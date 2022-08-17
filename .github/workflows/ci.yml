@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:  
+      - 'release-*'
+
+env:
+  GOLANGCI_LINT_VERSION: 'v1.46.2'
+  NFPM_VERSION: 'v2.18.0'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Lint Agent Code
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: "${{ env.GOLANGCI_LINT_VERSION }}"
+          args: -c ./scripts/.golangci.yml
+      - name: Lint SDK Code
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: "${{ env.GOLANGCI_LINT_VERSION }}"
+          working-directory: sdk
+          args: -c ../scripts/.golangci.yml
+
+  unit-test:
+    name: Unit Tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Run Unit Tests
+        run: make unit-test
+      - name: Upload Test Coverage
+        uses: codecov/codecov-action@v3
+        with:
+            files: ./build/test/coverage.out
+
+  component-test:
+    name: Component Tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Run Component Tests
+        run: make component-test
+
+  performance-test:
+    name: Performance Tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Build
+        uses: docker/setup-buildx-action@v2
+      - name: Build Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          file: test/docker/Dockerfile
+          tags: nginx-agent-benchmark:1.0.0
+          context: '.'
+          push: false
+          load: true
+          no-cache: true
+          secrets: |
+            "nginx-crt=${{ secrets.NGINX_CRT }}"
+            "nginx-key=${{ secrets.NGINX_KEY }}"
+      - name: Run Performance Tests
+        run: docker run -v ${GITHUB_WORKSPACE}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
+
+  build-snapshot:
+    name: Build Snapshot
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          file: scripts/packages/packager/Dockerfile
+          tags: build-packager:1.0.0
+          context: '.'
+          push: false
+          load: true
+          no-cache: true
+      - name: Build Packages
+        # TODO: Remove git config step later once the repo https://github.com/nginxinc/crossplane-go is made public
+        env:
+          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          git config --global url."https://dhurley:${TOKEN}@github.com".insteadOf "https://github.com"
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          make clean local-apk-package local-deb-package local-rpm-package local-pkg-package
+          tar -cf ./build/snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.pkg ./build/*.apk
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: snapshots
+          path: build/**/*.tar.gz
+          retention-days: 3

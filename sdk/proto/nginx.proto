@@ -1,0 +1,105 @@
+
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+option go_package = "gitlab.com:f5/nginx/agent/product/nginx-agent/sdk/v2/proto;proto";
+import "gogo.proto";
+import "config.proto";
+import "common.proto";
+
+message PlusInfo {
+  bool enabled = 1 [(gogoproto.jsontag) = "enabled" ];
+  string release = 2 [(gogoproto.jsontag) = "release" ];
+}
+
+message SSLInfo {
+  repeated string built = 1 [(gogoproto.jsontag) = "built" ];
+  repeated string run = 2 [(gogoproto.jsontag) = "run" ];
+}
+
+message PathInfo {
+  string bin = 1 [(gogoproto.jsontag) = "bin" ];
+  string conf = 2 [(gogoproto.jsontag) = "conf" ];
+}
+
+// Each NGINXDetails is associated with with a single NGINX instance.
+message NginxDetails {
+  string nginx_id = 1 [(gogoproto.jsontag) = "nginx_id" ];
+  string version = 2 [(gogoproto.jsontag) = "version" ];
+  string conf_path = 3 [(gogoproto.jsontag) = "conf_path" ];
+  string process_id = 4 [(gogoproto.jsontag) = "process_id" ];
+  string process_path = 5 [(gogoproto.jsontag) = "process_path" ];
+  int64 start_time = 6 [(gogoproto.jsontag) = "start_time" ];
+  bool built_from_source = 7 [(gogoproto.jsontag) = "built_from_source" ]; 
+  repeated string loadable_modules = 8 [(gogoproto.jsontag) = "loadable_modules" ];
+  repeated string runtime_modules = 9 [(gogoproto.jsontag) = "runtime_modules" ];
+  NginxPlusMetaData plus = 10 [(gogoproto.jsontag) = "plus" ];
+  NginxSslMetaData ssl = 11 [(gogoproto.jsontag) = "ssl" ];
+  string status_url = 12 [(gogoproto.jsontag) = "status_url" ];
+  repeated string configure_args = 13 [(gogoproto.jsontag) = "configure_args" ];
+}
+
+message NginxPlusMetaData {
+  bool enabled = 1 [(gogoproto.jsontag) = "enabled" ];
+  string release = 2 [(gogoproto.jsontag) = "release" ];
+}
+
+message NginxSslMetaData {
+  enum NginxSslType {
+    BUILT = 0;
+    RUN = 1;
+  }
+  NginxSslType ssl_type = 1 [(gogoproto.jsontag) = "ssl_type" ]; 
+  repeated string details = 2 [(gogoproto.jsontag) = "details" ];
+}
+
+message NginxHealth {
+  enum NginxStatus {
+      UNKNOWN = 0;
+      ACTIVE = 1;
+      DEGRADED = 2;
+    }
+  string nginx_id = 1 [(gogoproto.jsontag) = "nginx_id" ];
+  NginxStatus nginx_status = 2 [(gogoproto.jsontag) = "nginx_status" ];
+  string degraded_reason = 3 [(gogoproto.jsontag) = "degraded_reason" ];
+}
+
+enum NginxConfigAction {
+  UNKNOWN = 0;
+  APPLY = 1;
+  TEST = 2;
+  ROLLBACK = 3;
+  RETURN = 4;
+}
+
+message NginxConfig {
+  NginxConfigAction action = 1 [(gogoproto.jsontag) = "action" ];
+  ConfigDescriptor config_data = 2 [(gogoproto.jsontag) = "config_data" ];
+  ZippedFile zconfig = 3 [(gogoproto.jsontag) = "zconfig" ];
+  ZippedFile zaux = 4 [(gogoproto.jsontag) = "zaux" ];
+  AccessLogs access_logs = 5 [(gogoproto.jsontag) = "access_logs" ];
+  ErrorLogs error_logs = 6 [(gogoproto.jsontag) = "error_logs" ];
+  SslCertificates ssl = 7 [(gogoproto.jsontag) = "ssl" ];
+  DirectoryMap directory_map = 8 [(gogoproto.jsontag) = "directory_map" ];
+}
+
+message AccessLogs {
+  repeated AccessLog access_log = 1 [(gogoproto.jsontag) = "access_log" ];
+}
+
+message AccessLog {
+  string name = 1 [(gogoproto.jsontag) = "name" ];
+  string format = 2 [(gogoproto.jsontag) = "format" ];
+  string permissions = 3 [(gogoproto.jsontag) = "permissions" ];
+  bool readable = 4 [(gogoproto.jsontag) = "readable" ];
+}
+
+message ErrorLogs {
+  repeated ErrorLog error_log = 1 [(gogoproto.jsontag) = "error_log" ];
+}
+
+message ErrorLog {
+  string name = 1 [(gogoproto.jsontag) = "name" ];
+  string log_level = 2 [(gogoproto.jsontag) = "log_level" ];
+  string permissions = 3 [(gogoproto.jsontag) = "permissions" ];
+  bool readable = 4 [(gogoproto.jsontag) = "readable" ];
+}

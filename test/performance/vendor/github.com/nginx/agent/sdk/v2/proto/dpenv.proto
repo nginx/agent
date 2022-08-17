@@ -1,0 +1,36 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+option go_package = "gitlab.com:f5/nginx/agent/product/nginx-agent/sdk/v2/proto;proto";
+
+import "gogo.proto";
+import "common.proto";
+import "metrics.proto";
+
+// MetasReport a report containing status entities for a specific metric type
+message EnvReport {
+  enum Type {
+    SYSTEM = 0;
+    INSTANCE = 1;
+    AGENT = 2;
+  }
+  Metadata meta = 1 [(gogoproto.jsontag) = "meta" ];
+  Type type = 2 [(gogoproto.jsontag) = "type" ];
+  repeated EnvPropertySet property_sets = 3 [(gogoproto.jsontag) = "property_sets" ];
+}
+
+
+// EnvPropety - a container for a Dataplane Environment property.
+message EnvProperty {
+  string name = 1 [(gogoproto.jsontag) = "name" ];
+
+  oneof value {
+    int64 ival = 10 [(gogoproto.jsontag) = "ival" ];  // for example cpu count.
+    double dval = 11 [(gogoproto.jsontag) = "dval" ]; // for example cpu utilization
+    string sval = 12 [(gogoproto.jsontag) = "sval" ];    // for example os name, release name
+  }
+}
+
+message EnvPropertySet {
+  repeated Dimension dimensions = 1 [(gogoproto.jsontag) = "dimensions" ];
+  repeated EnvProperty properties = 2 [(gogoproto.jsontag) = "properties" ];
+}

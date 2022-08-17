@@ -1,0 +1,78 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+option go_package = "gitlab.com:f5/nginx/agent/product/nginx-agent/sdk/v2/proto;proto";
+
+import "gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+// Metadata timestamped info associating a client with a specific command message
+message Metadata {
+  google.protobuf.Timestamp timestamp = 1 [(gogoproto.jsontag) = "timestamp" ];
+  string client_id = 2 [(gogoproto.jsontag) = "client_id" ];
+  string message_id = 3 [(gogoproto.jsontag) = "message_id" ];
+  string cloud_account_id = 4 [(gogoproto.jsontag) = "cloud_account_id" ];
+}
+
+message DirectoryMap {
+  repeated Directory directories = 1;
+}
+
+message File {
+  string name = 1 [(gogoproto.jsontag) = "name" ];
+  int32 lines = 2 [(gogoproto.jsontag) = "lines" ];
+  google.protobuf.Timestamp mtime = 3 [(gogoproto.jsontag) = "mtime" ];
+  string permissions = 4 [(gogoproto.jsontag) = "permissions" ];
+  int64 size = 5 [(gogoproto.jsontag) = "size" ];
+  bytes contents = 6 [(gogoproto.jsontag) = "contents" ];
+}
+
+message Directory {
+  string name = 1;
+  google.protobuf.Timestamp mtime = 2;
+  string permissions = 3;
+  int64 size = 4;
+  repeated File files = 5;
+}
+
+message SslCertificates {
+  repeated SslCertificate ssl_certs = 1;
+}
+
+message SslCertificate {
+  string file_name = 1 [(gogoproto.jsontag) = "fileName" ];
+  int64 size = 2 [(gogoproto.jsontag) = "size" ];
+  google.protobuf.Timestamp mtime = 3 [(gogoproto.jsontag) = "mtime" ];
+  CertificateDates validity = 4 [(gogoproto.jsontag) = "validity" ];
+  CertificateName issuer =  5 [(gogoproto.jsontag) = "issuer" ];
+  CertificateName subject = 6 [(gogoproto.jsontag) = "subject" ];
+  repeated string subj_alt_names = 7 [(gogoproto.jsontag) = "subjectAltName" ];
+  repeated string ocsp_url = 8 [(gogoproto.jsontag) = "ocspURL" ];
+  string public_key_algorithm = 9 [(gogoproto.jsontag) = "publicKeyAlgorithm" ];
+  string signature_algorithm = 10 [(gogoproto.jsontag) = "signatureAlgorithm" ];
+  string serial_number = 11 [(gogoproto.jsontag) = "serialNumber" ];
+  string subject_key_identifier = 12 [(gogoproto.jsontag) = "subjectKeyIdentifier" ];
+  string fingerprint = 13 [(gogoproto.jsontag) = "fingerprint" ];
+  string fingerprint_algorithm = 14 [(gogoproto.jsontag) = "fingerprintAlgorithm" ];
+  int64 version = 15 [(gogoproto.jsontag) = "version" ];
+  string authority_key_identifier = 16 [(gogoproto.jsontag) = "authorityKeyIdentifier" ];
+}
+
+message CertificateDates {
+  int64 not_before = 1 [(gogoproto.jsontag) = "notBefore" ];
+  int64 not_after = 2 [(gogoproto.jsontag) = "notAfter" ];
+}
+
+message CertificateName {
+  string common_name = 1 [(gogoproto.jsontag) = "commonName" ];
+  repeated string country = 2 [(gogoproto.jsontag) = "country" ];
+  repeated string state = 3 [(gogoproto.jsontag) = "state" ];
+  repeated string locality = 4 [(gogoproto.jsontag) = "locality" ];
+  repeated string organization = 5 [(gogoproto.jsontag) = "organization" ];
+  repeated string organizational_unit = 6 [(gogoproto.jsontag) = "organizationalUnit" ];
+}
+
+message ZippedFile {
+  bytes contents = 1 [(gogoproto.jsontag) = "contents" ];
+  string checksum = 2 [(gogoproto.jsontag) = "checksum" ];
+  string root_directory = 3 [(gogoproto.jsontag) = "root_directory" ];
+}

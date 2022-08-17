@@ -1,0 +1,137 @@
+
+## <summary>policy for nginx_agent</summary>
+
+########################################
+## <summary>
+##	Execute nginx_agent_exec_t in the nginx_agent domain.
+## </summary>
+## <param name="domain">
+## <summary>
+##	Domain allowed to transition.
+## </summary>
+## </param>
+#
+interface(`nginx_agent_domtrans',`
+	gen_require(`
+		type nginx_agent_t, nginx_agent_exec_t;
+	')
+
+	corecmd_search_bin($1)
+	domtrans_pattern($1, nginx_agent_exec_t, nginx_agent_t)
+')
+
+######################################
+## <summary>
+##	Execute nginx_agent in the caller domain.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`nginx_agent_exec',`
+	gen_require(`
+		type nginx_agent_exec_t;
+	')
+
+	corecmd_search_bin($1)
+	can_exec($1, nginx_agent_exec_t)
+')
+########################################
+## <summary>
+##	Read nginx_agent's log files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`nginx_agent_read_log',`
+	gen_require(`
+		type nginx_agent_log_t;
+	')
+
+	logging_search_logs($1)
+	read_files_pattern($1, nginx_agent_log_t, nginx_agent_log_t)
+')
+
+########################################
+## <summary>
+##	Append to nginx_agent log files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`nginx_agent_append_log',`
+	gen_require(`
+		type nginx_agent_log_t;
+	')
+
+	logging_search_logs($1)
+	append_files_pattern($1, nginx_agent_log_t, nginx_agent_log_t)
+')
+
+########################################
+## <summary>
+##	Manage nginx_agent log files
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`nginx_agent_manage_log',`
+	gen_require(`
+		type nginx_agent_log_t;
+	')
+
+	logging_search_logs($1)
+	manage_dirs_pattern($1, nginx_agent_log_t, nginx_agent_log_t)
+	manage_files_pattern($1, nginx_agent_log_t, nginx_agent_log_t)
+	manage_lnk_files_pattern($1, nginx_agent_log_t, nginx_agent_log_t)
+')
+
+########################################
+## <summary>
+##	All of the rules required to administrate
+##	an nginx_agent environment
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <param name="role">
+##	<summary>
+##	Role allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`nginx_agent_admin',`
+	gen_require(`
+		type nginx_agent_t;
+		type nginx_agent_log_t;
+	')
+
+	allow $1 nginx_agent_t:process { signal_perms };
+	ps_process_pattern($1, nginx_agent_t)
+
+    tunable_policy(`deny_ptrace',`',`
+        allow $1 nginx_agent_t:process ptrace;
+    ')
+
+	logging_search_logs($1)
+	admin_pattern($1, nginx_agent_log_t)
+	optional_policy(`
+		systemd_passwd_agent_exec($1)
+		systemd_read_fifo_file_passwd_run($1)
+	')
+')

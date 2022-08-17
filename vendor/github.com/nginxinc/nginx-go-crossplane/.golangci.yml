@@ -1,0 +1,84 @@
+# GolangCI-Lint settings
+
+# Disable all linters and enable the required ones
+linters:
+  enable-all: true
+  disable:
+    - goimports # handled by `make format`
+    - gofmt # handled by `make format`
+    - wsl # hyper specific to a the creator and not configurable enough to be useful - https://github.com/bombsimon/wsl
+    - dupl
+    - gomnd
+    - godox
+    - nlreturn
+    - exhaustivestruct
+    - wrapcheck
+    - thelper
+    - testpackage
+    - nestif
+    - gofumpt
+    - goerr113
+    - errorlint
+    - ifshort
+    - paralleltest
+    - interfacer
+    - golint
+    - maligned
+    - scopelint
+
+
+# Run options
+run:
+  # 10 minute timeout for analysis
+  timeout: 10m
+  modules-download-mode: vendor
+  skip-dirs-use-default: true
+
+# Specific linter settings
+linters-settings:
+  gocyclo:
+    # Minimal code complexity to report
+    min-complexity: 16
+  maligned:
+    # Print struct with more effective memory layout
+    suggest-new: true
+  govet:
+    # Report shadowed variables
+    check-shadowing: true
+  misspell:
+    # Correct spellings using locale preferences for US
+    locale: US
+  goimports:
+    # Put imports beginning with prefix after 3rd-party packages
+    local-prefixes: gitswarm.f5net.com/indigo,gitlab.com/f5
+  errcheck:
+    ignore: ^Close.*,os:^Setenv.*,fmt:.*,io/ioutil:^Read.*,github.com/spf13/viper:.*,github.com/pkg/errors:^Wrap.*
+
+  lll:
+    line-length: 140
+
+issues:
+  # Exclude configuration
+  exclude-rules:
+    # Exclude gochecknoinits and gosec from running on tests files
+    - path: _test\.go
+      linters:
+        - gochecknoinits
+        - gosec
+    - path: test/*
+      linters:
+        - gochecknoinits
+        - gosec
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "^//go:generate "
+    - path: _desiredstatehistory(|_test)\.go
+      linters:
+        - dupl
+
+  # Disable maximum issues count per one linter
+  max-issues-per-linter: 0
+
+  # Disable maximum count of issues with the same text
+  max-same-issues: 0

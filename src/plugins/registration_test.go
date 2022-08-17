@@ -1,0 +1,106 @@
+package plugins
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/v2/src/core"
+	"github.com/nginx/agent/v2/src/core/config"
+
+	tutils "github.com/nginx/agent/v2/test/utils"
+)
+
+func TestRegistration_Process(t *testing.T) {
+	tests := []struct {
+		name                 string
+		expectedMessageCount int
+	}{
+		{
+			name:                 "test registration",
+			expectedMessageCount: 2,
+		},
+	}
+	t.Parallel()
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(tt *testing.T) {
+			tt.Parallel()
+
+			binary := tutils.GetMockNginxBinary()
+			env := tutils.GetMockEnvWithHostAndProcess()
+
+			cfg := &config.Config{
+				NginxAppProtect: config.NginxAppProtect{
+					ReportInterval: time.Duration(1) * time.Second,
+				},
+			}
+
+			pluginUnderTest := NewOneTimeRegistration(cfg, binary, env, &proto.Metadata{}, "0.0.0")
+			pluginUnderTest.dataplaneSoftwareDetails[napPluginName] = &proto.DataplaneSoftwareDetails{
+				Data: testNAPDetailsActive,
+			}
+			defer pluginUnderTest.Close()
+
+			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+
+			messagePipe.Run()
+			messages := messagePipe.GetProcessedMessages()
+			assert.Len(tt, messages, test.expectedMessageCount)
+
+			assert.Equal(tt, messages[0].Topic(), core.CommRegister)
+			// host info checked elsewhere
+			assert.NotNil(tt, messages[0].Data())
+
+			assert.Equal(tt, messages[1].Topic(), core.RegistrationCompletedTopic)
+			assert.Nil(tt, messages[1].Data())
+		})
+	}
+}
+
+func TestRegistration_RegisterWithDataplaneSoftwareDetails(t *testing.T) {
+	cfg := &config.Config{
+		NginxAppProtect: config.NginxAppProtect{
+			ReportInterval: time.Duration(1) * time.Millisecond,
+		},
+	}
+
+	pluginUnderTest := NewOneTimeRegistration(cfg, tutils.GetMockNginxBinary(), tutils.GetMockEnvWithHostAndProcess(), nil, "")
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+
+	expectedMessages := []string{core.RegisterWithDataplaneSoftwareDetails}
+
+	messagePipe.Run()
+
+	messages := messagePipe.GetProcessedMessages()
+	assert.Len(t, messages, len(expectedMessages))
+
+	for idx, message := range messages {
+		assert.EqualValues(t, expectedMessages[idx], message.Topic())
+	}
+	messagePipe.ClearMessages()
+}
+
+func TestRegistration_DataplaneReady(t *testing.T) {
+	conf := tutils.GetMockAgentConfig()
+	conf.NginxAppProtect = config.NginxAppProtect{ReportInterval: time.Duration(15) * time.Second}
+
+	pluginUnderTest := NewOneTimeRegistration(conf, nil, tutils.GetMockEnv(), nil, "")
+
+	assert.NoError(t, pluginUnderTest.dataplaneSoftwareDetailsReady())
+}
+
+func TestRegistration_Subscriptions(t *testing.T) {
+	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil, "")
+
+	assert.Equal(t, []string{core.RegistrationCompletedTopic}, pluginUnderTest.Subscriptions())
+}
+
+func TestRegistration_Info(t *testing.T) {
+	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil, "")
+
+	assert.Equal(t, "OneTimeRegistration", pluginUnderTest.Info().Name())
+}

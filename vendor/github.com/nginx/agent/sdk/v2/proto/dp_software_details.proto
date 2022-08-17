@@ -1,0 +1,15 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+option go_package = "gitlab.com:f5/nginx/agent/product/nginx-agent/sdk/v2/proto;proto";
+
+import "gogo.proto";
+import "nap.proto";
+
+// DataplaneSoftwareDetails contains details for additional software running on the dataplane that pertains 
+// to NGINX Agent
+message DataplaneSoftwareDetails {
+    oneof data {
+        AppProtectWAFDetails app_protect_waf_details = 1 [(gogoproto.jsontag) = "app_protect_waf_details"];
+    }
+
+}

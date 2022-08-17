@@ -1,0 +1,6 @@
+user_usec bad_value
+system_usec bad_value
+uknown 80000000
+nr_periods 0
+nr_throttled 0
+throttled_usec 0

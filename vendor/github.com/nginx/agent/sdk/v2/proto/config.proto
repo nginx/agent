@@ -1,0 +1,17 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+option go_package = "gitlab.com:f5/nginx/agent/product/nginx-agent/sdk/v2/proto;proto";
+
+import "gogo.proto";
+import "common.proto";
+
+message ConfigReport {
+    Metadata meta = 1 [(gogoproto.jsontag) = "meta" ];
+    repeated ConfigDescriptor configs = 2 [(gogoproto.jsontag) = "configs" ];
+}
+
+message ConfigDescriptor {
+    string system_id = 1 [(gogoproto.jsontag) = "system_id" ];
+    string nginx_id = 2 [(gogoproto.jsontag) = "nginx_id" ];
+    string checksum = 3 [(gogoproto.jsontag) = "checksum" ];
+}

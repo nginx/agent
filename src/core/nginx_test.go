@@ -1,0 +1,709 @@
+package core
+
+import (
+	"bytes"
+	"encoding/base64"
+	"errors"
+	"fmt"
+	"io/fs"
+	"io/ioutil"
+	"os"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/sdk/v2/zip"
+	"github.com/nginx/agent/v2/src/core/config"
+)
+
+type TestConfig []struct {
+	Name     string
+	Contents string
+}
+
+const CONF_TEMPLATE = `
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+
+events {
+worker_connections 768;
+}
+
+http {
+sendfile on;
+tcp_nopush on;
+tcp_nodelay on;
+keepalive_timeout 65;
+types_hash_max_size 2048;
+
+access_log /var/log/nginx/access.log;
+error_log /var/log/nginx/error.log;
+
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+	server_name  localhost;
+
+	location / {
+		root %s/aux/;
+	}
+}
+
+gzip on;
+}
+					
+`
+
+func TestGetNginxInfoFromBuffer(t *testing.T) {
+	tests := []struct {
+		name              string
+		input             string
+		expectedNginxInfo *nginxInfo
+	}{
+		{
+			name: "normal nginx install",
+			input: `nginx version: nginx/1.19.10
+			built by clang 12.0.0 (clang-1200.0.32.29)
+			built with OpenSSL 1.1.1k  25 Mar 2021
+			TLS SNI support enabled
+			configure arguments: --prefix=/usr/local/Cellar/nginx/1.19.10 --modules-path=/usr/sbin/nginx/modules --sbin-path=/usr/local/Cellar/nginx/1.19.10/bin/nginx --with-cc-opt='-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include' --with-ld-opt='-L/usr/local/opt/pcre/lib -L/usr/local/opt/openssl@1.1/lib' --conf-path=/usr/local/etc/nginx/nginx.conf --pid-path=/usr/local/var/run/nginx.pid --lock-path=/usr/local/var/run/nginx.lock --http-client-body-temp-path=/usr/local/var/run/nginx/client_body_temp --http-proxy-temp-path=/usr/local/var/run/nginx/proxy_temp --http-fastcgi-temp-path=/usr/local/var/run/nginx/fastcgi_temp --http-uwsgi-temp-path=/usr/local/var/run/nginx/uwsgi_temp --http-scgi-temp-path=/usr/local/var/run/nginx/scgi_temp --http-log-path=/usr/local/var/log/nginx/access.log --error-log-path=/usr/local/var/log/nginx/error.log --with-compat --with-debug --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_degradation_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-ipv6 --with-mail --with-mail_ssl_module --with-pcre --with-pcre-jit --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module`,
+			expectedNginxInfo: &nginxInfo{
+				prefix:    "/usr/local/Cellar/nginx/1.19.10",
+				confPath:  "/usr/local/etc/nginx/nginx.conf",
+				logPath:   "/usr/local/var/log/nginx/access.log",
+				errorPath: "/usr/local/var/log/nginx/error.log",
+				version:   "1.19.10",
+				plusver:   "",
+				source:    "built by clang 12.0.0 (clang-1200.0.32.29)",
+				ssl: []string{
+					"OpenSSL",
+					"1.1.1k",
+					"25 Mar 2021",
+				},
+				cfgf: map[string]interface{}{
+					"conf-path":                      "/usr/local/etc/nginx/nginx.conf",
+					"error-log-path":                 "/usr/local/var/log/nginx/error.log",
+					"modules-path":                   "/usr/sbin/nginx/modules",
+					"http-client-body-temp-path":     "/usr/local/var/run/nginx/client_body_temp",
+					"http-fastcgi-temp-path":         "/usr/local/var/run/nginx/fastcgi_temp",
+					"http-log-path":                  "/usr/local/var/log/nginx/access.log",
+					"http-proxy-temp-path":           "/usr/local/var/run/nginx/proxy_temp",
+					"http-scgi-temp-path":            "/usr/local/var/run/nginx/scgi_temp",
+					"http-uwsgi-temp-path":           "/usr/local/var/run/nginx/uwsgi_temp",
+					"lock-path":                      "/usr/local/var/run/nginx.lock",
+					"pid-path":                       "/usr/local/var/run/nginx.pid",
+					"prefix":                         "/usr/local/Cellar/nginx/1.19.10",
+					"sbin-path":                      "/usr/local/Cellar/nginx/1.19.10/bin/nginx",
+					"with-cc-opt":                    "'-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include'",
+					"with-compat":                    true,
+					"with-debug":                     true,
+					"with-http_addition_module":      true,
+					"with-http_auth_request_module":  true,
+					"with-http_dav_module":           true,
+					"with-http_degradation_module":   true,
+					"with-http_flv_module":           true,
+					"with-http_gunzip_module":        true,
+					"with-http_gzip_static_module":   true,
+					"with-http_mp4_module":           true,
+					"with-http_random_index_module":  true,
+					"with-http_realip_module":        true,
+					"with-http_secure_link_module":   true,
+					"with-http_slice_module":         true,
+					"with-http_ssl_module":           true,
+					"with-http_stub_status_module":   true,
+					"with-http_sub_module":           true,
+					"with-http_v2_module":            true,
+					"with-ipv6":                      true,
+					"with-ld-opt":                    "'-L/usr/local/opt/pcre/lib -L/usr/local/opt/openssl@1.1/lib'",
+					"with-mail":                      true,
+					"with-mail_ssl_module":           true,
+					"with-pcre":                      true,
+					"with-pcre-jit":                  true,
+					"with-stream":                    true,
+					"with-stream_realip_module":      true,
+					"with-stream_ssl_module":         true,
+					"with-stream_ssl_preread_module": true,
+				},
+				configureArgs: []string{
+					"",
+					"prefix=/usr/local/Cellar/nginx/1.19.10",
+					"modules-path=/usr/sbin/nginx/modules",
+					"sbin-path=/usr/local/Cellar/nginx/1.19.10/bin/nginx",
+					"with-cc-opt='-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include'",
+					"with-ld-opt='-L/usr/local/opt/pcre/lib -L/usr/local/opt/openssl@1.1/lib'",
+					"conf-path=/usr/local/etc/nginx/nginx.conf",
+					"pid-path=/usr/local/var/run/nginx.pid",
+					"lock-path=/usr/local/var/run/nginx.lock",
+					"http-client-body-temp-path=/usr/local/var/run/nginx/client_body_temp",
+					"http-proxy-temp-path=/usr/local/var/run/nginx/proxy_temp",
+					"http-fastcgi-temp-path=/usr/local/var/run/nginx/fastcgi_temp",
+					"http-uwsgi-temp-path=/usr/local/var/run/nginx/uwsgi_temp",
+					"http-scgi-temp-path=/usr/local/var/run/nginx/scgi_temp",
+					"http-log-path=/usr/local/var/log/nginx/access.log",
+					"error-log-path=/usr/local/var/log/nginx/error.log",
+					"with-compat",
+					"with-debug",
+					"with-http_addition_module",
+					"with-http_auth_request_module",
+					"with-http_dav_module",
+					"with-http_degradation_module",
+					"with-http_flv_module",
+					"with-http_gunzip_module",
+					"with-http_gzip_static_module",
+					"with-http_mp4_module",
+					"with-http_random_index_module",
+					"with-http_realip_module",
+					"with-http_secure_link_module",
+					"with-http_slice_module",
+					"with-http_ssl_module",
+					"with-http_stub_status_module",
+					"with-http_sub_module",
+					"with-http_v2_module",
+					"with-ipv6",
+					"with-mail",
+					"with-mail_ssl_module",
+					"with-pcre",
+					"with-pcre-jit",
+					"with-stream",
+					"with-stream_realip_module",
+					"with-stream_ssl_module",
+					"with-stream_ssl_preread_module",
+				},
+				loadableModules: nil,
+				modulesPath:     "/usr/sbin/nginx/modules",
+			},
+		},
+		{
+			name: "custom nginx install",
+			input: `nginx version: nginx/1.19.10
+			TLS SNI support enabled
+			configure arguments: --prefix=/usr/local/Cellar/nginx/1.19.10 --sbin-path=/usr/local/Cellar/nginx/1.19.10/bin/nginx --with-cc-opt='-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include'`,
+			expectedNginxInfo: &nginxInfo{
+				prefix:   "/usr/local/Cellar/nginx/1.19.10",
+				confPath: "/usr/local/Cellar/nginx/1.19.10/conf/nginx.conf",
+				version:  "1.19.10",
+				plusver:  "",
+				source:   "",
+				cfgf: map[string]interface{}{
+					"prefix":      "/usr/local/Cellar/nginx/1.19.10",
+					"sbin-path":   "/usr/local/Cellar/nginx/1.19.10/bin/nginx",
+					"with-cc-opt": "'-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include'",
+				},
+				configureArgs: []string{
+					"",
+					"prefix=/usr/local/Cellar/nginx/1.19.10",
+					"sbin-path=/usr/local/Cellar/nginx/1.19.10/bin/nginx",
+					"with-cc-opt='-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include'",
+				},
+				loadableModules: nil,
+				modulesPath:     "",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			binary := NginxBinaryType{
+				env: &EnvironmentType{},
+			}
+
+			var buffer bytes.Buffer
+			buffer.WriteString(test.input)
+			nginxInfo := binary.getNginxInfoFromBuffer("/usr/sbin/nginx", &buffer)
+
+			assert.Equal(t, test.expectedNginxInfo.cfgf, nginxInfo.cfgf)
+			assert.Equal(t, test.expectedNginxInfo.confPath, nginxInfo.confPath)
+			assert.Equal(t, test.expectedNginxInfo.configureArgs, nginxInfo.configureArgs)
+			assert.Equal(t, test.expectedNginxInfo.errorPath, nginxInfo.errorPath)
+			assert.Equal(t, test.expectedNginxInfo.loadableModules, nginxInfo.loadableModules)
+			assert.Equal(t, test.expectedNginxInfo.logPath, nginxInfo.logPath)
+			assert.Equal(t, test.expectedNginxInfo.modulesPath, nginxInfo.modulesPath)
+			assert.Equal(t, test.expectedNginxInfo.plusver, nginxInfo.plusver)
+			assert.Equal(t, test.expectedNginxInfo.prefix, nginxInfo.prefix)
+			assert.Equal(t, test.expectedNginxInfo.source, nginxInfo.source)
+			assert.Equal(t, test.expectedNginxInfo.ssl, nginxInfo.ssl)
+			assert.Equal(t, test.expectedNginxInfo.version, nginxInfo.version)
+			assert.NotNil(t, nginxInfo.mtime)
+		})
+	}
+}
+
+func TestParseConfigureArguemtns(t *testing.T) {
+	input := `configure arguments: --prefix=/usr/local/Cellar/nginx/1.19.10 --sbin-path=/usr/local/Cellar/nginx/1.19.10/bin/nginx --with-cc-opt='-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include' --with-ld-opt='-L/usr/local/opt/pcre/lib -L/usr/local/opt/openssl@1.1/lib' --conf-path=/usr/local/etc/nginx/nginx.conf --pid-path=/usr/local/var/run/nginx.pid --lock-path=/usr/local/var/run/nginx.lock --http-client-body-temp-path=/usr/local/var/run/nginx/client_body_temp --http-proxy-temp-path=/usr/local/var/run/nginx/proxy_temp --http-fastcgi-temp-path=/usr/local/var/run/nginx/fastcgi_temp --http-uwsgi-temp-path=/usr/local/var/run/nginx/uwsgi_temp --http-scgi-temp-path=/usr/local/var/run/nginx/scgi_temp --http-log-path=/usr/local/var/log/nginx/access.log --error-log-path=/usr/local/var/log/nginx/error.log --with-compat --with-debug --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_degradation_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-ipv6 --with-mail --with-mail_ssl_module --with-pcre --with-pcre-jit --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module`
+
+	expected := map[string]interface{}{
+		"conf-path":                      "/usr/local/etc/nginx/nginx.conf",
+		"error-log-path":                 "/usr/local/var/log/nginx/error.log",
+		"http-client-body-temp-path":     "/usr/local/var/run/nginx/client_body_temp",
+		"http-fastcgi-temp-path":         "/usr/local/var/run/nginx/fastcgi_temp",
+		"http-log-path":                  "/usr/local/var/log/nginx/access.log",
+		"http-proxy-temp-path":           "/usr/local/var/run/nginx/proxy_temp",
+		"http-scgi-temp-path":            "/usr/local/var/run/nginx/scgi_temp",
+		"http-uwsgi-temp-path":           "/usr/local/var/run/nginx/uwsgi_temp",
+		"lock-path":                      "/usr/local/var/run/nginx.lock",
+		"pid-path":                       "/usr/local/var/run/nginx.pid",
+		"prefix":                         "/usr/local/Cellar/nginx/1.19.10",
+		"sbin-path":                      "/usr/local/Cellar/nginx/1.19.10/bin/nginx",
+		"with-cc-opt":                    "'-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include'",
+		"with-compat":                    true,
+		"with-debug":                     true,
+		"with-http_addition_module":      true,
+		"with-http_auth_request_module":  true,
+		"with-http_dav_module":           true,
+		"with-http_degradation_module":   true,
+		"with-http_flv_module":           true,
+		"with-http_gunzip_module":        true,
+		"with-http_gzip_static_module":   true,
+		"with-http_mp4_module":           true,
+		"with-http_random_index_module":  true,
+		"with-http_realip_module":        true,
+		"with-http_secure_link_module":   true,
+		"with-http_slice_module":         true,
+		"with-http_ssl_module":           true,
+		"with-http_stub_status_module":   true,
+		"with-http_sub_module":           true,
+		"with-http_v2_module":            true,
+		"with-ipv6":                      true,
+		"with-ld-opt":                    "'-L/usr/local/opt/pcre/lib -L/usr/local/opt/openssl@1.1/lib'",
+		"with-mail":                      true,
+		"with-mail_ssl_module":           true,
+		"with-pcre":                      true,
+		"with-pcre-jit":                  true,
+		"with-stream":                    true,
+		"with-stream_realip_module":      true,
+		"with-stream_ssl_module":         true,
+		"with-stream_ssl_preread_module": true,
+	}
+
+	result, args := parseConfigureArguments(input)
+
+	assert.Equal(t, expected, result)
+	assert.NotNil(t, args)
+}
+
+func TestParseNginxVersion(t *testing.T) {
+	tests := []struct {
+		input       string
+		plusVersion string
+		version     string
+	}{
+		{
+			input:       "nginx version: nginx/1.19.10",
+			plusVersion: "",
+			version:     "1.19.10",
+		},
+	}
+
+	for _, test := range tests {
+		versionResult, plusResult := parseNginxVersion(test.input)
+
+		assert.Equal(t, test.plusVersion, plusResult)
+		assert.Equal(t, test.version, versionResult)
+	}
+}
+
+func TestGetConfPath(t *testing.T) {
+	result := getConfPathFromCommand("nginx: master process nginx -c /tmp/nginx.conf")
+	assert.Equal(t, "/tmp/nginx.conf", result)
+
+	result = getConfPathFromCommand("nginx: master process nginx -c")
+	assert.Equal(t, "", result)
+
+	result = getConfPathFromCommand("-c")
+	assert.Equal(t, "", result)
+
+	result = getConfPathFromCommand("")
+	assert.Equal(t, "", result)
+}
+
+func TestBuildSslRun(t *testing.T) {
+	input := []string{"hello"}
+	result := buildSsl(input, "")
+	expected := &proto.NginxSslMetaData{
+		SslType: proto.NginxSslMetaData_RUN,
+		Details: input,
+	}
+	assert.Equal(t, expected, result)
+}
+
+func TestBuildSslBuilt(t *testing.T) {
+	input := []string{"bye"}
+	result := buildSsl(input, "built by")
+	expected := &proto.NginxSslMetaData{
+		SslType: proto.NginxSslMetaData_BUILT,
+		Details: input,
+	}
+	assert.Equal(t, expected, result)
+}
+
+func TestWriteBackup(t *testing.T) {
+	zippedFile := &proto.ZippedFile{
+		RootDirectory: "/tmp",
+	}
+
+	tests := []struct {
+		name           string
+		config         config.Config
+		nginxConfig    *proto.NginxConfig
+		confFiles      []*proto.File
+		auxFiles       []*proto.File
+		expectedResult int
+	}{
+		{
+			name:        "enabled test",
+			config:      config.Config{Nginx: config.Nginx{Debug: true}},
+			nginxConfig: &proto.NginxConfig{Zconfig: zippedFile, Zaux: zippedFile},
+			confFiles: []*proto.File{
+				{
+					Name: "/tmp/file1.html",
+				},
+			},
+			auxFiles: []*proto.File{
+				{
+					Name: "/tmp/auxfile1.html",
+				},
+			},
+			expectedResult: 2,
+		},
+		{
+			name:           "not enabled test",
+			config:         config.Config{Nginx: config.Nginx{Debug: false}},
+			nginxConfig:    &proto.NginxConfig{},
+			confFiles:      []*proto.File{},
+			auxFiles:       []*proto.File{},
+			expectedResult: 0,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			fakeEnv := FakeEnvironment{}
+
+			binary := NginxBinaryType{config: &test.config, env: &fakeEnv}
+			binary.writeBackup(test.nginxConfig, test.confFiles, test.auxFiles)
+
+			assert.Equal(t, test.expectedResult, fakeEnv.WriteFilesCallCount())
+		})
+	}
+}
+
+func TestWriteConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	expectedExisting := make(map[string]struct{})
+	expectedNotExisting := map[string]struct{}{
+		tmpDir + "/aux/test1.html": {},
+	}
+
+	allowedDirs := make(map[string]struct{})
+	allowedDirs[tmpDir] = struct{}{}
+	fakeConfig := config.Config{
+		AllowedDirectoriesMap: allowedDirs,
+	}
+
+	env := EnvironmentType{}
+	n := NewNginxBinary(&env, &fakeConfig)
+
+	n.nginxDetailsMap = make(map[string]*proto.NginxDetails)
+	n.nginxDetailsMap["151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8"] = &proto.NginxDetails{
+		NginxId:     "151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8",
+		ConfPath:    tmpDir + "/nginx.conf",
+		ProcessId:   "777",
+		ProcessPath: "/usr/sbin/nginx",
+	}
+
+	confString := fmt.Sprintf(CONF_TEMPLATE, tmpDir)
+	confBytes := []byte(confString)
+	if err := ioutil.WriteFile(tmpDir+"/nginx.conf", confBytes, 0755); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+
+	if err := os.Mkdir(tmpDir+"/aux/", 0755); err != nil {
+		t.Fatalf("failed to create aux directory: %v", err)
+	}
+	auxBytes := []byte("<html><html>")
+	if err := ioutil.WriteFile(tmpDir+"/aux/test2.html", auxBytes, 0755); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+
+	nginxConfig, err := buildConfig(tmpDir)
+	if err != nil {
+		t.Fatal("failed to create test config")
+	}
+	configApply, err := n.WriteConfig(nginxConfig)
+
+	// Verify configApply
+	assert.Equal(t, expectedExisting, configApply.GetExisting())
+	assert.Equal(t, expectedNotExisting, configApply.GetNotExists())
+	assert.Nil(t, err)
+
+	err = configApply.Complete()
+	assert.Nil(t, err)
+
+	// Verify aux file test1.html was created
+	_, err = os.Stat(tmpDir + "/aux/test1.html")
+	assert.Nil(t, err)
+	// Verify aux file test2.html was deleted
+	_, err = os.Stat(tmpDir + "/aux/test2.html")
+	assert.NotNil(t, err)
+
+	// Verify that rollback on failure works as expected
+	err = configApply.Rollback(errors.New("Config Validation Failed"))
+	assert.Nil(t, err)
+
+	// Verify aux file test1.html was removed
+	_, err = os.Stat(tmpDir + "/aux/test1.html")
+	assert.NotNil(t, err)
+	// Verify aux file test2.html was restored again
+	_, err = os.Stat(tmpDir + "/aux/test2.html")
+	assert.Nil(t, err)
+}
+
+func TestGetDirectoryMapDiff(t *testing.T) {
+	tests := []struct {
+		name                 string
+		currentDirectoryMap  []*proto.Directory
+		incomingDirectoryMap []*proto.Directory
+		expectedResult       []string
+	}{
+		{
+			name:                 "2 Empty Directory Maps",
+			currentDirectoryMap:  []*proto.Directory{},
+			incomingDirectoryMap: []*proto.Directory{},
+			expectedResult:       []string{},
+		},
+		{
+			name:                "Empty Current Directory Map",
+			currentDirectoryMap: []*proto.Directory{},
+			incomingDirectoryMap: []*proto.Directory{
+				{
+					Name: "/dir1",
+					Files: []*proto.File{
+						{
+							Name: "file1.html",
+						},
+					},
+				},
+			},
+			expectedResult: []string{},
+		},
+		{
+			name: "Empty Incoming Directory Map",
+			currentDirectoryMap: []*proto.Directory{
+				{
+					Name: "/dir1",
+					Files: []*proto.File{
+						{
+							Name: "file1.html",
+						},
+					},
+				},
+			},
+			incomingDirectoryMap: []*proto.Directory{},
+			expectedResult:       []string{"/dir1/file1.html"},
+		},
+		{
+			name: "Same Directory Maps",
+			currentDirectoryMap: []*proto.Directory{
+				{
+					Name: "/dir1",
+					Files: []*proto.File{
+						{
+							Name: "file1.html",
+						},
+					},
+				},
+			},
+			incomingDirectoryMap: []*proto.Directory{
+				{
+					Name: "/dir1",
+					Files: []*proto.File{
+						{
+							Name: "file1.html",
+						},
+					},
+				},
+			},
+			expectedResult: []string{},
+		},
+		{
+			name: "Multiple directories and files with differences",
+			currentDirectoryMap: []*proto.Directory{
+				{
+					Name: "/dir1",
+					Files: []*proto.File{
+						{
+							Name: "file1.html",
+						},
+						{
+							Name: "file2.html",
+						},
+						{
+							Name: "file3.html",
+						},
+					},
+				},
+				{
+					Name: "/dir2",
+					Files: []*proto.File{
+						{
+							Name: "file1.html",
+						},
+						{
+							Name: "file2.html",
+						},
+					},
+				},
+				{
+					Name: "/dir3",
+					Files: []*proto.File{
+						{
+							Name: "file1.html",
+						},
+						{
+							Name: "file2.html",
+						},
+					},
+				},
+			},
+			incomingDirectoryMap: []*proto.Directory{
+				{
+					Name: "/dir1",
+					Files: []*proto.File{
+						{
+							Name: "file1.html",
+						},
+						{
+							Name: "file3.html",
+						},
+					},
+				},
+				{
+					Name: "/dir2",
+					Files: []*proto.File{
+						{
+							Name: "file2.html",
+						},
+					},
+				},
+			},
+			expectedResult: []string{
+				"/dir1/file2.html",
+				"/dir2/file1.html",
+				"/dir3/file1.html",
+				"/dir3/file2.html",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			actualResult := getDirectoryMapDiff(test.currentDirectoryMap, test.incomingDirectoryMap)
+			assert.Equal(tt, test.expectedResult, actualResult)
+		})
+	}
+}
+
+func TestDeepCopyWithNewPath(t *testing.T) {
+	tests := []struct {
+		name    string
+		files   []*proto.File
+		oldPath string
+		newPath string
+	}{
+		{
+			name: "happy path",
+			files: []*proto.File{
+				{
+					Name: "/tmp/file1.html",
+				},
+				{
+					Name: "/tmp/file2.html",
+				},
+				{
+					Name: "/tmp/file3.html",
+				},
+			},
+			oldPath: "/tmp/",
+			newPath: "/changed/",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			actualResult := deepCopyWithNewPath(test.files, test.oldPath, test.newPath)
+
+			for _, file := range actualResult {
+				assert.True(t, strings.HasPrefix(file.Name, test.newPath))
+			}
+		})
+	}
+}
+
+func buildConfig(rootDirectory string) (*proto.NginxConfig, error) {
+	nginxConfig := &proto.NginxConfig{}
+	defaultFileMode := fs.FileMode(0644)
+
+	// Add config file
+	configWriter, err := zip.NewWriter("testconfig")
+	if err != nil {
+		return nginxConfig, err
+	}
+
+	confString := fmt.Sprintf(CONF_TEMPLATE, rootDirectory)
+	confBytes := []byte(confString)
+	b := bytes.NewReader(confBytes)
+	err = configWriter.Add("nginx.conf", defaultFileMode, b)
+	if err != nil {
+		return nginxConfig, err
+	}
+
+	nginxConfig.Action = proto.NginxConfigAction_APPLY
+	nginxConfig.ConfigData = &proto.ConfigDescriptor{
+		SystemId: "59633a13-f50b-3c46-89e5-d9bbb9080dcf",
+		NginxId:  "151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8",
+	}
+	nginxConfig.Zconfig, _ = configWriter.Proto()
+
+	// Add aux files
+	auxWriter, err := zip.NewWriter("testaux")
+	if err != nil {
+		return nginxConfig, err
+	}
+	buf, err := base64.StdEncoding.DecodeString("")
+	if err != nil {
+		return nginxConfig, err
+	}
+	b = bytes.NewReader(buf)
+	err = auxWriter.Add(rootDirectory+"/aux/test1.html", defaultFileMode, b)
+	if err != nil {
+		return nginxConfig, err
+	}
+
+	nginxConfig.Zaux, _ = auxWriter.Proto()
+
+	// Add Directory Map
+	nginxConfig.DirectoryMap = &proto.DirectoryMap{
+		Directories: []*proto.Directory{
+			{
+				Name: rootDirectory,
+				Files: []*proto.File{
+					{
+						Name: "nginx.conf",
+					},
+				},
+			},
+			{
+				Name: rootDirectory + "/aux/",
+				Files: []*proto.File{
+					{
+						Name: "test1.html",
+					},
+				},
+			},
+		},
+	}
+
+	return nginxConfig, nil
+}

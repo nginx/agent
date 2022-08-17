@@ -1,0 +1,8 @@
+hash: f47b9345c96159fb80780b5af5afb3a21deba466456810eede26855f33cbf4c1
+updated: 2017-07-10T22:30:23.041269589+02:00
+imports: []
+testImports:
+- name: github.com/trivago/tgo
+  version: bdfa63d0265af496c5bc30356dc31b19aa71447e
+  subpackages:
+  - ttesting

@@ -1,0 +1,10 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk.common;
+option go_package = "github.com/nginx/agent/sdk/v2/proto/common;f5.nginx.agent.sdk.common";
+
+import "gogo.proto";
+
+message Dimension {
+    string name = 1 [(gogoproto.jsontag) = "name" ];
+    string value = 2 [(gogoproto.jsontag) = "value" ];
+}

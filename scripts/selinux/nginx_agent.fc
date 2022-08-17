@@ -1,0 +1,5 @@
+/usr/bin/nginx-agent		--	gen_context(system_u:object_r:nginx_agent_exec_t,s0)
+
+/etc/nginx-agent(/.*)?	    --	gen_context(system_u:object_r:nginx_agent_config_t,s0)
+
+/var/log/nginx-agent(/.*)?		gen_context(system_u:object_r:nginx_agent_log_t,s0)

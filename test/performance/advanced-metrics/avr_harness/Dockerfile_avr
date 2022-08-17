@@ -1,0 +1,18 @@
+FROM ubuntu:xenial
+
+COPY bin/avr.deb /avr.deb
+COPY bin/deps.deb /deps.deb
+
+RUN apt-get update
+RUN apt-get install -y libssl1.0.0 libxerces-c3.1
+RUN dpkg -i /deps.deb
+RUN dpkg -i /avr.deb
+
+# Adding to all these locations just to be sure
+COPY avr_harness/config /etc/nginx-controller/metrics/config.json
+COPY avr_harness/config /etc/avr/config/IndigoConfig.json
+COPY avr_harness/config /etc/avr/config/config.json
+COPY avr_harness/config /etc/avr/config/avr_config.json
+COPY avr_harness/logger_config /etc/avr/avrd_logger.cfg
+
+ENTRYPOINT ["bash","-c","avrd -m 128 --config /etc/nginx-controller/metrics/config.json >/dev/null"]

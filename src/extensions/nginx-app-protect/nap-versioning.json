@@ -1,0 +1,240 @@
+{
+    "releases": {
+        "3.10": {
+            "nap-packages": {
+                "debian-10": "app-protect_26+3.890.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_26+3.890.0-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_26+3.890.0-1~focal_amd64.deb",
+                "centos-7": "app-protect-26+3.890.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-26+3.890.0-1.el7.ngx.x86_64.rpm",
+                "amazon-linux-2": "app-protect-26+3.890.0-1.el7.ngx.x86_64.rpm",
+                "redhat-8": "app-protect-26+3.890.0-1.el8.ngx.x86_64.rpm"
+            },
+            "versioning-details": {
+                "nginx-plus": "26",
+                "nap-release": "3.10",
+                "nap-build": "3.890.0",
+                "nap-compiler": "10.58.0",
+                "nap-engine": "10.58.0",
+                "nap-plugin": "3.890.0",
+                "nap-plus-module": "26+3.890.0"
+            }
+        },
+        "3.9.1": {
+            "nap-packages": {
+                "debian-10": "app-protect_26+3.796.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_26+3.796.0-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_26+3.796.0-1~focal_amd64.deb",
+                "centos-7": "app-protect-26+3.796.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-26+3.796.0-1.el7.ngx.x86_64.rpm",
+                "amazon-linux-2": "app-protect-26+3.796.0-1.el7.ngx.x86_64.rpm",
+                "redhat-8": "app-protect-26+3.796.0-1.el8.ngx.x86_64.rpm"
+            },
+            "versioning-details": {
+                "nginx-plus": "26",
+                "nap-release": "3.9.1",
+                "nap-build": "3.796.0",
+                "nap-compiler": "10.29.1",
+                "nap-engine": "10.29.1",
+                "nap-plugin": "3.796.0",
+                "nap-plus-module": "26+3.796.0"
+            }
+        },
+        "3.9": {
+            "nap-packages": {
+                "debian-10": "app-protect_26+3.780.1-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_26+3.780.1-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_26+3.780.1-1~focal_amd64.deb",
+                "centos-7": "app-protect-26+3.780.1-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-26+3.780.1-1.el7.ngx.x86_64.rpm",
+                "amazon-linux-2": "app-protect-26+3.780.1-1.el7.ngx.x86_64.rpm",
+                "redhat-8": "app-protect-26+3.780.1-1.el8.ngx.x86_64.rpm"
+            },
+            "versioning-details": {
+                "nginx-plus": "26",
+                "nap-release": "3.9",
+                "nap-build": "3.780.1",
+                "nap-compiler": "10.16.5",
+                "nap-engine": "10.16.5",
+                "nap-plugin": "3.780.1",
+                "nap-plus-module": "26+3.780.1"
+            }
+        },
+        "3.8": {
+            "nap-packages": {
+                "debian-10": "app-protect_25+3.760.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_25+3.760.0-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_25+3.760.0-1~focal_amd64.deb",
+                "centos-7": "app-protect-25+3.760.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-25+3.760.0-1.el7.ngx.x86_64.rpm",
+                "amazon-linux-2": "app-protect-25+3.760.0-1.el7.ngx.x86_64.rpm",
+                "redhat-8": "app-protect-25+3.760.0-1.el8.ngx.x86_64.rpm"
+            },
+            "versioning-details": {
+                "nap-build": "3.760.0",
+                "nap-release": "3.8",
+                "nginx-plus": "25",
+                "nap-compiler": "9.15.0",
+                "nap-engine": "9.15.0",
+                "nap-plugin": "3.760.0",
+                "nap-plus-module": "25+3.760.0"
+            }
+        },
+        "3.7": {
+            "nap-packages": {
+                "debian-10": "app-protect_25+3.733.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_25+3.733.0-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_25+3.733.0-1~focal_amd64.deb",
+                "centos-7": "app-protect-25+3.733.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-25+3.733.0-1.el7.ngx.x86_64.rpm",
+                "amazon-linux-2": "app-protect-25+3.733.0-1.el7.ngx.x86_64.rpm"
+            },
+            "versioning-details": {
+                "nginx-plus": "25",
+                "nap-release": "3.7",
+                "nap-build": "3.733.0",
+                "nap-compiler": "9.15.0",
+                "nap-engine": "9.15.0",
+                "nap-plugin": "3.733.0",
+                "nap-plus-module": "25+3.733.0"
+            }
+        },
+        "3.6": {
+            "nap-packages": {
+                "debian-10": "app-protect_25+3.671.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_25+3.671.0-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_25+3.671.0-1~focal_amd64.deb",
+                "centos-7": "app-protect-25+3.671.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-25+3.671.0-1.el7.ngx.x86_64.rpm",
+                "amazon-linux-2": "app-protect-25+3.671.0-1.el7.ngx.x86_64.rpm"
+            },
+            "versioning-details": {
+                "nginx-plus": "25",
+                "nap-release": "3.6",
+                "nap-build": "3.671.0",
+                "nap-compiler": "8.12.1",
+                "nap-engine": "8.12.1",
+                "nap-plugin": "3.671.0",
+                "nap-plus-module": "25+3.671.0"
+            }
+        },
+        "3.5": {
+            "nap-packages": {
+                "debian-10": "app-protect_24+3.639.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_24+3.639.0-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_24+3.639.0-1~focal_amd64.deb",
+                "centos-7": "app-protect-24+3.639.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-24+3.639.0-1.el7.ngx.x86_64.rpm",
+                "amazon-linux-2": "app-protect-24+3.639.0-1.el7.ngx.x86_64.rpm",
+                "alpine-3.10": "app-protect-24.3.639.0-r1.apk"
+            },
+            "versioning-details": {
+                "nginx-plus": "24",
+                "nap-release": "3.5",
+                "nap-build": "3.639.0",
+                "nap-compiler": "8.7.4",
+                "nap-engine": "8.7.4",
+                "nap-plugin": "3.639.0",
+                "nap-plus-module": "24+3.639.0"
+            }
+        },
+        "3.4": {
+            "nap-packages": {
+                "debian-10": "app-protect_24+3.612.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_24+3.612.0-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_24+3.612.0-1~focal_amd64.deb",
+                "centos-7": "app-protect-24+3.612.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-24+3.612.0-1.el7.ngx.x86_64.rpm",
+                "amazon-linux-2": "app-protect-24+3.612.0-1.el7.ngx.x86_64.rpm",
+                "alpine-3.10": "app-protect-24.3.612.0-r1.apk"
+            },
+            "versioning-details": {
+                "nginx-plus": "24",
+                "nap-release": "3.4",
+                "nap-build": "3.612.0",
+                "nap-compiler": "7.19.6",
+                "nap-engine": "7.19.6",
+                "nap-plugin": "3.612.0",
+                "nap-plus-module": "24+3.612.0"
+            }
+        },
+        "3.3": {
+            "nap-packages": {
+                "debian-10": "app-protect_24+3.583.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_24+3.583.0-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_24+3.583.0-1~focal_amd64.deb",
+                "centos-7": "app-protect-24+3.583.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-24+3.583.0-1.el7.ngx.x86_64.rpm",
+                "amazon-linux-2": "app-protect-24+3.583.0-1.el7.ngx.x86_64.rpm",
+                "alpine-3.10": "app-protect-24.3.583.0-r1.apk"
+            },
+            "versioning-details": {
+                "nginx-plus": "24",
+                "nap-release": "3.3",
+                "nap-build": "3.583.0",
+                "nap-compiler": "7.7.7",
+                "nap-engine": "7.7.7",
+                "nap-plugin": "3.583.0",
+                "nap-plus-module": "24+3.583.0"
+            }
+        },
+        "3.2": {
+            "nap-packages": {
+                "debian-10": "app-protect_24+3.512.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_24+3.512.0-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_24+3.512.0-1~focal_amd64.deb",
+                "centos-7": "app-protect-24+3.512.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-24+3.512.0-1.el7.ngx.x86_64.rpm",
+                "alpine-3.10": "app-protect-24.3.512.0-r1.apk"
+            },
+            "versioning-details": {
+                "nginx-plus": "24",
+                "nap-build": "3.512.0",
+                "nap-release": "3.2",
+                "nap-compiler": "6.64.2",
+                "nap-engine": "6.64.2",
+                "nap-plugin": "3.512.0",
+                "nap-plus-module": "24+3.512.0"
+            }
+        },
+        "3.1": {
+            "nap-packages": {
+                "debian-9": "app-protect_23+3.462.0-1~stretch_amd64.deb",
+                "debian-10": "app-protect_23+3.462.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_23+3.462.0-1~bionic_amd64.deb",
+                "ubuntu-20.04": "app-protect_23+3.462.0-1~focal_amd64.deb",
+                "centos-7": "app-protect-23+3.462.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-23+3.462.0-1.el7.ngx.x86_64.rpm",
+                "alpine-3.10": "app-protect-23.3.462.0-r1.apk"
+            },
+            "versioning-details": {
+                "nginx-plus": "23",
+                "nap-build": "3.462.0",
+                "nap-release": "3.1",
+                "nap-compiler": "6.53.1",
+                "nap-engine": "6.53.1",
+                "nap-plugin": "3.462.0",
+                "nap-plus-module": "23+3.462.0"
+            }
+        },
+        "3.0": {
+            "nap-packages": {
+                "debian-9": "app-protect_23+3.332.0-1~stretch_amd64.deb",
+                "debian-10": "app-protect_23+3.332.0-1~buster_amd64.deb",
+                "ubuntu-18.04": "app-protect_23+3.332.0-1~bionic_amd64.deb",
+                "centos-7": "app-protect-23+3.332.0-1.el7.ngx.x86_64.rpm",
+                "redhat-7": "app-protect-23+3.332.0-1.el7.ngx.x86_64.rpm",
+                "alpine-3.10": "app-protect-23.3.332.0-r1.apk"
+            },
+            "versioning-details": {
+                "nginx-plus": "23",
+                "nap-release": "3.0",
+                "nap-build": "3.332.0",
+                "nap-compiler": "6.3.6",
+                "nap-engine": "6.3.6",
+                "nap-plugin": "3.332.0",
+                "nap-plus-module": "23+3.332.0"
+            }
+        }
+    }
+}

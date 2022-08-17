@@ -1,0 +1,42 @@
+#!/bin/sh
+
+# PROVIDE: nginx_agent
+# REQUIRE: nginx
+# KEYWORD: shutdown
+
+# Enable this script by adding:
+# nginx_agent_enable="YES"
+# ... to /etc/rc.conf
+
+. /etc/rc.subr
+
+name=nginx_agent
+rcvar=${name}_enable
+command="/usr/local/bin/nginx-agent"
+pidfile="/var/run/${name}.pid"
+
+start_cmd="start_agent"
+stop_cmd="stop_agent"
+status_cmd="status_agent"
+
+start_agent() {
+    PATH=$PATH:/usr/local/sbin
+    mkdir -p /var/log/nginx-agent
+    /usr/sbin/daemon -f -p ${pidfile} ${command} 
+}
+
+stop_agent() {
+    /bin/kill -2 $(cat $pidfile)
+}
+
+status_agent() {
+    if [ -e $pidfile ]; then
+        echo $name is running on PID $(cat $pidfile)
+    else 
+        echo $name is not running
+        return 1
+    fi
+}
+
+load_rc_config $name
+run_rc_command "$1"

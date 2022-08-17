@@ -1,0 +1,81 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+option go_package = "gitlab.com:f5/nginx/agent/product/nginx-agent/sdk/v2/proto;proto";
+
+import "gogo.proto";
+import "host.proto";
+import "config.proto";
+import "nginx.proto";
+import "google/protobuf/timestamp.proto";
+import "dp_software_details.proto";
+
+message AgentConnectRequest {
+    // DEPRECATED
+    reserved 1;
+    reserved "identity";
+    AgentMeta meta = 2  [(gogoproto.jsontag) = "meta"];
+    repeated NginxDetails details = 3 [(gogoproto.jsontag) = "details"];
+    HostInfo host = 4 [(gogoproto.jsontag) = "host"];
+    repeated DataplaneSoftwareDetails dataplane_software_details = 5 [(gogoproto.jsontag) = "dataplane_software_details"];
+}
+
+message AgentConnectStatus {
+    enum StatusCode {
+        CONNECT_UNKNOWN = 0;
+        CONNECT_OK = 1;
+        CONNECT_REJECTED_OTHER = 2;
+        CONNECT_REJECTED_DUP_ID = 3;
+    }
+    StatusCode statusCode = 1 [(gogoproto.jsontag) = "status_code"];
+    string message = 2 [(gogoproto.jsontag) = "message"];
+    string error = 3 [(gogoproto.jsontag) = "error"];
+}
+
+message AgentConnectResponse {
+    AgentConfig agent_config = 1 [(gogoproto.jsontag) = "agent_config"];
+    AgentConnectStatus status = 2  [(gogoproto.jsontag) = "status"];
+}
+
+message AgentConfigRequest {}
+
+message AgentConfig {
+    AgentDetails details = 1 [(gogoproto.jsontag) = "details"];
+    AgentLogging loggers = 2 [(gogoproto.jsontag) = "loggers"];
+    ConfigReport configs = 3 [(gogoproto.jsontag) = "configs"];
+}
+
+message AgentDetails {
+    repeated string features = 1 [(gogoproto.jsontag) = "features"];
+    repeated string extensions = 2 [(gogoproto.jsontag) = "extensions"];
+    repeated string tags = 3 [(gogoproto.jsontag) = "tags"];
+    string alias = 4 [(gogoproto.jsontag) = "alias"];
+}
+
+message AgentLogging {
+    enum Level {
+        INFO = 0;
+        DEBUG = 1;
+        WARN = 2;
+        ERROR = 3;
+        FATAL = 4;
+    }
+    Level level = 1 [(gogoproto.jsontag) = "level"];
+    string dir = 2 [(gogoproto.jsontag) = "dir"];
+    string file = 3 [(gogoproto.jsontag) = "file"];
+    uint32 max_size = 4 [(gogoproto.jsontag) = "max_size"]; // max size in MB
+    uint32 max_backups = 5 [(gogoproto.jsontag) = "max_backups"];
+    uint32 max_age = 6 [(gogoproto.jsontag) = "max_age"]; // age in days
+    bool compress = 7 [(gogoproto.jsontag) = "compress"];
+}
+
+message AgentMeta {
+    string version = 1 [(gogoproto.jsontag) = "version"];
+    string display_name = 2 [(gogoproto.jsontag) = "display_name"];
+    repeated string tag = 3 [(gogoproto.jsontag) = "tag"];
+    // DEPRECATED
+    reserved 4;
+    reserved "instance_name";    
+    string instance_group = 5 [(gogoproto.jsontag) = "instance_group"];
+    google.protobuf.Timestamp updated = 6 [(gogoproto.jsontag) = "updated"];
+    string system_uid = 7 [(gogoproto.jsontag) = "system_uid"];
+}

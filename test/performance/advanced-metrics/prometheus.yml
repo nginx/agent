@@ -1,0 +1,9 @@
+scrape_configs:
+  - job_name: default
+    scrape_interval: 5s
+    static_configs:
+      - targets:
+          - cadvisor:8080
+          - avr-benchmark-generator:2113
+          - agent-with-advanced-metrics:2112
+          - harness:2112

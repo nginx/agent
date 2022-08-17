@@ -1,0 +1,64 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+option go_package = "gitlab.com:f5/nginx/agent/product/nginx-agent/sdk/v2/proto;proto";
+
+import "gogo.proto";
+
+message HostInfo {
+    string agent = 1 [(gogoproto.jsontag) = "agent" ];
+    uint64 boot = 2 [(gogoproto.jsontag) = "boot" ];
+    string hostname = 3 [(gogoproto.jsontag) = "hostname" ];
+    string display_name = 4 [(gogoproto.jsontag) = "display_name" ];
+    string os_type = 5 [(gogoproto.jsontag) = "os-type" ];  // note kebab case used for compatibility with legacy
+    string uuid = 6 [(gogoproto.jsontag) = "uuid" ];
+    string uname = 7 [(gogoproto.jsontag) = "uname" ];
+    repeated DiskPartition partitons = 8 [(gogoproto.jsontag) = "disk_partitions" ];
+    Network network = 9 [(gogoproto.jsontag) = "network" ];
+    repeated CpuInfo processor = 10 [(gogoproto.jsontag) = "processor" ];
+    ReleaseInfo release = 11 [(gogoproto.jsontag) = "release" ];
+    repeated string tags = 12 [(gogoproto.jsontag) = "tags" ];
+    string agent_accessible_dirs = 13 [(gogoproto.jsontag) = "agent_accessible_dirs" ];
+}
+
+message DiskPartition {
+    string mount_point = 1 [(gogoproto.jsontag) = "mountpoint" ];
+    string device = 2 [(gogoproto.jsontag) = "device" ];
+    string fs_type = 3 [(gogoproto.jsontag) = "fstype" ];
+}
+
+message Network {
+    repeated NetworkInterface interfaces = 1 [(gogoproto.jsontag) = "interfaces" ];
+    string default = 2 [(gogoproto.jsontag) = "default" ];
+}
+
+message NetworkInterface {
+    string mac = 1 [(gogoproto.jsontag) = "mac" ];
+    repeated Address ipv6 = 2 [(gogoproto.jsontag) = "ipv6" ];
+    repeated Address ipv4 = 3 [(gogoproto.jsontag) = "ipv4" ];
+    string name = 4 [(gogoproto.jsontag) = "name" ];
+}
+
+message Address {
+    int64 prefixlen = 1 [(gogoproto.jsontag) = "prefixlen" ];
+    string netmask = 2 [(gogoproto.jsontag) = "netmask" ];
+    string address = 3 [(gogoproto.jsontag) = "address" ];
+}
+
+message CpuInfo {
+    string model = 1 [(gogoproto.jsontag) = "model" ];
+    int32 cores = 2 [(gogoproto.jsontag) = "cores" ];
+    string architecture = 3 [(gogoproto.jsontag) = "architecture" ];
+    double mhz = 4 [(gogoproto.jsontag) = "mhz" ];
+    string hypervisor = 5 [(gogoproto.jsontag) = "hypervisor" ];
+    int32 cpus = 6 [(gogoproto.jsontag) = "cpus" ];
+    string virtualization = 7 [(gogoproto.jsontag) = "virtualization" ];
+    map<string, string> cache = 8 [(gogoproto.jsontag) = "cache" ];
+}
+
+message ReleaseInfo {
+    string codename = 1 [(gogoproto.jsontag) = "codename" ];
+    string id = 2 [(gogoproto.jsontag) = "id" ];
+    string name = 3 [(gogoproto.jsontag) = "name" ];
+    string version_id = 4 [(gogoproto.jsontag) = "version_id" ];
+    string version = 5 [(gogoproto.jsontag) = "version" ];
+}

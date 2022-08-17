@@ -1,0 +1,33 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk.events;
+option go_package = "github.com/nginx/agent/sdk/v2/proto/events;f5.nginx.agent.sdk.events";
+
+import "gogo.proto";
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+message Metadata {
+    string Module = 1 [(gogoproto.jsontag) = "module" ];
+    string UUID = 2 [(gogoproto.jsontag) = "uuid" ];
+    string CorrelationID = 3 [(gogoproto.jsontag) = "correlation_id" ];
+    google.protobuf.Timestamp Timestamp = 4 [(gogoproto.jsontag) = "timestamp" ];
+    string EventLevel = 5 [(gogoproto.jsontag) = "event_level" ];
+    string Type = 6 [(gogoproto.jsontag) = "type" ];
+    string Category = 7 [(gogoproto.jsontag) = "category" ];
+}
+
+message Event {
+    Metadata Metadata = 1 [(gogoproto.jsontag) = "metadata" ];
+    oneof data {
+        ActivityEvent ActivityEvent = 2 [(gogoproto.jsontag) = "activity_event" ];
+    }
+}
+
+message EventReport {
+    repeated Event Events = 1 [(gogoproto.jsontag) = "events" ];
+}
+
+message ActivityEvent {
+    string Message = 1 [(gogoproto.jsontag) = "message" ];
+    repeated f5.nginx.agent.sdk.common.Dimension Dimensions = 2 [(gogoproto.jsontag) = "dimensions" ];
+}

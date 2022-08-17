@@ -1,0 +1,76 @@
+version: "3"
+services:
+  agent-with-advanced-metrics:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2048M
+    networks:
+      - test_network
+    ports:
+    - 2112:2112
+    build:
+      context: .
+      dockerfile: fake_agent/Dockerfile
+    environment:
+      ADVANCED_METRICS_SOCKET: "${SOCKET_DIR}/benchmark-advanced-metrics.sock"
+      PROMETHEUS_PORT: "${PROMETHEUS_PORT_ADVANCED_METRICS}"
+    volumes:
+      - ${SOCKET_DIR}:${SOCKET_DIR}
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - 9090:9090
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - cadvisor
+    networks:
+      - test_network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - 8080:8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - test_network
+
+  avr-benchmark-generator:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2048M
+    networks:
+      - test_network
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      AVR_SOCKET: "${SOCKET_DIR}/benchmark-advanced-metrics.sock"
+      UNIQUE_DIMENSION_PERCENTAGE: "${UNIQUE_DIMENSION_PERCENTAGE}"
+      DIMENSION_SIZE: "${DIMENSION_SIZE}"
+      METRICS_PER_MINUTE: "${METRICS_PER_MINUTE}"
+      DURATION: "${DURATION}"
+      PROMETHEUS_PORT: "${PROMETHEUS_PORT_GENERATOR}"
+      SIMPLE_BENCHMARK: "$SIMPLE_BENCHMARK"
+    volumes:
+      - ${SOCKET_DIR}:${SOCKET_DIR}
+    depends_on:
+      - agent-with-advanced-metrics
+
+networks:
+  test_network:
+    driver: bridge

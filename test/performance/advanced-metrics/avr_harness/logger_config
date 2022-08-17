@@ -1,0 +1,37 @@
+#
+# this is the configuration file for avr logging.
+#
+# possible levels (listed from most severe to least severe):
+# - CRITICAL
+# - ERROR
+# - WARNING
+# - NOTICE
+# - INFO
+# - NOTICE
+#
+# when a level is set, any messages that are at this level
+# or at a more severe level will be printed.
+#
+
+AVRD_GENERAL      ERROR
+AVRD_CONFIG       ERROR
+AVRD_PUBLISH      ERROR
+AVRD_TMSTAT       ERROR
+AVRD_AVRDATA_API  ERROR
+AVRDATA_CONFIG    ERROR
+AVRDATA_COLLECT   ERROR
+AVRDATA_QUERY     ERROR
+TMM_API           ERROR
+ACLMGMT_API       ERROR
+ASM_BD_API        ERROR
+TMM_HTTP_TC       ERROR
+TMM_SWEEPER       ERROR
+TMM_HTTP_GENERAL  ERROR
+AVRD_HTTP_MAIN    ERROR
+DOS_INPUT         ERROR
+RT_CHART          ERROR
+PEM_SUBS          ERROR
+DOS_VISIBILITY    ERROR
+TMSTAT_ADAPTERS   ERROR
+TMSTAT_REWRITER   ERROR
+EXTERNAL_MESSAGES ERROR

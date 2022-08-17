@@ -1,0 +1,38 @@
+ {
+  "db_variable": {
+    "avr.stats.internal.maxentitiespertable": "2048"
+  },
+  "dimensions": {
+    "alias": "",
+    "instance": "test",
+    "instance.tags": "",
+    "instance_group": "test-group",
+    "local_id": "local_id",
+    "location": "unspecified",
+    "parent_hostname": "hostname",
+    "root_uuid": ""
+  },
+  "external_protocol": {
+    "nats": {
+      "hostname": "harness",
+      "port": "4222",
+      "subject": "controller.avrd.metrics"
+    },
+    "tcp": "{}"
+  },
+  "global": {
+    "publish-interval": "30"
+  },
+  "memory": {
+    "aggregation-table-entities": "2048",
+    "incoming-table-entities": "30899",
+    "incoming-table-max-size-MB": "22",
+    "max-connections": "64",
+    "queue-num-elms": "200"
+  },
+  "socket": {
+    "unixSocketGroup": "root",
+    "unixSocketPath": "/tmp/bench.sock",
+    "unixSocketUser": "root"
+  }
+}

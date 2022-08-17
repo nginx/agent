@@ -1,0 +1,11 @@
+language: go
+install:
+    - go get -v golang.org/x/tools/cmd/cover
+    - go get github.com/mattn/goveralls
+    - go get github.com/golang/lint/golint
+script:
+    - go test -v -tags=testcgo -covermode=count -coverprofile=profile.cov
+    - golint -set_exit_status `go list ./... | grep -v vendor`
+after_success:
+    - export PATH=$PATH:$HOME/gopath/bin
+    - goveralls -coverprofile=profile.cov -service=travis-ci
