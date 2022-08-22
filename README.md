@@ -56,7 +56,7 @@ Table: Agent sizing recommendations
 ### Logging 
 The Agent uses the log files and formats to collect metrics. Expanding the log formats and instance counts will also increase the size of the log files on the Agent. Adding a separate partition for /var/log/nginx-agent is always a good idea. Without log rotation or a separated partition, a log directory could cause your system to run out of space.
 
-## Get started with Agent in 2 mins
+## End to end demo in 2 mins
 
 The result of following the below steps you will locally have an NGINX instance running, Agent running, and a mock control plane to which the Agent will report.
 
