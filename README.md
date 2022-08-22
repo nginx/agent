@@ -35,14 +35,17 @@ You can deploy the Agent in the following environments:
 
 Bare Metal
 
+
 Container
 
+
 Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
+
 
 Virtual Machine
 
 ### Supported NGINX Versions 
-The Agent works with all versions of NGINX OSS and NGINX Plus.
+The Agent works with all supported versions of NGINX OSS and NGINX Plus.
 
 ### Sizing Recommendations 
 The following table lists the minimum sizing recommendations for the Agent:
