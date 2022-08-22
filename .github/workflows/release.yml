@@ -14,8 +14,8 @@ jobs:
           go-version-file: 'go.mod'
       - name: Setup build environment
         run: |
-          apt-get update
-          apt-get install -y make jq gnupg gnupg1 gpgv1 git aptly debsig-verify aptly debsig-verify createrepo-c dnf rpm curl gettext-base make monkeysphere libtool unzip libssl-dev libbz2-dev libbsd-dev libarchive-dev liblzma-dev zlib1g-dev
+          sudo apt-get update
+          sudo apt-get install -y make jq gnupg gnupg1 gpgv1 git aptly debsig-verify aptly debsig-verify createrepo-c dnf rpm curl gettext-base make monkeysphere libtool unzip libssl-dev libbz2-dev libbsd-dev libarchive-dev liblzma-dev zlib1g-dev
           mkdir /tmp/pkg
           cd /tmp/pkg
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.18.0
