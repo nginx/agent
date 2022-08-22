@@ -1,7 +1,5 @@
-
-
-# Agent
-Whether you are using NGINX OSS or NGINX Plus for App Delivery, Content Caching, API Gateway, App Security, ... Agent enhances your deployment experience and enables you to monitor your system and app performance. To do so, Agent provides an administrative entry point to remotely manage, configure and collect metrics and events on the datapath instances.
+# NGINX Agent
+Agent enhances your deployment experience and enables you to monitor your system and app performance. Whether you are using NGINX OSS or NGINX Plus for App Delivery, Content Caching, API Gateway and App Security, ...  To do so, Agent provides an administrative entry point to remotely manage, configure and collect metrics and events on the datapath instances.
 
 Simply put, Agent optimizes the operationalization of your application stack.
 
