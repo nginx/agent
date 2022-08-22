@@ -170,5 +170,3 @@ If you'd like to contribute to the project, please read our [Contributing guide]
 ## License
 
 [Apache License, Version 2.0](LICENSE)
-
-&copy; [F5 Networks, Inc.](https://www.f5.com/) 2022
