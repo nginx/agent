@@ -56,28 +56,6 @@ Table: Agent sizing recommendations
 ### Logging 
 The Agent uses the log files and formats to collect metrics. Expanding the log formats and instance counts will also increase the size of the log files on the Agent. Adding a separate partition for /var/log/nginx-agent is always a good idea. Without log rotation or a separated partition, a log directory could cause your system to run out of space.
 
-## Installation
-
-### Install from package files
-To install Agent on your system go to [Releases](https://github.com/nginx/agent/releases) and download the packages.zip file under Assets for a given version of the Agent.
-
-Depending on your OS distribution and cpu architecture type
-```
-sudo apt install ./nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.deb
-
-sudo rpm -i nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.rpm
-
-sudo yum localinstall nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.rpm
-```
-### Start and Enable Agent
-To start the NGINX Agent on systemd systems, run the following command:
-```
-sudo systemctl start nginx-agent
-```
-To enable the NGINX Agent to start on boot, run the following command:
-```
-sudo systemctl enable nginx-agent
-```
 ## Get started with Agent in 2 mins
 
 The result of following the below steps you will locally have an NGINX instance running, Agent running, and a mock control plane to which the Agent will report.
@@ -152,6 +130,28 @@ Next, open up a web browser to view the mock control plane [http://localhost:547
 
 For more use-cases of Agent, refer to https://github.com/nginx/agent/tree/main/sdk/examples
 
+## Installation
+
+### Install from package files
+To install Agent on your system go to [Releases](https://github.com/nginx/agent/releases) and download the packages.zip file under Assets for a given version of the Agent.
+
+Depending on your OS distribution and cpu architecture type
+```
+sudo apt install ./nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.deb
+
+sudo rpm -i nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.rpm
+
+sudo yum localinstall nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.rpm
+```
+### Start and Enable Agent
+To start the NGINX Agent on systemd systems, run the following command:
+```
+sudo systemctl start nginx-agent
+```
+To enable the NGINX Agent to start on boot, run the following command:
+```
+sudo systemctl enable nginx-agent
+```
 
 ## Community
 
