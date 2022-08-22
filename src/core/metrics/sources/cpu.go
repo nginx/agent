@@ -82,7 +82,7 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 
 		if err != nil {
 			// linux impl returns zero length without error
-			log.Errorf("Failed to get CPU metrics %v", err)
+			log.Warnf("Error occurred getting CPU metrics, %v", err)
 			return
 		}
 
