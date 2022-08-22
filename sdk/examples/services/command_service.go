@@ -118,7 +118,10 @@ func (grpcService *CommandGrpcService) handleCommand(cmd *proto.Command) {
 		case *proto.Command_AgentConnectRequest:
 			log.Infof("Got agentConnectRequest from Agent %v", commandData)
 			grpcService.registrationData = commandData.AgentConnectRequest
-			grpcService.nginxes = commandData.AgentConnectRequest.Details
+			if (commandData.AgentConnectRequest != nil && len(commandData.AgentConnectRequest.Details) > 0) {
+				grpcService.nginxes = commandData.AgentConnectRequest.Details
+			}
+
 			// Step 2: Send AgentConnectResponse to Agent
 			grpcService.sendAgentConnectResponse(cmd)
 		case *proto.Command_NginxConfig:
@@ -187,6 +190,11 @@ func (grpcService *CommandGrpcService) GetConfigs() *proto.NginxConfig {
 }
 
 func (grpcService *CommandGrpcService) sendAgentConnectResponse(cmd *proto.Command) {
+	// get first nginx id for example
+	nginxId := "0"
+	if len(cmd.GetAgentConnectRequest().GetDetails()) > 0 {
+		nginxId = cmd.GetAgentConnectRequest().GetDetails()[0].GetNginxId()
+	}
 	response := &proto.Command{
 		Data: &proto.Command_AgentConnectResponse{
 			AgentConnectResponse: &proto.AgentConnectResponse{
@@ -197,7 +205,7 @@ func (grpcService *CommandGrpcService) sendAgentConnectResponse(cmd *proto.Comma
 							{
 								Checksum: "",
 								// only one nginx id in this example
-								NginxId:  cmd.GetAgentConnectRequest().GetDetails()[0].GetNginxId(),
+								NginxId:  nginxId,
 								SystemId: cmd.GetAgentConnectRequest().GetMeta().GetSystemUid(),
 							},
 						},

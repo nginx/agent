@@ -50,7 +50,6 @@ func (r *Comms) Close() {
 	log.Info("Comms is wrapping up")
 	r.started.Store(false)
 	r.readyToSend.Store(false)
-	r.wait.Done()
 }
 
 func (r *Comms) Info() *core.Info {
