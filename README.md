@@ -159,8 +159,6 @@ For more use-cases of Agent, refer to https://github.com/nginx/agent/tree/main/s
 
 - Our [GitHub issues page](https://github.com/nginx/agent/issues) offers space for a more technical discussion at your own pace.
 
-- The [project map](https://github.com/orgs/nginx/projects/2) on GitHub sheds some light on our current work and plans for the future.
-
 - Get involved with the project by contributing! See the contributing guide for details.
 
 To reach the team directly, subscribe to the [mailing list](https://mailman.nginx.org/mailman/listinfo/agent).
