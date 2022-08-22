@@ -163,8 +163,6 @@ For more use-cases of Agent, refer to https://github.com/nginx/agent/tree/main/s
 
 To reach the team directly, subscribe to the [mailing list](https://mailman.nginx.org/mailman/listinfo/agent).
 
-For security issues, [email us](https://github.com/nginx/unit/blob/master/security-alert@nginx.org), mentioning NGINX Agent in the subject and following the [CVSS v3.1](https://www.first.org/cvss/v3.1/specification-document) spec.
-
 ## Contributing
 
 If you'd like to contribute to the project, please read our [Contributing guide](docs/CONTRIBUTING.md).
