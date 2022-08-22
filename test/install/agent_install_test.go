@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	AGENT_PACKAGE_FILE = os.Getenv("AGENT_PACKAGE")
+	AGENT_PACKAGE_FILE = os.Getenv("AGENT_PACKAGE_FILE")
 	maxFileSize        = int64(20000000)
 	maxInstallTime     = 30 * time.Second
 	expectedLogMsg     = LogMessages()
@@ -21,9 +21,9 @@ var (
 )
 
 /*
-	Test Agent Install and Uninstall.
-	Verifies that agent installs with correct output and files.
-	Verifies that agent uninstalls and removes all the files.
+Test Agent Install and Uninstall.
+Verifies that agent installs with correct output and files.
+Verifies that agent uninstalls and removes all the files.
 */
 func TestAgentManualInstallUninstall(t *testing.T) {
 
@@ -48,7 +48,6 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	//Check install output
 	checkAgentInstall.Contains(agentLog, expectedLogMsg["InstallFoundNginxAgent"])
 	checkAgentInstall.Contains(agentLog, expectedLogMsg["InstallAgentToRunAs"])
-	checkAgentInstall.Contains(agentLog, expectedLogMsg["InstallCreateSystemFile"])
 	checkAgentInstall.Contains(agentLog, expectedLogMsg["InstallAgentSuccess"])
 	checkAgentInstall.Contains(agentLog, expectedLogMsg["InstallAgentStartCmd"])
 
@@ -77,7 +76,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	checkAgentInstall.NotNil(deletedServiceFileError)
 }
 
-//Installs the agent returning total install time and install output
+// Installs the agent returning total install time and install output
 func installAgent(agentPackage string, verify *testing.T) (float64, string) {
 
 	//Get OS to create install cmd
@@ -100,7 +99,7 @@ func installAgent(agentPackage string, verify *testing.T) (float64, string) {
 	return float64(elapsed), string(stdoutStderr)
 }
 
-//Uninstall the agent returning output
+// Uninstall the agent returning output
 func uninstallAgent(agentPackage string, verify *testing.T) string {
 
 	//Get OS to create uninstall cmd
@@ -118,7 +117,7 @@ func uninstallAgent(agentPackage string, verify *testing.T) string {
 	return string(stdoutStderr)
 }
 
-//Creates install command based on OS
+// Creates install command based on OS
 func createInstallCommand(t *testing.T) []string {
 
 	//Check OS release file exists first to determine OS
@@ -135,7 +134,7 @@ func createInstallCommand(t *testing.T) []string {
 	}
 }
 
-//Creates uninstall command based on OS
+// Creates uninstall command based on OS
 func createUninstallCommand(t *testing.T) []string {
 
 	//Check OS release file exists first to determine OS
@@ -154,14 +153,9 @@ func createUninstallCommand(t *testing.T) []string {
 
 func LogMessages() map[string]string {
 	return map[string]string{
-		"NginxVersion":               "NGINX Agent v",
-		"HeartbeatTopic":             "topic=comms.heartbeat",
-		"RegSuccess":                 "msg=\"OneTimeRegistration completed\"",
-		"HandshakeDone":              "topic=signal.handshake.done",
 		"ConnectionStatus":           "agent_connect_response:<agent_config:<details:<> configs:<configs:<> > > status:<statusCode:CONNECT_OK > >",
 		"InstallFoundNginxAgent":     "Found nginx-agent /usr/bin/nginx-agent",
 		"InstallAgentToRunAs":        "nginx-agent will be configured to run as same user",
-		"InstallCreateSystemFile":    "Creating directory /etc/systemd/system",
 		"InstallAgentSuccess":        "NGINX Agent package has been successfully installed.",
 		"InstallAgentStartCmd":       "sudo systemctl start nginx-agent",
 		"UninstallAgent":             "Removing nginx-agent",

@@ -1,19 +1,23 @@
 # NGINX Agent Install tests
 
 ## Set up
-To run the install test you'll need to copy over the agent tarball to your VM and assign environment variable AGENT_PACKAGE_FILE to it's location.
+To run the install test you'll need to copy over the agent package to your /tmp directory and assign environment variable AGENT_PACKAGE_FILE to it's location.
+
 ```
-cp /path/to/tarball/ /tmp/
-export AGENT_PACKAGE="/[path/to/tarball"] 
+cp <agent_package> /tmp/
+export AGENT_PACKAGE_FILE=/tmp/<agent_package>
 ```
 
 ## Run the tests
-To run the test. You'll need to be in the root agent project directory while on your VM
+To run the test. You'll need to be in the agent project root directory.
+
 ```
-cd /path/to/agent
+cd /path/to/agent_project
 go test -v ./test/install
 ```
-Alternatively you can use the Makefile command in the project directory
+
+Alternatively you can use the Makefile command in the project directory.
+
 ```
 make test-install
 ```
