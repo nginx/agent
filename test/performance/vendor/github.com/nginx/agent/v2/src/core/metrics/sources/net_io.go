@@ -87,7 +87,7 @@ func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pro
 	// collect net overflow. This is not easily obtained by gopsutil, so we exec netstat to get these values
 	overflows, err := nio.env.GetNetOverflow()
 	if err != nil {
-		log.Warnf("Error occurred getting network overflow metrics, %v", err)
+		log.Debugf("Error occurred getting network overflow metrics, %v", err)
 	}
 
 	if nio.netOverflows < 0 {
