@@ -35,12 +35,9 @@ You can deploy the Agent in the following environments:
 
 Bare Metal
 
-
 Container
 
-
 Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
-
 
 Virtual Machine
 
@@ -68,9 +65,9 @@ Depending on your OS distribution and cpu architecture type
 ```
 sudo apt install ./nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.deb
 
-sudo rpm -i nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.deb.rpm
+sudo rpm -i nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.rpm
 
-sudo yum localinstall nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.deb.rpm
+sudo yum localinstall nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.rpm
 ```
 ### Start and Enable Agent
 To start the NGINX Agent on systemd systems, run the following command:
