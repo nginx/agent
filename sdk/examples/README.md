@@ -6,13 +6,13 @@ To run the server example from this context:
 ```
 go run server.go
 
-INFO[0000] http listening at 54790                      
-INFO[0000] grpc listening at 54789
+INFO[0000] http listening                    
+INFO[0000] grpc listening
 ```
 
 The above command should show the following output in the application:
-INFO[0000] http listening at 54790                      
-INFO[0000] grpc listening at 54789    
+INFO[0000] http listening                       
+INFO[0000] grpc listening    
 
 Configuring the Agent to run against the example server
 ### Agent Settings

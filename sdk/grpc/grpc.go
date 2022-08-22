@@ -31,7 +31,7 @@ var (
 		grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor()),
 		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor()),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                10 * time.Second,
+			Time:                120 * time.Second,
 			Timeout:             60 * time.Second,
 			PermitWithoutStream: true,
 		}),
