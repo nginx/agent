@@ -11,18 +11,9 @@ Agent reads both the access and error logs from the NGINX configuration. Reading
 ![How agent works](docs/how-it-works.png "How it works")
 
 ## What you can do with Agent today
-- Providing registration process to capture NGINX instances and host information on the dataplane
-- Manage NGINX configurations upstream and downstream
-- Count NGINX+ instances (NGINX R27+)
-- Watch file changes on the dataplane
-- Watch NGINX process changes (including workers)
-- Report TLS certificate information
-- Report metric information on NGINX OSS / Plus instances 
-- Report the health of NGINX instances and host information
-- Report key events on the dataplane such as:
-    -  Agent Start / Stop
-    -  NGINX process and worker start / stop / reload
-    -  Configuration apply success / failure / rollback
+- Circulation of NGINX configurations
+- Reporting of metrics
+- Publicizing of dataplane events
 
 ## Agent Technical Specifications
 
