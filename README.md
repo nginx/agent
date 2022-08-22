@@ -10,7 +10,7 @@ Agent reads both the access and error logs from the NGINX configuration. Reading
 
 ![How agent works](docs/how-it-works.png "How it works")
 
-## Key Features
+## What you can do with Agent today
 - Providing registration process to capture NGINX instances and host information on the dataplane
 - Manage NGINX configurations upstream and downstream
 - Count NGINX+ instances (NGINX R27+)
