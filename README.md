@@ -33,13 +33,10 @@ The Agent can run on most environments. For the supported distributions, see the
 ### Supported Deployment Environments 
 You can deploy the Agent in the following environments:
 
-Bare Metal
-
-Container
-
-Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
-
-Virtual Machine
+- Bare Metal
+- Container
+- Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
+- Virtual Machine
 
 ### Supported NGINX Versions 
 The Agent works with all supported versions of NGINX OSS and NGINX Plus.
