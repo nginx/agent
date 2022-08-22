@@ -1,17 +1,16 @@
 
 
 # Agent
-
 Whether you are using NGINX OSS or NGINX Plus for App Delivery, Content Caching, API Gateway, App Security, ... Agent enhances your deployment experience and enables you to monitor your system and app performance. To do so, Agent provides an administrative entry point to remotely manage, configure and collect metrics and events on the datapath instances.
 
 Simply put, Agent optimizes the operationalization of your application stack.
 
 ## How it works 
+NGINX Agent uses the Linux operating system pseudo-filesystems to interface with the process information of NGINX. Agent checks ```nginx -V``` output to determine the relevant configuration location for NGINX. Agent validates configuration with ```nginx -t``` before applying NGINX configuration.
+Agent reads both the access and error logs from the NGINX configuration. Reading these set of files from the NGINX configuration, using the specified log formats, it parses the appropriate log files and calculates the reported metrics. For NGINX Plus, Agent takes the relevant information from the Plus API, configurable through the NGINX configuration.
 
-<Oliver/Chris, please provide a paragraph with technical explanation on how Agent communicates/interact with NGINX OSS and how a user can interact with Agent>
 
-
-<Drawing is ideal here >
+![How agent works](docs/how-it-works.png "How it works")
 
 ## Key Features
 - Providing registration process to capture NGINX instances and host information on the dataplane
