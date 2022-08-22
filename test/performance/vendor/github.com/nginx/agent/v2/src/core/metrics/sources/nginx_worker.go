@@ -183,13 +183,13 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 
 		pidAsInt, err := strconv.Atoi(nginxDetails.ProcessId)
 		if err != nil {
-			log.Warnf("failed to convert %s to int: %v", nginxDetails.ProcessId, err)
+			log.Debugf("failed to convert %s to int: %v", nginxDetails.ProcessId, err)
 			continue
 		}
 
 		proc, err := ps.NewProcess(int32(pidAsInt))
 		if err != nil {
-			log.Warnf("failed to retrieve process from pid %d: %v", pidAsInt, err)
+			log.Debugf("failed to retrieve process from pid %d: %v", pidAsInt, err)
 			continue
 		}
 
@@ -197,26 +197,26 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 			usr = usr + times.User
 			sys = sys + times.System
 		} else {
-			log.Warn("unable to get CPU times metrics")
+			log.Debug("unable to get CPU times metrics")
 		}
 
 		if memstat, err := proc.MemoryInfo(); err == nil {
 			memRss += float64(memstat.RSS)
 			memVms += float64(memstat.VMS)
 		} else {
-			log.Warn("unable to get memory info metrics")
+			log.Debug("unable to get memory info metrics")
 		}
 
 		if mempct, err := proc.MemoryPercent(); err == nil {
 			memPct += float64(mempct)
 		} else {
-			log.Warn("unable to get memory percentage metrics")
+			log.Debug("unable to get memory percentage metrics")
 		}
 
 		if fd, err := proc.NumFDs(); err == nil {
 			fdSum = fdSum + float64(fd)
 		} else {
-			log.Warn("unable to get number of file descriptors used metrics")
+			log.Debug("unable to get number of file descriptors used metrics")
 		}
 
 		if rlimit, err := proc.Rlimit(); err == nil {
@@ -228,7 +228,7 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 			}
 			stats.Workers.RlimitNofile = float64(rlimitMax)
 		} else {
-			log.Warn("unable to get resource limit metrics")
+			log.Debug("unable to get resource limit metrics")
 		}
 
 		if ioc, err := proc.IOCounters(); err == nil {
