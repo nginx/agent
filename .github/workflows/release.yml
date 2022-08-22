@@ -24,7 +24,7 @@ jobs:
           cd pkg-1.17.5
           ./configure
           make -s -j$(nproc)
-          make install
+          sudo make install
           rm -rf /tmp/pkg
       - name: Release Packages
       # TODO: Remove git config step later once the repo https://github.com/nginxinc/crossplane-go is made public
