@@ -30,10 +30,11 @@ jobs:
       # TODO: Remove git config step later once the repo https://github.com/nginxinc/crossplane-go is made public
         env:
           TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          NFPM_SIGNING_KEY_FILE: ${{ secrets.NFPM_SIGNING_KEY_FILE }}
         run: |
           git config --global url."https://dhurley:${TOKEN}@github.com".insteadOf "https://github.com"
           make package
-          make release
+        #   make release
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
