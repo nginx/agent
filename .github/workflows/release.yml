@@ -34,7 +34,7 @@ jobs:
           NFPM_SIGNING_KEY_FILE: .key.asc
         run: |
           git config --global url."https://dhurley:${TOKEN}@github.com".insteadOf "https://github.com"
-          echo $INDIGO_GPG_AGENT > .key.asc
+          echo $INDIGO_GPG_AGENT | base64 --decode > .key.asc
           make package
         #   make release
       - name: Upload Artifacts
