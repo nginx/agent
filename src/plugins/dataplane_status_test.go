@@ -158,7 +158,7 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 			assert.Equal(t, tc.config.Tags, *dataPlaneStatus.tags)
 
 			// Attempt update & check results
-			updated, err := config.UpdateAgentConfig("12345", tc.expUpdatedConfig.Tags)
+			updated, err := config.UpdateAgentConfig("12345", tc.expUpdatedConfig.Tags, tc.expUpdatedConfig.Features)
 			assert.Nil(t, err)
 			assert.Equal(t, updated, tc.updatedTags)
 
