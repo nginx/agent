@@ -113,9 +113,9 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 		rpm_distro=`echo $$distro | cut -d- -f 1`;  \
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
 		rpm_codename='na'; \
-		if [ "$$rpm_distro" == "centos" ] || [ "$$rpm_distro" == "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
-		elif [ "$$rpm_distro" == "amazon" ] && [ "$$rpm_major" == "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
-		if [ "$$rpm_distro" == "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
+		if [ "$$rpm_distro" = "centos" ] || [ "$$rpm_distro" = "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
+		elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
+		if [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=${ARCH} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${UNAME_M}.rpm; \
 		fi; \
