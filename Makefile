@@ -144,7 +144,9 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 	cp scripts/packages/postinstall.sh staging/+POST_INSTALL
 	cp scripts/packages/plist staging
 
-	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o staging/usr/local/bin
+	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
+    cp build/nginx-agent /staging/usr/local/bin
+
 	chmod +x staging/usr/local/etc/rc.d/nginx-agent
 	VERSION="$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')" envsubst < scripts/packages/manifest > staging/+MANIFEST
 
