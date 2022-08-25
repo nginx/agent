@@ -144,7 +144,7 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 	cp scripts/packages/postinstall.sh staging/+POST_INSTALL
 	cp scripts/packages/plist staging
 
-	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
+	GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 	cp build/nginx-agent staging/usr/local/bin
 
 	chmod +x staging/usr/local/etc/rc.d/nginx-agent
@@ -177,7 +177,6 @@ gpg-key: ## Generate GPG public key
 	gpg1 --armor --import $(NFPM_SIGNING_KEY_FILE) \
 	# we need to convert the private gpg key to rsa pem format for pkg signing \
 	keyid=$$(gpg --list-keys NGINX | awk '/pub/{getline; print substr($$0,length($$0)-7,8)}'); \
-	echo $$keyid; \
 	gpg1 --export-secret-key $$keyid | openpgp2ssh $$keyid > .key.rsa; \
 	gpg1 --armor --export > $(GPG_PUBLIC_KEY)
 
