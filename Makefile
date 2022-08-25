@@ -109,6 +109,7 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 			VERSION=$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename} ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb; \
 		done; \
 	done; \
+
 	for distro in $(RPM_DISTROS); do \
 		rpm_distro=`echo $$distro | cut -d- -f 1`;  \
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
@@ -120,6 +121,7 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=${ARCH} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${UNAME_M}.rpm; \
 		fi; \
 	done; \
+
 	for version in $(APK_VERSIONS); do \
 		if [ ! -d "$(PACKAGES_DIR)/apk/$${version}" ]; then mkdir $(PACKAGES_DIR)/apk/$${version}; fi; \
 		for arch in $(APK_ARCHS); do \
@@ -127,30 +129,36 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
 		done; \
 	done; \
+	
 	# create specific freebsd pkg files \
 	rm -rf ./build/nginx-agent; \
 	mkdir -p $(PACKAGES_DIR)/pkg/freebsd; \
-	staging=$$(mktemp -d); \
-	mkdir -p $${staging}/usr/local/{bin,etc/nginx-agent,etc/rc.d}; \
-	cp nginx-agent.conf $${staging}/usr/local/etc/nginx-agent; \
-	cp scripts/packages/nginx-agent $${staging}/usr/local/etc/rc.d; \
-	cp scripts/packages/postremove.sh $${staging}/+PRE_DEINSTALL; \
-	cp scripts/packages/postinstall.sh $${staging}/+POST_INSTALL; \
-	cp scripts/packages/plist $$staging; \
-	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o $${staging}/usr/local/bin; \
-	chmod +x $${staging}/usr/local/etc/rc.d/nginx-agent; \
-	VERSION=$(VERSION); VERSION=$${VERSION//v/} envsubst < scripts/packages/manifest > $${staging}/+MANIFEST; \
+
+	mkdir -p /staging/usr/local/bin
+	mkdir -p /staging/usr/local/etc/nginx-agent
+	mkdir -p /staging/usr/local/etc/rc.d
+
+	cp nginx-agent.conf /staging/usr/local/etc/nginx-agent; \
+	cp scripts/packages/nginx-agent /staging/usr/local/etc/rc.d; \
+	cp scripts/packages/postremove.sh /staging/+PRE_DEINSTALL; \
+	cp scripts/packages/postinstall.sh /staging/+POST_INSTALL; \
+	cp scripts/packages/plist /staging; \
+
+	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o /staging/usr/local/bin; \
+	chmod +x /staging/usr/local/etc/rc.d/nginx-agent; \
+	VERSION=$(VERSION); VERSION=$${VERSION//v/} envsubst < scripts/packages/manifest > /staging/+MANIFEST; \
 	for freebsd_abi in $(FREEBSD_DISTROS); do \
 		mkdir -p $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
 		pkg -o ABI=$${freebsd_abi} create \
-			-m $${staging} \
-			-r $${staging} \
-			-p $${staging}/plist \
+			-m /staging \
+			-r /staging \
+			-p /staging/plist \
 			-o $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
 		# create freebsd pkg repo layout \
 		pkg repo $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi} .key.rsa; \
 	done; \
-	rm -rf $$staging; \
+	rm -rf /staging; \
+
 	echo "DEB packages:"; \
 	find $(PACKAGES_DIR)/deb ;\
 	echo "RPM packages:"; \
