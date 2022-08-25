@@ -146,7 +146,7 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 
 	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o staging/usr/local/bin
 	chmod +x staging/usr/local/etc/rc.d/nginx-agent
-	VERSION=$(VERSION); VERSION=$${VERSION//v/} envsubst < scripts/packages/manifest > staging/+MANIFEST
+	VERSION="$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')" envsubst < scripts/packages/manifest > staging/+MANIFEST
 
 	for freebsd_abi in $(FREEBSD_DISTROS); do \
 		mkdir -p $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
