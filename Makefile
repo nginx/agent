@@ -129,35 +129,37 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
 		done; \
 	done; \
-	
-	# create specific freebsd pkg files \
-	rm -rf ./build/nginx-agent; \
-	mkdir -p $(PACKAGES_DIR)/pkg/freebsd; \
 
-	mkdir -p /staging/usr/local/bin
-	mkdir -p /staging/usr/local/etc/nginx-agent
-	mkdir -p /staging/usr/local/etc/rc.d
+	# create specific freebsd pkg files
+	rm -rf ./build/nginx-agent
+	mkdir -p $(PACKAGES_DIR)/pkg/freebsd
 
-	cp nginx-agent.conf /staging/usr/local/etc/nginx-agent; \
-	cp scripts/packages/nginx-agent /staging/usr/local/etc/rc.d; \
-	cp scripts/packages/postremove.sh /staging/+PRE_DEINSTALL; \
-	cp scripts/packages/postinstall.sh /staging/+POST_INSTALL; \
-	cp scripts/packages/plist /staging; \
+	mkdir -p staging/usr/local/bin
+	mkdir -p staging/usr/local/etc/nginx-agent
+	mkdir -p staging/usr/local/etc/rc.d
 
-	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o /staging/usr/local/bin; \
-	chmod +x /staging/usr/local/etc/rc.d/nginx-agent; \
-	VERSION=$(VERSION); VERSION=$${VERSION//v/} envsubst < scripts/packages/manifest > /staging/+MANIFEST; \
+	cp nginx-agent.conf staging/usr/local/etc/nginx-agent
+	cp scripts/packages/nginx-agent staging/usr/local/etc/rc.d
+	cp scripts/packages/postremove.sh staging/+PRE_DEINSTALL
+	cp scripts/packages/postinstall.sh staging/+POST_INSTALL
+	cp scripts/packages/plist staging
+
+	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o staging/usr/local/bin
+	chmod +x staging/usr/local/etc/rc.d/nginx-agent
+	VERSION=$(VERSION); VERSION=$${VERSION//v/} envsubst < scripts/packages/manifest > staging/+MANIFEST
+
 	for freebsd_abi in $(FREEBSD_DISTROS); do \
 		mkdir -p $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
 		pkg -o ABI=$${freebsd_abi} create \
-			-m /staging \
-			-r /staging \
-			-p /staging/plist \
+			-m staging \
+			-r staging \
+			-p staging/plist \
 			-o $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
 		# create freebsd pkg repo layout \
 		pkg repo $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi} .key.rsa; \
 	done; \
-	rm -rf /staging; \
+
+	rm -rf staging
 
 	echo "DEB packages:"; \
 	find $(PACKAGES_DIR)/deb ;\
