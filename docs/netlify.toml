@@ -1,0 +1,36 @@
+[build]
+  base = "docs/"
+  publish = "public"
+  command = "hugo --gc"
+
+[build.environment]
+  HUGO_VERSION = "0.80.0"
+
+[context.docs-development]
+  command = "hugo --gc -e development"
+
+[context.docs-staging]
+  command = "hugo --gc -e staging"
+
+
+[context.branch-deploy]
+  command = "hugo --gc -d public/nginx-agent -b $DEPLOY_PRIME_URL/nginx-agent"
+
+[context.deploy-preview]
+  command = "hugo --gc -d public/nginx-agent -b $DEPLOY_PRIME_URL/nginx-agent"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "https://docs.nginx.com"
+
+[[redirects]]
+  from = "/"
+  to = "/nginx-agent/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "*"
+  to = "/404.html"
+  status = 404
