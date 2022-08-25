@@ -177,6 +177,7 @@ gpg-key: ## Generate GPG public key
 	gpg1 --armor --import $(NFPM_SIGNING_KEY_FILE) \
 	# we need to convert the private gpg key to rsa pem format for pkg signing \
 	keyid=$$(gpg --list-keys NGINX | awk '/pub/{getline; print substr($$0,length($$0)-7,8)}'); \
+	echo $$keyid; \
 	gpg1 --export-secret-key $$keyid | openpgp2ssh $$keyid > .key.rsa; \
 	gpg1 --armor --export > $(GPG_PUBLIC_KEY)
 
