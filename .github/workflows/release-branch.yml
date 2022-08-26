@@ -137,14 +137,10 @@ jobs:
       - name: Build Packages
         env:
           INDIGO_GPG_AGENT: ${{ secrets.INDIGO_GPG_AGENT }}
-          AGENT_UPLOADER_PFX: ${{ secrets.AGENT_UPLOADER_PFX }}
           NFPM_SIGNING_KEY_FILE: .key.asc
         run: |
           echo $INDIGO_GPG_AGENT | base64 --decode > .key.asc
-          echo $AGENT_UPLOADER_PFX | base64 --decode > agent-uploader.pem
-          
           make clean build package
-          make release
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         env:
