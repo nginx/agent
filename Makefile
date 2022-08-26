@@ -126,7 +126,7 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 		if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}" ]; then mkdir $(PACKAGES_DIR)/apk/v$${version}; fi; \
 		for arch in $(APK_ARCHS); do \
 			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
 		done; \
 	done; \
 
@@ -142,8 +142,8 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 	find $(PACKAGES_DIR)/rpm ;\
 	echo "APK packages:"; \
 	find $(PACKAGES_DIR)/apk ;\
-	echo "TXZ packages:"; \
-	find $(PACKAGES_DIR)/txz ;\
+	echo "PKG packages:"; \
+	find $(PACKAGES_DIR)/pkg ;\
 	cd $(PACKAGES_DIR) && tar -czvf "./${PACKAGE_PREFIX}.tar.gz" * && cd ../..;
 
  gpg-key: ## Generate GPG public key
