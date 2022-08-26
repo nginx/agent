@@ -3,6 +3,8 @@
 =============
 2022-08-26
 
+* update packaging (321c8f60)
+* Updating changelog (e0e0f6d4)
 * Added release branch workflow (5ad59fb0)
 * Updating changelog (0a547913)
 * Added release branch workflow (6488dc25)
