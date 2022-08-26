@@ -141,6 +141,7 @@ jobs:
         run: |
           echo $INDIGO_GPG_AGENT | base64 --decode > .key.asc
           make clean build package
+          make release
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         env:
