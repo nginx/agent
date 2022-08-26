@@ -3,6 +3,8 @@
 =============
 2022-08-26
 
+* Added release branch workflow (6488dc25)
+* Updating changelog (f5a8664a)
 * Added release branch workflow (d6b7095f)
 * Updating changelog (175546db)
 * Added release branch workflow (233e70af)
