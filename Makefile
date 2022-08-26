@@ -41,7 +41,7 @@ APK_ARCHS?=aarch64 x86_64
 PACKAGE_PREFIX	   := nginx-agent
 PACKAGES_DIR	   := ./build/packages
 PACKAGES_REPO	   := "pkgs-test.nginx.com"
-AGENT_UPLOADER_KEY := "agent-uploader.pem"
+AGENT_UPLOADER_KEY := "./agent-uploader.pem"
 UNAME_M	            = $(shell uname -m)
 TEST_BUILD_DIR	   := build/test
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
