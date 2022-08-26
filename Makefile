@@ -180,6 +180,7 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 	$$(gpg --quick-set-expire $$keyid $$expiry '*'); \
 	# we need to convert the private gpg key to rsa pem format for pkg signing \
 	$$(gpg --export-secret-key $$keyid | openpgp2ssh $$keyid > .key.rsa); \
+	$$(wc -c < .key.rsa); \
 	$$(gpg --output $(GPG_PUBLIC_KEY) --armor --export)
 
 release: ## Publish tarball to the UPLOAD_URL
