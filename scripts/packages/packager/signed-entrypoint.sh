@@ -26,14 +26,14 @@ chmod +x staging/usr/local/etc/rc.d/nginx-agent
 VERSION="$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')" envsubst < scripts/packages/manifest > staging/+MANIFEST
 
 for freebsd_abi in $FREEBSD_DISTROS; do \
-    mkdir -p ./build/packages/pkg/freebsd/$${freebsd_abi}; \
-    pkg -o ABI=$${freebsd_abi} create \
+    mkdir -p ./build/packages/pkg/freebsd/$freebsd_abi; \
+    pkg -o ABI=$freebsd_abi create \
         -m staging \
         -r staging \
         -p staging/plist \
-        -o ./build/packages/pkg/freebsd/$${freebsd_abi}; \
+        -o ./build/packages/pkg/freebsd/$freebsd_abi; \
     # create freebsd pkg repo layout \
-    pkg repo ./build/packages/pkg/freebsd/$${freebsd_abi} .key.rsa; \
+    pkg repo ./build/packages/pkg/freebsd/$freebsd_abi .key.rsa; \
 done; \
 
 rm -rf /staging
