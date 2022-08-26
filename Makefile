@@ -132,36 +132,9 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 
 	# create specific freebsd pkg files
 	rm -rf ./build/nginx-agent
-	mkdir -p $(PACKAGES_DIR)/pkg/freebsd
-
-	mkdir -p staging/usr/local/bin
-	mkdir -p staging/usr/local/etc/nginx-agent
-	mkdir -p staging/usr/local/etc/rc.d
-
-	cp nginx-agent.conf staging/usr/local/etc/nginx-agent
-	cp scripts/packages/nginx-agent staging/usr/local/etc/rc.d
-	cp scripts/packages/postremove.sh staging/+PRE_DEINSTALL
-	cp scripts/packages/postinstall.sh staging/+POST_INSTALL
-	cp scripts/packages/plist staging
-
 	GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
-	cp build/nginx-agent staging/usr/local/bin
 
-	chmod +x staging/usr/local/etc/rc.d/nginx-agent
-	VERSION="$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')" envsubst < scripts/packages/manifest > staging/+MANIFEST
-
-	for freebsd_abi in $(FREEBSD_DISTROS); do \
-		mkdir -p $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
-		pkg -o ABI=$${freebsd_abi} create \
-			-m staging \
-			-r staging \
-			-p staging/plist \
-			-o $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
-		# create freebsd pkg repo layout \
-		pkg repo $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi} .key.rsa; \
-	done; \
-
-	rm -rf staging
+	docker run -v `pwd`:/nginx-agent/ build-signed-packager:1.0.0
 
 	echo "DEB packages:"; \
 	find $(PACKAGES_DIR)/deb ;\
@@ -180,8 +153,8 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 	$$(gpg --quick-set-expire $$keyid $$expiry '*'); \
 	# we need to convert the private gpg key to rsa pem format for pkg signing \
 	$$(gpg --export-secret-key $$keyid | openpgp2ssh $$keyid > .key.rsa); \
-	$$(wc -c < .key.rsa); \
 	$$(gpg --output $(GPG_PUBLIC_KEY) --armor --export)
+	wc -c < .key.rsa;
 
 release: ## Publish tarball to the UPLOAD_URL
 	echo "Publishing nginx-agent packages to ${UPLOAD_URL}"; \
@@ -205,11 +178,11 @@ local-rpm-package: ## Create local rpm package
 
 local-pkg-package: ## Create local pkg package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	docker run -v `pwd`:/nginx-agent/ build-packager:1.0.0
+	docker run -v `pwd`:/nginx-agent/ build-local-packager:1.0.0
 
 build-pkg-packager-docker: ## Builds pkg packager docker image
 	@echo Building Local Packager; \
-	DOCKER_BUILDKIT=1 docker build -t build-packager:1.0.0 . --no-cache -f ./scripts/packages/packager/Dockerfile
+	DOCKER_BUILDKIT=1 docker build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Testing                                                                                                         #

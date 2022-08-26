@@ -96,6 +96,8 @@ jobs:
           push: false
           load: true
           no-cache: true
+          build-args: |
+            package_type=local-package
       - name: Build Packages
         # TODO: Remove git config step later once the repo https://github.com/nginxinc/crossplane-go is made public
         env:

@@ -130,6 +130,19 @@ jobs:
           chglog format -i ./scripts/changelog.yml --template repo > ./docs/CHANGELOG.md
           git commit -am "Updating changelog"
           git push
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          file: scripts/packages/packager/Dockerfile
+          tags: build-signed-packager:1.0.0
+          context: '.'
+          push: false
+          load: true
+          no-cache: true
+          build-args: |
+            package_type=signed-package
       - name: Build Packages
         env:
           INDIGO_GPG_AGENT: ${{ secrets.INDIGO_GPG_AGENT }}
