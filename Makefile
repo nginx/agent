@@ -100,7 +100,7 @@ clean-packages:
 	@rm -rf $(PACKAGES_DIR)
 
 $(PACKAGES_DIR):
-	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk && mkdir -p $(PACKAGES_DIR)/pkg
+	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk && mkdir -p $(PACKAGES_DIR)/txz
 
 package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported distros
 	@for distro in $(DEB_DISTROS); do \
@@ -123,9 +123,9 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 	done; \
 
 	for version in $(APK_VERSIONS); do \
-		if [ ! -d "$(PACKAGES_DIR)/apk/$${version}" ]; then mkdir $(PACKAGES_DIR)/apk/$${version}; fi; \
+		if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}" ]; then mkdir $(PACKAGES_DIR)/apk/v$${version}; fi; \
 		for arch in $(APK_ARCHS); do \
-			if [ ! -d "$(PACKAGES_DIR)/apk/$${version}/$${arch}" ]; then mkdir $(PACKAGES_DIR)/apk/$${version}/$${arch}; fi; \
+			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
 		done; \
 	done; \
@@ -142,8 +142,8 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 	find $(PACKAGES_DIR)/rpm ;\
 	echo "APK packages:"; \
 	find $(PACKAGES_DIR)/apk ;\
-	echo "PKG packages:"; \
-	find $(PACKAGES_DIR)/pkg ;\
+	echo "TXZ packages:"; \
+	find $(PACKAGES_DIR)/txz ;\
 	cd $(PACKAGES_DIR) && tar -czvf "./${PACKAGE_PREFIX}.tar.gz" * && cd ../..;
 
  gpg-key: ## Generate GPG public key

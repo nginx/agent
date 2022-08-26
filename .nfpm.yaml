@@ -35,6 +35,7 @@ overrides:
       - apt-transport-https
 deb:
   signature:
+    method: dpkg-sig
     key_file: ".key.asc"
 rpm:
   signature:
