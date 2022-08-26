@@ -136,7 +136,7 @@ jobs:
           NFPM_SIGNING_KEY_FILE: .key.asc
         run: |
           echo $INDIGO_GPG_AGENT | base64 --decode > .key.asc
-          make build package
+          make clean build package
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         env:
