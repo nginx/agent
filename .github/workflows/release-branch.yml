@@ -101,18 +101,7 @@ jobs:
           echo "RELEASE_UPLOAD_URL=$(echo '${{steps.release.outputs.result}}' | jq -r '.release_upload_url')" >> $GITHUB_ENV
       - name: Setup build environment
         run: |
-          sudo apt-get update
-          sudo apt-get install -y jq gnupg gnupg1 gpgv1 debsig-verify createrepo-c dnf rpm curl gettext-base monkeysphere libtool libssl-dev libbz2-dev libbsd-dev libarchive-dev liblzma-dev zlib1g-dev
-          mkdir /tmp/pkg
-          cd /tmp/pkg
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.18.0
-          curl -L -o pkg.zip https://github.com/freebsd/pkg/archive/refs/tags/1.17.5.zip
-          unzip -qo pkg.zip
-          cd pkg-1.17.5
-          ./configure
-          make -s -j$(nproc)
-          sudo make install
-          rm -rf /tmp/pkg
       - name: Tag release and update changelog
       # TODO: Remove git config step later once the repo https://github.com/nginxinc/crossplane-go is made public
         env:

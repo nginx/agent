@@ -8,7 +8,6 @@ FREEBSD_DISTROS="FreeBSD:12:amd64 FreeBSD:13:amd64"
 
 cd /nginx-agent/
 
-rm -rf ./build/nginx-agent
 mkdir -p ./build/packages/pkg/freebsd
 
 mkdir -p staging/usr/local/bin
