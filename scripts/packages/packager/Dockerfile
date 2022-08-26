@@ -1,3 +1,5 @@
+ARG package_type
+
 FROM golang:1.18.5-bullseye AS base
 
 ARG PKG_VER="1.17.5"
