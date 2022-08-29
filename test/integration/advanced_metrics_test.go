@@ -33,6 +33,13 @@ func SetupAdvancedMetrics(t *testing.T, socketLocation string) *advanced_metrics
 		NewDimension("environment", 32).
 		NewDimension("app", 32).
 		NewDimension("component", 256).
+		NewDimension("acm_infra_workspaces_name", 256).
+		NewDimension("acm_service_workspaces_name", 256).
+		NewDimension("acm_environments_name", 256).
+		NewDimension("acm_environments_type", 256).
+		NewDimension("acm_api_proxy_name", 256).
+		NewDimension("acm_api_proxy_hostname", 256).
+		NewDimension("acm_api_proxy_version", 256).
 		NewDimension("country_code", 256).
 		NewDimension("http.version_schema", 16).
 		NewDimension("http.upstream_addr", 1024).
@@ -1126,6 +1133,114 @@ func TestStreamUdpMetrics(t *testing.T) {
 		assert.NotEmpty(t, metrics)
 		assert.Len(t, metrics, 1)
 		validator.AssertMetricSetEqual(t, expectedMetrics, expectedDimensions, metrics[0])
+	case <-time.After(time.Second * 15):
+		assert.Fail(t, "failed to receive message")
+	}
+}
+
+func TestAppCentricACMDimensions(t *testing.T) {
+	httpServerListenAddress := fmt.Sprintf("%s:8080", httpServerAddress)
+
+	socket := "/tmp/advanced_metrics.sr"
+	acm := SetupAdvancedMetrics(t, socket)
+
+	httpUpstream := upstream.HttpTestUpstream{
+		Name:    "returns_200_ok",
+		Address: fmt.Sprintf("%s:%d", upstreamHost, upstreamPort),
+		Handlers: map[string]upstream.Handler{
+			location1: {
+				Handler: func(w http.ResponseWriter, req *http.Request) {
+					fmt.Fprintf(w, "OK")
+				},
+			},
+		},
+	}
+	httpUpstream.Serve(t)
+
+	var (
+		// acm centric
+		acmInfraWorkspace1    = "acm_infra_1"
+		acmServicesWorkspace1 = "acm_service_1"
+		acmEnvName1           = "acm_env_1"
+		envType1              = "env_type_1"
+		apiProxyName1         = "api_proxy_name_1"
+		apiHostname1          = "api_proxy_hostname_1"
+		apiProxyVersion1      = "api_proxy_version_1"
+	)
+
+	// generate config that exercises ACM dimensions using metrics marker directive
+	cfg := conf.NginxConf{
+		HttpBlock: &conf.HttpBlock{
+			F5MetricsServer: socket,
+			Upstreams: map[string]conf.Upstream{
+				httpUpstream.Name: httpUpstream.AsUpstream(),
+			},
+			Servers: []conf.Server{
+				httpUpstream.AsServer(httpServerListenAddress,
+					map[string]string{
+						conf.MarkerEnvironment:                 env1,
+						conf.MarkerGateway:                     gw1,
+						conf.AcmInfraWorkspacesNameDimension:   acmInfraWorkspace1,
+						conf.AcmServiceWorkspacesNameDimension: acmServicesWorkspace1,
+						conf.AcmEnvironmentsNameDimension:      acmEnvName1,
+						conf.AcmEnvironmentsTypeDimension:      envType1,
+					},
+					upstream.LocationsMarkers{
+						location1: map[string]string{
+							conf.MarkerApp:                    app1,
+							conf.MarkerComponent:              comp1,
+							conf.AcmApiProxyNameDimension:     apiProxyName1,
+							conf.AcmApiProxyHostnameDimension: apiHostname1,
+							conf.AcmProxyApiVersionDimension:  apiProxyVersion1,
+						},
+					},
+					upstream.LocationsDirectives{},
+				),
+			},
+		},
+	}
+
+	cmd, err := conf.NewNginxCommand(&cfg)
+	require.NoError(t, err)
+	cmd.Start(t)
+
+	location1Url := fmt.Sprintf("http://%s/loc1", httpServerListenAddress)
+
+	_, err = http.Get(location1Url)
+	assert.NoError(t, err)
+	_, err = http.Get(location1Url)
+	assert.NoError(t, err)
+
+	expectedDimensions := []publisher.Dimension{
+		{Name: "app", Value: app1},
+		{Name: "component", Value: comp1},
+		{Name: "gateway", Value: gw1},
+		{Name: "environment", Value: env1},
+		{Name: "http.uri", Value: location1},
+		{Name: "http.request_method", Value: "GET"},
+		{Name: "http.response_code", Value: "200"},
+		{Name: "country_code", Value: "0100007fffff00000000000000000000"},
+		{Name: "http.version_schema", Value: "4"},
+		{Name: "http.upstream_addr", Value: fmt.Sprintf("%s:%d", upstreamAddress, upstreamPort)},
+		{Name: "http.hostname", Value: httpServerAddress},
+		{Name: "family", Value: "web"},
+		{Name: "proxied_protocol", Value: "http"},
+		{Name: "request_outcome", Value: "PASSED"},
+		{Name: "upstream_response_code", Value: "200"},
+		{Name: conf.AcmInfraWorkspacesNameDimension, Value: acmInfraWorkspace1},
+		{Name: conf.AcmServiceWorkspacesNameDimension, Value: acmServicesWorkspace1},
+		{Name: conf.AcmEnvironmentsNameDimension, Value: acmEnvName1},
+		{Name: conf.AcmEnvironmentsTypeDimension, Value: envType1},
+		{Name: conf.AcmApiProxyHostnameDimension, Value: apiHostname1},
+		{Name: conf.AcmProxyApiVersionDimension, Value: apiProxyVersion1},
+		{Name: conf.AcmApiProxyNameDimension, Value: apiProxyName1},
+	}
+
+	select {
+	case metrics := <-acm.OutChannel():
+		assert.NotEmpty(t, metrics)
+		assert.Len(t, metrics, 1)
+		validator.AssertDimensionsEqual(t, expectedDimensions, metrics[0])
 	case <-time.After(time.Second * 15):
 		assert.Fail(t, "failed to receive message")
 	}
