@@ -27,8 +27,8 @@ VERSION="$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')" envsubst < sc
 
 for freebsd_abi in $FREEBSD_DISTROS; do \
     mkdir -p ./build/packages/txz/$freebsd_abi; \
-    pkg -o ABI=$freebsd_abi create \
-        -f txz \
+    pkg -o ABI=$freebsd_abi create --format txz \
+        --level best \
         -m staging \
         -r staging \
         -p staging/plist \
