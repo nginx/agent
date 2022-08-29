@@ -8,7 +8,7 @@ FREEBSD_DISTROS="FreeBSD:12:amd64 FreeBSD:13:amd64"
 
 cd /nginx-agent/
 
-mkdir -p ./build/packages/pkg/freebsd
+mkdir -p ./build/packages/txz
 
 mkdir -p staging/usr/local/bin
 mkdir -p staging/usr/local/etc/nginx-agent
@@ -26,14 +26,15 @@ chmod +x staging/usr/local/etc/rc.d/nginx-agent
 VERSION="$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')" envsubst < scripts/packages/manifest > staging/+MANIFEST
 
 for freebsd_abi in $FREEBSD_DISTROS; do \
-    mkdir -p ./build/packages/pkg/freebsd/$freebsd_abi; \
+    mkdir -p ./build/packages/txz/$freebsd_abi; \
     pkg -o ABI=$freebsd_abi create \
+        -f txz \
         -m staging \
         -r staging \
         -p staging/plist \
-        -o ./build/packages/pkg/freebsd/$freebsd_abi; \
+        -o ./build/packages/txz/$freebsd_abi; \
     # create freebsd pkg repo layout \
-    pkg repo ./build/packages/pkg/freebsd/$freebsd_abi .key.rsa; \
+    pkg repo ./build/packages/txz/$freebsd_abi .key.rsa; \
 done; \
 
 rm -rf /staging

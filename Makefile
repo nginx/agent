@@ -142,8 +142,8 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 	find $(PACKAGES_DIR)/rpm ;\
 	echo "APK packages:"; \
 	find $(PACKAGES_DIR)/apk ;\
-	echo "PKG packages:"; \
-	find $(PACKAGES_DIR)/pkg ;\
+	echo "TXZ packages:"; \
+	find $(PACKAGES_DIR)/txz ;\
 	cd $(PACKAGES_DIR) && tar -czvf "./${PACKAGE_PREFIX}.tar.gz" * && cd ../..;
 
  gpg-key: ## Generate GPG public key
