@@ -76,11 +76,7 @@ func TestCommander_Process(t *testing.T) {
 			},
 			msgTopics: []string{
 				core.AgentConnected,
-				core.AgentConnected,
 				core.AgentConfigChanged,
-				core.NginxConfigUpload,
-				core.EnableExtension,
-				core.EnableExtension,
 				core.NginxConfigUpload,
 				core.EnableExtension,
 				core.EnableExtension,
@@ -223,7 +219,7 @@ func TestCommander_Process(t *testing.T) {
 
 			ctx := context.TODO()
 			cmdr := tutils.NewMockCommandClient()
-			mockChannel := testChannel(test.cmd)
+			mockChannel := testChannel(&proto.Command{})
 
 			// setup expectations
 			cmdr.On("Recv").Return(mockChannel)
@@ -237,10 +233,10 @@ func TestCommander_Process(t *testing.T) {
 			messagePipe.Process(core.NewMessage(test.topic, test.cmd))
 			messagePipe.Run()
 
-			processedMessages := messagePipe.GetProcessedMessages()
-
-			assert.Eventually(t, func() bool { return len(processedMessages) == len(test.msgTopics) }, 1*time.Second, 100*time.Millisecond)
+			assert.Eventually(t, func() bool { return len(messagePipe.GetProcessedMessages()) == len(test.msgTopics) }, 1*time.Second, 100*time.Millisecond)
 			cmdr.AssertExpectations(tt)
+
+			processedMessages := messagePipe.GetProcessedMessages()
 
 			for idx, msg := range processedMessages {
 				if test.msgTopics[idx] != msg.Topic() {

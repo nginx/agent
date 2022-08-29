@@ -236,8 +236,13 @@ func TestNAPStatus(t *testing.T) {
 
 			// Create fake process(es)
 			if tc.procsToCreate != nil {
-				killFakeProcesses := testutils.StartFakeProcesses(tc.procsToCreate, "5")
-				t.Cleanup(killFakeProcesses)
+				processCheckFunc = func(processesToCheck []string) ([]string, error) {
+					return []string{}, nil
+				}
+			} else {
+				processCheckFunc = func(processesToCheck []string) ([]string, error) {
+					return []string{"fakeProc"}, nil
+				}
 			}
 
 			// Get running status
