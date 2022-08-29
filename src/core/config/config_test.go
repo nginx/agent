@@ -376,37 +376,61 @@ func TestUpdateAgentConfig(t *testing.T) {
 	}
 
 	testCases := []struct {
-		testName        string
-		updatedConfTags []string
-		expConfTags     []string
-		updatedTags     bool
+		testName            string
+		updatedConfTags     []string
+		updatedConfFeatures []string
+		expConfTags         []string
+		expConfFeatures     []string
+		updatedConf         bool
 	}{
 		{
-			testName:        "NoTagsToUpdate",
-			updatedConfTags: curConf.Tags,
-			expConfTags:     curConf.Tags,
-			updatedTags:     false,
+			testName:            "NoFieldsInConfToUpdate",
+			updatedConfTags:     curConf.Tags,
+			updatedConfFeatures: curConf.Features,
+			expConfTags:         curConf.Tags,
+			expConfFeatures:     curConf.Features,
+			updatedConf:         false,
 		},
 		{
-			testName:        "UpdatedTags",
-			updatedConfTags: []string{"new-tag1:One", "new-tag2:Two"},
-			expConfTags:     []string{"new-tag1:One", "new-tag2:Two"},
-			updatedTags:     true,
+			testName:            "UpdatedTags",
+			updatedConfTags:     []string{"new-tag1:One", "new-tag2:Two"},
+			updatedConfFeatures: curConf.Features,
+			expConfTags:         []string{"new-tag1:One", "new-tag2:Two"},
+			expConfFeatures:     curConf.Features,
+			updatedConf:         true,
 		},
 		{
-			testName:        "RemoveAllTags",
-			updatedConfTags: []string{},
-			expConfTags:     []string{},
-			updatedTags:     true,
+			testName:            "RemoveAllTags",
+			updatedConfTags:     []string{},
+			updatedConfFeatures: curConf.Features,
+			expConfTags:         []string{},
+			expConfFeatures:     curConf.Features,
+			updatedConf:         true,
+		},
+		{
+			testName:            "UpdateFeatures",
+			updatedConfTags:     curConf.Tags,
+			updatedConfFeatures: []string{"registration", "nginx-config", "metrics"},
+			expConfTags:         curConf.Tags,
+			expConfFeatures:     []string{"registration", "nginx-config", "metrics"},
+			updatedConf:         true,
+		},
+		{
+			testName:            "RemoveAllFeatures",
+			updatedConfTags:     curConf.Tags,
+			updatedConfFeatures: []string{},
+			expConfTags:         curConf.Tags,
+			expConfFeatures:     []string{},
+			updatedConf:         true,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Attempt update & check results
-			updated, err := UpdateAgentConfig("12345", tc.updatedConfTags)
+			updated, err := UpdateAgentConfig("12345", tc.updatedConfTags, tc.updatedConfFeatures)
 			assert.NoError(t, err)
-			assert.Equal(t, updated, tc.updatedTags)
+			assert.Equal(t, updated, tc.updatedConf)
 
 			// Get potentially updated config
 			updatedConf, err := GetConfig("12345")
@@ -421,6 +445,11 @@ func TestUpdateAgentConfig(t *testing.T) {
 			equalTags := reflect.DeepEqual(tc.expConfTags, updatedConf.Tags)
 
 			assert.Equal(t, equalTags, true)
+			// Sort features before asserting
+			sort.Strings(tc.expConfFeatures)
+			sort.Strings(updatedConf.Features)
+			equalFeatures := reflect.DeepEqual(tc.expConfFeatures, updatedConf.Features)
+			assert.Equal(t, equalFeatures, true)
 		})
 	}
 }

@@ -18,7 +18,7 @@ func StartFakeProcesses(names []string, fakeProcsDuration string) func() {
 		_ = pCmd.Start()
 
 		// Arbitrary sleep to ensure process has time to come up
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 150)
 
 		pList = append(pList, pCmd.Process)
 	}

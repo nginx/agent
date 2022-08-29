@@ -145,7 +145,8 @@ func TestUpdateAgentConfig(t *testing.T) {
 				Data: &proto.Command_AgentConfig{
 					AgentConfig: &proto.AgentConfig{
 						Details: &proto.AgentDetails{
-							Tags: curConf.Tags,
+							Tags:     curConf.Tags,
+							Features: curConf.Features,
 						},
 					},
 				},
