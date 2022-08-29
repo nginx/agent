@@ -1,7 +1,23 @@
 - semver: 2.17.1
-  date: 2022-08-29T10:51:41+01:00
+  date: 2022-08-29T16:32:07+01:00
   packager: nginx
   changes:
+    - commit: 8d6be2d070b07fc8edfe14da2b16fdcaaa6e078d
+      note: update packaging
+      author:
+        name: Aphral Griffin
+        email: a.griffin@f5.com
+      committer:
+        name: Aphral Griffin
+        email: a.griffin@f5.com
+    - commit: 99aae10f7e030058824299a32fc3d2005db76d25
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: c9136cf31d50c5ab16a699f069cb4dffc8d2e92e
       note: update packaging
       author:
