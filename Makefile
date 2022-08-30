@@ -40,7 +40,7 @@ APK_ARCHS?=aarch64 x86_64
 
 PACKAGE_PREFIX	   := nginx-agent
 PACKAGES_DIR	   := ./build/packages
-PACKAGES_REPO	   := "pkgs-test.nginx.com"
+PACKAGES_REPO	   := "pkgs.nginx.com"
 AGENT_UPLOADER_KEY := "~/agent-uploader.pem"
 UNAME_M	            = $(shell uname -m)
 TEST_BUILD_DIR	   := build/test
@@ -285,7 +285,7 @@ certs: ## Generate TLS certificates
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Docker Helper Targets                                                                                           #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-build-docker: clean local-apk-package # Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
+build-docker: # Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	@echo Building Docker; \
 	DOCKER_BUILDKIT=1 docker build -t ${DOCKER_TAG} . \
 		--no-cache -f ./scripts/docker/${OS_RELEASE}/Dockerfile \
