@@ -6,7 +6,6 @@ whitesource/
 *.log
 *.test
 *.orig
-certs/*
 sdk/certs/**
 
 __debug_bin

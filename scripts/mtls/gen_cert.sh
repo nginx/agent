@@ -82,6 +82,7 @@ create_self_signed() {
         -new \
         -nodes \
         -x509 \
+        -sha256 \
         -keyout "$OUT/$1.key" \
         -out "$OUT/$1.crt" \
         -config "$CONFIG" \
