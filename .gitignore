@@ -11,6 +11,7 @@ sdk/certs/**
 __debug_bin
 .key
 .key.*
+.srl
 .next-version
 .devops-utils/
 
