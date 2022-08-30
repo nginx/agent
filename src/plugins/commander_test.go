@@ -75,7 +75,6 @@ func TestCommander_Process(t *testing.T) {
 				DirectoryMap: &proto.DirectoryMap{},
 			},
 			msgTopics: []string{
-				core.AgentConnected,
 				core.AgentConfigChanged,
 				core.NginxConfigUpload,
 				core.EnableExtension,
@@ -88,14 +87,12 @@ func TestCommander_Process(t *testing.T) {
 				Data: &proto.Command_AgentConnectResponse{
 					AgentConnectResponse: &proto.AgentConnectResponse{}},
 			},
-			topic:    core.AgentConnected,
-			setMocks: false,
-			nginxId:  "",
-			systemId: "",
-			config:   nil,
-			msgTopics: []string{
-				core.AgentConnected,
-			},
+			topic:     core.AgentConnected,
+			setMocks:  false,
+			nginxId:   "",
+			systemId:  "",
+			config:    nil,
+			msgTopics: []string{},
 		},
 		{
 			name: "test agent register",
@@ -109,14 +106,12 @@ func TestCommander_Process(t *testing.T) {
 					},
 				},
 			},
-			setMocks: true,
-			topic:    core.CommRegister,
-			nginxId:  "",
-			systemId: "",
-			config:   nil,
-			msgTopics: []string{
-				core.CommRegister,
-			},
+			setMocks:  true,
+			topic:     core.CommRegister,
+			nginxId:   "",
+			systemId:  "",
+			config:    nil,
+			msgTopics: []string{},
 		},
 		{
 			name: "test agent config apply",
@@ -133,12 +128,10 @@ func TestCommander_Process(t *testing.T) {
 					},
 				},
 			},
-			topic:    core.CommNginxConfig,
-			nginxId:  "12345",
-			systemId: "67890",
-			msgTopics: []string{
-				core.CommNginxConfig,
-			},
+			topic:     core.CommNginxConfig,
+			nginxId:   "12345",
+			systemId:  "67890",
+			msgTopics: []string{},
 		},
 		{
 			name: "test agent config request",
@@ -149,10 +142,8 @@ func TestCommander_Process(t *testing.T) {
 					AgentConfigRequest: &proto.AgentConfigRequest{},
 				},
 			},
-			topic: core.AgentConfig,
-			msgTopics: []string{
-				core.AgentConfig,
-			},
+			topic:     core.AgentConfig,
+			msgTopics: []string{},
 		},
 		{
 			name: "test agent command status ok",
@@ -161,10 +152,8 @@ func TestCommander_Process(t *testing.T) {
 				Type: proto.Command_NORMAL,
 				Data: newOKStatus("ok"),
 			},
-			topic: core.UNKNOWN,
-			msgTopics: []string{
-				core.UNKNOWN,
-			},
+			topic:     core.UNKNOWN,
+			msgTopics: []string{},
 		},
 		{
 			name: "test agent command status not ok",
@@ -173,10 +162,8 @@ func TestCommander_Process(t *testing.T) {
 				Type: proto.Command_NORMAL,
 				Data: newErrStatus("err"),
 			},
-			topic: core.UNKNOWN,
-			msgTopics: []string{
-				core.UNKNOWN,
-			},
+			topic:     core.UNKNOWN,
+			msgTopics: []string{},
 		},
 		{
 			name: "test agent command data nil",
@@ -185,10 +172,8 @@ func TestCommander_Process(t *testing.T) {
 				Type: proto.Command_NORMAL,
 				Data: nil,
 			},
-			topic: core.UNKNOWN,
-			msgTopics: []string{
-				core.UNKNOWN,
-			},
+			topic:     core.UNKNOWN,
+			msgTopics: []string{},
 		},
 		{
 			name: "test agent command data nil",
@@ -197,10 +182,8 @@ func TestCommander_Process(t *testing.T) {
 				Type: proto.Command_NORMAL,
 				Data: newOKStatus("ok"),
 			},
-			topic: core.UNKNOWN,
-			msgTopics: []string{
-				core.UNKNOWN,
-			},
+			topic:     core.UNKNOWN,
+			msgTopics: []string{},
 		},
 	}
 
@@ -219,10 +202,8 @@ func TestCommander_Process(t *testing.T) {
 
 			ctx := context.TODO()
 			cmdr := tutils.NewMockCommandClient()
-			mockChannel := testChannel(&proto.Command{})
 
 			// setup expectations
-			cmdr.On("Recv").Return(mockChannel)
 			if test.setMocks {
 				cmdr.On("Send", mock.Anything, client.MessageFromCommand(test.cmd))
 			}
@@ -230,15 +211,17 @@ func TestCommander_Process(t *testing.T) {
 			pluginUnderTest := NewCommander(cmdr, &config.Config{ClientID: "12345"})
 			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
 
-			messagePipe.Process(core.NewMessage(test.topic, test.cmd))
-			messagePipe.Run()
+			messagePipe.RunWithoutInit()
+			pluginUnderTest.pipeline = messagePipe
+			pluginUnderTest.ctx = ctx
+			pluginUnderTest.Process(core.NewMessage(test.topic, test.cmd))
 
-			assert.Eventually(t, func() bool { return len(messagePipe.GetProcessedMessages()) == len(test.msgTopics) }, 1*time.Second, 100*time.Millisecond)
+			assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == len(test.msgTopics) }, 1*time.Second, 100*time.Millisecond)
 			cmdr.AssertExpectations(tt)
 
-			processedMessages := messagePipe.GetProcessedMessages()
+			messages := messagePipe.GetMessages()
 
-			for idx, msg := range processedMessages {
+			for idx, msg := range messages {
 				if test.msgTopics[idx] != msg.Topic() {
 					tt.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), test.msgTopics[idx])
 				}
@@ -247,16 +230,6 @@ func TestCommander_Process(t *testing.T) {
 			pluginUnderTest.Close()
 		})
 	}
-}
-
-func testChannel(command *proto.Command) <-chan client.Message {
-	c := make(chan client.Message)
-
-	go func() {
-		c <- client.MessageFromCommand(command)
-	}()
-
-	return c
 }
 
 func TestCommander_Subscriptions(t *testing.T) {
