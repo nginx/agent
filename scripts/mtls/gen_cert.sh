@@ -79,10 +79,10 @@ parse_args() {
 
 create_self_signed() {
     if ! openssl req \
-        -new \
+        -newkey rsa:4096 \
         -nodes \
         -x509 \
-        -sha256 \
+        -sha512 \
         -keyout "$OUT/$1.key" \
         -out "$OUT/$1.crt" \
         -config "$CONFIG" \
@@ -96,8 +96,9 @@ create_self_signed() {
 
 create_csr() {
     if ! openssl req \
-        -new \
+        -newkey rsa:4096 \
         -nodes \
+        -sha512 \
         -keyout "$OUT/$1.key" \
         -out "$OUT/$1.csr" \
         -config "$CONFIG" \
