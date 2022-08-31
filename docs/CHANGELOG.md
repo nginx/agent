@@ -3,6 +3,8 @@
 =============
 2022-08-31
 
+* Rename pkg to txz (b1c20156)
+* Updating changelog (8534e360)
 * Rename pkg to txz (d52123f9)
 * Updating changelog (3e5efdb1)
 * update packaging (8d6be2d0)
