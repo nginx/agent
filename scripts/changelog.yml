@@ -1,7 +1,23 @@
 - semver: 2.17.1
-  date: 2022-08-29T16:32:07+01:00
+  date: 2022-08-31T10:32:53+01:00
   packager: nginx
   changes:
+    - commit: d52123f960d89fab17cb7da050fcc541d3f49f0b
+      note: Rename pkg to txz
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 3e5efdb1c0bb5e55db5facc93690dd3efbc65d52
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: 8d6be2d070b07fc8edfe14da2b16fdcaaa6e078d
       note: update packaging
       author:

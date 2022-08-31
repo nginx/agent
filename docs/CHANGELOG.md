@@ -1,8 +1,10 @@
 
 2.17.1
 =============
-2022-08-29
+2022-08-31
 
+* Rename pkg to txz (d52123f9)
+* Updating changelog (3e5efdb1)
 * update packaging (8d6be2d0)
 * Updating changelog (99aae10f)
 * update packaging (c9136cf3)
