@@ -28,13 +28,13 @@ VERSION="$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')" envsubst < sc
 for freebsd_abi in $FREEBSD_DISTROS; do \
     mkdir -p ./build/packages/txz/$freebsd_abi; \
     pkg -o ABI=$freebsd_abi create --format txz \
-        --level best \
         -m staging \
         -r staging \
         -p staging/plist \
         -o ./build/packages/txz/$freebsd_abi; \
     # create freebsd pkg repo layout \
     pkg repo ./build/packages/txz/$freebsd_abi .key.rsa; \
+    mv ./build/packages/txz/$freebsd_abi/nginx-agent-$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v').pkg ./build/packages/txz/$freebsd_abi/nginx-agent-$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v').txz; \
 done; \
 
 rm -rf /staging
