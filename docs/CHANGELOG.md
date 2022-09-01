@@ -1,8 +1,10 @@
 
 2.17.1
 =============
-2022-08-31
+2022-09-01
 
+* Updated release branch workflow to publish release (66e10ef9)
+* Updating changelog (60ff6502)
 * Rename pkg to txz (b1c20156)
 * Updating changelog (8534e360)
 * Rename pkg to txz (d52123f9)

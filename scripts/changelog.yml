@@ -1,7 +1,23 @@
 - semver: 2.17.1
-  date: 2022-08-31T10:44:48+01:00
+  date: 2022-09-01T14:20:49+01:00
   packager: nginx
   changes:
+    - commit: 66e10ef931d4657e98ec97d93496e79510309916
+      note: Updated release branch workflow to publish release
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 60ff6502cd9af4682da298a5d91b2b4ed9a63cdd
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: b1c20156a7486606c5bda679b5b20aac9bc2f963
       note: Rename pkg to txz
       author:
