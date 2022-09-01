@@ -6,7 +6,7 @@ ARG PKG_VER="1.17.5"
 ARG PKG_DIR="/tmp/pkg"
 
 RUN apt-get update && \
-    apt-get install -y make jq gnupg gnupg1 gpgv1 git aptly debsig-verify aptly debsig-verify createrepo-c dnf rpm \
+    apt-get install -y make jq gnupg gnupg1 gpgv1 git aptly debsig-verify createrepo-c dnf rpm \
                        curl gettext-base make monkeysphere libtool unzip libssl-dev libbz2-dev libbsd-dev libarchive-dev liblzma-dev zlib1g-dev
 
 # compile, install pkg tool for linux
