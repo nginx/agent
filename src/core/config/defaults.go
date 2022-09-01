@@ -77,6 +77,18 @@ var (
 				PriorityTableMaxSize:   1000,
 			},
 		},
+		Features: []string{
+			"registration",
+			"nginx-config",
+			"nginx-ssl-config",
+			"nginx-counting",
+			"metrics",
+			"metrics-throttle",
+			"dataplanestatus",
+			"process-watcher",
+			"file-watcher",
+			"activity-events",
+		},
 	}
 	AllowedDirectoriesMap map[string]struct{}
 )
