@@ -154,14 +154,9 @@ jobs:
         env:
           INDIGO_GPG_AGENT: ${{ secrets.INDIGO_GPG_AGENT }}
           NFPM_SIGNING_KEY_FILE: .key.asc
-          PUBLISH_PACKAGE: ${{ inputs.publishPackages }}
         run: |
           echo $INDIGO_GPG_AGENT | base64 --decode > .key.asc
           make clean build package
-          echo "PUBLISH_PACKAGE: $PUBLISH_PACKAGE"
-          if [[ -z "${PUBLISH_PACKAGE}" ]] && ${PUBLISH_PACKAGE}='true'; then
-            make release
-          fi
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         env:
@@ -171,7 +166,14 @@ jobs:
           asset_path: ./build/packages/nginx-agent.tar.gz
           asset_name: nginx-agent.tar.gz
           asset_content_type: application/zip
-      - name: Publish Release
+      - name: Publish Release Packages
+        # if: ${{ inputs.publishPackages == 'true' }}
+        env:
+          AGENT_UPLOADER_PEM: ${{ secrets.AGENT_UPLOADER_PEM }}
+        run: |
+          echo $AGENT_UPLOADER_PEM | base64 --decode > agent-uploader.pem
+          make release
+      - name: Publish Github Release
         if: ${{ inputs.publishPackages == 'true' }}
         uses: actions/github-script@v6
         with:
