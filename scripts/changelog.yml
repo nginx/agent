@@ -1,7 +1,23 @@
 - semver: 2.17.1
-  date: 2022-09-01T14:20:49+01:00
+  date: 2022-09-01T14:28:34+01:00
   packager: nginx
   changes:
+    - commit: 2bbe94a5d2062ff4cb12577aee104790ab1895bc
+      note: Updated release branch workflow to publish release
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 67175e1030425b2f6c5659504cad8afd181aa582
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: 66e10ef931d4657e98ec97d93496e79510309916
       note: Updated release branch workflow to publish release
       author:
