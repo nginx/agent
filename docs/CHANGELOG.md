@@ -3,6 +3,8 @@
 =============
 2022-09-01
 
+* Updated release branch workflow to publish release (2eb42768)
+* Updating changelog (e0efd264)
 * Updated release branch workflow to publish release (32f68d21)
 * Updating changelog (21ced150)
 * Updated release branch workflow to publish release (2bbe94a5)
