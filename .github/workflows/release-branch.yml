@@ -94,13 +94,13 @@ jobs:
               draft: true,
             }))
             console.log(`Release created: ${release.data.html_url}`)
-            console.log(`Release ID: ${release.release_id}`)
+            console.log(`Release ID: ${release.data.id}`)
             console.log(`Release notes: ${release_notes.data.body}`)
             console.log(`Release Upload URL: ${release.data.upload_url}`)
             
             return {
                 version: version,
-                release_id: release.release_id,
+                release_id: release.data.id,
                 release_upload_url: release.data.upload_url,
             }
       - name: Set Environment Variables
