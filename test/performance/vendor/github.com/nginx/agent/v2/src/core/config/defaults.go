@@ -67,7 +67,7 @@ var (
 			Mode:               "aggregation",
 		},
 		AdvancedMetrics: AdvancedMetrics{
-			SocketPath:        "/tmp/advanced-metrics.sock",
+			SocketPath:        "/var/run/nginx-agent/advanced-metrics.sock",
 			AggregationPeriod: time.Second * 10,
 			PublishingPeriod:  time.Second * 30,
 			TableSizesLimits: advanced_metrics.TableSizesLimits{
