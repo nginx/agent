@@ -42,7 +42,7 @@ CERTS_DIR          := ./build/certs
 PACKAGE_PREFIX	   := nginx-agent
 PACKAGES_DIR	   := ./build/packages
 PACKAGES_REPO	   := "pkgs.nginx.com"
-AGENT_UPLOADER_KEY := "~/agent-uploader.pem"
+AGENT_UPLOADER_KEY := "./agent-uploader.pem"
 UNAME_M	            = $(shell uname -m)
 TEST_BUILD_DIR	   := build/test
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
@@ -101,7 +101,7 @@ clean-packages:
 	@rm -rf $(PACKAGES_DIR)
 
 $(PACKAGES_DIR):
-	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk && mkdir -p $(PACKAGES_DIR)/pkg
+	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk && mkdir -p $(PACKAGES_DIR)/txz
 
 package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported distros
 	@for distro in $(DEB_DISTROS); do \
@@ -110,64 +110,51 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 			VERSION=$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename} ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb; \
 		done; \
 	done; \
+
 	for distro in $(RPM_DISTROS); do \
 		rpm_distro=`echo $$distro | cut -d- -f 1`;  \
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
 		rpm_codename='na'; \
-		if [ "$$rpm_distro" == "centos" ] || [ "$$rpm_distro" == "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
-		elif [ "$$rpm_distro" == "amazon" ] && [ "$$rpm_major" == "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
-		if [ "$$rpm_distro" == "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
+		if [ "$$rpm_distro" = "centos" ] || [ "$$rpm_distro" = "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
+		elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
+		if [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=${ARCH} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${UNAME_M}.rpm; \
 		fi; \
 	done; \
+
 	for version in $(APK_VERSIONS); do \
-		if [ ! -d "$(PACKAGES_DIR)/apk/$${version}" ]; then mkdir $(PACKAGES_DIR)/apk/$${version}; fi; \
+		if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}" ]; then mkdir $(PACKAGES_DIR)/apk/v$${version}; fi; \
 		for arch in $(APK_ARCHS); do \
-			if [ ! -d "$(PACKAGES_DIR)/apk/$${version}/$${arch}" ]; then mkdir $(PACKAGES_DIR)/apk/$${version}/$${arch}; fi; \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
+			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
 		done; \
 	done; \
-	# create specific freebsd pkg files \
-	rm -rf ./build/nginx-agent; \
-	mkdir -p $(PACKAGES_DIR)/pkg/freebsd; \
-	staging=$$(mktemp -d); \
-	mkdir -p $${staging}/usr/local/{bin,etc/nginx-agent,etc/rc.d}; \
-	cp nginx-agent.conf $${staging}/usr/local/etc/nginx-agent; \
-	cp scripts/packages/nginx-agent $${staging}/usr/local/etc/rc.d; \
-	cp scripts/packages/postremove.sh $${staging}/+PRE_DEINSTALL; \
-	cp scripts/packages/postinstall.sh $${staging}/+POST_INSTALL; \
-	cp scripts/packages/plist $$staging; \
-	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o $${staging}/usr/local/bin; \
-	chmod +x $${staging}/usr/local/etc/rc.d/nginx-agent; \
-	VERSION=$(VERSION); VERSION=$${VERSION//v/} envsubst < scripts/packages/manifest > $${staging}/+MANIFEST; \
-	for freebsd_abi in $(FREEBSD_DISTROS); do \
-		mkdir -p $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
-		pkg -o ABI=$${freebsd_abi} create \
-			-m $${staging} \
-			-r $${staging} \
-			-p $${staging}/plist \
-			-o $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
-		# create freebsd pkg repo layout \
-		pkg repo $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi} .key.rsa; \
-	done; \
-	rm -rf $$staging; \
+
+	# create specific freebsd txz files
+	rm -rf ./build/nginx-agent
+	GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
+
+	docker run -v `pwd`:/nginx-agent/ build-signed-packager:1.0.0
+
 	echo "DEB packages:"; \
 	find $(PACKAGES_DIR)/deb ;\
 	echo "RPM packages:"; \
 	find $(PACKAGES_DIR)/rpm ;\
 	echo "APK packages:"; \
 	find $(PACKAGES_DIR)/apk ;\
-	echo "PKG packages:"; \
-	find $(PACKAGES_DIR)/pkg ;\
+	echo "TXZ packages:"; \
+	find $(PACKAGES_DIR)/txz ;\
 	cd $(PACKAGES_DIR) && tar -czvf "./${PACKAGE_PREFIX}.tar.gz" * && cd ../..;
 
-gpg-key: ## Generate GPG public key
-	gpg1 --armor --import $(NFPM_SIGNING_KEY_FILE) \
+ gpg-key: ## Generate GPG public key
+	$$(gpg --import $(NFPM_SIGNING_KEY_FILE)); \
+	keyid=$$(gpg --list-keys NGINX | egrep -A1 "^pub" | egrep -v "^pub" | tr -d '[:space:]'); \
+	expiry=1y; \
+	$$(gpg --quick-set-expire $$keyid $$expiry '*'); \
 	# we need to convert the private gpg key to rsa pem format for pkg signing \
-	keyid=$$(gpg --list-keys NGINX | awk '/pub/{getline; print substr($$0,length($$0)-7,8)}'); \
-	gpg1 --export-secret-key $$keyid | openpgp2ssh $$keyid > .key.rsa; \
-	gpg1 --armor --export > $(GPG_PUBLIC_KEY)
+	$$(gpg --export-secret-key $$keyid | openpgp2ssh $$keyid > .key.rsa); \
+	$$(gpg --output $(GPG_PUBLIC_KEY) --armor --export)
 
 release: ## Publish tarball to the UPLOAD_URL
 	echo "Publishing nginx-agent packages to ${UPLOAD_URL}"; \
@@ -189,13 +176,13 @@ local-rpm-package: ## Create local rpm package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
 	VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT.rpm;
 
-local-pkg-package: ## Create local pkg package
+local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	docker run -v `pwd`:/nginx-agent/ build-packager:1.0.0
+	docker run -v `pwd`:/nginx-agent/ build-local-packager:1.0.0
 
-build-pkg-packager-docker: ## Builds pkg packager docker image
+build-txz-packager-docker: ## Builds txz packager docker image
 	@echo Building Local Packager; \
-	DOCKER_BUILDKIT=1 docker build -t build-packager:1.0.0 . --no-cache -f ./scripts/packages/packager/Dockerfile
+	DOCKER_BUILDKIT=1 docker build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Testing                                                                                                         #

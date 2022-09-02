@@ -1,0 +1,206 @@
+name: Release Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      publishPackages:
+        description: 'Publish packages to up-ap.nginx.com'
+        required: true
+        type: boolean
+        default: false
+  workflow_run:
+    branches: [release-*]
+    workflows: [CI]
+    types:
+      - completed
+
+jobs:
+  update-draft:
+    name: Update Release
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - uses: actions/setup-node@v3
+      - run: npm install semver
+      - name: Create Draft Release
+        uses: actions/github-script@v6
+        id: release
+        with:
+          script: |
+            const semver = require('semver');
+            const ref = context.ref.split("/")[2]
+            const releases = (await github.rest.repos.listReleases({
+              owner: context.payload.repository.owner.login,
+              repo: context.payload.repository.name,
+              per_page: 100,
+            })).data
+            let latest_release
+            const latest_release_current_branch = releases.find(release => !release.draft && release.tag_name.startsWith("v" + ref.split("-")[1]))
+            if (latest_release_current_branch === undefined){
+              latest_release = (await github.rest.repos.getLatestRelease({
+                owner: context.payload.repository.owner.login,
+                repo: context.payload.repository.name,
+              })).data.tag_name
+            } else {
+              latest_release = latest_release_current_branch.tag_name
+            }
+            console.log(`The latest release was ${latest_release}`)
+            const temp_notes = (await github.rest.repos.generateReleaseNotes({
+                owner: context.payload.repository.owner.login,
+                repo: context.payload.repository.name,
+                tag_name: "next",
+                previous_tag_name: latest_release,
+                target_commitish: ref,
+            })).data.body
+            let level
+            temp_notes.includes("### 🚀 Features") ? level = 'minor' : level = 'patch'
+            temp_notes.includes("### 💣 Breaking Changes") ? level = 'major' : level = level
+            const version = semver.inc(latest_release, level)
+            console.log(`The level of the release is ${level}`)
+            const draft = releases.find((r) => r.draft && r.tag_name === "v"+version)
+            const draft_found = !(draft === undefined)
+            console.log(`The next version is v${version}`)
+            const footer = `
+              ## Resources
+              - Documentation -- https://docs.nginx.com/nginx-instance-manager/nginx-agent/
+              - Upgrade Steps -- https://docs.nginx.com/nginx-instance-manager/installation/upgrade-guide/#upgrade-nginx-agent
+            `
+            const release_notes = (await github.rest.repos.generateReleaseNotes({
+              owner: context.payload.repository.owner.login,
+              repo: context.payload.repository.name,
+              tag_name: 'v' + version,
+              previous_tag_name: latest_release,
+              target_commitish: ref,
+            }))
+            let release
+            if (draft_found){
+              console.log("Draft release already exists. Deleting current draft release and recreating it")
+              release = (await github.rest.repos.deleteRelease({
+                owner: context.payload.repository.owner.login,
+                repo: context.payload.repository.name,
+                release_id: draft.id,
+              }))
+            }
+            release = (await github.rest.repos.createRelease({
+              owner: context.payload.repository.owner.login,
+              repo: context.payload.repository.name,
+              tag_name: 'v' + version,
+              target_commitish: ref,
+              name: 'v' + version,
+              body: release_notes.data.body + footer,
+              draft: true,
+            }))
+            console.log(`Release created: ${release.data.html_url}`)
+            console.log(`Release ID: ${release.data.id}`)
+            console.log(`Release notes: ${release_notes.data.body}`)
+            console.log(`Release Upload URL: ${release.data.upload_url}`)
+            
+            return {
+                version: version,
+                release_id: release.data.id,
+                release_upload_url: release.data.upload_url,
+            }
+      - name: Set Environment Variables
+        run: |
+          echo "${{steps.release.outputs.result}}"
+          echo "VERSION=$(echo '${{steps.release.outputs.result}}' | jq -r '.version')" >> $GITHUB_ENV
+          echo "RELEASE_ID=$(echo '${{steps.release.outputs.result}}' | jq -r '.release_id')" >> $GITHUB_ENV
+          echo "RELEASE_UPLOAD_URL=$(echo '${{steps.release.outputs.result}}' | jq -r '.release_upload_url')" >> $GITHUB_ENV
+      - name: Setup build environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gpgv1 monkeysphere 
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.18.0
+          go install github.com/goreleaser/chglog/cmd/chglog@v0.2.0
+      - name: Tag release and update changelog
+      # TODO: Remove git config step later once the repo https://github.com/nginxinc/crossplane-go is made public
+        env:
+          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          PUBLISH_PACKAGE: ${{ inputs.publishPackages }}
+        run: |
+          git config --global url."https://dhurley:${TOKEN}@github.com".insteadOf "https://github.com"
+          git config --global user.name 'github-actions'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git tag -a "v${{env.VERSION}}" -m "CI Autogenerated"
+          git tag -a "sdk/v${{env.VERSION}}" -m "CI Autogenerated"
+          
+          chglog init -o ./scripts/changelog.yml . 
+          chglog format -i ./scripts/changelog.yml --template repo > ./docs/CHANGELOG.md
+          git commit -am "Updating changelog"
+          git push
+
+          if [[ -z "${PUBLISH_PACKAGE}" ]] && ${PUBLISH_PACKAGE}='true'; then
+            git push origin "v${{env.VERSION}}"
+            git push origin "sdk/v${{env.VERSION}}"
+          fi
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          file: scripts/packages/packager/Dockerfile
+          tags: build-signed-packager:1.0.0
+          context: '.'
+          push: false
+          load: true
+          no-cache: true
+          build-args: |
+            package_type=signed-package
+      - name: Build Packages
+        env:
+          INDIGO_GPG_AGENT: ${{ secrets.INDIGO_GPG_AGENT }}
+          NFPM_SIGNING_KEY_FILE: .key.asc
+        run: |
+          echo $INDIGO_GPG_AGENT | base64 --decode > .key.asc
+          make clean build package
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }} 
+          asset_path: ./build/packages/nginx-agent.tar.gz
+          asset_name: nginx-agent.tar.gz
+          asset_content_type: application/zip
+      - name: Publish Release Packages
+        if: ${{ inputs.publishPackages == 'true' }}
+        env:
+          AGENT_UPLOADER_PEM: ${{ secrets.AGENT_UPLOADER_PEM }}
+        run: |
+          echo $AGENT_UPLOADER_PEM | base64 --decode > agent-uploader.pem
+          make release
+      - name: Publish Github Release
+        if: ${{ inputs.publishPackages == 'true' }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const {RELEASE_ID} = process.env
+            const release = (await github.rest.repos.updateRelease({
+              owner: context.payload.repository.owner.login,
+              repo: context.payload.repository.name,
+              release_id: `${RELEASE_ID}`,
+              draft: false,
+            }))
+            console.log(`Release published: ${release.data.html_url}`)
+      - name: Create Pull Request
+        if: ${{ inputs.publishPackages == 'true' }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const result = await github.rest.pulls.create({
+              title: 'Merge ${{ github.event.inputs.branch }} back into main',
+              owner,
+              repo,
+              head: '${{ github.ref_name }}',
+              base: 'main',
+              body: [
+                'This PR is auto-generated by the release branch workflow.'
+              ].join('\n')
+            });

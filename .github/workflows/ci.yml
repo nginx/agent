@@ -2,8 +2,6 @@ name: CI
 
 on:
   push:
-    branches-ignore:  
-      - 'release-*'
 
 env:
   GOLANGCI_LINT_VERSION: 'v1.46.2'
@@ -91,11 +89,13 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           file: scripts/packages/packager/Dockerfile
-          tags: build-packager:1.0.0
+          tags: build-local-packager:1.0.0
           context: '.'
           push: false
           load: true
           no-cache: true
+          build-args: |
+            package_type=local-package
       - name: Build Packages
         # TODO: Remove git config step later once the repo https://github.com/nginxinc/crossplane-go is made public
         env:
@@ -103,8 +103,8 @@ jobs:
         run: |
           git config --global url."https://dhurley:${TOKEN}@github.com".insteadOf "https://github.com"
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          make clean local-apk-package local-deb-package local-rpm-package local-pkg-package
-          tar -cf ./build/snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.pkg ./build/*.apk
+          make clean local-apk-package local-deb-package local-rpm-package local-txz-package
+          tar -cf ./build/snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.txz ./build/*.apk
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
