@@ -78,16 +78,16 @@ var (
 			},
 		},
 		Features: []string{
-			"registration",
-			"nginx-config",
-			"nginx-ssl-config",
-			"nginx-counting",
-			"metrics",
-			"metrics-throttle",
-			"dataplanestatus",
-			"process-watcher",
-			"file-watcher",
-			"activity-events",
+			FeatureRegistration,
+			FeatureNginxConfig,
+			FeatureNginxSSLConfig,
+			FeatureNginxCounting,
+			FeatureMetrics,
+			FeatureMetricsThrottle,
+			FeatureDataPlaneStatus,
+			FeatureProcessWatcher,
+			FeatureFileWatcher,
+			FeatureActivityEvents,
 		},
 	}
 	AllowedDirectoriesMap map[string]struct{}
@@ -109,7 +109,6 @@ const (
 	InstanceGroupKey  = "instance_group"
 	ConfigDirsKey     = "config_dirs"
 	TagsKey           = "tags"
-	FeaturesKey       = "features"
 
 	// viper keys used in config
 	LogKey = "log"
@@ -174,6 +173,20 @@ const (
 	NginxAppProtectKey = "nginx_app_protect"
 
 	NginxAppProtectReportInterval = NginxAppProtectKey + KeyDelimiter + "report_interval"
+
+	// viper keys used in config
+	FeaturesKey = "features"
+
+	FeatureRegistration    = FeaturesKey + KeyDelimiter + "registration"
+	FeatureNginxConfig     = FeaturesKey + KeyDelimiter + "nginx-config"
+	FeatureNginxSSLConfig  = FeaturesKey + KeyDelimiter + "nginx-ssl-config"
+	FeatureNginxCounting   = FeaturesKey + KeyDelimiter + "nginx-counting"
+	FeatureMetrics         = FeaturesKey + KeyDelimiter + "metrics"
+	FeatureMetricsThrottle = FeaturesKey + KeyDelimiter + "metrics-throttle"
+	FeatureDataPlaneStatus = FeaturesKey + KeyDelimiter + "dataplanestatus"
+	FeatureProcessWatcher  = FeaturesKey + KeyDelimiter + "process-watcher"
+	FeatureFileWatcher     = FeaturesKey + KeyDelimiter + "file-watcher"
+	FeatureActivityEvents  = FeaturesKey + KeyDelimiter + "activity-events"
 
 	// DEPRECATED KEYS
 	NginxBinPathKey       = "nginx_bin_path"

@@ -229,7 +229,7 @@ func TestNginx_Config(t *testing.T) {
 
 			commandClient := tutils.GetMockCommandClient(test.config)
 
-			pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{nginxConfUploadFeature}})
+			pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
 			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
 
 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
@@ -297,7 +297,7 @@ func TestUploadConfigs(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
 	cmdr.On("Upload", mock.Anything, mock.Anything).Return(nil)
 
-	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{nginxConfUploadFeature}})
+	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
 	messagePipe := core.SetupMockMessagePipe(t, context.Background(), pluginUnderTest)
 
 	pluginUnderTest.Init(messagePipe)
@@ -401,7 +401,7 @@ func TestNginx_Process_NginxConfigUpload(t *testing.T) {
 
 	env := tutils.GetMockEnvWithProcess()
 
-	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{nginxConfUploadFeature}})
+	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
 	pluginUnderTest.Process(core.NewMessage(core.NginxConfigUpload, configDesc))
 
 	binary.AssertExpectations(t)

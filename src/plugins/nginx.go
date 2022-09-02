@@ -19,7 +19,6 @@ import (
 
 const (
 	appProtectMetadataFilePath = "/etc/nms/app_protect_metadata.json"
-	nginxConfUploadFeature     = "nginx-config"
 )
 
 // Nginx is the metadata of our nginx binary
@@ -53,12 +52,9 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 	if loadedConfig.NginxAppProtect != (config.NginxAppProtect{}) {
 		isNAPEnabled = true
 	}
-	var isConfUploadEnabled bool
-	for _, feature := range loadedConfig.Features {
-		if feature == nginxConfUploadFeature {
-			isConfUploadEnabled = true
-		}
-	}
+
+	isConfUploadEnabled := isConfUploadEnabled(loadedConfig)
+
 	return &Nginx{nginxBinary: nginxBinary, processes: env.Processes(), env: env, cmdr: cmdr, config: loadedConfig, isNAPEnabled: isNAPEnabled, isConfUploadEnabled: isConfUploadEnabled}
 }
 
@@ -389,13 +385,16 @@ func (n *Nginx) syncAgentConfigChange() {
 		n.isNAPEnabled = false
 	}
 
-	var isConfUploadEnabled bool
-	for _, feature := range conf.Features {
-		if feature == nginxConfUploadFeature {
-			isConfUploadEnabled = true
-		}
-	}
-	n.isConfUploadEnabled = isConfUploadEnabled
+	n.isConfUploadEnabled = isConfUploadEnabled(conf)
 
 	n.config = conf
+}
+
+func isConfUploadEnabled(conf *config.Config) bool {
+	for _, feature := range conf.Features {
+		if feature == config.FeatureNginxConfig {
+			return true
+		}
+	}
+	return false
 }
