@@ -131,7 +131,7 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 		done; \
 	done; \
 
-	# create specific freebsd pkg files
+	# create specific freebsd txz files
 	rm -rf ./build/nginx-agent
 	GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 
@@ -176,11 +176,11 @@ local-rpm-package: ## Create local rpm package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
 	VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT.rpm;
 
-local-pkg-package: ## Create local pkg package
+local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
 	docker run -v `pwd`:/nginx-agent/ build-local-packager:1.0.0
 
-build-pkg-packager-docker: ## Builds pkg packager docker image
+build-txz-packager-docker: ## Builds txz packager docker image
 	@echo Building Local Packager; \
 	DOCKER_BUILDKIT=1 docker build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
 
