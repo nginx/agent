@@ -74,9 +74,9 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 		if agtCfg := commandData.AgentConnectResponse.AgentConfig; agtCfg != nil &&
 			agtCfg.Configs != nil && len(agtCfg.Configs.Configs) > 0 {
 
-			// Update config tags if they were out of sync between Manager and Agent
-			if agtCfg.Details != nil && len(agtCfg.Details.Tags) > 0 {
-				configUpdated, err := config.UpdateAgentConfig(c.config.ClientID, agtCfg.Details.Tags)
+			// Update config tags and features if they were out of sync between Manager and Agent
+			if agtCfg.Details != nil && (len(agtCfg.Details.Tags) > 0 || len(agtCfg.Details.Features) > 0) {
+				configUpdated, err := config.UpdateAgentConfig(c.config.ClientID, agtCfg.Details.Tags, agtCfg.Details.Features)
 				if err != nil {
 					log.Errorf("Failed updating Agent config - %v", err)
 				}

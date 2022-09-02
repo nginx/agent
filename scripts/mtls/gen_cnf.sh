@@ -120,7 +120,7 @@ default_bits        = ${KEY_SIZE:-"4096"}
 default_days        = ${DAYS:-"365"}
 distinguished_name  = req_distinguished_name
 prompt              = no
-default_md          = sha256
+default_md          = sha512
 req_extensions      = v3_req
 policy              = policy
 
@@ -158,7 +158,7 @@ default_bits        = ${KEY_SIZE:-"4096"}
 default_days        = ${DAYS:-"365"}
 distinguished_name  = req_distinguished_name
 prompt              = no
-default_md          = sha256
+default_md          = sha512
 req_extensions      = v3_req
 policy              = policy
 

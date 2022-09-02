@@ -38,9 +38,10 @@ FREEBSD_DISTROS?="FreeBSD:12:amd64" "FreeBSD:13:amd64"
 APK_VERSIONS?=3.13 3.14 3.15 3.16
 APK_ARCHS?=aarch64 x86_64
 
+CERTS_DIR          := ./build/certs
 PACKAGE_PREFIX	   := nginx-agent
 PACKAGES_DIR	   := ./build/packages
-PACKAGES_REPO	   := "pkgs-test.nginx.com"
+PACKAGES_REPO	   := "pkgs.nginx.com"
 AGENT_UPLOADER_KEY := "./agent-uploader.pem"
 UNAME_M	            = $(shell uname -m)
 TEST_BUILD_DIR	   := build/test
@@ -245,34 +246,34 @@ test-install: ## Run agent install test
 # Cert Generation                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 certs: ## Generate TLS certificates
-	scripts/mtls/gen_cnf.sh ca --cn 'client-ca.local' --state Cork --locality Cork --org NGINX --country IE --out certs/client/conf
-	scripts/mtls/gen_cert.sh ca --config certs/client/conf/ca.cnf --out certs/client
+	scripts/mtls/gen_cnf.sh ca --cn 'client-ca.local' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/client/conf
+	scripts/mtls/gen_cert.sh ca --config ${CERTS_DIR}/client/conf/ca.cnf --out ${CERTS_DIR}/client
 
-	scripts/mtls/gen_cnf.sh intermediate --cn 'client-int.local' --org NGINX --locality Cork --out certs/client/conf
-	scripts/mtls/gen_cert.sh intermediate --config certs/client/conf/int.cnf --ca-cert certs/client/ca.crt --ca-key certs/client/ca.key --out certs/client
+	scripts/mtls/gen_cnf.sh intermediate --cn 'client-int.local' --org NGINX --locality Cork --out ${CERTS_DIR}/client/conf
+	scripts/mtls/gen_cert.sh intermediate --config ${CERTS_DIR}/client/conf/int.cnf --ca-cert ${CERTS_DIR}/client/ca.crt --ca-key ${CERTS_DIR}/client/ca.key --out ${CERTS_DIR}/client
 
-	scripts/mtls/gen_cnf.sh end-entity --cn 'client.local' --san 'DNS.1=client.local' --out certs/client/conf
-	scripts/mtls/gen_cert.sh end-entity --config certs/client/conf/ee.cnf --ca-cert certs/client/int.crt --ca-key certs/client/int.key --out certs/client
+	scripts/mtls/gen_cnf.sh end-entity --cn 'client.local' --san 'DNS.1=client.local' --out ${CERTS_DIR}/client/conf
+	scripts/mtls/gen_cert.sh end-entity --config ${CERTS_DIR}/client/conf/ee.cnf --ca-cert ${CERTS_DIR}/client/int.crt --ca-key ${CERTS_DIR}/client/int.key --out ${CERTS_DIR}/client
 
-	cp certs/client/ee.crt certs/client.crt
-	cp certs/client/ee.key certs/client.key
+	cp ${CERTS_DIR}/client/ee.crt ${CERTS_DIR}/client.crt
+	cp ${CERTS_DIR}/client/ee.key ${CERTS_DIR}/client.key
 
-	scripts/mtls/gen_cnf.sh ca --cn 'server-ca.local' --state Cork --locality Cork --org NGINX --country IE --out certs/server/conf
-	scripts/mtls/gen_cert.sh ca --config certs/server/conf/ca.cnf --out certs/server
+	scripts/mtls/gen_cnf.sh ca --cn 'server-ca.local' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/server/conf
+	scripts/mtls/gen_cert.sh ca --config ${CERTS_DIR}/server/conf/ca.cnf --out ${CERTS_DIR}/server
 
-	scripts/mtls/gen_cnf.sh intermediate --cn 'server-int.local' --org NGINX --locality Cork --out certs/server/conf
-	scripts/mtls/gen_cert.sh intermediate --config certs/server/conf/int.cnf --ca-cert certs/server/ca.crt --ca-key certs/server/ca.key --out certs/server
+	scripts/mtls/gen_cnf.sh intermediate --cn 'server-int.local' --org NGINX --locality Cork --out ${CERTS_DIR}/server/conf
+	scripts/mtls/gen_cert.sh intermediate --config ${CERTS_DIR}/server/conf/int.cnf --ca-cert ${CERTS_DIR}/server/ca.crt --ca-key ${CERTS_DIR}/server/ca.key --out ${CERTS_DIR}/server
 
-	scripts/mtls/gen_cnf.sh end-entity --cn 'tls.example.com' --san 'DNS.1=tls.example.com' --out certs/server/conf
-	scripts/mtls/gen_cert.sh end-entity --config certs/server/conf/ee.cnf --ca-cert certs/server/int.crt --ca-key certs/server/int.key --out certs/server
+	scripts/mtls/gen_cnf.sh end-entity --cn 'tls.example.com' --san 'DNS.1=tls.example.com' --out ${CERTS_DIR}/server/conf
+	scripts/mtls/gen_cert.sh end-entity --config ${CERTS_DIR}/server/conf/ee.cnf --ca-cert ${CERTS_DIR}/server/int.crt --ca-key ${CERTS_DIR}/server/int.key --out ${CERTS_DIR}/server
 
-	cp certs/server/ee.crt certs/server.crt
-	cp certs/server/ee.key certs/server.key
+	cp ${CERTS_DIR}/server/ee.crt ${CERTS_DIR}/server.crt
+	cp ${CERTS_DIR}/server/ee.key ${CERTS_DIR}/server.key
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Docker Helper Targets                                                                                           #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-build-docker: clean local-apk-package # Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
+build-docker: # Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	@echo Building Docker; \
 	DOCKER_BUILDKIT=1 docker build -t ${DOCKER_TAG} . \
 		--no-cache -f ./scripts/docker/${OS_RELEASE}/Dockerfile \

@@ -68,7 +68,7 @@ func (r *ConfigReader) Subscriptions() []string {
 func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
 	switch commandData := cmd.Data.(type) {
 	case *proto.Command_AgentConfig:
-		configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, commandData.AgentConfig.Details.Tags)
+		configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, commandData.AgentConfig.Details.Tags, commandData.AgentConfig.Details.Features)
 		if err != nil {
 			log.Errorf("Failed updating Agent config - %v", err)
 		}

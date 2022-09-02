@@ -97,6 +97,7 @@ const (
 	InstanceGroupKey  = "instance_group"
 	ConfigDirsKey     = "config_dirs"
 	TagsKey           = "tags"
+	FeaturesKey       = "features"
 
 	// viper keys used in config
 	LogKey = "log"
@@ -220,6 +221,10 @@ var (
 		&StringSliceFlag{
 			Name:  TagsKey,
 			Usage: "A comma-separated list of tags to add to the current instance or machine, to be used for inventory purposes.",
+		},
+		&StringSliceFlag{
+			Name:  FeaturesKey,
+			Usage: "A comma-separated list of features enabled for the agent.",
 		},
 		// NGINX Config
 		&StringFlag{

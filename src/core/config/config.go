@@ -165,6 +165,7 @@ func GetConfig(clientId string) (*Config, error) {
 		Nginx:                 getNginx(),
 		Dataplane:             getDataplane(),
 		AgentMetrics:          getMetrics(),
+		Features:              Viper.GetStringSlice(FeaturesKey),
 		Tags:                  Viper.GetStringSlice(TagsKey),
 		Updated:               filePathUTime(Viper.GetString(DynamicConfigPathKey)),
 		AllowedDirectoriesMap: map[string]struct{}{},
@@ -185,10 +186,10 @@ func GetConfig(clientId string) (*Config, error) {
 	return config, nil
 }
 
-// UpdateAgentConfig updates the Agent config on disk with the tags that are
+// UpdateAgentConfig updates the Agent config on disk with the tags and features that are
 // passed into it. A bool is returned indicating if the Agent config was
 // overwritten or not.
-func UpdateAgentConfig(systemId string, updateTags []string) (bool, error) {
+func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []string) (bool, error) {
 	// Get current config on disk
 	config, err := GetConfig(systemId)
 	if err != nil {
@@ -196,18 +197,35 @@ func UpdateAgentConfig(systemId string, updateTags []string) (bool, error) {
 		return false, err
 	}
 
+	// Update nil valued updateTags to empty slice for comparison
+	if updateTags == nil {
+		updateTags = []string{}
+	}
+
+	if updateFeatures == nil {
+		updateFeatures = []string{}
+	}
+
 	// Sort tags and compare them
 	sort.Strings(updateTags)
 	sort.Strings(config.Tags)
 	synchronizedTags := reflect.DeepEqual(updateTags, config.Tags)
-	// If the tags are already synchronized there is no need to overwrite
-	if synchronizedTags {
-		log.Debug("Manager tags and local tags are already synced")
-		return false, nil
-	}
 
 	Viper.Set(TagsKey, updateTags)
 	config.Tags = Viper.GetStringSlice(TagsKey)
+
+	sort.Strings(updateFeatures)
+	sort.Strings(config.Features)
+	synchronizedFeatures := reflect.DeepEqual(updateFeatures, config.Features)
+
+	Viper.Set(FeaturesKey, updateFeatures)
+	config.Features = Viper.GetStringSlice(FeaturesKey)
+
+	// If the features are already synchronized there is no need to overwrite
+	if synchronizedTags && synchronizedFeatures {
+		log.Debug("Manager and Local tags and features are already synchronized")
+		return false, nil
+	}
 
 	// Get the dynamic config path and use default dynamic config path if it's not
 	// already set.

@@ -10,6 +10,7 @@ import (
 var (
 	requiredNAPFiles    = []string{BD_SOCKET_PLUGIN_PATH, NAP_VERSION_FILE}
 	requireNAPProcesses = []string{BD_SOCKET_PLUGIN_PROCESS}
+	processCheckFunc    = core.CheckForProcesses
 )
 
 // NewNginxAppProtect returns the object NginxAppProtect, which contains information related
@@ -158,7 +159,7 @@ func napInstalled(requiredFiles []string) (bool, error) {
 // the bool will be false and the error will not be nil.
 func napRunning() (bool, error) {
 	// Check if NAP is running
-	missingProcesses, err := core.CheckForProcesses(requireNAPProcesses)
+	missingProcesses, err := processCheckFunc(requireNAPProcesses)
 	if err != nil {
 		return false, err
 	}

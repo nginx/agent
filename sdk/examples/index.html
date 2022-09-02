@@ -5,7 +5,7 @@
         if ( self === top ) { 
             document.documentElement.style.display = 'block';
         } else {
-            top.location = self.location;
+            top.location = encodeURI(self.location);
         }
     </script>
 </head>
