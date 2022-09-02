@@ -187,7 +187,7 @@ func (m *AdvancedMetrics) run() {
 	if err != nil {
 		log.Error("App centric metric plugin failed to change socket permissions")
 	}
-	commonDimmensions := append(m.commonDims.ToDimensions(), &proto.Dimension{
+	commonDimensions := append(m.commonDims.ToDimensions(), &proto.Dimension{
 		Name:  aggregationDurationDimension,
 		Value: strconv.Itoa(int(m.cfg.PublishingPeriod.Seconds())),
 	})
@@ -199,7 +199,7 @@ func (m *AdvancedMetrics) run() {
 				return
 			}
 			now := types.TimestampNow()
-			m.pipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{toMetricReport(mr, now, commonDimmensions)}))
+			m.pipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{toMetricReport(mr, now, commonDimensions)}))
 		case <-m.pipeline.Context().Done():
 			return
 		}
@@ -223,7 +223,7 @@ func enableWritePermissionForSocket(path string) error {
 	}
 }
 
-func toMetricReport(set []*publisher.MetricSet, now *types.Timestamp, commonDimmensions []*proto.Dimension) *proto.MetricsReport {
+func toMetricReport(set []*publisher.MetricSet, now *types.Timestamp, commonDimensions []*proto.Dimension) *proto.MetricsReport {
 	mr := &proto.MetricsReport{
 		Meta: &proto.Metadata{Timestamp: now},
 		Type: proto.MetricsReport_INSTANCE,
@@ -234,7 +234,7 @@ func toMetricReport(set []*publisher.MetricSet, now *types.Timestamp, commonDimm
 		statsEntity := proto.StatsEntity{
 			Timestamp:     now,
 			Simplemetrics: make([]*proto.SimpleMetric, 0, len(s.Metrics)*4),
-			Dimensions:    commonDimmensions,
+			Dimensions:    commonDimensions,
 		}
 
 		isStreamMetric := false
