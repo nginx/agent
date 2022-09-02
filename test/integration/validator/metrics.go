@@ -26,6 +26,10 @@ func AssertMetricSetEqual(t *testing.T, expectedMetrics []ExpectedMetric, expect
 	assertMetricsEqual(t, expectedMetrics, actuallMetrics.Metrics)
 }
 
+func AssertDimensionsEqual(t *testing.T, expectedDimensions []publisher.Dimension, actualMetrics *publisher.MetricSet) {
+	assertDimensionsEqual(t, expectedDimensions, actualMetrics)
+}
+
 func assertMetricsEqual(t *testing.T, expectedMetrics []ExpectedMetric,
 	actualMetrics []publisher.Metric) {
 

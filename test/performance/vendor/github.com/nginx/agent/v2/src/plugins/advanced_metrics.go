@@ -21,6 +21,7 @@ const (
 	advancedMetricsPluginVersion = "v0.8.0"
 	advancedMetricsPluginName    = "Advanced Metrics Plugin"
 
+	// ordinal positions of data collected by metrics module.
 	httpUriDimension                   = "http.uri"
 	httpResponseCodeDimension          = "http.response_code"
 	httpRequestMethodDimension         = "http.request_method"
@@ -30,6 +31,13 @@ const (
 	environmentDimension               = "environment"
 	appDimension                       = "app"
 	componentDimension                 = "component"
+	acmInfraWorkspacesNameDimension    = "acm_infra_workspaces_name"
+	acmServiceWorkspacesNameDimension  = "acm_service_workspaces_name"
+	acmEnvironmentsNameDimension       = "acm_environments_name"
+	acmEnvironmentsTypeDimension       = "acm_environments_type"
+	acmApiProxyNameDimension           = "acm_api_proxy_name"
+	acmApiProxyHostnameDimension       = "acm_api_proxy_hostname"
+	acmProxyApiVersionDimension        = "acm_api_proxy_version"
 	countryCodeDimension               = "country_code"
 	httpVersionSchemaDimension         = "http.version_schema"
 	httpUpstreamAddrDimension          = "http.upstream_addr" // TODO this should not contain http. prefix probably
@@ -103,6 +111,13 @@ func NewAdvancedMetrics(env core.Environment, conf *config.Config) *AdvancedMetr
 		NewDimension(environmentDimension, 32).
 		NewDimension(appDimension, 32).
 		NewDimension(componentDimension, 256).
+		NewDimension(acmInfraWorkspacesNameDimension, 256).
+		NewDimension(acmServiceWorkspacesNameDimension, 256).
+		NewDimension(acmEnvironmentsNameDimension, 256).
+		NewDimension(acmEnvironmentsTypeDimension, 256).
+		NewDimension(acmApiProxyNameDimension, 256).
+		NewDimension(acmApiProxyHostnameDimension, 256).
+		NewDimension(acmProxyApiVersionDimension, 256).
 		NewDimension(countryCodeDimension, 256). //TODO should be implemented as GeoIP
 		NewDimension(httpVersionSchemaDimension, 16).
 		NewDimension(httpUpstreamAddrDimension, 1024).
