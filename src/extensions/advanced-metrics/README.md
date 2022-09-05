@@ -20,7 +20,7 @@ need to be provided. nginx-agent.conf snippet for advanced metrics showing defau
 server: ...
 tls: ...
 advanced_metrics:
-  socket_path: /tmp/acm.sock
+  socket_path: /var/run/nginx-agent/advanced-metrics.sock
   aggregation_period: 1s
   publishing_period: 3s
   table_sizes_limits:
@@ -32,7 +32,7 @@ advanced_metrics:
 #### Parameter Definitions:</BR>
 |Parameter| Description|
 | ----------- | ----------- |
-socket_path| Full os filepath to the unix socket which Nginx+ andAgent use to comunicate.
+socket_path| Full os filepath to the unix socket which Nginx+ and Agent use to communicate.
 aggregation_period| Frequency at which data in priority tables are aggregated to conserve space prior to publishing.
 publishing_period| Frequency at which data in priority tables is published to Management Plane.
 table_sizes_limits|staging_table_max_size| Max number of records allowed within any single aggregation period.staging_table_threshold | When the number of records reaches this threshold, data aggregation starts to keep number of records within the staging_table_max_size limit. **staging_table_threshold &le; staging_table_max_size**.
@@ -124,9 +124,9 @@ schema.NewSchemaBuilder().
 
 This example defines that advanced metrics is able to receive messages with 5 fields and only 5 fields where:
 - 1st is dimension with `dim1` name, this name will be used by `Publisher` to set `MetricsSet.Dimensions.Name` value, and cardinality 100, which means that up to 100 different possible dimensions values will be collected in single `PublishingPeriod`,
-- 2nd same as above but this `dim2` dimension additionally specifies CollapsingLevel, which should be a percent more [here](./pkg/shema_builder.go)
+- 2nd same as above but this `dim2` dimension additionally specifies CollapsingLevel, which should be a percent more [here](./pkg/schema/schema_builder.go)
 - 3th dimension which is integer dimensions, so value of dimensions will be converted into integer and IT'S value will be used as a lookup code, this is optimization which save space in lookup tables and stores its value in key itself rather than keeping string representation of integers
-- 4th and 5th are metrics same as with dimenisons this name will be used in `MetricsSet` struct, metrics does not contain any additional options
+- 4th and 5th are metrics same as with dimensions this name will be used in `MetricsSet` struct, metrics does not contain any additional options
 
 ### Advanced Metrics
 
