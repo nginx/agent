@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/config"
 )
@@ -35,6 +36,7 @@ type NginxCollectorConfig struct {
 	CollectionInterval time.Duration
 	AccessLogs         []string
 	ErrorLogs          []string
+	ServerZones        []sdk.ServerZone
 }
 
 func NewStatsEntity(dims []*proto.Dimension, samples []*proto.SimpleMetric) *proto.StatsEntity {

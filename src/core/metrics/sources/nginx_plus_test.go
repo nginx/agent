@@ -404,7 +404,7 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 }
 
 func TestNginxPlusUpdate(t *testing.T) {
-	nginxPlus := NewNginxPlus(&metrics.CommonDim{}, "test", PlusNamespace, "http://localhost:8080/api")
+	nginxPlus := NewNginxPlus(&metrics.CommonDim{}, "test", PlusNamespace, &metrics.NginxCollectorConfig{PlusAPI: "http://localhost:8080/api"})
 
 	assert.Equal(t, "", nginxPlus.baseDimensions.InstanceTags)
 	assert.Equal(t, "http://localhost:8080/api", nginxPlus.plusAPI)
@@ -435,7 +435,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 		"nginx.http.conn.dropped":    0,
 		"nginx.http.conn.idle":       0,
 		"nginx.http.request.current": currentHTTPRequestCurrent,
-		"nginx.http.request.count":   currentHTTPRequestTotal - previousHTTPRequestTotal,
+		"nginx.http.request.count":   currentHTTPRequestTotal - previousHTTPRequestTotal - (currentZoneRequests - previousZoneRequests) - currentZoneRequests,
 	}
 
 	expectedSSLMetrics := map[string]float64{
@@ -643,7 +643,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 	for _, test := range tests {
 		ctx := context.TODO()
 
-		f := &FakeNginxPlus{NewNginxPlus(test.baseDimensions, "nginx", "plus", "")}
+		f := &FakeNginxPlus{NewNginxPlus(test.baseDimensions, "nginx", "plus", &metrics.NginxCollectorConfig{})}
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
 		go f.Collect(ctx, wg, test.m)

@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -1323,4 +1324,86 @@ func TestAddAuxfileToNginxConfig(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestGetServerZones(t *testing.T) {
+	expectedZones := []ServerZone {
+		{
+			name: "server_zone_1",
+			locationZones: []string{
+				"location_zone_1",
+				"location_zone_2",
+			},
+		},
+	}
+
+	tmpDir := t.TempDir()
+	confFile := path.Join(tmpDir, "nginx.conf")
+
+	content := `
+user  nginx;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log notice;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    server {
+        status_zone server_zone_1;
+        listen 127.0.0.1:8081;
+        location /frontend1 {
+            proxy_pass http://nginx1;
+            status_zone location_zone_1;
+        }
+        location /frontend2 {
+            proxy_pass http://nginx2;
+            status_zone location_zone_2;
+        }
+    }
+
+	server {
+        listen 127.0.0.1:8082;
+        location /frontend1 {
+            proxy_pass http://nginx3;
+            status_zone location_zone_3;
+        }
+    }
+
+	server {
+        listen 127.0.0.1:8084;
+        location /frontend1 {
+            proxy_pass http://nginx4;
+        }
+    }
+}
+	`
+
+	err := ioutil.WriteFile(confFile, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("failed to create nginx.conf file: %v", err)
+	}
+
+	zones, err := GetServerZones(confFile)
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedZones, zones)
+}
+
+func TestServerZoneIsLocationInServer(t *testing.T) {
+	testZone := ServerZone{
+		name: "server1",
+		locationZones: []string{
+			"location1",
+			"location2",
+		},
+	}
+
+	assert.True(t, testZone.IsLocationInServer("location1"))
+	assert.True(t, testZone.IsLocationInServer("location2"))
+	assert.False(t, testZone.IsLocationInServer("location3"))
+	assert.False(t, testZone.IsLocationInServer(""))
 }

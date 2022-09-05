@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -45,6 +46,7 @@ var (
 		CollectionInterval: 1,
 		AccessLogs:         []string{},
 		ErrorLogs:          []string{},
+		ServerZones:        []sdk.ServerZone{},
 	}
 
 	secondCollectorConfig = &metrics.NginxCollectorConfig{
@@ -53,6 +55,7 @@ var (
 		CollectionInterval: 1,
 		AccessLogs:         []string{},
 		ErrorLogs:          []string{},
+		ServerZones:        []sdk.ServerZone{},
 	}
 )
 

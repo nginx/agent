@@ -308,6 +308,11 @@ func createCollectorConfigsMap(config *config.Config, env core.Environment, bina
 			log.Warnf("Error reading access and error logs from config %s %v", detail.ConfPath, err)
 		}
 
+		serverZones, err := sdk.GetServerZones(detail.ConfPath)
+		if err != nil {
+			log.Warnf("Error reading server zones from config %s %v", detail.ConfPath, err)
+		}
+
 		collectorConfigsMap[detail.NginxId] = &metrics.NginxCollectorConfig{
 			StubStatus:         stubStatusApi,
 			PlusAPI:            plusApi,
@@ -316,6 +321,7 @@ func createCollectorConfigsMap(config *config.Config, env core.Environment, bina
 			CollectionInterval: config.AgentMetrics.CollectionInterval,
 			AccessLogs:         sdk.GetAccessLogs(accessLogs),
 			ErrorLogs:          sdk.GetErrorLogs(errorLogs),
+			ServerZones:        serverZones,
 			NginxId:            detail.NginxId,
 		}
 	}

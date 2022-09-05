@@ -773,6 +773,86 @@ func GetAccessLogs(accessLogs *proto.AccessLogs) []string {
 	return result
 }
 
+type ServerZone struct {
+	name          string
+	locationZones []string
+}
+
+func (sz *ServerZone) GetName() string {
+	return sz.name
+}
+
+func (sz *ServerZone) IsLocationInServer(locationZone string) bool {
+	found := false
+
+	if sz.locationZones != nil {
+		for _, location := range sz.locationZones {
+			if location == locationZone {
+				found = true
+				break
+			}
+		}
+	}
+
+	return found
+}
+
+func GetServerZones(confFile string) ([]ServerZone, error) {
+	serverZones := []ServerZone{}
+	payload, err := crossplane.Parse(confFile,
+		&crossplane.ParseOptions{
+			SingleFile:         false,
+			StopParsingOnError: true,
+		},
+	)
+	if err != nil {
+		return serverZones, fmt.Errorf("error reading config from %s, error: %s", confFile, err)
+	}
+
+	stop := false
+
+	for _, xpConf := range payload.Config {
+		CrossplaneConfigTraverse(&xpConf,
+			func(parent *crossplane.Directive, directive *crossplane.Directive) bool {
+				switch directive.Directive {
+				case "server":
+					serverZone := ServerZone{}
+					serverZoneFound := false
+
+					for _, serverDirective := range directive.Block {
+						if serverDirective.Directive == "status_zone" {
+							serverZone = ServerZone{name: serverDirective.Args[0]}
+							serverZoneFound = true
+							break
+						}
+					}
+
+					if serverZoneFound {
+						traverse(directive, func(parent, current *crossplane.Directive) bool {
+							if current.Directive == "location" {
+								for _, locationDirective := range current.Block {
+									if locationDirective.Directive == "status_zone" {
+										serverZone.locationZones = append(serverZone.locationZones, locationDirective.Args[0])
+										break
+									}
+								}
+							}
+							return true
+						}, &stop)
+						serverZones = append(serverZones, serverZone)
+					}
+				}
+
+				return true
+			},
+		)
+	}
+
+	log.Tracef("Found the following server zones in config: %v", serverZones)
+
+	return serverZones, nil
+}
+
 // allowedPath return true if the provided path has a prefix in the allowedDirectories, false otherwise. The
 // path could be a filepath or directory.
 func allowedPath(path string, allowedDirectories map[string]struct{}) bool {

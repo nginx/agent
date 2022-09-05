@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
 	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
 	log "github.com/sirupsen/logrus"
@@ -32,13 +33,14 @@ type NginxPlus struct {
 	nginxNamespace,
 	plusNamespace,
 	plusAPI string
+	serverZones []sdk.ServerZone
 	// This is for keeping the previous stats.  Need to report the delta.
 	prevStats *plusclient.Stats
 	init      sync.Once
 }
 
-func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespace, plusAPI string) *NginxPlus {
-	return &NginxPlus{baseDimensions: baseDimensions, nginxNamespace: nginxNamespace, plusNamespace: plusNamespace, plusAPI: plusAPI}
+func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespace string, collectorConf *metrics.NginxCollectorConfig) *NginxPlus {
+	return &NginxPlus{baseDimensions: baseDimensions, nginxNamespace: nginxNamespace, plusNamespace: plusNamespace, plusAPI: collectorConf.PlusAPI, serverZones: collectorConf.ServerZones}
 }
 
 func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
@@ -91,6 +93,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *p
 func (c *NginxPlus) Update(dimensions *metrics.CommonDim, collectorConf *metrics.NginxCollectorConfig) {
 	c.baseDimensions = dimensions
 	c.plusAPI = collectorConf.PlusAPI
+	c.serverZones = collectorConf.ServerZones
 }
 
 func (c *NginxPlus) Stop() {
@@ -108,13 +111,16 @@ func (c *NginxPlus) sendMetrics(ctx context.Context, m chan<- *proto.StatsEntity
 }
 
 func (c *NginxPlus) collectMetrics(stats, prevStats *plusclient.Stats) (entries []*proto.StatsEntity) {
-	entries = append(entries,
-		c.instanceMetrics(stats, prevStats),
-		c.commonMetrics(stats, prevStats),
-		c.sslMetrics(stats, prevStats))
-	entries = append(entries, c.serverZoneMetrics(stats, prevStats)...)
+	serverZoneMetrics := c.serverZoneMetrics(stats, prevStats)
+	locationZoneMetrics := c.locationZoneMetrics(stats, prevStats)
+	statusZoneRequestCount := c.getStatusZoneRequestCount(serverZoneMetrics, locationZoneMetrics)
+
+	entries = append(entries, c.instanceMetrics(stats, prevStats))
+	entries = append(entries, c.commonMetrics(stats, prevStats, uint64(statusZoneRequestCount)))
+	entries = append(entries, c.sslMetrics(stats, prevStats))
+	entries = append(entries, serverZoneMetrics...)
 	entries = append(entries, c.streamServerZoneMetrics(stats, prevStats)...)
-	entries = append(entries, c.locationZoneMetrics(stats, prevStats)...)
+	entries = append(entries, locationZoneMetrics...)
 	entries = append(entries, c.cacheMetrics(stats, prevStats)...)
 	entries = append(entries, c.httpUpstreamMetrics(stats, prevStats)...)
 	entries = append(entries, c.streamUpstreamMetrics(stats, prevStats)...)
@@ -122,6 +128,41 @@ func (c *NginxPlus) collectMetrics(stats, prevStats *plusclient.Stats) (entries 
 	entries = append(entries, c.httpLimitConnsMetrics(stats, prevStats)...)
 	entries = append(entries, c.httpLimitRequestMetrics(stats, prevStats)...)
 	return entries
+}
+
+func (c *NginxPlus) getStatusZoneRequestCount(serverZoneMetrics []*proto.StatsEntity, locationZoneMetrics []*proto.StatsEntity) float64 {
+	l := &namedMetric{namespace: c.plusNamespace, group: "http"}
+
+	statusZoneRequestCount := 0.0
+	for _, serverZoneMetric := range serverZoneMetrics {
+		for _, simpleMetric := range serverZoneMetric.Simplemetrics {
+			if simpleMetric.GetName() == l.label("request.count") {
+				statusZoneRequestCount += simpleMetric.GetValue()
+				break
+			}
+		}
+	}
+
+	for _, locationZoneMetric := range locationZoneMetrics {
+		orphanLocationZone := true
+		for _, dimension := range locationZoneMetric.Dimensions {
+			if dimension.GetName() == "server_zone" {
+				orphanLocationZone = false
+				break
+			}
+		}
+
+		if orphanLocationZone {
+			for _, simpleMetric := range locationZoneMetric.Simplemetrics {
+				if simpleMetric.GetName() == l.label("request.count") {
+					statusZoneRequestCount += simpleMetric.GetValue()
+					break
+				}
+			}
+		}
+	}
+
+	return statusZoneRequestCount
 }
 
 func (c *NginxPlus) instanceMetrics(stats, prevStats *plusclient.Stats) *proto.StatsEntity {
@@ -138,11 +179,15 @@ func (c *NginxPlus) instanceMetrics(stats, prevStats *plusclient.Stats) *proto.S
 	})
 
 	dims := c.baseDimensions.ToDimensions()
-	return metrics.NewStatsEntity(dims, simpleMetrics)
+	instanceMetrics := metrics.NewStatsEntity(dims, simpleMetrics)
+
+	log.Tracef("Nginx plus instance metrics: %v", instanceMetrics)
+
+	return instanceMetrics
 }
 
 // commonMetrics uses the namespace of nginx because the metrics are common between oss and plus
-func (c *NginxPlus) commonMetrics(stats, prevStats *plusclient.Stats) *proto.StatsEntity {
+func (c *NginxPlus) commonMetrics(stats, prevStats *plusclient.Stats, statusZoneRequestCount uint64) *proto.StatsEntity {
 	l := &namedMetric{namespace: c.nginxNamespace, group: "http"}
 
 	// For the case if nginx restarted (systemctl restart nginx), the stats counters were reset to zero, and
@@ -169,11 +214,15 @@ func (c *NginxPlus) commonMetrics(stats, prevStats *plusclient.Stats) *proto.Sta
 		"conn.dropped":    float64(connDropped),
 		"conn.idle":       float64(stats.Connections.Idle),
 		"request.current": float64(stats.HTTPRequests.Current),
-		"request.count":   float64(requestCount),
+		"request.count":   float64(requestCount - statusZoneRequestCount),
 	})
 
 	dims := c.baseDimensions.ToDimensions()
-	return metrics.NewStatsEntity(dims, simpleMetrics)
+	commonMetrics := metrics.NewStatsEntity(dims, simpleMetrics)
+
+	log.Tracef("Nginx plus common metrics: %v", commonMetrics)
+
+	return commonMetrics
 }
 
 func (c *NginxPlus) sslMetrics(stats, prevStats *plusclient.Stats) *proto.StatsEntity {
@@ -199,7 +248,11 @@ func (c *NginxPlus) sslMetrics(stats, prevStats *plusclient.Stats) *proto.StatsE
 	})
 
 	dims := c.baseDimensions.ToDimensions()
-	return metrics.NewStatsEntity(dims, simpleMetrics)
+	sslMetrics := metrics.NewStatsEntity(dims, simpleMetrics)
+
+	log.Tracef("Nginx plus ssl metrics: %v", sslMetrics)
+
+	return sslMetrics
 }
 
 func (c *NginxPlus) serverZoneMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
@@ -267,6 +320,8 @@ func (c *NginxPlus) serverZoneMetrics(stats, prevStats *plusclient.Stats) []*pro
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
 	}
 
+	log.Tracef("Nginx plus server zone metrics: %v", zoneMetrics)
+
 	return zoneMetrics
 }
 
@@ -324,6 +379,9 @@ func (c *NginxPlus) streamServerZoneMetrics(stats, prevStats *plusclient.Stats) 
 		dims = append(dims, &proto.Dimension{Name: "server_zone", Value: name})
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
 	}
+
+	log.Tracef("Nginx plus stream server zone metrics: %v", zoneMetrics)
+
 	return zoneMetrics
 }
 
@@ -388,8 +446,16 @@ func (c *NginxPlus) locationZoneMetrics(stats, prevStats *plusclient.Stats) []*p
 
 		dims := c.baseDimensions.ToDimensions()
 		dims = append(dims, &proto.Dimension{Name: "location_zone", Value: name})
+		for _, serverZone := range c.serverZones {
+			if serverZone.IsLocationInServer(name) {
+				dims = append(dims, &proto.Dimension{Name: "server_zone", Value: serverZone.GetName()})
+				break
+			}
+		}
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
 	}
+
+	log.Tracef("Nginx plus location zone metrics: %v", zoneMetrics)
 
 	return zoneMetrics
 }
@@ -510,6 +576,8 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*p
 		upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntity(upstreamDims, simpleMetrics))
 	}
 
+	log.Tracef("Nginx plus http upstream metrics: %v", upstreamMetrics)
+
 	return upstreamMetrics
 }
 
@@ -596,6 +664,8 @@ func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []
 		upstreamDims = append(upstreamDims, &proto.Dimension{Name: "upstream_zone", Value: u.Zone})
 		upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntity(upstreamDims, simpleMetrics))
 	}
+
+	log.Tracef("Nginx plus stream upstream metrics: %v", upstreamMetrics)
 
 	return upstreamMetrics
 }
@@ -686,6 +756,8 @@ func (c *NginxPlus) cacheMetrics(stats, prevStats *plusclient.Stats) []*proto.St
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
 	}
 
+	log.Tracef("Nginx plus cache metrics: %v", zoneMetrics)
+
 	return zoneMetrics
 }
 
@@ -724,6 +796,8 @@ func (c *NginxPlus) slabMetrics(stats, prevStats *plusclient.Stats) []*proto.Sta
 		}
 	}
 
+	log.Tracef("Nginx plus slab metrics: %v", slabMetrics)
+
 	return slabMetrics
 }
 
@@ -740,8 +814,10 @@ func (c *NginxPlus) httpLimitConnsMetrics(stats, prevStats *plusclient.Stats) []
 		dims := c.baseDimensions.ToDimensions()
 		dims = append(dims, &proto.Dimension{Name: "limit_conn_zone", Value: name})
 		limitConnsMetrics = append(limitConnsMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
-
 	}
+
+	log.Tracef("Nginx plus http limit conns metrics: %v", limitConnsMetrics)
+
 	return limitConnsMetrics
 }
 
@@ -762,6 +838,9 @@ func (c *NginxPlus) httpLimitRequestMetrics(stats, prevStats *plusclient.Stats) 
 		limitRequestMetrics = append(limitRequestMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
 
 	}
+
+	log.Tracef("Nginx plus http limit request metrics: %v", limitRequestMetrics)
+
 	return limitRequestMetrics
 }
 
