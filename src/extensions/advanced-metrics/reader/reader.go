@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"net"
 	"os"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
 //go:generate mockgen -source reader.go -destination mocks/reader_mock.go -package mocks
@@ -150,7 +150,8 @@ func (r *Reader) runWorker(ctx context.Context, connection net.Conn, id int) {
 }
 
 func (r *Reader) checkSocketAndCleanup() error {
-	log.Info("Checking availability of unix socket")
+	log.Debugf("Checking availability of unix socket: %s", r.address)
+
 	if _, err := os.Stat(r.address); err == nil {
 		err = os.Remove(r.address)
 		if err != nil {
