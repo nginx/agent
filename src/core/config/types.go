@@ -26,6 +26,7 @@ type Config struct {
 	InstanceGroup         string              `mapstructure:"instance_group" yaml:"instance_group,omitempty"`
 	AdvancedMetrics       AdvancedMetrics     `mapstructure:"advanced_metrics" yaml:"advanced_metrics,omitempty"`
 	NginxAppProtect       NginxAppProtect     `mapstructure:"nginx_app_protect" yaml:"nginx_app_protect,omitempty"`
+	NAPMonitoring         NAPMonitoring       `mapstructure:"nap_monitoring" yaml:"nap_monitoring,omitempty"`
 }
 
 type Server struct {
@@ -88,4 +89,13 @@ type AdvancedMetrics struct {
 
 type NginxAppProtect struct {
 	ReportInterval time.Duration `mapstructure:"report_interval" yaml:"-"`
+}
+
+type NAPMonitoring struct {
+	CollectorBufferSize int           `mapstructure:"collector_buffer_size" yaml:"-"`
+	ProcessorBufferSize int           `mapstructure:"processor_buffer_size" yaml:"-"`
+	SyslogIP            string        `mapstructure:"syslog_ip" yaml:"-"`
+	SyslogPort          int           `mapstructure:"syslog_port" yaml:"-"`
+	ReportInterval      time.Duration `mapstructure:"report_interval" yaml:"-"`
+	ReportCount         int           `mapstructure:"report_count" yaml:"-"`
 }

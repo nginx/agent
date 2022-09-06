@@ -15,6 +15,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/client"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
+	f5_nginx_agent_sdk_events "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/logger"
@@ -30,6 +31,7 @@ var (
 	addr        = "127.0.0.1:90"
 	network     = "tcp"
 	messageChan = make(chan *proto.MetricsReport)
+	eventChan   = make(chan *f5_nginx_agent_sdk_events.EventReport)
 )
 
 func BenchmarkMetrics(b *testing.B) {
@@ -62,11 +64,12 @@ func NewMetricsServer() *MetricsServer {
 }
 
 type metricHandlerFunc func(proto.MetricsService_StreamServer, *sync.WaitGroup)
-
+type eventReportHandlerFunc func(proto.MetricsService_StreamEventsServer, *sync.WaitGroup)
 type metricHandler struct {
-	msgCount          atomic.Int64
-	handleCount       atomic.Int64
-	metricHandlerFunc metricHandlerFunc
+	msgCount               atomic.Int64
+	handleCount            atomic.Int64
+	metricHandlerFunc      metricHandlerFunc
+	eventReportHandlerFunc eventReportHandlerFunc
 }
 
 func (m *MetricsServer) Stream(stream proto.MetricsService_StreamServer) error {
@@ -76,6 +79,19 @@ func (m *MetricsServer) Stream(stream proto.MetricsService_StreamServer) error {
 	hf := h.metricHandlerFunc
 	if hf == nil {
 		hf = h.metricsHandle
+	}
+	go hf(stream, wg)
+	wg.Wait()
+	return nil
+}
+
+func (m *MetricsServer) StreamEvents(stream proto.MetricsService_StreamEventsServer) error {
+	wg := &sync.WaitGroup{}
+	h := m.ensureHandler()
+	wg.Add(1)
+	hf := h.eventReportHandlerFunc
+	if hf == nil {
+		hf = h.eventReportHandle
 	}
 	go hf(stream, wg)
 	wg.Wait()
@@ -109,6 +125,19 @@ func (h *metricHandler) metricsHandle(server proto.MetricsService_StreamServer, 
 		}
 		messageChan <- metricsReport
 		h.msgCount.Inc()
+	}
+}
+
+func (h *metricHandler) eventReportHandle(server proto.MetricsService_StreamEventsServer, wg *sync.WaitGroup) {
+	defer func() {
+		wg.Done()
+	}()
+	for {
+		eventReport, err := server.Recv()
+		if err != nil {
+			return
+		}
+		eventChan <- eventReport
 	}
 }
 
