@@ -77,6 +77,12 @@ var (
 				PriorityTableMaxSize:   1000,
 			},
 		},
+		NAPMonitoring: NAPMonitoring{
+			ProcessorBufferSize: 50000,
+			CollectorBufferSize: 50000,
+			SyslogIP:            "0.0.0.0",
+			SyslogPort:          514,
+		},
 		Features: []string{
 			FeatureRegistration,
 			FeatureNginxConfig,
@@ -173,6 +179,14 @@ const (
 	NginxAppProtectKey = "nginx_app_protect"
 
 	NginxAppProtectReportInterval = NginxAppProtectKey + KeyDelimiter + "report_interval"
+
+	// viper keys used in config
+	NAPMonitoringKey = "nap_monitoring"
+
+	NAPMonitoringCollectorBufferSize = NAPMonitoringKey + KeyDelimiter + "collector_buffer_size"
+	NAPMonitoringProcessorBufferSize = NAPMonitoringKey + KeyDelimiter + "processor_buffer_size"
+	NAPMonitoringSyslogIP            = NAPMonitoringKey + KeyDelimiter + "syslog_ip"
+	NAPMonitoringSyslogPort          = NAPMonitoringKey + KeyDelimiter + "syslog_port"
 
 	// viper keys used in config
 	FeaturesKey = "features"
@@ -359,6 +373,23 @@ var (
 		&DurationFlag{
 			Name:  NginxAppProtectReportInterval,
 			Usage: "The period of time the agent will check for App Protect software changes on the dataplane",
+		},
+		// NAP Monitoring
+		&IntFlag{
+			Name:  NAPMonitoringCollectorBufferSize,
+			Usage: "The buffer size used for the collection of events in the NGINX App Protect Monitoring extension.",
+		},
+		&IntFlag{
+			Name:  NAPMonitoringProcessorBufferSize,
+			Usage: "The buffer size used by the processing of events in the NGINX App Protect Monitoring extension.",
+		},
+		&StringFlag{
+			Name:  NAPMonitoringSyslogIP,
+			Usage: "The Syslog IP address the NGINX Agent would run on. This IP address would be used in the NGINX App Protect config to send logging events.",
+		},
+		&IntFlag{
+			Name:  NAPMonitoringSyslogPort,
+			Usage: "The Syslog port the NGINX Agent would run on. This port would be used in the NGINX App Protect config to send logging events.",
 		},
 		// Other Config
 		&StringFlag{
