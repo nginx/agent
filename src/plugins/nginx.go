@@ -120,7 +120,8 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	log.Debugf("Uploading config for %v", config)
 
 	if !n.isConfUploadEnabled {
-		return errors.New("unable to upload config as nginx-config feature is disabled")
+		log.Info("unable to upload config as nginx-config feature is disabled")
+		return nil
 	}
 
 	if config.GetNginxId() == "" {
