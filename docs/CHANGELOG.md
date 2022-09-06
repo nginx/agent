@@ -3,6 +3,8 @@
 =============
 2022-09-06
 
+* Fixed publish variable in release branch workflow (e5037c1b)
+* Updating changelog (c4ca68f4)
 * Updating changelog (f59779c8)
 * Moved packaging logic into a different Makefile (#34) (a5fdcaf0)
 * Fix release workflow (#33) (c72810ee)

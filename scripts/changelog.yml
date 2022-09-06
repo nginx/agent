@@ -1,7 +1,23 @@
 - semver: 2.18.0
-  date: 2022-09-06T13:41:16Z
+  date: 2022-09-06T15:08:26+01:00
   packager: nginx
   changes:
+    - commit: e5037c1bf7a53d781ad8f4a06b096625bc7fc91a
+      note: Fixed publish variable in release branch workflow
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: c4ca68f4f5050d03c4f079b09ce4367d741e1094
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: f59779c82a7726bdd680e9571513f17eae8cc917
       note: Updating changelog
       author:
