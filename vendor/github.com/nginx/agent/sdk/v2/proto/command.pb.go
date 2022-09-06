@@ -670,7 +670,6 @@ func (m *UploadStatus) GetReason() string {
 
 type DataChunk struct {
 	// Types that are valid to be assigned to Chunk:
-	//
 	//	*DataChunk_Header
 	//	*DataChunk_Data
 	Chunk                isDataChunk_Chunk `protobuf_oneof:"chunk"`
