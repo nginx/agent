@@ -8,11 +8,7 @@ on:
         required: true
         type: boolean
         default: false
-  workflow_run:
-    branches: [release-*]
-    workflows: [CI]
-    types:
-      - completed
+  workflow_call:
 
 jobs:
   update-draft:
