@@ -1,7 +1,15 @@
 - semver: 2.18.0
-  date: 2022-09-06T15:08:26+01:00
+  date: 2022-09-06T14:14:46Z
   packager: nginx
   changes:
+    - commit: ab2a7b85fc64779cbc1e744e87da9d62916c9282
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: e5037c1bf7a53d781ad8f4a06b096625bc7fc91a
       note: Fixed publish variable in release branch workflow
       author:
