@@ -3,6 +3,7 @@
 =============
 2022-09-06
 
+* Updating changelog (f59779c8)
 * Moved packaging logic into a different Makefile (#34) (a5fdcaf0)
 * Fix release workflow (#33) (c72810ee)
 * Add release branch workflow (#30) (1646c3ee)

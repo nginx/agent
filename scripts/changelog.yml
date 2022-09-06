@@ -1,7 +1,15 @@
 - semver: 2.18.0
-  date: 2022-09-06T14:26:49+01:00
+  date: 2022-09-06T13:41:16Z
   packager: nginx
   changes:
+    - commit: f59779c82a7726bdd680e9571513f17eae8cc917
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: a5fdcaf0e985f59eba1023a6c3d36f6a98bd710d
       note: Moved packaging logic into a different Makefile (#34)
       author:
