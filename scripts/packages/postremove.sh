@@ -1,7 +1,9 @@
 #!/bin/sh
 # Determine OS platform
+# shellcheck source=/dev/null
 . /etc/os-release
-if [ $ID = "freebsd" ]; then
+
+if [ "$ID" = "freebsd" ]; then
     echo "Stop and remove nginx-agent service"
     service nginx-agent onestop || true
     sysrc -x nginx_agent_enable || true
