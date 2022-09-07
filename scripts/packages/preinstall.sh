@@ -129,7 +129,7 @@ parse_args() {
                 done
 
                 if [ "$valid_log_level" != "true" ]; then
-                    printf "Exiting due to invalid option ($1) for -o | --log-level. Please select a valid option: trace, debug, info, error, fatal, panic.\n"
+                    printf "Exiting due to invalid option (%s) for -o | --log-level. Please select a valid option: trace, debug, info, error, fatal, panic.\n" "$1"
                     exit 1
                 fi
 
@@ -194,7 +194,7 @@ update_config_file() {
     # Check the log-level and set accordingly
     if [ "${LOG_LEVEL}" ]; then
         if [ "$(grep -cP '^(?=[\s]*+[^#])[^#]*(level:)' "${AGENT_CONFIG_FILE}")" -ge 1 ]; then
-            printf "Setting existing log level: %s\n" ${LOG_LEVEL}
+            printf "Setting existing log level: %s\n" "${LOG_LEVEL}"
             ${sed_cmd} "/^[[:space:]]*#/!s/\(level:.*\)/level: ${LOG_LEVEL}/g" "${AGENT_CONFIG_FILE}"
         else
             printf "Setting log level: %s\n" "${LOG_LEVEL}"

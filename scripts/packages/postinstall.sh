@@ -135,7 +135,7 @@ if command -v systemctl; then
     systemctl enable "${AGENT_UNIT_FILE}"
 fi
 
-if [ $ID = "freebsd" ]; then
+if [ "$ID" = "freebsd" ]; then
     printf "PostInstall: Enabling NGINX Agent Service\n"
     sysrc nginx_agent_enable=YES
 fi
