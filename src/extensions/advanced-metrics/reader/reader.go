@@ -150,7 +150,7 @@ func (r *Reader) runWorker(ctx context.Context, connection net.Conn, id int) {
 }
 
 func (r *Reader) checkSocketAndCleanup() error {
-	log.Debugf("Checking availability of unix socket: %s", r.address)
+	log.Info("Checking availability of unix socket")
 
 	if _, err := os.Stat(r.address); err == nil {
 		err = os.Remove(r.address)
