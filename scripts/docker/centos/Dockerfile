@@ -29,6 +29,7 @@ sslclientcert=/etc/ssl/nginx/nginx-repo.crt \n\
 sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
+sslverify=true \n\
 gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-plus-$DOCKER_IMAGE.repo \
     && printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
@@ -37,6 +38,7 @@ sslclientcert=/etc/ssl/nginx/nginx-repo.crt \n\
 sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
+sslverify=true \n\
 gpgkey=https://nginx.org/keys/nginx_signing.key">> /etc/yum.repos.d/nginx-agent-$DOCKER_IMAGE.repo \
     && nginxPackages=" \
         nginx-agent \
