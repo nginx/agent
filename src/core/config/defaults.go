@@ -183,7 +183,7 @@ const (
 	FeatureNginxCounting   = FeaturesKey + KeyDelimiter + "nginx-counting"
 	FeatureMetrics         = FeaturesKey + KeyDelimiter + "metrics"
 	FeatureMetricsThrottle = FeaturesKey + KeyDelimiter + "metrics-throttle"
-	FeatureDataPlaneStatus = FeaturesKey + KeyDelimiter + "dataplanestatus"
+	FeatureDataPlaneStatus = FeaturesKey + KeyDelimiter + "dataplane-status"
 	FeatureProcessWatcher  = FeaturesKey + KeyDelimiter + "process-watcher"
 	FeatureFileWatcher     = FeaturesKey + KeyDelimiter + "file-watcher"
 	FeatureActivityEvents  = FeaturesKey + KeyDelimiter + "activity-events"
