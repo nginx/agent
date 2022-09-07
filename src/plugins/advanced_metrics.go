@@ -214,7 +214,7 @@ func enableWritePermissionForSocket(path string) error {
 		case <-timeout:
 			return lastError
 		default:
-			lastError = os.Chmod(path, 0774)
+			lastError = os.Chmod(path, 0660)
 			if lastError == nil {
 				return nil
 			}

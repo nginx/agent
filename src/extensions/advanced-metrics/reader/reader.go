@@ -67,12 +67,9 @@ func NewReader(address string) *Reader {
 func newReader(address string, listenerConfig ListenerConfig, frameChannel chan Frame, newWorker NewWorkerConstructor) *Reader {
 	return &Reader{
 		listenerConfig: listenerConfig,
-
-		address: address,
-
-		newWorker: newWorker,
-
-		frameChannel: frameChannel,
+		address:        address,
+		newWorker:      newWorker,
+		frameChannel:   frameChannel,
 	}
 }
 
