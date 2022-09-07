@@ -77,6 +77,18 @@ var (
 				PriorityTableMaxSize:   1000,
 			},
 		},
+		Features: []string{
+			FeatureRegistration,
+			FeatureNginxConfig,
+			FeatureNginxSSLConfig,
+			FeatureNginxCounting,
+			FeatureMetrics,
+			FeatureMetricsThrottle,
+			FeatureDataPlaneStatus,
+			FeatureProcessWatcher,
+			FeatureFileWatcher,
+			FeatureActivityEvents,
+		},
 	}
 	AllowedDirectoriesMap map[string]struct{}
 )
@@ -97,7 +109,6 @@ const (
 	InstanceGroupKey  = "instance_group"
 	ConfigDirsKey     = "config_dirs"
 	TagsKey           = "tags"
-	FeaturesKey       = "features"
 
 	// viper keys used in config
 	LogKey = "log"
@@ -162,6 +173,20 @@ const (
 	NginxAppProtectKey = "nginx_app_protect"
 
 	NginxAppProtectReportInterval = NginxAppProtectKey + KeyDelimiter + "report_interval"
+
+	// viper keys used in config
+	FeaturesKey = "features"
+
+	FeatureRegistration    = FeaturesKey + KeyDelimiter + "registration"
+	FeatureNginxConfig     = FeaturesKey + KeyDelimiter + "nginx-config"
+	FeatureNginxSSLConfig  = FeaturesKey + KeyDelimiter + "nginx-ssl-config"
+	FeatureNginxCounting   = FeaturesKey + KeyDelimiter + "nginx-counting"
+	FeatureMetrics         = FeaturesKey + KeyDelimiter + "metrics"
+	FeatureMetricsThrottle = FeaturesKey + KeyDelimiter + "metrics-throttle"
+	FeatureDataPlaneStatus = FeaturesKey + KeyDelimiter + "dataplane-status"
+	FeatureProcessWatcher  = FeaturesKey + KeyDelimiter + "process-watcher"
+	FeatureFileWatcher     = FeaturesKey + KeyDelimiter + "file-watcher"
+	FeatureActivityEvents  = FeaturesKey + KeyDelimiter + "activity-events"
 
 	// DEPRECATED KEYS
 	NginxBinPathKey       = "nginx_bin_path"
