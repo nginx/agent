@@ -97,7 +97,7 @@ func (p *PriorityTable) shouldCollapseSamples() bool {
 func (p *PriorityTable) collapseSample(sample *sample.Sample, currentCollapseLevel limits.CollapsingLevel) {
 	for _, dim := range p.schema.Dimensions() {
 		if dim.ShouldCollapse(currentCollapseLevel) {
-			sample.Key().SetKeyPart(lookup.LookupAggrCode, dim.KeyBitSize, dim.KeyBitPositionInCompoudKey)
+			sample.Key().SetKeyPart(lookup.LookupAggrCode, dim.KeyBitSize, dim.KeyBitPositionInCompoundKey)
 		}
 	}
 }
