@@ -1,15 +1,11 @@
 #!/bin/sh
 set -e
 
-# Copyright (C) Nginx, Inc. 2021.
+# Copyright (C) Nginx, Inc. 2022.
 #
 # Description:
 # NGINX Agent install script for downloading the NGINX Agent package from the appropriate repository
 #
-# args:
-#   $INSTANCE_GROUP         | -g | --instance-group  Instance group name (e.g. nginx-01)
-#   $LOG_LEVEL              | -o | --log-level       Log level for this script (info; trace; debug; error; fatal; panic;)
-
 ################################
 ###### Changeable variables
 ################################
@@ -73,22 +69,6 @@ title() {
     sleep 5
 }
 
-print_help() {
-  title
-  cat <<EOF
-Install NGINX Agent.
-
-Usage:
-  $(basename "$0") [-g | --instance-group <instance_group>] [-o | --log-level default: info; trace; debug; error; fatal; panic]
-
-
-Options:
-  -g | --instance-group  Instance group name (e.g. nginx-01)
-  -o | --log-level       Logging level of nginx-agent (default: info; trace; debug; error; fatal; panic)
-}
-EOF
-}
-
 ensure_sudo() {
     if [ "$(id -u)" = "0" ]; then
         echo "Sudo permissions detected"
@@ -103,46 +83,6 @@ is_empty() {
         return 0
     fi
     return 1
-}
-
-parse_args() {
-    while [ "$1" != "" ]; do
-        arg=$1
-        case "$arg" in
-            -g | --instance-group)
-                [ "$#" -eq 1 ] && print_help && err_exit "\nMissing value for '$arg'"
-                shift
-                is_empty "$arg" "$1" && shift && continue
-                INSTANCE_GROUP=$1
-                printf "Overriding instance_group value from command line: %s ...\n" "${INSTANCE_GROUP}"
-                ;;
-            -o | --log-level)
-                [ "$#" -eq 1 ] && print_help && err_exit "\nMissing value for '$arg'"
-                shift
-                is_empty "$arg" "$1" && shift && continue
-
-                valid_log_level="false"
-                for LEVEL in ${ALLOWABLE_LOG_LEVELS}; do
-                    if [ "$LEVEL" = "$1" ]; then
-                        valid_log_level="true"
-                    fi
-                done
-
-                if [ "$valid_log_level" != "true" ]; then
-                    printf "Exiting due to invalid option (%s) for -o | --log-level. Please select a valid option: trace, debug, info, error, fatal, panic.\n" "$1"
-                    exit 1
-                fi
-
-                LOG_LEVEL=$1
-                printf "Overriding log-level value from command line: %s ...\n" "${LOG_LEVEL}"
-                ;;
-            *)
-                print_help
-                exit 0
-                ;;
-        esac
-        shift
-    done
 }
 
 load_config_values() {
@@ -220,7 +160,6 @@ update_config_file() {
 # Main body of the script
 #
 {
-  parse_args "$@"
   title
   ensure_sudo
   load_config_values
