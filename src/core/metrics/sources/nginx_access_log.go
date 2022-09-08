@@ -173,32 +173,32 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				n := "request.body_bytes_sent"
 				counters[n] = float64(v) + counters[n]
 			} else {
-				log.Warnf("Error getting body_bytes_sent value from access logs, %v", err)
+				log.Debugf("Error getting body_bytes_sent value from access logs, %v", err)
 			}
 
 			if v, err := strconv.Atoi(access.BytesSent); err == nil {
 				n := "request.bytes_sent"
 				counters[n] = float64(v) + counters[n]
 			} else {
-				log.Warnf("Error getting bytes_sent value from access logs, %v", err)
+				log.Debugf("Error getting bytes_sent value from access logs, %v", err)
 			}
 
 			if v, err := strconv.Atoi(access.GzipRatio); err == nil {
 				gzipRatios = append(gzipRatios, float64(v))
 			} else {
-				log.Warnf("Error getting gzip_ratio value from access logs, %v", err)
+				log.Debugf("Error getting gzip_ratio value from access logs, %v", err)
 			}
 
 			if v, err := strconv.Atoi(access.RequestLength); err == nil {
 				requestLengths = append(requestLengths, float64(v))
 			} else {
-				log.Warnf("Error getting request_length value from access logs, %v", err)
+				log.Debugf("Error getting request_length value from access logs, %v", err)
 			}
 
 			if v, err := strconv.ParseFloat(access.RequestTime, 64); err == nil {
 				requestTimes = append(requestTimes, v)
 			} else {
-				log.Warnf("Error getting request_time value from access logs, %v", err)
+				log.Debugf("Error getting request_time value from access logs, %v", err)
 			}
 
 			if access.Request != "" {
@@ -242,7 +242,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 						counters[n] = counters[n] + 1
 					}
 				} else {
-					log.Warnf("Error getting status value from access logs, %v", err)
+					log.Debugf("Error getting status value from access logs, %v", err)
 				}
 			}
 			mu.Unlock()
