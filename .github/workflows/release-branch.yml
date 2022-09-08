@@ -130,11 +130,11 @@ jobs:
           chglog format -i ./scripts/changelog.yml --template repo > ./docs/CHANGELOG.md
           git commit -am "Updating changelog"
           git push
-
-          if [[ -z "${PUBLISH_PACKAGE}" ]] && ${PUBLISH_PACKAGE}='true'; then
-            git push origin "v${{env.VERSION}}"
-            git push origin "sdk/v${{env.VERSION}}"
-          fi
+      - name: Push Tags
+        if: ${{ inputs.publishPackages == 'true' }}
+        run: |
+          git push origin "v${{env.VERSION}}"
+          git push origin "sdk/v${{env.VERSION}}"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Docker Image
