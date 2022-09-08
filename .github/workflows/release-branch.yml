@@ -165,14 +165,14 @@ jobs:
           asset_name: nginx-agent.tar.gz
           asset_content_type: application/zip
       - name: Publish Release Packages
-        if: ${{ inputs.publishPackages == 'true' }}
+        if: ${{ inputs.publishPackages == true }}
         env:
           AGENT_UPLOADER_PEM: ${{ secrets.AGENT_UPLOADER_PEM }}
         run: |
           echo $AGENT_UPLOADER_PEM | base64 --decode > agent-uploader.pem
           make release
       - name: Publish Github Release
-        if: ${{ inputs.publishPackages == 'true' }}
+        if: ${{ inputs.publishPackages == true }}
         uses: actions/github-script@v6
         with:
           script: |
@@ -185,7 +185,7 @@ jobs:
             }))
             console.log(`Release published: ${release.data.html_url}`)
       - name: Create Pull Request
-        if: ${{ inputs.publishPackages == 'true' }}
+        if: ${{ inputs.publishPackages == true }}
         uses: actions/github-script@v6
         with:
           script: |

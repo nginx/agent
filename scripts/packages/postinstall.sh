@@ -1,7 +1,9 @@
 #!/bin/sh
 # Determine OS platform
+# shellcheck source=/dev/null
 . /etc/os-release
-if [ $ID = "freebsd" ]; then
+
+if [ "$ID" = "freebsd" ]; then
     BSD_HIER="/usr/local"
     AGENT_EXE="${BSD_HIER}/bin/nginx-agent"
 else
@@ -133,7 +135,7 @@ if command -v systemctl; then
     systemctl enable "${AGENT_UNIT_FILE}"
 fi
 
-if [ $ID = "freebsd" ]; then
+if [ "$ID" = "freebsd" ]; then
     printf "PostInstall: Enabling NGINX Agent Service\n"
     sysrc nginx_agent_enable=YES
 fi
@@ -142,7 +144,7 @@ echo "----------------------------------------------------------------------"
 echo " NGINX Agent package has been successfully installed."
 echo ""
 echo " Please follow the next steps to start the software:"
-if [ $ID = "freebsd" ]; then
+if [ "$ID" = "freebsd" ]; then
     echo "    sudo service nginx-agent start"
     echo ""
 else
