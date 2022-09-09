@@ -44,7 +44,7 @@ func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespa
 func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
 	defer wg.Done()
 	c.init.Do(func() {
-		cl, err := plusclient.NewNginxClient(&http.Client{}, c.plusAPI)
+		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, )
 		if err != nil {
 			log.Errorf("Failed to create plus metrics client: %v", err)
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -59,7 +59,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *p
 		}
 	})
 
-	cl, err := plusclient.NewNginxClient(&http.Client{}, c.plusAPI)
+	cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI)
 	if err != nil {
 		log.Errorf("Failed to create plus metrics client: %v", err)
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)

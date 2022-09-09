@@ -304,6 +304,7 @@ func getNginx() Nginx {
 		ExcludeLogs:         Viper.GetString(NginxExcludeLogs),
 		Debug:               Viper.GetBool(NginxDebug),
 		NginxCountingSocket: Viper.GetString(NginxCountingSocket),
+		ClientVersion:       Viper.GetInt(NginxClientVersion),
 	}
 }
 

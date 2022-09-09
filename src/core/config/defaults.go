@@ -47,6 +47,7 @@ var (
 		Nginx: Nginx{
 			Debug:               false,
 			NginxCountingSocket: "unix:/var/run/nginx-agent/nginx.sock",
+			NginxClientVersion:  8,
 		},
 		ConfigDirs:            "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms",
 		AllowedDirectoriesMap: map[string]struct{}{},
@@ -140,6 +141,7 @@ const (
 	NginxExcludeLogs    = NginxKey + KeyDelimiter + "exclude_logs"
 	NginxDebug          = NginxKey + KeyDelimiter + "debug"
 	NginxCountingSocket = NginxKey + KeyDelimiter + "socket"
+	NginxClientVersion  = NginxKey + KeyDelimiter + "client_version"
 
 	// viper keys used in config
 	DataplaneKey = "dataplane"

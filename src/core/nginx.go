@@ -64,6 +64,7 @@ type NginxBinaryType struct {
 	errorLogs         map[string]string
 	accessLogsUpdated bool
 	errorLogsUpdated  bool
+	wg                sync.WaitGroup
 }
 
 type nginxInfo struct {
@@ -243,12 +244,16 @@ func (n *NginxBinaryType) Reload(processId, bin string) error {
 // ValidateConfig tests the config with nginx -t -c configLocation.
 func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error {
 	log.Debugf("Validating config, %s for nginx process, %s", configLocation, processId)
-	response, err := runCmd(bin, "-t", "-c", configLocation)
-	if err != nil {
-		confFiles, auxFiles, err := sdk.GetNginxConfigFiles(config)
-		n.writeBackup(config, confFiles, auxFiles)
-		return fmt.Errorf("error running nginx -t -c %v:\n%s%v", configLocation, response, err)
-	}
+
+	go func() {
+		n.wg.Wait()
+		response, err := runCmd(bin, "-t", "-c", configLocation)
+		if err != nil {
+			confFiles, auxFiles, err := sdk.GetNginxConfigFiles(config)
+			n.writeBackup(config, confFiles, auxFiles)
+			return fmt.Errorf("error running nginx -t -c %v:\n%s%v", configLocation, response, err)
+		}
+	}()
 
 	log.Infof("Config validated:\n%s", response)
 
