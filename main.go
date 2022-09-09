@@ -65,8 +65,8 @@ func main() {
 			log.Infof("setting displayName to %s", loadedConfig.DisplayName)
 		}
 
-		log.Infof("NGINX Agent %s at %s with pid %d, clientID=%s name=%s",
-			version, commit, os.Getpid(), loadedConfig.ClientID, loadedConfig.DisplayName)
+		log.Infof("NGINX Agent %s at %s with pid %d, clientID=%s name=%s features=%v",
+			version, commit, os.Getpid(), loadedConfig.ClientID, loadedConfig.DisplayName, loadedConfig.Features)
 		sdkGRPC.InitMeta(loadedConfig.ClientID, loadedConfig.CloudAccountID)
 
 		controller, commander, reporter := createGrpcClients(ctx, loadedConfig)
