@@ -250,6 +250,7 @@ var (
 		&StringSliceFlag{
 			Name:  FeaturesKey,
 			Usage: "A comma-separated list of features enabled for the agent.",
+			DefaultValue: Defaults.Features,
 		},
 		// NGINX Config
 		&StringFlag{

@@ -211,6 +211,7 @@ func TestMetrics_Process_AgentConfigChanged(t *testing.T) {
 					CollectionInterval: 10,
 					Mode:               "streaming",
 				},
+				Features: config.Defaults.Features,
 			},
 			expUpdatedConfig: &config.Config{
 				ClientID: "12345",
@@ -221,6 +222,7 @@ func TestMetrics_Process_AgentConfigChanged(t *testing.T) {
 					CollectionInterval: 10,
 					Mode:               "aggregated",
 				},
+				Features: config.Defaults.Features,
 			},
 			updatedTags: false,
 		},

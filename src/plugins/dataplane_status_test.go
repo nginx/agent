@@ -96,9 +96,11 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 			testName: "ValuesToUpdate",
 			config: &config.Config{
 				Tags: tutils.InitialConfTags,
+				Features: config.Defaults.Features,
 			},
 			expUpdatedConfig: &config.Config{
 				Tags: updateTags,
+				Features: config.Defaults.Features,
 			},
 			updatedTags: true,
 		},
@@ -106,9 +108,11 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 			testName: "NoValuesToUpdate",
 			config: &config.Config{
 				Tags: tutils.InitialConfTags,
+				Features: config.Defaults.Features,
 			},
 			expUpdatedConfig: &config.Config{
 				Tags: tutils.InitialConfTags,
+				Features: config.Defaults.Features,
 			},
 			updatedTags: false,
 		},
