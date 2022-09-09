@@ -104,7 +104,7 @@ if command -v systemctl; then
     fi
 
     printf "PostInstall: Creating NGINX Agent run directory \n"
-    mkdir "${AGENT_RUN_DIR}"
+    mkdir -p "${AGENT_RUN_DIR}"
 
     printf "PostInstall: Modifying group ownership of NGINX Agent run directory \n"
     chown "${AGENT_USER}":"${AGENT_GROUP}" "${AGENT_RUN_DIR}"

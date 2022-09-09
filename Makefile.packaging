@@ -50,9 +50,9 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 	done; \
 
 	for version in $(APK_VERSIONS); do \
-		if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}" ]; then mkdir $(PACKAGES_DIR)/apk/v$${version}; fi; \
+		if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}; fi; \
 		for arch in $(APK_ARCHS); do \
-			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
+			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
 		done; \
 	done; \
