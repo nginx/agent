@@ -1,4 +1,4 @@
-package main
+package advanced_metrics
 
 import (
 	"net"

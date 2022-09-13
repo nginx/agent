@@ -6,18 +6,19 @@ import (
 	"log"
 	"net/http"
 	"net/http/pprof"
-	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/schema"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+
+	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
+	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/schema"
 )
 
 const (
@@ -108,20 +109,20 @@ func main() {
 	}()
 
 	builder := schema.NewSchemaBuilder()
-	builder.NewDimension(httpUriDimension, 16000, schema.Lvl(1)).
+	builder.NewDimension(httpUriDimension, 16000).
 		NewIntegerDimension(httpResponseCodeDimension, 600).
-		NewDimension(httpRequestMethodDimension, 16, schema.Lvl(20)).
+		NewDimension(httpRequestMethodDimension, 16).
 		NewMetric(hitcountMetric).
 		NewMetric(httpRequestBytesRcvdMetric).
 		NewMetric(httpRequestBytesSentMetric).
 		NewDimension(environmentDimension, 32).
 		NewDimension(appDimension, 32).
 		NewDimension(componentDimension, 256).
-		NewDimension(countryCodeDimension, 256, schema.Lvl(50)). //TODO should be implemented as GeoIP
-		NewDimension(httpVersionSchemaDimension, 16, schema.Lvl(30)).
-		NewDimension(httpUpstreamAddrDimension, 1024, schema.Lvl(50)).
+		NewDimension(countryCodeDimension, 256). //TODO should be implemented as GeoIP
+		NewDimension(httpVersionSchemaDimension, 16).
+		NewDimension(httpUpstreamAddrDimension, 1024).
 		NewIntegerDimension(upstreamResponseCodeDimension, 600).
-		NewDimension(httpHostnameDimension, 16000, schema.Lvl(10)).
+		NewDimension(httpHostnameDimension, 16000).
 		NewMetric(clientNetworkLatencyMetric).
 		NewMetric(clientTtfbLatencyMetric).
 		NewMetric(clientRequestLatencyMetric).
@@ -130,14 +131,14 @@ func main() {
 		NewMetric(upstreamHeaderLatencyMetric).
 		NewMetric(upstreamResponseLatencyMetric).
 		NewDimension(publishedApiDimension, 256).
-		NewDimension(requestOutcomeDimension, 8, schema.Lvl(80)).
-		NewDimension(requestOutcomeReasonDimension, 32, schema.Lvl(80)).
+		NewDimension(requestOutcomeDimension, 8).
+		NewDimension(requestOutcomeReasonDimension, 32).
 		NewDimension(gatewayDimension, 32).
-		NewDimension(wafSignatureIdsDimension, 16000, schema.Lvl(30)).
-		NewDimension(wafAttackTypesDimension, 8, schema.Lvl(30)).
-		NewDimension(wafViolationRatingDimension, 8, schema.Lvl(30)).
-		NewDimension(wafViolationsDimension, 128, schema.Lvl(30)).
-		NewDimension(wafViolationSubviolationsDimension, 16, schema.Lvl(30)).
+		NewDimension(wafSignatureIdsDimension, 16000).
+		NewDimension(wafAttackTypesDimension, 8).
+		NewDimension(wafViolationRatingDimension, 8).
+		NewDimension(wafViolationsDimension, 128).
+		NewDimension(wafViolationSubviolationsDimension, 16).
 		NewMetric(clientLatencyMetric).
 		NewMetric(upstreamLatencyMetric).
 		NewMetric(connectionDurationMetric).
@@ -153,11 +154,11 @@ func main() {
 	config.PublishingPeriod = time.Second * 30
 	config.StagingTableMaxSize = 32000
 	config.StagingTableThreshold = 28000
-	s, err := builder.Build()
+	schema, err := builder.Build()
 	if err != nil {
 		log.Fatal(err)
 	}
-	app, err := advanced_metrics.NewAdvancedMetrics(config, s)
+	app, err := advanced_metrics.NewAdvancedMetrics(config, schema)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -166,7 +167,6 @@ func main() {
 			for _, m := range f {
 				messagesProcessed.Inc()
 				metricsProcessedOnOutput.Add(float64(len(m.Metrics)))
-
 			}
 			if len(f) == 0 {
 				continue
