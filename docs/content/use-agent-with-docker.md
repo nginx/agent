@@ -3,7 +3,7 @@ authors: []
 categories:
 - installation
 date: "2020-10-26T15:32:41-06:00"
-description: Learn how to use the NGINX Controller Agent in a Docker environment
+description: Learn how to use the NGINX Agent in a Docker environment
 docs: DOCS-000
 doctypes:
 - reference
@@ -21,9 +21,9 @@ roles:
 - admin
 tags:
 - docs
-title: Use the NGINX Controller Agent with Docker
+title: Use the NGINX Agent with Docker
 toc: true
-weight: 200
+weight: 300
 ---
 
 ## Before You Begin
