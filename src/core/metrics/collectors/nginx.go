@@ -23,7 +23,7 @@ type NginxCollector struct {
 	collectorConf *metrics.NginxCollectorConfig
 	env           core.Environment
 	binary        core.NginxBinary
-	conf          config.Config
+	conf          *config.Config
 }
 
 func NewNginxCollector(conf *config.Config, env core.Environment, collectorConf *metrics.NginxCollectorConfig, binary core.NginxBinary) *NginxCollector {
@@ -39,7 +39,6 @@ func NewNginxCollector(conf *config.Config, env core.Environment, collectorConf 
 		collectorConf: collectorConf,
 		env:           env,
 		binary:        binary,
-		conf:          conf,
 	}
 }
 
@@ -54,7 +53,7 @@ func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collec
 		nginxSources = append(nginxSources, sources.NewNginxAccessLog(dimensions, sources.OSSNamespace, binary, sources.OSSNginxType, collectorConf.CollectionInterval))
 		nginxSources = append(nginxSources, sources.NewNginxErrorLog(dimensions, sources.OSSNamespace, binary, sources.OSSNginxType, collectorConf.CollectionInterval))
 	} else if collectorConf.PlusAPI != "" {
-		nginxSources = append(nginxSources, sources.NewNginxPlus(dimensions, sources.OSSNamespace, sources.PlusNamespace, collectorConf.PlusAPI))
+		nginxSources = append(nginxSources, sources.NewNginxPlus(dimensions, sources.OSSNamespace, sources.PlusNamespace, collectorConf.PlusAPI, collectorConf.ClientVersion))
 		nginxSources = append(nginxSources, sources.NewNginxAccessLog(dimensions, sources.OSSNamespace, binary, sources.PlusNginxType, collectorConf.CollectionInterval))
 		nginxSources = append(nginxSources, sources.NewNginxErrorLog(dimensions, sources.OSSNamespace, binary, sources.PlusNginxType, collectorConf.CollectionInterval))
 	} else {

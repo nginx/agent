@@ -35,16 +35,17 @@ type NginxPlus struct {
 	// This is for keeping the previous stats.  Need to report the delta.
 	prevStats *plusclient.Stats
 	init      sync.Once
+	clientVersion int
 }
 
-func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespace, plusAPI string) *NginxPlus {
+func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespace, plusAPI, c string) *NginxPlus {
 	return &NginxPlus{baseDimensions: baseDimensions, nginxNamespace: nginxNamespace, plusNamespace: plusNamespace, plusAPI: plusAPI}
 }
 
 func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
 	defer wg.Done()
 	c.init.Do(func() {
-		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, )
+		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
 		if err != nil {
 			log.Errorf("Failed to create plus metrics client: %v", err)
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -59,7 +60,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *p
 		}
 	})
 
-	cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI)
+	cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
 	if err != nil {
 		log.Errorf("Failed to create plus metrics client: %v", err)
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
