@@ -29,9 +29,6 @@ contents:
     packager: rpm
   - dst: /var/log/nginx-agent
     type: dir
-  - src: /var/run/nginx-agent
-    dst: /run/nginx-agent
-    type: "symlink"
 overrides:
   deb:
     depends:

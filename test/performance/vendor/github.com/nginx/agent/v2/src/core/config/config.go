@@ -345,7 +345,6 @@ func LoadPropertiesFromFile(cfg string) error {
 
 	// Get dynamic file, if it doesn't exist create it.
 	file, err := os.Stat(dynamicCfgPath)
-
 	if err != nil {
 		log.Warnf("Unable to read dynamic config (%s), got the following error: %v", dynamicCfgPath, err)
 	}
