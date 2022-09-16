@@ -7,11 +7,11 @@ Benchmarks are run in docker-compose environment. You can start a benchmark with
 make benchmark_run
 ```
 To run benchmarks of old AVR you need to put .deb file with AVR into /bin and name it `avr.deb`
-and do the same with dependencies but with `deps.deb` file name. We are running AVR benchmarks on Ubutnu:xenial.
+and do the same with dependencies but with `deps.deb` file name. We are running AVR benchmarks on Ubuntu:xenial.
 
 ### Configuration
 
-Benchmarks are configurated via .test_env file commited into this repository.
+Benchmarks are configurated via `.test_env` file committed into this repository.
 File should look something like this:
 ```bigquery
 export SOCKET_DIR=/tmp
@@ -40,7 +40,7 @@ export SIMPLE_BENCHMARK=true
 
 ### Setting up external machine for benchmarking
 
-Use setup_external_ubuntu.sh script
+Use `setup_external_ubuntu.sh` script
 
 ### Prometheus and benchmarking metrics
 

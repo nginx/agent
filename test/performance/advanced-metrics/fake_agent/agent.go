@@ -1,4 +1,4 @@
-package fake_agent
+package main
 
 import (
 	"context"
@@ -63,10 +63,6 @@ const (
 	proxiedProtocolDimension           = "proxied_protocol"
 	bytesRcvdMetric                    = "bytes_rcvd"
 	bytesSentMetric                    = "bytes_sent"
-
-	aggregationDurrationDimension = "aggregation_duration"
-
-	streamMetricFamilyDimensionValue = "tcp-udp"
 )
 
 var (
@@ -118,7 +114,7 @@ func main() {
 		NewDimension(environmentDimension, 32).
 		NewDimension(appDimension, 32).
 		NewDimension(componentDimension, 256).
-		NewDimension(countryCodeDimension, 256). //TODO should be implemented as GeoIP
+		NewDimension(countryCodeDimension, 256). // TODO should be implemented as GeoIP
 		NewDimension(httpVersionSchemaDimension, 16).
 		NewDimension(httpUpstreamAddrDimension, 1024).
 		NewIntegerDimension(upstreamResponseCodeDimension, 600).
@@ -149,11 +145,18 @@ func main() {
 
 	config := advanced_metrics.Config{
 		Address: cfg.AdvancedMetricsSocket,
+		AggregatorConfig: advanced_metrics.AggregatorConfig{
+			AggregationPeriod: time.Second,
+			PublishingPeriod:  time.Second * 10,
+		},
+		TableSizesLimits: advanced_metrics.TableSizesLimits{
+			StagingTableMaxSize:    32000,
+			StagingTableThreshold:  32000,
+			PriorityTableMaxSize:   32000,
+			PriorityTableThreshold: 32000,
+		},
 	}
-	config.AggregationPeriod = time.Second * 10
-	config.PublishingPeriod = time.Second * 30
-	config.StagingTableMaxSize = 32000
-	config.StagingTableThreshold = 28000
+
 	schema, err := builder.Build()
 	if err != nil {
 		log.Fatal(err)
