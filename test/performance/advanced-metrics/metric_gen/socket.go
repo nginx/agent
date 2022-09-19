@@ -1,4 +1,4 @@
-package advanced_metrics
+package metric_gen
 
 import (
 	"net"
