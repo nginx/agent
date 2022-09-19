@@ -155,9 +155,10 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 
 func TestProcessWatcher_Process(t *testing.T) {
 	env := tutils.GetMockEnvWithProcess()
-
 	pluginUnderTest := NewProcessWatcher(env, tutils.GetMockNginxBinary())
-	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+
+	ctx, cancel := context.WithCancel(context.TODO())
+	messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
 
 	pluginUnderTest.Init(messagePipe)
 	messagePipe.Run()
@@ -172,6 +173,8 @@ func TestProcessWatcher_Process(t *testing.T) {
 			t.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), msgTopics[idx])
 		}
 	}
+
+	cancel()
 
 	pluginUnderTest.Close()
 }
