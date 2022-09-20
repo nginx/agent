@@ -1,6 +1,6 @@
 syntax = "proto3";
 package f5.nginx.agent.sdk;
-option go_package = "gitlab.com:f5/nginx/agent/product/nginx-agent/sdk/v2/proto;proto";
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
 
 import "gogo.proto";
 
