@@ -79,23 +79,22 @@ func main() {
 
 	fmt.Println("Nats Subscriber OK")
 	for _, s := range h.natsSubs {
-		msg := <-s.Stats
-
-		go func(stats *Stats) {
+		go func(statsChannel chan *Stats) {
 			for {
+				msg := <-statsChannel
 				messagesProcessed.Inc()
 				if msg.Stats == nil {
 					continue
 				}
 
-				metricsProcessedOnOutput.Add(float64(len(stats.Stats.Simplemetrics)))
-				for _, d := range stats.Stats.Dimensions {
+				metricsProcessedOnOutput.Add(float64(len(msg.Stats.Simplemetrics)))
+				for _, d := range msg.Stats.Dimensions {
 					if d.Value == aggregatedValue {
 						aggregatedDimensionValuesProcessedOnOutput.Inc()
 					}
 				}
 			}
-		}(msg)
+		}(s.Stats)
 	}
 	wg.Wait()
 }
