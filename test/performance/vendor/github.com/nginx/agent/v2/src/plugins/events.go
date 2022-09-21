@@ -38,8 +38,9 @@ const (
 	AGENT_EVENT_TYPE = "Agent"
 
 	// Categories
-	STATUS_CATEGORY = "Status"
-	CONFIG_CATEGORY = "Config"
+	STATUS_CATEGORY      = "Status"
+	CONFIG_CATEGORY      = "Config"
+	APP_PROTECT_CATEGORY = "AppProtect"
 
 	// Event Levels
 	INFO_EVENT_LEVEL     = "INFO"
