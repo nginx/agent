@@ -79,22 +79,22 @@ func main() {
 
 	fmt.Println("Nats Subscriber OK")
 	for _, s := range h.natsSubs {
-		go func() {
+		go func(statsChannel chan *Stats) {
 			for {
-				msg := <-s.Stats
+				msg := <-statsChannel
 				messagesProcessed.Inc()
 				if msg.Stats == nil {
 					continue
 				}
 
-				metricsProcessedOnOutput.Add(float64(len(msg.Stats.Metrics)))
+				metricsProcessedOnOutput.Add(float64(len(msg.Stats.Simplemetrics)))
 				for _, d := range msg.Stats.Dimensions {
 					if d.Value == aggregatedValue {
 						aggregatedDimensionValuesProcessedOnOutput.Inc()
 					}
 				}
 			}
-		}()
+		}(s.Stats)
 	}
 	wg.Wait()
 }
@@ -128,12 +128,12 @@ func (h *Harness) SetupNATSSubscriber(subj string, addr string) *NatsConn {
 	out := make(chan *Stats)
 	_, err = nc.Subscribe(subj, func(m *nats.Msg) {
 		size := len(m.Data)
-		avrstat := &metrics.StatsEntity{}
-		err := proto.Unmarshal(m.Data, avrstat)
+		avrStats := &metrics.StatsEntity{}
+		err := proto.Unmarshal(m.Data, avrStats)
 		if err != nil {
 			log.Fatalf("Error proto.Unmarshal: %v, Payload (%d bytes): %q", err, size, string(m.Data))
 		} else {
-			out <- &Stats{Stats: avrstat, Subject: &subj, Size: &size}
+			out <- &Stats{Stats: avrStats, Subject: &subj, Size: &size}
 		}
 	})
 	if err != nil {

@@ -28,7 +28,7 @@ message Dimension {
   string value = 2 [(gogoproto.jsontag) = "value" ];
 }
 
-// StatsEntity a timestamped entry for Dementions and Metrics
+// StatsEntity a timestamped entry for Dimensions and Metrics
 message StatsEntity {
   google.protobuf.Timestamp timestamp = 1;
   // DEPRECATED

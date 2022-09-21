@@ -227,7 +227,7 @@ func (m *Dimension) GetValue() string {
 	return ""
 }
 
-// StatsEntity a timestamped entry for Dementions and Metrics
+// StatsEntity a timestamped entry for Dimensions and Metrics
 type StatsEntity struct {
 	Timestamp            *types.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	Dimensions           []*Dimension     `protobuf:"bytes,3,rep,name=dimensions,proto3" json:"dimensions"`
