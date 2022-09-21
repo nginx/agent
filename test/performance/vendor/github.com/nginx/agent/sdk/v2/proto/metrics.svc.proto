@@ -7,6 +7,7 @@ import "metrics.proto";
 
 // Interface exported by the server.
 service MetricsService {
+  option deprecated = true;
 
   // A client-to-server streaming RPC to deliver high volume metrics reports.
   rpc Stream(stream MetricsReport) returns (google.protobuf.Empty) {}
