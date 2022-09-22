@@ -37,9 +37,9 @@ for freebsd_abi in $FREEBSD_DISTROS; do \
     # Creating symbolic link from txz to pkg. In older versions of pkg the extension would represent the format of the file 
     # but since version 1.17.0 pkg will now always create a file with the extesion pkg no matter what the format is. 
     # See 1.17.0 release notes for more info: https://cgit.freebsd.org/ports/commit/?id=e497a16a286972bfcab908209b11ee6a13d99dc9
-    cd build/packages/txz/"$freebsd_abi" \
+    cd build/packages/txz/"$freebsd_abi"; \
     ln -s nginx-agent-"$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')".pkg nginx-agent-"$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')".txz; \
-    cd ../../../../ \
+    cd ../../../../; \
 done; \
 
 rm -rf /staging
