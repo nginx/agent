@@ -115,6 +115,18 @@ if [ "$ID" = "freebsd" ]; then
     fi
 fi
 
+if [ "$ID" = "alpine" ]; then
+    printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
+    addgroup "${AGENT_GROUP}"
+
+    printf "PostInstall: Adding NGINX / agent user %s to group %s\n" "${AGENT_USER}" "${AGENT_GROUP}"
+    addgroup "${AGENT_USER}" "${AGENT_GROUP}"
+    if [ "${WORKER_USER}" ]; then
+        printf "PostInstall: Adding NGINX Worker user %s to group %s\n" "${WORKER_USER}" "${AGENT_GROUP}"
+        addgroup "${WORKER_USER}" "${AGENT_GROUP}"
+    fi
+fi
+
 printf "PostInstall: Creating NGINX Agent run directory \n"
 mkdir -p "${AGENT_RUN_DIR}"
 
