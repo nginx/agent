@@ -105,7 +105,7 @@ jobs:
           git config --global url."https://dhurley:${TOKEN}@github.com".insteadOf "https://github.com"
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           make clean local-apk-package local-deb-package local-rpm-package local-txz-package
-          tar -cf ./build/snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.txz ./build/*.apk
+          tar -cf ./build/snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.pkg ./build/*.apk
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
