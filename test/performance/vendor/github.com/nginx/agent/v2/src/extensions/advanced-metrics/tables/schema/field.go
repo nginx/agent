@@ -30,11 +30,11 @@ type Field struct {
 // MaxDimensionSetSize specifies max unique dimension which will be stored in staging table
 //					   if max size will be reaches all new unique dimensions will be transformed to AGGR value
 type DimensionField struct {
-	KeyBitSize                 int
-	KeyBitPositionInCompoudKey int
-	MaxDimensionSetSize        uint32
-	Transform                  *DimensionTransformFunction
-	CollapsingLevel            *limits.CollapsingLevel
+	KeyBitSize                  int
+	KeyBitPositionInCompoundKey int
+	MaxDimensionSetSize         uint32
+	Transform                   *DimensionTransformFunction
+	CollapsingLevel             *limits.CollapsingLevel
 }
 
 type FieldOption func(f *Field)

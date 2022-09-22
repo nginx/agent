@@ -8,11 +8,7 @@ on:
         required: true
         type: boolean
         default: false
-  workflow_run:
-    branches: [release-*]
-    workflows: [CI]
-    types:
-      - completed
+  workflow_call:
 
 jobs:
   update-draft:
@@ -134,11 +130,11 @@ jobs:
           chglog format -i ./scripts/changelog.yml --template repo > ./docs/CHANGELOG.md
           git commit -am "Updating changelog"
           git push
-
-          if [[ -z "${PUBLISH_PACKAGE}" ]] && ${PUBLISH_PACKAGE}='true'; then
-            git push origin "v${{env.VERSION}}"
-            git push origin "sdk/v${{env.VERSION}}"
-          fi
+      - name: Push Tags
+        if: ${{ inputs.publishPackages == 'true' }}
+        run: |
+          git push origin "v${{env.VERSION}}"
+          git push origin "sdk/v${{env.VERSION}}"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Docker Image
@@ -169,14 +165,14 @@ jobs:
           asset_name: nginx-agent.tar.gz
           asset_content_type: application/zip
       - name: Publish Release Packages
-        if: ${{ inputs.publishPackages == 'true' }}
+        if: ${{ inputs.publishPackages == true }}
         env:
           AGENT_UPLOADER_PEM: ${{ secrets.AGENT_UPLOADER_PEM }}
         run: |
           echo $AGENT_UPLOADER_PEM | base64 --decode > agent-uploader.pem
           make release
       - name: Publish Github Release
-        if: ${{ inputs.publishPackages == 'true' }}
+        if: ${{ inputs.publishPackages == true }}
         uses: actions/github-script@v6
         with:
           script: |
@@ -189,7 +185,7 @@ jobs:
             }))
             console.log(`Release published: ${release.data.html_url}`)
       - name: Create Pull Request
-        if: ${{ inputs.publishPackages == 'true' }}
+        if: ${{ inputs.publishPackages == true }}
         uses: actions/github-script@v6
         with:
           script: |

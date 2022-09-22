@@ -12,6 +12,7 @@ generate: clean ## Generate .pb.go files
 		protoc \
 			-I ./proto/$$packageName \
 			-I ./proto \
+			-I /usr/local/include \
 			-I ./vendor/github.com/gogo/protobuf/gogoproto \
 			-I ./vendor/github.com/gogo/protobuf/proto \
 			--gogofast_out=plugins=grpc,paths=source_relative,\
@@ -27,6 +28,7 @@ Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
 
 	protoc \
 		-I ./proto \
+		-I /usr/local/include \
 		-I ./vendor/github.com/gogo/protobuf/gogoproto \
 		-I ./vendor/github.com/gogo/protobuf/proto \
 		--gogofast_out=plugins=grpc,paths=source_relative,\

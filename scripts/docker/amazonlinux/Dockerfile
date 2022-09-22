@@ -29,15 +29,19 @@ name=nginx-plus repo \n\
 baseurl=https://$PACKAGES_REPO/plus/amzn$OS_VERSION/\$releasever/\$basearch \n\
 sslclientcert=/etc/ssl/nginx/nginx-repo.crt \n\
 sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
-gpgcheck=0 \n\
-enabled=1" >> /etc/yum.repos.d/nginx-plus-$DOCKER_IMAGE.repo \
+gpgcheck=1 \n\
+enabled=1 \n\
+sslverify=true \n\
+gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-plus-$DOCKER_IMAGE.repo \
     && printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
 baseurl=https://$PACKAGES_REPO/nginx-agent/amzn$OS_VERSION/\$releasever/\$basearch \n\
 sslclientcert=/etc/ssl/nginx/nginx-repo.crt \n\
 sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
-gpgcheck=0 \n\
-enabled=1" >> /etc/yum.repos.d/nginx-agent-$DOCKER_IMAGE.repo \
+gpgcheck=1 \n\
+enabled=1 \n\
+sslverify=true \n\
+gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-agent-$DOCKER_IMAGE.repo \
     && yum install -y $nginxPackages \
     && yum clean all \
     && rm -rf /var/cache/yum /etc/yum.repos.d/* /etc/ssl/nginx

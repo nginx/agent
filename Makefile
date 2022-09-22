@@ -1,3 +1,5 @@
+include Makefile.*
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Variable Definitions                                                                                            #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -29,31 +31,14 @@ DOCKER_TAG=agent_${OS_RELEASE}_${OS_VERSION}
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 
-GPG_PUBLIC_KEY := .key
-
-DEB_DISTROS?=ubuntu-jammy-22.04 ubuntu-focal-20.04 ubuntu-bionic-18.04 debian-bullseye-11 debian-buster-10
-DEB_ARCHS?=arm64 amd64
-RPM_DISTROS?=centos-7-x86_64 redhatenterprise-7-x86_64 redhatenterprise-8-x86_64 redhatenterprise-9-x86_64 amazon-2-x86_64 amazon-latest-x86_64 amazon-2017.09-x86_64 suse-12-x86_64 suse-15-x86_64
-FREEBSD_DISTROS?="FreeBSD:12:amd64" "FreeBSD:13:amd64"
-APK_VERSIONS?=3.13 3.14 3.15 3.16
-APK_ARCHS?=aarch64 x86_64
-
 CERTS_DIR          := ./build/certs
 PACKAGE_PREFIX	   := nginx-agent
-PACKAGES_DIR	   := ./build/packages
 PACKAGES_REPO	   := "pkgs.nginx.com"
-AGENT_UPLOADER_KEY := "./agent-uploader.pem"
 UNAME_M	            = $(shell uname -m)
 TEST_BUILD_DIR	   := build/test
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 LOCAL_ARCH         := amd64
-UPLOAD_URL         := "https://up-ap.nginx.com/"
 
-ifeq ($(uname_m),aarch64)
-ARCH   	                = arm64
-else
-ARCH                    = amd64
-endif
 
 $(TEST_BUILD_DIR):
 	mkdir -p $(TEST_BUILD_DIR)
@@ -93,73 +78,6 @@ format: ## Format code
 
 install-tools: ## Install dependencies in tools.go
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Release Packaging                                                                                               #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-clean-packages: 
-	@rm -rf $(PACKAGES_DIR)
-
-$(PACKAGES_DIR):
-	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk && mkdir -p $(PACKAGES_DIR)/txz
-
-package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported distros
-	@for distro in $(DEB_DISTROS); do \
-		deb_codename=`echo $$distro | cut -d- -f 2`; \
-		for arch in $(DEB_ARCHS); do \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename} ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb; \
-		done; \
-	done; \
-
-	for distro in $(RPM_DISTROS); do \
-		rpm_distro=`echo $$distro | cut -d- -f 1`;  \
-		rpm_major=`echo $$distro | cut -d- -f 2`; \
-		rpm_codename='na'; \
-		if [ "$$rpm_distro" = "centos" ] || [ "$$rpm_distro" = "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
-		elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
-		if [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
-		if [ "$$rpm_codename" != "na" ]; then \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=${ARCH} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${UNAME_M}.rpm; \
-		fi; \
-	done; \
-
-	for version in $(APK_VERSIONS); do \
-		if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}" ]; then mkdir $(PACKAGES_DIR)/apk/v$${version}; fi; \
-		for arch in $(APK_ARCHS); do \
-			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
-		done; \
-	done; \
-
-	# create specific freebsd txz files
-	rm -rf ./build/nginx-agent
-	GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
-
-	docker run -v `pwd`:/nginx-agent/ build-signed-packager:1.0.0
-
-	echo "DEB packages:"; \
-	find $(PACKAGES_DIR)/deb ;\
-	echo "RPM packages:"; \
-	find $(PACKAGES_DIR)/rpm ;\
-	echo "APK packages:"; \
-	find $(PACKAGES_DIR)/apk ;\
-	echo "TXZ packages:"; \
-	find $(PACKAGES_DIR)/txz ;\
-	cd $(PACKAGES_DIR) && tar -czvf "./${PACKAGE_PREFIX}.tar.gz" * && cd ../..;
-
- gpg-key: ## Generate GPG public key
-	$$(gpg --import $(NFPM_SIGNING_KEY_FILE)); \
-	keyid=$$(gpg --list-keys NGINX | egrep -A1 "^pub" | egrep -v "^pub" | tr -d '[:space:]'); \
-	expiry=1y; \
-	$$(gpg --quick-set-expire $$keyid $$expiry '*'); \
-	# we need to convert the private gpg key to rsa pem format for pkg signing \
-	$$(gpg --export-secret-key $$keyid | openpgp2ssh $$keyid > .key.rsa); \
-	$$(gpg --output $(GPG_PUBLIC_KEY) --armor --export)
-
-release: ## Publish tarball to the UPLOAD_URL
-	echo "Publishing nginx-agent packages to ${UPLOAD_URL}"; \
-	curl -XPOST -F "file=@$(PACKAGES_DIR)/${PACKAGE_PREFIX}.tar.gz" -E ${AGENT_UPLOADER_KEY} ${UPLOAD_URL}; \
-	curl -XPOST -F "file=@$(GPG_PUBLIC_KEY)" -E ${AGENT_UPLOADER_KEY} ${UPLOAD_URL}; \
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Local Packaging                                                                                                 #
@@ -229,7 +147,7 @@ performance-test: ## Run performance tests
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem userWorkFlow_test.go
+	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
 
 build-benchmark-docker: ## Build benchmark test docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory

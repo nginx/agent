@@ -23,13 +23,14 @@ const (
 
 // Nginx is the metadata of our nginx binary
 type Nginx struct {
-	messagePipeline core.MessagePipeInterface
-	nginxBinary     core.NginxBinary
-	processes       []core.Process
-	env             core.Environment
-	cmdr            client.Commander
-	config          *config.Config
-	isNAPEnabled    bool
+	messagePipeline     core.MessagePipeInterface
+	nginxBinary         core.NginxBinary
+	processes           []core.Process
+	env                 core.Environment
+	cmdr                client.Commander
+	config              *config.Config
+	isNAPEnabled        bool
+	isConfUploadEnabled bool
 }
 
 type ConfigRollbackResponse struct {
@@ -51,7 +52,10 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 	if loadedConfig.NginxAppProtect != (config.NginxAppProtect{}) {
 		isNAPEnabled = true
 	}
-	return &Nginx{nginxBinary: nginxBinary, processes: env.Processes(), env: env, cmdr: cmdr, config: loadedConfig, isNAPEnabled: isNAPEnabled}
+
+	isConfUploadEnabled := isConfUploadEnabled(loadedConfig)
+
+	return &Nginx{nginxBinary: nginxBinary, processes: env.Processes(), env: env, cmdr: cmdr, config: loadedConfig, isNAPEnabled: isNAPEnabled, isConfUploadEnabled: isConfUploadEnabled}
 }
 
 // Init initializes the plugin
@@ -114,6 +118,12 @@ func (n *Nginx) Subscriptions() []string {
 
 func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) error {
 	log.Debugf("Uploading config for %v", config)
+
+	if !n.isConfUploadEnabled {
+		log.Info("unable to upload config as nginx-config feature is disabled")
+		return nil
+	}
+
 	if config.GetNginxId() == "" {
 		return nil
 	}
@@ -161,7 +171,11 @@ func (n *Nginx) processCmd(cmd *proto.Command) {
 
 		switch commandData.NginxConfig.Action {
 		case proto.NginxConfigAction_APPLY:
-			status = n.applyConfig(cmd, commandData)
+			if n.isConfUploadEnabled {
+				status = n.applyConfig(cmd, commandData)
+			} else {
+				log.Warnf("unable to upload config as nginx-config feature is disabled")
+			}
 		case proto.NginxConfigAction_TEST:
 			// TODO: Test agent config?
 			status.NginxConfigResponse.Status = newErrStatus("Config test not implemented").CmdStatus
@@ -372,5 +386,16 @@ func (n *Nginx) syncAgentConfigChange() {
 		n.isNAPEnabled = false
 	}
 
+	n.isConfUploadEnabled = isConfUploadEnabled(conf)
+
 	n.config = conf
+}
+
+func isConfUploadEnabled(conf *config.Config) bool {
+	for _, feature := range conf.Features {
+		if feature == config.FeatureNginxConfig {
+			return true
+		}
+	}
+	return false
 }

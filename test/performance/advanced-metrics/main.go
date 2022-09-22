@@ -1,4 +1,4 @@
-package advanced_metrics
+package main
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/nginx/agent/test/performance/advanced-metrics/metric_gen"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -83,7 +84,7 @@ func main() {
 	// wait 3 seconds to make sure socket exists
 	time.Sleep(time.Second * 3)
 
-	pusher := NewPusher(cfg.AvrSocket)
+	pusher := metric_gen.NewPusher(cfg.AvrSocket)
 	err = pusher.Connect()
 	if err != nil {
 		log.Fatal(err)
