@@ -123,7 +123,6 @@ func (m *Metadata) GetCategory() string {
 type Event struct {
 	Metadata *Metadata `protobuf:"bytes,1,opt,name=Metadata,proto3" json:"metadata"`
 	// Types that are valid to be assigned to Data:
-	//
 	//	*Event_ActivityEvent
 	Data                 isEvent_Data `protobuf_oneof:"data"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
