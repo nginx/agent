@@ -96,7 +96,7 @@ message AgentActivityStatus {
 }
 
 message NginxConfigStatus {
-  string CorrelationID = 1 [(gogoproto.jsontag) = "correlation_id" ];
+  string correlation_id = 1 [(gogoproto.jsontag) = "correlation_id" ];
   Status status = 2 [(gogoproto.jsontag) = "status" ];
   string message = 3 [(gogoproto.jsontag) = "message" ];
 }
