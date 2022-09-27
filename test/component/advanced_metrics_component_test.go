@@ -773,6 +773,7 @@ func toMessage(data ...interface{}) []byte {
 }
 
 func assertMessageSent(t *testing.T, addr string, dataToSend [][]byte) {
+	time.Sleep(1 * time.Millisecond)
 	conn, err := net.Dial("unix", addr)
 	assert.NoError(t, err)
 
