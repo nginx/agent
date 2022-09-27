@@ -99,13 +99,14 @@ message NginxConfigStatus {
   string correlation_id = 1 [(gogoproto.jsontag) = "correlation_id" ];
   Status status = 2 [(gogoproto.jsontag) = "status" ];
   string message = 3 [(gogoproto.jsontag) = "message" ];
+
+  enum Status {
+    PENDING = 0;
+    OK = 1;
+    ERROR = 2;
+  }
 }
   
-enum Status {
-  PENDING = 0;
-  OK = 1;
-  ERROR = 2;
-}
 
 message DownloadRequest {
   Metadata meta = 1 [(gogoproto.jsontag) = "meta" ];
