@@ -131,7 +131,7 @@ jobs:
           git commit -am "Updating changelog"
           git push
       - name: Push Tags
-        if: ${{ inputs.publishPackages == 'true' }}
+        if: ${{ inputs.publishPackages == true }}
         run: |
           git push origin "v${{env.VERSION}}"
           git push origin "sdk/v${{env.VERSION}}"
