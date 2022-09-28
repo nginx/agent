@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
 	log "github.com/sirupsen/logrus"
@@ -18,9 +19,10 @@ import (
 // of the current files, mark them off as they are getting applied, and delete any leftovers that's not in the incoming
 // apply payload.
 type ConfigApply struct {
-	writer    *zip.Writer
-	existing  map[string]struct{}
-	notExists map[string]struct{} // set of files that exists in the config provided payload, but not on disk
+	writer       *zip.Writer
+	existing     map[string]struct{}
+	notExists    map[string]struct{} // set of files that exists in the config provided payload, but not on disk
+	notExistDirs map[string]struct{} // set of directories that exists in the config provided payload, but not on disk
 }
 
 func NewConfigApply(
@@ -32,9 +34,10 @@ func NewConfigApply(
 		return nil, err
 	}
 	b := &ConfigApply{
-		writer:    w,
-		existing:  make(map[string]struct{}),
-		notExists: make(map[string]struct{}),
+		writer:       w,
+		existing:     make(map[string]struct{}),
+		notExists:    make(map[string]struct{}),
+		notExistDirs: make(map[string]struct{}),
 	}
 	if confFile != "" {
 		return b, b.mapCurrentFiles(confFile, allowedDirectories)
@@ -61,6 +64,13 @@ func (b *ConfigApply) Rollback(cause error) error {
 		err = os.Remove(fullPath)
 		if err != nil {
 			log.Warnf("error during rollback (remove) for %s: %s", fullPath, err)
+		}
+	}
+
+	for fullPath := range b.notExistDirs {
+		err = os.RemoveAll(fullPath)
+		if err != nil {
+			log.Warnf("error during rollback (remove dir) for %s: %s", fullPath, err)
 		}
 	}
 
@@ -109,16 +119,36 @@ func (b *ConfigApply) Complete() error {
 func (b *ConfigApply) MarkAndSave(fullPath string) error {
 	// delete from existing list, so we don't delete them during Complete
 	delete(b.existing, fullPath)
+
 	p, err := os.Stat(fullPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			b.notExists[fullPath] = struct{}{}
 			log.Debugf("backup: %s does not exist", fullPath)
+
+			paths := strings.Split(fullPath, "/")
+			for i := 2; i < len(paths); i++ {
+				dirPath := strings.Join(paths[0:i], "/")
+
+				_, err := os.Stat(dirPath)
+				if err != nil {
+					if errors.Is(err, os.ErrNotExist) {
+						b.notExistDirs[dirPath] = struct{}{}
+						log.Debugf("backup: dir %s does not exist", dirPath)
+						return nil
+					}
+
+					log.Warnf("backup: dir %s error: %s", dirPath, err)
+					return err
+				}
+			}
 			return nil
 		}
+
 		log.Warnf("backup: %s error: %s", fullPath, err)
 		return err
 	}
+
 	r, err := os.Open(fullPath)
 	if err != nil {
 		log.Warnf("backup: %s open error: %s", fullPath, err)
@@ -209,4 +239,8 @@ func (b *ConfigApply) GetExisting() map[string]struct{} {
 
 func (b *ConfigApply) GetNotExists() map[string]struct{} {
 	return b.notExists
+}
+
+func (b *ConfigApply) GetNotExistDirs() map[string]struct{} {
+	return b.notExistDirs
 }
