@@ -1,7 +1,23 @@
 - semver: 2.19.0
-  date: 2022-09-28T12:58:16Z
+  date: 2022-09-28T14:29:21+01:00
   packager: nginx
   changes:
+    - commit: 0b3292f9d98969d5343ae7bbd4b5cabb887fa0cb
+      note: Update release-branch.yml
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: f10062c6bc163eef395e8202d91a0b0dbadbf229
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: 96dbc7eadb6092014ae35020f7337b4ce191d61e
       note: Updating changelog
       author:
