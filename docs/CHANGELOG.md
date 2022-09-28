@@ -100,5 +100,3 @@
 * Merge pull request #15 from nginx/Agent-readme-blog (8b81933d)
 * docs: readme and blog (4da532c6)
 * The NGINX Agent is a lightweight piece of software that can be installed next to NGINX Open Source (OSS) and/or NGINX Plus (2074d371)
-
-
