@@ -1,7 +1,616 @@
-- semver: 2.18.0
-  date: 2022-09-06T14:14:46Z
+- semver: 2.19.0
+  date: 2022-09-28T13:35:55Z
   packager: nginx
   changes:
+    - commit: a87935f8afc03f6184ddd57a4c4b4cd3210bb157
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+    - commit: 0b3292f9d98969d5343ae7bbd4b5cabb887fa0cb
+      note: Update release-branch.yml
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: f10062c6bc163eef395e8202d91a0b0dbadbf229
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+    - commit: 96dbc7eadb6092014ae35020f7337b4ce191d61e
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+    - commit: 702a21845b12c58d3aef1b869d242807a7cac7ce
+      note: Update release-branch.yml
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: d6fbf470e3bc0bad221ea4644b6f60c833d17719
+      note: Update CHANGELOG.md
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: af14676090959e098b98883123947f8bb6dfe155
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+    - commit: 1f515f87a92e6c29820264eca4cc202413917794
+      note: Update CHANGELOG.md
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 894c6c9377ce7ab75c0c12113ee94ac9f0ae2b6d
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+    - commit: 61d3b3d494c9e8bc6b6928050c91862a8494a3a2
+      note: Update CHANGELOG.md
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 54160aac374d5cdd04c93c431e7b615037dea225
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+    - commit: 5bebf6659910a59b2e540f8f668999733441c890
+      note: |-
+        Update ci workflow build snapshot job (#52)
+
+        * Updated ci workflow build-snapshot job to package *.pkg files instead of *.txz files
+        * Fixed syntax in signed-entrypoint.sh
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 47273981ba4a804c7a73c3f997453e153b41a858
+      note: Changing extension back to pkg instead of txz for freebsd packages. Introducing a symbolic link instead. (#50)
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 19c3c266cbc0e58ca7fac598218ce624fdc6d72c
+      note: 'fix: move proto namespace to github/agent'
+      author:
+        name: Sanath Kumar
+        email: b.s.sanathkumar@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 81ef6949692890e3003339b5711a04347e60313f
+      note: Fix advanced metrics performance test (#45)
+      author:
+        name: Dean Coakley
+        email: d.coakley@f5.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: d4dca2d41c392c8e5738a2fd1a283ae6c18ad674
+      note: |-
+        Fix nginx-agent shutdown (#44)
+
+        ProcessWatcher waitgroup was already decremented in it's go routine so
+        the wg.Done() in plugin.Close() led to panic due to negative waitgroup.
+
+        This means on SIGTERM/SIGINT the main nginx-agent process would exit
+        with status code 2 which is reported in systemd status.
+      author:
+        name: Dean Coakley
+        email: d.coakley@f5.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 138f6b33a192c129230e4586b5fa03fdfafe082d
+      note: 'fix: rename namespace to github for all protos'
+      author:
+        name: sanathkumarbs
+        email: b.s.sanathkumar@gmail.com
+      committer:
+        name: sanathkumarbs
+        email: b.s.sanathkumar@gmail.com
+    - commit: 9b0c6b6e73abc2f0017050ed1fa91d5ab5aab522
+      note: |-
+        Merge pull request #46 from nginx/fix-generate
+
+        chore: update makefile to generate proto bindings
+      author:
+        name: Sanath Kumar
+        email: b.s.sanathkumar@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 2514e2bbd2d926c94399ec9fb366a5eb7021ae73
+      note: 'chore: update makefile to generate proto bindings'
+      author:
+        name: sanathkumarbs
+        email: b.s.sanathkumar@gmail.com
+      committer:
+        name: sanathkumarbs
+        email: b.s.sanathkumar@gmail.com
+    - commit: bcf7ef2ac4d9ead53642ffc8da56d162300af05f
+      note: |-
+        features missing defaults (#43)
+
+        * features missing defaults and fixed tests
+
+        Co-authored-by: o.omahony <o.omahony@f5.com>
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 1695327ab74dd4d516b6a396886adb67555c8590
+      note: |-
+        create dir if doesnt exist (#41)
+
+        Co-authored-by: o.omahony <o.omahony@f5.com>
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 84815d6b2f262cce1a73309fee095bcc898fc769
+      note: Updated metrics logging for when a field isn't found in the access logs (#39)
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 470dc5363b2223799956455d6c40f466a0c50caa
+      note: |-
+        removing symlink for now (#40)
+
+        Co-authored-by: o.omahony <o.omahony@f5.com>
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: d2761c8dd195f09fda87fc60511bfe8e265c7dd2
+      note: |-
+        Change advanced metrics socket default location (#32)
+
+        * Move default location of advanced metrics socket
+        * Fix typos. Lint
+        * Update docs
+        * Restrict socket permissions
+      author:
+        name: Dean Coakley
+        email: d.coakley@f5.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 970eeb50cb394d6597d36ed4db8c476b928ecb08
+      note: Fix tagging of releases (#38)
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 3ac29637109aafbc5e7ce05aebadaaafb36ef7d7
+      note: |-
+        tidying of install scripts (#35)
+
+        * tidying of install scripts
+        * added sym link between /var/run and /run
+        * removed print help from preinstall
+
+        Co-authored-by: o.omahony <o.omahony@f5.com>
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: a7768eab46777a20c44fdbead386474759a42323
+      note: |-
+        Merge  back into main (#36)
+
+        * Updating changelog
+
+        Co-authored-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+        Co-authored-by: Donal Hurley <djhurley1990@gmail.com>
+      author:
+        name: github-actions[bot]
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 937af0d32c54ebf9d1089c0a56f05a732674b9a3
+      note: |-
+        added public gpg and it works ok (#37)
+
+        * added public gpg and ssl verify check
+
+        Co-authored-by: o.omahony <o.omahony@f5.com>
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 68783dd79862989dd776be6c8384db9c09d0e578
+      note: |-
+        feat: Upload nginx configs if nginx-config feature is enabled (#29)
+
+        * feat: Upload nginx configs if nginx-config feature is enabled
+
+        * Address review comments
+
+        * Log inability of uploading config
+
+        * make deps changes
+
+        * Make feature names consistent
+
+        Co-authored-by: o.omahony <o.omahony@f5.com>
+      author:
+        name: Nishant Kashiv
+        email: 90479227+nkashiv@users.noreply.github.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: a5fdcaf0e985f59eba1023a6c3d36f6a98bd710d
+      note: Moved packaging logic into a different Makefile (#34)
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: c72810eec09132e86b4bd59192e7a5d77e57e612
+      note: |-
+        Fix release workflow (#33)
+
+        Update CI workflow to call release branch workflow
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 1646c3ee21c523860201655e36a686a174c803a8
+      note: |-
+        Add release branch workflow (#30)
+
+        * Added release branch workflow
+        Co-authored-by: Aphral Griffin <a.griffin@f5.com>
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: a51d3d8945aad21e8c14a9ebc6c8ba1b7e8ab770
+      note: 'feat: new NMS ACM dimensions for advanced metrics (#24)'
+      author:
+        name: vrmare
+        email: 102700175+vrmare@users.noreply.github.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 934bb58a0a027eaae45cda826f0cee36db3a2d2b
+      note: |-
+        mitigate click jacking in example html (#28)
+
+        * mitigate click jacking in example html
+
+        Co-authored-by: o.omahony <o.omahony@f5.com>
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 32d34d26c4d2ce29a9dad1eb6226a8d89a8c343e
+      note: "fixing certs to be seeded by sha256 (#26)\n\n* fixing certificates to use higher encryption algorithms \n\nCo-authored-by: o.omahony <o.omahony@f5.com>"
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 5d04c77b90e42aa6364018d0a053107dcb1253dc
+      note: Updated build-docker make target to use pkgs.nginx.com (#27)
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 25d5766dbaa3089df7b325490dd92446553ac790
+      note: |-
+        Merge pull request #25 from nginx/update-commander-plugin-unit-tests
+
+        Updated commander plugin unit tests
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 3e75fca0f627a7ed25f57df549eb8e34383dd981
+      note: Updated commander plugin unit tests
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 87f8d802ede1432d331ade8f357bba413f5535c7
+      note: |-
+        added features key to config to list features for NGINX Agent (#21)
+
+        Co-authored-by: nkashiv <n.kashiv@f5.com>
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: f3c7384b40d54dc3f7a4230bcd4baa29420bc6d0
+      note: |-
+        Merge pull request #23 from nginx/update-unstable-unit-tests
+
+        Updated unstable unit tests
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 4de4ea0274cc92eafb5641768faf9ed4954ed4d4
+      note: Updated unstable unit tests
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 13b02e4fb2255e33efeffdc8b3cea918f2a0e308
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 6976682c1c1df78ba064eb7236355a81160ab471
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: cdea93973db8e7e22773de3f708f84e9a8194064
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 0a3a4a81c9a543f9719e67d9aa3de6186e242496
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 04ce7be08fb0bc4309dc2cd37d82ee8837f88556
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: e5c014f55990e11becf2158e164042f1516606fc
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: a66708fac2ece38a6231a6ecf3b48a8fd3d33ef7
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: b9c5f621a64a0afa9fb7895b39ec3d34a0784b2d
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 3750a19313c5b6b9a2fa735337dbe9206b0a7bb1
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 2313cd844fc9d4d99bd7ecc1adae1e71b623b4ca
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 76a6517a184d0b2279a8ec1abe132f100e49a4c9
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 4a1fa0398fce54610d4655050171e00ebd61806a
+      note: Update release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 1cba8135b465aba5a9c601764c84782319668fdc
+      note: Add release workflow
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 9149ae8ff9ad3a481fb3c7b0c239cd167622022a
+      note: Improve metrics logging for network io and nginx workers (#16)
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 855e28d0c0883d56b9f8168fb38864b9c080cd5b
+      note: |-
+        added a fix for the example server crashing when NGINX is not running. Removed the waitgroup in comms.go Close, as if no active waitgroup can cause a negative count. (#17)
+
+        Co-authored-by: o.omahony <o.omahony@f5.com>
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: baf3723ca3bebabe5d385e492b484279e7b216be
+      note: |-
+        Update the default keep alive params for the grpc client (#20)
+
+        * Update the default keep alive params for the grpc client
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: bcb8b7921d34edccf047a95929051bfe5c734063
+      note: Install test cleanup (#18)
+      author:
+        name: Craig Elliott
+        email: 80339985+craigell@users.noreply.github.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 8b81933d5c8e68e39868f6d7563f13d796971d5a
+      note: |-
+        Merge pull request #15 from nginx/Agent-readme-blog
+
+        docs: readme and blog
+      author:
+        name: Isaac Noumba
+        email: inoumba@users.noreply.github.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 4da532c6e9536fd41a9a44d434fceb698dfb0dae
+      note: 'docs: readme and blog'
+      author:
+        name: Isaac Noumba
+        email: i.noumba@f5.com
+      committer:
+        name: Isaac Noumba
+        email: i.noumba@f5.com
+    - commit: 2074d3718148f404937fa8b870d7cd94a5c55e3a
+      note: |-
+        The NGINX Agent is a lightweight piece of software that can be installed next to NGINX Open Source (OSS) and/or NGINX Plus
+
+        The Agent provides the following information on a NGINX instance
+        * Management of NGINX instance configurations
+        * Metrics from Logs (OSS) or API (Plus)
+        * Gathering of a key set of dataplane events
+
+        Key features of the Agent
+        - Registration: Registration of NGINX and Host / Dataplane Software Information
+        - NGINX Config Management: Manage NGINX configurations upstream and downstream
+        - NGINX+ Counting: R27+ NGINX Counting
+        - Metrics Reporting: Reporting of metrics information from NGINX OSS / Plus, Host (real and virtual)
+        - Dataplane Health Status: Report on the health of NGINX instances and dataplane information
+        - Process Watching: Watch for NGINX process changes (including workers)
+        - File Watching: Watch for file changes on the dataplane, uploading NGINX configuration changes via an allowed list of directories
+        - Activity Events: Report on key events on the dataplane
+        - TLS Certificate Reporting: Report on TLS Certificate Information
+      author:
+        name: oliveromahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+- semver: 2.18.0
+  date: 2022-09-06T14:22:30Z
+  packager: nginx
+  changes:
+    - commit: 3422f3b51e82dc0c1828eae35af5de7831d7273f
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: ab2a7b85fc64779cbc1e744e87da9d62916c9282
       note: Updating changelog
       author:
