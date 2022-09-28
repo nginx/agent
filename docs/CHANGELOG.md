@@ -3,6 +3,9 @@
 =============
 2022-09-28
 
+* Update release-branch.yml (702a2184)
+* Update CHANGELOG.md (d6fbf470)
+* Updating changelog (af146760)
 * Update CHANGELOG.md (1f515f87)
 * Updating changelog (894c6c93)
 * Update CHANGELOG.md (61d3b3d4)
@@ -104,3 +107,5 @@
 * Merge pull request #15 from nginx/Agent-readme-blog (8b81933d)
 * docs: readme and blog (4da532c6)
 * The NGINX Agent is a lightweight piece of software that can be installed next to NGINX Open Source (OSS) and/or NGINX Plus (2074d371)
+
+
