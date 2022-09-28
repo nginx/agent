@@ -1,7 +1,23 @@
 - semver: 2.19.0
-  date: 2022-09-23T10:36:16+01:00
+  date: 2022-09-28T11:37:01+01:00
   packager: nginx
   changes:
+    - commit: 61d3b3d494c9e8bc6b6928050c91862a8494a3a2
+      note: Update CHANGELOG.md
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 54160aac374d5cdd04c93c431e7b615037dea225
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: 5bebf6659910a59b2e540f8f668999733441c890
       note: |-
         Update ci workflow build snapshot job (#52)
