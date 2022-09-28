@@ -3,7 +3,9 @@
 =============
 2022-09-28
 
-* Updating changelog (7bb5f516)
+* Updating changelog (f80762cc)
+* Updating changelog (7ab4fc17)
+* Updating changelog (3b89dce1)
 * Merge  back into main (#56) (3b7ad1df)
 * Merge pull request #54 from nginx/Fix-Failing-Component-Test (20c7e80c)
 * fix intermittently failing component tests (c7da24b7)
