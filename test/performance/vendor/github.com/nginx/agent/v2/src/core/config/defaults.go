@@ -248,8 +248,8 @@ var (
 			Usage: "A comma-separated list of tags to add to the current instance or machine, to be used for inventory purposes.",
 		},
 		&StringSliceFlag{
-			Name:  FeaturesKey,
-			Usage: "A comma-separated list of features enabled for the agent.",
+			Name:         FeaturesKey,
+			Usage:        "A comma-separated list of features enabled for the agent.",
 			DefaultValue: Defaults.Features,
 		},
 		// NGINX Config
