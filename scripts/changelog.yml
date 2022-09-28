@@ -1,95 +1,56 @@
 - semver: 2.19.0
-  date: 2022-09-28T13:35:55Z
+  date: 2022-09-28T14:50:45+01:00
   packager: nginx
   changes:
-    - commit: a87935f8afc03f6184ddd57a4c4b4cd3210bb157
-      note: Updating changelog
+    - commit: 3b7ad1df00c195c98c7798989d1d30b7150ec6da
+      note: |-
+        Merge  back into main (#56)
+
+        Updating changelog
+
+        Co-authored-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+        Co-authored-by: Donal Hurley <djhurley1990@gmail.com>
       author:
-        name: github-actions
+        name: github-actions[bot]
         email: 41898282+github-actions[bot]@users.noreply.github.com
-      committer:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
-    - commit: 0b3292f9d98969d5343ae7bbd4b5cabb887fa0cb
-      note: Update release-branch.yml
-      author:
-        name: Donal Hurley
-        email: djhurley1990@gmail.com
       committer:
         name: GitHub
         email: noreply@github.com
-    - commit: f10062c6bc163eef395e8202d91a0b0dbadbf229
-      note: Updating changelog
+    - commit: 20c7e80c2c36826d73337f47daf6cf04799e788d
+      note: |-
+        Merge pull request #54 from nginx/Fix-Failing-Component-Test
+
+        Fix Failing Component Tests
       author:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
-      committer:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
-    - commit: 96dbc7eadb6092014ae35020f7337b4ce191d61e
-      note: Updating changelog
-      author:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
-      committer:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
-    - commit: 702a21845b12c58d3aef1b869d242807a7cac7ce
-      note: Update release-branch.yml
-      author:
-        name: Donal Hurley
-        email: djhurley1990@gmail.com
+        name: aphralG
+        email: 108004222+aphralG@users.noreply.github.com
       committer:
         name: GitHub
         email: noreply@github.com
-    - commit: d6fbf470e3bc0bad221ea4644b6f60c833d17719
-      note: Update CHANGELOG.md
+    - commit: c7da24b711cc9d879649a02e8ac41b2886803a9c
+      note: fix intermittently failing component tests
       author:
-        name: Donal Hurley
-        email: djhurley1990@gmail.com
+        name: Aphral Griffin
+        email: a.griffin@f5.com
       committer:
-        name: GitHub
-        email: noreply@github.com
-    - commit: af14676090959e098b98883123947f8bb6dfe155
-      note: Updating changelog
+        name: Aphral Griffin
+        email: a.griffin@f5.com
+    - commit: ff5443dc50d563a8086143098b3182848cc8d44b
+      note: fix intermittently failing component tests
       author:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
+        name: Aphral Griffin
+        email: a.griffin@f5.com
       committer:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
-    - commit: 1f515f87a92e6c29820264eca4cc202413917794
-      note: Update CHANGELOG.md
+        name: Aphral Griffin
+        email: a.griffin@f5.com
+    - commit: 75abbd1c069d14e3df215730613a0e959ebaaeba
+      note: fix failing component tests
       author:
-        name: Donal Hurley
-        email: djhurley1990@gmail.com
+        name: Aphral Griffin
+        email: a.griffin@f5.com
       committer:
-        name: GitHub
-        email: noreply@github.com
-    - commit: 894c6c9377ce7ab75c0c12113ee94ac9f0ae2b6d
-      note: Updating changelog
-      author:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
-      committer:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
-    - commit: 61d3b3d494c9e8bc6b6928050c91862a8494a3a2
-      note: Update CHANGELOG.md
-      author:
-        name: Donal Hurley
-        email: djhurley1990@gmail.com
-      committer:
-        name: GitHub
-        email: noreply@github.com
-    - commit: 54160aac374d5cdd04c93c431e7b615037dea225
-      note: Updating changelog
-      author:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
-      committer:
-        name: github-actions
-        email: 41898282+github-actions[bot]@users.noreply.github.com
+        name: Aphral Griffin
+        email: a.griffin@f5.com
     - commit: 5bebf6659910a59b2e540f8f668999733441c890
       note: |-
         Update ci workflow build snapshot job (#52)
