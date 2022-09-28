@@ -773,8 +773,13 @@ func toMessage(data ...interface{}) []byte {
 }
 
 func assertMessageSent(t *testing.T, addr string, dataToSend [][]byte) {
-	time.Sleep(1 * time.Millisecond)
 	conn, err := net.Dial("unix", addr)
+
+	for i := 0; i <= 3 && err != nil; i++ {
+		time.Sleep(5 * time.Millisecond)
+		conn, err = net.Dial("unix", addr)
+	}
+
 	assert.NoError(t, err)
 
 	for _, data := range dataToSend {
