@@ -1,7 +1,23 @@
 - semver: 2.19.0
-  date: 2022-09-28T11:37:01+01:00
+  date: 2022-09-28T11:52:53+01:00
   packager: nginx
   changes:
+    - commit: 1f515f87a92e6c29820264eca4cc202413917794
+      note: Update CHANGELOG.md
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 894c6c9377ce7ab75c0c12113ee94ac9f0ae2b6d
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: 61d3b3d494c9e8bc6b6928050c91862a8494a3a2
       note: Update CHANGELOG.md
       author:
