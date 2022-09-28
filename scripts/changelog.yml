@@ -1,7 +1,15 @@
 - semver: 2.19.0
-  date: 2022-09-28T15:52:51+01:00
+  date: 2022-09-28T15:41:54Z
   packager: nginx
   changes:
+    - commit: f80762cc4a30b08f955b8efd1809d7b897dc387b
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: 7ab4fc176109ced569068fc3ef4b36453ece9225
       note: Updating changelog
       author:
