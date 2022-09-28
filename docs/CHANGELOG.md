@@ -3,17 +3,11 @@
 =============
 2022-09-28
 
-* Updating changelog (a87935f8)
-* Update release-branch.yml (0b3292f9)
-* Updating changelog (f10062c6)
-* Updating changelog (96dbc7ea)
-* Update release-branch.yml (702a2184)
-* Update CHANGELOG.md (d6fbf470)
-* Updating changelog (af146760)
-* Update CHANGELOG.md (1f515f87)
-* Updating changelog (894c6c93)
-* Update CHANGELOG.md (61d3b3d4)
-* Updating changelog (54160aac)
+* Merge  back into main (#56) (3b7ad1df)
+* Merge pull request #54 from nginx/Fix-Failing-Component-Test (20c7e80c)
+* fix intermittently failing component tests (c7da24b7)
+* fix intermittently failing component tests (ff5443dc)
+* fix failing component tests (75abbd1c)
 * Update ci workflow build snapshot job (#52) (5bebf665)
 * Changing extension back to pkg instead of txz for freebsd packages. Introducing a symbolic link instead. (#50) (47273981)
 * fix: move proto namespace to github/agent (19c3c266)
