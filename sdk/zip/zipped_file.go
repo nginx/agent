@@ -65,12 +65,12 @@ func (z *Writer) Payloads() ([]byte, string, string, error) {
 	if z.flushed {
 		return nil, "", "", ErrFlushed
 	}
-	if err := z.gzip.Close(); err != nil {
-		return nil, "", "", err
-	}
 	// close the writer, so it flushes to the buffer, this also means we can/should only
 	// do this once.
 	if err := z.writer.Close(); err != nil {
+		return nil, "", "", err
+	}
+	if err := z.gzip.Close(); err != nil {
 		return nil, "", "", err
 	}
 	z.flushed = true
