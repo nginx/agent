@@ -2,8 +2,6 @@ name: CI
 
 on:
   push:
-    branches-ignore:  
-      - 'release-*'
 
 env:
   GOLANGCI_LINT_VERSION: 'v1.46.2'
@@ -78,6 +76,7 @@ jobs:
   build-snapshot:
     name: Build Snapshot
     runs-on: ubuntu-22.04
+    if: ${{ !startsWith(github.ref, 'refs/heads/release-') }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -91,11 +90,13 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           file: scripts/packages/packager/Dockerfile
-          tags: build-packager:1.0.0
+          tags: build-local-packager:1.0.0
           context: '.'
           push: false
           load: true
           no-cache: true
+          build-args: |
+            package_type=local-package
       - name: Build Packages
         # TODO: Remove git config step later once the repo https://github.com/nginxinc/crossplane-go is made public
         env:
@@ -103,7 +104,7 @@ jobs:
         run: |
           git config --global url."https://dhurley:${TOKEN}@github.com".insteadOf "https://github.com"
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          make clean local-apk-package local-deb-package local-rpm-package local-pkg-package
+          make clean local-apk-package local-deb-package local-rpm-package local-txz-package
           tar -cf ./build/snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.pkg ./build/*.apk
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
@@ -111,3 +112,8 @@ jobs:
           name: snapshots
           path: build/**/*.tar.gz
           retention-days: 3
+  trigger-release-workflow:
+    if: startsWith(github.ref, 'refs/heads/release-')
+    needs: [ lint, unit-test, component-test, performance-test ]
+    uses: ./.github/workflows/release-branch.yml
+    secrets: inherit

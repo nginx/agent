@@ -11,6 +11,15 @@ const (
 	MarkerComponent    = "component"
 	MarkerGateway      = "gateway"
 	MarkerPublishedApi = "published_api"
+
+	// ACM dimensions
+	AcmInfraWorkspacesNameDimension   = "acm_infra_workspaces_name"
+	AcmServiceWorkspacesNameDimension = "acm_service_workspaces_name"
+	AcmEnvironmentsNameDimension      = "acm_environments_name"
+	AcmEnvironmentsTypeDimension      = "acm_environments_type"
+	AcmApiProxyNameDimension          = "acm_api_proxy_name"
+	AcmApiProxyHostnameDimension      = "acm_api_proxy_hostname"
+	AcmProxyApiVersionDimension       = "acm_api_proxy_version"
 )
 
 type NginxConf struct {

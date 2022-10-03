@@ -24,7 +24,7 @@ func NewSchema(fields ...*Field) *Schema {
 		if f.Type == FieldTypeDimension {
 			dims = append(dims, f)
 
-			f.KeyBitPositionInCompoudKey = keyBits
+			f.KeyBitPositionInCompoundKey = keyBits
 			keyBits += f.KeyBitSize
 			f.index = dimensionIndex
 			dimensionIndex++

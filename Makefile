@@ -1,3 +1,5 @@
+include Makefile.*
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Variable Definitions                                                                                            #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -29,30 +31,14 @@ DOCKER_TAG=agent_${OS_RELEASE}_${OS_VERSION}
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 
-GPG_PUBLIC_KEY := .key
-
-DEB_DISTROS?=ubuntu-jammy-22.04 ubuntu-focal-20.04 ubuntu-bionic-18.04 debian-bullseye-11 debian-buster-10
-DEB_ARCHS?=arm64 amd64
-RPM_DISTROS?=centos-7-x86_64 redhatenterprise-7-x86_64 redhatenterprise-8-x86_64 redhatenterprise-9-x86_64 amazon-2-x86_64 amazon-latest-x86_64 amazon-2017.09-x86_64 suse-12-x86_64 suse-15-x86_64
-FREEBSD_DISTROS?="FreeBSD:12:amd64" "FreeBSD:13:amd64"
-APK_VERSIONS?=3.13 3.14 3.15 3.16
-APK_ARCHS?=aarch64 x86_64
-
+CERTS_DIR          := ./build/certs
 PACKAGE_PREFIX	   := nginx-agent
-PACKAGES_DIR	   := ./build/packages
-PACKAGES_REPO	   := "pkgs-test.nginx.com"
-AGENT_UPLOADER_KEY := "~/agent-uploader.pem"
+PACKAGES_REPO	   := "pkgs.nginx.com"
 UNAME_M	            = $(shell uname -m)
 TEST_BUILD_DIR	   := build/test
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 LOCAL_ARCH         := amd64
-UPLOAD_URL         := "https://up-ap.nginx.com/"
 
-ifeq ($(uname_m),aarch64)
-ARCH   	                = arm64
-else
-ARCH                    = amd64
-endif
 
 $(TEST_BUILD_DIR):
 	mkdir -p $(TEST_BUILD_DIR)
@@ -94,86 +80,6 @@ install-tools: ## Install dependencies in tools.go
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Release Packaging                                                                                               #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-clean-packages: 
-	@rm -rf $(PACKAGES_DIR)
-
-$(PACKAGES_DIR):
-	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk && mkdir -p $(PACKAGES_DIR)/pkg
-
-package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported distros
-	@for distro in $(DEB_DISTROS); do \
-		deb_codename=`echo $$distro | cut -d- -f 2`; \
-		for arch in $(DEB_ARCHS); do \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename} ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb; \
-		done; \
-	done; \
-	for distro in $(RPM_DISTROS); do \
-		rpm_distro=`echo $$distro | cut -d- -f 1`;  \
-		rpm_major=`echo $$distro | cut -d- -f 2`; \
-		rpm_codename='na'; \
-		if [ "$$rpm_distro" == "centos" ] || [ "$$rpm_distro" == "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
-		elif [ "$$rpm_distro" == "amazon" ] && [ "$$rpm_major" == "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
-		if [ "$$rpm_distro" == "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
-		if [ "$$rpm_codename" != "na" ]; then \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=${ARCH} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${UNAME_M}.rpm; \
-		fi; \
-	done; \
-	for version in $(APK_VERSIONS); do \
-		if [ ! -d "$(PACKAGES_DIR)/apk/$${version}" ]; then mkdir $(PACKAGES_DIR)/apk/$${version}; fi; \
-		for arch in $(APK_ARCHS); do \
-			if [ ! -d "$(PACKAGES_DIR)/apk/$${version}/$${arch}" ]; then mkdir $(PACKAGES_DIR)/apk/$${version}/$${arch}; fi; \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
-		done; \
-	done; \
-	# create specific freebsd pkg files \
-	rm -rf ./build/nginx-agent; \
-	mkdir -p $(PACKAGES_DIR)/pkg/freebsd; \
-	staging=$$(mktemp -d); \
-	mkdir -p $${staging}/usr/local/{bin,etc/nginx-agent,etc/rc.d}; \
-	cp nginx-agent.conf $${staging}/usr/local/etc/nginx-agent; \
-	cp scripts/packages/nginx-agent $${staging}/usr/local/etc/rc.d; \
-	cp scripts/packages/postremove.sh $${staging}/+PRE_DEINSTALL; \
-	cp scripts/packages/postinstall.sh $${staging}/+POST_INSTALL; \
-	cp scripts/packages/plist $$staging; \
-	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o $${staging}/usr/local/bin; \
-	chmod +x $${staging}/usr/local/etc/rc.d/nginx-agent; \
-	VERSION=$(VERSION); VERSION=$${VERSION//v/} envsubst < scripts/packages/manifest > $${staging}/+MANIFEST; \
-	for freebsd_abi in $(FREEBSD_DISTROS); do \
-		mkdir -p $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
-		pkg -o ABI=$${freebsd_abi} create \
-			-m $${staging} \
-			-r $${staging} \
-			-p $${staging}/plist \
-			-o $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi}; \
-		# create freebsd pkg repo layout \
-		pkg repo $(PACKAGES_DIR)/pkg/freebsd/$${freebsd_abi} .key.rsa; \
-	done; \
-	rm -rf $$staging; \
-	echo "DEB packages:"; \
-	find $(PACKAGES_DIR)/deb ;\
-	echo "RPM packages:"; \
-	find $(PACKAGES_DIR)/rpm ;\
-	echo "APK packages:"; \
-	find $(PACKAGES_DIR)/apk ;\
-	echo "PKG packages:"; \
-	find $(PACKAGES_DIR)/pkg ;\
-	cd $(PACKAGES_DIR) && tar -czvf "./${PACKAGE_PREFIX}.tar.gz" * && cd ../..;
-
-gpg-key: ## Generate GPG public key
-	gpg1 --armor --import $(NFPM_SIGNING_KEY_FILE) \
-	# we need to convert the private gpg key to rsa pem format for pkg signing \
-	keyid=$$(gpg --list-keys NGINX | awk '/pub/{getline; print substr($$0,length($$0)-7,8)}'); \
-	gpg1 --export-secret-key $$keyid | openpgp2ssh $$keyid > .key.rsa; \
-	gpg1 --armor --export > $(GPG_PUBLIC_KEY)
-
-release: ## Publish tarball to the UPLOAD_URL
-	echo "Publishing nginx-agent packages to ${UPLOAD_URL}"; \
-	curl -XPOST -F "file=@$(PACKAGES_DIR)/${PACKAGE_PREFIX}.tar.gz" -E ${AGENT_UPLOADER_KEY} ${UPLOAD_URL}; \
-	curl -XPOST -F "file=@$(GPG_PUBLIC_KEY)" -E ${AGENT_UPLOADER_KEY} ${UPLOAD_URL}; \
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Local Packaging                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 local-apk-package: ## Create local apk package
@@ -188,13 +94,13 @@ local-rpm-package: ## Create local rpm package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
 	VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT.rpm;
 
-local-pkg-package: ## Create local pkg package
+local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	docker run -v `pwd`:/nginx-agent/ build-packager:1.0.0
+	docker run -v `pwd`:/nginx-agent/ build-local-packager:1.0.0
 
-build-pkg-packager-docker: ## Builds pkg packager docker image
+build-txz-packager-docker: ## Builds txz packager docker image
 	@echo Building Local Packager; \
-	DOCKER_BUILDKIT=1 docker build -t build-packager:1.0.0 . --no-cache -f ./scripts/packages/packager/Dockerfile
+	DOCKER_BUILDKIT=1 docker build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Testing                                                                                                         #
@@ -241,7 +147,7 @@ performance-test: ## Run performance tests
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem userWorkFlow_test.go
+	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
 
 build-benchmark-docker: ## Build benchmark test docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
@@ -258,34 +164,34 @@ test-install: ## Run agent install test
 # Cert Generation                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 certs: ## Generate TLS certificates
-	scripts/mtls/gen_cnf.sh ca --cn 'client-ca.local' --state Cork --locality Cork --org NGINX --country IE --out certs/client/conf
-	scripts/mtls/gen_cert.sh ca --config certs/client/conf/ca.cnf --out certs/client
+	scripts/mtls/gen_cnf.sh ca --cn 'client-ca.local' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/client/conf
+	scripts/mtls/gen_cert.sh ca --config ${CERTS_DIR}/client/conf/ca.cnf --out ${CERTS_DIR}/client
 
-	scripts/mtls/gen_cnf.sh intermediate --cn 'client-int.local' --org NGINX --locality Cork --out certs/client/conf
-	scripts/mtls/gen_cert.sh intermediate --config certs/client/conf/int.cnf --ca-cert certs/client/ca.crt --ca-key certs/client/ca.key --out certs/client
+	scripts/mtls/gen_cnf.sh intermediate --cn 'client-int.local' --org NGINX --locality Cork --out ${CERTS_DIR}/client/conf
+	scripts/mtls/gen_cert.sh intermediate --config ${CERTS_DIR}/client/conf/int.cnf --ca-cert ${CERTS_DIR}/client/ca.crt --ca-key ${CERTS_DIR}/client/ca.key --out ${CERTS_DIR}/client
 
-	scripts/mtls/gen_cnf.sh end-entity --cn 'client.local' --san 'DNS.1=client.local' --out certs/client/conf
-	scripts/mtls/gen_cert.sh end-entity --config certs/client/conf/ee.cnf --ca-cert certs/client/int.crt --ca-key certs/client/int.key --out certs/client
+	scripts/mtls/gen_cnf.sh end-entity --cn 'client.local' --san 'DNS.1=client.local' --out ${CERTS_DIR}/client/conf
+	scripts/mtls/gen_cert.sh end-entity --config ${CERTS_DIR}/client/conf/ee.cnf --ca-cert ${CERTS_DIR}/client/int.crt --ca-key ${CERTS_DIR}/client/int.key --out ${CERTS_DIR}/client
 
-	cp certs/client/ee.crt certs/client.crt
-	cp certs/client/ee.key certs/client.key
+	cp ${CERTS_DIR}/client/ee.crt ${CERTS_DIR}/client.crt
+	cp ${CERTS_DIR}/client/ee.key ${CERTS_DIR}/client.key
 
-	scripts/mtls/gen_cnf.sh ca --cn 'server-ca.local' --state Cork --locality Cork --org NGINX --country IE --out certs/server/conf
-	scripts/mtls/gen_cert.sh ca --config certs/server/conf/ca.cnf --out certs/server
+	scripts/mtls/gen_cnf.sh ca --cn 'server-ca.local' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/server/conf
+	scripts/mtls/gen_cert.sh ca --config ${CERTS_DIR}/server/conf/ca.cnf --out ${CERTS_DIR}/server
 
-	scripts/mtls/gen_cnf.sh intermediate --cn 'server-int.local' --org NGINX --locality Cork --out certs/server/conf
-	scripts/mtls/gen_cert.sh intermediate --config certs/server/conf/int.cnf --ca-cert certs/server/ca.crt --ca-key certs/server/ca.key --out certs/server
+	scripts/mtls/gen_cnf.sh intermediate --cn 'server-int.local' --org NGINX --locality Cork --out ${CERTS_DIR}/server/conf
+	scripts/mtls/gen_cert.sh intermediate --config ${CERTS_DIR}/server/conf/int.cnf --ca-cert ${CERTS_DIR}/server/ca.crt --ca-key ${CERTS_DIR}/server/ca.key --out ${CERTS_DIR}/server
 
-	scripts/mtls/gen_cnf.sh end-entity --cn 'tls.example.com' --san 'DNS.1=tls.example.com' --out certs/server/conf
-	scripts/mtls/gen_cert.sh end-entity --config certs/server/conf/ee.cnf --ca-cert certs/server/int.crt --ca-key certs/server/int.key --out certs/server
+	scripts/mtls/gen_cnf.sh end-entity --cn 'tls.example.com' --san 'DNS.1=tls.example.com' --out ${CERTS_DIR}/server/conf
+	scripts/mtls/gen_cert.sh end-entity --config ${CERTS_DIR}/server/conf/ee.cnf --ca-cert ${CERTS_DIR}/server/int.crt --ca-key ${CERTS_DIR}/server/int.key --out ${CERTS_DIR}/server
 
-	cp certs/server/ee.crt certs/server.crt
-	cp certs/server/ee.key certs/server.key
+	cp ${CERTS_DIR}/server/ee.crt ${CERTS_DIR}/server.crt
+	cp ${CERTS_DIR}/server/ee.key ${CERTS_DIR}/server.key
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Docker Helper Targets                                                                                           #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-build-docker: clean local-apk-package # Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
+build-docker: # Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	@echo Building Docker; \
 	DOCKER_BUILDKIT=1 docker build -t ${DOCKER_TAG} . \
 		--no-cache -f ./scripts/docker/${OS_RELEASE}/Dockerfile \

@@ -95,20 +95,24 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 		{
 			testName: "ValuesToUpdate",
 			config: &config.Config{
-				Tags: tutils.InitialConfTags,
+				Tags:     tutils.InitialConfTags,
+				Features: config.Defaults.Features,
 			},
 			expUpdatedConfig: &config.Config{
-				Tags: updateTags,
+				Tags:     updateTags,
+				Features: config.Defaults.Features,
 			},
 			updatedTags: true,
 		},
 		{
 			testName: "NoValuesToUpdate",
 			config: &config.Config{
-				Tags: tutils.InitialConfTags,
+				Tags:     tutils.InitialConfTags,
+				Features: config.Defaults.Features,
 			},
 			expUpdatedConfig: &config.Config{
-				Tags: tutils.InitialConfTags,
+				Tags:     tutils.InitialConfTags,
+				Features: config.Defaults.Features,
 			},
 			updatedTags: false,
 		},
@@ -158,7 +162,7 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 			assert.Equal(t, tc.config.Tags, *dataPlaneStatus.tags)
 
 			// Attempt update & check results
-			updated, err := config.UpdateAgentConfig("12345", tc.expUpdatedConfig.Tags)
+			updated, err := config.UpdateAgentConfig("12345", tc.expUpdatedConfig.Tags, tc.expUpdatedConfig.Features)
 			assert.Nil(t, err)
 			assert.Equal(t, updated, tc.updatedTags)
 

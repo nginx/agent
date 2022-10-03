@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -69,8 +70,7 @@ func TestGetNginxInfoFromBuffer(t *testing.T) {
 			built by clang 12.0.0 (clang-1200.0.32.29)
 			built with OpenSSL 1.1.1k  25 Mar 2021
 			TLS SNI support enabled
-			configure arguments: --prefix=/usr/local/Cellar/nginx/1.19.10 --modules-path=/usr/sbin/nginx/modules --sbin-path=/usr/local/Cellar/nginx/1.19.10/bin/nginx --with-cc-opt='-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include' --with-ld-opt='-L/usr/local/opt/pcre/lib -L/usr/local/opt/openssl@1.1/lib' --conf-path=/usr/local/etc/nginx/nginx.conf --pid-path=/usr/local/var/run/nginx.pid --lock-path=/usr/local/var/run/nginx.lock --http-client-body-temp-path=/usr/local/var/run/nginx/client_body_temp --http-proxy-temp-path=/usr/local/var/run/nginx/proxy_temp --http-fastcgi-temp-path=/usr/local/var/run/nginx/fastcgi_temp --http-uwsgi-temp-path=/usr/local/var/run/nginx/uwsgi_temp --http-scgi-temp-path=/usr/local/var/run/nginx/scgi_temp --http-log-path=/usr/local/var/log/nginx/access.log --error-log-path=/usr/local/var/log/nginx/error.log --with-compat --with-debug --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_degradation_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-ipv6 --with-mail --with-mail_ssl_module --with-pcre --with-pcre-jit --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module`,
-			expectedNginxInfo: &nginxInfo{
+			configure arguments: --prefix=/usr/local/Cellar/nginx/1.19.10 --modules-path=/tmp/modules --sbin-path=/usr/local/Cellar/nginx/1.19.10/bin/nginx --with-cc-opt='-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include' --with-ld-opt='-L/usr/local/opt/pcre/lib -L/usr/local/opt/openssl@1.1/lib' --conf-path=/usr/local/etc/nginx/nginx.conf --pid-path=/usr/local/var/run/nginx.pid --lock-path=/usr/local/var/run/nginx.lock --http-client-body-temp-path=/usr/local/var/run/nginx/client_body_temp --http-proxy-temp-path=/usr/local/var/run/nginx/proxy_temp --http-fastcgi-temp-path=/usr/local/var/run/nginx/fastcgi_temp --http-uwsgi-temp-path=/usr/local/var/run/nginx/uwsgi_temp --http-scgi-temp-path=/usr/local/var/run/nginx/scgi_temp --http-log-path=/usr/local/var/log/nginx/access.log --error-log-path=/usr/local/var/log/nginx/error.log --with-compat --with-debug --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_degradation_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-ipv6 --with-mail --with-mail_ssl_module --with-pcre --with-pcre-jit --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module`, expectedNginxInfo: &nginxInfo{
 				prefix:    "/usr/local/Cellar/nginx/1.19.10",
 				confPath:  "/usr/local/etc/nginx/nginx.conf",
 				logPath:   "/usr/local/var/log/nginx/access.log",
@@ -86,7 +86,7 @@ func TestGetNginxInfoFromBuffer(t *testing.T) {
 				cfgf: map[string]interface{}{
 					"conf-path":                      "/usr/local/etc/nginx/nginx.conf",
 					"error-log-path":                 "/usr/local/var/log/nginx/error.log",
-					"modules-path":                   "/usr/sbin/nginx/modules",
+					"modules-path":                   "/tmp/modules",
 					"http-client-body-temp-path":     "/usr/local/var/run/nginx/client_body_temp",
 					"http-fastcgi-temp-path":         "/usr/local/var/run/nginx/fastcgi_temp",
 					"http-log-path":                  "/usr/local/var/log/nginx/access.log",
@@ -130,7 +130,7 @@ func TestGetNginxInfoFromBuffer(t *testing.T) {
 				configureArgs: []string{
 					"",
 					"prefix=/usr/local/Cellar/nginx/1.19.10",
-					"modules-path=/usr/sbin/nginx/modules",
+					"modules-path=/tmp/modules",
 					"sbin-path=/usr/local/Cellar/nginx/1.19.10/bin/nginx",
 					"with-cc-opt='-I/usr/local/opt/pcre/include -I/usr/local/opt/openssl@1.1/include'",
 					"with-ld-opt='-L/usr/local/opt/pcre/lib -L/usr/local/opt/openssl@1.1/lib'",
@@ -173,7 +173,7 @@ func TestGetNginxInfoFromBuffer(t *testing.T) {
 					"with-stream_ssl_preread_module",
 				},
 				loadableModules: nil,
-				modulesPath:     "/usr/sbin/nginx/modules",
+				modulesPath:     "/tmp/modules",
 			},
 		},
 		{
@@ -204,6 +204,19 @@ func TestGetNginxInfoFromBuffer(t *testing.T) {
 		},
 	}
 
+	err := os.Mkdir("/tmp/modules", 0700)
+	assert.NoError(t, err)
+
+	tempDir := t.TempDir()
+	mockNginx, err := ioutil.TempFile(tempDir, "mock_nginx_executable")
+	assert.NoError(t, err)
+
+	defer func() {
+		_ = mockNginx.Close()
+		_ = os.RemoveAll(mockNginx.Name())
+		_ = os.RemoveAll("/tmp/modules")
+	}()
+
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			binary := NginxBinaryType{
@@ -212,7 +225,7 @@ func TestGetNginxInfoFromBuffer(t *testing.T) {
 
 			var buffer bytes.Buffer
 			buffer.WriteString(test.input)
-			nginxInfo := binary.getNginxInfoFromBuffer("/usr/sbin/nginx", &buffer)
+			nginxInfo := binary.getNginxInfoFromBuffer(filepath.Join(tempDir, mockNginx.Name()), &buffer)
 
 			assert.Equal(t, test.expectedNginxInfo.cfgf, nginxInfo.cfgf)
 			assert.Equal(t, test.expectedNginxInfo.confPath, nginxInfo.confPath)

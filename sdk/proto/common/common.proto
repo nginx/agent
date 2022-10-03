@@ -8,3 +8,4 @@ message Dimension {
     string name = 1 [(gogoproto.jsontag) = "name" ];
     string value = 2 [(gogoproto.jsontag) = "value" ];
 }
+

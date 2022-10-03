@@ -5,7 +5,7 @@ const (
 master_process on;
 worker_processes auto;
 
-error_log /dev/stderr;
+error_log /var/log/nginx/error.log warn;
 
 load_module modules/ngx_http_f5_metrics_module.so;
 load_module modules/ngx_stream_f5_metrics_module.so;

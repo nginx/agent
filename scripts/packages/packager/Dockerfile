@@ -1,10 +1,12 @@
-FROM golang:1.18.5-bullseye
+ARG package_type
+
+FROM golang:1.18.5-bullseye AS base
 
 ARG PKG_VER="1.17.5"
 ARG PKG_DIR="/tmp/pkg"
 
 RUN apt-get update && \
-    apt-get install -y make jq gnupg gnupg1 gpgv1 git aptly debsig-verify aptly debsig-verify createrepo-c dnf rpm \
+    apt-get install -y make jq gnupg gnupg1 gpgv1 git aptly debsig-verify createrepo-c dnf rpm \
                        curl gettext-base make monkeysphere libtool unzip libssl-dev libbz2-dev libbsd-dev libarchive-dev liblzma-dev zlib1g-dev
 
 # compile, install pkg tool for linux
@@ -14,7 +16,13 @@ RUN	mkdir $PKG_DIR; cd $PKG_DIR; \
 	unzip -qo pkg.zip; cd pkg-$PKG_VER; ./configure; make -s -j$(nproc); make install; \
 	rm -rf $PKG_DIR
 
-ADD ./scripts/packages/packager/entrypoint.sh /scripts/entrypoint.sh
+FROM base AS local-package
+ADD ./scripts/packages/packager/local-entrypoint.sh /scripts/entrypoint.sh
 RUN chmod +x /scripts/entrypoint.sh
 
+FROM base AS signed-package
+ADD ./scripts/packages/packager/signed-entrypoint.sh /scripts/entrypoint.sh
+RUN chmod +x /scripts/entrypoint.sh
+
+FROM ${package_type} AS final
 ENTRYPOINT [ "/scripts/entrypoint.sh" ]

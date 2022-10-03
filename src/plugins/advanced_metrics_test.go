@@ -186,7 +186,7 @@ func TestAppCentricMetric_toMetricReport(t *testing.T) {
 	}, report)
 }
 
-func TestAppCenticMetricClose(t *testing.T) {
+func TestAppCentricMetricClose(t *testing.T) {
 	env := tutils.GetMockEnv()
 	pluginUnderTest := NewAdvancedMetrics(env, &config.Config{})
 
@@ -201,7 +201,7 @@ func TestAppCenticMetricClose(t *testing.T) {
 	env.AssertExpectations(t)
 }
 
-func TestAppCenticMetricSubscriptions(t *testing.T) {
+func TestAppCentricMetricSubscriptions(t *testing.T) {
 	pluginUnderTest := NewAdvancedMetrics(tutils.GetMockEnv(), &config.Config{})
 	assert.Equal(t, []string{}, pluginUnderTest.Subscriptions())
 }

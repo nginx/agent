@@ -214,6 +214,7 @@ func TestMetrics_Process_AgentConfigChanged(t *testing.T) {
 					CollectionInterval: 10,
 					Mode:               "streaming",
 				},
+				Features: config.Defaults.Features,
 			},
 			expUpdatedConfig: &config.Config{
 				ClientID: "12345",
@@ -224,6 +225,7 @@ func TestMetrics_Process_AgentConfigChanged(t *testing.T) {
 					CollectionInterval: 10,
 					Mode:               "aggregated",
 				},
+				Features: config.Defaults.Features,
 			},
 			updatedTags: false,
 		},
@@ -253,7 +255,7 @@ func TestMetrics_Process_AgentConfigChanged(t *testing.T) {
 			assert.Equal(t, tutils.InitialConfTags, metricsPlugin.conf.Tags)
 
 			// Attempt update & check results
-			updated, err := config.UpdateAgentConfig("12345", tc.expUpdatedConfig.Tags)
+			updated, err := config.UpdateAgentConfig("12345", tc.expUpdatedConfig.Tags, tc.expUpdatedConfig.Features)
 			assert.Nil(t, err)
 			assert.Equal(t, updated, tc.updatedTags)
 
