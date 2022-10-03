@@ -86,6 +86,25 @@ message DataplaneStatus {
   HostInfo host = 3 [(gogoproto.jsontag) = "host" ];
   repeated NginxHealth healths = 5 [(gogoproto.jsontag) = "healths" ];
   repeated DataplaneSoftwareDetails dataplane_software_details = 6 [(gogoproto.jsontag) = "dataplane_software_details"];
+  repeated AgentActivityStatus agent_activity_status = 7 [(gogoproto.jsontag) = "agent_activity_status" ];
+}
+
+message AgentActivityStatus {
+    oneof Status {
+        NginxConfigStatus nginx_config_status = 1 [(gogoproto.jsontag) = "nginx_config_status" ];
+    }
+}
+
+message NginxConfigStatus {
+  string correlation_id = 1 [(gogoproto.jsontag) = "correlation_id" ];
+  Status status = 2 [(gogoproto.jsontag) = "status" ];
+  string message = 3 [(gogoproto.jsontag) = "message" ];
+
+  enum Status {
+    PENDING = 0;
+    OK = 1;
+    ERROR = 2;
+  }
 }
 
 message DownloadRequest {

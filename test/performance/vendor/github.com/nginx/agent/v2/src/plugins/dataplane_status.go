@@ -15,22 +15,23 @@ import (
 )
 
 type DataPlaneStatus struct {
-	messagePipeline core.MessagePipeInterface
-	ctx             context.Context
-	sendStatus      chan bool
-	healthTicker    *time.Ticker
-	interval        time.Duration
-	meta            *proto.Metadata
-	binary          core.NginxBinary
-	env             core.Environment
-	version         string
-	tags            *[]string
-	configDirs      string
-	lastSendDetails time.Time
-	envHostInfo     *proto.HostInfo
-	statusUrls      map[string]string
-	reportInterval  time.Duration
-	napDetails      *proto.DataplaneSoftwareDetails_AppProtectWafDetails
+	messagePipeline       core.MessagePipeInterface
+	ctx                   context.Context
+	sendStatus            chan bool
+	healthTicker          *time.Ticker
+	interval              time.Duration
+	meta                  *proto.Metadata
+	binary                core.NginxBinary
+	env                   core.Environment
+	version               string
+	tags                  *[]string
+	configDirs            string
+	lastSendDetails       time.Time
+	envHostInfo           *proto.HostInfo
+	statusUrls            map[string]string
+	reportInterval        time.Duration
+	napDetails            *proto.DataplaneSoftwareDetails_AppProtectWafDetails
+	agentActivityStatuses []*proto.AgentActivityStatus
 }
 
 const (
@@ -87,11 +88,54 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 	case msg.Exact(core.NginxAppProtectDetailsGenerated):
 		// If a NAP report was generated sync it
 		dps.syncNAPDetails(msg)
+
+	case msg.Exact(core.NginxConfigValidationPending):
+		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
+		switch data := msg.Data().(type) {
+		case *proto.AgentActivityStatus:
+			dps.updateAgentActivityStatuses(data)
+		default:
+			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, data)
+		}
+	case msg.Exact(core.NginxConfigApplyFailed) || msg.Exact(core.NginxConfigApplySucceeded):
+		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
+		switch data := msg.Data().(type) {
+		case *proto.AgentActivityStatus:
+			dps.updateAgentActivityStatuses(data)
+			dps.sendDataplaneStatus(dps.messagePipeline, false)
+		default:
+			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, data)
+		}
 	}
 }
 
 func (dps *DataPlaneStatus) Subscriptions() []string {
-	return []string{core.AgentConfigChanged, core.NginxAppProtectDetailsGenerated}
+	return []string{
+		core.AgentConfigChanged,
+		core.NginxAppProtectDetailsGenerated,
+		core.NginxConfigValidationPending,
+		core.NginxConfigApplyFailed,
+		core.NginxConfigApplySucceeded,
+	}
+}
+
+func (dps *DataPlaneStatus) updateAgentActivityStatuses(newAgentActivityStatus *proto.AgentActivityStatus) {
+	log.Tracef("DataplaneStatus: Adding %v to agentActivityStatuses", newAgentActivityStatus)
+	if _, ok := newAgentActivityStatus.GetStatus().(*proto.AgentActivityStatus_NginxConfigStatus); ok {
+		foundExistingNginxStatus := false
+		for index, agentActivityStatus := range dps.agentActivityStatuses {
+			if _, ok := agentActivityStatus.GetStatus().(*proto.AgentActivityStatus_NginxConfigStatus); ok {
+				dps.agentActivityStatuses[index] = newAgentActivityStatus
+				log.Tracef("DataplaneStatus: Updated agentActivityStatus with new status %v", newAgentActivityStatus)
+				foundExistingNginxStatus = true
+			}
+		}
+
+		if !foundExistingNginxStatus {
+			dps.agentActivityStatuses = append(dps.agentActivityStatuses, newAgentActivityStatus)
+			log.Tracef("DataplaneStatus: Added new status %v to agentActivityStatus", newAgentActivityStatus)
+		}
+	}
 }
 
 func (dps *DataPlaneStatus) sendDataplaneStatus(pipeline core.MessagePipeInterface, forceDetails bool) {
@@ -133,6 +177,7 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 		Details:                  dps.detailsForProcess(processes, forceDetails),
 		Healths:                  dps.healthForProcess(processes),
 		DataplaneSoftwareDetails: dps.dataplaneSoftwareDetails(),
+		AgentActivityStatus:      dps.agentActivityStatuses,
 	}
 }
 

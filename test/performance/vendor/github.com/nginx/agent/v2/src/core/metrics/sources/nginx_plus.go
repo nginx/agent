@@ -33,8 +33,8 @@ type NginxPlus struct {
 	plusNamespace,
 	plusAPI string
 	// This is for keeping the previous stats.  Need to report the delta.
-	prevStats *plusclient.Stats
-	init      sync.Once
+	prevStats     *plusclient.Stats
+	init          sync.Once
 	clientVersion int
 }
 

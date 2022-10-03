@@ -244,23 +244,14 @@ func (n *NginxBinaryType) Reload(processId, bin string) error {
 // ValidateConfig tests the config with nginx -t -c configLocation.
 func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error {
 	log.Debugf("Validating config, %s for nginx process, %s", configLocation, processId)
+	response, err := runCmd(bin, "-t", "-c", configLocation)
+	if err != nil {
+		confFiles, auxFiles, err := sdk.GetNginxConfigFiles(config)
+		n.writeBackup(config, confFiles, auxFiles)
+		return fmt.Errorf("error running nginx -t -c %v:\n%s%v", configLocation, response, err)
+	}
 
-	errChan := make(chan error, 1)
-    responseChan := make(chan string)
-
-	go func(responseChan chan string, errChan chan error) {
-		n.wg.Wait()
-		res, errResponse := runCmd(bin, "-t", "-c", configLocation)
-		if errResponse != nil {
-			confFiles, auxFiles, errResponse := sdk.GetNginxConfigFiles(config)
-			n.writeBackup(config, confFiles, auxFiles)
-			errChan <- fmt.Errorf("error running nginx -t -c %s:\n %s %v", configLocation, res, errResponse)
-		}
-		responseChan <- res.String()
-		defer n.wg.Done()
-	}(responseChan, errChan)
-
-	log.Infof("Config validated:\n%s", <-responseChan)
+	log.Infof("Config validated:\n%s", response)
 
 	return nil
 }
