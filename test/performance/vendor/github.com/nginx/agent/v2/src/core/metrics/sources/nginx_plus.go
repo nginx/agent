@@ -146,9 +146,13 @@ func (c *NginxPlus) getStatusZoneRequestCount(serverZoneMetrics []*proto.StatsEn
 	for _, locationZoneMetric := range locationZoneMetrics {
 		orphanLocationZone := true
 		for _, dimension := range locationZoneMetric.Dimensions {
-			if dimension.GetName() == "server_zone" {
-				orphanLocationZone = false
-				break
+			if dimension.GetName() == "location_zone" {
+				for _, serverZone := range c.serverZones {
+					if serverZone.IsLocationInServer(dimension.GetValue()) {
+						orphanLocationZone = false
+						break
+					}
+				}
 			}
 		}
 
@@ -161,6 +165,8 @@ func (c *NginxPlus) getStatusZoneRequestCount(serverZoneMetrics []*proto.StatsEn
 			}
 		}
 	}
+
+	log.Tracef("Nginx plus status zone request count: %v", statusZoneRequestCount)
 
 	return statusZoneRequestCount
 }
@@ -446,12 +452,6 @@ func (c *NginxPlus) locationZoneMetrics(stats, prevStats *plusclient.Stats) []*p
 
 		dims := c.baseDimensions.ToDimensions()
 		dims = append(dims, &proto.Dimension{Name: "location_zone", Value: name})
-		for _, serverZone := range c.serverZones {
-			if serverZone.IsLocationInServer(name) {
-				dims = append(dims, &proto.Dimension{Name: "server_zone", Value: serverZone.GetName()})
-				break
-			}
-		}
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
 	}
 
