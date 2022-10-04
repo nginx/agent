@@ -16,11 +16,10 @@ import (
 	"testing"
 	"time"
 
-	nap_monitoring "github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
-
 	"github.com/sirupsen/logrus"
 
 	pb "github.com/nginx/agent/sdk/v2/proto/events"
+	nap_monitoring "github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
 )
 
 const (
@@ -55,7 +54,7 @@ func TestNAPWAFProcess(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			
+
 			sigDBFile := mockSigDBFile
 			if !tc.fileExists {
 				sigDBFile = nonexistentFile

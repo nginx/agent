@@ -35,6 +35,9 @@ const (
 
 	// Get subject name from config
 	eventsSubjectName = "external.events.security"
+
+	defaultCollectorBufferSize = 50000
+	defaultProcessorBufferSize = 50000
 )
 
 type SecurityEventManager struct {
@@ -117,7 +120,12 @@ func (s *SecurityEventManager) initCollector() error {
 		return err
 	}
 
-	s.collectChan = make(chan *monitoring.RawLog, s.config.NAPMonitoring.CollectorBufferSize)
+	if s.config.NAPMonitoring.CollectorBufferSize > 0 {
+		s.collectChan = make(chan *monitoring.RawLog, s.config.NAPMonitoring.CollectorBufferSize)
+	} else {
+		s.logger.Warnf("CollectorBufferSize cannot be zero or negative. Defaulting to %v", defaultCollectorBufferSize)
+		s.collectChan = make(chan *monitoring.RawLog, defaultCollectorBufferSize)
+	}
 
 	return nil
 }
@@ -137,15 +145,20 @@ func (s *SecurityEventManager) initProcessor() error {
 		return err
 	}
 
-	s.processorChan = make(chan *models.Event, s.config.NAPMonitoring.ProcessorBufferSize)
+	if s.config.NAPMonitoring.ProcessorBufferSize > 0 {
+		s.processorChan = make(chan *models.Event, s.config.NAPMonitoring.ProcessorBufferSize)
+	} else {
+		s.logger.Warnf("ProcessorBufferSize cannot be zero or negative. Defaulting to %v", defaultProcessorBufferSize)
+		s.processorChan = make(chan *models.Event, defaultProcessorBufferSize)
+	}
 
 	return nil
 }
 
-func (s *SecurityEventManager) initForwarder() error {
+func (s *SecurityEventManager) initForwarder(ctx context.Context) error {
 	var err error
 
-	ctx := context.Background()
+	s.logger.Infof("Initializing %s forwarder", componentName)
 
 	server := fmt.Sprintf("%v:%v", s.config.Server.Host, s.config.Server.GrpcPort)
 
@@ -213,7 +226,7 @@ func (s *SecurityEventManager) Run(ctx context.Context) {
 
 	fwdrWaitGroup := &sync.WaitGroup{}
 
-	if err := s.initForwarder(); err != nil {
+	if err := s.initForwarder(s.fwdrctx); err != nil {
 		s.logger.Errorf("Could not initialize %s forwarder: %s", componentName, err)
 		s.logger.Infof("%s is exiting gracefully...", componentName)
 
