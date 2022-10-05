@@ -142,6 +142,7 @@ func (b *ConfigApply) MarkAndSave(fullPath string) error {
 					return err
 				}
 			}
+
 			return nil
 		}
 

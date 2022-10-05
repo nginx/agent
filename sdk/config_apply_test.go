@@ -229,7 +229,7 @@ func TestConfigApplyMarkAndSave(t *testing.T) {
 				writer:       writer,
 			}
 
-			assert.NoError(t, configApply.MarkAndSave(tmpDir))
+			assert.NoError(t, configApply.MarkAndSave(tc.file))
 			assert.Equal(t, tc.expectedConfigApply.existing, configApply.GetExisting())
 			assert.Equal(t, tc.expectedConfigApply.notExists, configApply.GetNotExists())
 			assert.Equal(t, tc.expectedConfigApply.notExistDirs, configApply.GetNotExistDirs())
