@@ -159,15 +159,15 @@ func (b *ConfigApply) mapCurrentFiles(confFile string, allowedDirectories map[st
 		}
 		b.existing[xpc.File] = struct{}{}
 		CrossplaneConfigTraverse(&xpc,
-			func(parent *crossplane.Directive, directive *crossplane.Directive) bool {
+			func(parent *crossplane.Directive, directive *crossplane.Directive) (bool, error) {
 				switch directive.Directive {
 				case "root":
 					if err = b.walkRoot(directive.Args[0], seen, allowedDirectories); err != nil {
 						log.Warnf("config_apply: walk root error %s: %s", directive.Args[0], err)
-						return false
+						return false, err
 					}
 				}
-				return true
+				return true, nil
 			})
 		if err != nil {
 			return err
