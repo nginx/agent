@@ -147,7 +147,7 @@ func GetDataplaneNetworks() (res *proto.Network) {
 
 	defaultNetworkInterface, err := getDefaultNetworkInterfaceCrossPlatform()
 	if err != nil {
-		log.Warnf("Error getting default network interface, %v", err)
+		log.Debug("Error getting default network interface, %v", err)
 	}
 
 	if defaultNetworkInterface == "" && len(ifs) > 0 {
