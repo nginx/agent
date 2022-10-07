@@ -22,7 +22,12 @@ func traverse(root *crossplane.Directive, callback CrossplaneTraverseCallback, s
 			return nil
 		}
 
-		traverse(child, callback, stop)
+		err = traverse(child, callback, stop)
+
+		if err != nil {
+			return err
+		}
+
 		if *stop {
 			return nil
 		}
