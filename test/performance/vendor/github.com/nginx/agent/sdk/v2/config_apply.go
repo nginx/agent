@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nginxinc/nginx-go-crossplane"
+	crossplane "github.com/nginxinc/nginx-go-crossplane"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nginx/agent/sdk/v2/zip"
@@ -75,6 +75,7 @@ func (b *ConfigApply) Rollback(cause error) error {
 			log.Warnf("error during rollback (open) for %s: %s", path, err)
 			return true
 		}
+		defer f.Close()
 		_, err = io.Copy(f, r)
 		if err != nil {
 			log.Warnf("error during rollback (copy) for %s: %s", path, err)
@@ -123,6 +124,7 @@ func (b *ConfigApply) MarkAndSave(fullPath string) error {
 		log.Warnf("backup: %s open error: %s", fullPath, err)
 		return err
 	}
+	defer r.Close()
 	log.Tracef("backup: %s mode=%s bytes=%d", fullPath, p.Mode(), p.Size())
 	return b.writer.Add(fullPath, p.Mode(), r)
 }
