@@ -759,7 +759,7 @@ func GetErrorAndAccessLogs(confFile string) (*proto.ErrorLogs, *proto.AccessLogs
 	seen := make(map[string]struct{})
 	for _, xpConf := range payload.Config {
 		var err error
-		CrossplaneConfigTraverse(&xpConf,
+		err = CrossplaneConfigTraverse(&xpConf,
 			func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error) {
 				switch current.Directive {
 				case "access_log":

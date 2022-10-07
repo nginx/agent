@@ -920,12 +920,14 @@ server {
 		assert.Equal(t, len(payload.Config), 1)
 		for _, xpConf := range payload.Config {
 			assert.Equal(t, len(xpConf.Parsed), 1)
-			CrossplaneConfigTraverse(&xpConf, func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error) {
+			err = CrossplaneConfigTraverse(&xpConf, func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error) {
 				_plus, _oss := parseStatusAPIEndpoints(parent, current)
 				oss = append(oss, _oss...)
 				plus = append(plus, _plus...)
 				return true, nil
 			})
+			assert.NoError(t, err)
+
 		}
 
 		assert.Equal(t, tt.plus, plus)

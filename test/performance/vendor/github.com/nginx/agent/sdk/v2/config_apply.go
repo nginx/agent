@@ -158,7 +158,7 @@ func (b *ConfigApply) mapCurrentFiles(confFile string, allowedDirectories map[st
 			return fmt.Errorf("config_apply: %s read error %s", xpc.File, err)
 		}
 		b.existing[xpc.File] = struct{}{}
-		CrossplaneConfigTraverse(&xpc,
+		err = CrossplaneConfigTraverse(&xpc,
 			func(parent *crossplane.Directive, directive *crossplane.Directive) (bool, error) {
 				switch directive.Directive {
 				case "root":
