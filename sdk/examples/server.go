@@ -42,8 +42,8 @@ func main() {
 	srvOptions := sdkGRPC.DefaultServerDialOptions
 	grpcServer := grpc.NewServer(srvOptions...)
 
-	metricsService := services.NewMetricsService()
-	sdkProto.RegisterMetricsServiceServer(grpcServer, metricsService)
+	ingesterService := services.NewIngesterSvc()
+	sdkProto.RegisterIngesterServer(grpcServer, ingesterService)
 
 	commandService := services.NewCommandService()
 	sdkProto.RegisterCommanderServer(grpcServer, commandService)
@@ -116,7 +116,7 @@ func main() {
 	}))
 
 	http.Handle("/metrics", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
-		payload, err := json.Marshal(metricsService.GetMetrics())
+		payload, err := json.Marshal(ingesterService.GetMetrics())
 		if err != nil {
 			log.Warnf("%v", err)
 			return

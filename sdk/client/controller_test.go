@@ -21,18 +21,18 @@ func TestControllerConnect(t *testing.T) {
 	commanderClient := NewMockCommandClient()
 	commanderClient.On("Connect", mock.Anything).Return(nil)
 
-	metricsReportClient := NewMockMetricsReportClient()
-	metricsReportClient.On("Connect", mock.Anything).Return(nil)
+	ingesterClient := NewMockIngesterClient()
+	ingesterClient.On("Connect", mock.Anything).Return(nil)
 
 	controller := NewClientController()
 	controller.WithClient(commanderClient)
-	controller.WithClient(metricsReportClient)
+	controller.WithClient(ingesterClient)
 
 	err := controller.Connect()
 	assert.Nil(t, err)
 
 	commanderClient.AssertNumberOfCalls(t, "Connect", 1)
-	metricsReportClient.AssertNumberOfCalls(t, "Connect", 1)
+	ingesterClient.AssertNumberOfCalls(t, "Connect", 1)
 }
 
 func TestControllerConnect_error(t *testing.T) {
@@ -40,37 +40,37 @@ func TestControllerConnect_error(t *testing.T) {
 	commanderClient.On("Connect", mock.Anything).Return(fmt.Errorf("Error connecting"))
 	commanderClient.On("Server").Return("127.0.0.1")
 
-	metricsReportClient := NewMockMetricsReportClient()
-	metricsReportClient.On("Connect", mock.Anything).Return(fmt.Errorf("Error connecting"))
-	metricsReportClient.On("Server").Return("127.0.0.1")
+	ingesterClient := NewMockIngesterClient()
+	ingesterClient.On("Connect", mock.Anything).Return(fmt.Errorf("Error connecting"))
+	ingesterClient.On("Server").Return("127.0.0.1")
 
 	controller := NewClientController()
 	controller.WithClient(commanderClient)
-	controller.WithClient(metricsReportClient)
+	controller.WithClient(ingesterClient)
 
 	err := controller.Connect()
 	assert.NotNil(t, err)
 
 	commanderClient.AssertNumberOfCalls(t, "Connect", 1)
-	metricsReportClient.AssertNumberOfCalls(t, "Connect", 1)
+	ingesterClient.AssertNumberOfCalls(t, "Connect", 1)
 }
 
 func TestControllerClose(t *testing.T) {
 	commanderClient := NewMockCommandClient()
 	commanderClient.On("Close").Return(nil)
 
-	metricsReportClient := NewMockMetricsReportClient()
-	metricsReportClient.On("Close").Return(nil)
+	ingesterClient := NewMockIngesterClient()
+	ingesterClient.On("Close").Return(nil)
 
 	controller := NewClientController()
 	controller.WithClient(commanderClient)
-	controller.WithClient(metricsReportClient)
+	controller.WithClient(ingesterClient)
 
 	err := controller.Close()
 	assert.Nil(t, err)
 
 	commanderClient.AssertNumberOfCalls(t, "Close", 1)
-	metricsReportClient.AssertNumberOfCalls(t, "Close", 1)
+	ingesterClient.AssertNumberOfCalls(t, "Close", 1)
 }
 
 func TestControllerClose_error(t *testing.T) {
@@ -78,17 +78,17 @@ func TestControllerClose_error(t *testing.T) {
 	commanderClient.On("Close").Return(fmt.Errorf("Error closing"))
 	commanderClient.On("Server").Return("127.0.0.1")
 
-	metricsReportClient := NewMockMetricsReportClient()
-	metricsReportClient.On("Close").Return(fmt.Errorf("Error closing"))
-	metricsReportClient.On("Server").Return("127.0.0.1")
+	ingesterClient := NewMockIngesterClient()
+	ingesterClient.On("Close").Return(fmt.Errorf("Error closing"))
+	ingesterClient.On("Server").Return("127.0.0.1")
 
 	controller := NewClientController()
 	controller.WithClient(commanderClient)
-	controller.WithClient(metricsReportClient)
+	controller.WithClient(ingesterClient)
 
 	err := controller.Close()
 	assert.NotNil(t, err)
 
 	commanderClient.AssertNumberOfCalls(t, "Close", 1)
-	metricsReportClient.AssertNumberOfCalls(t, "Close", 1)
+	ingesterClient.AssertNumberOfCalls(t, "Close", 1)
 }

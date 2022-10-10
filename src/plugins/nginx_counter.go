@@ -22,14 +22,15 @@ import (
 )
 
 type NginxCounter struct {
-	ctx            context.Context
-	conf           *config.Config
-	signalChannel  chan os.Signal
-	nginxBinary    core.NginxBinary
-	env            core.Environment
-	lastUpdated    int64
-	serverAddress  []string
-	reporter       client.MetricReporter
+	ctx           context.Context
+	conf          *config.Config
+	signalChannel chan os.Signal
+	nginxBinary   core.NginxBinary
+	env           core.Environment
+	lastUpdated   int64
+	serverAddress []string
+	// TOOD: why does NGINX Counter need reporter? where is the reporter used?
+	reporter       client.Ingester
 	connected      *atomic.Bool
 	socketListener net.Listener
 	processMutex   sync.RWMutex
@@ -39,7 +40,7 @@ type Payload struct {
 	LastUpdated int64 `json:",string"`
 }
 
-func NewNginxCounter(conf *config.Config, nginxBinary core.NginxBinary, env core.Environment, reporter client.MetricReporter) *NginxCounter {
+func NewNginxCounter(conf *config.Config, nginxBinary core.NginxBinary, env core.Environment, reporter client.Ingester) *NginxCounter {
 	return &NginxCounter{
 		conf:          conf,
 		signalChannel: make(chan os.Signal, 1),

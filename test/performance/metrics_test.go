@@ -61,7 +61,7 @@ func NewMetricsServer() *MetricsServer {
 	}
 }
 
-type metricHandlerFunc func(proto.MetricsService_StreamServer, *sync.WaitGroup)
+type metricHandlerFunc func(proto.Ingester_StreamMetricsReportServer, *sync.WaitGroup)
 
 type metricHandler struct {
 	msgCount          atomic.Int64
@@ -69,7 +69,7 @@ type metricHandler struct {
 	metricHandlerFunc metricHandlerFunc
 }
 
-func (m *MetricsServer) Stream(stream proto.MetricsService_StreamServer) error {
+func (m *MetricsServer) StreamMetricsReport(stream proto.Ingester_StreamMetricsReportServer) error {
 	wg := &sync.WaitGroup{}
 	h := m.ensureHandler()
 	wg.Add(1)
@@ -97,7 +97,7 @@ func (m *MetricsServer) ensureHandler() *metricHandler {
 	return m.metricHandler
 }
 
-func (h *metricHandler) metricsHandle(server proto.MetricsService_StreamServer, wg *sync.WaitGroup) {
+func (h *metricHandler) metricsHandle(server proto.Ingester_StreamMetricsReportServer, wg *sync.WaitGroup) {
 	defer func() {
 		wg.Done()
 	}()
@@ -210,7 +210,7 @@ func startFakeServer() *MetricsServer {
 	grpcServer := grpc.NewServer(srvOptions...)
 
 	metricsServer := NewMetricsServer()
-	proto.RegisterMetricsServiceServer(grpcServer, metricsServer)
+	proto.RegisterIngesterServer(grpcServer, metricsServer)
 
 	commandServer := &cmdService{}
 	proto.RegisterCommanderServer(grpcServer, commandServer)
@@ -275,7 +275,7 @@ func startNginxAgent(b *testing.B) {
 	commander.WithServer(loadedConfig.Server.Target)
 	commander.WithDialOptions(append(grpcDialOptions, secureCmdDialOpts)...)
 
-	reporter := client.NewMetricReporterClient()
+	reporter := client.NewIngesterClient()
 	reporter.WithServer(loadedConfig.Server.Target)
 	reporter.WithDialOptions(append(grpcDialOptions, secureMetricsDialOpts)...)
 

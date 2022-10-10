@@ -131,7 +131,7 @@ func handleSignals(
 	}()
 }
 
-func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client.Controller, client.Commander, client.MetricReporter) {
+func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client.Controller, client.Commander, client.Ingester) {
 	grpcDialOptions := setDialOptions(loadedConfig)
 	secureMetricsDialOpts, err := sdkGRPC.SecureDialOptions(
 		loadedConfig.TLS.Enable,
@@ -162,24 +162,24 @@ func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client
 	commander.WithServer(loadedConfig.Server.Target)
 	commander.WithDialOptions(append(grpcDialOptions, secureCmdDialOpts)...)
 
-	reporter := client.NewMetricReporterClient()
-	reporter.WithServer(loadedConfig.Server.Target)
-	reporter.WithDialOptions(append(grpcDialOptions, secureMetricsDialOpts)...)
+	ingester := client.NewIngesterClient()
+	ingester.WithServer(loadedConfig.Server.Target)
+	ingester.WithDialOptions(append(grpcDialOptions, secureMetricsDialOpts)...)
 
 	controller.WithClient(commander)
-	controller.WithClient(reporter)
+	controller.WithClient(ingester)
 
-	return controller, commander, reporter
+	return controller, commander, ingester
 }
 
-func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *core.EnvironmentType, reporter client.MetricReporter, loadedConfig *config.Config) []core.Plugin {
+func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *core.EnvironmentType, ingester client.Ingester, loadedConfig *config.Config) []core.Plugin {
 	var corePlugins []core.Plugin
 
 	corePlugins = append(corePlugins,
 		plugins.NewConfigReader(loadedConfig),
 		plugins.NewNginx(commander, binary, env, loadedConfig),
 		plugins.NewCommander(commander, loadedConfig),
-		plugins.NewComms(reporter),
+		plugins.NewComms(ingester),
 		plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString()), version),
 		plugins.NewMetrics(loadedConfig, env, binary),
 		plugins.NewMetricsThrottle(loadedConfig, env),
@@ -192,7 +192,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 	)
 
 	if len(loadedConfig.Nginx.NginxCountingSocket) > 0 {
-		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env, reporter))
+		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env, ingester))
 	}
 
 	if (config.AdvancedMetrics{}) != loadedConfig.AdvancedMetrics {

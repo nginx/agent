@@ -5,10 +5,8 @@ option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
 import "google/protobuf/empty.proto";
 import "metrics.proto";
 
-// Interface exported by the server.
-service MetricsService {
-  option deprecated = true;
-
+// Ingester is responsible for ingesting high volume metrics and events
+service Ingester {
   // A client-to-server streaming RPC to deliver high volume metrics reports.
-  rpc Stream(stream MetricsReport) returns (google.protobuf.Empty) {}
+  rpc StreamMetricsReport(stream MetricsReport) returns (google.protobuf.Empty) {}
 }

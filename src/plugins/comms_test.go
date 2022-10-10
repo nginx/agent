@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
-	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
 func TestCommsSendMetrics(t *testing.T) {
@@ -33,8 +33,8 @@ func TestCommsSendMetrics(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 
 			ctx := context.TODO()
-			mockMetricsReportClient := tutils.NewMockMetricsReportClient()
-			mockMetricsReportClient.Mock.On("Send", ctx, mock.Anything).Return(test.err)
+			mockMetricsReportClient := client.NewMockIngesterClient()
+			mockMetricsReportClient.Mock.On("SendMetricsReport", ctx, mock.Anything).Return(test.err)
 			pluginUnderTest := NewComms(mockMetricsReportClient)
 
 			assert.False(t, pluginUnderTest.started.Load())
@@ -65,6 +65,6 @@ func TestCommsSendMetrics(t *testing.T) {
 }
 
 func TestCommsSubscriptions(t *testing.T) {
-	pluginUnderTest := NewComms(tutils.NewMockMetricsReportClient())
+	pluginUnderTest := NewComms(client.NewMockIngesterClient())
 	assert.Equal(t, []string{core.CommMetrics, core.RegistrationCompletedTopic}, pluginUnderTest.Subscriptions())
 }

@@ -62,9 +62,9 @@ type (
 
 		WithBackoffSettings(backoffSettings BackoffSettings) Client
 	}
-	MetricReporter interface {
+	Ingester interface {
 		Client
-		Send(context.Context, Message) error
+		SendMetricsReport(context.Context, Message) error
 	}
 	Commander interface {
 		Client

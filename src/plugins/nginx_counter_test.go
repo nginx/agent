@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -67,7 +68,7 @@ func TestNginxCounter(t *testing.T) {
 				},
 			}
 
-			nginxCounter := NewNginxCounter(config, binary, tutils.NewMockEnvironment(), tutils.NewMockMetricsReportClient())
+			nginxCounter := NewNginxCounter(config, binary, tutils.NewMockEnvironment(), client.NewMockIngesterClient())
 
 			messagePipe := core.NewMockMessagePipe(context.Background())
 			err := messagePipe.Register(1, nginxCounter)

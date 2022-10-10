@@ -15,36 +15,36 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func NewMetricReporterClient() MetricReporter {
-	return &metricReporter{
-		connector: newConnector(),
+func NewIngesterClient() Ingester {
+	return &ingesterReporter{
+		connector:       newConnector(),
 		backoffSettings: DefaultBackoffSettings,
 	}
 }
 
-type metricReporter struct {
+type ingesterReporter struct {
 	*connector
-	client          proto.MetricsServiceClient
-	channel         proto.MetricsService_StreamClient
+	client          proto.IngesterClient
+	metricsChannel  proto.Ingester_StreamMetricsReportClient
 	ctx             context.Context
 	mu              sync.Mutex
 	backoffSettings BackoffSettings
 }
 
-func (r *metricReporter) WithInterceptor(interceptor interceptors.Interceptor) Client {
+func (r *ingesterReporter) WithInterceptor(interceptor interceptors.Interceptor) Client {
 	r.connector.interceptors = append(r.connector.interceptors, interceptor)
 
 	return r
 }
 
-func (r *metricReporter) WithClientInterceptor(interceptor interceptors.ClientInterceptor) Client {
+func (r *ingesterReporter) WithClientInterceptor(interceptor interceptors.ClientInterceptor) Client {
 	r.clientInterceptors = append(r.clientInterceptors, interceptor)
 
 	return r
 }
 
-func (r *metricReporter) Connect(ctx context.Context) error {
-	log.Debugf("Metric Reporter connecting to %s", r.server)
+func (r *ingesterReporter) Connect(ctx context.Context) error {
+	log.Debugf("Ingester reporter connecting to %s", r.server)
 
 	r.ctx = ctx
 	err := sdk.WaitUntil(
@@ -61,7 +61,7 @@ func (r *metricReporter) Connect(ctx context.Context) error {
 	return nil
 }
 
-func (r *metricReporter) createClient() error {
+func (r *ingesterReporter) createClient() error {
 	log.Debug("Creating metric reporter client")
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -82,49 +82,49 @@ func (r *metricReporter) createClient() error {
 	}
 	r.grpc = grpc
 
-	r.client = proto.NewMetricsServiceClient(r.grpc)
+	r.client = proto.NewIngesterClient(r.grpc)
 
-	channel, err := r.client.Stream(r.ctx)
+	channel, err := r.client.StreamMetricsReport(r.ctx)
 	if err != nil {
 		log.Warnf("Unable to create metrics channel: %s", err)
 		log.Infof("Metric reporter retrying to connect to %s", r.grpc.Target())
 		return err
 	}
-	r.channel = channel
-	
+	r.metricsChannel = channel
+
 	return nil
 }
 
-func (r *metricReporter) Close() (err error) {
+func (r *ingesterReporter) Close() (err error) {
 	return r.closeConnection()
 }
 
-func (r *metricReporter) Server() string {
+func (r *ingesterReporter) Server() string {
 	return r.server
 }
 
-func (r *metricReporter) WithServer(s string) Client {
+func (r *ingesterReporter) WithServer(s string) Client {
 	r.server = s
 
 	return r
 }
 
-func (r *metricReporter) DialOptions() []grpc.DialOption {
+func (r *ingesterReporter) DialOptions() []grpc.DialOption {
 	return r.dialOptions
 }
 
-func (r *metricReporter) WithDialOptions(options ...grpc.DialOption) Client {
+func (r *ingesterReporter) WithDialOptions(options ...grpc.DialOption) Client {
 	r.dialOptions = append(r.dialOptions, options...)
 
 	return r
 }
 
-func (r *metricReporter) WithBackoffSettings(backoffSettings BackoffSettings) Client {
+func (r *ingesterReporter) WithBackoffSettings(backoffSettings BackoffSettings) Client {
 	r.backoffSettings = backoffSettings
 	return r
 }
 
-func (r *metricReporter) Send(ctx context.Context, message Message) error {
+func (r *ingesterReporter) SendMetricsReport(ctx context.Context, message Message) error {
 	var (
 		report *proto.MetricsReport
 		ok     bool
@@ -138,29 +138,29 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 	default:
 		return fmt.Errorf("MetricReporter expected a metrics report message, but received %T", message.Data())
 	}
-	
+
 	err := sdk.WaitUntil(r.ctx, r.backoffSettings.initialInterval, r.backoffSettings.maxInterval, r.backoffSettings.sendMaxTimeout, func() error {
-		if err := r.channel.Send(report); err != nil {
+		if err := r.metricsChannel.Send(report); err != nil {
 			return r.handleGrpcError("Metric Reporter Channel Send", err)
 		}
 
 		log.Tracef("MetricReporter sent report %v", report)
-	
+
 		return nil
 	})
 
 	return err
 }
 
-func (r *metricReporter) closeConnection() (error) {
-	err := r.channel.CloseSend()
+func (r *ingesterReporter) closeConnection() error {
+	err := r.metricsChannel.CloseSend()
 	if err != nil {
-		return err 
+		return err
 	}
 	return r.grpc.Close()
 }
 
-func (r *metricReporter) handleGrpcError(messagePrefix string, err error) error{
+func (r *ingesterReporter) handleGrpcError(messagePrefix string, err error) error {
 	if st, ok := status.FromError(err); ok {
 		log.Errorf("%s: error communicating with %s, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
 	} else if err == io.EOF {

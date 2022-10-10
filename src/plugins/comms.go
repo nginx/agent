@@ -16,7 +16,7 @@ const (
 )
 
 type Comms struct {
-	reporter    client.MetricReporter
+	ingester    client.Ingester
 	pipeline    core.MessagePipeInterface
 	reportChan  chan *proto.MetricsReport
 	ctx         context.Context
@@ -25,9 +25,9 @@ type Comms struct {
 	wait        sync.WaitGroup
 }
 
-func NewComms(reporter client.MetricReporter) *Comms {
+func NewComms(ingester client.Ingester) *Comms {
 	return &Comms{
-		reporter:    reporter,
+		ingester:    ingester,
 		reportChan:  make(chan *proto.MetricsReport, DefaultMetricsChanLength),
 		started:     atomic.NewBool(false),
 		readyToSend: atomic.NewBool(false),
@@ -104,14 +104,14 @@ func (r *Comms) reportLoop() {
 			if err != nil {
 				log.Errorf("error in done context reportLoop %v", err)
 			}
-			log.Debug("reporter loop exiting")
+			log.Debug("ingester loop exiting")
 			return
 		case report := <-r.reportChan:
-			err := r.reporter.Send(r.ctx, client.MessageFromMetrics(report))
+			err := r.ingester.SendMetricsReport(r.ctx, client.MessageFromMetrics(report))
 			if err != nil {
 				log.Errorf("Failed to send MetricsReport: %v, data: %+v", err, report)
 			} else {
-				log.Tracef("MetricsReport sent, %v", report)
+				log.Tracef("ingester sent MetricsReport, %v", report)
 			}
 		}
 	}
