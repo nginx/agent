@@ -775,7 +775,7 @@ func toMessage(data ...interface{}) []byte {
 func assertMessageSent(t *testing.T, addr string, dataToSend [][]byte) {
 	numberOfRetries := 3
 	conn, err := net.Dial("unix", addr)
-	
+
 	// if net.Dial fails connection will be retried 3 times
 	for i := 0; i <= numberOfRetries && err != nil; i++ {
 		time.Sleep(5 * time.Millisecond)
