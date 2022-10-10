@@ -40,7 +40,7 @@ func BenchmarkNginxConfig(b *testing.B) {
 			b.Run(confFile, func(bb *testing.B) {
 				bb.ReportAllocs()
 				allowedDirs := map[string]struct{}{}
-				allowedDirs["../testdata/configs/bigger/"] = struct{}{}
+				allowedDirs["../testdata/configs/bigger/ssl/"] = struct{}{}
 
 				var nginxConfig *proto.NginxConfig
 				var err error
