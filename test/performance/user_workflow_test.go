@@ -103,7 +103,9 @@ func BenchmarkReadConfig(b *testing.B) {
 		b.Error(err)
 	}
 	for _, v := range largeConfigFiles {
-		binary := core.NewNginxBinary(nil, &config.Config{AllowedDirectoriesMap: make(map[string]struct{})})
+		allowedDirs := map[string]struct{}{}
+		allowedDirs["../testdata/configs/bigger/ssl/"] = struct{}{}
+		binary := core.NewNginxBinary(nil, &config.Config{AllowedDirectoriesMap: allowedDirs})
 
 		func(config string) {
 			testName := strings.Join([]string{"Read Config ", config}, "")
