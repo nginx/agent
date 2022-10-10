@@ -87,6 +87,7 @@ func GetNginxConfig(
 	systemId string,
 	allowedDirectories map[string]struct{},
 ) (*proto.NginxConfig, error) {
+	log.Infof("Allowed Directories: %v",allowedDirectories)
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
 			SingleFile:         false,
