@@ -10,7 +10,7 @@ import "nginx.proto";
 import "config.proto";
 import "events/event.proto";
 import "dp_software_details.proto";
-
+import "nap.proto";
 
 // Command is the envelope sent between the management plane and the data plane, requesting some action or reporting a response
 message Command {
@@ -82,10 +82,23 @@ message CommandStatusResponse {
 // DataplaneStatus reports Dataplane metrics the Agent is aware of
 message DataplaneStatus {
   string system_id = 1 [(gogoproto.jsontag) = "system_id" ];
-  repeated NginxDetails details = 2 [(gogoproto.jsontag) = "details" ];
+  repeated NginxDetails details = 2 [(gogoproto.jsontag) = "details" ]; // moving to dataplane_software_details
   HostInfo host = 3 [(gogoproto.jsontag) = "host" ];
-  repeated NginxHealth healths = 5 [(gogoproto.jsontag) = "healths" ];
+  repeated NginxHealth healths = 5 [(gogoproto.jsontag) = "healths" ]; // moving to DataplaneSoftwareHealth
   repeated DataplaneSoftwareDetails dataplane_software_details = 6 [(gogoproto.jsontag) = "dataplane_software_details"];
+  repeated DataplaneSoftwareHealth dataplane_software_healths = 7 [(gogoproto.jsontag) = "dataplane_software_healths"];
+}
+
+message DataplaneSoftwareHealth {
+    oneof health {
+        NginxHealth nginx_health = 1 [(gogoproto.jsontag) = "nginx_health"];
+        AppProtectWAFHealth app_protect_waf_health = 2 [(gogoproto.jsontag) = "app_protect_waf_health"];
+    }
+}
+
+message DataplaneUpdate {
+    HostInfo host_info = 1;
+    repeated DataplaneSoftwareDetails dataplane_software_details = 2 [(gogoproto.jsontag) = "dataplane_software_details"];
 }
 
 message DownloadRequest {
