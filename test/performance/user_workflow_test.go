@@ -39,10 +39,13 @@ func BenchmarkNginxConfig(b *testing.B) {
 		func(confFile string) {
 			b.Run(confFile, func(bb *testing.B) {
 				bb.ReportAllocs()
+				allowedDirs := map[string]struct{}{}
+				allowedDirs["../testdata/configs/bigger/"] = struct{}{}
+
 				var nginxConfig *proto.NginxConfig
 				var err error
 				for n := 0; n < b.N; n++ {
-					nginxConfig, err = sdk.GetNginxConfig(confFile, "", "", make(map[string]struct{}))
+					nginxConfig, err = sdk.GetNginxConfig(confFile, "", "", allowedDirs)
 				}
 				require.NoError(bb, err)
 				require.NotNil(bb, nginxConfig, "Generated nginxConfig struct should not be nil")

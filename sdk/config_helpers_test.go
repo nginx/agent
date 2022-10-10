@@ -599,8 +599,10 @@ func TestGetNginxConfig(t *testing.T) {
 		assert.NoError(t, err)
 
 		allowedDirs := map[string]struct{}{}
+		log.Errorf("Allowed Directories: %v" , allowedDirs)
 		if test.expected.Zaux != nil {
 			allowedDirs[test.expected.Zaux.RootDirectory] = struct{}{}
+			allowedDirs["/tmp/testdata/nginx/"] = struct{}{}
 		}
 		result, err := GetNginxConfig(test.fileName, nginxID, systemID, allowedDirs)
 		assert.NoError(t, err)
