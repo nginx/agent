@@ -97,7 +97,7 @@ message DataplaneSoftwareHealth {
 }
 
 message DataplaneUpdate {
-    HostInfo host_info = 1;
+    HostInfo host = 1 [(gogoproto.jsontag) = "host"];
     repeated DataplaneSoftwareDetails dataplane_software_details = 2 [(gogoproto.jsontag) = "dataplane_software_details"];
 }
 

@@ -9,7 +9,7 @@ message AppProtectWAFDetails {
     string waf_version = 1 [(gogoproto.jsontag) = "waf_version"];
     string attack_signatures_version = 2 [(gogoproto.jsontag) = "attack_signatures_version"]; // deprecating
     string threat_campaigns_version = 3 [(gogoproto.jsontag) = "threat_campaigns_version"]; // deprecating
-    AppProtectWAFHealth health = 4 [(gogoproto.jsontag) = "health"]; // deprecated
+    AppProtectWAFHealth health = 4 [(gogoproto.jsontag) = "health"]; // deprecating
 }
 
 // AppProtectWAFHealth reports the health details of Nginx App Protect
