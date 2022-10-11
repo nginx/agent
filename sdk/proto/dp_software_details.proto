@@ -11,5 +11,4 @@ message DataplaneSoftwareDetails {
     oneof data {
         AppProtectWAFDetails app_protect_waf_details = 1 [(gogoproto.jsontag) = "app_protect_waf_details"];
     }
-
 }
