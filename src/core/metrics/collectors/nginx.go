@@ -23,7 +23,6 @@ type NginxCollector struct {
 	collectorConf *metrics.NginxCollectorConfig
 	env           core.Environment
 	binary        core.NginxBinary
-	conf          *config.Config
 }
 
 func NewNginxCollector(conf *config.Config, env core.Environment, collectorConf *metrics.NginxCollectorConfig, binary core.NginxBinary) *NginxCollector {

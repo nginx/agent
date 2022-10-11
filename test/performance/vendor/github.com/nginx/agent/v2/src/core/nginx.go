@@ -63,7 +63,6 @@ type NginxBinaryType struct {
 	errorLogs         map[string]string
 	accessLogsUpdated bool
 	errorLogsUpdated  bool
-	wg                sync.WaitGroup
 }
 
 type nginxInfo struct {
