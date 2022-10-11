@@ -39,6 +39,7 @@ func BenchmarkNginxConfig(b *testing.B) {
 		func(confFile string) {
 			b.Run(confFile, func(bb *testing.B) {
 				bb.ReportAllocs()
+
 				allowedDirs := map[string]struct{}{}
 				allowedDirs["../testdata/configs/bigger/ssl/"] = struct{}{}
 
@@ -250,14 +251,13 @@ func generateCertificate() error {
 	err := cmd.Run()
 	if err != nil {
 		return err
-		}
+	}
 
-		cmd1 := exec.Command("../../scripts/mtls/gen_cert.sh", "ca", "--config", "../testdata/configs/bigger/conf/ca.cnf", "--out", "../testdata/configs/bigger/ssl")
-		err = cmd1.Run()
-		if err != nil {
-			return err
-		}
-
+	cmd1 := exec.Command("../../scripts/mtls/gen_cert.sh", "ca", "--config", "../testdata/configs/bigger/conf/ca.cnf", "--out", "../testdata/configs/bigger/ssl")
+	err = cmd1.Run()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

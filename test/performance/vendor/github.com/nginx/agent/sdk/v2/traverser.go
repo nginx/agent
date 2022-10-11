@@ -65,8 +65,9 @@ func CrossplaneConfigTraverse(root *crossplane.Config, callback CrossplaneTraver
 		if !result {
 			return nil
 		}
-		err = traverse(dir, callback, &stop)
 
+		err = traverse(dir, callback, &stop)
+		
 		if err != nil {
 			return err
 		}
