@@ -59,6 +59,7 @@ type Nginx struct {
 	ExcludeLogs         string `mapstructure:"exclude_logs" yaml:"-"`
 	Debug               bool   `mapstructure:"debug" yaml:"-"`
 	NginxCountingSocket string `mapstructure:"socket" yaml:"-"`
+	NginxClientVersion  int    `mapstructure:"client_version" yaml:"-"`
 }
 
 type Dataplane struct {
