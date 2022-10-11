@@ -14,6 +14,7 @@ import (
 func NewNAPReleaseMap() *NAPReleaseMap {
 	return &NAPReleaseMap{
 		ReleaseMap: map[string]NAPRelease{
+			"3.12":  NAPRelease3_12(),
 			"3.11":  NAPRelease3_11(),
 			"3.10":  NAPRelease3_10(),
 			"3.9.1": NAPRelease3_9_1(),

@@ -63,7 +63,6 @@ require {
 	type auditd_t;
 	type sysfs_t;
 	type unconfined_service_t;
-	type container_runtime_t;
 	type system_dbusd_t;
 	type tuned_t;
 	type irqbalance_t;
@@ -108,8 +107,6 @@ allow nginx_agent_t auditd_t:dir { getattr search };
 allow nginx_agent_t auditd_t:file { getattr open read };
 allow nginx_agent_t chronyd_t:dir { getattr search };
 allow nginx_agent_t chronyd_t:file { getattr open read };
-allow nginx_agent_t container_runtime_t:dir { getattr search };
-allow nginx_agent_t container_runtime_t:file { getattr open read };
 allow nginx_agent_t crond_t:dir { getattr search };
 allow nginx_agent_t dhcpc_t:file { getattr open read };
 allow nginx_agent_t fs_t:filesystem getattr;
@@ -383,3 +380,31 @@ require {
 
 #============= nginx_agent_t ==============
 allow nginx_agent_t rpm_t:file read;
+
+require {
+	type nginx_agent_t;
+}
+
+#============= nginx_agent_t ==============
+apache_list_cache(nginx_agent_t)
+rng_systemctl_rngd(nginx_agent_t)
+userdom_manage_user_home_content_dirs(nginx_agent_t)
+
+require {
+	type rpm_t;
+	type nginx_agent_t;
+	class file open;
+}
+
+#============= nginx_agent_t ==============
+allow nginx_agent_t rpm_t:file open;
+corenet_tcp_bind_http_cache_port(nginx_agent_t)
+rng_systemctl_rngd(nginx_agent_t)
+userdom_manage_user_home_content_dirs(nginx_agent_t)
+
+require {
+	type nginx_agent_t;
+}
+
+#============= nginx_agent_t ==============
+files_rw_etc_files(nginx_agent_t)

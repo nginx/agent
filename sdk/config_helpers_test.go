@@ -247,7 +247,7 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "21134c2ebad195ca0dfb087ccbdf023adc214c398f1fd6160853acf4c90f6487",
+				Checksum:      "4b9cb7001222fcbf2a24e3409b264302a8a8f22f28c4a1830e065f0986dd57e6",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
@@ -390,7 +390,7 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "42dbaa1692f4cd76252f0e725ab2cbf64e54bbbd375f44b40e1dc1e0f5271cc2",
+				Checksum:      "29fb1bed60766983ba835c80b3f4faf8aae145094e4d0b8b9cf5cb6b2bc3a9c3",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
@@ -531,7 +531,7 @@ var tests = []struct {
 			},
 			Zaux: nil,
 			Zconfig: &proto.ZippedFile{
-				Checksum:      "e0c4a83015e81ed49fb51c28a52be5b1f8360b9fbb22531803cde3b14dc211d5",
+				Checksum:      "1e4bebfb74c215d6bd247ef1c4452cfa8973804abe190725a317d0230b4e6a67",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
@@ -641,6 +641,25 @@ func TestGetNginxConfig(t *testing.T) {
 		assert.Equal(t, test.expected.ConfigData, result.ConfigData)
 		assert.Equal(t, test.expected.Ssl, result.Ssl)
 		assert.Equal(t, test.expected.Zconfig.Checksum, result.Zconfig.Checksum)
+
+		r, err := zip.NewReader(result.Zconfig)
+		require.NoError(t, err)
+		expectedFileContent := map[string][]byte{test.fileName: []byte(test.config)}
+		r.RangeFileReaders(func(err error, path string, mode os.FileMode, r io.Reader) bool {
+			var b []byte
+			b, err = io.ReadAll(r)
+			require.NoError(t, err)
+			if bb, ok := expectedFileContent[path]; ok {
+				require.Equal(t, bb, b, path)
+				delete(expectedFileContent, path)
+			} else {
+				bb, err = os.ReadFile(path)
+				require.NoError(t, err)
+				assert.Equal(t, bb, b, path)
+			}
+			return true
+		})
+		assert.Empty(t, expectedFileContent)
 
 		if test.expected.Zaux != nil {
 			assert.NotNil(t, result.Zaux)
@@ -1117,7 +1136,7 @@ root foo/bar;`,
 }
 
 func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
-	var tests = []struct {
+	var myTests = []struct {
 		fileName         string
 		content          string
 		allowDir         string
@@ -1146,7 +1165,7 @@ func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
 					},
 				},
 				Zaux: &proto.ZippedFile{
-					Checksum:      "e7dc2d75ecae15b09e2ec6f2e7e0648c2b822a11f98b39907feb163f5219e112",
+					Checksum:      "c660937641a883c1291a9cde1a0e0e61a926fe17c2f2b18af2ee05382d7d5b49",
 					RootDirectory: "/tmp/testdata",
 				},
 			},
@@ -1156,7 +1175,7 @@ func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for _, test := range myTests {
 		err := setUpDirectories()
 		assert.NoError(t, err)
 		defer tearDownDirectories()
@@ -1199,12 +1218,19 @@ func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
 			assert.Equal(t, test.expected.Zaux.Checksum, auxProto.Checksum)
 			zf, err := zip.NewReader(auxProto)
 			assert.NoError(t, err)
-			files := make(map[string]struct{})
+			expectedFiles := make(map[string]struct{})
 			zf.RangeFileReaders(func(err error, path string, mode os.FileMode, r io.Reader) bool {
-				files[path] = struct{}{}
+				expectedFiles[path] = struct{}{}
+				var b []byte
+				b, err = io.ReadAll(r)
+				require.NoError(t, err)
+				var bb []byte
+				bb, err = os.ReadFile(path)
+				require.NoError(t, err)
+				assert.Equal(t, bb, b)
 				return true
 			})
-			assert.Equal(t, test.expectedAuxFiles, files)
+			assert.Equal(t, test.expectedAuxFiles, expectedFiles)
 		}
 
 		setDirectoryMap(directoryMap, nginxConfig)
@@ -1254,7 +1280,7 @@ func TestAddAuxfileToNginxConfig(t *testing.T) {
 					},
 				},
 				Zaux: &proto.ZippedFile{
-					Checksum:      "e7dc2d75ecae15b09e2ec6f2e7e0648c2b822a11f98b39907feb163f5219e112",
+					Checksum:      "c660937641a883c1291a9cde1a0e0e61a926fe17c2f2b18af2ee05382d7d5b49",
 					RootDirectory: "/tmp/testdata",
 				},
 			},

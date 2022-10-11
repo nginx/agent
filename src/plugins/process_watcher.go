@@ -62,7 +62,7 @@ func (pw *ProcessWatcher) Info() *core.Info {
 
 func (pw *ProcessWatcher) Close() {
 	log.Info("ProcessWatcher is wrapping up")
-	pw.wg.Done()
+	pw.wg.Wait()
 }
 
 func (pw *ProcessWatcher) Process(message *core.Message) {}

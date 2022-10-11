@@ -404,7 +404,7 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 }
 
 func TestNginxPlusUpdate(t *testing.T) {
-	nginxPlus := NewNginxPlus(&metrics.CommonDim{}, "test", PlusNamespace, "http://localhost:8080/api", "8")
+	nginxPlus := NewNginxPlus(&metrics.CommonDim{}, "test", PlusNamespace, "http://localhost:8080/api", 6)
 
 	assert.Equal(t, "", nginxPlus.baseDimensions.InstanceTags)
 	assert.Equal(t, "http://localhost:8080/api", nginxPlus.plusAPI)
@@ -643,7 +643,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 	for _, test := range tests {
 		ctx := context.TODO()
 
-		f := &FakeNginxPlus{NewNginxPlus(test.baseDimensions, "nginx", "plus", "", "8")}
+		f := &FakeNginxPlus{NewNginxPlus(test.baseDimensions, "nginx", "plus", "", 6)}
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
 		go f.Collect(ctx, wg, test.m)

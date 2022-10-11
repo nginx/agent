@@ -46,10 +46,9 @@ type NginxBinary interface {
 	UpdateNginxDetailsFromProcesses(nginxProcesses []Process)
 	WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error)
 	ReadConfig(path, nginxId, systemId string) (*proto.NginxConfig, error)
-	UpdatedAccessLogs() (bool, map[string]string)
-	UpdatedErrorLogs() (bool, map[string]string)
-	SetAccessLogUpdated(bool)
-	SetErrorLogUpdated(bool)
+	UpdateLogs(existingLogs map[string]string, newLogs map[string]string) bool
+	GetAccessLogs() map[string]string
+	GetErrorLogs() map[string]string
 	GetChildProcesses() map[string][]*proto.NginxDetails
 }
 
@@ -409,28 +408,16 @@ func (n *NginxBinaryType) ReadConfig(confFile, nginxId, systemId string) (*proto
 	return configPayload, nil
 }
 
-func (n *NginxBinaryType) UpdatedAccessLogs() (bool, map[string]string) {
+func (n *NginxBinaryType) GetAccessLogs() map[string]string {
 	logMutex.Lock()
 	defer logMutex.Unlock()
-	return n.accessLogsUpdated, n.accessLogs
+	return n.accessLogs
 }
 
-func (n *NginxBinaryType) UpdatedErrorLogs() (bool, map[string]string) {
+func (n *NginxBinaryType) GetErrorLogs() map[string]string {
 	logMutex.Lock()
 	defer logMutex.Unlock()
-	return n.errorLogsUpdated, n.errorLogs
-}
-
-func (n *NginxBinaryType) SetAccessLogUpdated(value bool) {
-	logMutex.Lock()
-	defer logMutex.Unlock()
-	n.accessLogsUpdated = value
-}
-
-func (n *NginxBinaryType) SetErrorLogUpdated(value bool) {
-	logMutex.Lock()
-	defer logMutex.Unlock()
-	n.errorLogsUpdated = value
+	return n.errorLogs
 }
 
 // SkipLog checks if a logfile should be omitted from analysis

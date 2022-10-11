@@ -35,7 +35,7 @@ type NginxCollectorConfig struct {
 	CollectionInterval time.Duration
 	AccessLogs         []string
 	ErrorLogs          []string
-	ClientVersion      string
+	ClientVersion      int
 }
 
 func NewStatsEntity(dims []*proto.Dimension, samples []*proto.SimpleMetric) *proto.StatsEntity {

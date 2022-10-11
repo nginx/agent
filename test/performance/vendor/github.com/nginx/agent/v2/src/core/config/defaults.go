@@ -47,7 +47,7 @@ var (
 		Nginx: Nginx{
 			Debug:               false,
 			NginxCountingSocket: "unix:/var/run/nginx-agent/nginx.sock",
-			NginxClientVersion:  8,
+			NginxClientVersion:  6,
 		},
 		ConfigDirs:            "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms",
 		AllowedDirectoriesMap: map[string]struct{}{},

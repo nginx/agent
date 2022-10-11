@@ -67,6 +67,9 @@ func SetDefaults() {
 	Viper.SetDefault(MetricsBulkSize, Defaults.AgentMetrics.BulkSize)
 	Viper.SetDefault(MetricsReportInterval, Defaults.AgentMetrics.ReportInterval)
 	Viper.SetDefault(MetricsCollectionInterval, Defaults.AgentMetrics.CollectionInterval)
+
+	// NGINX DEFAULTS
+	Viper.SetDefault(NginxClientVersion, Defaults.Nginx.NginxClientVersion)
 }
 
 func SetAdvancedMetricsDefaults() {
