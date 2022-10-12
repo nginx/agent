@@ -1,7 +1,7 @@
 package sdk
 
 import (
-	 "github.com/nginxinc/nginx-go-crossplane"
+	"github.com/nginxinc/nginx-go-crossplane"
 )
 
 type CrossplaneTraverseCallback = func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error)
@@ -67,7 +67,7 @@ func CrossplaneConfigTraverse(root *crossplane.Config, callback CrossplaneTraver
 		}
 
 		err = traverse(dir, callback, &stop)
-		
+
 		if err != nil {
 			return err
 		}
