@@ -58,6 +58,9 @@ message Command {
     // DataplaneSoftwareDetails contains details for additional software running on the dataplane that pertains
     // to NGINX Agent
     DataplaneSoftwareDetails dataplane_software_details = 13 [(gogoproto.jsontag) = "dataplane_software_details"];
+
+    // DataplaneUpdate contains details for dataplane resources that have changed
+    DataplaneUpdate dataplane_update = 14 [(gogoproto.jsontag) = "dataplane_update" ];
   }
 }
 

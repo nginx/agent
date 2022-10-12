@@ -19,7 +19,6 @@ type DataPlaneStatus struct {
 	ctx             context.Context
 	sendStatus      chan bool
 	healthTicker    *time.Ticker
-	interval        time.Duration
 	meta            *proto.Metadata
 	binary          core.NginxBinary
 	env             core.Environment
@@ -39,15 +38,10 @@ const (
 
 func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core.NginxBinary, env core.Environment, version string) *DataPlaneStatus {
 	log.Tracef("Dataplane status interval %s", config.Dataplane.Status.PollInterval)
-	pollInt := config.Dataplane.Status.PollInterval
-	if pollInt < defaultMinInterval {
-		pollInt = defaultMinInterval
-		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, config.Dataplane.Status.PollInterval)
-	}
+
 	return &DataPlaneStatus{
 		sendStatus:     make(chan bool),
-		healthTicker:   time.NewTicker(pollInt),
-		interval:       pollInt,
+		healthTicker:   time.NewTicker(getPollIntervalFrom(config)),
 		meta:           meta,
 		binary:         binary,
 		env:            env,
@@ -56,9 +50,17 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		configDirs:     config.ConfigDirs,
 		statusUrls:     make(map[string]string),
 		reportInterval: config.Dataplane.Status.ReportInterval,
-		// Intentionally empty as it will be set later
-		napDetails: nil,
 	}
+}
+
+// move to SDK?!?
+func getPollIntervalFrom(config *config.Config) time.Duration {
+	pollInt := config.Dataplane.Status.PollInterval
+	if pollInt < defaultMinInterval {
+		pollInt = defaultMinInterval
+		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, config.Dataplane.Status.PollInterval)
+	}
+	return pollInt
 }
 
 func (dps *DataPlaneStatus) Init(pipeline core.MessagePipeInterface) {
@@ -251,11 +253,7 @@ func (dps *DataPlaneStatus) syncAgentConfigChange() {
 	}
 	log.Debugf("DataPlaneStatus is updating to a new config - %v", conf)
 
-	pollInt := conf.Dataplane.Status.PollInterval
-	if pollInt < defaultMinInterval {
-		pollInt = defaultMinInterval
-		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, conf.Dataplane.Status.PollInterval)
-	}
+	dps.healthTicker.Reset(getPollIntervalFrom(conf))
 
 	if conf.DisplayName == "" {
 		conf.DisplayName = dps.env.GetHostname()
@@ -263,7 +261,6 @@ func (dps *DataPlaneStatus) syncAgentConfigChange() {
 	}
 
 	// Update DataPlaneStatus with relevant config info
-	dps.interval = pollInt
 	dps.tags = &conf.Tags
 	dps.configDirs = conf.ConfigDirs
 }

@@ -19,7 +19,6 @@ type DataPlaneStatus struct {
 	ctx             context.Context
 	sendStatus      chan bool
 	healthTicker    *time.Ticker
-	interval        time.Duration
 	meta            *proto.Metadata
 	binary          core.NginxBinary
 	env             core.Environment
@@ -47,7 +46,6 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 	return &DataPlaneStatus{
 		sendStatus:     make(chan bool),
 		healthTicker:   time.NewTicker(pollInt),
-		interval:       pollInt,
 		meta:           meta,
 		binary:         binary,
 		env:            env,
@@ -263,7 +261,6 @@ func (dps *DataPlaneStatus) syncAgentConfigChange() {
 	}
 
 	// Update DataPlaneStatus with relevant config info
-	dps.interval = pollInt
 	dps.tags = &conf.Tags
 	dps.configDirs = conf.ConfigDirs
 }

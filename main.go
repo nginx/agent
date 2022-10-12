@@ -184,6 +184,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		plugins.NewMetrics(loadedConfig, env, binary),
 		plugins.NewMetricsThrottle(loadedConfig, env),
 		plugins.NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, env, version),
+		plugins.NewDataPlaneUpdate(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString())),
 		plugins.NewProcessWatcher(env, binary),
 		plugins.NewExtensions(loadedConfig, env),
 		plugins.NewFileWatcher(loadedConfig, env),
