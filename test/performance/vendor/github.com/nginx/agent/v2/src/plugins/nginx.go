@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/google/uuid"
@@ -20,6 +21,10 @@ import (
 
 const (
 	appProtectMetadataFilePath = "/etc/nms/app_protect_metadata.json"
+)
+
+var (
+	validationTimeout = 15 * time.Second
 )
 
 // Nginx is the metadata of our nginx binary
@@ -301,35 +306,67 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		return n.handleErrorStatus(status, message)
 	}
 
-	n.validateConfig(nginx, cmd.Meta.MessageId, config, configApply)
-	log.Debug("Validation of nginx config in progress")
-	return status
+	validationResponse := n.validateConfig(nginx, cmd.Meta.MessageId, config, configApply)
+	if validationResponse != nil {
+		if validationResponse.err == nil {
+			agentActivityStatus := n.completeConfigApply(validationResponse)
+			if agentActivityStatus.GetNginxConfigStatus().GetStatus() == proto.NginxConfigStatus_ERROR {
+				status.NginxConfigResponse.Status = newErrStatus(agentActivityStatus.GetNginxConfigStatus().GetMessage()).CmdStatus
+			} else {
+				status.NginxConfigResponse.Status = newOKStatus(agentActivityStatus.GetNginxConfigStatus().GetMessage()).CmdStatus
+			}
+			return status
+		} else {
+			n.rollbackConfigApply(validationResponse)
+			message := fmt.Sprintf("Config apply failed (write): " + validationResponse.err.Error())
+			return n.handleErrorStatus(status, message)
+		}
+	} else {
+		log.Debug("Validation of nginx config in progress")
+		return status
+	}
 }
 
-func (n *Nginx) validateConfig(nginx *proto.NginxDetails, correlationId string, config *proto.NginxConfig, configApply *sdk.ConfigApply) {
+// This function will run a nginx config validation in a separate go routine. If the validation takes less than 15 seconds then the result is returned straight away,
+// otherwise nil is returned and the validation continues on in the background until it is complete. The result is always added to the message pipeline for other plugins
+// to use.
+func (n *Nginx) validateConfig(nginx *proto.NginxDetails, correlationId string, config *proto.NginxConfig, configApply *sdk.ConfigApply) *NginxConfigValidationResponse {
+	validationChannel := make(chan *NginxConfigValidationResponse, 1)
+
 	go func() {
 		err := n.nginxBinary.ValidateConfig(nginx.NginxId, nginx.ProcessPath, nginx.ConfPath, config, configApply)
 		if err != nil {
-			n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationFailed, &NginxConfigValidationResponse{
+			response := &NginxConfigValidationResponse{
 				err:           fmt.Errorf("error running nginx -t -c %s:\n %v", nginx.ConfPath, err),
 				correlationId: correlationId,
 				nginxDetails:  nginx,
 				config:        config,
 				configApply:   configApply,
-			}))
+			}
+			n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationFailed, response))
+			validationChannel <- response
 		} else {
-			n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationSucceeded, &NginxConfigValidationResponse{
+			response := &NginxConfigValidationResponse{
 				err:           nil,
 				correlationId: correlationId,
 				nginxDetails:  nginx,
 				config:        config,
 				configApply:   configApply,
-			}))
+			}
+			n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
+			validationChannel <- response
 		}
 	}()
+
+	select {
+	case result := <-validationChannel:
+		return result
+	case <-time.After(validationTimeout):
+		return nil
+	}
 }
 
-func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) {
+func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *proto.AgentActivityStatus {
 	nginxConfigStatusMessage := "Config applied successfully"
 	if response.configApply != nil {
 		if err := response.configApply.Complete(); err != nil {
@@ -394,6 +431,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) {
 	n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplySucceeded, agentActivityStatus))
 
 	log.Debug("Config Apply Complete")
+	return agentActivityStatus
 }
 
 func (n *Nginx) rollbackConfigApply(response *NginxConfigValidationResponse) {

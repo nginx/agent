@@ -92,6 +92,7 @@ var (
 )
 
 func TestNginxConfigApply(t *testing.T) {
+	validationTimeout = 0 * time.Millisecond
 	t.Parallel()
 
 	tests := []struct {
@@ -209,7 +210,7 @@ func TestNginxConfigApply(t *testing.T) {
 			err = ioutil.WriteFile(tempConf.Name(), fourth, 0644)
 			assert.NoError(t, err)
 
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx := context.TODO()
 
 			env := tutils.GetMockEnvWithProcess()
 			allowedDirectoriesMap := map[string]struct{}{dir: {}}
@@ -233,10 +234,15 @@ func TestNginxConfigApply(t *testing.T) {
 			messagePipe.Run()
 			processedMessages := messagePipe.GetProcessedMessages()
 
-			assert.Eventually(tt, func() bool { return len(processedMessages) != len(test.msgTopics) }, time.Duration(15*time.Millisecond), 3*time.Millisecond)
+			assert.Eventually(
+				tt,
+				func() bool { return len(processedMessages) != len(test.msgTopics) },
+				time.Duration(15*time.Millisecond),
+				3*time.Millisecond,
+				fmt.Sprintf("Expected %d messages but only processed %d messages", len(test.msgTopics), len(processedMessages)),
+			)
 			binary.AssertExpectations(tt)
 			env.AssertExpectations(tt)
-			cancel()
 
 			for idx, msg := range processedMessages {
 				if test.msgTopics[idx] != msg.Topic() {
@@ -504,7 +510,13 @@ func TestNginx_completeConfigApply(t *testing.T) {
 
 	processedMessages := messagePipe.GetProcessedMessages()
 
-	assert.Eventually(t, func() bool { return len(processedMessages) == len(expectedTopics) }, time.Duration(15*time.Millisecond), 3*time.Millisecond)
+	assert.Eventually(
+		t,
+		func() bool { return len(processedMessages) == len(expectedTopics) },
+		time.Duration(15*time.Millisecond),
+		3*time.Millisecond,
+		fmt.Sprintf("Expected %d messages but only processed %d messages", len(expectedTopics), len(processedMessages)),
+	)
 
 	for idx, msg := range processedMessages {
 		if expectedTopics[idx] != msg.Topic() {
@@ -587,7 +599,13 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 
 	processedMessages := messagePipe.GetProcessedMessages()
 
-	assert.Eventually(t, func() bool { return len(processedMessages) == len(expectedTopics) }, time.Duration(5*time.Millisecond), 1*time.Millisecond)
+	assert.Eventually(
+		t,
+		func() bool { return len(processedMessages) == len(expectedTopics) },
+		time.Duration(5*time.Millisecond),
+		1*time.Millisecond,
+		fmt.Sprintf("Expected %d messages but only processed %d messages", len(expectedTopics), len(processedMessages)),
+	)
 
 	for idx, msg := range processedMessages {
 		if expectedTopics[idx] != msg.Topic() {
