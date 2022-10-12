@@ -233,7 +233,7 @@ func TestNginxConfigApply(t *testing.T) {
 			messagePipe.Run()
 			processedMessages := messagePipe.GetProcessedMessages()
 
-			assert.Eventually(tt, func() bool { return len(processedMessages) != len(test.msgTopics) }, time.Duration(5*time.Millisecond), 1*time.Millisecond)
+			assert.Eventually(tt, func() bool { return len(processedMessages) != len(test.msgTopics) }, time.Duration(15*time.Millisecond), 3*time.Millisecond)
 			binary.AssertExpectations(tt)
 			env.AssertExpectations(tt)
 			cancel()
@@ -504,7 +504,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 
 	processedMessages := messagePipe.GetProcessedMessages()
 
-	assert.Eventually(t, func() bool { return len(processedMessages) == len(expectedTopics) }, time.Duration(5*time.Millisecond), 1*time.Millisecond)
+	assert.Eventually(t, func() bool { return len(processedMessages) == len(expectedTopics) }, time.Duration(15*time.Millisecond), 3*time.Millisecond)
 
 	for idx, msg := range processedMessages {
 		if expectedTopics[idx] != msg.Topic() {
