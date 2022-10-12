@@ -82,7 +82,7 @@ func (e *Extensions) Process(msg *core.Message) {
 					}
 					e.conf = conf
 
-					napMonitoring, err := NewNapMonitoring(e.conf)
+					napMonitoring, err := NewNAPMonitoring(e.conf)
 					if err != nil {
 						log.Warnf("Unable to load the Nginx App Protect Monitoring plugin due to the following error: %v", err)
 						break

@@ -3,10 +3,10 @@ package monitoring
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log/syslog"
 	"math/rand"
 	"net"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -49,13 +49,13 @@ func TestNAPMonitoring(t *testing.T) {
 		ingestionServer.Run(ctx)
 	}()
 
-	sem, err := manager.NewSecurityEventManager(cfg)
+	m, err := manager.NewManager(cfg)
 	assert.NoError(t, err)
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		sem.Run(ctx)
+		m.Run(ctx)
 	}()
 
 	// Let monitor init
@@ -64,23 +64,23 @@ func TestNAPMonitoring(t *testing.T) {
 	sysLog, err := syslog.Dial("tcp", fmt.Sprintf("%s:%d", cfg.NAPMonitoring.SyslogIP, cfg.NAPMonitoring.SyslogPort), syslog.LOG_WARNING, "napMonitoringTest")
 	assert.NoError(t, err)
 
-	files, err := ioutil.ReadDir("./testData/logs-in/")
+	files, err := os.ReadDir("./testData/logs-in/")
 	assert.NoError(t, err)
 	for _, file := range files {
-		bInput, err := ioutil.ReadFile(fmt.Sprintf("./testData/logs-in/%s", file.Name()))
+		bInput, err := os.ReadFile(fmt.Sprintf("./testData/logs-in/%s", file.Name()))
 		assert.NoError(t, err)
 		input := string(bInput)
-		_, err = fmt.Fprintf(sysLog, input)
+		_, err = fmt.Fprint(sysLog, input)
 		assert.NoError(t, err)
 	}
 
 	// Let monitor work
 	time.Sleep(5 * time.Second)
 
-	files, err = ioutil.ReadDir("./testData/events-out/")
+	files, err = os.ReadDir("./testData/events-out/")
 	assert.NoError(t, err)
 	for _, file := range files {
-		bEvent, err := ioutil.ReadFile(fmt.Sprintf("./testData/events-out/%s", file.Name()))
+		bEvent, err := os.ReadFile(fmt.Sprintf("./testData/events-out/%s", file.Name()))
 		assert.NoError(t, err)
 		expectedEvent := &events.Event{}
 		err = proto.Unmarshal(bEvent, expectedEvent)

@@ -34,7 +34,7 @@ func NewIngestionServerMock(serverAddr string) (*IngestionServerMock, error) {
 		grpcServer:     grpcServer,
 	}
 
-	pb.RegisterIngesterServer(grpcServer, ingestionServer)
+	pb.RegisterMetricsServiceServer(grpcServer, ingestionServer)
 
 	var grpcErr error
 	go func() {
@@ -47,11 +47,11 @@ func NewIngestionServerMock(serverAddr string) (*IngestionServerMock, error) {
 	return ingestionServer, grpcErr
 }
 
-func (s *IngestionServerMock) StreamMetricsReport(pb.Ingester_StreamMetricsReportServer) error {
+func (s *IngestionServerMock) Stream(pb.MetricsService_StreamServer) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (s *IngestionServerMock) StreamEventReport(stream pb.Ingester_StreamEventReportServer) error {
+func (s *IngestionServerMock) StreamEvents(stream pb.MetricsService_StreamEventsServer) error {
 	for {
 		eventReport, err := stream.Recv()
 		if err == io.EOF {

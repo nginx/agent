@@ -15,44 +15,48 @@ const (
 	napMonitoringPluginVersion = "v0.0.1"
 )
 
-type NapMonitoring struct {
-	securityEventsMgr *manager.SecurityEventManager
-	messagePipeline   core.MessagePipeInterface
-	ctx               context.Context
-	ctxCancel         context.CancelFunc
+type NAPMonitoring struct {
+	monitorMgr      *manager.Manager
+	messagePipeline core.MessagePipeInterface
+	ctx             context.Context
+	ctxCancel       context.CancelFunc
 }
 
-func NewNapMonitoring(config *config.Config) (*NapMonitoring, error) {
-	sem, err := manager.NewSecurityEventManager(config)
+func NewNAPMonitoring(config *config.Config) (*NAPMonitoring, error) {
+	m, err := manager.NewManager(config)
 	if err != nil {
 		return nil, err
 	}
 
-	return &NapMonitoring{
-		securityEventsMgr: sem,
+	return &NAPMonitoring{
+		monitorMgr: m,
 	}, nil
 }
 
-func (n *NapMonitoring) Info() *core.Info {
+func (n *NAPMonitoring) Info() *core.Info {
 	return core.NewInfo(napMonitoringPluginName, napMonitoringPluginVersion)
 }
 
-func (n *NapMonitoring) Init(pipeline core.MessagePipeInterface) {
+func (n *NAPMonitoring) Init(pipeline core.MessagePipeInterface) {
 	log.Infof("%s initializing", napMonitoringPluginName)
 	n.messagePipeline = pipeline
 	ctx, cancel := context.WithCancel(n.messagePipeline.Context())
 	n.ctx = ctx
 	n.ctxCancel = cancel
-	n.securityEventsMgr.Run(ctx)
+	n.monitorMgr.Run(ctx)
 }
 
-func (n *NapMonitoring) Process(msg *core.Message) {}
+// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38140
+//   - Identify if we need to process any interactions with NGINX
+func (n *NAPMonitoring) Process(msg *core.Message) {}
 
-func (n *NapMonitoring) Subscriptions() []string {
+// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38140
+//   - Subscribe for Agent config updates
+func (n *NAPMonitoring) Subscriptions() []string {
 	return []string{}
 }
 
-func (n *NapMonitoring) Close() {
+func (n *NAPMonitoring) Close() {
 	log.Infof("%s is wrapping up", napMonitoringPluginName)
 	n.ctxCancel()
 }
