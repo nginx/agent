@@ -66,7 +66,7 @@ INFO[0000] grpc listening at 54789 # grpc control plane port which Agent will re
 ```
 
 Next change the nginx-agent.conf file within the root directory
-### Agent Settings
+### NGINX Agent Settings
 ```yaml
 server:
   # host of the control plane
