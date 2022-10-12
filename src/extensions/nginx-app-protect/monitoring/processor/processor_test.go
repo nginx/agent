@@ -1,17 +1,8 @@
-/*
- * Copyright (C) F5 Inc. 2022
- * All rights reserved.
- *
- * No part of the software may be reproduced or transmitted in any
- * form or by any means, electronic or mechanical, for any purpose,
- * without express written permission of F5 Inc.
- */
-
 package processor
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -25,14 +16,10 @@ import (
 const (
 	// in seconds
 	eventWaitTimeout = 5
-
-	numWorkers = 4
-
-	mockSigDBFile   = "./testdata/mock-sigs"
-	nonexistentFile = "NonexistentFile"
+	numWorkers       = 4
 )
 
-func TestNAPWAFProcess(t *testing.T) {
+func TestNAPProcess(t *testing.T) {
 	testCases := []struct {
 		testName   string
 		testFile   string
@@ -46,7 +33,6 @@ func TestNAPWAFProcess(t *testing.T) {
 			expected: nil,
 			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
 			isNegative: false,
-			fileExists: true,
 		},
 
 		// XML Parsing
@@ -56,7 +42,6 @@ func TestNAPWAFProcess(t *testing.T) {
 			expected: nil,
 			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
 			isNegative: false,
-			fileExists: true,
 		},
 		{
 			testName: "parameter data parsing",
@@ -64,7 +49,6 @@ func TestNAPWAFProcess(t *testing.T) {
 			expected: nil,
 			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
 			isNegative: false,
-			fileExists: true,
 		},
 		{
 			testName: "parameter data parsing with empty context key",
@@ -72,7 +56,6 @@ func TestNAPWAFProcess(t *testing.T) {
 			expected: nil,
 			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
 			isNegative: false,
-			fileExists: true,
 		},
 		{
 			testName: "parameter data parsing as param_data",
@@ -80,7 +63,6 @@ func TestNAPWAFProcess(t *testing.T) {
 			expected: nil,
 			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
 			isNegative: false,
-			fileExists: true,
 		},
 		{
 			testName: "header data parsing",
@@ -88,7 +70,6 @@ func TestNAPWAFProcess(t *testing.T) {
 			expected: nil,
 			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
 			isNegative: false,
-			fileExists: true,
 		},
 		{
 			testName: "signature data parsing",
@@ -96,7 +77,6 @@ func TestNAPWAFProcess(t *testing.T) {
 			expected: nil,
 			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
 			isNegative: false,
-			fileExists: true,
 		},
 	}
 
@@ -105,38 +85,23 @@ func TestNAPWAFProcess(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			sigDBFile := mockSigDBFile
-			if !tc.fileExists {
-				sigDBFile = nonexistentFile
-			}
-
 			collect := make(chan *monitoring.RawLog, 2)
-
 			processed := make(chan *pb.Event, 2)
 
 			log := logrus.New()
 			log.SetLevel(logrus.DebugLevel)
 
 			p, err := GetClient(&Config{
-				Logger:                log.WithField("extension", "test"),
-				Workers:               numWorkers,
-				SigDBFile:             sigDBFile,
-				SigDBFilePollInterval: 1,
+				Logger:  log.WithField("extension", "test"),
+				Workers: numWorkers,
 			})
 			if err != nil {
 				t.Fatalf("Could not get a Processor Client: %s", err)
 			}
 
-			// This is to simulate the behavior of the necessary DB file
-			// not existing prior to getting the processor client, but knowing
-			// that later at some point the DB file will exist and we'll
-			// populate the sigIdToSigName map with it in the background.
-			if !tc.fileExists {
-				p.sigDBFile = mockSigDBFile
-			}
-
 			// make sure the tests actually wait on wg and
 			// verify that they are closed on cancel()
+			// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38117
 			wg := &sync.WaitGroup{}
 
 			wg.Add(1)
@@ -149,12 +114,12 @@ func TestNAPWAFProcess(t *testing.T) {
 				time.Sleep(2 * time.Second)
 			}
 
-			input, err := ioutil.ReadFile(tc.testFile)
+			input, err := os.ReadFile(tc.testFile)
 			if err != nil {
 				t.Fatalf("Error while reading the logfile %s: %v", tc.testFile, err)
 			}
 
-			collect <- &monitoring.RawLog{Origin: monitoring.NAPWAF, Logline: string(input)}
+			collect <- &monitoring.RawLog{Origin: monitoring.NAP, Logline: string(input)}
 
 			select {
 			case event := <-processed:

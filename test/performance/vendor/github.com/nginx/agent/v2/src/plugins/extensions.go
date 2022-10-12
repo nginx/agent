@@ -73,6 +73,26 @@ func (e *Extensions) Process(msg *core.Message) {
 					}
 					nap.Init(e.pipeline)
 				}
+			} else if data == config.NAPMonitoringKey {
+				if !e.isPluginAlreadyRegistered(napMonitoringPluginName) {
+					config.SetNAPMonitoringDefaults()
+					conf, err := config.GetConfig(e.conf.ClientID)
+					if err != nil {
+						log.Warnf("Unable to get agent config, %v", err)
+					}
+					e.conf = conf
+
+					napMonitoring, err := NewNapMonitoring(e.conf)
+					if err != nil {
+						log.Warnf("Unable to load the Nginx App Protect Monitoring plugin due to the following error: %v", err)
+						break
+					}
+					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, napMonitoring)
+					if err != nil {
+						log.Errorf("Unable to register %s extension, %v", data, err)
+					}
+					napMonitoring.Init(e.pipeline)
+				}
 			}
 		}
 	}
