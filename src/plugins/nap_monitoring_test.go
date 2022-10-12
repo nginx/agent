@@ -1,8 +1,9 @@
 package plugins
 
 import (
-	"github.com/nginx/agent/v2/src/core/config"
 	"testing"
+
+	"github.com/nginx/agent/v2/src/core/config"
 
 	"github.com/stretchr/testify/assert"
 
@@ -73,7 +74,7 @@ func TestNAPMonitoring(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := NewNapMonitoring(test.Config)
+			_, err := NewNAPMonitoring(test.Config)
 
 			if test.error {
 				assert.Contains(t, err.Error(), test.errorContains)
@@ -85,7 +86,7 @@ func TestNAPMonitoring(t *testing.T) {
 }
 
 func TestNAPMonitoring_Info(t *testing.T) {
-	pluginUnderTest, err := NewNapMonitoring(tutils.GetMockAgentConfig())
+	pluginUnderTest, err := NewNAPMonitoring(tutils.GetMockAgentConfig())
 
 	assert.NoError(t, err)
 	assert.Equal(t, "Nginx App Protect Monitor", pluginUnderTest.Info().Name())

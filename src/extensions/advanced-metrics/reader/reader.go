@@ -43,10 +43,9 @@ type Frame interface {
 // <message_data><separator>
 //
 // Where:
-// - <separator> is message separator character: `;`
-// - <message_data> is any arbitrary data forming single message with following restrictions: it could not contain <separator> and
-// 					maximal message size is 64kB - 1(for separator)
-//
+//   - <separator> is message separator character: `;`
+//   - <message_data> is any arbitrary data forming single message with following restrictions: it could not contain <separator> and
+//     maximal message size is 64kB - 1(for separator)
 type Reader struct {
 	listenerConfig ListenerConfig
 	listener       net.Listener
