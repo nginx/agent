@@ -126,6 +126,12 @@ func (b *ConfigApply) MarkAndSave(fullPath string) error {
 			b.notExists[fullPath] = struct{}{}
 			log.Debugf("backup: %s does not exist", fullPath)
 
+			for dir := range b.notExistDirs {
+				if strings.HasPrefix(fullPath, dir) {
+					return nil
+				}
+			}
+
 			paths := strings.Split(fullPath, "/")
 			for i := 2; i < len(paths); i++ {
 				dirPath := strings.Join(paths[0:i], "/")
