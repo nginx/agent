@@ -310,7 +310,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 		n.config.AllowedDirectoriesMap,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%v", err)
+		return nil, err
 	}
 
 	if !allowedFile(filepath.Dir(details.ConfPath), n.config.AllowedDirectoriesMap) {
