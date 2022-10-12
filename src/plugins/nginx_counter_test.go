@@ -67,7 +67,7 @@ func TestNginxCounter(t *testing.T) {
 				},
 			}
 
-			nginxCounter := NewNginxCounter(config, binary, tutils.NewMockEnvironment(), tutils.NewMockMetricsReportClient())
+			nginxCounter := NewNginxCounter(config, binary, tutils.NewMockEnvironment())
 
 			messagePipe := core.NewMockMessagePipe(context.Background())
 			err := messagePipe.Register(1, nginxCounter)
