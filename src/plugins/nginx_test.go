@@ -237,7 +237,7 @@ func TestNginxConfigApply(t *testing.T) {
 			assert.Eventually(
 				tt,
 				func() bool { return len(processedMessages) != len(test.msgTopics) },
-				time.Duration(15*time.Millisecond),
+				time.Duration(2*time.Second),
 				3*time.Millisecond,
 				fmt.Sprintf("Expected %d messages but only processed %d messages", len(test.msgTopics), len(processedMessages)),
 			)
@@ -513,7 +513,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	assert.Eventually(
 		t,
 		func() bool { return len(processedMessages) == len(expectedTopics) },
-		time.Duration(15*time.Millisecond),
+		time.Duration(2*time.Second),
 		3*time.Millisecond,
 		fmt.Sprintf("Expected %d messages but only processed %d messages", len(expectedTopics), len(processedMessages)),
 	)
@@ -602,7 +602,7 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 	assert.Eventually(
 		t,
 		func() bool { return len(processedMessages) == len(expectedTopics) },
-		time.Duration(5*time.Millisecond),
+		time.Duration(2*time.Second),
 		1*time.Millisecond,
 		fmt.Sprintf("Expected %d messages but only processed %d messages", len(expectedTopics), len(processedMessages)),
 	)
