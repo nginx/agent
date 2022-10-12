@@ -116,7 +116,7 @@ Next, open up a web browser to view the mock control plane [http://localhost:547
 - configs/raw - Shows
 - metrics - Shows 
 
-For more use-cases of Agent, refer to https://github.com/nginx/agent/tree/main/sdk/examples
+For more use-cases of the NGINX Agent, refer to https://github.com/nginx/agent/tree/main/sdk/examples
 
 ## Installation
 
