@@ -13,7 +13,7 @@ The Agent reads both the access and error logs from the NGINX configuration. Rea
 ## What can you do with the NGINX Agent today
 - Circulation of NGINX configurations
 - Reporting of metrics
-- Publicizing of dataplane events
+- Publicizing of data plane events
 
 ## Agent Technical Specifications
 
