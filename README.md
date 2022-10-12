@@ -10,7 +10,7 @@ The Agent reads both the access and error logs from the NGINX configuration. Rea
 
 ![How agent works](docs/how-it-works.png "How it works")
 
-## What you can do with Agent today
+## What can you do with the NGINX Agent today
 - Circulation of NGINX configurations
 - Reporting of metrics
 - Publicizing of dataplane events
