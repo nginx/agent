@@ -209,48 +209,48 @@ func setDirectoryMap(directories *DirectoryMap, nginxConfig *proto.NginxConfig) 
 }
 
 func updateNginxConfigFileConfig(
-    conf crossplane.Config,
-    nginxConfig *proto.NginxConfig,
-    hostDir string,
-    aux *zip.Writer,
-    formatMap map[string]string,
-    seen map[string]struct{},
-    allowedDirectories map[string]struct{},
-    directoryMap *DirectoryMap,
+	conf crossplane.Config,
+	nginxConfig *proto.NginxConfig,
+	hostDir string,
+	aux *zip.Writer,
+	formatMap map[string]string,
+	seen map[string]struct{},
+	allowedDirectories map[string]struct{},
+	directoryMap *DirectoryMap,
 ) error {
-    err := CrossplaneConfigTraverse(&conf,
-        func(parent *crossplane.Directive, directive *crossplane.Directive) (bool, error) {
-            switch directive.Directive {
-            case "log_format":
-                if len(directive.Args) >= 2 {
-                    formatMap[directive.Args[0]] = strings.Join(directive.Args[1:], "")
-                }
-            case "root":
-                if err := updateNginxConfigFileWithRoot(aux, directive.Args[0], seen, allowedDirectories, directoryMap); err != nil {
-                    return true, err
-                }
-            case "ssl_certificate", "ssl_certificate_key", "ssl_trusted_certificate":
-                
-                if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories); err != nil {
-                    return true, err
-                }
-            case "access_log":
-                updateNginxConfigWithAccessLog(
-                    directive.Args[0],
-                    getAccessLogDirectiveFormat(directive),
-                    nginxConfig, formatMap, seen)
-            case "error_log":
-                updateNginxConfigWithErrorLog(
-                    directive.Args[0],
-                    getErrorLogDirectiveLevel(directive),
-                    nginxConfig, seen)
-            }
-            return true, nil
-        })
-    if err != nil{
-        return err
-        }
-    return nil
+	err := CrossplaneConfigTraverse(&conf,
+		func(parent *crossplane.Directive, directive *crossplane.Directive) (bool, error) {
+			switch directive.Directive {
+			case "log_format":
+				if len(directive.Args) >= 2 {
+					formatMap[directive.Args[0]] = strings.Join(directive.Args[1:], "")
+				}
+			case "root":
+				if err := updateNginxConfigFileWithRoot(aux, directive.Args[0], seen, allowedDirectories, directoryMap); err != nil {
+					return true, err
+				}
+			case "ssl_certificate", "ssl_certificate_key", "ssl_trusted_certificate":
+
+				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories); err != nil {
+					return true, err
+				}
+			case "access_log":
+				updateNginxConfigWithAccessLog(
+					directive.Args[0],
+					getAccessLogDirectiveFormat(directive),
+					nginxConfig, formatMap, seen)
+			case "error_log":
+				updateNginxConfigWithErrorLog(
+					directive.Args[0],
+					getErrorLogDirectiveLevel(directive),
+					nginxConfig, seen)
+			}
+			return true, nil
+		})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func updateNginxConfigWithCert(
@@ -278,12 +278,12 @@ func updateNginxConfigWithCert(
 	isAllowed := false
 	for dir := range allowedDirectories {
 		if strings.HasPrefix(file, dir) {
-			isAllowed = true 
-			break 
+			isAllowed = true
+			break
 		}
 	}
 
-	if !isAllowed{ 
+	if !isAllowed {
 		return fmt.Errorf("file outside allowed directories %s", file)
 	}
 

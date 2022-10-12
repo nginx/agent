@@ -77,10 +77,10 @@ func TestTimeConvert(t *testing.T) {
 		expected *types.Timestamp
 	}{
 		{
-			input:    time.Date(2022, 01, 23, 12, 0, 20, 100, &time.Location{}),
+			input: time.Date(2022, 01, 23, 12, 0, 20, 100, &time.Location{}),
 			expected: &types.Timestamp{
 				Seconds: 1642939220,
-				Nanos: 100,
+				Nanos:   100,
 			},
 		},
 		{

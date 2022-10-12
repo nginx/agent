@@ -9,13 +9,13 @@ import (
 
 type MetricsGrpcService struct {
 	sync.RWMutex
-	fromClient      chan *proto.MetricsReport
-	reports         []*proto.MetricsReport
+	fromClient chan *proto.MetricsReport
+	reports    []*proto.MetricsReport
 }
 
 func NewMetricsService() *MetricsGrpcService {
 	return &MetricsGrpcService{
-		fromClient:      make(chan *proto.MetricsReport, 100),
+		fromClient: make(chan *proto.MetricsReport, 100),
 	}
 }
 
@@ -25,7 +25,7 @@ func (grpcService *MetricsGrpcService) Stream(stream proto.MetricsService_Stream
 	for {
 		report, err := stream.Recv()
 		if err != nil {
-            // recommend handling error
+			// recommend handling error
 			log.Debugf("Error in recvHandle %v", err)
 			break
 		}

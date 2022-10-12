@@ -17,7 +17,7 @@ import (
 
 func NewMetricReporterClient() MetricReporter {
 	return &metricReporter{
-		connector: newConnector(),
+		connector:       newConnector(),
 		backoffSettings: DefaultBackoffSettings,
 	}
 }
@@ -91,7 +91,7 @@ func (r *metricReporter) createClient() error {
 		return err
 	}
 	r.channel = channel
-	
+
 	return nil
 }
 
@@ -138,29 +138,29 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 	default:
 		return fmt.Errorf("MetricReporter expected a metrics report message, but received %T", message.Data())
 	}
-	
+
 	err := sdk.WaitUntil(r.ctx, r.backoffSettings.initialInterval, r.backoffSettings.maxInterval, r.backoffSettings.sendMaxTimeout, func() error {
 		if err := r.channel.Send(report); err != nil {
 			return r.handleGrpcError("Metric Reporter Channel Send", err)
 		}
 
 		log.Tracef("MetricReporter sent report %v", report)
-	
+
 		return nil
 	})
 
 	return err
 }
 
-func (r *metricReporter) closeConnection() (error) {
+func (r *metricReporter) closeConnection() error {
 	err := r.channel.CloseSend()
 	if err != nil {
-		return err 
+		return err
 	}
 	return r.grpc.Close()
 }
 
-func (r *metricReporter) handleGrpcError(messagePrefix string, err error) error{
+func (r *metricReporter) handleGrpcError(messagePrefix string, err error) error {
 	if st, ok := status.FromError(err); ok {
 		log.Errorf("%s: error communicating with %s, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
 	} else if err == io.EOF {
