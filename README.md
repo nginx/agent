@@ -4,7 +4,7 @@ The NGINX Agent enhances your deployment experience and enables you to monitor y
 Simply put, Agent optimizes the operationalization of your application stack.
 
 ## How it works 
-NGINX Agent uses the Linux operating system pseudo-filesystems to interface with the process information of NGINX. Agent checks ```nginx -V``` output to determine the relevant configuration location for NGINX. Agent validates configuration with ```nginx -t``` before applying NGINX configuration.
+The NGINX Agent uses the Linux operating system pseudo-filesystems to interface with the process information of NGINX. The Agent checks ```nginx -V``` output to determine the relevant configuration location for NGINX. Then it validates the configuration with ```nginx -t``` before applying the NGINX configuration.
 The Agent reads both the access and error logs from the NGINX configuration. Reading this set of files from the NGINX configuration, using the specified log formats, it parses the appropriate log files and calculates the reported metrics. For NGINX Plus, the Agent takes the relevant information from the NGINX Plus API, configurable through the NGINX configuration.
 
 
