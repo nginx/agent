@@ -143,7 +143,7 @@ sudo systemctl enable nginx-agent
 
 ## Community
 
-- The go-to place to start asking questions and share your thoughts is our [Slack channel](https://nginxcommunity.slack.com/).
+- Our [Slack channel #nginx-agent](https://nginxcommunity.slack.com/), is the go-to place to start asking questions and sharing your thoughts.
 
 - Our [GitHub issues page](https://github.com/nginx/agent/issues) offers space for a more technical discussion at your own pace.
 
