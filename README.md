@@ -123,7 +123,7 @@ For more use-cases of Agent, refer to https://github.com/nginx/agent/tree/main/s
 ### Install from package files
 To install Agent on your system go to [Releases](https://github.com/nginx/agent/releases) and download the packages.zip file under Assets for a given version of the Agent.
 
-Depending on your OS distribution and cpu architecture type
+Depending on your OS distribution and CPU architecture type, use your system's package manager as in the following examples:
 ```
 sudo apt install ./nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.deb
 
