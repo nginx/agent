@@ -19,7 +19,7 @@ The Agent reads both the access and error logs from the NGINX configuration. Rea
 
 ### Supported Distributions 
 
-The Agent can run on most environments. For the supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
+The Agent can run in most environments. For the supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
 
 ### Supported Deployment Environments 
 You can deploy the Agent in the following environments:
