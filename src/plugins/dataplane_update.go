@@ -108,7 +108,7 @@ func (dpu *DataPlaneUpdate) sendDataplaneUpdate() {
 
     update := &proto.DataplaneUpdate{
     	Host:                     dpu.getHostInfo(),
-    	DataplaneSoftwareDetails: dpu.getSoftwareDetails(dpu.env, dpu.binary, dpu.napDetails),
+    	DataplaneSoftwareDetails: getSoftwareDetails(dpu.env, dpu.binary, dpu.napDetails),
 	}
 
 	if (!cmp.Equal(dpu.dataplaneUpdate, update)) {

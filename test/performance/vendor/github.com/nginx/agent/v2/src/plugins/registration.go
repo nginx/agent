@@ -133,7 +133,7 @@ func (r *OneTimeRegistration) registerAgent() {
 					SystemUid:     r.env.GetSystemUUID(),
 				},
 				Details:                  details,
-				DataplaneSoftwareDetails: r.dataplaneSoftwareDetailsSlice(details),
+				DataplaneSoftwareDetails: getSoftwareDetails(r.env, r.binary, nil),
 			},
 		},
 	}
@@ -211,23 +211,6 @@ func (r *OneTimeRegistration) dataplaneSoftwareDetailsMissing() bool {
 	return false
 }
 
-// dataplaneSoftwareDetails converts the map of dataplane software details into a
-// slice of dataplane software details and returns it.
-func (r *OneTimeRegistration) dataplaneSoftwareDetailsSlice(nginxes []*proto.NginxDetails) []*proto.DataplaneSoftwareDetails {
-	allDetails := []*proto.DataplaneSoftwareDetails{}
-
-	for _, details := range r.dataplaneSoftwareDetails {
-		if details != nil {
-			allDetails = append(allDetails, details)
-		}
-	}
-
-	for _, nginx := range nginxes {
-		allDetails = append(allDetails, nginx)
-	}
-
-	return allDetails
-}
 
 // getPluginsReportingDataplaneSoftwareDetails returns a list of plugin names that
 // are enabled which transmit dataplane software details based off the config passed.
