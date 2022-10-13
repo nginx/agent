@@ -23,7 +23,7 @@ func TestNAPMonitoring(t *testing.T) {
 				NAPMonitoring: config.NAPMonitoring{
 					CollectorBufferSize: 1,
 					ProcessorBufferSize: 1,
-					SyslogIP:            "0.0.0.0",
+					SyslogIP:            "127.0.0.1",
 					SyslogPort:          1234,
 				},
 			},
@@ -50,7 +50,7 @@ func TestNAPMonitoring(t *testing.T) {
 				NAPMonitoring: config.NAPMonitoring{
 					CollectorBufferSize: -1,
 					ProcessorBufferSize: -1,
-					SyslogIP:            "0.0.0.0",
+					SyslogIP:            "127.0.0.1",
 					SyslogPort:          4321,
 				},
 			},
@@ -62,7 +62,7 @@ func TestNAPMonitoring(t *testing.T) {
 				NAPMonitoring: config.NAPMonitoring{
 					CollectorBufferSize: 1,
 					ProcessorBufferSize: 1,
-					SyslogIP:            "0.0.0.0",
+					SyslogIP:            "127.0.0.1",
 					SyslogPort:          -4321,
 				},
 			},

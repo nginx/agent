@@ -1,10 +1,11 @@
-package nginx_app_protect
+package mock
 
 import (
 	"context"
 	"fmt"
 	"io"
 	"net"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
@@ -13,13 +14,13 @@ import (
 	events "github.com/nginx/agent/sdk/v2/proto/events"
 )
 
-type IngestionServerTest struct {
+type IngestionServerMock struct {
 	channel        chan *events.EventReport
 	receivedEvents map[string]*events.Event
 	grpcServer     *grpc.Server
 }
 
-func NewIngestionServerTest(serverAddr string) (*IngestionServerTest, error) {
+func NewIngestionServerMock(serverAddr string) (*IngestionServerMock, error) {
 	listener, err := net.Listen("tcp", serverAddr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen: %v", err)
@@ -27,7 +28,7 @@ func NewIngestionServerTest(serverAddr string) (*IngestionServerTest, error) {
 
 	grpcServer := grpc.NewServer()
 
-	ingestionServer := &IngestionServerTest{
+	ingestionServer := &IngestionServerMock{
 		channel:        make(chan *events.EventReport),
 		receivedEvents: make(map[string]*events.Event),
 		grpcServer:     grpcServer,
@@ -35,18 +36,22 @@ func NewIngestionServerTest(serverAddr string) (*IngestionServerTest, error) {
 
 	pb.RegisterIngesterServer(grpcServer, ingestionServer)
 
+	var grpcErr error
 	go func() {
-		_ = grpcServer.Serve(listener)
+		grpcErr = grpcServer.Serve(listener)
 	}()
 
-	return ingestionServer, nil
+	// Letting error be affected if there is any error while doing grpcServer.Serve()
+	time.Sleep(time.Second)
+
+	return ingestionServer, grpcErr
 }
 
-func (s *IngestionServerTest) StreamMetricsReport(pb.Ingester_StreamMetricsReportServer) error {
+func (s *IngestionServerMock) StreamMetricsReport(pb.Ingester_StreamMetricsReportServer) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (s *IngestionServerTest) StreamEventReport(stream pb.Ingester_StreamEventReportServer) error {
+func (s *IngestionServerMock) StreamEventReport(stream pb.Ingester_StreamEventReportServer) error {
 	for {
 		eventReport, err := stream.Recv()
 		if err == io.EOF {
@@ -59,19 +64,21 @@ func (s *IngestionServerTest) StreamEventReport(stream pb.Ingester_StreamEventRe
 	}
 }
 
-func (s *IngestionServerTest) Run(ctx context.Context) {
-	select {
-	case <-ctx.Done():
-		s.grpcServer.Stop()
-		return
-	case eventsReport := <-s.channel:
-		for _, event := range eventsReport.Events {
-			s.receivedEvents[event.GetSecurityViolationEvent().SupportID] = event
+func (s *IngestionServerMock) Run(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			s.grpcServer.Stop()
+			return
+		case eventsReport := <-s.channel:
+			for _, event := range eventsReport.Events {
+				s.receivedEvents[event.GetSecurityViolationEvent().SupportID] = event
+			}
 		}
 	}
 }
 
-func (s *IngestionServerTest) ReceivedEvent(supportID string) (event *events.Event, found bool) {
+func (s *IngestionServerMock) ReceivedEvent(supportID string) (event *events.Event, found bool) {
 	event, found = s.receivedEvents[supportID]
 	return
 }
