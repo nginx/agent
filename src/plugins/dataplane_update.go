@@ -18,16 +18,24 @@ type DataPlaneUpdate struct {
 	ctx             context.Context
 	updateTicker    *time.Ticker
 	env             core.Environment
+	binary          core.NginxBinary
 	dataplaneUpdate *proto.DataplaneUpdate
 	meta            *proto.Metadata
+	config          *config.Config
+	version         string
+	napDetails      *proto.DataplaneSoftwareDetails_AppProtectWafDetails
 }
 
-func NewDataPlaneUpdate(config *config.Config, env core.Environment, meta *proto.Metadata) *DataPlaneUpdate {
+func NewDataPlaneUpdate(config *config.Config, binary core.NginxBinary, env core.Environment, meta *proto.Metadata, version string) *DataPlaneUpdate {
 	log.Tracef("Dataplane update interval %s", config.Dataplane.Status.PollInterval)
 
 	return &DataPlaneUpdate{
-		meta:         meta,
 		updateTicker: time.NewTicker(getPollIntervalFrom(config)),
+		env:          env,
+		binary:       binary,
+		meta:         meta,
+		config:	      config,
+		version:      version,
 	}
 }
 
@@ -45,7 +53,6 @@ func (dpu *DataPlaneUpdate) Init(pipeline core.MessagePipeInterface) {
 		for {
 			select {
 			case <-dpu.updateTicker.C:
-				// do stuff
 				dpu.sendDataplaneUpdate()
 			case <-quit:
 				dpu.updateTicker.Stop()
@@ -67,60 +74,86 @@ func (dpu *DataPlaneUpdate) Info() *core.Info {
 func (dpu *DataPlaneUpdate) Process(msg *core.Message) {
 	switch {
 	case msg.Exact(core.AgentConfigChanged):
-		// If the agent config on disk changed update DataPlaneStatus with relevant config info
-		conf, err := config.GetConfig(dpu.env.GetSystemUUID())
-		if err != nil {
-			log.Errorf("Failed to load config for updating: %v", err)
-			return
-		}
-		log.Debugf("DataPlaneStatus is updating to a new config - %v", conf)
-
-		dpu.updateTicker.Reset(getPollIntervalFrom(conf))
-
-		// move this to software details?
-		// dps.configDirs = conf.ConfigDirs
-
+		dpu.syncAgentConfigChange()
 	case msg.Exact(core.NginxAppProtectDetailsGenerated):
-		switch commandData := msg.Data().(type) {
-		case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
-			log.Debugf("DataPlaneStatus is syncing with NAP details - %+v", commandData.AppProtectWafDetails)
-			// dpu.napDetails = commandData
-		default:
-			log.Errorf("Expected the type %T but got %T", &proto.DataplaneSoftwareDetails_AppProtectWafDetails{}, commandData)
-		}
+		dpu.napDetails = getNAPDetails(msg)
 	}
+}
+
+func (dpu *DataPlaneUpdate) syncAgentConfigChange() {
+	conf, err := config.GetConfig(dpu.env.GetSystemUUID())
+	if err != nil {
+		log.Errorf("Failed to load config for updating: %v", err)
+		return
+	}
+	log.Debugf("DataPlaneStatus is updating to a new config - %v", conf)
+
+	dpu.updateTicker.Reset(getPollIntervalFrom(conf))
+
+	if conf.DisplayName == "" {
+		conf.DisplayName = dpu.env.GetHostname()
+		log.Infof("setting displayName to %s", conf.DisplayName)
+	}
+
+	dpu.config = conf
 }
 
 func (dpu *DataPlaneUpdate) Subscriptions() []string {
-	return []string{}
+	return []string{core.AgentConfigChanged, core.NginxAppProtectDetailsGenerated}
 }
 
-func (dpu *DataPlaneUpdate) dataplaneUpdateMessage() *proto.DataplaneUpdate {
-	processes := dpu.env.Processes()
-	log.Tracef("dataplaneStatus: processes %v", processes)
+func (dpu *DataPlaneUpdate) sendDataplaneUpdate() {
+	meta := *dpu.meta
+	meta.MessageId = uuid.New().String()
+
     update := &proto.DataplaneUpdate{
-    	Host:                     &proto.HostInfo{},
-    	DataplaneSoftwareDetails: []*proto.DataplaneSoftwareDetails{},
+    	Host:                     dpu.getHostInfo(),
+    	DataplaneSoftwareDetails: dpu.getSoftwareDetails(dpu.env, dpu.binary, dpu.napDetails),
 	}
 
 	if (!cmp.Equal(dpu.dataplaneUpdate, update)) {
+		statusData := proto.Command_DataplaneUpdate{
+			DataplaneUpdate: update,
+		}
+		log.Tracef("sendDataplaneStatus statusData: %v", statusData)
 		dpu.dataplaneUpdate = update
+		dpu.messagePipeline.Process(
+			core.NewMessage(core.CommStatus, &proto.Command{
+				Meta: &meta,
+				Data: &statusData,
+			}),
+		)
 	}
-
-	return dpu.dataplaneUpdate
 }
 
-func (dpu *DataPlaneUpdate) sendDataplaneUpdate(pipeline core.MessagePipeInterface) {
-	meta := *dpu.meta
-	meta.MessageId = uuid.New().String()
-	statusData := proto.Command_DataplaneUpdate{
-		DataplaneUpdate: dpu.dataplaneUpdateMessage(),
+func (dpu *DataPlaneUpdate) getHostInfo() *proto.HostInfo {
+	hostInfo := dpu.env.NewHostInfo(dpu.version, &dpu.config.Tags, dpu.config.ConfigDirs, true)
+	log.Tracef("hostInfo: %v", hostInfo)
+	return hostInfo
+}
+
+func getSoftwareDetails(env core.Environment, binary core.NginxBinary, napDetails *proto.DataplaneSoftwareDetails_AppProtectWafDetails) (details []*proto.DataplaneSoftwareDetails) {
+	processes := env.Processes()
+	log.Tracef("dataplane update: processes %v", processes)
+	for _, p := range processes {
+		if !p.IsMaster {
+			continue
+		}
+		detail := binary.GetNginxDetailsFromProcess(p)
+
+		data := &proto.DataplaneSoftwareDetails{
+			Data: &proto.DataplaneSoftwareDetails_NginxDetails{
+				NginxDetails: detail,
+			},
+		}
+		details = append(details, data)
 	}
-	log.Tracef("sendDataplaneStatus statusData: %v", statusData)
-	pipeline.Process(
-		core.NewMessage(core.CommStatus, &proto.Command{
-			Meta: &meta,
-			Data: &statusData,
-		}),
-	)
+
+	// add nap details
+	details = append(details, &proto.DataplaneSoftwareDetails{
+		Data: napDetails,
+	})
+	
+	log.Tracef("software details: %v", details)
+	return details
 }

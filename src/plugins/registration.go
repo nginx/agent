@@ -133,7 +133,7 @@ func (r *OneTimeRegistration) registerAgent() {
 					SystemUid:     r.env.GetSystemUUID(),
 				},
 				Details:                  details,
-				DataplaneSoftwareDetails: r.dataplaneSoftwareDetailsSlice(),
+				DataplaneSoftwareDetails: r.dataplaneSoftwareDetailsSlice(details),
 			},
 		},
 	}
@@ -213,13 +213,17 @@ func (r *OneTimeRegistration) dataplaneSoftwareDetailsMissing() bool {
 
 // dataplaneSoftwareDetails converts the map of dataplane software details into a
 // slice of dataplane software details and returns it.
-func (r *OneTimeRegistration) dataplaneSoftwareDetailsSlice() []*proto.DataplaneSoftwareDetails {
+func (r *OneTimeRegistration) dataplaneSoftwareDetailsSlice(nginxes []*proto.NginxDetails) []*proto.DataplaneSoftwareDetails {
 	allDetails := []*proto.DataplaneSoftwareDetails{}
 
 	for _, details := range r.dataplaneSoftwareDetails {
 		if details != nil {
 			allDetails = append(allDetails, details)
 		}
+	}
+
+	for _, nginx := range nginxes {
+		allDetails = append(allDetails, nginx)
 	}
 
 	return allDetails

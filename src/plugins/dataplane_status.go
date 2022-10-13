@@ -53,7 +53,6 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 	}
 }
 
-// move to SDK?!?
 func getPollIntervalFrom(config *config.Config) time.Duration {
 	pollInt := config.Dataplane.Status.PollInterval
 	if pollInt < defaultMinInterval {
@@ -88,7 +87,7 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 
 	case msg.Exact(core.NginxAppProtectDetailsGenerated):
 		// If a NAP report was generated sync it
-		dps.syncNAPDetails(msg)
+		dps.napDetails = getNAPDetails(msg)
 	}
 }
 
@@ -134,22 +133,10 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 		Host:                     dps.hostInfo(forceDetails),
 		Details:                  dps.detailsForProcess(processes, forceDetails),
 		Healths:                  dps.healthForProcess(processes),
-		DataplaneSoftwareDetails: dps.dataplaneSoftwareDetails(),
+		DataplaneSoftwareDetails: getSoftwareDetails(dps.env, dps.binary, dps.napDetails),
 	}
 }
 
-func (dps *DataPlaneStatus) dataplaneSoftwareDetails() []*proto.DataplaneSoftwareDetails {
-	allDetails := make([]*proto.DataplaneSoftwareDetails, 0)
-
-	if dps.napDetails != nil {
-		napDetails := &proto.DataplaneSoftwareDetails{
-			Data: dps.napDetails,
-		}
-		allDetails = append(allDetails, napDetails)
-	}
-
-	return allDetails
-}
 
 func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
 	// this sets send if we are forcing details, or it has been 24 hours since the last send
@@ -265,12 +252,13 @@ func (dps *DataPlaneStatus) syncAgentConfigChange() {
 	dps.configDirs = conf.ConfigDirs
 }
 
-func (dps *DataPlaneStatus) syncNAPDetails(msg *core.Message) {
+func getNAPDetails(msg *core.Message) *proto.DataplaneSoftwareDetails_AppProtectWafDetails {
 	switch commandData := msg.Data().(type) {
 	case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
 		log.Debugf("DataPlaneStatus is syncing with NAP details - %+v", commandData.AppProtectWafDetails)
-		dps.napDetails = commandData
+		return commandData
 	default:
 		log.Errorf("Expected the type %T but got %T", &proto.DataplaneSoftwareDetails_AppProtectWafDetails{}, commandData)
 	}
+	return nil
 }

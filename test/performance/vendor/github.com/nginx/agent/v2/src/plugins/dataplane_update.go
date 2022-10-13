@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -15,22 +17,25 @@ type DataPlaneUpdate struct {
 	messagePipeline core.MessagePipeInterface
 	ctx             context.Context
 	updateTicker    *time.Ticker
-	reportInterval  time.Duration
 	env             core.Environment
+	binary          core.NginxBinary
 	dataplaneUpdate *proto.DataplaneUpdate
+	meta            *proto.Metadata
+	config          *config.Config
+	version         string
+	napDetails      *proto.DataplaneSoftwareDetails_AppProtectWafDetails
 }
 
-func NewDataPlaneUpdate(config *config.Config, env core.Environment) *DataPlaneUpdate {
-	log.Tracef("Dataplane status interval %s", config.Dataplane.Status.PollInterval)
-	pollInt := config.Dataplane.Status.PollInterval
-	if pollInt < defaultMinInterval {
-		pollInt = defaultMinInterval
-		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, config.Dataplane.Status.PollInterval)
-	}
-	
+func NewDataPlaneUpdate(config *config.Config, binary core.NginxBinary, env core.Environment, meta *proto.Metadata, version string) *DataPlaneUpdate {
+	log.Tracef("Dataplane update interval %s", config.Dataplane.Status.PollInterval)
+
 	return &DataPlaneUpdate{
-		updateTicker:   time.NewTicker(pollInt),
-		reportInterval: config.Dataplane.Status.ReportInterval,
+		updateTicker: time.NewTicker(getPollIntervalFrom(config)),
+		env:          env,
+		binary:       binary,
+		meta:         meta,
+		config:	      config,
+		version:      version,
 	}
 }
 
@@ -39,27 +44,22 @@ func (dpu *DataPlaneUpdate) Init(pipeline core.MessagePipeInterface) {
 	dpu.messagePipeline = pipeline
 	dpu.ctx = dpu.messagePipeline.Context()
 
-	done := make(chan bool)
-    ticker := time.NewTicker(1 * time.Second)
-    for _ = range ticker.C {
-        fmt.Println("Tock")
-    }
+	quit := make(chan struct{})
 
-    go func() {
+	// this should call ticker.Stop()
+	defer close(quit)
+
+	go func() {
 		for {
 			select {
-			case <-done:
+			case <-dpu.updateTicker.C:
+				dpu.sendDataplaneUpdate()
+			case <-quit:
+				dpu.updateTicker.Stop()
 				return
-			case t := <-ticker.C:
-				fmt.Println("Tick at", t)
 			}
 		}
 	}()
-
-    time.Sleep(100 * time.Second)
-	ticker.Stop()
-	done <- true
-	fmt.Println("Ticker stopped")
 }
 
 func (dpu *DataPlaneUpdate) Close() {
@@ -67,35 +67,93 @@ func (dpu *DataPlaneUpdate) Close() {
 	dpu.updateTicker.Stop()
 }
 
-func (dps *DataPlaneUpdate) Info() *core.Info {
+func (dpu *DataPlaneUpdate) Info() *core.Info {
 	return core.NewInfo("DataPlaneUpdate", "v0.0.1")
 }
 
-func (dps *DataPlaneUpdate) Process(msg *core.Message) {
+func (dpu *DataPlaneUpdate) Process(msg *core.Message) {
+	switch {
+	case msg.Exact(core.AgentConfigChanged):
+		dpu.syncAgentConfigChange()
+	case msg.Exact(core.NginxAppProtectDetailsGenerated):
+		dpu.napDetails = getNAPDetails(msg)
+	}
+}
+
+func (dpu *DataPlaneUpdate) syncAgentConfigChange() {
+	conf, err := config.GetConfig(dpu.env.GetSystemUUID())
+	if err != nil {
+		log.Errorf("Failed to load config for updating: %v", err)
+		return
+	}
+	log.Debugf("DataPlaneStatus is updating to a new config - %v", conf)
+
+	dpu.updateTicker.Reset(getPollIntervalFrom(conf))
+
+	if conf.DisplayName == "" {
+		conf.DisplayName = dpu.env.GetHostname()
+		log.Infof("setting displayName to %s", conf.DisplayName)
+	}
+
+	dpu.config = conf
 }
 
 func (dpu *DataPlaneUpdate) Subscriptions() []string {
-	return []string{}
+	return []string{core.AgentConfigChanged, core.NginxAppProtectDetailsGenerated}
 }
 
-func (dpu *DataPlaneUpdate) dataplaneUpdateMessage(forceDetails bool) *proto.DataplaneUpdate {
-	processes := dpu.env.Processes()
-	log.Tracef("dataplaneStatus: processes %v", processes)
-	forceDetails = forceDetails || time.Now().UTC().Add(-dpu.reportInterval).After(dpu.lastSendDetails)
-	return dpu.dataplaneUpdate
-}
-
-func (dps *DataPlaneStatus) sendDataplaneUpdate(pipeline core.MessagePipeInterface, forceDetails bool) {
-	meta := *dps.meta
+func (dpu *DataPlaneUpdate) sendDataplaneUpdate() {
+	meta := *dpu.meta
 	meta.MessageId = uuid.New().String()
-	statusData := proto.Comm{
-		DataplaneStatus: dps.dataplaneStatus(forceDetails),
+
+    update := &proto.DataplaneUpdate{
+    	Host:                     dpu.getHostInfo(),
+    	DataplaneSoftwareDetails: dpu.getSoftwareDetails(dpu.env, dpu.binary, dpu.napDetails),
 	}
-	log.Tracef("sendDataplaneStatus statusData: %v", statusData)
-	pipeline.Process(
-		core.NewMessage(core.CommStatus, &proto.Command{
-			Meta: &meta,
-			Data: &statusData,
-		}),
-	)
+
+	if (!cmp.Equal(dpu.dataplaneUpdate, update)) {
+		statusData := proto.Command_DataplaneUpdate{
+			DataplaneUpdate: update,
+		}
+		log.Tracef("sendDataplaneStatus statusData: %v", statusData)
+		dpu.dataplaneUpdate = update
+		dpu.messagePipeline.Process(
+			core.NewMessage(core.CommStatus, &proto.Command{
+				Meta: &meta,
+				Data: &statusData,
+			}),
+		)
+	}
+}
+
+func (dpu *DataPlaneUpdate) getHostInfo() *proto.HostInfo {
+	hostInfo := dpu.env.NewHostInfo(dpu.version, &dpu.config.Tags, dpu.config.ConfigDirs, true)
+	log.Tracef("hostInfo: %v", hostInfo)
+	return hostInfo
+}
+
+func getSoftwareDetails(env core.Environment, binary core.NginxBinary, napDetails *proto.DataplaneSoftwareDetails_AppProtectWafDetails) (details []*proto.DataplaneSoftwareDetails) {
+	processes := env.Processes()
+	log.Tracef("dataplane update: processes %v", processes)
+	for _, p := range processes {
+		if !p.IsMaster {
+			continue
+		}
+		detail := binary.GetNginxDetailsFromProcess(p)
+
+		data := &proto.DataplaneSoftwareDetails{
+			Data: &proto.DataplaneSoftwareDetails_NginxDetails{
+				NginxDetails: detail,
+			},
+		}
+		details = append(details, data)
+	}
+
+	// add nap details
+	details = append(details, &proto.DataplaneSoftwareDetails{
+		Data: napDetails,
+	})
+	
+	log.Tracef("software details: %v", details)
+	return details
 }
