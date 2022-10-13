@@ -335,6 +335,9 @@ func (n *Nginx) validateConfig(nginx *proto.NginxDetails, correlationId string, 
 
 	go func() {
 		err := n.nginxBinary.ValidateConfig(nginx.NginxId, nginx.ProcessPath, nginx.ConfPath, config, configApply)
+		if err == nil {
+			_, err = n.nginxBinary.ReadConfig(nginx.GetConfPath(), config.GetConfigData().GetNginxId(), n.env.GetSystemUUID())
+		}
 		if err != nil {
 			response := &NginxConfigValidationResponse{
 				err:           fmt.Errorf("error running nginx -t -c %s:\n %v", nginx.ConfPath, err),

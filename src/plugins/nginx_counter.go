@@ -13,7 +13,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -29,7 +28,6 @@ type NginxCounter struct {
 	env            core.Environment
 	lastUpdated    int64
 	serverAddress  []string
-	reporter       client.MetricReporter
 	connected      *atomic.Bool
 	socketListener net.Listener
 	processMutex   sync.RWMutex
@@ -39,14 +37,13 @@ type Payload struct {
 	LastUpdated int64 `json:",string"`
 }
 
-func NewNginxCounter(conf *config.Config, nginxBinary core.NginxBinary, env core.Environment, reporter client.MetricReporter) *NginxCounter {
+func NewNginxCounter(conf *config.Config, nginxBinary core.NginxBinary, env core.Environment) *NginxCounter {
 	return &NginxCounter{
 		conf:          conf,
 		signalChannel: make(chan os.Signal, 1),
 		nginxBinary:   nginxBinary,
 		env:           env,
 		lastUpdated:   time.Now().Unix(),
-		reporter:      reporter,
 		connected:     atomic.NewBool(false),
 	}
 }

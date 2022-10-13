@@ -39,10 +39,14 @@ func BenchmarkNginxConfig(b *testing.B) {
 		func(confFile string) {
 			b.Run(confFile, func(bb *testing.B) {
 				bb.ReportAllocs()
+
+				allowedDirs := map[string]struct{}{}
+				allowedDirs["../testdata/configs/bigger/ssl/"] = struct{}{}
+
 				var nginxConfig *proto.NginxConfig
 				var err error
 				for n := 0; n < b.N; n++ {
-					nginxConfig, err = sdk.GetNginxConfig(confFile, "", "", make(map[string]struct{}))
+					nginxConfig, err = sdk.GetNginxConfig(confFile, "", "", allowedDirs)
 				}
 				require.NoError(bb, err)
 				require.NotNil(bb, nginxConfig, "Generated nginxConfig struct should not be nil")
@@ -100,7 +104,9 @@ func BenchmarkReadConfig(b *testing.B) {
 		b.Error(err)
 	}
 	for _, v := range largeConfigFiles {
-		binary := core.NewNginxBinary(nil, &config.Config{AllowedDirectoriesMap: make(map[string]struct{})})
+		allowedDirs := map[string]struct{}{}
+		allowedDirs["../testdata/configs/bigger/ssl/"] = struct{}{}
+		binary := core.NewNginxBinary(nil, &config.Config{AllowedDirectoriesMap: allowedDirs})
 
 		func(config string) {
 			testName := strings.Join([]string{"Read Config ", config}, "")
@@ -196,7 +202,9 @@ func BenchmarkUnZipConfig(b *testing.B) {
 func genConfig() ([]*proto.NginxConfig, error) {
 	configs := []*proto.NginxConfig{}
 	for _, confFile := range largeConfigFiles {
-		nginxConfig, err := sdk.GetNginxConfig(confFile, "", "", map[string]struct{}{})
+		allowedDirs := map[string]struct{}{}
+		allowedDirs["../testdata/configs/bigger/ssl/"] = struct{}{}
+		nginxConfig, err := sdk.GetNginxConfig(confFile, "", "", allowedDirs)
 		if err != nil {
 			return nil, err
 		}
@@ -235,6 +243,20 @@ func generateCertificate() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	filename := "test.local"
+	cmd := exec.Command("../../scripts/mtls/gen_cnf.sh", "ca", "--cn", filename, "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "../testdata/configs/bigger/conf")
+
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	cmd1 := exec.Command("../../scripts/mtls/gen_cert.sh", "ca", "--config", "../testdata/configs/bigger/conf/ca.cnf", "--out", "../testdata/configs/bigger/ssl")
+	err = cmd1.Run()
+	if err != nil {
+		return err
 	}
 
 	return nil

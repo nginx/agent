@@ -192,7 +192,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 	)
 
 	if len(loadedConfig.Nginx.NginxCountingSocket) > 0 {
-		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env, reporter))
+		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env))
 	}
 
 	if (config.AdvancedMetrics{}) != loadedConfig.AdvancedMetrics {

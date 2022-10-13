@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var(
+var (
 	defaultConfFileContentsString = `daemon            off;
 		worker_processes  2;
 		user              www-data;
@@ -86,16 +86,16 @@ func TestNewConfigApply(t *testing.T) {
 	confFile := path.Join(tmpDir, "nginx.conf")
 	confFileContent := fmt.Sprintf(confFileContentsString, defaultConfFile)
 	assert.NoError(t, ioutil.WriteFile(confFile, []byte(confFileContent), 0644))
-	
+
 	testCases := []struct {
-		name string
-		confFile string
-		allowedDirectories map[string]struct{}
+		name                string
+		confFile            string
+		allowedDirectories  map[string]struct{}
 		expectedConfigApply *ConfigApply
-		expectError bool
-	} {
+		expectError         bool
+	}{
 		{
-			name: "config file present",
+			name:     "config file present",
 			confFile: confFile,
 			allowedDirectories: map[string]struct{}{
 				tmpDir: {},
@@ -103,41 +103,41 @@ func TestNewConfigApply(t *testing.T) {
 			expectedConfigApply: &ConfigApply{
 				existing: map[string]struct{}{
 					defaultConfFile: {},
-					confFile: {},
-					rootFile1: {},
-					rootFile2: {},
-					rootFile3: {},
+					confFile:        {},
+					rootFile1:       {},
+					rootFile2:       {},
+					rootFile3:       {},
 				},
 				notExists: map[string]struct{}{},
 			},
 			expectError: false,
 		},
 		{
-			name: "no config file present",
-			confFile: "",
+			name:               "no config file present",
+			confFile:           "",
 			allowedDirectories: map[string]struct{}{},
 			expectedConfigApply: &ConfigApply{
-				existing: map[string]struct{}{},
+				existing:  map[string]struct{}{},
 				notExists: map[string]struct{}{},
 			},
 			expectError: false,
 		},
 		{
-			name: "empty config file present",
-			confFile: emptyConfFile,
+			name:               "empty config file present",
+			confFile:           emptyConfFile,
 			allowedDirectories: map[string]struct{}{},
 			expectedConfigApply: &ConfigApply{
-				existing: map[string]struct{}{},
+				existing:  map[string]struct{}{},
 				notExists: map[string]struct{}{},
 			},
 			expectError: false,
 		},
 		{
-			name: "unknown config file present",
-			confFile: "/tmp/unknown.conf",
+			name:               "unknown config file present",
+			confFile:           "/tmp/unknown.conf",
 			allowedDirectories: map[string]struct{}{},
 			expectedConfigApply: &ConfigApply{
-				existing: map[string]struct{}{},
+				existing:  map[string]struct{}{},
 				notExists: map[string]struct{}{},
 			},
 			expectError: true,
@@ -168,34 +168,34 @@ func TestConfigApplyMarkAndSave(t *testing.T) {
 	assert.Nil(t, err)
 
 	testCases := []struct {
-		name string
-		file string
-		configApply *ConfigApply
+		name                string
+		file                string
+		configApply         *ConfigApply
 		expectedConfigApply *ConfigApply
-	} {
+	}{
 		{
 			name: "file doesn't exist",
 			file: unknownFile,
 			configApply: &ConfigApply{
-				existing: map[string]struct{}{},
+				existing:  map[string]struct{}{},
 				notExists: map[string]struct{}{},
 			},
 			expectedConfigApply: &ConfigApply{
-				existing: map[string]struct{}{},
-				notExists: map[string]struct{}{ unknownFile: {} },
-				writer: writer,
+				existing:  map[string]struct{}{},
+				notExists: map[string]struct{}{unknownFile: {}},
+				writer:    writer,
 			},
 		},
 		{
 			name: "file exists",
 			file: knownFile,
 			configApply: &ConfigApply{
-				existing: map[string]struct{}{ knownFile: {} },
+				existing:  map[string]struct{}{knownFile: {}},
 				notExists: map[string]struct{}{},
-				writer: writer,
+				writer:    writer,
 			},
 			expectedConfigApply: &ConfigApply{
-				existing: map[string]struct{}{},
+				existing:  map[string]struct{}{},
 				notExists: map[string]struct{}{},
 			},
 		},
@@ -232,8 +232,8 @@ func TestConfigApplyCompleteAndRollback(t *testing.T) {
 	confFileContent := fmt.Sprintf(confFileContentsString, defaultConfFile)
 	assert.NoError(t, ioutil.WriteFile(confFile, []byte(confFileContent), 0644))
 
-	allowedDirectories := map[string]struct{}{ tmpDir: {} }
-	
+	allowedDirectories := map[string]struct{}{tmpDir: {}}
+
 	configApply, err := NewConfigApply(confFile, allowedDirectories)
 	assert.Equal(t, 5, len(configApply.GetExisting()))
 	assert.Nil(t, err)

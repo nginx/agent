@@ -218,8 +218,8 @@ func updateNginxConfigFileConfig(
 	allowedDirectories map[string]struct{},
 	directoryMap *DirectoryMap,
 ) error {
-	CrossplaneConfigTraverse(&conf,
-		func(parent *crossplane.Directive, directive *crossplane.Directive) bool {
+	err := CrossplaneConfigTraverse(&conf,
+		func(parent *crossplane.Directive, directive *crossplane.Directive) (bool, error) {
 			switch directive.Directive {
 			case "log_format":
 				if len(directive.Args) >= 2 {
@@ -227,11 +227,12 @@ func updateNginxConfigFileConfig(
 				}
 			case "root":
 				if err := updateNginxConfigFileWithRoot(aux, directive.Args[0], seen, allowedDirectories, directoryMap); err != nil {
-					return true
+					return true, err
 				}
 			case "ssl_certificate", "ssl_certificate_key", "ssl_trusted_certificate":
-				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap); err != nil {
-					return true
+
+				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories); err != nil {
+					return true, err
 				}
 			case "access_log":
 				updateNginxConfigWithAccessLog(
@@ -244,8 +245,11 @@ func updateNginxConfigFileConfig(
 					getErrorLogDirectiveLevel(directive),
 					nginxConfig, seen)
 			}
-			return true
+			return true, nil
 		})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -256,6 +260,7 @@ func updateNginxConfigWithCert(
 	aux *zip.Writer,
 	rootDir string,
 	directoryMap *DirectoryMap,
+	allowedDirectories map[string]struct{},
 ) error {
 	if strings.HasPrefix("$", file) {
 		// variable loading, not actual cert file
@@ -268,6 +273,18 @@ func updateNginxConfigWithCert(
 	info, err := os.Stat(file)
 	if err != nil {
 		return err
+	}
+
+	isAllowed := false
+	for dir := range allowedDirectories {
+		if strings.HasPrefix(file, dir) {
+			isAllowed = true
+			break
+		}
+	}
+
+	if !isAllowed {
+		return fmt.Errorf("file outside allowed directories %s", file)
 	}
 
 	if directive == "ssl_certificate" {
@@ -742,15 +759,15 @@ func GetErrorAndAccessLogs(confFile string) (*proto.ErrorLogs, *proto.AccessLogs
 	seen := make(map[string]struct{})
 	for _, xpConf := range payload.Config {
 		var err error
-		CrossplaneConfigTraverse(&xpConf,
-			func(parent *crossplane.Directive, current *crossplane.Directive) bool {
+		err = CrossplaneConfigTraverse(&xpConf,
+			func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error) {
 				switch current.Directive {
 				case "access_log":
 					updateNginxConfigWithAccessLogPath(current.Args[0], nginxConfig, seen)
 				case "error_log":
 					updateNginxConfigWithErrorLogPath(current.Args[0], nginxConfig, seen)
 				}
-				return true
+				return true, nil
 			})
 		return nginxConfig.ErrorLogs, nginxConfig.AccessLogs, err
 	}
