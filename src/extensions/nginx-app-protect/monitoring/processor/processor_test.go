@@ -19,7 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	pb "github.com/nginx/agent/sdk/v2/proto/events"
-	nap_monitoring "github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
+	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
 )
 
 const (
@@ -48,6 +48,56 @@ func TestNAPWAFProcess(t *testing.T) {
 			isNegative: false,
 			fileExists: true,
 		},
+
+		// XML Parsing
+		{
+			testName: "violation name parsing",
+			testFile: "./testdata/xml_violation_name.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
+		{
+			testName: "parameter data parsing",
+			testFile: "./testdata/xml_parameter_data.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
+		{
+			testName: "parameter data parsing with empty context key",
+			testFile: "./testdata/xml_parameter_data_empty_context.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
+		{
+			testName: "parameter data parsing as param_data",
+			testFile: "./testdata/xml_parameter_data_as_param_data.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
+		{
+			testName: "header data parsing",
+			testFile: "./testdata/xml_header_data.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
+		{
+			testName: "signature data parsing",
+			testFile: "./testdata/xml_signature_data.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -60,7 +110,7 @@ func TestNAPWAFProcess(t *testing.T) {
 				sigDBFile = nonexistentFile
 			}
 
-			collect := make(chan *nap_monitoring.RawLog, 2)
+			collect := make(chan *monitoring.RawLog, 2)
 
 			processed := make(chan *pb.Event, 2)
 
@@ -104,7 +154,7 @@ func TestNAPWAFProcess(t *testing.T) {
 				t.Fatalf("Error while reading the logfile %s: %v", tc.testFile, err)
 			}
 
-			collect <- &nap_monitoring.RawLog{Origin: nap_monitoring.NAPWAF, Logline: string(input)}
+			collect <- &monitoring.RawLog{Origin: monitoring.NAPWAF, Logline: string(input)}
 
 			select {
 			case event := <-processed:

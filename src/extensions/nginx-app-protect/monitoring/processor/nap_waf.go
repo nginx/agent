@@ -89,6 +89,30 @@ const (
 	enforcedBotAnomalies   = "enforced_bot_anomalies"
 )
 
+type ParameterData struct {
+	Text  string `xml:",chardata"`
+	Name  string `xml:"name"`
+	Value string `xml:"value"`
+}
+
+type ParamData struct {
+	Text  string `xml:",chardata"`
+	Name  string `xml:"param_name"`
+	Value string `xml:"param_value"`
+}
+
+type Header struct {
+	Text  string `xml:",chardata"`
+	Name  string `xml:"header_name"`
+	Value string `xml:"header_value"`
+}
+
+type Cookie struct {
+	Text  string `xml:",chardata"`
+	Name  string `xml:"cookie_name"`
+	Value string `xml:"cookie_value"`
+}
+
 type BADMSG struct {
 	XMLName        xml.Name `xml:"BAD_MSG"`
 	Text           string   `xml:",chardata"`
@@ -102,23 +126,19 @@ type BADMSG struct {
 	RequestViolations struct {
 		Text      string `xml:",chardata"`
 		Violation []struct {
-			Text          string `xml:",chardata"`
-			ViolIndex     string `xml:"viol_index"`
-			ViolName      string `xml:"viol_name"`
-			Context       string `xml:"context"`
-			ParameterData struct {
-				Text             string `xml:",chardata"`
-				ValueError       string `xml:"value_error"`
-				EnforcementLevel string `xml:"enforcement_level"`
-				Name             string `xml:"name"`
-				AutoDetectedType string `xml:"auto_detected_type"`
-				Value            string `xml:"value"`
-				Location         string `xml:"location"`
-				ParamNamePattern string `xml:"param_name_pattern"`
-				Staging          string `xml:"staging"`
-			} `xml:"parameter_data"`
-			Staging string `xml:"staging"`
-			SigData []struct {
+			Text      string `xml:",chardata"`
+			ViolIndex string `xml:"viol_index"`
+			ViolName  string `xml:"viol_name"`
+			Context   string `xml:"context"`
+			// ParameterData and ParamData are both received when context == "parameter" | ""
+			// We receive either ParameterData or ParamData separately and not in the same XML message
+			// ParameterData and ParamData semantically represent the same thing (with ParameterData having more fields).
+			ParameterData ParameterData `xml:"parameter_data"`
+			ParamData     ParamData     `xml:"param_data"`
+			Header        Header        `xml:"header"`
+			Cookie        Cookie        `xml:"cookie"`
+			Staging       string        `xml:"staging"`
+			SigData       []struct {
 				Text         string `xml:",chardata"`
 				SigID        string `xml:"sig_id"`
 				BlockingMask string `xml:"blocking_mask"`
@@ -307,13 +327,13 @@ func parseNAPWAF(logEntry string, logger *logrus.Entry) (*NAPWAFConfig, error) {
 	values := strings.Split(logEntry, ",")
 
 	for idx, key := range keys {
-		err := setValue(&waf, key, values[idx])
+		err := setValue(&waf, key, values[idx], logger)
 		if err != nil {
 			return &NAPWAFConfig{}, err
 		}
 	}
 
-	err := setValue(&waf, "request", strings.Join(values[len(keys):], ","))
+	err := setValue(&waf, "request", strings.Join(values[len(keys):], ","), logger)
 	if err != nil {
 		return &NAPWAFConfig{}, err
 	}
@@ -321,7 +341,7 @@ func parseNAPWAF(logEntry string, logger *logrus.Entry) (*NAPWAFConfig, error) {
 	return &waf, nil
 }
 
-func setValue(napWaf *NAPWAFConfig, key, value string) error {
+func setValue(napWaf *NAPWAFConfig, key, value string, logger *logrus.Entry) error {
 	switch key {
 	case blockingExceptionReason:
 		napWaf.BlockingExceptionReason = value
@@ -342,6 +362,7 @@ func setValue(napWaf *NAPWAFConfig, key, value string) error {
 			var xmlData BADMSG
 			err := xml.Unmarshal([]byte(data), &xmlData)
 			if err != nil {
+				logger.Errorf("failed to parse XML message: %v", err)
 				return nil
 			}
 			return &xmlData
@@ -436,46 +457,100 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 
 		switch v.Context {
 		case parameterCtx, "":
-			decodedName, err := base64.StdEncoding.DecodeString(v.ParameterData.Name)
-			if err != nil {
-				logger.Errorf(fmt.Sprintf("could not decode the Paramater Name %s for %v", v.ParameterData.Name, f.SupportID))
-				break
+			if v.ParameterData != (ParameterData{}) {
+				decodedName, err := base64.StdEncoding.DecodeString(v.ParameterData.Name)
+				if err != nil {
+					logger.Errorf("could not decode the Paramater Name %s for %v", v.ParameterData.Name, f.SupportID)
+					break
+				}
+				decodedValue, err := base64.StdEncoding.DecodeString(v.ParameterData.Value)
+				if err != nil {
+					logger.Errorf("could not decode the Paramater Value %s for %v", v.ParameterData.Value, f.SupportID)
+					break
+				}
+
+				violation.ContextData = &models.ContextData{
+					Name:  string(decodedName),
+					Value: string(decodedValue),
+				}
+			} else if v.ParamData != (ParamData{}) {
+				decodedName, err := base64.StdEncoding.DecodeString(v.ParamData.Name)
+				if err != nil {
+					logger.Errorf("could not decode the Paramater Name %s for %v", v.ParamData.Name, f.SupportID)
+					break
+				}
+				decodedValue, err := base64.StdEncoding.DecodeString(v.ParamData.Value)
+				if err != nil {
+					logger.Errorf("could not decode the Paramater Value %s for %v", v.ParamData.Value, f.SupportID)
+					break
+				}
+
+				violation.ContextData = &models.ContextData{
+					Name:  string(decodedName),
+					Value: string(decodedValue),
+				}
+			} else if v.Context == parameterCtx {
+				logger.Warn("context is parameter but no Parameter data received")
 			}
-
-			decodedValue, err := base64.StdEncoding.DecodeString(v.ParameterData.Value)
-			if err != nil {
-				logger.Errorf(fmt.Sprintf("could not decode the Paramater Value %s for %v", v.ParameterData.Value, f.SupportID))
-				break
-			}
-
-			violation.ParameterName = string(decodedName)
-			violation.ParamaterValue = string(decodedValue)
-
 		case headerCtx:
-			// To be implemented based on BAD_MSG format of Header context
-			// todo: https://nginxsoftware.atlassian.net/browse/NMS-37562
+			if v.Header == (Header{}) {
+				logger.Warn("context is header but no Header data received")
+				break
+			}
 
+			decodedName, err := base64.StdEncoding.DecodeString(v.Header.Name)
+			if err != nil {
+				logger.Errorf("could not decode the Header Name %s for %v", v.Header.Name, f.SupportID)
+				break
+			}
+			decodedValue, err := base64.StdEncoding.DecodeString(v.Header.Value)
+			if err != nil {
+				logger.Errorf("could not decode the Header Value %s for %v", v.Header.Value, f.SupportID)
+				break
+			}
+
+			violation.ContextData = &models.ContextData{
+				Name:  string(decodedName),
+				Value: string(decodedValue),
+			}
 		case cookieCtx:
-			// To be implemented based on BAD_MSG format of Cookie context
-			// TODO: https://nginxsoftware.atlassian.net/browse/NMS-37562
+			if v.Cookie == (Cookie{}) {
+				logger.Warn("context is cookie but no Cookie data received")
+				break
+			}
 
+			decodedName, err := base64.StdEncoding.DecodeString(v.Cookie.Name)
+			if err != nil {
+				logger.Errorf("could not decode the Cookie Name %s for %v", v.Cookie.Name, f.SupportID)
+				break
+			}
+			decodedValue, err := base64.StdEncoding.DecodeString(v.Cookie.Value)
+			if err != nil {
+				logger.Errorf("could not decode the Cookie Value %s for %v", v.Cookie.Value, f.SupportID)
+				break
+			}
+
+			violation.ContextData = &models.ContextData{
+				Name:  string(decodedName),
+				Value: string(decodedValue),
+			}
 		default:
 			logger.Warnf("Got an invalid context %v while parsing ViolationDetails for %v", v.Context, f.SupportID)
 		}
 
-		// TODO: Looks like Sig Data can be a "hash" encoded data, need to handle this scenario
 		for _, s := range v.SigData {
 			buf, err := base64.StdEncoding.DecodeString(s.KwData.Buffer)
 			if err != nil {
-				logger.Errorf(fmt.Sprintf("could not decode the Buffer value %s for %v", s, f.SupportID))
+				logger.Errorf("could not decode the Buffer value %s for %v", s, f.SupportID)
 				continue
 			}
 
 			violation.Signatures = append(violation.Signatures, &models.SignatureData{
-				ID:     s.SigID,
-				Buffer: string(buf),
-				Offset: s.KwData.Offset,
-				Length: s.KwData.Length,
+				ID:           s.SigID,
+				BlockingMask: s.BlockingMask,
+				Buffer:       string(buf),
+				Offset:       s.KwData.Offset,
+				Length:       s.KwData.Length,
 			})
 		}
 

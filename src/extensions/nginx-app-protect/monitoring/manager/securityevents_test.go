@@ -16,7 +16,7 @@ func TestSecurityEventManager_Close(t *testing.T) {
 		NAPMonitoring: config.NAPMonitoring{
 			CollectorBufferSize: 1,
 			ProcessorBufferSize: 1,
-			SyslogIP:            "0.0.0.0",
+			SyslogIP:            "127.0.0.1",
 			SyslogPort:          1234,
 		},
 	}
@@ -24,17 +24,14 @@ func TestSecurityEventManager_Close(t *testing.T) {
 	napMonitoring, err := NewSecurityEventManager(conf)
 	assert.NoError(t, err)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 
 	go func(ctx context.Context) {
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 		cancel()
 	}(ctx)
 
 	napMonitoring.Run(ctx)
 
-	select {
-	case <-ctx.Done():
-		assert.Equal(t, context.Canceled, ctx.Err())
-	}
+	assert.Equal(t, context.Canceled, ctx.Err())
 }

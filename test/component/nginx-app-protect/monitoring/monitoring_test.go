@@ -1,26 +1,30 @@
-package nginx_app_protect
+package monitoring
 
 import (
 	"context"
 	"fmt"
-	"github.com/gogo/protobuf/proto"
 	"io/ioutil"
 	"log/syslog"
+	"math/rand"
+	"net"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 
 	events "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager"
+	"github.com/nginx/agent/v2/test/component/nginx-app-protect/monitoring/mock"
 )
 
 func TestNAPMonitoring(t *testing.T) {
 	cfg := &config.Config{
 		Server: config.Server{
 			Host:     "localhost",
-			GrpcPort: 8443,
+			GrpcPort: EphemeralPort(),
 		},
 		TLS: config.TLSConfig{
 			Enable: false,
@@ -28,29 +32,37 @@ func TestNAPMonitoring(t *testing.T) {
 		NAPMonitoring: config.NAPMonitoring{
 			CollectorBufferSize: 50,
 			ProcessorBufferSize: 50,
-			SyslogIP:            "0.0.0.0",
-			SyslogPort:          1234,
+			SyslogIP:            "127.0.0.1",
+			SyslogPort:          EphemeralPort(),
 		},
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	ingestionServer, err := mock.NewIngestionServerMock(fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.GrpcPort))
+	assert.NoError(t, err)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ingestionServer.Run(ctx)
+	}()
 
 	sem, err := manager.NewSecurityEventManager(cfg)
 	assert.NoError(t, err)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go sem.Run(ctx)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		sem.Run(ctx)
+	}()
 
 	// Let monitor init
-	time.Sleep(3 * time.Second)
+	time.Sleep(5 * time.Second)
 
-	sysLog, err := syslog.Dial("tcp", "localhost:1234", syslog.LOG_WARNING, "napMonitoringTest")
+	sysLog, err := syslog.Dial("tcp", fmt.Sprintf("%s:%d", cfg.NAPMonitoring.SyslogIP, cfg.NAPMonitoring.SyslogPort), syslog.LOG_WARNING, "napMonitoringTest")
 	assert.NoError(t, err)
-
-	ingestionServer, err := NewIngestionServerTest(fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.GrpcPort))
-	assert.NoError(t, err)
-
-	go ingestionServer.Run(ctx)
 
 	files, err := ioutil.ReadDir("./testData/logs-in/")
 	assert.NoError(t, err)
@@ -78,6 +90,9 @@ func TestNAPMonitoring(t *testing.T) {
 		assert.True(t, found)
 		assertEqualSecurityViolationEvents(t, expectedEvent, resultEvent)
 	}
+
+	cancel()
+	wg.Wait()
 }
 
 func assertEqualSecurityViolationEvents(t *testing.T, expectedEvent, resultEvent *events.Event) {
@@ -99,4 +114,75 @@ func assertEqualSecurityViolationEvents(t *testing.T, expectedEvent, resultEvent
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().Severity, resultEvent.GetSecurityViolationEvent().Severity)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().ClientClass, resultEvent.GetSecurityViolationEvent().ClientClass)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().BotSignatureName, resultEvent.GetSecurityViolationEvent().BotSignatureName)
+	assertEqualSecurityViolationsDetails(t, expectedEvent.GetSecurityViolationEvent().ViolationsData, resultEvent.GetSecurityViolationEvent().ViolationsData)
 }
+
+func assertEqualSecurityViolationsDetails(t *testing.T, expectedDetails, resultDetails []*events.ViolationData) {
+	for i, expected := range expectedDetails {
+		result := resultDetails[i]
+		assert.Equal(t, expected.Name, result.Name)
+		assert.Equal(t, expected.Context, result.Context)
+		if expected.ContextData != nil {
+			assert.Equal(t, expected.ContextData.Name, result.ContextData.Name)
+			assert.Equal(t, expected.ContextData.Value, result.ContextData.Value)
+		}
+	}
+}
+
+func EphemeralPort() int {
+	base := 32768
+	port := base + rand.Intn(10000)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	for err != nil {
+		port = base + rand.Intn(10000)
+		ln, err = net.Listen("tcp", fmt.Sprintf(":%d", port))
+	}
+	_ = ln.Close()
+	return port
+}
+
+/*
+	ne := &pb.Event{
+		Data: &pb.Event_SecurityViolationEvent{
+			SecurityViolationEvent: &pb.SecurityViolationEvent{
+				PolicyName:       "extract from input log",
+				SupportID:        "extract from input log",
+				Outcome:          "extract from input log",
+				OutcomeReason:    "extract from input log",
+				Method:           "extract from input log",
+				Protocol:         "extract from input log",
+				URI:              "extract from input log",
+				Request:          "extract from input log",
+				RequestStatus:    "extract from input log",
+				ResponseCode:     "extract from input log",
+				UnitHostname:     "extract from input log",
+				VSName:           "extract from input log",
+				IPClient:         "extract from input log",
+				DestinationPort:  "extract from input log",
+				SourcePort:       "extract from input log",
+				Violations:       "extract from input log",
+				ClientClass:      "extract from input log",
+				Severity:         "extract from input log",
+				BotSignatureName: "extract from input log",
+				ViolationsData:   "extract from input log",
+				ViolationsData:   []*pb.ViolationData{
+					{
+						Name: "extract from input log",
+						Context: "extract from input log",
+						ContextData: &pb.ContextData{
+							Name:                 "extract from input log",
+							Value:                "extract from input log",
+						},
+					},
+				},
+			},
+		},
+	}
+	bEvent, err := proto.Marshal(ne)
+	if err != nil {
+		t.Fatalf("Error while marshaling event: %v", err)
+	}
+	if err := ioutil.WriteFile(tc.testFile+".out", bEvent, 0644); err != nil {
+		log.Fatalln("Failed to write event:", err)
+	}
+*/
