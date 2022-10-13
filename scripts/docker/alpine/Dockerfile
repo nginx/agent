@@ -60,7 +60,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=/etc/apk/cert.pem \
         nginx-agent \
     " \
     && apk update \
-    && apk add $nginxPackages 
+    && apk add $nginxPackages
 
 # run the nginx and agent
 FROM install as runtime

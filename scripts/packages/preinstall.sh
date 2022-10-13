@@ -17,7 +17,7 @@ INSTANCE_GROUP=""
 ###### Default variables
 ################################
 export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
-export AGENT_INSTALL_LOG="${AGENT_INSTALL_LOG:-/tmp/agent-install.log}"
+export AGENT_INSTALL_LOG="${AGENT_INSTALL_LOG:-/var/log/nginx-agent/agent-install-$(date +"%Y-%m-%d-%H.%M.%S").log}"
 
 # Determine OS platform
 # shellcheck source=/dev/null
@@ -50,8 +50,6 @@ AGENT_DYNAMIC_CONFIG_COMMENT="#
 
 "
 
-ALLOWABLE_LOG_LEVELS="trace debug info error fatal panic"
-
 #
 # Functions
 #
@@ -77,16 +75,7 @@ ensure_sudo() {
     fi
 }
 
-is_empty() {
-    if [ -z "$2" ]; then
-        printf "\nValue for '%s' blank... skipping" "$1"
-        return 0
-    fi
-    return 1
-}
-
 load_config_values() {
-
     # If the file doesn't exist attempt to create it
     if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
         printf "Could not find %s ... Creating file\n" ${AGENT_DYNAMIC_CONFIG_FILE}
@@ -165,3 +154,5 @@ update_config_file() {
   load_config_values
   update_config_file
 } | tee "${AGENT_INSTALL_LOG}"
+
+chmod 0640 "${AGENT_INSTALL_LOG}"
