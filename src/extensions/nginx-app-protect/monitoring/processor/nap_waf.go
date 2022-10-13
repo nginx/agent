@@ -89,6 +89,31 @@ const (
 	enforcedBotAnomalies   = "enforced_bot_anomalies"
 )
 
+type ParameterData struct {
+	Text             string `xml:",chardata"`
+	ValueError       string `xml:"value_error"`
+	EnforcementLevel string `xml:"enforcement_level"`
+	Name             string `xml:"name"`
+	Value            string `xml:"value"`
+	ParamNamePattern string `xml:"param_name_pattern"`
+	Staging          string `xml:"staging"`
+}
+
+type ParamData struct {
+	Text    string `xml:",chardata"`
+	Name    string `xml:"param_name"`
+	Value   string `xml:"param_value"`
+	Staging string `xml:"staging"`
+}
+
+type Header struct {
+	Text    string `xml:",chardata"`
+	Name    string `xml:"header_name"`
+	Value   string `xml:"header_value"`
+	Pattern string `xml:"header_pattern"`
+	Staging string `xml:"staging"`
+}
+
 type BADMSG struct {
 	XMLName        xml.Name `xml:"BAD_MSG"`
 	Text           string   `xml:",chardata"`
@@ -106,19 +131,11 @@ type BADMSG struct {
 			ViolIndex     string `xml:"viol_index"`
 			ViolName      string `xml:"viol_name"`
 			Context       string `xml:"context"`
-			ParameterData struct {
-				Text             string `xml:",chardata"`
-				ValueError       string `xml:"value_error"`
-				EnforcementLevel string `xml:"enforcement_level"`
-				Name             string `xml:"name"`
-				AutoDetectedType string `xml:"auto_detected_type"`
-				Value            string `xml:"value"`
-				Location         string `xml:"location"`
-				ParamNamePattern string `xml:"param_name_pattern"`
-				Staging          string `xml:"staging"`
-			} `xml:"parameter_data"`
-			Staging string `xml:"staging"`
-			SigData []struct {
+			ParameterData `xml:"parameter_data"`
+			ParamData     `xml:"param_data"`
+			Header        `xml:"header"`
+			Staging       string `xml:"staging"`
+			SigData       []struct {
 				Text         string `xml:",chardata"`
 				SigID        string `xml:"sig_id"`
 				BlockingMask string `xml:"blocking_mask"`
@@ -436,34 +453,82 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 
 		switch v.Context {
 		case parameterCtx, "":
-			decodedName, err := base64.StdEncoding.DecodeString(v.ParameterData.Name)
-			if err != nil {
-				logger.Errorf(fmt.Sprintf("could not decode the Paramater Name %s for %v", v.ParameterData.Name, f.SupportID))
-				break
+			if v.ParameterData != (ParameterData{}) {
+				decodedName, err := base64.StdEncoding.DecodeString(v.ParameterData.Name)
+				if err != nil {
+					logger.Errorf(fmt.Sprintf("could not decode the Paramater Name %s for %v", v.ParameterData.Name, f.SupportID))
+					break
+				}
+				decodedValue, err := base64.StdEncoding.DecodeString(v.ParameterData.Value)
+				if err != nil {
+					logger.Errorf(fmt.Sprintf("could not decode the Paramater Value %s for %v", v.ParameterData.Value, f.SupportID))
+					break
+				}
+
+				violation.ContextData = &models.ViolationData_ParameterData{
+					ParameterData: &models.ParameterData{
+						Name:             string(decodedName),
+						Value:            string(decodedValue),
+						ValueError:       v.ParameterData.ValueError,
+						EnforcementLevel: v.ParameterData.EnforcementLevel,
+						NamePattern:      v.ParameterData.ParamNamePattern,
+						Staging:          v.ParameterData.Staging,
+					},
+				}
+			} else if v.ParamData != (ParamData{}) {
+				decodedName, err := base64.StdEncoding.DecodeString(v.ParamData.Name)
+				if err != nil {
+					logger.Errorf(fmt.Sprintf("could not decode the Paramater Name %s for %v", v.ParamData.Name, f.SupportID))
+					break
+				}
+				decodedValue, err := base64.StdEncoding.DecodeString(v.ParamData.Value)
+				if err != nil {
+					logger.Errorf(fmt.Sprintf("could not decode the Paramater Value %s for %v", v.ParamData.Value, f.SupportID))
+					break
+				}
+
+				violation.ContextData = &models.ViolationData_ParameterData{
+					ParameterData: &models.ParameterData{
+						Name:    string(decodedName),
+						Value:   string(decodedValue),
+						Staging: v.ParamData.Staging,
+					},
+				}
+			} else {
+				logger.Warn("context is Parameter but no Parameter data received")
 			}
-
-			decodedValue, err := base64.StdEncoding.DecodeString(v.ParameterData.Value)
-			if err != nil {
-				logger.Errorf(fmt.Sprintf("could not decode the Paramater Value %s for %v", v.ParameterData.Value, f.SupportID))
-				break
-			}
-
-			violation.ParameterName = string(decodedName)
-			violation.ParamaterValue = string(decodedValue)
-
 		case headerCtx:
-			// To be implemented based on BAD_MSG format of Header context
-			// todo: https://nginxsoftware.atlassian.net/browse/NMS-37562
+			if v.Header == (Header{}) {
+				logger.Warn("context is Header but no Header data received")
+				break
+			}
 
+			decodedName, err := base64.StdEncoding.DecodeString(v.Header.Name)
+			if err != nil {
+				logger.Errorf(fmt.Sprintf("could not decode the Header Name %s for %v", v.Header.Name, f.SupportID))
+				break
+			}
+			decodedValue, err := base64.StdEncoding.DecodeString(v.Header.Value)
+			if err != nil {
+				logger.Errorf(fmt.Sprintf("could not decode the Header Value %s for %v", v.Header.Value, f.SupportID))
+				break
+			}
+
+			violation.ContextData = &models.ViolationData_Header{
+				Header: &models.Header{
+					Name:    string(decodedName),
+					Value:   string(decodedValue),
+					Pattern: v.Header.Pattern,
+					Staging: v.Header.Staging,
+				},
+			}
 		case cookieCtx:
 			// To be implemented based on BAD_MSG format of Cookie context
 			// TODO: https://nginxsoftware.atlassian.net/browse/NMS-37562
-
 		default:
 			logger.Warnf("Got an invalid context %v while parsing ViolationDetails for %v", v.Context, f.SupportID)
 		}
 
-		// TODO: Looks like Sig Data can be a "hash" encoded data, need to handle this scenario
 		for _, s := range v.SigData {
 			buf, err := base64.StdEncoding.DecodeString(s.KwData.Buffer)
 			if err != nil {
@@ -472,10 +537,11 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 			}
 
 			violation.Signatures = append(violation.Signatures, &models.SignatureData{
-				ID:     s.SigID,
-				Buffer: string(buf),
-				Offset: s.KwData.Offset,
-				Length: s.KwData.Length,
+				ID:           s.SigID,
+				BlockingMask: s.BlockingMask,
+				Buffer:       string(buf),
+				Offset:       s.KwData.Offset,
+				Length:       s.KwData.Length,
 			})
 		}
 

@@ -1,12 +1,5 @@
 
-Y
-Agent$4ae3d6e2-4962-11ed-865f-acde48001122123"ëÉ•š€½ƒ*ERROR2Nginx:
-AppProtect¾
-2022-10-11 12:43:23.042app_protect_default_policy4355056874564592513"REJECTED*SECURITY_WAF_VIOLATION2N/A:GETBHTTPJN/AR/ZHTTP/1.1jblockedr0zblah‚blahŠtestenv-ad595bed-data-1’blahš1-localhost:1-/¢172.18.9.78ª61478²80ºHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client DetectedÂ?HTTP protocol compliance failed:Host header contains IP addressÊ5Ò200001475,200000098Ú=XSS script tag end (Parameter) (2),XSS script tag (Parameter)âu{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}ê,òUntrusted BotúN/A‚N/AŠCritical’blahšblah¢N/AªN/A²HTTP LibraryºN/AÂcurlÊ	parameterÒm
-VIOL_ATTACK_SIGNATURE	parametera"<script>*
-	200001475
-a=<script>3"7*
-	200000098
-a=<script>2"7Ò
-VIOL_HTTP_PROTOCOLÒ,
-VIOL_PARAMETER_VALUE_METACHARa"<script>
+Z
+Agent$c6ca634c-4a94-11ed-a05d-acde48001122123"œÎš€ˆğ²*ERROR2Nginx:
+AppProtectü
+2022-10-13 01:17:16.912app_protect_default_policy4355056874564592513"REJECTED*SECURITY_WAF_VIOLATION2N/A:GETBHTTPJN/AR/ZHTTP/1.1jblockedr0zblah‚blahŠtestenv-ad595bed-data-1’blahš1-localhost:1-/¢172.18.9.78ª61478²80ºHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client DetectedÂ?HTTP protocol compliance failed:Host header contains IP addressÊ5Ò200001475,200000098Ú=XSS script tag end (Parameter) (2),XSS script tag (Parameter)âu{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}ê,òUntrusted BotúN/A‚N/AŠCritical’blahšblah¢N/AªN/A²HTTP LibraryºN/AÂcurl
