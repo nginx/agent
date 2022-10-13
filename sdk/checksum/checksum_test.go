@@ -67,7 +67,7 @@ func TestHexChunk(t *testing.T) {
 		{
 			input:    []byte{1, 2, 3, 4},
 			limit:    3,
-			expected: [][]byte{{1, 2 , 3}, {4}},
+			expected: [][]byte{{1, 2, 3}, {4}},
 		},
 		{
 			input:    []byte{1, 2, 3, 4},
