@@ -127,10 +127,13 @@ type BADMSG struct {
 	RequestViolations struct {
 		Text      string `xml:",chardata"`
 		Violation []struct {
-			Text          string `xml:",chardata"`
-			ViolIndex     string `xml:"viol_index"`
-			ViolName      string `xml:"viol_name"`
-			Context       string `xml:"context"`
+			Text      string `xml:",chardata"`
+			ViolIndex string `xml:"viol_index"`
+			ViolName  string `xml:"viol_name"`
+			Context   string `xml:"context"`
+			// ParameterData and ParamData are both received when context == "parameter" | ""
+			// We receive either ParameterData or ParamData separately and not in the same XML message
+			// ParameterData and ParamData semantically represent the same thing (with ParameterData having more fields).
 			ParameterData `xml:"parameter_data"`
 			ParamData     `xml:"param_data"`
 			Header        `xml:"header"`
@@ -456,12 +459,12 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 			if v.ParameterData != (ParameterData{}) {
 				decodedName, err := base64.StdEncoding.DecodeString(v.ParameterData.Name)
 				if err != nil {
-					logger.Errorf(fmt.Sprintf("could not decode the Paramater Name %s for %v", v.ParameterData.Name, f.SupportID))
+					logger.Errorf("could not decode the Paramater Name %s for %v", v.ParameterData.Name, f.SupportID)
 					break
 				}
 				decodedValue, err := base64.StdEncoding.DecodeString(v.ParameterData.Value)
 				if err != nil {
-					logger.Errorf(fmt.Sprintf("could not decode the Paramater Value %s for %v", v.ParameterData.Value, f.SupportID))
+					logger.Errorf("could not decode the Paramater Value %s for %v", v.ParameterData.Value, f.SupportID)
 					break
 				}
 
@@ -478,12 +481,12 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 			} else if v.ParamData != (ParamData{}) {
 				decodedName, err := base64.StdEncoding.DecodeString(v.ParamData.Name)
 				if err != nil {
-					logger.Errorf(fmt.Sprintf("could not decode the Paramater Name %s for %v", v.ParamData.Name, f.SupportID))
+					logger.Errorf("could not decode the Paramater Name %s for %v", v.ParamData.Name, f.SupportID)
 					break
 				}
 				decodedValue, err := base64.StdEncoding.DecodeString(v.ParamData.Value)
 				if err != nil {
-					logger.Errorf(fmt.Sprintf("could not decode the Paramater Value %s for %v", v.ParamData.Value, f.SupportID))
+					logger.Errorf("could not decode the Paramater Value %s for %v", v.ParamData.Value, f.SupportID)
 					break
 				}
 
@@ -505,12 +508,12 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 
 			decodedName, err := base64.StdEncoding.DecodeString(v.Header.Name)
 			if err != nil {
-				logger.Errorf(fmt.Sprintf("could not decode the Header Name %s for %v", v.Header.Name, f.SupportID))
+				logger.Errorf("could not decode the Header Name %s for %v", v.Header.Name, f.SupportID)
 				break
 			}
 			decodedValue, err := base64.StdEncoding.DecodeString(v.Header.Value)
 			if err != nil {
-				logger.Errorf(fmt.Sprintf("could not decode the Header Value %s for %v", v.Header.Value, f.SupportID))
+				logger.Errorf("could not decode the Header Value %s for %v", v.Header.Value, f.SupportID)
 				break
 			}
 
@@ -532,7 +535,7 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 		for _, s := range v.SigData {
 			buf, err := base64.StdEncoding.DecodeString(s.KwData.Buffer)
 			if err != nil {
-				logger.Errorf(fmt.Sprintf("could not decode the Buffer value %s for %v", s, f.SupportID))
+				logger.Errorf("could not decode the Buffer value %s for %v", s, f.SupportID)
 				continue
 			}
 
