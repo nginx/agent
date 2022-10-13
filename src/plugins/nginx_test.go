@@ -232,19 +232,17 @@ func TestNginxConfigApply(t *testing.T) {
 
 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
 			messagePipe.Run()
-			processedMessages := messagePipe.GetProcessedMessages()
 
 			assert.Eventually(
 				tt,
-				func() bool { return len(processedMessages) != len(test.msgTopics) },
+				func() bool { return len(messagePipe.GetProcessedMessages()) != len(test.msgTopics) },
 				time.Duration(2*time.Second),
 				3*time.Millisecond,
-				fmt.Sprintf("Expected %d messages but only processed %d messages", len(test.msgTopics), len(processedMessages)),
 			)
 			binary.AssertExpectations(tt)
 			env.AssertExpectations(tt)
 
-			for idx, msg := range processedMessages {
+			for idx, msg := range  messagePipe.GetProcessedMessages() {
 				if test.msgTopics[idx] != msg.Topic() {
 					tt.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), test.msgTopics[idx])
 				}
@@ -508,17 +506,14 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	messagePipe.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
 	messagePipe.Run()
 
-	processedMessages := messagePipe.GetProcessedMessages()
-
 	assert.Eventually(
 		t,
-		func() bool { return len(processedMessages) == len(expectedTopics) },
+		func() bool { return len(messagePipe.GetProcessedMessages()) == len(expectedTopics) },
 		time.Duration(2*time.Second),
 		3*time.Millisecond,
-		fmt.Sprintf("Expected %d messages but only processed %d messages", len(expectedTopics), len(processedMessages)),
 	)
 
-	for idx, msg := range processedMessages {
+	for idx, msg := range messagePipe.GetProcessedMessages() {
 		if expectedTopics[idx] != msg.Topic() {
 			t.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), expectedTopics[idx])
 		}
@@ -597,17 +592,14 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 	messagePipe.Process(core.NewMessage(core.NginxConfigValidationFailed, response))
 	messagePipe.Run()
 
-	processedMessages := messagePipe.GetProcessedMessages()
-
 	assert.Eventually(
 		t,
-		func() bool { return len(processedMessages) == len(expectedTopics) },
+		func() bool { return len(messagePipe.GetProcessedMessages()) == len(expectedTopics) },
 		time.Duration(2*time.Second),
 		1*time.Millisecond,
-		fmt.Sprintf("Expected %d messages but only processed %d messages", len(expectedTopics), len(processedMessages)),
 	)
 
-	for idx, msg := range processedMessages {
+	for idx, msg := range messagePipe.GetProcessedMessages() {
 		if expectedTopics[idx] != msg.Topic() {
 			t.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), expectedTopics[idx])
 		}
