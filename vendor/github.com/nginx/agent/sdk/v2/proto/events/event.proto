@@ -111,28 +111,14 @@ message SignatureData {
     string Length = 5 [(gogoproto.jsontag) = "sig_data_length" ];
 }
 
-message ParameterData {
+message ContextData {
     string Name = 1 [(gogoproto.jsontag) = "parameter_data_name"];
     string Value = 2 [(gogoproto.jsontag) = "parameter_data_value"];
-    string ValueError = 3 [(gogoproto.jsontag) = "parameter_data_value_error"];
-    string EnforcementLevel = 4 [(gogoproto.jsontag) = "parameter_data_enforcement_level"];
-    string NamePattern = 5 [(gogoproto.jsontag) = "parameter_data_name_pattern"];
-    string Staging = 6 [(gogoproto.jsontag) = "parameter_data_staging"];
-}
-
-message Header {
-    string Name = 1 [(gogoproto.jsontag) = "header_name"];
-    string Value = 2 [(gogoproto.jsontag) = "header_value"];
-    string Pattern = 3 [(gogoproto.jsontag) = "header_pattern"];
-    string Staging = 4 [(gogoproto.jsontag) = "header_staging"];
 }
 
 message ViolationData {
     string Name = 1 [(gogoproto.jsontag) = "violation_data_name" ];
     string Context = 2 [(gogoproto.jsontag) = "violation_data_context" ];
-    oneof context_data {
-        ParameterData ParameterData = 3 [(gogoproto.jsontag) = "parameter_data" ];
-        Header Header = 4 [(gogoproto.jsontag) = "header" ];
-    }
-    repeated SignatureData Signatures = 5 [(gogoproto.jsontag) = "violation_data_signatures" ];
+    ContextData ContextData = 3 [(gogoproto.jsontag) = "violation_data_context_data" ];
+    repeated SignatureData Signatures = 4 [(gogoproto.jsontag) = "violation_data_signatures" ];
 }

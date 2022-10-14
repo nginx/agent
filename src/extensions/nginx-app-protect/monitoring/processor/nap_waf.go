@@ -90,28 +90,27 @@ const (
 )
 
 type ParameterData struct {
-	Text             string `xml:",chardata"`
-	ValueError       string `xml:"value_error"`
-	EnforcementLevel string `xml:"enforcement_level"`
-	Name             string `xml:"name"`
-	Value            string `xml:"value"`
-	ParamNamePattern string `xml:"param_name_pattern"`
-	Staging          string `xml:"staging"`
+	Text  string `xml:",chardata"`
+	Name  string `xml:"name"`
+	Value string `xml:"value"`
 }
 
 type ParamData struct {
-	Text    string `xml:",chardata"`
-	Name    string `xml:"param_name"`
-	Value   string `xml:"param_value"`
-	Staging string `xml:"staging"`
+	Text  string `xml:",chardata"`
+	Name  string `xml:"param_name"`
+	Value string `xml:"param_value"`
 }
 
 type Header struct {
-	Text    string `xml:",chardata"`
-	Name    string `xml:"header_name"`
-	Value   string `xml:"header_value"`
-	Pattern string `xml:"header_pattern"`
-	Staging string `xml:"staging"`
+	Text  string `xml:",chardata"`
+	Name  string `xml:"header_name"`
+	Value string `xml:"header_value"`
+}
+
+type Cookie struct {
+	Text  string `xml:",chardata"`
+	Name  string `xml:"cookie_name"`
+	Value string `xml:"cookie_value"`
 }
 
 type BADMSG struct {
@@ -137,6 +136,7 @@ type BADMSG struct {
 			ParameterData ParameterData `xml:"parameter_data"`
 			ParamData     ParamData     `xml:"param_data"`
 			Header        Header        `xml:"header"`
+			Cookie        Cookie        `xml:"cookie"`
 			Staging       string        `xml:"staging"`
 			SigData       []struct {
 				Text         string `xml:",chardata"`
@@ -469,15 +469,9 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 					break
 				}
 
-				violation.ContextData = &models.ViolationData_ParameterData{
-					ParameterData: &models.ParameterData{
-						Name:             string(decodedName),
-						Value:            string(decodedValue),
-						ValueError:       v.ParameterData.ValueError,
-						EnforcementLevel: v.ParameterData.EnforcementLevel,
-						NamePattern:      v.ParameterData.ParamNamePattern,
-						Staging:          v.ParameterData.Staging,
-					},
+				violation.ContextData = &models.ContextData{
+					Name:  string(decodedName),
+					Value: string(decodedValue),
 				}
 			} else if v.ParamData != (ParamData{}) {
 				decodedName, err := base64.StdEncoding.DecodeString(v.ParamData.Name)
@@ -491,19 +485,16 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 					break
 				}
 
-				violation.ContextData = &models.ViolationData_ParameterData{
-					ParameterData: &models.ParameterData{
-						Name:    string(decodedName),
-						Value:   string(decodedValue),
-						Staging: v.ParamData.Staging,
-					},
+				violation.ContextData = &models.ContextData{
+					Name:  string(decodedName),
+					Value: string(decodedValue),
 				}
 			} else if v.Context == parameterCtx {
-				logger.Warn("context is Parameter but no Parameter data received")
+				logger.Warn("context is parameter but no Parameter data received")
 			}
 		case headerCtx:
 			if v.Header == (Header{}) {
-				logger.Warn("context is Header but no Header data received")
+				logger.Warn("context is header but no Header data received")
 				break
 			}
 
@@ -518,17 +509,31 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 				break
 			}
 
-			violation.ContextData = &models.ViolationData_Header{
-				Header: &models.Header{
-					Name:    string(decodedName),
-					Value:   string(decodedValue),
-					Pattern: v.Header.Pattern,
-					Staging: v.Header.Staging,
-				},
+			violation.ContextData = &models.ContextData{
+				Name:  string(decodedName),
+				Value: string(decodedValue),
 			}
 		case cookieCtx:
-			// To be implemented based on BAD_MSG format of Cookie context
-			// TODO: https://nginxsoftware.atlassian.net/browse/NMS-37562
+			if v.Cookie == (Cookie{}) {
+				logger.Warn("context is cookie but no Cookie data received")
+				break
+			}
+
+			decodedName, err := base64.StdEncoding.DecodeString(v.Cookie.Name)
+			if err != nil {
+				logger.Errorf("could not decode the Cookie Name %s for %v", v.Cookie.Name, f.SupportID)
+				break
+			}
+			decodedValue, err := base64.StdEncoding.DecodeString(v.Cookie.Value)
+			if err != nil {
+				logger.Errorf("could not decode the Cookie Value %s for %v", v.Cookie.Value, f.SupportID)
+				break
+			}
+
+			violation.ContextData = &models.ContextData{
+				Name:  string(decodedName),
+				Value: string(decodedValue),
+			}
 		default:
 			logger.Warnf("Got an invalid context %v while parsing ViolationDetails for %v", v.Context, f.SupportID)
 		}
