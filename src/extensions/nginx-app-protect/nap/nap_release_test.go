@@ -36,7 +36,7 @@ func TestNAPReleaseInfo(t *testing.T) {
 			testName:          "InvalidNAPRelease",
 			napReleaseVersion: "invalid-release",
 			expReleaseVersion: nil,
-			expError:          fmt.Errorf(UNABLE_TO_FIND_RELEASE_VERION_INFO, "invalid-release"),
+			expError:          fmt.Errorf(UNABLE_TO_FIND_RELEASE_VERSION_INFO, "invalid-release"),
 		},
 	}
 
