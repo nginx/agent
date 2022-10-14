@@ -48,6 +48,56 @@ func TestNAPWAFProcess(t *testing.T) {
 			isNegative: false,
 			fileExists: true,
 		},
+
+		// XML Parsing
+		{
+			testName: "violation name parsing",
+			testFile: "./testdata/xml_violation_name.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
+		{
+			testName: "parameter data parsing",
+			testFile: "./testdata/xml_parameter_data.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
+		{
+			testName: "parameter data parsing with empty context key",
+			testFile: "./testdata/xml_parameter_data_empty_context.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
+		{
+			testName: "parameter data parsing as param_data",
+			testFile: "./testdata/xml_parameter_data_as_param_data.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
+		{
+			testName: "header data parsing",
+			testFile: "./testdata/xml_header_data.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
+		{
+			testName: "signature data parsing",
+			testFile: "./testdata/xml_signature_data.log.txt",
+			expected: nil,
+			// Event will not be generated because violationRating = 0, so it will be ignored as a low-risk event.
+			isNegative: false,
+			fileExists: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -109,7 +159,7 @@ func TestNAPWAFProcess(t *testing.T) {
 			select {
 			case event := <-processed:
 				t.Logf("Got event: %v", event)
-			case <-time.After(eventWaitTimeout * time.Second):
+			case <-time.After(3600 * eventWaitTimeout * time.Second):
 				// for negative test, there should not be an event generated.
 				if !tc.isNegative {
 					t.Error("Should receive security violation event, and should not be timeout.")

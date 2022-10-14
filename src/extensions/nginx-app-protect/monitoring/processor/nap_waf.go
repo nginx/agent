@@ -134,10 +134,10 @@ type BADMSG struct {
 			// ParameterData and ParamData are both received when context == "parameter" | ""
 			// We receive either ParameterData or ParamData separately and not in the same XML message
 			// ParameterData and ParamData semantically represent the same thing (with ParameterData having more fields).
-			ParameterData `xml:"parameter_data"`
-			ParamData     `xml:"param_data"`
-			Header        `xml:"header"`
-			Staging       string `xml:"staging"`
+			ParameterData ParameterData `xml:"parameter_data"`
+			ParamData     ParamData     `xml:"param_data"`
+			Header        Header        `xml:"header"`
+			Staging       string        `xml:"staging"`
 			SigData       []struct {
 				Text         string `xml:",chardata"`
 				SigID        string `xml:"sig_id"`
@@ -327,13 +327,13 @@ func parseNAPWAF(logEntry string, logger *logrus.Entry) (*NAPWAFConfig, error) {
 	values := strings.Split(logEntry, ",")
 
 	for idx, key := range keys {
-		err := setValue(&waf, key, values[idx])
+		err := setValue(&waf, key, values[idx], logger)
 		if err != nil {
 			return &NAPWAFConfig{}, err
 		}
 	}
 
-	err := setValue(&waf, "request", strings.Join(values[len(keys):], ","))
+	err := setValue(&waf, "request", strings.Join(values[len(keys):], ","), logger)
 	if err != nil {
 		return &NAPWAFConfig{}, err
 	}
@@ -341,7 +341,7 @@ func parseNAPWAF(logEntry string, logger *logrus.Entry) (*NAPWAFConfig, error) {
 	return &waf, nil
 }
 
-func setValue(napWaf *NAPWAFConfig, key, value string) error {
+func setValue(napWaf *NAPWAFConfig, key, value string, logger *logrus.Entry) error {
 	switch key {
 	case blockingExceptionReason:
 		napWaf.BlockingExceptionReason = value
@@ -362,6 +362,7 @@ func setValue(napWaf *NAPWAFConfig, key, value string) error {
 			var xmlData BADMSG
 			err := xml.Unmarshal([]byte(data), &xmlData)
 			if err != nil {
+				logger.Errorf("failed to parse XML message: %v", err)
 				return nil
 			}
 			return &xmlData
@@ -497,7 +498,7 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 						Staging: v.ParamData.Staging,
 					},
 				}
-			} else {
+			} else if v.Context == parameterCtx {
 				logger.Warn("context is Parameter but no Parameter data received")
 			}
 		case headerCtx:
