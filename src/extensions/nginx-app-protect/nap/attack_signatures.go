@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v2/src/core"
+
 	"gopkg.in/yaml.v2"
 )
 
@@ -29,7 +30,7 @@ func getAttackSignaturesVersion(versionFile string) (string, error) {
 
 	// Read bytes into object
 	attackSigVersionDateTime := napRevisionDateTime{}
-	err = yaml.Unmarshal([]byte(versionBytes), &attackSigVersionDateTime)
+	err = yaml.UnmarshalStrict([]byte(versionBytes), &attackSigVersionDateTime)
 	if err != nil {
 		return "", err
 	}
