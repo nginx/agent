@@ -155,4 +155,4 @@ update_config_file() {
   update_config_file
 } | tee "${AGENT_INSTALL_LOG}"
 
-chmod 0640 "${AGENT_INSTALL_LOG}"
+chmod 640 "${AGENT_INSTALL_LOG}"
