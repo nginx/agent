@@ -18,7 +18,6 @@ var (
 // the system then a NginxAppProtect object is still returned, the status field will be set
 // as MISSING and all other fields will be blank.
 func NewNginxAppProtect() (*NginxAppProtect, error) {
-
 	nap := &NginxAppProtect{
 		Status:                  "",
 		Release:                 NAPRelease{},
@@ -69,12 +68,12 @@ func NewNginxAppProtect() (*NginxAppProtect, error) {
 // function returns. Additionally if any changes are detected the NAP object that called
 // this monitoring function will have its attributes updated to the new changes. Here are
 // examples of NAP changes that would be detected and communicated:
-//	- NAP installed/version changed
-//	- NAP started running
-//	- NAP stopped running
-//	- NAP version changed
-//	- Attack signature installed/version changed
-//	- Threat campaign installed/version changed
+//   - NAP installed/version changed
+//   - NAP started running
+//   - NAP stopped running
+//   - NAP version changed
+//   - Attack signature installed/version changed
+//   - Threat campaign installed/version changed
 func (nap *NginxAppProtect) Monitor(pollInterval time.Duration) chan NAPReportBundle {
 	msgChannel := make(chan NAPReportBundle)
 	go nap.monitor(msgChannel, pollInterval)
