@@ -599,8 +599,10 @@ func TestGetNginxConfig(t *testing.T) {
 		assert.NoError(t, err)
 
 		allowedDirs := map[string]struct{}{}
+
 		if test.expected.Zaux != nil {
 			allowedDirs[test.expected.Zaux.RootDirectory] = struct{}{}
+			allowedDirs["/tmp/testdata/nginx/"] = struct{}{}
 		}
 		result, err := GetNginxConfig(test.fileName, nginxID, systemID, allowedDirs)
 		assert.NoError(t, err)
@@ -920,12 +922,14 @@ server {
 		assert.Equal(t, len(payload.Config), 1)
 		for _, xpConf := range payload.Config {
 			assert.Equal(t, len(xpConf.Parsed), 1)
-			CrossplaneConfigTraverse(&xpConf, func(parent *crossplane.Directive, current *crossplane.Directive) bool {
+			err = CrossplaneConfigTraverse(&xpConf, func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error) {
 				_plus, _oss := parseStatusAPIEndpoints(parent, current)
 				oss = append(oss, _oss...)
 				plus = append(plus, _plus...)
-				return true
+				return true, nil
 			})
+			assert.NoError(t, err)
+
 		}
 
 		assert.Equal(t, tt.plus, plus)

@@ -91,7 +91,6 @@ fi
 
 printf "Found nginx-agent %s\n" "${AGENT_EXE}"
 
-# Fill in data to unit file that's acquired post install
 if command -v systemctl; then
     printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
     groupadd "${AGENT_GROUP}"
@@ -102,13 +101,40 @@ if command -v systemctl; then
         printf "PostInstall: Adding NGINX Worker user %s to group %s\n" "${WORKER_USER}" "${AGENT_GROUP}"
         usermod -a -G "${AGENT_GROUP}" "${WORKER_USER}"
     fi
+fi
 
-    printf "PostInstall: Creating NGINX Agent run directory \n"
-    mkdir -p "${AGENT_RUN_DIR}"
+if [ "$ID" = "freebsd" ]; then
+    printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
+    pw groupadd "${AGENT_GROUP}"
 
-    printf "PostInstall: Modifying group ownership of NGINX Agent run directory \n"
-    chown "${AGENT_USER}":"${AGENT_GROUP}" "${AGENT_RUN_DIR}"
+    printf "PostInstall: Adding NGINX / agent user %s to group %s\n" "${AGENT_USER}" "${AGENT_GROUP}"
+    pw groupmod "${AGENT_GROUP}" -M "${AGENT_USER}"
+    if [ "${WORKER_USER}" ]; then
+        printf "PostInstall: Adding NGINX Worker user %s to group %s\n" "${WORKER_USER}" "${AGENT_GROUP}"
+        pw groupmod "${AGENT_GROUP}" -M "${WORKER_USER}"
+    fi
+fi
 
+if [ "$ID" = "alpine" ]; then
+    printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
+    addgroup "${AGENT_GROUP}"
+
+    printf "PostInstall: Adding NGINX / agent user %s to group %s\n" "${AGENT_USER}" "${AGENT_GROUP}"
+    addgroup "${AGENT_USER}" "${AGENT_GROUP}"
+    if [ "${WORKER_USER}" ]; then
+        printf "PostInstall: Adding NGINX Worker user %s to group %s\n" "${WORKER_USER}" "${AGENT_GROUP}"
+        addgroup "${WORKER_USER}" "${AGENT_GROUP}"
+    fi
+fi
+
+printf "PostInstall: Creating NGINX Agent run directory \n"
+mkdir -p "${AGENT_RUN_DIR}"
+
+printf "PostInstall: Modifying group ownership of NGINX Agent run directory \n"
+chown "${AGENT_USER}":"${AGENT_GROUP}" "${AGENT_RUN_DIR}"
+
+# Fill in data to unit file that's acquired post install
+if command -v systemctl; then
     printf "PostInstall: Modifying NGINX Agent unit file with correct locations and user information\n"
     EXE_CMD="s|\${AGENT_EXE}|${AGENT_EXE}|g"
     sed -i -e $EXE_CMD ${AGENT_UNIT_LOCATION}/${AGENT_UNIT_FILE}

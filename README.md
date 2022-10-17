@@ -1,130 +1,160 @@
 # NGINX Agent
+The NGINX Agent enhances your deployment experience and enables you to monitor your system and app performance, whether you are using NGINX OSS or NGINX Plus for App Delivery, Content Caching, API Gateway, and App Security. To do so, the Agent provides an administrative entry point to remotely manage, configure and collect metrics and events on the datapath instances.
 
-This is an Agent for various NGINX data plane services. It communicates via GRPC and protobuf with a Management Plane via HTTP.
+Simply put, Agent optimizes the operationalization of your application stack.
 
-## Prerequisites
-* Install [Goreleaser](https://goreleaser.com/install)
-* Install [nFPM](https://nfpm.goreleaser.com/install/)
-* Install [Protoc](https://grpc.io/docs/protoc-installation/)
-* Install tools: `make install-tools`
-* Install [golangci-lint](https://golangci-lint.run/usage/install/)
+## How it works 
+The NGINX Agent uses the Linux operating system pseudo-filesystems to interface with the process information of NGINX. The Agent checks ```nginx -V``` output to determine the relevant configuration location for NGINX. Then it validates the configuration with ```nginx -t``` before applying the NGINX configuration.
+The Agent reads both the access and error logs from the NGINX configuration. Reading this set of files from the NGINX configuration, using the specified log formats, it parses the appropriate log files and calculates the reported metrics. For NGINX Plus, the Agent takes the relevant information from the NGINX Plus API, configurable through the NGINX configuration.
 
-## Running the Agent Locally
-To simply get going, run the following make target (without building a binary):
-```
-make run
-```
 
-## Building the Agent Locally
-To build the agent locally, from the root directory, run:
-```
-make build
-```
-These commands output the agent binaries into `build/dist`.  You can run the executable with `./build/nginx-agent`
+![How agent works](docs/how-it-works.png "How it works")
 
-## Packaging The Agent Locally
-If you want to build the operating system packages (not signed), take a look at the "Local Packaging" section of the Makefile:
+## What can you do with the NGINX Agent today
+- Circulation of NGINX configurations
+- Reporting of metrics
+- Publicizing of data plane events
 
-## Docker With The Agent
-#### Prerequisites
-1. Place your nginx-repo.key and nginx-repo.crt in ./build
+## Agent Technical Specifications
 
-Running the docker make target will run agent and NGINX Plus within an appropriate Operating System.
-The list of available Operating Systems are as follows:
+### Supported Distributions 
 
- https://docs.nginx.com/nginx/releases/																		  
-These images are based on https://github.com/nginxinc/docker-nginx and are NOT recommended for production 
-| OS_RELEASE       | OS_VERSION                 | NOTES                                                          |
-| ---------------- | -------------------------- | -------------------------------------------------------------- |
-| amazonlinux      | 2                          |                                                                |
-| ubuntu           | 18.04, 20.04, 22.04        |                                                                |
-| debian           | bullseye-slim, buster-slim |                                                                |
-| centos           | 7                          | centos 7 (below 7.4) uses plus-pkgs.nginx.com as PACKAGES_REPO |
-| redhatenterprise | 7, 8, 9                    |                                                                |
-| alpine           | 3.13, 3.14, 3.15, 3.16     |                                                                |
-| oraclelinux      | 7, 8                       |                                                                |
-| suse             | sles12sp5, sle15           |                                                                |
-| freebsd          |                            | Not supported                                                  |
+The Agent can run in most environments. For the supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
 
-Edit the Makefile variables, to choose the appropriate Operating System for you (defaults to Ubuntu 22.04) e.g:
-```
-OS_RELEASE:=redhatenterprise
-OS_VERSION:=9
-```
+### Supported Deployment Environments 
+You can deploy the Agent in the following environments:
 
-### Build Container Image
-Run the ```make build-docker``` command from the agent root directory
+- Bare Metal
+- Container
+- Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
+- Virtual Machine
 
-### Run Container Image
-Run the ```make run-docker``` command from the agent root directory
+### Supported NGINX Versions 
+The Agent works with all supported versions of NGINX OSS and NGINX Plus.
 
-## Local Development with the Agent
-If you want to run a debug session with the agent through vscode, here is an example debug configuration you can use (gives verbose output for GRPC):
+### Sizing Recommendations 
+The following table lists the minimum sizing recommendations for the Agent:
+
+Table: Agent sizing recommendations
+
+| CPU        | Memory   | Network   | Storage |
+|------------|----------|-----------|---------|
+| 1 CPU core | 1 GB RAM | 1 GbE NIC | 20 GB   |
+
+### Logging 
+The Agent uses the log files and formats to collect metrics. Expanding the log formats and instance counts will also increase the size of the log files on the Agent. Adding a separate partition for /var/log/nginx-agent is always a good idea. Without log rotation or a separated partition, a log directory could cause your system to run out of space.
+
+## Getting started with Agent
+
+The result of following the below steps you will locally have an NGINX instance running, Agent running, and a mock control plane to which the Agent will report.
+
+Ensure you have Go installed ([download](https://go.dev/dl/)). Version 1.18 or higher is required.
+
+Ensure an NGINX instance is running. See [Prebuilt Packages for Linux and BSD](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/) or if your running on Mac see [brew nginx](https://formulae.brew.sh/formula/nginx) to install NGINX. Once installed ensure NGINX instance is running. If running on Mac and you installed using brew can start NGINX by the below command.
 
 ```
-{
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Launch file",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/main.go",
-            "env": {
-                "GRPC_VERBOSITY": "debug",
-                "GRPC_TRACE": "all",
-                "GODEBUG": "http2debug=2",
-                "GRPC_GO_LOG_SEVERITY_LEVEL": "debug",
-                "GRPC_GO_LOG_VERBOSITY_LEVEL": "99",
-                "CGO_ENABLED": "0",
-            }
-        }
-    ]
-}
+sudo brew services start nginx
 ```
 
-## Config Options
-### TLS
-For testing TLS, generate test certs by running:
+Next, start the mock control plane using the below command
 ```
-make certs
+go run sdk/examples/server.go
+
+# Command Output
+INFO[0000] http listening at 54790 # mock control plane port
+INFO[0000] grpc listening at 54789 # grpc control plane port which Agent will report to
 ```
-Then update the nginx agent configuration with the following:
-```
+
+Next change the nginx-agent.conf file within the root directory
+### NGINX Agent Settings
+```yaml
+server:
+  # host of the control plane
+  host: 127.0.0.1
+  grpcPort: 54789 # control plane grpc port
+# tls options - NOT RECOMMENDED FOR PRODUCTION
 tls:
-  # enable tls in the nginx-agent setup for grpcs
-  enable: true
-  # path to certificate
-  cert: /path/to/client.crt
-  # path to certificate key
-  key: /path/to/client.key
-  # path to CA cert
-  ca: /path/to/ca.crt
-  # skip cert verification (insecure)
-  skip_verify: false
-```
-### Config Directories
-The directories the agent will be only allowed read / write files to / from
-```
-config_dirs: "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms"
+  enable: false
+  skip_verify: true
 ```
 
-## Testing
-### Unit Tests
-`make unit-test`
+Next, open up another terminal and start the Agent
+```
+sudo mkdir /etc/nginx-agent
+sudo touch /etc/nginx-agent/agent-dynamic.conf
+sudo cp nginx-agent.conf /etc/nginx-agent/
+go run main.go
 
-### Install Tests
-`make test-install`
+# Command Output snippet
+WARN[0000] Log level is info                            
+INFO[0000] setting displayName to XXX            
+INFO[0000] NGINX Agent at with pid 12345, clientID=XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX name=XXX
+INFO[0000] NginxBinary initializing                     
+INFO[0000] Commander initializing                       
+INFO[0000] Comms initializing                           
+INFO[0000] OneTimeRegistration initializing             
+INFO[0000] Registering XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX 
+INFO[0000] Metrics initializing                         
+INFO[0000] MetricsThrottle initializing                 
+INFO[0000] DataPlaneStatus initializing                 
+INFO[0000] MetricsThrottle waiting for report ready     
+INFO[0000] Metrics waiting for handshake to be completed 
+INFO[0000] ProcessWatcher initializing                  
+INFO[0000] Extensions initializing                      
+INFO[0000] FileWatcher initializing                     
+INFO[0000] FileWatchThrottle initializing
+INFO[0001] Events initializing                          
+INFO[0001] OneTimeRegistration completed
+```
 
-### Performance Tests
-To performance tests require a docker container to run. To build the docker container run
+Next, open up a web browser to view the mock control plane [http://localhost:54790](http://localhost:54790). 6 links will be presented on the control plane
 
-```make build-benchmark-docker```
+- registred - Shows
+- nginxes - Shows
+- configs - Shows
+- configs/chunked - Shows
+- configs/raw - Shows
+- metrics - Shows 
 
-Then run the following to run the performance tests
+For more use-cases of the NGINX Agent, refer to https://github.com/nginx/agent/tree/main/sdk/examples
 
-```make performance-test```
+## Installation
+
+### Install from package files
+To install Agent on your system go to [Releases](https://github.com/nginx/agent/releases) and download the packages.zip file under Assets for a given version of the Agent.
+
+Depending on your OS distribution and CPU architecture type, use your system's package manager as in the following examples:
+```
+sudo apt install ./nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.deb
+
+sudo rpm -i nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.rpm
+
+sudo yum localinstall nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.rpm
+```
+### Start and Enable Agent
+To start the NGINX Agent on systemd systems, run the following command:
+```
+sudo systemctl start nginx-agent
+```
+To enable the NGINX Agent to start on boot, run the following command:
+```
+sudo systemctl enable nginx-agent
+```
+
+## Community
+
+- Our [Slack channel #nginx-agent](https://nginxcommunity.slack.com/), is the go-to place to start asking questions and sharing your thoughts.
+
+- Our [GitHub issues page](https://github.com/nginx/agent/issues) offers space for a more technical discussion at your own pace.
+
+- Get involved with the project by contributing! See the contributing guide for details.
+
+To reach the team directly, subscribe to the [mailing list](https://mailman.nginx.org/mailman/listinfo/agent).
+
+## Contributing
+
+If you'd like to contribute to the project, please read our [Contributing guide](docs/CONTRIBUTING.md).
+
+## License
+
+[Apache License, Version 2.0](LICENSE)
