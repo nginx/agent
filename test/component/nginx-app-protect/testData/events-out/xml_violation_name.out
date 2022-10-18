@@ -1,6 +1,0 @@
-
-Y
-Agent$cfd1824a-4bca-11ed-bd2e-aa665a400283123"ÄÞ¥š€Æý*ERROR2Nginx:
-AppProtectý
-2022-10-14 14:16:36.044app_protect_default_policy4355056874564592513"REJECTED*SECURITY_WAF_VIOLATION2N/A:GETBHTTPJN/AR/Z	HTTP/1.1
-jblockedr0zblah‚blahŠtestenv-ad595bed-data-1’blahš1-localhost:1-/¢172.18.9.78ª61478²80ºŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client DetectedÂ?HTTP protocol compliance failed:Host header contains IP addressÊ5Ò200001475,200000098Ú=XSS script tag end (Parameter) (2),XSS script tag (Parameter)âu{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}ê,òUntrusted BotúN/A‚N/AŠCritical’blahšblah¢N/AªN/A²HTTP LibraryºN/AÂcurl

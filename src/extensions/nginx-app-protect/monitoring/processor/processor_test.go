@@ -19,7 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	pb "github.com/nginx/agent/sdk/v2/proto/events"
-	nap_monitoring "github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
+	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
 )
 
 const (
@@ -110,7 +110,7 @@ func TestNAPWAFProcess(t *testing.T) {
 				sigDBFile = nonexistentFile
 			}
 
-			collect := make(chan *nap_monitoring.RawLog, 2)
+			collect := make(chan *monitoring.RawLog, 2)
 
 			processed := make(chan *pb.Event, 2)
 
@@ -154,12 +154,12 @@ func TestNAPWAFProcess(t *testing.T) {
 				t.Fatalf("Error while reading the logfile %s: %v", tc.testFile, err)
 			}
 
-			collect <- &nap_monitoring.RawLog{Origin: nap_monitoring.NAPWAF, Logline: string(input)}
+			collect <- &monitoring.RawLog{Origin: monitoring.NAPWAF, Logline: string(input)}
 
 			select {
 			case event := <-processed:
 				t.Logf("Got event: %v", event)
-			case <-time.After(3600 * eventWaitTimeout * time.Second):
+			case <-time.After(eventWaitTimeout * time.Second):
 				// for negative test, there should not be an event generated.
 				if !tc.isNegative {
 					t.Error("Should receive security violation event, and should not be timeout.")
