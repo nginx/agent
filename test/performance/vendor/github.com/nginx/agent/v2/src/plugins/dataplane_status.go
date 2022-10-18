@@ -30,6 +30,7 @@ type DataPlaneStatus struct {
 	statusUrls      map[string]string
 	reportInterval  time.Duration
 	napDetails      *proto.DataplaneSoftwareDetails_AppProtectWafDetails
+	napHealth       *proto.DataplaneSoftwareHealth_AppProtectWafHealth
 }
 
 const (
@@ -50,6 +51,7 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		configDirs:     config.ConfigDirs,
 		statusUrls:     make(map[string]string),
 		reportInterval: config.Dataplane.Status.ReportInterval,
+		napHealth:      &proto.DataplaneSoftwareHealth_AppProtectWafHealth{},
 	}
 }
 
@@ -84,10 +86,11 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 	case msg.Exact(core.AgentConfigChanged):
 		// If the agent config on disk changed update DataPlaneStatus with relevant config info
 		dps.syncAgentConfigChange()
-
 	case msg.Exact(core.NginxAppProtectDetailsGenerated):
 		// If a NAP report was generated sync it
 		dps.napDetails = getNAPDetails(msg)
+	case msg.Exact(core.NginxAppProtectHealth):
+		dps.napHealth = getNAPHealth(msg)
 	}
 }
 
@@ -129,14 +132,17 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 	processes := dps.env.Processes()
 	log.Tracef("dataplaneStatus: processes %v", processes)
 	forceDetails = forceDetails || time.Now().UTC().Add(-dps.reportInterval).After(dps.lastSendDetails)
+	host := dps.hostInfo(forceDetails)
 	return &proto.DataplaneStatus{
-		Host:                     dps.hostInfo(forceDetails),
+		SystemId:                 host.Uuid,
 		Details:                  dps.detailsForProcess(processes, forceDetails),
+		Host:                     dps.hostInfo(forceDetails),
 		Healths:                  dps.healthForProcess(processes),
 		DataplaneSoftwareDetails: getSoftwareDetails(dps.env, dps.binary, dps.napDetails),
+		DataplaneSoftwareHealths: []*proto.DataplaneSoftwareHealth{
+		},
 	}
 }
-
 
 func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
 	// this sets send if we are forcing details, or it has been 24 hours since the last send
@@ -259,6 +265,17 @@ func getNAPDetails(msg *core.Message) *proto.DataplaneSoftwareDetails_AppProtect
 		return commandData
 	default:
 		log.Errorf("Expected the type %T but got %T", &proto.DataplaneSoftwareDetails_AppProtectWafDetails{}, commandData)
+	}
+	return nil
+}
+
+func getNAPHealth(msg *core.Message) *proto.DataplaneSoftwareHealth_AppProtectWafHealth {
+	switch commandData := msg.Data().(type) {
+	case *proto.DataplaneSoftwareHealth_AppProtectWafHealth:
+		log.Debugf("DataPlaneStatus is syncing with NAP details - %+v", commandData.AppProtectWafHealth)
+		return commandData
+	default:
+		log.Errorf("Expected the type %T but got %T", &proto.DataplaneSoftwareHealth_AppProtectWafHealth{}, commandData)
 	}
 	return nil
 }

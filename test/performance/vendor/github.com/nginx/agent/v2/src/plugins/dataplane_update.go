@@ -34,7 +34,7 @@ func NewDataPlaneUpdate(config *config.Config, binary core.NginxBinary, env core
 		env:          env,
 		binary:       binary,
 		meta:         meta,
-		config:	      config,
+		config:       config,
 		version:      version,
 	}
 }
@@ -106,12 +106,12 @@ func (dpu *DataPlaneUpdate) sendDataplaneUpdate() {
 	meta := *dpu.meta
 	meta.MessageId = uuid.New().String()
 
-    update := &proto.DataplaneUpdate{
-    	Host:                     dpu.getHostInfo(),
-    	DataplaneSoftwareDetails: getSoftwareDetails(dpu.env, dpu.binary, dpu.napDetails),
+	update := &proto.DataplaneUpdate{
+		Host:                     dpu.getHostInfo(),
+		DataplaneSoftwareDetails: getSoftwareDetails(dpu.env, dpu.binary, dpu.napDetails),
 	}
 
-	if (!cmp.Equal(dpu.dataplaneUpdate, update)) {
+	if !cmp.Equal(dpu.dataplaneUpdate, update) {
 		statusData := proto.Command_DataplaneUpdate{
 			DataplaneUpdate: update,
 		}
@@ -153,7 +153,7 @@ func getSoftwareDetails(env core.Environment, binary core.NginxBinary, napDetail
 	details = append(details, &proto.DataplaneSoftwareDetails{
 		Data: napDetails,
 	})
-	
+
 	log.Tracef("software details: %v", details)
 	return details
 }

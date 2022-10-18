@@ -38,6 +38,7 @@ const (
 	Events                               = "events"
 	FileWatcherEnabled                   = "file.watcher.enabled"
 	ConfigRollbackResponse               = "config.rollback.response"
+	NginxAppProtectHealth				 = "nap.health"
 	NginxAppProtectDetailsGenerated      = "nap.details.generated"
 	EnableExtension                      = "enable.extension"
 )

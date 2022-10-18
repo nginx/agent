@@ -66,6 +66,11 @@ func (n *NginxAppProtect) Init(pipeline core.MessagePipeInterface) {
 	ctx, cancel := context.WithCancel(n.messagePipeline.Context())
 	n.ctx = ctx
 	n.ctxCancel = cancel
+
+	initialDetails := n.generateNAPDetailsProtoCommand()
+	log.Infof("Initial Nginx App Protect details: %+v", initialDetails)
+	n.messagePipeline.Process(core.NewMessage(core.NginxAppProtectDetailsGenerated, initialDetails))
+
 	go n.monitor()
 }
 
@@ -106,10 +111,6 @@ func (n *NginxAppProtect) addSoftwareDetailsToRegistration(msg *core.Message) {
 // then a report message is sent through the communication pipeline indicating what the
 // previous state of NAP was and what the new state.
 func (n *NginxAppProtect) monitor() {
-	initialDetails := n.generateNAPDetailsProtoCommand()
-	log.Infof("Initial Nginx App Protect details: %+v", initialDetails)
-	n.messagePipeline.Process(core.NewMessage(core.NginxAppProtectDetailsGenerated, initialDetails))
-
 	napUpdateChannel := n.nap.Monitor(n.reportInterval)
 
 	for {
@@ -123,6 +124,7 @@ func (n *NginxAppProtect) monitor() {
 
 		case <-time.After(n.reportInterval):
 			log.Debugf("No NAP changes detected after %v seconds... NAP Values: %+v", n.reportInterval.Seconds(), n.nap.GenerateNAPReport())
+			n.messagePipeline.Process(core.NewMessage(core.NginxAppProtectHealth, n.generateNAPHealthProtoCommand()))
 
 		case <-n.ctx.Done():
 			return
@@ -133,6 +135,22 @@ func (n *NginxAppProtect) monitor() {
 // generateNAPDetailsProtoCommand converts the current NAP report to the proto command
 // format for reporting NAP details.
 func (n *NginxAppProtect) generateNAPDetailsProtoCommand() *proto.DataplaneSoftwareDetails_AppProtectWafDetails {
+	napReport := n.nap.GenerateNAPReport()
+
+	napDetailsProtoCmd := &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
+		AppProtectWafDetails: &proto.AppProtectWAFDetails{
+			WafVersion:	napReport.NAPVersion,
+		},
+	}
+
+	log.Debugf("Generated NAP details proto message: %+v", napDetailsProtoCmd)
+
+	return napDetailsProtoCmd
+}
+
+// generateNAPDetailsProtoCommand converts the current NAP report to the proto command
+// format for reporting NAP details.
+func (n *NginxAppProtect) generateNAPHealthProtoCommand() *proto.AppProtectWAFHealth {
 	napReport := n.nap.GenerateNAPReport()
 	var napStatus proto.AppProtectWAFHealth_AppProtectWAFStatus
 	degradedReason := ""
@@ -147,20 +165,12 @@ func (n *NginxAppProtect) generateNAPDetailsProtoCommand() *proto.DataplaneSoftw
 		napStatus = proto.AppProtectWAFHealth_ACTIVE
 	}
 
-	napDetailsProtoCmd := &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
-		AppProtectWafDetails: &proto.AppProtectWAFDetails{
-			WafVersion:              napReport.NAPVersion,
-			AttackSignaturesVersion: napReport.AttackSignaturesVersion,
-			ThreatCampaignsVersion:  napReport.ThreatCampaignsVersion,
-			Health: &proto.AppProtectWAFHealth{
-				SystemId:            n.env.GetSystemUUID(),
-				AppProtectWafStatus: napStatus,
-				DegradedReason:      degradedReason,
-			},
-		},
+	napHealthProtoCmd := &proto.AppProtectWAFHealth {
+		SystemId:            n.env.GetSystemUUID(),
+		AppProtectWafStatus: napStatus,
+		DegradedReason:      degradedReason,
 	}
+	log.Debugf("Generated NAP health proto message: %+v", napHealthProtoCmd)
 
-	log.Debugf("Generated NAP details proto message: %+v", napDetailsProtoCmd)
-
-	return napDetailsProtoCmd
+	return napHealthProtoCmd
 }

@@ -24,34 +24,16 @@ var (
 	testNAPDetailsActive = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
 			WafVersion:              nap.NAPRelease3_9().VersioningDetails.NAPRelease,
-			AttackSignaturesVersion: testSigDate1,
-			ThreatCampaignsVersion:  testCampaignDate1,
-			Health: &proto.AppProtectWAFHealth{
-				SystemId:            testSystemID,
-				AppProtectWafStatus: proto.AppProtectWAFHealth_ACTIVE,
-			},
 		},
 	}
 
 	testNAPDetailsUnknown = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
-		AppProtectWafDetails: &proto.AppProtectWAFDetails{
-			Health: &proto.AppProtectWAFHealth{
-				SystemId:            testSystemID,
-				AppProtectWafStatus: proto.AppProtectWAFHealth_UNKNOWN,
-			},
-		},
+		AppProtectWafDetails: &proto.AppProtectWAFDetails{},
 	}
 
 	testNAPDetailsDegraded = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
 			WafVersion:              nap.NAPRelease3_9().VersioningDetails.NAPRelease,
-			AttackSignaturesVersion: testSigDate1,
-			ThreatCampaignsVersion:  testCampaignDate1,
-			Health: &proto.AppProtectWAFHealth{
-				SystemId:            testSystemID,
-				AppProtectWafStatus: proto.AppProtectWAFHealth_DEGRADED,
-				DegradedReason:      napDegradedMessage,
-			},
 		},
 	}
 )

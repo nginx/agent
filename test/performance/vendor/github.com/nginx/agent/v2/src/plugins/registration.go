@@ -211,7 +211,6 @@ func (r *OneTimeRegistration) dataplaneSoftwareDetailsMissing() bool {
 	return false
 }
 
-
 // getPluginsReportingDataplaneSoftwareDetails returns a list of plugin names that
 // are enabled which transmit dataplane software details based off the config passed.
 func getPluginsReportingDataplaneSoftwareDetails(conf config.Config) []string {
