@@ -19,6 +19,9 @@ INSTANCE_GROUP=""
 export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
 export AGENT_INSTALL_LOG="${AGENT_INSTALL_LOG:-/var/log/nginx-agent/agent-install-$(date +"%Y-%m-%d-%H.%M.%S").log}"
 
+# Create directories for install log if they don't exist already
+mkdir -p "${AGENT_INSTALL_LOG}"
+
 # Determine OS platform
 # shellcheck source=/dev/null
 . /etc/os-release
@@ -129,7 +132,6 @@ update_config_file() {
             printf "Setting log level: %s\n" "${LOG_LEVEL}"
             _log_level_replacement="s/^log:/log:\\
   level: ${LOG_LEVEL}/"
-                    
             ${sed_cmd} "${_log_level_replacement}" "${AGENT_CONFIG_FILE}"
             printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
         fi
