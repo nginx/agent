@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	testSystemID      = "12345678"
 	testSigDate1      = "2022.02.14"
 	testCampaignDate1 = "2022.02.07"
 )
