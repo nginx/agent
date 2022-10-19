@@ -13,14 +13,16 @@ set -e
 LOG_LEVEL=""
 INSTANCE_GROUP=""
 
+# Create directory for install log if it doesn't exist already
+if [ -z "$AGENT_INSTALL_LOG" ]; then
+    mkdir -p "/var/log/nginx-agent"
+fi
+
 ################################
 ###### Default variables
 ################################
 export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
 export AGENT_INSTALL_LOG="${AGENT_INSTALL_LOG:-/var/log/nginx-agent/agent-install-$(date +"%Y-%m-%d-%H.%M.%S").log}"
-
-# Create directories for install log if they don't exist already
-mkdir -p "${AGENT_INSTALL_LOG}"
 
 # Determine OS platform
 # shellcheck source=/dev/null
