@@ -19,8 +19,8 @@ import (
 
 func TestAccessLogUpdate(t *testing.T) {
 	binary := testutils.NewMockNginxBinary()
-	binary.On("UpdatedAccessLogs").Return(true, map[string]string{"/tmp/access.log": ""}).Once()
-	binary.On("UpdatedAccessLogs").Return(true, map[string]string{"/tmp/new_access.log": ""}).Once()
+	binary.On("GetAccessLogs").Return(map[string]string{"/tmp/access.log": ""}).Once()
+	binary.On("GetAccessLogs").Return(map[string]string{"/tmp/new_access.log": ""}).Once()
 
 	collectionDuration, _ := time.ParseDuration("300ms")
 	newCollectionDuration, _ := time.ParseDuration("500ms")
@@ -48,7 +48,7 @@ func TestAccessLogUpdate(t *testing.T) {
 
 func TestAccessLogStop(t *testing.T) {
 	binary := testutils.NewMockNginxBinary()
-	binary.On("UpdatedAccessLogs").Return(true, map[string]string{"/tmp/access.log": ""}).Once()
+	binary.On("GetAccessLogs").Return(map[string]string{"/tmp/access.log": ""}).Once()
 
 	collectionDuration, _ := time.ParseDuration("300ms")
 	nginxAccessLog := NewNginxAccessLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)

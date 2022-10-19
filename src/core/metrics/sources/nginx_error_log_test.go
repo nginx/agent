@@ -19,8 +19,8 @@ import (
 
 func TestNginxErrorLogUpdate(t *testing.T) {
 	binary := testutils.NewMockNginxBinary()
-	binary.On("UpdatedErrorLogs").Return(true, map[string]string{"/tmp/error.log": ""}).Once()
-	binary.On("UpdatedErrorLogs").Return(true, map[string]string{"/tmp/new_error.log": ""}).Once()
+	binary.On("GetErrorLogs").Return(map[string]string{"/tmp/error.log": ""}).Once()
+	binary.On("GetErrorLogs").Return(map[string]string{"/tmp/new_error.log": ""}).Once()
 
 	collectionDuration, _ := time.ParseDuration("300ms")
 	newCollectionDuration, _ := time.ParseDuration("500ms")
@@ -48,7 +48,7 @@ func TestNginxErrorLogUpdate(t *testing.T) {
 
 func TestNginxErrorLogStop(t *testing.T) {
 	binary := testutils.NewMockNginxBinary()
-	binary.On("UpdatedErrorLogs").Return(true, map[string]string{"/tmp/error.log": ""}).Once()
+	binary.On("GetErrorLogs").Return(map[string]string{"/tmp/error.log": ""}).Once()
 
 	collectionDuration, _ := time.ParseDuration("300ms")
 	nginxErrorLog := NewNginxErrorLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)

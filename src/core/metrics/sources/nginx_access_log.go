@@ -24,6 +24,7 @@ type NginxAccessLog struct {
 	baseDimensions *metrics.CommonDim
 	*namedMetric
 	mu                 *sync.Mutex
+	logFormats         map[string]string
 	logs               map[string]context.CancelFunc
 	binary             core.NginxBinary
 	nginxType          string
@@ -38,10 +39,12 @@ func NewNginxAccessLog(
 	nginxType string,
 	collectionInterval time.Duration) *NginxAccessLog {
 	log.Trace("Creating NewNginxAccessLog")
+
 	nginxAccessLog := &NginxAccessLog{
 		baseDimensions,
 		&namedMetric{namespace: namespace},
 		&sync.Mutex{},
+		make(map[string]string),
 		make(map[string]context.CancelFunc),
 		binary,
 		nginxType,
@@ -49,12 +52,13 @@ func NewNginxAccessLog(
 		[]*proto.StatsEntity{},
 	}
 
-	_, logs := binary.UpdatedAccessLogs()
+	logs := binary.GetAccessLogs()
 
 	for logFile, logFormat := range logs {
 		log.Infof("Adding access log tailer: %s", logFile)
 		logCTX, fn := context.WithCancel(context.Background())
 		nginxAccessLog.logs[logFile] = fn
+		nginxAccessLog.logFormats[logFile] = logFormat
 		go nginxAccessLog.logStats(logCTX, logFile, logFormat)
 	}
 
@@ -80,15 +84,17 @@ func (c *NginxAccessLog) Update(dimensions *metrics.CommonDim, collectorConf *me
 			log.Infof("Removing access log tailer: %s", f)
 			fn()
 			delete(c.logs, f)
+			delete(c.logFormats, f)
 		}
 
-		_, logs := c.binary.UpdatedAccessLogs()
+		logs := c.binary.GetAccessLogs()
 
 		for logFile, logFormat := range logs {
 			if _, ok := c.logs[logFile]; !ok {
 				log.Infof("Adding access log tailer: %s", logFile)
 				logCTX, fn := context.WithCancel(context.Background())
 				c.logs[logFile] = fn
+				c.logFormats[logFile] = logFormat
 				go c.logStats(logCTX, logFile, logFormat)
 			}
 		}
@@ -107,9 +113,9 @@ func (c *NginxAccessLog) Stop() {
 func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.StatsEntity) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	updated, logs := c.binary.UpdatedAccessLogs()
+	logs := c.binary.GetAccessLogs()
 
-	if updated {
+	if c.binary.UpdateLogs(c.logFormats, logs) {
 		log.Info("Access logs updated")
 		// cancel any removed access logs
 		for f, fn := range c.logs {
@@ -128,7 +134,6 @@ func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.St
 				go c.logStats(logCTX, logFile, logFormat)
 			}
 		}
-		c.binary.SetAccessLogUpdated(false)
 	}
 
 	for _, stat := range c.buf {

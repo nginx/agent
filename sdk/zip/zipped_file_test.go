@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 )
@@ -35,7 +36,8 @@ func TestWriter(t *testing.T) {
 			// should not be able to double flush
 			prefix: "/root", preProtoCallback: func(f *Writer) {
 				_, _ = f.Proto()
-			}, protoErr: true,
+			},
+			protoErr: true,
 		},
 		{
 			prefix: "/root",
@@ -95,6 +97,24 @@ func TestWriter(t *testing.T) {
 		assert.Equal(t, p.RootDirectory, tt.prefix)
 		assert.NotNil(t, p.Contents)
 		assert.NotEmpty(t, p.Checksum)
+		if len(tt.files) > 0 {
+			files := make(map[string][]byte, len(tt.files))
+			for _, ff := range tt.files {
+				files[ff.name] = ff.content[:]
+			}
+			var r *Reader
+			r, err = NewReader(p)
+			require.NoError(t, err)
+			r.RangeFileReaders(func(err error, path string, mode os.FileMode, r io.Reader) bool {
+				var b []byte
+				b, err = io.ReadAll(r)
+				require.NoError(t, err)
+				require.Equal(t, files[path], b)
+				delete(files, path)
+				return true
+			})
+			require.Empty(t, files)
+		}
 	}
 }
 

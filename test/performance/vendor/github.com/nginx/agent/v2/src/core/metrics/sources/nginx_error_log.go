@@ -54,6 +54,7 @@ type NginxErrorLog struct {
 	baseDimensions *metrics.CommonDim
 	*namedMetric
 	mu                 *sync.Mutex
+	logFormats         map[string]string
 	logs               map[string]context.CancelFunc
 	binary             core.NginxBinary
 	nginxType          string
@@ -72,6 +73,7 @@ func NewNginxErrorLog(
 		baseDimensions,
 		&namedMetric{namespace: namespace},
 		&sync.Mutex{},
+		make(map[string]string),
 		make(map[string]context.CancelFunc),
 		binary,
 		nginxType,
@@ -79,12 +81,13 @@ func NewNginxErrorLog(
 		[]*proto.StatsEntity{},
 	}
 
-	_, logs := binary.UpdatedErrorLogs()
+	logs := binary.GetErrorLogs()
 
-	for logFile := range logs {
+	for logFile, logFormat := range logs {
 		log.Infof("Adding error log tailer: %s", logFile)
 		logCTX, fn := context.WithCancel(context.Background())
 		nginxErrorLog.logs[logFile] = fn
+		nginxErrorLog.logFormats[logFile] = logFormat
 		go nginxErrorLog.logStats(logCTX, logFile)
 	}
 
@@ -120,14 +123,15 @@ func (c *NginxErrorLog) Update(dimensions *metrics.CommonDim, collectorConf *met
 			delete(c.logs, f)
 		}
 
-		_, logs := c.binary.UpdatedErrorLogs()
+		logs := c.binary.GetErrorLogs()
 
 		// add any new ones
-		for logFile := range logs {
+		for logFile, logFormat := range logs {
 			if _, ok := c.logs[logFile]; !ok {
 				log.Infof("Adding error log tailer: %s", logFile)
 				logCTX, fn := context.WithCancel(context.Background())
 				c.logs[logFile] = fn
+				c.logFormats[logFile] = logFormat
 				go c.logStats(logCTX, logFile)
 			}
 		}
@@ -137,9 +141,9 @@ func (c *NginxErrorLog) Update(dimensions *metrics.CommonDim, collectorConf *met
 func (c *NginxErrorLog) collectLogStats(ctx context.Context, m chan<- *proto.StatsEntity) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	updated, logs := c.binary.UpdatedErrorLogs()
+	logs := c.binary.GetErrorLogs()
 
-	if updated {
+	if c.binary.UpdateLogs(c.logFormats, logs) {
 		log.Info("Error logs updated")
 		// cancel any removed error logs
 		for f, fn := range c.logs {
@@ -158,7 +162,6 @@ func (c *NginxErrorLog) collectLogStats(ctx context.Context, m chan<- *proto.Sta
 				go c.logStats(logCTX, logFile)
 			}
 		}
-		c.binary.SetErrorLogUpdated(false)
 	}
 
 	for _, stat := range c.buf {
