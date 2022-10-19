@@ -317,6 +317,7 @@ func createCollectorConfigsMap(config *config.Config, env core.Environment, bina
 			AccessLogs:         sdk.GetAccessLogs(accessLogs),
 			ErrorLogs:          sdk.GetErrorLogs(errorLogs),
 			NginxId:            detail.NginxId,
+			ClientVersion:      config.Nginx.NginxClientVersion,
 		}
 	}
 

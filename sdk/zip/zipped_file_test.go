@@ -36,7 +36,8 @@ func TestWriter(t *testing.T) {
 			// should not be able to double flush
 			prefix: "/root", preProtoCallback: func(f *Writer) {
 				_, _ = f.Proto()
-			}, protoErr: true,
+			},
+			protoErr: true,
 		},
 		{
 			prefix: "/root",

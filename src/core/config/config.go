@@ -67,6 +67,9 @@ func SetDefaults() {
 	Viper.SetDefault(MetricsBulkSize, Defaults.AgentMetrics.BulkSize)
 	Viper.SetDefault(MetricsReportInterval, Defaults.AgentMetrics.ReportInterval)
 	Viper.SetDefault(MetricsCollectionInterval, Defaults.AgentMetrics.CollectionInterval)
+
+	// NGINX DEFAULTS
+	Viper.SetDefault(NginxClientVersion, Defaults.Nginx.NginxClientVersion)
 }
 
 func SetAdvancedMetricsDefaults() {
@@ -304,6 +307,7 @@ func getNginx() Nginx {
 		ExcludeLogs:         Viper.GetString(NginxExcludeLogs),
 		Debug:               Viper.GetBool(NginxDebug),
 		NginxCountingSocket: Viper.GetString(NginxCountingSocket),
+		NginxClientVersion:  Viper.GetInt(NginxClientVersion),
 	}
 }
 

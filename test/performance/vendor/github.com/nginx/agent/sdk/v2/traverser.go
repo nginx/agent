@@ -4,23 +4,35 @@ import (
 	"github.com/nginxinc/nginx-go-crossplane"
 )
 
-type CrossplaneTraverseCallback = func(parent *crossplane.Directive, current *crossplane.Directive) bool
+type CrossplaneTraverseCallback = func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error)
 type CrossplaneTraverseCallbackStr = func(parent *crossplane.Directive, current *crossplane.Directive) string
 
-func traverse(root *crossplane.Directive, callback CrossplaneTraverseCallback, stop *bool) {
+func traverse(root *crossplane.Directive, callback CrossplaneTraverseCallback, stop *bool) error {
 	if *stop {
-		return
+		return nil
 	}
 	for _, child := range root.Block {
-		if !callback(root, child) {
-			*stop = true
-			return
+		result, err := callback(root, child)
+		if err != nil {
+			return err
 		}
-		traverse(child, callback, stop)
+
+		if !result {
+			*stop = true
+			return nil
+		}
+
+		err = traverse(child, callback, stop)
+
+		if err != nil {
+			return err
+		}
+
 		if *stop {
-			return
+			return nil
 		}
 	}
+	return nil
 }
 
 func traverseStr(root *crossplane.Directive, callback CrossplaneTraverseCallbackStr, stop *bool) string {
@@ -42,14 +54,25 @@ func traverseStr(root *crossplane.Directive, callback CrossplaneTraverseCallback
 	return response
 }
 
-func CrossplaneConfigTraverse(root *crossplane.Config, callback CrossplaneTraverseCallback) {
+func CrossplaneConfigTraverse(root *crossplane.Config, callback CrossplaneTraverseCallback) error {
 	stop := false
 	for _, dir := range root.Parsed {
-		if !callback(nil, dir) {
-			return
+		result, err := callback(nil, dir)
+		if err != nil {
+			return err
 		}
-		traverse(dir, callback, &stop)
+
+		if !result {
+			return nil
+		}
+
+		err = traverse(dir, callback, &stop)
+
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func CrossplaneConfigTraverseStr(root *crossplane.Config, callback CrossplaneTraverseCallbackStr) string {
