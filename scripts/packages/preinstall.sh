@@ -13,11 +13,6 @@ set -e
 LOG_LEVEL=""
 INSTANCE_GROUP=""
 
-# Create directory for install log if it doesn't exist already
-if [ -z "$AGENT_INSTALL_LOG" ]; then
-    mkdir -p "/var/log/nginx-agent"
-fi
-
 ################################
 ###### Default variables
 ################################
@@ -27,6 +22,9 @@ export AGENT_INSTALL_LOG="${AGENT_INSTALL_LOG:-/var/log/nginx-agent/agent-instal
 # Determine OS platform
 # shellcheck source=/dev/null
 . /etc/os-release
+
+# Create directory for install log default location
+mkdir -p "/var/log/nginx-agent"
 
 if [ "$ID" = "freebsd" ]; then
     AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/usr/local/etc/nginx-agent/nginx-agent.conf"}
