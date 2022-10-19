@@ -23,11 +23,11 @@ func TestExtensions_Process(t *testing.T) {
 			extensionKey:  config.AdvancedMetricsKey,
 			extensionName: "Advanced Metrics Plugin",
 		},
-		{
-			testName:      "Nginx App Protect",
-			extensionKey:  config.NginxAppProtectKey,
-			extensionName: "Nginx App Protect",
-		},
+		// {
+		// 	testName:      "Nginx App Protect",
+		// 	extensionKey:  config.NginxAppProtectKey,
+		// 	extensionName: "Nginx App Protect",
+		// },
 	}
 
 	// Create an agent config and initialize Viper config properties

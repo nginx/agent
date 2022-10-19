@@ -133,7 +133,7 @@ func (r *OneTimeRegistration) registerAgent() {
 					SystemUid:     r.env.GetSystemUUID(),
 				},
 				Details:                  details,
-				DataplaneSoftwareDetails: r.dataplaneSoftwareDetailsSlice(),
+				DataplaneSoftwareDetails: getSoftwareDetails(r.env, r.binary, nil),
 			},
 		},
 	}
@@ -209,20 +209,6 @@ func (r *OneTimeRegistration) dataplaneSoftwareDetailsMissing() bool {
 		}
 	}
 	return false
-}
-
-// dataplaneSoftwareDetails converts the map of dataplane software details into a
-// slice of dataplane software details and returns it.
-func (r *OneTimeRegistration) dataplaneSoftwareDetailsSlice() []*proto.DataplaneSoftwareDetails {
-	allDetails := []*proto.DataplaneSoftwareDetails{}
-
-	for _, details := range r.dataplaneSoftwareDetails {
-		if details != nil {
-			allDetails = append(allDetails, details)
-		}
-	}
-
-	return allDetails
 }
 
 // getPluginsReportingDataplaneSoftwareDetails returns a list of plugin names that

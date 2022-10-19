@@ -19,7 +19,6 @@ type DataPlaneStatus struct {
 	ctx             context.Context
 	sendStatus      chan bool
 	healthTicker    *time.Ticker
-	interval        time.Duration
 	meta            *proto.Metadata
 	binary          core.NginxBinary
 	env             core.Environment
@@ -31,6 +30,7 @@ type DataPlaneStatus struct {
 	statusUrls      map[string]string
 	reportInterval  time.Duration
 	napDetails      *proto.DataplaneSoftwareDetails_AppProtectWafDetails
+	napHealth       *proto.DataplaneSoftwareHealth_AppProtectWafHealth
 }
 
 const (
@@ -39,15 +39,10 @@ const (
 
 func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core.NginxBinary, env core.Environment, version string) *DataPlaneStatus {
 	log.Tracef("Dataplane status interval %s", config.Dataplane.Status.PollInterval)
-	pollInt := config.Dataplane.Status.PollInterval
-	if pollInt < defaultMinInterval {
-		pollInt = defaultMinInterval
-		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, config.Dataplane.Status.PollInterval)
-	}
+
 	return &DataPlaneStatus{
 		sendStatus:     make(chan bool),
-		healthTicker:   time.NewTicker(pollInt),
-		interval:       pollInt,
+		healthTicker:   time.NewTicker(getPollIntervalFrom(config)),
 		meta:           meta,
 		binary:         binary,
 		env:            env,
@@ -56,9 +51,17 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		configDirs:     config.ConfigDirs,
 		statusUrls:     make(map[string]string),
 		reportInterval: config.Dataplane.Status.ReportInterval,
-		// Intentionally empty as it will be set later
-		napDetails: nil,
+		napHealth:      &proto.DataplaneSoftwareHealth_AppProtectWafHealth{},
 	}
+}
+
+func getPollIntervalFrom(config *config.Config) time.Duration {
+	pollInt := config.Dataplane.Status.PollInterval
+	if pollInt < defaultMinInterval {
+		pollInt = defaultMinInterval
+		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, config.Dataplane.Status.PollInterval)
+	}
+	return pollInt
 }
 
 func (dps *DataPlaneStatus) Init(pipeline core.MessagePipeInterface) {
@@ -83,10 +86,11 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 	case msg.Exact(core.AgentConfigChanged):
 		// If the agent config on disk changed update DataPlaneStatus with relevant config info
 		dps.syncAgentConfigChange()
-
 	case msg.Exact(core.NginxAppProtectDetailsGenerated):
 		// If a NAP report was generated sync it
-		dps.syncNAPDetails(msg)
+		dps.napDetails = getNAPDetails(msg)
+	case msg.Exact(core.NginxAppProtectHealth):
+		dps.napHealth = getNAPHealth(msg)
 	}
 }
 
@@ -128,25 +132,16 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 	processes := dps.env.Processes()
 	log.Tracef("dataplaneStatus: processes %v", processes)
 	forceDetails = forceDetails || time.Now().UTC().Add(-dps.reportInterval).After(dps.lastSendDetails)
+	host := dps.hostInfo(forceDetails)
 	return &proto.DataplaneStatus{
-		Host:                     dps.hostInfo(forceDetails),
+		SystemId:                 host.Uuid,
 		Details:                  dps.detailsForProcess(processes, forceDetails),
+		Host:                     dps.hostInfo(forceDetails),
 		Healths:                  dps.healthForProcess(processes),
-		DataplaneSoftwareDetails: dps.dataplaneSoftwareDetails(),
+		DataplaneSoftwareDetails: getSoftwareDetails(dps.env, dps.binary, dps.napDetails),
+		DataplaneSoftwareHealths: []*proto.DataplaneSoftwareHealth{
+		},
 	}
-}
-
-func (dps *DataPlaneStatus) dataplaneSoftwareDetails() []*proto.DataplaneSoftwareDetails {
-	allDetails := make([]*proto.DataplaneSoftwareDetails, 0)
-
-	if dps.napDetails != nil {
-		napDetails := &proto.DataplaneSoftwareDetails{
-			Data: dps.napDetails,
-		}
-		allDetails = append(allDetails, napDetails)
-	}
-
-	return allDetails
 }
 
 func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
@@ -251,11 +246,7 @@ func (dps *DataPlaneStatus) syncAgentConfigChange() {
 	}
 	log.Debugf("DataPlaneStatus is updating to a new config - %v", conf)
 
-	pollInt := conf.Dataplane.Status.PollInterval
-	if pollInt < defaultMinInterval {
-		pollInt = defaultMinInterval
-		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, conf.Dataplane.Status.PollInterval)
-	}
+	dps.healthTicker.Reset(getPollIntervalFrom(conf))
 
 	if conf.DisplayName == "" {
 		conf.DisplayName = dps.env.GetHostname()
@@ -263,17 +254,28 @@ func (dps *DataPlaneStatus) syncAgentConfigChange() {
 	}
 
 	// Update DataPlaneStatus with relevant config info
-	dps.interval = pollInt
 	dps.tags = &conf.Tags
 	dps.configDirs = conf.ConfigDirs
 }
 
-func (dps *DataPlaneStatus) syncNAPDetails(msg *core.Message) {
+func getNAPDetails(msg *core.Message) *proto.DataplaneSoftwareDetails_AppProtectWafDetails {
 	switch commandData := msg.Data().(type) {
 	case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
 		log.Debugf("DataPlaneStatus is syncing with NAP details - %+v", commandData.AppProtectWafDetails)
-		dps.napDetails = commandData
+		return commandData
 	default:
 		log.Errorf("Expected the type %T but got %T", &proto.DataplaneSoftwareDetails_AppProtectWafDetails{}, commandData)
 	}
+	return nil
+}
+
+func getNAPHealth(msg *core.Message) *proto.DataplaneSoftwareHealth_AppProtectWafHealth {
+	switch commandData := msg.Data().(type) {
+	case *proto.DataplaneSoftwareHealth_AppProtectWafHealth:
+		log.Debugf("DataPlaneStatus is syncing with NAP details - %+v", commandData.AppProtectWafHealth)
+		return commandData
+	default:
+		log.Errorf("Expected the type %T but got %T", &proto.DataplaneSoftwareHealth_AppProtectWafHealth{}, commandData)
+	}
+	return nil
 }
