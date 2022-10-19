@@ -13,6 +13,7 @@ type PerDimension struct {
 	Dimensions    []*proto.Dimension
 	RunningSumMap map[string]float64
 }
+
 type MetricsHandler func(float64, int) float64
 
 type Collections struct {
@@ -72,7 +73,7 @@ func GenerateMetricsReport(metricsCollections Collections) *proto.MetricsReport 
 
 	return &proto.MetricsReport{
 		Meta: &proto.Metadata{},
-		Type: 0,
+		Type: proto.MetricsReport_SYSTEM,
 		Data: results,
 	}
 }
@@ -315,17 +316,17 @@ func getAggregatedSimpleMetric(count int, internalMap map[string]float64) (simpl
 
 	for name, value := range internalMap {
 		if calculation, ok := calcFn[name]; ok {
-			aggegatedValue := calculation(value, count)
+			aggregatedValue := calculation(value, count)
 
 			// Only aggregate metrics when the aggregation method is defined
 			simpleMetrics = append(simpleMetrics, &proto.SimpleMetric{
 				Name:  name,
-				Value: aggegatedValue,
+				Value: aggregatedValue,
 			})
 		} else {
-			for reg, calculation := range variableMetrics {
+			for reg, cal := range variableMetrics {
 				if reg.MatchString(name) {
-					result := calculation(value, count)
+					result := cal(value, count)
 
 					simpleMetrics = append(simpleMetrics, &proto.SimpleMetric{
 						Name:  name,

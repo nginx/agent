@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -14,7 +16,6 @@ import (
 	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/publisher"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/schema"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -214,7 +215,9 @@ func (m *AdvancedMetrics) run() {
 				return
 			}
 			now := types.TimestampNow()
-			m.pipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{toMetricReport(mr, now, commonDimensions)}))
+			if report := toMetricReport(mr, now, commonDimensions); len(report.Data) > 0 {
+				m.pipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{report}))
+			}
 		case <-m.pipeline.Context().Done():
 			return
 		}

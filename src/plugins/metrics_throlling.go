@@ -130,9 +130,11 @@ func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.W
 			return
 		case <-r.ticker.C:
 			aggregatedReport := r.getAggregatedReport()
-			r.messagePipeline.Process(
-				core.NewMessage(core.CommMetrics, []core.Payload{aggregatedReport}),
-			)
+			if len(aggregatedReport.Data) > 0 {
+				r.messagePipeline.Process(
+					core.NewMessage(core.CommMetrics, []core.Payload{aggregatedReport}),
+				)
+			}
 			if r.firstRun {
 				// for the first run, we added the staggering time in report cycle, reset it back to regular
 				r.ticker = time.NewTicker(r.conf.AgentMetrics.ReportInterval)
