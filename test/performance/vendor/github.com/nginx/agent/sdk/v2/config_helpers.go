@@ -229,8 +229,7 @@ func updateNginxConfigFileConfig(
 				if err := updateNginxConfigFileWithRoot(aux, directive.Args[0], seen, allowedDirectories, directoryMap); err != nil {
 					return true, err
 				}
-			case "ssl_certificate", "ssl_certificate_key", "ssl_trusted_certificate":
-
+			case "ssl_certificate", "ssl_trusted_certificate":
 				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories); err != nil {
 					return true, err
 				}
@@ -283,10 +282,6 @@ func updateNginxConfigWithCert(
 		}
 	}
 
-	if !isAllowed {
-		return fmt.Errorf("file outside allowed directories %s", file)
-	}
-
 	if directive == "ssl_certificate" {
 		cert, err := LoadCertificate(file)
 		if err != nil {
@@ -324,7 +319,7 @@ func updateNginxConfigWithCert(
 			Fingerprint:            convertToHexFormat(hex.EncodeToString(fingerprint[:])),
 			FingerprintAlgorithm:   cert.SignatureAlgorithm.String(),
 			Version:                int64(cert.Version),
-			AuthorityKeyIdentifier: convertToHexFormat((hex.EncodeToString(cert.AuthorityKeyId))),
+			AuthorityKeyIdentifier: convertToHexFormat(hex.EncodeToString(cert.AuthorityKeyId)),
 		}
 		certProto.Mtime = filesSDK.TimeConvert(info.ModTime())
 		certProto.Size_ = info.Size()
@@ -332,6 +327,11 @@ func updateNginxConfigWithCert(
 		nginxConfig.Ssl.SslCerts = append(nginxConfig.Ssl.SslCerts, certProto)
 	}
 
+	if !isAllowed {
+		log.Infof("certs: %s outside allowed directory, not including in aux payloads", file)
+		// we want the meta information, but skip putting the files into the aux contents
+		return nil
+	}
 	if err := directoryMap.appendFile(filepath.Dir(file), info); err != nil {
 		return err
 	}
