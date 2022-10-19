@@ -5,13 +5,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
+	"github.com/stretchr/testify/require"
 )
 
 const (
-	testThreatCampaignsVersionFile = "/tmp/test-threat-campaigns-version.yaml"
-	testThreatCampaignsDateTime    = "2022-03-01T20:32:01Z"
-	testThreatCampaignsVersion     = "2022.03.01"
+	testThreatCampaignsVersionFile     = "/tmp/test-threat-campaigns-version.yaml"
+	threatCampaignsVersionFileContents = `---
+checksum: ALCdgk8CQgQQLRJ1ydZA4g
+filename: threat_campaigns.bin.tgz
+revisionDatetime: 2022-03-01T20:32:01Z`
 )
 
 func TestGetThreatCampaignsVersion(t *testing.T) {
@@ -26,9 +28,9 @@ func TestGetThreatCampaignsVersion(t *testing.T) {
 			testName:    "ThreatCampaignsInstalled",
 			versionFile: testThreatCampaignsVersionFile,
 			threatCampaignDateTime: &napRevisionDateTime{
-				RevisionDatetime: testThreatCampaignsDateTime,
+				RevisionDatetime: "2022-03-01T20:32:01Z",
 			},
-			expVersion: testThreatCampaignsVersion,
+			expVersion: "2022.03.01",
 			expError:   nil,
 		},
 		{
@@ -44,22 +46,16 @@ func TestGetThreatCampaignsVersion(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Create a fake version file if required by test
 			if tc.threatCampaignDateTime != nil {
-				yamlBytes, err := yaml.Marshal(tc.threatCampaignDateTime)
-				assert.Nil(t, err)
-
-				err = os.WriteFile(tc.versionFile, yamlBytes, 0644)
-				assert.Nil(t, err)
+				err := os.WriteFile(tc.versionFile, []byte(threatCampaignsVersionFileContents), 0644)
+				require.NoError(t, err)
 
 				defer func() {
 					err := os.Remove(tc.versionFile)
-					assert.Nil(t, err)
+					require.NoError(t, err)
 				}()
 			}
 
-			// Get threat campaign version
 			version, err := getThreatCampaignsVersion(tc.versionFile)
-
-			// Validate returned info
 			assert.Equal(t, err, tc.expError)
 			assert.Equal(t, tc.expVersion, version)
 		})
