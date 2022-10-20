@@ -92,8 +92,10 @@ type NginxAppProtect struct {
 }
 
 type NAPMonitoring struct {
-	CollectorBufferSize int    `mapstructure:"collector_buffer_size" yaml:"-"`
-	ProcessorBufferSize int    `mapstructure:"processor_buffer_size" yaml:"-"`
-	SyslogIP            string `mapstructure:"syslog_ip" yaml:"-"`
-	SyslogPort          int    `mapstructure:"syslog_port" yaml:"-"`
+	CollectorBufferSize int           `mapstructure:"collector_buffer_size" yaml:"-"`
+	ProcessorBufferSize int           `mapstructure:"processor_buffer_size" yaml:"-"`
+	SyslogIP            string        `mapstructure:"syslog_ip" yaml:"-"`
+	SyslogPort          int           `mapstructure:"syslog_port" yaml:"-"`
+	ReportInterval      time.Duration `mapstructure:"report_interval" yaml:"-"`
+	ReportCount         int           `mapstructure:"report_count" yaml:"-"`
 }

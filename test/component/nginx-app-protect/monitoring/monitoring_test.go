@@ -12,12 +12,21 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 
+	"github.com/nginx/agent/sdk/v2/client"
+	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	events "github.com/nginx/agent/sdk/v2/proto/events"
+	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
-	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager"
+	"github.com/nginx/agent/v2/src/plugins"
 	"github.com/nginx/agent/v2/test/component/nginx-app-protect/monitoring/mock"
+)
+
+const (
+	DEFAULT_PLUGIN_SIZE = 100
 )
 
 func TestNAPMonitoring(t *testing.T) {
@@ -25,6 +34,7 @@ func TestNAPMonitoring(t *testing.T) {
 		Server: config.Server{
 			Host:     "localhost",
 			GrpcPort: EphemeralPort(),
+			Token:    uuid.New().String(),
 		},
 		TLS: config.TLSConfig{
 			Enable: false,
@@ -34,6 +44,11 @@ func TestNAPMonitoring(t *testing.T) {
 			ProcessorBufferSize: 50,
 			SyslogIP:            "127.0.0.1",
 			SyslogPort:          EphemeralPort(),
+			ReportInterval:      time.Minute,
+			// Since the minimum report interval is on minute, MAP monitor won't have enough time within the test timeframe
+			// to send the report. So always beware of the count of logged attacks and set report count accordingly
+			// Count of attacks = count of files under ./testData/logs-in/
+			ReportCount: 7,
 		},
 	}
 
@@ -49,13 +64,44 @@ func TestNAPMonitoring(t *testing.T) {
 		ingestionServer.Run(ctx)
 	}()
 
-	m, err := manager.NewManager(cfg)
+	grpcDialOptions := setDialOptions(cfg)
+	secureMetricsDialOpts, err := sdkGRPC.SecureDialOptions(
+		cfg.TLS.Enable,
+		cfg.TLS.Cert,
+		cfg.TLS.Key,
+		cfg.TLS.Ca,
+		cfg.Server.Metrics,
+		cfg.TLS.SkipVerify)
 	assert.NoError(t, err)
+	if err != nil {
+		cancel()
+		return
+	}
+
+	reporter := client.NewMetricReporterClient()
+	reporter.WithServer(fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.GrpcPort))
+	reporter.WithDialOptions(append(grpcDialOptions, secureMetricsDialOpts)...)
+
+	err = reporter.Connect(ctx)
+	assert.NoError(t, err)
+	if err != nil {
+		cancel()
+		return
+	}
+
+	comms := plugins.NewComms(reporter)
+
+	napMonitoring, err := plugins.NewNAPMonitoring(cfg)
+	assert.NoError(t, err)
+
+	pipe := initializeMessagePipe(t, ctx, []core.Plugin{comms, napMonitoring})
+
+	pipe.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		m.Run(ctx)
+		pipe.Run()
 	}()
 
 	// Let monitor init
@@ -88,9 +134,14 @@ func TestNAPMonitoring(t *testing.T) {
 
 		resultEvent, found := ingestionServer.ReceivedEvent(expectedEvent.GetSecurityViolationEvent().SupportID)
 		assert.True(t, found)
+		if !found {
+			break
+		}
 		assertEqualSecurityViolationEvents(t, expectedEvent, resultEvent)
 	}
 
+	err = reporter.Close()
+	assert.NoError(t, err)
 	cancel()
 	wg.Wait()
 }
@@ -139,6 +190,20 @@ func EphemeralPort() int {
 	}
 	_ = ln.Close()
 	return port
+}
+
+func initializeMessagePipe(t *testing.T, ctx context.Context, corePlugins []core.Plugin) *core.MessagePipe {
+	pipe := core.NewMessagePipe(ctx)
+	err := pipe.Register(DEFAULT_PLUGIN_SIZE, corePlugins...)
+	assert.NoError(t, err)
+	return pipe
+}
+
+func setDialOptions(loadedConfig *config.Config) []grpc.DialOption {
+	var grpcDialOptions []grpc.DialOption
+	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DefaultClientDialOptions...)
+	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DataplaneConnectionDialOptions(loadedConfig.Server.Token, sdkGRPC.NewMessageMeta(uuid.NewString()))...)
+	return grpcDialOptions
 }
 
 /*

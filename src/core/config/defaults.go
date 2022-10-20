@@ -83,6 +83,8 @@ var (
 			CollectorBufferSize: 50000,
 			SyslogIP:            "0.0.0.0",
 			SyslogPort:          514,
+			ReportInterval:      time.Minute,
+			ReportCount:         400,
 		},
 		Features: []string{
 			FeatureRegistration,
@@ -189,6 +191,8 @@ const (
 	NAPMonitoringProcessorBufferSize = NAPMonitoringKey + KeyDelimiter + "processor_buffer_size"
 	NAPMonitoringSyslogIP            = NAPMonitoringKey + KeyDelimiter + "syslog_ip"
 	NAPMonitoringSyslogPort          = NAPMonitoringKey + KeyDelimiter + "syslog_port"
+	NAPMonitoringReportInterval      = NAPMonitoringKey + KeyDelimiter + "report_interval"
+	NAPMonitoringReportCount         = NAPMonitoringKey + KeyDelimiter + "report_count"
 
 	// viper keys used in config
 	FeaturesKey = "features"
