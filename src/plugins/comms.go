@@ -11,14 +11,9 @@ import (
 	"go.uber.org/atomic"
 )
 
-const (
-	DefaultMetricsChanLength = 4 * 1024
-)
-
 type Comms struct {
 	reporter    client.MetricReporter
 	pipeline    core.MessagePipeInterface
-	reportChan  chan *proto.MetricsReport
 	ctx         context.Context
 	started     *atomic.Bool
 	readyToSend *atomic.Bool
@@ -28,7 +23,6 @@ type Comms struct {
 func NewComms(reporter client.MetricReporter) *Comms {
 	return &Comms{
 		reporter:    reporter,
-		reportChan:  make(chan *proto.MetricsReport, DefaultMetricsChanLength),
 		started:     atomic.NewBool(false),
 		readyToSend: atomic.NewBool(false),
 		wait:        sync.WaitGroup{},
@@ -43,7 +37,6 @@ func (r *Comms) Init(pipeline core.MessagePipeInterface) {
 	r.pipeline = pipeline
 	r.ctx = pipeline.Context()
 	log.Info("Comms initializing")
-	go r.reportLoop()
 }
 
 func (r *Comms) Close() {
@@ -69,18 +62,25 @@ func (r *Comms) Process(msg *core.Message) {
 			return
 		}
 		for _, p := range payloads {
+			if !r.readyToSend.Load() {
+				continue
+			}
+
 			switch report := p.(type) {
 			case *proto.MetricsReport:
-				select {
-				case <-r.ctx.Done():
-					err := r.ctx.Err()
+
+				if len(report.Data) > 0 {
+					message := client.MessageFromMetrics(report)
+					err := r.reporter.Send(r.ctx, message)
+
 					if err != nil {
-						log.Errorf("error in done context Process in comms %v", err)
+						log.Errorf("Failed to send MetricsReport: %v, data: %+v", err, report)
+					} else {
+						log.Tracef("MetricsReport sent, %v", report)
 					}
-					return
-				case r.reportChan <- report:
-					// report queued
-					log.Debug("report queued")
+
+				} else {
+					log.Errorf("Got report of length 0 data: %v", report)
 				}
 			}
 		}
@@ -89,30 +89,4 @@ func (r *Comms) Process(msg *core.Message) {
 
 func (r *Comms) Subscriptions() []string {
 	return []string{core.CommMetrics, core.RegistrationCompletedTopic}
-}
-
-func (r *Comms) reportLoop() {
-	r.wait.Add(1)
-	defer r.wait.Done()
-	for {
-		if !r.readyToSend.Load() {
-			continue
-		}
-		select {
-		case <-r.ctx.Done():
-			err := r.ctx.Err()
-			if err != nil {
-				log.Errorf("error in done context reportLoop %v", err)
-			}
-			log.Debug("reporter loop exiting")
-			return
-		case report := <-r.reportChan:
-			err := r.reporter.Send(r.ctx, client.MessageFromMetrics(report))
-			if err != nil {
-				log.Errorf("Failed to send MetricsReport: %v, data: %+v", err, report)
-			} else {
-				log.Tracef("MetricsReport sent, %v", report)
-			}
-		}
-	}
 }

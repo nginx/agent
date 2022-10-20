@@ -26,7 +26,6 @@ type MetricsThrottle struct {
 	reportsReady       *atomic.Bool
 	collectorsUpdate   *atomic.Bool
 	metricsAggregation bool
-	firstRun           bool
 	metricsCollections metrics.Collections
 	ctx                context.Context
 	wg                 sync.WaitGroup
@@ -49,7 +48,6 @@ func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrot
 		reportsReady:       atomic.NewBool(false),
 		collectorsUpdate:   atomic.NewBool(false),
 		metricsAggregation: conf.AgentMetrics.Mode == "aggregated",
-		firstRun:           true,
 		metricsCollections: metricsCollections,
 		wg:                 sync.WaitGroup{},
 		env:                env,
@@ -130,18 +128,15 @@ func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.W
 			return
 		case <-r.ticker.C:
 			aggregatedReport := r.getAggregatedReport()
-			r.messagePipeline.Process(
-				core.NewMessage(core.CommMetrics, []core.Payload{aggregatedReport}),
-			)
-			if r.firstRun {
-				// for the first run, we added the staggering time in report cycle, reset it back to regular
-				r.ticker = time.NewTicker(r.conf.AgentMetrics.ReportInterval)
-				r.firstRun = false
+			if len(aggregatedReport.Data) > 0 {
+				r.messagePipeline.Process(
+					core.NewMessage(core.CommMetrics, []core.Payload{aggregatedReport}),
+				)
 			}
 			if r.collectorsUpdate.Load() {
 				r.BulkSize = r.conf.AgentMetrics.BulkSize
 				r.metricsAggregation = r.conf.AgentMetrics.Mode == "aggregated"
-				r.ticker = time.NewTicker(r.conf.AgentMetrics.ReportInterval)
+				r.ticker = time.NewTicker(r.conf.AgentMetrics.ReportInterval + reportStaggeringStartTime)
 				r.messagePipeline.Process(core.NewMessage(core.AgentCollectorsUpdate, ""))
 				r.collectorsUpdate.Store(false)
 			}
