@@ -2,11 +2,11 @@ package plugins
 
 import (
 	"context"
-	events "github.com/nginx/agent/sdk/v2/proto/events"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
+	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager"
@@ -72,8 +72,8 @@ func (n *NAPMonitoring) run() {
 	riTicker := time.NewTicker(reportInterval)
 	defer riTicker.Stop()
 
-	report := &events.EventReport{
-		Events: []*events.Event{},
+	report := &models.EventReport{
+		Events: []*models.Event{},
 	}
 
 	for {
@@ -97,8 +97,8 @@ func (n *NAPMonitoring) run() {
 	}
 }
 
-func (n *NAPMonitoring) send(report *events.EventReport, logMsg string) {
+func (n *NAPMonitoring) send(report *models.EventReport, logMsg string) {
 	log.Debugf(logMsg, report)
 	n.messagePipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{report}))
-	report.Events = []*events.Event{}
+	report.Events = []*models.Event{}
 }

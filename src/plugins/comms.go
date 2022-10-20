@@ -2,15 +2,16 @@ package plugins
 
 import (
 	"context"
+	"strings"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -133,7 +134,15 @@ func (r *Comms) reportLoop() {
 		case report := <-r.reportEventsChan:
 			err := r.reporter.Send(r.ctx, client.MessageFromEvents(report))
 			if err != nil {
-				log.Errorf("Failed to send EventReport: %v, data: %+v", err, report)
+				l := len(report.Events)
+				var sb strings.Builder
+				for i := 0; i < l-1; i++ {
+					sb.WriteString(report.Events[i].GetSecurityViolationEvent().SupportID)
+					sb.WriteString(", ")
+				}
+				sb.WriteString(report.Events[l-1].GetSecurityViolationEvent().SupportID)
+				// TODO: In addition to the below, make sure we don't lose data https://nginxsoftware.atlassian.net/browse/NMS-38169
+				log.Errorf("Failed to send EventReport with error: %v, supportID list: %s", err, sb.String())
 			} else {
 				log.Tracef("EventReport sent, %v", report)
 			}
