@@ -240,13 +240,6 @@ func TestNginxConfigApply(t *testing.T) {
 				time.Duration(5*time.Second),
 				3*time.Millisecond,
 			)
-			assert.Eventually(
-				tt,
-				func() bool { return binary.AssertExpectations(tt) },
-				time.Duration(5*time.Second),
-				3*time.Millisecond,
-			)
-			env.AssertExpectations(tt)
 
 			for idx, msg := range  messagePipe.GetProcessedMessages() {
 				if test.msgTopics[idx] != msg.Topic() {

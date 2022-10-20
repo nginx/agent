@@ -332,11 +332,12 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 
 	go n.validateConfig(nginx, cmd.Meta.MessageId, config, configApply)
 
+	// If the NGINX config can be validated with the validationTimeout the result will be returned straight away.
 	select {
 		case result := <-n.configApplyStatusChannel:
 			return result
 		case <-time.After(validationTimeout):
-			log.Debug("Validation of nginx config in progress")
+			log.Debugf("Validation of the NGINX config in taking longer than the validationTimeout %s", validationTimeout)
 			return status
 	}
 }
