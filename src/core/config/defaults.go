@@ -287,41 +287,34 @@ var (
 		},
 		// Advanced Metrics
 		&StringFlag{
-			Name:         AdvancedMetricsSocketPath,
-			Usage:        "The advanced metrics socket location.",
-			DefaultValue: Defaults.AdvancedMetrics.SocketPath,
+			Name:  AdvancedMetricsSocketPath,
+			Usage: "The advanced metrics socket location.",
 		},
 		// change to advanced metrics collection interval
 		&DurationFlag{
-			Name:         AdvancedMetricsAggregationPeriod,
-			Usage:        "Sets the interval, in seconds, at which advanced metrics are collected.",
-			DefaultValue: Defaults.AdvancedMetrics.AggregationPeriod,
+			Name:  AdvancedMetricsAggregationPeriod,
+			Usage: "Sets the interval, in seconds, at which advanced metrics are collected.",
 		},
 		// change to advanced metrics report interval
 		&DurationFlag{
-			Name:         AdvancedMetricsPublishPeriod,
-			Usage:        "The polling period specified for a single set of advanced metrics being collected.",
-			DefaultValue: Defaults.AdvancedMetrics.PublishingPeriod,
+			Name:  AdvancedMetricsPublishPeriod,
+			Usage: "The polling period specified for a single set of advanced metrics being collected.",
 		},
 		&IntFlag{
-			Name:         AdvancedMetricsTableSizesLimitsPTMS,
-			Usage:        "Default Maximum Size of the Priority Table.",
-			DefaultValue: Defaults.AdvancedMetrics.TableSizesLimits.PriorityTableMaxSize,
+			Name:  AdvancedMetricsTableSizesLimitsPTMS,
+			Usage: "Default Maximum Size of the Priority Table.",
 		},
 		&IntFlag{
-			Name:         AdvancedMetricsTableSizesLimitsPTT,
-			Usage:        "Default Threshold of the Priority Table - normally a value which is a percentage of the corresponding Default Maximum Size of the Priority Table (<100%, but its value is not an actual percentage, i.e 88%, rather 88%*AdvancedMetricsTableSizesLimitsPTMS).",
-			DefaultValue: Defaults.AdvancedMetrics.TableSizesLimits.PriorityTableThreshold,
+			Name:  AdvancedMetricsTableSizesLimitsPTT,
+			Usage: "Default Threshold of the Priority Table - normally a value which is a percentage of the corresponding Default Maximum Size of the Priority Table (<100%, but its value is not an actual percentage, i.e 88%, rather 88%*AdvancedMetricsTableSizesLimitsPTMS).",
 		},
 		&IntFlag{
-			Name:         AdvancedMetricsTableSizesLimitsSTMS,
-			Usage:        "Default Maximum Size of the Staging Table.",
-			DefaultValue: Defaults.AdvancedMetrics.TableSizesLimits.StagingTableMaxSize,
+			Name:  AdvancedMetricsTableSizesLimitsSTMS,
+			Usage: "Default Maximum Size of the Staging Table.",
 		},
 		&IntFlag{
-			Name:         AdvancedMetricsTableSizesLimitsSTT,
-			Usage:        "AdvancedMetricsTableSizesLimitsSTT - Default Threshold of the Staging Table - normally a value which is a percentage of the corresponding Default Maximum Size of the Staging Table (<100%, but its value is not an actual percentage, i.e 88%, rather 88%*AdvancedMetricsTableSizesLimitsSTMS).",
-			DefaultValue: Defaults.AdvancedMetrics.TableSizesLimits.StagingTableThreshold,
+			Name:  AdvancedMetricsTableSizesLimitsSTT,
+			Usage: "AdvancedMetricsTableSizesLimitsSTT - Default Threshold of the Staging Table - normally a value which is a percentage of the corresponding Default Maximum Size of the Staging Table (<100%, but its value is not an actual percentage, i.e 88%, rather 88%*AdvancedMetricsTableSizesLimitsSTMS).",
 		},
 		// TLS Config
 		&BoolFlag{
