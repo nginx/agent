@@ -41,11 +41,10 @@ func NewMessagePipe(ctx context.Context) *MessagePipe {
 }
 
 func (p *MessagePipe) Register(size int, plugins ...Plugin) error {
+	p.mu.Lock()
+
 	p.plugins = append(p.plugins, plugins...)
-	p.bus = messagebus.New(size)
-	
-    p.mu.Lock()
-    defer p.mu.Unlock()
+	p.bus = messagebus.New(size)	
 
 	for _, plugin := range p.plugins {
 		for _, subscription := range plugin.Subscriptions() {
@@ -56,6 +55,7 @@ func (p *MessagePipe) Register(size int, plugins ...Plugin) error {
 		}
 	}
 
+	p.mu.Unlock()
 	return nil
 }
 
@@ -84,8 +84,8 @@ func (p *MessagePipe) Run() {
 			return
 		case m := <-p.messageChannel:
 			p.mu.Lock()
-			defer p.mu.Unlock()
 			p.bus.Publish(m.Topic(), m)
+			p.mu.Unlock()
 		}
 	}
 }
