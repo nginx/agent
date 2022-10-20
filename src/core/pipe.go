@@ -25,7 +25,7 @@ type MessagePipe struct {
 	plugins        []Plugin
 	ctx            context.Context
 	cancel         context.CancelFunc
-	wg             sync.WaitGroup
+	mu             sync.Mutex
 	bus            messagebus.MessageBus
 }
 
@@ -36,15 +36,16 @@ func NewMessagePipe(ctx context.Context) *MessagePipe {
 		plugins:        make([]Plugin, 0, MaxPlugins),
 		ctx:            pipeContext,
 		cancel:         pipeCancel,
-		wg:             sync.WaitGroup{},
+		mu:             sync.Mutex{},
 	}
 }
 
 func (p *MessagePipe) Register(size int, plugins ...Plugin) error {
 	p.plugins = append(p.plugins, plugins...)
 	p.bus = messagebus.New(size)
-	p.wg.Add(1)
-	defer p.wg.Done()
+	
+    p.mu.Lock()
+    defer p.mu.Unlock()
 
 	for _, plugin := range p.plugins {
 		for _, subscription := range plugin.Subscriptions() {
@@ -74,11 +75,16 @@ func (p *MessagePipe) Run() {
 	for {
 		select {
 		case <-p.ctx.Done():
-			p.shutdown()
+			
+			for _, r := range p.plugins {
+				r.Close()
+			}
+			close(p.messageChannel)
+
 			return
 		case m := <-p.messageChannel:
-			p.wg.Add(1)
-			defer p.wg.Done()
+			p.mu.Lock()
+			defer p.mu.Unlock()
 			p.bus.Publish(m.Topic(), m)
 		}
 	}
@@ -100,11 +106,4 @@ func (p *MessagePipe) initPlugins() {
 	for _, r := range p.plugins {
 		r.Init(p)
 	}
-}
-
-func (p *MessagePipe) shutdown() {
-	for _, r := range p.plugins {
-		r.Close()
-	}
-	close(p.messageChannel)
 }
