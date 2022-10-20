@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	testThreatCampaignsVersionFile     = "/tmp/test-threat-campaigns-version.yaml"
-	threatCampaignsVersionFileContents = `---
+	testThreatCampaignsVersionFile         = "/tmp/test-threat-campaigns-version.yaml"
+	testThreatCampaignsVersionFileContents = `---
 checksum: ALCdgk8CQgQQLRJ1ydZA4g
 filename: threat_campaigns.bin.tgz
 revisionDatetime: 2022-03-01T20:32:01Z`
@@ -46,7 +46,7 @@ func TestGetThreatCampaignsVersion(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Create a fake version file if required by test
 			if tc.threatCampaignDateTime != nil {
-				err := os.WriteFile(tc.versionFile, []byte(threatCampaignsVersionFileContents), 0644)
+				err := os.WriteFile(tc.versionFile, []byte(testThreatCampaignsVersionFileContents), 0644)
 				require.NoError(t, err)
 
 				defer func() {
