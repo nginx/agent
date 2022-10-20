@@ -2,6 +2,7 @@ package client
 
 import (
 	"github.com/nginx/agent/sdk/v2/proto"
+	models "github.com/nginx/agent/sdk/v2/proto/events"
 )
 
 func MessageFromCommand(cmd *proto.Command) Message {
@@ -18,10 +19,18 @@ func MessageFromMetrics(metric *proto.MetricsReport) Message {
 	}
 }
 
+func MessageFromEvents(event *models.EventReport) Message {
+	return &msg{
+		msgType: MsgClassificationSecurityEvent,
+		event:   event,
+	}
+}
+
 type msg struct {
 	msgType MsgClassification
 	cmd     *proto.Command
 	metric  *proto.MetricsReport
+	event   *models.EventReport
 }
 
 func (m *msg) Meta() *proto.Metadata {
@@ -67,6 +76,8 @@ func (m *msg) Raw() interface{} {
 		return m.cmd
 	case MsgClassificationMetric:
 		return m.metric
+	case MsgClassificationSecurityEvent:
+		return m.event
 	}
 
 	return nil

@@ -2,6 +2,8 @@ package plugins
 
 import (
 	"context"
+	events "github.com/nginx/agent/sdk/v2/proto/events"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -13,6 +15,8 @@ import (
 const (
 	napMonitoringPluginName    = "Nginx App Protect Monitor"
 	napMonitoringPluginVersion = "v0.0.1"
+	reportInterval             = 5 * time.Second
+	reportCount                = 50
 )
 
 type NAPMonitoring struct {
@@ -43,7 +47,8 @@ func (n *NAPMonitoring) Init(pipeline core.MessagePipeInterface) {
 	ctx, cancel := context.WithCancel(n.messagePipeline.Context())
 	n.ctx = ctx
 	n.ctxCancel = cancel
-	n.monitorMgr.Run(ctx)
+	go n.monitorMgr.Run(ctx)
+	go n.run()
 }
 
 // TODO: https://nginxsoftware.atlassian.net/browse/NMS-38140
@@ -59,4 +64,41 @@ func (n *NAPMonitoring) Subscriptions() []string {
 func (n *NAPMonitoring) Close() {
 	log.Infof("%s is wrapping up", napMonitoringPluginName)
 	n.ctxCancel()
+}
+
+func (n *NAPMonitoring) run() {
+	defer n.Close()
+
+	riTicker := time.NewTicker(reportInterval)
+	defer riTicker.Stop()
+
+	report := &events.EventReport{
+		Events: []*events.Event{},
+	}
+
+	for {
+		select {
+		case event, ok := <-n.monitorMgr.OutChannel():
+			if !ok {
+				log.Errorf("NAP Monitoring processing channel closed unexpectedly")
+				return
+			}
+			report.Events = append(report.Events, event)
+			if len(report.Events) == reportCount {
+				n.send(report, "report count reached. sending report: %v")
+			}
+		case <-riTicker.C:
+			if len(report.Events) > 0 {
+				n.send(report, "report interval reached. sending report: %v")
+			}
+		case <-n.ctx.Done():
+			return
+		}
+	}
+}
+
+func (n *NAPMonitoring) send(report *events.EventReport, logMsg string) {
+	log.Debugf(logMsg, report)
+	n.messagePipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{report}))
+	report.Events = []*events.Event{}
 }

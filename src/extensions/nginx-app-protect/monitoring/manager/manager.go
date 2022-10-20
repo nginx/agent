@@ -2,23 +2,15 @@ package manager
 
 import (
 	"context"
-	"fmt"
 	"runtime"
 	"sync"
 
-	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
-
-	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
-	pb "github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/collector"
-	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/forwarder"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/processor"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -38,10 +30,6 @@ type Manager struct {
 
 	processor     *processor.Client
 	processorChan chan *models.Event
-
-	forwarder  forwarder.Forwarder
-	fwdrctx    context.Context
-	fwdrcancel context.CancelFunc
 }
 
 func NewManager(config *config.Config) (*Manager, error) {
@@ -141,59 +129,6 @@ func (s *Manager) initProcessor() error {
 	return nil
 }
 
-func (s *Manager) initForwarder(ctx context.Context) error {
-	var err error
-
-	s.logger.Infof("Initializing %s forwarder", componentName)
-
-	var grpcDialOptions []grpc.DialOption
-	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DefaultClientDialOptions...)
-	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DataplaneConnectionDialOptions(s.config.Server.Token, sdkGRPC.NewMessageMeta(uuid.NewString()))...)
-
-	secureCmdDialOpts, err := sdkGRPC.SecureDialOptions(
-		s.config.TLS.Enable,
-		s.config.TLS.Cert,
-		s.config.TLS.Key,
-		s.config.TLS.Ca,
-		s.config.Server.Command,
-		s.config.TLS.SkipVerify)
-	if err != nil {
-		s.logger.Fatalf("Failed to load secure command gRPC dial options: %v", err)
-	}
-
-	grpcDialOptions = append(grpcDialOptions, secureCmdDialOpts)
-
-	server := fmt.Sprintf("%v:%v", s.config.Server.Host, s.config.Server.GrpcPort)
-	conn, err := sdkGRPC.NewGrpcConnectionWithContext(ctx, server, grpcDialOptions)
-	if err != nil {
-		s.logger.Errorf("error while connecting to the grpcServer %v with dialOps %v: %v", server, grpcDialOptions, err)
-		return err
-	}
-	s.logger.Infof("connecting to %s", server)
-
-	client := pb.NewMetricsServiceClient(conn)
-	eventsChan, err := client.StreamEvents(ctx, sdkGRPC.GetCallOptions()...)
-	if err != nil {
-		s.logger.Warnf("channel error: %s", err)
-		statusRepresentation, ok := status.FromError(err)
-		if ok {
-			s.logger.Warnf("error creating events channel - GRPC Code: %s Message: %s",
-				statusRepresentation.Code(), statusRepresentation.Message())
-		} else {
-			s.logger.Errorf("error creating events channel: %s", err)
-		}
-		return err
-	}
-
-	s.logger.Infof("Initializing %s forwarder", componentName)
-	s.forwarder, err = forwarder.NewClient(eventsChan)
-	if err != nil {
-		s.logger.Errorf("error initializing the forwarder: %v", err)
-		return err
-	}
-	return nil
-}
-
 func (s *Manager) Run(ctx context.Context) {
 	s.logger.Infof("Starting to run %s", componentName)
 
@@ -206,39 +141,15 @@ func (s *Manager) Run(ctx context.Context) {
 	go s.collector.Collect(chtx, waitGroup, s.collectChan)
 	go s.processor.Process(chtx, waitGroup, s.collectChan, s.processorChan)
 
-	s.fwdrctx, s.fwdrcancel = context.WithCancel(ctx)
-	defer s.fwdrcancel()
-
-	fwdrWaitGroup := &sync.WaitGroup{}
-
-	if err := s.initForwarder(s.fwdrctx); err != nil {
-		s.logger.Errorf("Could not initialize %s forwarder: %s", componentName, err)
-		s.logger.Infof("%s is exiting gracefully...", componentName)
-
-		s.logger.Debugf("Cancelling %s's %s context", componentName, "default")
-		cancel()
-
-		s.logger.Debugf("Waiting for %s's %s context to exit gracefully...", componentName, "default")
-		waitGroup.Wait()
-
-		return
-	}
-
-	s.logger.Infof("Starting forwarding events to %s", fmt.Sprintf("%v:%v", s.config.Server.Host, s.config.Server.GrpcPort))
-
-	fwdrWaitGroup.Add(1)
-	go s.forwarder.Forward(
-		s.fwdrctx, fwdrWaitGroup,
-		s.processorChan,
-	)
-
-	s.logger.Info("Successfully initialized a forwarder")
-
 	<-ctx.Done()
 	s.logger.Infof("Received Context cancellation, %s is wrapping up...", componentName)
 
 	waitGroup.Wait()
-	fwdrWaitGroup.Wait()
 
 	s.logger.Infof("Context cancellation, %s wrapped up...", componentName)
+}
+
+// OutChannel returns processorChan channel which will publish events
+func (m *Manager) OutChannel() chan *models.Event {
+	return m.processorChan
 }
