@@ -237,13 +237,13 @@ func TestNginxConfigApply(t *testing.T) {
 			assert.Eventually(
 				tt,
 				func() bool { return len(messagePipe.GetProcessedMessages()) != len(test.msgTopics) },
-				time.Duration(2*time.Second),
+				time.Duration(5*time.Second),
 				3*time.Millisecond,
 			)
 			assert.Eventually(
 				tt,
 				func() bool { return binary.AssertExpectations(tt) },
-				time.Duration(2*time.Second),
+				time.Duration(5*time.Second),
 				3*time.Millisecond,
 			)
 			env.AssertExpectations(tt)
@@ -437,6 +437,61 @@ func TestNginx_Info(t *testing.T) {
 	pluginUnderTest := NewNginx(nil, nil, tutils.GetMockEnvWithProcess(), &loadedConfig.Config{})
 
 	assert.Equal(t, "NginxBinary", pluginUnderTest.Info().Name())
+}
+
+func TestNginx_validateConfig(t *testing.T) {
+	tests := []struct {
+		name             string
+		validationResult error
+		expectedTopic    string
+		expectedError    error
+	}{
+		{
+			name: "successful validation",
+			validationResult: nil,
+			expectedTopic: core.NginxConfigValidationSucceeded,
+		},
+		{
+			name: "failed validation",
+			validationResult: errors.New("failure"),
+			expectedTopic: core.NginxConfigValidationFailed,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+
+			env := tutils.GetMockEnvWithProcess()
+			binary := tutils.NewMockNginxBinary()
+			binary.On("ValidateConfig", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(test.validationResult)
+			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
+			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
+
+			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
+
+			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+			messagePipe.Run()
+
+			pluginUnderTest.validateConfig(&proto.NginxDetails{}, "123", &proto.NginxConfig{}, &sdk.ConfigApply{})
+
+			assert.Eventually(
+				t,
+				func() bool { return len(messagePipe.GetMessages()) == 1 },
+				time.Duration(2*time.Second),
+				3*time.Millisecond,
+			)
+
+			assert.Equal(t, test.expectedTopic, messagePipe.GetMessages()[0].Topic())
+			assert.Equal(t, "123", messagePipe.GetMessages()[0].Data().(*NginxConfigValidationResponse).correlationId)
+			if test.validationResult == nil {
+				assert.Nil(t, messagePipe.GetMessages()[0].Data().(*NginxConfigValidationResponse).err)
+			} else {
+				assert.NotNil(t, messagePipe.GetMessages()[0].Data().(*NginxConfigValidationResponse).err)
+			}
+			assert.Greater(t, messagePipe.GetMessages()[0].Data().(*NginxConfigValidationResponse).elapsedTime, 0*time.Second)
+		})
+	}
 }
 
 func TestNginx_completeConfigApply(t *testing.T) {

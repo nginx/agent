@@ -29,14 +29,15 @@ var (
 
 // Nginx is the metadata of our nginx binary
 type Nginx struct {
-	messagePipeline     core.MessagePipeInterface
-	nginxBinary         core.NginxBinary
-	processes           []core.Process
-	env                 core.Environment
-	cmdr                client.Commander
-	config              *config.Config
-	isNAPEnabled        bool
-	isConfUploadEnabled bool
+	messagePipeline          core.MessagePipeInterface
+	nginxBinary              core.NginxBinary
+	processes                []core.Process
+	env                      core.Environment
+	cmdr                     client.Commander
+	config                   *config.Config
+	isNAPEnabled             bool
+	isConfUploadEnabled      bool
+	configApplyStatusChannel chan *proto.Command_NginxConfigResponse
 }
 
 type ConfigRollbackResponse struct {
@@ -59,6 +60,7 @@ type NginxConfigValidationResponse struct {
 	nginxDetails  *proto.NginxDetails
 	config        *proto.NginxConfig
 	configApply   *sdk.ConfigApply
+	elapsedTime   time.Duration
 }
 
 func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config) *Nginx {
@@ -69,7 +71,16 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 
 	isConfUploadEnabled := isConfUploadEnabled(loadedConfig)
 
-	return &Nginx{nginxBinary: nginxBinary, processes: env.Processes(), env: env, cmdr: cmdr, config: loadedConfig, isNAPEnabled: isNAPEnabled, isConfUploadEnabled: isConfUploadEnabled}
+	return &Nginx{
+		nginxBinary: nginxBinary,
+		processes: env.Processes(),
+		env: env,
+		cmdr: cmdr,
+		config: loadedConfig,
+		isNAPEnabled: isNAPEnabled,
+		isConfUploadEnabled: isConfUploadEnabled,
+		configApplyStatusChannel: make(chan *proto.Command_NginxConfigResponse, 1),
+	}
 }
 
 // Init initializes the plugin
@@ -112,12 +123,25 @@ func (n *Nginx) Process(message *core.Message) {
 	case core.NginxConfigValidationSucceeded:
 		switch response := message.Data().(type) {
 		case *NginxConfigValidationResponse:
-			n.completeConfigApply(response)
+			status := n.completeConfigApply(response)
+			if response.elapsedTime < validationTimeout {
+				n.configApplyStatusChannel <- status
+			}
 		}
 	case core.NginxConfigValidationFailed:
 		switch response := message.Data().(type) {
 		case *NginxConfigValidationResponse:
 			n.rollbackConfigApply(response)
+			status := &proto.Command_NginxConfigResponse{
+				NginxConfigResponse: &proto.NginxConfigResponse{
+					Status:     newErrStatus(fmt.Sprintf("Config apply failed (write): " + response.err.Error())).CmdStatus,
+					Action:     proto.NginxConfigAction_APPLY,
+					ConfigData: response.config.ConfigData,
+				},
+			}
+			if response.elapsedTime < validationTimeout {
+				n.configApplyStatusChannel <- status
+			}
 		}
 	case core.EnableExtension:
 		switch data := message.Data().(type) {
@@ -293,7 +317,7 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 
 		message := fmt.Sprintf("Config apply failed (write): " + err.Error())
 
-		n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationPending, &proto.AgentActivityStatus{
+		n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplyFailed, &proto.AgentActivityStatus{
 			Status: &proto.AgentActivityStatus_NginxConfigStatus{
 				NginxConfigStatus: &proto.NginxConfigStatus{
 					CorrelationId: cmd.Meta.MessageId,
@@ -306,70 +330,55 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		return n.handleErrorStatus(status, message)
 	}
 
-	validationResponse := n.validateConfig(nginx, cmd.Meta.MessageId, config, configApply)
-	if validationResponse != nil {
-		if validationResponse.err == nil {
-			agentActivityStatus := n.completeConfigApply(validationResponse)
-			if agentActivityStatus.GetNginxConfigStatus().GetStatus() == proto.NginxConfigStatus_ERROR {
-				status.NginxConfigResponse.Status = newErrStatus(agentActivityStatus.GetNginxConfigStatus().GetMessage()).CmdStatus
-			} else {
-				status.NginxConfigResponse.Status = newOKStatus(agentActivityStatus.GetNginxConfigStatus().GetMessage()).CmdStatus
-			}
+	go n.validateConfig(nginx, cmd.Meta.MessageId, config, configApply)
+
+	select {
+		case result := <-n.configApplyStatusChannel:
+			return result
+		case <-time.After(validationTimeout):
+			log.Debug("Validation of nginx config in progress")
 			return status
-		} else {
-			n.rollbackConfigApply(validationResponse)
-			message := fmt.Sprintf("Config apply failed (write): " + validationResponse.err.Error())
-			return n.handleErrorStatus(status, message)
-		}
-	} else {
-		log.Debug("Validation of nginx config in progress")
-		return status
 	}
 }
 
 // This function will run a nginx config validation in a separate go routine. If the validation takes less than 15 seconds then the result is returned straight away,
 // otherwise nil is returned and the validation continues on in the background until it is complete. The result is always added to the message pipeline for other plugins
 // to use.
-func (n *Nginx) validateConfig(nginx *proto.NginxDetails, correlationId string, config *proto.NginxConfig, configApply *sdk.ConfigApply) *NginxConfigValidationResponse {
-	validationChannel := make(chan *NginxConfigValidationResponse, 1)
+func (n *Nginx) validateConfig(nginx *proto.NginxDetails, correlationId string, config *proto.NginxConfig, configApply *sdk.ConfigApply) {
+	start := time.Now()
 
-	go func() {
-		err := n.nginxBinary.ValidateConfig(nginx.NginxId, nginx.ProcessPath, nginx.ConfPath, config, configApply)
-		if err == nil {
-			_, err = n.nginxBinary.ReadConfig(nginx.GetConfPath(), config.GetConfigData().GetNginxId(), n.env.GetSystemUUID())
-		}
-		if err != nil {
-			response := &NginxConfigValidationResponse{
-				err:           fmt.Errorf("error running nginx -t -c %s:\n %v", nginx.ConfPath, err),
-				correlationId: correlationId,
-				nginxDetails:  nginx,
-				config:        config,
-				configApply:   configApply,
-			}
-			n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationFailed, response))
-			validationChannel <- response
-		} else {
-			response := &NginxConfigValidationResponse{
-				err:           nil,
-				correlationId: correlationId,
-				nginxDetails:  nginx,
-				config:        config,
-				configApply:   configApply,
-			}
-			n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
-			validationChannel <- response
-		}
-	}()
+	err := n.nginxBinary.ValidateConfig(nginx.NginxId, nginx.ProcessPath, nginx.ConfPath, config, configApply)
+	if err == nil {
+		_, err = n.nginxBinary.ReadConfig(nginx.GetConfPath(), config.GetConfigData().GetNginxId(), n.env.GetSystemUUID())
+	}
 
-	select {
-	case result := <-validationChannel:
-		return result
-	case <-time.After(validationTimeout):
-		return nil
+	elapsedTime := time.Since(start)
+	log.Tracef("nginx config validation took %s to complete", elapsedTime)
+
+	if err != nil {
+		response := &NginxConfigValidationResponse{
+			err:           fmt.Errorf("error running nginx -t -c %s:\n %v", nginx.ConfPath, err),
+			correlationId: correlationId,
+			nginxDetails:  nginx,
+			config:        config,
+			configApply:   configApply,
+			elapsedTime:   elapsedTime,
+		}
+		n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationFailed, response))
+	} else {
+		response := &NginxConfigValidationResponse{
+			err:           nil,
+			correlationId: correlationId,
+			nginxDetails:  nginx,
+			config:        config,
+			configApply:   configApply,
+			elapsedTime:   elapsedTime,
+		}
+		n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
 	}
 }
 
-func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *proto.AgentActivityStatus {
+func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *proto.Command_NginxConfigResponse {
 	nginxConfigStatusMessage := "Config applied successfully"
 	if response.configApply != nil {
 		if err := response.configApply.Complete(); err != nil {
@@ -433,8 +442,23 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *pr
 
 	n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplySucceeded, agentActivityStatus))
 
+	status := &proto.Command_NginxConfigResponse{
+		NginxConfigResponse: &proto.NginxConfigResponse{
+			Status:     newOKStatus("config apply request successfully processed").CmdStatus,
+			Action:     proto.NginxConfigAction_APPLY,
+			ConfigData: response.config.ConfigData,
+		},
+	}
+
+	if agentActivityStatus.GetNginxConfigStatus().GetStatus() == proto.NginxConfigStatus_ERROR {
+		status.NginxConfigResponse.Status = newErrStatus(agentActivityStatus.GetNginxConfigStatus().GetMessage()).CmdStatus
+	} else {
+		status.NginxConfigResponse.Status = newOKStatus(agentActivityStatus.GetNginxConfigStatus().GetMessage()).CmdStatus
+	}
+
 	log.Debug("Config Apply Complete")
-	return agentActivityStatus
+
+	return status
 }
 
 func (n *Nginx) rollbackConfigApply(response *NginxConfigValidationResponse) {
