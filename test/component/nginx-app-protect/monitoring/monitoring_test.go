@@ -44,8 +44,11 @@ func TestNAPMonitoring(t *testing.T) {
 			ProcessorBufferSize: 50,
 			SyslogIP:            "127.0.0.1",
 			SyslogPort:          EphemeralPort(),
-			ReportInterval:      3 * time.Second,
-			ReportCount:         5,
+			ReportInterval:      time.Minute,
+			// Since the minimum report interval is on minute, MAP monitor won't have enough time within the test timeframe
+			// to send the report. So always beware of the count of logged attacks and set report count accordingly
+			// Count of attacks = count of files under ./testData/logs-in/
+			ReportCount: 7,
 		},
 	}
 
@@ -69,6 +72,11 @@ func TestNAPMonitoring(t *testing.T) {
 		cfg.TLS.Ca,
 		cfg.Server.Metrics,
 		cfg.TLS.SkipVerify)
+	assert.NoError(t, err)
+	if err != nil {
+		cancel()
+		return
+	}
 
 	reporter := client.NewMetricReporterClient()
 	reporter.WithServer(fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.GrpcPort))
