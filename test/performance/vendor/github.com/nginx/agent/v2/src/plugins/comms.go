@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"context"
-	"sync"
 
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
