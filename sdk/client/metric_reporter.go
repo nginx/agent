@@ -154,7 +154,7 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 
 			return nil
 		})
-	case MsgClassificationSecurityEvent:
+	case MsgClassificationEvent:
 		report, ok := message.Raw().(*events.EventReport)
 		if !ok {
 			return fmt.Errorf("MetricReporter expected an events report message, but received %T", message.Data())

@@ -83,8 +83,8 @@ var (
 			CollectorBufferSize: 50000,
 			SyslogIP:            "0.0.0.0",
 			SyslogPort:          514,
-			ReportInterval:      5 * time.Second,
-			ReportCount:         50,
+			ReportInterval:      time.Minute,
+			ReportCount:         400,
 		},
 		Features: []string{
 			FeatureRegistration,

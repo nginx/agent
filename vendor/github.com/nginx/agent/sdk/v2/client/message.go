@@ -21,7 +21,7 @@ func MessageFromMetrics(metric *proto.MetricsReport) Message {
 
 func MessageFromEvents(event *models.EventReport) Message {
 	return &msg{
-		msgType: MsgClassificationSecurityEvent,
+		msgType: MsgClassificationEvent,
 		event:   event,
 	}
 }
@@ -76,7 +76,7 @@ func (m *msg) Raw() interface{} {
 		return m.cmd
 	case MsgClassificationMetric:
 		return m.metric
-	case MsgClassificationSecurityEvent:
+	case MsgClassificationEvent:
 		return m.event
 	}
 

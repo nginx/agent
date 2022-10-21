@@ -15,8 +15,9 @@ import (
 const (
 	napMonitoringPluginName    = "Nginx App Protect Monitor"
 	napMonitoringPluginVersion = "v0.0.1"
+	minReportIntervalDelimiter = time.Minute
 	minReportCountDelimiter    = 1
-	maxReportCountDelimiter    = 1000
+	maxReportCountDelimiter    = 400
 )
 
 type NAPMonitoring struct {
@@ -34,8 +35,10 @@ func NewNAPMonitoring(cfg *config.Config) (*NAPMonitoring, error) {
 		return nil, err
 	}
 
-	if !(cfg.NAPMonitoring.ReportInterval > 0) {
-		log.Warnf("NAP Monitoring report interval must be positive. Defaulting to %v", config.Defaults.NAPMonitoring.ReportInterval)
+	if !(cfg.NAPMonitoring.ReportInterval > minReportIntervalDelimiter) {
+		log.Warnf("NAP Monitoring report interval must be higher than %v. Defaulting to %v",
+			minReportIntervalDelimiter,
+			config.Defaults.NAPMonitoring.ReportInterval)
 		cfg.NAPMonitoring.ReportInterval = config.Defaults.NAPMonitoring.ReportInterval
 	}
 	if cfg.NAPMonitoring.ReportCount < minReportCountDelimiter ||
