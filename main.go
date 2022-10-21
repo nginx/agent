@@ -32,7 +32,7 @@ const (
 )
 
 func init() {
-	config.SetVersion(version, commit)
+	config.SetVersion(version)
 	config.SetDefaults()
 	config.RegisterFlags()
 	configPath, err := config.RegisterConfigFile(config.DynamicConfigFileAbsPath, config.ConfigFileName, config.ConfigFilePaths()...)
