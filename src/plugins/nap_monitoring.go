@@ -15,25 +15,42 @@ import (
 const (
 	napMonitoringPluginName    = "Nginx App Protect Monitor"
 	napMonitoringPluginVersion = "v0.0.1"
-	reportInterval             = 5 * time.Second
-	reportCount                = 50
+	minReportCountDelimiter    = 1
+	maxReportCountDelimiter    = 1000
 )
 
 type NAPMonitoring struct {
 	monitorMgr      *manager.Manager
 	messagePipeline core.MessagePipeInterface
+	reportInterval  time.Duration
+	reportCount     int
 	ctx             context.Context
 	ctxCancel       context.CancelFunc
 }
 
-func NewNAPMonitoring(config *config.Config) (*NAPMonitoring, error) {
-	m, err := manager.NewManager(config)
+func NewNAPMonitoring(cfg *config.Config) (*NAPMonitoring, error) {
+	m, err := manager.NewManager(cfg)
 	if err != nil {
 		return nil, err
 	}
 
+	if !(cfg.NAPMonitoring.ReportInterval > 0) {
+		log.Warnf("NAP Monitoring report interval must be positive. Defaulting to %v", config.Defaults.NAPMonitoring.ReportInterval)
+		cfg.NAPMonitoring.ReportInterval = config.Defaults.NAPMonitoring.ReportInterval
+	}
+	if cfg.NAPMonitoring.ReportCount < minReportCountDelimiter ||
+		cfg.NAPMonitoring.ReportCount > maxReportCountDelimiter {
+		log.Warnf("NAP Monitoring report count must be between %v and %v. Defaulting to %v",
+			minReportCountDelimiter,
+			maxReportCountDelimiter,
+			config.Defaults.NAPMonitoring.ReportInterval)
+		cfg.NAPMonitoring.ReportCount = config.Defaults.NAPMonitoring.ReportCount
+	}
+
 	return &NAPMonitoring{
-		monitorMgr: m,
+		monitorMgr:     m,
+		reportInterval: cfg.NAPMonitoring.ReportInterval,
+		reportCount:    cfg.NAPMonitoring.ReportCount,
 	}, nil
 }
 
@@ -69,7 +86,7 @@ func (n *NAPMonitoring) Close() {
 func (n *NAPMonitoring) run() {
 	defer n.Close()
 
-	riTicker := time.NewTicker(reportInterval)
+	riTicker := time.NewTicker(n.reportInterval)
 	defer riTicker.Stop()
 
 	report := &models.EventReport{
@@ -84,12 +101,12 @@ func (n *NAPMonitoring) run() {
 				return
 			}
 			report.Events = append(report.Events, event)
-			if len(report.Events) == reportCount {
-				n.send(report, "report count reached. sending report: %v")
+			if len(report.Events) == n.reportCount {
+				n.send(report, "report count reached. sending report")
 			}
 		case <-riTicker.C:
 			if len(report.Events) > 0 {
-				n.send(report, "report interval reached. sending report: %v")
+				n.send(report, "report interval reached. sending report")
 			}
 		case <-n.ctx.Done():
 			return
@@ -98,7 +115,11 @@ func (n *NAPMonitoring) run() {
 }
 
 func (n *NAPMonitoring) send(report *models.EventReport, logMsg string) {
-	log.Debugf(logMsg, report)
-	n.messagePipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{report}))
+	log.Debugf(logMsg)
+	reportToSend := &models.EventReport{
+		Events: make([]*models.Event, len(report.Events)),
+	}
+	copy(reportToSend.Events, report.Events)
+	n.messagePipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{reportToSend}))
 	report.Events = []*models.Event{}
 }
