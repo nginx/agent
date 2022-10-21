@@ -49,10 +49,13 @@ func TestCommsSendMetrics(t *testing.T) {
 
 			assert.True(t, pluginUnderTest.readyToSend.Load())
 
+			metricData := make([]*proto.StatsEntity, 0, 1)
+			metricData = append(metricData, &proto.StatsEntity{Simplemetrics: []*proto.SimpleMetric{{Name: "Metric A", Value: 5}}})
+
 			pluginUnderTest.Process(core.NewMessage(core.CommMetrics, []core.Payload{&proto.MetricsReport{
 				Meta: &proto.Metadata{Timestamp: types.TimestampNow()},
 				Type: proto.MetricsReport_INSTANCE,
-				Data: make([]*proto.StatsEntity, 0, 1),
+				Data: metricData,
 			}}))
 
 			time.Sleep(1 * time.Second) // for the above call being asynchronous
