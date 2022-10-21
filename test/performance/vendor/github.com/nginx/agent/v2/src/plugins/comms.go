@@ -17,7 +17,6 @@ type Comms struct {
 	ctx         context.Context
 	started     *atomic.Bool
 	readyToSend *atomic.Bool
-	wait        sync.WaitGroup
 }
 
 func NewComms(reporter client.MetricReporter) *Comms {
@@ -25,7 +24,6 @@ func NewComms(reporter client.MetricReporter) *Comms {
 		reporter:    reporter,
 		started:     atomic.NewBool(false),
 		readyToSend: atomic.NewBool(false),
-		wait:        sync.WaitGroup{},
 	}
 }
 
@@ -80,7 +78,7 @@ func (r *Comms) Process(msg *core.Message) {
 					}
 
 				} else {
-					log.Errorf("Got report of length 0 data: %v", report)
+					log.Debugf("Got report of length 0 data: %v", report)
 				}
 			}
 		}
