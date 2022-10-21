@@ -118,7 +118,7 @@ func (grpcService *CommandGrpcService) handleCommand(cmd *proto.Command) {
 		case *proto.Command_AgentConnectRequest:
 			log.Infof("Got agentConnectRequest from Agent %v", commandData)
 			grpcService.registrationData = commandData.AgentConnectRequest
-			if (commandData.AgentConnectRequest != nil && len(commandData.AgentConnectRequest.Details) > 0) {
+			if commandData.AgentConnectRequest != nil && len(commandData.AgentConnectRequest.Details) > 0 {
 				grpcService.nginxes = commandData.AgentConnectRequest.Details
 			}
 

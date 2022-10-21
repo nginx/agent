@@ -7,8 +7,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/nginxinc/nginx-go-crossplane"
+	crossplane "github.com/nginxinc/nginx-go-crossplane"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nginx/agent/sdk/v2/zip"
@@ -18,9 +19,10 @@ import (
 // of the current files, mark them off as they are getting applied, and delete any leftovers that's not in the incoming
 // apply payload.
 type ConfigApply struct {
-	writer    *zip.Writer
-	existing  map[string]struct{}
-	notExists map[string]struct{} // set of files that exists in the config provided payload, but not on disk
+	writer       *zip.Writer
+	existing     map[string]struct{}
+	notExists    map[string]struct{} // set of files that exists in the config provided payload, but not on disk
+	notExistDirs map[string]struct{} // set of directories that exists in the config provided payload, but not on disk
 }
 
 func NewConfigApply(
@@ -32,9 +34,10 @@ func NewConfigApply(
 		return nil, err
 	}
 	b := &ConfigApply{
-		writer:    w,
-		existing:  make(map[string]struct{}),
-		notExists: make(map[string]struct{}),
+		writer:       w,
+		existing:     make(map[string]struct{}),
+		notExists:    make(map[string]struct{}),
+		notExistDirs: make(map[string]struct{}),
 	}
 	if confFile != "" {
 		return b, b.mapCurrentFiles(confFile, allowedDirectories)
@@ -64,6 +67,13 @@ func (b *ConfigApply) Rollback(cause error) error {
 		}
 	}
 
+	for fullPath := range b.notExistDirs {
+		err = os.RemoveAll(fullPath)
+		if err != nil {
+			log.Warnf("error during rollback (remove dir) for %s: %s", fullPath, err)
+		}
+	}
+
 	r.RangeFileReaders(func(innerErr error, path string, mode os.FileMode, r io.Reader) bool {
 		if innerErr != nil {
 			log.Warnf("error during rollback for %s: %s", path, innerErr)
@@ -75,6 +85,7 @@ func (b *ConfigApply) Rollback(cause error) error {
 			log.Warnf("error during rollback (open) for %s: %s", path, err)
 			return true
 		}
+		defer f.Close()
 		_, err = io.Copy(f, r)
 		if err != nil {
 			log.Warnf("error during rollback (copy) for %s: %s", path, err)
@@ -108,21 +119,49 @@ func (b *ConfigApply) Complete() error {
 func (b *ConfigApply) MarkAndSave(fullPath string) error {
 	// delete from existing list, so we don't delete them during Complete
 	delete(b.existing, fullPath)
+
 	p, err := os.Stat(fullPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			b.notExists[fullPath] = struct{}{}
 			log.Debugf("backup: %s does not exist", fullPath)
+
+			for dir := range b.notExistDirs {
+				if strings.HasPrefix(fullPath, dir) {
+					return nil
+				}
+			}
+
+			paths := strings.Split(fullPath, "/")
+			for i := 2; i < len(paths); i++ {
+				dirPath := strings.Join(paths[0:i], "/")
+
+				_, err := os.Stat(dirPath)
+				if err != nil {
+					if errors.Is(err, os.ErrNotExist) {
+						b.notExistDirs[dirPath] = struct{}{}
+						log.Debugf("backup: dir %s does not exist", dirPath)
+						return nil
+					}
+
+					log.Warnf("backup: dir %s error: %s", dirPath, err)
+					return err
+				}
+			}
+
 			return nil
 		}
+
 		log.Warnf("backup: %s error: %s", fullPath, err)
 		return err
 	}
+
 	r, err := os.Open(fullPath)
 	if err != nil {
 		log.Warnf("backup: %s open error: %s", fullPath, err)
 		return err
 	}
+	defer r.Close()
 	log.Tracef("backup: %s mode=%s bytes=%d", fullPath, p.Mode(), p.Size())
 	return b.writer.Add(fullPath, p.Mode(), r)
 }
@@ -156,16 +195,16 @@ func (b *ConfigApply) mapCurrentFiles(confFile string, allowedDirectories map[st
 			return fmt.Errorf("config_apply: %s read error %s", xpc.File, err)
 		}
 		b.existing[xpc.File] = struct{}{}
-		CrossplaneConfigTraverse(&xpc,
-			func(parent *crossplane.Directive, directive *crossplane.Directive) bool {
+		err = CrossplaneConfigTraverse(&xpc,
+			func(parent *crossplane.Directive, directive *crossplane.Directive) (bool, error) {
 				switch directive.Directive {
 				case "root":
 					if err = b.walkRoot(directive.Args[0], seen, allowedDirectories); err != nil {
 						log.Warnf("config_apply: walk root error %s: %s", directive.Args[0], err)
-						return false
+						return false, err
 					}
 				}
-				return true
+				return true, nil
 			})
 		if err != nil {
 			return err
@@ -207,4 +246,8 @@ func (b *ConfigApply) GetExisting() map[string]struct{} {
 
 func (b *ConfigApply) GetNotExists() map[string]struct{} {
 	return b.notExists
+}
+
+func (b *ConfigApply) GetNotExistDirs() map[string]struct{} {
+	return b.notExistDirs
 }

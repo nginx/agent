@@ -105,6 +105,34 @@ func (CommandStatusResponse_CommandErrorCode) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_213c0bb044472049, []int{1, 1}
 }
 
+type NginxConfigStatus_Status int32
+
+const (
+	NginxConfigStatus_PENDING NginxConfigStatus_Status = 0
+	NginxConfigStatus_OK      NginxConfigStatus_Status = 1
+	NginxConfigStatus_ERROR   NginxConfigStatus_Status = 2
+)
+
+var NginxConfigStatus_Status_name = map[int32]string{
+	0: "PENDING",
+	1: "OK",
+	2: "ERROR",
+}
+
+var NginxConfigStatus_Status_value = map[string]int32{
+	"PENDING": 0,
+	"OK":      1,
+	"ERROR":   2,
+}
+
+func (x NginxConfigStatus_Status) String() string {
+	return proto.EnumName(NginxConfigStatus_Status_name, int32(x))
+}
+
+func (NginxConfigStatus_Status) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_213c0bb044472049, []int{4, 0}
+}
+
 type UploadStatus_TransferStatus int32
 
 const (
@@ -130,7 +158,7 @@ func (x UploadStatus_TransferStatus) String() string {
 }
 
 func (UploadStatus_TransferStatus) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_213c0bb044472049, []int{5, 0}
+	return fileDescriptor_213c0bb044472049, []int{9, 0}
 }
 
 // Command is the envelope sent between the management plane and the data plane, requesting some action or reporting a response
@@ -422,6 +450,8 @@ type DataplaneStatus struct {
 	Host                     *HostInfo                   `protobuf:"bytes,3,opt,name=host,proto3" json:"host"`
 	Healths                  []*NginxHealth              `protobuf:"bytes,5,rep,name=healths,proto3" json:"healths"`
 	DataplaneSoftwareDetails []*DataplaneSoftwareDetails `protobuf:"bytes,6,rep,name=dataplane_software_details,json=dataplaneSoftwareDetails,proto3" json:"dataplane_software_details"`
+	DataplaneSoftwareHealths []*DataplaneSoftwareHealth  `protobuf:"bytes,7,rep,name=dataplane_software_healths,json=dataplaneSoftwareHealths,proto3" json:"dataplane_software_healths"`
+	AgentActivityStatus      []*AgentActivityStatus      `protobuf:"bytes,8,rep,name=agent_activity_status,json=agentActivityStatus,proto3" json:"agent_activity_status"`
 	XXX_NoUnkeyedLiteral     struct{}                    `json:"-"`
 	XXX_unrecognized         []byte                      `json:"-"`
 	XXX_sizecache            int32                       `json:"-"`
@@ -495,6 +525,301 @@ func (m *DataplaneStatus) GetDataplaneSoftwareDetails() []*DataplaneSoftwareDeta
 	return nil
 }
 
+func (m *DataplaneStatus) GetDataplaneSoftwareHealths() []*DataplaneSoftwareHealth {
+	if m != nil {
+		return m.DataplaneSoftwareHealths
+	}
+	return nil
+}
+
+func (m *DataplaneStatus) GetAgentActivityStatus() []*AgentActivityStatus {
+	if m != nil {
+		return m.AgentActivityStatus
+	}
+	return nil
+}
+
+type AgentActivityStatus struct {
+	// Types that are valid to be assigned to Status:
+	//	*AgentActivityStatus_NginxConfigStatus
+	Status               isAgentActivityStatus_Status `protobuf_oneof:"Status"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *AgentActivityStatus) Reset()         { *m = AgentActivityStatus{} }
+func (m *AgentActivityStatus) String() string { return proto.CompactTextString(m) }
+func (*AgentActivityStatus) ProtoMessage()    {}
+func (*AgentActivityStatus) Descriptor() ([]byte, []int) {
+	return fileDescriptor_213c0bb044472049, []int{3}
+}
+func (m *AgentActivityStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AgentActivityStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AgentActivityStatus.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AgentActivityStatus) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AgentActivityStatus.Merge(m, src)
+}
+func (m *AgentActivityStatus) XXX_Size() int {
+	return m.Size()
+}
+func (m *AgentActivityStatus) XXX_DiscardUnknown() {
+	xxx_messageInfo_AgentActivityStatus.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AgentActivityStatus proto.InternalMessageInfo
+
+type isAgentActivityStatus_Status interface {
+	isAgentActivityStatus_Status()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type AgentActivityStatus_NginxConfigStatus struct {
+	NginxConfigStatus *NginxConfigStatus `protobuf:"bytes,1,opt,name=nginx_config_status,json=nginxConfigStatus,proto3,oneof" json:"nginx_config_status"`
+}
+
+func (*AgentActivityStatus_NginxConfigStatus) isAgentActivityStatus_Status() {}
+
+func (m *AgentActivityStatus) GetStatus() isAgentActivityStatus_Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (m *AgentActivityStatus) GetNginxConfigStatus() *NginxConfigStatus {
+	if x, ok := m.GetStatus().(*AgentActivityStatus_NginxConfigStatus); ok {
+		return x.NginxConfigStatus
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*AgentActivityStatus) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*AgentActivityStatus_NginxConfigStatus)(nil),
+	}
+}
+
+type NginxConfigStatus struct {
+	CorrelationId        string                   `protobuf:"bytes,1,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id"`
+	Status               NginxConfigStatus_Status `protobuf:"varint,2,opt,name=status,proto3,enum=f5.nginx.agent.sdk.NginxConfigStatus_Status" json:"status"`
+	Message              string                   `protobuf:"bytes,3,opt,name=message,proto3" json:"message"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
+}
+
+func (m *NginxConfigStatus) Reset()         { *m = NginxConfigStatus{} }
+func (m *NginxConfigStatus) String() string { return proto.CompactTextString(m) }
+func (*NginxConfigStatus) ProtoMessage()    {}
+func (*NginxConfigStatus) Descriptor() ([]byte, []int) {
+	return fileDescriptor_213c0bb044472049, []int{4}
+}
+func (m *NginxConfigStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NginxConfigStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NginxConfigStatus.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NginxConfigStatus) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NginxConfigStatus.Merge(m, src)
+}
+func (m *NginxConfigStatus) XXX_Size() int {
+	return m.Size()
+}
+func (m *NginxConfigStatus) XXX_DiscardUnknown() {
+	xxx_messageInfo_NginxConfigStatus.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NginxConfigStatus proto.InternalMessageInfo
+
+func (m *NginxConfigStatus) GetCorrelationId() string {
+	if m != nil {
+		return m.CorrelationId
+	}
+	return ""
+}
+
+func (m *NginxConfigStatus) GetStatus() NginxConfigStatus_Status {
+	if m != nil {
+		return m.Status
+	}
+	return NginxConfigStatus_PENDING
+}
+
+func (m *NginxConfigStatus) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
+type DataplaneSoftwareHealth struct {
+	// Types that are valid to be assigned to Health:
+	//	*DataplaneSoftwareHealth_NginxHealth
+	//	*DataplaneSoftwareHealth_AppProtectWafHealth
+	Health               isDataplaneSoftwareHealth_Health `protobuf_oneof:"health"`
+	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
+	XXX_unrecognized     []byte                           `json:"-"`
+	XXX_sizecache        int32                            `json:"-"`
+}
+
+func (m *DataplaneSoftwareHealth) Reset()         { *m = DataplaneSoftwareHealth{} }
+func (m *DataplaneSoftwareHealth) String() string { return proto.CompactTextString(m) }
+func (*DataplaneSoftwareHealth) ProtoMessage()    {}
+func (*DataplaneSoftwareHealth) Descriptor() ([]byte, []int) {
+	return fileDescriptor_213c0bb044472049, []int{5}
+}
+func (m *DataplaneSoftwareHealth) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DataplaneSoftwareHealth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DataplaneSoftwareHealth.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DataplaneSoftwareHealth) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DataplaneSoftwareHealth.Merge(m, src)
+}
+func (m *DataplaneSoftwareHealth) XXX_Size() int {
+	return m.Size()
+}
+func (m *DataplaneSoftwareHealth) XXX_DiscardUnknown() {
+	xxx_messageInfo_DataplaneSoftwareHealth.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DataplaneSoftwareHealth proto.InternalMessageInfo
+
+type isDataplaneSoftwareHealth_Health interface {
+	isDataplaneSoftwareHealth_Health()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type DataplaneSoftwareHealth_NginxHealth struct {
+	NginxHealth *NginxHealth `protobuf:"bytes,1,opt,name=nginx_health,json=nginxHealth,proto3,oneof" json:"nginx_health"`
+}
+type DataplaneSoftwareHealth_AppProtectWafHealth struct {
+	AppProtectWafHealth *AppProtectWAFHealth `protobuf:"bytes,2,opt,name=app_protect_waf_health,json=appProtectWafHealth,proto3,oneof" json:"app_protect_waf_health"`
+}
+
+func (*DataplaneSoftwareHealth_NginxHealth) isDataplaneSoftwareHealth_Health()         {}
+func (*DataplaneSoftwareHealth_AppProtectWafHealth) isDataplaneSoftwareHealth_Health() {}
+
+func (m *DataplaneSoftwareHealth) GetHealth() isDataplaneSoftwareHealth_Health {
+	if m != nil {
+		return m.Health
+	}
+	return nil
+}
+
+func (m *DataplaneSoftwareHealth) GetNginxHealth() *NginxHealth {
+	if x, ok := m.GetHealth().(*DataplaneSoftwareHealth_NginxHealth); ok {
+		return x.NginxHealth
+	}
+	return nil
+}
+
+func (m *DataplaneSoftwareHealth) GetAppProtectWafHealth() *AppProtectWAFHealth {
+	if x, ok := m.GetHealth().(*DataplaneSoftwareHealth_AppProtectWafHealth); ok {
+		return x.AppProtectWafHealth
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*DataplaneSoftwareHealth) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*DataplaneSoftwareHealth_NginxHealth)(nil),
+		(*DataplaneSoftwareHealth_AppProtectWafHealth)(nil),
+	}
+}
+
+type DataplaneUpdate struct {
+	Host                     *HostInfo                   `protobuf:"bytes,1,opt,name=host,proto3" json:"host"`
+	DataplaneSoftwareDetails []*DataplaneSoftwareDetails `protobuf:"bytes,2,rep,name=dataplane_software_details,json=dataplaneSoftwareDetails,proto3" json:"dataplane_software_details"`
+	XXX_NoUnkeyedLiteral     struct{}                    `json:"-"`
+	XXX_unrecognized         []byte                      `json:"-"`
+	XXX_sizecache            int32                       `json:"-"`
+}
+
+func (m *DataplaneUpdate) Reset()         { *m = DataplaneUpdate{} }
+func (m *DataplaneUpdate) String() string { return proto.CompactTextString(m) }
+func (*DataplaneUpdate) ProtoMessage()    {}
+func (*DataplaneUpdate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_213c0bb044472049, []int{6}
+}
+func (m *DataplaneUpdate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DataplaneUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DataplaneUpdate.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DataplaneUpdate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DataplaneUpdate.Merge(m, src)
+}
+func (m *DataplaneUpdate) XXX_Size() int {
+	return m.Size()
+}
+func (m *DataplaneUpdate) XXX_DiscardUnknown() {
+	xxx_messageInfo_DataplaneUpdate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DataplaneUpdate proto.InternalMessageInfo
+
+func (m *DataplaneUpdate) GetHost() *HostInfo {
+	if m != nil {
+		return m.Host
+	}
+	return nil
+}
+
+func (m *DataplaneUpdate) GetDataplaneSoftwareDetails() []*DataplaneSoftwareDetails {
+	if m != nil {
+		return m.DataplaneSoftwareDetails
+	}
+	return nil
+}
+
 type DownloadRequest struct {
 	Meta                 *Metadata `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
@@ -506,7 +831,7 @@ func (m *DownloadRequest) Reset()         { *m = DownloadRequest{} }
 func (m *DownloadRequest) String() string { return proto.CompactTextString(m) }
 func (*DownloadRequest) ProtoMessage()    {}
 func (*DownloadRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_213c0bb044472049, []int{3}
+	return fileDescriptor_213c0bb044472049, []int{7}
 }
 func (m *DownloadRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -555,7 +880,7 @@ func (m *NginxConfigResponse) Reset()         { *m = NginxConfigResponse{} }
 func (m *NginxConfigResponse) String() string { return proto.CompactTextString(m) }
 func (*NginxConfigResponse) ProtoMessage()    {}
 func (*NginxConfigResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_213c0bb044472049, []int{4}
+	return fileDescriptor_213c0bb044472049, []int{8}
 }
 func (m *NginxConfigResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -618,7 +943,7 @@ func (m *UploadStatus) Reset()         { *m = UploadStatus{} }
 func (m *UploadStatus) String() string { return proto.CompactTextString(m) }
 func (*UploadStatus) ProtoMessage()    {}
 func (*UploadStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_213c0bb044472049, []int{5}
+	return fileDescriptor_213c0bb044472049, []int{9}
 }
 func (m *UploadStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -682,7 +1007,7 @@ func (m *DataChunk) Reset()         { *m = DataChunk{} }
 func (m *DataChunk) String() string { return proto.CompactTextString(m) }
 func (*DataChunk) ProtoMessage()    {}
 func (*DataChunk) Descriptor() ([]byte, []int) {
-	return fileDescriptor_213c0bb044472049, []int{6}
+	return fileDescriptor_213c0bb044472049, []int{10}
 }
 func (m *DataChunk) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -771,7 +1096,7 @@ func (m *ChunkedResourceHeader) Reset()         { *m = ChunkedResourceHeader{} }
 func (m *ChunkedResourceHeader) String() string { return proto.CompactTextString(m) }
 func (*ChunkedResourceHeader) ProtoMessage()    {}
 func (*ChunkedResourceHeader) Descriptor() ([]byte, []int) {
-	return fileDescriptor_213c0bb044472049, []int{7}
+	return fileDescriptor_213c0bb044472049, []int{11}
 }
 func (m *ChunkedResourceHeader) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -841,7 +1166,7 @@ func (m *ChunkedResourceChunk) Reset()         { *m = ChunkedResourceChunk{} }
 func (m *ChunkedResourceChunk) String() string { return proto.CompactTextString(m) }
 func (*ChunkedResourceChunk) ProtoMessage()    {}
 func (*ChunkedResourceChunk) Descriptor() ([]byte, []int) {
-	return fileDescriptor_213c0bb044472049, []int{8}
+	return fileDescriptor_213c0bb044472049, []int{12}
 }
 func (m *ChunkedResourceChunk) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -895,10 +1220,15 @@ func init() {
 	proto.RegisterEnum("f5.nginx.agent.sdk.Command_CommandType", Command_CommandType_name, Command_CommandType_value)
 	proto.RegisterEnum("f5.nginx.agent.sdk.CommandStatusResponse_CommandStatus", CommandStatusResponse_CommandStatus_name, CommandStatusResponse_CommandStatus_value)
 	proto.RegisterEnum("f5.nginx.agent.sdk.CommandStatusResponse_CommandErrorCode", CommandStatusResponse_CommandErrorCode_name, CommandStatusResponse_CommandErrorCode_value)
+	proto.RegisterEnum("f5.nginx.agent.sdk.NginxConfigStatus_Status", NginxConfigStatus_Status_name, NginxConfigStatus_Status_value)
 	proto.RegisterEnum("f5.nginx.agent.sdk.UploadStatus_TransferStatus", UploadStatus_TransferStatus_name, UploadStatus_TransferStatus_value)
 	proto.RegisterType((*Command)(nil), "f5.nginx.agent.sdk.Command")
 	proto.RegisterType((*CommandStatusResponse)(nil), "f5.nginx.agent.sdk.CommandStatusResponse")
 	proto.RegisterType((*DataplaneStatus)(nil), "f5.nginx.agent.sdk.DataplaneStatus")
+	proto.RegisterType((*AgentActivityStatus)(nil), "f5.nginx.agent.sdk.AgentActivityStatus")
+	proto.RegisterType((*NginxConfigStatus)(nil), "f5.nginx.agent.sdk.NginxConfigStatus")
+	proto.RegisterType((*DataplaneSoftwareHealth)(nil), "f5.nginx.agent.sdk.DataplaneSoftwareHealth")
+	proto.RegisterType((*DataplaneUpdate)(nil), "f5.nginx.agent.sdk.DataplaneUpdate")
 	proto.RegisterType((*DownloadRequest)(nil), "f5.nginx.agent.sdk.DownloadRequest")
 	proto.RegisterType((*NginxConfigResponse)(nil), "f5.nginx.agent.sdk.NginxConfigResponse")
 	proto.RegisterType((*UploadStatus)(nil), "f5.nginx.agent.sdk.UploadStatus")
@@ -910,85 +1240,101 @@ func init() {
 func init() { proto.RegisterFile("command.proto", fileDescriptor_213c0bb044472049) }
 
 var fileDescriptor_213c0bb044472049 = []byte{
-	// 1233 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x57, 0xcb, 0x6e, 0xdb, 0x46,
-	0x17, 0x26, 0x65, 0x8b, 0xb2, 0x8e, 0xe4, 0x58, 0x98, 0x38, 0x3f, 0x18, 0x23, 0x30, 0x0d, 0xfe,
-	0x4d, 0xed, 0x14, 0xad, 0x84, 0x3a, 0x28, 0x02, 0x24, 0x2b, 0x53, 0x52, 0x4a, 0x23, 0xb6, 0x54,
-	0x8c, 0xe3, 0x04, 0x48, 0x51, 0x08, 0x0c, 0x39, 0xba, 0xc0, 0x16, 0xa9, 0x72, 0xa8, 0x24, 0x0e,
-	0xba, 0x2f, 0x50, 0x74, 0x57, 0x14, 0x45, 0x9f, 0xa2, 0xaf, 0xd1, 0x65, 0x9e, 0x80, 0x28, 0xbc,
-	0xe4, 0x03, 0x74, 0x5d, 0xcc, 0x85, 0xb2, 0x64, 0x53, 0x72, 0x03, 0x77, 0xa3, 0x39, 0x1c, 0x7e,
-	0xdf, 0x77, 0x2e, 0x33, 0x73, 0x86, 0x82, 0x55, 0x37, 0x18, 0x0e, 0x1d, 0xdf, 0xab, 0x8e, 0xc2,
-	0x20, 0x0a, 0x10, 0xea, 0x7e, 0x55, 0xf5, 0x7b, 0x03, 0xff, 0x5d, 0xd5, 0xe9, 0x11, 0x3f, 0xaa,
-	0x52, 0xef, 0x64, 0x03, 0x7a, 0x41, 0x2f, 0x10, 0xef, 0x37, 0xca, 0x0c, 0x1e, 0xf8, 0xf2, 0xa9,
-	0x24, 0x40, 0xe2, 0x01, 0xfa, 0x01, 0x4d, 0xed, 0x92, 0xd0, 0x98, 0x70, 0xfc, 0xee, 0xa0, 0x27,
-	0x9f, 0x10, 0x79, 0x43, 0xfc, 0x88, 0xd6, 0xf8, 0x20, 0xe7, 0xee, 0x7a, 0xa3, 0x0e, 0x0d, 0xba,
-	0xd1, 0x5b, 0x27, 0x24, 0x1d, 0x8f, 0x44, 0xce, 0xe0, 0x94, 0x8a, 0x57, 0xe6, 0x2f, 0x00, 0x85,
-	0xba, 0x08, 0x11, 0x3d, 0x86, 0xe5, 0x21, 0x89, 0x1c, 0x5d, 0xdd, 0x52, 0x77, 0x4a, 0xbb, 0xf7,
-	0xaa, 0x57, 0x63, 0xad, 0x1e, 0x92, 0xc8, 0xf1, 0x9c, 0xc8, 0xb1, 0x56, 0x92, 0xd8, 0xe0, 0x68,
-	0xcc, 0x7f, 0x51, 0x13, 0x96, 0xa3, 0xb3, 0x11, 0xd1, 0x73, 0x5b, 0xea, 0xce, 0xad, 0xdd, 0xed,
-	0x2c, 0xae, 0x74, 0x93, 0x8e, 0xcf, 0xcf, 0x46, 0x44, 0xc8, 0x30, 0x22, 0xe6, 0xbf, 0xe8, 0x15,
-	0x80, 0x3b, 0xf4, 0x3a, 0x34, 0x72, 0xa2, 0x31, 0xd5, 0x97, 0x78, 0x20, 0x0f, 0x16, 0x88, 0x1d,
-	0x71, 0x20, 0x26, 0x74, 0x14, 0xf8, 0x94, 0x58, 0xb7, 0x92, 0xd8, 0x98, 0x12, 0xb0, 0x15, 0x5c,
-	0x74, 0x87, 0x12, 0x84, 0x5e, 0x40, 0x99, 0xab, 0x74, 0x44, 0xbd, 0xf4, 0x65, 0xae, 0x6e, 0x64,
-	0xa9, 0xb7, 0xd8, 0x73, 0x9d, 0xc3, 0xac, 0x4a, 0x12, 0x1b, 0x33, 0x44, 0x5b, 0xc1, 0xa2, 0xfe,
-	0x02, 0x80, 0xde, 0xc1, 0x9d, 0xe9, 0xd7, 0x9d, 0x50, 0x46, 0xa3, 0xe7, 0xb9, 0x83, 0xed, 0x6b,
-	0x1c, 0x4c, 0x82, 0xbf, 0x9b, 0xc4, 0x46, 0xb6, 0x92, 0xad, 0xe0, 0xdb, 0xfe, 0x55, 0x06, 0xf3,
-	0xcc, 0x25, 0x19, 0xde, 0x27, 0x6e, 0xd4, 0x09, 0xc9, 0xf7, 0x63, 0x42, 0x23, 0x5d, 0x9b, 0xef,
-	0x79, 0x8f, 0x59, 0x75, 0x81, 0xc7, 0x02, 0x2e, 0x3c, 0x67, 0x2a, 0x31, 0xcf, 0xce, 0x55, 0x06,
-	0xfa, 0x01, 0xfe, 0x77, 0x19, 0x2f, 0x93, 0x2e, 0x70, 0xd7, 0x3b, 0xd7, 0xbb, 0x96, 0x59, 0x6f,
-	0x24, 0xb1, 0x31, 0x47, 0xcb, 0x56, 0xf0, 0xba, 0x93, 0xc1, 0x41, 0x11, 0xac, 0x4f, 0x18, 0xa2,
-	0x4e, 0x22, 0xed, 0x15, 0xee, 0xfb, 0xd3, 0x45, 0xbe, 0x79, 0xf9, 0x44, 0xd6, 0x7a, 0x12, 0x1b,
-	0x99, 0x3a, 0xb6, 0x82, 0x91, 0x73, 0x05, 0xcf, 0xf6, 0xcf, 0x34, 0x5a, 0x2f, 0xce, 0xdf, 0x3f,
-	0x53, 0xde, 0xc4, 0xfe, 0x99, 0x26, 0xb2, 0xfd, 0x33, 0x25, 0x8f, 0xba, 0x50, 0x61, 0x47, 0x6a,
-	0x74, 0xea, 0xf8, 0x24, 0xdd, 0xf9, 0x25, 0xae, 0xfd, 0xff, 0x2c, 0xed, 0x46, 0x8a, 0x15, 0xdb,
-	0xda, 0x5a, 0x4f, 0x62, 0xe3, 0x8a, 0x80, 0xad, 0xe0, 0x35, 0x6f, 0x16, 0x88, 0xbe, 0x83, 0x32,
-	0x6f, 0x0a, 0x9d, 0x90, 0x8c, 0x82, 0x30, 0xd2, 0xcb, 0xf3, 0xab, 0x25, 0x7a, 0x48, 0xb5, 0xc9,
-	0x06, 0xcc, 0xd1, 0x22, 0x8d, 0x69, 0x3e, 0x4b, 0x83, 0x5c, 0x00, 0xd0, 0xcf, 0x2a, 0x6c, 0x4c,
-	0x85, 0x71, 0xa9, 0xdd, 0xe8, 0xab, 0xdc, 0xdb, 0xe7, 0x8b, 0x33, 0x92, 0xa4, 0x86, 0xe0, 0x58,
-	0x9b, 0x49, 0x6c, 0x2c, 0xd0, 0xb4, 0x15, 0xac, 0x7b, 0x73, 0xb8, 0xe6, 0x43, 0x28, 0x4d, 0x35,
-	0x1a, 0x04, 0xa0, 0xb5, 0xda, 0xf8, 0x70, 0xef, 0xa0, 0xa2, 0xa0, 0x32, 0xac, 0x34, 0xda, 0x2f,
-	0x5b, 0x07, 0xed, 0xbd, 0x46, 0x45, 0x65, 0x6f, 0x8e, 0xbf, 0xe1, 0x76, 0xce, 0xd2, 0x60, 0x99,
-	0x09, 0x9a, 0xbf, 0x2e, 0xc1, 0x9d, 0xcc, 0x0e, 0x83, 0xbe, 0x05, 0x4d, 0x2e, 0x91, 0xca, 0x3b,
-	0xdd, 0xa3, 0x7f, 0xdd, 0x9c, 0x66, 0x67, 0x2d, 0x48, 0x62, 0x43, 0x4a, 0x61, 0x39, 0xa2, 0x01,
-	0x00, 0x09, 0xc3, 0x20, 0xec, 0xb8, 0x81, 0x97, 0xb6, 0xd2, 0xc7, 0x1f, 0xed, 0xa0, 0xc9, 0x24,
-	0xea, 0x81, 0x27, 0xdb, 0xe1, 0x85, 0x22, 0x2e, 0x92, 0xf4, 0x15, 0xba, 0x0f, 0x85, 0x21, 0xa1,
-	0xd4, 0xe9, 0x11, 0xde, 0x65, 0x8b, 0x56, 0x29, 0x89, 0x8d, 0x74, 0x0a, 0xa7, 0x06, 0x32, 0x20,
-	0xcf, 0x39, 0xbc, 0x59, 0x16, 0xad, 0x62, 0x12, 0x1b, 0x62, 0x02, 0x8b, 0xc1, 0x7c, 0x02, 0xab,
-	0x33, 0xc1, 0xa0, 0x35, 0x28, 0xd5, 0x0f, 0x1b, 0x9d, 0xe3, 0xd6, 0xb3, 0x56, 0xfb, 0x65, 0xab,
-	0xa2, 0xb0, 0xfa, 0xb2, 0x89, 0xf6, 0xb3, 0x8a, 0x8a, 0x56, 0xa1, 0xc8, 0xec, 0x26, 0xc6, 0x6d,
-	0x5c, 0xc9, 0x99, 0x35, 0xa8, 0x5c, 0x8e, 0x99, 0xc1, 0x9b, 0x18, 0x33, 0xb8, 0xc2, 0xb4, 0x98,
-	0x9d, 0x6a, 0xa9, 0xe6, 0x6f, 0x4b, 0xb0, 0x76, 0x69, 0xff, 0xa3, 0xcf, 0xa0, 0x48, 0xcf, 0x68,
-	0x44, 0x86, 0x9d, 0x81, 0xc7, 0x17, 0xa5, 0x68, 0xad, 0x26, 0xb1, 0x71, 0x31, 0x89, 0x57, 0x84,
-	0xb9, 0xef, 0xa1, 0xaf, 0xa1, 0x90, 0xee, 0xc7, 0xdc, 0xd6, 0xd2, 0x4e, 0x69, 0x77, 0x6b, 0x6e,
-	0x73, 0x4e, 0xf7, 0x20, 0xaf, 0x8b, 0x24, 0xe1, 0xd4, 0x60, 0x57, 0x25, 0xbb, 0x8e, 0xe5, 0x0d,
-	0x95, 0x79, 0x55, 0xda, 0x01, 0x8d, 0xf6, 0xfd, 0x6e, 0x20, 0xee, 0x38, 0x86, 0xc6, 0xfc, 0x17,
-	0x3d, 0x85, 0x42, 0x9f, 0x38, 0xa7, 0x51, 0x9f, 0xea, 0x79, 0x1e, 0xc4, 0xfc, 0x2b, 0xc8, 0xe6,
-	0x38, 0x11, 0x83, 0xe4, 0xe0, 0xd4, 0x40, 0x3f, 0x2d, 0x3e, 0x70, 0x1a, 0xd7, 0xfe, 0x4f, 0x0f,
-	0xdc, 0x82, 0xe3, 0x76, 0x08, 0x6b, 0x8d, 0xe0, 0xad, 0x7f, 0x1a, 0x38, 0x5e, 0xda, 0x2f, 0x6f,
-	0xf0, 0x39, 0x61, 0xfe, 0x98, 0x83, 0xdb, 0x19, 0x77, 0x24, 0x3a, 0x9c, 0x39, 0x7e, 0x1f, 0xf5,
-	0x6d, 0x90, 0x75, 0xe0, 0xf6, 0x41, 0x73, 0xdc, 0x68, 0x10, 0xf8, 0xf2, 0xb0, 0xdd, 0xbf, 0xe6,
-	0xae, 0xde, 0xe3, 0x60, 0x21, 0x25, 0x88, 0x58, 0x8e, 0xe8, 0x05, 0x94, 0xe4, 0x2d, 0xc2, 0x12,
-	0x92, 0x1b, 0xe3, 0x93, 0xec, 0xf0, 0x18, 0xac, 0x41, 0xa8, 0x1b, 0x0e, 0x46, 0x51, 0x10, 0x5a,
-	0x6b, 0x49, 0x6c, 0x4c, 0x93, 0x31, 0x88, 0x07, 0xb6, 0x4c, 0xe6, 0xdf, 0x2a, 0x94, 0x8f, 0x47,
-	0xac, 0xae, 0x72, 0xbf, 0xdf, 0xe4, 0x2b, 0xed, 0x68, 0x52, 0x3e, 0x91, 0x6f, 0x2d, 0x8b, 0x3d,
-	0xed, 0xad, 0xfa, 0x3c, 0x74, 0x7c, 0xda, 0x25, 0xe1, 0x82, 0xae, 0x65, 0x82, 0x16, 0x12, 0x87,
-	0x06, 0xbe, 0xec, 0x24, 0x1c, 0x23, 0x66, 0xb0, 0x1c, 0xcd, 0x2f, 0xe1, 0xd6, 0xac, 0x12, 0x2a,
-	0x41, 0xe1, 0xa2, 0x47, 0x68, 0x90, 0xe3, 0xfd, 0x01, 0x40, 0x7b, 0xba, 0xb7, 0x7f, 0xd0, 0x6c,
-	0x54, 0x72, 0xe6, 0x1f, 0x2a, 0x14, 0x59, 0x05, 0xea, 0xfd, 0xb1, 0x7f, 0x82, 0xda, 0xa0, 0xf5,
-	0x89, 0xe3, 0x91, 0x70, 0xe1, 0xc2, 0x33, 0x28, 0xf1, 0x30, 0xa1, 0xc1, 0x38, 0x74, 0x89, 0xcd,
-	0x09, 0x22, 0x1e, 0x41, 0xb6, 0x15, 0x2c, 0x2d, 0x64, 0x8b, 0x56, 0xcf, 0x0b, 0x31, 0xe7, 0x7b,
-	0xe5, 0x92, 0x1c, 0x7f, 0x14, 0x25, 0x65, 0x4c, 0x5b, 0xc1, 0x7c, 0xb4, 0x0a, 0x90, 0x77, 0xd9,
-	0x2b, 0xf3, 0x83, 0x0a, 0x77, 0x32, 0x43, 0xb8, 0xd1, 0x9a, 0x99, 0xa0, 0x71, 0x79, 0xb1, 0x66,
-	0x79, 0x91, 0x8e, 0x98, 0xc1, 0x72, 0x44, 0x3b, 0xb0, 0xe2, 0xf6, 0x89, 0x7b, 0x42, 0xc7, 0x43,
-	0xb9, 0x08, 0xe5, 0x24, 0x36, 0x26, 0x73, 0x78, 0x62, 0xa1, 0x2f, 0x00, 0x38, 0xa7, 0x43, 0x07,
-	0xef, 0x09, 0xef, 0xea, 0x79, 0xf9, 0xd5, 0x3c, 0x99, 0xc5, 0x45, 0x6e, 0x1f, 0x0d, 0xde, 0x13,
-	0xf3, 0x77, 0x15, 0xd6, 0xb3, 0xca, 0x70, 0xa3, 0x8c, 0xb6, 0x59, 0xb4, 0xcc, 0xdb, 0xc0, 0x93,
-	0x39, 0xc9, 0x68, 0xc5, 0x1c, 0x2e, 0x70, 0x6b, 0xdf, 0x43, 0xf7, 0xe4, 0x1a, 0xb1, 0x94, 0xca,
-	0x17, 0x95, 0x97, 0x75, 0x7f, 0xf4, 0xe7, 0xf9, 0xa6, 0xfa, 0xe1, 0x7c, 0x53, 0xfd, 0xeb, 0x7c,
-	0x53, 0x7d, 0xf5, 0xa0, 0x37, 0x88, 0xfa, 0xe3, 0xd7, 0x55, 0x37, 0x18, 0xd6, 0x78, 0x24, 0x35,
-	0x1e, 0x49, 0x8d, 0x7a, 0x27, 0xb5, 0x37, 0xbb, 0x35, 0xfe, 0x6f, 0xe7, 0x09, 0xff, 0x7d, 0xad,
-	0xf1, 0xe1, 0xe1, 0x3f, 0x01, 0x00, 0x00, 0xff, 0xff, 0xb6, 0xa7, 0x4a, 0x04, 0x9c, 0x0d, 0x00,
-	0x00,
+	// 1500 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x58, 0x4b, 0x6f, 0xdb, 0xc6,
+	0x16, 0x26, 0x15, 0xeb, 0x75, 0x24, 0xdb, 0xca, 0xd8, 0x49, 0x14, 0x23, 0x30, 0x0d, 0xde, 0x9b,
+	0x1b, 0xe5, 0xde, 0x5c, 0x09, 0x75, 0x50, 0x04, 0x4d, 0x56, 0x92, 0xa5, 0x84, 0x42, 0x62, 0xc9,
+	0x98, 0xc4, 0x09, 0x90, 0xa2, 0x10, 0x18, 0x71, 0x24, 0x0b, 0xb6, 0x48, 0x96, 0xa4, 0x9d, 0x38,
+	0xe8, 0xbe, 0x68, 0xd1, 0x4d, 0x51, 0x74, 0x51, 0xf4, 0x47, 0xf4, 0x6f, 0x74, 0x99, 0x75, 0x17,
+	0x44, 0x91, 0x25, 0x77, 0xdd, 0xb4, 0xdb, 0x62, 0x1e, 0x94, 0x28, 0x89, 0x92, 0x9d, 0xba, 0xe8,
+	0x46, 0x33, 0x1c, 0x7e, 0xe7, 0x3b, 0xe7, 0xcc, 0xe3, 0x9b, 0x43, 0xc1, 0x72, 0xd7, 0x1a, 0x0e,
+	0x75, 0xd3, 0x28, 0xdb, 0x8e, 0xe5, 0x59, 0x08, 0xf5, 0x3e, 0x2e, 0x9b, 0xfd, 0x81, 0xf9, 0xa6,
+	0xac, 0xf7, 0x89, 0xe9, 0x95, 0x5d, 0xe3, 0x70, 0x03, 0xfa, 0x56, 0xdf, 0xe2, 0xef, 0x37, 0xf2,
+	0x14, 0x6e, 0x99, 0xe2, 0x29, 0xc7, 0x41, 0xfc, 0x01, 0x0e, 0x2c, 0x37, 0xec, 0xe7, 0x38, 0xc7,
+	0xc8, 0xc6, 0xec, 0x0d, 0xfa, 0xe2, 0x09, 0x91, 0x13, 0x62, 0x7a, 0x6e, 0x85, 0x35, 0x62, 0xec,
+	0xba, 0x61, 0x77, 0x5c, 0xab, 0xe7, 0xbd, 0xd6, 0x1d, 0xd2, 0x31, 0x88, 0xa7, 0x0f, 0x8e, 0x5c,
+	0xf1, 0x2a, 0x6b, 0xea, 0x36, 0xef, 0xaa, 0xdf, 0x01, 0xa4, 0x77, 0x78, 0xb4, 0xe8, 0x3e, 0x2c,
+	0x0d, 0x89, 0xa7, 0x17, 0xe5, 0x2d, 0xb9, 0x94, 0xdb, 0xbe, 0x51, 0x9e, 0x0d, 0xbb, 0xbc, 0x4b,
+	0x3c, 0xdd, 0xd0, 0x3d, 0xbd, 0x96, 0x09, 0x7c, 0x85, 0xa1, 0x31, 0xfb, 0x45, 0x0d, 0x58, 0xf2,
+	0x4e, 0x6d, 0x52, 0x4c, 0x6c, 0xc9, 0xa5, 0x95, 0xed, 0x5b, 0x71, 0xb6, 0xc2, 0x4d, 0xd8, 0x3e,
+	0x3b, 0xb5, 0x09, 0xa7, 0xa1, 0x86, 0x98, 0xfd, 0xa2, 0x97, 0x00, 0xdd, 0xa1, 0xd1, 0x71, 0x3d,
+	0xdd, 0x3b, 0x76, 0x8b, 0x97, 0x58, 0x20, 0xb7, 0x17, 0x90, 0x3d, 0x65, 0x40, 0x4c, 0x5c, 0xdb,
+	0x32, 0x5d, 0x52, 0x5b, 0x09, 0x7c, 0x25, 0x42, 0xa0, 0x49, 0x38, 0xdb, 0x1d, 0x0a, 0x10, 0x7a,
+	0x0e, 0x79, 0xc6, 0xd2, 0xe1, 0x53, 0x57, 0x5c, 0x62, 0xec, 0x4a, 0x1c, 0x7b, 0x8b, 0x3e, 0xef,
+	0x30, 0x58, 0xad, 0x10, 0xf8, 0xca, 0x84, 0xa1, 0x26, 0x61, 0xbe, 0x14, 0x1c, 0x80, 0xde, 0xc0,
+	0x95, 0xe8, 0xeb, 0x8e, 0x23, 0xa2, 0x29, 0x26, 0x99, 0x83, 0x5b, 0x67, 0x38, 0x18, 0x05, 0x7f,
+	0x3d, 0xf0, 0x95, 0x78, 0x26, 0x4d, 0xc2, 0x6b, 0xe6, 0xac, 0x05, 0xf5, 0xcc, 0x28, 0x29, 0xde,
+	0x24, 0x5d, 0xaf, 0xe3, 0x90, 0xcf, 0x8f, 0x89, 0xeb, 0x15, 0x53, 0xf3, 0x3d, 0x57, 0x69, 0x6f,
+	0x87, 0xe3, 0x31, 0x87, 0x73, 0xcf, 0xb1, 0x4c, 0xd4, 0xb3, 0x3e, 0x6b, 0x81, 0xbe, 0x80, 0xab,
+	0xd3, 0x78, 0x91, 0x74, 0x9a, 0xb9, 0x2e, 0x9d, 0xed, 0x5a, 0x64, 0xbd, 0x11, 0xf8, 0xca, 0x1c,
+	0x2e, 0x4d, 0xc2, 0xeb, 0x7a, 0x8c, 0x0d, 0xf2, 0x60, 0x7d, 0x64, 0xc1, 0xe7, 0x89, 0xa7, 0x9d,
+	0x61, 0xbe, 0xff, 0xb3, 0xc8, 0x37, 0x9b, 0x3e, 0x9e, 0x75, 0x31, 0xf0, 0x95, 0x58, 0x1e, 0x4d,
+	0xc2, 0x48, 0x9f, 0xc1, 0xd3, 0xfd, 0x13, 0x45, 0x17, 0xb3, 0xf3, 0xf7, 0x4f, 0xc4, 0x1b, 0xdf,
+	0x3f, 0x51, 0x43, 0xba, 0x7f, 0x22, 0xf4, 0xa8, 0x07, 0x05, 0x7a, 0xa4, 0xec, 0x23, 0xdd, 0x24,
+	0xe1, 0xce, 0xcf, 0x31, 0xee, 0x7f, 0xc5, 0x71, 0xd7, 0x43, 0x2c, 0xdf, 0xd6, 0xb5, 0xf5, 0xc0,
+	0x57, 0x66, 0x08, 0x34, 0x09, 0xaf, 0x1a, 0x93, 0x40, 0xf4, 0x19, 0xe4, 0x99, 0x3e, 0x74, 0x1c,
+	0x62, 0x5b, 0x8e, 0x57, 0xcc, 0xcf, 0x9f, 0x2d, 0x2e, 0x27, 0xe5, 0x06, 0x6d, 0x30, 0x43, 0xf3,
+	0x34, 0xa2, 0xf6, 0x34, 0x0d, 0x32, 0x06, 0xa0, 0x6f, 0x64, 0xd8, 0x88, 0x84, 0x31, 0xa5, 0x3c,
+	0xc5, 0x65, 0xe6, 0xed, 0xce, 0xe2, 0x8c, 0x84, 0x51, 0x9d, 0xdb, 0xd4, 0x36, 0x03, 0x5f, 0x59,
+	0xc0, 0xa9, 0x49, 0xb8, 0x68, 0xcc, 0xb1, 0x55, 0xef, 0x42, 0x2e, 0x22, 0x34, 0x08, 0x20, 0xd5,
+	0x6a, 0xe3, 0xdd, 0xea, 0x93, 0x82, 0x84, 0xf2, 0x90, 0xa9, 0xb7, 0x5f, 0xb4, 0x9e, 0xb4, 0xab,
+	0xf5, 0x82, 0x4c, 0xdf, 0xec, 0xef, 0xb1, 0x7e, 0xa2, 0x96, 0x82, 0x25, 0x4a, 0xa8, 0x7e, 0x7f,
+	0x09, 0xae, 0xc4, 0x2a, 0x0c, 0xfa, 0x14, 0x52, 0x62, 0x89, 0x64, 0xa6, 0x74, 0xf7, 0xce, 0x2d,
+	0x4e, 0x93, 0xa3, 0x35, 0x08, 0x7c, 0x45, 0x50, 0x61, 0xd1, 0xa2, 0x01, 0x00, 0x71, 0x1c, 0xcb,
+	0xe9, 0x74, 0x2d, 0x23, 0x94, 0xd2, 0xfb, 0x1f, 0xec, 0xa0, 0x41, 0x29, 0x76, 0x2c, 0x43, 0xc8,
+	0xe1, 0x98, 0x11, 0x67, 0x49, 0xf8, 0x0a, 0xdd, 0x84, 0xf4, 0x90, 0xb8, 0xae, 0xde, 0x27, 0x4c,
+	0x65, 0xb3, 0xb5, 0x5c, 0xe0, 0x2b, 0xe1, 0x10, 0x0e, 0x3b, 0x48, 0x81, 0x24, 0xb3, 0x61, 0x62,
+	0x99, 0xad, 0x65, 0x03, 0x5f, 0xe1, 0x03, 0x98, 0x37, 0xea, 0x03, 0x58, 0x9e, 0x08, 0x06, 0xad,
+	0x42, 0x6e, 0x67, 0xb7, 0xde, 0xd9, 0x6f, 0x3d, 0x6e, 0xb5, 0x5f, 0xb4, 0x0a, 0x12, 0x9d, 0x5f,
+	0x3a, 0xd0, 0x7e, 0x5c, 0x90, 0xd1, 0x32, 0x64, 0x69, 0xbf, 0x81, 0x71, 0x1b, 0x17, 0x12, 0x6a,
+	0x05, 0x0a, 0xd3, 0x31, 0x53, 0x78, 0x03, 0x63, 0x0a, 0x97, 0x28, 0x17, 0xed, 0x87, 0x5c, 0xb2,
+	0xfa, 0x63, 0x12, 0x56, 0xa7, 0xf6, 0x3f, 0xfa, 0x2f, 0x64, 0xdd, 0x53, 0xd7, 0x23, 0xc3, 0xce,
+	0xc0, 0x60, 0x8b, 0x92, 0xad, 0x2d, 0x07, 0xbe, 0x32, 0x1e, 0xc4, 0x19, 0xde, 0x6d, 0x1a, 0xe8,
+	0x11, 0xa4, 0xc3, 0xfd, 0x98, 0xd8, 0xba, 0x54, 0xca, 0x6d, 0x6f, 0xcd, 0x15, 0xe7, 0x70, 0x0f,
+	0xb2, 0x79, 0x11, 0x46, 0x38, 0xec, 0xd0, 0xab, 0x92, 0xde, 0xcc, 0xe2, 0x86, 0x8a, 0xbd, 0x2a,
+	0x35, 0xcb, 0xf5, 0x9a, 0x66, 0xcf, 0xe2, 0x77, 0x1c, 0x45, 0x63, 0xf6, 0x8b, 0x1e, 0x42, 0xfa,
+	0x80, 0xe8, 0x47, 0xde, 0x81, 0x5b, 0x4c, 0xb2, 0x20, 0xe6, 0x5f, 0x41, 0x1a, 0xc3, 0xf1, 0x18,
+	0x84, 0x0d, 0x0e, 0x3b, 0xe8, 0xeb, 0xc5, 0x07, 0x2e, 0xc5, 0xb8, 0xff, 0xd6, 0x03, 0x37, 0xff,
+	0xb8, 0xa1, 0xaf, 0xe2, 0x83, 0x09, 0x13, 0x4d, 0xb3, 0x60, 0xfe, 0x77, 0xae, 0x60, 0x44, 0xd2,
+	0xf3, 0x62, 0x09, 0xe7, 0x61, 0x36, 0x16, 0x4d, 0x4c, 0xcc, 0x49, 0x78, 0x2d, 0xea, 0x5d, 0x6f,
+	0x70, 0x32, 0xf0, 0x4e, 0x43, 0x55, 0xcd, 0xb0, 0x28, 0xe6, 0x5f, 0x8b, 0x55, 0x81, 0x17, 0x47,
+	0x34, 0x72, 0x2d, 0x4e, 0x31, 0x89, 0x4b, 0x71, 0x12, 0xaf, 0x7e, 0x2b, 0xc3, 0x5a, 0x0c, 0x0f,
+	0xb2, 0x61, 0x6d, 0xe2, 0x5a, 0x8f, 0x08, 0x48, 0x6e, 0xfb, 0xe6, 0x19, 0xe5, 0x81, 0x88, 0xe5,
+	0x5a, 0xe0, 0x2b, 0x71, 0x2c, 0x9a, 0x84, 0x2f, 0x9b, 0x33, 0xe8, 0x0c, 0xa4, 0x44, 0x4c, 0xbf,
+	0xc9, 0x70, 0x79, 0x86, 0x0d, 0x7d, 0x02, 0x2b, 0x5d, 0xcb, 0x71, 0xc8, 0x91, 0xee, 0x0d, 0x2c,
+	0x73, 0x7c, 0x70, 0x50, 0xe0, 0x2b, 0x53, 0x6f, 0xf0, 0x72, 0xe4, 0xb9, 0x69, 0xa0, 0xbd, 0x91,
+	0x00, 0x72, 0x7d, 0xba, 0x73, 0xae, 0xf8, 0xcb, 0x0b, 0x54, 0xef, 0x7c, 0x52, 0xa4, 0x96, 0xc2,
+	0x9c, 0x50, 0x0e, 0xd2, 0x7b, 0x8d, 0x56, 0xbd, 0xd9, 0x7a, 0x54, 0x90, 0x50, 0x0a, 0x12, 0x4c,
+	0x5a, 0xb2, 0x90, 0x0c, 0x65, 0xe5, 0x0f, 0x19, 0xae, 0xcd, 0xd9, 0x55, 0xe3, 0x22, 0x90, 0x6f,
+	0x23, 0xb1, 0x08, 0x67, 0x9e, 0xc0, 0x48, 0x11, 0xc8, 0x0d, 0x47, 0x45, 0xa0, 0xe0, 0x7d, 0x0b,
+	0x57, 0x75, 0xdb, 0xee, 0xd0, 0xa2, 0x9a, 0x96, 0x30, 0xaf, 0xf5, 0x5e, 0xe8, 0x21, 0xb1, 0xa0,
+	0x16, 0xb3, 0xed, 0x3d, 0x6e, 0xf0, 0xa2, 0xfa, 0x50, 0x78, 0xe2, 0xf5, 0x50, 0x2c, 0x15, 0x2b,
+	0xc6, 0xc6, 0x26, 0x7a, 0x4f, 0x98, 0x64, 0x20, 0xc5, 0x01, 0xea, 0x2f, 0x72, 0x44, 0x1f, 0xf7,
+	0x6d, 0x43, 0xf7, 0xc8, 0x48, 0xaa, 0xe4, 0xbf, 0x20, 0x55, 0x67, 0x48, 0x4c, 0xe2, 0x9f, 0x94,
+	0x18, 0x75, 0x17, 0x56, 0xeb, 0xd6, 0x6b, 0xf3, 0xc8, 0xd2, 0x8d, 0xb0, 0x24, 0xbb, 0xc0, 0x17,
+	0x8b, 0xfa, 0x65, 0x02, 0xd6, 0x62, 0xca, 0x70, 0xb4, 0x3b, 0x71, 0xc3, 0x7f, 0xd0, 0xe7, 0x47,
+	0xdc, 0xee, 0x6e, 0x42, 0x8a, 0x8a, 0x87, 0x65, 0x8a, 0xf3, 0x72, 0xd6, 0x79, 0xaf, 0x32, 0x30,
+	0xa7, 0xe2, 0x86, 0x58, 0xb4, 0xe8, 0x39, 0xe4, 0xc4, 0xd9, 0xa7, 0x09, 0x89, 0xbb, 0xe7, 0xdf,
+	0xf1, 0xe1, 0x51, 0x58, 0x9d, 0xb8, 0x5d, 0x67, 0x60, 0x7b, 0x96, 0x53, 0x5b, 0x0d, 0x7c, 0x25,
+	0x6a, 0x8c, 0x81, 0x3f, 0xd0, 0x65, 0x52, 0x7f, 0x97, 0x21, 0xbf, 0x6f, 0xd3, 0x79, 0x15, 0x07,
+	0xec, 0x22, 0x1f, 0x82, 0x4f, 0xa7, 0xf4, 0xa1, 0x12, 0x67, 0x1d, 0xf5, 0x56, 0x7e, 0xe6, 0xe8,
+	0xa6, 0xdb, 0x23, 0xce, 0x02, 0x89, 0x50, 0x21, 0xe5, 0x10, 0xdd, 0xb5, 0x4c, 0xa1, 0x10, 0x0c,
+	0xc3, 0x47, 0xb0, 0x68, 0xd5, 0x8f, 0x60, 0x65, 0x92, 0x89, 0xea, 0xc4, 0xb8, 0x0c, 0x09, 0x75,
+	0x02, 0x20, 0xf5, 0xb0, 0xda, 0x7c, 0xd2, 0xa8, 0x17, 0x12, 0xea, 0x4f, 0x32, 0x64, 0xe9, 0x0c,
+	0xec, 0x1c, 0x1c, 0x9b, 0x87, 0xa8, 0xcd, 0x8e, 0x91, 0x41, 0x9c, 0x85, 0x0b, 0x4f, 0xa1, 0xc4,
+	0xc0, 0xc4, 0xb5, 0x8e, 0x9d, 0x2e, 0x55, 0x15, 0x83, 0x38, 0x3c, 0x1e, 0x6e, 0xac, 0x49, 0x58,
+	0xf4, 0x90, 0xc6, 0xab, 0x49, 0xa1, 0x00, 0xa5, 0x73, 0xd0, 0xb1, 0x47, 0x3e, 0xa5, 0xd4, 0x52,
+	0x93, 0x30, 0x6b, 0x6b, 0x69, 0x48, 0x76, 0xe9, 0x2b, 0xf5, 0x9d, 0x0c, 0x57, 0x62, 0x43, 0xb8,
+	0xd0, 0x9a, 0xa9, 0x90, 0x62, 0xf4, 0x7c, 0xcd, 0x92, 0x3c, 0x1d, 0x3e, 0x82, 0x45, 0x8b, 0x4a,
+	0x90, 0xe9, 0x1e, 0x90, 0xee, 0xa1, 0x7b, 0x3c, 0x14, 0x8b, 0x90, 0x0f, 0x7c, 0x65, 0x34, 0x86,
+	0x47, 0x3d, 0xf4, 0x7f, 0x00, 0x66, 0xd3, 0x71, 0x07, 0x6f, 0x09, 0x2b, 0x1c, 0x93, 0xe2, 0xc3,
+	0x7c, 0x34, 0x8a, 0xb3, 0xac, 0xff, 0x74, 0xf0, 0x96, 0xa8, 0x3f, 0xc8, 0xb0, 0x1e, 0x37, 0x0d,
+	0x17, 0xca, 0xe8, 0x16, 0x8d, 0x96, 0x7a, 0x1b, 0x18, 0x22, 0x27, 0x11, 0x2d, 0x1f, 0xc3, 0x69,
+	0xd6, 0x6b, 0x1a, 0xe8, 0x86, 0x58, 0x23, 0x9a, 0x52, 0x7e, 0x3c, 0xf3, 0x62, 0xde, 0xef, 0xfd,
+	0xfc, 0x7e, 0x53, 0x7e, 0xf7, 0x7e, 0x53, 0xfe, 0xf5, 0xfd, 0xa6, 0xfc, 0xf2, 0x76, 0x7f, 0xe0,
+	0x1d, 0x1c, 0xbf, 0x2a, 0x77, 0xad, 0x61, 0x85, 0x45, 0x52, 0x61, 0x91, 0x54, 0x5c, 0xe3, 0xb0,
+	0x72, 0xb2, 0x5d, 0x61, 0x7f, 0xa8, 0x3c, 0x60, 0xbf, 0xaf, 0x52, 0xac, 0xb9, 0xfb, 0x67, 0x00,
+	0x00, 0x00, 0xff, 0xff, 0x8d, 0x5d, 0x34, 0x7d, 0x0a, 0x12, 0x00, 0x00,
 }
 
 func (m *Command) Marshal() (dAtA []byte, err error) {
@@ -1329,6 +1675,34 @@ func (m *DataplaneStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if len(m.AgentActivityStatus) > 0 {
+		for iNdEx := len(m.AgentActivityStatus) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.AgentActivityStatus[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintCommand(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x42
+		}
+	}
+	if len(m.DataplaneSoftwareHealths) > 0 {
+		for iNdEx := len(m.DataplaneSoftwareHealths) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.DataplaneSoftwareHealths[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintCommand(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x3a
+		}
+	}
 	if len(m.DataplaneSoftwareDetails) > 0 {
 		for iNdEx := len(m.DataplaneSoftwareDetails) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -1387,6 +1761,240 @@ func (m *DataplaneStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.SystemId)
 		copy(dAtA[i:], m.SystemId)
 		i = encodeVarintCommand(dAtA, i, uint64(len(m.SystemId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AgentActivityStatus) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AgentActivityStatus) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AgentActivityStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Status != nil {
+		{
+			size := m.Status.Size()
+			i -= size
+			if _, err := m.Status.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AgentActivityStatus_NginxConfigStatus) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AgentActivityStatus_NginxConfigStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.NginxConfigStatus != nil {
+		{
+			size, err := m.NginxConfigStatus.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCommand(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *NginxConfigStatus) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NginxConfigStatus) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NginxConfigStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Message) > 0 {
+		i -= len(m.Message)
+		copy(dAtA[i:], m.Message)
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.Message)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Status != 0 {
+		i = encodeVarintCommand(dAtA, i, uint64(m.Status))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.CorrelationId) > 0 {
+		i -= len(m.CorrelationId)
+		copy(dAtA[i:], m.CorrelationId)
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.CorrelationId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DataplaneSoftwareHealth) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DataplaneSoftwareHealth) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DataplaneSoftwareHealth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Health != nil {
+		{
+			size := m.Health.Size()
+			i -= size
+			if _, err := m.Health.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DataplaneSoftwareHealth_NginxHealth) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DataplaneSoftwareHealth_NginxHealth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.NginxHealth != nil {
+		{
+			size, err := m.NginxHealth.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCommand(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *DataplaneSoftwareHealth_AppProtectWafHealth) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DataplaneSoftwareHealth_AppProtectWafHealth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.AppProtectWafHealth != nil {
+		{
+			size, err := m.AppProtectWafHealth.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCommand(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+func (m *DataplaneUpdate) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DataplaneUpdate) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DataplaneUpdate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.DataplaneSoftwareDetails) > 0 {
+		for iNdEx := len(m.DataplaneSoftwareDetails) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.DataplaneSoftwareDetails[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintCommand(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if m.Host != nil {
+		{
+			size, err := m.Host.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCommand(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1928,6 +2536,129 @@ func (m *DataplaneStatus) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovCommand(uint64(l))
 		}
+	}
+	if len(m.DataplaneSoftwareDetails) > 0 {
+		for _, e := range m.DataplaneSoftwareDetails {
+			l = e.Size()
+			n += 1 + l + sovCommand(uint64(l))
+		}
+	}
+	if len(m.DataplaneSoftwareHealths) > 0 {
+		for _, e := range m.DataplaneSoftwareHealths {
+			l = e.Size()
+			n += 1 + l + sovCommand(uint64(l))
+		}
+	}
+	if len(m.AgentActivityStatus) > 0 {
+		for _, e := range m.AgentActivityStatus {
+			l = e.Size()
+			n += 1 + l + sovCommand(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AgentActivityStatus) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Status != nil {
+		n += m.Status.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AgentActivityStatus_NginxConfigStatus) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NginxConfigStatus != nil {
+		l = m.NginxConfigStatus.Size()
+		n += 1 + l + sovCommand(uint64(l))
+	}
+	return n
+}
+func (m *NginxConfigStatus) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CorrelationId)
+	if l > 0 {
+		n += 1 + l + sovCommand(uint64(l))
+	}
+	if m.Status != 0 {
+		n += 1 + sovCommand(uint64(m.Status))
+	}
+	l = len(m.Message)
+	if l > 0 {
+		n += 1 + l + sovCommand(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DataplaneSoftwareHealth) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Health != nil {
+		n += m.Health.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DataplaneSoftwareHealth_NginxHealth) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NginxHealth != nil {
+		l = m.NginxHealth.Size()
+		n += 1 + l + sovCommand(uint64(l))
+	}
+	return n
+}
+func (m *DataplaneSoftwareHealth_AppProtectWafHealth) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.AppProtectWafHealth != nil {
+		l = m.AppProtectWafHealth.Size()
+		n += 1 + l + sovCommand(uint64(l))
+	}
+	return n
+}
+func (m *DataplaneUpdate) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Host != nil {
+		l = m.Host.Size()
+		n += 1 + l + sovCommand(uint64(l))
 	}
 	if len(m.DataplaneSoftwareDetails) > 0 {
 		for _, e := range m.DataplaneSoftwareDetails {
@@ -2872,6 +3603,536 @@ func (m *DataplaneStatus) Unmarshal(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataplaneSoftwareDetails", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommand
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCommand
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DataplaneSoftwareDetails = append(m.DataplaneSoftwareDetails, &DataplaneSoftwareDetails{})
+			if err := m.DataplaneSoftwareDetails[len(m.DataplaneSoftwareDetails)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataplaneSoftwareHealths", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommand
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCommand
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DataplaneSoftwareHealths = append(m.DataplaneSoftwareHealths, &DataplaneSoftwareHealth{})
+			if err := m.DataplaneSoftwareHealths[len(m.DataplaneSoftwareHealths)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AgentActivityStatus", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommand
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCommand
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AgentActivityStatus = append(m.AgentActivityStatus, &AgentActivityStatus{})
+			if err := m.AgentActivityStatus[len(m.AgentActivityStatus)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCommand(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AgentActivityStatus) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCommand
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AgentActivityStatus: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AgentActivityStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NginxConfigStatus", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommand
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCommand
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &NginxConfigStatus{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Status = &AgentActivityStatus_NginxConfigStatus{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCommand(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NginxConfigStatus) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCommand
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NginxConfigStatus: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NginxConfigStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CorrelationId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommand
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCommand
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CorrelationId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommand
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= NginxConfigStatus_Status(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommand
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCommand
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Message = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCommand(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DataplaneSoftwareHealth) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCommand
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DataplaneSoftwareHealth: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DataplaneSoftwareHealth: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NginxHealth", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommand
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCommand
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &NginxHealth{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Health = &DataplaneSoftwareHealth_NginxHealth{v}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppProtectWafHealth", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommand
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCommand
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &AppProtectWAFHealth{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Health = &DataplaneSoftwareHealth_AppProtectWafHealth{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCommand(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DataplaneUpdate) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCommand
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DataplaneUpdate: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DataplaneUpdate: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommand
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCommand
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Host == nil {
+				m.Host = &HostInfo{}
+			}
+			if err := m.Host.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DataplaneSoftwareDetails", wireType)
 			}

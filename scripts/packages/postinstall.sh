@@ -93,9 +93,9 @@ ensure_agent_path() {
             echo "nginx-agent not in default path, exiting..."
             exit 1
         fi
-    fi
 
-    printf "Found nginx-agent %s\n" "${AGENT_EXE}"
+        printf "Found nginx-agent %s\n" "${AGENT_EXE}"
+    fi
 }
 
 create_agent_group() {
@@ -143,7 +143,6 @@ create_run_dir() {
     printf "PostInstall: Modifying group ownership of NGINX Agent run directory \n"
     chown "${AGENT_USER}":"${AGENT_GROUP}" "${AGENT_RUN_DIR}"
 }
-
 
 update_unit_file() {
     # Fill in data to unit file that's acquired post install

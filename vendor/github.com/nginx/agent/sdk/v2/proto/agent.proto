@@ -14,7 +14,7 @@ message AgentConnectRequest {
     reserved 1;
     reserved "identity";
     AgentMeta meta = 2  [(gogoproto.jsontag) = "meta"];
-    repeated NginxDetails details = 3 [(gogoproto.jsontag) = "details"];
+    repeated NginxDetails details = 3 [(gogoproto.jsontag) = "details"]; // moving to dataplane_software_details
     HostInfo host = 4 [(gogoproto.jsontag) = "host"];
     repeated DataplaneSoftwareDetails dataplane_software_details = 5 [(gogoproto.jsontag) = "dataplane_software_details"];
 }

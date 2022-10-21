@@ -162,10 +162,12 @@ func (env *EnvironmentType) WriteFiles(backup ConfigApplyMarker, files []*proto.
 }
 
 func (env *EnvironmentType) IsContainer() bool {
-	const dockerEnv = "/.dockerenv"
-	const containerEnv = "/run/.containerenv"
-	const selfCgroup = "/proc/self/cgroup"
-	const k8sServiceAcct = "/var/run/secrets/kubernetes.io/serviceaccount"
+	const (
+		dockerEnv      = "/.dockerenv"
+		containerEnv   = "/run/.containerenv"
+		selfCgroup     = "/proc/self/cgroup"
+		k8sServiceAcct = "/var/run/secrets/kubernetes.io/serviceaccount"
+	)
 
 	for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
 		if _, err := os.Stat(filename); err == nil {
