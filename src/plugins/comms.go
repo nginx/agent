@@ -66,18 +66,13 @@ func (r *Comms) Process(msg *core.Message) {
 			switch report := p.(type) {
 			case *proto.MetricsReport:
 
-				if len(report.Data) > 0 {
-					message := client.MessageFromMetrics(report)
-					err := r.reporter.Send(r.ctx, message)
+				message := client.MessageFromMetrics(report)
+				err := r.reporter.Send(r.ctx, message)
 
-					if err != nil {
-						log.Errorf("Failed to send MetricsReport: %v, data: %+v", err, report)
-					} else {
-						log.Tracef("MetricsReport sent, %v", report)
-					}
-
+				if err != nil {
+					log.Errorf("Failed to send MetricsReport: %v, data: %+v", err, report)
 				} else {
-					log.Debugf("Got report of length 0 data: %v", report)
+					log.Tracef("MetricsReport sent, %v", report)
 				}
 			}
 		}

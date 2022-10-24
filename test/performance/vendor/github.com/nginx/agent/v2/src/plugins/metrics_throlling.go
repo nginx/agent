@@ -128,11 +128,9 @@ func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.W
 			return
 		case <-r.ticker.C:
 			aggregatedReport := r.getAggregatedReport()
-			if len(aggregatedReport.Data) > 0 {
-				r.messagePipeline.Process(
-					core.NewMessage(core.CommMetrics, []core.Payload{aggregatedReport}),
-				)
-			}
+			r.messagePipeline.Process(
+				core.NewMessage(core.CommMetrics, []core.Payload{aggregatedReport}),
+			)
 			if r.collectorsUpdate.Load() {
 				r.BulkSize = r.conf.AgentMetrics.BulkSize
 				r.metricsAggregation = r.conf.AgentMetrics.Mode == "aggregated"
