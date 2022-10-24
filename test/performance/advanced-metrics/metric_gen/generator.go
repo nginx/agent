@@ -2,10 +2,10 @@ package metric_gen
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"math"
 	"math/big"
-	"crypto/rand"
 	"strconv"
 	"strings"
 	"sync"
@@ -38,7 +38,7 @@ type Generator struct {
 	messageCache []*Message
 	cacheLock    sync.Mutex
 
-	iterator     int
+	iterator int
 
 	setMetrics     bool
 	setMetricsSets []string
@@ -203,7 +203,7 @@ func (g *Generator) makeMetricSet(uniqueDimension bool) string {
 	// choose one string dimension that will be unique
 	uniqueDimPositionBig, _ := rand.Int(rand.Reader, big.NewInt(int64(len(fieldOrder))))
 	for fieldOrder[uniqueDimPositionBig.Int64()].Type != stringType {
-		uniqueDimPositionBig, _ = rand.Int(rand.Reader, big.NewInt(int64(len(fieldOrder)) - 8))
+		uniqueDimPositionBig, _ = rand.Int(rand.Reader, big.NewInt(int64(len(fieldOrder))-8))
 	}
 	uniqueDimPosition := int(uniqueDimPositionBig.Int64())
 

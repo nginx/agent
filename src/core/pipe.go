@@ -44,7 +44,7 @@ func (p *MessagePipe) Register(size int, plugins ...Plugin) error {
 	p.mu.Lock()
 
 	p.plugins = append(p.plugins, plugins...)
-	p.bus = messagebus.New(size)	
+	p.bus = messagebus.New(size)
 
 	for _, plugin := range p.plugins {
 		for _, subscription := range plugin.Subscriptions() {
@@ -75,7 +75,7 @@ func (p *MessagePipe) Run() {
 	for {
 		select {
 		case <-p.ctx.Done():
-			
+
 			for _, r := range p.plugins {
 				r.Close()
 			}
