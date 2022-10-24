@@ -5,13 +5,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
+	"github.com/stretchr/testify/require"
 )
 
 const (
-	testAttackSigVersionFile = "/tmp/test-attack-sigs-version.yaml"
-	testAttackSigDateTime    = "2022-02-24T20:32:01Z"
-	testAttackSigVersion     = "2022.02.24"
+	testAttackSigVersionFile         = "/tmp/test-attack-sigs-version.yaml"
+	testAttackSigVersionFileContents = `---
+checksum: t+N7AHGIKPhdDwb8zMZh2w
+filename: signatures.bin.tgz
+revisionDatetime: 2022-02-24T20:32:01Z`
 )
 
 func TestGetAttackSignaturesVersion(t *testing.T) {
@@ -26,9 +28,9 @@ func TestGetAttackSignaturesVersion(t *testing.T) {
 			testName:    "AttackSignaturesInstalled",
 			versionFile: testAttackSigVersionFile,
 			attackSigDateTime: &napRevisionDateTime{
-				RevisionDatetime: testAttackSigDateTime,
+				RevisionDatetime: "2022-02-24T20:32:01Z",
 			},
-			expVersion: testAttackSigVersion,
+			expVersion: "2022.02.24",
 			expError:   nil,
 		},
 		{
@@ -42,25 +44,18 @@ func TestGetAttackSignaturesVersion(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-
 			// Create a fake version file if required by test
 			if tc.attackSigDateTime != nil {
-				yamlBytes, err := yaml.Marshal(tc.attackSigDateTime)
-				assert.Nil(t, err)
-
-				err = os.WriteFile(tc.versionFile, yamlBytes, 0644)
-				assert.Nil(t, err)
+				err := os.WriteFile(tc.versionFile, []byte(testAttackSigVersionFileContents), 0644)
+				require.NoError(t, err)
 
 				defer func() {
 					err := os.Remove(tc.versionFile)
-					assert.Nil(t, err)
+					require.NoError(t, err)
 				}()
 			}
 
-			// Get attack signature version version
 			version, err := getAttackSignaturesVersion(tc.versionFile)
-
-			// Validate returned info
 			assert.Equal(t, err, tc.expError)
 			assert.Equal(t, tc.expVersion, version)
 		})
