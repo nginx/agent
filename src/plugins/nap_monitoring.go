@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -29,8 +30,9 @@ type NAPMonitoring struct {
 	ctxCancel       context.CancelFunc
 }
 
-func NewNAPMonitoring(cfg *config.Config) (*NAPMonitoring, error) {
-	m, err := manager.NewManager(cfg)
+func NewNAPMonitoring(env core.Environment, cfg *config.Config) (*NAPMonitoring, error) {
+	commonDims := metrics.NewCommonDim(env.NewHostInfo("agentVersion", &cfg.Tags, cfg.ConfigDirs, false), cfg, "")
+	m, err := manager.NewManager(cfg, commonDims)
 	if err != nil {
 		return nil, err
 	}

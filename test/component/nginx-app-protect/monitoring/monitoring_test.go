@@ -3,6 +3,7 @@ package monitoring
 import (
 	"context"
 	"fmt"
+	tutils "github.com/nginx/agent/v2/test/utils"
 	"log/syslog"
 	"math/rand"
 	"net"
@@ -91,7 +92,9 @@ func TestNAPMonitoring(t *testing.T) {
 
 	comms := plugins.NewComms(reporter)
 
-	napMonitoring, err := plugins.NewNAPMonitoring(cfg)
+	env := tutils.GetMockEnv()
+
+	napMonitoring, err := plugins.NewNAPMonitoring(env, cfg)
 	assert.NoError(t, err)
 
 	pipe := initializeMessagePipe(t, ctx, []core.Plugin{comms, napMonitoring})

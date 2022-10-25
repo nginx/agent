@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"runtime"
 	"sync"
 
@@ -32,14 +33,14 @@ type Manager struct {
 	processorChan chan *models.Event
 }
 
-func NewManager(config *config.Config) (*Manager, error) {
+func NewManager(config *config.Config, commonDims *metrics.CommonDim) (*Manager, error) {
 	m := &Manager{
 		config:     config,
 		syslogIP:   config.NAPMonitoring.SyslogIP,
 		syslogPort: config.NAPMonitoring.SyslogPort,
 	}
 
-	err := m.init()
+	err := m.init(commonDims)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +52,7 @@ func (s *Manager) Name() string {
 	return componentName
 }
 
-func (s *Manager) init() error {
+func (s *Manager) init(commonDims *metrics.CommonDim) error {
 	var err error
 
 	s.initLogging()
@@ -63,7 +64,7 @@ func (s *Manager) init() error {
 		return err
 	}
 
-	err = s.initProcessor()
+	err = s.initProcessor(commonDims)
 	if err != nil {
 		s.logger.Errorf("Could not initialize %s processor: %s", componentName, err)
 		return err
@@ -104,14 +105,15 @@ func (s *Manager) initCollector() error {
 	return nil
 }
 
-func (s *Manager) initProcessor() error {
+func (s *Manager) initProcessor(commonDims *metrics.CommonDim) error {
 	var err error
 
 	s.logger.Infof("Initializing %s processor", componentName)
 
 	s.processor, err = processor.GetClient(&processor.Config{
-		Logger:  s.logger,
-		Workers: runtime.NumCPU(),
+		Logger:     s.logger,
+		Workers:    runtime.NumCPU(),
+		CommonDims: commonDims,
 	})
 
 	if err != nil {

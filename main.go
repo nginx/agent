@@ -209,7 +209,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 	}
 
 	if loadedConfig.NAPMonitoring != (config.NAPMonitoring{}) {
-		nm, err := plugins.NewNAPMonitoring(loadedConfig)
+		nm, err := plugins.NewNAPMonitoring(env, loadedConfig)
 		if err != nil {
 			log.Errorf("Unable to load the Nginx App Protect Monitoring plugin due to the following error: %v", err)
 		} else {

@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ func TestManager_Close(t *testing.T) {
 		},
 	}
 
-	m, err := NewManager(conf)
+	m, err := NewManager(conf, &metrics.CommonDim{})
 	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())

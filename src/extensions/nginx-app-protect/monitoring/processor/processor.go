@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"regexp"
 	"sync"
 
@@ -37,6 +38,7 @@ type Client struct {
 	logger      *logrus.Entry
 	workers     int
 	hostPattern *regexp.Regexp
+	commonDims  *metrics.CommonDim
 }
 
 // GetClient gives you a Client for processing.
@@ -59,6 +61,8 @@ func GetClient(cfg *Config) (*Client, error) {
 		return &c, err
 	}
 	c.hostPattern = hostPattern
+
+	c.commonDims = cfg.CommonDims
 
 	return &c, nil
 }

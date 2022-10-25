@@ -101,6 +101,13 @@ message SecurityViolationEvent {
 
     string ViolationContexts = 41 [(gogoproto.jsontag) = "violation_contexts" ];
     repeated ViolationData ViolationsData = 42 [(gogoproto.jsontag) = "violations_data" ];
+
+    string SystemID = 43 [(gogoproto.jsontag) = "system_id" ];
+    string Hostname = 44 [(gogoproto.jsontag) = "hostname" ];
+    string InstanceTags = 45 [(gogoproto.jsontag) = "instance_tags" ];
+    string InstanceGroup = 46 [(gogoproto.jsontag) = "instance_group" ];
+    string DisplayName = 47 [(gogoproto.jsontag) = "display_name" ];
+    string NginxID = 48 [(gogoproto.jsontag) = "nginx_id" ];
 }
 
 message SignatureData {
