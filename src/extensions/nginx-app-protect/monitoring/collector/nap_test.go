@@ -33,9 +33,6 @@ func TestNAPCollect(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// make sure the tests actually wait on wg and
-	// verify that they are closed on cancel()
-	// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38117
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 

@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"context"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -10,6 +9,7 @@ import (
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager"
 )
 
@@ -73,12 +73,8 @@ func (n *NAPMonitoring) Init(pipeline core.MessagePipeInterface) {
 	go n.run()
 }
 
-// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38140
-//   - Identify if we need to process any interactions with NGINX
 func (n *NAPMonitoring) Process(msg *core.Message) {}
 
-// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38140
-//   - Subscribe for Agent config updates
 func (n *NAPMonitoring) Subscriptions() []string {
 	return []string{}
 }

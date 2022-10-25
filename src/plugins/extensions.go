@@ -1,9 +1,10 @@
 package plugins
 
 import (
+	log "github.com/sirupsen/logrus"
+
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
-	log "github.com/sirupsen/logrus"
 )
 
 const (

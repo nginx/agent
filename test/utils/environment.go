@@ -54,7 +54,7 @@ func (m *MockEnvironment) NewHostInfo(agentVersion string, tags *[]string, confi
 		Hostname:    "test-host",
 		DisplayName: "",
 		OsType:      "",
-		Uuid:        "",
+		Uuid:        "12345678",
 		Uname:       "",
 		Partitons:   []*proto.DiskPartition{},
 		Network:     &proto.Network{},

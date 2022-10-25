@@ -3,10 +3,9 @@ package plugins
 import (
 	"testing"
 
-	"github.com/nginx/agent/v2/src/core/config"
-
 	"github.com/stretchr/testify/assert"
 
+	"github.com/nginx/agent/v2/src/core/config"
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
 

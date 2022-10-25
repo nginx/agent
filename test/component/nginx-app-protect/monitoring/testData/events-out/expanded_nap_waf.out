@@ -1,10 +1,0 @@
-²app_protect_default_policy4355056874564592513"REJECTED*SECURITY_WAF_VIOLATION:GETBHTTPR/ZHTTP/1.1jblockedr0Štestenv-ad595bed-data-1š1-localhost:1-/¢172.18.9.78ª61478²80ºŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client DetectedòUntrusted BotŠCriticalÂcurlÒu
-VIOL_ATTACK_SIGNATURE	parameter
-a<script>" 
-	2000014753
-a=<script>"3*7" 
-	2000000983
-a=<script>"2*7Ò
-VIOL_HTTP_PROTOCOLÒ.
-VIOL_PARAMETER_VALUE_METACHAR
-a<script>

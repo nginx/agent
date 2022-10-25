@@ -1,20 +1,0 @@
-Žapp_protect_default_policy4355056874564592518"REJECTED*SECURITY_WAF_VIOLATION:GETBHTTPR/ZcGET /?a=<script> HTTP/1.1\r\nHost: 10.146.179.119\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\njblockedr0Štestenv-ad595bed-data-1š1-localhost:1-/¢172.18.9.78ª61478²80ºŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client DetectedòUntrusted BotŠCriticalÂcurlÒ½
-VIOL_ATTACK_SIGNATURE"™
-	2000210944€Connection: keep-alive
-Host: a.com
-User-Agent: Java/1.7.0_51
-Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
-
-"37*16"V
-	2000110342?pt: */*
-Foo: Authorization: %n%n%n%n
-Foo: echo<!-- #echo
-X18"29*6"W
-	2000001793?7
-Accept: */*
-Foo: Authorization: %n%n%n%n
-Foo: echo<!-- #ec"21*23"W
-	2000041062?zation: %n%n%n%n
-Foo: echo<!-- #echo
-X1892: echo
-X1893: '<!-"27*10

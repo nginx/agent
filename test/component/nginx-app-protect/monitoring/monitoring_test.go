@@ -3,11 +3,11 @@ package monitoring
 import (
 	"context"
 	"fmt"
-	tutils "github.com/nginx/agent/v2/test/utils"
 	"log/syslog"
 	"math/rand"
 	"net"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -24,6 +24,7 @@ import (
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/plugins"
 	"github.com/nginx/agent/v2/test/component/nginx-app-protect/monitoring/mock"
+	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
 const (
@@ -46,12 +47,23 @@ func TestNAPMonitoring(t *testing.T) {
 			SyslogIP:            "127.0.0.1",
 			SyslogPort:          EphemeralPort(),
 			ReportInterval:      time.Minute,
-			// Since the minimum report interval is on minute, MAP monitor won't have enough time within the test timeframe
+			// Since the minimum report interval is one minute, MAP monitor won't have enough time within the test timeframe
 			// to send the report. So always beware of the count of logged attacks and set report count accordingly
 			// Count of attacks = count of files under ./testData/logs-in/
 			ReportCount: 7,
 		},
+		Tags:          []string{"tag1", "tag2"},
+		DisplayName:   "nap-monitoring-component-test",
+		InstanceGroup: "instance-group1",
 	}
+
+	// Expected common dimensions that need to be added to the generated SecurityViolationEvent
+	// Values of hostname and uuid are coming from test/utils/environment(*MockEnvironment.NewHostInfo)
+	expectedHostname := "test-host"
+	expectedUUID := "12345678"
+	expectedInstanceTags := strings.Join(cfg.Tags, ",")
+	expectedDisplayName := cfg.DisplayName
+	expectedInstanceGroup := cfg.InstanceGroup
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -141,6 +153,11 @@ func TestNAPMonitoring(t *testing.T) {
 			break
 		}
 		assertEqualSecurityViolationEvents(t, expectedEvent, resultEvent)
+		assert.Equal(t, expectedHostname, resultEvent.GetSecurityViolationEvent().Hostname)
+		assert.Equal(t, expectedUUID, resultEvent.GetSecurityViolationEvent().SystemID)
+		assert.Equal(t, expectedInstanceTags, resultEvent.GetSecurityViolationEvent().InstanceTags)
+		assert.Equal(t, expectedInstanceGroup, resultEvent.GetSecurityViolationEvent().InstanceGroup)
+		assert.Equal(t, expectedDisplayName, resultEvent.GetSecurityViolationEvent().DisplayName)
 	}
 
 	err = reporter.Close()
@@ -208,49 +225,3 @@ func setDialOptions(loadedConfig *config.Config) []grpc.DialOption {
 	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DataplaneConnectionDialOptions(loadedConfig.Server.Token, sdkGRPC.NewMessageMeta(uuid.NewString()))...)
 	return grpcDialOptions
 }
-
-/*
-	ne := &pb.Event{
-		Data: &pb.Event_SecurityViolationEvent{
-			SecurityViolationEvent: &pb.SecurityViolationEvent{
-				PolicyName:       "extract from input log",
-				SupportID:        "extract from input log",
-				Outcome:          "extract from input log",
-				OutcomeReason:    "extract from input log",
-				Method:           "extract from input log",
-				Protocol:         "extract from input log",
-				URI:              "extract from input log",
-				Request:          "extract from input log",
-				RequestStatus:    "extract from input log",
-				ResponseCode:     "extract from input log",
-				UnitHostname:     "extract from input log",
-				VSName:           "extract from input log",
-				IPClient:         "extract from input log",
-				DestinationPort:  "extract from input log",
-				SourcePort:       "extract from input log",
-				Violations:       "extract from input log",
-				ClientClass:      "extract from input log",
-				Severity:         "extract from input log",
-				BotSignatureName: "extract from input log",
-				ViolationsData:   "extract from input log",
-				ViolationsData:   []*pb.ViolationData{
-					{
-						Name: "extract from input log",
-						Context: "extract from input log",
-						ContextData: &pb.ContextData{
-							Name:                 "extract from input log",
-							Value:                "extract from input log",
-						},
-					},
-				},
-			},
-		},
-	}
-	bEvent, err := proto.Marshal(ne)
-	if err != nil {
-		t.Fatalf("Error while marshaling event: %v", err)
-	}
-	if err := ioutil.WriteFile(tc.testFile+".out", bEvent, 0644); err != nil {
-		log.Fatalln("Failed to write event:", err)
-	}
-*/

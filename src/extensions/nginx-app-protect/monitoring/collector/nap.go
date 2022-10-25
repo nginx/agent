@@ -35,24 +35,21 @@ type syslogServer struct {
 }
 
 // NewNAPCollector gives you a NAP collector for the syslog server.
-func NewNAPCollector(cfg *NAPConfig) (*NAPCollector, error) {
-	var (
-		c   NAPCollector
-		err error
-	)
+func NewNAPCollector(cfg *NAPConfig) (napCollector *NAPCollector, err error) {
+	napCollector = &NAPCollector{}
 
-	c.logger = logrus.StandardLogger().WithFields(componentLogFields)
+	napCollector.logger = logrus.StandardLogger().WithFields(componentLogFields)
 	if cfg.Logger != nil {
-		c.logger = cfg.Logger.WithFields(componentLogFields)
+		napCollector.logger = cfg.Logger.WithFields(componentLogFields)
 	}
-	c.logger.Infof("Getting %s Collector", monitoring.NAP)
+	napCollector.logger.Infof("Getting %s Collector", monitoring.NAP)
 
-	c.syslog, err = newSyslogServer(c.logger, cfg.SyslogIP, cfg.SyslogPort)
+	napCollector.syslog, err = newSyslogServer(napCollector.logger, cfg.SyslogIP, cfg.SyslogPort)
 	if err != nil {
 		return nil, err
 	}
 
-	return &c, nil
+	return napCollector, nil
 }
 
 func newSyslogServer(logger *logrus.Entry, ip string, port int) (*syslogServer, error) {

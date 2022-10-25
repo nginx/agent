@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"regexp"
 	"sync"
 
 	"github.com/sirupsen/logrus"
 
 	pb "github.com/nginx/agent/sdk/v2/proto/events"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
 )
 

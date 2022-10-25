@@ -99,9 +99,6 @@ func TestNAPProcess(t *testing.T) {
 				t.Fatalf("Could not get a Processor Client: %s", err)
 			}
 
-			// make sure the tests actually wait on wg and
-			// verify that they are closed on cancel()
-			// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38117
 			wg := &sync.WaitGroup{}
 
 			wg.Add(1)
