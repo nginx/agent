@@ -14,6 +14,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/grpc"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -72,13 +73,13 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 	isConfUploadEnabled := isConfUploadEnabled(loadedConfig)
 
 	return &Nginx{
-		nginxBinary: nginxBinary,
-		processes: env.Processes(),
-		env: env,
-		cmdr: cmdr,
-		config: loadedConfig,
-		isNAPEnabled: isNAPEnabled,
-		isConfUploadEnabled: isConfUploadEnabled,
+		nginxBinary:              nginxBinary,
+		processes:                env.Processes(),
+		env:                      env,
+		cmdr:                     cmdr,
+		config:                   loadedConfig,
+		isNAPEnabled:             isNAPEnabled,
+		isConfUploadEnabled:      isConfUploadEnabled,
 		configApplyStatusChannel: make(chan *proto.Command_NginxConfigResponse, 1),
 	}
 }
@@ -334,11 +335,11 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 
 	// If the NGINX config can be validated with the validationTimeout the result will be returned straight away.
 	select {
-		case result := <-n.configApplyStatusChannel:
-			return result
-		case <-time.After(validationTimeout):
-			log.Debugf("Validation of the NGINX config in taking longer than the validationTimeout %s", validationTimeout)
-			return status
+	case result := <-n.configApplyStatusChannel:
+		return result
+	case <-time.After(validationTimeout):
+		log.Debugf("Validation of the NGINX config in taking longer than the validationTimeout %s", validationTimeout)
+		return status
 	}
 }
 
@@ -558,7 +559,7 @@ func (n *Nginx) syncAgentConfigChange() {
 
 func isConfUploadEnabled(conf *config.Config) bool {
 	for _, feature := range conf.Features {
-		if feature == config.FeatureNginxConfig {
+		if feature == agent_config.FeatureNginxConfig {
 			return true
 		}
 	}

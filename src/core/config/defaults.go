@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 	log "github.com/sirupsen/logrus"
 )
@@ -78,18 +80,7 @@ var (
 				PriorityTableMaxSize:   1000,
 			},
 		},
-		Features: []string{
-			FeatureRegistration,
-			FeatureNginxConfig,
-			FeatureNginxSSLConfig,
-			FeatureNginxCounting,
-			FeatureMetrics,
-			FeatureMetricsThrottle,
-			FeatureDataPlaneStatus,
-			FeatureProcessWatcher,
-			FeatureFileWatcher,
-			FeatureActivityEvents,
-		},
+		Features: agent_config.GetDefaultFeatures(),
 	}
 	AllowedDirectoriesMap map[string]struct{}
 )
@@ -99,7 +90,6 @@ const (
 	DynamicConfigFileAbsPath = "/etc/nginx-agent/agent-dynamic.conf"
 	ConfigFileName           = "nginx-agent.conf"
 	ConfigFileType           = "yaml"
-	KeyDelimiter             = "_"
 	EnvPrefix                = "nms"
 	ConfigPathKey            = "path"
 	DynamicConfigPathKey     = "dynamic-config-path"
@@ -114,81 +104,67 @@ const (
 	// viper keys used in config
 	LogKey = "log"
 
-	LogLevel = LogKey + KeyDelimiter + "level"
-	LogPath  = LogKey + KeyDelimiter + "path"
+	LogLevel = LogKey + agent_config.KeyDelimiter + "level"
+	LogPath  = LogKey + agent_config.KeyDelimiter + "path"
 
 	// viper keys used in config
 	ServerKey = "server"
 
-	ServerHost     = ServerKey + KeyDelimiter + "host"
-	ServerGrpcport = ServerKey + KeyDelimiter + "grpcport"
-	ServerToken    = ServerKey + KeyDelimiter + "token"
-	ServerMetrics  = ServerKey + KeyDelimiter + "metrics"
-	ServerCommand  = ServerKey + KeyDelimiter + "command"
+	ServerHost     = ServerKey + agent_config.KeyDelimiter + "host"
+	ServerGrpcport = ServerKey + agent_config.KeyDelimiter + "grpcport"
+	ServerToken    = ServerKey + agent_config.KeyDelimiter + "token"
+	ServerMetrics  = ServerKey + agent_config.KeyDelimiter + "metrics"
+	ServerCommand  = ServerKey + agent_config.KeyDelimiter + "command"
 
 	// viper keys used in config
 	TlsKey = "tls"
 
-	TlsEnable     = TlsKey + KeyDelimiter + "enable"
-	TlsCert       = TlsKey + KeyDelimiter + "cert"
-	TlsPrivateKey = TlsKey + KeyDelimiter + "key"
-	TlsCa         = TlsKey + KeyDelimiter + "ca"
-	TlsSkipVerify = TlsKey + KeyDelimiter + "skip_verify"
+	TlsEnable     = TlsKey + agent_config.KeyDelimiter + "enable"
+	TlsCert       = TlsKey + agent_config.KeyDelimiter + "cert"
+	TlsPrivateKey = TlsKey + agent_config.KeyDelimiter + "key"
+	TlsCa         = TlsKey + agent_config.KeyDelimiter + "ca"
+	TlsSkipVerify = TlsKey + agent_config.KeyDelimiter + "skip_verify"
 
 	// viper keys used in config
 	NginxKey = "nginx"
 
-	NginxExcludeLogs    = NginxKey + KeyDelimiter + "exclude_logs"
-	NginxDebug          = NginxKey + KeyDelimiter + "debug"
-	NginxCountingSocket = NginxKey + KeyDelimiter + "socket"
-	NginxClientVersion  = NginxKey + KeyDelimiter + "client_version"
+	NginxExcludeLogs    = NginxKey + agent_config.KeyDelimiter + "exclude_logs"
+	NginxDebug          = NginxKey + agent_config.KeyDelimiter + "debug"
+	NginxCountingSocket = NginxKey + agent_config.KeyDelimiter + "socket"
+	NginxClientVersion  = NginxKey + agent_config.KeyDelimiter + "client_version"
 
 	// viper keys used in config
 	DataplaneKey = "dataplane"
 
-	DataplaneEventsEnable         = DataplaneKey + KeyDelimiter + "events_enable"
-	DataplaneSyncEnable           = DataplaneKey + KeyDelimiter + "sync_enable"
-	DataplaneStatusPoll           = DataplaneKey + KeyDelimiter + "status_poll_interval"
-	DataplaneStatusReportInterval = DataplaneKey + KeyDelimiter + "report_interval"
+	DataplaneEventsEnable         = DataplaneKey + agent_config.KeyDelimiter + "events_enable"
+	DataplaneSyncEnable           = DataplaneKey + agent_config.KeyDelimiter + "sync_enable"
+	DataplaneStatusPoll           = DataplaneKey + agent_config.KeyDelimiter + "status_poll_interval"
+	DataplaneStatusReportInterval = DataplaneKey + agent_config.KeyDelimiter + "report_interval"
 
 	// viper keys used in config
 	MetricsKey = "metrics"
 
-	MetricsBulkSize           = MetricsKey + KeyDelimiter + "bulk_size"
-	MetricsReportInterval     = MetricsKey + KeyDelimiter + "report_interval"
-	MetricsCollectionInterval = MetricsKey + KeyDelimiter + "collection_interval"
-	MetricsMode               = MetricsKey + KeyDelimiter + "mode"
+	MetricsBulkSize           = MetricsKey + agent_config.KeyDelimiter + "bulk_size"
+	MetricsReportInterval     = MetricsKey + agent_config.KeyDelimiter + "report_interval"
+	MetricsCollectionInterval = MetricsKey + agent_config.KeyDelimiter + "collection_interval"
+	MetricsMode               = MetricsKey + agent_config.KeyDelimiter + "mode"
 
 	// viper keys used in config
 	AdvancedMetricsKey = "advanced_metrics"
 
-	AdvancedMetricsSocketPath           = AdvancedMetricsKey + KeyDelimiter + "socket_path"
-	AdvancedMetricsAggregationPeriod    = AdvancedMetricsKey + KeyDelimiter + "aggregation_period"
-	AdvancedMetricsPublishPeriod        = AdvancedMetricsKey + KeyDelimiter + "publishing_period"
-	AdvancedMetricsTableSizesLimits     = AdvancedMetricsKey + KeyDelimiter + "table_sizes_limits"
-	AdvancedMetricsTableSizesLimitsSTMS = AdvancedMetricsTableSizesLimits + KeyDelimiter + "staging_table_max_size"
-	AdvancedMetricsTableSizesLimitsSTT  = AdvancedMetricsTableSizesLimits + KeyDelimiter + "staging_table_threshold"
-	AdvancedMetricsTableSizesLimitsPTMS = AdvancedMetricsTableSizesLimits + KeyDelimiter + "priority_table_max_size"
-	AdvancedMetricsTableSizesLimitsPTT  = AdvancedMetricsTableSizesLimits + KeyDelimiter + "priority_table_threshold"
+	AdvancedMetricsSocketPath           = AdvancedMetricsKey + agent_config.KeyDelimiter + "socket_path"
+	AdvancedMetricsAggregationPeriod    = AdvancedMetricsKey + agent_config.KeyDelimiter + "aggregation_period"
+	AdvancedMetricsPublishPeriod        = AdvancedMetricsKey + agent_config.KeyDelimiter + "publishing_period"
+	AdvancedMetricsTableSizesLimits     = AdvancedMetricsKey + agent_config.KeyDelimiter + "table_sizes_limits"
+	AdvancedMetricsTableSizesLimitsSTMS = AdvancedMetricsTableSizesLimits + agent_config.KeyDelimiter + "staging_table_max_size"
+	AdvancedMetricsTableSizesLimitsSTT  = AdvancedMetricsTableSizesLimits + agent_config.KeyDelimiter + "staging_table_threshold"
+	AdvancedMetricsTableSizesLimitsPTMS = AdvancedMetricsTableSizesLimits + agent_config.KeyDelimiter + "priority_table_max_size"
+	AdvancedMetricsTableSizesLimitsPTT  = AdvancedMetricsTableSizesLimits + agent_config.KeyDelimiter + "priority_table_threshold"
 
 	// viper keys used in config
 	NginxAppProtectKey = "nginx_app_protect"
 
-	NginxAppProtectReportInterval = NginxAppProtectKey + KeyDelimiter + "report_interval"
-
-	// viper keys used in config
-	FeaturesKey = "features"
-
-	FeatureRegistration    = FeaturesKey + KeyDelimiter + "registration"
-	FeatureNginxConfig     = FeaturesKey + KeyDelimiter + "nginx-config"
-	FeatureNginxSSLConfig  = FeaturesKey + KeyDelimiter + "nginx-ssl-config"
-	FeatureNginxCounting   = FeaturesKey + KeyDelimiter + "nginx-counting"
-	FeatureMetrics         = FeaturesKey + KeyDelimiter + "metrics"
-	FeatureMetricsThrottle = FeaturesKey + KeyDelimiter + "metrics-throttle"
-	FeatureDataPlaneStatus = FeaturesKey + KeyDelimiter + "dataplane-status"
-	FeatureProcessWatcher  = FeaturesKey + KeyDelimiter + "process-watcher"
-	FeatureFileWatcher     = FeaturesKey + KeyDelimiter + "file-watcher"
-	FeatureActivityEvents  = FeaturesKey + KeyDelimiter + "activity-events"
+	NginxAppProtectReportInterval = NginxAppProtectKey + agent_config.KeyDelimiter + "report_interval"
 
 	// DEPRECATED KEYS
 	NginxBinPathKey       = "nginx_bin_path"
@@ -250,9 +226,9 @@ var (
 			Usage: "A comma-separated list of tags to add to the current instance or machine, to be used for inventory purposes.",
 		},
 		&StringSliceFlag{
-			Name:         FeaturesKey,
+			Name:         agent_config.FeaturesKey,
 			Usage:        "A comma-separated list of features enabled for the agent.",
-			DefaultValue: Defaults.Features,
+			DefaultValue: agent_config.GetDefaultFeatures(),
 		},
 		// NGINX Config
 		&StringFlag{

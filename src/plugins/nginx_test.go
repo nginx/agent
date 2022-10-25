@@ -17,6 +17,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	loadedConfig "github.com/nginx/agent/v2/src/core/config"
 
@@ -228,7 +229,7 @@ func TestNginxConfigApply(t *testing.T) {
 
 			commandClient := tutils.GetMockCommandClient(test.config)
 
-			pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
+			pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
 
 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
@@ -241,7 +242,7 @@ func TestNginxConfigApply(t *testing.T) {
 				3*time.Millisecond,
 			)
 
-			for idx, msg := range  messagePipe.GetProcessedMessages() {
+			for idx, msg := range messagePipe.GetProcessedMessages() {
 				if test.msgTopics[idx] != msg.Topic() {
 					tt.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), test.msgTopics[idx])
 				}
@@ -295,7 +296,7 @@ func TestUploadConfigs(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
 	cmdr.On("Upload", mock.Anything, mock.Anything).Return(nil)
 
-	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
+	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 	messagePipe := core.SetupMockMessagePipe(t, context.Background(), pluginUnderTest)
 
 	pluginUnderTest.Init(messagePipe)
@@ -399,7 +400,7 @@ func TestNginx_Process_NginxConfigUpload(t *testing.T) {
 
 	env := tutils.GetMockEnvWithProcess()
 
-	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
+	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 	pluginUnderTest.Process(core.NewMessage(core.NginxConfigUpload, configDesc))
 
 	binary.AssertExpectations(t)
@@ -440,14 +441,14 @@ func TestNginx_validateConfig(t *testing.T) {
 		expectedError    error
 	}{
 		{
-			name: "successful validation",
+			name:             "successful validation",
 			validationResult: nil,
-			expectedTopic: core.NginxConfigValidationSucceeded,
+			expectedTopic:    core.NginxConfigValidationSucceeded,
 		},
 		{
-			name: "failed validation",
+			name:             "failed validation",
 			validationResult: errors.New("failure"),
-			expectedTopic: core.NginxConfigValidationFailed,
+			expectedTopic:    core.NginxConfigValidationFailed,
 		},
 	}
 
@@ -461,7 +462,7 @@ func TestNginx_validateConfig(t *testing.T) {
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
 
-			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
+			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 
 			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
 			messagePipe.Run()
@@ -529,7 +530,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 		},
 	)
 
-	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
+	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 
 	dir := t.TempDir()
 	tempConf, err := ioutil.TempFile(dir, "nginx.conf")
@@ -615,7 +616,7 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 		},
 	)
 
-	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
+	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 
 	dir := t.TempDir()
 	tempConf, err := ioutil.TempFile(dir, "nginx.conf")
