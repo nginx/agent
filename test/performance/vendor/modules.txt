@@ -148,7 +148,6 @@ github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/sample
 github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/schema
 github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring
 github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/collector
-github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/forwarder
 github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager
 github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/processor
 github.com/nginx/agent/v2/src/extensions/nginx-app-protect/nap

@@ -16,8 +16,52 @@ import (
 )
 
 const (
-	napWAFDateTimeLayout = "2006-01-02 15:04:05.000"
-	listSeperator        = "::"
+	napDateTimeLayout = "2006-01-02 15:04:05.000"
+	listSeperator     = "::"
+	parameterCtx      = "parameter"
+	headerCtx         = "header"
+	cookieCtx         = "cookie"
+)
+
+var (
+	logFormatKeys = []string{
+		"date_time",
+		"blocking_exception_reason",
+		"dest_port",
+		"ip_client",
+		"is_truncated",
+		"method",
+		"policy_name",
+		"protocol",
+		"request_status",
+		"response_code",
+		"severity",
+		"sig_cves",
+		"sig_ids",
+		"sig_names",
+		"sig_set_names",
+		"src_port",
+		"sub_violations",
+		"support_id",
+		"threat_campaign_names",
+		"unit_hostname",
+		"uri",
+		"violation_rating",
+		"vs_name",
+		"x_forwarded_for_header_value",
+		"outcome",
+		"outcome_reason",
+		"violations",
+		"violation_details",
+		"bot_signature_name",
+		"bot_category",
+		"bot_anomalies",
+		"enforced_bot_anomalies",
+		"client_class",
+		"client_application",
+		"client_application_version",
+		"transport_protocol",
+	}
 )
 
 const (
@@ -35,34 +79,36 @@ const (
 	transportProtocol        = "transport_protocol"
 
 	// Using default values instead of overriden keys per older CAS policy
-	// httpRequestMethod      = "http_request_method"
-	httpRequestMethod = "method"
-	// httpResponseCode       = "http_response_code"
-	httpResponseCode = "response_code"
-	// sigCVEs                = "signature_cves"
-	sigCVEs = "sig_cves"
-	// sigIds                 = "signature_ids"
-	sigIds = "sig_ids"
-	// sigNames               = "signature_names"
-	sigNames = "sig_names"
-	// httpRemotePort       = "http_remote_port"
-	httpRemotePort = "src_port"
-	// httpURI              = "http_uri"
-	httpURI = "uri"
-	// httpHostname   = "http_hostname"
-	httpHostname = "vs_name"
-	// requestOutcome       = "request_outcome"
-	requestOutcome = "outcome"
-	// requestOutcomeReason = "request_outcome_reason"
+	httpRequestMethod    = "method"
+	httpResponseCode     = "response_code"
+	sigCVEs              = "sig_cves"
+	sigIds               = "sig_ids"
+	sigNames             = "sig_names"
+	httpRemotePort       = "src_port"
+	httpURI              = "uri"
+	httpHostname         = "vs_name"
+	requestOutcome       = "outcome"
 	requestOutcomeReason = "outcome_reason"
-	// description = "description"
-	// As -> description == "attack_type"
-	// httpRemoteAddr         = "http_remote_addr"
-	httpRemoteAddr = "ip_client"
-	// httpServerPort         = "http_server_port"
-	httpServerPort = "dest_port"
-	isTruncated    = "is_truncated"
-	// isTruncated = "is_truncated_bool"
+	httpRemoteAddr       = "ip_client"
+	httpServerPort       = "dest_port"
+	isTruncated          = "is_truncated"
+
+	// Older CAS Naming (this needs to be removed)
+	// httpRequestMethod    = "http_request_method"
+	// httpResponseCode     = "http_response_code"
+	// sigCVEs              = "signature_cves"
+	// sigIds               = "signature_ids"
+	// sigNames             = "signature_names"
+	// httpRemotePort       = "http_remote_port"
+	// httpURI              = "http_uri"
+	// httpHostname         = "http_hostname"
+	// requestOutcome       = "request_outcome"
+	// requestOutcomeReason = "request_outcome_reason"
+	// description          = "description"
+	// As -> description    == "attack_type"
+	// httpRemoteAddr       = "http_remote_addr"
+	// httpServerPort       = "http_server_port"
+	// isTruncated          = "is_truncated_bool"
 
 	// Existing parsed keys from the log
 	dateTime               = "date_time"
@@ -150,7 +196,7 @@ type BADMSG struct {
 	} `xml:"request-violations"`
 }
 
-type NAPWAFConfig struct {
+type NAPConfig struct {
 	DateTime                 string
 	BlockingExceptionReason  string
 	HTTPServerPort           string
@@ -192,7 +238,7 @@ type NAPWAFConfig struct {
 }
 
 // GetEvent will generate a protobuf Security Event.
-func (f *NAPWAFConfig) GetEvent(hostPattern *regexp.Regexp, logger *logrus.Entry) (*models.Event, error) {
+func (f *NAPConfig) GetEvent(hostPattern *regexp.Regexp, logger *logrus.Entry) (*models.Event, error) {
 	var (
 		event  models.Event
 		secevt *models.SecurityViolationEvent
@@ -220,26 +266,19 @@ func (f *NAPWAFConfig) GetEvent(hostPattern *regexp.Regexp, logger *logrus.Entry
 	return &event, err
 }
 
-func (f *NAPWAFConfig) getSecurityViolation(logger *logrus.Entry) *models.SecurityViolationEvent {
+func (f *NAPConfig) getSecurityViolation(logger *logrus.Entry) *models.SecurityViolationEvent {
 	return &models.SecurityViolationEvent{
-		DateTime:                 f.DateTime, // remove, metadata has it
 		PolicyName:               f.PolicyName,
 		SupportID:                f.SupportID,
-		Outcome:                  f.RequestOutcome,       //rename the proto
-		OutcomeReason:            f.RequestOutcomeReason, //rename the proto
 		BlockingExceptionReason:  f.BlockingExceptionReason,
 		Method:                   f.HTTPRequestMethod,
 		Protocol:                 f.Protocol,
 		XForwardedForHeaderValue: f.XForwardedForHeaderVal,
-		URI:                      f.HTTPURI, // rename to HTTP URI?
 		Request:                  f.Request,
 		IsTruncated:              f.IsTruncated,
 		RequestStatus:            f.RequestStatus,
 		ResponseCode:             f.HTTPResponseCode,
-		GeoIP:                    "blah", // to add
-		Host:                     "blah", // to add
 		UnitHostname:             f.UnitHostname,
-		SourceHost:               "blah", // remove, this is the same as HTTPRemoteAddr
 		VSName:                   f.HTTPHostname,
 		IPClient:                 f.HTTPRemoteAddr,
 		DestinationPort:          f.HTTPRemotePort,
@@ -252,8 +291,6 @@ func (f *NAPWAFConfig) getSecurityViolation(logger *logrus.Entry) *models.Securi
 		SigSetNames:              f.SigSetNames,
 		SigCVEs:                  f.SignatureCVEs,
 		Severity:                 f.Severity,
-		SeverityLabel:            "blah", // to do
-		Priority:                 "blah", // to do
 		ThreatCampaignNames:      f.ThreatCampaignNames,
 		ClientClass:              f.ClientClass,
 		ClientApplication:        f.ClientApplication,
@@ -264,10 +301,36 @@ func (f *NAPWAFConfig) getSecurityViolation(logger *logrus.Entry) *models.Securi
 		EnforcedBotAnomalies:     f.EnforcedBotAnomalies,
 		ViolationContexts:        f.getViolationContext(),
 		ViolationsData:           f.getViolations(logger),
+		// The following items needs to be fixed before release
+		// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38119
+		DateTime:      f.DateTime,             // remove, metadata has it
+		Outcome:       f.RequestOutcome,       //rename the proto
+		OutcomeReason: f.RequestOutcomeReason, //rename the proto
+		URI:           f.HTTPURI,              // rename to HTTP URI?
+		GeoIP:         "blah",                 // to add
+		Host:          "blah",                 // to add
+		SourceHost:    "blah",                 // remove, this is the same as HTTPRemoteAddr
+		SeverityLabel: "blah",                 // to do
+		Priority:      "blah",                 // to do
 	}
 }
 
-func (f *NAPWAFConfig) getViolationContext() string {
+func (f *NAPConfig) getMetadata() (*models.Metadata, error) {
+	// Set date time as current time with format YYYY-MM-DD HH:MM:SS.SSS
+	// This is a temporary solution - https://nginxsoftware.atlassian.net/browse/IND-10651
+	f.DateTime = time.Now().UTC().Format(napDateTimeLayout)
+
+	t, err := parseNAPDateTime(f.DateTime)
+	if err != nil {
+		return nil, err
+	}
+
+	// set the correlation ID correctly
+	// TODO: https://nginxsoftware.atlassian.net/browse/NMS-37563
+	return NewMetadata(t, "123")
+}
+
+func (f *NAPConfig) getViolationContext() string {
 	contexts := []string{}
 	if f.ViolationDetailsXML != nil {
 		for _, v := range f.ViolationDetailsXML.RequestViolations.Violation {
@@ -279,161 +342,7 @@ func (f *NAPWAFConfig) getViolationContext() string {
 	return strings.Join(contexts, ",")
 }
 
-func (f *NAPWAFConfig) getMetadata() (*models.Metadata, error) {
-	// Set date time as current time with format YYYY-MM-DD HH:MM:SS.SSS
-	// This is a temporary solution - https://nginxsoftware.atlassian.net/browse/IND-10651
-	f.DateTime = time.Now().UTC().Format(napWAFDateTimeLayout)
-
-	t, err := parseNAPDateTime(f.DateTime)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: https://nginxsoftware.atlassian.net/browse/NMS-37563
-	// set the correlation ID correctly
-	return NewMetadata(t, "123")
-}
-
-// Parse the NAP WAF date time string into a Proto Time type.
-func parseNAPDateTime(raw string) (*types.Timestamp, error) {
-	t, err := time.Parse(napWAFDateTimeLayout, raw)
-	if err != nil {
-		return nil, err
-	}
-
-	return types.TimestampProto(t)
-}
-
-func parseNAPWAF(logEntry string, logger *logrus.Entry) (*NAPWAFConfig, error) {
-	var waf NAPWAFConfig
-
-	// Lasy reader
-	// Assumptions:
-	// 1. list values do not contain `commas`, rather have `::` as delimiter
-	// 2. no json values
-	// 3. no other comma exists in the response other than the delimiter comma
-	logger.Infof("Entry: %s", logEntry)
-
-	keys := []string{"date_time", "blocking_exception_reason", "dest_port", "ip_client", "is_truncated", "method", "policy_name", "protocol", "request_status", "response_code", "severity", "sig_cves", "sig_ids", "sig_names", "sig_set_names", "src_port", "sub_violations", "support_id", "threat_campaign_names", "unit_hostname", "uri", "violation_rating", "vs_name", "x_forwarded_for_header_value", "outcome", "outcome_reason", "violations", "violation_details", "bot_signature_name", "bot_category", "bot_anomalies", "enforced_bot_anomalies", "client_class", "client_application", "client_application_version", "transport_protocol"}
-	values := strings.Split(logEntry, ",")
-
-	for idx, key := range keys {
-		err := setValue(&waf, key, values[idx], logger)
-		if err != nil {
-			return &NAPWAFConfig{}, err
-		}
-	}
-
-	err := setValue(&waf, "request", strings.Join(values[len(keys):], ","), logger)
-	if err != nil {
-		return &NAPWAFConfig{}, err
-	}
-
-	return &waf, nil
-}
-
-func setValue(napWaf *NAPWAFConfig, key, value string, logger *logrus.Entry) error {
-	switch key {
-	case blockingExceptionReason:
-		napWaf.BlockingExceptionReason = value
-	case protocol:
-		napWaf.Protocol = value
-	case requestStatus:
-		napWaf.RequestStatus = value
-	case severity:
-		napWaf.Severity = value
-	case sigSetNames:
-		napWaf.SigSetNames = replaceEncodedList(value, listSeperator)
-	case threatCampaignNames:
-		napWaf.ThreatCampaignNames = value
-	case unitHostname:
-		napWaf.UnitHostname = value
-	case violationDetails:
-		napWaf.ViolationDetailsXML = func(data string) *BADMSG {
-			var xmlData BADMSG
-			err := xml.Unmarshal([]byte(data), &xmlData)
-			if err != nil {
-				logger.Errorf("failed to parse XML message: %v", err)
-				return nil
-			}
-			return &xmlData
-		}(value)
-	case clientApplication:
-		napWaf.ClientApplication = value
-	case clientApplicationVersion:
-		napWaf.ClientApplicationVersion = value
-	case transportProtocol:
-		napWaf.TransportProtocol = value
-	case dateTime:
-		napWaf.DateTime = value
-	case httpHostname:
-		napWaf.HTTPHostname = value
-	case httpRemoteAddr:
-		napWaf.HTTPRemoteAddr = value
-	case httpRemotePort:
-		napWaf.HTTPRemotePort = value
-	case httpRequestMethod:
-		napWaf.HTTPRequestMethod = value
-	case httpResponseCode:
-		napWaf.HTTPResponseCode = value
-	case httpServerPort:
-		napWaf.HTTPServerPort = value
-	case httpURI:
-		napWaf.HTTPURI = value
-	case isTruncated:
-		napWaf.IsTruncated = value
-	case policyName:
-		napWaf.PolicyName = value
-	case request:
-		napWaf.Request = value
-	case requestOutcome:
-		napWaf.RequestOutcome = value
-	case requestOutcomeReason:
-		napWaf.RequestOutcomeReason = value
-	case sigCVEs:
-		napWaf.SignatureCVEs = replaceEncodedList(value, listSeperator)
-	case sigIds:
-		napWaf.SignatureIDs = replaceEncodedList(value, listSeperator)
-	case sigNames:
-		napWaf.SignatureNames = replaceEncodedList(value, listSeperator)
-	case subViolations:
-		napWaf.SubViolations = value
-	case supportID:
-		napWaf.SupportID = value
-	case violations:
-		napWaf.Violations = replaceEncodedList(value, listSeperator)
-	case violationRating:
-		napWaf.ViolationRating = value
-	case xForwardedForHeaderVal:
-		napWaf.XForwardedForHeaderVal = value
-	case botAnomalies:
-		napWaf.BotAnomalies = value
-	case botCategory:
-		napWaf.BotCategory = value
-	case clientClass:
-		napWaf.ClientClass = value
-	case botSignatureName:
-		napWaf.BotSignatureName = value
-	case enforcedBotAnomalies:
-		napWaf.EnforcedBotAnomalies = value
-	default:
-		msg := fmt.Sprintf("Invalid field for NAPWAFConfig - %s", key)
-		return errors.New(msg)
-	}
-	return nil
-}
-
-func replaceEncodedList(entry, decoder string) string {
-	return strings.ReplaceAll(entry, decoder, ",")
-}
-
-const (
-	parameterCtx = "parameter"
-	headerCtx    = "header"
-	cookieCtx    = "cookie"
-)
-
-func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationData {
+func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData {
 	violations := []*models.ViolationData{}
 
 	if f.ViolationDetailsXML == nil {
@@ -454,6 +363,7 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 					logger.Errorf("could not decode the Paramater Name %s for %v", v.ParameterData.Name, f.SupportID)
 					break
 				}
+
 				decodedValue, err := base64.StdEncoding.DecodeString(v.ParameterData.Value)
 				if err != nil {
 					logger.Errorf("could not decode the Paramater Value %s for %v", v.ParameterData.Value, f.SupportID)
@@ -470,6 +380,7 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 					logger.Errorf("could not decode the Paramater Name %s for %v", v.ParamData.Name, f.SupportID)
 					break
 				}
+
 				decodedValue, err := base64.StdEncoding.DecodeString(v.ParamData.Value)
 				if err != nil {
 					logger.Errorf("could not decode the Paramater Value %s for %v", v.ParamData.Value, f.SupportID)
@@ -494,6 +405,7 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 				logger.Errorf("could not decode the Header Name %s for %v", v.Header.Name, f.SupportID)
 				break
 			}
+
 			decodedValue, err := base64.StdEncoding.DecodeString(v.Header.Value)
 			if err != nil {
 				logger.Errorf("could not decode the Header Value %s for %v", v.Header.Value, f.SupportID)
@@ -515,6 +427,7 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 				logger.Errorf("could not decode the Cookie Name %s for %v", v.Cookie.Name, f.SupportID)
 				break
 			}
+
 			decodedValue, err := base64.StdEncoding.DecodeString(v.Cookie.Value)
 			if err != nil {
 				logger.Errorf("could not decode the Cookie Value %s for %v", v.Cookie.Value, f.SupportID)
@@ -549,4 +462,136 @@ func (f *NAPWAFConfig) getViolations(logger *logrus.Entry) []*models.ViolationDa
 	}
 
 	return violations
+}
+
+// Parse the NAP date time string into a Proto Time type.
+func parseNAPDateTime(raw string) (*types.Timestamp, error) {
+	t, err := time.Parse(napDateTimeLayout, raw)
+	if err != nil {
+		return nil, err
+	}
+
+	return types.TimestampProto(t)
+}
+
+// Assumptions while parsing the NAP Syslog data:
+// 1. list values do not contain `commas`, rather have `::` as delimiter
+// 2. no json values
+// 3. no other comma exists in the response other than the delimiter comma
+// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38118
+func parseNAP(logEntry string, logger *logrus.Entry) (*NAPConfig, error) {
+	var waf NAPConfig
+
+	logger.Debugf("Got log entry: %s", logEntry)
+
+	values := strings.Split(logEntry, ",")
+
+	for idx, key := range logFormatKeys {
+		err := setValue(&waf, key, values[idx], logger)
+		if err != nil {
+			return &NAPConfig{}, err
+		}
+	}
+
+	err := setValue(&waf, "request", strings.Join(values[len(logFormatKeys):], ","), logger)
+	if err != nil {
+		return &NAPConfig{}, err
+	}
+
+	return &waf, nil
+}
+
+func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) error {
+	switch key {
+	case blockingExceptionReason:
+		napConfig.BlockingExceptionReason = value
+	case protocol:
+		napConfig.Protocol = value
+	case requestStatus:
+		napConfig.RequestStatus = value
+	case severity:
+		napConfig.Severity = value
+	case sigSetNames:
+		napConfig.SigSetNames = replaceEncodedList(value, listSeperator)
+	case threatCampaignNames:
+		napConfig.ThreatCampaignNames = value
+	case unitHostname:
+		napConfig.UnitHostname = value
+	case violationDetails:
+		napConfig.ViolationDetailsXML = func(data string) *BADMSG {
+			var xmlData BADMSG
+			err := xml.Unmarshal([]byte(data), &xmlData)
+			if err != nil {
+				logger.Errorf("failed to parse XML message: %v", err)
+				return nil
+			}
+			return &xmlData
+		}(value)
+	case clientApplication:
+		napConfig.ClientApplication = value
+	case clientApplicationVersion:
+		napConfig.ClientApplicationVersion = value
+	case transportProtocol:
+		napConfig.TransportProtocol = value
+	case dateTime:
+		napConfig.DateTime = value
+	case httpHostname:
+		napConfig.HTTPHostname = value
+	case httpRemoteAddr:
+		napConfig.HTTPRemoteAddr = value
+	case httpRemotePort:
+		napConfig.HTTPRemotePort = value
+	case httpRequestMethod:
+		napConfig.HTTPRequestMethod = value
+	case httpResponseCode:
+		napConfig.HTTPResponseCode = value
+	case httpServerPort:
+		napConfig.HTTPServerPort = value
+	case httpURI:
+		napConfig.HTTPURI = value
+	case isTruncated:
+		napConfig.IsTruncated = value
+	case policyName:
+		napConfig.PolicyName = value
+	case request:
+		napConfig.Request = value
+	case requestOutcome:
+		napConfig.RequestOutcome = value
+	case requestOutcomeReason:
+		napConfig.RequestOutcomeReason = value
+	case sigCVEs:
+		napConfig.SignatureCVEs = replaceEncodedList(value, listSeperator)
+	case sigIds:
+		napConfig.SignatureIDs = replaceEncodedList(value, listSeperator)
+	case sigNames:
+		napConfig.SignatureNames = replaceEncodedList(value, listSeperator)
+	case subViolations:
+		napConfig.SubViolations = value
+	case supportID:
+		napConfig.SupportID = value
+	case violations:
+		napConfig.Violations = replaceEncodedList(value, listSeperator)
+	case violationRating:
+		napConfig.ViolationRating = value
+	case xForwardedForHeaderVal:
+		napConfig.XForwardedForHeaderVal = value
+	case botAnomalies:
+		napConfig.BotAnomalies = value
+	case botCategory:
+		napConfig.BotCategory = value
+	case clientClass:
+		napConfig.ClientClass = value
+	case botSignatureName:
+		napConfig.BotSignatureName = value
+	case enforcedBotAnomalies:
+		napConfig.EnforcedBotAnomalies = value
+	default:
+		msg := fmt.Sprintf("Invalid field for NAP Config - %s", key)
+		return errors.New(msg)
+	}
+	return nil
+}
+
+func replaceEncodedList(entry, decoder string) string {
+	return strings.ReplaceAll(entry, decoder, ",")
 }

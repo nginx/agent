@@ -4,8 +4,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// NAPWAFConfig holds the config for NAPWAFConfig Collector.
-type NAPWAFConfig struct {
+// NAPConfig holds the config for NAPConfig Collector.
+type NAPConfig struct {
 	SyslogIP   string
 	SyslogPort int
 	Logger     *logrus.Entry

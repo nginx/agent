@@ -12,18 +12,18 @@ import (
 )
 
 const (
-	napWAFComponentName = "collector:napWaf-collector"
+	napComponentName = "collector:nap"
 )
 
 var (
 	// logging fields for the component
 	componentLogFields = logrus.Fields{
-		"component": napWAFComponentName,
+		"component": napComponentName,
 	}
 )
 
-// NAPWAFCollector lets you to Collect log data on given port.
-type NAPWAFCollector struct {
+// NAPCollector lets you to Collect log data on given port.
+type NAPCollector struct {
 	syslog *syslogServer
 	logger *logrus.Entry
 }
@@ -34,10 +34,10 @@ type syslogServer struct {
 	server  *syslog.Server
 }
 
-// NewNAPWAFCollector gives you a NAP WAF collector for the syslog server.
-func NewNAPWAFCollector(cfg *NAPWAFConfig) (*NAPWAFCollector, error) {
+// NewNAPCollector gives you a NAP collector for the syslog server.
+func NewNAPCollector(cfg *NAPConfig) (*NAPCollector, error) {
 	var (
-		c   NAPWAFCollector
+		c   NAPCollector
 		err error
 	)
 
@@ -45,8 +45,7 @@ func NewNAPWAFCollector(cfg *NAPWAFConfig) (*NAPWAFCollector, error) {
 	if cfg.Logger != nil {
 		c.logger = cfg.Logger.WithFields(componentLogFields)
 	}
-
-	c.logger.Infof("Getting %s Collector", monitoring.NAPWAF)
+	c.logger.Infof("Getting %s Collector", monitoring.NAP)
 
 	c.syslog, err = newSyslogServer(c.logger, cfg.SyslogIP, cfg.SyslogPort)
 	if err != nil {
@@ -65,7 +64,6 @@ func newSyslogServer(logger *logrus.Entry, ip string, port int) (*syslogServer, 
 	server.SetHandler(handler)
 
 	addr := fmt.Sprintf("%s:%d", ip, port)
-
 	err := server.ListenTCP(addr)
 	if err != nil {
 		msg := fmt.Sprintf("Error while configuring syslog server to listen on %s:\n %v", addr, err)
@@ -84,24 +82,22 @@ func newSyslogServer(logger *logrus.Entry, ip string, port int) (*syslogServer, 
 }
 
 // Collect starts collecting on collect chan until done chan gets a signal.
-func (nap *NAPWAFCollector) Collect(ctx context.Context, wg *sync.WaitGroup, collect chan<- *monitoring.RawLog) {
+func (nap *NAPCollector) Collect(ctx context.Context, wg *sync.WaitGroup, collect chan<- *monitoring.RawLog) {
 	defer wg.Done()
 
-	nap.logger.Infof("Starting collection for %s", monitoring.NAPWAF)
+	nap.logger.Infof("Starting collection for %s", monitoring.NAP)
 
 	for {
 		select {
 		case logParts := <-nap.syslog.channel:
 			line, ok := logParts["content"].(string)
-
 			if !ok {
 				nap.logger.Warnf("Noncompliant syslog message, got: %v", logParts)
 				break
 			}
 
 			nap.logger.Infof("collected log line succesfully.")
-
-			collect <- &monitoring.RawLog{Origin: monitoring.NAPWAF, Logline: line}
+			collect <- &monitoring.RawLog{Origin: monitoring.NAP, Logline: line}
 		case <-ctx.Done():
 			nap.logger.Infof("Context cancellation, collector is wrapping up...")
 

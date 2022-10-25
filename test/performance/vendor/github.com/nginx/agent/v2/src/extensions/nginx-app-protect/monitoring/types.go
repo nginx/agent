@@ -5,9 +5,9 @@ import "fmt"
 // WAFType denotes which type of WAF is being used
 type WAFType uint
 
-// WAFType currently can be NAPWAF
+// WAFType currently can just be NAP, can be extended to support other types of WAFs if needed
 const (
-	NAPWAF WAFType = iota
+	NAP WAFType = iota
 )
 
 // RawLog describes the raw log entry received from the WAF
@@ -19,8 +19,8 @@ type RawLog struct {
 // String converts WAFType enum into string
 func (w WAFType) String() string {
 	switch w {
-	case NAPWAF:
-		return "NAP WAF"
+	case NAP:
+		return "Nginx App Protect"
 	}
 
 	return fmt.Sprintf("Unknown WAFType : %d", w)

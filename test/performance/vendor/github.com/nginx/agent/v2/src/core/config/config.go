@@ -91,6 +91,8 @@ func SetNAPMonitoringDefaults() {
 	Viper.SetDefault(NAPMonitoringProcessorBufferSize, Defaults.NAPMonitoring.ProcessorBufferSize)
 	Viper.SetDefault(NAPMonitoringSyslogIP, Defaults.NAPMonitoring.SyslogIP)
 	Viper.SetDefault(NAPMonitoringSyslogPort, Defaults.NAPMonitoring.SyslogPort)
+	Viper.SetDefault(NAPMonitoringReportInterval, Defaults.NAPMonitoring.ReportInterval)
+	Viper.SetDefault(NAPMonitoringReportCount, Defaults.NAPMonitoring.ReportCount)
 }
 
 func setFlagDeprecated(name string, usageMessage string) {
@@ -316,6 +318,8 @@ func getNAPMonitoring() NAPMonitoring {
 		ProcessorBufferSize: Viper.GetInt(NAPMonitoringProcessorBufferSize),
 		SyslogIP:            Viper.GetString(NAPMonitoringSyslogIP),
 		SyslogPort:          Viper.GetInt(NAPMonitoringSyslogPort),
+		ReportInterval:      Viper.GetDuration(NAPMonitoringReportInterval),
+		ReportCount:         Viper.GetInt(NAPMonitoringReportCount),
 	}
 }
 

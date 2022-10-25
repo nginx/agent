@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"regexp"
 	"sync"
 
@@ -14,15 +15,8 @@ import (
 )
 
 const (
-	componentName = "processor"
-
-	defualtSigDBFile             = "/opt/app_protect/db/PLC"
-	defualtSigDBFilePollInterval = 10
-	sigTable                     = "NEGSIG_SIGNATURES"
-	sigIdCol                     = "sig_id"
-	sigNameCol                   = "sig_name"
-	errorPopulatingMapMsg        = "Error populating signature map: %s"
-	hostnameFormat               = `(?m)\d+\-(.*)\:\d+\-.*`
+	componentName  = "processor"
+	hostnameFormat = `(?m)\d+\-(.*)\:\d+\-.*`
 )
 
 var (
@@ -44,6 +38,7 @@ type Client struct {
 	logger      *logrus.Entry
 	workers     int
 	hostPattern *regexp.Regexp
+	commonDims  *metrics.CommonDim
 }
 
 // GetClient gives you a Client for processing.
@@ -63,10 +58,11 @@ func GetClient(cfg *Config) (*Client, error) {
 	hostPattern, err := regexp.Compile(hostnameFormat)
 	if err != nil {
 		c.logger.Errorf("could not compile the hostname regex: %v", err)
-
 		return &c, err
 	}
 	c.hostPattern = hostPattern
+
+	c.commonDims = cfg.CommonDims
 
 	return &c, nil
 }
@@ -81,14 +77,12 @@ func (c *Client) processorWorker(ctx context.Context, wg *sync.WaitGroup, id int
 		select {
 		case logline := <-collected:
 			e, err := c.parse(logline.Origin, logline.Logline)
-
 			if err != nil {
 				c.logger.Errorf("%d: Error while parsing %s's log: %s, Error: %v", id, logline.Origin, logline.Logline, err)
 				break
 			}
 
 			var event *pb.Event
-
 			event, err = e.GetEvent(c.hostPattern, c.logger)
 			if err != nil {
 				if errors.Is(err, errFalsePositive) {
@@ -117,7 +111,6 @@ func (c *Client) Process(ctx context.Context, wg *sync.WaitGroup, collected <-ch
 
 	for id := 1; id <= c.workers; id++ {
 		wg.Add(1)
-
 		go c.processorWorker(ctx, wg, id, collected, processed)
 	}
 
@@ -126,8 +119,8 @@ func (c *Client) Process(ctx context.Context, wg *sync.WaitGroup, collected <-ch
 
 func (c *Client) parse(waf monitoring.WAFType, logentry string) (Eventer, error) {
 	switch waf {
-	case monitoring.NAPWAF:
-		return parseNAPWAF(logentry, c.logger)
+	case monitoring.NAP:
+		return parseNAP(logentry, c.logger)
 	default:
 		err := fmt.Errorf("could not parse logentry, invalid WAF type: %s", waf)
 		c.logger.Error(err)
