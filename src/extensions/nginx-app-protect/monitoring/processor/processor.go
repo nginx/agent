@@ -62,6 +62,10 @@ func GetClient(cfg *Config) (*Client, error) {
 	}
 	c.hostPattern = hostPattern
 
+	if cfg.CommonDims == nil {
+		c.logger.Warnf("common dimensions are not passed to NAP Monitoring processor")
+		cfg.CommonDims = &metrics.CommonDim{}
+	}
 	c.commonDims = cfg.CommonDims
 
 	return &c, nil
@@ -92,6 +96,18 @@ func (c *Client) processorWorker(ctx context.Context, wg *sync.WaitGroup, id int
 				}
 				break
 			}
+
+			if event.GetSecurityViolationEvent() == nil {
+				c.logger.Errorf("event expected as SecurityViolationEvent from nap monitor processing")
+				break
+			}
+
+			event.GetSecurityViolationEvent().SystemID = c.commonDims.SystemId
+			event.GetSecurityViolationEvent().Hostname = c.commonDims.Hostname
+			event.GetSecurityViolationEvent().InstanceTags = c.commonDims.InstanceTags
+			event.GetSecurityViolationEvent().InstanceGroup = c.commonDims.InstanceGroup
+			event.GetSecurityViolationEvent().DisplayName = c.commonDims.DisplayName
+			event.GetSecurityViolationEvent().NginxID = c.commonDims.NginxId
 
 			c.logger.Debugf("%d: Generated Event: %s", id, event)
 			processed <- event
