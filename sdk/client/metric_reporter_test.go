@@ -2,13 +2,14 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	f5_nginx_agent_sdk_events "github.com/nginx/agent/sdk/v2/proto/events"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -152,9 +153,16 @@ type metricReporterHandler struct {
 	metricReportStream chan *proto.MetricsReport
 }
 
+type eventReporterHandlerFunc func(proto.MetricsService_StreamEventsServer, *sync.WaitGroup)
+type eventReporterHandler struct {
+	streamEventsHandleFunc eventReporterHandlerFunc
+	eventReportStream      chan *f5_nginx_agent_sdk_events.EventReport
+}
+
 type mockMetricReporterService struct {
 	sync.RWMutex
 	metricReporterHandler *metricReporterHandler
+	eventReporterHandler  *eventReporterHandler
 }
 
 func (c *mockMetricReporterService) Stream(stream proto.MetricsService_StreamServer) error {
@@ -168,6 +176,23 @@ func (c *mockMetricReporterService) Stream(stream proto.MetricsService_StreamSer
 	}
 
 	go streamHandleFunc(stream, wg)
+
+	wg.Wait()
+
+	return nil
+}
+
+func (c *mockMetricReporterService) StreamEvents(stream proto.MetricsService_StreamEventsServer) error {
+	wg := &sync.WaitGroup{}
+	h := c.ensureEventReporterHandler()
+	wg.Add(1)
+
+	streamEventsHandleFunc := h.streamEventsHandleFunc
+	if streamEventsHandleFunc == nil {
+		streamEventsHandleFunc = h.streamEventsHandle
+	}
+
+	go streamEventsHandleFunc(stream, wg)
 
 	wg.Wait()
 
@@ -188,15 +213,41 @@ func (c *mockMetricReporterService) ensureMetricReporterHandler() *metricReporte
 	return c.metricReporterHandler
 }
 
+func (c *mockMetricReporterService) ensureEventReporterHandler() *eventReporterHandler {
+	c.RLock()
+	if c.eventReporterHandler == nil {
+		c.RUnlock()
+		c.Lock()
+		defer c.Unlock()
+		c.eventReporterHandler = &eventReporterHandler{}
+		c.eventReporterHandler.eventReportStream = make(chan *f5_nginx_agent_sdk_events.EventReport)
+		return c.eventReporterHandler
+	}
+	defer c.RUnlock()
+	return c.eventReporterHandler
+}
+
 func (h *metricReporterHandler) streamHandle(server proto.MetricsService_StreamServer, wg *sync.WaitGroup) {
 	for {
 		cmd, err := server.Recv()
-		fmt.Printf("Recv Metric Report: %v\n", cmd)
+		log.Debugf("Recv Metric Report: %v\n", cmd)
 		if err != nil {
-			fmt.Printf("Recv Metric Report: %v\n", err)
+			log.Debugf("Recv Metric Report: %v\n", err)
 			return
 		}
 		h.metricReportStream <- cmd
+	}
+}
+
+func (h *eventReporterHandler) streamEventsHandle(server proto.MetricsService_StreamEventsServer, wg *sync.WaitGroup) {
+	for {
+		cmd, err := server.Recv()
+		log.Debugf("Recv Event Report: %v\n", cmd)
+		if err != nil {
+			log.Debugf("Recv Event Report: %v\n", err)
+			return
+		}
+		h.eventReportStream <- cmd
 	}
 }
 
@@ -210,7 +261,7 @@ func startMetricReporterMockServer() (*grpc.Server, *mockMetricReporterService, 
 
 	go func() {
 		if err := grpcServer.Serve(listener); err != nil {
-			fmt.Printf("Error starting mock GRPC server: %v\n", err)
+			log.Errorf("Error starting mock GRPC server: %v\n", err)
 		}
 	}()
 

@@ -24,6 +24,7 @@ type MsgClassification int
 const (
 	MsgClassificationCommand MsgClassification = iota
 	MsgClassificationMetric
+	MsgClassificationEvent
 )
 
 var (
