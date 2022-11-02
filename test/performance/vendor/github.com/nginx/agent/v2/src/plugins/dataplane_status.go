@@ -103,6 +103,7 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 		case *proto.AgentActivityStatus:
 			dps.updateAgentActivityStatuses(data)
 			dps.sendDataplaneStatus(dps.messagePipeline, false)
+			dps.removeAgentActivityStatus(data)
 		default:
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, data)
 		}
@@ -134,6 +135,18 @@ func (dps *DataPlaneStatus) updateAgentActivityStatuses(newAgentActivityStatus *
 		if !foundExistingNginxStatus {
 			dps.agentActivityStatuses = append(dps.agentActivityStatuses, newAgentActivityStatus)
 			log.Tracef("DataplaneStatus: Added new status %v to agentActivityStatus", newAgentActivityStatus)
+		}
+	}
+}
+
+func (dps *DataPlaneStatus) removeAgentActivityStatus(agentActivityStatus *proto.AgentActivityStatus) {
+	log.Tracef("DataplaneStatus: Removing %v from agentActivityStatuses", agentActivityStatus)
+	if _, ok := agentActivityStatus.GetStatus().(*proto.AgentActivityStatus_NginxConfigStatus); ok {
+		for index, agentActivityStatus := range dps.agentActivityStatuses {
+			if _, ok := agentActivityStatus.GetStatus().(*proto.AgentActivityStatus_NginxConfigStatus); ok {
+				dps.agentActivityStatuses = append(dps.agentActivityStatuses[:index], dps.agentActivityStatuses[index+1:]...)
+				log.Tracef("DataplaneStatus: Removed %v from agentActivityStatus", agentActivityStatus)
+			}
 		}
 	}
 }
