@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v2/src/core"
+
 	"gopkg.in/yaml.v2"
 )
 
@@ -29,7 +30,7 @@ func getThreatCampaignsVersion(versionFile string) (string, error) {
 
 	// Read bytes into object
 	threatCampVersionDateTime := napRevisionDateTime{}
-	err = yaml.Unmarshal([]byte(versionBytes), &threatCampVersionDateTime)
+	err = yaml.UnmarshalStrict([]byte(versionBytes), &threatCampVersionDateTime)
 	if err != nil {
 		return "", err
 	}

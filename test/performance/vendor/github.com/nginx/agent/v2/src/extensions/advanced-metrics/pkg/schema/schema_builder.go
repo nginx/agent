@@ -39,7 +39,8 @@ func NewSchemaBuilder() *SchemaBuilder {
 // NewDimension builds new dimension definition
 // name - name of the dimension used later by publisher to build Dimension in MetricSet
 // maxDimensionSetSize - cardinality of given dimension, specify maximal size of unique dimensions which will be accumulated
-//                       during publishing period, minimum value is 4, two elements are reserved for internal use
+//
+//	during publishing period, minimum value is 4, two elements are reserved for internal use
 func (b *SchemaBuilder) NewDimension(name string, maxDimensionSetSize uint32, opts ...FieldOption) *SchemaBuilder {
 	b.fields = append(b.fields, schema.NewDimensionField(name, maxDimensionSetSize, opts...))
 

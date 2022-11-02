@@ -28,7 +28,8 @@ type Field struct {
 // DimensionField defines dimension field specific information
 // KeyBitSize specifies the size of the key which will be used in the staging table to represent dimension value
 // MaxDimensionSetSize specifies max unique dimension which will be stored in staging table
-//					   if max size will be reaches all new unique dimensions will be transformed to AGGR value
+//
+//	if max size will be reaches all new unique dimensions will be transformed to AGGR value
 type DimensionField struct {
 	KeyBitSize                  int
 	KeyBitPositionInCompoundKey int

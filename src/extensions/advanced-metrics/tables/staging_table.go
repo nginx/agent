@@ -149,8 +149,9 @@ func (t *StagingTable) lookupCodeForDimension(dimension []byte, field *schema.Fi
 // Previous read snapshot will be cleared.
 // By default returned LookupSet is nil.
 // resetLookups determines if new instance of LookupSet should be created, old one will be returned in case of reset
-//				,as Samples and LookupSet reset need to be done atomically this function
-// 				do both functionalities instead of separate methods
+//
+//	,as Samples and LookupSet reset need to be done atomically this function
+//	do both functionalities instead of separate methods
 func (t *StagingTable) ReadSnapshot(resetLookups bool) (SamplesView, LookupSet) {
 	t.Lock()
 	defer t.Unlock()

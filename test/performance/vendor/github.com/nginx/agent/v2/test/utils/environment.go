@@ -47,20 +47,24 @@ func NewMockEnvironment() *MockEnvironment {
 var _ core.Environment = NewMockEnvironment()
 
 func (m *MockEnvironment) NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
-	m.Called(agentVersion, tags)
-	return &proto.HostInfo{
-		Agent:       agentVersion,
-		Boot:        0,
-		Hostname:    "test-host",
-		DisplayName: "",
-		OsType:      "",
-		Uuid:        "",
-		Uname:       "",
-		Partitons:   []*proto.DiskPartition{},
-		Network:     &proto.Network{},
-		Processor:   []*proto.CpuInfo{},
-		Release:     &proto.ReleaseInfo{},
+	args := m.Called(agentVersion, tags)
+	returned, ok := args.Get(0).(*proto.HostInfo)
+	if !ok {
+		return &proto.HostInfo{
+			Agent:       agentVersion,
+			Boot:        0,
+			Hostname:    "test-host",
+			DisplayName: "",
+			OsType:      "",
+			Uuid:        "",
+			Uname:       "",
+			Partitons:   []*proto.DiskPartition{},
+			Network:     &proto.Network{},
+			Processor:   []*proto.CpuInfo{},
+			Release:     &proto.ReleaseInfo{},
+		}
 	}
+	return returned
 }
 
 func (m *MockEnvironment) GetHostname() string {

@@ -81,7 +81,9 @@ func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
 
 		if commandData.AgentConfig.Details != nil && commandData.AgentConfig.Details.Extensions != nil {
 			for _, extension := range commandData.AgentConfig.Details.Extensions {
-				if extension == config.AdvancedMetricsKey || extension == config.NginxAppProtectKey {
+				if extension == config.AdvancedMetricsKey ||
+					extension == config.NginxAppProtectKey ||
+					extension == config.NAPMonitoringKey {
 					r.messagePipeline.Process(core.NewMessage(core.EnableExtension, extension))
 				}
 			}

@@ -6,13 +6,15 @@ import (
 	"io"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
+
 	"github.com/nginx/agent/sdk/v2"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/interceptors"
 	"github.com/nginx/agent/sdk/v2/proto"
-	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
+	events "github.com/nginx/agent/sdk/v2/proto/events"
 )
 
 func NewMetricReporterClient() MetricReporter {
@@ -26,6 +28,7 @@ type metricReporter struct {
 	*connector
 	client          proto.MetricsServiceClient
 	channel         proto.MetricsService_StreamClient
+	eventsChannel   proto.MetricsService_StreamEventsClient
 	ctx             context.Context
 	mu              sync.Mutex
 	backoffSettings BackoffSettings
@@ -90,7 +93,16 @@ func (r *metricReporter) createClient() error {
 		log.Infof("Metric reporter retrying to connect to %s", r.grpc.Target())
 		return err
 	}
+
+	eventsChannel, err := r.client.StreamEvents(r.ctx)
+	if err != nil {
+		log.Warnf("Unable to create events channel: %s", err)
+		log.Infof("Metric reporter retrying to connect to %s", r.grpc.Target())
+		return err
+	}
+
 	r.channel = channel
+	r.eventsChannel = eventsChannel
 
 	return nil
 }
@@ -125,35 +137,50 @@ func (r *metricReporter) WithBackoffSettings(backoffSettings BackoffSettings) Cl
 }
 
 func (r *metricReporter) Send(ctx context.Context, message Message) error {
-	var (
-		report *proto.MetricsReport
-		ok     bool
-	)
+	var err error
 
 	switch message.Classification() {
 	case MsgClassificationMetric:
-		if report, ok = message.Raw().(*proto.MetricsReport); !ok {
+		report, ok := message.Raw().(*proto.MetricsReport)
+		if !ok {
 			return fmt.Errorf("MetricReporter expected a metrics report message, but received %T", message.Data())
 		}
-	default:
-		return fmt.Errorf("MetricReporter expected a metrics report message, but received %T", message.Data())
-	}
+		err = sdk.WaitUntil(r.ctx, r.backoffSettings.initialInterval, r.backoffSettings.maxInterval, r.backoffSettings.sendMaxTimeout, func() error {
+			if err := r.channel.Send(report); err != nil {
+				return r.handleGrpcError("Metric Reporter Channel Send", err)
+			}
 
-	err := sdk.WaitUntil(r.ctx, r.backoffSettings.initialInterval, r.backoffSettings.maxInterval, r.backoffSettings.sendMaxTimeout, func() error {
-		if err := r.channel.Send(report); err != nil {
-			return r.handleGrpcError("Metric Reporter Channel Send", err)
+			log.Tracef("MetricReporter sent metrics report %v", report)
+
+			return nil
+		})
+	case MsgClassificationEvent:
+		report, ok := message.Raw().(*events.EventReport)
+		if !ok {
+			return fmt.Errorf("MetricReporter expected an events report message, but received %T", message.Data())
 		}
+		err = sdk.WaitUntil(r.ctx, r.backoffSettings.initialInterval, r.backoffSettings.maxInterval, r.backoffSettings.sendMaxTimeout, func() error {
+			if err := r.eventsChannel.Send(report); err != nil {
+				return r.handleGrpcError("Metric Reporter Events Channel Send", err)
+			}
 
-		log.Tracef("MetricReporter sent report %v", report)
+			log.Tracef("MetricReporter sent events report %v", report)
 
-		return nil
-	})
+			return nil
+		})
+	default:
+		return fmt.Errorf("MetricReporter expected a metrics or events report message, but received %T", message.Data())
+	}
 
 	return err
 }
 
 func (r *metricReporter) closeConnection() error {
 	err := r.channel.CloseSend()
+	if err != nil {
+		return err
+	}
+	err = r.eventsChannel.CloseSend()
 	if err != nil {
 		return err
 	}

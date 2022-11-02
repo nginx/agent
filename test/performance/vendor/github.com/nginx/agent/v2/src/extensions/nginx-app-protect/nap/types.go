@@ -75,4 +75,6 @@ type NAPReleaseMap struct {
 // captured in their yaml files under the field "revisionDatetime".
 type napRevisionDateTime struct {
 	RevisionDatetime string `yaml:"revisionDatetime,omitempty"`
+	Checksum         string `yaml:"checksum,omitempty"`
+	Filename         string `yaml:"filename,omitempty"`
 }
