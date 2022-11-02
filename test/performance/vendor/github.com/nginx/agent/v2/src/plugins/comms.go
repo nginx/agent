@@ -141,7 +141,6 @@ func (r *Comms) reportLoop() {
 					sb.WriteString(", ")
 				}
 				sb.WriteString(report.Events[l-1].GetSecurityViolationEvent().SupportID)
-				// TODO: In addition to the below, make sure we don't lose data https://nginxsoftware.atlassian.net/browse/NMS-38169
 				log.Errorf("Failed to send EventReport with error: %v, supportID list: %s", err, sb.String())
 			} else {
 				log.Tracef("EventReport sent, %v", report)

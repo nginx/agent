@@ -2,16 +2,17 @@ package manager
 
 import (
 	"context"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"runtime"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
+
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/collector"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/processor"
-	log "github.com/sirupsen/logrus"
 )
 
 const (

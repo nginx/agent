@@ -25,6 +25,7 @@ const (
 
 var (
 	logFormatKeys = []string{
+		// TODO: Remove `date_time` from syslog format as it is unused (NMS-38119)
 		"date_time",
 		"blocking_exception_reason",
 		"dest_port",
@@ -65,7 +66,7 @@ var (
 )
 
 const (
-	// TODO: Identify the usage of the following new keys
+	// TODO: Identify the usage of the following new keys (NMS-38311)
 	blockingExceptionReason  = "blocking_exception_reason"
 	protocol                 = "protocol"
 	requestStatus            = "request_status"
@@ -77,22 +78,6 @@ const (
 	clientApplication        = "client_application"
 	clientApplicationVersion = "client_application_version"
 	transportProtocol        = "transport_protocol"
-
-	// Using default values instead of overriden keys per older CAS policy
-	httpRequestMethod    = "method"
-	httpResponseCode     = "response_code"
-	sigCVEs              = "sig_cves"
-	sigIds               = "sig_ids"
-	sigNames             = "sig_names"
-	httpRemotePort       = "src_port"
-	httpURI              = "uri"
-	httpHostname         = "vs_name"
-	requestOutcome       = "outcome"
-	requestOutcomeReason = "outcome_reason"
-	httpRemoteAddr       = "ip_client"
-	httpServerPort       = "dest_port"
-	isTruncated          = "is_truncated"
-
 	// Older CAS Naming (this needs to be removed)
 	// httpRequestMethod    = "http_request_method"
 	// httpResponseCode     = "http_response_code"
@@ -109,6 +94,21 @@ const (
 	// httpRemoteAddr       = "http_remote_addr"
 	// httpServerPort       = "http_server_port"
 	// isTruncated          = "is_truncated_bool"
+
+	// Using default values instead of overriden keys per older CAS policy
+	httpRequestMethod    = "method"
+	httpResponseCode     = "response_code"
+	sigCVEs              = "sig_cves"
+	sigIds               = "sig_ids"
+	sigNames             = "sig_names"
+	httpRemotePort       = "src_port"
+	httpURI              = "uri"
+	httpHostname         = "vs_name"
+	requestOutcome       = "outcome"
+	requestOutcomeReason = "outcome_reason"
+	httpRemoteAddr       = "ip_client"
+	httpServerPort       = "dest_port"
+	isTruncated          = "is_truncated"
 
 	// Existing parsed keys from the log
 	dateTime               = "date_time"
@@ -301,8 +301,7 @@ func (f *NAPConfig) getSecurityViolation(logger *logrus.Entry) *models.SecurityV
 		EnforcedBotAnomalies:     f.EnforcedBotAnomalies,
 		ViolationContexts:        f.getViolationContext(),
 		ViolationsData:           f.getViolations(logger),
-		// The following items needs to be fixed before release
-		// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38119
+		// TODO: The following items needs to be fixed before release (NMS-38119)
 		DateTime:      f.DateTime,             // remove, metadata has it
 		Outcome:       f.RequestOutcome,       //rename the proto
 		OutcomeReason: f.RequestOutcomeReason, //rename the proto
@@ -316,8 +315,6 @@ func (f *NAPConfig) getSecurityViolation(logger *logrus.Entry) *models.SecurityV
 }
 
 func (f *NAPConfig) getMetadata() (*models.Metadata, error) {
-	// Set date time as current time with format YYYY-MM-DD HH:MM:SS.SSS
-	// This is a temporary solution - https://nginxsoftware.atlassian.net/browse/IND-10651
 	f.DateTime = time.Now().UTC().Format(napDateTimeLayout)
 
 	t, err := parseNAPDateTime(f.DateTime)
@@ -325,9 +322,7 @@ func (f *NAPConfig) getMetadata() (*models.Metadata, error) {
 		return nil, err
 	}
 
-	// set the correlation ID correctly
-	// TODO: https://nginxsoftware.atlassian.net/browse/NMS-37563
-	return NewMetadata(t, "123")
+	return NewMetadata(t, f.SupportID)
 }
 
 func (f *NAPConfig) getViolationContext() string {
@@ -474,11 +469,10 @@ func parseNAPDateTime(raw string) (*types.Timestamp, error) {
 	return types.TimestampProto(t)
 }
 
-// Assumptions while parsing the NAP Syslog data:
+// TODO: Assumptions while parsing the NAP Syslog data (NMS-38118)
 // 1. list values do not contain `commas`, rather have `::` as delimiter
 // 2. no json values
 // 3. no other comma exists in the response other than the delimiter comma
-// TODO: https://nginxsoftware.atlassian.net/browse/NMS-38118
 func parseNAP(logEntry string, logger *logrus.Entry) (*NAPConfig, error) {
 	var waf NAPConfig
 
