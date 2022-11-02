@@ -10,6 +10,8 @@ type NginxAppProtect struct {
 	Release                 NAPRelease
 	AttackSignaturesVersion string
 	ThreatCampaignsVersion  string
+	optDirPath              string
+	symLinkDir              string
 }
 
 // NAPReport is a collection of information on the current systems NAP details.

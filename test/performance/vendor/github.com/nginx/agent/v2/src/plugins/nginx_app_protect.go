@@ -33,7 +33,7 @@ type NginxAppProtect struct {
 }
 
 func NewNginxAppProtect(config *config.Config, env core.Environment) (*NginxAppProtect, error) {
-	napTime, err := nap.NewNginxAppProtect()
+	napTime, err := nap.NewNginxAppProtect(nap.DefaultOptNAPDir, nap.DefaultNMSCompilerDir)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (n *NginxAppProtect) monitor() {
 			n.messagePipeline.Process(core.NewMessage(core.NginxAppProtectDetailsGenerated, napReportMsg))
 
 		case <-time.After(n.reportInterval):
-			log.Debugf("No NAP changes detected after %v seconds... NAP Values: %+v", n.reportInterval.Seconds(), n.nap.GenerateNAPReport())
+			log.Infof("No NAP changes detected after %v seconds... NAP Values: %+v", n.reportInterval.Seconds(), n.nap.GenerateNAPReport())
 
 		case <-n.ctx.Done():
 			return
