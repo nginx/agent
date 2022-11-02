@@ -25,7 +25,7 @@ func NAPRelease3_12_2() NAPRelease {
 			NAPEngine:     "10.139.2",
 			NAPPlugin:     "3.1088.2",
 			NAPPlusModule: "27+3.1088.2",
-			NAPRelease:    "3.12.x",
+			NAPRelease:    "3.12.2",
 			NginxPlus:     "27",
 		},
 	}
