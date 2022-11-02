@@ -334,6 +334,8 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 	go n.validateConfig(nginx, cmd.Meta.MessageId, config, configApply)
 
 	// If the NGINX config can be validated with the validationTimeout the result will be returned straight away.
+	// This is timeout is temporary to ensure we support backwards compatibility. In a future release this timeout 
+	// will be removed.
 	select {
 	case result := <-n.configApplyStatusChannel:
 		return result
