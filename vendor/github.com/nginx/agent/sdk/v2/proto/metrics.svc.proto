@@ -7,10 +7,6 @@ import "events/event.proto";
 import "metrics.proto";
 
 // MetricsService is responsible for ingesting high volume metrics and events
-// Note: 
-//    The naming of MetricsService is unfortunate, it is extended to StreamEvents
-//    to keep backward and forward compatability with NGINX Management Suite products
-//    This will be refactored when a major revision change for NGINX Agent is introduced
 service MetricsService {
   // A client-to-server streaming RPC to deliver high volume metrics reports.
   rpc Stream(stream MetricsReport) returns (google.protobuf.Empty) {}
