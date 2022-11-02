@@ -93,7 +93,9 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 
 			if agtCfg.Details != nil && agtCfg.Details.Extensions != nil {
 				for _, extension := range agtCfg.Details.Extensions {
-					if extension == config.AdvancedMetricsKey || extension == config.NginxAppProtectKey {
+					if extension == config.AdvancedMetricsKey ||
+						extension == config.NginxAppProtectKey ||
+						extension == config.NAPMonitoringKey {
 						c.pipeline.Process(core.NewMessage(core.EnableExtension, extension))
 					}
 				}

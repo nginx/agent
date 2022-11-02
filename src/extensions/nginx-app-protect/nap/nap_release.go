@@ -37,7 +37,7 @@ func NAPReleaseInfo(napReleaseVersion string) (*NAPRelease, error) {
 	napRelease, exists := NewNAPReleaseMap().ReleaseMap[napReleaseVersion]
 	if !exists {
 		// Couldn't find details for supplied version
-		msg := fmt.Sprintf(UNABLE_TO_FIND_RELEASE_VERION_INFO, napReleaseVersion)
+		msg := fmt.Sprintf(UNABLE_TO_FIND_RELEASE_VERSION_INFO, napReleaseVersion)
 		logger.Error(msg)
 		return nil, errors.New(msg)
 	}

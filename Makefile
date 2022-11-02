@@ -139,7 +139,7 @@ test-docker-component: ## Run integration tests in docker
 	for container in `docker ps -aqf "name=^nginx-agent_"`; do echo && docker ps -f "id=$$container" --format "{{.Image}}" && docker exec $$container ./tmp/component.test -test.v; done
 
 test-component-run: ## Run component tests
-	GOWORK=off CGO_ENABLED=0 go test -v ./test/component
+	GOWORK=off CGO_ENABLED=0 go test -v ./test/component/...
 
 # Performance tests
 performance-test: ## Run performance tests

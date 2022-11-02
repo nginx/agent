@@ -27,6 +27,7 @@ Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
 	done
 
 	protoc \
+		-I ./proto/events \
 		-I ./proto \
 		-I /usr/local/include \
 		-I ./vendor/github.com/gogo/protobuf/gogoproto \
