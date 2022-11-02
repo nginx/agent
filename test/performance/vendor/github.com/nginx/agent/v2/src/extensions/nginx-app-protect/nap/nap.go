@@ -2,9 +2,22 @@ package nap
 
 import (
 	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/nginx/agent/v2/src/core"
+	log "github.com/sirupsen/logrus"
+)
+
+const (
+	DefaultOptNAPDir      = "/opt/app_protect"
+	DefaultNMSCompilerDir = "/opt/nms-nap-compiler"
+	compilerDirPrefix     = "app_protect-"
+
+	dirPerm = 0755
 )
 
 var (
@@ -17,12 +30,14 @@ var (
 // to the Nginx App Protect installed on the system. If Nginx App Protect is NOT installed on
 // the system then a NginxAppProtect object is still returned, the status field will be set
 // as MISSING and all other fields will be blank.
-func NewNginxAppProtect() (*NginxAppProtect, error) {
+func NewNginxAppProtect(optDirPath, symLinkDir string) (*NginxAppProtect, error) {
 	nap := &NginxAppProtect{
 		Status:                  "",
 		Release:                 NAPRelease{},
 		AttackSignaturesVersion: "",
 		ThreatCampaignsVersion:  "",
+		optDirPath:              optDirPath,
+		symLinkDir:              symLinkDir,
 	}
 
 	// Get status of NAP on the system
@@ -83,42 +98,130 @@ func (nap *NginxAppProtect) Monitor(pollInterval time.Duration) chan NAPReportBu
 // monitor checks the system for any NAP related changes and communicates those changes with
 // a report message sent via the channel provided to it.
 func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterval time.Duration) {
-	for {
-		newNap, err := NewNginxAppProtect()
+	// Initial symlink sync
+	if nap.Release.VersioningDetails.NAPRelease != "" {
+		err := nap.syncSymLink("", nap.Release.VersioningDetails.NAPRelease)
 		if err != nil {
-			logger.Errorf("The following error occurred while monitoring NAP - %v", err)
-			time.Sleep(pollInterval)
-			continue
+			log.Errorf("Error occurred while performing initial sync for NAP symlink  - %v", err)
 		}
-
-		newNAPReport := newNap.GenerateNAPReport()
-
-		// Check if there has been any change in the NAP report
-		if nap.napReportIsEqual(newNAPReport) {
-			logger.Debugf("No change in NAP detected... Checking NAP again in %v seconds", pollInterval.Seconds())
-			time.Sleep(pollInterval)
-			continue
-		}
-
-		// Get NAP report before values are updated to allow sending previous NAP report
-		// values via the channel
-		previousReport := nap.GenerateNAPReport()
-		logger.Debugf("Change in NAP detected... \nPrevious: %+v\nUpdated: %+v\n", previousReport, newNAPReport)
-
-		// Update the current NAP values since there was a change
-		nap.Status = newNap.Status
-		nap.Release = newNap.Release
-		nap.AttackSignaturesVersion = newNap.AttackSignaturesVersion
-		nap.ThreatCampaignsVersion = newNap.ThreatCampaignsVersion
-
-		// Send the update message through the channel
-		msgChannel <- NAPReportBundle{
-			PreviousReport: previousReport,
-			UpdatedReport:  newNAPReport,
-		}
-
-		time.Sleep(pollInterval)
 	}
+
+	ticker := time.NewTicker(pollInterval)
+
+	for {
+		select {
+		case <-ticker.C:
+			newNap, err := NewNginxAppProtect(nap.optDirPath, nap.symLinkDir)
+			if err != nil {
+				log.Errorf("The following error occurred while monitoring NAP - %v", err)
+				break
+			}
+
+			newNAPReport := newNap.GenerateNAPReport()
+
+			// Check if there has been any change in the NAP report
+			if nap.napReportIsEqual(newNAPReport) {
+				log.Infof("No change in NAP detected... Checking NAP again in %v seconds", pollInterval.Seconds())
+				break
+			}
+
+			// Get NAP report before values are updated to allow sending previous NAP report
+			// values via the channel
+			previousReport := nap.GenerateNAPReport()
+			log.Infof("Change in NAP detected... \nPrevious: %+v\nUpdated: %+v\n", previousReport, newNAPReport)
+
+			err = nap.syncSymLink(nap.Release.VersioningDetails.NAPRelease, newNAPReport.NAPVersion)
+			if err != nil {
+				log.Errorf("Got the following error syncing NAP symlink - %v", err)
+				break
+			}
+
+			// Update the current NAP values since there was a change
+			nap.Status = newNap.Status
+			nap.Release = newNap.Release
+			nap.AttackSignaturesVersion = newNap.AttackSignaturesVersion
+			nap.ThreatCampaignsVersion = newNap.ThreatCampaignsVersion
+
+			// Send the update message through the channel
+			msgChannel <- NAPReportBundle{
+				PreviousReport: previousReport,
+				UpdatedReport:  newNAPReport,
+			}
+		}
+
+	}
+}
+
+// syncSymLink determines if the symlink for the NAP installation needs to be updated
+// or not and performs the necessary actions to do so.
+func (nap *NginxAppProtect) syncSymLink(previousVersion, newVersion string) error {
+	oldSymLink := filepath.Join(nap.symLinkDir, compilerDirPrefix+previousVersion)
+	nmsCompilerSymLinkDir := filepath.Join(nap.symLinkDir, compilerDirPrefix+newVersion)
+
+	if previousVersion == newVersion {
+		// Same version no need for updating symlink
+		return nil
+	} else if newVersion == "" {
+		// NAP was removed so remove all NAP symlinks
+		return nap.removeNAPSymlinks("")
+	}
+
+	// Check if the necessary directory exists
+	_, err := os.Stat(nap.symLinkDir)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(nap.symLinkDir, dirPerm)
+		if err != nil {
+			return err
+		}
+		log.Debugf("Successfully create the directory %s for creating NAP symlink", nap.symLinkDir)
+	} else if err != nil {
+		return err
+	}
+
+	// Remove existing NAP symlinks except for currently used one, b/c if we're updating a
+	// symlink that already exists then we need to remove then create the updated one.
+	err = nap.removeNAPSymlinks(previousVersion)
+	if err != nil {
+		return err
+	}
+
+	// Create new symlink
+	log.Debugf("Creating symlink %s -> %s", nmsCompilerSymLinkDir, nap.optDirPath)
+	err = os.Symlink(nap.optDirPath, nmsCompilerSymLinkDir)
+	if err != nil {
+		return err
+	}
+
+	// Once new symlink is created remove old one if it exists
+	log.Debugf("Deleting previous NAP symlink %s -> %s", oldSymLink, nap.optDirPath)
+	return nap.removeNAPSymlinks(newVersion)
+}
+
+// removeNAPSymlinks walks the NAP symlink directory and removes any existing NAP
+// symlinks found in the directory except for ones that match the ignore pattern.
+func (nap *NginxAppProtect) removeNAPSymlinks(symlinkPatternToIgnore string) error {
+	// Check if the necessary directory exists
+	_, err := os.Stat(nap.symLinkDir)
+	if os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	err = filepath.WalkDir(nap.symLinkDir, func(s string, d fs.DirEntry, e error) error {
+		if e != nil {
+			return e
+		}
+
+		// If it doesn't contain the compiler symlink dir prefix skip the file
+		if !strings.Contains(d.Name(), compilerDirPrefix) || strings.Contains(d.Name(), symlinkPatternToIgnore) {
+			return nil
+		}
+
+		return os.Remove(filepath.Join(nap.symLinkDir, d.Name()))
+	})
+
+	return err
 }
 
 // GenerateNAPReport generates a NAPReport based off the NAP object calling
@@ -149,7 +252,7 @@ func (nap *NginxAppProtect) napReportIsEqual(incomingNAPReport NAPReport) bool {
 // system then the bool will be false and the error will be nil, if the error is not nil then
 // it's possible NAP might be installed but an error verifying it's installation has occurred.
 func napInstalled(requiredFiles []string) (bool, error) {
-	logger.Debugf("Checking for the required NAP files - %v\n", requiredFiles)
+	log.Debugf("Checking for the required NAP files - %v\n", requiredFiles)
 	return core.FilesExists(requiredFiles)
 }
 
@@ -164,7 +267,7 @@ func napRunning() (bool, error) {
 	}
 
 	if len(missingProcesses) != 0 {
-		logger.Debugf("The following required NAP process(es) couldn't be found: %v", missingProcesses)
+		log.Debugf("The following required NAP process(es) couldn't be found: %v", missingProcesses)
 		return false, nil
 	}
 
