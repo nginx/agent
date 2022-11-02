@@ -87,6 +87,15 @@ func SetNginxAppProtectDefaults() {
 	Viper.SetDefault(NginxAppProtectReportInterval, Defaults.NginxAppProtect.ReportInterval)
 }
 
+func SetNAPMonitoringDefaults() {
+	Viper.SetDefault(NAPMonitoringCollectorBufferSize, Defaults.NAPMonitoring.CollectorBufferSize)
+	Viper.SetDefault(NAPMonitoringProcessorBufferSize, Defaults.NAPMonitoring.ProcessorBufferSize)
+	Viper.SetDefault(NAPMonitoringSyslogIP, Defaults.NAPMonitoring.SyslogIP)
+	Viper.SetDefault(NAPMonitoringSyslogPort, Defaults.NAPMonitoring.SyslogPort)
+	Viper.SetDefault(NAPMonitoringReportInterval, Defaults.NAPMonitoring.ReportInterval)
+	Viper.SetDefault(NAPMonitoringReportCount, Defaults.NAPMonitoring.ReportCount)
+}
+
 func setFlagDeprecated(name string, usageMessage string) {
 	err := ROOT_COMMAND.Flags().MarkDeprecated(name, usageMessage)
 	if err != nil {
@@ -177,6 +186,7 @@ func GetConfig(clientId string) (*Config, error) {
 		InstanceGroup:         Viper.GetString(InstanceGroupKey),
 		AdvancedMetrics:       getAdvancedMetrics(),
 		NginxAppProtect:       getNginxAppProtect(),
+		NAPMonitoring:         getNAPMonitoring(),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDirs, ":") {
@@ -300,6 +310,17 @@ func getAdvancedMetrics() AdvancedMetrics {
 func getNginxAppProtect() NginxAppProtect {
 	return NginxAppProtect{
 		ReportInterval: Viper.GetDuration(NginxAppProtectReportInterval),
+	}
+}
+
+func getNAPMonitoring() NAPMonitoring {
+	return NAPMonitoring{
+		CollectorBufferSize: Viper.GetInt(NAPMonitoringCollectorBufferSize),
+		ProcessorBufferSize: Viper.GetInt(NAPMonitoringProcessorBufferSize),
+		SyslogIP:            Viper.GetString(NAPMonitoringSyslogIP),
+		SyslogPort:          Viper.GetInt(NAPMonitoringSyslogPort),
+		ReportInterval:      Viper.GetDuration(NAPMonitoringReportInterval),
+		ReportCount:         Viper.GetInt(NAPMonitoringReportCount),
 	}
 }
 

@@ -1,9 +1,10 @@
 package plugins
 
 import (
+	log "github.com/sirupsen/logrus"
+
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -72,6 +73,26 @@ func (e *Extensions) Process(msg *core.Message) {
 						log.Errorf("Unable to register %s extension, %v", data, err)
 					}
 					nap.Init(e.pipeline)
+				}
+			} else if data == config.NAPMonitoringKey {
+				if !e.isPluginAlreadyRegistered(napMonitoringPluginName) {
+					config.SetNAPMonitoringDefaults()
+					conf, err := config.GetConfig(e.conf.ClientID)
+					if err != nil {
+						log.Warnf("Unable to get agent config, %v", err)
+					}
+					e.conf = conf
+
+					napMonitoring, err := NewNAPMonitoring(e.env, e.conf)
+					if err != nil {
+						log.Warnf("Unable to load the Nginx App Protect Monitoring plugin due to the following error: %v", err)
+						break
+					}
+					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, napMonitoring)
+					if err != nil {
+						log.Errorf("Unable to register %s extension, %v", data, err)
+					}
+					napMonitoring.Init(e.pipeline)
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-package advanced_metrics_component_test
+package component
 
 import (
 	"context"
