@@ -43,8 +43,8 @@ var (
 	Viper = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 )
 
-func SetVersion(version string) {
-	ROOT_COMMAND.Version = version
+func SetVersion(version, commit string) {
+	ROOT_COMMAND.Version = version + "-" + commit
 }
 
 func Execute() error {
