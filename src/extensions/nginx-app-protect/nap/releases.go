@@ -1,5 +1,36 @@
 package nap
 
+// NAPRelease3_12_2 returns information regarding packages and versioning for NAP release
+// version 3.12.2.
+func NAPRelease3_12_2() NAPRelease {
+	return NAPRelease{
+		NAPPackages: NAPReleasePackages{
+			Alpine310:    "",
+			AmazonLinux2: "app-protect-27+3.1088.2-1.el7.ngx.x86_64.rpm",
+			Centos7:      "app-protect-27+3.1088.2-1.el7.ngx.x86_64.rpm",
+			Debian9:      "",
+			Debian10:     "app-protect_27+3.1088.2~buster_amd64.deb",
+			Redhat7:      "app-protect-27+3.1088.2-1.el7.ngx.x86_64.rpm",
+			Redhat8:      "app-protect-27+3.1088.2-1.el8.ngx.x86_64.rpm",
+			Ubuntu1804:   "app-protect_27+3.1088.2~bionic_amd64.deb",
+			Ubuntu2004:   "app-protect_27+3.1088.2~focal_amd64.deb",
+		},
+		NAPCompilerPackages:   NAPReleasePackages{},
+		NAPEnginePackages:     NAPReleasePackages{},
+		NAPPluginPackages:     NAPReleasePackages{},
+		NAPPlusModulePackages: NAPReleasePackages{},
+		VersioningDetails: NAPVersioningDetails{
+			NAPBuild:      "3.1088.2",
+			NAPCompiler:   "10.139.2",
+			NAPEngine:     "10.139.2",
+			NAPPlugin:     "3.1088.2",
+			NAPPlusModule: "27+3.1088.2",
+			NAPRelease:    "3.12.x",
+			NginxPlus:     "27",
+		},
+	}
+}
+
 // NAPRelease3_12 returns information regarding packages and versioning for NAP release
 // version 3.12.
 func NAPRelease3_12() NAPRelease {
