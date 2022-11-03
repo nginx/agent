@@ -226,6 +226,7 @@ func TestNginxConfigApply(t *testing.T) {
 			binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+			binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
 
 			commandClient := tutils.GetMockCommandClient(test.config)
 
