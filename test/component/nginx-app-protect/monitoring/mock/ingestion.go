@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
 	pb "github.com/nginx/agent/sdk/v2/proto"
@@ -18,6 +19,7 @@ type IngestionServerMock struct {
 	channel        chan *events.EventReport
 	receivedEvents map[string]*events.Event
 	grpcServer     *grpc.Server
+	logger         *log.Entry
 }
 
 func NewIngestionServerMock(serverAddr string) (*IngestionServerMock, error) {
@@ -32,6 +34,9 @@ func NewIngestionServerMock(serverAddr string) (*IngestionServerMock, error) {
 		channel:        make(chan *events.EventReport),
 		receivedEvents: make(map[string]*events.Event),
 		grpcServer:     grpcServer,
+		logger: log.WithFields(log.Fields{
+			"extension": "mock-ingestion-server",
+		}),
 	}
 
 	pb.RegisterMetricsServiceServer(grpcServer, ingestionServer)
@@ -60,6 +65,7 @@ func (s *IngestionServerMock) StreamEvents(stream pb.MetricsService_StreamEvents
 		if err != nil {
 			return err
 		}
+		s.logger.Debugf("Got an eventReport: %v", eventReport)
 		s.channel <- eventReport
 	}
 }
@@ -72,6 +78,7 @@ func (s *IngestionServerMock) Run(ctx context.Context) {
 			return
 		case eventsReport := <-s.channel:
 			for _, event := range eventsReport.Events {
+				s.logger.Debugf("Got an event with Support ID %v, storing it to receivedEvents", event.GetSecurityViolationEvent().SupportID)
 				s.receivedEvents[event.GetSecurityViolationEvent().SupportID] = event
 			}
 		}
@@ -80,5 +87,14 @@ func (s *IngestionServerMock) Run(ctx context.Context) {
 
 func (s *IngestionServerMock) ReceivedEvent(supportID string) (event *events.Event, found bool) {
 	event, found = s.receivedEvents[supportID]
+	if !found {
+		s.logger.Debug(
+			fmt.Sprintf(
+				"Could not find an event with Support ID %v, have receivedEvents: %v",
+				supportID,
+				s.receivedEvents,
+			),
+		)
+	}
 	return
 }

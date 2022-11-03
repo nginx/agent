@@ -1,4 +1,8 @@
-ýapp_protect_default_policy4355056874564592518"REJECTED*SECURITY_WAF_VIOLATION:GETBHTTPR/Z^GET /?a=<script> HTTP/1.1\r\nHost: 127.0.0.1\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\njblockedr0Šunit-hostnameš1-localhost:1-/¢	127.0.0.1ª61478²80ºŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client DetectedòUntrusted BotŠCriticalÂcurlÒ½
+
+j
+Agent$d124a6ac-6071-11ed-8415-5671f551701b4355056874564592518"ãª°›€Þüâ*ERROR2Nginx:
+AppProtectë
+app_protect_default_policy4355056874564592518REJECTED"SECURITY_WAF_VIOLATION*N/A2GET:HTTPBN/AJ/R^GET /?a=<script> HTTP/1.1\r\nHost: 127.0.0.1\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\nbblockedjBlockedz1-localhost:1-/‚	127.0.0.1Š61478’80šŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected¢?HTTP protocol compliance failed:Host header contains IP addressª5²u{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}º,ÂUntrusted BotÊN/AÒN/AÚCriticalâN/AêN/AòHTTP LibraryúN/A‚curl’½
 VIOL_ATTACK_SIGNATURE"™
 	2000210944€Connection: keep-alive
 Host: a.com

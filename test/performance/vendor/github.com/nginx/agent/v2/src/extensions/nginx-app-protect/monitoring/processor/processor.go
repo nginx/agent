@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"sync"
@@ -24,7 +23,6 @@ var (
 	componentLogFields = logrus.Fields{
 		"component": componentName,
 	}
-	errFalsePositive = errors.New("false positive event detected, will not generate event")
 )
 
 // Eventer is the interface implemented to generate an Event from a log entry.
@@ -89,31 +87,30 @@ func (c *Client) processorWorker(ctx context.Context, wg *sync.WaitGroup, id int
 			var event *pb.Event
 			event, err = e.GetEvent(c.hostPattern, c.logger)
 			if err != nil {
-				if errors.Is(err, errFalsePositive) {
-					c.logger.Debugf("%d: Event %s generated: %s", id, logline.Logline, err)
-				} else {
-					c.logger.Errorf("%d: Error while generating event %s: %s", id, logline.Logline, err)
-				}
+				c.logger.Errorf("%d: Error while generating event %s: %s", id, logline.Logline, err)
 				break
 			}
 
 			if event.GetSecurityViolationEvent() == nil {
-				c.logger.Errorf("event expected as SecurityViolationEvent from nap monitor processing")
+				c.logger.Errorf("expected SecurityViolationEvent, got %v, skipping sending", event)
 				break
 			}
 
 			event.GetSecurityViolationEvent().SystemID = c.commonDims.SystemId
-			event.GetSecurityViolationEvent().Hostname = c.commonDims.Hostname
+			event.GetSecurityViolationEvent().ParentHostname = c.commonDims.Hostname
+			// Note: Currently using the Hostname of the machine as the Server Address as well, we may
+			// change this to the Host present in Request Header
+			event.GetSecurityViolationEvent().ServerAddr = c.commonDims.Hostname
 			event.GetSecurityViolationEvent().InstanceTags = c.commonDims.InstanceTags
 			event.GetSecurityViolationEvent().InstanceGroup = c.commonDims.InstanceGroup
 			event.GetSecurityViolationEvent().DisplayName = c.commonDims.DisplayName
 			event.GetSecurityViolationEvent().NginxID = c.commonDims.NginxId
 
-			c.logger.Debugf("%d: Generated Event: %s", id, event)
+			c.logger.Debugf("worker %d: generated SecurityViolationEvent: %v", id, event)
 			processed <- event
 
 		case <-ctx.Done():
-			c.logger.Debugf("%d: Context cancellation, processor is wrapping up...", id)
+			c.logger.Debugf("worker %d: Context cancellation, processor is wrapping up...", id)
 			return
 		}
 	}
@@ -138,7 +135,7 @@ func (c *Client) parse(waf monitoring.WAFType, logentry string) (Eventer, error)
 	case monitoring.NAP:
 		return parseNAP(logentry, c.logger)
 	default:
-		err := fmt.Errorf("could not parse logentry, invalid WAF type: %s", waf)
+		err := fmt.Errorf("could not parse log entry, invalid WAF type: %s", waf)
 		c.logger.Error(err)
 		return nil, err
 	}
