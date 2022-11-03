@@ -156,7 +156,7 @@ func NewAdvancedMetrics(env core.Environment, conf *config.Config) *AdvancedMetr
 		TableSizesLimits: conf.AdvancedMetrics.TableSizesLimits,
 	}
 
-	checkAdvancedMetricsDefaults(&cfg)
+	CheckAdvancedMetricsDefaults(&cfg)
 
 	schema, err := builder.Build()
 	if err != nil {
@@ -311,7 +311,7 @@ func (m *AdvancedMetrics) Subscriptions() []string {
 	return []string{}
 }
 
-func checkAdvancedMetricsDefaults(cfg *advanced_metrics.Config) {
+func CheckAdvancedMetricsDefaults(cfg *advanced_metrics.Config) {
 	config.CheckAndSetDefault(&cfg.Address, config.Defaults.AdvancedMetrics.SocketPath)
 	config.CheckAndSetDefault(&cfg.AggregationPeriod, config.Defaults.AdvancedMetrics.AggregationPeriod)
 	config.CheckAndSetDefault(&cfg.PublishingPeriod, config.Defaults.AdvancedMetrics.PublishingPeriod)

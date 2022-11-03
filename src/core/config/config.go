@@ -280,7 +280,7 @@ func getDataplane() Dataplane {
 	}
 }
 
-func SetAdvancedMetricsDefaults() AdvancedMetrics {
+func getAdvancedMetrics() AdvancedMetrics {
 	return AdvancedMetrics{
 		SocketPath:        Viper.GetString(AdvancedMetricsSocketPath),
 		AggregationPeriod: Viper.GetDuration(AdvancedMetricsAggregationPeriod),

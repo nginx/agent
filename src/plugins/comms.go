@@ -14,18 +14,18 @@ import (
 )
 
 type Comms struct {
-	reporter         client.MetricReporter
-	pipeline         core.MessagePipeInterface
-	ctx              context.Context
-	started          *atomic.Bool
-	readyToSend      *atomic.Bool
+	reporter    client.MetricReporter
+	pipeline    core.MessagePipeInterface
+	ctx         context.Context
+	started     *atomic.Bool
+	readyToSend *atomic.Bool
 }
 
 func NewComms(reporter client.MetricReporter) *Comms {
 	return &Comms{
-		reporter:         reporter,
-		started:          atomic.NewBool(false),
-		readyToSend:      atomic.NewBool(false),
+		reporter:    reporter,
+		started:     atomic.NewBool(false),
+		readyToSend: atomic.NewBool(false),
 	}
 }
 

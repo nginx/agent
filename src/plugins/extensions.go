@@ -41,7 +41,6 @@ func (e *Extensions) Process(msg *core.Message) {
 		case core.EnableExtension:
 			if data == config.AdvancedMetricsKey {
 				if !e.isPluginAlreadyRegistered(advancedMetricsPluginName) {
-					config.SetAdvancedMetricsDefaults()
 					conf, err := config.GetConfig(e.conf.ClientID)
 					if err != nil {
 						log.Warnf("Unable to get agent config, %v", err)
