@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/google/uuid"
@@ -11,7 +12,9 @@ import (
 
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/client"
+	"github.com/nginx/agent/sdk/v2/grpc"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -21,16 +24,21 @@ const (
 	appProtectMetadataFilePath = "/etc/nms/app_protect_metadata.json"
 )
 
+var (
+	validationTimeout = 15 * time.Second
+)
+
 // Nginx is the metadata of our nginx binary
 type Nginx struct {
-	messagePipeline     core.MessagePipeInterface
-	nginxBinary         core.NginxBinary
-	processes           []core.Process
-	env                 core.Environment
-	cmdr                client.Commander
-	config              *config.Config
-	isNAPEnabled        bool
-	isConfUploadEnabled bool
+	messagePipeline          core.MessagePipeInterface
+	nginxBinary              core.NginxBinary
+	processes                []core.Process
+	env                      core.Environment
+	cmdr                     client.Commander
+	config                   *config.Config
+	isNAPEnabled             bool
+	isConfUploadEnabled      bool
+	configApplyStatusChannel chan *proto.Command_NginxConfigResponse
 }
 
 type ConfigRollbackResponse struct {
@@ -47,6 +55,15 @@ type NginxReloadResponse struct {
 	nginxDetails  *proto.NginxDetails
 }
 
+type NginxConfigValidationResponse struct {
+	err           error
+	correlationId string
+	nginxDetails  *proto.NginxDetails
+	config        *proto.NginxConfig
+	configApply   *sdk.ConfigApply
+	elapsedTime   time.Duration
+}
+
 func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config) *Nginx {
 	var isNAPEnabled bool
 	if loadedConfig.NginxAppProtect != (config.NginxAppProtect{}) {
@@ -55,7 +72,16 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 
 	isConfUploadEnabled := isConfUploadEnabled(loadedConfig)
 
-	return &Nginx{nginxBinary: nginxBinary, processes: env.Processes(), env: env, cmdr: cmdr, config: loadedConfig, isNAPEnabled: isNAPEnabled, isConfUploadEnabled: isConfUploadEnabled}
+	return &Nginx{
+		nginxBinary:              nginxBinary,
+		processes:                env.Processes(),
+		env:                      env,
+		cmdr:                     cmdr,
+		config:                   loadedConfig,
+		isNAPEnabled:             isNAPEnabled,
+		isConfUploadEnabled:      isConfUploadEnabled,
+		configApplyStatusChannel: make(chan *proto.Command_NginxConfigResponse, 1),
+	}
 }
 
 // Init initializes the plugin
@@ -95,6 +121,29 @@ func (n *Nginx) Process(message *core.Message) {
 	case core.AgentConfigChanged:
 		// If the agent config on disk changed update this with relevant config info
 		n.syncAgentConfigChange()
+	case core.NginxConfigValidationSucceeded:
+		switch response := message.Data().(type) {
+		case *NginxConfigValidationResponse:
+			status := n.completeConfigApply(response)
+			if response.elapsedTime < validationTimeout {
+				n.configApplyStatusChannel <- status
+			}
+		}
+	case core.NginxConfigValidationFailed:
+		switch response := message.Data().(type) {
+		case *NginxConfigValidationResponse:
+			n.rollbackConfigApply(response)
+			status := &proto.Command_NginxConfigResponse{
+				NginxConfigResponse: &proto.NginxConfigResponse{
+					Status:     newErrStatus(fmt.Sprintf("Config apply failed (write): " + response.err.Error())).CmdStatus,
+					Action:     proto.NginxConfigAction_APPLY,
+					ConfigData: response.config.ConfigData,
+				},
+			}
+			if response.elapsedTime < validationTimeout {
+				n.configApplyStatusChannel <- status
+			}
+		}
 	case core.EnableExtension:
 		switch data := message.Data().(type) {
 		case string:
@@ -113,6 +162,9 @@ func (n *Nginx) Subscriptions() []string {
 		core.DataplaneChanged,
 		core.AgentConfigChanged,
 		core.EnableExtension,
+		core.NginxConfigValidationPending,
+		core.NginxConfigValidationSucceeded,
+		core.NginxConfigValidationFailed,
 	}
 }
 
@@ -203,20 +255,22 @@ func (n *Nginx) processCmd(cmd *proto.Command) {
 	}
 }
 
-// The applyConfig does the following:
-// - Download config
-// - Stop file watcher
-// - Write the config
-// - Valid config
-// - Upload the config
-// - Start file watcher
-// - Reload nginx
 func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) (status *proto.Command_NginxConfigResponse) {
 	log.Debugf("Applying config for message id, %s", cmd.GetMeta().MessageId)
 
+	n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationPending, &proto.AgentActivityStatus{
+		Status: &proto.AgentActivityStatus_NginxConfigStatus{
+			NginxConfigStatus: &proto.NginxConfigStatus{
+				CorrelationId: cmd.Meta.MessageId,
+				Status:        proto.NginxConfigStatus_PENDING,
+				Message:       "config apply pending",
+			},
+		},
+	}))
+
 	status = &proto.Command_NginxConfigResponse{
 		NginxConfigResponse: &proto.NginxConfigResponse{
-			Status:     newOKStatus("config applied successfully").CmdStatus,
+			Status:     newOKStatus("config apply request successfully processed").CmdStatus,
 			Action:     proto.NginxConfigAction_APPLY,
 			ConfigData: cfg.NginxConfig.ConfigData,
 		},
@@ -263,36 +317,77 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		}
 
 		message := fmt.Sprintf("Config apply failed (write): " + err.Error())
+
+		n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplyFailed, &proto.AgentActivityStatus{
+			Status: &proto.AgentActivityStatus_NginxConfigStatus{
+				NginxConfigStatus: &proto.NginxConfigStatus{
+					CorrelationId: cmd.Meta.MessageId,
+					Status:        proto.NginxConfigStatus_ERROR,
+					Message:       message,
+				},
+			},
+		}))
+
 		return n.handleErrorStatus(status, message)
 	}
 
-	err = n.nginxBinary.ValidateConfig(nginx.NginxId, nginx.ProcessPath, nginx.ConfPath, config, configApply)
+	go n.validateConfig(nginx, cmd.Meta.MessageId, config, configApply)
+
+	// If the NGINX config can be validated with the validationTimeout the result will be returned straight away.
+	// This is timeout is temporary to ensure we support backwards compatibility. In a future release this timeout
+	// will be removed.
+	select {
+	case result := <-n.configApplyStatusChannel:
+		return result
+	case <-time.After(validationTimeout):
+		log.Debugf("Validation of the NGINX config in taking longer than the validationTimeout %s", validationTimeout)
+		return status
+	}
+}
+
+// This function will run a nginx config validation in a separate go routine. If the validation takes less than 15 seconds then the result is returned straight away,
+// otherwise nil is returned and the validation continues on in the background until it is complete. The result is always added to the message pipeline for other plugins
+// to use.
+func (n *Nginx) validateConfig(nginx *proto.NginxDetails, correlationId string, config *proto.NginxConfig, configApply *sdk.ConfigApply) {
+	start := time.Now()
+
+	err := n.nginxBinary.ValidateConfig(nginx.NginxId, nginx.ProcessPath, nginx.ConfPath, config, configApply)
 	if err == nil {
 		_, err = n.nginxBinary.ReadConfig(nginx.GetConfPath(), config.GetConfigData().GetNginxId(), n.env.GetSystemUUID())
 	}
+
+	elapsedTime := time.Since(start)
+	log.Tracef("nginx config validation took %s to complete", elapsedTime)
+
 	if err != nil {
-		if configApply != nil {
-			succeeded := true
-
-			if rollbackErr := configApply.Rollback(err); rollbackErr != nil {
-				log.Errorf("Config rollback failed: %v", rollbackErr)
-				succeeded = false
-			}
-
-			configRollbackResponse := ConfigRollbackResponse{
-				succeeded:     succeeded,
-				correlationId: cmd.Meta.MessageId,
-				timestamp:     types.TimestampNow(),
-				nginxDetails:  nginx,
-			}
-			n.messagePipeline.Process(core.NewMessage(core.ConfigRollbackResponse, configRollbackResponse))
+		response := &NginxConfigValidationResponse{
+			err:           fmt.Errorf("error running nginx -t -c %s:\n %v", nginx.ConfPath, err),
+			correlationId: correlationId,
+			nginxDetails:  nginx,
+			config:        config,
+			configApply:   configApply,
+			elapsedTime:   elapsedTime,
 		}
+		n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationFailed, response))
+	} else {
+		response := &NginxConfigValidationResponse{
+			err:           nil,
+			correlationId: correlationId,
+			nginxDetails:  nginx,
+			config:        config,
+			configApply:   configApply,
+			elapsedTime:   elapsedTime,
+		}
+		n.messagePipeline.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
+	}
+}
 
-		message := fmt.Sprintf("Config apply failed (write): " + err.Error())
-		return n.handleErrorStatus(status, message)
-	} else if configApply != nil {
-		if err = configApply.Complete(); err != nil {
-			log.Errorf("Config complete failed: %v", err)
+func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *proto.Command_NginxConfigResponse {
+	nginxConfigStatusMessage := "Config applied successfully"
+	if response.configApply != nil {
+		if err := response.configApply.Complete(); err != nil {
+			nginxConfigStatusMessage = fmt.Sprintf("Config complete failed: %v", err)
+			log.Errorf(nginxConfigStatusMessage)
 		}
 	}
 
@@ -304,38 +399,109 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		},
 	}
 
-	err = n.uploadConfig(
+	err := n.uploadConfig(
 		&proto.ConfigDescriptor{
 			SystemId: n.env.GetSystemUUID(),
-			NginxId:  config.GetConfigData().GetNginxId(),
+			NginxId:  response.config.GetConfigData().GetNginxId(),
 		},
-		cmd.Meta.GetMessageId(),
+		response.correlationId,
 	)
 	if err != nil {
-		uploadResponse.NginxConfigResponse.Status = newErrStatus("config uploaded error: " + err.Error()).CmdStatus
+		uploadResponse.NginxConfigResponse.Status = newErrStatus("Config uploaded error: " + err.Error()).CmdStatus
+		nginxConfigStatusMessage = fmt.Sprintf("Config uploaded error: %v", err)
+		log.Errorf(nginxConfigStatusMessage)
 	}
 
-	uploadResponseCommand := newStatusCommand(cmd)
+	uploadResponseCommand := &proto.Command{Meta: grpc.NewMessageMeta(response.correlationId)}
 	uploadResponseCommand.Data = uploadResponse
 
 	n.messagePipeline.Process(core.NewMessage(core.CommResponse, uploadResponseCommand))
 	log.Debug("Enabling file watcher")
 	n.messagePipeline.Process(core.NewMessage(core.FileWatcherEnabled, true))
 
-	reloadErr := n.nginxBinary.Reload(nginx.ProcessId, nginx.ProcessPath)
+	reloadErr := n.nginxBinary.Reload(response.nginxDetails.ProcessId, response.nginxDetails.ProcessPath)
 	if reloadErr != nil {
-		status.NginxConfigResponse.Status = newErrStatus("Config apply failed (write): " + reloadErr.Error()).CmdStatus
+		nginxConfigStatusMessage = fmt.Sprintf("Config apply failed (write): %v", reloadErr)
+		log.Errorf(nginxConfigStatusMessage)
 	}
 
 	nginxReloadEventMeta := NginxReloadResponse{
 		succeeded:     reloadErr == nil,
-		correlationId: cmd.Meta.MessageId,
+		correlationId: response.correlationId,
 		timestamp:     types.TimestampNow(),
-		nginxDetails:  nginx,
+		nginxDetails:  response.nginxDetails,
 	}
+
 	n.messagePipeline.Process(core.NewMessage(core.NginxReloadComplete, nginxReloadEventMeta))
+
+	agentActivityStatus := &proto.AgentActivityStatus{
+		Status: &proto.AgentActivityStatus_NginxConfigStatus{
+			NginxConfigStatus: &proto.NginxConfigStatus{
+				CorrelationId: response.correlationId,
+				Status:        proto.NginxConfigStatus_OK,
+				Message:       nginxConfigStatusMessage,
+			},
+		},
+	}
+
+	n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplySucceeded, agentActivityStatus))
+
+	status := &proto.Command_NginxConfigResponse{
+		NginxConfigResponse: &proto.NginxConfigResponse{
+			Status:     newOKStatus("config apply request successfully processed").CmdStatus,
+			Action:     proto.NginxConfigAction_APPLY,
+			ConfigData: response.config.ConfigData,
+		},
+	}
+
+	if agentActivityStatus.GetNginxConfigStatus().GetStatus() == proto.NginxConfigStatus_ERROR {
+		status.NginxConfigResponse.Status = newErrStatus(agentActivityStatus.GetNginxConfigStatus().GetMessage()).CmdStatus
+	} else {
+		status.NginxConfigResponse.Status = newOKStatus(agentActivityStatus.GetNginxConfigStatus().GetMessage()).CmdStatus
+	}
+
 	log.Debug("Config Apply Complete")
+
 	return status
+}
+
+func (n *Nginx) rollbackConfigApply(response *NginxConfigValidationResponse) {
+	nginxConfigStatusMessage := fmt.Sprintf("Config apply failed (write): %v", response.err.Error())
+	log.Error(nginxConfigStatusMessage)
+
+	if response.configApply != nil {
+		succeeded := true
+
+		if rollbackErr := response.configApply.Rollback(response.err); rollbackErr != nil {
+			nginxConfigStatusMessage := fmt.Sprintf("Config rollback failed: %v", rollbackErr)
+			log.Error(nginxConfigStatusMessage)
+			succeeded = false
+		}
+
+		configRollbackResponse := ConfigRollbackResponse{
+			succeeded:     succeeded,
+			correlationId: response.correlationId,
+			timestamp:     types.TimestampNow(),
+			nginxDetails:  response.nginxDetails,
+		}
+
+		n.messagePipeline.Process(core.NewMessage(core.ConfigRollbackResponse, configRollbackResponse))
+
+		agentActivityStatus := &proto.AgentActivityStatus{
+			Status: &proto.AgentActivityStatus_NginxConfigStatus{
+				NginxConfigStatus: &proto.NginxConfigStatus{
+					CorrelationId: response.correlationId,
+					Status:        proto.NginxConfigStatus_ERROR,
+					Message:       nginxConfigStatusMessage,
+				},
+			},
+		}
+
+		n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplyFailed, agentActivityStatus))
+	}
+
+	log.Debug("Enabling file watcher")
+	n.messagePipeline.Process(core.NewMessage(core.FileWatcherEnabled, true))
 }
 
 func (n *Nginx) handleErrorStatus(status *proto.Command_NginxConfigResponse, message string) *proto.Command_NginxConfigResponse {
@@ -395,7 +561,7 @@ func (n *Nginx) syncAgentConfigChange() {
 
 func isConfUploadEnabled(conf *config.Config) bool {
 	for _, feature := range conf.Features {
-		if feature == config.FeatureNginxConfig {
+		if feature == agent_config.FeatureNginxConfig {
 			return true
 		}
 	}

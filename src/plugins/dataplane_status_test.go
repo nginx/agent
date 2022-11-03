@@ -18,6 +18,83 @@ import (
 )
 
 func TestDataPlaneStatus(t *testing.T) {
+	tests := []struct {
+		testName        string
+		message         *core.Message
+		expectedMessage *core.Message
+	}{
+		{
+			testName: "default status",
+			message:  nil,
+			expectedMessage: core.NewMessage(core.CommStatus, &proto.Command{
+				Meta: nil,
+				Data: &proto.Command_DataplaneStatus{
+					DataplaneStatus: &proto.DataplaneStatus{},
+				},
+			}),
+		},
+		{
+			testName: "successful nginx config apply",
+			message: core.NewMessage(core.NginxConfigApplySucceeded, &proto.AgentActivityStatus{
+				Status: &proto.AgentActivityStatus_NginxConfigStatus{
+					NginxConfigStatus: &proto.NginxConfigStatus{
+						CorrelationId: "123",
+						Status:        proto.NginxConfigStatus_OK,
+						Message:       "config applied",
+					},
+				},
+			}),
+			expectedMessage: core.NewMessage(core.CommStatus, &proto.Command{
+				Meta: nil,
+				Data: &proto.Command_DataplaneStatus{
+					DataplaneStatus: &proto.DataplaneStatus{
+						AgentActivityStatus: []*proto.AgentActivityStatus{
+							{
+								Status: &proto.AgentActivityStatus_NginxConfigStatus{
+									NginxConfigStatus: &proto.NginxConfigStatus{
+										CorrelationId: "123",
+										Status:        proto.NginxConfigStatus_OK,
+										Message:       "config applied",
+									},
+								},
+							},
+						},
+					},
+				},
+			}),
+		},
+		{
+			testName: "nginx config apply failed",
+			message: core.NewMessage(core.NginxConfigApplySucceeded, &proto.AgentActivityStatus{
+				Status: &proto.AgentActivityStatus_NginxConfigStatus{
+					NginxConfigStatus: &proto.NginxConfigStatus{
+						CorrelationId: "123",
+						Status:        proto.NginxConfigStatus_ERROR,
+						Message:       "config applied failed",
+					},
+				},
+			}),
+			expectedMessage: core.NewMessage(core.CommStatus, &proto.Command{
+				Meta: nil,
+				Data: &proto.Command_DataplaneStatus{
+					DataplaneStatus: &proto.DataplaneStatus{
+						AgentActivityStatus: []*proto.AgentActivityStatus{
+							{
+								Status: &proto.AgentActivityStatus_NginxConfigStatus{
+									NginxConfigStatus: &proto.NginxConfigStatus{
+										CorrelationId: "123",
+										Status:        proto.NginxConfigStatus_ERROR,
+										Message:       "config applied failed",
+									},
+								},
+							},
+						},
+					},
+				},
+			}),
+		},
+	}
+
 	processID := "12345"
 	detailsMap := map[string]*proto.NginxDetails{
 		processID: {
@@ -59,30 +136,30 @@ func TestDataPlaneStatus(t *testing.T) {
 	messagePipe.Run()
 	defer dataPlaneStatus.Close()
 
-	// Instance Service
-	t.Run("returns get response", func(t *testing.T) {
-		// sleep for 3 seconds
-		// check messages
-		// need to mock env
-		time.Sleep(3 * time.Second)
-		result := messagePipe.GetProcessedMessages()
-
-		expectedMsg := []string{
-			core.CommStatus,
-		}
-		assert.GreaterOrEqual(t, len(result), len(expectedMsg))
-		for idx, expMsg := range expectedMsg {
-			message := result[idx]
-			assert.Equal(t, expMsg, message.Topic())
-			if expMsg == core.CommStatus {
-				cmd := message.Data().(*proto.Command)
-				dps := cmd.Data.(*proto.Command_DataplaneStatus)
-				assert.NotNil(t, dps)
-				assert.NotNil(t, dps.DataplaneStatus.GetHost().GetHostname())
-				assert.Len(t, dps.DataplaneStatus.GetDataplaneSoftwareDetails(), 1)
+	for _, test := range tests {
+		t.Run(test.testName, func(tt *testing.T) {
+			if test.message != nil {
+				messagePipe.Process(test.message)
+				messagePipe.RunWithoutInit()
 			}
-		}
-	})
+
+			result := messagePipe.GetProcessedMessages()
+
+			message := result[len(result)-1]
+			assert.Equal(t, test.expectedMessage.Topic(), message.Topic())
+
+			cmd := message.Data().(*proto.Command)
+			dps := cmd.Data.(*proto.Command_DataplaneStatus)
+
+			expectedCmd := test.expectedMessage.Data().(*proto.Command)
+			expectedDps := expectedCmd.Data.(*proto.Command_DataplaneStatus)
+
+			assert.NotNil(t, dps)
+			assert.NotNil(t, dps.DataplaneStatus.GetHost().GetHostname())
+			assert.Len(t, dps.DataplaneStatus.GetDataplaneSoftwareDetails(), 1)
+			assert.EqualValues(t, expectedDps.DataplaneStatus.GetAgentActivityStatus(), dps.DataplaneStatus.GetAgentActivityStatus())
+		})
+	}
 }
 
 func TestDPSSyncAgentConfigChange(t *testing.T) {
@@ -244,4 +321,43 @@ func TestDPSSyncNAPDetails(t *testing.T) {
 			assert.Equal(t, tc.updatedNAPDetails, dataPlaneStatus.napDetails)
 		})
 	}
+}
+
+func TestDataPlaneSubscriptions(t *testing.T) {
+	expectedSubscriptions := []string{
+		core.AgentConfigChanged,
+		core.NginxAppProtectDetailsGenerated,
+		core.NginxConfigValidationPending,
+		core.NginxConfigApplyFailed,
+		core.NginxConfigApplySucceeded,
+	}
+
+	processID := "12345"
+
+	binary := tutils.NewMockNginxBinary()
+	binary.On("GetNginxDetailsMapFromProcesses", mock.Anything).Return(detailsMap)
+	binary.On("GetNginxIDForProcess", mock.Anything).Return(processID)
+	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
+
+	env := tutils.NewMockEnvironment()
+	env.On("Processes", mock.Anything).Return([]core.Process{})
+	env.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
+		Hostname: "test-host",
+	})
+
+	config := &config.Config{
+		Server:     config.Server{},
+		ConfigDirs: "",
+		Log:        config.LogConfig{},
+		TLS:        config.TLSConfig{},
+		Dataplane: config.Dataplane{
+			Status: config.Status{PollInterval: time.Duration(1)},
+		},
+		AgentMetrics: config.AgentMetrics{},
+		Tags:         []string{},
+	}
+
+	dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env, "")
+
+	assert.Equal(t, expectedSubscriptions, dataPlaneStatus.Subscriptions())
 }

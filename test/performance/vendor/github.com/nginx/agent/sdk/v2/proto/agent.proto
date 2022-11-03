@@ -78,4 +78,5 @@ message AgentMeta {
     string instance_group = 5 [(gogoproto.jsontag) = "instance_group"];
     google.protobuf.Timestamp updated = 6 [(gogoproto.jsontag) = "updated"];
     string system_uid = 7 [(gogoproto.jsontag) = "system_uid"];
+    AgentDetails agent_details = 8 [(gogoproto.jsontag) = "agent_details"];
 }

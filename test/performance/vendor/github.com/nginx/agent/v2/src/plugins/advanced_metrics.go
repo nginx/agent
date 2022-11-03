@@ -89,15 +89,15 @@ var totalOnlyMetrics = map[string]struct{}{
 }
 
 var advancedMetricsDefaults = &config.AdvancedMetrics{
-		SocketPath:        "/var/run/nginx-agent/advanced-metrics.sock",
-		AggregationPeriod: time.Second * 10,
-		PublishingPeriod:  time.Second * 30,
-		TableSizesLimits: advanced_metrics.TableSizesLimits{
-			StagingTableThreshold:  1000,
-			StagingTableMaxSize:    1000,
-			PriorityTableThreshold: 1000,
-			PriorityTableMaxSize:   1000,
-		},
+	SocketPath:        "/var/run/nginx-agent/advanced-metrics.sock",
+	AggregationPeriod: time.Second * 10,
+	PublishingPeriod:  time.Second * 30,
+	TableSizesLimits: advanced_metrics.TableSizesLimits{
+		StagingTableThreshold:  1000,
+		StagingTableMaxSize:    1000,
+		PriorityTableThreshold: 1000,
+		PriorityTableMaxSize:   1000,
+	},
 }
 
 const httpMetricPrefix = "http.request"

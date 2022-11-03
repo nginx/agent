@@ -20,6 +20,7 @@ type Config struct {
 	AgentMetrics          AgentMetrics        `mapstructure:"metrics" yaml:"-"`
 	Tags                  []string            `mapstructure:"tags" yaml:"tags,omitempty"`
 	Features              []string            `mapstructure:"features" yaml:"features,omitempty"`
+	Extensions            []string            `mapstructure:"extensions" yaml:"extensions,omitempty"`
 	Updated               time.Time           `yaml:"-"` // update time of the config file
 	AllowedDirectoriesMap map[string]struct{} `yaml:"-"`
 	DisplayName           string              `mapstructure:"display_name" yaml:"display_name,omitempty"`
