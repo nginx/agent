@@ -11,7 +11,7 @@ import (
 	"time"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
-	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -73,16 +73,6 @@ func SetDefaults() {
 	Viper.SetDefault(NginxClientVersion, Defaults.Nginx.NginxClientVersion)
 }
 
-func SetAdvancedMetricsDefaults() {
-	Viper.SetDefault(AdvancedMetricsSocketPath, Defaults.AdvancedMetrics.SocketPath)
-	Viper.SetDefault(AdvancedMetricsAggregationPeriod, Defaults.AdvancedMetrics.AggregationPeriod)
-	Viper.SetDefault(AdvancedMetricsPublishPeriod, Defaults.AdvancedMetrics.PublishingPeriod)
-	Viper.SetDefault(AdvancedMetricsTableSizesLimitsSTMS, Defaults.AdvancedMetrics.TableSizesLimits.StagingTableMaxSize)
-	Viper.SetDefault(AdvancedMetricsTableSizesLimitsSTT, Defaults.AdvancedMetrics.TableSizesLimits.StagingTableThreshold)
-	Viper.SetDefault(AdvancedMetricsTableSizesLimitsPTMS, Defaults.AdvancedMetrics.TableSizesLimits.PriorityTableMaxSize)
-	Viper.SetDefault(AdvancedMetricsTableSizesLimitsPTT, Defaults.AdvancedMetrics.TableSizesLimits.PriorityTableThreshold)
-}
-
 func SetNginxAppProtectDefaults() {
 	Viper.SetDefault(NginxAppProtectReportInterval, Defaults.NginxAppProtect.ReportInterval)
 }
@@ -139,7 +129,6 @@ func RegisterFlags() {
 		if err := Viper.BindPFlag(strings.ReplaceAll(flag.Name, "-", "_"), fs.Lookup(flag.Name)); err != nil {
 			return
 		}
-		// Viper.BindPFlag(flag.Name, ROOT_COMMAND.Flags().Lookup(flag.Name))
 		err := Viper.BindEnv(flag.Name)
 		if err != nil {
 			log.Warnf("error occurred binding env %s: %v", flag.Name, err)
@@ -184,7 +173,6 @@ func GetConfig(clientId string) (*Config, error) {
 		AllowedDirectoriesMap: map[string]struct{}{},
 		DisplayName:           Viper.GetString(DisplayNameKey),
 		InstanceGroup:         Viper.GetString(InstanceGroupKey),
-		AdvancedMetrics:       getAdvancedMetrics(),
 		NginxAppProtect:       getNginxAppProtect(),
 		NAPMonitoring:         getNAPMonitoring(),
 	}
@@ -289,20 +277,6 @@ func getDataplane() Dataplane {
 		Status: Status{
 			PollInterval:   Viper.GetDuration(DataplaneStatusPoll),
 			ReportInterval: Viper.GetDuration(DataplaneStatusReportInterval),
-		},
-	}
-}
-
-func getAdvancedMetrics() AdvancedMetrics {
-	return AdvancedMetrics{
-		SocketPath:        Viper.GetString(AdvancedMetricsSocketPath),
-		AggregationPeriod: Viper.GetDuration(AdvancedMetricsAggregationPeriod),
-		PublishingPeriod:  Viper.GetDuration(AdvancedMetricsPublishPeriod),
-		TableSizesLimits: advanced_metrics.TableSizesLimits{
-			StagingTableMaxSize:    Viper.GetInt(AdvancedMetricsTableSizesLimitsSTMS),
-			StagingTableThreshold:  Viper.GetInt(AdvancedMetricsTableSizesLimitsSTT),
-			PriorityTableMaxSize:   Viper.GetInt(AdvancedMetricsTableSizesLimitsPTMS),
-			PriorityTableThreshold: Viper.GetInt(AdvancedMetricsTableSizesLimitsPTT),
 		},
 	}
 }

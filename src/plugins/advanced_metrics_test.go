@@ -188,7 +188,7 @@ func TestAppCentricMetric_toMetricReport(t *testing.T) {
 
 func TestAppCentricMetricClose(t *testing.T) {
 	env := tutils.GetMockEnv()
-	pluginUnderTest := NewAdvancedMetrics(env, &config.Config{})
+	pluginUnderTest := NewAdvancedMetrics(env, &config.Config{AdvancedMetrics: config.AdvancedMetrics{}})
 
 	ctx, cancelCTX := context.WithCancel(context.Background())
 	defer cancelCTX()
@@ -202,6 +202,6 @@ func TestAppCentricMetricClose(t *testing.T) {
 }
 
 func TestAppCentricMetricSubscriptions(t *testing.T) {
-	pluginUnderTest := NewAdvancedMetrics(tutils.GetMockEnv(), &config.Config{})
+	pluginUnderTest := NewAdvancedMetrics(tutils.GetMockEnv(), &config.Config{AdvancedMetrics: config.AdvancedMetrics{}})
 	assert.Equal(t, []string{}, pluginUnderTest.Subscriptions())
 }
