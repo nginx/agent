@@ -279,19 +279,6 @@ func getDataplane() Dataplane {
 		},
 	}
 }
-func getAdvancedMetrics() AdvancedMetrics {
-	return AdvancedMetrics{
-		SocketPath:        Viper.GetString(AdvancedMetricsSocketPath),
-		AggregationPeriod: Viper.GetDuration(AdvancedMetricsAggregationPeriod),
-		PublishingPeriod:  Viper.GetDuration(AdvancedMetricsPublishPeriod),
-		TableSizesLimits: advanced_metrics.TableSizesLimits{
-			StagingTableMaxSize:    Viper.GetInt(AdvancedMetricsTableSizesLimitsSTMS),
-			StagingTableThreshold:  Viper.GetInt(AdvancedMetricsTableSizesLimitsSTT),
-			PriorityTableMaxSize:   Viper.GetInt(AdvancedMetricsTableSizesLimitsPTMS),
-			PriorityTableThreshold: Viper.GetInt(AdvancedMetricsTableSizesLimitsPTT),
-		},
-	}
-}
 
 func SetAdvancedMetricsDefaults() AdvancedMetrics {
 	return AdvancedMetrics{

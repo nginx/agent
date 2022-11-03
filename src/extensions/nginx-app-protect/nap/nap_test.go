@@ -29,6 +29,8 @@ func TestNewNginxAppProtect(t *testing.T) {
 				Release:                 NAPRelease{},
 				AttackSignaturesVersion: "",
 				ThreatCampaignsVersion:  "",
+				optDirPath:              "",
+				symLinkDir:              "",
 			},
 			expError: nil,
 		},
@@ -37,7 +39,7 @@ func TestNewNginxAppProtect(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
 			// get installation status
-			nap, err := NewNginxAppProtect()
+			nap, err := NewNginxAppProtect(tc.expNAP.optDirPath, tc.expNAP.symLinkDir)
 
 			// Validate returned info
 			assert.Equal(t, err, tc.expError)

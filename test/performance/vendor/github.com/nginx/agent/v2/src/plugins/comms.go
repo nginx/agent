@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	DefaultMetricsChanLength = 4 * 1024
-	DefaultEventsChanLength  = 4 * 1024
+	DefaultMetricsChanLength = 10 * 1024
+	DefaultEventsChanLength  = 10 * 1024
 )
 
 type Comms struct {
