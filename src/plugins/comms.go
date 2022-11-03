@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
@@ -12,16 +13,9 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 )
 
-const (
-	DefaultMetricsChanLength = 4 * 1024
-	DefaultEventsChanLength  = 4 * 1024
-)
-
 type Comms struct {
 	reporter         client.MetricReporter
 	pipeline         core.MessagePipeInterface
-	reportChan       chan *proto.MetricsReport
-	reportEventsChan chan *models.EventReport
 	ctx              context.Context
 	started          *atomic.Bool
 	readyToSend      *atomic.Bool
@@ -30,8 +24,6 @@ type Comms struct {
 func NewComms(reporter client.MetricReporter) *Comms {
 	return &Comms{
 		reporter:         reporter,
-		reportChan:       make(chan *proto.MetricsReport, DefaultMetricsChanLength),
-		reportEventsChan: make(chan *models.EventReport, DefaultEventsChanLength),
 		started:          atomic.NewBool(false),
 		readyToSend:      atomic.NewBool(false),
 	}
@@ -85,16 +77,16 @@ func (r *Comms) Process(msg *core.Message) {
 					log.Tracef("MetricsReport sent, %v", report)
 				}
 			case *models.EventReport:
-				select {
-				case <-r.ctx.Done():
-					err := r.ctx.Err()
-					if err != nil {
-						log.Errorf("error in done context Process in comms %v", err)
+				err := r.reporter.Send(r.ctx, client.MessageFromEvents(report))
+				if err != nil {
+					l := len(report.Events)
+					var sb strings.Builder
+					for i := 0; i < l-1; i++ {
+						sb.WriteString(report.Events[i].GetSecurityViolationEvent().SupportID)
+						sb.WriteString(", ")
 					}
-					return
-				case r.reportEventsChan <- report:
-					// report queued
-					log.Debug("events report queued")
+					sb.WriteString(report.Events[l-1].GetSecurityViolationEvent().SupportID)
+					log.Errorf("Failed to send EventReport with error: %v, supportID list: %s", err, sb.String())
 				}
 			}
 		}
