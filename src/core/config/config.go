@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -276,20 +275,6 @@ func getDataplane() Dataplane {
 		Status: Status{
 			PollInterval:   Viper.GetDuration(DataplaneStatusPoll),
 			ReportInterval: Viper.GetDuration(DataplaneStatusReportInterval),
-		},
-	}
-}
-
-func getAdvancedMetrics() AdvancedMetrics {
-	return AdvancedMetrics{
-		SocketPath:        Viper.GetString(AdvancedMetricsSocketPath),
-		AggregationPeriod: Viper.GetDuration(AdvancedMetricsAggregationPeriod),
-		PublishingPeriod:  Viper.GetDuration(AdvancedMetricsPublishPeriod),
-		TableSizesLimits: advanced_metrics.TableSizesLimits{
-			StagingTableMaxSize:    Viper.GetInt(AdvancedMetricsTableSizesLimitsSTMS),
-			StagingTableThreshold:  Viper.GetInt(AdvancedMetricsTableSizesLimitsSTT),
-			PriorityTableMaxSize:   Viper.GetInt(AdvancedMetricsTableSizesLimitsPTMS),
-			PriorityTableThreshold: Viper.GetInt(AdvancedMetricsTableSizesLimitsPTT),
 		},
 	}
 }
