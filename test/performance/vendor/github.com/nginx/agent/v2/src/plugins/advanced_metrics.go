@@ -88,6 +88,18 @@ var totalOnlyMetrics = map[string]struct{}{
 	connectionDurationMetric: {},
 }
 
+var advancedMetricsDefaults = &config.AdvancedMetrics{
+		SocketPath:        "/var/run/nginx-agent/advanced-metrics.sock",
+		AggregationPeriod: time.Second * 10,
+		PublishingPeriod:  time.Second * 30,
+		TableSizesLimits: advanced_metrics.TableSizesLimits{
+			StagingTableThreshold:  1000,
+			StagingTableMaxSize:    1000,
+			PriorityTableThreshold: 1000,
+			PriorityTableMaxSize:   1000,
+		},
+}
+
 const httpMetricPrefix = "http.request"
 const streamMetricPrefix = "stream"
 
@@ -312,11 +324,11 @@ func (m *AdvancedMetrics) Subscriptions() []string {
 }
 
 func CheckAdvancedMetricsDefaults(cfg *advanced_metrics.Config) {
-	config.CheckAndSetDefault(&cfg.Address, config.Defaults.AdvancedMetrics.SocketPath)
-	config.CheckAndSetDefault(&cfg.AggregationPeriod, config.Defaults.AdvancedMetrics.AggregationPeriod)
-	config.CheckAndSetDefault(&cfg.PublishingPeriod, config.Defaults.AdvancedMetrics.PublishingPeriod)
-	config.CheckAndSetDefault(&cfg.TableSizesLimits.StagingTableMaxSize, config.Defaults.AdvancedMetrics.TableSizesLimits.StagingTableMaxSize)
-	config.CheckAndSetDefault(&cfg.TableSizesLimits.StagingTableThreshold, config.Defaults.AdvancedMetrics.TableSizesLimits.StagingTableThreshold)
-	config.CheckAndSetDefault(&cfg.TableSizesLimits.PriorityTableMaxSize, config.Defaults.AdvancedMetrics.TableSizesLimits.PriorityTableMaxSize)
-	config.CheckAndSetDefault(&cfg.TableSizesLimits.PriorityTableThreshold, config.Defaults.AdvancedMetrics.TableSizesLimits.PriorityTableThreshold)
+	config.CheckAndSetDefault(&cfg.Address, advancedMetricsDefaults.SocketPath)
+	config.CheckAndSetDefault(&cfg.AggregationPeriod, advancedMetricsDefaults.AggregationPeriod)
+	config.CheckAndSetDefault(&cfg.PublishingPeriod, advancedMetricsDefaults.PublishingPeriod)
+	config.CheckAndSetDefault(&cfg.TableSizesLimits.StagingTableMaxSize, advancedMetricsDefaults.TableSizesLimits.StagingTableMaxSize)
+	config.CheckAndSetDefault(&cfg.TableSizesLimits.StagingTableThreshold, advancedMetricsDefaults.TableSizesLimits.StagingTableThreshold)
+	config.CheckAndSetDefault(&cfg.TableSizesLimits.PriorityTableMaxSize, advancedMetricsDefaults.TableSizesLimits.PriorityTableMaxSize)
+	config.CheckAndSetDefault(&cfg.TableSizesLimits.PriorityTableThreshold, advancedMetricsDefaults.TableSizesLimits.PriorityTableThreshold)
 }
