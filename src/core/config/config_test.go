@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+
 	sysutils "github.com/nginx/agent/v2/test/utils/system"
 )
 
@@ -455,7 +457,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 }
 
 func setEnvVariable(t *testing.T, name string, value string) {
-	key := strings.ToUpper(EnvPrefix + KeyDelimiter + name)
+	key := strings.ToUpper(EnvPrefix + agent_config.KeyDelimiter + name)
 	err := os.Setenv(key, value)
 	require.NoError(t, err)
 }
@@ -464,7 +466,7 @@ func cleanEnv(t *testing.T, confFileName, dynamicConfFileAbsPath string) {
 	os.Clearenv()
 	ROOT_COMMAND.ResetFlags()
 	ROOT_COMMAND.ResetCommands()
-	Viper = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	Viper = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
 	SetDefaults()
 	RegisterFlags()
 

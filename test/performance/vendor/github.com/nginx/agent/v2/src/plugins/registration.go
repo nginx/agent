@@ -131,6 +131,12 @@ func (r *OneTimeRegistration) registerAgent() {
 					InstanceGroup: r.config.InstanceGroup,
 					Updated:       updated,
 					SystemUid:     r.env.GetSystemUUID(),
+					AgentDetails: &proto.AgentDetails{
+						Features:   r.config.Features,
+						Extensions: r.config.Extensions,
+						Tags:       *r.tags,
+						Alias:      "",
+					},
 				},
 				Details:                  details,
 				DataplaneSoftwareDetails: r.dataplaneSoftwareDetailsSlice(),

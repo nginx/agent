@@ -9,7 +9,9 @@ import (
 
 	"github.com/spf13/viper"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core/config"
+
 	sysutils "github.com/nginx/agent/v2/test/utils/system"
 	log "github.com/sirupsen/logrus"
 )
@@ -116,7 +118,7 @@ func setupRoutine(wg *sync.WaitGroup) error {
 	os.Clearenv()
 	config.ROOT_COMMAND.ResetFlags()
 	config.ROOT_COMMAND.ResetCommands()
-	config.Viper = viper.NewWithOptions(viper.KeyDelimiter(config.KeyDelimiter))
+	config.Viper = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
 	config.SetDefaults()
 	config.RegisterFlags()
 

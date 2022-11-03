@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -40,7 +41,7 @@ const (
 )
 
 var (
-	Viper = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	Viper = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
 )
 
 func SetVersion(version, commit string) {
@@ -177,7 +178,7 @@ func GetConfig(clientId string) (*Config, error) {
 		Nginx:                 getNginx(),
 		Dataplane:             getDataplane(),
 		AgentMetrics:          getMetrics(),
-		Features:              Viper.GetStringSlice(FeaturesKey),
+		Features:              Viper.GetStringSlice(agent_config.FeaturesKey),
 		Tags:                  Viper.GetStringSlice(TagsKey),
 		Updated:               filePathUTime(Viper.GetString(DynamicConfigPathKey)),
 		AllowedDirectoriesMap: map[string]struct{}{},
@@ -231,8 +232,8 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 	sort.Strings(config.Features)
 	synchronizedFeatures := reflect.DeepEqual(updateFeatures, config.Features)
 
-	Viper.Set(FeaturesKey, updateFeatures)
-	config.Features = Viper.GetStringSlice(FeaturesKey)
+	Viper.Set(agent_config.FeaturesKey, updateFeatures)
+	config.Features = Viper.GetStringSlice(agent_config.FeaturesKey)
 
 	// If the features are already synchronized there is no need to overwrite
 	if synchronizedTags && synchronizedFeatures {

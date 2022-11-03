@@ -2,9 +2,11 @@ package plugins
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -15,6 +17,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	loadedConfig "github.com/nginx/agent/v2/src/core/config"
 
@@ -89,7 +92,8 @@ var (
 	}`)
 )
 
-func TestNginx_Config(t *testing.T) {
+func TestNginxConfigApply(t *testing.T) {
+	validationTimeout = 0 * time.Millisecond
 	t.Parallel()
 
 	tests := []struct {
@@ -118,11 +122,10 @@ func TestNginx_Config(t *testing.T) {
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
 				core.FileWatcherEnabled,
 				core.CommResponse,
-				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
-				core.CommResponse,
+				core.NginxConfigValidationSucceeded,
 			},
 		},
 		{
@@ -147,11 +150,10 @@ func TestNginx_Config(t *testing.T) {
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
 				core.FileWatcherEnabled,
 				core.CommResponse,
-				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
-				core.CommResponse,
+				core.NginxConfigValidationSucceeded,
 			},
 		},
 		{
@@ -176,11 +178,10 @@ func TestNginx_Config(t *testing.T) {
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
 				core.FileWatcherEnabled,
 				core.CommResponse,
-				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
-				core.CommResponse,
+				core.NginxConfigValidationSucceeded,
 			},
 		},
 	}
@@ -210,7 +211,7 @@ func TestNginx_Config(t *testing.T) {
 			err = ioutil.WriteFile(tempConf.Name(), fourth, 0644)
 			assert.NoError(t, err)
 
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx := context.TODO()
 
 			env := tutils.GetMockEnvWithProcess()
 			allowedDirectoriesMap := map[string]struct{}{dir: {}}
@@ -220,30 +221,28 @@ func TestNginx_Config(t *testing.T) {
 
 			binary := tutils.NewMockNginxBinary()
 			binary.On("WriteConfig", mock.Anything).Return(config, nil)
-			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 			binary.On("ValidateConfig", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 			binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
-			binary.On("Reload", mock.Anything, mock.Anything)
 
 			commandClient := tutils.GetMockCommandClient(test.config)
 
-			pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
+			pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
 
 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
 			messagePipe.Run()
 
-			binary.AssertExpectations(tt)
-			env.AssertExpectations(tt)
-			cancel()
+			assert.Eventually(
+				tt,
+				func() bool { return len(messagePipe.GetProcessedMessages()) != len(test.msgTopics) },
+				time.Duration(5*time.Second),
+				3*time.Millisecond,
+			)
 
-			processedMessages := messagePipe.GetProcessedMessages()
-			if len(processedMessages) != len(test.msgTopics) {
-				tt.Fatalf("expected %d messages, received %d: %+v", len(test.msgTopics), len(processedMessages), processedMessages)
-			}
-			for idx, msg := range processedMessages {
+			for idx, msg := range messagePipe.GetProcessedMessages() {
 				if test.msgTopics[idx] != msg.Topic() {
 					tt.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), test.msgTopics[idx])
 				}
@@ -297,7 +296,7 @@ func TestUploadConfigs(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
 	cmdr.On("Upload", mock.Anything, mock.Anything).Return(nil)
 
-	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
+	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 	messagePipe := core.SetupMockMessagePipe(t, context.Background(), pluginUnderTest)
 
 	pluginUnderTest.Init(messagePipe)
@@ -401,7 +400,7 @@ func TestNginx_Process_NginxConfigUpload(t *testing.T) {
 
 	env := tutils.GetMockEnvWithProcess()
 
-	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{loadedConfig.FeatureNginxConfig}})
+	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 	pluginUnderTest.Process(core.NewMessage(core.NginxConfigUpload, configDesc))
 
 	binary.AssertExpectations(t)
@@ -419,6 +418,9 @@ func TestNginx_Subscriptions(t *testing.T) {
 		core.DataplaneChanged,
 		core.AgentConfigChanged,
 		core.EnableExtension,
+		core.NginxConfigValidationPending,
+		core.NginxConfigValidationSucceeded,
+		core.NginxConfigValidationFailed,
 	}
 	pluginUnderTest := NewNginx(nil, nil, tutils.GetMockEnvWithProcess(), &loadedConfig.Config{})
 
@@ -429,4 +431,232 @@ func TestNginx_Info(t *testing.T) {
 	pluginUnderTest := NewNginx(nil, nil, tutils.GetMockEnvWithProcess(), &loadedConfig.Config{})
 
 	assert.Equal(t, "NginxBinary", pluginUnderTest.Info().Name())
+}
+
+func TestNginx_validateConfig(t *testing.T) {
+	tests := []struct {
+		name             string
+		validationResult error
+		expectedTopic    string
+		expectedError    error
+	}{
+		{
+			name:             "successful validation",
+			validationResult: nil,
+			expectedTopic:    core.NginxConfigValidationSucceeded,
+		},
+		{
+			name:             "failed validation",
+			validationResult: errors.New("failure"),
+			expectedTopic:    core.NginxConfigValidationFailed,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+
+			env := tutils.GetMockEnvWithProcess()
+			binary := tutils.NewMockNginxBinary()
+			binary.On("ValidateConfig", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(test.validationResult)
+			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
+			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
+
+			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+
+			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+			messagePipe.Run()
+
+			pluginUnderTest.validateConfig(&proto.NginxDetails{}, "123", &proto.NginxConfig{}, &sdk.ConfigApply{})
+
+			assert.Eventually(
+				t,
+				func() bool { return len(messagePipe.GetMessages()) == 1 },
+				time.Duration(2*time.Second),
+				3*time.Millisecond,
+			)
+
+			assert.Equal(t, test.expectedTopic, messagePipe.GetMessages()[0].Topic())
+			assert.Equal(t, "123", messagePipe.GetMessages()[0].Data().(*NginxConfigValidationResponse).correlationId)
+			if test.validationResult == nil {
+				assert.Nil(t, messagePipe.GetMessages()[0].Data().(*NginxConfigValidationResponse).err)
+			} else {
+				assert.NotNil(t, messagePipe.GetMessages()[0].Data().(*NginxConfigValidationResponse).err)
+			}
+			assert.Greater(t, messagePipe.GetMessages()[0].Data().(*NginxConfigValidationResponse).elapsedTime, 0*time.Second)
+		})
+	}
+}
+
+func TestNginx_completeConfigApply(t *testing.T) {
+	expectedTopics := []string{
+		core.NginxConfigValidationSucceeded,
+		core.NginxPluginConfigured,
+		core.NginxInstancesFound,
+		core.CommResponse,
+		core.FileWatcherEnabled,
+		core.NginxReloadComplete,
+		core.NginxConfigApplySucceeded,
+	}
+
+	env := tutils.GetMockEnvWithProcess()
+	env.On("GetSystemUUID").Return("456")
+
+	binary := tutils.NewMockNginxBinary()
+	binary.On("uploadConfig", mock.Anything, mock.Anything).Return(nil)
+	binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
+	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
+	binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
+	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+	binary.On("Reload", mock.Anything, mock.Anything)
+
+	commandClient := tutils.GetMockCommandClient(
+		&proto.NginxConfig{
+			Action: proto.NginxConfigAction_APPLY,
+			ConfigData: &proto.ConfigDescriptor{
+				NginxId:  "12345",
+				Checksum: "2314365",
+			},
+			Zconfig: &proto.ZippedFile{
+				Contents:      first,
+				Checksum:      checksum.Checksum(first),
+				RootDirectory: "nginx.conf",
+			},
+			Zaux:         &proto.ZippedFile{},
+			AccessLogs:   &proto.AccessLogs{},
+			ErrorLogs:    &proto.ErrorLogs{},
+			Ssl:          &proto.SslCertificates{},
+			DirectoryMap: &proto.DirectoryMap{},
+		},
+	)
+
+	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+
+	dir := t.TempDir()
+	tempConf, err := ioutil.TempFile(dir, "nginx.conf")
+	assert.NoError(t, err)
+	allowedDirectoriesMap := map[string]struct{}{dir: {}}
+	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+
+	response := &NginxConfigValidationResponse{
+		err:           nil,
+		correlationId: "123",
+		nginxDetails: &proto.NginxDetails{
+			NginxId:     "12345",
+			ProcessId:   "123456",
+			ProcessPath: "/var/test/",
+		},
+		config: &proto.NginxConfig{
+			Action: proto.NginxConfigAction_APPLY,
+			ConfigData: &proto.ConfigDescriptor{
+				SystemId: "456",
+				NginxId:  "12345",
+				Checksum: "2314365",
+			},
+		},
+		configApply: configApply,
+	}
+
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+	messagePipe.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
+	messagePipe.Run()
+
+	assert.Eventually(
+		t,
+		func() bool { return len(messagePipe.GetProcessedMessages()) == len(expectedTopics) },
+		time.Duration(2*time.Second),
+		3*time.Millisecond,
+	)
+
+	for idx, msg := range messagePipe.GetProcessedMessages() {
+		if expectedTopics[idx] != msg.Topic() {
+			t.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), expectedTopics[idx])
+		}
+	}
+}
+
+func TestNginx_rollbackConfigApply(t *testing.T) {
+	expectedTopics := []string{
+		core.NginxConfigValidationFailed,
+		core.NginxPluginConfigured,
+		core.NginxInstancesFound,
+		core.ConfigRollbackResponse,
+		core.NginxConfigApplyFailed,
+		core.FileWatcherEnabled,
+	}
+
+	env := tutils.GetMockEnvWithProcess()
+	env.On("GetSystemUUID").Return("456")
+
+	binary := tutils.NewMockNginxBinary()
+	binary.On("uploadConfig", mock.Anything, mock.Anything).Return(nil)
+	binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
+	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
+	binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
+	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+	binary.On("Reload", mock.Anything, mock.Anything)
+
+	commandClient := tutils.GetMockCommandClient(
+		&proto.NginxConfig{
+			Action: proto.NginxConfigAction_APPLY,
+			ConfigData: &proto.ConfigDescriptor{
+				NginxId:  "12345",
+				Checksum: "2314365",
+			},
+			Zconfig: &proto.ZippedFile{
+				Contents:      first,
+				Checksum:      checksum.Checksum(first),
+				RootDirectory: "nginx.conf",
+			},
+			Zaux:         &proto.ZippedFile{},
+			AccessLogs:   &proto.AccessLogs{},
+			ErrorLogs:    &proto.ErrorLogs{},
+			Ssl:          &proto.SslCertificates{},
+			DirectoryMap: &proto.DirectoryMap{},
+		},
+	)
+
+	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+
+	dir := t.TempDir()
+	tempConf, err := ioutil.TempFile(dir, "nginx.conf")
+	assert.NoError(t, err)
+	allowedDirectoriesMap := map[string]struct{}{dir: {}}
+	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+
+	response := &NginxConfigValidationResponse{
+		err:           errors.New("Failure"),
+		correlationId: "123",
+		nginxDetails: &proto.NginxDetails{
+			NginxId:     "12345",
+			ProcessId:   "123456",
+			ProcessPath: "/var/test/",
+		},
+		config: &proto.NginxConfig{
+			Action: proto.NginxConfigAction_APPLY,
+			ConfigData: &proto.ConfigDescriptor{
+				SystemId: "456",
+				NginxId:  "12345",
+				Checksum: "2314365",
+			},
+		},
+		configApply: configApply,
+	}
+
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+	messagePipe.Process(core.NewMessage(core.NginxConfigValidationFailed, response))
+	messagePipe.Run()
+
+	assert.Eventually(
+		t,
+		func() bool { return len(messagePipe.GetProcessedMessages()) == len(expectedTopics) },
+		time.Duration(2*time.Second),
+		1*time.Millisecond,
+	)
+
+	for idx, msg := range messagePipe.GetProcessedMessages() {
+		if expectedTopics[idx] != msg.Topic() {
+			t.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), expectedTopics[idx])
+		}
+	}
 }
