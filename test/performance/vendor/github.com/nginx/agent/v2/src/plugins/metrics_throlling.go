@@ -134,6 +134,7 @@ func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.W
 			if r.collectorsUpdate.Load() {
 				r.BulkSize = r.conf.AgentMetrics.BulkSize
 				r.metricsAggregation = r.conf.AgentMetrics.Mode == "aggregated"
+				r.ticker.Stop()
 				r.ticker = time.NewTicker(r.conf.AgentMetrics.ReportInterval + reportStaggeringStartTime)
 				r.messagePipeline.Process(core.NewMessage(core.AgentCollectorsUpdate, ""))
 				r.collectorsUpdate.Store(false)
