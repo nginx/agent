@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -66,17 +65,6 @@ var (
 			ReportInterval:     1 * time.Minute,
 			CollectionInterval: 15 * time.Second,
 			Mode:               "aggregation",
-		},
-		AdvancedMetrics: AdvancedMetrics{
-			SocketPath:        "/var/run/nginx-agent/advanced-metrics.sock",
-			AggregationPeriod: time.Second * 10,
-			PublishingPeriod:  time.Second * 30,
-			TableSizesLimits: advanced_metrics.TableSizesLimits{
-				StagingTableThreshold:  1000,
-				StagingTableMaxSize:    1000,
-				PriorityTableThreshold: 1000,
-				PriorityTableMaxSize:   1000,
-			},
 		},
 		NAPMonitoring: NAPMonitoring{
 			ProcessorBufferSize: 50000,

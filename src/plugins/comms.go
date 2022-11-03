@@ -2,8 +2,6 @@ package plugins
 
 import (
 	"context"
-	"strings"
-	"sync"
 
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
@@ -27,7 +25,6 @@ type Comms struct {
 	ctx              context.Context
 	started          *atomic.Bool
 	readyToSend      *atomic.Bool
-	wait             sync.WaitGroup
 }
 
 func NewComms(reporter client.MetricReporter) *Comms {
@@ -37,7 +34,6 @@ func NewComms(reporter client.MetricReporter) *Comms {
 		reportEventsChan: make(chan *models.EventReport, DefaultEventsChanLength),
 		started:          atomic.NewBool(false),
 		readyToSend:      atomic.NewBool(false),
-		wait:             sync.WaitGroup{},
 	}
 }
 
@@ -107,44 +103,4 @@ func (r *Comms) Process(msg *core.Message) {
 
 func (r *Comms) Subscriptions() []string {
 	return []string{core.CommMetrics, core.RegistrationCompletedTopic}
-}
-
-func (r *Comms) reportLoop() {
-	r.wait.Add(1)
-	defer r.wait.Done()
-	for {
-		if !r.readyToSend.Load() {
-			continue
-		}
-		select {
-		case <-r.ctx.Done():
-			err := r.ctx.Err()
-			if err != nil {
-				log.Errorf("error in done context reportLoop %v", err)
-			}
-			log.Debug("reporter loop exiting")
-			return
-		case report := <-r.reportChan:
-			err := r.reporter.Send(r.ctx, client.MessageFromMetrics(report))
-			if err != nil {
-				log.Errorf("Failed to send MetricsReport: %v, data: %+v", err, report)
-			} else {
-				log.Tracef("MetricsReport sent, %v", report)
-			}
-		case report := <-r.reportEventsChan:
-			err := r.reporter.Send(r.ctx, client.MessageFromEvents(report))
-			if err != nil {
-				l := len(report.Events)
-				var sb strings.Builder
-				for i := 0; i < l-1; i++ {
-					sb.WriteString(report.Events[i].GetSecurityViolationEvent().SupportID)
-					sb.WriteString(", ")
-				}
-				sb.WriteString(report.Events[l-1].GetSecurityViolationEvent().SupportID)
-				log.Errorf("Failed to send EventReport with error: %v, supportID list: %s", err, sb.String())
-			} else {
-				log.Tracef("EventReport sent, %v", report)
-			}
-		}
-	}
 }
