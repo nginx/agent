@@ -82,12 +82,17 @@ func (dps *DataPlaneStatus) Info() *core.Info {
 func (dps *DataPlaneStatus) Process(msg *core.Message) {
 	switch {
 	case msg.Exact(core.AgentConfigChanged):
+		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
 		// If the agent config on disk changed update DataPlaneStatus with relevant config info
 		dps.syncAgentConfigChange()
 
-	case msg.Exact(core.NginxAppProtectDetailsGenerated):
-		// If a NAP report was generated sync it
-		dps.syncNAPDetails(msg)
+	case msg.Exact(core.DataplaneSoftwareDetailsUpdated):
+		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
+		switch data := msg.Data().(type) {
+		case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
+			log.Debugf("DataplaneStatus is syncing with NAP details - %+v", data.AppProtectWafDetails)
+			dps.napDetails = data
+		}
 
 	case msg.Exact(core.NginxConfigValidationPending):
 		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
@@ -97,6 +102,7 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 		default:
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, data)
 		}
+
 	case msg.Exact(core.NginxConfigApplyFailed) || msg.Exact(core.NginxConfigApplySucceeded):
 		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
 		switch data := msg.Data().(type) {
@@ -113,7 +119,7 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 func (dps *DataPlaneStatus) Subscriptions() []string {
 	return []string{
 		core.AgentConfigChanged,
-		core.NginxAppProtectDetailsGenerated,
+		core.DataplaneSoftwareDetailsUpdated,
 		core.NginxConfigValidationPending,
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,
@@ -324,14 +330,4 @@ func (dps *DataPlaneStatus) syncAgentConfigChange() {
 	dps.interval = pollInt
 	dps.tags = &conf.Tags
 	dps.configDirs = conf.ConfigDirs
-}
-
-func (dps *DataPlaneStatus) syncNAPDetails(msg *core.Message) {
-	switch commandData := msg.Data().(type) {
-	case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
-		log.Debugf("DataPlaneStatus is syncing with NAP details - %+v", commandData.AppProtectWafDetails)
-		dps.napDetails = commandData
-	default:
-		log.Errorf("Expected the type %T but got %T", &proto.DataplaneSoftwareDetails_AppProtectWafDetails{}, commandData)
-	}
 }

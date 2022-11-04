@@ -43,6 +43,6 @@ const (
 	Events                               = "events"
 	FileWatcherEnabled                   = "file.watcher.enabled"
 	ConfigRollbackResponse               = "config.rollback.response"
-	NginxAppProtectDetailsGenerated      = "nap.details.generated"
+	DataplaneSoftwareDetailsUpdated      = "dataplane.software.details.updated"
 	EnableExtension                      = "enable.extension"
 )

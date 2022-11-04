@@ -315,7 +315,7 @@ func TestDPSSyncNAPDetails(t *testing.T) {
 			assert.Equal(t, tc.initialNAPDetails, dataPlaneStatus.napDetails)
 
 			// Send updated NAP details message
-			dataPlaneStatus.Process(core.NewMessage(core.NginxAppProtectDetailsGenerated, tc.updatedNAPDetails))
+			dataPlaneStatus.Process(core.NewMessage(core.DataplaneSoftwareDetailsUpdated, tc.updatedNAPDetails))
 
 			// Check if NAP details were updated
 			assert.Equal(t, tc.updatedNAPDetails, dataPlaneStatus.napDetails)
@@ -326,7 +326,7 @@ func TestDPSSyncNAPDetails(t *testing.T) {
 func TestDataPlaneSubscriptions(t *testing.T) {
 	expectedSubscriptions := []string{
 		core.AgentConfigChanged,
-		core.NginxAppProtectDetailsGenerated,
+		core.DataplaneSoftwareDetailsUpdated,
 		core.NginxConfigValidationPending,
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,

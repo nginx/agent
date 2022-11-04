@@ -108,7 +108,7 @@ func (n *NginxAppProtect) addSoftwareDetailsToRegistration(msg *core.Message) {
 func (n *NginxAppProtect) monitor() {
 	initialDetails := n.generateNAPDetailsProtoCommand()
 	log.Infof("Initial Nginx App Protect details: %+v", initialDetails)
-	n.messagePipeline.Process(core.NewMessage(core.NginxAppProtectDetailsGenerated, initialDetails))
+	n.messagePipeline.Process(core.NewMessage(core.DataplaneSoftwareDetailsUpdated, initialDetails))
 
 	napUpdateChannel := n.nap.Monitor(n.reportInterval)
 
@@ -119,7 +119,7 @@ func (n *NginxAppProtect) monitor() {
 			// Communicate the update in NAP status via message pipeline
 			log.Infof("Change in NAP detected... Previous: %+v... Updated: %+v", updateMsg.PreviousReport, updateMsg.UpdatedReport)
 			napReportMsg := n.generateNAPDetailsProtoCommand()
-			n.messagePipeline.Process(core.NewMessage(core.NginxAppProtectDetailsGenerated, napReportMsg))
+			n.messagePipeline.Process(core.NewMessage(core.DataplaneSoftwareDetailsUpdated, napReportMsg))
 
 		case <-time.After(n.reportInterval):
 			log.Infof("No NAP changes detected after %v seconds... NAP Values: %+v", n.reportInterval.Seconds(), n.nap.GenerateNAPReport())
