@@ -32,6 +32,7 @@ type Metrics struct {
 	wg                   sync.WaitGroup
 	mu                   sync.Mutex
 	mu2                  sync.Mutex
+	mu3					 sync.RWMutex
 	env                  core.Environment
 	conf                 *config.Config
 	binary               core.NginxBinary
@@ -52,6 +53,7 @@ func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBi
 		wg:                   sync.WaitGroup{},
 		mu:                   sync.Mutex{},
 		mu2:                  sync.Mutex{},
+		mu3:				  sync.RWMutex{},
 		env:                  env,
 		conf:                 config,
 		binary:               binary,
@@ -121,6 +123,8 @@ func (m *Metrics) Process(msg *core.Message) {
 		m.mu2.Unlock()
 
 		stoppedCollectorIndex := -1
+
+		m.mu3.RLock()
 		for index, collector := range m.collectors {
 			if nginxCollector, ok := collector.(*collectors.NginxCollector); ok {
 				for _, nginxId := range collectorsToStop {
@@ -133,6 +137,7 @@ func (m *Metrics) Process(msg *core.Message) {
 				}
 			}
 		}
+		m.mu3.RUnlock()
 
 		if stoppedCollectorIndex >= 0 {
 			m.collectors = append(m.collectors[:stoppedCollectorIndex], m.collectors[stoppedCollectorIndex+1:]...)
@@ -265,7 +270,9 @@ func (m *Metrics) registerStatsSources() {
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.mu3.Lock()
 	m.collectors = tempCollectors
+	m.mu3.Unlock()
 }
 
 func (m *Metrics) syncAgentConfigChange() {

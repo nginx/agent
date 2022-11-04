@@ -114,6 +114,8 @@ func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []Proce
 }
 
 func (n *NginxBinaryType) GetChildProcesses() map[string][]*proto.NginxDetails {
+	n.mx.Lock()
+	defer n.mx.Unlock()
 	return n.nginxWorkersMap
 }
 
