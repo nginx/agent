@@ -86,16 +86,12 @@ ensure_sudo() {
 }
 
 ensure_agent_path() {
-    if [ -z "${AGENT_EXE}" ]; then
-        printf "Could not determine path to nginx-agent, using default...\n"
-
-        if [ ! -f "${AGENT_EXE}" ]; then
-            echo "nginx-agent not in default path, exiting..."
-            exit 1
-        fi
-
-        printf "Found nginx-agent %s\n" "${AGENT_EXE}"
+    if [ ! -f "${AGENT_EXE}" ]; then
+        echo "nginx-agent not in default path, exiting..."
+        exit 1
     fi
+
+    printf "Found nginx-agent %s\n" "${AGENT_EXE}"
 }
 
 create_agent_group() {
