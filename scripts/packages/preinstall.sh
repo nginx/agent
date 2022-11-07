@@ -26,6 +26,14 @@ export AGENT_INSTALL_LOG="${AGENT_INSTALL_LOG:-/var/log/nginx-agent/agent-instal
 # Create directory for install log default location
 mkdir -p "/var/log/nginx-agent"
 
+if touch "${AGENT_INSTALL_LOG}"; then
+    printf "Install log will be outputted to: %s\n" "${AGENT_INSTALL_LOG}"
+    chmod 640 "${AGENT_INSTALL_LOG}"
+else
+    printf "Install log is not writable at %s. An install log will not be created\n" "${AGENT_INSTALL_LOG}"
+    AGENT_INSTALL_LOG=""
+fi
+
 if [ "$ID" = "freebsd" ]; then
     AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/usr/local/etc/nginx-agent/nginx-agent.conf"}
     AGENT_DYNAMIC_CONFIG_DIR="/usr/local/etc/nginx-agent"
@@ -66,13 +74,6 @@ err_exit() {
 title() {
     printf "\n --- NGINX Agent Package Installer --- \n\n"
     printf " --- Will install the NGINX Agent in 5 seconds ---\n"
-    if touch "${AGENT_INSTALL_LOG}"; then
-        printf " --- Install log will be outputted to: %s\n" "${AGENT_INSTALL_LOG}"
-        chmod 640 "${AGENT_INSTALL_LOG}"
-    else
-        printf " --- Install log is not writable at %s. An install log will not be created\n" "${AGENT_INSTALL_LOG}"
-        AGENT_INSTALL_LOG=""
-    fi
     sleep 5
 }
 
