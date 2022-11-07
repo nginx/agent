@@ -20,13 +20,13 @@ AGENT_GROUP="nginx-agent"
 AGENT_INSTALL_LOG=$(find $AGENT_LOG_DIR -name "agent-install*" -print0 | xargs -0 ls -1 -t | head -1)
 
 detect_nginx_users() {
-    if command -v systemctl; then
+    if command -V systemctl >/dev/null 2>&1; then
         printf "PostInstall: Reading NGINX systemctl unit file for user information\n"
         nginx_unit_file=$(systemctl status nginx | grep -Po "\(\K\/.*service")
         pid_file=$(grep -Po "PIDFile=\K.*$" "${nginx_unit_file}")
 
         if [ ! -f "$pid_file" ]; then
-            echo "${pid_file} does not exist"
+            printf "%s does not exist\n" "${pid_file}"
         else
             pidId=$(cat "${pid_file}")
             nginx_user=$(ps --no-headers -u -p "${pidId}" | head -1 | awk '{print $1}')
@@ -99,7 +99,7 @@ ensure_agent_path() {
 }
 
 create_agent_group() {
-    if command -v systemctl; then
+    if command -V systemctl >/dev/null 2>&1; then
         printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
         groupadd "${AGENT_GROUP}"
 
@@ -146,7 +146,7 @@ create_run_dir() {
 
 update_unit_file() {
     # Fill in data to unit file that's acquired post install
-    if command -v systemctl; then
+    if command -V systemctl >/dev/null 2>&1; then
         printf "PostInstall: Modifying NGINX Agent unit file with correct locations and user information\n"
         EXE_CMD="s|\${AGENT_EXE}|${AGENT_EXE}|g"
         sed -i -e $EXE_CMD ${AGENT_UNIT_LOCATION}/${AGENT_UNIT_FILE}
@@ -200,12 +200,24 @@ summary() {
 #
 # Main body of the script
 #
-{
-  detect_nginx_users
-  ensure_sudo
-  ensure_agent_path
-  create_agent_group
-  create_run_dir
-  update_unit_file
-  summary
-} | tee -a "${AGENT_INSTALL_LOG}"
+if [ -z "$AGENT_INSTALL_LOG" ]; then
+    {
+        detect_nginx_users
+        ensure_sudo
+        ensure_agent_path
+        create_agent_group
+        create_run_dir
+        update_unit_file
+        summary
+    }
+else
+    {
+        detect_nginx_users
+        ensure_sudo
+        ensure_agent_path
+        create_agent_group
+        create_run_dir
+        update_unit_file
+        summary
+    } | tee -a "${AGENT_INSTALL_LOG}"
+fi
