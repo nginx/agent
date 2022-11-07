@@ -25,6 +25,6 @@ func NewRegisterWithDataplaneSoftwareDetailsPayload(details map[string]*proto.Da
 // the dataplane software details map object that has been sent as part of the payload.
 func (p *RegisterWithDataplaneSoftwareDetailsPayload) AddDataplaneSoftwareDetails(pluginName string, details *proto.DataplaneSoftwareDetails) {
 	p.mutex.Lock()
-	defer p.mutex.Unlock()
 	p.dataplaneSoftwareDetails[pluginName] = details
+	p.mutex.Unlock()
 }

@@ -32,7 +32,7 @@ type Metrics struct {
 	wg                   sync.WaitGroup
 	mu                   sync.Mutex
 	mu2                  sync.Mutex
-	mu3					 sync.RWMutex
+	mu3                  sync.RWMutex
 	env                  core.Environment
 	conf                 *config.Config
 	binary               core.NginxBinary
@@ -53,7 +53,7 @@ func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBi
 		wg:                   sync.WaitGroup{},
 		mu:                   sync.Mutex{},
 		mu2:                  sync.Mutex{},
-		mu3:				  sync.RWMutex{},
+		mu3:                  sync.RWMutex{},
 		env:                  env,
 		conf:                 config,
 		binary:               binary,
