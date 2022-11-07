@@ -48,7 +48,7 @@ The Agent uses the log files and formats to collect metrics. Expanding the log f
 
 The result of following the below steps you will locally have an NGINX instance running, Agent running, and a mock control plane to which the Agent will report.
 
-Ensure you have Go installed ([download](https://go.dev/dl/)). Version 1.18 or higher is required.
+Ensure you have Go installed ([download](https://go.dev/dl/)). Version 1.19 or higher is required.
 
 Ensure an NGINX instance is running. See [Prebuilt Packages for Linux and BSD](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/) or if your running on Mac see [brew nginx](https://formulae.brew.sh/formula/nginx) to install NGINX. Once installed ensure NGINX instance is running. If running on Mac and you installed using brew can start NGINX by the below command.
 
