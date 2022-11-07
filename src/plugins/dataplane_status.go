@@ -33,7 +33,7 @@ type DataPlaneStatus struct {
 	reportInterval        time.Duration
 	napDetails            *proto.DataplaneSoftwareDetails_AppProtectWafDetails
 	agentActivityStatuses []*proto.AgentActivityStatus
-	mu                    sync.RWMutex
+	napDetailsMutex       sync.RWMutex
 }
 
 const (
@@ -48,18 +48,18 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, config.Dataplane.Status.PollInterval)
 	}
 	return &DataPlaneStatus{
-		sendStatus:     make(chan bool),
-		healthTicker:   time.NewTicker(pollInt),
-		interval:       pollInt,
-		meta:           meta,
-		binary:         binary,
-		env:            env,
-		version:        version,
-		tags:           &config.Tags,
-		configDirs:     config.ConfigDirs,
-		statusUrls:     make(map[string]string),
-		reportInterval: config.Dataplane.Status.ReportInterval,
-		mu:             sync.RWMutex{},
+		sendStatus:      make(chan bool),
+		healthTicker:    time.NewTicker(pollInt),
+		interval:        pollInt,
+		meta:            meta,
+		binary:          binary,
+		env:             env,
+		version:         version,
+		tags:            &config.Tags,
+		configDirs:      config.ConfigDirs,
+		statusUrls:      make(map[string]string),
+		reportInterval:  config.Dataplane.Status.ReportInterval,
+		napDetailsMutex: sync.RWMutex{},
 		// Intentionally empty as it will be set later
 		napDetails: nil,
 	}
@@ -200,8 +200,8 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 func (dps *DataPlaneStatus) dataplaneSoftwareDetails() []*proto.DataplaneSoftwareDetails {
 	allDetails := make([]*proto.DataplaneSoftwareDetails, 0)
 
-	dps.mu.RLock()
-	defer dps.mu.RUnlock()
+	dps.napDetailsMutex.RLock()
+	defer dps.napDetailsMutex.RUnlock()
 	if dps.napDetails != nil {
 		napDetails := &proto.DataplaneSoftwareDetails{
 			Data: dps.napDetails,
@@ -335,9 +335,9 @@ func (dps *DataPlaneStatus) syncNAPDetails(msg *core.Message) {
 	switch commandData := msg.Data().(type) {
 	case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
 		log.Debugf("DataPlaneStatus is syncing with NAP details - %+v", commandData.AppProtectWafDetails)
-		dps.mu.Lock()
+		dps.napDetailsMutex.Lock()
 		dps.napDetails = commandData
-		dps.mu.Unlock()
+		dps.napDetailsMutex.Unlock()
 	default:
 		log.Errorf("Expected the type %T but got %T", &proto.DataplaneSoftwareDetails_AppProtectWafDetails{}, commandData)
 	}

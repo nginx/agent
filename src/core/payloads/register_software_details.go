@@ -9,8 +9,8 @@ import (
 // RegisterWithDataplaneSoftwareDetailsPayload is an internal payload meant to be used as
 // part of registration when there are plugins reporting software details.
 type RegisterWithDataplaneSoftwareDetailsPayload struct {
-	dataplaneSoftwareDetails map[string]*proto.DataplaneSoftwareDetails
-	mutex                    sync.Mutex
+	dataplaneSoftwareDetails      map[string]*proto.DataplaneSoftwareDetails
+	dataplaneSoftwareDetailsMutex sync.Mutex
 }
 
 // NewRegisterWithDataplaneSoftwareDetailsPayload returns a pointer to an instance of a
@@ -24,7 +24,7 @@ func NewRegisterWithDataplaneSoftwareDetailsPayload(details map[string]*proto.Da
 // AddDataplaneSoftwareDetails adds the dataplane software details passed into the function to
 // the dataplane software details map object that has been sent as part of the payload.
 func (p *RegisterWithDataplaneSoftwareDetailsPayload) AddDataplaneSoftwareDetails(pluginName string, details *proto.DataplaneSoftwareDetails) {
-	p.mutex.Lock()
+	p.dataplaneSoftwareDetailsMutex.Lock()
 	p.dataplaneSoftwareDetails[pluginName] = details
-	p.mutex.Unlock()
+	p.dataplaneSoftwareDetailsMutex.Unlock()
 }

@@ -53,7 +53,8 @@ type NginxBinary interface {
 }
 
 type NginxBinaryType struct {
-	mx                sync.Mutex
+	detailsMapMutex   sync.Mutex
+	workersMapMutex   sync.Mutex
 	env               Environment
 	config            *config.Config
 	nginxDetailsMap   map[string]*proto.NginxDetails
@@ -92,15 +93,18 @@ func NewNginxBinary(env Environment, config *config.Config) *NginxBinaryType {
 }
 
 func (n *NginxBinaryType) GetNginxDetailsMapFromProcesses(nginxProcesses []Process) map[string]*proto.NginxDetails {
-	n.mx.Lock()
-	defer n.mx.Unlock()
+	n.detailsMapMutex.Lock()
+	defer n.detailsMapMutex.Unlock()
 	return n.nginxDetailsMap
 }
 
 func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []Process) {
-	n.mx.Lock()
-	defer n.mx.Unlock()
+	n.detailsMapMutex.Lock()
+	defer n.detailsMapMutex.Unlock()
 	n.nginxDetailsMap = map[string]*proto.NginxDetails{}
+
+	n.workersMapMutex.Lock()
+	defer n.workersMapMutex.Unlock()
 	n.nginxWorkersMap = map[string][]*proto.NginxDetails{}
 
 	for _, process := range nginxProcesses {
@@ -114,8 +118,8 @@ func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []Proce
 }
 
 func (n *NginxBinaryType) GetChildProcesses() map[string][]*proto.NginxDetails {
-	n.mx.Lock()
-	defer n.mx.Unlock()
+	n.workersMapMutex.Lock()
+	defer n.workersMapMutex.Unlock()
 	return n.nginxWorkersMap
 }
 
@@ -143,8 +147,8 @@ func (n *NginxBinaryType) getNginxIDFromProcessInfo(nginxProcess Process, info *
 }
 
 func (n *NginxBinaryType) GetNginxDetailsByID(nginxID string) *proto.NginxDetails {
-	n.mx.Lock()
-	defer n.mx.Unlock()
+	n.detailsMapMutex.Lock()
+	defer n.detailsMapMutex.Unlock()
 	return n.nginxDetailsMap[nginxID]
 }
 
