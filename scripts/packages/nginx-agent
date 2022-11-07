@@ -19,7 +19,6 @@ start_cmd="start_agent"
 stop_cmd="stop_agent"
 status_cmd="status_agent"
 
-
 start_agent() {
     PATH=$PATH:/usr/local/sbin
     /usr/sbin/daemon -f -p ${pidfile} ${command} 
