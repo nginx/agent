@@ -130,13 +130,6 @@ update_config_file() {
 
     printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
 
-
-    if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
-        printf "Dynamic agent config file %s does not exist. Could not be updated\n" "$AGENT_DYNAMIC_CONFIG_FILE"
-        exit 0
-    fi
-
-
     # Check the instance group and set accordingly
     if [ "${INSTANCE_GROUP}" ]; then
         printf "Updating %s ...\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
