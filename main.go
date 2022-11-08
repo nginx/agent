@@ -179,7 +179,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		plugins.NewConfigReader(loadedConfig),
 		plugins.NewNginx(commander, binary, env, loadedConfig),
 		plugins.NewCommander(commander, loadedConfig),
-		plugins.NewComms(reporter),
+		plugins.NewMetricsSender(reporter),
 		plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString()), version),
 		plugins.NewMetrics(loadedConfig, env, binary),
 		plugins.NewMetricsThrottle(loadedConfig, env),

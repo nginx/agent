@@ -15,7 +15,7 @@ import (
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
-func TestCommsSendMetrics(t *testing.T) {
+func TestMetricsSenderSendMetrics(t *testing.T) {
 	tests := []struct {
 		name string
 		err  error
@@ -35,7 +35,7 @@ func TestCommsSendMetrics(t *testing.T) {
 			ctx := context.TODO()
 			mockMetricsReportClient := tutils.NewMockMetricsReportClient()
 			mockMetricsReportClient.Mock.On("Send", ctx, mock.Anything).Return(test.err)
-			pluginUnderTest := NewComms(mockMetricsReportClient)
+			pluginUnderTest := NewMetricsSender(mockMetricsReportClient)
 
 			assert.False(t, pluginUnderTest.started.Load())
 			assert.False(t, pluginUnderTest.readyToSend.Load())
@@ -67,7 +67,7 @@ func TestCommsSendMetrics(t *testing.T) {
 	}
 }
 
-func TestCommsSubscriptions(t *testing.T) {
-	pluginUnderTest := NewComms(tutils.NewMockMetricsReportClient())
+func TestMetricsSenderSubscriptions(t *testing.T) {
+	pluginUnderTest := NewMetricsSender(tutils.NewMockMetricsReportClient())
 	assert.Equal(t, []string{core.CommMetrics, core.RegistrationCompletedTopic}, pluginUnderTest.Subscriptions())
 }

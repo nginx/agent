@@ -104,7 +104,7 @@ func TestNAPMonitoring(t *testing.T) {
 		return
 	}
 
-	comms := plugins.NewComms(reporter)
+	metricsSender := plugins.NewMetricsSender(reporter)
 
 	env := tutils.NewMockEnvironment()
 	env.On("NewHostInfo", testifyMock.Anything, testifyMock.Anything, testifyMock.Anything).Return(&sdkPb.HostInfo{
@@ -115,7 +115,7 @@ func TestNAPMonitoring(t *testing.T) {
 	napMonitoring, err := plugins.NewNAPMonitoring(env, cfg)
 	assert.NoError(t, err)
 
-	pipe := initializeMessagePipe(t, ctx, []core.Plugin{comms, napMonitoring})
+	pipe := initializeMessagePipe(t, ctx, []core.Plugin{metricsSender, napMonitoring})
 
 	pipe.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
 
