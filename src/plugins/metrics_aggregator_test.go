@@ -12,7 +12,7 @@ import (
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
-func TestMetricsThrottle_Process(t *testing.T) {
+func TestMetricsAggregator_Process(t *testing.T) {
 	tests := []struct {
 		name         string
 		metricBuffer []core.Payload
@@ -29,32 +29,6 @@ func TestMetricsThrottle_Process(t *testing.T) {
 				core.MetricReport,
 			},
 			config: tutils.GetMockAgentConfig(),
-		},
-		{
-			name: "flush buffer of metrics streaming",
-			msgs: []*core.Message{
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
-			},
-			msgTopics: []string{
-				core.MetricReport,
-				core.MetricReport,
-				core.MetricReport,
-				core.CommMetrics,
-				core.CommMetrics,
-				core.CommMetrics,
-			},
-			config: &config.Config{
-				ClientID: "12345",
-				Tags:     tutils.InitialConfTags,
-				AgentMetrics: config.AgentMetrics{
-					BulkSize:           1,
-					ReportInterval:     5,
-					CollectionInterval: 1,
-					Mode:               "streaming",
-				},
-			},
 		},
 		{
 			name: "flush buffer of metrics",
@@ -85,7 +59,7 @@ func TestMetricsThrottle_Process(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(tt *testing.T) {
-			throttlePlugin := NewMetricsThrottle(test.config, &tutils.MockEnvironment{})
+			throttlePlugin := NewMetricsAggregator(test.config, &tutils.MockEnvironment{})
 			ctx := context.Background()
 			messagePipe := core.SetupMockMessagePipe(t, ctx, throttlePlugin)
 
@@ -100,15 +74,15 @@ func TestMetricsThrottle_Process(t *testing.T) {
 	}
 }
 
-func TestMetricsThrottle_Subscriptions(t *testing.T) {
+func TestMetricsAggregator_Subscriptions(t *testing.T) {
 	subs := []string{core.MetricReport, core.AgentConfigChanged, core.LoggerLevel}
-	pluginUnderTest := NewMetricsThrottle(tutils.GetMockAgentConfig(), &tutils.MockEnvironment{})
+	pluginUnderTest := NewMetricsAggregator(tutils.GetMockAgentConfig(), &tutils.MockEnvironment{})
 
 	assert.Equal(t, subs, pluginUnderTest.Subscriptions())
 }
 
-func TestMetricsThrottle_Info(t *testing.T) {
-	pluginUnderTest := NewMetricsThrottle(tutils.GetMockAgentConfig(), &tutils.MockEnvironment{})
+func TestMetricsAggregator_Info(t *testing.T) {
+	pluginUnderTest := NewMetricsAggregator(tutils.GetMockAgentConfig(), &tutils.MockEnvironment{})
 
-	assert.Equal(t, "MetricsThrottle", pluginUnderTest.Info().Name())
+	assert.Equal(t, "MetricsAggregator", pluginUnderTest.Info().Name())
 }

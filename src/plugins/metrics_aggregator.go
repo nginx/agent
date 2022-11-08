@@ -18,14 +18,13 @@ const (
 	reportStaggeringStartTime = 5555 * time.Millisecond // want to start the report cycle staggering of the collection time
 )
 
-type MetricsThrottle struct {
+type MetricsAggregator struct {
 	messagePipeline    core.MessagePipeInterface
 	BulkSize           int
 	metricBuffer       []core.Payload
 	ticker             *time.Ticker
 	reportsReady       *atomic.Bool
 	collectorsUpdate   *atomic.Bool
-	metricsAggregation bool
 	metricsCollections metrics.Collections
 	ctx                context.Context
 	wg                 sync.WaitGroup
@@ -35,19 +34,18 @@ type MetricsThrottle struct {
 	errors             chan error
 }
 
-func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrottle {
+func NewMetricsAggregator(conf *config.Config, env core.Environment) *MetricsAggregator {
 	metricsCollections := metrics.Collections{
 		Count: 0,
 		Data:  make(map[string]metrics.PerDimension),
 	}
 
-	return &MetricsThrottle{
+	return &MetricsAggregator{
 		metricBuffer:       make([]core.Payload, 0),
 		BulkSize:           conf.AgentMetrics.BulkSize,
 		ticker:             time.NewTicker(conf.AgentMetrics.ReportInterval + reportStaggeringStartTime),
 		reportsReady:       atomic.NewBool(false),
 		collectorsUpdate:   atomic.NewBool(false),
-		metricsAggregation: conf.AgentMetrics.Mode == "aggregated",
 		metricsCollections: metricsCollections,
 		wg:                 sync.WaitGroup{},
 		env:                env,
@@ -56,64 +54,51 @@ func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrot
 	}
 }
 
-func (r *MetricsThrottle) Init(pipeline core.MessagePipeInterface) {
+func (r *MetricsAggregator) Init(pipeline core.MessagePipeInterface) {
 	r.messagePipeline = pipeline
 	r.ctx = pipeline.Context()
-	if r.metricsAggregation {
-		r.wg.Add(1)
-		go r.metricsReportGoroutine(r.ctx, &r.wg)
-	}
-	log.Info("MetricsThrottle initializing")
+	r.wg.Add(1)
+	go r.metricsReportGoroutine(r.ctx, &r.wg)
+	log.Info("MetricsAggregator initializing")
 }
 
-func (r *MetricsThrottle) Close() {
-	log.Info("MetricsThrottle is wrapping up")
+func (r *MetricsAggregator) Close() {
+	log.Info("MetricsAggregator is wrapping up")
 	r.reportsReady.Store(false) // allow metricsReportGoroutine to shutdown gracefully
 	r.ticker.Stop()
 }
 
-func (r *MetricsThrottle) Info() *core.Info {
-	return core.NewInfo("MetricsThrottle", "v0.0.1")
+func (r *MetricsAggregator) Info() *core.Info {
+	return core.NewInfo("MetricsAggregator", "v0.0.1")
 }
 
-func (r *MetricsThrottle) Process(msg *core.Message) {
+func (r *MetricsAggregator) Process(msg *core.Message) {
 	switch {
 	case msg.Exact(core.AgentConfigChanged):
-		// If the agent config on disk changed update MetricsThrottle with relevant config info
+		// If the agent config on disk changed update MetricsAggregator with relevant config info
 		r.syncAgentConfigChange()
 		r.collectorsUpdate.Store(true)
 		return
 	case msg.Exact(core.MetricReport):
-		if r.metricsAggregation {
-			switch report := msg.Data().(type) {
-			case *proto.MetricsReport:
-				r.mu.Lock()
-				r.metricsCollections = metrics.SaveCollections(r.metricsCollections, report)
-				r.mu.Unlock()
-				log.Debug("MetricsThrottle: Metrics collection saved")
-				r.reportsReady.Store(true)
-			}
-		} else {
-			r.metricBuffer = append(r.metricBuffer, msg.Data())
-			if len(r.metricBuffer) >= r.BulkSize {
-				log.Info("MetricsThrottle buffer flush")
-				r.messagePipeline.Process(
-					core.NewMessage(core.CommMetrics, r.metricBuffer),
-				)
-				r.metricBuffer = make([]core.Payload, 0)
-			}
+		switch report := msg.Data().(type) {
+		case *proto.MetricsReport:
+			r.mu.Lock()
+			r.metricsCollections = metrics.SaveCollections(r.metricsCollections, report)
+			r.mu.Unlock()
+			log.Debug("MetricsAggregator: Metrics collection saved")
+			r.reportsReady.Store(true)
 		}
 	}
 }
 
-func (r *MetricsThrottle) Subscriptions() []string {
+func (r *MetricsAggregator) Subscriptions() []string {
 	return []string{core.MetricReport, core.AgentConfigChanged, core.LoggerLevel}
 }
 
-func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.WaitGroup) {
+func (r *MetricsAggregator) metricsReportGoroutine(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer r.ticker.Stop()
-	log.Info("MetricsThrottle waiting for report ready")
+	log.Info("MetricsAggregator waiting for report ready")
 	for {
 		if !r.reportsReady.Load() {
 			continue
@@ -133,7 +118,6 @@ func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.W
 			)
 			if r.collectorsUpdate.Load() {
 				r.BulkSize = r.conf.AgentMetrics.BulkSize
-				r.metricsAggregation = r.conf.AgentMetrics.Mode == "aggregated"
 				r.ticker.Stop()
 				r.ticker = time.NewTicker(r.conf.AgentMetrics.ReportInterval + reportStaggeringStartTime)
 				r.messagePipeline.Process(core.NewMessage(core.AgentCollectorsUpdate, ""))
@@ -145,7 +129,7 @@ func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.W
 	}
 }
 
-func (r *MetricsThrottle) syncAgentConfigChange() {
+func (r *MetricsAggregator) syncAgentConfigChange() {
 	conf, err := config.GetConfig(r.env.GetSystemUUID())
 	if err != nil {
 		log.Errorf("Failed to load config for updating: %v", err)
@@ -155,12 +139,12 @@ func (r *MetricsThrottle) syncAgentConfigChange() {
 		conf.DisplayName = r.env.GetHostname()
 		log.Infof("setting displayName to %s", conf.DisplayName)
 	}
-	log.Debugf("MetricsThrottle is updating to a new config - %v", conf)
+	log.Debugf("MetricsAggregator is updating to a new config - %v", conf)
 
 	r.conf = conf
 }
 
-func (r *MetricsThrottle) getAggregatedReport() *proto.MetricsReport {
+func (r *MetricsAggregator) getAggregatedReport() *proto.MetricsReport {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	report := metrics.GenerateMetricsReport(r.metricsCollections)
