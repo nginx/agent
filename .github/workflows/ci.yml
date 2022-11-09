@@ -112,6 +112,21 @@ jobs:
           name: snapshots
           path: build/**/*.tar.gz
           retention-days: 3
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Temp test read azure storage
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage fs directory exists --name nginx-agent/main/nginx-agent.tar.gz \
+              --file-system ${{ secrets.AZURE_CONTAINER_NAME }} --account-name ${{ secrets.AZURE_ACCOUNT_NAME }}
+      - name: Azure Logout
+        run: |
+          az logout
+        if: always()
+
   trigger-release-workflow:
     if: startsWith(github.ref, 'refs/heads/release-')
     needs: [ lint, unit-test, component-test, performance-test ]
