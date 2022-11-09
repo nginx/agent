@@ -58,13 +58,13 @@ func TestGenerateNAPReport(t *testing.T) {
 			testName: "NAPInstalled",
 			nap: NginxAppProtect{
 				Status:                  INSTALLED.String(),
-				Release:                 napRelease3_9,
+				Release:                 testUnmappedBuildRelease,
 				AttackSignaturesVersion: "2022.02.24",
 				ThreatCampaignsVersion:  "2022.03.01",
 			},
 			expNAPReport: NAPReport{
 				Status:                  INSTALLED.String(),
-				NAPVersion:              napRelease3_9.VersioningDetails.NAPRelease,
+				NAPVersion:              testUnmappedBuildRelease.VersioningDetails.NAPRelease,
 				AttackSignaturesVersion: "2022.02.24",
 				ThreatCampaignsVersion:  "2022.03.01",
 			},

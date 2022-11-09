@@ -15,42 +15,8 @@ const (
 )
 
 var (
-	napRelease3_9            = NAPRelease3_9()
-	testUnmappedBuildRelease = NAPReleaseUnmappedBuild(testUnsupportedVersion)
+	testUnmappedBuildRelease = ReleaseUnmappedBuild(testUnsupportedVersion)
 )
-
-func TestNAPReleaseInfo(t *testing.T) {
-	testCases := []struct {
-		testName          string
-		napReleaseVersion string
-		expReleaseVersion *NAPRelease
-		expError          error
-	}{
-		{
-			testName:          "ValidNAPRelease",
-			napReleaseVersion: "3.9",
-			expReleaseVersion: &napRelease3_9,
-			expError:          nil,
-		},
-		{
-			testName:          "InvalidNAPRelease",
-			napReleaseVersion: "invalid-release",
-			expReleaseVersion: nil,
-			expError:          fmt.Errorf(UNABLE_TO_FIND_RELEASE_VERSION_INFO, "invalid-release"),
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.testName, func(t *testing.T) {
-			// Get release version info
-			releaseVersion, err := NAPReleaseInfo(tc.napReleaseVersion)
-
-			// Validate returned release info
-			assert.Equal(t, err, tc.expError)
-			assert.Equal(t, releaseVersion, tc.expReleaseVersion)
-		})
-	}
-}
 
 func TestInstalledNAPBuildVersion(t *testing.T) {
 	testCases := []struct {
@@ -100,6 +66,10 @@ func TestInstalledNAPBuildVersion(t *testing.T) {
 	}
 }
 
+func buildFromPTR(v string) *NAPRelease {
+	version := ReleaseUnmappedBuild(v)
+	return &version
+}
 func TestInstalledNAPRelease(t *testing.T) {
 	testCases := []struct {
 		testName          string
@@ -119,7 +89,7 @@ func TestInstalledNAPRelease(t *testing.T) {
 			testName:          "SuccessfullyGetNAPReleaseVersion",
 			versionFile:       testNAPVersionFile,
 			version:           testNAPVersion,
-			expReleaseVersion: &napRelease3_9,
+			expReleaseVersion: buildFromPTR(testNAPVersion),
 			expError:          nil,
 		},
 		{
