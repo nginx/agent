@@ -1,7 +1,6 @@
 package nap
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -55,22 +54,8 @@ func NewNginxAppProtect(optDirPath, symLinkDir string) (*NginxAppProtect, error)
 		}
 	}
 
-	// Get attack signatures version
-	attackSigsVersion, err := getAttackSignaturesVersion(ATTACK_SIGNATURES_UPDATE_FILE)
-	if err != nil && err.Error() != fmt.Sprintf(FILE_NOT_FOUND, ATTACK_SIGNATURES_UPDATE_FILE) {
-		return nil, err
-	}
-
-	// Get threat campaigns version
-	threatCampaignsVersion, err := getThreatCampaignsVersion(THREAT_CAMPAIGNS_UPDATE_FILE)
-	if err != nil && err.Error() != fmt.Sprintf(FILE_NOT_FOUND, THREAT_CAMPAIGNS_UPDATE_FILE) {
-		return nil, err
-	}
-
 	// Update the NAP object with the values from NAP on the system
 	nap.Status = napStatus.String()
-	nap.AttackSignaturesVersion = attackSigsVersion
-	nap.ThreatCampaignsVersion = threatCampaignsVersion
 	if napRelease != nil {
 		nap.Release = *napRelease
 	}
