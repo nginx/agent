@@ -17,7 +17,6 @@ AGENT_UNIT_FILE="nginx-agent.service"
 AGENT_USER=$(id -nu)
 WORKER_USER=""
 AGENT_GROUP="nginx-agent"
-AGENT_INSTALL_LOG=$(find $AGENT_LOG_DIR -name "agent-install*" -print0 | xargs -0 ls -1 -t | head -1)
 
 detect_nginx_users() {
     if command -V systemctl >/dev/null 2>&1; then
@@ -196,24 +195,13 @@ summary() {
 #
 # Main body of the script
 #
-if [ -z "$AGENT_INSTALL_LOG" ]; then
-    {
-        detect_nginx_users
-        ensure_sudo
-        ensure_agent_path
-        create_agent_group
-        create_run_dir
-        update_unit_file
-        summary
-    }
-else
-    {
-        detect_nginx_users
-        ensure_sudo
-        ensure_agent_path
-        create_agent_group
-        create_run_dir
-        update_unit_file
-        summary
-    } | tee -a "${AGENT_INSTALL_LOG}"
-fi
+{
+    detect_nginx_users
+    ensure_sudo
+    ensure_agent_path
+    create_agent_group
+    create_run_dir
+    update_unit_file
+    summary
+}
+

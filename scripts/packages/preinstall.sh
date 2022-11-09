@@ -17,22 +17,10 @@ INSTANCE_GROUP=""
 ###### Default variables
 ################################
 export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
-export AGENT_INSTALL_LOG="${AGENT_INSTALL_LOG:-/var/log/nginx-agent/agent-install-$(date +"%Y-%m-%d-%H.%M.%S").log}"
 
 # Determine OS platform
 # shellcheck source=/dev/null
 . /etc/os-release
-
-# Create directory for install log default location
-mkdir -p "/var/log/nginx-agent"
-
-if touch "${AGENT_INSTALL_LOG}"; then
-    printf "Install log will be outputted to: %s\n" "${AGENT_INSTALL_LOG}"
-    chmod 640 "${AGENT_INSTALL_LOG}"
-else
-    printf "Install log is not writable at %s. An install log will not be created\n" "${AGENT_INSTALL_LOG}"
-    AGENT_INSTALL_LOG=""
-fi
 
 if [ "$ID" = "freebsd" ]; then
     AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/usr/local/etc/nginx-agent/nginx-agent.conf"}
@@ -149,18 +137,9 @@ update_config_file() {
 #
 # Main body of the script
 #
-if [ -z "${AGENT_INSTALL_LOG}" ]; then
-    {
-        title
-        ensure_sudo
-        load_config_values
-        update_config_file
-    }
-else
-    {
-        title
-        ensure_sudo
-        load_config_values
-        update_config_file
-    } | tee "${AGENT_INSTALL_LOG}"
-fi
+{
+    title
+    ensure_sudo
+    load_config_values
+    update_config_file
+}

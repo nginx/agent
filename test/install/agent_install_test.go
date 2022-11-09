@@ -4,8 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -21,8 +19,7 @@ const (
 )
 
 var (
-	AGENT_PACKAGE_FILE       = os.Getenv("AGENT_PACKAGE_FILE")
-	installLogFileNameRegexp = regexp.MustCompile("^agent-install-([0-9]+(-[0-9]+)+).[0-9]+.[0-9]+.[log]+")
+	AGENT_PACKAGE_FILE = os.Getenv("AGENT_PACKAGE_FILE")
 )
 
 // TestAgentManualInstallUninstall tests Agent Install and Uninstall.
@@ -41,9 +38,8 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	}
 
 	expectedAgentPaths := map[string]string{
-		"AgentConfigFile":    "/etc/nginx-agent/nginx-agent.conf",
-		"AgentSystemFile":    "/etc/systemd/system/multi-user.target.wants/nginx-agent.service",
-		"AgentInstallLogDir": "/var/log/nginx-agent/",
+		"AgentConfigFile": "/etc/nginx-agent/nginx-agent.conf",
+		"AgentSystemFile": "/etc/systemd/system/multi-user.target.wants/nginx-agent.service",
 	}
 
 	// Check the environment variable $AGENT_PACKAGE_FILE is set
@@ -73,19 +69,6 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	// Check nginx-agent system unit file is created.
 	assert.FileExists(t, expectedAgentPaths["AgentSystemFile"])
-
-	// Check nginx-agent install log file is created.
-	files, err := ioutil.ReadDir(expectedAgentPaths["AgentInstallLogDir"])
-	require.NoError(t, err)
-
-	installLogFile := ""
-	for _, f := range files {
-		if installLogFileNameRegexp.MatchString(f.Name()) {
-			installLogFile = filepath.Join(expectedAgentPaths["AgentInstallLogDir"], f.Name())
-			break
-		}
-	}
-	assert.FileExists(t, installLogFile, "agent install log not found")
 
 	// Uninstall the agent package
 	uninstallLog := uninstallAgent(t, "nginx-agent")
