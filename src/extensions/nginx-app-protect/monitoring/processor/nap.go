@@ -460,7 +460,7 @@ func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) err
 	case requestStatus:
 		napConfig.RequestStatus = value
 	case severity:
-		napConfig.Severity = value
+		napConfig.Severity = strings.ToLower(value)
 	case sigSetNames:
 		napConfig.SigSetNames = replaceEncodedList(value, listSeperator)
 	case threatCampaignNames:

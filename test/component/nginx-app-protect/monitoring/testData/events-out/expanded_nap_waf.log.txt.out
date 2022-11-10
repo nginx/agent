@@ -1,8 +1,8 @@
 
 j
-Agent$c9f9fc06-6071-11ed-8415-5671f551701b4355056874564592513"×ª°›€òÃ×*ERROR2Nginx:
+Agent$638d54bc-6135-11ed-8afe-5671f551701b4355056874564592513"€»µ›€–¾Ï*ERROR2Nginx:
 AppProtect 
-app_protect_default_policy4355056874564592513REJECTED"SECURITY_WAF_VIOLATION*N/A2GET:HTTPBN/AJ/RHTTP/1.1bblockedjBlockedz1-localhost:1-/‚	127.0.0.1Š61478’80šŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected¢?HTTP protocol compliance failed:Host header contains IP addressª5²u{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}º,ÂUntrusted BotÊN/AÒN/AÚCriticalâN/AêN/AòHTTP LibraryúN/A‚curlŠ	parameter’u
+app_protect_default_policy4355056874564592513REJECTED"SECURITY_WAF_VIOLATION*N/A2GET:HTTPBN/AJ/RHTTP/1.1bblockedjBlockedz1-localhost:1-/‚	127.0.0.1Š61478’80šŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected¢?HTTP protocol compliance failed:Host header contains IP addressª5²u{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}º,ÂUntrusted BotÊN/AÒN/AÚcriticalâN/AêN/AòHTTP LibraryúN/A‚curlŠ	parameter’u
 VIOL_ATTACK_SIGNATURE	parameter
 a<script>" 
 	2000014753
