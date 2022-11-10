@@ -93,7 +93,7 @@ func (nap *NAPCollector) Collect(ctx context.Context, wg *sync.WaitGroup, collec
 				break
 			}
 
-			nap.logger.Infof("collected log line succesfully.")
+			nap.logger.Tracef("collected log line succesfully: %v", line)
 			collect <- &monitoring.RawLog{Origin: monitoring.NAP, Logline: line}
 		case <-ctx.Done():
 			nap.logger.Infof("Context cancellation, collector is wrapping up...")

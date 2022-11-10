@@ -90,5 +90,5 @@ func TestNAPMonitoring_Info(t *testing.T) {
 	pluginUnderTest, err := NewNAPMonitoring(tutils.GetMockEnv(), tutils.GetMockAgentConfig())
 
 	assert.NoError(t, err)
-	assert.Equal(t, "Nginx App Protect Monitor", pluginUnderTest.Info().Name())
+	assert.Equal(t, "Nginx App Protect Monitoring", pluginUnderTest.Info().Name())
 }

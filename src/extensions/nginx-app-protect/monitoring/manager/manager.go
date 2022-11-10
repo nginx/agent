@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	componentName              = "security-events-manager"
+	componentName              = "nginx-app-protect-monitoring"
 	defaultCollectorBufferSize = 50000
 	defaultProcessorBufferSize = 50000
 )

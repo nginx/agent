@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	napMonitoringPluginName    = "Nginx App Protect Monitor"
+	napMonitoringPluginName    = "Nginx App Protect Monitoring"
 	napMonitoringPluginVersion = "v0.0.1"
 	minReportIntervalDelimiter = time.Minute
 	minReportCountDelimiter    = 1
@@ -103,11 +103,13 @@ func (n *NAPMonitoring) run() {
 			}
 			report.Events = append(report.Events, event)
 			if len(report.Events) == n.reportCount {
-				n.send(report, "report count reached. sending report")
+				log.Infof("collected %d Security Violation Events, sending report", n.reportCount)
+				n.send(report)
 			}
 		case <-riTicker.C:
 			if len(report.Events) > 0 {
-				n.send(report, "report interval reached. sending report")
+				log.Infof("reached a report interval of %vs, sending %d Security Violation Events as a report", n.reportInterval.Seconds(), n.reportCount)
+				n.send(report)
 			}
 		case <-n.ctx.Done():
 			return
@@ -115,8 +117,7 @@ func (n *NAPMonitoring) run() {
 	}
 }
 
-func (n *NAPMonitoring) send(report *models.EventReport, logMsg string) {
-	log.Debugf(logMsg)
+func (n *NAPMonitoring) send(report *models.EventReport) {
 	reportToSend := &models.EventReport{
 		Events: make([]*models.Event, len(report.Events)),
 	}

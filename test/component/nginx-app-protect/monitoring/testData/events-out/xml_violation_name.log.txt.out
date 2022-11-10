@@ -1,5 +1,9 @@
-°app_protect_default_policy4355056874564592519"REJECTED*SECURITY_WAF_VIOLATION:GETBHTTPR/Z^GET /?a=<script> HTTP/1.1\r\nHost: 127.0.0.1\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\njblockedr0Šunit-hostnameš1-localhost:1-/¢	127.0.0.1ª61478²80ºŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client DetectedòUntrusted BotŠCriticalÂcurlÒ
-VIOL_ASM_COOKIE_MODIFIEDÒ
-VIOL_ASM_COOKIE_MODIFIEDÒ
-VIOL_ASM_COOKIE_MODIFIEDÒ
+
+j
+Agent$cb2bd36a-6071-11ed-8415-5671f551701b4355056874564592519"Ùª°›ÀˆõÙ*ERROR2Nginx:
+AppProtectž
+app_protect_default_policy4355056874564592519REJECTED"SECURITY_WAF_VIOLATION*N/A2GET:HTTPBN/AJ/R^GET /?a=<script> HTTP/1.1\r\nHost: 127.0.0.1\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\nbblockedjBlockedz1-localhost:1-/‚	127.0.0.1Š61478’80šŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected¢?HTTP protocol compliance failed:Host header contains IP addressª5²u{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}º,ÂUntrusted BotÊN/AÒN/AÚCriticalâN/AêN/AòHTTP LibraryúN/A‚curl’
+VIOL_ASM_COOKIE_MODIFIED’
+VIOL_ASM_COOKIE_MODIFIED’
+VIOL_ASM_COOKIE_MODIFIED’
 VIOL_ASM_COOKIE_MODIFIED
