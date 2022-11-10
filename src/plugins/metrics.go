@@ -18,43 +18,43 @@ import (
 )
 
 type Metrics struct {
-	pipeline             core.MessagePipeInterface
-	registrationComplete *atomic.Bool
-	collectorsReady      *atomic.Bool
-	collectorsUpdate     *atomic.Bool
-	ticker               *time.Ticker
-	interval             time.Duration
-	collectors           []metrics.Collector
-	buf                  chan *proto.StatsEntity
-	errors               chan error
-	collectorConfigsMap  map[string]*metrics.NginxCollectorConfig
-	ctx                  context.Context
-	wg                   sync.WaitGroup
-	mu                   sync.Mutex
-	mu2                  sync.Mutex
-	env                  core.Environment
-	conf                 *config.Config
-	binary               core.NginxBinary
+	pipeline                 core.MessagePipeInterface
+	registrationComplete     *atomic.Bool
+	collectorsReady          *atomic.Bool
+	collectorsUpdate         *atomic.Bool
+	ticker                   *time.Ticker
+	interval                 time.Duration
+	collectors               []metrics.Collector
+	buf                      chan *proto.StatsEntity
+	errors                   chan error
+	collectorConfigsMap      map[string]*metrics.NginxCollectorConfig
+	ctx                      context.Context
+	wg                       sync.WaitGroup
+	collectorsMutex          sync.RWMutex
+	collectorConfigsMapMutex sync.Mutex
+	env                      core.Environment
+	conf                     *config.Config
+	binary                   core.NginxBinary
 }
 
 func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary) *Metrics {
 
 	collectorConfigsMap := createCollectorConfigsMap(config, env, binary)
 	return &Metrics{
-		registrationComplete: atomic.NewBool(false),
-		collectorsReady:      atomic.NewBool(false),
-		collectorsUpdate:     atomic.NewBool(false),
-		ticker:               time.NewTicker(config.AgentMetrics.CollectionInterval),
-		interval:             config.AgentMetrics.CollectionInterval,
-		buf:                  make(chan *proto.StatsEntity, 4096),
-		errors:               make(chan error),
-		collectorConfigsMap:  collectorConfigsMap,
-		wg:                   sync.WaitGroup{},
-		mu:                   sync.Mutex{},
-		mu2:                  sync.Mutex{},
-		env:                  env,
-		conf:                 config,
-		binary:               binary,
+		registrationComplete:     atomic.NewBool(false),
+		collectorsReady:          atomic.NewBool(false),
+		collectorsUpdate:         atomic.NewBool(false),
+		ticker:                   time.NewTicker(config.AgentMetrics.CollectionInterval),
+		interval:                 config.AgentMetrics.CollectionInterval,
+		buf:                      make(chan *proto.StatsEntity, 4096),
+		errors:                   make(chan error),
+		collectorConfigsMap:      collectorConfigsMap,
+		wg:                       sync.WaitGroup{},
+		collectorsMutex:          sync.RWMutex{},
+		collectorConfigsMapMutex: sync.Mutex{},
+		env:                      env,
+		conf:                     config,
+		binary:                   binary,
 	}
 }
 
@@ -80,9 +80,9 @@ func (m *Metrics) Process(msg *core.Message) {
 		// If the agent config on disk changed or the NGINX statusAPI was updated
 		// Then update Metrics with relevant config info
 		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary)
-		m.mu2.Lock()
+		m.collectorConfigsMapMutex.Lock()
 		m.collectorConfigsMap = collectorConfigsMap
-		m.mu2.Unlock()
+		m.collectorConfigsMapMutex.Unlock()
 
 		m.syncAgentConfigChange()
 		m.updateCollectorsConfig()
@@ -116,11 +116,13 @@ func (m *Metrics) Process(msg *core.Message) {
 			}
 		}
 
-		m.mu2.Lock()
+		m.collectorConfigsMapMutex.Lock()
 		m.collectorConfigsMap = collectorConfigsMap
-		m.mu2.Unlock()
+		m.collectorConfigsMapMutex.Unlock()
 
 		stoppedCollectorIndex := -1
+
+		m.collectorsMutex.RLock()
 		for index, collector := range m.collectors {
 			if nginxCollector, ok := collector.(*collectors.NginxCollector); ok {
 				for _, nginxId := range collectorsToStop {
@@ -133,6 +135,7 @@ func (m *Metrics) Process(msg *core.Message) {
 				}
 			}
 		}
+		m.collectorsMutex.RUnlock()
 
 		if stoppedCollectorIndex >= 0 {
 			m.collectors = append(m.collectors[:stoppedCollectorIndex], m.collectors[stoppedCollectorIndex+1:]...)
@@ -200,8 +203,8 @@ func (m *Metrics) collectStats() (stats []*proto.StatsEntity) {
 	// locks the m.collectors to make sure it doesn't get deleted in the middle
 	// of collection, as we will delete the old one if config changes.
 	// maybe we can fine tune the lock later, but the collection has been very quick so far.
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.collectorsMutex.Lock()
+	defer m.collectorsMutex.Unlock()
 	wg := &sync.WaitGroup{}
 	start := time.Now()
 	for _, s := range m.collectors {
@@ -245,14 +248,14 @@ func (m *Metrics) registerStatsSources() {
 	}
 
 	hasNginxCollector := false
-	m.mu2.Lock()
+	m.collectorConfigsMapMutex.Lock()
 	for key := range m.collectorConfigsMap {
 		tempCollectors = append(tempCollectors,
 			collectors.NewNginxCollector(m.conf, m.env, m.collectorConfigsMap[key], m.binary),
 		)
 		hasNginxCollector = true
 	}
-	m.mu2.Unlock()
+	m.collectorConfigsMapMutex.Unlock()
 
 	// if NGINX is not running/detected, still run the static collector to output nginx.status = 0.
 	if !hasNginxCollector {
@@ -263,9 +266,9 @@ func (m *Metrics) registerStatsSources() {
 		)
 	}
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.collectorsMutex.Lock()
 	m.collectors = tempCollectors
+	m.collectorsMutex.Unlock()
 }
 
 func (m *Metrics) syncAgentConfigChange() {
