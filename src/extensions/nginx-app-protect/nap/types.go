@@ -71,12 +71,3 @@ type NAPVersioningDetails struct {
 type NAPReleaseMap struct {
 	ReleaseMap map[string]NAPRelease `json:"releases"`
 }
-
-// napRevisionDateTime is an object used to get the version for attack signatures and
-// threat campaigns, as their versions are the same as their revision dates which can be
-// captured in their yaml files under the field "revisionDatetime".
-type napRevisionDateTime struct {
-	RevisionDatetime string `yaml:"revisionDatetime,omitempty"`
-	Checksum         string `yaml:"checksum,omitempty"`
-	Filename         string `yaml:"filename,omitempty"`
-}

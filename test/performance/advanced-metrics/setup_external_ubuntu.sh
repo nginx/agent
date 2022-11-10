@@ -14,8 +14,8 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 sudo apt install make
 
-sudo wget https://golang.org/dl/go1.18.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.18.linux-amd64.tar.gz
+sudo wget https://golang.org/dl/go1.19.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
 
 export PATH=$PATH:/usr/local/go/bin:/home/ubuntu/go/bin
 echo "export PATH=$PATH:/usr/local/go/bin:/home/ubuntu/go/bin" >> ~/.bashrc

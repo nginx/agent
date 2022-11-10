@@ -13,7 +13,7 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 )
 
-type Comms struct {
+type MetricsSender struct {
 	reporter    client.MetricReporter
 	pipeline    core.MessagePipeInterface
 	ctx         context.Context
@@ -21,35 +21,35 @@ type Comms struct {
 	readyToSend *atomic.Bool
 }
 
-func NewComms(reporter client.MetricReporter) *Comms {
-	return &Comms{
+func NewMetricsSender(reporter client.MetricReporter) *MetricsSender {
+	return &MetricsSender{
 		reporter:    reporter,
 		started:     atomic.NewBool(false),
 		readyToSend: atomic.NewBool(false),
 	}
 }
 
-func (r *Comms) Init(pipeline core.MessagePipeInterface) {
+func (r *MetricsSender) Init(pipeline core.MessagePipeInterface) {
 	if r.started.Load() {
 		return
 	}
 	r.started.Toggle()
 	r.pipeline = pipeline
 	r.ctx = pipeline.Context()
-	log.Info("Comms initializing")
+	log.Info("MetricsSender initializing")
 }
 
-func (r *Comms) Close() {
-	log.Info("Comms is wrapping up")
+func (r *MetricsSender) Close() {
+	log.Info("MetricsSender is wrapping up")
 	r.started.Store(false)
 	r.readyToSend.Store(false)
 }
 
-func (r *Comms) Info() *core.Info {
-	return core.NewInfo("Communications", "v0.0.2")
+func (r *MetricsSender) Info() *core.Info {
+	return core.NewInfo("MetricsSender", "v0.0.1")
 }
 
-func (r *Comms) Process(msg *core.Message) {
+func (r *MetricsSender) Process(msg *core.Message) {
 	if msg.Exact(core.RegistrationCompletedTopic) {
 		r.readyToSend.Toggle()
 		return
@@ -93,6 +93,6 @@ func (r *Comms) Process(msg *core.Message) {
 	}
 }
 
-func (r *Comms) Subscriptions() []string {
+func (r *MetricsSender) Subscriptions() []string {
 	return []string{core.CommMetrics, core.RegistrationCompletedTopic}
 }

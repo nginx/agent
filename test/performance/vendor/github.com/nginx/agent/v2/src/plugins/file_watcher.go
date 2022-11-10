@@ -94,7 +94,6 @@ func (fw *FileWatcher) Info() *core.Info {
 func (fw *FileWatcher) Close() {
 	log.Info("File Watcher is wrapping up")
 	fw.watcher.Close()
-	fw.watching = &sync.Map{}
 }
 
 func (fw *FileWatcher) Process(message *core.Message) {

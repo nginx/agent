@@ -14,6 +14,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	testifyMock "github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -34,6 +35,8 @@ const (
 )
 
 func TestNAPMonitoring(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+
 	cfg := &config.Config{
 		Server: config.Server{
 			Host:     "localhost",
@@ -104,7 +107,7 @@ func TestNAPMonitoring(t *testing.T) {
 		return
 	}
 
-	comms := plugins.NewComms(reporter)
+	metricsSender := plugins.NewMetricsSender(reporter)
 
 	env := tutils.NewMockEnvironment()
 	env.On("NewHostInfo", testifyMock.Anything, testifyMock.Anything, testifyMock.Anything).Return(&sdkPb.HostInfo{
@@ -115,7 +118,7 @@ func TestNAPMonitoring(t *testing.T) {
 	napMonitoring, err := plugins.NewNAPMonitoring(env, cfg)
 	assert.NoError(t, err)
 
-	pipe := initializeMessagePipe(t, ctx, []core.Plugin{comms, napMonitoring})
+	pipe := initializeMessagePipe(t, ctx, []core.Plugin{metricsSender, napMonitoring})
 
 	pipe.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
 
@@ -147,7 +150,10 @@ func TestNAPMonitoring(t *testing.T) {
 	files, err = os.ReadDir("./testData/events-out/")
 	assert.NoError(t, err)
 	for _, file := range files {
-		bEvent, err := os.ReadFile(fmt.Sprintf("./testData/events-out/%s", file.Name()))
+		fName := fmt.Sprintf("./testData/events-out/%s", file.Name())
+		log.Debugf("Running Monitoring Test for %s", fName)
+
+		bEvent, err := os.ReadFile(fName)
 		assert.NoError(t, err)
 		expectedEvent := &events.Event{}
 		err = proto.Unmarshal(bEvent, expectedEvent)
@@ -159,7 +165,7 @@ func TestNAPMonitoring(t *testing.T) {
 			break
 		}
 		assertEqualSecurityViolationEvents(t, expectedEvent, resultEvent)
-		assert.Equal(t, expectedHostname, resultEvent.GetSecurityViolationEvent().Hostname)
+		assert.Equal(t, expectedHostname, resultEvent.GetSecurityViolationEvent().ParentHostname)
 		assert.Equal(t, expectedUUID, resultEvent.GetSecurityViolationEvent().SystemID)
 		assert.Equal(t, expectedInstanceTags, resultEvent.GetSecurityViolationEvent().InstanceTags)
 		assert.Equal(t, expectedInstanceGroup, resultEvent.GetSecurityViolationEvent().InstanceGroup)
@@ -182,11 +188,10 @@ func assertEqualSecurityViolationEvents(t *testing.T, expectedEvent, resultEvent
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().Request, resultEvent.GetSecurityViolationEvent().Request)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().RequestStatus, resultEvent.GetSecurityViolationEvent().RequestStatus)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().ResponseCode, resultEvent.GetSecurityViolationEvent().ResponseCode)
-	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().UnitHostname, resultEvent.GetSecurityViolationEvent().UnitHostname)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().VSName, resultEvent.GetSecurityViolationEvent().VSName)
-	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().IPClient, resultEvent.GetSecurityViolationEvent().IPClient)
-	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().DestinationPort, resultEvent.GetSecurityViolationEvent().DestinationPort)
-	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().SourcePort, resultEvent.GetSecurityViolationEvent().SourcePort)
+	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().RemoteAddr, resultEvent.GetSecurityViolationEvent().RemoteAddr)
+	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().RemotePort, resultEvent.GetSecurityViolationEvent().RemotePort)
+	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().ServerPort, resultEvent.GetSecurityViolationEvent().ServerPort)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().Violations, resultEvent.GetSecurityViolationEvent().Violations)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().Severity, resultEvent.GetSecurityViolationEvent().Severity)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().ClientClass, resultEvent.GetSecurityViolationEvent().ClientClass)

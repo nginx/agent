@@ -3,6 +3,7 @@ package plugins
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -32,6 +33,7 @@ type DataPlaneStatus struct {
 	reportInterval        time.Duration
 	napDetails            *proto.DataplaneSoftwareDetails_AppProtectWafDetails
 	agentActivityStatuses []*proto.AgentActivityStatus
+	napDetailsMutex       sync.RWMutex
 }
 
 const (
@@ -46,17 +48,18 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, config.Dataplane.Status.PollInterval)
 	}
 	return &DataPlaneStatus{
-		sendStatus:     make(chan bool),
-		healthTicker:   time.NewTicker(pollInt),
-		interval:       pollInt,
-		meta:           meta,
-		binary:         binary,
-		env:            env,
-		version:        version,
-		tags:           &config.Tags,
-		configDirs:     config.ConfigDirs,
-		statusUrls:     make(map[string]string),
-		reportInterval: config.Dataplane.Status.ReportInterval,
+		sendStatus:      make(chan bool),
+		healthTicker:    time.NewTicker(pollInt),
+		interval:        pollInt,
+		meta:            meta,
+		binary:          binary,
+		env:             env,
+		version:         version,
+		tags:            &config.Tags,
+		configDirs:      config.ConfigDirs,
+		statusUrls:      make(map[string]string),
+		reportInterval:  config.Dataplane.Status.ReportInterval,
+		napDetailsMutex: sync.RWMutex{},
 		// Intentionally empty as it will be set later
 		napDetails: nil,
 	}
@@ -91,7 +94,9 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 		switch data := msg.Data().(type) {
 		case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
 			log.Debugf("DataplaneStatus is syncing with NAP details - %+v", data.AppProtectWafDetails)
+			dps.napDetailsMutex.Lock()
 			dps.napDetails = data
+			dps.napDetailsMutex.Unlock()
 		}
 
 	case msg.Exact(core.NginxConfigValidationPending):
@@ -203,6 +208,8 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 func (dps *DataPlaneStatus) dataplaneSoftwareDetails() []*proto.DataplaneSoftwareDetails {
 	allDetails := make([]*proto.DataplaneSoftwareDetails, 0)
 
+	dps.napDetailsMutex.RLock()
+	defer dps.napDetailsMutex.RUnlock()
 	if dps.napDetails != nil {
 		napDetails := &proto.DataplaneSoftwareDetails{
 			Data: dps.napDetails,

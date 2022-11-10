@@ -16,114 +16,88 @@ import (
 )
 
 const (
-	napDateTimeLayout = "2006-01-02 15:04:05.000"
-	listSeperator     = "::"
-	parameterCtx      = "parameter"
-	headerCtx         = "header"
-	cookieCtx         = "cookie"
+	napDateTimeLayout       = "2006-01-02 15:04:05.000"
+	listSeperator           = "::"
+	parameterCtx            = "parameter"
+	headerCtx               = "header"
+	cookieCtx               = "cookie"
+	defaultBlockedRespCode  = "0"
+	defaultBlockedRespValue = "Blocked"
 )
 
-var (
-	logFormatKeys = []string{
-		// TODO: Remove `date_time` from syslog format as it is unused (NMS-38119)
-		"date_time",
-		"blocking_exception_reason",
-		"dest_port",
-		"ip_client",
-		"is_truncated",
-		"method",
-		"policy_name",
-		"protocol",
-		"request_status",
-		"response_code",
-		"severity",
-		"sig_cves",
-		"sig_ids",
-		"sig_names",
-		"sig_set_names",
-		"src_port",
-		"sub_violations",
-		"support_id",
-		"threat_campaign_names",
-		"unit_hostname",
-		"uri",
-		"violation_rating",
-		"vs_name",
-		"x_forwarded_for_header_value",
-		"outcome",
-		"outcome_reason",
-		"violations",
-		"violation_details",
-		"bot_signature_name",
-		"bot_category",
-		"bot_anomalies",
-		"enforced_bot_anomalies",
-		"client_class",
-		"client_application",
-		"client_application_version",
-		"transport_protocol",
-	}
-)
-
+// NGINX App Protect Logging Directives
 const (
-	// TODO: Identify the usage of the following new keys (NMS-38311)
 	blockingExceptionReason  = "blocking_exception_reason"
 	protocol                 = "protocol"
 	requestStatus            = "request_status"
 	severity                 = "severity"
 	sigSetNames              = "sig_set_names"
 	threatCampaignNames      = "threat_campaign_names"
-	unitHostname             = "unit_hostname"
 	violationDetails         = "violation_details"
 	clientApplication        = "client_application"
 	clientApplicationVersion = "client_application_version"
 	transportProtocol        = "transport_protocol"
-	// Older CAS Naming (this needs to be removed)
-	// httpRequestMethod    = "http_request_method"
-	// httpResponseCode     = "http_response_code"
-	// sigCVEs              = "signature_cves"
-	// sigIds               = "signature_ids"
-	// sigNames             = "signature_names"
-	// httpRemotePort       = "http_remote_port"
-	// httpURI              = "http_uri"
-	// httpHostname         = "http_hostname"
-	// requestOutcome       = "request_outcome"
-	// requestOutcomeReason = "request_outcome_reason"
-	// description          = "description"
-	// As -> description    == "attack_type"
-	// httpRemoteAddr       = "http_remote_addr"
-	// httpServerPort       = "http_server_port"
-	// isTruncated          = "is_truncated_bool"
+	httpRequestMethod        = "method"
+	httpResponseCode         = "response_code"
+	sigCVEs                  = "sig_cves"
+	httpRemotePort           = "src_port"
+	httpURI                  = "uri"
+	httpHostname             = "vs_name"
+	requestOutcome           = "outcome"
+	requestOutcomeReason     = "outcome_reason"
+	httpRemoteAddr           = "ip_client"
+	httpServerPort           = "dest_port"
+	isTruncated              = "is_truncated_bool"
+	policyName               = "policy_name"
+	request                  = "request"
+	subViolations            = "sub_violations"
+	supportID                = "support_id"
+	violations               = "violations"
+	violationRating          = "violation_rating"
+	xForwardedForHeaderVal   = "x_forwarded_for_header_value"
+	botAnomalies             = "bot_anomalies"
+	botCategory              = "bot_category"
+	clientClass              = "client_class"
+	botSignatureName         = "bot_signature_name"
+	enforcedBotAnomalies     = "enforced_bot_anomalies"
+)
 
-	// Using default values instead of overriden keys per older CAS policy
-	httpRequestMethod    = "method"
-	httpResponseCode     = "response_code"
-	sigCVEs              = "sig_cves"
-	sigIds               = "sig_ids"
-	sigNames             = "sig_names"
-	httpRemotePort       = "src_port"
-	httpURI              = "uri"
-	httpHostname         = "vs_name"
-	requestOutcome       = "outcome"
-	requestOutcomeReason = "outcome_reason"
-	httpRemoteAddr       = "ip_client"
-	httpServerPort       = "dest_port"
-	isTruncated          = "is_truncated"
-
-	// Existing parsed keys from the log
-	dateTime               = "date_time"
-	policyName             = "policy_name"
-	request                = "request"
-	subViolations          = "sub_violations"
-	supportID              = "support_id"
-	violations             = "violations"
-	violationRating        = "violation_rating"
-	xForwardedForHeaderVal = "x_forwarded_for_header_value"
-	botAnomalies           = "bot_anomalies"
-	botCategory            = "bot_category"
-	clientClass            = "client_class"
-	botSignatureName       = "bot_signature_name"
-	enforcedBotAnomalies   = "enforced_bot_anomalies"
+// NGINX App Protect Log Directives Order Per Config
+var (
+	logFormatKeys = []string{
+		blockingExceptionReason,
+		httpServerPort,
+		httpRemoteAddr,
+		isTruncated,
+		httpRequestMethod,
+		policyName,
+		protocol,
+		requestStatus,
+		httpResponseCode,
+		severity,
+		sigCVEs,
+		sigSetNames,
+		httpRemotePort,
+		subViolations,
+		supportID,
+		threatCampaignNames,
+		httpURI,
+		violationRating,
+		httpHostname,
+		xForwardedForHeaderVal,
+		requestOutcome,
+		requestOutcomeReason,
+		violations,
+		violationDetails,
+		botSignatureName,
+		botCategory,
+		botAnomalies,
+		enforcedBotAnomalies,
+		clientClass,
+		clientApplication,
+		clientApplicationVersion,
+		transportProtocol,
+	}
 )
 
 type ParameterData struct {
@@ -209,8 +183,6 @@ type NAPConfig struct {
 	HTTPResponseCode         string
 	Severity                 string
 	SignatureCVEs            string
-	SignatureIDs             string
-	SignatureNames           string
 	SigSetNames              string
 	HTTPRemotePort           string
 	SubViolations            string
@@ -278,16 +250,13 @@ func (f *NAPConfig) getSecurityViolation(logger *logrus.Entry) *models.SecurityV
 		IsTruncated:              f.IsTruncated,
 		RequestStatus:            f.RequestStatus,
 		ResponseCode:             f.HTTPResponseCode,
-		UnitHostname:             f.UnitHostname,
 		VSName:                   f.HTTPHostname,
-		IPClient:                 f.HTTPRemoteAddr,
-		DestinationPort:          f.HTTPRemotePort,
-		SourcePort:               f.HTTPServerPort,
+		RemoteAddr:               f.HTTPRemoteAddr,
+		RemotePort:               f.HTTPRemotePort,
+		ServerPort:               f.HTTPServerPort,
 		Violations:               f.Violations,
 		SubViolations:            f.SubViolations,
 		ViolationRating:          f.ViolationRating,
-		SigID:                    f.SignatureIDs,
-		SigNames:                 f.SignatureNames,
 		SigSetNames:              f.SigSetNames,
 		SigCVEs:                  f.SignatureCVEs,
 		Severity:                 f.Severity,
@@ -301,16 +270,9 @@ func (f *NAPConfig) getSecurityViolation(logger *logrus.Entry) *models.SecurityV
 		EnforcedBotAnomalies:     f.EnforcedBotAnomalies,
 		ViolationContexts:        f.getViolationContext(),
 		ViolationsData:           f.getViolations(logger),
-		// TODO: The following items needs to be fixed before release (NMS-38119)
-		DateTime:      f.DateTime,             // remove, metadata has it
-		Outcome:       f.RequestOutcome,       //rename the proto
-		OutcomeReason: f.RequestOutcomeReason, //rename the proto
-		URI:           f.HTTPURI,              // rename to HTTP URI?
-		GeoIP:         "blah",                 // to add
-		Host:          "blah",                 // to add
-		SourceHost:    "blah",                 // remove, this is the same as HTTPRemoteAddr
-		SeverityLabel: "blah",                 // to do
-		Priority:      "blah",                 // to do
+		Outcome:                  f.RequestOutcome,
+		OutcomeReason:            f.RequestOutcomeReason,
+		URI:                      f.HTTPURI,
 	}
 }
 
@@ -433,8 +395,6 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				Name:  string(decodedName),
 				Value: string(decodedValue),
 			}
-		default:
-			logger.Warnf("Got an invalid context %v while parsing ViolationDetails for %v", v.Context, f.SupportID)
 		}
 
 		for _, s := range v.SigData {
@@ -469,14 +429,10 @@ func parseNAPDateTime(raw string) (*types.Timestamp, error) {
 	return types.TimestampProto(t)
 }
 
-// TODO: Assumptions while parsing the NAP Syslog data (NMS-38118)
-// 1. list values do not contain `commas`, rather have `::` as delimiter
-// 2. no json values
-// 3. no other comma exists in the response other than the delimiter comma
 func parseNAP(logEntry string, logger *logrus.Entry) (*NAPConfig, error) {
-	var waf NAPConfig
+	logger.Tracef("Parsing log entry: %s", logEntry)
 
-	logger.Debugf("Got log entry: %s", logEntry)
+	var waf NAPConfig
 
 	values := strings.Split(logEntry, ",")
 
@@ -487,7 +443,7 @@ func parseNAP(logEntry string, logger *logrus.Entry) (*NAPConfig, error) {
 		}
 	}
 
-	err := setValue(&waf, "request", strings.Join(values[len(logFormatKeys):], ","), logger)
+	err := setValue(&waf, request, strings.Join(values[len(logFormatKeys):], ","), logger)
 	if err != nil {
 		return &NAPConfig{}, err
 	}
@@ -509,15 +465,15 @@ func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) err
 		napConfig.SigSetNames = replaceEncodedList(value, listSeperator)
 	case threatCampaignNames:
 		napConfig.ThreatCampaignNames = value
-	case unitHostname:
-		napConfig.UnitHostname = value
 	case violationDetails:
 		napConfig.ViolationDetailsXML = func(data string) *BADMSG {
 			var xmlData BADMSG
-			err := xml.Unmarshal([]byte(data), &xmlData)
-			if err != nil {
-				logger.Errorf("failed to parse XML message: %v", err)
-				return nil
+			if data != "" {
+				err := xml.Unmarshal([]byte(data), &xmlData)
+				if err != nil {
+					logger.Errorf("failed to parse XML message: %v", err)
+					return nil
+				}
 			}
 			return &xmlData
 		}(value)
@@ -527,8 +483,6 @@ func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) err
 		napConfig.ClientApplicationVersion = value
 	case transportProtocol:
 		napConfig.TransportProtocol = value
-	case dateTime:
-		napConfig.DateTime = value
 	case httpHostname:
 		napConfig.HTTPHostname = value
 	case httpRemoteAddr:
@@ -539,6 +493,9 @@ func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) err
 		napConfig.HTTPRequestMethod = value
 	case httpResponseCode:
 		napConfig.HTTPResponseCode = value
+		if value == defaultBlockedRespCode {
+			napConfig.HTTPResponseCode = defaultBlockedRespValue
+		}
 	case httpServerPort:
 		napConfig.HTTPServerPort = value
 	case httpURI:
@@ -555,10 +512,6 @@ func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) err
 		napConfig.RequestOutcomeReason = value
 	case sigCVEs:
 		napConfig.SignatureCVEs = replaceEncodedList(value, listSeperator)
-	case sigIds:
-		napConfig.SignatureIDs = replaceEncodedList(value, listSeperator)
-	case sigNames:
-		napConfig.SignatureNames = replaceEncodedList(value, listSeperator)
 	case subViolations:
 		napConfig.SubViolations = value
 	case supportID:

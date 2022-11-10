@@ -113,7 +113,7 @@ github.com/mwitkow/go-proto-validators
 github.com/mwitkow/go-proto-validators/plugin
 github.com/mwitkow/go-proto-validators/protoc-gen-govalidators
 # github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000 => ./sdk
-## explicit; go 1.18
+## explicit; go 1.19
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
 github.com/nginx/agent/sdk/v2/checksum
@@ -266,7 +266,7 @@ golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/text v0.3.7
+# golang.org/x/text v0.4.0
 ## explicit; go 1.17
 golang.org/x/text/runes
 golang.org/x/text/secure/bidirule

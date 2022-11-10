@@ -1,15 +1,15 @@
 package nap
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/nginx/agent/v2/src/core"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/nginx/agent/v2/src/core"
 )
 
 const (
@@ -41,36 +41,22 @@ func NewNginxAppProtect(optDirPath, symLinkDir string) (*NginxAppProtect, error)
 	}
 
 	// Get status of NAP on the system
-	napStatus, err := napStatus(requiredNAPFiles)
+	status, err := napStatus(requiredNAPFiles)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get the release version of NAP on the system if NAP is installed
 	var napRelease *NAPRelease
-	if napStatus != MISSING {
+	if status != MISSING {
 		napRelease, err = installedNAPRelease(NAP_VERSION_FILE)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// Get attack signatures version
-	attackSigsVersion, err := getAttackSignaturesVersion(ATTACK_SIGNATURES_UPDATE_FILE)
-	if err != nil && err.Error() != fmt.Sprintf(FILE_NOT_FOUND, ATTACK_SIGNATURES_UPDATE_FILE) {
-		return nil, err
-	}
-
-	// Get threat campaigns version
-	threatCampaignsVersion, err := getThreatCampaignsVersion(THREAT_CAMPAIGNS_UPDATE_FILE)
-	if err != nil && err.Error() != fmt.Sprintf(FILE_NOT_FOUND, THREAT_CAMPAIGNS_UPDATE_FILE) {
-		return nil, err
-	}
-
 	// Update the NAP object with the values from NAP on the system
-	nap.Status = napStatus.String()
-	nap.AttackSignaturesVersion = attackSigsVersion
-	nap.ThreatCampaignsVersion = threatCampaignsVersion
+	nap.Status = status.String()
 	if napRelease != nil {
 		nap.Release = *napRelease
 	}
@@ -80,7 +66,7 @@ func NewNginxAppProtect(optDirPath, symLinkDir string) (*NginxAppProtect, error)
 
 // Monitor starts a goroutine responsible for monitoring the system for any NAP related
 // changes and communicates those changes with a report message sent via the channel this
-// function returns. Additionally if any changes are detected the NAP object that called
+// function returns. Additionally, if any changes are detected the NAP object that called
 // this monitoring function will have its attributes updated to the new changes. Here are
 // examples of NAP changes that would be detected and communicated:
 //   - NAP installed/version changed
@@ -121,7 +107,7 @@ func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterva
 
 			// Check if there has been any change in the NAP report
 			if nap.napReportIsEqual(newNAPReport) {
-				log.Infof("No change in NAP detected... Checking NAP again in %v seconds", pollInterval.Seconds())
+				log.Debugf("No change in NAP detected... Checking NAP again in %v seconds", pollInterval.Seconds())
 				break
 			}
 
@@ -198,7 +184,7 @@ func (nap *NginxAppProtect) syncSymLink(previousVersion, newVersion string) erro
 }
 
 // removeNAPSymlinks walks the NAP symlink directory and removes any existing NAP
-// symlinks found in the directory except for ones that match the ignore pattern.
+// symlinks found in the directory except for ones that match to ignore pattern.
 func (nap *NginxAppProtect) removeNAPSymlinks(symlinkPatternToIgnore string) error {
 	// Check if the necessary directory exists
 	_, err := os.Stat(nap.symLinkDir)
@@ -250,7 +236,7 @@ func (nap *NginxAppProtect) napReportIsEqual(incomingNAPReport NAPReport) bool {
 
 // napInstalled determines if NAP is installed on the system. If NAP is NOT installed on the
 // system then the bool will be false and the error will be nil, if the error is not nil then
-// it's possible NAP might be installed but an error verifying it's installation has occurred.
+// it's possible NAP might be installed but an error verifying its installation has occurred.
 func napInstalled(requiredFiles []string) (bool, error) {
 	log.Debugf("Checking for the required NAP files - %v\n", requiredFiles)
 	return core.FilesExists(requiredFiles)
@@ -282,16 +268,16 @@ func napRunning() (bool, error) {
 func napStatus(requiredFiles []string) (Status, error) {
 
 	// Check if NAP is installed
-	napInstalled, err := napInstalled(requiredFiles)
-	if !napInstalled && err == nil {
+	installed, err := napInstalled(requiredFiles)
+	if !installed && err == nil {
 		return MISSING, nil
 	} else if err != nil {
 		return UNDEFINED, err
 	}
 
 	// It's installed, but is running?
-	napRunning, err := napRunning()
-	if !napRunning && err == nil {
+	running, err := napRunning()
+	if !running && err == nil {
 		return INSTALLED, nil
 	} else if err != nil {
 		return UNDEFINED, err

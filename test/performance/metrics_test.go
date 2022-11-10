@@ -320,7 +320,7 @@ func startNginxAgent(b *testing.B) {
 		plugins.NewConfigReader(loadedConfig),
 		plugins.NewNginx(commander, binary, env, &config.Config{}),
 		plugins.NewCommander(commander, loadedConfig),
-		plugins.NewComms(reporter),
+		plugins.NewMetricsSender(reporter),
 		plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.New().String()), "1.0.0"),
 		plugins.NewMetrics(loadedConfig, env, binary),
 		plugins.NewMetricsThrottle(loadedConfig, env),
