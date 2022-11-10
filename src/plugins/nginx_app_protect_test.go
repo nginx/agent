@@ -18,12 +18,13 @@ const (
 	testSystemID      = "12345678"
 	testSigDate1      = "2022.02.14"
 	testCampaignDate1 = "2022.02.07"
+	testWAFVersion    = "3.780.1"
 )
 
 var (
 	testNAPDetailsActive = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
-			WafVersion:              nap.NAPRelease3_9().VersioningDetails.NAPRelease,
+			WafVersion:              testWAFVersion,
 			AttackSignaturesVersion: testSigDate1,
 			ThreatCampaignsVersion:  testCampaignDate1,
 			Health: &proto.AppProtectWAFHealth{
@@ -44,7 +45,7 @@ var (
 
 	testNAPDetailsDegraded = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
-			WafVersion:              nap.NAPRelease3_9().VersioningDetails.NAPRelease,
+			WafVersion:              testWAFVersion,
 			AttackSignaturesVersion: testSigDate1,
 			ThreatCampaignsVersion:  testCampaignDate1,
 			Health: &proto.AppProtectWAFHealth{
@@ -81,7 +82,7 @@ func TestNginxAppProtect(t *testing.T) {
 			Status:                  nap.RUNNING.String(),
 			AttackSignaturesVersion: testSigDate1,
 			ThreatCampaignsVersion:  testCampaignDate1,
-			Release:                 nap.NAPRelease3_9(),
+			Release:                 nap.ReleaseUnmappedBuild("3.780.1"),
 		}
 		currentNAPPluginDetails = napPlugin.generateNAPDetailsProtoCommand()
 		assert.Equal(t, testNAPDetailsActive, currentNAPPluginDetails)
@@ -91,7 +92,7 @@ func TestNginxAppProtect(t *testing.T) {
 			Status:                  nap.INSTALLED.String(),
 			AttackSignaturesVersion: testSigDate1,
 			ThreatCampaignsVersion:  testCampaignDate1,
-			Release:                 nap.NAPRelease3_9(),
+			Release:                 nap.ReleaseUnmappedBuild("3.780.1"),
 		}
 		currentNAPPluginDetails = napPlugin.generateNAPDetailsProtoCommand()
 		assert.Equal(t, testNAPDetailsDegraded, currentNAPPluginDetails)
