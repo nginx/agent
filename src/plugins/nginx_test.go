@@ -93,7 +93,7 @@ var (
 )
 
 func TestNginxConfigApply(t *testing.T) {
-	validationTimeout = 0 * time.Millisecond
+	validationTimeout = 100 * time.Millisecond
 	t.Parallel()
 
 	tests := []struct {
@@ -124,8 +124,12 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxInstancesFound,
 				core.NginxConfigValidationPending,
 				core.FileWatcherEnabled,
-				core.CommResponse,
 				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxReloadComplete,
+				core.NginxConfigApplySucceeded,
 			},
 		},
 		{
@@ -152,8 +156,12 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxInstancesFound,
 				core.NginxConfigValidationPending,
 				core.FileWatcherEnabled,
-				core.CommResponse,
 				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxReloadComplete,
+				core.NginxConfigApplySucceeded,
 			},
 		},
 		{
@@ -180,8 +188,12 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxInstancesFound,
 				core.NginxConfigValidationPending,
 				core.FileWatcherEnabled,
-				core.CommResponse,
 				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxReloadComplete,
+				core.NginxConfigApplySucceeded,
 			},
 		},
 	}
@@ -203,7 +215,6 @@ func TestNginxConfigApply(t *testing.T) {
 	for idx, test := range tests {
 		test := test
 		t.Run(fmt.Sprintf("%d", idx), func(tt *testing.T) {
-			tt.Parallel()
 			dir := t.TempDir()
 			tempConf, err := ioutil.TempFile(dir, "nginx.conf")
 			assert.NoError(t, err)
@@ -238,7 +249,7 @@ func TestNginxConfigApply(t *testing.T) {
 
 			assert.Eventually(
 				tt,
-				func() bool { return len(messagePipe.GetProcessedMessages()) != len(test.msgTopics) },
+				func() bool { return len(messagePipe.GetProcessedMessages()) == len(test.msgTopics) },
 				time.Duration(5*time.Second),
 				3*time.Millisecond,
 			)
