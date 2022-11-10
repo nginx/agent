@@ -96,9 +96,13 @@ func (h *NginxHandler) sendInstanceDetailsPayload(nginxDetails []*proto.NginxDet
 	}
 
 	responseBodyBytes := new(bytes.Buffer)
-	json.NewEncoder(responseBodyBytes).Encode(nginxDetails)
+	err := json.NewEncoder(responseBodyBytes).Encode(nginxDetails)
+	if err != nil {
+		log.Warnf("Failed to encode nginxDetails payload: %v", err)
+		return
+	}
 
-	_, err := fmt.Fprint(w, responseBodyBytes.Bytes())
+	_, err = fmt.Fprint(w, responseBodyBytes.Bytes())
 	if err != nil {
 		log.Warnf("Failed to send instance details payload: %v", err)
 	}
