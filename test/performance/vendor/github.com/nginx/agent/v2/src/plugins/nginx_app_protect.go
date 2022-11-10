@@ -66,18 +66,14 @@ func (n *NginxAppProtect) Init(pipeline core.MessagePipeInterface) {
 	ctx, cancel := context.WithCancel(n.messagePipeline.Context())
 	n.ctx = ctx
 	n.ctxCancel = cancel
+	n.addSoftwareDetailsToRegistration()
 	go n.monitor()
 }
 
-func (n *NginxAppProtect) Process(msg *core.Message) {
-	switch {
-	case msg.Exact(core.RegisterWithDataplaneSoftwareDetails):
-		n.addSoftwareDetailsToRegistration(msg)
-	}
-}
+func (n *NginxAppProtect) Process(msg *core.Message) {}
 
 func (n *NginxAppProtect) Subscriptions() []string {
-	return []string{core.RegisterWithDataplaneSoftwareDetails}
+	return []string{}
 }
 
 func (n *NginxAppProtect) Close() {
@@ -88,18 +84,14 @@ func (n *NginxAppProtect) Close() {
 // addSoftwareDetailsToRegistration adds the dataplane software details produced by the
 // NAP plugin to the OneTimeRegistration dataplane software details map that has been sent
 // as part of the message.
-func (n *NginxAppProtect) addSoftwareDetailsToRegistration(msg *core.Message) {
-	switch commandData := msg.Data().(type) {
-	case *payloads.RegisterWithDataplaneSoftwareDetailsPayload:
-		log.Debugf("%s is adding software details to registration", napPluginName)
-		napReport := n.generateNAPDetailsProtoCommand()
-		napSoftwareDetails := &proto.DataplaneSoftwareDetails{
-			Data: napReport,
-		}
-		commandData.AddDataplaneSoftwareDetails(napPluginName, napSoftwareDetails)
-	default:
-		log.Errorf("Expected the type %T but got %T", payloads.RegisterWithDataplaneSoftwareDetailsPayload{}, commandData)
+func (n *NginxAppProtect) addSoftwareDetailsToRegistration() {
+	log.Debugf("%s is adding software details to registration", napPluginName)
+	napReport := n.generateNAPDetailsProtoCommand()
+	napSoftwareDetails := &proto.DataplaneSoftwareDetails{
+		Data: napReport,
 	}
+
+	n.messagePipeline.Process(core.NewMessage(core.RegisterWithDataplaneSoftwareDetails, payloads.NewRegisterWithDataplaneSoftwareDetailsPayload(napPluginName, napSoftwareDetails)))
 }
 
 // monitor Monitors the system for any changes related to NAP, if any changes are detected
