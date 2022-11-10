@@ -54,7 +54,7 @@ func (r *RestApi) createHttpServer() {
 	r.handler = &NginxHandler{r.env, r.nginxBinary}
 	mux.Handle("/nginx/", r.handler)
 
-	log.Info("Starting REST API HTTP server")
+	log.Debug("Starting REST API HTTP server")
 
 	server := http.Server{
 		Addr:    ":9090",
@@ -74,7 +74,7 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	switch {
 	case r.Method == http.MethodGet && instancesRegex.MatchString(r.URL.Path):
-		h.sendInstanceDetailsPayload(w, r)
+		h.sendInstanceDetailsPayload(h.getNginxDetails(), w, r)
 		return
 	default:
 		w.WriteHeader(http.StatusNotFound)
@@ -83,15 +83,7 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, r *http.Request) {
-	var nginxDetails []*proto.NginxDetails
-
-	for _, proc := range h.env.Processes() {
-		if proc.IsMaster {
-			nginxDetails = append(nginxDetails, h.nginxBinary.GetNginxDetailsFromProcess(proc))
-		}
-	}
-
+func (h *NginxHandler) sendInstanceDetailsPayload(nginxDetails []*proto.NginxDetails, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if len(nginxDetails) == 0 {
@@ -106,8 +98,20 @@ func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, r *http
 	responseBodyBytes := new(bytes.Buffer)
 	json.NewEncoder(responseBodyBytes).Encode(nginxDetails)
 
-	_, err := w.Write(responseBodyBytes.Bytes())
+	_, err := fmt.Fprint(w, responseBodyBytes.Bytes())
 	if err != nil {
 		log.Warnf("Failed to send instance details payload: %v", err)
 	}
+}
+
+func (h *NginxHandler) getNginxDetails() []*proto.NginxDetails {
+	var nginxDetails []*proto.NginxDetails
+
+	for _, proc := range h.env.Processes() {
+		if proc.IsMaster {
+			nginxDetails = append(nginxDetails, h.nginxBinary.GetNginxDetailsFromProcess(proc))
+		}
+	}
+
+	return nginxDetails
 }
