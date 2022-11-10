@@ -78,7 +78,10 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	default:
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("not found"))
+		_, err := fmt.Fprint(w, []byte("not found"))
+		if err != nil {
+			log.Warnf("Failed to send api response: %v", err)
+		}
 		return
 	}
 }
