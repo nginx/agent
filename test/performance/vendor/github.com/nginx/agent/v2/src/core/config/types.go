@@ -33,6 +33,7 @@ type Config struct {
 type Server struct {
 	Host     string `mapstructure:"host" yaml:"-"`
 	GrpcPort int    `mapstructure:"grpcPort" yaml:"-"`
+	RestPort int    `mapstructure:"restPort" yaml:"-"`
 	Token    string `mapstructure:"token" yaml:"-"`
 	Metrics  string `mapstructure:"metrics" yaml:"-"`
 	Command  string `mapstructure:"command" yaml:"-"`

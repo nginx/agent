@@ -39,6 +39,7 @@ var (
 		Server: Server{
 			Host:     "127.0.0.1",
 			GrpcPort: 443,
+			RestPort: 9090,
 			Command:  "",
 			Metrics:  "",
 			// token needs to be validated on the server side - can be overridden by the config value or the cli / environment variable
@@ -107,7 +108,8 @@ const (
 	ServerKey = "server"
 
 	ServerHost     = ServerKey + agent_config.KeyDelimiter + "host"
-	ServerGrpcport = ServerKey + agent_config.KeyDelimiter + "grpcport"
+	ServerGrpcPort = ServerKey + agent_config.KeyDelimiter + "grpcport"
+	ServerRestPort = ServerKey + agent_config.KeyDelimiter + "restport"
 	ServerToken    = ServerKey + agent_config.KeyDelimiter + "token"
 	ServerMetrics  = ServerKey + agent_config.KeyDelimiter + "metrics"
 	ServerCommand  = ServerKey + agent_config.KeyDelimiter + "command"
@@ -203,9 +205,14 @@ var (
 			DefaultValue: Defaults.Server.Host,
 		},
 		&IntFlag{
-			Name:         ServerGrpcport,
+			Name:         ServerGrpcPort,
 			Usage:        "The desired GRPC port to use for nginx-agent traffic.",
 			DefaultValue: Defaults.Server.GrpcPort,
+		},
+		&IntFlag{
+			Name:         ServerRestPort,
+			Usage:        "The desired port to use for nginx-agent to expose for HTTP traffic.",
+			DefaultValue: Defaults.Server.RestPort,
 		},
 		&StringFlag{
 			Name:         ServerToken,

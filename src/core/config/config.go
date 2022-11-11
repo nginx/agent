@@ -326,7 +326,8 @@ func getNginx() Nginx {
 func getServer() Server {
 	return Server{
 		Host:     Viper.GetString(ServerHost),
-		GrpcPort: Viper.GetInt(ServerGrpcport),
+		GrpcPort: Viper.GetInt(ServerGrpcPort),
+		RestPort: Viper.GetInt(ServerRestPort),
 		Token:    Viper.GetString(ServerToken),
 		Metrics:  Viper.GetString(ServerMetrics),
 		Command:  Viper.GetString(ServerCommand),

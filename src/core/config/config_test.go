@@ -19,7 +19,8 @@ import (
 
 const (
 	updatedServerHost         = "192.168.0.1"
-	updatedServerPort         = 11000
+	updatedServerGrpcPort     = 11000
+	updatedServerRestPort     = 9010
 	updatedLogLevel           = "fatal"
 	updatedLogPath            = "./test-path"
 	updatedConfigDirs         = "/usr/local/etc/nginx"
@@ -137,6 +138,7 @@ func TestGetConfig(t *testing.T) {
 
 		assert.Equal(t, Defaults.Server.Host, config.Server.Host)
 		assert.Equal(t, Defaults.Server.GrpcPort, config.Server.GrpcPort)
+		assert.Equal(t, Defaults.Server.RestPort, config.Server.RestPort)
 		assert.Equal(t, Defaults.Server.Command, config.Server.Command)
 		assert.Equal(t, Defaults.Server.Metrics, config.Server.Metrics)
 		assert.True(t, len(config.AllowedDirectoriesMap) > 0)
@@ -193,6 +195,7 @@ func TestGetConfig(t *testing.T) {
 		// Everything else should still be default
 		assert.Equal(t, Defaults.Server.Host, config.Server.Host)
 		assert.Equal(t, Defaults.Server.GrpcPort, config.Server.GrpcPort)
+		assert.Equal(t, Defaults.Server.RestPort, config.Server.RestPort)
 		assert.Equal(t, []string{updatedTag}, config.Tags)
 	})
 
@@ -249,7 +252,8 @@ func TestGetConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, updatedServerHost, config.Server.Host)
-		assert.Equal(t, updatedServerPort, config.Server.GrpcPort)
+		assert.Equal(t, updatedServerGrpcPort, config.Server.GrpcPort)
+		assert.Equal(t, updatedServerRestPort, config.Server.RestPort)
 		assert.Equal(t, updatedConfTags, config.Tags)
 
 		// Check for updated values

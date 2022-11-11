@@ -72,6 +72,7 @@ server:
   # host of the control plane
   host: 127.0.0.1
   grpcPort: 54789 # control plane grpc port
+  restPort: 9090
 # tls options - NOT RECOMMENDED FOR PRODUCTION
 tls:
   enable: false
