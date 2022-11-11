@@ -134,8 +134,12 @@ func handleSignals(
 	}()
 }
 
+func connectionUnavilable(loadedConfig *config.Config) bool {
+	return loadedConfig.Server.Host == "" || loadedConfig.Server.GrpcPort == 0 
+}
+
 func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client.Controller, client.Commander, client.MetricReporter) {
-	if loadedConfig.Server.GrpcPort == 0 {
+	if connectionUnavilable(loadedConfig) {
 		return nil, nil, nil
 	}
 	

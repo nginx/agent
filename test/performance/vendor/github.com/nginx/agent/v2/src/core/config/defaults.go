@@ -37,8 +37,6 @@ var (
 			Path:  "/var/log/nginx-agent",
 		},
 		Server: Server{
-			Host:     "127.0.0.1",
-			GrpcPort: 443,
 			Command:  "",
 			Metrics:  "",
 			// token needs to be validated on the server side - can be overridden by the config value or the cli / environment variable
@@ -200,7 +198,6 @@ var (
 		&StringFlag{
 			Name:         ServerHost,
 			Usage:        "The IP address of the server host. IPv4 addresses and hostnames are supported.",
-			DefaultValue: Defaults.Server.Host,
 		},
 		&IntFlag{
 			Name:         ServerGrpcport,
