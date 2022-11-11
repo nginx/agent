@@ -116,12 +116,12 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Temp test read azure storage
+      - name: Azure Upload Snapshot
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az storage fs directory exists --name nginx-agent/main/nginx-agent.tar.gz \
-              --file-system ${{ secrets.AZURE_CONTAINER_NAME }} --account-name ${{ secrets.AZURE_ACCOUNT_NAME }}
+            az storage blob upload --auth-mode=key -f build/**/*.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} -n nginx-agent/${GITHUB_REF##*/}/nginx-agent-snapshot.tar.gz
       - name: Azure Logout
         run: |
           az logout
