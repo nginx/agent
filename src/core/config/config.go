@@ -336,7 +336,7 @@ func getServer() Server {
 
 func getAgentAPI() AgentAPI {
 	return AgentAPI{
-		Port: viper.GetInt(AgentAPIPort),
+		Port: Viper.GetInt(AgentAPIPort),
 	}
 }
 
