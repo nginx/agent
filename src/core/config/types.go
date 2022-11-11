@@ -12,6 +12,7 @@ type Config struct {
 	ClientID              string              `mapstructure:"agent_id" yaml:"-"`
 	CloudAccountID        string              `mapstructure:"cloud_account" yaml:"-"`
 	Server                Server              `mapstructure:"server" yaml:"-"`
+	AgentAPI              AgentAPI            `mapstructure:"api" yaml:"-"`
 	ConfigDirs            string              `mapstructure:"config-dirs" yaml:"-"`
 	Log                   LogConfig           `mapstructure:"log" yaml:"-"`
 	TLS                   TLSConfig           `mapstructure:"tls" yaml:"-"`
@@ -33,12 +34,15 @@ type Config struct {
 type Server struct {
 	Host     string `mapstructure:"host" yaml:"-"`
 	GrpcPort int    `mapstructure:"grpcPort" yaml:"-"`
-	RestPort int    `mapstructure:"restPort" yaml:"-"`
 	Token    string `mapstructure:"token" yaml:"-"`
 	Metrics  string `mapstructure:"metrics" yaml:"-"`
 	Command  string `mapstructure:"command" yaml:"-"`
 	// This is internal and shouldnt be exposed as a flag
 	Target string `mapstructure:"target" yaml:"-"`
+}
+
+type AgentAPI struct {
+	Port int `mapstructure:"port" yaml:"-"`
 }
 
 // LogConfig for logging

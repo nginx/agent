@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type RestApi struct {
+type AgentAPI struct {
 	config       *config.Config
 	env          core.Environment
 	nginxBinary  core.NginxBinary
@@ -26,40 +26,40 @@ type NginxHandler struct {
 	nginxBinary core.NginxBinary
 }
 
-func NewRestApi(config *config.Config, env core.Environment, nginxBinary core.NginxBinary) *RestApi {
-	return &RestApi{config: config, env: env, nginxBinary: nginxBinary}
+func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.NginxBinary) *AgentAPI {
+	return &AgentAPI{config: config, env: env, nginxBinary: nginxBinary}
 }
 
-func (r *RestApi) Init(core.MessagePipeInterface) {
-	log.Info("REST API initializing")
-	go r.createHttpServer()
+func (a *AgentAPI) Init(core.MessagePipeInterface) {
+	log.Info("Agent API initializing")
+	go a.createHttpServer()
 }
 
-func (r *RestApi) Close() {
-	log.Info("REST API is wrapping up")
+func (a *AgentAPI) Close() {
+	log.Info("Agent API is wrapping up")
 }
 
-func (r *RestApi) Process(message *core.Message) {
+func (a *AgentAPI) Process(message *core.Message) {
 	log.Tracef("Process function in the rest_api.go, %s %v", message.Topic(), message.Data())
 }
 
-func (r *RestApi) Info() *core.Info {
-	return core.NewInfo("REST API Plugin", "v0.0.1")
+func (a *AgentAPI) Info() *core.Info {
+	return core.NewInfo("Agent API Plugin", "v0.0.1")
 }
 
-func (r *RestApi) Subscriptions() []string {
+func (a *AgentAPI) Subscriptions() []string {
 	return []string{}
 }
 
-func (r *RestApi) createHttpServer() {
+func (a *AgentAPI) createHttpServer() {
 	mux := http.NewServeMux()
-	r.nginxHandler = &NginxHandler{r.env, r.nginxBinary}
-	mux.Handle("/nginx/", r.nginxHandler)
+	a.nginxHandler = &NginxHandler{a.env, a.nginxBinary}
+	mux.Handle("/nginx/", a.nginxHandler)
 
-	log.Debug("Starting REST API HTTP server")
+	log.Debug("Starting Agent API HTTP server")
 
 	server := http.Server{
-		Addr:    fmt.Sprintf(":%d", r.config.Server.RestPort),
+		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
 		Handler: mux,
 	}
 

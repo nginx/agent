@@ -13,14 +13,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
-
 	sysutils "github.com/nginx/agent/v2/test/utils/system"
 )
 
 const (
 	updatedServerHost         = "192.168.0.1"
 	updatedServerGrpcPort     = 11000
-	updatedServerRestPort     = 9010
+	updatedAgentAPIPort       = 9010
 	updatedLogLevel           = "fatal"
 	updatedLogPath            = "./test-path"
 	updatedConfigDirs         = "/usr/local/etc/nginx"
@@ -138,9 +137,11 @@ func TestGetConfig(t *testing.T) {
 
 		assert.Equal(t, Defaults.Server.Host, config.Server.Host)
 		assert.Equal(t, Defaults.Server.GrpcPort, config.Server.GrpcPort)
-		assert.Equal(t, Defaults.Server.RestPort, config.Server.RestPort)
 		assert.Equal(t, Defaults.Server.Command, config.Server.Command)
 		assert.Equal(t, Defaults.Server.Metrics, config.Server.Metrics)
+
+		assert.Equal(t, Defaults.AgentAPI.Port, config.AgentAPI.Port)
+
 		assert.True(t, len(config.AllowedDirectoriesMap) > 0)
 		assert.Equal(t, Defaults.ConfigDirs, config.ConfigDirs)
 		assert.Equal(t, Defaults.TLS.Enable, config.TLS.Enable)
@@ -191,12 +192,12 @@ func TestGetConfig(t *testing.T) {
 		// Check for updated values
 		assert.Equal(t, updatedLogLevel, config.Log.Level)
 		assert.Equal(t, updatedTag, config.DisplayName)
+		assert.Equal(t, []string{updatedTag}, config.Tags)
 
 		// Everything else should still be default
 		assert.Equal(t, Defaults.Server.Host, config.Server.Host)
 		assert.Equal(t, Defaults.Server.GrpcPort, config.Server.GrpcPort)
-		assert.Equal(t, Defaults.Server.RestPort, config.Server.RestPort)
-		assert.Equal(t, []string{updatedTag}, config.Tags)
+		assert.Equal(t, Defaults.AgentAPI.Port, config.AgentAPI.Port)
 	})
 
 	t.Run("test override defaults with config file values", func(t *testing.T) {
@@ -253,7 +254,7 @@ func TestGetConfig(t *testing.T) {
 
 		assert.Equal(t, updatedServerHost, config.Server.Host)
 		assert.Equal(t, updatedServerGrpcPort, config.Server.GrpcPort)
-		assert.Equal(t, updatedServerRestPort, config.Server.RestPort)
+		assert.Equal(t, updatedAgentAPIPort, config.AgentAPI.Port)
 		assert.Equal(t, updatedConfTags, config.Tags)
 
 		// Check for updated values

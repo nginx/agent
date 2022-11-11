@@ -162,6 +162,7 @@ func GetConfig(clientId string) (*Config, error) {
 		ClientID:              clientId,
 		CloudAccountID:        Viper.GetString(CloudAccountIdKey),
 		Server:                getServer(),
+		AgentAPI:              getAgentAPI(),
 		ConfigDirs:            Viper.GetString(ConfigDirsKey),
 		Log:                   getLog(),
 		TLS:                   getTLS(),
@@ -327,10 +328,15 @@ func getServer() Server {
 	return Server{
 		Host:     Viper.GetString(ServerHost),
 		GrpcPort: Viper.GetInt(ServerGrpcPort),
-		RestPort: Viper.GetInt(ServerRestPort),
 		Token:    Viper.GetString(ServerToken),
 		Metrics:  Viper.GetString(ServerMetrics),
 		Command:  Viper.GetString(ServerCommand),
+	}
+}
+
+func getAgentAPI() API {
+	return API{
+		Port: viper.GetInt(AgentAPIPort),
 	}
 }
 

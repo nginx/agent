@@ -189,7 +189,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		plugins.NewFileWatcher(loadedConfig, env),
 		plugins.NewFileWatchThrottle(),
 		plugins.NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary),
-		plugins.NewRestApi(loadedConfig, env, binary),
+		plugins.NewAgentAPI(loadedConfig, env, binary),
 	)
 
 	if len(loadedConfig.Nginx.NginxCountingSocket) > 0 {
