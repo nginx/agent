@@ -1,6 +1,6 @@
 
-j
-Agent$6ab883d8-6135-11ed-8afe-5671f551701b4355056874564592518"åªµõ¿èÆ‹*ERROR2Nginx:
+i
+Agent$a509bc08-6209-11ed-8365-5671f551701b4355056874564592518"úÉªõ¿åíE*ERROR2Nginx:
 AppProtectÎ
 app_protect_default_policy4355056874564592518REJECTED"SECURITY_WAF_VIOLATION*N/A2GET:HTTPBN/AJ/R^GET /?a=<script> HTTP/1.1\r\nHost: 127.0.0.1\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\nbblockedjBlockedz1-localhost:1-/Ç	127.0.0.1ä61478í80öéHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected¢?HTTP protocol compliance failed:Host header contains IP address™5≤u{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}∫,¬Untrusted Bot N/A“N/A⁄critical‚N/AÍN/AÚHTTP Library˙N/AÇcurlíΩ
 VIOL_ATTACK_SIGNATURE"ô

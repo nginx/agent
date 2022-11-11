@@ -81,7 +81,6 @@ var (
 		subViolations,
 		supportID,
 		threatCampaignNames,
-		httpURI,
 		violationRating,
 		httpHostname,
 		xForwardedForHeaderVal,
@@ -97,6 +96,7 @@ var (
 		clientApplication,
 		clientApplicationVersion,
 		transportProtocol,
+		httpURI,
 	}
 )
 
