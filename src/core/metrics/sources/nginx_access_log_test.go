@@ -74,7 +74,7 @@ func TestAccessLogStats(t *testing.T) {
 			`$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for"`,
 			[]string{
 				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\"\n",
+				`127.0.0.1 - - [19/May/2022:09:30:39 +0000] "GET /user/register?ahref<Script>p' or 's' = 's</Script> HTTP/1.1" 200 98 "-" "-" "-"`,
 			},
 			make(chan *proto.StatsEntity, 1),
 			&proto.StatsEntity{
