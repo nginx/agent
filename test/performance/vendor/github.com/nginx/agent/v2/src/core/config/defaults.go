@@ -205,7 +205,6 @@ var (
 		&IntFlag{
 			Name:         ServerGrpcport,
 			Usage:        "The desired GRPC port to use for nginx-agent traffic.",
-			DefaultValue: Defaults.Server.GrpcPort,
 		},
 		&StringFlag{
 			Name:         ServerToken,
