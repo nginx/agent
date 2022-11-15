@@ -12,7 +12,7 @@ type Config struct {
 	ClientID              string              `mapstructure:"agent_id" yaml:"-"`
 	CloudAccountID        string              `mapstructure:"cloud_account" yaml:"-"`
 	Server                Server              `mapstructure:"server" yaml:"-"`
-	AgentAPI              API                 `mapstructure:"api" yaml:"-"`
+	AgentAPI              AgentAPI            `mapstructure:"api" yaml:"-"`
 	ConfigDirs            string              `mapstructure:"config-dirs" yaml:"-"`
 	Log                   LogConfig           `mapstructure:"log" yaml:"-"`
 	TLS                   TLSConfig           `mapstructure:"tls" yaml:"-"`
@@ -41,7 +41,7 @@ type Server struct {
 	Target string `mapstructure:"target" yaml:"-"`
 }
 
-type API struct {
+type AgentAPI struct {
 	Port int `mapstructure:"port" yaml:"-"`
 }
 

@@ -45,7 +45,7 @@ var (
 			// so setting to random uuid at the moment, tls connection won't work without the auth header
 			Token: uuid.New().String(),
 		},
-		AgentAPI: API{
+		AgentAPI: AgentAPI{
 			Port: 9090,
 		},
 		Nginx: Nginx{

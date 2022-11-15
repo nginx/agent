@@ -14,12 +14,10 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 	tests := []struct {
 		name         string
 		nginxDetails []*proto.NginxDetails
-		expectedJSON string
 	}{
 		{
 			name:         "no instances",
 			nginxDetails: []*proto.NginxDetails{},
-			expectedJSON: "[]",
 		},
 		{
 			name: "single instance",
@@ -33,7 +31,6 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 					ConfigureArgs:   []string{},
 				},
 			},
-			expectedJSON: `[{"nginx_id":"1","version":"21","conf_path":"/etc/yo","process_id":"123","process_path":"","start_time":1238043824,"built_from_source":false,"loadable_modules":[],"runtime_modules":[],"plus":{"enabled":true,"release":""},"ssl":null,"status_url":"","configure_args":[]}]` + "\n",
 		},
 		{
 			name: "multi instance",
@@ -55,7 +52,6 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 					ConfigureArgs:   []string{},
 				},
 			},
-			expectedJSON: `[{"nginx_id":"1","version":"21","conf_path":"/etc/yo","process_id":"123","process_path":"","start_time":1238043824,"built_from_source":false,"loadable_modules":[],"runtime_modules":[],"plus":{"enabled":true,"release":""},"ssl":null,"status_url":"","configure_args":[]},{"nginx_id":"2","version":"21","conf_path":"/etc/yo","process_id":"123","process_path":"","start_time":1238043824,"built_from_source":false,"loadable_modules":[],"runtime_modules":[],"plus":{"enabled":true,"release":""},"ssl":null,"status_url":"","configure_args":[]}]` + "\n",
 		},
 	}
 	for _, tt := range tests {
@@ -70,11 +66,13 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 			resp := respRec.Result()
 			defer resp.Body.Close()
 
-			jsonStr := respRec.Body.String()
+			var nginxDetailsResponse []*proto.NginxDetails
+			err = json.Unmarshal(respRec.Body.Bytes(), &nginxDetailsResponse)
+			assert.Nil(t, err)
 
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			assert.True(t, json.Valid([]byte(jsonStr)))
-			assert.Equal(t, tt.expectedJSON, jsonStr)
+			assert.True(t, json.Valid(respRec.Body.Bytes()))
+			assert.Equal(t, tt.nginxDetails, nginxDetailsResponse)
 		})
 	}
 }

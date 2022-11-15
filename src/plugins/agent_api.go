@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 type AgentAPI struct {
 	config       *config.Config
 	env          core.Environment
+	server       http.Server
 	nginxBinary  core.NginxBinary
 	nginxHandler *NginxHandler
 }
@@ -37,10 +39,13 @@ func (a *AgentAPI) Init(core.MessagePipeInterface) {
 
 func (a *AgentAPI) Close() {
 	log.Info("Agent API is wrapping up")
+	if err := a.server.Shutdown(context.Background()); err != nil {
+		log.Errorf("Agent API HTTP Server Shutdown Error: %v", err)
+	}
 }
 
 func (a *AgentAPI) Process(message *core.Message) {
-	log.Tracef("Process function in the rest_api.go, %s %v", message.Topic(), message.Data())
+	log.Tracef("Process function in the agent_api.go, %s %v", message.Topic(), message.Data())
 }
 
 func (a *AgentAPI) Info() *core.Info {
@@ -58,12 +63,12 @@ func (a *AgentAPI) createHttpServer() {
 
 	log.Debug("Starting Agent API HTTP server")
 
-	server := http.Server{
+	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
 		Handler: mux,
 	}
 
-	if err := server.ListenAndServe(); err != nil {
+	if err := a.server.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatalf("error listening to port: %v", err)
 	}
 }
