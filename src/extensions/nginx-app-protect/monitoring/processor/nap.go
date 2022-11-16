@@ -464,7 +464,7 @@ func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) err
 	case sigSetNames:
 		napConfig.SigSetNames = replaceEncodedList(value, listSeperator)
 	case threatCampaignNames:
-		napConfig.ThreatCampaignNames = value
+		napConfig.ThreatCampaignNames = replaceEncodedList(value, listSeperator)
 	case violationDetails:
 		napConfig.ViolationDetailsXML = func(data string) *BADMSG {
 			var xmlData BADMSG
@@ -513,7 +513,7 @@ func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) err
 	case sigCVEs:
 		napConfig.SignatureCVEs = replaceEncodedList(value, listSeperator)
 	case subViolations:
-		napConfig.SubViolations = value
+		napConfig.SubViolations = replaceEncodedList(value, listSeperator)
 	case supportID:
 		napConfig.SupportID = value
 	case violations:
