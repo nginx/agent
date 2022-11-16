@@ -202,6 +202,23 @@ func TestGetNginxInfoFromBuffer(t *testing.T) {
 				modulesPath:     "",
 			},
 		},
+		{
+			name: "custom nginx install no config args",
+			input: `nginx version: nginx/1.19.10
+			TLS SNI support enabled
+			configure arguments: `,
+			expectedNginxInfo: &nginxInfo{
+				prefix:          "/usr/local/nginx",
+				confPath:        "/usr/local/nginx/conf/nginx.conf",
+				version:         "1.19.10",
+				plusver:         "",
+				source:          "",
+				cfgf:            map[string]interface{}{},
+				configureArgs:   []string{""},
+				loadableModules: nil,
+				modulesPath:     "",
+			},
+		},
 	}
 
 	err := os.Mkdir("/tmp/modules", 0700)
