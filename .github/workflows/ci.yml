@@ -110,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: snapshots
-          path: build/**/*.tar.gz
+          path: ./build/snapshots.tar.gz
           retention-days: 3
       - name: Azure Login
         uses: azure/login@v1
@@ -120,7 +120,7 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az storage blob upload --auth-mode=key -f ./build/snapshots.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
+            az storage blob upload --auth-mode=login -f ./build/snapshots.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} -n nginx-agent/${GITHUB_REF##*/}/nginx-agent-snapshot.tar.gz
       - name: Azure Logout
         run: |
