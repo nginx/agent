@@ -70,9 +70,12 @@ func main() {
 		sdkGRPC.InitMeta(loadedConfig.ClientID, loadedConfig.CloudAccountID)
 
 		controller, commander, reporter := createGrpcClients(ctx, loadedConfig)
-		if err := controller.Connect(); err != nil {
-			log.Warnf("Unable to connect to control plane: %v", err)
-			return
+		
+		if controller != nil {
+			if err := controller.Connect(); err != nil {
+				log.Warnf("Unable to connect to control plane: %v", err)
+				return
+			}
 		}
 
 		binary := core.NewNginxBinary(env, loadedConfig)
@@ -131,7 +134,16 @@ func handleSignals(
 	}()
 }
 
+func connectionUnavilable(loadedConfig *config.Config) bool {
+	return loadedConfig.Server.Host == "" || loadedConfig.Server.GrpcPort == 0 
+}
+
 func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client.Controller, client.Commander, client.MetricReporter) {
+	if connectionUnavilable(loadedConfig) {
+		log.Infof("GRPC clients not created")
+		return nil, nil, nil
+	}
+	
 	grpcDialOptions := setDialOptions(loadedConfig)
 	secureMetricsDialOpts, err := sdkGRPC.SecureDialOptions(
 		loadedConfig.TLS.Enable,
@@ -175,11 +187,21 @@ func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client
 func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *core.EnvironmentType, reporter client.MetricReporter, loadedConfig *config.Config) []core.Plugin {
 	var corePlugins []core.Plugin
 
+	if commander != nil {
+		corePlugins = append(corePlugins,
+			plugins.NewCommander(commander, loadedConfig),
+		)
+	}
+
+	if reporter != nil {
+		corePlugins = append(corePlugins,
+			plugins.NewMetricsSender(reporter),
+		)
+	}
+
 	corePlugins = append(corePlugins,
 		plugins.NewConfigReader(loadedConfig),
 		plugins.NewNginx(commander, binary, env, loadedConfig),
-		plugins.NewCommander(commander, loadedConfig),
-		plugins.NewMetricsSender(reporter),
 		plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString()), version),
 		plugins.NewMetrics(loadedConfig, env, binary),
 		plugins.NewMetricsThrottle(loadedConfig, env),
