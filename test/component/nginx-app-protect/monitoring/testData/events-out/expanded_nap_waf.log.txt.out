@@ -1,8 +1,8 @@
 
-i
-Agent$9dde6a00-6209-11ed-8365-5671f551701b4355056874564592513"êÉªõÄì¢8*ERROR2Nginx:
-AppProtect˝
-app_protect_default_policy4355056874564592513REJECTED"SECURITY_WAF_VIOLATION*N/A2GET:HTTPBN/AJ^GET /?a=<script> HTTP/1.1\r\nHost: 127.0.0.1\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\nRHTTP/1.1bblockedjBlockedz1-localhost:1-/Ç	127.0.0.1ä61478í80öéHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected¢?HTTP protocol compliance failed:Host header contains IP address™5≤u{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}∫,¬Untrusted Bot N/A“N/A⁄critical‚N/AÍN/AÚHTTP Library˙N/AÇcurlä	parameteríu
+j
+Agent$8b8e7050-655d-11ed-9d1d-5671f551701b4355056874564592513"‹≠—õÄ∞ı°*ERROR2Nginx:
+AppProtectø
+app_protect_default_policy4355056874564592513REJECTED"SECURITY_WAF_VIOLATION*N/A2GET:HTTPBN/AJ^GET /?a=<script> HTTP/1.1\r\nHost: 127.0.0.1\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\nRHTTP/1.1bblockedjBlockedz1-localhost:1-/Ç	127.0.0.1ä61478í80öéHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected¢qHTTP protocol compliance failed:Host header contains IP address,HTTP protocol compliance failed:Evasion technique™5≤u{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}∫,¬Untrusted Bot N/A“N/A⁄critical‚campaign1,campaign2ÍN/AÚHTTP Library˙N/AÇcurlä	parameteríu
 VIOL_ATTACK_SIGNATURE	parameter
 a<script>" 
 	2000014753
