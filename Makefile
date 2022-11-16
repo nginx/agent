@@ -92,7 +92,7 @@ local-deb-package: ## Create local deb package
 
 local-rpm-package: ## Create local rpm package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT.rpm;
+	VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
 
 local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
