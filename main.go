@@ -140,6 +140,7 @@ func connectionUnavilable(loadedConfig *config.Config) bool {
 
 func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client.Controller, client.Commander, client.MetricReporter) {
 	if connectionUnavilable(loadedConfig) {
+		log.Infof("GRPC clients not created")
 		return nil, nil, nil
 	}
 	
