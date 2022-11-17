@@ -54,7 +54,6 @@ func (a *AgentAPI) Close() {
 
 func (a *AgentAPI) Process(message *core.Message) {
 	log.Tracef("Process function in the agent_api.go, %s %v", message.Topic(), message.Data())
-	log.Error("------------------------- PROCESS ----------------------------")
 	switch {
 	case message.Exact(core.MetricReport):
 		metricReport, ok := message.Data().(*proto.MetricsReport)
@@ -62,7 +61,6 @@ func (a *AgentAPI) Process(message *core.Message) {
 			log.Warnf("Invalid message received, %T, for topic, %s", message.Data(), message.Topic())
 			return
 		}
-		log.Error(metricReport)
 		a.exporter.latestMetricReport = metricReport
 		return
 	}
