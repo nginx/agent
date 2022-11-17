@@ -38,7 +38,7 @@ jobs:
       - name: Upload Test Coverage
         uses: codecov/codecov-action@v3
         with:
-            files: ./build/test/coverage.out
+          files: ./build/test/coverage.out
 
   component-test:
     name: Component Tests
