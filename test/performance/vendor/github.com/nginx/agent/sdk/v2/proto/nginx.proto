@@ -69,6 +69,7 @@ enum NginxConfigAction {
   TEST = 2;
   ROLLBACK = 3;
   RETURN = 4;
+  FORCE = 5;
 }
 
 message NginxConfig {
