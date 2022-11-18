@@ -155,6 +155,20 @@ jobs:
         run: |
           echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
           make clean build package
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Azure Upload Release Packages
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage blob upload --auth-mode=login -f ./build/packages/nginx-agent.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/build/packages/nginx-agent.tar.gz
+      - name: Azure Logout
+        run: |
+          az logout
+        if: always()
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         env:
