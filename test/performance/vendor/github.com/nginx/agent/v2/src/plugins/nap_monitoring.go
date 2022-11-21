@@ -108,7 +108,7 @@ func (n *NAPMonitoring) run() {
 			}
 		case <-riTicker.C:
 			if len(report.Events) > 0 {
-				log.Infof("reached a report interval of %vs, sending %d Security Violation Events as a report", n.reportInterval.Seconds(), n.reportCount)
+				log.Infof("reached a report interval of %vs, sending %d Security Violation Events as a report", n.reportInterval.Seconds(), len(report.Events))
 				n.send(report)
 			}
 		case <-n.ctx.Done():

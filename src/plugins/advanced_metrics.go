@@ -226,7 +226,11 @@ func (m *AdvancedMetrics) run() {
 				return
 			}
 			now := types.TimestampNow()
-			m.pipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{toMetricReport(mr, now, commonDimensions)}))
+			report := toMetricReport(mr, now, commonDimensions)
+			log.Infof("%v", report)
+			if len(report.Data) != 0 {
+				m.pipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{report}))
+			}
 		case <-m.pipeline.Context().Done():
 			return
 		}
