@@ -22,10 +22,7 @@ func TestPublisher(t *testing.T) {
 	}{
 		{
 			name: "no metric with no dimension",
-			schema: schema.NewSchema([]*schema.Field{
-				schema.NewDimensionField("dim1", 0, schema.WithKeyBitSize(8)),
-				schema.NewMetricField("metric1"),
-			}...),
+			schema: schema.NewSchema([]*schema.Field{}...),
 			samples: map[string]*sample.Sample{},
 			dimensionsLookups: map[int]map[int]string{},
 			expectedMetrics: []*MetricSet{},
