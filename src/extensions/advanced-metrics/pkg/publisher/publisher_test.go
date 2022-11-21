@@ -21,6 +21,16 @@ func TestPublisher(t *testing.T) {
 		dimensionsLookups map[int]map[int]string
 	}{
 		{
+			name: "no metric with no dimension",
+			schema: schema.NewSchema([]*schema.Field{
+				schema.NewDimensionField("dim1", 0, schema.WithKeyBitSize(8)),
+				schema.NewMetricField("metric1"),
+			}...),
+			samples: map[string]*sample.Sample{},
+			dimensionsLookups: map[int]map[int]string{},
+			expectedMetrics: []*MetricSet{},
+		},
+		{
 			name: "single metric with single dimension",
 			schema: schema.NewSchema([]*schema.Field{
 				schema.NewDimensionField("dim1", 0, schema.WithKeyBitSize(8)),
