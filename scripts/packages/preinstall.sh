@@ -25,6 +25,7 @@ export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
 if [ "$ID" = "freebsd" ]; then
     AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/usr/local/etc/nginx-agent/nginx-agent.conf"}
     AGENT_DYNAMIC_CONFIG_DIR="/usr/local/etc/nginx-agent"
+    mkdir -p /var/log/nginx-agent/
 else
     AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/etc/nginx-agent/nginx-agent.conf"}
     AGENT_DYNAMIC_CONFIG_DIR="/etc/nginx-agent"
