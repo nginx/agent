@@ -17,7 +17,6 @@ INSTANCE_GROUP=""
 ###### Default variables
 ################################
 export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
-export AGENT_INSTALL_LOG="${AGENT_INSTALL_LOG:-/tmp/agent-install.log}"
 
 # Determine OS platform
 # shellcheck source=/dev/null
@@ -26,6 +25,7 @@ export AGENT_INSTALL_LOG="${AGENT_INSTALL_LOG:-/tmp/agent-install.log}"
 if [ "$ID" = "freebsd" ]; then
     AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/usr/local/etc/nginx-agent/nginx-agent.conf"}
     AGENT_DYNAMIC_CONFIG_DIR="/usr/local/etc/nginx-agent"
+    mkdir -p /var/log/nginx-agent/
 else
     AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/etc/nginx-agent/nginx-agent.conf"}
     AGENT_DYNAMIC_CONFIG_DIR="/etc/nginx-agent"
@@ -50,8 +50,6 @@ AGENT_DYNAMIC_CONFIG_COMMENT="#
 
 "
 
-ALLOWABLE_LOG_LEVELS="trace debug info error fatal panic"
-
 #
 # Functions
 #
@@ -65,7 +63,6 @@ err_exit() {
 title() {
     printf "\n --- NGINX Agent Package Installer --- \n\n"
     printf " --- Will install the NGINX Agent in 5 seconds ---\n"
-    printf " --- Install log is outputted to: %s\n" "${AGENT_INSTALL_LOG}"
     sleep 5
 }
 
@@ -77,16 +74,7 @@ ensure_sudo() {
     fi
 }
 
-is_empty() {
-    if [ -z "$2" ]; then
-        printf "\nValue for '%s' blank... skipping" "$1"
-        return 0
-    fi
-    return 1
-}
-
 load_config_values() {
-
     # If the file doesn't exist attempt to create it
     if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
         printf "Could not find %s ... Creating file\n" ${AGENT_DYNAMIC_CONFIG_FILE}
@@ -96,7 +84,7 @@ load_config_values() {
     fi
 
     # Check if there are existing values
-    _instance_group="$(grep "^instance_group:" "${AGENT_DYNAMIC_CONFIG_FILE}"  | head -n 1 | cut -d : -f 2 | sed "s/^[[:space:]]//")"
+    _instance_group="$(grep "^instance_group:" "${AGENT_DYNAMIC_CONFIG_FILE}" | head -n 1 | cut -d : -f 2 | sed "s/^[[:space:]]//")"
 
     if [ "$_instance_group" ] && [ ! "${INSTANCE_GROUP}" ]; then
         INSTANCE_GROUP=$_instance_group
@@ -104,32 +92,16 @@ load_config_values() {
 }
 
 update_config_file() {
-    agent_config_updated=""
-    dynamic_config_updated=""
-
-    printf "Updating %s ...\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
-    sed_cmd="sed -i.bak "
     if [ ! -f "$AGENT_CONFIG_FILE" ]; then
-        err_exit "$AGENT_CONFIG_FILE does not exist"
+        printf "Agent config file %s does not exist. Could not be updated\n" "$AGENT_CONFIG_FILE"
+        exit 0
     fi
-    if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
-        err_exit "$AGENT_DYNAMIC_CONFIG_FILE does not exist"
-    fi
+
+    printf "Updating %s ...\n" "${AGENT_CONFIG_FILE}"
 
     # Replace Host
+    sed_cmd="sed -i.bak "
     ${sed_cmd} "s/host:.*$/host: ${PACKAGE_HOST}/" "${AGENT_CONFIG_FILE}"
-
-    # Check the instance group and set accordingly
-    if [ "${INSTANCE_GROUP}" ]; then
-        if [ "$(grep -cP '^(?=[\s]*+[^#])[^#]*(instance_group)' "${AGENT_DYNAMIC_CONFIG_FILE}")" -ge 1 ]; then
-            printf "Setting existing instance_group: %s\n" "${INSTANCE_GROUP}"
-            ${sed_cmd} "/^[[:space:]]*#/!s/\(instance_group:.*\)/instance_group: ${INSTANCE_GROUP}/g" "${AGENT_DYNAMIC_CONFIG_FILE}"
-        else
-            printf "Setting instance_group: %s\n" "${INSTANCE_GROUP}"
-            printf "instance_group: %s\n" "${INSTANCE_GROUP}" >> "${AGENT_DYNAMIC_CONFIG_FILE}"
-        fi
-        dynamic_config_updated="true" 
-    fi
 
     # Check the log-level and set accordingly
     if [ "${LOG_LEVEL}" ]; then
@@ -140,28 +112,35 @@ update_config_file() {
             printf "Setting log level: %s\n" "${LOG_LEVEL}"
             _log_level_replacement="s/^log:/log:\\
   level: ${LOG_LEVEL}/"
-                    
             ${sed_cmd} "${_log_level_replacement}" "${AGENT_CONFIG_FILE}"
             printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
         fi
-        agent_config_updated="true" 
     fi
 
-    if [ "${dynamic_config_updated=}" ]; then
+    printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
+
+    # Check the instance group and set accordingly
+    if [ "${INSTANCE_GROUP}" ]; then
+        printf "Updating %s ...\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
+
+        if [ "$(grep -cP '^(?=[\s]*+[^#])[^#]*(instance_group)' "${AGENT_DYNAMIC_CONFIG_FILE}")" -ge 1 ]; then
+            printf "Setting existing instance_group: %s\n" "${INSTANCE_GROUP}"
+            ${sed_cmd} "/^[[:space:]]*#/!s/\(instance_group:.*\)/instance_group: ${INSTANCE_GROUP}/g" "${AGENT_DYNAMIC_CONFIG_FILE}"
+        else
+            printf "Setting instance_group: %s\n" "${INSTANCE_GROUP}"
+            printf "instance_group: %s\n" "${INSTANCE_GROUP}" >> "${AGENT_DYNAMIC_CONFIG_FILE}"
+        fi
+
         printf "Successfully updated %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
     fi
-
-    if [ "${agent_config_updated=}" ]; then
-        printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
-    fi   
 }
 
 #
 # Main body of the script
 #
 {
-  title
-  ensure_sudo
-  load_config_values
-  update_config_file
-} | tee "${AGENT_INSTALL_LOG}"
+    title
+    ensure_sudo
+    load_config_values
+    update_config_file
+}

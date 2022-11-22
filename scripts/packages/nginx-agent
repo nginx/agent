@@ -21,7 +21,6 @@ status_cmd="status_agent"
 
 start_agent() {
     PATH=$PATH:/usr/local/sbin
-    mkdir -p /var/log/nginx-agent
     /usr/sbin/daemon -f -p ${pidfile} ${command} 
 }
 
