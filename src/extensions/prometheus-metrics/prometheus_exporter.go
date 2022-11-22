@@ -51,7 +51,7 @@ func createPrometheusMetric(metric *proto.SimpleMetric, Dimensions []*proto.Dime
 	return prometheus.MustNewConstMetric(
 		prometheus.NewDesc(
 			convertMetricNameToPrometheusFormat(metric.Name),
-			"Metric Report",
+			"",
 			nil,
 			convertDimensionsToLabels(Dimensions),
 		),

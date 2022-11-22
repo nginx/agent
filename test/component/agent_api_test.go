@@ -159,7 +159,7 @@ func TestMetrics(t *testing.T) {
 
 	agentAPI.Close()
 
-	assert.Contains(t, string(responseData), "# HELP system_cpu_idle Metric Report")
+	assert.Contains(t, string(responseData), "# HELP system_cpu_idle")
 	assert.Contains(t, string(responseData), "# TYPE system_cpu_idle gauge")
 	assert.Contains(t, string(responseData), "system_cpu_idle{hostname=\"example.com\",system_tags=\"\"} 12")
 }
