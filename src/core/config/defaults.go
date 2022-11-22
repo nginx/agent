@@ -117,6 +117,8 @@ const (
 	APIKey = "api"
 
 	AgentAPIPort = APIKey + agent_config.KeyDelimiter + "port"
+	AgentAPICert = APIKey + agent_config.KeyDelimiter + "cert"
+	AgentAPIKey  = APIKey + agent_config.KeyDelimiter + "key"
 
 	// viper keys used in config
 	TlsKey = "tls"
@@ -231,6 +233,16 @@ var (
 			Name:         AgentAPIPort,
 			Usage:        "The desired port to use for nginx-agent to expose for HTTP traffic.",
 			DefaultValue: Defaults.AgentAPI.Port,
+		},
+		&StringFlag{
+			Name:         AgentAPICert,
+			Usage:        "The cert used by the Agent API.",
+			DefaultValue: "",
+		},
+		&StringFlag{
+			Name:         AgentAPIKey,
+			Usage:        "The key used by the Agent API.",
+			DefaultValue: "",
 		},
 		&StringFlag{
 			Name:         ConfigDirsKey,

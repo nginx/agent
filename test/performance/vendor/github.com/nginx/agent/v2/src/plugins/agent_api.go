@@ -28,6 +28,12 @@ type NginxHandler struct {
 	nginxBinary core.NginxBinary
 }
 
+const (
+	contentTypeHeader = "Content-Type"
+	jsonMimeType      = "application/json"
+)
+
+
 func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.NginxBinary) *AgentAPI {
 	return &AgentAPI{config: config, env: env, nginxBinary: nginxBinary}
 }
@@ -61,15 +67,21 @@ func (a *AgentAPI) createHttpServer() {
 	a.nginxHandler = &NginxHandler{a.env, a.nginxBinary}
 	mux.Handle("/nginx/", a.nginxHandler)
 
-	log.Debug("Starting Agent API HTTP server")
-
 	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
 		Handler: mux,
 	}
 
-	if err := a.server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("error listening to port: %v", err)
+	if a.config.AgentAPI.Cert != "" && a.config.AgentAPI.Key != "" {
+		log.Debug("Starting Agent API HTTP server with cert and key")
+		if err := a.server.ListenAndServeTLS(a.config.AgentAPI.Cert, a.config.AgentAPI.Key); err != http.ErrServerClosed {
+			log.Fatalf("error listening to port: %v", err)
+		}
+	} else {
+		log.Debug("Starting Agent API HTTP server with cert and key")
+		if err := a.server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("error listening to port: %v", err)
+		}
 	}
 }
 
@@ -78,7 +90,7 @@ var (
 )
 
 func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", "application/json")
+	w.Header().Set(contentTypeHeader, jsonMimeType)
 	switch {
 	case r.Method == http.MethodGet && instancesRegex.MatchString(r.URL.Path):
 		err := sendInstanceDetailsPayload(h.getNginxDetails(), w, r)
