@@ -243,7 +243,6 @@ Minimum system sizing recommendations for Agent:
 
 - Our [GitHub issues page](https://github.com/nginx/agent/issues) offers space for a more technical discussion at your own pace.
 
-- Subscribe to the Agent [mailing list](https://mailman.nginx.org/mailman/listinfo/agent) for release notifications.
 
 # Contributing
 Get involved with the project by contributing! Please see our [contributing guide](docs/CONTRIBUTING.md) for details.
