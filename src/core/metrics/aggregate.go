@@ -86,7 +86,7 @@ func getAggregatedSimpleMetric(count int, internalMap map[string]float64) (simpl
 		regexp.MustCompile(`slab.slots.*.used`):  avg,
 	}
 
-	calMap := CalculationMap()
+	calMap := GetCalculationMap()
 
 	for name, value := range internalMap {
 		if valueType, ok := calMap[name]; ok {

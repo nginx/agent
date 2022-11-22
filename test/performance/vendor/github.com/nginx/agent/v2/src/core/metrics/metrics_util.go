@@ -2,11 +2,12 @@ package metrics
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/config"
-	"sync"
-	"time"
 )
 
 type Collector interface {
@@ -41,7 +42,7 @@ func NewStatsEntity(dims []*proto.Dimension, samples []*proto.SimpleMetric) *pro
 	}
 }
 
-func CalculationMap() map[string]string {
+func GetCalculationMap() map[string]string {
 	return map[string]string{
 		"system.cpu.idle":                                    "avg",
 		"system.cpu.iowait":                                  "avg",

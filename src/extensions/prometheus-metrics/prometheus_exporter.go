@@ -1,4 +1,4 @@
-package prometheusmetrics
+package prometheus_metrics
 
 import (
 	"strings"
@@ -21,6 +21,10 @@ func (e *Exporter) SetLatestMetricReport(latest *proto.MetricsReport) {
 	e.latestMetricReport = latest
 }
 
+func (e *Exporter) GetLatestMetricReport() *proto.MetricsReport {
+	return e.latestMetricReport
+}
+
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	metricCh := make(chan prometheus.Metric)
 	doneCh := make(chan struct{})
@@ -34,20 +38,42 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	close(metricCh)
 	<-doneCh
 }
-func metricName(in string) string {
-	return strings.Replace(in, ".", "_", -1)
+
+func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
+	for _, statsEntity := range e.latestMetricReport.Data {
+		for _, metric := range statsEntity.Simplemetrics {
+			ch <- createPrometheusMetric(metric, statsEntity.GetDimensions())
+		}
+	}
 }
-func metricLabels(Dimensions []*proto.Dimension) map[string]string {
+
+func createPrometheusMetric(metric *proto.SimpleMetric, Dimensions []*proto.Dimension) prometheus.Metric {
+	return prometheus.MustNewConstMetric(
+		prometheus.NewDesc(
+			convertMetricNameToPrometheusFormat(metric.Name),
+			"Metric Report",
+			nil,
+			convertDimensionsToLabels(Dimensions),
+		),
+		getValueType(metric.Name), metric.Value,
+	)
+}
+
+func convertMetricNameToPrometheusFormat(metricName string) string {
+	return strings.Replace(metricName, ".", "_", -1)
+}
+
+func convertDimensionsToLabels(Dimensions []*proto.Dimension) map[string]string {
 	m := make(map[string]string)
 	for _, dimension := range Dimensions {
-		name := metricName(dimension.Name)
+		name := convertMetricNameToPrometheusFormat(dimension.Name)
 		m[name] = dimension.Value
 	}
 	return m
 }
 
 func getValueType(metricName string) prometheus.ValueType {
-	calMap := metrics.CalculationMap()
+	calMap := metrics.GetCalculationMap()
 
 	if value, ok := calMap[metricName]; ok {
 		if value == "sum" {
@@ -59,20 +85,4 @@ func getValueType(metricName string) prometheus.ValueType {
 	}
 
 	return prometheus.GaugeValue
-}
-
-func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
-	for _, statsEntity := range e.latestMetricReport.Data {
-		for _, metric := range statsEntity.Simplemetrics {
-			ch <- prometheus.MustNewConstMetric(
-				prometheus.NewDesc(
-					metricName(metric.Name),
-					"Metric Report",
-					nil,
-					metricLabels(statsEntity.Dimensions),
-				),
-				getValueType(metric.Name), metric.Value,
-			)
-		}
-	}
 }
