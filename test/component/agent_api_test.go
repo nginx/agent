@@ -104,5 +104,62 @@ func TestInvalidPath(t *testing.T) {
 	response, err := http.Get(fmt.Sprintf("http://localhost:%d/invalid/", port))
 	assert.Nil(t, err)
 
+	agentAPI.Close()
+
 	assert.Equal(t, http.StatusNotFound, response.StatusCode)
+}
+
+func TestMetrics(t *testing.T) {
+	port := 9090
+
+	conf := &config.Config{
+		AgentAPI: config.AgentAPI{
+			Port: port,
+		},
+	}
+
+	mockEnvironment := tutils.NewMockEnvironment()
+	mockNginxBinary := tutils.NewMockNginxBinary()
+
+	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
+	agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
+	agentAPI.Process(core.NewMessage(core.MetricReport, &proto.MetricsReport{
+		Meta: &proto.Metadata{
+			MessageId: "123",
+		},
+		Data: []*proto.StatsEntity{
+			{
+				Dimensions: []*proto.Dimension{
+					{
+						Name:  "hostname",
+						Value: "example.com",
+					},
+					{
+						Name:  "system.tags",
+						Value: "",
+					},
+				},
+				Simplemetrics: []*proto.SimpleMetric{
+					{
+						Name:  "system.cpu.idle",
+						Value: 12,
+					},
+				},
+			},
+		},
+	}))
+
+	response, err := http.Get(fmt.Sprintf("http://localhost:%d/metrics", port))
+	assert.Nil(t, err)
+
+	assert.Equal(t, http.StatusOK, response.StatusCode)
+
+	responseData, err := io.ReadAll(response.Body)
+	assert.Nil(t, err)
+
+	agentAPI.Close()
+
+	assert.Contains(t, string(responseData), "# HELP system_cpu_idle Metric Report")
+	assert.Contains(t, string(responseData), "# TYPE system_cpu_idle gauge")
+	assert.Contains(t, string(responseData), "system_cpu_idle{hostname=\"example.com\",system_tags=\"\"} 12")
 }
