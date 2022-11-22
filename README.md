@@ -122,6 +122,7 @@ sudo mkdir /etc/nginx-agent
 sudo cp nginx-agent.conf /etc/nginx-agent/
 ```
 
+### Enabling the gRPC interface
 Update the `/etc/nginx-agent/nginx-agent.conf` file to include the following settings:
 
 ```yaml
@@ -135,14 +136,21 @@ tls:
   skip_verify: true
 ```
 
-!!!!!TODO: Provide sample config for connecting via REST when ready
+### Enabling the REST interface
+While the mock control plane uses gRPC to communicate with Agent, the REST interface can be exposed by adding the following lines to the `nginx-agent.conf` file.
+
+```yaml
+api:
+  # port to expose http api
+  port: 9090
+```
 
 ## Starting Agent
 If already running, restart Agent to apply the new configuration. Alternatively, if Agent is not running, you may run it from the source code root directory.
 
 Open another terminal window and start the Agent. Issue the following command from the `agent` source code root directory.
 ```
-go run main.go
+make run
 
 # Command Output snippet
 WARN[0000] Log level is info                            
