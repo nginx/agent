@@ -1,13 +1,24 @@
 package plugins
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"io"
+	"io/fs"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/v2/src/core"
+	"github.com/nginx/agent/v2/src/core/config"
+	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
@@ -68,11 +79,63 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 
 			var nginxDetailsResponse []*proto.NginxDetails
 			err = json.Unmarshal(respRec.Body.Bytes(), &nginxDetailsResponse)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 			assert.True(t, json.Valid(respRec.Body.Bytes()))
 			assert.Equal(t, tt.nginxDetails, nginxDetailsResponse)
+		})
+	}
+}
+
+func TestNginxHandler_updateConfig(t *testing.T) {
+	tests := []struct {
+		name         string
+		configUpdate string
+	}{
+		{
+			name:         "update config",
+			configUpdate: "# test",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Skip()
+			w := httptest.NewRecorder()
+			path := "/nginx/config/"
+
+			file, err := os.CreateTemp(t.TempDir(), "file")
+			require.NoError(t, err)
+			defer file.Close()
+
+			err = os.WriteFile(file.Name(), []byte(tt.configUpdate), fs.FileMode(os.O_RDWR))
+			require.NoError(t, err)
+
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+			part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
+			require.NoError(t, err)
+			io.Copy(part, file)
+			writer.Close()
+
+			r := httptest.NewRequest(http.MethodPut, path, body)
+			r.Header.Set("Content-Type", writer.FormDataContentType())
+
+			h := &NginxHandler{
+				config:          config.Defaults,
+				env:             &core.EnvironmentType{},
+				pipeline:        core.NewMessagePipe(context.TODO()),
+				nginxBinary:     tutils.NewMockNginxBinary(),
+				responseChannel: make(chan *proto.Command_NginxConfigResponse),
+			}
+
+			err = h.updateConfig(w, r)
+			assert.NoError(t, err)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			assert.Equal(t, "# test", w.Body.String())
 		})
 	}
 }

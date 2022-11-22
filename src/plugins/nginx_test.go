@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -13,14 +13,12 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/nginx/agent/sdk/v2"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
-
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	loadedConfig "github.com/nginx/agent/v2/src/core/config"
-
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
@@ -216,10 +214,10 @@ func TestNginxConfigApply(t *testing.T) {
 		test := test
 		t.Run(fmt.Sprintf("%d", idx), func(tt *testing.T) {
 			dir := t.TempDir()
-			tempConf, err := ioutil.TempFile(dir, "nginx.conf")
+			tempConf, err := os.CreateTemp(dir, "nginx.conf")
 			assert.NoError(t, err)
 
-			err = ioutil.WriteFile(tempConf.Name(), fourth, 0644)
+			err = os.WriteFile(tempConf.Name(), fourth, 0644)
 			assert.NoError(t, err)
 
 			ctx := context.TODO()
@@ -545,10 +543,11 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 
 	dir := t.TempDir()
-	tempConf, err := ioutil.TempFile(dir, "nginx.conf")
+	tempConf, err := os.CreateTemp(dir, "nginx.conf")
 	assert.NoError(t, err)
 	allowedDirectoriesMap := map[string]struct{}{dir: {}}
 	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+	assert.NoError(t, err)
 
 	response := &NginxConfigValidationResponse{
 		err:           nil,
@@ -631,10 +630,11 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 
 	dir := t.TempDir()
-	tempConf, err := ioutil.TempFile(dir, "nginx.conf")
+	tempConf, err := os.CreateTemp(dir, "nginx.conf")
 	assert.NoError(t, err)
 	allowedDirectoriesMap := map[string]struct{}{dir: {}}
 	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+	assert.NoError(t, err)
 
 	response := &NginxConfigValidationResponse{
 		err:           errors.New("Failure"),

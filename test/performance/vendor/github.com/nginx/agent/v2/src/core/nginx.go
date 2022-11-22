@@ -341,7 +341,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 	}
 
 	// Ensure all aux files are within the allowed list directories.
-	if err := ensureFilesAllowed(auxFiles, n.config.AllowedDirectoriesMap, config.Zaux.RootDirectory); err != nil {
+	if err := ensureFilesAllowed(auxFiles, n.config.AllowedDirectoriesMap, config.GetZaux().GetRootDirectory()); err != nil {
 		return nil, err
 	}
 
