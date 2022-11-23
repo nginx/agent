@@ -33,6 +33,9 @@ const (
 	jsonMimeType      = "application/json"
 )
 
+var (
+	instancesRegex = regexp.MustCompile(`^\/nginx[\/]*$`)
+)
 
 func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.NginxBinary) *AgentAPI {
 	return &AgentAPI{config: config, env: env, nginxBinary: nginxBinary}
@@ -72,22 +75,20 @@ func (a *AgentAPI) createHttpServer() {
 		Handler: mux,
 	}
 
-	if a.config.AgentAPI.Cert != "" && a.config.AgentAPI.Key != "" {
-		log.Debug("Starting Agent API HTTP server with cert and key")
+	if (a.config.AgentAPI.Cert != "" && a.config.AgentAPI.Key != "" && a.config.AgentAPI.Port != 0) {
+		log.Info("Starting Agent API HTTP server with cert and key and port from config")
 		if err := a.server.ListenAndServeTLS(a.config.AgentAPI.Cert, a.config.AgentAPI.Key); err != http.ErrServerClosed {
 			log.Fatalf("error listening to port: %v", err)
 		}
-	} else {
-		log.Debug("Starting Agent API HTTP server with cert and key")
+	} else if (a.config.AgentAPI.Port != 0) {
+		log.Info("Starting Agent API HTTP server with port from config and TLS disabled")
 		if err := a.server.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatalf("error listening to port: %v", err)
 		}
+	} else {
+		log.Info("Agent API not started")
 	}
 }
-
-var (
-	instancesRegex = regexp.MustCompile(`^\/nginx[\/]*$`)
-)
 
 func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentTypeHeader, jsonMimeType)

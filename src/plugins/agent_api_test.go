@@ -1,13 +1,20 @@
 package plugins
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	// "os/exec"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/v2/src/core"
+	"github.com/nginx/agent/v2/src/core/config"
+	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/go-resty/resty/v2"
 )
 
 func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
@@ -76,3 +83,62 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 		})
 	}
 }
+
+func TestMtlsForApi(t *testing.T) {
+	dir := t.TempDir()
+	t.Logf("%v", dir)
+	conf := &config.Config{
+		AgentAPI: config.AgentAPI{ 
+			Port: 2345,
+		},
+	}
+
+	// generateCertificate(t, dir)
+	pluginUnderTest := NewAgentAPI(conf, tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary())
+	pluginUnderTest.Init(core.NewMockMessagePipe(context.TODO()))
+
+	client := resty.New()
+
+	resp, err := client.R().EnableTrace().Get(fmt.Sprintf("http://localhost:%d/nginx", conf.AgentAPI.Port))
+
+	// Explore response object
+	fmt.Println("Response Info:")
+	fmt.Println("  Error      :", err)
+	fmt.Println("  Status Code:", resp.StatusCode())
+	fmt.Println("  Status     :", resp.Status())
+	fmt.Println("  Proto      :", resp.Proto())
+	fmt.Println("  Time       :", resp.Time())
+	fmt.Println("  Received At:", resp.ReceivedAt())
+	fmt.Println("  Body       :\n", resp)
+	fmt.Println()
+
+	var details []*proto.NginxDetails
+	json.Unmarshal(resp.Body(),&details)
+	// var responseItems map[string]*proto.NginxDetails 
+	expected := tutils.GetDetailsMap()["12345"]
+	assert.Len(t, details, 1)
+	assert.Equal(t, expected, details[0])
+}
+
+// func generateCertificate(t *testing.T, dir string) error {
+// 	cmd := exec.Command("../../scripts/mtls/gen_cnf.sh", "ca", "--cn", "'ca.local'", "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", dir)
+
+// 	err := cmd.Run()
+// 	if err != nil {
+// 		t.Logf("%v", err)
+// 		t.Fail()
+// 	}
+
+// 	cmd1 := exec.Command("../../scripts/mtls/gen_cert.sh", "ca", "--config", "certs/conf/ca.cnf", "--out", dir)
+
+// 	err = cmd1.Run()
+// 	if err != nil {
+// 		t.Logf("%v", err)
+// 		t.Fail()
+// 	}
+
+// 	// scripts/mtls/gen_cnf.sh ca --cn '${CERT_CLIENT_CA_CN}' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/client/conf
+// 	// scripts/mtls/gen_cert.sh ca --config ${CERTS_DIR}/client/conf/ca.cnf --out ${CERTS_DIR}/client
+
+// 	return nil
+// }
