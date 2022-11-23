@@ -24,7 +24,7 @@ Agent interfaces with NGINX process information and parses NGINX logs to calcula
 When running alongside an open source instance of NGINX, Agent requires that NGINX Access and Error are turned on and contain all default variables.
 
 ### NGINX Plus
-In order for Agent to work properly with an NGINX Plus instance, the API needs to be configured in nginx.conf for that instance. See [Instance Metrics Overview](https://docs.nginx.com/nginx-management-suite/nim/about/overview-metrics/) for more details.
+In order for Agent to work properly with an NGINX Plus instance, the API needs to be configured in nginx.conf for that instance. See [Instance Metrics Overview](https://docs.nginx.com/nginx-management-suite/nim/about/overview-metrics/) for more details. Once NGINX Plus is configured with the `/api/` endpoint, Agent will automatically use it on startup.
 
 ## Event Notifications
 Agent allows a gRPC connected control system to register a listener for a specific event. The control mechanism is then invoked when an associated system signal is sent by Agent. The source of a notification can be either the NGINX instance or Agent itself. Here's a list of currently supported events:
@@ -127,23 +127,28 @@ Update the `/etc/nginx-agent/nginx-agent.conf` file to include the following set
 
 ```yaml
 server:
-  # host of the control interface
-  host: 127.0.0.1
-  grpcPort: 54789 # control interface grpc port
-# tls options - NOT RECOMMENDED FOR PRODUCTION
+  host: 127.0.0.1 # mock control plane host
+  grpcPort: 54789 # mock control plane gRPC port
+
+# gRPC TLS options - DISABLING TLS IS NOT RECOMMENDED FOR PRODUCTION
 tls:
   enable: false
   skip_verify: true
 ```
 
 ### Enabling the REST interface
-While the mock control plane uses gRPC to communicate with Agent, the REST interface can be exposed by adding the following lines to the `nginx-agent.conf` file.
+The Agent REST interface can be exposed by adding the following lines to the `nginx-agent.conf` file.
 
 ```yaml
 api:
-  # port to expose http api
-  port: 9090
+  port: 9090 # port to expose REST API
+  
+  # REST TLS parameters
+  cert: "<TLS-CERTIFICATE>.crt"
+  key: "<PRIVATE-KEY>.key"
 ```
+
+The mock control plane can use either gRPC or REST protocols to communicate with Agent.
 
 ## Starting Agent
 If already running, restart Agent to apply the new configuration. Alternatively, if Agent is not running, you may run it from the source code root directory.
