@@ -78,10 +78,7 @@ func getValueType(metricName string) prometheus.ValueType {
 	if value, ok := calMap[metricName]; ok {
 		if value == "sum" {
 			return prometheus.CounterValue
-		} else {
-			return prometheus.GaugeValue
 		}
-
 	}
 
 	return prometheus.GaugeValue
