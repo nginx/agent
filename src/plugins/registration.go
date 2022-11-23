@@ -121,7 +121,13 @@ func (r *OneTimeRegistration) registerAgent() {
 	for _, proc := range r.env.Processes() {
 		// only need master process for registration
 		if proc.IsMaster {
-			details = append(details, r.binary.GetNginxDetailsFromProcess(proc))
+			nginxDetails := r.binary.GetNginxDetailsFromProcess(proc)
+			details = append(details, nginxDetails)
+			// Reading nginx config during registration to populate nginx fields like access/error logs, etc.
+			_, err := r.binary.ReadConfig(nginxDetails.GetConfPath(), nginxDetails.NginxId, r.env.GetSystemUUID())
+			if err != nil {
+				log.Warnf("Unable to read config for NGINX instance %s, %v", nginxDetails.NginxId, err)
+			}
 		} else {
 			log.Tracef("NGINX non-master process: %d", proc.Pid)
 		}
