@@ -43,6 +43,3 @@ services:
       - 3000:3000
     networks:
       - monitoring
-
-
-## TODO add datasource & dashboard to grafana config https://grafana.com/docs/grafana/latest/administration/provisioning/#provision-grafana
