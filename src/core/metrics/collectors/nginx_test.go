@@ -184,7 +184,7 @@ func TestNginxCollector_UpdateConfig(t *testing.T) {
 			mockNginxSource2,
 		},
 		collectorConf: &metrics.NginxCollectorConfig{
-			NginxId: "124",
+			NginxId: "123",
 		},
 		env: env,
 	}
