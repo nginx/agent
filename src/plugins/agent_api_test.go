@@ -113,7 +113,9 @@ func TestMtlsForApi(t *testing.T) {
 	fmt.Println()
 
 	var details []*proto.NginxDetails
-	json.Unmarshal(resp.Body(),&details)
+	err = json.Unmarshal(resp.Body(),&details)
+
+	assert.NoError(t, err)
 	// var responseItems map[string]*proto.NginxDetails 
 	expected := tutils.GetDetailsMap()["12345"]
 	assert.Len(t, details, 1)
