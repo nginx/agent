@@ -57,7 +57,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 6,
+                "h": 7,
                 "w": 5,
                 "x": 0,
                 "y": 0
@@ -123,7 +123,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 6,
+                "h": 7,
                 "w": 5,
                 "x": 5,
                 "y": 0
@@ -189,7 +189,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 6,
+                "h": 7,
                 "w": 5,
                 "x": 10,
                 "y": 0
@@ -254,7 +254,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 6,
+                "h": 7,
                 "w": 9,
                 "x": 15,
                 "y": 0
@@ -318,6 +318,196 @@
                         "axisPlacement": "auto",
                         "barAlignment": 0,
                         "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 7
+            },
+            "id": 22,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "9.2.3",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "exemplar": false,
+                    "expr": "rate(nginx_http_request_count[1m]) * 60",
+                    "instant": false,
+                    "legendFormat": "requests / min",
+                    "range": true,
+                    "refId": "A"
+                }
+            ],
+            "title": "HTTP requests per minute",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 7,
+                "x": 8,
+                "y": 7
+            },
+            "id": 24,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "9.2.3",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "exemplar": false,
+                    "expr": "rate(nginx_http_request_bytes_sent[1m]) * 60",
+                    "instant": false,
+                    "legendFormat": "bytes / min",
+                    "range": true,
+                    "refId": "A"
+                }
+            ],
+            "title": "HTTP bytes sent per minute",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
                         "fillOpacity": 10,
                         "gradientMode": "none",
                         "hideFrom": {
@@ -363,10 +553,10 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 14,
-                "w": 24,
-                "x": 0,
-                "y": 6
+                "h": 9,
+                "w": 9,
+                "x": 15,
+                "y": 7
             },
             "id": 14,
             "options": {
@@ -463,13 +653,13 @@
         "list": []
     },
     "time": {
-        "from": "now-30m",
+        "from": "now-1h",
         "to": "now"
     },
     "timepicker": {},
     "timezone": "",
     "title": "NGINX Agent",
     "uid": "zjoqqbd4k",
-    "version": 5,
+    "version": 2,
     "weekStart": ""
 }
