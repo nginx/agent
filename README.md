@@ -104,7 +104,7 @@ git clone git@github.com:nginx/agent.git
 ```
 
 ## Starting the Mock Control Plane
-Start the mock control plane by issuing the following command from the `agent` source code root directory:
+Start the mock control plane by running the following command from the `agent` source code root directory:
 
 ```
 go run sdk/examples/server.go
