@@ -48,7 +48,7 @@ Agent allows a gRPC connected control system to register a listener for a specif
 Agent interfaces directly with an NGINX server process installed on the same system. If you don't have it already, follow these steps to install [NGINX Open Source](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/) or [NGINX Plus](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-plus/). Once installed, ensure the NGINX instance is running.
 
 ## Installing Go
-Agent is written in Go and requires Go 1.19 or higher to be installed. You can [download Go from the official website](https://go.dev/dl/)). 
+Agent is written in Go and requires Go 1.19 or higher to be installed. You can [download Go from the official website](https://go.dev/dl/). 
 
 ## Installing Agent from Package Files
 To install Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download `nginx-agent.tar.gz`. Extract the file and locate the appropriate binary in the archive.
