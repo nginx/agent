@@ -20,7 +20,7 @@ Follow steps in the [Installation]({{< relref "/installation.md" >}}) section to
 
 Run the following command in your development directory to clone the Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
-```
+```bash
 git clone git@github.com:nginx/agent.git
 ```
 
@@ -28,7 +28,7 @@ git clone git@github.com:nginx/agent.git
 
 Start the mock control plane by running the following command from the `agent` source code root directory:
 
-```
+```bash
 go run sdk/examples/server.go
 
 # Command Output
@@ -37,16 +37,19 @@ INFO[0000] grpc listening at 54789 # grpc control plane port which Agent will re
 ```
 
 ## Agent Settings
+
 If it doesn't already exist, create the `/etc/nginx-agent/nginx-agent.conf` file
-```
+
+```bash
 sudo mkdir /etc/nginx-agent
 sudo cp nginx-agent.conf /etc/nginx-agent/
 ```
 
 ### Enabling the gRPC interface
+
 Update the `/etc/nginx-agent/nginx-agent.conf` file to include the following settings:
 
-```yaml
+```nginx
 server:
   host: 127.0.0.1 # mock control plane host
   grpcPort: 54789 # mock control plane gRPC port
@@ -58,9 +61,10 @@ tls:
 ```
 
 ### Enabling the REST interface
+
 The Agent REST interface can be exposed by adding the following lines to the `nginx-agent.conf` file.
 
-```yaml
+```nginx
 api:
   port: 9090 # port to expose REST API
   
@@ -72,10 +76,12 @@ api:
 The mock control plane can use either gRPC or REST protocols to communicate with Agent.
 
 ## Starting Agent
+
 If already running, restart Agent to apply the new configuration. Alternatively, if Agent is not running, you may run it from the source code root directory.
 
 Open another terminal window and start the Agent. Issue the following command from the `agent` source code root directory.
-```
+
+```bash
 make run
 
 # Command Output snippet
@@ -102,50 +108,11 @@ INFO[0001] OneTimeRegistration completed
 
 Open a web browser to view the mock control plane at [http://localhost:54790](http://localhost:54790). The following links will be shown in the web interface:
 
-- registered - shows registration information of the dataplane
-- nginxes - lists the nginx instances on the dataplane
-- configs - shows the protobuf payload for NGINX configuration sent to the management plane
-- configs/chunked - shows the split up payloads sent to the management plane
-- configs/raw - shows the actual configuration as it would live on the dataplane
-- metrics - shows a buffer of metrics sent to the management plane (similar to what will be sent back in the REST API)
+- **registered** - shows registration information of the dataplane
+- **nginxes** - lists the nginx instances on the dataplane
+- **configs** - shows the protobuf payload for NGINX configuration sent to the management plane
+- **configs/chunked** - shows the split up payloads sent to the management plane
+- **configs/raw** - shows the actual configuration as it would live on the dataplane
+- **metrics** - shows a buffer of metrics sent to the management plane (similar to what will be sent back in the REST API)
 
-For more Agent use-cases, refer to https://github.com/nginx/agent/tree/main/sdk/examples
-
-# Development Environment Setup
-## Selecting an Operating System
-While most Linux or FreeBSD operating systems can be used to contribute to the Agent project, the following steps have been designed for Ubuntu. Ubuntu is packaged with most libraries required to build and run Agent, and is the recommended platform for Agent development.
-
-## Installing NGINX
-Follow steps in the [Installation](#installation) section to download and install NGINX. Once installed ensure NGINX instance is running.
-
-## Cloning the Agent Repository
-Run the following command from your development directory to clone Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
-
-```
-git clone git@github.com:nginx/agent.git
-```
-
-## Installing Prerequisite Packages
-Depending on the operating system distribution, it may be necessary to install the following packages in order to build Agent.
-
-Change to the Agent source directory:
-```
-cd <path_to_development_directory>/agent
-```
-
-Install Make:
-```
-sudo apt install make
-```
-
-Agent is written in Go. To install Go, run:
-```
-sudo apt install golang-go
-```
-
-## Building Agent from Source Code
-Run the following commands to build and run Agent:
-```
-make build
-make run
-```
+For more Agent use-cases, refer to the [NGINX Agent SDK examples](https://github.com/nginx/agent/tree/main/sdk/examples).
