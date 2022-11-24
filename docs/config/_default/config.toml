@@ -1,6 +1,6 @@
 title = "NGINX Agent"
 enableGitInfo = false
-baseURL = "/"
+baseURL = ""
 publishDir = "public/nginx-agent"
 staticDir = ["static"]
 languageCode = "en-us"
