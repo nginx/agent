@@ -1,6 +1,6 @@
 [build]
+  command = "hugo --gc -b $DEPLOY_PRIME_URL/nginx-app-protect-dos"
   publish = "public"
-  command = "hugo --gc"
 
 [build.environment]
   HUGO_VERSION = "0.91.1"
@@ -16,12 +16,23 @@
 
 
 [context.deploy-preview]
-  command = "hugo --gc -e development"
+  command = "hugo --gc -b $DEPLOY_PRIME_URL/nginx-agent"
+  publish = "public"
+
+[context.branch-deploy]
+  command = "hugo --gc -b '/'"
+  publish = "public"
 
 [[headers]]
   for = "/*"
   [headers.values]
     Access-Control-Allow-Origin = "https://docs.nginx.com"
+
+[[redirects]]
+  from = "/"
+  to = "/nginx-agent/"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "*"

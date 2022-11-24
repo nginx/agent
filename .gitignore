@@ -16,3 +16,6 @@ __debug_bin
 .devops-utils/
 
 *tar.gz
+
+# Local Netlify folder
+.netlify

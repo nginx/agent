@@ -1,10 +1,10 @@
 title = "NGINX Agent"
 enableGitInfo = false
-baseURL = ""
+baseURL = "/"
 publishDir = "public/nginx-agent"
 staticDir = ["static"]
 languageCode = "en-us"
-description = ""
+description = "NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus instance."
 refLinksErrorLevel = "ERROR"
 enableRobotsTXT = "true"
 #canonifyURLs = true
