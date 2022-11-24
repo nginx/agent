@@ -14,13 +14,12 @@
 [context.docs-staging]
   command = "hugo --gc -e staging"
 
-
 [context.deploy-preview]
   command = "hugo --gc -b $DEPLOY_PRIME_URL/nginx-agent"
   publish = "public"
 
 [context.branch-deploy]
-  command = "hugo --gc -b '/'"
+  command = "hugo --gc -b $DEPLOY_PRIME_URL/nginx-agent"
   publish = "public"
 
 [[headers]]
