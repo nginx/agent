@@ -52,7 +52,7 @@ func TestActivityEvents_Process(t *testing.T) {
 		expectedEventReport *eventsProto.EventReport
 	}{
 		{
-			name: "test NginxInstancesFound message",
+			name:    "test NginxInstancesFound message",
 			message: core.NewMessage(core.NginxInstancesFound, tutils.GetDetailsMap()),
 			msgTopics: []string{
 				core.NginxInstancesFound,
@@ -81,8 +81,8 @@ func TestActivityEvents_Process(t *testing.T) {
 		{
 			name: "test NginxReloadComplete message - reload failed",
 			message: core.NewMessage(core.NginxReloadComplete, NginxReloadResponse{
-				succeeded: false,
-				nginxDetails: tutils.GetDetailsMap()["12345"],
+				succeeded:     false,
+				nginxDetails:  tutils.GetDetailsMap()["12345"],
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{
@@ -111,8 +111,8 @@ func TestActivityEvents_Process(t *testing.T) {
 		{
 			name: "test NginxReloadComplete message - reload succeeded",
 			message: core.NewMessage(core.NginxReloadComplete, NginxReloadResponse{
-				succeeded: true,
-				nginxDetails: tutils.GetDetailsMap()["12345"],
+				succeeded:     true,
+				nginxDetails:  tutils.GetDetailsMap()["12345"],
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{
@@ -232,8 +232,8 @@ func TestActivityEvents_Process(t *testing.T) {
 		{
 			name: "test successful ConfigRollbackResponse message",
 			message: core.NewMessage(core.ConfigRollbackResponse, ConfigRollbackResponse{
-				succeeded: true,
-				nginxDetails: tutils.GetDetailsMap()["12345"],
+				succeeded:     true,
+				nginxDetails:  tutils.GetDetailsMap()["12345"],
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{
@@ -262,8 +262,8 @@ func TestActivityEvents_Process(t *testing.T) {
 		{
 			name: "test failed ConfigRollbackResponse message",
 			message: core.NewMessage(core.ConfigRollbackResponse, ConfigRollbackResponse{
-				succeeded: false,
-				nginxDetails: tutils.GetDetailsMap()["12345"],
+				succeeded:     false,
+				nginxDetails:  tutils.GetDetailsMap()["12345"],
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{

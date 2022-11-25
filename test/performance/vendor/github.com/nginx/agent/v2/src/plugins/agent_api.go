@@ -70,17 +70,22 @@ func (a *AgentAPI) createHttpServer() {
 	a.nginxHandler = &NginxHandler{a.env, a.nginxBinary}
 	mux.Handle("/nginx/", a.nginxHandler)
 
+	// func(w http.ResponseWriter, req *http.Request) {
+	//    w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+	//    w.Write([]byte("This is an example server.\n"))
+	//})
+
 	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
 		Handler: mux,
 	}
 
-	if (a.config.AgentAPI.Cert != "" && a.config.AgentAPI.Key != "" && a.config.AgentAPI.Port != 0) {
+	if a.config.AgentAPI.Cert != "" && a.config.AgentAPI.Key != "" && a.config.AgentAPI.Port != 0 {
 		log.Info("Starting Agent API HTTP server with cert and key and port from config")
 		if err := a.server.ListenAndServeTLS(a.config.AgentAPI.Cert, a.config.AgentAPI.Key); err != http.ErrServerClosed {
 			log.Fatalf("error listening to port: %v", err)
 		}
-	} else if (a.config.AgentAPI.Port != 0) {
+	} else if a.config.AgentAPI.Port != 0 {
 		log.Info("Starting Agent API HTTP server with port from config and TLS disabled")
 		if err := a.server.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatalf("error listening to port: %v", err)

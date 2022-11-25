@@ -11,6 +11,7 @@ make_ca() {
         -new -newkey rsa:4096 \
         -nodes \
         -x509 \
+        -sha256 \
         -keyout ../../build/certs/ca.key \
         -out ../../build/certs/ca.crt \
         -config ca.cnf \
@@ -30,6 +31,7 @@ make_int() {
     openssl req -in ../../build/certs/ca_int.csr -noout -verify
     openssl x509 \
         -req \
+        -sha256 \
         -CA ../../build/certs/ca.crt \
         -CAkey ../../build/certs/ca.key \
         -CAcreateserial \
@@ -54,6 +56,7 @@ make_server() {
     openssl req -in ../../build/certs/server.csr -noout -verify
     openssl x509 \
         -req \
+        -sha256 \
         -CA ../../build/certs/ca_int.crt \
         -CAkey ../../build/certs/ca_int.key \
         -CAcreateserial \
@@ -76,6 +79,7 @@ make_client() {
     openssl req -in ../../build/certs/client.csr -noout -verify
     openssl x509 \
         -req \
+        -sha256 \
         -CA ../../build/certs/ca.crt \
         -CAkey ../../build/certs/ca.key \
         -CAcreateserial \

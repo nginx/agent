@@ -3,6 +3,7 @@ package plugins
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -90,11 +91,6 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 	}
 }
 
-// const (
-// 	GEN_CNF  = "../../%s"
-// 	GEN_CERT = "../../%s"
-// )
-
 func TestMtlsForApi(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -104,11 +100,11 @@ func TestMtlsForApi(t *testing.T) {
 		clientMTLS bool
 	}{
 		{
-			name: 	  "no tls test",
+			name:     "no tls test",
 			expected: tutils.GetDetailsMap()["12345"],
 			dir:      t.TempDir(),
-			conf:     &config.Config{
-				AgentAPI: config.AgentAPI{ 
+			conf: &config.Config{
+				AgentAPI: config.AgentAPI{
 					Port: 2345,
 					Key:  "",
 					Cert: "",
@@ -117,11 +113,11 @@ func TestMtlsForApi(t *testing.T) {
 			clientMTLS: false,
 		},
 		{
-			name: 	  "mtls test",
+			name:     "mtls test",
 			expected: tutils.GetDetailsMap()["12345"],
 			dir:      t.TempDir(),
-			conf:     &config.Config{
-				AgentAPI: config.AgentAPI{ 
+			conf: &config.Config{
+				AgentAPI: config.AgentAPI{
 					Port: 2345,
 					Key:  "../../build/certs/server.key",
 					Cert: "../../build/certs/server.crt",
@@ -134,20 +130,20 @@ func TestMtlsForApi(t *testing.T) {
 		// 	expected: tutils.GetDetailsMap()["12345"],
 		// 	dir:      t.TempDir(),
 		// 	conf:     &config.Config{
-		// 		AgentAPI: config.AgentAPI{ 
+		// 		AgentAPI: config.AgentAPI{
 		// 			Port: 2345,
-		// 			Key:  "../../build/certs/server/ca.key",
-		// 			Cert: "../../build/certs/server/ca.crt",
+		// 			Key:  "../../build/certs/server.key",
+		// 			Cert: "../../build/certs/server.crt",
 		// 		},
 		// 	},
 		// 	clientMTLS: false,
-		// }, 
+		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Logf("%v", tt.dir)
 
-			if (tt.conf.AgentAPI.Key != "") {
+			if tt.conf.AgentAPI.Key != "" {
 				certsDir, err := os.MkdirTemp(tt.dir, "certs")
 				if err != nil {
 					t.Fail()
@@ -165,7 +161,7 @@ func TestMtlsForApi(t *testing.T) {
 				// 	fmt.Sprintf("cp %s/server/ca.crt %s/server-ca.pem", certsDir, certsDir),
 				// 	fmt.Sprintf("cp %s/server/ca.key %s/server-ca.key", certsDir, certsDir),
 				// }
-			
+
 				// for _, command := range commands {
 				// 	cmd := exec.Command(command)
 				// 	stdout, err := cmd.Output()
@@ -173,53 +169,28 @@ func TestMtlsForApi(t *testing.T) {
 				// 	if err != nil {
 				// 		t.Fatal(err)
 				// 	}
-			
+
 				// 	t.Log(string(stdout))
-				// } 
+				// }
 
 				// openssl req -new -nodes -x509 -out certs/server.pem -keyout certs/server.key -days 3650 -subj "/C=DE/ST=NRW/L=Earth/O=Random Company/OU=IT/CN=www.random.com/emailAddress=$1"
 				// echo "make client cert"
 				// openssl req -new -nodes -x509 -out certs/client.pem -keyout certs/client.key -days 3650 -subj "/C=DE/ST=NRW/L=Earth/O=Random Company/OU=IT/CN=www.random.com/emailAddress=$1"
 			}
 
-	
-			// generateCertificate(t, dir)
 			pluginUnderTest := NewAgentAPI(tt.conf, tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary())
 			pluginUnderTest.Init(core.NewMockMessagePipe(context.TODO()))
-		
+
 			client := resty.New()
 
 			client.SetDebug(true)
 			var url string
-			if (tt.conf.AgentAPI.Key != "") {
-				url = fmt.Sprintf("https://localhost:%d/nginx", tt.conf.AgentAPI.Port)
-				
-				if (tt.clientMTLS) {
-					// Assign Client TLSClientConfig
-					// One can set custom root-certificate. Refer: http://golang.org/pkg/crypto/tls/#example_Dial
-					crt, err := ioutil.ReadFile("../../build/certs/client.crt")
-					assert.NoError(t, err)
-					key, err := ioutil.ReadFile("../../build/certs/client.key")
-					assert.NoError(t, err)
-					tlsConfig := &tls.Config{
-						// ServerName: "localhost", // Optional
-						MaxVersion: tls.VersionTLS13, // Optional
-						GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
-							if cert, err := tls.X509KeyPair(crt, key); err != nil {						
-								return nil, err
-			
-							} else {
-								return &cert, nil
-							}
-						},
-					}
-			
-					transport := &http.Transport{ TLSClientConfig: tlsConfig }
-					client.SetTransport(transport)
-					// client.SetTLSClientConfig(&tls.Config{ RootCAs: roots })
+			if tt.conf.AgentAPI.Key != "" {
+				url = fmt.Sprintf("https://127.0.0.1:%d/nginx", tt.conf.AgentAPI.Port)
 
-					// or One can disable security check (https)
-					//client.SetTLSClientConfig(&tls.Config{ InsecureSkipVerify: true })
+				if tt.clientMTLS {
+					transport := &http.Transport{TLSClientConfig: getConfig(t)}
+					client.SetTransport(transport)
 				}
 			} else {
 				url = fmt.Sprintf("http://localhost:%d/nginx", tt.conf.AgentAPI.Port)
@@ -235,28 +206,61 @@ func TestMtlsForApi(t *testing.T) {
 			)
 
 			resp, err := client.R().EnableTrace().Get(url)
-		
+
 			printResult(resp, err)
-		
+
 			var details []*proto.NginxDetails
 			err = json.Unmarshal(resp.Body(), &details)
-		
+
 			assert.NoError(t, err)
 
 			expected := tutils.GetDetailsMap()["12345"]
 			assert.Len(t, details, 1)
-			if (len(details) < 1) {
+			if len(details) < 1 {
 				assert.Fail(t, "No data returned")
 			} else {
 				assert.Equal(t, expected, details[0])
 			}
+
 			pluginUnderTest.Close()
 		})
 	}
 }
 
+func getConfig(t *testing.T) *tls.Config {
+	crt, err := ioutil.ReadFile("../../build/certs/client.crt")
+	assert.NoError(t, err)
+	key, err := ioutil.ReadFile("../../build/certs/client.key")
+	assert.NoError(t, err)
+	ca, err := ioutil.ReadFile("../../build/certs/ca.pem")
+	assert.NoError(t, err)
+
+	os.Setenv("SSL_CERT_FILE", "../../build/certs/ca.pem")
+
+	cert, err := tls.X509KeyPair(crt, key)
+	if err != nil {
+		assert.Fail(t, "error reading cert")
+
+	}
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+	}
+
+	caPool := tlsConfig.RootCAs
+	if caPool == nil {
+		caPool = x509.NewCertPool()
+	}
+
+	if !caPool.AppendCertsFromPEM(ca) {
+		assert.Fail(t, "Can't append cert")
+	}
+
+	tlsConfig.RootCAs = caPool
+	return tlsConfig
+}
+
 // explore response object for debugging
-func printResult( resp *resty.Response, err error) (*resty.Response, error) {
+func printResult(resp *resty.Response, err error) (*resty.Response, error) {
 	fmt.Println("Response Info:")
 	fmt.Println("  Error      :", err)
 	fmt.Println("  Status Code:", resp.StatusCode())
