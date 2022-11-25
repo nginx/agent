@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package config
 
 import (
@@ -37,8 +44,8 @@ var (
 			Path:  "/var/log/nginx-agent",
 		},
 		Server: Server{
-			Command:  "",
-			Metrics:  "",
+			Command: "",
+			Metrics: "",
 			// token needs to be validated on the server side - can be overridden by the config value or the cli / environment variable
 			// so setting to random uuid at the moment, tls connection won't work without the auth header
 			Token: uuid.New().String(),
@@ -204,12 +211,12 @@ var (
 			DefaultValue: Defaults.Log.Path,
 		},
 		&StringFlag{
-			Name:         ServerHost,
-			Usage:        "The IP address of the server host. IPv4 addresses and hostnames are supported.",
+			Name:  ServerHost,
+			Usage: "The IP address of the server host. IPv4 addresses and hostnames are supported.",
 		},
 		&IntFlag{
-			Name:         ServerGrpcPort,
-			Usage:        "The desired GRPC port to use for nginx-agent traffic.",
+			Name:  ServerGrpcPort,
+			Usage: "The desired GRPC port to use for nginx-agent traffic.",
 		},
 		&StringFlag{
 			Name:         ServerToken,
