@@ -203,7 +203,7 @@ func TestMtlsForApi(t *testing.T) {
 					assert.NoError(t, err)
 					tlsConfig := &tls.Config{
 						// ServerName: "localhost", // Optional
-						// MaxVersion: tls.VersionTLS13, // Optional
+						MaxVersion: tls.VersionTLS13, // Optional
 						GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
 							if cert, err := tls.X509KeyPair(crt, key); err != nil {						
 								return nil, err
@@ -268,26 +268,3 @@ func printResult( resp *resty.Response, err error) (*resty.Response, error) {
 	fmt.Println()
 	return resp, err
 }
-
-// func generateCertificate(t *testing.T, dir string) error {
-// 	cmd := exec.Command("../../%s", "ca", "--cn", "'ca.local'", "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", dir)
-
-// 	err := cmd.Run()
-// 	if err != nil {
-// 		t.Logf("%v", err)
-// 		t.Fail()
-// 	}
-
-// 	cmd1 := exec.Command("../../%s", "ca", "--config", "certs/conf/ca.cnf", "--out", dir)
-
-// 	err = cmd1.Run()
-// 	if err != nil {
-// 		t.Logf("%v", err)
-// 		t.Fail()
-// 	}
-
-// 	// %s ca --cn '${CERT_CLIENT_CA_CN}' --state Cork --locality Cork --org NGINX --country IE --out %s/client/conf
-// 	// %s ca --config %s/client/conf/ca.cnf --out %s/client
-
-// 	return nil
-// }

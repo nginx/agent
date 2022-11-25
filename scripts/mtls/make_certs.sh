@@ -8,7 +8,7 @@ fi
 make_ca() {
     echo "Creating Self-Signed Root CA certificate and key"
     openssl req \
-        -newkey rsa:1024 \
+        -new -newkey rsa:4096 \
         -nodes \
         -x509 \
         -keyout ../../build/certs/ca.key \
@@ -21,7 +21,7 @@ make_ca() {
 make_int() {
     echo "Creating Intermediate CA certificate and key"
     openssl req \
-        -newkey rsa:1024 \
+        -new -newkey rsa:4096 \
         -nodes \
         -keyout ../../build/certs/ca_int.key \
         -out ../../build/certs/ca_int.csr \
@@ -46,7 +46,7 @@ make_int() {
 make_server() {
     echo "Creating nginx-manger certificate and key"
     openssl req \
-        -newkey rsa:1024 \
+        -new -newkey rsa:4096 \
         -nodes \
         -keyout ../../build/certs/server.key \
         -out ../../build/certs/server.csr \
@@ -68,7 +68,7 @@ make_server() {
 make_client() {
     echo "Creating Client certificate and key"
     openssl req \
-        -newkey rsa:1024 \
+        -new -newkey rsa:4096 \
         -nodes \
         -keyout ../../build/certs/client.key \
         -out ../../build/certs/client.csr \

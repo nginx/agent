@@ -10,7 +10,7 @@ countryName                 = IE
 stateOrProvinceName         = Munster
 localityName                = Cork
 organizationName            = NGINX, Inc.
-commonName                  = agent-int-ca
+commonName                  = agent-server-int.example.com
 
 [v3_req]
 basicConstraints = critical, CA:true
