@@ -11,12 +11,6 @@ FREEBSD_DISTROS?="FreeBSD:12:amd64" "FreeBSD:13:amd64"
 APK_VERSIONS?=3.13 3.14 3.15 3.16
 APK_ARCHS?=aarch64 x86_64
 
-ifeq ($(uname_m),aarch64)
-ARCH   	                = arm64
-else
-ARCH                    = amd64
-endif
-
 UPLOAD_URL         := "https://up-ap.nginx.com/"
 AGENT_UPLOADER_KEY := "./agent-uploader.pem"
 
@@ -30,14 +24,22 @@ $(PACKAGES_DIR):
 	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk && mkdir -p $(PACKAGES_DIR)/txz
 
 package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported distros
-	@for distro in $(DEB_DISTROS); do \
-		deb_codename=`echo $$distro | cut -d- -f 2`; \
-		for arch in $(DEB_ARCHS); do \
+	# Create deb packages
+	
+	@for arch in $(DEB_ARCHS); do \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		for distro in $(DEB_DISTROS); do \
+			deb_codename=`echo $$distro | cut -d- -f 2`; \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename} ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb; \
 		done; \
+		rm -rf ./build/nginx-agent; \
 	done; \
-
-	for distro in $(RPM_DISTROS); do \
+	
+	# Create rpm packages
+	
+	@GOWORK=off CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
+	
+	@for distro in $(RPM_DISTROS); do \
 		rpm_distro=`echo $$distro | cut -d- -f 1`;  \
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
 		rpm_codename='na'; \
@@ -45,24 +47,32 @@ package: gpg-key $(PACKAGES_DIR) ## Create final packages for all supported dist
 		elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
 		if [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=${ARCH} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${UNAME_M}.rpm; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=amd64 nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${UNAME_M}.rpm; \
 		fi; \
 	done; \
-
-	for version in $(APK_VERSIONS); do \
-		if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}; fi; \
-		for arch in $(APK_ARCHS); do \
+	
+	@rm -rf ./build/nginx-agent
+	
+	# Create apk packages
+	
+	@for arch in $(APK_ARCHS); do \
+		goarch=amd64; \
+		if [ $${arch} == aarch64 ]; then goarch=arm64; fi; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		for version in $(APK_VERSIONS); do \
 			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
-		done; \
+        done; \
+		rm -rf ./build/nginx-agent; \
 	done; \
-
-	# create specific freebsd txz files
-	rm -rf ./build/nginx-agent
-	GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
-
+	
+	# Create txz packages
+	
+	@rm -rf ./build/nginx-agent
+	@GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
+	
 	docker run -v `pwd`:/nginx-agent/ build-signed-packager:1.0.0
-
+	
 	echo "DEB packages:"; \
 	find $(PACKAGES_DIR)/deb ;\
 	echo "RPM packages:"; \
