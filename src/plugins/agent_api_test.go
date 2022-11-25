@@ -143,39 +143,19 @@ func TestMtlsForApi(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Logf("%v", tt.dir)
 
+			var url string
+
 			if tt.conf.AgentAPI.Key != "" {
+				url = fmt.Sprintf("https://127.0.0.1:%d/nginx", tt.conf.AgentAPI.Port)
+
 				certsDir, err := os.MkdirTemp(tt.dir, "certs")
 				if err != nil {
 					t.Fail()
 				}
 				t.Logf("%s", certsDir)
+			} else {
+				url = fmt.Sprintf("http://localhost:%d/nginx", tt.conf.AgentAPI.Port)
 
-				// commands := []string{
-				// 	fmt.Sprintf("%s ca --cn 'client-ca.local' --state Cork --locality Cork --org NGINX --country IE --out %s/client/conf", GEN_CNF, certsDir),
-				// 	fmt.Sprintf("%s ca --config %s/client/conf/ca.cnf --out %s/client", GEN_CERT, certsDir, certsDir),
-				// 	fmt.Sprintf("cp %s/client/ca.crt %s/client-ca.crt", certsDir, certsDir),
-				// 	fmt.Sprintf("cp %s/client/ca.key %s/client-ca.key", certsDir, certsDir),
-
-				// 	fmt.Sprintf("%s ca --cn 'server-ca.local' --state Cork --locality Cork --org NGINX --country IE --out %s/server/conf", GEN_CNF, certsDir),
-				// 	fmt.Sprintf("%s ca --config %s/server/conf/ca.cnf --out %s/server", GEN_CERT, certsDir, certsDir),
-				// 	fmt.Sprintf("cp %s/server/ca.crt %s/server-ca.pem", certsDir, certsDir),
-				// 	fmt.Sprintf("cp %s/server/ca.key %s/server-ca.key", certsDir, certsDir),
-				// }
-
-				// for _, command := range commands {
-				// 	cmd := exec.Command(command)
-				// 	stdout, err := cmd.Output()
-
-				// 	if err != nil {
-				// 		t.Fatal(err)
-				// 	}
-
-				// 	t.Log(string(stdout))
-				// }
-
-				// openssl req -new -nodes -x509 -out certs/server.pem -keyout certs/server.key -days 3650 -subj "/C=DE/ST=NRW/L=Earth/O=Random Company/OU=IT/CN=www.random.com/emailAddress=$1"
-				// echo "make client cert"
-				// openssl req -new -nodes -x509 -out certs/client.pem -keyout certs/client.key -days 3650 -subj "/C=DE/ST=NRW/L=Earth/O=Random Company/OU=IT/CN=www.random.com/emailAddress=$1"
 			}
 
 			pluginUnderTest := NewAgentAPI(tt.conf, tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary())
@@ -184,16 +164,10 @@ func TestMtlsForApi(t *testing.T) {
 			client := resty.New()
 
 			client.SetDebug(true)
-			var url string
-			if tt.conf.AgentAPI.Key != "" {
-				url = fmt.Sprintf("https://127.0.0.1:%d/nginx", tt.conf.AgentAPI.Port)
 
-				if tt.clientMTLS {
-					transport := &http.Transport{TLSClientConfig: getConfig(t)}
-					client.SetTransport(transport)
-				}
-			} else {
-				url = fmt.Sprintf("http://localhost:%d/nginx", tt.conf.AgentAPI.Port)
+			if tt.clientMTLS {
+				transport := &http.Transport{TLSClientConfig: getConfig(t)}
+				client.SetTransport(transport)
 			}
 			// Set client timeout as per your need
 			client.SetTimeout(1 * time.Minute)
