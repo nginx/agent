@@ -1,0 +1,19 @@
+[req]
+prompt             = no
+default_bits       = 2048
+x509_extensions    = v3_req
+req_extensions     = v3_req
+default_md         = sha512
+distinguished_name = req_distinguished_name
+
+[req_distinguished_name]
+countryName                 = IE
+stateOrProvinceName         = Munster
+localityName                = Cork
+organizationName            = NGINX, Inc.
+commonName                  = agent.example.com
+
+[v3_req]
+basicConstraints = CA:FALSE
+keyUsage         = nonRepudiation, digitalSignature, keyEncipherment, keyAgreement
+extendedKeyUsage = critical, clientAuth

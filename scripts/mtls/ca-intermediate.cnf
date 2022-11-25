@@ -1,0 +1,18 @@
+[req]
+default_bits        = 4096
+distinguished_name  = req_distinguished_name
+prompt              = no
+default_md          = sha512
+req_extensions      = v3_req
+
+[req_distinguished_name]
+countryName                 = IE
+stateOrProvinceName         = Munster
+localityName                = Cork
+organizationName            = NGINX, Inc.
+commonName                  = agent-int-ca
+
+[v3_req]
+basicConstraints = critical, CA:true
+keyUsage = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash

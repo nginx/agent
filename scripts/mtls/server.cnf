@@ -1,0 +1,27 @@
+[req]
+prompt             = no
+default_bits       = 4096
+x509_extensions    = v3_req
+req_extensions     = v3_req
+default_md         = sha512
+distinguished_name = req_distinguished_name
+
+[req_distinguished_name]
+countryName                 = IE
+stateOrProvinceName         = Munster
+localityName                = Cork
+organizationName            = NGINX, Inc.
+commonName                  = agent-server.example.com
+
+[v3_req]
+basicConstraints = CA:FALSE
+keyUsage         = nonRepudiation, digitalSignature, keyEncipherment, keyAgreement
+extendedKeyUsage = critical, serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = example.com
+DNS.2 = *.example.com
+DNS.3 = example.test
+IP.1 = 127.0.0.1
+IP.2 = ::1
