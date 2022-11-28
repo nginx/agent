@@ -1,13 +1,20 @@
 #!/bin/sh
 set -e
 
+scripts_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" 2>&1 && pwd )
+echo "$scripts_dir"
+
+build_dir="$scripts_dir/../../build/certs"
+echo "$build_dir"
+
 if [ -f .srl ]; then
    rm .srl
    echo ".srl removed"
 fi
 
-if [ ! -d ../../build/certs ]; then
-  mkdir -p ../../build/certs;
+if [ ! -d "$build_dir" ]; then
+  echo "creating certs directory"
+  mkdir -p "$build_dir";
 fi
 
 make_ca() {
@@ -17,9 +24,9 @@ make_ca() {
         -nodes \
         -x509 \
         -sha256 \
-        -keyout ../../build/certs/ca.key \
-        -out ../../build/certs/ca.crt \
-        -config ca.cnf \
+        -keyout "$build_dir"/ca.key \
+        -out "$build_dir"/ca.crt \
+        -config "$scripts_dir"/ca.cnf \
         -extensions v3_req \
         -days 1
 }
@@ -29,25 +36,25 @@ make_int() {
     openssl req \
         -new -newkey rsa:4096 \
         -nodes \
-        -keyout ../../build/certs/ca_int.key \
-        -out ../../build/certs/ca_int.csr \
-        -config ca-intermediate.cnf \
+        -keyout "$build_dir"/ca_int.key \
+        -out "$build_dir"/ca_int.csr \
+        -config "$scripts_dir"/ca-intermediate.cnf \
         -extensions v3_req
-    openssl req -in ../../build/certs/ca_int.csr -noout -verify
+    openssl req -in "$build_dir"/ca_int.csr -noout -verify
     openssl x509 \
         -req \
         -sha256 \
-        -CA ../../build/certs/ca.crt \
-        -CAkey ../../build/certs/ca.key \
+        -CA "$build_dir"/ca.crt \
+        -CAkey "$build_dir"/ca.key \
         -CAcreateserial \
-        -in ../../build/certs/ca_int.csr \
-        -out ../../build/certs/ca_int.crt \
-        -extfile ca-intermediate.cnf \
+        -in "$build_dir"/ca_int.csr \
+        -out "$build_dir"/ca_int.crt \
+        -extfile "$scripts_dir"/ca-intermediate.cnf \
         -extensions v3_req \
         -days 1
-    openssl verify -CAfile ../../build/certs/ca.crt ../../build/certs/ca_int.crt
+    openssl verify -CAfile "$build_dir"/ca.crt "$build_dir"/ca_int.crt
     echo "Creating CA chain"
-    cat ../../build/certs/ca_int.crt ../../build/certs/ca.crt > ../../build/certs/ca.pem
+    cat "$build_dir"/ca_int.crt "$build_dir"/ca.crt > "$build_dir"/ca.pem
 }
 
 make_server() {
@@ -55,22 +62,22 @@ make_server() {
     openssl req \
         -new -newkey rsa:4096 \
         -nodes \
-        -keyout ../../build/certs/server.key \
-        -out ../../build/certs/server.csr \
-        -config server.cnf
-    openssl req -in ../../build/certs/server.csr -noout -verify
+        -keyout "$build_dir"/server.key \
+        -out "$build_dir"/server.csr \
+        -config "$scripts_dir"/server.cnf
+    openssl req -in "$build_dir"/server.csr -noout -verify
     openssl x509 \
         -req \
         -sha256 \
-        -CA ../../build/certs/ca_int.crt \
-        -CAkey ../../build/certs/ca_int.key \
+        -CA "$build_dir"/ca_int.crt \
+        -CAkey "$build_dir"/ca_int.key \
         -CAcreateserial \
-        -in ../../build/certs/server.csr \
-        -out ../../build/certs/server.crt \
-        -extfile server.cnf \
+        -in "$build_dir"/server.csr \
+        -out "$build_dir"/server.crt \
+        -extfile "$scripts_dir"/server.cnf \
         -extensions v3_req \
         -days 1
-    openssl verify -CAfile ../../build/certs/ca.pem ../../build/certs/server.crt
+    openssl verify -CAfile "$build_dir"/ca.pem "$build_dir"/server.crt
 }
 
 make_client() {
@@ -78,25 +85,26 @@ make_client() {
     openssl req \
         -new -newkey rsa:4096 \
         -nodes \
-        -keyout ../../build/certs/client.key \
-        -out ../../build/certs/client.csr \
-        -config client.cnf
-    openssl req -in ../../build/certs/client.csr -noout -verify
+        -keyout "$build_dir"/client.key \
+        -out "$build_dir"/client.csr \
+        -config "$scripts_dir"/client.cnf
+    openssl req -in "$build_dir"/client.csr -noout -verify
     openssl x509 \
         -req \
         -sha256 \
-        -CA ../../build/certs/ca.crt \
-        -CAkey ../../build/certs/ca.key \
+        -CA "$build_dir"/ca.crt \
+        -CAkey "$build_dir"/ca.key \
         -CAcreateserial \
-        -in ../../build/certs/client.csr \
-        -out ../../build/certs/client.crt \
-        -extfile client.cnf \
+        -in "$build_dir"/client.csr \
+        -out "$build_dir"/client.crt \
+        -extfile "$scripts_dir"/client.cnf \
         -extensions v3_req \
         -days 1
-    openssl verify -CAfile ../../build/certs/ca.pem ../../build/certs/client.crt
+    openssl verify -CAfile "$build_dir"/ca.pem "$build_dir"/client.crt
 }
 
 # MAIN
+cd "$scripts_dir"
 make_ca
 make_int
 make_server

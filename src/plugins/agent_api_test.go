@@ -123,7 +123,6 @@ func TestMtlsForApi(t *testing.T) {
 		{
 			name:     "no tls test",
 			expected: tutils.GetDetailsMap()["12345"],
-			dir:      t.TempDir(),
 			conf: &config.Config{
 				AgentAPI: config.AgentAPI{
 					Port: 2345,
@@ -136,7 +135,6 @@ func TestMtlsForApi(t *testing.T) {
 		{
 			name:     "mtls test",
 			expected: tutils.GetDetailsMap()["12345"],
-			dir:      t.TempDir(),
 			conf: &config.Config{
 				AgentAPI: config.AgentAPI{
 					Port: 2345,
@@ -146,50 +144,38 @@ func TestMtlsForApi(t *testing.T) {
 			},
 			clientMTLS: true,
 		},
-		// {
-		// 	name: 	  "mtls test, no client cert",
-		// 	expected: tutils.GetDetailsMap()["12345"],
-		// 	dir:      t.TempDir(),
-		// 	conf:     &config.Config{
-		// 		AgentAPI: config.AgentAPI{
-		// 			Port: 2345,
-		// 			Key:  "../../build/certs/server.key",
-		// 			Cert: "../../build/certs/server.crt",
-		// 		},
-		// 	},
-		// 	clientMTLS: false,
-		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Logf("%v", tt.dir)
+			// t.Logf("%v", tt.dir)
 
 			var url string
 
 			if tt.conf.AgentAPI.Key != "" {
 				url = fmt.Sprintf("https://127.0.0.1:%d/nginx", tt.conf.AgentAPI.Port)
-
-				certsDir, err := os.MkdirTemp(tt.dir, "certs")
-				if err != nil {
-					t.Fail()
-				}
-				t.Logf("%s", certsDir)
 			} else {
 				url = fmt.Sprintf("http://localhost:%d/nginx", tt.conf.AgentAPI.Port)
 
 			}
-
-			pluginUnderTest := NewAgentAPI(tt.conf, tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary())
-			pluginUnderTest.Init(core.NewMockMessagePipe(context.TODO()))
-
 			client := resty.New()
 
 			client.SetDebug(true)
 
 			if tt.clientMTLS {
+				cmd := exec.Command("../../scripts/mtls/make_certs.sh")
+
+				err := cmd.Run()
+				if err != nil {
+					t.Logf("%v", err)
+					t.Fail()
+				}
+
 				transport := &http.Transport{TLSClientConfig: getConfig(t)}
 				client.SetTransport(transport)
 			}
+
+			pluginUnderTest := NewAgentAPI(tt.conf, tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary())
+			pluginUnderTest.Init(core.NewMockMessagePipe(context.TODO()))
 
 			resp, err := client.R().EnableTrace().Get(url)
 
@@ -219,28 +205,12 @@ func TestMtlsForApi(t *testing.T) {
 }
 
 func getConfig(t *testing.T) *tls.Config {
-	err := os.MkdirAll("../../build/certs", 0755)
-	if err != nil {
-		t.Logf("%v", err)
-		t.Fail()
-	}
-
-	cmd := exec.Command("../../scripts/mtls/make_certs.sh")
-
-	err = cmd.Run()
-	if err != nil {
-		t.Logf("%v", err)
-		t.Fail()
-	}
-
 	crt, err := ioutil.ReadFile("../../build/certs/client.crt")
 	assert.NoError(t, err)
 	key, err := ioutil.ReadFile("../../build/certs/client.key")
 	assert.NoError(t, err)
 	ca, err := ioutil.ReadFile("../../build/certs/ca.pem")
 	assert.NoError(t, err)
-
-	os.Setenv("SSL_CERT_FILE", "../../build/certs/ca.pem")
 
 	cert, err := tls.X509KeyPair(crt, key)
 	if err != nil {
