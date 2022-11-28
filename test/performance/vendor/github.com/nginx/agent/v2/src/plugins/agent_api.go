@@ -11,7 +11,9 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
-
+	prometheus_metrics "github.com/nginx/agent/v2/src/extensions/prometheus-metrics"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,6 +23,7 @@ type AgentAPI struct {
 	server       http.Server
 	nginxBinary  core.NginxBinary
 	nginxHandler *NginxHandler
+	exporter     *prometheus_metrics.Exporter
 }
 
 type NginxHandler struct {
@@ -38,7 +41,7 @@ var (
 )
 
 func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.NginxBinary) *AgentAPI {
-	return &AgentAPI{config: config, env: env, nginxBinary: nginxBinary}
+	return &AgentAPI{config: config, env: env, nginxBinary: nginxBinary, exporter: prometheus_metrics.NewExporter(&proto.MetricsReport{})}
 }
 
 func (a *AgentAPI) Init(core.MessagePipeInterface) {
@@ -55,19 +58,34 @@ func (a *AgentAPI) Close() {
 
 func (a *AgentAPI) Process(message *core.Message) {
 	log.Tracef("Process function in the agent_api.go, %s %v", message.Topic(), message.Data())
+	switch {
+	case message.Exact(core.MetricReport):
+		metricReport, ok := message.Data().(*proto.MetricsReport)
+		if !ok {
+			log.Warnf("Invalid message received, %T, for topic, %s", message.Data(), message.Topic())
+			return
+		}
+		a.exporter.SetLatestMetricReport(metricReport)
+		return
+	}
 }
-
 func (a *AgentAPI) Info() *core.Info {
 	return core.NewInfo("Agent API Plugin", "v0.0.1")
 }
 
 func (a *AgentAPI) Subscriptions() []string {
-	return []string{}
+	return []string{core.MetricReport}
 }
 
 func (a *AgentAPI) createHttpServer() {
 	mux := http.NewServeMux()
 	a.nginxHandler = &NginxHandler{a.env, a.nginxBinary}
+	registerer := prometheus.DefaultRegisterer
+	gatherer := prometheus.DefaultGatherer
+
+	registerer.MustRegister(a.exporter)
+	mux.Handle("/metrics", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
+
 	mux.Handle("/nginx/", a.nginxHandler)
 
 	// func(w http.ResponseWriter, req *http.Request) {
@@ -147,6 +165,5 @@ func (h *NginxHandler) getNginxDetails() []*proto.NginxDetails {
 			nginxDetails = append(nginxDetails, h.nginxBinary.GetNginxDetailsFromProcess(proc))
 		}
 	}
-
 	return nginxDetails
 }

@@ -88,6 +88,7 @@ func BenchmarkPluginOneTimeRegistration(b *testing.B) {
 	binary.On("GetNginxDetailsMapFromProcesses", mock.Anything).Return(detailsMap)
 	binary.On("GetNginxIDForProcess", mock.Anything).Return(processID)
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
+	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 
 	env := utils.NewMockEnvironment()
 	env.Mock.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
