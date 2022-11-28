@@ -165,7 +165,7 @@ func TestMtls_forApi(t *testing.T) {
 				output, err := exec.Command("../../scripts/mtls/make_certs.sh").CombinedOutput()
 				if err != nil {
 					t.Errorf("make_certs.sh output: \n%s \n", output)
-					os.RemoveAll("../../build")
+					os.RemoveAll("../../build/certs/")
 					t.FailNow()
 				}
 
@@ -205,7 +205,7 @@ func TestMtls_forApi(t *testing.T) {
 
 			pluginUnderTest.Close()
 			if tt.clientMTLS {
-				os.RemoveAll("../../build")
+				os.RemoveAll("../../build/certs/")
 			}
 		})
 	}
