@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/v2/src/core"
+	"github.com/nginx/agent/v2/src/core/config"
+	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,4 +78,27 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 			assert.Equal(t, tt.nginxDetails, nginxDetailsResponse)
 		})
 	}
+}
+
+func TestProcess_metricReport(t *testing.T) {
+	conf := &config.Config{
+		AgentAPI: config.AgentAPI{
+			Port: 9090,
+		},
+	}
+
+	mockEnvironment := tutils.NewMockEnvironment()
+	mockNginxBinary := tutils.NewMockNginxBinary()
+
+	metricReport := &proto.MetricsReport{Meta: &proto.Metadata{MessageId: "123"}}
+
+	agentAPI := NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
+
+	// Check that latest metric report isn't set
+	assert.NotEqual(t, metricReport, agentAPI.exporter.GetLatestMetricReport())
+
+	agentAPI.Process(core.NewMessage(core.MetricReport, metricReport))
+
+	// Check that latest metric report matches the report that was processed
+	assert.Equal(t, metricReport, agentAPI.exporter.GetLatestMetricReport())
 }
