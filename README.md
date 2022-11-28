@@ -8,6 +8,38 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
 ![Grafana dashboard showing Agent reported metrics](docs/grafana-dashboard-example.png "Grafana dashboard showing Agent reported metrics")
 [Grafana](https://grafana.com/) dashboard showing metrics reported by Agent
 
+# Table of Contents
+- [How it Works](#how-it-works)
+  - [Configuration Management](#configuration-management)
+  - [Collecting Metrics](#collecting-metrics)
+  - [Event Notifications](#event-notifications)
+- [Installation](#installation)
+  - [Installing NGINX](#installing-nginx)
+  - [Installing Go](#installing-go)
+  - [Installing Agent from Package Files](#installing-agent-from-package-files)
+  - [Starting and Enabling Start on Boot](#starting-and-enabling-start-on-boot)
+  - [Logging](#logging)
+- [Getting Started with Agent](#getting-started-with-agent)
+  - [Installing NGINX and Agent](#installing-nginx-and-agent)
+  - [Starting the Mock Control Plane](#starting-the-mock-control-plane)
+  - [Agent Settings](#agent-settings)
+  - [Starting Agent](#starting-agent)
+- [Development Environment Setup](#development-environment-setup)
+  - [Selecting an Operating System](#selecting-an-operating-system)
+  - [Installing NGINX](#installing-nginx)
+  - [Cloning the Agent Repository](#cloning-the-agent-repository)
+  - [Installing Prerequisite Packages](#installing-prerequisite-packages)
+  - [Building Agent from Source Code](#building-agent-from-source-code)
+- [Agent Technical Specifications](#agent-technical-specifications)
+  - [Supported Distributions](#supported-distributions)
+  - [Supported Deployment Environments](#supported-deployment-environments)
+  - [Supported NGINX Versions](#supported-nginx-versions)
+  - [Sizing Recommendations](#sizing-recommendations)
+- [Community](#community)
+- [Contributing](#contributing)
+- [Change Log](#change-log)
+- [License](#license)
+
 # How it Works
 Agent runs as a companion process on a system running NGINX. It provides gRPC and REST interfaces for configuration management and metrics collection from the NGINX process and operating system. Agent enables remote interaction with NGINX using common Linux tools and unlocks the ability to build sophisticated monitoring and control systems that can manage large collections of NGINX instances.
 
