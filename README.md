@@ -49,7 +49,7 @@ Agent runs as a companion process on a system running NGINX. It provides gRPC an
 Agent provides an API interface for submission of updated configuration files. Upon receipt of a new file, it checks the output of `nginx -V` to determine the location of existing configurations. It then validates the new configuration with `nginx -t` before applying it via a NOHUP signal to the NGINX master process.
 
 ## Collecting Metrics
-Agent interfaces with NGINX process information and parses NGINX logs to calculate and report metrics. When interfacing with NGINX Plus, Agent pulls relevant information from the NGINX Plus API. Reported metrics may be aggrigated by [Prometheus](https://prometheus.io/) and visualized with tools like [Grafana](https://grafana.com/).
+Agent interfaces with NGINX process information and parses NGINX logs to calculate and report metrics. When interfacing with NGINX Plus, Agent pulls relevant information from the NGINX Plus API. Reported metrics may be aggregated by [Prometheus](https://prometheus.io/) and visualized with tools like [Grafana](https://grafana.com/).
 
 ### NGINX Open Source
 When running alongside an open source instance of NGINX, Agent requires that NGINX Access and Error logs are turned on and contain all default variables.
