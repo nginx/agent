@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -31,6 +32,7 @@ func TestRegistration_Process(t *testing.T) {
 			tt.Parallel()
 
 			binary := tutils.GetMockNginxBinary()
+			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 			env := tutils.GetMockEnvWithHostAndProcess()
 
 			cfg := &config.Config{

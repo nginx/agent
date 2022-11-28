@@ -190,6 +190,8 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 	if commander != nil {
 		corePlugins = append(corePlugins,
 			plugins.NewCommander(commander, loadedConfig),
+			plugins.NewFileWatcher(loadedConfig, env),
+			plugins.NewFileWatchThrottle(),
 		)
 	}
 
@@ -208,8 +210,6 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		plugins.NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, env, version),
 		plugins.NewProcessWatcher(env, binary),
 		plugins.NewExtensions(loadedConfig, env),
-		plugins.NewFileWatcher(loadedConfig, env),
-		plugins.NewFileWatchThrottle(),
 		plugins.NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary),
 		plugins.NewAgentAPI(loadedConfig, env, binary),
 	)
