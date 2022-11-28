@@ -169,6 +169,9 @@ func TestMtls_forApi(t *testing.T) {
 					t.Fail()
 				}
 
+				time.Sleep(200 * time.Millisecond)
+
+				assert.FileExists(t, "../../build/certs/server.crt")
 				transport := &http.Transport{TLSClientConfig: getConfig(t)}
 				client.SetTransport(transport)
 			}
