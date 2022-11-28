@@ -87,12 +87,7 @@ func (a *AgentAPI) createHttpServer() {
 	mux.Handle("/metrics", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
 
 	mux.Handle("/nginx/", a.nginxHandler)
-
-	// func(w http.ResponseWriter, req *http.Request) {
-	//    w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
-	//    w.Write([]byte("This is an example server.\n"))
-	//})
-
+    
 	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
 		Handler: mux,
