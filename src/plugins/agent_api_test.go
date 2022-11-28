@@ -10,9 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"time"
-
-	// "os/exec"
+	"os/exec"
 
 	"testing"
 
@@ -169,17 +167,10 @@ func TestMtlsForApi(t *testing.T) {
 				transport := &http.Transport{TLSClientConfig: getConfig(t)}
 				client.SetTransport(transport)
 			}
-			// Set client timeout as per your need
-			client.SetTimeout(1 * time.Minute)
-			client.AddRetryCondition(
-				// RetryConditionFunc type is for retry condition function
-				// input: non-nil Response OR request execution error
-				func(r *resty.Response, err error) bool {
-					return r.StatusCode() == http.StatusTooManyRequests
-				},
-			)
 
 			resp, err := client.R().EnableTrace().Get(url)
+
+			assert.NoError(t, err)
 
 			printResult(resp, err)
 
@@ -197,11 +188,28 @@ func TestMtlsForApi(t *testing.T) {
 			}
 
 			pluginUnderTest.Close()
+			if tt.clientMTLS {
+				os.RemoveAll("../../build")
+			}
 		})
 	}
 }
 
 func getConfig(t *testing.T) *tls.Config {
+	err := os.MkdirAll("../../build/certs", 0755)
+	if err != nil {
+		t.Logf("%v", err)
+		t.Fail()
+	}
+
+	cmd := exec.Command("../../scripts/mtls/make_certs.sh")
+
+	err = cmd.Run()
+	if err != nil {
+		t.Logf("%v", err)
+		t.Fail()
+	}
+
 	crt, err := ioutil.ReadFile("../../build/certs/client.crt")
 	assert.NoError(t, err)
 	key, err := ioutil.ReadFile("../../build/certs/client.key")
@@ -234,7 +242,7 @@ func getConfig(t *testing.T) *tls.Config {
 }
 
 // explore response object for debugging
-func printResult(resp *resty.Response, err error) (*resty.Response, error) {
+func printResult(resp *resty.Response, err error) (*resty.Response) {
 	fmt.Println("Response Info:")
 	fmt.Println("  Error      :", err)
 	fmt.Println("  Status Code:", resp.StatusCode())
@@ -244,5 +252,5 @@ func printResult(resp *resty.Response, err error) (*resty.Response, error) {
 	fmt.Println("  Received At:", resp.ReceivedAt())
 	fmt.Println("  Body       :\n", resp)
 	fmt.Println()
-	return resp, err
+	return resp
 }

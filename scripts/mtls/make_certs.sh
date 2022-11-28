@@ -1,7 +1,12 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
-if [ ! -d ../../build ]; then
+if [ -f .srl ]; then
+   rm .srl
+   echo ".srl removed"
+fi
+
+if [ ! -d ../../build/certs ]; then
   mkdir -p ../../build/certs;
 fi
 
