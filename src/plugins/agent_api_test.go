@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -150,6 +151,7 @@ func TestMtls_forApi(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var url string
+			ctx := context.Background()
 
 			if tt.conf.AgentAPI.Key != "" {
 				url = fmt.Sprintf("https://127.0.0.1:%d/nginx", tt.conf.AgentAPI.Port)
@@ -169,15 +171,18 @@ func TestMtls_forApi(t *testing.T) {
 					t.Fail()
 				}
 
-				time.Sleep(200 * time.Millisecond)
+				err = sdk.WaitUntil(ctx, 100*time.Millisecond, 100*time.Millisecond, 1*time.Second, func() error {
+					_, err := ioutil.ReadFile("../../build/certs/server.crt")
+					return err
+				})
 
-				assert.FileExists(t, "../../build/certs/server.crt")
+				assert.NoError(t, err)
 				transport := &http.Transport{TLSClientConfig: getConfig(t)}
 				client.SetTransport(transport)
 			}
 
 			pluginUnderTest := NewAgentAPI(tt.conf, tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary())
-			pluginUnderTest.Init(core.NewMockMessagePipe(context.Background()))
+			pluginUnderTest.Init(core.NewMockMessagePipe(ctx))
 
 			client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
