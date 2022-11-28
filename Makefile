@@ -198,9 +198,6 @@ certs: ## Generate TLS certificates
 	cp ${CERTS_DIR}/server/ee.crt ${CERTS_DIR}/server.crt
 	cp ${CERTS_DIR}/server/ee.key ${CERTS_DIR}/server.key
 
-certs-new: ## Generate TLS certificates
-	scripts/mtls/make_certs.sh
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Docker Helper Targets                                                                                           #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
