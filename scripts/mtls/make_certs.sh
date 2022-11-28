@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-scripts_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" 2>&1 && pwd )
+scripts_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 echo "$scripts_dir"
 
 build_dir="$scripts_dir/../../build/certs"

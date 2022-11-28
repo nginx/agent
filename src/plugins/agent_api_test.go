@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"time"
+
 	"os"
 	"os/exec"
 
@@ -112,7 +114,7 @@ func TestProcess_metricReport(t *testing.T) {
 	assert.Equal(t, metricReport, agentAPI.exporter.GetLatestMetricReport())
 }
 
-func TestMtlsForApi(t *testing.T) {
+func TestMtls_forApi(t *testing.T) {
 	tests := []struct {
 		name       string
 		expected   *proto.NginxDetails
@@ -147,8 +149,6 @@ func TestMtlsForApi(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// t.Logf("%v", tt.dir)
-
 			var url string
 
 			if tt.conf.AgentAPI.Key != "" {
@@ -159,9 +159,8 @@ func TestMtlsForApi(t *testing.T) {
 			}
 			client := resty.New()
 
-			client.SetDebug(true)
-
 			if tt.clientMTLS {
+
 				cmd := exec.Command("../../scripts/mtls/make_certs.sh")
 
 				err := cmd.Run()
@@ -175,7 +174,9 @@ func TestMtlsForApi(t *testing.T) {
 			}
 
 			pluginUnderTest := NewAgentAPI(tt.conf, tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary())
-			pluginUnderTest.Init(core.NewMockMessagePipe(context.TODO()))
+			pluginUnderTest.Init(core.NewMockMessagePipe(context.Background()))
+
+			client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
 			resp, err := client.R().EnableTrace().Get(url)
 
