@@ -70,7 +70,7 @@ func main() {
 		sdkGRPC.InitMeta(loadedConfig.ClientID, loadedConfig.CloudAccountID)
 
 		controller, commander, reporter := createGrpcClients(ctx, loadedConfig)
-		
+
 		if controller != nil {
 			if err := controller.Connect(); err != nil {
 				log.Warnf("Unable to connect to control plane: %v", err)
@@ -135,7 +135,7 @@ func handleSignals(
 }
 
 func connectionUnavilable(loadedConfig *config.Config) bool {
-	return loadedConfig.Server.Host == "" || loadedConfig.Server.GrpcPort == 0 
+	return loadedConfig.Server.Host == "" || loadedConfig.Server.GrpcPort == 0
 }
 
 func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client.Controller, client.Commander, client.MetricReporter) {
@@ -143,7 +143,7 @@ func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client
 		log.Infof("GRPC clients not created")
 		return nil, nil, nil
 	}
-	
+
 	grpcDialOptions := setDialOptions(loadedConfig)
 	secureMetricsDialOpts, err := sdkGRPC.SecureDialOptions(
 		loadedConfig.TLS.Enable,
@@ -190,6 +190,8 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 	if commander != nil {
 		corePlugins = append(corePlugins,
 			plugins.NewCommander(commander, loadedConfig),
+			plugins.NewFileWatcher(loadedConfig, env),
+			plugins.NewFileWatchThrottle(),
 		)
 	}
 
@@ -208,8 +210,6 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		plugins.NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, env, version),
 		plugins.NewProcessWatcher(env, binary),
 		plugins.NewExtensions(loadedConfig, env),
-		plugins.NewFileWatcher(loadedConfig, env),
-		plugins.NewFileWatchThrottle(),
 		plugins.NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary),
 		plugins.NewAgentAPI(loadedConfig, env, binary),
 	)

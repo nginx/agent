@@ -235,7 +235,7 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 			kbsr += float64(ioc.ReadBytes / 1000)
 			kbsw += float64(ioc.WriteBytes / 1000)
 		} else {
-			log.Warn("unable to get io counter metrics")
+			log.Debug("unable to get io counter metrics")
 		}
 	}
 

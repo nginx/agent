@@ -14,7 +14,9 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
-
+	prometheus_metrics "github.com/nginx/agent/v2/src/extensions/prometheus-metrics"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,6 +27,7 @@ type AgentAPI struct {
 	server       http.Server
 	nginxBinary  core.NginxBinary
 	nginxHandler *NginxHandler
+	exporter     *prometheus_metrics.Exporter
 }
 
 type NginxHandler struct {
@@ -40,6 +43,7 @@ func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.N
 		config:      config,
 		env:         env,
 		nginxBinary: nginxBinary,
+		exporter:    prometheus_metrics.NewExporter(&proto.MetricsReport{}),
 	}
 }
 
@@ -67,15 +71,21 @@ func (a *AgentAPI) Process(message *core.Message) {
 		default:
 			log.Warnf("Unknown Command_NginxConfigResponse type: %T(%v)", message.Data(), message.Data())
 		}
+	case core.MetricReport:
+		switch response := message.Data().(type) {
+		case *proto.MetricsReport:
+			a.exporter.SetLatestMetricReport(response)
+		default:
+			log.Warnf("Unknown MetricReport type: %T(%v)", message.Data(), message.Data())
+		}
 	}
 }
-
 func (a *AgentAPI) Info() *core.Info {
 	return core.NewInfo("Agent API Plugin", "v0.0.1")
 }
 
 func (a *AgentAPI) Subscriptions() []string {
-	return []string{core.RestAPIConfigApplyResponse}
+	return []string{core.RestAPIConfigApplyResponse, core.MetricReport}
 }
 
 func (a *AgentAPI) createHttpServer() {
@@ -88,6 +98,11 @@ func (a *AgentAPI) createHttpServer() {
 	}
 
 	mux := http.NewServeMux()
+	registerer := prometheus.DefaultRegisterer
+	gatherer := prometheus.DefaultGatherer
+
+	registerer.MustRegister(a.exporter)
+	mux.Handle("/metrics", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
 	mux.Handle("/nginx/", a.nginxHandler)
 
 	a.server = http.Server{
@@ -174,14 +189,16 @@ func (h *NginxHandler) getNginxDetails() []*proto.NginxDetails {
 			nginxDetails = append(nginxDetails, h.nginxBinary.GetNginxDetailsFromProcess(proc))
 		}
 	}
-
 	return nginxDetails
 }
 
 func (h *NginxHandler) updateConfig(w http.ResponseWriter, r *http.Request) error {
 	log.Info("Updating config")
 
-	r.ParseMultipartForm(32 << 20)
+	err := r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		log.Errorf("unable to parse config apply request, %v", err)
+	}
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
 		return fmt.Errorf("can't read form file: %v", err)

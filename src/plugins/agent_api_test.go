@@ -115,7 +115,8 @@ func TestNginxHandler_updateConfig(t *testing.T) {
 			writer := multipart.NewWriter(body)
 			part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
 			require.NoError(t, err)
-			io.Copy(part, file)
+			_, err = io.Copy(part, file)
+			require.NoError(t, err)
 			writer.Close()
 
 			r := httptest.NewRequest(http.MethodPut, path, body)
@@ -138,4 +139,27 @@ func TestNginxHandler_updateConfig(t *testing.T) {
 			assert.Equal(t, "# test", w.Body.String())
 		})
 	}
+}
+
+func TestProcess_metricReport(t *testing.T) {
+	conf := &config.Config{
+		AgentAPI: config.AgentAPI{
+			Port: 9090,
+		},
+	}
+
+	mockEnvironment := tutils.NewMockEnvironment()
+	mockNginxBinary := tutils.NewMockNginxBinary()
+
+	metricReport := &proto.MetricsReport{Meta: &proto.Metadata{MessageId: "123"}}
+
+	agentAPI := NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
+
+	// Check that latest metric report isn't set
+	assert.NotEqual(t, metricReport, agentAPI.exporter.GetLatestMetricReport())
+
+	agentAPI.Process(core.NewMessage(core.MetricReport, metricReport))
+
+	// Check that latest metric report matches the report that was processed
+	assert.Equal(t, metricReport, agentAPI.exporter.GetLatestMetricReport())
 }

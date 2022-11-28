@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: 'dashboards'
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    updateIntervalSeconds: 10
+    folder: "NGINX"
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

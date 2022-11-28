@@ -18,6 +18,10 @@ import (
 	"github.com/nginx/agent/v2/src/core/metrics/sources/tailer"
 )
 
+const (
+	spaceDelim = " "
+)
+
 // This metrics source is used to tail the NGINX access logs to retrieve http metrics.
 
 type NginxAccessLog struct {
@@ -207,26 +211,30 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			}
 
 			if access.Request != "" {
-				splitRequest := strings.Split(access.Request, " ")
-				n := fmt.Sprintf("method.%s", strings.ToLower(splitRequest[0]))
+				method, _, protocol := getParsedRequest(access.Request)
+				n := fmt.Sprintf("method.%s", strings.ToLower(method))
 				if isOtherMethod(n) {
 					n = "method.others"
 				}
 				counters[n] = counters[n] + 1
 
 				if access.ServerProtocol == "" {
-					httpProtocolVersion := strings.Split(splitRequest[2], "/")[1]
-					httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
-					n = fmt.Sprintf("v%s", httpProtocolVersion)
-					counters[n] = counters[n] + 1
+					if strings.Count(protocol, "/") == 1 {
+						httpProtocolVersion := strings.Split(protocol, "/")[1]
+						httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
+						n = fmt.Sprintf("v%s", httpProtocolVersion)
+						counters[n] = counters[n] + 1
+					}
 				}
 			}
 
 			if access.ServerProtocol != "" {
-				httpProtocolVersion := strings.Split(access.ServerProtocol, "/")[1]
-				httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
-				n := fmt.Sprintf("v%s", httpProtocolVersion)
-				counters[n] = counters[n] + 1
+				if strings.Count(access.ServerProtocol, "/") == 1 {
+					httpProtocolVersion := strings.Split(access.ServerProtocol, "/")[1]
+					httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
+					n := fmt.Sprintf("v%s", httpProtocolVersion)
+					counters[n] = counters[n] + 1
+				}
 			}
 
 			// don't need the http status for NGINX Plus
@@ -292,6 +300,35 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			return
 		}
 	}
+}
+
+func getParsedRequest(request string) (method string, uri string, protocol string) {
+	if len(request) == 0 {
+		return
+	}
+
+	startURIIdx := strings.Index(request, spaceDelim)
+	if startURIIdx == -1 {
+		return
+	}
+
+	endURIIdx := strings.LastIndex(request, spaceDelim)
+	// Ideally, endURIIdx should never be -1 here, as startURIIdx should have handled it already
+	if endURIIdx == -1 {
+		return
+	}
+
+	// For Example: GET /user/register?ahref<random>p' or '</random> HTTP/1.1
+
+	// method -> GET
+	method = request[:startURIIdx]
+
+	// uri -> /user/register?ahref<random>p' or '</random>
+	uri = request[startURIIdx+1 : endURIIdx]
+
+	// protocol -> HTTP/1.1
+	protocol = request[endURIIdx+1:]
+	return
 }
 
 func getRequestLengthMetricValue(requestLengths []float64) float64 {
