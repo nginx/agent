@@ -18,7 +18,7 @@ if [ ! -d "$build_dir" ]; then
   mkdir -p "$build_dir";
 fi
 
-make_ca() {
+ca() {
     echo "Creating Self-Signed Root CA certificate and key"
     openssl req \
         -new -newkey rsa:4096 \
@@ -32,7 +32,7 @@ make_ca() {
         -days 1
 }
 
-make_int() {
+intermediate() {
     echo "Creating Intermediate CA certificate and key"
     openssl req \
         -new -newkey rsa:4096 \
@@ -58,7 +58,7 @@ make_int() {
     cat "$build_dir"/ca_int.crt "$build_dir"/ca.crt > "$build_dir"/ca.pem
 }
 
-make_server() {
+server() {
     echo "Creating nginx-manger certificate and key"
     openssl req \
         -new -newkey rsa:4096 \
@@ -81,7 +81,7 @@ make_server() {
     openssl verify -CAfile "$build_dir"/ca.pem "$build_dir"/server.crt
 }
 
-make_client() {
+client() {
     echo "Creating Client certificate and key"
     openssl req \
         -new -newkey rsa:4096 \
@@ -95,7 +95,7 @@ make_client() {
         -sha256 \
         -CA "$build_dir"/ca.crt \
         -CAkey "$build_dir"/ca.key \
-        -CAcreateserial \
+        -CAserial "$scripts_dir"/.srl \
         -in "$build_dir"/client.csr \
         -out "$build_dir"/client.crt \
         -extfile "$scripts_dir"/client.cnf \
@@ -106,7 +106,7 @@ make_client() {
 
 # MAIN
 cd "$scripts_dir"
-make_ca
-make_int
-make_server
-make_client
+ca
+intermediate
+server
+client
