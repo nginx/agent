@@ -44,7 +44,7 @@ var (
 			Token: uuid.New().String(),
 		},
 		AgentAPI: AgentAPI{
-			Port: 9090,
+			Port: 0,
 		},
 		Nginx: Nginx{
 			Debug:               false,
@@ -232,7 +232,6 @@ var (
 		&IntFlag{
 			Name:         AgentAPIPort,
 			Usage:        "The desired port to use for nginx-agent to expose for HTTP traffic.",
-			DefaultValue: Defaults.AgentAPI.Port,
 		},
 		&StringFlag{
 			Name:         AgentAPICert,

@@ -16,6 +16,7 @@ const (
 	FeatureProcessWatcher   = FeaturesKey + KeyDelimiter + "process-watcher"
 	FeatureFileWatcher      = FeaturesKey + KeyDelimiter + "file-watcher"
 	FeatureActivityEvents   = FeaturesKey + KeyDelimiter + "activity-events"
+	FeatureAgentAPI         = FeaturesKey + KeyDelimiter + "agent-api"
 )
 
 func GetDefaultFeatures() []string {
@@ -31,5 +32,6 @@ func GetDefaultFeatures() []string {
 		FeatureProcessWatcher,
 		FeatureFileWatcher,
 		FeatureActivityEvents,
+		FeatureAgentAPI,
 	}
 }
