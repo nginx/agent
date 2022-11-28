@@ -162,13 +162,11 @@ func TestMtls_forApi(t *testing.T) {
 			client := resty.New()
 
 			if tt.clientMTLS {
-
-				cmd := exec.Command("../../scripts/mtls/make_certs.sh")
-
-				err := cmd.Run()
+				output, err := exec.Command("../../scripts/mtls/make_certs.sh").CombinedOutput()
 				if err != nil {
-					t.Logf("%v", err)
-					t.Fail()
+					t.Errorf("make_certs.sh output: \n%s \n", output)
+					os.RemoveAll("../../build")
+					t.FailNow()
 				}
 
 				err = sdk.WaitUntil(ctx, 100*time.Millisecond, 100*time.Millisecond, 1*time.Second, func() error {
@@ -244,7 +242,7 @@ func getConfig(t *testing.T) *tls.Config {
 }
 
 // explore response object for debugging
-func printResult(resp *resty.Response, err error) (*resty.Response) {
+func printResult(resp *resty.Response, err error) *resty.Response {
 	fmt.Println("Response Info:")
 	fmt.Println("  Error      :", err)
 	fmt.Println("  Status Code:", resp.StatusCode())
