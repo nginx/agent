@@ -87,10 +87,10 @@ To install Agent on your system, go to [Releases](https://github.com/nginx/agent
 
 Depending on OS distribution and CPU architecture type, use your system's package manager to install the package. Some examples:
 
-Debian, Ubuntu, and other distributions using the `apt` package manager. Note that a `./` is necessary before the package name in order to install `apt` packages from a local source.
+Debian, Ubuntu, and other distributions using the `dpkg` package manager. 
 
 ```
-sudo apt install ./nginx-agent-<agent-version>.deb
+sudo dpkg -i nginx-agent-<agent-version>.deb
 ```
 RHEL, CentOS RHEL, Amazon Linux, Oracle Linux, and other distributions using the `yum` package manager
 ```
