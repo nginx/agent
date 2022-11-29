@@ -1,0 +1,53 @@
+# github.com/davecgh/go-spew v1.1.1
+## explicit
+github.com/davecgh/go-spew/spew
+# github.com/kr/text v0.2.0
+## explicit
+# github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000 => ./../../
+## explicit; go 1.19
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/aggregator
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/ingester
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/publisher
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/schema
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/reader
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/limits
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/lookup
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/priority_table
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/sample
+github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/schema
+# github.com/nginx/agent/v2/test/integration v0.0.0-00010101000000-000000000000 => ./
+## explicit; go 1.19
+github.com/nginx/agent/v2/test/integration/nginx
+github.com/nginx/agent/v2/test/integration/upstream
+github.com/nginx/agent/v2/test/integration/validator
+# github.com/orcaman/concurrent-map v1.0.0
+## explicit
+github.com/orcaman/concurrent-map
+# github.com/pmezard/go-difflib v1.0.0
+## explicit
+github.com/pmezard/go-difflib/difflib
+# github.com/rogpeppe/go-internal v1.6.1
+## explicit; go 1.11
+# github.com/sirupsen/logrus v1.9.0
+## explicit; go 1.13
+github.com/sirupsen/logrus
+# github.com/stretchr/testify v1.8.1
+## explicit; go 1.13
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
+# golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+## explicit
+golang.org/x/sync/errgroup
+# golang.org/x/sys v0.0.0-20220804214406-8e32c043e418
+## explicit; go 1.17
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# gopkg.in/yaml.v3 v3.0.1
+## explicit
+gopkg.in/yaml.v3
+# github.com/nginx/agent/v2/test/integration => ./
+# github.com/nginx/agent/sdk/v2 => ./../../sdk
+# github.com/nginx/agent/v2 => ./../../
