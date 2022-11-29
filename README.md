@@ -257,7 +257,7 @@ sudo apt install golang-go
 Run the following commands to build and run Agent:
 ```
 make build
-make run
+sudo make run
 ```
 
 # Agent Technical Specifications
