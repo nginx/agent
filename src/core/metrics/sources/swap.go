@@ -27,6 +27,15 @@ func NewSwapSource(namespace string, env core.Environment) *Swap {
 		statFunc = cgroupSwapSource.SwapMemoryStat
 	}
 
+	// Verify if swap metrics can be collected on startup
+	_, err := statFunc()
+	if err != nil {
+		if e, ok := err.(*os.PathError); ok {
+			log.Warnf("Unable to collect Swap metrics because the file %v was not found", e.Path)
+		}
+		log.Warnf("Unable to collect Swap metrics: %v", err)
+	}
+
 	return &Swap{&namedMetric{namespace, "swap"}, statFunc}
 }
 
@@ -35,10 +44,10 @@ func (c *Swap) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 	swapStats, err := c.statFunc()
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {
-			log.Warnf("Unable to collect Swap metrics because the file %v was not found", e.Path)
+			log.Debugf("Unable to collect Swap metrics because the file %v was not found", e.Path)
 			return
 		}
-		log.Errorf("Failed to collect Swap metrics: %v", err)
+		log.Debugf("Unable to collect Swap metrics: %v", err)
 		return
 	}
 

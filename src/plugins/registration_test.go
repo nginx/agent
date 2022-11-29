@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -31,6 +32,7 @@ func TestRegistration_Process(t *testing.T) {
 			tt.Parallel()
 
 			binary := tutils.GetMockNginxBinary()
+			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 			env := tutils.GetMockEnvWithHostAndProcess()
 
 			cfg := &config.Config{
@@ -61,29 +63,6 @@ func TestRegistration_Process(t *testing.T) {
 	}
 }
 
-func TestRegistration_RegisterWithDataplaneSoftwareDetails(t *testing.T) {
-	cfg := &config.Config{
-		NginxAppProtect: config.NginxAppProtect{
-			ReportInterval: time.Duration(1) * time.Millisecond,
-		},
-	}
-
-	pluginUnderTest := NewOneTimeRegistration(cfg, tutils.GetMockNginxBinary(), tutils.GetMockEnvWithHostAndProcess(), nil, "")
-	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
-
-	expectedMessages := []string{core.RegisterWithDataplaneSoftwareDetails}
-
-	messagePipe.Run()
-
-	messages := messagePipe.GetProcessedMessages()
-	assert.Len(t, messages, len(expectedMessages))
-
-	for idx, message := range messages {
-		assert.EqualValues(t, expectedMessages[idx], message.Topic())
-	}
-	messagePipe.ClearMessages()
-}
-
 func TestRegistration_DataplaneReady(t *testing.T) {
 	conf := tutils.GetMockAgentConfig()
 	conf.NginxAppProtect = config.NginxAppProtect{ReportInterval: time.Duration(15) * time.Second}
@@ -96,7 +75,7 @@ func TestRegistration_DataplaneReady(t *testing.T) {
 func TestRegistration_Subscriptions(t *testing.T) {
 	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil, "")
 
-	assert.Equal(t, []string{core.RegistrationCompletedTopic}, pluginUnderTest.Subscriptions())
+	assert.Equal(t, []string{core.RegistrationCompletedTopic, core.RegisterWithDataplaneSoftwareDetails}, pluginUnderTest.Subscriptions())
 }
 
 func TestRegistration_Info(t *testing.T) {

@@ -23,8 +23,9 @@ import (
 )
 
 const (
-	withWithPrefix   = "with-"
-	withModuleSuffix = "module"
+	withWithPrefix        = "with-"
+	withModuleSuffix      = "module"
+	defaultNginxOssPrefix = "/usr/local/nginx"
 )
 
 var (
@@ -576,7 +577,9 @@ func (n *NginxBinaryType) getNginxInfoFromBuffer(exePath string, buffer *bytes.B
 		}
 	}
 
-	if info.cfgf["prefix"] != nil {
+	if info.cfgf["prefix"] == nil {
+		info.prefix = defaultNginxOssPrefix
+	} else {
 		info.prefix = info.cfgf["prefix"].(string)
 	}
 

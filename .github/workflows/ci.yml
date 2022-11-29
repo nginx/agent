@@ -4,8 +4,8 @@ on:
   push:
 
 env:
-  GOLANGCI_LINT_VERSION: 'v1.46.2'
-  NFPM_VERSION: 'v2.18.0'
+  GOLANGCI_LINT_VERSION: 'v1.49.0'
+  NFPM_VERSION: 'v2.18.1'
 
 jobs:
   lint:
@@ -38,7 +38,7 @@ jobs:
       - name: Upload Test Coverage
         uses: codecov/codecov-action@v3
         with:
-            files: ./build/test/coverage.out
+          files: ./build/test/coverage.out
 
   component-test:
     name: Component Tests
@@ -110,8 +110,23 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: snapshots
-          path: build/**/*.tar.gz
+          path: ./build/snapshots.tar.gz
           retention-days: 3
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Azure Upload Snapshot
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage blob upload --auth-mode=login -f ./build/snapshots.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/nginx-agent-snapshot.tar.gz
+      - name: Azure Logout
+        run: |
+          az logout
+        if: always()
+
   trigger-release-workflow:
     if: startsWith(github.ref, 'refs/heads/release-')
     needs: [ lint, unit-test, component-test, performance-test ]

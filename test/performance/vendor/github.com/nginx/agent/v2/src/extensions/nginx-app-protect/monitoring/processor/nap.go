@@ -81,7 +81,6 @@ var (
 		subViolations,
 		supportID,
 		threatCampaignNames,
-		httpURI,
 		violationRating,
 		httpHostname,
 		xForwardedForHeaderVal,
@@ -97,6 +96,7 @@ var (
 		clientApplication,
 		clientApplicationVersion,
 		transportProtocol,
+		httpURI,
 	}
 )
 
@@ -460,11 +460,11 @@ func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) err
 	case requestStatus:
 		napConfig.RequestStatus = value
 	case severity:
-		napConfig.Severity = value
+		napConfig.Severity = strings.ToLower(value)
 	case sigSetNames:
 		napConfig.SigSetNames = replaceEncodedList(value, listSeperator)
 	case threatCampaignNames:
-		napConfig.ThreatCampaignNames = value
+		napConfig.ThreatCampaignNames = replaceEncodedList(value, listSeperator)
 	case violationDetails:
 		napConfig.ViolationDetailsXML = func(data string) *BADMSG {
 			var xmlData BADMSG
@@ -513,7 +513,7 @@ func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) err
 	case sigCVEs:
 		napConfig.SignatureCVEs = replaceEncodedList(value, listSeperator)
 	case subViolations:
-		napConfig.SubViolations = value
+		napConfig.SubViolations = replaceEncodedList(value, listSeperator)
 	case supportID:
 		napConfig.SupportID = value
 	case violations:

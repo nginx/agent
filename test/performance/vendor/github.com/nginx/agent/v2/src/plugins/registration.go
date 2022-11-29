@@ -3,6 +3,7 @@ package plugins
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -23,15 +24,16 @@ const (
 )
 
 type OneTimeRegistration struct {
-	agentVersion             string
-	tags                     *[]string
-	meta                     *proto.Metadata
-	config                   *config.Config
-	env                      core.Environment
-	host                     *proto.HostInfo
-	binary                   core.NginxBinary
-	dataplaneSoftwareDetails map[string]*proto.DataplaneSoftwareDetails
-	pipeline                 core.MessagePipeInterface
+	agentVersion                  string
+	tags                          *[]string
+	meta                          *proto.Metadata
+	config                        *config.Config
+	env                           core.Environment
+	host                          *proto.HostInfo
+	binary                        core.NginxBinary
+	dataplaneSoftwareDetails      map[string]*proto.DataplaneSoftwareDetails
+	pipeline                      core.MessagePipeInterface
+	dataplaneSoftwareDetailsMutex sync.Mutex
 }
 
 func NewOneTimeRegistration(
@@ -44,14 +46,15 @@ func NewOneTimeRegistration(
 	// this might be slow so do on startup
 	host := env.NewHostInfo(version, &config.Tags, config.ConfigDirs, true)
 	return &OneTimeRegistration{
-		tags:                     &config.Tags,
-		agentVersion:             version,
-		meta:                     meta,
-		config:                   config,
-		env:                      env,
-		host:                     host,
-		binary:                   binary,
-		dataplaneSoftwareDetails: make(map[string]*proto.DataplaneSoftwareDetails),
+		tags:                          &config.Tags,
+		agentVersion:                  version,
+		meta:                          meta,
+		config:                        config,
+		env:                           env,
+		host:                          host,
+		binary:                        binary,
+		dataplaneSoftwareDetails:      make(map[string]*proto.DataplaneSoftwareDetails),
+		dataplaneSoftwareDetailsMutex: sync.Mutex{},
 	}
 }
 
@@ -73,18 +76,33 @@ func (r *OneTimeRegistration) Process(msg *core.Message) {
 	switch {
 	case msg.Exact(core.RegistrationCompletedTopic):
 		log.Info("OneTimeRegistration completed")
+	case msg.Exact(core.RegisterWithDataplaneSoftwareDetails):
+		switch data := msg.Data().(type) {
+		case *payloads.RegisterWithDataplaneSoftwareDetailsPayload:
+			r.dataplaneSoftwareDetailsMutex.Lock()
+			defer r.dataplaneSoftwareDetailsMutex.Unlock()
+			r.dataplaneSoftwareDetails[data.GetPluginName()] = data.GetDataplaneSoftwareDetails()
+		}
 	}
 }
 
 func (r *OneTimeRegistration) Subscriptions() []string {
-	return []string{core.RegistrationCompletedTopic}
+	return []string{
+		core.RegistrationCompletedTopic,
+		core.RegisterWithDataplaneSoftwareDetails,
+	}
 }
 
 func (r *OneTimeRegistration) startRegistration() {
 	// Check if there are any plugins that will report dataplane software details upon registration and
 	// if they have already reported their details or not.
 	if pluginsReportingDataplaneSoftwareDetails(*r.config) && r.dataplaneSoftwareDetailsMissing() {
-		r.registerWithDataplaneSoftwareDetails()
+		r.dataplaneSoftwareDetailsMutex.Lock()
+		defer r.dataplaneSoftwareDetailsMutex.Unlock()
+		for _, plugin := range getPluginsReportingDataplaneSoftwareDetails(*r.config) {
+			r.dataplaneSoftwareDetails[plugin] = nil
+		}
+		go r.waitAndRegister()
 		return
 	}
 	r.registerAgent()
@@ -103,7 +121,13 @@ func (r *OneTimeRegistration) registerAgent() {
 	for _, proc := range r.env.Processes() {
 		// only need master process for registration
 		if proc.IsMaster {
-			details = append(details, r.binary.GetNginxDetailsFromProcess(proc))
+			nginxDetails := r.binary.GetNginxDetailsFromProcess(proc)
+			details = append(details, nginxDetails)
+			// Reading nginx config during registration to populate nginx fields like access/error logs, etc.
+			_, err := r.binary.ReadConfig(nginxDetails.GetConfPath(), nginxDetails.NginxId, r.env.GetSystemUUID())
+			if err != nil {
+				log.Warnf("Unable to read config for NGINX instance %s, %v", nginxDetails.NginxId, err)
+			}
 		} else {
 			log.Tracef("NGINX non-master process: %d", proc.Pid)
 		}
@@ -152,19 +176,6 @@ func (r *OneTimeRegistration) registerAgent() {
 	)
 }
 
-// registerWithDataplaneSoftwareDetails Attempts to ensure that the plugins enabled that transmit dataplane
-// software details have transmitted their details to OneTimeRegistration then registers.
-func (r *OneTimeRegistration) registerWithDataplaneSoftwareDetails() {
-	for _, plugin := range getPluginsReportingDataplaneSoftwareDetails(*r.config) {
-		r.dataplaneSoftwareDetails[plugin] = nil
-	}
-
-	registrationPayload := payloads.NewRegisterWithDataplaneSoftwareDetailsPayload(r.dataplaneSoftwareDetails)
-	r.pipeline.Process(core.NewMessage(core.RegisterWithDataplaneSoftwareDetails, registrationPayload))
-
-	go r.waitAndRegister()
-}
-
 // waitAndRegister checks in a retry loop if the plugins enabled that transmit dataplane
 // software details have transmitted their details to OneTimeRegistration then registers.
 // If the plugins do not successfully transmit their details before the max retries is
@@ -190,6 +201,8 @@ func (r *OneTimeRegistration) waitAndRegister() {
 func (r *OneTimeRegistration) dataplaneSoftwareDetailsReady() error {
 	pluginsMissingDetails := []string{}
 
+	r.dataplaneSoftwareDetailsMutex.Lock()
+	defer r.dataplaneSoftwareDetailsMutex.Unlock()
 	for pluginName, detailsReported := range r.dataplaneSoftwareDetails {
 		if detailsReported == nil {
 			pluginsMissingDetails = append(pluginsMissingDetails, pluginName)
@@ -209,6 +222,8 @@ func (r *OneTimeRegistration) dataplaneSoftwareDetailsReady() error {
 // transmit dataplane software details have already transmitted their details to
 // OneTimeRegistration. If they have then false is returned, if not then true is returned.
 func (r *OneTimeRegistration) dataplaneSoftwareDetailsMissing() bool {
+	r.dataplaneSoftwareDetailsMutex.Lock()
+	defer r.dataplaneSoftwareDetailsMutex.Unlock()
 	for _, plugin := range getPluginsReportingDataplaneSoftwareDetails(*r.config) {
 		if _, ok := r.dataplaneSoftwareDetails[plugin]; !ok {
 			return true
@@ -222,6 +237,8 @@ func (r *OneTimeRegistration) dataplaneSoftwareDetailsMissing() bool {
 func (r *OneTimeRegistration) dataplaneSoftwareDetailsSlice() []*proto.DataplaneSoftwareDetails {
 	allDetails := []*proto.DataplaneSoftwareDetails{}
 
+	r.dataplaneSoftwareDetailsMutex.Lock()
+	defer r.dataplaneSoftwareDetailsMutex.Unlock()
 	for _, details := range r.dataplaneSoftwareDetails {
 		if details != nil {
 			allDetails = append(allDetails, details)

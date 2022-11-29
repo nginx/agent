@@ -4,9 +4,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/uuid"
-
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -37,13 +37,14 @@ var (
 			Path:  "/var/log/nginx-agent",
 		},
 		Server: Server{
-			Host:     "127.0.0.1",
-			GrpcPort: 443,
-			Command:  "",
-			Metrics:  "",
+			Command: "",
+			Metrics: "",
 			// token needs to be validated on the server side - can be overridden by the config value or the cli / environment variable
 			// so setting to random uuid at the moment, tls connection won't work without the auth header
 			Token: uuid.New().String(),
+		},
+		AgentAPI: AgentAPI{
+			Port: 9090,
 		},
 		Nginx: Nginx{
 			Debug:               false,
@@ -107,10 +108,15 @@ const (
 	ServerKey = "server"
 
 	ServerHost     = ServerKey + agent_config.KeyDelimiter + "host"
-	ServerGrpcport = ServerKey + agent_config.KeyDelimiter + "grpcport"
+	ServerGrpcPort = ServerKey + agent_config.KeyDelimiter + "grpcport"
 	ServerToken    = ServerKey + agent_config.KeyDelimiter + "token"
 	ServerMetrics  = ServerKey + agent_config.KeyDelimiter + "metrics"
 	ServerCommand  = ServerKey + agent_config.KeyDelimiter + "command"
+
+	// viper keys used in config
+	APIKey = "api"
+
+	AgentAPIPort = APIKey + agent_config.KeyDelimiter + "port"
 
 	// viper keys used in config
 	TlsKey = "tls"
@@ -198,14 +204,12 @@ var (
 			DefaultValue: Defaults.Log.Path,
 		},
 		&StringFlag{
-			Name:         ServerHost,
-			Usage:        "The IP address of the server host. IPv4 addresses and hostnames are supported.",
-			DefaultValue: Defaults.Server.Host,
+			Name:  ServerHost,
+			Usage: "The IP address of the server host. IPv4 addresses and hostnames are supported.",
 		},
 		&IntFlag{
-			Name:         ServerGrpcport,
-			Usage:        "The desired GRPC port to use for nginx-agent traffic.",
-			DefaultValue: Defaults.Server.GrpcPort,
+			Name:  ServerGrpcPort,
+			Usage: "The desired GRPC port to use for nginx-agent traffic.",
 		},
 		&StringFlag{
 			Name:         ServerToken,
@@ -221,6 +225,12 @@ var (
 			Name:         ServerCommand,
 			Usage:        "The name of the command server sent in the tls configuration.",
 			DefaultValue: Defaults.Server.Command,
+		},
+		// API Config
+		&IntFlag{
+			Name:         AgentAPIPort,
+			Usage:        "The desired port to use for nginx-agent to expose for HTTP traffic.",
+			DefaultValue: Defaults.AgentAPI.Port,
 		},
 		&StringFlag{
 			Name:         ConfigDirsKey,

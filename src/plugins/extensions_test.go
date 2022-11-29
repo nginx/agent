@@ -62,7 +62,8 @@ func TestExtensions_Process(t *testing.T) {
 			time.Sleep(250 * time.Millisecond)
 
 			processedMessages := messagePipe.GetProcessedMessages()
-			assert.Equal(t, 1, len(processedMessages))
+			assert.GreaterOrEqual(t, len(processedMessages), 1)
+			assert.Equal(t, core.EnableExtension, processedMessages[0].Topic())
 
 			assert.Equal(t, 2, len(messagePipe.GetPlugins()))
 			assert.Equal(t, "Extensions Plugin", messagePipe.GetPlugins()[0].Info().Name())
