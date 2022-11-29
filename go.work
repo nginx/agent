@@ -3,5 +3,6 @@ go 1.19
 use (
 	.
 	./sdk
+	./test/integration
 	./test/performance
 )
