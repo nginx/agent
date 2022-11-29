@@ -230,7 +230,7 @@ func (a *Events) sendConfigApplyEvent(msg *core.Message) {
 	log.Debugf("nginxConfigResponse: %v", nginxConfigResponse)
 	log.Debugf("nginxConfigResponse.GetConfigData(): %v", nginxConfigResponse.GetConfigData())
 
-	if nginxConfigResponse.Action != proto.NginxConfigAction_APPLY {
+	if (nginxConfigResponse.GetAction() != proto.NginxConfigAction_APPLY) {
 		return
 	}
 

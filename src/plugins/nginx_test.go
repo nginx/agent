@@ -134,6 +134,38 @@ func TestNginxConfigApply(t *testing.T) {
 		},
 		{
 			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_FORCE,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      first,
+					Checksum:      checksum.Checksum(first),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux:         &proto.ZippedFile{},
+				AccessLogs:   &proto.AccessLogs{},
+				ErrorLogs:    &proto.ErrorLogs{},
+				Ssl:          &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxReloadComplete,
+				core.NginxConfigApplySucceeded,
+			},
+		},
+		{
+			config: &proto.NginxConfig{
 				Action: proto.NginxConfigAction_APPLY,
 				ConfigData: &proto.ConfigDescriptor{
 					NginxId:  "12345",
@@ -198,23 +230,21 @@ func TestNginxConfigApply(t *testing.T) {
 		},
 	}
 
-	cmd := &proto.Command{
-		Meta: grpc.NewMessageMeta(uuid.New().String()),
-		Type: 1,
-		Data: &proto.Command_NginxConfig{
-			NginxConfig: &proto.NginxConfig{
-				Action: proto.NginxConfigAction_APPLY,
-				ConfigData: &proto.ConfigDescriptor{
-					NginxId:  "12345",
-					Checksum: "test",
-				},
-			},
-		},
-	}
-
 	for idx, test := range tests {
-		test := test
 		t.Run(fmt.Sprintf("%d", idx), func(tt *testing.T) {
+			cmd := &proto.Command{
+				Meta: grpc.NewMessageMeta(uuid.New().String()),
+				Type: 1,
+				Data: &proto.Command_NginxConfig{
+					NginxConfig: &proto.NginxConfig{
+						Action: test.config.GetAction(),
+						ConfigData: &proto.ConfigDescriptor{
+							NginxId:  "12345",
+							Checksum: "test",
+						},
+					},
+				},
+			}			
 			dir := t.TempDir()
 			tempConf, err := ioutil.TempFile(dir, "nginx.conf")
 			assert.NoError(t, err)
@@ -266,6 +296,8 @@ func TestNginxConfigApply(t *testing.T) {
 					}
 				}
 			}
+			pluginUnderTest.Close()
+			messagePipe.ClearMessages()
 		})
 	}
 }

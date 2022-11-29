@@ -223,6 +223,7 @@ func (n *Nginx) processCmd(cmd *proto.Command) {
 
 		switch commandData.NginxConfig.Action {
 		case proto.NginxConfigAction_APPLY:
+		case proto.NginxConfigAction_FORCE:
 			if n.isConfUploadEnabled {
 				status = n.applyConfig(cmd, commandData)
 			} else {
