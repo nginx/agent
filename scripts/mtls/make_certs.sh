@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-
+# See https://stackoverflow.com/questions/34612991/openssl-key-generation-on-os-x-failing
+# On Mac OS X use openssl to run this script
 set -e
 
 scripts_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -7,11 +8,6 @@ echo "$scripts_dir"
 
 build_dir="$scripts_dir/../../build/certs"
 echo "$build_dir"
-
-if [ -f .srl ]; then
-   rm .srl
-   echo ".srl removed"
-fi
 
 if [ ! -d "$build_dir" ]; then
   echo "creating certs directory"
@@ -95,7 +91,7 @@ client() {
         -sha256 \
         -CA "$build_dir"/ca.crt \
         -CAkey "$build_dir"/ca.key \
-        -CAserial "$scripts_dir"/.srl \
+        -CAserial "$build_dir"/ca_int.srl \
         -in "$build_dir"/client.csr \
         -out "$build_dir"/client.crt \
         -extfile "$scripts_dir"/client.cnf \
