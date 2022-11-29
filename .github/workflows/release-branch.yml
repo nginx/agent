@@ -154,7 +154,7 @@ jobs:
           NFPM_SIGNING_KEY_FILE: .key.asc
         run: |
           echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
-          make clean build package
+          make clean package
       - name: Azure Login
         uses: azure/login@v1
         with:
