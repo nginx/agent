@@ -72,7 +72,8 @@ build: ## Build agent executable
 	GOWORK=off CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 
 deps: ## Update dependencies in vendor folders
-	cd sdk && make generate && go mod tidy && go mod vendor
+	cd sdk && go mod tidy && go mod vendor &&  make generate && go mod tidy && go mod vendor
+	cd test/integration && go mod tidy && go mod vendor
 	cd test/performance && go mod tidy && go mod vendor
 	go mod tidy && go mod vendor && go mod download && go work sync
 
