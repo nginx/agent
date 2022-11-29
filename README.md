@@ -83,11 +83,11 @@ Agent interfaces directly with an NGINX server process installed on the same sys
 Agent is written in Go and requires Go 1.19 or higher to be installed. You can [download Go from the official website](https://go.dev/dl/). 
 
 ## Installing Agent from Package Files
-To install Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download `nginx-agent.tar.gz`. Extract the file and locate the appropriate binary in the archive.
+To install Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download `nginx-agent.tar.gz`. Create a new subdirectory and extract the archive into it. Locate the appropriate binary in the archive.
 
 Depending on OS distribution and CPU architecture type, use your system's package manager to install the package. Some examples:
 
-Debian, Ubuntu, and other distributions using the `apt` package manager
+Debian, Ubuntu, and other distributions using the `apt` package manager. Note that a `./` is necessary before the package name in order to install `apt` packages from a local source.
 
 ```
 sudo apt install ./nginx-agent-<agent-version>.deb
@@ -248,7 +248,7 @@ Install Make:
 sudo apt install make
 ```
 
-Agent is written in Go. To install Go, run:
+Agent is written in Go. You may [download Go](https://go.dev/doc/install) and follow installation instructions on the same page or run:
 ```
 sudo apt install golang-go
 ```
