@@ -196,6 +196,7 @@ func (lim *Limiter) Reserve() *Reservation {
 // The Limiter takes this Reservation into account when allowing future events.
 // The returned Reservation’s OK() method returns false if n exceeds the Limiter's burst size.
 // Usage example:
+<<<<<<< HEAD
 //
 //	r := lim.ReserveN(time.Now(), 1)
 //	if !r.OK() {
@@ -205,6 +206,15 @@ func (lim *Limiter) Reserve() *Reservation {
 //	time.Sleep(r.Delay())
 //	Act()
 //
+=======
+//   r := lim.ReserveN(time.Now(), 1)
+//   if !r.OK() {
+//     // Not allowed to act! Did you remember to set lim.burst to be > 0 ?
+//     return
+//   }
+//   time.Sleep(r.Delay())
+//   Act()
+>>>>>>> 68cd746 (added testcontainers)
 // Use this method if you wish to wait and slow down in accordance with the rate limit without dropping events.
 // If you need to respect a deadline or cancel the delay, use Wait instead.
 // To drop or skip events exceeding rate limit, use Allow instead.
@@ -223,6 +233,7 @@ func (lim *Limiter) Wait(ctx context.Context) (err error) {
 // canceled, or the expected wait time exceeds the Context's Deadline.
 // The burst limit is ignored if the rate limit is Inf.
 func (lim *Limiter) WaitN(ctx context.Context, n int) (err error) {
+<<<<<<< HEAD
 	// The test code calls lim.wait with a fake timer generator.
 	// This is the real timer generator.
 	newTimer := func(d time.Duration) (<-chan time.Time, func() bool, func()) {
@@ -235,6 +246,8 @@ func (lim *Limiter) WaitN(ctx context.Context, n int) (err error) {
 
 // wait is the internal implementation of WaitN.
 func (lim *Limiter) wait(ctx context.Context, n int, now time.Time, newTimer func(d time.Duration) (<-chan time.Time, func() bool, func())) error {
+=======
+>>>>>>> 68cd746 (added testcontainers)
 	lim.mu.Lock()
 	burst := lim.burst
 	limit := lim.limit
@@ -250,6 +263,10 @@ func (lim *Limiter) wait(ctx context.Context, n int, now time.Time, newTimer fun
 	default:
 	}
 	// Determine wait limit
+<<<<<<< HEAD
+=======
+	now := time.Now()
+>>>>>>> 68cd746 (added testcontainers)
 	waitLimit := InfDuration
 	if deadline, ok := ctx.Deadline(); ok {
 		waitLimit = deadline.Sub(now)
@@ -264,11 +281,18 @@ func (lim *Limiter) wait(ctx context.Context, n int, now time.Time, newTimer fun
 	if delay == 0 {
 		return nil
 	}
+<<<<<<< HEAD
 	ch, stop, advance := newTimer(delay)
 	defer stop()
 	advance() // only has an effect when testing
 	select {
 	case <-ch:
+=======
+	t := time.NewTimer(delay)
+	defer t.Stop()
+	select {
+	case <-t.C:
+>>>>>>> 68cd746 (added testcontainers)
 		// We can proceed.
 		return nil
 	case <-ctx.Done():
