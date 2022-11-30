@@ -1,91 +1,192 @@
-# NGINX Agent
-The NGINX Agent enhances your deployment experience and enables you to monitor your system and app performance, whether you are using NGINX OSS or NGINX Plus for App Delivery, Content Caching, API Gateway, and App Security. To do so, the Agent provides an administrative entry point to remotely manage, configure and collect metrics and events on the datapath instances.
+![Agent Banner](docs/agent-banner.png "Agent Banner")
 
-Simply put, Agent optimizes the operationalization of your application stack.
+NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus instance. It enables:
+- Remote management of NGINX configurations
+- Collection and reporting of real-time NGINX performance and operating system metrics
+- Notifications of NGINX events
 
-## How it works 
-The NGINX Agent uses the Linux operating system pseudo-filesystems to interface with the process information of NGINX. The Agent checks ```nginx -V``` output to determine the relevant configuration location for NGINX. Then it validates the configuration with ```nginx -t``` before applying the NGINX configuration.
-The Agent reads both the access and error logs from the NGINX configuration. Reading this set of files from the NGINX configuration, using the specified log formats, it parses the appropriate log files and calculates the reported metrics. For NGINX Plus, the Agent takes the relevant information from the NGINX Plus API, configurable through the NGINX configuration.
+![Grafana dashboard showing Agent reported metrics](docs/grafana-dashboard-example.png "Grafana dashboard showing Agent reported metrics")
+[Grafana](https://grafana.com/) dashboard showing metrics reported by Agent
 
+# Table of Contents
+- [How it Works](#how-it-works)
+  - [Configuration Management](#configuration-management)
+  - [Collecting Metrics](#collecting-metrics)
+  - [Event Notifications](#event-notifications)
+- [Installation](#installation)
+  - [Installing NGINX](#installing-nginx)
+  - [Installing Go](#installing-go)
+  - [Installing Agent from Package Files](#installing-agent-from-package-files)
+  - [Starting and Enabling Start on Boot](#starting-and-enabling-start-on-boot)
+  - [Logging](#logging)
+- [Getting Started with Agent](#getting-started-with-agent)
+  - [Installing NGINX and Agent](#installing-nginx-and-agent)
+  - [Starting the Mock Control Plane](#starting-the-mock-control-plane)
+  - [Agent Settings](#agent-settings)
+  - [Starting Agent](#starting-agent)
+- [Development Environment Setup](#development-environment-setup)
+  - [Selecting an Operating System](#selecting-an-operating-system)
+  - [Installing NGINX](#installing-nginx)
+  - [Cloning the Agent Repository](#cloning-the-agent-repository)
+  - [Installing Prerequisite Packages](#installing-prerequisite-packages)
+  - [Building Agent from Source Code](#building-agent-from-source-code)
+- [Agent Technical Specifications](#agent-technical-specifications)
+  - [Supported Distributions](#supported-distributions)
+  - [Supported Deployment Environments](#supported-deployment-environments)
+  - [Supported NGINX Versions](#supported-nginx-versions)
+  - [Sizing Recommendations](#sizing-recommendations)
+- [Community](#community)
+- [Contributing](#contributing)
+- [Change Log](#change-log)
+- [License](#license)
 
-![How agent works](docs/how-it-works.png "How it works")
+# How it Works
+Agent runs as a companion process on a system running NGINX. It provides gRPC and REST interfaces for configuration management and metrics collection from the NGINX process and operating system. Agent enables remote interaction with NGINX using common Linux tools and unlocks the ability to build sophisticated monitoring and control systems that can manage large collections of NGINX instances.
 
-## What can you do with the NGINX Agent today
-- Circulation of NGINX configurations
-- Reporting of metrics
-- Publicizing of data plane events
+![How agent works](docs/agent-flow.png "How it works")
 
-## Agent Technical Specifications
+## Configuration Management
+Agent provides an API interface for submission of updated configuration files. Upon receipt of a new file, it checks the output of `nginx -V` to determine the location of existing configurations. It then validates the new configuration with `nginx -t` before applying it via a NOHUP signal to the NGINX master process.
 
-### Supported Distributions 
+## Collecting Metrics
+Agent interfaces with NGINX process information and parses NGINX logs to calculate and report metrics. When interfacing with NGINX Plus, Agent pulls relevant information from the NGINX Plus API. Reported metrics may be aggregated by [Prometheus](https://prometheus.io/) and visualized with tools like [Grafana](https://grafana.com/).
 
-The Agent can run in most environments. For the supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
+### NGINX Open Source
+When running alongside an open source instance of NGINX, Agent requires that NGINX Access and Error logs are turned on and contain all default variables.
 
-### Supported Deployment Environments 
-You can deploy the Agent in the following environments:
+### NGINX Plus
+For Agent to work properly with an NGINX Plus instance, the API needs to be configured in that instance's nginx.conf. See [Instance Metrics Overview](https://docs.nginx.com/nginx-management-suite/nim/about/overview-metrics/) for more details. Once NGINX Plus is configured with the `/api/` endpoint, Agent will automatically use it on startup.
 
-- Bare Metal
-- Container
-- Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
-- Virtual Machine
+## Event Notifications
+Agent allows a gRPC connected control system to register a listener for a specific event. The control mechanism is then invoked when Agent sends an associated system signal. The source of a notification can be either the NGINX instance or Agent itself. Here's a list of currently supported events:
 
-### Supported NGINX Versions 
-The Agent works with all supported versions of NGINX OSS and NGINX Plus.
+| Event                            | Description                                  |
+| -------------------------------- | -------------------------------------------- |
+| AGENT_START_MESSAGE              | Agent process started                        |
+| AGENT_STOP_MESSAGE               | Agent process stopped                        |
+| NGINX_FOUND_MESSAGE              | NGINX master process detected on system      |
+| NGINX_STOP_MESSAGE               | NGINX master process stopped                 |
+| NGINX_RELOAD_SUCCESS_MESSAGE     | NGINX master process reloaded successfully   |
+| NGINX_RELOAD_FAILED_MESSAGE      | NGINX master process failed to reload        |
+| NGINX_WORKER_START_MESSAGE       | New NGINX worker process started             |
+| NGINX_WORKER_STOP_MESSAGE        | NGINX worker process stopped                 |
+| CONFIG_APPLY_SUCCESS_MESSAGE     | Successfully applied new NGINX configuration |
+| CONFIG_APPLY_FAILURE_MESSAGE     | Failed to apply new NGINX configuration      |
+| CONFIG_ROLLBACK_SUCCESS_MESSAGE  | Successfully rolled back NGINX configuration |
+| CONFIG_ROLLBACK_FAILURE_MESSAGE  | Failed to roll back NGINX configuration      |
 
-### Sizing Recommendations 
-The following table lists the minimum sizing recommendations for the Agent:
+# Installation
+## Installing NGINX
+Agent interfaces directly with an NGINX server process installed on the same system. If you don't have it already, follow these steps to install [NGINX Open Source](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) or [NGINX Plus](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-plus/). Once installed, ensure the NGINX instance is running.
 
-Table: Agent sizing recommendations
+## Installing Go
+Agent is written in Go and requires Go 1.19 or higher to be installed. You can [download Go from the official website](https://go.dev/dl/). 
 
-| CPU        | Memory   | Network   | Storage |
-|------------|----------|-----------|---------|
-| 1 CPU core | 1 GB RAM | 1 GbE NIC | 20 GB   |
+## Installing Agent from Package Files
+To install Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download `nginx-agent.tar.gz`. Create a new subdirectory and extract the archive into it. Change into the subdirectory matching the package manager format appropriate for your operating system distribution.
 
-### Logging 
-The Agent uses the log files and formats to collect metrics. Expanding the log formats and instance counts will also increase the size of the log files on the Agent. Adding a separate partition for /var/log/nginx-agent is always a good idea. Without log rotation or a separated partition, a log directory could cause your system to run out of space.
+Depending on OS distribution and CPU architecture type, use your system's package manager to install the package. Some examples:
 
-## Getting started with Agent
-
-The result of following the below steps you will locally have an NGINX instance running, Agent running, and a mock control plane to which the Agent will report.
-
-Ensure you have Go installed ([download](https://go.dev/dl/)). Version 1.19 or higher is required.
-
-Ensure an NGINX instance is running. See [Prebuilt Packages for Linux and BSD](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/) or if your running on Mac see [brew nginx](https://formulae.brew.sh/formula/nginx) to install NGINX. Once installed ensure NGINX instance is running. If running on Mac and you installed using brew can start NGINX by the below command.
+Debian, Ubuntu, and other distributions using the `dpkg` package manager. 
 
 ```
-sudo brew services start nginx
+sudo dpkg -i nginx-agent-<agent-version>.deb
+```
+RHEL, CentOS RHEL, Amazon Linux, Oracle Linux, and other distributions using the `yum` package manager
+```
+sudo yum localinstall nginx-agent-<agent-version>.rpm
+```
+RHEL and other distributions using the `rpm` package manager
+```
+sudo rpm -i nginx-agent-<agent-version>.rpm
+```
+Alpine Linux
+```
+sudo apk add nginx-agent-<agent-version>.apk
+```
+FreeBSD
+```
+sudo pkg add nginx-agent-<agent-version>
 ```
 
-Next, start the mock control plane using the below command
+## Starting and Enabling Start on Boot
+To start the Agent on systemd systems, run the following command:
+```
+sudo systemctl start nginx-agent
+```
+To enable the Agent to start on boot, run the following command:
+```
+sudo systemctl enable nginx-agent
+```
+
+## Logging 
+Agent uses formatted log files to collect metrics. Expanding log formats and instance counts will also increase the size of Agent log files. We recommend adding a separate partition for `/var/log/nginx-agent`. Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.
+
+# Getting Started with Agent
+Follow these steps to configure and run Agent and a mock interface ("control plane") to which the Agent will report.
+
+## Installing NGINX and Agent
+Follow steps in the [Installation](#installation) section to download, install, and run NGINX and Agent.
+
+## Cloning the Agent Repository
+Run the following command in your development directory to clone the Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
+
+```
+git clone git@github.com:nginx/agent.git
+```
+
+## Starting the gRPC Mock Control Plane
+Start the mock control plane by running the following command from the `agent` source code root directory:
+
 ```
 go run sdk/examples/server.go
 
 # Command Output
 INFO[0000] http listening at 54790 # mock control plane port
-INFO[0000] grpc listening at 54789 # grpc control plane port which Agent will report to
+INFO[0000] gRPC listening at 54789 # gRPC control plane port which Agent will report to
 ```
 
-Next change the nginx-agent.conf file within the root directory
-### NGINX Agent Settings
+## Agent Settings
+If it doesn't already exist, create the `/etc/nginx-agent/nginx-agent.conf` file
+```
+sudo mkdir /etc/nginx-agent
+sudo cp nginx-agent.conf /etc/nginx-agent/
+```
+
+### Enabling the gRPC interface
+Update the `/etc/nginx-agent/nginx-agent.conf` file to include the following settings:
+
 ```yaml
 server:
-  # host of the control plane
-  host: 127.0.0.1
-  grpcPort: 54789 # control plane grpc port
-api:
-  port: 9090 # nginx-agent http api
-# tls options - NOT RECOMMENDED FOR PRODUCTION
+  host: 127.0.0.1 # mock control plane host
+  grpcPort: 54789 # mock control plane gRPC port
+
+# gRPC TLS options - DISABLING TLS IS NOT RECOMMENDED FOR PRODUCTION
 tls:
   enable: false
   skip_verify: true
 ```
 
-Next, open up another terminal and start the Agent
+### Enabling the REST interface
+The Agent REST interface can be exposed by adding the following lines to the `nginx-agent.conf` file.
+
+```yaml
+api:
+  port: 9090 # port to expose REST API
+  
+  # REST TLS parameters
+  cert: "<TLS-CERTIFICATE>.crt"
+  key: "<PRIVATE-KEY>.key"
 ```
-sudo mkdir /etc/nginx-agent
-sudo touch /etc/nginx-agent/agent-dynamic.conf
-sudo cp nginx-agent.conf /etc/nginx-agent/
-go run main.go
+
+The mock control plane can use either gRPC or REST protocols to communicate with Agent.
+
+## Starting Agent
+If already running, restart Agent to apply the new configuration. Alternatively, if Agent is not running, you may run it from the source code root directory.
+
+Open another terminal window and start the Agent. Issue the following command from the `agent` source code root directory.
+```
+make run
 
 # Command Output snippet
 WARN[0000] Log level is info                            
@@ -109,54 +210,89 @@ INFO[0001] Events initializing
 INFO[0001] OneTimeRegistration completed
 ```
 
-Next, open up a web browser to view the mock control plane [http://localhost:54790](http://localhost:54790). 6 links will be presented on the control plane
+Open a web browser to view the mock control plane at [http://localhost:54790](http://localhost:54790). The following links will be shown in the web interface:
 
-- registred - Shows
-- nginxes - Shows
-- configs - Shows
-- configs/chunked - Shows
-- configs/raw - Shows
-- metrics - Shows 
+- registered - shows registration information of the dataplane
+- nginxes - lists the NGINX instances on the dataplane
+- configs - shows the protobuf payload for NGINX configuration sent to the management plane
+- configs/chunked - shows the split up payloads sent to the management plane
+- configs/raw - shows the actual configuration as it would live on the dataplane
+- metrics - shows a buffer of metrics sent to the management plane (similar to what will be sent back in the REST API)
 
-For more use-cases of the NGINX Agent, refer to https://github.com/nginx/agent/tree/main/sdk/examples
+For more Agent use-cases, refer to https://github.com/nginx/agent/tree/main/sdk/examples
 
-## Installation
+# Development Environment Setup
+## Selecting an Operating System
+While most Linux or FreeBSD operating systems can be used to contribute to the Agent project, the following steps have been designed for Ubuntu. Ubuntu is packaged with most libraries required to build and run Agent, and is the recommended platform for Agent development.
 
-### Install from package files
-To install Agent on your system go to [Releases](https://github.com/nginx/agent/releases) and download the packages.zip file under Assets for a given version of the Agent.
+## Installing NGINX
+Follow steps in the [Installation](#installation) section to download and install NGINX. Once installed ensure NGINX instance is running.
 
-Depending on your OS distribution and CPU architecture type, use your system's package manager as in the following examples:
+## Cloning the Agent Repository
+Run the following command from your development directory to clone Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
+
 ```
-sudo apt install ./nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.deb
-
-sudo rpm -i nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.rpm
-
-sudo yum localinstall nginx-agent_<agent-version>-SNAPSHOT-<snapshot-id>_linux_<arch-type>.rpm
-```
-### Start and Enable Agent
-To start the NGINX Agent on systemd systems, run the following command:
-```
-sudo systemctl start nginx-agent
-```
-To enable the NGINX Agent to start on boot, run the following command:
-```
-sudo systemctl enable nginx-agent
+git clone git@github.com:nginx/agent.git
 ```
 
-## Community
+## Installing Prerequisite Packages
+Depending on the operating system distribution, it may be necessary to install the following packages in order to build Agent.
 
+Change to the Agent source directory:
+```
+cd <path_to_development_directory>/agent
+```
+
+Install Make:
+```
+sudo apt install make
+```
+
+Agent is written in Go. You may [download Go](https://go.dev/doc/install) and follow installation instructions on the same page or run:
+```
+sudo apt install golang-go
+```
+
+## Building Agent from Source Code
+Run the following commands to build and run Agent:
+```
+make build
+sudo make run
+```
+
+# Agent Technical Specifications
+## Supported Distributions
+Agent can run in most environments. For a list of supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
+
+## Supported Deployment Environments 
+Agent can be deployed in the following environments:
+
+- Bare Metal
+- Container
+- Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
+- Virtual Machine
+
+## Supported NGINX Versions 
+Agent works with all supported versions of NGINX Open Source and NGINX Plus.
+
+## Sizing Recommendations
+Minimum system sizing recommendations for Agent:
+
+| CPU        | Memory   | Network   | Storage |
+|------------|----------|-----------|---------|
+| 1 CPU core | 1 GB RAM | 1 GbE NIC | 20 GB   |
+
+# Community
 - Our [Slack channel #nginx-agent](https://nginxcommunity.slack.com/), is the go-to place to start asking questions and sharing your thoughts.
 
 - Our [GitHub issues page](https://github.com/nginx/agent/issues) offers space for a more technical discussion at your own pace.
 
-- Get involved with the project by contributing! See the contributing guide for details.
 
-To reach the team directly, subscribe to the [mailing list](https://mailman.nginx.org/mailman/listinfo/agent).
+# Contributing
+Get involved with the project by contributing! Please see our [contributing guide](docs/CONTRIBUTING.md) for details.
 
-## Contributing
+# Change Log
+See our [changelog](docs/CHANGELOG.md) to keep track of updates.
 
-If you'd like to contribute to the project, please read our [Contributing guide](docs/CONTRIBUTING.md).
-
-## License
-
+# License
 [Apache License, Version 2.0](LICENSE)

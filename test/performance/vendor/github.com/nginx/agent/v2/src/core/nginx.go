@@ -341,7 +341,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 	}
 
 	// Ensure all aux files are within the allowed list directories.
-	if err := ensureFilesAllowed(auxFiles, n.config.AllowedDirectoriesMap, config.Zaux.RootDirectory); err != nil {
+	if err := ensureFilesAllowed(auxFiles, n.config.AllowedDirectoriesMap, config.GetZaux().GetRootDirectory()); err != nil {
 		return nil, err
 	}
 
@@ -365,7 +365,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 	}
 
 	if len(auxFiles) > 0 {
-		auxPath := config.Zaux.RootDirectory
+		auxPath := config.GetZaux().GetRootDirectory()
 		err = n.env.WriteFiles(configApply, auxFiles, auxPath, n.config.AllowedDirectoriesMap)
 		if err != nil {
 			log.Warnf("Auxiliary files write failed: %s", err)

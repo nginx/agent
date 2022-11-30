@@ -31,6 +31,15 @@ type NginxHandler struct {
 	nginxBinary core.NginxBinary
 }
 
+const (
+	contentTypeHeader = "Content-Type"
+	jsonMimeType      = "application/json"
+)
+
+var (
+	instancesRegex = regexp.MustCompile(`^\/nginx[\/]*$`)
+)
+
 func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.NginxBinary) *AgentAPI {
 	return &AgentAPI{config: config, env: env, nginxBinary: nginxBinary, exporter: prometheus_metrics.NewExporter(&proto.MetricsReport{})}
 }
@@ -78,25 +87,29 @@ func (a *AgentAPI) createHttpServer() {
 	mux.Handle("/metrics", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
 
 	mux.Handle("/nginx/", a.nginxHandler)
-
-	log.Debug("Starting Agent API HTTP server")
-
+    
 	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
 		Handler: mux,
 	}
 
-	if err := a.server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("error listening to port: %v", err)
+	if a.config.AgentAPI.Cert != "" && a.config.AgentAPI.Key != "" && a.config.AgentAPI.Port != 0 {
+		log.Info("Starting Agent API HTTP server with cert and key and port from config")
+		if err := a.server.ListenAndServeTLS(a.config.AgentAPI.Cert, a.config.AgentAPI.Key); err != http.ErrServerClosed {
+			log.Fatalf("error listening to port: %v", err)
+		}
+	} else if a.config.AgentAPI.Port != 0 {
+		log.Info("Starting Agent API HTTP server with port from config and TLS disabled")
+		if err := a.server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("error listening to port: %v", err)
+		}
+	} else {
+		log.Info("Agent API not started")
 	}
 }
 
-var (
-	instancesRegex = regexp.MustCompile(`^\/nginx[\/]*$`)
-)
-
 func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", "application/json")
+	w.Header().Set(contentTypeHeader, jsonMimeType)
 	switch {
 	case r.Method == http.MethodGet && instancesRegex.MatchString(r.URL.Path):
 		err := sendInstanceDetailsPayload(h.getNginxDetails(), w, r)

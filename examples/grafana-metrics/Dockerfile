@@ -39,6 +39,6 @@ COPY --from=install /agent/nginx-agent.conf /etc/nginx-agent/nginx-agent.conf
 
 RUN chmod +x /agent/entrypoint.sh
 STOPSIGNAL SIGTERM
-EXPOSE 80 443
+EXPOSE 8080
 
 ENTRYPOINT ["/agent/entrypoint.sh"]
