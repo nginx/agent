@@ -39,6 +39,7 @@ type Nginx struct {
 	isNAPEnabled             bool
 	isConfUploadEnabled      bool
 	configApplyStatusChannel chan *proto.Command_NginxConfigResponse
+	wafVersion      		 string
 }
 
 type ConfigRollbackResponse struct {
@@ -118,6 +119,11 @@ func (n *Nginx) Process(message *core.Message) {
 		n.nginxBinary.UpdateNginxDetailsFromProcesses(procs)
 	case core.DataplaneChanged:
 		n.uploadConfigs()
+	case core.DataplaneSoftwareDetailsUpdated:
+		switch details := message.Data().(type) {
+		case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
+			n.processDataplaneSoftwareDetails(details)
+		}
 	case core.AgentConfigChanged:
 		// If the agent config on disk changed update this with relevant config info
 		n.syncAgentConfigChange()
@@ -160,6 +166,7 @@ func (n *Nginx) Subscriptions() []string {
 		core.NginxConfigUpload,
 		core.NginxDetailProcUpdate,
 		core.DataplaneChanged,
+		core.DataplaneSoftwareDetailsUpdated,
 		core.AgentConfigChanged,
 		core.EnableExtension,
 		core.NginxConfigValidationPending,
@@ -207,6 +214,12 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	}
 
 	return nil
+}
+
+func (n *Nginx) processDataplaneSoftwareDetails(details *proto.DataplaneSoftwareDetails_AppProtectWafDetails) {
+	log.Tracef("software details updated software %+v", details)
+
+	n.wafVersion = details.AppProtectWafDetails.WafVersion
 }
 
 func (n *Nginx) processCmd(cmd *proto.Command) {
@@ -284,6 +297,16 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 
 	if config.GetConfigData().GetNginxId() == "" {
 		status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): no Nginx Id in ConfigDescriptor %v", config.GetConfigData())).CmdStatus
+		return status
+	}
+
+	// unwrap the zaux to check for waf content
+	if (config.GetZaux() != &proto.ZippedFile{} && cmd.GetNginxConfig().GetAction() == proto.NginxConfigAction_APPLY) {
+		_, auxFiles, _ := sdk.GetNginxConfigFiles(config)
+		for _, file := range auxFiles {
+			log.Tracef("file %v", file.Name)
+		}
+		status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config a %v", config.GetConfigData())).CmdStatus
 		return status
 	}
 

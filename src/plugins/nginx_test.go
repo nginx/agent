@@ -704,3 +704,44 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 		}
 	}
 }
+
+func TestBlock_ConfigApply(t *testing.T) {
+	commandClient := tutils.GetMockCommandClient(
+		&proto.NginxConfig{
+			Action: proto.NginxConfigAction_APPLY,
+			ConfigData: &proto.ConfigDescriptor{
+				NginxId:  "12345",
+				Checksum: "2314365",
+			},
+			Zconfig: &proto.ZippedFile{
+				Contents:      first,
+				Checksum:      checksum.Checksum(first),
+				RootDirectory: "nginx.conf",
+			},
+			Zaux:         &proto.ZippedFile{
+				Contents:      first,
+				Checksum:      checksum.Checksum(first),
+				RootDirectory: "nginx.conf",
+			},
+			AccessLogs:   &proto.AccessLogs{},
+			ErrorLogs:    &proto.ErrorLogs{},
+			Ssl:          &proto.SslCertificates{},
+			DirectoryMap: &proto.DirectoryMap{},
+		},
+	)
+
+	env := tutils.GetMockEnvWithProcess()
+	binary := tutils.NewMockNginxBinary()
+	binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
+	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+	binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
+
+	config := tutils.GetMockAgentConfig()
+	pluginUnderTest := NewNginx(commandClient, binary, env, config)
+
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+	messagePipe.Process(core.NewMessage(core.DataplaneSoftwareDetailsUpdated, testNAPDetailsActive))
+	messagePipe.Run()
+
+	assert.Equal(t, testNAPDetailsActive.AppProtectWafDetails.WafVersion, pluginUnderTest.wafVersion)
+}
