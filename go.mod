@@ -9,7 +9,7 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/klauspost/cpuid/v2 v2.1.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
@@ -22,14 +22,14 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/shirou/gopsutil/v3 v3.22.7
 	github.com/sirupsen/logrus v1.9.0
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.1
 	github.com/trivago/grok v1.0.0
 	github.com/vardius/message-bus v1.1.5
 	go.uber.org/atomic v1.9.0
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.48.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
 	google.golang.org/protobuf v1.28.1
@@ -52,7 +52,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20220517141722-cf486979b281 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.2 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.1 // indirect
 	github.com/pascaldekloe/name v1.0.1 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
@@ -72,8 +72,8 @@ require (
 	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/net v0.0.0-20220805013720-a33c5aa5df48 // indirect
-	golang.org/x/sys v0.0.0-20220804214406-8e32c043e418 // indirect
+	golang.org/x/net v0.0.0-20220906165146-f3363e06e74c // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/genproto v0.0.0-20220805133916-01dd62135a58 // indirect
