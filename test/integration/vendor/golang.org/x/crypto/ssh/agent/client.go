@@ -773,10 +773,14 @@ func (s *agentKeyringSigner) Sign(rand io.Reader, data []byte) (*ssh.Signature, 
 
 func (s *agentKeyringSigner) SignWithAlgorithm(rand io.Reader, data []byte, algorithm string) (*ssh.Signature, error) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if algorithm == "" || algorithm == underlyingAlgo(s.pub.Type()) {
 =======
 	if algorithm == "" || algorithm == s.pub.Type() {
 >>>>>>> 68cd746 (added testcontainers)
+=======
+	if algorithm == "" || algorithm == underlyingAlgo(s.pub.Type()) {
+>>>>>>> 52bedc1 (fixed make deps)
 		return s.Sign(rand, data)
 	}
 
@@ -796,6 +800,9 @@ func (s *agentKeyringSigner) SignWithAlgorithm(rand io.Reader, data []byte, algo
 var _ ssh.AlgorithmSigner = &agentKeyringSigner{}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 52bedc1 (fixed make deps)
 // certKeyAlgoNames is a mapping from known certificate algorithm names to the
 // corresponding public key signature algorithm.
 //
@@ -823,8 +830,11 @@ func underlyingAlgo(algo string) string {
 	return algo
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 68cd746 (added testcontainers)
+=======
+>>>>>>> 52bedc1 (fixed make deps)
 // Calls an extension method. It is up to the agent implementation as to whether or not
 // any particular extension is supported and may always return an error. Because the
 // type of the response is up to the implementation, this returns the bytes of the
