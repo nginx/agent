@@ -143,7 +143,7 @@ go run sdk/examples/server.go
 
 # Command Output
 INFO[0000] http listening at 54790 # mock control plane port
-INFO[0000] grpc listening at 54789 # grpc control plane port which Agent will report to
+INFO[0000] gRPC listening at 54789 # gRPC control plane port which Agent will report to
 ```
 
 ## Agent Settings
@@ -213,7 +213,7 @@ INFO[0001] OneTimeRegistration completed
 Open a web browser to view the mock control plane at [http://localhost:54790](http://localhost:54790). The following links will be shown in the web interface:
 
 - registered - shows registration information of the dataplane
-- nginxes - lists the nginx instances on the dataplane
+- nginxes - lists the NGINX instances on the dataplane
 - configs - shows the protobuf payload for NGINX configuration sent to the management plane
 - configs/chunked - shows the split up payloads sent to the management plane
 - configs/raw - shows the actual configuration as it would live on the dataplane
