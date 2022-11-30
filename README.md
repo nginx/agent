@@ -135,7 +135,7 @@ Run the following command in your development directory to clone the Agent sourc
 git clone git@github.com:nginx/agent.git
 ```
 
-## Starting the Mock Control Plane
+## Starting the gRPC Mock Control Plane
 Start the mock control plane by running the following command from the `agent` source code root directory:
 
 ```
