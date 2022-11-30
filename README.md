@@ -186,7 +186,7 @@ If already running, restart Agent to apply the new configuration. Alternatively,
 
 Open another terminal window and start the Agent. Issue the following command from the `agent` source code root directory.
 ```
-make run
+sudo make run
 
 # Command Output snippet
 WARN[0000] Log level is info                            
