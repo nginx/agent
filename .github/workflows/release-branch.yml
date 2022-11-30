@@ -114,12 +114,9 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.18.0
           go install github.com/goreleaser/chglog/cmd/chglog@v0.2.0
       - name: Tag release and update changelog
-      # TODO: Remove git config step later once the repo https://github.com/nginxinc/crossplane-go is made public
         env:
-          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           PUBLISH_PACKAGE: ${{ inputs.publishPackages }}
         run: |
-          git config --global url."https://dhurley:${TOKEN}@github.com".insteadOf "https://github.com"
           git config --global user.name 'github-actions'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
