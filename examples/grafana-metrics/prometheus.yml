@@ -5,4 +5,4 @@ scrape_configs:
   - job_name: "prometheus"
     scrape_interval: 15s
     static_configs:
-    - targets: ["agent:9091"]
+    - targets: ["agent:8081"]

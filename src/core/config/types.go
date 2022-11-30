@@ -42,7 +42,9 @@ type Server struct {
 }
 
 type AgentAPI struct {
-	Port int `mapstructure:"port" yaml:"-"`
+	Port int    `mapstructure:"port" yaml:"-"`
+	Cert string `mapstructure:"cert" yaml:"-"`
+	Key  string `mapstructure:"key" yaml:"-"`
 }
 
 // LogConfig for logging

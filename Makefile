@@ -39,6 +39,14 @@ TEST_BUILD_DIR	   := build/test
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 LOCAL_ARCH         := amd64
 
+CERT_CLIENT_CA_CN  := client-ca.local
+CERT_CLIENT_INT_CN := client-int.local
+CERT_CLIENT_EE_CN  := client-ee.local
+CERT_CLIENT_DNS    := client.local
+CERT_SERVER_CA_CN  := server-ca.local
+CERT_SERVER_INT_CN := server-int.local
+CERT_SERVER_EE_CN  := server-ee.local
+CERT_SERVER_DNS    := tls.example.com
 
 $(TEST_BUILD_DIR):
 	mkdir -p $(TEST_BUILD_DIR)
@@ -164,26 +172,28 @@ test-install: ## Run agent install test
 # Cert Generation                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 certs: ## Generate TLS certificates
-	scripts/mtls/gen_cnf.sh ca --cn 'client-ca.local' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/client/conf
+	scripts/mtls/gen_cnf.sh ca --cn '${CERT_CLIENT_CA_CN}' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/client/conf
 	scripts/mtls/gen_cert.sh ca --config ${CERTS_DIR}/client/conf/ca.cnf --out ${CERTS_DIR}/client
 
-	scripts/mtls/gen_cnf.sh intermediate --cn 'client-int.local' --org NGINX --locality Cork --out ${CERTS_DIR}/client/conf
+	scripts/mtls/gen_cnf.sh intermediate --cn '${CERT_CLIENT_INT_CN}' --org NGINX --locality Cork --out ${CERTS_DIR}/client/conf
 	scripts/mtls/gen_cert.sh intermediate --config ${CERTS_DIR}/client/conf/int.cnf --ca-cert ${CERTS_DIR}/client/ca.crt --ca-key ${CERTS_DIR}/client/ca.key --out ${CERTS_DIR}/client
 
-	scripts/mtls/gen_cnf.sh end-entity --cn 'client.local' --san 'DNS.1=client.local' --out ${CERTS_DIR}/client/conf
+	scripts/mtls/gen_cnf.sh end-entity --cn '${CERT_CLIENT_EE_CN}' --san 'DNS.1=${CERT_CLIENT_DNS}' --out ${CERTS_DIR}/client/conf
 	scripts/mtls/gen_cert.sh end-entity --config ${CERTS_DIR}/client/conf/ee.cnf --ca-cert ${CERTS_DIR}/client/int.crt --ca-key ${CERTS_DIR}/client/int.key --out ${CERTS_DIR}/client
 
 	cp ${CERTS_DIR}/client/ee.crt ${CERTS_DIR}/client.crt
 	cp ${CERTS_DIR}/client/ee.key ${CERTS_DIR}/client.key
 
-	scripts/mtls/gen_cnf.sh ca --cn 'server-ca.local' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/server/conf
+	scripts/mtls/gen_cnf.sh ca --cn '${CERT_SERVER_CA_CN}' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/server/conf
 	scripts/mtls/gen_cert.sh ca --config ${CERTS_DIR}/server/conf/ca.cnf --out ${CERTS_DIR}/server
 
-	scripts/mtls/gen_cnf.sh intermediate --cn 'server-int.local' --org NGINX --locality Cork --out ${CERTS_DIR}/server/conf
+	scripts/mtls/gen_cnf.sh intermediate --cn '${CERT_SERVER_INT_CN}' --org NGINX --locality Cork --out ${CERTS_DIR}/server/conf
 	scripts/mtls/gen_cert.sh intermediate --config ${CERTS_DIR}/server/conf/int.cnf --ca-cert ${CERTS_DIR}/server/ca.crt --ca-key ${CERTS_DIR}/server/ca.key --out ${CERTS_DIR}/server
 
-	scripts/mtls/gen_cnf.sh end-entity --cn 'tls.example.com' --san 'DNS.1=tls.example.com' --out ${CERTS_DIR}/server/conf
+	scripts/mtls/gen_cnf.sh end-entity --cn '${CERT_SERVER_EE_CN}' --san 'DNS.1=${CERT_SERVER_DNS}' --out ${CERTS_DIR}/server/conf
 	scripts/mtls/gen_cert.sh end-entity --config ${CERTS_DIR}/server/conf/ee.cnf --ca-cert ${CERTS_DIR}/server/int.crt --ca-key ${CERTS_DIR}/server/int.key --out ${CERTS_DIR}/server
+
+	cat ${CERTS_DIR}/server/int.crt ${CERTS_DIR}/server/ca.crt > ${CERTS_DIR}/ca.pem
 
 	cp ${CERTS_DIR}/server/ee.crt ${CERTS_DIR}/server.crt
 	cp ${CERTS_DIR}/server/ee.key ${CERTS_DIR}/server.key

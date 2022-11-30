@@ -211,8 +211,13 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		plugins.NewProcessWatcher(env, binary),
 		plugins.NewExtensions(loadedConfig, env),
 		plugins.NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary),
-		plugins.NewAgentAPI(loadedConfig, env, binary),
 	)
+
+	if loadedConfig.AgentAPI.Port != 0 {
+		corePlugins = append(corePlugins, plugins.NewAgentAPI(loadedConfig, env, binary))
+	} else {
+		log.Info("Agent API not configured")
+	}
 
 	if len(loadedConfig.Nginx.NginxCountingSocket) > 0 {
 		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env))

@@ -125,10 +125,10 @@ req_extensions      = v3_req
 policy              = policy
 
 [ policy ]
-countryName             = optional
-stateOrProvinceName     = optional
+countryName             = match
+stateOrProvinceName     = match
+organizationName        = match
 localityName            = optional
-organizationName        = optional
 organizationalUnitName  = optional
 commonName              = supplied
 
@@ -163,10 +163,10 @@ req_extensions      = v3_req
 policy              = policy
 
 [ policy ]
-countryName             = optional
-stateOrProvinceName     = optional
+countryName             = match
+stateOrProvinceName     = match
+organizationName        = match
 localityName            = optional
-organizationName        = optional
 organizationalUnitName  = optional
 commonName              = supplied
 
