@@ -289,7 +289,7 @@ Minimum system sizing recommendations for Agent:
 
 
 # Contributing
-Get involved with the project by contributing! Please see our [contributing guide](docs/CONTRIBUTING.md) for details.
+Get involved with the project by contributing! Please see our [contributing guide](CONTRIBUTING.md) for details.
 
 # Change Log
 See our [changelog](docs/CHANGELOG.md) to keep track of updates.
