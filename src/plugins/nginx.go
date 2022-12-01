@@ -11,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -309,12 +310,23 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 
 	// unwrap the zaux to check for waf content
 	if (config.GetZaux() != &proto.ZippedFile{} && cmd.GetNginxConfig().GetAction() == proto.NginxConfigAction_APPLY) {
-		_, auxFiles, _ := sdk.GetNginxConfigFiles(config)
-		for _, file := range auxFiles {
-			log.Tracef("file %v", file.Name)
+		appProtectMetadataPath := strings.Split(appProtectMetadataFilePath, "/")
+		directories := config.GetDirectoryMap().GetDirectories()
+		for _, directory := range directories {
+			log.Tracef("directory %v", directory.Name)
+
+			for _, file := range directory.GetFiles() {
+				log.Tracef("checking %v", file)
+				if (file.GetName() == appProtectMetadataPath[len(appProtectMetadataPath)-1]) {
+					_, auxFiles, _ := sdk.GetNginxConfigFiles(config)
+					for _, file := range auxFiles {
+						log.Tracef("file %v", file.Name)
+					}
+					status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config a %v", config.GetConfigData())).CmdStatus
+					return status
+				}
+			}
 		}
-		status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config a %v", config.GetConfigData())).CmdStatus
-		return status
 	}
 
 	log.Debugf("Disabling file watcher")

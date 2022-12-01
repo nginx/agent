@@ -83,8 +83,8 @@ func BenchmarkGetConfigFiles(b *testing.B) {
 					confFiles, auxFiles, err = sdk.GetNginxConfigFiles(config)
 				}
 				require.NoError(bb, err)
-				conf := fmt.Sprintf("Generated config Files for %v should not be nil", config.DirectoryMap.Directories[0].Files[0].Name)
-				confAux := fmt.Sprintf("Generated auxillary files for %v should not be nil", config.DirectoryMap.Directories[0].Files[0].Name)
+				conf := fmt.Sprintf("Generated config Files for %v should not be nil", config.GetDirectoryMap().GetDirectories()[0].GetFiles()[0].GetName())
+				confAux := fmt.Sprintf("Generated auxillary files for %v should not be nil", config.GetDirectoryMap().GetDirectories()[0].GetFiles()[0].GetName())
 
 				require.NotNil(bb, confFiles, conf)
 				require.NotNil(bb, auxFiles, confAux)

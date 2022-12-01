@@ -97,6 +97,32 @@ var (
 			}
 		}
 	}`)
+	wafMetaData  = []byte(`{
+		"napVersion": "3.1088.2",
+		"globalStateFileName": "",
+		"globalStateFileUID": "",
+		"attackSignatureRevisionTimestamp ": "2021.04.04",
+		"threatCampaignRevisionTimestamp": "2021.04.16",
+		"policyMetadata": [
+		  {
+			"name": "default-enforcemen t3",
+			"uid": "d102e132-12a0-483d-8329-d365d29801e0",
+			"revisionTimestamp": 1669071164488
+		  },
+		  {
+			"name": "ignore-xss3",
+			" uid": "de178e35-dc3b-40da-a53e-2bcede19e072",
+			"revisionTimestamp": 1668723801915
+		  }
+		],
+		"logProfileMetadata": [
+		  {
+			"nam e": "log_all",
+			"uid": "ee07fd58-fbd2-4db9-a2c2-0d06dc4d4321",
+			"revisionTimestamp": 1668723322517
+		  }
+		]
+	  }`)
 )
 
 func TestNginxConfigApply(t *testing.T) {
@@ -184,6 +210,109 @@ func TestNginxConfigApply(t *testing.T) {
 					RootDirectory: "nginx.conf",
 				},
 				Zaux:         &proto.ZippedFile{},
+				AccessLogs:   &proto.AccessLogs{},
+				ErrorLogs:    &proto.ErrorLogs{},
+				Ssl:          &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxReloadComplete,
+				core.NginxConfigApplySucceeded,
+			},
+		},
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_APPLY,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      third,
+					Checksum:      checksum.Checksum(third),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux: &proto.ZippedFile{
+					Contents:      wafMetaData,
+					Checksum:      checksum.Checksum(wafMetaData),
+					RootDirectory: "/etc/nms",
+				},
+				AccessLogs:   &proto.AccessLogs{},
+				ErrorLogs:    &proto.ErrorLogs{},
+				Ssl:          &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{
+					Directories: []*proto.Directory{
+						{
+							Name:        "/etc/nms",
+							Permissions: "0755",
+							Files: []*proto.File{
+								{
+									Name:        "app_protect_metadata.json",
+									Permissions: "0644",
+									Size_:       959,
+								},
+							},
+							Size_: 128,
+						},
+						{
+							Name:        "/tmp/testdata/root",
+							Permissions: "0755",
+							Files: []*proto.File{
+								{
+									Name:        "log-default.json",
+									Permissions: "0644",
+									Size_:       959,
+								},
+								{
+									Name:        "my-nap-policy.json",
+									Permissions: "0644",
+									Size_:       959,
+								},
+								{
+									Name:        "test.html",
+									Permissions: "0644",
+									Size_:       959,
+								},
+							},
+							Size_: 128,
+						},
+					},
+				},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.CommResponse,
+			},
+		},
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_APPLY,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      third,
+					Checksum:      checksum.Checksum(third),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux: &proto.ZippedFile{
+					Contents:      wafMetaData,
+					Checksum:      checksum.Checksum(wafMetaData),
+					RootDirectory: "/etc/nms",
+				},
 				AccessLogs:   &proto.AccessLogs{},
 				ErrorLogs:    &proto.ErrorLogs{},
 				Ssl:          &proto.SslCertificates{},
@@ -467,6 +596,7 @@ func TestNginx_Subscriptions(t *testing.T) {
 		core.NginxConfigUpload,
 		core.NginxDetailProcUpdate,
 		core.DataplaneChanged,
+		core.DataplaneSoftwareDetailsUpdated,
 		core.AgentConfigChanged,
 		core.EnableExtension,
 		core.NginxConfigValidationPending,
@@ -588,6 +718,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	assert.NoError(t, err)
 	allowedDirectoriesMap := map[string]struct{}{dir: {}}
 	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+	assert.NoError(t, err)
 
 	response := &NginxConfigValidationResponse{
 		err:           nil,
@@ -674,6 +805,7 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 	assert.NoError(t, err)
 	allowedDirectoriesMap := map[string]struct{}{dir: {}}
 	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+	assert.NoError(t, err)
 
 	response := &NginxConfigValidationResponse{
 		err:           errors.New("Failure"),
