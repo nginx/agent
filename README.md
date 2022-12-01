@@ -21,7 +21,7 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
   - [Logging](#logging)
 - [Getting Started with NGINX Agent](#getting-started-with-nginx-agent)
   - [Installing NGINX and NGINX Agent](#installing-nginx-and-nginx-agent)
-  - [Starting the Mock Control Plane](#starting-the-mock-control-plane)
+  - [Starting the gRPC Mock Control Plane](#starting-the-grpc-mock-control-plane)
   - [NGINX Agent Settings](#nginx-agent-settings)
   - [Starting NGINX Agent](#starting-nginx-agent)
 - [Development Environment Setup](#development-environment-setup)
