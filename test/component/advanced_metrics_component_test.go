@@ -53,7 +53,7 @@ var (
 )
 
 func init() {
-	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetLevel(logrus.TraceLevel)
 }
 
 // TestAdvancedMetricsSimple this is simple test which presents basic logic of advanced_metrics module

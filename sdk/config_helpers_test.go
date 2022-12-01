@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package sdk
 
 import (
@@ -1327,8 +1334,7 @@ func TestAddAuxfileToNginxConfig(t *testing.T) {
 		assert.NoError(t, err)
 
 		if test.expected.Zaux != nil {
-			assert.Equal(t, test.expected.Zaux.Checksum, nginxConfig.Zaux.Checksum)
-			assert.Equal(t, test.expected.Zaux.Checksum, nginxConfig.Zaux.Checksum)
+			assert.Equal(t, test.expected.Zaux.Checksum, nginxConfig.GetZaux().GetChecksum())
 			zf, err := zip.NewReader(nginxConfig.Zaux)
 			assert.NoError(t, err)
 			files := make(map[string]struct{})

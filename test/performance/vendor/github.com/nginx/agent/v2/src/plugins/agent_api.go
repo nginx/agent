@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package plugins
 
 import (
@@ -37,6 +44,16 @@ type NginxHandler struct {
 	nginxBinary     core.NginxBinary
 	responseChannel chan *proto.Command_NginxConfigResponse
 }
+
+const (
+	contentTypeHeader = "Content-Type"
+	jsonMimeType      = "application/json"
+)
+
+var (
+	instancesRegex = regexp.MustCompile(`^\/nginx[\/]*$`)
+	configRegex    = regexp.MustCompile(`^\/nginx/config[\/]*$`)
+)
 
 func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.NginxBinary) *AgentAPI {
 	return &AgentAPI{
@@ -104,26 +121,29 @@ func (a *AgentAPI) createHttpServer() {
 	registerer.MustRegister(a.exporter)
 	mux.Handle("/metrics", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
 	mux.Handle("/nginx/", a.nginxHandler)
-
+    
 	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
 		Handler: mux,
 	}
 
-	log.Debug("Starting Agent API HTTP server")
-
-	if err := a.server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("error listening to port: %v", err)
+	if a.config.AgentAPI.Cert != "" && a.config.AgentAPI.Key != "" && a.config.AgentAPI.Port != 0 {
+		log.Info("Starting Agent API HTTP server with cert and key and port from config")
+		if err := a.server.ListenAndServeTLS(a.config.AgentAPI.Cert, a.config.AgentAPI.Key); err != http.ErrServerClosed {
+			log.Fatalf("error listening to port: %v", err)
+		}
+	} else if a.config.AgentAPI.Port != 0 {
+		log.Info("Starting Agent API HTTP server with port from config and TLS disabled")
+		if err := a.server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("error listening to port: %v", err)
+		}
+	} else {
+		log.Info("Agent API not started")
 	}
 }
 
-var (
-	instancesRegex = regexp.MustCompile(`^\/nginx[\/]*$`)
-	configRegex    = regexp.MustCompile(`^\/nginx/config[\/]*$`)
-)
-
 func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", "application/json")
+	w.Header().Set(contentTypeHeader, jsonMimeType)
 	switch {
 	case instancesRegex.MatchString(r.URL.Path):
 		if r.Method != http.MethodGet {

@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package publisher
 
 import (
@@ -20,6 +27,13 @@ func TestPublisher(t *testing.T) {
 		expectedMetrics   []*MetricSet
 		dimensionsLookups map[int]map[int]string
 	}{
+		{
+			name: "no metric with no dimension",
+			schema: schema.NewSchema([]*schema.Field{}...),
+			samples: map[string]*sample.Sample{},
+			dimensionsLookups: map[int]map[int]string{},
+			expectedMetrics: []*MetricSet{},
+		},
 		{
 			name: "single metric with single dimension",
 			schema: schema.NewSchema([]*schema.Field{

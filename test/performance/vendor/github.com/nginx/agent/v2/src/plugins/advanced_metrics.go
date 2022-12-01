@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package plugins
 
 import (
@@ -226,7 +233,10 @@ func (m *AdvancedMetrics) run() {
 				return
 			}
 			now := types.TimestampNow()
-			m.pipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{toMetricReport(mr, now, commonDimensions)}))
+			report := toMetricReport(mr, now, commonDimensions)
+			if len(report.Data) != 0 {
+				m.pipeline.Process(core.NewMessage(core.CommMetrics, []core.Payload{report}))
+			}
 		case <-m.pipeline.Context().Done():
 			return
 		}

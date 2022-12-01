@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package main
 
 import (
@@ -211,8 +218,13 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		plugins.NewProcessWatcher(env, binary),
 		plugins.NewExtensions(loadedConfig, env),
 		plugins.NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary),
-		plugins.NewAgentAPI(loadedConfig, env, binary),
 	)
+
+	if loadedConfig.AgentAPI.Port != 0 {
+		corePlugins = append(corePlugins, plugins.NewAgentAPI(loadedConfig, env, binary))
+	} else {
+		log.Info("Agent API not configured")
+	}
 
 	if len(loadedConfig.Nginx.NginxCountingSocket) > 0 {
 		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env))

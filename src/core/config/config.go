@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package config
 
 import (
@@ -337,6 +344,8 @@ func getServer() Server {
 func getAgentAPI() AgentAPI {
 	return AgentAPI{
 		Port: Viper.GetInt(AgentAPIPort),
+		Cert: Viper.GetString(AgentAPICert),
+		Key:  Viper.GetString(AgentAPIKey),
 	}
 }
 
@@ -355,7 +364,7 @@ func LoadPropertiesFromFile(cfg string) error {
 	Viper.SetConfigType(ConfigFileType)
 	err := Viper.MergeInConfig()
 	if err != nil {
-		return fmt.Errorf("Error loading config file %s: %v", cfg, err)
+		return fmt.Errorf("error loading config file %s: %v", cfg, err)
 	}
 
 	// Get the dynamic config path and use default dynamic config path if it's not
@@ -376,12 +385,12 @@ func LoadPropertiesFromFile(cfg string) error {
 		log.Infof("Writing the following file to disk: %s", dynamicCfgPath)
 		err = os.MkdirAll(dynamicCfgDir, 0755)
 		if err != nil {
-			return fmt.Errorf("Error attempting to create directory for dynamic config (%s), got the following error: %v", dynamicCfgDir, err)
+			return fmt.Errorf("error attempting to create directory for dynamic config (%s), got the following error: %v", dynamicCfgDir, err)
 		}
 
 		err = os.WriteFile(dynamicCfgPath, []byte(dynamicConfigUsageComment), 0644)
 		if err != nil {
-			return fmt.Errorf("Error attempting to create dynamic config (%s), got the following error: %v", dynamicCfgPath, err)
+			return fmt.Errorf("error attempting to create dynamic config (%s), got the following error: %v", dynamicCfgPath, err)
 		}
 	}
 
@@ -391,7 +400,7 @@ func LoadPropertiesFromFile(cfg string) error {
 	Viper.SetConfigName(dynamicCfgFile)
 	err = Viper.MergeInConfig()
 	if err != nil {
-		return fmt.Errorf("Error loading file %s: %v", dynamicCfgPath, err)
+		return fmt.Errorf("error loading file %s: %v", dynamicCfgPath, err)
 	}
 
 	return nil
@@ -418,7 +427,7 @@ func SeekConfigFileInPaths(configName string, searchPaths ...string) (string, er
 			return f, nil
 		}
 	}
-	return "", fmt.Errorf("A valid configuration has not been found in any of the search paths.")
+	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths.")
 }
 
 func filePathUTime(path string) time.Time {

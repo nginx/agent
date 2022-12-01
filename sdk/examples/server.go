@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package main
 
 import (
@@ -50,7 +57,7 @@ func main() {
 
 	//Serve gRPC Server
 	log.Println("http listening")
-	log.Println("grpc listening")
+	log.Println("gRPC listening")
 
 	go func() {
 		if err := grpcServer.Serve(grpcListener); err != nil {
@@ -60,7 +67,7 @@ func main() {
 
 	http.Handle("/", http.FileServer(http.FS(content)))
 
-	http.Handle("/registered", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	http.Handle("/registered/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		payload, err := json.Marshal(commandService.GetRegistration())
 		if err != nil {
 			log.Warnf("%v", err)
@@ -69,7 +76,7 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Handle("/nginxes", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	http.Handle("/nginxes/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		payload, err := json.Marshal(commandService.GetNginxes())
 		if err != nil {
 			log.Warnf("%v", err)
@@ -78,7 +85,7 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Handle("/configs/chunked", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	http.Handle("/configs/chunked/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		payload, err := json.Marshal(commandService.GetChunks())
 		if err != nil {
 			log.Warnf("%v", err)
@@ -87,7 +94,7 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Handle("/configs/raw", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	http.Handle("/configs/raw/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		confFiles, auxFiles := commandService.GetContents()
 		response := map[string]interface{}{}
 		for _, confFile := range confFiles {
@@ -106,7 +113,7 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Handle("/configs", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	http.Handle("/configs/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		payload, err := json.Marshal(commandService.GetConfigs())
 		if err != nil {
 			log.Warnf("%v", err)
@@ -115,7 +122,7 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Handle("/metrics", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	http.Handle("/metrics/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		payload, err := json.Marshal(metricsService.GetMetrics())
 		if err != nil {
 			log.Warnf("%v", err)

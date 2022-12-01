@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package plugins
 
 import (
@@ -52,16 +59,8 @@ func TestActivityEvents_Process(t *testing.T) {
 		expectedEventReport *eventsProto.EventReport
 	}{
 		{
-			name: "test NginxInstancesFound message",
-			message: core.NewMessage(core.NginxInstancesFound, map[string]*proto.NginxDetails{
-				"12345": {
-					ProcessPath: "/path/to/nginx",
-					NginxId:     "12345",
-					ProcessId:   "123",
-					Version:     "1.2.1",
-					StartTime:   1564894894,
-				},
-			}),
+			name:    "test NginxInstancesFound message",
+			message: core.NewMessage(core.NginxInstancesFound, tutils.GetDetailsMap()),
 			msgTopics: []string{
 				core.NginxInstancesFound,
 				core.Events,
@@ -89,14 +88,8 @@ func TestActivityEvents_Process(t *testing.T) {
 		{
 			name: "test NginxReloadComplete message - reload failed",
 			message: core.NewMessage(core.NginxReloadComplete, NginxReloadResponse{
-				succeeded: false,
-				nginxDetails: &proto.NginxDetails{
-					ProcessPath: "/path/to/nginx",
-					NginxId:     "12345",
-					ProcessId:   "123",
-					Version:     "1.2.1",
-					StartTime:   1564894894,
-				},
+				succeeded:     false,
+				nginxDetails:  tutils.GetDetailsMap()["12345"],
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{
@@ -125,14 +118,8 @@ func TestActivityEvents_Process(t *testing.T) {
 		{
 			name: "test NginxReloadComplete message - reload succeeded",
 			message: core.NewMessage(core.NginxReloadComplete, NginxReloadResponse{
-				succeeded: true,
-				nginxDetails: &proto.NginxDetails{
-					ProcessPath: "/path/to/nginx",
-					NginxId:     "12345",
-					ProcessId:   "124",
-					Version:     "1.2.1",
-					StartTime:   1564894891,
-				},
+				succeeded:     true,
+				nginxDetails:  tutils.GetDetailsMap()["12345"],
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{
@@ -150,7 +137,7 @@ func TestActivityEvents_Process(t *testing.T) {
 						},
 						Data: &eventsProto.Event_ActivityEvent{
 							ActivityEvent: &eventsProto.ActivityEvent{
-								Message:    "nginx-v1.2.1 master process (pid: 124) reloaded successfully",
+								Message:    "nginx-v1.2.1 master process (pid: 123) reloaded successfully",
 								Dimensions: expectedNginxDimensions,
 							},
 						},
@@ -252,11 +239,8 @@ func TestActivityEvents_Process(t *testing.T) {
 		{
 			name: "test successful ConfigRollbackResponse message",
 			message: core.NewMessage(core.ConfigRollbackResponse, ConfigRollbackResponse{
-				succeeded: true,
-				nginxDetails: &proto.NginxDetails{
-					ProcessPath: "/path/to/nginx",
-					NginxId:     "12345",
-				},
+				succeeded:     true,
+				nginxDetails:  tutils.GetDetailsMap()["12345"],
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{
@@ -285,11 +269,8 @@ func TestActivityEvents_Process(t *testing.T) {
 		{
 			name: "test failed ConfigRollbackResponse message",
 			message: core.NewMessage(core.ConfigRollbackResponse, ConfigRollbackResponse{
-				succeeded: false,
-				nginxDetails: &proto.NginxDetails{
-					ProcessPath: "/path/to/nginx",
-					NginxId:     "12345",
-				},
+				succeeded:     false,
+				nginxDetails:  tutils.GetDetailsMap()["12345"],
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{

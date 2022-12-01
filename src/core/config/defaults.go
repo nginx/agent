@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package config
 
 import (
@@ -42,9 +49,6 @@ var (
 			// token needs to be validated on the server side - can be overridden by the config value or the cli / environment variable
 			// so setting to random uuid at the moment, tls connection won't work without the auth header
 			Token: uuid.New().String(),
-		},
-		AgentAPI: AgentAPI{
-			Port: 9090,
 		},
 		Nginx: Nginx{
 			Debug:               false,
@@ -117,6 +121,8 @@ const (
 	APIKey = "api"
 
 	AgentAPIPort = APIKey + agent_config.KeyDelimiter + "port"
+	AgentAPICert = APIKey + agent_config.KeyDelimiter + "cert"
+	AgentAPIKey  = APIKey + agent_config.KeyDelimiter + "key"
 
 	// viper keys used in config
 	TlsKey = "tls"
@@ -230,7 +236,16 @@ var (
 		&IntFlag{
 			Name:         AgentAPIPort,
 			Usage:        "The desired port to use for nginx-agent to expose for HTTP traffic.",
-			DefaultValue: Defaults.AgentAPI.Port,
+		},
+		&StringFlag{
+			Name:         AgentAPICert,
+			Usage:        "The cert used by the Agent API.",
+			DefaultValue: "",
+		},
+		&StringFlag{
+			Name:         AgentAPIKey,
+			Usage:        "The key used by the Agent API.",
+			DefaultValue: "",
 		},
 		&StringFlag{
 			Name:         ConfigDirsKey,
