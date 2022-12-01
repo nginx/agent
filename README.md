@@ -132,7 +132,7 @@ Follow steps in the [Installation](#installation) section to download, install, 
 Run the following command in your development directory to clone the Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
 ```
-git clone git@github.com:nginx/agent.git
+git clone https://github.com/nginx/agent.git
 ```
 
 ## Starting the gRPC Mock Control Plane
@@ -172,7 +172,7 @@ The Agent REST interface can be exposed by adding the following lines to the `ng
 
 ```yaml
 api:
-  port: 9090 # port to expose REST API
+  port: 8081 # port to expose REST API
   
   # REST TLS parameters
   cert: "<TLS-CERTIFICATE>.crt"
