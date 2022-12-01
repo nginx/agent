@@ -25,4 +25,6 @@ const (
 	// THREAT_CAMPAIGN_VERSION_FILE  = "/opt/app_protect/var/update_files/threat_campaigns/version"
 	ATTACK_SIGNATURES_UPDATE_FILE = "/opt/app_protect/var/update_files/signatures/signature_update.yaml"
 	THREAT_CAMPAIGNS_UPDATE_FILE  = "/opt/app_protect/var/update_files/threat_campaigns/threat_campaign_update.yaml"
+
+	APP_PROTECT_METADATA_FILE_PATH = "/etc/nms/app_protect_metadata.json"
 )

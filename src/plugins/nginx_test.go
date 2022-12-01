@@ -259,6 +259,7 @@ func TestNginxConfigApply(t *testing.T) {
 									Name:        "app_protect_metadata.json",
 									Permissions: "0644",
 									Size_:       959,
+									Contents:    wafMetaData,
 								},
 							},
 							Size_: 128,
