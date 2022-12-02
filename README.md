@@ -129,11 +129,7 @@ Follow these steps to configure and run NGINX Agent and a mock interface ("contr
 Follow steps in the [Installation](#installation) section to download, install, and run NGINX and NGINX Agent.
 
 ## Cloning the NGINX Agent Repository
-Run the following command in your development directory to clone the NGINX Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
-
-```
-git clone git@github.com:nginx/agent.git
-```
+Using your preferred method, clone the NGINX Agent repository into your development directory. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
 ## Starting the gRPC Mock Control Plane
 Start the mock control plane by running the following command from the `agent` source code root directory:
