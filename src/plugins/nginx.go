@@ -22,6 +22,7 @@ import (
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/grpc"
+	"github.com/nginx/agent/sdk/v2/zip"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -306,11 +307,32 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		return status
 	}
 
-	// unwrap the zaux to check for waf content
-	// read file, check waf version
-	valid, resp := validateNapVersion(config, cmd, status, n.wafVersion)
-	if !valid {
-		return resp
+	appProtectMetadataPath := strings.Split(nap.APP_PROTECT_METADATA_FILE_PATH, "/")
+	if (isNapInPayload(config.GetDirectoryMap(), cmd.GetNginxConfig().GetAction(), appProtectMetadataPath)) {
+		if aux := config.GetZaux(); aux != nil && len(aux.Contents) > 0 {
+			auxFiles, err := zip.UnPack(aux)
+			if err != nil {
+				status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read unpack aux files %v", config.GetZaux())).CmdStatus
+				return status			
+			}
+			for _, file := range auxFiles {
+				if file.GetName() == appProtectMetadataPath[len(appProtectMetadataPath)-1] {
+					log.Debugf("%v", file)
+
+					var napMetaData nap.Metadata
+	
+					err := json.Unmarshal(file.GetContents(), &napMetaData)
+					if err != nil {
+						status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read WAF file in metadata %v", config.GetConfigData())).CmdStatus
+						return status
+					}
+					if n.wafVersion != napMetaData.NapVersion {
+						status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config a %v", config.GetConfigData())).CmdStatus
+						return status
+					}
+				}				
+			}
+		}
 	}
 
 	log.Debugf("Disabling file watcher")
@@ -371,33 +393,23 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 	}
 }
 
-func validateNapVersion(config *proto.NginxConfig, cmd *proto.Command, status *proto.Command_NginxConfigResponse, wafVersion string) (bool, *proto.Command_NginxConfigResponse) {
-	if (config.GetZaux() != &proto.ZippedFile{} && cmd.GetNginxConfig().GetAction() == proto.NginxConfigAction_APPLY) {
-		appProtectMetadataPath := strings.Split(nap.APP_PROTECT_METADATA_FILE_PATH, "/")
-		directories := config.GetDirectoryMap().GetDirectories()
-		for _, directory := range directories {
+func isNapInPayload(directoryMap *proto.DirectoryMap, action proto.NginxConfigAction, path []string) (bool) {
+	if (action == proto.NginxConfigAction_APPLY) {
+		for _, directory := range directoryMap.Directories {
 			log.Tracef("directory %v", directory.Name)
 
 			for _, file := range directory.GetFiles() {
 				log.Tracef("checking %v", file)
-				if file.GetName() == appProtectMetadataPath[len(appProtectMetadataPath)-1] {
-					var napMetaData nap.Metadata
-
-					err := json.Unmarshal(file.GetContents(), &napMetaData)
-					if err != nil {
-						status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read WAF file in metadata %v", config.GetConfigData())).CmdStatus
-						return false, status
-					}
-					if wafVersion != napMetaData.NapVersion {
-						status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config a %v", config.GetConfigData())).CmdStatus
-						return false, status
-					}
+				if file.GetName() == path[len(path)-1] {
+					return true
 				}
 			}
 		}
 	}
-	return true, nil
+	return false
 }
+
+
 
 // This function will run a nginx config validation in a separate go routine. If the validation takes less than 15 seconds then the result is returned straight away,
 // otherwise nil is returned and the validation continues on in the background until it is complete. The result is always added to the message pipeline for other plugins

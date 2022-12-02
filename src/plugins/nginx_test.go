@@ -234,7 +234,7 @@ func TestNginxConfigApply(t *testing.T) {
 				Action: proto.NginxConfigAction_APPLY,
 				ConfigData: &proto.ConfigDescriptor{
 					NginxId:  "12345",
-					Checksum: "test",
+					Checksum: "\xe7e\x8dD\xb8E\x12\xb4\x04s\x85\xed\x1d\\\x84-߮\x878o\nѫ\xae\x9e3`\xb4\xd1\x1ae",
 				},
 				Zconfig: &proto.ZippedFile{
 					Contents:      third,
