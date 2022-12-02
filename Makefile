@@ -25,6 +25,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE:=ubuntu
 OS_VERSION:=22.04
+OS_CODENAME:=jammy
 DOCKER_IMAGE="${OS_RELEASE}:${OS_VERSION}"
 DOCKER_TAG=agent_${OS_RELEASE}_${OS_VERSION}
 
@@ -165,8 +166,13 @@ build-benchmark-docker: ## Build benchmark test docker image for NGINX Plus, nee
 		-f test/docker/Dockerfile .
 
 # Install tests
-test-install: ## Run agent install test
-	GOWORK=off CGO_ENABLED=0 go test -v ./test/install
+test-install: ## Run agent install/uninstall test for release
+	AGENT_PACKAGE_FILE=${shell find ./build/packages/deb/*${OS_CODENAME}_${LOCAL_ARCH}.deb -type f -exec realpath {} \;} \
+		GOWORK=off CGO_ENABLED=0 go test -v ./test/install
+
+local-test-install: ## Run agent install/uninstall test for local snapshot
+	AGENT_PACKAGE_FILE=${shell find ./build/packages/*.deb -type f -exec realpath {} \;} \
+		GOWORK=off CGO_ENABLED=0 go test -v ./test/install
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Cert Generation                                                                                                 #
