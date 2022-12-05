@@ -4,11 +4,13 @@ option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
 
 import "gogo.proto";
 import "nap.proto";
+import "nginx.proto";
 
 // DataplaneSoftwareDetails contains details for additional software running on the dataplane that pertains 
 // to NGINX Agent
 message DataplaneSoftwareDetails {
     oneof data {
         AppProtectWAFDetails app_protect_waf_details = 1 [(gogoproto.jsontag) = "app_protect_waf_details"];
+        NginxDetails nginx_details = 2 [(gogoproto.jsontag) = "nginx_details"];
     }
 }

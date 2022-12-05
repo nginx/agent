@@ -94,7 +94,7 @@ func (a *AgentAPI) createHttpServer() {
 	mux.Handle("/metrics/", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
 
 	mux.Handle("/nginx/", a.nginxHandler)
-    
+
 	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
 		Handler: mux,

@@ -41,6 +41,7 @@ type DataPlaneStatus struct {
 	napDetails            *proto.DataplaneSoftwareDetails_AppProtectWafDetails
 	agentActivityStatuses []*proto.AgentActivityStatus
 	napDetailsMutex       sync.RWMutex
+	napHealth             *proto.DataplaneSoftwareHealth_AppProtectWafHealth
 }
 
 const (
@@ -69,6 +70,7 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		napDetailsMutex: sync.RWMutex{},
 		// Intentionally empty as it will be set later
 		napDetails: nil,
+		napHealth:  &proto.DataplaneSoftwareHealth_AppProtectWafHealth{},
 	}
 }
 
