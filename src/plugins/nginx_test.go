@@ -400,28 +400,83 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
 				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxReloadComplete,
+				core.NginxConfigApplySucceeded,
 			},
+			// mismatch, test should still pass because of the NginxConfigAction_FORCE
 			wafVersion: "3.1088.1",
 		},
-	}
-
-	cmd := &proto.Command{
-		Meta: grpc.NewMessageMeta(uuid.New().String()),
-		Type: 1,
-		Data: &proto.Command_NginxConfig{
-			NginxConfig: &proto.NginxConfig{
+		{
+			config: &proto.NginxConfig{
 				Action: proto.NginxConfigAction_APPLY,
 				ConfigData: &proto.ConfigDescriptor{
 					NginxId:  "12345",
 					Checksum: "test",
 				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      first,
+					Checksum:      checksum.Checksum(first),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux: &proto.ZippedFile{
+					Contents:      wafMetaData1,
+					Checksum:      "e7658d44b84512b4047385ed1d5c842ddfae87386f0ad1abae9e3360b4d11a65",
+					RootDirectory: "/etc/nms",
+				},
+				AccessLogs: &proto.AccessLogs{},
+				ErrorLogs:  &proto.ErrorLogs{},
+				Ssl:        &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{
+					Directories: []*proto.Directory{
+						{
+							Name:        "/etc/nms",
+							Permissions: "0755",
+							Files: []*proto.File{
+								{
+									Name:        "app_protect_metadata.json",
+									Permissions: "0644",
+									Size_:       959,
+									Contents:    wafMetaData1,
+								},
+							},
+							Size_: 128,
+						},
+					},
+				},
 			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.CommResponse,
+			},
+			// mismatch, should fail on prefligh because of the NginxConfigAction_APPLY
+			wafVersion: "3.1088.1",
 		},
 	}
 
 	for idx, test := range tests {
 		test := test
+		cmd := &proto.Command{
+			Meta: grpc.NewMessageMeta(uuid.New().String()),
+			Type: 1,
+			Data: &proto.Command_NginxConfig{
+				NginxConfig: &proto.NginxConfig{
+					Action: test.config.GetAction(),
+					ConfigData: &proto.ConfigDescriptor{
+						NginxId:  "12345",
+						Checksum: "test",
+					},
+				},
+			},
+		}
+
 		t.Run(fmt.Sprintf("%d", idx), func(tt *testing.T) {
 			dir := t.TempDir()
 			var auxPath string

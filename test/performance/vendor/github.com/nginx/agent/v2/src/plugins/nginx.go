@@ -309,27 +309,29 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		return status
 	}
 
-	if isNapInPayload(config.GetDirectoryMap(), cmd.GetNginxConfig().GetAction(), n.wafLocation) {
-		if aux := config.GetZaux(); aux != nil && len(aux.Contents) > 0 {
-			auxFiles, err := zip.UnPack(aux)
-			if err != nil {
-				status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read unpack aux files %v", config.GetZaux())).CmdStatus
-				return status
-			}
-			for _, file := range auxFiles {
-				if filepath.Base(file.GetName()) == filepath.Base(n.wafLocation) {
-					log.Debugf("%v", file)
+	if (cmd.GetNginxConfig().GetAction() != proto.NginxConfigAction_FORCE) {
+		if isNapInPayload(config.GetDirectoryMap(), cmd.GetNginxConfig().GetAction(), n.wafLocation) {
+			if aux := config.GetZaux(); aux != nil && len(aux.Contents) > 0 {
+				auxFiles, err := zip.UnPack(aux)
+				if err != nil {
+					status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read unpack aux files %v", config.GetZaux())).CmdStatus
+					return status
+				}
+				for _, file := range auxFiles {
+					if filepath.Base(file.GetName()) == filepath.Base(n.wafLocation) {
+						log.Debugf("%v", file)
 
-					var napMetaData nap.Metadata
+						var napMetaData nap.Metadata
 
-					err := json.Unmarshal(file.GetContents(), &napMetaData)
-					if err != nil {
-						status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read WAF file in metadata %v", config.GetConfigData())).CmdStatus
-						return status
-					}
-					if n.wafVersion != napMetaData.NapVersion {
-						status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config a %v", config.GetConfigData())).CmdStatus
-						return status
+						err := json.Unmarshal(file.GetContents(), &napMetaData)
+						if err != nil {
+							status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read WAF file in metadata %v", config.GetConfigData())).CmdStatus
+							return status
+						}
+						if n.wafVersion != napMetaData.NapVersion {
+							status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config metadata mismatch %v", config.GetConfigData())).CmdStatus
+							return status
+						}
 					}
 				}
 			}
