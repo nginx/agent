@@ -28,11 +28,11 @@ func TestPublisher(t *testing.T) {
 		dimensionsLookups map[int]map[int]string
 	}{
 		{
-			name: "no metric with no dimension",
-			schema: schema.NewSchema([]*schema.Field{}...),
-			samples: map[string]*sample.Sample{},
+			name:              "no metric with no dimension",
+			schema:            schema.NewSchema([]*schema.Field{}...),
+			samples:           map[string]*sample.Sample{},
 			dimensionsLookups: map[int]map[int]string{},
-			expectedMetrics: []*MetricSet{},
+			expectedMetrics:   []*MetricSet{},
 		},
 		{
 			name: "single metric with single dimension",

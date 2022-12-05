@@ -69,8 +69,8 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		reportInterval:  config.Dataplane.Status.ReportInterval,
 		napDetailsMutex: sync.RWMutex{},
 		// Intentionally empty as it will be set later
-		napDetails:      nil,
-		napHealth:       &proto.DataplaneSoftwareHealth_AppProtectWafHealth{},
+		napDetails: nil,
+		napHealth:  &proto.DataplaneSoftwareHealth_AppProtectWafHealth{},
 	}
 }
 

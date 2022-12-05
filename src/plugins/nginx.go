@@ -12,7 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
+	"path/filepath"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -46,7 +46,8 @@ type Nginx struct {
 	isNAPEnabled             bool
 	isConfUploadEnabled      bool
 	configApplyStatusChannel chan *proto.Command_NginxConfigResponse
-	wafVersion      		 string
+	wafVersion               string
+	wafLocation              string
 }
 
 type ConfigRollbackResponse struct {
@@ -89,6 +90,7 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 		isNAPEnabled:             isNAPEnabled,
 		isConfUploadEnabled:      isConfUploadEnabled,
 		configApplyStatusChannel: make(chan *proto.Command_NginxConfigResponse, 1),
+		wafLocation:              nap.APP_PROTECT_METADATA_FILE_PATH,
 	}
 }
 
@@ -208,9 +210,9 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	}
 
 	if n.isNAPEnabled {
-		cfg, err = sdk.AddAuxfileToNginxConfig(nginx.GetConfPath(), cfg, nap.APP_PROTECT_METADATA_FILE_PATH, n.config.AllowedDirectoriesMap, true)
+		cfg, err = sdk.AddAuxfileToNginxConfig(nginx.GetConfPath(), cfg, n.wafLocation, n.config.AllowedDirectoriesMap, true)
 		if err != nil {
-			log.Errorf("Unable to add aux file %s to nginx config: %v", nap.APP_PROTECT_METADATA_FILE_PATH, err)
+			log.Errorf("Unable to add aux file %s to nginx config: %v", n.wafLocation, err)
 			return err
 		}
 	}
@@ -307,20 +309,19 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		return status
 	}
 
-	appProtectMetadataPath := strings.Split(nap.APP_PROTECT_METADATA_FILE_PATH, "/")
-	if (isNapInPayload(config.GetDirectoryMap(), cmd.GetNginxConfig().GetAction(), appProtectMetadataPath)) {
+	if isNapInPayload(config.GetDirectoryMap(), cmd.GetNginxConfig().GetAction(), n.wafLocation) {
 		if aux := config.GetZaux(); aux != nil && len(aux.Contents) > 0 {
 			auxFiles, err := zip.UnPack(aux)
 			if err != nil {
 				status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read unpack aux files %v", config.GetZaux())).CmdStatus
-				return status			
+				return status
 			}
 			for _, file := range auxFiles {
-				if file.GetName() == appProtectMetadataPath[len(appProtectMetadataPath)-1] {
+				if filepath.Base(file.GetName()) == filepath.Base(n.wafLocation) {
 					log.Debugf("%v", file)
 
 					var napMetaData nap.Metadata
-	
+
 					err := json.Unmarshal(file.GetContents(), &napMetaData)
 					if err != nil {
 						status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read WAF file in metadata %v", config.GetConfigData())).CmdStatus
@@ -330,7 +331,7 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 						status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config a %v", config.GetConfigData())).CmdStatus
 						return status
 					}
-				}				
+				}
 			}
 		}
 	}
@@ -393,14 +394,14 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 	}
 }
 
-func isNapInPayload(directoryMap *proto.DirectoryMap, action proto.NginxConfigAction, path []string) (bool) {
-	if (action == proto.NginxConfigAction_APPLY) {
+func isNapInPayload(directoryMap *proto.DirectoryMap, action proto.NginxConfigAction, path string) bool {
+	if (action == proto.NginxConfigAction_APPLY && directoryMap != &proto.DirectoryMap{}) {
 		for _, directory := range directoryMap.Directories {
 			log.Tracef("directory %v", directory.Name)
 
 			for _, file := range directory.GetFiles() {
 				log.Tracef("checking %v", file)
-				if file.GetName() == path[len(path)-1] {
+				if filepath.Base(file.GetName()) == filepath.Base(path) {
 					return true
 				}
 			}
@@ -408,8 +409,6 @@ func isNapInPayload(directoryMap *proto.DirectoryMap, action proto.NginxConfigAc
 	}
 	return false
 }
-
-
 
 // This function will run a nginx config validation in a separate go routine. If the validation takes less than 15 seconds then the result is returned straight away,
 // otherwise nil is returned and the validation continues on in the background until it is complete. The result is always added to the message pipeline for other plugins

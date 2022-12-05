@@ -8,6 +8,7 @@
 package plugins
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -23,11 +24,11 @@ import (
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
+	sdk_zip "github.com/nginx/agent/sdk/v2/zip"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	loadedConfig "github.com/nginx/agent/v2/src/core/config"
-
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
@@ -97,7 +98,7 @@ var (
 			}
 		}
 	}`)
-	wafMetaData  = []byte(`{
+	wafMetaData1 = []byte(`{
 		"napVersion": "3.1088.2",
 		"globalStateFileName": "",
 		"globalStateFileUID": "",
@@ -234,7 +235,7 @@ func TestNginxConfigApply(t *testing.T) {
 				Action: proto.NginxConfigAction_APPLY,
 				ConfigData: &proto.ConfigDescriptor{
 					NginxId:  "12345",
-					Checksum: "\xe7e\x8dD\xb8E\x12\xb4\x04s\x85\xed\x1d\\\x84-߮\x878o\nѫ\xae\x9e3`\xb4\xd1\x1ae",
+					Checksum: "test",
 				},
 				Zconfig: &proto.ZippedFile{
 					Contents:      third,
@@ -242,13 +243,13 @@ func TestNginxConfigApply(t *testing.T) {
 					RootDirectory: "nginx.conf",
 				},
 				Zaux: &proto.ZippedFile{
-					Contents:      wafMetaData,
-					Checksum:      checksum.Checksum(wafMetaData),
+					Contents:      wafMetaData1,
+					Checksum:      "e7658d44b84512b4047385ed1d5c842ddfae87386f0ad1abae9e3360b4d11a65",
 					RootDirectory: "/etc/nms",
 				},
-				AccessLogs:   &proto.AccessLogs{},
-				ErrorLogs:    &proto.ErrorLogs{},
-				Ssl:          &proto.SslCertificates{},
+				AccessLogs: &proto.AccessLogs{},
+				ErrorLogs:  &proto.ErrorLogs{},
+				Ssl:        &proto.SslCertificates{},
 				DirectoryMap: &proto.DirectoryMap{
 					Directories: []*proto.Directory{
 						{
@@ -259,29 +260,7 @@ func TestNginxConfigApply(t *testing.T) {
 									Name:        "app_protect_metadata.json",
 									Permissions: "0644",
 									Size_:       959,
-									Contents:    wafMetaData,
-								},
-							},
-							Size_: 128,
-						},
-						{
-							Name:        "/tmp/testdata/root",
-							Permissions: "0755",
-							Files: []*proto.File{
-								{
-									Name:        "log-default.json",
-									Permissions: "0644",
-									Size_:       959,
-								},
-								{
-									Name:        "my-nap-policy.json",
-									Permissions: "0644",
-									Size_:       959,
-								},
-								{
-									Name:        "test.html",
-									Permissions: "0644",
-									Size_:       959,
+									Contents:    wafMetaData1,
 								},
 							},
 							Size_: 128,
@@ -294,7 +273,13 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
 				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxReloadComplete,
+				core.NginxConfigApplySucceeded,
 			},
 		},
 		{
@@ -310,8 +295,8 @@ func TestNginxConfigApply(t *testing.T) {
 					RootDirectory: "nginx.conf",
 				},
 				Zaux: &proto.ZippedFile{
-					Contents:      wafMetaData,
-					Checksum:      checksum.Checksum(wafMetaData),
+					Contents:      wafMetaData1,
+					Checksum:      checksum.Checksum(wafMetaData1),
 					RootDirectory: "/etc/nms",
 				},
 				AccessLogs:   &proto.AccessLogs{},
@@ -385,11 +370,37 @@ func TestNginxConfigApply(t *testing.T) {
 		test := test
 		t.Run(fmt.Sprintf("%d", idx), func(tt *testing.T) {
 			dir := t.TempDir()
+			var auxPath string
 			tempConf, err := ioutil.TempFile(dir, "nginx.conf")
 			assert.NoError(t, err)
 
 			err = ioutil.WriteFile(tempConf.Name(), fourth, 0644)
 			assert.NoError(t, err)
+
+			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
+				auxDir := t.TempDir()
+				auxMainFile := fmt.Sprintf("%s/app_protect_metadata.json", auxDir)
+				err := ioutil.WriteFile(auxMainFile, wafMetaData1, 0644)
+				assert.NoError(t, err)
+				auxPath = auxMainFile
+
+				writer, err := sdk_zip.NewWriter(auxDir)
+				assert.NoError(t, err)
+
+				for _, directory := range test.config.GetDirectoryMap().GetDirectories() {
+					for _, file := range directory.GetFiles() {
+						reader := bytes.NewReader(file.GetContents())
+						err = writer.Add(fmt.Sprintf("%s/%s", directory.GetName(), file.GetName()), 0644, reader)
+						assert.NoError(t, err)
+					}
+				}
+
+				zipFile, err := writer.Proto()
+				assert.NoError(t, err)
+				assert.NotEmpty(t, zipFile.Contents)
+
+				test.config.Zaux = zipFile
+			}
 
 			ctx := context.TODO()
 
@@ -411,6 +422,11 @@ func TestNginxConfigApply(t *testing.T) {
 			commandClient := tutils.GetMockCommandClient(test.config)
 
 			pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
+				pluginUnderTest.wafLocation = auxPath
+				pluginUnderTest.wafVersion = "3.1088.2"
+			}
+
 			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
 
 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
@@ -424,6 +440,7 @@ func TestNginxConfigApply(t *testing.T) {
 			)
 
 			for idx, msg := range messagePipe.GetProcessedMessages() {
+				t.Logf("%v", msg.Topic())
 				if test.msgTopics[idx] != msg.Topic() {
 					tt.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), test.msgTopics[idx])
 				}
@@ -858,7 +875,7 @@ func TestBlock_ConfigApply(t *testing.T) {
 				Checksum:      checksum.Checksum(first),
 				RootDirectory: "nginx.conf",
 			},
-			Zaux:         &proto.ZippedFile{
+			Zaux: &proto.ZippedFile{
 				Contents:      first,
 				Checksum:      checksum.Checksum(first),
 				RootDirectory: "nginx.conf",
