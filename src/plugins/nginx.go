@@ -319,8 +319,6 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 				}
 				for _, file := range auxFiles {
 					if filepath.Base(file.GetName()) == filepath.Base(n.wafLocation) {
-						log.Debugf("%v", file)
-
 						var napMetaData nap.Metadata
 
 						err := json.Unmarshal(file.GetContents(), &napMetaData)
@@ -399,10 +397,7 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 func isNapInPayload(directoryMap *proto.DirectoryMap, action proto.NginxConfigAction, path string) bool {
 	if (action == proto.NginxConfigAction_APPLY && directoryMap != &proto.DirectoryMap{}) {
 		for _, directory := range directoryMap.Directories {
-			log.Tracef("directory %v", directory.Name)
-
 			for _, file := range directory.GetFiles() {
-				log.Tracef("checking %v", file)
 				if filepath.Base(file.GetName()) == filepath.Base(path) {
 					return true
 				}
