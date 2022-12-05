@@ -117,7 +117,7 @@ jobs:
         with:
           inlineScript: |
             az storage blob upload --auth-mode=login -f ./build/snapshots.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
-              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/nginx-agent-snapshot.tar.gz
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/nginx-agent.tar.gz
       - name: Azure Logout
         run: |
           az logout
