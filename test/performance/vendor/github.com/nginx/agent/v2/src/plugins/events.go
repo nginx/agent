@@ -238,8 +238,8 @@ func (a *Events) sendConfigApplyEvent(msg *core.Message) {
 	log.Debugf("nginxConfigResponse.GetConfigData(): %v", nginxConfigResponse.GetConfigData())
 
 	switch action := nginxConfigResponse.GetAction(); action {
-		case  proto.NginxConfigAction_ROLLBACK, proto.NginxConfigAction_RETURN, proto.NginxConfigAction_UNKNOWN, proto.NginxConfigAction_TEST:
-			return
+	case proto.NginxConfigAction_ROLLBACK, proto.NginxConfigAction_RETURN, proto.NginxConfigAction_UNKNOWN, proto.NginxConfigAction_TEST:
+		return
 	}
 
 	var event *eventsProto.Event

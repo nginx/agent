@@ -309,7 +309,7 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		return status
 	}
 
-	if (cmd.GetNginxConfig().GetAction() != proto.NginxConfigAction_FORCE) {
+	if cmd.GetNginxConfig().GetAction() != proto.NginxConfigAction_FORCE {
 		if isNapInPayload(config.GetDirectoryMap(), cmd.GetNginxConfig().GetAction(), n.wafLocation) {
 			if aux := config.GetZaux(); aux != nil && len(aux.Contents) > 0 {
 				auxFiles, err := zip.UnPack(aux)
