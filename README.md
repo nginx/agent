@@ -21,6 +21,7 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
   - [Logging](#logging)
 - [Getting Started with NGINX Agent](#getting-started-with-nginx-agent)
   - [Installing NGINX and NGINX Agent](#installing-nginx-and-nginx-agent)
+  - [Cloning the NGINX Agent Repository](#cloning-the-nginx-agent-repository)
   - [Starting the gRPC Mock Control Plane](#starting-the-grpc-mock-control-plane)
   - [NGINX Agent Settings](#nginx-agent-settings)
   - [Starting NGINX Agent](#starting-nginx-agent)
@@ -227,11 +228,7 @@ While most Linux or FreeBSD operating systems can be used to contribute to the N
 Follow steps in the [Installation](#installation) section to download and install NGINX. Once installed ensure NGINX instance is running.
 
 ## Cloning the NGINX Agent Repository
-Run the following command from your development directory to clone NGINX Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
-
-```
-git clone git@github.com:nginx/agent.git
-```
+Follow steps in the Getting Started with NGINX Agent section to [clone the NGINX Agent Repository](#cloning-the-nginx-agent-repository)
 
 ## Installing Prerequisite Packages
 Depending on the operating system distribution, it may be necessary to install the following packages in order to build NGINX Agent.
