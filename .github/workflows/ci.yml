@@ -90,23 +90,25 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           file: scripts/packages/packager/Dockerfile
-          tags: build-local-packager:1.0.0
+          tags: build-signed-packager:1.0.0
           context: '.'
           push: false
           load: true
           no-cache: true
           build-args: |
-            package_type=local-package
+            package_type=signed-package
       - name: Build Packages
+        env:
+          INDIGO_GPG_AGENT: ${{ secrets.INDIGO_GPG_AGENT }}
+          NFPM_SIGNING_KEY_FILE: .key.asc
         run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          make clean local-apk-package local-deb-package local-rpm-package local-txz-package
-          tar -cf ./build/snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.pkg ./build/*.apk
+          echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
+          make clean package
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: snapshots
-          path: ./build/snapshots.tar.gz
+          path: ./build/packages/nginx-agent.tar.gz
           retention-days: 3
       - name: Azure Login
         uses: azure/login@v1
@@ -116,7 +118,7 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az storage blob upload --auth-mode=login -f ./build/snapshots.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
+            az storage blob upload --auth-mode=login -f ./build/packages/nginx-agent.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/nginx-agent.tar.gz
       - name: Azure Logout
         run: |
