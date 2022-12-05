@@ -144,12 +144,14 @@ INFO[0000] gRPC listening at 54789 # gRPC control plane port which NGINX Agent w
 ```
 
 ## NGINX Agent Settings
-If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the nginx-agent.conf file from the project root directory into the newly created directory. 
-Create the agent-dynamic.conf file in the `/etc/nginx-agent/` directory for agent to run. 
+If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory. 
 ```
 sudo mkdir /etc/nginx-agent
-sudo cp nginx-agent.conf /etc/nginx-agent/
-sudo vi /etc/nginx-agent/agent-dynamic.conf
+sudo cp <project_root_directory>/nginx-agent.conf /etc/nginx-agent/
+```
+Create the `agent-dynamic.conf` file in the `/etc/nginx-agent/` directory, which is required for NGINX Agent to run. 
+```
+sudo touch /etc/nginx-agent/agent-dynamic.conf
 ```
 
 ### Enabling the gRPC interface
