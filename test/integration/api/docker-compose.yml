@@ -1,0 +1,15 @@
+version: '3.9'
+
+networks:
+  monitoring:
+    driver: bridge
+
+services:
+  agent:
+    build: 
+      context: ../../../
+      dockerfile: ./test/integration/api/Dockerfile
+    ports:
+      - 9091:9091
+    networks:
+      - monitoring
