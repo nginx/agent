@@ -131,8 +131,9 @@ func TestNginxConfigApply(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		config    *proto.NginxConfig
-		msgTopics []string
+		config     *proto.NginxConfig
+		msgTopics  []string
+		wafVersion string
 	}{
 		{
 			config: &proto.NginxConfig{
@@ -165,6 +166,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
+			wafVersion: "",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -197,6 +199,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
+			wafVersion: "",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -229,6 +232,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
+			wafVersion: "",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -281,6 +285,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
+			wafVersion: "3.1088.2",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -317,6 +322,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
+			wafVersion: "",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -349,6 +355,54 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
+			wafVersion: "",
+		},
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_FORCE,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      first,
+					Checksum:      checksum.Checksum(first),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux: &proto.ZippedFile{
+					Contents:      wafMetaData1,
+					Checksum:      "e7658d44b84512b4047385ed1d5c842ddfae87386f0ad1abae9e3360b4d11a65",
+					RootDirectory: "/etc/nms",
+				},
+				AccessLogs: &proto.AccessLogs{},
+				ErrorLogs:  &proto.ErrorLogs{},
+				Ssl:        &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{
+					Directories: []*proto.Directory{
+						{
+							Name:        "/etc/nms",
+							Permissions: "0755",
+							Files: []*proto.File{
+								{
+									Name:        "app_protect_metadata.json",
+									Permissions: "0644",
+									Size_:       959,
+									Contents:    wafMetaData1,
+								},
+							},
+							Size_: 128,
+						},
+					},
+				},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.CommResponse,
+			},
+			wafVersion: "3.1088.1",
 		},
 	}
 
@@ -424,7 +478,7 @@ func TestNginxConfigApply(t *testing.T) {
 			pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
 			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
 				pluginUnderTest.wafLocation = auxPath
-				pluginUnderTest.wafVersion = "3.1088.2"
+				pluginUnderTest.wafVersion = test.wafVersion
 			}
 
 			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
