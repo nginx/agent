@@ -141,12 +141,8 @@ func handleSignals(
 	}()
 }
 
-func connectionUnavilable(loadedConfig *config.Config) bool {
-	return loadedConfig.Server.Host == "" || loadedConfig.Server.GrpcPort == 0
-}
-
 func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client.Controller, client.Commander, client.MetricReporter) {
-	if connectionUnavilable(loadedConfig) {
+	if !loadedConfig.IsGrpcServerConfigured() {
 		log.Infof("GRPC clients not created")
 		return nil, nil, nil
 	}
@@ -234,7 +230,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		corePlugins = append(corePlugins, plugins.NewAdvancedMetrics(env, loadedConfig))
 	}
 
-	if loadedConfig.NginxAppProtect != (config.NginxAppProtect{}) {
+	if loadedConfig.IsNginxAppProtectConfigured() {
 		napPlugin, err := plugins.NewNginxAppProtect(loadedConfig, env)
 		if err == nil {
 			corePlugins = append(corePlugins, napPlugin)

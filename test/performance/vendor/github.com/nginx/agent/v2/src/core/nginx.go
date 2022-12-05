@@ -258,9 +258,11 @@ func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, 
 	log.Debugf("Validating config, %s for nginx process, %s", configLocation, processId)
 	response, err := runCmd(bin, "-t", "-c", configLocation)
 	if err != nil {
-		confFiles, auxFiles, err := sdk.GetNginxConfigFiles(config)
-		n.writeBackup(config, confFiles, auxFiles)
-		return fmt.Errorf("error running nginx -t -c %v:\n%s%v", configLocation, response, err)
+		confFiles, auxFiles, getNginxConfigFilesErr := sdk.GetNginxConfigFiles(config)
+		if getNginxConfigFilesErr == nil {
+			n.writeBackup(config, confFiles, auxFiles)
+		}
+		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
 	}
 
 	log.Infof("Config validated:\n%s", response)

@@ -8,14 +8,19 @@
 package plugins
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/fs"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"time"
 
 	"os"
@@ -30,8 +35,73 @@ import (
 	"github.com/nginx/agent/v2/src/core/config"
 	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+const (
+	nginxConfigContent = `
+		user  nginx;
+		worker_processes  auto;
+		
+		error_log  /usr/local/nginx/error.log notice;
+		pid        /var/run/nginx.pid;
+		
+		events {
+			worker_connections  1024;
+		}
+		
+		
+		http {
+			default_type  application/octet-stream;
+		
+			log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+							'$status $body_bytes_sent "$http_referer" '
+							'"$http_user_agent" "$http_x_forwarded_for"';
+		
+			access_log  /usr/local/nginx/access.log  main;
+		
+			sendfile        on;
+			#tcp_nopush     on;
+		
+			keepalive_timeout  65;
+		
+			#gzip  on;
+			server {
+				listen 8080;
+				server_name  localhost;
+				location /api {
+					stub_status;
+					allow 127.0.0.1;
+					deny all;
+				}
+			}
+		}
+	`
+)
+
+func TestAgentAPI_Info(t *testing.T) {
+	agentAPI := AgentAPI{}
+	info := agentAPI.Info()
+
+	assert.Equal(t, "Agent API Plugin", info.Name())
+	assert.Equal(t, "v0.0.1", info.Version())
+}
+
+func TestAgentAPI_Subscriptions(t *testing.T) {
+	expectedSubscriptions := []string{
+		core.AgentAPIConfigApplyResponse,
+		core.MetricReport,
+		core.NginxConfigValidationPending,
+		core.NginxConfigApplyFailed,
+		core.NginxConfigApplySucceeded,
+	}
+
+	agentAPI := AgentAPI{}
+	subscriptions := agentAPI.Subscriptions()
+
+	assert.Equal(t, expectedSubscriptions, subscriptions)
+}
 
 func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 	tests := []struct {
@@ -83,7 +153,19 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 			path := "/nginx/"
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 
-			err := sendInstanceDetailsPayload(tt.nginxDetails, respRec, req)
+			env := tutils.GetMockEnv()
+			mockNginxBinary := tutils.NewMockNginxBinary()
+			processes := []core.Process{}
+
+			for _, nginxDetail := range tt.nginxDetails {
+				mockNginxBinary.On("GetNginxDetailsFromProcess", mock.Anything).Return(nginxDetail).Once()
+				processes = append(processes, core.Process{Pid: 1, Name: "12345", IsMaster: true})
+			}
+
+			env.On("Processes").Return(processes)
+
+			nginxHandler := NginxHandler{env: env, nginxBinary: mockNginxBinary}
+			err := nginxHandler.sendInstanceDetailsPayload(respRec, req)
 			assert.NoError(t, err)
 
 			resp := respRec.Result()
@@ -101,22 +183,103 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 }
 
 func TestNginxHandler_updateConfig(t *testing.T) {
+	conf := &proto.NginxConfig{}
+
 	tests := []struct {
-		name         string
-		configUpdate string
+		name                  string
+		configUpdate          string
+		validationTimeout     time.Duration
+		response              *proto.Command_NginxConfigResponse
+		nginxInstancesPresent bool
+		expectedStatusCode    int
+		expectedMessage       string
+		expectedStatus        string
 	}{
 		{
-			name:         "update config",
-			configUpdate: "# test",
+			name:                  "no nginx instances",
+			configUpdate:          nginxConfigContent,
+			validationTimeout:     15 * time.Second,
+			response:              nil,
+			nginxInstancesPresent: false,
+			expectedStatusCode:    500,
+			expectedMessage:       "No NGINX instances found",
+			expectedStatus:        "",
+		},
+		{
+			name:                  "no config apply response",
+			configUpdate:          nginxConfigContent,
+			validationTimeout:     1 * time.Millisecond,
+			response:              nil,
+			nginxInstancesPresent: true,
+			expectedStatusCode:    408,
+			expectedMessage:       "Pending config apply",
+			expectedStatus:        "PENDING",
+		},
+		{
+			name:              "pending config apply response",
+			configUpdate:      nginxConfigContent,
+			validationTimeout: 15 * time.Second,
+			response: &proto.Command_NginxConfigResponse{
+				NginxConfigResponse: &proto.NginxConfigResponse{
+					Status: &proto.CommandStatusResponse{
+						Status:  proto.CommandStatusResponse_CMD_OK,
+						Message: configAppliedProcessedResponse,
+					},
+					Action:     proto.NginxConfigAction_APPLY,
+					ConfigData: conf.GetConfigData(),
+				},
+			},
+			nginxInstancesPresent: true,
+			expectedStatusCode:    408,
+			expectedMessage:       "config apply request successfully processed",
+			expectedStatus:        "PENDING",
+		},
+		{
+			name:              "successful config apply response",
+			configUpdate:      nginxConfigContent,
+			validationTimeout: 15 * time.Second,
+			response: &proto.Command_NginxConfigResponse{
+				NginxConfigResponse: &proto.NginxConfigResponse{
+					Status: &proto.CommandStatusResponse{
+						Status:  proto.CommandStatusResponse_CMD_OK,
+						Message: configAppliedResponse,
+					},
+					Action:     proto.NginxConfigAction_APPLY,
+					ConfigData: conf.GetConfigData(),
+				},
+			},
+			nginxInstancesPresent: true,
+			expectedStatusCode:    200,
+			expectedMessage:       "config applied successfully",
+			expectedStatus:        "OK",
+		},
+		{
+			name:              "failed config apply response",
+			configUpdate:      nginxConfigContent,
+			validationTimeout: 15 * time.Second,
+			response: &proto.Command_NginxConfigResponse{
+				NginxConfigResponse: &proto.NginxConfigResponse{
+					Status: &proto.CommandStatusResponse{
+						Status:  proto.CommandStatusResponse_CMD_ERROR,
+						Message: "config applied failed",
+					},
+					Action:     proto.NginxConfigAction_APPLY,
+					ConfigData: conf.GetConfigData(),
+				},
+			},
+			nginxInstancesPresent: true,
+			expectedStatusCode:    400,
+			expectedMessage:       "config applied failed",
+			expectedStatus:        "ERROR",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Skip()
+			validationTimeout = tt.validationTimeout
 			w := httptest.NewRecorder()
 			path := "/nginx/config/"
 
-			file, err := os.CreateTemp(t.TempDir(), "file")
+			file, err := os.CreateTemp(t.TempDir(), "nginx.conf")
 			require.NoError(t, err)
 			defer file.Close()
 
@@ -134,21 +297,132 @@ func TestNginxHandler_updateConfig(t *testing.T) {
 			r := httptest.NewRequest(http.MethodPut, path, body)
 			r.Header.Set("Content-Type", writer.FormDataContentType())
 
+			nginxDetail := &proto.NginxDetails{
+				NginxId: "1", Version: "21", ConfPath: file.Name(), ProcessId: "123", StartTime: 1238043824,
+				BuiltFromSource: false,
+				LoadableModules: []string{},
+				RuntimeModules:  []string{},
+				Plus:            &proto.NginxPlusMetaData{Enabled: true},
+				ConfigureArgs:   []string{},
+			}
+
+			var env *tutils.MockEnvironment
+			if tt.nginxInstancesPresent {
+				env = tutils.GetMockEnvWithProcess()
+			} else {
+				env = tutils.GetMockEnv()
+				env.On("Processes", mock.Anything).Return([]core.Process{})
+			}
+			env.On("WriteFiles", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+			mockNginxBinary := tutils.NewMockNginxBinary()
+			mockNginxBinary.On("GetNginxDetailsFromProcess", mock.Anything).Return(nginxDetail)
+			mockNginxBinary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(conf, nil)
+
+			pipeline := core.NewMessagePipe(context.TODO())
+
 			h := &NginxHandler{
 				config:          config.Defaults,
-				env:             &core.EnvironmentType{},
-				pipeline:        core.NewMessagePipe(context.TODO()),
-				nginxBinary:     tutils.NewMockNginxBinary(),
+				env:             env,
+				pipeline:        pipeline,
+				nginxBinary:     mockNginxBinary,
 				responseChannel: make(chan *proto.Command_NginxConfigResponse),
+			}
+
+			if tt.response != nil {
+				go func() { h.responseChannel <- tt.response }()
 			}
 
 			err = h.updateConfig(w, r)
 			assert.NoError(t, err)
 
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			assert.Equal(t, "# test", w.Body.String())
+			if tt.response == nil {
+				result := &AgentAPIConfigApplyStatusResponse{}
+				err = json.NewDecoder(w.Body).Decode(result)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedMessage, result.Message)
+				assert.Equal(t, tt.expectedStatus, result.Status)
+			} else {
+				result := &AgentAPIConfigApplyResponse{}
+				err = json.NewDecoder(w.Body).Decode(result)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedMessage, result.NginxInstances[0].Message)
+				assert.Equal(t, tt.expectedStatus, result.NginxInstances[0].Status)
+			}
+
+		})
+	}
+}
+
+func TestNginxHandler_getConfigStatus(t *testing.T) {
+	tests := []struct {
+		name                 string
+		url                  string
+		configResponseStatus *proto.NginxConfigStatus
+		expectedStatusCode   int
+		expectedMessage      string
+		expectedStatus       string
+	}{
+		{
+			name:                 "no query parameter",
+			url:                  "/nginx/config/status/",
+			configResponseStatus: nil,
+			expectedStatusCode:   400,
+			expectedMessage:      "Missing required query parameter correlation_id",
+			expectedStatus:       "UNKNOWN",
+		},
+		{
+			name:                 "no matching correlation_id",
+			url:                  "/nginx/config/status/?correlation_id=123",
+			configResponseStatus: nil,
+			expectedStatusCode:   404,
+			expectedMessage:      "Unable to find a config apply request with the correlation_id 123",
+			expectedStatus:       "UNKNOWN",
+		},
+		{
+			name: "found matching correlation_id",
+			url:  "/nginx/config/status/?correlation_id=123",
+			configResponseStatus: &proto.NginxConfigStatus{
+				CorrelationId: "123",
+				Status:        proto.NginxConfigStatus_OK,
+				Message:       "config applied successfully",
+			},
+			expectedStatusCode: 200,
+			expectedMessage:    "config applied successfully",
+			expectedStatus:     "OK",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, tt.url, nil)
+			h := &NginxHandler{
+				config:               config.Defaults,
+				env:                  tutils.GetMockEnv(),
+				pipeline:             core.NewMessagePipe(context.TODO()),
+				nginxBinary:          tutils.NewMockNginxBinary(),
+				responseChannel:      make(chan *proto.Command_NginxConfigResponse),
+				configResponseStatus: tt.configResponseStatus,
+			}
+
+			err := h.getConfigStatus(w, r)
+			assert.NoError(t, err)
+
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			result := &AgentAPIConfigApplyStatusResponse{}
+			err = json.NewDecoder(w.Body).Decode(result)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedMessage, result.Message)
+			assert.Equal(t, tt.expectedStatus, result.Status)
 		})
 	}
 }

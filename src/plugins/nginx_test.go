@@ -245,8 +245,9 @@ func TestNginxConfigApply(t *testing.T) {
 			binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
 
 			commandClient := tutils.GetMockCommandClient(test.config)
+			conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
 
-			pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+			pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
 
 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
@@ -313,7 +314,9 @@ func TestUploadConfigs(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
 	cmdr.On("Upload", mock.Anything, mock.Anything).Return(nil)
 
-	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+
+	pluginUnderTest := NewNginx(cmdr, binary, env, conf)
 	messagePipe := core.SetupMockMessagePipe(t, context.Background(), pluginUnderTest)
 
 	pluginUnderTest.Init(messagePipe)
@@ -416,8 +419,9 @@ func TestNginx_Process_NginxConfigUpload(t *testing.T) {
 	binary.On("ReadConfig", "/var/conf", "12345", "12345678").Return(config, nil)
 
 	env := tutils.GetMockEnvWithProcess()
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
 
-	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+	pluginUnderTest := NewNginx(cmdr, binary, env, conf)
 	pluginUnderTest.Process(core.NewMessage(core.NginxConfigUpload, configDesc))
 
 	binary.AssertExpectations(t)
@@ -478,8 +482,9 @@ func TestNginx_validateConfig(t *testing.T) {
 			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
+			conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
 
-			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, conf)
 
 			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
 			messagePipe.Run()
@@ -547,7 +552,9 @@ func TestNginx_completeConfigApply(t *testing.T) {
 		},
 	)
 
-	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+
+	pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 
 	dir := t.TempDir()
 	tempConf, err := os.CreateTemp(dir, "nginx.conf")
@@ -634,7 +641,9 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 		},
 	)
 
-	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+
+	pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 
 	dir := t.TempDir()
 	tempConf, err := os.CreateTemp(dir, "nginx.conf")

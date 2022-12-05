@@ -52,5 +52,5 @@ const (
 	ConfigRollbackResponse               = "config.rollback.response"
 	DataplaneSoftwareDetailsUpdated      = "dataplane.software.details.updated"
 	EnableExtension                      = "enable.extension"
-	RestAPIConfigApplyResponse           = "rest.api.config.apply.response"
+	AgentAPIConfigApplyResponse          = "agent.api.config.apply.response"
 )
