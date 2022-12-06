@@ -39,45 +39,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	nginxConfigContent = `
-		user  nginx;
-		worker_processes  auto;
-		
-		error_log  /usr/local/nginx/error.log notice;
-		pid        /var/run/nginx.pid;
-		
-		events {
-			worker_connections  1024;
-		}
-		
-		
-		http {
-			default_type  application/octet-stream;
-		
-			log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-							'$status $body_bytes_sent "$http_referer" '
-							'"$http_user_agent" "$http_x_forwarded_for"';
-		
-			access_log  /usr/local/nginx/access.log  main;
-		
-			sendfile        on;
-			#tcp_nopush     on;
-		
-			keepalive_timeout  65;
-		
-			#gzip  on;
-			server {
-				listen 8080;
-				server_name  localhost;
-				location /api {
-					stub_status;
-					allow 127.0.0.1;
-					deny all;
-				}
-			}
-		}
-	`
+var (
+	nginxConfigContent = tutils.GetDetailsNginxOssConfig()
 )
 
 func TestAgentAPI_Info(t *testing.T) {
