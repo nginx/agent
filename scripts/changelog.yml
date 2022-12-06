@@ -1,7 +1,31 @@
 - semver: 2.20.0
-  date: 2022-12-05T18:05:06Z
+  date: 2022-12-06T15:25:52Z
   packager: nginx
   changes:
+    - commit: ecf0b035459372197c1461aae2b0d3169b8d1264
+      note: Merge branch 'main' into release-2.20.0
+      author:
+        name: dhurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: dhurley
+        email: djhurley1990@gmail.com
+    - commit: 8adbc9496d8057db6eca23f51fe62434fdc66935
+      note: Update release-branch.yml (#134)
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 33aaaa412c27cbe3c17cbcee9df49d1071962532
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: d7df7a574582656aed9f8304dfc6df43959cb007
       note: |-
         Update ci build snapshot job (#132)

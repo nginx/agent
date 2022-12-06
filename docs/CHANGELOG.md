@@ -1,8 +1,11 @@
 
 2.20.0
 =============
-2022-12-05
+2022-12-06
 
+* Merge branch 'main' into release-2.20.0 (ecf0b035)
+* Update release-branch.yml (#134) (8adbc949)
+* Updating changelog (33aaaa41)
 * Update ci build snapshot job (#132) (d7df7a57)
 * Block config apply (#131) (81a4bc91)
 * Update ci.yml (#129) (476803f4)
