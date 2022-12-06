@@ -141,6 +141,26 @@ func TestCommander_Process(t *testing.T) {
 			msgTopics: []string{},
 		},
 		{
+			name: "test agent config force",
+			cmd: &proto.Command{
+				Meta: &proto.Metadata{},
+				Type: proto.Command_NORMAL,
+				Data: &proto.Command_NginxConfigResponse{
+					NginxConfigResponse: &proto.NginxConfigResponse{
+						Status: newOKStatus("config applied successfully").CmdStatus,
+						Action: proto.NginxConfigAction_FORCE,
+						ConfigData: &proto.ConfigDescriptor{
+							NginxId: "12345",
+						},
+					},
+				},
+			},
+			topic:     core.CommNginxConfig,
+			nginxId:   "12345",
+			systemId:  "67890",
+			msgTopics: []string{},
+		},
+		{
 			name: "test agent config request",
 			cmd: &proto.Command{
 				Meta: &proto.Metadata{},

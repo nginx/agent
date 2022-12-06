@@ -91,10 +91,10 @@ func (a *AgentAPI) createHttpServer() {
 	gatherer := prometheus.DefaultGatherer
 
 	registerer.MustRegister(a.exporter)
-	mux.Handle("/metrics", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
+	mux.Handle("/metrics/", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
 
 	mux.Handle("/nginx/", a.nginxHandler)
-    
+
 	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
 		Handler: mux,

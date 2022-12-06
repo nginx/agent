@@ -172,26 +172,26 @@ test-install: ## Run agent install test
 # Cert Generation                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 certs: ## Generate TLS certificates
-	scripts/mtls/gen_cnf.sh ca --cn '${CERT_CLIENT_CA_CN}' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/client/conf
-	scripts/mtls/gen_cert.sh ca --config ${CERTS_DIR}/client/conf/ca.cnf --out ${CERTS_DIR}/client
+	scripts/tls/gen_cnf.sh ca --cn '${CERT_CLIENT_CA_CN}' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/client/conf
+	scripts/tls/gen_cert.sh ca --config ${CERTS_DIR}/client/conf/ca.cnf --out ${CERTS_DIR}/client
 
-	scripts/mtls/gen_cnf.sh intermediate --cn '${CERT_CLIENT_INT_CN}' --org NGINX --locality Cork --out ${CERTS_DIR}/client/conf
-	scripts/mtls/gen_cert.sh intermediate --config ${CERTS_DIR}/client/conf/int.cnf --ca-cert ${CERTS_DIR}/client/ca.crt --ca-key ${CERTS_DIR}/client/ca.key --out ${CERTS_DIR}/client
+	scripts/tls/gen_cnf.sh intermediate --cn '${CERT_CLIENT_INT_CN}' --org NGINX --locality Cork --out ${CERTS_DIR}/client/conf
+	scripts/tls/gen_cert.sh intermediate --config ${CERTS_DIR}/client/conf/int.cnf --ca-cert ${CERTS_DIR}/client/ca.crt --ca-key ${CERTS_DIR}/client/ca.key --out ${CERTS_DIR}/client
 
-	scripts/mtls/gen_cnf.sh end-entity --cn '${CERT_CLIENT_EE_CN}' --san 'DNS.1=${CERT_CLIENT_DNS}' --out ${CERTS_DIR}/client/conf
-	scripts/mtls/gen_cert.sh end-entity --config ${CERTS_DIR}/client/conf/ee.cnf --ca-cert ${CERTS_DIR}/client/int.crt --ca-key ${CERTS_DIR}/client/int.key --out ${CERTS_DIR}/client
+	scripts/tls/gen_cnf.sh end-entity --cn '${CERT_CLIENT_EE_CN}' --san 'DNS.1=${CERT_CLIENT_DNS}' --out ${CERTS_DIR}/client/conf
+	scripts/tls/gen_cert.sh end-entity --config ${CERTS_DIR}/client/conf/ee.cnf --ca-cert ${CERTS_DIR}/client/int.crt --ca-key ${CERTS_DIR}/client/int.key --out ${CERTS_DIR}/client
 
 	cp ${CERTS_DIR}/client/ee.crt ${CERTS_DIR}/client.crt
 	cp ${CERTS_DIR}/client/ee.key ${CERTS_DIR}/client.key
 
-	scripts/mtls/gen_cnf.sh ca --cn '${CERT_SERVER_CA_CN}' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/server/conf
-	scripts/mtls/gen_cert.sh ca --config ${CERTS_DIR}/server/conf/ca.cnf --out ${CERTS_DIR}/server
+	scripts/tls/gen_cnf.sh ca --cn '${CERT_SERVER_CA_CN}' --state Cork --locality Cork --org NGINX --country IE --out ${CERTS_DIR}/server/conf
+	scripts/tls/gen_cert.sh ca --config ${CERTS_DIR}/server/conf/ca.cnf --out ${CERTS_DIR}/server
 
-	scripts/mtls/gen_cnf.sh intermediate --cn '${CERT_SERVER_INT_CN}' --org NGINX --locality Cork --out ${CERTS_DIR}/server/conf
-	scripts/mtls/gen_cert.sh intermediate --config ${CERTS_DIR}/server/conf/int.cnf --ca-cert ${CERTS_DIR}/server/ca.crt --ca-key ${CERTS_DIR}/server/ca.key --out ${CERTS_DIR}/server
+	scripts/tls/gen_cnf.sh intermediate --cn '${CERT_SERVER_INT_CN}' --org NGINX --locality Cork --out ${CERTS_DIR}/server/conf
+	scripts/tls/gen_cert.sh intermediate --config ${CERTS_DIR}/server/conf/int.cnf --ca-cert ${CERTS_DIR}/server/ca.crt --ca-key ${CERTS_DIR}/server/ca.key --out ${CERTS_DIR}/server
 
-	scripts/mtls/gen_cnf.sh end-entity --cn '${CERT_SERVER_EE_CN}' --san 'DNS.1=${CERT_SERVER_DNS}' --out ${CERTS_DIR}/server/conf
-	scripts/mtls/gen_cert.sh end-entity --config ${CERTS_DIR}/server/conf/ee.cnf --ca-cert ${CERTS_DIR}/server/int.crt --ca-key ${CERTS_DIR}/server/int.key --out ${CERTS_DIR}/server
+	scripts/tls/gen_cnf.sh end-entity --cn '${CERT_SERVER_EE_CN}' --san 'DNS.1=${CERT_SERVER_DNS}' --out ${CERTS_DIR}/server/conf
+	scripts/tls/gen_cert.sh end-entity --config ${CERTS_DIR}/server/conf/ee.cnf --ca-cert ${CERTS_DIR}/server/int.crt --ca-key ${CERTS_DIR}/server/int.key --out ${CERTS_DIR}/server
 
 	cat ${CERTS_DIR}/server/int.crt ${CERTS_DIR}/server/ca.crt > ${CERTS_DIR}/ca.pem
 
@@ -216,3 +216,7 @@ build-docker: # Build agent docker image for NGINX Plus, need nginx-repo.crt and
 run-docker: ## Run docker container from specified DOCKER_TAG
 	@echo Running Docker; \
 		docker run ${DOCKER_TAG}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Dashboard Targets                                                                                               #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

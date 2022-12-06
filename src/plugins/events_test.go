@@ -146,13 +146,50 @@ func TestActivityEvents_Process(t *testing.T) {
 			},
 		},
 		{
-			name: "test successful CommResponse message",
+			name: "test successful CommResponse message apply",
 			message: core.NewMessage(core.CommResponse, &proto.Command{
 				Meta: grpc.NewMessageMeta(uuid.New().String()),
 				Data: &proto.Command_NginxConfigResponse{
 					NginxConfigResponse: &proto.NginxConfigResponse{
 						Status: newOKStatus("config applied successfully").CmdStatus,
 						Action: proto.NginxConfigAction_APPLY,
+						ConfigData: &proto.ConfigDescriptor{
+							NginxId: "12345",
+						},
+					},
+				},
+			}),
+			msgTopics: []string{
+				core.CommResponse,
+				core.Events,
+			},
+			expectedEventReport: &eventsProto.EventReport{
+				Events: []*eventsProto.Event{
+					{
+						Metadata: &eventsProto.Metadata{
+							Module:     "NGINX-AGENT",
+							Type:       "Agent",
+							Category:   "Config",
+							EventLevel: "INFO",
+						},
+						Data: &eventsProto.Event_ActivityEvent{
+							ActivityEvent: &eventsProto.ActivityEvent{
+								Message:    "successfully applied config on test-host",
+								Dimensions: expectedNginxDimensions,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test successful CommResponse message force",
+			message: core.NewMessage(core.CommResponse, &proto.Command{
+				Meta: grpc.NewMessageMeta(uuid.New().String()),
+				Data: &proto.Command_NginxConfigResponse{
+					NginxConfigResponse: &proto.NginxConfigResponse{
+						Status: newOKStatus("config applied successfully").CmdStatus,
+						Action: proto.NginxConfigAction_FORCE,
 						ConfigData: &proto.ConfigDescriptor{
 							NginxId: "12345",
 						},

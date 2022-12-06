@@ -16,7 +16,7 @@ mkdir -p staging/usr/local/etc/rc.d
 
 cp nginx-agent.conf staging/usr/local/etc/nginx-agent
 cp scripts/packages/nginx-agent staging/usr/local/etc/rc.d
-cp scripts/packages/preinstall.sh /staging/+PRE_INSTALL
+cp scripts/packages/preinstall.sh staging/+PRE_INSTALL
 cp scripts/packages/postremove.sh staging/+PRE_DEINSTALL
 cp scripts/packages/postinstall.sh staging/+POST_INSTALL
 cp scripts/packages/plist staging

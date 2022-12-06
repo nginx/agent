@@ -173,7 +173,7 @@ The NGINX Agent REST interface can be exposed by adding the following lines to t
 
 ```yaml
 api:
-  port: 9090 # port to expose REST API
+  port: 8081 # port to expose REST API
   
   # REST TLS parameters
   cert: "<TLS-CERTIFICATE>.crt"
