@@ -78,3 +78,21 @@ type NAPVersioningDetails struct {
 type NAPReleaseMap struct {
 	ReleaseMap map[string]NAPRelease `json:"releases"`
 }
+
+type Metadata struct {
+	NapVersion                       string            `json:"napVersion"`
+	GlobalStateFileName              string            `json:"globalStateFileName"`
+	GlobalStateFileUID               string            `json:"globalStateFileUID"`
+	AttackSignatureRevisionTimestamp string            `json:"attackSignatureRevisionTimestamp,omitempty"`
+	AttackSignatureUID               string            `json:"attackSignatureUID,omitempty"`
+	ThreatCampaignRevisionTimestamp  string            `json:"threatCampaignRevisionTimestamp,omitempty"`
+	ThreatCampaignUID                string            `json:"threatCampaignUID,omitempty"`
+	Policies                         []*BundleMetadata `json:"policyMetadata,omitempty"`
+	Profiles                         []*BundleMetadata `json:"logProfileMetadata,omitempty"`
+}
+
+type BundleMetadata struct {
+	Name              string `json:"name"`
+	UID               string `json:"uid"`
+	RevisionTimestamp int64  `json:"revisionTimestamp"`
+}

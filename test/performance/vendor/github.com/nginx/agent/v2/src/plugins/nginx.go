@@ -9,8 +9,10 @@ package plugins
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -20,15 +22,16 @@ import (
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/grpc"
+	"github.com/nginx/agent/sdk/v2/zip"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/nap"
 )
 
 const (
-	appProtectMetadataFilePath     = "/etc/nms/app_protect_metadata.json"
 	configAppliedProcessedResponse = "config apply request successfully processed"
 	configAppliedResponse          = "config applied successfully"
 )
@@ -48,6 +51,8 @@ type Nginx struct {
 	isNAPEnabled                bool
 	isFeatureNginxConfigEnabled bool
 	configApplyStatusChannel    chan *proto.Command_NginxConfigResponse
+	wafVersion                  string
+	wafLocation                 string
 }
 
 type ConfigRollbackResponse struct {
@@ -86,6 +91,7 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 		isNAPEnabled:                isNAPEnabled,
 		isFeatureNginxConfigEnabled: isFeatureNginxConfigEnabled,
 		configApplyStatusChannel:    make(chan *proto.Command_NginxConfigResponse, 1),
+		wafLocation:                 nap.APP_PROTECT_METADATA_FILE_PATH,
 	}
 }
 
@@ -110,7 +116,7 @@ func (n *Nginx) Process(message *core.Message) {
 		case *proto.Command:
 			n.processCmd(cmd)
 		case *AgentAPIConfigApplyRequest:
-			status := n.writeConfigAndReloadNginx(cmd.correlationId, cmd.config)
+			status := n.writeConfigAndReloadNginx(cmd.correlationId, cmd.config, proto.NginxConfigAction_APPLY)
 			if status.NginxConfigResponse.GetStatus().GetMessage() != configAppliedProcessedResponse {
 				n.messagePipeline.Process(core.NewMessage(core.AgentAPIConfigApplyResponse, status))
 			}
@@ -129,6 +135,11 @@ func (n *Nginx) Process(message *core.Message) {
 		n.nginxBinary.UpdateNginxDetailsFromProcesses(procs)
 	case core.DataplaneChanged:
 		n.uploadConfigs()
+	case core.DataplaneSoftwareDetailsUpdated:
+		switch details := message.Data().(type) {
+		case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
+			n.processDataplaneSoftwareDetails(details)
+		}
 	case core.AgentConfigChanged:
 		// If the agent config on disk changed update this with relevant config info
 		n.syncAgentConfigChange()
@@ -171,6 +182,7 @@ func (n *Nginx) Subscriptions() []string {
 		core.NginxConfigUpload,
 		core.NginxDetailProcUpdate,
 		core.DataplaneChanged,
+		core.DataplaneSoftwareDetailsUpdated,
 		core.AgentConfigChanged,
 		core.EnableExtension,
 		core.NginxConfigValidationPending,
@@ -205,9 +217,9 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	}
 
 	if n.isNAPEnabled {
-		cfg, err = sdk.AddAuxfileToNginxConfig(nginx.GetConfPath(), cfg, appProtectMetadataFilePath, n.config.AllowedDirectoriesMap, true)
+		cfg, err = sdk.AddAuxfileToNginxConfig(nginx.GetConfPath(), cfg, n.wafLocation, n.config.AllowedDirectoriesMap, true)
 		if err != nil {
-			log.Errorf("Unable to add aux file %s to nginx config: %v", appProtectMetadataFilePath, err)
+			log.Errorf("Unable to add aux file %s to nginx config: %v", n.wafLocation, err)
 			return err
 		}
 	}
@@ -218,6 +230,12 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	}
 
 	return nil
+}
+
+func (n *Nginx) processDataplaneSoftwareDetails(details *proto.DataplaneSoftwareDetails_AppProtectWafDetails) {
+	log.Tracef("software details updated software %+v", details)
+
+	n.wafVersion = details.AppProtectWafDetails.WafVersion
 }
 
 func (n *Nginx) processCmd(cmd *proto.Command) {
@@ -233,7 +251,7 @@ func (n *Nginx) processCmd(cmd *proto.Command) {
 		}
 
 		switch commandData.NginxConfig.Action {
-		case proto.NginxConfigAction_APPLY:
+		case proto.NginxConfigAction_APPLY, proto.NginxConfigAction_FORCE:
 			if n.isFeatureNginxConfigEnabled {
 				status = n.applyConfig(cmd, commandData)
 			} else {
@@ -287,13 +305,13 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		return status
 	}
 
-	status = n.writeConfigAndReloadNginx(cmd.Meta.MessageId, config)
+	status = n.writeConfigAndReloadNginx(cmd.Meta.MessageId, config, cmd.GetNginxConfig().GetAction())
 
 	log.Debug("Config Apply Complete")
 	return status
 }
 
-func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.NginxConfig) *proto.Command_NginxConfigResponse {
+func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.NginxConfig, action proto.NginxConfigAction) *proto.Command_NginxConfigResponse {
 	status := &proto.Command_NginxConfigResponse{
 		NginxConfigResponse: &proto.NginxConfigResponse{
 			Status:     newOKStatus(configAppliedProcessedResponse).CmdStatus,
@@ -317,9 +335,34 @@ func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.Ng
 		return status
 	}
 
-	log.Debugf("config.GetConfigData().GetNginxId() %s", config.GetConfigData().GetNginxId())
+	if action != proto.NginxConfigAction_FORCE {
+		if isNapInPayload(config.GetDirectoryMap(), action, n.wafLocation) {
+			if aux := config.GetZaux(); aux != nil && len(aux.Contents) > 0 {
+				auxFiles, err := zip.UnPack(aux)
+				if err != nil {
+					status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read unpack aux files %v", config.GetZaux())).CmdStatus
+					return status
+				}
+				for _, file := range auxFiles {
+					if filepath.Base(file.GetName()) == filepath.Base(n.wafLocation) {
+						var napMetaData nap.Metadata
 
-	log.Debug("Disabling file watcher")
+						err := json.Unmarshal(file.GetContents(), &napMetaData)
+						if err != nil {
+							status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read WAF file in metadata %v", config.GetConfigData())).CmdStatus
+							return status
+						}
+						if n.wafVersion != napMetaData.NapVersion {
+							status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config metadata mismatch %v", config.GetConfigData())).CmdStatus
+							return status
+						}
+					}
+				}
+			}
+		}
+	}
+
+	log.Debugf("Disabling file watcher")
 	n.messagePipeline.Process(core.NewMessage(core.FileWatcherEnabled, false))
 
 	nginx := n.nginxBinary.GetNginxDetailsByID(config.GetConfigData().GetNginxId())
@@ -364,6 +407,19 @@ func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.Ng
 		log.Errorf("Validation of the NGINX config in taking longer than the validationTimeout %s", validationTimeout)
 		return status
 	}
+}
+
+func isNapInPayload(directoryMap *proto.DirectoryMap, action proto.NginxConfigAction, path string) bool {
+	if (action == proto.NginxConfigAction_APPLY && directoryMap != &proto.DirectoryMap{}) {
+		for _, directory := range directoryMap.Directories {
+			for _, file := range directory.GetFiles() {
+				if filepath.Base(file.GetName()) == filepath.Base(path) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // This function will run a nginx config validation in a separate go routine. If the validation takes less than 15 seconds then the result is returned straight away,
