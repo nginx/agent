@@ -10,15 +10,15 @@ categories: ["configuration"]
 doctypes: ["task"]
 ---
 
-Follow these steps to configure and run Agent and a mock interface ("control plane") to which the Agent will report.
+Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which the NGINX Agent will report.
 
-## Installing NGINX and Agent
+## Installing NGINX and NGINX Agent
 
-Follow steps in the [Installation]({{< relref "/installation.md" >}}) section to download, install, and run NGINX and Agent.
+Follow steps in the [Installation]({{< relref "/installation.md" >}}) section to download, install, and run NGINX and NGINX Agent.
 
-## Cloning the Agent Repository
+## Cloning the NGINX Agent Repository
 
-Run the following command in your development directory to clone the Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
+Run the following command in your development directory to clone the NGINX Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
 ```bash
 git clone git@github.com:nginx/agent.git
@@ -33,10 +33,10 @@ go run sdk/examples/server.go
 
 # Command Output
 INFO[0000] http listening at 54790 # mock control plane port
-INFO[0000] grpc listening at 54789 # grpc control plane port which Agent will report to
+INFO[0000] grpc listening at 54789 # grpc control plane port which NGINX Agent will report to
 ```
 
-## Agent Settings
+## NGINX Agent Settings
 
 If it doesn't already exist, create the `/etc/nginx-agent/nginx-agent.conf` file
 
@@ -62,7 +62,7 @@ tls:
 
 ### Enabling the REST interface
 
-The Agent REST interface can be exposed by adding the following lines to the `nginx-agent.conf` file.
+The NGINX Agent REST interface can be exposed by adding the following lines to the `nginx-agent.conf` file.
 
 ```nginx
 api:
@@ -73,13 +73,13 @@ api:
   key: "<PRIVATE-KEY>.key"
 ```
 
-The mock control plane can use either gRPC or REST protocols to communicate with Agent.
+The mock control plane can use either gRPC or REST protocols to communicate with NGINX Agent.
 
-## Starting Agent
+## Starting NGINX Agent
 
-If already running, restart Agent to apply the new configuration. Alternatively, if Agent is not running, you may run it from the source code root directory.
+If already running, restart NGINX Agent to apply the new configuration. Alternatively, if NGINX Agent is not running, you may run it from the source code root directory.
 
-Open another terminal window and start the Agent. Issue the following command from the `agent` source code root directory.
+Open another terminal window and start the NGINX Agent. Issue the following command from the `agent` source code root directory.
 
 ```bash
 make run
@@ -115,4 +115,4 @@ Open a web browser to view the mock control plane at [http://localhost:54790](ht
 - **configs/raw** - shows the actual configuration as it would live on the dataplane
 - **metrics** - shows a buffer of metrics sent to the management plane (similar to what will be sent back in the REST API)
 
-For more Agent use-cases, refer to the [NGINX Agent SDK examples](https://github.com/nginx/agent/tree/main/sdk/examples).
+For more NGINX Agent use-cases, refer to the [NGINX Agent SDK examples](https://github.com/nginx/agent/tree/main/sdk/examples).

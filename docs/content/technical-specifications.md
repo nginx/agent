@@ -12,11 +12,11 @@ doctypes: ["task"]
 
 ## Supported Distributions
 
-Agent can run in most environments. For a list of supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
+NGINX Agent can run in most environments. For a list of supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
 
 ## Supported Deployment Environments 
 
-Agent can be deployed in the following environments:
+NGINX Agent can be deployed in the following environments:
 
 - Bare Metal
 - Container
@@ -25,12 +25,12 @@ Agent can be deployed in the following environments:
 
 ## Supported NGINX Versions 
 
-Agent works with all supported versions of NGINX Open Source and NGINX Plus.
+NGINX Agent works with all supported versions of NGINX Open Source and NGINX Plus.
 
 
 ## Sizing Recommendations
 
-Minimum system sizing recommendations for Agent:
+Minimum system sizing recommendations for NGINX Agent:
 
 | CPU        | Memory   | Network   | Storage |
 |------------|----------|-----------|---------|
