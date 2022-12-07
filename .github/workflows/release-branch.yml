@@ -63,8 +63,7 @@ jobs:
             console.log(`The next version is v${version}`)
             const footer = `
               ## Resources
-              - Documentation -- https://docs.nginx.com/nginx-instance-manager/nginx-agent/
-              - Upgrade Steps -- https://docs.nginx.com/nginx-instance-manager/installation/upgrade-guide/#upgrade-nginx-agent
+              - Documentation -- https://github.com/nginx/agent#readme
             `
             const release_notes = (await github.rest.repos.generateReleaseNotes({
               owner: context.payload.repository.owner.login,
