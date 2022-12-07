@@ -5,7 +5,7 @@ description: "Learn how to install NGINX Agent."
 weight: 200
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-000"
+docs: "DOCS-1090"
 categories: ["configuration"]
 doctypes: ["task"]
 ---

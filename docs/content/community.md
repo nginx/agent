@@ -5,7 +5,7 @@ description: "Learn about the NGINX Agent community."
 weight: 600
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-000"
+docs: "DOCS-1087"
 categories: ["configuration"]
 doctypes: ["task"]
 ---

@@ -5,7 +5,7 @@ description: "This document describes the requirements for NGINX Agent."
 weight: 500
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-000"
+docs: "DOCS-1092"
 categories: ["development"]
 doctypes: ["task"]
 ---

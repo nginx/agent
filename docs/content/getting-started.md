@@ -1,11 +1,11 @@
 ---
-title: "Getting started"
+title: "Getting Started"
 draft: false
 description: "Learn how to configure and run NGINX Agent."
 weight: 300
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-000"
+docs: "DOCS-1089"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
