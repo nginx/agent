@@ -11,11 +11,13 @@ doctypes: ["task"]
 ---
 
 NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus instance. It enables:
+
 - Remote management of NGINX configurations
 - Collection and reporting of real-time NGINX performance and operating system metrics
 - Notifications of NGINX events
 
-{{< img src="docs/nim-agent-00.png" caption="NMS with Agent Metrics" alt="NGINX Instance Manager showing metrics reported by Agent collected from NGINX Plus instanc" width="99%">}}
+
+{{< img src="docs/grafana-dashboard-example.png" caption="NMS with Agent Metrics" alt="Grafana dashboard showing metrics reported by NGINX Agent" width="99%">}}
 
 # How it Works
 
@@ -42,7 +44,7 @@ For NGINX Agent to work properly with an NGINX Plus instance, the API needs to b
 
 ## Event Notifications
 
-NGINX Agent allows a gRPC connected control system to register a listener for a specific event. The control mechanism is then invoked when NGINX Agent sends an associated system signal. The source of a notification can be either the NGINX instance or the Agent itself. Here's a list of currently supported events:
+NGINX Agent allows a gRPC connected control system to register a listener for a specific event. The control mechanism is then invoked when NGINX Agent sends an associated system signal. The source of a notification can be either the NGINX instance or NGINX Agent itself. Here's a list of currently supported events:
 
 
 {{< raw-html>}}<div class="table-responsive">{{</raw-html>}}

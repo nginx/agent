@@ -16,7 +16,7 @@ doctypes: ["task"]
 
 - Our [GitHub issues page](https://github.com/nginx/agent/issues) offers space for a more technical discussion at your own pace.
 
-# Contributing
+# Contribute
 Get involved with the project by contributing! Please see our [contributing guide](https://github.com/nginx/agent/blob/main/CONTRIBUTING.md) for details.
 
 # License

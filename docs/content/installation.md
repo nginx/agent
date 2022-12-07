@@ -10,24 +10,24 @@ categories: ["configuration"]
 doctypes: ["task"]
 ---
 
-## Installing NGINX
+## Install NGINX
 
 NGINX Agent interfaces directly with an NGINX server process installed on the same system. If you don't have it already, follow these steps to install [NGINX Open Source](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/) or [NGINX Plus](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-plus/). Once installed, ensure the NGINX instance is running.
 
-## Installing Go
+## Install Go
 
 NGINX Agent is written in Go and requires Go 1.19 or higher to be installed. You can [download Go from the official website](https://go.dev/dl/). 
 
-## Installing Agent from Package Files
+## Install Agent from Package Files
 
-To install NGINX Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download `nginx-agent.tar.gz`. Extract the file and locate the appropriate binary in the archive.
+To install NGINX Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download `nginx-agent.tar.gz`. Create a new subdirectory and extract the archive into it. Change into the subdirectory matching the package manager format appropriate for your operating system distribution.
 
 Depending on OS distribution and CPU architecture type, use your system's package manager to install the package. Some examples:
 
-- Debian, Ubuntu, and other distributions using the `apt` package manager
+- Debian, Ubuntu, and other distributions using the `dpkg` package manager.
 
   ```
-  sudo apt install ./nginx-agent-<agent-version>.deb
+  sudo dpkg -i nginx-agent-<agent-version>.deb
   ```
 
 - RHEL, CentOS RHEL, Amazon Linux, Oracle Linux, and other distributions using the `yum` package manager
@@ -54,20 +54,21 @@ Depending on OS distribution and CPU architecture type, use your system's packag
   sudo pkg add nginx-agent-<agent-version>
   ```
 
-## Starting and Enabling Start on Boot
+## Start and Enable Start on Boot
 
 To start the NGINX Agent on `systemd` systems, run the following command:
 
 ```
 sudo systemctl start nginx-agent
 ```
+
 To enable the NGINX Agent to start on boot, run the following command:
 
 ```
 sudo systemctl enable nginx-agent
 ```
 
-## Logging 
+## Logs 
 
 NGINX Agent uses formatted log files to collect metrics. Expanding log formats and instance counts will also increase the size of the NGINX Agent log files. We recommend adding a separate partition for `/var/log/nginx-agent`. 
 

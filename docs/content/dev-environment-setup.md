@@ -10,23 +10,19 @@ categories: ["development"]
 doctypes: ["task"]
 ---
 
-## Selecting an Operating System
+## Select an Operating System
 
 While most Linux or FreeBSD operating systems can be used to contribute to the NGINX Agent project, the following steps have been designed for Ubuntu. Ubuntu is packaged with most libraries required to build and run NGINX Agent, and is the recommended platform for NGINX Agent development.
 
-## Installing NGINX
+## Install NGINX
 
-Follow steps in the [Installation]({{< relref "/installation.md" >}}) section to download, install, and run NGINX and NGINX Agent.
+Follow the steps in the [Installation]({{< relref "/installation.md" >}}) section to download, install, and run NGINX and NGINX Agent.
 
-## Cloning the NGINX Agent Repository
+## Clone the NGINX Agent Repository
 
-Run the following command from your development directory to clone Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
+Using your preferred method, clone the NGINX Agent repository into your development directory. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
-```bash
-git clone git@github.com:nginx/agent.git
-```
-
-## Installing Prerequisite Packages
+## Install Prerequisite Packages
 
 Depending on the operating system distribution, it may be necessary to install the following packages in order to build NGINX Agent.
 
@@ -54,5 +50,5 @@ Run the following commands to build and run NGINX Agent:
 
 ```
 make build
-make run
+sudo make run
 ```

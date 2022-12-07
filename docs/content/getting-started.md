@@ -12,19 +12,15 @@ doctypes: ["task"]
 
 Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which the NGINX Agent will report.
 
-## Installing NGINX and NGINX Agent
+## Install NGINX and NGINX Agent
 
-Follow steps in the [Installation]({{< relref "/installation.md" >}}) section to download, install, and run NGINX and NGINX Agent.
+Follow the steps in the [Installation]({{< relref "/installation.md" >}}) section to download, install, and run NGINX and NGINX Agent.
 
-## Cloning the NGINX Agent Repository
+## Clone the NGINX Agent Repository
 
-Run the following command in your development directory to clone the NGINX Agent source code from the GitHub repository. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
+Using your preferred method, clone the NGINX Agent repository into your development directory. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
-```bash
-git clone git@github.com:nginx/agent.git
-```
-
-## Starting the Mock Control Plane
+## Start the Mock Control Plane
 
 Start the mock control plane by running the following command from the `agent` source code root directory:
 
@@ -38,11 +34,16 @@ INFO[0000] grpc listening at 54789 # grpc control plane port which NGINX Agent w
 
 ## NGINX Agent Settings
 
-If it doesn't already exist, create the `/etc/nginx-agent/nginx-agent.conf` file
+If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory.
 
 ```bash
 sudo mkdir /etc/nginx-agent
 sudo cp nginx-agent.conf /etc/nginx-agent/
+```
+Create the `agent-dynamic.conf` file in the `/etc/nginx-agent/` directory, which is required for NGINX Agent to run.
+
+```bash
+sudo touch /etc/nginx-agent/agent-dynamic.conf
 ```
 
 ### Enabling the gRPC interface
@@ -75,14 +76,14 @@ api:
 
 The mock control plane can use either gRPC or REST protocols to communicate with NGINX Agent.
 
-## Starting NGINX Agent
+## Start NGINX Agent
 
 If already running, restart NGINX Agent to apply the new configuration. Alternatively, if NGINX Agent is not running, you may run it from the source code root directory.
 
 Open another terminal window and start the NGINX Agent. Issue the following command from the `agent` source code root directory.
 
 ```bash
-make run
+sudo make run
 
 # Command Output snippet
 WARN[0000] Log level is info                            
@@ -108,11 +109,11 @@ INFO[0001] OneTimeRegistration completed
 
 Open a web browser to view the mock control plane at [http://localhost:54790](http://localhost:54790). The following links will be shown in the web interface:
 
-- **registered** - shows registration information of the dataplane
-- **nginxes** - lists the nginx instances on the dataplane
+- **registered** - shows registration information of the data plane
+- **nginxes** - lists the nginx instances on the data plane
 - **configs** - shows the protobuf payload for NGINX configuration sent to the management plane
-- **configs/chunked** - shows the split up payloads sent to the management plane
-- **configs/raw** - shows the actual configuration as it would live on the dataplane
+- **configs/chunked** - shows the split-up payloads sent to the management plane
+- **configs/raw** - shows the actual configuration as it would live on the data plane
 - **metrics** - shows a buffer of metrics sent to the management plane (similar to what will be sent back in the REST API)
 
-For more NGINX Agent use-cases, refer to the [NGINX Agent SDK examples](https://github.com/nginx/agent/tree/main/sdk/examples).
+For more NGINX Agent use cases, refer to the [NGINX Agent SDK examples](https://github.com/nginx/agent/tree/main/sdk/examples).
