@@ -1,16 +1,35 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"strconv"
+	"strings"
 	"testing"
+	"time"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
+	tc "github.com/testcontainers/testcontainers-go"
+	// "github.com/testcontainers/testcontainers-go/wait"
 )
 
 func TestAPI (t *testing.T) {
+
+	compose, err := tc.NewDockerCompose("docker-compose.yml")
+    assert.NoError(t, err, "NewDockerComposeAPI()")
+
+	t.Cleanup(func() {
+        assert.NoError(t, compose.Down(context.Background(), tc.RemoveOrphans(true), tc.RemoveImagesLocal), "compose.Down()")
+    })
+
+	ctx, cancel := context.WithCancel(context.Background())
+    t.Cleanup(cancel)
+
+    assert.NoError(t, compose.Up(ctx, tc.Wait(true)), "compose.Up()")
+
+	time.Sleep(15 * time.Second)
     port := 9091
 
     client := resty.New()
@@ -45,8 +64,8 @@ func TestAPI (t *testing.T) {
 
 		switch {
 		case strings.Contains(metric[0], "system_cpu_system"):
-				value, _ := strconv.ParseFloat(metric[1], 64)
-				assert.Greater(t, value, float64(0))
+			value, _ := strconv.ParseFloat(metric[1], 64)
+			assert.Greater(t, value, float64(0))
 		
 		case strings.Contains(metric[0], "system_mem_used_all"):
 			value, _ := strconv.ParseFloat(metric[1], 64)
@@ -63,8 +82,6 @@ func TestAPI (t *testing.T) {
 		
 	}
 }
-
-
 
 
 func printResult(resp *resty.Response, err error) *resty.Response {
