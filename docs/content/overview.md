@@ -19,7 +19,7 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
 
 {{< img src="docs/grafana-dashboard-example.png" caption="Grafana  dashboard showing metrics reported by NGINX Agent" alt="Grafana dashboard showing metrics reported by NGINX Agent" width="99%">}}
 
-# How it Works
+## How it Works
 
 NGINX Agent runs as a companion process on a system running NGINX. It provides gRPC and REST interfaces for configuration management and metrics collection from the NGINX process and operating system. NGINX Agent enables remote interaction with NGINX using common Linux tools and unlocks the ability to build sophisticated monitoring and control systems that can manage large collections of NGINX instances.
 
