@@ -17,7 +17,7 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
 - Notifications of NGINX events
 
 
-{{< img src="docs/grafana-dashboard-example.png" caption="NMS with Agent Metrics" alt="Grafana dashboard showing metrics reported by NGINX Agent" width="99%">}}
+{{< img src="docs/grafana-dashboard-example.png" caption="Grafana  dashboard showing metrics reported by NGINX Agent" alt="Grafana dashboard showing metrics reported by NGINX Agent" width="99%">}}
 
 # How it Works
 
