@@ -462,6 +462,7 @@ func (c *Certificate) SignCert(rand io.Reader, authority Signer) error {
 // corresponding public key signature algorithm.
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 //
 // This map must be kept in sync with the one in agent/client.go.
 =======
@@ -470,6 +471,8 @@ func (c *Certificate) SignCert(rand io.Reader, authority Signer) error {
 //
 // This map must be kept in sync with the one in agent/client.go.
 >>>>>>> 52bedc1 (fixed make deps)
+=======
+>>>>>>> df6c055 (added integration test to make file & ran  make deps)
 var certKeyAlgoNames = map[string]string{
 	CertAlgoRSAv01:        KeyAlgoRSA,
 	CertAlgoRSASHA256v01:  KeyAlgoRSASHA256,

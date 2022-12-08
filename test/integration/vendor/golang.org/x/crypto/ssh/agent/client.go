@@ -774,6 +774,7 @@ func (s *agentKeyringSigner) Sign(rand io.Reader, data []byte) (*ssh.Signature, 
 func (s *agentKeyringSigner) SignWithAlgorithm(rand io.Reader, data []byte, algorithm string) (*ssh.Signature, error) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if algorithm == "" || algorithm == underlyingAlgo(s.pub.Type()) {
 =======
 	if algorithm == "" || algorithm == s.pub.Type() {
@@ -781,6 +782,9 @@ func (s *agentKeyringSigner) SignWithAlgorithm(rand io.Reader, data []byte, algo
 =======
 	if algorithm == "" || algorithm == underlyingAlgo(s.pub.Type()) {
 >>>>>>> 52bedc1 (fixed make deps)
+=======
+	if algorithm == "" || algorithm == s.pub.Type() {
+>>>>>>> df6c055 (added integration test to make file & ran  make deps)
 		return s.Sign(rand, data)
 	}
 
@@ -799,6 +803,7 @@ func (s *agentKeyringSigner) SignWithAlgorithm(rand io.Reader, data []byte, algo
 
 var _ ssh.AlgorithmSigner = &agentKeyringSigner{}
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -835,6 +840,8 @@ func underlyingAlgo(algo string) string {
 >>>>>>> 68cd746 (added testcontainers)
 =======
 >>>>>>> 52bedc1 (fixed make deps)
+=======
+>>>>>>> df6c055 (added integration test to make file & ran  make deps)
 // Calls an extension method. It is up to the agent implementation as to whether or not
 // any particular extension is supported and may always return an error. Because the
 // type of the response is up to the implementation, this returns the bytes of the

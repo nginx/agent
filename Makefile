@@ -155,6 +155,9 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	docker run -v ${PWD}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
 
+integration-test:
+	go test ./test/integration/api
+
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
