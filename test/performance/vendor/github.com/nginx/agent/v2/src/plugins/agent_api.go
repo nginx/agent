@@ -53,12 +53,12 @@ type AgentAPI struct {
 }
 
 type NginxHandler struct {
-	config               *config.Config
-	env                  core.Environment
-	pipeline             core.MessagePipeInterface
-	nginxBinary          core.NginxBinary
-	responseChannel      chan *proto.Command_NginxConfigResponse
-	configResponseStatus *proto.NginxConfigStatus
+	config                 *config.Config
+	env                    core.Environment
+	pipeline               core.MessagePipeInterface
+	nginxBinary            core.NginxBinary
+	responseChannel        chan *proto.Command_NginxConfigResponse
+	configResponseStatuses map[string]*proto.NginxConfigStatus
 }
 
 type AgentAPIConfigApplyRequest struct {
@@ -136,7 +136,9 @@ func (a *AgentAPI) Process(message *core.Message) {
 	case core.NginxConfigValidationPending, core.NginxConfigApplyFailed, core.NginxConfigApplySucceeded:
 		switch response := message.Data().(type) {
 		case *proto.AgentActivityStatus:
-			a.nginxHandler.configResponseStatus = response.GetNginxConfigStatus()
+			log.Error(response)
+			nginxConfigStatus := response.GetNginxConfigStatus()
+			a.nginxHandler.configResponseStatuses[nginxConfigStatus.GetNginxId()] = nginxConfigStatus
 		default:
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, response)
 		}
@@ -158,12 +160,12 @@ func (a *AgentAPI) Subscriptions() []string {
 
 func (a *AgentAPI) createHttpServer() {
 	a.nginxHandler = &NginxHandler{
-		config:               a.config,
-		pipeline:             a.pipeline,
-		env:                  a.env,
-		nginxBinary:          a.nginxBinary,
-		responseChannel:      make(chan *proto.Command_NginxConfigResponse),
-		configResponseStatus: &proto.NginxConfigStatus{},
+		config:                 a.config,
+		pipeline:               a.pipeline,
+		env:                    a.env,
+		nginxBinary:            a.nginxBinary,
+		responseChannel:        make(chan *proto.Command_NginxConfigResponse),
+		configResponseStatuses: make(map[string]*proto.NginxConfigStatus),
 	}
 
 	mux := http.NewServeMux()
@@ -424,7 +426,23 @@ func (h *NginxHandler) getConfigStatus(w http.ResponseWriter, r *http.Request) e
 		return writeObjectToResponseBody(w, agentAPIConfigApplyStatusResponse)
 	}
 
-	if h.configResponseStatus.GetCorrelationId() != correlationId {
+	agentAPIConfigApplyStatusResponse := AgentAPIConfigApplyResponse{
+		CorrelationId:  correlationId,
+		NginxInstances: []NginxInstanceResponse{},
+	}
+
+	for _, nginxConfigStatus := range h.configResponseStatuses {
+		if nginxConfigStatus.GetCorrelationId() == correlationId {
+			nginxInstanceResponse := NginxInstanceResponse{
+				NginxId: nginxConfigStatus.GetNginxId(),
+				Message: nginxConfigStatus.GetMessage(),
+				Status:  nginxConfigStatus.GetStatus().String(),
+			}
+			agentAPIConfigApplyStatusResponse.NginxInstances = append(agentAPIConfigApplyStatusResponse.NginxInstances, nginxInstanceResponse)
+		}
+	}
+
+	if len(agentAPIConfigApplyStatusResponse.NginxInstances) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		agentAPIConfigApplyStatusResponse := AgentAPIConfigApplyStatusResponse{
 			CorrelationId: correlationId,
@@ -436,13 +454,6 @@ func (h *NginxHandler) getConfigStatus(w http.ResponseWriter, r *http.Request) e
 	}
 
 	w.WriteHeader(http.StatusOK)
-
-	agentAPIConfigApplyStatusResponse := AgentAPIConfigApplyStatusResponse{
-		CorrelationId: correlationId,
-		Message:       h.configResponseStatus.Message,
-		Status:        h.configResponseStatus.Status.String(),
-	}
-
 	return writeObjectToResponseBody(w, agentAPIConfigApplyStatusResponse)
 }
 

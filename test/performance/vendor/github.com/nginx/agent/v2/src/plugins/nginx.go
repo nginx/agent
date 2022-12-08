@@ -326,6 +326,7 @@ func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.Ng
 				CorrelationId: correlationId,
 				Status:        proto.NginxConfigStatus_PENDING,
 				Message:       "config apply pending",
+				NginxId:       config.GetConfigData().GetNginxId(),
 			},
 		},
 	}))
@@ -521,6 +522,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *pr
 				CorrelationId: response.correlationId,
 				Status:        proto.NginxConfigStatus_OK,
 				Message:       nginxConfigStatusMessage,
+				NginxId:       response.config.GetConfigData().GetNginxId(),
 			},
 		},
 	}
@@ -574,6 +576,7 @@ func (n *Nginx) rollbackConfigApply(response *NginxConfigValidationResponse) {
 					CorrelationId: response.correlationId,
 					Status:        proto.NginxConfigStatus_ERROR,
 					Message:       nginxConfigStatusMessage,
+					NginxId:       response.config.GetConfigData().GetNginxId(),
 				},
 			},
 		}

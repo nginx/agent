@@ -324,36 +324,39 @@ func TestNginxHandler_updateConfig(t *testing.T) {
 
 func TestNginxHandler_getConfigStatus(t *testing.T) {
 	tests := []struct {
-		name                 string
-		url                  string
-		configResponseStatus *proto.NginxConfigStatus
-		expectedStatusCode   int
-		expectedMessage      string
-		expectedStatus       string
+		name                   string
+		url                    string
+		configResponseStatuses map[string]*proto.NginxConfigStatus
+		expectedStatusCode     int
+		expectedMessage        string
+		expectedStatus         string
 	}{
 		{
-			name:                 "no query parameter",
-			url:                  "/nginx/config/status/",
-			configResponseStatus: nil,
-			expectedStatusCode:   400,
-			expectedMessage:      "Missing required query parameter correlation_id",
-			expectedStatus:       "UNKNOWN",
+			name:                   "no query parameter",
+			url:                    "/nginx/config/status/",
+			configResponseStatuses: make(map[string]*proto.NginxConfigStatus),
+			expectedStatusCode:     400,
+			expectedMessage:        "Missing required query parameter correlation_id",
+			expectedStatus:         "UNKNOWN",
 		},
 		{
-			name:                 "no matching correlation_id",
-			url:                  "/nginx/config/status/?correlation_id=123",
-			configResponseStatus: nil,
-			expectedStatusCode:   404,
-			expectedMessage:      "Unable to find a config apply request with the correlation_id 123",
-			expectedStatus:       "UNKNOWN",
+			name:                   "no matching correlation_id",
+			url:                    "/nginx/config/status/?correlation_id=123",
+			configResponseStatuses: make(map[string]*proto.NginxConfigStatus),
+			expectedStatusCode:     404,
+			expectedMessage:        "Unable to find a config apply request with the correlation_id 123",
+			expectedStatus:         "UNKNOWN",
 		},
 		{
 			name: "found matching correlation_id",
 			url:  "/nginx/config/status/?correlation_id=123",
-			configResponseStatus: &proto.NginxConfigStatus{
-				CorrelationId: "123",
-				Status:        proto.NginxConfigStatus_OK,
-				Message:       "config applied successfully",
+			configResponseStatuses: map[string]*proto.NginxConfigStatus{
+				"12345": {
+					CorrelationId: "123",
+					Status:        proto.NginxConfigStatus_OK,
+					Message:       "config applied successfully",
+					NginxId:       "12345",
+				},
 			},
 			expectedStatusCode: 200,
 			expectedMessage:    "config applied successfully",
@@ -365,12 +368,12 @@ func TestNginxHandler_getConfigStatus(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, tt.url, nil)
 			h := &NginxHandler{
-				config:               config.Defaults,
-				env:                  tutils.GetMockEnv(),
-				pipeline:             core.NewMessagePipe(context.TODO()),
-				nginxBinary:          tutils.NewMockNginxBinary(),
-				responseChannel:      make(chan *proto.Command_NginxConfigResponse),
-				configResponseStatus: tt.configResponseStatus,
+				config:                 config.Defaults,
+				env:                    tutils.GetMockEnv(),
+				pipeline:               core.NewMessagePipe(context.TODO()),
+				nginxBinary:            tutils.NewMockNginxBinary(),
+				responseChannel:        make(chan *proto.Command_NginxConfigResponse),
+				configResponseStatuses: tt.configResponseStatuses,
 			}
 
 			err := h.getConfigStatus(w, r)
@@ -381,11 +384,21 @@ func TestNginxHandler_getConfigStatus(t *testing.T) {
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			result := &AgentAPIConfigApplyStatusResponse{}
-			err = json.NewDecoder(w.Body).Decode(result)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expectedMessage, result.Message)
-			assert.Equal(t, tt.expectedStatus, result.Status)
+			if len(tt.configResponseStatuses) > 0 {
+				result := &AgentAPIConfigApplyResponse{}
+				err = json.NewDecoder(w.Body).Decode(result)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedMessage, result.NginxInstances[0].Message)
+				assert.Equal(t, tt.expectedStatus, result.NginxInstances[0].Status)
+				assert.Equal(t, "12345", result.NginxInstances[0].NginxId)
+
+			} else {
+				result := &AgentAPIConfigApplyStatusResponse{}
+				err = json.NewDecoder(w.Body).Decode(result)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedMessage, result.Message)
+				assert.Equal(t, tt.expectedStatus, result.Status)
+			}
 		})
 	}
 }

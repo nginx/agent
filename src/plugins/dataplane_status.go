@@ -23,25 +23,25 @@ import (
 )
 
 type DataPlaneStatus struct {
-	messagePipeline       core.MessagePipeInterface
-	ctx                   context.Context
-	sendStatus            chan bool
-	healthTicker          *time.Ticker
-	interval              time.Duration
-	meta                  *proto.Metadata
-	binary                core.NginxBinary
-	env                   core.Environment
-	version               string
-	tags                  *[]string
-	configDirs            string
-	lastSendDetails       time.Time
-	envHostInfo           *proto.HostInfo
-	statusUrls            map[string]string
-	reportInterval        time.Duration
-	napDetails            *proto.DataplaneSoftwareDetails_AppProtectWafDetails
-	agentActivityStatuses []*proto.AgentActivityStatus
-	napDetailsMutex       sync.RWMutex
-	napHealth             *proto.DataplaneSoftwareHealth_AppProtectWafHealth
+	messagePipeline             core.MessagePipeInterface
+	ctx                         context.Context
+	sendStatus                  chan bool
+	healthTicker                *time.Ticker
+	interval                    time.Duration
+	meta                        *proto.Metadata
+	binary                      core.NginxBinary
+	env                         core.Environment
+	version                     string
+	tags                        *[]string
+	configDirs                  string
+	lastSendDetails             time.Time
+	envHostInfo                 *proto.HostInfo
+	statusUrls                  map[string]string
+	reportInterval              time.Duration
+	napDetails                  *proto.DataplaneSoftwareDetails_AppProtectWafDetails
+	nginxConfigActivityStatuses map[string]*proto.AgentActivityStatus
+	napDetailsMutex             sync.RWMutex
+	napHealth                   *proto.DataplaneSoftwareHealth_AppProtectWafHealth
 }
 
 const (
@@ -56,18 +56,19 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, config.Dataplane.Status.PollInterval)
 	}
 	return &DataPlaneStatus{
-		sendStatus:      make(chan bool),
-		healthTicker:    time.NewTicker(pollInt),
-		interval:        pollInt,
-		meta:            meta,
-		binary:          binary,
-		env:             env,
-		version:         version,
-		tags:            &config.Tags,
-		configDirs:      config.ConfigDirs,
-		statusUrls:      make(map[string]string),
-		reportInterval:  config.Dataplane.Status.ReportInterval,
-		napDetailsMutex: sync.RWMutex{},
+		sendStatus:                  make(chan bool),
+		healthTicker:                time.NewTicker(pollInt),
+		interval:                    pollInt,
+		meta:                        meta,
+		binary:                      binary,
+		env:                         env,
+		version:                     version,
+		tags:                        &config.Tags,
+		configDirs:                  config.ConfigDirs,
+		statusUrls:                  make(map[string]string),
+		reportInterval:              config.Dataplane.Status.ReportInterval,
+		napDetailsMutex:             sync.RWMutex{},
+		nginxConfigActivityStatuses: make(map[string]*proto.AgentActivityStatus),
 		// Intentionally empty as it will be set later
 		napDetails: nil,
 		napHealth:  &proto.DataplaneSoftwareHealth_AppProtectWafHealth{},
@@ -112,7 +113,7 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
 		switch data := msg.Data().(type) {
 		case *proto.AgentActivityStatus:
-			dps.updateAgentActivityStatuses(data)
+			dps.updateNginxConfigActivityStatuses(data)
 		default:
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, data)
 		}
@@ -121,9 +122,8 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
 		switch data := msg.Data().(type) {
 		case *proto.AgentActivityStatus:
-			dps.updateAgentActivityStatuses(data)
+			dps.updateNginxConfigActivityStatuses(data)
 			dps.sendDataplaneStatus(dps.messagePipeline, false)
-			dps.removeAgentActivityStatus(data)
 		default:
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, data)
 		}
@@ -140,34 +140,10 @@ func (dps *DataPlaneStatus) Subscriptions() []string {
 	}
 }
 
-func (dps *DataPlaneStatus) updateAgentActivityStatuses(newAgentActivityStatus *proto.AgentActivityStatus) {
-	log.Tracef("DataplaneStatus: Adding %v to agentActivityStatuses", newAgentActivityStatus)
+func (dps *DataPlaneStatus) updateNginxConfigActivityStatuses(newAgentActivityStatus *proto.AgentActivityStatus) {
+	log.Tracef("DataplaneStatus: Updating nginxConfigActivityStatuses with %v", newAgentActivityStatus)
 	if _, ok := newAgentActivityStatus.GetStatus().(*proto.AgentActivityStatus_NginxConfigStatus); ok {
-		foundExistingNginxStatus := false
-		for index, agentActivityStatus := range dps.agentActivityStatuses {
-			if _, ok := agentActivityStatus.GetStatus().(*proto.AgentActivityStatus_NginxConfigStatus); ok {
-				dps.agentActivityStatuses[index] = newAgentActivityStatus
-				log.Tracef("DataplaneStatus: Updated agentActivityStatus with new status %v", newAgentActivityStatus)
-				foundExistingNginxStatus = true
-			}
-		}
-
-		if !foundExistingNginxStatus {
-			dps.agentActivityStatuses = append(dps.agentActivityStatuses, newAgentActivityStatus)
-			log.Tracef("DataplaneStatus: Added new status %v to agentActivityStatus", newAgentActivityStatus)
-		}
-	}
-}
-
-func (dps *DataPlaneStatus) removeAgentActivityStatus(agentActivityStatus *proto.AgentActivityStatus) {
-	log.Tracef("DataplaneStatus: Removing %v from agentActivityStatuses", agentActivityStatus)
-	if _, ok := agentActivityStatus.GetStatus().(*proto.AgentActivityStatus_NginxConfigStatus); ok {
-		for index, agentActivityStatus := range dps.agentActivityStatuses {
-			if _, ok := agentActivityStatus.GetStatus().(*proto.AgentActivityStatus_NginxConfigStatus); ok {
-				dps.agentActivityStatuses = append(dps.agentActivityStatuses[:index], dps.agentActivityStatuses[index+1:]...)
-				log.Tracef("DataplaneStatus: Removed %v from agentActivityStatus", agentActivityStatus)
-			}
-		}
+		dps.nginxConfigActivityStatuses[newAgentActivityStatus.GetNginxConfigStatus().GetNginxId()] = newAgentActivityStatus
 	}
 }
 
@@ -205,12 +181,18 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 	processes := dps.env.Processes()
 	log.Tracef("dataplaneStatus: processes %v", processes)
 	forceDetails = forceDetails || time.Now().UTC().Add(-dps.reportInterval).After(dps.lastSendDetails)
+
+	agentActivityStatuses := []*proto.AgentActivityStatus{}
+	for _, nginxConfigActivityStatus := range dps.nginxConfigActivityStatuses {
+		agentActivityStatuses = append(agentActivityStatuses, nginxConfigActivityStatus)
+	}
+
 	return &proto.DataplaneStatus{
 		Host:                     dps.hostInfo(forceDetails),
 		Details:                  dps.detailsForProcess(processes, forceDetails),
 		Healths:                  dps.healthForProcess(processes),
 		DataplaneSoftwareDetails: dps.dataplaneSoftwareDetails(),
-		AgentActivityStatus:      dps.agentActivityStatuses,
+		AgentActivityStatus:      agentActivityStatuses,
 	}
 }
 
