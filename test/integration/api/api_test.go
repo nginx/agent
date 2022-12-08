@@ -28,10 +28,54 @@ func TestAPI_setupTestContainer (t *testing.T){
     assert.NoError(t, compose.Up(ctx, tc.Wait(true)), "compose.Up()")
 }
 
-func TestAPI_Metrics (t *testing.T) {
-	port := 9091
+func TestAPI_Nginx (t *testing.T){
 
 	TestAPI_setupTestContainer(t)
+
+	port := 9091
+
+	time.Sleep(15 * time.Second)
+
+    client := resty.New()
+
+    url := fmt.Sprintf("http://localhost:%d/nginx", port)
+
+	resp, err := client.R().EnableTrace().Get(url)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+	assert.Contains(t, string(resp.String()), "nginx_id")
+
+	nginxDetails := strings.Split(resp.String(), " ")
+
+	for _, detail := range nginxDetails{
+		detail := strings.Split(detail, ":")
+
+		switch {
+		case strings.Contains(detail[0], "nginx_id"):
+			assert.NotNil(t, detail[1])
+
+		case strings.Contains(detail[0], "version"):
+			assert.NotNil(t, detail[1])
+
+		case strings.Contains(detail[0], "runtime_modules"):
+			assert.Equal(t, detail[1], "http_stub_status_module")
+
+		case strings.Contains(detail[0], "conf_path"):
+			assert.Equal(t, detail[1], "/usr/local/nginx/conf/nginx.conf")
+		}
+	}
+
+	printResult(resp,err)
+ 
+	
+}
+
+func TestAPI_Metrics (t *testing.T) {
+
+	TestAPI_setupTestContainer(t)
+
+	port := 9091
 
 	time.Sleep(15 * time.Second)
 
