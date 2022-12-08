@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// Host: localhost:8081
+// swagger:meta
 package plugins
 
 import (
@@ -21,8 +23,13 @@ import (
 	prometheus_metrics "github.com/nginx/agent/v2/src/extensions/prometheus-metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 )
+
+// swagger:response MetricsResponse
+// in: body
+type _ string
 
 type AgentAPI struct {
 	config       *config.Config
@@ -87,17 +94,14 @@ func (a *AgentAPI) Subscriptions() []string {
 func (a *AgentAPI) createHttpServer() {
 	mux := http.NewServeMux()
 	a.nginxHandler = &NginxHandler{a.env, a.nginxBinary}
-	registerer := prometheus.DefaultRegisterer
-	gatherer := prometheus.DefaultGatherer
 
-	registerer.MustRegister(a.exporter)
-	mux.Handle("/metrics/", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
-
+	mux.Handle("/metrics/", a.getPrometheusHandler())
 	mux.Handle("/nginx/", a.nginxHandler)
 
+	handler := cors.Default().Handler(mux)
 	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
-		Handler: mux,
+		Handler: handler,
 	}
 
 	if a.config.AgentAPI.Cert != "" && a.config.AgentAPI.Key != "" && a.config.AgentAPI.Port != 0 {
@@ -115,8 +119,29 @@ func (a *AgentAPI) createHttpServer() {
 	}
 }
 
+// swagger:route GET /metrics/ nginx-agent get-prometheus-metrics
+//
+// # Get Prometheus Metrics
+//
+// # Returns prometheus metrics
+//
+// Produces:
+//   - text/plain
+//
+// responses:
+//
+//	200: MetricsResponse
+func (a *AgentAPI) getPrometheusHandler() http.Handler {
+	registerer := prometheus.DefaultRegisterer
+	gatherer := prometheus.DefaultGatherer
+
+	registerer.MustRegister(a.exporter)
+	return promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
+}
+
 func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentTypeHeader, jsonMimeType)
+
 	switch {
 	case r.Method == http.MethodGet && instancesRegex.MatchString(r.URL.Path):
 		err := sendInstanceDetailsPayload(h.getNginxDetails(), w, r)
@@ -132,6 +157,16 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// swagger:route GET /nginx/ nginx-agent get-nginx-instances
+//
+// # Get NGINX Instances
+//
+// # Returns a list of NGINX instances
+//
+// responses:
+//
+//	200: []NginxDetails
+//	500
 func sendInstanceDetailsPayload(nginxDetails []*proto.NginxDetails, w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusOK)
 

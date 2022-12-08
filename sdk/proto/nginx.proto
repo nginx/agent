@@ -21,34 +21,70 @@ message PathInfo {
   string conf = 2 [(gogoproto.jsontag) = "conf" ];
 }
 
+// swagger:model NginxDetails
 // Each NGINXDetails is associated with with a single NGINX instance.
 message NginxDetails {
+  // NGINX ID
+  // example: 6204037c-30e6-408b-8aaa-dd8219860b4b
   string nginx_id = 1 [(gogoproto.jsontag) = "nginx_id" ];
+  // Version of NGINX
+  // example: 1.23.2
   string version = 2 [(gogoproto.jsontag) = "version" ];
+  // Path to configuration file
+  // example: /usr/local/nginx/conf/nginx.conf
   string conf_path = 3 [(gogoproto.jsontag) = "conf_path" ];
+  // Process ID
+  // example: 8
   string process_id = 4 [(gogoproto.jsontag) = "process_id" ];
+  // Process Path
+  // example: /usr/local/nginx/sbin/nginx
   string process_path = 5 [(gogoproto.jsontag) = "process_path" ];
+  // Start Time
+  // example: 1670429190000
   int64 start_time = 6 [(gogoproto.jsontag) = "start_time" ];
+  // Was NGINX built from source
+  // example: false
   bool built_from_source = 7 [(gogoproto.jsontag) = "built_from_source" ]; 
+  // List of loadable modules
+  // example: []
   repeated string loadable_modules = 8 [(gogoproto.jsontag) = "loadable_modules" ];
+  // List of runtime modules
+  // example: [ "http_stub_status_module" ]
   repeated string runtime_modules = 9 [(gogoproto.jsontag) = "runtime_modules" ];
+  // NGINX plus metadata
   NginxPlusMetaData plus = 10 [(gogoproto.jsontag) = "plus" ];
+  // SSL metadata
   NginxSslMetaData ssl = 11 [(gogoproto.jsontag) = "ssl" ];
+  // Status URL
+  // example: http://localhost:8080/api
   string status_url = 12 [(gogoproto.jsontag) = "status_url" ];
+  // Configuration arguments
+  // example: [ "", "with-http_stub_status_module" ]
   repeated string configure_args = 13 [(gogoproto.jsontag) = "configure_args" ];
 }
 
+// swagger:model NginxPlusMetaData
 message NginxPlusMetaData {
+  // Is NGINX instance a plus instance
+  // example: true
   bool enabled = 1 [(gogoproto.jsontag) = "enabled" ];
+  // NGINX plus release
+  // example: R27
   string release = 2 [(gogoproto.jsontag) = "release" ];
 }
 
+// swagger:model NginxSslMetaData
 message NginxSslMetaData {
+  // SSL type enum
   enum NginxSslType {
     BUILT = 0;
     RUN = 1;
   }
-  NginxSslType ssl_type = 1 [(gogoproto.jsontag) = "ssl_type" ]; 
+  // SSL type
+  // example: 0
+  NginxSslType ssl_type = 1 [(gogoproto.jsontag) = "ssl_type" ];
+  // SSL details
+  // example: null
   repeated string details = 2 [(gogoproto.jsontag) = "details" ];
 }
 
