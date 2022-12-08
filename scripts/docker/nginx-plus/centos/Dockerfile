@@ -1,13 +1,14 @@
-ARG OS_VERSION
-FROM registry.access.redhat.com/ubi$OS_VERSION/ubi:latest as install
+ARG DOCKER_IMAGE
+FROM ${DOCKER_IMAGE} as install
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
-ARG PACKAGES_REPO
 ARG DOCKER_IMAGE
+ARG PACKAGES_REPO
+ARG OS_RELEASE
 ARG OS_VERSION
 
 WORKDIR /agent
-COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
+COPY ./scripts/docker/nginx-plus/entrypoint.sh /agent/entrypoint.sh
 COPY ./nginx-agent.conf /agent/nginx-agent.conf
 
 RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
@@ -21,13 +22,9 @@ RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     && adduser -g nginx --system --no-create-home --home /nonexistent --shell /bin/false --uid 101 nginx \
     && usermod -s /sbin/nologin nginx \
     && usermod -L nginx \
-    && nginxPackages=" \
-        nginx-agent \
-        nginx-plus \
-       " \
     && printf "[nginx-plus] \n\
 name=nginx-plus repo \n\
-baseurl=https://$PACKAGES_REPO/plus/centos/$OS_VERSION/\$basearch \n\
+baseurl=https://$PACKAGES_REPO/plus/$OS_RELEASE/$OS_VERSION/\$basearch \n\
 sslclientcert=/etc/ssl/nginx/nginx-repo.crt \n\
 sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
@@ -36,13 +33,17 @@ sslverify=true \n\
 gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-plus-$DOCKER_IMAGE.repo \
     && printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
-baseurl=https://$PACKAGES_REPO/nginx-agent/centos/$OS_VERSION/\$basearch \n\
+baseurl=https://$PACKAGES_REPO/nginx-agent/$OS_RELEASE/$OS_VERSION/\$basearch \n\
 sslclientcert=/etc/ssl/nginx/nginx-repo.crt \n\
 sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
 sslverify=true \n\
-gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-agent-$DOCKER_IMAGE.repo \
+gpgkey=https://nginx.org/keys/nginx_signing.key">> /etc/yum.repos.d/nginx-agent-$DOCKER_IMAGE.repo \
+    && nginxPackages=" \
+        nginx-agent \
+        nginx-plus \
+       " \
     && yum install -y $nginxPackages \
     && yum clean all \
     && rm -rf /var/cache/yum /etc/yum.repos.d/* /etc/ssl/nginx
