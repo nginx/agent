@@ -1067,14 +1067,14 @@ func getCertMeta(file string) crtMetaFields {
 }
 
 func generateCertificate() error {
-	cmd := exec.Command("../scripts/mtls/gen_cnf.sh", "ca", "--cn", "'ca.local'", "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "certs/conf")
+	cmd := exec.Command("../scripts/tls/gen_cnf.sh", "ca", "--cn", "'ca.local'", "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "certs/conf")
 
 	err := cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	cmd1 := exec.Command("../scripts/mtls/gen_cert.sh", "ca", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
+	cmd1 := exec.Command("../scripts/tls/gen_cert.sh", "ca", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
 
 	err = cmd1.Run()
 	if err != nil {

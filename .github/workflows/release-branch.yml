@@ -63,8 +63,7 @@ jobs:
             console.log(`The next version is v${version}`)
             const footer = `
               ## Resources
-              - Documentation -- https://docs.nginx.com/nginx-instance-manager/nginx-agent/
-              - Upgrade Steps -- https://docs.nginx.com/nginx-instance-manager/installation/upgrade-guide/#upgrade-nginx-agent
+              - Documentation -- https://github.com/nginx/agent#readme
             `
             const release_notes = (await github.rest.repos.generateReleaseNotes({
               owner: context.payload.repository.owner.login,
@@ -161,20 +160,18 @@ jobs:
         with:
           inlineScript: |
             az storage blob upload --auth-mode=login -f ./build/packages/nginx-agent.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
-              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/build/packages/nginx-agent.tar.gz
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/nginx-agent.tar.gz
       - name: Azure Logout
         run: |
           az logout
         if: always()
       - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ env.RELEASE_UPLOAD_URL }} 
-          asset_path: ./build/packages/nginx-agent.tar.gz
-          asset_name: nginx-agent.tar.gz
-          asset_content_type: application/zip
+        # clobber overwrites existing assets of the same name
+        run: |
+          gh release upload --clobber v${{env.VERSION}} \
+            $(find ./build -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.pkg" -o -name "*.txz" -o -name "*.apk" \))
       - name: Publish Release Packages
         if: ${{ inputs.publishPackages == true }}
         env:

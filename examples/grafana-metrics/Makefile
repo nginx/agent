@@ -11,5 +11,5 @@ build: ## Build agent package
 	cd ../../ && GOWORK=off CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o ./build/nginx-agent
 	cd ../../ && nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./examples/grafana-metrics/build/nginx-agent.deb
 
-run: ## Start docker containers
+run: build ## Start docker containers
 	docker-compose up --build

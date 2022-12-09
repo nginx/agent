@@ -83,8 +83,8 @@ func BenchmarkGetConfigFiles(b *testing.B) {
 					confFiles, auxFiles, err = sdk.GetNginxConfigFiles(config)
 				}
 				require.NoError(bb, err)
-				conf := fmt.Sprintf("Generated config Files for %v should not be nil", config.DirectoryMap.Directories[0].Files[0].Name)
-				confAux := fmt.Sprintf("Generated auxillary files for %v should not be nil", config.DirectoryMap.Directories[0].Files[0].Name)
+				conf := fmt.Sprintf("Generated config Files for %v should not be nil", config.GetDirectoryMap().GetDirectories()[0].GetFiles()[0].GetName())
+				confAux := fmt.Sprintf("Generated auxillary files for %v should not be nil", config.GetDirectoryMap().GetDirectories()[0].GetFiles()[0].GetName())
 
 				require.NotNil(bb, confFiles, conf)
 				require.NotNil(bb, auxFiles, confAux)
@@ -218,14 +218,14 @@ func generateCertificate() error {
 	for i := 1; i <= 3; i++ {
 		agentVersion := fmt.Sprintf("agent%v", i)
 		filename := fmt.Sprintf("%v.local", agentVersion)
-		cmd := exec.Command("../../scripts/mtls/gen_cnf.sh", "ca", "--cn", filename, "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "../testdata/configs/bigger/conf")
+		cmd := exec.Command("../../scripts/tls/gen_cnf.sh", "ca", "--cn", filename, "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "../testdata/configs/bigger/conf")
 
 		err := cmd.Run()
 		if err != nil {
 			return err
 		}
 
-		cmd1 := exec.Command("../../scripts/mtls/gen_cert.sh", "ca", "--config", "../testdata/configs/bigger/conf/ca.cnf", "--out", "../testdata/configs/bigger/ssl")
+		cmd1 := exec.Command("../../scripts/tls/gen_cert.sh", "ca", "--config", "../testdata/configs/bigger/conf/ca.cnf", "--out", "../testdata/configs/bigger/ssl")
 		err = cmd1.Run()
 		if err != nil {
 			return err
@@ -246,14 +246,14 @@ func generateCertificate() error {
 	}
 
 	filename := "test.local"
-	cmd := exec.Command("../../scripts/mtls/gen_cnf.sh", "ca", "--cn", filename, "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "../testdata/configs/bigger/conf")
+	cmd := exec.Command("../../scripts/tls/gen_cnf.sh", "ca", "--cn", filename, "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "../testdata/configs/bigger/conf")
 
 	err := cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	cmd1 := exec.Command("../../scripts/mtls/gen_cert.sh", "ca", "--config", "../testdata/configs/bigger/conf/ca.cnf", "--out", "../testdata/configs/bigger/ssl")
+	cmd1 := exec.Command("../../scripts/tls/gen_cert.sh", "ca", "--config", "../testdata/configs/bigger/conf/ca.cnf", "--out", "../testdata/configs/bigger/ssl")
 	err = cmd1.Run()
 	if err != nil {
 		return err
