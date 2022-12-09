@@ -326,7 +326,7 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 							status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read WAF file in metadata %v", config.GetConfigData())).CmdStatus
 							return status
 						}
-						if n.wafVersion != napMetaData.NapVersion {
+						if napMetaData.NapVersion != "" && n.wafVersion != napMetaData.NapVersion {
 							status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config metadata mismatch %v", config.GetConfigData())).CmdStatus
 							return status
 						}
