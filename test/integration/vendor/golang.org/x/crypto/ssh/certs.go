@@ -463,6 +463,7 @@ func (c *Certificate) SignCert(rand io.Reader, authority Signer) error {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 //
 // This map must be kept in sync with the one in agent/client.go.
 =======
@@ -473,6 +474,10 @@ func (c *Certificate) SignCert(rand io.Reader, authority Signer) error {
 >>>>>>> 52bedc1 (fixed make deps)
 =======
 >>>>>>> df6c055 (added integration test to make file & ran  make deps)
+=======
+//
+// This map must be kept in sync with the one in agent/client.go.
+>>>>>>> 188dbde (move files, add integration test to make format & run make format)
 var certKeyAlgoNames = map[string]string{
 	CertAlgoRSAv01:        KeyAlgoRSA,
 	CertAlgoRSASHA256v01:  KeyAlgoRSASHA256,

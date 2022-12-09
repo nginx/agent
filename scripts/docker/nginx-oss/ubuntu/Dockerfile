@@ -3,9 +3,9 @@ LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
 WORKDIR /agent
 COPY ./ /agent
-COPY ./scripts/docker/nginx-oss/ubuntu/entrypoint.sh /agent/entrypoint.sh
-COPY ./scripts/docker/nginx-oss/ubuntu/nginx-agent.conf /agent/nginx-agent.conf
-COPY ./scripts/docker/nginx-oss/ubuntu/nginx.conf /agent/nginx.conf
+COPY ./scripts/docker/nginx-oss/entrypoint.sh /agent/entrypoint.sh
+COPY ./scripts/docker/nginx-oss/nginx-agent.conf /agent/nginx-agent.conf
+COPY ./scripts/docker/nginx-oss/nginx.conf /agent/nginx.conf
 
 
 
