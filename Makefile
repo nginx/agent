@@ -83,7 +83,7 @@ lint: ## Run linter
 	cd sdk && make lint
 
 format: ## Format code
-	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance && go fmt ./...
+	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance  && go fmt ./... && cd ../../test/integration && go fmt ./...
 
 install-tools: ## Install dependencies in tools.go
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %

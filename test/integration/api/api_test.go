@@ -14,31 +14,31 @@ import (
 	tc "github.com/testcontainers/testcontainers-go"
 )
 
-func TestAPI_setupTestContainer (t *testing.T){
+func TestAPI_setupTestContainer(t *testing.T) {
 	compose, err := tc.NewDockerCompose("docker-compose.yml")
-    assert.NoError(t, err, "NewDockerComposeAPI()")
+	assert.NoError(t, err, "NewDockerComposeAPI()")
 
 	t.Cleanup(func() {
-        assert.NoError(t, compose.Down(context.Background(), tc.RemoveOrphans(true), tc.RemoveImagesLocal), "compose.Down()")
-    })
+		assert.NoError(t, compose.Down(context.Background(), tc.RemoveOrphans(true), tc.RemoveImagesLocal), "compose.Down()")
+	})
 
 	ctx, cancel := context.WithCancel(context.Background())
-    t.Cleanup(cancel)
+	t.Cleanup(cancel)
 
-    assert.NoError(t, compose.Up(ctx, tc.Wait(true)), "compose.Up()")
+	assert.NoError(t, compose.Up(ctx, tc.Wait(true)), "compose.Up()")
 }
 
-func TestAPI_Nginx (t *testing.T){
+func TestAPI_Nginx(t *testing.T) {
 
 	TestAPI_setupTestContainer(t)
 
 	port := 9091
 
-	time.Sleep(15 * time.Second)
+	client := resty.New()
 
-    client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
-    url := fmt.Sprintf("http://localhost:%d/nginx", port)
+	url := fmt.Sprintf("http://localhost:%d/nginx", port)
 
 	resp, err := client.R().EnableTrace().Get(url)
 
@@ -48,7 +48,7 @@ func TestAPI_Nginx (t *testing.T){
 
 	nginxDetails := strings.Split(resp.String(), " ")
 
-	for _, detail := range nginxDetails{
+	for _, detail := range nginxDetails {
 		detail := strings.Split(detail, ":")
 
 		switch {
@@ -66,12 +66,11 @@ func TestAPI_Nginx (t *testing.T){
 		}
 	}
 
-	printResult(resp,err)
- 
-	
+	printResult(resp, err)
+
 }
 
-func TestAPI_Metrics (t *testing.T) {
+func TestAPI_Metrics(t *testing.T) {
 
 	TestAPI_setupTestContainer(t)
 
@@ -79,29 +78,29 @@ func TestAPI_Metrics (t *testing.T) {
 
 	time.Sleep(15 * time.Second)
 
-    client := resty.New()
+	client := resty.New()
 
-    url := fmt.Sprintf("http://localhost:%d/metrics", port)
+	url := fmt.Sprintf("http://localhost:%d/metrics", port)
 
-    resp, err := client.R().EnableTrace().Get(url)
+	resp, err := client.R().EnableTrace().Get(url)
 
-    assert.NoError(t, err)
-    assert.Equal(t, http.StatusOK, resp.StatusCode())
-    assert.Contains(t, string(resp.String()), "system_cpu_system")
-    assert.NoError(t, err)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+	assert.Contains(t, string(resp.String()), "system_cpu_system")
+	assert.NoError(t, err)
 
 	printResult(resp, err)
 
 	metrics := ProcessResponse(resp)
 
-	for _, m := range metrics{
+	for _, m := range metrics {
 		metric := strings.Split(m, " ")
 
 		switch {
 		case strings.Contains(metric[0], "system_cpu_system"):
 			value, _ := strconv.ParseFloat(metric[1], 64)
 			assert.Greater(t, value, float64(0))
-		
+
 		case strings.Contains(metric[0], "system_mem_used_all"):
 			value, _ := strconv.ParseFloat(metric[1], 64)
 			assert.Greater(t, value, float64(0))
@@ -114,9 +113,9 @@ func TestAPI_Metrics (t *testing.T) {
 			value, _ := strconv.ParseFloat(metric[1], 64)
 			assert.Greater(t, value, float64(0))
 		}
-		
+
 	}
-	
+
 }
 
 func ProcessResponse(resp *resty.Response) []string {
@@ -134,7 +133,7 @@ func ProcessResponse(resp *resty.Response) []string {
 	metrics = metrics[:i]
 
 	return metrics
-	
+
 }
 
 func printResult(resp *resty.Response, err error) *resty.Response {
@@ -149,4 +148,3 @@ func printResult(resp *resty.Response, err error) *resty.Response {
 	fmt.Println()
 	return resp
 }
-
