@@ -110,7 +110,7 @@ local-rpm-package: ## Create local rpm package
 
 local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	docker run -v `pwd`:/nginx-agent/ build-local-packager:1.0.0
+	docker run -v ${PWD}:/nginx-agent/ build-local-packager:1.0.0
 
 build-txz-packager-docker: ## Builds txz packager docker image
 	@echo Building Local Packager; \
@@ -150,7 +150,7 @@ test-component-build: ## Compile component tests
 	GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test ./test/component -c -o component.test
 
 test-docker-component: ## Run integration tests in docker
-	for container in `docker ps -aqf "name=^nginx-agent_"`; do echo && docker ps -f "id=$$container" --format "{{.Image}}" && docker exec $$container ./tmp/component.test -test.v; done
+	for container in ${docker ps -aqf "name=^nginx-agent_"}; do echo && docker ps -f "id=$$container" --format "{{.Image}}" && docker exec $$container ./tmp/component.test -test.v; done
 
 test-component-run: ## Run component tests
 	GOWORK=off CGO_ENABLED=0 go test -v ./test/component/...
