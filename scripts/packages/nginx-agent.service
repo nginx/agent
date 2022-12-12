@@ -1,6 +1,6 @@
 [Unit]
 Description=NGINX Agent
-Documentation=https://www.nginx.com/products/nginx-agent/
+Documentation=https://github.com/nginx/agent#readme
 After=network.target
 Wants=network-online.target
 StartLimitIntervalSec=15

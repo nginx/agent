@@ -12,7 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -21,12 +21,11 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/nginx/agent/sdk/v2"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
 	sdk_zip "github.com/nginx/agent/sdk/v2/zip"
-
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	loadedConfig "github.com/nginx/agent/v2/src/core/config"
 	tutils "github.com/nginx/agent/v2/test/utils"
@@ -480,16 +479,16 @@ func TestNginxConfigApply(t *testing.T) {
 		t.Run(fmt.Sprintf("%d", idx), func(tt *testing.T) {
 			dir := t.TempDir()
 			var auxPath string
-			tempConf, err := ioutil.TempFile(dir, "nginx.conf")
+			tempConf, err := os.CreateTemp(dir, "nginx.conf")
 			assert.NoError(t, err)
 
-			err = ioutil.WriteFile(tempConf.Name(), fourth, 0644)
+			err = os.WriteFile(tempConf.Name(), fourth, 0644)
 			assert.NoError(t, err)
 
 			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
 				auxDir := t.TempDir()
 				auxMainFile := fmt.Sprintf("%s/app_protect_metadata.json", auxDir)
-				err := ioutil.WriteFile(auxMainFile, wafMetaData1, 0644)
+				err := os.WriteFile(auxMainFile, wafMetaData1, 0644)
 				assert.NoError(t, err)
 				auxPath = auxMainFile
 
@@ -529,8 +528,9 @@ func TestNginxConfigApply(t *testing.T) {
 			binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
 
 			commandClient := tutils.GetMockCommandClient(test.config)
+			conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
 
-			pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+			pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
 				pluginUnderTest.wafLocation = auxPath
 				pluginUnderTest.wafVersion = test.wafVersion
@@ -603,7 +603,9 @@ func TestUploadConfigs(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
 	cmdr.On("Upload", mock.Anything, mock.Anything).Return(nil)
 
-	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+
+	pluginUnderTest := NewNginx(cmdr, binary, env, conf)
 	messagePipe := core.SetupMockMessagePipe(t, context.Background(), pluginUnderTest)
 
 	pluginUnderTest.Init(messagePipe)
@@ -706,8 +708,9 @@ func TestNginx_Process_NginxConfigUpload(t *testing.T) {
 	binary.On("ReadConfig", "/var/conf", "12345", "12345678").Return(config, nil)
 
 	env := tutils.GetMockEnvWithProcess()
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
 
-	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+	pluginUnderTest := NewNginx(cmdr, binary, env, conf)
 	pluginUnderTest.Process(core.NewMessage(core.NginxConfigUpload, configDesc))
 
 	binary.AssertExpectations(t)
@@ -769,8 +772,9 @@ func TestNginx_validateConfig(t *testing.T) {
 			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
+			conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
 
-			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, conf)
 
 			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
 			messagePipe.Run()
@@ -838,10 +842,12 @@ func TestNginx_completeConfigApply(t *testing.T) {
 		},
 	)
 
-	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+
+	pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 
 	dir := t.TempDir()
-	tempConf, err := ioutil.TempFile(dir, "nginx.conf")
+	tempConf, err := os.CreateTemp(dir, "nginx.conf")
 	assert.NoError(t, err)
 	allowedDirectoriesMap := map[string]struct{}{dir: {}}
 	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
@@ -925,10 +931,12 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 		},
 	)
 
-	pluginUnderTest := NewNginx(commandClient, binary, env, &loadedConfig.Config{Features: []string{agent_config.FeatureNginxConfig}})
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+
+	pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 
 	dir := t.TempDir()
-	tempConf, err := ioutil.TempFile(dir, "nginx.conf")
+	tempConf, err := os.CreateTemp(dir, "nginx.conf")
 	assert.NoError(t, err)
 	allowedDirectoriesMap := map[string]struct{}{dir: {}}
 	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)

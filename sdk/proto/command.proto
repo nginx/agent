@@ -103,6 +103,7 @@ message NginxConfigStatus {
   string correlation_id = 1 [(gogoproto.jsontag) = "correlation_id" ];
   Status status = 2 [(gogoproto.jsontag) = "status" ];
   string message = 3 [(gogoproto.jsontag) = "message" ];
+  string nginx_id = 4 [(gogoproto.jsontag) = "nginx_id" ];
 
   enum Status {
     PENDING = 0;

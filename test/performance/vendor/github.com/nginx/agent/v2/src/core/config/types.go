@@ -38,6 +38,23 @@ type Config struct {
 	NAPMonitoring         NAPMonitoring       `mapstructure:"nap_monitoring" yaml:"nap_monitoring,omitempty"`
 }
 
+func (c *Config) IsGrpcServerConfigured() bool {
+	return c.Server.Host != "" && c.Server.GrpcPort != 0
+}
+
+func (c *Config) IsNginxAppProtectConfigured() bool {
+	return c.NginxAppProtect != (NginxAppProtect{})
+}
+
+func (c *Config) IsFeatureEnabled(feature string) bool {
+	for _, configFeature := range c.Features {
+		if configFeature == feature {
+			return true
+		}
+	}
+	return false
+}
+
 type Server struct {
 	Host     string `mapstructure:"host" yaml:"-"`
 	GrpcPort int    `mapstructure:"grpcPort" yaml:"-"`
