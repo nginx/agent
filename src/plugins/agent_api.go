@@ -68,31 +68,61 @@ type NginxHandler struct {
 	configResponseStatuses map[string]*proto.NginxConfigStatus
 }
 
+// swagger:parameters apply-nginx-config
+type ParameterRequest struct {
+	// in: formData
+	// swagger:file
+	File interface{} `json:"file"`
+}
+
 type AgentAPIConfigApplyRequest struct {
 	correlationId string
 	config        *proto.NginxConfig
 }
 
+// swagger:model NginxInstanceResponse
 type NginxInstanceResponse struct {
+	// NGINX ID
+	// example: b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437
 	NginxId string `json:"nginx_id"`
+	// Message
+	// example: config applied successfully
 	Message string `json:"message"`
-	Status  string `json:"status"`
+	// Status
+	// example: OK
+	Status string `json:"status"`
 }
 
+// swagger:model AgentAPIConfigApplyResponse
 type AgentAPIConfigApplyResponse struct {
-	CorrelationId  string                  `json:"correlation_id"`
+	// Correlation ID
+	// example: 6204037c-30e6-408b-8aaa-dd8219860b4b
+	CorrelationId string `json:"correlation_id"`
+	// NGINX Instances
 	NginxInstances []NginxInstanceResponse `json:"nginx_instances"`
 }
 
+// swagger:model AgentAPICommonResponse
 type AgentAPICommonResponse struct {
+	// Correlation ID
+	// example: 6204037c-30e6-408b-8aaa-dd8219860b4b
 	CorrelationId string `json:"correlation_id"`
-	Message       string `json:"message"`
+	// Message
+	// example: No NGINX instances found
+	Message string `json:"message"`
 }
 
+// swagger:model AgentAPIConfigApplyStatusResponse
 type AgentAPIConfigApplyStatusResponse struct {
+	// Correlation ID
+	// example: 6204037c-30e6-408b-8aaa-dd8219860b4b
 	CorrelationId string `json:"correlation_id"`
-	Message       string `json:"message"`
-	Status        string `json:"status"`
+	// Message
+	// example: pending config apply
+	Message string `json:"message"`
+	// Status
+	// example: PENDING
+	Status string `json:"status"`
 }
 
 const (
@@ -179,7 +209,7 @@ func (a *AgentAPI) createHttpServer() {
 	mux.Handle("/metrics/", a.getPrometheusHandler())
 	mux.Handle("/nginx/", a.nginxHandler)
 
-	handler := cors.Default().Handler(mux)
+	handler := cors.New(cors.Options{AllowedMethods: []string{"OPTIONS", "GET", "PUT"}}).Handler(mux)
 	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
 		Handler: handler,
@@ -290,6 +320,23 @@ func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, r *http
 	return writeObjectToResponseBody(w, nginxDetails)
 }
 
+// swagger:route PUT /nginx/config/ nginx-agent apply-nginx-config
+//
+// # Apply NGINX configuration to allow NGINX instances
+//
+// # Returns a config apply status
+// Consumes:
+//   - multipart/form-data
+//
+// Produces:
+//   - application/json
+//
+// responses:
+//
+//	200: AgentAPIConfigApplyResponse
+//	400: AgentAPICommonResponse
+//	408: AgentAPIConfigApplyStatusResponse
+//	500: AgentAPICommonResponse
 func (h *NginxHandler) updateConfig(w http.ResponseWriter, r *http.Request) error {
 	correlationId := uuid.New().String()
 
@@ -352,7 +399,7 @@ func (h *NginxHandler) updateConfig(w http.ResponseWriter, r *http.Request) erro
 			w.WriteHeader(http.StatusRequestTimeout)
 			agentAPIConfigApplyStatusResponse := AgentAPIConfigApplyStatusResponse{
 				CorrelationId: correlationId,
-				Message:       "Pending config apply",
+				Message:       "pending config apply",
 				Status:        pendingStatus,
 			}
 
@@ -446,6 +493,25 @@ func (h *NginxHandler) applyNginxConfig(nginxDetail *proto.NginxDetails, buf *by
 	return nil
 }
 
+// swagger:route GET /nginx/config/status nginx-agent get-nginx-config-status
+//
+// # Get status NGINX config apply
+//
+// # Returns status NGINX config apply
+//
+//	Parameters:
+//	     + name: correlation_id
+//	       in: query
+//	       description: Correlation ID of a NGINX config apply request
+//	       required: true
+//	       type: string
+//
+// responses:
+//
+//	200: AgentAPIConfigApplyResponse
+//	400: AgentAPIConfigApplyStatusResponse
+//	404: AgentAPIConfigApplyStatusResponse
+//	500
 func (h *NginxHandler) getConfigStatus(w http.ResponseWriter, r *http.Request) error {
 	correlationId := r.URL.Query().Get("correlation_id")
 

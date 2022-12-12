@@ -283,7 +283,7 @@ func (m *PathInfo) GetConf() string {
 // Each NGINXDetails is associated with with a single NGINX instance.
 type NginxDetails struct {
 	// NGINX ID
-	// example: 6204037c-30e6-408b-8aaa-dd8219860b4b
+	// example: b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437
 	NginxId string `protobuf:"bytes,1,opt,name=nginx_id,json=nginxId,proto3" json:"nginx_id"`
 	// Version of NGINX
 	// example: 1.23.2

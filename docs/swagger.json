@@ -41,9 +41,160 @@
           }
         }
       }
+    },
+    "/nginx/config/": {
+      "put": {
+        "description": "# Returns a config apply status",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nginx-agent"
+        ],
+        "summary": "Apply NGINX configuration to allow NGINX instances",
+        "operationId": "apply-nginx-config",
+        "parameters": [
+          {
+            "type": "file",
+            "x-go-name": "File",
+            "name": "file",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AgentAPIConfigApplyResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPIConfigApplyResponse"
+            }
+          },
+          "400": {
+            "description": "AgentAPICommonResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPICommonResponse"
+            }
+          },
+          "408": {
+            "description": "AgentAPIConfigApplyStatusResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPIConfigApplyStatusResponse"
+            }
+          },
+          "500": {
+            "description": "AgentAPICommonResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPICommonResponse"
+            }
+          }
+        }
+      }
+    },
+    "/nginx/config/status": {
+      "get": {
+        "description": "# Returns status NGINX config apply",
+        "tags": [
+          "nginx-agent"
+        ],
+        "summary": "Get status NGINX config apply",
+        "operationId": "get-nginx-config-status",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Correlation ID of a NGINX config apply request",
+            "name": "correlation_id",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AgentAPIConfigApplyResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPIConfigApplyResponse"
+            }
+          },
+          "400": {
+            "description": "AgentAPIConfigApplyStatusResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPIConfigApplyStatusResponse"
+            }
+          },
+          "404": {
+            "description": "AgentAPIConfigApplyStatusResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPIConfigApplyStatusResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
+    "AgentAPICommonResponse": {
+      "type": "object",
+      "properties": {
+        "correlation_id": {
+          "description": "Correlation ID",
+          "type": "string",
+          "x-go-name": "CorrelationId",
+          "example": "6204037c-30e6-408b-8aaa-dd8219860b4b"
+        },
+        "message": {
+          "description": "Message",
+          "type": "string",
+          "x-go-name": "Message",
+          "example": "No NGINX instances found"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/v2/src/plugins"
+    },
+    "AgentAPIConfigApplyResponse": {
+      "type": "object",
+      "properties": {
+        "correlation_id": {
+          "description": "Correlation ID",
+          "type": "string",
+          "x-go-name": "CorrelationId",
+          "example": "6204037c-30e6-408b-8aaa-dd8219860b4b"
+        },
+        "nginx_instances": {
+          "description": "NGINX Instances",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NginxInstanceResponse"
+          },
+          "x-go-name": "NginxInstances"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/v2/src/plugins"
+    },
+    "AgentAPIConfigApplyStatusResponse": {
+      "type": "object",
+      "properties": {
+        "correlation_id": {
+          "description": "Correlation ID",
+          "type": "string",
+          "x-go-name": "CorrelationId",
+          "example": "6204037c-30e6-408b-8aaa-dd8219860b4b"
+        },
+        "message": {
+          "description": "Message",
+          "type": "string",
+          "x-go-name": "Message",
+          "example": "pending config apply"
+        },
+        "status": {
+          "description": "Status",
+          "type": "string",
+          "x-go-name": "Status",
+          "example": "PENDING"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/v2/src/plugins"
+    },
     "NginxDetails": {
       "type": "object",
       "properties": {
@@ -84,7 +235,7 @@
           "description": "NGINX ID",
           "type": "string",
           "x-go-name": "NginxId",
-          "example": "6204037c-30e6-408b-8aaa-dd8219860b4b"
+          "example": "b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437"
         },
         "plus": {
           "$ref": "#/definitions/NginxPlusMetaData"
@@ -136,6 +287,30 @@
         }
       },
       "x-go-package": "github.com/nginx/agent/sdk/v2/proto"
+    },
+    "NginxInstanceResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "description": "Message",
+          "type": "string",
+          "x-go-name": "Message",
+          "example": "config applied successfully"
+        },
+        "nginx_id": {
+          "description": "NGINX ID",
+          "type": "string",
+          "x-go-name": "NginxId",
+          "example": "b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437"
+        },
+        "status": {
+          "description": "Status",
+          "type": "string",
+          "x-go-name": "Status",
+          "example": "OK"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/v2/src/plugins"
     },
     "NginxPlusMetaData": {
       "type": "object",
