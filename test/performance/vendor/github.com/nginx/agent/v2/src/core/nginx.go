@@ -132,12 +132,7 @@ func (n *NginxBinaryType) GetChildProcesses() map[string][]*proto.NginxDetails {
 }
 
 func (n *NginxBinaryType) GetNginxIDForProcess(nginxProcess Process) string {
-	defaulted := false
-	if nginxProcess.Path == "" {
-		nginxProcess.Path = defaultToNginxCommandForProcessPath()
-		defaulted = true
-	}
-
+	defaulted := n.sanitizeProcessPath(&nginxProcess)
 	info := n.getNginxInfoFrom(nginxProcess.Path)
 
 	// reset the process path from the default to what NGINX tells us
@@ -160,13 +155,21 @@ func (n *NginxBinaryType) GetNginxDetailsByID(nginxID string) *proto.NginxDetail
 	return n.nginxDetailsMap[nginxID]
 }
 
-func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess Process) *proto.NginxDetails {
+func (n *NginxBinaryType) sanitizeProcessPath(nginxProcess *Process) bool {
 	defaulted := false
 	if nginxProcess.Path == "" {
 		nginxProcess.Path = defaultToNginxCommandForProcessPath()
 		defaulted = true
 	}
+	if strings.Contains(nginxProcess.Path, execDeleted) {
+		log.Infof("nginx was upgraded (process), using new info")
+		nginxProcess.Path = sanitizeExecDeletedPath(nginxProcess.Path)
+	}
+	return defaulted
+}
 
+func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess Process) *proto.NginxDetails {
+	defaulted := n.sanitizeProcessPath(&nginxProcess)
 	info := n.getNginxInfoFrom(nginxProcess.Path)
 
 	// reset the process path from the default to what NGINX tells us
@@ -537,6 +540,10 @@ func (n *NginxBinaryType) getNginxInfoFrom(ngxExe string) *nginxInfo {
 	if ngxExe == "" {
 		return &nginxInfo{}
 	}
+	if strings.Contains(ngxExe, execDeleted) {
+		log.Infof("nginx was upgraded, using new info")
+		ngxExe = sanitizeExecDeletedPath(ngxExe)
+	}
 	if info, ok := n.nginxInfoMap[ngxExe]; ok {
 		stat, err := os.Stat(ngxExe)
 		if err == nil && stat.ModTime().Equal(info.mtime) {
@@ -552,6 +559,18 @@ func (n *NginxBinaryType) getNginxInfoFrom(ngxExe string) *nginxInfo {
 	info := n.getNginxInfoFromBuffer(ngxExe, outbuf)
 	n.nginxInfoMap[ngxExe] = info
 	return info
+}
+
+const (
+	execDeleted = "(deleted)"
+)
+
+func sanitizeExecDeletedPath(exe string) string {
+	firstSpace := strings.Index(exe, execDeleted)
+	if firstSpace != -1 {
+		return strings.TrimSpace(exe[0:firstSpace])
+	}
+	return strings.TrimSpace(exe)
 }
 
 // getNginxInfoFromBuffer -
