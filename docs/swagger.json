@@ -54,7 +54,7 @@
         "tags": [
           "nginx-agent"
         ],
-        "summary": "Apply NGINX configuration to allow NGINX instances",
+        "summary": "Apply NGINX configuration to all NGINX instances",
         "operationId": "apply-nginx-config",
         "parameters": [
           {
