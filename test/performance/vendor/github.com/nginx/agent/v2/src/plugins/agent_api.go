@@ -322,7 +322,7 @@ func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, r *http
 
 // swagger:route PUT /nginx/config/ nginx-agent apply-nginx-config
 //
-// # Apply NGINX configuration to allow NGINX instances
+// # Apply NGINX configuration to all NGINX instances
 //
 // # Returns a config apply status
 // Consumes:
