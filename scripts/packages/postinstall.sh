@@ -176,6 +176,7 @@ update_unit_file() {
 
 add_default_config_file() {
     if [ ! -f "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf ]; then
+        printf "PostInstall: Creating default nginx-agent.conf file\n"
         cat <<EOF > "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
 #
 # /etc/nginx-agent/nginx-agent.conf
