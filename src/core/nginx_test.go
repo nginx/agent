@@ -744,3 +744,30 @@ func buildConfig(rootDirectory string) (*proto.NginxConfig, error) {
 
 	return nginxConfig, nil
 }
+
+// TestNginxBinaryType_sanitizeProcessPath validate correct parsing of the nginx path when nginx binary has been updated.
+func TestNginxBinaryType_sanitizeProcessPath(t *testing.T) {
+	type testDef struct {
+		desc      string
+		path      string
+		expect    string
+		defaulted bool
+	}
+
+	// no test case for process lookup, that would require running nginx or proc some where
+	for _, def := range []testDef{
+		{desc: "deleted path", path: "/usr/sbin/nginx (deleted)", expect: "/usr/sbin/nginx"},
+		{desc: "no change path", path: "/usr/sbin/nginx", expect: "/usr/sbin/nginx"},
+	} {
+		t.Run(def.desc, func(tt *testing.T) {
+			p := Process{
+				Path: def.path,
+			}
+			binary := NginxBinaryType{
+				env: &EnvironmentType{},
+			}
+			assert.Equal(tt, def.defaulted, binary.sanitizeProcessPath(&p))
+			assert.Equal(tt, def.expect, p.Path)
+		})
+	}
+}
