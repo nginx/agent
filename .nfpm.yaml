@@ -12,30 +12,8 @@ changelog: "./scripts/changelog.yml"
 contents:
   - src: ./build/nginx-agent
     dst: /usr/bin/nginx-agent
-  - src: nginx-agent.conf
-    dst: /etc/nginx-agent/nginx-agent.conf
-    type: config|noreplace
-    packager: rpm
-    file_info:
-      mode: 0640
-  - src: nginx-agent.conf
-    dst: /etc/nginx-agent/nginx-agent.conf
-    type: config|noreplace
-    packager: deb
-    file_info:
-      mode: 0640
-  - src: nginx-agent.conf
-    dst: /etc/nginx-agent/nginx-agent.conf
-    type: config|noreplace
-    packager: pkg
-    file_info:
-      mode: 0640
-  - src: nginx-agent.conf
-    dst: /etc/nginx-agent/nginx-agent.conf
-    type: config|noreplace
-    packager: apk
-    file_info:
-      mode: 0640
+  - dst: /etc/nginx-agent
+    type: dir
   - src: ./scripts/packages/nginx-agent.service
     dst: /etc/systemd/system/nginx-agent.service
   - src: ./scripts/selinux/nginx_agent_selinux.8.gz
