@@ -244,6 +244,8 @@ api:
   # default port for Agent API, this is for the server configuration of the REST API
   port: 8081
 EOF
+    printf "PostInstall: Updating file permissions for nginx-agent.conf to 0640\n"
+    chmod 0640 "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
     fi
 }
 
