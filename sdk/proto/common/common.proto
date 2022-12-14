@@ -1,11 +1,15 @@
+// Common messages
 syntax = "proto3";
 package f5.nginx.agent.sdk.common;
 option go_package = "github.com/nginx/agent/sdk/v2/proto/common;f5.nginx.agent.sdk.common";
 
 import "gogo.proto";
 
+// Represents a dimension used in events
 message Dimension {
+    // Name of the dimension
     string name = 1 [(gogoproto.jsontag) = "name" ];
+    // Value of the dimension
     string value = 2 [(gogoproto.jsontag) = "value" ];
 }
 

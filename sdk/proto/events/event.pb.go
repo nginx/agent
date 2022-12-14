@@ -25,17 +25,25 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// Represents the metadata for an event
 type Metadata struct {
-	Module               string           `protobuf:"bytes,1,opt,name=Module,proto3" json:"module"`
-	UUID                 string           `protobuf:"bytes,2,opt,name=UUID,proto3" json:"uuid"`
-	CorrelationID        string           `protobuf:"bytes,3,opt,name=CorrelationID,proto3" json:"correlation_id"`
-	Timestamp            *types.Timestamp `protobuf:"bytes,4,opt,name=Timestamp,proto3" json:"timestamp"`
-	EventLevel           string           `protobuf:"bytes,5,opt,name=EventLevel,proto3" json:"event_level"`
-	Type                 string           `protobuf:"bytes,6,opt,name=Type,proto3" json:"type"`
-	Category             string           `protobuf:"bytes,7,opt,name=Category,proto3" json:"category"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	// Module is the process that generate the event
+	Module string `protobuf:"bytes,1,opt,name=Module,proto3" json:"module"`
+	// UUID is a unique identifier for each event
+	UUID string `protobuf:"bytes,2,opt,name=UUID,proto3" json:"uuid"`
+	// CorrelationID is an ID used by the producer of the message to track the flow of events
+	CorrelationID string `protobuf:"bytes,3,opt,name=CorrelationID,proto3" json:"correlation_id"`
+	// Timestamp defines the time of event generation
+	Timestamp *types.Timestamp `protobuf:"bytes,4,opt,name=Timestamp,proto3" json:"timestamp"`
+	// EventLevel defines the criticality of event
+	EventLevel string `protobuf:"bytes,5,opt,name=EventLevel,proto3" json:"event_level"`
+	// Type is used to identify the event type for further processing
+	Type string `protobuf:"bytes,6,opt,name=Type,proto3" json:"type"`
+	// Category is used for classifying the event type into a higher level entity
+	Category             string   `protobuf:"bytes,7,opt,name=Category,proto3" json:"category"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Metadata) Reset()         { *m = Metadata{} }
@@ -120,7 +128,9 @@ func (m *Metadata) GetCategory() string {
 	return ""
 }
 
+// Represents an event
 type Event struct {
+	// Event metadata
 	Metadata *Metadata `protobuf:"bytes,1,opt,name=Metadata,proto3" json:"metadata"`
 	// Types that are valid to be assigned to Data:
 	//
@@ -217,6 +227,7 @@ func (*Event) XXX_OneofWrappers() []interface{} {
 	}
 }
 
+// Represents an event report
 type EventReport struct {
 	Events               []*Event `protobuf:"bytes,1,rep,name=Events,proto3" json:"events"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -264,6 +275,7 @@ func (m *EventReport) GetEvents() []*Event {
 	return nil
 }
 
+// Represents an activity event
 type ActivityEvent struct {
 	Message              string              `protobuf:"bytes,1,opt,name=Message,proto3" json:"message"`
 	Dimensions           []*common.Dimension `protobuf:"bytes,2,rep,name=Dimensions,proto3" json:"dimensions"`
@@ -319,7 +331,7 @@ func (m *ActivityEvent) GetDimensions() []*common.Dimension {
 	return nil
 }
 
-// SecurityViolationEvent represents a Security Violation that is emitted by the Agent
+// Represents a security violation that is emitted by the Agent
 type SecurityViolationEvent struct {
 	PolicyName               string           `protobuf:"bytes,1,opt,name=PolicyName,proto3" json:"policy_name"`
 	SupportID                string           `protobuf:"bytes,2,opt,name=SupportID,proto3" json:"support_id"`
