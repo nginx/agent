@@ -12,8 +12,11 @@ changelog: "./scripts/changelog.yml"
 contents:
   - src: ./build/nginx-agent
     dst: /usr/bin/nginx-agent
-  - dst: /etc/nginx-agent
-    type: dir
+  - src: nginx-agent.conf
+    dst: /etc/nginx-agent/nginx-agent.conf
+    type: config|noreplace
+    file_info:
+      mode: 0640
   - src: ./scripts/packages/nginx-agent.service
     dst: /etc/systemd/system/nginx-agent.service
   - src: ./scripts/selinux/nginx_agent_selinux.8.gz
