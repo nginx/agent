@@ -4,7 +4,7 @@ on:
   push:
 
 env:
-  GOLANGCI_LINT_VERSION: 'v1.49.0'
+  GOLANGCI_LINT_VERSION: 'v1.50.1'
   NFPM_VERSION: 'v2.18.1'
 
 jobs:
@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
       - name: Lint Agent Code
         uses: golangci/golangci-lint-action@v3
         with:

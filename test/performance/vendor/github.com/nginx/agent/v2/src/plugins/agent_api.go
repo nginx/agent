@@ -12,9 +12,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"regexp"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -24,9 +29,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	okStatus      = "OK"
+	pendingStatus = "PENDING"
+	errorStatus   = "ERROR"
+	unknownStatus = "UNKNOWN"
+)
+
+var (
+	instancesRegex    = regexp.MustCompile(`^\/nginx[\/]*$`)
+	configRegex       = regexp.MustCompile(`^\/nginx/config[\/]*$`)
+	configStatusRegex = regexp.MustCompile(`^\/nginx/config/status[\/]*$`)
+)
+
 type AgentAPI struct {
 	config       *config.Config
 	env          core.Environment
+	pipeline     core.MessagePipeInterface
 	server       http.Server
 	nginxBinary  core.NginxBinary
 	nginxHandler *NginxHandler
@@ -34,8 +53,39 @@ type AgentAPI struct {
 }
 
 type NginxHandler struct {
-	env         core.Environment
-	nginxBinary core.NginxBinary
+	config                 *config.Config
+	env                    core.Environment
+	pipeline               core.MessagePipeInterface
+	nginxBinary            core.NginxBinary
+	responseChannel        chan *proto.Command_NginxConfigResponse
+	configResponseStatuses map[string]*proto.NginxConfigStatus
+}
+
+type AgentAPIConfigApplyRequest struct {
+	correlationId string
+	config        *proto.NginxConfig
+}
+
+type NginxInstanceResponse struct {
+	NginxId string `json:"nginx_id"`
+	Message string `json:"message"`
+	Status  string `json:"status"`
+}
+
+type AgentAPIConfigApplyResponse struct {
+	CorrelationId  string                  `json:"correlation_id"`
+	NginxInstances []NginxInstanceResponse `json:"nginx_instances"`
+}
+
+type AgentAPICommonResponse struct {
+	CorrelationId string `json:"correlation_id"`
+	Message       string `json:"message"`
+}
+
+type AgentAPIConfigApplyStatusResponse struct {
+	CorrelationId string `json:"correlation_id"`
+	Message       string `json:"message"`
+	Status        string `json:"status"`
 }
 
 const (
@@ -43,16 +93,18 @@ const (
 	jsonMimeType      = "application/json"
 )
 
-var (
-	instancesRegex = regexp.MustCompile(`^\/nginx[\/]*$`)
-)
-
 func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.NginxBinary) *AgentAPI {
-	return &AgentAPI{config: config, env: env, nginxBinary: nginxBinary, exporter: prometheus_metrics.NewExporter(&proto.MetricsReport{})}
+	return &AgentAPI{
+		config:      config,
+		env:         env,
+		nginxBinary: nginxBinary,
+		exporter:    prometheus_metrics.NewExporter(&proto.MetricsReport{}),
+	}
 }
 
-func (a *AgentAPI) Init(core.MessagePipeInterface) {
+func (a *AgentAPI) Init(pipeline core.MessagePipeInterface) {
 	log.Info("Agent API initializing")
+	a.pipeline = pipeline
 	go a.createHttpServer()
 }
 
@@ -65,15 +117,31 @@ func (a *AgentAPI) Close() {
 
 func (a *AgentAPI) Process(message *core.Message) {
 	log.Tracef("Process function in the agent_api.go, %s %v", message.Topic(), message.Data())
-	switch {
-	case message.Exact(core.MetricReport):
-		metricReport, ok := message.Data().(*proto.MetricsReport)
-		if !ok {
-			log.Warnf("Invalid message received, %T, for topic, %s", message.Data(), message.Topic())
-			return
+
+	switch message.Topic() {
+	case core.AgentAPIConfigApplyResponse:
+		switch response := message.Data().(type) {
+		case *proto.Command_NginxConfigResponse:
+			a.nginxHandler.responseChannel <- response
+		default:
+			log.Warnf("Unknown Command_NginxConfigResponse type: %T(%v)", message.Data(), message.Data())
 		}
-		a.exporter.SetLatestMetricReport(metricReport)
-		return
+	case core.MetricReport:
+		switch response := message.Data().(type) {
+		case *proto.MetricsReport:
+			a.exporter.SetLatestMetricReport(response)
+		default:
+			log.Warnf("Unknown MetricReport type: %T(%v)", message.Data(), message.Data())
+		}
+	case core.NginxConfigValidationPending, core.NginxConfigApplyFailed, core.NginxConfigApplySucceeded:
+		switch response := message.Data().(type) {
+		case *proto.AgentActivityStatus:
+			log.Error(response)
+			nginxConfigStatus := response.GetNginxConfigStatus()
+			a.nginxHandler.configResponseStatuses[nginxConfigStatus.GetNginxId()] = nginxConfigStatus
+		default:
+			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, response)
+		}
 	}
 }
 func (a *AgentAPI) Info() *core.Info {
@@ -81,18 +149,31 @@ func (a *AgentAPI) Info() *core.Info {
 }
 
 func (a *AgentAPI) Subscriptions() []string {
-	return []string{core.MetricReport}
+	return []string{
+		core.AgentAPIConfigApplyResponse,
+		core.MetricReport,
+		core.NginxConfigValidationPending,
+		core.NginxConfigApplyFailed,
+		core.NginxConfigApplySucceeded,
+	}
 }
 
 func (a *AgentAPI) createHttpServer() {
+	a.nginxHandler = &NginxHandler{
+		config:                 a.config,
+		pipeline:               a.pipeline,
+		env:                    a.env,
+		nginxBinary:            a.nginxBinary,
+		responseChannel:        make(chan *proto.Command_NginxConfigResponse),
+		configResponseStatuses: make(map[string]*proto.NginxConfigStatus),
+	}
+
 	mux := http.NewServeMux()
-	a.nginxHandler = &NginxHandler{a.env, a.nginxBinary}
 	registerer := prometheus.DefaultRegisterer
 	gatherer := prometheus.DefaultGatherer
 
 	registerer.MustRegister(a.exporter)
 	mux.Handle("/metrics/", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
-
 	mux.Handle("/nginx/", a.nginxHandler)
 
 	a.server = http.Server{
@@ -118,10 +199,35 @@ func (a *AgentAPI) createHttpServer() {
 func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentTypeHeader, jsonMimeType)
 	switch {
-	case r.Method == http.MethodGet && instancesRegex.MatchString(r.URL.Path):
-		err := sendInstanceDetailsPayload(h.getNginxDetails(), w, r)
+	case instancesRegex.MatchString(r.URL.Path):
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		err := h.sendInstanceDetailsPayload(w, r)
 		if err != nil {
 			log.Warnf("Failed to send instance details payload: %v", err)
+		}
+	case configRegex.MatchString(r.URL.Path):
+		if r.Method != http.MethodPut {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		err := h.updateConfig(w, r)
+		if err != nil {
+			log.Warnf("Failed to update config: %v", err)
+		}
+	case configStatusRegex.MatchString(r.URL.Path):
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		err := h.getConfigStatus(w, r)
+		if err != nil {
+			log.Warnf("Failed to get config status: %v", err)
 		}
 	default:
 		w.WriteHeader(http.StatusNotFound)
@@ -132,7 +238,8 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func sendInstanceDetailsPayload(nginxDetails []*proto.NginxDetails, w http.ResponseWriter, r *http.Request) error {
+func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, r *http.Request) error {
+	nginxDetails := h.getNginxDetails()
 	w.WriteHeader(http.StatusOK)
 
 	if len(nginxDetails) == 0 {
@@ -145,18 +252,106 @@ func sendInstanceDetailsPayload(nginxDetails []*proto.NginxDetails, w http.Respo
 		return nil
 	}
 
-	respBody := new(bytes.Buffer)
-	err := json.NewEncoder(respBody).Encode(nginxDetails)
+	return writeObjectToResponseBody(w, nginxDetails)
+}
+
+func (h *NginxHandler) updateConfig(w http.ResponseWriter, r *http.Request) error {
+	correlationId := uuid.New().String()
+
+	buf, err := readFileFromRequest(r)
 	if err != nil {
-		return fmt.Errorf("failed to encode payload: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		response := AgentAPICommonResponse{
+			CorrelationId: correlationId,
+			Message:       err.Error(),
+		}
+		return writeObjectToResponseBody(w, response)
 	}
 
-	_, err = fmt.Fprint(w, respBody)
-	if err != nil {
-		return fmt.Errorf("failed to send payload: %v", err)
+	nginxDetails := h.getNginxDetails()
+
+	for _, nginxDetail := range nginxDetails {
+		err := h.applyNginxConfig(nginxDetail, buf, correlationId)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			response := AgentAPICommonResponse{
+				CorrelationId: correlationId,
+				Message:       err.Error(),
+			}
+			return writeObjectToResponseBody(w, response)
+		}
 	}
 
+	if len(nginxDetails) > 0 {
+		agentAPIConfigApplyResponse := &AgentAPIConfigApplyResponse{CorrelationId: correlationId, NginxInstances: make([]NginxInstanceResponse, 0)}
+
+		select {
+		case response := <-h.responseChannel:
+			nginxResponse := NginxInstanceResponse{
+				NginxId: response.NginxConfigResponse.GetConfigData().GetNginxId(),
+				Message: response.NginxConfigResponse.GetStatus().GetMessage(),
+				Status:  okStatus,
+			}
+
+			if response.NginxConfigResponse.GetStatus().GetStatus() != proto.CommandStatusResponse_CMD_OK {
+				w.WriteHeader(http.StatusBadRequest)
+				nginxResponse.Status = errorStatus
+			} else {
+				if response.NginxConfigResponse.GetStatus().GetMessage() == configAppliedProcessedResponse {
+					w.WriteHeader(http.StatusRequestTimeout)
+					nginxResponse.Status = pendingStatus
+				} else {
+					w.WriteHeader(http.StatusOK)
+				}
+			}
+
+			agentAPIConfigApplyResponse.NginxInstances = append(agentAPIConfigApplyResponse.NginxInstances, nginxResponse)
+
+			// If the number of responses match the number of NGINX instances then return a response.
+			// Otherwise wait until all config apply requests are complete for all NGINX instances.
+			if len(agentAPIConfigApplyResponse.NginxInstances) == len(nginxDetails) {
+				return writeObjectToResponseBody(w, agentAPIConfigApplyResponse)
+			}
+
+		case <-time.After(validationTimeout):
+			w.WriteHeader(http.StatusRequestTimeout)
+			agentAPIConfigApplyStatusResponse := AgentAPIConfigApplyStatusResponse{
+				CorrelationId: correlationId,
+				Message:       "Pending config apply",
+				Status:        pendingStatus,
+			}
+
+			return writeObjectToResponseBody(w, agentAPIConfigApplyStatusResponse)
+		}
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		response := AgentAPICommonResponse{
+			CorrelationId: correlationId,
+			Message:       "No NGINX instances found",
+		}
+		return writeObjectToResponseBody(w, response)
+	}
+
+	w.WriteHeader(http.StatusInternalServerError)
 	return nil
+}
+
+func readFileFromRequest(r *http.Request) (*bytes.Buffer, error) {
+	err := r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		log.Errorf("unable to parse config apply request, %v", err)
+	}
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		return nil, fmt.Errorf("can't read form file: %v", err)
+	}
+	defer file.Close()
+
+	buf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buf, file); err != nil {
+		return nil, fmt.Errorf("can't read file, %v", err)
+	}
+	return buf, nil
 }
 
 func (h *NginxHandler) getNginxDetails() []*proto.NginxDetails {
@@ -168,4 +363,110 @@ func (h *NginxHandler) getNginxDetails() []*proto.NginxDetails {
 		}
 	}
 	return nginxDetails
+}
+
+func (h *NginxHandler) applyNginxConfig(nginxDetail *proto.NginxDetails, buf *bytes.Buffer, correlationId string) error {
+	fullFilePath := nginxDetail.ConfPath
+
+	// Create backup of nginx.conf file on host
+	data, err := os.ReadFile(fullFilePath)
+	if err != nil {
+		return fmt.Errorf("unable to read file %s: %v", fullFilePath, err)
+	}
+
+	protoFile := &proto.File{
+		Name:        fullFilePath,
+		Permissions: "0755",
+		Contents:    buf.Bytes(),
+	}
+
+	configApply, err := sdk.NewConfigApply(protoFile.GetName(), h.config.AllowedDirectoriesMap)
+	if err != nil {
+		return fmt.Errorf("unable to write config: %v", err)
+	}
+
+	// Temporarily write the new nginx.conf to disk
+	err = h.env.WriteFiles(configApply, []*proto.File{protoFile}, "", h.config.AllowedDirectoriesMap)
+	if err != nil {
+		rollbackErr := configApply.Rollback(err)
+		return fmt.Errorf("config rollback failed: %v", rollbackErr)
+	}
+
+	// Create NginxConfig object for new nginx.conf
+	conf, err := h.nginxBinary.ReadConfig(fullFilePath, nginxDetail.NginxId, h.env.GetSystemUUID())
+	if err != nil {
+		rollbackErr := configApply.Rollback(err)
+		return fmt.Errorf("unable to read config: %v", rollbackErr)
+	}
+
+	// Write back the original nginx.conf
+	err = os.WriteFile(fullFilePath, data, 0644)
+	if err != nil {
+		rollbackErr := configApply.Rollback(err)
+		return fmt.Errorf("unable to write file %s: %v", fullFilePath, rollbackErr)
+	}
+
+	// Send a config apply request to the nginx.go plugin
+	h.pipeline.Process(core.NewMessage(core.CommNginxConfig, &AgentAPIConfigApplyRequest{correlationId: correlationId, config: conf}))
+	return nil
+}
+
+func (h *NginxHandler) getConfigStatus(w http.ResponseWriter, r *http.Request) error {
+	correlationId := r.URL.Query().Get("correlation_id")
+
+	if correlationId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		agentAPIConfigApplyStatusResponse := AgentAPIConfigApplyStatusResponse{
+			CorrelationId: correlationId,
+			Message:       "Missing required query parameter correlation_id",
+			Status:        unknownStatus,
+		}
+
+		return writeObjectToResponseBody(w, agentAPIConfigApplyStatusResponse)
+	}
+
+	agentAPIConfigApplyStatusResponse := AgentAPIConfigApplyResponse{
+		CorrelationId:  correlationId,
+		NginxInstances: []NginxInstanceResponse{},
+	}
+
+	for _, nginxConfigStatus := range h.configResponseStatuses {
+		if nginxConfigStatus.GetCorrelationId() == correlationId {
+			nginxInstanceResponse := NginxInstanceResponse{
+				NginxId: nginxConfigStatus.GetNginxId(),
+				Message: nginxConfigStatus.GetMessage(),
+				Status:  nginxConfigStatus.GetStatus().String(),
+			}
+			agentAPIConfigApplyStatusResponse.NginxInstances = append(agentAPIConfigApplyStatusResponse.NginxInstances, nginxInstanceResponse)
+		}
+	}
+
+	if len(agentAPIConfigApplyStatusResponse.NginxInstances) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		agentAPIConfigApplyStatusResponse := AgentAPIConfigApplyStatusResponse{
+			CorrelationId: correlationId,
+			Message:       fmt.Sprintf("Unable to find a config apply request with the correlation_id %s", correlationId),
+			Status:        unknownStatus,
+		}
+
+		return writeObjectToResponseBody(w, agentAPIConfigApplyStatusResponse)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return writeObjectToResponseBody(w, agentAPIConfigApplyStatusResponse)
+}
+
+func writeObjectToResponseBody(w http.ResponseWriter, response any) error {
+	respBody := new(bytes.Buffer)
+	err := json.NewEncoder(respBody).Encode(response)
+	if err != nil {
+		return fmt.Errorf("failed to encode payload: %v", err)
+	}
+
+	_, err = fmt.Fprint(w, respBody)
+	if err != nil {
+		return fmt.Errorf("failed to send payload: %v", err)
+	}
+	return nil
 }

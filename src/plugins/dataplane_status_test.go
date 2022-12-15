@@ -36,7 +36,9 @@ func TestDataPlaneStatus(t *testing.T) {
 			expectedMessage: core.NewMessage(core.CommStatus, &proto.Command{
 				Meta: nil,
 				Data: &proto.Command_DataplaneStatus{
-					DataplaneStatus: &proto.DataplaneStatus{},
+					DataplaneStatus: &proto.DataplaneStatus{
+						AgentActivityStatus: []*proto.AgentActivityStatus{},
+					},
 				},
 			}),
 		},
