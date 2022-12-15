@@ -91,13 +91,13 @@ load_config_values() {
     fi
 }
 update_config_file() {
-    agent_config_updated=""
-    dynamic_config_updated=""
+    sed_cmd="sed -i.bak "
 
     printf "Updating %s ...\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
-    sed_cmd="sed -i.bak "
+
     if [ ! -f "$AGENT_CONFIG_FILE" ]; then
         err_exit "$AGENT_CONFIG_FILE does not exist"
+        exit 0
     fi
 
     if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
@@ -108,7 +108,6 @@ update_config_file() {
         printf "Updating %s ...\n" "${AGENT_CONFIG_FILE}"
 
         # Replace Host
-        sed_cmd="sed -i.bak "
         ${sed_cmd} "s/host:.*$/host: ${PACKAGE_HOST}/" "${AGENT_CONFIG_FILE}"
     fi
     
@@ -121,7 +120,7 @@ update_config_file() {
             printf "Setting instance_group: %s\n" "${INSTANCE_GROUP}"
             printf "instance_group: %s\n" "${INSTANCE_GROUP}" >> "${AGENT_DYNAMIC_CONFIG_FILE}"
         fi
-        dynamic_config_updated="true" 
+        printf "Successfully updated %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"    
     fi
     # Check the log-level and set accordingly
     if [ "${LOG_LEVEL}" ]; then
@@ -136,14 +135,6 @@ update_config_file() {
             ${sed_cmd} "${_log_level_replacement}" "${AGENT_CONFIG_FILE}"
             printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
         fi
-        agent_config_updated="true" 
-    fi
-
-    if [ "${dynamic_config_updated=}" ]; then
-        printf "Successfully updated %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
-    fi
-
-    if [ "${agent_config_updated=}" ]; then
         printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
     fi
 }
