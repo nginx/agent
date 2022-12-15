@@ -1,5 +1,3 @@
-include Makefile.*
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Variable Definitions                                                                                            #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -48,8 +46,6 @@ CERT_SERVER_INT_CN := server-int.local
 CERT_SERVER_EE_CN  := server-ee.local
 CERT_SERVER_DNS    := tls.example.com
 
-$(TEST_BUILD_DIR):
-	mkdir -p $(TEST_BUILD_DIR)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Developer Targets                                                                                               #
@@ -110,6 +106,8 @@ build-txz-packager-docker: ## Builds txz packager docker image
 	@echo Building Local Packager; \
 	DOCKER_BUILDKIT=1 docker build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
 
+include Makefile.packaging
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Testing                                                                                                         #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -117,6 +115,9 @@ generate-mocks: # Regenerate all needed mocks, in order to add new mocks generat
 	GOWORK=off go generate ./...
 
 test: unit-test performance-test component-test ## Run all tests
+
+$(TEST_BUILD_DIR):
+	mkdir -p $(TEST_BUILD_DIR)
 
 # Unit tests
 unit-test: $(TEST_BUILD_DIR) test-core test-plugins test-sdk test-extensions ## Run unit tests
