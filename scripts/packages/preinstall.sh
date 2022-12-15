@@ -97,11 +97,13 @@ update_config_file() {
         exit 0
     fi
 
-    printf "Updating %s ...\n" "${AGENT_CONFIG_FILE}"
+    if [ "${PACKAGE_HOST}" ]; then
+        printf "Updating %s ...\n" "${AGENT_CONFIG_FILE}"
 
-    # Replace Host
-    sed_cmd="sed -i.bak "
-    ${sed_cmd} "s/host:.*$/host: ${PACKAGE_HOST}/" "${AGENT_CONFIG_FILE}"
+        # Replace Host
+        sed_cmd="sed -i.bak "
+        ${sed_cmd} "s/host:.*$/host: ${PACKAGE_HOST}/" "${AGENT_CONFIG_FILE}"
+    fi
 
     # Check the log-level and set accordingly
     if [ "${LOG_LEVEL}" ]; then
