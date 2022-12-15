@@ -1,8 +1,21 @@
 
+2.20.1
+=============
+2022-12-15
+
+* rhel packages not to be replaced (#152) (5f364603)
+
 2.20.0
 =============
-2022-12-06
+2022-12-13
 
+* Fix packaging config for 2.20 (#150) (0c15c7bc)
+* fix: detect nginx upgrade (#145) (b50facc5)
+* Merge pull request #144 from nginx/fix-metadata-nap-version (5384bb84)
+* fix: check if app_protect_metadata's nap version is empty first. (6f4c2b13)
+* Updated release branch workflow to only create a changelog commit when publishing the release (#140) (d78f841e)
+* Fix arch of apk packages (#138) (e8567dc3)
+* Updating changelog (bc937953)
 * Merge branch 'main' into release-2.20.0 (ecf0b035)
 * Update release-branch.yml (#134) (8adbc949)
 * Updating changelog (33aaaa41)

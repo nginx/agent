@@ -1,7 +1,96 @@
-- semver: 2.20.0
-  date: 2022-12-06T15:25:52Z
+- semver: 2.20.1
+  date: 2022-12-15T16:56:55Z
   packager: nginx
   changes:
+    - commit: 5f36460364cecb3cee8978486273390077c9d4d6
+      note: "rhel packages not to be replaced (#152)\n\n* packages not to be replaced, fix host and instance group population \n\nCo-authored-by: o.omahony <o.omahony@f5.com>"
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+- semver: 2.20.0
+  date: 2022-12-13T17:16:23Z
+  packager: nginx
+  changes:
+    - commit: 0c15c7bc2ec8f563ca92604f8b62689ed7bf00df
+      note: |-
+        Fix packaging config for 2.20 (#150)
+
+        * added default configuration for the post install script until we figure a better way
+
+        Co-authored-by: o.omahony <o.omahony@f5.com>
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: b50facc59182c326b0296015e5b3dcac161c2af0
+      note: |-
+        fix: detect nginx upgrade (#145)
+
+        * fix: detect nginx deletes and use the new binary path
+
+        * fix: change log entry to debug
+
+        Co-authored-by: Nick Chen <nick.chen@f5.com>
+      author:
+        name: Nick Chen
+        email: nickchen@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 5384bb8408a4c76fba588831bf8f570b266693d1
+      note: |-
+        Merge pull request #144 from nginx/fix-metadata-nap-version
+
+        fix: check if app_protect_metadata's nap version is empty first.
+      author:
+        name: yluf5
+        email: 111309812+yluf5@users.noreply.github.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: 6f4c2b13ea13a5b41df7ccd15c550b17f5709963
+      note: 'fix: check if app_protect_metadata''s nap version is empty first.'
+      author:
+        name: Yong Lu
+        email: y.lu@f5.com
+      committer:
+        name: Yong Lu
+        email: y.lu@f5.com
+    - commit: d78f841e05570cb81924d197d408d5db08e8ff7c
+      note: |-
+        Updated release branch workflow to only create a changelog commit when publishing the release (#140)
+
+        Updated release branch workflow to only create a changelog commit when publishing the release
+      author:
+        name: Donal Hurley
+        email: djhurley1990@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: e8567dc34f6ad40606b71cc94cdc704085480619
+      note: |-
+        Fix arch of apk packages (#138)
+
+        arm packages accidentally contained amd64 binaries
+      author:
+        name: Dean Coakley
+        email: d.coakley@f5.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
+    - commit: bc937953f1fb704f1c00d4d77d906eb08a6f512d
+      note: Updating changelog
+      author:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      committer:
+        name: github-actions
+        email: 41898282+github-actions[bot]@users.noreply.github.com
     - commit: ecf0b035459372197c1461aae2b0d3169b8d1264
       note: Merge branch 'main' into release-2.20.0
       author:
