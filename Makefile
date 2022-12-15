@@ -72,7 +72,8 @@ build: ## Build agent executable
 	GOWORK=off CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 
 deps: ## Update dependencies in vendor folders
-	cd sdk && make generate && go mod tidy && go mod vendor
+	cd sdk && go mod tidy && go mod vendor &&  make generate && go mod tidy && go mod vendor
+	cd test/integration && go mod tidy && go mod vendor
 	cd test/performance && go mod tidy && go mod vendor
 	go mod tidy && go mod vendor && go mod download && go work sync
 
@@ -82,7 +83,7 @@ lint: ## Run linter
 	cd sdk && make lint
 
 format: ## Format code
-	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance && go fmt ./...
+	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance  && go fmt ./... && cd ../../test/integration && go fmt ./...
 
 install-tools: ## Install dependencies in tools.go
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
@@ -153,6 +154,9 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	docker run -v ${PWD}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
 
+integration-test:
+	go test ./test/integration/api
+
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
@@ -204,7 +208,7 @@ certs: ## Generate TLS certificates
 build-docker: # Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	@echo Building Docker; \
 	DOCKER_BUILDKIT=1 docker build -t ${DOCKER_TAG} . \
-		--no-cache -f ./scripts/docker/${OS_RELEASE}/Dockerfile \
+		--no-cache -f ./scripts/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
 		--secret id=nginx-crt,src=build/nginx-repo.crt \
 		--secret id=nginx-key,src=build/nginx-repo.key \
 		--build-arg AGENT_CONF="$$(cat nginx-agent.conf)" \
