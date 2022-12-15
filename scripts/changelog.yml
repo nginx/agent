@@ -1,3 +1,15 @@
+- semver: 2.20.1
+  date: 2022-12-15T16:56:55Z
+  packager: nginx
+  changes:
+    - commit: 5f36460364cecb3cee8978486273390077c9d4d6
+      note: "rhel packages not to be replaced (#152)\n\n* packages not to be replaced, fix host and instance group population \n\nCo-authored-by: o.omahony <o.omahony@f5.com>"
+      author:
+        name: Oliver O'Mahony
+        email: oliveromahony+github@gmail.com
+      committer:
+        name: GitHub
+        email: noreply@github.com
 - semver: 2.20.0
   date: 2022-12-13T17:16:23Z
   packager: nginx
