@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// Host: localhost:8081
+// swagger:meta
 package plugins
 
 import (
@@ -26,8 +28,13 @@ import (
 	prometheus_metrics "github.com/nginx/agent/v2/src/extensions/prometheus-metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 )
+
+// swagger:response MetricsResponse
+// in: body
+type _ string
 
 const (
 	okStatus      = "OK"
@@ -61,31 +68,61 @@ type NginxHandler struct {
 	configResponseStatuses map[string]*proto.NginxConfigStatus
 }
 
+// swagger:parameters apply-nginx-config
+type ParameterRequest struct {
+	// in: formData
+	// swagger:file
+	File interface{} `json:"file"`
+}
+
 type AgentAPIConfigApplyRequest struct {
 	correlationId string
 	config        *proto.NginxConfig
 }
 
+// swagger:model NginxInstanceResponse
 type NginxInstanceResponse struct {
+	// NGINX ID
+	// example: b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437
 	NginxId string `json:"nginx_id"`
+	// Message
+	// example: config applied successfully
 	Message string `json:"message"`
-	Status  string `json:"status"`
+	// Status
+	// example: OK
+	Status string `json:"status"`
 }
 
+// swagger:model AgentAPIConfigApplyResponse
 type AgentAPIConfigApplyResponse struct {
-	CorrelationId  string                  `json:"correlation_id"`
+	// Correlation ID
+	// example: 6204037c-30e6-408b-8aaa-dd8219860b4b
+	CorrelationId string `json:"correlation_id"`
+	// NGINX Instances
 	NginxInstances []NginxInstanceResponse `json:"nginx_instances"`
 }
 
+// swagger:model AgentAPICommonResponse
 type AgentAPICommonResponse struct {
+	// Correlation ID
+	// example: 6204037c-30e6-408b-8aaa-dd8219860b4b
 	CorrelationId string `json:"correlation_id"`
-	Message       string `json:"message"`
+	// Message
+	// example: No NGINX instances found
+	Message string `json:"message"`
 }
 
+// swagger:model AgentAPIConfigApplyStatusResponse
 type AgentAPIConfigApplyStatusResponse struct {
+	// Correlation ID
+	// example: 6204037c-30e6-408b-8aaa-dd8219860b4b
 	CorrelationId string `json:"correlation_id"`
-	Message       string `json:"message"`
-	Status        string `json:"status"`
+	// Message
+	// example: pending config apply
+	Message string `json:"message"`
+	// Status
+	// example: PENDING
+	Status string `json:"status"`
 }
 
 const (
@@ -136,7 +173,6 @@ func (a *AgentAPI) Process(message *core.Message) {
 	case core.NginxConfigValidationPending, core.NginxConfigApplyFailed, core.NginxConfigApplySucceeded:
 		switch response := message.Data().(type) {
 		case *proto.AgentActivityStatus:
-			log.Error(response)
 			nginxConfigStatus := response.GetNginxConfigStatus()
 			a.nginxHandler.configResponseStatuses[nginxConfigStatus.GetNginxId()] = nginxConfigStatus
 		default:
@@ -169,16 +205,14 @@ func (a *AgentAPI) createHttpServer() {
 	}
 
 	mux := http.NewServeMux()
-	registerer := prometheus.DefaultRegisterer
-	gatherer := prometheus.DefaultGatherer
 
-	registerer.MustRegister(a.exporter)
-	mux.Handle("/metrics/", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
+	mux.Handle("/metrics/", a.getPrometheusHandler())
 	mux.Handle("/nginx/", a.nginxHandler)
 
+	handler := cors.New(cors.Options{AllowedMethods: []string{"OPTIONS", "GET", "PUT"}}).Handler(mux)
 	a.server = http.Server{
 		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
-		Handler: mux,
+		Handler: handler,
 	}
 
 	if a.config.AgentAPI.Cert != "" && a.config.AgentAPI.Key != "" && a.config.AgentAPI.Port != 0 {
@@ -196,8 +230,29 @@ func (a *AgentAPI) createHttpServer() {
 	}
 }
 
+// swagger:route GET /metrics/ nginx-agent get-prometheus-metrics
+//
+// # Get Prometheus Metrics
+//
+// # Returns prometheus metrics
+//
+// Produces:
+//   - text/plain
+//
+// responses:
+//
+//	200: MetricsResponse
+func (a *AgentAPI) getPrometheusHandler() http.Handler {
+	registerer := prometheus.DefaultRegisterer
+	gatherer := prometheus.DefaultGatherer
+
+	registerer.MustRegister(a.exporter)
+	return promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
+}
+
 func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentTypeHeader, jsonMimeType)
+
 	switch {
 	case instancesRegex.MatchString(r.URL.Path):
 		if r.Method != http.MethodGet {
@@ -238,6 +293,16 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// swagger:route GET /nginx/ nginx-agent get-nginx-instances
+//
+// # Get NGINX Instances
+//
+// # Returns a list of NGINX instances
+//
+// responses:
+//
+//	200: []NginxDetails
+//	500
 func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, r *http.Request) error {
 	nginxDetails := h.getNginxDetails()
 	w.WriteHeader(http.StatusOK)
@@ -255,6 +320,23 @@ func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, r *http
 	return writeObjectToResponseBody(w, nginxDetails)
 }
 
+// swagger:route PUT /nginx/config/ nginx-agent apply-nginx-config
+//
+// # Apply NGINX configuration to all NGINX instances
+//
+// # Returns a config apply status
+// Consumes:
+//   - multipart/form-data
+//
+// Produces:
+//   - application/json
+//
+// responses:
+//
+//	200: AgentAPIConfigApplyResponse
+//	400: AgentAPICommonResponse
+//	408: AgentAPIConfigApplyStatusResponse
+//	500: AgentAPICommonResponse
 func (h *NginxHandler) updateConfig(w http.ResponseWriter, r *http.Request) error {
 	correlationId := uuid.New().String()
 
@@ -317,7 +399,7 @@ func (h *NginxHandler) updateConfig(w http.ResponseWriter, r *http.Request) erro
 			w.WriteHeader(http.StatusRequestTimeout)
 			agentAPIConfigApplyStatusResponse := AgentAPIConfigApplyStatusResponse{
 				CorrelationId: correlationId,
-				Message:       "Pending config apply",
+				Message:       "pending config apply",
 				Status:        pendingStatus,
 			}
 
@@ -411,6 +493,25 @@ func (h *NginxHandler) applyNginxConfig(nginxDetail *proto.NginxDetails, buf *by
 	return nil
 }
 
+// swagger:route GET /nginx/config/status nginx-agent get-nginx-config-status
+//
+// # Get status NGINX config apply
+//
+// # Returns status NGINX config apply
+//
+//	Parameters:
+//	     + name: correlation_id
+//	       in: query
+//	       description: Correlation ID of a NGINX config apply request
+//	       required: true
+//	       type: string
+//
+// responses:
+//
+//	200: AgentAPIConfigApplyResponse
+//	400: AgentAPIConfigApplyStatusResponse
+//	404: AgentAPIConfigApplyStatusResponse
+//	500
 func (h *NginxHandler) getConfigStatus(w http.ResponseWriter, r *http.Request) error {
 	correlationId := r.URL.Query().Get("correlation_id")
 

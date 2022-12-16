@@ -60,6 +60,7 @@ func (NginxConfigAction) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_917f1a70b1fd7255, []int{0}
 }
 
+// SSL type enum
 type NginxSslMetaData_NginxSslType int32
 
 const (
@@ -278,24 +279,49 @@ func (m *PathInfo) GetConf() string {
 	return ""
 }
 
+// swagger:model NginxDetails
 // Each NGINXDetails is associated with with a single NGINX instance.
 type NginxDetails struct {
-	NginxId              string             `protobuf:"bytes,1,opt,name=nginx_id,json=nginxId,proto3" json:"nginx_id"`
-	Version              string             `protobuf:"bytes,2,opt,name=version,proto3" json:"version"`
-	ConfPath             string             `protobuf:"bytes,3,opt,name=conf_path,json=confPath,proto3" json:"conf_path"`
-	ProcessId            string             `protobuf:"bytes,4,opt,name=process_id,json=processId,proto3" json:"process_id"`
-	ProcessPath          string             `protobuf:"bytes,5,opt,name=process_path,json=processPath,proto3" json:"process_path"`
-	StartTime            int64              `protobuf:"varint,6,opt,name=start_time,json=startTime,proto3" json:"start_time"`
-	BuiltFromSource      bool               `protobuf:"varint,7,opt,name=built_from_source,json=builtFromSource,proto3" json:"built_from_source"`
-	LoadableModules      []string           `protobuf:"bytes,8,rep,name=loadable_modules,json=loadableModules,proto3" json:"loadable_modules"`
-	RuntimeModules       []string           `protobuf:"bytes,9,rep,name=runtime_modules,json=runtimeModules,proto3" json:"runtime_modules"`
-	Plus                 *NginxPlusMetaData `protobuf:"bytes,10,opt,name=plus,proto3" json:"plus"`
-	Ssl                  *NginxSslMetaData  `protobuf:"bytes,11,opt,name=ssl,proto3" json:"ssl"`
-	StatusUrl            string             `protobuf:"bytes,12,opt,name=status_url,json=statusUrl,proto3" json:"status_url"`
-	ConfigureArgs        []string           `protobuf:"bytes,13,rep,name=configure_args,json=configureArgs,proto3" json:"configure_args"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
+	// NGINX ID
+	// example: b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437
+	NginxId string `protobuf:"bytes,1,opt,name=nginx_id,json=nginxId,proto3" json:"nginx_id"`
+	// Version of NGINX
+	// example: 1.23.2
+	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version"`
+	// Path to configuration file
+	// example: /usr/local/nginx/conf/nginx.conf
+	ConfPath string `protobuf:"bytes,3,opt,name=conf_path,json=confPath,proto3" json:"conf_path"`
+	// Process ID
+	// example: 8
+	ProcessId string `protobuf:"bytes,4,opt,name=process_id,json=processId,proto3" json:"process_id"`
+	// Process Path
+	// example: /usr/local/nginx/sbin/nginx
+	ProcessPath string `protobuf:"bytes,5,opt,name=process_path,json=processPath,proto3" json:"process_path"`
+	// Start Time
+	// example: 1670429190000
+	StartTime int64 `protobuf:"varint,6,opt,name=start_time,json=startTime,proto3" json:"start_time"`
+	// Was NGINX built from source
+	// example: false
+	BuiltFromSource bool `protobuf:"varint,7,opt,name=built_from_source,json=builtFromSource,proto3" json:"built_from_source"`
+	// List of loadable modules
+	// example: []
+	LoadableModules []string `protobuf:"bytes,8,rep,name=loadable_modules,json=loadableModules,proto3" json:"loadable_modules"`
+	// List of runtime modules
+	// example: [ "http_stub_status_module" ]
+	RuntimeModules []string `protobuf:"bytes,9,rep,name=runtime_modules,json=runtimeModules,proto3" json:"runtime_modules"`
+	// NGINX plus metadata
+	Plus *NginxPlusMetaData `protobuf:"bytes,10,opt,name=plus,proto3" json:"plus"`
+	// SSL metadata
+	Ssl *NginxSslMetaData `protobuf:"bytes,11,opt,name=ssl,proto3" json:"ssl"`
+	// Status URL
+	// example: http://localhost:8080/api
+	StatusUrl string `protobuf:"bytes,12,opt,name=status_url,json=statusUrl,proto3" json:"status_url"`
+	// Configuration arguments
+	// example: [ "", "with-http_stub_status_module" ]
+	ConfigureArgs        []string `protobuf:"bytes,13,rep,name=configure_args,json=configureArgs,proto3" json:"configure_args"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *NginxDetails) Reset()         { *m = NginxDetails{} }
@@ -422,8 +448,13 @@ func (m *NginxDetails) GetConfigureArgs() []string {
 	return nil
 }
 
+// swagger:model NginxPlusMetaData
 type NginxPlusMetaData struct {
-	Enabled              bool     `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled"`
+	// Is NGINX instance a plus instance
+	// example: true
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled"`
+	// NGINX plus release
+	// example: R27
 	Release              string   `protobuf:"bytes,2,opt,name=release,proto3" json:"release"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -477,12 +508,17 @@ func (m *NginxPlusMetaData) GetRelease() string {
 	return ""
 }
 
+// swagger:model NginxSslMetaData
 type NginxSslMetaData struct {
-	SslType              NginxSslMetaData_NginxSslType `protobuf:"varint,1,opt,name=ssl_type,json=sslType,proto3,enum=f5.nginx.agent.sdk.NginxSslMetaData_NginxSslType" json:"ssl_type"`
-	Details              []string                      `protobuf:"bytes,2,rep,name=details,proto3" json:"details"`
-	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
-	XXX_unrecognized     []byte                        `json:"-"`
-	XXX_sizecache        int32                         `json:"-"`
+	// SSL type
+	// example: 0
+	SslType NginxSslMetaData_NginxSslType `protobuf:"varint,1,opt,name=ssl_type,json=sslType,proto3,enum=f5.nginx.agent.sdk.NginxSslMetaData_NginxSslType" json:"ssl_type"`
+	// SSL details
+	// example: null
+	Details              []string `protobuf:"bytes,2,rep,name=details,proto3" json:"details"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *NginxSslMetaData) Reset()         { *m = NginxSslMetaData{} }

@@ -83,6 +83,12 @@ format: ## Format code
 install-tools: ## Install dependencies in tools.go
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
 
+generate-swagger: ## Generates swagger.json from source code
+	swagger generate spec -o ./docs/swagger.json --scan-models
+
+launch-swagger-ui: generate-swagger ## Launch Swagger UI
+	swagger serve ./docs/swagger.json -F=swagger --port=8082 --no-open
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Local Packaging                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
