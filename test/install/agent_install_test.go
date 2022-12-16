@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shirou/gopsutil/process"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,28 +19,30 @@ const (
 	maxInstallTime = 30 * time.Second
 )
 
-var (
-	AGENT_PACKAGE_FILE = os.Getenv("AGENT_PACKAGE_FILE")
-)
+var AGENT_PACKAGE_FILE = os.Getenv("AGENT_PACKAGE_FILE")
 
 // TestAgentManualInstallUninstall tests Agent Install and Uninstall.
+// Expects nginx-agent is not currently installed.
 // Verifies that agent installs with correct output and files.
 // Verifies that agent uninstalls and removes all the files.
 func TestAgentManualInstallUninstall(t *testing.T) {
-	expectedLogMsgs := map[string]string{
-		"ConnectionStatus":           "agent_connect_response:<agent_config:<details:<> configs:<configs:<> > > status:<statusCode:CONNECT_OK > >",
-		"InstallFoundNginxAgent":     "Found nginx-agent /usr/bin/nginx-agent",
-		"InstallAgentToRunAs":        "nginx-agent will be configured to run as same user",
-		"InstallAgentSuccess":        "NGINX Agent package has been successfully installed.",
-		"InstallAgentStartCmd":       "sudo systemctl start nginx-agent",
+	expectedInstallLogMsgs := map[string]string{
+		"InstallFoundNginxAgent": "Found nginx-agent /usr/bin/nginx-agent",
+		"InstallAgentToRunAs":    "nginx-agent will be configured to run as same user",
+		"InstallAgentSuccess":    "NGINX Agent package has been successfully installed.",
+		"InstallAgentStartCmd":   "sudo systemctl start nginx-agent",
+	}
+
+	expectedUninstallLogMsgs := map[string]string{
 		"UninstallAgent":             "Removing nginx-agent",
 		"UninstallAgentStopService":  "Stop and disable nginx-agent service",
 		"UninstallAgentPurgingFiles": "Purging configuration files for nginx-agent",
 	}
 
 	expectedAgentPaths := map[string]string{
-		"AgentConfigFile": "/etc/nginx-agent/nginx-agent.conf",
-		"AgentSystemFile": "/etc/systemd/system/multi-user.target.wants/nginx-agent.service",
+		"AgentConfigFile":        "/etc/nginx-agent/nginx-agent.conf",
+		"AgentDynamicConfigFile": "/etc/nginx-agent/agent-dynamic.conf",
+		"AgentSystemFile":        "/etc/systemd/system/multi-user.target.wants/nginx-agent.service",
 	}
 
 	// Check the environment variable $AGENT_PACKAGE_FILE is set
@@ -50,7 +53,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	require.NoError(t, err, "Error accessing tarball at: "+AGENT_PACKAGE_FILE)
 
 	// Install Agent and record installation time/install output
-	installTime, agentLog := installAgent(t, AGENT_PACKAGE_FILE)
+	installTime, installLog := installAgent(t, AGENT_PACKAGE_FILE)
 
 	// Check the file size is less than or equal 20MB
 	assert.LessOrEqual(t, file.Size(), maxFileSize)
@@ -59,30 +62,30 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	assert.LessOrEqual(t, installTime, float64(maxInstallTime))
 
 	// Check install output
-	assert.Contains(t, agentLog, expectedLogMsgs["InstallFoundNginxAgent"])
-	assert.Contains(t, agentLog, expectedLogMsgs["InstallAgentToRunAs"])
-	assert.Contains(t, agentLog, expectedLogMsgs["InstallAgentSuccess"])
-	assert.Contains(t, agentLog, expectedLogMsgs["InstallAgentStartCmd"])
+	for log, logMsg := range expectedInstallLogMsgs {
+		if log == "InstallAgentToRunAs" && !nginxIsRunning() {
+			continue // only expected if nginx is installed and running
+		}
+		assert.Contains(t, installLog, logMsg)
+	}
 
-	// Check nginx-agent config is created.
-	assert.FileExists(t, expectedAgentPaths["AgentConfigFile"])
-
-	// Check nginx-agent system unit file is created.
-	assert.FileExists(t, expectedAgentPaths["AgentSystemFile"])
+	// Check nginx-agent config files were created.
+	for _, path := range expectedAgentPaths {
+		assert.FileExists(t, path)
+	}
 
 	// Uninstall the agent package
 	uninstallLog := uninstallAgent(t, "nginx-agent")
 
 	// Check uninstall output
-	assert.Contains(t, uninstallLog, expectedLogMsgs["UninstallAgent"])
-	assert.Contains(t, uninstallLog, expectedLogMsgs["UninstallAgentStopService"])
-	assert.Contains(t, uninstallLog, expectedLogMsgs["UninstallAgentPurgingFiles"])
+	for _, logMsg := range expectedUninstallLogMsgs {
+		assert.Contains(t, uninstallLog, logMsg)
+	}
 
-	// Check nginx-agent config is removed.
-	assert.NoFileExists(t, expectedAgentPaths["AgentConfigFile"])
-
-	// Check nginx-agent system unit file is removed.
-	assert.NoFileExists(t, expectedAgentPaths["AgentSystemFile"])
+	// Check nginx-agent config files were removed.
+	for path := range expectedAgentPaths {
+		assert.NoFileExists(t, path)
+	}
 }
 
 // installAgent installs the agent returning total install time and install output
@@ -145,4 +148,16 @@ func createUninstallCommand(t *testing.T) []string {
 	} else {
 		return []string{"sudo", "yum", "remove", "-y"}
 	}
+}
+
+func nginxIsRunning() bool {
+	processes, _ := process.Processes()
+	for _, process := range processes {
+		name, _ := process.Name()
+		if name == "nginx" {
+			return true
+		}
+	}
+
+	return false
 }
