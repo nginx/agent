@@ -48,7 +48,7 @@ sudo touch /etc/nginx-agent/agent-dynamic.conf
 
 ### Enabling the gRPC interface
 
-Update the `/etc/nginx-agent/nginx-agent.conf` file to include the following settings:
+Add the the following settings to `/etc/nginx-agent/nginx-agent.conf`:
 
 ```nginx
 server:
@@ -63,7 +63,7 @@ tls:
 
 ### Enabling the REST interface
 
-The NGINX Agent REST interface can be exposed by adding the following lines to the `nginx-agent.conf` file.
+The NGINX Agent REST interface can be exposed by validating the following lines in the `/etc/nginx-agent/nginx-agent.conf` file are present:
 
 ```nginx
 api:
