@@ -24,6 +24,14 @@ message File {
   string permissions = 4 [(gogoproto.jsontag) = "permissions" ];
   int64 size = 5 [(gogoproto.jsontag) = "size" ];
   bytes contents = 6 [(gogoproto.jsontag) = "contents" ];
+  enum Action {
+    unset = 0;
+    unchanged = 1;
+    add = 2;
+    update = 3;
+    delete = 4;
+  }
+  Action action = 7;
 }
 
 message Directory {
