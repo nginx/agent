@@ -2,7 +2,7 @@ help: ## Show help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\033[36m\033[0m\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-17s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 clean: ## Remove all .pb.go files
-	find . -name "*.pb.go" -exec rm -f {} \;
+	find . -name "*.pb.go" -not -path "*/vendor/*" -exec rm -f {} \;
 
 lint: ## Run linter
 	GOWORK=off golangci-lint run -c ../scripts/.golangci.yml

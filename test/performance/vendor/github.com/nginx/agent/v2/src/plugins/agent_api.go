@@ -136,7 +136,6 @@ func (a *AgentAPI) Process(message *core.Message) {
 	case core.NginxConfigValidationPending, core.NginxConfigApplyFailed, core.NginxConfigApplySucceeded:
 		switch response := message.Data().(type) {
 		case *proto.AgentActivityStatus:
-			log.Error(response)
 			nginxConfigStatus := response.GetNginxConfigStatus()
 			a.nginxHandler.configResponseStatuses[nginxConfigStatus.GetNginxId()] = nginxConfigStatus
 		default:
