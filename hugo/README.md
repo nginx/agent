@@ -5,7 +5,8 @@ This folder houses the product documentation for the NGINX Agent:
 Directory Tree:
 
 ```shell
-└──docs
+└──hugo
+    └──content
 ```
 
 ## Where to Find Docs Online
