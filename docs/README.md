@@ -6,9 +6,6 @@ Directory Tree:
 
 ```shell
 └──docs
-    └── content
-        ├── 
-        └── 
 ```
 
 ## Where to Find Docs Online
