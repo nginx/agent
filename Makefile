@@ -23,7 +23,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE:=ubuntu
 OS_VERSION:=22.04
-DOCKER_IMAGE="${OS_RELEASE}:${OS_VERSION}"
+DOCKER_IMAGE="docker.io/${OS_RELEASE}:${OS_VERSION}"
 DOCKER_TAG=agent_${OS_RELEASE}_${OS_VERSION}
 
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
@@ -32,7 +32,8 @@ DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.dat
 CERTS_DIR          := ./build/certs
 PACKAGE_PREFIX	   := nginx-agent
 PACKAGES_REPO	   := "pkgs.nginx.com"
-UNAME_M	            = $(shell uname -m)
+OS                 := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+OSARCH             := $(shell uname -m)
 TEST_BUILD_DIR	   := build/test
 PACKAGE_NAME	   := ${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
@@ -47,12 +48,22 @@ CERT_SERVER_INT_CN := server-int.local
 CERT_SERVER_EE_CN  := server-ee.local
 CERT_SERVER_DNS    := tls.example.com
 
+include Makefile.containers
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Developer Targets                                                                                               #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 help: ## Show help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\033[36m\033[0m\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+show-var-%:
+	@{ \
+		if [ -n "$($*)" ]; then v="$($*)"; else v="(undefined)"; fi; \
+		printf "%-20s %s\n" "$*" "$$v"; \
+	}
+
+SHOW_ENV_VARS = VERSION COMMIT DATE OS OSARCH $(CONTAINER_VARS)
+show-env: $(addprefix show-var-, $(SHOW_ENV_VARS)) ## Show environment
 
 all: clean build run ## Compile and run code.
 
@@ -113,18 +124,18 @@ local-rpm-package: ## Create local rpm package
 
 local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	docker run -v ${PWD}:/nginx-agent/ build-local-packager:1.0.0
+	$(CONTAINER_CLITOOL) run -v ${PWD}:/nginx-agent/$(CONTAINER_VOLUME_FLAGS) build-local-packager:1.0.0
 
 build-txz-packager-docker: ## Builds txz packager docker image
 	@echo Building Local Packager; \
-	DOCKER_BUILDKIT=1 docker build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
 
 include Makefile.packaging
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Testing                                                                                                         #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-generate-mocks: # Regenerate all needed mocks, in order to add new mocks generation add //go:generate mockgen to file from witch mocks should be generated
+generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate mockgen to file from witch mocks should be generated
 	GOWORK=off go generate ./...
 
 test: unit-test performance-test component-test ## Run all tests
@@ -158,14 +169,14 @@ test-component-build: ## Compile component tests
 	GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test ./test/component -c -o component.test
 
 test-docker-component: ## Run integration tests in docker
-	for container in ${docker ps -aqf "name=^nginx-agent_"}; do echo && docker ps -f "id=$$container" --format "{{.Image}}" && docker exec $$container ./tmp/component.test -test.v; done
+	for container in ${$(CONTAINER_CLITOOL) ps -aqf "name=^nginx-agent_"}; do echo && $(CONTAINER_CLITOOL) ps -f "id=$$container" --format "{{.Image}}" && $(CONTAINER_CLITOOL) exec $$container ./tmp/component.test -test.v; done
 
 test-component-run: ## Run component tests
 	GOWORK=off CGO_ENABLED=0 go test -v ./test/component/...
 
 # Performance tests
 performance-test: ## Run performance tests
-	docker run -v ${PWD}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
+	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
 integration-test: local-deb-package
 	PACKAGE=${PACKAGE_NAME} DOCKER_IMAGE=${DOCKER_IMAGE} go test ./test/integration/api 
@@ -176,7 +187,7 @@ test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
 
 build-benchmark-docker: ## Build benchmark test docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
-	DOCKER_BUILDKIT=1 docker build --no-cache -t nginx-agent-benchmark:1.0.0 \
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build --no-cache -t nginx-agent-benchmark:1.0.0 \
 		--secret id=nginx-crt,src=build/nginx-repo.crt \
 		--secret id=nginx-key,src=build/nginx-repo.key \
 		-f test/docker/Dockerfile .
@@ -218,9 +229,9 @@ certs: ## Generate TLS certificates
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Docker Helper Targets                                                                                           #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-build-docker: # Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
+build-docker: ## Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	@echo Building Docker; \
-	DOCKER_BUILDKIT=1 docker build -t ${DOCKER_TAG} . \
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${DOCKER_TAG} . \
 		--no-cache -f ./scripts/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
 		--secret id=nginx-crt,src=build/nginx-repo.crt \
 		--secret id=nginx-key,src=build/nginx-repo.key \
@@ -232,7 +243,7 @@ build-docker: # Build agent docker image for NGINX Plus, need nginx-repo.crt and
 
 run-docker: ## Run docker container from specified DOCKER_TAG
 	@echo Running Docker; \
-		docker run ${DOCKER_TAG}
+		$(CONTAINER_CLITOOL) run ${DOCKER_TAG}
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Dashboard Targets                                                                                               #

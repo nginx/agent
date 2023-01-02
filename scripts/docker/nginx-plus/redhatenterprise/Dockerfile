@@ -10,12 +10,12 @@ WORKDIR /agent
 COPY ./scripts/docker/nginx-plus/entrypoint.sh /agent/entrypoint.sh
 COPY ./nginx-agent.conf /agent/nginx-agent.conf
 
-RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
-    --mount=type=secret,id=nginx-key,dst=nginx-repo.key \
+RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
+    --mount=type=secret,id=nginx-key,dst=/nginx-repo.key \
     set -x \
     && mkdir -p /etc/ssl/nginx \
-    && cat nginx-repo.crt > /etc/ssl/nginx/nginx-repo.crt \
-    && cat nginx-repo.key > /etc/ssl/nginx/nginx-repo.key \
+    && cat /nginx-repo.crt > /etc/ssl/nginx/nginx-repo.crt \
+    && cat /nginx-repo.key > /etc/ssl/nginx/nginx-repo.key \
     && yum install -y --setopt=tsflags=nodocs wget ca-certificates bind-utils wget bind-utils vim-minimal shadow-utils procps \
     && groupadd --system --gid 101 nginx \
     && adduser -g nginx --system --no-create-home --home /nonexistent --shell /bin/false --uid 101 nginx \

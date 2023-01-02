@@ -9,8 +9,8 @@ WORKDIR /agent
 COPY ./scripts/docker/nginx-plus/entrypoint.sh /agent/entrypoint.sh
 COPY ./nginx-agent.conf /agent/nginx-agent.conf
 
-RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
-    --mount=type=secret,id=nginx-key,dst=nginx-repo.key \
+RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
+    --mount=type=secret,id=nginx-key,dst=/nginx-repo.key \
     set -x \
     && addgroup --system --gid 101 nginx \
     && adduser --system --disabled-login --ingroup nginx --no-create-home --home /nonexistent --gecos "nginx user" --shell /bin/false --uid 101 nginx \
@@ -48,8 +48,8 @@ RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     && printf "deb https://$PACKAGES_REPO/plus/ubuntu/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-plus.list \
     && printf "deb https://$PACKAGES_REPO/nginx-agent/ubuntu/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-agent.list \
     && mkdir -p /etc/ssl/nginx \
-    && cat nginx-repo.crt > /etc/ssl/nginx/nginx-repo.crt \
-    && cat nginx-repo.key > /etc/ssl/nginx/nginx-repo.key \
+    && cat /nginx-repo.crt > /etc/ssl/nginx/nginx-repo.crt \
+    && cat /nginx-repo.key > /etc/ssl/nginx/nginx-repo.key \
     && apt-get update \
     && apt-get install $nginxPackages -y  \
     && rm /etc/ssl/nginx/nginx-repo.crt /etc/ssl/nginx/nginx-repo.key
