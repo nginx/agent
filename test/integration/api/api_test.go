@@ -14,6 +14,10 @@ import (
 	tc "github.com/testcontainers/testcontainers-go"
 )
 
+const (
+	port = 9091
+)
+
 func TestAPI_setupTestContainer(t *testing.T) {
 	compose, err := tc.NewDockerCompose("docker-compose.yml")
 	assert.NoError(t, err, "NewDockerComposeAPI()")
@@ -32,8 +36,6 @@ func TestAPI_Nginx(t *testing.T) {
 
 	TestAPI_setupTestContainer(t)
 
-	port := 9091
-
 	client := resty.New()
 
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
@@ -45,6 +47,7 @@ func TestAPI_Nginx(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 	assert.Contains(t, string(resp.String()), "nginx_id")
+	assert.NotContains(t, string(resp.String()), "test_fail_nginx")
 
 	nginxDetails := strings.Split(resp.String(), " ")
 
@@ -66,32 +69,28 @@ func TestAPI_Nginx(t *testing.T) {
 		}
 	}
 
-	printResult(resp, err)
-
 }
 
 func TestAPI_Metrics(t *testing.T) {
 
 	TestAPI_setupTestContainer(t)
-
-	port := 9091
-
-	time.Sleep(15 * time.Second)
-
 	client := resty.New()
 
 	url := fmt.Sprintf("http://localhost:%d/metrics", port)
 
 	resp, err := client.R().EnableTrace().Get(url)
+	metrics := ProcessResponse(resp)
+
+	for len(metrics) <= 40 {
+		resp, err = client.R().EnableTrace().Get(url)
+		metrics = ProcessResponse(resp)
+
+	}
 
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 	assert.Contains(t, string(resp.String()), "system_cpu_system")
-	assert.NoError(t, err)
-
-	printResult(resp, err)
-
-	metrics := ProcessResponse(resp)
+	assert.NotContains(t, string(resp.String()), "test_fail_metric")
 
 	for _, m := range metrics {
 		metric := strings.Split(m, " ")
@@ -134,17 +133,4 @@ func ProcessResponse(resp *resty.Response) []string {
 
 	return metrics
 
-}
-
-func printResult(resp *resty.Response, err error) *resty.Response {
-	fmt.Println("Response Info:")
-	fmt.Println("  Error      :", err)
-	fmt.Println("  Status Code:", resp.StatusCode())
-	fmt.Println("  Status     :", resp.Status())
-	fmt.Println("  Proto      :", resp.Proto())
-	fmt.Println("  Time       :", resp.Time())
-	fmt.Println("  Received At:", resp.ReceivedAt())
-	fmt.Println("  Body       :\n", resp)
-	fmt.Println()
-	return resp
 }
