@@ -77,15 +77,15 @@ func TestAPI_Metrics(t *testing.T) {
 	client := resty.New()
 
 	url := fmt.Sprintf("http://localhost:%d/metrics", port)
+	client.SetRetryCount(5).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
+	client.AddRetryCondition(
+		func(r *resty.Response, err error) bool {
+			fmt.Println(len(r.String()))
+			return len(r.String()) < 22000
+		})
 
 	resp, err := client.R().EnableTrace().Get(url)
 	metrics := ProcessResponse(resp)
-
-	for len(metrics) <= 40 {
-		resp, err = client.R().EnableTrace().Get(url)
-		metrics = ProcessResponse(resp)
-
-	}
 
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
