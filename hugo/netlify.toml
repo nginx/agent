@@ -1,5 +1,5 @@
 [build]
-  command = "hugo --gc -b $DEPLOY_PRIME_URL/nginx-app-protect-dos"
+  command = "hugo --gc -b $DEPLOY_PRIME_URL/nginx-agent"
   publish = "public"
 
 [build.environment]
