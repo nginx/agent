@@ -162,7 +162,7 @@ func (n *NginxBinaryType) sanitizeProcessPath(nginxProcess *Process) bool {
 		defaulted = true
 	}
 	if strings.Contains(nginxProcess.Path, execDeleted) {
-		log.Infof("nginx was upgraded (process), using new info")
+		log.Debugf("nginx was upgraded (process), using new info")
 		nginxProcess.Path = sanitizeExecDeletedPath(nginxProcess.Path)
 	}
 	return defaulted
