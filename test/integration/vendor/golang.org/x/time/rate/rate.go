@@ -196,14 +196,6 @@ func (lim *Limiter) Reserve() *Reservation {
 // The Limiter takes this Reservation into account when allowing future events.
 // The returned Reservation’s OK() method returns false if n exceeds the Limiter's burst size.
 // Usage example:
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 52bedc1 (fixed make deps)
-=======
->>>>>>> 188dbde (move files, add integration test to make format & run make format)
 //
 //	r := lim.ReserveN(time.Now(), 1)
 //	if !r.OK() {
@@ -213,26 +205,6 @@ func (lim *Limiter) Reserve() *Reservation {
 //	time.Sleep(r.Delay())
 //	Act()
 //
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> df6c055 (added integration test to make file & ran  make deps)
-//   r := lim.ReserveN(time.Now(), 1)
-//   if !r.OK() {
-//     // Not allowed to act! Did you remember to set lim.burst to be > 0 ?
-//     return
-//   }
-//   time.Sleep(r.Delay())
-//   Act()
-<<<<<<< HEAD
->>>>>>> 68cd746 (added testcontainers)
-=======
->>>>>>> 52bedc1 (fixed make deps)
-=======
->>>>>>> df6c055 (added integration test to make file & ran  make deps)
-=======
->>>>>>> 188dbde (move files, add integration test to make format & run make format)
 // Use this method if you wish to wait and slow down in accordance with the rate limit without dropping events.
 // If you need to respect a deadline or cancel the delay, use Wait instead.
 // To drop or skip events exceeding rate limit, use Allow instead.
@@ -251,14 +223,6 @@ func (lim *Limiter) Wait(ctx context.Context) (err error) {
 // canceled, or the expected wait time exceeds the Context's Deadline.
 // The burst limit is ignored if the rate limit is Inf.
 func (lim *Limiter) WaitN(ctx context.Context, n int) (err error) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 52bedc1 (fixed make deps)
-=======
->>>>>>> 188dbde (move files, add integration test to make format & run make format)
 	// The test code calls lim.wait with a fake timer generator.
 	// This is the real timer generator.
 	newTimer := func(d time.Duration) (<-chan time.Time, func() bool, func()) {
@@ -271,16 +235,6 @@ func (lim *Limiter) WaitN(ctx context.Context, n int) (err error) {
 
 // wait is the internal implementation of WaitN.
 func (lim *Limiter) wait(ctx context.Context, n int, now time.Time, newTimer func(d time.Duration) (<-chan time.Time, func() bool, func())) error {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 68cd746 (added testcontainers)
-=======
->>>>>>> 52bedc1 (fixed make deps)
-=======
->>>>>>> df6c055 (added integration test to make file & ran  make deps)
-=======
->>>>>>> 188dbde (move files, add integration test to make format & run make format)
 	lim.mu.Lock()
 	burst := lim.burst
 	limit := lim.limit
@@ -296,20 +250,6 @@ func (lim *Limiter) wait(ctx context.Context, n int, now time.Time, newTimer fun
 	default:
 	}
 	// Determine wait limit
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	now := time.Now()
->>>>>>> 68cd746 (added testcontainers)
-=======
->>>>>>> 52bedc1 (fixed make deps)
-=======
-	now := time.Now()
->>>>>>> df6c055 (added integration test to make file & ran  make deps)
-=======
->>>>>>> 188dbde (move files, add integration test to make format & run make format)
 	waitLimit := InfDuration
 	if deadline, ok := ctx.Deadline(); ok {
 		waitLimit = deadline.Sub(now)
@@ -324,41 +264,11 @@ func (lim *Limiter) wait(ctx context.Context, n int, now time.Time, newTimer fun
 	if delay == 0 {
 		return nil
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ch, stop, advance := newTimer(delay)
 	defer stop()
 	advance() // only has an effect when testing
 	select {
 	case <-ch:
-=======
-	t := time.NewTimer(delay)
-	defer t.Stop()
-	select {
-	case <-t.C:
->>>>>>> 68cd746 (added testcontainers)
-=======
-	ch, stop, advance := newTimer(delay)
-	defer stop()
-	advance() // only has an effect when testing
-	select {
-	case <-ch:
->>>>>>> 52bedc1 (fixed make deps)
-=======
-	t := time.NewTimer(delay)
-	defer t.Stop()
-	select {
-	case <-t.C:
->>>>>>> df6c055 (added integration test to make file & ran  make deps)
-=======
-	ch, stop, advance := newTimer(delay)
-	defer stop()
-	advance() // only has an effect when testing
-	select {
-	case <-ch:
->>>>>>> 188dbde (move files, add integration test to make format & run make format)
 		// We can proceed.
 		return nil
 	case <-ctx.Done():
