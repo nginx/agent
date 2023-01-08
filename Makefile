@@ -58,7 +58,8 @@ help: ## Show help message
 
 show-var-%:
 	@{ \
-		if [ -n "$($*)" ]; then v="$($*)"; else v="(undefined)"; fi; \
+		escaped_v="$(subst ",\",$($*))" ; \
+		if [ -n "$$escaped_v" ]; then v="$$escaped_v"; else v="(undefined)"; fi; \
 		printf "%-20s %s\n" "$*" "$$v"; \
 	}
 
