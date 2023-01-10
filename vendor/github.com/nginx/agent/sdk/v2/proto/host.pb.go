@@ -24,23 +24,37 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// Represents the host system information
 type HostInfo struct {
-	Agent                string           `protobuf:"bytes,1,opt,name=agent,proto3" json:"agent"`
-	Boot                 uint64           `protobuf:"varint,2,opt,name=boot,proto3" json:"boot"`
-	Hostname             string           `protobuf:"bytes,3,opt,name=hostname,proto3" json:"hostname"`
-	DisplayName          string           `protobuf:"bytes,4,opt,name=display_name,json=displayName,proto3" json:"display_name"`
-	OsType               string           `protobuf:"bytes,5,opt,name=os_type,json=osType,proto3" json:"os-type"`
-	Uuid                 string           `protobuf:"bytes,6,opt,name=uuid,proto3" json:"uuid"`
-	Uname                string           `protobuf:"bytes,7,opt,name=uname,proto3" json:"uname"`
-	Partitons            []*DiskPartition `protobuf:"bytes,8,rep,name=partitons,proto3" json:"disk_partitions"`
-	Network              *Network         `protobuf:"bytes,9,opt,name=network,proto3" json:"network"`
-	Processor            []*CpuInfo       `protobuf:"bytes,10,rep,name=processor,proto3" json:"processor"`
-	Release              *ReleaseInfo     `protobuf:"bytes,11,opt,name=release,proto3" json:"release"`
-	Tags                 []string         `protobuf:"bytes,12,rep,name=tags,proto3" json:"tags"`
-	AgentAccessibleDirs  string           `protobuf:"bytes,13,opt,name=agent_accessible_dirs,json=agentAccessibleDirs,proto3" json:"agent_accessible_dirs"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	// NGINX Agent version
+	Agent string `protobuf:"bytes,1,opt,name=agent,proto3" json:"agent"`
+	// Host boot time
+	Boot uint64 `protobuf:"varint,2,opt,name=boot,proto3" json:"boot"`
+	// Hostname
+	Hostname string `protobuf:"bytes,3,opt,name=hostname,proto3" json:"hostname"`
+	// Display Name
+	DisplayName string `protobuf:"bytes,4,opt,name=display_name,json=displayName,proto3" json:"display_name"`
+	// OS type (e.g. freebsd, linux, etc)
+	OsType string `protobuf:"bytes,5,opt,name=os_type,json=osType,proto3" json:"os-type"`
+	// Host UUID
+	Uuid string `protobuf:"bytes,6,opt,name=uuid,proto3" json:"uuid"`
+	// The native cpu architecture queried at runtime, as returned by `uname -m` or empty string in case of error
+	Uname string `protobuf:"bytes,7,opt,name=uname,proto3" json:"uname"`
+	// List of disk partitions
+	Partitons []*DiskPartition `protobuf:"bytes,8,rep,name=partitons,proto3" json:"disk_partitions"`
+	// Network information
+	Network *Network `protobuf:"bytes,9,opt,name=network,proto3" json:"network"`
+	// List of CPU processor information
+	Processor []*CpuInfo `protobuf:"bytes,10,rep,name=processor,proto3" json:"processor"`
+	// Release Information
+	Release *ReleaseInfo `protobuf:"bytes,11,opt,name=release,proto3" json:"release"`
+	// List of tags
+	Tags []string `protobuf:"bytes,12,rep,name=tags,proto3" json:"tags"`
+	// List of directories that the NGINX Agent is allowed to access on the host
+	AgentAccessibleDirs  string   `protobuf:"bytes,13,opt,name=agent_accessible_dirs,json=agentAccessibleDirs,proto3" json:"agent_accessible_dirs"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *HostInfo) Reset()         { *m = HostInfo{} }
@@ -167,9 +181,13 @@ func (m *HostInfo) GetAgentAccessibleDirs() string {
 	return ""
 }
 
+// Represents a disk partition
 type DiskPartition struct {
-	MountPoint           string   `protobuf:"bytes,1,opt,name=mount_point,json=mountPoint,proto3" json:"mountpoint"`
-	Device               string   `protobuf:"bytes,2,opt,name=device,proto3" json:"device"`
+	// Mount point location
+	MountPoint string `protobuf:"bytes,1,opt,name=mount_point,json=mountPoint,proto3" json:"mountpoint"`
+	// Device file path
+	Device string `protobuf:"bytes,2,opt,name=device,proto3" json:"device"`
+	// File system type (e.g. hfs, swap, etc)
 	FsType               string   `protobuf:"bytes,3,opt,name=fs_type,json=fsType,proto3" json:"fstype"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -230,12 +248,15 @@ func (m *DiskPartition) GetFsType() string {
 	return ""
 }
 
+// Represents a network
 type Network struct {
-	Interfaces           []*NetworkInterface `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces"`
-	Default              string              `protobuf:"bytes,2,opt,name=default,proto3" json:"default"`
-	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
-	XXX_unrecognized     []byte              `json:"-"`
-	XXX_sizecache        int32               `json:"-"`
+	// List of network interfaces
+	Interfaces []*NetworkInterface `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces"`
+	// Default network name
+	Default              string   `protobuf:"bytes,2,opt,name=default,proto3" json:"default"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Network) Reset()         { *m = Network{} }
@@ -285,14 +306,19 @@ func (m *Network) GetDefault() string {
 	return ""
 }
 
+// Represents a network interface
 type NetworkInterface struct {
-	Mac                  string     `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac"`
-	Ipv6                 []*Address `protobuf:"bytes,2,rep,name=ipv6,proto3" json:"ipv6"`
-	Ipv4                 []*Address `protobuf:"bytes,3,rep,name=ipv4,proto3" json:"ipv4"`
-	Name                 string     `protobuf:"bytes,4,opt,name=name,proto3" json:"name"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
+	// MAC address
+	Mac string `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac"`
+	// List of IPV6 addresses
+	Ipv6 []*Address `protobuf:"bytes,2,rep,name=ipv6,proto3" json:"ipv6"`
+	// List of IPV4 addresses
+	Ipv4 []*Address `protobuf:"bytes,3,rep,name=ipv4,proto3" json:"ipv4"`
+	// Name of network interface
+	Name                 string   `protobuf:"bytes,4,opt,name=name,proto3" json:"name"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *NetworkInterface) Reset()         { *m = NetworkInterface{} }
@@ -356,9 +382,13 @@ func (m *NetworkInterface) GetName() string {
 	return ""
 }
 
+// Represents an IP address
 type Address struct {
-	Prefixlen            int64    `protobuf:"varint,1,opt,name=prefixlen,proto3" json:"prefixlen"`
-	Netmask              string   `protobuf:"bytes,2,opt,name=netmask,proto3" json:"netmask"`
+	// Prefix length
+	Prefixlen int64 `protobuf:"varint,1,opt,name=prefixlen,proto3" json:"prefixlen"`
+	// Netmask
+	Netmask string `protobuf:"bytes,2,opt,name=netmask,proto3" json:"netmask"`
+	// IP Address
 	Address              string   `protobuf:"bytes,3,opt,name=address,proto3" json:"address"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -419,14 +449,23 @@ func (m *Address) GetAddress() string {
 	return ""
 }
 
+// Represents CPU information
 type CpuInfo struct {
-	Model                string            `protobuf:"bytes,1,opt,name=model,proto3" json:"model"`
-	Cores                int32             `protobuf:"varint,2,opt,name=cores,proto3" json:"cores"`
-	Architecture         string            `protobuf:"bytes,3,opt,name=architecture,proto3" json:"architecture"`
-	Mhz                  float64           `protobuf:"fixed64,4,opt,name=mhz,proto3" json:"mhz"`
-	Hypervisor           string            `protobuf:"bytes,5,opt,name=hypervisor,proto3" json:"hypervisor"`
-	Cpus                 int32             `protobuf:"varint,6,opt,name=cpus,proto3" json:"cpus"`
-	Virtualization       string            `protobuf:"bytes,7,opt,name=virtualization,proto3" json:"virtualization"`
+	// Model of CPU
+	Model string `protobuf:"bytes,1,opt,name=model,proto3" json:"model"`
+	// Number of cores
+	Cores int32 `protobuf:"varint,2,opt,name=cores,proto3" json:"cores"`
+	// CPU architecture
+	Architecture string `protobuf:"bytes,3,opt,name=architecture,proto3" json:"architecture"`
+	// CPU clock speed in MHz
+	Mhz float64 `protobuf:"fixed64,4,opt,name=mhz,proto3" json:"mhz"`
+	// Hypervisor (e.g. VMWare, KVM, etc.)
+	Hypervisor string `protobuf:"bytes,5,opt,name=hypervisor,proto3" json:"hypervisor"`
+	// Total number of CPUs
+	Cpus int32 `protobuf:"varint,6,opt,name=cpus,proto3" json:"cpus"`
+	// Type of hypervisor (e.g guest or host)
+	Virtualization string `protobuf:"bytes,7,opt,name=virtualization,proto3" json:"virtualization"`
+	// Map of caches with names as the keys and size in bytes as the values
 	Cache                map[string]string `protobuf:"bytes,8,rep,name=cache,proto3" json:"cache" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -522,11 +561,17 @@ func (m *CpuInfo) GetCache() map[string]string {
 	return nil
 }
 
+// Represents release information
 type ReleaseInfo struct {
-	Codename             string   `protobuf:"bytes,1,opt,name=codename,proto3" json:"codename"`
-	Id                   string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id"`
-	Name                 string   `protobuf:"bytes,3,opt,name=name,proto3" json:"name"`
-	VersionId            string   `protobuf:"bytes,4,opt,name=version_id,json=versionId,proto3" json:"version_id"`
+	// OS type (e.g. freebsd, linux, etc)
+	Codename string `protobuf:"bytes,1,opt,name=codename,proto3" json:"codename"`
+	// OS name (e.g. ubuntu, linuxmint, etc)
+	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id"`
+	// OS family (e.g. debian, rhel)
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name"`
+	// Version of the OS kernel
+	VersionId string `protobuf:"bytes,4,opt,name=version_id,json=versionId,proto3" json:"version_id"`
+	// Version of the OS
 	Version              string   `protobuf:"bytes,5,opt,name=version,proto3" json:"version"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

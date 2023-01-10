@@ -25,9 +25,9 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Represents a dimension used in events
 type Dimension struct {
-	// Name of the dimension
+	// Dimension name
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
-	// Value of the dimension
+	// Dimension value
 	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

@@ -14,7 +14,7 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## common.proto
-
+Common messages
 
 
 <a name="f5-nginx-agent-sdk-common-Dimension"></a>
@@ -25,8 +25,8 @@ Represents a dimension used in events
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  | Name of the dimension |
-| value | [string](#string) |  | Value of the dimension |
+| name | [string](#string) |  | Dimension name |
+| value | [string](#string) |  | Dimension value |
 
 
 

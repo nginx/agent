@@ -21,7 +21,7 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## event.proto
-
+Event messages
 
 
 <a name="f5-nginx-agent-sdk-events-ActivityEvent"></a>
@@ -112,7 +112,7 @@ Represents the metadata for an event
 <a name="f5-nginx-agent-sdk-events-SecurityViolationEvent"></a>
 
 ### SecurityViolationEvent
-Represents a security violation that is emitted by the Agent
+Represents a security violation that is emitted by the agent
 
 
 | Field | Type | Label | Description |

@@ -24,15 +24,19 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Metadata timestamped info associating a client with a specific command message
+// Represents the metadata for a message
 type Metadata struct {
-	Timestamp            *types.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp"`
-	ClientId             string           `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id"`
-	MessageId            string           `protobuf:"bytes,3,opt,name=message_id,json=messageId,proto3" json:"message_id"`
-	CloudAccountId       string           `protobuf:"bytes,4,opt,name=cloud_account_id,json=cloudAccountId,proto3" json:"cloud_account_id"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	// timestamp defines the time of message creation
+	Timestamp *types.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp"`
+	// Client ID
+	ClientId string `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id"`
+	// Message ID
+	MessageId string `protobuf:"bytes,3,opt,name=message_id,json=messageId,proto3" json:"message_id"`
+	// Cloud Account ID (e.g. AWS/Azure/GCP account ID)
+	CloudAccountId       string   `protobuf:"bytes,4,opt,name=cloud_account_id,json=cloudAccountId,proto3" json:"cloud_account_id"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Metadata) Reset()         { *m = Metadata{} }
@@ -96,7 +100,9 @@ func (m *Metadata) GetCloudAccountId() string {
 	return ""
 }
 
+// Represents a map of directories & files on the system
 type DirectoryMap struct {
+	// List of directories
 	Directories          []*Directory `protobuf:"bytes,1,rep,name=directories,proto3" json:"directories,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
@@ -143,16 +149,23 @@ func (m *DirectoryMap) GetDirectories() []*Directory {
 	return nil
 }
 
+// Represents a file
 type File struct {
-	Name                 string           `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
-	Lines                int32            `protobuf:"varint,2,opt,name=lines,proto3" json:"lines"`
-	Mtime                *types.Timestamp `protobuf:"bytes,3,opt,name=mtime,proto3" json:"mtime"`
-	Permissions          string           `protobuf:"bytes,4,opt,name=permissions,proto3" json:"permissions"`
-	Size_                int64            `protobuf:"varint,5,opt,name=size,proto3" json:"size"`
-	Contents             []byte           `protobuf:"bytes,6,opt,name=contents,proto3" json:"contents"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	// Name of the file
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
+	// Number of lines in the file
+	Lines int32 `protobuf:"varint,2,opt,name=lines,proto3" json:"lines"`
+	// When the file was last modified
+	Mtime *types.Timestamp `protobuf:"bytes,3,opt,name=mtime,proto3" json:"mtime"`
+	// File permissions (e.g. 0644)
+	Permissions string `protobuf:"bytes,4,opt,name=permissions,proto3" json:"permissions"`
+	// Size of the file in bytes
+	Size_ int64 `protobuf:"varint,5,opt,name=size,proto3" json:"size"`
+	// The contents of the file in bytes
+	Contents             []byte   `protobuf:"bytes,6,opt,name=contents,proto3" json:"contents"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *File) Reset()         { *m = File{} }
@@ -230,15 +243,21 @@ func (m *File) GetContents() []byte {
 	return nil
 }
 
+// Represents a directory
 type Directory struct {
-	Name                 string           `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Mtime                *types.Timestamp `protobuf:"bytes,2,opt,name=mtime,proto3" json:"mtime,omitempty"`
-	Permissions          string           `protobuf:"bytes,3,opt,name=permissions,proto3" json:"permissions,omitempty"`
-	Size_                int64            `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
-	Files                []*File          `protobuf:"bytes,5,rep,name=files,proto3" json:"files,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	// Name of the directory
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// When the directory was last modified
+	Mtime *types.Timestamp `protobuf:"bytes,2,opt,name=mtime,proto3" json:"mtime,omitempty"`
+	// Directory permissions (e.g. 0644)
+	Permissions string `protobuf:"bytes,3,opt,name=permissions,proto3" json:"permissions,omitempty"`
+	// Size of the directory in bytes
+	Size_ int64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
+	// List of files in the directory
+	Files                []*File  `protobuf:"bytes,5,rep,name=files,proto3" json:"files,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Directory) Reset()         { *m = Directory{} }
@@ -309,7 +328,9 @@ func (m *Directory) GetFiles() []*File {
 	return nil
 }
 
+// Represents a list of SSL certificates files
 type SslCertificates struct {
+	// List of SSL certificates
 	SslCerts             []*SslCertificate `protobuf:"bytes,1,rep,name=ssl_certs,json=sslCerts,proto3" json:"ssl_certs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -356,26 +377,43 @@ func (m *SslCertificates) GetSslCerts() []*SslCertificate {
 	return nil
 }
 
+// Represents a SSL certificate file
 type SslCertificate struct {
-	FileName               string            `protobuf:"bytes,1,opt,name=file_name,json=fileName,proto3" json:"fileName"`
-	Size_                  int64             `protobuf:"varint,2,opt,name=size,proto3" json:"size"`
-	Mtime                  *types.Timestamp  `protobuf:"bytes,3,opt,name=mtime,proto3" json:"mtime"`
-	Validity               *CertificateDates `protobuf:"bytes,4,opt,name=validity,proto3" json:"validity"`
-	Issuer                 *CertificateName  `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer"`
-	Subject                *CertificateName  `protobuf:"bytes,6,opt,name=subject,proto3" json:"subject"`
-	SubjAltNames           []string          `protobuf:"bytes,7,rep,name=subj_alt_names,json=subjAltNames,proto3" json:"subjectAltName"`
-	OcspUrl                []string          `protobuf:"bytes,8,rep,name=ocsp_url,json=ocspUrl,proto3" json:"ocspURL"`
-	PublicKeyAlgorithm     string            `protobuf:"bytes,9,opt,name=public_key_algorithm,json=publicKeyAlgorithm,proto3" json:"publicKeyAlgorithm"`
-	SignatureAlgorithm     string            `protobuf:"bytes,10,opt,name=signature_algorithm,json=signatureAlgorithm,proto3" json:"signatureAlgorithm"`
-	SerialNumber           string            `protobuf:"bytes,11,opt,name=serial_number,json=serialNumber,proto3" json:"serialNumber"`
-	SubjectKeyIdentifier   string            `protobuf:"bytes,12,opt,name=subject_key_identifier,json=subjectKeyIdentifier,proto3" json:"subjectKeyIdentifier"`
-	Fingerprint            string            `protobuf:"bytes,13,opt,name=fingerprint,proto3" json:"fingerprint"`
-	FingerprintAlgorithm   string            `protobuf:"bytes,14,opt,name=fingerprint_algorithm,json=fingerprintAlgorithm,proto3" json:"fingerprintAlgorithm"`
-	Version                int64             `protobuf:"varint,15,opt,name=version,proto3" json:"version"`
-	AuthorityKeyIdentifier string            `protobuf:"bytes,16,opt,name=authority_key_identifier,json=authorityKeyIdentifier,proto3" json:"authorityKeyIdentifier"`
-	XXX_NoUnkeyedLiteral   struct{}          `json:"-"`
-	XXX_unrecognized       []byte            `json:"-"`
-	XXX_sizecache          int32             `json:"-"`
+	// Name of the file
+	FileName string `protobuf:"bytes,1,opt,name=file_name,json=fileName,proto3" json:"fileName"`
+	// Size of the file in bytes
+	Size_ int64 `protobuf:"varint,2,opt,name=size,proto3" json:"size"`
+	// When the file was last modified
+	Mtime *types.Timestamp `protobuf:"bytes,3,opt,name=mtime,proto3" json:"mtime"`
+	// A time when the certificate is valid
+	Validity *CertificateDates `protobuf:"bytes,4,opt,name=validity,proto3" json:"validity"`
+	// This field contains the distinguished name (DN) of the certificate issuer
+	Issuer *CertificateName `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer"`
+	// This dedicated object name associated with the public key, for which the certificate is issued
+	Subject *CertificateName `protobuf:"bytes,6,opt,name=subject,proto3" json:"subject"`
+	// Subject alternative names that allows users to specify additional host names for the SSL certificate
+	SubjAltNames []string `protobuf:"bytes,7,rep,name=subj_alt_names,json=subjAltNames,proto3" json:"subjectAltName"`
+	// Online Certificate Status Protocol URL
+	OcspUrl []string `protobuf:"bytes,8,rep,name=ocsp_url,json=ocspUrl,proto3" json:"ocspURL"`
+	// Public key encryption algorithm (e.g. RSA)
+	PublicKeyAlgorithm string `protobuf:"bytes,9,opt,name=public_key_algorithm,json=publicKeyAlgorithm,proto3" json:"publicKeyAlgorithm"`
+	// The signature algorithm contain a hashing algorithm and an encryption algorithm (e.g. sha256RSA where sha256 is the hashing algorithm and RSA is the encryption algorithm)
+	SignatureAlgorithm string `protobuf:"bytes,10,opt,name=signature_algorithm,json=signatureAlgorithm,proto3" json:"signatureAlgorithm"`
+	// Used to uniquely identify the certificate within a CA's systems
+	SerialNumber string `protobuf:"bytes,11,opt,name=serial_number,json=serialNumber,proto3" json:"serialNumber"`
+	// The subject key identifier extension provides a means of identifying certificates that contain a particular public key
+	SubjectKeyIdentifier string `protobuf:"bytes,12,opt,name=subject_key_identifier,json=subjectKeyIdentifier,proto3" json:"subjectKeyIdentifier"`
+	// SSL certificate fingerprint
+	Fingerprint string `protobuf:"bytes,13,opt,name=fingerprint,proto3" json:"fingerprint"`
+	// SSL certificate fingerprint algorithm
+	FingerprintAlgorithm string `protobuf:"bytes,14,opt,name=fingerprint_algorithm,json=fingerprintAlgorithm,proto3" json:"fingerprintAlgorithm"`
+	// There are three versions of certificates: 1, 2 and 3, numbered as 0, 1 and 2. Version 1 supports only the basic fields; Version 2 adds unique identifiers, which represent two additional fields; Version 3 adds extensions.
+	Version int64 `protobuf:"varint,15,opt,name=version,proto3" json:"version"`
+	// The authority key identifier extension provides a means of identifying the Public Key corresponding to the Private Key used to sign a certificate
+	AuthorityKeyIdentifier string   `protobuf:"bytes,16,opt,name=authority_key_identifier,json=authorityKeyIdentifier,proto3" json:"authorityKeyIdentifier"`
+	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
+	XXX_unrecognized       []byte   `json:"-"`
+	XXX_sizecache          int32    `json:"-"`
 }
 
 func (m *SslCertificate) Reset()         { *m = SslCertificate{} }
@@ -523,8 +561,11 @@ func (m *SslCertificate) GetAuthorityKeyIdentifier() string {
 	return ""
 }
 
+// Represents the dates for which a certificate is valid
 type CertificateDates struct {
-	NotBefore            int64    `protobuf:"varint,1,opt,name=not_before,json=notBefore,proto3" json:"notBefore"`
+	// The start date that for when the certificate is valid
+	NotBefore int64 `protobuf:"varint,1,opt,name=not_before,json=notBefore,proto3" json:"notBefore"`
+	// The end date that for when the certificate is valid
 	NotAfter             int64    `protobuf:"varint,2,opt,name=not_after,json=notAfter,proto3" json:"notAfter"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -578,12 +619,19 @@ func (m *CertificateDates) GetNotAfter() int64 {
 	return 0
 }
 
+// Represents a Distinguished Name (DN)
 type CertificateName struct {
-	CommonName           string   `protobuf:"bytes,1,opt,name=common_name,json=commonName,proto3" json:"commonName"`
-	Country              []string `protobuf:"bytes,2,rep,name=country,proto3" json:"country"`
-	State                []string `protobuf:"bytes,3,rep,name=state,proto3" json:"state"`
-	Locality             []string `protobuf:"bytes,4,rep,name=locality,proto3" json:"locality"`
-	Organization         []string `protobuf:"bytes,5,rep,name=organization,proto3" json:"organization"`
+	// The fully qualified domain name (e.g. www.example.com)
+	CommonName string `protobuf:"bytes,1,opt,name=common_name,json=commonName,proto3" json:"commonName"`
+	// Country
+	Country []string `protobuf:"bytes,2,rep,name=country,proto3" json:"country"`
+	// State
+	State []string `protobuf:"bytes,3,rep,name=state,proto3" json:"state"`
+	// Locality
+	Locality []string `protobuf:"bytes,4,rep,name=locality,proto3" json:"locality"`
+	// Organization
+	Organization []string `protobuf:"bytes,5,rep,name=organization,proto3" json:"organization"`
+	// Organizational Unit
 	OrganizationalUnit   []string `protobuf:"bytes,6,rep,name=organizational_unit,json=organizationalUnit,proto3" json:"organizationalUnit"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -665,9 +713,13 @@ func (m *CertificateName) GetOrganizationalUnit() []string {
 	return nil
 }
 
+// Represents a zipped file
 type ZippedFile struct {
-	Contents             []byte   `protobuf:"bytes,1,opt,name=contents,proto3" json:"contents"`
-	Checksum             string   `protobuf:"bytes,2,opt,name=checksum,proto3" json:"checksum"`
+	// The contents of the file in bytes
+	Contents []byte `protobuf:"bytes,1,opt,name=contents,proto3" json:"contents"`
+	// File checksum
+	Checksum string `protobuf:"bytes,2,opt,name=checksum,proto3" json:"checksum"`
+	// The directory where the file is located
 	RootDirectory        string   `protobuf:"bytes,3,opt,name=root_directory,json=rootDirectory,proto3" json:"root_directory"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

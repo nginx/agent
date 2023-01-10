@@ -267,7 +267,7 @@ func (n *Nginx) processCmd(cmd *proto.Command) {
 			status.NginxConfigResponse.Action = proto.NginxConfigAction_ROLLBACK
 		case proto.NginxConfigAction_RETURN:
 			// TODO: Upload config
-			status.NginxConfigResponse.Status = newErrStatus("Config return not implemented").CmdStatus
+			status.NginxConfigResponse.Status = newErrStatus("Config return nNginxConfigResponseot implemented").CmdStatus
 			status.NginxConfigResponse.Action = proto.NginxConfigAction_RETURN
 		default:
 			log.Infof("unknown nginx config action")

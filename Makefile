@@ -83,6 +83,7 @@ lint: ## Run linter
 
 format: ## Format code
 	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance && go fmt ./...
+	buf format -w ./sdk/proto/
 
 install-tools: ## Install dependencies in tools.go
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
