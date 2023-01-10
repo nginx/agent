@@ -17,13 +17,13 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: Lint Agent Code
-        uses: golangci/golangci-lint-action@v3.3.0
+        uses: golangci/golangci-lint-action@v3
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
           args: -c ./scripts/.golangci.yml
           skip-pkg-cache: true
       - name: Lint SDK Code
-        uses: golangci/golangci-lint-action@v3.3.0
+        uses: golangci/golangci-lint-action@v3
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
           working-directory: sdk
