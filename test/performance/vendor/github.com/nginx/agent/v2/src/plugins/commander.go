@@ -151,7 +151,6 @@ func (c *Commander) dispatchLoop() {
 		var topic string
 		switch cmd.Data.(type) {
 		case *proto.Command_NginxConfig, *proto.Command_NginxConfigResponse:
-			log.Errorf("Command: %v", cmd.GetNginxConfig())
 			topic = core.CommNginxConfig
 		case *proto.Command_AgentConnectRequest, *proto.Command_AgentConnectResponse:
 			topic = core.AgentConnected
