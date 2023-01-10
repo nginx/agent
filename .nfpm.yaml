@@ -14,6 +14,7 @@ contents:
     dst: /usr/bin/nginx-agent
   - src: nginx-agent.conf
     dst: /etc/nginx-agent/nginx-agent.conf
+    type: config|noreplace
     file_info:
       mode: 0640
   - src: ./scripts/packages/nginx-agent.service

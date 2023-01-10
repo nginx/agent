@@ -31,6 +31,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
             zypper addrepo -G -c "https://$PACKAGES_REPO/plus/sles/15?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer" nginx-plus \
             && zypper addrepo -G -c "https://$PACKAGES_REPO/nginx-agent/sles/15?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer" nginx-agent; \
         fi \
+    && zypper refresh \
     && zypper install -y $nginxPackages \
     && rm -rf /etc/ssl/nginx/nginx-repo-bundle.crt /etc/ssl/nginx
 

@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,11 +24,6 @@ import (
 	"github.com/nginx/agent/sdk/v2/zip"
 	"github.com/nginx/agent/v2/src/core/config"
 )
-
-type TestConfig []struct {
-	Name     string
-	Contents string
-}
 
 const CONF_TEMPLATE = `
 user www-data;
@@ -232,7 +226,7 @@ func TestGetNginxInfoFromBuffer(t *testing.T) {
 	assert.NoError(t, err)
 
 	tempDir := t.TempDir()
-	mockNginx, err := ioutil.TempFile(tempDir, "mock_nginx_executable")
+	mockNginx, err := os.CreateTemp(tempDir, "mock_nginx_executable")
 	assert.NoError(t, err)
 
 	defer func() {
@@ -428,9 +422,9 @@ func TestWriteBackup(t *testing.T) {
 
 func TestWriteConfig(t *testing.T) {
 	tmpDir := t.TempDir()
-	expectedExisting := make(map[string]struct{})
+	expectedExisting := map[string]struct{}{}
 	expectedNotExisting := map[string]struct{}{
-		tmpDir + "/aux/test1.html": {},
+		filepath.Join(tmpDir, "/aux/test1.html"): {},
 	}
 
 	allowedDirs := make(map[string]struct{})
@@ -442,25 +436,24 @@ func TestWriteConfig(t *testing.T) {
 	env := EnvironmentType{}
 	n := NewNginxBinary(&env, &fakeConfig)
 
-	n.nginxDetailsMap = make(map[string]*proto.NginxDetails)
-	n.nginxDetailsMap["151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8"] = &proto.NginxDetails{
-		NginxId:     "151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8",
-		ConfPath:    tmpDir + "/nginx.conf",
-		ProcessId:   "777",
-		ProcessPath: "/usr/sbin/nginx",
+	n.nginxDetailsMap = map[string]*proto.NginxDetails{
+		"151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8": {
+			NginxId:     "151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8",
+			ConfPath:    filepath.Join(tmpDir, "/nginx.conf"),
+			ProcessId:   "777",
+			ProcessPath: "/usr/sbin/nginx",
+		},
 	}
 
-	confString := fmt.Sprintf(CONF_TEMPLATE, tmpDir)
-	confBytes := []byte(confString)
-	if err := ioutil.WriteFile(tmpDir+"/nginx.conf", confBytes, 0755); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "nginx.conf"),
+		[]byte(fmt.Sprintf(CONF_TEMPLATE, tmpDir)), 0755); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
 	if err := os.Mkdir(tmpDir+"/aux/", 0755); err != nil {
 		t.Fatalf("failed to create aux directory: %v", err)
 	}
-	auxBytes := []byte("<html><html>")
-	if err := ioutil.WriteFile(tmpDir+"/aux/test2.html", auxBytes, 0755); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test2.html"), []byte("<html><html>"), 0755); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
@@ -486,7 +479,7 @@ func TestWriteConfig(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Verify that rollback on failure works as expected
-	err = configApply.Rollback(errors.New("Config Validation Failed"))
+	err = configApply.Rollback(errors.New("config validation failed"))
 	assert.Nil(t, err)
 
 	// Verify aux file test1.html was removed
@@ -495,6 +488,103 @@ func TestWriteConfig(t *testing.T) {
 	// Verify aux file test2.html was restored again
 	_, err = os.Stat(tmpDir + "/aux/test2.html")
 	assert.Nil(t, err)
+}
+
+func TestWriteConfigWithFileAction(t *testing.T) {
+	tmpDir := t.TempDir()
+	expectedExisting := map[string]struct{}{}
+	expectedNotExisting := map[string]struct{}{
+		filepath.Join(tmpDir, "/aux/test1.html"): {},
+	}
+
+	allowedDirs := make(map[string]struct{})
+	allowedDirs[tmpDir] = struct{}{}
+	fakeConfig := config.Config{
+		AllowedDirectoriesMap: allowedDirs,
+	}
+
+	env := EnvironmentType{}
+	n := NewNginxBinary(&env, &fakeConfig)
+
+	n.nginxDetailsMap = map[string]*proto.NginxDetails{
+		"151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8": {
+			NginxId:     "151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8",
+			ConfPath:    filepath.Join(tmpDir, "/nginx.conf"),
+			ProcessId:   "777",
+			ProcessPath: "/usr/sbin/nginx",
+		},
+	}
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "nginx.conf"),
+		[]byte(fmt.Sprintf(CONF_TEMPLATE, tmpDir)), 0755); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+
+	if err := os.Mkdir(filepath.Join(tmpDir, "aux"), 0755); err != nil {
+		t.Fatalf("failed to create aux directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test2.html"), []byte("<html><html>"), 0755); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test3.html"), []byte("<html><html>"), 0755); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+
+	nginxConfig, err := buildConfig(tmpDir)
+	if err != nil {
+		t.Fatal("failed to create test config")
+	}
+	var auxDir *proto.Directory
+	for _, dir := range nginxConfig.DirectoryMap.Directories {
+		for _, f := range dir.Files {
+			f.Action = proto.File_unchanged
+		}
+		if filepath.Clean(dir.Name) == filepath.Join(tmpDir, "aux") {
+			auxDir = dir
+		}
+	}
+	if auxDir == nil {
+		t.Fatalf("no aux dir found")
+	}
+	auxDir.Files = append(auxDir.Files, &proto.File{
+		Name:   "test2.html",
+		Action: proto.File_delete,
+	})
+	auxDir.Files = append(auxDir.Files, &proto.File{
+		Name:   "test3.html",
+		Action: proto.File_delete,
+	})
+	configApply, err := n.WriteConfig(nginxConfig)
+
+	// Verify configApply
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExisting, configApply.GetExisting())
+	assert.Equal(t, expectedNotExisting, configApply.GetNotExists())
+
+	err = configApply.Complete()
+	assert.Nil(t, err)
+	// Verify aux file test1.html was created
+	_, err = os.Stat(tmpDir + "/aux/test1.html")
+	assert.NoError(t, err)
+	// Verify aux file test2.html was deleted
+	_, err = os.Stat(tmpDir + "/aux/test2.html")
+	assert.Error(t, err)
+	_, err = os.Stat(tmpDir + "/aux/test3.html")
+	assert.Error(t, err)
+
+	// Verify that rollback on failure works as expected
+	assert.NoError(t, configApply.Rollback(errors.New("config validation failed")))
+
+	// Verify aux file test1.html was removed
+	_, err = os.Stat(tmpDir + "/aux/test1.html")
+	assert.NotNil(t, err)
+	// Verify aux file test2.html was restored again
+	_, err = os.Stat(tmpDir + "/aux/test2.html")
+	assert.NoError(t, err)
+
+	_, err = os.Stat(tmpDir + "/aux/test3.html")
+	assert.NoError(t, err)
 }
 
 func TestGetDirectoryMapDiff(t *testing.T) {
@@ -743,4 +833,31 @@ func buildConfig(rootDirectory string) (*proto.NginxConfig, error) {
 	}
 
 	return nginxConfig, nil
+}
+
+// TestNginxBinaryType_sanitizeProcessPath validate correct parsing of the nginx path when nginx binary has been updated.
+func TestNginxBinaryType_sanitizeProcessPath(t *testing.T) {
+	type testDef struct {
+		desc      string
+		path      string
+		expect    string
+		defaulted bool
+	}
+
+	// no test case for process lookup, that would require running nginx or proc somewhere
+	for _, def := range []testDef{
+		{desc: "deleted path", path: "/usr/sbin/nginx (deleted)", expect: "/usr/sbin/nginx"},
+		{desc: "no change path", path: "/usr/sbin/nginx", expect: "/usr/sbin/nginx"},
+	} {
+		t.Run(def.desc, func(tt *testing.T) {
+			p := Process{
+				Path: def.path,
+			}
+			binary := NginxBinaryType{
+				env: &EnvironmentType{},
+			}
+			assert.Equal(tt, def.defaulted, binary.sanitizeProcessPath(&p))
+			assert.Equal(tt, def.expect, p.Path)
+		})
+	}
 }

@@ -38,6 +38,21 @@ message File {
   int64 size = 5 [(gogoproto.jsontag) = "size"];
   // The contents of the file in bytes
   bytes contents = 6 [(gogoproto.jsontag) = "contents"];
+  // Action enum
+  enum Action {
+    // Default value
+    unset = 0;
+    // No changes to the file
+    unchanged = 1;
+    // New file
+    add = 2;
+    // Updated file
+    update = 3;
+    // File deleted
+    delete = 4;
+  }
+  // Action to take on the file (e.g. update, delete, etc)
+  Action action = 7;
 }
 
 // Represents a directory

@@ -1,4 +1,4 @@
-module github.com/nginx/agent/docs
+module github.com/nginx/agent/hugo
 
 go 1.18
 

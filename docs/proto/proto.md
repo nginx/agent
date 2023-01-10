@@ -51,6 +51,8 @@
     - [SslCertificates](#f5-nginx-agent-sdk-SslCertificates)
     - [ZippedFile](#f5-nginx-agent-sdk-ZippedFile)
   
+    - [File.Action](#f5-nginx-agent-sdk-File-Action)
+  
 - [config.proto](#config-proto)
     - [ConfigDescriptor](#f5-nginx-agent-sdk-ConfigDescriptor)
     - [ConfigReport](#f5-nginx-agent-sdk-ConfigReport)
@@ -718,6 +720,7 @@ Represents a file
 | permissions | [string](#string) |  | File permissions (e.g. 0644) |
 | size | [int64](#int64) |  | Size of the file in bytes |
 | contents | [bytes](#bytes) |  | The contents of the file in bytes |
+| action | [File.Action](#f5-nginx-agent-sdk-File-Action) |  | Action to take on the file (e.g. update, delete, etc) |
 
 
 
@@ -804,6 +807,21 @@ Represents a zipped file
 
 
  
+
+
+<a name="f5-nginx-agent-sdk-File-Action"></a>
+
+### File.Action
+Action enum
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| unset | 0 | Default value |
+| unchanged | 1 | No changes to the file |
+| add | 2 | New file |
+| update | 3 | Updated file |
+| delete | 4 | File deleted |
+
 
  
 
