@@ -145,7 +145,7 @@ jobs:
     steps:
       - name: Test
         run: |
-          echo "$github.ref"
-          echo "$github.ref_name"
-          echo "$github.ref_type"
+          echo "${{github.ref}}"
+          echo "${{github.ref_name}}"
+          echo "${{github.ref_type}}"
           echo "${{github.ref_type}}"
