@@ -138,3 +138,14 @@ jobs:
     needs: [ lint, unit-test, component-test, performance-test ]
     uses: ./.github/workflows/release-branch.yml
     secrets: inherit
+
+  test-branch-name:
+    name: test-branch-name
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Test
+        run: |
+          echo "{{github.ref}}"
+          echo "{{github.ref_name}}"
+          echo "{{github.ref_type}}"
+          echo "{{github.ref_type}}"
