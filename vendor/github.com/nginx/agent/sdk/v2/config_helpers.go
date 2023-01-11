@@ -726,6 +726,7 @@ func GetStatusApiInfo(confFile string) (statusApi string, err error) {
 		&crossplane.ParseOptions{
 			SingleFile:         false,
 			StopParsingOnError: true,
+			CombineConfigs:     true,
 		},
 	)
 	if err != nil {
