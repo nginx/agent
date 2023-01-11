@@ -40,7 +40,9 @@ require (
 require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000
+	github.com/nginxinc/nginx-go-crossplane v0.4.1
 	github.com/prometheus/client_golang v1.13.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -54,7 +56,6 @@ require (
 	github.com/lufia/plan9stats v0.0.0-20220517141722-cf486979b281 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
-	github.com/nginxinc/nginx-go-crossplane v0.4.1 // indirect
 	github.com/pascaldekloe/name v1.0.1 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.2 // indirect
@@ -80,7 +81,6 @@ require (
 	google.golang.org/genproto v0.0.0-20220805133916-01dd62135a58 // indirect
 	gopkg.in/ini.v1 v1.66.6 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 replace github.com/nginx/agent/sdk/v2 => ./sdk
