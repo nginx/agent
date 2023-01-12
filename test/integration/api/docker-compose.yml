@@ -8,7 +8,7 @@ services:
   agent:
     build: 
       context: ../../../
-      dockerfile: ./scripts/docker/nginx-oss/ubuntu/Dockerfile
+      dockerfile: ./test/docker/integration/api/Dockerfile
     ports:
       - 9091:9091
     networks:

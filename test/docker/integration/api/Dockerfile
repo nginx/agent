@@ -3,11 +3,9 @@ LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
 WORKDIR /agent
 COPY ./ /agent
-COPY ./scripts/docker/nginx-oss/entrypoint.sh /agent/entrypoint.sh
-COPY ./scripts/docker/nginx-oss/nginx-agent.conf /agent/nginx-agent.conf
-COPY ./scripts/docker/nginx-oss/nginx.conf /agent/nginx.conf
-
-
+COPY ./test/testdata/entrypoint.sh /agent/entrypoint.sh
+COPY ./test/testdata/configs/integration/api/nginx-agent.conf /agent/nginx-agent.conf
+COPY ./test/testdata/configs/integration/api/nginx.conf /agent/nginx.conf
 
 RUN set -x \
     && addgroup --system --gid 101 nginx \
