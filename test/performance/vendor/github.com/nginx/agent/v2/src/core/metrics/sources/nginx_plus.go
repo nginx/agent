@@ -412,7 +412,7 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*p
 			peerStateMap[peer.State] = peerStateMap[peer.State] + 1
 			tempPeer := plusclient.Peer(peer)
 			if prevPeer, ok := prevPeersMap[getHttpUpstreamPeerKey((peer))]; ok {
-				if peer.Active > prevPeer.Active {
+				if peer.Active >= prevPeer.Active {
 					tempPeer.Active = peer.Active - prevPeer.Active
 				}
 				if peer.Requests >= prevPeer.Requests {

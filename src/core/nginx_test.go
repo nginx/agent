@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/zip"
@@ -555,6 +556,10 @@ func TestWriteConfigWithFileAction(t *testing.T) {
 		Name:   "test3.html",
 		Action: proto.File_delete,
 	})
+	auxDir.Files = append(auxDir.Files, &proto.File{
+		Name:   "test4.html",
+		Action: proto.File_delete,
+	})
 	configApply, err := n.WriteConfig(nginxConfig)
 
 	// Verify configApply
@@ -585,6 +590,85 @@ func TestWriteConfigWithFileAction(t *testing.T) {
 
 	_, err = os.Stat(tmpDir + "/aux/test3.html")
 	assert.NoError(t, err)
+}
+
+func TestWriteConfigWithFileActionDeleteWithPermError(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	allowedDirs := make(map[string]struct{})
+	allowedDirs[tmpDir] = struct{}{}
+	fakeConfig := config.Config{
+		AllowedDirectoriesMap: allowedDirs,
+	}
+
+	env := EnvironmentType{}
+	n := NewNginxBinary(&env, &fakeConfig)
+
+	n.nginxDetailsMap = map[string]*proto.NginxDetails{
+		"151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8": {
+			NginxId:     "151d8728e792f42e129337573a21bb30ab3065d59102f075efc2ded28e713ff8",
+			ConfPath:    filepath.Join(tmpDir, "/nginx.conf"),
+			ProcessId:   "777",
+			ProcessPath: "/usr/sbin/nginx",
+		},
+	}
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "nginx.conf"),
+		[]byte(fmt.Sprintf(CONF_TEMPLATE, tmpDir)), 0755); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+
+	if err := os.Mkdir(filepath.Join(tmpDir, "aux"), 0755); err != nil {
+		t.Fatalf("failed to create aux directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test2.html"), []byte("<html><html>"), 0755); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+
+	nginxConfig, err := buildConfig(tmpDir)
+	if err != nil {
+		t.Fatal("failed to create test config")
+	}
+	var auxDir *proto.Directory
+	auxTmpDir := filepath.Join(tmpDir, "aux")
+	for _, dir := range nginxConfig.DirectoryMap.Directories {
+		for _, f := range dir.Files {
+			f.Action = proto.File_unchanged
+		}
+		// set aux dir directory map
+		if filepath.Clean(dir.Name) == auxTmpDir {
+			auxDir = dir
+		}
+	}
+	if auxDir == nil {
+		t.Fatalf("no aux dir found")
+	}
+	auxDir.Files = append(auxDir.Files, &proto.File{
+		Name:   "test2.html",
+		Action: proto.File_delete,
+	})
+
+	modDir := &proto.Directory{
+		Name:  tmpDir,
+		Files: make([]*proto.File, 0),
+	}
+	modDir.Files = append(modDir.Files, &proto.File{
+		Name:   "test3.html",
+		Action: proto.File_delete,
+	})
+	nginxConfig.DirectoryMap.Directories = append(nginxConfig.DirectoryMap.Directories, modDir)
+
+	permFile := filepath.Join(tmpDir, "test3.html")
+	if err = os.WriteFile(permFile, []byte("<html><html>"), 0755); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+	require.NoError(t, os.Chmod(permFile, 0000))
+
+	ca, err := n.WriteConfig(nginxConfig)
+	// Verify configApply
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, os.ErrPermission)
+	assert.NotNil(t, ca)
 }
 
 func TestGetDirectoryMapDiff(t *testing.T) {
