@@ -1,7 +1,0 @@
-conventional-commits: false
-deb:
-  distribution: []
-  urgency: ""
-debug: false
-owner: "nginx"
-package-name: "nginx-agent"
