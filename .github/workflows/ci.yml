@@ -2,6 +2,14 @@ name: CI
 
 on:
   push:
+    branches:
+    - 'main'
+    - 'release/*'
+  pull_request:
+    types: 
+    - opened
+    - reopened
+    - synchronize
 
 env:
   GOLANGCI_LINT_VERSION: 'v1.50.1'
