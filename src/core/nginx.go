@@ -385,14 +385,29 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 		}
 	}
 
-	// Delete files that are not in the directory map
-	filesToDelete := getDirectoryMapDiff(systemNginxConfig.DirectoryMap.Directories, config.DirectoryMap.Directories)
+	filesToDelete, ok := generateDeleteFromDirectoryMap(config.DirectoryMap, n.config.AllowedDirectoriesMap)
+	if ok {
+		log.Debugf("use explicit set action for delete files %s", filesToDelete)
+	} else {
+		// Delete files that are not in the directory map
+		filesToDelete = getDirectoryMapDiff(systemNginxConfig.DirectoryMap.Directories, config.DirectoryMap.Directories)
+	}
 
 	fileDeleted := make(map[string]struct{})
 	for _, file := range filesToDelete {
 		log.Infof("Deleting file: %s", file)
 		if _, ok = fileDeleted[file]; ok {
 			continue
+		}
+
+		if found, foundErr := FileExists(file); !found {
+			if foundErr == nil {
+				log.Debugf("skip delete for non-existing file: %s", file)
+				continue
+			}
+			// possible perm deny, depends on platform
+			log.Warnf("file exists returned for %s: %s", file, foundErr)
+			return configApply, foundErr
 		}
 		if err = configApply.MarkAndSave(file); err != nil {
 			return configApply, err
@@ -404,6 +419,41 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 	}
 
 	return configApply, nil
+}
+
+// generateDeleteFromDirectoryMap return a list of delete files from the directory map where Action File_delete is set.
+// This supports incremental upgrade if the files in the DirectoryMap doesn't have any action set to a non-default value,
+// in which the return bool will be false, to indicate explicit action is not set in the provided DirectoryMap.
+func generateDeleteFromDirectoryMap(
+	directoryMap *proto.DirectoryMap,
+	allowedDirectory map[string]struct{},
+) ([]string, bool) {
+	actionIsSet := false
+	if directoryMap == nil {
+		return nil, actionIsSet
+	}
+	deleteFiles := make([]string, 0)
+	for _, dir := range directoryMap.Directories {
+		for _, f := range dir.Files {
+			if f.Action == proto.File_unset {
+				continue
+			}
+			actionIsSet = true
+			if f.Action != proto.File_delete {
+				continue
+			}
+			path := filepath.Join(dir.Name, f.Name)
+			if !filepath.IsAbs(path) {
+				// can't assume relative path
+				continue
+			}
+			if !allowedFile(path, allowedDirectory) {
+				continue
+			}
+			deleteFiles = append(deleteFiles, path)
+		}
+	}
+	return deleteFiles, actionIsSet
 }
 
 func (n *NginxBinaryType) ReadConfig(confFile, nginxId, systemId string) (*proto.NginxConfig, error) {

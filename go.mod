@@ -42,6 +42,7 @@ require (
 	github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rs/cors v1.8.2
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -81,7 +82,6 @@ require (
 	google.golang.org/genproto v0.0.0-20220805133916-01dd62135a58 // indirect
 	gopkg.in/ini.v1 v1.66.6 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 replace github.com/nginx/agent/sdk/v2 => ./sdk

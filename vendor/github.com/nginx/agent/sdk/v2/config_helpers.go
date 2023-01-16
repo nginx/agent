@@ -16,6 +16,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -726,6 +727,7 @@ func GetStatusApiInfo(confFile string) (statusApi string, err error) {
 		&crossplane.ParseOptions{
 			SingleFile:         false,
 			StopParsingOnError: true,
+			CombineConfigs:     true,
 		},
 	)
 	if err != nil {
@@ -818,4 +820,62 @@ func convertToHexFormat(hexString string) string {
 		formatted += string(hexString[i])
 	}
 	return formatted
+}
+
+func GetAppProtectPolicyAndSecurityLogFiles(cfg *proto.NginxConfig) ([]string, []string) {
+	policyMap := make(map[string]bool)
+	profileMap := make(map[string]bool)
+
+	for _, directory := range cfg.GetDirectoryMap().GetDirectories() {
+		for _, file := range directory.GetFiles() {
+			confFile := path.Join(directory.GetName(), file.GetName())
+
+			payload, err := crossplane.Parse(confFile,
+				&crossplane.ParseOptions{
+					SingleFile:         false,
+					StopParsingOnError: true,
+				},
+			)
+
+			if err != nil {
+				continue
+			}
+
+			for _, conf := range payload.Config {
+				err = CrossplaneConfigTraverse(&conf,
+					func(parent *crossplane.Directive, directive *crossplane.Directive) (bool, error) {
+						switch directive.Directive {
+						case "app_protect_policy_file":
+							if len(directive.Args) == 1 {
+								_, policy := path.Split(directive.Args[0])
+								policyMap[policy] = true
+							}
+						case "app_protect_security_log":
+							if len(directive.Args) == 2 {
+								_, profile := path.Split(directive.Args[0])
+								profileMap[profile] = true
+							}
+						}
+						return true, nil
+					})
+				if err != nil {
+					continue
+				}
+			}
+			if err != nil {
+				continue
+			}
+		}
+	}
+	policies := []string{}
+	for policy := range policyMap {
+		policies = append(policies, policy)
+	}
+
+	profiles := []string{}
+	for profile := range profileMap {
+		profiles = append(profiles, profile)
+	}
+
+	return policies, profiles
 }
