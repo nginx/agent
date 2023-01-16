@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
 
 	log "github.com/sirupsen/logrus"
@@ -45,7 +46,7 @@ func UpdateMetadata(
 		return nil
 	}
 
-	policies, profiles := getContent(cfg)
+	policies, profiles := sdk.GetAppProtectPolicyAndSecurityLogFiles(cfg)
 
 	policyBundles := []*BundleMetadata{}
 	profileBundles := []*BundleMetadata{}
