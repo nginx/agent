@@ -83,6 +83,7 @@ func SetDefaults() {
 
 func SetNginxAppProtectDefaults() {
 	Viper.SetDefault(NginxAppProtectReportInterval, Defaults.NginxAppProtect.ReportInterval)
+	Viper.SetDefault(NginxAppProtectPrecompiledPublication, Defaults.NginxAppProtect.PrecompiledPublication)
 }
 
 func SetNAPMonitoringDefaults() {
@@ -307,7 +308,8 @@ func getDataplane() Dataplane {
 
 func getNginxAppProtect() NginxAppProtect {
 	return NginxAppProtect{
-		ReportInterval: Viper.GetDuration(NginxAppProtectReportInterval),
+		ReportInterval:         Viper.GetDuration(NginxAppProtectReportInterval),
+		PrecompiledPublication: Viper.GetBool(NginxAppProtectPrecompiledPublication),
 	}
 }
 

@@ -42,17 +42,20 @@ var (
 
 // Nginx is the metadata of our nginx binary
 type Nginx struct {
-	messagePipeline             core.MessagePipeInterface
-	nginxBinary                 core.NginxBinary
-	processes                   []core.Process
-	env                         core.Environment
-	cmdr                        client.Commander
-	config                      *config.Config
-	isNAPEnabled                bool
-	isFeatureNginxConfigEnabled bool
-	configApplyStatusChannel    chan *proto.Command_NginxConfigResponse
-	wafVersion                  string
-	wafLocation                 string
+	messagePipeline                    core.MessagePipeInterface
+	nginxBinary                        core.NginxBinary
+	processes                          []core.Process
+	env                                core.Environment
+	cmdr                               client.Commander
+	config                             *config.Config
+	isNAPEnabled                       bool
+	isNAPPrecompiledPublicationEnabled bool
+	isFeatureNginxConfigEnabled        bool
+	configApplyStatusChannel           chan *proto.Command_NginxConfigResponse
+	wafVersion                         string
+	wafLocation                        string
+	wafAttackSignaturesVersion         string
+	wafThreatCampaignsVersion          string
 }
 
 type ConfigRollbackResponse struct {
@@ -79,19 +82,19 @@ type NginxConfigValidationResponse struct {
 }
 
 func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config) *Nginx {
-	isNAPEnabled := loadedConfig.IsNginxAppProtectConfigured()
 	isFeatureNginxConfigEnabled := loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfig)
 
 	return &Nginx{
-		nginxBinary:                 nginxBinary,
-		processes:                   env.Processes(),
-		env:                         env,
-		cmdr:                        cmdr,
-		config:                      loadedConfig,
-		isNAPEnabled:                isNAPEnabled,
-		isFeatureNginxConfigEnabled: isFeatureNginxConfigEnabled,
-		configApplyStatusChannel:    make(chan *proto.Command_NginxConfigResponse, 1),
-		wafLocation:                 nap.APP_PROTECT_METADATA_FILE_PATH,
+		nginxBinary:                        nginxBinary,
+		processes:                          env.Processes(),
+		env:                                env,
+		cmdr:                               cmdr,
+		config:                             loadedConfig,
+		isNAPEnabled:                       loadedConfig.IsNginxAppProtectConfigured(),
+		isNAPPrecompiledPublicationEnabled: loadedConfig.IsNginxAppProtectPrecompiledPublicationConfigured(),
+		isFeatureNginxConfigEnabled:        isFeatureNginxConfigEnabled,
+		configApplyStatusChannel:           make(chan *proto.Command_NginxConfigResponse, 1),
+		wafLocation:                        nap.APP_PROTECT_METADATA_FILE_PATH,
 	}
 }
 
@@ -217,6 +220,17 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	}
 
 	if n.isNAPEnabled {
+		err = nap.UpdateMetadata(
+			cfg,
+			n.isNAPPrecompiledPublicationEnabled,
+			n.wafLocation,
+			n.wafVersion,
+			n.wafAttackSignaturesVersion,
+			n.wafThreatCampaignsVersion,
+		)
+		if err != nil {
+			log.Errorf("Unable to update NAP metadata: %v", err)
+		}
 		cfg, err = sdk.AddAuxfileToNginxConfig(nginx.GetConfPath(), cfg, n.wafLocation, n.config.AllowedDirectoriesMap, true)
 		if err != nil {
 			log.Errorf("Unable to add aux file %s to nginx config: %v", n.wafLocation, err)
@@ -236,6 +250,8 @@ func (n *Nginx) processDataplaneSoftwareDetails(details *proto.DataplaneSoftware
 	log.Tracef("software details updated software %+v", details)
 
 	n.wafVersion = details.AppProtectWafDetails.WafVersion
+	n.wafAttackSignaturesVersion = details.AppProtectWafDetails.AttackSignaturesVersion
+	n.wafThreatCampaignsVersion = details.AppProtectWafDetails.ThreatCampaignsVersion
 }
 
 func (n *Nginx) processCmd(cmd *proto.Command) {
@@ -634,7 +650,9 @@ func (n *Nginx) syncAgentConfigChange() {
 
 	if conf.NginxAppProtect != (config.NginxAppProtect{}) {
 		n.isNAPEnabled = true
+		n.isNAPPrecompiledPublicationEnabled = conf.IsNginxAppProtectPrecompiledPublicationConfigured()
 	} else {
+		n.isNAPPrecompiledPublicationEnabled = false
 		n.isNAPEnabled = false
 	}
 
