@@ -300,7 +300,7 @@ Minimum system sizing recommendations for NGINX Agent:
 Get involved with the project by contributing! Please see our [contributing guide](CONTRIBUTING.md) for details.
 
 # Change Log
-See our [release page](dhttps://github.com/nginx/agent/releases) to keep track of updates.
+See our [release page](https://github.com/nginx/agent/releases) to keep track of updates.
 
 # License
 [Apache License, Version 2.0](LICENSE)
