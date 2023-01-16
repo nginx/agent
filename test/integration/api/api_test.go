@@ -80,7 +80,6 @@ func TestAPI_Metrics(t *testing.T) {
 	client.SetRetryCount(5).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
-			fmt.Println(len(r.String()))
 			return len(r.String()) < 22000
 		})
 
