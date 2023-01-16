@@ -175,7 +175,7 @@ func TestNginxHandler_updateConfig(t *testing.T) {
 			response:              nil,
 			nginxInstancesPresent: true,
 			expectedStatusCode:    408,
-			expectedMessage:       "Pending config apply",
+			expectedMessage:       "pending config apply",
 			expectedStatus:        "PENDING",
 		},
 		{

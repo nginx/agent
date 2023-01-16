@@ -1364,24 +1364,24 @@ Represents a NGINX config
 <a name="f5-nginx-agent-sdk-NginxDetails"></a>
 
 ### NginxDetails
-Represents NGINX details about a single NGINX instance.
+Represents NGINX details about a single NGINX instance
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| nginx_id | [string](#string) |  | NGINX ID |
-| version | [string](#string) |  | NGINX version |
-| conf_path | [string](#string) |  | Path to NGINX configuration |
-| process_id | [string](#string) |  | Process ID of NGINX instance |
-| process_path | [string](#string) |  | The path to the NGINX executable |
-| start_time | [int64](#int64) |  | The start time of the NGINX instance |
-| built_from_source | [bool](#bool) |  | Determines if the NGINX instance was built from the source code in github or not |
-| loadable_modules | [string](#string) | repeated | List of NGINX loadable modules |
-| runtime_modules | [string](#string) | repeated | List of NGINX runtime modules |
-| plus | [NginxPlusMetaData](#f5-nginx-agent-sdk-NginxPlusMetaData) |  | NGINX Plus metadata |
-| ssl | [NginxSslMetaData](#f5-nginx-agent-sdk-NginxSslMetaData) |  | NGINX SSL metadata |
-| status_url | [string](#string) |  | Status URL |
-| configure_args | [string](#string) | repeated | Command line arguments that were used when the NGINX instance was started |
+| nginx_id | [string](#string) |  | NGINX ID. Example: b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437 |
+| version | [string](#string) |  | NGINX version. Example: 1.23.2 |
+| conf_path | [string](#string) |  | Path to NGINX configuration. Example: /usr/local/nginx/conf/nginx.conf |
+| process_id | [string](#string) |  | Process ID of NGINX instance. Example: 8 |
+| process_path | [string](#string) |  | The path to the NGINX executable. Example: /usr/local/nginx/sbin/nginx |
+| start_time | [int64](#int64) |  | The start time of the NGINX instance. Example: 1670429190000 |
+| built_from_source | [bool](#bool) |  | Determines if the NGINX instance was built from the source code in github or not. Example: false |
+| loadable_modules | [string](#string) | repeated | List of NGINX loadable modules. Example: [] |
+| runtime_modules | [string](#string) | repeated | List of NGINX runtime modules. Example: [ &#34;http_stub_status_module&#34; ] |
+| plus | [NginxPlusMetaData](#f5-nginx-agent-sdk-NginxPlusMetaData) |  | NGINX Plus metadata. |
+| ssl | [NginxSslMetaData](#f5-nginx-agent-sdk-NginxSslMetaData) |  | NGINX SSL metadata. |
+| status_url | [string](#string) |  | Status URL. Example: http://localhost:8080/api |
+| configure_args | [string](#string) | repeated | Command line arguments that were used when the NGINX instance was started. Example: [ &#34;&#34;, &#34;with-http_stub_status_module&#34; ] |
 
 
 
@@ -1413,8 +1413,8 @@ Represents NGINX Plus metadata
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  | Determines if its a plus instance or not |
-| release | [string](#string) |  | NGINX Plus version |
+| enabled | [bool](#bool) |  | Determines if its a plus instance or not. Example: true |
+| release | [string](#string) |  | NGINX Plus version. Example: R27 |
 
 
 
@@ -1429,8 +1429,8 @@ Represents NGINX SSL metadata
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ssl_type | [NginxSslMetaData.NginxSslType](#f5-nginx-agent-sdk-NginxSslMetaData-NginxSslType) |  | SSL Type |
-| details | [string](#string) | repeated | List of SSL information (e.g. version, type, etc) |
+| ssl_type | [NginxSslMetaData.NginxSslType](#f5-nginx-agent-sdk-NginxSslMetaData-NginxSslType) |  | SSL Type. Example: 0 |
+| details | [string](#string) | repeated | List of SSL information (e.g. version, type, etc). Example: null |
 
 
 
@@ -1471,7 +1471,7 @@ NGINX status enum
 <a name="f5-nginx-agent-sdk-NginxSslMetaData-NginxSslType"></a>
 
 ### NginxSslMetaData.NginxSslType
-SSL Type enum
+SSL type enum
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |

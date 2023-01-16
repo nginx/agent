@@ -399,6 +399,16 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 		if _, ok = fileDeleted[file]; ok {
 			continue
 		}
+
+		if found, foundErr := FileExists(file); !found {
+			if foundErr == nil {
+				log.Debugf("skip delete for non-existing file: %s", file)
+				continue
+			}
+			// possible perm deny, depends on platform
+			log.Warnf("file exists returned for %s: %s", file, foundErr)
+			return configApply, foundErr
+		}
 		if err = configApply.MarkAndSave(file); err != nil {
 			return configApply, err
 		}

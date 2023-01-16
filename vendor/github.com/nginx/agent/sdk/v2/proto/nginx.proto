@@ -7,56 +7,74 @@ import "gogo.proto";
 
 option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
 
-// Represents NGINX details about a single NGINX instance.
+// @ignore swagger:model NginxDetails
+// Represents NGINX details about a single NGINX instance
 message NginxDetails {
-  // NGINX ID
+  // NGINX ID.
+  // Example: b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437
   string nginx_id = 1 [(gogoproto.jsontag) = "nginx_id"];
-  // NGINX version
+  // NGINX version.
+  // Example: 1.23.2
   string version = 2 [(gogoproto.jsontag) = "version"];
-  // Path to NGINX configuration
+  // Path to NGINX configuration.
+  // Example: /usr/local/nginx/conf/nginx.conf
   string conf_path = 3 [(gogoproto.jsontag) = "conf_path"];
-  // Process ID of NGINX instance
+  // Process ID of NGINX instance.
+  // Example: 8
   string process_id = 4 [(gogoproto.jsontag) = "process_id"];
-  // The path to the NGINX executable
+  // The path to the NGINX executable.
+  // Example: /usr/local/nginx/sbin/nginx
   string process_path = 5 [(gogoproto.jsontag) = "process_path"];
-  // The start time of the NGINX instance
+  // The start time of the NGINX instance.
+  // Example: 1670429190000
   int64 start_time = 6 [(gogoproto.jsontag) = "start_time"];
-  // Determines if the NGINX instance was built from the source code in github or not
+  // Determines if the NGINX instance was built from the source code in github or not.
+  // Example: false
   bool built_from_source = 7 [(gogoproto.jsontag) = "built_from_source"];
-  // List of NGINX loadable modules
+  // List of NGINX loadable modules.
+  // Example: []
   repeated string loadable_modules = 8 [(gogoproto.jsontag) = "loadable_modules"];
-  // List of NGINX runtime modules
+  // List of NGINX runtime modules.
+  // Example: [ "http_stub_status_module" ]
   repeated string runtime_modules = 9 [(gogoproto.jsontag) = "runtime_modules"];
-  // NGINX Plus metadata
+  // NGINX Plus metadata.
   NginxPlusMetaData plus = 10 [(gogoproto.jsontag) = "plus"];
-  // NGINX SSL metadata
+  // NGINX SSL metadata.
   NginxSslMetaData ssl = 11 [(gogoproto.jsontag) = "ssl"];
-  // Status URL
+  // Status URL.
+  // Example: http://localhost:8080/api
   string status_url = 12 [(gogoproto.jsontag) = "status_url"];
-  // Command line arguments that were used when the NGINX instance was started
+  // Command line arguments that were used when the NGINX instance was started.
+  // Example: [ "", "with-http_stub_status_module" ]
   repeated string configure_args = 13 [(gogoproto.jsontag) = "configure_args"];
 }
 
+// @ignore swagger:model NginxPlusMetaData
 // Represents NGINX Plus metadata
 message NginxPlusMetaData {
-  // Determines if its a plus instance or not
+  // Determines if its a plus instance or not.
+  // Example: true
   bool enabled = 1 [(gogoproto.jsontag) = "enabled"];
-  // NGINX Plus version
+  // NGINX Plus version.
+  // Example: R27
   string release = 2 [(gogoproto.jsontag) = "release"];
 }
 
+// @ignore swagger:model NginxSslMetaData
 // Represents NGINX SSL metadata
 message NginxSslMetaData {
-  // SSL Type enum
+  // SSL type enum
   enum NginxSslType {
     // SSL complied with NGINX
     BUILT = 0;
     // SSL not complied with NGINX
     RUN = 1;
   }
-  // SSL Type
+  // SSL Type.
+  // Example: 0
   NginxSslType ssl_type = 1 [(gogoproto.jsontag) = "ssl_type"];
-  // List of SSL information (e.g. version, type, etc)
+  // List of SSL information (e.g. version, type, etc).
+  // Example: null
   repeated string details = 2 [(gogoproto.jsontag) = "details"];
 }
 

@@ -67,7 +67,7 @@ func (NginxConfigAction) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_917f1a70b1fd7255, []int{0}
 }
 
-// SSL Type enum
+// SSL type enum
 type NginxSslMetaData_NginxSslType int32
 
 const (
@@ -127,33 +127,45 @@ func (NginxHealth_NginxStatus) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_917f1a70b1fd7255, []int{3, 0}
 }
 
-// Represents NGINX details about a single NGINX instance.
+// @ignore swagger:model NginxDetails
+// Represents NGINX details about a single NGINX instance
 type NginxDetails struct {
-	// NGINX ID
+	// NGINX ID.
+	// Example: b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437
 	NginxId string `protobuf:"bytes,1,opt,name=nginx_id,json=nginxId,proto3" json:"nginx_id"`
-	// NGINX version
+	// NGINX version.
+	// Example: 1.23.2
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version"`
-	// Path to NGINX configuration
+	// Path to NGINX configuration.
+	// Example: /usr/local/nginx/conf/nginx.conf
 	ConfPath string `protobuf:"bytes,3,opt,name=conf_path,json=confPath,proto3" json:"conf_path"`
-	// Process ID of NGINX instance
+	// Process ID of NGINX instance.
+	// Example: 8
 	ProcessId string `protobuf:"bytes,4,opt,name=process_id,json=processId,proto3" json:"process_id"`
-	// The path to the NGINX executable
+	// The path to the NGINX executable.
+	// Example: /usr/local/nginx/sbin/nginx
 	ProcessPath string `protobuf:"bytes,5,opt,name=process_path,json=processPath,proto3" json:"process_path"`
-	// The start time of the NGINX instance
+	// The start time of the NGINX instance.
+	// Example: 1670429190000
 	StartTime int64 `protobuf:"varint,6,opt,name=start_time,json=startTime,proto3" json:"start_time"`
-	// Determines if the NGINX instance was built from the source code in github or not
+	// Determines if the NGINX instance was built from the source code in github or not.
+	// Example: false
 	BuiltFromSource bool `protobuf:"varint,7,opt,name=built_from_source,json=builtFromSource,proto3" json:"built_from_source"`
-	// List of NGINX loadable modules
+	// List of NGINX loadable modules.
+	// Example: []
 	LoadableModules []string `protobuf:"bytes,8,rep,name=loadable_modules,json=loadableModules,proto3" json:"loadable_modules"`
-	// List of NGINX runtime modules
+	// List of NGINX runtime modules.
+	// Example: [ "http_stub_status_module" ]
 	RuntimeModules []string `protobuf:"bytes,9,rep,name=runtime_modules,json=runtimeModules,proto3" json:"runtime_modules"`
-	// NGINX Plus metadata
+	// NGINX Plus metadata.
 	Plus *NginxPlusMetaData `protobuf:"bytes,10,opt,name=plus,proto3" json:"plus"`
-	// NGINX SSL metadata
+	// NGINX SSL metadata.
 	Ssl *NginxSslMetaData `protobuf:"bytes,11,opt,name=ssl,proto3" json:"ssl"`
-	// Status URL
+	// Status URL.
+	// Example: http://localhost:8080/api
 	StatusUrl string `protobuf:"bytes,12,opt,name=status_url,json=statusUrl,proto3" json:"status_url"`
-	// Command line arguments that were used when the NGINX instance was started
+	// Command line arguments that were used when the NGINX instance was started.
+	// Example: [ "", "with-http_stub_status_module" ]
 	ConfigureArgs        []string `protobuf:"bytes,13,rep,name=configure_args,json=configureArgs,proto3" json:"configure_args"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -284,11 +296,14 @@ func (m *NginxDetails) GetConfigureArgs() []string {
 	return nil
 }
 
+// @ignore swagger:model NginxPlusMetaData
 // Represents NGINX Plus metadata
 type NginxPlusMetaData struct {
-	// Determines if its a plus instance or not
+	// Determines if its a plus instance or not.
+	// Example: true
 	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled"`
-	// NGINX Plus version
+	// NGINX Plus version.
+	// Example: R27
 	Release              string   `protobuf:"bytes,2,opt,name=release,proto3" json:"release"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -342,11 +357,14 @@ func (m *NginxPlusMetaData) GetRelease() string {
 	return ""
 }
 
+// @ignore swagger:model NginxSslMetaData
 // Represents NGINX SSL metadata
 type NginxSslMetaData struct {
-	// SSL Type
+	// SSL Type.
+	// Example: 0
 	SslType NginxSslMetaData_NginxSslType `protobuf:"varint,1,opt,name=ssl_type,json=sslType,proto3,enum=f5.nginx.agent.sdk.NginxSslMetaData_NginxSslType" json:"ssl_type"`
-	// List of SSL information (e.g. version, type, etc)
+	// List of SSL information (e.g. version, type, etc).
+	// Example: null
 	Details              []string `protobuf:"bytes,2,rep,name=details,proto3" json:"details"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
