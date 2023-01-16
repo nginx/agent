@@ -46,6 +46,10 @@ func (c *Config) IsNginxAppProtectConfigured() bool {
 	return c.NginxAppProtect != (NginxAppProtect{})
 }
 
+func (c *Config) IsNginxAppProtectPrecompiledPublicationConfigured() bool {
+	return c.NginxAppProtect.PrecompiledPublication
+}
+
 func (c *Config) IsFeatureEnabled(feature string) bool {
 	for _, configFeature := range c.Features {
 		if configFeature == feature {
@@ -120,7 +124,8 @@ type AdvancedMetrics struct {
 }
 
 type NginxAppProtect struct {
-	ReportInterval time.Duration `mapstructure:"report_interval" yaml:"-"`
+	ReportInterval         time.Duration `mapstructure:"report_interval" yaml:"-"`
+	PrecompiledPublication bool          `mapstructure:"precompiled_publication" yaml:"-"`
 }
 
 type NAPMonitoring struct {
