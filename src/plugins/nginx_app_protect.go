@@ -31,12 +31,13 @@ const (
 
 // NginxAppProtect monitors the NAP installation on the system and reports back its details
 type NginxAppProtect struct {
-	nap             nap.NginxAppProtect
-	messagePipeline core.MessagePipeInterface
-	env             core.Environment
-	reportInterval  time.Duration
-	ctx             context.Context
-	ctxCancel       context.CancelFunc
+	nap                    nap.NginxAppProtect
+	messagePipeline        core.MessagePipeInterface
+	env                    core.Environment
+	reportInterval         time.Duration
+	precompiledPublication bool
+	ctx                    context.Context
+	ctxCancel              context.CancelFunc
 }
 
 func NewNginxAppProtect(config *config.Config, env core.Environment) (*NginxAppProtect, error) {
@@ -55,9 +56,10 @@ func NewNginxAppProtect(config *config.Config, env core.Environment) (*NginxAppP
 	}
 
 	nginxAppProtect := &NginxAppProtect{
-		nap:            *napTime,
-		env:            env,
-		reportInterval: reportInterval,
+		nap:                    *napTime,
+		env:                    env,
+		reportInterval:         reportInterval,
+		precompiledPublication: config.NginxAppProtect.PrecompiledPublication,
 	}
 
 	return nginxAppProtect, nil
