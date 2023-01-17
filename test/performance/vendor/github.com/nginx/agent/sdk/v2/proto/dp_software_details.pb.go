@@ -23,8 +23,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// DataplaneSoftwareDetails contains details for additional software running on the dataplane that pertains
-// to NGINX Agent
+// Represents dataplane software details which contains details for additional software running on the dataplane that pertains to NGINX Agent
 type DataplaneSoftwareDetails struct {
 	// Types that are valid to be assigned to Data:
 	//	*DataplaneSoftwareDetails_AppProtectWafDetails

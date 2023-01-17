@@ -23,7 +23,10 @@ Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,\
 Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,\
 Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
 ./proto/$$packageName/ \
+		--doc_out=./../docs/proto/ \
+		--doc_opt=markdown,$$packageName.md \
 			proto/$$packageName/*.proto;\
+		grep -v '^swagger:' ./../docs/proto/$$packageName.md > ./../docs/proto/tmp-$$packageName.md && mv ./../docs/proto/tmp-$$packageName.md ./../docs/proto/$$packageName.md;\
 	done
 
 	protoc \
@@ -40,7 +43,10 @@ Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,\
 Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,\
 Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
 ./proto/ \
-		proto/*.proto
+		--doc_out=./../docs/proto/ \
+		--doc_opt=markdown,proto.md \
+		proto/*.proto; \
+	grep -v '^swagger:' ./../docs/proto/proto.md > ./../docs/proto/tmp-proto.md && mv ./../docs/proto/tmp-proto.md ./../docs/proto/proto.md
 	
 	go generate ./sdk/...
 

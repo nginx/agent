@@ -199,19 +199,19 @@
       "type": "object",
       "properties": {
         "built_from_source": {
-          "description": "Was NGINX built from source",
+          "description": "Determines if the NGINX instance was built from the source code in github or not.",
           "type": "boolean",
           "x-go-name": "BuiltFromSource",
           "example": false
         },
         "conf_path": {
-          "description": "Path to configuration file",
+          "description": "Path to NGINX configuration.",
           "type": "string",
           "x-go-name": "ConfPath",
           "example": "/usr/local/nginx/conf/nginx.conf"
         },
         "configure_args": {
-          "description": "Configuration arguments",
+          "description": "Command line arguments that were used when the NGINX instance was started.",
           "type": "array",
           "items": {
             "type": "string"
@@ -223,7 +223,7 @@
           ]
         },
         "loadable_modules": {
-          "description": "List of loadable modules",
+          "description": "List of NGINX loadable modules.",
           "type": "array",
           "items": {
             "type": "string"
@@ -232,7 +232,7 @@
           "example": []
         },
         "nginx_id": {
-          "description": "NGINX ID",
+          "description": "NGINX ID.",
           "type": "string",
           "x-go-name": "NginxId",
           "example": "b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437"
@@ -241,19 +241,19 @@
           "$ref": "#/definitions/NginxPlusMetaData"
         },
         "process_id": {
-          "description": "Process ID",
+          "description": "Process ID of NGINX instance.",
           "type": "string",
           "x-go-name": "ProcessId",
           "example": "8"
         },
         "process_path": {
-          "description": "Process Path",
+          "description": "The path to the NGINX executable.",
           "type": "string",
           "x-go-name": "ProcessPath",
           "example": "/usr/local/nginx/sbin/nginx"
         },
         "runtime_modules": {
-          "description": "List of runtime modules",
+          "description": "List of NGINX runtime modules.",
           "type": "array",
           "items": {
             "type": "string"
@@ -267,20 +267,20 @@
           "$ref": "#/definitions/NginxSslMetaData"
         },
         "start_time": {
-          "description": "Start Time",
+          "description": "The start time of the NGINX instance.",
           "type": "integer",
           "format": "int64",
           "x-go-name": "StartTime",
           "example": 1670429190000
         },
         "status_url": {
-          "description": "Status URL",
+          "description": "Status URL.",
           "type": "string",
           "x-go-name": "StatusUrl",
           "example": "http://localhost:8080/api"
         },
         "version": {
-          "description": "Version of NGINX",
+          "description": "NGINX version.",
           "type": "string",
           "x-go-name": "Version",
           "example": "1.23.2"
@@ -316,13 +316,13 @@
       "type": "object",
       "properties": {
         "enabled": {
-          "description": "Is NGINX instance a plus instance",
+          "description": "Determines if its a plus instance or not.",
           "type": "boolean",
           "x-go-name": "Enabled",
           "example": true
         },
         "release": {
-          "description": "NGINX plus release",
+          "description": "NGINX Plus version.",
           "type": "string",
           "x-go-name": "Release",
           "example": "R27"
@@ -334,7 +334,7 @@
       "type": "object",
       "properties": {
         "details": {
-          "description": "SSL details",
+          "description": "List of SSL information (e.g. version, type, etc).",
           "type": "array",
           "items": {
             "type": "string"

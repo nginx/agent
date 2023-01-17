@@ -168,6 +168,8 @@ tls:
   skip_verify: true
 ```
 
+Documentation for the proto definitions can be found here: https://github.com/nginx/agent/tree/main/docs/proto/README.md
+
 ### Enabling the REST interface
 The NGINX Agent REST interface can be exposed by validating the following lines in the `/etc/nginx-agent/nginx-agent.conf` file are present:
 

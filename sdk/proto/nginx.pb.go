@@ -23,15 +23,22 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// NGINX config action enum
 type NginxConfigAction int32
 
 const (
-	NginxConfigAction_UNKNOWN  NginxConfigAction = 0
-	NginxConfigAction_APPLY    NginxConfigAction = 1
-	NginxConfigAction_TEST     NginxConfigAction = 2
+	// Unknown action
+	NginxConfigAction_UNKNOWN NginxConfigAction = 0
+	// Apply config action
+	NginxConfigAction_APPLY NginxConfigAction = 1
+	// Test config action (This will be implemented in a future release)
+	NginxConfigAction_TEST NginxConfigAction = 2
+	// Rollback config action (This will be implemented in a future release)
 	NginxConfigAction_ROLLBACK NginxConfigAction = 3
-	NginxConfigAction_RETURN   NginxConfigAction = 4
-	NginxConfigAction_FORCE    NginxConfigAction = 5
+	// Return config action (This will be implemented in a future release)
+	NginxConfigAction_RETURN NginxConfigAction = 4
+	// Force config apply action
+	NginxConfigAction_FORCE NginxConfigAction = 5
 )
 
 var NginxConfigAction_name = map[int32]string{
@@ -64,8 +71,10 @@ func (NginxConfigAction) EnumDescriptor() ([]byte, []int) {
 type NginxSslMetaData_NginxSslType int32
 
 const (
+	// SSL complied with NGINX
 	NginxSslMetaData_BUILT NginxSslMetaData_NginxSslType = 0
-	NginxSslMetaData_RUN   NginxSslMetaData_NginxSslType = 1
+	// SSL not complied with NGINX
+	NginxSslMetaData_RUN NginxSslMetaData_NginxSslType = 1
 )
 
 var NginxSslMetaData_NginxSslType_name = map[int32]string{
@@ -83,14 +92,18 @@ func (x NginxSslMetaData_NginxSslType) String() string {
 }
 
 func (NginxSslMetaData_NginxSslType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{5, 0}
+	return fileDescriptor_917f1a70b1fd7255, []int{2, 0}
 }
 
+// NGINX status enum
 type NginxHealth_NginxStatus int32
 
 const (
-	NginxHealth_UNKNOWN  NginxHealth_NginxStatus = 0
-	NginxHealth_ACTIVE   NginxHealth_NginxStatus = 1
+	// Unknown status
+	NginxHealth_UNKNOWN NginxHealth_NginxStatus = 0
+	// Active status
+	NginxHealth_ACTIVE NginxHealth_NginxStatus = 1
+	// Degraded status
 	NginxHealth_DEGRADED NginxHealth_NginxStatus = 2
 )
 
@@ -111,213 +124,48 @@ func (x NginxHealth_NginxStatus) String() string {
 }
 
 func (NginxHealth_NginxStatus) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{6, 0}
-}
-
-type PlusInfo struct {
-	Enabled              bool     `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled"`
-	Release              string   `protobuf:"bytes,2,opt,name=release,proto3" json:"release"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *PlusInfo) Reset()         { *m = PlusInfo{} }
-func (m *PlusInfo) String() string { return proto.CompactTextString(m) }
-func (*PlusInfo) ProtoMessage()    {}
-func (*PlusInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{0}
-}
-func (m *PlusInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *PlusInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_PlusInfo.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *PlusInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PlusInfo.Merge(m, src)
-}
-func (m *PlusInfo) XXX_Size() int {
-	return m.Size()
-}
-func (m *PlusInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_PlusInfo.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PlusInfo proto.InternalMessageInfo
-
-func (m *PlusInfo) GetEnabled() bool {
-	if m != nil {
-		return m.Enabled
-	}
-	return false
-}
-
-func (m *PlusInfo) GetRelease() string {
-	if m != nil {
-		return m.Release
-	}
-	return ""
-}
-
-type SSLInfo struct {
-	Built                []string `protobuf:"bytes,1,rep,name=built,proto3" json:"built"`
-	Run                  []string `protobuf:"bytes,2,rep,name=run,proto3" json:"run"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *SSLInfo) Reset()         { *m = SSLInfo{} }
-func (m *SSLInfo) String() string { return proto.CompactTextString(m) }
-func (*SSLInfo) ProtoMessage()    {}
-func (*SSLInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{1}
-}
-func (m *SSLInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *SSLInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_SSLInfo.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *SSLInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SSLInfo.Merge(m, src)
-}
-func (m *SSLInfo) XXX_Size() int {
-	return m.Size()
-}
-func (m *SSLInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_SSLInfo.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SSLInfo proto.InternalMessageInfo
-
-func (m *SSLInfo) GetBuilt() []string {
-	if m != nil {
-		return m.Built
-	}
-	return nil
-}
-
-func (m *SSLInfo) GetRun() []string {
-	if m != nil {
-		return m.Run
-	}
-	return nil
-}
-
-type PathInfo struct {
-	Bin                  string   `protobuf:"bytes,1,opt,name=bin,proto3" json:"bin"`
-	Conf                 string   `protobuf:"bytes,2,opt,name=conf,proto3" json:"conf"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *PathInfo) Reset()         { *m = PathInfo{} }
-func (m *PathInfo) String() string { return proto.CompactTextString(m) }
-func (*PathInfo) ProtoMessage()    {}
-func (*PathInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{2}
-}
-func (m *PathInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *PathInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_PathInfo.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *PathInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PathInfo.Merge(m, src)
-}
-func (m *PathInfo) XXX_Size() int {
-	return m.Size()
-}
-func (m *PathInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_PathInfo.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PathInfo proto.InternalMessageInfo
-
-func (m *PathInfo) GetBin() string {
-	if m != nil {
-		return m.Bin
-	}
-	return ""
-}
-
-func (m *PathInfo) GetConf() string {
-	if m != nil {
-		return m.Conf
-	}
-	return ""
+	return fileDescriptor_917f1a70b1fd7255, []int{3, 0}
 }
 
 // swagger:model NginxDetails
-// Each NGINXDetails is associated with with a single NGINX instance.
+// Represents NGINX details about a single NGINX instance
 type NginxDetails struct {
-	// NGINX ID
-	// example: b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437
+	// NGINX ID.
+	// Example: b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437
 	NginxId string `protobuf:"bytes,1,opt,name=nginx_id,json=nginxId,proto3" json:"nginx_id"`
-	// Version of NGINX
-	// example: 1.23.2
+	// NGINX version.
+	// Example: 1.23.2
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version"`
-	// Path to configuration file
-	// example: /usr/local/nginx/conf/nginx.conf
+	// Path to NGINX configuration.
+	// Example: /usr/local/nginx/conf/nginx.conf
 	ConfPath string `protobuf:"bytes,3,opt,name=conf_path,json=confPath,proto3" json:"conf_path"`
-	// Process ID
-	// example: 8
+	// Process ID of NGINX instance.
+	// Example: 8
 	ProcessId string `protobuf:"bytes,4,opt,name=process_id,json=processId,proto3" json:"process_id"`
-	// Process Path
-	// example: /usr/local/nginx/sbin/nginx
+	// The path to the NGINX executable.
+	// Example: /usr/local/nginx/sbin/nginx
 	ProcessPath string `protobuf:"bytes,5,opt,name=process_path,json=processPath,proto3" json:"process_path"`
-	// Start Time
-	// example: 1670429190000
+	// The start time of the NGINX instance.
+	// Example: 1670429190000
 	StartTime int64 `protobuf:"varint,6,opt,name=start_time,json=startTime,proto3" json:"start_time"`
-	// Was NGINX built from source
-	// example: false
+	// Determines if the NGINX instance was built from the source code in github or not.
+	// Example: false
 	BuiltFromSource bool `protobuf:"varint,7,opt,name=built_from_source,json=builtFromSource,proto3" json:"built_from_source"`
-	// List of loadable modules
-	// example: []
+	// List of NGINX loadable modules.
+	// Example: []
 	LoadableModules []string `protobuf:"bytes,8,rep,name=loadable_modules,json=loadableModules,proto3" json:"loadable_modules"`
-	// List of runtime modules
-	// example: [ "http_stub_status_module" ]
+	// List of NGINX runtime modules.
+	// Example: [ "http_stub_status_module" ]
 	RuntimeModules []string `protobuf:"bytes,9,rep,name=runtime_modules,json=runtimeModules,proto3" json:"runtime_modules"`
-	// NGINX plus metadata
+	// NGINX Plus metadata.
 	Plus *NginxPlusMetaData `protobuf:"bytes,10,opt,name=plus,proto3" json:"plus"`
-	// SSL metadata
+	// NGINX SSL metadata.
 	Ssl *NginxSslMetaData `protobuf:"bytes,11,opt,name=ssl,proto3" json:"ssl"`
-	// Status URL
-	// example: http://localhost:8080/api
+	// Status URL.
+	// Example: http://localhost:8080/api
 	StatusUrl string `protobuf:"bytes,12,opt,name=status_url,json=statusUrl,proto3" json:"status_url"`
-	// Configuration arguments
-	// example: [ "", "with-http_stub_status_module" ]
+	// Command line arguments that were used when the NGINX instance was started.
+	// Example: [ "", "with-http_stub_status_module" ]
 	ConfigureArgs        []string `protobuf:"bytes,13,rep,name=configure_args,json=configureArgs,proto3" json:"configure_args"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -328,7 +176,7 @@ func (m *NginxDetails) Reset()         { *m = NginxDetails{} }
 func (m *NginxDetails) String() string { return proto.CompactTextString(m) }
 func (*NginxDetails) ProtoMessage()    {}
 func (*NginxDetails) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{3}
+	return fileDescriptor_917f1a70b1fd7255, []int{0}
 }
 func (m *NginxDetails) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -449,12 +297,13 @@ func (m *NginxDetails) GetConfigureArgs() []string {
 }
 
 // swagger:model NginxPlusMetaData
+// Represents NGINX Plus metadata
 type NginxPlusMetaData struct {
-	// Is NGINX instance a plus instance
-	// example: true
+	// Determines if its a plus instance or not.
+	// Example: true
 	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled"`
-	// NGINX plus release
-	// example: R27
+	// NGINX Plus version.
+	// Example: R27
 	Release              string   `protobuf:"bytes,2,opt,name=release,proto3" json:"release"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -465,7 +314,7 @@ func (m *NginxPlusMetaData) Reset()         { *m = NginxPlusMetaData{} }
 func (m *NginxPlusMetaData) String() string { return proto.CompactTextString(m) }
 func (*NginxPlusMetaData) ProtoMessage()    {}
 func (*NginxPlusMetaData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{4}
+	return fileDescriptor_917f1a70b1fd7255, []int{1}
 }
 func (m *NginxPlusMetaData) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -509,12 +358,13 @@ func (m *NginxPlusMetaData) GetRelease() string {
 }
 
 // swagger:model NginxSslMetaData
+// Represents NGINX SSL metadata
 type NginxSslMetaData struct {
-	// SSL type
-	// example: 0
+	// SSL Type.
+	// Example: 0
 	SslType NginxSslMetaData_NginxSslType `protobuf:"varint,1,opt,name=ssl_type,json=sslType,proto3,enum=f5.nginx.agent.sdk.NginxSslMetaData_NginxSslType" json:"ssl_type"`
-	// SSL details
-	// example: null
+	// List of SSL information (e.g. version, type, etc).
+	// Example: null
 	Details              []string `protobuf:"bytes,2,rep,name=details,proto3" json:"details"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -525,7 +375,7 @@ func (m *NginxSslMetaData) Reset()         { *m = NginxSslMetaData{} }
 func (m *NginxSslMetaData) String() string { return proto.CompactTextString(m) }
 func (*NginxSslMetaData) ProtoMessage()    {}
 func (*NginxSslMetaData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{5}
+	return fileDescriptor_917f1a70b1fd7255, []int{2}
 }
 func (m *NginxSslMetaData) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -568,20 +418,24 @@ func (m *NginxSslMetaData) GetDetails() []string {
 	return nil
 }
 
+// Represents the health of a NGINX instance
 type NginxHealth struct {
-	NginxId              string                  `protobuf:"bytes,1,opt,name=nginx_id,json=nginxId,proto3" json:"nginx_id"`
-	NginxStatus          NginxHealth_NginxStatus `protobuf:"varint,2,opt,name=nginx_status,json=nginxStatus,proto3,enum=f5.nginx.agent.sdk.NginxHealth_NginxStatus" json:"nginx_status"`
-	DegradedReason       string                  `protobuf:"bytes,3,opt,name=degraded_reason,json=degradedReason,proto3" json:"degraded_reason"`
-	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
-	XXX_unrecognized     []byte                  `json:"-"`
-	XXX_sizecache        int32                   `json:"-"`
+	// NGINX ID
+	NginxId string `protobuf:"bytes,1,opt,name=nginx_id,json=nginxId,proto3" json:"nginx_id"`
+	// NGINX status
+	NginxStatus NginxHealth_NginxStatus `protobuf:"varint,2,opt,name=nginx_status,json=nginxStatus,proto3,enum=f5.nginx.agent.sdk.NginxHealth_NginxStatus" json:"nginx_status"`
+	// Provides an error message of why a NGINX instance is degraded
+	DegradedReason       string   `protobuf:"bytes,3,opt,name=degraded_reason,json=degradedReason,proto3" json:"degraded_reason"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *NginxHealth) Reset()         { *m = NginxHealth{} }
 func (m *NginxHealth) String() string { return proto.CompactTextString(m) }
 func (*NginxHealth) ProtoMessage()    {}
 func (*NginxHealth) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{6}
+	return fileDescriptor_917f1a70b1fd7255, []int{3}
 }
 func (m *NginxHealth) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -631,25 +485,34 @@ func (m *NginxHealth) GetDegradedReason() string {
 	return ""
 }
 
+// Represents a NGINX config
 type NginxConfig struct {
-	Action               NginxConfigAction `protobuf:"varint,1,opt,name=action,proto3,enum=f5.nginx.agent.sdk.NginxConfigAction" json:"action"`
-	ConfigData           *ConfigDescriptor `protobuf:"bytes,2,opt,name=config_data,json=configData,proto3" json:"config_data"`
-	Zconfig              *ZippedFile       `protobuf:"bytes,3,opt,name=zconfig,proto3" json:"zconfig"`
-	Zaux                 *ZippedFile       `protobuf:"bytes,4,opt,name=zaux,proto3" json:"zaux"`
-	AccessLogs           *AccessLogs       `protobuf:"bytes,5,opt,name=access_logs,json=accessLogs,proto3" json:"access_logs"`
-	ErrorLogs            *ErrorLogs        `protobuf:"bytes,6,opt,name=error_logs,json=errorLogs,proto3" json:"error_logs"`
-	Ssl                  *SslCertificates  `protobuf:"bytes,7,opt,name=ssl,proto3" json:"ssl"`
-	DirectoryMap         *DirectoryMap     `protobuf:"bytes,8,opt,name=directory_map,json=directoryMap,proto3" json:"directory_map"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+	// NGINX config action
+	Action NginxConfigAction `protobuf:"varint,1,opt,name=action,proto3,enum=f5.nginx.agent.sdk.NginxConfigAction" json:"action"`
+	// Metadata information about the configuration
+	ConfigData *ConfigDescriptor `protobuf:"bytes,2,opt,name=config_data,json=configData,proto3" json:"config_data"`
+	// Zipped file of all NGINX config files
+	Zconfig *ZippedFile `protobuf:"bytes,3,opt,name=zconfig,proto3" json:"zconfig"`
+	// Zipped file of all auxiliary files
+	Zaux *ZippedFile `protobuf:"bytes,4,opt,name=zaux,proto3" json:"zaux"`
+	// Information about all access log files
+	AccessLogs *AccessLogs `protobuf:"bytes,5,opt,name=access_logs,json=accessLogs,proto3" json:"access_logs"`
+	// Information about all error log files
+	ErrorLogs *ErrorLogs `protobuf:"bytes,6,opt,name=error_logs,json=errorLogs,proto3" json:"error_logs"`
+	// Information about all SSL certificates files
+	Ssl *SslCertificates `protobuf:"bytes,7,opt,name=ssl,proto3" json:"ssl"`
+	// Directory map of all config and aux files
+	DirectoryMap         *DirectoryMap `protobuf:"bytes,8,opt,name=directory_map,json=directoryMap,proto3" json:"directory_map"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
 func (m *NginxConfig) Reset()         { *m = NginxConfig{} }
 func (m *NginxConfig) String() string { return proto.CompactTextString(m) }
 func (*NginxConfig) ProtoMessage()    {}
 func (*NginxConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{7}
+	return fileDescriptor_917f1a70b1fd7255, []int{4}
 }
 func (m *NginxConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -734,7 +597,9 @@ func (m *NginxConfig) GetDirectoryMap() *DirectoryMap {
 	return nil
 }
 
+// Represents access log files
 type AccessLogs struct {
+	// List of access log files
 	AccessLog            []*AccessLog `protobuf:"bytes,1,rep,name=access_log,json=accessLog,proto3" json:"access_log"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
@@ -745,7 +610,7 @@ func (m *AccessLogs) Reset()         { *m = AccessLogs{} }
 func (m *AccessLogs) String() string { return proto.CompactTextString(m) }
 func (*AccessLogs) ProtoMessage()    {}
 func (*AccessLogs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{8}
+	return fileDescriptor_917f1a70b1fd7255, []int{5}
 }
 func (m *AccessLogs) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -781,10 +646,15 @@ func (m *AccessLogs) GetAccessLog() []*AccessLog {
 	return nil
 }
 
+// Represents an access log file
 type AccessLog struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
-	Format               string   `protobuf:"bytes,2,opt,name=format,proto3" json:"format"`
-	Permissions          string   `protobuf:"bytes,3,opt,name=permissions,proto3" json:"permissions"`
+	// Name of file
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
+	// Format of the file
+	Format string `protobuf:"bytes,2,opt,name=format,proto3" json:"format"`
+	// File Permissions
+	Permissions string `protobuf:"bytes,3,opt,name=permissions,proto3" json:"permissions"`
+	// Determines if the file is readable or not
 	Readable             bool     `protobuf:"varint,4,opt,name=readable,proto3" json:"readable"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -795,7 +665,7 @@ func (m *AccessLog) Reset()         { *m = AccessLog{} }
 func (m *AccessLog) String() string { return proto.CompactTextString(m) }
 func (*AccessLog) ProtoMessage()    {}
 func (*AccessLog) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{9}
+	return fileDescriptor_917f1a70b1fd7255, []int{6}
 }
 func (m *AccessLog) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -852,7 +722,9 @@ func (m *AccessLog) GetReadable() bool {
 	return false
 }
 
+// Represents error log files
 type ErrorLogs struct {
+	// List of error log files
 	ErrorLog             []*ErrorLog `protobuf:"bytes,1,rep,name=error_log,json=errorLog,proto3" json:"error_log"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -863,7 +735,7 @@ func (m *ErrorLogs) Reset()         { *m = ErrorLogs{} }
 func (m *ErrorLogs) String() string { return proto.CompactTextString(m) }
 func (*ErrorLogs) ProtoMessage()    {}
 func (*ErrorLogs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{10}
+	return fileDescriptor_917f1a70b1fd7255, []int{7}
 }
 func (m *ErrorLogs) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -899,10 +771,15 @@ func (m *ErrorLogs) GetErrorLog() []*ErrorLog {
 	return nil
 }
 
+// Represents an error log file
 type ErrorLog struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
-	LogLevel             string   `protobuf:"bytes,2,opt,name=log_level,json=logLevel,proto3" json:"log_level"`
-	Permissions          string   `protobuf:"bytes,3,opt,name=permissions,proto3" json:"permissions"`
+	// Name of file
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
+	// Log level
+	LogLevel string `protobuf:"bytes,2,opt,name=log_level,json=logLevel,proto3" json:"log_level"`
+	// File Permissions
+	Permissions string `protobuf:"bytes,3,opt,name=permissions,proto3" json:"permissions"`
+	// Determines if the file is readable or not
 	Readable             bool     `protobuf:"varint,4,opt,name=readable,proto3" json:"readable"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -913,7 +790,7 @@ func (m *ErrorLog) Reset()         { *m = ErrorLog{} }
 func (m *ErrorLog) String() string { return proto.CompactTextString(m) }
 func (*ErrorLog) ProtoMessage()    {}
 func (*ErrorLog) Descriptor() ([]byte, []int) {
-	return fileDescriptor_917f1a70b1fd7255, []int{11}
+	return fileDescriptor_917f1a70b1fd7255, []int{8}
 }
 func (m *ErrorLog) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -974,9 +851,6 @@ func init() {
 	proto.RegisterEnum("f5.nginx.agent.sdk.NginxConfigAction", NginxConfigAction_name, NginxConfigAction_value)
 	proto.RegisterEnum("f5.nginx.agent.sdk.NginxSslMetaData_NginxSslType", NginxSslMetaData_NginxSslType_name, NginxSslMetaData_NginxSslType_value)
 	proto.RegisterEnum("f5.nginx.agent.sdk.NginxHealth_NginxStatus", NginxHealth_NginxStatus_name, NginxHealth_NginxStatus_value)
-	proto.RegisterType((*PlusInfo)(nil), "f5.nginx.agent.sdk.PlusInfo")
-	proto.RegisterType((*SSLInfo)(nil), "f5.nginx.agent.sdk.SSLInfo")
-	proto.RegisterType((*PathInfo)(nil), "f5.nginx.agent.sdk.PathInfo")
 	proto.RegisterType((*NginxDetails)(nil), "f5.nginx.agent.sdk.NginxDetails")
 	proto.RegisterType((*NginxPlusMetaData)(nil), "f5.nginx.agent.sdk.NginxPlusMetaData")
 	proto.RegisterType((*NginxSslMetaData)(nil), "f5.nginx.agent.sdk.NginxSslMetaData")
@@ -991,215 +865,80 @@ func init() {
 func init() { proto.RegisterFile("nginx.proto", fileDescriptor_917f1a70b1fd7255) }
 
 var fileDescriptor_917f1a70b1fd7255 = []byte{
-	// 1240 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0xdd, 0x6e, 0xdc, 0xc4,
-	0x17, 0xaf, 0xb3, 0x49, 0xd6, 0x3e, 0xbb, 0x49, 0xb6, 0xf3, 0xff, 0x23, 0x6d, 0xab, 0x12, 0x47,
-	0x86, 0x8a, 0x50, 0x44, 0xa2, 0xa6, 0x20, 0x84, 0xa8, 0xa8, 0xf6, 0xab, 0x34, 0xea, 0x36, 0x8d,
-	0x26, 0x9b, 0x52, 0x72, 0xb3, 0x4c, 0xd6, 0x93, 0x8d, 0x55, 0xaf, 0xbd, 0x9a, 0xb1, 0xab, 0xb6,
-	0xcf, 0xc0, 0x93, 0x70, 0xc7, 0x25, 0x6f, 0xc0, 0x1d, 0x3c, 0x81, 0x85, 0x7a, 0xe9, 0x1b, 0x5e,
-	0x01, 0xcd, 0x99, 0xb1, 0x77, 0xf3, 0x45, 0x7b, 0x01, 0x37, 0xe3, 0x39, 0xbf, 0x39, 0xe7, 0xe7,
-	0x39, 0x9f, 0x36, 0xd4, 0xa2, 0x71, 0x10, 0xbd, 0xda, 0x9a, 0x8a, 0x38, 0x89, 0x09, 0x39, 0xf9,
-	0x72, 0x4b, 0xcb, 0x6c, 0xcc, 0xa3, 0x64, 0x4b, 0xfa, 0x2f, 0x6e, 0xc2, 0x38, 0x1e, 0xc7, 0xfa,
-	0xfc, 0x66, 0x7d, 0x14, 0x47, 0x27, 0xc1, 0x78, 0x26, 0x4d, 0x26, 0x71, 0xa4, 0x25, 0xef, 0x39,
-	0xd8, 0xfb, 0x61, 0x2a, 0x77, 0xa3, 0x93, 0x98, 0xdc, 0x86, 0x2a, 0x8f, 0xd8, 0x71, 0xc8, 0xfd,
-	0xa6, 0xb5, 0x61, 0x6d, 0xda, 0xed, 0x5a, 0x9e, 0xb9, 0x05, 0x44, 0x8b, 0x8d, 0x52, 0x13, 0x3c,
-	0xe4, 0x4c, 0xf2, 0xe6, 0xc2, 0x86, 0xb5, 0xe9, 0x68, 0x35, 0x03, 0xd1, 0x62, 0xe3, 0xf5, 0xa0,
-	0x7a, 0x70, 0xd0, 0x47, 0x62, 0x17, 0x96, 0x8e, 0xd3, 0x20, 0x4c, 0x9a, 0xd6, 0x46, 0x65, 0xd3,
-	0x69, 0x3b, 0x79, 0xe6, 0x6a, 0x80, 0xea, 0x07, 0xb9, 0x01, 0x15, 0x91, 0x46, 0xcd, 0x05, 0x3c,
-	0xae, 0xe6, 0x99, 0xab, 0x44, 0xaa, 0x16, 0xaf, 0x03, 0xf6, 0x3e, 0x4b, 0x4e, 0x91, 0xe7, 0x06,
-	0x54, 0x8e, 0x83, 0x08, 0x2f, 0x67, 0xd4, 0x8e, 0x83, 0x88, 0xaa, 0x85, 0xdc, 0x82, 0x45, 0xe5,
-	0xa5, 0xb9, 0x91, 0x9d, 0x67, 0x2e, 0xca, 0x14, 0x57, 0xef, 0xf7, 0x25, 0xa8, 0xef, 0xa9, 0x08,
-	0x75, 0x79, 0xc2, 0x82, 0x50, 0x92, 0x4f, 0xc0, 0xc6, 0x88, 0x0d, 0x03, 0xdf, 0xd0, 0xd5, 0xf3,
-	0xcc, 0x2d, 0x31, 0x5a, 0xc5, 0xdd, 0x2e, 0x3a, 0xfb, 0x92, 0x0b, 0x19, 0xc4, 0xd1, 0xbc, 0xb3,
-	0x06, 0xa2, 0xc5, 0x86, 0xdc, 0x01, 0x47, 0xbd, 0x68, 0x38, 0x65, 0xc9, 0x69, 0xb3, 0x82, 0x8a,
-	0x2b, 0x79, 0xe6, 0xce, 0x40, 0x6a, 0xab, 0xad, 0xf2, 0x84, 0x7c, 0x0e, 0x30, 0x15, 0xf1, 0x88,
-	0x4b, 0xa9, 0xde, 0xbe, 0x88, 0xca, 0xab, 0x79, 0xe6, 0xce, 0xa1, 0xd4, 0x31, 0xfb, 0x5d, 0x9f,
-	0xdc, 0x83, 0x7a, 0x71, 0x80, 0xec, 0x4b, 0x68, 0xd0, 0xc8, 0x33, 0xf7, 0x0c, 0x4e, 0x6b, 0x46,
-	0x2a, 0xde, 0x21, 0x13, 0x26, 0x92, 0x61, 0x12, 0x4c, 0x78, 0x73, 0x79, 0xc3, 0xda, 0xac, 0xe8,
-	0x77, 0xcc, 0x50, 0xea, 0xe0, 0x7e, 0x10, 0x4c, 0x38, 0x69, 0xc1, 0x75, 0x4c, 0xc4, 0xf0, 0x44,
-	0xc4, 0x93, 0xa1, 0x8c, 0x53, 0x31, 0xe2, 0xcd, 0x2a, 0xd6, 0xc0, 0x07, 0x79, 0xe6, 0x5e, 0x3c,
-	0xa4, 0x6b, 0x08, 0x3d, 0x14, 0xf1, 0xe4, 0x00, 0x01, 0xf2, 0x00, 0x1a, 0x61, 0xcc, 0x7c, 0x55,
-	0x22, 0xc3, 0x49, 0xec, 0xa7, 0x21, 0x97, 0x4d, 0x1b, 0xf3, 0xf9, 0xff, 0x3c, 0x73, 0x2f, 0x9c,
-	0xd1, 0xb5, 0x02, 0x79, 0xa2, 0x01, 0x72, 0x1f, 0xd6, 0x44, 0x1a, 0xa9, 0x9b, 0x95, 0xf6, 0x0e,
-	0xda, 0xff, 0x2f, 0xcf, 0xdc, 0xf3, 0x47, 0x74, 0xd5, 0x00, 0x85, 0x75, 0x07, 0x16, 0xa7, 0x61,
-	0x2a, 0x9b, 0xb0, 0x61, 0x6d, 0xd6, 0x76, 0x6e, 0x6f, 0x5d, 0x6c, 0x89, 0x2d, 0x2c, 0x00, 0x55,
-	0xec, 0x4f, 0x78, 0xc2, 0xba, 0x2c, 0x61, 0xba, 0x4c, 0x94, 0x19, 0xc5, 0x95, 0x3c, 0x80, 0x8a,
-	0x94, 0x61, 0xb3, 0x86, 0x1c, 0x1f, 0x5f, 0xc9, 0x71, 0x20, 0xc3, 0x92, 0x02, 0xab, 0x50, 0xca,
-	0x90, 0xaa, 0xc5, 0x84, 0x3d, 0x49, 0xe5, 0x30, 0x15, 0x61, 0xb3, 0x3e, 0x4b, 0xed, 0x0c, 0xc5,
-	0xb0, 0x27, 0xa9, 0x3c, 0x14, 0x21, 0xf9, 0x1a, 0x56, 0x75, 0x6b, 0xa6, 0x82, 0x0f, 0x99, 0x18,
-	0xcb, 0xe6, 0x0a, 0x7a, 0x4c, 0xf2, 0xcc, 0x3d, 0x77, 0x42, 0x57, 0x4a, 0xb9, 0x25, 0xc6, 0xd2,
-	0x63, 0x70, 0xfd, 0x82, 0x3f, 0xff, 0x72, 0x03, 0xff, 0x6a, 0x41, 0xe3, 0xbc, 0xbf, 0xe4, 0x08,
-	0x6c, 0x29, 0xc3, 0x61, 0xf2, 0x7a, 0xca, 0xf1, 0x1d, 0xab, 0x3b, 0x77, 0xdf, 0x27, 0x4e, 0x25,
-	0x30, 0x78, 0x3d, 0xe5, 0xba, 0xd7, 0x0a, 0x1a, 0x5a, 0x95, 0x1a, 0x56, 0xf7, 0xf2, 0x75, 0x7f,
-	0x9a, 0x49, 0x80, 0xf7, 0x32, 0x10, 0x2d, 0x36, 0x9e, 0x67, 0x7a, 0xd9, 0xb0, 0x11, 0x07, 0x96,
-	0xda, 0x87, 0xbb, 0xfd, 0x41, 0xe3, 0x1a, 0xa9, 0x42, 0x85, 0x1e, 0xee, 0x35, 0x2c, 0xef, 0xa7,
-	0x05, 0xa8, 0xa1, 0xd2, 0x23, 0xce, 0xc2, 0xe4, 0xf4, 0xfd, 0xfb, 0xfd, 0x47, 0xa8, 0x6b, 0x50,
-	0x67, 0x09, 0x03, 0xb4, 0xba, 0xf3, 0xd9, 0x95, 0x3e, 0x6a, 0x7e, 0xe3, 0x1e, 0x9a, 0xe8, 0xd6,
-	0x9c, 0x27, 0xa1, 0x7a, 0x5a, 0xeb, 0x63, 0x55, 0xe7, 0x3e, 0x1f, 0x0b, 0xe6, 0x73, 0x7f, 0x28,
-	0x38, 0x93, 0x71, 0x64, 0x06, 0x06, 0xd6, 0xf9, 0xb9, 0x23, 0xba, 0x5a, 0x00, 0x14, 0x65, 0xef,
-	0x0b, 0xe3, 0x97, 0x21, 0xab, 0x41, 0xf5, 0x70, 0xef, 0xf1, 0xde, 0xd3, 0xef, 0xf7, 0x1a, 0xd7,
-	0x08, 0xc0, 0x72, 0xab, 0x33, 0xd8, 0x7d, 0xd6, 0x6b, 0x58, 0xa4, 0x0e, 0x76, 0xb7, 0xf7, 0x1d,
-	0x6d, 0x75, 0x7b, 0xdd, 0xc6, 0x82, 0xf7, 0xd7, 0xa2, 0x31, 0xeb, 0x60, 0x11, 0x91, 0x5d, 0x58,
-	0x66, 0xa3, 0x44, 0x0d, 0x35, 0x9d, 0xc3, 0xab, 0xfb, 0x45, 0x1b, 0xb4, 0x50, 0xb9, 0x0d, 0x79,
-	0xe6, 0x1a, 0x43, 0x6a, 0x9e, 0xe4, 0x19, 0xd4, 0x74, 0x65, 0x0e, 0x7d, 0x96, 0x30, 0x8c, 0xd7,
-	0x15, 0xbd, 0xa3, 0xa9, 0xba, 0x5c, 0x8e, 0x44, 0x30, 0x4d, 0x62, 0xd1, 0x5e, 0xcb, 0x33, 0x77,
-	0xde, 0x98, 0x82, 0x16, 0xb0, 0xd0, 0x7a, 0x50, 0x7d, 0xa3, 0x45, 0x0c, 0x4f, 0x6d, 0x67, 0xfd,
-	0x32, 0xce, 0xa3, 0x60, 0x3a, 0xe5, 0xfe, 0xc3, 0x20, 0xe4, 0xba, 0x58, 0x8c, 0x09, 0x2d, 0x36,
-	0xe4, 0x3e, 0x2c, 0xbe, 0x61, 0xe9, 0x2b, 0x1c, 0xb3, 0xef, 0xe6, 0xc0, 0x81, 0xa0, 0xf4, 0x29,
-	0xae, 0x64, 0x1f, 0x6a, 0x6c, 0x84, 0x23, 0x36, 0x8c, 0xc7, 0x12, 0x47, 0xef, 0x15, 0x24, 0x2d,
-	0x54, 0xeb, 0xc7, 0x63, 0xa9, 0xdd, 0x9a, 0x33, 0xa3, 0xc0, 0xca, 0x43, 0xd2, 0x07, 0xe0, 0x42,
-	0xc4, 0x42, 0x13, 0x2e, 0x23, 0xe1, 0x87, 0x97, 0x11, 0xf6, 0x94, 0x16, 0xf2, 0xe1, 0x00, 0x99,
-	0x19, 0x51, 0x87, 0x17, 0x47, 0xe4, 0x5b, 0x3d, 0xb0, 0xaa, 0x48, 0xf3, 0xd1, 0x65, 0x34, 0x07,
-	0x32, 0xec, 0x70, 0x91, 0x04, 0x27, 0xc1, 0x88, 0x25, 0x5c, 0x9e, 0x9b, 0x57, 0xcf, 0x61, 0xc5,
-	0x0f, 0x04, 0x1f, 0x25, 0xb1, 0x78, 0x3d, 0x9c, 0xb0, 0x69, 0xd3, 0x46, 0xa6, 0x8d, 0xcb, 0x98,
-	0xba, 0x85, 0xe2, 0x13, 0x36, 0x6d, 0x5f, 0xcf, 0x33, 0xf7, 0xac, 0x29, 0xad, 0xfb, 0x73, 0x0a,
-	0xde, 0x11, 0x40, 0xeb, 0x8c, 0xd7, 0xb3, 0x80, 0xe0, 0x5f, 0xc0, 0x15, 0x5e, 0x97, 0x36, 0xda,
-	0xeb, 0x99, 0x11, 0x75, 0xca, 0x20, 0x7a, 0x3f, 0x5b, 0xe0, 0x94, 0x8a, 0xea, 0xcb, 0x1f, 0xb1,
-	0x09, 0x37, 0x6d, 0x8d, 0x19, 0x54, 0x32, 0xc5, 0x95, 0x78, 0xb0, 0x7c, 0x12, 0x8b, 0x09, 0x4b,
-	0xcc, 0xa8, 0xc3, 0x12, 0xd6, 0x08, 0x35, 0x4f, 0x72, 0x17, 0x6a, 0x53, 0x2e, 0x26, 0x81, 0x54,
-	0x9f, 0x72, 0x69, 0xba, 0x11, 0xb3, 0x38, 0x07, 0xd3, 0x79, 0x81, 0x6c, 0x82, 0x2d, 0xb8, 0xfe,
-	0x7e, 0x61, 0x69, 0xd9, 0x7a, 0x9e, 0x14, 0x18, 0x2d, 0x77, 0xde, 0x21, 0x38, 0x65, 0x2a, 0xc9,
-	0x23, 0x70, 0xca, 0x44, 0x9a, 0x30, 0xdc, 0xfa, 0xa7, 0xe4, 0xeb, 0x9f, 0x88, 0xd2, 0x84, 0xda,
-	0x45, 0xea, 0xbd, 0x5f, 0x2c, 0xb0, 0x0b, 0xad, 0x77, 0x84, 0xe0, 0x0e, 0x38, 0x61, 0x3c, 0x1e,
-	0x86, 0xfc, 0x25, 0x0f, 0x4d, 0x14, 0x90, 0xb6, 0x04, 0xa9, 0x1d, 0xc6, 0xe3, 0xbe, 0xda, 0xfd,
-	0xa7, 0xa1, 0xb8, 0x73, 0x64, 0xbe, 0x59, 0xf3, 0x33, 0xe5, 0xec, 0x04, 0x73, 0x60, 0xa9, 0xb5,
-	0xbf, 0xdf, 0xff, 0xa1, 0x61, 0x11, 0x1b, 0x16, 0x07, 0xbd, 0x83, 0x41, 0x63, 0x41, 0x8d, 0x32,
-	0xfa, 0xb4, 0xdf, 0x6f, 0xb7, 0x3a, 0x8f, 0x1b, 0x15, 0x35, 0xe4, 0x68, 0x6f, 0x70, 0x48, 0xf7,
-	0x1a, 0x8b, 0x4a, 0xfd, 0xe1, 0x53, 0xda, 0xe9, 0x35, 0x96, 0xda, 0x5f, 0xfd, 0xf6, 0x76, 0xdd,
-	0xfa, 0xe3, 0xed, 0xba, 0xf5, 0xe7, 0xdb, 0x75, 0xeb, 0xe8, 0xd3, 0x71, 0x90, 0x9c, 0xa6, 0xc7,
-	0x5b, 0xa3, 0x78, 0xb2, 0x8d, 0xb1, 0xdd, 0xc6, 0xd8, 0x6e, 0x4b, 0xff, 0xc5, 0xf6, 0xcb, 0x9d,
-	0x6d, 0xfc, 0xf5, 0xfd, 0x06, 0xd7, 0xe3, 0x65, 0x7c, 0xdc, 0xfb, 0x3b, 0x00, 0x00, 0xff, 0xff,
-	0xd1, 0x1d, 0x3e, 0xf9, 0x52, 0x0b, 0x00, 0x00,
-}
-
-func (m *PlusInfo) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *PlusInfo) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *PlusInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Release) > 0 {
-		i -= len(m.Release)
-		copy(dAtA[i:], m.Release)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.Release)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if m.Enabled {
-		i--
-		if m.Enabled {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *SSLInfo) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *SSLInfo) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SSLInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Run) > 0 {
-		for iNdEx := len(m.Run) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Run[iNdEx])
-			copy(dAtA[i:], m.Run[iNdEx])
-			i = encodeVarintNginx(dAtA, i, uint64(len(m.Run[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	if len(m.Built) > 0 {
-		for iNdEx := len(m.Built) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Built[iNdEx])
-			copy(dAtA[i:], m.Built[iNdEx])
-			i = encodeVarintNginx(dAtA, i, uint64(len(m.Built[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *PathInfo) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *PathInfo) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *PathInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Conf) > 0 {
-		i -= len(m.Conf)
-		copy(dAtA[i:], m.Conf)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.Conf)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Bin) > 0 {
-		i -= len(m.Bin)
-		copy(dAtA[i:], m.Bin)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.Bin)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
+	// 1166 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0xcd, 0x6e, 0xdb, 0x46,
+	0x10, 0x0e, 0x2d, 0xd9, 0x22, 0x47, 0xb2, 0xcd, 0x6c, 0x5b, 0x80, 0x28, 0x52, 0x53, 0x60, 0x1b,
+	0xd4, 0x4d, 0x51, 0x1b, 0x71, 0x5a, 0x14, 0x45, 0x83, 0x06, 0x92, 0xa5, 0x34, 0x46, 0x14, 0xc7,
+	0x58, 0xcb, 0x69, 0xeb, 0x0b, 0xbb, 0x16, 0xd7, 0x34, 0x11, 0x4a, 0x14, 0x76, 0xa9, 0x20, 0xc9,
+	0x33, 0xf4, 0x49, 0x7a, 0xeb, 0xb1, 0x6f, 0xd0, 0x5b, 0xfb, 0x04, 0x44, 0x91, 0x23, 0x2f, 0x7d,
+	0x85, 0x82, 0xb3, 0x4b, 0x4a, 0xfe, 0x6b, 0x72, 0xe9, 0x85, 0x9a, 0xf9, 0x76, 0xbe, 0x6f, 0x39,
+	0xb3, 0xb3, 0x43, 0x41, 0x73, 0x12, 0x46, 0x93, 0x97, 0x5b, 0x53, 0x91, 0xa4, 0x09, 0x21, 0xa7,
+	0x5f, 0x6d, 0x29, 0x9f, 0x85, 0x7c, 0x92, 0x6e, 0xc9, 0xe0, 0xf9, 0x87, 0xad, 0x51, 0x32, 0x1e,
+	0x27, 0x13, 0x15, 0x51, 0x78, 0x93, 0xd3, 0x28, 0xd4, 0x1e, 0x84, 0x49, 0x98, 0x28, 0xdb, 0xfb,
+	0x73, 0x19, 0x5a, 0xfb, 0x05, 0xb7, 0xc7, 0x53, 0x16, 0xc5, 0x92, 0x7c, 0x0a, 0x26, 0x6a, 0xf9,
+	0x51, 0xe0, 0x18, 0x6d, 0x63, 0xd3, 0xea, 0xb6, 0xf2, 0xcc, 0xad, 0x30, 0xda, 0x40, 0x6b, 0x2f,
+	0x20, 0xb7, 0xa1, 0xf1, 0x82, 0x0b, 0x19, 0x25, 0x13, 0x67, 0x09, 0xe3, 0x9a, 0x79, 0xe6, 0x96,
+	0x10, 0x2d, 0x0d, 0x72, 0x07, 0xac, 0x62, 0x73, 0x7f, 0xca, 0xd2, 0x33, 0xa7, 0x86, 0x81, 0xab,
+	0x79, 0xe6, 0xce, 0x41, 0x6a, 0x16, 0xe6, 0x01, 0x4b, 0xcf, 0xc8, 0x17, 0x00, 0x53, 0x91, 0x8c,
+	0xb8, 0x94, 0xc5, 0xee, 0x75, 0x0c, 0x5e, 0xcb, 0x33, 0x77, 0x01, 0xa5, 0x96, 0xb6, 0xf7, 0x02,
+	0x72, 0x0f, 0x5a, 0xe5, 0x02, 0xaa, 0x2f, 0x23, 0xc1, 0xce, 0x33, 0xf7, 0x1c, 0x4e, 0x9b, 0xda,
+	0x2b, 0xf7, 0x90, 0x29, 0x13, 0xa9, 0x9f, 0x46, 0x63, 0xee, 0xac, 0xb4, 0x8d, 0xcd, 0x9a, 0xda,
+	0x63, 0x8e, 0x52, 0x0b, 0xed, 0x61, 0x34, 0xe6, 0xa4, 0x03, 0x37, 0x4f, 0x66, 0x51, 0x9c, 0xfa,
+	0xa7, 0x22, 0x19, 0xfb, 0x32, 0x99, 0x89, 0x11, 0x77, 0x1a, 0x6d, 0x63, 0xd3, 0xec, 0x7e, 0x90,
+	0x67, 0xee, 0xe5, 0x45, 0xba, 0x8e, 0xd0, 0x43, 0x91, 0x8c, 0x0f, 0x11, 0x20, 0x0f, 0xc0, 0x8e,
+	0x13, 0x16, 0xb0, 0x93, 0x98, 0xfb, 0xe3, 0x24, 0x98, 0xc5, 0x5c, 0x3a, 0x66, 0xbb, 0xb6, 0x69,
+	0x75, 0xdf, 0xcf, 0x33, 0xf7, 0xd2, 0x1a, 0x5d, 0x2f, 0x91, 0x27, 0x0a, 0x20, 0xf7, 0x61, 0x5d,
+	0xcc, 0x26, 0xc5, 0x9b, 0x55, 0x7c, 0x0b, 0xf9, 0xef, 0xe5, 0x99, 0x7b, 0x71, 0x89, 0xae, 0x69,
+	0xa0, 0x64, 0xef, 0x42, 0x7d, 0x1a, 0xcf, 0xa4, 0x03, 0x6d, 0x63, 0xb3, 0xb9, 0x73, 0x7b, 0xeb,
+	0x72, 0xb3, 0x6c, 0x61, 0x03, 0x1c, 0xc4, 0x33, 0xf9, 0x84, 0xa7, 0xac, 0xc7, 0x52, 0xd6, 0x35,
+	0xf3, 0xcc, 0x45, 0x1a, 0xc5, 0x27, 0x79, 0x00, 0x35, 0x29, 0x63, 0xa7, 0x89, 0x1a, 0x9f, 0x5c,
+	0xab, 0x71, 0x28, 0xe3, 0x4a, 0xa2, 0x91, 0x67, 0x6e, 0x41, 0xa2, 0xc5, 0x43, 0x97, 0x3d, 0x9d,
+	0x49, 0x7f, 0x26, 0x62, 0xa7, 0x35, 0x3f, 0xda, 0x39, 0x8a, 0x65, 0x4f, 0x67, 0xf2, 0x48, 0xc4,
+	0xe4, 0x1b, 0x58, 0x53, 0x2d, 0x3b, 0x13, 0xdc, 0x67, 0x22, 0x94, 0xce, 0x2a, 0x66, 0x4c, 0xf2,
+	0xcc, 0xbd, 0xb0, 0x42, 0x57, 0x2b, 0xbf, 0x23, 0x42, 0xe9, 0x31, 0xb8, 0x79, 0x29, 0x9f, 0xa2,
+	0x59, 0xf9, 0xa4, 0xa8, 0xa9, 0x6a, 0x6a, 0x53, 0x35, 0xab, 0x86, 0x68, 0x69, 0x14, 0x61, 0x82,
+	0xc7, 0x9c, 0x49, 0xbe, 0xd8, 0xd3, 0x1a, 0xa2, 0xa5, 0xe1, 0xfd, 0x6e, 0x80, 0x7d, 0x31, 0x5f,
+	0x72, 0x0c, 0xa6, 0x94, 0xb1, 0x9f, 0xbe, 0x9a, 0x72, 0xdc, 0x63, 0x6d, 0xe7, 0xee, 0xbb, 0xd4,
+	0xa9, 0x02, 0x86, 0xaf, 0xa6, 0x5c, 0xdd, 0xb5, 0x52, 0x86, 0x36, 0xa4, 0x82, 0x8b, 0xf7, 0x0a,
+	0xd4, 0xfd, 0x74, 0x96, 0xb0, 0x0e, 0xf8, 0x5e, 0x1a, 0xa2, 0xa5, 0xe1, 0x79, 0xfa, 0x2e, 0x6b,
+	0x35, 0x62, 0xc1, 0x72, 0xf7, 0x68, 0x6f, 0x30, 0xb4, 0x6f, 0x90, 0x06, 0xd4, 0xe8, 0xd1, 0xbe,
+	0x6d, 0x78, 0xbf, 0x2c, 0x41, 0x13, 0x83, 0x1e, 0x71, 0x16, 0xa7, 0x67, 0xef, 0x7e, 0xdf, 0x7f,
+	0x86, 0x96, 0x02, 0xd5, 0x29, 0x61, 0x81, 0xd6, 0x76, 0x3e, 0xbf, 0x36, 0x47, 0xa5, 0xaf, 0xd3,
+	0x43, 0x8a, 0xba, 0x9a, 0x8b, 0x22, 0x54, 0xcd, 0x31, 0xb5, 0x5c, 0xf4, 0x79, 0xc0, 0x43, 0xc1,
+	0x02, 0x1e, 0xf8, 0x82, 0x33, 0x99, 0x4c, 0xf4, 0xc0, 0xc0, 0x3e, 0xbf, 0xb0, 0x44, 0xd7, 0x4a,
+	0x80, 0xa2, 0xef, 0x7d, 0xa9, 0xf3, 0xd2, 0x62, 0x4d, 0x68, 0x1c, 0xed, 0x3f, 0xde, 0x7f, 0xfa,
+	0xc3, 0xbe, 0x7d, 0x83, 0x00, 0xac, 0x74, 0x76, 0x87, 0x7b, 0xcf, 0xfa, 0xb6, 0x41, 0x5a, 0x60,
+	0xf6, 0xfa, 0xdf, 0xd3, 0x4e, 0xaf, 0xdf, 0xb3, 0x97, 0xbc, 0x7f, 0xea, 0x9a, 0xb6, 0x8b, 0x4d,
+	0x44, 0xf6, 0x60, 0x85, 0x8d, 0xd2, 0x62, 0xa8, 0xa9, 0x33, 0xbc, 0xfe, 0xbe, 0x28, 0x42, 0x07,
+	0x83, 0xbb, 0x90, 0x67, 0xae, 0x26, 0x52, 0xfd, 0x4b, 0x9e, 0x41, 0x53, 0x75, 0xa6, 0x1f, 0xb0,
+	0x94, 0x61, 0xbd, 0xae, 0xb9, 0x3b, 0x4a, 0xaa, 0xc7, 0xe5, 0x48, 0x44, 0xd3, 0x34, 0x11, 0xdd,
+	0xf5, 0x3c, 0x73, 0x17, 0xc9, 0x14, 0x94, 0x83, 0x8d, 0xd6, 0x87, 0xc6, 0x6b, 0xe5, 0x62, 0x79,
+	0x9a, 0x3b, 0x1b, 0x57, 0x69, 0x1e, 0x47, 0xd3, 0x29, 0x0f, 0x1e, 0x46, 0x31, 0x57, 0xcd, 0xa2,
+	0x29, 0xb4, 0x34, 0xc8, 0x7d, 0xa8, 0xbf, 0x66, 0xb3, 0x97, 0x38, 0x66, 0xdf, 0xae, 0x81, 0x03,
+	0xa1, 0x88, 0xa7, 0xf8, 0x24, 0x07, 0xd0, 0x64, 0x23, 0x1c, 0xb1, 0x71, 0x12, 0x4a, 0x1c, 0xbd,
+	0xd7, 0x88, 0x74, 0x30, 0x6c, 0x90, 0x84, 0x52, 0xa5, 0xb5, 0x40, 0xa3, 0xc0, 0xaa, 0x45, 0x32,
+	0x00, 0xe0, 0x42, 0x24, 0x42, 0x09, 0xae, 0xa0, 0xe0, 0x47, 0x57, 0x09, 0xf6, 0x8b, 0x28, 0xd4,
+	0xc3, 0x01, 0x32, 0x27, 0x51, 0x8b, 0x97, 0x4b, 0xe4, 0x3b, 0x35, 0xb0, 0x1a, 0x28, 0xf3, 0xf1,
+	0x55, 0x32, 0x87, 0x32, 0xde, 0xe5, 0x22, 0x8d, 0x4e, 0xa3, 0x11, 0x4b, 0xb9, 0xbc, 0x30, 0xaf,
+	0x7e, 0x84, 0xd5, 0x20, 0x12, 0x7c, 0x94, 0x26, 0xe2, 0x95, 0x3f, 0x66, 0x53, 0xc7, 0x44, 0xa5,
+	0xf6, 0x55, 0x4a, 0xbd, 0x32, 0xf0, 0x09, 0x9b, 0x76, 0x6f, 0xe6, 0x99, 0x7b, 0x9e, 0x4a, 0x5b,
+	0xc1, 0x42, 0x80, 0x77, 0x0c, 0xd0, 0x39, 0x97, 0xf5, 0xbc, 0x20, 0x8e, 0xd1, 0xae, 0x5d, 0x97,
+	0x75, 0xc5, 0x51, 0x59, 0xcf, 0x49, 0xd4, 0xaa, 0x8a, 0xe8, 0xfd, 0x6a, 0x80, 0x55, 0x05, 0x92,
+	0x5b, 0x50, 0x9f, 0xb0, 0x31, 0xd7, 0xd7, 0x1a, 0x4f, 0xb0, 0xf0, 0x29, 0x3e, 0x89, 0x07, 0x2b,
+	0xa7, 0x89, 0x18, 0xb3, 0x54, 0x8f, 0x3a, 0x6c, 0x61, 0x85, 0x50, 0xfd, 0x4b, 0xee, 0x42, 0x73,
+	0xca, 0xc5, 0x38, 0x92, 0xc5, 0xa7, 0x5c, 0xea, 0xdb, 0x88, 0xa7, 0xb8, 0x00, 0xd3, 0x45, 0x87,
+	0x6c, 0x82, 0x29, 0xb8, 0xfa, 0x7e, 0x61, 0x6b, 0x99, 0x6a, 0x9e, 0x94, 0x18, 0xad, 0x2c, 0xef,
+	0x08, 0xac, 0xea, 0x28, 0xc9, 0x23, 0xb0, 0xaa, 0x83, 0xd4, 0x65, 0xb8, 0xf5, 0x5f, 0x87, 0xaf,
+	0xfe, 0x44, 0x54, 0x14, 0x6a, 0x96, 0x47, 0xef, 0xfd, 0x66, 0x80, 0x59, 0x46, 0xbd, 0xa5, 0x04,
+	0x77, 0xc0, 0x8a, 0x93, 0xd0, 0x8f, 0xf9, 0x0b, 0x1e, 0xeb, 0x2a, 0xa0, 0x6c, 0x05, 0x52, 0x33,
+	0x4e, 0xc2, 0x41, 0x61, 0xfd, 0xaf, 0xa5, 0xb8, 0x73, 0xac, 0xbf, 0x59, 0x8b, 0x33, 0xe5, 0xfc,
+	0x04, 0xb3, 0x60, 0xb9, 0x73, 0x70, 0x30, 0xf8, 0xc9, 0x36, 0x88, 0x09, 0xf5, 0x61, 0xff, 0x70,
+	0x68, 0x2f, 0x15, 0xa3, 0x8c, 0x3e, 0x1d, 0x0c, 0xba, 0x9d, 0xdd, 0xc7, 0x76, 0xad, 0x18, 0x72,
+	0xb4, 0x3f, 0x3c, 0xa2, 0xfb, 0x76, 0xbd, 0x08, 0x7f, 0xf8, 0x94, 0xee, 0xf6, 0xed, 0xe5, 0xee,
+	0xd7, 0x7f, 0xbc, 0xd9, 0x30, 0xfe, 0x7a, 0xb3, 0x61, 0xfc, 0xfd, 0x66, 0xc3, 0x38, 0xfe, 0x2c,
+	0x8c, 0xd2, 0xb3, 0xd9, 0xc9, 0xd6, 0x28, 0x19, 0x6f, 0x63, 0x6d, 0xb7, 0xb1, 0xb6, 0xdb, 0x32,
+	0x78, 0xbe, 0xfd, 0x62, 0x67, 0x1b, 0xff, 0x14, 0x7e, 0x8b, 0xcf, 0x93, 0x15, 0xfc, 0xb9, 0xf7,
+	0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x4d, 0x80, 0x5c, 0xfb, 0x6c, 0x0a, 0x00, 0x00,
 }
 
 func (m *NginxDetails) Marshal() (dAtA []byte, err error) {
@@ -1793,69 +1532,6 @@ func encodeVarintNginx(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *PlusInfo) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Enabled {
-		n += 2
-	}
-	l = len(m.Release)
-	if l > 0 {
-		n += 1 + l + sovNginx(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *SSLInfo) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Built) > 0 {
-		for _, s := range m.Built {
-			l = len(s)
-			n += 1 + l + sovNginx(uint64(l))
-		}
-	}
-	if len(m.Run) > 0 {
-		for _, s := range m.Run {
-			l = len(s)
-			n += 1 + l + sovNginx(uint64(l))
-		}
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *PathInfo) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Bin)
-	if l > 0 {
-		n += 1 + l + sovNginx(uint64(l))
-	}
-	l = len(m.Conf)
-	if l > 0 {
-		n += 1 + l + sovNginx(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *NginxDetails) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2125,339 +1801,6 @@ func sovNginx(x uint64) (n int) {
 }
 func sozNginx(x uint64) (n int) {
 	return sovNginx(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *PlusInfo) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowNginx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PlusInfo: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PlusInfo: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNginx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Enabled = bool(v != 0)
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Release", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNginx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthNginx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthNginx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Release = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipNginx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthNginx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *SSLInfo) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowNginx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: SSLInfo: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SSLInfo: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Built", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNginx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthNginx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthNginx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Built = append(m.Built, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Run", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNginx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthNginx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthNginx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Run = append(m.Run, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipNginx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthNginx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *PathInfo) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowNginx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PathInfo: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PathInfo: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Bin", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNginx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthNginx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthNginx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Bin = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Conf", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNginx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthNginx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthNginx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Conf = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipNginx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthNginx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *NginxDetails) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
