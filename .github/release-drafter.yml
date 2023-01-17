@@ -7,6 +7,8 @@ autolabeler:
   - label: 'chore'
     branch:
       - '/chore\/.+/'
+    files:
+      - '*.go'
   - label: 'bug'
     branch:
       - '/fix\/.+/'
