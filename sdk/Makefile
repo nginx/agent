@@ -26,7 +26,7 @@ Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
 		--doc_out=./../docs/proto/ \
 		--doc_opt=markdown,$$packageName.md \
 			proto/$$packageName/*.proto;\
-		grep -v '^@ignore' ./../docs/proto/$$packageName.md > ./../docs/proto/tmp-$$packageName.md && mv ./../docs/proto/tmp-$$packageName.md ./../docs/proto/$$packageName.md;\
+		grep -v '^swagger:' ./../docs/proto/$$packageName.md > ./../docs/proto/tmp-$$packageName.md && mv ./../docs/proto/tmp-$$packageName.md ./../docs/proto/$$packageName.md;\
 	done
 
 	protoc \
@@ -46,7 +46,7 @@ Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
 		--doc_out=./../docs/proto/ \
 		--doc_opt=markdown,proto.md \
 		proto/*.proto; \
-	grep -v '^@ignore' ./../docs/proto/proto.md > ./../docs/proto/tmp-proto.md && mv ./../docs/proto/tmp-proto.md ./../docs/proto/proto.md
+	grep -v '^swagger:' ./../docs/proto/proto.md > ./../docs/proto/tmp-proto.md && mv ./../docs/proto/tmp-proto.md ./../docs/proto/proto.md
 	
 	go generate ./sdk/...
 

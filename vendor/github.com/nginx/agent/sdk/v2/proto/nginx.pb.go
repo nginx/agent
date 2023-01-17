@@ -127,7 +127,7 @@ func (NginxHealth_NginxStatus) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_917f1a70b1fd7255, []int{3, 0}
 }
 
-// @ignore swagger:model NginxDetails
+// swagger:model NginxDetails
 // Represents NGINX details about a single NGINX instance
 type NginxDetails struct {
 	// NGINX ID.
@@ -296,7 +296,7 @@ func (m *NginxDetails) GetConfigureArgs() []string {
 	return nil
 }
 
-// @ignore swagger:model NginxPlusMetaData
+// swagger:model NginxPlusMetaData
 // Represents NGINX Plus metadata
 type NginxPlusMetaData struct {
 	// Determines if its a plus instance or not.
@@ -357,7 +357,7 @@ func (m *NginxPlusMetaData) GetRelease() string {
 	return ""
 }
 
-// @ignore swagger:model NginxSslMetaData
+// swagger:model NginxSslMetaData
 // Represents NGINX SSL metadata
 type NginxSslMetaData struct {
 	// SSL Type.

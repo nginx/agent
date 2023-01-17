@@ -7,7 +7,7 @@ import "gogo.proto";
 
 option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
 
-// @ignore swagger:model NginxDetails
+// swagger:model NginxDetails
 // Represents NGINX details about a single NGINX instance
 message NginxDetails {
   // NGINX ID.
@@ -49,7 +49,7 @@ message NginxDetails {
   repeated string configure_args = 13 [(gogoproto.jsontag) = "configure_args"];
 }
 
-// @ignore swagger:model NginxPlusMetaData
+// swagger:model NginxPlusMetaData
 // Represents NGINX Plus metadata
 message NginxPlusMetaData {
   // Determines if its a plus instance or not.
@@ -60,7 +60,7 @@ message NginxPlusMetaData {
   string release = 2 [(gogoproto.jsontag) = "release"];
 }
 
-// @ignore swagger:model NginxSslMetaData
+// swagger:model NginxSslMetaData
 // Represents NGINX SSL metadata
 message NginxSslMetaData {
   // SSL type enum
