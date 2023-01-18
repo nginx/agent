@@ -20,7 +20,7 @@ AGENT_UPLOADER_KEY := "./agent-uploader.pem"
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 clean-packages: 
 	rm -rf $(PACKAGES_DIR)
-    rm -rf $(GITHUB_PACKAGES_DIR)
+	rm -rf $(GITHUB_PACKAGES_DIR)
 
 $(PACKAGES_DIR):
 	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk && mkdir -p $(PACKAGES_DIR)/txz
@@ -68,7 +68,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
             cp $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-v$${version}-$${arch}.apk
-        done; \
+		done; \
 		rm -rf ./build/nginx-agent; \
 	done; \
 	
@@ -79,8 +79,8 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	
 	docker run -v `pwd`:/nginx-agent/ build-signed-packager:1.0.0
 
-    zip -r ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-freebsd-12-amd64.zip $(PACKAGES_DIR)/txz/FreeBSD:12:amd64/
-    zip -r ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-freebsd-13-amd64.zip $(PACKAGES_DIR)/txz/FreeBSD:13:amd64/
+	zip -r ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-freebsd-12-amd64.zip $(PACKAGES_DIR)/txz/FreeBSD:12:amd64/
+	zip -r ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-freebsd-13-amd64.zip $(PACKAGES_DIR)/txz/FreeBSD:13:amd64/
 	
 	echo "DEB packages:"; \
 	find $(PACKAGES_DIR)/deb ;\
