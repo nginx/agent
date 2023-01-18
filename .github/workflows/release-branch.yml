@@ -158,10 +158,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # clobber overwrites existing assets of the same name
         run: |
-          zip -r nginx-agent-{{env.VERSION}}-freebsd-12-amd64.zip ./build/packages/tzx/FreeBSD/12/amd64/
-          zip -r nginx-agent-{{env.VERSION}}-freebsd-13-amd64.zip ./build/packages/tzx/FreeBSD/13/amd64/
           gh release upload --clobber v${{env.VERSION}} \
-            $(find ./build -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.zip" -o -name "*.apk" \))
+            $(find ./build/github/packages -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.pkg" -o -name "*.apk" \))
       - name: Publish Release Packages
         if: ${{ inputs.publishPackages == true }}
         env:
