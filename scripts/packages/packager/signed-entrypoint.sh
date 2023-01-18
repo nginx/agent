@@ -42,7 +42,7 @@ for freebsd_abi in $FREEBSD_DISTROS; do \
     cd build/packages/txz/"$freebsd_abi"; \
     ln -s nginx-agent-"$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')".pkg nginx-agent-"$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')".txz; \
     cd ../../../../; \
-    cp ./build/packages/txz/"$freebsd_abi"/nginx-agent-"$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')".pkg ./build/github/packages/; nginx-agent-"$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')"-"$freebsd_abi".pkg\
+    cp ./build/packages/txz/"$freebsd_abi"/nginx-agent-"$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')".pkg ./build/github/packages/nginx-agent-"$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')"-"$freebsd_abi".pkg; \
 done; \
 
 rm -rf /staging
