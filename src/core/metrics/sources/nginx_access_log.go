@@ -285,7 +285,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				counters[key] = value
 			}
 
-			for key, value := range c.getUpstreamConnectMetrics(connectTimes) {
+			for key, value := range getUpstreamConnectMetrics(connectTimes) {
 				genCounters[key] = value
 			}
 
@@ -410,7 +410,7 @@ func getRequestTimeMetrics(requestTimes []float64) map[string]float64 {
 	return counters
 }
 
-func (c *NginxAccessLog) getUpstreamConnectMetrics(connectTimes []float64) map[string]float64 {
+func getUpstreamConnectMetrics(connectTimes []float64) map[string]float64 {
 	counters := make(map[string]float64)
 
 	if len(connectTimes) > 0 {

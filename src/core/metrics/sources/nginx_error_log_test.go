@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"sort"
 	"testing"
@@ -20,6 +19,7 @@ import (
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -112,7 +112,7 @@ func TestErrorLogStats(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			errorLogFile, _ := ioutil.TempFile(os.TempDir(), "error.log")
+			errorLogFile, _ := os.CreateTemp(os.TempDir(), "error.log")
 
 			nginxErrorLog := NewNginxErrorLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
 			go nginxErrorLog.logStats(context.TODO(), errorLogFile.Name())
