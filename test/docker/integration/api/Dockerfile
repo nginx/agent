@@ -1,6 +1,8 @@
 FROM ubuntu:22.04 as install
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
+ARG PACKAGE
+
 WORKDIR /agent
 COPY ./ /agent
 COPY ./test/testdata/entrypoint.sh /agent/entrypoint.sh
@@ -10,7 +12,6 @@ COPY ./test/testdata/configs/integration/api/nginx.conf /agent/nginx.conf
 RUN set -x \
     && addgroup --system --gid 101 nginx \
     && adduser --system --disabled-login --ingroup nginx --no-create-home --home /nonexistent --gecos "nginx user" --shell /bin/false --uid 101 nginx \
-    && echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
     && apt-get update \
     && apt-get install --no-install-recommends --no-install-suggests -y \
                         ca-certificates \
@@ -22,20 +23,9 @@ RUN set -x \
                         curl \
                         vim \
                         golang \
+                        nginx \
     && apt-get update \
-    && apt-get install -y build-essential libpcre3 libpcre3-dev zlib1g zlib1g-dev libssl-dev nfpm \
-    && GOWORK=off CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o ./build/nginx-agent \
-	&& nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/nginx-agent.deb \
-    && export PATH=$PATH:/usr/local/go/bin \
-    && wget http://nginx.org/download/nginx-1.23.2.tar.gz \
-    && tar xfz nginx-1.23.2.tar.gz \
-    && cd nginx-1.23.2 \
-    && cp /agent/nginx.conf ./conf/nginx.conf \
-    && ./configure --with-http_stub_status_module \
-    && make \
-    && make install \
-    && cd ../ \
-    && apt-get install -y -f ./build/nginx-agent.deb
+    && apt install -y -f /agent/build/$PACKAGE.deb
 
 # run the nginx and agent
 FROM install as runtime

@@ -17,7 +17,7 @@ trap 'handle_term' TERM
 
 # Launch nginx
 echo "starting nginx ..."
-/usr/local/nginx/sbin/nginx -g "daemon off;" &
+/usr/sbin/nginx -g "daemon off;" &
 
 nginx_pid=$!
 

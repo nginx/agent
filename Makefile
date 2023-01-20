@@ -34,6 +34,7 @@ PACKAGE_PREFIX	   := nginx-agent
 PACKAGES_REPO	   := "pkgs.nginx.com"
 UNAME_M	            = $(shell uname -m)
 TEST_BUILD_DIR	   := build/test
+PACKAGE_NAME	   := ${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 LOCAL_ARCH         := amd64
 
@@ -156,7 +157,7 @@ performance-test: ## Run performance tests
 	docker run -v ${PWD}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
 
 integration-test:
-	go test ./test/integration/api
+	PACKAGE=${PACKAGE_NAME} go test ./test/integration/api 
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
