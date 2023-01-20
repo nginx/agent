@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -88,8 +89,18 @@ func UpdateMetadata(
 	if err != nil {
 		return err
 	}
-	log.Debugf("Writing NAP Metadata %s", m)
 
+	// Make dir if not exists
+	directory := filepath.Dir(wafLocation)
+	_, err = os.Stat(directory)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(directory, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Debugf("Writing NAP Metadata %s", m)
 	return os.WriteFile(wafLocation, m, 0644)
 }
 

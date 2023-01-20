@@ -19,7 +19,9 @@ import (
 
 const (
 	configFile   = "/tmp/testdata/nginx.conf"
-	metadataFile = "/tmp/testdata/app_protect_metadata.json"
+	basePath     = "/tmp/testdata"
+	metadataPath = "/tmp/testdata/nms"
+	metadataFile = "/tmp/testdata/nms/app_protect_metadata.json"
 
 	nginxID  = "1"
 	systemID = "2"
@@ -106,6 +108,12 @@ func TestUpdateNapMetadata(t *testing.T) {
 		expected   string
 	}{
 		{
+			testName:   "NoMetadataDir",
+			meta:       "",
+			precompPub: false,
+			expected:   expectedFalse,
+		},
+		{
 			testName:   "NoMetadataFile",
 			meta:       "",
 			precompPub: false,
@@ -135,7 +143,14 @@ func TestUpdateNapMetadata(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			defer tearDownTestDirectory()
 
-			if tc.testName != "NoMetadataFile" {
+			switch tc.testName {
+			case "NoMetadataDir":
+				err := os.MkdirAll(basePath, 0755)
+				assert.NoError(t, err)
+			case "NoMetadataFile":
+				err := os.MkdirAll(metadataPath, 0755)
+				assert.NoError(t, err)
+			default:
 				err := setUpFile(metadataFile, []byte(tc.meta))
 				assert.NoError(t, err)
 			}
