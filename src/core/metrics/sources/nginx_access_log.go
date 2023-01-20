@@ -18,11 +18,11 @@ import (
 	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/sources/tailer"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -78,7 +78,6 @@ func NewNginxAccessLog(
 
 func (c *NginxAccessLog) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
 	defer wg.Done()
-
 	c.collectLogStats(ctx, m)
 }
 
@@ -155,13 +154,14 @@ func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.St
 
 func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string) {
 	logPattern := convertLogFormat(logFormat)
-	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
-	log.Debugf("Pattern used for tailing logs: %s", logPattern)
+	// TODO: Undo debugf->infof
+	log.Infof("Collecting from: %s using format: %s", logFile, logFormat)
+	log.Infof("Pattern used for tailing logs: %s", logPattern)
 
 	counters := getDefaultCounters()
-	gzipRatios := []float64{}
-	requestLengths := []float64{}
-	requestTimes := []float64{}
+	genCounters := getDefaultGenCounters()
+
+	gzipRatios, requestLengths, requestTimes, connectTimes := []float64{}, []float64{}, []float64{}, []float64{}
 	mu := sync.Mutex{}
 
 	t, err := tailer.NewPatternTailer(logFile, map[string]string{"DEFAULT": logPattern})
@@ -270,13 +270,13 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 		case <-tick.C:
 			c.baseDimensions.NginxType = c.nginxType
 			c.baseDimensions.PublishedAPI = logFile
-			c.group = "http"
 
 			mu.Lock()
 
 			if len(requestLengths) > 0 {
 				counters["request.length"] = getRequestLengthMetricValue(requestLengths)
 			}
+
 			if len(gzipRatios) > 0 {
 				counters["gzip.ratio"] = getGzipRatioMetricValue(gzipRatios)
 			}
@@ -285,14 +285,22 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				counters[key] = value
 			}
 
+			for key, value := range c.getUpstreamConnectMetrics(connectTimes) {
+				genCounters[key] = value
+			}
+
+			c.group = "http"
 			simpleMetrics := c.convertSamplesToSimpleMetrics(counters)
+
+			c.group = ""
+			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(genCounters)...)
+
 			log.Tracef("Access log metrics collected: %v", simpleMetrics)
 
 			// reset the counters
 			counters = getDefaultCounters()
-			gzipRatios = []float64{}
-			requestLengths = []float64{}
-			requestTimes = []float64{}
+			genCounters = getDefaultGenCounters()
+			gzipRatios, requestLengths, requestTimes, connectTimes = []float64{}, []float64{}, []float64{}, []float64{}
 
 			c.buf = append(c.buf, metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics))
 
@@ -373,16 +381,13 @@ func getRequestTimeMetrics(requestTimes []float64) map[string]float64 {
 
 	if len(requestTimes) > 0 {
 		// Calculate request time average
-		sort.Float64s(requestTimes)
 		requestTimesSum := 0.0
 		for _, requestTime := range requestTimes {
 			requestTimesSum += requestTime
 		}
-
 		counters["request.time"] = requestTimesSum / float64(len(requestTimes))
 
 		// Calculate request time count
-		sort.Float64s(requestTimes)
 		counters["request.time.count"] = float64(len(requestTimes))
 
 		// Calculate request time max
@@ -405,6 +410,41 @@ func getRequestTimeMetrics(requestTimes []float64) map[string]float64 {
 	return counters
 }
 
+func (c *NginxAccessLog) getUpstreamConnectMetrics(connectTimes []float64) map[string]float64 {
+	counters := make(map[string]float64)
+
+	if len(connectTimes) > 0 {
+		// Calculate upstream connect time average
+		connectTimesSum := 0.0
+		for _, connectTime := range connectTimes {
+			connectTimesSum += connectTime
+		}
+		counters["upstream.connect.time"] = connectTimesSum / float64(len(connectTimes))
+
+		// Calculate upstream connect time count
+		counters["upstream.connect.time.count"] = float64(len(connectTimes))
+
+		// Calculate upstream connect time max
+		sort.Float64s(connectTimes)
+		counters["upstream.connect.time.max"] = connectTimes[len(connectTimes)-1]
+
+		// Calculate upstream connect time median
+		mNumber := len(connectTimes) / 2
+		if len(connectTimes)%2 != 0 {
+			counters["upstream.connect.time.median"] = connectTimes[mNumber]
+		} else {
+			counters["upstream.connect.time.median"] = (connectTimes[mNumber-1] + connectTimes[mNumber]) / 2
+		}
+
+		// Calculate upstream connect time 95 percentile
+		index := int(math.RoundToEven(float64(0.95)*float64(len(connectTimes)))) - 1
+		counters["upstream.connect.time.pctl95"] = connectTimes[index]
+	}
+
+	return counters
+}
+
+// convertLogFormat converts log format into a log format including a pattern that can be parsed by the tailer
 func convertLogFormat(logFormat string) string {
 	newLogFormat := strings.ReplaceAll(logFormat, "$remote_addr", "%{IPORHOST:remote_addr}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$remote_user", "%{USERNAME:remote_user}")
@@ -421,6 +461,7 @@ func convertLogFormat(logFormat string) string {
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$request_time", "%{DATA:request_time}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "\"$request\"", "\"%{DATA:request}\"")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$request ", "%{DATA:request} ")
+	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_connect_time", "%{DATA:upstream_connect_time} ")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "[", "\\[")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "]", "\\]")
 	return newLogFormat
@@ -470,5 +511,15 @@ func getDefaultCounters() map[string]float64 {
 		"v1_0":                    0,
 		"v1_1":                    0,
 		"v2":                      0,
+	}
+}
+
+func getDefaultGenCounters() map[string]float64 {
+	return map[string]float64{
+		"upstream.connect.time":        0,
+		"upstream.connect.time.count":  0,
+		"upstream.connect.time.max":    0,
+		"upstream.connect.time.median": 0,
+		"upstream.connect.time.pctl95": 0,
 	}
 }
