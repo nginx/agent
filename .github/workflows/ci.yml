@@ -65,7 +65,10 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: Run Integration Tests
-        run: make integration-test
+        run: |
+            sudo apt-get update
+            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
+            make integration-test
         
   performance-test:
     name: Performance Tests
