@@ -1235,10 +1235,6 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
-		// if Group is not defined let the developer know right away
-		if x.GroupID != "" && !c.ContainsGroup(x.GroupID) {
-			panic(fmt.Sprintf("Group id '%s' is not defined for subcommand '%s'", x.GroupID, cmds[i].CommandPath()))
-		}
 		// update max lengths
 		usageLen := len(x.Use)
 		if usageLen > c.commandsMaxUseLen {

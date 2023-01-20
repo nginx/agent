@@ -403,8 +403,8 @@ github.com/lufia/plan9stats
 # github.com/magiconair/properties v1.8.6
 ## explicit; go 1.13
 github.com/magiconair/properties
-# github.com/matttproud/golang_protobuf_extensions v1.0.2
-## explicit; go 1.9
+# github.com/matttproud/golang_protobuf_extensions v1.0.1
+## explicit
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
 ## explicit; go 1.17
