@@ -1,13 +1,13 @@
 name: Label Pull Requests
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, reopened, synchronize]
 
 jobs:
-  update_release_draft:
+  label-pr:
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
     runs-on: ubuntu-20.04
     steps:

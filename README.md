@@ -168,6 +168,8 @@ tls:
   skip_verify: true
 ```
 
+Documentation for the proto definitions can be found here: https://github.com/nginx/agent/tree/main/docs/proto/README.md
+
 ### Enabling the REST interface
 The NGINX Agent REST interface can be exposed by validating the following lines in the `/etc/nginx-agent/nginx-agent.conf` file are present:
 
@@ -181,6 +183,17 @@ api:
 ```
 
 The mock control plane can use either gRPC or REST protocols to communicate with NGINX Agent.
+
+### Launching Swagger UI
+To use the Swagger UI, goswagger needs to be installed first. Instructions on how to install goswagger can be found here https://goswagger.io/install.html.
+
+To launch the Swagger UI for the REST interface run the following command
+
+```
+make launch-swagger-ui
+```
+
+Open a web browser to view the Swagger UI at http://localhost:8082/docs.
 
 ## Starting NGINX Agent
 If already running, restart NGINX Agent to apply the new configuration. Alternatively, if NGINX Agent is not running, you may run it from the source code root directory.
@@ -289,7 +302,7 @@ Minimum system sizing recommendations for NGINX Agent:
 Get involved with the project by contributing! Please see our [contributing guide](CONTRIBUTING.md) for details.
 
 # Change Log
-See our [changelog](docs/CHANGELOG.md) to keep track of updates.
+See our [release page](https://github.com/nginx/agent/releases) to keep track of updates.
 
 # License
 [Apache License, Version 2.0](LICENSE)

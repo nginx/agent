@@ -73,6 +73,7 @@ deps: ## Update dependencies in vendor folders
 	cd test/integration && go mod tidy && go mod vendor
 	cd test/performance && go mod tidy && go mod vendor
 	go mod tidy && go mod vendor && go mod download && go work sync
+	make generate-swagger
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
@@ -80,10 +81,17 @@ lint: ## Run linter
 	cd sdk && make lint
 
 format: ## Format code
-	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance  && go fmt ./... && cd ../../test/integration && go fmt ./...
+	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance && go fmt ./... && cd ../../test/integration && go fmt ./...
+	buf format -w ./sdk/proto/
 
 install-tools: ## Install dependencies in tools.go
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
+
+generate-swagger: ## Generates swagger.json from source code
+	swagger generate spec -o ./docs/swagger.json --scan-models
+
+launch-swagger-ui: generate-swagger ## Launch Swagger UI
+	swagger serve ./docs/swagger.json -F=swagger --port=8082 --no-open
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Local Packaging                                                                                                 #

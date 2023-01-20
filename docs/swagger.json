@@ -1,0 +1,366 @@
+{
+  "swagger": "2.0",
+  "info": {},
+  "host": "localhost:8081",
+  "paths": {
+    "/metrics/": {
+      "get": {
+        "description": "# Returns prometheus metrics",
+        "produces": [
+          "text/plain"
+        ],
+        "tags": [
+          "nginx-agent"
+        ],
+        "summary": "Get Prometheus Metrics",
+        "operationId": "get-prometheus-metrics",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/MetricsResponse"
+          }
+        }
+      }
+    },
+    "/nginx/": {
+      "get": {
+        "description": "# Returns a list of NGINX instances",
+        "tags": [
+          "nginx-agent"
+        ],
+        "summary": "Get NGINX Instances",
+        "operationId": "get-nginx-instances",
+        "responses": {
+          "200": {
+            "description": "NginxDetails",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NginxDetails"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nginx/config/": {
+      "put": {
+        "description": "# Returns a config apply status",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nginx-agent"
+        ],
+        "summary": "Apply NGINX configuration to all NGINX instances",
+        "operationId": "apply-nginx-config",
+        "parameters": [
+          {
+            "type": "file",
+            "x-go-name": "File",
+            "name": "file",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AgentAPIConfigApplyResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPIConfigApplyResponse"
+            }
+          },
+          "400": {
+            "description": "AgentAPICommonResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPICommonResponse"
+            }
+          },
+          "408": {
+            "description": "AgentAPIConfigApplyStatusResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPIConfigApplyStatusResponse"
+            }
+          },
+          "500": {
+            "description": "AgentAPICommonResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPICommonResponse"
+            }
+          }
+        }
+      }
+    },
+    "/nginx/config/status": {
+      "get": {
+        "description": "# Returns status NGINX config apply",
+        "tags": [
+          "nginx-agent"
+        ],
+        "summary": "Get status NGINX config apply",
+        "operationId": "get-nginx-config-status",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Correlation ID of a NGINX config apply request",
+            "name": "correlation_id",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AgentAPIConfigApplyResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPIConfigApplyResponse"
+            }
+          },
+          "400": {
+            "description": "AgentAPIConfigApplyStatusResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPIConfigApplyStatusResponse"
+            }
+          },
+          "404": {
+            "description": "AgentAPIConfigApplyStatusResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPIConfigApplyStatusResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "AgentAPICommonResponse": {
+      "type": "object",
+      "properties": {
+        "correlation_id": {
+          "description": "Correlation ID",
+          "type": "string",
+          "x-go-name": "CorrelationId",
+          "example": "6204037c-30e6-408b-8aaa-dd8219860b4b"
+        },
+        "message": {
+          "description": "Message",
+          "type": "string",
+          "x-go-name": "Message",
+          "example": "No NGINX instances found"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/v2/src/plugins"
+    },
+    "AgentAPIConfigApplyResponse": {
+      "type": "object",
+      "properties": {
+        "correlation_id": {
+          "description": "Correlation ID",
+          "type": "string",
+          "x-go-name": "CorrelationId",
+          "example": "6204037c-30e6-408b-8aaa-dd8219860b4b"
+        },
+        "nginx_instances": {
+          "description": "NGINX Instances",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NginxInstanceResponse"
+          },
+          "x-go-name": "NginxInstances"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/v2/src/plugins"
+    },
+    "AgentAPIConfigApplyStatusResponse": {
+      "type": "object",
+      "properties": {
+        "correlation_id": {
+          "description": "Correlation ID",
+          "type": "string",
+          "x-go-name": "CorrelationId",
+          "example": "6204037c-30e6-408b-8aaa-dd8219860b4b"
+        },
+        "message": {
+          "description": "Message",
+          "type": "string",
+          "x-go-name": "Message",
+          "example": "pending config apply"
+        },
+        "status": {
+          "description": "Status",
+          "type": "string",
+          "x-go-name": "Status",
+          "example": "PENDING"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/v2/src/plugins"
+    },
+    "NginxDetails": {
+      "type": "object",
+      "properties": {
+        "built_from_source": {
+          "description": "Determines if the NGINX instance was built from the source code in github or not.",
+          "type": "boolean",
+          "x-go-name": "BuiltFromSource",
+          "example": false
+        },
+        "conf_path": {
+          "description": "Path to NGINX configuration.",
+          "type": "string",
+          "x-go-name": "ConfPath",
+          "example": "/usr/local/nginx/conf/nginx.conf"
+        },
+        "configure_args": {
+          "description": "Command line arguments that were used when the NGINX instance was started.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "ConfigureArgs",
+          "example": [
+            "",
+            "with-http_stub_status_module"
+          ]
+        },
+        "loadable_modules": {
+          "description": "List of NGINX loadable modules.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "LoadableModules",
+          "example": []
+        },
+        "nginx_id": {
+          "description": "NGINX ID.",
+          "type": "string",
+          "x-go-name": "NginxId",
+          "example": "b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437"
+        },
+        "plus": {
+          "$ref": "#/definitions/NginxPlusMetaData"
+        },
+        "process_id": {
+          "description": "Process ID of NGINX instance.",
+          "type": "string",
+          "x-go-name": "ProcessId",
+          "example": "8"
+        },
+        "process_path": {
+          "description": "The path to the NGINX executable.",
+          "type": "string",
+          "x-go-name": "ProcessPath",
+          "example": "/usr/local/nginx/sbin/nginx"
+        },
+        "runtime_modules": {
+          "description": "List of NGINX runtime modules.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RuntimeModules",
+          "example": [
+            "http_stub_status_module"
+          ]
+        },
+        "ssl": {
+          "$ref": "#/definitions/NginxSslMetaData"
+        },
+        "start_time": {
+          "description": "The start time of the NGINX instance.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "StartTime",
+          "example": 1670429190000
+        },
+        "status_url": {
+          "description": "Status URL.",
+          "type": "string",
+          "x-go-name": "StatusUrl",
+          "example": "http://localhost:8080/api"
+        },
+        "version": {
+          "description": "NGINX version.",
+          "type": "string",
+          "x-go-name": "Version",
+          "example": "1.23.2"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/sdk/v2/proto"
+    },
+    "NginxInstanceResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "description": "Message",
+          "type": "string",
+          "x-go-name": "Message",
+          "example": "config applied successfully"
+        },
+        "nginx_id": {
+          "description": "NGINX ID",
+          "type": "string",
+          "x-go-name": "NginxId",
+          "example": "b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437"
+        },
+        "status": {
+          "description": "Status",
+          "type": "string",
+          "x-go-name": "Status",
+          "example": "OK"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/v2/src/plugins"
+    },
+    "NginxPlusMetaData": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Determines if its a plus instance or not.",
+          "type": "boolean",
+          "x-go-name": "Enabled",
+          "example": true
+        },
+        "release": {
+          "description": "NGINX Plus version.",
+          "type": "string",
+          "x-go-name": "Release",
+          "example": "R27"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/sdk/v2/proto"
+    },
+    "NginxSslMetaData": {
+      "type": "object",
+      "properties": {
+        "details": {
+          "description": "List of SSL information (e.g. version, type, etc).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Details",
+          "example": null
+        },
+        "ssl_type": {
+          "$ref": "#/definitions/NginxSslMetaData_NginxSslType"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/sdk/v2/proto"
+    },
+    "NginxSslMetaData_NginxSslType": {
+      "description": "SSL type enum",
+      "type": "integer",
+      "format": "int32",
+      "x-go-package": "github.com/nginx/agent/sdk/v2/proto"
+    }
+  },
+  "responses": {
+    "MetricsResponse": {
+      "description": "",
+      "schema": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -10,4 +10,4 @@ categories: ["configuration"]
 doctypes: ["task"]
 ---
 
-See the NGINX Agent changelog: https://github.com/nginx/agent/blob/main/docs/CHANGELOG.md
+See the NGINX Agent release page: https://github.com/nginx/agent/releases

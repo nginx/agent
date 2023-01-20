@@ -23,11 +23,15 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// Status enum
 type AppProtectWAFHealth_AppProtectWAFStatus int32
 
 const (
-	AppProtectWAFHealth_UNKNOWN  AppProtectWAFHealth_AppProtectWAFStatus = 0
-	AppProtectWAFHealth_ACTIVE   AppProtectWAFHealth_AppProtectWAFStatus = 1
+	// Unknown status
+	AppProtectWAFHealth_UNKNOWN AppProtectWAFHealth_AppProtectWAFStatus = 0
+	// Active status
+	AppProtectWAFHealth_ACTIVE AppProtectWAFHealth_AppProtectWAFStatus = 1
+	// Degraded status
 	AppProtectWAFHealth_DEGRADED AppProtectWAFHealth_AppProtectWAFStatus = 2
 )
 
@@ -51,15 +55,19 @@ func (AppProtectWAFHealth_AppProtectWAFStatus) EnumDescriptor() ([]byte, []int) 
 	return fileDescriptor_f34234efeae954d9, []int{1, 0}
 }
 
-// AppProtectWAFDetails reports the details of Nginx App Protect
+// Represents App Protect WAF details
 type AppProtectWAFDetails struct {
-	WafVersion              string               `protobuf:"bytes,1,opt,name=waf_version,json=wafVersion,proto3" json:"waf_version"`
-	AttackSignaturesVersion string               `protobuf:"bytes,2,opt,name=attack_signatures_version,json=attackSignaturesVersion,proto3" json:"attack_signatures_version"`
-	ThreatCampaignsVersion  string               `protobuf:"bytes,3,opt,name=threat_campaigns_version,json=threatCampaignsVersion,proto3" json:"threat_campaigns_version"`
-	Health                  *AppProtectWAFHealth `protobuf:"bytes,4,opt,name=health,proto3" json:"health"`
-	XXX_NoUnkeyedLiteral    struct{}             `json:"-"`
-	XXX_unrecognized        []byte               `json:"-"`
-	XXX_sizecache           int32                `json:"-"`
+	// WAF version
+	WafVersion string `protobuf:"bytes,1,opt,name=waf_version,json=wafVersion,proto3" json:"waf_version"`
+	// Attack signatures version (This is being deprecated and will be removed in a future release)
+	AttackSignaturesVersion string `protobuf:"bytes,2,opt,name=attack_signatures_version,json=attackSignaturesVersion,proto3" json:"attack_signatures_version"`
+	// Threat signatures version (This is being deprecated and will be removed in a future release)
+	ThreatCampaignsVersion string `protobuf:"bytes,3,opt,name=threat_campaigns_version,json=threatCampaignsVersion,proto3" json:"threat_campaigns_version"`
+	// App Protect Health details (This is being deprecated and will be removed in a future release)
+	Health               *AppProtectWAFHealth `protobuf:"bytes,4,opt,name=health,proto3" json:"health"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *AppProtectWAFDetails) Reset()         { *m = AppProtectWAFDetails{} }
@@ -123,14 +131,17 @@ func (m *AppProtectWAFDetails) GetHealth() *AppProtectWAFHealth {
 	return nil
 }
 
-// AppProtectWAFHealth reports the health details of Nginx App Protect
+// Represents the health of App Protect WAF
 type AppProtectWAFHealth struct {
-	SystemId             string                                  `protobuf:"bytes,1,opt,name=system_id,json=systemId,proto3" json:"system_id"`
-	AppProtectWafStatus  AppProtectWAFHealth_AppProtectWAFStatus `protobuf:"varint,2,opt,name=app_protect_waf_status,json=appProtectWafStatus,proto3,enum=f5.nginx.agent.sdk.AppProtectWAFHealth_AppProtectWAFStatus" json:"app_protect_waf_status"`
-	DegradedReason       string                                  `protobuf:"bytes,3,opt,name=degraded_reason,json=degradedReason,proto3" json:"degraded_reason"`
-	XXX_NoUnkeyedLiteral struct{}                                `json:"-"`
-	XXX_unrecognized     []byte                                  `json:"-"`
-	XXX_sizecache        int32                                   `json:"-"`
+	// System ID
+	SystemId string `protobuf:"bytes,1,opt,name=system_id,json=systemId,proto3" json:"system_id"`
+	// App Protect WAF status
+	AppProtectWafStatus AppProtectWAFHealth_AppProtectWAFStatus `protobuf:"varint,2,opt,name=app_protect_waf_status,json=appProtectWafStatus,proto3,enum=f5.nginx.agent.sdk.AppProtectWAFHealth_AppProtectWAFStatus" json:"app_protect_waf_status"`
+	// Provides an error message of why App Protect WAF is degraded
+	DegradedReason       string   `protobuf:"bytes,3,opt,name=degraded_reason,json=degradedReason,proto3" json:"degraded_reason"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *AppProtectWAFHealth) Reset()         { *m = AppProtectWAFHealth{} }

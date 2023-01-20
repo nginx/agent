@@ -9,8 +9,10 @@ package nap
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
 
 	log "github.com/sirupsen/logrus"
@@ -26,26 +28,31 @@ func UpdateMetadata(
 	wafAttackSignaturesVersion,
 	wafThreatCampaignsVersion string,
 ) error {
+	previousPrecompiledPublication := false
+	previousMeta := Metadata{}
+
 	// Read NAP metadata
 	data, err := os.ReadFile(wafLocation)
 	if err != nil {
-		return err
-	}
-
-	var oldMeta Metadata
-	if err := json.Unmarshal(data, &oldMeta); err != nil {
-		return err
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	} else {
+		if err := json.Unmarshal(data, &previousMeta); err != nil {
+			return err
+		}
+		previousPrecompiledPublication = previousMeta.PrecompiledPublication
 	}
 
 	// Write the metadata if precomp publication is false, or
 	// when precomp publication toggles to true.
 	// If toggled, write metadata once more then the publisher
 	// will send metadata thereafter.
-	if oldMeta.PrecompiledPublication && currentPrecompiledPublication {
+	if previousPrecompiledPublication && currentPrecompiledPublication {
 		return nil
 	}
 
-	policies, profiles := getContent(cfg)
+	policies, profiles := sdk.GetAppProtectPolicyAndSecurityLogFiles(cfg)
 
 	policyBundles := []*BundleMetadata{}
 	profileBundles := []*BundleMetadata{}
@@ -73,7 +80,7 @@ func UpdateMetadata(
 	}
 
 	// Check if metadata changed, don't need to write if unchanged
-	if metadataAreEqual(&oldMeta, metadata) {
+	if metadataAreEqual(&previousMeta, metadata) {
 		return nil
 	}
 
