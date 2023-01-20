@@ -156,8 +156,7 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	docker run -v ${PWD}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
 
-integration-test:
-	make local-deb-package
+integration-test: local-deb-package
 	PACKAGE=${PACKAGE_NAME} go test ./test/integration/api 
 
 test-bench: ## Run benchmark tests
