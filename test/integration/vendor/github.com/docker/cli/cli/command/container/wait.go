@@ -7,6 +7,7 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/command/completion"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -27,6 +28,10 @@ func NewWaitCommand(dockerCli command.Cli) *cobra.Command {
 			opts.containers = args
 			return runWait(dockerCli, &opts)
 		},
+		Annotations: map[string]string{
+			"aliases": "docker container wait, docker wait",
+		},
+		ValidArgsFunction: completion.ContainerNames(dockerCli, false),
 	}
 
 	return cmd

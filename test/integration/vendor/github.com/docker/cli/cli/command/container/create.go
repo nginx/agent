@@ -10,6 +10,7 @@ import (
 	"github.com/containerd/containerd/platforms"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/image"
 	"github.com/docker/cli/opts"
 	"github.com/docker/distribution/reference"
@@ -36,12 +37,13 @@ type createOptions struct {
 	name      string
 	platform  string
 	untrusted bool
-	pull      string // alway, missing, never
+	pull      string // always, missing, never
+	quiet     bool
 }
 
 // NewCreateCommand creates a new cobra.Command for `docker create`
 func NewCreateCommand(dockerCli command.Cli) *cobra.Command {
-	var opts createOptions
+	var options createOptions
 	var copts *containerOptions
 
 	cmd := &cobra.Command{
@@ -53,28 +55,36 @@ func NewCreateCommand(dockerCli command.Cli) *cobra.Command {
 			if len(args) > 1 {
 				copts.Args = args[1:]
 			}
-			return runCreate(dockerCli, cmd.Flags(), &opts, copts)
+			return runCreate(dockerCli, cmd.Flags(), &options, copts)
 		},
+		Annotations: map[string]string{
+			"aliases": "docker container create, docker create",
+		},
+		ValidArgsFunction: completion.ImageNames(dockerCli),
 	}
 
 	flags := cmd.Flags()
 	flags.SetInterspersed(false)
 
-	flags.StringVar(&opts.name, "name", "", "Assign a name to the container")
-	flags.StringVar(&opts.pull, "pull", PullImageMissing,
-		`Pull image before creating ("`+PullImageAlways+`"|"`+PullImageMissing+`"|"`+PullImageNever+`")`)
+	flags.StringVar(&options.name, "name", "", "Assign a name to the container")
+	flags.StringVar(&options.pull, "pull", PullImageMissing, `Pull image before creating ("`+PullImageAlways+`"|"`+PullImageMissing+`"|"`+PullImageNever+`")`)
+	flags.BoolVarP(&options.quiet, "quiet", "q", false, "Suppress the pull output")
 
 	// Add an explicit help that doesn't have a `-h` to prevent the conflict
 	// with hostname
 	flags.Bool("help", false, "Print usage")
 
-	command.AddPlatformFlag(flags, &opts.platform)
-	command.AddTrustVerificationFlags(flags, &opts.untrusted, dockerCli.ContentTrustEnabled())
+	command.AddPlatformFlag(flags, &options.platform)
+	command.AddTrustVerificationFlags(flags, &options.untrusted, dockerCli.ContentTrustEnabled())
 	copts = addFlags(flags)
 	return cmd
 }
 
 func runCreate(dockerCli command.Cli, flags *pflag.FlagSet, options *createOptions, copts *containerOptions) error {
+	if err := validatePullOpt(options.pull); err != nil {
+		reportError(dockerCli.Err(), "create", err.Error(), true)
+		return cli.StatusError{StatusCode: 125}
+	}
 	proxyConfig := dockerCli.ConfigFile().ParseProxyConfig(dockerCli.Client().DaemonHost(), opts.ConvertKVStringsToMapWithNil(copts.env.GetAll()))
 	newEnv := []string{}
 	for k, v := range proxyConfig {
@@ -188,15 +198,14 @@ func newCIDFile(path string) (*cidFile, error) {
 	return &cidFile{path: path, file: f}, nil
 }
 
-// nolint: gocyclo
-func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig *containerConfig, opts *createOptions) (*container.ContainerCreateCreatedBody, error) {
+//nolint:gocyclo
+func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig *containerConfig, opts *createOptions) (*container.CreateResponse, error) {
 	config := containerConfig.Config
 	hostConfig := containerConfig.HostConfig
 	networkingConfig := containerConfig.NetworkingConfig
-	stderr := dockerCli.Err()
 
-	warnOnOomKillDisable(*hostConfig, stderr)
-	warnOnLocalhostDNS(*hostConfig, stderr)
+	warnOnOomKillDisable(*hostConfig, dockerCli.Err())
+	warnOnLocalhostDNS(*hostConfig, dockerCli.Err())
 
 	var (
 		trustedRef reference.Canonical
@@ -227,7 +236,11 @@ func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig
 	}
 
 	pullAndTagImage := func() error {
-		if err := pullImage(ctx, dockerCli, config.Image, opts.platform, stderr); err != nil {
+		pullOut := dockerCli.Err()
+		if opts.quiet {
+			pullOut = io.Discard
+		}
+		if err := pullImage(ctx, dockerCli, config.Image, opts.platform, pullOut); err != nil {
 			return err
 		}
 		if taggedRef, ok := namedRef.(reference.NamedTagged); ok && trustedRef != nil {
@@ -255,12 +268,17 @@ func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig
 		}
 	}
 
+	hostConfig.ConsoleSize[0], hostConfig.ConsoleSize[1] = dockerCli.Out().GetTtySize()
+
 	response, err := dockerCli.Client().ContainerCreate(ctx, config, hostConfig, networkingConfig, platform, opts.name)
 	if err != nil {
 		// Pull image if it does not exist locally and we have the PullImageMissing option. Default behavior.
 		if apiclient.IsErrNotFound(err) && namedRef != nil && opts.pull == PullImageMissing {
-			// we don't want to write to stdout anything apart from container.ID
-			fmt.Fprintf(stderr, "Unable to find image '%s' locally\n", reference.FamiliarString(namedRef))
+			if !opts.quiet {
+				// we don't want to write to stdout anything apart from container.ID
+				fmt.Fprintf(dockerCli.Err(), "Unable to find image '%s' locally\n", reference.FamiliarString(namedRef))
+			}
+
 			if err := pullAndTagImage(); err != nil {
 				return nil, err
 			}
@@ -276,7 +294,7 @@ func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig
 	}
 
 	for _, warning := range response.Warnings {
-		fmt.Fprintf(stderr, "WARNING: %s\n", warning)
+		fmt.Fprintf(dockerCli.Err(), "WARNING: %s\n", warning)
 	}
 	err = containerIDFile.Write(response.ID)
 	return &response, err
@@ -309,4 +327,20 @@ var localhostIPRegexp = regexp.MustCompile(ipLocalhost)
 // localhost addresses
 func isLocalhost(ip string) bool {
 	return localhostIPRegexp.MatchString(ip)
+}
+
+func validatePullOpt(val string) error {
+	switch val {
+	case PullImageAlways, PullImageMissing, PullImageNever, "":
+		// valid option, but nothing to do yet
+		return nil
+	default:
+		return fmt.Errorf(
+			"invalid pull option: '%s': must be one of %q, %q or %q",
+			val,
+			PullImageAlways,
+			PullImageMissing,
+			PullImageNever,
+		)
+	}
 }

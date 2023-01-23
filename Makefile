@@ -85,14 +85,17 @@ format: ## Format code
 	buf format -w ./sdk/proto/
 
 install-tools: ## Install dependencies in tools.go
+	@echo "Getting Tools"
+	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go get %
+	@echo "Installing Tools"
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
 
 generate-swagger: ## Generates swagger.json from source code
-	swagger generate spec -o ./docs/swagger.json --scan-models
+	go run github.com/go-swagger/go-swagger/cmd/swagger generate spec -o ./docs/swagger.json --scan-models
 
 launch-swagger-ui: generate-swagger ## Launch Swagger UI
-	swagger serve ./docs/swagger.json -F=swagger --port=8082 --no-open
-
+	go run github.com/go-swagger/go-swagger/cmd/swagger serve ./docs/swagger.json -F=swagger --port=8082 --no-open
+	
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Local Packaging                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

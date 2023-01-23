@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"sort"
 
 	"github.com/docker/cli/cli/command"
@@ -17,7 +16,7 @@ import (
 	registrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/registry"
-	digest "github.com/opencontainers/go-digest"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/theupdateframework/notary/client"
@@ -43,7 +42,8 @@ func TrustedPush(ctx context.Context, cli command.Cli, repoInfo *registry.Reposi
 }
 
 // PushTrustedReference pushes a canonical reference to the trust server.
-// nolint: gocyclo
+//
+//nolint:gocyclo
 func PushTrustedReference(streams command.Streams, repoInfo *registry.RepositoryInfo, ref reference.Named, authConfig types.AuthConfig, in io.Reader) error {
 	// If it is a trusted push we would like to find the target entry which match the
 	// tag provided in the function and then do an AddTarget later.
@@ -283,7 +283,7 @@ func imagePullPrivileged(ctx context.Context, cli command.Cli, imgRefAndAuth tru
 
 	out := cli.Out()
 	if opts.quiet {
-		out = streams.NewOut(ioutil.Discard)
+		out = streams.NewOut(io.Discard)
 	}
 	return jsonmessage.DisplayJSONMessagesToStream(responseBody, out, nil)
 }
@@ -312,7 +312,6 @@ func TrustedReference(ctx context.Context, cli command.Cli, ref reference.NamedT
 	r, err := convertTarget(t.Target)
 	if err != nil {
 		return nil, err
-
 	}
 	return reference.WithDigest(reference.TrimNamed(ref), r.digest)
 }
@@ -330,7 +329,6 @@ func convertTarget(t client.Target) (target, error) {
 }
 
 // TagTrusted tags a trusted ref
-// nolint: interfacer
 func TagTrusted(ctx context.Context, cli command.Cli, trustedRef reference.Canonical, ref reference.NamedTagged) error {
 	// Use familiar references when interacting with client and output
 	familiarRef := reference.FamiliarString(ref)

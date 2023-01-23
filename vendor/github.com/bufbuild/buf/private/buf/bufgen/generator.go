@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -511,14 +511,12 @@ func newModifier(
 ) (bufimagemodify.Modifier, error) {
 	modifier := bufimagemodify.NewMultiModifier(
 		bufimagemodify.JavaOuterClassname(logger, sweeper, managedConfig.Override[bufimagemodify.JavaOuterClassNameID]),
-		bufimagemodify.ObjcClassPrefix(logger, sweeper, managedConfig.Override[bufimagemodify.ObjcClassPrefixID]),
 		bufimagemodify.PhpNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpNamespaceID]),
 		bufimagemodify.PhpMetadataNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
-		bufimagemodify.RubyPackage(logger, sweeper, managedConfig.Override[bufimagemodify.RubyPackageID]),
 	)
 	javaPackagePrefix := &JavaPackagePrefixConfig{Default: bufimagemodify.DefaultJavaPackagePrefix}
-	if managedConfig.JavaPackagePrefix != nil {
-		javaPackagePrefix = managedConfig.JavaPackagePrefix
+	if managedConfig.JavaPackagePrefixConfig != nil {
+		javaPackagePrefix = managedConfig.JavaPackagePrefixConfig
 	}
 	javaPackageModifier, err := bufimagemodify.JavaPackage(
 		logger,
@@ -623,6 +621,47 @@ func newModifier(
 			goPackageModifier,
 		)
 	}
+	var (
+		objcClassPrefixDefault  string
+		objcClassPrefixExcept   []bufmoduleref.ModuleIdentity
+		objcClassPrefixOverride map[bufmoduleref.ModuleIdentity]string
+	)
+	if objcClassPrefixConfig := managedConfig.ObjcClassPrefixConfig; objcClassPrefixConfig != nil {
+		objcClassPrefixDefault = objcClassPrefixConfig.Default
+		objcClassPrefixExcept = objcClassPrefixConfig.Except
+		objcClassPrefixOverride = objcClassPrefixConfig.Override
+	}
+	objcClassPrefixModifier := bufimagemodify.ObjcClassPrefix(
+		logger,
+		sweeper,
+		objcClassPrefixDefault,
+		objcClassPrefixExcept,
+		objcClassPrefixOverride,
+		managedConfig.Override[bufimagemodify.ObjcClassPrefixID],
+	)
+	modifier = bufimagemodify.Merge(
+		modifier,
+		objcClassPrefixModifier,
+	)
+	var (
+		rubyPackageExcept    []bufmoduleref.ModuleIdentity
+		rubyPackageOverrides map[bufmoduleref.ModuleIdentity]string
+	)
+	if rubyPackageConfig := managedConfig.RubyPackageConfig; rubyPackageConfig != nil {
+		rubyPackageExcept = rubyPackageConfig.Except
+		rubyPackageOverrides = rubyPackageConfig.Override
+	}
+	rubyPackageModifier := bufimagemodify.RubyPackage(
+		logger,
+		sweeper,
+		rubyPackageExcept,
+		rubyPackageOverrides,
+		managedConfig.Override[bufimagemodify.RubyPackageID],
+	)
+	modifier = bufimagemodify.Merge(
+		modifier,
+		rubyPackageModifier,
+	)
 	return modifier, nil
 }
 

@@ -230,7 +230,7 @@ type ValidatorFctListType func(val string) ([]string, error)
 
 // ValidateIPAddress validates an Ip address.
 func ValidateIPAddress(val string) (string, error) {
-	var ip = net.ParseIP(strings.TrimSpace(val))
+	ip := net.ParseIP(strings.TrimSpace(val))
 	if ip != nil {
 		return ip.String(), nil
 	}
@@ -319,17 +319,6 @@ func ValidateSysctl(val string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("sysctl '%s' is not whitelisted", val)
-}
-
-// ValidateProgressOutput errors out if an invalid value is passed to --progress
-func ValidateProgressOutput(val string) error {
-	valid := []string{"auto", "plain", "tty"}
-	for _, s := range valid {
-		if s == val {
-			return nil
-		}
-	}
-	return fmt.Errorf("invalid value %q passed to --progress, valid values are: %s", val, strings.Join(valid, ", "))
 }
 
 // FilterOpt is a flag type for validating filters

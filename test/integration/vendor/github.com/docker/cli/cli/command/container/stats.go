@@ -10,7 +10,9 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/formatter"
+	flagsHelper "github.com/docker/cli/cli/flags"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
@@ -38,19 +40,24 @@ func NewStatsCommand(dockerCli command.Cli) *cobra.Command {
 			opts.containers = args
 			return runStats(dockerCli, &opts)
 		},
+		Annotations: map[string]string{
+			"aliases": "docker container stats, docker stats",
+		},
+		ValidArgsFunction: completion.ContainerNames(dockerCli, false),
 	}
 
 	flags := cmd.Flags()
 	flags.BoolVarP(&opts.all, "all", "a", false, "Show all containers (default shows just running)")
 	flags.BoolVar(&opts.noStream, "no-stream", false, "Disable streaming stats and only pull the first result")
 	flags.BoolVar(&opts.noTrunc, "no-trunc", false, "Do not truncate output")
-	flags.StringVar(&opts.format, "format", "", "Pretty-print images using a Go template")
+	flags.StringVar(&opts.format, "format", "", flagsHelper.FormatHelp)
 	return cmd
 }
 
 // runStats displays a live stream of resource usage statistics for one or more containers.
 // This shows real-time information on CPU usage, memory usage, and network I/O.
-// nolint: gocyclo
+//
+//nolint:gocyclo
 func runStats(dockerCli command.Cli, opts *statsOptions) error {
 	showAll := len(opts.containers) == 0
 	closeChan := make(chan error)
@@ -59,7 +66,7 @@ func runStats(dockerCli command.Cli, opts *statsOptions) error {
 
 	// monitorContainerEvents watches for container creation and removal (only
 	// used when calling `docker stats` without arguments).
-	monitorContainerEvents := func(started chan<- struct{}, c chan events.Message) {
+	monitorContainerEvents := func(started chan<- struct{}, c chan events.Message, stopped <-chan struct{}) {
 		f := filters.NewArgs()
 		f.Add("type", "container")
 		options := types.EventsOptions{
@@ -71,9 +78,12 @@ func runStats(dockerCli command.Cli, opts *statsOptions) error {
 		// Whether we successfully subscribed to eventq or not, we can now
 		// unblock the main goroutine.
 		close(started)
+		defer close(c)
 
 		for {
 			select {
+			case <-stopped:
+				return
 			case event := <-eventq:
 				c <- event
 			case err := <-errq:
@@ -149,8 +159,9 @@ func runStats(dockerCli command.Cli, opts *statsOptions) error {
 
 		eventChan := make(chan events.Message)
 		go eh.Watch(eventChan)
-		go monitorContainerEvents(started, eventChan)
-		defer close(eventChan)
+		stopped := make(chan struct{})
+		go monitorContainerEvents(started, eventChan, stopped)
+		defer close(stopped)
 		<-started
 
 		// Start a short-lived goroutine to retrieve the initial list of
@@ -177,13 +188,13 @@ func runStats(dockerCli command.Cli, opts *statsOptions) error {
 		waitFirst.Wait()
 
 		var errs []string
-		cStats.mu.Lock()
+		cStats.mu.RLock()
 		for _, c := range cStats.cs {
 			if err := c.GetError(); err != nil {
 				errs = append(errs, err.Error())
 			}
 		}
-		cStats.mu.Unlock()
+		cStats.mu.RUnlock()
 		if len(errs) > 0 {
 			return errors.New(strings.Join(errs, "\n"))
 		}
@@ -214,11 +225,11 @@ func runStats(dockerCli command.Cli, opts *statsOptions) error {
 	for range ticker.C {
 		cleanScreen()
 		ccstats := []StatsEntry{}
-		cStats.mu.Lock()
+		cStats.mu.RLock()
 		for _, c := range cStats.cs {
 			ccstats = append(ccstats, c.GetStatistics())
 		}
-		cStats.mu.Unlock()
+		cStats.mu.RUnlock()
 		if err = statsFormatWrite(statsCtx, ccstats, daemonOSType, !opts.noTrunc); err != nil {
 			break
 		}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/formatter"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -26,6 +27,10 @@ func NewDiffCommand(dockerCli command.Cli) *cobra.Command {
 			opts.container = args[0]
 			return runDiff(dockerCli, &opts)
 		},
+		Annotations: map[string]string{
+			"aliases": "docker container diff, docker diff",
+		},
+		ValidArgsFunction: completion.ContainerNames(dockerCli, false),
 	}
 }
 

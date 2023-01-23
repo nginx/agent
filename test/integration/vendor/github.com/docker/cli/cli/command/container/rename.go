@@ -7,6 +7,7 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/command/completion"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -29,6 +30,10 @@ func NewRenameCommand(dockerCli command.Cli) *cobra.Command {
 			opts.newName = args[1]
 			return runRename(dockerCli, &opts)
 		},
+		Annotations: map[string]string{
+			"aliases": "docker container rename, docker rename",
+		},
+		ValidArgsFunction: completion.ContainerNames(dockerCli, true),
 	}
 	return cmd
 }
