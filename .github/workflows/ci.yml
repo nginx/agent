@@ -165,7 +165,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           file: scripts/packages/packager/Dockerfile
-          tags: build-local-package:1.0.0
+          tags: build-local-packager:1.0.0
           context: '.'
           push: false
           load: true
