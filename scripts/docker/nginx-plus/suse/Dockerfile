@@ -6,7 +6,7 @@ LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
 ARG OS_VERSION
 ARG PACKAGES_REPO
-ARG DOCKER_IMAGE
+ARG BASE_IMAGE
 
 WORKDIR /agent
 COPY ./scripts/docker/nginx-plus/entrypoint.sh /agent/entrypoint.sh

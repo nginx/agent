@@ -1,5 +1,5 @@
-ARG DOCKER_IMAGE
-FROM ${DOCKER_IMAGE} as install
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} as install
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
 ARG PACKAGES_REPO

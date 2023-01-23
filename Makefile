@@ -23,8 +23,8 @@ DATE = $(shell date +%F_%H-%M-%S)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE:=ubuntu
 OS_VERSION:=22.04
-DOCKER_IMAGE="docker.io/${OS_RELEASE}:${OS_VERSION}"
-DOCKER_TAG=agent_${OS_RELEASE}_${OS_VERSION}
+BASE_IMAGE="docker.io/${OS_RELEASE}:${OS_VERSION}"
+IMAGE_TAG=agent_${OS_RELEASE}_${OS_VERSION}
 
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
@@ -127,7 +127,7 @@ local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${LOCAL_ARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/nginx-agent/$(CONTAINER_VOLUME_FLAGS) build-local-packager:1.0.0
 
-build-txz-packager-docker: ## Builds txz packager docker image
+txz-packager-image: ## Builds txz packager container image
 	@echo Building Local Packager; \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
 
@@ -169,7 +169,7 @@ component-test: test-component-build test-component-run ## Run component tests
 test-component-build: ## Compile component tests
 	GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test ./test/component -c -o component.test
 
-test-docker-component: ## Run integration tests in docker
+test-container-component: ## Run integration tests in container
 	for container in ${$(CONTAINER_CLITOOL) ps -aqf "name=^nginx-agent_"}; do echo && $(CONTAINER_CLITOOL) ps -f "id=$$container" --format "{{.Image}}" && $(CONTAINER_CLITOOL) exec $$container ./tmp/component.test -test.v; done
 
 test-component-run: ## Run component tests
@@ -187,7 +187,7 @@ test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
 
-build-benchmark-docker: ## Build benchmark test docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
+benchmark-image: ## Build benchmark test container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build --no-cache -t nginx-agent-benchmark:1.0.0 \
 		--secret id=nginx-crt,src=build/nginx-repo.crt \
 		--secret id=nginx-key,src=build/nginx-repo.key \
@@ -228,23 +228,23 @@ certs: ## Generate TLS certificates
 	cp ${CERTS_DIR}/server/ee.key ${CERTS_DIR}/server.key
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Docker Helper Targets                                                                                           #
+# Container Image Helper Targets                                                                                  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-build-docker: ## Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
-	@echo Building Docker; \
-	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${DOCKER_TAG} . \
-		--no-cache -f ./scripts/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
+image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
+	@echo Building image with $(CONTAINER_CLITOOL); \
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
+		--no-cache -f ./scripts/docker/${OS_RELEASE}/Dockerfile \
 		--secret id=nginx-crt,src=build/nginx-repo.crt \
 		--secret id=nginx-key,src=build/nginx-repo.key \
 		--build-arg AGENT_CONF="$$(cat nginx-agent.conf)" \
-		--build-arg DOCKER_IMAGE=${DOCKER_IMAGE} \
+		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		--build-arg PACKAGES_REPO=${PACKAGES_REPO} \
 		--build-arg OS_RELEASE=${OS_RELEASE} \
 		--build-arg OS_VERSION=${OS_VERSION}
 
-run-docker: ## Run docker container from specified DOCKER_TAG
-	@echo Running Docker; \
-		$(CONTAINER_CLITOOL) run ${DOCKER_TAG}
+run-container: ## Run container from specified IMAGE_TAG
+	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \
+		$(CONTAINER_CLITOOL) run ${IMAGE_TAG}
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Dashboard Targets                                                                                               #

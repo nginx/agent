@@ -1,8 +1,8 @@
-ARG DOCKER_IMAGE
-FROM ${DOCKER_IMAGE} as install
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} as install
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
-ARG DOCKER_IMAGE
+ARG BASE_IMAGE
 ARG PACKAGES_REPO
 ARG OS_RELEASE
 ARG OS_VERSION
@@ -30,7 +30,7 @@ sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
 sslverify=true \n\
-gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-plus-$DOCKER_IMAGE.repo \
+gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-plus-$BASE_IMAGE.repo \
     && printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
 baseurl=https://$PACKAGES_REPO/nginx-agent/$OS_RELEASE/$OS_VERSION/\$basearch \n\
@@ -39,7 +39,7 @@ sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
 sslverify=true \n\
-gpgkey=https://nginx.org/keys/nginx_signing.key">> /etc/yum.repos.d/nginx-agent-$DOCKER_IMAGE.repo \
+gpgkey=https://nginx.org/keys/nginx_signing.key">> /etc/yum.repos.d/nginx-agent-$BASE_IMAGE.repo \
     && nginxPackages=" \
         nginx-agent \
         nginx-plus \
