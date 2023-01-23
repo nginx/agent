@@ -152,13 +152,21 @@ func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.St
 	c.buf = []*proto.StatsEntity{}
 }
 
+var httpRequestMetrics = []string{
+	"request.time",
+	"request.time.count",
+	"request.time.max",
+	"request.time.median",
+	"request.time.pctl95",
+}
+
 func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string) {
 	logPattern := convertLogFormat(logFormat)
 	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
 	log.Debugf("Pattern used for tailing logs: %s", logPattern)
 
 	httpCounters := getDefaultHTTPCounters()
-	counters := getDefaultGenCounters()
+	counters := getDefaultCounters()
 
 	gzipRatios, requestLengths, requestTimes, connectTimes := []float64{}, []float64{}, []float64{}, []float64{}
 	mu := sync.Mutex{}
@@ -291,7 +299,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				httpCounters["gzip.ratio"] = getGzipRatioMetricValue(gzipRatios)
 			}
 
-			for metricName := range httpCounters {
+			for _, metricName := range httpRequestMetrics {
 				httpCounters[metricName] = getTimeMetrics(metricName, requestTimes)
 			}
 
@@ -309,7 +317,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 			// reset the counters
 			httpCounters = getDefaultHTTPCounters()
-			counters = getDefaultGenCounters()
+			counters = getDefaultCounters()
 			gzipRatios, requestLengths, requestTimes, connectTimes = []float64{}, []float64{}, []float64{}, []float64{}
 
 			c.buf = append(c.buf, metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics))
@@ -395,7 +403,7 @@ func getTimeMetrics(metricName string, times []float64) float64 {
 
 	switch metricType {
 	case "time":
-		// Calculate time average
+		// Calculate times average
 		sum := 0.0
 		for _, t := range times {
 			sum += t
@@ -501,7 +509,7 @@ func getDefaultHTTPCounters() map[string]float64 {
 	}
 }
 
-func getDefaultGenCounters() map[string]float64 {
+func getDefaultCounters() map[string]float64 {
 	return map[string]float64{
 		"upstream.connect.time":        0,
 		"upstream.connect.time.count":  0,
