@@ -15,10 +15,10 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNginxOSSUpdate(t *testing.T) {
