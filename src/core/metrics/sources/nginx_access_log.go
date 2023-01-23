@@ -235,6 +235,12 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				}
 			}
 
+			if v, err := strconv.ParseFloat(access.UpstreamConnectTime, 64); err == nil {
+				connectTimes = append(connectTimes, v)
+			} else {
+				log.Debugf("Error getting upstream_connect_time value from access logs, %v", err)
+			}
+
 			if access.ServerProtocol != "" {
 				if strings.Count(access.ServerProtocol, "/") == 1 {
 					httpProtocolVersion := strings.Split(access.ServerProtocol, "/")[1]
@@ -462,7 +468,6 @@ func convertLogFormat(logFormat string) string {
 	newLogFormat = strings.ReplaceAll(newLogFormat, "\"$request\"", "\"%{DATA:request}\"")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$request ", "%{DATA:request} ")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_connect_time", "%{DATA:upstream_connect_time}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "\"$upstream_connect_time\"", "\"%{DATA:upstream_connect_time}\"")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "[", "\\[")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "]", "\\]")
 	return newLogFormat
