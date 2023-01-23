@@ -12,9 +12,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
-    "github.com/testcontainers/testcontainers-go"
+    "github.com/testcontainers/testcontainers-go/modules/compose"
 	wait "github.com/testcontainers/testcontainers-go/wait"
-	dc "github.com/testcontainers/testcontainers-go/modules/compose"
 )
 
 const (
@@ -22,21 +21,21 @@ const (
 )
 
 func TestAPI_setupTestContainer(t *testing.T) {
-	compose, err := dc.NewDockerCompose("docker-compose.yml")
+	comp, err := compose.NewDockerCompose("docker-compose.yml")
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
 	t.Cleanup(func() {
-		assert.NoError(t, compose.Down(context.Background(), dc.RemoveOrphans(true), dc.RemoveImagesLocal), "compose.Down()")
+		assert.NoError(t, comp.Down(context.Background(), compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	assert.NoError(t, compose.
+	assert.NoError(t, comp.
 		WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(map[string]string{
 		"PACKAGE": os.Getenv("PACKAGE"),
 	}).
-		Up(ctx, dc.Wait(true)), "compose.Up()")
+		Up(ctx, compose.Wait(true)), "compose.Up()")
 }
 
 func TestAPI_Nginx(t *testing.T) {
