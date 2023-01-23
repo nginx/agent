@@ -444,7 +444,7 @@ func getUpstreamConnectMetrics(connectTimes []float64) map[string]float64 {
 	return counters
 }
 
-// convertLogFormat converts log format into a log format including a pattern that can be parsed by the tailer
+// convertLogFormat converts log format into a pattern that can be parsed by the tailer
 func convertLogFormat(logFormat string) string {
 	newLogFormat := strings.ReplaceAll(logFormat, "$remote_addr", "%{IPORHOST:remote_addr}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$remote_user", "%{USERNAME:remote_user}")
@@ -462,6 +462,7 @@ func convertLogFormat(logFormat string) string {
 	newLogFormat = strings.ReplaceAll(newLogFormat, "\"$request\"", "\"%{DATA:request}\"")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$request ", "%{DATA:request} ")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_connect_time", "%{DATA:upstream_connect_time}")
+	newLogFormat = strings.ReplaceAll(newLogFormat, "\"$upstream_connect_time\"", "\"%{DATA:upstream_connect_time}\"")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "[", "\\[")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "]", "\\]")
 	return newLogFormat

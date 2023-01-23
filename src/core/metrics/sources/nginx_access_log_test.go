@@ -392,26 +392,26 @@ func TestAccessLogStats(t *testing.T) {
 						Name:  "nginx.http.v2",
 						Value: 1,
 					},
-					// {
-					// 	Name:  "nginx.upstream.connect.time",
-					// 	Value: 0,
-					// },
-					// {
-					// 	Name:  "nginx.upstream.connect.time.count",
-					// 	Value: 0,
-					// },
-					// {
-					// 	Name:  "nginx.upstream.connect.time.max",
-					// 	Value: 0,
-					// },
-					// {
-					// 	Name:  "nginx.upstream.connect.time.median",
-					// 	Value: 0,
-					// },
-					// {
-					// 	Name:  "nginx.upstream.connect.time.pctl95",
-					// 	Value: 0,
-					// },
+					{
+						Name:  "nginx.upstream.connect.time",
+						Value: 350,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.count",
+						Value: 350,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.max",
+						Value: 350,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.median",
+						Value: 350,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.pctl95",
+						Value: 350,
+					},
 				},
 			},
 		},
