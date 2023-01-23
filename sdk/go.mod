@@ -3,7 +3,7 @@ module github.com/nginx/agent/sdk/v2
 go 1.19
 
 require (
-	github.com/cenkalti/backoff/v4 v4.1.3
+	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/nginxinc/nginx-go-crossplane v0.4.1
@@ -21,8 +21,8 @@ require (
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	golang.org/x/net v0.4.0 // indirect
-	golang.org/x/sys v0.3.0 // indirect
-	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/text v0.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20221207170731-23e4bf6bdc37 // indirect
 	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
