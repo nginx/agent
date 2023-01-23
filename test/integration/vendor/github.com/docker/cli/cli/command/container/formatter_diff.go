@@ -24,6 +24,7 @@ func NewDiffFormat(source string) formatter.Format {
 
 // DiffFormatWrite writes formatted diff using the Context
 func DiffFormatWrite(ctx formatter.Context, changes []container.ContainerChangeResponseItem) error {
+
 	render := func(format func(subContext formatter.SubContext) error) error {
 		for _, change := range changes {
 			if err := format(&diffContext{c: change}); err != nil {
@@ -64,6 +65,7 @@ func (d *diffContext) Type() string {
 		kind = "D"
 	}
 	return kind
+
 }
 
 func (d *diffContext) Path() string {

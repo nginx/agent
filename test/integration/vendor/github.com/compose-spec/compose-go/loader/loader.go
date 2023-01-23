@@ -167,6 +167,13 @@ func Load(configDetails types.ConfigDetails, options ...func(*Options)) (*types.
 	for i, file := range configDetails.ConfigFiles {
 		configDict := file.Config
 		if configDict == nil {
+			if len(file.Content) == 0 {
+				content, err := os.ReadFile(file.Filename)
+				if err != nil {
+					return nil, err
+				}
+				file.Content = content
+			}
 			dict, err := parseConfig(file.Content, opts)
 			if err != nil {
 				return nil, err
@@ -556,7 +563,7 @@ func loadServiceWithExtends(filename, name string, servicesDict map[string]inter
 				if vol.Type != types.VolumeTypeBind {
 					continue
 				}
-				baseService.Volumes[i].Source = absPath(baseFileParent, vol.Source)
+				baseService.Volumes[i].Source = resolveMaybeUnixPath(vol.Source, baseFileParent, lookupEnv)
 			}
 		}
 
@@ -622,6 +629,12 @@ func convertVolumePath(volume types.ServiceVolumeConfig) types.ServiceVolumeConf
 
 func resolveEnvironment(serviceConfig *types.ServiceConfig, workingDir string, lookupEnv template.Mapping) error {
 	environment := types.MappingWithEquals{}
+	var resolve dotenv.LookupFn = func(s string) (string, bool) {
+		if v, ok := environment[s]; ok && v != nil {
+			return *v, true
+		}
+		return lookupEnv(s)
+	}
 
 	if len(serviceConfig.EnvFile) > 0 {
 		if serviceConfig.Environment == nil {
@@ -642,7 +655,7 @@ func resolveEnvironment(serviceConfig *types.ServiceConfig, workingDir string, l
 			// Do not defer to avoid it inside a loop
 			file.Close() //nolint:errcheck
 
-			fileVars, err := dotenv.ParseWithLookup(bytes.NewBuffer(b), dotenv.LookupFn(lookupEnv))
+			fileVars, err := dotenv.ParseWithLookup(bytes.NewBuffer(b), resolve)
 			if err != nil {
 				return err
 			}
@@ -660,8 +673,8 @@ func resolveEnvironment(serviceConfig *types.ServiceConfig, workingDir string, l
 	return nil
 }
 
-func resolveVolumePath(volume types.ServiceVolumeConfig, workingDir string, lookupEnv template.Mapping) types.ServiceVolumeConfig {
-	filePath := expandUser(volume.Source, lookupEnv)
+func resolveMaybeUnixPath(path string, workingDir string, lookupEnv template.Mapping) string {
+	filePath := expandUser(path, lookupEnv)
 	// Check if source is an absolute path (either Unix or Windows), to
 	// handle a Windows client with a Unix daemon or vice-versa.
 	//
@@ -671,8 +684,19 @@ func resolveVolumePath(volume types.ServiceVolumeConfig, workingDir string, look
 	if !paths.IsAbs(filePath) && !isAbs(filePath) {
 		filePath = absPath(workingDir, filePath)
 	}
-	volume.Source = filePath
+	return filePath
+}
+
+func resolveVolumePath(volume types.ServiceVolumeConfig, workingDir string, lookupEnv template.Mapping) types.ServiceVolumeConfig {
+	volume.Source = resolveMaybeUnixPath(volume.Source, workingDir, lookupEnv)
 	return volume
+}
+
+func resolveSecretsPath(secret types.SecretConfig, workingDir string, lookupEnv template.Mapping) types.SecretConfig {
+	if !secret.External.External && secret.File != "" {
+		secret.File = resolveMaybeUnixPath(secret.File, workingDir, lookupEnv)
+	}
+	return secret
 }
 
 // TODO: make this more robust
@@ -723,7 +747,7 @@ func LoadNetworks(source map[string]interface{}) (map[string]types.NetworkConfig
 			if network.Name != "" {
 				return nil, errors.Errorf("network %s: network.external.name and network.name conflict; only use network.name", name)
 			}
-			logrus.Warnf("network %s: network.external.name is deprecated in favor of network.name", name)
+			logrus.Warnf("network %s: network.external.name is deprecated. Please set network.name with external: true", name)
 			network.Name = network.External.Name
 			network.External.Name = ""
 		case network.Name == "":
@@ -782,11 +806,14 @@ func LoadSecrets(source map[string]interface{}, details types.ConfigDetails, res
 		return secrets, err
 	}
 	for name, secret := range secrets {
-		obj, err := loadFileObjectConfig(name, "secret", types.FileObjectConfig(secret), details, resolvePaths)
+		obj, err := loadFileObjectConfig(name, "secret", types.FileObjectConfig(secret), details, false)
 		if err != nil {
 			return nil, err
 		}
 		secretConfig := types.SecretConfig(obj)
+		if resolvePaths {
+			secretConfig = resolveSecretsPath(secretConfig, details.WorkingDir, details.LookupEnv)
+		}
 		secrets[name] = secretConfig
 	}
 	return secrets, nil

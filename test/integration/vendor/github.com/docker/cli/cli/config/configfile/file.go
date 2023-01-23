@@ -3,7 +3,9 @@ package configfile
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +14,13 @@ import (
 	"github.com/docker/cli/cli/config/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	// This constant is only used for really old config files when the
+	// URL wasn't saved as part of the config file and it was just
+	// assumed to be this value.
+	defaultIndexServer = "https://index.docker.io/v1/"
 )
 
 // ConfigFile ~/.docker/config.json file info
@@ -37,7 +46,8 @@ type ConfigFile struct {
 	PruneFilters         []string                     `json:"pruneFilters,omitempty"`
 	Proxies              map[string]ProxyConfig       `json:"proxies,omitempty"`
 	Experimental         string                       `json:"experimental,omitempty"`
-	StackOrchestrator    string                       `json:"stackOrchestrator,omitempty"` // Deprecated: swarm is now the default orchestrator, and this option is ignored.
+	StackOrchestrator    string                       `json:"stackOrchestrator,omitempty"`
+	Kubernetes           *KubernetesConfig            `json:"kubernetes,omitempty"`
 	CurrentContext       string                       `json:"currentContext,omitempty"`
 	CLIPluginsExtraDirs  []string                     `json:"cliPluginsExtraDirs,omitempty"`
 	Plugins              map[string]map[string]string `json:"plugins,omitempty"`
@@ -50,7 +60,11 @@ type ProxyConfig struct {
 	HTTPSProxy string `json:"httpsProxy,omitempty"`
 	NoProxy    string `json:"noProxy,omitempty"`
 	FTPProxy   string `json:"ftpProxy,omitempty"`
-	AllProxy   string `json:"allProxy,omitempty"`
+}
+
+// KubernetesConfig contains Kubernetes orchestrator settings
+type KubernetesConfig struct {
+	AllNamespaces string `json:"allNamespaces,omitempty"`
 }
 
 // New initializes an empty configuration file for the given filename 'fn'
@@ -62,6 +76,44 @@ func New(fn string) *ConfigFile {
 		Plugins:     make(map[string]map[string]string),
 		Aliases:     make(map[string]string),
 	}
+}
+
+// LegacyLoadFromReader reads the non-nested configuration data given and sets up the
+// auth config information with given directory and populates the receiver object
+func (configFile *ConfigFile) LegacyLoadFromReader(configData io.Reader) error {
+	b, err := ioutil.ReadAll(configData)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(b, &configFile.AuthConfigs); err != nil {
+		arr := strings.Split(string(b), "\n")
+		if len(arr) < 2 {
+			return errors.Errorf("The Auth config file is empty")
+		}
+		authConfig := types.AuthConfig{}
+		origAuth := strings.Split(arr[0], " = ")
+		if len(origAuth) != 2 {
+			return errors.Errorf("Invalid Auth config file")
+		}
+		authConfig.Username, authConfig.Password, err = decodeAuth(origAuth[1])
+		if err != nil {
+			return err
+		}
+		authConfig.ServerAddress = defaultIndexServer
+		configFile.AuthConfigs[defaultIndexServer] = authConfig
+	} else {
+		for k, authConfig := range configFile.AuthConfigs {
+			authConfig.Username, authConfig.Password, err = decodeAuth(authConfig.Auth)
+			if err != nil {
+				return err
+			}
+			authConfig.Auth = ""
+			authConfig.ServerAddress = k
+			configFile.AuthConfigs[k] = authConfig
+		}
+	}
+	return nil
 }
 
 // LoadFromReader reads the configuration data given and sets up the auth config
@@ -82,7 +134,7 @@ func (configFile *ConfigFile) LoadFromReader(configData io.Reader) error {
 		ac.ServerAddress = addr
 		configFile.AuthConfigs[addr] = ac
 	}
-	return nil
+	return checkKubernetesConfiguration(configFile.Kubernetes)
 }
 
 // ContainsAuth returns whether there is authentication configured
@@ -142,7 +194,7 @@ func (configFile *ConfigFile) Save() (retErr error) {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-	temp, err := os.CreateTemp(dir, filepath.Base(configFile.Filename))
+	temp, err := ioutil.TempFile(dir, filepath.Base(configFile.Filename))
 	if err != nil {
 		return err
 	}
@@ -192,7 +244,6 @@ func (configFile *ConfigFile) ParseProxyConfig(host string, runOpts map[string]*
 		"HTTPS_PROXY": &config.HTTPSProxy,
 		"NO_PROXY":    &config.NoProxy,
 		"FTP_PROXY":   &config.FTPProxy,
-		"ALL_PROXY":   &config.AllProxy,
 	}
 	m := runOpts
 	if m == nil {
@@ -347,4 +398,18 @@ func (configFile *ConfigFile) SetPluginConfig(pluginname, option, value string) 
 	if len(pluginConfig) == 0 {
 		delete(configFile.Plugins, pluginname)
 	}
+}
+
+func checkKubernetesConfiguration(kubeConfig *KubernetesConfig) error {
+	if kubeConfig == nil {
+		return nil
+	}
+	switch kubeConfig.AllNamespaces {
+	case "":
+	case "enabled":
+	case "disabled":
+	default:
+		return fmt.Errorf("invalid 'kubernetes.allNamespaces' value, should be 'enabled' or 'disabled': %s", kubeConfig.AllNamespaces)
+	}
+	return nil
 }

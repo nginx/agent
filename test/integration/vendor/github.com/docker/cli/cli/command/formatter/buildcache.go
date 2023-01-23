@@ -124,16 +124,10 @@ func (c *buildCacheContext) ID() string {
 }
 
 func (c *buildCacheContext) Parent() string {
-	var parent string
-	if len(c.v.Parents) > 0 {
-		parent = strings.Join(c.v.Parents, ", ")
-	} else {
-		parent = c.v.Parent //nolint:staticcheck // Ignore SA1019: Field was deprecated in API v1.42, but kept for backward compatibility
-	}
 	if c.trunc {
-		return stringid.TruncateID(parent)
+		return stringid.TruncateID(c.v.Parent)
 	}
-	return parent
+	return c.v.Parent
 }
 
 func (c *buildCacheContext) CacheType() string {

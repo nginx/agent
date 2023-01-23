@@ -3,7 +3,6 @@ package opts
 import (
 	"encoding/csv"
 	"fmt"
-	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,8 +25,7 @@ type PortOpt struct {
 }
 
 // Set a new port value
-//
-//nolint:gocyclo
+// nolint: gocyclo
 func (p *PortOpt) Set(value string) error {
 	longSyntax, err := regexp.MatchString(`\w+=\w+(,\w+=\w+)*`, value)
 	if err != nil {
@@ -150,8 +148,8 @@ func ConvertPortToPortConfig(
 	ports := []swarm.PortConfig{}
 
 	for _, binding := range portBindings[port] {
-		if p := net.ParseIP(binding.HostIP); p != nil && !p.IsUnspecified() {
-			logrus.Warnf("ignoring IP-address (%s:%s) service will listen on '0.0.0.0'", net.JoinHostPort(binding.HostIP, binding.HostPort), port)
+		if binding.HostIP != "" && binding.HostIP != "0.0.0.0" {
+			logrus.Warnf("ignoring IP-address (%s:%s:%s) service will listen on '0.0.0.0'", binding.HostIP, binding.HostPort, port)
 		}
 
 		startHostPort, endHostPort, err := nat.ParsePortRange(binding.HostPort)

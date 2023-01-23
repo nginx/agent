@@ -4,19 +4,17 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
-	"github.com/docker/docker/api/types/container"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
 type stopOptions struct {
-	signal         string
-	timeout        int
-	timeoutChanged bool
+	time        int
+	timeChanged bool
 
 	containers []string
 }
@@ -31,40 +29,36 @@ func NewStopCommand(dockerCli command.Cli) *cobra.Command {
 		Args:  cli.RequiresMinArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.containers = args
-			opts.timeoutChanged = cmd.Flags().Changed("time")
+			opts.timeChanged = cmd.Flags().Changed("time")
 			return runStop(dockerCli, &opts)
 		},
-		Annotations: map[string]string{
-			"aliases": "docker container stop, docker stop",
-		},
-		ValidArgsFunction: completion.ContainerNames(dockerCli, false),
 	}
 
 	flags := cmd.Flags()
-	flags.StringVarP(&opts.signal, "signal", "s", "", "Signal to send to the container")
-	flags.IntVarP(&opts.timeout, "time", "t", 0, "Seconds to wait before killing the container")
+	flags.IntVarP(&opts.time, "time", "t", 10, "Seconds to wait for stop before killing it")
 	return cmd
 }
 
 func runStop(dockerCli command.Cli, opts *stopOptions) error {
-	var timeout *int
-	if opts.timeoutChanged {
-		timeout = &opts.timeout
+	ctx := context.Background()
+
+	var timeout *time.Duration
+	if opts.timeChanged {
+		timeoutValue := time.Duration(opts.time) * time.Second
+		timeout = &timeoutValue
 	}
 
-	errChan := parallelOperation(context.Background(), opts.containers, func(ctx context.Context, id string) error {
-		return dockerCli.Client().ContainerStop(ctx, id, container.StopOptions{
-			Signal:  opts.signal,
-			Timeout: timeout,
-		})
-	})
 	var errs []string
-	for _, ctr := range opts.containers {
+
+	errChan := parallelOperation(ctx, opts.containers, func(ctx context.Context, id string) error {
+		return dockerCli.Client().ContainerStop(ctx, id, timeout)
+	})
+	for _, container := range opts.containers {
 		if err := <-errChan; err != nil {
 			errs = append(errs, err.Error())
 			continue
 		}
-		_, _ = fmt.Fprintln(dockerCli.Out(), ctr)
+		fmt.Fprintln(dockerCli.Out(), container)
 	}
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, "\n"))

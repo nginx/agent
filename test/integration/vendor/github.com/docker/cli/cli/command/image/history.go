@@ -6,7 +6,6 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/formatter"
-	flagsHelper "github.com/docker/cli/cli/flags"
 	"github.com/spf13/cobra"
 )
 
@@ -31,9 +30,6 @@ func NewHistoryCommand(dockerCli command.Cli) *cobra.Command {
 			opts.image = args[0]
 			return runHistory(dockerCli, opts)
 		},
-		Annotations: map[string]string{
-			"aliases": "docker image history, docker history",
-		},
 	}
 
 	flags := cmd.Flags()
@@ -41,7 +37,7 @@ func NewHistoryCommand(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVarP(&opts.human, "human", "H", true, "Print sizes and dates in human readable format")
 	flags.BoolVarP(&opts.quiet, "quiet", "q", false, "Only show image IDs")
 	flags.BoolVar(&opts.noTrunc, "no-trunc", false, "Don't truncate output")
-	flags.StringVar(&opts.format, "format", "", flagsHelper.FormatHelp)
+	flags.StringVar(&opts.format, "format", "", "Pretty-print images using a Go template")
 
 	return cmd
 }

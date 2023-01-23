@@ -29,9 +29,6 @@ func NewRemoveCommand(dockerCli command.Cli) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRemove(dockerCli, opts, args)
 		},
-		Annotations: map[string]string{
-			"aliases": "docker image rm, docker image remove, docker rmi",
-		},
 	}
 
 	flags := cmd.Flags()
@@ -59,7 +56,7 @@ func runRemove(dockerCli command.Cli, opts removeOptions, images []string) error
 	}
 
 	var errs []string
-	fatalErr := false
+	var fatalErr = false
 	for _, img := range images {
 		dels, err := client.ImageRemove(ctx, img, options)
 		if err != nil {

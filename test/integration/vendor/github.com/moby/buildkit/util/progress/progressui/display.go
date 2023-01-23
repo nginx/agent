@@ -108,7 +108,6 @@ type job struct {
 	name        string
 	status      string
 	hasError    bool
-	hasWarning  bool // This is currently unused, but it's here for future use.
 	isCanceled  bool
 	vertex      *vertex
 	showTerm    bool
@@ -830,13 +829,8 @@ func (disp *display) print(d displayInfo, width, height int, all bool) {
 				color = colorCancel
 			} else if j.hasError {
 				color = colorError
-			} else if j.hasWarning {
-				// This is currently unused, but it's here for future use.
-				color = colorWarning
 			}
-			if color != nil {
-				out = aec.Apply(out, color)
-			}
+			out = aec.Apply(out, color)
 		}
 		fmt.Fprint(disp.c, out)
 		lineCount++

@@ -33,6 +33,7 @@ import (
 	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/moby/buildkit/session/secrets/secretsprovider"
 	"github.com/moby/buildkit/session/sshforward/sshprovider"
+	"github.com/moby/buildkit/util/entitlements"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/docker/compose/v2/pkg/api"
@@ -48,21 +49,20 @@ func (s *composeService) Build(ctx context.Context, project *types.Project, opti
 
 func (s *composeService) build(ctx context.Context, project *types.Project, options api.BuildOptions) error {
 	opts := map[string]build.Options{}
-	var imagesToBuild []string
-
 	args := flatten(options.Args.Resolve(envResolver(project.Environment)))
 
-	services, err := project.GetServices(options.Services...)
-	if err != nil {
-		return err
-	}
-
-	for _, service := range services {
+	return InDependencyOrder(ctx, project, func(ctx context.Context, name string) error {
+		if len(options.Services) > 0 && !utils.Contains(options.Services, name) {
+			return nil
+		}
+		service, err := project.GetService(name)
+		if err != nil {
+			return err
+		}
 		if service.Build == nil {
-			continue
+			return nil
 		}
 		imageName := api.GetImageNameOrDefault(service, project.Name)
-		imagesToBuild = append(imagesToBuild, imageName)
 		buildOptions, err := s.toBuildOptions(project, service, imageName, options.SSHs)
 		if err != nil {
 			return err
@@ -74,7 +74,6 @@ func (s *composeService) build(ctx context.Context, project *types.Project, opti
 		if err != nil {
 			return err
 		}
-
 		for _, image := range service.Build.CacheFrom {
 			buildOptions.CacheFrom = append(buildOptions.CacheFrom, bclient.CacheOptionsEntry{
 				Type:  "registry",
@@ -94,16 +93,11 @@ func (s *composeService) build(ctx context.Context, project *types.Project, opti
 			}}
 		}
 		opts[imageName] = buildOptions
-	}
-
-	_, err = s.doBuild(ctx, project, opts, options.Progress)
-	if err == nil {
-		if len(imagesToBuild) > 0 && !options.Quiet {
-			utils.DisplayScanSuggestMsg()
-		}
-	}
-
-	return err
+		_, err = s.doBuild(ctx, project, opts, options.Progress)
+		return err
+	}, func(traversal *graphTraversal) {
+		traversal.maxConcurrency = s.maxConcurrency
+	})
 }
 
 func (s *composeService) ensureImagesExists(ctx context.Context, project *types.Project, quietPull bool) error {
@@ -136,9 +130,6 @@ func (s *composeService) ensureImagesExists(ctx context.Context, project *types.
 		return err
 	}
 
-	if len(builtImages) > 0 {
-		utils.DisplayScanSuggestMsg()
-	}
 	for name, digest := range builtImages {
 		images[name] = digest
 	}
@@ -270,6 +261,10 @@ func (s *composeService) toBuildOptions(project *types.Project, service types.Se
 	if len(service.Build.Tags) > 0 {
 		tags = append(tags, service.Build.Tags...)
 	}
+	var allow []entitlements.Entitlement
+	if service.Build.Privileged {
+		allow = append(allow, entitlements.EntitlementSecurityInsecure)
+	}
 
 	imageLabels := getImageBuildLabels(project, service)
 
@@ -291,6 +286,7 @@ func (s *composeService) toBuildOptions(project *types.Project, service types.Se
 		NetworkMode: service.Build.Network,
 		ExtraHosts:  service.Build.ExtraHosts.AsList(),
 		Session:     sessionConfig,
+		Allow:       allow,
 	}, nil
 }
 
@@ -415,8 +411,8 @@ func useDockerDefaultOrServicePlatform(project *types.Project, service types.Ser
 		return plats, err
 	}
 
-	if service.Platform != "" && !utils.StringContains(service.Build.Platforms, service.Platform) {
-		if len(service.Build.Platforms) > 0 {
+	if service.Platform != "" {
+		if len(service.Build.Platforms) > 0 && !utils.StringContains(service.Build.Platforms, service.Platform) {
 			return nil, fmt.Errorf("service.platform %q should be part of the service.build.platforms: %q", service.Platform, service.Build.Platforms)
 		}
 		// User defined a service platform and no build platforms, so we should keep the one define on the service level

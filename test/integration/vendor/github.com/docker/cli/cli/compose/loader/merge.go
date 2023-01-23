@@ -58,8 +58,6 @@ func mergeServices(base, override []types.ServiceConfig) ([]types.ServiceConfig,
 			reflect.TypeOf([]types.ServiceSecretConfig{}):    mergeSlice(toServiceSecretConfigsMap, toServiceSecretConfigsSlice),
 			reflect.TypeOf([]types.ServiceConfigObjConfig{}): mergeSlice(toServiceConfigObjConfigsMap, toSServiceConfigObjConfigsSlice),
 			reflect.TypeOf(&types.UlimitsConfig{}):           mergeUlimitsConfig,
-			reflect.TypeOf([]types.ServiceVolumeConfig{}):    mergeSlice(toServiceVolumeConfigsMap, toServiceVolumeConfigsSlice),
-			reflect.TypeOf(types.ShellCommand{}):             mergeShellCommand,
 			reflect.TypeOf(&types.ServiceNetworkConfig{}):    mergeServiceNetworkConfig,
 		},
 	}
@@ -118,18 +116,6 @@ func toServicePortConfigsMap(s interface{}) (map[interface{}]interface{}, error)
 	return m, nil
 }
 
-func toServiceVolumeConfigsMap(s interface{}) (map[interface{}]interface{}, error) {
-	volumes, ok := s.([]types.ServiceVolumeConfig)
-	if !ok {
-		return nil, errors.Errorf("not a serviceVolumeConfig slice: %v", s)
-	}
-	m := map[interface{}]interface{}{}
-	for _, v := range volumes {
-		m[v.Target] = v
-	}
-	return m, nil
-}
-
 func toServiceSecretConfigsSlice(dst reflect.Value, m map[interface{}]interface{}) error {
 	s := []types.ServiceSecretConfig{}
 	for _, v := range m {
@@ -160,20 +146,8 @@ func toServicePortConfigsSlice(dst reflect.Value, m map[interface{}]interface{})
 	return nil
 }
 
-func toServiceVolumeConfigsSlice(dst reflect.Value, m map[interface{}]interface{}) error {
-	s := []types.ServiceVolumeConfig{}
-	for _, v := range m {
-		s = append(s, v.(types.ServiceVolumeConfig))
-	}
-	sort.Slice(s, func(i, j int) bool { return s[i].Target < s[j].Target })
-	dst.Set(reflect.ValueOf(s))
-	return nil
-}
-
-type (
-	tomapFn             func(s interface{}) (map[interface{}]interface{}, error)
-	writeValueFromMapFn func(reflect.Value, map[interface{}]interface{}) error
-)
+type tomapFn func(s interface{}) (map[interface{}]interface{}, error)
+type writeValueFromMapFn func(reflect.Value, map[interface{}]interface{}) error
 
 func safelyMerge(mergeFn func(dst, src reflect.Value) error) func(dst, src reflect.Value) error {
 	return func(dst, src reflect.Value) error {
@@ -229,7 +203,7 @@ func mergeLoggingConfig(dst, src reflect.Value) error {
 	return nil
 }
 
-//nolint:unparam
+//nolint: unparam
 func mergeUlimitsConfig(dst, src reflect.Value) error {
 	if src.Interface() != reflect.Zero(reflect.TypeOf(src.Interface())).Interface() {
 		dst.Elem().Set(src.Elem())
@@ -237,15 +211,7 @@ func mergeUlimitsConfig(dst, src reflect.Value) error {
 	return nil
 }
 
-//nolint:unparam
-func mergeShellCommand(dst, src reflect.Value) error {
-	if src.Len() != 0 {
-		dst.Set(src)
-	}
-	return nil
-}
-
-//nolint:unparam
+//nolint: unparam
 func mergeServiceNetworkConfig(dst, src reflect.Value) error {
 	if src.Interface() != reflect.Zero(reflect.TypeOf(src.Interface())).Interface() {
 		dst.Elem().FieldByName("Aliases").Set(src.Elem().FieldByName("Aliases"))

@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/docker/cli/cli/manifest/types"
 	"github.com/docker/distribution"
@@ -13,7 +14,7 @@ import (
 	v2 "github.com/docker/distribution/registry/api/v2"
 	distclient "github.com/docker/distribution/registry/client"
 	"github.com/docker/docker/registry"
-	"github.com/opencontainers/go-digest"
+	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -127,7 +128,7 @@ func validateManifestDigest(ref reference.Named, mfst distribution.Manifest) (oc
 	// If pull by digest, then verify the manifest digest.
 	if digested, isDigested := ref.(reference.Canonical); isDigested {
 		if digested.Digest() != desc.Digest {
-			err := errors.Errorf("manifest verification failed for digest %s", digested.Digest())
+			err := fmt.Errorf("manifest verification failed for digest %s", digested.Digest())
 			return ocispec.Descriptor{}, err
 		}
 	}
@@ -155,7 +156,7 @@ func pullManifestList(ctx context.Context, ref reference.Named, repo distributio
 		}
 		v, ok := manifest.(*schema2.DeserializedManifest)
 		if !ok {
-			return nil, errors.Errorf("unsupported manifest format: %v", v)
+			return nil, fmt.Errorf("unsupported manifest format: %v", v)
 		}
 
 		manifestRef, err := reference.WithDigest(ref, manifestDescriptor.Digest)
@@ -277,17 +278,27 @@ func allEndpoints(namedRef reference.Named, insecure bool) ([]registry.APIEndpoi
 	return endpoints, err
 }
 
-func newNotFoundError(ref string) *notFoundError {
-	return &notFoundError{err: errors.New("no such manifest: " + ref)}
+type notFoundError struct {
+	object string
 }
 
-type notFoundError struct {
-	err error
+func newNotFoundError(ref string) *notFoundError {
+	return &notFoundError{object: ref}
 }
 
 func (n *notFoundError) Error() string {
-	return n.err.Error()
+	return fmt.Sprintf("no such manifest: %s", n.object)
 }
 
-// NotFound satisfies interface github.com/docker/docker/errdefs.ErrNotFound
+// NotFound interface
 func (n *notFoundError) NotFound() {}
+
+// IsNotFound returns true if the error is a not found error
+func IsNotFound(err error) bool {
+	_, ok := err.(notFound)
+	return ok
+}
+
+type notFound interface {
+	NotFound()
+}

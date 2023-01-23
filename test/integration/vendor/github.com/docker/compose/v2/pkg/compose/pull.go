@@ -31,6 +31,7 @@ import (
 	moby "github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/registry"
+	"github.com/hashicorp/go-multierror"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/docker/compose/v2/pkg/api"
@@ -46,7 +47,7 @@ func (s *composeService) Pull(ctx context.Context, project *types.Project, optio
 	})
 }
 
-func (s *composeService) pull(ctx context.Context, project *types.Project, opts api.PullOptions) error {
+func (s *composeService) pull(ctx context.Context, project *types.Project, opts api.PullOptions) error { //nolint:gocyclo
 	info, err := s.apiClient().Info(ctx)
 	if err != nil {
 		return err
@@ -63,13 +64,16 @@ func (s *composeService) pull(ctx context.Context, project *types.Project, opts 
 
 	w := progress.ContextWriter(ctx)
 	eg, ctx := errgroup.WithContext(ctx)
+	eg.SetLimit(s.maxConcurrency)
 
-	var mustBuild []string
+	var (
+		mustBuild         []string
+		pullErrors        = make([]error, len(project.Services))
+		imagesBeingPulled = map[string]string{}
+	)
 
-	imagesBeingPulled := map[string]string{}
-
-	for _, service := range project.Services {
-		service := service
+	for i, service := range project.Services {
+		i, service := i, service
 		if service.Image == "" {
 			w.Event(progress.Event{
 				ID:     service.Name,
@@ -98,6 +102,15 @@ func (s *composeService) pull(ctx context.Context, project *types.Project, opts 
 			}
 		}
 
+		if service.Build != nil && opts.IgnoreBuildable {
+			w.Event(progress.Event{
+				ID:     service.Name,
+				Status: progress.Done,
+				Text:   "Skipped - Image can be built",
+			})
+			continue
+		}
+
 		if s, ok := imagesBeingPulled[service.Image]; ok {
 			w.Event(progress.Event{
 				ID:     service.Name,
@@ -110,15 +123,16 @@ func (s *composeService) pull(ctx context.Context, project *types.Project, opts 
 		imagesBeingPulled[service.Image] = service.Name
 
 		eg.Go(func() error {
-			_, err := s.pullServiceImage(ctx, service, info, s.configFile(), w, false)
+			_, err := s.pullServiceImage(ctx, service, info, s.configFile(), w, false, project.Environment["DOCKER_DEFAULT_PLATFORM"])
 			if err != nil {
-				if !opts.IgnoreFailures {
-					if service.Build != nil {
-						mustBuild = append(mustBuild, service.Name)
-					}
+				pullErrors[i] = err
+				if service.Build != nil {
+					mustBuild = append(mustBuild, service.Name)
+				}
+				if !opts.IgnoreFailures && service.Build == nil {
+					// fail fast if image can't be pulled nor built
 					return err
 				}
-				w.TailMsgf("Pulling %s: %s", service.Name, err.Error())
 			}
 			return nil
 		})
@@ -126,11 +140,17 @@ func (s *composeService) pull(ctx context.Context, project *types.Project, opts 
 
 	err = eg.Wait()
 
-	if !opts.IgnoreFailures && len(mustBuild) > 0 {
+	if len(mustBuild) > 0 {
 		w.TailMsgf("WARNING: Some service image(s) must be built from source by running:\n    docker compose build %s", strings.Join(mustBuild, " "))
 	}
 
-	return err
+	if err != nil {
+		return err
+	}
+	if opts.IgnoreFailures {
+		return nil
+	}
+	return multierror.Append(nil, pullErrors...).ErrorOrNil()
 }
 
 func imageAlreadyPresent(serviceImage string, localImages map[string]string) bool {
@@ -146,7 +166,8 @@ func imageAlreadyPresent(serviceImage string, localImages map[string]string) boo
 	return ok && tagged.Tag() != "latest"
 }
 
-func (s *composeService) pullServiceImage(ctx context.Context, service types.ServiceConfig, info moby.Info, configFile driver.Auth, w progress.Writer, quietPull bool) (string, error) {
+func (s *composeService) pullServiceImage(ctx context.Context, service types.ServiceConfig, info moby.Info,
+	configFile driver.Auth, w progress.Writer, quietPull bool, defaultPlatform string) (string, error) {
 	w.Event(progress.Event{
 		ID:     service.Name,
 		Status: progress.Working,
@@ -157,29 +178,19 @@ func (s *composeService) pullServiceImage(ctx context.Context, service types.Ser
 		return "", err
 	}
 
-	repoInfo, err := registry.ParseRepositoryInfo(ref)
+	encodedAuth, err := encodedAuth(ref, info, configFile)
 	if err != nil {
 		return "", err
 	}
 
-	key := repoInfo.Index.Name
-	if repoInfo.Index.Official {
-		key = info.IndexServerAddress
-	}
-
-	authConfig, err := configFile.GetAuthConfig(key)
-	if err != nil {
-		return "", err
-	}
-
-	buf, err := json.Marshal(authConfig)
-	if err != nil {
-		return "", err
+	platform := service.Platform
+	if platform == "" {
+		platform = defaultPlatform
 	}
 
 	stream, err := s.apiClient().ImagePull(ctx, service.Image, moby.ImagePullOptions{
-		RegistryAuth: base64.URLEncoding.EncodeToString(buf),
-		Platform:     service.Platform,
+		RegistryAuth: encodedAuth,
+		Platform:     platform,
 	})
 
 	// check if has error and the service has a build section
@@ -231,6 +242,29 @@ func (s *composeService) pullServiceImage(ctx context.Context, service types.Ser
 	return inspected.ID, nil
 }
 
+func encodedAuth(ref reference.Named, info moby.Info, configFile driver.Auth) (string, error) {
+	repoInfo, err := registry.ParseRepositoryInfo(ref)
+	if err != nil {
+		return "", err
+	}
+
+	key := repoInfo.Index.Name
+	if repoInfo.Index.Official {
+		key = info.IndexServerAddress
+	}
+
+	authConfig, err := configFile.GetAuthConfig(key)
+	if err != nil {
+		return "", err
+	}
+
+	buf, err := json.Marshal(authConfig)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(buf), nil
+}
+
 func (s *composeService) pullRequiredImages(ctx context.Context, project *types.Project, images map[string]string, quietPull bool) error {
 	info, err := s.apiClient().Info(ctx)
 	if err != nil {
@@ -265,30 +299,41 @@ func (s *composeService) pullRequiredImages(ctx context.Context, project *types.
 	return progress.Run(ctx, func(ctx context.Context) error {
 		w := progress.ContextWriter(ctx)
 		eg, ctx := errgroup.WithContext(ctx)
+		eg.SetLimit(s.maxConcurrency)
 		pulledImages := make([]string, len(needPull))
 		for i, service := range needPull {
 			i, service := i, service
 			eg.Go(func() error {
-				id, err := s.pullServiceImage(ctx, service, info, s.configFile(), w, quietPull)
+				id, err := s.pullServiceImage(ctx, service, info, s.configFile(), w, quietPull, project.Environment["DOCKER_DEFAULT_PLATFORM"])
 				pulledImages[i] = id
-				if err != nil && service.Build != nil {
+				if err != nil && isServiceImageToBuild(service, project.Services) {
 					// image can be built, so we can ignore pull failure
 					return nil
 				}
 				return err
 			})
 		}
+		err := eg.Wait()
 		for i, service := range needPull {
 			if pulledImages[i] != "" {
 				images[service.Image] = pulledImages[i]
 			}
 		}
-		err := eg.Wait()
-		if err != nil {
-			return err
-		}
 		return err
 	})
+}
+
+func isServiceImageToBuild(service types.ServiceConfig, services []types.ServiceConfig) bool {
+	if service.Build != nil {
+		return true
+	}
+
+	for _, depService := range services {
+		if depService.Image == service.Image && depService.Build != nil {
+			return true
+		}
+	}
+	return false
 }
 
 func toPullProgressEvent(parent string, jm jsonmessage.JSONMessage, w progress.Writer) {

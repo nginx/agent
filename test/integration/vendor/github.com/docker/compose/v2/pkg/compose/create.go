@@ -27,7 +27,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/compose-spec/compose-go/types"
 	moby "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/blkiodev"
 	"github.com/docker/docker/api/types/container"
@@ -41,6 +40,8 @@ import (
 	"github.com/docker/go-units"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/compose-spec/compose-go/types"
 
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/docker/compose/v2/pkg/progress"
@@ -259,7 +260,7 @@ func (s *composeService) getCreateOptions(ctx context.Context, p *types.Project,
 		stdinOpen = service.StdinOpen
 	)
 
-	volumeMounts, binds, mounts, err := s.buildContainerVolumes(ctx, *p, service, inherit)
+	binds, mounts, err := s.buildContainerVolumes(ctx, *p, service, inherit)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -288,7 +289,6 @@ func (s *composeService) getCreateOptions(ctx context.Context, p *types.Project,
 		StopSignal:      service.StopSignal,
 		Env:             ToMobyEnv(env),
 		Healthcheck:     ToMobyHealthCheck(service.HealthCheck),
-		Volumes:         volumeMounts,
 		StopTimeout:     ToSeconds(service.StopGracePeriod),
 	}
 
@@ -301,35 +301,9 @@ func (s *composeService) getCreateOptions(ctx context.Context, p *types.Project,
 	}
 
 	var networkConfig *network.NetworkingConfig
-
 	for _, id := range service.NetworksByPriority() {
-		net := p.Networks[id]
-		config := service.Networks[id]
-		var ipam *network.EndpointIPAMConfig
-		var (
-			ipv4Address string
-			ipv6Address string
-		)
-		if config != nil {
-			ipv4Address = config.Ipv4Address
-			ipv6Address = config.Ipv6Address
-			ipam = &network.EndpointIPAMConfig{
-				IPv4Address:  ipv4Address,
-				IPv6Address:  ipv6Address,
-				LinkLocalIPs: config.LinkLocalIPs,
-			}
-		}
-		networkConfig = &network.NetworkingConfig{
-			EndpointsConfig: map[string]*network.EndpointSettings{
-				net.Name: {
-					Aliases:     getAliases(service, config),
-					IPAddress:   ipv4Address,
-					IPv6Gateway: ipv6Address,
-					IPAMConfig:  ipam,
-				},
-			},
-		}
-		break //nolint:staticcheck
+		networkConfig = s.createNetworkConfig(p, service, id)
+		break
 	}
 
 	tmpfs := map[string]string{}
@@ -362,7 +336,7 @@ func (s *composeService) getCreateOptions(ctx context.Context, p *types.Project,
 		return nil, nil, nil, err
 	}
 
-	securityOpts, err := parseSecurityOpts(p, service.SecurityOpt)
+	securityOpts, unconfined, err := parseSecurityOpts(p, service.SecurityOpt)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -375,6 +349,7 @@ func (s *composeService) getCreateOptions(ctx context.Context, p *types.Project,
 		NetworkMode:    container.NetworkMode(service.NetworkMode),
 		Init:           service.Init,
 		IpcMode:        container.IpcMode(service.Ipc),
+		CgroupnsMode:   container.CgroupnsMode(service.Cgroup),
 		ReadonlyRootfs: service.ReadOnly,
 		RestartPolicy:  getRestartPolicy(service),
 		ShmSize:        int64(service.ShmSize),
@@ -397,37 +372,82 @@ func (s *composeService) getCreateOptions(ctx context.Context, p *types.Project,
 		LogConfig:      logConfig,
 		GroupAdd:       service.GroupAdd,
 		Links:          links,
+		OomScoreAdj:    int(service.OomScoreAdj),
+	}
+
+	if unconfined {
+		hostConfig.MaskedPaths = []string{}
+		hostConfig.ReadonlyPaths = []string{}
 	}
 
 	return &containerConfig, &hostConfig, networkConfig, nil
 }
 
+func (s *composeService) createNetworkConfig(p *types.Project, service types.ServiceConfig, networkID string) *network.NetworkingConfig {
+	net := p.Networks[networkID]
+	config := service.Networks[networkID]
+	var ipam *network.EndpointIPAMConfig
+	var (
+		ipv4Address string
+		ipv6Address string
+	)
+	if config != nil {
+		ipv4Address = config.Ipv4Address
+		ipv6Address = config.Ipv6Address
+		ipam = &network.EndpointIPAMConfig{
+			IPv4Address:  ipv4Address,
+			IPv6Address:  ipv6Address,
+			LinkLocalIPs: config.LinkLocalIPs,
+		}
+	}
+	return &network.NetworkingConfig{
+		EndpointsConfig: map[string]*network.EndpointSettings{
+			net.Name: {
+				Aliases:     getAliases(service, config),
+				IPAddress:   ipv4Address,
+				IPv6Gateway: ipv6Address,
+				IPAMConfig:  ipam,
+			},
+		},
+	}
+}
+
 // copy/pasted from https://github.com/docker/cli/blob/9de1b162f/cli/command/container/opts.go#L673-L697 + RelativePath
 // TODO find so way to share this code with docker/cli
-func parseSecurityOpts(p *types.Project, securityOpts []string) ([]string, error) {
-	for key, opt := range securityOpts {
+func parseSecurityOpts(p *types.Project, securityOpts []string) ([]string, bool, error) {
+	var (
+		unconfined bool
+		parsed     []string
+	)
+	for _, opt := range securityOpts {
+		if opt == "systempaths=unconfined" {
+			unconfined = true
+			continue
+		}
 		con := strings.SplitN(opt, "=", 2)
 		if len(con) == 1 && con[0] != "no-new-privileges" {
 			if strings.Contains(opt, ":") {
 				con = strings.SplitN(opt, ":", 2)
 			} else {
-				return securityOpts, errors.Errorf("Invalid security-opt: %q", opt)
+				return securityOpts, false, errors.Errorf("Invalid security-opt: %q", opt)
 			}
 		}
 		if con[0] == "seccomp" && con[1] != "unconfined" {
 			f, err := os.ReadFile(p.RelativePath(con[1]))
 			if err != nil {
-				return securityOpts, errors.Errorf("opening seccomp profile (%s) failed: %v", con[1], err)
+				return securityOpts, false, errors.Errorf("opening seccomp profile (%s) failed: %v", con[1], err)
 			}
 			b := bytes.NewBuffer(nil)
 			if err := json.Compact(b, f); err != nil {
-				return securityOpts, errors.Errorf("compacting json for seccomp profile (%s) failed: %v", con[1], err)
+				return securityOpts, false, errors.Errorf("compacting json for seccomp profile (%s) failed: %v", con[1], err)
 			}
-			securityOpts[key] = fmt.Sprintf("seccomp=%s", b.Bytes())
+			parsed = append(parsed, fmt.Sprintf("seccomp=%s", b.Bytes()))
+		} else {
+			parsed = append(parsed, opt)
 		}
 	}
 
-	return securityOpts, nil
+	return parsed, unconfined, nil
 }
 
 func (s *composeService) prepareLabels(service types.ServiceConfig, number int) (map[string]string, error) {
@@ -488,11 +508,25 @@ func getRestartPolicy(service types.ServiceConfig) container.RestartPolicy {
 			attempts = int(*policy.MaxAttempts)
 		}
 		restart = container.RestartPolicy{
-			Name:              policy.Condition,
+			Name:              mapRestartPolicyCondition(policy.Condition),
 			MaximumRetryCount: attempts,
 		}
 	}
 	return restart
+}
+
+func mapRestartPolicyCondition(condition string) string {
+	// map definitions of deploy.restart_policy to engine definitions
+	switch condition {
+	case "none", "no":
+		return "no"
+	case "on-failure", "unless-stopped":
+		return condition
+	case "any", "always":
+		return "always"
+	default:
+		return condition
+	}
 }
 
 func getDeployResources(s types.ServiceConfig) container.Resources {
@@ -514,7 +548,8 @@ func getDeployResources(s types.ServiceConfig) container.Resources {
 		CPURealtimePeriod:  s.CPURTPeriod,
 		CPURealtimeRuntime: s.CPURTRuntime,
 		CPUShares:          s.CPUShares,
-		CPUPercent:         int64(s.CPUS * 100),
+		NanoCPUs:           int64(s.CPUS * 1e9),
+		CPUPercent:         int64(s.CPUPercent * 100),
 		CpusetCpus:         s.CPUSet,
 		DeviceCgroupRules:  s.DeviceCgroupRules,
 	}
@@ -578,6 +613,12 @@ func setReservations(reservations *types.Resource, resources *container.Resource
 	if reservations == nil {
 		return
 	}
+	// Cpu reservation is a swarm option and PIDs is only a limit
+	// So we only need to map memory reservation and devices
+	if reservations.MemoryBytes != 0 {
+		resources.MemoryReservation = int64(reservations.MemoryBytes)
+	}
+
 	for _, device := range reservations.Devices {
 		resources.DeviceRequests = append(resources.DeviceRequests, container.DeviceRequest{
 			Capabilities: [][]string{device.Capabilities},
@@ -709,30 +750,32 @@ func getDependentServiceFromMode(mode string) string {
 	return ""
 }
 
-func (s *composeService) buildContainerVolumes(ctx context.Context, p types.Project, service types.ServiceConfig,
-	inherit *moby.Container) (map[string]struct{}, []string, []mount.Mount, error) {
-	var mounts = []mount.Mount{}
+func (s *composeService) buildContainerVolumes(
+	ctx context.Context,
+	p types.Project,
+	service types.ServiceConfig,
+	inherit *moby.Container,
+) ([]string, []mount.Mount, error) {
+	var mounts []mount.Mount
+	var binds []string
 
 	image := api.GetImageNameOrDefault(service, p.Name)
 	imgInspect, _, err := s.apiClient().ImageInspectWithRaw(ctx, image)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	mountOptions, err := buildContainerMountOptions(p, service, imgInspect, inherit)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	volumeMounts := map[string]struct{}{}
-	binds := []string{}
 MOUNTS:
 	for _, m := range mountOptions {
 		if m.Type == mount.TypeNamedPipe {
 			mounts = append(mounts, m)
 			continue
 		}
-		volumeMounts[m.Target] = struct{}{}
 		if m.Type == mount.TypeBind {
 			// `Mount` is preferred but does not offer option to created host path if missing
 			// so `Bind` API is used here with raw volume string
@@ -752,7 +795,7 @@ MOUNTS:
 		}
 		mounts = append(mounts, m)
 	}
-	return volumeMounts, binds, mounts, nil
+	return binds, mounts, nil
 }
 
 func buildContainerMountOptions(p types.Project, s types.ServiceConfig, img moby.ImageInspect, inherit *moby.Container) ([]mount.Mount, error) {
@@ -968,7 +1011,7 @@ func buildMountOptions(project types.Project, volume types.ServiceVolumeConfig) 
 			logrus.Warnf("mount of type `bind` should not define `volume` option")
 		}
 		if volume.Tmpfs != nil {
-			logrus.Warnf("mount of type `tmpfs` should not define `tmpfs` option")
+			logrus.Warnf("mount of type `bind` should not define `tmpfs` option")
 		}
 		return buildBindOption(volume.Bind), nil, nil
 	case "volume":
@@ -1023,7 +1066,7 @@ func buildTmpfsOptions(tmpfs *types.ServiceVolumeTmpfs) *mount.TmpfsOptions {
 	}
 	return &mount.TmpfsOptions{
 		SizeBytes: int64(tmpfs.Size),
-		// Mode:      , // FIXME missing from model ?
+		Mode:      os.FileMode(tmpfs.Mode),
 	}
 }
 

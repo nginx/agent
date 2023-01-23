@@ -1,7 +1,8 @@
 package schema
 
+//go:generate esc -o bindata.go -pkg schema -ignore .*\.go -private -modtime=1518458244 data
+
 import (
-	"embed"
 	"fmt"
 	"strings"
 	"time"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	defaultVersion = "3.10"
+	defaultVersion = "1.0"
 	versionField   = "version"
 )
 
@@ -39,9 +40,7 @@ func init() {
 	gojsonschema.FormatCheckers.Add("duration", durationFormatChecker{})
 }
 
-// Version returns the version of the config, defaulting to the latest "3.x"
-// version (3.10). If only the major version "3" is specified, it is used as
-// version "3.x" and returns the default version (latest 3.x).
+// Version returns the version of the config, defaulting to version 1.0
 func Version(config map[string]interface{}) string {
 	version, ok := config[versionField]
 	if !ok {
@@ -52,20 +51,16 @@ func Version(config map[string]interface{}) string {
 
 func normalizeVersion(version string) string {
 	switch version {
-	case "", "3":
-		return defaultVersion
+	case "3":
+		return "3.0"
 	default:
 		return version
 	}
 }
 
-//go:embed data/config_schema_v*.json
-var schemas embed.FS
-
 // Validate uses the jsonschema to validate the configuration
 func Validate(config map[string]interface{}, version string) error {
-	version = normalizeVersion(version)
-	schemaData, err := schemas.ReadFile("data/config_schema_v" + version + ".json")
+	schemaData, err := _escFSByte(false, fmt.Sprintf("/data/config_schema_v%s.json", version))
 	if err != nil {
 		return errors.Errorf("unsupported Compose file version: %s", version)
 	}

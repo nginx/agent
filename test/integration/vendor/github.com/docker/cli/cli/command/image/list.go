@@ -6,7 +6,6 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/formatter"
-	flagsHelper "github.com/docker/cli/cli/flags"
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types"
 	"github.com/spf13/cobra"
@@ -37,10 +36,6 @@ func NewImagesCommand(dockerCli command.Cli) *cobra.Command {
 			}
 			return runImages(dockerCli, options)
 		},
-		Annotations: map[string]string{
-			"category-top": "7",
-			"aliases":      "docker image ls, docker image list, docker images",
-		},
 	}
 
 	flags := cmd.Flags()
@@ -49,7 +44,7 @@ func NewImagesCommand(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVarP(&options.all, "all", "a", false, "Show all images (default hides intermediate images)")
 	flags.BoolVar(&options.noTrunc, "no-trunc", false, "Don't truncate output")
 	flags.BoolVar(&options.showDigests, "digests", false, "Show digests")
-	flags.StringVar(&options.format, "format", "", flagsHelper.FormatHelp)
+	flags.StringVar(&options.format, "format", "", "Pretty-print images using a Go template")
 	flags.VarP(&options.filter, "filter", "f", "Filter output based on conditions provided")
 
 	return cmd

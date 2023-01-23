@@ -6,7 +6,7 @@ import (
 	gosignal "os/signal"
 
 	"github.com/docker/cli/cli/command"
-	"github.com/moby/sys/signal"
+	"github.com/docker/docker/pkg/signal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -54,7 +54,7 @@ func ForwardAllSignals(ctx context.Context, cli command.Cli, cid string, sigc <-
 	}
 }
 
-func notifyAllSignals() chan os.Signal {
+func notfiyAllSignals() chan os.Signal {
 	sigc := make(chan os.Signal, 128)
 	gosignal.Notify(sigc)
 	return sigc

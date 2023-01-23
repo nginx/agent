@@ -72,9 +72,11 @@ type Service interface {
 	// Events executes the equivalent to a `compose events`
 	Events(ctx context.Context, projectName string, options EventsOptions) error
 	// Port executes the equivalent to a `compose port`
-	Port(ctx context.Context, projectName string, service string, port int, options PortOptions) (string, int, error)
+	Port(ctx context.Context, projectName string, service string, port uint16, options PortOptions) (string, int, error)
 	// Images executes the equivalent of a `compose images`
 	Images(ctx context.Context, projectName string, options ImagesOptions) ([]ImageSummary, error)
+	// MaxConcurrency defines upper limit for concurrent operations against engine API
+	MaxConcurrency(parallel int)
 }
 
 // BuildOptions group options of the Build API
@@ -179,6 +181,8 @@ type ConvertOptions struct {
 	Format string
 	// Output defines the path to save the application model
 	Output string
+	// Resolve image reference to digests
+	ResolveImageDigests bool
 }
 
 // PushOptions group options of the Push API
@@ -189,8 +193,9 @@ type PushOptions struct {
 
 // PullOptions group options of the Pull API
 type PullOptions struct {
-	Quiet          bool
-	IgnoreFailures bool
+	Quiet           bool
+	IgnoreFailures  bool
+	IgnoreBuildable bool
 }
 
 // ImagesOptions group options of the Images API
@@ -314,10 +319,13 @@ type PortPublisher struct {
 type ContainerSummary struct {
 	ID         string
 	Name       string
+	Image      any
 	Command    string
 	Project    string
 	Service    string
+	Created    int64
 	State      string
+	Status     string
 	Health     string
 	ExitCode   int
 	Publishers PortPublishers
@@ -433,7 +441,8 @@ type Stack struct {
 
 // LogConsumer is a callback to process log messages from services
 type LogConsumer interface {
-	Log(containerName, service, message string)
+	Log(containerName, message string)
+	Err(containerName, message string)
 	Status(container, msg string)
 	Register(container string)
 }
@@ -457,8 +466,10 @@ type ContainerEvent struct {
 }
 
 const (
-	// ContainerEventLog is a ContainerEvent of type log. Line is set
+	// ContainerEventLog is a ContainerEvent of type log on stdout. Line is set
 	ContainerEventLog = iota
+	// ContainerEventErr is a ContainerEvent of type log on stderr. Line is set
+	ContainerEventErr
 	// ContainerEventAttach is a ContainerEvent of type attach. First event sent about a container
 	ContainerEventAttach
 	// ContainerEventStopped is a ContainerEvent of type stopped.

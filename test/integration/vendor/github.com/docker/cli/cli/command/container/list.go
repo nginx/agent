@@ -2,13 +2,11 @@ package container
 
 import (
 	"context"
-	"io"
+	"io/ioutil"
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/formatter"
-	flagsHelper "github.com/docker/cli/cli/flags"
 	"github.com/docker/cli/opts"
 	"github.com/docker/cli/templates"
 	"github.com/docker/docker/api/types"
@@ -38,11 +36,6 @@ func NewPsCommand(dockerCli command.Cli) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runPs(dockerCli, &options)
 		},
-		Annotations: map[string]string{
-			"category-top": "3",
-			"aliases":      "docker container ls, docker container list, docker container ps, docker ps",
-		},
-		ValidArgsFunction: completion.NoComplete,
 	}
 
 	flags := cmd.Flags()
@@ -53,7 +46,7 @@ func NewPsCommand(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVar(&options.noTrunc, "no-trunc", false, "Don't truncate output")
 	flags.BoolVarP(&options.nLatest, "latest", "l", false, "Show the latest created container (includes all states)")
 	flags.IntVarP(&options.last, "last", "n", -1, "Show n last created containers (includes all states)")
-	flags.StringVarP(&options.format, "format", "", "", flagsHelper.FormatHelp)
+	flags.StringVarP(&options.format, "format", "", "", "Pretty-print containers using a Go template")
 	flags.VarP(&options.filter, "filter", "f", "Filter output based on conditions provided")
 
 	return cmd
@@ -78,7 +71,8 @@ func buildContainerListOptions(opts *psOptions) (*types.ContainerListOptions, er
 		options.Limit = 1
 	}
 
-	if !opts.quiet && !options.Size && len(opts.format) > 0 {
+	options.Size = opts.size
+	if !options.Size && len(opts.format) > 0 {
 		// The --size option isn't set, but .Size may be used in the template.
 		// Parse and execute the given template to detect if the .Size field is
 		// used. If it is, then automatically enable the --size option. See #24696
@@ -86,6 +80,7 @@ func buildContainerListOptions(opts *psOptions) (*types.ContainerListOptions, er
 		// Only requesting container size information when needed is an optimization,
 		// because calculating the size is a costly operation.
 		tmpl, err := templates.NewParse("", opts.format)
+
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to parse template")
 		}
@@ -94,7 +89,7 @@ func buildContainerListOptions(opts *psOptions) (*types.ContainerListOptions, er
 
 		// This shouldn't error out but swallowing the error makes it harder
 		// to track down if preProcessor issues come up.
-		if err := tmpl.Execute(io.Discard, optionsProcessor); err != nil {
+		if err := tmpl.Execute(ioutil.Discard, optionsProcessor); err != nil {
 			return nil, errors.Wrap(err, "failed to execute template")
 		}
 
@@ -109,11 +104,6 @@ func buildContainerListOptions(opts *psOptions) (*types.ContainerListOptions, er
 func runPs(dockerCli command.Cli, options *psOptions) error {
 	ctx := context.Background()
 
-	if len(options.format) == 0 {
-		// load custom psFormat from CLI config (if any)
-		options.format = dockerCli.ConfigFile().PsFormat
-	}
-
 	listOptions, err := buildContainerListOptions(options)
 	if err != nil {
 		return err
@@ -124,9 +114,18 @@ func runPs(dockerCli command.Cli, options *psOptions) error {
 		return err
 	}
 
+	format := options.format
+	if len(format) == 0 {
+		if len(dockerCli.ConfigFile().PsFormat) > 0 && !options.quiet {
+			format = dockerCli.ConfigFile().PsFormat
+		} else {
+			format = formatter.TableFormatKey
+		}
+	}
+
 	containerCtx := formatter.Context{
 		Output: dockerCli.Out(),
-		Format: formatter.NewContainerFormat(options.format, options.quiet, listOptions.Size),
+		Format: formatter.NewContainerFormat(format, options.quiet, listOptions.Size),
 		Trunc:  !options.noTrunc,
 	}
 	return formatter.ContainerWrite(containerCtx, containers)

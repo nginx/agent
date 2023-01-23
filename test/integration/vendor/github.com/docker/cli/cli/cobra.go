@@ -3,17 +3,12 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 
 	pluginmanager "github.com/docker/cli/cli-plugins/manager"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/config"
+	cliconfig "github.com/docker/cli/cli/config"
 	cliflags "github.com/docker/cli/cli/flags"
-	"github.com/docker/docker/pkg/homedir"
-	"github.com/docker/docker/registry"
-	"github.com/fvbommel/sortorder"
 	"github.com/moby/term"
 	"github.com/morikuni/aec"
 	"github.com/pkg/errors"
@@ -27,21 +22,15 @@ func setupCommonRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *p
 	opts := cliflags.NewClientOptions()
 	flags := rootCmd.Flags()
 
-	flags.StringVar(&opts.ConfigDir, "config", config.Dir(), "Location of client config files")
+	flags.StringVar(&opts.ConfigDir, "config", cliconfig.Dir(), "Location of client config files")
 	opts.Common.InstallFlags(flags)
 
 	cobra.AddTemplateFunc("add", func(a, b int) int { return a + b })
-	cobra.AddTemplateFunc("hasAliases", hasAliases)
 	cobra.AddTemplateFunc("hasSubCommands", hasSubCommands)
-	cobra.AddTemplateFunc("hasTopCommands", hasTopCommands)
 	cobra.AddTemplateFunc("hasManagementSubCommands", hasManagementSubCommands)
-	cobra.AddTemplateFunc("hasSwarmSubCommands", hasSwarmSubCommands)
 	cobra.AddTemplateFunc("hasInvalidPlugins", hasInvalidPlugins)
-	cobra.AddTemplateFunc("topCommands", topCommands)
-	cobra.AddTemplateFunc("commandAliases", commandAliases)
 	cobra.AddTemplateFunc("operationSubCommands", operationSubCommands)
 	cobra.AddTemplateFunc("managementSubCommands", managementSubCommands)
-	cobra.AddTemplateFunc("orchestratorSubCommands", orchestratorSubCommands)
 	cobra.AddTemplateFunc("invalidPlugins", invalidPlugins)
 	cobra.AddTemplateFunc("wrappedFlagUsages", wrappedFlagUsages)
 	cobra.AddTemplateFunc("vendorAndVersion", vendorAndVersion)
@@ -63,21 +52,17 @@ func setupCommonRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *p
 
 	rootCmd.Annotations = map[string]string{"additionalHelp": "To get more help with docker, check out our guides at https://docs.docker.com/go/guides/"}
 
-	// Configure registry.CertsDir() when running in rootless-mode
-	if os.Getenv("ROOTLESSKIT_STATE_DIR") != "" {
-		if configHome, err := homedir.GetConfigHome(); err == nil {
-			registry.SetCertsDir(filepath.Join(configHome, "docker/certs.d"))
-		}
-	}
-
 	return opts, flags, helpCommand
 }
 
 // SetupRootCommand sets default usage, help, and error handling for the
 // root command.
 func SetupRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *pflag.FlagSet, *cobra.Command) {
+	opts, flags, helpCmd := setupCommonRootCommand(rootCmd)
+
 	rootCmd.SetVersionTemplate("Docker version {{.Version}}\n")
-	return setupCommonRootCommand(rootCmd)
+
+	return opts, flags, helpCmd
 }
 
 // SetupPluginRootCommand sets default usage, help and error handling for a plugin root command.
@@ -237,11 +222,7 @@ func hasAdditionalHelp(cmd *cobra.Command) bool {
 }
 
 func isPlugin(cmd *cobra.Command) bool {
-	return pluginmanager.IsPluginCommand(cmd)
-}
-
-func hasAliases(cmd *cobra.Command) bool {
-	return len(cmd.Aliases) > 0 || cmd.Annotations["aliases"] != ""
+	return cmd.Annotations[pluginmanager.CommandAnnotationPlugin] == "true"
 }
 
 func hasSubCommands(cmd *cobra.Command) bool {
@@ -252,55 +233,8 @@ func hasManagementSubCommands(cmd *cobra.Command) bool {
 	return len(managementSubCommands(cmd)) > 0
 }
 
-func hasSwarmSubCommands(cmd *cobra.Command) bool {
-	return len(orchestratorSubCommands(cmd)) > 0
-}
-
 func hasInvalidPlugins(cmd *cobra.Command) bool {
 	return len(invalidPlugins(cmd)) > 0
-}
-
-func hasTopCommands(cmd *cobra.Command) bool {
-	return len(topCommands(cmd)) > 0
-}
-
-// commandAliases is a templating function to return aliases for the command,
-// formatted as the full command as they're called (contrary to the default
-// Aliases function, which only returns the subcommand).
-func commandAliases(cmd *cobra.Command) string {
-	if cmd.Annotations["aliases"] != "" {
-		return cmd.Annotations["aliases"]
-	}
-	var parentPath string
-	if cmd.HasParent() {
-		parentPath = cmd.Parent().CommandPath() + " "
-	}
-	aliases := cmd.CommandPath()
-	for _, alias := range cmd.Aliases {
-		aliases += ", " + parentPath + alias
-	}
-	return aliases
-}
-
-func topCommands(cmd *cobra.Command) []*cobra.Command {
-	cmds := []*cobra.Command{}
-	if cmd.Parent() != nil {
-		// for now, only use top-commands for the root-command, and skip
-		// for sub-commands
-		return cmds
-	}
-	for _, sub := range cmd.Commands() {
-		if isPlugin(sub) || !sub.IsAvailableCommand() {
-			continue
-		}
-		if _, ok := sub.Annotations["category-top"]; ok {
-			cmds = append(cmds, sub)
-		}
-	}
-	sort.SliceStable(cmds, func(i, j int) bool {
-		return sortorder.NaturalLess(cmds[i].Annotations["category-top"], cmds[j].Annotations["category-top"])
-	})
-	return cmds
 }
 
 func operationSubCommands(cmd *cobra.Command) []*cobra.Command {
@@ -308,12 +242,6 @@ func operationSubCommands(cmd *cobra.Command) []*cobra.Command {
 	for _, sub := range cmd.Commands() {
 		if isPlugin(sub) {
 			continue
-		}
-		if _, ok := sub.Annotations["category-top"]; ok {
-			if cmd.Parent() == nil {
-				// for now, only use top-commands for the root-command
-				continue
-			}
 		}
 		if sub.IsAvailableCommand() && !sub.HasSubCommands() {
 			cmds = append(cmds, sub)
@@ -350,27 +278,6 @@ func vendorAndVersion(cmd *cobra.Command) string {
 }
 
 func managementSubCommands(cmd *cobra.Command) []*cobra.Command {
-	cmds := []*cobra.Command{}
-	for _, sub := range allManagementSubCommands(cmd) {
-		if _, ok := sub.Annotations["swarm"]; ok {
-			continue
-		}
-		cmds = append(cmds, sub)
-	}
-	return cmds
-}
-
-func orchestratorSubCommands(cmd *cobra.Command) []*cobra.Command {
-	cmds := []*cobra.Command{}
-	for _, sub := range allManagementSubCommands(cmd) {
-		if _, ok := sub.Annotations["swarm"]; ok {
-			cmds = append(cmds, sub)
-		}
-	}
-	return cmds
-}
-
-func allManagementSubCommands(cmd *cobra.Command) []*cobra.Command {
 	cmds := []*cobra.Command{}
 	for _, sub := range cmd.Commands() {
 		if isPlugin(sub) {
@@ -419,10 +326,10 @@ EXPERIMENTAL:
   https://docs.docker.com/go/experimental/
 
 {{- end}}
-{{- if hasAliases . }}
+{{- if gt .Aliases 0}}
 
 Aliases:
-  {{ commandAliases . }}
+  {{.NameAndAliases}}
 
 {{- end}}
 {{- if .HasExample}}
@@ -431,35 +338,17 @@ Examples:
 {{ .Example }}
 
 {{- end}}
-{{- if .HasParent}}
 {{- if .HasAvailableFlags}}
 
 Options:
 {{ wrappedFlagUsages . | trimRightSpace}}
 
 {{- end}}
-{{- end}}
-{{- if hasTopCommands .}}
-
-Common Commands:
-{{- range topCommands .}}
-  {{rpad (decoratedName .) (add .NamePadding 1)}}{{.Short}}
-{{- end}}
-{{- end}}
 {{- if hasManagementSubCommands . }}
 
 Management Commands:
 
 {{- range managementSubCommands . }}
-  {{rpad (decoratedName .) (add .NamePadding 1)}}{{.Short}}{{ if isPlugin .}} {{vendorAndVersion .}}{{ end}}
-{{- end}}
-
-{{- end}}
-{{- if hasSwarmSubCommands . }}
-
-Swarm Commands:
-
-{{- range orchestratorSubCommands . }}
   {{rpad (decoratedName .) (add .NamePadding 1)}}{{.Short}}{{ if isPlugin .}} {{vendorAndVersion .}}{{ end}}
 {{- end}}
 
@@ -481,14 +370,6 @@ Invalid Plugins:
   {{rpad .Name .NamePadding }} {{invalidPluginReason .}}
 {{- end}}
 
-{{- end}}
-{{- if not .HasParent}}
-{{- if .HasAvailableFlags}}
-
-Global Options:
-{{ wrappedFlagUsages . | trimRightSpace}}
-
-{{- end}}
 {{- end}}
 
 {{- if .HasSubCommands }}

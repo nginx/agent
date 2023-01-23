@@ -23,11 +23,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/docker/compose/v2/pkg/api"
-	"github.com/docker/compose/v2/pkg/progress"
-
 	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli"
+	"github.com/docker/compose/v2/pkg/api"
+	"github.com/docker/compose/v2/pkg/progress"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -56,31 +55,34 @@ func (s *composeService) Up(ctx context.Context, project *types.Project, options
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	stopFunc := func() error {
+		fmt.Fprintln(s.stderr(), "Aborting on container exit...")
 		ctx := context.Background()
 		return progress.Run(ctx, func(ctx context.Context) error {
 			go func() {
 				<-signalChan
 				s.Kill(ctx, project.Name, api.KillOptions{ //nolint:errcheck
 					Services: options.Create.Services,
+					Project:  project,
 				})
 			}()
 
 			return s.Stop(ctx, project.Name, api.StopOptions{
 				Services: options.Create.Services,
+				Project:  project,
 			})
 		})
 	}
 	go func() {
 		<-signalChan
 		printer.Cancel()
-		fmt.Println("Gracefully stopping... (press Ctrl+C again to force)")
+		fmt.Fprintln(s.stderr(), "Gracefully stopping... (press Ctrl+C again to force)")
 		stopFunc() //nolint:errcheck
 	}()
 
 	var exitCode int
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
-		code, err := printer.Run(context.Background(), options.Start.CascadeStop, options.Start.ExitCodeFrom, stopFunc)
+		code, err := printer.Run(options.Start.CascadeStop, options.Start.ExitCodeFrom, stopFunc)
 		exitCode = code
 		return err
 	})
@@ -90,6 +92,7 @@ func (s *composeService) Up(ctx context.Context, project *types.Project, options
 		return err
 	}
 
+	printer.Stop()
 	err = eg.Wait()
 	if exitCode != 0 {
 		errMsg := ""

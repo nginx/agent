@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
-	tc "github.com/testcontainers/testcontainers-go"
+    tc "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
@@ -22,7 +22,6 @@ const (
 
 func TestAPI_setupTestContainer(t *testing.T) {
 	compose, err := tc.NewDockerCompose("docker-compose.yml")
-	
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
 	t.Cleanup(func() {
@@ -33,9 +32,9 @@ func TestAPI_setupTestContainer(t *testing.T) {
 	t.Cleanup(cancel)
 
 	assert.NoError(t, compose.
-		WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(map[string]string {
-			"PACKAGE": os.Getenv("PACKAGE"),
-		}).
+		WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(map[string]string{
+		"PACKAGE": os.Getenv("PACKAGE"),
+	}).
 		Up(ctx, tc.Wait(true)), "compose.Up()")
 }
 

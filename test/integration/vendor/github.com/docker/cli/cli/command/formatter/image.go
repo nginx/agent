@@ -177,6 +177,7 @@ func imageFormatTaggedAndDigest(ctx ImageContext, image types.ImageSummary) []*i
 			}
 		} else {
 			addImage(repo, "<none>", "")
+
 		}
 	}
 	return images

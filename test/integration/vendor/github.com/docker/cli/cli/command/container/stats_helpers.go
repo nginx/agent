@@ -14,7 +14,7 @@ import (
 )
 
 type stats struct {
-	mu sync.RWMutex
+	mu sync.Mutex
 	cs []*Stats
 }
 

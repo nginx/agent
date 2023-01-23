@@ -17,7 +17,6 @@
 package compose
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/docker/compose/v2/pkg/api"
@@ -26,21 +25,25 @@ import (
 // logPrinter watch application containers an collect their logs
 type logPrinter interface {
 	HandleEvent(event api.ContainerEvent)
-	Run(ctx context.Context, cascadeStop bool, exitCodeFrom string, stopFn func() error) (int, error)
+	Run(cascadeStop bool, exitCodeFrom string, stopFn func() error) (int, error)
 	Cancel()
+	Stop()
 }
 
 type printer struct {
 	queue    chan api.ContainerEvent
 	consumer api.LogConsumer
+	stopCh   chan struct{}
 }
 
 // newLogPrinter builds a LogPrinter passing containers logs to LogConsumer
 func newLogPrinter(consumer api.LogConsumer) logPrinter {
 	queue := make(chan api.ContainerEvent)
+	stopCh := make(chan struct{}, 1) // printer MAY stop on his own, so Stop MUST not be blocking
 	printer := printer{
 		consumer: consumer,
 		queue:    queue,
+		stopCh:   stopCh,
 	}
 	return &printer
 }
@@ -51,12 +54,16 @@ func (p *printer) Cancel() {
 	}
 }
 
+func (p *printer) Stop() {
+	p.stopCh <- struct{}{}
+}
+
 func (p *printer) HandleEvent(event api.ContainerEvent) {
 	p.queue <- event
 }
 
 //nolint:gocyclo
-func (p *printer) Run(ctx context.Context, cascadeStop bool, exitCodeFrom string, stopFn func() error) (int, error) {
+func (p *printer) Run(cascadeStop bool, exitCodeFrom string, stopFn func() error) (int, error) {
 	var (
 		aborting bool
 		exitCode int
@@ -64,8 +71,8 @@ func (p *printer) Run(ctx context.Context, cascadeStop bool, exitCodeFrom string
 	containers := map[string]struct{}{}
 	for {
 		select {
-		case <-ctx.Done():
-			return exitCode, ctx.Err()
+		case <-p.stopCh:
+			return exitCode, nil
 		case event := <-p.queue:
 			container := event.Container
 			switch event.Type {
@@ -87,7 +94,6 @@ func (p *printer) Run(ctx context.Context, cascadeStop bool, exitCodeFrom string
 				if cascadeStop {
 					if !aborting {
 						aborting = true
-						fmt.Println("Aborting on container exit...")
 						err := stopFn()
 						if err != nil {
 							return 0, err
@@ -108,7 +114,11 @@ func (p *printer) Run(ctx context.Context, cascadeStop bool, exitCodeFrom string
 				}
 			case api.ContainerEventLog:
 				if !aborting {
-					p.consumer.Log(container, event.Service, event.Line)
+					p.consumer.Log(container, event.Line)
+				}
+			case api.ContainerEventErr:
+				if !aborting {
+					p.consumer.Err(container, event.Line)
 				}
 			}
 		}

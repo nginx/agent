@@ -27,7 +27,7 @@ const (
 // NewContainerFormat returns a Format for rendering using a Context
 func NewContainerFormat(source string, quiet bool, size bool) Format {
 	switch source {
-	case TableFormatKey, "": // table formatting is the default if none is set.
+	case TableFormatKey:
 		if quiet {
 			return DefaultQuietFormat
 		}
@@ -54,9 +54,8 @@ ports: {{- pad .Ports 1 0}}
 			format += `size: {{.Size}}\n`
 		}
 		return Format(format)
-	default: // custom format
-		return Format(source)
 	}
+	return Format(source)
 }
 
 // ContainerWrite renders the context for a list of containers
@@ -126,7 +125,7 @@ func (c *ContainerContext) ID() string {
 // slash (/) prefix stripped. Additional names for the container (related to the
 // legacy `--link` feature) are omitted.
 func (c *ContainerContext) Names() string {
-	names := StripNamePrefix(c.c.Names)
+	names := stripNamePrefix(c.c.Names)
 	if c.trunc {
 		for _, name := range names {
 			if len(strings.Split(name, "/")) == 1 {
@@ -136,15 +135,6 @@ func (c *ContainerContext) Names() string {
 		}
 	}
 	return strings.Join(names, ",")
-}
-
-// StripNamePrefix removes prefix from string, typically container names as returned by `ContainersList` API
-func StripNamePrefix(ss []string) []string {
-	sss := make([]string, len(ss))
-	for i, s := range ss {
-		sss[i] = s[1:]
-	}
-	return sss
 }
 
 // Image returns the container's image reference. If the trunc option is set,

@@ -1,10 +1,13 @@
 package command
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strconv"
 
+	"github.com/docker/cli/cli/context/docker"
+	"github.com/docker/cli/cli/context/store"
 	"github.com/docker/cli/cli/streams"
 	"github.com/moby/term"
 )
@@ -79,10 +82,15 @@ func WithContentTrust(enabled bool) DockerCliOption {
 	}
 }
 
-// WithDefaultContextStoreConfig configures the cli to use the default context store configuration.
-func WithDefaultContextStoreConfig() DockerCliOption {
+// WithContextEndpointType add support for an additional typed endpoint in the context store
+// Plugins should use this to store additional endpoints configuration in the context store
+func WithContextEndpointType(endpointName string, endpointType store.TypeGetter) DockerCliOption {
 	return func(cli *DockerCli) error {
-		cli.contextStoreConfig = DefaultContextStoreConfig()
+		switch endpointName {
+		case docker.DockerEndpoint:
+			return fmt.Errorf("cannot change %q endpoint type", endpointName)
+		}
+		cli.contextStoreConfig.SetEndpoint(endpointName, endpointType)
 		return nil
 	}
 }

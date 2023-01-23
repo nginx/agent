@@ -10,7 +10,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var pluginNameRe = regexp.MustCompile("^[a-z][a-z0-9]*$")
+var (
+	pluginNameRe = regexp.MustCompile("^[a-z][a-z0-9]*$")
+)
 
 // Plugin represents a potential plugin with all it's metadata.
 type Plugin struct {
@@ -31,6 +33,8 @@ type Plugin struct {
 // is set, and is always a `pluginError`, but the `Plugin` is still
 // returned with no error. An error is only returned due to a
 // non-recoverable error.
+//
+// nolint: gocyclo
 func newPlugin(c Candidate, rootcmd *cobra.Command) (Plugin, error) {
 	path := c.Path()
 	if path == "" {
@@ -67,7 +71,7 @@ func newPlugin(c Candidate, rootcmd *cobra.Command) (Plugin, error) {
 			// Ignore conflicts with commands which are
 			// just plugin stubs (i.e. from a previous
 			// call to AddPluginCommandStubs).
-			if IsPluginCommand(cmd) {
+			if p := cmd.Annotations[CommandAnnotationPlugin]; p == "true" {
 				continue
 			}
 			if cmd.Name() == p.Name {

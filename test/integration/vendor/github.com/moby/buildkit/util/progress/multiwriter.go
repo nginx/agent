@@ -36,7 +36,9 @@ func (ps *MultiWriter) Add(pw Writer) {
 	}
 	ps.mu.Lock()
 	plist := make([]*Progress, 0, len(ps.items))
-	plist = append(plist, ps.items...)
+	for _, p := range ps.items {
+		plist = append(plist, p)
+	}
 	sort.Slice(plist, func(i, j int) bool {
 		return plist[i].Timestamp.Before(plist[j].Timestamp)
 	})

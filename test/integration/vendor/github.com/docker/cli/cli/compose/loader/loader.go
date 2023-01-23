@@ -143,7 +143,7 @@ func loadSections(config map[string]interface{}, configDetails types.ConfigDetai
 		Version: schema.Version(config),
 	}
 
-	loaders := []struct {
+	var loaders = []struct {
 		key string
 		fnc func(config map[string]interface{}) error
 	}{

@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -30,14 +29,10 @@ func NewKillCommand(dockerCli command.Cli) *cobra.Command {
 			opts.containers = args
 			return runKill(dockerCli, &opts)
 		},
-		Annotations: map[string]string{
-			"aliases": "docker container kill, docker kill",
-		},
-		ValidArgsFunction: completion.ContainerNames(dockerCli, false),
 	}
 
 	flags := cmd.Flags()
-	flags.StringVarP(&opts.signal, "signal", "s", "", "Signal to send to the container")
+	flags.StringVarP(&opts.signal, "signal", "s", "KILL", "Signal to send to the container")
 	return cmd
 }
 

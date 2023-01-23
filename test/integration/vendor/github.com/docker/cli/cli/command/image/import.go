@@ -2,14 +2,15 @@ package image
 
 import (
 	"context"
+	"io"
 	"os"
-	"strings"
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	dockeropts "github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/docker/docker/pkg/urlutil"
 	"github.com/spf13/cobra"
 )
 
@@ -36,9 +37,6 @@ func NewImportCommand(dockerCli command.Cli) *cobra.Command {
 			}
 			return runImport(dockerCli, options)
 		},
-		Annotations: map[string]string{
-			"aliases": "docker image import, docker import",
-		},
 	}
 
 	flags := cmd.Flags()
@@ -52,37 +50,37 @@ func NewImportCommand(dockerCli command.Cli) *cobra.Command {
 }
 
 func runImport(dockerCli command.Cli, options importOptions) error {
-	var source types.ImageImportSource
-	switch {
-	case options.source == "-":
-		// import from STDIN
-		source = types.ImageImportSource{
-			Source:     dockerCli.In(),
-			SourceName: options.source,
-		}
-	case strings.HasPrefix(options.source, "https://"), strings.HasPrefix(options.source, "http://"):
-		// import from a remote source (handled by the daemon)
-		source = types.ImageImportSource{
-			SourceName: options.source,
-		}
-	default:
-		// import from a local file
+	var (
+		in      io.Reader
+		srcName = options.source
+	)
+
+	if options.source == "-" {
+		in = dockerCli.In()
+	} else if !urlutil.IsURL(options.source) {
+		srcName = "-"
 		file, err := os.Open(options.source)
 		if err != nil {
 			return err
 		}
 		defer file.Close()
-		source = types.ImageImportSource{
-			Source:     file,
-			SourceName: "-",
-		}
+		in = file
 	}
 
-	responseBody, err := dockerCli.Client().ImageImport(context.Background(), source, options.reference, types.ImageImportOptions{
+	source := types.ImageImportSource{
+		Source:     in,
+		SourceName: srcName,
+	}
+
+	importOptions := types.ImageImportOptions{
 		Message:  options.message,
 		Changes:  options.changes.GetAll(),
 		Platform: options.platform,
-	})
+	}
+
+	clnt := dockerCli.Client()
+
+	responseBody, err := clnt.ImageImport(context.Background(), source, options.reference, importOptions)
 	if err != nil {
 		return err
 	}

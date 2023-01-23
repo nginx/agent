@@ -19,7 +19,7 @@ func EndpointTypeGetter(name string, getter TypeGetter) NamedTypeGetter {
 	}
 }
 
-// Config is used to configure the metadata marshaler of the context ContextStore
+// Config is used to configure the metadata marshaler of the context store
 type Config struct {
 	contextType   TypeGetter
 	endpointTypes map[string]TypeGetter

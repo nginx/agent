@@ -3,6 +3,7 @@ package store
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,7 +11,7 @@ import (
 	"github.com/docker/cli/cli/manifest/types"
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/reference"
-	"github.com/opencontainers/go-digest"
+	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
@@ -46,7 +47,7 @@ func (s *fsStore) Get(listRef reference.Reference, manifest reference.Reference)
 }
 
 func (s *fsStore) getFromFilename(ref reference.Reference, filename string) (types.ImageManifest, error) {
-	bytes, err := os.ReadFile(filename)
+	bytes, err := ioutil.ReadFile(filename)
 	switch {
 	case os.IsNotExist(err):
 		return types.ImageManifest{}, newNotFoundError(ref.String())
@@ -111,7 +112,7 @@ func (s *fsStore) GetList(listRef reference.Reference) ([]types.ImageManifest, e
 // listManifests stored in a transaction
 func (s *fsStore) listManifests(transaction string) ([]string, error) {
 	transactionDir := filepath.Join(s.root, makeFilesafeName(transaction))
-	fileInfos, err := os.ReadDir(transactionDir)
+	fileInfos, err := ioutil.ReadDir(transactionDir)
 	switch {
 	case os.IsNotExist(err):
 		return nil, nil
@@ -119,7 +120,7 @@ func (s *fsStore) listManifests(transaction string) ([]string, error) {
 		return nil, err
 	}
 
-	filenames := make([]string, 0, len(fileInfos))
+	filenames := []string{}
 	for _, info := range fileInfos {
 		filenames = append(filenames, info.Name())
 	}
@@ -136,7 +137,7 @@ func (s *fsStore) Save(listRef reference.Reference, manifest reference.Reference
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filename, bytes, 0644)
+	return ioutil.WriteFile(filename, bytes, 0644)
 }
 
 func (s *fsStore) createManifestListDirectory(transaction string) error {
