@@ -235,10 +235,15 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				}
 			}
 
-			if v, err := strconv.ParseFloat(access.UpstreamConnectTime, 64); err == nil {
-				connectTimes = append(connectTimes, v)
-			} else {
-				log.Debugf("Error getting upstream_connect_time value from access logs, %v", err)
+			for _, cTime := range strings.Split(access.UpstreamConnectTime, ", ") {
+				// nginx uses '-' to represent TCP connection fails
+				cTime = strings.ReplaceAll(cTime, "-", "0")
+
+				if v, err := strconv.ParseFloat(cTime, 64); err == nil {
+					connectTimes = append(connectTimes, v)
+				} else {
+					log.Debugf("Error getting upstream_connect_time value from access logs, %v", err)
+				}
 			}
 
 			if access.ServerProtocol != "" {
