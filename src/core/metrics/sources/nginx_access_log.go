@@ -154,12 +154,11 @@ func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.St
 
 func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string) {
 	logPattern := convertLogFormat(logFormat)
-	// TODO: Undo debugf->infof
-	log.Infof("Collecting from: %s using format: %s", logFile, logFormat)
-	log.Infof("Pattern used for tailing logs: %s", logPattern)
+	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
+	log.Debugf("Pattern used for tailing logs: %s", logPattern)
 
-	counters := getDefaultCounters()
-	genCounters := getDefaultGenCounters()
+	httpCounters := getDefaultHTTPCounters()
+	counters := getDefaultGenCounters()
 
 	gzipRatios, requestLengths, requestTimes, connectTimes := []float64{}, []float64{}, []float64{}, []float64{}
 	mu := sync.Mutex{}
@@ -187,14 +186,14 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			mu.Lock()
 			if v, err := strconv.Atoi(access.BodyBytesSent); err == nil {
 				n := "request.body_bytes_sent"
-				counters[n] = float64(v) + counters[n]
+				httpCounters[n] = float64(v) + httpCounters[n]
 			} else {
 				log.Debugf("Error getting body_bytes_sent value from access logs, %v", err)
 			}
 
 			if v, err := strconv.Atoi(access.BytesSent); err == nil {
 				n := "request.bytes_sent"
-				counters[n] = float64(v) + counters[n]
+				httpCounters[n] = float64(v) + httpCounters[n]
 			} else {
 				log.Debugf("Error getting bytes_sent value from access logs, %v", err)
 			}
@@ -223,20 +222,20 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				if isOtherMethod(n) {
 					n = "method.others"
 				}
-				counters[n] = counters[n] + 1
+				httpCounters[n] = httpCounters[n] + 1
 
 				if access.ServerProtocol == "" {
 					if strings.Count(protocol, "/") == 1 {
 						httpProtocolVersion := strings.Split(protocol, "/")[1]
 						httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
 						n = fmt.Sprintf("v%s", httpProtocolVersion)
-						counters[n] = counters[n] + 1
+						httpCounters[n] = httpCounters[n] + 1
 					}
 				}
 			}
 
 			for _, cTime := range strings.Split(access.UpstreamConnectTime, ", ") {
-				// nginx uses '-' to represent TCP connection fails
+				// nginx uses '-' to represent TCP connection failures
 				cTime = strings.ReplaceAll(cTime, "-", "0")
 
 				if v, err := strconv.ParseFloat(cTime, 64); err == nil {
@@ -251,7 +250,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 					httpProtocolVersion := strings.Split(access.ServerProtocol, "/")[1]
 					httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
 					n := fmt.Sprintf("v%s", httpProtocolVersion)
-					counters[n] = counters[n] + 1
+					httpCounters[n] = httpCounters[n] + 1
 				}
 			}
 
@@ -259,18 +258,18 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			if c.nginxType == OSSNginxType {
 				if v, err := strconv.Atoi(access.Status); err == nil {
 					n := fmt.Sprintf("status.%dxx", v/100)
-					counters[n] = counters[n] + 1
+					httpCounters[n] = httpCounters[n] + 1
 					if v == 403 || v == 404 || v == 500 || v == 502 || v == 503 || v == 504 {
 						n := fmt.Sprintf("status.%d", v)
-						counters[n] = counters[n] + 1
+						httpCounters[n] = httpCounters[n] + 1
 					}
 					if v == 499 {
 						n := "status.discarded"
-						counters[n] = counters[n] + 1
+						httpCounters[n] = httpCounters[n] + 1
 					}
 					if v == 400 {
 						n := "request.malformed"
-						counters[n] = counters[n] + 1
+						httpCounters[n] = httpCounters[n] + 1
 					}
 				} else {
 					log.Debugf("Error getting status value from access logs, %v", err)
@@ -285,32 +284,32 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			mu.Lock()
 
 			if len(requestLengths) > 0 {
-				counters["request.length"] = getRequestLengthMetricValue(requestLengths)
+				httpCounters["request.length"] = getRequestLengthMetricValue(requestLengths)
 			}
 
 			if len(gzipRatios) > 0 {
-				counters["gzip.ratio"] = getGzipRatioMetricValue(gzipRatios)
+				httpCounters["gzip.ratio"] = getGzipRatioMetricValue(gzipRatios)
 			}
 
-			for key, value := range getRequestTimeMetrics(requestTimes) {
-				counters[key] = value
+			for metricName := range httpCounters {
+				httpCounters[metricName] = getTimeMetrics(metricName, requestTimes)
 			}
 
-			for key, value := range getUpstreamConnectMetrics(connectTimes) {
-				genCounters[key] = value
+			for metricName := range counters {
+				counters[metricName] = getTimeMetrics(metricName, connectTimes)
 			}
 
 			c.group = "http"
-			simpleMetrics := c.convertSamplesToSimpleMetrics(counters)
+			simpleMetrics := c.convertSamplesToSimpleMetrics(httpCounters)
 
 			c.group = ""
-			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(genCounters)...)
+			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(counters)...)
 
 			log.Tracef("Access log metrics collected: %v", simpleMetrics)
 
 			// reset the counters
-			counters = getDefaultCounters()
-			genCounters = getDefaultGenCounters()
+			httpCounters = getDefaultHTTPCounters()
+			counters = getDefaultGenCounters()
 			gzipRatios, requestLengths, requestTimes, connectTimes = []float64{}, []float64{}, []float64{}, []float64{}
 
 			c.buf = append(c.buf, metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics))
@@ -387,72 +386,49 @@ func getGzipRatioMetricValue(gzipRatios []float64) float64 {
 	return value
 }
 
-func getRequestTimeMetrics(requestTimes []float64) map[string]float64 {
-	counters := make(map[string]float64)
-
-	if len(requestTimes) > 0 {
-		// Calculate request time average
-		requestTimesSum := 0.0
-		for _, requestTime := range requestTimes {
-			requestTimesSum += requestTime
-		}
-		counters["request.time"] = requestTimesSum / float64(len(requestTimes))
-
-		// Calculate request time count
-		counters["request.time.count"] = float64(len(requestTimes))
-
-		// Calculate request time max
-		sort.Float64s(requestTimes)
-		counters["request.time.max"] = requestTimes[len(requestTimes)-1]
-
-		// Calculate request time median
-		mNumber := len(requestTimes) / 2
-		if len(requestTimes)%2 != 0 {
-			counters["request.time.median"] = requestTimes[mNumber]
-		} else {
-			counters["request.time.median"] = (requestTimes[mNumber-1] + requestTimes[mNumber]) / 2
-		}
-
-		// Calculate request time 95 percentile
-		index := int(math.RoundToEven(float64(0.95)*float64(len(requestTimes)))) - 1
-		counters["request.time.pctl95"] = requestTimes[index]
+func getTimeMetrics(metricName string, times []float64) float64 {
+	if len(times) == 0 {
+		return 0
 	}
 
-	return counters
-}
+	metricType := metricName[strings.LastIndex(metricName, ".")+1:]
 
-func getUpstreamConnectMetrics(connectTimes []float64) map[string]float64 {
-	counters := make(map[string]float64)
-
-	if len(connectTimes) > 0 {
-		// Calculate upstream connect time average
-		connectTimesSum := 0.0
-		for _, connectTime := range connectTimes {
-			connectTimesSum += connectTime
+	switch metricType {
+	case "time":
+		// Calculate time average
+		sum := 0.0
+		for _, t := range times {
+			sum += t
 		}
-		counters["upstream.connect.time"] = connectTimesSum / float64(len(connectTimes))
+		return sum / float64(len(times))
 
-		// Calculate upstream connect time count
-		counters["upstream.connect.time.count"] = float64(len(connectTimes))
+	case "count":
+		return float64(len(times))
 
-		// Calculate upstream connect time max
-		sort.Float64s(connectTimes)
-		counters["upstream.connect.time.max"] = connectTimes[len(connectTimes)-1]
+	case "max":
+		sort.Float64s(times)
+		return times[len(times)-1]
 
-		// Calculate upstream connect time median
-		mNumber := len(connectTimes) / 2
-		if len(connectTimes)%2 != 0 {
-			counters["upstream.connect.time.median"] = connectTimes[mNumber]
+	case "median":
+		sort.Float64s(times)
+
+		mNumber := len(times) / 2
+		if len(times)%2 != 0 {
+			return times[mNumber]
 		} else {
-			counters["upstream.connect.time.median"] = (connectTimes[mNumber-1] + connectTimes[mNumber]) / 2
+			return (times[mNumber-1] + times[mNumber]) / 2
 		}
 
-		// Calculate upstream connect time 95 percentile
-		index := int(math.RoundToEven(float64(0.95)*float64(len(connectTimes)))) - 1
-		counters["upstream.connect.time.pctl95"] = connectTimes[index]
+	case "pctl95":
+		sort.Float64s(times)
+
+		index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
+		return times[index]
 	}
 
-	return counters
+	log.Debugf("Could not get time metrics for %s: invalid metric type", metricName)
+
+	return 0
 }
 
 // convertLogFormat converts log format into a pattern that can be parsed by the tailer
@@ -487,7 +463,7 @@ func isOtherMethod(method string) bool {
 		method != "method.options"
 }
 
-func getDefaultCounters() map[string]float64 {
+func getDefaultHTTPCounters() map[string]float64 {
 	return map[string]float64{
 		"gzip.ratio":              0,
 		"method.delete":           0,
