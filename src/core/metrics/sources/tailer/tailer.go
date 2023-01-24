@@ -41,6 +41,7 @@ type NginxAccessItem struct {
 	GzipRatio           string `mapstructure:"gzip_ratio"`
 	ServerProtocol      string `mapstructure:"server_protocol"`
 	UpstreamConnectTime string `mapstructure:"upstream_connect_time"`
+	UpstreamHeaderTime  string `mapstructure:"upstream_header_time"`
 }
 
 func NewNginxAccessItem(v map[string]string) (*NginxAccessItem, error) {
