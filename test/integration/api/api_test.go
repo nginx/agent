@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
-    "github.com/testcontainers/testcontainers-go/modules/compose"
+	"github.com/testcontainers/testcontainers-go/modules/compose"
 	wait "github.com/testcontainers/testcontainers-go/wait"
 )
 
@@ -33,7 +33,8 @@ func TestAPI_setupTestContainer(t *testing.T) {
 
 	assert.NoError(t, comp.
 		WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(map[string]string{
-		"PACKAGE": os.Getenv("PACKAGE"),
+		"PACKAGE":      os.Getenv("PACKAGE"),
+		"DOCKER_IMAGE": os.Getenv("DOCKER_IMAGE"),
 	}).
 		Up(ctx, compose.Wait(true)), "compose.Up()")
 }

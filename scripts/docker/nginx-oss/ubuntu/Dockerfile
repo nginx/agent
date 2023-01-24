@@ -1,4 +1,5 @@
-FROM ubuntu:22.04 as install
+ARG DOCKER_IMAGE
+FROM ${DOCKER_IMAGE} as install
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
 ARG PACKAGE
