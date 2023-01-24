@@ -64,6 +64,20 @@ jobs:
       - name: Run Component Tests
         run: make component-test
 
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Run Integration Tests
+        run: |
+            sudo apt-get update
+            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
+            make integration-test
+        
   performance-test:
     name: Performance Tests
     if: "!github.event.pull_request.head.repo.fork"

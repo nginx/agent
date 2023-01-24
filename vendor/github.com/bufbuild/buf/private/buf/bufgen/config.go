@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -260,6 +260,14 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 	if err != nil {
 		return nil, err
 	}
+	objcClassPrefixConfig, err := newObjcClassPrefixConfigV1(externalManagedConfig.ObjcClassPrefix)
+	if err != nil {
+		return nil, err
+	}
+	rubyPackageConfig, err := newRubyPackageConfigV1(externalManagedConfig.RubyPackage)
+	if err != nil {
+		return nil, err
+	}
 	override := externalManagedConfig.Override
 	for overrideID, overrideValue := range override {
 		for importPath := range overrideValue {
@@ -281,14 +289,16 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 		}
 	}
 	return &ManagedConfig{
-		CcEnableArenas:        externalManagedConfig.CcEnableArenas,
-		JavaMultipleFiles:     externalManagedConfig.JavaMultipleFiles,
-		JavaStringCheckUtf8:   externalManagedConfig.JavaStringCheckUtf8,
-		JavaPackagePrefix:     javaPackagePrefixConfig,
-		CsharpNameSpaceConfig: csharpNamespaceConfig,
-		OptimizeForConfig:     optimizeForConfig,
-		GoPackagePrefixConfig: goPackagePrefixConfig,
-		Override:              override,
+		CcEnableArenas:          externalManagedConfig.CcEnableArenas,
+		JavaMultipleFiles:       externalManagedConfig.JavaMultipleFiles,
+		JavaStringCheckUtf8:     externalManagedConfig.JavaStringCheckUtf8,
+		JavaPackagePrefixConfig: javaPackagePrefixConfig,
+		CsharpNameSpaceConfig:   csharpNamespaceConfig,
+		OptimizeForConfig:       optimizeForConfig,
+		GoPackagePrefixConfig:   goPackagePrefixConfig,
+		ObjcClassPrefixConfig:   objcClassPrefixConfig,
+		RubyPackageConfig:       rubyPackageConfig,
+		Override:                override,
 	}, nil
 }
 
@@ -435,6 +445,43 @@ func newGoPackagePrefixConfigV1(externalGoPackagePrefixConfig ExternalGoPackageP
 	}, nil
 }
 
+func newRubyPackageConfigV1(
+	externalRubyPackageConfig ExternalRubyPackageConfigV1,
+) (*RubyPackageConfig, error) {
+	if externalRubyPackageConfig.IsEmpty() {
+		return nil, nil
+	}
+	seenModuleIdentities := make(map[string]struct{}, len(externalRubyPackageConfig.Except))
+	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalRubyPackageConfig.Except))
+	for _, moduleName := range externalRubyPackageConfig.Except {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid ruby_package except: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid ruby_package except: %q is defined multiple times", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		except = append(except, moduleIdentity)
+	}
+	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalRubyPackageConfig.Override))
+	for moduleName, rubyPackage := range externalRubyPackageConfig.Override {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid ruby_package override key: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid ruby_package override: %q is already defined as an except", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		override[moduleIdentity] = rubyPackage
+	}
+	return &RubyPackageConfig{
+		Except:   except,
+		Override: override,
+	}, nil
+}
+
 func newCsharpNamespaceConfigV1(
 	externalCsharpNamespaceConfig ExternalCsharpNamespaceConfigV1,
 ) (*CsharpNameSpaceConfig, error) {
@@ -467,6 +514,44 @@ func newCsharpNamespaceConfigV1(
 		override[moduleIdentity] = csharpNamespace
 	}
 	return &CsharpNameSpaceConfig{
+		Except:   except,
+		Override: override,
+	}, nil
+}
+
+func newObjcClassPrefixConfigV1(externalObjcClassPrefixConfig ExternalObjcClassPrefixConfigV1) (*ObjcClassPrefixConfig, error) {
+	if externalObjcClassPrefixConfig.IsEmpty() {
+		return nil, nil
+	}
+	// It's ok to have an empty default, which will have the same effect as previously enabling managed mode.
+	defaultObjcClassPrefix := externalObjcClassPrefixConfig.Default
+	seenModuleIdentities := make(map[string]struct{}, len(externalObjcClassPrefixConfig.Except))
+	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalObjcClassPrefixConfig.Except))
+	for _, moduleName := range externalObjcClassPrefixConfig.Except {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid objc_class_prefix except: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid objc_class_prefix except: %q is defined multiple times", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		except = append(except, moduleIdentity)
+	}
+	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalObjcClassPrefixConfig.Override))
+	for moduleName, objcClassPrefix := range externalObjcClassPrefixConfig.Override {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid objc_class_prefix override key: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid objc_class_prefix override: %q is already defined as an except", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		override[moduleIdentity] = objcClassPrefix
+	}
+	return &ObjcClassPrefixConfig{
+		Default:  defaultObjcClassPrefix,
 		Except:   except,
 		Override: override,
 	}, nil
