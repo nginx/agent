@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -27,7 +28,7 @@ func TestExtensions_Process(t *testing.T) {
 	}{
 		{
 			testName:      "Advanced Metrics",
-			extensionKey:  config.AdvancedMetricsKey,
+			extensionKey:  agent_config.AdvancedMetricsExtensionPlugin,
 			extensionName: "Advanced Metrics Plugin",
 		},
 		{

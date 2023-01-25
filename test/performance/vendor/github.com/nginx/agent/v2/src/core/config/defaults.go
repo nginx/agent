@@ -161,18 +161,6 @@ const (
 	MetricsMode               = MetricsKey + agent_config.KeyDelimiter + "mode"
 
 	// viper keys used in config
-	AdvancedMetricsKey = "advanced_metrics"
-
-	AdvancedMetricsSocketPath           = AdvancedMetricsKey + agent_config.KeyDelimiter + "socket_path"
-	AdvancedMetricsAggregationPeriod    = AdvancedMetricsKey + agent_config.KeyDelimiter + "aggregation_period"
-	AdvancedMetricsPublishPeriod        = AdvancedMetricsKey + agent_config.KeyDelimiter + "publishing_period"
-	AdvancedMetricsTableSizesLimits     = AdvancedMetricsKey + agent_config.KeyDelimiter + "table_sizes_limits"
-	AdvancedMetricsTableSizesLimitsSTMS = AdvancedMetricsTableSizesLimits + agent_config.KeyDelimiter + "staging_table_max_size"
-	AdvancedMetricsTableSizesLimitsSTT  = AdvancedMetricsTableSizesLimits + agent_config.KeyDelimiter + "staging_table_threshold"
-	AdvancedMetricsTableSizesLimitsPTMS = AdvancedMetricsTableSizesLimits + agent_config.KeyDelimiter + "priority_table_max_size"
-	AdvancedMetricsTableSizesLimitsPTT  = AdvancedMetricsTableSizesLimits + agent_config.KeyDelimiter + "priority_table_threshold"
-
-	// viper keys used in config
 	NginxAppProtectKey = "nginx_app_protect"
 
 	NginxAppProtectReportInterval         = NginxAppProtectKey + agent_config.KeyDelimiter + "report_interval"
@@ -295,37 +283,6 @@ var (
 			Name:         MetricsReportInterval,
 			Usage:        "The polling period specified for a single set of metrics being collected.",
 			DefaultValue: Defaults.AgentMetrics.ReportInterval,
-		},
-		// Advanced Metrics
-		&StringFlag{
-			Name:  AdvancedMetricsSocketPath,
-			Usage: "The advanced metrics socket location.",
-		},
-		// change to advanced metrics collection interval
-		&DurationFlag{
-			Name:  AdvancedMetricsAggregationPeriod,
-			Usage: "Sets the interval, in seconds, at which advanced metrics are collected.",
-		},
-		// change to advanced metrics report interval
-		&DurationFlag{
-			Name:  AdvancedMetricsPublishPeriod,
-			Usage: "The polling period specified for a single set of advanced metrics being collected.",
-		},
-		&IntFlag{
-			Name:  AdvancedMetricsTableSizesLimitsPTMS,
-			Usage: "Default Maximum Size of the Priority Table.",
-		},
-		&IntFlag{
-			Name:  AdvancedMetricsTableSizesLimitsPTT,
-			Usage: "Default Threshold of the Priority Table - normally a value which is a percentage of the corresponding Default Maximum Size of the Priority Table (<100%, but its value is not an actual percentage, i.e 88%, rather 88%*AdvancedMetricsTableSizesLimitsPTMS).",
-		},
-		&IntFlag{
-			Name:  AdvancedMetricsTableSizesLimitsSTMS,
-			Usage: "Default Maximum Size of the Staging Table.",
-		},
-		&IntFlag{
-			Name:  AdvancedMetricsTableSizesLimitsSTT,
-			Usage: "AdvancedMetricsTableSizesLimitsSTT - Default Threshold of the Staging Table - normally a value which is a percentage of the corresponding Default Maximum Size of the Staging Table (<100%, but its value is not an actual percentage, i.e 88%, rather 88%*AdvancedMetricsTableSizesLimitsSTMS).",
 		},
 		// TLS Config
 		&BoolFlag{

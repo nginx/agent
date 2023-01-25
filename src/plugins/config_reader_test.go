@@ -169,7 +169,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 					AgentConfig: &proto.AgentConfig{
 						Details: &proto.AgentDetails{
 							Tags:       []string{"new-tag1:one", "new-tag2:two"},
-							Extensions: []string{"advanced_metrics", "nginx_app_protect"},
+							Extensions: []string{"advanced-metrics", "nginx_app_protect"},
 						},
 					},
 				},

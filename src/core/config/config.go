@@ -18,7 +18,6 @@ import (
 	"time"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
-	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -178,6 +177,7 @@ func GetConfig(clientId string) (*Config, error) {
 		Dataplane:             getDataplane(),
 		AgentMetrics:          getMetrics(),
 		Features:              Viper.GetStringSlice(agent_config.FeaturesKey),
+		Extensions:            Viper.GetStringSlice(agent_config.ExtensionsKey),
 		Tags:                  Viper.GetStringSlice(TagsKey),
 		Updated:               filePathUTime(Viper.GetString(DynamicConfigPathKey)),
 		AllowedDirectoriesMap: map[string]struct{}{},
@@ -185,7 +185,6 @@ func GetConfig(clientId string) (*Config, error) {
 		InstanceGroup:         Viper.GetString(InstanceGroupKey),
 		NginxAppProtect:       getNginxAppProtect(),
 		NAPMonitoring:         getNAPMonitoring(),
-		AdvancedMetrics:       getAdvancedMetrics(),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDirs, ":") {
@@ -273,20 +272,6 @@ func getMetrics() AgentMetrics {
 		ReportInterval:     Viper.GetDuration(MetricsReportInterval),
 		CollectionInterval: Viper.GetDuration(MetricsCollectionInterval),
 		Mode:               Viper.GetString(MetricsMode),
-	}
-}
-
-func getAdvancedMetrics() AdvancedMetrics {
-	return AdvancedMetrics{
-		SocketPath:        Viper.GetString(AdvancedMetricsSocketPath),
-		AggregationPeriod: Viper.GetDuration(AdvancedMetricsAggregationPeriod),
-		PublishingPeriod:  Viper.GetDuration(AdvancedMetricsPublishPeriod),
-		TableSizesLimits: advanced_metrics.TableSizesLimits{
-			StagingTableMaxSize:    Viper.GetInt(AdvancedMetricsTableSizesLimitsSTMS),
-			StagingTableThreshold:  Viper.GetInt(AdvancedMetricsTableSizesLimitsSTT),
-			PriorityTableMaxSize:   Viper.GetInt(AdvancedMetricsTableSizesLimitsPTMS),
-			PriorityTableThreshold: Viper.GetInt(AdvancedMetricsTableSizesLimitsPTT),
-		},
 	}
 }
 

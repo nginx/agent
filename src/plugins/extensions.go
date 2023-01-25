@@ -12,6 +12,9 @@ import (
 
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/extensions"
+
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 )
 
 const (
@@ -46,15 +49,19 @@ func (e *Extensions) Process(msg *core.Message) {
 	case string:
 		switch msg.Topic() {
 		case core.EnableExtension:
-			if data == config.AdvancedMetricsKey {
-				if !e.isPluginAlreadyRegistered(advancedMetricsPluginName) {
+			if data == agent_config.AdvancedMetricsExtensionPlugin {
+				if !e.isPluginAlreadyRegistered(extensions.AdvancedMetricsPluginName) {
 					conf, err := config.GetConfig(e.conf.ClientID)
 					if err != nil {
 						log.Warnf("Unable to get agent config, %v", err)
 					}
 					e.conf = conf
 
-					advancedMetrics := NewAdvancedMetrics(e.env, e.conf)
+					advancedMetrics := extensions.NewAdvancedMetrics(
+						e.env,
+						e.conf,
+						config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey),
+					)
 					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, advancedMetrics)
 					if err != nil {
 						log.Warnf("Unable to register %s extension, %v", data, err)

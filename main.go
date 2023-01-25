@@ -25,7 +25,10 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/logger"
+	"github.com/nginx/agent/v2/src/extensions"
 	"github.com/nginx/agent/v2/src/plugins"
+
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 )
 
 var (
@@ -226,8 +229,19 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env))
 	}
 
-	if (config.AdvancedMetrics{}) != loadedConfig.AdvancedMetrics {
-		corePlugins = append(corePlugins, plugins.NewAdvancedMetrics(env, loadedConfig))
+	if loadedConfig.Extensions != nil && len(loadedConfig.Extensions) > 0 {
+		for _, extension := range loadedConfig.Extensions {
+			if extension == agent_config.AdvancedMetricsExtensionPlugin {
+				corePlugins = append(
+					corePlugins,
+					extensions.NewAdvancedMetrics(
+						env,
+						loadedConfig,
+						config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey),
+					),
+				)
+			}
+		}
 	}
 
 	if loadedConfig.IsNginxAppProtectConfigured() {

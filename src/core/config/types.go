@@ -9,8 +9,6 @@ package config
 
 import (
 	"time"
-
-	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 )
 
 type Config struct {
@@ -33,7 +31,6 @@ type Config struct {
 	AllowedDirectoriesMap map[string]struct{} `yaml:"-"`
 	DisplayName           string              `mapstructure:"display_name" yaml:"display_name,omitempty"`
 	InstanceGroup         string              `mapstructure:"instance_group" yaml:"instance_group,omitempty"`
-	AdvancedMetrics       AdvancedMetrics     `mapstructure:"advanced_metrics" yaml:"advanced_metrics,omitempty"`
 	NginxAppProtect       NginxAppProtect     `mapstructure:"nginx_app_protect" yaml:"nginx_app_protect,omitempty"`
 	NAPMonitoring         NAPMonitoring       `mapstructure:"nap_monitoring" yaml:"nap_monitoring,omitempty"`
 }
@@ -114,13 +111,6 @@ type AgentMetrics struct {
 	ReportInterval     time.Duration `mapstructure:"report_interval" yaml:"-"`
 	CollectionInterval time.Duration `mapstructure:"collection_interval" yaml:"-"`
 	Mode               string        `mapstructure:"mode" yaml:"-"`
-}
-
-type AdvancedMetrics struct {
-	SocketPath        string                            `mapstructure:"socket_path" yaml:"-"`
-	AggregationPeriod time.Duration                     `mapstructure:"aggregation_period" yaml:"-"`
-	PublishingPeriod  time.Duration                     `mapstructure:"publishing_period" yaml:"-"`
-	TableSizesLimits  advanced_metrics.TableSizesLimits `mapstructure:"table_sizes_limits" yaml:"-"`
 }
 
 type NginxAppProtect struct {

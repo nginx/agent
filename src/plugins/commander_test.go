@@ -44,7 +44,7 @@ func TestCommander_Process(t *testing.T) {
 						AgentConfig: &proto.AgentConfig{
 							Details: &proto.AgentDetails{
 								Tags:       []string{"new-tag1:one", "new-tag2:two"},
-								Extensions: []string{"advanced_metrics", "nginx_app_protect"},
+								Extensions: []string{"advanced-metrics", "nginx_app_protect"},
 							},
 							Configs: &proto.ConfigReport{
 								Configs: []*proto.ConfigDescriptor{
@@ -223,7 +223,7 @@ func TestCommander_Process(t *testing.T) {
 			// Need to either not run parallel or properly lock the code.
 			_, _, cleanupFunc, err := tutils.CreateTestAgentConfigEnv()
 			if err != nil {
-				t.Fatalf(err.Error())
+				tt.Fatalf(err.Error())
 			}
 			defer cleanupFunc()
 
@@ -243,7 +243,7 @@ func TestCommander_Process(t *testing.T) {
 			pluginUnderTest.ctx = ctx
 			pluginUnderTest.Process(core.NewMessage(test.topic, test.cmd))
 
-			assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == len(test.msgTopics) }, 1*time.Second, 100*time.Millisecond)
+			assert.Eventually(tt, func() bool { return len(messagePipe.GetMessages()) == len(test.msgTopics) }, 1*time.Second, 100*time.Millisecond)
 			cmdr.AssertExpectations(tt)
 
 			messages := messagePipe.GetMessages()

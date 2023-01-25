@@ -10,7 +10,7 @@ package config
 const (
 	KeyDelimiter = "_"
 
-	// viper keys used in config
+	// Features
 	FeaturesKey             = "features"
 	FeatureRegistration     = FeaturesKey + KeyDelimiter + "registration"
 	FeatureNginxConfig      = FeaturesKey + KeyDelimiter + "nginx-config"
@@ -24,6 +24,13 @@ const (
 	FeatureFileWatcher      = FeaturesKey + KeyDelimiter + "file-watcher"
 	FeatureActivityEvents   = FeaturesKey + KeyDelimiter + "activity-events"
 	FeatureAgentAPI         = FeaturesKey + KeyDelimiter + "agent-api"
+
+	// Extensions
+	ExtensionsKey                  = "extensions"
+	AdvancedMetricsExtensionPlugin = "advanced-metrics"
+
+	// Configuration Keys
+	AdvancedMetricsExtensionPluginConfigKey = "advanced_metrics"
 )
 
 func GetDefaultFeatures() []string {

@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -88,7 +89,7 @@ func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
 
 		if commandData.AgentConfig.Details != nil && commandData.AgentConfig.Details.Extensions != nil {
 			for _, extension := range commandData.AgentConfig.Details.Extensions {
-				if extension == config.AdvancedMetricsKey ||
+				if extension == agent_config.AdvancedMetricsExtensionPlugin ||
 					extension == config.NginxAppProtectKey ||
 					extension == config.NAPMonitoringKey {
 					r.messagePipeline.Process(core.NewMessage(core.EnableExtension, extension))

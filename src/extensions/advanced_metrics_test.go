@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package plugins
+package extensions
 
 import (
 	"context"
@@ -195,7 +195,7 @@ func TestAppCentricMetric_toMetricReport(t *testing.T) {
 
 func TestAppCentricMetricClose(t *testing.T) {
 	env := tutils.GetMockEnv()
-	pluginUnderTest := NewAdvancedMetrics(env, &config.Config{AdvancedMetrics: config.AdvancedMetrics{}})
+	pluginUnderTest := NewAdvancedMetrics(env, &config.Config{}, nil)
 
 	ctx, cancelCTX := context.WithCancel(context.Background())
 	defer cancelCTX()
@@ -209,6 +209,6 @@ func TestAppCentricMetricClose(t *testing.T) {
 }
 
 func TestAppCentricMetricSubscriptions(t *testing.T) {
-	pluginUnderTest := NewAdvancedMetrics(tutils.GetMockEnv(), &config.Config{AdvancedMetrics: config.AdvancedMetrics{}})
+	pluginUnderTest := NewAdvancedMetrics(tutils.GetMockEnv(), &config.Config{}, nil)
 	assert.Equal(t, []string{}, pluginUnderTest.Subscriptions())
 }
