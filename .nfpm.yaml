@@ -8,12 +8,12 @@ vendor: NGINX Software, Inc.
 maintainer: NGINX Inc. <agent@nginx.org>
 homepage: https://github.com/nginx/agent
 license: Apache 2.0
-changelog: "./scripts/changelog.yml"
 contents:
   - src: ./build/nginx-agent
     dst: /usr/bin/nginx-agent
   - src: nginx-agent.conf
     dst: /etc/nginx-agent/nginx-agent.conf
+    type: config|noreplace
     file_info:
       mode: 0640
   - src: ./scripts/packages/nginx-agent.service

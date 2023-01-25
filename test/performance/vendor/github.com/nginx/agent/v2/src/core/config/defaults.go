@@ -82,6 +82,9 @@ var (
 			ReportInterval:      time.Minute,
 			ReportCount:         400,
 		},
+		NginxAppProtect: NginxAppProtect{
+			PrecompiledPublication: false,
+		},
 	}
 	AllowedDirectoriesMap map[string]struct{}
 )
@@ -172,7 +175,8 @@ const (
 	// viper keys used in config
 	NginxAppProtectKey = "nginx_app_protect"
 
-	NginxAppProtectReportInterval = NginxAppProtectKey + agent_config.KeyDelimiter + "report_interval"
+	NginxAppProtectReportInterval         = NginxAppProtectKey + agent_config.KeyDelimiter + "report_interval"
+	NginxAppProtectPrecompiledPublication = NginxAppProtectKey + agent_config.KeyDelimiter + "precompiled_publication"
 
 	// viper keys used in config
 	NAPMonitoringKey = "nap_monitoring"
@@ -361,6 +365,11 @@ var (
 		&DurationFlag{
 			Name:  NginxAppProtectReportInterval,
 			Usage: "The period of time the agent will check for App Protect software changes on the dataplane",
+		},
+		&BoolFlag{
+			Name:         NginxAppProtectPrecompiledPublication,
+			Usage:        "Enables publication of NGINX App Protect pre-compiled content from an external source.",
+			DefaultValue: Defaults.NginxAppProtect.PrecompiledPublication,
 		},
 		// NAP Monitoring
 		&IntFlag{

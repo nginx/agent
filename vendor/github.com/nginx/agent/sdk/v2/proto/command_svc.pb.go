@@ -57,21 +57,14 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type CommanderClient interface {
-	// A Bidirectional streaming RPC established by the data plane agent and is kept open
+	// A Bidirectional streaming RPC established by the agent and is kept open
 	CommandChannel(ctx context.Context, opts ...grpc.CallOption) (Commander_CommandChannelClient, error)
-	// A streaming RPC established by the data plane agent and is used to download resources associated with commands
-	// The download stream will be kept open for the duration of the data transfer and will be closed when its done/
-	// The transfer is a stream of chunks as follows:
-	// - header
-	//    - data chunk count to follow
-	//    - resource identifier/metadata
-	// - data 1
-	// ...
-	// - data
-	//
-	// each data chunk is of a size smaller than the maximum gRPC payload
+	// A streaming RPC established by the agent and is used to download resources associated with commands
+	// The download stream will be kept open for the duration of the data transfer and will be closed when its done.
+	// The transfer is a stream of chunks as follows: header -> data chunk 1 -> data chunk N.
+	// Each data chunk is of a size smaller than the maximum gRPC payload
 	Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (Commander_DownloadClient, error)
-	// A streaming RPC established by the data plane agent and is used to upload resources associated with commands
+	// A streaming RPC established by the agent and is used to upload resources associated with commands
 	Upload(ctx context.Context, opts ...grpc.CallOption) (Commander_UploadClient, error)
 }
 
@@ -182,21 +175,14 @@ func (x *commanderUploadClient) CloseAndRecv() (*UploadStatus, error) {
 
 // CommanderServer is the server API for Commander service.
 type CommanderServer interface {
-	// A Bidirectional streaming RPC established by the data plane agent and is kept open
+	// A Bidirectional streaming RPC established by the agent and is kept open
 	CommandChannel(Commander_CommandChannelServer) error
-	// A streaming RPC established by the data plane agent and is used to download resources associated with commands
-	// The download stream will be kept open for the duration of the data transfer and will be closed when its done/
-	// The transfer is a stream of chunks as follows:
-	// - header
-	//    - data chunk count to follow
-	//    - resource identifier/metadata
-	// - data 1
-	// ...
-	// - data
-	//
-	// each data chunk is of a size smaller than the maximum gRPC payload
+	// A streaming RPC established by the agent and is used to download resources associated with commands
+	// The download stream will be kept open for the duration of the data transfer and will be closed when its done.
+	// The transfer is a stream of chunks as follows: header -> data chunk 1 -> data chunk N.
+	// Each data chunk is of a size smaller than the maximum gRPC payload
 	Download(*DownloadRequest, Commander_DownloadServer) error
-	// A streaming RPC established by the data plane agent and is used to upload resources associated with commands
+	// A streaming RPC established by the agent and is used to upload resources associated with commands
 	Upload(Commander_UploadServer) error
 }
 

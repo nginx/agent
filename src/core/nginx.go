@@ -132,12 +132,7 @@ func (n *NginxBinaryType) GetChildProcesses() map[string][]*proto.NginxDetails {
 }
 
 func (n *NginxBinaryType) GetNginxIDForProcess(nginxProcess Process) string {
-	defaulted := false
-	if nginxProcess.Path == "" {
-		nginxProcess.Path = defaultToNginxCommandForProcessPath()
-		defaulted = true
-	}
-
+	defaulted := n.sanitizeProcessPath(&nginxProcess)
 	info := n.getNginxInfoFrom(nginxProcess.Path)
 
 	// reset the process path from the default to what NGINX tells us
@@ -160,13 +155,21 @@ func (n *NginxBinaryType) GetNginxDetailsByID(nginxID string) *proto.NginxDetail
 	return n.nginxDetailsMap[nginxID]
 }
 
-func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess Process) *proto.NginxDetails {
+func (n *NginxBinaryType) sanitizeProcessPath(nginxProcess *Process) bool {
 	defaulted := false
 	if nginxProcess.Path == "" {
 		nginxProcess.Path = defaultToNginxCommandForProcessPath()
 		defaulted = true
 	}
+	if strings.Contains(nginxProcess.Path, execDeleted) {
+		log.Debugf("nginx was upgraded (process), using new info")
+		nginxProcess.Path = sanitizeExecDeletedPath(nginxProcess.Path)
+	}
+	return defaulted
+}
 
+func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess Process) *proto.NginxDetails {
+	defaulted := n.sanitizeProcessPath(&nginxProcess)
 	info := n.getNginxInfoFrom(nginxProcess.Path)
 
 	// reset the process path from the default to what NGINX tells us
@@ -382,14 +385,29 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 		}
 	}
 
-	// Delete files that are not in the directory map
-	filesToDelete := getDirectoryMapDiff(systemNginxConfig.DirectoryMap.Directories, config.DirectoryMap.Directories)
+	filesToDelete, ok := generateDeleteFromDirectoryMap(config.DirectoryMap, n.config.AllowedDirectoriesMap)
+	if ok {
+		log.Debugf("use explicit set action for delete files %s", filesToDelete)
+	} else {
+		// Delete files that are not in the directory map
+		filesToDelete = getDirectoryMapDiff(systemNginxConfig.DirectoryMap.Directories, config.DirectoryMap.Directories)
+	}
 
 	fileDeleted := make(map[string]struct{})
 	for _, file := range filesToDelete {
 		log.Infof("Deleting file: %s", file)
 		if _, ok = fileDeleted[file]; ok {
 			continue
+		}
+
+		if found, foundErr := FileExists(file); !found {
+			if foundErr == nil {
+				log.Debugf("skip delete for non-existing file: %s", file)
+				continue
+			}
+			// possible perm deny, depends on platform
+			log.Warnf("file exists returned for %s: %s", file, foundErr)
+			return configApply, foundErr
 		}
 		if err = configApply.MarkAndSave(file); err != nil {
 			return configApply, err
@@ -401,6 +419,41 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 	}
 
 	return configApply, nil
+}
+
+// generateDeleteFromDirectoryMap return a list of delete files from the directory map where Action File_delete is set.
+// This supports incremental upgrade if the files in the DirectoryMap doesn't have any action set to a non-default value,
+// in which the return bool will be false, to indicate explicit action is not set in the provided DirectoryMap.
+func generateDeleteFromDirectoryMap(
+	directoryMap *proto.DirectoryMap,
+	allowedDirectory map[string]struct{},
+) ([]string, bool) {
+	actionIsSet := false
+	if directoryMap == nil {
+		return nil, actionIsSet
+	}
+	deleteFiles := make([]string, 0)
+	for _, dir := range directoryMap.Directories {
+		for _, f := range dir.Files {
+			if f.Action == proto.File_unset {
+				continue
+			}
+			actionIsSet = true
+			if f.Action != proto.File_delete {
+				continue
+			}
+			path := filepath.Join(dir.Name, f.Name)
+			if !filepath.IsAbs(path) {
+				// can't assume relative path
+				continue
+			}
+			if !allowedFile(path, allowedDirectory) {
+				continue
+			}
+			deleteFiles = append(deleteFiles, path)
+		}
+	}
+	return deleteFiles, actionIsSet
 }
 
 func (n *NginxBinaryType) ReadConfig(confFile, nginxId, systemId string) (*proto.NginxConfig, error) {
@@ -539,6 +592,10 @@ func (n *NginxBinaryType) getNginxInfoFrom(ngxExe string) *nginxInfo {
 	if ngxExe == "" {
 		return &nginxInfo{}
 	}
+	if strings.Contains(ngxExe, execDeleted) {
+		log.Infof("nginx was upgraded, using new info")
+		ngxExe = sanitizeExecDeletedPath(ngxExe)
+	}
 	if info, ok := n.nginxInfoMap[ngxExe]; ok {
 		stat, err := os.Stat(ngxExe)
 		if err == nil && stat.ModTime().Equal(info.mtime) {
@@ -554,6 +611,18 @@ func (n *NginxBinaryType) getNginxInfoFrom(ngxExe string) *nginxInfo {
 	info := n.getNginxInfoFromBuffer(ngxExe, outbuf)
 	n.nginxInfoMap[ngxExe] = info
 	return info
+}
+
+const (
+	execDeleted = "(deleted)"
+)
+
+func sanitizeExecDeletedPath(exe string) string {
+	firstSpace := strings.Index(exe, execDeleted)
+	if firstSpace != -1 {
+		return strings.TrimSpace(exe[0:firstSpace])
+	}
+	return strings.TrimSpace(exe)
 }
 
 // getNginxInfoFromBuffer -

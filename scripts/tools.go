@@ -11,5 +11,7 @@ import (
 	_ "github.com/maxbrunsfeld/counterfeiter/v6"
 	_ "github.com/mwitkow/go-proto-validators/protoc-gen-govalidators"
 	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
-	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
+	_ "github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc"
+	_ "github.com/go-swagger/go-swagger/cmd/swagger"
+	_ "github.com/bufbuild/buf/cmd/buf"
 )

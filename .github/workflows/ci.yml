@@ -2,6 +2,14 @@ name: CI
 
 on:
   push:
+    branches:
+    - 'main'
+    - 'release-*'
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
 
 env:
   GOLANGCI_LINT_VERSION: 'v1.50.1'
@@ -21,12 +29,14 @@ jobs:
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
           args: -c ./scripts/.golangci.yml
+          skip-pkg-cache: true
       - name: Lint SDK Code
         uses: golangci/golangci-lint-action@v3
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
           working-directory: sdk
           args: -c ../scripts/.golangci.yml
+          skip-pkg-cache: true
 
   unit-test:
     name: Unit Tests
@@ -54,8 +64,23 @@ jobs:
       - name: Run Component Tests
         run: make component-test
 
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Run Integration Tests
+        run: |
+            sudo apt-get update
+            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
+            make integration-test
+        
   performance-test:
     name: Performance Tests
+    if: "!github.event.pull_request.head.repo.fork"
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -76,10 +101,10 @@ jobs:
       - name: Run Performance Tests
         run: docker run -v ${GITHUB_WORKSPACE}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
 
-  build-snapshot:
-    name: Build Snapshot
+  build-signed-snapshot:
+    name: Build signed snapshot
     runs-on: ubuntu-22.04
-    if: ${{ !startsWith(github.ref, 'refs/heads/release-') }}
+    if: ${{ !startsWith(github.ref_name, 'release-') && !github.event.pull_request.head.repo.fork }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -91,7 +116,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gpgv1 monkeysphere 
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.18.0
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Docker Image
@@ -135,8 +160,48 @@ jobs:
           az logout
         if: always()
 
+  build-unsigned-snapshot:
+    name: Build unsigned snapshot
+    runs-on: ubuntu-22.04
+    if: ${{ !startsWith(github.ref_name, 'release-') && github.event.pull_request.head.repo.fork }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Setup build environment
+        run: |
+          sudo apt-get update
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          file: scripts/packages/packager/Dockerfile
+          tags: build-local-packager:1.0.0
+          context: '.'
+          push: false
+          load: true
+          no-cache: true
+          build-args: |
+            package_type=local-package
+      - name: Build Packages
+        run: |
+          make clean local-deb-package local-rpm-package local-txz-package local-apk-package
+          tar -cf ./build/nginx-agent-snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.pkg ./build/*.apk
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: nginx-agent-snapshots
+          path: ./build/nginx-agent-snapshots.tar.gz
+          retention-days: 3
+
+
   trigger-release-workflow:
-    if: startsWith(github.ref, 'refs/heads/release-')
+    if: ${{ startsWith(github.ref_name, 'release-') && !github.event.pull_request.head.repo.fork }}
     needs: [ lint, unit-test, component-test, performance-test ]
     uses: ./.github/workflows/release-branch.yml
     secrets: inherit

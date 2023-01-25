@@ -23,8 +23,11 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// Represents a dimension used in events
 type Dimension struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
+	// Dimension name
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
+	// Dimension value
 	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

@@ -84,25 +84,44 @@ load_config_values() {
     fi
 
     # Check if there are existing values
-    _instance_group="$(grep "^instance_group:" "${AGENT_DYNAMIC_CONFIG_FILE}" | head -n 1 | cut -d : -f 2 | sed "s/^[[:space:]]//")"
+    _instance_group="$(grep "^instance_group:" "${AGENT_DYNAMIC_CONFIG_FILE}"  | head -n 1 | cut -d : -f 2 | sed "s/^[[:space:]]//")"
 
     if [ "$_instance_group" ] && [ ! "${INSTANCE_GROUP}" ]; then
         INSTANCE_GROUP=$_instance_group
     fi
 }
-
 update_config_file() {
+    sed_cmd="sed -i.bak "
+
+    printf "Updating %s ...\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
+
     if [ ! -f "$AGENT_CONFIG_FILE" ]; then
-        printf "Agent config file %s does not exist. Could not be updated\n" "$AGENT_CONFIG_FILE"
+        printf "Agent config file %s does not exist. Could not be updated\n" "$AGENT_CONFIG_FILE"        
         exit 0
     fi
 
-    printf "Updating %s ...\n" "${AGENT_CONFIG_FILE}"
+    if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
+        err_exit "$AGENT_DYNAMIC_CONFIG_FILE does not exist"
+    fi
 
-    # Replace Host
-    sed_cmd="sed -i.bak "
-    ${sed_cmd} "s/host:.*$/host: ${PACKAGE_HOST}/" "${AGENT_CONFIG_FILE}"
+    if [ "${PACKAGE_HOST}" ]; then
+        printf "Updating %s ...\n" "${AGENT_CONFIG_FILE}"
 
+        # Replace Host
+        ${sed_cmd} "s/host:.*$/host: ${PACKAGE_HOST}/" "${AGENT_CONFIG_FILE}"
+    fi
+    
+    # Check the instance group and set accordingly
+    if [ "${INSTANCE_GROUP}" ]; then
+        if [ "$(grep -cP '^(?=[\s]*+[^#])[^#]*(instance_group)' "${AGENT_DYNAMIC_CONFIG_FILE}")" -ge 1 ]; then
+            printf "Setting existing instance_group: %s\n" "${INSTANCE_GROUP}"
+            ${sed_cmd} "/^[[:space:]]*#/!s/\(instance_group:.*\)/instance_group: ${INSTANCE_GROUP}/g" "${AGENT_DYNAMIC_CONFIG_FILE}"
+        else
+            printf "Setting instance_group: %s\n" "${INSTANCE_GROUP}"
+            printf "instance_group: %s\n" "${INSTANCE_GROUP}" >> "${AGENT_DYNAMIC_CONFIG_FILE}"
+        fi
+        printf "Successfully updated %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"    
+    fi
     # Check the log-level and set accordingly
     if [ "${LOG_LEVEL}" ]; then
         if [ "$(grep -cP '^(?=[\s]*+[^#])[^#]*(level:)' "${AGENT_CONFIG_FILE}")" -ge 1 ]; then
@@ -112,26 +131,11 @@ update_config_file() {
             printf "Setting log level: %s\n" "${LOG_LEVEL}"
             _log_level_replacement="s/^log:/log:\\
   level: ${LOG_LEVEL}/"
+
             ${sed_cmd} "${_log_level_replacement}" "${AGENT_CONFIG_FILE}"
             printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
         fi
-    fi
-
-    printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
-
-    # Check the instance group and set accordingly
-    if [ "${INSTANCE_GROUP}" ]; then
-        printf "Updating %s ...\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
-
-        if [ "$(grep -cP '^(?=[\s]*+[^#])[^#]*(instance_group)' "${AGENT_DYNAMIC_CONFIG_FILE}")" -ge 1 ]; then
-            printf "Setting existing instance_group: %s\n" "${INSTANCE_GROUP}"
-            ${sed_cmd} "/^[[:space:]]*#/!s/\(instance_group:.*\)/instance_group: ${INSTANCE_GROUP}/g" "${AGENT_DYNAMIC_CONFIG_FILE}"
-        else
-            printf "Setting instance_group: %s\n" "${INSTANCE_GROUP}"
-            printf "instance_group: %s\n" "${INSTANCE_GROUP}" >> "${AGENT_DYNAMIC_CONFIG_FILE}"
-        fi
-
-        printf "Successfully updated %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
+        printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
     fi
 }
 

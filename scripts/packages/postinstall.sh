@@ -174,6 +174,81 @@ update_unit_file() {
     fi
 }
 
+add_default_config_file() {
+    if [ ! -f "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf ]; then
+        printf "PostInstall: Creating default nginx-agent.conf file\n"
+        cat <<EOF > "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
+#
+# /etc/nginx-agent/nginx-agent.conf
+#
+# Configuration file for NGINX Agent.
+#
+# This file is to track agent configuration values that are meant to be statically set. There  
+# are additional agent configuration values that are set via the API and agent install script
+# which can be found in /etc/nginx-agent/agent-dynamic.conf. 
+
+# specify the server grpc port to connect to
+server:
+  # host of the control plane
+  host: 127.0.0.1
+  grpcPort: 54789
+  # provide servername overrides if using SNI
+  # metrics: ""
+  # command: ""
+# tls options
+tls:
+  # enable tls in the nginx-agent setup for grpcs
+  # default to enable to connect with tls connection but without client cert for mtls
+  enable: false
+  # specify the absolute path to the CA certificate file to use for verifying
+  # the server certificate (also requires 'skip_verify: false' below)
+  # by default, this will be the trusted root CAs found in the OS CA store
+  # ca: /etc/nginx-agent/ca.pem
+  # specify the absolute path to the client cert, when mtls is enabled
+  # cert: /etc/nginx-agent/client.crt
+  # specify the absolute path to the client cert key, when mtls is enabled
+  # key: /etc/nginx-agent/client.key
+  # controls whether the server certificate chain and host name are verified.
+  # for production use, see instructions for configuring TLS
+  skip_verify: true
+log:
+  # set log level (panic, fatal, error, info, debug, trace; default "info")
+  level: info
+  # set log path. if empty, don't log to file.
+  path: /var/log/nginx-agent/
+# data plane status message / 'heartbeat'
+nginx:
+  # path of NGINX logs to exclude
+  exclude_logs: ""
+  socket: "unix:/var/run/nginx-agent/nginx.sock"
+
+dataplane:
+  status:
+    # poll interval for data plane status - the frequency the agent will query the dataplane for changes
+    poll_interval: 30s
+    # report interval for data plane status - the maximum duration to wait before syncing dataplane information if no updates have being observed
+    report_interval: 24h
+metrics:
+  # specify the size of a buffer to build before sending metrics
+  bulk_size: 20
+  # specify metrics poll interval
+  report_interval: 1m
+  collection_interval: 15s
+  mode: aggregated
+
+# OSS NGINX default config path
+# path to aux file dirs can also be added
+config_dirs: "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms"
+
+api:
+  # default port for Agent API, this is for the server configuration of the REST API
+  port: 8081
+EOF
+    printf "PostInstall: Updating file permissions for nginx-agent.conf to 0640\n"
+    chmod 0640 "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
+    fi
+}
+
 summary() {
     echo "----------------------------------------------------------------------"
     echo " NGINX Agent package has been successfully installed."
@@ -202,6 +277,7 @@ summary() {
     create_agent_group
     create_run_dir
     update_unit_file
+    add_default_config_file
     summary
 }
 

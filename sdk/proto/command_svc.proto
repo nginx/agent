@@ -1,29 +1,21 @@
 syntax = "proto3";
 package f5.nginx.agent.sdk;
-option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
 
 import "command.proto";
 
-// Interface exported by the server.
-service Commander {
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
 
-  // A Bidirectional streaming RPC established by the data plane agent and is kept open
+// Represents a service used to sent command messages between the management server and the agent.
+service Commander {
+  // A Bidirectional streaming RPC established by the agent and is kept open
   rpc CommandChannel(stream Command) returns (stream Command) {}
 
-  // A streaming RPC established by the data plane agent and is used to download resources associated with commands
-  // The download stream will be kept open for the duration of the data transfer and will be closed when its done/
-  // The transfer is a stream of chunks as follows:
-  // - header
-  //    - data chunk count to follow
-  //    - resource identifier/metadata
-  // - data 1
-  // ...
-  // - data
-  //
-  // each data chunk is of a size smaller than the maximum gRPC payload
+  // A streaming RPC established by the agent and is used to download resources associated with commands
+  // The download stream will be kept open for the duration of the data transfer and will be closed when its done.
+  // The transfer is a stream of chunks as follows: header -> data chunk 1 -> data chunk N.
+  // Each data chunk is of a size smaller than the maximum gRPC payload
   rpc Download(DownloadRequest) returns (stream DataChunk) {}
 
-  // A streaming RPC established by the data plane agent and is used to upload resources associated with commands
+  // A streaming RPC established by the agent and is used to upload resources associated with commands
   rpc Upload(stream DataChunk) returns (UploadStatus) {}
 }
-
