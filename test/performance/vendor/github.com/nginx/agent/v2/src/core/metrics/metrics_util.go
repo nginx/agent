@@ -12,9 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/config"
+
+	"github.com/gogo/protobuf/types"
 )
 
 type Collector interface {
@@ -129,6 +130,16 @@ func GetCalculationMap() map[string]string {
 		"nginx.http.v1_0":                                    "sum",
 		"nginx.http.v1_1":                                    "sum",
 		"nginx.http.v2":                                      "sum",
+		"nginx.upstream.time":                                "avg",
+		"nginx.upstream.time.count":                          "sum",
+		"nginx.upstream.time.max":                            "avg",
+		"nginx.upstream.time.median":                         "avg",
+		"nginx.upstream.time.pctl95":                         "avg",
+		"nginx.upstream.header":                              "avg",
+		"nginx.upstream.header.count":                        "sum",
+		"nginx.upstream.header.max":                          "avg",
+		"nginx.upstream.header.median":                       "avg",
+		"nginx.upstream.header.pctl95":                       "avg",
 		"nginx.http.conn.handled":                            "sum",
 		"nginx.http.conn.reading":                            "avg",
 		"nginx.http.conn.writing":                            "avg",
