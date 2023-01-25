@@ -8,6 +8,11 @@ on:
         required: true
         type: boolean
         default: false
+      createPullRequest:
+        description: 'Create pull request back into main'
+        required: true
+        type: boolean
+        default: false
   workflow_call:
 
 jobs:
@@ -71,8 +76,8 @@ jobs:
                 }))
                 
                 const footer = `
-                    ## Resources
-                    - Documentation -- https://github.com/nginx/agent#readme
+            ## Resources
+            - Documentation -- https://github.com/nginx/agent#readme
                 `
                 
                 release = (await github.rest.repos.createRelease({
@@ -181,7 +186,7 @@ jobs:
             }))
             console.log(`Release published: ${release.data.html_url}`)
       - name: Create Pull Request
-        if: ${{ inputs.publishPackages == true }}
+        if: ${{ inputs.publishPackages == true && inputs.createPullRequest == true }}
         uses: actions/github-script@v6
         with:
           script: |

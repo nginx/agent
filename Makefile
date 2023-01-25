@@ -34,6 +34,7 @@ PACKAGE_PREFIX	   := nginx-agent
 PACKAGES_REPO	   := "pkgs.nginx.com"
 UNAME_M	            = $(shell uname -m)
 TEST_BUILD_DIR	   := build/test
+PACKAGE_NAME	   := ${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 LOCAL_ARCH         := amd64
 
@@ -68,7 +69,8 @@ build: ## Build agent executable
 	GOWORK=off CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 
 deps: ## Update dependencies in vendor folders
-	cd sdk && make generate && go mod tidy && go mod vendor
+	cd sdk && go mod tidy && go mod vendor &&  make generate && go mod tidy && go mod vendor
+	cd test/integration && go mod tidy && go mod vendor
 	cd test/performance && go mod tidy && go mod vendor
 	go mod tidy && go mod vendor && go mod download && go work sync
 	make generate-swagger
@@ -79,18 +81,21 @@ lint: ## Run linter
 	cd sdk && make lint
 
 format: ## Format code
-	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance && go fmt ./...
+	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance && go fmt ./... && cd ../../test/integration && go fmt ./...
 	buf format -w ./sdk/proto/
 
 install-tools: ## Install dependencies in tools.go
+	@echo "Getting Tools"
+	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go get %
+	@echo "Installing Tools"
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
 
 generate-swagger: ## Generates swagger.json from source code
-	swagger generate spec -o ./docs/swagger.json --scan-models
+	go run github.com/go-swagger/go-swagger/cmd/swagger generate spec -o ./docs/swagger.json --scan-models
 
 launch-swagger-ui: generate-swagger ## Launch Swagger UI
-	swagger serve ./docs/swagger.json -F=swagger --port=8082 --no-open
-
+	go run github.com/go-swagger/go-swagger/cmd/swagger serve ./docs/swagger.json -F=swagger --port=8082 --no-open
+	
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Local Packaging                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -162,6 +167,9 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	docker run -v ${PWD}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
 
+integration-test: local-deb-package
+	PACKAGE=${PACKAGE_NAME} go test ./test/integration/api 
+
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
@@ -213,7 +221,7 @@ certs: ## Generate TLS certificates
 build-docker: # Build agent docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	@echo Building Docker; \
 	DOCKER_BUILDKIT=1 docker build -t ${DOCKER_TAG} . \
-		--no-cache -f ./scripts/docker/${OS_RELEASE}/Dockerfile \
+		--no-cache -f ./scripts/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
 		--secret id=nginx-crt,src=build/nginx-repo.crt \
 		--secret id=nginx-key,src=build/nginx-repo.key \
 		--build-arg AGENT_CONF="$$(cat nginx-agent.conf)" \
