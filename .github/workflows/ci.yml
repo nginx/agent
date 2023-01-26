@@ -139,7 +139,8 @@ jobs:
           make clean package
       - name: Test install and uninstall
         run: |
-          echo "AGENT_PACKAGE_FILE=$(find build/packages/deb/ -regex ".*~jammy_amd64.*.deb" -type f -exec realpath {} \)" >> $GITHUB_ENV
+          echo "$(find build/packages/deb/*~jammy_amd64.deb" -type f -exec realpath {} \)"
+          echo "AGENT_PACKAGE_FILE=$(find build/packages/deb/*~jammy_amd64.deb" -type f -exec realpath {} \)" >> $GITHUB_ENV
           make test-install
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
