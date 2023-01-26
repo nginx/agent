@@ -102,22 +102,19 @@ func setFlagDeprecated(name string, usageMessage string) {
 }
 
 func deprecateFlags() {
-	setFlagDeprecated("api-token", "DEPRECATED. API Token is no longer set. No replacement command.")
-	setFlagDeprecated("location", "DEPRECATED. Set through APIs. No replacement command.")
-	setFlagDeprecated("metadata", "DEPRECATED. Use tags instead.")
-	setFlagDeprecated("metrics-server", "DEPRECATED. Use server instead.")
-	setFlagDeprecated("metrics-tls-ca", "DEPRECATED. metrics-tls-ca has been replaced by tls-ca")
-	setFlagDeprecated("metrics-tls-cert", "DEPRECATED. metrics-tls-cert has been replaced by tls-cert")
-	setFlagDeprecated("metrics-tls-enable", "DEPRECATED. metrics-tls-enable has been replaced by tls-enable")
-	setFlagDeprecated("metrics-tls-key", "DEPRECATED. metrics-tls-key has been replaced by tls-key")
-	setFlagDeprecated("nginx-bin-path", "DEPRECATED. nginx-bin-path is no longer used. The agent strives to discover the nginx instances on the dataplane")
-	setFlagDeprecated("nginx-metrics-poll-interval", "DEPRECATED. nginx-metrics-poll-interval has been replaced by metrics-report-interval and metrics-collection-interval")
-	setFlagDeprecated("nginx-pid-path", "DEPRECATED. nginx-pid-path is no longer used. The agent strives to discover the nginx instances on the dataplane")
-	setFlagDeprecated("nginx-plus-api", "DEPRECATED. nginx-plus-api is no longer used. The agent strives to discover the nginx instances on the dataplane and read this from the configuration file")
-	setFlagDeprecated("nginx-stub-status", "DEPRECATED. nginx-stub-status is no longer used. The agent strives to discover the nginx instances on the dataplane and read this from the configuration file")
-	setFlagDeprecated("server", "DEPRECATED. server has been replaced with the new server structure")
-	setFlagDeprecated("dataplane-sync-enable", "DEPRECATED. server has been replaced with the new server structure")
-	setFlagDeprecated("dataplane-events-enable", "DEPRECATED. server has been replaced with the new server structure")
+	setFlagDeprecated("advanced-metrics-socket-path", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-aggregation-period", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-publishing-period", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-table-sizes-limits-priority-table-max-size", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-table-sizes-limits-priority-table-threshold", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-table-sizes-limits-staging-table-max-size", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-table-sizes-limits-staging-table-threshold", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nginx-app-protect-report-interval", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nginx-app-protect-precompiled-publication", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nap-monitoring-collector-buffer-size", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nap-monitoring-processor-buffer-size", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nap-monitoring-syslog-ip", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nap-monitoring-syslog-port", "DEPRECATED. No replacement command.")
 }
 
 func RegisterFlags() {
