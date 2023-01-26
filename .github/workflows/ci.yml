@@ -138,7 +138,8 @@ jobs:
           echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
           make clean package
       - name: Test install and uninstall
-        run: AGENT_PACKAGE_FILE=${find build/packages/deb/ -regex ".*~jammy_amd64.*.deb" -type f -exec realpath {} \;} \
+        run: |
+          echo "AGENT_PACKAGE_FILE=$(find build/packages/deb/ -regex ".*~jammy_amd64.*.deb" -type f -exec realpath {} \)" >> $GITHUB_ENV
           make test-install
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
