@@ -8,9 +8,13 @@ services:
   agent:
     build: 
       context: ../../../
-      dockerfile: ./test/docker/integration/api/Dockerfile
+      dockerfile: ./scripts/docker/nginx-oss/ubuntu/Dockerfile
       args:
-        - PACKAGE
+        PACKAGE: ${PACKAGE}
+        DOCKER_IMAGE: ${DOCKER_IMAGE}
+        AGENT_CONF: "./test/testdata/configs/integration/api/nginx-agent.conf"
+        NGINX_CONF: "./test/testdata/configs/integration/api/nginx.conf"
+        ENTRY_POINT: "./scripts/docker/nginx-oss/entrypoint.sh"
     ports:
       - 9091:9091
     networks:

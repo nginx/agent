@@ -168,7 +168,7 @@ performance-test: ## Run performance tests
 	docker run -v ${PWD}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
 
 integration-test: local-deb-package
-	PACKAGE=${PACKAGE_NAME} go test ./test/integration/api 
+	PACKAGE=${PACKAGE_NAME} DOCKER_IMAGE=${DOCKER_IMAGE} go test ./test/integration/api 
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
