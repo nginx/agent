@@ -149,7 +149,6 @@ require (
 )
 
 replace (
-
 	// https://github.com/cucumber/godog/releases/tag/v0.12.0 - this version breaks
 	github.com/cucumber/godog => github.com/cucumber/godog v0.11.0
 	github.com/docker/cli => github.com/docker/cli v20.10.3-0.20221013132413-1d6c6e2367e2+incompatible // 22.06 master branch

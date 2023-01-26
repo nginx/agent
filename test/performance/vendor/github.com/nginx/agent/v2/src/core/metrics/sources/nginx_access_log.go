@@ -523,7 +523,7 @@ func getDefaultCounters() (map[string]float64, map[string]float64, map[string]fl
 		"v2":                      0,
 	}
 
-	upstreamConnnectCounters := map[string]float64{
+	upstreamConnectCounters := map[string]float64{
 		"upstream.connect.time":        0,
 		"upstream.connect.time.count":  0,
 		"upstream.connect.time.max":    0,
@@ -539,5 +539,5 @@ func getDefaultCounters() (map[string]float64, map[string]float64, map[string]fl
 		"upstream.header.time.pctl95": 0,
 	}
 
-	return httpCounters, upstreamConnnectCounters, upstreamHeaderCounters
+	return httpCounters, upstreamConnectCounters, upstreamHeaderCounters
 }
