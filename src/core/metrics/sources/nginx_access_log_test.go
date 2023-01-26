@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"sort"
 	"testing"
@@ -19,18 +18,19 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
-	testutils "github.com/nginx/agent/v2/test/utils"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAccessLogUpdate(t *testing.T) {
-	binary := testutils.NewMockNginxBinary()
+	binary := tutils.NewMockNginxBinary()
 	binary.On("GetAccessLogs").Return(map[string]string{"/tmp/access.log": ""}).Once()
 	binary.On("GetAccessLogs").Return(map[string]string{"/tmp/new_access.log": ""}).Once()
 
-	collectionDuration, _ := time.ParseDuration("300ms")
-	newCollectionDuration, _ := time.ParseDuration("500ms")
+	collectionDuration := time.Millisecond * 300
+	newCollectionDuration := time.Millisecond * 500
 	nginxAccessLog := NewNginxAccessLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
 
 	assert.Equal(t, "", nginxAccessLog.baseDimensions.InstanceTags)
@@ -54,10 +54,10 @@ func TestAccessLogUpdate(t *testing.T) {
 }
 
 func TestAccessLogStop(t *testing.T) {
-	binary := testutils.NewMockNginxBinary()
+	binary := tutils.NewMockNginxBinary()
 	binary.On("GetAccessLogs").Return(map[string]string{"/tmp/access.log": ""}).Once()
 
-	collectionDuration, _ := time.ParseDuration("300ms")
+	collectionDuration := time.Millisecond * 300
 	nginxAccessLog := NewNginxAccessLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
 
 	_, ok := nginxAccessLog.logs["/tmp/access.log"]
@@ -65,7 +65,7 @@ func TestAccessLogStop(t *testing.T) {
 
 	nginxAccessLog.Stop()
 
-	assert.Equal(t, 0, len(nginxAccessLog.logs))
+	assert.Len(t, nginxAccessLog.logs, 0)
 }
 
 func TestAccessLogStats(t *testing.T) {
@@ -73,7 +73,6 @@ func TestAccessLogStats(t *testing.T) {
 		name          string
 		logFormat     string
 		logLines      []string
-		m             chan *proto.StatsEntity
 		expectedStats *proto.StatsEntity
 	}{
 		{
@@ -83,7 +82,6 @@ func TestAccessLogStats(t *testing.T) {
 				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\"\n",
 				`127.0.0.1 - - [19/May/2022:09:30:39 +0000] "GET /user/register?ahref<Script>p' or 's' = 's</Script> HTTP/1.1" 200 98 "-" "-" "-"`,
 			},
-			make(chan *proto.StatsEntity, 1),
 			&proto.StatsEntity{
 				Simplemetrics: []*proto.SimpleMetric{
 					{
@@ -218,29 +216,68 @@ func TestAccessLogStats(t *testing.T) {
 						Name:  "nginx.http.v2",
 						Value: 0,
 					},
+					{
+						Name:  "nginx.upstream.connect.time",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.count",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.max",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.median",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.pctl95",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.header.time",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.header.time.count",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.header.time.max",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.header.time.median",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.header.time.pctl95",
+						Value: 0,
+					},
 				},
 			},
 		},
 		{
 			"full_access_log_test",
-			`$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time" "$gzip_ratio" "$server_protocol"`,
+			`$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time" "$gzip_ratio" "$server_protocol" "$upstream_connect_time" "$upstream_header_time"`,
 			[]string{
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"10\" \"HTTP/1.1\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"POST /nginx_status HTTP/1.1\" 201 98 \"-\" \"Go-http-client/1.1\" \"-\" \"250\" \"110\" \"0.300\" \"20\" \"HTTP/1.1\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"DELETE /nginx_status HTTP/1.1\" 400 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"DELETE /nginx_status HTTP/1.1\" 403 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"HEAD /nginx_status HTTP/1.1\" 404 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"PUT /nginx_status HTTP/1.1\" 499 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"PUT /nginx_status HTTP/1.1\" 500 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/1.0\" 502 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.0\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/2\" 503 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/2\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/0.9\" 504 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/0.9\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/1.1\" 502 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"TRACE /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"-\" \"HTTP/1.1\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"TRACE /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"-\" \"HTTP/1.1\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"10\" \"HTTP/1.1\" \"350\" \"500\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"POST /nginx_status HTTP/1.1\" 201 98 \"-\" \"Go-http-client/1.1\" \"-\" \"250\" \"110\" \"0.300\" \"20\" \"HTTP/1.1\" \"350\" \"730\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"500\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"DELETE /nginx_status HTTP/1.1\" 400 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"500\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"DELETE /nginx_status HTTP/1.1\" 403 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"100\" \"500\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"HEAD /nginx_status HTTP/1.1\" 404 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"505\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"PUT /nginx_status HTTP/1.1\" 499 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"2000\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"PUT /nginx_status HTTP/1.1\" 500 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"2350\" \"250\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/1.0\" 502 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.0\" \"350\" \"500\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/2\" 503 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/2\" \"350\" \"500\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/0.9\" 504 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/0.9\" \"350\" \"590\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/1.1\" 502 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"900\" \"500\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"TRACE /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"-\" \"HTTP/1.1\" \"350\" \"170\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"TRACE /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"-\" \"HTTP/1.1\" \"350\" \"500\"\n",
 			},
-			make(chan *proto.StatsEntity, 1),
 			&proto.StatsEntity{
 				Simplemetrics: []*proto.SimpleMetric{
 					{
@@ -249,7 +286,7 @@ func TestAccessLogStats(t *testing.T) {
 					},
 					{
 						Name:  "nginx.http.request.time",
-						Value: 0.1857142857142857,
+						Value: 0.18571428571428572,
 					},
 					{
 						Name:  "nginx.http.request.time.count",
@@ -375,29 +412,67 @@ func TestAccessLogStats(t *testing.T) {
 						Name:  "nginx.http.v2",
 						Value: 1,
 					},
+					{
+						Name:  "nginx.upstream.connect.time",
+						Value: 514.2857142857143,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.count",
+						Value: 14,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.max",
+						Value: 2350,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.median",
+						Value: 350,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.pctl95",
+						Value: 900,
+					},
+					{
+						Name:  "nginx.upstream.header.time",
+						Value: 588.9285714285714,
+					},
+					{
+						Name:  "nginx.upstream.header.time.count",
+						Value: 14,
+					},
+					{
+						Name:  "nginx.upstream.header.time.max",
+						Value: 2000,
+					},
+					{
+						Name:  "nginx.upstream.header.time.median",
+						Value: 500,
+					},
+					{
+						Name:  "nginx.upstream.header.time.pctl95",
+						Value: 730,
+					},
 				},
 			},
 		},
 	}
 
 	binary := core.NewNginxBinary(tutils.NewMockEnvironment(), &config.Config{})
-	collectionDuration, _ := time.ParseDuration("300ms")
-	sleepDuration, _ := time.ParseDuration("100ms")
+	collectionDuration := time.Millisecond * 300
+	sleepDuration := time.Millisecond * 100
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			context := context.TODO()
-			accessLogFile, _ := ioutil.TempFile(os.TempDir(), "access.log")
+			accessLogFile, _ := os.CreateTemp(os.TempDir(), "access.log")
 
 			nginxAccessLog := NewNginxAccessLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
-			go nginxAccessLog.logStats(context, accessLogFile.Name(), test.logFormat)
+			go nginxAccessLog.logStats(context.TODO(), accessLogFile.Name(), test.logFormat)
 
 			time.Sleep(sleepDuration)
+
 			for _, logLine := range test.logLines {
 				_, err := accessLogFile.WriteString(logLine)
-				if err != nil {
-					tt.Fatalf("Error writing data to access log")
-				}
+				require.NoError(t, err, "Error writing data to access log")
 			}
 
 			time.Sleep(collectionDuration)

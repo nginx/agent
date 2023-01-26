@@ -15,6 +15,7 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	cgroup "github.com/nginx/agent/v2/src/core/metrics/sources/cgroup"
+
 	"github.com/shirou/gopsutil/v3/cpu"
 	log "github.com/sirupsen/logrus"
 )
