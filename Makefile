@@ -184,12 +184,7 @@ build-benchmark-docker: ## Build benchmark test docker image for NGINX Plus, nee
 
 # Install tests
 test-install: ## Run agent install/uninstall test for release
-	AGENT_PACKAGE_FILE=${shell find ./build/packages/deb/*${OS_CODENAME}_${LOCAL_ARCH}.deb -type f -exec realpath {} \;} \
-		GOWORK=off CGO_ENABLED=0 go test -v ./test/install
-
-local-test-install: ## Run agent install/uninstall test for local snapshot
-	AGENT_PACKAGE_FILE=${shell find ./build/packages/*.deb -type f -exec realpath {} \;} \
-		GOWORK=off CGO_ENABLED=0 go test -v ./test/install
+	GOWORK=off CGO_ENABLED=0 go test -v ./test/install
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Cert Generation                                                                                                 #
