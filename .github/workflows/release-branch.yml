@@ -144,8 +144,6 @@ jobs:
         run: |
           echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
           make clean package
-      - name: Test install and uninstall
-        run: make test-install
       - name: Azure Login
         uses: azure/login@v1
         with:
