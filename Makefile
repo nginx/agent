@@ -233,7 +233,7 @@ certs: ## Generate TLS certificates
 image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
-		--no-cache -f ./scripts/docker/${OS_RELEASE}/Dockerfile \
+		--no-cache -f ./scripts/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
 		--secret id=nginx-crt,src=build/nginx-repo.crt \
 		--secret id=nginx-key,src=build/nginx-repo.key \
 		--build-arg AGENT_CONF="$$(cat nginx-agent.conf)" \
