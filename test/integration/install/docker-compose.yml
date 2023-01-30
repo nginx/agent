@@ -5,3 +5,6 @@ services:
     build:
       context: ../../../
       dockerfile: ./test/docker/integration/install/Dockerfile
+      args:
+        PACKAGE_NAME: ${PACKAGE_NAME}
+        BASE_IMAGE: ${BASE_IMAGE}
