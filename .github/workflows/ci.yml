@@ -74,10 +74,9 @@ jobs:
           go-version-file: 'go.mod'
       - name: Run Integration Tests
         run: |
-            sudo apt-get update
             go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
             make integration-test
-        
+
   performance-test:
     name: Performance Tests
     if: "!github.event.pull_request.head.repo.fork"
@@ -137,11 +136,6 @@ jobs:
         run: |
           echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
           make clean package
-      - name: Test install and uninstall
-        run: |
-          echo "$(find build/packages/deb/*~jammy_amd64.deb" -type f -exec realpath {} \)"
-          echo "AGENT_PACKAGE_FILE=$(find build/packages/deb/*~jammy_amd64.deb" -type f -exec realpath {} \)" >> $GITHUB_ENV
-          make test-install
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:

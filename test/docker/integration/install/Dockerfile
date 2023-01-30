@@ -1,13 +1,9 @@
 FROM ubuntu:22.04 as install
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
-ARG PACKAGE_NAME
-
 WORKDIR /agent
 COPY ./ /agent
-COPY ./test/testdata/entrypoint.sh /agent/entrypoint.sh
-COPY ./test/testdata/configs/integration/api/nginx-agent.conf /agent/nginx-agent.conf
-COPY ./test/testdata/configs/integration/api/nginx.conf /agent/nginx.conf
+COPY ./test/testdata/agentless-entrypoint.sh /agent/agentless-entrypoint.sh
 
 RUN set -x \
     && addgroup --system --gid 101 nginx \
@@ -23,18 +19,9 @@ RUN set -x \
                         curl \
                         vim \
                         golang \
-                        nginx \
-    && apt-get update \
-    && apt install -y -f /agent/build/$PACKAGE_NAME.deb
+                        nginx
 
-# run the nginx and agent
-FROM install as runtime
-
-COPY --from=install /agent/entrypoint.sh /agent/entrypoint.sh
-COPY --from=install /agent/nginx-agent.conf /etc/nginx-agent/nginx-agent.conf
-
-RUN chmod +x /agent/entrypoint.sh
+RUN chmod +x /agent/agentless-entrypoint.sh
 STOPSIGNAL SIGTERM
-EXPOSE 80 443
 
-ENTRYPOINT ["/agent/entrypoint.sh"]
+ENTRYPOINT ["/agent/agentless-entrypoint.sh"]

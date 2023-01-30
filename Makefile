@@ -31,11 +31,11 @@ LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=$
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 
 CERTS_DIR          := ./build/certs
-PACKAGE_PREFIX	   := nginx-agent
-PACKAGES_REPO	   := "pkgs.nginx.com"
-UNAME_M	            = $(shell uname -m)
-TEST_BUILD_DIR	   := build/test
-PACKAGE_NAME	   := ${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}
+PACKAGE_PREFIX     := nginx-agent
+PACKAGES_REPO      := "pkgs.nginx.com"
+PACKAGE_NAME       := ${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}
+UNAME_M             = $(shell uname -m)
+TEST_BUILD_DIR     := build/test
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 LOCAL_ARCH         := amd64
 
@@ -169,11 +169,11 @@ performance-test: ## Run performance tests
 	docker run -v ${PWD}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
 
 integration-test: local-deb-package
-	PACKAGE=${PACKAGE_NAME} go test ./test/integration/api 
+	PACKAGE_NAME=${PACKAGE_NAME} go test ./test/integration/install
+	PACKAGE_NAME=${PACKAGE_NAME} go test ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
 
 build-benchmark-docker: ## Build benchmark test docker image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
@@ -181,10 +181,6 @@ build-benchmark-docker: ## Build benchmark test docker image for NGINX Plus, nee
 		--secret id=nginx-crt,src=build/nginx-repo.crt \
 		--secret id=nginx-key,src=build/nginx-repo.key \
 		-f test/docker/Dockerfile .
-
-# Install tests
-test-install: ## Run agent install/uninstall test for release
-	GOWORK=off CGO_ENABLED=0 go test -v ./test/install
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Cert Generation                                                                                                 #
