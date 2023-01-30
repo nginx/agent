@@ -1,6 +1,6 @@
 ARG package_type
 
-FROM golang:1.19-bullseye AS base
+FROM docker.io/golang:1.19-bullseye AS base
 
 ARG PKG_VER="1.17.5"
 ARG PKG_DIR="/tmp/pkg"

@@ -1,5 +1,5 @@
-ARG DOCKER_IMAGE
-FROM ${DOCKER_IMAGE} as install
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} as install
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
 ARG PACKAGES_REPO
@@ -8,8 +8,8 @@ WORKDIR /agent
 COPY ./scripts/docker/nginx-plus/entrypoint.sh /agent/entrypoint.sh
 COPY ./nginx-agent.conf /agent/nginx-agent.conf
 
-RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
-    --mount=type=secret,id=nginx-key,dst=nginx-repo.key \
+RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
+    --mount=type=secret,id=nginx-key,dst=/nginx-repo.key \
     set -x \
 # Create nginx user/group first, to be consistent throughout Docker variants
     && addgroup --system --gid 101 nginx \
@@ -45,8 +45,8 @@ RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     && printf "deb https://$PACKAGES_REPO/plus/debian/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-plus.list \
     && printf "deb https://$PACKAGES_REPO/nginx-agent/debian/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-agent.list \
     && mkdir -p /etc/ssl/nginx \
-    && cat nginx-repo.crt > /etc/ssl/nginx/nginx-repo.crt \
-    && cat nginx-repo.key > /etc/ssl/nginx/nginx-repo.key \
+    && cat /nginx-repo.crt > /etc/ssl/nginx/nginx-repo.crt \
+    && cat /nginx-repo.key > /etc/ssl/nginx/nginx-repo.key \
     && apt-get update \
     && apt-get install --no-install-recommends --no-install-suggests -y \
                         $nginxPackages \
