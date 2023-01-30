@@ -10,9 +10,8 @@ services:
       context: ../../../
       dockerfile: ./test/docker/integration/api/Dockerfile
       args:
-        - PACKAGE
+        - PACKAGE_NAME
     ports:
       - 9091:9091
     networks:
       - monitoring
-      
