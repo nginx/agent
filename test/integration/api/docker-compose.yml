@@ -6,11 +6,15 @@ networks:
 
 services:
   agent:
-    build: 
+    build:
       context: ../../../
-      dockerfile: ./test/docker/integration/api/Dockerfile
+      dockerfile: ./scripts/docker/nginx-oss/ubuntu/Dockerfile
       args:
-        - PACKAGE_NAME
+        PACKAGE_NAME: ${PACKAGE_NAME}
+        BASE_IMAGE: ${BASE_IMAGE}
+        AGENT_CONF: "./test/testdata/configs/integration/api/nginx-agent.conf"
+        NGINX_CONF: "./test/testdata/configs/integration/api/nginx.conf"
+        ENTRY_POINT: "./scripts/docker/nginx-oss/entrypoint.sh"
     ports:
       - 9091:9091
     networks:

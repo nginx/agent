@@ -14,11 +14,11 @@ import (
 	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/sources/tailer"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (

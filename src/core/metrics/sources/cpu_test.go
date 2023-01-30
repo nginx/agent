@@ -18,6 +18,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	cgroup "github.com/nginx/agent/v2/src/core/metrics/sources/cgroup"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/stretchr/testify/assert"
 )

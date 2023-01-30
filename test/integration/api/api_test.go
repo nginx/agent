@@ -35,6 +35,7 @@ func setupTestContainer(t *testing.T) {
 	require.NoError(t, comp.
 		WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(map[string]string{
 		"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
+		"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
 	}).
 		Up(ctx, compose.Wait(true)), "compose.Up()")
 }

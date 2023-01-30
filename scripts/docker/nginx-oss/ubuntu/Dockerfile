@@ -1,13 +1,17 @@
-FROM ubuntu:22.04 as install
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} as install
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
 ARG PACKAGE_NAME
+ARG AGENT_CONF
+ARG NGINX_CONF
+ARG ENTRY_POINT
 
 WORKDIR /agent
 COPY ./ /agent
-COPY ./test/testdata/entrypoint.sh /agent/entrypoint.sh
-COPY ./test/testdata/configs/integration/api/nginx-agent.conf /agent/nginx-agent.conf
-COPY ./test/testdata/configs/integration/api/nginx.conf /agent/nginx.conf
+COPY $ENTRY_POINT /agent/entrypoint.sh
+COPY $AGENT_CONF /agent/nginx-agent.conf
+COPY $NGINX_CONF /agent/nginx.conf
 
 RUN set -x \
     && addgroup --system --gid 101 nginx \
