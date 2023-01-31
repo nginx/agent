@@ -85,7 +85,6 @@ deps: ## Update dependencies in vendor folders
 	cd test/integration && go mod tidy && go mod vendor
 	cd test/performance && go mod tidy && go mod vendor
 	go mod tidy && go mod vendor && go mod download && go work sync
-	make generate-swagger
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
