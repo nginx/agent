@@ -9,15 +9,16 @@ package sources
 
 import (
 	"context"
+	"net/http"
 	"sync"
 	"testing"
 
+	"github.com/h2non/gock"
 	"github.com/nginx/agent/sdk/v2/proto"
-	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
+	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -1026,5 +1027,61 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		assert.Len(t, extraMetrics, 0, "metrics returned but not tested")
+	}
+}
+
+func TestUnmarshallingOfResponses(t *testing.T) {
+	tests := []struct {
+		url      string
+		response string
+		status   int
+	}{
+		{
+			url:      "http://example.com",
+			response: `{"dbQueryCache":{"size":180224,"max_size":20971520,"cold":false,"hit":{"responses":4838962,"bytes":2275206055},"stale":{"responses":0,"bytes":0},"updating":{"responses":0,"bytes":0},"revalidated":{"responses":0,"bytes":0},"miss":{"responses":1908180,"bytes":907271533,"responses_written":1905974,"bytes_written":906774753},"expired":{"responses":312900,"bytes":145738071,"responses_written":312900,"bytes_written":145738071},"bypass":{"responses":0,"bytes":0,"responses_written":0,"bytes_written":0}}}`,
+			status:   http.StatusOK,
+		},
+		{
+			url:      "http://example.com",
+			response: `{"dbQueryCache":{"size":-8192,"max_size":20971520,"cold":false,"hit":{"responses":4291772,"bytes":2018161047},"stale":{"responses":0,"bytes":0},"updating":{"responses":0,"bytes":0},"revalidated":{"responses":0,"bytes":0},"miss":{"responses":1781465,"bytes":846917288,"responses_written":1779325,"bytes_written":846439158},"expired":{"responses":288419,"bytes":134369109,"responses_written":288419,"bytes_written":134369109},"bypass":{"responses":0,"bytes":0,"responses_written":0,"bytes_written":0}}}`,
+			status:   http.StatusOK,
+		},
+		{
+			url:      "http://example.com",
+			response: `{"dbQueryCache":{"size":18446744073709551616,"max_size":20971520,"cold":false,"hit":{"responses":4291772,"bytes":2018161047},"stale":{"responses":0,"bytes":0},"updating":{"responses":0,"bytes":0},"revalidated":{"responses":0,"bytes":0},"miss":{"responses":1781465,"bytes":846917288,"responses_written":1779325,"bytes_written":846439158},"expired":{"responses":288419,"bytes":134369109,"responses_written":288419,"bytes_written":134369109},"bypass":{"responses":0,"bytes":0,"responses_written":0,"bytes_written":0}}}`,
+			status:   http.StatusOK,
+		},
+	}
+
+	for _, test := range tests {
+
+		defer gock.Off() // Flush pending mocks after test execution
+
+		gock.New(test.url).
+			Reply(200).
+			JSON([]int{6, 7, 8})
+
+		gock.New(test.url).
+			Get("/http/caches").
+			Reply(200).
+			JSON(test.response)
+
+		nginxClient, err := plusclient.NewNginxClient(&http.Client{}, test.url)
+
+		if err != nil {
+			t.Errorf("error creating client %v", err)
+		}
+		caches, err := nginxClient.GetCaches()
+		if err != nil {
+			t.Errorf("error creating client %v", err)
+		}
+
+		if caches == nil {
+			t.Errorf("error creating caches %v", caches)
+		}
+		// result := nginxClient.get(mockClient)
+		// if result != test.expected {
+		// 	t.Errorf("haveSameParametersForStream(%v, %v) returned %v but expected %v", test.server, test.serverNGX, result, test.expected)
+		// }
 	}
 }
