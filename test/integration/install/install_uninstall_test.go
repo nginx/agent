@@ -38,7 +38,7 @@ func setupTestContainer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	require.NoError(t, comp.WaitForService("agent", wait.ForHTTP("/")).WithEnv(
+	require.NoError(t, comp.WaitForService("agent", wait.ForLog("starting nginx ...")).WithEnv(
 		map[string]string{
 			"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
 			"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
