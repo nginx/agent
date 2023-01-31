@@ -185,6 +185,7 @@ integration-test: local-deb-package
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
+	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
 
 benchmark-image: ## Build benchmark test container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
