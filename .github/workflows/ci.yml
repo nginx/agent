@@ -37,6 +37,9 @@ jobs:
           working-directory: sdk
           args: -c ../scripts/.golangci.yml
           skip-pkg-cache: true
+      - name: Check if vendor directories are up to date
+        run: |
+          make deps && git diff --name-only --exit-code vendor/** test/performance/vendor/** sdk/vendor/**
 
   unit-test:
     name: Unit Tests
