@@ -9,6 +9,7 @@ services:
     build:
       context: ../../../
       dockerfile: ./scripts/docker/nginx-oss/ubuntu/Dockerfile
+      target: install-agent
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         BASE_IMAGE: ${BASE_IMAGE}
