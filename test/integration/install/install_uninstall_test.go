@@ -176,7 +176,7 @@ func createInstallCommand(osReleaseContent string) []string {
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return []string{"dpkg", "-i", AGENT_PACKAGE_FILEPATH}
 	} else {
-		return []string{"yum", "install"}
+		return []string{"yum", "localinstall", AGENT_PACKAGE_FILEPATH}
 	}
 }
 
