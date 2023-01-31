@@ -23,7 +23,6 @@ const (
 
 var (
 	AGENT_PACKAGE_FILENAME = os.Getenv("PACKAGE_NAME")
-	agentPackageFilePath   = ""
 	agentContainer         *testcontainers.DockerContainer
 )
 
@@ -81,7 +80,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		"AgentDynamicConfigFile": "/etc/nginx-agent/agent-dynamic.conf",
 	}
 
-	agentPackageFilePath = getPackagePath(string(osReleaseContent))
+	agentPackageFilePath := getPackagePath(string(osReleaseContent))
 
 	// Check the agent package is present
 	agentPkg, err := agentContainer.CopyFileFromContainer(context.TODO(), agentPackageFilePath)
@@ -104,7 +103,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	assert.LessOrEqual(t, file.Size(), maxFileSize)
 
 	// Install Agent and record installation time/install output
-	installTime, installLog := installAgent(t, agentContainer, string(osReleaseContent))
+	installTime, installLog := installAgent(t, agentContainer, agentPackageFilePath, string(osReleaseContent))
 
 	// Check the install time under 30s
 	assert.LessOrEqual(t, installTime, maxInstallTime)
@@ -139,9 +138,9 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 }
 
 // installAgent installs the agent returning total install time and install output
-func installAgent(t *testing.T, container *testcontainers.DockerContainer, osReleaseContent string) (time.Duration, string) {
+func installAgent(t *testing.T, container *testcontainers.DockerContainer, agentPackageFilePath, osReleaseContent string) (time.Duration, string) {
 	// Get OS to create install cmd
-	installCmd := createInstallCommand(osReleaseContent)
+	installCmd := createInstallCommand(agentPackageFilePath, osReleaseContent)
 
 	// Start install timer
 	start := time.Now()
@@ -174,7 +173,7 @@ func uninstallAgent(t *testing.T, container *testcontainers.DockerContainer, osR
 	return string(stdoutStderr)
 }
 
-func createInstallCommand(osReleaseContent string) []string {
+func createInstallCommand(agentPackageFilePath, osReleaseContent string) []string {
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return []string{"dpkg", "-i", agentPackageFilePath}
 	} else {
