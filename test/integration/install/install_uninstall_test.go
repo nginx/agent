@@ -23,7 +23,7 @@ const (
 
 var (
 	AGENT_PACKAGE_FILENAME = os.Getenv("PACKAGE_NAME")
-	AGENT_PACKAGE_FILEPATH = "/agent/build/" + AGENT_PACKAGE_FILENAME + ".deb"
+	agentPackageFilePath   = ""
 	agentContainer         *testcontainers.DockerContainer
 )
 
@@ -81,8 +81,10 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		"AgentDynamicConfigFile": "/etc/nginx-agent/agent-dynamic.conf",
 	}
 
+	agentPackageFilePath = getPackagePath(string(osReleaseContent))
+
 	// Check the agent package is present
-	agentPkg, err := agentContainer.CopyFileFromContainer(context.TODO(), AGENT_PACKAGE_FILEPATH)
+	agentPkg, err := agentContainer.CopyFileFromContainer(context.TODO(), agentPackageFilePath)
 	assert.NoError(t, err)
 
 	a, err := io.ReadAll(agentPkg)
@@ -96,7 +98,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	f.Close()
 
 	file, err := os.Stat(f.Name())
-	assert.NoError(t, err, "Error accessing package at:", AGENT_PACKAGE_FILEPATH)
+	assert.NoError(t, err, "Error accessing package at:", agentPackageFilePath)
 
 	// Check the file size is less than or equal 20MB
 	assert.LessOrEqual(t, file.Size(), maxFileSize)
@@ -174,9 +176,9 @@ func uninstallAgent(t *testing.T, container *testcontainers.DockerContainer, osR
 
 func createInstallCommand(osReleaseContent string) []string {
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
-		return []string{"dpkg", "-i", AGENT_PACKAGE_FILEPATH}
+		return []string{"dpkg", "-i", agentPackageFilePath}
 	} else {
-		return []string{"yum", "localinstall", AGENT_PACKAGE_FILEPATH}
+		return []string{"yum", "localinstall", agentPackageFilePath}
 	}
 }
 
@@ -199,4 +201,16 @@ func nginxIsRunning() bool {
 	}
 
 	return false
+}
+
+const pkgDir = "/agent/build/"
+
+func getPackagePath(osReleaseContent string) string {
+	pkgPath := pkgDir + AGENT_PACKAGE_FILENAME
+
+	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
+		return pkgPath + ".deb"
+	} else {
+		return pkgPath + ".rpm"
+	}
 }
