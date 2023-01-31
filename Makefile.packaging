@@ -52,8 +52,8 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 		elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
 		if [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=amd64 nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${UNAME_M}.rpm; \
-            cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${UNAME_M}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${UNAME_M}.rpm; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=amd64 nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(OSARCH).rpm; \
+			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(OSARCH).rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(OSARCH).rpm; \
 		fi; \
 	done; \
 	rm -rf ./build/nginx-agent
