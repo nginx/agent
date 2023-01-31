@@ -39,8 +39,10 @@ jobs:
           skip-pkg-cache: true
       - name: Check if vendor directories are up to date
         run: |
-          sudo apt install -y protobuf-compiler && make install-tools
-          make deps && git diff --name-only --exit-code vendor/** sdk/vendor/** test/integration/vendor/** test/performance/vendor/**
+          sudo apt install -y protobuf-compiler
+          make install-tools
+          make deps
+          git diff --name-only --exit-code vendor/** sdk/vendor/** test/integration/vendor/** test/performance/vendor/**
 
   unit-test:
     name: Unit Tests
