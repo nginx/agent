@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/compose"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const (
@@ -37,10 +38,11 @@ func setupTestContainer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	require.NoError(t, comp.WithEnv(map[string]string{
-		"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
-		"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
-	},
+	require.NoError(t, comp.WaitForService("agent", wait.ForHTTP("/")).WithEnv(
+		map[string]string{
+			"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
+			"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
+		},
 	).Up(ctx, compose.Wait(true)), "compose.Up()")
 
 	agentContainer, err = comp.ServiceContainer(context.TODO(), "agent")

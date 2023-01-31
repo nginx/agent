@@ -32,12 +32,13 @@ func setupTestContainer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	require.NoError(t, comp.
-		WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(map[string]string{
-		"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
-		"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
-	}).
-		Up(ctx, compose.Wait(true)), "compose.Up()")
+	require.NoError(t,
+		comp.WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(
+			map[string]string{
+				"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
+				"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
+			},
+		).Up(ctx, compose.Wait(true)), "compose.Up()")
 }
 
 func TestAPI_Nginx(t *testing.T) {
