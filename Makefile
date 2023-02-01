@@ -1,7 +1,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Variable Definitions                                                                                            #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-VERSION = $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
+# VERSION = $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
 COMMIT = $(shell git rev-parse --short HEAD)
 DATE = $(shell date +%F_%H-%M-%S)
 
@@ -85,6 +85,7 @@ deps: ## Update dependencies in vendor folders
 	cd test/integration && go mod tidy && go mod vendor
 	cd test/performance && go mod tidy && go mod vendor
 	go mod tidy && go mod vendor && go mod download && go work sync
+	make generate-swagger
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
