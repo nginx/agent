@@ -40,7 +40,10 @@ jobs:
       - name: Check if vendor directories are up to date
         run: |
           sudo apt install -y protobuf-compiler
-          make install-tools && make deps
+          cd sdk && go mod tidy && go mod vendor && go mod tidy && go mod vendor
+          cd test/integration && go mod tidy && go mod vendor
+          cd test/performance && go mod tidy && go mod vendor
+          go mod tidy && go mod vendor && go mod download && go work sync
           git diff --name-only --exit-code vendor/** sdk/vendor/** test/integration/vendor/** test/performance/vendor/**
 
   unit-test:
