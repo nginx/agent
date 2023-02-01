@@ -1079,9 +1079,5 @@ func TestUnmarshallingOfResponses(t *testing.T) {
 		if caches == nil {
 			t.Errorf("error creating caches %v", caches)
 		}
-		// result := nginxClient.get(mockClient)
-		// if result != test.expected {
-		// 	t.Errorf("haveSameParametersForStream(%v, %v) returned %v but expected %v", test.server, test.serverNGX, result, test.expected)
-		// }
 	}
 }
