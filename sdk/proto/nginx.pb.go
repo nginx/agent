@@ -21,7 +21,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
+const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
 // NGINX config action enum
 type NginxConfigAction int32
@@ -186,7 +186,7 @@ func (m *NginxDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return xxx_messageInfo_NginxDetails.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -324,7 +324,7 @@ func (m *NginxPlusMetaData) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return xxx_messageInfo_NginxPlusMetaData.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -385,7 +385,7 @@ func (m *NginxSslMetaData) XXX_Marshal(b []byte, deterministic bool) ([]byte, er
 		return xxx_messageInfo_NginxSslMetaData.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -445,7 +445,7 @@ func (m *NginxHealth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return xxx_messageInfo_NginxHealth.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -522,7 +522,7 @@ func (m *NginxConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return xxx_messageInfo_NginxConfig.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -620,7 +620,7 @@ func (m *AccessLogs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_AccessLogs.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -675,7 +675,7 @@ func (m *AccessLog) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_AccessLog.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -745,7 +745,7 @@ func (m *ErrorLogs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_ErrorLogs.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -800,7 +800,7 @@ func (m *ErrorLog) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_ErrorLog.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -944,7 +944,7 @@ var fileDescriptor_917f1a70b1fd7255 = []byte{
 func (m *NginxDetails) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -952,134 +952,136 @@ func (m *NginxDetails) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *NginxDetails) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *NginxDetails) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.NginxId) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.NginxId)))
+		i += copy(dAtA[i:], m.NginxId)
 	}
-	if len(m.ConfigureArgs) > 0 {
-		for iNdEx := len(m.ConfigureArgs) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.ConfigureArgs[iNdEx])
-			copy(dAtA[i:], m.ConfigureArgs[iNdEx])
-			i = encodeVarintNginx(dAtA, i, uint64(len(m.ConfigureArgs[iNdEx])))
-			i--
-			dAtA[i] = 0x6a
-		}
+	if len(m.Version) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.Version)))
+		i += copy(dAtA[i:], m.Version)
 	}
-	if len(m.StatusUrl) > 0 {
-		i -= len(m.StatusUrl)
-		copy(dAtA[i:], m.StatusUrl)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.StatusUrl)))
-		i--
-		dAtA[i] = 0x62
+	if len(m.ConfPath) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.ConfPath)))
+		i += copy(dAtA[i:], m.ConfPath)
 	}
-	if m.Ssl != nil {
-		{
-			size, err := m.Ssl.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNginx(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x5a
+	if len(m.ProcessId) > 0 {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.ProcessId)))
+		i += copy(dAtA[i:], m.ProcessId)
 	}
-	if m.Plus != nil {
-		{
-			size, err := m.Plus.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNginx(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x52
+	if len(m.ProcessPath) > 0 {
+		dAtA[i] = 0x2a
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.ProcessPath)))
+		i += copy(dAtA[i:], m.ProcessPath)
 	}
-	if len(m.RuntimeModules) > 0 {
-		for iNdEx := len(m.RuntimeModules) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.RuntimeModules[iNdEx])
-			copy(dAtA[i:], m.RuntimeModules[iNdEx])
-			i = encodeVarintNginx(dAtA, i, uint64(len(m.RuntimeModules[iNdEx])))
-			i--
-			dAtA[i] = 0x4a
-		}
-	}
-	if len(m.LoadableModules) > 0 {
-		for iNdEx := len(m.LoadableModules) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.LoadableModules[iNdEx])
-			copy(dAtA[i:], m.LoadableModules[iNdEx])
-			i = encodeVarintNginx(dAtA, i, uint64(len(m.LoadableModules[iNdEx])))
-			i--
-			dAtA[i] = 0x42
-		}
+	if m.StartTime != 0 {
+		dAtA[i] = 0x30
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.StartTime))
 	}
 	if m.BuiltFromSource {
-		i--
+		dAtA[i] = 0x38
+		i++
 		if m.BuiltFromSource {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
 		}
-		i--
-		dAtA[i] = 0x38
+		i++
 	}
-	if m.StartTime != 0 {
-		i = encodeVarintNginx(dAtA, i, uint64(m.StartTime))
-		i--
-		dAtA[i] = 0x30
+	if len(m.LoadableModules) > 0 {
+		for _, s := range m.LoadableModules {
+			dAtA[i] = 0x42
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
 	}
-	if len(m.ProcessPath) > 0 {
-		i -= len(m.ProcessPath)
-		copy(dAtA[i:], m.ProcessPath)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.ProcessPath)))
-		i--
-		dAtA[i] = 0x2a
+	if len(m.RuntimeModules) > 0 {
+		for _, s := range m.RuntimeModules {
+			dAtA[i] = 0x4a
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
 	}
-	if len(m.ProcessId) > 0 {
-		i -= len(m.ProcessId)
-		copy(dAtA[i:], m.ProcessId)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.ProcessId)))
-		i--
-		dAtA[i] = 0x22
+	if m.Plus != nil {
+		dAtA[i] = 0x52
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.Plus.Size()))
+		n1, err1 := m.Plus.MarshalTo(dAtA[i:])
+		if err1 != nil {
+			return 0, err1
+		}
+		i += n1
 	}
-	if len(m.ConfPath) > 0 {
-		i -= len(m.ConfPath)
-		copy(dAtA[i:], m.ConfPath)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.ConfPath)))
-		i--
-		dAtA[i] = 0x1a
+	if m.Ssl != nil {
+		dAtA[i] = 0x5a
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.Ssl.Size()))
+		n2, err2 := m.Ssl.MarshalTo(dAtA[i:])
+		if err2 != nil {
+			return 0, err2
+		}
+		i += n2
 	}
-	if len(m.Version) > 0 {
-		i -= len(m.Version)
-		copy(dAtA[i:], m.Version)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.Version)))
-		i--
-		dAtA[i] = 0x12
+	if len(m.StatusUrl) > 0 {
+		dAtA[i] = 0x62
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.StatusUrl)))
+		i += copy(dAtA[i:], m.StatusUrl)
 	}
-	if len(m.NginxId) > 0 {
-		i -= len(m.NginxId)
-		copy(dAtA[i:], m.NginxId)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.NginxId)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.ConfigureArgs) > 0 {
+		for _, s := range m.ConfigureArgs {
+			dAtA[i] = 0x6a
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *NginxPlusMetaData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1087,43 +1089,36 @@ func (m *NginxPlusMetaData) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *NginxPlusMetaData) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *NginxPlusMetaData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Release) > 0 {
-		i -= len(m.Release)
-		copy(dAtA[i:], m.Release)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.Release)))
-		i--
-		dAtA[i] = 0x12
-	}
 	if m.Enabled {
-		i--
+		dAtA[i] = 0x8
+		i++
 		if m.Enabled {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
 		}
-		i--
-		dAtA[i] = 0x8
+		i++
 	}
-	return len(dAtA) - i, nil
+	if len(m.Release) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.Release)))
+		i += copy(dAtA[i:], m.Release)
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *NginxSslMetaData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1131,40 +1126,40 @@ func (m *NginxSslMetaData) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *NginxSslMetaData) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *NginxSslMetaData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if m.SslType != 0 {
+		dAtA[i] = 0x8
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.SslType))
 	}
 	if len(m.Details) > 0 {
-		for iNdEx := len(m.Details) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Details[iNdEx])
-			copy(dAtA[i:], m.Details[iNdEx])
-			i = encodeVarintNginx(dAtA, i, uint64(len(m.Details[iNdEx])))
-			i--
+		for _, s := range m.Details {
 			dAtA[i] = 0x12
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
 		}
 	}
-	if m.SslType != 0 {
-		i = encodeVarintNginx(dAtA, i, uint64(m.SslType))
-		i--
-		dAtA[i] = 0x8
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 
 func (m *NginxHealth) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1172,45 +1167,37 @@ func (m *NginxHealth) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *NginxHealth) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *NginxHealth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.DegradedReason) > 0 {
-		i -= len(m.DegradedReason)
-		copy(dAtA[i:], m.DegradedReason)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.DegradedReason)))
-		i--
-		dAtA[i] = 0x1a
+	if len(m.NginxId) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.NginxId)))
+		i += copy(dAtA[i:], m.NginxId)
 	}
 	if m.NginxStatus != 0 {
-		i = encodeVarintNginx(dAtA, i, uint64(m.NginxStatus))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.NginxStatus))
 	}
-	if len(m.NginxId) > 0 {
-		i -= len(m.NginxId)
-		copy(dAtA[i:], m.NginxId)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.NginxId)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.DegradedReason) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.DegradedReason)))
+		i += copy(dAtA[i:], m.DegradedReason)
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *NginxConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1218,115 +1205,95 @@ func (m *NginxConfig) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *NginxConfig) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *NginxConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.DirectoryMap != nil {
-		{
-			size, err := m.DirectoryMap.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNginx(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x42
-	}
-	if m.Ssl != nil {
-		{
-			size, err := m.Ssl.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNginx(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x3a
-	}
-	if m.ErrorLogs != nil {
-		{
-			size, err := m.ErrorLogs.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNginx(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x32
-	}
-	if m.AccessLogs != nil {
-		{
-			size, err := m.AccessLogs.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNginx(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x2a
-	}
-	if m.Zaux != nil {
-		{
-			size, err := m.Zaux.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNginx(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x22
-	}
-	if m.Zconfig != nil {
-		{
-			size, err := m.Zconfig.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNginx(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x1a
+	if m.Action != 0 {
+		dAtA[i] = 0x8
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.Action))
 	}
 	if m.ConfigData != nil {
-		{
-			size, err := m.ConfigData.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNginx(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.ConfigData.Size()))
+		n3, err3 := m.ConfigData.MarshalTo(dAtA[i:])
+		if err3 != nil {
+			return 0, err3
+		}
+		i += n3
 	}
-	if m.Action != 0 {
-		i = encodeVarintNginx(dAtA, i, uint64(m.Action))
-		i--
-		dAtA[i] = 0x8
+	if m.Zconfig != nil {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.Zconfig.Size()))
+		n4, err4 := m.Zconfig.MarshalTo(dAtA[i:])
+		if err4 != nil {
+			return 0, err4
+		}
+		i += n4
 	}
-	return len(dAtA) - i, nil
+	if m.Zaux != nil {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.Zaux.Size()))
+		n5, err5 := m.Zaux.MarshalTo(dAtA[i:])
+		if err5 != nil {
+			return 0, err5
+		}
+		i += n5
+	}
+	if m.AccessLogs != nil {
+		dAtA[i] = 0x2a
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.AccessLogs.Size()))
+		n6, err6 := m.AccessLogs.MarshalTo(dAtA[i:])
+		if err6 != nil {
+			return 0, err6
+		}
+		i += n6
+	}
+	if m.ErrorLogs != nil {
+		dAtA[i] = 0x32
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.ErrorLogs.Size()))
+		n7, err7 := m.ErrorLogs.MarshalTo(dAtA[i:])
+		if err7 != nil {
+			return 0, err7
+		}
+		i += n7
+	}
+	if m.Ssl != nil {
+		dAtA[i] = 0x3a
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.Ssl.Size()))
+		n8, err8 := m.Ssl.MarshalTo(dAtA[i:])
+		if err8 != nil {
+			return 0, err8
+		}
+		i += n8
+	}
+	if m.DirectoryMap != nil {
+		dAtA[i] = 0x42
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(m.DirectoryMap.Size()))
+		n9, err9 := m.DirectoryMap.MarshalTo(dAtA[i:])
+		if err9 != nil {
+			return 0, err9
+		}
+		i += n9
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *AccessLogs) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1334,40 +1301,32 @@ func (m *AccessLogs) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *AccessLogs) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AccessLogs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if len(m.AccessLog) > 0 {
-		for iNdEx := len(m.AccessLog) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.AccessLog[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintNginx(dAtA, i, uint64(size))
-			}
-			i--
+		for _, msg := range m.AccessLog {
 			dAtA[i] = 0xa
+			i++
+			i = encodeVarintNginx(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
 		}
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *AccessLog) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1375,57 +1334,48 @@ func (m *AccessLog) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *AccessLog) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AccessLog) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.Name) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.Name)))
+		i += copy(dAtA[i:], m.Name)
+	}
+	if len(m.Format) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.Format)))
+		i += copy(dAtA[i:], m.Format)
+	}
+	if len(m.Permissions) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.Permissions)))
+		i += copy(dAtA[i:], m.Permissions)
 	}
 	if m.Readable {
-		i--
+		dAtA[i] = 0x20
+		i++
 		if m.Readable {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
 		}
-		i--
-		dAtA[i] = 0x20
+		i++
 	}
-	if len(m.Permissions) > 0 {
-		i -= len(m.Permissions)
-		copy(dAtA[i:], m.Permissions)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.Permissions)))
-		i--
-		dAtA[i] = 0x1a
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Format) > 0 {
-		i -= len(m.Format)
-		copy(dAtA[i:], m.Format)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.Format)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 
 func (m *ErrorLogs) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1433,40 +1383,32 @@ func (m *ErrorLogs) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *ErrorLogs) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ErrorLogs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if len(m.ErrorLog) > 0 {
-		for iNdEx := len(m.ErrorLog) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.ErrorLog[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintNginx(dAtA, i, uint64(size))
-			}
-			i--
+		for _, msg := range m.ErrorLog {
 			dAtA[i] = 0xa
+			i++
+			i = encodeVarintNginx(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
 		}
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *ErrorLog) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1474,63 +1416,52 @@ func (m *ErrorLog) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *ErrorLog) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ErrorLog) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.Name) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.Name)))
+		i += copy(dAtA[i:], m.Name)
+	}
+	if len(m.LogLevel) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.LogLevel)))
+		i += copy(dAtA[i:], m.LogLevel)
+	}
+	if len(m.Permissions) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintNginx(dAtA, i, uint64(len(m.Permissions)))
+		i += copy(dAtA[i:], m.Permissions)
 	}
 	if m.Readable {
-		i--
+		dAtA[i] = 0x20
+		i++
 		if m.Readable {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
 		}
-		i--
-		dAtA[i] = 0x20
+		i++
 	}
-	if len(m.Permissions) > 0 {
-		i -= len(m.Permissions)
-		copy(dAtA[i:], m.Permissions)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.Permissions)))
-		i--
-		dAtA[i] = 0x1a
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.LogLevel) > 0 {
-		i -= len(m.LogLevel)
-		copy(dAtA[i:], m.LogLevel)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.LogLevel)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintNginx(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 
 func encodeVarintNginx(dAtA []byte, offset int, v uint64) int {
-	offset -= sovNginx(v)
-	base := offset
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
 	dAtA[offset] = uint8(v)
-	return base
+	return offset + 1
 }
 func (m *NginxDetails) Size() (n int) {
 	if m == nil {
@@ -2236,7 +2167,10 @@ func (m *NginxDetails) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthNginx
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthNginx
 			}
 			if (iNdEx + skippy) > l {
@@ -2339,7 +2273,10 @@ func (m *NginxPlusMetaData) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthNginx
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthNginx
 			}
 			if (iNdEx + skippy) > l {
@@ -2441,7 +2378,10 @@ func (m *NginxSslMetaData) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthNginx
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthNginx
 			}
 			if (iNdEx + skippy) > l {
@@ -2575,7 +2515,10 @@ func (m *NginxHealth) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthNginx
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthNginx
 			}
 			if (iNdEx + skippy) > l {
@@ -2897,7 +2840,10 @@ func (m *NginxConfig) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthNginx
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthNginx
 			}
 			if (iNdEx + skippy) > l {
@@ -2982,7 +2928,10 @@ func (m *AccessLogs) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthNginx
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthNginx
 			}
 			if (iNdEx + skippy) > l {
@@ -3149,7 +3098,10 @@ func (m *AccessLog) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthNginx
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthNginx
 			}
 			if (iNdEx + skippy) > l {
@@ -3234,7 +3186,10 @@ func (m *ErrorLogs) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthNginx
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthNginx
 			}
 			if (iNdEx + skippy) > l {
@@ -3401,7 +3356,10 @@ func (m *ErrorLog) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthNginx
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthNginx
 			}
 			if (iNdEx + skippy) > l {
@@ -3420,7 +3378,6 @@ func (m *ErrorLog) Unmarshal(dAtA []byte) error {
 func skipNginx(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
-	depth := 0
 	for iNdEx < l {
 		var wire uint64
 		for shift := uint(0); ; shift += 7 {
@@ -3452,8 +3409,10 @@ func skipNginx(dAtA []byte) (n int, err error) {
 					break
 				}
 			}
+			return iNdEx, nil
 		case 1:
 			iNdEx += 8
+			return iNdEx, nil
 		case 2:
 			var length int
 			for shift := uint(0); ; shift += 7 {
@@ -3474,30 +3433,55 @@ func skipNginx(dAtA []byte) (n int, err error) {
 				return 0, ErrInvalidLengthNginx
 			}
 			iNdEx += length
-		case 3:
-			depth++
-		case 4:
-			if depth == 0 {
-				return 0, ErrUnexpectedEndOfGroupNginx
+			if iNdEx < 0 {
+				return 0, ErrInvalidLengthNginx
 			}
-			depth--
+			return iNdEx, nil
+		case 3:
+			for {
+				var innerWire uint64
+				var start int = iNdEx
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return 0, ErrIntOverflowNginx
+					}
+					if iNdEx >= l {
+						return 0, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					innerWire |= (uint64(b) & 0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				innerWireType := int(innerWire & 0x7)
+				if innerWireType == 4 {
+					break
+				}
+				next, err := skipNginx(dAtA[start:])
+				if err != nil {
+					return 0, err
+				}
+				iNdEx = start + next
+				if iNdEx < 0 {
+					return 0, ErrInvalidLengthNginx
+				}
+			}
+			return iNdEx, nil
+		case 4:
+			return iNdEx, nil
 		case 5:
 			iNdEx += 4
+			return iNdEx, nil
 		default:
 			return 0, fmt.Errorf("proto: illegal wireType %d", wireType)
 		}
-		if iNdEx < 0 {
-			return 0, ErrInvalidLengthNginx
-		}
-		if depth == 0 {
-			return iNdEx, nil
-		}
 	}
-	return 0, io.ErrUnexpectedEOF
+	panic("unreachable")
 }
 
 var (
-	ErrInvalidLengthNginx        = fmt.Errorf("proto: negative length found during unmarshaling")
-	ErrIntOverflowNginx          = fmt.Errorf("proto: integer overflow")
-	ErrUnexpectedEndOfGroupNginx = fmt.Errorf("proto: unexpected end of group")
+	ErrInvalidLengthNginx = fmt.Errorf("proto: negative length found during unmarshaling")
+	ErrIntOverflowNginx   = fmt.Errorf("proto: integer overflow")
 )

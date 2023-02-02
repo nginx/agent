@@ -184,6 +184,7 @@ func (m *Metrics) metricsGoroutine() {
 		case <-m.ticker.C:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			stats := m.collectStats()
 			for _, reportBundle := range metrics.GenerateMetricsReports(stats) {
 				m.pipeline.Process(core.NewMessage(core.MetricReport, reportBundle))
@@ -193,6 +194,13 @@ func (m *Metrics) metricsGoroutine() {
 			stats := m.collectStats()
 			for _, report := range metrics.GenerateMetricsReports(stats) {
 >>>>>>> using StatsEntityWarpper in place of StatsEntity
+=======
+			stats := m.collectStats()
+			for _, report := range metrics.GenerateMetricsReports(stats) {
+=======
+			for _, report := range generateMetricsReports(m.collectStats(), true) {
+>>>>>>> Create dedicated cache and upstream metrics reports
+>>>>>>> Create dedicated cache and upstream metrics reports
 				m.pipeline.Process(core.NewMessage(core.MetricReport, report))
 >>>>>>> Create dedicated cache and upstream metrics reports
 			}

@@ -144,11 +144,19 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 				r.reportsReady.Store(true)
 			}
 		} else {
+<<<<<<< HEAD
 			switch report := msg.Data().(type) {
 			case *proto.MetricsReport:
 				r.metricBuffer = append(r.metricBuffer, report)
 			}
+<<<<<<< HEAD
 >>>>>>> using StatsEntityWarpper in place of StatsEntity
+=======
+=======
+			r.metricBuffer = append(r.metricBuffer,
+				generateMetricsReports(getAllStatsEntities(msg.Data()), false)...)
+>>>>>>> Create dedicated cache and upstream metrics reports
+>>>>>>> Create dedicated cache and upstream metrics reports
 			log.Tracef("MetricsThrottle buffer size: %d of %d", len(r.metricBuffer), r.BulkSize)
 			if len(r.metricBuffer) >= r.BulkSize {
 				log.Info("MetricsThrottle buffer flush")
@@ -215,6 +223,7 @@ func (r *MetricsThrottle) syncAgentConfigChange() {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -237,6 +246,8 @@ func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 =======
 func (r *MetricsThrottle) getAggregatedReports() []core.Payload {
 =======
+=======
+>>>>>>> Create dedicated cache and upstream metrics reports
 func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 >>>>>>> using StatsEntityWarpper in place of StatsEntity
 	r.mu.Lock()
@@ -261,5 +272,20 @@ func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 >>>>>>> Create dedicated cache and upstream metrics reports
 =======
 	return
+<<<<<<< HEAD
 >>>>>>> using StatsEntityWarpper in place of StatsEntity
+=======
+=======
+func (r *MetricsThrottle) getAggregatedReports() []core.Payload {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	reports := generateMetricsReports(metrics.GenerateMetrics(r.metricsCollections), false)
+	r.metricsCollections = metrics.Collections{
+		Count: 0,
+		Data:  make(map[string]metrics.PerDimension),
+	}
+
+	return reports
+>>>>>>> Create dedicated cache and upstream metrics reports
+>>>>>>> Create dedicated cache and upstream metrics reports
 }

@@ -6,18 +6,20 @@ import "google/protobuf/timestamp.proto";
 import "common.proto";
 import "gogo.proto";
 
-// Represents a metric report
 message MetricsReport {
+<<<<<<< HEAD
   // Metric type enum  
+=======
+>>>>>>> Create dedicated cache and upstream metrics reports
   enum Type {
-    // System metric type
     SYSTEM = 0;
-    // NGINX instance metric type
     INSTANCE = 1;
-    // Agent metric type
     AGENT = 2;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Create dedicated cache and upstream metrics reports
     // Cache zone metric type
     CACHE_ZONE = 3;
     // Upstreams metric type
@@ -36,18 +38,30 @@ message MetricsReport {
   // Type of metrics
   Type type = 2 [(gogoproto.jsontag) = "type" ];
   // List of stats entities
+=======
+    CACHE_ZONE = 3;
+    UPSTREAMS = 4;
+  }
+  Metadata meta = 1 [(gogoproto.jsontag) = "meta" ];
+  Type type = 2 [(gogoproto.jsontag) = "type" ];
+>>>>>>> Create dedicated cache and upstream metrics reports
   repeated StatsEntity data = 3 [(gogoproto.jsontag) = "data" ];
 }
 
 message SimpleMetric {
+<<<<<<< HEAD
   // Metric name
   string name = 1 [(gogoproto.jsontag) = "name" ];
   // Metric value
+=======
+  string name = 1 [(gogoproto.jsontag) = "name" ];
+>>>>>>> Create dedicated cache and upstream metrics reports
   double value = 2 [(gogoproto.jsontag) = "value" ];
 }
 
 // Dimension defines a dimensional attribute used when classifying and categorizing data
 message Dimension {
+<<<<<<< HEAD
   // Dimension name
   string name = 1 [(gogoproto.jsontag) = "name" ];
   // Dimension value
@@ -55,14 +69,24 @@ message Dimension {
 }
 
 // StatsEntity defines a stats entity which is a timestamped entry for dimensions and metrics
+=======
+  string name = 1 [(gogoproto.jsontag) = "name" ];
+  string value = 2 [(gogoproto.jsontag) = "value" ];
+}
+
+// StatsEntity a timestamped entry for Dimensions and Metrics
+>>>>>>> Create dedicated cache and upstream metrics reports
 message StatsEntity {
-  // Timestamp defines the time of stats entity creation
   google.protobuf.Timestamp timestamp = 1;
   // DEPRECATED
   reserved 2;
   reserved "metrics";
+<<<<<<< HEAD
   // List of dimensions
   repeated Dimension dimensions = 3 [(gogoproto.jsontag) = "dimensions" ];
   // List of metrics
+=======
+  repeated Dimension dimensions = 3 [(gogoproto.jsontag) = "dimensions" ];
+>>>>>>> Create dedicated cache and upstream metrics reports
   repeated SimpleMetric simplemetrics = 4 [(gogoproto.jsontag) = "simplemetrics" ];
 }
