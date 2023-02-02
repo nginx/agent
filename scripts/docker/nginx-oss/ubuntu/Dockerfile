@@ -23,7 +23,6 @@ RUN set -x \
                         make \
                         curl \
                         vim \
-                        golang \
                         nginx
 RUN chmod +x /agent/entrypoint.sh
 STOPSIGNAL SIGTERM

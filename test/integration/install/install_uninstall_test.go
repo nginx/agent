@@ -45,7 +45,7 @@ func setupTestContainer(t *testing.T) {
 		},
 	).Up(ctx, compose.Wait(true)), "compose.Up()")
 
-	agentContainer, err = comp.ServiceContainer(context.TODO(), "agent")
+	agentContainer, err = comp.ServiceContainer(context.Background(), "agent")
 	require.NoError(t, err)
 }
 
@@ -58,7 +58,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	setupTestContainer(t)
 
-	exitCode, o, err := agentContainer.Exec(context.TODO(), []string{"cat", osReleasePath})
+	exitCode, o, err := agentContainer.Exec(context.Background(), []string{"cat", osReleasePath})
 	assert.NoError(t, err)
 	osReleaseContent, err := io.ReadAll(o)
 	assert.NoError(t, err)
@@ -85,7 +85,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	agentPackageFilePath := getPackagePath(string(osReleaseContent))
 
 	// Check the agent package is present
-	agentPkg, err := agentContainer.CopyFileFromContainer(context.TODO(), agentPackageFilePath)
+	agentPkg, err := agentContainer.CopyFileFromContainer(context.Background(), agentPackageFilePath)
 	assert.NoError(t, err)
 
 	a, err := io.ReadAll(agentPkg)
@@ -120,7 +120,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	// Check nginx-agent config files were created.
 	for _, path := range expectedAgentPaths {
-		_, err = agentContainer.CopyFileFromContainer(context.TODO(), path)
+		_, err = agentContainer.CopyFileFromContainer(context.Background(), path)
 		assert.NoError(t, err)
 	}
 
@@ -134,7 +134,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	// Check nginx-agent config files were removed.
 	for path := range expectedAgentPaths {
-		_, err = agentContainer.CopyFileFromContainer(context.TODO(), path)
+		_, err = agentContainer.CopyFileFromContainer(context.Background(), path)
 		assert.Error(t, err)
 	}
 }
@@ -148,7 +148,7 @@ func installAgent(t *testing.T, container *testcontainers.DockerContainer, agent
 	start := time.Now()
 
 	// Start agent installation and capture install output
-	exitCode, cmdOut, err := container.Exec(context.TODO(), installCmd)
+	exitCode, cmdOut, err := container.Exec(context.Background(), installCmd)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, exitCode, "expected exit code of 0")
 
@@ -166,7 +166,7 @@ func uninstallAgent(t *testing.T, container *testcontainers.DockerContainer, osR
 	uninstallCmd := createUninstallCommand(osReleaseContent)
 
 	// Start agent uninstall and capture uninstall output
-	exitCode, cmdOut, err := container.Exec(context.TODO(), uninstallCmd)
+	exitCode, cmdOut, err := container.Exec(context.Background(), uninstallCmd)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, exitCode)
 
