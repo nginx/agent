@@ -22,7 +22,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
+const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
 // Action enum
 type File_Action int32
@@ -93,7 +93,7 @@ func (m *Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_Metadata.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +163,7 @@ func (m *DirectoryMap) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return xxx_messageInfo_DirectoryMap.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -224,7 +224,7 @@ func (m *File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_File.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -323,7 +323,7 @@ func (m *Directory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_Directory.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -400,7 +400,7 @@ func (m *SslCertificates) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return xxx_messageInfo_SslCertificates.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -479,7 +479,7 @@ func (m *SslCertificate) XXX_Marshal(b []byte, deterministic bool) ([]byte, erro
 		return xxx_messageInfo_SslCertificate.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -635,7 +635,7 @@ func (m *CertificateDates) XXX_Marshal(b []byte, deterministic bool) ([]byte, er
 		return xxx_messageInfo_CertificateDates.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -701,7 +701,7 @@ func (m *CertificateName) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return xxx_messageInfo_CertificateName.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -789,7 +789,7 @@ func (m *ZippedFile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_ZippedFile.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -925,7 +925,7 @@ var fileDescriptor_555bd8c177793206 = []byte{
 func (m *Metadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -933,59 +933,48 @@ func (m *Metadata) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *Metadata) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Metadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.CloudAccountId) > 0 {
-		i -= len(m.CloudAccountId)
-		copy(dAtA[i:], m.CloudAccountId)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.CloudAccountId)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.MessageId) > 0 {
-		i -= len(m.MessageId)
-		copy(dAtA[i:], m.MessageId)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.MessageId)))
-		i--
-		dAtA[i] = 0x1a
+	if m.Timestamp != nil {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Timestamp.Size()))
+		n1, err1 := m.Timestamp.MarshalTo(dAtA[i:])
+		if err1 != nil {
+			return 0, err1
+		}
+		i += n1
 	}
 	if len(m.ClientId) > 0 {
-		i -= len(m.ClientId)
-		copy(dAtA[i:], m.ClientId)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.ClientId)))
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.ClientId)))
+		i += copy(dAtA[i:], m.ClientId)
 	}
-	if m.Timestamp != nil {
-		{
-			size, err := m.Timestamp.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommon(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
+	if len(m.MessageId) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.MessageId)))
+		i += copy(dAtA[i:], m.MessageId)
 	}
-	return len(dAtA) - i, nil
+	if len(m.CloudAccountId) > 0 {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.CloudAccountId)))
+		i += copy(dAtA[i:], m.CloudAccountId)
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *DirectoryMap) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -993,40 +982,32 @@ func (m *DirectoryMap) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *DirectoryMap) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DirectoryMap) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if len(m.Directories) > 0 {
-		for iNdEx := len(m.Directories) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Directories[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintCommon(dAtA, i, uint64(size))
-			}
-			i--
+		for _, msg := range m.Directories {
 			dAtA[i] = 0xa
+			i++
+			i = encodeVarintCommon(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
 		}
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *File) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1034,74 +1015,63 @@ func (m *File) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *File) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *File) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Action != 0 {
-		i = encodeVarintCommon(dAtA, i, uint64(m.Action))
-		i--
-		dAtA[i] = 0x38
-	}
-	if len(m.Contents) > 0 {
-		i -= len(m.Contents)
-		copy(dAtA[i:], m.Contents)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.Contents)))
-		i--
-		dAtA[i] = 0x32
-	}
-	if m.Size_ != 0 {
-		i = encodeVarintCommon(dAtA, i, uint64(m.Size_))
-		i--
-		dAtA[i] = 0x28
-	}
-	if len(m.Permissions) > 0 {
-		i -= len(m.Permissions)
-		copy(dAtA[i:], m.Permissions)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.Permissions)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if m.Mtime != nil {
-		{
-			size, err := m.Mtime.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommon(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x1a
+	if len(m.Name) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.Name)))
+		i += copy(dAtA[i:], m.Name)
 	}
 	if m.Lines != 0 {
-		i = encodeVarintCommon(dAtA, i, uint64(m.Lines))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Lines))
 	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
+	if m.Mtime != nil {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Mtime.Size()))
+		n2, err2 := m.Mtime.MarshalTo(dAtA[i:])
+		if err2 != nil {
+			return 0, err2
+		}
+		i += n2
 	}
-	return len(dAtA) - i, nil
+	if len(m.Permissions) > 0 {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.Permissions)))
+		i += copy(dAtA[i:], m.Permissions)
+	}
+	if m.Size_ != 0 {
+		dAtA[i] = 0x28
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Size_))
+	}
+	if len(m.Contents) > 0 {
+		dAtA[i] = 0x32
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.Contents)))
+		i += copy(dAtA[i:], m.Contents)
+	}
+	if m.Action != 0 {
+		dAtA[i] = 0x38
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Action))
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *Directory) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1109,71 +1079,59 @@ func (m *Directory) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *Directory) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Directory) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Files) > 0 {
-		for iNdEx := len(m.Files) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Files[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintCommon(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if m.Size_ != 0 {
-		i = encodeVarintCommon(dAtA, i, uint64(m.Size_))
-		i--
-		dAtA[i] = 0x20
-	}
-	if len(m.Permissions) > 0 {
-		i -= len(m.Permissions)
-		copy(dAtA[i:], m.Permissions)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.Permissions)))
-		i--
-		dAtA[i] = 0x1a
+	if len(m.Name) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.Name)))
+		i += copy(dAtA[i:], m.Name)
 	}
 	if m.Mtime != nil {
-		{
-			size, err := m.Mtime.MarshalToSizedBuffer(dAtA[:i])
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Mtime.Size()))
+		n3, err3 := m.Mtime.MarshalTo(dAtA[i:])
+		if err3 != nil {
+			return 0, err3
+		}
+		i += n3
+	}
+	if len(m.Permissions) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.Permissions)))
+		i += copy(dAtA[i:], m.Permissions)
+	}
+	if m.Size_ != 0 {
+		dAtA[i] = 0x20
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Size_))
+	}
+	if len(m.Files) > 0 {
+		for _, msg := range m.Files {
+			dAtA[i] = 0x2a
+			i++
+			i = encodeVarintCommon(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
 			if err != nil {
 				return 0, err
 			}
-			i -= size
-			i = encodeVarintCommon(dAtA, i, uint64(size))
+			i += n
 		}
-		i--
-		dAtA[i] = 0x12
 	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 
 func (m *SslCertificates) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1181,40 +1139,32 @@ func (m *SslCertificates) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *SslCertificates) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SslCertificates) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if len(m.SslCerts) > 0 {
-		for iNdEx := len(m.SslCerts) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.SslCerts[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintCommon(dAtA, i, uint64(size))
-			}
-			i--
+		for _, msg := range m.SslCerts {
 			dAtA[i] = 0xa
+			i++
+			i = encodeVarintCommon(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
 		}
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *SslCertificate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1222,160 +1172,150 @@ func (m *SslCertificate) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *SslCertificate) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SslCertificate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.AuthorityKeyIdentifier) > 0 {
-		i -= len(m.AuthorityKeyIdentifier)
-		copy(dAtA[i:], m.AuthorityKeyIdentifier)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.AuthorityKeyIdentifier)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x82
-	}
-	if m.Version != 0 {
-		i = encodeVarintCommon(dAtA, i, uint64(m.Version))
-		i--
-		dAtA[i] = 0x78
-	}
-	if len(m.FingerprintAlgorithm) > 0 {
-		i -= len(m.FingerprintAlgorithm)
-		copy(dAtA[i:], m.FingerprintAlgorithm)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.FingerprintAlgorithm)))
-		i--
-		dAtA[i] = 0x72
-	}
-	if len(m.Fingerprint) > 0 {
-		i -= len(m.Fingerprint)
-		copy(dAtA[i:], m.Fingerprint)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.Fingerprint)))
-		i--
-		dAtA[i] = 0x6a
-	}
-	if len(m.SubjectKeyIdentifier) > 0 {
-		i -= len(m.SubjectKeyIdentifier)
-		copy(dAtA[i:], m.SubjectKeyIdentifier)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.SubjectKeyIdentifier)))
-		i--
-		dAtA[i] = 0x62
-	}
-	if len(m.SerialNumber) > 0 {
-		i -= len(m.SerialNumber)
-		copy(dAtA[i:], m.SerialNumber)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.SerialNumber)))
-		i--
-		dAtA[i] = 0x5a
-	}
-	if len(m.SignatureAlgorithm) > 0 {
-		i -= len(m.SignatureAlgorithm)
-		copy(dAtA[i:], m.SignatureAlgorithm)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.SignatureAlgorithm)))
-		i--
-		dAtA[i] = 0x52
-	}
-	if len(m.PublicKeyAlgorithm) > 0 {
-		i -= len(m.PublicKeyAlgorithm)
-		copy(dAtA[i:], m.PublicKeyAlgorithm)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.PublicKeyAlgorithm)))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.OcspUrl) > 0 {
-		for iNdEx := len(m.OcspUrl) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.OcspUrl[iNdEx])
-			copy(dAtA[i:], m.OcspUrl[iNdEx])
-			i = encodeVarintCommon(dAtA, i, uint64(len(m.OcspUrl[iNdEx])))
-			i--
-			dAtA[i] = 0x42
-		}
-	}
-	if len(m.SubjAltNames) > 0 {
-		for iNdEx := len(m.SubjAltNames) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.SubjAltNames[iNdEx])
-			copy(dAtA[i:], m.SubjAltNames[iNdEx])
-			i = encodeVarintCommon(dAtA, i, uint64(len(m.SubjAltNames[iNdEx])))
-			i--
-			dAtA[i] = 0x3a
-		}
-	}
-	if m.Subject != nil {
-		{
-			size, err := m.Subject.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommon(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x32
-	}
-	if m.Issuer != nil {
-		{
-			size, err := m.Issuer.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommon(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x2a
-	}
-	if m.Validity != nil {
-		{
-			size, err := m.Validity.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommon(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x22
-	}
-	if m.Mtime != nil {
-		{
-			size, err := m.Mtime.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommon(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x1a
+	if len(m.FileName) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.FileName)))
+		i += copy(dAtA[i:], m.FileName)
 	}
 	if m.Size_ != 0 {
-		i = encodeVarintCommon(dAtA, i, uint64(m.Size_))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Size_))
 	}
-	if len(m.FileName) > 0 {
-		i -= len(m.FileName)
-		copy(dAtA[i:], m.FileName)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.FileName)))
-		i--
-		dAtA[i] = 0xa
+	if m.Mtime != nil {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Mtime.Size()))
+		n4, err4 := m.Mtime.MarshalTo(dAtA[i:])
+		if err4 != nil {
+			return 0, err4
+		}
+		i += n4
 	}
-	return len(dAtA) - i, nil
+	if m.Validity != nil {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Validity.Size()))
+		n5, err5 := m.Validity.MarshalTo(dAtA[i:])
+		if err5 != nil {
+			return 0, err5
+		}
+		i += n5
+	}
+	if m.Issuer != nil {
+		dAtA[i] = 0x2a
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Issuer.Size()))
+		n6, err6 := m.Issuer.MarshalTo(dAtA[i:])
+		if err6 != nil {
+			return 0, err6
+		}
+		i += n6
+	}
+	if m.Subject != nil {
+		dAtA[i] = 0x32
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Subject.Size()))
+		n7, err7 := m.Subject.MarshalTo(dAtA[i:])
+		if err7 != nil {
+			return 0, err7
+		}
+		i += n7
+	}
+	if len(m.SubjAltNames) > 0 {
+		for _, s := range m.SubjAltNames {
+			dAtA[i] = 0x3a
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
+	}
+	if len(m.OcspUrl) > 0 {
+		for _, s := range m.OcspUrl {
+			dAtA[i] = 0x42
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
+	}
+	if len(m.PublicKeyAlgorithm) > 0 {
+		dAtA[i] = 0x4a
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.PublicKeyAlgorithm)))
+		i += copy(dAtA[i:], m.PublicKeyAlgorithm)
+	}
+	if len(m.SignatureAlgorithm) > 0 {
+		dAtA[i] = 0x52
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.SignatureAlgorithm)))
+		i += copy(dAtA[i:], m.SignatureAlgorithm)
+	}
+	if len(m.SerialNumber) > 0 {
+		dAtA[i] = 0x5a
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.SerialNumber)))
+		i += copy(dAtA[i:], m.SerialNumber)
+	}
+	if len(m.SubjectKeyIdentifier) > 0 {
+		dAtA[i] = 0x62
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.SubjectKeyIdentifier)))
+		i += copy(dAtA[i:], m.SubjectKeyIdentifier)
+	}
+	if len(m.Fingerprint) > 0 {
+		dAtA[i] = 0x6a
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.Fingerprint)))
+		i += copy(dAtA[i:], m.Fingerprint)
+	}
+	if len(m.FingerprintAlgorithm) > 0 {
+		dAtA[i] = 0x72
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.FingerprintAlgorithm)))
+		i += copy(dAtA[i:], m.FingerprintAlgorithm)
+	}
+	if m.Version != 0 {
+		dAtA[i] = 0x78
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.Version))
+	}
+	if len(m.AuthorityKeyIdentifier) > 0 {
+		dAtA[i] = 0x82
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.AuthorityKeyIdentifier)))
+		i += copy(dAtA[i:], m.AuthorityKeyIdentifier)
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *CertificateDates) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1383,36 +1323,30 @@ func (m *CertificateDates) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *CertificateDates) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CertificateDates) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if m.NotBefore != 0 {
+		dAtA[i] = 0x8
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.NotBefore))
 	}
 	if m.NotAfter != 0 {
-		i = encodeVarintCommon(dAtA, i, uint64(m.NotAfter))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(m.NotAfter))
 	}
-	if m.NotBefore != 0 {
-		i = encodeVarintCommon(dAtA, i, uint64(m.NotBefore))
-		i--
-		dAtA[i] = 0x8
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 
 func (m *CertificateName) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1420,78 +1354,101 @@ func (m *CertificateName) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *CertificateName) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CertificateName) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.CommonName) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.CommonName)))
+		i += copy(dAtA[i:], m.CommonName)
 	}
-	if len(m.OrganizationalUnit) > 0 {
-		for iNdEx := len(m.OrganizationalUnit) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.OrganizationalUnit[iNdEx])
-			copy(dAtA[i:], m.OrganizationalUnit[iNdEx])
-			i = encodeVarintCommon(dAtA, i, uint64(len(m.OrganizationalUnit[iNdEx])))
-			i--
-			dAtA[i] = 0x32
-		}
-	}
-	if len(m.Organization) > 0 {
-		for iNdEx := len(m.Organization) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Organization[iNdEx])
-			copy(dAtA[i:], m.Organization[iNdEx])
-			i = encodeVarintCommon(dAtA, i, uint64(len(m.Organization[iNdEx])))
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if len(m.Locality) > 0 {
-		for iNdEx := len(m.Locality) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Locality[iNdEx])
-			copy(dAtA[i:], m.Locality[iNdEx])
-			i = encodeVarintCommon(dAtA, i, uint64(len(m.Locality[iNdEx])))
-			i--
-			dAtA[i] = 0x22
+	if len(m.Country) > 0 {
+		for _, s := range m.Country {
+			dAtA[i] = 0x12
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
 		}
 	}
 	if len(m.State) > 0 {
-		for iNdEx := len(m.State) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.State[iNdEx])
-			copy(dAtA[i:], m.State[iNdEx])
-			i = encodeVarintCommon(dAtA, i, uint64(len(m.State[iNdEx])))
-			i--
+		for _, s := range m.State {
 			dAtA[i] = 0x1a
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
 		}
 	}
-	if len(m.Country) > 0 {
-		for iNdEx := len(m.Country) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Country[iNdEx])
-			copy(dAtA[i:], m.Country[iNdEx])
-			i = encodeVarintCommon(dAtA, i, uint64(len(m.Country[iNdEx])))
-			i--
-			dAtA[i] = 0x12
+	if len(m.Locality) > 0 {
+		for _, s := range m.Locality {
+			dAtA[i] = 0x22
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
 		}
 	}
-	if len(m.CommonName) > 0 {
-		i -= len(m.CommonName)
-		copy(dAtA[i:], m.CommonName)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.CommonName)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.Organization) > 0 {
+		for _, s := range m.Organization {
+			dAtA[i] = 0x2a
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
 	}
-	return len(dAtA) - i, nil
+	if len(m.OrganizationalUnit) > 0 {
+		for _, s := range m.OrganizationalUnit {
+			dAtA[i] = 0x32
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *ZippedFile) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1499,53 +1456,42 @@ func (m *ZippedFile) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *ZippedFile) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ZippedFile) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.RootDirectory) > 0 {
-		i -= len(m.RootDirectory)
-		copy(dAtA[i:], m.RootDirectory)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.RootDirectory)))
-		i--
-		dAtA[i] = 0x1a
+	if len(m.Contents) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.Contents)))
+		i += copy(dAtA[i:], m.Contents)
 	}
 	if len(m.Checksum) > 0 {
-		i -= len(m.Checksum)
-		copy(dAtA[i:], m.Checksum)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.Checksum)))
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.Checksum)))
+		i += copy(dAtA[i:], m.Checksum)
 	}
-	if len(m.Contents) > 0 {
-		i -= len(m.Contents)
-		copy(dAtA[i:], m.Contents)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.Contents)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.RootDirectory) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.RootDirectory)))
+		i += copy(dAtA[i:], m.RootDirectory)
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func encodeVarintCommon(dAtA []byte, offset int, v uint64) int {
-	offset -= sovCommon(v)
-	base := offset
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
 	dAtA[offset] = uint8(v)
-	return base
+	return offset + 1
 }
 func (m *Metadata) Size() (n int) {
 	if m == nil {
@@ -2020,7 +1966,10 @@ func (m *Metadata) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommon
 			}
 			if (iNdEx + skippy) > l {
@@ -2105,7 +2054,10 @@ func (m *DirectoryMap) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommon
 			}
 			if (iNdEx + skippy) > l {
@@ -2347,7 +2299,10 @@ func (m *File) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommon
 			}
 			if (iNdEx + skippy) > l {
@@ -2551,7 +2506,10 @@ func (m *Directory) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommon
 			}
 			if (iNdEx + skippy) > l {
@@ -2636,7 +2594,10 @@ func (m *SslCertificates) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommon
 			}
 			if (iNdEx + skippy) > l {
@@ -3189,7 +3150,10 @@ func (m *SslCertificate) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommon
 			}
 			if (iNdEx + skippy) > l {
@@ -3278,7 +3242,10 @@ func (m *CertificateDates) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommon
 			}
 			if (iNdEx + skippy) > l {
@@ -3521,7 +3488,10 @@ func (m *CertificateName) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommon
 			}
 			if (iNdEx + skippy) > l {
@@ -3670,7 +3640,10 @@ func (m *ZippedFile) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommon
 			}
 			if (iNdEx + skippy) > l {
@@ -3689,7 +3662,6 @@ func (m *ZippedFile) Unmarshal(dAtA []byte) error {
 func skipCommon(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
-	depth := 0
 	for iNdEx < l {
 		var wire uint64
 		for shift := uint(0); ; shift += 7 {
@@ -3721,8 +3693,10 @@ func skipCommon(dAtA []byte) (n int, err error) {
 					break
 				}
 			}
+			return iNdEx, nil
 		case 1:
 			iNdEx += 8
+			return iNdEx, nil
 		case 2:
 			var length int
 			for shift := uint(0); ; shift += 7 {
@@ -3743,30 +3717,55 @@ func skipCommon(dAtA []byte) (n int, err error) {
 				return 0, ErrInvalidLengthCommon
 			}
 			iNdEx += length
-		case 3:
-			depth++
-		case 4:
-			if depth == 0 {
-				return 0, ErrUnexpectedEndOfGroupCommon
+			if iNdEx < 0 {
+				return 0, ErrInvalidLengthCommon
 			}
-			depth--
+			return iNdEx, nil
+		case 3:
+			for {
+				var innerWire uint64
+				var start int = iNdEx
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return 0, ErrIntOverflowCommon
+					}
+					if iNdEx >= l {
+						return 0, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					innerWire |= (uint64(b) & 0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				innerWireType := int(innerWire & 0x7)
+				if innerWireType == 4 {
+					break
+				}
+				next, err := skipCommon(dAtA[start:])
+				if err != nil {
+					return 0, err
+				}
+				iNdEx = start + next
+				if iNdEx < 0 {
+					return 0, ErrInvalidLengthCommon
+				}
+			}
+			return iNdEx, nil
+		case 4:
+			return iNdEx, nil
 		case 5:
 			iNdEx += 4
+			return iNdEx, nil
 		default:
 			return 0, fmt.Errorf("proto: illegal wireType %d", wireType)
 		}
-		if iNdEx < 0 {
-			return 0, ErrInvalidLengthCommon
-		}
-		if depth == 0 {
-			return iNdEx, nil
-		}
 	}
-	return 0, io.ErrUnexpectedEOF
+	panic("unreachable")
 }
 
 var (
-	ErrInvalidLengthCommon        = fmt.Errorf("proto: negative length found during unmarshaling")
-	ErrIntOverflowCommon          = fmt.Errorf("proto: integer overflow")
-	ErrUnexpectedEndOfGroupCommon = fmt.Errorf("proto: unexpected end of group")
+	ErrInvalidLengthCommon = fmt.Errorf("proto: negative length found during unmarshaling")
+	ErrIntOverflowCommon   = fmt.Errorf("proto: integer overflow")
 )

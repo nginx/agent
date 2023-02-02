@@ -21,7 +21,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
+const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
 // Represents dataplane software details which contains details for additional software running on the dataplane that pertains to NGINX Agent
 type DataplaneSoftwareDetails struct {
@@ -48,7 +48,7 @@ func (m *DataplaneSoftwareDetails) XXX_Marshal(b []byte, deterministic bool) ([]
 		return xxx_messageInfo_DataplaneSoftwareDetails.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -74,10 +74,10 @@ type isDataplaneSoftwareDetails_Data interface {
 }
 
 type DataplaneSoftwareDetails_AppProtectWafDetails struct {
-	AppProtectWafDetails *AppProtectWAFDetails `protobuf:"bytes,1,opt,name=app_protect_waf_details,json=appProtectWafDetails,proto3,oneof" json:"app_protect_waf_details"`
+	AppProtectWafDetails *AppProtectWAFDetails `protobuf:"bytes,1,opt,name=app_protect_waf_details,json=appProtectWafDetails,proto3,oneof"`
 }
 type DataplaneSoftwareDetails_NginxDetails struct {
-	NginxDetails *NginxDetails `protobuf:"bytes,2,opt,name=nginx_details,json=nginxDetails,proto3,oneof" json:"nginx_details"`
+	NginxDetails *NginxDetails `protobuf:"bytes,2,opt,name=nginx_details,json=nginxDetails,proto3,oneof"`
 }
 
 func (*DataplaneSoftwareDetails_AppProtectWafDetails) isDataplaneSoftwareDetails_Data() {}
@@ -104,12 +104,78 @@ func (m *DataplaneSoftwareDetails) GetNginxDetails() *NginxDetails {
 	return nil
 }
 
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*DataplaneSoftwareDetails) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*DataplaneSoftwareDetails) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _DataplaneSoftwareDetails_OneofMarshaler, _DataplaneSoftwareDetails_OneofUnmarshaler, _DataplaneSoftwareDetails_OneofSizer, []interface{}{
 		(*DataplaneSoftwareDetails_AppProtectWafDetails)(nil),
 		(*DataplaneSoftwareDetails_NginxDetails)(nil),
 	}
+}
+
+func _DataplaneSoftwareDetails_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*DataplaneSoftwareDetails)
+	// data
+	switch x := m.Data.(type) {
+	case *DataplaneSoftwareDetails_AppProtectWafDetails:
+		_ = b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.AppProtectWafDetails); err != nil {
+			return err
+		}
+	case *DataplaneSoftwareDetails_NginxDetails:
+		_ = b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.NginxDetails); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("DataplaneSoftwareDetails.Data has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _DataplaneSoftwareDetails_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*DataplaneSoftwareDetails)
+	switch tag {
+	case 1: // data.app_protect_waf_details
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(AppProtectWAFDetails)
+		err := b.DecodeMessage(msg)
+		m.Data = &DataplaneSoftwareDetails_AppProtectWafDetails{msg}
+		return true, err
+	case 2: // data.nginx_details
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(NginxDetails)
+		err := b.DecodeMessage(msg)
+		m.Data = &DataplaneSoftwareDetails_NginxDetails{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _DataplaneSoftwareDetails_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*DataplaneSoftwareDetails)
+	// data
+	switch x := m.Data.(type) {
+	case *DataplaneSoftwareDetails_AppProtectWafDetails:
+		s := proto.Size(x.AppProtectWafDetails)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *DataplaneSoftwareDetails_NginxDetails:
+		s := proto.Size(x.NginxDetails)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 func init() {
@@ -142,7 +208,7 @@ var fileDescriptor_c38a59b96dc90da7 = []byte{
 func (m *DataplaneSoftwareDetails) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -150,83 +216,59 @@ func (m *DataplaneSoftwareDetails) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *DataplaneSoftwareDetails) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataplaneSoftwareDetails) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if m.Data != nil {
-		{
-			size := m.Data.Size()
-			i -= size
-			if _, err := m.Data.MarshalTo(dAtA[i:]); err != nil {
-				return 0, err
-			}
+		nn1, err1 := m.Data.MarshalTo(dAtA[i:])
+		if err1 != nil {
+			return 0, err1
 		}
+		i += nn1
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *DataplaneSoftwareDetails_AppProtectWafDetails) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataplaneSoftwareDetails_AppProtectWafDetails) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.AppProtectWafDetails != nil {
-		{
-			size, err := m.AppProtectWafDetails.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintDpSoftwareDetails(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0xa
+		i++
+		i = encodeVarintDpSoftwareDetails(dAtA, i, uint64(m.AppProtectWafDetails.Size()))
+		n2, err2 := m.AppProtectWafDetails.MarshalTo(dAtA[i:])
+		if err2 != nil {
+			return 0, err2
+		}
+		i += n2
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *DataplaneSoftwareDetails_NginxDetails) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataplaneSoftwareDetails_NginxDetails) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.NginxDetails != nil {
-		{
-			size, err := m.NginxDetails.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintDpSoftwareDetails(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintDpSoftwareDetails(dAtA, i, uint64(m.NginxDetails.Size()))
+		n3, err3 := m.NginxDetails.MarshalTo(dAtA[i:])
+		if err3 != nil {
+			return 0, err3
+		}
+		i += n3
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func encodeVarintDpSoftwareDetails(dAtA []byte, offset int, v uint64) int {
-	offset -= sovDpSoftwareDetails(v)
-	base := offset
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
 	dAtA[offset] = uint8(v)
-	return base
+	return offset + 1
 }
 func (m *DataplaneSoftwareDetails) Size() (n int) {
 	if m == nil {
@@ -379,7 +421,10 @@ func (m *DataplaneSoftwareDetails) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthDpSoftwareDetails
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthDpSoftwareDetails
 			}
 			if (iNdEx + skippy) > l {
@@ -398,7 +443,6 @@ func (m *DataplaneSoftwareDetails) Unmarshal(dAtA []byte) error {
 func skipDpSoftwareDetails(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
-	depth := 0
 	for iNdEx < l {
 		var wire uint64
 		for shift := uint(0); ; shift += 7 {
@@ -430,8 +474,10 @@ func skipDpSoftwareDetails(dAtA []byte) (n int, err error) {
 					break
 				}
 			}
+			return iNdEx, nil
 		case 1:
 			iNdEx += 8
+			return iNdEx, nil
 		case 2:
 			var length int
 			for shift := uint(0); ; shift += 7 {
@@ -452,30 +498,55 @@ func skipDpSoftwareDetails(dAtA []byte) (n int, err error) {
 				return 0, ErrInvalidLengthDpSoftwareDetails
 			}
 			iNdEx += length
-		case 3:
-			depth++
-		case 4:
-			if depth == 0 {
-				return 0, ErrUnexpectedEndOfGroupDpSoftwareDetails
+			if iNdEx < 0 {
+				return 0, ErrInvalidLengthDpSoftwareDetails
 			}
-			depth--
+			return iNdEx, nil
+		case 3:
+			for {
+				var innerWire uint64
+				var start int = iNdEx
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return 0, ErrIntOverflowDpSoftwareDetails
+					}
+					if iNdEx >= l {
+						return 0, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					innerWire |= (uint64(b) & 0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				innerWireType := int(innerWire & 0x7)
+				if innerWireType == 4 {
+					break
+				}
+				next, err := skipDpSoftwareDetails(dAtA[start:])
+				if err != nil {
+					return 0, err
+				}
+				iNdEx = start + next
+				if iNdEx < 0 {
+					return 0, ErrInvalidLengthDpSoftwareDetails
+				}
+			}
+			return iNdEx, nil
+		case 4:
+			return iNdEx, nil
 		case 5:
 			iNdEx += 4
+			return iNdEx, nil
 		default:
 			return 0, fmt.Errorf("proto: illegal wireType %d", wireType)
 		}
-		if iNdEx < 0 {
-			return 0, ErrInvalidLengthDpSoftwareDetails
-		}
-		if depth == 0 {
-			return iNdEx, nil
-		}
 	}
-	return 0, io.ErrUnexpectedEOF
+	panic("unreachable")
 }
 
 var (
-	ErrInvalidLengthDpSoftwareDetails        = fmt.Errorf("proto: negative length found during unmarshaling")
-	ErrIntOverflowDpSoftwareDetails          = fmt.Errorf("proto: integer overflow")
-	ErrUnexpectedEndOfGroupDpSoftwareDetails = fmt.Errorf("proto: unexpected end of group")
+	ErrInvalidLengthDpSoftwareDetails = fmt.Errorf("proto: negative length found during unmarshaling")
+	ErrIntOverflowDpSoftwareDetails   = fmt.Errorf("proto: integer overflow")
 )

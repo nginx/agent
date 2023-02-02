@@ -22,7 +22,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
+const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
 // Command type enum
 type Command_CommandType int32
@@ -221,7 +221,7 @@ func (m *Command) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_Command.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -247,37 +247,37 @@ type isCommand_Data interface {
 }
 
 type Command_CmdStatus struct {
-	CmdStatus *CommandStatusResponse `protobuf:"bytes,3,opt,name=cmd_status,json=cmdStatus,proto3,oneof" json:"cmd_status"`
+	CmdStatus *CommandStatusResponse `protobuf:"bytes,3,opt,name=cmd_status,json=cmdStatus,proto3,oneof"`
 }
 type Command_NginxConfig struct {
-	NginxConfig *NginxConfig `protobuf:"bytes,4,opt,name=nginx_config,json=nginxConfig,proto3,oneof" json:"nginx_config"`
+	NginxConfig *NginxConfig `protobuf:"bytes,4,opt,name=nginx_config,json=nginxConfig,proto3,oneof"`
 }
 type Command_NginxConfigResponse struct {
-	NginxConfigResponse *NginxConfigResponse `protobuf:"bytes,5,opt,name=nginx_config_response,json=nginxConfigResponse,proto3,oneof" json:"nginx_config_response"`
+	NginxConfigResponse *NginxConfigResponse `protobuf:"bytes,5,opt,name=nginx_config_response,json=nginxConfigResponse,proto3,oneof"`
 }
 type Command_AgentConnectRequest struct {
-	AgentConnectRequest *AgentConnectRequest `protobuf:"bytes,6,opt,name=agent_connect_request,json=agentConnectRequest,proto3,oneof" json:"agent_connect_request"`
+	AgentConnectRequest *AgentConnectRequest `protobuf:"bytes,6,opt,name=agent_connect_request,json=agentConnectRequest,proto3,oneof"`
 }
 type Command_AgentConnectResponse struct {
-	AgentConnectResponse *AgentConnectResponse `protobuf:"bytes,7,opt,name=agent_connect_response,json=agentConnectResponse,proto3,oneof" json:"agent_connect_response"`
+	AgentConnectResponse *AgentConnectResponse `protobuf:"bytes,7,opt,name=agent_connect_response,json=agentConnectResponse,proto3,oneof"`
 }
 type Command_AgentConfigRequest struct {
-	AgentConfigRequest *AgentConfigRequest `protobuf:"bytes,8,opt,name=agent_config_request,json=agentConfigRequest,proto3,oneof" json:"agent_config_request"`
+	AgentConfigRequest *AgentConfigRequest `protobuf:"bytes,8,opt,name=agent_config_request,json=agentConfigRequest,proto3,oneof"`
 }
 type Command_AgentConfig struct {
-	AgentConfig *AgentConfig `protobuf:"bytes,9,opt,name=agent_config,json=agentConfig,proto3,oneof" json:"agent_config"`
+	AgentConfig *AgentConfig `protobuf:"bytes,9,opt,name=agent_config,json=agentConfig,proto3,oneof"`
 }
 type Command_DataplaneStatus struct {
-	DataplaneStatus *DataplaneStatus `protobuf:"bytes,11,opt,name=dataplane_status,json=dataplaneStatus,proto3,oneof" json:"dataplane_status"`
+	DataplaneStatus *DataplaneStatus `protobuf:"bytes,11,opt,name=dataplane_status,json=dataplaneStatus,proto3,oneof"`
 }
 type Command_EventReport struct {
-	EventReport *events.EventReport `protobuf:"bytes,12,opt,name=event_report,json=eventReport,proto3,oneof" json:"event_report"`
+	EventReport *events.EventReport `protobuf:"bytes,12,opt,name=event_report,json=eventReport,proto3,oneof"`
 }
 type Command_DataplaneSoftwareDetails struct {
-	DataplaneSoftwareDetails *DataplaneSoftwareDetails `protobuf:"bytes,13,opt,name=dataplane_software_details,json=dataplaneSoftwareDetails,proto3,oneof" json:"dataplane_software_details"`
+	DataplaneSoftwareDetails *DataplaneSoftwareDetails `protobuf:"bytes,13,opt,name=dataplane_software_details,json=dataplaneSoftwareDetails,proto3,oneof"`
 }
 type Command_DataplaneUpdate struct {
-	DataplaneUpdate *DataplaneUpdate `protobuf:"bytes,14,opt,name=dataplane_update,json=dataplaneUpdate,proto3,oneof" json:"dataplane_update"`
+	DataplaneUpdate *DataplaneUpdate `protobuf:"bytes,14,opt,name=dataplane_update,json=dataplaneUpdate,proto3,oneof"`
 }
 
 func (*Command_CmdStatus) isCommand_Data()                {}
@@ -390,9 +390,9 @@ func (m *Command) GetDataplaneUpdate() *DataplaneUpdate {
 	return nil
 }
 
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*Command) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Command) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Command_OneofMarshaler, _Command_OneofUnmarshaler, _Command_OneofSizer, []interface{}{
 		(*Command_CmdStatus)(nil),
 		(*Command_NginxConfig)(nil),
 		(*Command_NginxConfigResponse)(nil),
@@ -405,6 +405,234 @@ func (*Command) XXX_OneofWrappers() []interface{} {
 		(*Command_DataplaneSoftwareDetails)(nil),
 		(*Command_DataplaneUpdate)(nil),
 	}
+}
+
+func _Command_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Command)
+	// data
+	switch x := m.Data.(type) {
+	case *Command_CmdStatus:
+		_ = b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.CmdStatus); err != nil {
+			return err
+		}
+	case *Command_NginxConfig:
+		_ = b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.NginxConfig); err != nil {
+			return err
+		}
+	case *Command_NginxConfigResponse:
+		_ = b.EncodeVarint(5<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.NginxConfigResponse); err != nil {
+			return err
+		}
+	case *Command_AgentConnectRequest:
+		_ = b.EncodeVarint(6<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.AgentConnectRequest); err != nil {
+			return err
+		}
+	case *Command_AgentConnectResponse:
+		_ = b.EncodeVarint(7<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.AgentConnectResponse); err != nil {
+			return err
+		}
+	case *Command_AgentConfigRequest:
+		_ = b.EncodeVarint(8<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.AgentConfigRequest); err != nil {
+			return err
+		}
+	case *Command_AgentConfig:
+		_ = b.EncodeVarint(9<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.AgentConfig); err != nil {
+			return err
+		}
+	case *Command_DataplaneStatus:
+		_ = b.EncodeVarint(11<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.DataplaneStatus); err != nil {
+			return err
+		}
+	case *Command_EventReport:
+		_ = b.EncodeVarint(12<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.EventReport); err != nil {
+			return err
+		}
+	case *Command_DataplaneSoftwareDetails:
+		_ = b.EncodeVarint(13<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.DataplaneSoftwareDetails); err != nil {
+			return err
+		}
+	case *Command_DataplaneUpdate:
+		_ = b.EncodeVarint(14<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.DataplaneUpdate); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Command.Data has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Command_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Command)
+	switch tag {
+	case 3: // data.cmd_status
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(CommandStatusResponse)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_CmdStatus{msg}
+		return true, err
+	case 4: // data.nginx_config
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(NginxConfig)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_NginxConfig{msg}
+		return true, err
+	case 5: // data.nginx_config_response
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(NginxConfigResponse)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_NginxConfigResponse{msg}
+		return true, err
+	case 6: // data.agent_connect_request
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(AgentConnectRequest)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_AgentConnectRequest{msg}
+		return true, err
+	case 7: // data.agent_connect_response
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(AgentConnectResponse)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_AgentConnectResponse{msg}
+		return true, err
+	case 8: // data.agent_config_request
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(AgentConfigRequest)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_AgentConfigRequest{msg}
+		return true, err
+	case 9: // data.agent_config
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(AgentConfig)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_AgentConfig{msg}
+		return true, err
+	case 11: // data.dataplane_status
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(DataplaneStatus)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_DataplaneStatus{msg}
+		return true, err
+	case 12: // data.event_report
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(events.EventReport)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_EventReport{msg}
+		return true, err
+	case 13: // data.dataplane_software_details
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(DataplaneSoftwareDetails)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_DataplaneSoftwareDetails{msg}
+		return true, err
+	case 14: // data.dataplane_update
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(DataplaneUpdate)
+		err := b.DecodeMessage(msg)
+		m.Data = &Command_DataplaneUpdate{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Command_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Command)
+	// data
+	switch x := m.Data.(type) {
+	case *Command_CmdStatus:
+		s := proto.Size(x.CmdStatus)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Command_NginxConfig:
+		s := proto.Size(x.NginxConfig)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Command_NginxConfigResponse:
+		s := proto.Size(x.NginxConfigResponse)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Command_AgentConnectRequest:
+		s := proto.Size(x.AgentConnectRequest)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Command_AgentConnectResponse:
+		s := proto.Size(x.AgentConnectResponse)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Command_AgentConfigRequest:
+		s := proto.Size(x.AgentConfigRequest)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Command_AgentConfig:
+		s := proto.Size(x.AgentConfig)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Command_DataplaneStatus:
+		s := proto.Size(x.DataplaneStatus)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Command_EventReport:
+		s := proto.Size(x.EventReport)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Command_DataplaneSoftwareDetails:
+		s := proto.Size(x.DataplaneSoftwareDetails)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Command_DataplaneUpdate:
+		s := proto.Size(x.DataplaneUpdate)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 // Represents a command status response
@@ -436,7 +664,7 @@ func (m *CommandStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return xxx_messageInfo_CommandStatusResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -518,7 +746,7 @@ func (m *DataplaneStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return xxx_messageInfo_DataplaneStatus.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -610,7 +838,7 @@ func (m *AgentActivityStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return xxx_messageInfo_AgentActivityStatus.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -636,7 +864,7 @@ type isAgentActivityStatus_Status interface {
 }
 
 type AgentActivityStatus_NginxConfigStatus struct {
-	NginxConfigStatus *NginxConfigStatus `protobuf:"bytes,1,opt,name=nginx_config_status,json=nginxConfigStatus,proto3,oneof" json:"nginx_config_status"`
+	NginxConfigStatus *NginxConfigStatus `protobuf:"bytes,1,opt,name=nginx_config_status,json=nginxConfigStatus,proto3,oneof"`
 }
 
 func (*AgentActivityStatus_NginxConfigStatus) isAgentActivityStatus_Status() {}
@@ -655,11 +883,59 @@ func (m *AgentActivityStatus) GetNginxConfigStatus() *NginxConfigStatus {
 	return nil
 }
 
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*AgentActivityStatus) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*AgentActivityStatus) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _AgentActivityStatus_OneofMarshaler, _AgentActivityStatus_OneofUnmarshaler, _AgentActivityStatus_OneofSizer, []interface{}{
 		(*AgentActivityStatus_NginxConfigStatus)(nil),
 	}
+}
+
+func _AgentActivityStatus_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*AgentActivityStatus)
+	// Status
+	switch x := m.Status.(type) {
+	case *AgentActivityStatus_NginxConfigStatus:
+		_ = b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.NginxConfigStatus); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("AgentActivityStatus.Status has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _AgentActivityStatus_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*AgentActivityStatus)
+	switch tag {
+	case 1: // Status.nginx_config_status
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(NginxConfigStatus)
+		err := b.DecodeMessage(msg)
+		m.Status = &AgentActivityStatus_NginxConfigStatus{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _AgentActivityStatus_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*AgentActivityStatus)
+	// Status
+	switch x := m.Status.(type) {
+	case *AgentActivityStatus_NginxConfigStatus:
+		s := proto.Size(x.NginxConfigStatus)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 // Represents a NGINX configuration status
@@ -691,7 +967,7 @@ func (m *NginxConfigStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return xxx_messageInfo_NginxConfigStatus.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -763,7 +1039,7 @@ func (m *DataplaneSoftwareHealth) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return xxx_messageInfo_DataplaneSoftwareHealth.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -789,10 +1065,10 @@ type isDataplaneSoftwareHealth_Health interface {
 }
 
 type DataplaneSoftwareHealth_NginxHealth struct {
-	NginxHealth *NginxHealth `protobuf:"bytes,1,opt,name=nginx_health,json=nginxHealth,proto3,oneof" json:"nginx_health"`
+	NginxHealth *NginxHealth `protobuf:"bytes,1,opt,name=nginx_health,json=nginxHealth,proto3,oneof"`
 }
 type DataplaneSoftwareHealth_AppProtectWafHealth struct {
-	AppProtectWafHealth *AppProtectWAFHealth `protobuf:"bytes,2,opt,name=app_protect_waf_health,json=appProtectWafHealth,proto3,oneof" json:"app_protect_waf_health"`
+	AppProtectWafHealth *AppProtectWAFHealth `protobuf:"bytes,2,opt,name=app_protect_waf_health,json=appProtectWafHealth,proto3,oneof"`
 }
 
 func (*DataplaneSoftwareHealth_NginxHealth) isDataplaneSoftwareHealth_Health()         {}
@@ -819,12 +1095,78 @@ func (m *DataplaneSoftwareHealth) GetAppProtectWafHealth() *AppProtectWAFHealth 
 	return nil
 }
 
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*DataplaneSoftwareHealth) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*DataplaneSoftwareHealth) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _DataplaneSoftwareHealth_OneofMarshaler, _DataplaneSoftwareHealth_OneofUnmarshaler, _DataplaneSoftwareHealth_OneofSizer, []interface{}{
 		(*DataplaneSoftwareHealth_NginxHealth)(nil),
 		(*DataplaneSoftwareHealth_AppProtectWafHealth)(nil),
 	}
+}
+
+func _DataplaneSoftwareHealth_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*DataplaneSoftwareHealth)
+	// health
+	switch x := m.Health.(type) {
+	case *DataplaneSoftwareHealth_NginxHealth:
+		_ = b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.NginxHealth); err != nil {
+			return err
+		}
+	case *DataplaneSoftwareHealth_AppProtectWafHealth:
+		_ = b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.AppProtectWafHealth); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("DataplaneSoftwareHealth.Health has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _DataplaneSoftwareHealth_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*DataplaneSoftwareHealth)
+	switch tag {
+	case 1: // health.nginx_health
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(NginxHealth)
+		err := b.DecodeMessage(msg)
+		m.Health = &DataplaneSoftwareHealth_NginxHealth{msg}
+		return true, err
+	case 2: // health.app_protect_waf_health
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(AppProtectWAFHealth)
+		err := b.DecodeMessage(msg)
+		m.Health = &DataplaneSoftwareHealth_AppProtectWafHealth{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _DataplaneSoftwareHealth_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*DataplaneSoftwareHealth)
+	// health
+	switch x := m.Health.(type) {
+	case *DataplaneSoftwareHealth_NginxHealth:
+		s := proto.Size(x.NginxHealth)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *DataplaneSoftwareHealth_AppProtectWafHealth:
+		s := proto.Size(x.AppProtectWafHealth)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 // Represents a dataplane update
@@ -852,7 +1194,7 @@ func (m *DataplaneUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return xxx_messageInfo_DataplaneUpdate.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -908,7 +1250,7 @@ func (m *DownloadRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return xxx_messageInfo_DownloadRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -961,7 +1303,7 @@ func (m *NginxConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return xxx_messageInfo_NginxConfigResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -1028,7 +1370,7 @@ func (m *UploadStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return xxx_messageInfo_UploadStatus.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -1093,7 +1435,7 @@ func (m *DataChunk) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_DataChunk.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -1119,10 +1461,10 @@ type isDataChunk_Chunk interface {
 }
 
 type DataChunk_Header struct {
-	Header *ChunkedResourceHeader `protobuf:"bytes,1,opt,name=header,proto3,oneof" json:"header"`
+	Header *ChunkedResourceHeader `protobuf:"bytes,1,opt,name=header,proto3,oneof"`
 }
 type DataChunk_Data struct {
-	Data *ChunkedResourceChunk `protobuf:"bytes,2,opt,name=data,proto3,oneof" json:"data"`
+	Data *ChunkedResourceChunk `protobuf:"bytes,2,opt,name=data,proto3,oneof"`
 }
 
 func (*DataChunk_Header) isDataChunk_Chunk() {}
@@ -1149,12 +1491,78 @@ func (m *DataChunk) GetData() *ChunkedResourceChunk {
 	return nil
 }
 
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*DataChunk) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*DataChunk) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _DataChunk_OneofMarshaler, _DataChunk_OneofUnmarshaler, _DataChunk_OneofSizer, []interface{}{
 		(*DataChunk_Header)(nil),
 		(*DataChunk_Data)(nil),
 	}
+}
+
+func _DataChunk_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*DataChunk)
+	// chunk
+	switch x := m.Chunk.(type) {
+	case *DataChunk_Header:
+		_ = b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Header); err != nil {
+			return err
+		}
+	case *DataChunk_Data:
+		_ = b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Data); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("DataChunk.Chunk has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _DataChunk_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*DataChunk)
+	switch tag {
+	case 1: // chunk.header
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(ChunkedResourceHeader)
+		err := b.DecodeMessage(msg)
+		m.Chunk = &DataChunk_Header{msg}
+		return true, err
+	case 2: // chunk.data
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(ChunkedResourceChunk)
+		err := b.DecodeMessage(msg)
+		m.Chunk = &DataChunk_Data{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _DataChunk_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*DataChunk)
+	// chunk
+	switch x := m.Chunk.(type) {
+	case *DataChunk_Header:
+		s := proto.Size(x.Header)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *DataChunk_Data:
+		s := proto.Size(x.Data)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 // Represents a chunked resource Header
@@ -1186,7 +1594,7 @@ func (m *ChunkedResourceHeader) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return xxx_messageInfo_ChunkedResourceHeader.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -1260,7 +1668,7 @@ func (m *ChunkedResourceChunk) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return xxx_messageInfo_ChunkedResourceChunk.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -1426,7 +1834,7 @@ var fileDescriptor_213c0bb044472049 = []byte{
 func (m *Command) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1434,283 +1842,196 @@ func (m *Command) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *Command) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Data != nil {
-		{
-			size := m.Data.Size()
-			i -= size
-			if _, err := m.Data.MarshalTo(dAtA[i:]); err != nil {
-				return 0, err
-			}
+	if m.Meta != nil {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Meta.Size()))
+		n1, err1 := m.Meta.MarshalTo(dAtA[i:])
+		if err1 != nil {
+			return 0, err1
 		}
+		i += n1
 	}
 	if m.Type != 0 {
-		i = encodeVarintCommand(dAtA, i, uint64(m.Type))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Type))
 	}
-	if m.Meta != nil {
-		{
-			size, err := m.Meta.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
+	if m.Data != nil {
+		nn2, err2 := m.Data.MarshalTo(dAtA[i:])
+		if err2 != nil {
+			return 0, err2
 		}
-		i--
-		dAtA[i] = 0xa
+		i += nn2
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *Command_CmdStatus) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_CmdStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.CmdStatus != nil {
-		{
-			size, err := m.CmdStatus.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.CmdStatus.Size()))
+		n3, err3 := m.CmdStatus.MarshalTo(dAtA[i:])
+		if err3 != nil {
+			return 0, err3
+		}
+		i += n3
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Command_NginxConfig) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_NginxConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.NginxConfig != nil {
-		{
-			size, err := m.NginxConfig.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x22
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.NginxConfig.Size()))
+		n4, err4 := m.NginxConfig.MarshalTo(dAtA[i:])
+		if err4 != nil {
+			return 0, err4
+		}
+		i += n4
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Command_NginxConfigResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_NginxConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.NginxConfigResponse != nil {
-		{
-			size, err := m.NginxConfigResponse.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x2a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.NginxConfigResponse.Size()))
+		n5, err5 := m.NginxConfigResponse.MarshalTo(dAtA[i:])
+		if err5 != nil {
+			return 0, err5
+		}
+		i += n5
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Command_AgentConnectRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_AgentConnectRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.AgentConnectRequest != nil {
-		{
-			size, err := m.AgentConnectRequest.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x32
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.AgentConnectRequest.Size()))
+		n6, err6 := m.AgentConnectRequest.MarshalTo(dAtA[i:])
+		if err6 != nil {
+			return 0, err6
+		}
+		i += n6
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Command_AgentConnectResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_AgentConnectResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.AgentConnectResponse != nil {
-		{
-			size, err := m.AgentConnectResponse.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x3a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.AgentConnectResponse.Size()))
+		n7, err7 := m.AgentConnectResponse.MarshalTo(dAtA[i:])
+		if err7 != nil {
+			return 0, err7
+		}
+		i += n7
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Command_AgentConfigRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_AgentConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.AgentConfigRequest != nil {
-		{
-			size, err := m.AgentConfigRequest.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x42
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.AgentConfigRequest.Size()))
+		n8, err8 := m.AgentConfigRequest.MarshalTo(dAtA[i:])
+		if err8 != nil {
+			return 0, err8
+		}
+		i += n8
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Command_AgentConfig) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_AgentConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.AgentConfig != nil {
-		{
-			size, err := m.AgentConfig.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x4a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.AgentConfig.Size()))
+		n9, err9 := m.AgentConfig.MarshalTo(dAtA[i:])
+		if err9 != nil {
+			return 0, err9
+		}
+		i += n9
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Command_DataplaneStatus) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_DataplaneStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.DataplaneStatus != nil {
-		{
-			size, err := m.DataplaneStatus.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x5a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.DataplaneStatus.Size()))
+		n10, err10 := m.DataplaneStatus.MarshalTo(dAtA[i:])
+		if err10 != nil {
+			return 0, err10
+		}
+		i += n10
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Command_EventReport) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_EventReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.EventReport != nil {
-		{
-			size, err := m.EventReport.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x62
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.EventReport.Size()))
+		n11, err11 := m.EventReport.MarshalTo(dAtA[i:])
+		if err11 != nil {
+			return 0, err11
+		}
+		i += n11
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Command_DataplaneSoftwareDetails) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_DataplaneSoftwareDetails) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.DataplaneSoftwareDetails != nil {
-		{
-			size, err := m.DataplaneSoftwareDetails.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x6a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.DataplaneSoftwareDetails.Size()))
+		n12, err12 := m.DataplaneSoftwareDetails.MarshalTo(dAtA[i:])
+		if err12 != nil {
+			return 0, err12
+		}
+		i += n12
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Command_DataplaneUpdate) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Command_DataplaneUpdate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.DataplaneUpdate != nil {
-		{
-			size, err := m.DataplaneUpdate.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x72
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.DataplaneUpdate.Size()))
+		n13, err13 := m.DataplaneUpdate.MarshalTo(dAtA[i:])
+		if err13 != nil {
+			return 0, err13
+		}
+		i += n13
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *CommandStatusResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1718,50 +2039,42 @@ func (m *CommandStatusResponse) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *CommandStatusResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CommandStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Error) > 0 {
-		i -= len(m.Error)
-		copy(dAtA[i:], m.Error)
-		i = encodeVarintCommand(dAtA, i, uint64(len(m.Error)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.Message) > 0 {
-		i -= len(m.Message)
-		copy(dAtA[i:], m.Message)
-		i = encodeVarintCommand(dAtA, i, uint64(len(m.Message)))
-		i--
-		dAtA[i] = 0x1a
+	if m.Status != 0 {
+		dAtA[i] = 0x8
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Status))
 	}
 	if m.ErrorCode != 0 {
-		i = encodeVarintCommand(dAtA, i, uint64(m.ErrorCode))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.ErrorCode))
 	}
-	if m.Status != 0 {
-		i = encodeVarintCommand(dAtA, i, uint64(m.Status))
-		i--
-		dAtA[i] = 0x8
+	if len(m.Message) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.Message)))
+		i += copy(dAtA[i:], m.Message)
 	}
-	return len(dAtA) - i, nil
+	if len(m.Error) > 0 {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.Error)))
+		i += copy(dAtA[i:], m.Error)
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *DataplaneStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1769,115 +2082,96 @@ func (m *DataplaneStatus) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *DataplaneStatus) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataplaneStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.SystemId) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.SystemId)))
+		i += copy(dAtA[i:], m.SystemId)
 	}
-	if len(m.AgentActivityStatus) > 0 {
-		for iNdEx := len(m.AgentActivityStatus) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.AgentActivityStatus[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintCommand(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x42
-		}
-	}
-	if len(m.DataplaneSoftwareHealths) > 0 {
-		for iNdEx := len(m.DataplaneSoftwareHealths) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.DataplaneSoftwareHealths[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintCommand(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x3a
-		}
-	}
-	if len(m.DataplaneSoftwareDetails) > 0 {
-		for iNdEx := len(m.DataplaneSoftwareDetails) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.DataplaneSoftwareDetails[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintCommand(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x32
-		}
-	}
-	if len(m.Healths) > 0 {
-		for iNdEx := len(m.Healths) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Healths[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintCommand(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if m.Host != nil {
-		{
-			size, err := m.Host.MarshalToSizedBuffer(dAtA[:i])
+	if len(m.Details) > 0 {
+		for _, msg := range m.Details {
+			dAtA[i] = 0x12
+			i++
+			i = encodeVarintCommand(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
 			if err != nil {
 				return 0, err
 			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
+			i += n
 		}
-		i--
+	}
+	if m.Host != nil {
 		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Host.Size()))
+		n14, err14 := m.Host.MarshalTo(dAtA[i:])
+		if err14 != nil {
+			return 0, err14
+		}
+		i += n14
 	}
-	if len(m.Details) > 0 {
-		for iNdEx := len(m.Details) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Details[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintCommand(dAtA, i, uint64(size))
+	if len(m.Healths) > 0 {
+		for _, msg := range m.Healths {
+			dAtA[i] = 0x2a
+			i++
+			i = encodeVarintCommand(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
 			}
-			i--
-			dAtA[i] = 0x12
+			i += n
 		}
 	}
-	if len(m.SystemId) > 0 {
-		i -= len(m.SystemId)
-		copy(dAtA[i:], m.SystemId)
-		i = encodeVarintCommand(dAtA, i, uint64(len(m.SystemId)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.DataplaneSoftwareDetails) > 0 {
+		for _, msg := range m.DataplaneSoftwareDetails {
+			dAtA[i] = 0x32
+			i++
+			i = encodeVarintCommand(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
 	}
-	return len(dAtA) - i, nil
+	if len(m.DataplaneSoftwareHealths) > 0 {
+		for _, msg := range m.DataplaneSoftwareHealths {
+			dAtA[i] = 0x3a
+			i++
+			i = encodeVarintCommand(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if len(m.AgentActivityStatus) > 0 {
+		for _, msg := range m.AgentActivityStatus {
+			dAtA[i] = 0x42
+			i++
+			i = encodeVarintCommand(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *AgentActivityStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1885,56 +2179,41 @@ func (m *AgentActivityStatus) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *AgentActivityStatus) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AgentActivityStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if m.Status != nil {
-		{
-			size := m.Status.Size()
-			i -= size
-			if _, err := m.Status.MarshalTo(dAtA[i:]); err != nil {
-				return 0, err
-			}
+		nn15, err15 := m.Status.MarshalTo(dAtA[i:])
+		if err15 != nil {
+			return 0, err15
 		}
+		i += nn15
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *AgentActivityStatus_NginxConfigStatus) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AgentActivityStatus_NginxConfigStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.NginxConfigStatus != nil {
-		{
-			size, err := m.NginxConfigStatus.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.NginxConfigStatus.Size()))
+		n16, err16 := m.NginxConfigStatus.MarshalTo(dAtA[i:])
+		if err16 != nil {
+			return 0, err16
+		}
+		i += n16
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *NginxConfigStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1942,52 +2221,43 @@ func (m *NginxConfigStatus) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *NginxConfigStatus) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *NginxConfigStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.NginxId) > 0 {
-		i -= len(m.NginxId)
-		copy(dAtA[i:], m.NginxId)
-		i = encodeVarintCommand(dAtA, i, uint64(len(m.NginxId)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.Message) > 0 {
-		i -= len(m.Message)
-		copy(dAtA[i:], m.Message)
-		i = encodeVarintCommand(dAtA, i, uint64(len(m.Message)))
-		i--
-		dAtA[i] = 0x1a
+	if len(m.CorrelationId) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.CorrelationId)))
+		i += copy(dAtA[i:], m.CorrelationId)
 	}
 	if m.Status != 0 {
-		i = encodeVarintCommand(dAtA, i, uint64(m.Status))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Status))
 	}
-	if len(m.CorrelationId) > 0 {
-		i -= len(m.CorrelationId)
-		copy(dAtA[i:], m.CorrelationId)
-		i = encodeVarintCommand(dAtA, i, uint64(len(m.CorrelationId)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.Message) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.Message)))
+		i += copy(dAtA[i:], m.Message)
 	}
-	return len(dAtA) - i, nil
+	if len(m.NginxId) > 0 {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.NginxId)))
+		i += copy(dAtA[i:], m.NginxId)
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *DataplaneSoftwareHealth) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1995,77 +2265,55 @@ func (m *DataplaneSoftwareHealth) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *DataplaneSoftwareHealth) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataplaneSoftwareHealth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if m.Health != nil {
-		{
-			size := m.Health.Size()
-			i -= size
-			if _, err := m.Health.MarshalTo(dAtA[i:]); err != nil {
-				return 0, err
-			}
+		nn17, err17 := m.Health.MarshalTo(dAtA[i:])
+		if err17 != nil {
+			return 0, err17
 		}
+		i += nn17
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *DataplaneSoftwareHealth_NginxHealth) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataplaneSoftwareHealth_NginxHealth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.NginxHealth != nil {
-		{
-			size, err := m.NginxHealth.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.NginxHealth.Size()))
+		n18, err18 := m.NginxHealth.MarshalTo(dAtA[i:])
+		if err18 != nil {
+			return 0, err18
+		}
+		i += n18
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *DataplaneSoftwareHealth_AppProtectWafHealth) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataplaneSoftwareHealth_AppProtectWafHealth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.AppProtectWafHealth != nil {
-		{
-			size, err := m.AppProtectWafHealth.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.AppProtectWafHealth.Size()))
+		n19, err19 := m.AppProtectWafHealth.MarshalTo(dAtA[i:])
+		if err19 != nil {
+			return 0, err19
+		}
+		i += n19
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *DataplaneUpdate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -2073,52 +2321,42 @@ func (m *DataplaneUpdate) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *DataplaneUpdate) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataplaneUpdate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if m.Host != nil {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Host.Size()))
+		n20, err20 := m.Host.MarshalTo(dAtA[i:])
+		if err20 != nil {
+			return 0, err20
+		}
+		i += n20
 	}
 	if len(m.DataplaneSoftwareDetails) > 0 {
-		for iNdEx := len(m.DataplaneSoftwareDetails) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.DataplaneSoftwareDetails[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintCommand(dAtA, i, uint64(size))
-			}
-			i--
+		for _, msg := range m.DataplaneSoftwareDetails {
 			dAtA[i] = 0x12
-		}
-	}
-	if m.Host != nil {
-		{
-			size, err := m.Host.MarshalToSizedBuffer(dAtA[:i])
+			i++
+			i = encodeVarintCommand(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
 			if err != nil {
 				return 0, err
 			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
+			i += n
 		}
-		i--
-		dAtA[i] = 0xa
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *DownloadRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -2126,38 +2364,30 @@ func (m *DownloadRequest) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *DownloadRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DownloadRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if m.Meta != nil {
-		{
-			size, err := m.Meta.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Meta.Size()))
+		n21, err21 := m.Meta.MarshalTo(dAtA[i:])
+		if err21 != nil {
+			return 0, err21
+		}
+		i += n21
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *NginxConfigResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -2165,55 +2395,45 @@ func (m *NginxConfigResponse) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *NginxConfigResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *NginxConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.ConfigData != nil {
-		{
-			size, err := m.ConfigData.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
+	if m.Status != nil {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Status.Size()))
+		n22, err22 := m.Status.MarshalTo(dAtA[i:])
+		if err22 != nil {
+			return 0, err22
 		}
-		i--
-		dAtA[i] = 0x1a
+		i += n22
 	}
 	if m.Action != 0 {
-		i = encodeVarintCommand(dAtA, i, uint64(m.Action))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Action))
 	}
-	if m.Status != nil {
-		{
-			size, err := m.Status.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
+	if m.ConfigData != nil {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.ConfigData.Size()))
+		n23, err23 := m.ConfigData.MarshalTo(dAtA[i:])
+		if err23 != nil {
+			return 0, err23
 		}
-		i--
-		dAtA[i] = 0xa
+		i += n23
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *UploadStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -2221,50 +2441,41 @@ func (m *UploadStatus) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *UploadStatus) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *UploadStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Reason) > 0 {
-		i -= len(m.Reason)
-		copy(dAtA[i:], m.Reason)
-		i = encodeVarintCommand(dAtA, i, uint64(len(m.Reason)))
-		i--
-		dAtA[i] = 0x1a
+	if m.Meta != nil {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Meta.Size()))
+		n24, err24 := m.Meta.MarshalTo(dAtA[i:])
+		if err24 != nil {
+			return 0, err24
+		}
+		i += n24
 	}
 	if m.Status != 0 {
-		i = encodeVarintCommand(dAtA, i, uint64(m.Status))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Status))
 	}
-	if m.Meta != nil {
-		{
-			size, err := m.Meta.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
+	if len(m.Reason) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.Reason)))
+		i += copy(dAtA[i:], m.Reason)
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *DataChunk) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -2272,77 +2483,55 @@ func (m *DataChunk) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *DataChunk) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataChunk) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if m.Chunk != nil {
-		{
-			size := m.Chunk.Size()
-			i -= size
-			if _, err := m.Chunk.MarshalTo(dAtA[i:]); err != nil {
-				return 0, err
-			}
+		nn25, err25 := m.Chunk.MarshalTo(dAtA[i:])
+		if err25 != nil {
+			return 0, err25
 		}
+		i += nn25
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *DataChunk_Header) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataChunk_Header) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.Header != nil {
-		{
-			size, err := m.Header.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Header.Size()))
+		n26, err26 := m.Header.MarshalTo(dAtA[i:])
+		if err26 != nil {
+			return 0, err26
+		}
+		i += n26
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *DataChunk_Data) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DataChunk_Data) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.Data != nil {
-		{
-			size, err := m.Data.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Data.Size()))
+		n27, err27 := m.Data.MarshalTo(dAtA[i:])
+		if err27 != nil {
+			return 0, err27
+		}
+		i += n27
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *ChunkedResourceHeader) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -2350,55 +2539,46 @@ func (m *ChunkedResourceHeader) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *ChunkedResourceHeader) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ChunkedResourceHeader) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.ChunkSize != 0 {
-		i = encodeVarintCommand(dAtA, i, uint64(m.ChunkSize))
-		i--
-		dAtA[i] = 0x20
-	}
-	if len(m.Checksum) > 0 {
-		i -= len(m.Checksum)
-		copy(dAtA[i:], m.Checksum)
-		i = encodeVarintCommand(dAtA, i, uint64(len(m.Checksum)))
-		i--
-		dAtA[i] = 0x1a
+	if m.Meta != nil {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Meta.Size()))
+		n28, err28 := m.Meta.MarshalTo(dAtA[i:])
+		if err28 != nil {
+			return 0, err28
+		}
+		i += n28
 	}
 	if m.Chunks != 0 {
-		i = encodeVarintCommand(dAtA, i, uint64(m.Chunks))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Chunks))
 	}
-	if m.Meta != nil {
-		{
-			size, err := m.Meta.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
+	if len(m.Checksum) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.Checksum)))
+		i += copy(dAtA[i:], m.Checksum)
 	}
-	return len(dAtA) - i, nil
+	if m.ChunkSize != 0 {
+		dAtA[i] = 0x20
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.ChunkSize))
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *ChunkedResourceChunk) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -2406,56 +2586,45 @@ func (m *ChunkedResourceChunk) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *ChunkedResourceChunk) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ChunkedResourceChunk) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Data) > 0 {
-		i -= len(m.Data)
-		copy(dAtA[i:], m.Data)
-		i = encodeVarintCommand(dAtA, i, uint64(len(m.Data)))
-		i--
-		dAtA[i] = 0x1a
+	if m.Meta != nil {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.Meta.Size()))
+		n29, err29 := m.Meta.MarshalTo(dAtA[i:])
+		if err29 != nil {
+			return 0, err29
+		}
+		i += n29
 	}
 	if m.ChunkId != 0 {
-		i = encodeVarintCommand(dAtA, i, uint64(m.ChunkId))
-		i--
 		dAtA[i] = 0x10
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(m.ChunkId))
 	}
-	if m.Meta != nil {
-		{
-			size, err := m.Meta.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintCommand(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
+	if len(m.Data) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintCommand(dAtA, i, uint64(len(m.Data)))
+		i += copy(dAtA[i:], m.Data)
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func encodeVarintCommand(dAtA []byte, offset int, v uint64) int {
-	offset -= sovCommand(v)
-	base := offset
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
 	dAtA[offset] = uint8(v)
-	return base
+	return offset + 1
 }
 func (m *Command) Size() (n int) {
 	if m == nil {
@@ -3433,7 +3602,10 @@ func (m *Command) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -3586,7 +3758,10 @@ func (m *CommandStatusResponse) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -3875,7 +4050,10 @@ func (m *DataplaneStatus) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -3961,7 +4139,10 @@ func (m *AgentActivityStatus) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -4127,7 +4308,10 @@ func (m *NginxConfigStatus) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -4248,7 +4432,10 @@ func (m *DataplaneSoftwareHealth) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -4369,7 +4556,10 @@ func (m *DataplaneUpdate) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -4456,7 +4646,10 @@ func (m *DownloadRequest) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -4598,7 +4791,10 @@ func (m *NginxConfigResponse) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -4736,7 +4932,10 @@ func (m *UploadStatus) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -4857,7 +5056,10 @@ func (m *DataChunk) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -5014,7 +5216,10 @@ func (m *ChunkedResourceHeader) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -5154,7 +5359,10 @@ func (m *ChunkedResourceChunk) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthCommand
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthCommand
 			}
 			if (iNdEx + skippy) > l {
@@ -5173,7 +5381,6 @@ func (m *ChunkedResourceChunk) Unmarshal(dAtA []byte) error {
 func skipCommand(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
-	depth := 0
 	for iNdEx < l {
 		var wire uint64
 		for shift := uint(0); ; shift += 7 {
@@ -5205,8 +5412,10 @@ func skipCommand(dAtA []byte) (n int, err error) {
 					break
 				}
 			}
+			return iNdEx, nil
 		case 1:
 			iNdEx += 8
+			return iNdEx, nil
 		case 2:
 			var length int
 			for shift := uint(0); ; shift += 7 {
@@ -5227,30 +5436,55 @@ func skipCommand(dAtA []byte) (n int, err error) {
 				return 0, ErrInvalidLengthCommand
 			}
 			iNdEx += length
-		case 3:
-			depth++
-		case 4:
-			if depth == 0 {
-				return 0, ErrUnexpectedEndOfGroupCommand
+			if iNdEx < 0 {
+				return 0, ErrInvalidLengthCommand
 			}
-			depth--
+			return iNdEx, nil
+		case 3:
+			for {
+				var innerWire uint64
+				var start int = iNdEx
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return 0, ErrIntOverflowCommand
+					}
+					if iNdEx >= l {
+						return 0, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					innerWire |= (uint64(b) & 0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				innerWireType := int(innerWire & 0x7)
+				if innerWireType == 4 {
+					break
+				}
+				next, err := skipCommand(dAtA[start:])
+				if err != nil {
+					return 0, err
+				}
+				iNdEx = start + next
+				if iNdEx < 0 {
+					return 0, ErrInvalidLengthCommand
+				}
+			}
+			return iNdEx, nil
+		case 4:
+			return iNdEx, nil
 		case 5:
 			iNdEx += 4
+			return iNdEx, nil
 		default:
 			return 0, fmt.Errorf("proto: illegal wireType %d", wireType)
 		}
-		if iNdEx < 0 {
-			return 0, ErrInvalidLengthCommand
-		}
-		if depth == 0 {
-			return iNdEx, nil
-		}
 	}
-	return 0, io.ErrUnexpectedEOF
+	panic("unreachable")
 }
 
 var (
-	ErrInvalidLengthCommand        = fmt.Errorf("proto: negative length found during unmarshaling")
-	ErrIntOverflowCommand          = fmt.Errorf("proto: integer overflow")
-	ErrUnexpectedEndOfGroupCommand = fmt.Errorf("proto: unexpected end of group")
+	ErrInvalidLengthCommand = fmt.Errorf("proto: negative length found during unmarshaling")
+	ErrIntOverflowCommand   = fmt.Errorf("proto: integer overflow")
 )
