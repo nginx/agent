@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 
@@ -184,15 +183,9 @@ func (m *Metrics) metricsGoroutine() {
 			}
 			return
 		case <-m.ticker.C:
-			report := &proto.MetricsReport{
-				Meta: &proto.Metadata{
-					Timestamp: types.TimestampNow(),
-				},
-				Type: proto.MetricsReport_SYSTEM,
-				Data: m.collectStats(),
+			for _, report := range generateMetricsReports(m.collectStats(), true) {
+				m.pipeline.Process(core.NewMessage(core.MetricReport, report))
 			}
-
-			m.pipeline.Process(core.NewMessage(core.MetricReport, report))
 			if m.collectorsUpdate.Load() {
 				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)
 				m.collectorsUpdate.Store(false)

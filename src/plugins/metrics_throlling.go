@@ -101,12 +101,12 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 				r.reportsReady.Store(true)
 			}
 		} else {
-			r.metricBuffer = append(r.metricBuffer, msg.Data())
+			r.metricBuffer = append(r.metricBuffer,
+				generateMetricsReports(getAllStatsEntities(msg.Data()), false)...)
+			log.Tracef("MetricsThrottle buffer size: %d of %d", len(r.metricBuffer), r.BulkSize)
 			if len(r.metricBuffer) >= r.BulkSize {
 				log.Info("MetricsThrottle buffer flush")
-				r.messagePipeline.Process(
-					core.NewMessage(core.CommMetrics, r.metricBuffer),
-				)
+				r.messagePipeline.Process(core.NewMessage(core.CommMetrics, r.metricBuffer))
 				r.metricBuffer = make([]core.Payload, 0)
 			}
 		}
@@ -134,10 +134,10 @@ func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.W
 			}
 			return
 		case <-r.ticker.C:
-			aggregatedReport := r.getAggregatedReport()
-			r.messagePipeline.Process(
-				core.NewMessage(core.CommMetrics, []core.Payload{aggregatedReport}),
-			)
+			reports := r.getAggregatedReports()
+			if len(reports) > 0 {
+				r.messagePipeline.Process(core.NewMessage(core.CommMetrics, reports))
+			}
 			if r.collectorsUpdate.Load() {
 				r.BulkSize = r.conf.AgentMetrics.BulkSize
 				r.metricsAggregation = r.conf.AgentMetrics.Mode == "aggregated"
@@ -167,13 +167,14 @@ func (r *MetricsThrottle) syncAgentConfigChange() {
 	r.conf = conf
 }
 
-func (r *MetricsThrottle) getAggregatedReport() *proto.MetricsReport {
+func (r *MetricsThrottle) getAggregatedReports() []core.Payload {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	report := metrics.GenerateMetricsReport(r.metricsCollections)
+	reports := generateMetricsReports(metrics.GenerateMetrics(r.metricsCollections), false)
 	r.metricsCollections = metrics.Collections{
 		Count: 0,
 		Data:  make(map[string]metrics.PerDimension),
 	}
-	return report
+
+	return reports
 }

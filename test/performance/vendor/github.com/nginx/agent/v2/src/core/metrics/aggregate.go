@@ -65,7 +65,7 @@ func SaveCollections(metricsCollections Collections, reports ...*proto.MetricsRe
 	return metricsCollections
 }
 
-func GenerateMetricsReport(metricsCollections Collections) *proto.MetricsReport {
+func GenerateMetrics(metricsCollections Collections) []*proto.StatsEntity {
 
 	results := make([]*proto.StatsEntity, 0, 200)
 
@@ -77,11 +77,7 @@ func GenerateMetricsReport(metricsCollections Collections) *proto.MetricsReport 
 		))
 	}
 
-	return &proto.MetricsReport{
-		Meta: &proto.Metadata{},
-		Type: 0,
-		Data: results,
-	}
+	return results
 }
 
 func getAggregatedSimpleMetric(count int, internalMap map[string]float64) (simpleMetrics []*proto.SimpleMetric) {

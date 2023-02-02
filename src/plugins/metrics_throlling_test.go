@@ -38,7 +38,33 @@ func TestMetricsThrottle_Process(t *testing.T) {
 			config: tutils.GetMockAgentConfig(),
 		},
 		{
-			name: "flush buffer of metrics streaming",
+			name: "flush buffer of metrics streaming - nonempty reports",
+			msgs: []*core.Message{
+				core.NewMessage(core.MetricReport, &proto.MetricsReport{Data: []*proto.StatsEntity{&proto.StatsEntity{}}}),
+				core.NewMessage(core.MetricReport, &proto.MetricsReport{Data: []*proto.StatsEntity{&proto.StatsEntity{}}}),
+				core.NewMessage(core.MetricReport, &proto.MetricsReport{Data: []*proto.StatsEntity{&proto.StatsEntity{}}}),
+			},
+			msgTopics: []string{
+				core.MetricReport,
+				core.MetricReport,
+				core.MetricReport,
+				core.CommMetrics,
+				core.CommMetrics,
+				core.CommMetrics,
+			},
+			config: &config.Config{
+				ClientID: "12345",
+				Tags:     tutils.InitialConfTags,
+				AgentMetrics: config.AgentMetrics{
+					BulkSize:           1,
+					ReportInterval:     5,
+					CollectionInterval: 1,
+					Mode:               "streaming",
+				},
+			},
+		},
+		{
+			name: "flush buffer of metrics streaming - empty reports",
 			msgs: []*core.Message{
 				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
 				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
@@ -48,9 +74,6 @@ func TestMetricsThrottle_Process(t *testing.T) {
 				core.MetricReport,
 				core.MetricReport,
 				core.MetricReport,
-				core.CommMetrics,
-				core.CommMetrics,
-				core.CommMetrics,
 			},
 			config: &config.Config{
 				ClientID: "12345",
