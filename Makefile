@@ -16,6 +16,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | debian           | bullseye-slim, buster-slim |                                                                |
 # | centos           | 7                          | centos 7 (below 7.4) uses plus-pkgs.nginx.com as PACKAGES_REPO |
 # | redhatenterprise | 7, 8, 9                    |                                                                |
+# | rocky            | 8, 9                       |                                                                |
 # | alpine           | 3.13, 3.14, 3.15, 3.16     |                                                                |
 # | oraclelinux      | 7, 8                       |                                                                |
 # | suse             | sles12sp5, sle15           |                                                                |
