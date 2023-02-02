@@ -23,7 +23,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
+const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
 // Represents the metadata for an event
 type Metadata struct {
@@ -60,7 +60,7 @@ func (m *Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_Metadata.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -133,7 +133,6 @@ type Event struct {
 	// Event metadata
 	Metadata *Metadata `protobuf:"bytes,1,opt,name=Metadata,proto3" json:"metadata"`
 	// Types that are valid to be assigned to Data:
-	//
 	//	*Event_ActivityEvent
 	//	*Event_SecurityViolationEvent
 	Data                 isEvent_Data `protobuf_oneof:"data"`
@@ -156,7 +155,7 @@ func (m *Event) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_Event.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -182,10 +181,10 @@ type isEvent_Data interface {
 }
 
 type Event_ActivityEvent struct {
-	ActivityEvent *ActivityEvent `protobuf:"bytes,2,opt,name=ActivityEvent,proto3,oneof" json:"activity_event"`
+	ActivityEvent *ActivityEvent `protobuf:"bytes,2,opt,name=ActivityEvent,proto3,oneof"`
 }
 type Event_SecurityViolationEvent struct {
-	SecurityViolationEvent *SecurityViolationEvent `protobuf:"bytes,3,opt,name=SecurityViolationEvent,proto3,oneof" json:"security_violation_event"`
+	SecurityViolationEvent *SecurityViolationEvent `protobuf:"bytes,3,opt,name=SecurityViolationEvent,proto3,oneof"`
 }
 
 func (*Event_ActivityEvent) isEvent_Data()          {}
@@ -219,12 +218,78 @@ func (m *Event) GetSecurityViolationEvent() *SecurityViolationEvent {
 	return nil
 }
 
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*Event) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Event) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Event_OneofMarshaler, _Event_OneofUnmarshaler, _Event_OneofSizer, []interface{}{
 		(*Event_ActivityEvent)(nil),
 		(*Event_SecurityViolationEvent)(nil),
 	}
+}
+
+func _Event_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Event)
+	// data
+	switch x := m.Data.(type) {
+	case *Event_ActivityEvent:
+		_ = b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.ActivityEvent); err != nil {
+			return err
+		}
+	case *Event_SecurityViolationEvent:
+		_ = b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.SecurityViolationEvent); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Event.Data has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Event_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Event)
+	switch tag {
+	case 2: // data.ActivityEvent
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(ActivityEvent)
+		err := b.DecodeMessage(msg)
+		m.Data = &Event_ActivityEvent{msg}
+		return true, err
+	case 3: // data.SecurityViolationEvent
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(SecurityViolationEvent)
+		err := b.DecodeMessage(msg)
+		m.Data = &Event_SecurityViolationEvent{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Event_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Event)
+	// data
+	switch x := m.Data.(type) {
+	case *Event_ActivityEvent:
+		s := proto.Size(x.ActivityEvent)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Event_SecurityViolationEvent:
+		s := proto.Size(x.SecurityViolationEvent)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 // Represents an event report
@@ -250,7 +315,7 @@ func (m *EventReport) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return xxx_messageInfo_EventReport.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -301,7 +366,7 @@ func (m *ActivityEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error
 		return xxx_messageInfo_ActivityEvent.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -394,7 +459,7 @@ func (m *SecurityViolationEvent) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return xxx_messageInfo_SecurityViolationEvent.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -711,7 +776,7 @@ func (m *SignatureData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error
 		return xxx_messageInfo_SignatureData.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -787,7 +852,7 @@ func (m *ContextData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return xxx_messageInfo_ContextData.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -844,7 +909,7 @@ func (m *ViolationData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error
 		return xxx_messageInfo_ViolationData.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := m.MarshalTo(b)
 		if err != nil {
 			return nil, err
 		}
@@ -1014,7 +1079,7 @@ var fileDescriptor_2d17a9d3f0ddf27e = []byte{
 func (m *Metadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1022,80 +1087,66 @@ func (m *Metadata) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *Metadata) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Metadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Category) > 0 {
-		i -= len(m.Category)
-		copy(dAtA[i:], m.Category)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Category)))
-		i--
-		dAtA[i] = 0x3a
-	}
-	if len(m.Type) > 0 {
-		i -= len(m.Type)
-		copy(dAtA[i:], m.Type)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Type)))
-		i--
-		dAtA[i] = 0x32
-	}
-	if len(m.EventLevel) > 0 {
-		i -= len(m.EventLevel)
-		copy(dAtA[i:], m.EventLevel)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.EventLevel)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if m.Timestamp != nil {
-		{
-			size, err := m.Timestamp.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.CorrelationID) > 0 {
-		i -= len(m.CorrelationID)
-		copy(dAtA[i:], m.CorrelationID)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.CorrelationID)))
-		i--
-		dAtA[i] = 0x1a
+	if len(m.Module) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Module)))
+		i += copy(dAtA[i:], m.Module)
 	}
 	if len(m.UUID) > 0 {
-		i -= len(m.UUID)
-		copy(dAtA[i:], m.UUID)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.UUID)))
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.UUID)))
+		i += copy(dAtA[i:], m.UUID)
 	}
-	if len(m.Module) > 0 {
-		i -= len(m.Module)
-		copy(dAtA[i:], m.Module)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Module)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.CorrelationID) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.CorrelationID)))
+		i += copy(dAtA[i:], m.CorrelationID)
 	}
-	return len(dAtA) - i, nil
+	if m.Timestamp != nil {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(m.Timestamp.Size()))
+		n1, err1 := m.Timestamp.MarshalTo(dAtA[i:])
+		if err1 != nil {
+			return 0, err1
+		}
+		i += n1
+	}
+	if len(m.EventLevel) > 0 {
+		dAtA[i] = 0x2a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.EventLevel)))
+		i += copy(dAtA[i:], m.EventLevel)
+	}
+	if len(m.Type) > 0 {
+		dAtA[i] = 0x32
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Type)))
+		i += copy(dAtA[i:], m.Type)
+	}
+	if len(m.Category) > 0 {
+		dAtA[i] = 0x3a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Category)))
+		i += copy(dAtA[i:], m.Category)
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *Event) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1103,89 +1154,65 @@ func (m *Event) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *Event) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Event) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if m.Metadata != nil {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(m.Metadata.Size()))
+		n2, err2 := m.Metadata.MarshalTo(dAtA[i:])
+		if err2 != nil {
+			return 0, err2
+		}
+		i += n2
 	}
 	if m.Data != nil {
-		{
-			size := m.Data.Size()
-			i -= size
-			if _, err := m.Data.MarshalTo(dAtA[i:]); err != nil {
-				return 0, err
-			}
+		nn3, err3 := m.Data.MarshalTo(dAtA[i:])
+		if err3 != nil {
+			return 0, err3
 		}
+		i += nn3
 	}
-	if m.Metadata != nil {
-		{
-			size, err := m.Metadata.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 
 func (m *Event_ActivityEvent) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Event_ActivityEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.ActivityEvent != nil {
-		{
-			size, err := m.ActivityEvent.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(m.ActivityEvent.Size()))
+		n4, err4 := m.ActivityEvent.MarshalTo(dAtA[i:])
+		if err4 != nil {
+			return 0, err4
+		}
+		i += n4
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *Event_SecurityViolationEvent) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Event_SecurityViolationEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	i := 0
 	if m.SecurityViolationEvent != nil {
-		{
-			size, err := m.SecurityViolationEvent.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
-		}
-		i--
 		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(m.SecurityViolationEvent.Size()))
+		n5, err5 := m.SecurityViolationEvent.MarshalTo(dAtA[i:])
+		if err5 != nil {
+			return 0, err5
+		}
+		i += n5
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 func (m *EventReport) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1193,40 +1220,32 @@ func (m *EventReport) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *EventReport) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if len(m.Events) > 0 {
-		for iNdEx := len(m.Events) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Events[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintEvent(dAtA, i, uint64(size))
-			}
-			i--
+		for _, msg := range m.Events {
 			dAtA[i] = 0xa
+			i++
+			i = encodeVarintEvent(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
 		}
 	}
-	return len(dAtA) - i, nil
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *ActivityEvent) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1234,47 +1253,38 @@ func (m *ActivityEvent) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *ActivityEvent) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ActivityEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.Message) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Message)))
+		i += copy(dAtA[i:], m.Message)
 	}
 	if len(m.Dimensions) > 0 {
-		for iNdEx := len(m.Dimensions) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Dimensions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintEvent(dAtA, i, uint64(size))
-			}
-			i--
+		for _, msg := range m.Dimensions {
 			dAtA[i] = 0x12
+			i++
+			i = encodeVarintEvent(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
 		}
 	}
-	if len(m.Message) > 0 {
-		i -= len(m.Message)
-		copy(dAtA[i:], m.Message)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Message)))
-		i--
-		dAtA[i] = 0xa
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 
 func (m *SecurityViolationEvent) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1282,18 +1292,16 @@ func (m *SecurityViolationEvent) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *SecurityViolationEvent) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SecurityViolationEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Create dedicated cache and upstream metrics reports
 =======
 >>>>>>> Create dedicated cache and upstream metrics reports
 	if len(m.PolicyName) > 0 {
@@ -1302,6 +1310,7 @@ func (m *SecurityViolationEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		i = encodeVarintEvent(dAtA, i, uint64(len(m.PolicyName)))
 		i += copy(dAtA[i:], m.PolicyName)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	}
 	if len(m.SupportID) > 0 {
 		dAtA[i] = 0x12
@@ -1397,351 +1406,309 @@ func (m *SecurityViolationEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 >>>>>>> adds updated generated files from protobuf
-	}
-	if len(m.ParentHostname) > 0 {
-		i -= len(m.ParentHostname)
-		copy(dAtA[i:], m.ParentHostname)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ParentHostname)))
-		i--
-		dAtA[i] = 0x2
-		i--
-		dAtA[i] = 0xc2
-	}
-	if len(m.NginxID) > 0 {
-		i -= len(m.NginxID)
-		copy(dAtA[i:], m.NginxID)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.NginxID)))
-		i--
-		dAtA[i] = 0x2
-		i--
-		dAtA[i] = 0xba
-	}
-	if len(m.DisplayName) > 0 {
-		i -= len(m.DisplayName)
-		copy(dAtA[i:], m.DisplayName)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.DisplayName)))
-		i--
-		dAtA[i] = 0x2
-		i--
-		dAtA[i] = 0xb2
-	}
-	if len(m.InstanceGroup) > 0 {
-		i -= len(m.InstanceGroup)
-		copy(dAtA[i:], m.InstanceGroup)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.InstanceGroup)))
-		i--
-		dAtA[i] = 0x2
-		i--
-		dAtA[i] = 0xaa
-	}
-	if len(m.InstanceTags) > 0 {
-		i -= len(m.InstanceTags)
-		copy(dAtA[i:], m.InstanceTags)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.InstanceTags)))
-		i--
-		dAtA[i] = 0x2
-		i--
-		dAtA[i] = 0xa2
-	}
-	if len(m.SystemID) > 0 {
-		i -= len(m.SystemID)
-		copy(dAtA[i:], m.SystemID)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.SystemID)))
-		i--
-		dAtA[i] = 0x2
-		i--
-		dAtA[i] = 0x9a
-	}
-	if len(m.ViolationsData) > 0 {
-		for iNdEx := len(m.ViolationsData) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.ViolationsData[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintEvent(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x2
-			i--
-			dAtA[i] = 0x92
-		}
-	}
-	if len(m.ViolationContexts) > 0 {
-		i -= len(m.ViolationContexts)
-		copy(dAtA[i:], m.ViolationContexts)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ViolationContexts)))
-		i--
-		dAtA[i] = 0x2
-		i--
-		dAtA[i] = 0x8a
-	}
-	if len(m.BotSignatureName) > 0 {
-		i -= len(m.BotSignatureName)
-		copy(dAtA[i:], m.BotSignatureName)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.BotSignatureName)))
-		i--
-		dAtA[i] = 0x2
-		i--
-		dAtA[i] = 0x82
-	}
-	if len(m.EnforcedBotAnomalies) > 0 {
-		i -= len(m.EnforcedBotAnomalies)
-		copy(dAtA[i:], m.EnforcedBotAnomalies)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.EnforcedBotAnomalies)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xfa
-	}
-	if len(m.BotCategory) > 0 {
-		i -= len(m.BotCategory)
-		copy(dAtA[i:], m.BotCategory)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.BotCategory)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xf2
-	}
-	if len(m.BotAnomalies) > 0 {
-		i -= len(m.BotAnomalies)
-		copy(dAtA[i:], m.BotAnomalies)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.BotAnomalies)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xea
-	}
-	if len(m.ThreatCampaignNames) > 0 {
-		i -= len(m.ThreatCampaignNames)
-		copy(dAtA[i:], m.ThreatCampaignNames)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ThreatCampaignNames)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xe2
-	}
-	if len(m.Severity) > 0 {
-		i -= len(m.Severity)
-		copy(dAtA[i:], m.Severity)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Severity)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xda
-	}
-	if len(m.ClientApplicationVersion) > 0 {
-		i -= len(m.ClientApplicationVersion)
-		copy(dAtA[i:], m.ClientApplicationVersion)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClientApplicationVersion)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xd2
-	}
-	if len(m.ClientApplication) > 0 {
-		i -= len(m.ClientApplication)
-		copy(dAtA[i:], m.ClientApplication)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClientApplication)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xca
-	}
-	if len(m.ClientClass) > 0 {
-		i -= len(m.ClientClass)
-		copy(dAtA[i:], m.ClientClass)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClientClass)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xc2
-	}
-	if len(m.SigCVEs) > 0 {
-		i -= len(m.SigCVEs)
-		copy(dAtA[i:], m.SigCVEs)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.SigCVEs)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xba
-	}
-	if len(m.SigSetNames) > 0 {
-		i -= len(m.SigSetNames)
-		copy(dAtA[i:], m.SigSetNames)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.SigSetNames)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xb2
-	}
-	if len(m.ViolationRating) > 0 {
-		i -= len(m.ViolationRating)
-		copy(dAtA[i:], m.ViolationRating)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ViolationRating)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xaa
-	}
-	if len(m.SubViolations) > 0 {
-		i -= len(m.SubViolations)
-		copy(dAtA[i:], m.SubViolations)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.SubViolations)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xa2
-	}
-	if len(m.Violations) > 0 {
-		i -= len(m.Violations)
-		copy(dAtA[i:], m.Violations)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Violations)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x9a
-	}
-	if len(m.ServerPort) > 0 {
-		i -= len(m.ServerPort)
-		copy(dAtA[i:], m.ServerPort)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServerPort)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x92
-	}
-	if len(m.RemotePort) > 0 {
-		i -= len(m.RemotePort)
-		copy(dAtA[i:], m.RemotePort)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.RemotePort)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x8a
-	}
-	if len(m.RemoteAddr) > 0 {
-		i -= len(m.RemoteAddr)
-		copy(dAtA[i:], m.RemoteAddr)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.RemoteAddr)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x82
-	}
-	if len(m.VSName) > 0 {
-		i -= len(m.VSName)
-		copy(dAtA[i:], m.VSName)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.VSName)))
-		i--
-		dAtA[i] = 0x7a
-	}
-	if len(m.ServerAddr) > 0 {
-		i -= len(m.ServerAddr)
-		copy(dAtA[i:], m.ServerAddr)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServerAddr)))
-		i--
-		dAtA[i] = 0x72
-	}
-	if len(m.ResponseCode) > 0 {
-		i -= len(m.ResponseCode)
-		copy(dAtA[i:], m.ResponseCode)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ResponseCode)))
-		i--
-		dAtA[i] = 0x6a
-	}
-	if len(m.RequestStatus) > 0 {
-		i -= len(m.RequestStatus)
-		copy(dAtA[i:], m.RequestStatus)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.RequestStatus)))
-		i--
-		dAtA[i] = 0x62
-	}
-	if len(m.IsTruncated) > 0 {
-		i -= len(m.IsTruncated)
-		copy(dAtA[i:], m.IsTruncated)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.IsTruncated)))
-		i--
-		dAtA[i] = 0x5a
-	}
-	if len(m.Request) > 0 {
-		i -= len(m.Request)
-		copy(dAtA[i:], m.Request)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Request)))
-		i--
-		dAtA[i] = 0x52
-	}
-	if len(m.URI) > 0 {
-		i -= len(m.URI)
-		copy(dAtA[i:], m.URI)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.URI)))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.XForwardedForHeaderValue) > 0 {
-		i -= len(m.XForwardedForHeaderValue)
-		copy(dAtA[i:], m.XForwardedForHeaderValue)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.XForwardedForHeaderValue)))
-		i--
-		dAtA[i] = 0x42
-	}
-	if len(m.Protocol) > 0 {
-		i -= len(m.Protocol)
-		copy(dAtA[i:], m.Protocol)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Protocol)))
-		i--
-		dAtA[i] = 0x3a
-	}
-	if len(m.Method) > 0 {
-		i -= len(m.Method)
-		copy(dAtA[i:], m.Method)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Method)))
-		i--
-		dAtA[i] = 0x32
-	}
-	if len(m.BlockingExceptionReason) > 0 {
-		i -= len(m.BlockingExceptionReason)
-		copy(dAtA[i:], m.BlockingExceptionReason)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.BlockingExceptionReason)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.OutcomeReason) > 0 {
-		i -= len(m.OutcomeReason)
-		copy(dAtA[i:], m.OutcomeReason)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.OutcomeReason)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.Outcome) > 0 {
-		i -= len(m.Outcome)
-		copy(dAtA[i:], m.Outcome)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Outcome)))
-		i--
-		dAtA[i] = 0x1a
+=======
+>>>>>>> Create dedicated cache and upstream metrics reports
 	}
 	if len(m.SupportID) > 0 {
-		i -= len(m.SupportID)
-		copy(dAtA[i:], m.SupportID)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.SupportID)))
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SupportID)))
+		i += copy(dAtA[i:], m.SupportID)
 	}
-	if len(m.PolicyName) > 0 {
-		i -= len(m.PolicyName)
-		copy(dAtA[i:], m.PolicyName)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.PolicyName)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.Outcome) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Outcome)))
+		i += copy(dAtA[i:], m.Outcome)
 	}
-	return len(dAtA) - i, nil
+	if len(m.OutcomeReason) > 0 {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.OutcomeReason)))
+		i += copy(dAtA[i:], m.OutcomeReason)
+	}
+	if len(m.BlockingExceptionReason) > 0 {
+		dAtA[i] = 0x2a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.BlockingExceptionReason)))
+		i += copy(dAtA[i:], m.BlockingExceptionReason)
+	}
+	if len(m.Method) > 0 {
+		dAtA[i] = 0x32
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Method)))
+		i += copy(dAtA[i:], m.Method)
+	}
+	if len(m.Protocol) > 0 {
+		dAtA[i] = 0x3a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Protocol)))
+		i += copy(dAtA[i:], m.Protocol)
+	}
+	if len(m.XForwardedForHeaderValue) > 0 {
+		dAtA[i] = 0x42
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.XForwardedForHeaderValue)))
+		i += copy(dAtA[i:], m.XForwardedForHeaderValue)
+	}
+	if len(m.URI) > 0 {
+		dAtA[i] = 0x4a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.URI)))
+		i += copy(dAtA[i:], m.URI)
+	}
+	if len(m.Request) > 0 {
+		dAtA[i] = 0x52
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Request)))
+		i += copy(dAtA[i:], m.Request)
+	}
+	if len(m.IsTruncated) > 0 {
+		dAtA[i] = 0x5a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.IsTruncated)))
+		i += copy(dAtA[i:], m.IsTruncated)
+	}
+	if len(m.RequestStatus) > 0 {
+		dAtA[i] = 0x62
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.RequestStatus)))
+		i += copy(dAtA[i:], m.RequestStatus)
+	}
+	if len(m.ResponseCode) > 0 {
+		dAtA[i] = 0x6a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ResponseCode)))
+		i += copy(dAtA[i:], m.ResponseCode)
+	}
+	if len(m.ServerAddr) > 0 {
+		dAtA[i] = 0x72
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServerAddr)))
+		i += copy(dAtA[i:], m.ServerAddr)
+	}
+	if len(m.VSName) > 0 {
+		dAtA[i] = 0x7a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.VSName)))
+		i += copy(dAtA[i:], m.VSName)
+	}
+	if len(m.RemoteAddr) > 0 {
+		dAtA[i] = 0x82
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.RemoteAddr)))
+		i += copy(dAtA[i:], m.RemoteAddr)
+	}
+	if len(m.RemotePort) > 0 {
+		dAtA[i] = 0x8a
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.RemotePort)))
+		i += copy(dAtA[i:], m.RemotePort)
+	}
+	if len(m.ServerPort) > 0 {
+		dAtA[i] = 0x92
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServerPort)))
+		i += copy(dAtA[i:], m.ServerPort)
+	}
+	if len(m.Violations) > 0 {
+		dAtA[i] = 0x9a
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Violations)))
+		i += copy(dAtA[i:], m.Violations)
+	}
+	if len(m.SubViolations) > 0 {
+		dAtA[i] = 0xa2
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SubViolations)))
+		i += copy(dAtA[i:], m.SubViolations)
+	}
+	if len(m.ViolationRating) > 0 {
+		dAtA[i] = 0xaa
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ViolationRating)))
+		i += copy(dAtA[i:], m.ViolationRating)
+	}
+	if len(m.SigSetNames) > 0 {
+		dAtA[i] = 0xb2
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SigSetNames)))
+		i += copy(dAtA[i:], m.SigSetNames)
+	}
+	if len(m.SigCVEs) > 0 {
+		dAtA[i] = 0xba
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SigCVEs)))
+		i += copy(dAtA[i:], m.SigCVEs)
+	}
+	if len(m.ClientClass) > 0 {
+		dAtA[i] = 0xc2
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClientClass)))
+		i += copy(dAtA[i:], m.ClientClass)
+	}
+	if len(m.ClientApplication) > 0 {
+		dAtA[i] = 0xca
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClientApplication)))
+		i += copy(dAtA[i:], m.ClientApplication)
+	}
+	if len(m.ClientApplicationVersion) > 0 {
+		dAtA[i] = 0xd2
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ClientApplicationVersion)))
+		i += copy(dAtA[i:], m.ClientApplicationVersion)
+	}
+	if len(m.Severity) > 0 {
+		dAtA[i] = 0xda
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Severity)))
+		i += copy(dAtA[i:], m.Severity)
+	}
+	if len(m.ThreatCampaignNames) > 0 {
+		dAtA[i] = 0xe2
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ThreatCampaignNames)))
+		i += copy(dAtA[i:], m.ThreatCampaignNames)
+	}
+	if len(m.BotAnomalies) > 0 {
+		dAtA[i] = 0xea
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.BotAnomalies)))
+		i += copy(dAtA[i:], m.BotAnomalies)
+	}
+	if len(m.BotCategory) > 0 {
+		dAtA[i] = 0xf2
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.BotCategory)))
+		i += copy(dAtA[i:], m.BotCategory)
+	}
+	if len(m.EnforcedBotAnomalies) > 0 {
+		dAtA[i] = 0xfa
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.EnforcedBotAnomalies)))
+		i += copy(dAtA[i:], m.EnforcedBotAnomalies)
+	}
+	if len(m.BotSignatureName) > 0 {
+		dAtA[i] = 0x82
+		i++
+		dAtA[i] = 0x2
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.BotSignatureName)))
+		i += copy(dAtA[i:], m.BotSignatureName)
+	}
+	if len(m.ViolationContexts) > 0 {
+		dAtA[i] = 0x8a
+		i++
+		dAtA[i] = 0x2
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ViolationContexts)))
+		i += copy(dAtA[i:], m.ViolationContexts)
+	}
+	if len(m.ViolationsData) > 0 {
+		for _, msg := range m.ViolationsData {
+			dAtA[i] = 0x92
+			i++
+			dAtA[i] = 0x2
+			i++
+			i = encodeVarintEvent(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if len(m.SystemID) > 0 {
+		dAtA[i] = 0x9a
+		i++
+		dAtA[i] = 0x2
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SystemID)))
+		i += copy(dAtA[i:], m.SystemID)
+	}
+	if len(m.InstanceTags) > 0 {
+		dAtA[i] = 0xa2
+		i++
+		dAtA[i] = 0x2
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.InstanceTags)))
+		i += copy(dAtA[i:], m.InstanceTags)
+	}
+	if len(m.InstanceGroup) > 0 {
+		dAtA[i] = 0xaa
+		i++
+		dAtA[i] = 0x2
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.InstanceGroup)))
+		i += copy(dAtA[i:], m.InstanceGroup)
+	}
+	if len(m.DisplayName) > 0 {
+		dAtA[i] = 0xb2
+		i++
+		dAtA[i] = 0x2
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.DisplayName)))
+		i += copy(dAtA[i:], m.DisplayName)
+	}
+	if len(m.NginxID) > 0 {
+		dAtA[i] = 0xba
+		i++
+		dAtA[i] = 0x2
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.NginxID)))
+		i += copy(dAtA[i:], m.NginxID)
+	}
+	if len(m.ParentHostname) > 0 {
+		dAtA[i] = 0xc2
+		i++
+		dAtA[i] = 0x2
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ParentHostname)))
+		i += copy(dAtA[i:], m.ParentHostname)
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *SignatureData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1749,61 +1716,50 @@ func (m *SignatureData) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *SignatureData) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SignatureData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Length) > 0 {
-		i -= len(m.Length)
-		copy(dAtA[i:], m.Length)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Length)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.Offset) > 0 {
-		i -= len(m.Offset)
-		copy(dAtA[i:], m.Offset)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Offset)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.Buffer) > 0 {
-		i -= len(m.Buffer)
-		copy(dAtA[i:], m.Buffer)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Buffer)))
-		i--
-		dAtA[i] = 0x1a
+	if len(m.ID) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.ID)))
+		i += copy(dAtA[i:], m.ID)
 	}
 	if len(m.BlockingMask) > 0 {
-		i -= len(m.BlockingMask)
-		copy(dAtA[i:], m.BlockingMask)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.BlockingMask)))
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.BlockingMask)))
+		i += copy(dAtA[i:], m.BlockingMask)
 	}
-	if len(m.ID) > 0 {
-		i -= len(m.ID)
-		copy(dAtA[i:], m.ID)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ID)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.Buffer) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Buffer)))
+		i += copy(dAtA[i:], m.Buffer)
 	}
-	return len(dAtA) - i, nil
+	if len(m.Offset) > 0 {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Offset)))
+		i += copy(dAtA[i:], m.Offset)
+	}
+	if len(m.Length) > 0 {
+		dAtA[i] = 0x2a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Length)))
+		i += copy(dAtA[i:], m.Length)
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
 }
 
 func (m *ContextData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1811,40 +1767,32 @@ func (m *ContextData) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *ContextData) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ContextData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.Name) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Name)))
+		i += copy(dAtA[i:], m.Name)
 	}
 	if len(m.Value) > 0 {
-		i -= len(m.Value)
-		copy(dAtA[i:], m.Value)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Value)))
-		i--
 		dAtA[i] = 0x12
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Value)))
+		i += copy(dAtA[i:], m.Value)
 	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 
 func (m *ViolationData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
@@ -1852,72 +1800,58 @@ func (m *ViolationData) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *ViolationData) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ViolationData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
+	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.Name) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Name)))
+		i += copy(dAtA[i:], m.Name)
 	}
-	if len(m.Signatures) > 0 {
-		for iNdEx := len(m.Signatures) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Signatures[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintEvent(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x22
-		}
+	if len(m.Context) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Context)))
+		i += copy(dAtA[i:], m.Context)
 	}
 	if m.ContextData != nil {
-		{
-			size, err := m.ContextData.MarshalToSizedBuffer(dAtA[:i])
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintEvent(dAtA, i, uint64(m.ContextData.Size()))
+		n6, err6 := m.ContextData.MarshalTo(dAtA[i:])
+		if err6 != nil {
+			return 0, err6
+		}
+		i += n6
+	}
+	if len(m.Signatures) > 0 {
+		for _, msg := range m.Signatures {
+			dAtA[i] = 0x22
+			i++
+			i = encodeVarintEvent(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
 			if err != nil {
 				return 0, err
 			}
-			i -= size
-			i = encodeVarintEvent(dAtA, i, uint64(size))
+			i += n
 		}
-		i--
-		dAtA[i] = 0x1a
 	}
-	if len(m.Context) > 0 {
-		i -= len(m.Context)
-		copy(dAtA[i:], m.Context)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Context)))
-		i--
-		dAtA[i] = 0x12
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
+	return i, nil
 }
 
 func encodeVarintEvent(dAtA []byte, offset int, v uint64) int {
-	offset -= sovEvent(v)
-	base := offset
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
 	dAtA[offset] = uint8(v)
-	return base
+	return offset + 1
 }
 func (m *Metadata) Size() (n int) {
 	if m == nil {
@@ -2563,7 +2497,10 @@ func (m *Metadata) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthEvent
 			}
 			if (iNdEx + skippy) > l {
@@ -2720,7 +2657,10 @@ func (m *Event) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthEvent
 			}
 			if (iNdEx + skippy) > l {
@@ -2805,7 +2745,10 @@ func (m *EventReport) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthEvent
 			}
 			if (iNdEx + skippy) > l {
@@ -2922,7 +2865,10 @@ func (m *ActivityEvent) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthEvent
 			}
 			if (iNdEx + skippy) > l {
@@ -4223,7 +4169,10 @@ func (m *SecurityViolationEvent) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthEvent
 			}
 			if (iNdEx + skippy) > l {
@@ -4434,7 +4383,10 @@ func (m *SignatureData) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthEvent
 			}
 			if (iNdEx + skippy) > l {
@@ -4549,7 +4501,10 @@ func (m *ContextData) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthEvent
 			}
 			if (iNdEx + skippy) > l {
@@ -4734,7 +4689,10 @@ func (m *ViolationData) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			if skippy < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) < 0 {
 				return ErrInvalidLengthEvent
 			}
 			if (iNdEx + skippy) > l {
@@ -4753,7 +4711,6 @@ func (m *ViolationData) Unmarshal(dAtA []byte) error {
 func skipEvent(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
-	depth := 0
 	for iNdEx < l {
 		var wire uint64
 		for shift := uint(0); ; shift += 7 {
@@ -4785,8 +4742,10 @@ func skipEvent(dAtA []byte) (n int, err error) {
 					break
 				}
 			}
+			return iNdEx, nil
 		case 1:
 			iNdEx += 8
+			return iNdEx, nil
 		case 2:
 			var length int
 			for shift := uint(0); ; shift += 7 {
@@ -4807,30 +4766,55 @@ func skipEvent(dAtA []byte) (n int, err error) {
 				return 0, ErrInvalidLengthEvent
 			}
 			iNdEx += length
-		case 3:
-			depth++
-		case 4:
-			if depth == 0 {
-				return 0, ErrUnexpectedEndOfGroupEvent
+			if iNdEx < 0 {
+				return 0, ErrInvalidLengthEvent
 			}
-			depth--
+			return iNdEx, nil
+		case 3:
+			for {
+				var innerWire uint64
+				var start int = iNdEx
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return 0, ErrIntOverflowEvent
+					}
+					if iNdEx >= l {
+						return 0, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					innerWire |= (uint64(b) & 0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				innerWireType := int(innerWire & 0x7)
+				if innerWireType == 4 {
+					break
+				}
+				next, err := skipEvent(dAtA[start:])
+				if err != nil {
+					return 0, err
+				}
+				iNdEx = start + next
+				if iNdEx < 0 {
+					return 0, ErrInvalidLengthEvent
+				}
+			}
+			return iNdEx, nil
+		case 4:
+			return iNdEx, nil
 		case 5:
 			iNdEx += 4
+			return iNdEx, nil
 		default:
 			return 0, fmt.Errorf("proto: illegal wireType %d", wireType)
 		}
-		if iNdEx < 0 {
-			return 0, ErrInvalidLengthEvent
-		}
-		if depth == 0 {
-			return iNdEx, nil
-		}
 	}
-	return 0, io.ErrUnexpectedEOF
+	panic("unreachable")
 }
 
 var (
-	ErrInvalidLengthEvent        = fmt.Errorf("proto: negative length found during unmarshaling")
-	ErrIntOverflowEvent          = fmt.Errorf("proto: integer overflow")
-	ErrUnexpectedEndOfGroupEvent = fmt.Errorf("proto: unexpected end of group")
+	ErrInvalidLengthEvent = fmt.Errorf("proto: negative length found during unmarshaling")
+	ErrIntOverflowEvent   = fmt.Errorf("proto: integer overflow")
 )

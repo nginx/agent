@@ -182,9 +182,14 @@ func (m *Metrics) metricsGoroutine() {
 			}
 			return
 		case <-m.ticker.C:
+<<<<<<< HEAD
 			stats := m.collectStats()
 			for _, reportBundle := range metrics.GenerateMetricsReports(stats) {
 				m.pipeline.Process(core.NewMessage(core.MetricReport, reportBundle))
+=======
+			for _, report := range generateMetricsReports(m.collectStats(), true) {
+				m.pipeline.Process(core.NewMessage(core.MetricReport, report))
+>>>>>>> Create dedicated cache and upstream metrics reports
 			}
 			if m.collectorsUpdate.Load() {
 				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)
