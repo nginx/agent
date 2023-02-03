@@ -33,7 +33,7 @@ func TestAPI_setupTestContainer(t *testing.T) {
 
 	assert.NoError(t, comp.
 		WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(map[string]string{
-		"PACKAGE":      os.Getenv("PACKAGE"),
+		"PACKAGE":    os.Getenv("PACKAGE"),
 		"BASE_IMAGE": os.Getenv("BASE_IMAGE"),
 	}).
 		Up(ctx, compose.Wait(true)), "compose.Up()")

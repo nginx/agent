@@ -152,22 +152,13 @@ func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.St
 	c.buf = []*proto.StatsEntity{}
 }
 
-var httpRequestMetrics = []string{
-	"request.time",
-	"request.time.count",
-	"request.time.max",
-	"request.time.median",
-	"request.time.pctl95",
-}
-
-
 func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string) {
 	logPattern := convertLogFormat(logFormat)
 	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
 	log.Debugf("Pattern used for tailing logs: %s", logPattern)
 
-	httpCounters, connCounters, headerCounters, upstreamResponseTimeCounters, upstreamResponseLenCounters := getDefaultCounters()
-	gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, connectTimes, headerTimes := []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
+	httpCounters, upstreamCounters := getDefaultCounters()
+	gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes := []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
 	mu := sync.Mutex{}
 
@@ -247,7 +238,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				cTime = strings.ReplaceAll(cTime, "-", "0")
 
 				if v, err := strconv.ParseFloat(cTime, 64); err == nil {
-					connectTimes = append(connectTimes, v)
+					upstreamConnectTimes = append(upstreamConnectTimes, v)
 				} else {
 					log.Debugf("Error getting upstream_connect_time value from access logs, %v", err)
 				}
@@ -258,7 +249,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				hTime = strings.ReplaceAll(hTime, "-", "0")
 
 				if v, err := strconv.ParseFloat(hTime, 64); err == nil {
-					headerTimes = append(headerTimes, v)
+					upstreamHeaderTimes = append(upstreamHeaderTimes, v)
 				} else {
 					log.Debugf("Error getting upstream_header_time value from access logs: %v", err)
 				}
@@ -266,11 +257,11 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 			for _, rLength := range strings.Split(access.UpstreamResponseLength, ", ") {
 				rLength = strings.ReplaceAll(rLength, "-", "0")
-				
+
 				if v, err := strconv.ParseFloat(rLength, 64); err == nil {
 					upstreamResponseLength = append(upstreamResponseLength, v)
 				} else {
-					log.Debug("Error getting upstream_response_length value from access logs: %v", err)
+					log.Debugf("Error getting upstream_response_length value from access logs: %v", err)
 				}
 
 			}
@@ -280,7 +271,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				if v, err := strconv.ParseFloat(rTime, 64); err == nil {
 					upstreamResponseTimes = append(upstreamResponseTimes, v)
 				} else {
-					log.Debug("Error getting upstream_response_time value from access logs: %v")
+					log.Debugf("Error getting upstream_response_time value from access logs: %v", err)
 				}
 			}
 
@@ -330,41 +321,48 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				httpCounters["gzip.ratio"] = getAverageMetricValue(gzipRatios)
 			}
 
-			for _, metricName := range httpRequestMetrics {
-				httpCounters[metricName] = getTimeMetrics(metricName, requestTimes)
+			if len(requestTimes) > 0 {
+				metricMap := getTimeMetricsMap("request.time", requestTimes)
+				for metricName, value := range metricMap {
+					httpCounters[metricName] = value
+				}
 			}
 
-			for metricName := range connCounters {
-				connCounters[metricName] = getTimeMetrics(metricName, connectTimes)
+			if len(upstreamConnectTimes) > 0 {
+				metricMap := getTimeMetricsMap("upstream.connect.time", upstreamConnectTimes)
+				for metricName, value := range metricMap {
+					upstreamCounters[metricName] = value
+				}
 			}
 
-			for metricName := range headerCounters {
-				headerCounters[metricName] = getTimeMetrics(metricName, headerTimes)
+			if len(upstreamHeaderTimes) > 0 {
+				metricMap := getTimeMetricsMap("upstream.header.time", upstreamHeaderTimes)
+				for metricName, value := range metricMap {
+					upstreamCounters[metricName] = value
+				}
 			}
 
-			for metricName := range upstreamResponseTimeCounters {
-				upstreamResponseTimeCounters[metricName] = getTimeMetrics(metricName, upstreamResponseTimes)
+			if len(upstreamResponseTimes) > 0 {
+				metricMap := getTimeMetricsMap("upstream.response.time", upstreamResponseTimes)
+				for metricName, value := range metricMap {
+					upstreamCounters[metricName] = value
+				}
 			}
 
 			if len(upstreamResponseLength) > 0 {
-				upstreamResponseLenCounters["upstream.response.length"] = getAverageMetricValue(upstreamResponseLength)
+				upstreamCounters["upstream.response.length"] = getAverageMetricValue(upstreamResponseLength)
 			}
 			c.group = "http"
 			simpleMetrics := c.convertSamplesToSimpleMetrics(httpCounters)
 
 			c.group = ""
-			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(connCounters)...)
-			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(headerCounters)...)
-			
-			c.group = ""
-			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamResponseTimeCounters)...)
-			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamResponseLenCounters)...)
+			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamCounters)...)
 
-			log.Tracef("Access log metrics collected: %v", simpleMetrics)
+			log.Infof("Access log metrics collected: %v", simpleMetrics)
 
 			// reset the counters
-			httpCounters, connCounters, headerCounters, upstreamResponseTimeCounters, upstreamResponseLenCounters = getDefaultCounters()
-			gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, connectTimes, headerTimes = []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
+			httpCounters, upstreamCounters = getDefaultCounters()
+			gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes = []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
 			c.buf = append(c.buf, metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics))
 
@@ -425,49 +423,59 @@ func getAverageMetricValue(metricValues []float64) float64 {
 	return value
 }
 
-func getTimeMetrics(metricName string, times []float64) float64 {
-	if len(times) == 0 {
-		return 0
+func getTimeMetricsMap(metricName string, times []float64) map[string]float64 {
+
+	metrics := map[string]float64{
+		metricName:             0,
+		metricName + ".count":  0,
+		metricName + ".median": 0,
+		metricName + ".max":    0,
+		metricName + ".pctl95": 0,
 	}
 
-	metricType := metricName[strings.LastIndex(metricName, ".")+1:]
+	for metric := range metrics {
 
-	switch metricType {
-	case "time":
-		// Calculate average
-		sum := 0.0
-		for _, t := range times {
-			sum += t
+		metricType := metric[strings.LastIndex(metric, ".")+1:]
+
+		switch metricType {
+		case "time":
+			// Calculate average
+			sum := 0.0
+			for _, t := range times {
+				sum += t
+			}
+
+			metrics[metric] = (math.Round(sum*1000) / 1000) / float64(len(times))
+
+		case "count":
+			metrics[metric] = float64(len(times))
+
+		case "max":
+			sort.Float64s(times)
+			metrics[metric] = times[len(times)-1]
+
+		case "median":
+			sort.Float64s(times)
+
+			mNumber := len(times) / 2
+			if len(times)%2 != 0 {
+				metrics[metric] = times[mNumber]
+			} else {
+				metrics[metric] = (times[mNumber-1] + times[mNumber]) / 2
+			}
+
+		case "pctl95":
+			sort.Float64s(times)
+
+			index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
+			metrics[metric] = times[index]
 		}
-		return sum / float64(len(times))
 
-	case "count":
-		return float64(len(times))
-
-	case "max":
-		sort.Float64s(times)
-		return times[len(times)-1]
-
-	case "median":
-		sort.Float64s(times)
-
-		mNumber := len(times) / 2
-		if len(times)%2 != 0 {
-			return times[mNumber]
-		} else {
-			return (times[mNumber-1] + times[mNumber]) / 2
-		}
-
-	case "pctl95":
-		sort.Float64s(times)
-
-		index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
-		return times[index]
 	}
 
-	log.Debugf("Could not get time metrics for %s: invalid metric type", metricName)
+	// log.Debugf("Could not get time metrics for %s: invalid metric type", metricName)
 
-	return 0
+	return metrics
 }
 
 // convertLogFormat converts log format into a pattern that can be parsed by the tailer
@@ -505,7 +513,7 @@ func isOtherMethod(method string) bool {
 		method != "method.options"
 }
 
-func getDefaultCounters() (map[string]float64, map[string]float64, map[string]float64, map[string]float64, map[string]float64) {
+func getDefaultCounters() (map[string]float64, map[string]float64) {
 	httpCounters := map[string]float64{
 		"gzip.ratio":              0,
 		"method.delete":           0,
@@ -542,33 +550,24 @@ func getDefaultCounters() (map[string]float64, map[string]float64, map[string]fl
 		"v2":                      0,
 	}
 
-	upstreamConnectCounters := map[string]float64{
-		"upstream.connect.time":        0,
-		"upstream.connect.time.count":  0,
-		"upstream.connect.time.max":    0,
-		"upstream.connect.time.median": 0,
-		"upstream.connect.time.pctl95": 0,
-	}
-
-	upstreamHeaderCounters := map[string]float64{
-		"upstream.header.time":        0,
-		"upstream.header.time.count":  0,
-		"upstream.header.time.max":    0,
-		"upstream.header.time.median": 0,
-		"upstream.header.time.pctl95": 0,
-	}
-
-	upstreamResponseTimeCounters := map[string]float64{
+	upstreamCounters := map[string]float64{
+		"upstream.connect.time":         0,
+		"upstream.connect.time.count":   0,
+		"upstream.connect.time.max":     0,
+		"upstream.connect.time.median":  0,
+		"upstream.connect.time.pctl95":  0,
+		"upstream.header.time":          0,
+		"upstream.header.time.count":    0,
+		"upstream.header.time.max":      0,
+		"upstream.header.time.median":   0,
+		"upstream.header.time.pctl95":   0,
 		"upstream.response.time":        0,
 		"upstream.response.time.count":  0,
 		"upstream.response.time.max":    0,
 		"upstream.response.time.median": 0,
 		"upstream.response.time.pctl95": 0,
+		"upstream.response.length":      0,
 	}
 
-	upstreamResponseLenCounters := map[string]float64{
-		"upstream.response.length":        0,
-	}
-
-	return httpCounters, upstreamConnectCounters, upstreamHeaderCounters, upstreamResponseTimeCounters, upstreamResponseLenCounters
+	return httpCounters, upstreamCounters
 }
