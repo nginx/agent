@@ -144,7 +144,7 @@ func GetCalculationMap() map[string]string {
 		"nginx.upstream.response.time":                       "avg",
 		"nginx.upstream.response.time.count":                 "sum",
 		"nginx.upstream.response.time.max":                   "avg",
-		"nginx.upstream.response.median":                     "avg",
+		"nginx.upstream.response.time.median":                "avg",
 		"nginx.upstream.response.time.pctl95":                "avg",
 		"nginx.http.conn.handled":                            "sum",
 		"nginx.http.conn.reading":                            "avg",
