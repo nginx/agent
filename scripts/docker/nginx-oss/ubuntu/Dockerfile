@@ -8,7 +8,6 @@ ARG ENTRY_POINT
 WORKDIR /agent
 COPY ./ /agent
 COPY $ENTRY_POINT /agent/entrypoint.sh
-COPY $NGINX_CONF /agent/nginx.conf
 
 RUN set -x \
     && addgroup --system --gid 101 nginx \

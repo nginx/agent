@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -17,9 +19,11 @@ import (
 )
 
 const (
-	osReleasePath  = "/etc/os-release"
 	maxFileSize    = int64(20000000)
 	maxInstallTime = 30 * time.Second
+
+	osReleasePath               = "/etc/os-release"
+	absContainerAgentPackageDir = "/agent/build"
 )
 
 var (
@@ -58,9 +62,9 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	setupTestContainer(t)
 
-	exitCode, o, err := agentContainer.Exec(context.Background(), []string{"cat", osReleasePath})
+	exitCode, osReleaseFileContent, err := agentContainer.Exec(context.Background(), []string{"cat", osReleasePath})
 	assert.NoError(t, err)
-	osReleaseContent, err := io.ReadAll(o)
+	osReleaseContent, err := io.ReadAll(osReleaseFileContent)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, exitCode)
 	assert.NotEmpty(t, osReleaseContent, "os release file empty")
@@ -82,30 +86,17 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		"AgentDynamicConfigFile": "/etc/nginx-agent/agent-dynamic.conf",
 	}
 
-	agentPackageFilePath := getPackagePath(string(osReleaseContent))
-
-	// Check the agent package is present
-	agentPkg, err := agentContainer.CopyFileFromContainer(context.Background(), agentPackageFilePath)
-	assert.NoError(t, err)
-
-	a, err := io.ReadAll(agentPkg)
-	assert.NoError(t, err)
-
-	f, err := os.CreateTemp("", "tmpfile-")
-	assert.NoError(t, err)
-
-	_, err = f.Write(a)
-	assert.NoError(t, err)
-	f.Close()
-
-	file, err := os.Stat(f.Name())
-	assert.NoError(t, err, "Error accessing package at:", agentPackageFilePath)
-
 	// Check the file size is less than or equal 20MB
-	assert.LessOrEqual(t, file.Size(), maxFileSize)
+	absLocalAgentPkgDirPath, err := filepath.Abs("../../../build/")
+	assert.NoError(t, err, "Error finding local agent package build dir")
+	localAgentPkg, err := os.Stat(getPackagePath(absLocalAgentPkgDirPath, string(osReleaseContent)))
+	assert.NoError(t, err, "Error accessing package at: "+absLocalAgentPkgDirPath)
+
+	assert.LessOrEqual(t, localAgentPkg.Size(), maxFileSize)
 
 	// Install Agent and record installation time/install output
-	installTime, installLog := installAgent(t, agentContainer, agentPackageFilePath, string(osReleaseContent))
+	dockerAgentPackagePath := getPackagePath(absContainerAgentPackageDir, string(osReleaseContent))
+	installTime, installLog := installAgent(t, agentContainer, dockerAgentPackagePath, string(osReleaseContent))
 
 	// Check the install time under 30s
 	assert.LessOrEqual(t, installTime, maxInstallTime)
@@ -204,10 +195,8 @@ func nginxIsRunning() bool {
 	return false
 }
 
-const pkgDir = "/agent/build/"
-
-func getPackagePath(osReleaseContent string) string {
-	pkgPath := pkgDir + AGENT_PACKAGE_FILENAME
+func getPackagePath(pkgDir, osReleaseContent string) string {
+	pkgPath := path.Join(pkgDir, AGENT_PACKAGE_FILENAME)
 
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return pkgPath + ".deb"
