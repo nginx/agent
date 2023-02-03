@@ -346,7 +346,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			c.group = ""
 			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamCounters)...)
 
-			log.Infof("Access log metrics collected: %v", simpleMetrics)
+			log.Tracef("Access log metrics collected: %v", simpleMetrics)
 
 			// reset the counters
 			httpCounters, upstreamCounters = getDefaultCounters()
