@@ -322,31 +322,19 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			}
 
 			if len(requestTimes) > 0 {
-				metricMap := getTimeMetricsMap("request.time", requestTimes)
-				for metricName, value := range metricMap {
-					httpCounters[metricName] = value
-				}
+				getTimeMetricsMap("request.time", requestTimes, httpCounters)
 			}
 
 			if len(upstreamConnectTimes) > 0 {
-				metricMap := getTimeMetricsMap("upstream.connect.time", upstreamConnectTimes)
-				for metricName, value := range metricMap {
-					upstreamCounters[metricName] = value
-				}
+				getTimeMetricsMap("upstream.connect.time", upstreamConnectTimes, upstreamCounters)
 			}
 
 			if len(upstreamHeaderTimes) > 0 {
-				metricMap := getTimeMetricsMap("upstream.header.time", upstreamHeaderTimes)
-				for metricName, value := range metricMap {
-					upstreamCounters[metricName] = value
-				}
+				getTimeMetricsMap("upstream.header.time", upstreamHeaderTimes, upstreamCounters)
 			}
 
 			if len(upstreamResponseTimes) > 0 {
-				metricMap := getTimeMetricsMap("upstream.response.time", upstreamResponseTimes)
-				for metricName, value := range metricMap {
-					upstreamCounters[metricName] = value
-				}
+				getTimeMetricsMap("upstream.response.time", upstreamResponseTimes, upstreamCounters)
 			}
 
 			if len(upstreamResponseLength) > 0 {
@@ -423,7 +411,7 @@ func getAverageMetricValue(metricValues []float64) float64 {
 	return value
 }
 
-func getTimeMetricsMap(metricName string, times []float64) map[string]float64 {
+func getTimeMetricsMap(metricName string, times []float64, counter map[string]float64) {
 
 	metrics := map[string]float64{
 		metricName:             0,
@@ -445,37 +433,34 @@ func getTimeMetricsMap(metricName string, times []float64) map[string]float64 {
 				sum += t
 			}
 
-			metrics[metric] = (math.Round(sum*1000) / 1000) / float64(len(times))
+			counter[metric] = (math.Round(sum*1000) / 1000) / float64(len(times))
 
 		case "count":
-			metrics[metric] = float64(len(times))
+			counter[metric] = float64(len(times))
 
 		case "max":
 			sort.Float64s(times)
-			metrics[metric] = times[len(times)-1]
+			counter[metric] = times[len(times)-1]
 
 		case "median":
 			sort.Float64s(times)
 
 			mNumber := len(times) / 2
 			if len(times)%2 != 0 {
-				metrics[metric] = times[mNumber]
+				counter[metric] = times[mNumber]
 			} else {
-				metrics[metric] = (times[mNumber-1] + times[mNumber]) / 2
+				counter[metric] = (times[mNumber-1] + times[mNumber]) / 2
 			}
 
 		case "pctl95":
 			sort.Float64s(times)
 
 			index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
-			metrics[metric] = times[index]
+			counter[metric] = times[index]
 		}
 
 	}
 
-	// log.Debugf("Could not get time metrics for %s: invalid metric type", metricName)
-
-	return metrics
 }
 
 // convertLogFormat converts log format into a pattern that can be parsed by the tailer
