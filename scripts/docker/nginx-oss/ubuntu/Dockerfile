@@ -36,6 +36,7 @@ FROM install as runtime
 
 COPY --from=install /agent/entrypoint.sh /agent/entrypoint.sh
 COPY --from=install /agent/nginx-agent.conf /etc/nginx-agent/nginx-agent.conf
+COPY --from=install /agent/nginx.conf /etc/nginx/nginx.conf
 
 RUN chmod +x /agent/entrypoint.sh
 STOPSIGNAL SIGTERM

@@ -16,7 +16,7 @@ The services run by this example are listed below
 |-------------|-------|
 | Grafana     | 3000  |   
 | NGINX       | 8080  |
-| Grafana     | 8081  |  
+| AGENT API   | 8081  |  
 | Prometheus  | 9090  |
 
 <br>
