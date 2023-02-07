@@ -183,36 +183,46 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			}
 
 			mu.Lock()
-			if v, err := strconv.Atoi(access.BodyBytesSent); err == nil {
-				n := "request.body_bytes_sent"
-				httpCounters[n] = float64(v) + httpCounters[n]
-			} else {
-				log.Debugf("Error getting body_bytes_sent value from access logs: %v", err)
+			if access.BodyBytesSent != "" {
+				if v, err := strconv.Atoi(access.BodyBytesSent); err == nil {
+					n := "request.body_bytes_sent"
+					httpCounters[n] = float64(v) + httpCounters[n]
+				} else {
+					log.Debugf("Error getting body_bytes_sent value from access logs: %v", err)
+				}
 			}
 
-			if v, err := strconv.Atoi(access.BytesSent); err == nil {
-				n := "request.bytes_sent"
-				httpCounters[n] = float64(v) + httpCounters[n]
-			} else {
-				log.Debugf("Error getting bytes_sent value from access logs: %v", err)
+			if access.BytesSent != "" {
+				if v, err := strconv.Atoi(access.BytesSent); err == nil {
+					n := "request.bytes_sent"
+					httpCounters[n] = float64(v) + httpCounters[n]
+				} else {
+					log.Debugf("Error getting bytes_sent value from access logs: %v", err)
+				}
 			}
 
-			if v, err := strconv.Atoi(access.GzipRatio); err == nil {
-				gzipRatios = append(gzipRatios, float64(v))
-			} else {
-				log.Debugf("Error getting gzip_ratio value from access logs: %v", err)
+			if access.GzipRatio != "-" && access.GzipRatio != "" {
+				if v, err := strconv.Atoi(access.GzipRatio); err == nil {
+					gzipRatios = append(gzipRatios, float64(v))
+				} else {
+					log.Debugf("Error getting gzip_ratio value from access logs: %v", err)
+				}
 			}
 
-			if v, err := strconv.Atoi(access.RequestLength); err == nil {
-				requestLengths = append(requestLengths, float64(v))
-			} else {
-				log.Debugf("Error getting request_length value from access logs: %v", err)
+			if access.RequestLength != "" {
+				if v, err := strconv.Atoi(access.RequestLength); err == nil {
+					requestLengths = append(requestLengths, float64(v))
+				} else {
+					log.Debugf("Error getting request_length value from access logs: %v", err)
+				}
 			}
 
-			if v, err := strconv.ParseFloat(access.RequestTime, 64); err == nil {
-				requestTimes = append(requestTimes, v)
-			} else {
-				log.Debugf("Error getting request_time value from access logs: %v", err)
+			if access.RequestTime != "" {
+				if v, err := strconv.ParseFloat(access.RequestTime, 64); err == nil {
+					requestTimes = append(requestTimes, v)
+				} else {
+					log.Debugf("Error getting request_time value from access logs: %v", err)
+				}
 			}
 
 			if access.Request != "" {
@@ -233,32 +243,24 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				}
 			}
 
-			for _, cTime := range strings.Split(access.UpstreamConnectTime, ", ") {
-				// nginx uses '-' to represent TCP connection failures
-				cTime = strings.ReplaceAll(cTime, "-", "0")
-
-				if v, err := strconv.ParseFloat(cTime, 64); err == nil {
+			if access.UpstreamConnectTime != "-" && access.UpstreamConnectTime != "" {
+				if v, err := strconv.ParseFloat(access.UpstreamConnectTime, 64); err == nil {
 					upstreamConnectTimes = append(upstreamConnectTimes, v)
 				} else {
 					log.Debugf("Error getting upstream_connect_time value from access logs, %v", err)
 				}
 			}
 
-			for _, hTime := range strings.Split(access.UpstreamHeaderTime, ", ") {
-				// nginx uses '-' to represent TCP connection failures
-				hTime = strings.ReplaceAll(hTime, "-", "0")
-
-				if v, err := strconv.ParseFloat(hTime, 64); err == nil {
+			if access.UpstreamHeaderTime != "-" && access.UpstreamHeaderTime != "" {
+				if v, err := strconv.ParseFloat(access.UpstreamHeaderTime, 64); err == nil {
 					upstreamHeaderTimes = append(upstreamHeaderTimes, v)
 				} else {
 					log.Debugf("Error getting upstream_header_time value from access logs: %v", err)
 				}
 			}
 
-			for _, rLength := range strings.Split(access.UpstreamResponseLength, ", ") {
-				rLength = strings.ReplaceAll(rLength, "-", "0")
-
-				if v, err := strconv.ParseFloat(rLength, 64); err == nil {
+			if access.UpstreamResponseLength != "-" && access.UpstreamResponseLength != "" {
+				if v, err := strconv.ParseFloat(access.UpstreamResponseLength, 64); err == nil {
 					upstreamResponseLength = append(upstreamResponseLength, v)
 				} else {
 					log.Debugf("Error getting upstream_response_length value from access logs: %v", err)
@@ -266,9 +268,8 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 			}
 
-			for _, rTime := range strings.Split(access.UpstreamResponseTime, ", ") {
-				rTime = strings.ReplaceAll(rTime, "-", "0")
-				if v, err := strconv.ParseFloat(rTime, 64); err == nil {
+			if access.UpstreamResponseTime != "-" && access.UpstreamResponseTime != "" {
+				if v, err := strconv.ParseFloat(access.UpstreamResponseTime, 64); err == nil {
 					upstreamResponseTimes = append(upstreamResponseTimes, v)
 				} else {
 					log.Debugf("Error getting upstream_response_time value from access logs: %v", err)
