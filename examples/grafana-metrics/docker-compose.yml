@@ -14,7 +14,7 @@ services:
       dockerfile: ./scripts/docker/nginx-oss/ubuntu/Dockerfile
       args:
         PACKAGE: nginx-agent
-        BASE_IMAGE: "docker.io/ubuntu:22.04"
+        BASE_IMAGE: ${BASE_IMAGE}
         AGENT_CONF: "./examples/grafana-metrics/nginx-agent.conf"
         NGINX_CONF: "./examples/grafana-metrics/nginx.conf"
         ENTRY_POINT: "./scripts/docker/nginx-oss/entrypoint.sh"
