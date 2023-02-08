@@ -23,12 +23,16 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// Metric type enum
 type MetricsReport_Type int32
 
 const (
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> adds updated generated files from protobuf
 	// System metric type
 	MetricsReport_SYSTEM MetricsReport_Type = 0
 	// NGINX instance metric type
@@ -36,6 +40,7 @@ const (
 	// Agent metric type
 	MetricsReport_AGENT MetricsReport_Type = 2
 	// Cache zone metric type
+<<<<<<< HEAD
 	MetricsReport_CACHE_ZONE MetricsReport_Type = 3
 	// Upstreams metric type
 	MetricsReport_UPSTREAMS MetricsReport_Type = 4
@@ -46,6 +51,11 @@ const (
 	MetricsReport_CACHE_ZONE MetricsReport_Type = 3
 	MetricsReport_UPSTREAMS  MetricsReport_Type = 4
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+	MetricsReport_CACHE_ZONE MetricsReport_Type = 3
+	// Upstreams metric type
+	MetricsReport_UPSTREAMS MetricsReport_Type = 4
+>>>>>>> adds updated generated files from protobuf
 )
 
 var MetricsReport_Type_name = map[int32]string{
@@ -72,13 +82,17 @@ func (MetricsReport_Type) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_6039342a2ba47b72, []int{0, 0}
 }
 
+// Represents a metric report
 type MetricsReport struct {
-	Meta                 *Metadata          `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta"`
-	Type                 MetricsReport_Type `protobuf:"varint,2,opt,name=type,proto3,enum=f5.nginx.agent.sdk.MetricsReport_Type" json:"type"`
-	Data                 []*StatsEntity     `protobuf:"bytes,3,rep,name=data,proto3" json:"data"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
+	// Provides meta information about the metrics
+	Meta *Metadata `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta"`
+	// Type of metrics
+	Type MetricsReport_Type `protobuf:"varint,2,opt,name=type,proto3,enum=f5.nginx.agent.sdk.MetricsReport_Type" json:"type"`
+	// List of stats entities
+	Data                 []*StatsEntity `protobuf:"bytes,3,rep,name=data,proto3" json:"data"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
 func (m *MetricsReport) Reset()         { *m = MetricsReport{} }
@@ -95,7 +109,7 @@ func (m *MetricsReport) XXX_Marshal(b []byte, deterministic bool) ([]byte, error
 		return xxx_messageInfo_MetricsReport.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +150,9 @@ func (m *MetricsReport) GetData() []*StatsEntity {
 }
 
 type SimpleMetric struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
+	// Metric name
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
+	// Metric value
 	Value                float64  `protobuf:"fixed64,2,opt,name=value,proto3" json:"value"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -157,7 +173,7 @@ func (m *SimpleMetric) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return xxx_messageInfo_SimpleMetric.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -192,7 +208,9 @@ func (m *SimpleMetric) GetValue() float64 {
 
 // Dimension defines a dimensional attribute used when classifying and categorizing data
 type Dimension struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
+	// Dimension name
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
+	// Dimension value
 	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -213,7 +231,7 @@ func (m *Dimension) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_Dimension.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -247,17 +265,24 @@ func (m *Dimension) GetValue() string {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // StatsEntity defines a stats entity which is a timestamped entry for dimensions and metrics
 =======
 // StatsEntity a timestamped entry for Dimensions and Metrics
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+// StatsEntity defines a stats entity which is a timestamped entry for dimensions and metrics
+>>>>>>> adds updated generated files from protobuf
 type StatsEntity struct {
-	Timestamp            *types.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Dimensions           []*Dimension     `protobuf:"bytes,3,rep,name=dimensions,proto3" json:"dimensions"`
-	Simplemetrics        []*SimpleMetric  `protobuf:"bytes,4,rep,name=simplemetrics,proto3" json:"simplemetrics"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	// Timestamp defines the time of stats entity creation
+	Timestamp *types.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// List of dimensions
+	Dimensions []*Dimension `protobuf:"bytes,3,rep,name=dimensions,proto3" json:"dimensions"`
+	// List of metrics
+	Simplemetrics        []*SimpleMetric `protobuf:"bytes,4,rep,name=simplemetrics,proto3" json:"simplemetrics"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *StatsEntity) Reset()         { *m = StatsEntity{} }
@@ -274,7 +299,7 @@ func (m *StatsEntity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return xxx_messageInfo_StatsEntity.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -362,7 +387,7 @@ var fileDescriptor_6039342a2ba47b72 = []byte{
 func (m *MetricsReport) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
@@ -370,47 +395,57 @@ func (m *MetricsReport) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *MetricsReport) MarshalTo(dAtA []byte) (int, error) {
-	var i int
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MetricsReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Meta != nil {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintMetrics(dAtA, i, uint64(m.Meta.Size()))
-		n1, err1 := m.Meta.MarshalTo(dAtA[i:])
-		if err1 != nil {
-			return 0, err1
-		}
-		i += n1
-	}
-	if m.Type != 0 {
-		dAtA[i] = 0x10
-		i++
-		i = encodeVarintMetrics(dAtA, i, uint64(m.Type))
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if len(m.Data) > 0 {
-		for _, msg := range m.Data {
+		for iNdEx := len(m.Data) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Data[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintMetrics(dAtA, i, uint64(size))
+			}
+			i--
 			dAtA[i] = 0x1a
-			i++
-			i = encodeVarintMetrics(dAtA, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(dAtA[i:])
+		}
+	}
+	if m.Type != 0 {
+		i = encodeVarintMetrics(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Meta != nil {
+		{
+			size, err := m.Meta.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
-			i += n
+			i -= size
+			i = encodeVarintMetrics(dAtA, i, uint64(size))
 		}
+		i--
+		dAtA[i] = 0xa
 	}
-	if m.XXX_unrecognized != nil {
-		i += copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	return i, nil
+	return len(dAtA) - i, nil
 }
 
 func (m *SimpleMetric) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
@@ -418,32 +453,39 @@ func (m *SimpleMetric) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *SimpleMetric) MarshalTo(dAtA []byte) (int, error) {
-	var i int
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SimpleMetric) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Name) > 0 {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintMetrics(dAtA, i, uint64(len(m.Name)))
-		i += copy(dAtA[i:], m.Name)
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if m.Value != 0 {
-		dAtA[i] = 0x11
-		i++
+		i -= 8
 		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.Value))))
-		i += 8
+		i--
+		dAtA[i] = 0x11
 	}
-	if m.XXX_unrecognized != nil {
-		i += copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintMetrics(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
 	}
-	return i, nil
+	return len(dAtA) - i, nil
 }
 
 func (m *Dimension) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
@@ -451,32 +493,40 @@ func (m *Dimension) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *Dimension) MarshalTo(dAtA []byte) (int, error) {
-	var i int
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Dimension) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Name) > 0 {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintMetrics(dAtA, i, uint64(len(m.Name)))
-		i += copy(dAtA[i:], m.Name)
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if len(m.Value) > 0 {
-		dAtA[i] = 0x12
-		i++
+		i -= len(m.Value)
+		copy(dAtA[i:], m.Value)
 		i = encodeVarintMetrics(dAtA, i, uint64(len(m.Value)))
-		i += copy(dAtA[i:], m.Value)
+		i--
+		dAtA[i] = 0x12
 	}
-	if m.XXX_unrecognized != nil {
-		i += copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintMetrics(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
 	}
-	return i, nil
+	return len(dAtA) - i, nil
 }
 
 func (m *StatsEntity) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
@@ -484,58 +534,72 @@ func (m *StatsEntity) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *StatsEntity) MarshalTo(dAtA []byte) (int, error) {
-	var i int
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *StatsEntity) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Timestamp != nil {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintMetrics(dAtA, i, uint64(m.Timestamp.Size()))
-		n2, err2 := m.Timestamp.MarshalTo(dAtA[i:])
-		if err2 != nil {
-			return 0, err2
-		}
-		i += n2
-	}
-	if len(m.Dimensions) > 0 {
-		for _, msg := range m.Dimensions {
-			dAtA[i] = 0x1a
-			i++
-			i = encodeVarintMetrics(dAtA, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(dAtA[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if len(m.Simplemetrics) > 0 {
-		for _, msg := range m.Simplemetrics {
+		for iNdEx := len(m.Simplemetrics) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Simplemetrics[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintMetrics(dAtA, i, uint64(size))
+			}
+			i--
 			dAtA[i] = 0x22
-			i++
-			i = encodeVarintMetrics(dAtA, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(dAtA[i:])
+		}
+	}
+	if len(m.Dimensions) > 0 {
+		for iNdEx := len(m.Dimensions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Dimensions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintMetrics(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if m.Timestamp != nil {
+		{
+			size, err := m.Timestamp.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
-			i += n
+			i -= size
+			i = encodeVarintMetrics(dAtA, i, uint64(size))
 		}
+		i--
+		dAtA[i] = 0xa
 	}
-	if m.XXX_unrecognized != nil {
-		i += copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	return i, nil
+	return len(dAtA) - i, nil
 }
 
 func encodeVarintMetrics(dAtA []byte, offset int, v uint64) int {
+	offset -= sovMetrics(v)
+	base := offset
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
 	dAtA[offset] = uint8(v)
-	return offset + 1
+	return base
 }
 func (m *MetricsReport) Size() (n int) {
 	if m == nil {
@@ -759,10 +823,7 @@ func (m *MetricsReport) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthMetrics
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthMetrics
 			}
 			if (iNdEx + skippy) > l {
@@ -856,10 +917,7 @@ func (m *SimpleMetric) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthMetrics
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthMetrics
 			}
 			if (iNdEx + skippy) > l {
@@ -974,10 +1032,7 @@ func (m *Dimension) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthMetrics
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthMetrics
 			}
 			if (iNdEx + skippy) > l {
@@ -1132,10 +1187,7 @@ func (m *StatsEntity) Unmarshal(dAtA []byte) error {
 			if err != nil {
 				return err
 			}
-			if skippy < 0 {
-				return ErrInvalidLengthMetrics
-			}
-			if (iNdEx + skippy) < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return ErrInvalidLengthMetrics
 			}
 			if (iNdEx + skippy) > l {
@@ -1154,6 +1206,7 @@ func (m *StatsEntity) Unmarshal(dAtA []byte) error {
 func skipMetrics(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
+	depth := 0
 	for iNdEx < l {
 		var wire uint64
 		for shift := uint(0); ; shift += 7 {
@@ -1185,10 +1238,8 @@ func skipMetrics(dAtA []byte) (n int, err error) {
 					break
 				}
 			}
-			return iNdEx, nil
 		case 1:
 			iNdEx += 8
-			return iNdEx, nil
 		case 2:
 			var length int
 			for shift := uint(0); ; shift += 7 {
@@ -1209,55 +1260,30 @@ func skipMetrics(dAtA []byte) (n int, err error) {
 				return 0, ErrInvalidLengthMetrics
 			}
 			iNdEx += length
-			if iNdEx < 0 {
-				return 0, ErrInvalidLengthMetrics
-			}
-			return iNdEx, nil
 		case 3:
-			for {
-				var innerWire uint64
-				var start int = iNdEx
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return 0, ErrIntOverflowMetrics
-					}
-					if iNdEx >= l {
-						return 0, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					innerWire |= (uint64(b) & 0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				innerWireType := int(innerWire & 0x7)
-				if innerWireType == 4 {
-					break
-				}
-				next, err := skipMetrics(dAtA[start:])
-				if err != nil {
-					return 0, err
-				}
-				iNdEx = start + next
-				if iNdEx < 0 {
-					return 0, ErrInvalidLengthMetrics
-				}
-			}
-			return iNdEx, nil
+			depth++
 		case 4:
-			return iNdEx, nil
+			if depth == 0 {
+				return 0, ErrUnexpectedEndOfGroupMetrics
+			}
+			depth--
 		case 5:
 			iNdEx += 4
-			return iNdEx, nil
 		default:
 			return 0, fmt.Errorf("proto: illegal wireType %d", wireType)
 		}
+		if iNdEx < 0 {
+			return 0, ErrInvalidLengthMetrics
+		}
+		if depth == 0 {
+			return iNdEx, nil
+		}
 	}
-	panic("unreachable")
+	return 0, io.ErrUnexpectedEOF
 }
 
 var (
-	ErrInvalidLengthMetrics = fmt.Errorf("proto: negative length found during unmarshaling")
-	ErrIntOverflowMetrics   = fmt.Errorf("proto: integer overflow")
+	ErrInvalidLengthMetrics        = fmt.Errorf("proto: negative length found during unmarshaling")
+	ErrIntOverflowMetrics          = fmt.Errorf("proto: integer overflow")
+	ErrUnexpectedEndOfGroupMetrics = fmt.Errorf("proto: unexpected end of group")
 )
