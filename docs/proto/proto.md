@@ -1095,8 +1095,8 @@ Dimension defines a dimensional attribute used when classifying and categorizing
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| value | [string](#string) |  |  |
+| name | [string](#string) |  | Dimension name |
+| value | [string](#string) |  | Dimension value |
 
 
 
@@ -1106,14 +1106,14 @@ Dimension defines a dimensional attribute used when classifying and categorizing
 <a name="f5-nginx-agent-sdk-MetricsReport"></a>
 
 ### MetricsReport
-
+Represents a metric report
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [Metadata](#f5-nginx-agent-sdk-Metadata) |  |  |
-| type | [MetricsReport.Type](#f5-nginx-agent-sdk-MetricsReport-Type) |  |  |
-| data | [StatsEntity](#f5-nginx-agent-sdk-StatsEntity) | repeated |  |
+| meta | [Metadata](#f5-nginx-agent-sdk-Metadata) |  | Provides meta information about the metrics |
+| type | [MetricsReport.Type](#f5-nginx-agent-sdk-MetricsReport-Type) |  | Type of metrics |
+| data | [StatsEntity](#f5-nginx-agent-sdk-StatsEntity) | repeated | List of stats entities |
 
 
 
@@ -1128,8 +1128,8 @@ Dimension defines a dimensional attribute used when classifying and categorizing
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| value | [double](#double) |  |  |
+| name | [string](#string) |  | Metric name |
+| value | [double](#double) |  | Metric value |
 
 
 
@@ -1140,17 +1140,21 @@ Dimension defines a dimensional attribute used when classifying and categorizing
 
 ### StatsEntity
 <<<<<<< HEAD
+<<<<<<< HEAD
 StatsEntity defines a stats entity which is a timestamped entry for dimensions and metrics
 =======
 StatsEntity a timestamped entry for Dimensions and Metrics
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+StatsEntity defines a stats entity which is a timestamped entry for dimensions and metrics
+>>>>>>> adds updated generated files from protobuf
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
-| dimensions | [Dimension](#f5-nginx-agent-sdk-Dimension) | repeated |  |
-| simplemetrics | [SimpleMetric](#f5-nginx-agent-sdk-SimpleMetric) | repeated |  |
+| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Timestamp defines the time of stats entity creation |
+| dimensions | [Dimension](#f5-nginx-agent-sdk-Dimension) | repeated | List of dimensions |
+| simplemetrics | [SimpleMetric](#f5-nginx-agent-sdk-SimpleMetric) | repeated | List of metrics |
 
 
 
@@ -1162,10 +1166,11 @@ StatsEntity a timestamped entry for Dimensions and Metrics
 <a name="f5-nginx-agent-sdk-MetricsReport-Type"></a>
 
 ### MetricsReport.Type
-
+Metric type enum
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1173,6 +1178,10 @@ StatsEntity a timestamped entry for Dimensions and Metrics
 >>>>>>> adds updated generated files from protobuf
 =======
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+=======
+>>>>>>> adds updated generated files from protobuf
+>>>>>>> adds updated generated files from protobuf
 | SYSTEM | 0 | System metric type |
 | INSTANCE | 1 | NGINX instance metric type |
 | AGENT | 2 | Agent metric type |
@@ -1180,8 +1189,11 @@ StatsEntity a timestamped entry for Dimensions and Metrics
 | UPSTREAMS | 4 | Upstreams metric type |
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+>>>>>>> adds updated generated files from protobuf
 =======
 | SYSTEM | 0 |  |
 | INSTANCE | 1 |  |
@@ -1190,10 +1202,15 @@ StatsEntity a timestamped entry for Dimensions and Metrics
 | UPSTREAMS | 4 |  |
 >>>>>>> Create dedicated cache and upstream metrics reports
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> adds updated generated files from protobuf
 =======
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+=======
+>>>>>>> adds updated generated files from protobuf
+>>>>>>> adds updated generated files from protobuf
 
 
  
