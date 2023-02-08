@@ -30,7 +30,8 @@ func TestFileWatcherThrottling(t *testing.T) {
 		fileWatchThrottle := NewFileWatchThrottle()
 
 		messagePipe := core.NewMockMessagePipe(context.Background())
-		err := messagePipe.Register(10, fileWatchThrottle)
+
+		err := messagePipe.Register(10, []core.Plugin{fileWatchThrottle}, []core.ExtensionPlugin{})
 		assert.NoError(t, err)
 
 		defer fileWatchThrottle.Close()

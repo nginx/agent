@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package plugins
+package extensions
 
 import (
 	"context"
@@ -17,7 +17,6 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
-	"github.com/nginx/agent/v2/src/core/payloads"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/nap"
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
@@ -32,6 +31,7 @@ const (
 var (
 	testNAPDetailsActive = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
+			WafLocation:             nap.APP_PROTECT_METADATA_FILE_PATH,
 			WafVersion:              testWAFVersion,
 			AttackSignaturesVersion: testSigDate1,
 			ThreatCampaignsVersion:  testCampaignDate1,
@@ -44,6 +44,7 @@ var (
 
 	testNAPDetailsUnknown = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
+			WafLocation: nap.APP_PROTECT_METADATA_FILE_PATH,
 			Health: &proto.AppProtectWAFHealth{
 				SystemId:            testSystemID,
 				AppProtectWafStatus: proto.AppProtectWAFHealth_UNKNOWN,
@@ -53,6 +54,7 @@ var (
 
 	testNAPDetailsDegraded = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
+			WafLocation:             nap.APP_PROTECT_METADATA_FILE_PATH,
 			WafVersion:              testWAFVersion,
 			AttackSignaturesVersion: testSigDate1,
 			ThreatCampaignsVersion:  testCampaignDate1,
@@ -68,17 +70,15 @@ var (
 func TestNginxAppProtect(t *testing.T) {
 	env := tutils.GetMockEnvWithProcess()
 
-	config := &config.Config{
-		NginxAppProtect: config.NginxAppProtect{
-			ReportInterval: time.Duration(15) * time.Second,
-		},
-	}
+	config := &config.Config{}
 
-	napPlugin, err := NewNginxAppProtect(config, env)
+	napPlugin, err := NewNginxAppProtect(config, env, NginxAppProtectConfig{
+		ReportInterval: time.Duration(15) * time.Second,
+	})
 	assert.NoError(t, err)
 	defer napPlugin.Close()
 
-	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), napPlugin)
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{}, []core.ExtensionPlugin{napPlugin})
 	messagePipe.Run()
 
 	t.Run("returns get response", func(t *testing.T) {
@@ -104,11 +104,5 @@ func TestNginxAppProtect(t *testing.T) {
 		}
 		currentNAPPluginDetails = napPlugin.generateNAPDetailsProtoCommand()
 		assert.Equal(t, testNAPDetailsDegraded, currentNAPPluginDetails)
-	})
-
-	t.Run("software details are sent on startup", func(t *testing.T) {
-		assert.Equal(t, core.RegisterWithDataplaneSoftwareDetails, messagePipe.GetProcessedMessages()[0].Topic())
-		assert.Equal(t, "Nginx App Protect", messagePipe.GetProcessedMessages()[0].Data().(*payloads.RegisterWithDataplaneSoftwareDetailsPayload).GetPluginName())
-		assert.NotNil(t, messagePipe.GetProcessedMessages()[0].Data().(*payloads.RegisterWithDataplaneSoftwareDetailsPayload).GetDataplaneSoftwareDetails())
 	})
 }

@@ -80,20 +80,6 @@ func SetDefaults() {
 	Viper.SetDefault(NginxClientVersion, Defaults.Nginx.NginxClientVersion)
 }
 
-func SetNginxAppProtectDefaults() {
-	Viper.SetDefault(NginxAppProtectReportInterval, Defaults.NginxAppProtect.ReportInterval)
-	Viper.SetDefault(NginxAppProtectPrecompiledPublication, Defaults.NginxAppProtect.PrecompiledPublication)
-}
-
-func SetNAPMonitoringDefaults() {
-	Viper.SetDefault(NAPMonitoringCollectorBufferSize, Defaults.NAPMonitoring.CollectorBufferSize)
-	Viper.SetDefault(NAPMonitoringProcessorBufferSize, Defaults.NAPMonitoring.ProcessorBufferSize)
-	Viper.SetDefault(NAPMonitoringSyslogIP, Defaults.NAPMonitoring.SyslogIP)
-	Viper.SetDefault(NAPMonitoringSyslogPort, Defaults.NAPMonitoring.SyslogPort)
-	Viper.SetDefault(NAPMonitoringReportInterval, Defaults.NAPMonitoring.ReportInterval)
-	Viper.SetDefault(NAPMonitoringReportCount, Defaults.NAPMonitoring.ReportCount)
-}
-
 func setFlagDeprecated(name string, usageMessage string) {
 	err := ROOT_COMMAND.Flags().MarkDeprecated(name, usageMessage)
 	if err != nil {
@@ -180,8 +166,6 @@ func GetConfig(clientId string) (*Config, error) {
 		AllowedDirectoriesMap: map[string]struct{}{},
 		DisplayName:           Viper.GetString(DisplayNameKey),
 		InstanceGroup:         Viper.GetString(InstanceGroupKey),
-		NginxAppProtect:       getNginxAppProtect(),
-		NAPMonitoring:         getNAPMonitoring(),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDirs, ":") {
@@ -285,24 +269,6 @@ func getDataplane() Dataplane {
 			PollInterval:   Viper.GetDuration(DataplaneStatusPoll),
 			ReportInterval: Viper.GetDuration(DataplaneStatusReportInterval),
 		},
-	}
-}
-
-func getNginxAppProtect() NginxAppProtect {
-	return NginxAppProtect{
-		ReportInterval:         Viper.GetDuration(NginxAppProtectReportInterval),
-		PrecompiledPublication: Viper.GetBool(NginxAppProtectPrecompiledPublication),
-	}
-}
-
-func getNAPMonitoring() NAPMonitoring {
-	return NAPMonitoring{
-		CollectorBufferSize: Viper.GetInt(NAPMonitoringCollectorBufferSize),
-		ProcessorBufferSize: Viper.GetInt(NAPMonitoringProcessorBufferSize),
-		SyslogIP:            Viper.GetString(NAPMonitoringSyslogIP),
-		SyslogPort:          Viper.GetInt(NAPMonitoringSyslogPort),
-		ReportInterval:      Viper.GetDuration(NAPMonitoringReportInterval),
-		ReportCount:         Viper.GetInt(NAPMonitoringReportCount),
 	}
 }
 
@@ -411,13 +377,13 @@ func SeekConfigFileInPaths(configName string, searchPaths ...string) (string, er
 			return f, nil
 		}
 	}
-	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths.")
+	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths")
 }
 
 func filePathUTime(path string) time.Time {
 	s, err := os.Stat(path)
 	if err != nil {
-		log.Warnf("Unable to determine the modified time of %s: %s. Defaulting the value to Now.", path, err)
+		log.Warnf("Unable to determine the modified time of %s: %s. Defaulting the value to Now", path, err)
 		return time.Now()
 	}
 	return s.ModTime()

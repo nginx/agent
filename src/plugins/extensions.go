@@ -50,7 +50,7 @@ func (e *Extensions) Process(msg *core.Message) {
 		switch msg.Topic() {
 		case core.EnableExtension:
 			if data == agent_config.AdvancedMetricsExtensionPlugin {
-				if !e.isPluginAlreadyRegistered(extensions.AdvancedMetricsPluginName) {
+				if !e.isPluginAlreadyRegistered(agent_config.AdvancedMetricsExtensionPlugin) {
 					conf, err := config.GetConfig(e.conf.ClientID)
 					if err != nil {
 						log.Warnf("Unable to get agent config, %v", err)
@@ -62,46 +62,44 @@ func (e *Extensions) Process(msg *core.Message) {
 						e.conf,
 						config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey),
 					)
-					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, advancedMetrics)
+					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, nil, []core.ExtensionPlugin{advancedMetrics})
 					if err != nil {
 						log.Warnf("Unable to register %s extension, %v", data, err)
 					}
 					advancedMetrics.Init(e.pipeline)
 				}
-			} else if data == config.NginxAppProtectKey {
-				if !e.isPluginAlreadyRegistered(napPluginName) {
-					config.SetNginxAppProtectDefaults()
+			} else if data == agent_config.NginxAppProtectExtensionPlugin {
+				if !e.isPluginAlreadyRegistered(agent_config.NginxAppProtectExtensionPlugin) {
 					conf, err := config.GetConfig(e.conf.ClientID)
 					if err != nil {
 						log.Warnf("Unable to get agent config, %v", err)
 					}
 					e.conf = conf
 
-					nap, err := NewNginxAppProtect(e.conf, e.env)
+					nap, err := extensions.NewNginxAppProtect(e.conf, e.env, config.Viper.Get(agent_config.NginxAppProtectExtensionPluginConfigKey))
 					if err != nil {
 						log.Warnf("Unable to load the Nginx App Protect plugin due to the following error: %v", err)
 					}
-					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, nap)
+					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, nil, []core.ExtensionPlugin{nap})
 					if err != nil {
 						log.Errorf("Unable to register %s extension, %v", data, err)
 					}
 					nap.Init(e.pipeline)
 				}
-			} else if data == config.NAPMonitoringKey {
-				if !e.isPluginAlreadyRegistered(napMonitoringPluginName) {
-					config.SetNAPMonitoringDefaults()
+			} else if data == agent_config.NginxAppProtectMonitoringExtensionPlugin {
+				if !e.isPluginAlreadyRegistered(agent_config.NginxAppProtectMonitoringExtensionPlugin) {
 					conf, err := config.GetConfig(e.conf.ClientID)
 					if err != nil {
 						log.Warnf("Unable to get agent config, %v", err)
 					}
 					e.conf = conf
 
-					napMonitoring, err := NewNAPMonitoring(e.env, e.conf)
+					napMonitoring, err := extensions.NewNAPMonitoring(e.env, e.conf, config.Viper.Get(agent_config.NginxAppProtectMonitoringExtensionPluginConfigKey))
 					if err != nil {
 						log.Warnf("Unable to load the Nginx App Protect Monitoring plugin due to the following error: %v", err)
 						break
 					}
-					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, napMonitoring)
+					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, nil, []core.ExtensionPlugin{napMonitoring})
 					if err != nil {
 						log.Errorf("Unable to register %s extension, %v", data, err)
 					}
@@ -114,7 +112,7 @@ func (e *Extensions) Process(msg *core.Message) {
 
 func (e *Extensions) isPluginAlreadyRegistered(pluginName string) bool {
 	pluginAlreadyRegistered := false
-	for _, plugin := range e.pipeline.GetPlugins() {
+	for _, plugin := range e.pipeline.GetExtensionPlugins() {
 		if plugin.Info().Name() == pluginName {
 			pluginAlreadyRegistered = true
 		}

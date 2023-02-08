@@ -90,8 +90,8 @@ func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
 		if commandData.AgentConfig.Details != nil && commandData.AgentConfig.Details.Extensions != nil {
 			for _, extension := range commandData.AgentConfig.Details.Extensions {
 				if extension == agent_config.AdvancedMetricsExtensionPlugin ||
-					extension == config.NginxAppProtectKey ||
-					extension == config.NAPMonitoringKey {
+					extension == agent_config.NginxAppProtectExtensionPlugin ||
+					extension == agent_config.NginxAppProtectMonitoringExtensionPlugin {
 					r.messagePipeline.Process(core.NewMessage(core.EnableExtension, extension))
 				}
 			}

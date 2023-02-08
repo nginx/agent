@@ -5,14 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package plugins
+package extensions
 
 import (
 	"context"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -22,12 +24,17 @@ import (
 
 const (
 	napPluginVersion = "v0.0.1"
-	napPluginName    = "Nginx App Protect"
+	napPluginName    = agent_config.NginxAppProtectExtensionPlugin
 
 	napDegradedMessage = "Nginx App Protect is installed but is not running"
 
 	napDefaultMinInterval = time.Second * 10
 )
+
+var nginxAppProtectDefaults = &NginxAppProtectConfig{
+	ReportInterval:         1 * time.Minute,
+	PrecompiledPublication: false,
+}
 
 // NginxAppProtect monitors the NAP installation on the system and reports back its details
 type NginxAppProtect struct {
@@ -38,20 +45,48 @@ type NginxAppProtect struct {
 	precompiledPublication bool
 	ctx                    context.Context
 	ctxCancel              context.CancelFunc
+	softwareDetails        *proto.DataplaneSoftwareDetails_AppProtectWafDetails
 }
 
-func NewNginxAppProtect(config *config.Config, env core.Environment) (*NginxAppProtect, error) {
+type NginxAppProtectConfig struct {
+	ReportInterval         time.Duration `mapstructure:"report_interval" yaml:"-"`
+	PrecompiledPublication bool          `mapstructure:"precompiled_publication" yaml:"-"`
+}
+
+func NewNginxAppProtect(config *config.Config, env core.Environment, nginxAppProtectConf interface{}) (*NginxAppProtect, error) {
 	napTime, err := nap.NewNginxAppProtect(nap.DefaultOptNAPDir, nap.DefaultNMSCompilerDir)
 	if err != nil {
 		return nil, err
 	}
 
-	reportInterval := config.NginxAppProtect.ReportInterval
+	nginxAppProtectConfig := nginxAppProtectDefaults
+
+	if nginxAppProtectConfig != nil {
+		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+			WeaklyTypedInput: true,
+			DecodeHook:       mapstructure.ComposeDecodeHookFunc(mapstructure.StringToTimeDurationHookFunc()),
+			Result:           nginxAppProtectConfig,
+		})
+
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+
+		err = decoder.Decode(nginxAppProtectConf)
+
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+	}
+
+	reportInterval := nginxAppProtectConfig.ReportInterval
 	if reportInterval < napDefaultMinInterval {
 		reportInterval = napDefaultMinInterval
 		log.Warnf(
 			"The provided Nginx App Protect report interval (%s) is less than the allowed minimum, updating Nginx App Protect report interval to %s",
-			config.NginxAppProtect.ReportInterval, reportInterval,
+			nginxAppProtectConfig.ReportInterval, reportInterval,
 		)
 	}
 
@@ -59,7 +94,7 @@ func NewNginxAppProtect(config *config.Config, env core.Environment) (*NginxAppP
 		nap:                    *napTime,
 		env:                    env,
 		reportInterval:         reportInterval,
-		precompiledPublication: config.NginxAppProtect.PrecompiledPublication,
+		precompiledPublication: nginxAppProtectConfig.PrecompiledPublication,
 	}
 
 	return nginxAppProtect, nil
@@ -75,32 +110,20 @@ func (n *NginxAppProtect) Init(pipeline core.MessagePipeInterface) {
 	ctx, cancel := context.WithCancel(n.messagePipeline.Context())
 	n.ctx = ctx
 	n.ctxCancel = cancel
-	n.addSoftwareDetailsToRegistration()
 	go n.monitor()
 }
 
 func (n *NginxAppProtect) Process(msg *core.Message) {}
 
 func (n *NginxAppProtect) Subscriptions() []string {
-	return []string{}
+	return []string{
+		core.AgentConfigChanged,
+	}
 }
 
 func (n *NginxAppProtect) Close() {
 	log.Infof("%s is wrapping up", napPluginName)
 	n.ctxCancel()
-}
-
-// addSoftwareDetailsToRegistration adds the dataplane software details produced by the
-// NAP plugin to the OneTimeRegistration dataplane software details map that has been sent
-// as part of the message.
-func (n *NginxAppProtect) addSoftwareDetailsToRegistration() {
-	log.Debugf("%s is adding software details to registration", napPluginName)
-	napReport := n.generateNAPDetailsProtoCommand()
-	napSoftwareDetails := &proto.DataplaneSoftwareDetails{
-		Data: napReport,
-	}
-
-	n.messagePipeline.Process(core.NewMessage(core.RegisterWithDataplaneSoftwareDetails, payloads.NewRegisterWithDataplaneSoftwareDetailsPayload(napPluginName, napSoftwareDetails)))
 }
 
 // monitor Monitors the system for any changes related to NAP, if any changes are detected
@@ -109,7 +132,17 @@ func (n *NginxAppProtect) addSoftwareDetailsToRegistration() {
 func (n *NginxAppProtect) monitor() {
 	initialDetails := n.generateNAPDetailsProtoCommand()
 	log.Infof("Initial Nginx App Protect details: %+v", initialDetails)
-	n.messagePipeline.Process(core.NewMessage(core.DataplaneSoftwareDetailsUpdated, initialDetails))
+	n.messagePipeline.Process(
+		core.NewMessage(
+			core.DataplaneSoftwareDetailsUpdated,
+			payloads.NewDataplaneSoftwareDetailsUpdate(
+				napPluginName,
+				&proto.DataplaneSoftwareDetails{
+					Data: initialDetails,
+				},
+			),
+		),
+	)
 
 	napUpdateChannel := n.nap.Monitor(n.reportInterval)
 
@@ -120,7 +153,17 @@ func (n *NginxAppProtect) monitor() {
 			// Communicate the update in NAP status via message pipeline
 			log.Infof("Change in NAP detected... Previous: %+v... Updated: %+v", updateMsg.PreviousReport, updateMsg.UpdatedReport)
 			napReportMsg := n.generateNAPDetailsProtoCommand()
-			n.messagePipeline.Process(core.NewMessage(core.DataplaneSoftwareDetailsUpdated, napReportMsg))
+			n.messagePipeline.Process(
+				core.NewMessage(
+					core.DataplaneSoftwareDetailsUpdated,
+					payloads.NewDataplaneSoftwareDetailsUpdate(
+						napPluginName,
+						&proto.DataplaneSoftwareDetails{
+							Data: napReportMsg,
+						},
+					),
+				),
+			)
 
 		case <-time.After(n.reportInterval):
 			log.Infof("No NAP changes detected after %v seconds... NAP Values: %+v", n.reportInterval.Seconds(), n.nap.GenerateNAPReport())
@@ -148,8 +191,9 @@ func (n *NginxAppProtect) generateNAPDetailsProtoCommand() *proto.DataplaneSoftw
 		napStatus = proto.AppProtectWAFHealth_ACTIVE
 	}
 
-	napDetailsProtoCmd := &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
+	n.softwareDetails = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
+			WafLocation:             nap.APP_PROTECT_METADATA_FILE_PATH,
 			WafVersion:              napReport.NAPVersion,
 			AttackSignaturesVersion: napReport.AttackSignaturesVersion,
 			ThreatCampaignsVersion:  napReport.ThreatCampaignsVersion,
@@ -161,7 +205,7 @@ func (n *NginxAppProtect) generateNAPDetailsProtoCommand() *proto.DataplaneSoftw
 		},
 	}
 
-	log.Debugf("Generated NAP details proto message: %+v", napDetailsProtoCmd)
+	log.Debugf("Generated NAP details proto message: %+v", n.softwareDetails)
 
-	return napDetailsProtoCmd
+	return n.softwareDetails
 }

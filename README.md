@@ -24,6 +24,7 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
   - [Cloning the NGINX Agent Repository](#cloning-the-nginx-agent-repository)
   - [Starting the gRPC Mock Control Plane](#starting-the-grpc-mock-control-plane)
   - [NGINX Agent Settings](#nginx-agent-settings)
+  - [Extensions](#extensions)
   - [Starting NGINX Agent](#starting-nginx-agent)
 - [Development Environment Setup](#development-environment-setup)
   - [Selecting an Operating System](#selecting-an-operating-system)
@@ -194,6 +195,17 @@ make launch-swagger-ui
 ```
 
 Open a web browser to view the Swagger UI at http://localhost:8082/docs.
+
+## Extensions
+An extension is a piece of code, not critical to the main functionality that the NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
+
+To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`. 
+Here is an example of enabling the advanced metrics extension:
+
+```yaml
+extensions:
+  - advanced-metrics
+```
 
 ## Starting NGINX Agent
 If already running, restart NGINX Agent to apply the new configuration. Alternatively, if NGINX Agent is not running, you may run it from the source code root directory.

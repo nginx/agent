@@ -74,17 +74,6 @@ var (
 			Mode:               "aggregation",
 		},
 		Features: agent_config.GetDefaultFeatures(),
-		NAPMonitoring: NAPMonitoring{
-			ProcessorBufferSize: 50000,
-			CollectorBufferSize: 50000,
-			SyslogIP:            "0.0.0.0",
-			SyslogPort:          514,
-			ReportInterval:      time.Minute,
-			ReportCount:         400,
-		},
-		NginxAppProtect: NginxAppProtect{
-			PrecompiledPublication: false,
-		},
 	}
 	AllowedDirectoriesMap map[string]struct{}
 )

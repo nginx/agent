@@ -26,11 +26,15 @@ const (
 	FeatureAgentAPI         = FeaturesKey + KeyDelimiter + "agent-api"
 
 	// Extensions
-	ExtensionsKey                  = "extensions"
-	AdvancedMetricsExtensionPlugin = "advanced-metrics"
+	ExtensionsKey                            = "extensions"
+	AdvancedMetricsExtensionPlugin           = "advanced-metrics"
+	NginxAppProtectExtensionPlugin           = "nginx-app-protect"
+	NginxAppProtectMonitoringExtensionPlugin = "nginx-app-protect-monitoring"
 
 	// Configuration Keys
-	AdvancedMetricsExtensionPluginConfigKey = "advanced_metrics"
+	AdvancedMetricsExtensionPluginConfigKey           = "advanced_metrics"
+	NginxAppProtectExtensionPluginConfigKey           = "nginx_app_protect"
+	NginxAppProtectMonitoringExtensionPluginConfigKey = "nap_monitoring"
 )
 
 func GetDefaultFeatures() []string {

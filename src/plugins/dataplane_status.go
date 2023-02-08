@@ -20,6 +20,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/core/payloads"
 )
 
 type DataPlaneStatus struct {
@@ -38,10 +39,9 @@ type DataPlaneStatus struct {
 	envHostInfo                 *proto.HostInfo
 	statusUrls                  map[string]string
 	reportInterval              time.Duration
-	napDetails                  *proto.DataplaneSoftwareDetails_AppProtectWafDetails
+	softwareDetails             map[string]*proto.DataplaneSoftwareDetails
 	nginxConfigActivityStatuses map[string]*proto.AgentActivityStatus
-	napDetailsMutex             sync.RWMutex
-	napHealth                   *proto.DataplaneSoftwareHealth_AppProtectWafHealth
+	softwareDetailsMutex        sync.RWMutex
 }
 
 const (
@@ -67,11 +67,9 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		configDirs:                  config.ConfigDirs,
 		statusUrls:                  make(map[string]string),
 		reportInterval:              config.Dataplane.Status.ReportInterval,
-		napDetailsMutex:             sync.RWMutex{},
+		softwareDetailsMutex:        sync.RWMutex{},
 		nginxConfigActivityStatuses: make(map[string]*proto.AgentActivityStatus),
-		// Intentionally empty as it will be set later
-		napDetails: nil,
-		napHealth:  &proto.DataplaneSoftwareHealth_AppProtectWafHealth{},
+		softwareDetails:             make(map[string]*proto.DataplaneSoftwareDetails),
 	}
 }
 
@@ -102,11 +100,10 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 	case msg.Exact(core.DataplaneSoftwareDetailsUpdated):
 		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
 		switch data := msg.Data().(type) {
-		case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
-			log.Debugf("DataplaneStatus is syncing with NAP details - %+v", data.AppProtectWafDetails)
-			dps.napDetailsMutex.Lock()
-			dps.napDetails = data
-			dps.napDetailsMutex.Unlock()
+		case *payloads.DataplaneSoftwareDetailsUpdate:
+			dps.softwareDetailsMutex.Lock()
+			dps.softwareDetails[data.GetPluginName()] = data.GetDataplaneSoftwareDetails()
+			dps.softwareDetailsMutex.Unlock()
 		}
 
 	case msg.Exact(core.NginxConfigValidationPending):
@@ -187,28 +184,23 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 		agentActivityStatuses = append(agentActivityStatuses, nginxConfigActivityStatus)
 	}
 
-	return &proto.DataplaneStatus{
+	dps.softwareDetailsMutex.Lock()
+	defer dps.softwareDetailsMutex.Unlock()
+
+	dataplaneSoftwareDetails := []*proto.DataplaneSoftwareDetails{}
+	for _, softwareDetail := range dps.softwareDetails {
+		dataplaneSoftwareDetails = append(dataplaneSoftwareDetails, softwareDetail)
+	}
+
+	dataplaneStatus := &proto.DataplaneStatus{
 		Host:                     dps.hostInfo(forceDetails),
 		Details:                  dps.detailsForProcess(processes, forceDetails),
 		Healths:                  dps.healthForProcess(processes),
-		DataplaneSoftwareDetails: dps.dataplaneSoftwareDetails(),
+		DataplaneSoftwareDetails: dataplaneSoftwareDetails,
 		AgentActivityStatus:      agentActivityStatuses,
 	}
-}
 
-func (dps *DataPlaneStatus) dataplaneSoftwareDetails() []*proto.DataplaneSoftwareDetails {
-	allDetails := make([]*proto.DataplaneSoftwareDetails, 0)
-
-	dps.napDetailsMutex.RLock()
-	defer dps.napDetailsMutex.RUnlock()
-	if dps.napDetails != nil {
-		napDetails := &proto.DataplaneSoftwareDetails{
-			Data: dps.napDetails,
-		}
-		allDetails = append(allDetails, napDetails)
-	}
-
-	return allDetails
+	return dataplaneStatus
 }
 
 func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {

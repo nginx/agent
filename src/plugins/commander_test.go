@@ -236,7 +236,7 @@ func TestCommander_Process(t *testing.T) {
 			}
 
 			pluginUnderTest := NewCommander(cmdr, &config.Config{ClientID: "12345"})
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			messagePipe.RunWithoutInit()
 			pluginUnderTest.pipeline = messagePipe
@@ -282,7 +282,7 @@ func TestCommander_Close(t *testing.T) {
 
 	pluginUnderTest := NewCommander(cmdr, &config.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
-	messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+	messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
 

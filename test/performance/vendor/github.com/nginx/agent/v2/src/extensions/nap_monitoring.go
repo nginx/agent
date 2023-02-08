@@ -5,28 +5,41 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package plugins
+package extensions
 
 import (
 	"context"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
+	"github.com/nginx/agent/v2/src/core/payloads"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager"
 )
 
 const (
-	napMonitoringPluginName    = "Nginx App Protect Monitoring"
+	napMonitoringPluginName    = agent_config.NginxAppProtectMonitoringExtensionPlugin
 	napMonitoringPluginVersion = "v0.0.1"
 	minReportIntervalDelimiter = time.Minute
 	minReportCountDelimiter    = 1
 	maxReportCountDelimiter    = 400
 )
+
+var nginxAppProtectMonitoringDefault = &manager.NginxAppProtectMonitoringConfig{
+	ProcessorBufferSize: 50000,
+	CollectorBufferSize: 50000,
+	SyslogIP:            "0.0.0.0",
+	SyslogPort:          514,
+	ReportInterval:      time.Minute,
+	ReportCount:         400,
+}
 
 type NAPMonitoring struct {
 	monitorMgr      *manager.Manager
@@ -37,32 +50,54 @@ type NAPMonitoring struct {
 	ctxCancel       context.CancelFunc
 }
 
-func NewNAPMonitoring(env core.Environment, cfg *config.Config) (*NAPMonitoring, error) {
+func NewNAPMonitoring(env core.Environment, cfg *config.Config, nginxAppProtectMonitoringConf interface{}) (*NAPMonitoring, error) {
 	commonDims := metrics.NewCommonDim(env.NewHostInfo("agentVersion", &cfg.Tags, cfg.ConfigDirs, false), cfg, "")
-	m, err := manager.NewManager(cfg, commonDims)
+	nginxAppProtectMonitoringConfig := nginxAppProtectMonitoringDefault
+
+	if nginxAppProtectMonitoringConf != nil {
+		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+			WeaklyTypedInput: true,
+			DecodeHook:       mapstructure.ComposeDecodeHookFunc(mapstructure.StringToTimeDurationHookFunc()),
+			Result:           nginxAppProtectMonitoringConfig,
+		})
+
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+
+		err = decoder.Decode(nginxAppProtectMonitoringConf)
+
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+	}
+
+	m, err := manager.NewManager(nginxAppProtectMonitoringConfig, commonDims)
 	if err != nil {
 		return nil, err
 	}
 
-	if !(cfg.NAPMonitoring.ReportInterval > minReportIntervalDelimiter) {
+	if !(nginxAppProtectMonitoringConfig.ReportInterval > minReportIntervalDelimiter) {
 		log.Warnf("NAP Monitoring report interval must be higher than %v. Defaulting to %v",
 			minReportIntervalDelimiter,
-			config.Defaults.NAPMonitoring.ReportInterval)
-		cfg.NAPMonitoring.ReportInterval = config.Defaults.NAPMonitoring.ReportInterval
+			nginxAppProtectMonitoringDefault.ReportInterval)
+		nginxAppProtectMonitoringConfig.ReportInterval = nginxAppProtectMonitoringDefault.ReportInterval
 	}
-	if cfg.NAPMonitoring.ReportCount < minReportCountDelimiter ||
-		cfg.NAPMonitoring.ReportCount > maxReportCountDelimiter {
+	if nginxAppProtectMonitoringConfig.ReportCount < minReportCountDelimiter ||
+		nginxAppProtectMonitoringConfig.ReportCount > maxReportCountDelimiter {
 		log.Warnf("NAP Monitoring report count must be between %v and %v. Defaulting to %v",
 			minReportCountDelimiter,
 			maxReportCountDelimiter,
-			config.Defaults.NAPMonitoring.ReportInterval)
-		cfg.NAPMonitoring.ReportCount = config.Defaults.NAPMonitoring.ReportCount
+			nginxAppProtectMonitoringDefault.ReportInterval)
+		nginxAppProtectMonitoringConfig.ReportCount = nginxAppProtectMonitoringDefault.ReportCount
 	}
 
 	return &NAPMonitoring{
 		monitorMgr:     m,
-		reportInterval: cfg.NAPMonitoring.ReportInterval,
-		reportCount:    cfg.NAPMonitoring.ReportCount,
+		reportInterval: nginxAppProtectMonitoringConfig.ReportInterval,
+		reportCount:    nginxAppProtectMonitoringConfig.ReportCount,
 	}, nil
 }
 
@@ -76,6 +111,17 @@ func (n *NAPMonitoring) Init(pipeline core.MessagePipeInterface) {
 	ctx, cancel := context.WithCancel(n.messagePipeline.Context())
 	n.ctx = ctx
 	n.ctxCancel = cancel
+
+	n.messagePipeline.Process(
+		core.NewMessage(
+			core.DataplaneSoftwareDetailsUpdated,
+			payloads.NewDataplaneSoftwareDetailsUpdate(
+				napMonitoringPluginName,
+				&proto.DataplaneSoftwareDetails{},
+			),
+		),
+	)
+
 	go n.monitorMgr.Run(ctx)
 	go n.run()
 }

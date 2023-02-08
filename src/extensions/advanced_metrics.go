@@ -14,10 +14,12 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/mitchellh/mapstructure"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
+	"github.com/nginx/agent/v2/src/core/payloads"
 	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/publisher"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/schema"
@@ -26,7 +28,7 @@ import (
 
 const (
 	advancedMetricsPluginVersion = "v0.8.0"
-	AdvancedMetricsPluginName    = "Advanced Metrics Plugin"
+	AdvancedMetricsPluginName    = agent_config.AdvancedMetricsExtensionPlugin
 
 	// ordinal positions of data collected by metrics module.
 	httpUriDimension                   = "http.uri"
@@ -173,8 +175,6 @@ func NewAdvancedMetrics(env core.Environment, conf *config.Config, advancedMetri
 		NewMetric(bytesRcvdMetric).
 		NewMetric(bytesSentMetric)
 
-	log.Info(advancedMetricsConf)
-
 	advancedMetricsConfig := advancedMetricsDefaults
 
 	if advancedMetricsConf != nil {
@@ -208,8 +208,6 @@ func NewAdvancedMetrics(env core.Environment, conf *config.Config, advancedMetri
 
 	CheckAdvancedMetricsDefaults(&cfg)
 
-	log.Info(cfg)
-
 	schema, err := builder.Build()
 	if err != nil {
 		log.Warnf("Unable to build schema for Advanced Metrics %v", err)
@@ -232,6 +230,19 @@ func (m *AdvancedMetrics) Init(pipeline core.MessagePipeInterface) {
 	ctx, cancel := context.WithCancel(m.pipeline.Context())
 	m.ctx = ctx
 	m.ctxCancel = cancel
+
+	m.pipeline.Process(
+		core.NewMessage(
+			core.DataplaneSoftwareDetailsUpdated,
+			payloads.NewDataplaneSoftwareDetailsUpdate(
+				AdvancedMetricsPluginName,
+				&proto.DataplaneSoftwareDetails{},
+			),
+		),
+	)
+
+	log.Info("DataplaneSoftwareDetailsUpdated sent")
+
 	go m.run()
 }
 

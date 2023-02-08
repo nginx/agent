@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package plugins
+package extensions
 
 import (
 	"testing"
@@ -13,38 +13,35 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager"
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
 func TestNAPMonitoring(t *testing.T) {
 	type test struct {
-		name string
-		*config.Config
+		name          string
+		conf          manager.NginxAppProtectMonitoringConfig
 		error         bool
 		errorContains string
 	}
 	tests := []test{
 		{
 			name: "valid config",
-			Config: &config.Config{
-				NAPMonitoring: config.NAPMonitoring{
-					CollectorBufferSize: 1,
-					ProcessorBufferSize: 1,
-					SyslogIP:            "127.0.0.1",
-					SyslogPort:          1234,
-				},
+			conf: manager.NginxAppProtectMonitoringConfig{
+				CollectorBufferSize: 1,
+				ProcessorBufferSize: 1,
+				SyslogIP:            "127.0.0.1",
+				SyslogPort:          1234,
 			},
 			error: false,
 		},
 		{
 			name: "invalid Syslog IP address",
-			Config: &config.Config{
-				NAPMonitoring: config.NAPMonitoring{
-					CollectorBufferSize: 1,
-					ProcessorBufferSize: 1,
-					SyslogIP:            "no_such_host",
-					SyslogPort:          1234,
-				},
+			conf: manager.NginxAppProtectMonitoringConfig{
+				CollectorBufferSize: 1,
+				ProcessorBufferSize: 1,
+				SyslogIP:            "no_such_host",
+				SyslogPort:          1236,
 			},
 			error:         true,
 			errorContains: "lookup",
@@ -53,25 +50,21 @@ func TestNAPMonitoring(t *testing.T) {
 			// Current behaviour is logging a warning and then
 			// defaulting to the default buffer size = 50000 if the passed parameter is invalid
 			name: "invalid buffer sizes",
-			Config: &config.Config{
-				NAPMonitoring: config.NAPMonitoring{
-					CollectorBufferSize: -1,
-					ProcessorBufferSize: -1,
-					SyslogIP:            "127.0.0.1",
-					SyslogPort:          4321,
-				},
+			conf: manager.NginxAppProtectMonitoringConfig{
+				CollectorBufferSize: -1,
+				ProcessorBufferSize: -1,
+				SyslogIP:            "127.0.0.1",
+				SyslogPort:          4321,
 			},
 			error: false,
 		},
 		{
 			name: "invalid Syslog port",
-			Config: &config.Config{
-				NAPMonitoring: config.NAPMonitoring{
-					CollectorBufferSize: 1,
-					ProcessorBufferSize: 1,
-					SyslogIP:            "127.0.0.1",
-					SyslogPort:          -4321,
-				},
+			conf: manager.NginxAppProtectMonitoringConfig{
+				CollectorBufferSize: 1,
+				ProcessorBufferSize: 1,
+				SyslogIP:            "127.0.0.1",
+				SyslogPort:          -4321,
 			},
 			error:         true,
 			errorContains: "invalid port",
@@ -82,7 +75,7 @@ func TestNAPMonitoring(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := NewNAPMonitoring(env, test.Config)
+			_, err := NewNAPMonitoring(env, &config.Config{}, test.conf)
 
 			if test.error {
 				assert.Contains(t, err.Error(), test.errorContains)
@@ -94,8 +87,8 @@ func TestNAPMonitoring(t *testing.T) {
 }
 
 func TestNAPMonitoring_Info(t *testing.T) {
-	pluginUnderTest, err := NewNAPMonitoring(tutils.GetMockEnv(), tutils.GetMockAgentConfig())
+	pluginUnderTest, err := NewNAPMonitoring(tutils.GetMockEnv(), tutils.GetMockAgentConfig(), manager.NginxAppProtectMonitoringConfig{})
 
 	assert.NoError(t, err)
-	assert.Equal(t, "Nginx App Protect Monitoring", pluginUnderTest.Info().Name())
+	assert.Equal(t, "nginx-app-protect-monitoring", pluginUnderTest.Info().Name())
 }

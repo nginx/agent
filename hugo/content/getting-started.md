@@ -33,24 +33,20 @@ INFO[0000] grpc listening at 54789 # grpc control plane port which NGINX Agent w
 ```
 
 ## NGINX Agent Settings
-
-If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory.
-
-```bash
-sudo mkdir /etc/nginx-agent
-sudo cp nginx-agent.conf /etc/nginx-agent/
+If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory. 
 ```
-Create the `agent-dynamic.conf` file in the `/etc/nginx-agent/` directory, which is required for NGINX Agent to run.
-
-```bash
+sudo mkdir /etc/nginx-agent
+sudo cp <project_root_directory>/nginx-agent.conf /etc/nginx-agent/
+```
+Create the `agent-dynamic.conf` file in the `/etc/nginx-agent/` directory, which is required for NGINX Agent to run. 
+```
 sudo touch /etc/nginx-agent/agent-dynamic.conf
 ```
 
 ### Enabling the gRPC interface
-
 Add the the following settings to `/etc/nginx-agent/nginx-agent.conf`:
 
-```nginx
+```yaml
 server:
   host: 127.0.0.1 # mock control plane host
   grpcPort: 54789 # mock control plane gRPC port
@@ -61,13 +57,14 @@ tls:
   skip_verify: true
 ```
 
-### Enabling the REST interface
+Documentation for the proto definitions can be found here: https://github.com/nginx/agent/tree/main/docs/proto/README.md
 
+### Enabling the REST interface
 The NGINX Agent REST interface can be exposed by validating the following lines in the `/etc/nginx-agent/nginx-agent.conf` file are present:
 
-```nginx
+```yaml
 api:
-  port: 9090 # port to expose REST API
+  port: 8081 # port to expose REST API
   
   # REST TLS parameters
   cert: "<TLS-CERTIFICATE>.crt"
@@ -75,6 +72,28 @@ api:
 ```
 
 The mock control plane can use either gRPC or REST protocols to communicate with NGINX Agent.
+
+### Launching Swagger UI
+To use the Swagger UI, goswagger needs to be installed first. Instructions on how to install goswagger can be found here https://goswagger.io/install.html.
+
+To launch the Swagger UI for the REST interface run the following command
+
+```
+make launch-swagger-ui
+```
+
+Open a web browser to view the Swagger UI at http://localhost:8082/docs.
+
+## Extensions
+An extension is a piece of code, not critical to the main functionality that the NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
+
+To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`. 
+Here is an example of enabling the advanced metrics extension:
+
+```yaml
+extensions:
+  - advanced-metrics
+```
 
 ## Start NGINX Agent
 

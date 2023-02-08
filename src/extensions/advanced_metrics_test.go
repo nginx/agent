@@ -200,7 +200,7 @@ func TestAppCentricMetricClose(t *testing.T) {
 	ctx, cancelCTX := context.WithCancel(context.Background())
 	defer cancelCTX()
 
-	messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+	messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{}, []core.ExtensionPlugin{pluginUnderTest})
 
 	pluginUnderTest.Init(messagePipe)
 	pluginUnderTest.Close()

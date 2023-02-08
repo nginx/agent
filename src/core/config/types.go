@@ -31,20 +31,10 @@ type Config struct {
 	AllowedDirectoriesMap map[string]struct{} `yaml:"-"`
 	DisplayName           string              `mapstructure:"display_name" yaml:"display_name,omitempty"`
 	InstanceGroup         string              `mapstructure:"instance_group" yaml:"instance_group,omitempty"`
-	NginxAppProtect       NginxAppProtect     `mapstructure:"nginx_app_protect" yaml:"nginx_app_protect,omitempty"`
-	NAPMonitoring         NAPMonitoring       `mapstructure:"nap_monitoring" yaml:"nap_monitoring,omitempty"`
 }
 
 func (c *Config) IsGrpcServerConfigured() bool {
 	return c.Server.Host != "" && c.Server.GrpcPort != 0
-}
-
-func (c *Config) IsNginxAppProtectConfigured() bool {
-	return c.NginxAppProtect != (NginxAppProtect{})
-}
-
-func (c *Config) IsNginxAppProtectPrecompiledPublicationConfigured() bool {
-	return c.NginxAppProtect.PrecompiledPublication
 }
 
 func (c *Config) IsFeatureEnabled(feature string) bool {
@@ -111,18 +101,4 @@ type AgentMetrics struct {
 	ReportInterval     time.Duration `mapstructure:"report_interval" yaml:"-"`
 	CollectionInterval time.Duration `mapstructure:"collection_interval" yaml:"-"`
 	Mode               string        `mapstructure:"mode" yaml:"-"`
-}
-
-type NginxAppProtect struct {
-	ReportInterval         time.Duration `mapstructure:"report_interval" yaml:"-"`
-	PrecompiledPublication bool          `mapstructure:"precompiled_publication" yaml:"-"`
-}
-
-type NAPMonitoring struct {
-	CollectorBufferSize int           `mapstructure:"collector_buffer_size" yaml:"-"`
-	ProcessorBufferSize int           `mapstructure:"processor_buffer_size" yaml:"-"`
-	SyslogIP            string        `mapstructure:"syslog_ip" yaml:"-"`
-	SyslogPort          int           `mapstructure:"syslog_port" yaml:"-"`
-	ReportInterval      time.Duration `mapstructure:"report_interval" yaml:"-"`
-	ReportCount         int           `mapstructure:"report_count" yaml:"-"`
 }
