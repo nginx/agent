@@ -20,7 +20,6 @@ import (
 	"github.com/nginx/agent/v2/src/core/metrics"
 	tutils "github.com/nginx/agent/v2/test/utils"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -665,7 +664,6 @@ func TestAccessLogStats(t *testing.T) {
 			accessLogFile.Close()
 			os.Remove(accessLogFile.Name())
 
-			log.Info()
 			// Sort metrics before doing comparison
 			sort.SliceStable(test.expectedStats.GetSimplemetrics(), func(i, j int) bool {
 				return test.expectedStats.GetSimplemetrics()[i].Name < test.expectedStats.GetSimplemetrics()[j].Name
