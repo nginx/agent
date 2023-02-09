@@ -9,8 +9,9 @@ services:
     build:
       context: ../../../
       dockerfile: ./scripts/docker/nginx-oss/ubuntu/Dockerfile
+      target: install-agent
       args:
-        PACKAGE: ${PACKAGE}
+        PACKAGE_NAME: ${PACKAGE_NAME}
         BASE_IMAGE: ${BASE_IMAGE}
         AGENT_CONF: "./test/testdata/configs/integration/api/nginx-agent.conf"
         NGINX_CONF: "./test/testdata/configs/integration/api/nginx.conf"
