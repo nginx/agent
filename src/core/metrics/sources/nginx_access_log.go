@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -350,6 +351,13 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 }
 
 func getParsedRequest(request string) (method string, uri string, protocol string) {
+
+	re := regexp.MustCompile(`[0-9A-Za-z]+\s.+\s[0-9A-Za-z]+/[0-9A-Za-z]+`)
+
+	if re.FindString(request) == "" {
+		return
+	}
+
 	if len(request) == 0 {
 		return
 	}

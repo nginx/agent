@@ -20,6 +20,7 @@ import (
 	"github.com/nginx/agent/v2/src/core/metrics"
 	tutils "github.com/nginx/agent/v2/test/utils"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -211,6 +212,190 @@ func TestAccessLogStats(t *testing.T) {
 					{
 						Name:  "nginx.http.v1_1",
 						Value: 2,
+					},
+					{
+						Name:  "nginx.http.v2",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.connect.time",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.count",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.max",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.median",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.connect.time.pctl95",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.header.time",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.header.time.count",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.header.time.max",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.header.time.median",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.header.time.pctl95",
+						Value: 0,
+					},
+				},
+			},
+		},
+		{
+			"invalid_access_log",
+			`$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for"`,
+			[]string{
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\"\n",
+				"127.0.0.1 - - [09/Feb/2023:10:30:32 +0000] \"\x16\x03\x01\x02\x00\x01\x00\x01\xFC\x03\x03\xC1\x9F\xFD\x873E\x83%\x89hh\x8F\xC7\xD6\x14\xC3\x01\x84\xB8\xF3\x00ZPt\xAF\xD2\xE8x\x05\x16\x8DU \xB9>@\x15\xDA5\xC7\xCC\xB7N-\x84\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\"\n",
+			},
+			&proto.StatsEntity{
+				Simplemetrics: []*proto.SimpleMetric{
+					{
+						Name:  "nginx.http.gzip.ratio",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.request.time",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.request.time.count",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.request.time.median",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.request.time.max",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.request.time.pctl95",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.request.body_bytes_sent",
+						Value: 196,
+					},
+					{
+						Name:  "nginx.http.request.bytes_sent",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.request.length",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.request.malformed",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.method.post",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.method.get",
+						Value: 1,
+					},
+					{
+						Name:  "nginx.http.method.delete",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.method.put",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.method.head",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.method.options",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.method.others",
+						Value: 1,
+					},
+					{
+						Name:  "nginx.http.status.1xx",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.status.2xx",
+						Value: 2,
+					},
+					{
+						Name:  "nginx.http.status.3xx",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.status.4xx",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.status.5xx",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.status.403",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.status.404",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.status.500",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.status.502",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.status.503",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.status.504",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.status.discarded",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.v0_9",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.v1_0",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.http.v1_1",
+						Value: 1,
 					},
 					{
 						Name:  "nginx.http.v2",
@@ -480,6 +665,7 @@ func TestAccessLogStats(t *testing.T) {
 			accessLogFile.Close()
 			os.Remove(accessLogFile.Name())
 
+			log.Info()
 			// Sort metrics before doing comparison
 			sort.SliceStable(test.expectedStats.GetSimplemetrics(), func(i, j int) bool {
 				return test.expectedStats.GetSimplemetrics()[i].Name < test.expectedStats.GetSimplemetrics()[j].Name
