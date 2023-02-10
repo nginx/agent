@@ -78,7 +78,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	rm -rf ./build/nginx-agent
 	@GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 	
-	docker run -v ${pwd}:/nginx-agent/ build-signed-packager:1.0.0
+	docker run -v ${PWD}:/nginx-agent/ build-signed-packager:1.0.0
 	
 	echo "DEB packages:"; \
 	find $(PACKAGES_DIR)/deb ;\
