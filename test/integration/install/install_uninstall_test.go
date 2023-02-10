@@ -77,8 +77,8 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	}
 
 	expectedUninstallLogMsgs := map[string]string{
-		"UninstallAgent": "Removed:\n  nginx-agent",
-		// "UninstallAgentPurgingFiles": "Purging configuration files for nginx-agent",
+		"UninstallAgent":             "Removing nginx-agent",
+		"UninstallAgentPurgingFiles": "Purging configuration files for nginx-agent",
 	}
 
 	expectedAgentPaths := map[string]string{
@@ -119,6 +119,10 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	uninstallLog := uninstallAgent(t, agentContainer, string(osReleaseContent))
 
 	// Check uninstall output
+	if strings.HasSuffix(containerAgentPackagePath, "rpm") {
+		expectedUninstallLogMsgs["UninstallAgent"] = "Removed:\n  nginx-agent"
+		delete(expectedInstallLogMsgs, "UninstallAgentPurgingFiles")
+	}
 	for _, logMsg := range expectedUninstallLogMsgs {
 		assert.Contains(t, uninstallLog, logMsg)
 	}
