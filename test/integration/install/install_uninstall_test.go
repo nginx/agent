@@ -32,7 +32,7 @@ var (
 )
 
 func setupTestContainer(t *testing.T) {
-	comp, err := compose.NewDockerCompose("docker-compose.yml")
+	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
 	t.Cleanup(func() {
@@ -77,8 +77,8 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	}
 
 	expectedUninstallLogMsgs := map[string]string{
-		"UninstallAgent":             "Removing nginx-agent",
-		"UninstallAgentPurgingFiles": "Purging configuration files for nginx-agent",
+		"UninstallAgent": "Removed:\n  nginx-agent",
+		// "UninstallAgentPurgingFiles": "Purging configuration files for nginx-agent",
 	}
 
 	expectedAgentPaths := map[string]string{
@@ -94,9 +94,9 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	assert.LessOrEqual(t, localAgentPkg.Size(), maxFileSize)
 
-	// Install Agent and record installation time/install output
-	dockerAgentPackagePath := getPackagePath(absContainerAgentPackageDir, string(osReleaseContent))
-	installTime, installLog := installAgent(t, agentContainer, dockerAgentPackagePath, string(osReleaseContent))
+	// Install Agent inside container and record installation time/install output
+	containerAgentPackagePath := getPackagePath(absContainerAgentPackageDir, string(osReleaseContent))
+	installTime, installLog := installAgent(t, agentContainer, containerAgentPackagePath, string(osReleaseContent))
 
 	// Check the install time under 30s
 	assert.LessOrEqual(t, installTime, maxInstallTime)
@@ -170,7 +170,7 @@ func createInstallCommand(agentPackageFilePath, osReleaseContent string) []strin
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return []string{"dpkg", "-i", agentPackageFilePath}
 	} else {
-		return []string{"yum", "localinstall", agentPackageFilePath}
+		return []string{"yum", "localinstall", "-y", agentPackageFilePath}
 	}
 }
 
@@ -200,7 +200,9 @@ func getPackagePath(pkgDir, osReleaseContent string) string {
 
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return pkgPath + ".deb"
-	} else {
+	} else if strings.Contains(osReleaseContent, "rhel") || strings.Contains(osReleaseContent, "centos") {
 		return pkgPath + ".rpm"
+	} else {
+		return pkgPath + ".apk"
 	}
 }

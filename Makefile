@@ -16,27 +16,29 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | debian           | bullseye-slim, buster-slim |                                                                |
 # | centos           | 7                          | centos 7 (below 7.4) uses plus-pkgs.nginx.com as PACKAGES_REPO |
 # | redhatenterprise | 7, 8, 9                    |                                                                |
-# | rocky            | 8, 9                       |                                                                |
+# | rockylinux       | 8, 9                       |                                                                |
 # | alpine           | 3.13, 3.14, 3.15, 3.16     |                                                                |
 # | oraclelinux      | 7, 8                       |                                                                |
 # | suse             | sles12sp5, sle15           |                                                                |
 # | freebsd          |                            | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE:=ubuntu
-OS_VERSION:=22.04
-BASE_IMAGE="docker.io/${OS_RELEASE}:${OS_VERSION}"
-IMAGE_TAG=agent_${OS_RELEASE}_${OS_VERSION}
+OS_RELEASE := ubuntu
+OS_VERSION := 22.04
+BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
+IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
+
 
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 
-CERTS_DIR          := ./build/certs
-PACKAGE_PREFIX     := nginx-agent
-PACKAGES_REPO      := "pkgs.nginx.com"
-OS                 := $(shell uname -s | tr '[:upper:]' '[:lower:]')
-OSARCH             := $(shell uname -m)
-TEST_BUILD_DIR     := build/test
-PACKAGE_NAME       := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
+CERTS_DIR                := ./build/certs
+PACKAGE_PREFIX           := nginx-agent
+PACKAGES_REPO            := "pkgs.nginx.com"
+OS                       := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+OSARCH                   := $(shell uname -m)
+TEST_BUILD_DIR           := build/test
+TEST_DOCKER_COMPOSE_FILE  = "docker-compose.yml"
+PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 LOCAL_ARCH         := amd64
 
@@ -180,9 +182,9 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
-integration-test: local-deb-package
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test ./test/integration/install
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test ./test/integration/api
+integration-test: local-deb-package local-rpm-package
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=$(BASE_IMAGE) DOCKER_COMPOSE_FILE=$(TEST_DOCKER_COMPOSE_FILE) go test -v ./test/integration/install
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=${TEST_DOCKER_COMPOSE_FILE} go test ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go

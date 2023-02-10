@@ -1,0 +1,22 @@
+version: '3.9'
+
+networks:
+  monitoring:
+    driver: bridge
+
+services:
+  agent:
+    build:
+      context: ../../../
+      dockerfile: ./scripts/docker/nginx-oss/centos/Dockerfile
+      target: install-agent
+      args:
+        PACKAGE_NAME: ${PACKAGE_NAME}
+        BASE_IMAGE: ${BASE_IMAGE}
+        AGENT_CONF: "./test/testdata/configs/integration/api/nginx-agent.conf"
+        NGINX_CONF: "./test/testdata/configs/integration/api/nginx.conf"
+        ENTRY_POINT: "./scripts/docker/nginx-oss/entrypoint.sh"
+    ports:
+      - 9091:9091
+    networks:
+      - monitoring

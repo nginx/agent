@@ -22,7 +22,7 @@ const (
 )
 
 func setupTestContainer(t *testing.T) {
-	comp, err := compose.NewDockerCompose("docker-compose.yml")
+	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
 	t.Cleanup(func() {
