@@ -30,13 +30,13 @@ LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=$
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 
 CERTS_DIR          := ./build/certs
-PACKAGE_PREFIX	   := nginx-agent
-PACKAGES_REPO	   := "pkgs.nginx.com"
+PACKAGE_PREFIX     := nginx-agent
+PACKAGES_REPO      := "pkgs.nginx.com"
 OS                 := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 OSARCH             := $(shell uname -m)
-TEST_BUILD_DIR	   := build/test
-PACKAGE_NAME	   := ${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}
+TEST_BUILD_DIR     := build/test
+PACKAGE_NAME       := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
 CERT_CLIENT_CA_CN  := client-ca.local
 CERT_CLIENT_INT_CN := client-int.local
@@ -179,7 +179,8 @@ performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
 integration-test: local-deb-package
-	PACKAGE=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test ./test/integration/api
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test ./test/integration/install
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
@@ -191,10 +192,6 @@ benchmark-image: ## Build benchmark test container image for NGINX Plus, need ng
 		--secret id=nginx-crt,src=build/nginx-repo.crt \
 		--secret id=nginx-key,src=build/nginx-repo.key \
 		-f test/docker/Dockerfile .
-
-# Install tests
-test-install: ## Run agent install test
-	GOWORK=off CGO_ENABLED=0 go test -v ./test/install
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Cert Generation                                                                                                 #
