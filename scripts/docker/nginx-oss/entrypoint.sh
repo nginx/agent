@@ -15,8 +15,6 @@ handle_term()
 
 trap 'handle_term' TERM
 
-cp /agent/nginx.conf /etc/nginx/nginx.conf
-
 # Launch nginx
 echo "starting nginx ..."
 /usr/sbin/nginx -g "daemon off;" &

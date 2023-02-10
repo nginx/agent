@@ -18,7 +18,7 @@ services:
         AGENT_CONF: "./examples/grafana-metrics/nginx-agent.conf"
         NGINX_CONF: "./examples/grafana-metrics/nginx.conf"
         ENTRY_POINT: "./scripts/docker/nginx-oss/entrypoint.sh"
-    ports:
+    expose:
       - 8080:8080
       - 8081:8081
     networks:
