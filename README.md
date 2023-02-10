@@ -263,6 +263,17 @@ NGINX Agent is written in Go. You may [download Go](https://go.dev/doc/install) 
 sudo apt install golang-go
 ```
 
+Install nFPM:
+
+nFPM is used for building NGINX Agent packages and can be installed by following the instructions here: [install nFPM](https://nfpm.goreleaser.com/install/)
+
+Install NGINX Agent tools and dependencies:
+
+Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. This can be done by running the following `make` command:
+```
+make install-tools deps
+```
+
 ## Building NGINX Agent from Source Code
 Run the following commands to build and run NGINX Agent:
 ```

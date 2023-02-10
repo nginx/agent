@@ -133,6 +133,7 @@ type Event struct {
 	// Event metadata
 	Metadata *Metadata `protobuf:"bytes,1,opt,name=Metadata,proto3" json:"metadata"`
 	// Types that are valid to be assigned to Data:
+	//
 	//	*Event_ActivityEvent
 	//	*Event_SecurityViolationEvent
 	Data                 isEvent_Data `protobuf_oneof:"data"`
