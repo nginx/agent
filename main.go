@@ -230,8 +230,6 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env))
 	}
 
-	log.Error(loadedConfig.Extensions)
-
 	if loadedConfig.Extensions != nil && len(loadedConfig.Extensions) > 0 {
 		for _, extension := range loadedConfig.Extensions {
 			switch {
