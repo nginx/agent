@@ -265,7 +265,7 @@ sudo apt install golang-go
 
 Install nFPM:
 
-nFPM is used for building NGINX Agent packages and can be installed by following the instructions here: [install nFPM](https://nfpm.goreleaser.com/install/)
+nFPM is used for building NGINX Agent packages and can be installed by following the [install nFPM install instructions](https://nfpm.goreleaser.com/install/)
 
 Install NGINX Agent tools and dependencies:
 
