@@ -15,10 +15,4 @@ type Plugin interface {
 	Subscriptions() []string
 }
 
-type ExtensionPlugin interface {
-	Init(MessagePipeInterface)
-	Close()
-	Process(*Message)
-	Info() *Info
-	Subscriptions() []string
-}
+type ExtensionPlugin = Plugin

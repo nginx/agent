@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	MessageQueueSize = 100
-	MaxPlugins       = 100
+	MessageQueueSize    = 100
+	MaxPlugins          = 50
+	MaxExtensionPlugins = 50
 )
 
 type MessagePipeInterface interface {
@@ -44,7 +45,7 @@ func NewMessagePipe(ctx context.Context) *MessagePipe {
 	return &MessagePipe{
 		messageChannel:   make(chan *Message, MessageQueueSize),
 		plugins:          make([]Plugin, 0, MaxPlugins),
-		extensionPlugins: make([]ExtensionPlugin, 0, MaxPlugins),
+		extensionPlugins: make([]ExtensionPlugin, 0, MaxExtensionPlugins),
 		ctx:              pipeContext,
 		cancel:           pipeCancel,
 		mu:               sync.Mutex{},
