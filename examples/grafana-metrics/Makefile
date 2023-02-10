@@ -1,5 +1,6 @@
 OS_RELEASE:=ubuntu
 OS_VERSION:=22.04
+LOCAL_ARCH         := amd64
 BASE_IMAGE="docker.io/${OS_RELEASE}:${OS_VERSION}"
 
 help: ## Show help message
@@ -12,7 +13,7 @@ clean: ## Remove docker containers and agent package
 build: ## Build agent package
 	mkdir -p ../../build
 	cd ../../ && GOWORK=off CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o ./build/nginx-agent
-	cd ../../ && nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/nginx-agent.deb
+	cd ../../ && ARCH=${LOCAL_ARCH} nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/nginx-agent.deb
 
 run: build ## Start docker containers
 	BASE_IMAGE=${BASE_IMAGE} docker-compose up --build
