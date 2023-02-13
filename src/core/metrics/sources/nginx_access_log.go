@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,6 +28,7 @@ import (
 
 const (
 	spaceDelim = " "
+	pattern = `[A-Z]+\s.+\s[A-Z]+/.+`
 )
 
 // This metrics source is used to tail the NGINX access logs to retrieve metrics.
@@ -369,6 +371,19 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 }
 
 func getParsedRequest(request string) (method string, uri string, protocol string) {
+	
+	// Looking for capital letters, a space, anything, a space, capital letters, forward slash then anything. 
+	// Example: DELETE nginx_status HTTP/1.1
+	regex, err := regexp.Compile(pattern)
+
+	if err != nil{
+		return
+	}
+	
+	if regex.FindString(request) == "" {
+		return
+	}
+
 	if len(request) == 0 {
 		return
 	}
