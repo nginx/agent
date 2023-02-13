@@ -249,14 +249,13 @@ run-container: ## Run container from specified IMAGE_TAG
 		$(CONTAINER_CLITOOL) run ${IMAGE_TAG}
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Example Dashboard Targets                                                                                       #
+# Grafana Example Dashboard Targets                                                                               #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-clean-example: clean ## Clean example packages and docker
-	mkdir -p ../../build
-	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} docker-compose down
+clean-grafana-example: clean ## Clean example packages and docker
+	cd ./examples/grafana-metrics/ && BASE_IMAGE= PACKAGE_NAME= docker-compose down
 
-build-example: local-deb-package ## Build the example of nginx-agent
+build-grafana-example: local-deb-package ## Build the example of nginx-agent
 	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} docker-compose build
 
-run-example: ## Start the example of nginx-agent
+run-granfana-example: ## Start the example of nginx-agent
 	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} docker-compose up

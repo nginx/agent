@@ -197,7 +197,7 @@ jobs:
 
 
   build-example:
-    name: Build Dashboard Example
+    name: Build Grafana Dashboard Example
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -207,10 +207,10 @@ jobs:
       - name: Setup build environment
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-      - name: Build example
-        run: make build-example
-      - name: Shutdown example
-        run: make clean-example
+      - name: Build Grafana example
+        run: make build-grafana-example
+      - name: Clean Grafana example
+        run: make clean-grafana-example
 
   trigger-release-workflow:
     if: ${{ startsWith(github.ref_name, 'release-') && !github.event.pull_request.head.repo.fork }}
