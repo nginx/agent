@@ -199,6 +199,13 @@ jobs:
   build-example:
     name: Build Grafana Dashboard Example
     runs-on: ubuntu-22.04
+    concurrency: ubuntu-22.04-${{ matrix.runner.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - arch: amd64
+          - arch: arm64
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
