@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        base-image: [ubuntu-22.04]
+        base-image: ["ubuntu:22.04"]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        base-image: [rockylinux:8, rockylinux:9]
+        base-image: ["rockylinux:8", "rockylinux:9"]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
