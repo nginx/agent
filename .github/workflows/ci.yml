@@ -64,9 +64,12 @@ jobs:
       - name: Run Component Tests
         run: make component-test
 
-  integration-test:
+  integration-test-deb:
     name: Integration Tests
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        base-image: [ubuntu-22.04]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -74,8 +77,24 @@ jobs:
           go-version-file: 'go.mod'
       - name: Run Integration Tests
         run: |
-            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
-            make integration-test
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          BASE_IMAGE="docker.io/${{ matrix.base-image }}" DOCKER_COMPOSE_FILE="docker-compose.yml" make integration-test
+
+  integration-test-rpm:
+    name: Integration Tests
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        base-image: [rockylinux:8, rockylinux:9]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Run Integration Tests
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          BASE_IMAGE="docker.io/${{ matrix.base-image }}" DOCKER_COMPOSE_FILE="docker-compose-rpm.yml" make integration-test
 
   performance-test:
     name: Performance Tests
