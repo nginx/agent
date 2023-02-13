@@ -207,8 +207,8 @@ jobs:
       - name: Setup build environment
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-      - name: Run example
-        run: make run-example
+      - name: Build example
+        run: make build-example
       - name: Shutdown example
         run: make clean-example
 

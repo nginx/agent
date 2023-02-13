@@ -6,7 +6,7 @@ This README will give instructions on how to run the demonstration on how the NG
 ## Run Example
 Run the following command from the root directory, to start up the agent grafana metrics example. This will create all the services listed in [List of Services](#list-of-services).
 ```
-make clean build run
+make clean-example build-example run-example
 ```
 <br>
 
