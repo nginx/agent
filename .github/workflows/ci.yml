@@ -204,6 +204,9 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version-file: 'go.mod'
+      - name: Setup build environment
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
       - name: Run example
         run: make run-example
       - name: Shutdown example
