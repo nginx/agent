@@ -9,8 +9,9 @@ ARG ENTRY_POINT
 WORKDIR /agent
 COPY ./ /agent
 COPY $ENTRY_POINT /agent/entrypoint.sh
-COPY $AGENT_CONF /etc/nginx-agent/nginx-agent.conf
-COPY $NGINX_CONF /etc/nginx/nginx.conf
+
+RUN if [[ -z "$AGENT_CONF" ]] ; then cp $AGENT_CONF /etc/nginx-agent/nginx-agent.conf ; fi
+RUN if [[ -z "$NGINX_CONF" ]] ; then cp $NGINX_CONF /etc/nginx/nginx.conf ; fi
 
 RUN set -x \
     && addgroup --system --gid 101 nginx \
