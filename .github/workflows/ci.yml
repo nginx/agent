@@ -18,7 +18,7 @@ env:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -63,6 +63,19 @@ jobs:
           go-version-file: 'go.mod'
       - name: Run Component Tests
         run: make component-test
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Run Integration Tests
+        run: |
+            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
+            make integration-test
 
   performance-test:
     name: Performance Tests
@@ -157,7 +170,6 @@ jobs:
           go-version-file: 'go.mod'
       - name: Setup build environment
         run: |
-          sudo apt-get update
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -165,7 +177,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           file: scripts/packages/packager/Dockerfile
-          tags: build-local-package:1.0.0
+          tags: build-local-packager:1.0.0
           context: '.'
           push: false
           load: true

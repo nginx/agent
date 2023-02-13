@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -231,14 +231,16 @@ func (p *PluginConfig) GetRemoteHostname() string {
 
 // ManagedConfig is the managed mode configuration.
 type ManagedConfig struct {
-	CcEnableArenas        *bool
-	JavaMultipleFiles     *bool
-	JavaStringCheckUtf8   *bool
-	JavaPackagePrefix     *JavaPackagePrefixConfig
-	CsharpNameSpaceConfig *CsharpNameSpaceConfig
-	OptimizeForConfig     *OptimizeForConfig
-	GoPackagePrefixConfig *GoPackagePrefixConfig
-	Override              map[string]map[string]string
+	CcEnableArenas          *bool
+	JavaMultipleFiles       *bool
+	JavaStringCheckUtf8     *bool
+	JavaPackagePrefixConfig *JavaPackagePrefixConfig
+	CsharpNameSpaceConfig   *CsharpNameSpaceConfig
+	OptimizeForConfig       *OptimizeForConfig
+	GoPackagePrefixConfig   *GoPackagePrefixConfig
+	ObjcClassPrefixConfig   *ObjcClassPrefixConfig
+	RubyPackageConfig       *RubyPackageConfig
+	Override                map[string]map[string]string
 }
 
 // JavaPackagePrefixConfig is the java_package prefix configuration.
@@ -261,6 +263,21 @@ type GoPackagePrefixConfig struct {
 	Default string
 	Except  []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> go_package prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// ObjcClassPrefixConfig is the objc_class_prefix configuration.
+type ObjcClassPrefixConfig struct {
+	Default string
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> objc_class_prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// RubyPackgeConfig is the ruby_package configuration.
+type RubyPackageConfig struct {
+	Except []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> ruby_package.
 	Override map[bufmoduleref.ModuleIdentity]string
 }
 
@@ -348,6 +365,8 @@ type ExternalManagedConfigV1 struct {
 	CsharpNamespace     ExternalCsharpNamespaceConfigV1   `json:"csharp_namespace,omitempty" yaml:"csharp_namespace,omitempty"`
 	OptimizeFor         ExternalOptimizeForConfigV1       `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 	GoPackagePrefix     ExternalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
+	ObjcClassPrefix     ExternalObjcClassPrefixConfigV1   `json:"objc_class_prefix,omitempty" yaml:"objc_class_prefix,omitempty"`
+	RubyPackage         ExternalRubyPackageConfigV1       `json:"ruby_package,omitempty" yaml:"ruby_package,omitempty"`
 	Override            map[string]map[string]string      `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
@@ -357,8 +376,12 @@ func (e ExternalManagedConfigV1) IsEmpty() bool {
 		e.JavaMultipleFiles == nil &&
 		e.JavaStringCheckUtf8 == nil &&
 		e.JavaPackagePrefix.IsEmpty() &&
+		e.CsharpNamespace.IsEmpty() &&
+		e.CsharpNamespace.IsEmpty() &&
 		e.OptimizeFor.IsEmpty() &&
 		e.GoPackagePrefix.IsEmpty() &&
+		e.ObjcClassPrefix.IsEmpty() &&
+		e.RubyPackage.IsEmpty() &&
 		len(e.Override) == 0
 }
 
@@ -477,6 +500,30 @@ type ExternalCsharpNamespaceConfigV1 struct {
 // IsEmpty returns true if the config is empty.
 func (e ExternalCsharpNamespaceConfigV1) IsEmpty() bool {
 	return len(e.Except) == 0 &&
+		len(e.Override) == 0
+}
+
+// ExternalRubyPackageConfigV1 is the external ruby_package configuration
+type ExternalRubyPackageConfigV1 struct {
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// IsEmpty returns true is the config is empty
+func (e ExternalRubyPackageConfigV1) IsEmpty() bool {
+	return len(e.Except) == 0 && len(e.Override) == 0
+}
+
+// ExternalObjcClassPrefixConfigV1 is the external objc_class_prefix configuration.
+type ExternalObjcClassPrefixConfigV1 struct {
+	Default  string            `json:"default,omitempty" yaml:"default,omitempty"`
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+func (e ExternalObjcClassPrefixConfigV1) IsEmpty() bool {
+	return e.Default == "" &&
+		len(e.Except) == 0 &&
 		len(e.Override) == 0
 }
 

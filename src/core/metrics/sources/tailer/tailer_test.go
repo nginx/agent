@@ -9,7 +9,6 @@ package tailer
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -62,16 +61,13 @@ func TestGrok(t *testing.T) {
 }
 
 func TestTailer(t *testing.T) {
-	errorLogFile, _ := ioutil.TempFile(os.TempDir(), "error.log")
+	errorLogFile, _ := os.CreateTemp(os.TempDir(), "error.log")
 	logLine := `2015/07/15 05:56:30 [info] 28386#28386: *94160 client 10.196.158.41 closed keepalive connection`
 
 	tailer, err := NewTailer(errorLogFile.Name())
 	require.Nil(t, err)
 
-	timeoutDuration, err := time.ParseDuration("300ms")
-	if err != nil {
-		t.Fatal("Error creating timeout duration")
-	}
+	timeoutDuration := time.Millisecond * 300
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
 	defer cancel()
@@ -79,11 +75,7 @@ func TestTailer(t *testing.T) {
 	data := make(chan string, 100)
 	go tailer.Tail(ctx, data)
 
-	sleepDuration, err := time.ParseDuration("100ms")
-	if err != nil {
-		t.Fatal("Error creating sleep duration")
-	}
-	time.Sleep(sleepDuration)
+	time.Sleep(time.Millisecond * 100)
 	_, err = errorLogFile.WriteString(logLine)
 	if err != nil {
 		t.Fatalf("Error writing data to error log")
@@ -109,29 +101,20 @@ T:
 }
 
 func TestPatternTailer(t *testing.T) {
-	accessLogFile, _ := ioutil.TempFile(os.TempDir(), "access.log")
+	accessLogFile, _ := os.CreateTemp(os.TempDir(), "access.log")
 	logLine := "127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 500 98 \"-\" \"Go-http-client/1.1\" \"-\"\n"
 
 	tailer, err := NewPatternTailer(accessLogFile.Name(), defaultPatterns)
 	require.Nil(t, err)
 
-	timeoutDuration, err := time.ParseDuration("300ms")
-	if err != nil {
-		t.Fatal("Error creating timeout duration")
-	}
-
+	timeoutDuration := time.Millisecond * 300
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
 	defer cancel()
 
 	data := make(chan map[string]string, 100)
 	go tailer.Tail(ctx, data)
 
-	sleepDuration, err := time.ParseDuration("100ms")
-	if err != nil {
-		t.Fatal("Error creating sleep duration")
-	}
-
-	time.Sleep(sleepDuration)
+	time.Sleep(time.Millisecond * 100)
 	_, err = accessLogFile.WriteString(logLine)
 	if err != nil {
 		t.Fatalf("Error writing data to access log")

@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"sort"
 	"testing"
@@ -19,18 +18,19 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
-	testutils "github.com/nginx/agent/v2/test/utils"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNginxErrorLogUpdate(t *testing.T) {
-	binary := testutils.NewMockNginxBinary()
+	binary := tutils.NewMockNginxBinary()
 	binary.On("GetErrorLogs").Return(map[string]string{"/tmp/error.log": ""}).Once()
 	binary.On("GetErrorLogs").Return(map[string]string{"/tmp/new_error.log": ""}).Once()
 
-	collectionDuration, _ := time.ParseDuration("300ms")
-	newCollectionDuration, _ := time.ParseDuration("500ms")
+	collectionDuration := time.Millisecond * 300
+	newCollectionDuration := time.Millisecond * 500
 	nginxErrorLog := NewNginxErrorLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
 
 	assert.Equal(t, "", nginxErrorLog.baseDimensions.InstanceTags)
@@ -54,10 +54,10 @@ func TestNginxErrorLogUpdate(t *testing.T) {
 }
 
 func TestNginxErrorLogStop(t *testing.T) {
-	binary := testutils.NewMockNginxBinary()
+	binary := tutils.NewMockNginxBinary()
 	binary.On("GetErrorLogs").Return(map[string]string{"/tmp/error.log": ""}).Once()
 
-	collectionDuration, _ := time.ParseDuration("300ms")
+	collectionDuration := time.Millisecond * 300
 	nginxErrorLog := NewNginxErrorLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
 
 	_, ok := nginxErrorLog.logs["/tmp/error.log"]
@@ -65,14 +65,13 @@ func TestNginxErrorLogStop(t *testing.T) {
 
 	nginxErrorLog.Stop()
 
-	assert.Equal(t, 0, len(nginxErrorLog.logs))
+	assert.Len(t, nginxErrorLog.logs, 0)
 }
 
 func TestErrorLogStats(t *testing.T) {
 	tests := []struct {
 		name          string
 		logLines      []string
-		m             chan *proto.StatsEntity
 		expectedStats *proto.StatsEntity
 	}{
 		{
@@ -84,7 +83,6 @@ func TestErrorLogStats(t *testing.T) {
 				`2022/05/24 13:18:37 [error] 21314#21314: *91 connect() failed (111: Connection refused) while connecting to upstream, client: 127.0.0.1, server: , request: "GET /frontend1 HTTP/1.1", upstream: "http://127.0.0.1:9091/frontend1", host: "127.0.0.1:8081"`,
 				`2022/05/24 13:18:37 [error] 21314#21314: client request body is buffered.`,
 			},
-			make(chan *proto.StatsEntity, 1),
 			&proto.StatsEntity{
 				Simplemetrics: []*proto.SimpleMetric{
 					{
@@ -109,23 +107,21 @@ func TestErrorLogStats(t *testing.T) {
 	}
 
 	binary := core.NewNginxBinary(tutils.NewMockEnvironment(), &config.Config{})
-	collectionDuration, _ := time.ParseDuration("300ms")
-	sleepDuration, _ := time.ParseDuration("100ms")
+	collectionDuration := time.Millisecond * 300
+	sleepDuration := time.Millisecond * 100
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			context := context.TODO()
-			errorLogFile, _ := ioutil.TempFile(os.TempDir(), "error.log")
+			errorLogFile, _ := os.CreateTemp(os.TempDir(), "error.log")
 
 			nginxErrorLog := NewNginxErrorLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
-			go nginxErrorLog.logStats(context, errorLogFile.Name())
+			go nginxErrorLog.logStats(context.TODO(), errorLogFile.Name())
 
 			time.Sleep(sleepDuration)
+
 			for _, logLine := range test.logLines {
 				_, err := errorLogFile.WriteString(logLine)
-				if err != nil {
-					tt.Fatalf("Error writing data to error log")
-				}
+				require.NoError(t, err, "Error writing data to error log")
 			}
 
 			time.Sleep(collectionDuration)

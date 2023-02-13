@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,18 +19,19 @@ import (
 	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/sources/tailer"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	spaceDelim = " "
+	pattern = `[A-Z]+\s.+\s[A-Z]+/.+`
 )
 
-// This metrics source is used to tail the NGINX access logs to retrieve http metrics.
+// This metrics source is used to tail the NGINX access logs to retrieve metrics.
 
 type NginxAccessLog struct {
 	baseDimensions *metrics.CommonDim
@@ -49,7 +51,7 @@ func NewNginxAccessLog(
 	binary core.NginxBinary,
 	nginxType string,
 	collectionInterval time.Duration) *NginxAccessLog {
-	log.Trace("Creating NewNginxAccessLog")
+	log.Trace("Creating NginxAccessLog")
 
 	nginxAccessLog := &NginxAccessLog{
 		baseDimensions,
@@ -78,7 +80,6 @@ func NewNginxAccessLog(
 
 func (c *NginxAccessLog) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
 	defer wg.Done()
-
 	c.collectLogStats(ctx, m)
 }
 
@@ -158,10 +159,9 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
 	log.Debugf("Pattern used for tailing logs: %s", logPattern)
 
-	counters := getDefaultCounters()
-	gzipRatios := []float64{}
-	requestLengths := []float64{}
-	requestTimes := []float64{}
+	httpCounters, upstreamCounters := getDefaultCounters()
+	gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes := []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
+
 	mu := sync.Mutex{}
 
 	t, err := tailer.NewPatternTailer(logFile, map[string]string{"DEFAULT": logPattern})
@@ -185,36 +185,46 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			}
 
 			mu.Lock()
-			if v, err := strconv.Atoi(access.BodyBytesSent); err == nil {
-				n := "request.body_bytes_sent"
-				counters[n] = float64(v) + counters[n]
-			} else {
-				log.Debugf("Error getting body_bytes_sent value from access logs, %v", err)
+			if access.BodyBytesSent != "" {
+				if v, err := strconv.Atoi(access.BodyBytesSent); err == nil {
+					n := "request.body_bytes_sent"
+					httpCounters[n] = float64(v) + httpCounters[n]
+				} else {
+					log.Debugf("Error getting body_bytes_sent value from access logs: %v", err)
+				}
 			}
 
-			if v, err := strconv.Atoi(access.BytesSent); err == nil {
-				n := "request.bytes_sent"
-				counters[n] = float64(v) + counters[n]
-			} else {
-				log.Debugf("Error getting bytes_sent value from access logs, %v", err)
+			if access.BytesSent != "" {
+				if v, err := strconv.Atoi(access.BytesSent); err == nil {
+					n := "request.bytes_sent"
+					httpCounters[n] = float64(v) + httpCounters[n]
+				} else {
+					log.Debugf("Error getting bytes_sent value from access logs: %v", err)
+				}
 			}
 
-			if v, err := strconv.Atoi(access.GzipRatio); err == nil {
-				gzipRatios = append(gzipRatios, float64(v))
-			} else {
-				log.Debugf("Error getting gzip_ratio value from access logs, %v", err)
+			if access.GzipRatio != "-" && access.GzipRatio != "" {
+				if v, err := strconv.Atoi(access.GzipRatio); err == nil {
+					gzipRatios = append(gzipRatios, float64(v))
+				} else {
+					log.Debugf("Error getting gzip_ratio value from access logs: %v", err)
+				}
 			}
 
-			if v, err := strconv.Atoi(access.RequestLength); err == nil {
-				requestLengths = append(requestLengths, float64(v))
-			} else {
-				log.Debugf("Error getting request_length value from access logs, %v", err)
+			if access.RequestLength != "" {
+				if v, err := strconv.Atoi(access.RequestLength); err == nil {
+					requestLengths = append(requestLengths, float64(v))
+				} else {
+					log.Debugf("Error getting request_length value from access logs: %v", err)
+				}
 			}
 
-			if v, err := strconv.ParseFloat(access.RequestTime, 64); err == nil {
-				requestTimes = append(requestTimes, v)
-			} else {
-				log.Debugf("Error getting request_time value from access logs, %v", err)
+			if access.RequestTime != "" {
+				if v, err := strconv.ParseFloat(access.RequestTime, 64); err == nil {
+					requestTimes = append(requestTimes, v)
+				} else {
+					log.Debugf("Error getting request_time value from access logs: %v", err)
+				}
 			}
 
 			if access.Request != "" {
@@ -223,15 +233,48 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				if isOtherMethod(n) {
 					n = "method.others"
 				}
-				counters[n] = counters[n] + 1
+				httpCounters[n] = httpCounters[n] + 1
 
 				if access.ServerProtocol == "" {
 					if strings.Count(protocol, "/") == 1 {
 						httpProtocolVersion := strings.Split(protocol, "/")[1]
 						httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
 						n = fmt.Sprintf("v%s", httpProtocolVersion)
-						counters[n] = counters[n] + 1
+						httpCounters[n] = httpCounters[n] + 1
 					}
+				}
+			}
+
+			if access.UpstreamConnectTime != "-" && access.UpstreamConnectTime != "" {
+				if v, err := strconv.ParseFloat(access.UpstreamConnectTime, 64); err == nil {
+					upstreamConnectTimes = append(upstreamConnectTimes, v)
+				} else {
+					log.Debugf("Error getting upstream_connect_time value from access logs, %v", err)
+				}
+			}
+
+			if access.UpstreamHeaderTime != "-" && access.UpstreamHeaderTime != "" {
+				if v, err := strconv.ParseFloat(access.UpstreamHeaderTime, 64); err == nil {
+					upstreamHeaderTimes = append(upstreamHeaderTimes, v)
+				} else {
+					log.Debugf("Error getting upstream_header_time value from access logs: %v", err)
+				}
+			}
+
+			if access.UpstreamResponseLength != "-" && access.UpstreamResponseLength != "" {
+				if v, err := strconv.ParseFloat(access.UpstreamResponseLength, 64); err == nil {
+					upstreamResponseLength = append(upstreamResponseLength, v)
+				} else {
+					log.Debugf("Error getting upstream_response_length value from access logs: %v", err)
+				}
+
+			}
+
+			if access.UpstreamResponseTime != "-" && access.UpstreamResponseTime != "" {
+				if v, err := strconv.ParseFloat(access.UpstreamResponseTime, 64); err == nil {
+					upstreamResponseTimes = append(upstreamResponseTimes, v)
+				} else {
+					log.Debugf("Error getting upstream_response_time value from access logs: %v", err)
 				}
 			}
 
@@ -240,7 +283,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 					httpProtocolVersion := strings.Split(access.ServerProtocol, "/")[1]
 					httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
 					n := fmt.Sprintf("v%s", httpProtocolVersion)
-					counters[n] = counters[n] + 1
+					httpCounters[n] = httpCounters[n] + 1
 				}
 			}
 
@@ -248,18 +291,18 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			if c.nginxType == OSSNginxType {
 				if v, err := strconv.Atoi(access.Status); err == nil {
 					n := fmt.Sprintf("status.%dxx", v/100)
-					counters[n] = counters[n] + 1
+					httpCounters[n] = httpCounters[n] + 1
 					if v == 403 || v == 404 || v == 500 || v == 502 || v == 503 || v == 504 {
 						n := fmt.Sprintf("status.%d", v)
-						counters[n] = counters[n] + 1
+						httpCounters[n] = httpCounters[n] + 1
 					}
 					if v == 499 {
 						n := "status.discarded"
-						counters[n] = counters[n] + 1
+						httpCounters[n] = httpCounters[n] + 1
 					}
 					if v == 400 {
 						n := "request.malformed"
-						counters[n] = counters[n] + 1
+						httpCounters[n] = httpCounters[n] + 1
 					}
 				} else {
 					log.Debugf("Error getting status value from access logs, %v", err)
@@ -270,29 +313,47 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 		case <-tick.C:
 			c.baseDimensions.NginxType = c.nginxType
 			c.baseDimensions.PublishedAPI = logFile
-			c.group = "http"
 
 			mu.Lock()
 
 			if len(requestLengths) > 0 {
-				counters["request.length"] = getRequestLengthMetricValue(requestLengths)
+				httpCounters["request.length"] = getAverageMetricValue(requestLengths)
 			}
+
 			if len(gzipRatios) > 0 {
-				counters["gzip.ratio"] = getGzipRatioMetricValue(gzipRatios)
+				httpCounters["gzip.ratio"] = getAverageMetricValue(gzipRatios)
 			}
 
-			for key, value := range getRequestTimeMetrics(requestTimes) {
-				counters[key] = value
+			if len(requestTimes) > 0 {
+				getTimeMetricsMap("request.time", requestTimes, httpCounters)
 			}
 
-			simpleMetrics := c.convertSamplesToSimpleMetrics(counters)
+			if len(upstreamConnectTimes) > 0 {
+				getTimeMetricsMap("upstream.connect.time", upstreamConnectTimes, upstreamCounters)
+			}
+
+			if len(upstreamHeaderTimes) > 0 {
+				getTimeMetricsMap("upstream.header.time", upstreamHeaderTimes, upstreamCounters)
+			}
+
+			if len(upstreamResponseTimes) > 0 {
+				getTimeMetricsMap("upstream.response.time", upstreamResponseTimes, upstreamCounters)
+			}
+
+			if len(upstreamResponseLength) > 0 {
+				upstreamCounters["upstream.response.length"] = getAverageMetricValue(upstreamResponseLength)
+			}
+			c.group = "http"
+			simpleMetrics := c.convertSamplesToSimpleMetrics(httpCounters)
+
+			c.group = ""
+			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamCounters)...)
+
 			log.Tracef("Access log metrics collected: %v", simpleMetrics)
 
 			// reset the counters
-			counters = getDefaultCounters()
-			gzipRatios = []float64{}
-			requestLengths = []float64{}
-			requestTimes = []float64{}
+			httpCounters, upstreamCounters = getDefaultCounters()
+			gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes = []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
 			c.buf = append(c.buf, metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics))
 
@@ -310,6 +371,19 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 }
 
 func getParsedRequest(request string) (method string, uri string, protocol string) {
+	
+	// Looking for capital letters, a space, anything, a space, capital letters, forward slash then anything. 
+	// Example: DELETE nginx_status HTTP/1.1
+	regex, err := regexp.Compile(pattern)
+
+	if err != nil{
+		return
+	}
+	
+	if regex.FindString(request) == "" {
+		return
+	}
+
 	if len(request) == 0 {
 		return
 	}
@@ -338,73 +412,74 @@ func getParsedRequest(request string) (method string, uri string, protocol strin
 	return
 }
 
-func getRequestLengthMetricValue(requestLengths []float64) float64 {
+func getAverageMetricValue(metricValues []float64) float64 {
 	value := 0.0
 
-	if len(requestLengths) > 0 {
-		sort.Float64s(requestLengths)
-		requestLengthSum := 0.0
-		for _, requestLength := range requestLengths {
-			requestLengthSum += requestLength
+	if len(metricValues) > 0 {
+		sort.Float64s(metricValues)
+		metricValueSum := 0.0
+		for _, metricValue := range metricValues {
+			metricValueSum += metricValue
 		}
-		value = requestLengthSum / float64(len(requestLengths))
+		value = metricValueSum / float64(len(metricValues))
 	}
 
 	return value
 }
 
-func getGzipRatioMetricValue(gzipRatios []float64) float64 {
-	value := 0.0
+func getTimeMetricsMap(metricName string, times []float64, counter map[string]float64) {
 
-	if len(gzipRatios) > 0 {
-		sort.Float64s(gzipRatios)
-		gzipRatioSum := 0.0
-		for _, gzipRatio := range gzipRatios {
-			gzipRatioSum += gzipRatio
-		}
-		value = gzipRatioSum / float64(len(gzipRatios))
+	metrics := map[string]float64{
+		metricName:             0,
+		metricName + ".count":  0,
+		metricName + ".median": 0,
+		metricName + ".max":    0,
+		metricName + ".pctl95": 0,
 	}
 
-	return value
-}
+	for metric := range metrics {
 
-func getRequestTimeMetrics(requestTimes []float64) map[string]float64 {
-	counters := make(map[string]float64)
+		metricType := metric[strings.LastIndex(metric, ".")+1:]
 
-	if len(requestTimes) > 0 {
-		// Calculate request time average
-		sort.Float64s(requestTimes)
-		requestTimesSum := 0.0
-		for _, requestTime := range requestTimes {
-			requestTimesSum += requestTime
+		switch metricType {
+		case "time":
+			// Calculate average
+			sum := 0.0
+			for _, t := range times {
+				sum += t
+			}
+
+			counter[metric] = (math.Round(sum*1000) / 1000) / float64(len(times))
+
+		case "count":
+			counter[metric] = float64(len(times))
+
+		case "max":
+			sort.Float64s(times)
+			counter[metric] = times[len(times)-1]
+
+		case "median":
+			sort.Float64s(times)
+
+			mNumber := len(times) / 2
+			if len(times)%2 != 0 {
+				counter[metric] = times[mNumber]
+			} else {
+				counter[metric] = (times[mNumber-1] + times[mNumber]) / 2
+			}
+
+		case "pctl95":
+			sort.Float64s(times)
+
+			index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
+			counter[metric] = times[index]
 		}
 
-		counters["request.time"] = requestTimesSum / float64(len(requestTimes))
-
-		// Calculate request time count
-		sort.Float64s(requestTimes)
-		counters["request.time.count"] = float64(len(requestTimes))
-
-		// Calculate request time max
-		sort.Float64s(requestTimes)
-		counters["request.time.max"] = requestTimes[len(requestTimes)-1]
-
-		// Calculate request time median
-		mNumber := len(requestTimes) / 2
-		if len(requestTimes)%2 != 0 {
-			counters["request.time.median"] = requestTimes[mNumber]
-		} else {
-			counters["request.time.median"] = (requestTimes[mNumber-1] + requestTimes[mNumber]) / 2
-		}
-
-		// Calculate request time 95 percentile
-		index := int(math.RoundToEven(float64(0.95)*float64(len(requestTimes)))) - 1
-		counters["request.time.pctl95"] = requestTimes[index]
 	}
 
-	return counters
 }
 
+// convertLogFormat converts log format into a pattern that can be parsed by the tailer
 func convertLogFormat(logFormat string) string {
 	newLogFormat := strings.ReplaceAll(logFormat, "$remote_addr", "%{IPORHOST:remote_addr}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$remote_user", "%{USERNAME:remote_user}")
@@ -421,6 +496,10 @@ func convertLogFormat(logFormat string) string {
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$request_time", "%{DATA:request_time}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "\"$request\"", "\"%{DATA:request}\"")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$request ", "%{DATA:request} ")
+	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_connect_time", "%{DATA:upstream_connect_time}")
+	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_header_time", "%{DATA:upstream_header_time}")
+	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_response_time", "%{DATA:upstream_response_time}")
+	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_response_length", "%{DATA:upstream_response_length}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "[", "\\[")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "]", "\\]")
 	return newLogFormat
@@ -435,8 +514,8 @@ func isOtherMethod(method string) bool {
 		method != "method.options"
 }
 
-func getDefaultCounters() map[string]float64 {
-	return map[string]float64{
+func getDefaultCounters() (map[string]float64, map[string]float64) {
+	httpCounters := map[string]float64{
 		"gzip.ratio":              0,
 		"method.delete":           0,
 		"method.get":              0,
@@ -471,4 +550,25 @@ func getDefaultCounters() map[string]float64 {
 		"v1_1":                    0,
 		"v2":                      0,
 	}
+
+	upstreamCounters := map[string]float64{
+		"upstream.connect.time":         0,
+		"upstream.connect.time.count":   0,
+		"upstream.connect.time.max":     0,
+		"upstream.connect.time.median":  0,
+		"upstream.connect.time.pctl95":  0,
+		"upstream.header.time":          0,
+		"upstream.header.time.count":    0,
+		"upstream.header.time.max":      0,
+		"upstream.header.time.median":   0,
+		"upstream.header.time.pctl95":   0,
+		"upstream.response.time":        0,
+		"upstream.response.time.count":  0,
+		"upstream.response.time.max":    0,
+		"upstream.response.time.median": 0,
+		"upstream.response.time.pctl95": 0,
+		"upstream.response.length":      0,
+	}
+
+	return httpCounters, upstreamCounters
 }
