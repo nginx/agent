@@ -196,6 +196,19 @@ jobs:
           retention-days: 3
 
 
+  build-example:
+    name: Build Dashboard Example
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Run example
+        run: make run-example
+      - name: Shutdown example
+        run: make clean-example
+
   trigger-release-workflow:
     if: ${{ startsWith(github.ref_name, 'release-') && !github.event.pull_request.head.repo.fork }}
     needs: [ lint, unit-test, component-test, performance-test ]

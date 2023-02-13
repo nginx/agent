@@ -4,7 +4,7 @@ This README will give instructions on how to run the demonstration on how the NG
 <br>
 
 ## Run Example
-Run the following command to start up the agent grafana metrics example. This will create all the servies listed in [List of Services](#list-of-services).
+Run the following command from the root directory, to start up the agent grafana metrics example. This will create all the services listed in [List of Services](#list-of-services).
 ```
 make clean build run
 ```
@@ -42,7 +42,7 @@ If you monitor the dashboard you'll see the graphs being populated.
 
 ## Teardown Example
 
-Run the following command in the grafana directory to shut down example services.
+Run the following command from the root directory to shut down example services.
 ```
-make clean
+make clean-example
 ```
