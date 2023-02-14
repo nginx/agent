@@ -22,7 +22,7 @@ echo "starting nginx ..."
 nginx_pid=$!
 
 [ -e "/agent/nginx-agent.conf" ] && cp /agent/nginx-agent.conf /etc/nginx-agent/nginx-agent.conf
- cat /etc/nginx-agent/nginx-agent.conf;
+cat /etc/nginx-agent/nginx-agent.conf;
 
 [ -e "/agent/nginx.conf" ] && cp /agent/nginx.conf /etc/nginx/nginx.conf
 
