@@ -24,7 +24,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE := ubuntu
 OS_VERSION := 22.04
-BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
+BASE_IMAGE := "docker.io/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
 
@@ -37,7 +37,7 @@ PACKAGES_REPO            := "pkgs.nginx.com"
 OS                       := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 OSARCH                   := $(shell uname -m)
 TEST_BUILD_DIR           := build/test
-TEST_DOCKER_COMPOSE_FILE  = "docker-compose.yml"
+TEST_DOCKER_COMPOSE_FILE := "docker-compose-deb.yml"
 PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 LOCAL_ARCH         := amd64
@@ -183,7 +183,7 @@ performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
 integration-test: local-deb-package local-rpm-package
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=$(BASE_IMAGE) DOCKER_COMPOSE_FILE=$(TEST_DOCKER_COMPOSE_FILE) go test -v ./test/integration/install
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=$(TEST_DOCKER_COMPOSE_FILE) go test ./test/integration/install
 	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=${TEST_DOCKER_COMPOSE_FILE} go test ./test/integration/api
 
 test-bench: ## Run benchmark tests
