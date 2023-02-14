@@ -261,5 +261,5 @@ clean-grafana-example: clean ## Clean example packages and docker
 build-grafana-example: local-deb-package ## Build the example of nginx-agent
 	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} docker-compose build
 
-run-granfana-example: ## Start the example of nginx-agent
+run-grafana-example: ## Start the example of nginx-agent
 	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} docker-compose up

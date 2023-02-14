@@ -7,6 +7,7 @@ ARG ENTRY_POINT
 ARG PACKAGE_NAME
 
 WORKDIR /agent
+COPY ./build /agent/build
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN set -x \
@@ -34,5 +35,4 @@ FROM install-nginx as install-agent
 
 ARG PACKAGE_NAME
 
-# COPY --from=install-nginx /agent/nginx-agent.conf /etc/nginx-agent/nginx-agent.conf
-RUN apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -f /agent/build/$PACKAGE_NAME.deb
+RUN apt install -y /agent/build/$PACKAGE_NAME.deb
