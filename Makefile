@@ -190,7 +190,7 @@ performance-test: ## Run performance tests
 
 integration-test: local-deb-package
 	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test ./test/integration/install
-	# PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test ./test/integration/api
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go

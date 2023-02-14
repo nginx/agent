@@ -2,8 +2,8 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE} as install-nginx
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
-ARG NGINX_CONF=/etc/nginx/nginx.conf
-ARG AGENT_CONF=/etc/nginx-agent/nginx-agent.conf
+ARG NGINX_CONF
+ARG AGENT_CONF
 ARG ENTRY_POINT
 
 WORKDIR /agent
