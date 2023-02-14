@@ -51,8 +51,9 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
 		rpm_codename='na'; \
 		if [ "$$rpm_distro" = "centos" ] || [ "$$rpm_distro" = "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
-		elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
-		if [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
+			elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; \
+			elif [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; \
+		fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=amd64 nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(OSARCH).rpm; \
 			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(OSARCH).rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(OSARCH).rpm; \
@@ -65,8 +66,8 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	@for arch in $(ROCKY_ARCHS); do \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
 		for distro in $(ROCKY_DISTROS); do \
-			rpm_distro=$(echo $$distro | cut -d- -f 1); \
-			rpm_major=$(echo $$distro | cut -d- -f 2); \
+			rpm_distro=`echo $$distro | cut -d- -f 1`; \
+			rpm_major=`echo $$distro | cut -d- -f 2`; \
 			rpm_codename='na'; \
 			if [ "$$rpm_distro" = "rocky" ]; then rpm_codename="rocky$$rpm_major"; fi; \
 			if [ "$$rpm_codename" != "na" ]; then \
