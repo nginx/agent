@@ -8,7 +8,7 @@ GPG_PUBLIC_KEY      := .key
 DEB_DISTROS?=ubuntu-jammy-22.04 ubuntu-focal-20.04 ubuntu-bionic-18.04 debian-bullseye-11 debian-buster-10
 DEB_ARCHS?=arm64 amd64
 RPM_DISTROS?=centos-7-x86_64 redhatenterprise-7-x86_64 redhatenterprise-8-x86_64 redhatenterprise-9-x86_64 amazon-2-x86_64 amazon-latest-x86_64 amazon-2017.09-x86_64 suse-12-x86_64 suse-15-x86_64
-ROCKY_DISTROS?=rocky-8 rocky-9
+ROCKY_VERSIONS?=rocky-8 rocky-9
 ROCKY_ARCHS?=arm64 amd64
 FREEBSD_DISTROS?="FreeBSD:12:amd64" "FreeBSD:13:amd64"
 APK_VERSIONS?=3.13 3.14 3.15 3.16
@@ -47,7 +47,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 
 	@GOWORK=off CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 	@for distro in $(RPM_DISTROS); do \
-		rpm_distro=`echo $$distro | cut -d- -f 1`;  \
+		rpm_distro=`echo $$distro | cut -d- -f 1`; \
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
 		rpm_codename='na'; \
 		if [ "$$rpm_distro" = "centos" ] || [ "$$rpm_distro" = "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
@@ -65,7 +65,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	
 	@for arch in $(ROCKY_ARCHS); do \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
-		for distro in $(ROCKY_DISTROS); do \
+		for distro in $(ROCKY_VERSIONS); do \
 			rpm_distro=`echo $$distro | cut -d- -f 1`; \
 			rpm_major=`echo $$distro | cut -d- -f 2`; \
 			rpm_codename='na'; \
