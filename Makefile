@@ -122,15 +122,15 @@ launch-swagger-ui: generate-swagger ## Launch Swagger UI
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 local-apk-package: ## Create local apk package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.apk;
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') ${GOPATH}/bin/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.apk;
 
 local-deb-package: ## Create local deb package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.deb;
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') ${GOPATH}/bin/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.deb;
 
 local-rpm-package: ## Create local rpm package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') ${GOPATH}/bin/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
 
 local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
