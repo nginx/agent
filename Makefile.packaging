@@ -45,7 +45,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	# Create rpm packages
 	
 	@for arch in ${RPM_ARCHS}; do \
-		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
 		for distro in $(RPM_DISTROS); do \
 			rpm_distro=$(echo $$distro | cut -d- -f 1); \
 			rpm_major=$(echo $$distro | cut -d- -f 2); \
@@ -59,8 +59,8 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 				cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
 			fi; \
 		done; \
+		rm -rf ./build/nginx-agent; \
 	done; \
-	rm -rf ./build/nginx-agent
 	
 	# Create apk packages
 	
