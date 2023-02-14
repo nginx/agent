@@ -2,16 +2,12 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE} as install-nginx
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
-ARG NGINX_CONF=/etc/nginx/nginx.conf
-ARG AGENT_CONF=/etc/nginx-agent/nginx-agent.conf
+ARG DEBIAN_FRONTEND=noninteractive
 ARG ENTRY_POINT
+ARG PACKAGE_NAME
 
 WORKDIR /agent
-COPY ./ /agent
 COPY $ENTRY_POINT /agent/entrypoint.sh
-
-RUN if [[ -z "$AGENT_CONF" ]] ; then cp $AGENT_CONF /etc/nginx-agent/nginx-agent.conf ; fi
-RUN if [[ -z "$NGINX_CONF" ]] ; then cp $NGINX_CONF /etc/nginx/nginx.conf ; fi
 
 RUN set -x \
     && addgroup --system --gid 101 nginx \
@@ -37,7 +33,6 @@ ENTRYPOINT ["/agent/entrypoint.sh"]
 FROM install-nginx as install-agent
 
 ARG PACKAGE_NAME
-ARG AGENT_CONF
 
-COPY --from=install-nginx /agent/nginx-agent.conf /etc/nginx-agent/nginx-agent.conf
+# COPY --from=install-nginx /agent/nginx-agent.conf /etc/nginx-agent/nginx-agent.conf
 RUN apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -f /agent/build/$PACKAGE_NAME.deb
