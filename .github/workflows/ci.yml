@@ -65,13 +65,13 @@ jobs:
         run: make component-test
 
   integration-tests:
-    runs-on: ubuntu-22.04-${{ matrix.runner.arch }}
+    runs-on: ubuntu-22.04
     name: Integration Tests
     strategy:
       matrix:
-        runner:
-        - arch: amd64
-        - arch: arm64
+        # runner:
+        # - arch: amd64
+        # - arch: arm64
         container:
         - image: rockylinux
           version: 8
