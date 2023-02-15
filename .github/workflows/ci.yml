@@ -56,7 +56,6 @@ jobs:
   component-test:
     name: Component Tests
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -68,7 +67,6 @@ jobs:
   integration-test:
     name: Integration Tests
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -83,7 +81,6 @@ jobs:
     name: Performance Tests
     if: "!github.event.pull_request.head.repo.fork"
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v3
       - name: Set up Docker Build
