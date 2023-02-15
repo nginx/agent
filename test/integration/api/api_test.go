@@ -37,8 +37,6 @@ func setupTestContainer(t *testing.T) {
 			map[string]string{
 				"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
 				"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
-				"AGENT_CONF":   os.Getenv("AGENT_CONF"),
-				"NGINX_CONF":   os.Getenv("NGINX_CONF"),
 			},
 		).Up(ctx, compose.Wait(true)), "compose.Up()")
 }
@@ -76,7 +74,6 @@ func TestAPI_Nginx(t *testing.T) {
 			assert.Equal(t, detail[1], "/usr/local/nginx/conf/nginx.conf")
 		}
 	}
-
 }
 
 func TestAPI_Metrics(t *testing.T) {

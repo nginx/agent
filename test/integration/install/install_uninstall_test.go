@@ -31,14 +31,6 @@ var (
 	agentContainer         *testcontainers.DockerContainer
 )
 
-type TestLogConsumer struct {
-	Msgs []string
-}
-
-func (g *TestLogConsumer) Accept(l testcontainers.Log) {
-	g.Msgs = append(g.Msgs, string(l.Content))
-}
-
 func setupTestContainer(t *testing.T) {
 	ctx := context.Background()
 	comp, err := compose.NewDockerCompose("docker-compose.yml")
@@ -58,13 +50,7 @@ func setupTestContainer(t *testing.T) {
 		},
 	).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
-	agentContainer, err = comp.ServiceContainer(ctxCancel, "agent")
-	
-	err = agentContainer.StartLogProducer(ctxCancel)
-	require.NoError(t, err)
-	
-	agentContainer.FollowOutput(&TestLogConsumer{})
-
+	agentContainer, err = comp.ServiceContainer(ctxCancel, "agent")	
 	require.NoError(t, err)
 }
 
@@ -143,9 +129,6 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		_, err = agentContainer.CopyFileFromContainer(context.Background(), path)
 		assert.Error(t, err)
 	}
-
-	err = agentContainer.StopLogProducer()
-	require.NoError(t, err)
 }
 
 // installAgent installs the agent returning total install time and install output
