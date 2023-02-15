@@ -12,7 +12,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/klauspost/cpuid/v2 v2.1.0
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mwitkow/go-proto-validators v0.3.2
 	github.com/nginxinc/nginx-plus-go-client v0.10.0
@@ -38,20 +38,20 @@ require (
 )
 
 require (
-	github.com/bufbuild/buf v1.12.0
+	github.com/bufbuild/buf v1.14.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-swagger/go-swagger v0.30.4
 	github.com/goreleaser/nfpm/v2 v2.26.0
 	github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.13.0
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
-	github.com/rs/cors v1.8.2
+	github.com/rs/cors v1.8.3
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
 	github.com/AlekSi/pointer v1.2.0 // indirect
-	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
+	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
@@ -62,15 +62,15 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb // indirect
-	github.com/bufbuild/connect-go v1.4.1 // indirect
-	github.com/bufbuild/protocompile v0.1.0 // indirect
+	github.com/bufbuild/connect-go v1.5.0 // indirect
+	github.com/bufbuild/protocompile v0.2.0 // indirect
 	github.com/cavaliergopher/cpio v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/cli v20.10.21+incompatible // indirect
+	github.com/docker/cli v20.10.23+incompatible // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v20.10.21+incompatible // indirect
+	github.com/docker/docker v23.0.0+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -82,6 +82,8 @@ require (
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.3.1 // indirect
 	github.com/go-git/go-git/v5 v5.2.0 // indirect
+	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-openapi/analysis v0.21.4 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
@@ -96,10 +98,9 @@ require (
 	github.com/go-openapi/validate v0.22.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
-	github.com/gofrs/uuid v4.3.1+incompatible // indirect
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/google/go-containerregistry v0.12.1 // indirect
-	github.com/google/pprof v0.0.0-20221203041831-ce31453925ec // indirect
+	github.com/gofrs/uuid v4.4.0+incompatible // indirect
+	github.com/google/go-containerregistry v0.13.0 // indirect
+	github.com/google/pprof v0.0.0-20230131232505-5a9e8f65f08f // indirect
 	github.com/goreleaser/chglog v0.4.1 // indirect
 	github.com/goreleaser/fileglob v1.3.0 // indirect
 	github.com/gorilla/handlers v1.5.1 // indirect
@@ -165,10 +166,9 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	gitlab.com/digitalxero/go-conventional-commit v1.0.7 // indirect
 	go.mongodb.org/mongo-driver v1.11.1 // indirect
-	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/otel v1.11.2 // indirect
-	go.opentelemetry.io/otel/metric v0.34.0 // indirect
-	go.opentelemetry.io/otel/trace v1.11.2 // indirect
+	go.opentelemetry.io/otel v1.12.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.12.0 // indirect
+	go.opentelemetry.io/otel/trace v1.12.0 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect

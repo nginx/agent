@@ -67,7 +67,7 @@ func (s *Symbols) Import(fd protoreflect.FileDescriptor, handler *reporter.Handl
 		return nil
 	}
 
-	if f, ok := fd.(file); ok {
+	if f, ok := fd.(*file); ok {
 		// unwrap any file instance
 		fd = f.FileDescriptor
 	}

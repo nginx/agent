@@ -1,7 +1,7 @@
 # github.com/AlekSi/pointer v1.2.0
 ## explicit; go 1.18
 github.com/AlekSi/pointer
-# github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1
+# github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161
 ## explicit; go 1.16
 github.com/Azure/go-ansiterm
 github.com/Azure/go-ansiterm/winterm
@@ -56,7 +56,7 @@ github.com/beorn7/perks/quantile
 # github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb
 ## explicit
 github.com/blakesmith/ar
-# github.com/bufbuild/buf v1.12.0
+# github.com/bufbuild/buf v1.14.0
 ## explicit; go 1.18
 github.com/bufbuild/buf/cmd/buf
 github.com/bufbuild/buf/private/buf/bufapp
@@ -157,6 +157,7 @@ github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild
 github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify
 github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil
 github.com/bufbuild/buf/private/bufpkg/buflock
+github.com/bufbuild/buf/private/bufpkg/bufmanifest
 github.com/bufbuild/buf/private/bufpkg/bufmodule
 github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild
 github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache
@@ -202,11 +203,11 @@ github.com/bufbuild/buf/private/pkg/git
 github.com/bufbuild/buf/private/pkg/httpauth
 github.com/bufbuild/buf/private/pkg/interrupt
 github.com/bufbuild/buf/private/pkg/ioextended
+github.com/bufbuild/buf/private/pkg/manifest
 github.com/bufbuild/buf/private/pkg/netextended
 github.com/bufbuild/buf/private/pkg/netrc
 github.com/bufbuild/buf/private/pkg/normalpath
-github.com/bufbuild/buf/private/pkg/observability
-github.com/bufbuild/buf/private/pkg/observability/observabilityzap
+github.com/bufbuild/buf/private/pkg/observabilityzap
 github.com/bufbuild/buf/private/pkg/osextended
 github.com/bufbuild/buf/private/pkg/protodescriptor
 github.com/bufbuild/buf/private/pkg/protoencoding
@@ -220,7 +221,6 @@ github.com/bufbuild/buf/private/pkg/storage/storagemem/internal
 github.com/bufbuild/buf/private/pkg/storage/storageos
 github.com/bufbuild/buf/private/pkg/storage/storageutil
 github.com/bufbuild/buf/private/pkg/stringutil
-github.com/bufbuild/buf/private/pkg/tagrangeutil
 github.com/bufbuild/buf/private/pkg/thread
 github.com/bufbuild/buf/private/pkg/tmp
 github.com/bufbuild/buf/private/pkg/transport/http/httpclient
@@ -229,11 +229,11 @@ github.com/bufbuild/buf/private/pkg/uuidutil
 github.com/bufbuild/buf/private/pkg/verbose
 github.com/bufbuild/buf/private/pkg/zaputil
 github.com/bufbuild/buf/private/usage
-# github.com/bufbuild/connect-go v1.4.1
+# github.com/bufbuild/connect-go v1.5.0
 ## explicit; go 1.18
 github.com/bufbuild/connect-go
 github.com/bufbuild/connect-go/internal/gen/connectext/grpc/status/v1
-# github.com/bufbuild/protocompile v0.1.0
+# github.com/bufbuild/protocompile v0.2.0
 ## explicit; go 1.18
 github.com/bufbuild/protocompile
 github.com/bufbuild/protocompile/ast
@@ -260,7 +260,7 @@ github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/docker/cli v20.10.21+incompatible
+# github.com/docker/cli v20.10.23+incompatible
 ## explicit
 github.com/docker/cli/cli/config
 github.com/docker/cli/cli/config/configfile
@@ -271,7 +271,7 @@ github.com/docker/cli/cli/config/types
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
 github.com/docker/distribution/registry/client/auth/challenge
-# github.com/docker/docker v20.10.21+incompatible
+# github.com/docker/docker v23.0.0+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
@@ -387,6 +387,13 @@ github.com/go-git/go-git/v5/utils/merkletrie/filesystem
 github.com/go-git/go-git/v5/utils/merkletrie/index
 github.com/go-git/go-git/v5/utils/merkletrie/internal/frame
 github.com/go-git/go-git/v5/utils/merkletrie/noder
+# github.com/go-logr/logr v1.2.3
+## explicit; go 1.16
+github.com/go-logr/logr
+github.com/go-logr/logr/funcr
+# github.com/go-logr/stdr v1.2.2
+## explicit; go 1.16
+github.com/go-logr/stdr
 # github.com/go-ole/go-ole v1.2.6
 ## explicit; go 1.12
 github.com/go-ole/go-ole
@@ -464,7 +471,7 @@ github.com/gobwas/glob/util/strings
 # github.com/gofrs/flock v0.8.1
 ## explicit
 github.com/gofrs/flock
-# github.com/gofrs/uuid v4.3.1+incompatible
+# github.com/gofrs/uuid v4.4.0+incompatible
 ## explicit
 github.com/gofrs/uuid
 # github.com/gogo/protobuf v1.3.2
@@ -498,9 +505,6 @@ github.com/gogo/protobuf/sortkeys
 github.com/gogo/protobuf/types
 github.com/gogo/protobuf/vanity
 github.com/gogo/protobuf/vanity/command
-# github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-## explicit
-github.com/golang/groupcache/lru
 # github.com/golang/mock v1.6.0
 ## explicit; go 1.11
 github.com/golang/mock/gomock
@@ -523,15 +527,18 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/go-containerregistry v0.12.1
-## explicit; go 1.17
+# github.com/google/go-containerregistry v0.13.0
+## explicit; go 1.18
 github.com/google/go-containerregistry/internal/and
+github.com/google/go-containerregistry/internal/compression
 github.com/google/go-containerregistry/internal/gzip
 github.com/google/go-containerregistry/internal/redact
 github.com/google/go-containerregistry/internal/retry
 github.com/google/go-containerregistry/internal/retry/wait
 github.com/google/go-containerregistry/internal/verify
+github.com/google/go-containerregistry/internal/zstd
 github.com/google/go-containerregistry/pkg/authn
+github.com/google/go-containerregistry/pkg/compression
 github.com/google/go-containerregistry/pkg/logs
 github.com/google/go-containerregistry/pkg/name
 github.com/google/go-containerregistry/pkg/v1
@@ -541,7 +548,7 @@ github.com/google/go-containerregistry/pkg/v1/remote
 github.com/google/go-containerregistry/pkg/v1/remote/transport
 github.com/google/go-containerregistry/pkg/v1/stream
 github.com/google/go-containerregistry/pkg/v1/types
-# github.com/google/pprof v0.0.0-20221203041831-ce31453925ec
+# github.com/google/pprof v0.0.0-20230131232505-5a9e8f65f08f
 ## explicit; go 1.18
 github.com/google/pprof/profile
 # github.com/google/uuid v1.3.0
@@ -655,7 +662,7 @@ github.com/mailru/easyjson/jwriter
 # github.com/matttproud/golang_protobuf_extensions v1.0.4
 ## explicit; go 1.9
 github.com/matttproud/golang_protobuf_extensions/pbutil
-# github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
+# github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
 ## explicit; go 1.17
 github.com/maxbrunsfeld/counterfeiter/v6
 github.com/maxbrunsfeld/counterfeiter/v6/arguments
@@ -797,7 +804,7 @@ github.com/pseudomuto/protokit
 # github.com/rogpeppe/go-internal v1.9.0
 ## explicit; go 1.17
 github.com/rogpeppe/go-internal/fmtsort
-# github.com/rs/cors v1.8.2
+# github.com/rs/cors v1.8.3
 ## explicit; go 1.13
 github.com/rs/cors
 # github.com/russross/blackfriday/v2 v2.1.0
@@ -911,40 +918,26 @@ go.mongodb.org/mongo-driver/bson/bsonrw
 go.mongodb.org/mongo-driver/bson/bsontype
 go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
-# go.opencensus.io v0.24.0
-## explicit; go 1.13
-go.opencensus.io
-go.opencensus.io/internal
-go.opencensus.io/internal/tagencoding
-go.opencensus.io/metric/metricdata
-go.opencensus.io/metric/metricproducer
-go.opencensus.io/plugin/ochttp
-go.opencensus.io/plugin/ochttp/propagation/b3
-go.opencensus.io/resource
-go.opencensus.io/stats
-go.opencensus.io/stats/internal
-go.opencensus.io/stats/view
-go.opencensus.io/tag
-go.opencensus.io/trace
-go.opencensus.io/trace/internal
-go.opencensus.io/trace/propagation
-go.opencensus.io/trace/tracestate
-# go.opentelemetry.io/otel v1.11.2
+# go.opentelemetry.io/otel v1.12.0
 ## explicit; go 1.18
+go.opentelemetry.io/otel
 go.opentelemetry.io/otel/attribute
+go.opentelemetry.io/otel/baggage
 go.opentelemetry.io/otel/codes
 go.opentelemetry.io/otel/internal
 go.opentelemetry.io/otel/internal/attribute
-# go.opentelemetry.io/otel/metric v0.34.0
+go.opentelemetry.io/otel/internal/baggage
+go.opentelemetry.io/otel/internal/global
+go.opentelemetry.io/otel/propagation
+go.opentelemetry.io/otel/semconv/v1.17.0
+# go.opentelemetry.io/otel/sdk v1.12.0
 ## explicit; go 1.18
-go.opentelemetry.io/otel/metric
-go.opentelemetry.io/otel/metric/instrument
-go.opentelemetry.io/otel/metric/instrument/asyncfloat64
-go.opentelemetry.io/otel/metric/instrument/asyncint64
-go.opentelemetry.io/otel/metric/instrument/syncfloat64
-go.opentelemetry.io/otel/metric/instrument/syncint64
-go.opentelemetry.io/otel/metric/unit
-# go.opentelemetry.io/otel/trace v1.11.2
+go.opentelemetry.io/otel/sdk/instrumentation
+go.opentelemetry.io/otel/sdk/internal
+go.opentelemetry.io/otel/sdk/internal/env
+go.opentelemetry.io/otel/sdk/resource
+go.opentelemetry.io/otel/sdk/trace
+# go.opentelemetry.io/otel/trace v1.12.0
 ## explicit; go 1.18
 go.opentelemetry.io/otel/trace
 # go.uber.org/atomic v1.10.0
@@ -983,6 +976,7 @@ golang.org/x/crypto/openpgp/packet
 golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
+golang.org/x/crypto/sha3
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf

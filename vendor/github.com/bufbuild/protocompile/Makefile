@@ -76,7 +76,7 @@ lintfix: $(BIN)/golangci-lint ## Automatically fix some lint errors
 
 .PHONY: generate
 generate: $(BIN)/license-header $(BIN)/goyacc test-descriptors ## Regenerate code and licenses
-	PATH=$(BIN):$(PATH) $(GO) generate ./...
+	PATH="$(BIN):$(PATH)" $(GO) generate ./...
 	@# We want to operate on a list of modified and new files, excluding
 	@# deleted and ignored files. git-ls-files can't do this alone. comm -23 takes
 	@# two files and prints the union, dropping lines common to both (-3) and
