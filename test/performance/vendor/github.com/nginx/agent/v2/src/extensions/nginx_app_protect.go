@@ -11,7 +11,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
@@ -61,22 +60,11 @@ func NewNginxAppProtect(config *config.Config, env core.Environment, nginxAppPro
 
 	nginxAppProtectConfig := nginxAppProtectDefaults
 
-	if nginxAppProtectConfig != nil {
-		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-			WeaklyTypedInput: true,
-			DecodeHook:       mapstructure.ComposeDecodeHookFunc(mapstructure.StringToTimeDurationHookFunc()),
-			Result:           nginxAppProtectConfig,
-		})
-
+	if nginxAppProtectConf != nil {
+		var err error
+		nginxAppProtectConfig, err = agent_config.DecodeConfig[*NginxAppProtectConfig](nginxAppProtectConf)
 		if err != nil {
-			log.Error(err)
-			return nil, err
-		}
-
-		err = decoder.Decode(nginxAppProtectConf)
-
-		if err != nil {
-			log.Error(err)
+			log.Errorf("Error decoding configuration for extension plugin %s, %v", napPluginName, err)
 			return nil, err
 		}
 	}

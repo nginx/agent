@@ -37,10 +37,6 @@ var (
 	version = ""
 )
 
-const (
-	DEFAULT_PLUGIN_SIZE = 100
-)
-
 func init() {
 	config.SetVersion(version, commit)
 	config.SetDefaults()
@@ -261,7 +257,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 
 func initializeMessagePipe(ctx context.Context, corePlugins []core.Plugin, extensionPlugins []core.ExtensionPlugin) core.MessagePipeInterface {
 	pipe := core.NewMessagePipe(ctx)
-	err := pipe.Register(DEFAULT_PLUGIN_SIZE, corePlugins, extensionPlugins)
+	err := pipe.Register(agent_config.DefaultPluginSize, corePlugins, extensionPlugins)
 	if err != nil {
 		log.Warnf("Failed to start agent successfully, error loading plugins %v", err)
 	}

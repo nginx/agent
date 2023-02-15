@@ -7,8 +7,13 @@
 
 package config
 
+import (
+	"github.com/mitchellh/mapstructure"
+)
+
 const (
-	KeyDelimiter = "_"
+	DefaultPluginSize = 100
+	KeyDelimiter      = "_"
 
 	// Features
 	FeaturesKey             = "features"
@@ -52,4 +57,24 @@ func GetDefaultFeatures() []string {
 		FeatureActivityEvents,
 		FeatureAgentAPI,
 	}
+}
+
+func DecodeConfig[T interface{}](input interface{}) (output T, err error) {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		WeaklyTypedInput: true,
+		DecodeHook:       mapstructure.ComposeDecodeHookFunc(mapstructure.StringToTimeDurationHookFunc()),
+		Result:           &output,
+	})
+
+	if err != nil {
+		return output, err
+	}
+
+	err = decoder.Decode(input)
+
+	if err != nil {
+		return output, err
+	}
+
+	return output, nil
 }

@@ -17,10 +17,6 @@ import (
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 )
 
-const (
-	DEFAULT_PLUGIN_SIZE = 100
-)
-
 type Extensions struct {
 	pipeline core.MessagePipeInterface
 	conf     *config.Config
@@ -62,7 +58,7 @@ func (e *Extensions) Process(msg *core.Message) {
 						e.conf,
 						config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey),
 					)
-					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, nil, []core.ExtensionPlugin{advancedMetrics})
+					err = e.pipeline.Register(agent_config.DefaultPluginSize, nil, []core.ExtensionPlugin{advancedMetrics})
 					if err != nil {
 						log.Warnf("Unable to register %s extension, %v", data, err)
 					}
@@ -80,7 +76,7 @@ func (e *Extensions) Process(msg *core.Message) {
 					if err != nil {
 						log.Warnf("Unable to load the Nginx App Protect plugin due to the following error: %v", err)
 					}
-					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, nil, []core.ExtensionPlugin{nap})
+					err = e.pipeline.Register(agent_config.DefaultPluginSize, nil, []core.ExtensionPlugin{nap})
 					if err != nil {
 						log.Errorf("Unable to register %s extension, %v", data, err)
 					}
@@ -99,7 +95,7 @@ func (e *Extensions) Process(msg *core.Message) {
 						log.Warnf("Unable to load the Nginx App Protect Monitoring plugin due to the following error: %v", err)
 						break
 					}
-					err = e.pipeline.Register(DEFAULT_PLUGIN_SIZE, nil, []core.ExtensionPlugin{napMonitoring})
+					err = e.pipeline.Register(agent_config.DefaultPluginSize, nil, []core.ExtensionPlugin{napMonitoring})
 					if err != nil {
 						log.Errorf("Unable to register %s extension, %v", data, err)
 					}

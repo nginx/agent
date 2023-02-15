@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/mitchellh/mapstructure"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -178,21 +177,10 @@ func NewAdvancedMetrics(env core.Environment, conf *config.Config, advancedMetri
 	advancedMetricsConfig := advancedMetricsDefaults
 
 	if advancedMetricsConf != nil {
-		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-			WeaklyTypedInput: true,
-			DecodeHook:       mapstructure.ComposeDecodeHookFunc(mapstructure.StringToTimeDurationHookFunc()),
-			Result:           advancedMetricsConfig,
-		})
-
+		var err error
+		advancedMetricsConfig, err = agent_config.DecodeConfig[*AdvancedMetricsConfig](advancedMetricsConf)
 		if err != nil {
-			log.Error(err)
-			return nil
-		}
-
-		err = decoder.Decode(advancedMetricsConf)
-
-		if err != nil {
-			log.Error(err)
+			log.Errorf("Error decoding configuration for extension plugin %s, %v", AdvancedMetricsPluginName, err)
 			return nil
 		}
 	}
