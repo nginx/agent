@@ -74,7 +74,7 @@ jobs:
           go-version-file: 'go.mod'
       - name: Run Integration Tests
         run: |
-            go get github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} && go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
+            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
             make integration-test
 
   performance-test:
@@ -115,7 +115,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gpgv1 monkeysphere 
-          go get github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} && go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Docker Image
@@ -170,7 +170,7 @@ jobs:
           go-version-file: 'go.mod'
       - name: Setup build environment
         run: |
-          go get github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} && go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Docker Image
@@ -206,7 +206,7 @@ jobs:
           go-version-file: 'go.mod'
       - name: Setup build environment
         run: |
-          go get github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} && go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
       - name: Build Grafana example
         run: make build-grafana-example
       - name: Clean Grafana example
