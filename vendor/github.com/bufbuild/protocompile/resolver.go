@@ -15,7 +15,9 @@
 package protocompile
 
 import (
+	"errors"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"github.com/bufbuild/protocompile/ast"
+	"github.com/bufbuild/protocompile/parser"
 )
 
 // Resolver is used by the compiler to resolve a proto source file name
@@ -44,7 +47,7 @@ type Resolver interface {
 // the various fields must be set, based on what is available for a file. If
 // multiple fields are set, the compiler prefers them in opposite order listed:
 // so it uses a descriptor if present and only falls back to source if nothing
-// else if available.
+// else is available.
 type SearchResult struct {
 	// Represents source code for the file. This should be nil if source code
 	// is not available. If no field below is set, then the compiler will parse
@@ -57,6 +60,13 @@ type SearchResult struct {
 	// set, then the compiler will link this proto with its dependencies to
 	// produce a linked descriptor.
 	Proto *descriptorpb.FileDescriptorProto
+	// A parse result for the file. This packages both an AST and a descriptor
+	// proto in one. When a parser result is available, it is more efficient
+	// than using an AST search result, since the descriptor proto need not be
+	// re-created. And it provides better error messages than a descriptor proto
+	// search results, since the AST has greater fidelity with regard to source
+	// positions (even if the descriptor proto includes source code info).
+	ParseResult parser.Result
 	// A fully linked descriptor that represents the file. If this field is set,
 	// then the compiler has no additional work to do for this file as it is
 	// already compiled.
@@ -131,7 +141,7 @@ func (r *SourceResolver) FindFileByPath(path string) (SearchResult, error) {
 	for _, importPath := range r.ImportPaths {
 		reader, err := r.accessFile(filepath.Join(importPath, path))
 		if err != nil {
-			if os.IsNotExist(err) {
+			if errors.Is(err, fs.ErrNotExist) {
 				e = err
 				continue
 			}

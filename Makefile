@@ -31,14 +31,11 @@ IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 
-CERTS_DIR                := ./build/certs
-PACKAGE_PREFIX           := nginx-agent
-PACKAGES_REPO            := "pkgs.nginx.com"
-OS                       := $(shell uname -s | tr '[:upper:]' '[:lower:]')
-OSARCH                   := $(shell uname -m)
-TEST_BUILD_DIR           := build/test
-TEST_DOCKER_COMPOSE_FILE := "docker-compose-deb.yml"
-PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
+
+CERTS_DIR          := ./build/certs
+PACKAGE_PREFIX     := nginx-agent
+PACKAGES_REPO      := "pkgs.nginx.com"
+OS                 := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 uname_m    := $(shell uname -m)
 ifeq ($(uname_m),aarch64)
@@ -50,6 +47,10 @@ else
 		OSARCH = $(uname_m)
 	endif
 endif
+
+TEST_BUILD_DIR     := build/test
+TEST_DOCKER_COMPOSE_FILE := "docker-compose-deb.yml"
+PACKAGE_NAME       := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
 CERT_CLIENT_CA_CN  := client-ca.local
 CERT_CLIENT_INT_CN := client-int.local
@@ -124,19 +125,19 @@ launch-swagger-ui: generate-swagger ## Launch Swagger UI
 # Local Packaging                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 local-apk-package: ## Create local apk package
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OS_ARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OS_ARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.apk;
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.apk;
 
 local-deb-package: ## Create local deb package
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OS_ARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OS_ARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.deb;
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.deb;
 
 local-rpm-package: ## Create local rpm package
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OS_ARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OS_ARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
 
 local-txz-package: ## Create local txz package
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OS_ARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/nginx-agent/$(CONTAINER_VOLUME_FLAGS) build-local-packager:1.0.0
 
 txz-packager-image: ## Builds txz packager container image
@@ -151,7 +152,7 @@ include Makefile.packaging
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate mockgen to file from witch mocks should be generated
 	GOWORK=off go generate ./...
 
-test: unit-test performance-test component-test ## Run all tests
+test: unit-test performance-test component-test integration-test ## Run all tests
 
 $(TEST_BUILD_DIR):
 	mkdir -p $(TEST_BUILD_DIR)
@@ -192,8 +193,8 @@ performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
 integration-test: local-deb-package local-rpm-package
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=$(TEST_DOCKER_COMPOSE_FILE) go test ./test/integration/install
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=${TEST_DOCKER_COMPOSE_FILE} go test ./test/integration/api
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=$(TEST_DOCKER_COMPOSE_FILE) go test -v ./test/integration/install
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=${TEST_DOCKER_COMPOSE_FILE} go test -v ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
@@ -256,5 +257,13 @@ run-container: ## Run container from specified IMAGE_TAG
 		$(CONTAINER_CLITOOL) run ${IMAGE_TAG}
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Dashboard Targets                                                                                               #
+# Grafana Example Dashboard Targets                                                                               #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+clean-grafana-example: clean ## Clean example packages and docker
+	cd ./examples/grafana-metrics/ && BASE_IMAGE= PACKAGE_NAME= ${CONTAINER_COMPOSE} down
+
+build-grafana-example: local-deb-package ## Build the example of nginx-agent
+	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} ${CONTAINER_COMPOSE} build
+
+run-grafana-example: ## Start the example of nginx-agent
+	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} ${CONTAINER_COMPOSE} up

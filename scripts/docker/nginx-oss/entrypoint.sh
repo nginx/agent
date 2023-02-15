@@ -21,8 +21,7 @@ echo "starting nginx ..."
 
 nginx_pid=$!
 
-cp /agent/nginx-agent.conf /etc/nginx-agent/nginx-agent.conf
-cat /etc/nginx-agent/nginx-agent.conf
+cat /etc/nginx-agent/nginx-agent.conf;
 
 # start nginx-agent, pass args
 echo "starting nginx-agent ..."
