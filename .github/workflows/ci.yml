@@ -119,7 +119,7 @@ jobs:
           commands: |
             sudo apt-get update -y --allow-releaseinfo-change
             sudo apt-get install --no-install-recommends -y golang docker
-            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+            go get github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
             BASE_IMAGE="docker.io/${{ matrix.container.image }}:${{ matrix.container.version }}" \
               DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
               make integration-test
