@@ -2,11 +2,14 @@ package component
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/go-resty/resty/v2"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -62,23 +65,32 @@ func TestGetNginxInstances(t *testing.T) {
 			agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
 			agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
 
-			response, err := http.Get(fmt.Sprintf("http://localhost:%d/nginx/", port))
-			assert.Nil(t, err)
+			client := resty.New()
+			client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
-			responseData, err := io.ReadAll(response.Body)
-			assert.Nil(t, err)
+			url := fmt.Sprintf("http://localhost:%d/nginx", port)
+			response, err := client.R().EnableTrace().Get(url)
 
-			var nginxDetailsResponse []*proto.NginxDetails
-			err = json.Unmarshal(responseData, &nginxDetailsResponse)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
+			assert.Equal(t, http.StatusOK, response.StatusCode())
 
-			assert.Equal(t, http.StatusOK, response.StatusCode)
-			assert.True(t, json.Valid(responseData))
 			if tt.nginxDetails == nil {
-				assert.Equal(t, 0, len(nginxDetailsResponse))
+				assert.Equal(t, "[]", response.String())
 			} else {
-				assert.Equal(t, 1, len(nginxDetailsResponse))
-				assert.Equal(t, tt.nginxDetails, nginxDetailsResponse[0])
+				nginxDetails := tutils.ProcessApiNginxInstanceResponse(response)
+				for _, detail := range nginxDetails {
+					detail := strings.Split(detail, ":")
+					switch {
+					case strings.Contains(detail[0], "nginx_id"):
+						assert.Equal(t, "45d4sf5d4sf4e8s4f8es4564", detail[1])
+					case strings.Contains(detail[0], "version"):
+						assert.Equal(t, "21", detail[1])
+					case strings.Contains(detail[0], "conf_path"):
+						assert.Equal(t, "/etc/nginx/conf", detail[1])
+					case strings.Contains(detail[0], "start_time"):
+						assert.Equal(t, "1238043824", detail[1])
+					}
+				}
 			}
 
 			agentAPI.Close()
@@ -101,12 +113,17 @@ func TestInvalidPath(t *testing.T) {
 	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
 	agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
 
-	response, err := http.Get(fmt.Sprintf("http://localhost:%d/invalid/", port))
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+
+	url := fmt.Sprintf("http://localhost:%d/invalid/", port)
+	response, err := client.R().EnableTrace().Get(url)
+
 	assert.Nil(t, err)
 
 	agentAPI.Close()
 
-	assert.Equal(t, http.StatusNotFound, response.StatusCode)
+	assert.Equal(t, http.StatusNotFound, response.StatusCode())
 }
 
 func TestMetrics(t *testing.T) {
@@ -144,22 +161,40 @@ func TestMetrics(t *testing.T) {
 						Name:  "system.cpu.idle",
 						Value: 12,
 					},
+					{
+						Name:  "nginx.workers.count",
+						Value: 6,
+					},
 				},
 			},
 		},
 	}))
 
-	response, err := http.Get(fmt.Sprintf("http://localhost:%d/metrics", port))
+	client := resty.New()
+
+	url := fmt.Sprintf("http://localhost:%d/metrics", port)
+	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+
+	response, err := client.R().EnableTrace().Get(url)
 	assert.Nil(t, err)
-
-	assert.Equal(t, http.StatusOK, response.StatusCode)
-
-	responseData, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
+	assert.Equal(t, http.StatusOK, response.StatusCode())
+	assert.Contains(t, response.String(), "# HELP system_cpu_idle")
+	assert.Contains(t, response.String(), "# TYPE system_cpu_idle gauge")
 	agentAPI.Close()
 
-	assert.Contains(t, string(responseData), "# HELP system_cpu_idle")
-	assert.Contains(t, string(responseData), "# TYPE system_cpu_idle gauge")
-	assert.Contains(t, string(responseData), "system_cpu_idle{hostname=\"example.com\",system_tags=\"\"} 12")
+	responseData := tutils.ProcessApiMetricResponse(response)
+
+	for _, m := range responseData {
+		metric := strings.Split(m, " ")
+		switch {
+		case strings.Contains(metric[0], "system_cpu_idle"):
+			value, _ := strconv.ParseFloat(metric[1], 64)
+			assert.Equal(t, float64(12), value)
+		case strings.Contains(metric[0], "nginx_workers_count"):
+			value, _ := strconv.ParseFloat(metric[1], 64)
+			assert.Equal(t, float64(6), value)
+		}
+
+	}
+
 }

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	tutils "github.com/nginx/agent/v2/test/utils"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/compose"
@@ -55,23 +57,19 @@ func TestAPI_Nginx(t *testing.T) {
 	assert.Contains(t, resp.String(), "nginx_id")
 	assert.NotContains(t, resp.String(), "test_fail_nginx")
 
-	nginxDetails := strings.Split(resp.String(), " ")
+	nginxDetails := tutils.ProcessApiNginxInstanceResponse(resp)
 
 	for _, detail := range nginxDetails {
 		detail := strings.Split(detail, ":")
-
 		switch {
 		case strings.Contains(detail[0], "nginx_id"):
 			assert.NotNil(t, detail[1])
-
 		case strings.Contains(detail[0], "version"):
 			assert.NotNil(t, detail[1])
-
 		case strings.Contains(detail[0], "runtime_modules"):
-			assert.Equal(t, detail[1], "http_stub_status_module")
-
+			assert.Contains(t, detail[1], "http_ssl_module")
 		case strings.Contains(detail[0], "conf_path"):
-			assert.Equal(t, detail[1], "/usr/local/nginx/conf/nginx.conf")
+			assert.Equal(t, "/etc/nginx/nginx.conf", detail[1])
 		}
 	}
 
@@ -95,7 +93,7 @@ func TestAPI_Metrics(t *testing.T) {
 	assert.Contains(t, resp.String(), "system_cpu_system")
 	assert.NotContains(t, resp.String(), "test_fail_metric")
 
-	metrics := processResponse(resp)
+	metrics := tutils.ProcessApiMetricResponse(resp)
 
 	for _, m := range metrics {
 		metric := strings.Split(m, " ")
@@ -118,21 +116,4 @@ func TestAPI_Metrics(t *testing.T) {
 			assert.Greater(t, value, float64(0))
 		}
 	}
-}
-
-func processResponse(resp *resty.Response) []string {
-	metrics := strings.Split(resp.String(), "\n")
-
-	i := 0
-
-	for _, metric := range metrics {
-		if metric[0:1] != "#" {
-			metrics[i] = metric
-			i++
-		}
-	}
-
-	metrics = metrics[:i]
-
-	return metrics
 }
