@@ -1,4 +1,4 @@
-// Copyright 2021-2022 Buf Technologies, Inc.
+// Copyright 2021-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,10 +56,10 @@ func (*protocolConnect) NewHandler(params *protocolHandlerParams) protocolHandle
 	contentTypes := make(map[string]struct{})
 	for _, name := range params.Codecs.Names() {
 		if params.Spec.StreamType == StreamTypeUnary {
-			contentTypes[connectUnaryContentTypePrefix+name] = struct{}{}
+			contentTypes[canonicalizeContentType(connectUnaryContentTypePrefix+name)] = struct{}{}
 			continue
 		}
-		contentTypes[connectStreamingContentTypePrefix+name] = struct{}{}
+		contentTypes[canonicalizeContentType(connectStreamingContentTypePrefix+name)] = struct{}{}
 	}
 	return &connectHandler{
 		protocolHandlerParams: *params,
@@ -943,8 +943,7 @@ func (e *connectWireError) asError() *Error {
 	if e.Code < minCode || e.Code > maxCode {
 		e.Code = CodeUnknown
 	}
-	err := NewError(e.Code, errors.New(e.Message))
-	err.wireErr = true
+	err := NewWireError(e.Code, errors.New(e.Message))
 	if len(e.Details) > 0 {
 		err.details = make([]*ErrorDetail, len(e.Details))
 		for i, detail := range e.Details {

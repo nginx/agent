@@ -1,4 +1,4 @@
-// Copyright 2021-2022 Buf Technologies, Inc.
+// Copyright 2021-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ func (g *protocolGRPC) NewHandler(params *protocolHandlerParams) protocolHandler
 	}
 	contentTypes := make(map[string]struct{})
 	for _, name := range params.Codecs.Names() {
-		contentTypes[prefix+name] = struct{}{}
+		contentTypes[canonicalizeContentType(prefix+name)] = struct{}{}
 	}
 	if params.Codecs.Get(codecNameProto) != nil {
 		contentTypes[bare] = struct{}{}
@@ -701,8 +701,7 @@ func grpcErrorFromTrailer(bufferPool *bufferPool, protobuf Codec, trailer http.H
 		return errorf(CodeInternal, "gRPC protocol error: invalid error code %q", codeHeader)
 	}
 	message := grpcPercentDecode(bufferPool, trailer.Get(grpcHeaderMessage))
-	retErr := NewError(Code(code), errors.New(message))
-	retErr.wireErr = true
+	retErr := NewWireError(Code(code), errors.New(message))
 
 	detailsBinaryEncoded := trailer.Get(grpcHeaderDetails)
 	if len(detailsBinaryEncoded) > 0 {
