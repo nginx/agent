@@ -31,15 +31,24 @@ var (
 	agentContainer         *testcontainers.DockerContainer
 )
 
+type TestLogConsumer struct {
+	Msgs []string
+}
+
+func (g *TestLogConsumer) Accept(l testcontainers.Log) {
+	g.Msgs = append(g.Msgs, string(l.Content))
+}
+
 func setupTestContainer(t *testing.T) {
+	ctx := context.Background()
 	comp, err := compose.NewDockerCompose("docker-compose.yml")
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
 	t.Cleanup(func() {
-		assert.NoError(t, comp.Down(context.Background(), compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
+		assert.NoError(t, comp.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctxCancel, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
 
 	require.NoError(t, comp.WaitForService("agent", wait.ForHTTP("/")).WithEnv(
@@ -47,9 +56,15 @@ func setupTestContainer(t *testing.T) {
 			"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
 			"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
 		},
-	).Up(ctx, compose.Wait(true)), "compose.Up()")
+	).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
-	agentContainer, err = comp.ServiceContainer(context.Background(), "agent")
+	agentContainer, err = comp.ServiceContainer(ctxCancel, "agent")
+	
+	err = agentContainer.StartLogProducer(ctxCancel)
+	require.NoError(t, err)
+	
+	agentContainer.FollowOutput(&TestLogConsumer{})
+
 	require.NoError(t, err)
 }
 
@@ -128,6 +143,9 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		_, err = agentContainer.CopyFileFromContainer(context.Background(), path)
 		assert.Error(t, err)
 	}
+
+	err = agentContainer.StopLogProducer()
+	require.NoError(t, err)
 }
 
 // installAgent installs the agent returning total install time and install output

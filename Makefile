@@ -148,7 +148,7 @@ include Makefile.packaging
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate mockgen to file from witch mocks should be generated
 	GOWORK=off go generate ./...
 
-test: unit-test performance-test component-test ## Run all tests
+test: unit-test performance-test component-test integration-test ## Run all tests
 
 $(TEST_BUILD_DIR):
 	mkdir -p $(TEST_BUILD_DIR)
