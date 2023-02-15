@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,8 +12,8 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/nginx/agent/sdk/v2/proto"
 	tutils "github.com/nginx/agent/v2/test/utils"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/compose"
@@ -57,21 +58,18 @@ func TestAPI_Nginx(t *testing.T) {
 	assert.Contains(t, resp.String(), "nginx_id")
 	assert.NotContains(t, resp.String(), "test_fail_nginx")
 
-	nginxDetails := tutils.ProcessApiNginxInstanceResponse(resp)
+	var nginxDetailsResponse []*proto.NginxDetails
 
-	for _, detail := range nginxDetails {
-		detail := strings.Split(detail, ":")
-		switch {
-		case strings.Contains(detail[0], "nginx_id"):
-			assert.NotNil(t, detail[1])
-		case strings.Contains(detail[0], "version"):
-			assert.NotNil(t, detail[1])
-		case strings.Contains(detail[0], "runtime_modules"):
-			assert.Contains(t, detail[1], "http_ssl_module")
-		case strings.Contains(detail[0], "conf_path"):
-			assert.Equal(t, "/etc/nginx/nginx.conf", detail[1])
-		}
-	}
+	responseData := resp.Body()
+	err = json.Unmarshal(responseData, &nginxDetailsResponse)
+
+	assert.Nil(t, err)
+	assert.True(t, json.Valid(responseData))
+
+	assert.NotNil(t, nginxDetailsResponse[0].NginxId)
+	assert.NotNil(t, nginxDetailsResponse[0].Version)
+	assert.Contains(t, nginxDetailsResponse[0].RuntimeModules, "http_stub_status_module")
+	assert.Equal(t, "/etc/nginx/nginx.conf", nginxDetailsResponse[0].ConfPath)
 
 }
 
@@ -93,7 +91,7 @@ func TestAPI_Metrics(t *testing.T) {
 	assert.Contains(t, resp.String(), "system_cpu_system")
 	assert.NotContains(t, resp.String(), "test_fail_metric")
 
-	metrics := tutils.ProcessApiMetricResponse(resp)
+	metrics := tutils.ProcessResponse(resp)
 
 	for _, m := range metrics {
 		metric := strings.Split(m, " ")

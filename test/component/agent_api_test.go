@@ -177,7 +177,7 @@ func TestMetrics(t *testing.T) {
 	assert.Contains(t, response.String(), "# TYPE system_cpu_idle gauge")
 	agentAPI.Close()
 
-	responseData := tutils.ProcessApiMetricResponse(response)
+	responseData := tutils.ProcessResponse(response)
 
 	for _, m := range responseData {
 		metric := strings.Split(m, " ")

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func ProcessApiMetricResponse(resp *resty.Response) []string {
+func ProcessResponse(resp *resty.Response) []string {
 	metrics := strings.Split(resp.String(), "\n")
 
 	i := 0
@@ -20,14 +20,4 @@ func ProcessApiMetricResponse(resp *resty.Response) []string {
 	metrics = metrics[:i]
 
 	return metrics
-}
-
-func ProcessApiNginxInstanceResponse(resp *resty.Response) []string {
-	details := strings.ReplaceAll(resp.String(), "\"", "")
-	details = strings.ReplaceAll(details, "\\", "")
-
-	detail := strings.Split(details, ",")
-
-	return detail
-
 }
