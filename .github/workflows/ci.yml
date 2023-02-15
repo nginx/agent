@@ -64,9 +64,9 @@ jobs:
       - name: Run Component Tests
         run: make component-test
 
-  integration-tests-amd64:
+  integration-tests:
     runs-on: ubuntu-22.04
-    name: Integration Tests on AMD64
+    name: Integration Tests
     strategy:
       matrix:
         container:
@@ -90,39 +90,6 @@ jobs:
           BASE_IMAGE="docker.io/${{ matrix.container.image }}:${{ matrix.container.version }}" \
             DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
             make integration-test
-      - name: Run Integration Tests on arm64
-        uses: pguyot/arm-runner-action@v2
-        with:
-          image_additional_mb: 4096
-          commands: |
-            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-            BASE_IMAGE="docker.io/${{ matrix.container.image }}:${{ matrix.container.version }}" \
-              DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
-              make integration-test
-
-  integration-tests-arm64:
-    runs-on: ubuntu-22.04
-    name: Integration Tests on ARM64
-    strategy:
-      matrix:
-        container:
-        - image: "ubuntu"
-          version: "22.04"
-          compose-file: docker-compose-deb.yml
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run Integration Tests on arm64
-        uses: pguyot/arm-runner-action@v2
-        with:
-          image_additional_mb: 4096
-          optimize_image: no
-          commands: |
-            sudo apt-get update -y --allow-releaseinfo-change
-            sudo apt-get install --no-install-recommends -y golang docker
-            go get github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-            BASE_IMAGE="docker.io/${{ matrix.container.image }}:${{ matrix.container.version }}" \
-              DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
-              make integration-test
 
   performance-test:
     name: Performance Tests
