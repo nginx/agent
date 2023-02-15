@@ -3,11 +3,11 @@ FROM ${BASE_IMAGE} as install-nginx
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG NGINX_CONF
 ARG ENTRY_POINT
+ARG PACKAGE_NAME
 
 WORKDIR /agent
-COPY ./ /agent
+COPY ./build /agent/build
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN set -x \
@@ -31,12 +31,8 @@ EXPOSE 80 443
 
 ENTRYPOINT ["/agent/entrypoint.sh"]
 
-
 FROM install-nginx as install-agent
 
 ARG PACKAGE_NAME
-ARG AGENT_CONF
 
-COPY $AGENT_CONF /agent/nginx-agent.conf
-COPY --from=install-nginx /agent/nginx-agent.conf /etc/nginx-agent/nginx-agent.conf
-RUN apt install -y -f /agent/build/$PACKAGE_NAME.deb
+RUN apt install -y /agent/build/$PACKAGE_NAME.deb

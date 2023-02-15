@@ -533,6 +533,13 @@ func (t *task) link(parseRes parser.Result, deps linker.Files) (linker.File, err
 }
 
 func (t *task) asParseResult(name string, r SearchResult) (parser.Result, error) {
+	if r.ParseResult != nil {
+		if r.ParseResult.FileDescriptorProto().GetName() != name {
+			return nil, fmt.Errorf("search result for %q returned descriptor for %q", name, r.ParseResult.FileDescriptorProto().GetName())
+		}
+		return r.ParseResult, nil
+	}
+
 	if r.Proto != nil {
 		if r.Proto.GetName() != name {
 			return nil, fmt.Errorf("search result for %q returned descriptor for %q", name, r.Proto.GetName())

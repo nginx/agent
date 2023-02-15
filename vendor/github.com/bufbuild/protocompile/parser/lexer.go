@@ -495,6 +495,18 @@ func (l *protoLex) readIdentifier() {
 
 func (l *protoLex) readStringLiteral(quote rune) (string, error) {
 	var buf bytes.Buffer
+	var escapeErrors []reporter.ErrorWithPos
+	reportErr := func(msg, badEscape string) {
+		var err error
+		if strings.HasSuffix(msg, "%s") {
+			err = fmt.Errorf(msg, badEscape)
+		} else {
+			err = errors.New(msg)
+		}
+		// we've now consumed the bad escape and lexer position is after it, so we need
+		// to back up to the beginning of the escape to report the correct position
+		escapeErrors = append(escapeErrors, l.errWithCurrentPos(err, -len(badEscape)))
+	}
 	for {
 		c, _, err := l.input.readRune()
 		if err != nil {
@@ -510,7 +522,8 @@ func (l *protoLex) readStringLiteral(quote rune) (string, error) {
 			break
 		}
 		if c == 0 {
-			return "", errors.New("null character ('\\0') not allowed in string literal")
+			reportErr("null character ('\\0') not allowed in string literal", string(rune(0)))
+			continue
 		}
 		if c == '\\' {
 			// escape sequence
@@ -521,9 +534,14 @@ func (l *protoLex) readStringLiteral(quote rune) (string, error) {
 			switch {
 			case c == 'x' || c == 'X':
 				// hex escape
-				c, _, err := l.input.readRune()
+				c1, sz1, err := l.input.readRune()
 				if err != nil {
 					return "", err
+				}
+				if c1 == quote || c1 == '\\' {
+					l.input.unreadRune(sz1)
+					reportErr("invalid hex escape: %s", "\\"+string(c))
+					continue
 				}
 				c2, sz2, err := l.input.readRune()
 				if err != nil {
@@ -532,13 +550,14 @@ func (l *protoLex) readStringLiteral(quote rune) (string, error) {
 				var hex string
 				if (c2 < '0' || c2 > '9') && (c2 < 'a' || c2 > 'f') && (c2 < 'A' || c2 > 'F') {
 					l.input.unreadRune(sz2)
-					hex = string(c)
+					hex = string(c1)
 				} else {
-					hex = string([]rune{c, c2})
+					hex = string([]rune{c1, c2})
 				}
 				i, err := strconv.ParseInt(hex, 16, 32)
 				if err != nil {
-					return "", fmt.Errorf("invalid hex escape: \\x%q", hex)
+					reportErr("invalid hex escape: %s", "\\"+string(c)+hex)
+					continue
 				}
 				buf.WriteByte(byte(i))
 			case c >= '0' && c <= '7':
@@ -565,43 +584,68 @@ func (l *protoLex) readStringLiteral(quote rune) (string, error) {
 				}
 				i, err := strconv.ParseInt(octal, 8, 32)
 				if err != nil {
-					return "", fmt.Errorf("invalid octal escape: \\%q", octal)
+					reportErr("invalid octal escape: %s", "\\"+octal)
+					continue
 				}
 				if i > 0xff {
-					return "", fmt.Errorf("octal escape is out range, must be between 0 and 377: \\%q", octal)
+					reportErr("octal escape is out range, must be between 0 and 377: %s", "\\"+octal)
+					continue
 				}
 				buf.WriteByte(byte(i))
 			case c == 'u':
 				// short unicode escape
 				u := make([]rune, 4)
 				for i := range u {
-					c, _, err := l.input.readRune()
+					c2, sz2, err := l.input.readRune()
 					if err != nil {
 						return "", err
 					}
-					u[i] = c
+					if c2 == quote || c2 == '\\' {
+						l.input.unreadRune(sz2)
+						u = u[:i]
+						break
+					}
+					u[i] = c2
 				}
-				i, err := strconv.ParseInt(string(u), 16, 32)
+				codepointStr := string(u)
+				if len(u) < 4 {
+					reportErr("invalid unicode escape: %s", "\\u"+codepointStr)
+					continue
+				}
+				i, err := strconv.ParseInt(codepointStr, 16, 32)
 				if err != nil {
-					return "", fmt.Errorf("invalid unicode escape: \\u%q", string(u))
+					reportErr("invalid unicode escape: %s", "\\u"+codepointStr)
+					continue
 				}
 				buf.WriteRune(rune(i))
 			case c == 'U':
 				// long unicode escape
 				u := make([]rune, 8)
 				for i := range u {
-					c, _, err := l.input.readRune()
+					c2, sz2, err := l.input.readRune()
 					if err != nil {
 						return "", err
 					}
-					u[i] = c
+					if c2 == quote || c2 == '\\' {
+						l.input.unreadRune(sz2)
+						u = u[:i]
+						break
+					}
+					u[i] = c2
+				}
+				codepointStr := string(u)
+				if len(u) < 8 {
+					reportErr("invalid unicode escape: %s", "\\U"+codepointStr)
+					continue
 				}
 				i, err := strconv.ParseInt(string(u), 16, 32)
 				if err != nil {
-					return "", fmt.Errorf("invalid unicode escape: \\U%q", string(u))
+					reportErr("invalid unicode escape: %s", "\\U"+codepointStr)
+					continue
 				}
 				if i > 0x10ffff || i < 0 {
-					return "", fmt.Errorf("unicode escape is out of range, must be between 0 and 0x10ffff: \\U%q", string(u))
+					reportErr("unicode escape is out of range, must be between 0 and 0x10ffff: %s", "\\U"+codepointStr)
+					continue
 				}
 				buf.WriteRune(rune(i))
 			case c == 'a':
@@ -627,11 +671,21 @@ func (l *protoLex) readStringLiteral(quote rune) (string, error) {
 			case c == '?':
 				buf.WriteByte('?')
 			default:
-				return "", fmt.Errorf("invalid escape sequence: %q", "\\"+string(c))
+				reportErr("invalid escape sequence: %s", "\\"+string(c))
+				continue
 			}
 		} else {
 			buf.WriteRune(c)
 		}
+	}
+	if len(escapeErrors) > 0 {
+		// Report all but the last. Return that one for caller to report.
+		// If error handler does not accept all of them, it will at least
+		// get the first error.
+		for i := 0; i < len(escapeErrors)-1; i++ {
+			_ = l.addSourceError(escapeErrors[i])
+		}
+		return "", escapeErrors[len(escapeErrors)-1]
 	}
 	return buf.String(), nil
 }
@@ -690,4 +744,12 @@ func (l *protoLex) addSourceError(err error) reporter.ErrorWithPos {
 
 func (l *protoLex) Error(s string) {
 	_ = l.addSourceError(errors.New(s))
+}
+
+func (l *protoLex) errWithCurrentPos(err error, offset int) reporter.ErrorWithPos {
+	if ewp, ok := err.(reporter.ErrorWithPos); ok {
+		return ewp
+	}
+	pos := l.info.SourcePos(l.input.offset() + offset)
+	return reporter.Error(pos, err)
 }

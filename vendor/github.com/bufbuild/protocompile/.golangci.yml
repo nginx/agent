@@ -48,7 +48,6 @@ linters:
     - goconst
     - gocyclo
     - goerr113
-    - gosec
     - interfacebloat
     - nestif
     - nilerr
@@ -93,6 +92,8 @@ issues:
       linters:
         - paralleltest
     # dupword reports several errors in .proto test fixtures
+    # gosec reports a few minor issues in tests
     - path: _test\.go
       linters:
         - dupword
+        - gosec

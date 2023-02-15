@@ -196,6 +196,22 @@ jobs:
           retention-days: 3
 
 
+  build-example:
+    name: Build Grafana Dashboard Example
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Setup build environment
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+      - name: Build Grafana example
+        run: make build-grafana-example
+      - name: Clean Grafana example
+        run: make clean-grafana-example
+
   trigger-release-workflow:
     if: ${{ startsWith(github.ref_name, 'release-') && !github.event.pull_request.head.repo.fork }}
     needs: [ lint, unit-test, component-test, performance-test ]
