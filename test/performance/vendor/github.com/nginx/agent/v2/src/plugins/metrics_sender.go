@@ -72,7 +72,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			if !r.readyToSend.Load() {
 				continue
 			}
-
+			
 			switch report := p.(type) {
 			case *proto.MetricsReport:
 				message := client.MessageFromMetrics(report)

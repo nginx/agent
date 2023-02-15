@@ -89,6 +89,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 		return
 	case msg.Exact(core.MetricReport):
 		if r.metricsAggregation {
+<<<<<<< HEAD
 			switch bundle := msg.Data().(type) {
 			case *metrics.MetricsReportBundle:
 				if len(bundle.Data) > 0 {
@@ -126,6 +127,28 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 			r.metricBuffer = append(r.metricBuffer,
 				generateMetricsReports(getAllStatsEntities(msg.Data()), false)...)
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+			switch report := msg.Data().(type) {
+			case *proto.MetricsReport:
+				r.mu.Lock()
+				if _, ok := r.metricsCollections[report.Type]; !ok {
+					r.metricsCollections[report.Type] = &metrics.Collections{
+						Count: 0,
+						Data:  make(map[string]metrics.PerDimension),
+					}
+				}
+				collection := metrics.SaveCollections(*r.metricsCollections[report.Type], report)
+				r.metricsCollections[report.Type] = &collection
+				r.mu.Unlock()
+				log.Debug("MetricsThrottle: Metrics collection saved")
+				r.reportsReady.Store(true)
+			}
+		} else {
+			switch report := msg.Data().(type) {
+			case *proto.MetricsReport:
+				r.metricBuffer = append(r.metricBuffer, report)
+			}
+>>>>>>> using StatsEntityWarpper in place of StatsEntity
 			log.Tracef("MetricsThrottle buffer size: %d of %d", len(r.metricBuffer), r.BulkSize)
 			if len(r.metricBuffer) >= r.BulkSize {
 				log.Info("MetricsThrottle buffer flush")
@@ -191,6 +214,7 @@ func (r *MetricsThrottle) syncAgentConfigChange() {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -212,14 +236,30 @@ func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 	return
 =======
 func (r *MetricsThrottle) getAggregatedReports() []core.Payload {
+=======
+func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
+>>>>>>> using StatsEntityWarpper in place of StatsEntity
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	reports := generateMetricsReports(metrics.GenerateMetrics(r.metricsCollections), false)
-	r.metricsCollections = metrics.Collections{
-		Count: 0,
-		Data:  make(map[string]metrics.PerDimension),
+
+	for reportType, collection := range r.metricsCollections {
+		reports = append(reports, &proto.MetricsReport{
+			Meta: &proto.Metadata{
+				Timestamp: types.TimestampNow(),
+			},
+			Type: reportType,
+			Data: metrics.GenerateMetrics(*collection),
+		})
+		r.metricsCollections[reportType] = &metrics.Collections{
+			Count: 0,
+			Data:  make(map[string]metrics.PerDimension),
+		}
 	}
 
+<<<<<<< HEAD
 	return reports
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+	return
+>>>>>>> using StatsEntityWarpper in place of StatsEntity
 }
