@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"encoding/json"
 	"github.com/go-resty/resty/v2"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -74,23 +75,17 @@ func TestGetNginxInstances(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, http.StatusOK, response.StatusCode())
 
+			var nginxDetailsResponse []*proto.NginxDetails
+			responseData := response.Body()
+			err = json.Unmarshal(responseData, &nginxDetailsResponse)
+			assert.Nil(t, err)
+			assert.True(t, json.Valid(responseData))
+
 			if tt.nginxDetails == nil {
-				assert.Equal(t, "[]", response.String())
+				assert.Equal(t, 0, len(nginxDetailsResponse))
 			} else {
-				nginxDetails := tutils.ProcessApiNginxInstanceResponse(response)
-				for _, detail := range nginxDetails {
-					detail := strings.Split(detail, ":")
-					switch {
-					case strings.Contains(detail[0], "nginx_id"):
-						assert.Equal(t, "45d4sf5d4sf4e8s4f8es4564", detail[1])
-					case strings.Contains(detail[0], "version"):
-						assert.Equal(t, "21", detail[1])
-					case strings.Contains(detail[0], "conf_path"):
-						assert.Equal(t, "/etc/nginx/conf", detail[1])
-					case strings.Contains(detail[0], "start_time"):
-						assert.Equal(t, "1238043824", detail[1])
-					}
-				}
+				assert.Equal(t, 1, len(nginxDetailsResponse))
+				assert.Equal(t, tt.nginxDetails, nginxDetailsResponse[0])
 			}
 
 			agentAPI.Close()
