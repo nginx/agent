@@ -432,8 +432,15 @@ func (env *EnvironmentType) Processes() (result []Process) {
 
 	seenPids := make(map[int32]bool)
 	for _, pid := range pids {
-		p, _ := process.NewProcess(pid)
-		name, _ := p.Name()
+		p, err := process.NewProcess(pid)
+		if err != nil {
+			log.Errorf("Error on reading process information for ppid: %d error: %v", pid, err)
+		}
+
+		name, err := p.Name()
+		if err != nil {
+			log.Errorf("Error reading name for process %v", err)
+		}
 
 		if name == "nginx" {
 			createTime, _ := p.CreateTime()
@@ -442,26 +449,43 @@ func (env *EnvironmentType) Processes() (result []Process) {
 			user, _ := p.Username()
 			ppid, _ := p.Ppid()
 			cmd, _ := p.Cmdline()
-			exe, _ := p.Exe()
+			exe, err := p.Exe()
+			if err != nil {
+				log.Errorf("Error reading exe information for process: %d error: %v", pid, err)
+			}
 
 			// if the exe is empty, try get the exe from the parent
 			if exe == "" {
-				parentProcess, _ := process.NewProcess(ppid)
-				exe, _ = parentProcess.Exe()
-			}
+				log.Infof("getting process information from the parent ppid : %d", ppid)
+			    parentProcess, err := process.NewProcess(ppid)
+				if err != nil {
+					log.Errorf("Error on reading process information for ppid: %d error: %v", ppid, err)
+				}
 
-			processList = append(processList, Process{
-				Pid:        pid,
-				Name:       name,
-				CreateTime: createTime, // Running time is probably different
-				Status:     strings.Join(status, " "),
-				IsRunning:  running,
-				Path:       exe,
-				User:       user,
-				ParentPid:  ppid,
-				Command:    cmd,
-			})
-			seenPids[pid] = true
+				name, err = p.Name()
+				if err != nil {
+					log.Errorf("Error reading name for process %v", err)
+				}
+
+				exe, err = parentProcess.Exe()
+				if err != nil {
+					log.Errorf("Error reading exe information for process: %d error: %v", pid, err)
+				}
+			}
+			if name == "nginx" {
+				processList = append(processList, Process{
+					Pid:        pid,
+					Name:       name,
+					CreateTime: createTime, // Running time is probably different
+					Status:     strings.Join(status, " "),
+					IsRunning:  running,
+					Path:       exe,
+					User:       user,
+					ParentPid:  ppid,
+					Command:    cmd,
+				})
+				seenPids[pid] = true
+			}
 		}
 	}
 
