@@ -69,9 +69,6 @@ jobs:
     name: Integration Tests
     strategy:
       matrix:
-        # runner:
-        # - arch: amd64
-        # - arch: arm64
         container:
         - image: rockylinux
           version: 8
@@ -93,6 +90,14 @@ jobs:
           BASE_IMAGE="docker.io/${{ matrix.container.image }}:${{ matrix.container.version }}" \
             DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
             make integration-test
+      - name: Run Integration Tests on arm64
+        uses: pguyot/arm-runner-action@v2
+        with:
+          commands: |
+            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+            BASE_IMAGE="docker.io/${{ matrix.container.image }}:${{ matrix.container.version }}" \
+              DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
+              make integration-test
 
   performance-test:
     name: Performance Tests
