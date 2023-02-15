@@ -9,6 +9,7 @@ package plugins
 
 import (
 	"context"
+	"github.com/gogo/protobuf/types"
 	"sync"
 	"time"
 
@@ -33,7 +34,7 @@ type MetricsThrottle struct {
 	reportsReady       *atomic.Bool
 	collectorsUpdate   *atomic.Bool
 	metricsAggregation bool
-	metricsCollections metrics.Collections
+	metricsCollections map[proto.MetricsReport_Type]*metrics.Collections
 	ctx                context.Context
 	wg                 sync.WaitGroup
 	mu                 sync.Mutex
@@ -43,10 +44,6 @@ type MetricsThrottle struct {
 }
 
 func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrottle {
-	metricsCollections := metrics.Collections{
-		Count: 0,
-		Data:  make(map[string]metrics.PerDimension),
-	}
 
 	return &MetricsThrottle{
 		metricBuffer:       make([]core.Payload, 0),
@@ -55,7 +52,7 @@ func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrot
 		reportsReady:       atomic.NewBool(false),
 		collectorsUpdate:   atomic.NewBool(false),
 		metricsAggregation: conf.AgentMetrics.Mode == "aggregated",
-		metricsCollections: metricsCollections,
+		metricsCollections: make(map[proto.MetricsReport_Type]*metrics.Collections, 0),
 		wg:                 sync.WaitGroup{},
 		env:                env,
 		conf:               conf,
@@ -95,14 +92,23 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 			switch report := msg.Data().(type) {
 			case *proto.MetricsReport:
 				r.mu.Lock()
-				r.metricsCollections = metrics.SaveCollections(r.metricsCollections, report)
+				if _, ok := r.metricsCollections[report.Type]; !ok {
+					r.metricsCollections[report.Type] = &metrics.Collections{
+						Count: 0,
+						Data:  make(map[string]metrics.PerDimension),
+					}
+				}
+				collection := metrics.SaveCollections(*r.metricsCollections[report.Type], report)
+				r.metricsCollections[report.Type] = &collection
 				r.mu.Unlock()
 				log.Debug("MetricsThrottle: Metrics collection saved")
 				r.reportsReady.Store(true)
 			}
 		} else {
-			r.metricBuffer = append(r.metricBuffer,
-				generateMetricsReports(getAllStatsEntities(msg.Data()), false)...)
+			switch report := msg.Data().(type) {
+			case *proto.MetricsReport:
+				r.metricBuffer = append(r.metricBuffer, report)
+			}
 			log.Tracef("MetricsThrottle buffer size: %d of %d", len(r.metricBuffer), r.BulkSize)
 			if len(r.metricBuffer) >= r.BulkSize {
 				log.Info("MetricsThrottle buffer flush")
@@ -167,14 +173,23 @@ func (r *MetricsThrottle) syncAgentConfigChange() {
 	r.conf = conf
 }
 
-func (r *MetricsThrottle) getAggregatedReports() []core.Payload {
+func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	reports := generateMetricsReports(metrics.GenerateMetrics(r.metricsCollections), false)
-	r.metricsCollections = metrics.Collections{
-		Count: 0,
-		Data:  make(map[string]metrics.PerDimension),
+
+	for reportType, collection := range r.metricsCollections {
+		reports = append(reports, &proto.MetricsReport{
+			Meta: &proto.Metadata{
+				Timestamp: types.TimestampNow(),
+			},
+			Type: reportType,
+			Data: metrics.GenerateMetrics(*collection),
+		})
+		r.metricsCollections[reportType] = &metrics.Collections{
+			Count: 0,
+			Data:  make(map[string]metrics.PerDimension),
+		}
 	}
 
-	return reports
+	return
 }

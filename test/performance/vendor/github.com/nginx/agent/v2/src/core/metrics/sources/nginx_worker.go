@@ -47,7 +47,7 @@ func NewNginxWorker(baseDimensions *metrics.CommonDim,
 	}
 }
 
-func (c *NginxWorker) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *NginxWorker) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	var err error
 	defer wg.Done()
 	childProcs := c.binary.GetChildProcesses()
@@ -122,7 +122,7 @@ func (c *NginxWorker) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- 
 
 		select {
 		case <-ctx.Done():
-		case m <- metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics):
+		case m <- metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE):
 		}
 
 		c.prevStats[pid] = stats

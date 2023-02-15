@@ -13,7 +13,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -27,7 +26,7 @@ var (
 
 type ContainerCollector struct {
 	sources []metrics.Source
-	buf     chan *proto.StatsEntity
+	buf     chan *metrics.StatsEntityWrapper
 	dim     *metrics.CommonDim
 	env     core.Environment
 }
@@ -42,7 +41,7 @@ func NewContainerCollector(env core.Environment, conf *config.Config) *Container
 
 	return &ContainerCollector{
 		sources: containerSources,
-		buf:     make(chan *proto.StatsEntity, 65535),
+		buf:     make(chan *metrics.StatsEntityWrapper, 65535),
 		dim:     metrics.NewCommonDim(env.NewHostInfo("agentVersion", &conf.Tags, conf.ConfigDirs, false), conf, ""),
 		env:     env,
 	}
@@ -59,7 +58,7 @@ func (c *ContainerCollector) collectMetrics(ctx context.Context) {
 	wg.Wait()
 }
 
-func (c *ContainerCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *ContainerCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.collectMetrics(ctx)
 
@@ -69,7 +68,7 @@ func (c *ContainerCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m 
 		case <-ctx.Done():
 			return
 		case sample := <-c.buf:
-			sample.Dimensions = append(commonDims, sample.Dimensions...)
+			sample.Data.Dimensions = append(commonDims, sample.Data.Dimensions...)
 
 			select {
 			case <-ctx.Done():

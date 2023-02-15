@@ -46,7 +46,7 @@ func NewNetIOSource(namespace string, env core.Environment) *NetIO {
 	}
 }
 
-func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	nio.init.Do(func() {
 		ifs, err := nio.newNetInterfaces(ctx)
@@ -87,7 +87,7 @@ func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pro
 		case <-ctx.Done():
 			return
 		// network_interface is not a common dim
-		case m <- metrics.NewStatsEntity([]*proto.Dimension{{Name: NETWORK_INTERFACE, Value: k}}, simpleMetrics):
+		case m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{{Name: NETWORK_INTERFACE, Value: k}}, simpleMetrics, proto.MetricsReport_SYSTEM):
 		}
 	}
 
@@ -106,7 +106,7 @@ func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pro
 	nio.netOverflows = overflows
 
 	simpleMetrics := nio.convertSamplesToSimpleMetrics(totalStats)
-	m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics)
+	m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{}, simpleMetrics, proto.MetricsReport_SYSTEM)
 
 	nio.netIOStats = currentNetIOStats
 }

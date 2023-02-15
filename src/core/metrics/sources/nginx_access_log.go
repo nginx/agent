@@ -41,7 +41,7 @@ type NginxAccessLog struct {
 	binary             core.NginxBinary
 	nginxType          string
 	collectionInterval time.Duration
-	buf                []*proto.StatsEntity
+	buf                []*metrics.StatsEntityWrapper
 	logger             *MetricSourceLogger
 }
 
@@ -62,7 +62,7 @@ func NewNginxAccessLog(
 		binary,
 		nginxType,
 		collectionInterval,
-		[]*proto.StatsEntity{},
+		[]*metrics.StatsEntityWrapper{},
 		NewMetricSourceLogger(),
 	}
 
@@ -79,7 +79,7 @@ func NewNginxAccessLog(
 	return nginxAccessLog
 }
 
-func (c *NginxAccessLog) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *NginxAccessLog) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.collectLogStats(ctx, m)
 }
@@ -123,7 +123,7 @@ func (c *NginxAccessLog) Stop() {
 	log.Debugf("Stopping NginxAccessLog source for nginx id: %v", c.baseDimensions.NginxId)
 }
 
-func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.StatsEntity) {
+func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	logs := c.binary.GetAccessLogs()
@@ -152,7 +152,7 @@ func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.St
 	for _, stat := range c.buf {
 		m <- stat
 	}
-	c.buf = []*proto.StatsEntity{}
+	c.buf = []*metrics.StatsEntityWrapper{}
 }
 
 func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string) {
@@ -364,7 +364,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			httpCounters, upstreamCounters = getDefaultCounters()
 			gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes = []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
-			c.buf = append(c.buf, metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics))
+			c.buf = append(c.buf, metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE))
 
 			mu.Unlock()
 

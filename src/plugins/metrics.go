@@ -16,7 +16,6 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/nginx/agent/sdk/v2"
-	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -31,7 +30,7 @@ type Metrics struct {
 	ticker                   *time.Ticker
 	interval                 time.Duration
 	collectors               []metrics.Collector
-	buf                      chan *proto.StatsEntity
+	buf                      chan *metrics.StatsEntityWrapper
 	errors                   chan error
 	collectorConfigsMap      map[string]*metrics.NginxCollectorConfig
 	ctx                      context.Context
@@ -52,7 +51,7 @@ func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBi
 		collectorsUpdate:         atomic.NewBool(false),
 		ticker:                   time.NewTicker(config.AgentMetrics.CollectionInterval),
 		interval:                 config.AgentMetrics.CollectionInterval,
-		buf:                      make(chan *proto.StatsEntity, 4096),
+		buf:                      make(chan *metrics.StatsEntityWrapper, 4096),
 		errors:                   make(chan error),
 		collectorConfigsMap:      collectorConfigsMap,
 		wg:                       sync.WaitGroup{},
@@ -183,7 +182,8 @@ func (m *Metrics) metricsGoroutine() {
 			}
 			return
 		case <-m.ticker.C:
-			for _, report := range generateMetricsReports(m.collectStats(), true) {
+			stats := m.collectStats()
+			for _, report := range metrics.GenerateMetricsReports(stats) {
 				m.pipeline.Process(core.NewMessage(core.MetricReport, report))
 			}
 			if m.collectorsUpdate.Load() {
@@ -196,7 +196,7 @@ func (m *Metrics) metricsGoroutine() {
 	}
 }
 
-func (m *Metrics) collectStats() (stats []*proto.StatsEntity) {
+func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
 	// setups a collect duration of half-time of the poll interval
 	ctx, cancel := context.WithTimeout(m.ctx, m.interval/2)
 	defer cancel()
@@ -213,6 +213,7 @@ func (m *Metrics) collectStats() (stats []*proto.StatsEntity) {
 	}
 	// wait until all the collection go routines are done, which either context timeout or exit
 	wg.Wait()
+
 	for len(m.buf) > 0 {
 		// drain the buf, since our sources/collectors are all done, we can rely on buffer length
 		select {
@@ -226,8 +227,9 @@ func (m *Metrics) collectStats() (stats []*proto.StatsEntity) {
 			stats = append(stats, stat)
 		}
 	}
+
 	log.Debugf("collected %d entries in %s (ctx error=%t)", len(stats), time.Since(start), ctx.Err() != nil)
-	return stats
+	return
 }
 
 func (m *Metrics) registerStatsSources() {
