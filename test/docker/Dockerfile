@@ -12,6 +12,9 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 # Download certificate and key from the customer portal (https://account.f5.com)
 # and copy to the build context
 
+# https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
+ARG DEBIAN_FRONTEND=noninteractive
+
 RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     --mount=type=secret,id=nginx-key,dst=nginx-repo.key \
     set -x \
