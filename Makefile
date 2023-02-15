@@ -256,10 +256,10 @@ run-container: ## Run container from specified IMAGE_TAG
 # Grafana Example Dashboard Targets                                                                               #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 clean-grafana-example: clean ## Clean example packages and docker
-	cd ./examples/grafana-metrics/ && BASE_IMAGE= PACKAGE_NAME= docker-compose down
+	cd ./examples/grafana-metrics/ && BASE_IMAGE= PACKAGE_NAME= ${CONTAINER_COMPOSE} down
 
 build-grafana-example: local-deb-package ## Build the example of nginx-agent
-	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} docker-compose build
+	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} ${CONTAINER_COMPOSE} build
 
 run-grafana-example: ## Start the example of nginx-agent
-	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} docker-compose up
+	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} ${CONTAINER_COMPOSE} up

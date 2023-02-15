@@ -19,5 +19,5 @@ services:
     networks:
       - monitoring
     volumes:
-      - "./test/testdata/configs/integration/api/nginx.conf:/agent/nginx.conf"
-      - "./test/testdata/configs/integration/api/nginx-agent.conf:/agent/nginx-agent.conf"
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf
