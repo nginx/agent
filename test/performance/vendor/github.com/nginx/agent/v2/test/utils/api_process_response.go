@@ -1,8 +1,8 @@
 package utils
 
-import(
-	"strings"
+import (
 	"github.com/go-resty/resty/v2"
+	"strings"
 )
 
 func ProcessResponse(resp *resty.Response) []string {
