@@ -34,7 +34,6 @@ PACKAGE_PREFIX     := nginx-agent
 PACKAGES_REPO      := "pkgs.nginx.com"
 OS                 := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
-
 uname_m      := $(shell uname -m)
 ifeq ($(uname_m),aarch64)
 	OSARCH = arm64
