@@ -62,8 +62,8 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	rm -rf ./build/nginx-agent
 	
 	# Create apk packages
-	
 	@for arch in $(APK_ARCHS); do \
+		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
     	for version in $(APK_VERSIONS); do \
