@@ -50,7 +50,7 @@ func setupTestContainer(t *testing.T) {
 		},
 	).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
-	agentContainer, err = comp.ServiceContainer(ctxCancel, "agent")	
+	agentContainer, err = comp.ServiceContainer(ctxCancel, "agent")
 	require.NoError(t, err)
 }
 
