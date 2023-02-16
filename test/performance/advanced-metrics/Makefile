@@ -1,3 +1,5 @@
+include ../../../Makefile.containers
+
 SHELL:=/bin/bash
 
 #uncomment when you want to use go modules
@@ -13,11 +15,11 @@ benchmark_build:
 
 benchmark_run: benchmark_build
 	source .test_env && \
-	docker-compose -f docker-compose.yml up -d --build --remove-orphans
+	${CONTAINER_COMPOSE} -f docker-compose.yml up -d --build --remove-orphans
 
 benchmark_stop:
 	source .test_env && \
-	docker-compose -f docker-compose.yml down
+	${CONTAINER_COMPOSE} -f docker-compose.yml down
 
 benchmark_poc_build:
 	CGO_ENABLED=0 GOOS=linux go build -o bin/agent-with-poc fake_agent_poc/*.go
@@ -25,7 +27,7 @@ benchmark_poc_build:
 
 benchmark_poc_run: benchmark_poc_build
 	source .test_env && \
-	docker-compose -f docker-compose-with-poc.yml up --build --remove-orphans
+	${CONTAINER_COMPOSE} -f docker-compose-with-poc.yml up --build --remove-orphans
 
 benchmark_avr_build:
 	CGO_ENABLED=0 GOOS=linux go build -o bin/avr_harness avr_harness/*.go
@@ -33,8 +35,8 @@ benchmark_avr_build:
 
 benchmark_avr_run: benchmark_avr_build
 	source .test_env && \
-	docker-compose -f docker-compose-with-avr.yml up -d --build --remove-orphans
+	${CONTAINER_COMPOSE} -f docker-compose-with-avr.yml up -d --build --remove-orphans
 
 benchmark_avr_stop:
 	source .test_env && \
-	docker-compose -f docker-compose-with-avr.yml down
+	${CONTAINER_COMPOSE} -f docker-compose-with-avr.yml down
