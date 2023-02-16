@@ -44,7 +44,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	
 	# Create rpm packages
 	
-	@GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
+	@GOWORK=off CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 	@for distro in $(RPM_DISTROS); do \
 		rpm_distro=`echo $$distro | cut -d- -f 1`;  \
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
@@ -53,7 +53,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 		elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
 		if [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=${OSARCH} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=amd64 nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
 			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(RPM_ARCH).rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
 		fi; \
 	done; \
@@ -62,8 +62,9 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	# Create apk packages
 	
 	@for arch in $(APK_ARCHS); do \
-		GOWORK=off CGO_ENABLED=0 GOARCH=$${OSARCH} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
-		for version in $(APK_VERSIONS); do \
+		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+    	for version in $(APK_VERSIONS); do \
 			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
             cp $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-v$${version}-$${arch}.apk; \
@@ -74,8 +75,8 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	# Create txz packages
 	
 	rm -rf ./build/nginx-agent
-	@GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=${OSARCH} go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
-	
+    @GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent	
+
 	docker run -v `pwd`:/nginx-agent/ build-signed-packager:1.0.0
 	
 	echo "DEB packages:"; \
