@@ -28,7 +28,7 @@ import (
 
 const (
 	spaceDelim = " "
-	pattern = `[A-Z]+\s.+\s[A-Z]+/.+`
+	pattern    = `[A-Z]+\s.+\s[A-Z]+/.+`
 )
 
 // This metrics source is used to tail the NGINX access logs to retrieve metrics.
@@ -287,6 +287,14 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				}
 			}
 
+			if access.UpstreamStatus != "" && access.UpstreamStatus != "-" {
+				if v, err := strconv.Atoi(access.UpstreamStatus); err == nil {
+					n := fmt.Sprintf("upstream.status.%dxx", v/100)
+					upstreamCounters[n] = upstreamCounters[n] + 1
+				} else {
+					log.Debugf("Error getting upstream status value from access logs, %v", err)
+				}
+			}
 			// don't need the http status for NGINX Plus
 			if c.nginxType == OSSNginxType {
 				if v, err := strconv.Atoi(access.Status); err == nil {
@@ -371,15 +379,15 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 }
 
 func getParsedRequest(request string) (method string, uri string, protocol string) {
-	
-	// Looking for capital letters, a space, anything, a space, capital letters, forward slash then anything. 
+
+	// Looking for capital letters, a space, anything, a space, capital letters, forward slash then anything.
 	// Example: DELETE nginx_status HTTP/1.1
 	regex, err := regexp.Compile(pattern)
 
-	if err != nil{
+	if err != nil {
 		return
 	}
-	
+
 	if regex.FindString(request) == "" {
 		return
 	}
@@ -500,6 +508,7 @@ func convertLogFormat(logFormat string) string {
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_header_time", "%{DATA:upstream_header_time}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_response_time", "%{DATA:upstream_response_time}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_response_length", "%{DATA:upstream_response_length}")
+	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_status", "%{DATA:upstream_status}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "[", "\\[")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "]", "\\]")
 	return newLogFormat
@@ -568,6 +577,11 @@ func getDefaultCounters() (map[string]float64, map[string]float64) {
 		"upstream.response.time.median": 0,
 		"upstream.response.time.pctl95": 0,
 		"upstream.response.length":      0,
+		"upstream.status.1xx":           0,
+		"upstream.status.2xx":           0,
+		"upstream.status.3xx":           0,
+		"upstream.status.4xx":           0,
+		"upstream.status.5xx":           0,
 	}
 
 	return httpCounters, upstreamCounters
