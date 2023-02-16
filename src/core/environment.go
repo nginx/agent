@@ -434,13 +434,10 @@ func (env *EnvironmentType) Processes() (result []Process) {
 	for _, pid := range pids {
 		p, err := process.NewProcess(pid)
 		if err != nil {
-			log.Errorf("Error on reading process information for ppid: %d error: %v", pid, err)
+			continue
 		}
 
-		name, err := p.Name()
-		if err != nil {
-			log.Errorf("Error reading name for process %v", err)
-		}
+		name, _ := p.Name()
 
 		if name == "nginx" {
 			createTime, _ := p.CreateTime()
