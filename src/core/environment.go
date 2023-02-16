@@ -28,6 +28,7 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/process"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 
 	"github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -97,10 +98,10 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 			DisplayName:         hostInformation.Hostname,
 			OsType:              hostInformation.OS,
 			Uuid:                env.GetSystemUUID(),
-			Uname:               hostInformation.KernelArch,
+			Uname:               env.GetUnixName(),
 			Partitons:           diskPartitions(),
 			Network:             env.networks(),
-			Processor:           processors(),
+			Processor:           processors(hostInformation.KernelArch),
 			Release:             releaseInfo(),
 			Tags:                *tags,
 			AgentAccessibleDirs: configDirs,
@@ -110,6 +111,33 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 		env.host = hostInfoFacacde
 	}
 	return env.host
+}
+
+/*  Returns string containing
+	   sysname	 Name of the operating system implementation.
+	   nodename	 Network name of this machine.
+	   release	 Release level of the operating	system.
+	   version	 Version level of the operating	system.
+	   machine	 Machine hardware platform.
+
+	Different platforms have different Utsname struct definition.
+	https://cs.opensource.google/search?q=utsname&ss=go%2Fx%2Fsys&start=11
+
+	TODO :- Make this function platform agnotic to pull uname (uname -a).
+*/
+func (env *EnvironmentType) GetUnixName() string {
+	var utsname unix.Utsname
+	err := unix.Uname(&utsname)
+	unixName := ""
+	if(err == nil) {
+		sysName := string(utsname.Sysname[:bytes.IndexByte(utsname.Sysname[:], 0)])
+		nodeName := string(utsname.Nodename[:bytes.IndexByte(utsname.Nodename[:], 0)])
+		release := string(utsname.Release[:bytes.IndexByte(utsname.Release[:], 0)])
+		version := string(utsname.Version[:bytes.IndexByte(utsname.Version[:], 0)])
+		machine := string(utsname.Machine[:bytes.IndexByte(utsname.Machine[:], 0)])
+		unixName = strings.Join([]string{sysName, nodeName,release, version, machine}, " ")
+	}
+	return unixName
 }
 
 func (env *EnvironmentType) GetHostname() string {
@@ -477,7 +505,7 @@ func (env *EnvironmentType) Processes() (result []Process) {
 	return processList
 }
 
-func processors() (res []*proto.CpuInfo) {
+func processors(architecture string)  (res []*proto.CpuInfo) {
 	log.Debug("Reading CPU information for dataplane host")
 	cpus, err := cpu.Info()
 	if err != nil {
@@ -494,7 +522,13 @@ func processors() (res []*proto.CpuInfo) {
 			// https://stackoverflow.com/questions/21151765/cannot-unmarshal-string-into-go-value-of-type-int64
 			Model:        item.Model,
 			Cores:        item.Cores,
-			Architecture: item.Family,
+			/*
+				cpu_info does not provide architecture info.
+				Fix was to add KernelArch field in InfoStat struct that returns 'uname -m'
+				https://github.com/shirou/gopsutil/issues/737
+			*/
+			//Homogeneous value of architecture.
+			Architecture: architecture,
 			Cpus:         int32(len(cpus)),
 			Mhz:          item.Mhz,
 			// TODO - check if this is correct
