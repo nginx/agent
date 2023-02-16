@@ -8,6 +8,7 @@ GPG_PUBLIC_KEY      := .key
 DEB_DISTROS?=ubuntu-jammy-22.04 ubuntu-focal-20.04 ubuntu-bionic-18.04 debian-bullseye-11 debian-buster-10
 DEB_ARCHS?=arm64 amd64
 RPM_DISTROS?=centos-7-x86_64 redhatenterprise-7-x86_64 redhatenterprise-8-x86_64 redhatenterprise-9-x86_64 amazon-2-x86_64 amazon-latest-x86_64 amazon-2017.09-x86_64 suse-12-x86_64 suse-15-x86_64
+RPM_ARCH=x86_64
 FREEBSD_DISTROS?="FreeBSD:12:amd64" "FreeBSD:13:amd64"
 APK_VERSIONS?=3.13 3.14 3.15 3.16
 APK_ARCHS?=aarch64 x86_64
@@ -52,8 +53,8 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 		elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
 		if [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
-			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=${OSARCH} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(PACKAGE_ARCH).rpm; \
-			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(PACKAGE_ARCH).rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(PACKAGE_ARCH).rpm; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=${OSARCH} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
+			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(RPM_ARCH).rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
 		fi; \
 	done; \
 	rm -rf ./build/nginx-agent
