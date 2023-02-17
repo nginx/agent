@@ -23,7 +23,9 @@ type Collector interface {
 	UpdateConfig(config *config.Config)
 }
 type Source interface {
+	Name() string
 	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity)
+	ErrorCollectingMetrics() error
 }
 type NginxSource interface {
 	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity)

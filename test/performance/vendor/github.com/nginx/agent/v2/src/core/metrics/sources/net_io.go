@@ -28,10 +28,11 @@ type NetIO struct {
 	// This is for keeping the previous net io stats.  Need to report the delta.
 	// The first level key is the network interface name, and the inside map is the net
 	// io stats for that particular network interface.
-	netIOStats   map[string]map[string]float64
-	netOverflows float64
-	init         sync.Once
-	env          core.Environment
+	netIOStats             map[string]map[string]float64
+	netOverflows           float64
+	init                   sync.Once
+	env                    core.Environment
+	errorCollectingMetrics error
 	// Needed for unit tests
 	netIOInterfacesFunc func(ctx context.Context) (net.InterfaceStatList, error)
 	netIOCountersFunc   func(ctx context.Context, pernic bool) ([]net.IOCountersStat, error)
@@ -44,6 +45,10 @@ func NewNetIOSource(namespace string, env core.Environment) *NetIO {
 		netIOInterfacesFunc: net.InterfacesWithContext,
 		netIOCountersFunc:   net.IOCountersWithContext,
 	}
+}
+
+func (nio *NetIO) Name() string {
+	return "net-io"
 }
 
 func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
@@ -61,7 +66,7 @@ func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pro
 	// retrieve the current net IO stats
 	currentNetIOStats, err := nio.newNetInterfaces(ctx)
 	if err != nil || currentNetIOStats == nil {
-		log.Warn("Cannot get new network interface statistics")
+		nio.errorCollectingMetrics = err
 		return
 	}
 
@@ -94,7 +99,8 @@ func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pro
 	// collect net overflow. This is not easily obtained by gopsutil, so we exec netstat to get these values
 	overflows, err := nio.env.GetNetOverflow()
 	if err != nil {
-		log.Debugf("Error occurred getting network overflow metrics, %v", err)
+		nio.errorCollectingMetrics = err
+		return
 	}
 
 	if nio.netOverflows < 0 {
@@ -109,6 +115,11 @@ func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pro
 	m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics)
 
 	nio.netIOStats = currentNetIOStats
+	nio.errorCollectingMetrics = nil
+}
+
+func (nio *NetIO) ErrorCollectingMetrics() error {
+	return nio.errorCollectingMetrics
 }
 
 func (nio *NetIO) newNetInterfaces(ctx context.Context) (map[string]map[string]float64, error) {

@@ -16,6 +16,7 @@ import (
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/sources"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -23,10 +24,11 @@ var (
 )
 
 type SystemCollector struct {
-	sources []metrics.Source
-	buf     chan *proto.StatsEntity
-	dim     *metrics.CommonDim
-	env     core.Environment
+	sources      []metrics.Source
+	buf          chan *proto.StatsEntity
+	dim          *metrics.CommonDim
+	env          core.Environment
+	sourceErrors map[string]error
 }
 
 func NewSystemCollector(env core.Environment, conf *config.Config) *SystemCollector {
@@ -52,10 +54,11 @@ func NewSystemCollector(env core.Environment, conf *config.Config) *SystemCollec
 	}
 
 	return &SystemCollector{
-		sources: systemSources,
-		buf:     make(chan *proto.StatsEntity, 65535),
-		dim:     metrics.NewCommonDim(env.NewHostInfo("agentVersion", &conf.Tags, conf.ConfigDirs, false), conf, ""),
-		env:     env,
+		sources:      systemSources,
+		buf:          make(chan *proto.StatsEntity, 65535),
+		dim:          metrics.NewCommonDim(env.NewHostInfo("agentVersion", &conf.Tags, conf.ConfigDirs, false), conf, ""),
+		env:          env,
+		sourceErrors: make(map[string]error),
 	}
 }
 
@@ -73,6 +76,7 @@ func (c *SystemCollector) collectMetrics(ctx context.Context) {
 func (c *SystemCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
 	defer wg.Done()
 	c.collectMetrics(ctx)
+	c.checkSourcesForErrors()
 
 	commonDims := c.dim.ToDimensions()
 	for {
@@ -95,4 +99,17 @@ func (c *SystemCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m cha
 
 func (c *SystemCollector) UpdateConfig(config *config.Config) {
 	c.dim = metrics.NewCommonDim(c.env.NewHostInfo("agentVersion", &config.Tags, config.ConfigDirs, false), config, "")
+}
+
+func (c *SystemCollector) checkSourcesForErrors() {
+	for _, containerSource := range c.sources {
+		if containerSource.ErrorCollectingMetrics() != nil {
+			if _, ok := c.sourceErrors[containerSource.Name()]; !ok {
+				log.Warnf("Unable to collect system metrics from source %s, %v", containerSource.Name(), containerSource.ErrorCollectingMetrics())
+				c.sourceErrors[containerSource.Name()] = containerSource.ErrorCollectingMetrics()
+			}
+		} else {
+			delete(c.sourceErrors, containerSource.Name())
+		}
+	}
 }

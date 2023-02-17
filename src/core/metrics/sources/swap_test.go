@@ -30,12 +30,12 @@ func TestNewSwapSource(t *testing.T) {
 		{
 			"VM",
 			false,
-			&Swap{&namedMetric{namespace, "swap"}, mem.SwapMemory},
+			&Swap{&namedMetric{namespace, "swap"}, nil, mem.SwapMemory},
 		},
 		{
 			"container",
 			true,
-			&Swap{&namedMetric{namespace, "swap"}, cgroup.NewCgroupSwapSource(cgroup.CgroupBasePath).SwapMemoryStat},
+			&Swap{&namedMetric{namespace, "swap"}, nil, cgroup.NewCgroupSwapSource(cgroup.CgroupBasePath).SwapMemoryStat},
 		},
 	}
 	for _, test := range tests {

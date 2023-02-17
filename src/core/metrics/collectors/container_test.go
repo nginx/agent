@@ -49,8 +49,8 @@ func TestNewContainerCollector(t *testing.T) {
 }
 
 func TestContainerCollector_Collect(t *testing.T) {
-	mockSource1 := GetNginxSourceMock()
-	mockSource2 := GetNginxSourceMock()
+	mockSource1 := GetSourceMock()
+	mockSource2 := GetSourceMock()
 
 	containerCollector := &ContainerCollector{
 		sources: []metrics.Source{

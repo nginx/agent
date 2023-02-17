@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-	"os"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -22,7 +21,8 @@ import (
 
 type VirtualMemory struct {
 	*namedMetric
-	statFunc func() (*mem.VirtualMemoryStat, error)
+	errorCollectingMetrics error
+	statFunc               func() (*mem.VirtualMemoryStat, error)
 }
 
 func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemory {
@@ -33,18 +33,18 @@ func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemo
 		statFunc = cgroupMemSource.VirtualMemoryStat
 	}
 
-	return &VirtualMemory{&namedMetric{namespace, MemoryGroup}, statFunc}
+	return &VirtualMemory{&namedMetric{namespace, MemoryGroup}, nil, statFunc}
+}
+
+func (c *VirtualMemory) Name() string {
+	return "virtual-memory"
 }
 
 func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
 	defer wg.Done()
 	memstats, err := c.statFunc()
 	if err != nil {
-		if e, ok := err.(*os.PathError); ok {
-			log.Warnf("Unable to collect VirtualMemory metrics because the file %v was not found", e.Path)
-			return
-		}
-		log.Errorf("Failed to collect VirtualMemory metrics: %v", err)
+		c.errorCollectingMetrics = err
 		return
 	}
 
@@ -61,9 +61,14 @@ func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 	})
 
 	log.Debugf("Memory metrics collected: %v", simpleMetrics)
+	c.errorCollectingMetrics = nil
 
 	select {
 	case <-ctx.Done():
 	case m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics):
 	}
+}
+
+func (c *VirtualMemory) ErrorCollectingMetrics() error {
+	return c.errorCollectingMetrics
 }

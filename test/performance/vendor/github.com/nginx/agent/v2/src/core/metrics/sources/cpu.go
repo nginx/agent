@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -22,8 +23,9 @@ import (
 
 type CPUTimes struct {
 	*namedMetric
-	isDocker        bool
-	cgroupCPUSource *cgroup.CgroupCPU
+	isDocker               bool
+	cgroupCPUSource        *cgroup.CgroupCPU
+	errorCollectingMetrics error
 	// Needed for unit tests
 	timesFunc func(bool) ([]cpu.TimesStat, error)
 }
@@ -37,34 +39,13 @@ var lastCPUTime lastTime
 
 func NewCPUTimesSource(namespace string, env core.Environment) *CPUTimes {
 	if env.IsContainer() {
-		return &CPUTimes{&namedMetric{namespace, CpuGroup}, true, cgroup.NewCgroupCPUSource(cgroup.CgroupBasePath), nil}
+		return &CPUTimes{&namedMetric{namespace, CpuGroup}, true, cgroup.NewCgroupCPUSource(cgroup.CgroupBasePath), nil, nil}
 	}
-	return &CPUTimes{&namedMetric{namespace, CpuGroup}, false, nil, cpu.Times}
+	return &CPUTimes{&namedMetric{namespace, CpuGroup}, false, nil, nil, cpu.Times}
 }
 
-func percentCal(tt float64) func(float64) float64 {
-	return func(n float64) float64 {
-		if tt == 0.0 {
-			return 0.0
-		}
-		return (n / tt) * 100.00
-	}
-}
-
-func diffTimeStat(t1, t2 cpu.TimesStat) cpu.TimesStat {
-	return cpu.TimesStat{
-		CPU:       t1.CPU,
-		User:      t2.User - t1.User,
-		System:    t2.System - t1.System,
-		Idle:      t2.Idle - t1.Idle,
-		Nice:      t2.Nice - t1.Nice,
-		Iowait:    t2.Iowait - t1.Iowait,
-		Irq:       t2.Irq - t1.Irq,
-		Softirq:   t2.Softirq - t1.Softirq,
-		Steal:     t2.Steal - t1.Steal,
-		Guest:     t2.Guest - t1.Guest,
-		GuestNice: t2.GuestNice - t1.GuestNice,
-	}
+func (c *CPUTimes) Name() string {
+	return "cpu-times"
 }
 
 func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
@@ -74,8 +55,7 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 		dockerCpuPercentages, err := c.cgroupCPUSource.Percentages()
 
 		if err != nil {
-			// linux impl returns zero length without error
-			log.Errorf("Failed to get cgroup CPU metrics %v", err)
+			c.errorCollectingMetrics = err
 			return
 		}
 
@@ -89,13 +69,12 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 		timesArr, err := c.timesFunc(false)
 
 		if err != nil {
-			// linux impl returns zero length without error
-			log.Warnf("Error occurred getting CPU metrics, %v", err)
+			c.errorCollectingMetrics = err
 			return
 		}
 
 		if len(timesArr) != 1 {
-			log.Warn("Unexpected CPU metrics values")
+			c.errorCollectingMetrics = errors.New("Unexpected CPU metrics values")
 			return
 		}
 
@@ -122,8 +101,39 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 		log.Debugf("CPU metrics collected: %v", simpleMetrics)
 	}
 
+	c.errorCollectingMetrics = nil
+
 	select {
 	case <-ctx.Done():
 	case m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics):
+	}
+}
+
+func (c *CPUTimes) ErrorCollectingMetrics() error {
+	return c.errorCollectingMetrics
+}
+
+func percentCal(tt float64) func(float64) float64 {
+	return func(n float64) float64 {
+		if tt == 0.0 {
+			return 0.0
+		}
+		return (n / tt) * 100.00
+	}
+}
+
+func diffTimeStat(t1, t2 cpu.TimesStat) cpu.TimesStat {
+	return cpu.TimesStat{
+		CPU:       t1.CPU,
+		User:      t2.User - t1.User,
+		System:    t2.System - t1.System,
+		Idle:      t2.Idle - t1.Idle,
+		Nice:      t2.Nice - t1.Nice,
+		Iowait:    t2.Iowait - t1.Iowait,
+		Irq:       t2.Irq - t1.Irq,
+		Softirq:   t2.Softirq - t1.Softirq,
+		Steal:     t2.Steal - t1.Steal,
+		Guest:     t2.Guest - t1.Guest,
+		GuestNice: t2.GuestNice - t1.GuestNice,
 	}
 }

@@ -10,7 +10,6 @@ package sources
 import (
 	"context"
 	"math/big"
-	"os"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -23,7 +22,8 @@ import (
 
 type Swap struct {
 	*namedMetric
-	statFunc func() (*mem.SwapMemoryStat, error)
+	errorCollectingMetrics error
+	statFunc               func() (*mem.SwapMemoryStat, error)
 }
 
 func NewSwapSource(namespace string, env core.Environment) *Swap {
@@ -34,27 +34,18 @@ func NewSwapSource(namespace string, env core.Environment) *Swap {
 		statFunc = cgroupSwapSource.SwapMemoryStat
 	}
 
-	// Verify if swap metrics can be collected on startup
-	_, err := statFunc()
-	if err != nil {
-		if e, ok := err.(*os.PathError); ok {
-			log.Warnf("Unable to collect Swap metrics because the file %v was not found", e.Path)
-		}
-		log.Warnf("Unable to collect Swap metrics: %v", err)
-	}
+	return &Swap{&namedMetric{namespace, "swap"}, nil, statFunc}
+}
 
-	return &Swap{&namedMetric{namespace, "swap"}, statFunc}
+func (c *Swap) Name() string {
+	return "swap"
 }
 
 func (c *Swap) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
 	defer wg.Done()
 	swapStats, err := c.statFunc()
 	if err != nil {
-		if e, ok := err.(*os.PathError); ok {
-			log.Debugf("Unable to collect Swap metrics because the file %v was not found", e.Path)
-			return
-		}
-		log.Debugf("Unable to collect Swap metrics: %v", err)
+		c.errorCollectingMetrics = err
 		return
 	}
 
@@ -68,9 +59,14 @@ func (c *Swap) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 	})
 
 	log.Debugf("Swap Memory metrics collected: %v", simpleMetrics)
+	c.errorCollectingMetrics = nil
 
 	select {
 	case <-ctx.Done():
 	case m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics):
 	}
+}
+
+func (c *Swap) ErrorCollectingMetrics() error {
+	return c.errorCollectingMetrics
 }

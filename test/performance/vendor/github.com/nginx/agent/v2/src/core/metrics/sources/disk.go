@@ -14,19 +14,23 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/shirou/gopsutil/v3/disk"
-	log "github.com/sirupsen/logrus"
 )
 
 const MOUNT_POINT = "mount_point"
 
 type Disk struct {
 	*namedMetric
-	disks []disk.PartitionStat
+	errorCollectingMetrics error
+	disks                  []disk.PartitionStat
 }
 
 func NewDiskSource(namespace string) *Disk {
 	disks, _ := disk.Partitions(false)
-	return &Disk{&namedMetric{namespace, "disk"}, disks}
+	return &Disk{&namedMetric{namespace, "disk"}, nil, disks}
+}
+
+func (c *Disk) Name() string {
+	return "disk"
 }
 
 func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
@@ -38,7 +42,7 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 		usage, err := disk.Usage(part.Mountpoint)
 
 		if err != nil {
-			log.Errorf("Failed to get disk metrics %v", err)
+			c.errorCollectingMetrics = err
 			continue
 		}
 
@@ -49,6 +53,8 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 			"in_use": float64(usage.UsedPercent),
 		})
 
+		c.errorCollectingMetrics = nil
+
 		select {
 		case <-ctx.Done():
 			return
@@ -56,4 +62,8 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 		case m <- metrics.NewStatsEntity([]*proto.Dimension{{Name: MOUNT_POINT, Value: part.Mountpoint}}, simpleMetrics):
 		}
 	}
+}
+
+func (c *Disk) ErrorCollectingMetrics() error {
+	return c.errorCollectingMetrics
 }

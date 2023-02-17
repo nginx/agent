@@ -14,23 +14,27 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/shirou/gopsutil/v3/load"
-	log "github.com/sirupsen/logrus"
 )
 
 type Load struct {
 	*namedMetric
-	avgStatsFunc func() (*load.AvgStat, error)
+	errorCollectingMetrics error
+	avgStatsFunc           func() (*load.AvgStat, error)
 }
 
 func NewLoadSource(namespace string) *Load {
 	return &Load{namedMetric: &namedMetric{namespace, "load"}, avgStatsFunc: load.Avg}
 }
 
+func (c *Load) Name() string {
+	return "load"
+}
+
 func (c *Load) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
 	defer wg.Done()
 	loadStats, err := c.avgStatsFunc()
 	if err != nil {
-		log.Errorf("Failed to collect Load metrics: %v", err)
+		c.errorCollectingMetrics = err
 		return
 	}
 
@@ -44,4 +48,10 @@ func (c *Load) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 	case <-ctx.Done():
 	case m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics):
 	}
+
+	c.errorCollectingMetrics = nil
+}
+
+func (c *Load) ErrorCollectingMetrics() error {
+	return c.errorCollectingMetrics
 }

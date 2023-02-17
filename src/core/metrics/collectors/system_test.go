@@ -81,8 +81,8 @@ func TestNewSystemCollector(t *testing.T) {
 }
 
 func TestSystemCollector_Collect(t *testing.T) {
-	mockSource1 := GetNginxSourceMock()
-	mockSource2 := GetNginxSourceMock()
+	mockSource1 := GetSourceMock()
+	mockSource2 := GetSourceMock()
 
 	systemCollector := &SystemCollector{
 		sources: []metrics.Source{

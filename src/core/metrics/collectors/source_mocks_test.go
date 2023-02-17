@@ -22,6 +22,14 @@ func GetNginxSourceMock() *NginxSourceMock {
 	return mockSource
 }
 
+func GetSourceMock() *SourceMock {
+	mockSource := new(SourceMock)
+	mockSource.On("Collect", mock.Anything, mock.Anything, mock.Anything).Once()
+	mockSource.On("ErrorCollectingMetrics").Return(nil)
+	mockSource.On("Name").Return("mock-source")
+	return mockSource
+}
+
 type NginxSourceMock struct {
 	mock.Mock
 }
@@ -46,4 +54,14 @@ type SourceMock struct {
 func (m *SourceMock) Collect(ctx context.Context, wg *sync.WaitGroup, statsChannel chan<- *proto.StatsEntity) {
 	m.Called(ctx, wg, statsChannel)
 	wg.Done()
+}
+
+func (m *SourceMock) Name() string {
+	args := m.Called()
+	return args.Get(0).(string)
+}
+
+func (m *SourceMock) ErrorCollectingMetrics() error {
+	args := m.Called()
+	return args.Error(0)
 }

@@ -28,13 +28,18 @@ type DiskIO struct {
 	// io stats for that particular disk device.
 	diskIOStats map[string]map[string]float64
 	// Needed for unit tests
-	diskIOStatsFunc func(ctx context.Context, names ...string) (map[string]disk.IOCountersStat, error)
-	init            sync.Once
-	env             core.Environment
+	diskIOStatsFunc        func(ctx context.Context, names ...string) (map[string]disk.IOCountersStat, error)
+	init                   sync.Once
+	env                    core.Environment
+	errorCollectingMetrics error
 }
 
 func NewDiskIOSource(namespace string, env core.Environment) *DiskIO {
 	return &DiskIO{namedMetric: &namedMetric{namespace, "io"}, env: env, diskIOStatsFunc: disk.IOCountersWithContext}
+}
+
+func (dio *DiskIO) Name() string {
+	return "disk-io"
 }
 
 func (dio *DiskIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
@@ -65,6 +70,10 @@ func (dio *DiskIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 	}
 
 	dio.diskIOStats = currentDiskIOStats
+	dio.errorCollectingMetrics = nil
+}
+func (dio *DiskIO) ErrorCollectingMetrics() error {
+	return dio.errorCollectingMetrics
 }
 
 func isPhysDisk(part string, diskDevs []string) bool {
@@ -78,7 +87,11 @@ func isPhysDisk(part string, diskDevs []string) bool {
 
 func (dio *DiskIO) newDiskIOCounters(ctx context.Context, diskDevs []string) map[string]map[string]float64 {
 	res := make(map[string]map[string]float64)
-	diskIOCounters, _ := dio.diskIOStatsFunc(ctx)
+	diskIOCounters, err := dio.diskIOStatsFunc(ctx)
+	if err != nil {
+		dio.errorCollectingMetrics = err
+		return res
+	}
 	if diskIOCounters == nil {
 		log.Debug("Disk IO counters not available")
 		return res

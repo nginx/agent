@@ -26,10 +26,11 @@ var (
 )
 
 type ContainerCollector struct {
-	sources []metrics.Source
-	buf     chan *proto.StatsEntity
-	dim     *metrics.CommonDim
-	env     core.Environment
+	sources      []metrics.Source
+	buf          chan *proto.StatsEntity
+	dim          *metrics.CommonDim
+	env          core.Environment
+	sourceErrors map[string]error
 }
 
 func NewContainerCollector(env core.Environment, conf *config.Config) *ContainerCollector {
@@ -41,27 +42,18 @@ func NewContainerCollector(env core.Environment, conf *config.Config) *Container
 	}
 
 	return &ContainerCollector{
-		sources: containerSources,
-		buf:     make(chan *proto.StatsEntity, 65535),
-		dim:     metrics.NewCommonDim(env.NewHostInfo("agentVersion", &conf.Tags, conf.ConfigDirs, false), conf, ""),
-		env:     env,
+		sources:      containerSources,
+		buf:          make(chan *proto.StatsEntity, 65535),
+		dim:          metrics.NewCommonDim(env.NewHostInfo("agentVersion", &conf.Tags, conf.ConfigDirs, false), conf, ""),
+		env:          env,
+		sourceErrors: make(map[string]error),
 	}
-}
-
-func (c *ContainerCollector) collectMetrics(ctx context.Context) {
-	// using a separate WaitGroup, since we need to wait for our own buffer to be filled
-	// this ensures the collection is done before our own for/select loop to pull things off the buf
-	wg := &sync.WaitGroup{}
-	for _, containerSource := range c.sources {
-		wg.Add(1)
-		go containerSource.Collect(ctx, wg, c.buf)
-	}
-	wg.Wait()
 }
 
 func (c *ContainerCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
 	defer wg.Done()
 	c.collectMetrics(ctx)
+	c.checkSourcesForErrors()
 
 	commonDims := c.dim.ToDimensions()
 	for {
@@ -84,4 +76,28 @@ func (c *ContainerCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m 
 
 func (c *ContainerCollector) UpdateConfig(config *config.Config) {
 	c.dim = metrics.NewCommonDim(c.env.NewHostInfo("agentVersion", &config.Tags, config.ConfigDirs, false), config, "")
+}
+
+func (c *ContainerCollector) collectMetrics(ctx context.Context) {
+	// using a separate WaitGroup, since we need to wait for our own buffer to be filled
+	// this ensures the collection is done before our own for/select loop to pull things off the buf
+	wg := &sync.WaitGroup{}
+	for _, containerSource := range c.sources {
+		wg.Add(1)
+		go containerSource.Collect(ctx, wg, c.buf)
+	}
+	wg.Wait()
+}
+
+func (c *ContainerCollector) checkSourcesForErrors() {
+	for _, containerSource := range c.sources {
+		if containerSource.ErrorCollectingMetrics() != nil {
+			if _, ok := c.sourceErrors[containerSource.Name()]; !ok {
+				log.Warnf("Unable to collect container metrics from source %s, %v", containerSource.Name(), containerSource.ErrorCollectingMetrics())
+				c.sourceErrors[containerSource.Name()] = containerSource.ErrorCollectingMetrics()
+			}
+		} else {
+			delete(c.sourceErrors, containerSource.Name())
+		}
+	}
 }
