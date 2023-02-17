@@ -78,7 +78,7 @@ func newFile(f protoreflect.FileDescriptor, deps Files) (File, error) {
 	if err != nil {
 		return nil, err
 	}
-	return file{
+	return &file{
 		FileDescriptor: f,
 		descs:          descs,
 		deps:           deps,
@@ -133,23 +133,23 @@ type file struct {
 	deps  Files
 }
 
-func (f file) FindDescriptorByName(name protoreflect.FullName) protoreflect.Descriptor {
+func (f *file) FindDescriptorByName(name protoreflect.FullName) protoreflect.Descriptor {
 	return f.descs[name]
 }
 
-func (f file) FindImportByPath(path string) File {
+func (f *file) FindImportByPath(path string) File {
 	return f.deps.FindFileByPath(path)
 }
 
-func (f file) FindExtensionByNumber(msg protoreflect.FullName, tag protoreflect.FieldNumber) protoreflect.ExtensionTypeDescriptor {
+func (f *file) FindExtensionByNumber(msg protoreflect.FullName, tag protoreflect.FieldNumber) protoreflect.ExtensionTypeDescriptor {
 	return findExtension(f, msg, tag)
 }
 
-func (f file) importsAsFiles() Files {
+func (f *file) importsAsFiles() Files {
 	return f.deps
 }
 
-var _ File = file{}
+var _ File = (*file)(nil)
 
 // Files represents a set of protobuf files. It is a slice of File values, but
 // also provides a method for easily looking up files by path and name.

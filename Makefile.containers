@@ -1,12 +1,12 @@
 #!/usr/bin/make -f
 
-ifndef CONTAINER_CLITOOL
-ifeq ($(shell docker -v >/dev/null 2>&1 || echo FAIL),)
-CONTAINER_CLITOOL = docker
-else ifeq ($(shell podman -v >/dev/null 2>&1 || echo FAIL),)
+# ifndef CONTAINER_CLITOOL
+# ifeq ($(shell docker -v >/dev/null 2>&1 || echo FAIL),)
+# CONTAINER_CLITOOL = docker
+# else ifeq ($(shell podman -v >/dev/null 2>&1 || echo FAIL),)
 CONTAINER_CLITOOL = podman
-endif
-endif
+# endif
+# endif
 
 ifeq ($(CONTAINER_CLITOOL), docker)
 CONTAINER_BUILDENV ?= DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain

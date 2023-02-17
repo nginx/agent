@@ -14,4 +14,5 @@ import (
 	_ "github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc"
 	_ "github.com/go-swagger/go-swagger/cmd/swagger"
 	_ "github.com/bufbuild/buf/cmd/buf"
+	_ "github.com/goreleaser/nfpm/v2/cmd/nfpm"
 )

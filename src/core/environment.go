@@ -433,6 +433,7 @@ func (env *EnvironmentType) Processes() (result []Process) {
 	seenPids := make(map[int32]bool)
 	for _, pid := range pids {
 		p, _ := process.NewProcess(pid)
+
 		name, _ := p.Name()
 
 		if name == "nginx" {
@@ -442,14 +443,10 @@ func (env *EnvironmentType) Processes() (result []Process) {
 			user, _ := p.Username()
 			ppid, _ := p.Ppid()
 			cmd, _ := p.Cmdline()
-			exe, _ := p.Exe()
-
-			// if the exe is empty, try get the exe from the parent
-			if exe == "" {
-				parentProcess, _ := process.NewProcess(ppid)
-				exe, _ = parentProcess.Exe()
+			exe, err := p.Exe()
+			if err != nil {
+				log.Errorf("Error reading exe information for process: %d error: %v", pid, err)
 			}
-
 			processList = append(processList, Process{
 				Pid:        pid,
 				Name:       name,
