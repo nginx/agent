@@ -331,6 +331,8 @@ func TestNewHostInfo(t *testing.T) {
 	assert.GreaterOrEqual(t, len(host.Partitons), 1)
 	assert.GreaterOrEqual(t, len(host.Network.Interfaces), 1)
 	assert.GreaterOrEqual(t, len(host.Processor), 1)
+	assert.NotEmpty(t, host.Processor[0].Architecture)
+	assert.Equal(t, env.GetUnixName(), host.Uname)
 	assert.NotEmpty(t, host.Release)
 	assert.Equal(t, tags, host.Tags)
 }
@@ -370,9 +372,12 @@ func TestVirtualization(t *testing.T) {
 }
 
 func TestProcessors(t *testing.T) {
-	processorInfo := processors()
+	processorInfo := processors("arm64")
 	// at least one network interface
 	assert.GreaterOrEqual(t, processorInfo[0].GetCpus(), int32(1))
+	// non empty architecture
+	assert.NotEmpty(t, processorInfo[0].GetArchitecture())
+	assert.GreaterOrEqual(t, processorInfo[0].GetArchitecture(), "arm64")
 }
 
 func TestProcesses(t *testing.T) {
