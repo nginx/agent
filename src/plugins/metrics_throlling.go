@@ -101,7 +101,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 				collection := metrics.SaveCollections(*r.metricsCollections[report.Type], report)
 				r.metricsCollections[report.Type] = &collection
 				r.mu.Unlock()
-				log.Debug("MetricsThrottle: Metrics collection saved")
+				log.Debugf("MetricsThrottle: Metrics collection saved [Type: %d]", report.Type)
 				r.reportsReady.Store(true)
 			}
 		} else {
