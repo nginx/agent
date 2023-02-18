@@ -15,13 +15,13 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
   - [Event Notifications](#event-notifications)
 - [Installation](#installation)
   - [Installing NGINX](#installing-nginx)
-  - [Installing Go](#installing-go)
   - [Installing NGINX Agent from Package Files](#installing-nginx-agent-from-package-files)
   - [Starting and Enabling Start on Boot](#starting-and-enabling-start-on-boot)
   - [Logging](#logging)
 - [Getting Started with NGINX Agent](#getting-started-with-nginx-agent)
-  - [Installing NGINX and NGINX Agent](#installing-nginx-and-nginx-agent)
+  - [Installing NGINX](#installing-nginx)
   - [Cloning the NGINX Agent Repository](#cloning-the-nginx-agent-repository)
+  - [Installing Go](#installing-go)
   - [Starting the gRPC Mock Control Plane](#starting-the-grpc-mock-control-plane)
   - [NGINX Agent Settings](#nginx-agent-settings)
   - [Starting NGINX Agent](#starting-nginx-agent)
@@ -80,9 +80,6 @@ NGINX Agent allows a gRPC connected control system to register a listener for a 
 ## Installing NGINX
 NGINX Agent interfaces directly with an NGINX server process installed on the same system. If you don't have it already, follow these steps to install [NGINX Open Source](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) or [NGINX Plus](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-plus/). Once installed, ensure the NGINX instance is running.
 
-## Installing Go
-NGINX Agent is written in Go and requires Go 1.19 or higher to be installed. You can [download Go from the official website](https://go.dev/dl/). 
-
 ## Installing NGINX Agent from Package Files
 To install NGINX Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download `nginx-agent.tar.gz`. Create a new subdirectory and extract the archive into it. Change into the subdirectory matching the package manager format appropriate for your operating system distribution.
 
@@ -126,11 +123,14 @@ NGINX Agent uses formatted log files to collect metrics. Expanding log formats a
 # Getting Started with NGINX Agent
 Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which the NGINX Agent will report.
 
-## Installing NGINX and NGINX Agent
-Follow steps in the [Installation](#installation) section to download, install, and run NGINX and NGINX Agent.
+## Installing NGINX
+Follow steps in the [Installation](#installation) section to download, install, and run NGINX.
 
 ## Cloning the NGINX Agent Repository
 Using your preferred method, clone the NGINX Agent repository into your development directory. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
+
+## Installing Go
+NGINX Agent and the Mock Control Plane are written in Go. Go 1.19 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/). 
 
 ## Starting the gRPC Mock Control Plane
 Start the mock control plane by running the following command from the `agent` source code root directory:
@@ -168,7 +168,7 @@ tls:
   skip_verify: true
 ```
 
-Documentation for the proto definitions can be found here: https://github.com/nginx/agent/tree/main/docs/proto/README.md
+For more information, see [Agent Protocol Definitions and Documentation](https://github.com/nginx/agent/tree/main/docs/proto/README.md)
 
 ### Enabling the REST interface
 The NGINX Agent REST interface can be exposed by validating the following lines in the `/etc/nginx-agent/nginx-agent.conf` file are present:
@@ -185,7 +185,7 @@ api:
 The mock control plane can use either gRPC or REST protocols to communicate with NGINX Agent.
 
 ### Launching Swagger UI
-To use the Swagger UI, goswagger needs to be installed first. Instructions on how to install goswagger can be found here https://goswagger.io/install.html.
+Swagger UI requires goswagger be installed. See [instructions for installing goswagger](https://goswagger.io/install.html) for additional help.
 
 To launch the Swagger UI for the REST interface run the following command
 
