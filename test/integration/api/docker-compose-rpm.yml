@@ -8,7 +8,7 @@ services:
   agent:
     build:
       context: ../../../
-      dockerfile: ./scripts/docker/nginx-oss/centos/Dockerfile
+      dockerfile: ./scripts/docker/nginx-oss/rockylinux/Dockerfile
       target: install-agent
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
