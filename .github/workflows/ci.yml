@@ -66,6 +66,15 @@ jobs:
 
   integration-test:
     name: Integration Tests
+    strategy:
+      matrix:
+        container:
+        - image: almalinux
+          version: "7"
+          compose-file: docker-compose-rpm.yml
+        - image: almalinux
+          version: "8"
+          compose-file: docker-compose-rpm.yml
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -74,7 +83,9 @@ jobs:
           go-version-file: 'go.mod'
       - name: Run Integration Tests
         run: |
-            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          BASE_IMAGE="docker.io/${{ matrix.container.image }}:${{ matrix.container.version }}" \
+            DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
             make integration-test
 
   performance-test:
