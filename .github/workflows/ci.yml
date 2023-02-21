@@ -69,11 +69,11 @@ jobs:
     strategy:
       matrix:
         container:
-        - image: almalinux
-          version: "7"
-          compose-file: docker-compose-rpm.yml
-        - image: almalinux
+        - image: "almalinux"
           version: "8"
+          compose-file: docker-compose-rpm.yml
+        - image: "almalinux"
+          version: "9"
           compose-file: docker-compose-rpm.yml
     runs-on: ubuntu-22.04
     steps:
