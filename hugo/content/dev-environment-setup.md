@@ -22,26 +22,34 @@ Follow the steps in the [Installation]({{< relref "/installation.md" >}}) sectio
 
 Using your preferred method, clone the NGINX Agent repository into your development directory. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
-## Install Prerequisite Packages
-
+## Installing Prerequisite Packages
 Depending on the operating system distribution, it may be necessary to install the following packages in order to build NGINX Agent.
 
 Change to the NGINX Agent source directory:
-
 ```bash
 cd <path_to_development_directory>/agent
 ```
 
 Install Make:
-
 ```bash
 sudo apt install make
 ```
 
-NGINX Agent is written in Go. To install Go, run:
-
+NGINX Agent is written in Go. You may [download Go](https://go.dev/doc/install) and follow installation instructions on the same page or run:
 ```bash
 sudo apt install golang-go
+```
+
+Install Protoc:
+```bash
+sudo apt install -y protobuf-compiler
+```
+
+Install NGINX Agent tools and dependencies:
+
+Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. You can do this by running the following `make` command:
+```bash
+make install-tools deps
 ```
 
 ## Building NGINX Agent from Source Code
