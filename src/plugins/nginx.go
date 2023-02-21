@@ -388,8 +388,6 @@ func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.Ng
 		return n.handleErrorStatus(status, message)
 	}
 
-	jsonConfig, _ := json.Marshal(config)
-	log.Debugf("WriteConfig start %v", string(jsonConfig))
 	configApply, err := n.nginxBinary.WriteConfig(config)
 	if err != nil {
 		if configApply != nil {
