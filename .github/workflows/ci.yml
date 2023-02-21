@@ -70,15 +70,15 @@ jobs:
     strategy:
       matrix:
         container:
-        - image: rockylinux
-          version: 8
-          compose-file: docker-compose-rpm.yml
-        - image: rockylinux
-          version: 9
-          compose-file: docker-compose-rpm.yml
+        - image: "rockylinux"
+          version: "8"
+          compose-file: "docker-compose-rpm.yml"
+        - image: "rockylinux"
+          version: "9"
+          compose-file: "docker-compose-rpm.yml"
         - image: "ubuntu"
           version: "22.04"
-          compose-file: docker-compose-deb.yml
+          compose-file: "docker-compose-deb.yml"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -88,7 +88,7 @@ jobs:
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
-            DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
+            TEST_DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
             make integration-test
 
   performance-test:
