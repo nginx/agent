@@ -22,8 +22,8 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | suse             | sles12sp5, sle15           |                                                                |
 # | freebsd          |                            | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE  = ubuntu
-OS_VERSION  = 22.04
+OS_RELEASE  ?= ubuntu
+OS_VERSION  ?= 22.04
 BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
@@ -48,9 +48,9 @@ else
 	endif
 endif
 
-TEST_BUILD_DIR     := build/test
-TEST_DOCKER_COMPOSE_FILE := "docker-compose-deb.yml"
-PACKAGE_NAME       := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
+TEST_BUILD_DIR           := build/test
+TEST_DOCKER_COMPOSE_FILE ?= "docker-compose-deb.yml"
+PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
 CERT_CLIENT_CA_CN  := client-ca.local
 CERT_CLIENT_INT_CN := client-int.local

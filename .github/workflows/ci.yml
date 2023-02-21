@@ -87,7 +87,7 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          BASE_IMAGE="docker.io/${{ matrix.container.image }}:${{ matrix.container.version }}" \
+          OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
             make integration-test
 
