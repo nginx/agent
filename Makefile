@@ -22,9 +22,9 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | suse             | sles12sp5, sle15           |                                                                |
 # | freebsd          |                            | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE := ubuntu
-OS_VERSION := 22.04
-BASE_IMAGE := "docker.io/${OS_RELEASE}:${OS_VERSION}"
+OS_RELEASE  = ubuntu
+OS_VERSION  = 22.04
+BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
 
