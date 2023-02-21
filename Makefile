@@ -46,7 +46,7 @@ else
 	endif
 endif
 
-TEST_DOCKER_COMPOSE_FILE := "docker-compose-rpm.yml"
+TEST_DOCKER_COMPOSE_FILE := "docker-compose-deb.yml"
 TEST_BUILD_DIR     := build/test
 
 PACKAGE_NAME       := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
