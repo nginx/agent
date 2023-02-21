@@ -26,28 +26,24 @@ Using your preferred method, clone the NGINX Agent repository into your developm
 Depending on the operating system distribution, it may be necessary to install the following packages in order to build NGINX Agent.
 
 Change to the NGINX Agent source directory:
-```
+```bash
 cd <path_to_development_directory>/agent
 ```
 
 Install Make:
-```
+```bash
 sudo apt install make
 ```
 
 NGINX Agent is written in Go. You may [download Go](https://go.dev/doc/install) and follow installation instructions on the same page or run:
-```
+```bash
 sudo apt install golang-go
 ```
-
-Install nFPM:
-
-nFPM is used for building NGINX Agent packages and can be installed by following the [nFPM install instructions](https://nfpm.goreleaser.com/install/)
 
 Install NGINX Agent tools and dependencies:
 
 Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. This can be done by running the following `make` command:
-```
+```bash
 make install-tools deps
 ```
 
