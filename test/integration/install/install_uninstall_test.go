@@ -122,7 +122,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	// Check uninstall output
 	if strings.HasSuffix(containerAgentPackagePath, "rpm") {
 		expectedUninstallLogMsgs["UninstallAgent"] = "Removed:\n  nginx-agent"
-		delete(expectedInstallLogMsgs, "UninstallAgentPurgingFiles")
+		delete(expectedUninstallLogMsgs, "UninstallAgentPurgingFiles")
 	}
 	for _, logMsg := range expectedUninstallLogMsgs {
 		assert.Contains(t, uninstallLog, logMsg)
