@@ -128,16 +128,16 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 func (env *EnvironmentType) GetUnixName() string {
 	var utsname unix.Utsname
 	err := unix.Uname(&utsname)
-	unixName := ""
-	if(err == nil) {
-		sysName := string(utsname.Sysname[:bytes.IndexByte(utsname.Sysname[:], 0)])
-		nodeName := string(utsname.Nodename[:bytes.IndexByte(utsname.Nodename[:], 0)])
-		release := string(utsname.Release[:bytes.IndexByte(utsname.Release[:], 0)])
-		version := string(utsname.Version[:bytes.IndexByte(utsname.Version[:], 0)])
-		machine := string(utsname.Machine[:bytes.IndexByte(utsname.Machine[:], 0)])
-		unixName = strings.Join([]string{sysName, nodeName,release, version, machine}, " ")
+	if(err != nil) {
+		log.Warnf("Unable to read Uname. Error: %v", err)
+		return ""
 	}
-	return unixName
+	sysName := string(utsname.Sysname[:bytes.IndexByte(utsname.Sysname[:], 0)])
+	nodeName := string(utsname.Nodename[:bytes.IndexByte(utsname.Nodename[:], 0)])
+	release := string(utsname.Release[:bytes.IndexByte(utsname.Release[:], 0)])
+	version := string(utsname.Version[:bytes.IndexByte(utsname.Version[:], 0)])
+	machine := string(utsname.Machine[:bytes.IndexByte(utsname.Machine[:], 0)])
+	return strings.Join([]string{sysName, nodeName,release, version, machine}, " ")
 }
 
 func (env *EnvironmentType) GetHostname() string {
