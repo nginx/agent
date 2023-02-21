@@ -263,6 +263,11 @@ NGINX Agent is written in Go. You may [download Go](https://go.dev/doc/install) 
 sudo apt install golang-go
 ```
 
+Install Protoc:
+```
+sudo apt install -y protobuf-compiler
+```
+
 Install NGINX Agent tools and dependencies:
 
 Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. This can be done by running the following `make` command:
