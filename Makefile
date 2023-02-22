@@ -15,9 +15,9 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | ubuntu           | 18.04, 20.04, 22.04        |                                                                |
 # | debian           | bullseye-slim, buster-slim |                                                                |
 # | centos           | 7                          | centos 7 (below 7.4) uses plus-pkgs.nginx.com as PACKAGES_REPO |
-# | almalinux        | 8, 9                       |                                                                |
 # | redhatenterprise | 7, 8, 9                    |                                                                |
 # | rockylinux       | 8, 9                       |                                                                |
+# | almalinux        | 8, 9                       |                                                                |
 # | alpine           | 3.13, 3.14, 3.15, 3.16     |                                                                |
 # | oraclelinux      | 7, 8                       |                                                                |
 # | suse             | sles12sp5, sle15           |                                                                |
@@ -53,7 +53,6 @@ TEST_BUILD_DIR           := build/test
 TEST_DOCKER_COMPOSE_FILE ?= "docker-compose-deb.yml"
 PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
-PACKAGE_NAME       := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 CERT_CLIENT_CA_CN  := client-ca.local
 CERT_CLIENT_INT_CN := client-int.local
 CERT_CLIENT_EE_CN  := client-ee.local
