@@ -255,6 +255,7 @@ func GetCalculationMap() map[string]string {
 		"plus.stream.upstream.peers.connect_time":            "avg",
 		"plus.stream.upstream.peers.ttfb":                    "avg",
 		"plus.stream.upstream.peers.response.time":           "avg",
+		"plus.stream.upstream.peers.response.time.count":     "sum",
 		"plus.stream.upstream.peers.response.time.max":       "avg",
 		"plus.stream.upstream.peers.response.time.median":    "avg",
 		"plus.stream.upstream.peers.response.time.pctl95":    "avg",
