@@ -64,18 +64,27 @@ jobs:
       - name: Run Component Tests
         run: make component-test
 
-  integration-test:
+  integration-tests:
+    runs-on: ubuntu-22.04
     name: Integration Tests
     strategy:
       matrix:
         container:
+        - image: "rockylinux"
+          version: "8"
+          compose-file: "docker-compose-rpm.yml"
+        - image: "rockylinux"
+          version: "9"
+          compose-file: "docker-compose-rpm.yml"
         - image: "almalinux"
           version: "8"
           compose-file: docker-compose-rpm.yml
         - image: "almalinux"
           version: "9"
           compose-file: docker-compose-rpm.yml
-    runs-on: ubuntu-22.04
+        - image: "ubuntu"
+          version: "22.04"
+          compose-file: "docker-compose-deb.yml"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -84,8 +93,8 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          BASE_IMAGE="docker.io/${{ matrix.container.image }}:${{ matrix.container.version }}" \
-            DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
+          OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
+            TEST_DOCKER_COMPOSE_FILE="${{ matrix.container.compose-file }}" \
             make integration-test
 
   performance-test:

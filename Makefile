@@ -17,18 +17,21 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | centos           | 7                          | centos 7 (below 7.4) uses plus-pkgs.nginx.com as PACKAGES_REPO |
 # | almalinux        | 8, 9                       |                                                                |
 # | redhatenterprise | 7, 8, 9                    |                                                                |
+# | rockylinux       | 8, 9                       |                                                                |
 # | alpine           | 3.13, 3.14, 3.15, 3.16     |                                                                |
 # | oraclelinux      | 7, 8                       |                                                                |
 # | suse             | sles12sp5, sle15           |                                                                |
 # | freebsd          |                            | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE:=ubuntu
-OS_VERSION:=22.04
-BASE_IMAGE="docker.io/${OS_RELEASE}:${OS_VERSION}"
-IMAGE_TAG=agent_${OS_RELEASE}_${OS_VERSION}
+OS_RELEASE  ?= ubuntu
+OS_VERSION  ?= 22.04
+BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
+IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
+
 
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
+
 
 CERTS_DIR          := ./build/certs
 PACKAGE_PREFIX     := nginx-agent
@@ -46,8 +49,9 @@ else
 	endif
 endif
 
-TEST_DOCKER_COMPOSE_FILE := "docker-compose-deb.yml"
-TEST_BUILD_DIR     := build/test
+TEST_BUILD_DIR           := build/test
+TEST_DOCKER_COMPOSE_FILE ?= "docker-compose-deb.yml"
+PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
 PACKAGE_NAME       := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 CERT_CLIENT_CA_CN  := client-ca.local

@@ -32,8 +32,5 @@ ENTRYPOINT ["/agent/entrypoint.sh"]
 FROM install-nginx as install-agent
 
 ARG PACKAGE_NAME
-ARG AGENT_CONF
 
-COPY $AGENT_CONF /agent/nginx-agent.conf
-COPY --from=install-nginx /agent/nginx-agent.conf /etc/nginx-agent/nginx-agent.conf
 RUN yum localinstall -y /agent/build/$PACKAGE_NAME.rpm

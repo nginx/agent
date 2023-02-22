@@ -95,7 +95,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	assert.LessOrEqual(t, localAgentPkg.Size(), maxFileSize)
 
-	// Install Agent and record installation time/install output
+	// Install Agent inside container and record installation time/install output
 	containerAgentPackagePath := getPackagePath(absContainerAgentPackageDir, string(osReleaseContent))
 	installTime, installLog := installAgent(t, agentContainer, containerAgentPackagePath, string(osReleaseContent))
 
@@ -122,7 +122,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	// Check uninstall output
 	if strings.HasSuffix(containerAgentPackagePath, "rpm") {
 		expectedUninstallLogMsgs["UninstallAgent"] = "Removed:\n  nginx-agent"
-		delete(expectedInstallLogMsgs, "UninstallAgentPurgingFiles")
+		delete(expectedUninstallLogMsgs, "UninstallAgentPurgingFiles")
 	}
 	for _, logMsg := range expectedUninstallLogMsgs {
 		assert.Contains(t, uninstallLog, logMsg)
