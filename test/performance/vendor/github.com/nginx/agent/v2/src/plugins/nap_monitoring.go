@@ -55,7 +55,7 @@ func NewNAPMonitoring(env core.Environment, cfg *config.Config) (*NAPMonitoring,
 		log.Warnf("NAP Monitoring report count must be between %v and %v. Defaulting to %v",
 			minReportCountDelimiter,
 			maxReportCountDelimiter,
-			config.Defaults.NAPMonitoring.ReportInterval)
+			config.Defaults.NAPMonitoring.ReportCount)
 		cfg.NAPMonitoring.ReportCount = config.Defaults.NAPMonitoring.ReportCount
 	}
 

@@ -70,14 +70,14 @@ func newSyslogServer(logger *logrus.Entry, ip string, port int) (*syslogServer, 
 	addr := fmt.Sprintf("%s:%d", ip, port)
 	err := server.ListenTCP(addr)
 	if err != nil {
-		msg := fmt.Sprintf("Error while configuring syslog server to listen on %s:\n %v", addr, err)
+		msg := fmt.Sprintf("error while configuring syslog server to listen on %s:\n %v", addr, err)
 		logger.Error(msg)
 		return nil, err
 	}
 
 	err = server.Boot()
 	if err != nil {
-		msg := fmt.Sprintf("Error while booting the syslog server at %s:\n %v ", addr, err)
+		msg := fmt.Sprintf("error while booting the syslog server at %s:\n %v ", addr, err)
 		logger.Error(msg)
 		return nil, err
 	}
