@@ -406,6 +406,7 @@ func (c *NginxPlus) locationZoneMetrics(stats, prevStats *plusclient.Stats) []*p
 func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
 	upstreamMetrics := make([]*proto.StatsEntity, 0)
 	for name, u := range stats.Upstreams {
+		httpUpstreamHeaderTimes := []float64{}
 		l := &namedMetric{namespace: c.plusNamespace, group: "http"}
 		peerStateMap := make(map[string]int)
 		prevPeersMap := createHttpPeerMap(prevStats.Upstreams[name].Peers)
@@ -460,6 +461,8 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*p
 				}
 			}
 
+			httpUpstreamHeaderTimes = append(httpUpstreamHeaderTimes, float64(peer.HeaderTime))
+
 			simpleMetrics2 := l.convertSamplesToSimpleMetrics(map[string]float64{
 				"upstream.peers.conn.active":             float64(tempPeer.Active),
 				"upstream.peers.header_time":             float64(tempPeer.HeaderTime),
@@ -500,17 +503,21 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*p
 		}
 
 		simpleMetrics := l.convertSamplesToSimpleMetrics(map[string]float64{
-			"upstream.keepalives":            float64(u.Keepalives),
-			"upstream.zombies":               float64(u.Zombies),
-			"upstream.queue.maxsize":         float64(u.Queue.MaxSize),
-			"upstream.queue.overflows":       float64(upstreamQueueOverflows),
-			"upstream.queue.size":            float64(u.Queue.Size),
-			"upstream.peers.total.up":        float64(peerStateMap[peerStateUp]),
-			"upstream.peers.total.draining":  float64(peerStateMap[peerStateDraining]),
-			"upstream.peers.total.down":      float64(peerStateMap[peerStateDown]),
-			"upstream.peers.total.unavail":   float64(peerStateMap[peerStateUnavail]),
-			"upstream.peers.total.checking":  float64(peerStateMap[peerStateChecking]),
-			"upstream.peers.total.unhealthy": float64(peerStateMap[peerStateUnhealthy]),
+			"upstream.keepalives":               float64(u.Keepalives),
+			"upstream.zombies":                  float64(u.Zombies),
+			"upstream.queue.maxsize":            float64(u.Queue.MaxSize),
+			"upstream.queue.overflows":          float64(upstreamQueueOverflows),
+			"upstream.queue.size":               float64(u.Queue.Size),
+			"upstream.peers.total.up":           float64(peerStateMap[peerStateUp]),
+			"upstream.peers.total.draining":     float64(peerStateMap[peerStateDraining]),
+			"upstream.peers.total.down":         float64(peerStateMap[peerStateDown]),
+			"upstream.peers.total.unavail":      float64(peerStateMap[peerStateUnavail]),
+			"upstream.peers.total.checking":     float64(peerStateMap[peerStateChecking]),
+			"upstream.peers.total.unhealthy":    float64(peerStateMap[peerStateUnhealthy]),
+			"upstream.peers.header_time.count":  getTimeMetrics(httpUpstreamHeaderTimes, "count"),
+			"upstream.peers.header_time.max":    getTimeMetrics(httpUpstreamHeaderTimes, "max"),
+			"upstream.peers.header_time.median": getTimeMetrics(httpUpstreamHeaderTimes, "median"),
+			"upstream.peers.header_time.pctl95": getTimeMetrics(httpUpstreamHeaderTimes, "pctl95"),
 		})
 
 		upstreamDims := c.baseDimensions.ToDimensions()
@@ -526,6 +533,7 @@ func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []
 	upstreamMetrics := make([]*proto.StatsEntity, 0)
 	for name, u := range stats.StreamUpstreams {
 		streamUpstreamResponseTimes := []float64{}
+		streamUpstreamConnTimes := []float64{}
 		l := &namedMetric{namespace: c.plusNamespace, group: "stream"}
 		peerStateMap := make(map[string]int)
 		prevPeersMap := createStreamPeerMap(prevStats.StreamUpstreams[name].Peers)
@@ -563,6 +571,7 @@ func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []
 			}
 
 			streamUpstreamResponseTimes = append(streamUpstreamResponseTimes, float64(peer.ResponseTime))
+			streamUpstreamConnTimes = append(streamUpstreamConnTimes, float64(peer.ConnectTime))
 
 			simpleMetrics2 := l.convertSamplesToSimpleMetrics(map[string]float64{
 				"upstream.peers.conn.active":             float64(tempPeer.Active),
@@ -605,6 +614,10 @@ func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []
 			"upstream.peers.response.time.max":    getTimeMetrics(streamUpstreamResponseTimes, "max"),
 			"upstream.peers.response.time.median": getTimeMetrics(streamUpstreamResponseTimes, "median"),
 			"upstream.peers.response.time.pctl95": getTimeMetrics(streamUpstreamResponseTimes, "pctl95"),
+			"upstream.peers.connect_time.count":   getTimeMetrics(streamUpstreamConnTimes, "count"),
+			"upstream.peers.connect_time.max":     getTimeMetrics(streamUpstreamConnTimes, "max"),
+			"upstream.peers.connect_time.median":  getTimeMetrics(streamUpstreamConnTimes, "median"),
+			"upstream.peers.connect_time.pctl95":  getTimeMetrics(streamUpstreamConnTimes, "pctl95"),
 		})
 
 		upstreamDims := c.baseDimensions.ToDimensions()
