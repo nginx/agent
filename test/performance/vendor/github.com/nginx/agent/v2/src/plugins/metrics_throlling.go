@@ -91,29 +91,28 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 		if r.metricsAggregation {
 			switch report := msg.Data().(type) {
 			case *proto.MetricsReport:
-				r.mu.Lock()
-				if _, ok := r.metricsCollections[report.Type]; !ok {
-					r.metricsCollections[report.Type] = &metrics.Collections{
-						Count: 0,
-						Data:  make(map[string]metrics.PerDimension),
+				if len(report.Data) > 0 {
+					r.mu.Lock()
+					if _, ok := r.metricsCollections[report.Type]; !ok {
+						r.metricsCollections[report.Type] = &metrics.Collections{
+							Count: 0,
+							Data:  make(map[string]metrics.PerDimension),
+						}
 					}
+					collection := metrics.SaveCollections(*r.metricsCollections[report.Type], report)
+					r.metricsCollections[report.Type] = &collection
+					r.mu.Unlock()
+					log.Debugf("MetricsThrottle: Metrics collection saved [Type: %d]", report.Type)
+					r.reportsReady.Store(true)
 				}
-				collection := metrics.SaveCollections(*r.metricsCollections[report.Type], report)
-				r.metricsCollections[report.Type] = &collection
-				r.mu.Unlock()
-				log.Debug("MetricsThrottle: Metrics collection saved")
-				r.reportsReady.Store(true)
 			}
 		} else {
-<<<<<<< HEAD
 			switch report := msg.Data().(type) {
 			case *proto.MetricsReport:
-				r.metricBuffer = append(r.metricBuffer, report)
+				if len(report.Data) > 0 {
+					r.metricBuffer = append(r.metricBuffer, report)
+				}
 			}
-=======
-			r.metricBuffer = append(r.metricBuffer,
-				generateMetricsReports(getAllStatsEntities(msg.Data()), false)...)
->>>>>>> Create dedicated cache and upstream metrics reports
 			log.Tracef("MetricsThrottle buffer size: %d of %d", len(r.metricBuffer), r.BulkSize)
 			if len(r.metricBuffer) >= r.BulkSize {
 				log.Info("MetricsThrottle buffer flush")
@@ -178,7 +177,6 @@ func (r *MetricsThrottle) syncAgentConfigChange() {
 	r.conf = conf
 }
 
-<<<<<<< HEAD
 func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -198,16 +196,4 @@ func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 	}
 
 	return
-=======
-func (r *MetricsThrottle) getAggregatedReports() []core.Payload {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	reports := generateMetricsReports(metrics.GenerateMetrics(r.metricsCollections), false)
-	r.metricsCollections = metrics.Collections{
-		Count: 0,
-		Data:  make(map[string]metrics.PerDimension),
-	}
-
-	return reports
->>>>>>> Create dedicated cache and upstream metrics reports
 }

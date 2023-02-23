@@ -91,23 +91,27 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 		if r.metricsAggregation {
 			switch report := msg.Data().(type) {
 			case *proto.MetricsReport:
-				r.mu.Lock()
-				if _, ok := r.metricsCollections[report.Type]; !ok {
-					r.metricsCollections[report.Type] = &metrics.Collections{
-						Count: 0,
-						Data:  make(map[string]metrics.PerDimension),
+				if len(report.Data) > 0 {
+					r.mu.Lock()
+					if _, ok := r.metricsCollections[report.Type]; !ok {
+						r.metricsCollections[report.Type] = &metrics.Collections{
+							Count: 0,
+							Data:  make(map[string]metrics.PerDimension),
+						}
 					}
+					collection := metrics.SaveCollections(*r.metricsCollections[report.Type], report)
+					r.metricsCollections[report.Type] = &collection
+					r.mu.Unlock()
+					log.Debugf("MetricsThrottle: Metrics collection saved [Type: %d]", report.Type)
+					r.reportsReady.Store(true)
 				}
-				collection := metrics.SaveCollections(*r.metricsCollections[report.Type], report)
-				r.metricsCollections[report.Type] = &collection
-				r.mu.Unlock()
-				log.Debugf("MetricsThrottle: Metrics collection saved [Type: %d]", report.Type)
-				r.reportsReady.Store(true)
 			}
 		} else {
 			switch report := msg.Data().(type) {
 			case *proto.MetricsReport:
-				r.metricBuffer = append(r.metricBuffer, report)
+				if len(report.Data) > 0 {
+					r.metricBuffer = append(r.metricBuffer, report)
+				}
 			}
 			log.Tracef("MetricsThrottle buffer size: %d of %d", len(r.metricBuffer), r.BulkSize)
 			if len(r.metricBuffer) >= r.BulkSize {

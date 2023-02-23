@@ -86,7 +86,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	m := make(chan *proto.StatsEntity)
+	m := make(chan *metrics.StatsEntityWrapper)
 	go n.Collect(ctx, &wg, m)
 
 	time.Sleep(100 * time.Millisecond)
@@ -97,7 +97,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 	// the prev stats as equal to the initial stats collected
 	// that's ok, but we should test the counter gauge computations again later
 	metricReport := <-m
-	for _, metric := range metricReport.Simplemetrics {
+	for _, metric := range metricReport.Data.Simplemetrics {
 		switch metric.Name {
 		case "nginx.workers.cpu.system":
 			assert.Equal(t, float64(0), metric.Value)
@@ -137,7 +137,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 	mockBinary.AssertNumberOfCalls(t, "GetChildProcesses", 2)
 
 	metricReport = <-m
-	for _, metric := range metricReport.Simplemetrics {
+	for _, metric := range metricReport.Data.Simplemetrics {
 		switch metric.Name {
 		case "nginx.workers.cpu.system":
 			assert.Equal(t, float64(0), metric.Value)

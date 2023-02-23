@@ -6,111 +6,36 @@ import "google/protobuf/timestamp.proto";
 import "common.proto";
 import "gogo.proto";
 
-// Represents a metric report
 message MetricsReport {
-<<<<<<< HEAD
-<<<<<<< HEAD
-  // Metric type enum  
-=======
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
-  // Metric type enum  
->>>>>>> adds updated generated files from protobuf
   enum Type {
-    // System metric type
     SYSTEM = 0;
-    // NGINX instance metric type
     INSTANCE = 1;
-    // Agent metric type
     AGENT = 2;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> adds updated generated files from protobuf
-    // Cache zone metric type
-    CACHE_ZONE = 3;
-    // Upstreams metric type
-    UPSTREAMS = 4;
-  }
-  // Provides meta information about the metrics
-  Metadata meta = 1 [(gogoproto.jsontag) = "meta" ];
-  // Type of metrics
-  Type type = 2 [(gogoproto.jsontag) = "type" ];
-  // List of stats entities
-<<<<<<< HEAD
-=======
     CACHE_ZONE = 3;
     UPSTREAMS = 4;
   }
   Metadata meta = 1 [(gogoproto.jsontag) = "meta" ];
   Type type = 2 [(gogoproto.jsontag) = "type" ];
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
->>>>>>> adds updated generated files from protobuf
   repeated StatsEntity data = 3 [(gogoproto.jsontag) = "data" ];
 }
 
 message SimpleMetric {
-<<<<<<< HEAD
-<<<<<<< HEAD
-  // Metric name
   string name = 1 [(gogoproto.jsontag) = "name" ];
-  // Metric value
-=======
-  string name = 1 [(gogoproto.jsontag) = "name" ];
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
-  // Metric name
-  string name = 1 [(gogoproto.jsontag) = "name" ];
-  // Metric value
->>>>>>> adds updated generated files from protobuf
   double value = 2 [(gogoproto.jsontag) = "value" ];
 }
 
 // Dimension defines a dimensional attribute used when classifying and categorizing data
 message Dimension {
-<<<<<<< HEAD
-<<<<<<< HEAD
-  // Dimension name
   string name = 1 [(gogoproto.jsontag) = "name" ];
-  // Dimension value
   string value = 2 [(gogoproto.jsontag) = "value" ];
 }
 
-// StatsEntity defines a stats entity which is a timestamped entry for dimensions and metrics
-=======
-=======
-  // Dimension name
->>>>>>> adds updated generated files from protobuf
-  string name = 1 [(gogoproto.jsontag) = "name" ];
-  // Dimension value
-  string value = 2 [(gogoproto.jsontag) = "value" ];
-}
-
-<<<<<<< HEAD
 // StatsEntity a timestamped entry for Dimensions and Metrics
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
-// StatsEntity defines a stats entity which is a timestamped entry for dimensions and metrics
->>>>>>> adds updated generated files from protobuf
 message StatsEntity {
-  // Timestamp defines the time of stats entity creation
   google.protobuf.Timestamp timestamp = 1;
   // DEPRECATED
   reserved 2;
   reserved "metrics";
-<<<<<<< HEAD
-<<<<<<< HEAD
-  // List of dimensions
   repeated Dimension dimensions = 3 [(gogoproto.jsontag) = "dimensions" ];
-  // List of metrics
-=======
-  repeated Dimension dimensions = 3 [(gogoproto.jsontag) = "dimensions" ];
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
-  // List of dimensions
-  repeated Dimension dimensions = 3 [(gogoproto.jsontag) = "dimensions" ];
-  // List of metrics
->>>>>>> adds updated generated files from protobuf
   repeated SimpleMetric simplemetrics = 4 [(gogoproto.jsontag) = "simplemetrics" ];
 }

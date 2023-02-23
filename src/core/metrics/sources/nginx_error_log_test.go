@@ -133,11 +133,11 @@ func TestErrorLogStats(t *testing.T) {
 			sort.SliceStable(test.expectedStats.GetSimplemetrics(), func(i, j int) bool {
 				return test.expectedStats.GetSimplemetrics()[i].Name < test.expectedStats.GetSimplemetrics()[j].Name
 			})
-			sort.SliceStable(nginxErrorLog.buf[0].GetSimplemetrics(), func(i, j int) bool {
-				return nginxErrorLog.buf[0].GetSimplemetrics()[i].Name < nginxErrorLog.buf[0].GetSimplemetrics()[j].Name
+			sort.SliceStable(nginxErrorLog.buf[0].Data.GetSimplemetrics(), func(i, j int) bool {
+				return nginxErrorLog.buf[0].Data.GetSimplemetrics()[i].Name < nginxErrorLog.buf[0].Data.GetSimplemetrics()[j].Name
 			})
 
-			assert.Equal(tt, test.expectedStats.GetSimplemetrics(), nginxErrorLog.buf[0].GetSimplemetrics())
+			assert.Equal(tt, test.expectedStats.GetSimplemetrics(), nginxErrorLog.buf[0].Data.GetSimplemetrics())
 		})
 	}
 }

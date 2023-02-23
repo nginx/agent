@@ -169,7 +169,7 @@ func TestNginxCollector_Collect(t *testing.T) {
 	ctx := context.TODO()
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	go nginxCollector.Collect(ctx, wg, make(chan<- *proto.StatsEntity))
+	go nginxCollector.Collect(ctx, wg, make(chan<- *metrics.StatsEntityWrapper))
 
 	time.Sleep(10 * time.Millisecond)
 	mockNginxSource1.AssertExpectations(t)

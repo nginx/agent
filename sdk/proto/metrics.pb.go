@@ -25,37 +25,14 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Metric type enum
 type MetricsReport_Type int32
 
 const (
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> adds updated generated files from protobuf
-	// System metric type
-	MetricsReport_SYSTEM MetricsReport_Type = 0
-	// NGINX instance metric type
-	MetricsReport_INSTANCE MetricsReport_Type = 1
-	// Agent metric type
-	MetricsReport_AGENT MetricsReport_Type = 2
-	// Cache zone metric type
-<<<<<<< HEAD
-	MetricsReport_CACHE_ZONE MetricsReport_Type = 3
-	// Upstreams metric type
-	MetricsReport_UPSTREAMS MetricsReport_Type = 4
-=======
 	MetricsReport_SYSTEM     MetricsReport_Type = 0
 	MetricsReport_INSTANCE   MetricsReport_Type = 1
 	MetricsReport_AGENT      MetricsReport_Type = 2
 	MetricsReport_CACHE_ZONE MetricsReport_Type = 3
 	MetricsReport_UPSTREAMS  MetricsReport_Type = 4
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
-	MetricsReport_CACHE_ZONE MetricsReport_Type = 3
-	// Upstreams metric type
-	MetricsReport_UPSTREAMS MetricsReport_Type = 4
->>>>>>> adds updated generated files from protobuf
 )
 
 var MetricsReport_Type_name = map[int32]string{
@@ -82,17 +59,13 @@ func (MetricsReport_Type) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_6039342a2ba47b72, []int{0, 0}
 }
 
-// Represents a metric report
 type MetricsReport struct {
-	// Provides meta information about the metrics
-	Meta *Metadata `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta"`
-	// Type of metrics
-	Type MetricsReport_Type `protobuf:"varint,2,opt,name=type,proto3,enum=f5.nginx.agent.sdk.MetricsReport_Type" json:"type"`
-	// List of stats entities
-	Data                 []*StatsEntity `protobuf:"bytes,3,rep,name=data,proto3" json:"data"`
-	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
-	XXX_unrecognized     []byte         `json:"-"`
-	XXX_sizecache        int32          `json:"-"`
+	Meta                 *Metadata          `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta"`
+	Type                 MetricsReport_Type `protobuf:"varint,2,opt,name=type,proto3,enum=f5.nginx.agent.sdk.MetricsReport_Type" json:"type"`
+	Data                 []*StatsEntity     `protobuf:"bytes,3,rep,name=data,proto3" json:"data"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
 func (m *MetricsReport) Reset()         { *m = MetricsReport{} }
@@ -150,9 +123,7 @@ func (m *MetricsReport) GetData() []*StatsEntity {
 }
 
 type SimpleMetric struct {
-	// Metric name
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
-	// Metric value
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
 	Value                float64  `protobuf:"fixed64,2,opt,name=value,proto3" json:"value"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -208,9 +179,7 @@ func (m *SimpleMetric) GetValue() float64 {
 
 // Dimension defines a dimensional attribute used when classifying and categorizing data
 type Dimension struct {
-	// Dimension name
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
-	// Dimension value
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name"`
 	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -264,25 +233,14 @@ func (m *Dimension) GetValue() string {
 	return ""
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-// StatsEntity defines a stats entity which is a timestamped entry for dimensions and metrics
-=======
 // StatsEntity a timestamped entry for Dimensions and Metrics
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
-// StatsEntity defines a stats entity which is a timestamped entry for dimensions and metrics
->>>>>>> adds updated generated files from protobuf
 type StatsEntity struct {
-	// Timestamp defines the time of stats entity creation
-	Timestamp *types.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// List of dimensions
-	Dimensions []*Dimension `protobuf:"bytes,3,rep,name=dimensions,proto3" json:"dimensions"`
-	// List of metrics
-	Simplemetrics        []*SimpleMetric `protobuf:"bytes,4,rep,name=simplemetrics,proto3" json:"simplemetrics"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
+	Timestamp            *types.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Dimensions           []*Dimension     `protobuf:"bytes,3,rep,name=dimensions,proto3" json:"dimensions"`
+	Simplemetrics        []*SimpleMetric  `protobuf:"bytes,4,rep,name=simplemetrics,proto3" json:"simplemetrics"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *StatsEntity) Reset()         { *m = StatsEntity{} }

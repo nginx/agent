@@ -182,12 +182,8 @@ func (m *Metrics) metricsGoroutine() {
 			}
 			return
 		case <-m.ticker.C:
-<<<<<<< HEAD
 			stats := m.collectStats()
 			for _, report := range metrics.GenerateMetricsReports(stats) {
-=======
-			for _, report := range generateMetricsReports(m.collectStats(), true) {
->>>>>>> Create dedicated cache and upstream metrics reports
 				m.pipeline.Process(core.NewMessage(core.MetricReport, report))
 			}
 			if m.collectorsUpdate.Load() {

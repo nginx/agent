@@ -11,7 +11,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/stretchr/testify/mock"
 )
@@ -26,7 +25,7 @@ type NginxSourceMock struct {
 	mock.Mock
 }
 
-func (m *NginxSourceMock) Collect(ctx context.Context, wg *sync.WaitGroup, statsChannel chan<- *proto.StatsEntity) {
+func (m *NginxSourceMock) Collect(ctx context.Context, wg *sync.WaitGroup, statsChannel chan<- *metrics.StatsEntityWrapper) {
 	m.Called(ctx, wg, statsChannel)
 	wg.Done()
 }
@@ -43,7 +42,7 @@ type SourceMock struct {
 	mock.Mock
 }
 
-func (m *SourceMock) Collect(ctx context.Context, wg *sync.WaitGroup, statsChannel chan<- *proto.StatsEntity) {
+func (m *SourceMock) Collect(ctx context.Context, wg *sync.WaitGroup, statsChannel chan<- *metrics.StatsEntityWrapper) {
 	m.Called(ctx, wg, statsChannel)
 	wg.Done()
 }
