@@ -1090,13 +1090,13 @@ Represents release information
 <a name="f5-nginx-agent-sdk-Dimension"></a>
 
 ### Dimension
-Dimension defines a dimensional attribute used when classifying and categorizing data
+Represents a dimension which is a dimensional attribute used when classifying and categorizing data
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| value | [string](#string) |  |  |
+| name | [string](#string) |  | Dimension name |
+| value | [string](#string) |  | Dimension value |
 
 
 
@@ -1106,14 +1106,14 @@ Dimension defines a dimensional attribute used when classifying and categorizing
 <a name="f5-nginx-agent-sdk-MetricsReport"></a>
 
 ### MetricsReport
-
+Represents a metric report
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [Metadata](#f5-nginx-agent-sdk-Metadata) |  |  |
-| type | [MetricsReport.Type](#f5-nginx-agent-sdk-MetricsReport-Type) |  |  |
-| data | [StatsEntity](#f5-nginx-agent-sdk-StatsEntity) | repeated |  |
+| meta | [Metadata](#f5-nginx-agent-sdk-Metadata) |  | Provides meta information about the metrics |
+| type | [MetricsReport.Type](#f5-nginx-agent-sdk-MetricsReport-Type) |  | Type of metrics |
+| data | [StatsEntity](#f5-nginx-agent-sdk-StatsEntity) | repeated | List of stats entities |
 
 
 
@@ -1123,13 +1123,13 @@ Dimension defines a dimensional attribute used when classifying and categorizing
 <a name="f5-nginx-agent-sdk-SimpleMetric"></a>
 
 ### SimpleMetric
-
+Represents a simple metric
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| value | [double](#double) |  |  |
+| name | [string](#string) |  | Metric name |
+| value | [double](#double) |  | Metric value |
 
 
 
@@ -1139,14 +1139,14 @@ Dimension defines a dimensional attribute used when classifying and categorizing
 <a name="f5-nginx-agent-sdk-StatsEntity"></a>
 
 ### StatsEntity
-StatsEntity a timestamped entry for Dimensions and Metrics
+Represents a stats entity which is a timestamped entry for dimensions and metrics
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
-| dimensions | [Dimension](#f5-nginx-agent-sdk-Dimension) | repeated |  |
-| simplemetrics | [SimpleMetric](#f5-nginx-agent-sdk-SimpleMetric) | repeated |  |
+| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Timestamp defines the time of stats entity creation |
+| dimensions | [Dimension](#f5-nginx-agent-sdk-Dimension) | repeated | List of dimensions |
+| simplemetrics | [SimpleMetric](#f5-nginx-agent-sdk-SimpleMetric) | repeated | List of metrics |
 
 
 
@@ -1158,10 +1158,11 @@ StatsEntity a timestamped entry for Dimensions and Metrics
 <a name="f5-nginx-agent-sdk-MetricsReport-Type"></a>
 
 ### MetricsReport.Type
-
+Metric type enum
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1175,11 +1176,14 @@ StatsEntity a timestamped entry for Dimensions and Metrics
 =======
 >>>>>>> adds updated generated files from protobuf
 >>>>>>> adds updated generated files from protobuf
+=======
+>>>>>>> feat: restoring metrics.proto comments
 | SYSTEM | 0 | System metric type |
 | INSTANCE | 1 | NGINX instance metric type |
 | AGENT | 2 | Agent metric type |
 | CACHE_ZONE | 3 | Cache zone metric type |
 | UPSTREAMS | 4 | Upstreams metric type |
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1209,6 +1213,8 @@ StatsEntity a timestamped entry for Dimensions and Metrics
 >>>>>>> adds updated generated files from protobuf
 =======
 >>>>>>> feat: fixed tests and rebased with nginx/agent main
+=======
+>>>>>>> feat: restoring metrics.proto comments
 
 
  
