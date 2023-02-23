@@ -130,25 +130,29 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 =======
 			switch report := msg.Data().(type) {
 			case *proto.MetricsReport:
-				r.mu.Lock()
-				if _, ok := r.metricsCollections[report.Type]; !ok {
-					r.metricsCollections[report.Type] = &metrics.Collections{
-						Count: 0,
-						Data:  make(map[string]metrics.PerDimension),
+				if len(report.Data) > 0 {
+					r.mu.Lock()
+					if _, ok := r.metricsCollections[report.Type]; !ok {
+						r.metricsCollections[report.Type] = &metrics.Collections{
+							Count: 0,
+							Data:  make(map[string]metrics.PerDimension),
+						}
 					}
+					collection := metrics.SaveCollections(*r.metricsCollections[report.Type], report)
+					r.metricsCollections[report.Type] = &collection
+					r.mu.Unlock()
+					log.Debugf("MetricsThrottle: Metrics collection saved [Type: %d]", report.Type)
+					r.reportsReady.Store(true)
 				}
-				collection := metrics.SaveCollections(*r.metricsCollections[report.Type], report)
-				r.metricsCollections[report.Type] = &collection
-				r.mu.Unlock()
-				log.Debug("MetricsThrottle: Metrics collection saved")
-				r.reportsReady.Store(true)
 			}
 		} else {
-<<<<<<< HEAD
 			switch report := msg.Data().(type) {
 			case *proto.MetricsReport:
-				r.metricBuffer = append(r.metricBuffer, report)
+				if len(report.Data) > 0 {
+					r.metricBuffer = append(r.metricBuffer, report)
+				}
 			}
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> using StatsEntityWarpper in place of StatsEntity
 =======
@@ -157,6 +161,8 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 				generateMetricsReports(getAllStatsEntities(msg.Data()), false)...)
 >>>>>>> Create dedicated cache and upstream metrics reports
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+>>>>>>> feat: fixed tests and rebased with nginx/agent main
 			log.Tracef("MetricsThrottle buffer size: %d of %d", len(r.metricBuffer), r.BulkSize)
 			if len(r.metricBuffer) >= r.BulkSize {
 				log.Info("MetricsThrottle buffer flush")
@@ -224,6 +230,7 @@ func (r *MetricsThrottle) syncAgentConfigChange() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -248,6 +255,8 @@ func (r *MetricsThrottle) getAggregatedReports() []core.Payload {
 =======
 =======
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+>>>>>>> feat: fixed tests and rebased with nginx/agent main
 func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 >>>>>>> using StatsEntityWarpper in place of StatsEntity
 	r.mu.Lock()
@@ -272,6 +281,7 @@ func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 >>>>>>> Create dedicated cache and upstream metrics reports
 =======
 	return
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> using StatsEntityWarpper in place of StatsEntity
 =======
@@ -288,4 +298,6 @@ func (r *MetricsThrottle) getAggregatedReports() []core.Payload {
 	return reports
 >>>>>>> Create dedicated cache and upstream metrics reports
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+>>>>>>> feat: fixed tests and rebased with nginx/agent main
 }

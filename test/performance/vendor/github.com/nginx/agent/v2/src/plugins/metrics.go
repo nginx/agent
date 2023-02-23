@@ -185,6 +185,7 @@ func (m *Metrics) metricsGoroutine() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			stats := m.collectStats()
 			for _, reportBundle := range metrics.GenerateMetricsReports(stats) {
 				m.pipeline.Process(core.NewMessage(core.MetricReport, reportBundle))
@@ -201,6 +202,10 @@ func (m *Metrics) metricsGoroutine() {
 			for _, report := range generateMetricsReports(m.collectStats(), true) {
 >>>>>>> Create dedicated cache and upstream metrics reports
 >>>>>>> Create dedicated cache and upstream metrics reports
+=======
+			stats := m.collectStats()
+			for _, report := range metrics.GenerateMetricsReports(stats) {
+>>>>>>> feat: fixed tests and rebased with nginx/agent main
 				m.pipeline.Process(core.NewMessage(core.MetricReport, report))
 >>>>>>> Create dedicated cache and upstream metrics reports
 			}
