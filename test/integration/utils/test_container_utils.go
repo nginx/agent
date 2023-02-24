@@ -39,7 +39,7 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 	return testContainer
 }
 
-// SetupTestContainerWithAgent sets up a container with nginx installed
+// SetupTestContainerWithoutAgent sets up a container with nginx installed
 func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContainer {
 	ctx := context.Background()
 	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
@@ -75,4 +75,6 @@ func TestAgentHasNoErrorLogs(t *testing.T, agentContainer *testcontainers.Docker
 
 	assert.NotEmpty(t, agentLogContent, "agent log file empty")
 	assert.NotContains(t, string(agentLogContent), "level=error", "agent log file contains logs at error level")
+	assert.NotContains(t, string(agentLogContent), "level=panic", "agent log file contains logs at panic level")
+	assert.NotContains(t, string(agentLogContent), "level=fatal", "agent log file contains logs at fatal level")
 }
