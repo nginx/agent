@@ -561,19 +561,64 @@ func diskPartitions() (partitions []*proto.DiskPartition) {
 }
 
 func releaseInfo() (release *proto.ReleaseInfo) {
-	hostInfo, err := host.Info()
+	const osReleaseFile =  "/etc/os-release"
+	osRelease, err := getOsRelease(osReleaseFile)
 	if err != nil {
-		log.Errorf("Could not read release information for host: %v", err)
-		return &proto.ReleaseInfo{}
+		hostInfo, err := host.Info()
+		if err != nil {
+			log.Errorf("Could not read release information for host: %v", err)
+			return &proto.ReleaseInfo{}
+		}
+
+		return &proto.ReleaseInfo{
+			VersionId: hostInfo.PlatformVersion,
+			Version:   hostInfo.KernelVersion,
+			Codename:  hostInfo.OS,
+			Name:      hostInfo.PlatformFamily,
+			Id:        hostInfo.Platform,
+		}
+	}
+	return osRelease
+}
+
+// getOsRelease reads osReleaseFile and returns release information for host.
+// If os.Stat(osReleaseFilePath) does not find file, or
+// ioutil.ReadFile(osReleaseFilePath) fails to read file, an error occurs.
+func getOsRelease(osReleaseFile string) (release *proto.ReleaseInfo, err error) {
+	_ , osReleaseError := os.Stat(osReleaseFile)
+	if os.IsNotExist(osReleaseError) {
+		log.Errorf("Could not find path for os-release file on the host")
+		return &proto.ReleaseInfo{}, errors.New("unable to find " + osReleaseFile)
+	}
+
+	osReleaseInfoMap := map[string]string{}
+
+	data, err := ioutil.ReadFile(osReleaseFile)
+	if err != nil {
+		log.Errorf("Could not read os-release file on the host")
+		return &proto.ReleaseInfo{}, err
+	}
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		field := strings.Split(line, "=")
+		if len(field) < 2 {
+			continue
+		}
+		osReleaseInfoMap[field[0]] = strings.Trim(field[1], "\"")
+	}
+
+	if _, ok := osReleaseInfoMap["NAME"]; !ok {
+		osReleaseInfoMap["NAME"] = "unix"
 	}
 
 	return &proto.ReleaseInfo{
-		VersionId: hostInfo.PlatformVersion,
-		Version:   hostInfo.KernelVersion,
-		Codename:  hostInfo.OS,
-		Name:      hostInfo.PlatformFamily,
-		Id:        hostInfo.Platform,
-	}
+		VersionId: osReleaseInfoMap["VERSION_ID"],
+		Version:   osReleaseInfoMap["VERSION"],
+		Codename:  osReleaseInfoMap["VERSION_CODENAME"],
+		Name:      osReleaseInfoMap["NAME"],
+		Id:        osReleaseInfoMap["ID"],
+	}, nil
 }
 
 func (env *EnvironmentType) networks() (res *proto.Network) {
