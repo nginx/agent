@@ -81,7 +81,7 @@ NGINX Agent allows a gRPC connected control system to register a listener for a 
 NGINX Agent interfaces directly with an NGINX server process installed on the same system. If you don't have it already, follow these steps to install [NGINX Open Source](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) or [NGINX Plus](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-plus/). Once installed, ensure the NGINX instance is running.
 
 ## Installing NGINX Agent from Package Files
-To install NGINX Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download a package supported by your OS distribution and CPU architecture.
+To install NGINX Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download the latest package supported by your OS distribution and CPU architecture.
 
 Use your system's package manager to install the package. Some examples:
 
