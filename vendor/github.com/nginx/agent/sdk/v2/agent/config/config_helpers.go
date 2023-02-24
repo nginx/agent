@@ -34,7 +34,7 @@ const (
 	ExtensionsKey                            = "extensions"
 	AdvancedMetricsExtensionPlugin           = "advanced-metrics"
 	NginxAppProtectExtensionPlugin           = "nginx-app-protect"
-	NginxAppProtectMonitoringExtensionPlugin = "nginx-app-protect-monitoring"
+	NginxAppProtectMonitoringExtensionPlugin = "nap-monitoring"
 
 	// Configuration Keys
 	AdvancedMetricsExtensionPluginConfigKey           = "advanced_metrics"

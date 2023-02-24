@@ -7,10 +7,15 @@
 
 package config
 
-const (
-	KeyDelimiter = "_"
+import (
+	"github.com/mitchellh/mapstructure"
+)
 
-	// viper keys used in config
+const (
+	DefaultPluginSize = 100
+	KeyDelimiter      = "_"
+
+	// Features
 	FeaturesKey             = "features"
 	FeatureRegistration     = FeaturesKey + KeyDelimiter + "registration"
 	FeatureNginxConfig      = FeaturesKey + KeyDelimiter + "nginx-config"
@@ -24,6 +29,17 @@ const (
 	FeatureFileWatcher      = FeaturesKey + KeyDelimiter + "file-watcher"
 	FeatureActivityEvents   = FeaturesKey + KeyDelimiter + "activity-events"
 	FeatureAgentAPI         = FeaturesKey + KeyDelimiter + "agent-api"
+
+	// Extensions
+	ExtensionsKey                            = "extensions"
+	AdvancedMetricsExtensionPlugin           = "advanced-metrics"
+	NginxAppProtectExtensionPlugin           = "nginx-app-protect"
+	NginxAppProtectMonitoringExtensionPlugin = "nap-monitoring"
+
+	// Configuration Keys
+	AdvancedMetricsExtensionPluginConfigKey           = "advanced_metrics"
+	NginxAppProtectExtensionPluginConfigKey           = "nginx_app_protect"
+	NginxAppProtectMonitoringExtensionPluginConfigKey = "nap_monitoring"
 )
 
 func GetDefaultFeatures() []string {
@@ -41,4 +57,24 @@ func GetDefaultFeatures() []string {
 		FeatureActivityEvents,
 		FeatureAgentAPI,
 	}
+}
+
+func DecodeConfig[T interface{}](input interface{}) (output T, err error) {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		WeaklyTypedInput: true,
+		DecodeHook:       mapstructure.ComposeDecodeHookFunc(mapstructure.StringToTimeDurationHookFunc()),
+		Result:           &output,
+	})
+
+	if err != nil {
+		return output, err
+	}
+
+	err = decoder.Decode(input)
+
+	if err != nil {
+		return output, err
+	}
+
+	return output, nil
 }

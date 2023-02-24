@@ -229,8 +229,6 @@ func (m *AdvancedMetrics) Init(pipeline core.MessagePipeInterface) {
 		),
 	)
 
-	log.Info("DataplaneSoftwareDetailsUpdated sent")
-
 	go m.run()
 }
 
