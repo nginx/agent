@@ -418,12 +418,12 @@ func TestProcess_metricReport(t *testing.T) {
 	agentAPI := NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
 
 	// Check that latest metric report isn't set
-	assert.NotEqual(t, metricReport, agentAPI.exporter.GetLatestMetricReport())
+	assert.NotEqual(t, metricReport, agentAPI.exporter.GetLatestMetricReports()[0])
 
 	agentAPI.Process(core.NewMessage(core.MetricReport, metricReport))
 
 	// Check that latest metric report matches the report that was processed
-	assert.Equal(t, metricReport, agentAPI.exporter.GetLatestMetricReport())
+	assert.Equal(t, metricReport, agentAPI.exporter.GetLatestMetricReports()[0])
 }
 
 func TestMtls_forApi(t *testing.T) {

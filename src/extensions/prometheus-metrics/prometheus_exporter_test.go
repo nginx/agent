@@ -14,11 +14,11 @@ func TestExporter(t *testing.T) {
 
 	exporter := NewExporter(metricReport1)
 
-	assert.Equal(t, metricReport1, exporter.GetLatestMetricReport())
+	assert.Equal(t, metricReport1, exporter.GetLatestMetricReports()[0])
 
 	exporter.SetLatestMetricReport(metricReport2)
 
-	assert.Equal(t, metricReport2, exporter.GetLatestMetricReport())
+	assert.Equal(t, metricReport2, exporter.GetLatestMetricReports()[0])
 }
 
 func TestExporter_convertMetricNameToPrometheusFormat(t *testing.T) {
