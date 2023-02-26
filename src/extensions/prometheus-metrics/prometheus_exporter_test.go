@@ -1,6 +1,7 @@
 package prometheus_metrics
 
 import (
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -16,7 +17,7 @@ func TestExporter(t *testing.T) {
 
 	assert.Equal(t, metricReport1, exporter.GetLatestMetricReports()[0])
 
-	exporter.SetLatestMetricReport(metricReport2)
+	exporter.SetLatestMetricReport(&metrics.MetricsReportBundle{Data: []*proto.MetricsReport{metricReport2}})
 
 	assert.Equal(t, metricReport2, exporter.GetLatestMetricReports()[0])
 }

@@ -183,8 +183,8 @@ func (m *Metrics) metricsGoroutine() {
 			return
 		case <-m.ticker.C:
 			stats := m.collectStats()
-			for _, report := range metrics.GenerateMetricsReports(stats) {
-				m.pipeline.Process(core.NewMessage(core.MetricReport, report))
+			for _, reportBundle := range metrics.GenerateMetricsReports(stats) {
+				m.pipeline.Process(core.NewMessage(core.MetricReport, reportBundle))
 			}
 			if m.collectorsUpdate.Load() {
 				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)

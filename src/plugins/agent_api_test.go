@@ -14,6 +14,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -414,13 +415,14 @@ func TestProcess_metricReport(t *testing.T) {
 	mockNginxBinary := tutils.NewMockNginxBinary()
 
 	metricReport := &proto.MetricsReport{Meta: &proto.Metadata{MessageId: "123"}}
+	metricReportBundle := &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{metricReport}}
 
 	agentAPI := NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
 
 	// Check that latest metric report isn't set
 	assert.NotEqual(t, metricReport, agentAPI.exporter.GetLatestMetricReports()[0])
 
-	agentAPI.Process(core.NewMessage(core.MetricReport, metricReport))
+	agentAPI.Process(core.NewMessage(core.MetricReport, metricReportBundle))
 
 	// Check that latest metric report matches the report that was processed
 	assert.Equal(t, metricReport, agentAPI.exporter.GetLatestMetricReports()[0])

@@ -3,6 +3,7 @@ package component
 import (
 	"context"
 	"fmt"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"net/http"
 	"strconv"
 	"strings"
@@ -135,7 +136,7 @@ func TestMetrics(t *testing.T) {
 
 	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
 	agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
-	agentAPI.Process(core.NewMessage(core.MetricReport, &proto.MetricsReport{
+	agentAPI.Process(core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{
 		Meta: &proto.Metadata{
 			MessageId: "123",
 		},
@@ -163,7 +164,7 @@ func TestMetrics(t *testing.T) {
 				},
 			},
 		},
-	}))
+	}}}))
 
 	client := resty.New()
 

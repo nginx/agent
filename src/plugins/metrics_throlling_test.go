@@ -9,6 +9,7 @@ package plugins
 
 import (
 	"context"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -30,7 +31,7 @@ func TestMetricsThrottle_Process(t *testing.T) {
 		{
 			name: "not enough metrics",
 			msgs: []*core.Message{
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
+				core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{}}}),
 			},
 			msgTopics: []string{
 				core.MetricReport,
@@ -40,9 +41,9 @@ func TestMetricsThrottle_Process(t *testing.T) {
 		{
 			name: "flush buffer of metrics streaming - nonempty reports",
 			msgs: []*core.Message{
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{Data: []*proto.StatsEntity{&proto.StatsEntity{}}}),
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{Data: []*proto.StatsEntity{&proto.StatsEntity{}}}),
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{Data: []*proto.StatsEntity{&proto.StatsEntity{}}}),
+				core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{Data: []*proto.StatsEntity{&proto.StatsEntity{}}}}}),
+				core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{Data: []*proto.StatsEntity{&proto.StatsEntity{}}}}}),
+				core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{Data: []*proto.StatsEntity{&proto.StatsEntity{}}}}}),
 			},
 			msgTopics: []string{
 				core.MetricReport,
@@ -66,9 +67,9 @@ func TestMetricsThrottle_Process(t *testing.T) {
 		{
 			name: "flush buffer of metrics streaming - empty reports",
 			msgs: []*core.Message{
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
+				core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{}}}),
+				core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{}}}),
+				core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{}}}),
 			},
 			msgTopics: []string{
 				core.MetricReport,
@@ -89,9 +90,9 @@ func TestMetricsThrottle_Process(t *testing.T) {
 		{
 			name: "flush buffer of metrics",
 			msgs: []*core.Message{
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
-				core.NewMessage(core.MetricReport, &proto.MetricsReport{}),
+				core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{}}}),
+				core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{}}}),
+				core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{}}}),
 			},
 			msgTopics: []string{
 				core.MetricReport,
