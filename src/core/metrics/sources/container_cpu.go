@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	ContainerCpuMetricsWarning = "Unable to collect %v.%v metrics, %v"
+	ContainerCpuMetricsWarning = "Unable to collect %s.%s metrics, %v"
 
 	CpuCoresMetricName                = "cores"
 	CpuPeriodMetricName               = "period"
