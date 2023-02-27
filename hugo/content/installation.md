@@ -16,9 +16,9 @@ NGINX Agent interfaces directly with an NGINX server process installed on the sa
 
 ## Install Agent from Package Files
 
-To install NGINX Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download `nginx-agent.tar.gz`. Create a new subdirectory and extract the archive into it. Change into the subdirectory matching the package manager format appropriate for your operating system distribution.
+To install NGINX Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download the latest package supported by your OS distribution and CPU architecture.
 
-Depending on OS distribution and CPU architecture type, use your system's package manager to install the package. Some examples:
+Use your system's package manager to install the package. Some examples:
 
 - Debian, Ubuntu, and other distributions using the `dpkg` package manager.
 
@@ -47,7 +47,7 @@ Depending on OS distribution and CPU architecture type, use your system's packag
 - FreeBSD
  
   ```
-  sudo pkg add nginx-agent-<agent-version>
+  sudo pkg add nginx-agent-<agent-version>.pkg
   ```
 
 ## Start and Enable Start on Boot
