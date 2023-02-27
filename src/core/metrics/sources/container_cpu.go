@@ -55,14 +55,14 @@ func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 	if c.isCgroupV2 {
 		cpuMax, err := cgroup.ReadSingleValueCgroupFile(path.Join(c.basePath, cgroup.V2CpuMaxFile))
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 		cpu := strings.Split(cpuMax, " ")
 
 		cpuPeriod, err := strconv.ParseFloat(cpu[1], 64)
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
@@ -77,7 +77,7 @@ func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 		} else {
 			cpuQuota, err = strconv.ParseFloat(cpu[0], 64)
 			if err != nil {
-				LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+				logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 				return
 			}
 
@@ -86,7 +86,7 @@ func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 
 		cpuWeight, err := cgroup.ReadIntegerValueCgroupFile(path.Join(c.basePath, cgroup.V2CpuWeightFile))
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
@@ -96,7 +96,7 @@ func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 
 		setCores, err := getCPUSetCores(path.Join(c.basePath, cgroup.V2CpusetCpusFile))
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
@@ -111,7 +111,7 @@ func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 			cgroup.V2ThrottlingPeriodsKey,
 		)
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
@@ -127,25 +127,25 @@ func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 	} else {
 		cpuPeriodString, err := cgroup.ReadSingleValueCgroupFile(path.Join(c.basePath, cgroup.V1CpuPeriodFile))
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
 		cpuPeriod, err := strconv.ParseFloat(cpuPeriodString, 64)
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
 		cpuQuotaString, err := cgroup.ReadSingleValueCgroupFile(path.Join(c.basePath, cgroup.V1CpuQuotaFile))
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
 		cpuQuota, err := strconv.ParseFloat(cpuQuotaString, 64)
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
@@ -162,13 +162,13 @@ func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 
 		cpuShares, err := cgroup.ReadIntegerValueCgroupFile(path.Join(c.basePath, cgroup.V1CpuSharesFile))
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
 		setCores, err := getCPUSetCores(path.Join(c.basePath, cgroup.V1CpusetCpusFile))
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
@@ -183,7 +183,7 @@ func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 			cgroup.V1ThrottlingPeriodsKey,
 		)
 		if err != nil {
-			LogMetricError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
+			logMetricCollectionError(fmt.Sprintf(ContainerCpuMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 

@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"os"
 	"sync"
@@ -38,9 +39,9 @@ func NewSwapSource(namespace string, env core.Environment) *Swap {
 	_, err := statFunc()
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {
-			log.Warnf("Unable to collect Swap metrics because the file %v was not found", e.Path)
+			logMetricCollectionError(fmt.Sprintf("Unable to collect Swap metrics because the file %v was not found", e.Path))
 		}
-		log.Warnf("Unable to collect Swap metrics: %v", err)
+		logMetricCollectionError(fmt.Sprintf("Unable to collect Swap metrics, %v", err))
 	}
 
 	return &Swap{&namedMetric{namespace, "swap"}, statFunc}
@@ -51,10 +52,10 @@ func (c *Swap) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 	swapStats, err := c.statFunc()
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {
-			log.Debugf("Unable to collect Swap metrics because the file %v was not found", e.Path)
+			logMetricCollectionError(fmt.Sprintf("Unable to collect Swap metrics because the file %v was not found", e.Path))
 			return
 		}
-		log.Debugf("Unable to collect Swap metrics: %v", err)
+		logMetricCollectionError(fmt.Sprintf("Unable to collect Swap metrics, %v", err))
 		return
 	}
 

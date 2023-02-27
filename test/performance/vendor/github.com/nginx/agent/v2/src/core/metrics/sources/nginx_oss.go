@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -37,14 +38,14 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 	c.init.Do(func() {
 		cl, err := client.NewNginxClient(&http.Client{}, c.stubStatus)
 		if err != nil {
-			log.Errorf("Failed to create oss metrics client: %v", err)
+			logMetricCollectionError(fmt.Sprintf("Failed to create oss metrics client, %v", err))
 			c.prevStats = nil
 			return
 		}
 
 		c.prevStats, err = cl.GetStubStats()
 		if err != nil {
-			log.Errorf("Failed to retrieve oss metrics: %v", err)
+			logMetricCollectionError(fmt.Sprintf("Failed to retrieve oss metrics, %v", err))
 			c.prevStats = nil
 			return
 		}
@@ -52,14 +53,14 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 
 	cl, err := client.NewNginxClient(&http.Client{}, c.stubStatus)
 	if err != nil {
-		log.Errorf("Failed to create oss metrics client: %v", err)
+		logMetricCollectionError(fmt.Sprintf("Failed to create oss metrics client, %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
 
 	stats, err := cl.GetStubStats()
 	if err != nil {
-		log.Errorf("Failed to retrieve oss metrics: %v", err)
+		logMetricCollectionError(fmt.Sprintf("Failed to retrieve oss metrics, %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}

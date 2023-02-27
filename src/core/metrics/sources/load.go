@@ -9,12 +9,12 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/shirou/gopsutil/v3/load"
-	log "github.com/sirupsen/logrus"
 )
 
 type Load struct {
@@ -30,7 +30,7 @@ func (c *Load) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 	defer wg.Done()
 	loadStats, err := c.avgStatsFunc()
 	if err != nil {
-		log.Errorf("Failed to collect Load metrics: %v", err)
+		logMetricCollectionError(fmt.Sprintf("Failed to collect Load metrics, %v", err))
 		return
 	}
 

@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -75,7 +76,7 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 
 		if err != nil {
 			// linux impl returns zero length without error
-			log.Errorf("Failed to get cgroup CPU metrics %v", err)
+			logMetricCollectionError(fmt.Sprintf("Failed to get cgroup CPU metrics, %v", err))
 			return
 		}
 
@@ -90,12 +91,12 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 
 		if err != nil {
 			// linux impl returns zero length without error
-			log.Warnf("Error occurred getting CPU metrics, %v", err)
+			logMetricCollectionError(fmt.Sprintf("Error occurred getting CPU metrics, %v", err))
 			return
 		}
 
 		if len(timesArr) != 1 {
-			log.Warn("Unexpected CPU metrics values")
+			logMetricCollectionError("Unexpected CPU metrics values")
 			return
 		}
 

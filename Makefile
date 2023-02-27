@@ -21,10 +21,10 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | suse             | sles12sp5, sle15           |                                                                |
 # | freebsd          |                            | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE:=ubuntu
-OS_VERSION:=22.04
-BASE_IMAGE="docker.io/${OS_RELEASE}:${OS_VERSION}"
-IMAGE_TAG=agent_${OS_RELEASE}_${OS_VERSION}
+OS_RELEASE  ?= ubuntu
+OS_VERSION  ?= 22.04
+BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
+IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
@@ -45,8 +45,9 @@ else
 	endif
 endif
 
-TEST_BUILD_DIR     := build/test
-PACKAGE_NAME       := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
+TEST_BUILD_DIR           := build/test
+TEST_DOCKER_COMPOSE_FILE ?= "docker-compose-deb.yml"
+PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
 CERT_CLIENT_CA_CN  := client-ca.local
 CERT_CLIENT_INT_CN := client-int.local
@@ -188,9 +189,9 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
-integration-test: local-deb-package
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test -v ./test/integration/install
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test -v ./test/integration/api
+integration-test: local-deb-package local-rpm-package
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=$(TEST_DOCKER_COMPOSE_FILE) go test -v ./test/integration/install
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=${TEST_DOCKER_COMPOSE_FILE} go test -v ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go

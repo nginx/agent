@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -52,7 +53,7 @@ func (c *NginxWorker) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- 
 		for pid, children := range childProcs {
 			c.prevStats[pid], err = c.cl.GetWorkerStats(children)
 			if err != nil {
-				log.Errorf("Failed to retrieve nginx process metrics: %v", err)
+				logMetricCollectionError(fmt.Sprintf("Failed to retrieve nginx process metrics, %v", err))
 				c.prevStats[pid] = nil
 				return
 			}
@@ -62,7 +63,7 @@ func (c *NginxWorker) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- 
 	for pid, children := range childProcs {
 		stats, err := c.cl.GetWorkerStats(children)
 		if err != nil {
-			log.Errorf("Failed to retrieve nginx process metrics: %v", err)
+			logMetricCollectionError(fmt.Sprintf("Failed to retrieve nginx process metrics, %v", err))
 			return
 		}
 
@@ -190,13 +191,13 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 
 		pidAsInt, err := strconv.Atoi(nginxDetails.ProcessId)
 		if err != nil {
-			log.Debugf("failed to convert %s to int: %v", nginxDetails.ProcessId, err)
+			logMetricCollectionError(fmt.Sprintf("Failed to convert %s to int: %v", nginxDetails.ProcessId, err))
 			continue
 		}
 
 		proc, err := ps.NewProcess(int32(pidAsInt))
 		if err != nil {
-			log.Debugf("failed to retrieve process from pid %d: %v", pidAsInt, err)
+			logMetricCollectionError(fmt.Sprintf("Failed to retrieve process from pid %d: %v", pidAsInt, err))
 			continue
 		}
 
@@ -204,26 +205,26 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 			usr = usr + times.User
 			sys = sys + times.System
 		} else {
-			log.Debug("unable to get CPU times metrics")
+			logMetricCollectionError(fmt.Sprintf("Unable to get CPU times metrics, %v", err))
 		}
 
 		if memstat, err := proc.MemoryInfo(); err == nil {
 			memRss += float64(memstat.RSS)
 			memVms += float64(memstat.VMS)
 		} else {
-			log.Debug("unable to get memory info metrics")
+			logMetricCollectionError(fmt.Sprintf("Unable to get memory info metrics, %v", err))
 		}
 
 		if mempct, err := proc.MemoryPercent(); err == nil {
 			memPct += float64(mempct)
 		} else {
-			log.Debug("unable to get memory percentage metrics")
+			logMetricCollectionError(fmt.Sprintf("Unable to get memory percentage metrics, %v", err))
 		}
 
 		if fd, err := proc.NumFDs(); err == nil {
 			fdSum = fdSum + float64(fd)
 		} else {
-			log.Debug("unable to get number of file descriptors used metrics")
+			logMetricCollectionError(fmt.Sprintf("Unable to get number of file descriptors used metrics, %v", err))
 		}
 
 		if rlimit, err := proc.Rlimit(); err == nil {
@@ -235,14 +236,14 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 			}
 			stats.Workers.RlimitNofile = float64(rlimitMax)
 		} else {
-			log.Debug("unable to get resource limit metrics")
+			logMetricCollectionError(fmt.Sprintf("Unable to get resource limit metrics, %v", err))
 		}
 
 		if ioc, err := proc.IOCounters(); err == nil {
 			kbsr += float64(ioc.ReadBytes / 1000)
 			kbsw += float64(ioc.WriteBytes / 1000)
 		} else {
-			log.Debug("unable to get io counter metrics")
+			logMetricCollectionError(fmt.Sprintf("Unable to get io counter metrics, %v", err))
 		}
 	}
 

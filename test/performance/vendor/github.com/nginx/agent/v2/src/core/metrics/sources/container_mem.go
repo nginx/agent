@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"strconv"
 	"strings"
@@ -47,7 +48,7 @@ func (c *ContainerMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m cha
 	if c.isCgroupV2 {
 		cpuThrottlingStats, err := getMemOOMStats(path.Join(c.basePath, cgroup.V2MemEventsFile), cgroup.V2OutOfMemoryKey, cgroup.V2OutOfMemoryKillKey)
 		if err != nil {
-			log.Warnf(ContainerMemoryMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err)
+			logMetricCollectionError(fmt.Sprintf(ContainerMemoryMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
@@ -55,7 +56,7 @@ func (c *ContainerMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m cha
 	} else {
 		cpuThrottlingStats, err := getMemOOMStats(path.Join(c.basePath, cgroup.V1OutOfMemoryControlFile), cgroup.V1OutOfMemoryKey, cgroup.V1OutOfMemoryKillKey)
 		if err != nil {
-			log.Warnf(ContainerMemoryMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err)
+			logMetricCollectionError(fmt.Sprintf(ContainerMemoryMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 

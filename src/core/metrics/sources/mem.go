@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 
@@ -41,10 +42,10 @@ func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 	memstats, err := c.statFunc()
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {
-			log.Warnf("Unable to collect VirtualMemory metrics because the file %v was not found", e.Path)
+			logMetricCollectionError(fmt.Sprintf("Unable to collect VirtualMemory metrics because the file %v was not found", e.Path))
 			return
 		}
-		log.Errorf("Failed to collect VirtualMemory metrics: %v", err)
+		logMetricCollectionError(fmt.Sprintf("Failed to collect VirtualMemory metrics, %v", err))
 		return
 	}
 

@@ -9,12 +9,12 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/shirou/gopsutil/v3/disk"
-	log "github.com/sirupsen/logrus"
 )
 
 const MOUNT_POINT = "mount_point"
@@ -38,7 +38,7 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 		usage, err := disk.Usage(part.Mountpoint)
 
 		if err != nil {
-			log.Errorf("Failed to get disk metrics %v", err)
+			logMetricCollectionError(fmt.Sprintf("Failed to get disk metrics, %v", err))
 			continue
 		}
 
