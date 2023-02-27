@@ -24,7 +24,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 22.04
-BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
+BASE_IMAGE  = "${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
 
