@@ -98,7 +98,7 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 			DisplayName:         hostInformation.Hostname,
 			OsType:              hostInformation.OS,
 			Uuid:                env.GetSystemUUID(),
-			Uname:               env.GetUnixName(),
+			Uname:               getUnixName(),
 			Partitons:           diskPartitions(),
 			Network:             env.networks(),
 			Processor:           processors(hostInformation.KernelArch),
@@ -113,19 +113,22 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 	return env.host
 }
 
-/*  Returns string containing
-	   sysname	 Name of the operating system implementation.
-	   nodename	 Network name of this machine.
-	   release	 Release level of the operating	system.
-	   version	 Version level of the operating	system.
-	   machine	 Machine hardware platform.
-
-	Different platforms have different Utsname struct definition.
-	https://cs.opensource.google/search?q=utsname&ss=go%2Fx%2Fsys&start=11
-
-	TODO :- Make this function platform agnotic to pull uname (uname -a).
-*/
-func (env *EnvironmentType) GetUnixName() string {
+// getUnixName returns details about this operating system formatted as "sysname
+// nodename release version machine". Returns "" if unix name cannot be
+// determined.
+//
+//   - sysname: Name of the operating system implementation.
+//   - nodename: Network name of this machine.
+//   - release: Release level of the operating system.
+//   - version: Version level of the operating system.
+//   - machine: Machine hardware platform.
+//
+// Different platforms have different [Utsname] struct definitions.
+//
+// TODO :- Make this function platform agnostic to pull uname (uname -a).
+//
+// [Utsname]: https://cs.opensource.google/search?q=utsname&ss=go%2Fx%2Fsys&start=1
+func getUnixName () string {
 	var utsname unix.Utsname
 	err := unix.Uname(&utsname)
 	if(err != nil) {
@@ -522,12 +525,9 @@ func processors(architecture string)  (res []*proto.CpuInfo) {
 			// https://stackoverflow.com/questions/21151765/cannot-unmarshal-string-into-go-value-of-type-int64
 			Model:        item.Model,
 			Cores:        item.Cores,
-			/*
-				cpu_info does not provide architecture info.
-				Fix was to add KernelArch field in InfoStat struct that returns 'uname -m'
-				https://github.com/shirou/gopsutil/issues/737
-			*/
-			//Homogeneous value of architecture.
+			// cpu_info does not provide architecture info.
+			// Fix was to add KernelArch field in InfoStat struct that returns 'uname -m'
+			// https://github.com/shirou/gopsutil/issues/737
 			Architecture: architecture,
 			Cpus:         int32(len(cpus)),
 			Mhz:          item.Mhz,

@@ -10,6 +10,7 @@ package core
 import (
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2"
@@ -332,7 +333,7 @@ func TestNewHostInfo(t *testing.T) {
 	assert.GreaterOrEqual(t, len(host.Network.Interfaces), 1)
 	assert.GreaterOrEqual(t, len(host.Processor), 1)
 	assert.NotEmpty(t, host.Processor[0].Architecture)
-	assert.Equal(t, env.GetUnixName(), host.Uname)
+	assert.Len(t, strings.Split(host.Uname, " "), 5)
 	assert.NotEmpty(t, host.Release)
 	assert.Equal(t, tags, host.Tags)
 }
@@ -377,7 +378,7 @@ func TestProcessors(t *testing.T) {
 	assert.GreaterOrEqual(t, processorInfo[0].GetCpus(), int32(1))
 	// non empty architecture
 	assert.NotEmpty(t, processorInfo[0].GetArchitecture())
-	assert.GreaterOrEqual(t, processorInfo[0].GetArchitecture(), "arm64")
+	assert.Equal(t, "arm64", processorInfo[0].GetArchitecture())
 }
 
 func TestProcesses(t *testing.T) {
