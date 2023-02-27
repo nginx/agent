@@ -25,6 +25,8 @@ cp build/nginx-agent staging/usr/local/bin
 
 chmod +x staging/usr/local/etc/rc.d/nginx-agent
 
+# Temporary fix until the follow issue is resolved https://github.com/actions/checkout/issues/1169
+git config --global --add safe.directory /nginx-agent
 VERSION="$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')" envsubst < scripts/packages/manifest > staging/+MANIFEST
 
 for freebsd_abi in $FREEBSD_DISTROS; do \

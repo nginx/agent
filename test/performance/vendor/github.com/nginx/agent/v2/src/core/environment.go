@@ -430,48 +430,54 @@ func (env *EnvironmentType) Processes() (result []Process) {
 		return processList
 	}
 
-	seenPids := make(map[int32]bool)
+	nginxProcesses := make(map[int32]*process.Process)
 	for _, pid := range pids {
 		p, _ := process.NewProcess(pid)
+
 		name, _ := p.Name()
 
 		if name == "nginx" {
-			createTime, _ := p.CreateTime()
-			status, _ := p.Status()
-			running, _ := p.IsRunning()
-			user, _ := p.Username()
-			ppid, _ := p.Ppid()
-			cmd, _ := p.Cmdline()
-			exe, _ := p.Exe()
-
-			// if the exe is empty, try get the exe from the parent
-			if exe == "" {
-				parentProcess, _ := process.NewProcess(ppid)
-				exe, _ = parentProcess.Exe()
-			}
-
-			processList = append(processList, Process{
-				Pid:        pid,
-				Name:       name,
-				CreateTime: createTime, // Running time is probably different
-				Status:     strings.Join(status, " "),
-				IsRunning:  running,
-				Path:       exe,
-				User:       user,
-				ParentPid:  ppid,
-				Command:    cmd,
-			})
-			seenPids[pid] = true
+			nginxProcesses[pid] = p
 		}
 	}
 
-	for i := 0; i < len(processList); i++ {
-		item := &processList[i]
-		if seenPids[item.ParentPid] {
-			item.IsMaster = false
-		} else {
-			item.IsMaster = true
+	for pid, process := range nginxProcesses {
+		name, _ := process.Name()
+		createTime, _ := process.CreateTime()
+		status, _ := process.Status()
+		running, _ := process.IsRunning()
+		user, _ := process.Username()
+		ppid, _ := process.Ppid()
+		cmd, _ := process.Cmdline()
+		isMaster := false
+
+		_, ok := nginxProcesses[ppid]
+		if !ok {
+			isMaster = true
 		}
+
+		var exe string
+		if isMaster {
+			exe, err = process.Exe()
+			if err != nil {
+				log.Errorf("Error reading exe information for process: %d error: %v", pid, err)
+			}
+		}
+
+		newProcess := Process{
+			Pid:        pid,
+			Name:       name,
+			CreateTime: createTime, // Running time is probably different
+			Status:     strings.Join(status, " "),
+			IsRunning:  running,
+			Path:       exe,
+			User:       user,
+			ParentPid:  ppid,
+			Command:    cmd,
+			IsMaster:   isMaster,
+		}
+
+		processList = append(processList, newProcess)
 	}
 
 	return processList
