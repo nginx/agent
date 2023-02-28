@@ -13,10 +13,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var once = &sync.Once{}
+type MetricSourceLogger struct {
+	once *sync.Once
+}
 
-func logMetricCollectionError(message string) {
-	once.Do(func() {
+func NewMetricSourceLogger() *MetricSourceLogger {
+	return &MetricSourceLogger{&sync.Once{}}
+}
+
+func (m *MetricSourceLogger) Log(message string) {
+	m.once.Do(func() {
 		log.Warnf(message)
 	})
 	log.Tracef(message)

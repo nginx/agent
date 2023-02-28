@@ -20,13 +20,14 @@ import (
 const MOUNT_POINT = "mount_point"
 
 type Disk struct {
+	logger *MetricSourceLogger
 	*namedMetric
 	disks []disk.PartitionStat
 }
 
 func NewDiskSource(namespace string) *Disk {
 	disks, _ := disk.Partitions(false)
-	return &Disk{&namedMetric{namespace, "disk"}, disks}
+	return &Disk{NewMetricSourceLogger(), &namedMetric{namespace, "disk"}, disks}
 }
 
 func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
@@ -38,7 +39,7 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 		usage, err := disk.Usage(part.Mountpoint)
 
 		if err != nil {
-			logMetricCollectionError(fmt.Sprintf("Failed to get disk metrics, %v", err))
+			c.logger.Log(fmt.Sprintf("Failed to get disk metrics, %v", err))
 			continue
 		}
 

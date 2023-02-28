@@ -18,19 +18,20 @@ import (
 )
 
 type Load struct {
+	logger *MetricSourceLogger
 	*namedMetric
 	avgStatsFunc func() (*load.AvgStat, error)
 }
 
 func NewLoadSource(namespace string) *Load {
-	return &Load{namedMetric: &namedMetric{namespace, "load"}, avgStatsFunc: load.Avg}
+	return &Load{logger: NewMetricSourceLogger(), namedMetric: &namedMetric{namespace, "load"}, avgStatsFunc: load.Avg}
 }
 
 func (c *Load) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
 	defer wg.Done()
 	loadStats, err := c.avgStatsFunc()
 	if err != nil {
-		logMetricCollectionError(fmt.Sprintf("Failed to collect Load metrics, %v", err))
+		c.logger.Log(fmt.Sprintf("Failed to collect Load metrics, %v", err))
 		return
 	}
 

@@ -27,10 +27,11 @@ type NginxOSS struct {
 	// This is for keeping the previous stats.  Need to report the delta.
 	prevStats *client.StubStats
 	init      sync.Once
+	logger    *MetricSourceLogger
 }
 
 func NewNginxOSS(baseDimensions *metrics.CommonDim, namespace, stubStatus string) *NginxOSS {
-	return &NginxOSS{baseDimensions: baseDimensions, stubStatus: stubStatus, namedMetric: &namedMetric{namespace: namespace}}
+	return &NginxOSS{baseDimensions: baseDimensions, stubStatus: stubStatus, namedMetric: &namedMetric{namespace: namespace}, logger: NewMetricSourceLogger()}
 }
 
 func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
@@ -38,14 +39,14 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 	c.init.Do(func() {
 		cl, err := client.NewNginxClient(&http.Client{}, c.stubStatus)
 		if err != nil {
-			logMetricCollectionError(fmt.Sprintf("Failed to create oss metrics client, %v", err))
+			c.logger.Log(fmt.Sprintf("Failed to create oss metrics client, %v", err))
 			c.prevStats = nil
 			return
 		}
 
 		c.prevStats, err = cl.GetStubStats()
 		if err != nil {
-			logMetricCollectionError(fmt.Sprintf("Failed to retrieve oss metrics, %v", err))
+			c.logger.Log(fmt.Sprintf("Failed to retrieve oss metrics, %v", err))
 			c.prevStats = nil
 			return
 		}
@@ -53,14 +54,14 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 
 	cl, err := client.NewNginxClient(&http.Client{}, c.stubStatus)
 	if err != nil {
-		logMetricCollectionError(fmt.Sprintf("Failed to create oss metrics client, %v", err))
+		c.logger.Log(fmt.Sprintf("Failed to create oss metrics client, %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
 
 	stats, err := cl.GetStubStats()
 	if err != nil {
-		logMetricCollectionError(fmt.Sprintf("Failed to retrieve oss metrics, %v", err))
+		c.logger.Log(fmt.Sprintf("Failed to retrieve oss metrics, %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
