@@ -522,7 +522,7 @@ func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 
 	out, err := exec.Command("lscpu").Output()
 	if err != nil {
-		// return default values of cache
+		log.Warnf("Error executing lscpu on host: %v", err)
 		return cache
 	}
 
@@ -530,9 +530,9 @@ func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 }
 
 func parselscpuInfo(lscpuInfo string, cache map[string]string) map[string]string {
-	cpuInfos := strings.TrimSpace(lscpuInfo)
-	lines := strings.Split(cpuInfos, "\n")
-	cpuInfoMap := map[string]string{}
+	lscpuInfos := strings.TrimSpace(lscpuInfo)
+	lines := strings.Split(lscpuInfos, "\n")
+	lscpuInfoMap := map[string]string{}
 	for _, line := range lines {
 		fields := strings.Split(line, ":")
 		if len(fields) < 2 {
@@ -540,19 +540,19 @@ func parselscpuInfo(lscpuInfo string, cache map[string]string) map[string]string
 		}
 		key := strings.TrimSpace(fields[0])
 		value := strings.TrimSpace(fields[1])
-		cpuInfoMap[key] = strings.Trim(value, "\"")
+		lscpuInfoMap[key] = strings.Trim(value, "\"")
 	}
 
-	if l1dCache, ok := cpuInfoMap["L1d cache"]; ok {
+	if l1dCache, ok := lscpuInfoMap["L1d cache"]; ok {
 		cache["L1d"] = l1dCache
 	}
-	if l1iCache, ok := cpuInfoMap["L1i cache"]; ok {
+	if l1iCache, ok := lscpuInfoMap["L1i cache"]; ok {
 		cache["L1i"] = l1iCache
 	}
-	if l2Cache, ok := cpuInfoMap["L2 cache"]; ok {
+	if l2Cache, ok := lscpuInfoMap["L2 cache"]; ok {
 		cache["L2"] = l2Cache
 	}
-	if l3Cache, ok := cpuInfoMap["L3 cache"]; ok {
+	if l3Cache, ok := lscpuInfoMap["L3 cache"]; ok {
 		cache["L3"] = l3Cache
 	}
 
