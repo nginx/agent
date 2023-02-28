@@ -9,6 +9,6 @@ services:
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         BASE_IMAGE: ${BASE_IMAGE}
-        ENTRY_POINT: "./scripts/docker/nginx-oss/agentless-entrypoint.sh"
+        ENTRY_POINT: "./scripts/docker/agentless-entrypoint.sh"
     ports:
       - 80
