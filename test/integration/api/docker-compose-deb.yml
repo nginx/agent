@@ -13,7 +13,7 @@ services:
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         BASE_IMAGE: ${BASE_IMAGE}
-        ENTRY_POINT: "./scripts/docker/nginx-oss/entrypoint.sh"
+        ENTRY_POINT: "./scripts/docker/entrypoint.sh"
     ports:
       - 9091:9091
     networks:
