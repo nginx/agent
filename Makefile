@@ -25,7 +25,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 22.04
-BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
+BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
 
@@ -50,7 +50,6 @@ else
 endif
 
 TEST_BUILD_DIR           := build/test
-TEST_DOCKER_COMPOSE_FILE ?= "docker-compose-deb.yml"
 PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
 CERT_CLIENT_CA_CN  := client-ca.local
@@ -194,8 +193,8 @@ performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
 integration-test: local-deb-package local-rpm-package
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=$(TEST_DOCKER_COMPOSE_FILE) go test -v ./test/integration/install
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE=${TEST_DOCKER_COMPOSE_FILE} go test -v ./test/integration/api
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/install
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
@@ -251,7 +250,8 @@ image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and ng
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		--build-arg PACKAGES_REPO=${PACKAGES_REPO} \
 		--build-arg OS_RELEASE=${OS_RELEASE} \
-		--build-arg OS_VERSION=${OS_VERSION}
+		--build-arg OS_VERSION=${OS_VERSION} \
+		--build-arg CONTAINER_REGISTRY=${CONTAINER_REGISTRY}
 
 run-container: ## Run container from specified IMAGE_TAG
 	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \

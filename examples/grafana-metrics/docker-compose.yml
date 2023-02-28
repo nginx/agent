@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
     build:
       context: ../../
-      dockerfile: ./scripts/docker/nginx-oss/ubuntu/Dockerfile
+      dockerfile: ./scripts/docker/nginx-oss/deb/Dockerfile
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         BASE_IMAGE: ${BASE_IMAGE}

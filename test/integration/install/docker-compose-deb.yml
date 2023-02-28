@@ -4,7 +4,7 @@ services:
   agent:
     build:
       context: ../../../
-      dockerfile: ./scripts/docker/nginx-oss/ubuntu/Dockerfile
+      dockerfile: ./scripts/docker/nginx-oss/deb/Dockerfile
       target: install-nginx
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}

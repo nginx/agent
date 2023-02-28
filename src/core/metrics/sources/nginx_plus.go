@@ -15,10 +15,10 @@ import (
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/v2/src/core/metrics"
+
 	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/nginx/agent/v2/src/core/metrics"
 )
 
 const (
