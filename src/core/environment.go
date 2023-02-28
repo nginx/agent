@@ -526,7 +526,11 @@ func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 		return cache
 	}
 
-	cpuInfos := strings.TrimSpace(string(out))
+	return parselscpuInfo(string(out),cache)
+}
+
+func parselscpuInfo(lscpuInfo string, cache map[string]string) map[string]string {
+	cpuInfos := strings.TrimSpace(lscpuInfo)
 	lines := strings.Split(cpuInfos, "\n")
 	cpuInfoMap := map[string]string{}
 	for _, line := range lines {
