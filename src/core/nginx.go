@@ -318,10 +318,14 @@ func hasConfPath(files []*proto.File, confPath string) bool {
 
 func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error) {
 	if log.IsLevelEnabled(log.TraceLevel) {
-		jsonConfig, _ := json.Marshal(config)
-		log.Tracef("Writing config: %+v\n", string(jsonConfig))
+		jsonConfig, err := json.Marshal(config)
+		if err != nil {
+			log.Tracef("Writing raw config: %+v", config)
+		} else {
+			log.Tracef("Writing JSON config: %+v", string(jsonConfig))
+		}
 	}
-	
+
 	details, ok := n.nginxDetailsMap[config.ConfigData.NginxId]
 	if !ok || details == nil {
 		return nil, fmt.Errorf("NGINX instance %s not found", config.ConfigData.NginxId)
