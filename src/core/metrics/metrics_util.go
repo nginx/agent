@@ -9,6 +9,8 @@ package metrics
 
 import (
 	"context"
+	"math"
+	"sort"
 	"sync"
 	"time"
 
@@ -48,6 +50,48 @@ func NewStatsEntity(dims []*proto.Dimension, samples []*proto.SimpleMetric) *pro
 		Dimensions:    dims,
 		Simplemetrics: samples,
 	}
+}
+
+func GetTimeMetrics(times []float64, metricType string) float64 {
+	if len(times) == 0 {
+		return 0
+	}
+
+	switch metricType {
+	case "time":
+		// Calculate average
+		sum := 0.0
+		for _, t := range times {
+			sum += t
+		}
+
+		return (math.Round(sum*1000) / 1000) / float64(len(times))
+		
+	case "count":
+		return float64(len(times))
+
+	case "max":
+		sort.Float64s(times)
+		return times[len(times)-1]
+
+	case "median":
+		sort.Float64s(times)
+
+		mNumber := len(times) / 2
+		if len(times)%2 != 0 {
+			return times[mNumber]
+		} else {
+			return (times[mNumber-1] + times[mNumber]) / 2
+		}
+
+	case "pctl95":
+		sort.Float64s(times)
+
+		index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
+		return times[index]
+	}
+
+	return 0
 }
 
 func GetCalculationMap() map[string]string {

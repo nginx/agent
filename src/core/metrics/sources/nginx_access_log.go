@@ -10,7 +10,6 @@ package sources
 import (
 	"context"
 	"fmt"
-	"math"
 	"regexp"
 	"sort"
 	"strconv"
@@ -429,7 +428,7 @@ func getAverageMetricValue(metricValues []float64) float64 {
 
 func getTimeMetricsMap(metricName string, times []float64, counter map[string]float64) {
 
-	metrics := map[string]float64{
+	timeMetrics := map[string]float64{
 		metricName:             0,
 		metricName + ".count":  0,
 		metricName + ".median": 0,
@@ -437,43 +436,45 @@ func getTimeMetricsMap(metricName string, times []float64, counter map[string]fl
 		metricName + ".pctl95": 0,
 	}
 
-	for metric := range metrics {
+	for metric := range timeMetrics {
 
 		metricType := metric[strings.LastIndex(metric, ".")+1:]
 
-		switch metricType {
-		case "time":
-			// Calculate average
-			sum := 0.0
-			for _, t := range times {
-				sum += t
-			}
+		counter[metric] = metrics.GetTimeMetrics(times, metricType)
 
-			counter[metric] = (math.Round(sum*1000) / 1000) / float64(len(times))
+		// switch metricType {
+		// case "time":
+		// 	// Calculate average
+		// 	sum := 0.0
+		// 	for _, t := range times {
+		// 		sum += t
+		// 	}
 
-		case "count":
-			counter[metric] = float64(len(times))
+		// 	counter[metric] = (math.Round(sum*1000) / 1000) / float64(len(times))
 
-		case "max":
-			sort.Float64s(times)
-			counter[metric] = times[len(times)-1]
+		// case "count":
+		// 	counter[metric] = float64(len(times))
 
-		case "median":
-			sort.Float64s(times)
+		// case "max":
+		// 	sort.Float64s(times)
+		// 	counter[metric] = times[len(times)-1]
 
-			mNumber := len(times) / 2
-			if len(times)%2 != 0 {
-				counter[metric] = times[mNumber]
-			} else {
-				counter[metric] = (times[mNumber-1] + times[mNumber]) / 2
-			}
+		// case "median":
+		// 	sort.Float64s(times)
 
-		case "pctl95":
-			sort.Float64s(times)
+		// 	mNumber := len(times) / 2
+		// 	if len(times)%2 != 0 {
+		// 		counter[metric] = times[mNumber]
+		// 	} else {
+		// 		counter[metric] = (times[mNumber-1] + times[mNumber]) / 2
+		// 	}
 
-			index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
-			counter[metric] = times[index]
-		}
+		// case "pctl95":
+		// 	sort.Float64s(times)
+
+		// 	index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
+		// 	counter[metric] = times[index]
+		// }
 
 	}
 

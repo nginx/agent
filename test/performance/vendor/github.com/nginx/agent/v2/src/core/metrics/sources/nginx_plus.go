@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"sort"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -514,10 +513,10 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*p
 			"upstream.peers.total.unavail":      float64(peerStateMap[peerStateUnavail]),
 			"upstream.peers.total.checking":     float64(peerStateMap[peerStateChecking]),
 			"upstream.peers.total.unhealthy":    float64(peerStateMap[peerStateUnhealthy]),
-			"upstream.peers.header_time.count":  getTimeMetrics(httpUpstreamHeaderTimes, "count"),
-			"upstream.peers.header_time.max":    getTimeMetrics(httpUpstreamHeaderTimes, "max"),
-			"upstream.peers.header_time.median": getTimeMetrics(httpUpstreamHeaderTimes, "median"),
-			"upstream.peers.header_time.pctl95": getTimeMetrics(httpUpstreamHeaderTimes, "pctl95"),
+			"upstream.peers.header_time.count":  metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "count"),
+			"upstream.peers.header_time.max":    metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "max"),
+			"upstream.peers.header_time.median": metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "median"),
+			"upstream.peers.header_time.pctl95": metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "pctl95"),
 		})
 
 		upstreamDims := c.baseDimensions.ToDimensions()
@@ -610,14 +609,14 @@ func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []
 			"upstream.peers.total.unavail":        float64(peerStateMap[peerStateUnavail]),
 			"upstream.peers.total.checking":       float64(peerStateMap[peerStateChecking]),
 			"upstream.peers.total.unhealthy":      float64(peerStateMap[peerStateUnhealthy]),
-			"upstream.peers.response.time.count":  getTimeMetrics(streamUpstreamResponseTimes, "count"),
-			"upstream.peers.response.time.max":    getTimeMetrics(streamUpstreamResponseTimes, "max"),
-			"upstream.peers.response.time.median": getTimeMetrics(streamUpstreamResponseTimes, "median"),
-			"upstream.peers.response.time.pctl95": getTimeMetrics(streamUpstreamResponseTimes, "pctl95"),
-			"upstream.peers.connect_time.count":   getTimeMetrics(streamUpstreamConnTimes, "count"),
-			"upstream.peers.connect_time.max":     getTimeMetrics(streamUpstreamConnTimes, "max"),
-			"upstream.peers.connect_time.median":  getTimeMetrics(streamUpstreamConnTimes, "median"),
-			"upstream.peers.connect_time.pctl95":  getTimeMetrics(streamUpstreamConnTimes, "pctl95"),
+			"upstream.peers.response.time.count":  metrics.GetTimeMetrics(streamUpstreamResponseTimes, "count"),
+			"upstream.peers.response.time.max":    metrics.GetTimeMetrics(streamUpstreamResponseTimes, "max"),
+			"upstream.peers.response.time.median": metrics.GetTimeMetrics(streamUpstreamResponseTimes, "median"),
+			"upstream.peers.response.time.pctl95": metrics.GetTimeMetrics(streamUpstreamResponseTimes, "pctl95"),
+			"upstream.peers.connect_time.count":   metrics.GetTimeMetrics(streamUpstreamConnTimes, "count"),
+			"upstream.peers.connect_time.max":     metrics.GetTimeMetrics(streamUpstreamConnTimes, "max"),
+			"upstream.peers.connect_time.median":  metrics.GetTimeMetrics(streamUpstreamConnTimes, "median"),
+			"upstream.peers.connect_time.pctl95":  metrics.GetTimeMetrics(streamUpstreamConnTimes, "pctl95"),
 		})
 
 		upstreamDims := c.baseDimensions.ToDimensions()
@@ -627,39 +626,6 @@ func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []
 	}
 
 	return upstreamMetrics
-}
-
-func getTimeMetrics(times []float64, metricType string) float64 {
-	if len(times) == 0 {
-		return 0
-	}
-
-	switch metricType {
-	case "count":
-		return float64(len(times))
-
-	case "max":
-		sort.Float64s(times)
-		return times[len(times)-1]
-
-	case "median":
-		sort.Float64s(times)
-
-		mNumber := len(times) / 2
-		if len(times)%2 != 0 {
-			return times[mNumber]
-		} else {
-			return (times[mNumber-1] + times[mNumber]) / 2
-		}
-
-	case "pctl95":
-		sort.Float64s(times)
-
-		index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
-		return times[index]
-	}
-
-	return 0
 }
 
 func (c *NginxPlus) cacheMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
