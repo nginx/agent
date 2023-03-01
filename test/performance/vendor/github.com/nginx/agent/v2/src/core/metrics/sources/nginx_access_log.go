@@ -450,40 +450,6 @@ func getTimeMetricsMap(metricName string, times []float64, counter map[string]fl
 
 		counter[metric] = metrics.GetTimeMetrics(times, metricType)
 
-		// switch metricType {
-		// case "time":
-		// 	// Calculate average
-		// 	sum := 0.0
-		// 	for _, t := range times {
-		// 		sum += t
-		// 	}
-
-		// 	counter[metric] = (math.Round(sum*1000) / 1000) / float64(len(times))
-
-		// case "count":
-		// 	counter[metric] = float64(len(times))
-
-		// case "max":
-		// 	sort.Float64s(times)
-		// 	counter[metric] = times[len(times)-1]
-
-		// case "median":
-		// 	sort.Float64s(times)
-
-		// 	mNumber := len(times) / 2
-		// 	if len(times)%2 != 0 {
-		// 		counter[metric] = times[mNumber]
-		// 	} else {
-		// 		counter[metric] = (times[mNumber-1] + times[mNumber]) / 2
-		// 	}
-
-		// case "pctl95":
-		// 	sort.Float64s(times)
-
-		// 	index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
-		// 	counter[metric] = times[index]
-		// }
-
 	}
 
 }

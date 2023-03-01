@@ -42,6 +42,8 @@ const (
 	upstreamQueueMaxSize             = 20
 	currentPeer1UpstreamHeaderTime   = 100
 	currentPeer2UpstreamHeaderTime   = 80
+	currentPeer1UpstreamResponseTime = 100
+	currentPeer2UpstreamResponseTime = 80
 	currentUpstreamResponseTime      = 100
 	currentUpstreamConnectTime       = 80
 	currentUpstreamFirstByteTime     = 50
@@ -205,7 +207,7 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 							LastPassed: false,
 						},
 						HeaderTime:   currentPeer1UpstreamHeaderTime,
-						ResponseTime: currentUpstreamResponseTime,
+						ResponseTime: currentPeer1UpstreamResponseTime,
 					},
 					{
 						ID:       1,
@@ -234,7 +236,7 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 							LastPassed: false,
 						},
 						HeaderTime:   currentPeer2UpstreamHeaderTime,
-						ResponseTime: currentUpstreamResponseTime,
+						ResponseTime: currentPeer2UpstreamResponseTime,
 					},
 				},
 				Keepalives: 0,
@@ -538,27 +540,31 @@ func TestNginxPlus_Collect(t *testing.T) {
 	}
 
 	expectedHttpUpstreamMetrics := map[string]float64{
-		"plus.http.upstream.keepalives":               0,
-		"plus.http.upstream.zombies":                  0,
-		"plus.http.upstream.queue.maxsize":            upstreamQueueMaxSize,
-		"plus.http.upstream.queue.overflows":          0,
-		"plus.http.upstream.queue.size":               0,
-		"plus.http.upstream.peers.total.up":           2,
-		"plus.http.upstream.peers.total.draining":     0,
-		"plus.http.upstream.peers.total.down":         0,
-		"plus.http.upstream.peers.total.unavail":      0,
-		"plus.http.upstream.peers.total.checking":     0,
-		"plus.http.upstream.peers.total.unhealthy":    0,
-		"plus.http.upstream.peers.header_time.count":  2,
-		"plus.http.upstream.peers.header_time.max":    100,
-		"plus.http.upstream.peers.header_time.median": 90,
-		"plus.http.upstream.peers.header_time.pctl95": 100,
+		"plus.http.upstream.keepalives":                 0,
+		"plus.http.upstream.zombies":                    0,
+		"plus.http.upstream.queue.maxsize":              upstreamQueueMaxSize,
+		"plus.http.upstream.queue.overflows":            0,
+		"plus.http.upstream.queue.size":                 0,
+		"plus.http.upstream.peers.total.up":             2,
+		"plus.http.upstream.peers.total.draining":       0,
+		"plus.http.upstream.peers.total.down":           0,
+		"plus.http.upstream.peers.total.unavail":        0,
+		"plus.http.upstream.peers.total.checking":       0,
+		"plus.http.upstream.peers.total.unhealthy":      0,
+		"plus.http.upstream.peers.header_time.count":    2,
+		"plus.http.upstream.peers.header_time.max":      100,
+		"plus.http.upstream.peers.header_time.median":   90,
+		"plus.http.upstream.peers.header_time.pctl95":   100,
+		"plus.http.upstream.peers.response.time.count":  2,
+		"plus.http.upstream.peers.response.time.max":    100,
+		"plus.http.upstream.peers.response.time.median": 90,
+		"plus.http.upstream.peers.response.time.pctl95": 100,
 	}
 
 	expectedHttpPeer1UpstreamMetrics := map[string]float64{
 		"plus.http.upstream.peers.conn.active":             0,
 		"plus.http.upstream.peers.header_time":             currentPeer1UpstreamHeaderTime,
-		"plus.http.upstream.peers.response.time":           currentUpstreamResponseTime,
+		"plus.http.upstream.peers.response.time":           currentPeer1UpstreamResponseTime,
 		"plus.http.upstream.peers.request.count":           currentZoneRequests,
 		"plus.http.upstream.peers.response.count":          currentZoneResponses,
 		"plus.http.upstream.peers.status.1xx":              0,
@@ -584,7 +590,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 	expectedHttpPeer2UpstreamMetrics := map[string]float64{
 		"plus.http.upstream.peers.conn.active":             0,
 		"plus.http.upstream.peers.header_time":             currentPeer2UpstreamHeaderTime,
-		"plus.http.upstream.peers.response.time":           currentUpstreamResponseTime,
+		"plus.http.upstream.peers.response.time":           currentPeer2UpstreamResponseTime,
 		"plus.http.upstream.peers.request.count":           currentZoneRequests - previousZoneRequests,
 		"plus.http.upstream.peers.response.count":          currentZoneResponses - previousZoneResponses,
 		"plus.http.upstream.peers.status.1xx":              0,
@@ -946,6 +952,14 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.header_time.median"], metric.Value)
 			case "plus.http.upstream.peers.header_time.pctl95":
 				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.header_time.pctl95"], metric.Value)
+			case "plus.http.upstream.peers.response.time.count":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.response.time.count"], metric.Value)
+			case "plus.http.upstream.peers.response.time.max":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.response.time.max"], metric.Value)
+			case "plus.http.upstream.peers.response.time.median":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.response.time.median"], metric.Value)
+			case "plus.http.upstream.peers.response.time.pctl95":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.response.time.pctl95"], metric.Value)
 			}
 		}
 

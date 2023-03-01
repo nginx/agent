@@ -66,6 +66,7 @@ func GetTimeMetrics(times []float64, metricType string) float64 {
 		}
 
 		return (math.Round(sum*1000) / 1000) / float64(len(times))
+
 	case "count":
 		return float64(len(times))
 
@@ -275,6 +276,10 @@ func GetCalculationMap() map[string]string {
 		"plus.http.upstream.peers.header_time.median":        "avg",
 		"plus.http.upstream.peers.header_time.pctl95":        "avg",
 		"plus.http.upstream.peers.response.time":             "avg",
+		"plus.http.upstream.peers.response.time.count":       "sum",
+		"plus.http.upstream.peers.response.time.max":         "avg",
+		"plus.http.upstream.peers.response.time.median":      "avg",
+		"plus.http.upstream.peers.response.time.pctl95":      "avg",
 		"plus.http.upstream.peers.request.count":             "sum",
 		"plus.http.upstream.peers.response.count":            "sum",
 		"plus.http.upstream.peers.status.1xx":                "sum",

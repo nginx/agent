@@ -406,6 +406,7 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*p
 	upstreamMetrics := make([]*proto.StatsEntity, 0)
 	for name, u := range stats.Upstreams {
 		httpUpstreamHeaderTimes := []float64{}
+		httpUpstreamResponseTimes := []float64{}
 		l := &namedMetric{namespace: c.plusNamespace, group: "http"}
 		peerStateMap := make(map[string]int)
 		prevPeersMap := createHttpPeerMap(prevStats.Upstreams[name].Peers)
@@ -460,6 +461,7 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*p
 				}
 			}
 
+			httpUpstreamResponseTimes = append(httpUpstreamResponseTimes, float64(peer.ResponseTime))
 			httpUpstreamHeaderTimes = append(httpUpstreamHeaderTimes, float64(peer.HeaderTime))
 
 			simpleMetrics2 := l.convertSamplesToSimpleMetrics(map[string]float64{
@@ -502,21 +504,25 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*p
 		}
 
 		simpleMetrics := l.convertSamplesToSimpleMetrics(map[string]float64{
-			"upstream.keepalives":               float64(u.Keepalives),
-			"upstream.zombies":                  float64(u.Zombies),
-			"upstream.queue.maxsize":            float64(u.Queue.MaxSize),
-			"upstream.queue.overflows":          float64(upstreamQueueOverflows),
-			"upstream.queue.size":               float64(u.Queue.Size),
-			"upstream.peers.total.up":           float64(peerStateMap[peerStateUp]),
-			"upstream.peers.total.draining":     float64(peerStateMap[peerStateDraining]),
-			"upstream.peers.total.down":         float64(peerStateMap[peerStateDown]),
-			"upstream.peers.total.unavail":      float64(peerStateMap[peerStateUnavail]),
-			"upstream.peers.total.checking":     float64(peerStateMap[peerStateChecking]),
-			"upstream.peers.total.unhealthy":    float64(peerStateMap[peerStateUnhealthy]),
-			"upstream.peers.header_time.count":  metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "count"),
-			"upstream.peers.header_time.max":    metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "max"),
-			"upstream.peers.header_time.median": metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "median"),
-			"upstream.peers.header_time.pctl95": metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "pctl95"),
+			"upstream.keepalives":                 float64(u.Keepalives),
+			"upstream.zombies":                    float64(u.Zombies),
+			"upstream.queue.maxsize":              float64(u.Queue.MaxSize),
+			"upstream.queue.overflows":            float64(upstreamQueueOverflows),
+			"upstream.queue.size":                 float64(u.Queue.Size),
+			"upstream.peers.total.up":             float64(peerStateMap[peerStateUp]),
+			"upstream.peers.total.draining":       float64(peerStateMap[peerStateDraining]),
+			"upstream.peers.total.down":           float64(peerStateMap[peerStateDown]),
+			"upstream.peers.total.unavail":        float64(peerStateMap[peerStateUnavail]),
+			"upstream.peers.total.checking":       float64(peerStateMap[peerStateChecking]),
+			"upstream.peers.total.unhealthy":      float64(peerStateMap[peerStateUnhealthy]),
+			"upstream.peers.response.time.count":  metrics.GetTimeMetrics(httpUpstreamResponseTimes, "count"),
+			"upstream.peers.response.time.max":    metrics.GetTimeMetrics(httpUpstreamResponseTimes, "max"),
+			"upstream.peers.response.time.median": metrics.GetTimeMetrics(httpUpstreamResponseTimes, "median"),
+			"upstream.peers.response.time.pctl95": metrics.GetTimeMetrics(httpUpstreamResponseTimes, "pctl95"),
+			"upstream.peers.header_time.count":    metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "count"),
+			"upstream.peers.header_time.max":      metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "max"),
+			"upstream.peers.header_time.median":   metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "median"),
+			"upstream.peers.header_time.pctl95":   metrics.GetTimeMetrics(httpUpstreamHeaderTimes, "pctl95"),
 		})
 
 		upstreamDims := c.baseDimensions.ToDimensions()
