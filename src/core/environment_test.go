@@ -18,6 +18,43 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const fedoraOsReleaseInfo = `
+NAME=Fedora
+VERSION="32 (Workstation Edition)"
+ID=fedora
+VERSION_ID=32
+PRETTY_NAME="Fedora 32 (Workstation Edition)"
+ANSI_COLOR="0;38;2;60;110;180"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:32"
+HOME_URL="https://fedoraproject.org/"
+DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/fedora/f32/system-administrators-guide/"
+SUPPORT_URL="https://fedoraproject.org/wiki/Communicating_and_getting_help"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="Fedora"
+REDHAT_BUGZILLA_PRODUCT_VERSION=32
+REDHAT_SUPPORT_PRODUCT="Fedora"
+REDHAT_SUPPORT_PRODUCT_VERSION=32
+PRIVACY_POLICY_URL="https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
+VARIANT="Workstation Edition"
+VARIANT_ID=workstation"
+`
+
+const ubuntuReleaseInfo = `
+NAME="Ubuntu"
+VERSION="20.04.5 LTS (Focal Fossa)"
+VERSION_ID="20.04"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 20.04.5 LTS"
+HOME_URL="https://www.ubuntu.com"
+SUPPORT_URL=\"https://help.ubuntu.com/"
+BUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=focal
+UBUNTU_CODENAME=focal
+`
+
 var (
 	// set at buildtime
 	envMountInfo = [10]string{
@@ -493,69 +530,32 @@ func TestWriteFile(t *testing.T) {
 	assert.NoFileExists(t, file.GetName())
 }
 
-func getUbuntuOsReleaseInfo() string {
-	return "NAME=\"Ubuntu\"\n" +
-	"VERSION=\"20.04.5 LTS (Focal Fossa)\"\n" +
-	"VERSION_ID=\"20.04\"\n" +
-	"ID=ubuntu\n" +
-	"ID_LIKE=debian\n" +
-	"PRETTY_NAME=\"Ubuntu 20.04.5 LTS\"\n" +
-	"HOME_URL=\"https://www.ubuntu.com/\"\n" +
-	"SUPPORT_URL=\"https://help.ubuntu.com/\"\n" +
-	"BUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\n" +
-	"PRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\n" +
-	"VERSION_CODENAME=focal\n" +
-	"UBUNTU_CODENAME=focal"
-}
-
-func getFedoraOsReleaseInfo() string {
-	return "NAME=Fedora\n" +
-	"VERSION=\"32 (Workstation Edition)\"\n" +
-	"ID=fedora\n" +
-	"VERSION_ID=32\n" +
-	"PRETTY_NAME=\"Fedora 32 (Workstation Edition)\"\n" +
-	"ANSI_COLOR=\"0;38;2;60;110;180\"\n" +
-	"LOGO=fedora-logo-icon\n" +
-	"CPE_NAME=\"cpe:/o:fedoraproject:fedora:32\"\n" +
-	"HOME_URL=\"https://fedoraproject.org/\"\n" +
-	"DOCUMENTATION_URL=\"https://docs.fedoraproject.org/en-US/fedora/f32/system-administrators-guide/\"\n" +
-	"SUPPORT_URL=\"https://fedoraproject.org/wiki/Communicating_and_getting_help\"\n" +
-	"BUG_REPORT_URL=\"https://bugzilla.redhat.com/\"\n" +
-	"REDHAT_BUGZILLA_PRODUCT=\"Fedora" +
-	"REDHAT_BUGZILLA_PRODUCT_VERSION=32\n" +
-	"REDHAT_SUPPORT_PRODUCT=\"Fedora" +
-	"REDHAT_SUPPORT_PRODUCT_VERSION=32\n" +
-	"PRIVACY_POLICY_URL=\"https://fedoraproject.org/wiki/Legal:PrivacyPolicy\"\n" +
-	"VARIANT=\"Workstation Edition\"\n" +
-	"VARIANT_ID=workstation"
-}
-
 func TestParseOsReleaseFile(t *testing.T) {
 	tests := []struct {
-		name string
+		name             string
 		osReleaseContent string
-		expect map[string]string
-	} {
+		expect           map[string]string
+	}{
 		{
-			name: "TestUbuntuOsReleaseInfo",
-			osReleaseContent: getUbuntuOsReleaseInfo(),
+			name:             "TestParseUbuntuOsReleaseInfo",
+			osReleaseContent: ubuntuReleaseInfo,
 			expect: map[string]string{
-				"VERSION_ID": "20.04",
-				"VERSION": "20.04.5 LTS (Focal Fossa)",
+				"VERSION_ID":       "20.04",
+				"VERSION":          "20.04.5 LTS (Focal Fossa)",
 				"VERSION_CODENAME": "focal",
-				"NAME": "Ubuntu",
-				"ID": "ubuntu",
+				"NAME":             "Ubuntu",
+				"ID":               "ubuntu",
 			},
 		},
 		{
-			name: "TestFedoraOsReleaseInfo",
-			osReleaseContent: getFedoraOsReleaseInfo(),
+			name:             "TestParseFedoraOsReleaseInfo",
+			osReleaseContent: fedoraOsReleaseInfo,
 			expect: map[string]string{
-				"VERSION_ID": "32",
-				"VERSION": "32 (Workstation Edition)",
+				"VERSION_ID":       "32",
+				"VERSION":          "32 (Workstation Edition)",
 				"VERSION_CODENAME": "",
-				"NAME": "Fedora",
-				"ID": "fedora",
+				"NAME":             "Fedora",
+				"ID":               "fedora",
 			},
 		},
 	}
@@ -563,24 +563,20 @@ func TestParseOsReleaseFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			reader := strings.NewReader(tt.osReleaseContent)
 			osRelease, _ := parseOsReleaseFile(reader)
-			assert.Equal(t, tt.expect["VERSION_ID"] , osRelease["VERSION_ID"])
-			assert.Equal(t, tt.expect["VERSION"] , osRelease["VERSION"])
-			assert.Equal(t, tt.expect["VERSION_CODENAME"] , osRelease["VERSION_CODENAME"])
-			assert.Equal(t, tt.expect["NAME"] , osRelease["NAME"])
-			assert.Equal(t, tt.expect["ID"] , osRelease["ID"])
+			assert.Equal(t, tt.expect, osRelease)
 		})
 	}
 }
 
 func TestMergeHostAndOsReleaseInfo(t *testing.T) {
 	tests := []struct {
-		name string
+		name        string
 		hostRelease *proto.ReleaseInfo
-		osRelease map[string]string
-		expect *proto.ReleaseInfo
-	} {
+		osRelease   map[string]string
+		expect      *proto.ReleaseInfo
+	}{
 		{
-			name: "TestOsReleaseInfoPresent",
+			name: "TestMergeWithOsReleaseInfoPresent",
 			hostRelease: &proto.ReleaseInfo{
 				VersionId: "20.04",
 				Version:   "5.15.0-1028-aws",
@@ -589,11 +585,11 @@ func TestMergeHostAndOsReleaseInfo(t *testing.T) {
 				Id:        "ubuntu",
 			},
 			osRelease: map[string]string{
-				"VERSION_ID": "20.04",
-				"VERSION": "20.04.5 LTS (Focal Fossa)",
+				"VERSION_ID":       "20.04",
+				"VERSION":          "20.04.5 LTS (Focal Fossa)",
 				"VERSION_CODENAME": "focal",
-				"NAME": "Ubuntu",
-				"ID": "ubuntu",
+				"NAME":             "Ubuntu",
+				"ID":               "ubuntu",
 			},
 			expect: &proto.ReleaseInfo{
 				VersionId: "20.04",
@@ -604,13 +600,13 @@ func TestMergeHostAndOsReleaseInfo(t *testing.T) {
 			},
 		},
 		{
-			name: "TestOsReleaseInfoMissing",
+			name: "TestMergeWithOsReleaseInfoValueMissing",
 			osRelease: map[string]string{
-				"VERSION_ID": "32",
-				"VERSION": "32 (Workstation Edition)",
+				"VERSION_ID":       "32",
+				"VERSION":          "32 (Workstation Edition)",
 				"VERSION_CODENAME": "",
-				"NAME": "Fedora",
-				"ID": "fedora",
+				"NAME":             "Fedora",
+				"ID":               "fedora",
 			},
 			hostRelease: &proto.ReleaseInfo{
 				VersionId: "32",
@@ -621,21 +617,40 @@ func TestMergeHostAndOsReleaseInfo(t *testing.T) {
 			},
 			expect: &proto.ReleaseInfo{
 				VersionId: "32",
-				Version: "32 (Workstation Edition)",
-				Codename: "fedora",
-				Name: "Fedora",
-				Id: "fedora",
+				Version:   "32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "fedora",
+			},
+		},
+		{
+			name: "TestMergeWithOsReleaseInfoFieldMissing",
+			osRelease: map[string]string{
+				"VERSION_ID": "32",
+				"VERSION":    "32 (Workstation Edition)",
+				"NAME":       "Fedora",
+				"ID":         "fedora",
+			},
+			hostRelease: &proto.ReleaseInfo{
+				VersionId: "32",
+				Version:   "Fedora 32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "Fedora",
+			},
+			expect: &proto.ReleaseInfo{
+				VersionId: "32",
+				Version:   "32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "fedora",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			releaseInfo := mergeHostAndOsReleaseInfo(tt.hostRelease, tt.osRelease)
-			assert.Equal(t, tt.expect.GetVersionId() , releaseInfo.GetVersionId())
-			assert.Equal(t, tt.expect.GetVersion() , releaseInfo.GetVersion())
-			assert.Equal(t, tt.expect.GetCodename() , releaseInfo.GetCodename())
-			assert.Equal(t, tt.expect.GetName() , releaseInfo.GetName())
-			assert.Equal(t, tt.expect.GetId() , releaseInfo.GetId())
+			assert.Equal(t, tt.expect, releaseInfo)
 		})
 	}
 }
