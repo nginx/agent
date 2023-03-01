@@ -42,6 +42,24 @@ const (
 	NginxAppProtectMonitoringExtensionPluginConfigKey = "nap_monitoring"
 )
 
+func GetKnownExtensions() []string {
+	return []string{
+		AdvancedMetricsExtensionPlugin,
+		NginxAppProtectExtensionPlugin,
+		NginxAppProtectMonitoringExtensionPlugin,
+	}
+}
+
+func IsKnownExtension(extension string) bool {
+	for _, knownExtension := range GetKnownExtensions() {
+		if knownExtension == extension {
+			return true
+		}
+	}
+
+	return false
+}
+
 func GetDefaultFeatures() []string {
 	return []string{
 		FeatureRegistration,

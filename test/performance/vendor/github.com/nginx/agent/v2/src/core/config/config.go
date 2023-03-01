@@ -146,6 +146,16 @@ func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 }
 
 func GetConfig(clientId string) (*Config, error) {
+	extensions := []string{}
+
+	for _, extension := range Viper.GetStringSlice(agent_config.ExtensionsKey) {
+		if agent_config.IsKnownExtension(extension) {
+			extensions = append(extensions, extension)
+		} else {
+			log.Warnf("Ignoring unknown extension %s that was configured", extension)
+		}
+	}
+
 	config := &Config{
 		Path:                  Viper.GetString(ConfigPathKey),
 		DynamicConfigPath:     Viper.GetString(DynamicConfigPathKey),
@@ -160,7 +170,7 @@ func GetConfig(clientId string) (*Config, error) {
 		Dataplane:             getDataplane(),
 		AgentMetrics:          getMetrics(),
 		Features:              Viper.GetStringSlice(agent_config.FeaturesKey),
-		Extensions:            Viper.GetStringSlice(agent_config.ExtensionsKey),
+		Extensions:            extensions,
 		Tags:                  Viper.GetStringSlice(TagsKey),
 		Updated:               filePathUTime(Viper.GetString(DynamicConfigPathKey)),
 		AllowedDirectoriesMap: map[string]struct{}{},
