@@ -1,11 +1,9 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -13,44 +11,22 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/test/integration/utils"
 	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go/modules/compose"
-	wait "github.com/testcontainers/testcontainers-go/wait"
 )
 
 const (
-	PORT = 9091
+	API_PORT = 9091
 )
 
-func setupTestContainer(t *testing.T) {
-	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
-	assert.NoError(t, err, "NewDockerComposeAPI()")
-
-	t.Cleanup(func() {
-		assert.NoError(t, comp.Down(context.Background(), compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
-	})
-
-	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
-
-	require.NoError(t,
-		comp.WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(
-			map[string]string{
-				"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
-				"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
-			},
-		).Up(ctx, compose.Wait(true)), "compose.Up()")
-}
-
 func TestAPI_Nginx(t *testing.T) {
-	setupTestContainer(t)
+	testContainer := utils.SetupTestContainerWithAgent(t)
 
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
-	url := fmt.Sprintf("http://localhost:%d/nginx", PORT)
+	url := fmt.Sprintf("http://localhost:%d/nginx", API_PORT)
 	resp, err := client.R().EnableTrace().Get(url)
 
 	assert.NoError(t, err)
@@ -71,13 +47,15 @@ func TestAPI_Nginx(t *testing.T) {
 	assert.Contains(t, nginxDetailsResponse[0].RuntimeModules, "http_stub_status_module")
 	assert.Equal(t, "/etc/nginx/nginx.conf", nginxDetailsResponse[0].ConfPath)
 
+	utils.TestAgentHasNoErrorLogs(t, testContainer)
 }
 
 func TestAPI_Metrics(t *testing.T) {
-	setupTestContainer(t)
+	testContainer := utils.SetupTestContainerWithAgent(t)
+
 	client := resty.New()
 
-	url := fmt.Sprintf("http://localhost:%d/metrics", PORT)
+	url := fmt.Sprintf("http://localhost:%d/metrics", API_PORT)
 	client.SetRetryCount(5).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
@@ -114,4 +92,6 @@ func TestAPI_Metrics(t *testing.T) {
 			assert.Greater(t, value, float64(0))
 		}
 	}
+
+	utils.TestAgentHasNoErrorLogs(t, testContainer)
 }
