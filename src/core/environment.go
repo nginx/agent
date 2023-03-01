@@ -460,7 +460,15 @@ func (env *EnvironmentType) Processes() (result []Process) {
 		if isMaster {
 			exe, err = process.Exe()
 			if err != nil {
-				log.Errorf("Error reading exe information for process: %d error: %v", pid, err)
+				log.Debugf("Error reading exe information for process: %d error: %v", pid, err)
+
+				out, err := exec.Command("sh", "-c", "command -v nginx").Output()
+				if err != nil {
+					log.Debugf("Error executing 'command -v nginx' to find NGINX executable, %v", err)
+					log.Errorf("Unable to find NGINX executable for process %d", pid)
+				}
+
+				exe = strings.TrimSuffix(string(out), "\n")
 			}
 		}
 
