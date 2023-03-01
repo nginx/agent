@@ -580,7 +580,7 @@ func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {
 }
 
 func mergeHostAndOsReleaseInfo(hostReleaseInfo *proto.ReleaseInfo,
-	osReleaseInfo map[string]string) (release *proto.ReleaseInfo){
+	osReleaseInfo map[string]string) (release *proto.ReleaseInfo) {
 
 	// override os-release info with host info,
 	// if os-release info is empty.
@@ -623,18 +623,18 @@ func getHostReleaseInfo() (release *proto.ReleaseInfo) {
 	}
 }
 
-// getOsRelease reads osReleaseFile and returns release information for host.
-func getOsRelease(osReleaseFile string) (map[string]string, error) {
-	f , osReleaseError := os.Open(osReleaseFile)
-	if osReleaseError != nil {
-		return nil, fmt.Errorf("release file %s unreadable: %w", osReleaseFile, osReleaseError)
+// getOsRelease reads the path and returns release information for host.
+func getOsRelease(path string) (map[string]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("release file %s unreadable: %w", path, err)
 	}
-	parsedReleaseInfo, err :=  parseOsReleaseFile(f)
-	if(err != nil) {
-		return nil, fmt.Errorf("release file %s unparsable: %w", osReleaseFile, err)
+	defer f.Close()
+	info, err := parseOsReleaseFile(f)
+	if err != nil {
+		return nil, fmt.Errorf("release file %s unparsable: %w", path, err)
 	}
-	f.Close()
-	return parsedReleaseInfo, nil
+	return info, nil
 }
 
 func parseOsReleaseFile(reader io.Reader) (map[string]string, error) {
