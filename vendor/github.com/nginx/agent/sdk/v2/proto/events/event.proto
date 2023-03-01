@@ -115,7 +115,7 @@ message SecurityViolationEvent {
   string InstanceTags = 36 [(gogoproto.jsontag) = "instance_tags"];
   string InstanceGroup = 37 [(gogoproto.jsontag) = "instance_group"];
   string DisplayName = 38 [(gogoproto.jsontag) = "display_name"];
-  string NginxID = 39 [(gogoproto.jsontag) = "nginx_id"];
+  string NginxID = 39 [(gogoproto.jsontag) = "nginx_id", deprecated=true];
   string ParentHostname = 40 [(gogoproto.jsontag) = "parent_hostname"];
 }
 

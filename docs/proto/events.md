@@ -155,7 +155,7 @@ Represents a security violation that is emitted by the agent
 | InstanceTags | [string](#string) |  |  |
 | InstanceGroup | [string](#string) |  |  |
 | DisplayName | [string](#string) |  |  |
-| NginxID | [string](#string) |  |  |
+| NginxID | [string](#string) |  | **Deprecated.**  |
 | ParentHostname | [string](#string) |  |  |
 
 
