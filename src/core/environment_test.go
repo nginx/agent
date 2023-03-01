@@ -17,6 +17,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const lscpuInfo = `
+Architecture:                    aarch64
+CPU op-mode(s):                  32-bit, 64-bit
+Byte Order:                      Little Endian
+CPU(s):                          2
+On-line CPU(s) list:             0,1
+Thread(s) per core:              1
+Core(s) per socket:              2
+Socket(s):                       1
+NUMA node(s):                    1
+Vendor ID:                       ARM
+Model:                           3
+Model name:                      Cortex-A72
+Stepping:                        r0p3
+BogoMIPS:                        166.66
+L1d cache:                       64 KiB
+L1i cache:                       96 KiB
+L2 cache:                        2 MiB
+NUMA node0 CPU(s):               0,1
+Vulnerability Itlb multihit:     Not affected
+Vulnerability L1tf:              Not affected
+Vulnerability Mds:               Not affected
+Vulnerability Meltdown:          Not affected
+Vulnerability Mmio stale data:   Not affected
+Vulnerability Retbleed:          Not affected
+Vulnerability Spec store bypass: Not affected
+Vulnerability Spectre v1:        Mitigation; __user pointer sanitization
+Vulnerability Spectre v2:        Mitigation; Branch predictor hardening, BHB
+Vulnerability Srbds:             Not affected\nVulnerability Tsx async abort:   Not affected
+Flags:                           fp asimd evtstrm aes pmull sha1 sha2 crc32 cpuid
+`
+
 var (
 	// set at buildtime
 	envMountInfo = [10]string{
@@ -375,79 +407,72 @@ func TestProcessors(t *testing.T) {
 	assert.GreaterOrEqual(t, processorInfo[0].GetCpus(), int32(1))
 }
 
-func getlscpuInfo() string {
-	return "Architecture:                    aarch64\n" +
-	"CPU op-mode(s):                  32-bit, 64-bit\n" +
-	"Byte Order:                      Little Endian\n" +
-	"CPU(s):                          2\n" +
-	"On-line CPU(s) list:             0,1\n" +
-	"Thread(s) per core:              1\n" +
-	"Core(s) per socket:              2\n" +
-	"Socket(s):                       1\n" +
-	"NUMA node(s):                    1\n" +
-	"Vendor ID:                       ARM\n" +
-	"Model:                           3\n" +
-	"Model name:                      Cortex-A72\n" +
-	"Stepping:                        r0p3\n" +
-	"BogoMIPS:                        166.66\n" +
-	"L1d cache:                       64 KiB\n" +
-	"L1i cache:                       96 KiB\n" +
-	"L2 cache:                        2 MiB\n" +
-	"NUMA node0 CPU(s):               0,1\n" +
-	"Vulnerability Itlb multihit:     Not affected\n" +
-	"Vulnerability L1tf:              Not affected\n" +
-	"Vulnerability Mds:               Not affected\n" +
-	"Vulnerability Meltdown:          Not affected\n" +
-	"Vulnerability Mmio stale data:   Not affected\n" +
-	"Vulnerability Retbleed:          Not affected\n" +
-	"Vulnerability Spec store bypass: Not affected\n" +
-	"Vulnerability Spectre v1:        Mitigation; __user pointer sanitization\n" +
-	"Vulnerability Spectre v2:        Mitigation; Branch predictor hardening, BHB\n" +
-	"Vulnerability Srbds:             Not affected\nVulnerability Tsx async abort:   Not affected\n" +
-	"Flags:                           fp asimd evtstrm aes pmull sha1 sha2 crc32 cpuid\n"
-}
-
 func TestParselscpuInfo(t *testing.T) {
 	tests := []struct {
-		name string
+		name             string
 		defaultCacheInfo map[string]string
-		cpuInfoCache proto.CpuInfo
-		lscpuContent string
-		expect map[string]string
-	} {
+		cpuInfoCache     proto.CpuInfo
+		lscpuContent     string
+		expect           map[string]string
+	}{
 		{
-			name: "TestOsReleaseInfoPresent",
-			lscpuContent: getlscpuInfo(),
-			defaultCacheInfo: map[string]string  {
+			name:         "TestOsReleaseInfoPresent",
+			lscpuContent: lscpuInfo,
+			defaultCacheInfo: map[string]string{
 				"L1d": "-1",
 				"L1i": "-1",
-				"L2": "-1",
-				"L3": "-1",
+				"L2":  "-1",
+				"L3":  "-1",
 			},
-			expect: map[string]string  {
+			expect: map[string]string{
 				"L1d": "64 KiB",
 				"L1i": "96 KiB",
-				"L2": "2 MiB",
-				"L3": "-1",
+				"L2":  "2 MiB",
+				"L3":  "-1",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := parselscpuInfo(tt.lscpuContent, tt.defaultCacheInfo)
-			assert.Equal(t, tt.expect["L1d"] , actual["L1d"])
-			assert.Equal(t, tt.expect["L1i"] , actual["L1i"])
-			assert.Equal(t, tt.expect["L2"] , actual["L2"])
-			assert.Equal(t, tt.expect["L3"] , actual["L3"])
+			assert.Equal(t, tt.expect, actual)
 		})
 	}
 }
 
 func TestFormatBytes(t *testing.T) {
-	assert.Equal(t, "-1", formatBytes(-1))
-	assert.Equal(t, "128 KiB", formatBytes(131072))
-	assert.Equal(t, "192 KiB", formatBytes(196608))
-	assert.Equal(t, "4 MiB", formatBytes(4194304))
+	tests := []struct {
+		name   string
+		bytes  int
+		expect string
+	}{
+		{
+			name:   "TestFormatBytesNotSupported",
+			bytes:  -1,
+			expect: "-1",
+		},
+		{
+			name:   "TestFormatBytesinB",
+			bytes:  512,
+			expect: "512 B",
+		},
+		{
+			name:   "TestFormatBytesinKiB",
+			bytes:  131072,
+			expect: "128 KiB",
+		},
+				{
+			name:   "TestFormatBytesinMiB",
+			bytes:  4194304,
+			expect: "4 MiB",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := formatBytes(tt.bytes)
+			assert.Equal(t, tt.expect, actual)
+		})
+	}
 }
 
 func TestProcesses(t *testing.T) {

@@ -526,7 +526,7 @@ func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 		return cache
 	}
 
-	return parselscpuInfo(string(out),cache)
+	return parselscpuInfo(string(out), cache)
 }
 
 func parselscpuInfo(lscpuInfo string, cache map[string]string) map[string]string {
@@ -556,7 +556,7 @@ func parselscpuInfo(lscpuInfo string, cache map[string]string) map[string]string
 		cache["L3"] = l3Cache
 	}
 
-    return cache
+	return cache
 }
 
 func getDefaultProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
@@ -576,15 +576,15 @@ func formatBytes(bytes int) string {
 	if bytes <= -1 {
 		return "-1"
 	}
-	mib := 1024 * 1024;
+	mib := 1024 * 1024
 	kib := 1024
 
 	if bytes >= mib {
-		return fmt.Sprint(bytes/mib) +  " MiB"
+		return fmt.Sprint(bytes/mib) + " MiB"
 	} else if bytes >= kib {
-		return fmt.Sprint(bytes/kib) +  " KiB"
+		return fmt.Sprint(bytes/kib) + " KiB"
 	} else {
-		return fmt.Sprint(bytes) +  " B"
+		return fmt.Sprint(bytes) + " B"
 	}
 }
 
