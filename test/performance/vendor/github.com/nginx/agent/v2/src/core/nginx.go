@@ -10,6 +10,7 @@ package core
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -316,7 +317,15 @@ func hasConfPath(files []*proto.File, confPath string) bool {
 }
 
 func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error) {
-	log.Tracef("Writing config: %+v\n", config)
+	if log.IsLevelEnabled(log.TraceLevel) {
+		jsonConfig, err := json.Marshal(config)
+		if err != nil {
+			log.Tracef("Writing raw config: %+v", config)
+		} else {
+			log.Tracef("Writing JSON config: %+v", string(jsonConfig))
+		}
+	}
+
 	details, ok := n.nginxDetailsMap[config.ConfigData.NginxId]
 	if !ok || details == nil {
 		return nil, fmt.Errorf("NGINX instance %s not found", config.ConfigData.NginxId)
