@@ -49,6 +49,7 @@ else
 	endif
 endif
 
+VENDOR_LOCATIONS         := sdk test/integration test/performance .
 TEST_BUILD_DIR           := build/test
 PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
@@ -94,11 +95,14 @@ build: ## Build agent executable
 	GOWORK=off CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 
 deps: ## Update dependencies in vendor folders
-	cd sdk && go mod tidy && go mod vendor && make generate && go mod tidy && go mod vendor
-	cd test/integration && go mod tidy && go mod vendor
-	cd test/performance && go mod tidy && go mod vendor
-	go mod tidy && go mod vendor && go mod download && go work sync
-	make generate-swagger
+	git diff --quiet || { echo "Local changes found. Please commit or stash your changes." >&2; exit 1; }
+	cd sdk && make generate
+	for dir in ${VENDOR_LOCATIONS}; do \
+		(cd "$$dir" && echo "Running vendor commands on $$dir" && go mod tidy && go mod vendor && cd "$$OLDPWD" || exit) \
+	done
+	go mod download
+	go work sync
+	git diff --quiet || { echo "Depenency changes detected. Please commit these before pushing." >&2; exit 1; }
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
@@ -114,6 +118,7 @@ install-tools: ## Install dependencies in tools.go
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go get %
 	@echo "Installing Tools"
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
+	@go run github.com/evilmartians/lefthook run pre-push
 
 generate-swagger: ## Generates swagger.json from source code
 	go run github.com/go-swagger/go-swagger/cmd/swagger generate spec -o ./docs/swagger.json --scan-models

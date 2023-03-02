@@ -438,7 +438,7 @@ func (l *protoLex) setRune(lval *protoSymType, val rune) {
 }
 
 func (l *protoLex) setError(lval *protoSymType, err error) {
-	lval.err = l.addSourceError(err)
+	lval.err, _ = l.addSourceError(err)
 }
 
 func (l *protoLex) readNumber() {
@@ -495,8 +495,19 @@ func (l *protoLex) readIdentifier() {
 
 func (l *protoLex) readStringLiteral(quote rune) (string, error) {
 	var buf bytes.Buffer
-	var escapeErrors []reporter.ErrorWithPos
+	var escapeError reporter.ErrorWithPos
+	var noMoreErrors bool
 	reportErr := func(msg, badEscape string) {
+		if noMoreErrors {
+			return
+		}
+		if escapeError != nil {
+			// report previous one
+			_, ok := l.addSourceError(escapeError)
+			if !ok {
+				noMoreErrors = true
+			}
+		}
 		var err error
 		if strings.HasSuffix(msg, "%s") {
 			err = fmt.Errorf(msg, badEscape)
@@ -505,7 +516,7 @@ func (l *protoLex) readStringLiteral(quote rune) (string, error) {
 		}
 		// we've now consumed the bad escape and lexer position is after it, so we need
 		// to back up to the beginning of the escape to report the correct position
-		escapeErrors = append(escapeErrors, l.errWithCurrentPos(err, -len(badEscape)))
+		escapeError = l.errWithCurrentPos(err, -len(badEscape))
 	}
 	for {
 		c, _, err := l.input.readRune()
@@ -678,14 +689,8 @@ func (l *protoLex) readStringLiteral(quote rune) (string, error) {
 			buf.WriteRune(c)
 		}
 	}
-	if len(escapeErrors) > 0 {
-		// Report all but the last. Return that one for caller to report.
-		// If error handler does not accept all of them, it will at least
-		// get the first error.
-		for i := 0; i < len(escapeErrors)-1; i++ {
-			_ = l.addSourceError(escapeErrors[i])
-		}
-		return "", escapeErrors[len(escapeErrors)-1]
+	if escapeError != nil {
+		return "", escapeError
 	}
 	return buf.String(), nil
 }
@@ -733,17 +738,17 @@ func (l *protoLex) skipToEndOfBlockComment(lval *protoSymType) (ok, hasErr bool)
 	}
 }
 
-func (l *protoLex) addSourceError(err error) reporter.ErrorWithPos {
+func (l *protoLex) addSourceError(err error) (reporter.ErrorWithPos, bool) {
 	ewp, ok := err.(reporter.ErrorWithPos)
 	if !ok {
 		ewp = reporter.Error(l.prev(), err)
 	}
-	_ = l.handler.HandleError(ewp)
-	return ewp
+	handlerErr := l.handler.HandleError(ewp)
+	return ewp, handlerErr == nil
 }
 
 func (l *protoLex) Error(s string) {
-	_ = l.addSourceError(errors.New(s))
+	_, _ = l.addSourceError(errors.New(s))
 }
 
 func (l *protoLex) errWithCurrentPos(err error, offset int) reporter.ErrorWithPos {
