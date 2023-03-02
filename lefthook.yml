@@ -1,5 +1,5 @@
 # see https://github.com/evilmartians/lefthook for references
-pre-commit:
+pre-push:
   follow: true
   piped: true # Stop if one of the steps fail
   commands:
