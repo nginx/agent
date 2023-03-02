@@ -90,15 +90,16 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 	}
 
 	simpleMetrics := c.convertSamplesToSimpleMetrics(map[string]float64{
-		"conn.active":   float64(stats.Connections.Active),
-		"conn.accepted": float64(connAccepted),
-		"conn.handled":  float64(connHandled),
-		"conn.current":  float64(stats.Connections.Active + stats.Connections.Waiting),
-		"conn.idle":     float64(stats.Connections.Waiting),
-		"conn.dropped":  float64(connDropped),
-		"conn.reading":  float64(stats.Connections.Reading),
-		"conn.writing":  float64(stats.Connections.Writing),
-		"request.count": float64(requestCount),
+		"conn.active":     float64(stats.Connections.Active),
+		"conn.accepted":   float64(connAccepted),
+		"conn.handled":    float64(connHandled),
+		"conn.current":    float64(stats.Connections.Active + stats.Connections.Waiting),
+		"conn.idle":       float64(stats.Connections.Waiting),
+		"conn.dropped":    float64(connDropped),
+		"conn.reading":    float64(stats.Connections.Reading),
+		"conn.writing":    float64(stats.Connections.Writing),
+		"request.count":   float64(requestCount),
+		"request.current": float64(stats.Connections.Reading) + float64(stats.Connections.Writing),
 	})
 
 	simpleMetrics = append(simpleMetrics, &proto.SimpleMetric{Name: "nginx.status", Value: 1.0})
