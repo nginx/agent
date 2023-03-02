@@ -32,4 +32,22 @@ else
 CONTAINER_COMPOSETOOL = $(error Neither docker-compose nor podman-compose found)
 endif
 
-CONTAINER_VARS = CONTAINER_CLITOOL CONTAINER_COMPOSE CONTAINER_BUILDENV
+ifeq ($(OS_RELEASE), ubuntu)
+CONTAINER_OS_TYPE = deb
+else ifeq ($(OS_RELEASE), debian)
+CONTAINER_OS_TYPE = deb
+else ifeq (${OS_RELEASE}, alpine)
+CONTAINER_OS_TYPE = apk
+else
+CONTAINER_OS_TYPE = rpm
+endif
+
+CONTAINER_REGISTRY ?= docker.io
+ifeq ($(OS_RELEASE), suse)
+CONTAINER_REGISTRY = registry.suse.com
+endif
+ifeq ($(OS_RELEASE), redhatenterprise)
+CONTAINER_REGISTRY = registry.access.redhat.com
+endif
+
+CONTAINER_VARS = CONTAINER_CLITOOL CONTAINER_COMPOSE CONTAINER_BUILDENV CONTAINER_OS_TYPE CONTAINER_REGISTRY

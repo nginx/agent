@@ -13,11 +13,11 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
-	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
+
+	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
