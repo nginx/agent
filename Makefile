@@ -96,6 +96,7 @@ build: ## Build agent executable
 
 deps: ## Update dependencies in vendor folders
 	git diff --quiet || { echo "Local changes found. Please commit or stash your changes." >&2; exit 1; }
+	cd sdk && make generate
 	for dir in ${VENDOR_LOCATIONS}; do \
 		(cd "$$dir" && echo "Running vendor commands on $$dir" && go mod tidy && go mod vendor && cd "$$OLDPWD" || exit) \
 	done
