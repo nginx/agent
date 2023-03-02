@@ -25,10 +25,10 @@ import (
 )
 
 const (
-	advancedMetricsPluginVersion       = "v0.8.0"
-	advancedMetricsPluginName          = "Advanced Metrics Plugin"
-	aggregationDurationDimension       = "aggregation_duration"
-	streamMetricFamilyDimensionValue   = "tcp-udp"
+	advancedMetricsPluginVersion     = "v0.8.0"
+	advancedMetricsPluginName        = "Advanced Metrics Plugin"
+	aggregationDurationDimension     = "aggregation_duration"
+	streamMetricFamilyDimensionValue = "tcp-udp"
 	// ordinal positions of data collected by metrics module.
 	httpUriDimension                   = "http.uri"
 	httpResponseCodeDimension          = "http.response_code"

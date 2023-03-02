@@ -29,7 +29,6 @@ const (
 	advancedMetricsPluginName        = "Advanced Metrics Plugin"
 	aggregationDurationDimension     = "aggregation_duration"
 	streamMetricFamilyDimensionValue = "tcp-udp"
-
 	// ordinal positions of data collected by metrics module.
 	httpUriDimension                   = "http.uri"
 	httpResponseCodeDimension          = "http.response_code"

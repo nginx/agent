@@ -95,17 +95,13 @@ build: ## Build agent executable
 	GOWORK=off CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 
 deps: ## Update dependencies in vendor folders
+	git diff --quiet || { echo "Local changes found. Please commit or stash your changes." >&2; exit 1; }
 	for dir in ${VENDOR_LOCATIONS}; do \
 		(cd "$$dir" && echo "Running vendor commands on $$dir" && go mod tidy && go mod vendor && cd "$$OLDPWD" || exit) \
 	done
 	go mod download
 	go work sync
-	for dir in "${VENDOR_LOCATIONS[@]}"; do \
-		git diff --exit-code "vendor" &> /dev/null && continue || { \
-			echo "vendor dir in $$dir differs, please re-add it to your commit"; \
-			exit 1; \
-		}; \
-	done
+	git diff --quiet || { echo "Depenency changes detected. Please commit these before psuhing." >&2; exit 1; }
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
