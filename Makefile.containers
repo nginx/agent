@@ -38,8 +38,6 @@ else ifeq ($(OS_RELEASE), debian)
 CONTAINER_OS_TYPE = deb
 else ifeq (${OS_RELEASE}, alpine)
 CONTAINER_OS_TYPE = apk
-else ifeq (${OS_RELEASE}, freebsd)
-CONTAINER_OS_TYPE = pkg
 else
 CONTAINER_OS_TYPE = rpm
 endif
