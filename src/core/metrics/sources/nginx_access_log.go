@@ -159,7 +159,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
 	log.Debugf("Pattern used for tailing logs: %s", logPattern)
 
-	httpCounters, upstreamCounters := getDefaultCounters()
+	httpCounters, upstreamCounters, upstreamCacheCounters := getDefaultCounters()
 	gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes := []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
 	mu := sync.Mutex{}
@@ -295,6 +295,15 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 					log.Debugf("Error getting upstream status value from access logs, %v", err)
 				}
 			}
+
+			if access.UpstreamCacheStatus != "" && access.UpstreamCacheStatus != "-" {
+				log.Info("----------- Upstream Cache Status -------------")
+				log.Info(access.UpstreamCacheStatus)
+				log.Info(fmt.Sprintf("cache.%s", strings.ToLower(access.UpstreamCacheStatus)))
+				getUpstreamCacheStatus(access.UpstreamCacheStatus, upstreamCacheCounters)
+				log.Info(upstreamCacheCounters)
+			}
+
 			// don't need the http status for NGINX Plus
 			if c.nginxType == OSSNginxType {
 				if v, err := strconv.Atoi(access.Status); err == nil {
@@ -357,10 +366,13 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			c.group = ""
 			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamCounters)...)
 
+			c.group = ""
+			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamCacheCounters)...)
+
 			log.Tracef("Access log metrics collected: %v", simpleMetrics)
 
 			// reset the counters
-			httpCounters, upstreamCounters = getDefaultCounters()
+			httpCounters, upstreamCounters, upstreamCacheCounters = getDefaultCounters()
 			gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes = []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
 			c.buf = append(c.buf, metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics))
@@ -433,6 +445,35 @@ func getAverageMetricValue(metricValues []float64) float64 {
 	}
 
 	return value
+}
+
+func getUpstreamCacheStatus(status string, counter map[string]float64) {
+
+	n := fmt.Sprintf("cache.%s", strings.ToLower(status))
+
+	switch status {
+	case "BYPASS":
+		counter[n] = counter[n] + 1
+		return
+	case "EXPIRED":
+		counter[n] = counter[n] + 1
+		return
+	case "HIT":
+		counter[n] = counter[n] + 1
+		return
+	case "MISS":
+		counter[n] = counter[n] + 1
+		return
+	case "REVALIDATED":
+		counter[n] = counter[n] + 1
+		return
+	case "STALE":
+		counter[n] = counter[n] + 1
+		return
+	case "UPDATING":
+		counter[n] = counter[n] + 1
+		return
+	}
 }
 
 func getTimeMetricsMap(metricName string, times []float64, counter map[string]float64) {
@@ -509,6 +550,7 @@ func convertLogFormat(logFormat string) string {
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_response_time", "%{DATA:upstream_response_time}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_response_length", "%{DATA:upstream_response_length}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_status", "%{DATA:upstream_status}")
+	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_cache_status", "%{DATA:upstream_cache_status}")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "[", "\\[")
 	newLogFormat = strings.ReplaceAll(newLogFormat, "]", "\\]")
 	return newLogFormat
@@ -523,7 +565,7 @@ func isOtherMethod(method string) bool {
 		method != "method.options"
 }
 
-func getDefaultCounters() (map[string]float64, map[string]float64) {
+func getDefaultCounters() (map[string]float64, map[string]float64, map[string]float64) {
 	httpCounters := map[string]float64{
 		"gzip.ratio":              0,
 		"method.delete":           0,
@@ -584,5 +626,15 @@ func getDefaultCounters() (map[string]float64, map[string]float64) {
 		"upstream.status.5xx":           0,
 	}
 
-	return httpCounters, upstreamCounters
+	upstreamCacheCounters := map[string]float64{
+		"cache.bypass":      0,
+		"cache.expired":     0,
+		"cache.hit":         0,
+		"cache.miss":        0,
+		"cache.revalidated": 0,
+		"cache.stale":       0,
+		"cache.updating":    0,
+	}
+
+	return httpCounters, upstreamCounters, upstreamCacheCounters
 }

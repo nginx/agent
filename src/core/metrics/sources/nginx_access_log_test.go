@@ -300,6 +300,34 @@ func TestAccessLogStats(t *testing.T) {
 						Name:  "nginx.upstream.status.5xx",
 						Value: 0,
 					},
+					{
+						Name:  "nginx.cache.bypass",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.expired",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.hit",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.miss",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.revalidated",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.stale",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.updating",
+						Value: 0,
+					},
 				},
 			},
 		},
@@ -528,27 +556,55 @@ func TestAccessLogStats(t *testing.T) {
 						Name:  "nginx.upstream.status.5xx",
 						Value: 0,
 					},
+					{
+						Name:  "nginx.cache.bypass",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.expired",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.hit",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.miss",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.revalidated",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.stale",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.updating",
+						Value: 0,
+					},
 				},
 			},
 		},
 		{
 			"full_access_log_test",
-			`$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time" "$gzip_ratio" "$server_protocol" "$upstream_connect_time" "$upstream_header_time" "$upstream_response_length" "$upstream_response_time" "$upstream_status"`,
+			`$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time" "$gzip_ratio" "$server_protocol" "$upstream_connect_time" "$upstream_header_time" "$upstream_response_length" "$upstream_response_time" "$upstream_status" "$upstream_cache_status"`,
 			[]string{
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"10\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.00\" \"200\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"POST /nginx_status HTTP/1.1\" 201 98 \"-\" \"Go-http-client/1.1\" \"-\" \"250\" \"110\" \"0.300\" \"20\" \"HTTP/1.1\" \"350\" \"730\" \"28\" \"0.01\" \"201\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.00\" \"200\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"DELETE /nginx_status HTTP/1.1\" 400 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.03\" \"400\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"DELETE /nginx_status HTTP/1.1\" 403 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"100\" \"500\" \"28\" \"0.00\" \"403\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"HEAD /nginx_status HTTP/1.1\" 404 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"505\" \"28\" \"0.00\" \"404\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"PUT /nginx_status HTTP/1.1\" 499 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"2000\" \"28\" \"0.00\" \"-\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"PUT /nginx_status HTTP/1.1\" 500 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"2350\" \"250\" \"28\" \"0.02\" \"500\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/1.0\" 502 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.0\" \"350\" \"500\" \"28\" \"0.01\" \"502\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/2\" 503 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/2\" \"350\" \"500\" \"28\" \"0.00\" \"503\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/0.9\" 504 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/0.9\" \"350\" \"590\" \"28\" \"0.00\" \"502\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/1.1\" 502 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"900\" \"500\" \"28\" \"0.00\" \"200\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"TRACE /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"-\" \"HTTP/1.1\" \"350\" \"170\" \"28\" \"0.00\" \"200\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"TRACE /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"-\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.00\" \"200\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"10\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.00\" \"200\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"POST /nginx_status HTTP/1.1\" 201 98 \"-\" \"Go-http-client/1.1\" \"-\" \"250\" \"110\" \"0.300\" \"20\" \"HTTP/1.1\" \"350\" \"730\" \"28\" \"0.01\" \"201\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.00\" \"200\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"DELETE /nginx_status HTTP/1.1\" 400 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.03\" \"400\" \"MISS\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"DELETE /nginx_status HTTP/1.1\" 403 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"100\" \"500\" \"28\" \"0.00\" \"403\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"HEAD /nginx_status HTTP/1.1\" 404 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"505\" \"28\" \"0.00\" \"404\" \"MISS\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"PUT /nginx_status HTTP/1.1\" 499 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"2000\" \"28\" \"0.00\" \"-\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"PUT /nginx_status HTTP/1.1\" 500 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"2350\" \"250\" \"28\" \"0.02\" \"500\" \"UPDATING\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/1.0\" 502 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.0\" \"350\" \"500\" \"28\" \"0.01\" \"502\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/2\" 503 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/2\" \"350\" \"500\" \"28\" \"0.00\" \"503\" \"HIT\" \n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/0.9\" 504 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/0.9\" \"350\" \"590\" \"28\" \"0.00\" \"502\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"OPTIONS /nginx_status HTTP/1.1\" 502 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"900\" \"500\" \"28\" \"0.00\" \"200\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"TRACE /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"-\" \"HTTP/1.1\" \"350\" \"170\" \"28\" \"0.00\" \"200\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"TRACE /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"-\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.00\" \"200\" \"HIT\"\n",
 			},
 			&proto.StatsEntity{
 				Simplemetrics: []*proto.SimpleMetric{
@@ -767,6 +823,34 @@ func TestAccessLogStats(t *testing.T) {
 					{
 						Name:  "nginx.upstream.status.5xx",
 						Value: 4,
+					},
+					{
+						Name:  "nginx.cache.bypass",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.expired",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.hit",
+						Value: 11,
+					},
+					{
+						Name:  "nginx.cache.miss",
+						Value: 2,
+					},
+					{
+						Name:  "nginx.cache.revalidated",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.stale",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.cache.updating",
+						Value: 1,
 					},
 				},
 			},
