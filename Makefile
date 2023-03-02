@@ -102,7 +102,7 @@ deps: ## Update dependencies in vendor folders
 	done
 	go mod download
 	go work sync
-	git diff --quiet || { echo "Depenency changes detected. Please commit these before psuhing." >&2; exit 1; }
+	git diff --quiet || { echo "Depenency changes detected. Please commit these before pushing." >&2; exit 1; }
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
