@@ -26,7 +26,7 @@ import (
 
 const (
 	advancedMetricsPluginVersion     = "v0.8.0"
-	advancedMetricsPluginName    	 = "Advanced Metrics Plugin"
+	advancedMetricsPluginName        = "Advanced Metrics Plugin"
 	aggregationDurationDimension     = "aggregation_duration"
 	streamMetricFamilyDimensionValue = "tcp-udp"
 

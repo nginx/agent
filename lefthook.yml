@@ -1,6 +1,7 @@
 # see https://github.com/evilmartians/lefthook for references
 pre-commit:
   parallel: false
+  piped: true # Stop if one of the steps fail
   commands:
     format:
       run: make format

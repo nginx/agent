@@ -114,6 +114,7 @@ install-tools: ## Install dependencies in tools.go
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go get %
 	@echo "Installing Tools"
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
+	@go run github.com/evilmartians/lefthook run pre-commit
 
 generate-swagger: ## Generates swagger.json from source code
 	go run github.com/go-swagger/go-swagger/cmd/swagger generate spec -o ./docs/swagger.json --scan-models
