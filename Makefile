@@ -48,6 +48,7 @@ else
 	endif
 endif
 
+VENDOR_LOCATIONS         := sdk test/integration test/performance .
 TEST_BUILD_DIR           := build/test
 TEST_DOCKER_COMPOSE_FILE ?= "docker-compose-deb.yml"
 PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
@@ -94,11 +95,17 @@ build: ## Build agent executable
 	GOWORK=off CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 
 deps: ## Update dependencies in vendor folders
-	cd sdk && go mod tidy && go mod vendor && make generate && go mod tidy && go mod vendor
-	cd test/integration && go mod tidy && go mod vendor
-	cd test/performance && go mod tidy && go mod vendor
-	go mod tidy && go mod vendor && go mod download && go work sync
-	make generate-swagger
+	for dir in ${VENDOR_LOCATIONS}; do \
+		(cd "$$dir" && echo "Running vendor commands on $$dir" && go mod tidy && go mod vendor && cd "$$OLDPWD" || exit) \
+	done
+	go mod download
+	go work sync
+	for dir in "${VENDOR_LOCATIONS[@]}"; do \
+		git diff --exit-code "vendor" &> /dev/null && continue || { \
+			echo "vendor dir in $$dir differs, please re-add it to your commit"; \
+			exit 1; \
+		}; \
+	done
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
