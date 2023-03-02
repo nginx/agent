@@ -1,15 +1,15 @@
 ARG OS_RELEASE
 ARG OS_VERSION
+ARG CONTAINER_REGISTRY
 
-FROM registry.suse.com/${OS_RELEASE}/${OS_VERSION} as install
+FROM ${CONTAINER_REGISTRY}/${OS_RELEASE}/${OS_VERSION} as install
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
 ARG OS_VERSION
 ARG PACKAGES_REPO
-ARG BASE_IMAGE
 
 WORKDIR /agent
-COPY ./scripts/docker/nginx-plus/entrypoint.sh /agent/entrypoint.sh
+COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
 COPY ./nginx-agent.conf /agent/nginx-agent.conf
 
 RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
