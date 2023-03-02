@@ -39,6 +39,7 @@ require (
 
 require (
 	github.com/bufbuild/buf v1.15.0
+	github.com/evilmartians/lefthook v1.3.3
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-swagger/go-swagger v0.30.4
 	github.com/goreleaser/nfpm/v2 v2.26.0
@@ -80,7 +81,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.3.0-java // indirect
-	github.com/evilmartians/lefthook v1.3.3 // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect

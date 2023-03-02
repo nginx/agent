@@ -65,6 +65,17 @@ var (
 	}
 	grpcTimeoutUnitLookup        = make(map[byte]time.Duration)
 	errTrailersWithoutGRPCStatus = fmt.Errorf("gRPC protocol error: no %s trailer", grpcHeaderStatus)
+
+	// defaultGrpcUserAgent follows
+	// https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#user-agents:
+	//
+	//	While the protocol does not require a user-agent to function it is recommended
+	//	that clients provide a structured user-agent string that provides a basic
+	//	description of the calling library, version & platform to facilitate issue diagnosis
+	//	in heterogeneous environments. The following structure is recommended to library developers:
+	//
+	//	User-Agent → "grpc-" Language ?("-" Variant) "/" Version ?( " ("  *(AdditionalProperty ";") ")" )
+	defaultGrpcUserAgent = fmt.Sprintf("grpc-go-connect/%s (%s)", Version, runtime.Version())
 )
 
 func init() {
@@ -99,12 +110,18 @@ func (g *protocolGRPC) NewHandler(params *protocolHandlerParams) protocolHandler
 
 // NewClient implements protocol, so it must return an interface.
 func (g *protocolGRPC) NewClient(params *protocolClientParams) (protocolClient, error) {
-	if err := validateRequestURL(params.URL); err != nil {
+	url, err := validateRequestURL(params.URL)
+	if err != nil {
 		return nil, err
+	}
+	peer := newPeerFromURL(url, ProtocolGRPC)
+	if g.web {
+		peer = newPeerFromURL(url, ProtocolGRPCWeb)
 	}
 	return &grpcClient{
 		protocolClientParams: *params,
 		web:                  g.web,
+		peer:                 peer,
 	}, nil
 }
 
@@ -120,7 +137,7 @@ func (g *grpcHandler) ContentTypes() map[string]struct{} {
 }
 
 func (*grpcHandler) SetTimeout(request *http.Request) (context.Context, context.CancelFunc, error) {
-	timeout, err := grpcParseTimeout(request.Header.Get(grpcHeaderTimeout))
+	timeout, err := grpcParseTimeout(getHeaderCanonical(request.Header, grpcHeaderTimeout))
 	if err != nil && !errors.Is(err, errNoTimeout) {
 		// Errors here indicate that the client sent an invalid timeout header, so
 		// the error text is safe to send back.
@@ -141,8 +158,8 @@ func (g *grpcHandler) NewConn(
 	// send the error to the client later on.
 	requestCompression, responseCompression, failed := negotiateCompression(
 		g.CompressionPools,
-		request.Header.Get(grpcHeaderCompression),
-		request.Header.Get(grpcHeaderAcceptCompression),
+		getHeaderCanonical(request.Header, grpcHeaderCompression),
+		getHeaderCanonical(request.Header, grpcHeaderAcceptCompression),
 	)
 	if failed == nil {
 		failed = checkServerStreamsCanFlush(g.Spec, responseWriter)
@@ -156,13 +173,13 @@ func (g *grpcHandler) NewConn(
 	// Since we know that these header keys are already in canonical form, we can
 	// skip the normalization in Header.Set.
 	header := responseWriter.Header()
-	header[headerContentType] = []string{request.Header.Get(headerContentType)}
+	header[headerContentType] = []string{getHeaderCanonical(request.Header, headerContentType)}
 	header[grpcHeaderAcceptCompression] = []string{g.CompressionPools.CommaSeparatedNames()}
 	if responseCompression != compressionIdentity {
 		header[grpcHeaderCompression] = []string{responseCompression}
 	}
 
-	codecName := grpcCodecFromContentType(g.web, request.Header.Get(headerContentType))
+	codecName := grpcCodecFromContentType(g.web, getHeaderCanonical(request.Header, headerContentType))
 	codec := g.Codecs.Get(codecName) // handler.go guarantees this is not nil
 	protocolName := ProtocolGRPC
 	if g.web {
@@ -213,21 +230,19 @@ func (g *grpcHandler) NewConn(
 type grpcClient struct {
 	protocolClientParams
 
-	web bool
+	web  bool
+	peer Peer
 }
 
 func (g *grpcClient) Peer() Peer {
-	if g.web {
-		return newPeerFromURL(g.URL, ProtocolGRPCWeb)
-	}
-	return newPeerFromURL(g.URL, ProtocolGRPC)
+	return g.peer
 }
 
 func (g *grpcClient) WriteRequestHeader(_ StreamType, header http.Header) {
 	// We know these header keys are in canonical form, so we can bypass all the
 	// checks in Header.Set.
-	if header.Get(headerUserAgent) == "" {
-		header[headerUserAgent] = []string{grpcUserAgent()}
+	if getHeaderCanonical(header, headerUserAgent) == "" {
+		header[headerUserAgent] = []string{defaultGrpcUserAgent}
 	}
 	header[headerContentType] = []string{grpcContentTypeFromCodecName(g.web, g.Codec.Name())}
 	// gRPC handles compression on a per-message basis, so we don't want to
@@ -354,7 +369,7 @@ func (cc *grpcClientConn) Receive(msg any) error {
 	if err == nil {
 		return nil
 	}
-	if cc.responseHeader.Get(grpcHeaderStatus) != "" {
+	if getHeaderCanonical(cc.responseHeader, grpcHeaderStatus) != "" {
 		// We got what gRPC calls a trailers-only response, which puts the trailing
 		// metadata (including errors) into HTTP headers. validateResponse has
 		// already extracted the error.
@@ -412,7 +427,7 @@ func (cc *grpcClientConn) validateResponse(response *http.Response) *Error {
 	); err != nil {
 		return err
 	}
-	compression := response.Header.Get(grpcHeaderCompression)
+	compression := getHeaderCanonical(response.Header, grpcHeaderCompression)
 	cc.unmarshaler.envelopeReader.compressionPool = cc.compressionPools.Get(compression)
 	return nil
 }
@@ -531,11 +546,13 @@ func (hc *grpcHandlerConn) Close(err error) (retErr error) {
 		// implement http.Flusher, we must pre-declare our HTTP trailers. We can
 		// remove this when Go 1.21 ships and we drop support for Go 1.19.
 		for key := range mergedTrailers {
-			hc.responseWriter.Header().Add("Trailer", key)
+			addHeaderCanonical(hc.responseWriter.Header(), headerTrailer, key)
 		}
 		hc.responseWriter.WriteHeader(http.StatusOK)
 		for key, values := range mergedTrailers {
 			for _, value := range values {
+				// These are potentially user-supplied, so we can't assume they're in
+				// canonical form. Don't use addHeaderCanonical.
 				hc.responseWriter.Header().Add(key, value)
 			}
 		}
@@ -550,6 +567,8 @@ func (hc *grpcHandlerConn) Close(err error) (retErr error) {
 	// logic breaks Envoy's gRPC-Web translation.
 	for key, values := range mergedTrailers {
 		for _, value := range values {
+			// These are potentially user-supplied, so we can't assume they're in
+			// canonical form. Don't use addHeaderCanonical.
 			hc.responseWriter.Header().Add(http.TrailerPrefix+key, value)
 		}
 	}
@@ -563,6 +582,17 @@ type grpcMarshaler struct {
 func (m *grpcMarshaler) MarshalWebTrailers(trailer http.Header) *Error {
 	raw := m.envelopeWriter.bufferPool.Get()
 	defer m.envelopeWriter.bufferPool.Put(raw)
+	for key, values := range trailer {
+		// Per the Go specification, keys inserted during iteration may be produced
+		// later in the iteration or may be skipped. For safety, avoid mutating the
+		// map if the key is already lower-cased.
+		lower := strings.ToLower(key)
+		if key == lower {
+			continue
+		}
+		delete(trailer, key)
+		trailer[lower] = values
+	}
 	if err := trailer.Write(raw); err != nil {
 		return errorf(CodeInternal, "format trailers: %w", err)
 	}
@@ -625,7 +655,7 @@ func grpcValidateResponse(
 	if response.StatusCode != http.StatusOK {
 		return errorf(grpcHTTPToCode(response.StatusCode), "HTTP status %v", response.Status)
 	}
-	if compression := response.Header.Get(grpcHeaderCompression); compression != "" &&
+	if compression := getHeaderCanonical(response.Header, grpcHeaderCompression); compression != "" &&
 		compression != compressionIdentity &&
 		!availableCompressors.Contains(compression) {
 		// Per https://github.com/grpc/grpc/blob/master/doc/compression.md, we
@@ -647,11 +677,11 @@ func grpcValidateResponse(
 	); err != nil && !errors.Is(err, errTrailersWithoutGRPCStatus) {
 		// Per the specification, only the HTTP status code and Content-Type should
 		// be treated as headers. The rest should be treated as trailing metadata.
-		if contentType := response.Header.Get(headerContentType); contentType != "" {
-			header.Set(headerContentType, contentType)
+		if contentType := getHeaderCanonical(response.Header, headerContentType); contentType != "" {
+			setHeaderCanonical(header, headerContentType, contentType)
 		}
 		mergeHeaders(trailer, response.Header)
-		trailer.Del(headerContentType)
+		delHeaderCanonical(trailer, headerContentType)
 		// Also set the error metadata
 		err.meta = header.Clone()
 		mergeHeaders(err.meta, trailer)
@@ -688,7 +718,7 @@ func grpcHTTPToCode(httpCode int) Code {
 // use a different codec. Consequently, this function needs a Protobuf codec to
 // unmarshal error information in the headers.
 func grpcErrorFromTrailer(bufferPool *bufferPool, protobuf Codec, trailer http.Header) *Error {
-	codeHeader := trailer.Get(grpcHeaderStatus)
+	codeHeader := getHeaderCanonical(trailer, grpcHeaderStatus)
 	if codeHeader == "" {
 		return NewError(CodeInternal, errTrailersWithoutGRPCStatus)
 	}
@@ -700,10 +730,10 @@ func grpcErrorFromTrailer(bufferPool *bufferPool, protobuf Codec, trailer http.H
 	if err != nil {
 		return errorf(CodeInternal, "gRPC protocol error: invalid error code %q", codeHeader)
 	}
-	message := grpcPercentDecode(bufferPool, trailer.Get(grpcHeaderMessage))
+	message := grpcPercentDecode(bufferPool, getHeaderCanonical(trailer, grpcHeaderMessage))
 	retErr := NewWireError(Code(code), errors.New(message))
 
-	detailsBinaryEncoded := trailer.Get(grpcHeaderDetails)
+	detailsBinaryEncoded := getHeaderCanonical(trailer, grpcHeaderDetails)
 	if len(detailsBinaryEncoded) > 0 {
 		detailsBinary, err := DecodeBinaryHeader(detailsBinaryEncoded)
 		if err != nil {
@@ -762,19 +792,6 @@ func grpcEncodeTimeout(timeout time.Duration) (string, error) {
 	return "", errNoTimeout
 }
 
-// grpcUserAgent follows
-// https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#user-agents:
-//
-//	While the protocol does not require a user-agent to function it is recommended
-//	that clients provide a structured user-agent string that provides a basic
-//	description of the calling library, version & platform to facilitate issue diagnosis
-//	in heterogeneous environments. The following structure is recommended to library developers:
-//
-//	User-Agent → "grpc-" Language ?("-" Variant) "/" Version ?( " ("  *(AdditionalProperty ";") ")" )
-func grpcUserAgent() string {
-	return fmt.Sprintf("grpc-go-connect/%s (%s)", Version, runtime.Version())
-}
-
 func grpcCodecFromContentType(web bool, contentType string) string {
 	if (!web && contentType == grpcContentTypeDefault) || (web && contentType == grpcWebContentTypeDefault) {
 		// implicitly protobuf
@@ -796,19 +813,21 @@ func grpcContentTypeFromCodecName(web bool, name string) string {
 
 func grpcErrorToTrailer(bufferPool *bufferPool, trailer http.Header, protobuf Codec, err error) {
 	if err == nil {
-		trailer.Set(grpcHeaderStatus, "0") // zero is the gRPC OK status
-		trailer.Set(grpcHeaderMessage, "")
+		setHeaderCanonical(trailer, grpcHeaderStatus, "0") // zero is the gRPC OK status
+		setHeaderCanonical(trailer, grpcHeaderMessage, "")
 		return
 	}
 	status := grpcStatusFromError(err)
 	code := strconv.Itoa(int(status.Code))
 	bin, binErr := protobuf.Marshal(status)
 	if binErr != nil {
-		trailer.Set(
+		setHeaderCanonical(
+			trailer,
 			grpcHeaderStatus,
 			strconv.FormatInt(int64(CodeInternal), 10 /* base */),
 		)
-		trailer.Set(
+		setHeaderCanonical(
+			trailer,
 			grpcHeaderMessage,
 			grpcPercentEncode(
 				bufferPool,
@@ -820,9 +839,9 @@ func grpcErrorToTrailer(bufferPool *bufferPool, trailer http.Header, protobuf Co
 	if connectErr, ok := asError(err); ok {
 		mergeHeaders(trailer, connectErr.meta)
 	}
-	trailer.Set(grpcHeaderStatus, code)
-	trailer.Set(grpcHeaderMessage, grpcPercentEncode(bufferPool, status.Message))
-	trailer.Set(grpcHeaderDetails, EncodeBinaryHeader(bin))
+	setHeaderCanonical(trailer, grpcHeaderStatus, code)
+	setHeaderCanonical(trailer, grpcHeaderMessage, grpcPercentEncode(bufferPool, status.Message))
+	setHeaderCanonical(trailer, grpcHeaderDetails, EncodeBinaryHeader(bin))
 }
 
 func grpcStatusFromError(err error) *statusv1.Status {
