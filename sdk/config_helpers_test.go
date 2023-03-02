@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,11 +22,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/nginx/agent/sdk/v2/checksum"
 	SDKfiles "github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/zip"
+
+	"github.com/gogo/protobuf/types"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -170,11 +170,13 @@ var tests = []struct {
 							{
 								Name:        "nginx.conf",
 								Permissions: "0644",
+								Lines:       int32(51),
 								Size_:       959,
 							},
 							{
 								Name:        "ca.crt",
 								Permissions: "0644",
+								Lines:       int32(31),
 								Size_:       959,
 							},
 						},
@@ -187,17 +189,14 @@ var tests = []struct {
 							{
 								Name:        "log-default.json",
 								Permissions: "0644",
-								Size_:       959,
 							},
 							{
 								Name:        "my-nap-policy.json",
 								Permissions: "0644",
-								Size_:       959,
 							},
 							{
 								Name:        "test.html",
 								Permissions: "0644",
-								Size_:       959,
 							},
 						},
 						Size_: 128,
@@ -321,7 +320,6 @@ var tests = []struct {
 							{
 								Name:        "test.html",
 								Permissions: "0644",
-								Size_:       959,
 							},
 						},
 						Size_: 128,
@@ -333,12 +331,12 @@ var tests = []struct {
 							{
 								Name:        "nginx2.conf",
 								Permissions: "0644",
-								Size_:       959,
+								Lines:       int32(41),
 							},
 							{
 								Name:        "ca.crt",
 								Permissions: "0644",
-								Size_:       959,
+								Lines:       int32(31),
 							},
 						},
 						Size_: 128,
@@ -483,6 +481,7 @@ var tests = []struct {
 							{
 								Name:        "hello.conf",
 								Permissions: "0644",
+								Lines:       int32(62),
 								Size_:       1672,
 							},
 						},
@@ -626,6 +625,7 @@ func TestGetNginxConfig(t *testing.T) {
 				resultFile := resultDir.Files[fileIndex]
 				assert.Equal(t, expectedFile.Name, resultFile.Name)
 				assert.Equal(t, expectedFile.Permissions, resultFile.Permissions)
+				assert.Equal(t, expectedFile.Lines, resultFile.Lines, "unexpected line count for "+expectedFile.Name)
 			}
 		}
 
@@ -715,12 +715,12 @@ func TestGetStatusApiInfo(t *testing.T) {
 			require.Nil(t, err)
 
 			// Replace ip & ports in config with mock server ip & port
-			input, err := ioutil.ReadFile(test.fileName)
+			input, err := os.ReadFile(test.fileName)
 			assert.Nil(t, err)
 			splitUrl := strings.Split(server.URL, "//")[1]
 
 			output := bytes.Replace(input, []byte("127.0.0.1:80"), []byte(splitUrl), -1)
-			assert.NoError(t, ioutil.WriteFile(test.fileName, output, 0666))
+			assert.NoError(t, os.WriteFile(test.fileName, output, 0664))
 
 			result, err := GetStatusApiInfo(test.fileName)
 
@@ -912,7 +912,7 @@ server {
 		`,
 		},
 	} {
-		f, err := ioutil.TempFile(tmpDir, "conf")
+		f, err := os.CreateTemp(tmpDir, "conf")
 		assert.NoError(t, err)
 
 		_, err = f.Write([]byte(fmt.Sprintf("http{ %s }", tt.conf)))
@@ -985,7 +985,7 @@ func setUpDirectories() error {
 	}
 
 	for _, file := range files {
-		err := ioutil.WriteFile(file, []byte{}, 0644)
+		err := os.WriteFile(file, []byte{}, 0644)
 		if err != nil {
 			return err
 		}
@@ -1016,7 +1016,7 @@ func setUpFile(file string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(file, content, 0644)
+	err = os.WriteFile(file, content, 0644)
 	if err != nil {
 		return err
 	}
@@ -1112,7 +1112,7 @@ root foo/bar;`,
 		t.Run(tt.name, func(t *testing.T) {
 			tmpDir := t.TempDir()
 
-			f, err := ioutil.TempFile(tmpDir, "conf")
+			f, err := os.CreateTemp(tmpDir, "conf")
 			require.NoError(t, err)
 
 			_, err = f.WriteString(tt.input)
@@ -1256,6 +1256,7 @@ func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
 				resultFile := resultDir.Files[fileIndex]
 				assert.Equal(t, expectedFile.Name, resultFile.Name)
 				assert.Equal(t, expectedFile.Permissions, resultFile.Permissions)
+				assert.Equal(t, expectedFile.Lines, resultFile.Lines, "unexpected line count for "+expectedFile.Name)
 			}
 		}
 	}
@@ -1356,6 +1357,7 @@ func TestAddAuxfileToNginxConfig(t *testing.T) {
 				resultFile := resultDir.Files[fileIndex]
 				assert.Equal(t, expectedFile.Name, resultFile.Name)
 				assert.Equal(t, expectedFile.Permissions, resultFile.Permissions)
+				assert.Equal(t, expectedFile.Lines, resultFile.Lines, "unexpected line count for "+expectedFile.Name)
 			}
 		}
 	}
