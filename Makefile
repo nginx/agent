@@ -14,7 +14,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | amazonlinux      | 2                          |                                                                |
 # | ubuntu           | 18.04, 20.04, 22.04        |                                                                |
 # | debian           | bullseye-slim, buster-slim |                                                                |
-# | centos           | 7                          | centos 7 (below 7.4) uses plus-pkgs.nginx.com as PACKAGES_REPO |
+# | centos           | 7                          |                                                                |
 # | redhatenterprise | 7, 8, 9                    |                                                                |
 # | rockylinux       | 8, 9                       |                                                                |
 # | almalinux        | 8, 9                       |                                                                |
