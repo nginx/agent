@@ -297,11 +297,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			}
 
 			if access.UpstreamCacheStatus != "" && access.UpstreamCacheStatus != "-" {
-				log.Info("----------- Upstream Cache Status -------------")
-				log.Info(access.UpstreamCacheStatus)
-				log.Info(fmt.Sprintf("cache.%s", strings.ToLower(access.UpstreamCacheStatus)))
 				getUpstreamCacheStatus(access.UpstreamCacheStatus, upstreamCacheCounters)
-				log.Info(upstreamCacheCounters)
 			}
 
 			// don't need the http status for NGINX Plus
