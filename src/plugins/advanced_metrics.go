@@ -74,9 +74,8 @@ const (
 	bytesRcvdMetric                    = "bytes_rcvd"
 	bytesSentMetric                    = "bytes_sent"
 
-	aggregationDurationDimension = "aggregation_duration"
-
-	streamMetricFamilyDimensionValue = "tcp-udp"
+	aggregationDurationDimension       = "aggregation_duration"
+	streamMetricFamilyDimensionValue   = "tcp-udp"
 )
 
 var maxOnlyMetrics = map[string]struct{}{

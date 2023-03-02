@@ -1,5 +1,8 @@
+# see https://github.com/evilmartians/lefthook for references
 pre-commit:
+  parallel: false
   commands:
     format:
-    #   glob: "Makefile"
       run: make format
+    dependencies:
+      run: make deps

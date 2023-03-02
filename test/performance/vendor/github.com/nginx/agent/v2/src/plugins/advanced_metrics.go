@@ -74,8 +74,7 @@ const (
 	bytesRcvdMetric                    = "bytes_rcvd"
 	bytesSentMetric                    = "bytes_sent"
 
-	aggregationDurationDimension = "aggregation_duration"
-
+	aggregationDurationDimension     = "aggregation_duration"
 	streamMetricFamilyDimensionValue = "tcp-udp"
 )
 
