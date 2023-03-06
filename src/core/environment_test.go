@@ -551,10 +551,10 @@ func TestParseOsReleaseFile(t *testing.T) {
 			name:             "fedora os-release info",
 			osReleaseContent: fedoraOsReleaseInfo,
 			expect: map[string]string{
-				"VERSION_ID":       "32",
-				"VERSION":          "32 (Workstation Edition)",
-				"NAME":             "Fedora",
-				"ID":               "fedora",
+				"VERSION_ID": "32",
+				"VERSION":    "32 (Workstation Edition)",
+				"NAME":       "Fedora",
+				"ID":         "fedora",
 			},
 		},
 	}
@@ -656,6 +656,7 @@ func TestMergeHostAndOsReleaseInfo(t *testing.T) {
 		})
 	}
 }
+
 func TestGetContainerID(t *testing.T) {
 	tests := []struct {
 		name      string
