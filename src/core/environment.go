@@ -599,6 +599,7 @@ func mergeHostAndOsReleaseInfo(hostReleaseInfo *proto.ReleaseInfo,
 	if len(osReleaseInfo[id]) == 0 {
 		osReleaseInfo[id] = hostReleaseInfo.Id
 	}
+
 	return &proto.ReleaseInfo{
 		VersionId: osReleaseInfo[versionId],
 		Version:   osReleaseInfo[version],
