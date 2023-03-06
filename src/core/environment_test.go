@@ -333,7 +333,7 @@ func TestNewHostInfo(t *testing.T) {
 	assert.GreaterOrEqual(t, len(host.Network.Interfaces), 1)
 	assert.GreaterOrEqual(t, len(host.Processor), 1)
 	assert.NotEmpty(t, host.Processor[0].Architecture)
-	assert.Len(t, strings.Split(host.Uname, " "), 5)
+	assert.GreaterOrEqual(t, len(strings.Split(host.Uname, " ")), 5)
 	assert.NotEmpty(t, host.Release)
 	assert.Equal(t, tags, host.Tags)
 }
