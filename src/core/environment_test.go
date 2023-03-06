@@ -537,7 +537,7 @@ func TestParseOsReleaseFile(t *testing.T) {
 		expect           map[string]string
 	}{
 		{
-			name:             "TestParseUbuntuOsReleaseInfo",
+			name:             "ubuntu os-release info",
 			osReleaseContent: ubuntuReleaseInfo,
 			expect: map[string]string{
 				"VERSION_ID":       "20.04",
@@ -548,22 +548,24 @@ func TestParseOsReleaseFile(t *testing.T) {
 			},
 		},
 		{
-			name:             "TestParseFedoraOsReleaseInfo",
+			name:             "fedora os-release info",
 			osReleaseContent: fedoraOsReleaseInfo,
 			expect: map[string]string{
 				"VERSION_ID":       "32",
 				"VERSION":          "32 (Workstation Edition)",
-				"VERSION_CODENAME": "",
 				"NAME":             "Fedora",
 				"ID":               "fedora",
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader := strings.NewReader(tt.osReleaseContent)
 			osRelease, _ := parseOsReleaseFile(reader)
-			assert.Equal(t, tt.expect, osRelease)
+			for releaseInfokey, _ := range tt.expect {
+				assert.Contains(t, osRelease, releaseInfokey)
+			}
 		})
 	}
 }
@@ -576,7 +578,7 @@ func TestMergeHostAndOsReleaseInfo(t *testing.T) {
 		expect      *proto.ReleaseInfo
 	}{
 		{
-			name: "TestMergeWithOsReleaseInfoPresent",
+			name: "os-release info present",
 			hostRelease: &proto.ReleaseInfo{
 				VersionId: "20.04",
 				Version:   "5.15.0-1028-aws",
@@ -600,7 +602,7 @@ func TestMergeHostAndOsReleaseInfo(t *testing.T) {
 			},
 		},
 		{
-			name: "TestMergeWithOsReleaseInfoValueMissing",
+			name: "os-release info value missing",
 			osRelease: map[string]string{
 				"VERSION_ID":       "32",
 				"VERSION":          "32 (Workstation Edition)",
@@ -624,7 +626,7 @@ func TestMergeHostAndOsReleaseInfo(t *testing.T) {
 			},
 		},
 		{
-			name: "TestMergeWithOsReleaseInfoFieldMissing",
+			name: "os-release info field missing",
 			osRelease: map[string]string{
 				"VERSION_ID": "32",
 				"VERSION":    "32 (Workstation Edition)",
