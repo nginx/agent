@@ -39,6 +39,10 @@ type StatsEntityWrapper struct {
 	Data *proto.StatsEntity
 }
 
+type MetricsReportBundle struct {
+	Data []*proto.MetricsReport
+}
+
 type NginxCollectorConfig struct {
 	NginxId            string
 	StubStatus         string
@@ -373,7 +377,7 @@ func GetCalculationMap() map[string]string {
 	}
 }
 
-func GenerateMetricsReports(entities []*StatsEntityWrapper) (reports []core.Payload) {
+func GenerateMetricsReports(entities []*StatsEntityWrapper) (bundles []core.Payload) {
 	reportMap := make(map[proto.MetricsReport_Type]*proto.MetricsReport, 0)
 
 	for _, entity := range entities {
@@ -389,8 +393,12 @@ func GenerateMetricsReports(entities []*StatsEntityWrapper) (reports []core.Payl
 		reportMap[entity.Type].Data = append(reportMap[entity.Type].Data, entity.Data)
 	}
 
-	for _, report := range reportMap {
-		reports = append(reports, report)
+	if len(reportMap) > 0 {
+		bundle := &MetricsReportBundle{Data: []*proto.MetricsReport{}}
+		for _, report := range reportMap {
+			bundle.Data = append(bundle.Data, report)
+		}
+		bundles = append(bundles, bundle)
 	}
 	return
 }
