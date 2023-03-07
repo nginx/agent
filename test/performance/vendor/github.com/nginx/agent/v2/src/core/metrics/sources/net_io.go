@@ -13,12 +13,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/shirou/gopsutil/v3/net"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
+	"github.com/shirou/gopsutil/v3/net"
 )
 
 const NETWORK_INTERFACE = "network_interface"
@@ -32,6 +30,7 @@ type NetIO struct {
 	netOverflows float64
 	init         sync.Once
 	env          core.Environment
+	logger       *MetricSourceLogger
 	// Needed for unit tests
 	netIOInterfacesFunc func(ctx context.Context) (net.InterfaceStatList, error)
 	netIOCountersFunc   func(ctx context.Context, pernic bool) ([]net.IOCountersStat, error)
@@ -41,6 +40,7 @@ func NewNetIOSource(namespace string, env core.Environment) *NetIO {
 	return &NetIO{
 		namedMetric:         &namedMetric{namespace, "net"},
 		env:                 env,
+		logger:              NewMetricSourceLogger(),
 		netIOInterfacesFunc: net.InterfacesWithContext,
 		netIOCountersFunc:   net.IOCountersWithContext,
 	}
@@ -51,7 +51,7 @@ func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pro
 	nio.init.Do(func() {
 		ifs, err := nio.newNetInterfaces(ctx)
 		if err != nil || ifs == nil {
-			log.Error("Cannot initialize network interfaces")
+			nio.logger.Log("Cannot initialize network interfaces")
 			ifs = make(map[string]map[string]float64)
 		}
 		nio.netIOStats = ifs
@@ -61,7 +61,7 @@ func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pro
 	// retrieve the current net IO stats
 	currentNetIOStats, err := nio.newNetInterfaces(ctx)
 	if err != nil || currentNetIOStats == nil {
-		log.Warn("Cannot get new network interface statistics")
+		nio.logger.Log("Cannot get new network interface statistics")
 		return
 	}
 
@@ -94,7 +94,7 @@ func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pro
 	// collect net overflow. This is not easily obtained by gopsutil, so we exec netstat to get these values
 	overflows, err := nio.env.GetNetOverflow()
 	if err != nil {
-		log.Debugf("Error occurred getting network overflow metrics, %v", err)
+		nio.logger.Log(fmt.Sprintf("Error occurred getting network overflow metrics, %v", err))
 	}
 
 	if nio.netOverflows < 0 {

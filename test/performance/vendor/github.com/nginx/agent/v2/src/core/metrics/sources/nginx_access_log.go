@@ -42,6 +42,7 @@ type NginxAccessLog struct {
 	nginxType          string
 	collectionInterval time.Duration
 	buf                []*proto.StatsEntity
+	logger             *MetricSourceLogger
 }
 
 func NewNginxAccessLog(
@@ -62,6 +63,7 @@ func NewNginxAccessLog(
 		nginxType,
 		collectionInterval,
 		[]*proto.StatsEntity{},
+		NewMetricSourceLogger(),
 	}
 
 	logs := binary.GetAccessLogs()
@@ -179,7 +181,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 		case d := <-data:
 			access, err := tailer.NewNginxAccessItem(d)
 			if err != nil {
-				log.Error(err)
+				c.logger.Log(fmt.Sprintf("Error decoding access log entry, %v", err))
 				continue
 			}
 
@@ -189,7 +191,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 					n := "request.body_bytes_sent"
 					httpCounters[n] = float64(v) + httpCounters[n]
 				} else {
-					log.Debugf("Error getting body_bytes_sent value from access logs: %v", err)
+					c.logger.Log(fmt.Sprintf("Error getting body_bytes_sent value from access logs, %v", err))
 				}
 			}
 
@@ -198,7 +200,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 					n := "request.bytes_sent"
 					httpCounters[n] = float64(v) + httpCounters[n]
 				} else {
-					log.Debugf("Error getting bytes_sent value from access logs: %v", err)
+					c.logger.Log(fmt.Sprintf("Error getting bytes_sent value from access logs, %v", err))
 				}
 			}
 
@@ -206,7 +208,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				if v, err := strconv.Atoi(access.GzipRatio); err == nil {
 					gzipRatios = append(gzipRatios, float64(v))
 				} else {
-					log.Debugf("Error getting gzip_ratio value from access logs: %v", err)
+					c.logger.Log(fmt.Sprintf("Error getting gzip_ratio value from access logs, %v", err))
 				}
 			}
 
@@ -214,7 +216,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				if v, err := strconv.Atoi(access.RequestLength); err == nil {
 					requestLengths = append(requestLengths, float64(v))
 				} else {
-					log.Debugf("Error getting request_length value from access logs: %v", err)
+					c.logger.Log(fmt.Sprintf("Error getting request_length value from access logs, %v", err))
 				}
 			}
 
@@ -222,7 +224,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				if v, err := strconv.ParseFloat(access.RequestTime, 64); err == nil {
 					requestTimes = append(requestTimes, v)
 				} else {
-					log.Debugf("Error getting request_time value from access logs: %v", err)
+					c.logger.Log(fmt.Sprintf("Error getting request_time value from access logs, %v", err))
 				}
 			}
 
@@ -248,7 +250,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				if v, err := strconv.ParseFloat(access.UpstreamConnectTime, 64); err == nil {
 					upstreamConnectTimes = append(upstreamConnectTimes, v)
 				} else {
-					log.Debugf("Error getting upstream_connect_time value from access logs, %v", err)
+					c.logger.Log(fmt.Sprintf("Error getting upstream_connect_time value from access logs, %v", err))
 				}
 			}
 
@@ -256,7 +258,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				if v, err := strconv.ParseFloat(access.UpstreamHeaderTime, 64); err == nil {
 					upstreamHeaderTimes = append(upstreamHeaderTimes, v)
 				} else {
-					log.Debugf("Error getting upstream_header_time value from access logs: %v", err)
+					c.logger.Log(fmt.Sprintf("Error getting upstream_header_time value from access logs, %v", err))
 				}
 			}
 
@@ -264,7 +266,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				if v, err := strconv.ParseFloat(access.UpstreamResponseLength, 64); err == nil {
 					upstreamResponseLength = append(upstreamResponseLength, v)
 				} else {
-					log.Debugf("Error getting upstream_response_length value from access logs: %v", err)
+					c.logger.Log(fmt.Sprintf("Error getting upstream_response_length value from access logs, %v", err))
 				}
 
 			}
@@ -273,7 +275,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				if v, err := strconv.ParseFloat(access.UpstreamResponseTime, 64); err == nil {
 					upstreamResponseTimes = append(upstreamResponseTimes, v)
 				} else {
-					log.Debugf("Error getting upstream_response_time value from access logs: %v", err)
+					c.logger.Log(fmt.Sprintf("Error getting upstream_response_time value from access logs, %v", err))
 				}
 			}
 
@@ -312,7 +314,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 						httpCounters[n] = httpCounters[n] + 1
 					}
 				} else {
-					log.Debugf("Error getting status value from access logs, %v", err)
+					c.logger.Log(fmt.Sprintf("Error getting status value from access logs, %v", err))
 				}
 			}
 			mu.Unlock()

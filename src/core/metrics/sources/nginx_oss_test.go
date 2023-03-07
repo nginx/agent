@@ -107,6 +107,7 @@ Reading: 0 Writing: 1 Waiting: 0
 				baseDimensions: metrics.NewCommonDim(hostInfo, &config.Config{}, ""),
 				stubStatus:     test.stubAPI,
 				namedMetric:    test.namedMetric,
+				logger:         NewMetricSourceLogger(),
 			}
 			ctx := context.TODO()
 			wg := &sync.WaitGroup{}

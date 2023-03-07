@@ -43,10 +43,11 @@ type NginxPlus struct {
 	prevStats     *plusclient.Stats
 	init          sync.Once
 	clientVersion int
+	logger        *MetricSourceLogger
 }
 
 func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespace, plusAPI string, clientVersion int) *NginxPlus {
-	return &NginxPlus{baseDimensions: baseDimensions, nginxNamespace: nginxNamespace, plusNamespace: plusNamespace, plusAPI: plusAPI, clientVersion: clientVersion}
+	return &NginxPlus{baseDimensions: baseDimensions, nginxNamespace: nginxNamespace, plusNamespace: plusNamespace, plusAPI: plusAPI, clientVersion: clientVersion, logger: NewMetricSourceLogger()}
 }
 
 func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
@@ -54,13 +55,13 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *p
 	c.init.Do(func() {
 		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
 		if err != nil {
-			log.Errorf("Failed to create plus metrics client: %v", err)
+			c.logger.Log(fmt.Sprintf("Failed to create plus metrics client, %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 			return
 		}
 		c.prevStats, err = cl.GetStats()
 		if err != nil {
-			log.Warnf("Failed to retrieve plus metrics: %v", err)
+			c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics, %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 			c.prevStats = nil
 			return
@@ -69,14 +70,14 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *p
 
 	cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
 	if err != nil {
-		log.Errorf("Failed to create plus metrics client: %v", err)
+		c.logger.Log(fmt.Sprintf("Failed to create plus metrics client, %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
 
 	stats, err := cl.GetStats()
 	if err != nil {
-		log.Errorf("Failed to retrieve plus metrics: %v", err)
+		c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics, %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
