@@ -91,7 +91,7 @@ message CpuInfo {
   int32 cpus = 6 [(gogoproto.jsontag) = "cpus"];
   // Type of hypervisor (e.g guest or host)
   string virtualization = 7 [(gogoproto.jsontag) = "virtualization"];
-  // Map of caches with names as the keys and size in bytes as the values
+  // Map of caches with names as the keys and size in formatted bytes as the values
   map<string, string> cache = 8 [(gogoproto.jsontag) = "cache"];
 }
 
