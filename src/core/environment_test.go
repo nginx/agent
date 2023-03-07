@@ -10,12 +10,50 @@ package core
 import (
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/assert"
 )
+
+const fedoraOsReleaseInfo = `
+NAME=Fedora
+VERSION="32 (Workstation Edition)"
+ID=fedora
+VERSION_ID=32
+PRETTY_NAME="Fedora 32 (Workstation Edition)"
+ANSI_COLOR="0;38;2;60;110;180"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:32"
+HOME_URL="https://fedoraproject.org/"
+DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/fedora/f32/system-administrators-guide/"
+SUPPORT_URL="https://fedoraproject.org/wiki/Communicating_and_getting_help"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="Fedora"
+REDHAT_BUGZILLA_PRODUCT_VERSION=32
+REDHAT_SUPPORT_PRODUCT="Fedora"
+REDHAT_SUPPORT_PRODUCT_VERSION=32
+PRIVACY_POLICY_URL="https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
+VARIANT="Workstation Edition"
+VARIANT_ID=workstation"
+`
+
+const ubuntuReleaseInfo = `
+NAME="Ubuntu"
+VERSION="20.04.5 LTS (Focal Fossa)"
+VERSION_ID="20.04"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 20.04.5 LTS"
+HOME_URL="https://www.ubuntu.com"
+SUPPORT_URL=\"https://help.ubuntu.com/"
+BUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=focal
+UBUNTU_CODENAME=focal
+`
 
 var (
 	// set at buildtime
@@ -336,7 +374,7 @@ func TestNewHostInfo(t *testing.T) {
 }
 
 func TestReleaseInfo(t *testing.T) {
-	release := releaseInfo()
+	release := releaseInfo("dummy-release") // No release file present
 	assert.NotEmptyf(t, release, "release is empty %v", release)
 }
 
@@ -490,6 +528,133 @@ func TestWriteFile(t *testing.T) {
 
 	os.Remove(file.GetName())
 	assert.NoFileExists(t, file.GetName())
+}
+
+func TestParseOsReleaseFile(t *testing.T) {
+	tests := []struct {
+		name             string
+		osReleaseContent string
+		expect           map[string]string
+	}{
+		{
+			name:             "ubuntu os-release info",
+			osReleaseContent: ubuntuReleaseInfo,
+			expect: map[string]string{
+				"VERSION_ID":       "20.04",
+				"VERSION":          "20.04.5 LTS (Focal Fossa)",
+				"VERSION_CODENAME": "focal",
+				"NAME":             "Ubuntu",
+				"ID":               "ubuntu",
+			},
+		},
+		{
+			name:             "fedora os-release info",
+			osReleaseContent: fedoraOsReleaseInfo,
+			expect: map[string]string{
+				"VERSION_ID": "32",
+				"VERSION":    "32 (Workstation Edition)",
+				"NAME":       "Fedora",
+				"ID":         "fedora",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reader := strings.NewReader(tt.osReleaseContent)
+			osRelease, _ := parseOsReleaseFile(reader)
+			for releaseInfokey, _ := range tt.expect {
+				assert.Equal(t, osRelease[releaseInfokey], tt.expect[releaseInfokey])
+			}
+		})
+	}
+}
+
+func TestMergeHostAndOsReleaseInfo(t *testing.T) {
+	tests := []struct {
+		name        string
+		hostRelease *proto.ReleaseInfo
+		osRelease   map[string]string
+		expect      *proto.ReleaseInfo
+	}{
+		{
+			name: "os-release info present",
+			hostRelease: &proto.ReleaseInfo{
+				VersionId: "20.04",
+				Version:   "5.15.0-1028-aws",
+				Codename:  "linux",
+				Name:      "debian",
+				Id:        "ubuntu",
+			},
+			osRelease: map[string]string{
+				"VERSION_ID":       "20.04",
+				"VERSION":          "20.04.5 LTS (Focal Fossa)",
+				"VERSION_CODENAME": "focal",
+				"NAME":             "Ubuntu",
+				"ID":               "ubuntu",
+			},
+			expect: &proto.ReleaseInfo{
+				VersionId: "20.04",
+				Version:   "20.04.5 LTS (Focal Fossa)",
+				Codename:  "focal",
+				Name:      "Ubuntu",
+				Id:        "ubuntu",
+			},
+		},
+		{
+			name: "os-release info value missing",
+			osRelease: map[string]string{
+				"VERSION_ID":       "32",
+				"VERSION":          "32 (Workstation Edition)",
+				"VERSION_CODENAME": "",
+				"NAME":             "Fedora",
+				"ID":               "fedora",
+			},
+			hostRelease: &proto.ReleaseInfo{
+				VersionId: "32",
+				Version:   "Fedora 32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "Fedora",
+			},
+			expect: &proto.ReleaseInfo{
+				VersionId: "32",
+				Version:   "32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "fedora",
+			},
+		},
+		{
+			name: "os-release info field missing",
+			osRelease: map[string]string{
+				"VERSION_ID": "32",
+				"VERSION":    "32 (Workstation Edition)",
+				"NAME":       "Fedora",
+				"ID":         "fedora",
+			},
+			hostRelease: &proto.ReleaseInfo{
+				VersionId: "32",
+				Version:   "Fedora 32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "Fedora",
+			},
+			expect: &proto.ReleaseInfo{
+				VersionId: "32",
+				Version:   "32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "fedora",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			releaseInfo := mergeHostAndOsReleaseInfo(tt.hostRelease, tt.osRelease)
+			assert.Equal(t, tt.expect, releaseInfo)
+		})
+	}
 }
 
 func TestGetContainerID(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -75,6 +76,11 @@ type Process struct {
 }
 
 const lengthOfContainerId = 64
+const versionId = "VERSION_ID"
+const version = "VERSION"
+const codeName = "VERSION_CODENAME"
+const id = "ID"
+const name = "NAME"
 
 var (
 	virtualizationFunc             = host.Virtualization
@@ -101,7 +107,7 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 			Partitons:           diskPartitions(),
 			Network:             env.networks(),
 			Processor:           processors(),
-			Release:             releaseInfo(),
+			Release:             releaseInfo("/etc/os-release"),
 			Tags:                *tags,
 			AgentAccessibleDirs: configDirs,
 		}
@@ -566,13 +572,52 @@ func diskPartitions() (partitions []*proto.DiskPartition) {
 	return partitions
 }
 
-func releaseInfo() (release *proto.ReleaseInfo) {
+func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {
+	hostReleaseInfo := getHostReleaseInfo()
+	osRelease, err := getOsRelease(osReleaseFile)
+	if err != nil {
+		log.Warnf("Could not read from %s file: %v", osReleaseFile, err)
+		return hostReleaseInfo
+	}
+	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease)
+}
+
+func mergeHostAndOsReleaseInfo(hostReleaseInfo *proto.ReleaseInfo,
+	osReleaseInfo map[string]string) (release *proto.ReleaseInfo) {
+
+	// override os-release info with host info,
+	// if os-release info is empty.
+	if len(osReleaseInfo[versionId]) == 0 {
+		osReleaseInfo[versionId] = hostReleaseInfo.VersionId
+	}
+	if len(osReleaseInfo[version]) == 0 {
+		osReleaseInfo[version] = hostReleaseInfo.Version
+	}
+	if len(osReleaseInfo[codeName]) == 0 {
+		osReleaseInfo[codeName] = hostReleaseInfo.Codename
+	}
+	if len(osReleaseInfo[name]) == 0 {
+		osReleaseInfo[name] = hostReleaseInfo.Name
+	}
+	if len(osReleaseInfo[id]) == 0 {
+		osReleaseInfo[id] = hostReleaseInfo.Id
+	}
+
+	return &proto.ReleaseInfo{
+		VersionId: osReleaseInfo[versionId],
+		Version:   osReleaseInfo[version],
+		Codename:  osReleaseInfo[codeName],
+		Name:      osReleaseInfo[name],
+		Id:        osReleaseInfo[id],
+	}
+}
+
+func getHostReleaseInfo() (release *proto.ReleaseInfo) {
 	hostInfo, err := host.Info()
 	if err != nil {
 		log.Errorf("Could not read release information for host: %v", err)
 		return &proto.ReleaseInfo{}
 	}
-
 	return &proto.ReleaseInfo{
 		VersionId: hostInfo.PlatformVersion,
 		Version:   hostInfo.KernelVersion,
@@ -580,6 +625,39 @@ func releaseInfo() (release *proto.ReleaseInfo) {
 		Name:      hostInfo.PlatformFamily,
 		Id:        hostInfo.Platform,
 	}
+}
+
+// getOsRelease reads the path and returns release information for host.
+func getOsRelease(path string) (map[string]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("release file %s unreadable: %w", path, err)
+	}
+	defer f.Close()
+	info, err := parseOsReleaseFile(f)
+	if err != nil {
+		return nil, fmt.Errorf("release file %s unparsable: %w", path, err)
+	}
+	return info, nil
+}
+
+func parseOsReleaseFile(reader io.Reader) (map[string]string, error) {
+	osReleaseInfoMap := map[string]string{"NAME": "unix"}
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		field := strings.Split(line, "=")
+		if len(field) < 2 {
+			continue
+		}
+		osReleaseInfoMap[field[0]] = strings.Trim(field[1], "\"")
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("could not parse os-release file %w", err)
+	}
+
+	return osReleaseInfoMap, nil
 }
 
 func (env *EnvironmentType) networks() (res *proto.Network) {
