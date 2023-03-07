@@ -8,6 +8,7 @@
 package core
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -564,7 +565,7 @@ func TestParseOsReleaseFile(t *testing.T) {
 			reader := strings.NewReader(tt.osReleaseContent)
 			osRelease, _ := parseOsReleaseFile(reader)
 			for releaseInfokey, _ := range tt.expect {
-				assert.Contains(t, osRelease, releaseInfokey)
+				assert.Equal(t, osRelease[releaseInfokey], tt.expect[releaseInfokey])
 			}
 		})
 	}

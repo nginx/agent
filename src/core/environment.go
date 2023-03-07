@@ -574,9 +574,6 @@ func diskPartitions() (partitions []*proto.DiskPartition) {
 
 func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {
 	hostReleaseInfo := getHostReleaseInfo()
-	if hostReleaseInfo == nil {
-		hostReleaseInfo = &proto.ReleaseInfo{}
-	}
 	osRelease, err := getOsRelease(osReleaseFile)
 	if err != nil {
 		log.Warnf("Could not read from %s file: %v", osReleaseFile, err)
@@ -619,7 +616,7 @@ func getHostReleaseInfo() (release *proto.ReleaseInfo) {
 	hostInfo, err := host.Info()
 	if err != nil {
 		log.Errorf("Could not read release information for host: %v", err)
-		return nil
+		return &proto.ReleaseInfo{}
 	}
 	return &proto.ReleaseInfo{
 		VersionId: hostInfo.PlatformVersion,
