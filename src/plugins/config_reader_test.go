@@ -113,7 +113,7 @@ func TestConfigReader(t *testing.T) {
 	for _, test := range tests {
 		config := NewConfigReader(&config.Config{ClientID: "12345"})
 		messagePipe := core.NewMockMessagePipe(context.Background())
-		err := messagePipe.Register(10, config)
+		err := messagePipe.Register(10, []core.Plugin{config}, []core.ExtensionPlugin{})
 		assert.NoError(t, err)
 
 		config.Init(messagePipe)
@@ -129,7 +129,7 @@ func TestConfigReader(t *testing.T) {
 }
 
 func TestUpdateAgentConfig(t *testing.T) {
-	// Get the current config so we can correctly set a few testcase variables
+	// Get the current config so we can correctly set a few test case variables
 	_, _, _, err := tutils.CreateTestAgentConfigEnv()
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -169,7 +169,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 					AgentConfig: &proto.AgentConfig{
 						Details: &proto.AgentDetails{
 							Tags:       []string{"new-tag1:one", "new-tag2:two"},
-							Extensions: []string{"advanced_metrics", "nginx_app_protect"},
+							Extensions: []string{"advanced-metrics", "nginx-app-protect"},
 						},
 					},
 				},
@@ -215,7 +215,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 			assert.NoError(t, err)
 			// Setup config reader
 			configReader := NewConfigReader(conf)
-			messagePipe := core.SetupMockMessagePipe(t, context.Background(), configReader)
+			messagePipe := core.SetupMockMessagePipe(t, context.Background(), []core.Plugin{configReader}, []core.ExtensionPlugin{})
 
 			configReader.Init(messagePipe)
 

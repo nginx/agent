@@ -102,6 +102,8 @@ deps: ## Update dependencies in vendor folders
 	done
 	go mod download
 	go work sync
+
+no-local-changes:
 	git diff --quiet || { echo "Depenency changes detected. Please commit these before pushing." >&2; exit 1; }
 
 lint: ## Run linter

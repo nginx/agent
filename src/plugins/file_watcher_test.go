@@ -69,7 +69,7 @@ func TestWatcherCreatingSubDirectories(t *testing.T) {
 			pluginUnderTest := NewFileWatcher(&config.Config{AllowedDirectoriesMap: map[string]struct{}{test.dirs[0]: {}}}, &env)
 
 			ctx, cancelCTX := context.WithCancel(context.Background())
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			pluginUnderTest.Init(messagePipe)
 
@@ -113,7 +113,7 @@ func TestWatcherMovingDirectories(t *testing.T) {
 
 			pluginUnderTest := NewFileWatcher(&config.Config{AllowedDirectoriesMap: map[string]struct{}{test.dirs[0]: {}}}, &env)
 			ctx, cancelCTX := context.WithCancel(context.Background())
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			pluginUnderTest.Init(messagePipe)
 
@@ -154,7 +154,7 @@ func TestWatcherDeletingDirectories(t *testing.T) {
 
 			pluginUnderTest := NewFileWatcher(&config.Config{AllowedDirectoriesMap: map[string]struct{}{test.dirs[0]: {}}}, &tutils.MockEnvironment{})
 			ctx, cancelCTX := context.WithCancel(context.Background())
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			pluginUnderTest.Init(messagePipe)
 
@@ -193,7 +193,7 @@ func TestWatcherFixingPermissions(t *testing.T) {
 
 			pluginUnderTest := NewFileWatcher(&config.Config{AllowedDirectoriesMap: map[string]struct{}{test.dirs[0]: {}}}, &tutils.MockEnvironment{})
 			ctx, cancelCTX := context.WithCancel(context.Background())
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			pluginUnderTest.Init(messagePipe)
 
@@ -242,7 +242,7 @@ func TestWatcherCreatingFiles(t *testing.T) {
 
 			pluginUnderTest := NewFileWatcher(&config.Config{AllowedDirectoriesMap: map[string]struct{}{test.dirs[0]: {}}}, &env)
 			ctx, cancelCTX := context.WithCancel(context.Background())
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			pluginUnderTest.Init(messagePipe)
 
@@ -284,7 +284,7 @@ func TestWatcherCreatingFilesMultiple(t *testing.T) {
 
 			pluginUnderTest := NewFileWatcher(&config.Config{AllowedDirectoriesMap: map[string]struct{}{test.dirs[0]: {}}}, &env)
 			ctx, cancelCTX := context.WithCancel(context.Background())
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			pluginUnderTest.Init(messagePipe)
 
@@ -330,7 +330,7 @@ func TestWatcherMovingFiles(t *testing.T) {
 
 			pluginUnderTest := NewFileWatcher(&config.Config{AllowedDirectoriesMap: map[string]struct{}{test.dirs[0]: {}}}, &env)
 			ctx, cancelCTX := context.WithCancel(context.Background())
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			pluginUnderTest.Init(messagePipe)
 
@@ -369,7 +369,7 @@ func TestWatcherUpdatingFiles(t *testing.T) {
 
 			pluginUnderTest := NewFileWatcher(&config.Config{AllowedDirectoriesMap: map[string]struct{}{test.dirs[0]: {}}}, &tutils.MockEnvironment{})
 			ctx, cancelCTX := context.WithCancel(context.Background())
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			pluginUnderTest.Init(messagePipe)
 
@@ -408,7 +408,7 @@ func TestWatcherDeleteFiles(t *testing.T) {
 
 			pluginUnderTest := NewFileWatcher(&config.Config{AllowedDirectoriesMap: map[string]struct{}{test.dirs[0]: {}}}, &tutils.MockEnvironment{})
 			ctx, cancelCTX := context.WithCancel(context.Background())
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			pluginUnderTest.Init(messagePipe)
 
@@ -462,7 +462,7 @@ func TestWatcherProcess(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			pluginUnderTest := NewFileWatcher(&config.Config{AllowedDirectoriesMap: map[string]struct{}{"/tmp": {}}}, &tutils.MockEnvironment{})
 			ctx, cancelCTX := context.WithCancel(context.Background())
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			pluginUnderTest.Init(messagePipe)
 

@@ -165,7 +165,7 @@ func TestProcessWatcher_Process(t *testing.T) {
 	pluginUnderTest := NewProcessWatcher(env, tutils.GetMockNginxBinary())
 
 	ctx, cancel := context.WithCancel(context.TODO())
-	messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+	messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
 	messagePipe.Run()

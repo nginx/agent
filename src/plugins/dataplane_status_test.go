@@ -17,11 +17,50 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/core/payloads"
+	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/nap"
 	tutils "github.com/nginx/agent/v2/test/utils"
+)
+
+const (
+	testSystemID      = "12345678"
+	testSigDate1      = "2022.02.14"
+	testCampaignDate1 = "2022.02.07"
+	testWAFVersion    = "3.780.1"
+)
+
+var (
+	testNAPDetailsActive = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
+		AppProtectWafDetails: &proto.AppProtectWAFDetails{
+			WafLocation:             nap.APP_PROTECT_METADATA_FILE_PATH,
+			WafVersion:              testWAFVersion,
+			AttackSignaturesVersion: testSigDate1,
+			ThreatCampaignsVersion:  testCampaignDate1,
+			Health: &proto.AppProtectWAFHealth{
+				SystemId:            testSystemID,
+				AppProtectWafStatus: proto.AppProtectWAFHealth_ACTIVE,
+			},
+		},
+	}
+
+	testNAPDetailsDegraded = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
+		AppProtectWafDetails: &proto.AppProtectWAFDetails{
+			WafLocation:             nap.APP_PROTECT_METADATA_FILE_PATH,
+			WafVersion:              testWAFVersion,
+			AttackSignaturesVersion: testSigDate1,
+			ThreatCampaignsVersion:  testCampaignDate1,
+			Health: &proto.AppProtectWAFHealth{
+				SystemId:            testSystemID,
+				AppProtectWafStatus: proto.AppProtectWAFHealth_DEGRADED,
+				DegradedReason:      "Nginx App Protect is installed but is not running",
+			},
+		},
+	}
 )
 
 func TestDataPlaneStatus(t *testing.T) {
@@ -136,10 +175,9 @@ func TestDataPlaneStatus(t *testing.T) {
 	}
 
 	dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env, "")
-	dataPlaneStatus.napDetails = testNAPDetailsActive
 
 	messagePipe := core.NewMockMessagePipe(context.Background())
-	err := messagePipe.Register(10, dataPlaneStatus)
+	err := messagePipe.Register(10, []core.Plugin{dataPlaneStatus}, []core.ExtensionPlugin{})
 	assert.NoError(t, err)
 
 	messagePipe.Run()
@@ -165,7 +203,7 @@ func TestDataPlaneStatus(t *testing.T) {
 
 			assert.NotNil(t, dps)
 			assert.NotNil(t, dps.DataplaneStatus.GetHost().GetHostname())
-			assert.Len(t, dps.DataplaneStatus.GetDataplaneSoftwareDetails(), 1)
+			assert.Len(t, dps.DataplaneStatus.GetDataplaneSoftwareDetails(), 0)
 			assert.EqualValues(t, expectedDps.DataplaneStatus.GetAgentActivityStatus(), dps.DataplaneStatus.GetAgentActivityStatus())
 		})
 	}
@@ -236,7 +274,7 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 			dataPlaneStatus := NewDataPlaneStatus(tc.config, grpc.NewMessageMeta(uuid.New().String()), binary, env, "")
 			messagePipe := core.NewMockMessagePipe(context.Background())
 
-			err = messagePipe.Register(10, dataPlaneStatus)
+			err = messagePipe.Register(10, []core.Plugin{dataPlaneStatus}, []core.ExtensionPlugin{})
 			assert.NoError(t, err)
 
 			messagePipe.Run()
@@ -311,23 +349,33 @@ func TestDPSSyncNAPDetails(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Setup DataPlaneStatus
 			dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env, "")
-			dataPlaneStatus.napDetails = tc.initialNAPDetails
+			dataPlaneStatus.softwareDetails[agent_config.NginxAppProtectExtensionPlugin] = &proto.DataplaneSoftwareDetails{Data: tc.initialNAPDetails}
 			defer dataPlaneStatus.Close()
 
 			// Set up communication pipe and run it
 			messagePipe := core.NewMockMessagePipe(context.Background())
-			err := messagePipe.Register(10, dataPlaneStatus)
+			err := messagePipe.Register(10, []core.Plugin{dataPlaneStatus}, []core.ExtensionPlugin{})
 			assert.NoError(t, err)
 			messagePipe.Run()
 
 			// Make sure initial NAP details are as expected
-			assert.Equal(t, tc.initialNAPDetails, dataPlaneStatus.napDetails)
+			assert.Equal(t, tc.initialNAPDetails.AppProtectWafDetails, dataPlaneStatus.softwareDetails[agent_config.NginxAppProtectExtensionPlugin].GetAppProtectWafDetails())
 
 			// Send updated NAP details message
-			dataPlaneStatus.Process(core.NewMessage(core.DataplaneSoftwareDetailsUpdated, tc.updatedNAPDetails))
+			dataPlaneStatus.Process(
+				core.NewMessage(
+					core.DataplaneSoftwareDetailsUpdated,
+					payloads.NewDataplaneSoftwareDetailsUpdate(
+						agent_config.NginxAppProtectExtensionPlugin,
+						&proto.DataplaneSoftwareDetails{
+							Data: tc.updatedNAPDetails,
+						},
+					),
+				),
+			)
 
 			// Check if NAP details were updated
-			assert.Equal(t, tc.updatedNAPDetails, dataPlaneStatus.napDetails)
+			assert.Equal(t, tc.updatedNAPDetails.AppProtectWafDetails, dataPlaneStatus.softwareDetails[agent_config.NginxAppProtectExtensionPlugin].GetAppProtectWafDetails())
 		})
 	}
 }

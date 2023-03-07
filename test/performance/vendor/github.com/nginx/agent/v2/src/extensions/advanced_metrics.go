@@ -5,19 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package plugins
+package extensions
 
 import (
 	"context"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
+	"github.com/nginx/agent/v2/src/core/payloads"
 	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/publisher"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/schema"
@@ -26,7 +27,7 @@ import (
 
 const (
 	advancedMetricsPluginVersion     = "v0.8.0"
-	advancedMetricsPluginName        = "Advanced Metrics Plugin"
+	AdvancedMetricsPluginName        = agent_config.AdvancedMetricsExtensionPlugin
 	aggregationDurationDimension     = "aggregation_duration"
 	streamMetricFamilyDimensionValue = "tcp-udp"
 	// ordinal positions of data collected by metrics module.
@@ -92,7 +93,7 @@ var totalOnlyMetrics = map[string]struct{}{
 	connectionDurationMetric: {},
 }
 
-var advancedMetricsDefaults = &config.AdvancedMetrics{
+var advancedMetricsDefaults = &AdvancedMetricsConfig{
 	SocketPath:        "/var/run/nginx-agent/advanced-metrics.sock",
 	AggregationPeriod: time.Second * 10,
 	PublishingPeriod:  time.Second * 30,
@@ -107,6 +108,13 @@ var advancedMetricsDefaults = &config.AdvancedMetrics{
 const httpMetricPrefix = "http.request"
 const streamMetricPrefix = "stream"
 
+type AdvancedMetricsConfig struct {
+	SocketPath        string                            `mapstructure:"socket_path"`
+	AggregationPeriod time.Duration                     `mapstructure:"aggregation_period"`
+	PublishingPeriod  time.Duration                     `mapstructure:"publishing_period"`
+	TableSizesLimits  advanced_metrics.TableSizesLimits `mapstructure:"table_sizes_limits"`
+}
+
 type AdvancedMetrics struct {
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
@@ -116,7 +124,7 @@ type AdvancedMetrics struct {
 	commonDims       *metrics.CommonDim
 }
 
-func NewAdvancedMetrics(env core.Environment, conf *config.Config) *AdvancedMetrics {
+func NewAdvancedMetrics(env core.Environment, conf *config.Config, advancedMetricsConf interface{}) *AdvancedMetrics {
 	builder := schema.NewSchemaBuilder()
 	builder.NewDimension(httpUriDimension, 16000).
 		NewIntegerDimension(httpResponseCodeDimension, 600).
@@ -163,13 +171,24 @@ func NewAdvancedMetrics(env core.Environment, conf *config.Config) *AdvancedMetr
 		NewMetric(bytesRcvdMetric).
 		NewMetric(bytesSentMetric)
 
+	advancedMetricsConfig := advancedMetricsDefaults
+
+	if advancedMetricsConf != nil {
+		var err error
+		advancedMetricsConfig, err = agent_config.DecodeConfig[*AdvancedMetricsConfig](advancedMetricsConf)
+		if err != nil {
+			log.Errorf("Error decoding configuration for extension plugin %s, %v", AdvancedMetricsPluginName, err)
+			return nil
+		}
+	}
+
 	cfg := advanced_metrics.Config{
-		Address: conf.AdvancedMetrics.SocketPath,
+		Address: advancedMetricsConfig.SocketPath,
 		AggregatorConfig: advanced_metrics.AggregatorConfig{
-			AggregationPeriod: conf.AdvancedMetrics.AggregationPeriod,
-			PublishingPeriod:  conf.AdvancedMetrics.PublishingPeriod,
+			AggregationPeriod: advancedMetricsConfig.AggregationPeriod,
+			PublishingPeriod:  advancedMetricsConfig.PublishingPeriod,
 		},
-		TableSizesLimits: conf.AdvancedMetrics.TableSizesLimits,
+		TableSizesLimits: advancedMetricsConfig.TableSizesLimits,
 	}
 
 	CheckAdvancedMetricsDefaults(&cfg)
@@ -191,16 +210,27 @@ func NewAdvancedMetrics(env core.Environment, conf *config.Config) *AdvancedMetr
 }
 
 func (m *AdvancedMetrics) Init(pipeline core.MessagePipeInterface) {
-	log.Infof("%s initializing", advancedMetricsPluginName)
+	log.Infof("%s initializing", AdvancedMetricsPluginName)
 	m.pipeline = pipeline
 	ctx, cancel := context.WithCancel(m.pipeline.Context())
 	m.ctx = ctx
 	m.ctxCancel = cancel
+
+	m.pipeline.Process(
+		core.NewMessage(
+			core.DataplaneSoftwareDetailsUpdated,
+			payloads.NewDataplaneSoftwareDetailsUpdate(
+				AdvancedMetricsPluginName,
+				&proto.DataplaneSoftwareDetails{},
+			),
+		),
+	)
+
 	go m.run()
 }
 
 func (m *AdvancedMetrics) Close() {
-	log.Infof("%s is wrapping up", advancedMetricsPluginName)
+	log.Infof("%s is wrapping up", AdvancedMetricsPluginName)
 	m.ctxCancel()
 }
 
@@ -210,11 +240,11 @@ func (m *AdvancedMetrics) run() {
 	go func() {
 		err := m.advanced_metrics.Run(m.ctx)
 		if err != nil {
-			log.Errorf("%s failed: %s", advancedMetricsPluginName, err.Error())
+			log.Errorf("%s failed: %s", AdvancedMetricsPluginName, err.Error())
 		}
 	}()
 	defer m.ctxCancel()
-	err := enableWritePermissionForSocket(m.cfg.Address)
+	err := core.EnableWritePermissionForSocket(m.cfg.Address)
 	if err != nil {
 		log.Error("App centric metric plugin failed to change socket permissions")
 	}
@@ -237,23 +267,6 @@ func (m *AdvancedMetrics) run() {
 		case <-m.pipeline.Context().Done():
 			return
 		}
-	}
-}
-
-func enableWritePermissionForSocket(path string) error {
-	timeout := time.After(time.Second * 1)
-	var lastError error
-	for {
-		select {
-		case <-timeout:
-			return lastError
-		default:
-			lastError = os.Chmod(path, 0660)
-			if lastError == nil {
-				return nil
-			}
-		}
-		<-time.After(time.Microsecond * 100)
 	}
 }
 
@@ -323,7 +336,7 @@ func toMetricReport(set []*publisher.MetricSet, now *types.Timestamp, commonDime
 }
 
 func (m *AdvancedMetrics) Info() *core.Info {
-	return core.NewInfo(advancedMetricsPluginName, advancedMetricsPluginVersion)
+	return core.NewInfo(AdvancedMetricsPluginName, advancedMetricsPluginVersion)
 }
 
 func (m *AdvancedMetrics) Subscriptions() []string {

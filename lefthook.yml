@@ -9,3 +9,5 @@ pre-push:
       run: make format
     3_dependencies:
       run: make deps
+    4_check_local_changes:
+      run: make no-local-changes

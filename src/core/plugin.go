@@ -14,3 +14,5 @@ type Plugin interface {
 	Info() *Info
 	Subscriptions() []string
 }
+
+type ExtensionPlugin = Plugin

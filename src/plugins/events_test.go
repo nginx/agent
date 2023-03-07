@@ -498,7 +498,7 @@ func TestActivityEvents_Process(t *testing.T) {
 
 			pluginUnderTest := NewEvents(config, env, grpc.NewMessageMeta(uuid.New().String()), core.NewNginxBinary(env, config))
 
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			messagePipe.Process(test.message)
 			messagePipe.Run()
