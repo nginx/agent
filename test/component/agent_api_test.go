@@ -136,35 +136,60 @@ func TestMetrics(t *testing.T) {
 
 	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
 	agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
-	agentAPI.Process(core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{
-		Meta: &proto.Metadata{
-			MessageId: "123",
-		},
-		Data: []*proto.StatsEntity{
-			{
-				Dimensions: []*proto.Dimension{
-					{
-						Name:  "hostname",
-						Value: "example.com",
+	agentAPI.Process(core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{
+		{
+			Type: proto.MetricsReport_SYSTEM,
+			Meta: &proto.Metadata{
+				MessageId: "123",
+			},
+			Data: []*proto.StatsEntity{
+				{
+					Dimensions: []*proto.Dimension{
+						{
+							Name:  "hostname",
+							Value: "example.com",
+						},
+						{
+							Name:  "system.tags",
+							Value: "",
+						},
 					},
-					{
-						Name:  "system.tags",
-						Value: "",
-					},
-				},
-				Simplemetrics: []*proto.SimpleMetric{
-					{
-						Name:  "system.cpu.idle",
-						Value: 12,
-					},
-					{
-						Name:  "nginx.workers.count",
-						Value: 6,
+					Simplemetrics: []*proto.SimpleMetric{
+						{
+							Name:  "system.cpu.idle",
+							Value: 12,
+						},
 					},
 				},
 			},
 		},
-	}}}))
+		{
+			Type: proto.MetricsReport_INSTANCE,
+			Meta: &proto.Metadata{
+				MessageId: "456",
+			},
+			Data: []*proto.StatsEntity{
+				{
+					Dimensions: []*proto.Dimension{
+						{
+							Name:  "hostname",
+							Value: "example.com",
+						},
+						{
+							Name:  "system.tags",
+							Value: "",
+						},
+					},
+					Simplemetrics: []*proto.SimpleMetric{
+						{
+							Name:  "nginx.workers.count",
+							Value: 6,
+						},
+					},
+				},
+			},
+		},
+	}}))
 
 	client := resty.New()
 

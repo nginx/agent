@@ -12,6 +12,7 @@ import (
 func TestExporter(t *testing.T) {
 	metricReport1 := &proto.MetricsReport{Meta: &proto.Metadata{MessageId: "123"}}
 	metricReport2 := &proto.MetricsReport{Meta: &proto.Metadata{MessageId: "456"}}
+	metricReport3 := &proto.MetricsReport{Type: proto.MetricsReport_CACHE_ZONE, Meta: &proto.Metadata{MessageId: "789"}}
 
 	exporter := NewExporter(metricReport1)
 
@@ -20,6 +21,11 @@ func TestExporter(t *testing.T) {
 	exporter.SetLatestMetricReport(&metrics.MetricsReportBundle{Data: []*proto.MetricsReport{metricReport2}})
 
 	assert.Equal(t, metricReport2, exporter.GetLatestMetricReports()[0])
+
+	exporter.SetLatestMetricReport(&metrics.MetricsReportBundle{Data: []*proto.MetricsReport{metricReport2, metricReport3}})
+
+	assert.Equal(t, metricReport2, exporter.GetLatestMetricReports()[0])
+	assert.Equal(t, metricReport3, exporter.GetLatestMetricReports()[1])
 }
 
 func TestExporter_convertMetricNameToPrometheusFormat(t *testing.T) {
