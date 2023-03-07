@@ -1162,59 +1162,11 @@ Metric type enum
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> adds updated generated files from protobuf
-=======
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
-=======
->>>>>>> adds updated generated files from protobuf
->>>>>>> adds updated generated files from protobuf
-=======
->>>>>>> feat: restoring metrics.proto comments
 | SYSTEM | 0 | System metric type |
 | INSTANCE | 1 | NGINX instance metric type |
 | AGENT | 2 | Agent metric type |
 | CACHE_ZONE | 3 | Cache zone metric type |
 | UPSTREAMS | 4 | Upstreams metric type |
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
->>>>>>> adds updated generated files from protobuf
-=======
-=======
->>>>>>> feat: fixed tests and rebased with nginx/agent main
-| SYSTEM | 0 |  |
-| INSTANCE | 1 |  |
-| AGENT | 2 |  |
-| CACHE_ZONE | 3 |  |
-| UPSTREAMS | 4 |  |
-<<<<<<< HEAD
->>>>>>> Create dedicated cache and upstream metrics reports
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> adds updated generated files from protobuf
-=======
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
-=======
->>>>>>> adds updated generated files from protobuf
->>>>>>> adds updated generated files from protobuf
-=======
->>>>>>> feat: fixed tests and rebased with nginx/agent main
-=======
->>>>>>> feat: restoring metrics.proto comments
 
 
  

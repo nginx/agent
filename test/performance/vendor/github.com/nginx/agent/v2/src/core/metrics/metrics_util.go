@@ -9,12 +9,8 @@ package metrics
 
 import (
 	"context"
-<<<<<<< HEAD
 	"math"
 	"sort"
-=======
-	"github.com/nginx/agent/v2/src/core"
->>>>>>> using StatsEntityWarpper in place of StatsEntity
 	"sync"
 	"time"
 
@@ -43,13 +39,10 @@ type StatsEntityWrapper struct {
 	Data *proto.StatsEntity
 }
 
-<<<<<<< HEAD
 type MetricsReportBundle struct {
 	Data []*proto.MetricsReport
 }
 
-=======
->>>>>>> using StatsEntityWarpper in place of StatsEntity
 type NginxCollectorConfig struct {
 	NginxId            string
 	StubStatus         string
@@ -384,11 +377,7 @@ func GetCalculationMap() map[string]string {
 	}
 }
 
-<<<<<<< HEAD
 func GenerateMetricsReports(entities []*StatsEntityWrapper) (bundles []core.Payload) {
-=======
-func GenerateMetricsReports(entities []*StatsEntityWrapper) (reports []core.Payload) {
->>>>>>> using StatsEntityWarpper in place of StatsEntity
 	reportMap := make(map[proto.MetricsReport_Type]*proto.MetricsReport, 0)
 
 	for _, entity := range entities {
@@ -404,17 +393,12 @@ func GenerateMetricsReports(entities []*StatsEntityWrapper) (reports []core.Payl
 		reportMap[entity.Type].Data = append(reportMap[entity.Type].Data, entity.Data)
 	}
 
-<<<<<<< HEAD
 	if len(reportMap) > 0 {
 		bundle := &MetricsReportBundle{Data: []*proto.MetricsReport{}}
 		for _, report := range reportMap {
 			bundle.Data = append(bundle.Data, report)
 		}
 		bundles = append(bundles, bundle)
-=======
-	for _, report := range reportMap {
-		reports = append(reports, report)
->>>>>>> using StatsEntityWarpper in place of StatsEntity
 	}
 	return
 }

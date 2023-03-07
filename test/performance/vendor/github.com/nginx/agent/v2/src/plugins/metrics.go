@@ -182,32 +182,9 @@ func (m *Metrics) metricsGoroutine() {
 			}
 			return
 		case <-m.ticker.C:
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 			stats := m.collectStats()
 			for _, reportBundle := range metrics.GenerateMetricsReports(stats) {
 				m.pipeline.Process(core.NewMessage(core.MetricReport, reportBundle))
-=======
-			for _, report := range generateMetricsReports(m.collectStats(), true) {
-=======
-			stats := m.collectStats()
-			for _, report := range metrics.GenerateMetricsReports(stats) {
->>>>>>> using StatsEntityWarpper in place of StatsEntity
-=======
-			stats := m.collectStats()
-			for _, report := range metrics.GenerateMetricsReports(stats) {
-=======
-			for _, report := range generateMetricsReports(m.collectStats(), true) {
->>>>>>> Create dedicated cache and upstream metrics reports
->>>>>>> Create dedicated cache and upstream metrics reports
-=======
-			stats := m.collectStats()
-			for _, report := range metrics.GenerateMetricsReports(stats) {
->>>>>>> feat: fixed tests and rebased with nginx/agent main
-				m.pipeline.Process(core.NewMessage(core.MetricReport, report))
->>>>>>> Create dedicated cache and upstream metrics reports
 			}
 			if m.collectorsUpdate.Load() {
 				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)
