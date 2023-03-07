@@ -33,12 +33,12 @@ func TestNewCPUTimesSource(t *testing.T) {
 		{
 			"VM",
 			false,
-			&CPUTimes{&namedMetric{namespace, CpuGroup}, false, nil, cpu.Times},
+			&CPUTimes{&namedMetric{namespace, CpuGroup}, false, nil, NewMetricSourceLogger(), cpu.Times},
 		},
 		{
 			"container",
 			true,
-			&CPUTimes{&namedMetric{namespace, CpuGroup}, true, cgroup.NewCgroupCPUSource(cgroup.CgroupBasePath), nil},
+			&CPUTimes{&namedMetric{namespace, CpuGroup}, true, cgroup.NewCgroupCPUSource(cgroup.CgroupBasePath), NewMetricSourceLogger(), nil},
 		},
 	}
 	for _, test := range tests {

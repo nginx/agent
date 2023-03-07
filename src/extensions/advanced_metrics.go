@@ -26,9 +26,10 @@ import (
 )
 
 const (
-	advancedMetricsPluginVersion = "v0.8.0"
-	AdvancedMetricsPluginName    = agent_config.AdvancedMetricsExtensionPlugin
-
+	advancedMetricsPluginVersion     = "v0.8.0"
+	AdvancedMetricsPluginName        = agent_config.AdvancedMetricsExtensionPlugin
+	aggregationDurationDimension     = "aggregation_duration"
+	streamMetricFamilyDimensionValue = "tcp-udp"
 	// ordinal positions of data collected by metrics module.
 	httpUriDimension                   = "http.uri"
 	httpResponseCodeDimension          = "http.response_code"
@@ -74,10 +75,6 @@ const (
 	proxiedProtocolDimension           = "proxied_protocol"
 	bytesRcvdMetric                    = "bytes_rcvd"
 	bytesSentMetric                    = "bytes_sent"
-
-	aggregationDurationDimension = "aggregation_duration"
-
-	streamMetricFamilyDimensionValue = "tcp-udp"
 )
 
 var maxOnlyMetrics = map[string]struct{}{

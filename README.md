@@ -284,7 +284,7 @@ Install NGINX Agent tools and dependencies:
 
 Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. You can do this by running the following `make` command:
 ```
-make install-tools deps
+make install-tools
 ```
 
 ## Building NGINX Agent from Source Code

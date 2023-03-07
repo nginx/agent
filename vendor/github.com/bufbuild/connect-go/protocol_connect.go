@@ -49,6 +49,11 @@ const (
 	connectStreamingContentTypePrefix = "application/connect+"
 )
 
+// defaultConnectUserAgent returns a User-Agent string similar to those used in gRPC.
+//
+//nolint:gochecknoglobals
+var defaultConnectUserAgent = fmt.Sprintf("connect-go/%s (%s)", Version, runtime.Version())
+
 type protocolConnect struct{}
 
 // NewHandler implements protocol, so it must return an interface.
@@ -69,10 +74,14 @@ func (*protocolConnect) NewHandler(params *protocolHandlerParams) protocolHandle
 
 // NewClient implements protocol, so it must return an interface.
 func (*protocolConnect) NewClient(params *protocolClientParams) (protocolClient, error) {
-	if err := validateRequestURL(params.URL); err != nil {
+	url, err := validateRequestURL(params.URL)
+	if err != nil {
 		return nil, err
 	}
-	return &connectClient{protocolClientParams: *params}, nil
+	return &connectClient{
+		protocolClientParams: *params,
+		peer:                 newPeerFromURL(url, ProtocolConnect),
+	}, nil
 }
 
 type connectHandler struct {
@@ -86,7 +95,7 @@ func (h *connectHandler) ContentTypes() map[string]struct{} {
 }
 
 func (*connectHandler) SetTimeout(request *http.Request) (context.Context, context.CancelFunc, error) {
-	timeout := request.Header.Get(connectHeaderTimeout)
+	timeout := getHeaderCanonical(request.Header, connectHeaderTimeout)
 	if timeout == "" {
 		return request.Context(), nil, nil
 	}
@@ -112,11 +121,11 @@ func (h *connectHandler) NewConn(
 	// send the error to the client later on.
 	var contentEncoding, acceptEncoding string
 	if h.Spec.StreamType == StreamTypeUnary {
-		contentEncoding = request.Header.Get(connectUnaryHeaderCompression)
-		acceptEncoding = request.Header.Get(connectUnaryHeaderAcceptCompression)
+		contentEncoding = getHeaderCanonical(request.Header, connectUnaryHeaderCompression)
+		acceptEncoding = getHeaderCanonical(request.Header, connectUnaryHeaderAcceptCompression)
 	} else {
-		contentEncoding = request.Header.Get(connectStreamingHeaderCompression)
-		acceptEncoding = request.Header.Get(connectStreamingHeaderAcceptCompression)
+		contentEncoding = getHeaderCanonical(request.Header, connectStreamingHeaderCompression)
+		acceptEncoding = getHeaderCanonical(request.Header, connectStreamingHeaderAcceptCompression)
 	}
 	requestCompression, responseCompression, failed := negotiateCompression(
 		h.CompressionPools,
@@ -127,7 +136,7 @@ func (h *connectHandler) NewConn(
 		failed = checkServerStreamsCanFlush(h.Spec, responseWriter)
 	}
 	if failed == nil {
-		version := request.Header.Get(connectHeaderProtocolVersion)
+		version := getHeaderCanonical(request.Header, connectHeaderProtocolVersion)
 		if version == "" && h.RequireConnectProtocolHeader {
 			failed = errorf(CodeInvalidArgument, "missing required header: set %s to %q", connectHeaderProtocolVersion, connectProtocolVersion)
 		} else if version != "" && version != connectProtocolVersion {
@@ -143,7 +152,7 @@ func (h *connectHandler) NewConn(
 	// Since we know that these header keys are already in canonical form, we can
 	// skip the normalization in Header.Set.
 	header := responseWriter.Header()
-	header[headerContentType] = []string{request.Header.Get(headerContentType)}
+	header[headerContentType] = []string{getHeaderCanonical(request.Header, headerContentType)}
 	acceptCompressionHeader := connectUnaryHeaderAcceptCompression
 	if h.Spec.StreamType != StreamTypeUnary {
 		acceptCompressionHeader = connectStreamingHeaderAcceptCompression
@@ -159,7 +168,7 @@ func (h *connectHandler) NewConn(
 
 	codecName := connectCodecFromContentType(
 		h.Spec.StreamType,
-		request.Header.Get(headerContentType),
+		getHeaderCanonical(request.Header, headerContentType),
 	)
 	codec := h.Codecs.Get(codecName) // handler.go guarantees this is not nil
 
@@ -233,17 +242,19 @@ func (h *connectHandler) NewConn(
 
 type connectClient struct {
 	protocolClientParams
+
+	peer Peer
 }
 
 func (c *connectClient) Peer() Peer {
-	return newPeerFromURL(c.URL, ProtocolConnect)
+	return c.peer
 }
 
 func (c *connectClient) WriteRequestHeader(streamType StreamType, header http.Header) {
 	// We know these header keys are in canonical form, so we can bypass all the
 	// checks in Header.Set.
-	if header.Get(headerUserAgent) == "" {
-		header[headerUserAgent] = []string{connectUserAgent()}
+	if getHeaderCanonical(header, headerUserAgent) == "" {
+		header[headerUserAgent] = []string{defaultConnectUserAgent}
 	}
 	header[connectHeaderProtocolVersion] = []string{connectProtocolVersion}
 	header[headerContentType] = []string{
@@ -413,7 +424,7 @@ func (cc *connectUnaryClientConn) validateResponse(response *http.Response) *Err
 		}
 		cc.responseTrailer[strings.TrimPrefix(k, connectUnaryTrailerPrefix)] = v
 	}
-	compression := response.Header.Get(connectUnaryHeaderCompression)
+	compression := getHeaderCanonical(response.Header, connectUnaryHeaderCompression)
 	if compression != "" &&
 		compression != compressionIdentity &&
 		!cc.compressionPools.Contains(compression) {
@@ -529,7 +540,7 @@ func (cc *connectStreamingClientConn) validateResponse(response *http.Response) 
 	if response.StatusCode != http.StatusOK {
 		return errorf(connectHTTPToCode(response.StatusCode), "HTTP status %v", response.Status)
 	}
-	compression := response.Header.Get(connectStreamingHeaderCompression)
+	compression := getHeaderCanonical(response.Header, connectStreamingHeaderCompression)
 	if compression != "" &&
 		compression != compressionIdentity &&
 		!cc.compressionPools.Contains(compression) {
@@ -600,7 +611,7 @@ func (hc *connectUnaryHandlerConn) Close(err error) error {
 		return hc.request.Body.Close()
 	}
 	// In unary Connect, errors always use application/json.
-	hc.responseWriter.Header().Set(headerContentType, connectUnaryContentTypeJSON)
+	setHeaderCanonical(hc.responseWriter.Header(), headerContentType, connectUnaryContentTypeJSON)
 	hc.responseWriter.WriteHeader(connectCodeToHTTP(CodeOf(err)))
 	data, marshalErr := json.Marshal(newConnectWireError(err))
 	if marshalErr != nil {
@@ -790,7 +801,7 @@ func (m *connectUnaryMarshaler) Marshal(message any) *Error {
 	if m.sendMaxBytes > 0 && compressed.Len() > m.sendMaxBytes {
 		return NewError(CodeResourceExhausted, fmt.Errorf("compressed message size %d exceeds sendMaxBytes %d", compressed.Len(), m.sendMaxBytes))
 	}
-	m.header.Set(connectUnaryHeaderCompression, m.compressionName)
+	setHeaderCanonical(m.header, connectUnaryHeaderCompression, m.compressionName)
 	return m.write(compressed.Bytes())
 }
 
@@ -1026,11 +1037,6 @@ func connectHTTPToCode(httpCode int) Code {
 	default:
 		return CodeUnknown
 	}
-}
-
-// connectUserAgent returns a User-Agent string similar to those used in gRPC.
-func connectUserAgent() string {
-	return fmt.Sprintf("connect-go/%s (%s)", Version, runtime.Version())
 }
 
 func connectCodecFromContentType(streamType StreamType, contentType string) string {

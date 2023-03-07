@@ -8,7 +8,7 @@ ARG PACKAGES_REPO
 ARG OS_VERSION
 
 WORKDIR /agent
-COPY ./scripts/docker/nginx-plus/entrypoint.sh /agent/entrypoint.sh
+COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
 COPY ./nginx-agent.conf /agent/nginx-agent.conf
 
 RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
@@ -34,7 +34,7 @@ sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
 sslverify=true \n\
-gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-plus-$BASE_IMAGE.repo \
+gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-plus.repo \
     && printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
 baseurl=https://$PACKAGES_REPO/nginx-agent/centos/$OS_VERSION/\$basearch \n\
@@ -43,7 +43,7 @@ sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
 sslverify=true \n\
-gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-agent-$BASE_IMAGE.repo \
+gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-agent.repo \
     && yum install -y $nginxPackages \
     && yum clean all \
     && rm -rf /var/cache/yum /etc/yum.repos.d/* /etc/ssl/nginx

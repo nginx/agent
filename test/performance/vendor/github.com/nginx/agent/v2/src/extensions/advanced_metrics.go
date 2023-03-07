@@ -26,9 +26,16 @@ import (
 )
 
 const (
+<<<<<<< HEAD:test/performance/vendor/github.com/nginx/agent/v2/src/extensions/advanced_metrics.go
 	advancedMetricsPluginVersion = "v0.8.0"
 	AdvancedMetricsPluginName    = agent_config.AdvancedMetricsExtensionPlugin
 
+=======
+	advancedMetricsPluginVersion     = "v0.8.0"
+	advancedMetricsPluginName        = "Advanced Metrics Plugin"
+	aggregationDurationDimension     = "aggregation_duration"
+	streamMetricFamilyDimensionValue = "tcp-udp"
+>>>>>>> main:test/performance/vendor/github.com/nginx/agent/v2/src/plugins/advanced_metrics.go
 	// ordinal positions of data collected by metrics module.
 	httpUriDimension                   = "http.uri"
 	httpResponseCodeDimension          = "http.response_code"
@@ -74,10 +81,6 @@ const (
 	proxiedProtocolDimension           = "proxied_protocol"
 	bytesRcvdMetric                    = "bytes_rcvd"
 	bytesSentMetric                    = "bytes_sent"
-
-	aggregationDurationDimension = "aggregation_duration"
-
-	streamMetricFamilyDimensionValue = "tcp-udp"
 )
 
 var maxOnlyMetrics = map[string]struct{}{

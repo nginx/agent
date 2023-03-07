@@ -186,6 +186,7 @@ func TestNAPMonitoring(t *testing.T) {
 }
 
 func assertEqualSecurityViolationEvents(t *testing.T, expectedEvent, resultEvent *events.Event) {
+	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().SupportID, resultEvent.GetSecurityViolationEvent().SupportID)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().PolicyName, resultEvent.GetSecurityViolationEvent().PolicyName)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().Outcome, resultEvent.GetSecurityViolationEvent().Outcome)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().OutcomeReason, resultEvent.GetSecurityViolationEvent().OutcomeReason)

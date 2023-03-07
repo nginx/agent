@@ -16,6 +16,8 @@ RPM_ARCH=x86_64
 FREEBSD_DISTROS?="FreeBSD:12:amd64" "FreeBSD:13:amd64"
 APK_VERSIONS?=3.13 3.14 3.15 3.16
 APK_ARCHS?=aarch64 x86_64
+ALMA_VERSIONS?=almalinux-8 almalinux-9
+ALMA_ARCHS?=aarch64 x86_64
 
 UPLOAD_URL         := "https://up-ap.nginx.com/"
 AGENT_UPLOADER_KEY := "./agent-uploader.pem"
@@ -64,6 +66,22 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	done; \
 	rm -rf ./build/nginx-agent
 
+	# Create almalinux rpm packages
+	
+	@for arch in $(ALMA_ARCHS); do \
+		goarch=amd64; \
+		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		for distro in $(ALMA_VERSIONS); do \
+			rpm_distro=`echo $$distro | cut -d- -f 1`; \
+			rpm_major=`echo $$distro | cut -d- -f 2`; \
+			rpm_codename="almalinux$$rpm_major"; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+		done; \
+		rm -rf ./build/nginx-agent; \
+	done; \
+	
 	# Create rocky rpm packages
 	
 	@for arch in $(ROCKY_ARCHS); do \
@@ -84,6 +102,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	done; \
 	
 	# Create apk packages
+
 	@for arch in $(APK_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
