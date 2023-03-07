@@ -78,13 +78,8 @@ func NewNAPMonitoring(env core.Environment, cfg *config.Config, nginxAppProtectM
 		log.Warnf("NAP Monitoring report count must be between %v and %v. Defaulting to %v",
 			minReportCountDelimiter,
 			maxReportCountDelimiter,
-<<<<<<< HEAD:test/performance/vendor/github.com/nginx/agent/v2/src/extensions/nap_monitoring.go
-			nginxAppProtectMonitoringDefault.ReportInterval)
+			nginxAppProtectMonitoringDefault.ReportCount)
 		nginxAppProtectMonitoringConfig.ReportCount = nginxAppProtectMonitoringDefault.ReportCount
-=======
-			config.Defaults.NAPMonitoring.ReportCount)
-		cfg.NAPMonitoring.ReportCount = config.Defaults.NAPMonitoring.ReportCount
->>>>>>> main:test/performance/vendor/github.com/nginx/agent/v2/src/plugins/nap_monitoring.go
 	}
 
 	return &NAPMonitoring{
