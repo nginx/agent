@@ -28,6 +28,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/core/payloads"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/nap"
 )
 
@@ -42,20 +43,16 @@ var (
 
 // Nginx is the metadata of our nginx binary
 type Nginx struct {
-	messagePipeline                    core.MessagePipeInterface
-	nginxBinary                        core.NginxBinary
-	processes                          []core.Process
-	env                                core.Environment
-	cmdr                               client.Commander
-	config                             *config.Config
-	isNAPEnabled                       bool
-	isNAPPrecompiledPublicationEnabled bool
-	isFeatureNginxConfigEnabled        bool
-	configApplyStatusChannel           chan *proto.Command_NginxConfigResponse
-	wafVersion                         string
-	wafLocation                        string
-	wafAttackSignaturesVersion         string
-	wafThreatCampaignsVersion          string
+	messagePipeline                core.MessagePipeInterface
+	nginxBinary                    core.NginxBinary
+	processes                      []core.Process
+	env                            core.Environment
+	cmdr                           client.Commander
+	config                         *config.Config
+	isNginxAppProtectEnabled       bool
+	isFeatureNginxConfigEnabled    bool
+	configApplyStatusChannel       chan *proto.Command_NginxConfigResponse
+	nginxAppProtectSoftwareDetails *proto.AppProtectWAFDetails
 }
 
 type ConfigRollbackResponse struct {
@@ -85,16 +82,15 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 	isFeatureNginxConfigEnabled := loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfig)
 
 	return &Nginx{
-		nginxBinary:                        nginxBinary,
-		processes:                          env.Processes(),
-		env:                                env,
-		cmdr:                               cmdr,
-		config:                             loadedConfig,
-		isNAPEnabled:                       loadedConfig.IsNginxAppProtectConfigured(),
-		isNAPPrecompiledPublicationEnabled: loadedConfig.IsNginxAppProtectPrecompiledPublicationConfigured(),
-		isFeatureNginxConfigEnabled:        isFeatureNginxConfigEnabled,
-		configApplyStatusChannel:           make(chan *proto.Command_NginxConfigResponse, 1),
-		wafLocation:                        nap.APP_PROTECT_METADATA_FILE_PATH,
+		nginxBinary:                    nginxBinary,
+		processes:                      env.Processes(),
+		env:                            env,
+		cmdr:                           cmdr,
+		config:                         loadedConfig,
+		isNginxAppProtectEnabled:       false,
+		isFeatureNginxConfigEnabled:    isFeatureNginxConfigEnabled,
+		configApplyStatusChannel:       make(chan *proto.Command_NginxConfigResponse, 1),
+		nginxAppProtectSoftwareDetails: &proto.AppProtectWAFDetails{},
 	}
 }
 
@@ -140,8 +136,8 @@ func (n *Nginx) Process(message *core.Message) {
 		n.uploadConfigs()
 	case core.DataplaneSoftwareDetailsUpdated:
 		switch details := message.Data().(type) {
-		case *proto.DataplaneSoftwareDetails_AppProtectWafDetails:
-			n.processDataplaneSoftwareDetails(details)
+		case *payloads.DataplaneSoftwareDetailsUpdate:
+			n.processDataplaneSoftwareDetailsUpdate(details)
 		}
 	case core.AgentConfigChanged:
 		// If the agent config on disk changed update this with relevant config info
@@ -167,13 +163,6 @@ func (n *Nginx) Process(message *core.Message) {
 			}
 			if response.elapsedTime < validationTimeout {
 				n.configApplyStatusChannel <- status
-			}
-		}
-	case core.EnableExtension:
-		switch data := message.Data().(type) {
-		case string:
-			if data == config.NginxAppProtectKey {
-				n.isNAPEnabled = true
 			}
 		}
 	}
@@ -219,21 +208,14 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 		return err
 	}
 
-	if n.isNAPEnabled {
-		err = nap.UpdateMetadata(
-			cfg,
-			n.isNAPPrecompiledPublicationEnabled,
-			n.wafLocation,
-			n.wafVersion,
-			n.wafAttackSignaturesVersion,
-			n.wafThreatCampaignsVersion,
-		)
+	if n.isNginxAppProtectEnabled {
+		err = nap.UpdateMetadata(cfg, n.nginxAppProtectSoftwareDetails)
 		if err != nil {
 			log.Errorf("Unable to update NAP metadata: %v", err)
 		}
-		cfg, err = sdk.AddAuxfileToNginxConfig(nginx.GetConfPath(), cfg, n.wafLocation, n.config.AllowedDirectoriesMap, true)
+		cfg, err = sdk.AddAuxfileToNginxConfig(nginx.GetConfPath(), cfg, n.nginxAppProtectSoftwareDetails.GetWafLocation(), n.config.AllowedDirectoriesMap, true)
 		if err != nil {
-			log.Errorf("Unable to add aux file %s to nginx config: %v", n.wafLocation, err)
+			log.Errorf("Unable to add aux file %s to nginx config: %v", n.nginxAppProtectSoftwareDetails.GetWafLocation(), err)
 			return err
 		}
 	}
@@ -246,12 +228,12 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	return nil
 }
 
-func (n *Nginx) processDataplaneSoftwareDetails(details *proto.DataplaneSoftwareDetails_AppProtectWafDetails) {
-	log.Tracef("software details updated software %+v", details)
+func (n *Nginx) processDataplaneSoftwareDetailsUpdate(update *payloads.DataplaneSoftwareDetailsUpdate) {
+	log.Tracef("software details updated software %+v", update)
 
-	n.wafVersion = details.AppProtectWafDetails.WafVersion
-	n.wafAttackSignaturesVersion = details.AppProtectWafDetails.AttackSignaturesVersion
-	n.wafThreatCampaignsVersion = details.AppProtectWafDetails.ThreatCampaignsVersion
+	if update.GetPluginName() == agent_config.NginxAppProtectExtensionPlugin {
+		n.nginxAppProtectSoftwareDetails = update.GetDataplaneSoftwareDetails().GetAppProtectWafDetails()
+	}
 }
 
 func (n *Nginx) processCmd(cmd *proto.Command) {
@@ -352,30 +334,11 @@ func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.Ng
 		return status
 	}
 
-	if action != proto.NginxConfigAction_FORCE {
-		if isNapInPayload(config.GetDirectoryMap(), action, n.wafLocation) {
-			if aux := config.GetZaux(); aux != nil && len(aux.Contents) > 0 {
-				auxFiles, err := zip.UnPack(aux)
-				if err != nil {
-					status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read unpack aux files %v", config.GetZaux())).CmdStatus
-					return status
-				}
-				for _, file := range auxFiles {
-					if filepath.Base(file.GetName()) == filepath.Base(n.wafLocation) {
-						var napMetaData nap.Metadata
-
-						err := json.Unmarshal(file.GetContents(), &napMetaData)
-						if err != nil {
-							status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): not able to read WAF file in metadata %v", config.GetConfigData())).CmdStatus
-							return status
-						}
-						if napMetaData.NapVersion != "" && n.wafVersion != napMetaData.NapVersion {
-							status.NginxConfigResponse.Status = newErrStatus(fmt.Sprintf("Config apply failed (preflight): config metadata mismatch %v", config.GetConfigData())).CmdStatus
-							return status
-						}
-					}
-				}
-			}
+	if action == proto.NginxConfigAction_APPLY {
+		configValid, err := n.ValidateNginxAppProtectVersion(config)
+		if !configValid {
+			status.NginxConfigResponse.Status = newErrStatus(err.Error()).CmdStatus
+			return status
 		}
 	}
 
@@ -388,7 +351,6 @@ func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.Ng
 		return n.handleErrorStatus(status, message)
 	}
 
-	log.Debugf("WriteConfig start %v", config)
 	configApply, err := n.nginxBinary.WriteConfig(config)
 	if err != nil {
 		if configApply != nil {
@@ -424,19 +386,6 @@ func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.Ng
 		log.Errorf("Validation of the NGINX config in taking longer than the validationTimeout %s", validationTimeout)
 		return status
 	}
-}
-
-func isNapInPayload(directoryMap *proto.DirectoryMap, action proto.NginxConfigAction, path string) bool {
-	if (action == proto.NginxConfigAction_APPLY && directoryMap != &proto.DirectoryMap{}) {
-		for _, directory := range directoryMap.Directories {
-			for _, file := range directory.GetFiles() {
-				if filepath.Base(file.GetName()) == filepath.Base(path) {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }
 
 // This function will run a nginx config validation in a separate go routine. If the validation takes less than 15 seconds then the result is returned straight away,
@@ -648,15 +597,45 @@ func (n *Nginx) syncAgentConfigChange() {
 	}
 	log.Debugf("Nginx Plugins is updating to a new config - %v", conf)
 
-	if conf.NginxAppProtect != (config.NginxAppProtect{}) {
-		n.isNAPEnabled = true
-		n.isNAPPrecompiledPublicationEnabled = conf.IsNginxAppProtectPrecompiledPublicationConfigured()
-	} else {
-		n.isNAPPrecompiledPublicationEnabled = false
-		n.isNAPEnabled = false
-	}
-
 	n.isFeatureNginxConfigEnabled = conf.IsFeatureEnabled(agent_config.FeatureNginxConfig)
 
 	n.config = conf
+}
+
+func (n *Nginx) ValidateNginxAppProtectVersion(nginxConfig *proto.NginxConfig) (bool, error) {
+	if isFileInDirectoryMap(nginxConfig.GetDirectoryMap(), n.nginxAppProtectSoftwareDetails.GetWafLocation()) {
+		if aux := nginxConfig.GetZaux(); aux != nil && len(aux.Contents) > 0 {
+			auxFiles, err := zip.UnPack(aux)
+			if err != nil {
+				return false, fmt.Errorf("config apply failed (preflight): not able to read unpack aux files %v", nginxConfig.GetZaux())
+			}
+			for _, file := range auxFiles {
+				if filepath.Base(file.GetName()) == filepath.Base(n.nginxAppProtectSoftwareDetails.GetWafLocation()) {
+					var napMetdata nap.Metadata
+					err := json.Unmarshal(file.GetContents(), &napMetdata)
+					if err != nil {
+						return false, fmt.Errorf("config apply failed (preflight): not able to read WAF file in metadata %v", nginxConfig.GetConfigData())
+					}
+					if napMetdata.NapVersion != "" && n.nginxAppProtectSoftwareDetails.GetWafVersion() != napMetdata.NapVersion {
+						return false, fmt.Errorf("config apply failed (preflight): config metadata mismatch %v", nginxConfig.GetConfigData())
+					}
+				}
+			}
+		}
+	}
+
+	return true, nil
+}
+
+func isFileInDirectoryMap(directoryMap *proto.DirectoryMap, path string) bool {
+	if (directoryMap != &proto.DirectoryMap{}) {
+		for _, directory := range directoryMap.Directories {
+			for _, file := range directory.GetFiles() {
+				if filepath.Base(file.GetName()) == filepath.Base(path) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }

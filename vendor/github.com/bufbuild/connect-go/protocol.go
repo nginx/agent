@@ -37,6 +37,7 @@ const (
 const (
 	headerContentType = "Content-Type"
 	headerUserAgent   = "User-Agent"
+	headerTrailer     = "Trailer"
 
 	discardLimit = 1024 * 1024 * 4 // 4MiB
 )
@@ -237,20 +238,20 @@ func discard(reader io.Reader) error {
 	return err
 }
 
-func validateRequestURL(uri string) *Error {
-	_, err := url.ParseRequestURI(uri)
+func validateRequestURL(rawURL string) (*url.URL, *Error) {
+	url, err := url.ParseRequestURI(rawURL)
 	if err == nil {
-		return nil
+		return url, nil
 	}
-	if !strings.Contains(uri, "://") {
+	if !strings.Contains(rawURL, "://") {
 		// URL doesn't have a scheme, so the user is likely accustomed to
 		// grpc-go's APIs.
 		err = fmt.Errorf(
 			"URL %q missing scheme: use http:// or https:// (unlike grpc-go)",
-			uri,
+			rawURL,
 		)
 	}
-	return NewError(CodeUnavailable, err)
+	return nil, NewError(CodeUnavailable, err)
 }
 
 // negotiateCompression determines and validates the request compression and
@@ -315,12 +316,35 @@ func flushResponseWriter(w http.ResponseWriter) {
 	}
 }
 
-func canonicalizeContentType(ct string) string {
-	base, params, err := mime.ParseMediaType(ct)
-	if err != nil {
-		return ct
+func canonicalizeContentType(contentType string) string {
+	// Typically, clients send Content-Type in canonical form, without
+	// parameters. In those cases, we'd like to avoid parsing and
+	// canonicalization overhead.
+	//
+	// See https://www.rfc-editor.org/rfc/rfc2045.html#section-5.1 for a full
+	// grammar.
+	var slashes int
+	for _, r := range contentType {
+		switch {
+		case r >= 'a' && r <= 'z':
+		case r == '.' || r == '+' || r == '-':
+		case r == '/':
+			slashes++
+		default:
+			return canonicalizeContentTypeSlow(contentType)
+		}
 	}
+	if slashes == 1 {
+		return contentType
+	}
+	return canonicalizeContentTypeSlow(contentType)
+}
 
+func canonicalizeContentTypeSlow(contentType string) string {
+	base, params, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return contentType
+	}
 	// According to RFC 9110 Section 8.3.2, the charset parameter value should be treated as case-insensitive.
 	// mime.FormatMediaType canonicalizes parameter names, but not parameter values,
 	// because the case sensitivity of a parameter value depends on its semantics.
@@ -329,6 +353,5 @@ func canonicalizeContentType(ct string) string {
 	if charset, ok := params["charset"]; ok {
 		params["charset"] = strings.ToLower(charset)
 	}
-
 	return mime.FormatMediaType(base, params)
 }

@@ -249,6 +249,28 @@ EOF
     fi
 }
 
+upgrade_config_file() {
+    if [ -f "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf ]; then
+        extensions=""
+        if grep -q "advanced_metrics:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf; then
+            extensions="${extensions} advanced-metrics"
+        fi
+        if grep -q "nginx_app_protect:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf; then
+            extensions="${extensions} nginx-app-protect"
+        fi
+        if grep -q "nap_monitoring:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf; then
+            extensions="${extensions} nap-monitoring"
+        fi
+        if ! grep -q "extensions:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf && [ "${#extensions}" -ne "0" ]; then
+            printf "PostInstall: Updating nginx-agent.conf to include extensions array\n"
+            printf "\nextensions:\n" >> "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
+            for extension in ${extensions}; do
+                echo "  - $extension" >> "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
+            done
+        fi
+    fi
+}
+
 summary() {
     echo "----------------------------------------------------------------------"
     echo " NGINX Agent package has been successfully installed."
@@ -278,6 +300,7 @@ summary() {
     create_run_dir
     update_unit_file
     add_default_config_file
+    upgrade_config_file
     summary
 }
 

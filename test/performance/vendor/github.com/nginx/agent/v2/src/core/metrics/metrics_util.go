@@ -9,6 +9,8 @@ package metrics
 
 import (
 	"context"
+	"math"
+	"sort"
 	"sync"
 	"time"
 
@@ -48,6 +50,48 @@ func NewStatsEntity(dims []*proto.Dimension, samples []*proto.SimpleMetric) *pro
 		Dimensions:    dims,
 		Simplemetrics: samples,
 	}
+}
+
+func GetTimeMetrics(times []float64, metricType string) float64 {
+	if len(times) == 0 {
+		return 0
+	}
+
+	switch metricType {
+	case "time":
+		// Calculate average
+		sum := 0.0
+		for _, t := range times {
+			sum += t
+		}
+
+		return (math.Round(sum*1000) / 1000) / float64(len(times))
+
+	case "count":
+		return float64(len(times))
+
+	case "max":
+		sort.Float64s(times)
+		return times[len(times)-1]
+
+	case "median":
+		sort.Float64s(times)
+
+		mNumber := len(times) / 2
+		if len(times)%2 != 0 {
+			return times[mNumber]
+		} else {
+			return (times[mNumber-1] + times[mNumber]) / 2
+		}
+
+	case "pctl95":
+		sort.Float64s(times)
+
+		index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
+		return times[index]
+	}
+
+	return 0
 }
 
 func GetCalculationMap() map[string]string {
@@ -227,7 +271,15 @@ func GetCalculationMap() map[string]string {
 		"plus.http.upstream.queue.size":                      "avg",
 		"plus.http.upstream.peers.conn.active":               "avg",
 		"plus.http.upstream.peers.header_time":               "avg",
+		"plus.http.upstream.peers.header_time.count":         "sum",
+		"plus.http.upstream.peers.header_time.max":           "avg",
+		"plus.http.upstream.peers.header_time.median":        "avg",
+		"plus.http.upstream.peers.header_time.pctl95":        "avg",
 		"plus.http.upstream.peers.response.time":             "avg",
+		"plus.http.upstream.peers.response.time.count":       "sum",
+		"plus.http.upstream.peers.response.time.max":         "avg",
+		"plus.http.upstream.peers.response.time.median":      "avg",
+		"plus.http.upstream.peers.response.time.pctl95":      "avg",
 		"plus.http.upstream.peers.request.count":             "sum",
 		"plus.http.upstream.peers.response.count":            "sum",
 		"plus.http.upstream.peers.status.1xx":                "sum",
@@ -258,8 +310,16 @@ func GetCalculationMap() map[string]string {
 		"plus.stream.upstream.peers.conn.active":             "avg",
 		"plus.stream.upstream.peers.conn.count":              "sum",
 		"plus.stream.upstream.peers.connect_time":            "avg",
+		"plus.stream.upstream.peers.connect_time.count":      "sum",
+		"plus.stream.upstream.peers.connect_time.max":        "avg",
+		"plus.stream.upstream.peers.connect_time.median":     "avg",
+		"plus.stream.upstream.peers.connect_time.pctl95":     "avg",
 		"plus.stream.upstream.peers.ttfb":                    "avg",
 		"plus.stream.upstream.peers.response.time":           "avg",
+		"plus.stream.upstream.peers.response.time.count":     "sum",
+		"plus.stream.upstream.peers.response.time.max":       "avg",
+		"plus.stream.upstream.peers.response.time.median":    "avg",
+		"plus.stream.upstream.peers.response.time.pctl95":    "avg",
 		"plus.stream.upstream.peers.bytes_sent":              "sum",
 		"plus.stream.upstream.peers.bytes_rcvd":              "sum",
 		"plus.stream.upstream.peers.fails":                   "sum",

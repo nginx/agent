@@ -18,7 +18,6 @@ import (
 	"time"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
-	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -81,20 +80,6 @@ func SetDefaults() {
 	Viper.SetDefault(NginxClientVersion, Defaults.Nginx.NginxClientVersion)
 }
 
-func SetNginxAppProtectDefaults() {
-	Viper.SetDefault(NginxAppProtectReportInterval, Defaults.NginxAppProtect.ReportInterval)
-	Viper.SetDefault(NginxAppProtectPrecompiledPublication, Defaults.NginxAppProtect.PrecompiledPublication)
-}
-
-func SetNAPMonitoringDefaults() {
-	Viper.SetDefault(NAPMonitoringCollectorBufferSize, Defaults.NAPMonitoring.CollectorBufferSize)
-	Viper.SetDefault(NAPMonitoringProcessorBufferSize, Defaults.NAPMonitoring.ProcessorBufferSize)
-	Viper.SetDefault(NAPMonitoringSyslogIP, Defaults.NAPMonitoring.SyslogIP)
-	Viper.SetDefault(NAPMonitoringSyslogPort, Defaults.NAPMonitoring.SyslogPort)
-	Viper.SetDefault(NAPMonitoringReportInterval, Defaults.NAPMonitoring.ReportInterval)
-	Viper.SetDefault(NAPMonitoringReportCount, Defaults.NAPMonitoring.ReportCount)
-}
-
 func setFlagDeprecated(name string, usageMessage string) {
 	err := ROOT_COMMAND.Flags().MarkDeprecated(name, usageMessage)
 	if err != nil {
@@ -103,22 +88,19 @@ func setFlagDeprecated(name string, usageMessage string) {
 }
 
 func deprecateFlags() {
-	setFlagDeprecated("api-token", "DEPRECATED. API Token is no longer set. No replacement command.")
-	setFlagDeprecated("location", "DEPRECATED. Set through APIs. No replacement command.")
-	setFlagDeprecated("metadata", "DEPRECATED. Use tags instead.")
-	setFlagDeprecated("metrics-server", "DEPRECATED. Use server instead.")
-	setFlagDeprecated("metrics-tls-ca", "DEPRECATED. metrics-tls-ca has been replaced by tls-ca")
-	setFlagDeprecated("metrics-tls-cert", "DEPRECATED. metrics-tls-cert has been replaced by tls-cert")
-	setFlagDeprecated("metrics-tls-enable", "DEPRECATED. metrics-tls-enable has been replaced by tls-enable")
-	setFlagDeprecated("metrics-tls-key", "DEPRECATED. metrics-tls-key has been replaced by tls-key")
-	setFlagDeprecated("nginx-bin-path", "DEPRECATED. nginx-bin-path is no longer used. The agent strives to discover the nginx instances on the dataplane")
-	setFlagDeprecated("nginx-metrics-poll-interval", "DEPRECATED. nginx-metrics-poll-interval has been replaced by metrics-report-interval and metrics-collection-interval")
-	setFlagDeprecated("nginx-pid-path", "DEPRECATED. nginx-pid-path is no longer used. The agent strives to discover the nginx instances on the dataplane")
-	setFlagDeprecated("nginx-plus-api", "DEPRECATED. nginx-plus-api is no longer used. The agent strives to discover the nginx instances on the dataplane and read this from the configuration file")
-	setFlagDeprecated("nginx-stub-status", "DEPRECATED. nginx-stub-status is no longer used. The agent strives to discover the nginx instances on the dataplane and read this from the configuration file")
-	setFlagDeprecated("server", "DEPRECATED. server has been replaced with the new server structure")
-	setFlagDeprecated("dataplane-sync-enable", "DEPRECATED. server has been replaced with the new server structure")
-	setFlagDeprecated("dataplane-events-enable", "DEPRECATED. server has been replaced with the new server structure")
+	setFlagDeprecated("advanced-metrics-socket-path", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-aggregation-period", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-publishing-period", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-table-sizes-limits-priority-table-max-size", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-table-sizes-limits-priority-table-threshold", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-table-sizes-limits-staging-table-max-size", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("advanced-metrics-table-sizes-limits-staging-table-threshold", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nginx-app-protect-report-interval", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nginx-app-protect-precompiled-publication", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nap-monitoring-collector-buffer-size", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nap-monitoring-processor-buffer-size", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nap-monitoring-syslog-ip", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("nap-monitoring-syslog-port", "DEPRECATED. No replacement command.")
 }
 
 func RegisterFlags() {
@@ -164,6 +146,16 @@ func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 }
 
 func GetConfig(clientId string) (*Config, error) {
+	extensions := []string{}
+
+	for _, extension := range Viper.GetStringSlice(agent_config.ExtensionsKey) {
+		if agent_config.IsKnownExtension(extension) {
+			extensions = append(extensions, extension)
+		} else {
+			log.Warnf("Ignoring unknown extension %s that was configured", extension)
+		}
+	}
+
 	config := &Config{
 		Path:                  Viper.GetString(ConfigPathKey),
 		DynamicConfigPath:     Viper.GetString(DynamicConfigPathKey),
@@ -178,14 +170,12 @@ func GetConfig(clientId string) (*Config, error) {
 		Dataplane:             getDataplane(),
 		AgentMetrics:          getMetrics(),
 		Features:              Viper.GetStringSlice(agent_config.FeaturesKey),
+		Extensions:            extensions,
 		Tags:                  Viper.GetStringSlice(TagsKey),
 		Updated:               filePathUTime(Viper.GetString(DynamicConfigPathKey)),
 		AllowedDirectoriesMap: map[string]struct{}{},
 		DisplayName:           Viper.GetString(DisplayNameKey),
 		InstanceGroup:         Viper.GetString(InstanceGroupKey),
-		NginxAppProtect:       getNginxAppProtect(),
-		NAPMonitoring:         getNAPMonitoring(),
-		AdvancedMetrics:       getAdvancedMetrics(),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDirs, ":") {
@@ -276,20 +266,6 @@ func getMetrics() AgentMetrics {
 	}
 }
 
-func getAdvancedMetrics() AdvancedMetrics {
-	return AdvancedMetrics{
-		SocketPath:        Viper.GetString(AdvancedMetricsSocketPath),
-		AggregationPeriod: Viper.GetDuration(AdvancedMetricsAggregationPeriod),
-		PublishingPeriod:  Viper.GetDuration(AdvancedMetricsPublishPeriod),
-		TableSizesLimits: advanced_metrics.TableSizesLimits{
-			StagingTableMaxSize:    Viper.GetInt(AdvancedMetricsTableSizesLimitsSTMS),
-			StagingTableThreshold:  Viper.GetInt(AdvancedMetricsTableSizesLimitsSTT),
-			PriorityTableMaxSize:   Viper.GetInt(AdvancedMetricsTableSizesLimitsPTMS),
-			PriorityTableThreshold: Viper.GetInt(AdvancedMetricsTableSizesLimitsPTT),
-		},
-	}
-}
-
 func getLog() LogConfig {
 	return LogConfig{
 		Level: Viper.GetString(LogLevel),
@@ -303,24 +279,6 @@ func getDataplane() Dataplane {
 			PollInterval:   Viper.GetDuration(DataplaneStatusPoll),
 			ReportInterval: Viper.GetDuration(DataplaneStatusReportInterval),
 		},
-	}
-}
-
-func getNginxAppProtect() NginxAppProtect {
-	return NginxAppProtect{
-		ReportInterval:         Viper.GetDuration(NginxAppProtectReportInterval),
-		PrecompiledPublication: Viper.GetBool(NginxAppProtectPrecompiledPublication),
-	}
-}
-
-func getNAPMonitoring() NAPMonitoring {
-	return NAPMonitoring{
-		CollectorBufferSize: Viper.GetInt(NAPMonitoringCollectorBufferSize),
-		ProcessorBufferSize: Viper.GetInt(NAPMonitoringProcessorBufferSize),
-		SyslogIP:            Viper.GetString(NAPMonitoringSyslogIP),
-		SyslogPort:          Viper.GetInt(NAPMonitoringSyslogPort),
-		ReportInterval:      Viper.GetDuration(NAPMonitoringReportInterval),
-		ReportCount:         Viper.GetInt(NAPMonitoringReportCount),
 	}
 }
 
@@ -429,13 +387,13 @@ func SeekConfigFileInPaths(configName string, searchPaths ...string) (string, er
 			return f, nil
 		}
 	}
-	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths.")
+	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths")
 }
 
 func filePathUTime(path string) time.Time {
 	s, err := os.Stat(path)
 	if err != nil {
-		log.Warnf("Unable to determine the modified time of %s: %s. Defaulting the value to Now.", path, err)
+		log.Warnf("Unable to determine the modified time of %s: %s. Defaulting the value to Now", path, err)
 		return time.Now()
 	}
 	return s.ModTime()

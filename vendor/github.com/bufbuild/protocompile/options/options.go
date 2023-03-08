@@ -288,7 +288,11 @@ func (interp *interpreter) interpretFieldOptions(fqn string, fld *descriptorpb.F
 		if opt.StringValue == nil {
 			return interp.reporter.HandleErrorf(interp.nodeInfo(optNode.GetValue()).Start(), "%s: expecting string value for json_name option", scope)
 		}
-		fld.JsonName = proto.String(string(opt.StringValue))
+		name := string(opt.StringValue)
+		if strings.HasPrefix(name, "[") && strings.HasSuffix(name, "]") {
+			return interp.reporter.HandleErrorf(interp.nodeInfo(optNode.GetValue()).Start(), "%s: option json_name value cannot start with '[' and end with ']'; that is reserved for representing extensions", scope)
+		}
+		fld.JsonName = proto.String(name)
 	}
 
 	// and process default pseudo-option

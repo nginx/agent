@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -26,10 +27,11 @@ type NginxOSS struct {
 	// This is for keeping the previous stats.  Need to report the delta.
 	prevStats *client.StubStats
 	init      sync.Once
+	logger    *MetricSourceLogger
 }
 
 func NewNginxOSS(baseDimensions *metrics.CommonDim, namespace, stubStatus string) *NginxOSS {
-	return &NginxOSS{baseDimensions: baseDimensions, stubStatus: stubStatus, namedMetric: &namedMetric{namespace: namespace}}
+	return &NginxOSS{baseDimensions: baseDimensions, stubStatus: stubStatus, namedMetric: &namedMetric{namespace: namespace}, logger: NewMetricSourceLogger()}
 }
 
 func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
@@ -37,14 +39,14 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 	c.init.Do(func() {
 		cl, err := client.NewNginxClient(&http.Client{}, c.stubStatus)
 		if err != nil {
-			log.Errorf("Failed to create oss metrics client: %v", err)
+			c.logger.Log(fmt.Sprintf("Failed to create oss metrics client, %v", err))
 			c.prevStats = nil
 			return
 		}
 
 		c.prevStats, err = cl.GetStubStats()
 		if err != nil {
-			log.Errorf("Failed to retrieve oss metrics: %v", err)
+			c.logger.Log(fmt.Sprintf("Failed to retrieve oss metrics, %v", err))
 			c.prevStats = nil
 			return
 		}
@@ -52,14 +54,14 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 
 	cl, err := client.NewNginxClient(&http.Client{}, c.stubStatus)
 	if err != nil {
-		log.Errorf("Failed to create oss metrics client: %v", err)
+		c.logger.Log(fmt.Sprintf("Failed to create oss metrics client, %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
 
 	stats, err := cl.GetStubStats()
 	if err != nil {
-		log.Errorf("Failed to retrieve oss metrics: %v", err)
+		c.logger.Log(fmt.Sprintf("Failed to retrieve oss metrics, %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
@@ -90,15 +92,16 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 	}
 
 	simpleMetrics := c.convertSamplesToSimpleMetrics(map[string]float64{
-		"conn.active":   float64(stats.Connections.Active),
-		"conn.accepted": float64(connAccepted),
-		"conn.handled":  float64(connHandled),
-		"conn.current":  float64(stats.Connections.Active + stats.Connections.Waiting),
-		"conn.idle":     float64(stats.Connections.Waiting),
-		"conn.dropped":  float64(connDropped),
-		"conn.reading":  float64(stats.Connections.Reading),
-		"conn.writing":  float64(stats.Connections.Writing),
-		"request.count": float64(requestCount),
+		"conn.active":     float64(stats.Connections.Active),
+		"conn.accepted":   float64(connAccepted),
+		"conn.handled":    float64(connHandled),
+		"conn.current":    float64(stats.Connections.Active + stats.Connections.Waiting),
+		"conn.idle":       float64(stats.Connections.Waiting),
+		"conn.dropped":    float64(connDropped),
+		"conn.reading":    float64(stats.Connections.Reading),
+		"conn.writing":    float64(stats.Connections.Writing),
+		"request.count":   float64(requestCount),
+		"request.current": float64(stats.Connections.Reading) + float64(stats.Connections.Writing),
 	})
 
 	simpleMetrics = append(simpleMetrics, &proto.SimpleMetric{Name: "nginx.status", Value: 1.0})

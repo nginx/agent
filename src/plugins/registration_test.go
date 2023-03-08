@@ -19,6 +19,7 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
@@ -32,33 +33,35 @@ func TestRegistration_Process(t *testing.T) {
 			expectedMessageCount: 2,
 		},
 	}
-	t.Parallel()
+
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(tt *testing.T) {
-			tt.Parallel()
-
 			binary := tutils.GetMockNginxBinary()
 			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 			env := tutils.GetMockEnvWithHostAndProcess()
 
 			cfg := &config.Config{
-				NginxAppProtect: config.NginxAppProtect{
-					ReportInterval: time.Duration(1) * time.Second,
-				},
+				Extensions: []string{agent_config.NginxAppProtectExtensionPlugin},
 			}
 
 			pluginUnderTest := NewOneTimeRegistration(cfg, binary, env, &proto.Metadata{}, "0.0.0")
-			pluginUnderTest.dataplaneSoftwareDetails[napPluginName] = &proto.DataplaneSoftwareDetails{
+			pluginUnderTest.dataplaneSoftwareDetails[agent_config.NginxAppProtectExtensionPlugin] = &proto.DataplaneSoftwareDetails{
 				Data: testNAPDetailsActive,
 			}
 			defer pluginUnderTest.Close()
 
-			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
-
+			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 			messagePipe.Run()
-			messages := messagePipe.GetProcessedMessages()
-			assert.Len(tt, messages, test.expectedMessageCount)
+
+			assert.Eventually(
+				tt,
+				func() bool { return len(messagePipe.GetMessages()) == test.expectedMessageCount },
+				time.Duration(5*time.Second),
+				3*time.Millisecond,
+			)
+
+			messages := messagePipe.GetMessages()
 
 			assert.Equal(tt, messages[0].Topic(), core.CommRegister)
 			// host info checked elsewhere
@@ -70,19 +73,22 @@ func TestRegistration_Process(t *testing.T) {
 	}
 }
 
-func TestRegistration_DataplaneReady(t *testing.T) {
+func TestRegistration_areDataplaneSoftwareDetailsReady(t *testing.T) {
 	conf := tutils.GetMockAgentConfig()
-	conf.NginxAppProtect = config.NginxAppProtect{ReportInterval: time.Duration(15) * time.Second}
+	conf.Extensions = []string{agent_config.NginxAppProtectExtensionPlugin}
 
 	pluginUnderTest := NewOneTimeRegistration(conf, nil, tutils.GetMockEnv(), nil, "")
+	softwareDetails := make(map[string]*proto.DataplaneSoftwareDetails)
+	softwareDetails[agent_config.NginxAppProtectExtensionPlugin] = &proto.DataplaneSoftwareDetails{}
+	pluginUnderTest.dataplaneSoftwareDetails = softwareDetails
 
-	assert.NoError(t, pluginUnderTest.dataplaneSoftwareDetailsReady())
+	assert.NoError(t, pluginUnderTest.areDataplaneSoftwareDetailsReady())
 }
 
 func TestRegistration_Subscriptions(t *testing.T) {
 	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil, "")
 
-	assert.Equal(t, []string{core.RegistrationCompletedTopic, core.RegisterWithDataplaneSoftwareDetails}, pluginUnderTest.Subscriptions())
+	assert.Equal(t, []string{core.RegistrationCompletedTopic, core.DataplaneSoftwareDetailsUpdated}, pluginUnderTest.Subscriptions())
 }
 
 func TestRegistration_Info(t *testing.T) {

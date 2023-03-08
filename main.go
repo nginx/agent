@@ -25,17 +25,16 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/logger"
+	"github.com/nginx/agent/v2/src/extensions"
 	"github.com/nginx/agent/v2/src/plugins"
+
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 )
 
 var (
 	// set at buildtime
 	commit  = ""
 	version = ""
-)
-
-const (
-	DEFAULT_PLUGIN_SIZE = 100
 )
 
 func init() {
@@ -87,9 +86,9 @@ func main() {
 
 		binary := core.NewNginxBinary(env, loadedConfig)
 
-		corePlugins := loadPlugins(commander, binary, env, reporter, loadedConfig)
+		corePlugins, extensionPlugins := loadPlugins(commander, binary, env, reporter, loadedConfig)
 
-		pipe := initializeMessagePipe(ctx, corePlugins)
+		pipe := initializeMessagePipe(ctx, corePlugins, extensionPlugins)
 
 		pipe.Process(core.NewMessage(core.AgentStarted,
 			plugins.NewAgentEventMeta(version, strconv.Itoa(os.Getpid()))),
@@ -187,8 +186,9 @@ func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client
 	return controller, commander, reporter
 }
 
-func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *core.EnvironmentType, reporter client.MetricReporter, loadedConfig *config.Config) []core.Plugin {
+func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *core.EnvironmentType, reporter client.MetricReporter, loadedConfig *config.Config) ([]core.Plugin, []core.ExtensionPlugin) {
 	var corePlugins []core.Plugin
+	var extensionPlugins []core.ExtensionPlugin
 
 	if commander != nil {
 		corePlugins = append(corePlugins,
@@ -226,34 +226,38 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env))
 	}
 
-	if (config.AdvancedMetrics{}) != loadedConfig.AdvancedMetrics {
-		corePlugins = append(corePlugins, plugins.NewAdvancedMetrics(env, loadedConfig))
-	}
-
-	if loadedConfig.IsNginxAppProtectConfigured() {
-		napPlugin, err := plugins.NewNginxAppProtect(loadedConfig, env)
-		if err == nil {
-			corePlugins = append(corePlugins, napPlugin)
-		} else {
-			log.Errorf("Unable to load the Nginx App Protect plugin due to the following error: %v", err)
+	if loadedConfig.Extensions != nil && len(loadedConfig.Extensions) > 0 {
+		for _, extension := range loadedConfig.Extensions {
+			switch {
+			case extension == agent_config.AdvancedMetricsExtensionPlugin:
+				advancedMetricsExtensionPlugin := extensions.NewAdvancedMetrics(env, loadedConfig, config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey))
+				extensionPlugins = append(extensionPlugins, advancedMetricsExtensionPlugin)
+			case extension == agent_config.NginxAppProtectExtensionPlugin:
+				nginxAppProtectExtensionPlugin, err := extensions.NewNginxAppProtect(loadedConfig, env, config.Viper.Get(agent_config.NginxAppProtectExtensionPluginConfigKey))
+				if err != nil {
+					log.Errorf("Unable to load the Nginx App Protect plugin due to the following error: %v", err)
+				} else {
+					extensionPlugins = append(extensionPlugins, nginxAppProtectExtensionPlugin)
+				}
+			case extension == agent_config.NginxAppProtectMonitoringExtensionPlugin:
+				nginxAppProtectMonitoringExtensionPlugin, err := extensions.NewNAPMonitoring(env, loadedConfig, config.Viper.Get(agent_config.NginxAppProtectMonitoringExtensionPluginConfigKey))
+				if err != nil {
+					log.Errorf("Unable to load the Nginx App Protect Monitoring plugin due to the following error: %v", err)
+				} else {
+					extensionPlugins = append(extensionPlugins, nginxAppProtectMonitoringExtensionPlugin)
+				}
+			default:
+				log.Warnf("unknown extension configured: %s", extension)
+			}
 		}
 	}
 
-	if loadedConfig.NAPMonitoring != (config.NAPMonitoring{}) {
-		nm, err := plugins.NewNAPMonitoring(env, loadedConfig)
-		if err != nil {
-			log.Errorf("Unable to load the Nginx App Protect Monitoring plugin due to the following error: %v", err)
-		} else {
-			corePlugins = append(corePlugins, nm)
-		}
-	}
-
-	return corePlugins
+	return corePlugins, extensionPlugins
 }
 
-func initializeMessagePipe(ctx context.Context, corePlugins []core.Plugin) core.MessagePipeInterface {
+func initializeMessagePipe(ctx context.Context, corePlugins []core.Plugin, extensionPlugins []core.ExtensionPlugin) core.MessagePipeInterface {
 	pipe := core.NewMessagePipe(ctx)
-	err := pipe.Register(DEFAULT_PLUGIN_SIZE, corePlugins...)
+	err := pipe.Register(agent_config.DefaultPluginSize, corePlugins, extensionPlugins)
 	if err != nil {
 		log.Warnf("Failed to start agent successfully, error loading plugins %v", err)
 	}
