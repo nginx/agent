@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/klauspost/cpuid/v2"
@@ -28,10 +29,17 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/process"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 
 	"github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/network"
+)
+
+const (
+	CTLKern          = 1  // "high kernel": proc, limits
+	KernProc         = 14 // struct: process entries
+	KernProcPathname = 12 // path to executable
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -460,7 +468,22 @@ func (env *EnvironmentType) Processes() (result []Process) {
 		if isMaster {
 			exe, err = process.Exe()
 			if err != nil {
-				log.Errorf("Error reading exe information for process: %d error: %v", pid, err)
+				log.Debugf("Error reading exe information for process: %d error: %v", pid, err)
+
+				out, err := exec.Command("sh", "-c", "command -v nginx").CombinedOutput()
+				if err != nil {
+					log.Debugf("Error executing 'command -v nginx' to find NGINX executable, %v, %s", err, string(out))
+
+					// process.Exe() is not implemented yet for FreeBSD.
+					// This is a temporary workaround  until the gopsutil library supports it.
+					exe, err = getExe(pid)
+					if err != nil {
+						log.Debugf("Error reading exe information for process: %d error: %v", pid, err)
+						log.Errorf("Unable to find NGINX executable for process %d", pid)
+					}
+				} else {
+					exe = strings.TrimSuffix(string(out), "\n")
+				}
 			}
 		}
 
@@ -481,6 +504,58 @@ func (env *EnvironmentType) Processes() (result []Process) {
 	}
 
 	return processList
+}
+
+func getExe(pid int32) (string, error) {
+	mib := []int32{CTLKern, KernProc, KernProcPathname, pid}
+	buf, _, err := callSyscall(mib)
+	if err != nil {
+		return "", err
+	}
+	ret := strings.FieldsFunc(string(buf), func(r rune) bool {
+		return r == '\u0000'
+	})
+
+	return strings.Join(ret, " "), nil
+}
+
+func callSyscall(mib []int32) ([]byte, uint64, error) {
+	mibptr := unsafe.Pointer(&mib[0])
+	miblen := uint64(len(mib))
+
+	// get required buffer size
+	length := uint64(0)
+	_, _, err := unix.Syscall6(
+		unix.SYS___SYSCTL,
+		uintptr(mibptr),
+		uintptr(miblen),
+		0,
+		uintptr(unsafe.Pointer(&length)),
+		0,
+		0)
+	if err != 0 {
+		var b []byte
+		return b, length, err
+	}
+	if length == 0 {
+		var b []byte
+		return b, length, err
+	}
+	// get proc info itself
+	buf := make([]byte, length)
+	_, _, err = unix.Syscall6(
+		unix.SYS___SYSCTL,
+		uintptr(mibptr),
+		uintptr(miblen),
+		uintptr(unsafe.Pointer(&buf[0])),
+		uintptr(unsafe.Pointer(&length)),
+		0,
+		0)
+	if err != 0 {
+		return buf, length, err
+	}
+
+	return buf, length, nil
 }
 
 func processors() (res []*proto.CpuInfo) {

@@ -10,7 +10,6 @@ package sources
 import (
 	"context"
 	"os/exec"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -24,7 +23,7 @@ import (
 type NginxWorker struct {
 	baseDimensions *metrics.CommonDim
 	*namedMetric
-	prevStats map[string]*WorkerStats
+	prevStats map[int32]*WorkerStats
 	binary    core.NginxBinary
 	cl        NginxWorkerCollector
 	init      sync.Once
@@ -39,7 +38,7 @@ func NewNginxWorker(baseDimensions *metrics.CommonDim,
 		baseDimensions: baseDimensions,
 		namedMetric:    &namedMetric{namespace: namespace},
 		binary:         binary,
-		prevStats:      map[string]*WorkerStats{},
+		prevStats:      map[int32]*WorkerStats{},
 		cl:             collector,
 	}
 }
@@ -49,57 +48,57 @@ func (c *NginxWorker) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- 
 	defer wg.Done()
 	childProcs := c.binary.GetChildProcesses()
 	c.init.Do(func() {
-		for pid, children := range childProcs {
-			c.prevStats[pid], err = c.cl.GetWorkerStats(children)
+		for ppid, children := range childProcs {
+			c.prevStats[ppid], err = c.cl.GetWorkerStats(children)
 			if err != nil {
 				log.Errorf("Failed to retrieve nginx process metrics: %v", err)
-				c.prevStats[pid] = nil
+				c.prevStats[ppid] = nil
 				return
 			}
 		}
 	})
 
-	for pid, children := range childProcs {
+	for ppid, children := range childProcs {
 		stats, err := c.cl.GetWorkerStats(children)
 		if err != nil {
 			log.Errorf("Failed to retrieve nginx process metrics: %v", err)
 			return
 		}
 
-		if c.prevStats[pid] == nil {
-			c.prevStats[pid] = stats
+		if c.prevStats[ppid] == nil {
+			c.prevStats[ppid] = stats
 		}
 
 		c.group = "workers"
 
 		// gauges are computed via counter delta
-		cpuUser := stats.Workers.CPUUser - c.prevStats[pid].Workers.CPUUser
-		if stats.Workers.CPUUser < c.prevStats[pid].Workers.CPUUser {
+		cpuUser := stats.Workers.CPUUser - c.prevStats[ppid].Workers.CPUUser
+		if stats.Workers.CPUUser < c.prevStats[ppid].Workers.CPUUser {
 			cpuUser = stats.Workers.CPUUser
 		}
 
-		cpuSystem := stats.Workers.CPUSystem - c.prevStats[pid].Workers.CPUSystem
-		if stats.Workers.CPUSystem < c.prevStats[pid].Workers.CPUSystem {
+		cpuSystem := stats.Workers.CPUSystem - c.prevStats[ppid].Workers.CPUSystem
+		if stats.Workers.CPUSystem < c.prevStats[ppid].Workers.CPUSystem {
 			cpuSystem = stats.Workers.CPUSystem
 		}
 
-		memRss := stats.Workers.MemRss - c.prevStats[pid].Workers.MemRss
-		if stats.Workers.MemRss < c.prevStats[pid].Workers.MemRss {
+		memRss := stats.Workers.MemRss - c.prevStats[ppid].Workers.MemRss
+		if stats.Workers.MemRss < c.prevStats[ppid].Workers.MemRss {
 			memRss = stats.Workers.MemRss
 		}
 
-		memVms := stats.Workers.MemVms - c.prevStats[pid].Workers.MemVms
-		if stats.Workers.MemVms < c.prevStats[pid].Workers.MemVms {
+		memVms := stats.Workers.MemVms - c.prevStats[ppid].Workers.MemVms
+		if stats.Workers.MemVms < c.prevStats[ppid].Workers.MemVms {
 			memVms = stats.Workers.MemVms
 		}
 
-		KbsR := stats.Workers.KbsR - c.prevStats[pid].Workers.KbsR
-		if stats.Workers.KbsR < c.prevStats[pid].Workers.KbsR {
+		KbsR := stats.Workers.KbsR - c.prevStats[ppid].Workers.KbsR
+		if stats.Workers.KbsR < c.prevStats[ppid].Workers.KbsR {
 			KbsR = stats.Workers.KbsR
 		}
 
-		KbsW := stats.Workers.KbsW - c.prevStats[pid].Workers.KbsW
-		if stats.Workers.KbsW < c.prevStats[pid].Workers.KbsW {
+		KbsW := stats.Workers.KbsW - c.prevStats[ppid].Workers.KbsW
+		if stats.Workers.KbsW < c.prevStats[ppid].Workers.KbsW {
 			KbsW = stats.Workers.KbsW
 		}
 
@@ -122,7 +121,7 @@ func (c *NginxWorker) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- 
 		case m <- metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics):
 		}
 
-		c.prevStats[pid] = stats
+		c.prevStats[ppid] = stats
 	}
 }
 
@@ -160,7 +159,7 @@ type Workers struct {
 }
 
 type NginxWorkerCollector interface {
-	GetWorkerStats(childProcs []*proto.NginxDetails) (*WorkerStats, error)
+	GetWorkerStats(childProcs []int32) (*WorkerStats, error)
 }
 
 func NewNginxWorkerClient() NginxWorkerCollector {
@@ -168,7 +167,7 @@ func NewNginxWorkerClient() NginxWorkerCollector {
 }
 
 // GetWorkerStats fetches the nginx master & worker metrics from psutil.
-func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails) (*WorkerStats, error) {
+func (client *NginxWorkerClient) GetWorkerStats(childProcs []int32) (*WorkerStats, error) {
 	stats := &WorkerStats{
 		Workers: &Workers{},
 	}
@@ -182,21 +181,15 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 	var usr, sys, fdSum float64 = 0, 0, 0
 	var memRss, memVms, memPct float64 = 0, 0, 0
 	var kbsr, kbsw float64 = 0, 0
-	for _, nginxDetails := range childProcs {
-		if cacheProcs[nginxDetails.ProcessId] {
+	for _, pid := range childProcs {
+		if cacheProcs[string(pid)] {
 			continue
 		}
 		numWorkers++
 
-		pidAsInt, err := strconv.Atoi(nginxDetails.ProcessId)
+		proc, err := ps.NewProcess(pid)
 		if err != nil {
-			log.Debugf("failed to convert %s to int: %v", nginxDetails.ProcessId, err)
-			continue
-		}
-
-		proc, err := ps.NewProcess(int32(pidAsInt))
-		if err != nil {
-			log.Debugf("failed to retrieve process from pid %d: %v", pidAsInt, err)
+			log.Debugf("Failed to retrieve process from pid %d: %v", pid, err)
 			continue
 		}
 
