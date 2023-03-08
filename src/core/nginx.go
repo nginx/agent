@@ -170,6 +170,7 @@ func (n *NginxBinaryType) sanitizeProcessPath(nginxProcess *Process) bool {
 }
 
 func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess Process) *proto.NginxDetails {
+	log.Info(nginxProcess)
 	defaulted := n.sanitizeProcessPath(&nginxProcess)
 	info := n.getNginxInfoFrom(nginxProcess.Path)
 
