@@ -27,11 +27,9 @@ var (
 	instanceGroup = "my_instances"
 	nginxId       = uuid.New().String()
 	systemId      = uuid.New().String()
-	procMap       = map[string][]*proto.NginxDetails{
-		"1": {
-			{
-				ProcessId: "1",
-			},
+	procMap       = map[int32][]int32{
+		2: {
+			1,
 		},
 	}
 )
@@ -40,7 +38,7 @@ type MockWorkerClient struct {
 	mock.Mock
 }
 
-func (m *MockWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails) (*WorkerStats, error) {
+func (m *MockWorkerClient) GetWorkerStats(childProcs []int32) (*WorkerStats, error) {
 	args := m.Called(childProcs)
 	return args.Get(0).(*WorkerStats), nil
 }
@@ -65,7 +63,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 
 	mockBinary.On("GetChildProcesses").Return(procMap)
 
-	mockClient.On("GetWorkerStats", procMap["1"]).Return(&WorkerStats{
+	mockClient.On("GetWorkerStats", procMap[2]).Return(&WorkerStats{
 		Workers: &Workers{
 			Count:        1.00,
 			KbsR:         1.00,
