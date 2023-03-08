@@ -268,6 +268,9 @@ func (dps *DataPlaneStatus) healthForProcess(processes []core.Process) (healths 
 	log.Tracef("healthForProcess processes: %v", processes)
 
 	for _, p := range processes {
+		if !p.IsMaster {
+			continue
+		}
 		instanceID := dps.binary.GetNginxIDForProcess(p)
 		log.Tracef("Process: %v instanceID %s", p, instanceID)
 		if _, ok := heathDetails[instanceID]; !ok {

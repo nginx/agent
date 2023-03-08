@@ -40,6 +40,7 @@ const (
 	CTLKern          = 1  // "high kernel": proc, limits
 	KernProc         = 14 // struct: process entries
 	KernProcPathname = 12 // path to executable
+	SYS_SYSCTL       = 202
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -526,7 +527,7 @@ func callSyscall(mib []int32) ([]byte, uint64, error) {
 	// get required buffer size
 	length := uint64(0)
 	_, _, err := unix.Syscall6(
-		unix.SYS___SYSCTL,
+		SYS_SYSCTL,
 		uintptr(mibptr),
 		uintptr(miblen),
 		0,
@@ -544,7 +545,7 @@ func callSyscall(mib []int32) ([]byte, uint64, error) {
 	// get proc info itself
 	buf := make([]byte, length)
 	_, _, err = unix.Syscall6(
-		unix.SYS___SYSCTL,
+		SYS_SYSCTL,
 		uintptr(mibptr),
 		uintptr(miblen),
 		uintptr(unsafe.Pointer(&buf[0])),
