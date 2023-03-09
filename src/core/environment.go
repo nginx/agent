@@ -496,19 +496,16 @@ func (env *EnvironmentType) Processes() (result []Process) {
 }
 
 func getNginxProcessExe(nginxProcess *process.Process) string {
-	exe, err := nginxProcess.Exe()
-	if err != nil {
-		log.Debugf("Error reading exe information for process: %d error: %v", nginxProcess.Pid, err)
-
-		out, err := exec.Command("sh", "-c", "command -v nginx").CombinedOutput()
-		if err != nil {
-			log.Debugf("Error executing 'command -v nginx' to find NGINX executable, %v, %s", err, string(out))
-
+	exe, exeErr := nginxProcess.Exe()
+	if exeErr != nil {
+		out, commandErr := exec.Command("sh", "-c", "command -v nginx").CombinedOutput()
+		if commandErr != nil {
 			// process.Exe() is not implemented yet for FreeBSD.
 			// This is a temporary workaround  until the gopsutil library supports it.
+			var err error
 			exe, err = getExe(nginxProcess.Pid)
 			if err != nil {
-				log.Debugf("Error reading exe information for process: %d error: %v", nginxProcess.Pid, err)
+				log.Tracef("Failed to find exe information for process: %d. Failed for the following errors: %v, %v, %v", nginxProcess.Pid, exeErr, commandErr, err)
 				log.Errorf("Unable to find NGINX executable for process %d", nginxProcess.Pid)
 			}
 		} else {
