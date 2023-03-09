@@ -154,7 +154,7 @@ func (n *NginxAppProtect) monitor() {
 			)
 
 		case <-time.After(n.reportInterval):
-			log.Infof("No NAP changes detected after %v seconds... NAP Values: %+v", n.reportInterval.Seconds(), n.nap.GenerateNAPReport())
+			log.Debugf("No NAP changes detected after %v seconds... NAP Values: %+v", n.reportInterval.Seconds(), n.nap.GenerateNAPReport())
 
 		case <-n.ctx.Done():
 			return
@@ -185,6 +185,7 @@ func (n *NginxAppProtect) generateNAPDetailsProtoCommand() *proto.DataplaneSoftw
 			WafVersion:              napReport.NAPVersion,
 			AttackSignaturesVersion: napReport.AttackSignaturesVersion,
 			ThreatCampaignsVersion:  napReport.ThreatCampaignsVersion,
+			PrecompiledPublication:  n.precompiledPublication,
 			Health: &proto.AppProtectWAFHealth{
 				SystemId:            n.env.GetSystemUUID(),
 				AppProtectWafStatus: napStatus,

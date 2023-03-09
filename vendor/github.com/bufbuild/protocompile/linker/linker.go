@@ -106,18 +106,7 @@ func Link(parsed parser.Result, dependencies Files, symbols *Symbols, handler *r
 type Result interface {
 	File
 	parser.Result
-	// ResolveEnumType returns an enum descriptor for the given named enum that
-	// is available in this file. If no such element is available or if the
-	// named element is not an enum, nil is returned.
-	ResolveEnumType(protoreflect.FullName) protoreflect.EnumDescriptor
-	// ResolveMessageType returns a message descriptor for the given named
-	// message that is available in this file. If no such element is available
-	// or if the named element is not a message, nil is returned.
-	ResolveMessageType(protoreflect.FullName) protoreflect.MessageDescriptor
-	// ResolveExtension returns an extension descriptor for the given named
-	// extension that is available in this file. If no such element is available
-	// or if the named element is not an extension, nil is returned.
-	ResolveExtension(protoreflect.FullName) protoreflect.ExtensionTypeDescriptor
+
 	// ResolveMessageLiteralExtensionName returns the fully qualified name for
 	// an identifier for extension field names in message literals.
 	ResolveMessageLiteralExtensionName(ast.IdentValueNode) string
