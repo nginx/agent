@@ -513,11 +513,8 @@ func getExe(pid int32) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	ret := strings.FieldsFunc(string(buf), func(r rune) bool {
-		return r == '\u0000'
-	})
 
-	return strings.Join(ret, " "), nil
+	return strings.Trim(string(buf), "\x00"), nil
 }
 
 func callSyscall(mib []int32) ([]byte, uint64, error) {
