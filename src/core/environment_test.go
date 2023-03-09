@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const lscpuInfo = `
+const lscpuInfo1 = `
 Architecture:                    aarch64
 CPU op-mode(s):                  32-bit, 64-bit
 Byte Order:                      Little Endian
@@ -47,6 +47,12 @@ Vulnerability Spectre v1:        Mitigation; __user pointer sanitization
 Vulnerability Spectre v2:        Mitigation; Branch predictor hardening, BHB
 Vulnerability Srbds:             Not affected\nVulnerability Tsx async abort:   Not affected
 Flags:                           fp asimd evtstrm aes pmull sha1 sha2 crc32 cpuid
+`
+
+const lscpuInfo2 = `
+L1d cache:                       64 KiB
+L1i cache:                       "96 KiB"
+L2 cache:                        2 MiB
 `
 
 var (
@@ -407,7 +413,7 @@ func TestProcessors(t *testing.T) {
 	assert.GreaterOrEqual(t, processorInfo[0].GetCpus(), int32(1))
 }
 
-func TestParselscpuInfo(t *testing.T) {
+func TestParseLscpu(t *testing.T) {
 	tests := []struct {
 		name             string
 		defaultCacheInfo map[string]string
@@ -416,8 +422,24 @@ func TestParselscpuInfo(t *testing.T) {
 		expect           map[string]string
 	}{
 		{
-			name:         "TestOsReleaseInfoPresent",
-			lscpuContent: lscpuInfo,
+			name:         "os-release present",
+			lscpuContent: lscpuInfo1,
+			defaultCacheInfo: map[string]string{
+				"L1d": "-1",
+				"L1i": "-1",
+				"L2":  "-1",
+				"L3":  "-1",
+			},
+			expect: map[string]string{
+				"L1d": "64 KiB",
+				"L1i": "96 KiB",
+				"L2":  "2 MiB",
+				"L3":  "-1",
+			},
+		},
+		{
+			name:         "os-release present with quote",
+			lscpuContent: lscpuInfo2,
 			defaultCacheInfo: map[string]string{
 				"L1d": "-1",
 				"L1i": "-1",
@@ -434,7 +456,7 @@ func TestParselscpuInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := parselscpuInfo(tt.lscpuContent, tt.defaultCacheInfo)
+			actual := parseLscpu(tt.lscpuContent, tt.defaultCacheInfo)
 			assert.Equal(t, tt.expect, actual)
 		})
 	}
