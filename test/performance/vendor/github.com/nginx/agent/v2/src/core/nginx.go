@@ -57,7 +57,7 @@ type NginxBinary interface {
 	UpdateLogs(existingLogs map[string]string, newLogs map[string]string) bool
 	GetAccessLogs() map[string]string
 	GetErrorLogs() map[string]string
-	GetChildProcesses() map[int32][]int32
+	GetChildProcesses() map[string][]*proto.NginxDetails
 }
 
 type NginxBinaryType struct {
@@ -66,7 +66,7 @@ type NginxBinaryType struct {
 	env               Environment
 	config            *config.Config
 	nginxDetailsMap   map[string]*proto.NginxDetails
-	nginxWorkersMap   map[int32][]int32
+	nginxWorkersMap   map[string][]*proto.NginxDetails
 	nginxInfoMap      map[string]*nginxInfo
 	accessLogs        map[string]string
 	errorLogs         map[string]string
@@ -113,19 +113,19 @@ func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []Proce
 
 	n.workersMapMutex.Lock()
 	defer n.workersMapMutex.Unlock()
-	n.nginxWorkersMap = map[int32][]int32{}
+	n.nginxWorkersMap = map[string][]*proto.NginxDetails{}
 
 	for _, process := range nginxProcesses {
+		nginxDetails := n.GetNginxDetailsFromProcess(process)
 		if process.IsMaster {
-			nginxDetails := n.GetNginxDetailsFromProcess(process)
 			n.nginxDetailsMap[nginxDetails.GetNginxId()] = nginxDetails
 		} else {
-			n.nginxWorkersMap[process.ParentPid] = append(n.nginxWorkersMap[process.ParentPid], process.Pid)
+			n.nginxWorkersMap[nginxDetails.GetNginxId()] = append(n.nginxWorkersMap[nginxDetails.GetNginxId()], nginxDetails)
 		}
 	}
 }
 
-func (n *NginxBinaryType) GetChildProcesses() map[int32][]int32 {
+func (n *NginxBinaryType) GetChildProcesses() map[string][]*proto.NginxDetails {
 	n.workersMapMutex.Lock()
 	defer n.workersMapMutex.Unlock()
 	return n.nginxWorkersMap

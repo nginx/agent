@@ -27,9 +27,11 @@ var (
 	instanceGroup = "my_instances"
 	nginxId       = uuid.New().String()
 	systemId      = uuid.New().String()
-	procMap       = map[int32][]int32{
-		2: {
-			1,
+	procMap       = map[string][]*proto.NginxDetails{
+		"1": {
+			{
+				ProcessId: "1",
+			},
 		},
 	}
 )
@@ -38,7 +40,7 @@ type MockWorkerClient struct {
 	mock.Mock
 }
 
-func (m *MockWorkerClient) GetWorkerStats(childProcs []int32) (*WorkerStats, error) {
+func (m *MockWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails) (*WorkerStats, error) {
 	args := m.Called(childProcs)
 	return args.Get(0).(*WorkerStats), nil
 }
@@ -63,7 +65,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 
 	mockBinary.On("GetChildProcesses").Return(procMap)
 
-	mockClient.On("GetWorkerStats", procMap[2]).Return(&WorkerStats{
+	mockClient.On("GetWorkerStats", procMap["1"]).Return(&WorkerStats{
 		Workers: &Workers{
 			Count:        1.00,
 			KbsR:         1.00,
@@ -176,50 +178,50 @@ func TestExcludeCacheProcs(t *testing.T) {
 	tests := map[string]testCase{
 		"sample ps input should exclude the cache manager proc 3341323": {
 			input: []byte(`naas     1571264  0.1  2.0  97604 80636 ?        S    00:00   1:02 [celeryd: w0@test.server.com:MainProcess] -active- (worker -A naas.queue.celery:queue --loglevel=DEBUG -Ofair --time-limit=300 --concurrency=2 --maxtasksperchild=10 --logfile=/var/log/naas/queue-celery-w0.log --pidfile=/var/run/naas/queue-w0.pid --hostname=w0@test.server.com)
-			naas     1571284  0.1  2.0  97676 80952 ?        S    00:00   1:01 [celeryd: w1@test.server.com:MainProcess] -active- (worker -A naas.queue.celery:queue --loglevel=DEBUG -Ofair --time-limit=300 --concurrency=2 --maxtasksperchild=10 --logfile=/var/log/naas/queue-celery-w1.log --pidfile=/var/run/naas/queue-w1.pid --hostname=w1@test.server.com)
-			naas     1571325  0.0  1.8  96788 72148 ?        S    00:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-1]
-			naas     1571342  0.0  1.8  96788 72284 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-1]
-			naas     1571343  0.0  1.8  96244 71620 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-2]
-			naas     1699895  0.0  1.9  98568 73844 ?        S    12:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-3]
-			a.gordon 1744961  0.0  0.0   4728   652 pts/0    S+   16:15   0:00 grep --color=auto nginx
-			root     3341320  0.0  0.0  33008  2948 ?        Ss   Mar22   0:00 nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf
-			nginx    3341321  0.0  0.1  34196  5300 ?        S    Mar22   0:04 nginx: worker process
-			nginx    3341322  0.0  0.1  34196  5984 ?        S    Mar22   9:43 nginx: worker process
-			nginx    3341323  0.0  0.1  34004  4300 ?        S    Mar22   0:14 nginx: cache manager process
-			nginx    3669442  1.0  1.0 124264 39140 ?        Sl   Apr15 363:57 amplify-agent`),
+			 naas     1571284  0.1  2.0  97676 80952 ?        S    00:00   1:01 [celeryd: w1@test.server.com:MainProcess] -active- (worker -A naas.queue.celery:queue --loglevel=DEBUG -Ofair --time-limit=300 --concurrency=2 --maxtasksperchild=10 --logfile=/var/log/naas/queue-celery-w1.log --pidfile=/var/run/naas/queue-w1.pid --hostname=w1@test.server.com)
+			 naas     1571325  0.0  1.8  96788 72148 ?        S    00:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-1]
+			 naas     1571342  0.0  1.8  96788 72284 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-1]
+			 naas     1571343  0.0  1.8  96244 71620 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-2]
+			 naas     1699895  0.0  1.9  98568 73844 ?        S    12:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-3]
+			 a.gordon 1744961  0.0  0.0   4728   652 pts/0    S+   16:15   0:00 grep --color=auto nginx
+			 root     3341320  0.0  0.0  33008  2948 ?        Ss   Mar22   0:00 nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf
+			 nginx    3341321  0.0  0.1  34196  5300 ?        S    Mar22   0:04 nginx: worker process
+			 nginx    3341322  0.0  0.1  34196  5984 ?        S    Mar22   9:43 nginx: worker process
+			 nginx    3341323  0.0  0.1  34004  4300 ?        S    Mar22   0:14 nginx: cache manager process
+			 nginx    3669442  1.0  1.0 124264 39140 ?        Sl   Apr15 363:57 amplify-agent`),
 			expected: map[string]bool{
 				"3341323": true,
 			},
 		},
 		"no cache manager proc should yield empty map": {
 			input: []byte(`naas     1571264  0.1  2.0  97604 80636 ?        S    00:00   1:02 [celeryd: w0@test.server.com:MainProcess] -active- (worker -A naas.queue.celery:queue --loglevel=DEBUG -Ofair --time-limit=300 --concurrency=2 --maxtasksperchild=10 --logfile=/var/log/naas/queue-celery-w0.log --pidfile=/var/run/naas/queue-w0.pid --hostname=w0@test.server.com)
-			naas     1571284  0.1  2.0  97676 80952 ?        S    00:00   1:01 [celeryd: w1@test.server.com:MainProcess] -active- (worker -A naas.queue.celery:queue --loglevel=DEBUG -Ofair --time-limit=300 --concurrency=2 --maxtasksperchild=10 --logfile=/var/log/naas/queue-celery-w1.log --pidfile=/var/run/naas/queue-w1.pid --hostname=w1@test.server.com)
-			naas     1571325  0.0  1.8  96788 72148 ?        S    00:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-1]
-			naas     1571342  0.0  1.8  96788 72284 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-1]
-			naas     1571343  0.0  1.8  96244 71620 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-2]
-			naas     1699895  0.0  1.9  98568 73844 ?        S    12:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-3]
-			a.gordon 1744961  0.0  0.0   4728   652 pts/0    S+   16:15   0:00 grep --color=auto nginx
-			root     3341320  0.0  0.0  33008  2948 ?        Ss   Mar22   0:00 nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf
-			nginx    3341321  0.0  0.1  34196  5300 ?        S    Mar22   0:04 nginx: worker process
-			nginx    3341322  0.0  0.1  34196  5984 ?        S    Mar22   9:43 nginx: worker process
-			nginx    3669442  1.0  1.0 124264 39140 ?        Sl   Apr15 363:57 amplify-agent`),
+			 naas     1571284  0.1  2.0  97676 80952 ?        S    00:00   1:01 [celeryd: w1@test.server.com:MainProcess] -active- (worker -A naas.queue.celery:queue --loglevel=DEBUG -Ofair --time-limit=300 --concurrency=2 --maxtasksperchild=10 --logfile=/var/log/naas/queue-celery-w1.log --pidfile=/var/run/naas/queue-w1.pid --hostname=w1@test.server.com)
+			 naas     1571325  0.0  1.8  96788 72148 ?        S    00:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-1]
+			 naas     1571342  0.0  1.8  96788 72284 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-1]
+			 naas     1571343  0.0  1.8  96244 71620 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-2]
+			 naas     1699895  0.0  1.9  98568 73844 ?        S    12:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-3]
+			 a.gordon 1744961  0.0  0.0   4728   652 pts/0    S+   16:15   0:00 grep --color=auto nginx
+			 root     3341320  0.0  0.0  33008  2948 ?        Ss   Mar22   0:00 nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf
+			 nginx    3341321  0.0  0.1  34196  5300 ?        S    Mar22   0:04 nginx: worker process
+			 nginx    3341322  0.0  0.1  34196  5984 ?        S    Mar22   9:43 nginx: worker process
+			 nginx    3669442  1.0  1.0 124264 39140 ?        Sl   Apr15 363:57 amplify-agent`),
 			expected: map[string]bool{},
 		},
 		"many cache procs should yield >1 results": {
 			input: []byte(`naas     1571264  0.1  2.0  97604 80636 ?        S    00:00   1:02 [celeryd: w0@test.server.com:MainProcess] -active- (worker -A naas.queue.celery:queue --loglevel=DEBUG -Ofair --time-limit=300 --concurrency=2 --maxtasksperchild=10 --logfile=/var/log/naas/queue-celery-w0.log --pidfile=/var/run/naas/queue-w0.pid --hostname=w0@test.server.com)
-			naas     1571284  0.1  2.0  97676 80952 ?        S    00:00   1:01 [celeryd: w1@test.server.com:MainProcess] -active- (worker -A naas.queue.celery:queue --loglevel=DEBUG -Ofair --time-limit=300 --concurrency=2 --maxtasksperchild=10 --logfile=/var/log/naas/queue-celery-w1.log --pidfile=/var/run/naas/queue-w1.pid --hostname=w1@test.server.com)
-			naas     1571325  0.0  1.8  96788 72148 ?        S    00:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-1]
-			naas     1571342  0.0  1.8  96788 72284 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-1]
-			naas     1571343  0.0  1.8  96244 71620 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-2]
-			naas     1699895  0.0  1.9  98568 73844 ?        S    12:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-3]
-			a.gordon 1744961  0.0  0.0   4728   652 pts/0    S+   16:15   0:00 grep --color=auto nginx
-			root     3341320  0.0  0.0  33008  2948 ?        Ss   Mar22   0:00 nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf
-			nginx    3341321  0.0  0.1  34196  5300 ?        S    Mar22   0:04 nginx: worker process
-			nginx    3341322  0.0  0.1  34196  5984 ?        S    Mar22   9:43 nginx: worker process
-			nginx    3341323  0.0  0.1  34004  4300 ?        S    Mar22   0:14 nginx: cache manager process
-			nginx    3341324  0.0  0.1  34004  4300 ?        S    Mar22   0:14 nginx: cache worker process
-			nginx    3341325  0.0  0.1  34004  4300 ?        S    Mar22   0:14 nginx: cache manager process
-			nginx    3669442  1.0  1.0 124264 39140 ?        Sl   Apr15 363:57 amplify-agent`),
+			 naas     1571284  0.1  2.0  97676 80952 ?        S    00:00   1:01 [celeryd: w1@test.server.com:MainProcess] -active- (worker -A naas.queue.celery:queue --loglevel=DEBUG -Ofair --time-limit=300 --concurrency=2 --maxtasksperchild=10 --logfile=/var/log/naas/queue-celery-w1.log --pidfile=/var/run/naas/queue-w1.pid --hostname=w1@test.server.com)
+			 naas     1571325  0.0  1.8  96788 72148 ?        S    00:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-1]
+			 naas     1571342  0.0  1.8  96788 72284 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-1]
+			 naas     1571343  0.0  1.8  96244 71620 ?        S    00:00   0:00 [celeryd: w1@test.server.com:ForkPoolWorker-2]
+			 naas     1699895  0.0  1.9  98568 73844 ?        S    12:00   0:00 [celeryd: w0@test.server.com:ForkPoolWorker-3]
+			 a.gordon 1744961  0.0  0.0   4728   652 pts/0    S+   16:15   0:00 grep --color=auto nginx
+			 root     3341320  0.0  0.0  33008  2948 ?        Ss   Mar22   0:00 nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf
+			 nginx    3341321  0.0  0.1  34196  5300 ?        S    Mar22   0:04 nginx: worker process
+			 nginx    3341322  0.0  0.1  34196  5984 ?        S    Mar22   9:43 nginx: worker process
+			 nginx    3341323  0.0  0.1  34004  4300 ?        S    Mar22   0:14 nginx: cache manager process
+			 nginx    3341324  0.0  0.1  34004  4300 ?        S    Mar22   0:14 nginx: cache worker process
+			 nginx    3341325  0.0  0.1  34004  4300 ?        S    Mar22   0:14 nginx: cache manager process
+			 nginx    3669442  1.0  1.0 124264 39140 ?        Sl   Apr15 363:57 amplify-agent`),
 			expected: map[string]bool{
 				"3341323": true,
 				"3341324": true,

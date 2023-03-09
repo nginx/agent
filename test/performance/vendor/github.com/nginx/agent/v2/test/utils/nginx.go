@@ -49,9 +49,9 @@ func (m *MockNginxBinary) GetNginxDetailsByID(nginxID string) *proto.NginxDetail
 	return args.Get(0).(*proto.NginxDetails)
 }
 
-func (m *MockNginxBinary) GetChildProcesses() map[int32][]int32 {
+func (m *MockNginxBinary) GetChildProcesses() map[string][]*proto.NginxDetails {
 	args := m.Called()
-	return args.Get(0).(map[int32][]int32)
+	return args.Get(0).(map[string][]*proto.NginxDetails)
 }
 
 func (m *MockNginxBinary) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error) {
