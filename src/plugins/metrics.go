@@ -183,11 +183,14 @@ func (m *Metrics) metricsGoroutine() {
 			return
 		case <-m.ticker.C:
 			stats := m.collectStats()
-			m.pipeline.Process(core.NewMessage(core.MetricReport, metrics.GenerateMetricsReportBundle(stats)))
+			if bundle := metrics.GenerateMetricsReportBundle(stats); bundle != nil {
+				m.pipeline.Process(core.NewMessage(core.MetricReport, bundle))
+			}
 			if m.collectorsUpdate.Load() {
 				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)
 				m.collectorsUpdate.Store(false)
 			}
+
 		case err := <-m.errors:
 			log.Errorf("Error in metricsGoroutine %v", err)
 		}
