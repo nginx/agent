@@ -318,9 +318,11 @@ func hasConfPath(files []*proto.File, confPath string) bool {
 
 func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error) {
 	if log.IsLevelEnabled(log.TraceLevel) {
-		jsonConfig, err := json.Marshal(config)
+		loggedConfig := config
+		loggedConfig.Zaux.Contents = nil
+		jsonConfig, err := json.Marshal(loggedConfig)
 		if err != nil {
-			log.Tracef("Writing raw config: %+v", config)
+			log.Tracef("Writing raw config: %+v", loggedConfig)
 		} else {
 			log.Tracef("Writing JSON config: %+v", string(jsonConfig))
 		}
