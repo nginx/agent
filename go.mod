@@ -47,6 +47,7 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/rs/cors v1.8.3
+	golang.org/x/sys v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -188,7 +189,6 @@ require (
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect

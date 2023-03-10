@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/klauspost/cpuid/v2"
@@ -33,6 +34,13 @@ import (
 	"github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/network"
+)
+
+const (
+	CTLKern          = 1  // "high kernel": proc, limits
+	KernProc         = 14 // struct: process entries
+	KernProcPathname = 12 // path to executable
+	SYS_SYSCTL       = 202
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -482,14 +490,14 @@ func (env *EnvironmentType) Processes() (result []Process) {
 		}
 	}
 
-	for pid, process := range nginxProcesses {
-		name, _ := process.Name()
-		createTime, _ := process.CreateTime()
-		status, _ := process.Status()
-		running, _ := process.IsRunning()
-		user, _ := process.Username()
-		ppid, _ := process.Ppid()
-		cmd, _ := process.Cmdline()
+	for pid, nginxProcess := range nginxProcesses {
+		name, _ := nginxProcess.Name()
+		createTime, _ := nginxProcess.CreateTime()
+		status, _ := nginxProcess.Status()
+		running, _ := nginxProcess.IsRunning()
+		user, _ := nginxProcess.Username()
+		ppid, _ := nginxProcess.Ppid()
+		cmd, _ := nginxProcess.Cmdline()
 		isMaster := false
 
 		_, ok := nginxProcesses[ppid]
@@ -499,9 +507,12 @@ func (env *EnvironmentType) Processes() (result []Process) {
 
 		var exe string
 		if isMaster {
-			exe, err = process.Exe()
-			if err != nil {
-				log.Errorf("Error reading exe information for process: %d error: %v", pid, err)
+			exe = getNginxProcessExe(nginxProcess)
+		} else {
+			for potentialParentPid, potentialParentNginxProcess := range nginxProcesses {
+				if potentialParentPid == ppid {
+					exe = getNginxProcessExe(potentialParentNginxProcess)
+				}
 			}
 		}
 
@@ -522,6 +533,76 @@ func (env *EnvironmentType) Processes() (result []Process) {
 	}
 
 	return processList
+}
+
+func getNginxProcessExe(nginxProcess *process.Process) string {
+	exe, exeErr := nginxProcess.Exe()
+	if exeErr != nil {
+		out, commandErr := exec.Command("sh", "-c", "command -v nginx").CombinedOutput()
+		if commandErr != nil {
+			// process.Exe() is not implemented yet for FreeBSD.
+			// This is a temporary workaround  until the gopsutil library supports it.
+			var err error
+			exe, err = getExe(nginxProcess.Pid)
+			if err != nil {
+				log.Tracef("Failed to find exe information for process: %d. Failed for the following errors: %v, %v, %v", nginxProcess.Pid, exeErr, commandErr, err)
+				log.Errorf("Unable to find NGINX executable for process %d", nginxProcess.Pid)
+			}
+		} else {
+			exe = strings.TrimSuffix(string(out), "\n")
+		}
+	}
+
+	return exe
+}
+
+func getExe(pid int32) (string, error) {
+	mib := []int32{CTLKern, KernProc, KernProcPathname, pid}
+	buf, _, err := callSyscall(mib)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Trim(string(buf), "\x00"), nil
+}
+
+func callSyscall(mib []int32) ([]byte, uint64, error) {
+	mibptr := unsafe.Pointer(&mib[0])
+	miblen := uint64(len(mib))
+
+	// get required buffer size
+	length := uint64(0)
+	_, _, err := unix.Syscall6(
+		SYS_SYSCTL,
+		uintptr(mibptr),
+		uintptr(miblen),
+		0,
+		uintptr(unsafe.Pointer(&length)),
+		0,
+		0)
+	if err != 0 {
+		var b []byte
+		return b, length, err
+	}
+	if length == 0 {
+		var b []byte
+		return b, length, err
+	}
+	// get proc info itself
+	buf := make([]byte, length)
+	_, _, err = unix.Syscall6(
+		SYS_SYSCTL,
+		uintptr(mibptr),
+		uintptr(miblen),
+		uintptr(unsafe.Pointer(&buf[0])),
+		uintptr(unsafe.Pointer(&length)),
+		0,
+		0)
+	if err != 0 {
+		return buf, length, err
+	}
+
+	return buf, length, nil
 }
 
 func processors(architecture string) (res []*proto.CpuInfo) {
