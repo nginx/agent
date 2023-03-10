@@ -58,7 +58,7 @@ func TestMessagePipe(t *testing.T) {
 	pipelineDone := make(chan bool)
 
 	messagePipe := NewMessagePipe(ctx)
-	err := messagePipe.Register(10, plugin)
+	err := messagePipe.Register(10, []Plugin{plugin}, nil)
 
 	assert.NoError(t, err)
 

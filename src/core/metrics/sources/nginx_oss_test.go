@@ -75,16 +75,17 @@ Reading: 0 Writing: 1 Waiting: 0
 			server.URL + "/basic_status",
 			make(chan *proto.StatsEntity, 1),
 			map[string]float64{
-				"nginx.status":             float64(1),
-				"nginx.http.conn.active":   float64(1),
-				"nginx.http.conn.accepted": float64(0),
-				"nginx.http.conn.handled":  float64(0),
-				"nginx.http.conn.reading":  float64(0),
-				"nginx.http.conn.writing":  float64(1),
-				"nginx.http.request.count": float64(0),
-				"nginx.http.conn.dropped":  float64(0),
-				"nginx.http.conn.idle":     float64(0),
-				"nginx.http.conn.current":  float64(1),
+				"nginx.status":               float64(1),
+				"nginx.http.conn.active":     float64(1),
+				"nginx.http.conn.accepted":   float64(0),
+				"nginx.http.conn.handled":    float64(0),
+				"nginx.http.conn.reading":    float64(0),
+				"nginx.http.conn.writing":    float64(1),
+				"nginx.http.request.count":   float64(0),
+				"nginx.http.request.current": float64(1),
+				"nginx.http.conn.dropped":    float64(0),
+				"nginx.http.conn.idle":       float64(0),
+				"nginx.http.conn.current":    float64(1),
 			},
 		}, {
 			"unknown stub API",
@@ -106,6 +107,7 @@ Reading: 0 Writing: 1 Waiting: 0
 				baseDimensions: metrics.NewCommonDim(hostInfo, &config.Config{}, ""),
 				stubStatus:     test.stubAPI,
 				namedMetric:    test.namedMetric,
+				logger:         NewMetricSourceLogger(),
 			}
 			ctx := context.TODO()
 			wg := &sync.WaitGroup{}

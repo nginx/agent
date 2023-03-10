@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"strconv"
 	"strings"
@@ -30,12 +31,13 @@ const (
 type ContainerMemory struct {
 	basePath   string
 	isCgroupV2 bool
+	logger     *MetricSourceLogger
 	*namedMetric
 }
 
 func NewContainerMemorySource(namespace string, basePath string) *ContainerMemory {
 	log.Trace("Creating new container memory source")
-	return &ContainerMemory{basePath, cgroup.IsCgroupV2(basePath), &namedMetric{namespace, MemoryGroup}}
+	return &ContainerMemory{basePath, cgroup.IsCgroupV2(basePath), NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}}
 }
 
 func (c *ContainerMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
@@ -47,7 +49,7 @@ func (c *ContainerMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m cha
 	if c.isCgroupV2 {
 		cpuThrottlingStats, err := getMemOOMStats(path.Join(c.basePath, cgroup.V2MemEventsFile), cgroup.V2OutOfMemoryKey, cgroup.V2OutOfMemoryKillKey)
 		if err != nil {
-			log.Warnf(ContainerMemoryMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err)
+			c.logger.Log(fmt.Sprintf(ContainerMemoryMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 
@@ -55,7 +57,7 @@ func (c *ContainerMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m cha
 	} else {
 		cpuThrottlingStats, err := getMemOOMStats(path.Join(c.basePath, cgroup.V1OutOfMemoryControlFile), cgroup.V1OutOfMemoryKey, cgroup.V1OutOfMemoryKillKey)
 		if err != nil {
-			log.Warnf(ContainerMemoryMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err)
+			c.logger.Log(fmt.Sprintf(ContainerMemoryMetricsWarning, c.namedMetric.namespace, c.namedMetric.group, err))
 			return
 		}
 

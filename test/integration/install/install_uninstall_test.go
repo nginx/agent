@@ -10,12 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/test/integration/utils"
 	"github.com/shirou/gopsutil/process"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/compose"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const (
@@ -28,31 +27,7 @@ const (
 
 var (
 	AGENT_PACKAGE_FILENAME = os.Getenv("PACKAGE_NAME")
-	agentContainer         *testcontainers.DockerContainer
 )
-
-func setupTestContainer(t *testing.T) {
-	ctx := context.Background()
-	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
-	assert.NoError(t, err, "NewDockerComposeAPI()")
-
-	t.Cleanup(func() {
-		assert.NoError(t, comp.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
-	})
-
-	ctxCancel, cancel := context.WithCancel(ctx)
-	t.Cleanup(cancel)
-
-	require.NoError(t, comp.WaitForService("agent", wait.ForHTTP("/")).WithEnv(
-		map[string]string{
-			"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
-			"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
-		},
-	).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
-
-	agentContainer, err = comp.ServiceContainer(ctxCancel, "agent")
-	require.NoError(t, err)
-}
 
 // TestAgentManualInstallUninstall tests Agent Install and Uninstall.
 // Verifies that agent installs with correct output and files.
@@ -61,9 +36,9 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	// Check the environment variable $PACKAGE_NAME is set
 	require.NotEmpty(t, AGENT_PACKAGE_FILENAME, "Environment variable $PACKAGE_NAME not set")
 
-	setupTestContainer(t)
+	testContainer := utils.SetupTestContainerWithoutAgent(t)
 
-	exitCode, osReleaseFileContent, err := agentContainer.Exec(context.Background(), []string{"cat", osReleasePath})
+	exitCode, osReleaseFileContent, err := testContainer.Exec(context.Background(), []string{"cat", osReleasePath})
 	assert.NoError(t, err)
 	osReleaseContent, err := io.ReadAll(osReleaseFileContent)
 	assert.NoError(t, err)
@@ -97,7 +72,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	// Install Agent inside container and record installation time/install output
 	containerAgentPackagePath := getPackagePath(absContainerAgentPackageDir, string(osReleaseContent))
-	installTime, installLog := installAgent(t, agentContainer, containerAgentPackagePath, string(osReleaseContent))
+	installTime, installLog := installAgent(t, testContainer, containerAgentPackagePath, string(osReleaseContent))
 
 	// Check the install time under 30s
 	assert.LessOrEqual(t, installTime, maxInstallTime)
@@ -112,12 +87,12 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	// Check nginx-agent config files were created.
 	for _, path := range expectedAgentPaths {
-		_, err = agentContainer.CopyFileFromContainer(context.Background(), path)
+		_, err = testContainer.CopyFileFromContainer(context.Background(), path)
 		assert.NoError(t, err)
 	}
 
 	// Uninstall the agent package
-	uninstallLog := uninstallAgent(t, agentContainer, string(osReleaseContent))
+	uninstallLog := uninstallAgent(t, testContainer, string(osReleaseContent))
 
 	// Check uninstall output
 	if strings.HasSuffix(containerAgentPackagePath, "rpm") {
@@ -130,7 +105,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	// Check nginx-agent config files were removed.
 	for path := range expectedAgentPaths {
-		_, err = agentContainer.CopyFileFromContainer(context.Background(), path)
+		_, err = testContainer.CopyFileFromContainer(context.Background(), path)
 		assert.Error(t, err)
 	}
 }

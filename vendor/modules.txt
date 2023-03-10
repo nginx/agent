@@ -5,6 +5,9 @@ github.com/AlekSi/pointer
 ## explicit; go 1.16
 github.com/Azure/go-ansiterm
 github.com/Azure/go-ansiterm/winterm
+# github.com/MakeNowJust/heredoc v1.0.0
+## explicit; go 1.12
+github.com/MakeNowJust/heredoc
 # github.com/Masterminds/goutils v1.1.1
 ## explicit
 github.com/Masterminds/goutils
@@ -56,8 +59,11 @@ github.com/beorn7/perks/quantile
 # github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb
 ## explicit
 github.com/blakesmith/ar
-# github.com/bufbuild/buf v1.14.0
-## explicit; go 1.18
+# github.com/briandowns/spinner v1.21.0
+## explicit; go 1.14
+github.com/briandowns/spinner
+# github.com/bufbuild/buf v1.15.0
+## explicit; go 1.19
 github.com/bufbuild/buf/cmd/buf
 github.com/bufbuild/buf/private/buf/bufapp
 github.com/bufbuild/buf/private/buf/bufcli
@@ -80,6 +86,7 @@ github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencr
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist
+github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/stats
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist
@@ -169,6 +176,7 @@ github.com/bufbuild/buf/private/bufpkg/bufplugin
 github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig
 github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker
 github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref
+github.com/bufbuild/buf/private/bufpkg/bufpluginexec
 github.com/bufbuild/buf/private/bufpkg/bufreflect
 github.com/bufbuild/buf/private/bufpkg/bufremoteplugin
 github.com/bufbuild/buf/private/bufpkg/bufstudioagent
@@ -189,7 +197,6 @@ github.com/bufbuild/buf/private/pkg/app/appflag
 github.com/bufbuild/buf/private/pkg/app/applog
 github.com/bufbuild/buf/private/pkg/app/appname
 github.com/bufbuild/buf/private/pkg/app/appproto
-github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec
 github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos
 github.com/bufbuild/buf/private/pkg/app/appverbose
 github.com/bufbuild/buf/private/pkg/cert/certclient
@@ -212,6 +219,9 @@ github.com/bufbuild/buf/private/pkg/osextended
 github.com/bufbuild/buf/private/pkg/protodescriptor
 github.com/bufbuild/buf/private/pkg/protoencoding
 github.com/bufbuild/buf/private/pkg/protosource
+github.com/bufbuild/buf/private/pkg/protostat
+github.com/bufbuild/buf/private/pkg/protostat/protostatos
+github.com/bufbuild/buf/private/pkg/protostat/protostatstorage
 github.com/bufbuild/buf/private/pkg/prototime
 github.com/bufbuild/buf/private/pkg/protoversion
 github.com/bufbuild/buf/private/pkg/storage
@@ -229,11 +239,11 @@ github.com/bufbuild/buf/private/pkg/uuidutil
 github.com/bufbuild/buf/private/pkg/verbose
 github.com/bufbuild/buf/private/pkg/zaputil
 github.com/bufbuild/buf/private/usage
-# github.com/bufbuild/connect-go v1.5.0
-## explicit; go 1.18
+# github.com/bufbuild/connect-go v1.5.2
+## explicit; go 1.19
 github.com/bufbuild/connect-go
 github.com/bufbuild/connect-go/internal/gen/connectext/grpc/status/v1
-# github.com/bufbuild/protocompile v0.2.0
+# github.com/bufbuild/protocompile v0.2.1-0.20230123224550-da57cd758c2f
 ## explicit; go 1.18
 github.com/bufbuild/protocompile
 github.com/bufbuild/protocompile/ast
@@ -254,13 +264,19 @@ github.com/cenkalti/backoff/v4
 # github.com/cespare/xxhash/v2 v2.1.2
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
+# github.com/charmbracelet/lipgloss v0.6.0
+## explicit; go 1.15
+github.com/charmbracelet/lipgloss
 # github.com/cpuguy83/go-md2man/v2 v2.0.2
 ## explicit; go 1.11
 github.com/cpuguy83/go-md2man/v2/md2man
+# github.com/creack/pty v1.1.18
+## explicit; go 1.13
+github.com/creack/pty
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/docker/cli v20.10.23+incompatible
+# github.com/docker/cli v23.0.1+incompatible
 ## explicit
 github.com/docker/cli/cli/config
 github.com/docker/cli/cli/config/configfile
@@ -271,7 +287,7 @@ github.com/docker/cli/cli/config/types
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
 github.com/docker/distribution/registry/client/auth/challenge
-# github.com/docker/docker v23.0.0+incompatible
+# github.com/docker/docker v23.0.1+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
@@ -317,6 +333,20 @@ github.com/emirpasic/gods/utils
 # github.com/envoyproxy/protoc-gen-validate v0.3.0-java
 ## explicit
 github.com/envoyproxy/protoc-gen-validate/validate
+# github.com/evilmartians/lefthook v1.3.3
+## explicit; go 1.19
+github.com/evilmartians/lefthook
+github.com/evilmartians/lefthook/cmd
+github.com/evilmartians/lefthook/internal/config
+github.com/evilmartians/lefthook/internal/git
+github.com/evilmartians/lefthook/internal/lefthook
+github.com/evilmartians/lefthook/internal/lefthook/runner
+github.com/evilmartians/lefthook/internal/log
+github.com/evilmartians/lefthook/internal/templates
+github.com/evilmartians/lefthook/internal/version
+# github.com/fatih/color v1.14.1
+## explicit; go 1.17
+github.com/fatih/color
 # github.com/felixge/fgprof v0.9.3
 ## explicit; go 1.14
 github.com/felixge/fgprof
@@ -548,8 +578,8 @@ github.com/google/go-containerregistry/pkg/v1/remote
 github.com/google/go-containerregistry/pkg/v1/remote/transport
 github.com/google/go-containerregistry/pkg/v1/stream
 github.com/google/go-containerregistry/pkg/v1/types
-# github.com/google/pprof v0.0.0-20230131232505-5a9e8f65f08f
-## explicit; go 1.18
+# github.com/google/pprof v0.0.0-20230207041349-798e818bf904
+## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/uuid v1.3.0
 ## explicit
@@ -625,8 +655,8 @@ github.com/josharian/intern
 # github.com/kevinburke/ssh_config v1.1.0
 ## explicit
 github.com/kevinburke/ssh_config
-# github.com/klauspost/compress v1.15.15
-## explicit; go 1.17
+# github.com/klauspost/compress v1.16.0
+## explicit; go 1.18
 github.com/klauspost/compress
 github.com/klauspost/compress/flate
 github.com/klauspost/compress/fse
@@ -648,6 +678,9 @@ github.com/kr/pretty
 # github.com/kr/text v0.2.0
 ## explicit
 github.com/kr/text
+# github.com/lucasb-eyer/go-colorful v1.2.0
+## explicit; go 1.12
+github.com/lucasb-eyer/go-colorful
 # github.com/lufia/plan9stats v0.0.0-20220517141722-cf486979b281
 ## explicit; go 1.16
 github.com/lufia/plan9stats
@@ -659,6 +692,15 @@ github.com/magiconair/properties
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
+# github.com/mattn/go-colorable v0.1.13
+## explicit; go 1.15
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.17
+## explicit; go 1.15
+github.com/mattn/go-isatty
+# github.com/mattn/go-runewidth v0.0.14
+## explicit; go 1.9
+github.com/mattn/go-runewidth
 # github.com/matttproud/golang_protobuf_extensions v1.0.4
 ## explicit; go 1.9
 github.com/matttproud/golang_protobuf_extensions/pbutil
@@ -696,9 +738,18 @@ github.com/muesli/mango-cobra
 # github.com/muesli/mango-pflag v0.1.0
 ## explicit; go 1.17
 github.com/muesli/mango-pflag
+# github.com/muesli/reflow v0.2.1-0.20210115123740-9e1d0d53df68
+## explicit; go 1.13
+github.com/muesli/reflow/ansi
+github.com/muesli/reflow/truncate
+github.com/muesli/reflow/wordwrap
+github.com/muesli/reflow/wrap
 # github.com/muesli/roff v0.1.0
 ## explicit; go 1.17
 github.com/muesli/roff
+# github.com/muesli/termenv v0.11.1-0.20220204035834-5ac8409525e0
+## explicit; go 1.13
+github.com/muesli/termenv
 # github.com/mwitkow/go-proto-validators v0.3.2
 ## explicit; go 1.13
 github.com/mwitkow/go-proto-validators
@@ -801,6 +852,9 @@ github.com/pseudomuto/protoc-gen-doc/extensions/validator_field
 # github.com/pseudomuto/protokit v0.2.0
 ## explicit
 github.com/pseudomuto/protokit
+# github.com/rivo/uniseg v0.2.0
+## explicit; go 1.12
+github.com/rivo/uniseg
 # github.com/rogpeppe/go-internal v1.9.0
 ## explicit; go 1.17
 github.com/rogpeppe/go-internal/fmtsort
@@ -869,7 +923,7 @@ github.com/spf13/viper/internal/encoding/yaml
 # github.com/stretchr/objx v0.5.0
 ## explicit; go 1.12
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.8.1
+# github.com/stretchr/testify v1.8.2
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
@@ -918,7 +972,7 @@ go.mongodb.org/mongo-driver/bson/bsonrw
 go.mongodb.org/mongo-driver/bson/bsontype
 go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
-# go.opentelemetry.io/otel v1.12.0
+# go.opentelemetry.io/otel v1.13.0
 ## explicit; go 1.18
 go.opentelemetry.io/otel
 go.opentelemetry.io/otel/attribute
@@ -930,14 +984,14 @@ go.opentelemetry.io/otel/internal/baggage
 go.opentelemetry.io/otel/internal/global
 go.opentelemetry.io/otel/propagation
 go.opentelemetry.io/otel/semconv/v1.17.0
-# go.opentelemetry.io/otel/sdk v1.12.0
+# go.opentelemetry.io/otel/sdk v1.13.0
 ## explicit; go 1.18
 go.opentelemetry.io/otel/sdk/instrumentation
 go.opentelemetry.io/otel/sdk/internal
 go.opentelemetry.io/otel/sdk/internal/env
 go.opentelemetry.io/otel/sdk/resource
 go.opentelemetry.io/otel/sdk/trace
-# go.opentelemetry.io/otel/trace v1.12.0
+# go.opentelemetry.io/otel/trace v1.13.0
 ## explicit; go 1.18
 go.opentelemetry.io/otel/trace
 # go.uber.org/atomic v1.10.0
@@ -957,7 +1011,7 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.5.0
+# golang.org/x/crypto v0.6.0
 ## explicit; go 1.17
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
@@ -981,13 +1035,13 @@ golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/knownhosts
-# golang.org/x/mod v0.7.0
+# golang.org/x/mod v0.8.0
 ## explicit; go 1.17
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/modfile
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.5.0
+# golang.org/x/net v0.7.0
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
@@ -1004,7 +1058,7 @@ golang.org/x/net/trace
 ## explicit
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.4.0
+# golang.org/x/sys v0.5.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -1013,17 +1067,17 @@ golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/term v0.4.0
+# golang.org/x/term v0.5.0
 ## explicit; go 1.17
 golang.org/x/term
-# golang.org/x/text v0.6.0
+# golang.org/x/text v0.7.0
 ## explicit; go 1.17
 golang.org/x/text/runes
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.5.0
+# golang.org/x/tools v0.6.0
 ## explicit; go 1.18
 golang.org/x/tools/cmd/stringer
 golang.org/x/tools/go/ast/astutil
@@ -1046,6 +1100,7 @@ golang.org/x/tools/internal/gopathwalk
 golang.org/x/tools/internal/imports
 golang.org/x/tools/internal/packagesinternal
 golang.org/x/tools/internal/pkgbits
+golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 # google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef
@@ -1103,10 +1158,10 @@ google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
-# google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
-## explicit; go 1.9
+# google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
+## explicit; go 1.17
 google.golang.org/grpc/cmd/protoc-gen-go-grpc
-# google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8
+# google.golang.org/protobuf v1.28.2-0.20230222093303-bc1253ad3743
 ## explicit; go 1.11
 google.golang.org/protobuf/compiler/protogen
 google.golang.org/protobuf/encoding/protojson
@@ -1150,6 +1205,9 @@ google.golang.org/protobuf/types/known/timestamppb
 google.golang.org/protobuf/types/known/typepb
 google.golang.org/protobuf/types/known/wrapperspb
 google.golang.org/protobuf/types/pluginpb
+# gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61
+## explicit
+gopkg.in/alessio/shellescape.v1
 # gopkg.in/ini.v1 v1.67.0
 ## explicit
 gopkg.in/ini.v1

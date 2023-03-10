@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -162,14 +163,15 @@ func TestUpdateNapMetadata(t *testing.T) {
 			cfg, err := sdk.GetNginxConfig(configFile, nginxID, systemID, allowedDirs)
 			assert.NoError(t, err)
 
-			err = UpdateMetadata(
-				cfg,
-				tc.precompPub,
-				metadataFile,
-				wafVersion,
-				wafAttackSignaturesVersion,
-				wafThreatCampaignsVersion,
-			)
+			appProtectWAFDetails := &proto.AppProtectWAFDetails{
+				WafVersion:              wafVersion,
+				AttackSignaturesVersion: wafAttackSignaturesVersion,
+				ThreatCampaignsVersion:  wafThreatCampaignsVersion,
+				WafLocation:             metadataFile,
+				PrecompiledPublication:  tc.precompPub,
+			}
+
+			err = UpdateMetadata(cfg, appProtectWAFDetails)
 			assert.NoError(t, err)
 
 			data, err := os.ReadFile(metadataFile)

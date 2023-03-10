@@ -15,6 +15,7 @@ import (
 // MockMessagePipe is a mock message pipe
 type MockMessagePipe struct {
 	plugins           []Plugin
+	extensionPlugins  []ExtensionPlugin
 	messages          []*Message
 	processedMessages []*Message
 	ctx               context.Context
@@ -22,10 +23,10 @@ type MockMessagePipe struct {
 
 var _ MessagePipeInterface = &MockMessagePipe{}
 
-func SetupMockMessagePipe(t *testing.T, ctx context.Context, plugin ...Plugin) *MockMessagePipe {
+func SetupMockMessagePipe(t *testing.T, ctx context.Context, plugins []Plugin, extensionPlugins []ExtensionPlugin) *MockMessagePipe {
 	messagePipe := NewMockMessagePipe(ctx)
 
-	err := messagePipe.Register(10, plugin...)
+	err := messagePipe.Register(10, plugins, extensionPlugins)
 	if err != nil {
 		t.Fail()
 	}
@@ -51,8 +52,9 @@ func NewMockMessagePipe(ctx context.Context) *MockMessagePipe {
 	}
 }
 
-func (p *MockMessagePipe) Register(size int, plugin ...Plugin) error {
-	p.plugins = append(p.plugins, plugin...)
+func (p *MockMessagePipe) Register(size int, plugins []Plugin, extensionPlugins []ExtensionPlugin) error {
+	p.plugins = append(p.plugins, plugins...)
+	p.extensionPlugins = append(p.extensionPlugins, extensionPlugins...)
 	return nil
 }
 
@@ -81,6 +83,11 @@ func (p *MockMessagePipe) Run() {
 	for _, plugin := range p.plugins {
 		plugin.Init(p)
 	}
+
+	for _, r := range p.extensionPlugins {
+		r.Init(p)
+	}
+
 	p.RunWithoutInit()
 }
 
@@ -91,10 +98,17 @@ func (p *MockMessagePipe) RunWithoutInit() {
 		for _, plugin := range p.plugins {
 			plugin.Process(message)
 		}
+		for _, plugin := range p.extensionPlugins {
+			plugin.Process(message)
+		}
 		p.processedMessages = append(p.processedMessages, message)
 	}
 }
 
 func (p *MockMessagePipe) GetPlugins() []Plugin {
 	return p.plugins
+}
+
+func (p *MockMessagePipe) GetExtensionPlugins() []ExtensionPlugin {
+	return p.extensionPlugins
 }

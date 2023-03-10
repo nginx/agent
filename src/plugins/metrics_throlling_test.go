@@ -94,7 +94,7 @@ func TestMetricsThrottle_Process(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			throttlePlugin := NewMetricsThrottle(test.config, &tutils.MockEnvironment{})
 			ctx := context.Background()
-			messagePipe := core.SetupMockMessagePipe(t, ctx, throttlePlugin)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{throttlePlugin}, []core.ExtensionPlugin{})
 
 			messagePipe.Process(test.msgs...)
 			messagePipe.Run()

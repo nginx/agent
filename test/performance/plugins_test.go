@@ -49,7 +49,7 @@ func BenchmarkPlugin(b *testing.B) {
 	pipelineDone := make(chan bool)
 
 	messagePipe := core.NewMessagePipe(ctx)
-	err := messagePipe.Register(b.N, plugin)
+	err := messagePipe.Register(b.N, []core.Plugin{plugin}, []core.ExtensionPlugin{})
 	assert.NoError(b, err)
 
 	go func() {
@@ -109,7 +109,7 @@ func BenchmarkPluginOneTimeRegistration(b *testing.B) {
 		pluginsUnderTest = append(pluginsUnderTest, plugins.NewOneTimeRegistration(&config, binary, env, &meta, version))
 	}
 
-	err := messagePipe.Register(b.N, pluginsUnderTest...)
+	err := messagePipe.Register(b.N, pluginsUnderTest, []core.ExtensionPlugin{})
 	assert.NoError(b, err)
 
 	go func() {

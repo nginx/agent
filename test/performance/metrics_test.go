@@ -328,7 +328,7 @@ func startNginxAgent(b *testing.B) {
 	)
 
 	messagePipe := core.NewMessagePipe(ctx)
-	err = messagePipe.Register(100, corePlugins...)
+	err = messagePipe.Register(100, corePlugins, []core.ExtensionPlugin{})
 	assert.NoError(b, err)
 
 	go func() {

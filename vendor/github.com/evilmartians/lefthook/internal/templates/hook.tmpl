@@ -1,0 +1,54 @@
+#!/bin/sh
+
+if [ "$LEFTHOOK" = "0" ]; then
+  exit 0
+fi
+
+{{- if .Rc}}
+{{/* Load rc file and export all ENV vars defined in it */}}
+set -a
+[ -f {{.Rc}} ] && source {{.Rc}}
+{{- end}}
+
+call_lefthook()
+{
+  dir="$(git rev-parse --show-toplevel)"
+  osArch=$(echo "$(uname)" | tr '[:upper:]' '[:lower:]')
+  cpuArch=$(echo "$(uname -m)" | sed 's/aarch64/arm64/')
+
+  if lefthook{{.Extension}} -h >/dev/null 2>&1
+  then
+    eval lefthook{{.Extension}} $@
+  {{if .Extension -}}
+  {{/* Check if lefthook.bat exists. Ruby bundler creates such a wrapper */ -}}
+  elif lefthook.bat -h >/dev/null 2>&1
+  then
+    eval lefthook.bat $@
+  {{end -}}
+  elif test -f "$dir/node_modules/lefthook/bin/index.js"
+  then
+    eval "\"$dir/node_modules/lefthook/bin/index.js\" $@"
+  elif test -f "$dir/node_modules/@evilmartians/lefthook/bin/lefthook_${osArch}_${cpuArch}/lefthook{{.Extension}}"
+  then
+    eval "\"$dir/node_modules/@evilmartians/lefthook/bin/lefthook_${osArch}_${cpuArch}/lefthook{{.Extension}}\" $@"
+  elif test -f "$dir/node_modules/@evilmartians/lefthook-installer/bin/lefthook_${osArch}_${cpuArch}/lefthook{{.Extension}}"
+  then
+    eval "\"$dir/node_modules/@evilmartians/lefthook-installer/bin/lefthook_${osArch}_${cpuArch}/lefthook{{.Extension}}\" $@"
+  elif bundle exec lefthook -h >/dev/null 2>&1
+  then
+    bundle exec lefthook $@
+  elif yarn lefthook -h >/dev/null 2>&1
+  then
+    yarn lefthook $@
+  elif pnpm lefthook -h >/dev/null 2>&1
+  then
+    pnpm lefthook $@
+  elif npx @evilmartians/lefthook -h >/dev/null 2>&1
+  then
+    npx @evilmartians/lefthook $@
+  else
+    echo "Can't find lefthook in PATH"
+  fi
+}
+
+call_lefthook "run {{.HookName}} $@"
