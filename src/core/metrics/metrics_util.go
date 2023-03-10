@@ -377,7 +377,7 @@ func GetCalculationMap() map[string]string {
 	}
 }
 
-func GenerateMetricsReports(entities []*StatsEntityWrapper) (bundles []core.Payload) {
+func GenerateMetricsReportBundle(entities []*StatsEntityWrapper) (bundle core.Payload) {
 	reportMap := make(map[proto.MetricsReport_Type]*proto.MetricsReport, 0)
 
 	for _, entity := range entities {
@@ -398,7 +398,6 @@ func GenerateMetricsReports(entities []*StatsEntityWrapper) (bundles []core.Payl
 		for _, report := range reportMap {
 			bundle.Data = append(bundle.Data, report)
 		}
-		bundles = append(bundles, bundle)
 	}
 	return
 }
