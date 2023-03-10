@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -265,7 +266,7 @@ func initializeMessagePipe(ctx context.Context, corePlugins []core.Plugin, exten
 }
 
 func setDialOptions(loadedConfig *config.Config) []grpc.DialOption {
-	var grpcDialOptions []grpc.DialOption
+	grpcDialOptions := []grpc.DialOption{grpc.WithUserAgent("nginx-agent/" + strings.TrimPrefix(version, "v"))}
 	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DefaultClientDialOptions...)
 	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DataplaneConnectionDialOptions(loadedConfig.Server.Token, sdkGRPC.NewMessageMeta(uuid.NewString()))...)
 	return grpcDialOptions
