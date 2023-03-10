@@ -610,14 +610,14 @@ func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 
 	out, err := exec.Command("lscpu").Output()
 	if err != nil {
-		log.Warnf("Error executing lscpu on host: %v", err)
+		log.Warnf("Install lscpu on host to get processor info: %v", err)
 		return cache
 	}
 
-	return parselscpuInfo(string(out), cache)
+	return parseLscpu(string(out), cache)
 }
 
-func parselscpuInfo(lscpuInfo string, cache map[string]string) map[string]string {
+func parseLscpu(lscpuInfo string, cache map[string]string) map[string]string {
 	lscpuInfos := strings.TrimSpace(lscpuInfo)
 	lines := strings.Split(lscpuInfos, "\n")
 	lscpuInfoMap := map[string]string{}
