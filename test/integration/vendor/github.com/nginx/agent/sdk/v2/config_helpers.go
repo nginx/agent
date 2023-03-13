@@ -8,12 +8,10 @@
 package sdk
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"net"
 	"net/http"
@@ -28,8 +26,8 @@ import (
 	filesSDK "github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/zip"
-	crossplane "github.com/nginxinc/nginx-go-crossplane"
 
+	crossplane "github.com/nginxinc/nginx-go-crossplane"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,7 +61,7 @@ func (dm DirectoryMap) addDirectory(dir string) error {
 }
 
 func (dm DirectoryMap) appendFile(dir string, info fs.FileInfo) error {
-	lineCount, err := getLineCount(filepath.Join(dir, info.Name()))
+	lineCount, err := filesSDK.GetLineCount(filepath.Join(dir, info.Name()))
 	if err != nil {
 		log.Debugf("Failed to get line count: %v", err)
 	}
@@ -77,30 +75,6 @@ func (dm DirectoryMap) appendFile(dir string, info fs.FileInfo) error {
 	}
 
 	return dm.appendFileWithProto(dir, fileProto)
-}
-
-func getLineCount(path string) (int, error) {
-	reader, err := os.Open(path)
-	if err != nil {
-		return 0, fmt.Errorf("failed to read file(%s) while trying to get lineCount: %v", path, err)
-	}
-	defer reader.Close()
-
-	buf := make([]byte, 32*1024)
-	count := 0
-	lineSep := []byte{'\n'}
-
-	for {
-		c, err := reader.Read(buf)
-		count += bytes.Count(buf[:c], lineSep)
-
-		switch {
-		case err == io.EOF:
-			return count, nil
-		case err != nil:
-			return count, fmt.Errorf("failed to read file(%v): %v", path, err)
-		}
-	}
 }
 
 func (dm DirectoryMap) appendFileWithProto(dir string, fileProto *proto.File) error {

@@ -8,7 +8,9 @@
 package files
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"time"
@@ -27,6 +29,30 @@ func GetFileMode(mode string) os.FileMode {
 
 func GetPermissions(fileMode os.FileMode) string {
 	return fmt.Sprintf("%#o", fileMode.Perm())
+}
+
+func GetLineCount(path string) (int, error) {
+	reader, err := os.Open(path)
+	if err != nil {
+		return 0, fmt.Errorf("failed to read file(%s) while trying to get lineCount: %v", path, err)
+	}
+	defer reader.Close()
+
+	buf := make([]byte, 32*1024)
+	count := 0
+	lineSep := []byte{'\n'}
+
+	for {
+		c, err := reader.Read(buf)
+		count += bytes.Count(buf[:c], lineSep)
+
+		switch {
+		case err == io.EOF:
+			return count, nil
+		case err != nil:
+			return count, fmt.Errorf("failed to read file(%s): %v", path, err)
+		}
+	}
 }
 
 func TimeConvert(t time.Time) *types.Timestamp {
