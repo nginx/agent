@@ -16,44 +16,45 @@ import (
 )
 
 const (
-	phpFpmMetricsPluginName    = agent_config.PhpFpmMetericsExtensionPlugin
+	phpFpmMetricsPluginVersion = "v0.0.0"
+	PhpFpmMetricsPluginName    = agent_config.PhpFpmMetericsExtensionPlugin
 )
-
-type PhpFpm struct {
-
-}
-
-
-func (pf *PhpFpm) Init(pipeline core.MessagePipeInterface) {
-	log.Infof("%s initializing", phpFpmMetricsPluginName)
-}
-
-func (pf *PhpFpm) Info() {
-	log.Info("phpfpm info")
-	log.Info("phpfpm info")
-	log.Info("phpfpm info")
-}
-
-func (pf *PhpFpm) Process(msg *core.Message) {
-	log.Info("phpfpm process")
-	log.Info("phpfpm process")
-	log.Info("phpfpm process")
-}
-
-func (pf *PhpFpm) Subscriptions() []string {
-	return []string{}
-}
-
-func (pf *PhpFpm) Close() {
-	log.Infof("%s is wrapping up", phpFpmMetricsPluginName)
-}
 
 type PhpFpmMetrics struct {
 }
 
+type PhpFpmMetricsConfig struct {
+}
+
+func (pf *PhpFpmMetrics) Init(pipeline core.MessagePipeInterface) {
+	log.Infof("****** %s initializing", PhpFpmMetricsPluginName)
+}
+
+func (pf *PhpFpmMetrics) Info() *core.Info {
+	log.Info("*** PPhpFpmMetrics Info")
+	log.Info("*** PPhpFpmMetrics Info")
+	log.Info("*** PPhpFpmMetrics Info")
+	return core.NewInfo(PhpFpmMetricsPluginName, phpFpmMetricsPluginVersion)
+}
+
+func (pf *PhpFpmMetrics) Process(msg *core.Message) {
+	log.Info("*** PhpFpmMetrics Process")
+	log.Info("*** PPhpFpmMetrics Process")
+	log.Info("*** PPhpFpmMetrics Process")
+}
+
+func (pf *PhpFpmMetrics) Subscriptions() []string {
+	log.Infof("*** phpfpm metrics Subscriptions ***")
+	return []string{}
+}
+
+func (m *PhpFpmMetrics) Close() {
+	log.Infof("*** %s is wrapping up *** P", AdvancedMetricsPluginName)
+}
+
 func NewPhpFpmMetrics(env core.Environment, conf *config.Config, advancedMetricsConf interface{}) *PhpFpmMetrics {
 	// php fpm installed?
-	
+	log.Info("*** NewPhpFpmMetrics **")
 	return &PhpFpmMetrics{}
 }
 

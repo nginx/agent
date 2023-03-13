@@ -147,11 +147,13 @@ func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 
 func GetConfig(clientId string) (*Config, error) {
 	extensions := []string{}
-
+	log.Info("** GetConfig ** ")
 	for _, extension := range Viper.GetStringSlice(agent_config.ExtensionsKey) {
 		if agent_config.IsKnownExtension(extension) {
+			log.Infof("Adding extension %s that was configured", extension)
 			extensions = append(extensions, extension)
 		} else {
+			log.Infof("Ignoring unknown extension %s that was configured", extension)
 			log.Warnf("Ignoring unknown extension %s that was configured", extension)
 		}
 	}

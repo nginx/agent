@@ -239,7 +239,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 				advancedMetricsExtensionPlugin := extensions.NewAdvancedMetrics(env, loadedConfig, config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey))
 				extensionPlugins = append(extensionPlugins, advancedMetricsExtensionPlugin)
 			case extension == agent_config.PhpFpmMetericsExtensionPlugin:
-				phpFpmMetricsExtensionPlugin := extensions.NewAdvancedMetrics(env, loadedConfig, config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey))
+				phpFpmMetricsExtensionPlugin := extensions.NewPhpFpmMetrics(env, loadedConfig, config.Viper.Get(agent_config.PhpFpmMetericsExtensionPluginConfigKey))
 				extensionPlugins = append(extensionPlugins, phpFpmMetricsExtensionPlugin)	
 			case extension == agent_config.NginxAppProtectExtensionPlugin:
 				nginxAppProtectExtensionPlugin, err := extensions.NewNginxAppProtect(loadedConfig, env, config.Viper.Get(agent_config.NginxAppProtectExtensionPluginConfigKey))
