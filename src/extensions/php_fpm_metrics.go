@@ -8,11 +8,11 @@
 package extensions
 
 import (
-
 	log "github.com/sirupsen/logrus"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
+	"github.com/nginx/agent/v2/src/core/config"
 )
 
 const (
@@ -29,11 +29,15 @@ func (pf *PhpFpm) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (pf *PhpFpm) Info() {
+	log.Info("phpfpm info")
+	log.Info("phpfpm info")
+	log.Info("phpfpm info")
 }
 
 func (pf *PhpFpm) Process(msg *core.Message) {
-   return core.NewMessage(core.PhpFpmMetrics, readPhpFmpStatus())
-
+	log.Info("phpfpm process")
+	log.Info("phpfpm process")
+	log.Info("phpfpm process")
 }
 
 func (pf *PhpFpm) Subscriptions() []string {
@@ -41,5 +45,15 @@ func (pf *PhpFpm) Subscriptions() []string {
 }
 
 func (pf *PhpFpm) Close() {
-	log.Infof("%s is wrapping up", napMonitoringPluginName)
+	log.Infof("%s is wrapping up", phpFpmMetricsPluginName)
 }
+
+type PhpFpmMetrics struct {
+}
+
+func NewPhpFpmMetrics(env core.Environment, conf *config.Config, advancedMetricsConf interface{}) *PhpFpmMetrics {
+	// php fpm installed?
+	
+	return &PhpFpmMetrics{}
+}
+

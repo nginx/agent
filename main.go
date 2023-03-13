@@ -227,12 +227,20 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env))
 	}
 
+	log.Info("** extension ***")
 	if loadedConfig.Extensions != nil && len(loadedConfig.Extensions) > 0 {
 		for _, extension := range loadedConfig.Extensions {
+			log.Info("sdfsdf extension")
+			log.Info("extension")
+			log.Info("extension")
+			log.Info(extension)
 			switch {
 			case extension == agent_config.AdvancedMetricsExtensionPlugin:
 				advancedMetricsExtensionPlugin := extensions.NewAdvancedMetrics(env, loadedConfig, config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey))
 				extensionPlugins = append(extensionPlugins, advancedMetricsExtensionPlugin)
+			case extension == agent_config.PhpFpmMetericsExtensionPlugin:
+				phpFpmMetricsExtensionPlugin := extensions.NewAdvancedMetrics(env, loadedConfig, config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey))
+				extensionPlugins = append(extensionPlugins, phpFpmMetricsExtensionPlugin)	
 			case extension == agent_config.NginxAppProtectExtensionPlugin:
 				nginxAppProtectExtensionPlugin, err := extensions.NewNginxAppProtect(loadedConfig, env, config.Viper.Get(agent_config.NginxAppProtectExtensionPluginConfigKey))
 				if err != nil {
