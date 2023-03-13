@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -27,13 +28,13 @@ func TestExtensions_Process(t *testing.T) {
 	}{
 		{
 			testName:      "Advanced Metrics",
-			extensionKey:  config.AdvancedMetricsKey,
-			extensionName: "Advanced Metrics Plugin",
+			extensionKey:  agent_config.AdvancedMetricsExtensionPlugin,
+			extensionName: agent_config.AdvancedMetricsExtensionPlugin,
 		},
 		{
 			testName:      "Nginx App Protect",
-			extensionKey:  config.NginxAppProtectKey,
-			extensionName: "Nginx App Protect",
+			extensionKey:  agent_config.NginxAppProtectExtensionPlugin,
+			extensionName: agent_config.NginxAppProtectExtensionPlugin,
 		},
 	}
 
@@ -58,7 +59,7 @@ func TestExtensions_Process(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			// Assert that only the extensions plugin is registered
 			assert.Equal(t, 1, len(messagePipe.GetPlugins()))
@@ -72,9 +73,10 @@ func TestExtensions_Process(t *testing.T) {
 			assert.GreaterOrEqual(t, len(processedMessages), 1)
 			assert.Equal(t, core.EnableExtension, processedMessages[0].Topic())
 
-			assert.Equal(t, 2, len(messagePipe.GetPlugins()))
+			assert.Equal(t, 1, len(messagePipe.GetPlugins()))
+			assert.Equal(t, 1, len(messagePipe.GetExtensionPlugins()))
 			assert.Equal(t, "Extensions Plugin", messagePipe.GetPlugins()[0].Info().Name())
-			assert.Equal(t, tc.extensionName, messagePipe.GetPlugins()[1].Info().Name())
+			assert.Equal(t, tc.extensionName, messagePipe.GetExtensionPlugins()[0].Info().Name())
 		})
 	}
 

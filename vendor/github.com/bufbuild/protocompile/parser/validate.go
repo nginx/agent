@@ -36,32 +36,12 @@ func validateBasic(res *result, handler *reporter.Handler) {
 		return
 	}
 
-	depth := 0
-	_ = walk.DescriptorProtosEnterAndExit(fd,
+	_ = walk.DescriptorProtos(fd,
 		func(name protoreflect.FullName, d proto.Message) error {
-			if depth >= 32 {
-				// ignore any deeper structure
-				return nil
-			}
-
 			switch d := d.(type) {
 			case *descriptorpb.DescriptorProto:
-				depth++
-				if depth == 32 {
-					var n ast.Node = res.MessageNode(d)
-					if grp, ok := n.(*ast.GroupNode); ok {
-						// pinpoint the group keyword if the source is a group
-						n = grp.Keyword
-					}
-					if err := handler.HandleErrorf(res.file.NodeInfo(n).Start(), "message nesting depth must be less than 32"); err != nil {
-						// exit func is not called when enter returns error
-						depth--
-						return err
-					}
-				}
 				if err := validateMessage(res, isProto3, name, d, handler); err != nil {
 					// exit func is not called when enter returns error
-					depth--
 					return err
 				}
 			case *descriptorpb.EnumDescriptorProto:
@@ -72,12 +52,6 @@ func validateBasic(res *result, handler *reporter.Handler) {
 				if err := validateField(res, isProto3, name, d, handler); err != nil {
 					return err
 				}
-			}
-			return nil
-		},
-		func(name protoreflect.FullName, d proto.Message) error {
-			if _, ok := d.(*descriptorpb.DescriptorProto); ok {
-				depth--
 			}
 			return nil
 		})

@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -24,6 +25,7 @@ type CPUTimes struct {
 	*namedMetric
 	isDocker        bool
 	cgroupCPUSource *cgroup.CgroupCPU
+	logger          *MetricSourceLogger
 	// Needed for unit tests
 	timesFunc func(bool) ([]cpu.TimesStat, error)
 }
@@ -37,9 +39,9 @@ var lastCPUTime lastTime
 
 func NewCPUTimesSource(namespace string, env core.Environment) *CPUTimes {
 	if env.IsContainer() {
-		return &CPUTimes{&namedMetric{namespace, CpuGroup}, true, cgroup.NewCgroupCPUSource(cgroup.CgroupBasePath), nil}
+		return &CPUTimes{&namedMetric{namespace, CpuGroup}, true, cgroup.NewCgroupCPUSource(cgroup.CgroupBasePath), NewMetricSourceLogger(), nil}
 	}
-	return &CPUTimes{&namedMetric{namespace, CpuGroup}, false, nil, cpu.Times}
+	return &CPUTimes{&namedMetric{namespace, CpuGroup}, false, nil, NewMetricSourceLogger(), cpu.Times}
 }
 
 func percentCal(tt float64) func(float64) float64 {
@@ -75,7 +77,7 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 
 		if err != nil {
 			// linux impl returns zero length without error
-			log.Errorf("Failed to get cgroup CPU metrics %v", err)
+			c.logger.Log(fmt.Sprintf("Failed to get cgroup CPU metrics, %v", err))
 			return
 		}
 
@@ -90,12 +92,12 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 
 		if err != nil {
 			// linux impl returns zero length without error
-			log.Warnf("Error occurred getting CPU metrics, %v", err)
+			c.logger.Log(fmt.Sprintf("Error occurred getting CPU metrics, %v", err))
 			return
 		}
 
 		if len(timesArr) != 1 {
-			log.Warn("Unexpected CPU metrics values")
+			c.logger.Log("Unexpected CPU metrics values")
 			return
 		}
 

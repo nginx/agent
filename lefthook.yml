@@ -1,0 +1,13 @@
+# see https://github.com/evilmartians/lefthook for references
+pre-push:
+  follow: true
+  piped: true # Stop if one of the steps fail
+  commands:
+    1_lint: 
+      run: make lint
+    2_format:
+      run: make format
+    3_dependencies:
+      run: make deps
+    4_check_local_changes:
+      run: make no-local-changes

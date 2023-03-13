@@ -13,21 +13,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestManager_Close(t *testing.T) {
-	conf := &config.Config{
-		Log: config.LogConfig{
-			Level: "debug",
-		},
-		NAPMonitoring: config.NAPMonitoring{
-			CollectorBufferSize: 1,
-			ProcessorBufferSize: 1,
-			SyslogIP:            "127.0.0.1",
-			SyslogPort:          1234,
-		},
+	conf := &NginxAppProtectMonitoringConfig{
+		CollectorBufferSize: 1,
+		ProcessorBufferSize: 1,
+		SyslogIP:            "127.0.0.1",
+		SyslogPort:          1235,
 	}
 
 	m, err := NewManager(conf, &metrics.CommonDim{})
