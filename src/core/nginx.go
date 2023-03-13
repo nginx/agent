@@ -316,7 +316,19 @@ func hasConfPath(files []*proto.File, confPath string) bool {
 }
 
 func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error) {
-	log.Tracef("Writing config: %+v\n", config)
+	if log.IsLevelEnabled(log.TraceLevel) {
+		jsonLogger := log.New()
+		jsonLogger.SetFormatter(&log.JSONFormatter{})
+		jsonLogger.WithFields(log.Fields{
+			"access_logs":     config.AccessLogs,
+			"error_logs":      config.ErrorLogs,
+			"directory_map":   config.DirectoryMap,
+			"config_contents": config.Zconfig,
+			"config_data":     config.ConfigData,
+			"action":          config.Action,
+		}).Trace("Writing config")
+		defer jsonLogger.Writer().Close()
+	}
 	details, ok := n.nginxDetailsMap[config.ConfigData.NginxId]
 	if !ok || details == nil {
 		return nil, fmt.Errorf("NGINX instance %s not found", config.ConfigData.NginxId)
