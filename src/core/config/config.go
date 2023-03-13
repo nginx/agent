@@ -186,6 +186,8 @@ func GetConfig(clientId string) (*Config, error) {
 	config.Server.Target = fmt.Sprintf("%s:%d", config.Server.Host, config.Server.GrpcPort)
 
 	log.Tracef("%v", config)
+	log.Infof("***")
+	log.Infof("%v", config)
 	return config, nil
 }
 
