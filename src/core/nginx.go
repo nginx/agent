@@ -10,7 +10,6 @@ package core
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -327,7 +326,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 			"config_contents": config.Zconfig,
 			"config_data":     config.ConfigData,
 			"action":          config.Action,
-		}).Trace("Writing config")		
+		}).Trace("Writing config")
 		defer jsonLogger.Writer().Close()
 	}
 
