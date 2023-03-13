@@ -11,6 +11,7 @@ import (
 	"context"
 	"sync"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -100,7 +101,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 
 			if agtCfg.Details != nil && agtCfg.Details.Extensions != nil {
 				for _, extension := range agtCfg.Details.Extensions {
-					if extension == config.AdvancedMetricsKey ||
+					if extension == agent_config.AdvancedMetricsExtensionPlugin ||
 						extension == config.NginxAppProtectKey ||
 						extension == config.NAPMonitoringKey {
 						c.pipeline.Process(core.NewMessage(core.EnableExtension, extension))

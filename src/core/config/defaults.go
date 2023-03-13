@@ -74,17 +74,6 @@ var (
 			Mode:               "aggregation",
 		},
 		Features: agent_config.GetDefaultFeatures(),
-		NAPMonitoring: NAPMonitoring{
-			ProcessorBufferSize: 50000,
-			CollectorBufferSize: 50000,
-			SyslogIP:            "0.0.0.0",
-			SyslogPort:          514,
-			ReportInterval:      time.Minute,
-			ReportCount:         400,
-		},
-		NginxAppProtect: NginxAppProtect{
-			PrecompiledPublication: false,
-		},
 	}
 	AllowedDirectoriesMap map[string]struct{}
 )
@@ -160,9 +149,8 @@ const (
 	MetricsCollectionInterval = MetricsKey + agent_config.KeyDelimiter + "collection_interval"
 	MetricsMode               = MetricsKey + agent_config.KeyDelimiter + "mode"
 
-	// viper keys used in config
-	AdvancedMetricsKey = "advanced_metrics"
-
+	// DEPRECATED KEYS
+	AdvancedMetricsKey                  = "advanced_metrics"
 	AdvancedMetricsSocketPath           = AdvancedMetricsKey + agent_config.KeyDelimiter + "socket_path"
 	AdvancedMetricsAggregationPeriod    = AdvancedMetricsKey + agent_config.KeyDelimiter + "aggregation_period"
 	AdvancedMetricsPublishPeriod        = AdvancedMetricsKey + agent_config.KeyDelimiter + "publishing_period"
@@ -172,33 +160,17 @@ const (
 	AdvancedMetricsTableSizesLimitsPTMS = AdvancedMetricsTableSizesLimits + agent_config.KeyDelimiter + "priority_table_max_size"
 	AdvancedMetricsTableSizesLimitsPTT  = AdvancedMetricsTableSizesLimits + agent_config.KeyDelimiter + "priority_table_threshold"
 
-	// viper keys used in config
-	NginxAppProtectKey = "nginx_app_protect"
-
+	NginxAppProtectKey                    = "nginx_app_protect"
 	NginxAppProtectReportInterval         = NginxAppProtectKey + agent_config.KeyDelimiter + "report_interval"
 	NginxAppProtectPrecompiledPublication = NginxAppProtectKey + agent_config.KeyDelimiter + "precompiled_publication"
 
-	// viper keys used in config
-	NAPMonitoringKey = "nap_monitoring"
-
+	NAPMonitoringKey                 = "nap_monitoring"
 	NAPMonitoringCollectorBufferSize = NAPMonitoringKey + agent_config.KeyDelimiter + "collector_buffer_size"
 	NAPMonitoringProcessorBufferSize = NAPMonitoringKey + agent_config.KeyDelimiter + "processor_buffer_size"
 	NAPMonitoringSyslogIP            = NAPMonitoringKey + agent_config.KeyDelimiter + "syslog_ip"
 	NAPMonitoringSyslogPort          = NAPMonitoringKey + agent_config.KeyDelimiter + "syslog_port"
 	NAPMonitoringReportInterval      = NAPMonitoringKey + agent_config.KeyDelimiter + "report_interval"
 	NAPMonitoringReportCount         = NAPMonitoringKey + agent_config.KeyDelimiter + "report_count"
-
-	// DEPRECATED KEYS
-	NginxBinPathKey       = "nginx_bin_path"
-	NginxPIDPathKey       = "nginx_pid_path"
-	NginxStubStatusURLKey = "nginx_stub_status"
-	NginxPlusAPIURLKey    = "nginx_plus_api"
-	NginxMetricsPollKey   = "nginx_metrics_poll_interval"
-
-	MetricsEnableTLSKey   = "metrics_tls_enable"
-	MetricsTLSCertPathKey = "metrics_tls_cert"
-	MetricsTLSKeyPathKey  = "metrics_tls_key"
-	MetricsTLSCAPathKey   = "metrics_tls_ca"
 )
 
 var (
@@ -296,37 +268,6 @@ var (
 			Usage:        "The polling period specified for a single set of metrics being collected.",
 			DefaultValue: Defaults.AgentMetrics.ReportInterval,
 		},
-		// Advanced Metrics
-		&StringFlag{
-			Name:  AdvancedMetricsSocketPath,
-			Usage: "The advanced metrics socket location.",
-		},
-		// change to advanced metrics collection interval
-		&DurationFlag{
-			Name:  AdvancedMetricsAggregationPeriod,
-			Usage: "Sets the interval, in seconds, at which advanced metrics are collected.",
-		},
-		// change to advanced metrics report interval
-		&DurationFlag{
-			Name:  AdvancedMetricsPublishPeriod,
-			Usage: "The polling period specified for a single set of advanced metrics being collected.",
-		},
-		&IntFlag{
-			Name:  AdvancedMetricsTableSizesLimitsPTMS,
-			Usage: "Default Maximum Size of the Priority Table.",
-		},
-		&IntFlag{
-			Name:  AdvancedMetricsTableSizesLimitsPTT,
-			Usage: "Default Threshold of the Priority Table - normally a value which is a percentage of the corresponding Default Maximum Size of the Priority Table (<100%, but its value is not an actual percentage, i.e 88%, rather 88%*AdvancedMetricsTableSizesLimitsPTMS).",
-		},
-		&IntFlag{
-			Name:  AdvancedMetricsTableSizesLimitsSTMS,
-			Usage: "Default Maximum Size of the Staging Table.",
-		},
-		&IntFlag{
-			Name:  AdvancedMetricsTableSizesLimitsSTT,
-			Usage: "AdvancedMetricsTableSizesLimitsSTT - Default Threshold of the Staging Table - normally a value which is a percentage of the corresponding Default Maximum Size of the Staging Table (<100%, but its value is not an actual percentage, i.e 88%, rather 88%*AdvancedMetricsTableSizesLimitsSTMS).",
-		},
 		// TLS Config
 		&BoolFlag{
 			Name:         TlsEnable,
@@ -361,33 +302,6 @@ var (
 			Usage:        "The amount of time the agent will report on the dataplane. After this period of time it will send a snapshot of the dataplane information.",
 			DefaultValue: Defaults.Dataplane.Status.ReportInterval,
 		},
-		// Nginx App Protect
-		&DurationFlag{
-			Name:  NginxAppProtectReportInterval,
-			Usage: "The period of time the agent will check for App Protect software changes on the dataplane",
-		},
-		&BoolFlag{
-			Name:         NginxAppProtectPrecompiledPublication,
-			Usage:        "Enables publication of NGINX App Protect pre-compiled content from an external source.",
-			DefaultValue: Defaults.NginxAppProtect.PrecompiledPublication,
-		},
-		// NAP Monitoring
-		&IntFlag{
-			Name:  NAPMonitoringCollectorBufferSize,
-			Usage: "The buffer size used for the collection of events in the NGINX App Protect Monitoring extension.",
-		},
-		&IntFlag{
-			Name:  NAPMonitoringProcessorBufferSize,
-			Usage: "The buffer size used by the processing of events in the NGINX App Protect Monitoring extension.",
-		},
-		&StringFlag{
-			Name:  NAPMonitoringSyslogIP,
-			Usage: "The Syslog IP address the NGINX Agent would run on. This IP address would be used in the NGINX App Protect config to send logging events.",
-		},
-		&IntFlag{
-			Name:  NAPMonitoringSyslogPort,
-			Usage: "The Syslog port the NGINX Agent would run on. This port would be used in the NGINX App Protect config to send logging events.",
-		},
 		// Other Config
 		&StringFlag{
 			Name:  DisplayNameKey,
@@ -399,71 +313,60 @@ var (
 		},
 	}
 	deprecatedFlags = []Registrable{
+		// Advanced Metrics
 		&StringFlag{
-			Name:  "metadata",
-			Usage: "DEPRECATED; use --server-host instead.",
-		},
-		&StringFlag{
-			Name:  ServerKey,
-			Usage: "DEPRECATED; use --server-grpcport instead.",
-		},
-		&StringFlag{
-			Name:  "metrics_server",
-			Usage: "DEPRECATED; no replacement due to change in functionality.",
-		},
-		&StringFlag{
-			Name:  "api_token",
-			Usage: "DEPRECATED; no replacement due to change in functionality.",
-		},
-		&StringFlag{
-			Name:  DataplaneSyncEnable,
-			Usage: "DEPRECATED; no replacement due to change in functionality.",
-		},
-		&StringFlag{
-			Name:  DataplaneEventsEnable,
-			Usage: "DEPRECATED; no replacement due to change in functionality.",
-		},
-		&StringFlag{
-			Name:  LocationKey,
-			Usage: "DEPRECATED; no replacement due to change in functionality.",
-		},
-		// NGINX Config
-		&StringFlag{
-			Name:  NginxBinPathKey,
-			Usage: "DEPRECATED; no replacement due to change in functionality.",
-		},
-		&StringFlag{
-			Name:  NginxPIDPathKey,
-			Usage: "DEPRECATED; no replacement due to change in functionality.",
-		},
-		&StringFlag{
-			Name:  NginxStubStatusURLKey,
-			Usage: "DEPRECATED; no replacement due to change in functionality.",
-		},
-		&StringFlag{
-			Name:  NginxPlusAPIURLKey,
+			Name:  AdvancedMetricsSocketPath,
 			Usage: "DEPRECATED; no replacement due to change in functionality.",
 		},
 		&DurationFlag{
-			Name:  NginxMetricsPollKey,
-			Usage: "DEPRECATED; use --metrics-collection-interval instead.",
+			Name:  AdvancedMetricsAggregationPeriod,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
 		},
-		// Metrics TLS Config
+		&DurationFlag{
+			Name:  AdvancedMetricsPublishPeriod,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
+		},
+		&IntFlag{
+			Name:  AdvancedMetricsTableSizesLimitsPTMS,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
+		},
+		&IntFlag{
+			Name:  AdvancedMetricsTableSizesLimitsPTT,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
+		},
+		&IntFlag{
+			Name:  AdvancedMetricsTableSizesLimitsSTMS,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
+		},
+		&IntFlag{
+			Name:  AdvancedMetricsTableSizesLimitsSTT,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
+		},
+		// Nginx App Protect
+		&DurationFlag{
+			Name:  NginxAppProtectReportInterval,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
+		},
 		&BoolFlag{
-			Name:  MetricsEnableTLSKey,
-			Usage: "DEPRECATED; use --tls-enable instead.",
+			Name:  NginxAppProtectPrecompiledPublication,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
+		},
+		// NAP Monitoring
+		&IntFlag{
+			Name:  NAPMonitoringCollectorBufferSize,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
+		},
+		&IntFlag{
+			Name:  NAPMonitoringProcessorBufferSize,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
 		},
 		&StringFlag{
-			Name:  MetricsTLSCertPathKey,
-			Usage: "DEPRECATED; use --tls-cert instead.",
+			Name:  NAPMonitoringSyslogIP,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
 		},
-		&StringFlag{
-			Name:  MetricsTLSKeyPathKey,
-			Usage: "DEPRECATED; use --tls-key instead.",
-		},
-		&StringFlag{
-			Name:  MetricsTLSCAPathKey,
-			Usage: "DEPRECATED; use --tls-ca instead.",
+		&IntFlag{
+			Name:  NAPMonitoringSyslogPort,
+			Usage: "DEPRECATED; no replacement due to change in functionality.",
 		},
 	}
 )

@@ -11,11 +11,11 @@ import (
 	"context"
 	"runtime"
 	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	models "github.com/nginx/agent/sdk/v2/proto/events"
-	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/collector"
@@ -28,11 +28,20 @@ const (
 	defaultProcessorBufferSize = 50000
 )
 
+type NginxAppProtectMonitoringConfig struct {
+	CollectorBufferSize int           `mapstructure:"collector_buffer_size" yaml:"-"`
+	ProcessorBufferSize int           `mapstructure:"processor_buffer_size" yaml:"-"`
+	SyslogIP            string        `mapstructure:"syslog_ip" yaml:"-"`
+	SyslogPort          int           `mapstructure:"syslog_port" yaml:"-"`
+	ReportInterval      time.Duration `mapstructure:"report_interval" yaml:"-"`
+	ReportCount         int           `mapstructure:"report_count" yaml:"-"`
+}
+
 type Manager struct {
-	config     *config.Config
-	syslogIP   string
-	syslogPort int
-	logger     *log.Entry
+	nginxAppProtectMonitoringConfig *NginxAppProtectMonitoringConfig
+	syslogIP                        string
+	syslogPort                      int
+	logger                          *log.Entry
 
 	collector   collector.Collector
 	collectChan chan *monitoring.RawLog
@@ -41,11 +50,11 @@ type Manager struct {
 	processorChan chan *models.Event
 }
 
-func NewManager(config *config.Config, commonDims *metrics.CommonDim) (*Manager, error) {
+func NewManager(nginxAppProtectMonitoringConfig *NginxAppProtectMonitoringConfig, commonDims *metrics.CommonDim) (*Manager, error) {
 	m := &Manager{
-		config:     config,
-		syslogIP:   config.NAPMonitoring.SyslogIP,
-		syslogPort: config.NAPMonitoring.SyslogPort,
+		nginxAppProtectMonitoringConfig: nginxAppProtectMonitoringConfig,
+		syslogIP:                        nginxAppProtectMonitoringConfig.SyslogIP,
+		syslogPort:                      nginxAppProtectMonitoringConfig.SyslogPort,
 	}
 
 	err := m.init(commonDims)
@@ -103,8 +112,8 @@ func (s *Manager) initCollector() error {
 		return err
 	}
 
-	if s.config.NAPMonitoring.CollectorBufferSize > 0 {
-		s.collectChan = make(chan *monitoring.RawLog, s.config.NAPMonitoring.CollectorBufferSize)
+	if s.nginxAppProtectMonitoringConfig.CollectorBufferSize > 0 {
+		s.collectChan = make(chan *monitoring.RawLog, s.nginxAppProtectMonitoringConfig.CollectorBufferSize)
 	} else {
 		s.logger.Warnf("CollectorBufferSize cannot be zero or negative. Defaulting to %v", defaultCollectorBufferSize)
 		s.collectChan = make(chan *monitoring.RawLog, defaultCollectorBufferSize)
@@ -129,8 +138,8 @@ func (s *Manager) initProcessor(commonDims *metrics.CommonDim) error {
 		return err
 	}
 
-	if s.config.NAPMonitoring.ProcessorBufferSize > 0 {
-		s.processorChan = make(chan *models.Event, s.config.NAPMonitoring.ProcessorBufferSize)
+	if s.nginxAppProtectMonitoringConfig.ProcessorBufferSize > 0 {
+		s.processorChan = make(chan *models.Event, s.nginxAppProtectMonitoringConfig.ProcessorBufferSize)
 	} else {
 		s.logger.Warnf("ProcessorBufferSize cannot be zero or negative. Defaulting to %v", defaultProcessorBufferSize)
 		s.processorChan = make(chan *models.Event, defaultProcessorBufferSize)

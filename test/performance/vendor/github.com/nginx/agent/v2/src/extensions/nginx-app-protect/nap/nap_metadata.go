@@ -23,17 +23,13 @@ import (
 // the metadata
 func UpdateMetadata(
 	cfg *proto.NginxConfig,
-	currentPrecompiledPublication bool,
-	wafLocation,
-	wafVersion,
-	wafAttackSignaturesVersion,
-	wafThreatCampaignsVersion string,
+	appProtectWAFDetails *proto.AppProtectWAFDetails,
 ) error {
 	previousPrecompiledPublication := false
 	previousMeta := Metadata{}
 
 	// Read NAP metadata
-	data, err := os.ReadFile(wafLocation)
+	data, err := os.ReadFile(appProtectWAFDetails.GetWafLocation())
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
@@ -49,7 +45,7 @@ func UpdateMetadata(
 	// when precomp publication toggles to true.
 	// If toggled, write metadata once more then the publisher
 	// will send metadata thereafter.
-	if previousPrecompiledPublication && currentPrecompiledPublication {
+	if previousPrecompiledPublication && appProtectWAFDetails.GetPrecompiledPublication() {
 		return nil
 	}
 
@@ -72,10 +68,10 @@ func UpdateMetadata(
 	}
 
 	metadata := &Metadata{
-		NapVersion:                       wafVersion,
-		PrecompiledPublication:           currentPrecompiledPublication,
-		AttackSignatureRevisionTimestamp: wafAttackSignaturesVersion,
-		ThreatCampaignRevisionTimestamp:  wafThreatCampaignsVersion,
+		NapVersion:                       appProtectWAFDetails.GetWafVersion(),
+		PrecompiledPublication:           appProtectWAFDetails.GetPrecompiledPublication(),
+		AttackSignatureRevisionTimestamp: appProtectWAFDetails.GetAttackSignaturesVersion(),
+		ThreatCampaignRevisionTimestamp:  appProtectWAFDetails.GetThreatCampaignsVersion(),
 		Policies:                         policyBundles,
 		Profiles:                         profileBundles,
 	}
@@ -91,7 +87,7 @@ func UpdateMetadata(
 	}
 
 	// Make dir if not exists
-	directory := filepath.Dir(wafLocation)
+	directory := filepath.Dir(appProtectWAFDetails.GetWafLocation())
 	_, err = os.Stat(directory)
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(directory, 0755)
@@ -101,7 +97,7 @@ func UpdateMetadata(
 	}
 
 	log.Debugf("Writing NAP Metadata %s", m)
-	return os.WriteFile(wafLocation, m, 0644)
+	return os.WriteFile(appProtectWAFDetails.GetWafLocation(), m, 0644)
 }
 
 // metadataAreEqual compares the metadata for equality

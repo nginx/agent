@@ -24,6 +24,7 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
   - [Installing Go](#installing-go)
   - [Starting the gRPC Mock Control Plane](#starting-the-grpc-mock-control-plane)
   - [NGINX Agent Settings](#nginx-agent-settings)
+  - [Extensions](#extensions)
   - [Starting NGINX Agent](#starting-nginx-agent)
 - [Development Environment Setup](#development-environment-setup)
   - [Selecting an Operating System](#selecting-an-operating-system)
@@ -47,7 +48,7 @@ NGINX Agent runs as a companion process on a system running NGINX. It provides g
 ![How NGINX Agent works](docs/agent-flow.png "How NGINX Agent works")
 
 ## Configuration Management
-NGINX Agent provides an API interface for submission of updated configuration files. Upon receipt of a new file, it checks the output of `nginx -V` to determine the location of existing configurations. It then validates the new configuration with `nginx -t` before applying it via a NOHUP signal to the NGINX master process.
+NGINX Agent provides an API interface for submission of updated configuration files. Upon receipt of a new file, it checks the output of `nginx -V` to determine the location of existing configurations. It then validates the new configuration with `nginx -t` before applying it via a signal HUP to the NGINX master process.
 
 ## Collecting Metrics
 NGINX Agent interfaces with NGINX process information and parses NGINX logs to calculate and report metrics. When interfacing with NGINX Plus, NGINX Agent pulls relevant information from the NGINX Plus API. Reported metrics may be aggregated by [Prometheus](https://prometheus.io/) and visualized with tools like [Grafana](https://grafana.com/).
@@ -195,6 +196,17 @@ make launch-swagger-ui
 
 Open a web browser to view the Swagger UI at http://localhost:8082/docs.
 
+## Extensions
+An extension is a piece of code, not critical to the main functionality that the NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
+
+To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`. 
+Here is an example of enabling the advanced metrics extension:
+
+```yaml
+extensions:
+  - advanced-metrics
+```
+
 ## Starting NGINX Agent
 If already running, restart NGINX Agent to apply the new configuration. Alternatively, if NGINX Agent is not running, you may run it from the source code root directory.
 
@@ -272,7 +284,7 @@ Install NGINX Agent tools and dependencies:
 
 Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. You can do this by running the following `make` command:
 ```
-make install-tools deps
+make install-tools
 ```
 
 ## Building NGINX Agent from Source Code
