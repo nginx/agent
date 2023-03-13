@@ -10,14 +10,14 @@ package extensions
 import (
 	log "github.com/sirupsen/logrus"
 
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	//agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 )
 
 const (
 	phpFpmMetricsPluginVersion = "v0.0.0"
-	PhpFpmMetricsPluginName    = agent_config.PhpFpmMetericsExtensionPlugin
+	PhpFpmMetricsPluginName    = "php-fpm-metrics"
 )
 
 type PhpFpmMetrics struct {
@@ -31,16 +31,12 @@ func (pf *PhpFpmMetrics) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (pf *PhpFpmMetrics) Info() *core.Info {
-	log.Info("*** PPhpFpmMetrics Info")
-	log.Info("*** PPhpFpmMetrics Info")
-	log.Info("*** PPhpFpmMetrics Info")
+	log.Info("*** PPhpFpmMetrics Info ***")
 	return core.NewInfo(PhpFpmMetricsPluginName, phpFpmMetricsPluginVersion)
 }
 
 func (pf *PhpFpmMetrics) Process(msg *core.Message) {
-	log.Info("*** PhpFpmMetrics Process")
-	log.Info("*** PPhpFpmMetrics Process")
-	log.Info("*** PPhpFpmMetrics Process")
+	log.Info("*** PhpFpmMetrics Process ***")
 }
 
 func (pf *PhpFpmMetrics) Subscriptions() []string {
@@ -52,7 +48,7 @@ func (m *PhpFpmMetrics) Close() {
 	log.Infof("*** %s is wrapping up *** P", AdvancedMetricsPluginName)
 }
 
-func NewPhpFpmMetrics(env core.Environment, conf *config.Config, advancedMetricsConf interface{}) *PhpFpmMetrics {
+func NewPhpFpmMetrics(env core.Environment, conf *config.Config, phpFpmMetricsConf interface{}) *PhpFpmMetrics {
 	// php fpm installed?
 	log.Info("*** NewPhpFpmMetrics **")
 	return &PhpFpmMetrics{}

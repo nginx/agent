@@ -9,6 +9,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"os/signal"
 	"strconv"
@@ -57,11 +58,14 @@ func main() {
 
 		env := &core.EnvironmentType{}
 
+		log.Info("*** Trying to get loaded config ***")
 		loadedConfig, err := config.GetConfig(env.GetSystemUUID())
 		if err != nil {
 			log.Fatalf("Failed to load configuration: %v", err)
 		}
 
+		blobB, _ := json.Marshal(loadedConfig)
+		log.Infof("******** Fetched loaded config :::::    %s", string(blobB))
 		logger.SetLogLevel(loadedConfig.Log.Level)
 		logFile := logger.SetLogFile(loadedConfig.Log.Path)
 		if logFile != nil {
@@ -227,19 +231,19 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env))
 	}
 
-	log.Info("** extension ***")
+	log.Infof("** extension in loop *** %s", len(loadedConfig.Extensions))
+	log.Infof("** extension in loop *** %s", len(loadedConfig.Extensions))
+	log.Infof("** extension in loop *** %s", len(loadedConfig.Extensions))
+	log.Infof("** extension in loop *** %s", len(loadedConfig.Extensions))
 	if loadedConfig.Extensions != nil && len(loadedConfig.Extensions) > 0 {
 		for _, extension := range loadedConfig.Extensions {
-			log.Info("sdfsdf extension")
-			log.Info("extension")
-			log.Info("extension")
-			log.Info(extension)
+			log.Info("*** range extension *** %s", extension)
 			switch {
 			case extension == agent_config.AdvancedMetricsExtensionPlugin:
 				advancedMetricsExtensionPlugin := extensions.NewAdvancedMetrics(env, loadedConfig, config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey))
 				extensionPlugins = append(extensionPlugins, advancedMetricsExtensionPlugin)
-			case extension == agent_config.PhpFpmMetericsExtensionPlugin:
-				phpFpmMetricsExtensionPlugin := extensions.NewPhpFpmMetrics(env, loadedConfig, config.Viper.Get(agent_config.PhpFpmMetericsExtensionPluginConfigKey))
+			case extension == "php-fpm-metrics":
+				phpFpmMetricsExtensionPlugin := extensions.NewPhpFpmMetrics(env, loadedConfig, "php_fpm_metrics")
 				extensionPlugins = append(extensionPlugins, phpFpmMetricsExtensionPlugin)	
 			case extension == agent_config.NginxAppProtectExtensionPlugin:
 				nginxAppProtectExtensionPlugin, err := extensions.NewNginxAppProtect(loadedConfig, env, config.Viper.Get(agent_config.NginxAppProtectExtensionPluginConfigKey))
