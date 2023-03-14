@@ -19,9 +19,10 @@ import (
 
 var (
 	tailConfig = tail.Config{
-		Follow: true,
-		ReOpen: true,
-		Poll:   true,
+		Follow:    true,
+		ReOpen:    true,
+		MustExist: true,
+		Poll:      true,
 		Location: &tail.SeekInfo{
 			Whence: io.SeekEnd,
 		},
@@ -107,11 +108,7 @@ func (t *Tailer) Tail(ctx context.Context, data chan<- string) {
 			data <- line.Text
 
 		case <-ctx.Done():
-			err := ctx.Err()
-			if err != nil {
-				log.Errorf("error in done context Tail %v", err)
-			}
-			log.Info("tailer is done")
+			log.Trace("tailer is done")
 			return
 		}
 	}
@@ -133,11 +130,7 @@ func (t *PatternTailer) Tail(ctx context.Context, data chan<- map[string]string)
 				data <- l
 			}
 		case <-ctx.Done():
-			err := ctx.Err()
-			if err != nil {
-				log.Errorf("error in done context Tail %v", err)
-			}
-			log.Info("tailer is done")
+			log.Trace("tailer is done")
 			return
 		}
 	}

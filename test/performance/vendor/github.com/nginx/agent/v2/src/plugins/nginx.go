@@ -13,6 +13,8 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	re "regexp"
+	"sync"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -29,6 +31,7 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/payloads"
+	"github.com/nginx/agent/v2/src/core/tailer"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/nap"
 )
 
@@ -39,6 +42,9 @@ const (
 
 var (
 	validationTimeout = 15 * time.Second
+	reloadErrorList   = []*re.Regexp{
+		re.MustCompile(`.*Address already in use.*`),
+	}
 )
 
 // Nginx is the metadata of our nginx binary
@@ -53,6 +59,7 @@ type Nginx struct {
 	isFeatureNginxConfigEnabled    bool
 	configApplyStatusChannel       chan *proto.Command_NginxConfigResponse
 	nginxAppProtectSoftwareDetails *proto.AppProtectWAFDetails
+	reloadMonitoringPeriod         time.Duration
 }
 
 type ConfigRollbackResponse struct {
@@ -91,6 +98,7 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 		isFeatureNginxConfigEnabled:    isFeatureNginxConfigEnabled,
 		configApplyStatusChannel:       make(chan *proto.Command_NginxConfigResponse, 1),
 		nginxAppProtectSoftwareDetails: &proto.AppProtectWAFDetails{},
+		reloadMonitoringPeriod:         10 * time.Second,
 	}
 }
 
@@ -383,7 +391,7 @@ func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.Ng
 	case result := <-n.configApplyStatusChannel:
 		return result
 	case <-time.After(validationTimeout):
-		log.Errorf("Validation of the NGINX config in taking longer than the validationTimeout %s", validationTimeout)
+		log.Warnf("Validation of the NGINX config in taking longer than the validationTimeout %s", validationTimeout)
 		return status
 	}
 }
@@ -466,10 +474,18 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *pr
 	log.Debug("Enabling file watcher")
 	n.messagePipeline.Process(core.NewMessage(core.FileWatcherEnabled, true))
 
+	var monitoringErrors []string
 	reloadErr := n.nginxBinary.Reload(response.nginxDetails.ProcessId, response.nginxDetails.ProcessPath)
 	if reloadErr != nil {
 		nginxConfigStatusMessage = fmt.Sprintf("Config apply failed (write): %v", reloadErr)
 		log.Errorf(nginxConfigStatusMessage)
+	} else {
+		monitoringErrors = n.monitorErrorLogs()
+		if len(monitoringErrors) > 0 {
+			nginxConfigStatusMessage = fmt.Sprintf("Config apply failed. The following errors were found in the NGINX error logs: %v", monitoringErrors)
+		} else {
+			log.Info("No errors found in NGINX errors logs after NGINX reload")
+		}
 	}
 
 	nginxReloadEventMeta := NginxReloadResponse{
@@ -481,11 +497,16 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *pr
 
 	n.messagePipeline.Process(core.NewMessage(core.NginxReloadComplete, nginxReloadEventMeta))
 
+	nginxConfigStatus := proto.NginxConfigStatus_OK
+	if reloadErr != nil || len(monitoringErrors) > 0 {
+		nginxConfigStatus = proto.NginxConfigStatus_ERROR
+	}
+
 	agentActivityStatus := &proto.AgentActivityStatus{
 		Status: &proto.AgentActivityStatus_NginxConfigStatus{
 			NginxConfigStatus: &proto.NginxConfigStatus{
 				CorrelationId: response.correlationId,
-				Status:        proto.NginxConfigStatus_OK,
+				Status:        nginxConfigStatus,
 				Message:       nginxConfigStatusMessage,
 				NginxId:       response.config.GetConfigData().GetNginxId(),
 			},
@@ -511,6 +532,67 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *pr
 	log.Debug("Config Apply Complete")
 
 	return status
+}
+
+func (n *Nginx) monitorErrorLogs() []string {
+	errorLogs := n.nginxBinary.GetErrorLogs()
+	if len(errorLogs) == 0 {
+		log.Warn("Skipping error log validation for NGINX reload because no error logs have been configured in the NGINX configuration")
+	}
+
+	errorChannel := make(chan string, len(errorLogs))
+	wg := &sync.WaitGroup{}
+
+	for logFile := range errorLogs {
+		wg.Add(1)
+		logCTX, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		go n.tailLog(errorChannel, wg, logCTX, logFile)
+	}
+
+	wg.Wait()
+	close(errorChannel)
+
+	errorsFound := []string{}
+	for errorLog := range errorChannel {
+		errorsFound = append(errorsFound, errorLog)
+	}
+
+	return errorsFound
+}
+
+func (n *Nginx) tailLog(errorChannel chan string, wg *sync.WaitGroup, ctx context.Context, logFile string) {
+	defer wg.Done()
+	t, err := tailer.NewTailer(logFile)
+	if err != nil {
+		log.Errorf("Unable to tail %q: %v", logFile, err)
+		return
+	}
+	data := make(chan string, 1024)
+	go t.Tail(ctx, data)
+
+	tick := time.NewTicker(n.reloadMonitoringPeriod)
+	defer tick.Stop()
+
+	for {
+		select {
+		case d := <-data:
+			for _, errorRegex := range reloadErrorList {
+				if errorRegex.MatchString(d) {
+					errorChannel <- d
+					return
+				}
+			}
+		case <-tick.C:
+			return
+		case <-ctx.Done():
+			err := ctx.Err()
+			if err != nil {
+				log.Errorf("Nginx: error in done context tailLog %v", err)
+			}
+			return
+		}
+	}
 }
 
 func (n *Nginx) rollbackConfigApply(response *NginxConfigValidationResponse) {

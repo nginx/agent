@@ -13,12 +13,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
@@ -527,6 +529,7 @@ func TestNginxConfigApply(t *testing.T) {
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
 			binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
+			binary.On("GetErrorLogs").Return(make(map[string]string))
 
 			commandClient := tutils.GetMockCommandClient(test.config)
 			conf := &loadedConfig.Config{
@@ -831,6 +834,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
 	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
 	binary.On("Reload", mock.Anything, mock.Anything)
+	binary.On("GetErrorLogs").Return(make(map[string]string))
 
 	commandClient := tutils.GetMockCommandClient(
 		&proto.NginxConfig{
@@ -1038,4 +1042,54 @@ func TestBlock_ConfigApply(t *testing.T) {
 	messagePipe.Run()
 
 	assert.Equal(t, testNAPDetailsActive.AppProtectWafDetails.WafVersion, pluginUnderTest.nginxAppProtectSoftwareDetails.WafVersion)
+}
+
+func TestNginx_monitorErrorLogs(t *testing.T) {
+	tmpDir := t.TempDir()
+	errorLogFileName := path.Join(tmpDir, "/error.log")
+	errorLogFile, err := os.Create(errorLogFileName)
+
+	defer func() {
+		err := errorLogFile.Close()
+		require.NoError(t, err, "Error closing error log file")
+		os.Remove(errorLogFile.Name())
+	}()
+
+	require.NoError(t, err, "Error creating error log")
+	commandClient := tutils.GetMockCommandClient(&proto.NginxConfig{})
+
+	env := tutils.GetMockEnvWithProcess()
+	binary := tutils.NewMockNginxBinary()
+	binary.On("GetErrorLogs").Return(make(map[string]string)).Once()
+	binary.On("GetErrorLogs").Return(map[string]string{errorLogFileName: ""}).Once()
+
+	config := tutils.GetMockAgentConfig()
+	pluginUnderTest := NewNginx(commandClient, binary, env, config)
+	pluginUnderTest.reloadMonitoringPeriod = 300 * time.Millisecond
+
+	errorsFound := pluginUnderTest.monitorErrorLogs()
+	assert.Equal(t, 0, len(errorsFound))
+
+	errorsChannel := make(chan []string, 1)
+
+	go func() {
+		errorsFound := pluginUnderTest.monitorErrorLogs()
+		errorsChannel <- errorsFound
+	}()
+
+	time.Sleep(pluginUnderTest.reloadMonitoringPeriod / 4)
+
+	_, err = errorLogFile.WriteString("2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)")
+	require.NoError(t, err, "Error writing data to error log file")
+
+	for {
+		select {
+		case x := <-errorsChannel:
+			assert.Equal(t, 1, len(x))
+			return
+		case <-time.After(10 * time.Second):
+			assert.Fail(t, "Expected error to be reported")
+			return
+		}
+	}
 }
