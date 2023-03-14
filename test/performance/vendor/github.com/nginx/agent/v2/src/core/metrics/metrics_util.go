@@ -212,7 +212,7 @@ func GetCalculationMap() map[string]string {
 		"nginx.cache.updating":                "sum",
 		"nginx.upstream.response.buffered":    "sum",
 		"nginx.upstream.request.failed":       "sum",
-		// "nginx.upstream.request.count":                       "sum",
+		"nginx.upstream.request.count":        "sum",
 		// "nginx.upstream.next.count":                          "sum",
 		"nginx.upstream.response.failed":                     "sum",
 		"nginx.workers.count":                                "avg",
