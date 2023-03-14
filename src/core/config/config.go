@@ -168,9 +168,9 @@ func GetConfig(clientId string) (*Config, error) {
 
 	//extensions = append(extensions, "php-fpm-metrics")
 
-	log.Info("**********  Please help GetConfig **********  %s", extensions)
-	log.Info("**********  Please help GetConfig **********  %s", extensions)
-	log.Info("**********  Please help GetConfig **********  %s", extensions)
+	log.Infof("**********  Please help GetConfig **********  %s", extensions)
+	log.Infof("**********  Please help GetConfig **********  %s", extensions)
+	log.Infof("**********  Please help GetConfig **********  %s", extensions)
 
 	config := &Config{
 		Path:                  Viper.GetString(ConfigPathKey),

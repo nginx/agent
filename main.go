@@ -231,28 +231,28 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env))
 	}
 
-	log.Infof("** extension in loop *** %s", len(loadedConfig.Extensions))
-	log.Infof("** extension in loop *** %s", len(loadedConfig.Extensions))
-	log.Infof("** extension in loop *** %s", len(loadedConfig.Extensions))
-	log.Infof("** extension in loop *** %s", len(loadedConfig.Extensions))
+	log.Infof("** extension in loop *** %d", len(loadedConfig.Extensions))
+	log.Infof("** extension in loop *** %d", len(loadedConfig.Extensions))
+	log.Infof("** extension in loop *** %d", len(loadedConfig.Extensions))
+	log.Infof("** extension in loop *** %d", len(loadedConfig.Extensions))
 	if loadedConfig.Extensions != nil && len(loadedConfig.Extensions) > 0 {
 		for _, extension := range loadedConfig.Extensions {
-			log.Info("*** range extension *** %s", extension)
+			log.Infof("*** range extension *** %s", extension)
 			switch {
 			case extension == agent_config.AdvancedMetricsExtensionPlugin:
 				advancedMetricsExtensionPlugin := extensions.NewAdvancedMetrics(env, loadedConfig, config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey))
 				extensionPlugins = append(extensionPlugins, advancedMetricsExtensionPlugin)
 			case extension == "php-fpm-metrics":
-			    // agent_config.PhpFpmMetricsExtensionPlugin
-				// 
+				// agent_config.PhpFpmMetricsExtensionPlugin
+				//
 				// at moment results in errror : ./main.go:245:35: undefined: agent_config.PhpFpmMetricsExtensionPlugin
 				// make: *** [local-deb-package] Error 1
-				// 
+				//
 				// agent_config points to config on pkg.go.dev instead of local changed one. Hence the above error
 				// Need to figure out this.
-				phpFpmMetricsExtensionPlugin := extensions.NewPhpFpmMetrics(env, loadedConfig, "php_fpm_metrics") 
+				phpFpmMetricsExtensionPlugin := extensions.NewPhpFpmMetrics(env, loadedConfig, "php_fpm_metrics")
 				//agent_config.PhpFpmMetricsExtensionPluginConfigKey
-				extensionPlugins = append(extensionPlugins, phpFpmMetricsExtensionPlugin)	
+				extensionPlugins = append(extensionPlugins, phpFpmMetricsExtensionPlugin)
 			case extension == agent_config.NginxAppProtectExtensionPlugin:
 				nginxAppProtectExtensionPlugin, err := extensions.NewNginxAppProtect(loadedConfig, env, config.Viper.Get(agent_config.NginxAppProtectExtensionPluginConfigKey))
 				if err != nil {
