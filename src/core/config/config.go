@@ -147,6 +147,9 @@ func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 
 func GetConfig(clientId string) (*Config, error) {
 	extensions := []string{}
+	fmt.Println("** GetConfig ** ")
+	fmt.Println("** GetConfig ** ")
+	fmt.Println("** GetConfig ** ")
 	log.Info("** GetConfig ** ")
 	log.Info("** GetConfig ** ")
 	log.Info("** GetConfig ** ")
@@ -167,7 +170,7 @@ func GetConfig(clientId string) (*Config, error) {
 		} else {
 			log.Infof("***** Ignoring unknown extension %s that was configured *****", extension)
 			log.Infof("***** Ignoring unknown extension %s that was configured *****", extension)
-			
+
 			log.Infof("***** Ignoring unknown extension %s that was configured *****", extension)
 			log.Warnf("Ignoring unknown extension %s that was configured", extension)
 		}
