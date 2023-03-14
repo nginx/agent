@@ -53,4 +53,3 @@ func NewPhpFpmMetrics(env core.Environment, conf *config.Config, phpFpmMetricsCo
 	log.Info("*** NewPhpFpmMetrics **")
 	return &PhpFpmMetrics{}
 }
-
