@@ -184,8 +184,8 @@ func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.St
 func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string) {
 	logPattern := logFormat
 
-	for key, value := range logVarMap{
-		logPattern =  strings.ReplaceAll(logPattern, key, value)
+	for key, value := range logVarMap {
+		logPattern = strings.ReplaceAll(logPattern, key, value)
 	}
 
 	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
