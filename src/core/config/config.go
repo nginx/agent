@@ -147,23 +147,13 @@ func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 
 func GetConfig(clientId string) (*Config, error) {
 	extensions := []string{}
-	fmt.Println("** GetConfig ** ")
-	fmt.Println("** GetConfig ** ")
-	fmt.Println("** GetConfig ** ")
-	log.Info("** GetConfig ** ")
-	log.Info("** GetConfig ** ")
-	log.Info("** GetConfig ** ")
-	log.Info("** GetConfig ** ")
-	log.Info("** GetConfig ** ")
-	log.Info("** GetConfig ** ")
-	log.Info("** GetConfig ** ")
-	log.Info("** GetConfig ** ")
-	log.Info("** GetConfig ** ")
-	log.Info("** GetConfig ** ")
+	fmt.Println("******** GetConfig **********")
+	fmt.Println("******** GetConfig **********")
+	log.Info("******** GetConfig **********")
+	log.Info("******** GetConfig **********")
+
 	for _, extension := range Viper.GetStringSlice(agent_config.ExtensionsKey) {
 		if agent_config.IsKnownExtension(extension) {
-			log.Infof("***** Adding unknown extension %s that was configured *****", extension)
-			log.Infof("***** Adding unknown extension %s that was configured *****", extension)
 			log.Infof("***** Adding unknown extension %s that was configured *****", extension)
 			log.Infof("***** Adding unknown extension %s that was configured *****", extension)
 			extensions = append(extensions, extension)
@@ -178,18 +168,10 @@ func GetConfig(clientId string) (*Config, error) {
 
 	//extensions = append(extensions, "php-fpm-metrics")
 
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
-	log.Info("** Please help GetConfig ** %s", extensions)
+	log.Info("**********  Please help GetConfig **********  %s", extensions)
+	log.Info("**********  Please help GetConfig **********  %s", extensions)
+	log.Info("**********  Please help GetConfig **********  %s", extensions)
+
 	config := &Config{
 		Path:                  Viper.GetString(ConfigPathKey),
 		DynamicConfigPath:     Viper.GetString(DynamicConfigPathKey),
