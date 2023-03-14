@@ -501,8 +501,6 @@ github.com/gobwas/glob/util/strings
 # github.com/gofrs/flock v0.8.1
 ## explicit
 github.com/gofrs/flock
-# github.com/gofrs/uuid v4.4.0+incompatible
-## explicit
 # github.com/gofrs/uuid/v5 v5.0.0
 ## explicit; go 1.19
 github.com/gofrs/uuid/v5
