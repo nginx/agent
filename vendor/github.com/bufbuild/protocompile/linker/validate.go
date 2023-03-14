@@ -146,8 +146,6 @@ func (r *result) validateJSONNamesInEnum(ed *descriptorpb.EnumDescriptorProto, h
 func (r *result) validateFieldJSONNames(md *descriptorpb.DescriptorProto, useCustom bool, handler *reporter.Handler) error {
 	type jsonName struct {
 		source *descriptorpb.FieldDescriptorProto
-		// field's original JSON nane (which can differ in case from map key)
-		orig string
 		// true if orig is a custom JSON name (vs. the field's default JSON name)
 		custom bool
 	}
@@ -165,8 +163,7 @@ func (r *result) validateFieldJSONNames(md *descriptorpb.DescriptorProto, useCus
 				custom = true
 			}
 		}
-		lcaseName := strings.ToLower(name)
-		if existing, ok := seen[lcaseName]; ok {
+		if existing, ok := seen[name]; ok {
 			// When useCustom is true, we'll only report an issue when a conflict is
 			// due to a custom name. That way, we don't double report conflicts on
 			// non-custom names.
@@ -179,24 +176,20 @@ func (r *result) validateFieldJSONNames(md *descriptorpb.DescriptorProto, useCus
 				if !existing.custom {
 					srcCustomStr = "default"
 				}
-				otherName := ""
-				if name != existing.orig {
-					otherName = fmt.Sprintf(" %q", existing.orig)
-				}
 				pos := r.FileNode().NodeInfo(fldNode).Start()
-				conflictErr := reporter.Errorf(pos, "%s: %s JSON name %q conflicts with %s JSON name%s of field %s, defined at %v",
-					scope, customStr, name, srcCustomStr, otherName, existing.source.GetName(), r.FileNode().NodeInfo(r.FieldNode(existing.source)).Start())
+				conflictErr := reporter.Errorf(pos, "%s: %s JSON name %q conflicts with %s JSON name of field %s, defined at %v",
+					scope, customStr, name, srcCustomStr, existing.source.GetName(), r.FileNode().NodeInfo(r.FieldNode(existing.source)).Start())
 
-				// Since proto2 did not originally have default JSON names, we report conflicts involving
-				// default names as just warnings.
-				if r.Syntax() != protoreflect.Proto3 && (!custom || !existing.custom) {
+				// Since proto2 did not originally have default JSON names, we report conflicts
+				// between default names (neither is a custom name) as just warnings.
+				if r.Syntax() != protoreflect.Proto3 && !custom && !existing.custom {
 					handler.HandleWarning(conflictErr)
 				} else if err := handler.HandleError(conflictErr); err != nil {
 					return err
 				}
 			}
 		} else {
-			seen[lcaseName] = jsonName{source: fd, orig: name, custom: custom}
+			seen[name] = jsonName{source: fd, custom: custom}
 		}
 	}
 	return nil

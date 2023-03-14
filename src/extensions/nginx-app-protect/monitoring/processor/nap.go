@@ -30,6 +30,9 @@ const (
 	cookieCtx               = "cookie"
 	defaultBlockedRespCode  = "0"
 	defaultBlockedRespValue = "Blocked"
+
+	decodedComma = ","
+	encodedComma = "%2C"
 )
 
 // NGINX App Protect Logging Directives
@@ -104,6 +107,7 @@ var (
 		clientApplicationVersion,
 		transportProtocol,
 		httpURI,
+		request,
 	}
 )
 
@@ -450,11 +454,6 @@ func parseNAP(logEntry string, logger *logrus.Entry) (*NAPConfig, error) {
 		}
 	}
 
-	err := setValue(&waf, request, strings.Join(values[len(logFormatKeys):], ","), logger)
-	if err != nil {
-		return &NAPConfig{}, err
-	}
-
 	return &waf, nil
 }
 
@@ -506,13 +505,13 @@ func setValue(napConfig *NAPConfig, key, value string, logger *logrus.Entry) err
 	case httpServerPort:
 		napConfig.HTTPServerPort = value
 	case httpURI:
-		napConfig.HTTPURI = value
+		napConfig.HTTPURI = strings.ReplaceAll(value, encodedComma, decodedComma)
 	case isTruncated:
 		napConfig.IsTruncated = value
 	case policyName:
 		napConfig.PolicyName = value
 	case request:
-		napConfig.Request = value
+		napConfig.Request = strings.ReplaceAll(value, encodedComma, decodedComma)
 	case requestOutcome:
 		napConfig.RequestOutcome = value
 	case requestOutcomeReason:

@@ -9,6 +9,7 @@ package core
 
 import (
 	"os"
+	"time"
 )
 
 // FileExists determines if the specified file given by the file path exists on the system.
@@ -39,4 +40,21 @@ func FilesExists(filePaths []string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func EnableWritePermissionForSocket(path string) error {
+	timeout := time.After(time.Second * 1)
+	var lastError error
+	for {
+		select {
+		case <-timeout:
+			return lastError
+		default:
+			lastError = os.Chmod(path, 0660)
+			if lastError == nil {
+				return nil
+			}
+		}
+		<-time.After(time.Microsecond * 100)
+	}
 }

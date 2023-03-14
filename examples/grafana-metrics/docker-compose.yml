@@ -12,11 +12,11 @@ services:
     restart: unless-stopped
     build:
       context: ../../
-      dockerfile: ./scripts/docker/nginx-oss/ubuntu/Dockerfile
+      dockerfile: ./scripts/docker/nginx-oss/deb/Dockerfile
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         BASE_IMAGE: ${BASE_IMAGE}
-        ENTRY_POINT: "./scripts/docker/nginx-oss/entrypoint.sh"
+        ENTRY_POINT: "./scripts/docker/entrypoint.sh"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf

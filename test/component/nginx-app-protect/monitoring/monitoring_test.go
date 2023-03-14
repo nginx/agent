@@ -19,12 +19,15 @@ import (
 	testifyMock "github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	sdkPb "github.com/nginx/agent/sdk/v2/proto"
 	events "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/extensions"
+	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager"
 	"github.com/nginx/agent/v2/src/plugins"
 	"github.com/nginx/agent/v2/test/component/nginx-app-protect/monitoring/mock"
 	tutils "github.com/nginx/agent/v2/test/utils"
@@ -46,20 +49,24 @@ func TestNAPMonitoring(t *testing.T) {
 		TLS: config.TLSConfig{
 			Enable: false,
 		},
-		NAPMonitoring: config.NAPMonitoring{
-			CollectorBufferSize: 50,
-			ProcessorBufferSize: 50,
-			SyslogIP:            "127.0.0.1",
-			SyslogPort:          EphemeralPort(),
-			ReportInterval:      time.Minute,
-			// Since the minimum report interval is one minute, MAP monitor won't have enough time within the test timeframe
-			// to send the report. So always beware of the count of logged attacks and set report count accordingly
-			// Count of attacks = count of files under ./testData/logs-in/
-			ReportCount: 7,
-		},
 		Tags:          []string{"tag1", "tag2"},
 		DisplayName:   "nap-monitoring-component-test",
 		InstanceGroup: "instance-group1",
+		Extensions: []string{
+			agent_config.NginxAppProtectMonitoringExtensionPlugin,
+		},
+	}
+
+	nginxAppProtectMonitoringConfig := manager.NginxAppProtectMonitoringConfig{
+		CollectorBufferSize: 50,
+		ProcessorBufferSize: 50,
+		SyslogIP:            "127.0.0.1",
+		SyslogPort:          EphemeralPort(),
+		ReportInterval:      time.Minute,
+		// Since the minimum report interval is one minute, MAP monitor won't have enough time within the test timeframe
+		// to send the report. So always beware of the count of logged attacks and set report count accordingly
+		// Count of attacks = count of files under ./testData/logs-in/
+		ReportCount: 7,
 	}
 
 	// Expected common dimensions that need to be added to the generated SecurityViolationEvent
@@ -115,10 +122,10 @@ func TestNAPMonitoring(t *testing.T) {
 		Uuid:     expectedUUID,
 	})
 
-	napMonitoring, err := plugins.NewNAPMonitoring(env, cfg)
+	napMonitoring, err := extensions.NewNAPMonitoring(env, cfg, nginxAppProtectMonitoringConfig)
 	assert.NoError(t, err)
 
-	pipe := initializeMessagePipe(t, ctx, []core.Plugin{metricsSender, napMonitoring})
+	pipe := initializeMessagePipe(t, ctx, []core.Plugin{metricsSender}, []core.ExtensionPlugin{napMonitoring})
 
 	pipe.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
 
@@ -131,7 +138,7 @@ func TestNAPMonitoring(t *testing.T) {
 	// Let monitor init
 	time.Sleep(5 * time.Second)
 
-	sysLog, err := syslog.Dial("tcp", fmt.Sprintf("%s:%d", cfg.NAPMonitoring.SyslogIP, cfg.NAPMonitoring.SyslogPort), syslog.LOG_WARNING, "napMonitoringTest")
+	sysLog, err := syslog.Dial("tcp", fmt.Sprintf("%s:%d", nginxAppProtectMonitoringConfig.SyslogIP, nginxAppProtectMonitoringConfig.SyslogPort), syslog.LOG_WARNING, "napMonitoringTest")
 	assert.NoError(t, err)
 
 	files, err := os.ReadDir("./testData/logs-in/")
@@ -179,6 +186,7 @@ func TestNAPMonitoring(t *testing.T) {
 }
 
 func assertEqualSecurityViolationEvents(t *testing.T, expectedEvent, resultEvent *events.Event) {
+	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().SupportID, resultEvent.GetSecurityViolationEvent().SupportID)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().PolicyName, resultEvent.GetSecurityViolationEvent().PolicyName)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().Outcome, resultEvent.GetSecurityViolationEvent().Outcome)
 	assert.Equal(t, expectedEvent.GetSecurityViolationEvent().OutcomeReason, resultEvent.GetSecurityViolationEvent().OutcomeReason)
@@ -223,9 +231,9 @@ func EphemeralPort() int {
 	return port
 }
 
-func initializeMessagePipe(t *testing.T, ctx context.Context, corePlugins []core.Plugin) *core.MessagePipe {
+func initializeMessagePipe(t *testing.T, ctx context.Context, corePlugins []core.Plugin, extensionPlugins []core.ExtensionPlugin) *core.MessagePipe {
 	pipe := core.NewMessagePipe(ctx)
-	err := pipe.Register(DEFAULT_PLUGIN_SIZE, corePlugins...)
+	err := pipe.Register(DEFAULT_PLUGIN_SIZE, corePlugins, extensionPlugins)
 	assert.NoError(t, err)
 	return pipe
 }

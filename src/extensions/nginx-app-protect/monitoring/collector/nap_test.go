@@ -16,6 +16,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
@@ -23,6 +24,53 @@ import (
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/collector"
 )
+
+func TestNewNAPCollector(t *testing.T) {
+	testCases := []struct {
+		testName string
+		cfg      *collector.NAPConfig
+		expError bool
+	}{
+		{
+			testName: "Valid Config",
+			cfg: &collector.NAPConfig{
+				SyslogIP:   "127.0.0.1",
+				SyslogPort: 1234,
+				Logger:     logrus.NewEntry(logrus.New()),
+			},
+			expError: false,
+		},
+		{
+			testName: "Malformed IP address",
+			cfg: &collector.NAPConfig{
+				SyslogIP:   "not_an_ipaddress",
+				SyslogPort: 514,
+				Logger:     logrus.NewEntry(logrus.New()),
+			},
+			expError: true,
+		},
+		{
+			testName: "Bad port number",
+			cfg: &collector.NAPConfig{
+				SyslogIP:   "127.0.0.1",
+				SyslogPort: -1024,
+				Logger:     logrus.NewEntry(logrus.New()),
+			},
+			expError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.testName, func(t *testing.T) {
+			_, err := collector.NewNAPCollector(tc.cfg)
+			if tc.expError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
 
 func TestNAPCollect(t *testing.T) {
 	var logwriter *syslog.Writer

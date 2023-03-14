@@ -68,7 +68,7 @@ func NewOneTimeRegistration(
 func (r *OneTimeRegistration) Init(pipeline core.MessagePipeInterface) {
 	log.Info("OneTimeRegistration initializing")
 	r.pipeline = pipeline
-	r.startRegistration()
+	go r.startRegistration()
 }
 
 func (r *OneTimeRegistration) Close() {
@@ -83,9 +83,9 @@ func (r *OneTimeRegistration) Process(msg *core.Message) {
 	switch {
 	case msg.Exact(core.RegistrationCompletedTopic):
 		log.Info("OneTimeRegistration completed")
-	case msg.Exact(core.RegisterWithDataplaneSoftwareDetails):
+	case msg.Exact(core.DataplaneSoftwareDetailsUpdated):
 		switch data := msg.Data().(type) {
-		case *payloads.RegisterWithDataplaneSoftwareDetailsPayload:
+		case *payloads.DataplaneSoftwareDetailsUpdate:
 			r.dataplaneSoftwareDetailsMutex.Lock()
 			defer r.dataplaneSoftwareDetailsMutex.Unlock()
 			r.dataplaneSoftwareDetails[data.GetPluginName()] = data.GetDataplaneSoftwareDetails()
@@ -96,30 +96,49 @@ func (r *OneTimeRegistration) Process(msg *core.Message) {
 func (r *OneTimeRegistration) Subscriptions() []string {
 	return []string{
 		core.RegistrationCompletedTopic,
-		core.RegisterWithDataplaneSoftwareDetails,
+		core.DataplaneSoftwareDetailsUpdated,
 	}
 }
 
+// startRegistration checks in a retry loop if the plugins enabled that transmit dataplane
+// software details have transmitted their details to OneTimeRegistration then registers.
+// If the plugins do not successfully transmit their details before the max retries is
+// reached then an error will be logged then registration will start with whatever
+// dataplane software details were successfully transmitted (if any).
 func (r *OneTimeRegistration) startRegistration() {
-	// Check if there are any plugins that will report dataplane software details upon registration and
-	// if they have already reported their details or not.
-	if pluginsReportingDataplaneSoftwareDetails(*r.config) && r.dataplaneSoftwareDetailsMissing() {
-		r.dataplaneSoftwareDetailsMutex.Lock()
-		defer r.dataplaneSoftwareDetailsMutex.Unlock()
-		for _, plugin := range getPluginsReportingDataplaneSoftwareDetails(*r.config) {
-			r.dataplaneSoftwareDetails[plugin] = nil
-		}
-		go r.waitAndRegister()
-		return
+	log.Debug("OneTimeRegistration waiting on dataplane software details to be ready for registration")
+	err := sdk.WaitUntil(
+		context.Background(), softwareDetailsOperationInterval, softwareDetailsOperationInterval,
+		dataplaneSoftwareDetailsMaxWaitTime, r.areDataplaneSoftwareDetailsReady,
+	)
+	if err != nil {
+		log.Warn(err.Error())
 	}
+
 	r.registerAgent()
 }
 
-// pluginsReportingDataplaneDetails returns a bool indicating if there are any plugins
-// enabled that transmit dataplane software details based off the config passed. True is
-// returned if there are plugins enabled that report dataplane software details.
-func pluginsReportingDataplaneSoftwareDetails(conf config.Config) bool {
-	return conf.NginxAppProtect != (config.NginxAppProtect{})
+// dataplaneSoftwareDetailsReady Determines if all the plugins enabled that transmit dataplane
+// software details have transmitted their details to OneTimeRegistration. An error is returned
+// if any plugins enabled that transmit dataplane software details have not transmitted their
+// details to OneTimeRegistration.
+func (r *OneTimeRegistration) areDataplaneSoftwareDetailsReady() error {
+	if len(r.config.Extensions) == 0 {
+		log.Trace("No extension plugins to register")
+		return nil
+	}
+
+	r.dataplaneSoftwareDetailsMutex.Lock()
+	defer r.dataplaneSoftwareDetailsMutex.Unlock()
+
+	for _, extension := range r.config.Extensions {
+		if _, ok := r.dataplaneSoftwareDetails[extension]; !ok {
+			return fmt.Errorf("Registration max retries has been met before the extension %s was ready for registration", extension)
+		}
+	}
+
+	log.Debug("All dataplane software details are ready for registration")
+	return nil
 }
 
 func (r *OneTimeRegistration) registerAgent() {
@@ -183,62 +202,6 @@ func (r *OneTimeRegistration) registerAgent() {
 	)
 }
 
-// waitAndRegister checks in a retry loop if the plugins enabled that transmit dataplane
-// software details have transmitted their details to OneTimeRegistration then registers.
-// If the plugins do not successfully transmit their details before the max retries is
-// reached then an error will be logged then registration will start with whatever
-// dataplane software details were successfully transmitted (if any).
-func (r *OneTimeRegistration) waitAndRegister() {
-	log.Debug("OneTimeRegistration waiting on dataplane software details to be ready for registration")
-	err := sdk.WaitUntil(
-		context.Background(), softwareDetailsOperationInterval, softwareDetailsOperationInterval,
-		dataplaneSoftwareDetailsMaxWaitTime, r.dataplaneSoftwareDetailsReady,
-	)
-	if err != nil {
-		log.Warn(err.Error())
-	}
-
-	r.registerAgent()
-}
-
-// dataplaneSoftwareDetailsReady Determines if all the plugins enabled that transmit dataplane
-// software details have transmitted their details to OneTimeRegistration. An error is returned
-// if any plugins enabled that transmit dataplane software details have not transmitted their
-// details to OneTimeRegistration.
-func (r *OneTimeRegistration) dataplaneSoftwareDetailsReady() error {
-	pluginsMissingDetails := []string{}
-
-	r.dataplaneSoftwareDetailsMutex.Lock()
-	defer r.dataplaneSoftwareDetailsMutex.Unlock()
-	for pluginName, detailsReported := range r.dataplaneSoftwareDetails {
-		if detailsReported == nil {
-			pluginsMissingDetails = append(pluginsMissingDetails, pluginName)
-		}
-	}
-
-	if len(pluginsMissingDetails) > 0 {
-		log.Warnf("The following dataplane software details are not ready for registration - %v", pluginsMissingDetails)
-		return fmt.Errorf("OneTimeRegistration max retries has been met before the following dataplane software details were ready for registration - %v", pluginsMissingDetails)
-	}
-
-	log.Debug("All dataplane software details are ready for registration")
-	return nil
-}
-
-// dataplaneSoftwareDetailsMissing returns a bool indicating if the plugins enabled that
-// transmit dataplane software details have already transmitted their details to
-// OneTimeRegistration. If they have then false is returned, if not then true is returned.
-func (r *OneTimeRegistration) dataplaneSoftwareDetailsMissing() bool {
-	r.dataplaneSoftwareDetailsMutex.Lock()
-	defer r.dataplaneSoftwareDetailsMutex.Unlock()
-	for _, plugin := range getPluginsReportingDataplaneSoftwareDetails(*r.config) {
-		if _, ok := r.dataplaneSoftwareDetails[plugin]; !ok {
-			return true
-		}
-	}
-	return false
-}
-
 // dataplaneSoftwareDetails converts the map of dataplane software details into a
 // slice of dataplane software details and returns it.
 func (r *OneTimeRegistration) dataplaneSoftwareDetailsSlice() []*proto.DataplaneSoftwareDetails {
@@ -253,16 +216,4 @@ func (r *OneTimeRegistration) dataplaneSoftwareDetailsSlice() []*proto.Dataplane
 	}
 
 	return allDetails
-}
-
-// getPluginsReportingDataplaneSoftwareDetails returns a list of plugin names that
-// are enabled which transmit dataplane software details based off the config passed.
-func getPluginsReportingDataplaneSoftwareDetails(conf config.Config) []string {
-	plugins := make([]string, 0)
-
-	if conf.NginxAppProtect != (config.NginxAppProtect{}) {
-		plugins = append(plugins, napPluginName)
-	}
-
-	return plugins
 }

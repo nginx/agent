@@ -329,6 +329,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 		}).Trace("Writing config")
 		defer jsonLogger.Writer().Close()
 	}
+
 	details, ok := n.nginxDetailsMap[config.ConfigData.NginxId]
 	if !ok || details == nil {
 		return nil, fmt.Errorf("NGINX instance %s not found", config.ConfigData.NginxId)

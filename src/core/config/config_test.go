@@ -160,6 +160,7 @@ func TestGetConfig(t *testing.T) {
 		assert.Equal(t, Defaults.AgentMetrics.CollectionInterval, config.AgentMetrics.CollectionInterval)
 
 		assert.Equal(t, []string{}, config.Tags)
+		assert.Equal(t, []string{}, config.Extensions)
 	})
 
 	t.Run("test override defaults with flags", func(t *testing.T) {
@@ -363,6 +364,36 @@ func TestGetConfig(t *testing.T) {
 
 		// Everything else should still be default
 		assert.Equal(t, Defaults.ConfigDirs, config.ConfigDirs)
+	})
+
+	t.Run("test reading extensions from config file", func(t *testing.T) {
+		configData := `
+extensions:
+  - advanced-metrics
+  - unknown-extension`
+		err := os.WriteFile(tempCfgFile, []byte(configData), 0644)
+		require.NoError(t, err)
+		defer os.Remove(tempCfgFile)
+
+		// Copy sample dynamic config file to current directory
+		tempDynamicDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, DynamicConfigFileName), tempDynamicCfgFile)
+		defer func() {
+			err := tempDynamicDeleteFunc()
+			if err != nil {
+				t.Fatalf("deletion of temp dynamic config file failed: %v", err)
+			}
+		}()
+		require.NoError(t, err)
+
+		// Initialize environment with specified configs
+		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile))
+
+		config, err := GetConfig("5678")
+		require.NoError(t, err)
+
+		// Check extensions value
+		assert.Equal(t, 1, len(config.Extensions))
+		assert.Equal(t, agent_config.AdvancedMetricsExtensionPlugin, config.Extensions[0])
 	})
 }
 

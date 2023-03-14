@@ -526,6 +526,13 @@ func (r *result) resolveOptionValue(handler *reporter.Handler, mc *internal.Mess
 		for _, fld := range optVal {
 			// check for extension name
 			if fld.Name.IsExtension() {
+				// Confusingly, an extension reference inside a message literal cannot refer to
+				// elements in the same enclosing message without a qualifier. Basically, we
+				// treat this as if there were no message scopes, so only the package name is
+				// used for resolving relative references. (Inconsistent protoc behavior, but
+				// likely due to how it re-uses C++ text format implementation, and normal text
+				// format doesn't expect that kind of relative reference.)
+				scopes := scopes[:1] // first scope is file, the rest are enclosing messages
 				fqn, err := r.resolveExtensionName(string(fld.Name.Name.AsIdentifier()), scopes)
 				if err != nil {
 					if err := handler.HandleErrorf(r.FileNode().NodeInfo(fld.Name.Name).Start(), "%v%v", mc, err); err != nil {

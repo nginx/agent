@@ -28,6 +28,7 @@ import (
 	sdk_zip "github.com/nginx/agent/sdk/v2/zip"
 	"github.com/nginx/agent/v2/src/core"
 	loadedConfig "github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/core/payloads"
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
@@ -455,7 +456,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigValidationPending,
 				core.CommResponse,
 			},
-			// mismatch, should fail on prefligh because of the NginxConfigAction_APPLY
+			// mismatch, should fail on preflight because of the NginxConfigAction_APPLY
 			wafVersion: "3.1088.1",
 		},
 	}
@@ -528,15 +529,24 @@ func TestNginxConfigApply(t *testing.T) {
 			binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
 
 			commandClient := tutils.GetMockCommandClient(test.config)
-			conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+			conf := &loadedConfig.Config{
+				Server: loadedConfig.Server{
+					Host:     "127.0.0.1",
+					GrpcPort: 9092,
+				},
+				Features:   []string{agent_config.FeatureNginxConfig},
+				Extensions: []string{agent_config.NginxAppProtectExtensionPlugin},
+			}
 
 			pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
-				pluginUnderTest.wafLocation = auxPath
-				pluginUnderTest.wafVersion = test.wafVersion
+				pluginUnderTest.nginxAppProtectSoftwareDetails = &proto.AppProtectWAFDetails{
+					WafLocation: auxPath,
+					WafVersion:  test.wafVersion,
+				}
 			}
 
-			messagePipe := core.SetupMockMessagePipe(t, ctx, pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
 			messagePipe.Run()
@@ -606,7 +616,7 @@ func TestUploadConfigs(t *testing.T) {
 	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
 
 	pluginUnderTest := NewNginx(cmdr, binary, env, conf)
-	messagePipe := core.SetupMockMessagePipe(t, context.Background(), pluginUnderTest)
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
 	messagePipe.Process(core.NewMessage(core.DataplaneChanged, nil))
@@ -637,7 +647,7 @@ func TestDisableUploadConfigs(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
 
 	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{})
-	messagePipe := core.SetupMockMessagePipe(t, context.Background(), pluginUnderTest)
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
 	messagePipe.Process(core.NewMessage(core.DataplaneChanged, nil))
@@ -660,7 +670,7 @@ func TestNginxDetailProcUpdate(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
 
 	pluginUnderTest := NewNginx(cmdr, binary, env, &loadedConfig.Config{})
-	messagePipe := core.SetupMockMessagePipe(t, context.Background(), pluginUnderTest)
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
 	messagePipe.Process(core.NewMessage(core.NginxDetailProcUpdate, tutils.GetProcesses()))
@@ -776,7 +786,7 @@ func TestNginx_validateConfig(t *testing.T) {
 
 			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, conf)
 
-			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 			messagePipe.Run()
 
 			pluginUnderTest.validateConfig(&proto.NginxDetails{}, "123", &proto.NginxConfig{}, &sdk.ConfigApply{})
@@ -872,7 +882,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 		configApply: configApply,
 	}
 
-	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 	messagePipe.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
 	messagePipe.Run()
 
@@ -961,7 +971,7 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 		configApply: configApply,
 	}
 
-	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 	messagePipe.Process(core.NewMessage(core.NginxConfigValidationFailed, response))
 	messagePipe.Run()
 
@@ -1013,9 +1023,19 @@ func TestBlock_ConfigApply(t *testing.T) {
 	config := tutils.GetMockAgentConfig()
 	pluginUnderTest := NewNginx(commandClient, binary, env, config)
 
-	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), pluginUnderTest)
-	messagePipe.Process(core.NewMessage(core.DataplaneSoftwareDetailsUpdated, testNAPDetailsActive))
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
+	messagePipe.Process(
+		core.NewMessage(
+			core.DataplaneSoftwareDetailsUpdated,
+			payloads.NewDataplaneSoftwareDetailsUpdate(
+				agent_config.NginxAppProtectExtensionPlugin,
+				&proto.DataplaneSoftwareDetails{
+					Data: testNAPDetailsActive,
+				},
+			),
+		),
+	)
 	messagePipe.Run()
 
-	assert.Equal(t, testNAPDetailsActive.AppProtectWafDetails.WafVersion, pluginUnderTest.wafVersion)
+	assert.Equal(t, testNAPDetailsActive.AppProtectWafDetails.WafVersion, pluginUnderTest.nginxAppProtectSoftwareDetails.WafVersion)
 }

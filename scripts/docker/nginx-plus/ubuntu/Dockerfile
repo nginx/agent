@@ -6,7 +6,7 @@ ARG PACKAGES_REPO
 
 RUN echo $PACKAGES_REPO
 WORKDIR /agent
-COPY ./scripts/docker/nginx-plus/entrypoint.sh /agent/entrypoint.sh
+COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
 COPY ./nginx-agent.conf /agent/nginx-agent.conf
 
 RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
