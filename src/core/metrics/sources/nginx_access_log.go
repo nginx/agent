@@ -223,19 +223,19 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 			httpCounters = c.parseAccessLogFloatCounters("request.bytes_sent", access.BytesSent, httpCounters)
 
-			gzipRatios, upstreamRequest = c.parseAccessLogFloatTimes("gzip_ratio", access.GzipRatio, gzipRatios, upstreamRequest)
+			gzipRatios, upstreamRequest = c.parseAccessLogFloatTimes("gzip_ratio", access.GzipRatio, gzipRatios)
 
-			requestLengths, upstreamRequest = c.parseAccessLogFloatTimes("request_length", access.RequestLength, requestLengths, upstreamRequest)
+			requestLengths, upstreamRequest = c.parseAccessLogFloatTimes("request_length", access.RequestLength, requestLengths)
 
-			requestTimes, upstreamRequest = c.parseAccessLogFloatTimes("request_time", access.RequestTime, requestTimes, upstreamRequest)
+			requestTimes, upstreamRequest = c.parseAccessLogFloatTimes("request_time", access.RequestTime, requestTimes)
 
-			upstreamConnectTimes, upstreamRequest = c.parseAccessLogFloatTimes("upstream_connect_time", access.UpstreamConnectTime, upstreamConnectTimes, upstreamRequest)
+			upstreamConnectTimes, upstreamRequest = c.parseAccessLogFloatTimes("upstream_connect_time", access.UpstreamConnectTime, upstreamConnectTimes)
 
-			upstreamHeaderTimes, upstreamRequest = c.parseAccessLogFloatTimes("upstream_header_time", access.UpstreamHeaderTime, upstreamHeaderTimes, upstreamRequest)
+			upstreamHeaderTimes, upstreamRequest = c.parseAccessLogFloatTimes("upstream_header_time", access.UpstreamHeaderTime, upstreamHeaderTimes)
 
-			upstreamResponseLength, upstreamRequest = c.parseAccessLogFloatTimes("upstream_response_length", access.UpstreamResponseLength, upstreamResponseLength, upstreamRequest)
+			upstreamResponseLength, upstreamRequest = c.parseAccessLogFloatTimes("upstream_response_length", access.UpstreamResponseLength, upstreamResponseLength)
 
-			upstreamResponseTimes, upstreamRequest = c.parseAccessLogFloatTimes("upstream_response_time", access.UpstreamResponseTime, upstreamResponseTimes, upstreamRequest)
+			upstreamResponseTimes, upstreamRequest = c.parseAccessLogFloatTimes("upstream_response_time", access.UpstreamResponseTime, upstreamResponseTimes)
 
 			if access.Request != "" {
 				method, _, protocol := getParsedRequest(access.Request)
@@ -343,7 +343,8 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	}
 }
 
-func (c *NginxAccessLog) parseAccessLogFloatTimes(metricName string, field string, counter []float64, upstreamRequest bool) ([]float64, bool) {
+func (c *NginxAccessLog) parseAccessLogFloatTimes(metricName string, field string, counter []float64) ([]float64, bool) {
+	upstreamRequest := false
 	if field != "" && field != "-" {
 		if v, err := strconv.ParseFloat(field, 64); err == nil {
 			counter = append(counter, v)
@@ -437,18 +438,18 @@ func getAverageMetricValue(metricValues []float64) float64 {
 }
 
 func (c *NginxAccessLog) getHttpStatus(status string, counter map[string]float64) {
+
 	if v, err := strconv.Atoi(status); err == nil {
 		n := fmt.Sprintf("status.%dxx", v/100)
 		counter[n] = counter[n] + 1
-		if v == 403 || v == 404 || v == 500 || v == 502 || v == 503 || v == 504 {
+		switch v {
+		case 403, 404, 500, 502, 503, 504:
 			n := fmt.Sprintf("status.%d", v)
 			counter[n] = counter[n] + 1
-		}
-		if v == 499 {
+		case 499:
 			n := "status.discarded"
 			counter[n] = counter[n] + 1
-		}
-		if v == 400 {
+		case 400:
 			n := "request.malformed"
 			counter[n] = counter[n] + 1
 		}
