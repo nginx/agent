@@ -74,6 +74,10 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 
 	for _, plugin := range p.extensionPlugins {
 		for _, subscription := range plugin.Subscriptions() {
+			log.Infof("*** subscription ***")
+			log.Infof("*** subscription ***")
+			log.Infof("*** subscription ***")
+			log.Infof(subscription)
 			err := p.bus.Subscribe(subscription, plugin.Process)
 			if err != nil {
 				return err
