@@ -248,7 +248,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 				// at moment results in errror : ./main.go:245:35: undefined: agent_config.PhpFpmMetricsExtensionPlugin
 				// make: *** [local-deb-package] Error 1
 				// 
-				// agent_config points to config on pkg.go.dev instead of local changed one.
+				// agent_config points to config on pkg.go.dev instead of local changed one. Hence the above error
 				// Need to figure out this.
 				phpFpmMetricsExtensionPlugin := extensions.NewPhpFpmMetrics(env, loadedConfig, "php_fpm_metrics") 
 				//agent_config.PhpFpmMetricsExtensionPluginConfigKey
