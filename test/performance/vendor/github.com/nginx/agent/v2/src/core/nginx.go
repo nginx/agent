@@ -10,6 +10,7 @@ package core
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -317,17 +318,12 @@ func hasConfPath(files []*proto.File, confPath string) bool {
 
 func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error) {
 	if log.IsLevelEnabled(log.TraceLevel) {
-		jsonLogger := log.New()
-		jsonLogger.SetFormatter(&log.JSONFormatter{})
-		jsonLogger.WithFields(log.Fields{
-			"access_logs":     config.AccessLogs,
-			"error_logs":      config.ErrorLogs,
-			"directory_map":   config.DirectoryMap,
-			"config_contents": config.Zconfig,
-			"config_data":     config.ConfigData,
-			"action":          config.Action,
-		}).Trace("Writing config")
-		defer jsonLogger.Writer().Close()
+		var loggedConfig = *config
+		loggedConfig.Zaux = &proto.ZippedFile{}
+		jsonConfig, err := json.Marshal(loggedConfig)
+		if err == nil {
+			log.Tracef("Writing JSON config: %+v", string(jsonConfig))
+		}
 	}
 
 	details, ok := n.nginxDetailsMap[config.ConfigData.NginxId]
