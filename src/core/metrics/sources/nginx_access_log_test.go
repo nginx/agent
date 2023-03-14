@@ -261,6 +261,10 @@ func TestAccessLogStats(t *testing.T) {
 						Value: 0,
 					},
 					{
+						Name:  "nginx.upstream.request.count",
+						Value: 0,
+					},
+					{
 						Name:  "nginx.upstream.response.time",
 						Value: 0,
 					},
@@ -510,6 +514,10 @@ func TestAccessLogStats(t *testing.T) {
 					},
 					{
 						Name:  "nginx.upstream.header.time.pctl95",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.request.count",
 						Value: 0,
 					},
 					{
@@ -779,6 +787,10 @@ func TestAccessLogStats(t *testing.T) {
 					{
 						Name:  "nginx.upstream.header.time.pctl95",
 						Value: 730,
+					},
+					{
+						Name:  "nginx.upstream.request.count",
+						Value: 14,
 					},
 					{
 						Name:  "nginx.upstream.response.time",
