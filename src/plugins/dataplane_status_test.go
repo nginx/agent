@@ -37,6 +37,7 @@ const (
 var (
 	testNAPDetailsActive = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
+			PrecompiledPublication:  true,
 			WafLocation:             nap.APP_PROTECT_METADATA_FILE_PATH,
 			WafVersion:              testWAFVersion,
 			AttackSignaturesVersion: testSigDate1,
@@ -50,6 +51,7 @@ var (
 
 	testNAPDetailsDegraded = &proto.DataplaneSoftwareDetails_AppProtectWafDetails{
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
+			PrecompiledPublication:  false,
 			WafLocation:             nap.APP_PROTECT_METADATA_FILE_PATH,
 			WafVersion:              testWAFVersion,
 			AttackSignaturesVersion: testSigDate1,

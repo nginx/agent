@@ -206,7 +206,7 @@ func asSourceLocations(srcInfoProtos []*descriptorpb.SourceCodeInfo_Location) []
 func pathStr(p protoreflect.SourcePath) string {
 	var buf bytes.Buffer
 	for _, v := range p {
-		fmt.Fprintf(&buf, "%x:", v)
+		_, _ = fmt.Fprintf(&buf, "%x:", v)
 	}
 	return buf.String()
 }
@@ -1867,10 +1867,6 @@ func (r *result) FindExtensionByNumber(msg protoreflect.FullName, tag protorefle
 func (r *result) FindDescriptorByName(name protoreflect.FullName) protoreflect.Descriptor {
 	fqn := strings.TrimPrefix(string(name), ".")
 	return r.descriptors[fqn]
-}
-
-func (r *result) importsAsFiles() Files {
-	return r.deps
 }
 
 func (r *result) hasSource() bool {
