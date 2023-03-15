@@ -59,7 +59,6 @@ type Nginx struct {
 	isFeatureNginxConfigEnabled    bool
 	configApplyStatusChannel       chan *proto.Command_NginxConfigResponse
 	nginxAppProtectSoftwareDetails *proto.AppProtectWAFDetails
-	reloadMonitoringPeriod         time.Duration
 }
 
 type ConfigRollbackResponse struct {
@@ -98,7 +97,6 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 		isFeatureNginxConfigEnabled:    isFeatureNginxConfigEnabled,
 		configApplyStatusChannel:       make(chan *proto.Command_NginxConfigResponse, 1),
 		nginxAppProtectSoftwareDetails: &proto.AppProtectWAFDetails{},
-		reloadMonitoringPeriod:         10 * time.Second,
 	}
 }
 
@@ -571,7 +569,7 @@ func (n *Nginx) tailLog(errorChannel chan string, wg *sync.WaitGroup, ctx contex
 	data := make(chan string, 1024)
 	go t.Tail(ctx, data)
 
-	tick := time.NewTicker(n.reloadMonitoringPeriod)
+	tick := time.NewTicker(n.config.Nginx.ConfigReloadMonitoringPeriod)
 	defer tick.Stop()
 
 	for {

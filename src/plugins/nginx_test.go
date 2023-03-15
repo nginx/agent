@@ -1064,8 +1064,8 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 	binary.On("GetErrorLogs").Return(map[string]string{errorLogFileName: ""}).Once()
 
 	config := tutils.GetMockAgentConfig()
+	config.Nginx.ConfigReloadMonitoringPeriod = 300 * time.Millisecond
 	pluginUnderTest := NewNginx(commandClient, binary, env, config)
-	pluginUnderTest.reloadMonitoringPeriod = 300 * time.Millisecond
 
 	errorsFound := pluginUnderTest.monitorErrorLogs()
 	assert.Equal(t, 0, len(errorsFound))
@@ -1077,7 +1077,7 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 		errorsChannel <- errorsFound
 	}()
 
-	time.Sleep(pluginUnderTest.reloadMonitoringPeriod / 4)
+	time.Sleep(config.Nginx.ConfigReloadMonitoringPeriod / 2)
 
 	_, err = errorLogFile.WriteString("2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)")
 	require.NoError(t, err, "Error writing data to error log file")
@@ -1087,7 +1087,7 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 		case x := <-errorsChannel:
 			assert.Equal(t, 1, len(x))
 			return
-		case <-time.After(10 * time.Second):
+		case <-time.After(config.Nginx.ConfigReloadMonitoringPeriod * 2):
 			assert.Fail(t, "Expected error to be reported")
 			return
 		}

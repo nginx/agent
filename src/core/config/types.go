@@ -79,10 +79,11 @@ type TLSConfig struct {
 
 // Nginx settings
 type Nginx struct {
-	ExcludeLogs         string `mapstructure:"exclude_logs" yaml:"-"`
-	Debug               bool   `mapstructure:"debug" yaml:"-"`
-	NginxCountingSocket string `mapstructure:"socket" yaml:"-"`
-	NginxClientVersion  int    `mapstructure:"client_version" yaml:"-"`
+	ExcludeLogs                  string        `mapstructure:"exclude_logs" yaml:"-"`
+	Debug                        bool          `mapstructure:"debug" yaml:"-"`
+	NginxCountingSocket          string        `mapstructure:"socket" yaml:"-"`
+	NginxClientVersion           int           `mapstructure:"client_version" yaml:"-"`
+	ConfigReloadMonitoringPeriod time.Duration `mapstructure:"config_reload_monitoring_period" yaml:"-"`
 }
 
 type Dataplane struct {
