@@ -543,9 +543,7 @@ func (n *Nginx) monitorErrorLogs() []string {
 
 	for logFile := range errorLogs {
 		wg.Add(1)
-		logCTX, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		go n.tailLog(errorChannel, wg, logCTX, logFile)
+		go n.tailLog(errorChannel, wg, logFile)
 	}
 
 	wg.Wait()
@@ -559,13 +557,18 @@ func (n *Nginx) monitorErrorLogs() []string {
 	return errorsFound
 }
 
-func (n *Nginx) tailLog(errorChannel chan string, wg *sync.WaitGroup, ctx context.Context, logFile string) {
+func (n *Nginx) tailLog(errorChannel chan string, wg *sync.WaitGroup, logFile string) {
 	defer wg.Done()
+
 	t, err := tailer.NewTailer(logFile)
 	if err != nil {
 		log.Errorf("Unable to tail %q: %v", logFile, err)
 		return
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	data := make(chan string, 1024)
 	go t.Tail(ctx, data)
 
@@ -582,12 +585,6 @@ func (n *Nginx) tailLog(errorChannel chan string, wg *sync.WaitGroup, ctx contex
 				}
 			}
 		case <-tick.C:
-			return
-		case <-ctx.Done():
-			err := ctx.Err()
-			if err != nil {
-				log.Errorf("Nginx: error in done context tailLog %v", err)
-			}
 			return
 		}
 	}
