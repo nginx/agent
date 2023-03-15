@@ -69,7 +69,7 @@ message SecurityViolationEvent {
   // DEPRECATED
   reserved 39;
   reserved "NginxID";
-  
+
   string PolicyName = 1 [(gogoproto.jsontag) = "policy_name"];
   string SupportID = 2 [(gogoproto.jsontag) = "support_id"];
 
