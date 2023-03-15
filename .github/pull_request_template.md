@@ -7,6 +7,8 @@ Describe the use case and detail of the change. If this PR addresses an issue on
 Before creating a PR, run through this checklist and mark each as complete.
 
 - [ ] I have read the [`CONTRIBUTING`](https://github.com/nginx/agent/blob/main/docs/CONTRIBUTING.md) document
+- [ ] I have ran ```make install-tools``` and committed any dependency changes
 - [ ] If applicable, I have added tests that prove my fix is effective or that my feature works
 - [ ] If applicable, I have checked that any relevant tests pass after adding my changes
-- [ ] I have updated any relevant documentation ([`README.md`](https://github.com/nginx/agent/blob/main/README.md))
+- [ ] If applicable, I have updated any relevant documentation ([`README.md`](https://github.com/nginx/agent/blob/main/README.md))
+- [ ] If applicable, I have tested my cross-platform changes on Ubuntu 22, Redhat 8, SUSE 15 and FreeBSD 13
