@@ -598,22 +598,82 @@ func processors() (res []*proto.CpuInfo) {
 }
 
 func processorCache(item cpu.InfoStat) map[string]string {
-	// Find a library that supports multiple CPUs
-	cache := map[string]string{
-		// values are in bytes
-		"L1d":       fmt.Sprintf("%v", cpuid.CPU.Cache.L1D),
-		"L1i":       fmt.Sprintf("%v", cpuid.CPU.Cache.L1D),
-		"L2":        fmt.Sprintf("%v", cpuid.CPU.Cache.L2),
-		"L3":        fmt.Sprintf("%v", cpuid.CPU.Cache.L3),
-		"Features:": strings.Join(cpuid.CPU.FeatureSet(), ","),
-		// "Flags:": strings.Join(item.Flags, ","),
-		"Cacheline bytes:": fmt.Sprintf("%v", cpuid.CPU.CacheLine),
-	}
-
+	cache := getProcessorCacheInfo(cpuid.CPU)
 	if cpuid.CPU.Supports(cpuid.SSE, cpuid.SSE2) {
 		cache["SIMD 2:"] = "Streaming SIMD 2 Extensions"
 	}
 	return cache
+}
+
+func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
+	cache := getDefaultProcessorCacheInfo(cpuInfo)
+
+	out, err := exec.Command("lscpu").Output()
+	if err != nil {
+		log.Warnf("Install lscpu on host to get processor info: %v", err)
+		return cache
+	}
+
+	return parseLscpu(string(out), cache)
+}
+
+func parseLscpu(lscpuInfo string, cache map[string]string) map[string]string {
+	lscpuInfos := strings.TrimSpace(lscpuInfo)
+	lines := strings.Split(lscpuInfos, "\n")
+	lscpuInfoMap := map[string]string{}
+	for _, line := range lines {
+		fields := strings.Split(line, ":")
+		if len(fields) < 2 {
+			continue
+		}
+		key := strings.TrimSpace(fields[0])
+		value := strings.TrimSpace(fields[1])
+		lscpuInfoMap[key] = strings.Trim(value, "\"")
+	}
+
+	if l1dCache, ok := lscpuInfoMap["L1d cache"]; ok {
+		cache["L1d"] = l1dCache
+	}
+	if l1iCache, ok := lscpuInfoMap["L1i cache"]; ok {
+		cache["L1i"] = l1iCache
+	}
+	if l2Cache, ok := lscpuInfoMap["L2 cache"]; ok {
+		cache["L2"] = l2Cache
+	}
+	if l3Cache, ok := lscpuInfoMap["L3 cache"]; ok {
+		cache["L3"] = l3Cache
+	}
+
+	return cache
+}
+
+func getDefaultProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
+	// Find a library that supports multiple CPUs
+	return map[string]string{
+		"L1d":       formatBytes(cpuInfo.Cache.L1D),
+		"L1i":       formatBytes(cpuInfo.Cache.L1D),
+		"L2":        formatBytes(cpuInfo.Cache.L2),
+		"L3":        formatBytes(cpuInfo.Cache.L3),
+		"Features:": strings.Join(cpuInfo.FeatureSet(), ","),
+		// "Flags:": strings.Join(item.Flags, ","),
+		"Cacheline bytes:": fmt.Sprintf("%v", cpuInfo.CacheLine),
+	}
+}
+
+func formatBytes(bytes int) string {
+	if bytes <= -1 {
+		return "-1"
+	}
+	mib := 1024 * 1024
+	kib := 1024
+
+	if bytes >= mib {
+		return fmt.Sprint(bytes/mib) + " MiB"
+	} else if bytes >= kib {
+		return fmt.Sprint(bytes/kib) + " KiB"
+	} else {
+		return fmt.Sprint(bytes) + " B"
+	}
 }
 
 func virtualization() (string, string) {
