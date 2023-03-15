@@ -32,6 +32,7 @@ import (
 	loadedConfig "github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/payloads"
 	tutils "github.com/nginx/agent/v2/test/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -1083,6 +1084,7 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 
 	_, err = errorLogFile.WriteString("2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)")
 	require.NoError(t, err, "Error writing data to error log file")
+	log.Error("Write")
 
 	for {
 		select {

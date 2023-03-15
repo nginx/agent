@@ -548,6 +548,7 @@ func (n *Nginx) monitorErrorLogs() []string {
 
 	wg.Wait()
 	close(errorChannel)
+	log.Error("Done")
 
 	errorsFound := []string{}
 	for errorLog := range errorChannel {
@@ -574,10 +575,12 @@ func (n *Nginx) tailLog(errorChannel chan string, wg *sync.WaitGroup, logFile st
 
 	tick := time.NewTicker(n.config.Nginx.ConfigReloadMonitoringPeriod)
 	defer tick.Stop()
+	log.Errorf("ConfigReloadMonitoringPeriod %v", n.config.Nginx.ConfigReloadMonitoringPeriod)
 
 	for {
 		select {
 		case d := <-data:
+			log.Errorf("Data %v", d)
 			for _, errorRegex := range reloadErrorList {
 				if errorRegex.MatchString(d) {
 					errorChannel <- d
