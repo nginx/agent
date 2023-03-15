@@ -1067,13 +1067,13 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 	config.Nginx.ConfigReloadMonitoringPeriod = 300 * time.Millisecond
 	pluginUnderTest := NewNginx(commandClient, binary, env, config)
 
-	errorsFound := pluginUnderTest.monitorErrorLogs()
-	assert.Equal(t, 0, len(errorsFound))
+	errorsFound := pluginUnderTest.monitor(tutils.GetDetailsMap()["12345"])
+	assert.Equal(t, "", errorsFound)
 
-	errorsChannel := make(chan []string, 1)
+	errorsChannel := make(chan error, 1)
 
 	go func() {
-		errorsFound := pluginUnderTest.monitorErrorLogs()
+		errorsFound := pluginUnderTest.monitor(tutils.GetDetailsMap()["12345"])
 		errorsChannel <- errorsFound
 	}()
 
@@ -1085,7 +1085,7 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 	for {
 		select {
 		case x := <-errorsChannel:
-			assert.Equal(t, 1, len(x))
+			assert.Equal(t, "", x)
 			return
 		case <-time.After(config.Nginx.ConfigReloadMonitoringPeriod * 2):
 			assert.Fail(t, "Expected error to be reported")

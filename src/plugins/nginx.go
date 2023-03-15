@@ -472,15 +472,15 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *pr
 	log.Debug("Enabling file watcher")
 	n.messagePipeline.Process(core.NewMessage(core.FileWatcherEnabled, true))
 
-	var monitoringErrors []string
+	var monitoringError error
 	reloadErr := n.nginxBinary.Reload(response.nginxDetails.ProcessId, response.nginxDetails.ProcessPath)
 	if reloadErr != nil {
 		nginxConfigStatusMessage = fmt.Sprintf("Config apply failed (write): %v", reloadErr)
 		log.Errorf(nginxConfigStatusMessage)
 	} else {
-		monitoringErrors = n.monitorErrorLogs()
-		if len(monitoringErrors) > 0 {
-			nginxConfigStatusMessage = fmt.Sprintf("Config apply failed. The following errors were found in the NGINX error logs: %v", monitoringErrors)
+		monitoringError = n.monitor(response.nginxDetails)
+		if (monitoringError != nil) {
+			nginxConfigStatusMessage = fmt.Sprintf("Config apply failed. The following errors were found in the NGINX error logs: %v", monitoringError)
 		} else {
 			log.Info("No errors found in NGINX errors logs after NGINX reload")
 		}
@@ -496,7 +496,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *pr
 	n.messagePipeline.Process(core.NewMessage(core.NginxReloadComplete, nginxReloadEventMeta))
 
 	nginxConfigStatus := proto.NginxConfigStatus_OK
-	if reloadErr != nil || len(monitoringErrors) > 0 {
+	if reloadErr != nil || monitoringError != nil {
 		nginxConfigStatus = proto.NginxConfigStatus_ERROR
 	}
 
@@ -532,7 +532,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) *pr
 	return status
 }
 
-func (n *Nginx) monitorErrorLogs() []string {
+func (n *Nginx) monitor(details *proto.NginxDetails) error {
 	errorLogs := n.nginxBinary.GetErrorLogs()
 	if len(errorLogs) == 0 {
 		log.Warn("Skipping error log validation for NGINX reload because no error logs have been configured in the NGINX configuration")
@@ -546,6 +546,9 @@ func (n *Nginx) monitorErrorLogs() []string {
 		go n.tailLog(errorChannel, wg, logFile)
 	}
 
+	wg.Add(1)
+	go n.monitorPids(errorChannel, wg)
+
 	wg.Wait()
 	close(errorChannel)
 
@@ -554,7 +557,34 @@ func (n *Nginx) monitorErrorLogs() []string {
 		errorsFound = append(errorsFound, errorLog)
 	}
 
-	return errorsFound
+	return errors.New(errorsFound[0])
+}
+
+func (n *Nginx) monitorPids(errorChannel chan string, wg *sync.WaitGroup) {
+	// oldWorkers := utils.GetChildPids(v.Pid)
+	ctx, cncl := context.WithTimeout(context.Background(), 90 * time.Second)
+	defer cncl()
+		t := time.NewTicker(90 * time.Second)
+		for {
+			select {
+			case <-ctx.Done():
+				// log.WithContext(chtx).WithFields(logrus.Fields{
+				// 	"master": v,
+				// 	"pid":    v.Pid,
+				// 	"err":    chtx.Err(),
+				// }).Trace("Context cancelled while waiting for new workers")
+				wg.Done()
+				errorChannel <- "waiting for new workers timed out"
+				return 
+			case <-t.C:
+				// currentWorkers := utils.GetChildPids(v.Pid)
+				// if readyBasedOnWorkers(oldWorkers, currentWorkers) {
+					errorChannel <- ""
+					wg.Done()
+					return
+				//}
+			}
+		}
 }
 
 func (n *Nginx) tailLog(errorChannel chan string, wg *sync.WaitGroup, logFile string) {
