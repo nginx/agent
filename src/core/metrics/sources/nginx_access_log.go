@@ -212,6 +212,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 		case d := <-data:
 			access, err := tailer.NewNginxAccessItem(d)
 			upstreamRequest := false
+			upstreamLength := 0
 			if err != nil {
 				c.logger.Log(fmt.Sprintf("Error decoding access log entry, %v", err))
 				continue
@@ -223,19 +224,19 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 			httpCounters = c.parseAccessLogFloatCounters("request.bytes_sent", access.BytesSent, httpCounters)
 
-			gzipRatios, upstreamRequest = c.parseAccessLogFloatTimes("gzip_ratio", access.GzipRatio, gzipRatios)
+			gzipRatios = c.parseAccessLogFloatTimes("gzip_ratio", access.GzipRatio, gzipRatios)
 
-			requestLengths, upstreamRequest = c.parseAccessLogFloatTimes("request_length", access.RequestLength, requestLengths)
+			requestLengths = c.parseAccessLogFloatTimes("request_length", access.RequestLength, requestLengths)
 
-			requestTimes, upstreamRequest = c.parseAccessLogFloatTimes("request_time", access.RequestTime, requestTimes)
+			requestTimes = c.parseAccessLogFloatTimes("request_time", access.RequestTime, requestTimes)
 
-			upstreamConnectTimes, upstreamRequest = c.parseAccessLogFloatTimes("upstream_connect_time", access.UpstreamConnectTime, upstreamConnectTimes)
+			upstreamConnectTimes, upstreamRequest, upstreamLength = c.parseAccessLogUpstream("upstream_connect_time", access.UpstreamConnectTime, upstreamConnectTimes, upstreamRequest, upstreamLength)
 
-			upstreamHeaderTimes, upstreamRequest = c.parseAccessLogFloatTimes("upstream_header_time", access.UpstreamHeaderTime, upstreamHeaderTimes)
+			upstreamHeaderTimes, upstreamRequest, upstreamLength = c.parseAccessLogUpstream("upstream_header_time", access.UpstreamHeaderTime, upstreamHeaderTimes, upstreamRequest, upstreamLength)
 
-			upstreamResponseLength, upstreamRequest = c.parseAccessLogFloatTimes("upstream_response_length", access.UpstreamResponseLength, upstreamResponseLength)
+			upstreamResponseLength, upstreamRequest, upstreamLength = c.parseAccessLogUpstream("upstream_response_length", access.UpstreamResponseLength, upstreamResponseLength, upstreamRequest, upstreamLength)
 
-			upstreamResponseTimes, upstreamRequest = c.parseAccessLogFloatTimes("upstream_response_time", access.UpstreamResponseTime, upstreamResponseTimes)
+			upstreamResponseTimes, upstreamRequest, upstreamLength = c.parseAccessLogUpstream("upstream_response_time", access.UpstreamResponseTime, upstreamResponseTimes, upstreamRequest, upstreamLength)
 
 			if access.Request != "" {
 				method, _, protocol := getParsedRequest(access.Request)
@@ -256,12 +257,16 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 			if access.UpstreamStatus != "" && access.UpstreamStatus != "-" {
 				upstreamRequest = true
-				if v, err := strconv.Atoi(access.UpstreamStatus); err == nil {
-					n := fmt.Sprintf("upstream.status.%dxx", v/100)
-					upstreamCounters[n] = upstreamCounters[n] + 1
-				} else {
-					log.Debugf("Error getting upstream status value from access logs, %v", err)
+				statusValues := strings.Split(access.UpstreamStatus, ",")
+				for _, value := range statusValues {
+					if v, err := strconv.Atoi(value); err == nil {
+						n := fmt.Sprintf("upstream.status.%dxx", v/100)
+						upstreamCounters[n] = upstreamCounters[n] + 1
+					} else {
+						log.Debugf("Error getting upstream status value from access logs, %v", err)
+					}
 				}
+
 			}
 
 			if access.UpstreamCacheStatus != "" && access.UpstreamCacheStatus != "-" {
@@ -276,6 +281,10 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 			if upstreamRequest == true {
 				upstreamCounters["upstream.request.count"] = upstreamCounters["upstream.request.count"] + 1
+			}
+
+			if upstreamLength > 1 {
+				upstreamCounters["upstream.next.count"] = upstreamCounters["upstream.next.count"] + (float64(upstreamLength) - 1)
 			}
 
 			mu.Unlock()
@@ -343,29 +352,45 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	}
 }
 
-func (c *NginxAccessLog) parseAccessLogFloatTimes(metricName string, field string, counter []float64) ([]float64, bool) {
-	upstreamRequest := false
+func (c *NginxAccessLog) parseAccessLogFloatTimes(metricName string, field string, counter []float64) []float64 {
 	if field != "" && field != "-" {
 		if v, err := strconv.ParseFloat(field, 64); err == nil {
 			counter = append(counter, v)
-			if strings.Contains(metricName, "Upstream") {
-				upstreamRequest = true
-			}
-			return counter, upstreamRequest
+			return counter
 		} else {
-			log.Debugf("Error getting %s value from access logs: %v", metricName, err)
+			c.logger.Log(fmt.Sprintf("Error getting %s value from access logs, %v", metricName, err))
 		}
 	}
-	return counter, upstreamRequest
+	return counter
 }
 
-func (c *NginxAccessLog) parseAccessLogFloatCounters(counterName string, field string, counters map[string]float64) map[string]float64 {
+func (c *NginxAccessLog) parseAccessLogUpstream(metricName string, field string, counter []float64, upstreamRequest bool, upstreamLength int) ([]float64, bool, int) {
+	if field != "" && field != "-" {
+		fieldValues := strings.Split(field, ", ")
+		upstreamLength = len(fieldValues)
+		for _, value := range fieldValues {
+			if value != "" && value != "-" {
+				if v, err := strconv.ParseFloat(value, 64); err == nil {
+					counter = append(counter, v)
+					upstreamRequest = true
+				} else {
+					c.logger.Log(fmt.Sprintf("Error getting %s value from access logs, %v", metricName, err))
+				}
+			}
+		}
+		return counter, upstreamRequest, upstreamLength
+
+	}
+	return counter, upstreamRequest, upstreamLength
+}
+
+func (c *NginxAccessLog) parseAccessLogFloatCounters(metricName string, field string, counters map[string]float64) map[string]float64 {
 	if field != "" {
 		if v, err := strconv.ParseFloat(field, 64); err == nil {
-			counters[counterName] = v + counters[counterName]
+			counters[metricName] = v + counters[metricName]
 			return counters
 		} else {
-			c.logger.Log(fmt.Sprintf("Error getting %s value from access logs, %v", counterName, err))
+			c.logger.Log(fmt.Sprintf("Error getting %s value from access logs, %v", metricName, err))
 		}
 	}
 	return counters
@@ -565,6 +590,7 @@ func getDefaultCounters() (map[string]float64, map[string]float64, map[string]fl
 		"upstream.header.time.median":   0,
 		"upstream.header.time.pctl95":   0,
 		"upstream.request.count":        0,
+		"upstream.next.count":           0,
 		"upstream.response.time":        0,
 		"upstream.response.time.count":  0,
 		"upstream.response.time.max":    0,

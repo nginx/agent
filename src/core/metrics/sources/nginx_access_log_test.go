@@ -257,11 +257,15 @@ func TestAccessLogStats(t *testing.T) {
 						Value: 0,
 					},
 					{
-						Name:  "nginx.upstream.response.length",
+						Name:  "nginx.upstream.request.count",
 						Value: 0,
 					},
 					{
-						Name:  "nginx.upstream.request.count",
+						Name:  "nginx.upstream.next.count",
+						Value: 0,
+					},
+					{
+						Name:  "nginx.upstream.response.length",
 						Value: 0,
 					},
 					{
@@ -517,6 +521,10 @@ func TestAccessLogStats(t *testing.T) {
 						Value: 0,
 					},
 					{
+						Name:  "nginx.upstream.next.count",
+						Value: 0,
+					},
+					{
 						Name:  "nginx.upstream.request.count",
 						Value: 0,
 					},
@@ -599,8 +607,8 @@ func TestAccessLogStats(t *testing.T) {
 			"full_access_log_test",
 			`$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time" "$gzip_ratio" "$server_protocol" "$upstream_connect_time" "$upstream_header_time" "$upstream_response_length" "$upstream_response_time" "$upstream_status" "$upstream_cache_status"`,
 			[]string{
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"10\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.00\" \"200\" \"HIT\"\n",
-				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"POST /nginx_status HTTP/1.1\" 201 98 \"-\" \"Go-http-client/1.1\" \"-\" \"250\" \"110\" \"0.300\" \"20\" \"HTTP/1.1\" \"350\" \"730\" \"28\" \"0.01\" \"201\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"10\" \"HTTP/1.1\" \"350, 0.001, 0.02, -\" \"500, 0.02, -, 20\" \"28, 0, 0, 2\" \"0.00, 0.03, 0.04, -\" \"200\" \"HIT\"\n",
+				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"POST /nginx_status HTTP/1.1\" 201 98 \"-\" \"Go-http-client/1.1\" \"-\" \"250\" \"110\" \"0.300\" \"20\" \"HTTP/1.1\" \"350, 0.01\" \"730, 80\" \"28, 28\" \"0.01, 0.02\" \"201\" \"HIT\"\n",
 				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.00\" \"200\" \"HIT\"\n",
 				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"DELETE /nginx_status HTTP/1.1\" 400 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"350\" \"500\" \"28\" \"0.03\" \"400\" \"MISS\"\n",
 				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"DELETE /nginx_status HTTP/1.1\" 403 98 \"-\" \"Go-http-client/1.1\" \"-\" \"200\" \"100\" \"0.200\" \"-\" \"HTTP/1.1\" \"100\" \"500\" \"28\" \"0.00\" \"403\" \"HIT\"\n",
@@ -750,11 +758,11 @@ func TestAccessLogStats(t *testing.T) {
 					},
 					{
 						Name:  "nginx.upstream.connect.time",
-						Value: 514.2857142857143,
+						Value: 423.53123529411766,
 					},
 					{
 						Name:  "nginx.upstream.connect.time.count",
-						Value: 14,
+						Value: 17,
 					},
 					{
 						Name:  "nginx.upstream.connect.time.max",
@@ -770,11 +778,11 @@ func TestAccessLogStats(t *testing.T) {
 					},
 					{
 						Name:  "nginx.upstream.header.time",
-						Value: 588.9285714285714,
+						Value: 490.88352941176475,
 					},
 					{
 						Name:  "nginx.upstream.header.time.count",
-						Value: 14,
+						Value: 17,
 					},
 					{
 						Name:  "nginx.upstream.header.time.max",
@@ -793,16 +801,20 @@ func TestAccessLogStats(t *testing.T) {
 						Value: 14,
 					},
 					{
+						Name:  "nginx.upstream.next.count",
+						Value: 4,
+					},
+					{
 						Name:  "nginx.upstream.response.time",
-						Value: 0.005,
+						Value: 0.009411764705882354,
 					},
 					{
 						Name:  "nginx.upstream.response.time.count",
-						Value: 14,
+						Value: 17,
 					},
 					{
 						Name:  "nginx.upstream.response.time.max",
-						Value: 0.03,
+						Value: 0.04,
 					},
 					{
 						Name:  "nginx.upstream.response.time.median",
@@ -810,11 +822,11 @@ func TestAccessLogStats(t *testing.T) {
 					},
 					{
 						Name:  "nginx.upstream.response.time.pctl95",
-						Value: 0.02,
+						Value: 0.03,
 					},
 					{
 						Name:  "nginx.upstream.response.length",
-						Value: 28,
+						Value: 23.444444444444443,
 					},
 					{
 						Name:  "nginx.upstream.status.1xx",
