@@ -262,14 +262,14 @@ image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and ng
 oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
-	--no-cache -f ./scripts/docker/nginx-oss/${OS_RELEASE}/Dockerfile \
+	--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
 	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
 	--build-arg BASE_IMAGE=${BASE_IMAGE} \
-	--build-arg ENTRY_POINT=./scripts/docker/nginx-oss/entrypoint.sh
+	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG
 	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \
-		$(CONTAINER_CLITOOL) run --mount type=bind,source=${PWD}/nginx-agent.conf,target=/etc/nginx-agent/nginx-agent.conf ${IMAGE_TAG}
+		$(CONTAINER_CLITOOL) run -p 127.0.0.1:8081:8081/tcp --mount type=bind,source=${PWD}/nginx-agent.conf,target=/etc/nginx-agent/nginx-agent.conf ${IMAGE_TAG}
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Grafana Example Dashboard Targets                                                                               #

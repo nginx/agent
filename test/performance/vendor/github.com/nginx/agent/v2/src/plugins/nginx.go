@@ -43,7 +43,8 @@ const (
 var (
 	validationTimeout = 15 * time.Second
 	reloadErrorList   = []*re.Regexp{
-		re.MustCompile(`.*Address already in use.*`),
+		re.MustCompile(`.*bind\(\) to .* failed \(98: Address already in use\).*`),
+		re.MustCompile(`.*bind\(\) to .* failed \(98: Unknown error\).*`),
 	}
 )
 
