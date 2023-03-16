@@ -333,7 +333,7 @@ github.com/emirpasic/gods/utils
 # github.com/envoyproxy/protoc-gen-validate v0.3.0-java
 ## explicit
 github.com/envoyproxy/protoc-gen-validate/validate
-# github.com/evilmartians/lefthook v1.3.4
+# github.com/evilmartians/lefthook v1.3.5
 ## explicit; go 1.19
 github.com/evilmartians/lefthook
 github.com/evilmartians/lefthook/cmd

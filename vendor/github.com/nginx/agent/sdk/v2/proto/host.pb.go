@@ -38,7 +38,7 @@ type HostInfo struct {
 	OsType string `protobuf:"bytes,5,opt,name=os_type,json=osType,proto3" json:"os-type"`
 	// Host UUID
 	Uuid string `protobuf:"bytes,6,opt,name=uuid,proto3" json:"uuid"`
-	// The native cpu architecture queried at runtime, as returned by `uname -m` or empty string in case of error
+	// The native cpu architecture queried at runtime, as returned by `uname -a` or empty string in case of error
 	Uname string `protobuf:"bytes,7,opt,name=uname,proto3" json:"uname"`
 	// List of disk partitions
 	Partitons []*DiskPartition `protobuf:"bytes,8,rep,name=partitons,proto3" json:"disk_partitions"`
