@@ -71,13 +71,13 @@ jobs:
       matrix:
         container:
         - image: "rockylinux"
-          version: "8"
+          version: "8-minimal"
         - image: "rockylinux"
-          version: "9"
+          version: "9-minimal"
         - image: "almalinux"
-          version: "8"
+          version: "8-minimal"
         - image: "almalinux"
-          version: "9"
+          version: "9-minimal"
         - image: "ubuntu"
           version: "22.04"
     steps:
