@@ -278,13 +278,14 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				c.getHttpStatus(access.Status, httpCounters)
 			}
 
+			if access.UpstreamConnectTime != "" || access.UpstreamHeaderTime != "" || access.UpstreamResponseTime != "" {
+				upstreamTimes := []string{access.UpstreamConnectTime, access.UpstreamHeaderTime, access.UpstreamResponseTime}
+				upstreamRequest, upstreamCounters = getUpstreamNextCount(upstreamTimes, upstreamCounters)
+			}
+
 			if upstreamRequest == true {
 				upstreamCounters["upstream.request.count"] = upstreamCounters["upstream.request.count"] + 1
 			}
-
-			upstreamTimes := []string{access.UpstreamConnectTime, access.UpstreamHeaderTime, access.UpstreamResponseTime}
-
-			upstreamRequest, upstreamCounters = getUpstreamNextCount(upstreamTimes, upstreamCounters)
 
 			mu.Unlock()
 
@@ -351,9 +352,9 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	}
 }
 
-func getUpstreamNextCount(metricValue []string, upstreamCounters map[string]float64) (bool, map[string]float64) {
+func getUpstreamNextCount(metricValues []string, upstreamCounters map[string]float64) (bool, map[string]float64) {
 	upstreamRequest := false
-	for _, upstreamTimes := range metricValue {
+	for _, upstreamTimes := range metricValues {
 		if upstreamTimes != "" && upstreamTimes != "-" {
 			upstreamRequest = true
 			times := strings.Split(upstreamTimes, ", ")
