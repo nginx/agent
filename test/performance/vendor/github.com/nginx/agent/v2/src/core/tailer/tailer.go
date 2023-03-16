@@ -108,7 +108,14 @@ func (t *Tailer) Tail(ctx context.Context, data chan<- string) {
 			data <- line.Text
 
 		case <-ctx.Done():
-			log.Trace("tailer is done")
+			ctxErr := ctx.Err()
+			switch ctxErr {
+			case context.DeadlineExceeded:
+				log.Tracef("Tailer cancelled. Deadline exceeded, %v", ctxErr)
+			case context.Canceled:
+				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
+			}
+			log.Trace("Tailer is done")
 			return
 		}
 	}
@@ -130,7 +137,14 @@ func (t *PatternTailer) Tail(ctx context.Context, data chan<- map[string]string)
 				data <- l
 			}
 		case <-ctx.Done():
-			log.Trace("tailer is done")
+			ctxErr := ctx.Err()
+			switch ctxErr {
+			case context.DeadlineExceeded:
+				log.Tracef("Tailer cancelled because deadline was exceeded, %v", ctxErr)
+			case context.Canceled:
+				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
+			}
+			log.Error("Tailer is done")
 			return
 		}
 	}

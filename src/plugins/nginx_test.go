@@ -1064,7 +1064,7 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 	binary.On("GetErrorLogs").Return(map[string]string{errorLogFileName: ""}).Once()
 
 	config := tutils.GetMockAgentConfig()
-	config.Nginx.ConfigReloadMonitoringPeriod = 300 * time.Millisecond
+	config.Nginx.ConfigReloadMonitoringPeriod = 500 * time.Millisecond
 	pluginUnderTest := NewNginx(commandClient, binary, env, config)
 
 	errorsFound := pluginUnderTest.monitor(tutils.GetDetailsMap()["12345"])
@@ -1072,6 +1072,7 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 
 	errorsChannel := make(chan error, 1)
 
+	// Validate that errors in the logs returned
 	go func() {
 		errorsFound := pluginUnderTest.monitor(tutils.GetDetailsMap()["12345"])
 		errorsChannel <- errorsFound
