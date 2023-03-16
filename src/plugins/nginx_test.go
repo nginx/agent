@@ -163,9 +163,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
@@ -196,9 +196,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
@@ -229,9 +229,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
@@ -282,9 +282,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "3.1088.2",
@@ -319,9 +319,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
@@ -352,9 +352,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
@@ -405,9 +405,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			// mismatch, test should still pass because of the NginxConfigAction_FORCE
@@ -818,9 +818,9 @@ func TestNginx_completeConfigApply(t *testing.T) {
 		core.NginxConfigValidationSucceeded,
 		core.NginxPluginConfigured,
 		core.NginxInstancesFound,
+		core.NginxReloadComplete,
 		core.CommResponse,
 		core.FileWatcherEnabled,
-		core.NginxReloadComplete,
 		core.NginxConfigApplySucceeded,
 	}
 
@@ -856,7 +856,16 @@ func TestNginx_completeConfigApply(t *testing.T) {
 		},
 	)
 
-	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+	conf := &loadedConfig.Config{
+		Server: loadedConfig.Server{
+			Host:     "127.0.0.1",
+			GrpcPort: 9092,
+		},
+		Features: []string{agent_config.FeatureNginxConfig},
+		Nginx: loadedConfig.Nginx{
+			ConfigReloadMonitoringPeriod: 100 * time.Millisecond,
+		},
+	}
 
 	pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 
@@ -1067,15 +1076,15 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 	config.Nginx.ConfigReloadMonitoringPeriod = 500 * time.Millisecond
 	pluginUnderTest := NewNginx(commandClient, binary, env, config)
 
-	errorsFound := pluginUnderTest.monitor(tutils.GetDetailsMap()["12345"])
-	assert.Equal(t, "", errorsFound)
+	errorFound := pluginUnderTest.monitor(tutils.GetDetailsMap()["12345"])
+	assert.NoError(t, errorFound)
 
 	errorsChannel := make(chan error, 1)
 
 	// Validate that errors in the logs returned
 	go func() {
-		errorsFound := pluginUnderTest.monitor(tutils.GetDetailsMap()["12345"])
-		errorsChannel <- errorsFound
+		errorFound := pluginUnderTest.monitor(tutils.GetDetailsMap()["12345"])
+		errorsChannel <- errorFound
 	}()
 
 	time.Sleep(config.Nginx.ConfigReloadMonitoringPeriod / 2)
@@ -1086,7 +1095,7 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 	for {
 		select {
 		case x := <-errorsChannel:
-			assert.Equal(t, "", x)
+			assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x.Error())
 			return
 		case <-time.After(config.Nginx.ConfigReloadMonitoringPeriod * 2):
 			assert.Fail(t, "Expected error to be reported")
