@@ -147,8 +147,8 @@ github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.m
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/envoyproxy/protoc-gen-validate v0.3.0-java h1:bV5JGEB1ouEzZa0hgVDFFiClrUEuGWRaAc/3mxR2QK0=
 github.com/envoyproxy/protoc-gen-validate v0.3.0-java/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/evilmartians/lefthook v1.3.5 h1:K+wkFYtf1+oNe/gguNEGly1jXlUmfYIMYaZ7A43QZjQ=
-github.com/evilmartians/lefthook v1.3.5/go.mod h1:X4o0AX2Jh9SVFyxyDMoJb6p8LmzzqGGfNkrcg1FiDt8=
+github.com/evilmartians/lefthook v1.3.6 h1:xeSQszyJ4eJ/LPbg3zyH7jg6sK01sS0tJEnXT9OOi50=
+github.com/evilmartians/lefthook v1.3.6/go.mod h1:X4o0AX2Jh9SVFyxyDMoJb6p8LmzzqGGfNkrcg1FiDt8=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.14.1 h1:qfhVLaG5s+nCROl1zJsZRxFeYrHLqWroPOQ8BWiNb4w=
 github.com/fatih/color v1.14.1/go.mod h1:2oHN61fhTpgcxD3TSWCgKDiH1+x4OiDVVGH8WlgGZGg=

@@ -8,6 +8,7 @@
 package core
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -469,17 +470,55 @@ func TestProcessors(t *testing.T) {
 	assert.Equal(t, "arm64", processorInfo[0].GetArchitecture())
 }
 
-func TestParseLscpu(t *testing.T) {
+type mockShellCommand struct {
+	OutputFunc func() ([]byte, error)
+}
+
+func (msc mockShellCommand) Output() ([]byte, error) {
+	return msc.OutputFunc()
+}
+
+type testExecShellCommander func(name string, arg ...string) IExecShellCommander
+
+func mockExecShellCommander(output string, err error) testExecShellCommander {
+	return func(name string, arg ...string) IExecShellCommander {
+		outputFunc := func() ([]byte, error) {
+			return []byte(output), err
+		}
+		return mockShellCommand{
+			OutputFunc: outputFunc,
+		}
+	}
+}
+
+func TestGetCacheInfo(t *testing.T) {
+	tempShellCommander := currentShellCommander
+	defer func() { currentShellCommander = tempShellCommander }()
 	tests := []struct {
-		name             string
-		defaultCacheInfo map[string]string
-		cpuInfoCache     proto.CpuInfo
-		lscpuContent     string
-		expect           map[string]string
+		name                   string
+		mockExecShellCommander testExecShellCommander
+		defaultCacheInfo       map[string]string
+		expect                 map[string]string
 	}{
 		{
-			name:         "os-release present",
-			lscpuContent: lscpuInfo1,
+			name:                   "lscpu error",
+			mockExecShellCommander: mockExecShellCommander("", errors.New("Error executing lscpu")),
+			defaultCacheInfo: map[string]string{
+				"L1d": "64 KiB",
+				"L1i": "96 KiB",
+				"L2":  "2 MiB",
+				"L3":  "1 MiB",
+			},
+			expect: map[string]string{
+				"L1d": "64 KiB",
+				"L1i": "96 KiB",
+				"L2":  "2 MiB",
+				"L3":  "1 MiB",
+			},
+		},
+		{
+			name:                   "default cache info absent",
+			mockExecShellCommander: mockExecShellCommander(lscpuInfo1, nil),
 			defaultCacheInfo: map[string]string{
 				"L1d": "-1",
 				"L1i": "-1",
@@ -494,8 +533,8 @@ func TestParseLscpu(t *testing.T) {
 			},
 		},
 		{
-			name:         "os-release present with quote",
-			lscpuContent: lscpuInfo2,
+			name:                   "os-release present with quote",
+			mockExecShellCommander: mockExecShellCommander(lscpuInfo2, nil),
 			defaultCacheInfo: map[string]string{
 				"L1d": "-1",
 				"L1i": "-1",
@@ -512,7 +551,8 @@ func TestParseLscpu(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := parseLscpu(tt.lscpuContent, tt.defaultCacheInfo)
+			currentShellCommander = tt.mockExecShellCommander
+			actual := getCacheInfo(tt.defaultCacheInfo)
 			assert.Equal(t, tt.expect, actual)
 		})
 	}
