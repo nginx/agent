@@ -91,8 +91,10 @@ run: ## Run code
 run-debug: ## Run code
 	./build/nginx-agent
 
-build: ## Build agent executable
+build/nginx-agent:
 	GOWORK=off CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
+
+build: build/nginx-agent ## Build agent executable
 
 deps: ## Update dependencies in vendor folders
 	git diff --quiet || { echo "Local changes found. Please commit or stash your changes." >&2; exit 1; }
