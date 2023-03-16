@@ -243,7 +243,7 @@ func updateNginxConfigFileConfig(
 				if err := updateNginxConfigFileWithRoot(aux, directive.Args[0], seen, allowedDirectories, directoryMap); err != nil {
 					return true, err
 				}
-			case "ssl_certificate", "ssl_trusted_certificate":
+			case "ssl_certificate", "proxy_ssl_certificate", "ssl_trusted_certificate":
 				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories); err != nil {
 					return true, err
 				}
@@ -296,7 +296,7 @@ func updateNginxConfigWithCert(
 		}
 	}
 
-	if directive == "ssl_certificate" {
+	if directive == "ssl_certificate" || directive == "proxy_ssl_certificate" {
 		cert, err := LoadCertificate(file)
 		if err != nil {
 			return fmt.Errorf("configs: could not load cert(%s): %s", file, err)
