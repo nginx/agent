@@ -212,7 +212,6 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 		case d := <-data:
 			access, err := tailer.NewNginxAccessItem(d)
 			upstreamRequest := false
-			upstreamLength := 0
 			if err != nil {
 				c.logger.Log(fmt.Sprintf("Error decoding access log entry, %v", err))
 				continue
@@ -230,13 +229,13 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 			requestTimes = c.parseAccessLogFloatTimes("request_time", access.RequestTime, requestTimes)
 
-			upstreamConnectTimes, upstreamRequest, upstreamLength = c.parseAccessLogUpstream("upstream_connect_time", access.UpstreamConnectTime, upstreamConnectTimes, upstreamRequest, upstreamLength)
+			upstreamConnectTimes = c.parseAccessLogUpstream("upstream_connect_time", access.UpstreamConnectTime, upstreamConnectTimes)
 
-			upstreamHeaderTimes, upstreamRequest, upstreamLength = c.parseAccessLogUpstream("upstream_header_time", access.UpstreamHeaderTime, upstreamHeaderTimes, upstreamRequest, upstreamLength)
+			upstreamHeaderTimes = c.parseAccessLogUpstream("upstream_header_time", access.UpstreamHeaderTime, upstreamHeaderTimes)
 
-			upstreamResponseLength, upstreamRequest, upstreamLength = c.parseAccessLogUpstream("upstream_response_length", access.UpstreamResponseLength, upstreamResponseLength, upstreamRequest, upstreamLength)
+			upstreamResponseLength = c.parseAccessLogUpstream("upstream_response_length", access.UpstreamResponseLength, upstreamResponseLength)
 
-			upstreamResponseTimes, upstreamRequest, upstreamLength = c.parseAccessLogUpstream("upstream_response_time", access.UpstreamResponseTime, upstreamResponseTimes, upstreamRequest, upstreamLength)
+			upstreamResponseTimes = c.parseAccessLogUpstream("upstream_response_time", access.UpstreamResponseTime, upstreamResponseTimes)
 
 			if access.Request != "" {
 				method, _, protocol := getParsedRequest(access.Request)
@@ -283,9 +282,9 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				upstreamCounters["upstream.request.count"] = upstreamCounters["upstream.request.count"] + 1
 			}
 
-			if upstreamLength > 1 {
-				upstreamCounters["upstream.next.count"] = upstreamCounters["upstream.next.count"] + (float64(upstreamLength) - 1)
-			}
+			upstreamTimes := []string{access.UpstreamConnectTime, access.UpstreamHeaderTime, access.UpstreamResponseTime}
+
+			upstreamRequest, upstreamCounters = getUpstreamNextCount(upstreamTimes, upstreamCounters)
 
 			mu.Unlock()
 
@@ -352,9 +351,24 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	}
 }
 
-func (c *NginxAccessLog) parseAccessLogFloatTimes(metricName string, field string, counter []float64) []float64 {
-	if field != "" && field != "-" {
-		if v, err := strconv.ParseFloat(field, 64); err == nil {
+func getUpstreamNextCount(metricValue []string, upstreamCounters map[string]float64) (bool, map[string]float64) {
+	upstreamRequest := false
+	for _, upstreamTimes := range metricValue {
+		if upstreamTimes != "" && upstreamTimes != "-" {
+			upstreamRequest = true
+			times := strings.Split(upstreamTimes, ", ")
+			if len(times) > 1 {
+				upstreamCounters["upstream.next.count"] = upstreamCounters["upstream.next.count"] + (float64(len(times)) - 1)
+				return upstreamRequest, upstreamCounters
+			}
+		}
+	}
+	return upstreamRequest, upstreamCounters
+}
+
+func (c *NginxAccessLog) parseAccessLogFloatTimes(metricName string, metric string, counter []float64) []float64 {
+	if metric != "" && metric != "-" {
+		if v, err := strconv.ParseFloat(metric, 64); err == nil {
 			counter = append(counter, v)
 			return counter
 		} else {
@@ -364,29 +378,27 @@ func (c *NginxAccessLog) parseAccessLogFloatTimes(metricName string, field strin
 	return counter
 }
 
-func (c *NginxAccessLog) parseAccessLogUpstream(metricName string, field string, counter []float64, upstreamRequest bool, upstreamLength int) ([]float64, bool, int) {
-	if field != "" && field != "-" {
-		fieldValues := strings.Split(field, ", ")
-		upstreamLength = len(fieldValues)
-		for _, value := range fieldValues {
+func (c *NginxAccessLog) parseAccessLogUpstream(metricName string, metric string, counter []float64) []float64 {
+	if metric != "" && metric != "-" {
+		metricValues := strings.Split(metric, ", ")
+		for _, value := range metricValues {
 			if value != "" && value != "-" {
 				if v, err := strconv.ParseFloat(value, 64); err == nil {
 					counter = append(counter, v)
-					upstreamRequest = true
 				} else {
 					c.logger.Log(fmt.Sprintf("Error getting %s value from access logs, %v", metricName, err))
 				}
 			}
 		}
-		return counter, upstreamRequest, upstreamLength
+		return counter
 
 	}
-	return counter, upstreamRequest, upstreamLength
+	return counter
 }
 
-func (c *NginxAccessLog) parseAccessLogFloatCounters(metricName string, field string, counters map[string]float64) map[string]float64 {
-	if field != "" {
-		if v, err := strconv.ParseFloat(field, 64); err == nil {
+func (c *NginxAccessLog) parseAccessLogFloatCounters(metricName string, metric string, counters map[string]float64) map[string]float64 {
+	if metric != "" {
+		if v, err := strconv.ParseFloat(metric, 64); err == nil {
 			counters[metricName] = v + counters[metricName]
 			return counters
 		} else {
