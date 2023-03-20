@@ -142,6 +142,7 @@ var tests = []struct {
 					app_protect_policy_file /tmp/testdata/root/my-nap-policy.json;
 					app_protect_security_log_enable on;
 					app_protect_security_log "/tmp/testdata/root/log-default.json" /var/log/app_protect/security.log;		
+					proxy_ssl_certificate /tmp/testdata/nginx/proxy.crt;
 				}
 
 				location /privateapi {
@@ -170,10 +171,15 @@ var tests = []struct {
 							{
 								Name:        "nginx.conf",
 								Permissions: "0644",
-								Lines:       int32(51),
+								Lines:       int32(52),
 							},
 							{
 								Name:        "ca.crt",
+								Permissions: "0644",
+								Lines:       int32(31),
+							},
+							{
+								Name:        "proxy.crt",
 								Permissions: "0644",
 								Lines:       int32(31),
 							},
@@ -240,6 +246,38 @@ var tests = []struct {
 						AuthorityKeyIdentifier: "3A:79:E0:3E:61:CD:94:29:1D:BB:45:37:0B:E9:78:E9:2F:40:67:CA",
 						Version:                3,
 					},
+					{
+						FileName: "/tmp/testdata/nginx/proxy.crt",
+						Validity: &proto.CertificateDates{
+							NotBefore: 1632834204,
+							NotAfter:  1635426204,
+						},
+						Issuer: &proto.CertificateName{
+							CommonName:         "ca.local",
+							Country:            []string{"IE"},
+							Locality:           []string{"Cork"},
+							Organization:       []string{"NGINX"},
+							OrganizationalUnit: nil,
+						},
+						Subject: &proto.CertificateName{
+							CommonName:         "ca.local",
+							Country:            []string{"IE"},
+							Locality:           []string{"Cork"},
+							Organization:       []string{"NGINX"},
+							State:              []string{"Cork"},
+							OrganizationalUnit: nil,
+						},
+						Mtime:                  &types.Timestamp{Seconds: 1633343804, Nanos: 15240107},
+						SubjAltNames:           nil,
+						PublicKeyAlgorithm:     "RSA",
+						SignatureAlgorithm:     "SHA512-RSA",
+						SerialNumber:           "12554968962670027276",
+						SubjectKeyIdentifier:   "75:50:E2:24:8F:6F:13:1D:81:20:E1:01:0B:57:2B:98:39:E5:2E:C3",
+						Fingerprint:            "48:6D:05:D4:78:10:91:15:69:74:9C:6A:54:F7:F2:FC:C8:93:46:E8:28:42:24:41:68:41:51:1E:1E:43:E0:12",
+						FingerprintAlgorithm:   "SHA512-RSA",
+						AuthorityKeyIdentifier: "3A:79:E0:3E:61:CD:94:29:1D:BB:45:37:0B:E9:78:E9:2F:40:67:CA",
+						Version:                3,
+					},
 				},
 			},
 			Zaux: &proto.ZippedFile{
@@ -248,13 +286,14 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "4b9cb7001222fcbf2a24e3409b264302a8a8f22f28c4a1830e065f0986dd57e6",
+				Checksum:      "b12f45dee53b801dffe5091354a985b16552d5453fdf832df6f34b3b2ef9d2ee",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
 		expectedAuxFiles: map[string]struct{}{
 			"/tmp/testdata/root/test.html":          {},
 			"/tmp/testdata/nginx/ca.crt":            {},
+			"/tmp/testdata/nginx/proxy.crt":         {},
 			"/tmp/testdata/root/my-nap-policy.json": {},
 			"/tmp/testdata/root/log-default.json":   {},
 		},
@@ -590,7 +629,7 @@ func TestGetNginxConfig(t *testing.T) {
 		err = setUpFile(test.fileName, []byte(test.config))
 		assert.NoError(t, err)
 
-		err = generateCertificate()
+		err = generateCertificates()
 		assert.NoError(t, err)
 
 		allowedDirs := map[string]struct{}{}
@@ -1055,7 +1094,7 @@ func getCertMeta(file string) crtMetaFields {
 	}
 }
 
-func generateCertificate() error {
+func generateCertificates() error {
 	cmd := exec.Command("../scripts/tls/gen_cnf.sh", "ca", "--cn", "'ca.local'", "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "certs/conf")
 
 	err := cmd.Run()
@@ -1066,6 +1105,14 @@ func generateCertificate() error {
 	cmd1 := exec.Command("../scripts/tls/gen_cert.sh", "ca", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
 
 	err = cmd1.Run()
+	if err != nil {
+		return err
+	}
+
+	// create proxy.crt copy
+	copyCmd := exec.Command("cp", "/tmp/testdata/nginx/ca.crt", "/tmp/testdata/nginx/proxy.crt")
+
+	err = copyCmd.Run()
 	if err != nil {
 		return err
 	}
