@@ -68,6 +68,691 @@ func TestAccessLogStop(t *testing.T) {
 	assert.Len(t, nginxAccessLog.logs, 0)
 }
 
+func TestGetUpstreamNextCount(t *testing.T) {
+	upstreamRequest := false
+
+	tests := []struct {
+		name                    string
+		upstreamTimes           []string
+		expectedUpstreamRequest bool
+		expectedCount           float64
+		upstreamCounters        map[string]float64
+	}{
+		{
+			"singleUpstreamTimes",
+			[]string{"0.01", "0.02", "0.00"},
+			true,
+			float64(0),
+			map[string]float64{
+				"upstream.next.count": 0,
+			},
+		},
+		{
+			"multipleUpstreamTimes",
+			[]string{"0.01, 0.04, 0.03, 0.00", "0.02, 0.01, 0.03, 0.04", "0.00, 0.00, 0.08, 0.02"},
+			true,
+			float64(3),
+			map[string]float64{
+				"upstream.next.count": 0,
+			},
+		},
+		{
+			"noUpstreamTimes",
+			[]string{"-", "-", "-"},
+			false,
+			float64(0),
+			map[string]float64{
+				"upstream.next.count": 0,
+			},
+		},
+		{
+			"emptyUpstreamTimes",
+			[]string{"", "", ""},
+			false,
+			float64(0),
+			map[string]float64{
+				"upstream.next.count": 0,
+			},
+		},
+		{
+			"oneUpstreamTime",
+			[]string{"-, -, -, 0.04", "-, -, -, 0.02", "-, -, -, 0.02"},
+			true,
+			float64(3),
+			map[string]float64{
+				"upstream.next.count": 0,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			upstreamRequest, test.upstreamCounters = getUpstreamNextCount(test.upstreamTimes, test.upstreamCounters)
+			assert.Equal(t, test.expectedUpstreamRequest, upstreamRequest)
+			assert.Equal(t, test.expectedCount, test.upstreamCounters["upstream.next.count"])
+		})
+
+	}
+
+}
+
+func TestParseAccessLogFloatTimes(t *testing.T) {
+	tests := []struct {
+		name            string
+		metricName      string
+		metric          string
+		counter         []float64
+		expectedCounter []float64
+	}{
+		{
+			"validTime",
+			"request_time",
+			"0.00",
+			[]float64{0.02, 0.03},
+			[]float64{0.02, 0.03, 0.00},
+		},
+		{
+			"noTime",
+			"request_time",
+			"-",
+			[]float64{0.02, 0.03},
+			[]float64{0.02, 0.03},
+		},
+		{
+			"emptyTime",
+			"request_time",
+			"",
+			[]float64{0.02, 0.03},
+			[]float64{0.02, 0.03},
+		},
+		{
+			"invalidTime",
+			"request_time",
+			"test",
+			[]float64{0.02, 0.03},
+			[]float64{0.02, 0.03},
+		},
+	}
+
+	binary := core.NewNginxBinary(tutils.NewMockEnvironment(), &config.Config{})
+	collectionDuration := time.Millisecond * 300
+	nginxAccessLog := NewNginxAccessLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.counter = nginxAccessLog.parseAccessLogFloatTimes(test.metricName, test.metric, test.counter)
+			assert.Equal(t, test.expectedCounter, test.counter)
+
+		})
+	}
+}
+
+func TestParseAccessLogUpstream(t *testing.T) {
+	tests := []struct {
+		name            string
+		metricName      string
+		metric          string
+		counter         []float64
+		expectedCounter []float64
+	}{
+		{
+			"singleTime",
+			"upstream_connect_time",
+			"0.03",
+			[]float64{0.02, 0.03},
+			[]float64{0.02, 0.03, 0.03},
+		},
+		{
+			"multipleTimes",
+			"upstream_connect_time",
+			"0.03, 0.04, 0.06",
+			[]float64{0.02, 0.03},
+			[]float64{0.02, 0.03, 0.03, 0.04, 0.06},
+		},
+		{
+			"someEmptyTimes",
+			"upstream_connect_time",
+			"0.03, 0.04, -, 0.06, -",
+			[]float64{0.02, 0.03},
+			[]float64{0.02, 0.03, 0.03, 0.04, 0.06},
+		},
+		{
+			"emptyTime",
+			"upstream_connect_time",
+			"",
+			[]float64{0.02, 0.03},
+			[]float64{0.02, 0.03},
+		},
+		{
+			"noTime",
+			"upstream_connect_time",
+			"-",
+			[]float64{0.02, 0.03},
+			[]float64{0.02, 0.03},
+		},
+		{
+			"invalidTimes",
+			"upstream_connect_time",
+			"test",
+			[]float64{0.02, 0.03},
+			[]float64{0.02, 0.03},
+		},
+	}
+
+	binary := core.NewNginxBinary(tutils.NewMockEnvironment(), &config.Config{})
+	collectionDuration := time.Millisecond * 300
+	nginxAccessLog := NewNginxAccessLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.counter = nginxAccessLog.parseAccessLogUpstream(test.metricName, test.metric, test.counter)
+			assert.Equal(t, test.expectedCounter, test.counter)
+
+		})
+	}
+}
+
+func TestParseAccessLogFloatCounters(t *testing.T) {
+	tests := []struct {
+		name            string
+		metricName      string
+		metric          string
+		counter         map[string]float64
+		expectedCounter map[string]float64
+	}{
+		{
+
+			"validCount",
+			"request.bytes_sent",
+			"28",
+			map[string]float64{
+				"request.bytes_sent": 4,
+			},
+			map[string]float64{
+				"request.bytes_sent": 32,
+			},
+		},
+		{
+
+			"noCount",
+			"request.bytes_sent",
+			"-",
+			map[string]float64{
+				"request.bytes_sent": 4,
+			},
+			map[string]float64{
+				"request.bytes_sent": 4,
+			},
+		},
+		{
+
+			"emptyCount",
+			"request.bytes_sent",
+			"",
+			map[string]float64{
+				"request.bytes_sent": 4,
+			},
+			map[string]float64{
+				"request.bytes_sent": 4,
+			},
+		},
+		{
+
+			"invalidCount",
+			"request.bytes_sent",
+			"test",
+			map[string]float64{
+				"request.bytes_sent": 4,
+			},
+			map[string]float64{
+				"request.bytes_sent": 4,
+			},
+		},
+	}
+
+	binary := core.NewNginxBinary(tutils.NewMockEnvironment(), &config.Config{})
+	collectionDuration := time.Millisecond * 300
+	nginxAccessLog := NewNginxAccessLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			nginxAccessLog.parseAccessLogFloatCounters(test.metricName, test.metric, test.counter)
+			assert.Equal(t, test.expectedCounter, test.counter)
+
+		})
+	}
+}
+
+func TestGetServerProtocol(t *testing.T) {
+	tests := []struct {
+		name            string
+		protocol        string
+		counters        map[string]float64
+		expectedCounter map[string]float64
+	}{
+		{
+			"validProtocol",
+			"HTTP/1.1",
+			map[string]float64{
+				"v0_9": 0,
+				"v1_0": 0,
+				"v1_1": 2,
+				"v2":   0,
+			},
+			map[string]float64{
+				"v0_9": 0,
+				"v1_0": 0,
+				"v1_1": 3,
+				"v2":   0,
+			},
+		},
+		{
+			"invalidProtocol",
+			"",
+			map[string]float64{
+				"v0_9": 0,
+				"v1_0": 0,
+				"v1_1": 0,
+				"v2":   0,
+			},
+			map[string]float64{
+				"v0_9": 0,
+				"v1_0": 0,
+				"v1_1": 0,
+				"v2":   0,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			getServerProtocol(test.protocol, test.counters)
+			assert.Equal(t, test.expectedCounter, test.counters)
+		})
+
+	}
+}
+
+func TestGetParsedRequest(t *testing.T) {
+	tests := []struct {
+		name             string
+		request          string
+		expectedMethod   string
+		expectedURI      string
+		expectedProtocol string
+	}{
+		{
+			"validRequest",
+			"GET /user/register?ahref<random>p' or '</random> HTTP/1.1",
+			"GET",
+			"/user/register?ahref<random>p' or '</random>",
+			"HTTP/1.1",
+		},
+		{
+			"emptyRequest",
+			"",
+			"",
+			"",
+			"",
+		},
+		{
+			"invalidRequest",
+			"GET /user/register?ahref<random>p' or '</random> HTTP1.1",
+			"",
+			"",
+			"",
+		},
+		{
+			"nospacesRequest",
+			"GET/user/register?ahref<random>p'or'</random>HTTP1.1",
+			"",
+			"",
+			"",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			method, uri, protocol := getParsedRequest(test.request)
+			assert.Equal(t, test.expectedMethod, method)
+			assert.Equal(t, test.expectedURI, uri)
+			assert.Equal(t, test.expectedProtocol, protocol)
+		})
+
+	}
+
+}
+
+func TestGetAverageMetricValue(t *testing.T) {
+	tests := []struct {
+		name            string
+		metricValues    []float64
+		expectedAverage float64
+	}{
+		{
+			"validValues",
+			[]float64{28, 28, 4, 28, 19, 0},
+			17.833333333333332,
+		},
+		{
+			"emptyValues",
+			[]float64{},
+			0.0,
+		},
+		{
+			"zeroValues",
+			[]float64{0, 0, 0, 0},
+			0.0,
+		},
+		{
+			"decimalValues",
+			[]float64{0.02, 0.3, 0.06, 0.07},
+			0.1125,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			average := getAverageMetricValue(test.metricValues)
+			assert.Equal(t, test.expectedAverage, average)
+		})
+
+	}
+}
+
+func TestGetHTTPStatus(t *testing.T) {
+	tests := []struct {
+		name            string
+		status          string
+		counter         map[string]float64
+		expectedCounter map[string]float64
+	}{
+		{
+			"validStatus",
+			"403",
+			map[string]float64{
+				"status.403":        4,
+				"status.404":        2,
+				"status.500":        0,
+				"status.502":        0,
+				"status.503":        0,
+				"status.504":        0,
+				"status.discarded":  0,
+				"status.1xx":        0,
+				"status.2xx":        0,
+				"status.3xx":        0,
+				"status.4xx":        6,
+				"status.5xx":        0,
+				"request.malformed": 0,
+			},
+			map[string]float64{
+				"status.403":        5,
+				"status.404":        2,
+				"status.500":        0,
+				"status.502":        0,
+				"status.503":        0,
+				"status.504":        0,
+				"status.discarded":  0,
+				"status.1xx":        0,
+				"status.2xx":        0,
+				"status.3xx":        0,
+				"status.4xx":        7,
+				"status.5xx":        0,
+				"request.malformed": 0,
+			},
+		},
+		{
+			"discardedStatus",
+			"499",
+			map[string]float64{
+				"status.403":        0,
+				"status.404":        0,
+				"status.500":        0,
+				"status.502":        0,
+				"status.503":        0,
+				"status.504":        0,
+				"status.discarded":  0,
+				"status.1xx":        0,
+				"status.2xx":        0,
+				"status.3xx":        0,
+				"status.4xx":        0,
+				"status.5xx":        0,
+				"request.malformed": 0,
+			},
+			map[string]float64{
+				"status.403":        0,
+				"status.404":        0,
+				"status.500":        0,
+				"status.502":        0,
+				"status.503":        0,
+				"status.504":        0,
+				"status.discarded":  1,
+				"status.1xx":        0,
+				"status.2xx":        0,
+				"status.3xx":        0,
+				"status.4xx":        1,
+				"status.5xx":        0,
+				"request.malformed": 0,
+			},
+		},
+		{
+			"malformedStatus",
+			"400",
+			map[string]float64{
+				"status.403":        0,
+				"status.404":        0,
+				"status.500":        0,
+				"status.502":        0,
+				"status.503":        0,
+				"status.504":        0,
+				"status.discarded":  0,
+				"status.1xx":        0,
+				"status.2xx":        0,
+				"status.3xx":        0,
+				"status.4xx":        0,
+				"status.5xx":        0,
+				"request.malformed": 0,
+			},
+			map[string]float64{
+				"status.403":        0,
+				"status.404":        0,
+				"status.500":        0,
+				"status.502":        0,
+				"status.503":        0,
+				"status.504":        0,
+				"status.discarded":  0,
+				"status.1xx":        0,
+				"status.2xx":        0,
+				"status.3xx":        0,
+				"status.4xx":        1,
+				"status.5xx":        0,
+				"request.malformed": 1,
+			},
+		},
+		{
+			"emptyStatus",
+			"",
+			map[string]float64{
+				"status.403":        0,
+				"status.404":        0,
+				"status.500":        0,
+				"status.502":        0,
+				"status.503":        0,
+				"status.504":        0,
+				"status.discarded":  0,
+				"status.1xx":        0,
+				"status.2xx":        0,
+				"status.3xx":        0,
+				"status.4xx":        0,
+				"status.5xx":        0,
+				"request.malformed": 0,
+			},
+			map[string]float64{
+				"status.403":        0,
+				"status.404":        0,
+				"status.500":        0,
+				"status.502":        0,
+				"status.503":        0,
+				"status.504":        0,
+				"status.discarded":  0,
+				"status.1xx":        0,
+				"status.2xx":        0,
+				"status.3xx":        0,
+				"status.4xx":        0,
+				"status.5xx":        0,
+				"request.malformed": 0,
+			},
+		},
+	}
+
+	binary := core.NewNginxBinary(tutils.NewMockEnvironment(), &config.Config{})
+	collectionDuration := time.Millisecond * 300
+	nginxAccessLog := NewNginxAccessLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			nginxAccessLog.getHttpStatus(test.status, test.counter)
+			assert.Equal(t, test.expectedCounter, test.counter)
+
+		})
+	}
+}
+
+func TestGetUpstreamCacheStatus(t *testing.T) {
+	tests := []struct {
+		name            string
+		status          string
+		counter         map[string]float64
+		expectedCounter map[string]float64
+	}{
+		{
+			"validStatus",
+			"HIT",
+			map[string]float64{
+				"cache.bypass":      0,
+				"cache.expired":     0,
+				"cache.hit":         4,
+				"cache.miss":        0,
+				"cache.revalidated": 0,
+				"cache.stale":       0,
+				"cache.updating":    0,
+			},
+			map[string]float64{
+				"cache.bypass":      0,
+				"cache.expired":     0,
+				"cache.hit":         5,
+				"cache.miss":        0,
+				"cache.revalidated": 0,
+				"cache.stale":       0,
+				"cache.updating":    0,
+			},
+		},
+		{
+			"invalidStatus",
+			"",
+			map[string]float64{
+				"cache.bypass":      0,
+				"cache.expired":     0,
+				"cache.hit":         4,
+				"cache.miss":        0,
+				"cache.revalidated": 0,
+				"cache.stale":       0,
+				"cache.updating":    0,
+			},
+			map[string]float64{
+				"cache.bypass":      0,
+				"cache.expired":     0,
+				"cache.hit":         4,
+				"cache.miss":        0,
+				"cache.revalidated": 0,
+				"cache.stale":       0,
+				"cache.updating":    0,
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			getUpstreamCacheStatus(test.status, test.counter)
+			assert.Equal(t, test.expectedCounter, test.counter)
+		})
+
+	}
+}
+
+func TestGetTimeMetricsMap(t *testing.T) {
+	tests := []struct {
+		name            string
+		metricName      string
+		metricTimes     []float64
+		counter         map[string]float64
+		expectedCounter map[string]float64
+	}{
+		{
+			"validMetrics",
+			"request.time",
+			[]float64{0.02, 0.09, 0.3, 0.8, 0.05},
+			map[string]float64{
+				"request.time":        0,
+				"request.time.count":  0,
+				"request.time.max":    0,
+				"request.time.median": 0,
+				"request.time.pctl95": 0,
+			},
+			map[string]float64{
+				"request.time":        0.252,
+				"request.time.count":  5,
+				"request.time.max":    0.8,
+				"request.time.median": 0.09,
+				"request.time.pctl95": 0.8,
+			},
+		},
+		{
+			"emptyMetrics",
+			"request.time",
+			[]float64{},
+			map[string]float64{
+				"request.time":        0,
+				"request.time.count":  0,
+				"request.time.max":    0,
+				"request.time.median": 0,
+				"request.time.pctl95": 0,
+			},
+			map[string]float64{
+				"request.time":        0,
+				"request.time.count":  0,
+				"request.time.max":    0,
+				"request.time.median": 0,
+				"request.time.pctl95": 0,
+			},
+		},
+		{
+			"singleMetric",
+			"request.time",
+			[]float64{0.07},
+			map[string]float64{
+				"request.time":        0,
+				"request.time.count":  0,
+				"request.time.max":    0,
+				"request.time.median": 0,
+				"request.time.pctl95": 0,
+			},
+			map[string]float64{
+				"request.time":        0.07,
+				"request.time.count":  1,
+				"request.time.max":    0.07,
+				"request.time.median": 0.07,
+				"request.time.pctl95": 0.07,
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			getTimeMetricsMap(test.metricName, test.metricTimes, test.counter)
+			assert.Equal(t, test.expectedCounter, test.counter)
+		})
+
+	}
+}
+
 func TestAccessLogStats(t *testing.T) {
 	tests := []struct {
 		name          string

@@ -501,25 +501,7 @@ func getUpstreamCacheStatus(status string, counter map[string]float64) {
 	n := fmt.Sprintf("cache.%s", strings.ToLower(status))
 
 	switch status {
-	case "BYPASS":
-		counter[n] = counter[n] + 1
-		return
-	case "EXPIRED":
-		counter[n] = counter[n] + 1
-		return
-	case "HIT":
-		counter[n] = counter[n] + 1
-		return
-	case "MISS":
-		counter[n] = counter[n] + 1
-		return
-	case "REVALIDATED":
-		counter[n] = counter[n] + 1
-		return
-	case "STALE":
-		counter[n] = counter[n] + 1
-		return
-	case "UPDATING":
+	case "BYPASS", "EXPIRED", "HIT", "MISS", "REVALIDATED", "STALE", "UPDATING":
 		counter[n] = counter[n] + 1
 		return
 	}
