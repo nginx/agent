@@ -246,12 +246,12 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				httpCounters[n] = httpCounters[n] + 1
 
 				if access.ServerProtocol == "" {
-					getServerProtocol(protocol, httpCounters)
+					calculateServerProtocol(protocol, httpCounters)
 				}
 			}
 
 			if access.ServerProtocol != "" {
-				getServerProtocol(access.ServerProtocol, httpCounters)
+				calculateServerProtocol(access.ServerProtocol, httpCounters)
 			}
 
 			if access.UpstreamStatus != "" && access.UpstreamStatus != "-" {
@@ -270,17 +270,17 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 			if access.UpstreamCacheStatus != "" && access.UpstreamCacheStatus != "-" {
 				upstreamRequest = true
-				getUpstreamCacheStatus(access.UpstreamCacheStatus, upstreamCacheCounters)
+				calculateUpstreamCacheStatus(access.UpstreamCacheStatus, upstreamCacheCounters)
 			}
 
 			// don't need the http status for NGINX Plus
 			if c.nginxType == OSSNginxType {
-				c.getHttpStatus(access.Status, httpCounters)
+				c.calculateHttpStatus(access.Status, httpCounters)
 			}
 
 			if access.UpstreamConnectTime != "" || access.UpstreamHeaderTime != "" || access.UpstreamResponseTime != "" {
 				upstreamTimes := []string{access.UpstreamConnectTime, access.UpstreamHeaderTime, access.UpstreamResponseTime}
-				upstreamRequest, upstreamCounters = getUpstreamNextCount(upstreamTimes, upstreamCounters)
+				upstreamRequest, upstreamCounters = calculateUpstreamNextCount(upstreamTimes, upstreamCounters)
 			}
 
 			if upstreamRequest == true {
@@ -304,19 +304,19 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			}
 
 			if len(requestTimes) > 0 {
-				getTimeMetricsMap("request.time", requestTimes, httpCounters)
+				calculateTimeMetricsMap("request.time", requestTimes, httpCounters)
 			}
 
 			if len(upstreamConnectTimes) > 0 {
-				getTimeMetricsMap("upstream.connect.time", upstreamConnectTimes, upstreamCounters)
+				calculateTimeMetricsMap("upstream.connect.time", upstreamConnectTimes, upstreamCounters)
 			}
 
 			if len(upstreamHeaderTimes) > 0 {
-				getTimeMetricsMap("upstream.header.time", upstreamHeaderTimes, upstreamCounters)
+				calculateTimeMetricsMap("upstream.header.time", upstreamHeaderTimes, upstreamCounters)
 			}
 
 			if len(upstreamResponseTimes) > 0 {
-				getTimeMetricsMap("upstream.response.time", upstreamResponseTimes, upstreamCounters)
+				calculateTimeMetricsMap("upstream.response.time", upstreamResponseTimes, upstreamCounters)
 			}
 
 			if len(upstreamResponseLength) > 0 {
@@ -352,7 +352,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	}
 }
 
-func getUpstreamNextCount(metricValues []string, upstreamCounters map[string]float64) (bool, map[string]float64) {
+func calculateUpstreamNextCount(metricValues []string, upstreamCounters map[string]float64) (bool, map[string]float64) {
 	upstreamRequest := false
 	for _, upstreamTimes := range metricValues {
 		if upstreamTimes != "" && upstreamTimes != "-" {
@@ -409,7 +409,7 @@ func (c *NginxAccessLog) parseAccessLogFloatCounters(metricName string, metric s
 	return counters
 }
 
-func getServerProtocol(protocol string, counters map[string]float64) {
+func calculateServerProtocol(protocol string, counters map[string]float64) {
 	if strings.Count(protocol, "/") == 1 {
 		httpProtocolVersion := strings.Split(protocol, "/")[1]
 		httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
@@ -475,7 +475,7 @@ func getAverageMetricValue(metricValues []float64) float64 {
 	return value
 }
 
-func (c *NginxAccessLog) getHttpStatus(status string, counter map[string]float64) {
+func (c *NginxAccessLog) calculateHttpStatus(status string, counter map[string]float64) {
 
 	if v, err := strconv.Atoi(status); err == nil {
 		n := fmt.Sprintf("status.%dxx", v/100)
@@ -496,7 +496,7 @@ func (c *NginxAccessLog) getHttpStatus(status string, counter map[string]float64
 	}
 }
 
-func getUpstreamCacheStatus(status string, counter map[string]float64) {
+func calculateUpstreamCacheStatus(status string, counter map[string]float64) {
 
 	n := fmt.Sprintf("cache.%s", strings.ToLower(status))
 
@@ -507,7 +507,7 @@ func getUpstreamCacheStatus(status string, counter map[string]float64) {
 	}
 }
 
-func getTimeMetricsMap(metricName string, times []float64, counter map[string]float64) {
+func calculateTimeMetricsMap(metricName string, times []float64, counter map[string]float64) {
 
 	timeMetrics := map[string]float64{
 		metricName:             0,

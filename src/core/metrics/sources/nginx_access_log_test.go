@@ -68,7 +68,7 @@ func TestAccessLogStop(t *testing.T) {
 	assert.Len(t, nginxAccessLog.logs, 0)
 }
 
-func TestGetUpstreamNextCount(t *testing.T) {
+func TestCalculateUpstreamNextCount(t *testing.T) {
 	upstreamRequest := false
 
 	tests := []struct {
@@ -127,7 +127,7 @@ func TestGetUpstreamNextCount(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			upstreamRequest, test.upstreamCounters = getUpstreamNextCount(test.upstreamTimes, test.upstreamCounters)
+			upstreamRequest, test.upstreamCounters = calculateUpstreamNextCount(test.upstreamTimes, test.upstreamCounters)
 			assert.Equal(t, test.expectedUpstreamRequest, upstreamRequest)
 			assert.Equal(t, test.expectedCount, test.upstreamCounters["upstream.next.count"])
 		})
@@ -323,7 +323,7 @@ func TestParseAccessLogFloatCounters(t *testing.T) {
 	}
 }
 
-func TestGetServerProtocol(t *testing.T) {
+func TestCalculateServerProtocol(t *testing.T) {
 	tests := []struct {
 		name            string
 		protocol        string
@@ -366,7 +366,7 @@ func TestGetServerProtocol(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			getServerProtocol(test.protocol, test.counters)
+			calculateServerProtocol(test.protocol, test.counters)
 			assert.Equal(t, test.expectedCounter, test.counters)
 		})
 
@@ -459,7 +459,7 @@ func TestGetAverageMetricValue(t *testing.T) {
 	}
 }
 
-func TestGetHTTPStatus(t *testing.T) {
+func TestCalculateHTTPStatus(t *testing.T) {
 	tests := []struct {
 		name            string
 		status          string
@@ -610,14 +610,14 @@ func TestGetHTTPStatus(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			nginxAccessLog.getHttpStatus(test.status, test.counter)
+			nginxAccessLog.calculateHttpStatus(test.status, test.counter)
 			assert.Equal(t, test.expectedCounter, test.counter)
 
 		})
 	}
 }
 
-func TestGetUpstreamCacheStatus(t *testing.T) {
+func TestCalculateUpstreamCacheStatus(t *testing.T) {
 	tests := []struct {
 		name            string
 		status          string
@@ -671,7 +671,7 @@ func TestGetUpstreamCacheStatus(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			getUpstreamCacheStatus(test.status, test.counter)
+			calculateUpstreamCacheStatus(test.status, test.counter)
 			assert.Equal(t, test.expectedCounter, test.counter)
 		})
 
@@ -746,7 +746,7 @@ func TestGetTimeMetricsMap(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			getTimeMetricsMap(test.metricName, test.metricTimes, test.counter)
+			calculateTimeMetricsMap(test.metricName, test.metricTimes, test.counter)
 			assert.Equal(t, test.expectedCounter, test.counter)
 		})
 
