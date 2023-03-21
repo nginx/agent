@@ -80,11 +80,11 @@ func (w *Writer) Write(b []byte) (int, error) {
 	var curWidth uint
 
 	for _, c := range string(b) {
-		if c == '\x1B' {
+		if c == ansi.Marker {
 			// ANSI escape sequence
 			w.ansi = true
 		} else if w.ansi {
-			if (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a) {
+			if ansi.IsTerminator(c) {
 				// ANSI sequence terminated
 				w.ansi = false
 			}
@@ -93,10 +93,11 @@ func (w *Writer) Write(b []byte) (int, error) {
 		}
 
 		if curWidth > w.width {
+			n, err := w.buf.WriteString(w.tail)
 			if w.ansiWriter.LastSequence() != "" {
 				w.ansiWriter.ResetAnsi()
 			}
-			return w.buf.WriteString(w.tail)
+			return n, err
 		}
 
 		_, err := w.ansiWriter.Write([]byte(string(c)))
