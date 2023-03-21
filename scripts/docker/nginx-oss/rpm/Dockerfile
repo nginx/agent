@@ -9,6 +9,8 @@ WORKDIR /agent
 COPY ./ /agent
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
+RUN if command -v amazon-linux-extras >/dev/null 2>&1; then amazon-linux-extras enable epel && yum clean metadata && yum install -y epel-release shadow-utils.x86_64; fi
+
 RUN set -x \
     && groupadd --system --gid 101 nginx \
     && adduser -g nginx --system --no-create-home --home /nonexistent --shell /bin/false --uid 101 nginx \
