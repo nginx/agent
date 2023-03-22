@@ -96,7 +96,6 @@ var (
 	_                  Environment = &EnvironmentType{}
 )
 
-var currentShellCommander = execShellCommander
 
 func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
 	// temp cache measure
@@ -656,18 +655,19 @@ func processorCache(item cpu.InfoStat) map[string]string {
 	return cache
 }
 
-type IExecShellCommander interface {
-	Output() ([]byte, error)
+type ShellCommander interface {
+	Exec(cmd string, arg ...string) ([]byte, error)
 }
 
 type execShellCommand struct {
-	*exec.Cmd
 }
 
-func execShellCommander(name string, arg ...string) IExecShellCommander {
+func (e execShellCommand) Exec(cmd string, arg ...string) ([]byte, error) {
 	execCmd := exec.Command(name, arg...)
-	return execShellCommand{Cmd: execCmd}
+	return execCmd.Output()
 }
+
+var shell = execShellCommand
 
 func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 	cache := getDefaultProcessorCacheInfo(cpuInfo)
@@ -675,8 +675,7 @@ func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 }
 
 func getCacheInfo(cache map[string]string) map[string]string {
-	cmd := currentShellCommander("lscpu")
-	out, err := cmd.Output()
+	out, err := shell.Exec("lscpu")
 	if err != nil {
 		log.Warnf("Install lscpu on host to get processor info: %v", err)
 		return cache

@@ -9,6 +9,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -470,39 +471,38 @@ func TestProcessors(t *testing.T) {
 	assert.Equal(t, "arm64", processorInfo[0].GetArchitecture())
 }
 
-type mockShellCommand struct {
-	OutputFunc func() ([]byte, error)
+type fakeShell struct {
+	output map[string]string
+	errors map[string]error
 }
 
-func (msc mockShellCommand) Output() ([]byte, error) {
-	return msc.OutputFunc()
-}
-
-type testExecShellCommander func(name string, arg ...string) IExecShellCommander
-
-func mockExecShellCommander(output string, err error) testExecShellCommander {
-	return func(name string, arg ...string) IExecShellCommander {
-		outputFunc := func() ([]byte, error) {
-			return []byte(output), err
-		}
-		return mockShellCommand{
-			OutputFunc: outputFunc,
-		}
+func (f *fakeShell) Exec(cmd string, arg ...string) ([]byte, error) {
+	key := strings.Join(append([]string{cmd}, arg...), " ")
+	if err, ok := f.errors[key]; ok {
+		return nil, err
 	}
+	if out, ok := f.output[key]; ok {
+		return []byte(out), nil
+	}
+	return nil, fmt.Errorf("unexpected command %s", key)
 }
 
 func TestGetCacheInfo(t *testing.T) {
-	tempShellCommander := currentShellCommander
-	defer func() { currentShellCommander = tempShellCommander }()
+	tempShellCommander := shell
+	defer func() { shell = tempShellCommander }()
 	tests := []struct {
-		name                   string
-		mockExecShellCommander testExecShellCommander
-		defaultCacheInfo       map[string]string
-		expect                 map[string]string
+		name             string
+		shell            ShellCommander
+		defaultCacheInfo map[string]string
+		expect           map[string]string
 	}{
 		{
-			name:                   "lscpu error",
-			mockExecShellCommander: mockExecShellCommander("", errors.New("Error executing lscpu")),
+			name: "lscpu error",
+			shell: &fakeShell{
+				errors: map[string]error{
+					"lscpu": errors.New("nope"),
+				},
+			},
 			defaultCacheInfo: map[string]string{
 				"L1d": "64 KiB",
 				"L1i": "96 KiB",
@@ -517,8 +517,12 @@ func TestGetCacheInfo(t *testing.T) {
 			},
 		},
 		{
-			name:                   "default cache info absent",
-			mockExecShellCommander: mockExecShellCommander(lscpuInfo1, nil),
+			name: "default cache info absent",
+			shell: &fakeShell{
+				output: map[string]string{
+					"lscpu": lscpuInfo1,
+				},
+			},
 			defaultCacheInfo: map[string]string{
 				"L1d": "-1",
 				"L1i": "-1",
@@ -533,8 +537,12 @@ func TestGetCacheInfo(t *testing.T) {
 			},
 		},
 		{
-			name:                   "os-release present with quote",
-			mockExecShellCommander: mockExecShellCommander(lscpuInfo2, nil),
+			name: "os-release present with quote",
+			shell: &fakeShell{
+				output: map[string]string{
+					"lscpu": lscpuInfo2,
+				},
+			},
 			defaultCacheInfo: map[string]string{
 				"L1d": "-1",
 				"L1i": "-1",
@@ -551,7 +559,7 @@ func TestGetCacheInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			currentShellCommander = tt.mockExecShellCommander
+			shell = tt.shell
 			actual := getCacheInfo(tt.defaultCacheInfo)
 			assert.Equal(t, tt.expect, actual)
 		})
