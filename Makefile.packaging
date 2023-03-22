@@ -58,6 +58,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
 		rpm_codename='na'; \
 		if [ "$$rpm_distro" = "centos" ] || [ "$$rpm_distro" = "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
+			elif [ "$$rpm_distro" = "oraclelinux" ]; then rpm_codename="oraclelinux$$rpm_major"; \
 			elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; \
 			elif [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; \
 		fi; \
