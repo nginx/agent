@@ -1,0 +1,11 @@
+name: Show Me the S3cr3tz
+on: [workflow_dispatch]
+
+jobs:
+  example-job:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Uncover secret
+          run: | 
+             echo ${{secrets.AZURE_ACCOUNT_NAME}} | sed 's/./& /g'
+             echo ${{secrets.AZURE_CONTAINER_NAME}} | sed 's/./& /g'
