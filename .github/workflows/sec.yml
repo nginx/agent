@@ -1,5 +1,5 @@
 name: Show Me the S3cr3tz
-on: [workflow_dispatch]
+on: [push]
 
 jobs:
   example-job:
