@@ -13,6 +13,12 @@ on:
         required: true
         type: boolean
         default: false
+      releaseJWT:
+        description: 'JWT for upload'
+        required: true
+        type: string
+        default: false
+      
   workflow_call:
 
 jobs:
@@ -168,9 +174,8 @@ jobs:
       - name: Publish Release Packages
         if: ${{ inputs.publishPackages == true }}
         env:
-          AGENT_UPLOADER_PEM: ${{ secrets.AGENT_UPLOADER_PEM }}
+          TOKEN: ${{ inputs.releaseJWT }}
         run: |
-          echo $AGENT_UPLOADER_PEM | base64 --decode > agent-uploader.pem
           make release
       - name: Publish Github Release
         if: ${{ inputs.publishPackages == true }}
