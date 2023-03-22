@@ -33,6 +33,13 @@ const (
 
 	decodedComma = ","
 	encodedComma = "%2C"
+
+	violationNameSeparator    = '_'
+	violationContextRequest   = "REQUEST"
+	violationContextHeader    = "HEADER"
+	violationContextParameter = "PARAMETER"
+	violationContextCookie    = "COOKIE"
+	violationContextUrl       = "URL"
 )
 
 // NGINX App Protect Logging Directives
@@ -112,27 +119,31 @@ var (
 )
 
 type ParameterData struct {
-	Text  string `xml:",chardata"`
-	Name  string `xml:"name"`
-	Value string `xml:"value"`
+	Text            string `xml:",chardata"`
+	Name            string `xml:"name"`
+	Value           string `xml:"value"`
+	IsBase64Decoded bool   `xml:"is_base64_decoded"`
 }
 
 type ParamData struct {
-	Text  string `xml:",chardata"`
-	Name  string `xml:"param_name"`
-	Value string `xml:"param_value"`
+	Text            string `xml:",chardata"`
+	Name            string `xml:"param_name"`
+	Value           string `xml:"param_value"`
+	IsBase64Decoded bool   `xml:"is_base64_decoded"`
 }
 
 type Header struct {
-	Text  string `xml:",chardata"`
-	Name  string `xml:"header_name"`
-	Value string `xml:"header_value"`
+	Text            string `xml:",chardata"`
+	Name            string `xml:"header_name"`
+	Value           string `xml:"header_value"`
+	IsBase64Decoded bool   `xml:"is_base64_decoded"`
 }
 
 type Cookie struct {
-	Text  string `xml:",chardata"`
-	Name  string `xml:"cookie_name"`
-	Value string `xml:"cookie_value"`
+	Text            string `xml:",chardata"`
+	Name            string `xml:"cookie_name"`
+	Value           string `xml:"cookie_value"`
+	IsBase64Decoded bool   `xml:"is_base64_decoded"`
 }
 
 type BADMSG struct {
@@ -146,8 +157,8 @@ type BADMSG struct {
 		Staging string `xml:"staging"`
 	} `xml:"violation_masks"`
 	RequestViolations struct {
-		Text      string `xml:",chardata"`
-		Violation []struct {
+		Text       string `xml:",chardata"`
+		Violations []struct {
 			Text      string `xml:",chardata"`
 			ViolIndex string `xml:"viol_index"`
 			ViolName  string `xml:"viol_name"`
@@ -155,12 +166,17 @@ type BADMSG struct {
 			// ParameterData and ParamData are both received when context == "parameter" | ""
 			// We receive either ParameterData or ParamData separately and not in the same XML message
 			// ParameterData and ParamData semantically represent the same thing (with ParameterData having more fields).
-			ParameterData ParameterData `xml:"parameter_data"`
-			ParamData     ParamData     `xml:"param_data"`
-			Header        Header        `xml:"header"`
-			Cookie        Cookie        `xml:"cookie"`
-			Staging       string        `xml:"staging"`
-			SigData       []struct {
+			ParameterData   ParameterData `xml:"parameter_data"`
+			ParamData       ParamData     `xml:"param_data"`
+			ParamName       string        `xml:"param_name"`
+			IsBase64Decoded bool          `xml:"is_base64_decoded"`
+			Header          Header        `xml:"header"`
+			HeaderData      Header        `xml:"header_data"`
+			Cookie          Cookie        `xml:"cookie"`
+			CookieName      string        `xml:"cookie_name"`
+			Uri             string        `xml:"uri"`
+			Staging         string        `xml:"staging"`
+			SigData         []struct {
 				Text         string `xml:",chardata"`
 				SigID        string `xml:"sig_id"`
 				BlockingMask string `xml:"blocking_mask"`
@@ -250,7 +266,7 @@ func (f *NAPConfig) GetEvent(hostPattern *regexp.Regexp, logger *logrus.Entry) (
 }
 
 func (f *NAPConfig) getSecurityViolation(logger *logrus.Entry) *models.SecurityViolationEvent {
-	return &models.SecurityViolationEvent{
+	sve := &models.SecurityViolationEvent{
 		PolicyName:               f.PolicyName,
 		SupportID:                f.SupportID,
 		BlockingExceptionReason:  f.BlockingExceptionReason,
@@ -280,11 +296,14 @@ func (f *NAPConfig) getSecurityViolation(logger *logrus.Entry) *models.SecurityV
 		BotSignatureName:         f.BotSignatureName,
 		EnforcedBotAnomalies:     f.EnforcedBotAnomalies,
 		ViolationContexts:        f.getViolationContext(),
-		ViolationsData:           f.getViolations(logger),
 		Outcome:                  f.RequestOutcome,
 		OutcomeReason:            f.RequestOutcomeReason,
 		URI:                      f.HTTPURI,
 	}
+
+	sve.ViolationsData = f.getViolations(logger)
+
+	return sve
 }
 
 func (f *NAPConfig) getMetadata() (*models.Metadata, error) {
@@ -301,13 +320,38 @@ func (f *NAPConfig) getMetadata() (*models.Metadata, error) {
 func (f *NAPConfig) getViolationContext() string {
 	contexts := []string{}
 	if f.ViolationDetailsXML != nil {
-		for _, v := range f.ViolationDetailsXML.RequestViolations.Violation {
+		for i, v := range f.ViolationDetailsXML.RequestViolations.Violations {
 			if v.Context != "" {
 				contexts = append(contexts, v.Context)
+				continue
+			}
+			if v.ViolName != "" {
+				f.ViolationDetailsXML.RequestViolations.Violations[i].Context = extractContextFromViolationName(v.ViolName)
+				contexts = append(contexts, f.ViolationDetailsXML.RequestViolations.Violations[i].Context)
 			}
 		}
 	}
 	return strings.Join(contexts, ",")
+}
+
+func extractContextFromViolationName(violationName string) string {
+	if strings.Contains(violationName, violationContextParameter) {
+		return strings.ToLower(violationContextParameter)
+	}
+	if strings.Contains(violationName, violationContextHeader) {
+		return strings.ToLower(violationContextHeader)
+	}
+	if strings.Contains(violationName, violationContextCookie) {
+		return strings.ToLower(violationContextCookie)
+	}
+	if strings.Contains(violationName, violationContextRequest) {
+		return strings.ToLower(violationContextRequest)
+	}
+	if strings.Contains(violationName, violationContextUrl) {
+		return strings.ToLower(violationContextUrl)
+	}
+
+	return ""
 }
 
 func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData {
@@ -317,66 +361,87 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 		return violations
 	}
 
-	for _, v := range f.ViolationDetailsXML.RequestViolations.Violation {
+	for _, v := range f.ViolationDetailsXML.RequestViolations.Violations {
 		violation := models.ViolationData{
 			Name:    v.ViolName,
 			Context: v.Context,
 		}
 
 		switch v.Context {
-		case parameterCtx, "":
+		case parameterCtx:
+			var isB64Decoded bool
+			var name, value string
+
 			if v.ParameterData != (ParameterData{}) {
-				decodedName, err := base64.StdEncoding.DecodeString(v.ParameterData.Name)
-				if err != nil {
-					logger.Errorf("could not decode the Paramater Name %s for %v", v.ParameterData.Name, f.SupportID)
-					break
-				}
-
-				decodedValue, err := base64.StdEncoding.DecodeString(v.ParameterData.Value)
-				if err != nil {
-					logger.Errorf("could not decode the Paramater Value %s for %v", v.ParameterData.Value, f.SupportID)
-					break
-				}
-
-				violation.ContextData = &models.ContextData{
-					Name:  string(decodedName),
-					Value: string(decodedValue),
-				}
+				isB64Decoded = v.ParameterData.IsBase64Decoded
+				name = v.ParameterData.Name
+				value = v.ParameterData.Value
 			} else if v.ParamData != (ParamData{}) {
-				decodedName, err := base64.StdEncoding.DecodeString(v.ParamData.Name)
-				if err != nil {
-					logger.Errorf("could not decode the Paramater Name %s for %v", v.ParamData.Name, f.SupportID)
-					break
-				}
-
-				decodedValue, err := base64.StdEncoding.DecodeString(v.ParamData.Value)
-				if err != nil {
-					logger.Errorf("could not decode the Paramater Value %s for %v", v.ParamData.Value, f.SupportID)
-					break
-				}
-
-				violation.ContextData = &models.ContextData{
-					Name:  string(decodedName),
-					Value: string(decodedValue),
-				}
-			} else if v.Context == parameterCtx {
+				isB64Decoded = v.ParamData.IsBase64Decoded
+				name = v.ParamData.Name
+				value = v.ParamData.Value
+			} else if v.ParamName != "" {
+				isB64Decoded = v.IsBase64Decoded
+				name = v.ParamName
+			} else {
 				logger.Warn("context is parameter but no Parameter data received")
 			}
+
+			if isB64Decoded {
+				violation.ContextData = &models.ContextData{
+					Name:  name,
+					Value: value,
+				}
+				break
+			}
+
+			decodedName, err := base64.StdEncoding.DecodeString(name)
+			if err != nil {
+				logger.Errorf("could not decode the Paramater Name %s for %v", name, f.SupportID)
+				break
+			}
+
+			decodedValue, err := base64.StdEncoding.DecodeString(value)
+			if err != nil {
+				logger.Errorf("could not decode the Paramater Value %s for %v", value, f.SupportID)
+				break
+			}
+
+			violation.ContextData = &models.ContextData{
+				Name:  string(decodedName),
+				Value: string(decodedValue),
+			}
 		case headerCtx:
-			if v.Header == (Header{}) {
-				logger.Warn("context is header but no Header data received")
+			var isB64Decoded bool
+			var name, value string
+
+			if v.Header != (Header{}) {
+				isB64Decoded = v.Header.IsBase64Decoded
+				name = v.Header.Name
+				value = v.Header.Value
+			} else if v.HeaderData != (Header{}) {
+				isB64Decoded = v.HeaderData.IsBase64Decoded
+				name = v.HeaderData.Name
+				value = v.HeaderData.Value
+			}
+
+			if isB64Decoded {
+				violation.ContextData = &models.ContextData{
+					Name:  name,
+					Value: value,
+				}
 				break
 			}
 
-			decodedName, err := base64.StdEncoding.DecodeString(v.Header.Name)
+			decodedName, err := base64.StdEncoding.DecodeString(name)
 			if err != nil {
-				logger.Errorf("could not decode the Header Name %s for %v", v.Header.Name, f.SupportID)
+				logger.Errorf("could not decode the Header Name %s for %v", name, f.SupportID)
 				break
 			}
 
-			decodedValue, err := base64.StdEncoding.DecodeString(v.Header.Value)
+			decodedValue, err := base64.StdEncoding.DecodeString(value)
 			if err != nil {
-				logger.Errorf("could not decode the Header Value %s for %v", v.Header.Value, f.SupportID)
+				logger.Errorf("could not decode the Header Value %s for %v", value, f.SupportID)
 				break
 			}
 
@@ -385,20 +450,35 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				Value: string(decodedValue),
 			}
 		case cookieCtx:
-			if v.Cookie == (Cookie{}) {
-				logger.Warn("context is cookie but no Cookie data received")
+			var isB64Decoded bool
+			var name, value string
+
+			if v.Cookie != (Cookie{}) {
+				isB64Decoded = v.Cookie.IsBase64Decoded
+				name = v.Cookie.Name
+				value = v.Cookie.Value
+			} else if v.CookieName != "" {
+				isB64Decoded = v.IsBase64Decoded
+				name = v.CookieName
+			}
+
+			if isB64Decoded {
+				violation.ContextData = &models.ContextData{
+					Name:  name,
+					Value: value,
+				}
 				break
 			}
 
-			decodedName, err := base64.StdEncoding.DecodeString(v.Cookie.Name)
+			decodedName, err := base64.StdEncoding.DecodeString(name)
 			if err != nil {
-				logger.Errorf("could not decode the Cookie Name %s for %v", v.Cookie.Name, f.SupportID)
+				logger.Errorf("could not decode the Cookie Name %s for %v", name, f.SupportID)
 				break
 			}
 
-			decodedValue, err := base64.StdEncoding.DecodeString(v.Cookie.Value)
+			decodedValue, err := base64.StdEncoding.DecodeString(value)
 			if err != nil {
-				logger.Errorf("could not decode the Cookie Value %s for %v", v.Cookie.Value, f.SupportID)
+				logger.Errorf("could not decode the Cookie Value %s for %v", value, f.SupportID)
 				break
 			}
 

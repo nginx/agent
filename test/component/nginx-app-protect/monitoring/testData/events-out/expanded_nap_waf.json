@@ -1,0 +1,59 @@
+{
+    "SecurityViolationEvent": {
+        "PolicyName": "app_protect_default_policy",
+        "SupportID": "4355056874564592513",
+        "Outcome": "REJECTED",
+        "OutcomeReason": "SECURITY_WAF_VIOLATION",
+        "Method": "GET",
+        "Protocol": "HTTP",
+        "URI": "/",
+        "Request": "GET /?a=\u003cscript\u003e HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nUser-Agent: curl/7.64.1\\r\\nAccept: */*\\r\\n\\r\\n",
+        "RequestStatus": "blocked",
+        "ResponseCode": "Blocked",
+        "VSName": "1-localhost:1-/",
+        "RemoteAddr": "127.0.0.1",
+        "RemotePort": "61478",
+        "ServerPort": "80",
+        "Violations": "HTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected",
+        "ClientClass": "Untrusted Bot",
+        "Severity": "critical",
+        "BotSignatureName": "curl",
+        "ViolationsData": [
+            {
+                "Name": "VIOL_ATTACK_SIGNATURE",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "a",
+                    "Value": "\u003cscript\u003e"
+                },
+                "Signatures": [
+                    {
+                        "ID": "200001475",
+                        "BlockingMask": "3",
+                        "Buffer": "a=\u003cscript\u003e",
+                        "Offset": "3",
+                        "Length": "7"
+                    },
+                    {
+                        "ID": "200000098",
+                        "BlockingMask": "3",
+                        "Buffer": "a=\u003cscript\u003e",
+                        "Offset": "2",
+                        "Length": "7"
+                    }
+                ]
+            },
+            {
+                "Name": "VIOL_HTTP_PROTOCOL"
+            },
+            {
+                "Name": "VIOL_PARAMETER_VALUE_METACHAR",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "a",
+                    "Value": "\u003cscript\u003e"
+                }
+            }
+        ]
+    }
+}

@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	proto "github.com/golang/protobuf/jsonpb"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -163,7 +163,7 @@ func TestNAPMonitoring(t *testing.T) {
 		bEvent, err := os.ReadFile(fName)
 		assert.NoError(t, err)
 		expectedEvent := &events.Event{}
-		err = proto.Unmarshal(bEvent, expectedEvent)
+		err = proto.UnmarshalString(string(bEvent), expectedEvent)
 		assert.NoError(t, err)
 
 		resultEvent, found := ingestionServer.ReceivedEvent(expectedEvent.GetSecurityViolationEvent().SupportID)

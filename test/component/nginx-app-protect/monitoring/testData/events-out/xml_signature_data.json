@@ -1,0 +1,57 @@
+{
+    "SecurityViolationEvent": {
+        "PolicyName": "app_protect_default_policy",
+        "SupportID": "4355056874564592518",
+        "Outcome": "REJECTED",
+        "OutcomeReason": "SECURITY_WAF_VIOLATION",
+        "Method": "GET",
+        "Protocol": "HTTP",
+        "URI": "/",
+        "Request": "GET /?a=\u003cscript\u003e HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nUser-Agent: curl/7.64.1\\r\\nAccept: */*\\r\\n\\r\\n",
+        "RequestStatus": "blocked",
+        "ResponseCode": "Blocked",
+        "VSName": "1-localhost:1-/",
+        "RemoteAddr": "127.0.0.1",
+        "RemotePort": "61478",
+        "ServerPort": "80",
+        "Violations": "HTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected",
+        "ClientClass": "Untrusted Bot",
+        "Severity": "critical",
+        "BotSignatureName": "curl",
+        "ViolationsData": [
+            {
+                "Name": "VIOL_ATTACK_SIGNATURE",
+                "Signatures": [
+                    {
+                        "ID": "200021094",
+                        "BlockingMask": "4",
+                        "Buffer": "Connection: keep-alive\r\nHost: a.com\r\nUser-Agent: Java/1.7.0_51\r\nAccept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2\r\n\r\n",
+                        "Offset": "37",
+                        "Length": "16"
+                    },
+                    {
+                        "ID": "200011034",
+                        "BlockingMask": "2",
+                        "Buffer": "pt: */*\r\nFoo: Authorization: %n%n%n%n\r\nFoo: echo\u003c!-- #echo\r\nX18",
+                        "Offset": "29",
+                        "Length": "6"
+                    },
+                    {
+                        "ID": "200000179",
+                        "BlockingMask": "3",
+                        "Buffer": "7\r\nAccept: */*\r\nFoo: Authorization: %n%n%n%n\r\nFoo: echo\u003c!-- #ec",
+                        "Offset": "21",
+                        "Length": "23"
+                    },
+                    {
+                        "ID": "200004106",
+                        "BlockingMask": "2",
+                        "Buffer": "zation: %n%n%n%n\r\nFoo: echo\u003c!-- #echo\r\nX1892: echo\r\nX1893: '\u003c!-",
+                        "Offset": "27",
+                        "Length": "10"
+                    }
+                ]
+            }
+        ]
+    }
+}

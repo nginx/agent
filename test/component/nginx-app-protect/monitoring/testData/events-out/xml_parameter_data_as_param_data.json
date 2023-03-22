@@ -1,0 +1,32 @@
+{
+    "SecurityViolationEvent": {
+        "PolicyName": "app_protect_default_policy",
+        "SupportID": "4355056874564592516",
+        "Outcome": "REJECTED",
+        "OutcomeReason": "SECURITY_WAF_VIOLATION",
+        "Method": "GET",
+        "Protocol": "HTTP",
+        "URI": "/",
+        "Request": "GET /?a=\u003cscript\u003e HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nUser-Agent: curl/7.64.1\\r\\nAccept: */*\\r\\n\\r\\n",
+        "RequestStatus": "blocked",
+        "ResponseCode": "Blocked",
+        "VSName": "1-localhost:1-/",
+        "RemoteAddr": "127.0.0.1",
+        "RemotePort": "61478",
+        "ServerPort": "80",
+        "Violations": "HTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected",
+        "ClientClass": "Untrusted Bot",
+        "Severity": "critical",
+        "BotSignatureName": "curl",
+        "ViolationsData": [
+            {
+                "Name": "VIOL_JSON_MALFORMED",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "json",
+                    "Value": "{ \"a\": \"\"}"
+                }
+            }
+        ]
+    }
+}
