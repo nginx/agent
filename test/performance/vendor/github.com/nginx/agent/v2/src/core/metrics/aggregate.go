@@ -40,7 +40,7 @@ func dimChecksum(stats *proto.StatsEntity) string {
 // SaveCollections loops through one or more reports and get all the raw metrics for the Collections
 // Note this function operate on the Collections struct data directly.
 func SaveCollections(metricsCollections Collections, reports ...*proto.MetricsReport) Collections {
-	// could be multiple reports
+	// could be multiple reports, however they must all be of the same type.
 	for _, report := range reports {
 		metricsCollections.Count++
 		for _, stats := range report.GetData() {
