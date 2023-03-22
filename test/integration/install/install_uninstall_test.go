@@ -2,7 +2,7 @@ package install
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -73,7 +73,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	// Install Agent inside container and record installation time/install output
 	containerAgentPackagePath := getPackagePath(absContainerAgentPackageDir, string(osReleaseContent))
-	installTime, installLog, err := installAgent(ctx, testContainer, containerAgentPackagePath, string(osReleaseContent))
+	installLog, installTime, err := installAgent(ctx, testContainer, containerAgentPackagePath, string(osReleaseContent))
 	require.NoError(t, err)
 
 	// Check the install time under 30s
@@ -115,7 +115,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 }
 
 // installAgent installs the agent returning total install time and install output
-func installAgent(ctx context.Context, container *testcontainers.DockerContainer, agentPackageFilePath, osReleaseContent string) (time.Duration, string, error) {
+func installAgent(ctx context.Context, container *testcontainers.DockerContainer, agentPackageFilePath, osReleaseContent string) (string, time.Duration, error) {
 	// Get OS to create install cmd
 	installCmd := createInstallCommand(agentPackageFilePath, osReleaseContent)
 
@@ -125,14 +125,14 @@ func installAgent(ctx context.Context, container *testcontainers.DockerContainer
 	// Start agent installation and capture install output
 	exitCode, cmdOut, err := container.Exec(ctx, installCmd)
 	if err != nil {
-		return time.Since(start), "", err
+		return "", time.Since(start), err
 	}
 	if exitCode != 0 {
-		return time.Since(start), "", errors.New("expected exit code of 0")
+		return "", time.Since(start), fmt.Errorf("expected error code of 0. Got: %v", exitCode)
 	}
 
 	stdoutStderr, err := io.ReadAll(cmdOut)
-	return time.Since(start), string(stdoutStderr), err
+	return string(stdoutStderr), time.Since(start), err
 }
 
 // uninstallAgent uninstall the agent returning output
@@ -146,7 +146,7 @@ func uninstallAgent(ctx context.Context, container *testcontainers.DockerContain
 		return "", err
 	}
 	if exitCode != 0 {
-		return "", errors.New("expected exit code of 0")
+		return "", fmt.Errorf("expected error code of 0. Got: %v", exitCode)
 	}
 
 	stdoutStderr, err := io.ReadAll(cmdOut)
