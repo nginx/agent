@@ -84,7 +84,7 @@ jobs:
           version: "7"
         - image: "oraclelinux"
           version: "8"
-       - image: "oraclelinux"
+        - image: "oraclelinux"
           version: "9"
         - image: "ubuntu"
           version: "22.04"
