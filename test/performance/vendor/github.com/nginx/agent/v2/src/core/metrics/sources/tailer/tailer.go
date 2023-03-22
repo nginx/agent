@@ -45,6 +45,7 @@ type NginxAccessItem struct {
 	UpstreamResponseTime   string `mapstructure:"upstream_response_time"`
 	UpstreamResponseLength string `mapstructure:"upstream_response_length"`
 	UpstreamStatus         string `mapstructure:"upstream_status"`
+	UpstreamCacheStatus    string `mapstructure:"upstream_cache_status"`
 }
 
 func NewNginxAccessItem(v map[string]string) (*NginxAccessItem, error) {
