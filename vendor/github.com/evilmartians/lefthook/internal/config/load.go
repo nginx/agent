@@ -23,10 +23,25 @@ const (
 
 var hookKeyRegexp = regexp.MustCompile(`^(?P<hookName>[^.]+)\.(scripts|commands)`)
 
+// NotFoundError wraps viper.ConfigFileNotFoundError for lefthook.
+type NotFoundError struct {
+	message string
+}
+
+// Error returns message of viper.ConfigFileNotFoundError.
+func (err NotFoundError) Error() string {
+	return err.message
+}
+
 // Loads configs from the given directory with extensions.
 func Load(fs afero.Fs, repo *git.Repository) (*Config, error) {
 	global, err := read(fs, repo.RootPath, "lefthook")
 	if err != nil {
+		var notFoundErr viper.ConfigFileNotFoundError
+		if ok := errors.As(err, &notFoundErr); ok {
+			return nil, NotFoundError{err.Error()}
+		}
+
 		return nil, err
 	}
 
@@ -82,15 +97,15 @@ func mergeAll(fs afero.Fs, repo *git.Repository) (*viper.Viper, error) {
 		return nil, err
 	}
 
-	if err := merge("lefthook-local", "", extends); err != nil {
+	if err := merge("lefthook-local", "", extends); err == nil {
+		if err = extend(extends, repo.RootPath); err != nil {
+			return nil, err
+		}
+	} else {
 		var notFoundErr viper.ConfigFileNotFoundError
 		if ok := errors.As(err, &notFoundErr); !ok {
 			return nil, err
 		}
-	}
-
-	if err := extend(extends, repo.RootPath); err != nil {
-		return nil, err
 	}
 
 	return extends, nil
@@ -135,6 +150,7 @@ func mergeRemote(fs afero.Fs, repo *git.Repository, v *viper.Viper) error {
 
 // extend merges all files listed in 'extends' option into the config.
 func extend(v *viper.Viper, root string) error {
+	log.Debugf("extends %v\n", v.GetStringSlice("extends"))
 	for i, path := range v.GetStringSlice("extends") {
 		if !filepath.IsAbs(path) {
 			path = filepath.Join(root, path)

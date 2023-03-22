@@ -46,6 +46,15 @@ func (c *Config) IsFeatureEnabled(feature string) bool {
 	return false
 }
 
+func (c *Config) IsExtensionEnabled(extension string) bool {
+	for _, configExtension := range c.Extensions {
+		if configExtension == extension {
+			return true
+		}
+	}
+	return false
+}
+
 type Server struct {
 	Host     string `mapstructure:"host" yaml:"-"`
 	GrpcPort int    `mapstructure:"grpcPort" yaml:"-"`

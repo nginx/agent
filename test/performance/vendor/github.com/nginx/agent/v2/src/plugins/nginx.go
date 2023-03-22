@@ -89,13 +89,15 @@ type NginxConfigValidationResponse struct {
 func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config) *Nginx {
 	isFeatureNginxConfigEnabled := loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfig)
 
+	isNginxAppProtectEnabled := loadedConfig.IsExtensionEnabled(agent_config.NginxAppProtectExtensionPlugin)
+
 	return &Nginx{
 		nginxBinary:                    nginxBinary,
 		processes:                      env.Processes(),
 		env:                            env,
 		cmdr:                           cmdr,
 		config:                         loadedConfig,
-		isNginxAppProtectEnabled:       false,
+		isNginxAppProtectEnabled:       isNginxAppProtectEnabled,
 		isFeatureNginxConfigEnabled:    isFeatureNginxConfigEnabled,
 		configApplyStatusChannel:       make(chan *proto.Command_NginxConfigResponse, 1),
 		nginxAppProtectSoftwareDetails: &proto.AppProtectWAFDetails{},
@@ -795,6 +797,9 @@ func (n *Nginx) ValidateNginxAppProtectVersion(nginxConfig *proto.NginxConfig) (
 }
 
 func isFileInDirectoryMap(directoryMap *proto.DirectoryMap, path string) bool {
+	if directoryMap == nil {
+		return false
+	}
 	if (directoryMap != &proto.DirectoryMap{}) {
 		for _, directory := range directoryMap.Directories {
 			for _, file := range directory.GetFiles() {

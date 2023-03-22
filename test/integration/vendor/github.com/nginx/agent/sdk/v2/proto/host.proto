@@ -19,7 +19,7 @@ message HostInfo {
   string os_type = 5 [(gogoproto.jsontag) = "os-type"];
   // Host UUID
   string uuid = 6 [(gogoproto.jsontag) = "uuid"];
-  // The native cpu architecture queried at runtime, as returned by `uname -m` or empty string in case of error
+  // The native cpu architecture queried at runtime, as returned by `uname -a` or empty string in case of error
   string uname = 7 [(gogoproto.jsontag) = "uname"];
   // List of disk partitions
   repeated DiskPartition partitons = 8 [(gogoproto.jsontag) = "disk_partitions"];

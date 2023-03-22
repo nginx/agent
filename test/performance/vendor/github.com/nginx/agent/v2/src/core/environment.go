@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -84,6 +85,11 @@ type Process struct {
 }
 
 const lengthOfContainerId = 64
+const versionId = "VERSION_ID"
+const version = "VERSION"
+const codeName = "VERSION_CODENAME"
+const id = "ID"
+const name = "NAME"
 
 var (
 	virtualizationFunc             = host.Virtualization
@@ -106,11 +112,11 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 			DisplayName:         hostInformation.Hostname,
 			OsType:              hostInformation.OS,
 			Uuid:                env.GetSystemUUID(),
-			Uname:               hostInformation.KernelArch,
+			Uname:               getUnixName(),
 			Partitons:           diskPartitions(),
 			Network:             env.networks(),
-			Processor:           processors(),
-			Release:             releaseInfo(),
+			Processor:           processors(hostInformation.KernelArch),
+			Release:             releaseInfo("/etc/os-release"),
 			Tags:                *tags,
 			AgentAccessibleDirs: configDirs,
 		}
@@ -119,6 +125,46 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 		env.host = hostInfoFacacde
 	}
 	return env.host
+}
+
+// getUnixName returns details about this operating system formatted as "sysname
+// nodename release version machine". Returns "" if unix name cannot be
+// determined.
+//
+//   - sysname: Name of the operating system implementation.
+//   - nodename: Network name of this machine.
+//   - release: Release level of the operating system.
+//   - version: Version level of the operating system.
+//   - machine: Machine hardware platform.
+//
+// Different platforms have different [Utsname] struct definitions.
+//
+// TODO :- Make this function platform agnostic to pull uname (uname -a).
+//
+// [Utsname]: https://cs.opensource.google/search?q=utsname&ss=go%2Fx%2Fsys&start=1
+func getUnixName() string {
+	var utsname unix.Utsname
+	err := unix.Uname(&utsname)
+	if err != nil {
+		log.Warnf("Unable to read Uname. Error: %v", err)
+		return ""
+	}
+
+	toStr := func(buf []byte) string {
+		idx := bytes.IndexByte(buf, 0)
+		if idx == -1 {
+			return "unknown"
+		}
+		return string(buf[:idx])
+	}
+
+	sysName := toStr(utsname.Sysname[:])
+	nodeName := toStr(utsname.Nodename[:])
+	release := toStr(utsname.Release[:])
+	version := toStr(utsname.Version[:])
+	machine := toStr(utsname.Machine[:])
+
+	return strings.Join([]string{sysName, nodeName, release, version, machine}, " ")
 }
 
 func (env *EnvironmentType) GetHostname() string {
@@ -565,7 +611,7 @@ func callSyscall(mib []int32) ([]byte, uint64, error) {
 	return buf, length, nil
 }
 
-func processors() (res []*proto.CpuInfo) {
+func processors(architecture string) (res []*proto.CpuInfo) {
 	log.Debug("Reading CPU information for dataplane host")
 	cpus, err := cpu.Info()
 	if err != nil {
@@ -580,9 +626,12 @@ func processors() (res []*proto.CpuInfo) {
 			// TODO: Model is a number
 			// wait to see if unmarshalling error on control plane side is fixed with switch in models
 			// https://stackoverflow.com/questions/21151765/cannot-unmarshal-string-into-go-value-of-type-int64
-			Model:        item.Model,
-			Cores:        item.Cores,
-			Architecture: item.Family,
+			Model: item.Model,
+			Cores: item.Cores,
+			// cpu_info does not provide architecture info.
+			// Fix was to add KernelArch field in InfoStat struct that returns 'uname -m'
+			// https://github.com/shirou/gopsutil/issues/737
+			Architecture: architecture,
 			Cpus:         int32(len(cpus)),
 			Mhz:          item.Mhz,
 			// TODO - check if this is correct
@@ -598,22 +647,82 @@ func processors() (res []*proto.CpuInfo) {
 }
 
 func processorCache(item cpu.InfoStat) map[string]string {
-	// Find a library that supports multiple CPUs
-	cache := map[string]string{
-		// values are in bytes
-		"L1d":       fmt.Sprintf("%v", cpuid.CPU.Cache.L1D),
-		"L1i":       fmt.Sprintf("%v", cpuid.CPU.Cache.L1D),
-		"L2":        fmt.Sprintf("%v", cpuid.CPU.Cache.L2),
-		"L3":        fmt.Sprintf("%v", cpuid.CPU.Cache.L3),
-		"Features:": strings.Join(cpuid.CPU.FeatureSet(), ","),
-		// "Flags:": strings.Join(item.Flags, ","),
-		"Cacheline bytes:": fmt.Sprintf("%v", cpuid.CPU.CacheLine),
-	}
-
+	cache := getProcessorCacheInfo(cpuid.CPU)
 	if cpuid.CPU.Supports(cpuid.SSE, cpuid.SSE2) {
 		cache["SIMD 2:"] = "Streaming SIMD 2 Extensions"
 	}
 	return cache
+}
+
+func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
+	cache := getDefaultProcessorCacheInfo(cpuInfo)
+
+	out, err := exec.Command("lscpu").Output()
+	if err != nil {
+		log.Warnf("Install lscpu on host to get processor info: %v", err)
+		return cache
+	}
+
+	return parseLscpu(string(out), cache)
+}
+
+func parseLscpu(lscpuInfo string, cache map[string]string) map[string]string {
+	lscpuInfos := strings.TrimSpace(lscpuInfo)
+	lines := strings.Split(lscpuInfos, "\n")
+	lscpuInfoMap := map[string]string{}
+	for _, line := range lines {
+		fields := strings.Split(line, ":")
+		if len(fields) < 2 {
+			continue
+		}
+		key := strings.TrimSpace(fields[0])
+		value := strings.TrimSpace(fields[1])
+		lscpuInfoMap[key] = strings.Trim(value, "\"")
+	}
+
+	if l1dCache, ok := lscpuInfoMap["L1d cache"]; ok {
+		cache["L1d"] = l1dCache
+	}
+	if l1iCache, ok := lscpuInfoMap["L1i cache"]; ok {
+		cache["L1i"] = l1iCache
+	}
+	if l2Cache, ok := lscpuInfoMap["L2 cache"]; ok {
+		cache["L2"] = l2Cache
+	}
+	if l3Cache, ok := lscpuInfoMap["L3 cache"]; ok {
+		cache["L3"] = l3Cache
+	}
+
+	return cache
+}
+
+func getDefaultProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
+	// Find a library that supports multiple CPUs
+	return map[string]string{
+		"L1d":       formatBytes(cpuInfo.Cache.L1D),
+		"L1i":       formatBytes(cpuInfo.Cache.L1D),
+		"L2":        formatBytes(cpuInfo.Cache.L2),
+		"L3":        formatBytes(cpuInfo.Cache.L3),
+		"Features:": strings.Join(cpuInfo.FeatureSet(), ","),
+		// "Flags:": strings.Join(item.Flags, ","),
+		"Cacheline bytes:": fmt.Sprintf("%v", cpuInfo.CacheLine),
+	}
+}
+
+func formatBytes(bytes int) string {
+	if bytes <= -1 {
+		return "-1"
+	}
+	mib := 1024 * 1024
+	kib := 1024
+
+	if bytes >= mib {
+		return fmt.Sprint(bytes/mib) + " MiB"
+	} else if bytes >= kib {
+		return fmt.Sprint(bytes/kib) + " KiB"
+	} else {
+		return fmt.Sprint(bytes) + " B"
+	}
 }
 
 func virtualization() (string, string) {
@@ -648,13 +757,52 @@ func diskPartitions() (partitions []*proto.DiskPartition) {
 	return partitions
 }
 
-func releaseInfo() (release *proto.ReleaseInfo) {
+func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {
+	hostReleaseInfo := getHostReleaseInfo()
+	osRelease, err := getOsRelease(osReleaseFile)
+	if err != nil {
+		log.Warnf("Could not read from %s file: %v", osReleaseFile, err)
+		return hostReleaseInfo
+	}
+	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease)
+}
+
+func mergeHostAndOsReleaseInfo(hostReleaseInfo *proto.ReleaseInfo,
+	osReleaseInfo map[string]string) (release *proto.ReleaseInfo) {
+
+	// override os-release info with host info,
+	// if os-release info is empty.
+	if len(osReleaseInfo[versionId]) == 0 {
+		osReleaseInfo[versionId] = hostReleaseInfo.VersionId
+	}
+	if len(osReleaseInfo[version]) == 0 {
+		osReleaseInfo[version] = hostReleaseInfo.Version
+	}
+	if len(osReleaseInfo[codeName]) == 0 {
+		osReleaseInfo[codeName] = hostReleaseInfo.Codename
+	}
+	if len(osReleaseInfo[name]) == 0 {
+		osReleaseInfo[name] = hostReleaseInfo.Name
+	}
+	if len(osReleaseInfo[id]) == 0 {
+		osReleaseInfo[id] = hostReleaseInfo.Id
+	}
+
+	return &proto.ReleaseInfo{
+		VersionId: osReleaseInfo[versionId],
+		Version:   osReleaseInfo[version],
+		Codename:  osReleaseInfo[codeName],
+		Name:      osReleaseInfo[name],
+		Id:        osReleaseInfo[id],
+	}
+}
+
+func getHostReleaseInfo() (release *proto.ReleaseInfo) {
 	hostInfo, err := host.Info()
 	if err != nil {
 		log.Errorf("Could not read release information for host: %v", err)
 		return &proto.ReleaseInfo{}
 	}
-
 	return &proto.ReleaseInfo{
 		VersionId: hostInfo.PlatformVersion,
 		Version:   hostInfo.KernelVersion,
@@ -662,6 +810,39 @@ func releaseInfo() (release *proto.ReleaseInfo) {
 		Name:      hostInfo.PlatformFamily,
 		Id:        hostInfo.Platform,
 	}
+}
+
+// getOsRelease reads the path and returns release information for host.
+func getOsRelease(path string) (map[string]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("release file %s unreadable: %w", path, err)
+	}
+	defer f.Close()
+	info, err := parseOsReleaseFile(f)
+	if err != nil {
+		return nil, fmt.Errorf("release file %s unparsable: %w", path, err)
+	}
+	return info, nil
+}
+
+func parseOsReleaseFile(reader io.Reader) (map[string]string, error) {
+	osReleaseInfoMap := map[string]string{"NAME": "unix"}
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		field := strings.Split(line, "=")
+		if len(field) < 2 {
+			continue
+		}
+		osReleaseInfoMap[field[0]] = strings.Trim(field[1], "\"")
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("could not parse os-release file %w", err)
+	}
+
+	return osReleaseInfoMap, nil
 }
 
 func (env *EnvironmentType) networks() (res *proto.Network) {

@@ -525,7 +525,7 @@ func TestNginxConfigApply(t *testing.T) {
 			binary := tutils.NewMockNginxBinary()
 			binary.On("WriteConfig", mock.Anything).Return(config, nil)
 			binary.On("ValidateConfig", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
+			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(test.config, nil)
 			binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
@@ -545,8 +545,9 @@ func TestNginxConfigApply(t *testing.T) {
 			pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
 				pluginUnderTest.nginxAppProtectSoftwareDetails = &proto.AppProtectWAFDetails{
-					WafLocation: auxPath,
-					WafVersion:  test.wafVersion,
+					PrecompiledPublication: true,
+					WafLocation:            auxPath,
+					WafVersion:             test.wafVersion,
 				}
 			}
 

@@ -203,6 +203,10 @@ func (r *Runner) preHook() {
 }
 
 func (r *Runner) postHook() {
+	if !config.HookUsesStagedFiles(r.HookName) {
+		return
+	}
+
 	if err := r.Repo.RestoreUnstaged(); err != nil {
 		log.Warnf("Couldn't restore hidden unstaged files: %s\n", err)
 		return
@@ -279,7 +283,7 @@ func (r *Runner) runScript(script *config.Script, path string, file os.FileInfo)
 		defer log.StartSpinner()
 	}
 
-	r.run(ExecuteOptions{
+	finished := r.run(ExecuteOptions{
 		name:        file.Name(),
 		root:        r.Repo.RootPath,
 		args:        args,
@@ -287,6 +291,16 @@ func (r *Runner) runScript(script *config.Script, path string, file os.FileInfo)
 		interactive: script.Interactive && !r.DisableTTY,
 		env:         script.Env,
 	}, r.Hook.Follow)
+
+	if finished && config.HookUsesStagedFiles(r.HookName) && script.StageFixed {
+		files, err := r.Repo.StagedFiles()
+		if err != nil {
+			log.Warn("Couldn't stage fixed files:", err)
+			return
+		}
+
+		r.addStagedFiles(files)
+	}
 }
 
 func (r *Runner) runCommands() {
@@ -346,17 +360,43 @@ func (r *Runner) runCommand(name string, command *config.Command) {
 		defer log.StartSpinner()
 	}
 
-	r.run(ExecuteOptions{
+	finished := r.run(ExecuteOptions{
 		name:        name,
 		root:        filepath.Join(r.Repo.RootPath, command.Root),
-		args:        args,
+		args:        args.all,
 		failText:    command.FailText,
 		interactive: command.Interactive && !r.DisableTTY,
 		env:         command.Env,
 	}, r.Hook.Follow)
+
+	if finished && config.HookUsesStagedFiles(r.HookName) && command.StageFixed {
+		files := args.files
+		if len(files) == 0 {
+			stagedFiles, err := r.Repo.StagedFiles()
+			if err != nil {
+				log.Warn("Couldn't stage fixed files:", err)
+				return
+			}
+			files = prepareFiles(command, stagedFiles)
+		}
+
+		if len(command.Root) > 0 {
+			for i, file := range files {
+				files[i] = filepath.Join(command.Root, file)
+			}
+		}
+
+		r.addStagedFiles(files)
+	}
 }
 
-func (r *Runner) run(opts ExecuteOptions, follow bool) {
+func (r *Runner) addStagedFiles(files []string) {
+	if err := r.Repo.AddFiles(files); err != nil {
+		log.Warn("Couldn't stage fixed files:", err)
+	}
+}
+
+func (r *Runner) run(opts ExecuteOptions, follow bool) bool {
 	log.SetName(opts.name)
 	defer log.UnsetName(opts.name)
 
@@ -368,7 +408,7 @@ func (r *Runner) run(opts ExecuteOptions, follow bool) {
 		} else {
 			r.success(opts.name)
 		}
-		return
+		return err == nil
 	}
 
 	out := bytes.NewBuffer(make([]byte, 0))
@@ -384,7 +424,7 @@ func (r *Runner) run(opts ExecuteOptions, follow bool) {
 	}
 
 	if err == nil && r.SkipSettings.SkipExecution() {
-		return
+		return false
 	}
 
 	log.Infof("%s\n%s", execName, out)
@@ -392,6 +432,8 @@ func (r *Runner) run(opts ExecuteOptions, follow bool) {
 		log.Infof("%s", err)
 	}
 	log.Infof("\n")
+
+	return err == nil
 }
 
 // Returns whether two arrays have at least one similar element.

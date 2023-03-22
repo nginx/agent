@@ -23,12 +23,12 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	filesSDK "github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/zip"
-	"github.com/nginxinc/nginx-go-crossplane"
+
+	crossplane "github.com/nginxinc/nginx-go-crossplane"
+	log "github.com/sirupsen/logrus"
 )
 
 type DirectoryMap struct {
@@ -61,8 +61,14 @@ func (dm DirectoryMap) addDirectory(dir string) error {
 }
 
 func (dm DirectoryMap) appendFile(dir string, info fs.FileInfo) error {
+	lineCount, err := filesSDK.GetLineCount(filepath.Join(dir, info.Name()))
+	if err != nil {
+		log.Debugf("Failed to get line count: %v", err)
+	}
+
 	fileProto := &proto.File{
 		Name:        info.Name(),
+		Lines:       int32(lineCount),
 		Mtime:       filesSDK.TimeConvert(info.ModTime()),
 		Permissions: filesSDK.GetPermissions(info.Mode()),
 		Size_:       info.Size(),
@@ -237,7 +243,7 @@ func updateNginxConfigFileConfig(
 				if err := updateNginxConfigFileWithRoot(aux, directive.Args[0], seen, allowedDirectories, directoryMap); err != nil {
 					return true, err
 				}
-			case "ssl_certificate", "ssl_trusted_certificate":
+			case "ssl_certificate", "proxy_ssl_certificate", "ssl_trusted_certificate":
 				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories); err != nil {
 					return true, err
 				}
@@ -290,7 +296,7 @@ func updateNginxConfigWithCert(
 		}
 	}
 
-	if directive == "ssl_certificate" {
+	if directive == "ssl_certificate" || directive == "proxy_ssl_certificate" {
 		cert, err := LoadCertificate(file)
 		if err != nil {
 			return fmt.Errorf("configs: could not load cert(%s): %s", file, err)
