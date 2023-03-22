@@ -2,6 +2,7 @@ package utils
 
 import (
 	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/stretchr/testify/mock"
@@ -9,6 +10,30 @@ import (
 
 type MockNginxBinary struct {
 	mock.Mock
+}
+
+func GetNginxConfig(contents []byte) *proto.NginxConfig {
+	return &proto.NginxConfig{
+		Action: proto.NginxConfigAction_APPLY,
+		ConfigData: &proto.ConfigDescriptor{
+			NginxId:  "12345",
+			Checksum: "2314365",
+		},
+		Zconfig: &proto.ZippedFile{
+			Contents:      contents,
+			Checksum:      checksum.Checksum(contents),
+			RootDirectory: "nginx.conf",
+		},
+		Zaux: &proto.ZippedFile{
+			Contents:      contents,
+			Checksum:      checksum.Checksum(contents),
+			RootDirectory: "nginx.conf",
+		},
+		AccessLogs:   &proto.AccessLogs{},
+		ErrorLogs:    &proto.ErrorLogs{},
+		Ssl:          &proto.SslCertificates{},
+		DirectoryMap: &proto.DirectoryMap{},
+	}
 }
 
 func GetDetailsMap() map[string]*proto.NginxDetails {

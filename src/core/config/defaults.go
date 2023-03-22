@@ -251,7 +251,7 @@ var (
 		},
 		&DurationFlag{
 			Name:         NginxConfigReloadMonitoringPeriod,
-			Usage:        "The period at which the NGINX Agent will monitor error logs after a NGINX reload.",
+			Usage:        "The duration the NGINX Agent will monitor error logs after a NGINX reload",
 			DefaultValue: Defaults.Nginx.ConfigReloadMonitoringPeriod,
 		},
 		// Metrics

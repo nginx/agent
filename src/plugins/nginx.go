@@ -53,6 +53,7 @@ type Nginx struct {
 	messagePipeline                core.MessagePipeInterface
 	nginxBinary                    core.NginxBinary
 	processes                      []core.Process
+	processesMutex                 sync.RWMutex
 	env                            core.Environment
 	cmdr                           client.Commander
 	config                         *config.Config
@@ -105,8 +106,8 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 func (n *Nginx) Init(pipeline core.MessagePipeInterface) {
 	log.Info("NginxBinary initializing")
 	n.messagePipeline = pipeline
-	n.nginxBinary.UpdateNginxDetailsFromProcesses(n.processes)
-	nginxDetails := n.nginxBinary.GetNginxDetailsMapFromProcesses(n.processes)
+	n.nginxBinary.UpdateNginxDetailsFromProcesses(n.getNginxProccessInfo())
+	nginxDetails := n.nginxBinary.GetNginxDetailsMapFromProcesses(n.getNginxProccessInfo())
 
 	pipeline.Process(
 		core.NewMessage(core.NginxPluginConfigured, n),
@@ -138,6 +139,7 @@ func (n *Nginx) Process(message *core.Message) {
 		}
 	case core.NginxDetailProcUpdate:
 		procs := message.Data().([]core.Process)
+		n.syncProcessInfo(procs)
 		n.nginxBinary.UpdateNginxDetailsFromProcesses(procs)
 	case core.DataplaneChanged:
 		n.uploadConfigs()
@@ -188,6 +190,18 @@ func (n *Nginx) Subscriptions() []string {
 		core.NginxConfigValidationSucceeded,
 		core.NginxConfigValidationFailed,
 	}
+}
+
+func (n *Nginx) getNginxProccessInfo() []core.Process {
+	n.processesMutex.RLock()
+	defer n.processesMutex.RUnlock()
+	return n.processes
+}
+
+func (n *Nginx) syncProcessInfo(processInfo []core.Process) {
+	n.processesMutex.Lock()
+	defer n.processesMutex.Unlock()
+	n.processes = processInfo
 }
 
 func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) error {
@@ -540,6 +554,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 }
 
 func (n *Nginx) monitor(details *proto.NginxDetails) error {
+	// processInfo := n.getNginxProccessInfo()
 	errorLogs := n.nginxBinary.GetErrorLogs()
 	if len(errorLogs) == 0 {
 		log.Warn("Skipping error log validation for NGINX reload because no error logs have been configured in the NGINX configuration")
@@ -553,8 +568,8 @@ func (n *Nginx) monitor(details *proto.NginxDetails) error {
 		go n.tailLog(errorChannel, wg, logFile)
 	}
 
-	wg.Add(1)
-	go n.monitorPids(errorChannel, wg)
+	// wg.Add(1)
+	// go n.monitorPids(processInfo, errorChannel, wg)
 
 	wg.Wait()
 	close(errorChannel)
@@ -571,34 +586,66 @@ func (n *Nginx) monitor(details *proto.NginxDetails) error {
 	return nil
 }
 
-func (n *Nginx) monitorPids(errorChannel chan string, wg *sync.WaitGroup) {
-	wg.Done()
-	// oldWorkers := utils.GetChildPids(v.Pid)
-	// ctx, cncl := context.WithTimeout(context.Background(), 90*time.Second)
-	// defer cncl()
-	// tick := time.NewTicker(n.config.Nginx.ConfigReloadMonitoringPeriod)
-	// defer tick.Stop()
-	// for {
-	// 	select {
-	// 	case <-ctx.Done():
-	// 		// log.WithContext(chtx).WithFields(logrus.Fields{
-	// 		// 	"master": v,
-	// 		// 	"pid":    v.Pid,
-	// 		// 	"err":    chtx.Err(),
-	// 		// }).Trace("Context cancelled while waiting for new workers")
-	// 		wg.Done()
-	// 		errorChannel <- "waiting for new workers timed out"
-	// 		return
-	// 	case <-tick.C:
-	// 		// currentWorkers := utils.GetChildPids(v.Pid)
-	// 		// if readyBasedOnWorkers(oldWorkers, currentWorkers) {
-	// 		errorChannel <- ""
-	// 		wg.Done()
-	// 		return
-	// 		//}
-	// 	}
-	// }
+func (n *Nginx) monitorPids(processInfo []core.Process, errorChannel chan string, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	data := make(chan string, 1024)
+
+	for {
+		select {
+		case <-data:
+			for _, process := range n.getNginxProccessInfo() {
+				fmt.Println("Process", process)
+				// if errorRegex.MatchString(d) {
+				// 	errorChannel <- d
+				// 	return
+				// }
+			}
+		case t := <-ticker.C:
+			fmt.Println("Tick at", t)
+			// if errorRegex.MatchString(d) {
+			//done <- false
+			//}
+
+		case <-time.After(n.config.Nginx.ConfigReloadMonitoringPeriod * time.Second):
+			fmt.Println("Timeout")
+			errorChannel <- "error"
+			return
+		}
+	}
 }
+
+// func (n *Nginx) monitorPids(errorChannel chan string, wg *sync.WaitGroup) {
+// 	wg.Done()
+// oldWorkers := utils.GetChildPids(v.Pid)
+// ctx, cncl := context.WithTimeout(context.Background(), 90*time.Second)
+// defer cncl()
+// tick := time.NewTicker(n.config.Nginx.ConfigReloadMonitoringPeriod)
+// defer tick.Stop()
+// for {
+// 	select {
+// 	case <-ctx.Done():
+// 		// log.WithContext(chtx).WithFields(logrus.Fields{
+// 		// 	"master": v,
+// 		// 	"pid":    v.Pid,
+// 		// 	"err":    chtx.Err(),
+// 		// }).Trace("Context cancelled while waiting for new workers")
+// 		wg.Done()
+// 		errorChannel <- "waiting for new workers timed out"
+// 		return
+// 	case <-tick.C:
+// 		// currentWorkers := utils.GetChildPids(v.Pid)
+// 		// if readyBasedOnWorkers(oldWorkers, currentWorkers) {
+// 		errorChannel <- ""
+// 		wg.Done()
+// 		return
+// 		//}
+// 	}
+// }
+//}
 
 func (n *Nginx) tailLog(errorChannel chan string, wg *sync.WaitGroup, logFile string) {
 	defer wg.Done()
@@ -609,8 +656,8 @@ func (n *Nginx) tailLog(errorChannel chan string, wg *sync.WaitGroup, logFile st
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cncl := context.WithTimeout(context.Background(), n.config.Nginx.ConfigReloadMonitoringPeriod)
+	defer cncl()
 
 	data := make(chan string, 1024)
 	go t.Tail(ctx, data)
@@ -684,8 +731,8 @@ func (n *Nginx) handleErrorStatus(status *proto.Command_NginxConfigResponse, mes
 
 func (n *Nginx) uploadConfigs() {
 	systemId := n.env.GetSystemUUID()
-
-	for nginxID := range n.nginxBinary.GetNginxDetailsMapFromProcesses(n.env.Processes()) {
+	n.syncProcessInfo(n.env.Processes())
+	for nginxID := range n.nginxBinary.GetNginxDetailsMapFromProcesses(n.getNginxProccessInfo()) {
 		err := n.uploadConfig(
 			&proto.ConfigDescriptor{
 				SystemId: systemId,

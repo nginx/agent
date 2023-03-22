@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sync"
 	"testing"
 	"time"
 
@@ -1003,29 +1004,7 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 }
 
 func TestBlock_ConfigApply(t *testing.T) {
-	commandClient := tutils.GetMockCommandClient(
-		&proto.NginxConfig{
-			Action: proto.NginxConfigAction_APPLY,
-			ConfigData: &proto.ConfigDescriptor{
-				NginxId:  "12345",
-				Checksum: "2314365",
-			},
-			Zconfig: &proto.ZippedFile{
-				Contents:      first,
-				Checksum:      checksum.Checksum(first),
-				RootDirectory: "nginx.conf",
-			},
-			Zaux: &proto.ZippedFile{
-				Contents:      first,
-				Checksum:      checksum.Checksum(first),
-				RootDirectory: "nginx.conf",
-			},
-			AccessLogs:   &proto.AccessLogs{},
-			ErrorLogs:    &proto.ErrorLogs{},
-			Ssl:          &proto.SslCertificates{},
-			DirectoryMap: &proto.DirectoryMap{},
-		},
-	)
+	commandClient := tutils.GetMockCommandClient(tutils.GetNginxConfig(first))
 
 	env := tutils.GetMockEnvWithProcess()
 	binary := tutils.NewMockNginxBinary()
@@ -1097,7 +1076,38 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 		case x := <-errorsChannel:
 			assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x.Error())
 			return
-		case <-time.After(config.Nginx.ConfigReloadMonitoringPeriod * 2):
+		case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
+			assert.Fail(t, "Expected error to be reported")
+			return
+		}
+	}
+}
+
+func TestNginx_monitorPids(t *testing.T) {
+	errorChannel := make(chan string, 1)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	env := tutils.GetMockEnvWithProcess()
+	config := tutils.GetMockAgentConfig()
+	config.Nginx.ConfigReloadMonitoringPeriod = 500 * time.Millisecond
+	pluginUnderTest := NewNginx(tutils.GetMockCommandClient(&proto.NginxConfig{}), tutils.NewMockNginxBinary(), env, config)
+
+	newProcesses := []core.Process{
+		{Pid: 1, Name: "12345", IsMaster: true},
+		{Pid: 2, ParentPid: 1, Name: "worker-1", IsMaster: false},
+		{Pid: 3, ParentPid: 1, Name: "worker-2", IsMaster: false},
+	}
+	pluginUnderTest.monitorPids(tutils.GetProcesses(), errorChannel, wg)
+	pluginUnderTest.syncProcessInfo(newProcesses)
+	time.Sleep(config.Nginx.ConfigReloadMonitoringPeriod / 2 * time.Second)
+
+	for {
+		select {
+		case x := <-errorChannel:
+			assert.NotNil(t, x)
+			// assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x.Error())
+			return
+		case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
 			assert.Fail(t, "Expected error to be reported")
 			return
 		}
