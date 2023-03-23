@@ -134,7 +134,7 @@ func (r *OneTimeRegistration) areDataplaneSoftwareDetailsReady() error {
 	defer r.dataplaneSoftwareDetailsMutex.Unlock()
 	for _, extension := range r.config.Extensions {
 
-		log.Infof("**** OneTimeRegistration   areDataplaneSoftwareDetailsReady() *** %s", extension) 
+		log.Infof("**** OneTimeRegistration   areDataplaneSoftwareDetailsReady() *** %s", extension)
 		if _, ok := r.dataplaneSoftwareDetails[extension]; !ok {
 			return fmt.Errorf("Registration max retries has been met before the extension %s was ready for registration", extension)
 		}
