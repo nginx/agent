@@ -64,6 +64,7 @@ func (c *Commander) Subscriptions() []string {
 // *Command_AgentConfigRequest
 func (c *Commander) Process(msg *core.Message) {
 	log.Tracef("Process function in the commander.go, %s %v", msg.Topic(), msg.Data())
+
 	switch cmd := msg.Data().(type) {
 	case *proto.Command:
 		switch msg.Topic() {
@@ -78,7 +79,7 @@ func (c *Commander) Process(msg *core.Message) {
 func (c *Commander) agentRegistered(cmd *proto.Command) {
 	switch commandData := cmd.Data.(type) {
 	case *proto.Command_AgentConnectResponse:
-		log.Infof("config command %v", commandData)
+		log.Infof("agentRegistered() *proto.Command_AgentConnectResponse %v", commandData)
 		if agtCfg := commandData.AgentConnectResponse.AgentConfig; agtCfg != nil &&
 			agtCfg.Configs != nil && len(agtCfg.Configs.Configs) > 0 {
 
@@ -102,7 +103,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 			if agtCfg.Details != nil && agtCfg.Details.Extensions != nil {
 				for _, extension := range agtCfg.Details.Extensions {
 					if extension == agent_config.AdvancedMetricsExtensionPlugin ||
-						extension == config.NginxAppProtectKey ||
+						extension == config.NginxAppProtectKey || extension == agent_config.PhpFpmMetricsExtensionPlugin ||
 						extension == config.NAPMonitoringKey {
 						c.pipeline.Process(core.NewMessage(core.EnableExtension, extension))
 					}
@@ -115,7 +116,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 }
 
 func (c *Commander) sendCommand(ctx context.Context, cmd *proto.Command) {
-	log.Debugf("Sending command (messageId=%s), %v", cmd.GetMeta().MessageId, cmd.GetData())
+	log.Debugf("Sending command to client (messageId=%s), %v", cmd.GetMeta().MessageId, cmd.GetData())
 	if err := c.cmdr.Send(ctx, client.MessageFromCommand(cmd)); err != nil {
 		log.Errorf("Error sending to command channel %v", err)
 	}
@@ -161,7 +162,7 @@ func (c *Commander) dispatchLoop() {
 		case *proto.Command_CmdStatus:
 			data := cmd.Data.(*proto.Command_CmdStatus)
 			if data.CmdStatus.Status != proto.CommandStatusResponse_CMD_OK {
-				log.Debugf("command status %T :: %+v", cmd.Data, cmd.Data)
+				log.Debugf("command status %T :: %v", cmd.Data, cmd.Data)
 			}
 			topic = core.UNKNOWN
 			continue

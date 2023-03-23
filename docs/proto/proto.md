@@ -102,6 +102,13 @@
     - [NginxHealth.NginxStatus](#f5-nginx-agent-sdk-NginxHealth-NginxStatus)
     - [NginxSslMetaData.NginxSslType](#f5-nginx-agent-sdk-NginxSslMetaData-NginxSslType)
   
+- [php_fpm.proto](#php_fpm-proto)
+    - [PhpFpmDetails](#f5-nginx-agent-sdk-PhpFpmDetails)
+    - [PhpFpmHealth](#f5-nginx-agent-sdk-PhpFpmHealth)
+    - [PhpFpmPool](#f5-nginx-agent-sdk-PhpFpmPool)
+  
+    - [PhpFpmHealth.PhpFpmHealthStatus](#f5-nginx-agent-sdk-PhpFpmHealth-PhpFpmHealthStatus)
+  
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -897,6 +904,7 @@ Represents dataplane software details which contains details for additional soft
 | ----- | ---- | ----- | ----------- |
 | app_protect_waf_details | [AppProtectWAFDetails](#f5-nginx-agent-sdk-AppProtectWAFDetails) |  | App Protect WAF software details |
 | nginx_details | [NginxDetails](#f5-nginx-agent-sdk-NginxDetails) |  | NGINX software details |
+| php_fpm_details | [PhpFpmDetails](#f5-nginx-agent-sdk-PhpFpmDetails) |  | PhpFpmDetails software details |
 
 
 
@@ -1479,6 +1487,105 @@ SSL type enum
 | ---- | ------ | ----------- |
 | BUILT | 0 | SSL complied with NGINX |
 | RUN | 1 | SSL not complied with NGINX |
+
+
+ 
+
+ 
+
+ 
+
+
+
+<a name="php_fpm-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## php_fpm.proto
+
+
+
+<a name="f5-nginx-agent-sdk-PhpFpmDetails"></a>
+
+### PhpFpmDetails
+PhpFpmDetails registers a phpfpm master process &#43; child pools
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| root_uuid | [string](#string) |  |  |
+| local_id | [string](#string) |  |  |
+| name | [string](#string) |  |  |
+| cmd | [string](#string) |  |  |
+| conf_path | [string](#string) |  |  |
+| bin_path | [string](#string) |  |  |
+| version | [string](#string) |  |  |
+| version_line | [string](#string) |  |  |
+| pid | [int32](#int32) |  |  |
+| agent | [string](#string) |  |  |
+| children | [PhpFpmPool](#f5-nginx-agent-sdk-PhpFpmPool) | repeated |  |
+| workers | [int32](#int32) |  |  |
+| health | [PhpFpmHealth](#f5-nginx-agent-sdk-PhpFpmHealth) |  |  |
+
+
+
+
+
+
+<a name="f5-nginx-agent-sdk-PhpFpmHealth"></a>
+
+### PhpFpmHealth
+PhpFpmHealth reports the health details of PHPFPM process
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| system_id | [string](#string) |  |  |
+| phpfpm_health_status | [PhpFpmHealth.PhpFpmHealthStatus](#f5-nginx-agent-sdk-PhpFpmHealth-PhpFpmHealthStatus) |  |  |
+| degraded_reason | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="f5-nginx-agent-sdk-PhpFpmPool"></a>
+
+### PhpFpmPool
+PhpFpmPool registers one of the worker pools of a Php-Fpm master process
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| root_uuid | [string](#string) |  |  |
+| local_id | [string](#string) |  |  |
+| name | [string](#string) |  |  |
+| display_name | [string](#string) |  |  |
+| parent_local_id | [string](#string) |  |  |
+| listen | [string](#string) |  |  |
+| flisten | [string](#string) |  |  |
+| status_path | [string](#string) |  |  |
+| can_have_children | [bool](#bool) |  |  |
+| agent | [string](#string) |  |  |
+
+
+
+
+
+ 
+
+
+<a name="f5-nginx-agent-sdk-PhpFpmHealth-PhpFpmHealthStatus"></a>
+
+### PhpFpmHealth.PhpFpmHealthStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNKNOWN | 0 |  |
+| ACTIVE | 1 |  |
+| DEGRADED | 2 |  |
 
 
  

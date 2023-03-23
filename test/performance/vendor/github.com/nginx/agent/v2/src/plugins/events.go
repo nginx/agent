@@ -142,7 +142,7 @@ func (a *Events) sendAgentStartedEvent(msg *core.Message) {
 		uuid.NewString(),
 	)
 
-	log.Debugf("Created event: %v", event)
+	log.Debugf("*** Events sendAgentStartedEvent() --- Created event: %v", event)
 	a.pipeline.Process(core.NewMessage(core.Events, &proto.Command{
 		Meta: a.meta,
 		Type: proto.Command_NORMAL,
@@ -172,10 +172,11 @@ func (a *Events) sendNingxFoundEvent(msg *core.Message) {
 			uuid.NewString(),
 		)
 
-		log.Debugf("Created event: %v", event)
+		log.Debugf("sendNingxFoundEvent() ---- Created event: %v", event)
 		events = append(events, event)
 	}
 
+	log.Debugf("*** Events sendNingxFoundEvent() --- Created events array")
 	a.pipeline.Process(core.NewMessage(core.Events, &proto.Command{
 		Meta: a.meta,
 		Type: proto.Command_NORMAL,
@@ -213,7 +214,7 @@ func (a *Events) sendNginxReloadEvent(msg *core.Message) {
 		)
 	}
 
-	log.Debugf("Created event: %v", event)
+	log.Debugf("***** Events sendNginxReloadEvent() ---- Created event: %v", event)
 	a.pipeline.Process(core.NewMessage(core.Events, &proto.Command{
 		Meta: a.meta,
 		Type: proto.Command_NORMAL,
@@ -234,8 +235,8 @@ func (a *Events) sendConfigApplyEvent(msg *core.Message) {
 
 	nginxConfigResponse := command.GetNginxConfigResponse()
 
-	log.Debugf("nginxConfigResponse: %v", nginxConfigResponse)
-	log.Debugf("nginxConfigResponse.GetConfigData(): %v", nginxConfigResponse.GetConfigData())
+	log.Debugf("**** Events sendConfigApplyEvent() ---- nginxConfigResponse: %v", nginxConfigResponse)
+	log.Debugf("**** Events sendConfigApplyEvent() ---- nginxConfigResponse.GetConfigData(): %v", nginxConfigResponse.GetConfigData())
 
 	switch action := nginxConfigResponse.GetAction(); action {
 	case proto.NginxConfigAction_ROLLBACK, proto.NginxConfigAction_RETURN, proto.NginxConfigAction_UNKNOWN, proto.NginxConfigAction_TEST:
@@ -264,7 +265,7 @@ func (a *Events) sendConfigApplyEvent(msg *core.Message) {
 		return
 	}
 
-	log.Debugf("Created event: %v", event)
+	log.Debugf("**** Events sendConfigApplyEvent() ---- sending event report ... to pipeline process : %v", event)
 
 	a.pipeline.Process(core.NewMessage(core.Events, &proto.Command{
 		Meta: a.meta,
@@ -304,7 +305,7 @@ func (a *Events) sendConfigRollbackEvent(msg *core.Message) {
 		)
 	}
 
-	log.Debugf("Created event: %v", event)
+	log.Debugf("**** Events sendConfigRollbackEvent() ---- sending event report: %v", event)
 
 	a.pipeline.Process(core.NewMessage(core.Events, &proto.Command{
 		Meta: a.meta,
@@ -332,7 +333,7 @@ func (a *Events) sendNginxStartEvent(msg *core.Message) {
 		uuid.NewString(),
 	)
 
-	log.Debugf("Created event: %v", event)
+	log.Debugf("**** Events sendNginxStartEvent() ---- sending event report: %v", event)
 	a.pipeline.Process(core.NewMessage(core.Events, &proto.Command{
 		Meta: a.meta,
 		Type: proto.Command_NORMAL,
@@ -359,7 +360,7 @@ func (a *Events) sendNginxStopEvent(msg *core.Message) {
 		uuid.NewString(),
 	)
 
-	log.Debugf("Created event: %v", event)
+	log.Debugf("**** Events sendNginxStopEvent() ---- sending event report: %v", event)
 	a.pipeline.Process(core.NewMessage(core.Events, &proto.Command{
 		Meta: a.meta,
 		Type: proto.Command_NORMAL,
@@ -386,7 +387,7 @@ func (a *Events) sendNginxWorkerStartEvent(msg *core.Message) {
 		uuid.NewString(),
 	)
 
-	log.Debugf("Created event: %v", event)
+	log.Debugf("**** Events sendNginxWorkerStartEvent() ---- sending event report: %v", event)
 	a.pipeline.Process(core.NewMessage(core.Events, &proto.Command{
 		Meta: a.meta,
 		Type: proto.Command_NORMAL,
@@ -413,7 +414,7 @@ func (a *Events) sendNginxWorkerStopEvent(msg *core.Message) {
 		uuid.NewString(),
 	)
 
-	log.Debugf("Created event: %v", event)
+	log.Debugf("**** Events sendNginxWorkerStopEvent() ---- sending event report: %v", event)
 	a.pipeline.Process(core.NewMessage(core.Events, &proto.Command{
 		Meta: a.meta,
 		Type: proto.Command_NORMAL,

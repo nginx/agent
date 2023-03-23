@@ -35,11 +35,13 @@ const (
 	AdvancedMetricsExtensionPlugin           = "advanced-metrics"
 	NginxAppProtectExtensionPlugin           = "nginx-app-protect"
 	NginxAppProtectMonitoringExtensionPlugin = "nap-monitoring"
+	PhpFpmMetricsExtensionPlugin             = "php-fpm-metrics"
 
 	// Configuration Keys
 	AdvancedMetricsExtensionPluginConfigKey           = "advanced_metrics"
 	NginxAppProtectExtensionPluginConfigKey           = "nginx_app_protect"
 	NginxAppProtectMonitoringExtensionPluginConfigKey = "nap_monitoring"
+	PhpFpmMetricsExtensionPluginConfigKey             = "php_fpm_metrics"
 )
 
 func GetKnownExtensions() []string {
@@ -47,6 +49,7 @@ func GetKnownExtensions() []string {
 		AdvancedMetricsExtensionPlugin,
 		NginxAppProtectExtensionPlugin,
 		NginxAppProtectMonitoringExtensionPlugin,
+		PhpFpmMetricsExtensionPlugin,
 	}
 }
 

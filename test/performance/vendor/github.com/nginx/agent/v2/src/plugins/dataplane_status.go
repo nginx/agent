@@ -50,6 +50,7 @@ const (
 
 func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core.NginxBinary, env core.Environment, version string) *DataPlaneStatus {
 	log.Tracef("Dataplane status interval %s", config.Dataplane.Status.PollInterval)
+	log.Infof("Dataplane status interval %s", config.Dataplane.Status.PollInterval)
 	pollInt := config.Dataplane.Status.PollInterval
 	if pollInt < defaultMinInterval {
 		pollInt = defaultMinInterval
@@ -93,12 +94,14 @@ func (dps *DataPlaneStatus) Info() *core.Info {
 func (dps *DataPlaneStatus) Process(msg *core.Message) {
 	switch {
 	case msg.Exact(core.AgentConfigChanged):
-		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
+		log.Tracef("DataPlaneStatus Process() : %T message from topic %s received", msg.Data(), msg.Topic())
+		log.Infof("DataPlaneStatus Process() : %T message from topic %s received", msg.Data(), msg.Topic())
 		// If the agent config on disk changed update DataPlaneStatus with relevant config info
 		dps.syncAgentConfigChange()
 
 	case msg.Exact(core.DataplaneSoftwareDetailsUpdated):
 		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
+		log.Infof("DataPlaneStatus Process() : %T message from topic %s received", msg.Data(), msg.Topic())
 		switch data := msg.Data().(type) {
 		case *payloads.DataplaneSoftwareDetailsUpdate:
 			dps.softwareDetailsMutex.Lock()
@@ -107,7 +110,7 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 		}
 
 	case msg.Exact(core.NginxConfigValidationPending):
-		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
+		log.Tracef("DataPlaneStatus Process() : %T message from topic %s received", msg.Data(), msg.Topic())
 		switch data := msg.Data().(type) {
 		case *proto.AgentActivityStatus:
 			dps.updateNginxConfigActivityStatuses(data)
@@ -116,7 +119,7 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 		}
 
 	case msg.Exact(core.NginxConfigApplyFailed) || msg.Exact(core.NginxConfigApplySucceeded):
-		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
+		log.Tracef("DataPlaneStatus Process() : %T message from topic %s received", msg.Data(), msg.Topic())
 		switch data := msg.Data().(type) {
 		case *proto.AgentActivityStatus:
 			dps.updateNginxConfigActivityStatuses(data)

@@ -139,6 +139,8 @@ func (n *Nginx) Process(message *core.Message) {
 	case core.DataplaneSoftwareDetailsUpdated:
 		switch details := message.Data().(type) {
 		case *payloads.DataplaneSoftwareDetailsUpdate:
+			log.Infof("*** (n *Nginx) Process(message *core.Message) *** GetDataplaneSoftwareDetails :: %s", details.GetDataplaneSoftwareDetails())
+			log.Infof("*** (n *Nginx) Process(message *core.Message) *** GetPluginName :: %s", details.GetPluginName())
 			n.processDataplaneSoftwareDetailsUpdate(details)
 		}
 	case core.AgentConfigChanged:

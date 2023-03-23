@@ -97,6 +97,7 @@ func main() {
 
 		handleSignals(ctx, commander, loadedConfig, env, pipe, cancel)
 
+		log.Infof(" **** running pipe.run() from main.go ***")
 		pipe.Run()
 	})
 
@@ -229,10 +230,14 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 
 	if loadedConfig.Extensions != nil && len(loadedConfig.Extensions) > 0 {
 		for _, extension := range loadedConfig.Extensions {
+			log.Infof("*** range extension *** %s", extension)
 			switch {
 			case extension == agent_config.AdvancedMetricsExtensionPlugin:
 				advancedMetricsExtensionPlugin := extensions.NewAdvancedMetrics(env, loadedConfig, config.Viper.Get(agent_config.AdvancedMetricsExtensionPluginConfigKey))
 				extensionPlugins = append(extensionPlugins, advancedMetricsExtensionPlugin)
+			case extension == agent_config.PhpFpmMetricsExtensionPlugin:
+				phpFpmMetricsExtensionPlugin := extensions.NewPhpFpmMetrics(env, loadedConfig, version, config.Viper.Get(agent_config.PhpFpmMetricsExtensionPluginConfigKey))
+				extensionPlugins = append(extensionPlugins, phpFpmMetricsExtensionPlugin)
 			case extension == agent_config.NginxAppProtectExtensionPlugin:
 				nginxAppProtectExtensionPlugin, err := extensions.NewNginxAppProtect(loadedConfig, env, config.Viper.Get(agent_config.NginxAppProtectExtensionPluginConfigKey))
 				if err != nil {
@@ -257,6 +262,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 }
 
 func initializeMessagePipe(ctx context.Context, corePlugins []core.Plugin, extensionPlugins []core.ExtensionPlugin) core.MessagePipeInterface {
+	log.Info("***** initializeMessagePipe *****")
 	pipe := core.NewMessagePipe(ctx)
 	err := pipe.Register(agent_config.DefaultPluginSize, corePlugins, extensionPlugins)
 	if err != nil {

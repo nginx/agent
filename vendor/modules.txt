@@ -336,7 +336,7 @@ github.com/emirpasic/gods/utils
 # github.com/envoyproxy/protoc-gen-validate v0.3.0-java
 ## explicit
 github.com/envoyproxy/protoc-gen-validate/validate
-# github.com/evilmartians/lefthook v1.3.7
+# github.com/evilmartians/lefthook v1.3.8
 ## explicit; go 1.19
 github.com/evilmartians/lefthook
 github.com/evilmartians/lefthook/cmd
@@ -1237,3 +1237,4 @@ gopkg.in/yaml.v3
 # gotest.tools/v3 v3.4.0
 ## explicit; go 1.13
 # github.com/nginx/agent/sdk/v2 => ./sdk
+# github.com/nginx/agent/v2/src/extensions => ./extensions

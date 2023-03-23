@@ -147,14 +147,30 @@ func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 
 func GetConfig(clientId string) (*Config, error) {
 	extensions := []string{}
+	fmt.Println("******** GetConfig **********")
+	fmt.Println("******** GetConfig **********")
+	log.Info("******** GetConfig **********")
+	log.Info("******** GetConfig **********")
 
 	for _, extension := range Viper.GetStringSlice(agent_config.ExtensionsKey) {
 		if agent_config.IsKnownExtension(extension) {
+			log.Infof("***** Adding unknown extension %s that was configured *****", extension)
+			log.Infof("***** Adding unknown extension %s that was configured *****", extension)
 			extensions = append(extensions, extension)
 		} else {
+			log.Infof("***** Ignoring unknown extension %s that was configured *****", extension)
+			log.Infof("***** Ignoring unknown extension %s that was configured *****", extension)
+
+			log.Infof("***** Ignoring unknown extension %s that was configured *****", extension)
 			log.Warnf("Ignoring unknown extension %s that was configured", extension)
 		}
 	}
+
+	//extensions = append(extensions, "php-fpm-metrics")
+
+	log.Infof("**********  Please help GetConfig **********  %s", extensions)
+	log.Infof("**********  Please help GetConfig **********  %s", extensions)
+	log.Infof("**********  Please help GetConfig **********  %s", extensions)
 
 	config := &Config{
 		Path:                  Viper.GetString(ConfigPathKey),
@@ -186,6 +202,8 @@ func GetConfig(clientId string) (*Config, error) {
 	config.Server.Target = fmt.Sprintf("%s:%d", config.Server.Host, config.Server.GrpcPort)
 
 	log.Tracef("%v", config)
+	log.Infof("***")
+	log.Infof("%v", config)
 	return config, nil
 }
 

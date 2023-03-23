@@ -121,7 +121,7 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 			"stolen": pct(times.Steal),
 		})
 
-		log.Debugf("CPU metrics collected: %v", simpleMetrics)
+		log.Debugf("***** CPUTimes Collect() ---- CPU metrics collected: %v", simpleMetrics)
 	}
 
 	select {

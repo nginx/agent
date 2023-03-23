@@ -238,7 +238,7 @@ func (m *Metrics) collectStats() (stats []*proto.StatsEntity) {
 }
 
 func (m *Metrics) registerStatsSources() {
-	log.Trace("Calling registerStatsSources")
+	log.Info(" *** Metrics registerStatsSources() ***")
 
 	defer m.collectorsReady.Store(true)
 

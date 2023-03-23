@@ -210,7 +210,7 @@ func NewAdvancedMetrics(env core.Environment, conf *config.Config, advancedMetri
 }
 
 func (m *AdvancedMetrics) Init(pipeline core.MessagePipeInterface) {
-	log.Infof("%s initializing", AdvancedMetricsPluginName)
+	log.Infof("%s initializing AdvancedMetrics", AdvancedMetricsPluginName)
 	m.pipeline = pipeline
 	ctx, cancel := context.WithCancel(m.pipeline.Context())
 	m.ctx = ctx

@@ -66,7 +66,7 @@ func NewOneTimeRegistration(
 }
 
 func (r *OneTimeRegistration) Init(pipeline core.MessagePipeInterface) {
-	log.Info("OneTimeRegistration initializing")
+	log.Info("*** OneTimeRegistration Init() ***")
 	r.pipeline = pipeline
 	go r.startRegistration()
 }
@@ -80,14 +80,16 @@ func (r *OneTimeRegistration) Info() *core.Info {
 }
 
 func (r *OneTimeRegistration) Process(msg *core.Message) {
+	log.Infof("*** OneTimeRegistration Process() ---- topic %s ***", msg.Topic())
 	switch {
 	case msg.Exact(core.RegistrationCompletedTopic):
-		log.Info("OneTimeRegistration completed")
+		log.Info("*** OneTimeRegistration Process() ---- core.RegistrationCompletedTopic ***")
 	case msg.Exact(core.DataplaneSoftwareDetailsUpdated):
 		switch data := msg.Data().(type) {
 		case *payloads.DataplaneSoftwareDetailsUpdate:
 			r.dataplaneSoftwareDetailsMutex.Lock()
 			defer r.dataplaneSoftwareDetailsMutex.Unlock()
+			log.Info("*** OneTimeRegistration Process() ---- OneTimeRegistration DataplaneSoftwareDetailsUpdated ***")
 			r.dataplaneSoftwareDetails[data.GetPluginName()] = data.GetDataplaneSoftwareDetails()
 		}
 	}
@@ -106,7 +108,7 @@ func (r *OneTimeRegistration) Subscriptions() []string {
 // reached then an error will be logged then registration will start with whatever
 // dataplane software details were successfully transmitted (if any).
 func (r *OneTimeRegistration) startRegistration() {
-	log.Debug("OneTimeRegistration waiting on dataplane software details to be ready for registration")
+	log.Debug("*** OneTimeRegistration startRegistration() waiting on dataplane software details to be ready for registration ***")
 	err := sdk.WaitUntil(
 		context.Background(), softwareDetailsOperationInterval, softwareDetailsOperationInterval,
 		dataplaneSoftwareDetailsMaxWaitTime, r.areDataplaneSoftwareDetailsReady,
@@ -130,8 +132,9 @@ func (r *OneTimeRegistration) areDataplaneSoftwareDetailsReady() error {
 
 	r.dataplaneSoftwareDetailsMutex.Lock()
 	defer r.dataplaneSoftwareDetailsMutex.Unlock()
-
 	for _, extension := range r.config.Extensions {
+
+		log.Infof("**** OneTimeRegistration   areDataplaneSoftwareDetailsReady() *** %s", extension) 
 		if _, ok := r.dataplaneSoftwareDetails[extension]; !ok {
 			return fmt.Errorf("Registration max retries has been met before the extension %s was ready for registration", extension)
 		}
@@ -143,7 +146,7 @@ func (r *OneTimeRegistration) areDataplaneSoftwareDetailsReady() error {
 
 func (r *OneTimeRegistration) registerAgent() {
 	var details []*proto.NginxDetails
-
+	log.Info("** OneTimeRegistration registerAgent() **")
 	for _, proc := range r.env.Processes() {
 		// only need master process for registration
 		if proc.IsMaster {
@@ -154,8 +157,6 @@ func (r *OneTimeRegistration) registerAgent() {
 			if err != nil {
 				log.Warnf("Unable to read config for NGINX instance %s, %v", nginxDetails.NginxId, err)
 			}
-		} else {
-			log.Tracef("NGINX non-master process: %d", proc.Pid)
 		}
 	}
 	if len(details) == 0 {
@@ -194,8 +195,8 @@ func (r *OneTimeRegistration) registerAgent() {
 		},
 	}
 
-	log.Tracef("AgentConnectRequest: %v", agentConnectRequest)
-
+	log.Tracef("** OneTimeRegistration registerAgent() --- AgentConnectRequest: %v ***", agentConnectRequest)
+	log.Infof("** OneTimeRegistration registerAgent() --- AgentConnectRequest: %v ***", agentConnectRequest)
 	r.pipeline.Process(
 		core.NewMessage(core.CommRegister, agentConnectRequest),
 		core.NewMessage(core.RegistrationCompletedTopic, nil),

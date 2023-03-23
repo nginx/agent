@@ -156,6 +156,8 @@ github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/collector
 github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager
 github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/processor
 github.com/nginx/agent/v2/src/extensions/nginx-app-protect/nap
+github.com/nginx/agent/v2/src/extensions/php-fpm-metrics/pkg/php-fpm-metrics
+github.com/nginx/agent/v2/src/extensions/php-fpm-metrics/reader
 github.com/nginx/agent/v2/src/extensions/prometheus-metrics
 github.com/nginx/agent/v2/src/plugins
 github.com/nginx/agent/v2/test/utils

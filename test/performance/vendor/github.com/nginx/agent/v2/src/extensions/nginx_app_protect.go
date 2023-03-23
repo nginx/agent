@@ -93,7 +93,6 @@ func (n *NginxAppProtect) Info() *core.Info {
 }
 
 func (n *NginxAppProtect) Init(pipeline core.MessagePipeInterface) {
-	log.Infof("%s initializing", napPluginName)
 	n.messagePipeline = pipeline
 	ctx, cancel := context.WithCancel(n.messagePipeline.Context())
 	n.ctx = ctx
@@ -119,7 +118,6 @@ func (n *NginxAppProtect) Close() {
 // previous state of NAP was and what the new state.
 func (n *NginxAppProtect) monitor() {
 	initialDetails := n.generateNAPDetailsProtoCommand()
-	log.Infof("Initial Nginx App Protect details: %+v", initialDetails)
 	n.messagePipeline.Process(
 		core.NewMessage(
 			core.DataplaneSoftwareDetailsUpdated,

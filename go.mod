@@ -39,7 +39,7 @@ require (
 
 require (
 	github.com/bufbuild/buf v1.15.1
-	github.com/evilmartians/lefthook v1.3.7
+	github.com/evilmartians/lefthook v1.3.8
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-swagger/go-swagger v0.30.4
 	github.com/goreleaser/nfpm/v2 v2.27.1
@@ -202,3 +202,5 @@ require (
 )
 
 replace github.com/nginx/agent/sdk/v2 => ./sdk
+
+replace github.com/nginx/agent/v2/src/extensions => ./extensions

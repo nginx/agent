@@ -64,6 +64,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 
 	for _, plugin := range p.plugins {
 		for _, subscription := range plugin.Subscriptions() {
+			log.Infof("*** MessagePipe Register() - plugin - %s", subscription)
 			err := p.bus.Subscribe(subscription, plugin.Process)
 			if err != nil {
 				return err
@@ -74,6 +75,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 
 	for _, plugin := range p.extensionPlugins {
 		for _, subscription := range plugin.Subscriptions() {
+			log.Infof("*** MessagePipe Register() - extension plugin - %s", subscription)
 			err := p.bus.Subscribe(subscription, plugin.Process)
 			if err != nil {
 				return err
@@ -82,8 +84,8 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 		extensionPluginsRegistered = append(extensionPluginsRegistered, *plugin.Info().name)
 	}
 
-	log.Infof("The following core plugins have being registered: %q", pluginsRegistered)
-	log.Infof("The following extension plugins have being registered: %q", extensionPluginsRegistered)
+	log.Infof("MessagePipe register() The following core plugins have being registered: %q", pluginsRegistered)
+	log.Infof("MessagePipe register() The following extension plugins have being registered: %q", extensionPluginsRegistered)
 
 	p.mu.Unlock()
 	return nil
@@ -93,6 +95,7 @@ func (p *MessagePipe) Process(messages ...*Message) {
 	for _, m := range messages {
 		select {
 		case p.messageChannel <- m:
+			log.Info("*** MessagePipe Process() --- Message into channel ***")
 		case <-p.ctx.Done():
 			return
 		}
@@ -101,7 +104,7 @@ func (p *MessagePipe) Process(messages ...*Message) {
 
 func (p *MessagePipe) Run() {
 	p.initPlugins()
-
+	log.Infof("****  MessagePipe run() -- Initialization of plugins done ****")
 	for {
 		select {
 		case <-p.ctx.Done():
@@ -118,7 +121,9 @@ func (p *MessagePipe) Run() {
 			return
 		case m := <-p.messageChannel:
 			p.mu.Lock()
+			log.Infof("****  MessagePipe run() -- Publish message started with topic %s and data %v to message bus ***", m.Topic(), m.Data())
 			p.bus.Publish(m.Topic(), m)
+			log.Info("****  MessagePipe run() -- Publish message data to message bus completed ***")
 			p.mu.Unlock()
 		}
 	}
@@ -146,6 +151,7 @@ func (p *MessagePipe) initPlugins() {
 	}
 
 	for _, r := range p.extensionPlugins {
+		log.Infof("*** MessagePipe initPlugins() extensionPlugins: %s, with subscription %v ***", *r.Info().name, r.Subscriptions())
 		r.Init(p)
 	}
 }
