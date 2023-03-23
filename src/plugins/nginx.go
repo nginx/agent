@@ -460,7 +460,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 		rollbackError = reloadErr
 		rollback = true
 	} else {
-		rollbackError = n.monitor(response.nginxDetails)
+		rollbackError = n.monitor()
 		if rollbackError != nil {
 			nginxConfigStatusMessage = fmt.Sprintf("Config apply failed. The following errors were found in the NGINX error logs: %v", rollbackError)
 			rollback = true
@@ -555,28 +555,21 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	return status
 }
 
-func (n *Nginx) monitor(details *proto.NginxDetails) error {
-	monitorLogs := true
+func (n *Nginx) monitor() error {
 	wg := sync.WaitGroup{}
 	processInfo := n.getNginxProccessInfo()
 
 	errorLogs := n.nginxBinary.GetErrorLogs()
-	if len(errorLogs) == 0 {
-		log.Warn("Skipping error log validation for NGINX reload because no error logs have been configured in the NGINX configuration")
-		monitorLogs = true
-	}
 
-	logErrorChannel := make(chan string, len(errorLogs)+1)
+	logErrorChannel := make(chan string, len(errorLogs))
 	pidsChannel := make(chan string)
 
 	defer close(logErrorChannel)
 	defer close(pidsChannel)
 
-	if monitorLogs {
-		for _, logFile := range errorLogs {
-			wg.Add(1)
-			go n.tailLog(&wg, logFile, logErrorChannel)
-		}
+	for _, logFile := range errorLogs {
+		wg.Add(1)
+		go n.tailLog(&wg, logFile, logErrorChannel)
 	}
 
 	wg.Add(1)
@@ -586,12 +579,10 @@ func (n *Nginx) monitor(details *proto.NginxDetails) error {
 
 	var errorsFound []string
 
-	if monitorLogs {
-		for range errorLogs {
-			err := <-logErrorChannel
-			if err != "" {
-				errorsFound = append(errorsFound, err)
-			}
+	for range errorLogs {
+		err := <-logErrorChannel
+		if err != "" {
+			errorsFound = append(errorsFound, err)
 		}
 	}
 
@@ -613,26 +604,27 @@ func (n *Nginx) monitor(details *proto.NginxDetails) error {
 
 func (n *Nginx) monitorPids(wg *sync.WaitGroup, processInfo []core.Process, errorChannel chan string) {
 	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+	defer wg.Done()
 	startingPids := parseIntList(processInfo)
 	// wait 500 milliseconds for process information to change
 	time.Sleep(500 * time.Millisecond)
-	// defer wg.Done()
 
 	for {
 		select {
 		case <-time.After(n.config.Nginx.ConfigReloadMonitoringPeriod):
 			errorChannel <- "Timed out"
+			log.Info("Done")
 			return
 		case <-ticker.C:
-			log.Trace("Monitoring Pids")
-			wg.Add(1)
-			defer wg.Done()
+			log.Infof("Monitoring Pids")
+			// defer wg.Done()
 			currentList := parseIntList(n.getNginxProccessInfo())
 			difference := intersection(startingPids, currentList)
 			// if there is one pid leftover, that's ok
 			if len(difference) >= len(startingPids)-1 {
-				log.Debug("Success")
 				errorChannel <- ""
+				log.Infof("Success %v", wg)
 				return
 			}
 		}

@@ -865,7 +865,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 		},
 		Features: []string{agent_config.FeatureNginxConfig},
 		Nginx: loadedConfig.Nginx{
-			ConfigReloadMonitoringPeriod: 100 * time.Millisecond,
+			ConfigReloadMonitoringPeriod: 10 * time.Second,
 		},
 	}
 
@@ -1033,7 +1033,7 @@ func TestBlock_ConfigApply(t *testing.T) {
 	assert.Equal(t, testNAPDetailsActive.AppProtectWafDetails.WafVersion, pluginUnderTest.nginxAppProtectSoftwareDetails.WafVersion)
 }
 
-func TestNginx_monitorErrorLogs(t *testing.T) {
+func TestNginx_monitor(t *testing.T) {
 	tmpDir := t.TempDir()
 	errorLogFileName := path.Join(tmpDir, "/error.log")
 	errorLogFile, err := os.Create(errorLogFileName)
@@ -1056,14 +1056,14 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 	config.Nginx.ConfigReloadMonitoringPeriod = 500 * time.Millisecond
 	pluginUnderTest := NewNginx(commandClient, binary, env, config)
 
-	errorFound := pluginUnderTest.monitor(tutils.GetDetailsMap()["12345"])
+	errorFound := pluginUnderTest.monitor()
 	assert.NoError(t, errorFound)
 
 	errorsChannel := make(chan error, 1)
 
 	// Validate that errors in the logs returned
 	go func() {
-		errorFound := pluginUnderTest.monitor(tutils.GetDetailsMap()["12345"])
+		errorFound := pluginUnderTest.monitor()
 		errorsChannel <- errorFound
 	}()
 
