@@ -1085,32 +1085,112 @@ func TestNginx_monitorErrorLogs(t *testing.T) {
 }
 
 func TestNginx_monitorPids(t *testing.T) {
-	errorChannel := make(chan string, 1)
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	env := tutils.GetMockEnvWithProcess()
-	config := tutils.GetMockAgentConfig()
-	config.Nginx.ConfigReloadMonitoringPeriod = 500 * time.Millisecond
-	pluginUnderTest := NewNginx(tutils.GetMockCommandClient(&proto.NginxConfig{}), tutils.NewMockNginxBinary(), env, config)
-
-	newProcesses := []core.Process{
-		{Pid: 1, Name: "12345", IsMaster: true},
-		{Pid: 2, ParentPid: 1, Name: "worker-1", IsMaster: false},
-		{Pid: 3, ParentPid: 1, Name: "worker-2", IsMaster: false},
+	tests := []struct {
+		startingProcesses   []core.Process
+		updatedProcesses    []core.Process
+		errorStr            string
+		expectedTestTimeout bool
+		ticker              time.Duration
+	}{
+		{
+			startingProcesses:   tutils.GetProcesses(),
+			updatedProcesses:    tutils.GetProcesses(),
+			errorStr:            "",
+			expectedTestTimeout: false,
+			ticker:              200 * time.Millisecond,
+		},
+		{
+			startingProcesses: tutils.GetProcesses(),
+			updatedProcesses: []core.Process{
+				{Pid: 4, Name: "12345", IsMaster: true},
+				{Pid: 5, ParentPid: 1, Name: "worker-1", IsMaster: false},
+				{Pid: 6, ParentPid: 1, Name: "worker-2", IsMaster: false},
+			},
+			errorStr:            "",
+			expectedTestTimeout: true,
+			ticker:              2 * time.Second,
+		},
+		{
+			startingProcesses: tutils.GetProcesses(),
+			updatedProcesses: []core.Process{
+				{Pid: 4, Name: "12345", IsMaster: true},
+				{Pid: 5, ParentPid: 1, Name: "worker-1", IsMaster: false},
+				{Pid: 6, ParentPid: 1, Name: "worker-2", IsMaster: false},
+			},
+			errorStr:            "Timed out",
+			expectedTestTimeout: false,
+			ticker:              1 * time.Millisecond,
+		},
 	}
-	pluginUnderTest.monitorPids(tutils.GetProcesses(), errorChannel, wg)
-	pluginUnderTest.syncProcessInfo(newProcesses)
-	time.Sleep(config.Nginx.ConfigReloadMonitoringPeriod / 2 * time.Second)
 
-	for {
+	for _, tt := range tests {
+		errorChannel := make(chan string, 1)
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		env := tutils.GetMockEnvWithProcess()
+		config := tutils.GetMockAgentConfig()
+		config.Nginx.ConfigReloadMonitoringPeriod = tt.ticker
+		pluginUnderTest := NewNginx(tutils.GetMockCommandClient(&proto.NginxConfig{}), tutils.NewMockNginxBinary(), env, config)
+
+		go pluginUnderTest.monitorPids(wg, tt.startingProcesses, errorChannel)
+		pluginUnderTest.syncProcessInfo(tt.updatedProcesses)
+
 		select {
-		case x := <-errorChannel:
-			assert.NotNil(t, x)
-			// assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x.Error())
-			return
-		case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
-			assert.Fail(t, "Expected error to be reported")
-			return
+		case err := <-errorChannel:
+			// Check that the function completed with expected errors
+			assert.Equal(t, tt.errorStr, err)
+		case <-time.After(3 * time.Second):
+			// Timeout if the function takes too long
+			// t.Error("Timed out waiting for function to complete")
+			assert.True(t, tt.expectedTestTimeout)
 		}
+	}
+}
+
+func TestParseIntList(t *testing.T) {
+	processes := tutils.GetProcesses()
+
+	pidList := parseIntList(processes)
+
+	expectedPids := []int{1, 2, 3}
+	for i, expected := range expectedPids {
+		if pidList[i] != expected {
+			t.Errorf("parseIntList returned value %d at index %d, expected %d", pidList[i], i, expected)
+		}
+	}
+}
+
+func TestIntersection(t *testing.T) {
+	tests := []struct {
+		list1    []int
+		list2    []int
+		expected []int
+	}{
+		{
+			list1:    []int{},
+			list2:    []int{},
+			expected: []int{},
+		},
+		{
+			list1:    []int{1, 2, 3},
+			list2:    []int{4, 5, 6},
+			expected: []int{},
+		},
+		{
+			list1:    []int{1, 2, 3},
+			list2:    []int{},
+			expected: []int{},
+		},
+		{
+			list1:    []int{1, 2, 3},
+			list2:    []int{2, 3, 4, 5},
+			expected: []int{2, 3},
+		},
+	}
+
+	for _, tt := range tests {
+		result := intersection(tt.list1, tt.list2)
+		// Check that the output matches the expected result
+		assert.Equal(t, tt.expected, result, "Intersection should match expected result")
 	}
 }

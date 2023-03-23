@@ -556,29 +556,52 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 }
 
 func (n *Nginx) monitor(details *proto.NginxDetails) error {
-	// processInfo := n.getNginxProccessInfo()
+	monitorLogs := true
+	wg := sync.WaitGroup{}
+	processInfo := n.getNginxProccessInfo()
+
 	errorLogs := n.nginxBinary.GetErrorLogs()
 	if len(errorLogs) == 0 {
 		log.Warn("Skipping error log validation for NGINX reload because no error logs have been configured in the NGINX configuration")
+		monitorLogs = true
 	}
 
-	errorChannel := make(chan string, len(errorLogs)+1)
-	wg := &sync.WaitGroup{}
+	logErrorChannel := make(chan string, len(errorLogs)+1)
+	pidsChannel := make(chan string)
 
-	for logFile := range errorLogs {
-		wg.Add(1)
-		go n.tailLog(errorChannel, wg, logFile)
+	defer close(logErrorChannel)
+	defer close(pidsChannel)
+
+	if monitorLogs {
+		for _, logFile := range errorLogs {
+			wg.Add(1)
+			go n.tailLog(&wg, logFile, logErrorChannel)
+		}
 	}
 
-	// wg.Add(1)
-	// go n.monitorPids(processInfo, errorChannel, wg)
+	wg.Add(1)
+	go n.monitorPids(&wg, processInfo, pidsChannel)
 
 	wg.Wait()
-	close(errorChannel)
 
-	errorsFound := []string{}
-	for errorLog := range errorChannel {
-		errorsFound = append(errorsFound, errorLog)
+	var errorsFound []string
+
+	if monitorLogs {
+		for range errorLogs {
+			err := <-logErrorChannel
+			if err != "" {
+				errorsFound = append(errorsFound, err)
+			}
+		}
+	}
+
+	select {
+	case err := <-pidsChannel:
+		if err != "" {
+			errorsFound = append(errorsFound, err)
+		}
+	case <-time.After(n.config.Nginx.ConfigReloadMonitoringPeriod * time.Second):
+		errorsFound = append(errorsFound, "Timed out waiting for pids check")
 	}
 
 	if len(errorsFound) > 0 {
@@ -588,68 +611,58 @@ func (n *Nginx) monitor(details *proto.NginxDetails) error {
 	return nil
 }
 
-func (n *Nginx) monitorPids(processInfo []core.Process, errorChannel chan string, wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func (n *Nginx) monitorPids(wg *sync.WaitGroup, processInfo []core.Process, errorChannel chan string) {
 	ticker := time.NewTicker(500 * time.Millisecond)
-	defer ticker.Stop()
-
-	data := make(chan string, 1024)
+	startingPids := parseIntList(processInfo)
+	// wait 500 milliseconds for process information to change
+	time.Sleep(500 * time.Millisecond)
+	// defer wg.Done()
 
 	for {
 		select {
-		case <-data:
-			for _, process := range n.getNginxProccessInfo() {
-				fmt.Println("Process", process)
-				// if errorRegex.MatchString(d) {
-				// 	errorChannel <- d
-				// 	return
-				// }
-			}
-		case t := <-ticker.C:
-			fmt.Println("Tick at", t)
-			// if errorRegex.MatchString(d) {
-			//done <- false
-			//}
-
-		case <-time.After(n.config.Nginx.ConfigReloadMonitoringPeriod * time.Second):
-			fmt.Println("Timeout")
-			errorChannel <- "error"
+		case <-time.After(n.config.Nginx.ConfigReloadMonitoringPeriod):
+			errorChannel <- "Timed out"
 			return
+		case <-ticker.C:
+			log.Trace("Monitoring Pids")
+			wg.Add(1)
+			defer wg.Done()
+			currentList := parseIntList(n.getNginxProccessInfo())
+			difference := intersection(startingPids, currentList)
+			// if there is one pid leftover, that's ok
+			if len(difference) >= len(startingPids)-1 {
+				log.Debug("Success")
+				errorChannel <- ""
+				return
+			}
 		}
 	}
 }
 
-// func (n *Nginx) monitorPids(errorChannel chan string, wg *sync.WaitGroup) {
-// 	wg.Done()
-// oldWorkers := utils.GetChildPids(v.Pid)
-// ctx, cncl := context.WithTimeout(context.Background(), 90*time.Second)
-// defer cncl()
-// tick := time.NewTicker(n.config.Nginx.ConfigReloadMonitoringPeriod)
-// defer tick.Stop()
-// for {
-// 	select {
-// 	case <-ctx.Done():
-// 		// log.WithContext(chtx).WithFields(logrus.Fields{
-// 		// 	"master": v,
-// 		// 	"pid":    v.Pid,
-// 		// 	"err":    chtx.Err(),
-// 		// }).Trace("Context cancelled while waiting for new workers")
-// 		wg.Done()
-// 		errorChannel <- "waiting for new workers timed out"
-// 		return
-// 	case <-tick.C:
-// 		// currentWorkers := utils.GetChildPids(v.Pid)
-// 		// if readyBasedOnWorkers(oldWorkers, currentWorkers) {
-// 		errorChannel <- ""
-// 		wg.Done()
-// 		return
-// 		//}
-// 	}
-// }
-//}
+func intersection(list1 []int, list2 []int) []int {
+	m := make(map[int]bool)
+	intersection := []int{}
 
-func (n *Nginx) tailLog(errorChannel chan string, wg *sync.WaitGroup, logFile string) {
+	for _, item := range list1 {
+		m[item] = true
+	}
+	for _, item := range list2 {
+		if m[item] {
+			intersection = append(intersection, item)
+		}
+	}
+	return intersection
+}
+
+func parseIntList(data []core.Process) []int {
+	result := make([]int, len(data))
+	for index, process := range data {
+		result[index] = int(process.Pid)
+	}
+	return result
+}
+
+func (n *Nginx) tailLog(wg *sync.WaitGroup, logFile string, errorChannel chan string) {
 	defer wg.Done()
 
 	t, err := tailer.NewTailer(logFile)
