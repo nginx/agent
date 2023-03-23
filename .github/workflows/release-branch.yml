@@ -13,6 +13,11 @@ on:
         required: true
         type: boolean
         default: false
+      uploadJWT:
+        description: 'Temporary JWT to publish packages to up-ap.nginx.com'
+        required: true
+        type: string
+        default: ''
   workflow_call:
 
 jobs:
@@ -168,9 +173,8 @@ jobs:
       - name: Publish Release Packages
         if: ${{ inputs.publishPackages == true }}
         env:
-          AGENT_UPLOADER_PEM: ${{ secrets.AGENT_UPLOADER_PEM }}
+          TOKEN: ${{ inputs.uploadJWT }}
         run: |
-          echo $AGENT_UPLOADER_PEM | base64 --decode > agent-uploader.pem
           make release
       - name: Publish Github Release
         if: ${{ inputs.publishPackages == true }}

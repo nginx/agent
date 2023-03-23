@@ -78,6 +78,8 @@ jobs:
           version: "8"
         - image: "almalinux"
           version: "9"
+        - image: "amazonlinux"
+          version: "2"
         - image: "ubuntu"
           version: "22.04"
     steps:
