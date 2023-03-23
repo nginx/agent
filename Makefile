@@ -19,7 +19,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | rockylinux       | 8, 9                       |                                                                |
 # | almalinux        | 8, 9                       |                                                                |
 # | alpine           | 3.13, 3.14, 3.15, 3.16     |                                                                |
-# | oraclelinux      | 7, 8                       |                                                                |
+# | oraclelinux      | 7, 8 , 9                   |                                                                |
 # | suse             | sles12sp5, sle15           |                                                                |
 # | freebsd          |                            | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
