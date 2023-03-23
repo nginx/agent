@@ -96,7 +96,6 @@ var (
 	_                  Environment = &EnvironmentType{}
 )
 
-
 func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
 	// temp cache measure
 	if env.host == nil || clearCache {
@@ -667,7 +666,7 @@ func (e execShellCommand) Exec(cmd string, arg ...string) ([]byte, error) {
 	return execCmd.Output()
 }
 
-var shell = execShellCommand
+var shell ShellCommander = execShellCommand{}
 
 func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 	cache := getDefaultProcessorCacheInfo(cpuInfo)
