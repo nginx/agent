@@ -492,7 +492,7 @@ func TestGetCacheInfo(t *testing.T) {
 	defer func() { shell = tempShellCommander }()
 	tests := []struct {
 		name             string
-		shell            ShellCommander
+		shell            Shell
 		defaultCacheInfo map[string]string
 		expect           map[string]string
 	}{

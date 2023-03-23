@@ -654,7 +654,7 @@ func processorCache(item cpu.InfoStat) map[string]string {
 	return cache
 }
 
-type ShellCommander interface {
+type Shell interface {
 	Exec(cmd string, arg ...string) ([]byte, error)
 }
 
@@ -666,7 +666,7 @@ func (e execShellCommand) Exec(cmd string, arg ...string) ([]byte, error) {
 	return execCmd.Output()
 }
 
-var shell ShellCommander = execShellCommand{}
+var shell Shell = execShellCommand{}
 
 func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 	cache := getDefaultProcessorCacheInfo(cpuInfo)
