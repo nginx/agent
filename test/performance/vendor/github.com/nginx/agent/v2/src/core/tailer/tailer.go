@@ -145,7 +145,7 @@ func (t *PatternTailer) Tail(ctx context.Context, data chan<- map[string]string)
 			case context.Canceled:
 				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
 			}
-			log.Error("Tailer is done")
+			log.Tracef("Tailer is done")
 			return
 		}
 	}
