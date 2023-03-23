@@ -54,6 +54,7 @@ type Nginx struct {
 	nginxBinary                    core.NginxBinary
 	processes                      []core.Process
 	processesMutex                 sync.RWMutex
+	monitorMutex                   sync.Mutex
 	env                            core.Environment
 	cmdr                           client.Commander
 	config                         *config.Config
@@ -556,56 +557,55 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 }
 
 func (n *Nginx) monitor() error {
-	wg := sync.WaitGroup{}
+	n.monitorMutex.Lock()
+	defer n.monitorMutex.Unlock()
+	var errorsFound []string
 	processInfo := n.getNginxProccessInfo()
-
 	errorLogs := n.nginxBinary.GetErrorLogs()
 
 	logErrorChannel := make(chan string, len(errorLogs))
 	pidsChannel := make(chan string)
 
+	go n.monitorLogs(errorLogs, logErrorChannel)
+	go n.monitorPids(processInfo, pidsChannel)
+
+	for i := 0; i < 2; i++ {
+		select {
+		case err := <-pidsChannel:
+			log.Trace("pidsChannel finished")
+			if err != "" {
+				errorsFound = append(errorsFound, err)
+			}
+		case err := <-logErrorChannel:
+			log.Trace("logErrorChannel finished")
+			if err != "" {
+				errorsFound = append(errorsFound, err)
+			}
+		}
+	}
+
 	defer close(logErrorChannel)
 	defer close(pidsChannel)
-
-	for _, logFile := range errorLogs {
-		wg.Add(1)
-		go n.tailLog(&wg, logFile, logErrorChannel)
-	}
-
-	wg.Add(1)
-	go n.monitorPids(&wg, processInfo, pidsChannel)
-
-	wg.Wait()
-
-	var errorsFound []string
-
-	for range errorLogs {
-		err := <-logErrorChannel
-		if err != "" {
-			errorsFound = append(errorsFound, err)
-		}
-	}
-
-	select {
-	case err := <-pidsChannel:
-		if err != "" {
-			errorsFound = append(errorsFound, err)
-		}
-	case <-time.After(n.config.Nginx.ConfigReloadMonitoringPeriod * time.Second):
-		errorsFound = append(errorsFound, "Timed out waiting for pids check")
-	}
 
 	if len(errorsFound) > 0 {
 		return errors.New(errorsFound[0])
 	}
-
 	return nil
 }
 
-func (n *Nginx) monitorPids(wg *sync.WaitGroup, processInfo []core.Process, errorChannel chan string) {
+func (n *Nginx) monitorLogs(errorLogs map[string]string, errorChannel chan string) {
+	if len(errorLogs) == 0 {
+		errorChannel <- ""
+	}
+
+	for _, logFile := range errorLogs {
+		go n.tailLog(logFile, errorChannel)
+	}
+}
+
+func (n *Nginx) monitorPids(processInfo []core.Process, errorChannel chan string) {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
-	defer wg.Done()
 	startingPids := parseIntList(processInfo)
 	// wait 500 milliseconds for process information to change
 	time.Sleep(500 * time.Millisecond)
@@ -614,17 +614,16 @@ func (n *Nginx) monitorPids(wg *sync.WaitGroup, processInfo []core.Process, erro
 		select {
 		case <-time.After(n.config.Nginx.ConfigReloadMonitoringPeriod):
 			errorChannel <- "Timed out"
-			log.Info("Done")
+			log.Trace("Timed out monitoring PIDs")
 			return
 		case <-ticker.C:
-			log.Infof("Monitoring Pids")
-			// defer wg.Done()
+			log.Tracef("Monitoring Pids")
 			currentList := parseIntList(n.getNginxProccessInfo())
 			difference := intersection(startingPids, currentList)
 			// if there is one pid leftover, that's ok
 			if len(difference) >= len(startingPids)-1 {
 				errorChannel <- ""
-				log.Infof("Success %v", wg)
+				log.Tracef("Success monitoring PIDs")
 				return
 			}
 		}
@@ -654,9 +653,7 @@ func parseIntList(data []core.Process) []int {
 	return result
 }
 
-func (n *Nginx) tailLog(wg *sync.WaitGroup, logFile string, errorChannel chan string) {
-	defer wg.Done()
-
+func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	t, err := tailer.NewTailer(logFile)
 	if err != nil {
 		log.Errorf("Unable to tail %q: %v", logFile, err)

@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"sync"
 	"testing"
 	"time"
 
@@ -1050,10 +1049,10 @@ func TestNginx_monitor(t *testing.T) {
 	env := tutils.GetMockEnvWithProcess()
 	binary := tutils.NewMockNginxBinary()
 	binary.On("GetErrorLogs").Return(make(map[string]string)).Once()
-	binary.On("GetErrorLogs").Return(map[string]string{errorLogFileName: ""}).Once()
+	binary.On("GetErrorLogs").Return(map[string]string{errorLogFileName: errorLogFileName}).Once()
 
 	config := tutils.GetMockAgentConfig()
-	config.Nginx.ConfigReloadMonitoringPeriod = 500 * time.Millisecond
+	config.Nginx.ConfigReloadMonitoringPeriod = 10 * time.Second
 	pluginUnderTest := NewNginx(commandClient, binary, env, config)
 
 	errorFound := pluginUnderTest.monitor()
@@ -1076,6 +1075,54 @@ func TestNginx_monitor(t *testing.T) {
 		select {
 		case x := <-errorsChannel:
 			assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x.Error())
+			return
+		case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
+			assert.Fail(t, "Expected error to be reported")
+			return
+		}
+	}
+}
+
+func TestNginx_monitorLog(t *testing.T) {
+	tmpDir := t.TempDir()
+	errorLogFileName := path.Join(tmpDir, "/error.log")
+	errorLogFile, err := os.Create(errorLogFileName)
+	errorLogs := map[string]string{errorLogFileName: errorLogFileName}
+
+	defer func() {
+		err := errorLogFile.Close()
+		require.NoError(t, err, "Error closing error log file")
+		os.Remove(errorLogFile.Name())
+	}()
+
+	require.NoError(t, err, "Error creating error log")
+	commandClient := tutils.GetMockCommandClient(&proto.NginxConfig{})
+
+	env := tutils.GetMockEnvWithProcess()
+	binary := tutils.NewMockNginxBinary()
+	binary.On("GetErrorLogs").Return(errorLogs)
+
+	config := tutils.GetMockAgentConfig()
+	config.Nginx.ConfigReloadMonitoringPeriod = 10 * time.Second
+	pluginUnderTest := NewNginx(commandClient, binary, env, config)
+	errorsChannel := make(chan string, 1)
+
+	pluginUnderTest.monitorLogs(errorLogs, errorsChannel)
+
+	// Validate that errors in the logs returned
+	go func() {
+		pluginUnderTest.monitorLogs(errorLogs, errorsChannel)
+	}()
+
+	time.Sleep(config.Nginx.ConfigReloadMonitoringPeriod / 2)
+
+	_, err = errorLogFile.WriteString("2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)")
+	require.NoError(t, err, "Error writing data to error log file")
+
+	for {
+		select {
+		case x := <-errorsChannel:
+			assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x)
 			return
 		case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
 			assert.Fail(t, "Expected error to be reported")
@@ -1125,14 +1172,12 @@ func TestNginx_monitorPids(t *testing.T) {
 
 	for _, tt := range tests {
 		errorChannel := make(chan string, 1)
-		wg := &sync.WaitGroup{}
-		wg.Add(1)
 		env := tutils.GetMockEnvWithProcess()
 		config := tutils.GetMockAgentConfig()
 		config.Nginx.ConfigReloadMonitoringPeriod = tt.ticker
 		pluginUnderTest := NewNginx(tutils.GetMockCommandClient(&proto.NginxConfig{}), tutils.NewMockNginxBinary(), env, config)
 
-		go pluginUnderTest.monitorPids(wg, tt.startingProcesses, errorChannel)
+		go pluginUnderTest.monitorPids(tt.startingProcesses, errorChannel)
 		pluginUnderTest.syncProcessInfo(tt.updatedProcesses)
 
 		select {
