@@ -183,8 +183,8 @@ func getPackagePath(pkgDir, osReleaseContent string) string {
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return pkgPath + ".deb"
 	} else if strings.Contains(osReleaseContent, "alpine") {
-			return pkgPath + ".apk"
+		return pkgPath + ".apk"
 	} else {
-			return pkgPath + ".rpm"
+		return pkgPath + ".rpm"
 	}
 }
