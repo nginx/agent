@@ -156,6 +156,8 @@ func uninstallAgent(ctx context.Context, container *testcontainers.DockerContain
 func createInstallCommand(agentPackageFilePath, osReleaseContent string) []string {
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return []string{"dpkg", "-i", agentPackageFilePath}
+	} else if strings.Contains(osReleaseContent, "alpine") {
+		return []string{"apk", "add", "--allow-untrusted", agentPackageFilePath} // TODO: Validate trust, validate -y
 	} else {
 		return []string{"yum", "localinstall", "-y", agentPackageFilePath}
 	}
@@ -164,6 +166,8 @@ func createInstallCommand(agentPackageFilePath, osReleaseContent string) []strin
 func createUninstallCommand(osReleaseContent string) []string {
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return []string{"apt", "purge", "-y", "nginx-agent"}
+	} else if strings.Contains(osReleaseContent, "alpine") {
+		return []string{"apk", "del", "nginx-agent"}
 	} else {
 		return []string{"yum", "remove", "-y", "nginx-agent"}
 	}
@@ -182,9 +186,9 @@ func getPackagePath(pkgDir, osReleaseContent string) string {
 
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return pkgPath + ".deb"
-	} else if strings.Contains(osReleaseContent, "rhel") || strings.Contains(osReleaseContent, "centos") {
-		return pkgPath + ".rpm"
-	} else {
+	} else if strings.Contains(osReleaseContent, "alpine") {
 		return pkgPath + ".apk"
+	} else {
+		return pkgPath + ".rpm"
 	}
 }

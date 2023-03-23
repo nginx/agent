@@ -20,7 +20,6 @@ RUN set -x \
                       wget \
                       procps \
                       make \
-                      vim \
                       nginx
 
 RUN chmod +x /agent/entrypoint.sh
