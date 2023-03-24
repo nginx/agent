@@ -41,7 +41,7 @@ const (
 )
 
 var (
-	validationTimeout = 15 * time.Second
+	validationTimeout = 60 * time.Second
 	reloadErrorList   = []*re.Regexp{
 		re.MustCompile(`.*bind\(\) to .* failed \(98: Address already in use\).*`),
 		re.MustCompile(`.*bind\(\) to .* failed \(98: Unknown error\).*`),
@@ -557,6 +557,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 }
 
 func (n *Nginx) monitor() error {
+	log.Info("Monitoring post reload for changes")
 	n.monitorMutex.Lock()
 	defer n.monitorMutex.Unlock()
 	var errorsFound []string
@@ -587,6 +588,8 @@ func (n *Nginx) monitor() error {
 	defer close(logErrorChannel)
 	defer close(pidsChannel)
 
+	log.Info("Finished monitoring post reload")
+
 	if len(errorsFound) > 0 {
 		return errors.New(errorsFound[0])
 	}
@@ -595,6 +598,7 @@ func (n *Nginx) monitor() error {
 
 func (n *Nginx) monitorLogs(errorLogs map[string]string, errorChannel chan string) {
 	if len(errorLogs) == 0 {
+		log.Trace("No logs so returning monitoring of logs")
 		errorChannel <- ""
 	}
 
@@ -605,7 +609,6 @@ func (n *Nginx) monitorLogs(errorLogs map[string]string, errorChannel chan strin
 
 func (n *Nginx) monitorPids(processInfo []core.Process, errorChannel chan string) {
 	ticker := time.NewTicker(500 * time.Millisecond)
-	defer ticker.Stop()
 	startingPids := parseIntList(processInfo)
 	// wait 500 milliseconds for process information to change
 	time.Sleep(500 * time.Millisecond)
@@ -615,15 +618,17 @@ func (n *Nginx) monitorPids(processInfo []core.Process, errorChannel chan string
 		case <-time.After(n.config.Nginx.ConfigReloadMonitoringPeriod):
 			errorChannel <- "Timed out"
 			log.Trace("Timed out monitoring PIDs")
+			ticker.Stop()
 			return
 		case <-ticker.C:
 			log.Tracef("Monitoring Pids")
 			currentList := parseIntList(n.getNginxProccessInfo())
 			difference := intersection(startingPids, currentList)
 			// if there is one pid leftover, that's ok
-			if len(difference) >= len(startingPids)-1 {
+			if len(difference) <= 1 {
 				errorChannel <- ""
 				log.Tracef("Success monitoring PIDs")
+				ticker.Stop()
 				return
 			}
 		}
@@ -657,6 +662,8 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	t, err := tailer.NewTailer(logFile)
 	if err != nil {
 		log.Errorf("Unable to tail %q: %v", logFile, err)
+		// this is not an error in the logs, ignoring tailing
+		errorChannel <- ""
 		return
 	}
 

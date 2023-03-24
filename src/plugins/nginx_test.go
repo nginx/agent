@@ -1133,6 +1133,7 @@ func TestNginx_monitorLog(t *testing.T) {
 
 func TestNginx_monitorPids(t *testing.T) {
 	tests := []struct {
+		name                string
 		startingProcesses   []core.Process
 		updatedProcesses    []core.Process
 		errorStr            string
@@ -1140,26 +1141,33 @@ func TestNginx_monitorPids(t *testing.T) {
 		ticker              time.Duration
 	}{
 		{
+			name:				 "postive case",
 			startingProcesses:   tutils.GetProcesses(),
-			updatedProcesses:    tutils.GetProcesses(),
+			updatedProcesses:    []core.Process{
+				{Pid: 1, Name: "12345", IsMaster: true},
+				{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
+				{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
+			},
 			errorStr:            "",
 			expectedTestTimeout: false,
-			ticker:              200 * time.Millisecond,
+			ticker:              1 * time.Second,
 		},
 		{
+			name:				 "timeout case",
 			startingProcesses: tutils.GetProcesses(),
 			updatedProcesses: []core.Process{
-				{Pid: 4, Name: "12345", IsMaster: true},
-				{Pid: 5, ParentPid: 1, Name: "worker-1", IsMaster: false},
-				{Pid: 6, ParentPid: 1, Name: "worker-2", IsMaster: false},
+				{Pid: 1, Name: "12345", IsMaster: true},
+				{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
+				{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
 			},
 			errorStr:            "",
 			expectedTestTimeout: true,
 			ticker:              2 * time.Second,
 		},
 		{
-			startingProcesses: tutils.GetProcesses(),
-			updatedProcesses: []core.Process{
+			name:			     "ticker timeout case",
+			startingProcesses:   tutils.GetProcesses(),
+			updatedProcesses:    []core.Process{
 				{Pid: 4, Name: "12345", IsMaster: true},
 				{Pid: 5, ParentPid: 1, Name: "worker-1", IsMaster: false},
 				{Pid: 6, ParentPid: 1, Name: "worker-2", IsMaster: false},
@@ -1170,24 +1178,25 @@ func TestNginx_monitorPids(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, test := range tests {
+		t.Logf("Running test %s", test.name)
 		errorChannel := make(chan string, 1)
 		env := tutils.GetMockEnvWithProcess()
 		config := tutils.GetMockAgentConfig()
-		config.Nginx.ConfigReloadMonitoringPeriod = tt.ticker
+		config.Nginx.ConfigReloadMonitoringPeriod = test.ticker
 		pluginUnderTest := NewNginx(tutils.GetMockCommandClient(&proto.NginxConfig{}), tutils.NewMockNginxBinary(), env, config)
 
-		go pluginUnderTest.monitorPids(tt.startingProcesses, errorChannel)
-		pluginUnderTest.syncProcessInfo(tt.updatedProcesses)
+		go pluginUnderTest.monitorPids(test.startingProcesses, errorChannel)
+		pluginUnderTest.syncProcessInfo(test.updatedProcesses)
 
 		select {
 		case err := <-errorChannel:
 			// Check that the function completed with expected errors
-			assert.Equal(t, tt.errorStr, err)
-		case <-time.After(3 * time.Second):
+			assert.Equal(t, test.errorStr, err)
+		case <-time.After(test.ticker):
 			// Timeout if the function takes too long
 			// t.Error("Timed out waiting for function to complete")
-			assert.True(t, tt.expectedTestTimeout)
+			assert.True(t, test.expectedTestTimeout)
 		}
 	}
 }
