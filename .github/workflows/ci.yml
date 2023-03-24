@@ -166,12 +166,8 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az storage blob upload --auth-mode=login -f ./build/packages/nginx-agent.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
-              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/nginx-agent.tar.gz
-      - name: Azure Logout
-        run: |
-          az logout
-        if: always()
+            az storage blob upload-batch --auth-mode=login -p ./build/packages/ -c ${{ secrets.AZURE_CONTAINER_NAME }} \
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/
 
   build-unsigned-snapshot:
     name: Build unsigned snapshot
