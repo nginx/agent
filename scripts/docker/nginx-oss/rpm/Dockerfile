@@ -10,8 +10,6 @@ ARG OS_RELEASE
 WORKDIR /agent
 COPY ./ /agent
 COPY $ENTRY_POINT /agent/entrypoint.sh
-RUN echo "$OS_RELEASE"
-RUN echo "$OS_VERSION"
 
 RUN if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; \
      then yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm ; \
