@@ -34,7 +34,7 @@ func NewNginxOSS(baseDimensions *metrics.CommonDim, namespace, stubStatus string
 	return &NginxOSS{baseDimensions: baseDimensions, stubStatus: stubStatus, namedMetric: &namedMetric{namespace: namespace}, logger: NewMetricSourceLogger()}
 }
 
-func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.init.Do(func() {
 		cl, err := client.NewNginxClient(&http.Client{}, c.stubStatus)
@@ -108,7 +108,7 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 
 	select {
 	case <-ctx.Done():
-	case m <- metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics):
+	case m <- metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE):
 	}
 
 	c.prevStats = stats

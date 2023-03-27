@@ -157,7 +157,7 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 				return r.handleGrpcError("Metric Reporter Channel Send", err)
 			}
 
-			log.Tracef("MetricReporter sent metrics report %v", report)
+			log.Tracef("MetricReporter sent metrics report [Type: %d] %+v", report.Type, report)
 
 			return nil
 		})

@@ -1165,6 +1165,8 @@ Metric type enum
 | SYSTEM | 0 | System metric type |
 | INSTANCE | 1 | NGINX instance metric type |
 | AGENT | 2 | Agent metric type |
+| CACHE_ZONE | 3 | Cache zone metric type |
+| UPSTREAMS | 4 | Upstreams metric type |
 
 
  

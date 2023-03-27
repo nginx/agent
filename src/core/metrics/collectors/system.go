@@ -11,7 +11,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -24,7 +23,7 @@ var (
 
 type SystemCollector struct {
 	sources []metrics.Source
-	buf     chan *proto.StatsEntity
+	buf     chan *metrics.StatsEntityWrapper
 	dim     *metrics.CommonDim
 	env     core.Environment
 }
@@ -53,7 +52,7 @@ func NewSystemCollector(env core.Environment, conf *config.Config) *SystemCollec
 
 	return &SystemCollector{
 		sources: systemSources,
-		buf:     make(chan *proto.StatsEntity, 65535),
+		buf:     make(chan *metrics.StatsEntityWrapper, 65535),
 		dim:     metrics.NewCommonDim(env.NewHostInfo("agentVersion", &conf.Tags, conf.ConfigDirs, false), conf, ""),
 		env:     env,
 	}
@@ -70,7 +69,7 @@ func (c *SystemCollector) collectMetrics(ctx context.Context) {
 	wg.Wait()
 }
 
-func (c *SystemCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *SystemCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.collectMetrics(ctx)
 
@@ -80,7 +79,7 @@ func (c *SystemCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m cha
 		case <-ctx.Done():
 			return
 		case sample := <-c.buf:
-			sample.Dimensions = append(commonDims, sample.Dimensions...)
+			sample.Data.Dimensions = append(commonDims, sample.Data.Dimensions...)
 
 			select {
 			case <-ctx.Done():
