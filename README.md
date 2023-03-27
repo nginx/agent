@@ -152,7 +152,7 @@ sudo cp <project_root_directory>/nginx-agent.conf /etc/nginx-agent/
 ```
 Create the `agent-dynamic.conf` file in the `/etc/nginx-agent/` directory, which is required for NGINX Agent to run. 
 ```
-sudo touch /etc/nginx-agent/agent-dynamic.conf
+sudo touch /var/lib/nginx-agent/agent-dynamic.conf
 ```
 
 ### Enabling the gRPC interface

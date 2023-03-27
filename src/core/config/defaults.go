@@ -80,7 +80,7 @@ var (
 
 const (
 	DynamicConfigFileName    = "agent-dynamic.conf"
-	DynamicConfigFileAbsPath = "/etc/nginx-agent/agent-dynamic.conf"
+	DynamicConfigFileAbsPath = "/var/lib/nginx-agent/agent-dynamic.conf"
 	ConfigFileName           = "nginx-agent.conf"
 	ConfigFileType           = "yaml"
 	EnvPrefix                = "nms"

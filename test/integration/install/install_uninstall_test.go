@@ -47,7 +47,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 
 	expectedAgentPaths := map[string]string{
 		"AgentConfigFile":        "/etc/nginx-agent/nginx-agent.conf",
-		"AgentDynamicConfigFile": "/etc/nginx-agent/agent-dynamic.conf",
+		"AgentDynamicConfigFile": "/var/lib/nginx-agent/agent-dynamic.conf",
 	}
 
 	// Check the environment variable $PACKAGE_NAME is set
