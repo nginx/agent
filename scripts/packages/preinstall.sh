@@ -29,8 +29,8 @@ if [ "$ID" = "freebsd" ]; then
     OLD_DYNAMIC_CONFIG_DIR="/usr/local/etc/nginx-agent"
     mkdir -p /var/log/nginx-agent/
 else
-    AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/var/lib/nginx-agent/nginx-agent.conf"}
-    AGENT_DYNAMIC_CONFIG_DIR="/var/lib/nginx-agent"
+    AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/etc/nginx-agent/nginx-agent.conf"}
+     AGENT_DYNAMIC_CONFIG_DIR="/var/lib/nginx-agent"
     # Old location of agent-dynamic.conf 
     OLD_DYNAMIC_CONFIG_DIR="/etc/nginx-agent"
 fi
