@@ -22,7 +22,6 @@ AMAZON_VERSIONS?=amazon-2
 AMAZON_ARCHS?=aarch64 x86_64
 
 UPLOAD_URL         := "https://up-ap.nginx.com/"
-AGENT_UPLOADER_KEY := "./agent-uploader.pem"
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Release Packaging                                                                                               #
@@ -161,5 +160,5 @@ gpg-key: ## Generate GPG public key
 
 release: ## Publish tarball to the UPLOAD_URL
 	echo "Publishing nginx-agent packages to ${UPLOAD_URL}"; \
-	curl -XPOST -F "file=@$(PACKAGES_DIR)/${PACKAGE_PREFIX}.tar.gz" -E ${AGENT_UPLOADER_KEY} ${UPLOAD_URL}; \
-	curl -XPOST -F "file=@$(GPG_PUBLIC_KEY)" -E ${AGENT_UPLOADER_KEY} ${UPLOAD_URL}; \
+	curl -XPOST -F "file=@$(PACKAGES_DIR)/${PACKAGE_PREFIX}.tar.gz" -H "Token: ${TOKEN}" ${UPLOAD_URL}; \
+	curl -XPOST -F "file=@$(GPG_PUBLIC_KEY)" -H "Token: ${TOKEN}" ${UPLOAD_URL}; \

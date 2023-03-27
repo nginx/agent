@@ -79,7 +79,7 @@ type FakeNginxPlus struct {
 }
 
 // Collect is fake collector that hard codes a stats struct response to avoid dependency on external NGINX Plus api
-func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	stats := plusclient.Stats{
 		HTTPRequests: plusclient.HTTPRequests{
@@ -706,11 +706,11 @@ func TestNginxPlus_Collect(t *testing.T) {
 	}
 	tests := []struct {
 		baseDimensions *metrics.CommonDim
-		m              chan *proto.StatsEntity
+		m              chan *metrics.StatsEntityWrapper
 	}{
 		{
 			baseDimensions: metrics.NewCommonDim(hostInfo, &config.Config{}, ""),
-			m:              make(chan *proto.StatsEntity, 127),
+			m:              make(chan *metrics.StatsEntityWrapper, 127),
 		},
 	}
 
@@ -724,8 +724,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		wg.Wait()
 
 		instanceMetrics := <-test.m
-		assert.Len(t, instanceMetrics.Simplemetrics, len(expectedInstanceMetrics))
-		for _, metric := range instanceMetrics.Simplemetrics {
+		assert.Len(t, instanceMetrics.Data.Simplemetrics, len(expectedInstanceMetrics))
+		for _, metric := range instanceMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedInstanceMetrics, metric.Name)
 			switch metric.Name {
 			case "nginx.status":
@@ -736,8 +736,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		commonMetrics := <-test.m
-		assert.Len(t, commonMetrics.Simplemetrics, len(expectedCommonMetrics))
-		for _, metric := range commonMetrics.Simplemetrics {
+		assert.Len(t, commonMetrics.Data.Simplemetrics, len(expectedCommonMetrics))
+		for _, metric := range commonMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedCommonMetrics, metric.Name)
 			switch metric.Name {
 			case "nginx.http.request.count": // delta of sum
@@ -748,20 +748,20 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		sslMetrics := <-test.m
-		assert.Len(t, sslMetrics.Simplemetrics, len(expectedSSLMetrics))
-		for _, metric := range sslMetrics.Simplemetrics {
+		assert.Len(t, sslMetrics.Data.Simplemetrics, len(expectedSSLMetrics))
+		for _, metric := range sslMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedSSLMetrics, metric.Name)
 		}
 
 		serverZoneMetrics := <-test.m
-		assert.Len(t, serverZoneMetrics.Simplemetrics, len(expectedServerZoneMetrics))
-		for _, dimension := range serverZoneMetrics.Dimensions {
+		assert.Len(t, serverZoneMetrics.Data.Simplemetrics, len(expectedServerZoneMetrics))
+		for _, dimension := range serverZoneMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "server_zone":
 				assert.Equal(t, serverZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range serverZoneMetrics.Simplemetrics {
+		for _, metric := range serverZoneMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedServerZoneMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.http.request.count":
@@ -778,14 +778,14 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		streamServerZoneMetrics := <-test.m
-		assert.Len(t, streamServerZoneMetrics.Simplemetrics, len(expectedStreamServerZoneMetrics))
-		for _, dimension := range streamServerZoneMetrics.Dimensions {
+		assert.Len(t, streamServerZoneMetrics.Data.Simplemetrics, len(expectedStreamServerZoneMetrics))
+		for _, dimension := range streamServerZoneMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "server_zone":
 				assert.Equal(t, streamServerZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range streamServerZoneMetrics.Simplemetrics {
+		for _, metric := range streamServerZoneMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedStreamServerZoneMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.stream.connections":
@@ -802,14 +802,14 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		locationZoneMetrics := <-test.m
-		assert.Len(t, locationZoneMetrics.Simplemetrics, len(expectedLocationZoneMetrics))
-		for _, dimension := range locationZoneMetrics.Dimensions {
+		assert.Len(t, locationZoneMetrics.Data.Simplemetrics, len(expectedLocationZoneMetrics))
+		for _, dimension := range locationZoneMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "location_zone":
 				assert.Equal(t, locationZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range locationZoneMetrics.Simplemetrics {
+		for _, metric := range locationZoneMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedLocationZoneMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.http.request.count":
@@ -825,15 +825,89 @@ func TestNginxPlus_Collect(t *testing.T) {
 			}
 		}
 
+		slabMetrics := <-test.m
+		assert.Len(t, slabMetrics.Data.Simplemetrics, len(expectedSlabMetrics))
+		for _, dimension := range slabMetrics.Data.Dimensions {
+			switch dimension.Name {
+			case "zone":
+				assert.Equal(t, serverZoneName, dimension.Value)
+			}
+		}
+		for _, metric := range slabMetrics.Data.Simplemetrics {
+			assert.Contains(t, expectedSlabMetrics, metric.Name)
+			switch metric.Name {
+			case "plus.slab.pages.used":
+				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.used"], metric.Value)
+			case "plus.slab.pages.free":
+				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.free"], metric.Value)
+			case "plus.slab.pages.total":
+				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.total"], metric.Value)
+			case "plus.slab.pages.pct_used":
+				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.pct_used"], metric.Value)
+			}
+		}
+
+		slabSlotsMetrics := <-test.m
+		assert.Len(t, slabSlotsMetrics.Data.Simplemetrics, len(expectedSlabSlotMetrics))
+		for _, metric := range slabSlotsMetrics.Data.Simplemetrics {
+			assert.Contains(t, expectedSlabSlotMetrics, metric.Name)
+			assert.Equal(t, expectedSlabSlotMetrics[metric.Name], metric.Value)
+		}
+
+		limitConnectionsMetrics := <-test.m
+		assert.Len(t, limitConnectionsMetrics.Data.Simplemetrics, len(expectedHTTPLimitConnsMetrics))
+		for _, dimension := range limitConnectionsMetrics.Data.Dimensions {
+			switch dimension.Name {
+			case "limit_conn_zone":
+				assert.Equal(t, limitConnectionsName, dimension.Value)
+			}
+		}
+		for _, metric := range limitConnectionsMetrics.Data.Simplemetrics {
+			assert.Contains(t, expectedHTTPLimitConnsMetrics, metric.Name)
+			switch metric.Name {
+			case "plus.http.limit_conns.passed":
+				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.passed"], metric.Value)
+			case "plus.http.limit_conns.rejected":
+				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.rejected"], metric.Value)
+			case "plus.http.limit_conns.rejected_dry_run":
+				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.rejected_dry_run"], metric.Value)
+			}
+		}
+
+		limitRequestsMetrics := <-test.m
+		assert.Len(t, limitRequestsMetrics.Data.Simplemetrics, len(expectedHTTPLimitReqsMetrics))
+		for _, dimension := range limitRequestsMetrics.Data.Dimensions {
+			switch dimension.Name {
+			case "limit_req_zone":
+				assert.Equal(t, limitRequestName, dimension.Value)
+
+			}
+		}
+		for _, metric := range limitRequestsMetrics.Data.Simplemetrics {
+			assert.Contains(t, expectedHTTPLimitReqsMetrics, metric.Name)
+			switch metric.Name {
+			case "plus.http.limit_reqs.passed":
+				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.passed"], metric.Value)
+			case "plus.http.limit_reqs.delayed":
+				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.delayed"], metric.Value)
+			case "plus.http.limit_reqs.rejected":
+				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.rejected"], metric.Value)
+			case "plus.http.limit_reqs.delayed_dry_run":
+				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.delayed_dry_run"], metric.Value)
+			case "plus.http.limit_reqs.rejected_dry_run":
+				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.rejected_dry_run"], metric.Value)
+			}
+		}
+
 		cacheZoneMetrics := <-test.m
-		assert.Len(t, cacheZoneMetrics.Simplemetrics, len(expectedCacheZoneMetrics))
-		for _, dimension := range cacheZoneMetrics.Dimensions {
+		assert.Len(t, cacheZoneMetrics.Data.Simplemetrics, len(expectedCacheZoneMetrics))
+		for _, dimension := range cacheZoneMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "cache_zone":
 				assert.Equal(t, cacheZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range cacheZoneMetrics.Simplemetrics {
+		for _, metric := range cacheZoneMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedCacheZoneMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.cache.size":
@@ -852,8 +926,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		httpPeer1upstreamMetrics := <-test.m
-		assert.Len(t, httpPeer1upstreamMetrics.Simplemetrics, len(expectedHttpPeer1UpstreamMetrics))
-		for _, dimension := range httpPeer1upstreamMetrics.Dimensions {
+		assert.Len(t, httpPeer1upstreamMetrics.Data.Simplemetrics, len(expectedHttpPeer1UpstreamMetrics))
+		for _, dimension := range httpPeer1upstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -865,7 +939,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, upstreamPeer1ServerAddress, dimension.Value)
 			}
 		}
-		for _, metric := range httpPeer1upstreamMetrics.Simplemetrics {
+		for _, metric := range httpPeer1upstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedHttpPeer1UpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.http.upstream.peers.header_time":
@@ -888,8 +962,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		httpPeer2upstreamMetrics := <-test.m
-		assert.Len(t, httpPeer2upstreamMetrics.Simplemetrics, len(expectedHttpPeer2UpstreamMetrics))
-		for _, dimension := range httpPeer2upstreamMetrics.Dimensions {
+		assert.Len(t, httpPeer2upstreamMetrics.Data.Simplemetrics, len(expectedHttpPeer2UpstreamMetrics))
+		for _, dimension := range httpPeer2upstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -901,7 +975,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, upstreamPeer2ServerAddress, dimension.Value)
 			}
 		}
-		for _, metric := range httpPeer2upstreamMetrics.Simplemetrics {
+		for _, metric := range httpPeer2upstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedHttpPeer2UpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.http.upstream.peers.header_time":
@@ -924,8 +998,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		httpUpstreamMetrics := <-test.m
-		assert.Len(t, httpUpstreamMetrics.Simplemetrics, len(expectedHttpUpstreamMetrics))
-		for _, dimension := range httpUpstreamMetrics.Dimensions {
+		assert.Len(t, httpUpstreamMetrics.Data.Simplemetrics, len(expectedHttpUpstreamMetrics))
+		for _, dimension := range httpUpstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -933,7 +1007,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, upstreamZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range httpUpstreamMetrics.Simplemetrics {
+		for _, metric := range httpUpstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedHttpUpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.http.upstream.queue.maxsize":
@@ -964,8 +1038,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		streamPeer1upstreamMetrics := <-test.m
-		assert.Len(t, streamPeer1upstreamMetrics.Simplemetrics, len(expectedStreamPeer1UpstreamMetrics))
-		for _, dimension := range streamPeer1upstreamMetrics.Dimensions {
+		assert.Len(t, streamPeer1upstreamMetrics.Data.Simplemetrics, len(expectedStreamPeer1UpstreamMetrics))
+		for _, dimension := range streamPeer1upstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -979,8 +1053,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		streamPeer2upstreamMetrics := <-test.m
-		assert.Len(t, streamPeer2upstreamMetrics.Simplemetrics, len(expectedStreamPeer2UpstreamMetrics))
-		for _, dimension := range streamPeer2upstreamMetrics.Dimensions {
+		assert.Len(t, streamPeer2upstreamMetrics.Data.Simplemetrics, len(expectedStreamPeer2UpstreamMetrics))
+		for _, dimension := range streamPeer2upstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -993,7 +1067,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 			}
 		}
 
-		for _, metric := range streamPeer1upstreamMetrics.Simplemetrics {
+		for _, metric := range streamPeer1upstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedStreamPeer1UpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.stream.upstream.peers.conn.active":
@@ -1015,7 +1089,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 			}
 		}
 
-		for _, metric := range streamPeer2upstreamMetrics.Simplemetrics {
+		for _, metric := range streamPeer2upstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedStreamPeer2UpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.stream.upstream.peers.conn.active":
@@ -1038,8 +1112,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		streamUpstreamMetrics := <-test.m
-		assert.Len(t, streamUpstreamMetrics.Simplemetrics, len(expectedStreamUpstreamMetrics))
-		for _, dimension := range streamUpstreamMetrics.Dimensions {
+		assert.Len(t, streamUpstreamMetrics.Data.Simplemetrics, len(expectedStreamUpstreamMetrics))
+		for _, dimension := range streamUpstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -1047,7 +1121,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, upstreamZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range streamUpstreamMetrics.Simplemetrics {
+		for _, metric := range streamUpstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedStreamUpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.stream.upstream.zombies":
@@ -1075,81 +1149,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 			}
 		}
 
-		slabMetrics := <-test.m
-		assert.Len(t, slabMetrics.Simplemetrics, len(expectedSlabMetrics))
-		for _, dimension := range slabMetrics.Dimensions {
-			switch dimension.Name {
-			case "zone":
-				assert.Equal(t, serverZoneName, dimension.Value)
-			}
-		}
-		for _, metric := range slabMetrics.Simplemetrics {
-			assert.Contains(t, expectedSlabMetrics, metric.Name)
-			switch metric.Name {
-			case "plus.slab.pages.used":
-				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.used"], metric.Value)
-			case "plus.slab.pages.free":
-				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.free"], metric.Value)
-			case "plus.slab.pages.total":
-				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.total"], metric.Value)
-			case "plus.slab.pages.pct_used":
-				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.pct_used"], metric.Value)
-			}
-		}
-
-		slabSlotsMetrics := <-test.m
-		assert.Len(t, slabSlotsMetrics.Simplemetrics, len(expectedSlabSlotMetrics))
-		for _, metric := range slabSlotsMetrics.Simplemetrics {
-			assert.Contains(t, expectedSlabSlotMetrics, metric.Name)
-			assert.Equal(t, expectedSlabSlotMetrics[metric.Name], metric.Value)
-		}
-
-		limitConnectionsMetrics := <-test.m
-		assert.Len(t, limitConnectionsMetrics.Simplemetrics, len(expectedHTTPLimitConnsMetrics))
-		for _, dimension := range limitConnectionsMetrics.Dimensions {
-			switch dimension.Name {
-			case "limit_conn_zone":
-				assert.Equal(t, limitConnectionsName, dimension.Value)
-			}
-		}
-		for _, metric := range limitConnectionsMetrics.Simplemetrics {
-			assert.Contains(t, expectedHTTPLimitConnsMetrics, metric.Name)
-			switch metric.Name {
-			case "plus.http.limit_conns.passed":
-				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.passed"], metric.Value)
-			case "plus.http.limit_conns.rejected":
-				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.rejected"], metric.Value)
-			case "plus.http.limit_conns.rejected_dry_run":
-				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.rejected_dry_run"], metric.Value)
-			}
-		}
-
-		limitRequestsMetrics := <-test.m
-		assert.Len(t, limitRequestsMetrics.Simplemetrics, len(expectedHTTPLimitReqsMetrics))
-		for _, dimension := range limitRequestsMetrics.Dimensions {
-			switch dimension.Name {
-			case "limit_req_zone":
-				assert.Equal(t, limitRequestName, dimension.Value)
-
-			}
-		}
-		for _, metric := range limitRequestsMetrics.Simplemetrics {
-			assert.Contains(t, expectedHTTPLimitReqsMetrics, metric.Name)
-			switch metric.Name {
-			case "plus.http.limit_reqs.passed":
-				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.passed"], metric.Value)
-			case "plus.http.limit_reqs.delayed":
-				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.delayed"], metric.Value)
-			case "plus.http.limit_reqs.rejected":
-				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.rejected"], metric.Value)
-			case "plus.http.limit_reqs.delayed_dry_run":
-				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.delayed_dry_run"], metric.Value)
-			case "plus.http.limit_reqs.rejected_dry_run":
-				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.rejected_dry_run"], metric.Value)
-			}
-		}
-
-		var extraMetrics []*proto.StatsEntity
+		var extraMetrics []*metrics.StatsEntityWrapper
 	EMWAIT:
 		for {
 			select {

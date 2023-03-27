@@ -57,7 +57,7 @@ func TestContainerCollector_Collect(t *testing.T) {
 			mockSource1,
 			mockSource2,
 		},
-		buf: make(chan *proto.StatsEntity),
+		buf: make(chan *metrics.StatsEntityWrapper),
 		dim: &metrics.CommonDim{},
 	}
 
@@ -65,10 +65,10 @@ func TestContainerCollector_Collect(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
-	channel := make(chan *proto.StatsEntity)
+	channel := make(chan *metrics.StatsEntityWrapper)
 	go containerCollector.Collect(ctx, wg, channel)
 
-	containerCollector.buf <- &proto.StatsEntity{Dimensions: []*proto.Dimension{{Name: "new_dim", Value: "123"}}}
+	containerCollector.buf <- &metrics.StatsEntityWrapper{Type: proto.MetricsReport_SYSTEM, Data: &proto.StatsEntity{Dimensions: []*proto.Dimension{{Name: "new_dim", Value: "123"}}}}
 	actual := <-channel
 
 	mockSource1.AssertExpectations(t)
@@ -83,7 +83,7 @@ func TestContainerCollector_Collect(t *testing.T) {
 		{Name: "nginx_id", Value: ""},
 		{Name: "new_dim", Value: "123"},
 	}
-	assert.Equal(t, expectedDimensions, actual.Dimensions)
+	assert.Equal(t, expectedDimensions, actual.Data.Dimensions)
 }
 
 func TestContainerCollector_UpdateConfig(t *testing.T) {

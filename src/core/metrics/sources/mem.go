@@ -38,7 +38,7 @@ func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemo
 	return &VirtualMemory{NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}, statFunc}
 }
 
-func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	memstats, err := c.statFunc()
 	if err != nil {
@@ -66,6 +66,6 @@ func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 
 	select {
 	case <-ctx.Done():
-	case m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics):
+	case m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{}, simpleMetrics, proto.MetricsReport_SYSTEM):
 	}
 }

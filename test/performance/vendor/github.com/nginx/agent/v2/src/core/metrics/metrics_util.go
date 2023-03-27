@@ -15,23 +15,34 @@ import (
 	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 
 	"github.com/gogo/protobuf/types"
 )
 
 type Collector interface {
-	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity)
+	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
 	UpdateConfig(config *config.Config)
 }
 type Source interface {
-	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity)
+	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
 }
 type NginxSource interface {
-	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity)
+	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
 	Update(dimensions *CommonDim, collectorConf *NginxCollectorConfig)
 	Stop()
 }
+
+type StatsEntityWrapper struct {
+	Type proto.MetricsReport_Type
+	Data *proto.StatsEntity
+}
+
+type MetricsReportBundle struct {
+	Data []*proto.MetricsReport
+}
+
 type NginxCollectorConfig struct {
 	NginxId            string
 	StubStatus         string
@@ -42,6 +53,14 @@ type NginxCollectorConfig struct {
 	AccessLogs         []string
 	ErrorLogs          []string
 	ClientVersion      int
+}
+
+func NewStatsEntityWrapper(dims []*proto.Dimension, samples []*proto.SimpleMetric, seType proto.MetricsReport_Type) *StatsEntityWrapper {
+	return &StatsEntityWrapper{seType, &proto.StatsEntity{
+		Timestamp:     types.TimestampNow(),
+		Dimensions:    dims,
+		Simplemetrics: samples,
+	}}
 }
 
 func NewStatsEntity(dims []*proto.Dimension, samples []*proto.SimpleMetric) *proto.StatsEntity {
@@ -365,4 +384,30 @@ func GetCalculationMap() map[string]string {
 		"container.mem.oom":                                  "avg",
 		"container.mem.oom.kill":                             "avg",
 	}
+}
+
+func GenerateMetricsReportBundle(entities []*StatsEntityWrapper) core.Payload {
+	reportMap := make(map[proto.MetricsReport_Type]*proto.MetricsReport, 0)
+
+	for _, entity := range entities {
+		if _, ok := reportMap[entity.Type]; !ok {
+			reportMap[entity.Type] = &proto.MetricsReport{
+				Meta: &proto.Metadata{
+					Timestamp: types.TimestampNow(),
+				},
+				Type: entity.Type,
+				Data: make([]*proto.StatsEntity, 0),
+			}
+		}
+		reportMap[entity.Type].Data = append(reportMap[entity.Type].Data, entity.Data)
+	}
+
+	if len(reportMap) > 0 {
+		bundle := &MetricsReportBundle{Data: []*proto.MetricsReport{}}
+		for _, report := range reportMap {
+			bundle.Data = append(bundle.Data, report)
+		}
+		return bundle
+	}
+	return nil
 }

@@ -43,7 +43,7 @@ func (c *NginxProcess) getNginxCount() float64 {
 	return 0.0
 }
 
-func (c *NginxProcess) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *NginxProcess) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 
 	l := &namedMetric{namespace: PlusNamespace, group: ""}
@@ -53,7 +53,7 @@ func (c *NginxProcess) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 
 	select {
 	case <-ctx.Done():
-	case m <- metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), countSimpleMetric):
+	case m <- metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), countSimpleMetric, proto.MetricsReport_INSTANCE):
 	}
 }
 
