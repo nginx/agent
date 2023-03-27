@@ -60,7 +60,7 @@ func TestNginxProcessCollector_Collect_Process(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	m := make(chan *proto.StatsEntity)
+	m := make(chan *metrics.StatsEntityWrapper)
 	go n.Collect(ctx, &wg, m)
 
 	time.Sleep(100 * time.Millisecond)
@@ -70,7 +70,7 @@ func TestNginxProcessCollector_Collect_Process(t *testing.T) {
 	// the prev stats as equal to the initial stats collected
 	// that's ok, but we should test the counter gauge computations again later
 	metricReport := <-m
-	for _, metric := range metricReport.Simplemetrics {
+	for _, metric := range metricReport.Data.Simplemetrics {
 		switch metric.Name {
 		case "plus.instance.count":
 			assert.Equal(t, float64(1), metric.Value)
@@ -104,7 +104,7 @@ func TestNginxProcessCollector_Collect_NoProcess(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	m := make(chan *proto.StatsEntity)
+	m := make(chan *metrics.StatsEntityWrapper)
 	go n.Collect(ctx, &wg, m)
 
 	time.Sleep(100 * time.Millisecond)
@@ -114,7 +114,7 @@ func TestNginxProcessCollector_Collect_NoProcess(t *testing.T) {
 	// the prev stats as equal to the initial stats collected
 	// that's ok, but we should test the counter gauge computations again later
 	metricReport := <-m
-	for _, metric := range metricReport.Simplemetrics {
+	for _, metric := range metricReport.Data.Simplemetrics {
 		switch metric.Name {
 		case "plus.instance.count":
 			assert.Equal(t, float64(0), metric.Value)
@@ -151,7 +151,7 @@ func TestNginxProcessCollector_Collect_NotPlus(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	m := make(chan *proto.StatsEntity)
+	m := make(chan *metrics.StatsEntityWrapper)
 	go n.Collect(ctx, &wg, m)
 
 	time.Sleep(100 * time.Millisecond)
@@ -161,7 +161,7 @@ func TestNginxProcessCollector_Collect_NotPlus(t *testing.T) {
 	// the prev stats as equal to the initial stats collected
 	// that's ok, but we should test the counter gauge computations again later
 	metricReport := <-m
-	for _, metric := range metricReport.Simplemetrics {
+	for _, metric := range metricReport.Data.Simplemetrics {
 		switch metric.Name {
 		case "plus.instance.count":
 			assert.Equal(t, float64(0), metric.Value)

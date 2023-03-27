@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"path"
 	"runtime"
 	"sort"
@@ -116,7 +117,7 @@ func TestContainerCPUSource(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			actual := make(chan *proto.StatsEntity, 1)
+			actual := make(chan *metrics.StatsEntityWrapper, 1)
 			ctx := context.TODO()
 			wg := &sync.WaitGroup{}
 			wg.Add(1)
@@ -130,10 +131,10 @@ func TestContainerCPUSource(t *testing.T) {
 				sort.SliceStable(test.stats.Simplemetrics, func(i, j int) bool {
 					return test.stats.Simplemetrics[i].Name < test.stats.Simplemetrics[j].Name
 				})
-				sort.SliceStable(result.Simplemetrics, func(i, j int) bool {
-					return result.Simplemetrics[i].Name < result.Simplemetrics[j].Name
+				sort.SliceStable(result.Data.Simplemetrics, func(i, j int) bool {
+					return result.Data.Simplemetrics[i].Name < result.Data.Simplemetrics[j].Name
 				})
-				assert.Equal(tt, test.stats.Simplemetrics, result.Simplemetrics)
+				assert.Equal(tt, test.stats.Simplemetrics, result.Data.Simplemetrics)
 			case <-time.After(10 * time.Millisecond):
 				assert.Nil(tt, test.stats)
 			}

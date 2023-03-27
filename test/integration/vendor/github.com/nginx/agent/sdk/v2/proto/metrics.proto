@@ -17,6 +17,10 @@ message MetricsReport {
     INSTANCE = 1;
     // Agent metric type
     AGENT = 2;
+    // Cache zone metric type
+    CACHE_ZONE = 3;
+    // Upstreams metric type
+    UPSTREAMS = 4;
   }
   // Provides meta information about the metrics
   Metadata meta = 1 [(gogoproto.jsontag) = "meta"];

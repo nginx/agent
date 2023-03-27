@@ -27,7 +27,7 @@ func NewLoadSource(namespace string) *Load {
 	return &Load{logger: NewMetricSourceLogger(), namedMetric: &namedMetric{namespace, "load"}, avgStatsFunc: load.Avg}
 }
 
-func (c *Load) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *Load) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	loadStats, err := c.avgStatsFunc()
 	if err != nil {
@@ -43,6 +43,6 @@ func (c *Load) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 
 	select {
 	case <-ctx.Done():
-	case m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics):
+	case m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{}, simpleMetrics, proto.MetricsReport_SYSTEM):
 	}
 }

@@ -9,11 +9,11 @@ package sources
 
 import (
 	"context"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"sort"
 	"sync"
 	"testing"
 
-	"github.com/nginx/agent/sdk/v2/proto"
 	cgroup "github.com/nginx/agent/v2/src/core/metrics/sources/cgroup"
 	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -58,14 +58,14 @@ func TestVirtualMemoryCollect(t *testing.T) {
 	ctx := context.TODO()
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	channel := make(chan *proto.StatsEntity, 1)
+	channel := make(chan *metrics.StatsEntityWrapper, 1)
 	go virtualMemorySource.Collect(ctx, wg, channel)
 	wg.Wait()
 
 	actual := <-channel
 
 	actualMetricNames := []string{}
-	for _, simpleMetric := range actual.Simplemetrics {
+	for _, simpleMetric := range actual.Data.Simplemetrics {
 		actualMetricNames = append(actualMetricNames, simpleMetric.Name)
 	}
 	sort.Strings(actualMetricNames)

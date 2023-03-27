@@ -11,7 +11,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -25,7 +24,7 @@ var (
 
 type NginxCollector struct {
 	sources       []metrics.NginxSource
-	buf           chan *proto.StatsEntity
+	buf           chan *metrics.StatsEntityWrapper
 	dimensions    *metrics.CommonDim
 	collectorConf *metrics.NginxCollectorConfig
 	env           core.Environment
@@ -40,7 +39,7 @@ func NewNginxCollector(conf *config.Config, env core.Environment, collectorConf 
 
 	return &NginxCollector{
 		sources:       buildSources(dimensions, binary, collectorConf),
-		buf:           make(chan *proto.StatsEntity, 65535),
+		buf:           make(chan *metrics.StatsEntityWrapper, 65535),
 		dimensions:    dimensions,
 		collectorConf: collectorConf,
 		env:           env,
@@ -81,7 +80,7 @@ func (c *NginxCollector) collectMetrics(ctx context.Context) {
 	wg.Wait()
 }
 
-func (c *NginxCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *NginxCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.collectMetrics(ctx)
 	for {

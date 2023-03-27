@@ -1593,11 +1593,11 @@ func TestAccessLogStats(t *testing.T) {
 			sort.SliceStable(test.expectedStats.GetSimplemetrics(), func(i, j int) bool {
 				return test.expectedStats.GetSimplemetrics()[i].Name < test.expectedStats.GetSimplemetrics()[j].Name
 			})
-			sort.SliceStable(nginxAccessLog.buf[0].GetSimplemetrics(), func(i, j int) bool {
-				return nginxAccessLog.buf[0].GetSimplemetrics()[i].Name < nginxAccessLog.buf[0].GetSimplemetrics()[j].Name
+			sort.SliceStable(nginxAccessLog.buf[0].Data.GetSimplemetrics(), func(i, j int) bool {
+				return nginxAccessLog.buf[0].Data.GetSimplemetrics()[i].Name < nginxAccessLog.buf[0].Data.GetSimplemetrics()[j].Name
 			})
 
-			assert.Equal(tt, test.expectedStats.GetSimplemetrics(), nginxAccessLog.buf[0].GetSimplemetrics())
+			assert.Equal(tt, test.expectedStats.GetSimplemetrics(), nginxAccessLog.buf[0].Data.GetSimplemetrics())
 		})
 	}
 }

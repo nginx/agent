@@ -73,7 +73,6 @@ func TestAPI_Metrics(t *testing.T) {
 
 	for _, m := range metrics {
 		metric := strings.Split(m, " ")
-
 		switch {
 		case strings.Contains(metric[0], "system_cpu_system"):
 			value, _ := strconv.ParseFloat(metric[1], 64)

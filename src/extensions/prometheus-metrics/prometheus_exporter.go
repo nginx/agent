@@ -10,19 +10,22 @@ import (
 )
 
 type Exporter struct {
-	latestMetricReport *proto.MetricsReport
+	latestMetricReports *metrics.MetricsReportBundle
 }
 
 func NewExporter(report *proto.MetricsReport) *Exporter {
-	return &Exporter{latestMetricReport: report}
+	return &Exporter{latestMetricReports: &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{report}}}
 }
 
-func (e *Exporter) SetLatestMetricReport(latest *proto.MetricsReport) {
-	e.latestMetricReport = latest
+func (e *Exporter) SetLatestMetricReport(latest *metrics.MetricsReportBundle) {
+	e.latestMetricReports = latest
 }
 
-func (e *Exporter) GetLatestMetricReport() *proto.MetricsReport {
-	return e.latestMetricReport
+func (e *Exporter) GetLatestMetricReports() (reports []*proto.MetricsReport) {
+	for _, report := range e.latestMetricReports.Data {
+		reports = append(reports, report)
+	}
+	return
 }
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
@@ -40,9 +43,11 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
-	for _, statsEntity := range e.latestMetricReport.Data {
-		for _, metric := range statsEntity.Simplemetrics {
-			ch <- createPrometheusMetric(metric, statsEntity.GetDimensions())
+	for _, report := range e.latestMetricReports.Data {
+		for _, statsEntity := range report.Data {
+			for _, metric := range statsEntity.Simplemetrics {
+				ch <- createPrometheusMetric(metric, statsEntity.GetDimensions())
+			}
 		}
 	}
 }
