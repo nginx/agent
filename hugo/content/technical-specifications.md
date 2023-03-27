@@ -12,7 +12,7 @@ doctypes: ["task"]
 
 ## Supported Distributions
 
-NGINX Agent can run in most environments. For a list of supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
+NGINX Agent can run in most environments. The below list are the supported distributions.
 
 AlmaLinux
 - 8 (x86_64, aarch64)
