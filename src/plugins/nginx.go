@@ -610,7 +610,7 @@ func (n *Nginx) monitorLogs(errorLogs map[string]string, errorChannel chan strin
 func (n *Nginx) monitorPids(processInfo []core.Process, errorChannel chan string) {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	startingPids := parseIntList(processInfo)
-	// wait 500 milliseconds for process information to change
+	// wait 200 milliseconds for process information to change
 	time.Sleep(200 * time.Millisecond)
 	timeout := time.After(n.config.Nginx.ConfigReloadMonitoringPeriod)
 

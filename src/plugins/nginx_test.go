@@ -8,16 +8,16 @@
 package plugins
 
 import (
-	// "bytes"
+	"bytes"
 	"context"
 	"errors"
-	// "fmt"
+	"fmt"
 	"os"
 	"path"
 	"testing"
 	"time"
 
-	// "github.com/google/uuid"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -25,9 +25,9 @@ import (
 	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/checksum"
-	// "github.com/nginx/agent/sdk/v2/grpc"
+	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
-	// sdk_zip "github.com/nginx/agent/sdk/v2/zip"
+	sdk_zip "github.com/nginx/agent/sdk/v2/zip"
 	"github.com/nginx/agent/v2/src/core"
 	loadedConfig "github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/payloads"
@@ -128,456 +128,469 @@ var (
 	  }`)
 )
 
-// func TestNginxConfigApply(t *testing.T) {
-// 	validationTimeout = 100 * time.Millisecond
-// 	t.Parallel()
+func TestNginxConfigApply(t *testing.T) {
+	validationTimeout = 100 * time.Millisecond
+	updatedProcesses := []core.Process{
+		{Pid: 1, Name: "12345", IsMaster: true},
+		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
+		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
+	}
+	
+	t.Parallel()
 
-// 	tests := []struct {
-// 		config     *proto.NginxConfig
-// 		msgTopics  []string
-// 		wafVersion string
-// 	}{
-// 		{
-// 			config: &proto.NginxConfig{
-// 				Action: proto.NginxConfigAction_APPLY,
-// 				ConfigData: &proto.ConfigDescriptor{
-// 					NginxId:  "12345",
-// 					Checksum: "test",
-// 				},
-// 				Zconfig: &proto.ZippedFile{
-// 					Contents:      first,
-// 					Checksum:      checksum.Checksum(first),
-// 					RootDirectory: "nginx.conf",
-// 				},
-// 				Zaux:         &proto.ZippedFile{},
-// 				AccessLogs:   &proto.AccessLogs{},
-// 				ErrorLogs:    &proto.ErrorLogs{},
-// 				Ssl:          &proto.SslCertificates{},
-// 				DirectoryMap: &proto.DirectoryMap{},
-// 			},
-// 			msgTopics: []string{
-// 				core.CommNginxConfig,
-// 				core.NginxPluginConfigured,
-// 				core.NginxInstancesFound,
-// 				core.NginxConfigValidationPending,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigValidationSucceeded,
-// 				core.CommResponse,
-// 				core.NginxReloadComplete,
-// 				core.CommResponse,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigApplySucceeded,
-// 			},
-// 			wafVersion: "",
-// 		},
-// 		{
-// 			config: &proto.NginxConfig{
-// 				Action: proto.NginxConfigAction_APPLY,
-// 				ConfigData: &proto.ConfigDescriptor{
-// 					NginxId:  "12345",
-// 					Checksum: "test",
-// 				},
-// 				Zconfig: &proto.ZippedFile{
-// 					Contents:      second,
-// 					Checksum:      checksum.Checksum(second),
-// 					RootDirectory: "nginx.conf",
-// 				},
-// 				Zaux:         &proto.ZippedFile{},
-// 				AccessLogs:   &proto.AccessLogs{},
-// 				ErrorLogs:    &proto.ErrorLogs{},
-// 				Ssl:          &proto.SslCertificates{},
-// 				DirectoryMap: &proto.DirectoryMap{},
-// 			},
-// 			msgTopics: []string{
-// 				core.CommNginxConfig,
-// 				core.NginxPluginConfigured,
-// 				core.NginxInstancesFound,
-// 				core.NginxConfigValidationPending,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigValidationSucceeded,
-// 				core.CommResponse,
-// 				core.NginxReloadComplete,
-// 				core.CommResponse,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigApplySucceeded,
-// 			},
-// 			wafVersion: "",
-// 		},
-// 		{
-// 			config: &proto.NginxConfig{
-// 				Action: proto.NginxConfigAction_APPLY,
-// 				ConfigData: &proto.ConfigDescriptor{
-// 					NginxId:  "12345",
-// 					Checksum: "test",
-// 				},
-// 				Zconfig: &proto.ZippedFile{
-// 					Contents:      third,
-// 					Checksum:      checksum.Checksum(third),
-// 					RootDirectory: "nginx.conf",
-// 				},
-// 				Zaux:         &proto.ZippedFile{},
-// 				AccessLogs:   &proto.AccessLogs{},
-// 				ErrorLogs:    &proto.ErrorLogs{},
-// 				Ssl:          &proto.SslCertificates{},
-// 				DirectoryMap: &proto.DirectoryMap{},
-// 			},
-// 			msgTopics: []string{
-// 				core.CommNginxConfig,
-// 				core.NginxPluginConfigured,
-// 				core.NginxInstancesFound,
-// 				core.NginxConfigValidationPending,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigValidationSucceeded,
-// 				core.CommResponse,
-// 				core.NginxReloadComplete,
-// 				core.CommResponse,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigApplySucceeded,
-// 			},
-// 			wafVersion: "",
-// 		},
-// 		{
-// 			config: &proto.NginxConfig{
-// 				Action: proto.NginxConfigAction_APPLY,
-// 				ConfigData: &proto.ConfigDescriptor{
-// 					NginxId:  "12345",
-// 					Checksum: "test",
-// 				},
-// 				Zconfig: &proto.ZippedFile{
-// 					Contents:      third,
-// 					Checksum:      checksum.Checksum(third),
-// 					RootDirectory: "nginx.conf",
-// 				},
-// 				Zaux: &proto.ZippedFile{
-// 					Contents:      wafMetaData1,
-// 					Checksum:      "e7658d44b84512b4047385ed1d5c842ddfae87386f0ad1abae9e3360b4d11a65",
-// 					RootDirectory: "/etc/nms",
-// 				},
-// 				AccessLogs: &proto.AccessLogs{},
-// 				ErrorLogs:  &proto.ErrorLogs{},
-// 				Ssl:        &proto.SslCertificates{},
-// 				DirectoryMap: &proto.DirectoryMap{
-// 					Directories: []*proto.Directory{
-// 						{
-// 							Name:        "/etc/nms",
-// 							Permissions: "0755",
-// 							Files: []*proto.File{
-// 								{
-// 									Name:        "app_protect_metadata.json",
-// 									Permissions: "0644",
-// 									Size_:       959,
-// 									Contents:    wafMetaData1,
-// 								},
-// 							},
-// 							Size_: 128,
-// 						},
-// 					},
-// 				},
-// 			},
-// 			msgTopics: []string{
-// 				core.CommNginxConfig,
-// 				core.NginxPluginConfigured,
-// 				core.NginxInstancesFound,
-// 				core.NginxConfigValidationPending,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigValidationSucceeded,
-// 				core.CommResponse,
-// 				core.NginxReloadComplete,
-// 				core.CommResponse,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigApplySucceeded,
-// 			},
-// 			wafVersion: "3.1088.2",
-// 		},
-// 		{
-// 			config: &proto.NginxConfig{
-// 				Action: proto.NginxConfigAction_APPLY,
-// 				ConfigData: &proto.ConfigDescriptor{
-// 					NginxId:  "12345",
-// 					Checksum: "test",
-// 				},
-// 				Zconfig: &proto.ZippedFile{
-// 					Contents:      third,
-// 					Checksum:      checksum.Checksum(third),
-// 					RootDirectory: "nginx.conf",
-// 				},
-// 				Zaux: &proto.ZippedFile{
-// 					Contents:      wafMetaData1,
-// 					Checksum:      checksum.Checksum(wafMetaData1),
-// 					RootDirectory: "/etc/nms",
-// 				},
-// 				AccessLogs:   &proto.AccessLogs{},
-// 				ErrorLogs:    &proto.ErrorLogs{},
-// 				Ssl:          &proto.SslCertificates{},
-// 				DirectoryMap: &proto.DirectoryMap{},
-// 			},
-// 			msgTopics: []string{
-// 				core.CommNginxConfig,
-// 				core.NginxPluginConfigured,
-// 				core.NginxInstancesFound,
-// 				core.NginxConfigValidationPending,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigValidationSucceeded,
-// 				core.CommResponse,
-// 				core.NginxReloadComplete,
-// 				core.CommResponse,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigApplySucceeded,
-// 			},
-// 			wafVersion: "",
-// 		},
-// 		{
-// 			config: &proto.NginxConfig{
-// 				Action: proto.NginxConfigAction_FORCE,
-// 				ConfigData: &proto.ConfigDescriptor{
-// 					NginxId:  "12345",
-// 					Checksum: "test",
-// 				},
-// 				Zconfig: &proto.ZippedFile{
-// 					Contents:      first,
-// 					Checksum:      checksum.Checksum(first),
-// 					RootDirectory: "nginx.conf",
-// 				},
-// 				Zaux:         &proto.ZippedFile{},
-// 				AccessLogs:   &proto.AccessLogs{},
-// 				ErrorLogs:    &proto.ErrorLogs{},
-// 				Ssl:          &proto.SslCertificates{},
-// 				DirectoryMap: &proto.DirectoryMap{},
-// 			},
-// 			msgTopics: []string{
-// 				core.CommNginxConfig,
-// 				core.NginxPluginConfigured,
-// 				core.NginxInstancesFound,
-// 				core.NginxConfigValidationPending,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigValidationSucceeded,
-// 				core.CommResponse,
-// 				core.NginxReloadComplete,
-// 				core.CommResponse,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigApplySucceeded,
-// 			},
-// 			wafVersion: "",
-// 		},
-// 		{
-// 			config: &proto.NginxConfig{
-// 				Action: proto.NginxConfigAction_FORCE,
-// 				ConfigData: &proto.ConfigDescriptor{
-// 					NginxId:  "12345",
-// 					Checksum: "test",
-// 				},
-// 				Zconfig: &proto.ZippedFile{
-// 					Contents:      first,
-// 					Checksum:      checksum.Checksum(first),
-// 					RootDirectory: "nginx.conf",
-// 				},
-// 				Zaux: &proto.ZippedFile{
-// 					Contents:      wafMetaData1,
-// 					Checksum:      "e7658d44b84512b4047385ed1d5c842ddfae87386f0ad1abae9e3360b4d11a65",
-// 					RootDirectory: "/etc/nms",
-// 				},
-// 				AccessLogs: &proto.AccessLogs{},
-// 				ErrorLogs:  &proto.ErrorLogs{},
-// 				Ssl:        &proto.SslCertificates{},
-// 				DirectoryMap: &proto.DirectoryMap{
-// 					Directories: []*proto.Directory{
-// 						{
-// 							Name:        "/etc/nms",
-// 							Permissions: "0755",
-// 							Files: []*proto.File{
-// 								{
-// 									Name:        "app_protect_metadata.json",
-// 									Permissions: "0644",
-// 									Size_:       959,
-// 									Contents:    wafMetaData1,
-// 								},
-// 							},
-// 							Size_: 128,
-// 						},
-// 					},
-// 				},
-// 			},
-// 			msgTopics: []string{
-// 				core.CommNginxConfig,
-// 				core.NginxPluginConfigured,
-// 				core.NginxInstancesFound,
-// 				core.NginxConfigValidationPending,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigValidationSucceeded,
-// 				core.CommResponse,
-// 				core.NginxReloadComplete,
-// 				core.CommResponse,
-// 				core.FileWatcherEnabled,
-// 				core.NginxConfigApplySucceeded,
-// 			},
-// 			// mismatch, test should still pass because of the NginxConfigAction_FORCE
-// 			wafVersion: "3.1088.1",
-// 		},
-// 		{
-// 			config: &proto.NginxConfig{
-// 				Action: proto.NginxConfigAction_APPLY,
-// 				ConfigData: &proto.ConfigDescriptor{
-// 					NginxId:  "12345",
-// 					Checksum: "test",
-// 				},
-// 				Zconfig: &proto.ZippedFile{
-// 					Contents:      first,
-// 					Checksum:      checksum.Checksum(first),
-// 					RootDirectory: "nginx.conf",
-// 				},
-// 				Zaux: &proto.ZippedFile{
-// 					Contents:      wafMetaData1,
-// 					Checksum:      "e7658d44b84512b4047385ed1d5c842ddfae87386f0ad1abae9e3360b4d11a65",
-// 					RootDirectory: "/etc/nms",
-// 				},
-// 				AccessLogs: &proto.AccessLogs{},
-// 				ErrorLogs:  &proto.ErrorLogs{},
-// 				Ssl:        &proto.SslCertificates{},
-// 				DirectoryMap: &proto.DirectoryMap{
-// 					Directories: []*proto.Directory{
-// 						{
-// 							Name:        "/etc/nms",
-// 							Permissions: "0755",
-// 							Files: []*proto.File{
-// 								{
-// 									Name:        "app_protect_metadata.json",
-// 									Permissions: "0644",
-// 									Size_:       959,
-// 									Contents:    wafMetaData1,
-// 								},
-// 							},
-// 							Size_: 128,
-// 						},
-// 					},
-// 				},
-// 			},
-// 			msgTopics: []string{
-// 				core.CommNginxConfig,
-// 				core.NginxPluginConfigured,
-// 				core.NginxInstancesFound,
-// 				core.NginxConfigValidationPending,
-// 				core.CommResponse,
-// 			},
-// 			// mismatch, should fail on preflight because of the NginxConfigAction_APPLY
-// 			wafVersion: "3.1088.1",
-// 		},
-// 	}
+	tests := []struct {
+		config     *proto.NginxConfig
+		msgTopics  []string
+		wafVersion string
+	}{
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_APPLY,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      first,
+					Checksum:      checksum.Checksum(first),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux:         &proto.ZippedFile{},
+				AccessLogs:   &proto.AccessLogs{},
+				ErrorLogs:    &proto.ErrorLogs{},
+				Ssl:          &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.NginxReloadComplete,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxConfigApplySucceeded,
+			},
+			wafVersion: "",
+		},
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_APPLY,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      second,
+					Checksum:      checksum.Checksum(second),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux:         &proto.ZippedFile{},
+				AccessLogs:   &proto.AccessLogs{},
+				ErrorLogs:    &proto.ErrorLogs{},
+				Ssl:          &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.NginxReloadComplete,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxConfigApplySucceeded,
+			},
+			wafVersion: "",
+		},
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_APPLY,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      third,
+					Checksum:      checksum.Checksum(third),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux:         &proto.ZippedFile{},
+				AccessLogs:   &proto.AccessLogs{},
+				ErrorLogs:    &proto.ErrorLogs{},
+				Ssl:          &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.NginxReloadComplete,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxConfigApplySucceeded,
+			},
+			wafVersion: "",
+		},
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_APPLY,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      third,
+					Checksum:      checksum.Checksum(third),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux: &proto.ZippedFile{
+					Contents:      wafMetaData1,
+					Checksum:      "e7658d44b84512b4047385ed1d5c842ddfae87386f0ad1abae9e3360b4d11a65",
+					RootDirectory: "/etc/nms",
+				},
+				AccessLogs: &proto.AccessLogs{},
+				ErrorLogs:  &proto.ErrorLogs{},
+				Ssl:        &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{
+					Directories: []*proto.Directory{
+						{
+							Name:        "/etc/nms",
+							Permissions: "0755",
+							Files: []*proto.File{
+								{
+									Name:        "app_protect_metadata.json",
+									Permissions: "0644",
+									Size_:       959,
+									Contents:    wafMetaData1,
+								},
+							},
+							Size_: 128,
+						},
+					},
+				},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.NginxReloadComplete,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxConfigApplySucceeded,
+			},
+			wafVersion: "3.1088.2",
+		},
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_APPLY,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      third,
+					Checksum:      checksum.Checksum(third),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux: &proto.ZippedFile{
+					Contents:      wafMetaData1,
+					Checksum:      checksum.Checksum(wafMetaData1),
+					RootDirectory: "/etc/nms",
+				},
+				AccessLogs:   &proto.AccessLogs{},
+				ErrorLogs:    &proto.ErrorLogs{},
+				Ssl:          &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.NginxReloadComplete,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxConfigApplySucceeded,
+			},
+			wafVersion: "",
+		},
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_FORCE,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      first,
+					Checksum:      checksum.Checksum(first),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux:         &proto.ZippedFile{},
+				AccessLogs:   &proto.AccessLogs{},
+				ErrorLogs:    &proto.ErrorLogs{},
+				Ssl:          &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.NginxReloadComplete,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxConfigApplySucceeded,
+			},
+			wafVersion: "",
+		},
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_FORCE,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      first,
+					Checksum:      checksum.Checksum(first),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux: &proto.ZippedFile{
+					Contents:      wafMetaData1,
+					Checksum:      "e7658d44b84512b4047385ed1d5c842ddfae87386f0ad1abae9e3360b4d11a65",
+					RootDirectory: "/etc/nms",
+				},
+				AccessLogs: &proto.AccessLogs{},
+				ErrorLogs:  &proto.ErrorLogs{},
+				Ssl:        &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{
+					Directories: []*proto.Directory{
+						{
+							Name:        "/etc/nms",
+							Permissions: "0755",
+							Files: []*proto.File{
+								{
+									Name:        "app_protect_metadata.json",
+									Permissions: "0644",
+									Size_:       959,
+									Contents:    wafMetaData1,
+								},
+							},
+							Size_: 128,
+						},
+					},
+				},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.FileWatcherEnabled,
+				core.NginxConfigValidationSucceeded,
+				core.CommResponse,
+				core.NginxReloadComplete,
+				core.CommResponse,
+				core.FileWatcherEnabled,
+				core.NginxConfigApplySucceeded,
+			},
+			// mismatch, test should still pass because of the NginxConfigAction_FORCE
+			wafVersion: "3.1088.1",
+		},
+		{
+			config: &proto.NginxConfig{
+				Action: proto.NginxConfigAction_APPLY,
+				ConfigData: &proto.ConfigDescriptor{
+					NginxId:  "12345",
+					Checksum: "test",
+				},
+				Zconfig: &proto.ZippedFile{
+					Contents:      first,
+					Checksum:      checksum.Checksum(first),
+					RootDirectory: "nginx.conf",
+				},
+				Zaux: &proto.ZippedFile{
+					Contents:      wafMetaData1,
+					Checksum:      "e7658d44b84512b4047385ed1d5c842ddfae87386f0ad1abae9e3360b4d11a65",
+					RootDirectory: "/etc/nms",
+				},
+				AccessLogs: &proto.AccessLogs{},
+				ErrorLogs:  &proto.ErrorLogs{},
+				Ssl:        &proto.SslCertificates{},
+				DirectoryMap: &proto.DirectoryMap{
+					Directories: []*proto.Directory{
+						{
+							Name:        "/etc/nms",
+							Permissions: "0755",
+							Files: []*proto.File{
+								{
+									Name:        "app_protect_metadata.json",
+									Permissions: "0644",
+									Size_:       959,
+									Contents:    wafMetaData1,
+								},
+							},
+							Size_: 128,
+						},
+					},
+				},
+			},
+			msgTopics: []string{
+				core.CommNginxConfig,
+				core.NginxPluginConfigured,
+				core.NginxInstancesFound,
+				core.NginxConfigValidationPending,
+				core.CommResponse,
+			},
+			// mismatch, should fail on preflight because of the NginxConfigAction_APPLY
+			wafVersion: "3.1088.1",
+		},
+	}
 
-// 	for idx, test := range tests {
-// 		test := test
-// 		cmd := &proto.Command{
-// 			Meta: grpc.NewMessageMeta(uuid.New().String()),
-// 			Type: 1,
-// 			Data: &proto.Command_NginxConfig{
-// 				NginxConfig: &proto.NginxConfig{
-// 					Action: test.config.GetAction(),
-// 					ConfigData: &proto.ConfigDescriptor{
-// 						NginxId:  "12345",
-// 						Checksum: "test",
-// 					},
-// 				},
-// 			},
-// 		}
+	for idx, test := range tests {
+		test := test
+		cmd := &proto.Command{
+			Meta: grpc.NewMessageMeta(uuid.New().String()),
+			Type: 1,
+			Data: &proto.Command_NginxConfig{
+				NginxConfig: &proto.NginxConfig{
+					Action: test.config.GetAction(),
+					ConfigData: &proto.ConfigDescriptor{
+						NginxId:  "12345",
+						Checksum: "test",
+					},
+				},
+			},
+		}
 
-// 		t.Run(fmt.Sprintf("%d", idx), func(tt *testing.T) {
-// 			dir := t.TempDir()
-// 			var auxPath string
-// 			tempConf, err := os.CreateTemp(dir, "nginx.conf")
-// 			assert.NoError(t, err)
+		t.Run(fmt.Sprintf("%d", idx), func(tt *testing.T) {
+			dir := t.TempDir()
+			var auxPath string
+			tempConf, err := os.CreateTemp(dir, "nginx.conf")
+			assert.NoError(t, err)
 
-// 			err = os.WriteFile(tempConf.Name(), fourth, 0644)
-// 			assert.NoError(t, err)
+			err = os.WriteFile(tempConf.Name(), fourth, 0644)
+			assert.NoError(t, err)
 
-// 			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
-// 				auxDir := t.TempDir()
-// 				auxMainFile := fmt.Sprintf("%s/app_protect_metadata.json", auxDir)
-// 				err := os.WriteFile(auxMainFile, wafMetaData1, 0644)
-// 				assert.NoError(t, err)
-// 				auxPath = auxMainFile
+			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
+				auxDir := t.TempDir()
+				auxMainFile := fmt.Sprintf("%s/app_protect_metadata.json", auxDir)
+				err := os.WriteFile(auxMainFile, wafMetaData1, 0644)
+				assert.NoError(t, err)
+				auxPath = auxMainFile
 
-// 				writer, err := sdk_zip.NewWriter(auxDir)
-// 				assert.NoError(t, err)
+				writer, err := sdk_zip.NewWriter(auxDir)
+				assert.NoError(t, err)
 
-// 				for _, directory := range test.config.GetDirectoryMap().GetDirectories() {
-// 					for _, file := range directory.GetFiles() {
-// 						reader := bytes.NewReader(file.GetContents())
-// 						err = writer.Add(fmt.Sprintf("%s/%s", directory.GetName(), file.GetName()), 0644, reader)
-// 						assert.NoError(t, err)
-// 					}
-// 				}
+				for _, directory := range test.config.GetDirectoryMap().GetDirectories() {
+					for _, file := range directory.GetFiles() {
+						reader := bytes.NewReader(file.GetContents())
+						err = writer.Add(fmt.Sprintf("%s/%s", directory.GetName(), file.GetName()), 0644, reader)
+						assert.NoError(t, err)
+					}
+				}
 
-// 				zipFile, err := writer.Proto()
-// 				assert.NoError(t, err)
-// 				assert.NotEmpty(t, zipFile.Contents)
+				zipFile, err := writer.Proto()
+				assert.NoError(t, err)
+				assert.NotEmpty(t, zipFile.Contents)
 
-// 				test.config.Zaux = zipFile
-// 			}
+				test.config.Zaux = zipFile
+			}
 
-// 			ctx := context.TODO()
+			ctx := context.TODO()
 
-// 			env := tutils.GetMockEnvWithProcess()
-// 			allowedDirectoriesMap := map[string]struct{}{dir: {}}
+			env := tutils.GetMockEnvWithProcess()
+			allowedDirectoriesMap := map[string]struct{}{dir: {}}
 
-// 			config, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
-// 			assert.NoError(t, err)
+			config, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+			assert.NoError(t, err)
 
-// 			binary := tutils.NewMockNginxBinary()
-// 			binary.On("WriteConfig", mock.Anything).Return(config, nil)
-// 			binary.On("ValidateConfig", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-// 			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(test.config, nil)
-// 			binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
-// 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
-// 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
-// 			binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
-// 			binary.On("GetErrorLogs").Return(make(map[string]string))
+			binary := tutils.NewMockNginxBinary()
+			binary.On("WriteConfig", mock.Anything).Return(config, nil)
+			binary.On("ValidateConfig", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(test.config, nil)
+			binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
+			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
+			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+			binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
+			binary.On("GetErrorLogs").Return(make(map[string]string))
 
-// 			commandClient := tutils.GetMockCommandClient(test.config)
-// 			conf := &loadedConfig.Config{
-// 				Server: loadedConfig.Server{
-// 					Host:     "127.0.0.1",
-// 					GrpcPort: 9092,
-// 				},
-// 				Features:   []string{agent_config.FeatureNginxConfig},
-// 				Extensions: []string{agent_config.NginxAppProtectExtensionPlugin},
-// 			}
+			commandClient := tutils.GetMockCommandClient(test.config)
+			conf := &loadedConfig.Config{
+				Server: loadedConfig.Server{
+					Host:     "127.0.0.1",
+					GrpcPort: 9092,
+				},
+				Nginx: loadedConfig.Nginx{
+					ConfigReloadMonitoringPeriod: 5 * time.Second,
+				},
+				Features:   []string{agent_config.FeatureNginxConfig},
+				Extensions: []string{agent_config.NginxAppProtectExtensionPlugin},
+			}
 
-// 			pluginUnderTest := NewNginx(commandClient, binary, env, conf)
-// 			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
-// 				pluginUnderTest.nginxAppProtectSoftwareDetails = &proto.AppProtectWAFDetails{
-// 					PrecompiledPublication: true,
-// 					WafLocation:            auxPath,
-// 					WafVersion:             test.wafVersion,
-// 				}
-// 			}
+			pluginUnderTest := NewNginx(commandClient, binary, env, conf)
+			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
+				pluginUnderTest.nginxAppProtectSoftwareDetails = &proto.AppProtectWAFDetails{
+					PrecompiledPublication: true,
+					WafLocation:            auxPath,
+					WafVersion:             test.wafVersion,
+				}
+			}
 
-// 			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
+			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
-// 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
-// 			messagePipe.Run()
+			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
 
-// 			assert.Eventually(
-// 				tt,
-// 				func() bool { return len(messagePipe.GetProcessedMessages()) == len(test.msgTopics) },
-// 				time.Duration(5*time.Second),
-// 				3*time.Millisecond,
-// 			)
+			go messagePipe.Run()
 
-// 			for idx, msg := range messagePipe.GetProcessedMessages() {
-// 				t.Logf("%v", msg.Topic())
-// 				if test.msgTopics[idx] != msg.Topic() {
-// 					tt.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), test.msgTopics[idx])
-// 				}
-// 				// Verify that the NginxConfig Command and NginxConfigResponse Command meta messageIds match
-// 				if msg.Topic() == core.CommResponse {
-// 					messageIdReceived := msg.Data().(*proto.Command).Meta.MessageId
-// 					if messageIdReceived != cmd.Meta.MessageId {
-// 						tt.Errorf("unexpected MessageId: %s :: should have been: %s", messageIdReceived, cmd.Meta.MessageId)
-// 					}
-// 				}
-// 			}
-// 		})
-// 	}
-// }
+			time.Sleep(500 * time.Millisecond)
+			pluginUnderTest.syncProcessInfo(updatedProcesses)
+
+			assert.Eventually(
+				tt,
+				func() bool { return len(messagePipe.GetProcessedMessages()) == len(test.msgTopics) },
+				time.Duration(5*time.Second),
+				3*time.Millisecond,
+			)
+
+			for idx, msg := range messagePipe.GetProcessedMessages() {
+				t.Logf("%v", msg.Topic())
+				if test.msgTopics[idx] != msg.Topic() {
+					tt.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), test.msgTopics[idx])
+				}
+				// Verify that the NginxConfig Command and NginxConfigResponse Command meta messageIds match
+				if msg.Topic() == core.CommResponse {
+					messageIdReceived := msg.Data().(*proto.Command).Meta.MessageId
+					if messageIdReceived != cmd.Meta.MessageId {
+						tt.Errorf("unexpected MessageId: %s :: should have been: %s", messageIdReceived, cmd.Meta.MessageId)
+					}
+				}
+			}
+		})
+	}
+}
 
 func TestUploadConfigs(t *testing.T) {
 	config := &proto.NginxConfig{
@@ -814,105 +827,115 @@ func TestNginx_validateConfig(t *testing.T) {
 	}
 }
 
-// func TestNginx_completeConfigApply(t *testing.T) {
-// 	expectedTopics := []string{
-// 		core.NginxConfigValidationSucceeded,
-// 		core.NginxPluginConfigured,
-// 		core.NginxInstancesFound,
-// 		core.NginxReloadComplete,
-// 		core.CommResponse,
-// 		core.FileWatcherEnabled,
-// 		core.NginxConfigApplySucceeded,
-// 	}
+func TestNginx_completeConfigApply(t *testing.T) {
+	expectedTopics := []string{
+		core.NginxConfigValidationSucceeded,
+		core.NginxPluginConfigured,
+		core.NginxInstancesFound,
+		core.NginxReloadComplete,
+		core.CommResponse,
+		core.FileWatcherEnabled,
+		core.NginxConfigApplySucceeded,
+	}
 
-// 	env := tutils.GetMockEnvWithProcess()
-// 	env.On("GetSystemUUID").Return("456")
+	env := tutils.GetMockEnvWithProcess()
+	env.On("GetSystemUUID").Return("456")
 
-// 	binary := tutils.NewMockNginxBinary()
-// 	binary.On("uploadConfig", mock.Anything, mock.Anything).Return(nil)
-// 	binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
-// 	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
-// 	binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
-// 	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
-// 	binary.On("Reload", mock.Anything, mock.Anything)
-// 	binary.On("GetErrorLogs").Return(make(map[string]string))
+	updatedProcesses := []core.Process{
+		{Pid: 1, Name: "12345", IsMaster: true},
+		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
+		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
+	}
+	binary := tutils.NewMockNginxBinary()
+	binary.On("uploadConfig", mock.Anything, mock.Anything).Return(nil)
+	binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
+	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 
-// 	commandClient := tutils.GetMockCommandClient(
-// 		&proto.NginxConfig{
-// 			Action: proto.NginxConfigAction_APPLY,
-// 			ConfigData: &proto.ConfigDescriptor{
-// 				NginxId:  "12345",
-// 				Checksum: "2314365",
-// 			},
-// 			Zconfig: &proto.ZippedFile{
-// 				Contents:      first,
-// 				Checksum:      checksum.Checksum(first),
-// 				RootDirectory: "nginx.conf",
-// 			},
-// 			Zaux:         &proto.ZippedFile{},
-// 			AccessLogs:   &proto.AccessLogs{},
-// 			ErrorLogs:    &proto.ErrorLogs{},
-// 			Ssl:          &proto.SslCertificates{},
-// 			DirectoryMap: &proto.DirectoryMap{},
-// 		},
-// 	)
+	binary.On("UpdateNginxDetailsFromProcesses", env.Processes()).Once()
+	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap())).Once()
 
-// 	conf := &loadedConfig.Config{
-// 		Server: loadedConfig.Server{
-// 			Host:     "127.0.0.1",
-// 			GrpcPort: 9092,
-// 		},
-// 		Features: []string{agent_config.FeatureNginxConfig},
-// 		Nginx: loadedConfig.Nginx{
-// 			ConfigReloadMonitoringPeriod: 10 * time.Second,
-// 		},
-// 	}
+	binary.On("Reload", mock.Anything, mock.Anything)
+	binary.On("GetErrorLogs").Return(make(map[string]string))
 
-// 	pluginUnderTest := NewNginx(commandClient, binary, env, conf)
+	commandClient := tutils.GetMockCommandClient(
+		&proto.NginxConfig{
+			Action: proto.NginxConfigAction_APPLY,
+			ConfigData: &proto.ConfigDescriptor{
+				NginxId:  "12345",
+				Checksum: "2314365",
+			},
+			Zconfig: &proto.ZippedFile{
+				Contents:      first,
+				Checksum:      checksum.Checksum(first),
+				RootDirectory: "nginx.conf",
+			},
+			Zaux:         &proto.ZippedFile{},
+			AccessLogs:   &proto.AccessLogs{},
+			ErrorLogs:    &proto.ErrorLogs{},
+			Ssl:          &proto.SslCertificates{},
+			DirectoryMap: &proto.DirectoryMap{},
+		},
+	)
 
-// 	dir := t.TempDir()
-// 	tempConf, err := os.CreateTemp(dir, "nginx.conf")
-// 	assert.NoError(t, err)
-// 	allowedDirectoriesMap := map[string]struct{}{dir: {}}
-// 	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
-// 	assert.NoError(t, err)
+	conf := &loadedConfig.Config{
+		Server: loadedConfig.Server{
+			Host:     "127.0.0.1",
+			GrpcPort: 9092,
+		},
+		Features: []string{agent_config.FeatureNginxConfig},
+		Nginx: loadedConfig.Nginx{
+			ConfigReloadMonitoringPeriod: 5 * time.Second,
+		},
+	}
 
-// 	response := &NginxConfigValidationResponse{
-// 		err:           nil,
-// 		correlationId: "123",
-// 		nginxDetails: &proto.NginxDetails{
-// 			NginxId:     "12345",
-// 			ProcessId:   "123456",
-// 			ProcessPath: "/var/test/",
-// 		},
-// 		config: &proto.NginxConfig{
-// 			Action: proto.NginxConfigAction_APPLY,
-// 			ConfigData: &proto.ConfigDescriptor{
-// 				SystemId: "456",
-// 				NginxId:  "12345",
-// 				Checksum: "2314365",
-// 			},
-// 		},
-// 		configApply: configApply,
-// 	}
+	pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 
-// 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
-// 	messagePipe.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
-// 	messagePipe.Run()
+	dir := t.TempDir()
+	tempConf, err := os.CreateTemp(dir, "nginx.conf")
+	assert.NoError(t, err)
+	allowedDirectoriesMap := map[string]struct{}{dir: {}}
+	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+	assert.NoError(t, err)
 
-// 	assert.Eventually(
-// 		t,
-// 		func() bool { return len(messagePipe.GetProcessedMessages()) == len(expectedTopics) },
-// 		time.Duration(2*time.Second),
-// 		3*time.Millisecond,
-// 	)
+	response := &NginxConfigValidationResponse{
+		err:           nil,
+		correlationId: "123",
+		nginxDetails: &proto.NginxDetails{
+			NginxId:     "12345",
+			ProcessId:   "123456",
+			ProcessPath: "/var/test/",
+		},
+		config: &proto.NginxConfig{
+			Action: proto.NginxConfigAction_APPLY,
+			ConfigData: &proto.ConfigDescriptor{
+				SystemId: "456",
+				NginxId:  "12345",
+				Checksum: "2314365",
+			},
+		},
+		configApply: configApply,
+	}
 
-// 	for idx, msg := range messagePipe.GetProcessedMessages() {
-// 		if expectedTopics[idx] != msg.Topic() {
-// 			t.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), expectedTopics[idx])
-// 		}
-// 	}
-// }
+	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
+	messagePipe.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
+	go messagePipe.Run()
+
+	time.Sleep(1 * time.Second)
+	pluginUnderTest.syncProcessInfo(updatedProcesses)
+
+	assert.Eventually(
+		t,
+		func() bool { return len(messagePipe.GetProcessedMessages()) == len(expectedTopics) },
+		time.Duration(10*time.Second),
+		3*time.Millisecond,
+	)
+
+	for idx, msg := range messagePipe.GetProcessedMessages() {
+		if expectedTopics[idx] != msg.Topic() {
+			t.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), expectedTopics[idx])
+		}
+	}
+}
 
 func TestNginx_rollbackConfigApply(t *testing.T) {
 	expectedTopics := []string{
@@ -1032,69 +1055,75 @@ func TestBlock_ConfigApply(t *testing.T) {
 	assert.Equal(t, testNAPDetailsActive.AppProtectWafDetails.WafVersion, pluginUnderTest.nginxAppProtectSoftwareDetails.WafVersion)
 }
 
-// func TestNginx_monitor(t *testing.T) {
-// 	tmpDir := t.TempDir()
-// 	errorLogFileName := path.Join(tmpDir, "/error.log")
-// 	errorLogFile, err := os.Create(errorLogFileName)
+func TestNginx_monitor(t *testing.T) {
+	tmpDir := t.TempDir()
+	errorLogFileName := path.Join(tmpDir, "/error.log")
+	errorLogFile, err := os.Create(errorLogFileName)
 
-// 	defer func() {
-// 		err := errorLogFile.Close()
-// 		require.NoError(t, err, "Error closing error log file")
-// 		os.Remove(errorLogFile.Name())
-// 	}()
+	defer func() {
+		err := errorLogFile.Close()
+		require.NoError(t, err, "Error closing error log file")
+		os.Remove(errorLogFile.Name())
+	}()
 
-// 	require.NoError(t, err, "Error creating error log")
-// 	commandClient := tutils.GetMockCommandClient(&proto.NginxConfig{})
+	require.NoError(t, err, "Error creating error log")
+	commandClient := tutils.GetMockCommandClient(&proto.NginxConfig{})
 
-// 	env := tutils.GetMockEnvWithProcess()
-// 	binary := tutils.NewMockNginxBinary()
-// 	binary.On("GetErrorLogs").Return(make(map[string]string)).Once()
-// 	binary.On("GetErrorLogs").Return(map[string]string{errorLogFileName: errorLogFileName}).Once()
+	env := tutils.GetMockEnvWithProcess()
+	binary := tutils.NewMockNginxBinary()
+	binary.On("GetErrorLogs").Return(make(map[string]string)).Once()
+	binary.On("GetErrorLogs").Return(map[string]string{errorLogFileName: errorLogFileName}).Once()
 
-// 	config := tutils.GetMockAgentConfig()
-// 	config.Nginx.ConfigReloadMonitoringPeriod = 10 * time.Second
-// 	pluginUnderTest := NewNginx(commandClient, binary, env, config)
+	config := tutils.GetMockAgentConfig()
+	config.Nginx.ConfigReloadMonitoringPeriod = 10 * time.Second
+	pluginUnderTest := NewNginx(commandClient, binary, env, config)
 
-// 	errorFound := pluginUnderTest.monitor()
+	// Validate that errors in the logs returned
+	go func() {
+		errorFound := pluginUnderTest.monitor()
+		assert.NoError(t, errorFound)
+	}()
 
-// 	pluginUnderTest.syncProcessInfo([]core.Process{
-// 		{Pid: 1, Name: "12345", IsMaster: true},
-// 		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
-// 		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
-// 	})
+	time.Sleep(1 * time.Second)
 
-// 	time.Sleep(500 * time.Millisecond)
-// 	assert.NoError(t, errorFound)
+	pluginUnderTest.syncProcessInfo([]core.Process{
+		{Pid: 1, Name: "12345", IsMaster: true},
+		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
+		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
+	})
 
-// 	errorsChannel := make(chan error, 1)
+	time.Sleep(1 * time.Second)
 
-// 	// Validate that errors in the logs returned
-// 	go func() {
-// 		errorFound := pluginUnderTest.monitor()
-// 		errorsChannel <- errorFound
-// 	}()
+	errorsChannel := make(chan error, 1)
 
-// 	time.Sleep(500 * time.Millisecond)
-// 	pluginUnderTest.syncProcessInfo([]core.Process{
-// 		{Pid: 1, Name: "12345", IsMaster: true},
-// 		{Pid: 6, ParentPid: 1, Name: "worker-6", IsMaster: false},
-// 		{Pid: 7, ParentPid: 1, Name: "worker-7", IsMaster: false},
-// 	})
+	// Validate that errors in the logs returned
+	go func() {
+		errorFound := pluginUnderTest.monitor()
+		errorsChannel <- errorFound
+	}()
 
-// 	_, err = errorLogFile.WriteString("2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)")
-// 	require.NoError(t, err, "Error writing data to error log file")
+	time.Sleep(1 * time.Second)
 
-// 	for {
-// 		select {
-// 		case x := <-errorsChannel:
-// 			assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x.Error())
-// 			return
-// 		case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
-// 			assert.Fail(t, "Expected error to be reported")
-// 			return
-// 		}
-// 	}
-// }
+	pluginUnderTest.syncProcessInfo([]core.Process{
+		{Pid: 1, Name: "12345", IsMaster: true},
+		{Pid: 6, ParentPid: 1, Name: "worker-6", IsMaster: false},
+		{Pid: 7, ParentPid: 1, Name: "worker-7", IsMaster: false},
+	})
+
+	_, err = errorLogFile.WriteString("2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)")
+	require.NoError(t, err, "Error writing data to error log file")
+
+	for {
+		select {
+		case x := <-errorsChannel:
+			assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x.Error())
+			return
+		case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
+			assert.Fail(t, "Expected error to be reported")
+			return
+		}
+	}
+}
 
 func TestNginx_monitorLog(t *testing.T) {
 	tmpDir := t.TempDir()
