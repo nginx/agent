@@ -611,17 +611,18 @@ func (n *Nginx) monitorPids(processInfo []core.Process, errorChannel chan string
 	ticker := time.NewTicker(500 * time.Millisecond)
 	startingPids := parseIntList(processInfo)
 	// wait 500 milliseconds for process information to change
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
+	timeout := time.After(n.config.Nginx.ConfigReloadMonitoringPeriod)
 
 	for {
 		select {
-		case <-time.After(n.config.Nginx.ConfigReloadMonitoringPeriod):
-			errorChannel <- "Timed out"
+		case <-timeout:
 			log.Trace("Timed out monitoring PIDs")
 			ticker.Stop()
+			errorChannel <- "Timed out"
 			return
-		case <-ticker.C:
-			log.Tracef("Monitoring Pids")
+		case tick := <-ticker.C:
+			log.Tracef("Monitoring Pids %v", tick)
 			currentList := parseIntList(n.getNginxProccessInfo())
 			difference := intersection(startingPids, currentList)
 			// if there is one pid leftover, that's ok
