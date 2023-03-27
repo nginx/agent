@@ -30,7 +30,7 @@ if [ "$ID" = "freebsd" ]; then
     mkdir -p /var/log/nginx-agent/
 else
     AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/etc/nginx-agent/nginx-agent.conf"}
-     AGENT_DYNAMIC_CONFIG_DIR="/var/lib/nginx-agent"
+    AGENT_DYNAMIC_CONFIG_DIR="/var/lib/nginx-agent"
     # Old location of agent-dynamic.conf 
     OLD_DYNAMIC_CONFIG_DIR="/etc/nginx-agent"
 fi
@@ -82,7 +82,6 @@ ensure_sudo() {
 load_config_values() {
     # If the file doesn't exist attempt to create it
     if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
-
         if [ -f "$OLD_DYNAMIC_CONFIG_FILE" ]; then 
             mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
             ln "$OLD_DYNAMIC_CONFIG_FILE" "$AGENT_DYNAMIC_CONFIG_FILE"
