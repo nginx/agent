@@ -22,12 +22,18 @@
             {
                 "Name": "VIOL_REQUEST_MAX_LENGTH",
                 "Context": "request",
-                "ContextData": null
+                "ContextData": {
+                    "Name": "Defined length: 10000000",
+                    "Value": "Detected length: 11000125"
+                }
             },
             {
                 "Name": "VIOL_REQUEST_LENGTH",
                 "Context": "request",
-                "ContextData": null
+                "ContextData": {
+                    "Name": "Total length: 316",
+                    "Value": "Total length limit: 0"
+                }
             }
         ]
     }

@@ -25,9 +25,6 @@ import (
 const (
 	napDateTimeLayout       = "2006-01-02 15:04:05.000"
 	listSeperator           = "::"
-	parameterCtx            = "parameter"
-	headerCtx               = "header"
-	cookieCtx               = "cookie"
 	defaultBlockedRespCode  = "0"
 	defaultBlockedRespValue = "Blocked"
 
@@ -35,11 +32,12 @@ const (
 	encodedComma = "%2C"
 
 	violationNameSeparator    = '_'
-	violationContextRequest   = "REQUEST"
-	violationContextHeader    = "HEADER"
-	violationContextParameter = "PARAMETER"
-	violationContextCookie    = "COOKIE"
-	violationContextUrl       = "URL"
+	violationContextRequest   = "request"
+	violationContextHeader    = "header"
+	violationContextParameter = "parameter"
+	violationContextCookie    = "cookie"
+	violationContextUrl       = "url"
+	violationContextUri       = "uri"
 )
 
 // NGINX App Protect Logging Directives
@@ -146,6 +144,11 @@ type Cookie struct {
 	IsBase64Decoded bool   `xml:"is_base64_decoded"`
 }
 
+type UriObjectData struct {
+	Text   string `xml:",chardata"`
+	Object string `xml:"object"`
+}
+
 type BADMSG struct {
 	XMLName        xml.Name `xml:"BAD_MSG"`
 	Text           string   `xml:",chardata"`
@@ -174,7 +177,14 @@ type BADMSG struct {
 			HeaderData      Header        `xml:"header_data"`
 			Cookie          Cookie        `xml:"cookie"`
 			CookieName      string        `xml:"cookie_name"`
+			Buffer          string        `xml:"buffer"`
+			SpecificDesc    string        `xml:"specific_desc"`
 			Uri             string        `xml:"uri"`
+			UriObjectData   UriObjectData `xml:"object_data"`
+			DefinedLength   string        `xml:"defined_length"`
+			DetectedLength  string        `xml:"detected_length"`
+			TotalLen        string        `xml:"total_len"`
+			TotalLenLimit   string        `xml:"total_len_limit"`
 			Staging         string        `xml:"staging"`
 			SigData         []struct {
 				Text         string `xml:",chardata"`
@@ -335,20 +345,21 @@ func (f *NAPConfig) getViolationContext() string {
 }
 
 func extractContextFromViolationName(violationName string) string {
-	if strings.Contains(violationName, violationContextParameter) {
-		return strings.ToLower(violationContextParameter)
+	if strings.Contains(violationName, strings.ToUpper(violationContextParameter)) {
+		return violationContextParameter
 	}
-	if strings.Contains(violationName, violationContextHeader) {
-		return strings.ToLower(violationContextHeader)
+	if strings.Contains(violationName, strings.ToUpper(violationContextHeader)) {
+		return violationContextHeader
 	}
-	if strings.Contains(violationName, violationContextCookie) {
-		return strings.ToLower(violationContextCookie)
+	if strings.Contains(violationName, strings.ToUpper(violationContextCookie)) {
+		return violationContextCookie
 	}
-	if strings.Contains(violationName, violationContextRequest) {
-		return strings.ToLower(violationContextRequest)
+	if strings.Contains(violationName, strings.ToUpper(violationContextRequest)) {
+		return violationContextRequest
 	}
-	if strings.Contains(violationName, violationContextUrl) {
-		return strings.ToLower(violationContextUrl)
+	if strings.Contains(violationName, strings.ToUpper(violationContextUri)) ||
+		strings.Contains(violationName, strings.ToUpper(violationContextUrl)) {
+		return violationContextUri
 	}
 
 	return ""
@@ -368,7 +379,7 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 		}
 
 		switch v.Context {
-		case parameterCtx:
+		case violationContextParameter:
 			var isB64Decoded bool
 			var name, value string
 
@@ -411,7 +422,7 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				Name:  string(decodedName),
 				Value: string(decodedValue),
 			}
-		case headerCtx:
+		case violationContextHeader:
 			var isB64Decoded bool
 			var name, value string
 
@@ -449,7 +460,7 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				Name:  string(decodedName),
 				Value: string(decodedValue),
 			}
-		case cookieCtx:
+		case violationContextCookie:
 			var isB64Decoded bool
 			var name, value string
 
@@ -460,6 +471,16 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 			} else if v.CookieName != "" {
 				isB64Decoded = v.IsBase64Decoded
 				name = v.CookieName
+			} else if v.Buffer != "" {
+				// `buffer` is base64 encoded, while `specific_desc` is not.
+				isB64Decoded = true
+				decodedBuffer, err := base64.StdEncoding.DecodeString(v.Buffer)
+				if err != nil {
+					logger.Errorf("could not decode the Buffer %s for %v", v.Buffer, f.SupportID)
+					break
+				}
+				name = v.SpecificDesc
+				value = string(decodedBuffer)
 			}
 
 			if isB64Decoded {
@@ -486,6 +507,32 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				Name:  string(decodedName),
 				Value: string(decodedValue),
 			}
+		case violationContextUrl, violationContextUri:
+			var value string
+			if v.Uri != "" {
+				value = v.Uri
+			} else if v.UriObjectData != (UriObjectData{}) {
+				value = v.UriObjectData.Object
+			}
+
+			decodedValue, err := base64.StdEncoding.DecodeString(value)
+			if err != nil {
+				logger.Errorf("could not decode the URL Value %s for %v", value, f.SupportID)
+				break
+			}
+
+			violation.ContextData = &models.ContextData{Value: string(decodedValue)}
+		case violationContextRequest:
+			var name, value string
+			if v.DefinedLength != "" {
+				name = fmt.Sprintf("Defined length: %s", v.DefinedLength)
+				value = fmt.Sprintf("Detected length: %s", v.DetectedLength)
+			} else if v.TotalLen != "" {
+				name = fmt.Sprintf("Total length: %s", v.TotalLen)
+				value = fmt.Sprintf("Total length limit: %s", v.TotalLenLimit)
+			}
+
+			violation.ContextData = &models.ContextData{Name: name, Value: value}
 		}
 
 		for _, s := range v.SigData {

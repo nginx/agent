@@ -23,8 +23,8 @@
                 "Name": "VIOL_COOKIE_MALFORMED",
                 "Context": "cookie",
                 "ContextData": {
-                    "Name": "",
-                    "Value": ""
+                    "Name": "Invalid quotation mark sign",
+                    "Value": "ost\r\nCookie: TS0\"1c60e7b=013059d"
                 }
             },
             {

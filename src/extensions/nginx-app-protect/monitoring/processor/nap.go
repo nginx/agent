@@ -177,8 +177,14 @@ type BADMSG struct {
 			HeaderData      Header        `xml:"header_data"`
 			Cookie          Cookie        `xml:"cookie"`
 			CookieName      string        `xml:"cookie_name"`
+			Buffer          string        `xml:"buffer"`
+			SpecificDesc    string        `xml:"specific_desc"`
 			Uri             string        `xml:"uri"`
 			UriObjectData   UriObjectData `xml:"object_data"`
+			DefinedLength   string        `xml:"defined_length"`
+			DetectedLength  string        `xml:"detected_length"`
+			TotalLen        string        `xml:"total_len"`
+			TotalLenLimit   string        `xml:"total_len_limit"`
 			Staging         string        `xml:"staging"`
 			SigData         []struct {
 				Text         string `xml:",chardata"`
@@ -465,6 +471,16 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 			} else if v.CookieName != "" {
 				isB64Decoded = v.IsBase64Decoded
 				name = v.CookieName
+			} else if v.Buffer != "" {
+				// `buffer` is base64 encoded, while `specific_desc` is not.
+				isB64Decoded = true
+				decodedBuffer, err := base64.StdEncoding.DecodeString(v.Buffer)
+				if err != nil {
+					logger.Errorf("could not decode the Buffer %s for %v", v.Buffer, f.SupportID)
+					break
+				}
+				name = v.SpecificDesc
+				value = string(decodedBuffer)
 			}
 
 			if isB64Decoded {
@@ -504,8 +520,19 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				logger.Errorf("could not decode the URL Value %s for %v", value, f.SupportID)
 				break
 			}
-			
+
 			violation.ContextData = &models.ContextData{Value: string(decodedValue)}
+		case violationContextRequest:
+			var name, value string
+			if v.DefinedLength != "" {
+				name = fmt.Sprintf("Defined length: %s", v.DefinedLength)
+				value = fmt.Sprintf("Detected length: %s", v.DetectedLength)
+			} else if v.TotalLen != "" {
+				name = fmt.Sprintf("Total length: %s", v.TotalLen)
+				value = fmt.Sprintf("Total length limit: %s", v.TotalLenLimit)
+			}
+
+			violation.ContextData = &models.ContextData{Name: name, Value: value}
 		}
 
 		for _, s := range v.SigData {
