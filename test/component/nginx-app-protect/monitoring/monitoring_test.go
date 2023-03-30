@@ -66,7 +66,7 @@ func TestNAPMonitoring(t *testing.T) {
 		// Since the minimum report interval is one minute, MAP monitor won't have enough time within the test timeframe
 		// to send the report. So always beware of the count of logged attacks and set report count accordingly
 		// Count of attacks = count of files under ./testData/logs-in/
-		ReportCount: 7,
+		ReportCount: 12,
 	}
 
 	// Expected common dimensions that need to be added to the generated SecurityViolationEvent
@@ -212,10 +212,7 @@ func assertEqualSecurityViolationsDetails(t *testing.T, expectedDetails, resultD
 		result := resultDetails[i]
 		assert.Equal(t, expected.Name, result.Name)
 		assert.Equal(t, expected.Context, result.Context)
-		if expected.ContextData != nil {
-			assert.Equal(t, expected.ContextData.Name, result.ContextData.Name)
-			assert.Equal(t, expected.ContextData.Value, result.ContextData.Value)
-		}
+		assert.Equal(t, expected.ContextData, result.ContextData)
 	}
 }
 
