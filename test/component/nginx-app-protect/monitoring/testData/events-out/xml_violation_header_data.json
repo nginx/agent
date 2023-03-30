@@ -1,7 +1,7 @@
 {
     "SecurityViolationEvent": {
         "PolicyName": "app_protect_default_policy",
-        "SupportID": "4355056874564592522",
+        "SupportID": "4355056874564592518",
         "Outcome": "REJECTED",
         "OutcomeReason": "SECURITY_WAF_VIOLATION",
         "Method": "GET",
