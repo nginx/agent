@@ -118,25 +118,25 @@ func (c *NginxAccessLog) Update(dimensions *metrics.CommonDim, collectorConf *me
 
 	if c.collectionInterval != collectorConf.CollectionInterval {
 		c.collectionInterval = collectorConf.CollectionInterval
+	}
 
-		for f, fn := range c.logs {
-			log.Infof("Removing access log tailer: %s", f)
-			fn()
-			delete(c.logs, f)
-			delete(c.logFormats, f)
-		}
+	// remove old access logs
+	for f, fn := range c.logs {
+		log.Infof("Removing access log tailer: %s", f)
+		fn()
+		delete(c.logs, f)
+		delete(c.logFormats, f)
+	}
 
-		logs := c.binary.GetAccessLogs()
+	logs := c.binary.GetAccessLogs()
 
-		for logFile, logFormat := range logs {
-			if _, ok := c.logs[logFile]; !ok {
-				log.Infof("Adding access log tailer: %s", logFile)
-				logCTX, fn := context.WithCancel(context.Background())
-				c.logs[logFile] = fn
-				c.logFormats[logFile] = logFormat
-				go c.logStats(logCTX, logFile, logFormat)
-			}
-		}
+	// add new access logs
+	for logFile, logFormat := range logs {
+		log.Infof("Adding access log tailer: %s", logFile)
+		logCTX, fn := context.WithCancel(context.Background())
+		c.logs[logFile] = fn
+		c.logFormats[logFile] = logFormat
+		go c.logStats(logCTX, logFile, logFormat)
 	}
 }
 
@@ -344,7 +344,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 		case <-ctx.Done():
 			err := ctx.Err()
 			if err != nil {
-				log.Errorf("NginxAccessLog: error in done context logStats %v", err)
+				log.Tracef("NginxAccessLog: error in done context logStats %v", err)
 			}
 			log.Info("NginxAccessLog: logStats are done")
 			return
