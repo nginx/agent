@@ -94,7 +94,7 @@ update_config_file() {
     printf "Updating %s ...\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
 
     if [ ! -f "$AGENT_CONFIG_FILE" ]; then
-        printf "Agent config file %s does not exist. Could not be updated\n" "$AGENT_CONFIG_FILE"        
+        printf "NGINX Agent config file %s does not exist. Could not be updated\n" "$AGENT_CONFIG_FILE"        
         exit 0
     fi
 
