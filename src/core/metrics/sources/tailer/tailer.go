@@ -136,7 +136,7 @@ func (t *PatternTailer) Tail(ctx context.Context, data chan<- map[string]string)
 		case <-ctx.Done():
 			err := ctx.Err()
 			if err != nil {
-				log.Errorf("error in done context Tail %v", err)
+				log.Tracef("error in done context Tail %v", err)
 			}
 			log.Info("tailer is done")
 			return
