@@ -962,7 +962,12 @@ func TestNginxBinaryType_validateConfigCheckResponse(t *testing.T) {
 		{name: "validation fails, warn respected", response: "nginx [warn]", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx [warn]")},
 		{name: "validation passes, info irrelevant", response: "nginx [info]", treatWarningsAsErrors: false, expected: nil},
 		{name: "validation passes, info irrelevant, config irrelevant", response: "nginx [info]", treatWarningsAsErrors: true, expected: nil},
-		{name: "validation fails", response: "nginx: [emerg] unknown directive \"location/\" in /etc/nginx/sites-enabled/someapp:5", treatWarningsAsErrors: false, expected: errors.New("error running nginx -t -c :\nnginx: [emerg] unknown directive \"location/\" in /etc/nginx/sites-enabled/someapp:5")},
+		{name: "validation fails unknown directive", response: "nginx: [emerg] unknown directive \"location/\" in /etc/nginx/sites-enabled/someapp:5", treatWarningsAsErrors: false, expected: errors.New("error running nginx -t -c :\nnginx: [emerg] unknown directive \"location/\" in /etc/nginx/sites-enabled/someapp:5")},
+		{name: "validation fails conflicting server name", response: "nginx: [warn] conflicting server name \"example.com\" on 0.0.0.0:80, ignored", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx: [warn] conflicting server name \"example.com\" on 0.0.0.0:80, ignored")},
+		{name: "validation fails limit_req", response: "nginx: [emerg] 96300#96300: limit_req \"default\" uses the \"$binary_remote_addr\" key while previously it used the \"$http_apiKey\" key", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx: [emerg] 96300#96300: limit_req \"default\" uses the \"$binary_remote_addr\" key while previously it used the \"$http_apiKey\" key")},
+		{name: "validation fails host not found in upstream", response: "nginx: [emerg] 5191#5191: host not found in upstream \"example.com:80\" in /etc/nginx/nginx.conf:111", treatWarningsAsErrors: false, expected: errors.New("error running nginx -t -c :\nnginx: [emerg] 5191#5191: host not found in upstream \"example.com:80\" in /etc/nginx/nginx.conf:111")},
+		{name: "validation fails worker_connections", response: "nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx: [warn] 2048 worker_connections exceed open file resource limit: 1024")},
+		{name: "validation passes worker_connections", response: "nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024", treatWarningsAsErrors: false, expected: nil},
 	} {
 		t.Run(test.name, func(tt *testing.T) {
 			binary := NginxBinaryType{
