@@ -183,8 +183,8 @@ add_default_config_file() {
 #
 # Configuration file for NGINX Agent.
 #
-# This file is to track agent configuration values that are meant to be statically set. There  
-# are additional agent configuration values that are set via the API and agent install script
+# This file is to track NGINX Agent configuration values that are meant to be statically set. There  
+# are additional NGINX Agent configuration values that are set via the API and NGINX Agent install script
 # which can be found in /etc/nginx-agent/agent-dynamic.conf. 
 
 # specify the server grpc port to connect to
@@ -224,7 +224,7 @@ nginx:
 
 dataplane:
   status:
-    # poll interval for data plane status - the frequency the agent will query the dataplane for changes
+    # poll interval for data plane status - the frequency the NGINX Agent will query the dataplane for changes
     poll_interval: 30s
     # report interval for data plane status - the maximum duration to wait before syncing dataplane information if no updates have being observed
     report_interval: 24h
@@ -241,7 +241,7 @@ metrics:
 config_dirs: "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms"
 
 api:
-  # default port for Agent API, this is for the server configuration of the REST API
+  # default port for NGINX Agent API, this is for the server configuration of the REST API
   port: 8081
 EOF
     printf "PostInstall: Updating file permissions for nginx-agent.conf to 0640\n"

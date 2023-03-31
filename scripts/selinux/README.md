@@ -44,7 +44,7 @@ sudo ./nginx_agent.sh --update
 
 ## Debugging
 * To check for policy violation look at the file `/var/log/audit/audit.log`
-* To check if agent is confined by selinux: `ps -efZ | grep nginx-agent`
+* To check if NGINX Agent is confined by selinux: `ps -efZ | grep nginx-agent`
 * For debugging nginx selinux issues refer to this nginx blog: https://www.nginx.com/blog/using-nginx-plus-with-selinux
 
 ## References

@@ -37,15 +37,15 @@ AGENT_DYNAMIC_CONFIG_COMMENT="#
 #
 # Dynamic configuration file for NGINX Agent.
 #
-# The purpose of this file is to track agent configuration
-# values that can be dynamically changed via the API and the agent install script.
+# The purpose of this file is to track NGINX Agent configuration
+# values that can be dynamically changed via the API and the NGINX Agent install script.
 # You may edit this file, but API calls that modify the tags on this system will
 # overwrite the tag values in this file.
 #
-# The agent configuration values that API calls can modify are as follows:
+# The NGINX Agent configuration values that API calls can modify are as follows:
 #    - tags
 #
-# The agent configuration value(s) that the agent install script can modify are as follows:
+# The NGINX Agent configuration value(s) that the NGINX Agent install script can modify are as follows:
 #    - instance_group
 
 "
@@ -62,8 +62,6 @@ err_exit() {
 
 title() {
     printf "\n --- NGINX Agent Package Installer --- \n\n"
-    printf " --- Will install the NGINX Agent in 5 seconds ---\n"
-    sleep 5
 }
 
 ensure_sudo() {
