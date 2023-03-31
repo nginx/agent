@@ -386,7 +386,7 @@ func TestWriteBackup(t *testing.T) {
 	}{
 		{
 			name:        "enabled test",
-			config:      config.Config{Nginx: config.Nginx{Debug: true}},
+			config:      config.Config{Nginx: config.Nginx{Debug: true, TreatWarningsAsErrors: true}},
 			nginxConfig: &proto.NginxConfig{Zconfig: zippedFile, Zaux: zippedFile},
 			confFiles: []*proto.File{
 				{
@@ -402,7 +402,7 @@ func TestWriteBackup(t *testing.T) {
 		},
 		{
 			name:           "not enabled test",
-			config:         config.Config{Nginx: config.Nginx{Debug: false}},
+			config:         config.Config{Nginx: config.Nginx{Debug: false, TreatWarningsAsErrors: false}},
 			nginxConfig:    &proto.NginxConfig{},
 			confFiles:      []*proto.File{},
 			auxFiles:       []*proto.File{},
@@ -942,6 +942,37 @@ func TestNginxBinaryType_sanitizeProcessPath(t *testing.T) {
 			}
 			assert.Equal(tt, def.defaulted, binary.sanitizeProcessPath(&p))
 			assert.Equal(tt, def.expect, p.Path)
+		})
+	}
+}
+
+func TestNginxBinaryType_validateConfigCheckResponse(t *testing.T) {
+	type testDef struct {
+		name                  string
+		response              string
+		expected              interface{}
+		treatWarningsAsErrors bool
+	}
+
+	// no test case for process lookup, that would require running nginx or proc somewhere
+	for _, test := range []testDef{
+		{name: "validation fails, emerg respected", response: "nginx [emerg]", treatWarningsAsErrors: false, expected: errors.New("error running nginx -t -c :\nnginx [emerg]")},
+		{name: "validation fails, emerg respected, config irrelevant", response: "nginx [emerg]", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx [emerg]")},
+		{name: "validation passes, warn ignored", response: "nginx [warn]", treatWarningsAsErrors: false, expected: nil},
+		{name: "validation fails, warn respected", response: "nginx [warn]", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx [warn]")},
+		{name: "validation passes, info irrelevant", response: "nginx [info]", treatWarningsAsErrors: false, expected: nil},
+		{name: "validation passes, info irrelevant, config irrelevant", response: "nginx [info]", treatWarningsAsErrors: true, expected: nil},
+		{name: "validation fails", response: "nginx: [emerg] unknown directive \"location/\" in /etc/nginx/sites-enabled/someapp:5", treatWarningsAsErrors: false, expected: errors.New("error running nginx -t -c :\nnginx: [emerg] unknown directive \"location/\" in /etc/nginx/sites-enabled/someapp:5")},
+	} {
+		t.Run(test.name, func(tt *testing.T) {
+			binary := NginxBinaryType{
+				env: &EnvironmentType{},
+				config: &config.Config{Nginx: config.Nginx{Debug: true, TreatWarningsAsErrors: test.treatWarningsAsErrors}},
+
+			}
+			buffer := bytes.NewBuffer([]byte(test.response))
+			err := binary.validateConfigCheckResponse(buffer, "")
+			assert.Equal(tt, test.expected, err)
 		})
 	}
 }

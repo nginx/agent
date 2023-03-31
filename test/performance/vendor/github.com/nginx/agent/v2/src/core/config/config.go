@@ -290,6 +290,7 @@ func getNginx() Nginx {
 		NginxCountingSocket:          Viper.GetString(NginxCountingSocket),
 		NginxClientVersion:           Viper.GetInt(NginxClientVersion),
 		ConfigReloadMonitoringPeriod: Viper.GetDuration(NginxConfigReloadMonitoringPeriod),
+		TreatWarningsAsErrors:        Viper.GetBool(NginxTreatWarningsAsErrors),
 	}
 }
 

@@ -55,6 +55,7 @@ var (
 			NginxCountingSocket:          "unix:/var/run/nginx-agent/nginx.sock",
 			NginxClientVersion:           6,
 			ConfigReloadMonitoringPeriod: 10 * time.Second,
+			TreatWarningsAsErrors:        false,
 		},
 		ConfigDirs:            "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms",
 		AllowedDirectoriesMap: map[string]struct{}{},
@@ -134,6 +135,7 @@ const (
 	NginxCountingSocket               = NginxKey + agent_config.KeyDelimiter + "socket"
 	NginxClientVersion                = NginxKey + agent_config.KeyDelimiter + "client_version"
 	NginxConfigReloadMonitoringPeriod = NginxKey + agent_config.KeyDelimiter + "config_reload_monitoring_period"
+	NginxTreatWarningsAsErrors        = NginxKey + agent_config.KeyDelimiter + "treat_warnings_as_errors"
 
 	// viper keys used in config
 	DataplaneKey = "dataplane"
