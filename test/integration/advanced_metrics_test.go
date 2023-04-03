@@ -12,12 +12,12 @@ import (
 	"testing"
 	"time"
 
+	conf "github.com/nginx/agent/test/integration/nginx"
+	"github.com/nginx/agent/test/integration/upstream"
+	"github.com/nginx/agent/test/integration/validator"
 	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/publisher"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/schema"
-	conf "github.com/nginx/agent/v2/test/integration/nginx"
-	"github.com/nginx/agent/v2/test/integration/upstream"
-	"github.com/nginx/agent/v2/test/integration/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
