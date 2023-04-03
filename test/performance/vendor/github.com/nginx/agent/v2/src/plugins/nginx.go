@@ -463,7 +463,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	} else {
 		rollbackError = n.monitor()
 		if rollbackError != nil {
-			nginxConfigStatusMessage = fmt.Sprintf("Config apply failed. The following errors were found in the NGINX error logs: %v", rollbackError)
+			nginxConfigStatusMessage = fmt.Sprintf("Config apply failed. Errors found during monitoring period after applying a new configuration: %v", rollbackError)
 			rollback = true
 		} else {
 			log.Info("No errors found in NGINX errors logs after NGINX reload")

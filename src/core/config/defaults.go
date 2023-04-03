@@ -256,6 +256,11 @@ var (
 			Usage:        "The duration the NGINX Agent will monitor error logs after a NGINX reload",
 			DefaultValue: Defaults.Nginx.ConfigReloadMonitoringPeriod,
 		},
+		&BoolFlag{
+			Name:         NginxTreatWarningsAsErrors,
+			Usage:        "On nginx -t, treat warnings as failures on configuration application.",
+			DefaultValue: Defaults.Nginx.TreatWarningsAsErrors,
+		},
 		// Metrics
 		&DurationFlag{
 			Name:         MetricsCollectionInterval,
