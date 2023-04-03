@@ -51,9 +51,11 @@ var (
 			Token: uuid.New().String(),
 		},
 		Nginx: Nginx{
-			Debug:               false,
-			NginxCountingSocket: "unix:/var/run/nginx-agent/nginx.sock",
-			NginxClientVersion:  6,
+			Debug:                        false,
+			NginxCountingSocket:          "unix:/var/run/nginx-agent/nginx.sock",
+			NginxClientVersion:           6,
+			ConfigReloadMonitoringPeriod: 10 * time.Second,
+			TreatWarningsAsErrors:        false,
 		},
 		ConfigDirs:            "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms",
 		AllowedDirectoriesMap: map[string]struct{}{},
@@ -128,10 +130,12 @@ const (
 	// viper keys used in config
 	NginxKey = "nginx"
 
-	NginxExcludeLogs    = NginxKey + agent_config.KeyDelimiter + "exclude_logs"
-	NginxDebug          = NginxKey + agent_config.KeyDelimiter + "debug"
-	NginxCountingSocket = NginxKey + agent_config.KeyDelimiter + "socket"
-	NginxClientVersion  = NginxKey + agent_config.KeyDelimiter + "client_version"
+	NginxExcludeLogs                  = NginxKey + agent_config.KeyDelimiter + "exclude_logs"
+	NginxDebug                        = NginxKey + agent_config.KeyDelimiter + "debug"
+	NginxCountingSocket               = NginxKey + agent_config.KeyDelimiter + "socket"
+	NginxClientVersion                = NginxKey + agent_config.KeyDelimiter + "client_version"
+	NginxConfigReloadMonitoringPeriod = NginxKey + agent_config.KeyDelimiter + "config_reload_monitoring_period"
+	NginxTreatWarningsAsErrors        = NginxKey + agent_config.KeyDelimiter + "treat_warnings_as_errors"
 
 	// viper keys used in config
 	DataplaneKey = "dataplane"
@@ -246,6 +250,16 @@ var (
 			Name:         NginxCountingSocket,
 			Usage:        "The NGINX Plus counting unix socket location.",
 			DefaultValue: Defaults.Nginx.NginxCountingSocket,
+		},
+		&DurationFlag{
+			Name:         NginxConfigReloadMonitoringPeriod,
+			Usage:        "The duration the NGINX Agent will monitor error logs after a NGINX reload",
+			DefaultValue: Defaults.Nginx.ConfigReloadMonitoringPeriod,
+		},
+		&BoolFlag{
+			Name:         NginxTreatWarningsAsErrors,
+			Usage:        "On nginx -t, treat warnings as failures on configuration application.",
+			DefaultValue: Defaults.Nginx.TreatWarningsAsErrors,
 		},
 		// Metrics
 		&DurationFlag{

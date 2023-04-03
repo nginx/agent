@@ -13,12 +13,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
@@ -128,6 +130,12 @@ var (
 
 func TestNginxConfigApply(t *testing.T) {
 	validationTimeout = 100 * time.Millisecond
+	updatedProcesses := []core.Process{
+		{Pid: 1, Name: "12345", IsMaster: true},
+		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
+		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
+	}
+	
 	t.Parallel()
 
 	tests := []struct {
@@ -161,9 +169,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
@@ -194,9 +202,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
@@ -227,9 +235,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
@@ -280,9 +288,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "3.1088.2",
@@ -317,9 +325,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
@@ -350,9 +358,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
@@ -403,9 +411,9 @@ func TestNginxConfigApply(t *testing.T) {
 				core.FileWatcherEnabled,
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
+				core.NginxReloadComplete,
 				core.CommResponse,
 				core.FileWatcherEnabled,
-				core.NginxReloadComplete,
 				core.NginxConfigApplySucceeded,
 			},
 			// mismatch, test should still pass because of the NginxConfigAction_FORCE
@@ -527,12 +535,16 @@ func TestNginxConfigApply(t *testing.T) {
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
 			binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
+			binary.On("GetErrorLogs").Return(make(map[string]string))
 
 			commandClient := tutils.GetMockCommandClient(test.config)
 			conf := &loadedConfig.Config{
 				Server: loadedConfig.Server{
 					Host:     "127.0.0.1",
 					GrpcPort: 9092,
+				},
+				Nginx: loadedConfig.Nginx{
+					ConfigReloadMonitoringPeriod: 5 * time.Second,
 				},
 				Features:   []string{agent_config.FeatureNginxConfig},
 				Extensions: []string{agent_config.NginxAppProtectExtensionPlugin},
@@ -550,7 +562,11 @@ func TestNginxConfigApply(t *testing.T) {
 			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
-			messagePipe.Run()
+
+			go messagePipe.Run()
+
+			time.Sleep(500 * time.Millisecond)
+			pluginUnderTest.syncProcessInfo(updatedProcesses)
 
 			assert.Eventually(
 				tt,
@@ -816,22 +832,30 @@ func TestNginx_completeConfigApply(t *testing.T) {
 		core.NginxConfigValidationSucceeded,
 		core.NginxPluginConfigured,
 		core.NginxInstancesFound,
+		core.NginxReloadComplete,
 		core.CommResponse,
 		core.FileWatcherEnabled,
-		core.NginxReloadComplete,
 		core.NginxConfigApplySucceeded,
 	}
 
 	env := tutils.GetMockEnvWithProcess()
 	env.On("GetSystemUUID").Return("456")
 
+	updatedProcesses := []core.Process{
+		{Pid: 1, Name: "12345", IsMaster: true},
+		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
+		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
+	}
 	binary := tutils.NewMockNginxBinary()
 	binary.On("uploadConfig", mock.Anything, mock.Anything).Return(nil)
 	binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
 	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
-	binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
-	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+
+	binary.On("UpdateNginxDetailsFromProcesses", env.Processes()).Once()
+	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap())).Once()
+
 	binary.On("Reload", mock.Anything, mock.Anything)
+	binary.On("GetErrorLogs").Return(make(map[string]string))
 
 	commandClient := tutils.GetMockCommandClient(
 		&proto.NginxConfig{
@@ -853,7 +877,16 @@ func TestNginx_completeConfigApply(t *testing.T) {
 		},
 	)
 
-	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+	conf := &loadedConfig.Config{
+		Server: loadedConfig.Server{
+			Host:     "127.0.0.1",
+			GrpcPort: 9092,
+		},
+		Features: []string{agent_config.FeatureNginxConfig},
+		Nginx: loadedConfig.Nginx{
+			ConfigReloadMonitoringPeriod: 5 * time.Second,
+		},
+	}
 
 	pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 
@@ -885,12 +918,15 @@ func TestNginx_completeConfigApply(t *testing.T) {
 
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 	messagePipe.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
-	messagePipe.Run()
+	go messagePipe.Run()
+
+	time.Sleep(1 * time.Second)
+	pluginUnderTest.syncProcessInfo(updatedProcesses)
 
 	assert.Eventually(
 		t,
 		func() bool { return len(messagePipe.GetProcessedMessages()) == len(expectedTopics) },
-		time.Duration(2*time.Second),
+		time.Duration(10*time.Second),
 		3*time.Millisecond,
 	)
 
@@ -991,29 +1027,7 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 }
 
 func TestBlock_ConfigApply(t *testing.T) {
-	commandClient := tutils.GetMockCommandClient(
-		&proto.NginxConfig{
-			Action: proto.NginxConfigAction_APPLY,
-			ConfigData: &proto.ConfigDescriptor{
-				NginxId:  "12345",
-				Checksum: "2314365",
-			},
-			Zconfig: &proto.ZippedFile{
-				Contents:      first,
-				Checksum:      checksum.Checksum(first),
-				RootDirectory: "nginx.conf",
-			},
-			Zaux: &proto.ZippedFile{
-				Contents:      first,
-				Checksum:      checksum.Checksum(first),
-				RootDirectory: "nginx.conf",
-			},
-			AccessLogs:   &proto.AccessLogs{},
-			ErrorLogs:    &proto.ErrorLogs{},
-			Ssl:          &proto.SslCertificates{},
-			DirectoryMap: &proto.DirectoryMap{},
-		},
-	)
+	commandClient := tutils.GetMockCommandClient(tutils.GetNginxConfig(first))
 
 	env := tutils.GetMockEnvWithProcess()
 	binary := tutils.NewMockNginxBinary()
@@ -1039,4 +1053,240 @@ func TestBlock_ConfigApply(t *testing.T) {
 	messagePipe.Run()
 
 	assert.Equal(t, testNAPDetailsActive.AppProtectWafDetails.WafVersion, pluginUnderTest.nginxAppProtectSoftwareDetails.WafVersion)
+}
+
+func TestNginx_monitor(t *testing.T) {
+	tmpDir := t.TempDir()
+	errorLogFileName := path.Join(tmpDir, "/error.log")
+	errorLogFile, err := os.Create(errorLogFileName)
+
+	defer func() {
+		err := errorLogFile.Close()
+		require.NoError(t, err, "Error closing error log file")
+		os.Remove(errorLogFile.Name())
+	}()
+
+	require.NoError(t, err, "Error creating error log")
+	commandClient := tutils.GetMockCommandClient(&proto.NginxConfig{})
+
+	env := tutils.GetMockEnvWithProcess()
+	binary := tutils.NewMockNginxBinary()
+	binary.On("GetErrorLogs").Return(make(map[string]string)).Once()
+	binary.On("GetErrorLogs").Return(map[string]string{errorLogFileName: errorLogFileName}).Once()
+
+	config := tutils.GetMockAgentConfig()
+	config.Nginx.ConfigReloadMonitoringPeriod = 10 * time.Second
+	pluginUnderTest := NewNginx(commandClient, binary, env, config)
+
+	// Validate that errors in the logs returned
+	go func() {
+		errorFound := pluginUnderTest.monitor()
+		assert.NoError(t, errorFound)
+	}()
+
+	time.Sleep(1 * time.Second)
+
+	pluginUnderTest.syncProcessInfo([]core.Process{
+		{Pid: 1, Name: "12345", IsMaster: true},
+		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
+		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
+	})
+
+	time.Sleep(1 * time.Second)
+
+	errorsChannel := make(chan error, 1)
+
+	// Validate that errors in the logs returned
+	go func() {
+		errorFound := pluginUnderTest.monitor()
+		errorsChannel <- errorFound
+	}()
+
+	time.Sleep(1 * time.Second)
+
+	pluginUnderTest.syncProcessInfo([]core.Process{
+		{Pid: 1, Name: "12345", IsMaster: true},
+		{Pid: 6, ParentPid: 1, Name: "worker-6", IsMaster: false},
+		{Pid: 7, ParentPid: 1, Name: "worker-7", IsMaster: false},
+	})
+
+	_, err = errorLogFile.WriteString("2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)")
+	require.NoError(t, err, "Error writing data to error log file")
+
+	for {
+		select {
+		case x := <-errorsChannel:
+			assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x.Error())
+			return
+		case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
+			assert.Fail(t, "Expected error to be reported")
+			return
+		}
+	}
+}
+
+func TestNginx_monitorLog(t *testing.T) {
+	tmpDir := t.TempDir()
+	errorLogFileName := path.Join(tmpDir, "/error.log")
+	errorLogFile, err := os.Create(errorLogFileName)
+	errorLogs := map[string]string{errorLogFileName: errorLogFileName}
+
+	defer func() {
+		err := errorLogFile.Close()
+		require.NoError(t, err, "Error closing error log file")
+		os.Remove(errorLogFile.Name())
+	}()
+
+	require.NoError(t, err, "Error creating error log")
+	commandClient := tutils.GetMockCommandClient(&proto.NginxConfig{})
+
+	env := tutils.GetMockEnvWithProcess()
+	binary := tutils.NewMockNginxBinary()
+	binary.On("GetErrorLogs").Return(errorLogs)
+
+	config := tutils.GetMockAgentConfig()
+	config.Nginx.ConfigReloadMonitoringPeriod = 10 * time.Second
+	pluginUnderTest := NewNginx(commandClient, binary, env, config)
+	errorsChannel := make(chan string, 1)
+
+	pluginUnderTest.monitorLogs(errorLogs, errorsChannel)
+
+	// Validate that errors in the logs returned
+	go func() {
+		pluginUnderTest.monitorLogs(errorLogs, errorsChannel)
+	}()
+
+	time.Sleep(config.Nginx.ConfigReloadMonitoringPeriod / 2)
+
+	_, err = errorLogFile.WriteString("2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)")
+	require.NoError(t, err, "Error writing data to error log file")
+
+	for {
+		select {
+		case x := <-errorsChannel:
+			assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x)
+			return
+		case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
+			assert.Fail(t, "Expected error to be reported")
+			return
+		}
+	}
+}
+
+func TestNginx_monitorPids(t *testing.T) {
+	tests := []struct {
+		name                string
+		startingProcesses   []core.Process
+		updatedProcesses    []core.Process
+		errorStr            string
+		expectedTestTimeout bool
+		ticker              time.Duration
+		monitoringPeriod    time.Duration
+	}{
+		{
+			name:              "postive case",
+			startingProcesses: tutils.GetProcesses(),
+			updatedProcesses: []core.Process{
+				{Pid: 1, Name: "12345", IsMaster: true},
+				{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
+				{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
+			},
+			errorStr:            "",
+			expectedTestTimeout: false,
+			ticker:              1 * time.Second,
+			monitoringPeriod:    2 * time.Second,
+		},
+		{
+			name:              "timeout case",
+			startingProcesses: tutils.GetProcesses(),
+			updatedProcesses: []core.Process{
+				{Pid: 1, Name: "12345", IsMaster: true},
+				{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
+				{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
+			},
+			errorStr:            "",
+			expectedTestTimeout: true,
+			ticker:              2 * time.Second,
+			monitoringPeriod:    2 * time.Second,
+		},
+		{
+			name:                "ticker timeout case",
+			startingProcesses:   tutils.GetProcesses(),
+			updatedProcesses:    tutils.GetProcesses(),
+			errorStr:            "Timed out",
+			expectedTestTimeout: false,
+			ticker:              2 * time.Second,
+			monitoringPeriod:    100 * time.Millisecond,
+		},
+	}
+
+	for _, test := range tests {
+		t.Logf("Running test %s", test.name)
+		errorChannel := make(chan string, 1)
+		env := tutils.GetMockEnvWithProcess()
+		config := tutils.GetMockAgentConfig()
+		config.Nginx.ConfigReloadMonitoringPeriod = test.monitoringPeriod
+		pluginUnderTest := NewNginx(tutils.GetMockCommandClient(&proto.NginxConfig{}), tutils.NewMockNginxBinary(), env, config)
+
+		go pluginUnderTest.monitorPids(test.startingProcesses, errorChannel)
+		pluginUnderTest.syncProcessInfo(test.updatedProcesses)
+
+		select {
+		case err := <-errorChannel:
+			// Check that the function completed with expected errors
+			assert.Equal(t, test.errorStr, err)
+		case <-time.After(test.ticker):
+			// Timeout if the function takes too long
+			// t.Error("Timed out waiting for function to complete")
+			assert.True(t, test.expectedTestTimeout)
+		}
+	}
+}
+
+func TestParseIntList(t *testing.T) {
+	processes := tutils.GetProcesses()
+
+	pidList := parseIntList(processes)
+
+	expectedPids := []int{1, 2, 3}
+	for i, expected := range expectedPids {
+		if pidList[i] != expected {
+			t.Errorf("parseIntList returned value %d at index %d, expected %d", pidList[i], i, expected)
+		}
+	}
+}
+
+func TestIntersection(t *testing.T) {
+	tests := []struct {
+		list1    []int
+		list2    []int
+		expected []int
+	}{
+		{
+			list1:    []int{},
+			list2:    []int{},
+			expected: []int{},
+		},
+		{
+			list1:    []int{1, 2, 3},
+			list2:    []int{4, 5, 6},
+			expected: []int{},
+		},
+		{
+			list1:    []int{1, 2, 3},
+			list2:    []int{},
+			expected: []int{},
+		},
+		{
+			list1:    []int{1, 2, 3},
+			list2:    []int{2, 3, 4, 5},
+			expected: []int{2, 3},
+		},
+	}
+
+	for _, tt := range tests {
+		result := intersection(tt.list1, tt.list2)
+		// Check that the output matches the expected result
+		assert.Equal(t, tt.expected, result, "Intersection should match expected result")
+	}
 }

@@ -386,7 +386,7 @@ func TestWriteBackup(t *testing.T) {
 	}{
 		{
 			name:        "enabled test",
-			config:      config.Config{Nginx: config.Nginx{Debug: true}},
+			config:      config.Config{Nginx: config.Nginx{Debug: true, TreatWarningsAsErrors: true}},
 			nginxConfig: &proto.NginxConfig{Zconfig: zippedFile, Zaux: zippedFile},
 			confFiles: []*proto.File{
 				{
@@ -402,7 +402,7 @@ func TestWriteBackup(t *testing.T) {
 		},
 		{
 			name:           "not enabled test",
-			config:         config.Config{Nginx: config.Nginx{Debug: false}},
+			config:         config.Config{Nginx: config.Nginx{Debug: false, TreatWarningsAsErrors: false}},
 			nginxConfig:    &proto.NginxConfig{},
 			confFiles:      []*proto.File{},
 			auxFiles:       []*proto.File{},
@@ -942,6 +942,42 @@ func TestNginxBinaryType_sanitizeProcessPath(t *testing.T) {
 			}
 			assert.Equal(tt, def.defaulted, binary.sanitizeProcessPath(&p))
 			assert.Equal(tt, def.expect, p.Path)
+		})
+	}
+}
+
+func TestNginxBinaryType_validateConfigCheckResponse(t *testing.T) {
+	type testDef struct {
+		name                  string
+		response              string
+		expected              interface{}
+		treatWarningsAsErrors bool
+	}
+
+	// no test case for process lookup, that would require running nginx or proc somewhere
+	for _, test := range []testDef{
+		{name: "validation fails, emerg respected", response: "nginx [emerg]", treatWarningsAsErrors: false, expected: errors.New("error running nginx -t -c :\nnginx [emerg]")},
+		{name: "validation fails, emerg respected, config irrelevant", response: "nginx [emerg]", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx [emerg]")},
+		{name: "validation passes, warn ignored", response: "nginx [warn]", treatWarningsAsErrors: false, expected: nil},
+		{name: "validation fails, warn respected", response: "nginx [warn]", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx [warn]")},
+		{name: "validation passes, info irrelevant", response: "nginx [info]", treatWarningsAsErrors: false, expected: nil},
+		{name: "validation passes, info irrelevant, config irrelevant", response: "nginx [info]", treatWarningsAsErrors: true, expected: nil},
+		{name: "validation fails unknown directive", response: "nginx: [emerg] unknown directive \"location/\" in /etc/nginx/sites-enabled/someapp:5", treatWarningsAsErrors: false, expected: errors.New("error running nginx -t -c :\nnginx: [emerg] unknown directive \"location/\" in /etc/nginx/sites-enabled/someapp:5")},
+		{name: "validation fails conflicting server name", response: "nginx: [warn] conflicting server name \"example.com\" on 0.0.0.0:80, ignored", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx: [warn] conflicting server name \"example.com\" on 0.0.0.0:80, ignored")},
+		{name: "validation fails limit_req", response: "nginx: [emerg] 96300#96300: limit_req \"default\" uses the \"$binary_remote_addr\" key while previously it used the \"$http_apiKey\" key", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx: [emerg] 96300#96300: limit_req \"default\" uses the \"$binary_remote_addr\" key while previously it used the \"$http_apiKey\" key")},
+		{name: "validation fails host not found in upstream", response: "nginx: [emerg] 5191#5191: host not found in upstream \"example.com:80\" in /etc/nginx/nginx.conf:111", treatWarningsAsErrors: false, expected: errors.New("error running nginx -t -c :\nnginx: [emerg] 5191#5191: host not found in upstream \"example.com:80\" in /etc/nginx/nginx.conf:111")},
+		{name: "validation fails worker_connections", response: "nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx: [warn] 2048 worker_connections exceed open file resource limit: 1024")},
+		{name: "validation passes worker_connections", response: "nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024", treatWarningsAsErrors: false, expected: nil},
+	} {
+		t.Run(test.name, func(tt *testing.T) {
+			binary := NginxBinaryType{
+				env: &EnvironmentType{},
+				config: &config.Config{Nginx: config.Nginx{Debug: true, TreatWarningsAsErrors: test.treatWarningsAsErrors}},
+
+			}
+			buffer := bytes.NewBuffer([]byte(test.response))
+			err := binary.validateConfigCheckResponse(buffer, "")
+			assert.Equal(tt, test.expected, err)
 		})
 	}
 }
