@@ -40,11 +40,6 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		"InstallAgentStartCmd":   "sudo systemctl start nginx-agent",
 	}
 
-	expectedUninstallLogMsgs := map[string]string{
-		"UninstallAgent":             "Removing nginx-agent",
-		"UninstallAgentPurgingFiles": "Purging configuration files for nginx-agent",
-	}
-
 	expectedAgentPaths := map[string]string{
 		"AgentConfigFile":        "/etc/nginx-agent/nginx-agent.conf",
 		"AgentDynamicConfigFile": "/etc/nginx-agent/agent-dynamic.conf",
@@ -99,9 +94,14 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check uninstall output
-	if strings.HasSuffix(containerAgentPackagePath, "rpm") {
+	expectedUninstallLogMsgs := map[string]string{}
+	if strings.HasPrefix(containerAgentPackagePath, "deb") {
+		expectedUninstallLogMsgs["UninstallAgent"] = "Removing nginx-agent"
+		expectedUninstallLogMsgs["UninstallAgentPurgingFiles"] = "Purging configuration files for nginx-agent"
+	} else if strings.HasSuffix(containerAgentPackagePath, "rpm") {
 		expectedUninstallLogMsgs["UninstallAgent"] = "Removed:\n  nginx-agent"
-		delete(expectedUninstallLogMsgs, "UninstallAgentPurgingFiles")
+	} else if strings.HasSuffix(containerAgentPackagePath, "apk") {
+		expectedUninstallLogMsgs["UninstallAgent"] = "Purging nginx-agent"
 	}
 	for _, logMsg := range expectedUninstallLogMsgs {
 		assert.Contains(t, uninstallLog, logMsg)

@@ -5,7 +5,6 @@ services:
     build:
       context: ../../../
       dockerfile: ./scripts/docker/nginx-oss/apk/Dockerfile
-      # dockerfile: ./scripts/docker/nginx-plus/alpine/Dockerfile
       target: install-nginx
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
@@ -13,3 +12,6 @@ services:
         ENTRY_POINT: "./scripts/docker/agentless-entrypoint.sh"
     ports:
       - 80
+    # default nginx apk conf does not bind to localhost:80
+    # volumes:
+    #   - ./nginx.conf:/etc/nginx/nginx.conf
