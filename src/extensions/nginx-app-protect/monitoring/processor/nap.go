@@ -181,6 +181,8 @@ type BADMSG struct {
 			SpecificDesc    string        `xml:"specific_desc"`
 			Uri             string        `xml:"uri"`
 			UriObjectData   UriObjectData `xml:"object_data"`
+			UriLength       string        `xml:"uri_len"`
+			UriLengthLimit  string        `xml:"uri_len_limit"`
 			DefinedLength   string        `xml:"defined_length"`
 			DetectedLength  string        `xml:"detected_length"`
 			TotalLen        string        `xml:"total_len"`
@@ -332,7 +334,7 @@ func (f *NAPConfig) getViolationContext() string {
 	if f.ViolationDetailsXML != nil {
 		for i, v := range f.ViolationDetailsXML.RequestViolations.Violations {
 			if v.Context != "" {
-				contexts = append(contexts, v.Context)
+				contexts = append(contexts, strings.ToLower(v.Context))
 				continue
 			}
 			if v.ViolName != "" {
@@ -375,10 +377,10 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 	for _, v := range f.ViolationDetailsXML.RequestViolations.Violations {
 		violation := models.ViolationData{
 			Name:    v.ViolName,
-			Context: v.Context,
+			Context: strings.ToLower(v.Context),
 		}
 
-		switch v.Context {
+		switch strings.ToLower(v.Context) {
 		case violationContextParameter:
 			var isB64Decoded bool
 			var name, value string
@@ -508,11 +510,26 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				Value: string(decodedValue),
 			}
 		case violationContextUrl, violationContextUri:
-			var value string
+			var (
+				name, value  string
+				isB64Decoded bool
+			)
 			if v.Uri != "" {
 				value = v.Uri
 			} else if v.UriObjectData != (UriObjectData{}) {
 				value = v.UriObjectData.Object
+			} else if v.UriLength != "" {
+				isB64Decoded = true
+				name = fmt.Sprintf("URI length: %s", v.UriLength)
+				value = fmt.Sprintf("URI length limit: %s", v.UriLengthLimit)
+			}
+
+			if isB64Decoded {
+				violation.ContextData = &models.ContextData{
+					Name:  name,
+					Value: value,
+				}
+				break
 			}
 
 			decodedValue, err := base64.StdEncoding.DecodeString(value)
@@ -521,7 +538,7 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				break
 			}
 
-			violation.ContextData = &models.ContextData{Value: string(decodedValue)}
+			violation.ContextData = &models.ContextData{Name: name, Value: string(decodedValue)}
 		case violationContextRequest:
 			var name, value string
 			if v.DefinedLength != "" {

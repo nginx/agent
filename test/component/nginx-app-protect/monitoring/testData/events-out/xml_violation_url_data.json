@@ -31,8 +31,16 @@
                 "Name": "VIOL_URL_LENGTH",
                 "Context": "uri",
                 "ContextData": {
+                    "Name": "URI length: 18",
+                    "Value": "URI length limit: 0"
+                }
+            },
+            {
+                "Name": "VIOL_JSON_MALFORMED",
+                "Context": "url",
+                "ContextData": {
                     "Name": "",
-                    "Value": ""
+                    "Value": "/"
                 }
             }
         ]
