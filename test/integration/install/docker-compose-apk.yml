@@ -12,6 +12,5 @@ services:
         ENTRY_POINT: "./scripts/docker/agentless-entrypoint.sh"
     ports:
       - 80
-    # default nginx apk conf does not bind to localhost:80
-    # volumes:
-    #   - ./nginx.conf:/etc/nginx/nginx.conf
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf # default nginx apk conf does not listen on localhost

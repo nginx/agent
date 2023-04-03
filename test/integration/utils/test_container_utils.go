@@ -53,8 +53,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 	ctxCancel, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
 
-	// TODO: Move back to HTTP wait strategy
-	require.NoError(t, comp.WaitForService("agent", wait.ForLog("waiting for nginx to stop...")).WithEnv(
+	require.NoError(t, comp.WaitForService("agent", wait.ForHTTP("/")).WithEnv(
 		map[string]string{
 			"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
 			"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),

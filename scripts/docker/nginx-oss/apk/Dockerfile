@@ -9,8 +9,6 @@ WORKDIR /agent
 COPY ./build /agent/build
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
-# COPY ./test/integration/install/nginx.conf /etc/nginx/nginx.conf
-
 RUN set -x \
     && addgroup -g 101 -S nginx \
     && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx \

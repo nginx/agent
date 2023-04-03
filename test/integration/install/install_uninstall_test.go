@@ -157,7 +157,7 @@ func createInstallCommand(agentPackageFilePath, osReleaseContent string) []strin
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return []string{"dpkg", "-i", agentPackageFilePath}
 	} else if strings.Contains(osReleaseContent, "alpine") {
-		return []string{"apk", "add", "--allow-untrusted", agentPackageFilePath} // TODO: Validate trust, validate -y
+		return []string{"apk", "add", "--allow-untrusted", agentPackageFilePath}
 	} else {
 		return []string{"yum", "localinstall", "-y", agentPackageFilePath}
 	}
