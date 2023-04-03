@@ -145,11 +145,11 @@ func TestGenerateAggregationReport(t *testing.T) {
 	metricsCollections.Data[csum].RunningSumMap["system.cpu.system"] = 200.2
 	metricsCollections.Data[csum].RunningSumMap["system.undefined_method"] = 1000
 
-	report := GenerateMetricsReport(metricsCollections)
-	log.Info(report)
+	results := GenerateMetrics(metricsCollections)
+	log.Info(results)
 
-	assert.NotNil(t, report)
-	for _, stats := range report.GetData() {
+	assert.NotEmpty(t, results)
+	for _, stats := range results {
 		simplemetrics := stats.GetSimplemetrics()
 		for _, v := range simplemetrics {
 			switch {

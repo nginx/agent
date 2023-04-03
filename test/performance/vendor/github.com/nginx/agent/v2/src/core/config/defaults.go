@@ -71,7 +71,7 @@ var (
 			BulkSize:           20,
 			ReportInterval:     1 * time.Minute,
 			CollectionInterval: 15 * time.Second,
-			Mode:               "aggregation",
+			Mode:               "aggregated",
 		},
 		Features: agent_config.GetDefaultFeatures(),
 	}

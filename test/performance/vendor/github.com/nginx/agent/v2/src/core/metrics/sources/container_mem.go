@@ -40,7 +40,7 @@ func NewContainerMemorySource(namespace string, basePath string) *ContainerMemor
 	return &ContainerMemory{basePath, cgroup.IsCgroupV2(basePath), NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}}
 }
 
-func (c *ContainerMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *ContainerMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	log.Trace("Collecting container memory metrics")
 	defer wg.Done()
 
@@ -70,7 +70,7 @@ func (c *ContainerMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m cha
 
 	select {
 	case <-ctx.Done():
-	case m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics):
+	case m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{}, simpleMetrics, proto.MetricsReport_SYSTEM):
 	}
 }
 

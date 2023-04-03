@@ -9,13 +9,13 @@ package sources
 
 import (
 	"context"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"path"
 	"runtime"
 	"sort"
 	"sync"
 	"testing"
 
-	"github.com/nginx/agent/sdk/v2/proto"
 	cgroup "github.com/nginx/agent/v2/src/core/metrics/sources/cgroup"
 	tutils "github.com/nginx/agent/v2/test/utils"
 
@@ -108,14 +108,14 @@ func TestCPUTimesCollect_VM(t *testing.T) {
 	ctx := context.TODO()
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	channel := make(chan *proto.StatsEntity, 1)
+	channel := make(chan *metrics.StatsEntityWrapper, 1)
 	cpuTimes.Collect(ctx, wg, channel)
 	wg.Wait()
 
 	actual := <-channel
 
 	actualMetricNames := []string{}
-	for _, simpleMetric := range actual.Simplemetrics {
+	for _, simpleMetric := range actual.Data.Simplemetrics {
 		actualMetricNames = append(actualMetricNames, simpleMetric.Name)
 		switch simpleMetric.Name {
 		case "test.cpu.idle":
@@ -151,14 +151,14 @@ func TestCPUTimesCollect_VM(t *testing.T) {
 	ctx = context.TODO()
 	wg = &sync.WaitGroup{}
 	wg.Add(1)
-	channel = make(chan *proto.StatsEntity, 1)
+	channel = make(chan *metrics.StatsEntityWrapper, 1)
 	cpuTimes.Collect(ctx, wg, channel)
 	wg.Wait()
 
 	actual = <-channel
 
 	actualMetricNames = []string{}
-	for _, simpleMetric := range actual.Simplemetrics {
+	for _, simpleMetric := range actual.Data.Simplemetrics {
 		actualMetricNames = append(actualMetricNames, simpleMetric.Name)
 		switch simpleMetric.Name {
 		case "test.cpu.idle":
@@ -194,13 +194,13 @@ func TestCPUTimesCollect_Container(t *testing.T) {
 	ctx := context.TODO()
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	channel := make(chan *proto.StatsEntity, 1)
+	channel := make(chan *metrics.StatsEntityWrapper, 1)
 	cpuTimes.Collect(ctx, wg, channel)
 	wg.Wait()
 	actual := <-channel
 
 	actualMetricNames := []string{}
-	for _, simpleMetric := range actual.Simplemetrics {
+	for _, simpleMetric := range actual.Data.Simplemetrics {
 		actualMetricNames = append(actualMetricNames, simpleMetric.Name)
 	}
 	sort.Strings(actualMetricNames)

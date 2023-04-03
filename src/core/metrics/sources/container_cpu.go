@@ -47,7 +47,7 @@ func NewContainerCPUSource(namespace string, basePath string) *ContainerCPU {
 	return &ContainerCPU{basePath, cgroup.IsCgroupV2(basePath), NewMetricSourceLogger(), &namedMetric{namespace, CpuGroup}}
 }
 
-func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	log.Trace("Collecting container CPU metrics")
 	defer wg.Done()
 
@@ -205,7 +205,7 @@ func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 
 	select {
 	case <-ctx.Done():
-	case m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics):
+	case m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{}, simpleMetrics, proto.MetricsReport_SYSTEM):
 	}
 }
 

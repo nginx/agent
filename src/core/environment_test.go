@@ -8,6 +8,8 @@
 package core
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -469,17 +471,58 @@ func TestProcessors(t *testing.T) {
 	assert.Equal(t, "arm64", processorInfo[0].GetArchitecture())
 }
 
-func TestParseLscpu(t *testing.T) {
+type fakeShell struct {
+	output map[string]string
+	errors map[string]error
+}
+
+func (f *fakeShell) Exec(cmd string, arg ...string) ([]byte, error) {
+	key := strings.Join(append([]string{cmd}, arg...), " ")
+	if err, ok := f.errors[key]; ok {
+		return nil, err
+	}
+	if out, ok := f.output[key]; ok {
+		return []byte(out), nil
+	}
+	return nil, fmt.Errorf("unexpected command %s", key)
+}
+
+func TestGetCacheInfo(t *testing.T) {
+	tempShellCommander := shell
+	defer func() { shell = tempShellCommander }()
 	tests := []struct {
 		name             string
+		shell            Shell
 		defaultCacheInfo map[string]string
-		cpuInfoCache     proto.CpuInfo
-		lscpuContent     string
 		expect           map[string]string
 	}{
 		{
-			name:         "os-release present",
-			lscpuContent: lscpuInfo1,
+			name: "lscpu error",
+			shell: &fakeShell{
+				errors: map[string]error{
+					"lscpu": errors.New("nope"),
+				},
+			},
+			defaultCacheInfo: map[string]string{
+				"L1d": "64 KiB",
+				"L1i": "96 KiB",
+				"L2":  "2 MiB",
+				"L3":  "1 MiB",
+			},
+			expect: map[string]string{
+				"L1d": "64 KiB",
+				"L1i": "96 KiB",
+				"L2":  "2 MiB",
+				"L3":  "1 MiB",
+			},
+		},
+		{
+			name: "default cache info absent",
+			shell: &fakeShell{
+				output: map[string]string{
+					"lscpu": lscpuInfo1,
+				},
+			},
 			defaultCacheInfo: map[string]string{
 				"L1d": "-1",
 				"L1i": "-1",
@@ -494,8 +537,12 @@ func TestParseLscpu(t *testing.T) {
 			},
 		},
 		{
-			name:         "os-release present with quote",
-			lscpuContent: lscpuInfo2,
+			name: "os-release present with quote",
+			shell: &fakeShell{
+				output: map[string]string{
+					"lscpu": lscpuInfo2,
+				},
+			},
 			defaultCacheInfo: map[string]string{
 				"L1d": "-1",
 				"L1i": "-1",
@@ -512,7 +559,8 @@ func TestParseLscpu(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := parseLscpu(tt.lscpuContent, tt.defaultCacheInfo)
+			shell = tt.shell
+			actual := getCacheInfo(tt.defaultCacheInfo)
 			assert.Equal(t, tt.expect, actual)
 		})
 	}

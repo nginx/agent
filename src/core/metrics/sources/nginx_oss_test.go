@@ -66,14 +66,14 @@ Reading: 0 Writing: 1 Waiting: 0
 		name            string
 		namedMetric     *namedMetric
 		stubAPI         string
-		m               chan *proto.StatsEntity
+		m               chan *metrics.StatsEntityWrapper
 		expectedMetrics map[string]float64
 	}{
 		{
 			"valid stub API",
 			&namedMetric{namespace: "nginx", group: "http"},
 			server.URL + "/basic_status",
-			make(chan *proto.StatsEntity, 1),
+			make(chan *metrics.StatsEntityWrapper, 1),
 			map[string]float64{
 				"nginx.status":               float64(1),
 				"nginx.http.conn.active":     float64(1),
@@ -91,7 +91,7 @@ Reading: 0 Writing: 1 Waiting: 0
 			"unknown stub API",
 			&namedMetric{namespace: "nginx", group: "http"},
 			server.URL + "/unknown",
-			make(chan *proto.StatsEntity, 1),
+			make(chan *metrics.StatsEntityWrapper, 1),
 			map[string]float64{
 				"nginx.status": float64(0),
 			},
@@ -115,8 +115,8 @@ Reading: 0 Writing: 1 Waiting: 0
 			go c.Collect(ctx, wg, test.m)
 			wg.Wait()
 			statEntity := <-test.m
-			assert.Len(tt, statEntity.Simplemetrics, len(test.expectedMetrics))
-			for _, metric := range statEntity.Simplemetrics {
+			assert.Len(tt, statEntity.Data.Simplemetrics, len(test.expectedMetrics))
+			for _, metric := range statEntity.Data.Simplemetrics {
 				assert.Contains(t, test.expectedMetrics, metric.Name)
 				assert.Equal(t, test.expectedMetrics[metric.Name], metric.Value)
 			}

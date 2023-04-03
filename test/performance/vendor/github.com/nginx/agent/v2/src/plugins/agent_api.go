@@ -14,6 +14,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"io"
 	"net/http"
 	"os"
@@ -165,10 +166,10 @@ func (a *AgentAPI) Process(message *core.Message) {
 		}
 	case core.MetricReport:
 		switch response := message.Data().(type) {
-		case *proto.MetricsReport:
+		case *metrics.MetricsReportBundle:
 			a.exporter.SetLatestMetricReport(response)
 		default:
-			log.Warnf("Unknown MetricReport type: %T(%v)", message.Data(), message.Data())
+			log.Warnf("Unknown MetricReportBundle type: %T(%v)", message.Data(), message.Data())
 		}
 	case core.NginxConfigValidationPending, core.NginxConfigApplyFailed, core.NginxConfigApplySucceeded:
 		switch response := message.Data().(type) {
