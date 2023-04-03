@@ -30,7 +30,7 @@ func NewDiskSource(namespace string) *Disk {
 	return &Disk{NewMetricSourceLogger(), &namedMetric{namespace, "disk"}, disks}
 }
 
-func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	for _, part := range c.disks {
 		if part.Device == "" || part.Fstype == "" {
@@ -54,7 +54,7 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.
 		case <-ctx.Done():
 			return
 		// mount point is not a common dim
-		case m <- metrics.NewStatsEntity([]*proto.Dimension{{Name: MOUNT_POINT, Value: part.Mountpoint}}, simpleMetrics):
+		case m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{{Name: MOUNT_POINT, Value: part.Mountpoint}}, simpleMetrics, proto.MetricsReport_SYSTEM):
 		}
 	}
 }

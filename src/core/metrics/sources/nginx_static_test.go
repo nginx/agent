@@ -46,12 +46,12 @@ func TestNginxStatic_Collect(t *testing.T) {
 	tests := []struct {
 		name        string
 		namedMetric *namedMetric
-		m           chan *proto.StatsEntity
+		m           chan *metrics.StatsEntityWrapper
 	}{
 		{
 			"nginx static test",
 			&namedMetric{namespace: "nginx"},
-			make(chan *proto.StatsEntity, 1),
+			make(chan *metrics.StatsEntityWrapper, 1),
 		},
 	}
 
@@ -70,8 +70,8 @@ func TestNginxStatic_Collect(t *testing.T) {
 			go c.Collect(ctx, wg, test.m)
 			wg.Wait()
 			statEntity := <-test.m
-			assert.Len(tt, statEntity.Simplemetrics, len(expectedMetrics))
-			for _, metric := range statEntity.Simplemetrics {
+			assert.Len(tt, statEntity.Data.Simplemetrics, len(expectedMetrics))
+			for _, metric := range statEntity.Data.Simplemetrics {
 				assert.Contains(t, expectedMetrics, metric.Name)
 				assert.Equal(t, expectedMetricsValues[metric.Name], metric.Value)
 			}

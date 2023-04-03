@@ -654,15 +654,31 @@ func processorCache(item cpu.InfoStat) map[string]string {
 	return cache
 }
 
+type Shell interface {
+	Exec(cmd string, arg ...string) ([]byte, error)
+}
+
+type execShellCommand struct {
+}
+
+func (e execShellCommand) Exec(cmd string, arg ...string) ([]byte, error) {
+	execCmd := exec.Command(name, arg...)
+	return execCmd.Output()
+}
+
+var shell Shell = execShellCommand{}
+
 func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 	cache := getDefaultProcessorCacheInfo(cpuInfo)
+	return getCacheInfo(cache)
+}
 
-	out, err := exec.Command("lscpu").Output()
+func getCacheInfo(cache map[string]string) map[string]string {
+	out, err := shell.Exec("lscpu")
 	if err != nil {
 		log.Warnf("Install lscpu on host to get processor info: %v", err)
 		return cache
 	}
-
 	return parseLscpu(string(out), cache)
 }
 

@@ -50,7 +50,7 @@ func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespa
 	return &NginxPlus{baseDimensions: baseDimensions, nginxNamespace: nginxNamespace, plusNamespace: plusNamespace, plusAPI: plusAPI, clientVersion: clientVersion, logger: NewMetricSourceLogger()}
 }
 
-func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.init.Do(func() {
 		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
@@ -106,7 +106,7 @@ func (c *NginxPlus) Stop() {
 	log.Debugf("Stopping NginxPlus source for nginx id: %v", c.baseDimensions.NginxId)
 }
 
-func (c *NginxPlus) sendMetrics(ctx context.Context, m chan<- *proto.StatsEntity, entries ...*proto.StatsEntity) {
+func (c *NginxPlus) sendMetrics(ctx context.Context, m chan<- *metrics.StatsEntityWrapper, entries ...*metrics.StatsEntityWrapper) {
 	for _, entry := range entries {
 		select {
 		case <-ctx.Done():
@@ -116,7 +116,7 @@ func (c *NginxPlus) sendMetrics(ctx context.Context, m chan<- *proto.StatsEntity
 	}
 }
 
-func (c *NginxPlus) collectMetrics(stats, prevStats *plusclient.Stats) (entries []*proto.StatsEntity) {
+func (c *NginxPlus) collectMetrics(stats, prevStats *plusclient.Stats) (entries []*metrics.StatsEntityWrapper) {
 	entries = append(entries,
 		c.instanceMetrics(stats, prevStats),
 		c.commonMetrics(stats, prevStats),
@@ -124,16 +124,17 @@ func (c *NginxPlus) collectMetrics(stats, prevStats *plusclient.Stats) (entries 
 	entries = append(entries, c.serverZoneMetrics(stats, prevStats)...)
 	entries = append(entries, c.streamServerZoneMetrics(stats, prevStats)...)
 	entries = append(entries, c.locationZoneMetrics(stats, prevStats)...)
-	entries = append(entries, c.cacheMetrics(stats, prevStats)...)
-	entries = append(entries, c.httpUpstreamMetrics(stats, prevStats)...)
-	entries = append(entries, c.streamUpstreamMetrics(stats, prevStats)...)
 	entries = append(entries, c.slabMetrics(stats, prevStats)...)
 	entries = append(entries, c.httpLimitConnsMetrics(stats, prevStats)...)
 	entries = append(entries, c.httpLimitRequestMetrics(stats, prevStats)...)
-	return entries
+	entries = append(entries, c.cacheMetrics(stats, prevStats)...)
+	entries = append(entries, c.httpUpstreamMetrics(stats, prevStats)...)
+	entries = append(entries, c.streamUpstreamMetrics(stats, prevStats)...)
+
+	return
 }
 
-func (c *NginxPlus) instanceMetrics(stats, prevStats *plusclient.Stats) *proto.StatsEntity {
+func (c *NginxPlus) instanceMetrics(stats, prevStats *plusclient.Stats) *metrics.StatsEntityWrapper {
 	l := &namedMetric{namespace: c.nginxNamespace, group: ""}
 
 	configGeneration := stats.NginxInfo.Generation - prevStats.NginxInfo.Generation
@@ -147,11 +148,11 @@ func (c *NginxPlus) instanceMetrics(stats, prevStats *plusclient.Stats) *proto.S
 	})
 
 	dims := c.baseDimensions.ToDimensions()
-	return metrics.NewStatsEntity(dims, simpleMetrics)
+	return metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE)
 }
 
 // commonMetrics uses the namespace of nginx because the metrics are common between oss and plus
-func (c *NginxPlus) commonMetrics(stats, prevStats *plusclient.Stats) *proto.StatsEntity {
+func (c *NginxPlus) commonMetrics(stats, prevStats *plusclient.Stats) *metrics.StatsEntityWrapper {
 	l := &namedMetric{namespace: c.nginxNamespace, group: "http"}
 
 	// For the case if nginx restarted (systemctl restart nginx), the stats counters were reset to zero, and
@@ -182,10 +183,10 @@ func (c *NginxPlus) commonMetrics(stats, prevStats *plusclient.Stats) *proto.Sta
 	})
 
 	dims := c.baseDimensions.ToDimensions()
-	return metrics.NewStatsEntity(dims, simpleMetrics)
+	return metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE)
 }
 
-func (c *NginxPlus) sslMetrics(stats, prevStats *plusclient.Stats) *proto.StatsEntity {
+func (c *NginxPlus) sslMetrics(stats, prevStats *plusclient.Stats) *metrics.StatsEntityWrapper {
 	l := &namedMetric{namespace: c.plusNamespace, group: ""}
 
 	sslHandshakes := stats.SSL.Handshakes - prevStats.SSL.Handshakes
@@ -208,11 +209,11 @@ func (c *NginxPlus) sslMetrics(stats, prevStats *plusclient.Stats) *proto.StatsE
 	})
 
 	dims := c.baseDimensions.ToDimensions()
-	return metrics.NewStatsEntity(dims, simpleMetrics)
+	return metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE)
 }
 
-func (c *NginxPlus) serverZoneMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
-	zoneMetrics := make([]*proto.StatsEntity, 0)
+func (c *NginxPlus) serverZoneMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+	zoneMetrics := make([]*metrics.StatsEntityWrapper, 0)
 	for name, sz := range stats.ServerZones {
 		l := &namedMetric{namespace: c.plusNamespace, group: "http"}
 
@@ -273,14 +274,14 @@ func (c *NginxPlus) serverZoneMetrics(stats, prevStats *plusclient.Stats) []*pro
 
 		dims := c.baseDimensions.ToDimensions()
 		dims = append(dims, &proto.Dimension{Name: "server_zone", Value: name})
-		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
+		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
 
 	return zoneMetrics
 }
 
-func (c *NginxPlus) streamServerZoneMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
-	zoneMetrics := make([]*proto.StatsEntity, 0)
+func (c *NginxPlus) streamServerZoneMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+	zoneMetrics := make([]*metrics.StatsEntityWrapper, 0)
 	for name, ssz := range stats.StreamServerZones {
 		l := &namedMetric{namespace: c.plusNamespace, group: "stream"}
 
@@ -331,13 +332,13 @@ func (c *NginxPlus) streamServerZoneMetrics(stats, prevStats *plusclient.Stats) 
 
 		dims := c.baseDimensions.ToDimensions()
 		dims = append(dims, &proto.Dimension{Name: "server_zone", Value: name})
-		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
+		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
 	return zoneMetrics
 }
 
-func (c *NginxPlus) locationZoneMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
-	zoneMetrics := make([]*proto.StatsEntity, 0)
+func (c *NginxPlus) locationZoneMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+	zoneMetrics := make([]*metrics.StatsEntityWrapper, 0)
 	for name, lz := range stats.LocationZones {
 		l := &namedMetric{namespace: c.plusNamespace, group: "http"}
 
@@ -397,14 +398,14 @@ func (c *NginxPlus) locationZoneMetrics(stats, prevStats *plusclient.Stats) []*p
 
 		dims := c.baseDimensions.ToDimensions()
 		dims = append(dims, &proto.Dimension{Name: "location_zone", Value: name})
-		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
+		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
 
 	return zoneMetrics
 }
 
-func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
-	upstreamMetrics := make([]*proto.StatsEntity, 0)
+func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+	upstreamMetrics := make([]*metrics.StatsEntityWrapper, 0)
 	for name, u := range stats.Upstreams {
 		httpUpstreamHeaderTimes := []float64{}
 		httpUpstreamResponseTimes := []float64{}
@@ -496,7 +497,7 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*p
 			peerDims = append(peerDims, &proto.Dimension{Name: "upstream_zone", Value: u.Zone})
 			peerDims = append(peerDims, &proto.Dimension{Name: "peer.name", Value: peer.Name})
 			peerDims = append(peerDims, &proto.Dimension{Name: "peer.address", Value: peer.Server})
-			upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntity(peerDims, simpleMetrics2))
+			upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntityWrapper(peerDims, simpleMetrics2, proto.MetricsReport_UPSTREAMS))
 		}
 
 		upstreamQueueOverflows := u.Queue.Overflows - prevStats.Upstreams[name].Queue.Overflows
@@ -529,14 +530,14 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*p
 		upstreamDims := c.baseDimensions.ToDimensions()
 		upstreamDims = append(upstreamDims, &proto.Dimension{Name: "upstream", Value: name})
 		upstreamDims = append(upstreamDims, &proto.Dimension{Name: "upstream_zone", Value: u.Zone})
-		upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntity(upstreamDims, simpleMetrics))
+		upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntityWrapper(upstreamDims, simpleMetrics, proto.MetricsReport_UPSTREAMS))
 	}
 
 	return upstreamMetrics
 }
 
-func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
-	upstreamMetrics := make([]*proto.StatsEntity, 0)
+func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+	upstreamMetrics := make([]*metrics.StatsEntityWrapper, 0)
 	for name, u := range stats.StreamUpstreams {
 		streamUpstreamResponseTimes := []float64{}
 		streamUpstreamConnTimes := []float64{}
@@ -605,7 +606,7 @@ func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []
 			peerDims = append(peerDims, &proto.Dimension{Name: "upstream_zone", Value: u.Zone})
 			peerDims = append(peerDims, &proto.Dimension{Name: "peer.name", Value: peer.Name})
 			peerDims = append(peerDims, &proto.Dimension{Name: "peer.address", Value: peer.Server})
-			upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntity(peerDims, simpleMetrics2))
+			upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntityWrapper(peerDims, simpleMetrics2, proto.MetricsReport_UPSTREAMS))
 		}
 
 		simpleMetrics := l.convertSamplesToSimpleMetrics(map[string]float64{
@@ -629,14 +630,14 @@ func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []
 		upstreamDims := c.baseDimensions.ToDimensions()
 		upstreamDims = append(upstreamDims, &proto.Dimension{Name: "upstream", Value: name})
 		upstreamDims = append(upstreamDims, &proto.Dimension{Name: "upstream_zone", Value: u.Zone})
-		upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntity(upstreamDims, simpleMetrics))
+		upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntityWrapper(upstreamDims, simpleMetrics, proto.MetricsReport_UPSTREAMS))
 	}
 
 	return upstreamMetrics
 }
 
-func (c *NginxPlus) cacheMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
-	zoneMetrics := make([]*proto.StatsEntity, 0)
+func (c *NginxPlus) cacheMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+	zoneMetrics := make([]*metrics.StatsEntityWrapper, 0)
 	for name, ca := range stats.Caches {
 		l := &namedMetric{namespace: c.plusNamespace, group: "cache"}
 
@@ -718,15 +719,15 @@ func (c *NginxPlus) cacheMetrics(stats, prevStats *plusclient.Stats) []*proto.St
 
 		dims := c.baseDimensions.ToDimensions()
 		dims = append(dims, &proto.Dimension{Name: "cache_zone", Value: name})
-		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
+		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_CACHE_ZONE))
 	}
 
 	return zoneMetrics
 }
 
-func (c *NginxPlus) slabMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
+func (c *NginxPlus) slabMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
 	l := &namedMetric{namespace: c.plusNamespace, group: ""}
-	slabMetrics := make([]*proto.StatsEntity, 0)
+	slabMetrics := make([]*metrics.StatsEntityWrapper, 0)
 
 	for name, slab := range stats.Slabs {
 		pages := slab.Pages
@@ -746,7 +747,7 @@ func (c *NginxPlus) slabMetrics(stats, prevStats *plusclient.Stats) []*proto.Sta
 
 		dims := c.baseDimensions.ToDimensions()
 		dims = append(dims, &proto.Dimension{Name: "zone", Value: name})
-		slabMetrics = append(slabMetrics, metrics.NewStatsEntity(dims, slabSimpleMetrics))
+		slabMetrics = append(slabMetrics, metrics.NewStatsEntityWrapper(dims, slabSimpleMetrics, proto.MetricsReport_INSTANCE))
 
 		for slotNum, slot := range slab.Slots {
 			slotSimpleMetrics := l.convertSamplesToSimpleMetrics(map[string]float64{
@@ -755,15 +756,15 @@ func (c *NginxPlus) slabMetrics(stats, prevStats *plusclient.Stats) []*proto.Sta
 				"slab.slots." + slotNum + ".reqs":  float64(slot.Reqs),
 				"slab.slots." + slotNum + ".used":  float64(slot.Used),
 			})
-			slabMetrics = append(slabMetrics, metrics.NewStatsEntity(dims, slotSimpleMetrics))
+			slabMetrics = append(slabMetrics, metrics.NewStatsEntityWrapper(dims, slotSimpleMetrics, proto.MetricsReport_INSTANCE))
 		}
 	}
 
 	return slabMetrics
 }
 
-func (c *NginxPlus) httpLimitConnsMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
-	limitConnsMetrics := make([]*proto.StatsEntity, 0)
+func (c *NginxPlus) httpLimitConnsMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+	limitConnsMetrics := make([]*metrics.StatsEntityWrapper, 0)
 
 	for name, lc := range stats.HTTPLimitConnections {
 		l := &namedMetric{namespace: c.plusNamespace, group: "http"}
@@ -774,14 +775,14 @@ func (c *NginxPlus) httpLimitConnsMetrics(stats, prevStats *plusclient.Stats) []
 		})
 		dims := c.baseDimensions.ToDimensions()
 		dims = append(dims, &proto.Dimension{Name: "limit_conn_zone", Value: name})
-		limitConnsMetrics = append(limitConnsMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
+		limitConnsMetrics = append(limitConnsMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 
 	}
 	return limitConnsMetrics
 }
 
-func (c *NginxPlus) httpLimitRequestMetrics(stats, prevStats *plusclient.Stats) []*proto.StatsEntity {
-	limitRequestMetrics := make([]*proto.StatsEntity, 0)
+func (c *NginxPlus) httpLimitRequestMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+	limitRequestMetrics := make([]*metrics.StatsEntityWrapper, 0)
 
 	for name, lr := range stats.HTTPLimitRequests {
 		l := &namedMetric{namespace: c.plusNamespace, group: "http"}
@@ -794,7 +795,7 @@ func (c *NginxPlus) httpLimitRequestMetrics(stats, prevStats *plusclient.Stats) 
 		})
 		dims := c.baseDimensions.ToDimensions()
 		dims = append(dims, &proto.Dimension{Name: "limit_req_zone", Value: name})
-		limitRequestMetrics = append(limitRequestMetrics, metrics.NewStatsEntity(dims, simpleMetrics))
+		limitRequestMetrics = append(limitRequestMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 
 	}
 	return limitRequestMetrics
