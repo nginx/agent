@@ -130,3 +130,9 @@ func (c *NginxCollector) Stop() {
 func (c *NginxCollector) GetNginxId() string {
 	return c.dimensions.NginxId
 }
+
+func (c *NginxCollector) UpdateSources() {
+	for _, nginxSource := range c.sources {
+		nginxSource.Update(c.dimensions, c.collectorConf)
+	}
+}

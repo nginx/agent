@@ -104,7 +104,7 @@ func (m *Metrics) Process(msg *core.Message) {
 		return
 
 	case msg.Exact(core.NginxConfigApplySucceeded):
-		m.updateCollectorsConfig()
+		m.updateCollectorsSources()
 		return
 
 	case msg.Exact(core.NginxDetailProcUpdate):
@@ -345,5 +345,12 @@ func (m *Metrics) updateCollectorsConfig() {
 			}
 		}
 		collector.UpdateConfig(m.conf)
+	}
+}
+
+func (m *Metrics) updateCollectorsSources() {
+	log.Trace("Updating collector config")
+	for _, collector := range m.collectors {
+		collector.UpdateSources()
 	}
 }

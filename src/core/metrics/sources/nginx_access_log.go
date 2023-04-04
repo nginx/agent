@@ -101,7 +101,6 @@ func NewNginxAccessLog(
 		nginxAccessLog.logFormats[logFile] = logFormat
 		go nginxAccessLog.logStats(logCTX, logFile, logFormat)
 	}
-
 	return nginxAccessLog
 }
 
@@ -121,6 +120,11 @@ func (c *NginxAccessLog) Update(dimensions *metrics.CommonDim, collectorConf *me
 	}
 
 	// remove old access logs
+	// add new access logs
+	syncLogs(c)
+}
+
+func syncLogs(c *NginxAccessLog) {
 	for f, fn := range c.logs {
 		log.Infof("Removing access log tailer: %s", f)
 		fn()
@@ -130,13 +134,14 @@ func (c *NginxAccessLog) Update(dimensions *metrics.CommonDim, collectorConf *me
 
 	logs := c.binary.GetAccessLogs()
 
-	// add new access logs
 	for logFile, logFormat := range logs {
-		log.Infof("Adding access log tailer: %s", logFile)
-		logCTX, fn := context.WithCancel(context.Background())
-		c.logs[logFile] = fn
-		c.logFormats[logFile] = logFormat
-		go c.logStats(logCTX, logFile, logFormat)
+		if _, ok := c.logs[logFile]; !ok || c.logFormats[logFile] != logFormat {
+			log.Infof("Adding access log tailer: %s", logFile)
+			logCTX, fn := context.WithCancel(context.Background())
+			c.logs[logFile] = fn
+		  	c.logFormats[logFile] = logFormat
+		  	go c.logStats(logCTX, logFile, logFormat)
+		}
 	}
 }
 
@@ -152,28 +157,6 @@ func (c *NginxAccessLog) Stop() {
 func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	logs := c.binary.GetAccessLogs()
-
-	if c.binary.UpdateLogs(c.logFormats, logs) {
-		log.Info("Access logs updated")
-		// cancel any removed access logs
-		for f, fn := range c.logs {
-			if _, ok := logs[f]; !ok {
-				log.Infof("Removing access log tailer: %s", f)
-				fn()
-				delete(c.logs, f)
-			}
-		}
-		// add any new ones
-		for logFile, logFormat := range logs {
-			if _, ok := c.logs[logFile]; !ok {
-				log.Infof("Adding access log tailer: %s", logFile)
-				logCTX, fn := context.WithCancel(context.Background())
-				c.logs[logFile] = fn
-				go c.logStats(logCTX, logFile, logFormat)
-			}
-		}
-	}
 
 	for _, stat := range c.buf {
 		m <- stat
