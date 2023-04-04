@@ -158,6 +158,8 @@ github.com/envoyproxy/protoc-gen-validate v0.3.0-java h1:bV5JGEB1ouEzZa0hgVDFFiC
 github.com/envoyproxy/protoc-gen-validate v0.3.0-java/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/evilmartians/lefthook v1.3.8 h1:5SOqN6vd7S7FYvr9MDNM2g2lq/kTE3uTWY7Qt63uuj8=
 github.com/evilmartians/lefthook v1.3.8/go.mod h1:FTw9v/+5Tg5AlrLPxS2kJeqHhQNqhUA+6/WdGeaf41s=
+github.com/evilmartians/lefthook v1.3.9 h1:absf5hzDlY4Cxq0z4RyRlV5/Hu2EQFoXJ55kRZycsAQ=
+github.com/evilmartians/lefthook v1.3.9/go.mod h1:FTw9v/+5Tg5AlrLPxS2kJeqHhQNqhUA+6/WdGeaf41s=
 github.com/fatih/color v1.14.1 h1:qfhVLaG5s+nCROl1zJsZRxFeYrHLqWroPOQ8BWiNb4w=
 github.com/fatih/color v1.14.1/go.mod h1:2oHN61fhTpgcxD3TSWCgKDiH1+x4OiDVVGH8WlgGZGg=
 github.com/felixge/fgprof v0.9.3 h1:VvyZxILNuCiUCSXtPtYmmtGvb65nqXh2QFWc0Wpf2/g=
