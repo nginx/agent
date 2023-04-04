@@ -270,7 +270,7 @@ func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, 
 	}
 
 	err = n.validateConfigCheckResponse(response, configLocation)
-	if err != nil  {
+	if err != nil {
 		return err
 	}
 
@@ -279,12 +279,12 @@ func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, 
 	return nil
 }
 
-func (n *NginxBinaryType) validateConfigCheckResponse(response *bytes.Buffer, configLocation string) (error) {
+func (n *NginxBinaryType) validateConfigCheckResponse(response *bytes.Buffer, configLocation string) error {
 	if bytes.Contains(response.Bytes(), []byte("[emerg]")) {
 		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
 	}
 
-	if (n.config.Nginx.TreatWarningsAsErrors && bytes.Contains(response.Bytes(), []byte("[warn]"))) {
+	if n.config.Nginx.TreatWarningsAsErrors && bytes.Contains(response.Bytes(), []byte("[warn]")) {
 		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
 	}
 	return nil

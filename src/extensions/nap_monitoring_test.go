@@ -10,11 +10,11 @@ package extensions
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNAPMonitoring(t *testing.T) {
