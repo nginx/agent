@@ -20,7 +20,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
-	"github.com/nginx/agent/v2/src/core/metrics/sources/tailer"
+	"github.com/nginx/agent/v2/src/core/tailer"
 
 	log "github.com/sirupsen/logrus"
 )
