@@ -12,13 +12,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/nap"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
