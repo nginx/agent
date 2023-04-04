@@ -136,21 +136,21 @@ func syncLogs(c *NginxAccessLog) {
 
 	for logFile, logFormat := range logs {
 		if _, ok := c.logs[logFile]; !ok {
-		  c.startTailer(logFile, logFormat)
+			c.startTailer(logFile, logFormat)
 		} else if c.logFormats[logFile] != logFormat {
-		  // cancel tailer with old log format
-		  c.logs[logFile]()
-		  c.startTailer(logFile, logFormat)
+			// cancel tailer with old log format
+			c.logs[logFile]()
+			c.startTailer(logFile, logFormat)
 		}
-	  }
+	}
 }
 
 func (c *NginxAccessLog) startTailer(logFile string, logFormat string) {
-    log.Infof("Adding access log tailer: %s", logFile)
-    logCTX, fn := context.WithCancel(context.Background())
-    c.logs[logFile] = fn
-    c.logFormats[logFile] = logFormat
-    go c.logStats(logCTX, logFile, logFormat)
+	log.Infof("Adding access log tailer: %s", logFile)
+	logCTX, fn := context.WithCancel(context.Background())
+	c.logs[logFile] = fn
+	c.logFormats[logFile] = logFormat
+	go c.logStats(logCTX, logFile, logFormat)
 }
 
 func (c *NginxAccessLog) Stop() {

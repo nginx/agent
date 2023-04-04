@@ -98,6 +98,6 @@ func (c *SystemCollector) UpdateConfig(config *config.Config) {
 	c.dim = metrics.NewCommonDim(c.env.NewHostInfo("agentVersion", &config.Tags, config.ConfigDirs, false), config, "")
 }
 
-func (c *SystemCollector) UpdateSources(){
+func (c *SystemCollector) UpdateSources() {
 	log.Info("Something Here")
 }

@@ -971,9 +971,8 @@ func TestNginxBinaryType_validateConfigCheckResponse(t *testing.T) {
 	} {
 		t.Run(test.name, func(tt *testing.T) {
 			binary := NginxBinaryType{
-				env: &EnvironmentType{},
+				env:    &EnvironmentType{},
 				config: &config.Config{Nginx: config.Nginx{Debug: true, TreatWarningsAsErrors: test.treatWarningsAsErrors}},
-
 			}
 			buffer := bytes.NewBuffer([]byte(test.response))
 			err := binary.validateConfigCheckResponse(buffer, "")

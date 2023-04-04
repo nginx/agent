@@ -135,7 +135,7 @@ func TestNginxConfigApply(t *testing.T) {
 		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
 		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
 	}
-	
+
 	t.Parallel()
 
 	tests := []struct {
