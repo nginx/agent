@@ -135,14 +135,22 @@ func syncLogs(c *NginxAccessLog) {
 	logs := c.binary.GetAccessLogs()
 
 	for logFile, logFormat := range logs {
-		if _, ok := c.logs[logFile]; !ok || c.logFormats[logFile] != logFormat {
-			log.Infof("Adding access log tailer: %s", logFile)
-			logCTX, fn := context.WithCancel(context.Background())
-			c.logs[logFile] = fn
-		  	c.logFormats[logFile] = logFormat
-		  	go c.logStats(logCTX, logFile, logFormat)
+		if _, ok := c.logs[logFile]; !ok {
+		  c.startTailer(logFile, logFormat)
+		} else if c.logFormats[logFile] != logFormat {
+		  // cancel tailer with old log format
+		  c.logs[logFile]()
+		  c.startTailer(logFile, logFormat)
 		}
-	}
+	  }
+}
+
+func (c *NginxAccessLog) startTailer(logFile string, logFormat string) {
+    log.Infof("Adding access log tailer: %s", logFile)
+    logCTX, fn := context.WithCancel(context.Background())
+    c.logs[logFile] = fn
+    c.logFormats[logFile] = logFormat
+    go c.logStats(logCTX, logFile, logFormat)
 }
 
 func (c *NginxAccessLog) Stop() {
@@ -194,6 +202,8 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 		select {
 		case d := <-data:
 			access, err := tailer.NewNginxAccessItem(d)
+			log.Info("===============Access Item =================")
+			log.Info(access)
 			upstreamRequest := false
 			if err != nil {
 				c.logger.Log(fmt.Sprintf("Error decoding access log entry, %v", err))

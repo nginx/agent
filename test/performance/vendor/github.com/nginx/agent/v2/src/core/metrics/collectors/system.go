@@ -15,6 +15,8 @@ import (
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/sources"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -94,4 +96,8 @@ func (c *SystemCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m cha
 
 func (c *SystemCollector) UpdateConfig(config *config.Config) {
 	c.dim = metrics.NewCommonDim(c.env.NewHostInfo("agentVersion", &config.Tags, config.ConfigDirs, false), config, "")
+}
+
+func (c *SystemCollector) UpdateSources(){
+	log.Info("Something Here")
 }
