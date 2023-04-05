@@ -676,7 +676,7 @@ func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 func getCacheInfo(cache map[string]string) map[string]string {
 	out, err := shell.Exec("lscpu")
 	if err != nil {
-		log.Tracef("Install lscpu on host to get processor info: %v", err)
+		log.Warnf("Install lscpu on host to get processor info: %v", err)
 		return cache
 	}
 	return parseLscpu(string(out), cache)
