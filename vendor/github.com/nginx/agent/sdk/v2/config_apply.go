@@ -16,10 +16,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/nginx/agent/sdk/v2/zip"
+
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/nginx/agent/sdk/v2/zip"
 )
 
 // ConfigApply facilitates synchronizing the current config against incoming config_apply request. By keeping track
