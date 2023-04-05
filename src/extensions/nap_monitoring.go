@@ -11,8 +11,6 @@ import (
 	"context"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
@@ -21,6 +19,8 @@ import (
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/payloads"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (

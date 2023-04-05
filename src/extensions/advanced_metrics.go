@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -22,6 +21,8 @@ import (
 	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/publisher"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/schema"
+
+	"github.com/gogo/protobuf/types"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -11,14 +11,14 @@ import (
 	"context"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/payloads"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/nap"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -137,7 +137,6 @@ func (n *NginxAppProtect) monitor() {
 	for {
 		select {
 		case updateMsg := <-napUpdateChannel:
-
 			// Communicate the update in NAP status via message pipeline
 			log.Infof("Change in NAP detected... Previous: %+v... Updated: %+v", updateMsg.PreviousReport, updateMsg.UpdatedReport)
 			napReportMsg := n.generateNAPDetailsProtoCommand()
@@ -152,10 +151,8 @@ func (n *NginxAppProtect) monitor() {
 					),
 				),
 			)
-
 		case <-time.After(n.reportInterval):
-			log.Debugf("No NAP changes detected after %v seconds... NAP Values: %+v", n.reportInterval.Seconds(), n.nap.GenerateNAPReport())
-
+			log.Tracef("No NAP changes detected after %v seconds... NAP Values: %+v", n.reportInterval.Seconds(), n.nap.GenerateNAPReport())
 		case <-n.ctx.Done():
 			return
 		}
