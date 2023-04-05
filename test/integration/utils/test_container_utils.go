@@ -30,6 +30,8 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 			map[string]string{
 				"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
 				"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
+				"OS_RELEASE":   os.Getenv("OS_RELEASE"),
+				"OS_VERSION":   os.Getenv("OS_VERSION"),
 			},
 		).Up(ctx, compose.Wait(true)), "compose.Up()")
 
@@ -56,6 +58,8 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 		map[string]string{
 			"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
 			"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
+			"OS_RELEASE":   os.Getenv("OS_RELEASE"),
+			"OS_VERSION":   os.Getenv("OS_VERSION"),
 		},
 	).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 

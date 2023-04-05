@@ -78,6 +78,7 @@ func SetDefaults() {
 
 	// NGINX DEFAULTS
 	Viper.SetDefault(NginxClientVersion, Defaults.Nginx.NginxClientVersion)
+	Viper.SetDefault(NginxConfigReloadMonitoringPeriod, Defaults.Nginx.ConfigReloadMonitoringPeriod)
 }
 
 func setFlagDeprecated(name string, usageMessage string) {
@@ -284,10 +285,12 @@ func getDataplane() Dataplane {
 
 func getNginx() Nginx {
 	return Nginx{
-		ExcludeLogs:         Viper.GetString(NginxExcludeLogs),
-		Debug:               Viper.GetBool(NginxDebug),
-		NginxCountingSocket: Viper.GetString(NginxCountingSocket),
-		NginxClientVersion:  Viper.GetInt(NginxClientVersion),
+		ExcludeLogs:                  Viper.GetString(NginxExcludeLogs),
+		Debug:                        Viper.GetBool(NginxDebug),
+		NginxCountingSocket:          Viper.GetString(NginxCountingSocket),
+		NginxClientVersion:           Viper.GetInt(NginxClientVersion),
+		ConfigReloadMonitoringPeriod: Viper.GetDuration(NginxConfigReloadMonitoringPeriod),
+		TreatWarningsAsErrors:        Viper.GetBool(NginxTreatWarningsAsErrors),
 	}
 }
 

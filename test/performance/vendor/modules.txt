@@ -135,9 +135,9 @@ github.com/nginx/agent/v2/src/core/metrics
 github.com/nginx/agent/v2/src/core/metrics/collectors
 github.com/nginx/agent/v2/src/core/metrics/sources
 github.com/nginx/agent/v2/src/core/metrics/sources/cgroup
-github.com/nginx/agent/v2/src/core/metrics/sources/tailer
 github.com/nginx/agent/v2/src/core/network
 github.com/nginx/agent/v2/src/core/payloads
+github.com/nginx/agent/v2/src/core/tailer
 github.com/nginx/agent/v2/src/extensions
 github.com/nginx/agent/v2/src/extensions/advanced-metrics/aggregator
 github.com/nginx/agent/v2/src/extensions/advanced-metrics/ingester

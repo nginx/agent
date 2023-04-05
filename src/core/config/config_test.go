@@ -148,6 +148,7 @@ func TestGetConfig(t *testing.T) {
 		assert.Equal(t, Defaults.Server.Metrics, config.Server.Metrics)
 
 		assert.Equal(t, Defaults.AgentAPI.Port, config.AgentAPI.Port)
+		assert.Equal(t, Defaults.Nginx.ConfigReloadMonitoringPeriod, config.Nginx.ConfigReloadMonitoringPeriod)
 
 		assert.True(t, len(config.AllowedDirectoriesMap) > 0)
 		assert.Equal(t, Defaults.ConfigDirs, config.ConfigDirs)

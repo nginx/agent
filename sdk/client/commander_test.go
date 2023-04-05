@@ -664,6 +664,7 @@ func (h *handler) recvHandle(server proto.Commander_CommandChannelServer, wg *sy
 		fmt.Printf("Recv Command: %v\n", cmd)
 		if err != nil {
 			fmt.Printf("Recv Command Error: %v\n", err)
+			wg.Done()
 			return
 		}
 		h.fromClient <- cmd
@@ -677,6 +678,7 @@ func (h *handler) sendHandle(server proto.Commander_CommandChannelServer, wg *sy
 		fmt.Printf("Send Command: %v\n", cmd)
 		if err != nil {
 			fmt.Printf("Send Command Error: %v\n", err)
+			wg.Done()
 			return
 		}
 	}
