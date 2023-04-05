@@ -117,22 +117,36 @@ func (c *NginxAccessLog) Update(dimensions *metrics.CommonDim, collectorConf *me
 
 	if c.collectionInterval != collectorConf.CollectionInterval {
 		c.collectionInterval = collectorConf.CollectionInterval
+		// remove old access logs
+		// add new access logs
+		c.recreateLogs()
+	} else {
+		// add, remove or update existing log trailers
+		c.syncLogs()
 	}
 
-	// remove old access logs
-	// add new access logs
-	syncLogs(c)
 }
 
-func syncLogs(c *NginxAccessLog) {
+func (c *NginxAccessLog) recreateLogs() {
 	for f, fn := range c.logs {
-		log.Infof("Removing access log tailer: %s", f)
-		fn()
-		delete(c.logs, f)
-		delete(c.logFormats, f)
+		c.stopTailer(f, fn)
 	}
 
 	logs := c.binary.GetAccessLogs()
+
+	for logFile, logFormat := range logs {
+		c.startTailer(logFile, logFormat)
+	}
+}
+
+func (c *NginxAccessLog) syncLogs() {
+	logs := c.binary.GetAccessLogs()
+
+	for f, fn := range c.logs {
+		if _, ok := logs[f]; !ok {
+			c.stopTailer(f, fn)
+		}
+	}
 
 	for logFile, logFormat := range logs {
 		if _, ok := c.logs[logFile]; !ok {
@@ -151,6 +165,13 @@ func (c *NginxAccessLog) startTailer(logFile string, logFormat string) {
 	c.logs[logFile] = fn
 	c.logFormats[logFile] = logFormat
 	go c.logStats(logCTX, logFile, logFormat)
+}
+
+func (c *NginxAccessLog) stopTailer(logFile string, cancelFunction context.CancelFunc) {
+	log.Infof("Removing access log tailer: %s", logFile)
+	cancelFunction()
+	delete(c.logs, logFile)
+	delete(c.logFormats, logFile)
 }
 
 func (c *NginxAccessLog) Stop() {
@@ -197,13 +218,10 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 	tick := time.NewTicker(c.collectionInterval)
 	defer tick.Stop()
-
 	for {
 		select {
 		case d := <-data:
 			access, err := tailer.NewNginxAccessItem(d)
-			log.Info("===============Access Item =================")
-			log.Info(access)
 			upstreamRequest := false
 			if err != nil {
 				c.logger.Log(fmt.Sprintf("Error decoding access log entry, %v", err))
