@@ -35,6 +35,8 @@ else
     OLD_DYNAMIC_CONFIG_DIR="/etc/nginx-agent"
 fi
 
+OLD_FREE_BSD_FILE="/etc/nginx-agent/agent-dynamic.conf"
+NEW_FREE_BSD_FILE="/var/lib/nginx-agent/agent-dynamic.conf"
 AGENT_DYNAMIC_CONFIG_FILE="${AGENT_DYNAMIC_CONFIG_DIR}/agent-dynamic.conf"
 OLD_DYNAMIC_CONFIG_FILE="${OLD_DYNAMIC_CONFIG_DIR}/agent-dynamic.conf"
 AGENT_DYNAMIC_CONFIG_COMMENT="#
@@ -85,6 +87,9 @@ load_config_values() {
         if [ -f "$OLD_DYNAMIC_CONFIG_FILE" ]; then 
             mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
             ln "$OLD_DYNAMIC_CONFIG_FILE" "$AGENT_DYNAMIC_CONFIG_FILE"
+            if [ "$ID" = "freebsd" ]; then
+                ln "$OLD_FREE_BSD_FILE" "$NEW_FREE_BSD_FILE"
+            fi 
         else
             printf "Could not find %s ... Creating file\n" ${AGENT_DYNAMIC_CONFIG_FILE}
             mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
