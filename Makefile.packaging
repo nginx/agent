@@ -9,10 +9,12 @@ GPG_PUBLIC_KEY      := .key
 
 DEB_DISTROS?=ubuntu-jammy-22.04 ubuntu-focal-20.04 ubuntu-bionic-18.04 debian-bullseye-11 debian-buster-10
 DEB_ARCHS?=arm64 amd64
-RPM_DISTROS?=centos-7-x86_64 oraclelinux-7-x86_64 oraclelinux-8-x86_64 oraclelinux-9-x86_64 redhatenterprise-7-x86_64 redhatenterprise-8-x86_64 redhatenterprise-9-x86_64 suse-12-x86_64 suse-15-x86_64
+RPM_DISTROS?=centos-7-x86_64 oraclelinux-7-x86_64 oraclelinux-8-x86_64 oraclelinux-9-x86_64 suse-12-x86_64 suse-15-x86_64
+RPM_ARCH=x86_64
+REDHAT_VERSIONS?=redhatenterprise-7 redhatenterprise-8 redhatenterprise-9
+REDHAT_ARCHS?=aarch64 x86_64
 ROCKY_VERSIONS?=rocky-8 rocky-9
 ROCKY_ARCHS?=aarch64 x86_64
-RPM_ARCH=x86_64
 FREEBSD_DISTROS?="FreeBSD:12:amd64" "FreeBSD:13:amd64"
 APK_VERSIONS?=3.13 3.14 3.15 3.16
 APK_ARCHS?=aarch64 x86_64
@@ -67,6 +69,23 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 		fi; \
 	done; \
 	rm -rf ./build/nginx-agent
+
+
+	# Create redhat rpm packages
+	
+	@for arch in $(REDHAT_ARCHS); do \
+		goarch=amd64; \
+		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		for distro in $(REDHAT_VERSIONS); do \
+			rpm_distro=`echo $$distro | cut -d- -f 1`; \
+			rpm_major=`echo $$distro | cut -d- -f 2`; \
+			rpm_codename="el$$rpm_major"; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+		done; \
+		rm -rf ./build/nginx-agent; \
+	done; \
 
 	# Create almalinux rpm packages
 	
