@@ -32,8 +32,9 @@ import (
 )
 
 const (
-	configAppliedProcessedResponse = "config apply request successfully processed"
-	configAppliedResponse          = "config applied successfully"
+	configAppliedProcessedResponse  = "config apply request successfully processed"
+	configAppliedResponse           = "config applied successfully"
+	nginxConfigAsyncFeatureDisabled = "nginx-config-async feature is disabled"
 )
 
 var (
@@ -82,7 +83,7 @@ type NginxConfigValidationResponse struct {
 }
 
 func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config) *Nginx {
-	isFeatureNginxConfigEnabled := loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfig)
+	isFeatureNginxConfigEnabled := loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfig) || loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
 
 	return &Nginx{
 		nginxBinary:                        nginxBinary,
@@ -119,8 +120,21 @@ func (n *Nginx) Process(message *core.Message) {
 		case *proto.Command:
 			n.processCmd(cmd)
 		case *AgentAPIConfigApplyRequest:
-			status := n.writeConfigAndReloadNginx(cmd.correlationId, cmd.config, proto.NginxConfigAction_APPLY)
-			if status.NginxConfigResponse.GetStatus().GetMessage() != configAppliedProcessedResponse {
+			if n.isFeatureNginxConfigEnabled {
+				status := n.writeConfigAndReloadNginx(cmd.correlationId, cmd.config, proto.NginxConfigAction_APPLY)
+				if status.NginxConfigResponse.GetStatus().GetMessage() != configAppliedProcessedResponse {
+					n.messagePipeline.Process(core.NewMessage(core.AgentAPIConfigApplyResponse, status))
+				}
+			} else {
+				log.Warnf("unable to process NGINX config apply request as the nginx-config-async feature is disabled")
+				// TODO: Return a status code to Agent API
+				status := &proto.Command_NginxConfigResponse{
+					NginxConfigResponse: &proto.NginxConfigResponse{
+						Status:     newErrStatus(nginxConfigAsyncFeatureDisabled).CmdStatus,
+						Action:     proto.NginxConfigAction_APPLY,
+						ConfigData: cmd.config.ConfigData,
+					},
+				}
 				n.messagePipeline.Process(core.NewMessage(core.AgentAPIConfigApplyResponse, status))
 			}
 		}
@@ -217,6 +231,10 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	if err != nil {
 		log.Errorf("Unable to read nginx config %s: %v", nginx.GetConfPath(), err)
 		return err
+	}
+
+	if !n.config.IsFeatureEnabled(agent_config.FeatureNginxSSLConfig) {
+		cfg.Ssl = &proto.SslCertificates{SslCerts: make([]*proto.SslCertificate, 0)}
 	}
 
 	if n.isNAPEnabled {
@@ -656,7 +674,6 @@ func (n *Nginx) syncAgentConfigChange() {
 		n.isNAPEnabled = false
 	}
 
-	n.isFeatureNginxConfigEnabled = conf.IsFeatureEnabled(agent_config.FeatureNginxConfig)
-
+	n.isFeatureNginxConfigEnabled = conf.IsFeatureEnabled(agent_config.FeatureNginxConfig) || conf.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
 	n.config = conf
 }

@@ -188,6 +188,8 @@ func GetConfig(clientId string) (*Config, error) {
 		AdvancedMetrics:       getAdvancedMetrics(),
 	}
 
+	log.Info(config.Features)
+
 	for _, dir := range strings.Split(config.ConfigDirs, ":") {
 		if dir != "" {
 			config.AllowedDirectoriesMap[dir] = struct{}{}
@@ -227,6 +229,12 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 	Viper.Set(TagsKey, updateTags)
 	config.Tags = Viper.GetStringSlice(TagsKey)
 
+	// Needed for legacy reasons.
+	// Remove Features_ prefix from the feature strings.
+	// This is needed for management servers that are sending features before sdk version v2.23.0
+	for index, feature := range updateFeatures {
+		updateFeatures[index] = strings.Replace(feature, "Features_", "", 1)
+	}
 	sort.Strings(updateFeatures)
 	sort.Strings(config.Features)
 	synchronizedFeatures := reflect.DeepEqual(updateFeatures, config.Features)

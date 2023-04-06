@@ -276,16 +276,6 @@ func TestMetrics_Process_AgentConfigChanged(t *testing.T) {
 	}
 }
 
-func TestMetrics_Process_RegistrationCompleted(t *testing.T) {
-	env := tutils.GetMockEnvWithProcess()
-	env.On("IsContainer").Return(false)
-
-	pluginUnderTest := NewMetrics(tutils.GetMockAgentConfig(), env, tutils.GetMockNginxBinary())
-	pluginUnderTest.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
-
-	assert.True(t, pluginUnderTest.registrationComplete.Load())
-}
-
 func TestMetrics_Process_AgentCollectorsUpdate(t *testing.T) {
 	env := tutils.GetMockEnvWithProcess()
 	env.On("IsContainer").Return(false)

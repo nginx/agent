@@ -243,6 +243,7 @@ func (a *AgentAPI) createHttpServer() {
 //
 //	200: MetricsResponse
 func (a *AgentAPI) getPrometheusHandler() http.Handler {
+	// TODO: how to return error code when metrics feature is disabled ???
 	registerer := prometheus.DefaultRegisterer
 	gatherer := prometheus.DefaultGatherer
 
@@ -376,7 +377,11 @@ func (h *NginxHandler) updateConfig(w http.ResponseWriter, r *http.Request) erro
 			}
 
 			if response.NginxConfigResponse.GetStatus().GetStatus() != proto.CommandStatusResponse_CMD_OK {
-				w.WriteHeader(http.StatusBadRequest)
+				if response.NginxConfigResponse.Status.Error == nginxConfigAsyncFeatureDisabled {
+					w.WriteHeader(http.StatusForbidden)
+				} else {
+					w.WriteHeader(http.StatusBadRequest)
+				}
 				nginxResponse.Status = errorStatus
 			} else {
 				if response.NginxConfigResponse.GetStatus().GetMessage() == configAppliedProcessedResponse {

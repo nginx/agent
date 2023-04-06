@@ -26,7 +26,6 @@ import (
 
 type Metrics struct {
 	pipeline                 core.MessagePipeInterface
-	registrationComplete     *atomic.Bool
 	collectorsReady          *atomic.Bool
 	collectorsUpdate         *atomic.Bool
 	ticker                   *time.Ticker
@@ -48,7 +47,6 @@ func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBi
 
 	collectorConfigsMap := createCollectorConfigsMap(config, env, binary)
 	return &Metrics{
-		registrationComplete:     atomic.NewBool(false),
 		collectorsReady:          atomic.NewBool(false),
 		collectorsUpdate:         atomic.NewBool(false),
 		ticker:                   time.NewTicker(config.AgentMetrics.CollectionInterval),
@@ -79,10 +77,6 @@ func (m *Metrics) Close() {
 func (m *Metrics) Process(msg *core.Message) {
 	log.Debugf("Process function in the metrics.go, %s %v", msg.Topic(), msg.Data())
 	switch {
-	case msg.Exact(core.RegistrationCompletedTopic):
-		m.registrationComplete.Store(true)
-		return
-
 	case msg.Exact(core.AgentConfigChanged), msg.Exact(core.NginxStatusAPIUpdate):
 		// If the agent config on disk changed or the NGINX statusAPI was updated
 		// Then update Metrics with relevant config info
@@ -172,7 +166,7 @@ func (m *Metrics) metricsGoroutine() {
 	defer m.wg.Done()
 	log.Info("Metrics waiting for handshake to be completed")
 	for {
-		if !m.collectorsReady.Load() || !m.registrationComplete.Load() {
+		if !m.collectorsReady.Load() {
 			continue
 		}
 
