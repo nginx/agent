@@ -128,13 +128,6 @@ func (c *Commander) dispatchLoop() {
 	for {
 		var cmd *proto.Command
 		select {
-		case <-c.ctx.Done():
-			log.Debug("cmdr dispatch loop exiting")
-			err := c.ctx.Err()
-			if err != nil {
-				log.Errorf("error in done context commander dispatchLoop %v", err)
-			}
-			return
 		case msg := <-c.cmdr.Recv():
 			switch msg.Classification() {
 			case client.MsgClassificationCommand:
@@ -146,6 +139,13 @@ func (c *Commander) dispatchLoop() {
 				log.Warnf("expected %T type, but got: %T", &proto.Command{}, msg.Raw())
 				continue
 			}
+		case <-c.ctx.Done():
+			log.Debug("cmdr dispatch loop exiting")
+			err := c.ctx.Err()
+			if err != nil {
+				log.Errorf("error in done context commander dispatchLoop %v", err)
+			}
+			return
 		}
 
 		log.Debugf("Command msg from data plane: %v", cmd)
