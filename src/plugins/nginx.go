@@ -454,6 +454,10 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	rollback := false
 
 	var rollbackError error
+	// get the process info before reload
+	// so we can compare against after reload
+	processInfo := n.getNginxProccessInfo()
+
 	reloadErr := n.nginxBinary.Reload(response.nginxDetails.ProcessId, response.nginxDetails.ProcessPath)
 	if reloadErr != nil {
 		nginxConfigStatusMessage = fmt.Sprintf("Config apply failed (write): %v", reloadErr)
@@ -461,7 +465,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 		rollbackError = reloadErr
 		rollback = true
 	} else {
-		rollbackError = n.monitor()
+		rollbackError = n.monitor(processInfo)
 		if rollbackError != nil {
 			nginxConfigStatusMessage = fmt.Sprintf("Config apply failed. Errors found during monitoring period after applying a new configuration: %v", rollbackError)
 			rollback = true
@@ -556,12 +560,11 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	return status
 }
 
-func (n *Nginx) monitor() error {
+func (n *Nginx) monitor(processInfo []core.Process) error {
 	log.Info("Monitoring post reload for changes")
 	n.monitorMutex.Lock()
 	defer n.monitorMutex.Unlock()
 	var errorsFound []string
-	processInfo := n.getNginxProccessInfo()
 	errorLogs := n.nginxBinary.GetErrorLogs()
 
 	logErrorChannel := make(chan string, len(errorLogs))
