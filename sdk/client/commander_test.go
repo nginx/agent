@@ -613,10 +613,12 @@ func (c *mockCommanderService) Download(request *proto.DownloadRequest, server p
 	for {
 		data := <-c.downloadChannel
 		fmt.Printf("Download Send: %v\n", data)
-		err := server.Send(data)
-		if err != nil {
-			fmt.Printf("Download Send Error: %v\n", err)
-			return err
+		if data != nil {
+			err := server.Send(data)
+			if err != nil {
+				fmt.Printf("Download Send Error: %v\n", err)
+				return err
+			}
 		}
 	}
 }
@@ -661,26 +663,31 @@ func (c *mockCommanderService) ensureHandler() *handler {
 func (h *handler) recvHandle(server proto.Commander_CommandChannelServer, wg *sync.WaitGroup) {
 	for {
 		cmd, err := server.Recv()
-		fmt.Printf("Recv Command: %v\n", cmd)
-		if err != nil {
-			fmt.Printf("Recv Command Error: %v\n", err)
-			wg.Done()
-			return
+		if cmd != nil {
+			fmt.Printf("Recv Command: %v\n", cmd)
+			if err != nil {
+				fmt.Printf("Recv Command Error: %v\n", err)
+				wg.Done()
+				return
+			}
+			h.fromClient <- cmd
 		}
-		h.fromClient <- cmd
 	}
 }
 
 func (h *handler) sendHandle(server proto.Commander_CommandChannelServer, wg *sync.WaitGroup) {
 	for {
 		cmd := <-h.toClient
-		err := server.Send(cmd)
-		fmt.Printf("Send Command: %v\n", cmd)
-		if err != nil {
-			fmt.Printf("Send Command Error: %v\n", err)
-			wg.Done()
-			return
+		if cmd != nil {
+			err := server.Send(cmd)
+			fmt.Printf("Send Command: %v\n", cmd)
+			if err != nil {
+				fmt.Printf("Send Command Error: %v\n", err)
+				wg.Done()
+				return
+			}
 		}
+
 	}
 }
 
