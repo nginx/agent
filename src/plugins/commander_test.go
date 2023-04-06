@@ -10,18 +10,16 @@ package plugins
 import (
 	"context"
 	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
-
 	tutils "github.com/nginx/agent/v2/test/utils"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestCommander_Process(t *testing.T) {
@@ -243,7 +241,7 @@ func TestCommander_Process(t *testing.T) {
 			pluginUnderTest.ctx = ctx
 			pluginUnderTest.Process(core.NewMessage(test.topic, test.cmd))
 
-			assert.Eventually(tt, func() bool { return len(messagePipe.GetMessages()) == len(test.msgTopics) }, 1*time.Second, 100*time.Millisecond)
+			assert.Len(tt, messagePipe.GetMessages(), len(test.msgTopics))
 			cmdr.AssertExpectations(tt)
 
 			messages := messagePipe.GetMessages()
@@ -293,7 +291,6 @@ func TestCommander_Close(t *testing.T) {
 
 	messagePipe.Process(m)
 	messagePipe.Run()
-	time.Sleep(250 * time.Millisecond)
 
 	cancel()
 	pluginUnderTest.Close()
