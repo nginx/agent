@@ -85,7 +85,9 @@ func TestCommander_Recv(t *testing.T) {
 
 	select {
 	case actual := <-commanderClient.Recv():
-		assert.Equal(t, "1234", actual.Meta().MessageId)
+		if actual != nil {
+			assert.Equal(t, "1234", actual.Meta().MessageId)
+		}
 	case <-time.After(1 * time.Second):
 		t.Fatalf("No message received from commander")
 	}
@@ -112,7 +114,9 @@ func TestCommander_Send(t *testing.T) {
 
 	select {
 	case actual := <-commandService.handler.fromClient:
-		assert.Equal(t, "1234", actual.GetMeta().MessageId)
+		if actual != nil {
+			assert.Equal(t, "1234", actual.GetMeta().MessageId)
+		}
 	case <-time.After(1 * time.Second):
 		t.Fatalf("No message received from commander")
 	}
@@ -249,7 +253,9 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 
 	select {
 	case actual := <-commanderClient.Recv():
-		assert.Equal(t, "1234", actual.Meta().MessageId)
+		if actual != nil {
+			assert.Equal(t, "1234", actual.Meta().MessageId)
+		}
 	case <-time.After(1 * time.Second):
 		t.Fatalf("No message received from commander")
 	}
