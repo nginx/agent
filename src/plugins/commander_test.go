@@ -286,7 +286,8 @@ func TestCommander_Close(t *testing.T) {
 
 	m := core.NewMessage(core.AgentConnected, &proto.Command{
 		Data: &proto.Command_AgentConnectResponse{
-			AgentConnectResponse: &proto.AgentConnectResponse{}},
+			AgentConnectResponse: &proto.AgentConnectResponse{},
+		},
 	})
 
 	messagePipe.Process(m)
