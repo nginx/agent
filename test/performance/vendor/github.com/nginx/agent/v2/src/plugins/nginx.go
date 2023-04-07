@@ -569,40 +569,40 @@ func (n *Nginx) monitor(processInfo []core.Process) error {
 
 	logErrorChannel := make(chan string, len(errorLogs))
 	pidsChannel := make(chan string)
+	defer close(logErrorChannel)
+	defer close(pidsChannel)
 
 	go n.monitorLogs(errorLogs, logErrorChannel)
 	go n.monitorPids(processInfo, pidsChannel)
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < (1 + len(errorLogs)); i++ {
 		select {
 		case err := <-pidsChannel:
-			log.Trace("pidsChannel finished")
+			log.Tracef("message received in pidsChannel: %s", err)
 			if err != "" {
 				errorsFound = append(errorsFound, err)
 			}
 		case err := <-logErrorChannel:
-			log.Trace("logErrorChannel finished")
+			log.Tracef("message received in logErrorChannel: %s", err)
 			if err != "" {
 				errorsFound = append(errorsFound, err)
 			}
 		}
 	}
 
-	defer close(logErrorChannel)
-	defer close(pidsChannel)
-
 	log.Info("Finished monitoring post reload")
 
 	if len(errorsFound) > 0 {
 		return errors.New(errorsFound[0])
 	}
+
 	return nil
 }
 
 func (n *Nginx) monitorLogs(errorLogs map[string]string, errorChannel chan string) {
 	if len(errorLogs) == 0 {
 		log.Trace("No logs so returning monitoring of logs")
-		errorChannel <- ""
+		return
 	}
 
 	for _, logFile := range errorLogs {
@@ -665,7 +665,7 @@ func parseIntList(data []core.Process) []int {
 func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	t, err := tailer.NewTailer(logFile)
 	if err != nil {
-		log.Errorf("Unable to tail %q: %v", logFile, err)
+		log.Errorf("Unable to tail error log %q after NGINX reload: %v", logFile, err)
 		// this is not an error in the logs, ignoring tailing
 		errorChannel <- ""
 		return
