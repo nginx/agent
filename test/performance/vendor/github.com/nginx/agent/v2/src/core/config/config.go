@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -235,7 +236,11 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 	// already set.
 	dynamicCfgPath := Viper.GetString(DynamicConfigPathKey)
 	if dynamicCfgPath == "" {
-		dynamicCfgPath = DynamicConfigFileAbsPath
+		if runtime.GOOS == "freebsd"{
+			dynamicCfgPath = DynamicConfigFileAbsFreeBsdPath
+		}else{
+			dynamicCfgPath = DynamicConfigFileAbsPath
+		}
 	}
 
 	// Overwrite existing nginx-agent.conf with updated config
@@ -334,7 +339,11 @@ func LoadPropertiesFromFile(cfg string) error {
 	// already set.
 	dynamicCfgPath := Viper.GetString(DynamicConfigPathKey)
 	if dynamicCfgPath == "" {
-		dynamicCfgPath = DynamicConfigFileAbsPath
+		if runtime.GOOS == "freebsd"{
+			dynamicCfgPath = DynamicConfigFileAbsFreeBsdPath
+		}else{
+			dynamicCfgPath = DynamicConfigFileAbsPath
+		}
 	}
 	dynamicCfgDir, dynamicCfgFile := filepath.Split(dynamicCfgPath)
 
