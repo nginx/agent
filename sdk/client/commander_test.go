@@ -677,6 +677,7 @@ func (h *handler) recvHandle(server proto.Commander_CommandChannelServer, wg *sy
 				return
 			}
 			h.fromClient <- cmd
+			wg.Done()
 		}
 	}
 }
@@ -692,8 +693,8 @@ func (h *handler) sendHandle(server proto.Commander_CommandChannelServer, wg *sy
 				wg.Done()
 				return
 			}
+			wg.Done()
 		}
-
 	}
 }
 
