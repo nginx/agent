@@ -6,13 +6,13 @@
   HUGO_VERSION = "0.91.1"
 
 [context.production]
-  command = "hugo --gc -e production"
+  command = "make all"
 
 [context.docs-development]
-  command = "hugo --gc -e development"
+  command = "make all-dev"
 
 [context.docs-staging]
-  command = "hugo --gc -e staging"
+  command = "make all-staging"
 
 [context.deploy-preview]
   command = "hugo --gc -b $DEPLOY_PRIME_URL/nginx-agent"
