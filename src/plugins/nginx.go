@@ -575,7 +575,10 @@ func (n *Nginx) monitor(processInfo []core.Process) error {
 	go n.monitorLogs(errorLogs, logErrorChannel)
 	go n.monitorPids(processInfo, pidsChannel)
 
-	for i := 0; i < (1 + len(errorLogs)); i++ {
+	// Expect to receive one message from the pidsChannel and a message for each NGINX error log file in the logErrorChannel
+	numberOfExpectedMessages := 1 + len(errorLogs)
+
+	for i := 0; i < numberOfExpectedMessages; i++ {
 		select {
 		case err := <-pidsChannel:
 			log.Tracef("message received in pidsChannel: %s", err)
