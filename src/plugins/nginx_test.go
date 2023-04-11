@@ -533,7 +533,7 @@ func TestNginxConfigApply(t *testing.T) {
 			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(test.config, nil)
 			binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
-			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap())
 			binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
 			binary.On("GetErrorLogs").Return(make(map[string]string))
 
@@ -797,7 +797,7 @@ func TestNginx_validateConfig(t *testing.T) {
 			binary := tutils.NewMockNginxBinary()
 			binary.On("ValidateConfig", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(test.validationResult)
 			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
-			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap())
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
 			conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
 
@@ -852,7 +852,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 
 	binary.On("UpdateNginxDetailsFromProcesses", env.Processes()).Once()
-	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap())).Once()
+	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap()).Once()
 
 	binary.On("Reload", mock.Anything, mock.Anything)
 	binary.On("GetErrorLogs").Return(make(map[string]string))
@@ -955,7 +955,7 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 	binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
 	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 	binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
-	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap())
 	binary.On("Reload", mock.Anything, mock.Anything)
 
 	commandClient := tutils.GetMockCommandClient(
@@ -1032,7 +1032,7 @@ func TestBlock_ConfigApply(t *testing.T) {
 	env := tutils.GetMockEnvWithProcess()
 	binary := tutils.NewMockNginxBinary()
 	binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
-	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return((tutils.GetDetailsMap()))
+	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap())
 	binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
 
 	config := tutils.GetMockAgentConfig()
@@ -1080,7 +1080,7 @@ func TestNginx_monitor(t *testing.T) {
 
 	// Validate that errors in the logs returned
 	go func() {
-		errorFound := pluginUnderTest.monitor()
+		errorFound := pluginUnderTest.monitor(pluginUnderTest.getNginxProccessInfo())
 		assert.NoError(t, errorFound)
 	}()
 
@@ -1098,7 +1098,7 @@ func TestNginx_monitor(t *testing.T) {
 
 	// Validate that errors in the logs returned
 	go func() {
-		errorFound := pluginUnderTest.monitor()
+		errorFound := pluginUnderTest.monitor(pluginUnderTest.getNginxProccessInfo())
 		errorsChannel <- errorFound
 	}()
 

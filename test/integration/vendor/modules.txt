@@ -1,3 +1,5 @@
+# cloud.google.com/go/compute v1.18.0
+## explicit; go 1.19
 # github.com/AlecAivazis/survey/v2 v2.3.6
 ## explicit; go 1.13
 github.com/AlecAivazis/survey/v2
@@ -102,7 +104,7 @@ github.com/docker/buildx/util/platformutil
 github.com/docker/buildx/util/progress
 github.com/docker/buildx/util/resolver
 github.com/docker/buildx/util/waitmap
-# github.com/docker/cli v23.0.1+incompatible => github.com/docker/cli v20.10.3-0.20221013132413-1d6c6e2367e2+incompatible
+# github.com/docker/cli v23.0.2+incompatible => github.com/docker/cli v20.10.3-0.20221013132413-1d6c6e2367e2+incompatible
 ## explicit
 github.com/docker/cli/cli
 github.com/docker/cli/cli-plugins/manager
@@ -165,7 +167,7 @@ github.com/docker/distribution/registry/client/transport
 github.com/docker/distribution/registry/storage/cache
 github.com/docker/distribution/registry/storage/cache/memory
 github.com/docker/distribution/uuid
-# github.com/docker/docker v23.0.1+incompatible => github.com/docker/docker v20.10.3-0.20221013203545-33ab36d6b304+incompatible
+# github.com/docker/docker v23.0.2+incompatible => github.com/docker/docker v20.10.3-0.20221013203545-33ab36d6b304+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
@@ -505,9 +507,6 @@ github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/lookup
 github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/priority_table
 github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/sample
 github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/schema
-github.com/nginx/agent/v2/test/integration/nginx
-github.com/nginx/agent/v2/test/integration/upstream
-github.com/nginx/agent/v2/test/integration/validator
 github.com/nginx/agent/v2/test/utils
 github.com/nginx/agent/v2/test/utils/system
 # github.com/nginxinc/nginx-go-crossplane v0.4.1
@@ -775,7 +774,7 @@ golang.org/x/net/internal/timeseries
 golang.org/x/net/proxy
 golang.org/x/net/publicsuffix
 golang.org/x/net/trace
-# golang.org/x/oauth2 v0.4.0
+# golang.org/x/oauth2 v0.6.0
 ## explicit; go 1.17
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
@@ -833,7 +832,7 @@ google.golang.org/appengine/internal/log
 google.golang.org/appengine/internal/remote_api
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef
+# google.golang.org/genproto v0.0.0-20230124163310-31e0e69b6fc2
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/api/httpbody
 google.golang.org/genproto/googleapis/rpc/errdetails
@@ -892,7 +891,7 @@ google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
-# google.golang.org/protobuf v1.29.0
+# google.golang.org/protobuf v1.30.0
 ## explicit; go 1.11
 google.golang.org/protobuf/encoding/protojson
 google.golang.org/protobuf/encoding/prototext

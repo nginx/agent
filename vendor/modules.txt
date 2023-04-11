@@ -65,7 +65,7 @@ github.com/blakesmith/ar
 # github.com/briandowns/spinner v1.23.0
 ## explicit; go 1.17
 github.com/briandowns/spinner
-# github.com/bufbuild/buf v1.15.1
+# github.com/bufbuild/buf v1.16.0
 ## explicit; go 1.19
 github.com/bufbuild/buf/cmd/buf
 github.com/bufbuild/buf/private/buf/bufapp
@@ -85,12 +85,12 @@ github.com/bufbuild/buf/private/buf/cmd/buf
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/plugindelete
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginpush
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc
-github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/stats
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1
+github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete
@@ -174,6 +174,7 @@ github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache
 github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig
 github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleprotocompile
 github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref
+github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestat
 github.com/bufbuild/buf/private/bufpkg/bufmodule/internal
 github.com/bufbuild/buf/private/bufpkg/bufplugin
 github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig
@@ -184,6 +185,7 @@ github.com/bufbuild/buf/private/bufpkg/bufreflect
 github.com/bufbuild/buf/private/bufpkg/bufremoteplugin
 github.com/bufbuild/buf/private/bufpkg/bufstudioagent
 github.com/bufbuild/buf/private/bufpkg/buftransport
+github.com/bufbuild/buf/private/bufpkg/bufwasm
 github.com/bufbuild/buf/private/gen/data/dataspdx
 github.com/bufbuild/buf/private/gen/data/datawkt
 github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect
@@ -193,6 +195,7 @@ github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1
 github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1
 github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1
 github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1
+github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/wasmplugin/v1
 github.com/bufbuild/buf/private/gen/proto/go/grpc/reflection/v1
 github.com/bufbuild/buf/private/pkg/app
 github.com/bufbuild/buf/private/pkg/app/appcmd
@@ -279,7 +282,7 @@ github.com/creack/pty
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/docker/cli v23.0.1+incompatible
+# github.com/docker/cli v23.0.2+incompatible
 ## explicit
 github.com/docker/cli/cli/config
 github.com/docker/cli/cli/config/configfile
@@ -290,7 +293,7 @@ github.com/docker/cli/cli/config/types
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
 github.com/docker/distribution/registry/client/auth/challenge
-# github.com/docker/docker v23.0.1+incompatible
+# github.com/docker/docker v23.0.2+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
@@ -560,7 +563,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/go-containerregistry v0.13.0
+# github.com/google/go-containerregistry v0.14.0
 ## explicit; go 1.18
 github.com/google/go-containerregistry/internal/and
 github.com/google/go-containerregistry/internal/compression
@@ -581,7 +584,7 @@ github.com/google/go-containerregistry/pkg/v1/remote
 github.com/google/go-containerregistry/pkg/v1/remote/transport
 github.com/google/go-containerregistry/pkg/v1/stream
 github.com/google/go-containerregistry/pkg/v1/types
-# github.com/google/pprof v0.0.0-20230228050547-1710fef4ab10
+# github.com/google/pprof v0.0.0-20230323073829-e72429f035bd
 ## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/uuid v1.3.0
@@ -934,6 +937,44 @@ github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.4.2
 ## explicit; go 1.18
 github.com/subosito/gotenv
+# github.com/tetratelabs/wazero v1.0.1
+## explicit; go 1.18
+github.com/tetratelabs/wazero
+github.com/tetratelabs/wazero/api
+github.com/tetratelabs/wazero/experimental
+github.com/tetratelabs/wazero/experimental/gojs
+github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1
+github.com/tetratelabs/wazero/internal/asm
+github.com/tetratelabs/wazero/internal/asm/amd64
+github.com/tetratelabs/wazero/internal/asm/arm64
+github.com/tetratelabs/wazero/internal/descriptor
+github.com/tetratelabs/wazero/internal/engine/compiler
+github.com/tetratelabs/wazero/internal/engine/interpreter
+github.com/tetratelabs/wazero/internal/filecache
+github.com/tetratelabs/wazero/internal/gojs
+github.com/tetratelabs/wazero/internal/gojs/config
+github.com/tetratelabs/wazero/internal/gojs/custom
+github.com/tetratelabs/wazero/internal/gojs/goarch
+github.com/tetratelabs/wazero/internal/gojs/goos
+github.com/tetratelabs/wazero/internal/gojs/run
+github.com/tetratelabs/wazero/internal/gojs/util
+github.com/tetratelabs/wazero/internal/gojs/values
+github.com/tetratelabs/wazero/internal/ieee754
+github.com/tetratelabs/wazero/internal/leb128
+github.com/tetratelabs/wazero/internal/moremath
+github.com/tetratelabs/wazero/internal/platform
+github.com/tetratelabs/wazero/internal/sys
+github.com/tetratelabs/wazero/internal/sysfs
+github.com/tetratelabs/wazero/internal/u32
+github.com/tetratelabs/wazero/internal/u64
+github.com/tetratelabs/wazero/internal/version
+github.com/tetratelabs/wazero/internal/wasip1
+github.com/tetratelabs/wazero/internal/wasm
+github.com/tetratelabs/wazero/internal/wasm/binary
+github.com/tetratelabs/wazero/internal/wasmdebug
+github.com/tetratelabs/wazero/internal/wasmruntime
+github.com/tetratelabs/wazero/internal/wazeroir
+github.com/tetratelabs/wazero/sys
 # github.com/tklauser/go-sysconf v0.3.10
 ## explicit; go 1.13
 github.com/tklauser/go-sysconf
@@ -1107,7 +1148,7 @@ golang.org/x/tools/internal/pkgbits
 golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
-# google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef
+# google.golang.org/genproto v0.0.0-20230124163310-31e0e69b6fc2
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/api
 google.golang.org/genproto/googleapis/api/annotations
@@ -1165,7 +1206,7 @@ google.golang.org/grpc/tap
 # google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 ## explicit; go 1.17
 google.golang.org/grpc/cmd/protoc-gen-go-grpc
-# google.golang.org/protobuf v1.29.0
+# google.golang.org/protobuf v1.30.0
 ## explicit; go 1.11
 google.golang.org/protobuf/compiler/protogen
 google.golang.org/protobuf/encoding/protojson
