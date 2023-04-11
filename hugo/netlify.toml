@@ -34,6 +34,6 @@
   force = true
 
 [[redirects]]
-  from = "*"
-  to = "/404.html"
+  from = "/nginx-agent/*"
+  to = "/nginx-agent/404.html"
   status = 404
