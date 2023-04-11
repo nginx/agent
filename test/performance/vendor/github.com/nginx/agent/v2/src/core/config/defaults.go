@@ -81,14 +81,14 @@ var (
 )
 
 const (
-	DynamicConfigFileName    = "agent-dynamic.conf"
-	DynamicConfigFileAbsPath = "/var/lib/nginx-agent/agent-dynamic.conf"
+	DynamicConfigFileName           = "agent-dynamic.conf"
+	DynamicConfigFileAbsPath        = "/var/lib/nginx-agent/agent-dynamic.conf"
 	DynamicConfigFileAbsFreeBsdPath = "/var/db/nginx-agent/agent-dynamic.conf"
-	ConfigFileName           = "nginx-agent.conf"
-	ConfigFileType           = "yaml"
-	EnvPrefix                = "nms"
-	ConfigPathKey            = "path"
-	DynamicConfigPathKey     = "dynamic-config-path"
+	ConfigFileName                  = "nginx-agent.conf"
+	ConfigFileType                  = "yaml"
+	EnvPrefix                       = "nms"
+	ConfigPathKey                   = "path"
+	DynamicConfigPathKey            = "dynamic-config-path"
 
 	CloudAccountIdKey = "cloudaccountid"
 	LocationKey       = "location"

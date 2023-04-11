@@ -236,9 +236,9 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 	// already set.
 	dynamicCfgPath := Viper.GetString(DynamicConfigPathKey)
 	if dynamicCfgPath == "" {
-		if runtime.GOOS == "freebsd"{
+		if runtime.GOOS == "freebsd" {
 			dynamicCfgPath = DynamicConfigFileAbsFreeBsdPath
-		}else{
+		} else {
 			dynamicCfgPath = DynamicConfigFileAbsPath
 		}
 	}
@@ -339,9 +339,9 @@ func LoadPropertiesFromFile(cfg string) error {
 	// already set.
 	dynamicCfgPath := Viper.GetString(DynamicConfigPathKey)
 	if dynamicCfgPath == "" {
-		if runtime.GOOS == "freebsd"{
+		if runtime.GOOS == "freebsd" {
 			dynamicCfgPath = DynamicConfigFileAbsFreeBsdPath
-		}else{
+		} else {
 			dynamicCfgPath = DynamicConfigFileAbsPath
 		}
 	}

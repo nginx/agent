@@ -44,7 +44,7 @@ func init() {
 	config.SetDefaults()
 	config.RegisterFlags()
 	dynamicConfigPath := config.DynamicConfigFileAbsPath
-	if runtime.GOOS == "freebsd"{
+	if runtime.GOOS == "freebsd" {
 		dynamicConfigPath = config.DynamicConfigFileAbsFreeBsdPath
 	}
 	configPath, err := config.RegisterConfigFile(dynamicConfigPath, config.ConfigFileName, config.ConfigFilePaths()...)
