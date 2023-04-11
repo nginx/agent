@@ -11,6 +11,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -42,7 +43,11 @@ func init() {
 	config.SetVersion(version, commit)
 	config.SetDefaults()
 	config.RegisterFlags()
-	configPath, err := config.RegisterConfigFile(config.DynamicConfigFileAbsPath, config.ConfigFileName, config.ConfigFilePaths()...)
+	dynamicConfigPath := config.DynamicConfigFileAbsPath
+	if runtime.GOOS == "freebsd"{
+		dynamicConfigPath = config.DynamicConfigFileAbsFreeBsdPath
+	}
+	configPath, err := config.RegisterConfigFile(dynamicConfigPath, config.ConfigFileName, config.ConfigFilePaths()...)
 	if err != nil {
 		log.Fatalf("Failed to load configuration file: %v", err)
 	}

@@ -22,12 +22,21 @@ export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
 # shellcheck source=/dev/null
 . /etc/os-release
 
-AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/etc/nginx-agent/nginx-agent.conf"}
-AGENT_DYNAMIC_CONFIG_DIR="/var/lib/nginx-agent"
+if [ "$ID" = "freebsd" ]; then
+    AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/usr/local/etc/nginx-agent/nginx-agent.conf"}
+    AGENT_DYNAMIC_CONFIG_DIR="/var/db/nginx-agent"
+    # Old location of agent-dynamic.conf 
+    OLD_DYNAMIC_CONFIG_DIR="/etc/nginx-agent"
+    mkdir -p /var/log/nginx-agent/
+else
+    AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/etc/nginx-agent/nginx-agent.conf"}
+    AGENT_DYNAMIC_CONFIG_DIR="/var/lib/nginx-agent"
+    # Old location of agent-dynamic.conf 
+    OLD_DYNAMIC_CONFIG_DIR="/etc/nginx-agent"
+fi
 
-AGENT_DYNAMIC_CONFIG_FILE="/var/lib/nginx-agent/agent-dynamic.conf"
-# Old location of agent-dynamic.conf 
-OLD_DYNAMIC_CONFIG_FILE="/etc/nginx-agent/agent-dynamic.conf"
+AGENT_DYNAMIC_CONFIG_FILE="${AGENT_DYNAMIC_CONFIG_DIR}/agent-dynamic.conf"
+OLD_DYNAMIC_CONFIG_FILE="${OLD_DYNAMIC_CONFIG_DIR}/agent-dynamic.conf"
 AGENT_DYNAMIC_CONFIG_COMMENT="#
 # dynamic-agent.conf
 #
