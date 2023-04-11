@@ -662,7 +662,7 @@ type execShellCommand struct {
 }
 
 func (e execShellCommand) Exec(cmd string, arg ...string) ([]byte, error) {
-	execCmd := exec.Command(name, arg...)
+	execCmd := exec.Command(cmd, arg...)
 	return execCmd.Output()
 }
 
