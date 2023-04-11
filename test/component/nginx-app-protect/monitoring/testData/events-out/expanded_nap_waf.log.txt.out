@@ -1,11 +1,0 @@
-ñ
-app_protect_default_policy4355056874564592513REJECTED"SECURITY_WAF_VIOLATION2GET:HTTPJ/R^GET /?a=<script> HTTP/1.1\r\nHost: 127.0.0.1\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\nbblockedjBlockedz1-localhost:1-/‚	127.0.0.1Š61478’80šŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client DetectedÂUntrusted BotÚcritical‚curl’u
-VIOL_ATTACK_SIGNATURE	parameter
-a<script>" 
-	2000014753
-a=<script>"3*7" 
-	2000000983
-a=<script>"2*7’
-VIOL_HTTP_PROTOCOL’.
-VIOL_PARAMETER_VALUE_METACHAR
-a<script>

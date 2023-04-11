@@ -1,24 +1,0 @@
-
-j
-Agent$92b94a3a-655d-11ed-9d1d-5671f551701b4355056874564592518"è­Ñ›À ë­*ERROR2Nginx:
-AppProtect­	
-app_protect_default_policy4355056874564592518REJECTED"SECURITY_WAF_VIOLATION*N/A2GET:HTTPBN/AJ/R^GET /?a=<script> HTTP/1.1\r\nHost: 127.0.0.1\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\nbblockedjBlockedz1-localhost:1-/‚	127.0.0.1Š61478’80šŽHTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected¢qHTTP protocol compliance failed:Host header contains IP address,HTTP protocol compliance failed:Evasion techniqueª5²u{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}º,ÂUntrusted BotÊN/AÒN/AÚcriticalâcampaign1,campaign2êN/AòHTTP LibraryúN/A‚curl’½
-VIOL_ATTACK_SIGNATURE"™
-	2000210944€Connection: keep-alive
-Host: a.com
-User-Agent: Java/1.7.0_51
-Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
-
-"37*16"V
-	2000110342?pt: */*
-Foo: Authorization: %n%n%n%n
-Foo: echo<!-- #echo
-X18"29*6"W
-	2000001793?7
-Accept: */*
-Foo: Authorization: %n%n%n%n
-Foo: echo<!-- #ec"21*23"W
-	2000041062?zation: %n%n%n%n
-Foo: echo<!-- #echo
-X1892: echo
-X1893: '<!-"27*10

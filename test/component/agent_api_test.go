@@ -3,20 +3,22 @@ package component
 import (
 	"context"
 	"fmt"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v2/src/core/metrics"
+	"github.com/nginx/agent/v2/src/plugins"
+
 	"encoding/json"
+
 	"github.com/go-resty/resty/v2"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
-	"github.com/nginx/agent/v2/src/plugins"
 	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
