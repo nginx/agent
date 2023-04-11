@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	conf "github.com/nginx/agent/v2/test/integration/nginx"
+	conf "github.com/nginx/agent/test/integration/nginx"
 	"github.com/stretchr/testify/assert"
 )
 
