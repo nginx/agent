@@ -34,6 +34,14 @@
                     "Name": "yummy_cookie",
                     "Value": "choco"
                 }
+            },
+            {
+                "Name": "VIOL_COOKIE_LENGTH",
+                "Context": "cookie",
+                "ContextData": {
+                    "Name": "Cookie length: 28, exceeds Cookie length limit: 10",
+                    "Value": "Cookie: dfdfdfdfdf=dfdfdfdf;"
+                }
             }
         ]
     }

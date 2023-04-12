@@ -134,6 +134,8 @@ type Header struct {
 	Text            string `xml:",chardata"`
 	Name            string `xml:"header_name"`
 	Value           string `xml:"header_value"`
+	ActualValue     string `xml:"header_actual_value"`
+	MatchedValue    string `xml:"header_matched_value"`
 	IsBase64Decoded bool   `xml:"is_base64_decoded"`
 }
 
@@ -169,26 +171,31 @@ type BADMSG struct {
 			// ParameterData and ParamData are both received when context == "parameter" | ""
 			// We receive either ParameterData or ParamData separately and not in the same XML message
 			// ParameterData and ParamData semantically represent the same thing (with ParameterData having more fields).
-			ParameterData   ParameterData `xml:"parameter_data"`
-			ParamData       ParamData     `xml:"param_data"`
-			ParamName       string        `xml:"param_name"`
-			IsBase64Decoded bool          `xml:"is_base64_decoded"`
-			Header          Header        `xml:"header"`
-			HeaderData      Header        `xml:"header_data"`
-			Cookie          Cookie        `xml:"cookie"`
-			CookieName      string        `xml:"cookie_name"`
-			Buffer          string        `xml:"buffer"`
-			SpecificDesc    string        `xml:"specific_desc"`
-			Uri             string        `xml:"uri"`
-			UriObjectData   UriObjectData `xml:"object_data"`
-			UriLength       string        `xml:"uri_len"`
-			UriLengthLimit  string        `xml:"uri_len_limit"`
-			DefinedLength   string        `xml:"defined_length"`
-			DetectedLength  string        `xml:"detected_length"`
-			TotalLen        string        `xml:"total_len"`
-			TotalLenLimit   string        `xml:"total_len_limit"`
-			Staging         string        `xml:"staging"`
-			SigData         []struct {
+			ParameterData     ParameterData `xml:"parameter_data"`
+			ParamData         ParamData     `xml:"param_data"`
+			ParamName         string        `xml:"param_name"`
+			IsBase64Decoded   bool          `xml:"is_base64_decoded"`
+			Header            Header        `xml:"header"`
+			HeaderData        Header        `xml:"header_data"`
+			HeaderName        string        `xml:"header_name"`
+			HeaderLength      string        `xml:"header_len"`
+			HeaderLengthLimit string        `xml:"header_len_limit"`
+			Cookie            Cookie        `xml:"cookie"`
+			CookieName        string        `xml:"cookie_name"`
+			CookieLength      string        `xml:"cookie_len"`
+			CookieLengthLimit string        `xml:"cookie_len_limit"`
+			Buffer            string        `xml:"buffer"`
+			SpecificDesc      string        `xml:"specific_desc"`
+			Uri               string        `xml:"uri"`
+			UriObjectData     UriObjectData `xml:"object_data"`
+			UriLength         string        `xml:"uri_len"`
+			UriLengthLimit    string        `xml:"uri_len_limit"`
+			DefinedLength     string        `xml:"defined_length"`
+			DetectedLength    string        `xml:"detected_length"`
+			TotalLen          string        `xml:"total_len"`
+			TotalLenLimit     string        `xml:"total_len_limit"`
+			Staging           string        `xml:"staging"`
+			SigData           []struct {
 				Text         string `xml:",chardata"`
 				SigID        string `xml:"sig_id"`
 				BlockingMask string `xml:"blocking_mask"`
@@ -430,12 +437,25 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 
 			if v.Header != (Header{}) {
 				isB64Decoded = v.Header.IsBase64Decoded
-				name = v.Header.Name
-				value = v.Header.Value
+				if v.Header.Name != "" || v.Header.Value != "" {
+					name = v.Header.Name
+					value = v.Header.Value
+				} else {
+					value = v.Header.Text
+				}
 			} else if v.HeaderData != (Header{}) {
 				isB64Decoded = v.HeaderData.IsBase64Decoded
 				name = v.HeaderData.Name
 				value = v.HeaderData.Value
+			} else if v.HeaderLength != "" {
+				isB64Decoded = true
+				decodedValue, err := base64.StdEncoding.DecodeString(v.HeaderName)
+				if err != nil {
+					logger.Errorf("could not decode the Header %s for %v", v.HeaderName, f.SupportID)
+					break
+				}
+				name = fmt.Sprintf("Header length: %s, exceeds Header length limit: %s", v.HeaderLength, v.HeaderLengthLimit)
+				value = string(decodedValue)
 			}
 
 			if isB64Decoded {
@@ -466,7 +486,7 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 			var isB64Decoded bool
 			var name, value string
 
-			if v.Cookie != (Cookie{}) {
+			if v.Cookie != (Cookie{}) && v.CookieLength == "" {
 				isB64Decoded = v.Cookie.IsBase64Decoded
 				name = v.Cookie.Name
 				value = v.Cookie.Value
@@ -483,6 +503,15 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				}
 				name = v.SpecificDesc
 				value = string(decodedBuffer)
+			} else if v.CookieLength != "" {
+				isB64Decoded = true
+				decodedValue, err := base64.StdEncoding.DecodeString(v.Cookie.Text)
+				if err != nil {
+					logger.Errorf("could not decode the Cookie %s for %v", v.Cookie.Text, f.SupportID)
+					break
+				}
+				name = fmt.Sprintf("Cookie length: %s, exceeds Cookie length limit: %s", v.CookieLength, v.CookieLengthLimit)
+				value = string(decodedValue)
 			}
 
 			if isB64Decoded {
@@ -515,13 +544,34 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				isB64Decoded bool
 			)
 			if v.Uri != "" {
+				name = violationContextUri
 				value = v.Uri
 			} else if v.UriObjectData != (UriObjectData{}) {
+				name = violationContextUri
 				value = v.UriObjectData.Object
 			} else if v.UriLength != "" {
 				isB64Decoded = true
 				name = fmt.Sprintf("URI length: %s", v.UriLength)
 				value = fmt.Sprintf("URI length limit: %s", v.UriLengthLimit)
+			} else if v.HeaderData != (Header{}) {
+				isB64Decoded = true
+				decodedName, err := base64.StdEncoding.DecodeString(v.HeaderData.Name)
+				if err != nil {
+					logger.Errorf("uri context could not decode the Header name %s for %v", v.HeaderData.Name, f.SupportID)
+					break
+				}
+				decodedActualValue, err := base64.StdEncoding.DecodeString(v.HeaderData.ActualValue)
+				if err != nil {
+					logger.Errorf("uri context could not decode the Actual Header value %s for %v", v.HeaderData.ActualValue, f.SupportID)
+					break
+				}
+				decodedMatchedValue, err := base64.StdEncoding.DecodeString(v.HeaderData.MatchedValue)
+				if err != nil {
+					logger.Errorf("uri context could not decode the Matched Header value %s for %v", v.HeaderData.MatchedValue, f.SupportID)
+					break
+				}
+				name = string(decodedName)
+				value = fmt.Sprintf("actual header value: %s. matched header value: %s", string(decodedActualValue), string(decodedMatchedValue))
 			}
 
 			if isB64Decoded {
