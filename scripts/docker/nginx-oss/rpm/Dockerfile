@@ -12,13 +12,13 @@ COPY ./ /agent
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; \
-     then yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm ; \
-     fi
+        then yum install -y oracle-epel-release-el7; \
+    fi
 
 
 RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
-    then amazon-linux-extras enable epel && yum clean metadata \
-    && yum install -y epel-release shadow-utils.x86_64; \
+        then amazon-linux-extras enable epel && yum clean metadata \
+        && yum install -y epel-release shadow-utils; \
     fi
 
 RUN set -x \
