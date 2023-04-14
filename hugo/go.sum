@@ -1,6 +1,2 @@
-gitlab.com/f5/nginx/controller/poc/f5-hugo v0.22.2 h1:NTQmkbyS8/SA4p8c2J6idx/KQhky36PYNsTJHxH9Vig=
-gitlab.com/f5/nginx/controller/poc/f5-hugo v0.22.2/go.mod h1:Y9Ez7EKgsbFXNsflK0tGLe6FWqlPToWFGZyrkduYdM4=
-gitlab.com/f5/nginx/controller/poc/f5-hugo v0.23.2 h1:z/Zi+nPZ5U1VB8UaHIM79FQ6GEzMeltYLOE4U/ABPpE=
-gitlab.com/f5/nginx/controller/poc/f5-hugo v0.23.2/go.mod h1:Y9Ez7EKgsbFXNsflK0tGLe6FWqlPToWFGZyrkduYdM4=
-gitlab.com/f5/nginx/controller/poc/f5-hugo v0.25.2 h1:WYCERTzhAsQRe2iyZn3ui87f8gEapq8rB2xCMXiFxYw=
-gitlab.com/f5/nginx/controller/poc/f5-hugo v0.25.2/go.mod h1:Y9Ez7EKgsbFXNsflK0tGLe6FWqlPToWFGZyrkduYdM4=
+github.com/nginxinc/nginx-hugo-theme v0.28.0 h1:RHHvBmFk2Uptk+efLPSIuBd2elc3IOZPElkJbkkpAHo=
+github.com/nginxinc/nginx-hugo-theme v0.28.0/go.mod h1:DPNgSS5QYxkjH/BfH4uPDiTfODqWJ50NKZdorguom8M=
