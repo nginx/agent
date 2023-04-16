@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -195,18 +194,18 @@ func (env *EnvironmentType) GetSystemUUID() string {
 }
 
 func (env *EnvironmentType) ReadDirectory(dir string, ext string) ([]string, error) {
-	var files []string
-	fileInfo, err := ioutil.ReadDir(dir)
+	var filesList []string
+	fileInfo, err := os.ReadDir(dir)
 	if err != nil {
 		log.Warnf("Unable to reading directory %s: %v ", dir, err)
-		return files, err
+		return filesList, err
 	}
 
 	for _, file := range fileInfo {
-		files = append(files, strings.Replace(file.Name(), ext, "", -1))
+		filesList = append(filesList, strings.Replace(file.Name(), ext, "", -1))
 	}
 
-	return files, nil
+	return filesList, nil
 }
 
 func (env *EnvironmentType) WriteFiles(backup ConfigApplyMarker, files []*proto.File, confPath string, allowedDirs map[string]struct{}) error {
@@ -253,7 +252,7 @@ func cGroupV1Check(cgroupFile string) (bool, error) {
 		conatinerd = "containerd"
 	)
 
-	data, err := ioutil.ReadFile(cgroupFile)
+	data, err := os.ReadFile(cgroupFile)
 	if err != nil {
 		return false, err
 	}
@@ -301,7 +300,10 @@ func getContainerID(mountInfo string) (string, error) {
 	for fileScanner.Scan() {
 		lines = append(lines, fileScanner.Text())
 	}
-	mInfoFile.Close()
+	err = mInfoFile.Close()
+	if err != nil {
+		return "", fmt.Errorf("unable to close file %s: %v", mountInfo, err)
+	}
 
 	basePattern := regexp.MustCompile("/([a-f0-9]{64})$")
 	colonPattern := regexp.MustCompile(":([a-f0-9]{64})$")
@@ -368,7 +370,7 @@ func getLinuxDiskDevices() ([]string, error) {
 	dd := []string{}
 	log.Debugf("Reading directory for linux disk information: %s", SysBlockDir)
 
-	dir, err := ioutil.ReadDir(SysBlockDir)
+	dir, err := os.ReadDir(SysBlockDir)
 	if err != nil {
 		return dd, err
 	}
@@ -457,7 +459,7 @@ func writeFile(backup ConfigApplyMarker, file *proto.File, confPath string) erro
 		}
 	}
 
-	if err := ioutil.WriteFile(fileFullPath, file.GetContents(), permissions); err != nil {
+	if err := os.WriteFile(fileFullPath, file.GetContents(), permissions); err != nil {
 		// If the file didn't exist originally and failed to be created
 		// Then remove that file from the backup so that the rollback doesn't try to delete the file
 		if _, err := os.Stat(fileFullPath); !errors.Is(err, os.ErrNotExist) {
@@ -834,7 +836,14 @@ func getOsRelease(path string) (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("release file %s unreadable: %w", path, err)
 	}
-	defer f.Close()
+
+	defer func() {
+		cerr := f.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+
 	info, err := parseOsReleaseFile(f)
 	if err != nil {
 		return nil, fmt.Errorf("release file %s unparsable: %w", path, err)
