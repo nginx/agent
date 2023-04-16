@@ -17,13 +17,11 @@ RUN set -x \
     && apt-get install --no-install-recommends --no-install-suggests -y \
                         ca-certificates \
                         gnupg1 \
-                        lsb-release \
                         git \
-                        wget \
                         make \
                         curl \
-                        vim \
                         nginx
+
 RUN chmod +x /agent/entrypoint.sh
 STOPSIGNAL SIGTERM
 
