@@ -39,8 +39,8 @@
                 "Name": "VIOL_HEADER_LENGTH",
                 "Context": "header",
                 "ContextData": {
-                    "Name": "Header length: 42, exceeds Header length limit: 10",
-                    "Value": "Host: dflkdjfldkfldkfldkflkdflkdflkdlfkdlf"
+                    "Name": "Host: dflkdjfldkfldkfldkflkdflkdflkdlfkdlf",
+                    "Value": "Header length: 42, exceeds Header length limit: 10"
                 }
             }
         ]

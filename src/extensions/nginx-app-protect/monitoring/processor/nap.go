@@ -449,13 +449,13 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				value = v.HeaderData.Value
 			} else if v.HeaderLength != "" {
 				isB64Decoded = true
-				decodedValue, err := base64.StdEncoding.DecodeString(v.HeaderName)
+				decodedName, err := base64.StdEncoding.DecodeString(v.HeaderName)
 				if err != nil {
 					logger.Errorf("could not decode the Header %s for %v", v.HeaderName, f.SupportID)
 					break
 				}
-				name = fmt.Sprintf("Header length: %s, exceeds Header length limit: %s", v.HeaderLength, v.HeaderLengthLimit)
-				value = string(decodedValue)
+				name = string(decodedName)
+				value = fmt.Sprintf("Header length: %s, exceeds Header length limit: %s", v.HeaderLength, v.HeaderLengthLimit)
 			}
 
 			if isB64Decoded {

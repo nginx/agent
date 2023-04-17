@@ -227,7 +227,7 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "parameter",
+				ViolationContexts:        "parameter,parameter,parameter,parameter,parameter,parameter,parameter,parameter,parameter,parameter,parameter,parameter",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_ATTACK_SIGNATURE",
@@ -243,6 +243,94 @@ func TestNAPProcess(t *testing.T) {
 								Offset:       "1",
 								Length:       "15",
 							},
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_REPEATED",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "2",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_MULTIPART_NULL_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "parameter",
+							Value: "\x00",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_EMPTY_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_VALUE_REGEXP",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "r",
+							Value: "2",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_NUMERIC_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "2",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_DATA_TYPE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "f",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_VALUE_LENGTH",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "r",
+							Value: "3948394839489898",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_DYNAMIC_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "r",
+							Value: "2",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_STATIC_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "f",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_ARRAY_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "r",
+							Value: "1m\b",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_LOCATION",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "12",
 						},
 					},
 				},
@@ -538,7 +626,7 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "cookie,cookie",
+				ViolationContexts:        "cookie,cookie,cookie",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_COOKIE_MALFORMED",
@@ -554,6 +642,14 @@ func TestNAPProcess(t *testing.T) {
 						ContextData: &pb.ContextData{
 							Name:  "yummy_cookie",
 							Value: "choco",
+						},
+					},
+					{
+						Name:    "VIOL_COOKIE_EXPIRED",
+						Context: "cookie",
+						ContextData: &pb.ContextData{
+							Name:  "TS0142ff11",
+							Value: "",
 						},
 					},
 				},
@@ -740,7 +836,7 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "uri,uri,url",
+				ViolationContexts:        "uri,uri,url,uri",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_URL_METACHAR",
@@ -764,6 +860,14 @@ func TestNAPProcess(t *testing.T) {
 						ContextData: &pb.ContextData{
 							Name:  "uri",
 							Value: "/",
+						},
+					},
+					{
+						Name:    "VIOL_URL",
+						Context: "uri",
+						ContextData: &pb.ContextData{
+							Name:  "",
+							Value: "",
 						},
 					},
 				},
@@ -870,8 +974,8 @@ func TestNAPProcess(t *testing.T) {
 						Name:    "VIOL_HEADER_LENGTH",
 						Context: "header",
 						ContextData: &pb.ContextData{
-							Name:  "Header length: 42, exceeds Header length limit: 10",
-							Value: "Host: dflkdjfldkfldkfldkflkdflkdflkdlfkdlf",
+							Name:  "Host: dflkdjfldkfldkfldkflkdflkdflkdlfkdlf",
+							Value: "Header length: 42, exceeds Header length limit: 10",
 						},
 					},
 				},

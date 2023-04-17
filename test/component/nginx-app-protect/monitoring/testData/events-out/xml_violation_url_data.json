@@ -50,6 +50,14 @@
                     "Name": "$",
                     "Value": "actual header value: beni. matched header value: beni"
                 }
+            },
+            {
+                "Name": "VIOL_URL",
+                "Context": "uri",
+                "ContextData": {
+                    "Name": "",
+                    "Value": ""
+                }
             }
         ]
     }

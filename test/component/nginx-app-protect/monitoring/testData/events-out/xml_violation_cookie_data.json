@@ -42,6 +42,14 @@
                     "Name": "Cookie length: 28, exceeds Cookie length limit: 10",
                     "Value": "Cookie: dfdfdfdfdf=dfdfdfdf;"
                 }
+            },
+            {
+                "Name": "VIOL_COOKIE_EXPIRED",
+                "Context": "cookie",
+                "ContextData": {
+                    "Name": "TS0142ff11",
+                    "Value": ""
+                }
             }
         ]
     }
