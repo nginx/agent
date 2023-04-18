@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protostatos
+package bufanalysis
 
-import "github.com/bufbuild/buf/private/pkg/protostat"
-
-// NewFileWalker returns a new FileWalker for the given filenames.
-//
-// Anything without the .proto extension will be excluded.
-func NewFileWalker(filenames ...string) protostat.FileWalker {
-	return newFileWalker(filenames)
+func atLeast1(i int) int {
+	if i <= 0 {
+		return 1
+	}
+	return i
 }

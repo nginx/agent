@@ -174,13 +174,12 @@ func createFilesInTar(info *nfpm.Info, tw *tar.Writer) ([]MtreeEntry, int64, err
 
 		switch content.Type {
 		case files.TypeDir, files.TypeImplicitDir:
-			if content.Type == files.TypeDir {
-				entries = append(entries, MtreeEntry{
-					Destination: content.Destination,
-					Time:        content.ModTime().Unix(),
-					Type:        files.TypeDir,
-				})
-			}
+			entries = append(entries, MtreeEntry{
+				Destination: content.Destination,
+				Time:        content.ModTime().Unix(),
+				Mode:        int64(content.Mode()),
+				Type:        files.TypeDir,
+			})
 
 			err := tw.WriteHeader(&tar.Header{
 				Name:     content.Destination,
@@ -452,12 +451,13 @@ type MtreeEntry struct {
 
 func (me *MtreeEntry) WriteTo(w io.Writer) (int64, error) {
 	switch me.Type {
-	case files.TypeDir:
+	case files.TypeDir, files.TypeImplicitDir:
 		n, err := fmt.Fprintf(
 			w,
-			"./%s time=%d.0 type=dir\n",
+			"./%s time=%d.0 mode=%o type=dir\n",
 			me.Destination,
 			me.Time,
+			me.Mode,
 		)
 		return int64(n), err
 	case files.TypeSymlink:
