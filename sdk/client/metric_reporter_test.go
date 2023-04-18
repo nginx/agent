@@ -240,6 +240,7 @@ func (h *metricReporterHandler) streamHandle(server proto.MetricsService_StreamS
 		log.Debugf("Recv Metric Report: %v\n", cmd)
 		if err != nil {
 			log.Debugf("Recv Metric Report: %v\n", err)
+			wg.Done()
 			return
 		}
 		h.metricReportStream <- cmd
@@ -252,6 +253,7 @@ func (h *eventReporterHandler) streamEventsHandle(server proto.MetricsService_St
 		log.Debugf("Recv Event Report: %v\n", cmd)
 		if err != nil {
 			log.Debugf("Recv Event Report: %v\n", err)
+			wg.Done()
 			return
 		}
 		h.eventReportStream <- cmd
