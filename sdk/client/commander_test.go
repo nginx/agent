@@ -204,7 +204,7 @@ func TestCommander_Connect_NoServer(t *testing.T) {
 }
 
 func TestCommander_Recv_Reconnect(t *testing.T) {
-	grpcServer, commandService, dialer := startCommanderMockServer()
+	grpcServer, _, dialer := startCommanderMockServer()
 
 	ctx := context.TODO()
 
@@ -221,17 +221,17 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 	// Restart server
 	grpcServer.GracefulStop()
 
-	grpcServer, commandService, dialer = startCommanderMockServer()
+	recGrpcServer, recCommandService, recDialer := startCommanderMockServer()
 
 	go func() {
-		commandService.handler.toClient <- &proto.Command{Meta: &proto.Metadata{MessageId: "1234"}}
+		recCommandService.handler.toClient <- &proto.Command{Meta: &proto.Metadata{MessageId: "1234"}}
 	}()
 
-	commanderClient.WithDialOptions(getDialOptions(dialer)...)
+	commanderClient.WithDialOptions(getDialOptions(recDialer)...)
 
 	defer func() {
 		commanderClient.Close()
-		grpcServer.GracefulStop()
+		recGrpcServer.GracefulStop()
 	}()
 
 	select {
@@ -311,7 +311,7 @@ func TestCommander_Download_ServerDies(t *testing.T) {
 }
 
 func TestCommander_Download_Reconnect(t *testing.T) {
-	grpcServer, commandService, dialer := startCommanderMockServer()
+	grpcServer, _, dialer := startCommanderMockServer()
 
 	ctx := context.TODO()
 
@@ -327,20 +327,20 @@ func TestCommander_Download_Reconnect(t *testing.T) {
 
 	grpcServer.GracefulStop()
 
-	grpcServer, commandService, dialer = startCommanderMockServer()
+	recGrpcServer, recCommandService, recDialer := startCommanderMockServer()
 
 	go func() {
-		err := sendNginxConfigInChunks(commandService, expectedNginxConfig)
+		err := sendNginxConfigInChunks(recCommandService, expectedNginxConfig)
 		if err != nil {
 			t.Logf("Error converting nginx config to byte array: %v\n", err)
 		}
 	}()
 
-	commanderClient.WithDialOptions(getDialOptions(dialer)...)
+	commanderClient.WithDialOptions(getDialOptions(recDialer)...)
 
 	defer func() {
 		commanderClient.Close()
-		grpcServer.GracefulStop()
+		recGrpcServer.GracefulStop()
 	}()
 
 	actual, err := commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
