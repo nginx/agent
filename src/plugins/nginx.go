@@ -598,7 +598,7 @@ func (n *Nginx) monitorLogs(errorLogs map[string]string, errorChannel chan strin
 		return
 	}
 
-	for _, logFile := range errorLogs {
+	for logFile := range errorLogs {
 		go n.tailLog(logFile, errorChannel)
 	}
 }
@@ -631,6 +631,7 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 				}
 			}
 		case <-tick.C:
+			errorChannel <- ""
 			return
 		}
 	}
