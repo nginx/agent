@@ -43,9 +43,7 @@ func TestMetricReporter_Send(t *testing.T) {
 
 	defer func() {
 		metricReporterClient.Close()
-		if err := stopMockServer(grpcServer, dialer); err != nil {
-			t.Fatalf("Unable to stop grpc server")
-		}
+		grpcServer.GracefulStop()
 	}()
 
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
@@ -97,9 +95,7 @@ func TestMetricReporter_Send_ServerDies(t *testing.T) {
 		metricReporterClient.Close()
 	}()
 
-	if err := stopMockServer(grpcServer, dialer); err != nil {
-		t.Fatalf("Unable to stop grpc server")
-	}
+	grpcServer.GracefulStop()
 
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
 		Meta: &proto.Metadata{
@@ -125,17 +121,14 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Restart server
-	if err := stopMockServer(grpcServer, dialer); err != nil {
-		t.Fatalf("Unable to stop grpc server")
-	}
+	grpcServer.GracefulStop()
+
 	grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
 	metricReporterClient.WithDialOptions(getDialOptions(dialer)...)
 
 	defer func() {
 		metricReporterClient.Close()
-		if err := stopMockServer(grpcServer, dialer); err != nil {
-			t.Fatalf("Unable to stop grpc server")
-		}
+		grpcServer.GracefulStop()
 	}()
 
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
