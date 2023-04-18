@@ -5,24 +5,24 @@ VERSION = $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
 COMMIT = $(shell git rev-parse --short HEAD)
 DATE = $(shell date +%F_%H-%M-%S)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://docs.nginx.com/nginx/releases/                                                                          #
-# These images are based on https://github.com/nginxinc/docker-nginx and are NOT recommended for production       #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# | OS_RELEASE       | OS_VERSION                 | NOTES                                                          |
-# | ---------------- | -------------------------- | -------------------------------------------------------------- |
-# | amazonlinux      | 2                          |                                                                |
-# | ubuntu           | 18.04, 20.04, 22.04        |                                                                |
-# | debian           | bullseye-slim, buster-slim |                                                                |
-# | centos           | 7                          |                                                                |
-# | redhatenterprise | 7, 8, 9                    |                                                                |
-# | rockylinux       | 8, 9                       |                                                                |
-# | almalinux        | 8, 9                       |                                                                |
-# | alpine           | 3.13, 3.14, 3.15, 3.16     |                                                                |
-# | oraclelinux      | 7, 8 , 9                   |                                                                |
-# | suse             | sles12sp5, sle15           |                                                                |
-# | freebsd          |                            | Not supported                                                  |
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# https://docs.nginx.com/nginx/releases/                                                                              #
+# These images are based on https://github.com/nginxinc/docker-nginx and are NOT recommended for production           #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# | OS_RELEASE       | OS_VERSION                    | NOTES                                                          |
+# | ---------------- | ----------------------------- | -------------------------------------------------------------- |
+# | amazonlinux      | 2                             |                                                                |
+# | ubuntu           | 18.04, 20.04, 22.04           |                                                                |
+# | debian           | bullseye-slim, buster-slim    |                                                                |
+# | centos           | 7                             |                                                                |
+# | redhatenterprise | 7, 8, 9                       |                                                                |
+# | rockylinux       | 8, 9                          |                                                                |
+# | almalinux        | 8, 9                          |                                                                |
+# | alpine           | 3.13, 3.14, 3.15, 3.16, 3.17  |                                                                |
+# | oraclelinux      | 7, 8 , 9                      |                                                                |
+# | suse             | sles12sp5, sle15              |                                                                |
+# | freebsd          |                               | Not supported                                                  |
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 22.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
@@ -200,7 +200,7 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
-integration-test: local-deb-package local-rpm-package
+integration-test: local-deb-package local-rpm-package local-apk-package
 	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/install
 	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/api
 

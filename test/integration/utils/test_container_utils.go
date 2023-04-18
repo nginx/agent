@@ -18,11 +18,12 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
+	ctx := context.Background()
 	t.Cleanup(func() {
-		assert.NoError(t, comp.Down(context.Background(), compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
+		assert.NoError(t, comp.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctxCancel, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
 
 	require.NoError(t,
@@ -33,9 +34,9 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 				"OS_RELEASE":   os.Getenv("OS_RELEASE"),
 				"OS_VERSION":   os.Getenv("OS_VERSION"),
 			},
-		).Up(ctx, compose.Wait(true)), "compose.Up()")
+		).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
-	testContainer, err := comp.ServiceContainer(ctx, "agent")
+	testContainer, err := comp.ServiceContainer(ctxCancel, "agent")
 	require.NoError(t, err)
 
 	return testContainer
@@ -43,10 +44,10 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 
 // SetupTestContainerWithoutAgent sets up a container with nginx installed
 func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContainer {
-	ctx := context.Background()
 	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
+	ctx := context.Background()
 	t.Cleanup(func() {
 		assert.NoError(t, comp.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
 	})
