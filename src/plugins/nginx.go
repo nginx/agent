@@ -573,7 +573,7 @@ func (n *Nginx) monitor(processInfo []core.Process) error {
 	go n.monitorLogs(errorLogs, logErrorChannel)
 
 	// Expect to receive one message from a message for each NGINX error log file in the logErrorChannel
-	numberOfExpectedMessages := 1 + len(errorLogs)
+	numberOfExpectedMessages := len(errorLogs)
 
 	for i := 0; i < numberOfExpectedMessages; i++ {
 		err := <-logErrorChannel
