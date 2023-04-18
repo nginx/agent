@@ -568,28 +568,18 @@ func (n *Nginx) monitor(processInfo []core.Process) error {
 	errorLogs := n.nginxBinary.GetErrorLogs()
 
 	logErrorChannel := make(chan string, len(errorLogs))
-	pidsChannel := make(chan string)
 	defer close(logErrorChannel)
-	defer close(pidsChannel)
 
 	go n.monitorLogs(errorLogs, logErrorChannel)
-	go n.monitorPids(processInfo, pidsChannel)
 
-	// Expect to receive one message from the pidsChannel and a message for each NGINX error log file in the logErrorChannel
-	numberOfExpectedMessages := 1 + len(errorLogs)
+	// Expect to receive one message from a message for each NGINX error log file in the logErrorChannel
+	numberOfExpectedMessages := len(errorLogs)
 
 	for i := 0; i < numberOfExpectedMessages; i++ {
-		select {
-		case err := <-pidsChannel:
-			log.Tracef("message received in pidsChannel: %s", err)
-			if err != "" {
-				errorsFound = append(errorsFound, err)
-			}
-		case err := <-logErrorChannel:
-			log.Tracef("message received in logErrorChannel: %s", err)
-			if err != "" {
-				errorsFound = append(errorsFound, err)
-			}
+		err := <-logErrorChannel
+		log.Tracef("message received in logErrorChannel: %s", err)
+		if err != "" {
+			errorsFound = append(errorsFound, err)
 		}
 	}
 
@@ -608,61 +598,9 @@ func (n *Nginx) monitorLogs(errorLogs map[string]string, errorChannel chan strin
 		return
 	}
 
-	for _, logFile := range errorLogs {
+	for logFile := range errorLogs {
 		go n.tailLog(logFile, errorChannel)
 	}
-}
-
-func (n *Nginx) monitorPids(processInfo []core.Process, errorChannel chan string) {
-	ticker := time.NewTicker(500 * time.Millisecond)
-	startingPids := parseIntList(processInfo)
-	// wait 200 milliseconds for process information to change
-	time.Sleep(200 * time.Millisecond)
-	timeout := time.After(n.config.Nginx.ConfigReloadMonitoringPeriod)
-
-	for {
-		select {
-		case <-timeout:
-			log.Trace("Timed out monitoring PIDs")
-			ticker.Stop()
-			errorChannel <- "Timed out"
-			return
-		case tick := <-ticker.C:
-			log.Tracef("Monitoring Pids %v", tick)
-			currentList := parseIntList(n.getNginxProccessInfo())
-			difference := intersection(startingPids, currentList)
-			// if there is one pid leftover, that's ok
-			if len(difference) <= 1 {
-				errorChannel <- ""
-				log.Tracef("Success monitoring PIDs")
-				ticker.Stop()
-				return
-			}
-		}
-	}
-}
-
-func intersection(list1 []int, list2 []int) []int {
-	m := make(map[int]bool)
-	intersection := []int{}
-
-	for _, item := range list1 {
-		m[item] = true
-	}
-	for _, item := range list2 {
-		if m[item] {
-			intersection = append(intersection, item)
-		}
-	}
-	return intersection
-}
-
-func parseIntList(data []core.Process) []int {
-	result := make([]int, len(data))
-	for index, process := range data {
-		result[index] = int(process.Pid)
-	}
-	return result
 }
 
 func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
@@ -693,6 +631,7 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 				}
 			}
 		case <-tick.C:
+			errorChannel <- ""
 			return
 		}
 	}

@@ -1086,14 +1086,6 @@ func TestNginx_monitor(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	pluginUnderTest.syncProcessInfo([]core.Process{
-		{Pid: 1, Name: "12345", IsMaster: true},
-		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
-		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
-	})
-
-	time.Sleep(1 * time.Second)
-
 	errorsChannel := make(chan error, 1)
 
 	// Validate that errors in the logs returned
@@ -1101,14 +1093,7 @@ func TestNginx_monitor(t *testing.T) {
 		errorFound := pluginUnderTest.monitor(pluginUnderTest.getNginxProccessInfo())
 		errorsChannel <- errorFound
 	}()
-
 	time.Sleep(1 * time.Second)
-
-	pluginUnderTest.syncProcessInfo([]core.Process{
-		{Pid: 1, Name: "12345", IsMaster: true},
-		{Pid: 6, ParentPid: 1, Name: "worker-6", IsMaster: false},
-		{Pid: 7, ParentPid: 1, Name: "worker-7", IsMaster: false},
-	})
 
 	_, err = errorLogFile.WriteString("2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)")
 	require.NoError(t, err, "Error writing data to error log file")
@@ -1170,123 +1155,5 @@ func TestNginx_monitorLog(t *testing.T) {
 			assert.Fail(t, "Expected error to be reported")
 			return
 		}
-	}
-}
-
-func TestNginx_monitorPids(t *testing.T) {
-	tests := []struct {
-		name                string
-		startingProcesses   []core.Process
-		updatedProcesses    []core.Process
-		errorStr            string
-		expectedTestTimeout bool
-		ticker              time.Duration
-		monitoringPeriod    time.Duration
-	}{
-		{
-			name:              "postive case",
-			startingProcesses: tutils.GetProcesses(),
-			updatedProcesses: []core.Process{
-				{Pid: 1, Name: "12345", IsMaster: true},
-				{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
-				{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
-			},
-			errorStr:            "",
-			expectedTestTimeout: false,
-			ticker:              1 * time.Second,
-			monitoringPeriod:    2 * time.Second,
-		},
-		{
-			name:              "timeout case",
-			startingProcesses: tutils.GetProcesses(),
-			updatedProcesses: []core.Process{
-				{Pid: 1, Name: "12345", IsMaster: true},
-				{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
-				{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
-			},
-			errorStr:            "",
-			expectedTestTimeout: true,
-			ticker:              2 * time.Second,
-			monitoringPeriod:    2 * time.Second,
-		},
-		{
-			name:                "ticker timeout case",
-			startingProcesses:   tutils.GetProcesses(),
-			updatedProcesses:    tutils.GetProcesses(),
-			errorStr:            "Timed out",
-			expectedTestTimeout: false,
-			ticker:              2 * time.Second,
-			monitoringPeriod:    100 * time.Millisecond,
-		},
-	}
-
-	for _, test := range tests {
-		t.Logf("Running test %s", test.name)
-		errorChannel := make(chan string, 1)
-		env := tutils.GetMockEnvWithProcess()
-		config := tutils.GetMockAgentConfig()
-		config.Nginx.ConfigReloadMonitoringPeriod = test.monitoringPeriod
-		pluginUnderTest := NewNginx(tutils.GetMockCommandClient(&proto.NginxConfig{}), tutils.NewMockNginxBinary(), env, config)
-
-		go pluginUnderTest.monitorPids(test.startingProcesses, errorChannel)
-		pluginUnderTest.syncProcessInfo(test.updatedProcesses)
-
-		select {
-		case err := <-errorChannel:
-			// Check that the function completed with expected errors
-			assert.Equal(t, test.errorStr, err)
-		case <-time.After(test.ticker):
-			// Timeout if the function takes too long
-			// t.Error("Timed out waiting for function to complete")
-			assert.True(t, test.expectedTestTimeout)
-		}
-	}
-}
-
-func TestParseIntList(t *testing.T) {
-	processes := tutils.GetProcesses()
-
-	pidList := parseIntList(processes)
-
-	expectedPids := []int{1, 2, 3}
-	for i, expected := range expectedPids {
-		if pidList[i] != expected {
-			t.Errorf("parseIntList returned value %d at index %d, expected %d", pidList[i], i, expected)
-		}
-	}
-}
-
-func TestIntersection(t *testing.T) {
-	tests := []struct {
-		list1    []int
-		list2    []int
-		expected []int
-	}{
-		{
-			list1:    []int{},
-			list2:    []int{},
-			expected: []int{},
-		},
-		{
-			list1:    []int{1, 2, 3},
-			list2:    []int{4, 5, 6},
-			expected: []int{},
-		},
-		{
-			list1:    []int{1, 2, 3},
-			list2:    []int{},
-			expected: []int{},
-		},
-		{
-			list1:    []int{1, 2, 3},
-			list2:    []int{2, 3, 4, 5},
-			expected: []int{2, 3},
-		},
-	}
-
-	for _, tt := range tests {
-		result := intersection(tt.list1, tt.list2)
-		// Check that the output matches the expected result
-		assert.Equal(t, tt.expected, result, "Intersection should match expected result")
 	}
 }
