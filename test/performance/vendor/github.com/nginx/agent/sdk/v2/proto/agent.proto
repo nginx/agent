@@ -85,12 +85,32 @@ message AgentDetails {
 }
 
 message Server {
-  Backoff backoff = 1 [(gogoproto.jsontag) = "backoff"];
+  // Host name or IP of the host to connect to
+  string host = 1 [(gogoproto.jsontag) = "host"];
+  // Grpc port to connect to
+  int32 grpc_port = 2 [(gogoproto.jsontag) = "grpc_port"];
+  // Shared secrect between the server and client
+  string token = 3 [(gogoproto.jsontag) = "token"];
+  // Metrics server name
+  string metrics = 4 [(gogoproto.jsontag) = "metrics"];
+  // Command server name
+  string command = 5 [(gogoproto.jsontag) = "command"];
+  // Backoff settings for exponential retry and backoff
+  Backoff backoff = 6 [(gogoproto.jsontag) = "backoff"];
 }
 
 message Backoff {
-  // Duration in Seconds.
-  int64 delay = 1 [(gogoproto.jsontag) = "delay"];
+  // First backoff time interval in seconds
+  int32 intial_interval = 1 [(gogoproto.jsontag) = "intial_interval"];
+  // Random value used to create range around next backoff interval
+  float randomization_factor = 2 [(gogoproto.jsontag) = "randomization_factor"];
+  // Value to be multiplied with current backoff interval
+  float multiplier = 3 [(gogoproto.jsontag) = "multiplier"];
+  // Max interval in seconds between two retries
+  int32 max_interval = 4 [(gogoproto.jsontag) = "max_interval"];
+  // Elapsed time in seconds after which backoff stops.
+  // It never stops if max_elapsed_time == 0.
+  int32 max_elapsed_time = 5 [(gogoproto.jsontag) = "max_elapsed_time"];
 }
 
 // Represents agent logging details
