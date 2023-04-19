@@ -263,7 +263,11 @@ Represents agent metadata
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| delay | [int64](#int64) |  | Duration in Seconds. |
+| intial_interval | [int32](#int32) |  | First backoff time interval in seconds |
+| randomization_factor | [float](#float) |  | Random value used to create range around next backoff interval |
+| multiplier | [float](#float) |  | Value to be multiplied with current backoff interval |
+| max_interval | [int32](#int32) |  | Max interval in seconds between two retries |
+| max_elapsed_time | [int32](#int32) |  | Elapsed time in seconds after which backoff stops. It never stops if max_elapsed_time == 0. |
 
 
 
@@ -278,7 +282,12 @@ Represents agent metadata
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| backoff | [Backoff](#f5-nginx-agent-sdk-Backoff) |  |  |
+| host | [string](#string) |  | Host name or IP of the host to connect to |
+| grpc_port | [int32](#int32) |  | Grpc port to connect to |
+| token | [string](#string) |  | Shared secrect between the server and client |
+| metrics | [string](#string) |  | Metrics server name |
+| command | [string](#string) |  | Command server name |
+| backoff | [Backoff](#f5-nginx-agent-sdk-Backoff) |  | Backoff settings for exponential retry and backoff |
 
 
 
