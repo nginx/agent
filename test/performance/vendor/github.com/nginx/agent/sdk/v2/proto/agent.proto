@@ -85,12 +85,12 @@ message AgentDetails {
 }
 
 message Server {
-   Backoff backoff = 1 [(gogoproto.jsontag) = "backoff"];
+  Backoff backoff = 1 [(gogoproto.jsontag) = "backoff"];
 }
 
 message Backoff {
-   // Duration in Seconds.
-   int64 delay = 1 [(gogoproto.jsontag) = "delay"];
+  // Duration in Seconds.
+  int64 delay = 1 [(gogoproto.jsontag) = "delay"];
 }
 
 // Represents agent logging details
