@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package price
+package stats
 
 import (
 	"context"
 	"fmt"
-	"text/template"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestat"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -31,48 +31,8 @@ import (
 )
 
 const (
-	disableSymlinksFlagName       = "disable-symlinks"
-	teamsDollarsPerType           = float64(0.50)
-	proDollarsPerType             = float64(1)
-	teamsDollarsPerTypeDiscounted = float64(0.40)
-	proDollarsPerTypeDiscounted   = float64(0.80)
-	tmplCopy                      = `Current BSR pricing:
-
-  - Teams: $0.50 per type
-  - Pro: $1.00 per type
-
-If you sign up before October 15, 2023, we will give you a 20% discount for the first year:
-
-  - Teams: $0.40 per type for the first year
-  - Pro: $0.80 per type for the first year
-
-Pricing data last updated on April 4, 2023.
-
-Make sure you are on the latest version of the Buf CLI to get the most updated pricing
-information, and see buf.build/pricing if in doubt - this command runs completely locally
-and does not interact with our servers.
-
-Your sources have:
-
-  - {{.NumMessages}} messages
-  - {{.NumEnums}} enums
-  - {{.NumMethods}} methods
-
-This adds up to {{.NumTypes}} types.
-
-Based on this, these sources will cost:
-
-- ${{.TeamsDollarsPerMonth}}/month for Teams
-- ${{.ProDollarsPerMonth}}/month for Pro
-
-If you sign up before October 15, 2023, for the first year, these sources will cost:
-
-- ${{.TeamsDollarsPerMonthDiscounted}}/month for Teams
-- ${{.ProDollarsPerMonthDiscounted}}/month for Pro
-
-These values should be treated as an estimate - we price based on the average number
-of private types you have on the BSR during your billing period.
-`
+	formatFlagName          = "format"
+	disableSymlinksFlagName = "disable-symlinks"
 )
 
 // NewCommand returns a new Command.
@@ -83,8 +43,8 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Get the price for BSR paid plans for a given source or module",
-		Long:  bufcli.GetSourceOrModuleLong(`the source or module to get a price for`),
+		Short: "Get statistics for a given source or module",
+		Long:  bufcli.GetSourceOrModuleLong(`the source or module to get statistics for`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -97,6 +57,7 @@ func NewCommand(
 }
 
 type flags struct {
+	Format          string
 	DisableSymlinks bool
 
 	// special
@@ -108,6 +69,12 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(
+		&f.Format,
+		formatFlagName,
+		bufprint.FormatText.String(),
+		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+	)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 }
@@ -117,6 +84,10 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	format, err := bufprint.ParseFormat(flags.Format)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
@@ -165,34 +136,6 @@ func run(
 		}
 		statsSlice[i] = stats
 	}
-	tmpl, err := template.New("tmpl").Parse(tmplCopy)
-	if err != nil {
-		return err
-	}
-	return tmpl.Execute(
-		container.Stdout(),
-		newTmplData(protostat.MergeStats(statsSlice...)),
-	)
-}
-
-type tmplData struct {
-	*protostat.Stats
-
-	NumTypes                       int
-	TeamsDollarsPerMonth           string
-	ProDollarsPerMonth             string
-	TeamsDollarsPerMonthDiscounted string
-	ProDollarsPerMonthDiscounted   string
-}
-
-func newTmplData(stats *protostat.Stats) *tmplData {
-	tmplData := &tmplData{
-		Stats:    stats,
-		NumTypes: stats.NumMessages + stats.NumEnums + stats.NumMethods,
-	}
-	tmplData.TeamsDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*teamsDollarsPerType)
-	tmplData.ProDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*proDollarsPerType)
-	tmplData.TeamsDollarsPerMonthDiscounted = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*teamsDollarsPerTypeDiscounted)
-	tmplData.ProDollarsPerMonthDiscounted = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*proDollarsPerTypeDiscounted)
-	return tmplData
+	return bufprint.NewStatsPrinter(container.Stdout()).
+		PrintStats(ctx, format, protostat.MergeStats(statsSlice...))
 }
