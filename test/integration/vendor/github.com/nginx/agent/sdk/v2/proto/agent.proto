@@ -80,6 +80,17 @@ message AgentDetails {
   repeated string tags = 3 [(gogoproto.jsontag) = "tags"];
   // Alias name for the agent
   string alias = 4 [(gogoproto.jsontag) = "alias"];
+  // Server setting for the agent
+  Server server = 5 [(gogoproto.jsontag) = "server"];
+}
+
+message Server {
+   Backoff backoff = 1 [(gogoproto.jsontag) = "backoff"];
+}
+
+message Backoff {
+   // Duration in Seconds.
+   int64 delay = 1 [(gogoproto.jsontag) = "delay"];
 }
 
 // Represents agent logging details

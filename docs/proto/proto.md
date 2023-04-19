@@ -12,6 +12,8 @@
     - [AgentDetails](#f5-nginx-agent-sdk-AgentDetails)
     - [AgentLogging](#f5-nginx-agent-sdk-AgentLogging)
     - [AgentMeta](#f5-nginx-agent-sdk-AgentMeta)
+    - [Backoff](#f5-nginx-agent-sdk-Backoff)
+    - [Server](#f5-nginx-agent-sdk-Server)
   
     - [AgentConnectStatus.StatusCode](#f5-nginx-agent-sdk-AgentConnectStatus-StatusCode)
     - [AgentLogging.Level](#f5-nginx-agent-sdk-AgentLogging-Level)
@@ -204,6 +206,7 @@ Represents agent details. This message is sent from the management server to the
 | extensions | [string](#string) | repeated | List of agent extensions that are enabled |
 | tags | [string](#string) | repeated | List of tags |
 | alias | [string](#string) |  | Alias name for the agent |
+| server | [Server](#f5-nginx-agent-sdk-Server) |  | Server setting for the agent |
 
 
 
@@ -246,6 +249,36 @@ Represents agent metadata
 | updated | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Last time agent was updated |
 | system_uid | [string](#string) |  | ID of the system where the agent is installed |
 | agent_details | [AgentDetails](#f5-nginx-agent-sdk-AgentDetails) |  | Provides other agent information |
+
+
+
+
+
+
+<a name="f5-nginx-agent-sdk-Backoff"></a>
+
+### Backoff
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| delay | [int64](#int64) |  | Duration in Seconds. |
+
+
+
+
+
+
+<a name="f5-nginx-agent-sdk-Server"></a>
+
+### Server
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| backoff | [Backoff](#f5-nginx-agent-sdk-Backoff) |  |  |
 
 
 
