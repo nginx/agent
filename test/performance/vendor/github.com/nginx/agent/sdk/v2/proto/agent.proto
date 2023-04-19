@@ -101,16 +101,16 @@ message Server {
 
 message Backoff {
   // First backoff time interval in seconds
-  int32 intial_interval = 1 [(gogoproto.jsontag) = "intial_interval"];
+  int64 intial_interval = 1 [(gogoproto.jsontag) = "intial_interval"];
   // Random value used to create range around next backoff interval
   float randomization_factor = 2 [(gogoproto.jsontag) = "randomization_factor"];
   // Value to be multiplied with current backoff interval
   float multiplier = 3 [(gogoproto.jsontag) = "multiplier"];
   // Max interval in seconds between two retries
-  int32 max_interval = 4 [(gogoproto.jsontag) = "max_interval"];
+  int64 max_interval = 4 [(gogoproto.jsontag) = "max_interval"];
   // Elapsed time in seconds after which backoff stops.
   // It never stops if max_elapsed_time == 0.
-  int32 max_elapsed_time = 5 [(gogoproto.jsontag) = "max_elapsed_time"];
+  int64 max_elapsed_time = 5 [(gogoproto.jsontag) = "max_elapsed_time"];
 }
 
 // Represents agent logging details

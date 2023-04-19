@@ -263,11 +263,11 @@ Represents agent metadata
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| intial_interval | [int32](#int32) |  | First backoff time interval in seconds |
+| intial_interval | [int64](#int64) |  | First backoff time interval in seconds |
 | randomization_factor | [float](#float) |  | Random value used to create range around next backoff interval |
 | multiplier | [float](#float) |  | Value to be multiplied with current backoff interval |
-| max_interval | [int32](#int32) |  | Max interval in seconds between two retries |
-| max_elapsed_time | [int32](#int32) |  | Elapsed time in seconds after which backoff stops. It never stops if max_elapsed_time == 0. |
+| max_interval | [int64](#int64) |  | Max interval in seconds between two retries |
+| max_elapsed_time | [int64](#int64) |  | Elapsed time in seconds after which backoff stops. It never stops if max_elapsed_time == 0. |
 
 
 
