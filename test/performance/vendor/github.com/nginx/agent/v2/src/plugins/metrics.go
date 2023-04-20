@@ -349,8 +349,10 @@ func (m *Metrics) updateCollectorsConfig() {
 }
 
 func (m *Metrics) updateCollectorsSources() {
-	log.Trace("Updating collector config")
+	log.Trace("Updating nginx collector sources")
 	for _, collector := range m.collectors {
-		collector.UpdateSources()
+		if nginxCollector, ok := collector.(*collectors.NginxCollector); ok {
+			nginxCollector.UpdateSources()
+		}
 	}
 }
