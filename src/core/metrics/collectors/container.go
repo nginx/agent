@@ -84,7 +84,3 @@ func (c *ContainerCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m 
 func (c *ContainerCollector) UpdateConfig(config *config.Config) {
 	c.dim = metrics.NewCommonDim(c.env.NewHostInfo("agentVersion", &config.Tags, config.ConfigDirs, false), config, "")
 }
-
-func (c *ContainerCollector) UpdateSources() {
-	log.Info("Something Here")
-}

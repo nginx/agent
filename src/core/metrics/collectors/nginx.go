@@ -18,10 +18,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	_ metrics.Collector = (*NginxCollector)(nil)
-)
-
 type NginxCollector struct {
 	sources       []metrics.NginxSource
 	buf           chan *metrics.StatsEntityWrapper
