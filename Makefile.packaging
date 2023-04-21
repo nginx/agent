@@ -9,14 +9,21 @@ GPG_PUBLIC_KEY      := .key
 
 DEB_DISTROS?=ubuntu-jammy-22.04 ubuntu-focal-20.04 ubuntu-bionic-18.04 debian-bullseye-11 debian-buster-10
 DEB_ARCHS?=arm64 amd64
-RPM_DISTROS?=centos-7-x86_64 redhatenterprise-7-x86_64 redhatenterprise-8-x86_64 redhatenterprise-9-x86_64 amazon-2-x86_64 amazon-latest-x86_64 amazon-2017.09-x86_64 suse-12-x86_64 suse-15-x86_64
+RPM_DISTROS?=centos-7-x86_64 oraclelinux-7-x86_64 oraclelinux-8-x86_64 oraclelinux-9-x86_64 suse-12-x86_64 suse-15-x86_64
 RPM_ARCH=x86_64
+REDHAT_VERSIONS?=redhatenterprise-7 redhatenterprise-8 redhatenterprise-9
+REDHAT_ARCHS?=aarch64 x86_64
+ROCKY_VERSIONS?=rocky-8 rocky-9
+ROCKY_ARCHS?=aarch64 x86_64
 FREEBSD_DISTROS?="FreeBSD:12:amd64" "FreeBSD:13:amd64"
-APK_VERSIONS?=3.13 3.14 3.15 3.16
+APK_VERSIONS?=3.13 3.14 3.15 3.16 3.17
 APK_ARCHS?=aarch64 x86_64
+ALMA_VERSIONS?=almalinux-8 almalinux-9
+ALMA_ARCHS?=aarch64 x86_64
+AMAZON_VERSIONS?=amazon-2
+AMAZON_ARCHS?=aarch64 x86_64
 
 UPLOAD_URL         := "https://up-ap.nginx.com/"
-AGENT_UPLOADER_KEY := "./agent-uploader.pem"
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Release Packaging                                                                                               #
@@ -39,29 +46,98 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 		for distro in $(DEB_DISTROS); do \
 			deb_codename=`echo $$distro | cut -d- -f 2`; \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename} ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb; \
-            cp ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb; \
+			cp ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb; \
 		done; \
 		rm -rf ./build/nginx-agent; \
 	done; \
 	
 	# Create rpm packages
-	
+
 	@GOWORK=off CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 	@for distro in $(RPM_DISTROS); do \
-		rpm_distro=`echo $$distro | cut -d- -f 1`;  \
+		rpm_distro=`echo $$distro | cut -d- -f 1`; \
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
 		rpm_codename='na'; \
 		if [ "$$rpm_distro" = "centos" ] || [ "$$rpm_distro" = "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
-		elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; fi; \
-		if [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; fi; \
+			elif [ "$$rpm_distro" = "oraclelinux" ]; then rpm_codename="oraclelinux$$rpm_major"; \
+			elif [ "$$rpm_distro" = "amazon" ] && [ "$$rpm_major" = "2" ]; then rpm_codename="amzn$$rpm_major"; \
+			elif [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; \
+		fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=amd64 nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
 			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$(RPM_ARCH).rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
 		fi; \
 	done; \
 	rm -rf ./build/nginx-agent
+
+
+	# Create redhat rpm packages
+	
+	@for arch in $(REDHAT_ARCHS); do \
+		goarch=amd64; \
+		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		for distro in $(REDHAT_VERSIONS); do \
+			rpm_distro=`echo $$distro | cut -d- -f 1`; \
+			rpm_major=`echo $$distro | cut -d- -f 2`; \
+			rpm_codename="el$$rpm_major"; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+		done; \
+		rm -rf ./build/nginx-agent; \
+	done; \
+
+	# Create almalinux rpm packages
+	
+	@for arch in $(ALMA_ARCHS); do \
+		goarch=amd64; \
+		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		for distro in $(ALMA_VERSIONS); do \
+			rpm_distro=`echo $$distro | cut -d- -f 1`; \
+			rpm_major=`echo $$distro | cut -d- -f 2`; \
+			rpm_codename="almalinux$$rpm_major"; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+		done; \
+		rm -rf ./build/nginx-agent; \
+	done; \
+	
+	# Create rocky rpm packages
+	
+	@for arch in $(ROCKY_ARCHS); do \
+		goarch=amd64; \
+		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		for distro in $(ROCKY_VERSIONS); do \
+			rpm_distro=`echo $$distro | cut -d- -f 1`; \
+			rpm_major=`echo $$distro | cut -d- -f 2`; \
+			rpm_codename='na'; \
+			if [ "$$rpm_distro" = "rocky" ]; then rpm_codename="rocky$$rpm_major"; fi; \
+			if [ "$$rpm_codename" != "na" ]; then \
+				VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+				cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+			fi; \
+		done; \
+		rm -rf ./build/nginx-agent; \
+	done; \
+
+	@for arch in $(AMAZON_ARCHS); do \
+		goarch=amd64; \
+		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		for distro in $(AMAZON_VERSIONS); do \
+			rpm_distro=`echo $$distro | cut -d- -f 1`; \
+			rpm_major=`echo $$distro | cut -d- -f 2`; \
+			rpm_codename="amazon$$rpm_major"; \
+			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
+		done; \
+		rm -rf ./build/nginx-agent; \
+	done; \
 	
 	# Create apk packages
+
 	@for arch in $(APK_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
@@ -69,7 +145,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
     	for version in $(APK_VERSIONS); do \
 			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
-            cp $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-v$${version}-$${arch}.apk; \
+			cp $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-v$${version}-$${arch}.apk; \
 		done; \
 		rm -rf ./build/nginx-agent; \
 	done; \
@@ -78,8 +154,8 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	
 	rm -rf ./build/nginx-agent
 	@GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
-
-	docker run -v `pwd`:/nginx-agent/ build-signed-packager:1.0.0
+	
+	docker run -v ${PWD}:/nginx-agent/ build-signed-packager:1.0.0
 	
 	echo "DEB packages:"; \
 	find $(PACKAGES_DIR)/deb ;\
@@ -104,5 +180,5 @@ gpg-key: ## Generate GPG public key
 
 release: ## Publish tarball to the UPLOAD_URL
 	echo "Publishing nginx-agent packages to ${UPLOAD_URL}"; \
-	curl -XPOST -F "file=@$(PACKAGES_DIR)/${PACKAGE_PREFIX}.tar.gz" -E ${AGENT_UPLOADER_KEY} ${UPLOAD_URL}; \
-	curl -XPOST -F "file=@$(GPG_PUBLIC_KEY)" -E ${AGENT_UPLOADER_KEY} ${UPLOAD_URL}; \
+	curl -XPOST -F "file=@$(PACKAGES_DIR)/${PACKAGE_PREFIX}.tar.gz" -H "Token: ${TOKEN}" ${UPLOAD_URL}; \
+	curl -XPOST -F "file=@$(GPG_PUBLIC_KEY)" -H "Token: ${TOKEN}" ${UPLOAD_URL}; \

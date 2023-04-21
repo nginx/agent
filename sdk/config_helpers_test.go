@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,11 +22,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/nginx/agent/sdk/v2/checksum"
 	SDKfiles "github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/zip"
+
+	"github.com/gogo/protobuf/types"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -142,6 +142,7 @@ var tests = []struct {
 					app_protect_policy_file /tmp/testdata/root/my-nap-policy.json;
 					app_protect_security_log_enable on;
 					app_protect_security_log "/tmp/testdata/root/log-default.json" /var/log/app_protect/security.log;		
+					proxy_ssl_certificate /tmp/testdata/nginx/proxy.crt;
 				}
 
 				location /privateapi {
@@ -170,15 +171,19 @@ var tests = []struct {
 							{
 								Name:        "nginx.conf",
 								Permissions: "0644",
-								Size_:       959,
+								Lines:       int32(52),
 							},
 							{
 								Name:        "ca.crt",
 								Permissions: "0644",
-								Size_:       959,
+								Lines:       int32(31),
+							},
+							{
+								Name:        "proxy.crt",
+								Permissions: "0644",
+								Lines:       int32(31),
 							},
 						},
-						Size_: 128,
 					},
 					{
 						Name:        "/tmp/testdata/root",
@@ -187,20 +192,16 @@ var tests = []struct {
 							{
 								Name:        "log-default.json",
 								Permissions: "0644",
-								Size_:       959,
 							},
 							{
 								Name:        "my-nap-policy.json",
 								Permissions: "0644",
-								Size_:       959,
 							},
 							{
 								Name:        "test.html",
 								Permissions: "0644",
-								Size_:       959,
 							},
 						},
-						Size_: 128,
 					},
 				},
 			},
@@ -234,7 +235,38 @@ var tests = []struct {
 							State:              []string{"Cork"},
 							OrganizationalUnit: nil,
 						},
-						Size_:                  1926,
+						Mtime:                  &types.Timestamp{Seconds: 1633343804, Nanos: 15240107},
+						SubjAltNames:           nil,
+						PublicKeyAlgorithm:     "RSA",
+						SignatureAlgorithm:     "SHA512-RSA",
+						SerialNumber:           "12554968962670027276",
+						SubjectKeyIdentifier:   "75:50:E2:24:8F:6F:13:1D:81:20:E1:01:0B:57:2B:98:39:E5:2E:C3",
+						Fingerprint:            "48:6D:05:D4:78:10:91:15:69:74:9C:6A:54:F7:F2:FC:C8:93:46:E8:28:42:24:41:68:41:51:1E:1E:43:E0:12",
+						FingerprintAlgorithm:   "SHA512-RSA",
+						AuthorityKeyIdentifier: "3A:79:E0:3E:61:CD:94:29:1D:BB:45:37:0B:E9:78:E9:2F:40:67:CA",
+						Version:                3,
+					},
+					{
+						FileName: "/tmp/testdata/nginx/proxy.crt",
+						Validity: &proto.CertificateDates{
+							NotBefore: 1632834204,
+							NotAfter:  1635426204,
+						},
+						Issuer: &proto.CertificateName{
+							CommonName:         "ca.local",
+							Country:            []string{"IE"},
+							Locality:           []string{"Cork"},
+							Organization:       []string{"NGINX"},
+							OrganizationalUnit: nil,
+						},
+						Subject: &proto.CertificateName{
+							CommonName:         "ca.local",
+							Country:            []string{"IE"},
+							Locality:           []string{"Cork"},
+							Organization:       []string{"NGINX"},
+							State:              []string{"Cork"},
+							OrganizationalUnit: nil,
+						},
 						Mtime:                  &types.Timestamp{Seconds: 1633343804, Nanos: 15240107},
 						SubjAltNames:           nil,
 						PublicKeyAlgorithm:     "RSA",
@@ -254,13 +286,14 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "4b9cb7001222fcbf2a24e3409b264302a8a8f22f28c4a1830e065f0986dd57e6",
+				Checksum:      "b12f45dee53b801dffe5091354a985b16552d5453fdf832df6f34b3b2ef9d2ee",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
 		expectedAuxFiles: map[string]struct{}{
 			"/tmp/testdata/root/test.html":          {},
 			"/tmp/testdata/nginx/ca.crt":            {},
+			"/tmp/testdata/nginx/proxy.crt":         {},
 			"/tmp/testdata/root/my-nap-policy.json": {},
 			"/tmp/testdata/root/log-default.json":   {},
 		},
@@ -321,10 +354,8 @@ var tests = []struct {
 							{
 								Name:        "test.html",
 								Permissions: "0644",
-								Size_:       959,
 							},
 						},
-						Size_: 128,
 					},
 					{
 						Name:        "/tmp/testdata/nginx",
@@ -333,15 +364,14 @@ var tests = []struct {
 							{
 								Name:        "nginx2.conf",
 								Permissions: "0644",
-								Size_:       959,
+								Lines:       int32(41),
 							},
 							{
 								Name:        "ca.crt",
 								Permissions: "0644",
-								Size_:       959,
+								Lines:       int32(31),
 							},
 						},
-						Size_: 128,
 					},
 				},
 			},
@@ -375,7 +405,6 @@ var tests = []struct {
 							State:              []string{"Cork"},
 							OrganizationalUnit: nil,
 						},
-						Size_:                  1926,
 						Mtime:                  &types.Timestamp{Seconds: 1633343804, Nanos: 15240107},
 						SubjAltNames:           nil,
 						PublicKeyAlgorithm:     "RSA",
@@ -483,10 +512,9 @@ var tests = []struct {
 							{
 								Name:        "hello.conf",
 								Permissions: "0644",
-								Size_:       1672,
+								Lines:       int32(62),
 							},
 						},
-						Size_: 160,
 					},
 					{
 						Name:        "/tmp/testdata/nginx/other",
@@ -505,7 +533,6 @@ var tests = []struct {
 								Permissions: "0644",
 							},
 						},
-						Size_: 160,
 					},
 				},
 			},
@@ -602,7 +629,7 @@ func TestGetNginxConfig(t *testing.T) {
 		err = setUpFile(test.fileName, []byte(test.config))
 		assert.NoError(t, err)
 
-		err = generateCertificate()
+		err = generateCertificates()
 		assert.NoError(t, err)
 
 		allowedDirs := map[string]struct{}{}
@@ -626,6 +653,7 @@ func TestGetNginxConfig(t *testing.T) {
 				resultFile := resultDir.Files[fileIndex]
 				assert.Equal(t, expectedFile.Name, resultFile.Name)
 				assert.Equal(t, expectedFile.Permissions, resultFile.Permissions)
+				assert.Equal(t, expectedFile.Lines, resultFile.Lines, "unexpected line count for "+expectedFile.Name)
 			}
 		}
 
@@ -715,12 +743,12 @@ func TestGetStatusApiInfo(t *testing.T) {
 			require.Nil(t, err)
 
 			// Replace ip & ports in config with mock server ip & port
-			input, err := ioutil.ReadFile(test.fileName)
+			input, err := os.ReadFile(test.fileName)
 			assert.Nil(t, err)
 			splitUrl := strings.Split(server.URL, "//")[1]
 
 			output := bytes.Replace(input, []byte("127.0.0.1:80"), []byte(splitUrl), -1)
-			assert.NoError(t, ioutil.WriteFile(test.fileName, output, 0666))
+			assert.NoError(t, os.WriteFile(test.fileName, output, 0664))
 
 			result, err := GetStatusApiInfo(test.fileName)
 
@@ -912,7 +940,7 @@ server {
 		`,
 		},
 	} {
-		f, err := ioutil.TempFile(tmpDir, "conf")
+		f, err := os.CreateTemp(tmpDir, "conf")
 		assert.NoError(t, err)
 
 		_, err = f.Write([]byte(fmt.Sprintf("http{ %s }", tt.conf)))
@@ -985,7 +1013,7 @@ func setUpDirectories() error {
 	}
 
 	for _, file := range files {
-		err := ioutil.WriteFile(file, []byte{}, 0644)
+		err := os.WriteFile(file, []byte{}, 0644)
 		if err != nil {
 			return err
 		}
@@ -1016,7 +1044,7 @@ func setUpFile(file string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(file, content, 0644)
+	err = os.WriteFile(file, content, 0644)
 	if err != nil {
 		return err
 	}
@@ -1066,7 +1094,7 @@ func getCertMeta(file string) crtMetaFields {
 	}
 }
 
-func generateCertificate() error {
+func generateCertificates() error {
 	cmd := exec.Command("../scripts/tls/gen_cnf.sh", "ca", "--cn", "'ca.local'", "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "certs/conf")
 
 	err := cmd.Run()
@@ -1077,6 +1105,14 @@ func generateCertificate() error {
 	cmd1 := exec.Command("../scripts/tls/gen_cert.sh", "ca", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
 
 	err = cmd1.Run()
+	if err != nil {
+		return err
+	}
+
+	// create proxy.crt copy
+	copyCmd := exec.Command("cp", "/tmp/testdata/nginx/ca.crt", "/tmp/testdata/nginx/proxy.crt")
+
+	err = copyCmd.Run()
 	if err != nil {
 		return err
 	}
@@ -1112,7 +1148,7 @@ root foo/bar;`,
 		t.Run(tt.name, func(t *testing.T) {
 			tmpDir := t.TempDir()
 
-			f, err := ioutil.TempFile(tmpDir, "conf")
+			f, err := os.CreateTemp(tmpDir, "conf")
 			require.NoError(t, err)
 
 			_, err = f.WriteString(tt.input)
@@ -1168,10 +1204,8 @@ func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
 								{
 									Name:        "app_protect_metadata.json",
 									Permissions: "0644",
-									Size_:       959,
 								},
 							},
-							Size_: 128,
 						},
 					},
 				},
@@ -1256,6 +1290,7 @@ func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
 				resultFile := resultDir.Files[fileIndex]
 				assert.Equal(t, expectedFile.Name, resultFile.Name)
 				assert.Equal(t, expectedFile.Permissions, resultFile.Permissions)
+				assert.Equal(t, expectedFile.Lines, resultFile.Lines, "unexpected line count for "+expectedFile.Name)
 			}
 		}
 	}
@@ -1283,10 +1318,8 @@ func TestAddAuxfileToNginxConfig(t *testing.T) {
 								{
 									Name:        "app_protect_metadata.json",
 									Permissions: "0644",
-									Size_:       959,
 								},
 							},
-							Size_: 128,
 						},
 					},
 				},
@@ -1356,6 +1389,7 @@ func TestAddAuxfileToNginxConfig(t *testing.T) {
 				resultFile := resultDir.Files[fileIndex]
 				assert.Equal(t, expectedFile.Name, resultFile.Name)
 				assert.Equal(t, expectedFile.Permissions, resultFile.Permissions)
+				assert.Equal(t, expectedFile.Lines, resultFile.Lines, "unexpected line count for "+expectedFile.Name)
 			}
 		}
 	}

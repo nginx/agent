@@ -36,32 +36,12 @@ func validateBasic(res *result, handler *reporter.Handler) {
 		return
 	}
 
-	depth := 0
-	_ = walk.DescriptorProtosEnterAndExit(fd,
+	_ = walk.DescriptorProtos(fd,
 		func(name protoreflect.FullName, d proto.Message) error {
-			if depth >= 32 {
-				// ignore any deeper structure
-				return nil
-			}
-
 			switch d := d.(type) {
 			case *descriptorpb.DescriptorProto:
-				depth++
-				if depth == 32 {
-					var n ast.Node = res.MessageNode(d)
-					if grp, ok := n.(*ast.GroupNode); ok {
-						// pinpoint the group keyword if the source is a group
-						n = grp.Keyword
-					}
-					if err := handler.HandleErrorf(res.file.NodeInfo(n).Start(), "message nesting depth must be less than 32"); err != nil {
-						// exit func is not called when enter returns error
-						depth--
-						return err
-					}
-				}
 				if err := validateMessage(res, isProto3, name, d, handler); err != nil {
 					// exit func is not called when enter returns error
-					depth--
 					return err
 				}
 			case *descriptorpb.EnumDescriptorProto:
@@ -72,12 +52,6 @@ func validateBasic(res *result, handler *reporter.Handler) {
 				if err := validateField(res, isProto3, name, d, handler); err != nil {
 					return err
 				}
-			}
-			return nil
-		},
-		func(name protoreflect.FullName, d proto.Message) error {
-			if _, ok := d.(*descriptorpb.DescriptorProto); ok {
-				depth--
 			}
 			return nil
 		})
@@ -473,11 +447,6 @@ func validateField(res *result, isProto3 bool, name protoreflect.FullName, fld *
 		}
 	}
 
-	// finally, set any missing label to optional
-	if fld.Label == nil {
-		fld.Label = descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum()
-	}
-
 	return nil
 }
 
@@ -500,4 +469,31 @@ func (r tagRanges) Less(i, j int) bool {
 
 func (r tagRanges) Swap(i, j int) {
 	r[i], r[j] = r[j], r[i]
+}
+
+func fillInMissingLabels(fd *descriptorpb.FileDescriptorProto) {
+	for _, md := range fd.MessageType {
+		fillInMissingLabelsInMsg(md)
+	}
+	for _, extd := range fd.Extension {
+		fillInMissingLabel(extd)
+	}
+}
+
+func fillInMissingLabelsInMsg(md *descriptorpb.DescriptorProto) {
+	for _, fld := range md.Field {
+		fillInMissingLabel(fld)
+	}
+	for _, nmd := range md.NestedType {
+		fillInMissingLabelsInMsg(nmd)
+	}
+	for _, extd := range md.Extension {
+		fillInMissingLabel(extd)
+	}
+}
+
+func fillInMissingLabel(fld *descriptorpb.FieldDescriptorProto) {
+	if fld.Label == nil {
+		fld.Label = descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum()
+	}
 }

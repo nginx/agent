@@ -12,15 +12,19 @@ doctypes: ["task"]
 
 Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which the NGINX Agent will report.
 
-## Install NGINX and NGINX Agent
+## Install NGINX
 
-Follow the steps in the [Installation]({{< relref "/installation.md" >}}) section to download, install, and run NGINX and NGINX Agent.
+Follow the steps in the [Installation]({{< relref "/installation.md" >}}) section to download, install, and run NGINX.
 
 ## Clone the NGINX Agent Repository
 
 Using your preferred method, clone the NGINX Agent repository into your development directory. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
-## Start the Mock Control Plane
+## Install Go
+
+NGINX Agent and the Mock Control Plane are written in Go. Go 1.19 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/). 
+
+## Start the gRPC Mock Control Plane
 
 Start the mock control plane by running the following command from the `agent` source code root directory:
 
@@ -33,24 +37,21 @@ INFO[0000] grpc listening at 54789 # grpc control plane port which NGINX Agent w
 ```
 
 ## NGINX Agent Settings
-
-If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory.
-
-```bash
-sudo mkdir /etc/nginx-agent
-sudo cp nginx-agent.conf /etc/nginx-agent/
+If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory. 
 ```
-Create the `agent-dynamic.conf` file in the `/etc/nginx-agent/` directory, which is required for NGINX Agent to run.
-
-```bash
+sudo mkdir /etc/nginx-agent
+sudo cp <project_root_directory>/nginx-agent.conf /etc/nginx-agent/
+```
+Create the `agent-dynamic.conf` file in the `/etc/nginx-agent/` directory, which is required for NGINX Agent to run. 
+```
 sudo touch /etc/nginx-agent/agent-dynamic.conf
 ```
 
-### Enabling the gRPC interface
+### Enable the gRPC interface
 
 Add the the following settings to `/etc/nginx-agent/nginx-agent.conf`:
 
-```nginx
+```yaml
 server:
   host: 127.0.0.1 # mock control plane host
   grpcPort: 54789 # mock control plane gRPC port
@@ -61,13 +62,14 @@ tls:
   skip_verify: true
 ```
 
-### Enabling the REST interface
+For more information, see [Agent Protocol Definitions and Documentation](https://github.com/nginx/agent/tree/main/docs/proto/README.md)
 
+### Enable the REST interface
 The NGINX Agent REST interface can be exposed by validating the following lines in the `/etc/nginx-agent/nginx-agent.conf` file are present:
 
-```nginx
+```yaml
 api:
-  port: 9090 # port to expose REST API
+  port: 8081 # port to expose REST API
   
   # REST TLS parameters
   cert: "<TLS-CERTIFICATE>.crt"
@@ -75,6 +77,26 @@ api:
 ```
 
 The mock control plane can use either gRPC or REST protocols to communicate with NGINX Agent.
+
+## Launch Swagger UI
+Swagger UI requires goswagger be installed. See [instructions for installing goswagger](https://goswagger.io/install.html) for additional help.
+
+To launch the Swagger UI for the REST interface run the following command
+
+```bash
+make launch-swagger-ui
+```
+
+## Extensions
+An extension is a piece of code, not critical to the main functionality that the NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
+
+To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`. 
+Here is an example of enabling the advanced metrics extension:
+
+```yaml
+extensions:
+  - advanced-metrics
+```
 
 ## Start NGINX Agent
 

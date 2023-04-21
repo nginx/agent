@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"sync"
 	"testing"
 
@@ -30,12 +31,12 @@ func TestNewSwapSource(t *testing.T) {
 		{
 			"VM",
 			false,
-			&Swap{&namedMetric{namespace, "swap"}, mem.SwapMemory},
+			&Swap{NewMetricSourceLogger(), &namedMetric{namespace, "swap"}, mem.SwapMemory},
 		},
 		{
 			"container",
 			true,
-			&Swap{&namedMetric{namespace, "swap"}, cgroup.NewCgroupSwapSource(cgroup.CgroupBasePath).SwapMemoryStat},
+			&Swap{NewMetricSourceLogger(), &namedMetric{namespace, "swap"}, cgroup.NewCgroupSwapSource(cgroup.CgroupBasePath).SwapMemoryStat},
 		},
 	}
 	for _, test := range tests {
@@ -65,11 +66,11 @@ func TestSwapSource_Collect(t *testing.T) {
 
 	tests := []struct {
 		name string
-		m    chan *proto.StatsEntity
+		m    chan *metrics.StatsEntityWrapper
 	}{
 		{
 			"basic swap test",
-			make(chan *proto.StatsEntity, 1),
+			make(chan *metrics.StatsEntityWrapper, 1),
 		},
 	}
 
@@ -95,8 +96,8 @@ func TestSwapSource_Collect(t *testing.T) {
 			wg.Wait()
 
 			statsEntity := <-test.m
-			assert.Len(tt, statsEntity.Simplemetrics, len(expectedMetrics))
-			for _, metric := range statsEntity.Simplemetrics {
+			assert.Len(tt, statsEntity.Data.Simplemetrics, len(expectedMetrics))
+			for _, metric := range statsEntity.Data.Simplemetrics {
 				assert.Contains(tt, expectedMetrics, metric.Name)
 				assert.Equal(t, expectedMetrics[metric.Name], metric.Value)
 			}

@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 
@@ -21,6 +22,7 @@ import (
 )
 
 type VirtualMemory struct {
+	logger *MetricSourceLogger
 	*namedMetric
 	statFunc func() (*mem.VirtualMemoryStat, error)
 }
@@ -33,18 +35,18 @@ func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemo
 		statFunc = cgroupMemSource.VirtualMemoryStat
 	}
 
-	return &VirtualMemory{&namedMetric{namespace, MemoryGroup}, statFunc}
+	return &VirtualMemory{NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}, statFunc}
 }
 
-func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	memstats, err := c.statFunc()
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {
-			log.Warnf("Unable to collect VirtualMemory metrics because the file %v was not found", e.Path)
+			c.logger.Log(fmt.Sprintf("Unable to collect VirtualMemory metrics because the file %v was not found", e.Path))
 			return
 		}
-		log.Errorf("Failed to collect VirtualMemory metrics: %v", err)
+		c.logger.Log(fmt.Sprintf("Failed to collect VirtualMemory metrics, %v", err))
 		return
 	}
 
@@ -64,6 +66,6 @@ func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 
 	select {
 	case <-ctx.Done():
-	case m <- metrics.NewStatsEntity([]*proto.Dimension{}, simpleMetrics):
+	case m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{}, simpleMetrics, proto.MetricsReport_SYSTEM):
 	}
 }

@@ -42,13 +42,13 @@ func (o *manifestBucketObject) ExternalPath() string       { return o.path }
 func (o *manifestBucketObject) Read(p []byte) (int, error) { return o.file.Read(p) }
 func (o *manifestBucketObject) Close() error               { return o.file.Close() }
 
-// NewFromBucket creates a manifest and all its files' blobs from a storage
-// bucket, with all its digests in DigestTypeShake256.
+// NewFromBucket creates a manifest and blob set from the bucket's files. Blobs
+// in the blob set use the [DigestTypeShake256] digest.
 func NewFromBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 ) (*Manifest, *BlobSet, error) {
-	m := New()
+	var m Manifest
 	digester, err := NewDigester(DigestTypeShake256)
 	if err != nil {
 		return nil, nil, err
@@ -74,7 +74,7 @@ func NewFromBucket(
 	if err != nil {
 		return nil, nil, err
 	}
-	return m, blobSet, nil
+	return &m, blobSet, nil
 }
 
 type bucketOptions struct {
@@ -110,15 +110,13 @@ func NewBucket(m Manifest, blobs BlobSet, opts ...BucketOption) (storage.ReadBuc
 		option(&config)
 	}
 	if config.allManifestBlobs {
-		for _, path := range m.Paths() {
-			pathDigest, ok := m.DigestFor(path)
-			if !ok {
-				// we're iterating manifest paths, this should never happen.
-				return nil, fmt.Errorf("path %q not present in manifest", path)
+		if err := m.Range(func(path string, digest Digest) error {
+			if _, ok := blobs.BlobFor(digest.String()); !ok {
+				return fmt.Errorf("manifest path %q with digest %q has no associated blob", path, digest.String())
 			}
-			if _, ok := blobs.BlobFor(pathDigest.String()); !ok {
-				return nil, fmt.Errorf("manifest path %q with digest %q has no associated blob", path, pathDigest.String())
-			}
+			return nil
+		}); err != nil {
+			return nil, err
 		}
 	}
 	if config.noExtraBlobs {

@@ -22,7 +22,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufapp"
@@ -65,7 +64,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.14.0"
+	Version = "1.17.0"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -75,6 +74,8 @@ const (
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
 
+	// AlphaEnableWASMEnvKey is an env var to enable WASM local plugin execution
+	AlphaEnableWASMEnvKey = "BUF_ALPHA_ENABLE_WASM"
 	// BetaEnableTamperProofingEnvKey is an env var to enable tamper proofing
 	BetaEnableTamperProofingEnvKey = "BUF_BETA_ENABLE_TAMPER_PROOFING"
 
@@ -85,6 +86,9 @@ const (
 
 	publicVisibility  = "public"
 	privateVisibility = "private"
+
+	// WASMCompilationCacheDir compiled WASM plugin cache directory
+	WASMCompilationCacheDir = "wasmplugin-bin"
 )
 
 var (
@@ -121,6 +125,7 @@ var (
 		v1CacheModuleDataRelDirPath,
 		v1CacheModuleLockRelDirPath,
 		v1CacheModuleSumRelDirPath,
+		v2CacheModuleRelDirPath,
 	}
 
 	// ErrNotATTY is returned when an input io.Reader is not a TTY where it is expected.
@@ -154,6 +159,12 @@ var (
 	// These digests are used to make sure that the data written is actually what we expect, and if it is not,
 	// we clear an entry from the cache, i.e. delete the relevant data directory.
 	v1CacheModuleSumRelDirPath = normalpath.Join("v1", "module", "sum")
+	// v2CacheModuleRelDirPath is the relative path to the cache directory for content addressable storage.
+	//
+	// Normalized.
+	// This directory replaces the use of v1CacheModuleDataRelDirPath, v1CacheModuleLockRelDirPath, and
+	// v1CacheModuleSumRelDirPath for modules which support tamper proofing.
+	v2CacheModuleRelDirPath = normalpath.Join("v2", "module")
 
 	// allVisibiltyStrings are the possible options that a user can set the visibility flag with.
 	allVisibiltyStrings = []string{
@@ -277,7 +288,7 @@ func GetInputLong(inputArgDescription string) string {
 	return fmt.Sprintf(
 		`The first argument is %s.
 The first argument must be one of format %s.
-If no argument is specified, defaults to ".".`,
+Defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.AllFormatsString,
 	)
@@ -288,7 +299,7 @@ func GetSourceLong(inputArgDescription string) string {
 	return fmt.Sprintf(
 		`The first argument is %s.
 The first argument must be one of format %s.
-If no argument is specified, defaults to ".".`,
+Defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.SourceFormatsString,
 	)
@@ -299,7 +310,7 @@ func GetSourceDirLong(inputArgDescription string) string {
 	return fmt.Sprintf(
 		`The first argument is %s.
 The first argument must be one of format %s.
-If no argument is specified, defaults to ".".`,
+Defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.SourceDirFormatsString,
 	)
@@ -310,7 +321,7 @@ func GetSourceOrModuleLong(inputArgDescription string) string {
 	return fmt.Sprintf(
 		`The first argument is %s.
 The first argument must be one of format %s.
-If no argument is specified, defaults to ".".`,
+Defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.SourceOrModuleFormatsString,
 	)
@@ -546,62 +557,81 @@ func newModuleReaderAndCreateCacheDirs(
 	clientConfig *connectclient.Config,
 	cacheModuleReaderOpts ...bufmodulecache.ModuleReaderOption,
 ) (bufmodule.ModuleReader, error) {
-	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
-	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
-	cacheModuleSumDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleSumRelDirPath)
-	if err := checkExistingCacheDirs(
-		container.CacheDirPath(),
-		container.CacheDirPath(),
-		cacheModuleDataDirPath,
-		cacheModuleLockDirPath,
-		cacheModuleSumDirPath,
-	); err != nil {
-		return nil, err
-	}
-	if err := createCacheDirs(
-		cacheModuleDataDirPath,
-		cacheModuleLockDirPath,
-		cacheModuleSumDirPath,
-	); err != nil {
-		return nil, err
-	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	// do NOT want to enable symlinks for our cache
-	dataReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDataDirPath)
-	if err != nil {
-		return nil, err
-	}
-	// do NOT want to enable symlinks for our cache
-	sumReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleSumDirPath)
-	if err != nil {
-		return nil, err
-	}
-	fileLocker, err := filelock.NewLocker(cacheModuleLockDirPath)
-	if err != nil {
-		return nil, err
-	}
-	var moduleReaderOpts []bufapimodule.ModuleReaderOption
+	cacheModuleDataDirPathV1 := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
+	cacheModuleLockDirPathV1 := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
+	cacheModuleSumDirPathV1 := normalpath.Join(container.CacheDirPath(), v1CacheModuleSumRelDirPath)
+	cacheModuleDirPathV2 := normalpath.Join(container.CacheDirPath(), v2CacheModuleRelDirPath)
 	// Check if tamper proofing env var is enabled
 	tamperProofingEnabled, err := IsBetaTamperProofingEnabled(container)
 	if err != nil {
 		return nil, err
 	}
+	var cacheDirsToCreate []string
+	if tamperProofingEnabled {
+		cacheDirsToCreate = append(cacheDirsToCreate, cacheModuleDirPathV2)
+	} else {
+		cacheDirsToCreate = append(
+			cacheDirsToCreate,
+			cacheModuleDataDirPathV1,
+			cacheModuleLockDirPathV1,
+			cacheModuleSumDirPathV1,
+		)
+	}
+	if err := checkExistingCacheDirs(container.CacheDirPath(), cacheDirsToCreate...); err != nil {
+		return nil, err
+	}
+	if err := createCacheDirs(cacheDirsToCreate...); err != nil {
+		return nil, err
+	}
+	var moduleReaderOpts []bufapimodule.ModuleReaderOption
 	if tamperProofingEnabled {
 		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
 	}
-	moduleReader := bufmodulecache.NewModuleReader(
-		container.Logger(),
-		container.VerbosePrinter(),
-		fileLocker,
-		dataReadWriteBucket,
-		sumReadWriteBucket,
-		bufapimodule.NewModuleReader(
-			bufapimodule.NewDownloadServiceClientFactory(clientConfig),
-			moduleReaderOpts...,
-		),
-		bufmodulecache.NewRepositoryServiceClientFactory(clientConfig),
-		cacheModuleReaderOpts...,
+	delegateReader := bufapimodule.NewModuleReader(
+		bufapimodule.NewDownloadServiceClientFactory(clientConfig),
+		moduleReaderOpts...,
 	)
+	repositoryClientFactory := bufmodulecache.NewRepositoryServiceClientFactory(clientConfig)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	var moduleReader bufmodule.ModuleReader
+	if tamperProofingEnabled {
+		casModuleBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDirPathV2)
+		if err != nil {
+			return nil, err
+		}
+		moduleReader = bufmodulecache.NewCASModuleReader(
+			container.Logger(),
+			container.VerbosePrinter(),
+			casModuleBucket,
+			delegateReader,
+			repositoryClientFactory,
+		)
+	} else {
+		// do NOT want to enable symlinks for our cache
+		dataReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDataDirPathV1)
+		if err != nil {
+			return nil, err
+		}
+		// do NOT want to enable symlinks for our cache
+		sumReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleSumDirPathV1)
+		if err != nil {
+			return nil, err
+		}
+		fileLocker, err := filelock.NewLocker(cacheModuleLockDirPathV1)
+		if err != nil {
+			return nil, err
+		}
+		moduleReader = bufmodulecache.NewModuleReader(
+			container.Logger(),
+			container.VerbosePrinter(),
+			fileLocker,
+			dataReadWriteBucket,
+			sumReadWriteBucket,
+			delegateReader,
+			repositoryClientFactory,
+			cacheModuleReaderOpts...,
+		)
+	}
 	return moduleReader, nil
 }
 
@@ -789,7 +819,7 @@ func NewImageForSource(
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (bufimage.Image, error) {
-	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, source)
+	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, source)
 	if err != nil {
 		return nil, err
 	}
@@ -892,16 +922,12 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 
 // IsBetaTamperProofingEnabled returns if BUF_BETA_ENABLE_TAMPER_PROOFING is set to true.
 func IsBetaTamperProofingEnabled(container app.EnvContainer) (bool, error) {
-	// Check if tamper proofing env var is enabled
-	tamperProofingEnabled := false
-	if envVal := container.Env(BetaEnableTamperProofingEnvKey); envVal != "" {
-		var err error
-		tamperProofingEnabled, err = strconv.ParseBool(envVal)
-		if err != nil {
-			return false, fmt.Errorf("invalid value for %q: %w", BetaEnableTamperProofingEnvKey, err)
-		}
-	}
-	return tamperProofingEnabled, nil
+	return app.EnvBool(container, BetaEnableTamperProofingEnvKey, false)
+}
+
+// IsAlphaWASMEnabled returns an BUF_ALPHA_ENABLE_WASM is set to true.
+func IsAlphaWASMEnabled(container app.EnvContainer) (bool, error) {
+	return app.EnvBool(container, AlphaEnableWASMEnvKey, false)
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
@@ -1040,7 +1066,11 @@ func newFetchImageReader(
 }
 
 func checkExistingCacheDirs(baseCacheDirPath string, dirPaths ...string) error {
-	for _, dirPath := range dirPaths {
+	dirPathsToCheck := make([]string, 0, len(dirPaths)+1)
+	// Check base cache directory in addition to subdirectories
+	dirPathsToCheck = append(dirPathsToCheck, baseCacheDirPath)
+	dirPathsToCheck = append(dirPathsToCheck, dirPaths...)
+	for _, dirPath := range dirPathsToCheck {
 		dirPath = normalpath.Unnormalize(dirPath)
 		// OK to use os.Stat instead of os.LStat here as this is CLI-only
 		fileInfo, err := os.Stat(dirPath)

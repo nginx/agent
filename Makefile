@@ -5,29 +5,33 @@ VERSION = $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
 COMMIT = $(shell git rev-parse --short HEAD)
 DATE = $(shell date +%F_%H-%M-%S)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://docs.nginx.com/nginx/releases/                                                                          #
-# These images are based on https://github.com/nginxinc/docker-nginx and are NOT recommended for production       #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# | OS_RELEASE       | OS_VERSION                 | NOTES                                                          |
-# | ---------------- | -------------------------- | -------------------------------------------------------------- |
-# | amazonlinux      | 2                          |                                                                |
-# | ubuntu           | 18.04, 20.04, 22.04        |                                                                |
-# | debian           | bullseye-slim, buster-slim |                                                                |
-# | centos           | 7                          | centos 7 (below 7.4) uses plus-pkgs.nginx.com as PACKAGES_REPO |
-# | redhatenterprise | 7, 8, 9                    |                                                                |
-# | alpine           | 3.13, 3.14, 3.15, 3.16     |                                                                |
-# | oraclelinux      | 7, 8                       |                                                                |
-# | suse             | sles12sp5, sle15           |                                                                |
-# | freebsd          |                            | Not supported                                                  |
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE:=ubuntu
-OS_VERSION:=22.04
-BASE_IMAGE="docker.io/${OS_RELEASE}:${OS_VERSION}"
-IMAGE_TAG=agent_${OS_RELEASE}_${OS_VERSION}
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# https://docs.nginx.com/nginx/releases/                                                                              #
+# These images are based on https://github.com/nginxinc/docker-nginx and are NOT recommended for production           #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# | OS_RELEASE       | OS_VERSION                    | NOTES                                                          |
+# | ---------------- | ----------------------------- | -------------------------------------------------------------- |
+# | amazonlinux      | 2                             |                                                                |
+# | ubuntu           | 18.04, 20.04, 22.04           |                                                                |
+# | debian           | bullseye-slim, buster-slim    |                                                                |
+# | centos           | 7                             |                                                                |
+# | redhatenterprise | 7, 8, 9                       |                                                                |
+# | rockylinux       | 8, 9                          |                                                                |
+# | almalinux        | 8, 9                          |                                                                |
+# | alpine           | 3.13, 3.14, 3.15, 3.16, 3.17  |                                                                |
+# | oraclelinux      | 7, 8 , 9                      |                                                                |
+# | suse             | sles12sp5, sle15              |                                                                |
+# | freebsd          |                               | Not supported                                                  |
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+OS_RELEASE  ?= ubuntu
+OS_VERSION  ?= 22.04
+BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
+IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
+
 
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
+
 
 CERTS_DIR          := ./build/certs
 PACKAGE_PREFIX     := nginx-agent
@@ -45,8 +49,9 @@ else
 	endif
 endif
 
-TEST_BUILD_DIR     := build/test
-PACKAGE_NAME       := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
+VENDOR_LOCATIONS         := sdk test/integration test/performance .
+TEST_BUILD_DIR           := build/test
+PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
 CERT_CLIENT_CA_CN  := client-ca.local
 CERT_CLIENT_INT_CN := client-int.local
@@ -86,15 +91,21 @@ run: ## Run code
 run-debug: ## Run code
 	./build/nginx-agent
 
-build: ## Build agent executable
+build/nginx-agent:
 	GOWORK=off CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 
+build: build/nginx-agent ## Build agent executable
+
 deps: ## Update dependencies in vendor folders
-	cd sdk && go mod tidy && go mod vendor &&  make generate && go mod tidy && go mod vendor
-	cd test/integration && go mod tidy && go mod vendor
-	cd test/performance && go mod tidy && go mod vendor
-	go mod tidy && go mod vendor && go mod download && go work sync
-	make generate-swagger
+	cd sdk && make generate
+	for dir in ${VENDOR_LOCATIONS}; do \
+		(cd "$$dir" && echo "Running vendor commands on $$dir" && go mod tidy && go mod vendor && cd "$$OLDPWD" || exit) \
+	done
+	go mod download
+	go work sync
+
+no-local-changes:
+	git diff --quiet || { echo "Depenency changes detected. Please commit these before pushing." >&2; exit 1; }
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
@@ -110,6 +121,7 @@ install-tools: ## Install dependencies in tools.go
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go get %
 	@echo "Installing Tools"
 	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
+	@go run github.com/evilmartians/lefthook install pre-push
 
 generate-swagger: ## Generates swagger.json from source code
 	go run github.com/go-swagger/go-swagger/cmd/swagger generate spec -o ./docs/swagger.json --scan-models
@@ -188,9 +200,9 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
-integration-test: local-deb-package
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test -v ./test/integration/install
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} go test -v ./test/integration/api
+integration-test: local-deb-package local-rpm-package local-apk-package
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/install
+	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
@@ -242,11 +254,19 @@ image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and ng
 		--no-cache -f ./scripts/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
 		--secret id=nginx-crt,src=build/nginx-repo.crt \
 		--secret id=nginx-key,src=build/nginx-repo.key \
-		--build-arg AGENT_CONF="$$(cat nginx-agent.conf)" \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		--build-arg PACKAGES_REPO=${PACKAGES_REPO} \
 		--build-arg OS_RELEASE=${OS_RELEASE} \
-		--build-arg OS_VERSION=${OS_VERSION}
+		--build-arg OS_VERSION=${OS_VERSION} \
+		--build-arg CONTAINER_REGISTRY=${CONTAINER_REGISTRY}
+
+oss-image: ## Build agent container image for NGINX OSS
+	@echo Building image with $(CONTAINER_CLITOOL); \
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
+	--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
+	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
+	--build-arg BASE_IMAGE=${BASE_IMAGE} \
+	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
 oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
@@ -258,7 +278,7 @@ oss-image: ## Build agent container image for NGINX OSS
 
 run-container: ## Run container from specified IMAGE_TAG
 	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \
-		$(CONTAINER_CLITOOL) run -p 8081:8081 --mount type=bind,source=${PWD}/nginx-agent.conf,target=/etc/nginx-agent/nginx-agent.conf ${IMAGE_TAG}
+		$(CONTAINER_CLITOOL) run -p 127.0.0.1:8081:8081/tcp --mount type=bind,source=${PWD}/nginx-agent.conf,target=/etc/nginx-agent/nginx-agent.conf ${IMAGE_TAG}
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Grafana Example Dashboard Targets                                                                               #

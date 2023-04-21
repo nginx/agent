@@ -54,7 +54,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input> --against <against-input>",
 		Short: "Verify no breaking changes have been made",
-		Long: `buf breaking makes sure that the <input> location has no breaking changes compared to the <against-input> location` +
+		Long: `buf breaking makes sure that the <input> location has no breaking changes compared to the <against-input> location. ` +
 			bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -120,7 +120,7 @@ Overrides --%s`,
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration`,
+		`The buf.yaml file or data to use for configuration`,
 	)
 	flagSet.StringVar(
 		&f.Against,
@@ -135,7 +135,7 @@ Overrides --%s`,
 		&f.AgainstConfig,
 		againstConfigFlagName,
 		"",
-		`The file or data to use to configure the against source, module, or image`,
+		`The buf.yaml file or data to use to configure the against source, module, or image`,
 	)
 }
 
@@ -154,7 +154,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, input)
+	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -205,7 +205,7 @@ func run(
 			return err
 		}
 	}
-	againstRef, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, flags.Against)
+	againstRef, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, flags.Against)
 	if err != nil {
 		return err
 	}

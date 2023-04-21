@@ -10,6 +10,7 @@ package core
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -268,8 +269,24 @@ func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, 
 		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
 	}
 
+	err = n.validateConfigCheckResponse(response, configLocation)
+	if err != nil {
+		return err
+	}
+
 	log.Infof("Config validated:\n%s", response)
 
+	return nil
+}
+
+func (n *NginxBinaryType) validateConfigCheckResponse(response *bytes.Buffer, configLocation string) error {
+	if bytes.Contains(response.Bytes(), []byte("[emerg]")) {
+		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
+	}
+
+	if n.config.Nginx.TreatWarningsAsErrors && bytes.Contains(response.Bytes(), []byte("[warn]")) {
+		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
+	}
 	return nil
 }
 
@@ -316,9 +333,17 @@ func hasConfPath(files []*proto.File, confPath string) bool {
 }
 
 func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error) {
-	log.Tracef("Writing config: %+v\n", config)
-	details, ok := n.nginxDetailsMap[config.ConfigData.NginxId]
-	if !ok || details == nil {
+	if log.IsLevelEnabled(log.TraceLevel) {
+		var loggedConfig = *config
+		loggedConfig.Zaux = &proto.ZippedFile{}
+		jsonConfig, err := json.Marshal(loggedConfig)
+		if err == nil {
+			log.Tracef("Writing JSON config: %+v", string(jsonConfig))
+		}
+	}
+
+	details := n.GetNginxDetailsByID(config.ConfigData.NginxId)
+	if details == nil {
 		return nil, fmt.Errorf("NGINX instance %s not found", config.ConfigData.NginxId)
 	}
 

@@ -10,7 +10,6 @@ package sources
 import (
 	"context"
 	"fmt"
-	"math"
 	"regexp"
 	"sort"
 	"strconv"
@@ -21,7 +20,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
-	"github.com/nginx/agent/v2/src/core/metrics/sources/tailer"
+	"github.com/nginx/agent/v2/src/core/tailer"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -30,6 +29,32 @@ const (
 	spaceDelim = " "
 	pattern    = `[A-Z]+\s.+\s[A-Z]+/.+`
 )
+
+var logVarMap = map[string]string{
+	"$remote_addr":              "%{IPORHOST:remote_addr}",
+	"$remote_user":              "%{USERNAME:remote_user}",
+	"$time_local":               `%{HTTPDATE:time_local}`,
+	"$status":                   "%{INT:status}",
+	"$body_bytes_sent":          "%{NUMBER:body_bytes_sent}",
+	"$http_referer":             "%{DATA:http_referer}",
+	"$http_user_agent":          "%{DATA:http_user_agent}",
+	"$http_x_forwarded_for":     "%{DATA:http_x_forwarded_for}",
+	"$bytes_sent":               "%{NUMBER:bytes_sent}",
+	"$gzip_ratio":               "%{DATA:gzip_ratio}",
+	"$server_protocol":          "%{DATA:server_protocol}",
+	"$request_length":           "%{INT:request_length}",
+	"$request_time":             "%{DATA:request_time}",
+	"\"$request\"":              "\"%{DATA:request}\"",
+	"$request ":                 "%{DATA:request} ",
+	"$upstream_connect_time":    "%{DATA:upstream_connect_time}",
+	"$upstream_header_time":     "%{DATA:upstream_header_time}",
+	"$upstream_response_time":   "%{DATA:upstream_response_time}",
+	"$upstream_response_length": "%{DATA:upstream_response_length}",
+	"$upstream_status":          "%{DATA:upstream_status}",
+	"$upstream_cache_status":    "%{DATA:upstream_cache_status}",
+	"[":                         "\\[",
+	"]":                         "\\]",
+}
 
 // This metrics source is used to tail the NGINX access logs to retrieve metrics.
 
@@ -42,7 +67,8 @@ type NginxAccessLog struct {
 	binary             core.NginxBinary
 	nginxType          string
 	collectionInterval time.Duration
-	buf                []*proto.StatsEntity
+	buf                []*metrics.StatsEntityWrapper
+	logger             *MetricSourceLogger
 }
 
 func NewNginxAccessLog(
@@ -62,7 +88,8 @@ func NewNginxAccessLog(
 		binary,
 		nginxType,
 		collectionInterval,
-		[]*proto.StatsEntity{},
+		[]*metrics.StatsEntityWrapper{},
+		NewMetricSourceLogger(),
 	}
 
 	logs := binary.GetAccessLogs()
@@ -78,7 +105,7 @@ func NewNginxAccessLog(
 	return nginxAccessLog
 }
 
-func (c *NginxAccessLog) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *NginxAccessLog) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.collectLogStats(ctx, m)
 }
@@ -122,7 +149,7 @@ func (c *NginxAccessLog) Stop() {
 	log.Debugf("Stopping NginxAccessLog source for nginx id: %v", c.baseDimensions.NginxId)
 }
 
-func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.StatsEntity) {
+func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	logs := c.binary.GetAccessLogs()
@@ -151,15 +178,20 @@ func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *proto.St
 	for _, stat := range c.buf {
 		m <- stat
 	}
-	c.buf = []*proto.StatsEntity{}
+	c.buf = []*metrics.StatsEntityWrapper{}
 }
 
 func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string) {
-	logPattern := convertLogFormat(logFormat)
+	logPattern := logFormat
+
+	for key, value := range logVarMap {
+		logPattern = strings.ReplaceAll(logPattern, key, value)
+	}
+
 	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
 	log.Debugf("Pattern used for tailing logs: %s", logPattern)
 
-	httpCounters, upstreamCounters := getDefaultCounters()
+	httpCounters, upstreamCounters, upstreamCacheCounters := getDefaultCounters()
 	gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes := []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
 	mu := sync.Mutex{}
@@ -179,53 +211,31 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 		select {
 		case d := <-data:
 			access, err := tailer.NewNginxAccessItem(d)
+			upstreamRequest := false
 			if err != nil {
-				log.Error(err)
+				c.logger.Log(fmt.Sprintf("Error decoding access log entry, %v", err))
 				continue
 			}
 
 			mu.Lock()
-			if access.BodyBytesSent != "" {
-				if v, err := strconv.Atoi(access.BodyBytesSent); err == nil {
-					n := "request.body_bytes_sent"
-					httpCounters[n] = float64(v) + httpCounters[n]
-				} else {
-					log.Debugf("Error getting body_bytes_sent value from access logs: %v", err)
-				}
-			}
 
-			if access.BytesSent != "" {
-				if v, err := strconv.Atoi(access.BytesSent); err == nil {
-					n := "request.bytes_sent"
-					httpCounters[n] = float64(v) + httpCounters[n]
-				} else {
-					log.Debugf("Error getting bytes_sent value from access logs: %v", err)
-				}
-			}
+			httpCounters = c.parseAccessLogFloatCounters("request.body_bytes_sent", access.BodyBytesSent, httpCounters)
 
-			if access.GzipRatio != "-" && access.GzipRatio != "" {
-				if v, err := strconv.Atoi(access.GzipRatio); err == nil {
-					gzipRatios = append(gzipRatios, float64(v))
-				} else {
-					log.Debugf("Error getting gzip_ratio value from access logs: %v", err)
-				}
-			}
+			httpCounters = c.parseAccessLogFloatCounters("request.bytes_sent", access.BytesSent, httpCounters)
 
-			if access.RequestLength != "" {
-				if v, err := strconv.Atoi(access.RequestLength); err == nil {
-					requestLengths = append(requestLengths, float64(v))
-				} else {
-					log.Debugf("Error getting request_length value from access logs: %v", err)
-				}
-			}
+			gzipRatios = c.parseAccessLogFloatTimes("gzip_ratio", access.GzipRatio, gzipRatios)
 
-			if access.RequestTime != "" {
-				if v, err := strconv.ParseFloat(access.RequestTime, 64); err == nil {
-					requestTimes = append(requestTimes, v)
-				} else {
-					log.Debugf("Error getting request_time value from access logs: %v", err)
-				}
-			}
+			requestLengths = c.parseAccessLogFloatTimes("request_length", access.RequestLength, requestLengths)
+
+			requestTimes = c.parseAccessLogFloatTimes("request_time", access.RequestTime, requestTimes)
+
+			upstreamConnectTimes = c.parseAccessLogUpstream("upstream_connect_time", access.UpstreamConnectTime, upstreamConnectTimes)
+
+			upstreamHeaderTimes = c.parseAccessLogUpstream("upstream_header_time", access.UpstreamHeaderTime, upstreamHeaderTimes)
+
+			upstreamResponseLength = c.parseAccessLogUpstream("upstream_response_length", access.UpstreamResponseLength, upstreamResponseLength)
+
+			upstreamResponseTimes = c.parseAccessLogUpstream("upstream_response_time", access.UpstreamResponseTime, upstreamResponseTimes)
 
 			if access.Request != "" {
 				method, _, protocol := getParsedRequest(access.Request)
@@ -236,78 +246,47 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				httpCounters[n] = httpCounters[n] + 1
 
 				if access.ServerProtocol == "" {
-					if strings.Count(protocol, "/") == 1 {
-						httpProtocolVersion := strings.Split(protocol, "/")[1]
-						httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
-						n = fmt.Sprintf("v%s", httpProtocolVersion)
-						httpCounters[n] = httpCounters[n] + 1
-					}
-				}
-			}
-
-			if access.UpstreamConnectTime != "-" && access.UpstreamConnectTime != "" {
-				if v, err := strconv.ParseFloat(access.UpstreamConnectTime, 64); err == nil {
-					upstreamConnectTimes = append(upstreamConnectTimes, v)
-				} else {
-					log.Debugf("Error getting upstream_connect_time value from access logs, %v", err)
-				}
-			}
-
-			if access.UpstreamHeaderTime != "-" && access.UpstreamHeaderTime != "" {
-				if v, err := strconv.ParseFloat(access.UpstreamHeaderTime, 64); err == nil {
-					upstreamHeaderTimes = append(upstreamHeaderTimes, v)
-				} else {
-					log.Debugf("Error getting upstream_header_time value from access logs: %v", err)
-				}
-			}
-
-			if access.UpstreamResponseLength != "-" && access.UpstreamResponseLength != "" {
-				if v, err := strconv.ParseFloat(access.UpstreamResponseLength, 64); err == nil {
-					upstreamResponseLength = append(upstreamResponseLength, v)
-				} else {
-					log.Debugf("Error getting upstream_response_length value from access logs: %v", err)
-				}
-
-			}
-
-			if access.UpstreamResponseTime != "-" && access.UpstreamResponseTime != "" {
-				if v, err := strconv.ParseFloat(access.UpstreamResponseTime, 64); err == nil {
-					upstreamResponseTimes = append(upstreamResponseTimes, v)
-				} else {
-					log.Debugf("Error getting upstream_response_time value from access logs: %v", err)
+					calculateServerProtocol(protocol, httpCounters)
 				}
 			}
 
 			if access.ServerProtocol != "" {
-				if strings.Count(access.ServerProtocol, "/") == 1 {
-					httpProtocolVersion := strings.Split(access.ServerProtocol, "/")[1]
-					httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
-					n := fmt.Sprintf("v%s", httpProtocolVersion)
-					httpCounters[n] = httpCounters[n] + 1
+				calculateServerProtocol(access.ServerProtocol, httpCounters)
+			}
+
+			if access.UpstreamStatus != "" && access.UpstreamStatus != "-" {
+				upstreamRequest = true
+				statusValues := strings.Split(access.UpstreamStatus, ",")
+				for _, value := range statusValues {
+					if v, err := strconv.Atoi(value); err == nil {
+						n := fmt.Sprintf("upstream.status.%dxx", v/100)
+						upstreamCounters[n] = upstreamCounters[n] + 1
+					} else {
+						log.Debugf("Error getting upstream status value from access logs, %v", err)
+					}
 				}
+
+			}
+
+			if access.UpstreamCacheStatus != "" && access.UpstreamCacheStatus != "-" {
+				upstreamRequest = true
+				calculateUpstreamCacheStatus(access.UpstreamCacheStatus, upstreamCacheCounters)
 			}
 
 			// don't need the http status for NGINX Plus
 			if c.nginxType == OSSNginxType {
-				if v, err := strconv.Atoi(access.Status); err == nil {
-					n := fmt.Sprintf("status.%dxx", v/100)
-					httpCounters[n] = httpCounters[n] + 1
-					if v == 403 || v == 404 || v == 500 || v == 502 || v == 503 || v == 504 {
-						n := fmt.Sprintf("status.%d", v)
-						httpCounters[n] = httpCounters[n] + 1
-					}
-					if v == 499 {
-						n := "status.discarded"
-						httpCounters[n] = httpCounters[n] + 1
-					}
-					if v == 400 {
-						n := "request.malformed"
-						httpCounters[n] = httpCounters[n] + 1
-					}
-				} else {
-					log.Debugf("Error getting status value from access logs, %v", err)
-				}
+				c.calculateHttpStatus(access.Status, httpCounters)
 			}
+
+			if access.UpstreamConnectTime != "" || access.UpstreamHeaderTime != "" || access.UpstreamResponseTime != "" {
+				upstreamTimes := []string{access.UpstreamConnectTime, access.UpstreamHeaderTime, access.UpstreamResponseTime}
+				upstreamRequest, upstreamCounters = calculateUpstreamNextCount(upstreamTimes, upstreamCounters)
+			}
+
+			if upstreamRequest == true {
+				upstreamCounters["upstream.request.count"] = upstreamCounters["upstream.request.count"] + 1
+			}
+
 			mu.Unlock()
 
 		case <-tick.C:
@@ -325,19 +304,19 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			}
 
 			if len(requestTimes) > 0 {
-				getTimeMetricsMap("request.time", requestTimes, httpCounters)
+				calculateTimeMetricsMap("request.time", requestTimes, httpCounters)
 			}
 
 			if len(upstreamConnectTimes) > 0 {
-				getTimeMetricsMap("upstream.connect.time", upstreamConnectTimes, upstreamCounters)
+				calculateTimeMetricsMap("upstream.connect.time", upstreamConnectTimes, upstreamCounters)
 			}
 
 			if len(upstreamHeaderTimes) > 0 {
-				getTimeMetricsMap("upstream.header.time", upstreamHeaderTimes, upstreamCounters)
+				calculateTimeMetricsMap("upstream.header.time", upstreamHeaderTimes, upstreamCounters)
 			}
 
 			if len(upstreamResponseTimes) > 0 {
-				getTimeMetricsMap("upstream.response.time", upstreamResponseTimes, upstreamCounters)
+				calculateTimeMetricsMap("upstream.response.time", upstreamResponseTimes, upstreamCounters)
 			}
 
 			if len(upstreamResponseLength) > 0 {
@@ -349,13 +328,16 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			c.group = ""
 			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamCounters)...)
 
+			c.group = ""
+			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamCacheCounters)...)
+
 			log.Tracef("Access log metrics collected: %v", simpleMetrics)
 
 			// reset the counters
-			httpCounters, upstreamCounters = getDefaultCounters()
+			httpCounters, upstreamCounters, upstreamCacheCounters = getDefaultCounters()
 			gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes = []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
-			c.buf = append(c.buf, metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics))
+			c.buf = append(c.buf, metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE))
 
 			mu.Unlock()
 
@@ -367,6 +349,72 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			log.Info("NginxAccessLog: logStats are done")
 			return
 		}
+	}
+}
+
+func calculateUpstreamNextCount(metricValues []string, upstreamCounters map[string]float64) (bool, map[string]float64) {
+	upstreamRequest := false
+	for _, upstreamTimes := range metricValues {
+		if upstreamTimes != "" && upstreamTimes != "-" {
+			upstreamRequest = true
+			times := strings.Split(upstreamTimes, ", ")
+			if len(times) > 1 {
+				upstreamCounters["upstream.next.count"] = upstreamCounters["upstream.next.count"] + (float64(len(times)) - 1)
+				return upstreamRequest, upstreamCounters
+			}
+		}
+	}
+	return upstreamRequest, upstreamCounters
+}
+
+func (c *NginxAccessLog) parseAccessLogFloatTimes(metricName string, metric string, counter []float64) []float64 {
+	if metric != "" && metric != "-" {
+		if v, err := strconv.ParseFloat(metric, 64); err == nil {
+			counter = append(counter, v)
+			return counter
+		} else {
+			c.logger.Log(fmt.Sprintf("Error getting %s value from access logs, %v", metricName, err))
+		}
+	}
+	return counter
+}
+
+func (c *NginxAccessLog) parseAccessLogUpstream(metricName string, metric string, counter []float64) []float64 {
+	if metric != "" && metric != "-" {
+		metricValues := strings.Split(metric, ", ")
+		for _, value := range metricValues {
+			if value != "" && value != "-" {
+				if v, err := strconv.ParseFloat(value, 64); err == nil {
+					counter = append(counter, v)
+				} else {
+					c.logger.Log(fmt.Sprintf("Error getting %s value from access logs, %v", metricName, err))
+				}
+			}
+		}
+		return counter
+
+	}
+	return counter
+}
+
+func (c *NginxAccessLog) parseAccessLogFloatCounters(metricName string, metric string, counters map[string]float64) map[string]float64 {
+	if metric != "" {
+		if v, err := strconv.ParseFloat(metric, 64); err == nil {
+			counters[metricName] = v + counters[metricName]
+			return counters
+		} else {
+			c.logger.Log(fmt.Sprintf("Error getting %s value from access logs, %v", metricName, err))
+		}
+	}
+	return counters
+}
+
+func calculateServerProtocol(protocol string, counters map[string]float64) {
+	if strings.Count(protocol, "/") == 1 {
+		httpProtocolVersion := strings.Split(protocol, "/")[1]
+		httpProtocolVersion = strings.ReplaceAll(httpProtocolVersion, ".", "_")
+		n := fmt.Sprintf("v%s", httpProtocolVersion)
+		counters[n] = counters[n] + 1
 	}
 }
 
@@ -427,9 +475,41 @@ func getAverageMetricValue(metricValues []float64) float64 {
 	return value
 }
 
-func getTimeMetricsMap(metricName string, times []float64, counter map[string]float64) {
+func (c *NginxAccessLog) calculateHttpStatus(status string, counter map[string]float64) {
 
-	metrics := map[string]float64{
+	if v, err := strconv.Atoi(status); err == nil {
+		n := fmt.Sprintf("status.%dxx", v/100)
+		counter[n] = counter[n] + 1
+		switch v {
+		case 403, 404, 500, 502, 503, 504:
+			n := fmt.Sprintf("status.%d", v)
+			counter[n] = counter[n] + 1
+		case 499:
+			n := "status.discarded"
+			counter[n] = counter[n] + 1
+		case 400:
+			n := "request.malformed"
+			counter[n] = counter[n] + 1
+		}
+	} else {
+		c.logger.Log(fmt.Sprintf("Error getting status value from access logs, %v", err))
+	}
+}
+
+func calculateUpstreamCacheStatus(status string, counter map[string]float64) {
+
+	n := fmt.Sprintf("cache.%s", strings.ToLower(status))
+
+	switch status {
+	case "BYPASS", "EXPIRED", "HIT", "MISS", "REVALIDATED", "STALE", "UPDATING":
+		counter[n] = counter[n] + 1
+		return
+	}
+}
+
+func calculateTimeMetricsMap(metricName string, times []float64, counter map[string]float64) {
+
+	timeMetrics := map[string]float64{
 		metricName:             0,
 		metricName + ".count":  0,
 		metricName + ".median": 0,
@@ -437,72 +517,14 @@ func getTimeMetricsMap(metricName string, times []float64, counter map[string]fl
 		metricName + ".pctl95": 0,
 	}
 
-	for metric := range metrics {
+	for metric := range timeMetrics {
 
 		metricType := metric[strings.LastIndex(metric, ".")+1:]
 
-		switch metricType {
-		case "time":
-			// Calculate average
-			sum := 0.0
-			for _, t := range times {
-				sum += t
-			}
-
-			counter[metric] = (math.Round(sum*1000) / 1000) / float64(len(times))
-
-		case "count":
-			counter[metric] = float64(len(times))
-
-		case "max":
-			sort.Float64s(times)
-			counter[metric] = times[len(times)-1]
-
-		case "median":
-			sort.Float64s(times)
-
-			mNumber := len(times) / 2
-			if len(times)%2 != 0 {
-				counter[metric] = times[mNumber]
-			} else {
-				counter[metric] = (times[mNumber-1] + times[mNumber]) / 2
-			}
-
-		case "pctl95":
-			sort.Float64s(times)
-
-			index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
-			counter[metric] = times[index]
-		}
+		counter[metric] = metrics.GetTimeMetrics(times, metricType)
 
 	}
 
-}
-
-// convertLogFormat converts log format into a pattern that can be parsed by the tailer
-func convertLogFormat(logFormat string) string {
-	newLogFormat := strings.ReplaceAll(logFormat, "$remote_addr", "%{IPORHOST:remote_addr}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$remote_user", "%{USERNAME:remote_user}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$time_local", `%{HTTPDATE:time_local}`)
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$status", "%{INT:status}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$body_bytes_sent", "%{NUMBER:body_bytes_sent}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$http_referer", "%{DATA:http_referer}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$http_user_agent", "%{DATA:http_user_agent}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$http_x_forwarded_for", "%{DATA:http_x_forwarded_for}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$bytes_sent", "%{NUMBER:bytes_sent}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$gzip_ratio", "%{DATA:gzip_ratio}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$server_protocol", "%{DATA:server_protocol}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$request_length", "%{INT:request_length}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$request_time", "%{DATA:request_time}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "\"$request\"", "\"%{DATA:request}\"")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$request ", "%{DATA:request} ")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_connect_time", "%{DATA:upstream_connect_time}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_header_time", "%{DATA:upstream_header_time}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_response_time", "%{DATA:upstream_response_time}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "$upstream_response_length", "%{DATA:upstream_response_length}")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "[", "\\[")
-	newLogFormat = strings.ReplaceAll(newLogFormat, "]", "\\]")
-	return newLogFormat
 }
 
 func isOtherMethod(method string) bool {
@@ -514,7 +536,7 @@ func isOtherMethod(method string) bool {
 		method != "method.options"
 }
 
-func getDefaultCounters() (map[string]float64, map[string]float64) {
+func getDefaultCounters() (map[string]float64, map[string]float64, map[string]float64) {
 	httpCounters := map[string]float64{
 		"gzip.ratio":              0,
 		"method.delete":           0,
@@ -562,13 +584,30 @@ func getDefaultCounters() (map[string]float64, map[string]float64) {
 		"upstream.header.time.max":      0,
 		"upstream.header.time.median":   0,
 		"upstream.header.time.pctl95":   0,
+		"upstream.request.count":        0,
+		"upstream.next.count":           0,
 		"upstream.response.time":        0,
 		"upstream.response.time.count":  0,
 		"upstream.response.time.max":    0,
 		"upstream.response.time.median": 0,
 		"upstream.response.time.pctl95": 0,
 		"upstream.response.length":      0,
+		"upstream.status.1xx":           0,
+		"upstream.status.2xx":           0,
+		"upstream.status.3xx":           0,
+		"upstream.status.4xx":           0,
+		"upstream.status.5xx":           0,
 	}
 
-	return httpCounters, upstreamCounters
+	upstreamCacheCounters := map[string]float64{
+		"cache.bypass":      0,
+		"cache.expired":     0,
+		"cache.hit":         0,
+		"cache.miss":        0,
+		"cache.revalidated": 0,
+		"cache.stale":       0,
+		"cache.updating":    0,
+	}
+
+	return httpCounters, upstreamCounters, upstreamCacheCounters
 }

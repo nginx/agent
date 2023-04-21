@@ -9,14 +9,14 @@ package sources
 
 import (
 	"context"
+	"github.com/nginx/agent/sdk/v2/proto"
 	re "regexp"
 	"sync"
 	"time"
 
-	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
-	"github.com/nginx/agent/v2/src/core/metrics/sources/tailer"
+	"github.com/nginx/agent/v2/src/core/tailer"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -66,7 +66,7 @@ type NginxErrorLog struct {
 	binary             core.NginxBinary
 	nginxType          string
 	collectionInterval time.Duration
-	buf                []*proto.StatsEntity
+	buf                []*metrics.StatsEntityWrapper
 }
 
 func NewNginxErrorLog(
@@ -85,7 +85,7 @@ func NewNginxErrorLog(
 		binary,
 		nginxType,
 		collectionInterval,
-		[]*proto.StatsEntity{},
+		[]*metrics.StatsEntityWrapper{},
 	}
 
 	logs := binary.GetErrorLogs()
@@ -101,7 +101,7 @@ func NewNginxErrorLog(
 	return nginxErrorLog
 }
 
-func (c *NginxErrorLog) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (c *NginxErrorLog) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 
 	c.collectLogStats(ctx, m)
@@ -145,7 +145,7 @@ func (c *NginxErrorLog) Update(dimensions *metrics.CommonDim, collectorConf *met
 	}
 }
 
-func (c *NginxErrorLog) collectLogStats(ctx context.Context, m chan<- *proto.StatsEntity) {
+func (c *NginxErrorLog) collectLogStats(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	logs := c.binary.GetErrorLogs()
@@ -174,7 +174,7 @@ func (c *NginxErrorLog) collectLogStats(ctx context.Context, m chan<- *proto.Sta
 	for _, stat := range c.buf {
 		m <- stat
 	}
-	c.buf = []*proto.StatsEntity{}
+	c.buf = []*metrics.StatsEntityWrapper{}
 }
 
 func (c *NginxErrorLog) logStats(ctx context.Context, logFile string) {
@@ -231,7 +231,7 @@ func (c *NginxErrorLog) logStats(ctx context.Context, logFile string) {
 				UpstreamResponseFailedMetricName:   0,
 			}
 
-			c.buf = append(c.buf, metrics.NewStatsEntity(c.baseDimensions.ToDimensions(), simpleMetrics))
+			c.buf = append(c.buf, metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE))
 
 			mu.Unlock()
 

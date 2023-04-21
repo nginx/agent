@@ -84,14 +84,18 @@ func (f *formatter) Run() error {
 }
 
 // P prints a line to the generated output.
-func (f *formatter) P(elements ...string) {
-	if len(elements) > 0 {
+//
+// This will emit a newline and proper indentation. If you do not
+// want to emit a newline and want to write a raw string, use
+// WriteString (which P calls).
+//
+// If strings.TrimSpace(elem) is empty, no indentation is produced.
+func (f *formatter) P(elem string) {
+	if len(strings.TrimSpace(elem)) > 0 {
 		// We only want to write an indent if we're
-		// writing elements (not just a newline).
+		// writing a non-empty string (not just a newline).
 		f.Indent(nil)
-		for _, elem := range elements {
-			f.WriteString(elem)
-		}
+		f.WriteString(elem)
 	}
 	f.WriteString("\n")
 
@@ -143,6 +147,9 @@ func (f *formatter) Indent(nextNode ast.Node) {
 }
 
 // WriteString writes the given element to the generated output.
+//
+// This will not write indentation or newlines. Use P if you
+// want to emit identation or newlines.
 func (f *formatter) WriteString(elem string) {
 	if f.pendingSpace {
 		f.pendingSpace = false
@@ -198,7 +205,7 @@ func (f *formatter) writeFile() {
 	if f.lastWritten != 0 && f.lastWritten != '\n' {
 		// If anything was written, we always conclude with
 		// a newline.
-		f.P()
+		f.P("")
 	}
 }
 
@@ -250,7 +257,7 @@ func (f *formatter) writeFileHeader() {
 	})
 	for i, importNode := range importNodes {
 		if i == 0 && f.previousNode != nil && !f.leadingCommentsContainBlankLine(importNode) {
-			f.P()
+			f.P("")
 		}
 		f.writeImport(importNode, i > 0)
 	}
@@ -273,7 +280,7 @@ func (f *formatter) writeFileHeader() {
 	})
 	for i, optionNode := range optionNodes {
 		if i == 0 && f.previousNode != nil && !f.leadingCommentsContainBlankLine(optionNode) {
-			f.P()
+			f.P("")
 		}
 		f.writeFileOption(optionNode, i > 0)
 	}
@@ -291,7 +298,7 @@ func (f *formatter) writeFileTypes() {
 			info := f.fileNode.NodeInfo(node)
 			wantNewline := f.previousNode != nil && (i == 0 || info.LeadingComments().Len() > 0)
 			if wantNewline && !f.leadingCommentsContainBlankLine(node) {
-				f.P()
+				f.P("")
 			}
 			f.writeNode(node)
 		}
@@ -1319,7 +1326,7 @@ func (f *formatter) writeOpenBracePrefix(openBrace ast.Node) {
 	if info.TrailingComments().Len() > 0 {
 		f.writeTrailingEndComments(info.TrailingComments())
 	} else {
-		f.P()
+		f.P("")
 	}
 }
 
@@ -1336,7 +1343,7 @@ func (f *formatter) writeOpenBracePrefixForArray(openBrace ast.Node) {
 	if info.TrailingComments().Len() > 0 {
 		f.writeTrailingEndComments(info.TrailingComments())
 	} else {
-		f.P()
+		f.P("")
 	}
 }
 
@@ -1403,7 +1410,7 @@ func (f *formatter) writeCompoundStringLiteral(
 	needsIndent bool,
 	hasTrailingPunctuation bool,
 ) {
-	f.P()
+	f.P("")
 	if needsIndent {
 		f.In()
 	}
@@ -1719,7 +1726,7 @@ func (f *formatter) writeStartMaybeCompact(node ast.Node, forceCompact bool) {
 			// If the last comment is a C-style comment, multiple newline
 			// characters are required because C-style comments don't consume
 			// a newline.
-			f.P()
+			f.P("")
 		}
 	} else if !compact && nodeNewlineCount > 1 {
 		// If the previous node is an open brace, this is the first element
@@ -1738,7 +1745,7 @@ func (f *formatter) writeStartMaybeCompact(node ast.Node, forceCompact bool) {
 		//  message Foo {
 		//    string bar = 1;
 		//  }
-		f.P()
+		f.P("")
 	}
 	f.Indent(node)
 	f.writeNode(node)
@@ -1805,7 +1812,7 @@ func (f *formatter) writeBodyEnd(node ast.Node, leadingEndline bool) {
 		// will be written twice.
 		f.writeNode(node)
 		if f.lastWritten != '\n' {
-			f.P()
+			f.P("")
 		}
 		return
 	}
@@ -1901,7 +1908,7 @@ func (f *formatter) writeLineEnd(node ast.Node) {
 		// will be written twice.
 		f.writeNode(node)
 		if f.lastWritten != '\n' {
-			f.P()
+			f.P("")
 		}
 		return
 	}
@@ -1947,7 +1954,7 @@ func (f *formatter) writeMultilineCommentsMaybeCompact(comments ast.Comments, fo
 			//  // Package pet.v1 defines a PetStore API.
 			//  package pet.v1;
 			//
-			f.P()
+			f.P("")
 		}
 		compact = false
 		f.writeComment(comment.RawText())
@@ -2018,7 +2025,7 @@ func (f *formatter) writeTrailingEndComments(comments ast.Comments) {
 		}
 		f.writeComment(comment.RawText())
 	}
-	f.P()
+	f.P("")
 }
 
 func (f *formatter) writeComment(comment string) {
@@ -2027,10 +2034,29 @@ func (f *formatter) writeComment(comment string) {
 		// find minimum indent, so we can make all other lines relative to that
 		minIndent := -1 // sentinel that means unset
 		// start at 1 because line at index zero starts with "/*", not whitespace
+		var prefix string
 		for i := 1; i < len(lines); i++ {
 			indent, ok := computeIndent(lines[i])
 			if ok && (minIndent == -1 || indent < minIndent) {
 				minIndent = indent
+			}
+			if i > 1 && len(prefix) == 0 {
+				// no shared prefix
+				continue
+			}
+			line := strings.TrimSpace(lines[i])
+			if line == "*/" {
+				continue
+			}
+			var linePrefix string
+			if len(line) > 0 && isCommentPrefix(line[0]) {
+				linePrefix = line[:1]
+			}
+			if i == 1 {
+				prefix = linePrefix
+			} else if linePrefix != prefix {
+				// they do not share prefix
+				prefix = ""
 			}
 		}
 		if minIndent < 0 {
@@ -2040,7 +2066,7 @@ func (f *formatter) writeComment(comment string) {
 		}
 		for i, line := range lines {
 			trimmedLine := strings.TrimSpace(line)
-			if trimmedLine == "" || trimmedLine == "*/" {
+			if trimmedLine == "" || trimmedLine == "*/" || len(prefix) > 0 {
 				line = trimmedLine
 			} else {
 				// we only trim space from the right; for the left,
@@ -2048,9 +2074,45 @@ func (f *formatter) writeComment(comment string) {
 				line = unindent(line, minIndent)
 				line = strings.TrimRightFunc(line, unicode.IsSpace)
 			}
+			// If we have a block comment with no prefix, we'll format
+			// like so:
+
+			/*
+			   This is a multi-line comment example.
+			   It has no comment prefix on each line.
+			*/
+
+			// But if there IS a prefix, "|" for example, we'll left-align
+			// the prefix symbol under the asterisk of the comment start
+			// like this:
+
+			/*
+			 | This comment has a prefix before each line.
+			 | Usually the prefix is asterisk, but it's a
+			 | pipe in this example.
+			*/
+
+			// Finally, if the comment prefix is an asterisk, we'll left-align
+			// the comment end so its asterisk also aligns, like so:
+
+			/*
+			 * This comment has a prefix before each line.
+			 * Usually the prefix is asterisk, which is the
+			 * case in this example.
+			 */
+
 			if i > 0 && line != "*/" {
-				line = "   " + line
+				if len(prefix) == 0 {
+					line = "   " + line
+				} else {
+					line = " " + line
+				}
 			}
+			if line == "*/" && prefix == "*" {
+				// align the comment end with the other asterisks
+				line = " " + line
+			}
+
 			if i != len(lines)-1 {
 				f.P(line)
 			} else {
@@ -2064,6 +2126,18 @@ func (f *formatter) writeComment(comment string) {
 		f.Indent(nil)
 		f.WriteString(strings.TrimSpace(comment))
 	}
+}
+
+func isCommentPrefix(ch byte) bool {
+	r := rune(ch)
+	// A multi-line comment prefix is *usually* an asterisk, like in the following
+	/*
+	 * Foo
+	 * Bar
+	 * Baz
+	 */
+	// But we'll allow other prefixes. But if it's a letter or number, it's not a prefix.
+	return !unicode.IsLetter(r) && !unicode.IsNumber(r)
 }
 
 func unindent(s string, unindent int) string {

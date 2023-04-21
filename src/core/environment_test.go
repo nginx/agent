@@ -8,14 +8,105 @@
 package core
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/assert"
 )
+
+const fedoraOsReleaseInfo = `
+NAME=Fedora
+VERSION="32 (Workstation Edition)"
+ID=fedora
+VERSION_ID=32
+PRETTY_NAME="Fedora 32 (Workstation Edition)"
+ANSI_COLOR="0;38;2;60;110;180"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:32"
+HOME_URL="https://fedoraproject.org/"
+DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/fedora/f32/system-administrators-guide/"
+SUPPORT_URL="https://fedoraproject.org/wiki/Communicating_and_getting_help"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="Fedora"
+REDHAT_BUGZILLA_PRODUCT_VERSION=32
+REDHAT_SUPPORT_PRODUCT="Fedora"
+REDHAT_SUPPORT_PRODUCT_VERSION=32
+PRIVACY_POLICY_URL="https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
+VARIANT="Workstation Edition"
+VARIANT_ID=workstation"
+`
+
+const ubuntuReleaseInfo = `
+NAME="Ubuntu"
+VERSION="20.04.5 LTS (Focal Fossa)"
+VERSION_ID="20.04"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 20.04.5 LTS"
+HOME_URL="https://www.ubuntu.com"
+SUPPORT_URL=\"https://help.ubuntu.com/"
+BUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=focal
+UBUNTU_CODENAME=focal
+`
+
+const osReleaseInfoWithNoName = `
+VERSION="20.04.5 LTS (Focal Fossa)"
+VERSION_ID="20.04"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 20.04.5 LTS"
+HOME_URL="https://www.ubuntu.com"
+SUPPORT_URL=\"https://help.ubuntu.com/"
+BUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=focal
+UBUNTU_CODENAME=focal
+`
+const lscpuInfo1 = `
+Architecture:                    aarch64
+CPU op-mode(s):                  32-bit, 64-bit
+Byte Order:                      Little Endian
+CPU(s):                          2
+On-line CPU(s) list:             0,1
+Thread(s) per core:              1
+Core(s) per socket:              2
+Socket(s):                       1
+NUMA node(s):                    1
+Vendor ID:                       ARM
+Model:                           3
+Model name:                      Cortex-A72
+Stepping:                        r0p3
+BogoMIPS:                        166.66
+L1d cache:                       64 KiB
+L1i cache:                       96 KiB
+L2 cache:                        2 MiB
+NUMA node0 CPU(s):               0,1
+Vulnerability Itlb multihit:     Not affected
+Vulnerability L1tf:              Not affected
+Vulnerability Mds:               Not affected
+Vulnerability Meltdown:          Not affected
+Vulnerability Mmio stale data:   Not affected
+Vulnerability Retbleed:          Not affected
+Vulnerability Spec store bypass: Not affected
+Vulnerability Spectre v1:        Mitigation; __user pointer sanitization
+Vulnerability Spectre v2:        Mitigation; Branch predictor hardening, BHB
+Vulnerability Srbds:             Not affected\nVulnerability Tsx async abort:   Not affected
+Flags:                           fp asimd evtstrm aes pmull sha1 sha2 crc32 cpuid
+`
+
+const lscpuInfo2 = `
+L1d cache:                       64 KiB
+L1i cache:                       "96 KiB"
+L2 cache:                        2 MiB
+`
 
 var (
 	// set at buildtime
@@ -331,12 +422,14 @@ func TestNewHostInfo(t *testing.T) {
 	assert.GreaterOrEqual(t, len(host.Partitons), 1)
 	assert.GreaterOrEqual(t, len(host.Network.Interfaces), 1)
 	assert.GreaterOrEqual(t, len(host.Processor), 1)
+	assert.NotEmpty(t, host.Processor[0].Architecture)
+	assert.GreaterOrEqual(t, len(strings.Split(host.Uname, " ")), 5)
 	assert.NotEmpty(t, host.Release)
 	assert.Equal(t, tags, host.Tags)
 }
 
 func TestReleaseInfo(t *testing.T) {
-	release := releaseInfo()
+	release := releaseInfo("dummy-release") // No release file present
 	assert.NotEmptyf(t, release, "release is empty %v", release)
 }
 
@@ -370,9 +463,142 @@ func TestVirtualization(t *testing.T) {
 }
 
 func TestProcessors(t *testing.T) {
-	processorInfo := processors()
+	processorInfo := processors("arm64")
 	// at least one network interface
 	assert.GreaterOrEqual(t, processorInfo[0].GetCpus(), int32(1))
+	// non empty architecture
+	assert.NotEmpty(t, processorInfo[0].GetArchitecture())
+	assert.Equal(t, "arm64", processorInfo[0].GetArchitecture())
+}
+
+type fakeShell struct {
+	output map[string]string
+	errors map[string]error
+}
+
+func (f *fakeShell) Exec(cmd string, arg ...string) ([]byte, error) {
+	key := strings.Join(append([]string{cmd}, arg...), " ")
+	if err, ok := f.errors[key]; ok {
+		return nil, err
+	}
+	if out, ok := f.output[key]; ok {
+		return []byte(out), nil
+	}
+	return nil, fmt.Errorf("unexpected command %s", key)
+}
+
+func TestGetCacheInfo(t *testing.T) {
+	tempShellCommander := shell
+	defer func() { shell = tempShellCommander }()
+	tests := []struct {
+		name             string
+		shell            Shell
+		defaultCacheInfo map[string]string
+		expect           map[string]string
+	}{
+		{
+			name: "lscpu error",
+			shell: &fakeShell{
+				errors: map[string]error{
+					"lscpu": errors.New("nope"),
+				},
+			},
+			defaultCacheInfo: map[string]string{
+				"L1d": "64 KiB",
+				"L1i": "96 KiB",
+				"L2":  "2 MiB",
+				"L3":  "1 MiB",
+			},
+			expect: map[string]string{
+				"L1d": "64 KiB",
+				"L1i": "96 KiB",
+				"L2":  "2 MiB",
+				"L3":  "1 MiB",
+			},
+		},
+		{
+			name: "default cache info absent",
+			shell: &fakeShell{
+				output: map[string]string{
+					"lscpu": lscpuInfo1,
+				},
+			},
+			defaultCacheInfo: map[string]string{
+				"L1d": "-1",
+				"L1i": "-1",
+				"L2":  "-1",
+				"L3":  "-1",
+			},
+			expect: map[string]string{
+				"L1d": "64 KiB",
+				"L1i": "96 KiB",
+				"L2":  "2 MiB",
+				"L3":  "-1",
+			},
+		},
+		{
+			name: "os-release present with quote",
+			shell: &fakeShell{
+				output: map[string]string{
+					"lscpu": lscpuInfo2,
+				},
+			},
+			defaultCacheInfo: map[string]string{
+				"L1d": "-1",
+				"L1i": "-1",
+				"L2":  "-1",
+				"L3":  "-1",
+			},
+			expect: map[string]string{
+				"L1d": "64 KiB",
+				"L1i": "96 KiB",
+				"L2":  "2 MiB",
+				"L3":  "-1",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			shell = tt.shell
+			actual := getCacheInfo(tt.defaultCacheInfo)
+			assert.Equal(t, tt.expect, actual)
+		})
+	}
+}
+
+func TestFormatBytes(t *testing.T) {
+	tests := []struct {
+		name   string
+		bytes  int
+		expect string
+	}{
+		{
+			name:   "TestFormatBytesNotSupported",
+			bytes:  -1,
+			expect: "-1",
+		},
+		{
+			name:   "TestFormatBytesinB",
+			bytes:  512,
+			expect: "512 B",
+		},
+		{
+			name:   "TestFormatBytesinKiB",
+			bytes:  131072,
+			expect: "128 KiB",
+		},
+		{
+			name:   "TestFormatBytesinMiB",
+			bytes:  4194304,
+			expect: "4 MiB",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := formatBytes(tt.bytes)
+			assert.Equal(t, tt.expect, actual)
+		})
+	}
 }
 
 func TestProcesses(t *testing.T) {
@@ -490,6 +716,144 @@ func TestWriteFile(t *testing.T) {
 
 	os.Remove(file.GetName())
 	assert.NoFileExists(t, file.GetName())
+}
+
+func TestParseOsReleaseFile(t *testing.T) {
+	tests := []struct {
+		name             string
+		osReleaseContent string
+		expect           map[string]string
+	}{
+		{
+			name:             "ubuntu os-release info",
+			osReleaseContent: ubuntuReleaseInfo,
+			expect: map[string]string{
+				"VERSION_ID":       "20.04",
+				"VERSION":          "20.04.5 LTS (Focal Fossa)",
+				"VERSION_CODENAME": "focal",
+				"NAME":             "Ubuntu",
+				"ID":               "ubuntu",
+			},
+		},
+		{
+			name:             "fedora os-release info",
+			osReleaseContent: fedoraOsReleaseInfo,
+			expect: map[string]string{
+				"VERSION_ID": "32",
+				"VERSION":    "32 (Workstation Edition)",
+				"NAME":       "Fedora",
+				"ID":         "fedora",
+			},
+		},
+		{
+			name:             "os-release info with no name",
+			osReleaseContent: osReleaseInfoWithNoName,
+			expect: map[string]string{
+				"VERSION_ID":       "20.04",
+				"VERSION":          "20.04.5 LTS (Focal Fossa)",
+				"VERSION_CODENAME": "focal",
+				"NAME":             "unix",
+				"ID":               "ubuntu",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reader := strings.NewReader(tt.osReleaseContent)
+			osRelease, _ := parseOsReleaseFile(reader)
+			for releaseInfokey, _ := range tt.expect {
+				assert.Equal(t, osRelease[releaseInfokey], tt.expect[releaseInfokey])
+			}
+		})
+	}
+}
+
+func TestMergeHostAndOsReleaseInfo(t *testing.T) {
+	tests := []struct {
+		name        string
+		hostRelease *proto.ReleaseInfo
+		osRelease   map[string]string
+		expect      *proto.ReleaseInfo
+	}{
+		{
+			name: "os-release info present",
+			hostRelease: &proto.ReleaseInfo{
+				VersionId: "20.04",
+				Version:   "5.15.0-1028-aws",
+				Codename:  "linux",
+				Name:      "debian",
+				Id:        "ubuntu",
+			},
+			osRelease: map[string]string{
+				"VERSION_ID":       "20.04",
+				"VERSION":          "20.04.5 LTS (Focal Fossa)",
+				"VERSION_CODENAME": "focal",
+				"NAME":             "Ubuntu",
+				"ID":               "ubuntu",
+			},
+			expect: &proto.ReleaseInfo{
+				VersionId: "20.04",
+				Version:   "20.04.5 LTS (Focal Fossa)",
+				Codename:  "focal",
+				Name:      "Ubuntu",
+				Id:        "ubuntu",
+			},
+		},
+		{
+			name: "os-release info value missing",
+			osRelease: map[string]string{
+				"VERSION_ID":       "32",
+				"VERSION":          "32 (Workstation Edition)",
+				"VERSION_CODENAME": "",
+				"NAME":             "Fedora",
+				"ID":               "fedora",
+			},
+			hostRelease: &proto.ReleaseInfo{
+				VersionId: "32",
+				Version:   "Fedora 32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "Fedora",
+			},
+			expect: &proto.ReleaseInfo{
+				VersionId: "32",
+				Version:   "32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "fedora",
+			},
+		},
+		{
+			name: "os-release info field missing",
+			osRelease: map[string]string{
+				"VERSION_ID": "32",
+				"VERSION":    "32 (Workstation Edition)",
+				"NAME":       "Fedora",
+				"ID":         "fedora",
+			},
+			hostRelease: &proto.ReleaseInfo{
+				VersionId: "32",
+				Version:   "Fedora 32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "Fedora",
+			},
+			expect: &proto.ReleaseInfo{
+				VersionId: "32",
+				Version:   "32 (Workstation Edition)",
+				Codename:  "fedora",
+				Name:      "Fedora",
+				Id:        "fedora",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			releaseInfo := mergeHostAndOsReleaseInfo(tt.hostRelease, tt.osRelease)
+			assert.Equal(t, tt.expect, releaseInfo)
+		})
+	}
 }
 
 func TestGetContainerID(t *testing.T) {

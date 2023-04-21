@@ -37,7 +37,7 @@ func NewDiskIOSource(namespace string, env core.Environment) *DiskIO {
 	return &DiskIO{namedMetric: &namedMetric{namespace, "io"}, env: env, diskIOStatsFunc: disk.IOCountersWithContext}
 }
 
-func (dio *DiskIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (dio *DiskIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	dio.init.Do(func() {
 		dio.diskDevs, _ = dio.env.DiskDevices()
@@ -60,7 +60,7 @@ func (dio *DiskIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *pr
 		// the Controller 3.x was labelling it wrong.  However, changing this on the Analytics side
 		// would involve a lot of changes (UI, API, Schema and Ingestion). So we are using mount_point
 		// dimension for now.
-		case m <- metrics.NewStatsEntity([]*proto.Dimension{{Name: MOUNT_POINT, Value: k}}, simpleMetrics):
+		case m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{{Name: MOUNT_POINT, Value: k}}, simpleMetrics, proto.MetricsReport_SYSTEM):
 		}
 	}
 

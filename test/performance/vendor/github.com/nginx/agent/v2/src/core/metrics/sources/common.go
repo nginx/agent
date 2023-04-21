@@ -88,11 +88,11 @@ func Delta(current, previous map[string]map[string]float64) map[string]map[strin
 	return diff
 }
 
-func SendNginxDownStatus(ctx context.Context, dims []*proto.Dimension, m chan<- *proto.StatsEntity) {
+func SendNginxDownStatus(ctx context.Context, dims []*proto.Dimension, m chan<- *metrics.StatsEntityWrapper) {
 	simpleMetrics := []*proto.SimpleMetric{newFloatMetric("nginx.status", float64(0))}
 
 	select {
 	case <-ctx.Done():
-	case m <- metrics.NewStatsEntity(dims, simpleMetrics):
+	case m <- metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE):
 	}
 }

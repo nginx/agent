@@ -111,7 +111,6 @@ func (c *Client) processorWorker(ctx context.Context, wg *sync.WaitGroup, id int
 			event.GetSecurityViolationEvent().InstanceTags = c.commonDims.InstanceTags
 			event.GetSecurityViolationEvent().InstanceGroup = c.commonDims.InstanceGroup
 			event.GetSecurityViolationEvent().DisplayName = c.commonDims.DisplayName
-			event.GetSecurityViolationEvent().NginxID = c.commonDims.NginxId
 
 			c.logger.Debugf("worker %d: generated SecurityViolationEvent: %v", id, event)
 			processed <- event

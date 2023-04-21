@@ -9,6 +9,7 @@ package sources
 
 import (
 	"context"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"sort"
 	"testing"
 
@@ -180,10 +181,10 @@ func TestCommonDelta(t *testing.T) {
 }
 
 func TestCommonSendNginxDownStatus(t *testing.T) {
-	m := make(chan *proto.StatsEntity, 1)
+	m := make(chan *metrics.StatsEntityWrapper, 1)
 	expected := &proto.SimpleMetric{Name: "nginx.status", Value: 0.0}
 	SendNginxDownStatus(context.TODO(), []*proto.Dimension{}, m)
 	actual := <-m
-	assert.Equal(t, 1, len(actual.Simplemetrics))
-	assert.Equal(t, expected, actual.Simplemetrics[0])
+	assert.Equal(t, 1, len(actual.Data.Simplemetrics))
+	assert.Equal(t, expected, actual.Data.Simplemetrics[0])
 }

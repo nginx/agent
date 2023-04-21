@@ -1,0 +1,23 @@
+version: '3.9'
+
+networks:
+  monitoring:
+    driver: bridge
+
+services:
+  agent:
+    build:
+      context: ../../../
+      dockerfile: ./scripts/docker/nginx-oss/deb/Dockerfile
+      target: install-agent
+      args:
+        PACKAGE_NAME: ${PACKAGE_NAME}
+        BASE_IMAGE: ${BASE_IMAGE}
+        ENTRY_POINT: "./scripts/docker/entrypoint.sh"
+    ports:
+      - 9091:9091
+    networks:
+      - monitoring
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf

@@ -17,6 +17,7 @@ package protoc
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -26,11 +27,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
-	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -74,9 +76,9 @@ Additional flags:
 		NormalizeFlag: flagsBuilder.Normalize,
 		Version: fmt.Sprintf(
 			"%v.%v.%v-buf",
-			appprotoexec.DefaultVersion.GetMajor(),
-			appprotoexec.DefaultVersion.GetMinor(),
-			appprotoexec.DefaultVersion.GetPatch(),
+			bufpluginexec.DefaultVersion.GetMajor(),
+			bufpluginexec.DefaultVersion.GetMinor(),
+			bufpluginexec.DefaultVersion.GetPatch(),
 		),
 	}
 }
@@ -192,6 +194,11 @@ func run(
 			}
 			span.End()
 		}
+		wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
+			filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
+		if err != nil {
+			return err
+		}
 		pluginResponses := make([]*appproto.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
 		for _, pluginName := range env.PluginNamesSortedByOutIndex {
 			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
@@ -203,6 +210,7 @@ func run(
 				container.Logger(),
 				storageosProvider,
 				runner,
+				wasmPluginExecutor,
 				container,
 				images,
 				pluginName,

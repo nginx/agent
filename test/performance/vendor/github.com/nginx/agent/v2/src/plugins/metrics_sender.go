@@ -79,9 +79,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 				err := r.reporter.Send(r.ctx, message)
 
 				if err != nil {
-					log.Errorf("Failed to send MetricsReport: %v, data: %+v", err, report)
-				} else {
-					log.Tracef("MetricsReport sent, %v", report)
+					log.Errorf("Failed to send MetricsReport: %v", err)
 				}
 			case *models.EventReport:
 				err := r.reporter.Send(r.ctx, client.MessageFromEvents(report))

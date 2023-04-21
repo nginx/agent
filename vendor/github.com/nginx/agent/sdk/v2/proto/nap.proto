@@ -15,6 +15,10 @@ message AppProtectWAFDetails {
   string threat_campaigns_version = 3 [(gogoproto.jsontag) = "threat_campaigns_version"];
   // App Protect Health details (This is being deprecated and will be removed in a future release)
   AppProtectWAFHealth health = 4 [(gogoproto.jsontag) = "health"];
+  // Location of WAF metadata file
+  string waf_location = 5 [(gogoproto.jsontag) = "waf_location"];
+  // Determines whether the publication of NGINX App Protect pre-compiled content from an external source is supported
+  bool precompiled_publication = 6 [(gogoproto.jsontag) = "precompiled_publication"];
 }
 
 // Represents the health of App Protect WAF

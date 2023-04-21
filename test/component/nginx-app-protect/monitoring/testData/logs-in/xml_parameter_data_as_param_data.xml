@@ -1,0 +1,1 @@
+<?xml version='1.0' encoding='UTF-8'?><BAD_MSG><request-violations><violation><viol_index>52</viol_index><viol_name>VIOL_JSON_MALFORMED</viol_name><context>parameter</context><param_data><param_name>anNvbg==</param_name><staging>0</staging><param_value>eyAiYSI6ICIifQ==</param_value></param_data><staging>0</staging></violation></request-violations></BAD_MSG>

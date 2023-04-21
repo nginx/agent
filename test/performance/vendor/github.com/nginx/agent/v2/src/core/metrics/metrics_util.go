@@ -9,27 +9,40 @@ package metrics
 
 import (
 	"context"
+	"math"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 
 	"github.com/gogo/protobuf/types"
 )
 
 type Collector interface {
-	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity)
+	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
 	UpdateConfig(config *config.Config)
 }
 type Source interface {
-	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity)
+	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
 }
 type NginxSource interface {
-	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity)
+	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
 	Update(dimensions *CommonDim, collectorConf *NginxCollectorConfig)
 	Stop()
 }
+
+type StatsEntityWrapper struct {
+	Type proto.MetricsReport_Type
+	Data *proto.StatsEntity
+}
+
+type MetricsReportBundle struct {
+	Data []*proto.MetricsReport
+}
+
 type NginxCollectorConfig struct {
 	NginxId            string
 	StubStatus         string
@@ -42,12 +55,62 @@ type NginxCollectorConfig struct {
 	ClientVersion      int
 }
 
+func NewStatsEntityWrapper(dims []*proto.Dimension, samples []*proto.SimpleMetric, seType proto.MetricsReport_Type) *StatsEntityWrapper {
+	return &StatsEntityWrapper{seType, &proto.StatsEntity{
+		Timestamp:     types.TimestampNow(),
+		Dimensions:    dims,
+		Simplemetrics: samples,
+	}}
+}
+
 func NewStatsEntity(dims []*proto.Dimension, samples []*proto.SimpleMetric) *proto.StatsEntity {
 	return &proto.StatsEntity{
 		Timestamp:     types.TimestampNow(),
 		Dimensions:    dims,
 		Simplemetrics: samples,
 	}
+}
+
+func GetTimeMetrics(times []float64, metricType string) float64 {
+	if len(times) == 0 {
+		return 0
+	}
+
+	switch metricType {
+	case "time":
+		// Calculate average
+		sum := 0.0
+		for _, t := range times {
+			sum += t
+		}
+
+		return (math.Round(sum*1000) / 1000) / float64(len(times))
+
+	case "count":
+		return float64(len(times))
+
+	case "max":
+		sort.Float64s(times)
+		return times[len(times)-1]
+
+	case "median":
+		sort.Float64s(times)
+
+		mNumber := len(times) / 2
+		if len(times)%2 != 0 {
+			return times[mNumber]
+		} else {
+			return (times[mNumber-1] + times[mNumber]) / 2
+		}
+
+	case "pctl95":
+		sort.Float64s(times)
+
+		index := int(math.RoundToEven(float64(0.95)*float64(len(times)))) - 1
+		return times[index]
+	}
+
+	return 0
 }
 
 func GetCalculationMap() map[string]string {
@@ -146,6 +209,11 @@ func GetCalculationMap() map[string]string {
 		"nginx.upstream.response.time.max":                   "avg",
 		"nginx.upstream.response.time.median":                "avg",
 		"nginx.upstream.response.time.pctl95":                "avg",
+		"nginx.upstream.status.1xx":                          "sum",
+		"nginx.upstream.status.2xx":                          "sum",
+		"nginx.upstream.status.3xx":                          "sum",
+		"nginx.upstream.status.4xx":                          "sum",
+		"nginx.upstream.status.5xx":                          "sum",
 		"nginx.http.conn.handled":                            "sum",
 		"nginx.http.conn.reading":                            "avg",
 		"nginx.http.conn.writing":                            "avg",
@@ -154,8 +222,17 @@ func GetCalculationMap() map[string]string {
 		"nginx.http.conn.current":                            "avg",
 		"nginx.http.conn.dropped":                            "sum",
 		"nginx.http.conn.idle":                               "avg",
+		"nginx.cache.bypass":                                 "sum",
+		"nginx.cache.expired":                                "sum",
+		"nginx.cache.hit":                                    "sum",
+		"nginx.cache.miss":                                   "sum",
+		"nginx.cache.revalidated":                            "sum",
+		"nginx.cache.stale":                                  "sum",
+		"nginx.cache.updating":                               "sum",
 		"nginx.upstream.response.buffered":                   "sum",
 		"nginx.upstream.request.failed":                      "sum",
+		"nginx.upstream.request.count":                       "sum",
+		"nginx.upstream.next.count":                          "sum",
 		"nginx.upstream.response.failed":                     "sum",
 		"nginx.workers.count":                                "avg",
 		"nginx.workers.rlimit_nofile":                        "avg",
@@ -222,7 +299,15 @@ func GetCalculationMap() map[string]string {
 		"plus.http.upstream.queue.size":                      "avg",
 		"plus.http.upstream.peers.conn.active":               "avg",
 		"plus.http.upstream.peers.header_time":               "avg",
+		"plus.http.upstream.peers.header_time.count":         "sum",
+		"plus.http.upstream.peers.header_time.max":           "avg",
+		"plus.http.upstream.peers.header_time.median":        "avg",
+		"plus.http.upstream.peers.header_time.pctl95":        "avg",
 		"plus.http.upstream.peers.response.time":             "avg",
+		"plus.http.upstream.peers.response.time.count":       "sum",
+		"plus.http.upstream.peers.response.time.max":         "avg",
+		"plus.http.upstream.peers.response.time.median":      "avg",
+		"plus.http.upstream.peers.response.time.pctl95":      "avg",
 		"plus.http.upstream.peers.request.count":             "sum",
 		"plus.http.upstream.peers.response.count":            "sum",
 		"plus.http.upstream.peers.status.1xx":                "sum",
@@ -253,8 +338,16 @@ func GetCalculationMap() map[string]string {
 		"plus.stream.upstream.peers.conn.active":             "avg",
 		"plus.stream.upstream.peers.conn.count":              "sum",
 		"plus.stream.upstream.peers.connect_time":            "avg",
+		"plus.stream.upstream.peers.connect_time.count":      "sum",
+		"plus.stream.upstream.peers.connect_time.max":        "avg",
+		"plus.stream.upstream.peers.connect_time.median":     "avg",
+		"plus.stream.upstream.peers.connect_time.pctl95":     "avg",
 		"plus.stream.upstream.peers.ttfb":                    "avg",
 		"plus.stream.upstream.peers.response.time":           "avg",
+		"plus.stream.upstream.peers.response.time.count":     "sum",
+		"plus.stream.upstream.peers.response.time.max":       "avg",
+		"plus.stream.upstream.peers.response.time.median":    "avg",
+		"plus.stream.upstream.peers.response.time.pctl95":    "avg",
 		"plus.stream.upstream.peers.bytes_sent":              "sum",
 		"plus.stream.upstream.peers.bytes_rcvd":              "sum",
 		"plus.stream.upstream.peers.fails":                   "sum",
@@ -291,4 +384,30 @@ func GetCalculationMap() map[string]string {
 		"container.mem.oom":                                  "avg",
 		"container.mem.oom.kill":                             "avg",
 	}
+}
+
+func GenerateMetricsReportBundle(entities []*StatsEntityWrapper) core.Payload {
+	reportMap := make(map[proto.MetricsReport_Type]*proto.MetricsReport, 0)
+
+	for _, entity := range entities {
+		if _, ok := reportMap[entity.Type]; !ok {
+			reportMap[entity.Type] = &proto.MetricsReport{
+				Meta: &proto.Metadata{
+					Timestamp: types.TimestampNow(),
+				},
+				Type: entity.Type,
+				Data: make([]*proto.StatsEntity, 0),
+			}
+		}
+		reportMap[entity.Type].Data = append(reportMap[entity.Type].Data, entity.Data)
+	}
+
+	if len(reportMap) > 0 {
+		bundle := &MetricsReportBundle{Data: []*proto.MetricsReport{}}
+		for _, report := range reportMap {
+			bundle.Data = append(bundle.Data, report)
+		}
+		return bundle
+	}
+	return nil
 }

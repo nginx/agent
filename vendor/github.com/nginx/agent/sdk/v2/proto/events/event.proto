@@ -66,6 +66,10 @@ message ActivityEvent {
 
 // Represents a security violation that is emitted by the agent
 message SecurityViolationEvent {
+  // DEPRECATED
+  reserved 39;
+  reserved "NginxID";
+
   string PolicyName = 1 [(gogoproto.jsontag) = "policy_name"];
   string SupportID = 2 [(gogoproto.jsontag) = "support_id"];
 
@@ -115,7 +119,6 @@ message SecurityViolationEvent {
   string InstanceTags = 36 [(gogoproto.jsontag) = "instance_tags"];
   string InstanceGroup = 37 [(gogoproto.jsontag) = "instance_group"];
   string DisplayName = 38 [(gogoproto.jsontag) = "display_name"];
-  string NginxID = 39 [(gogoproto.jsontag) = "nginx_id"];
   string ParentHostname = 40 [(gogoproto.jsontag) = "parent_hostname"];
 }
 

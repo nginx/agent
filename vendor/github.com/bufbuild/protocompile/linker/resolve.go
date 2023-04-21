@@ -15,49 +15,20 @@
 package linker
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"google.golang.org/protobuf/types/dynamicpb"
 
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/internal"
 	"github.com/bufbuild/protocompile/reporter"
 	"github.com/bufbuild/protocompile/walk"
 )
-
-func (r *result) ResolveMessageType(name protoreflect.FullName) protoreflect.MessageDescriptor {
-	d := r.resolveElement(name)
-	if md, ok := d.(protoreflect.MessageDescriptor); ok {
-		return md
-	}
-	return nil
-}
-
-func (r *result) ResolveEnumType(name protoreflect.FullName) protoreflect.EnumDescriptor {
-	d := r.resolveElement(name)
-	if ed, ok := d.(protoreflect.EnumDescriptor); ok {
-		return ed
-	}
-	return nil
-}
-
-func (r *result) ResolveExtension(name protoreflect.FullName) protoreflect.ExtensionTypeDescriptor {
-	d := r.resolveElement(name)
-	if ed, ok := d.(protoreflect.ExtensionDescriptor); ok {
-		if !ed.IsExtension() {
-			return nil
-		}
-		if td, ok := ed.(protoreflect.ExtensionTypeDescriptor); ok {
-			return td
-		}
-		return dynamicpb.NewExtensionType(ed).TypeDescriptor()
-	}
-	return nil
-}
 
 func (r *result) ResolveMessageLiteralExtensionName(node ast.IdentValueNode) string {
 	return r.optionQualifiedNames[node]
@@ -67,11 +38,57 @@ func (r *result) resolveElement(name protoreflect.FullName) protoreflect.Descrip
 	if len(name) > 0 && name[0] == '.' {
 		name = name[1:]
 	}
-	importedFd, res := resolveElement(r, name, false, nil)
-	if importedFd != nil {
-		r.markUsed(importedFd.Path())
-	}
+	res, _ := resolveInFile(r, false, nil, func(f File) (protoreflect.Descriptor, error) {
+		d := resolveElementInFile(name, f)
+		if d != nil {
+			return d, nil
+		}
+		return nil, protoregistry.NotFound
+	})
 	return res
+}
+
+func resolveInFile[T any](f File, publicImportsOnly bool, checked []string, fn func(File) (T, error)) (T, error) {
+	var zero T
+	path := f.Path()
+	for _, str := range checked {
+		if str == path {
+			// already checked
+			return zero, protoregistry.NotFound
+		}
+	}
+	checked = append(checked, path)
+
+	res, err := fn(f)
+	if err == nil {
+		// found it
+		return res, nil
+	}
+	if !errors.Is(err, protoregistry.NotFound) {
+		return zero, err
+	}
+
+	imports := f.Imports()
+	for i, l := 0, imports.Len(); i < l; i++ {
+		imp := imports.Get(i)
+		if publicImportsOnly && !imp.IsPublic {
+			continue
+		}
+		res, err := resolveInFile(f.FindImportByPath(imp.Path()), true, checked, fn)
+		if errors.Is(err, protoregistry.NotFound) {
+			continue
+		}
+		if err != nil {
+			return zero, err
+		}
+		if !imp.IsPublic {
+			if r, ok := f.(*result); ok {
+				r.markUsed(imp.Path())
+			}
+		}
+		return res, nil
+	}
+	return zero, err
 }
 
 func (r *result) markUsed(importPath string) {
@@ -106,38 +123,6 @@ func (r *result) CheckForUnusedImports(handler *reporter.Handler) {
 			handler.HandleWarningWithPos(pos, errUnusedImport(dep))
 		}
 	}
-}
-
-func resolveElement(f File, fqn protoreflect.FullName, publicImportsOnly bool, checked []string) (imported File, d protoreflect.Descriptor) {
-	path := f.Path()
-	for _, str := range checked {
-		if str == path {
-			// already checked
-			return nil, nil
-		}
-	}
-	checked = append(checked, path)
-
-	r := resolveElementInFile(fqn, f)
-	if r != nil {
-		// not imported, but present in f
-		return nil, r
-	}
-
-	// When publicImportsOnly = false, we are searching only directly imported symbols. But
-	// we also need to search transitive public imports due to semantics of public imports.
-	for i := 0; i < f.Imports().Len(); i++ {
-		dep := f.Imports().Get(i)
-		if dep.IsPublic || !publicImportsOnly {
-			depFile := f.FindImportByPath(dep.Path())
-			_, d := resolveElement(depFile, fqn, true, checked)
-			if d != nil {
-				return depFile, d
-			}
-		}
-	}
-
-	return nil, nil
 }
 
 func descriptorTypeWithArticle(d protoreflect.Descriptor) string {
@@ -326,7 +311,10 @@ func resolveFieldTypes(f *fldDescriptor, handler *reporter.Handler, s *Symbols, 
 			return handler.HandleErrorf(file.NodeInfo(node.FieldExtendee()).Start(), "extendee is invalid: %s is %s, not a message", dsc.FullName(), descriptorTypeWithArticle(dsc))
 		}
 		f.extendee = extd
-		fld.Extendee = proto.String("." + string(dsc.FullName()))
+		extendeeName := "." + string(dsc.FullName())
+		if fld.GetExtendee() != extendeeName {
+			fld.Extendee = proto.String(extendeeName)
+		}
 		// make sure the tag number is in range
 		found := false
 		tag := protoreflect.FieldNumber(fld.GetNumber())
@@ -343,7 +331,7 @@ func resolveFieldTypes(f *fldDescriptor, handler *reporter.Handler, s *Symbols, 
 			}
 		} else {
 			// make sure tag is not a duplicate
-			if err := s.AddExtension(dsc.ParentFile().Package(), dsc.FullName(), tag, file.NodeInfo(node.FieldTag()).Start(), handler); err != nil {
+			if err := s.AddExtension(packageFor(dsc), dsc.FullName(), tag, file.NodeInfo(node.FieldTag()).Start(), handler); err != nil {
 				return err
 			}
 		}
@@ -394,27 +382,47 @@ func resolveFieldTypes(f *fldDescriptor, handler *reporter.Handler, s *Symbols, 
 				return handler.HandleErrorf(file.NodeInfo(node.FieldType()).Start(), "%s: %s is a synthetic map entry and may not be referenced explicitly", scope, dsc.FullName())
 			}
 		}
-		fld.TypeName = proto.String("." + string(dsc.FullName()))
-		// if type was tentatively unset, we now know it's actually a message
+		typeName := "." + string(dsc.FullName())
+		if fld.GetTypeName() != typeName {
+			fld.TypeName = proto.String(typeName)
+		}
 		if fld.Type == nil {
+			// if type was tentatively unset, we now know it's actually a message
 			fld.Type = descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum()
+		} else if fld.GetType() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && fld.GetType() != descriptorpb.FieldDescriptorProto_TYPE_GROUP {
+			return handler.HandleErrorf(file.NodeInfo(node.FieldType()).Start(), "%s: descriptor proto indicates type %v but should be %v", scope, fld.GetType(), descriptorpb.FieldDescriptorProto_TYPE_MESSAGE)
 		}
 		f.msgType = dsc
 	case protoreflect.EnumDescriptor:
 		proto3 := r.Syntax() == protoreflect.Proto3
-		enumIsProto3 := dsc.ParentFile().Syntax() == protoreflect.Proto3
+		enumIsProto3 := dsc.Syntax() == protoreflect.Proto3
 		if fld.GetExtendee() == "" && proto3 && !enumIsProto3 {
 			// fields in a proto3 message cannot refer to proto2 enums
 			return handler.HandleErrorf(file.NodeInfo(node.FieldType()).Start(), "%s: cannot use proto2 enum %s in a proto3 message", scope, fld.GetTypeName())
 		}
-		fld.TypeName = proto.String("." + string(dsc.FullName()))
-		// the type was tentatively unset, but now we know it's actually an enum
-		fld.Type = descriptorpb.FieldDescriptorProto_TYPE_ENUM.Enum()
+		typeName := "." + string(dsc.FullName())
+		if fld.GetTypeName() != typeName {
+			fld.TypeName = proto.String(typeName)
+		}
+		if fld.Type == nil {
+			// the type was tentatively unset, but now we know it's actually an enum
+			fld.Type = descriptorpb.FieldDescriptorProto_TYPE_ENUM.Enum()
+		} else if fld.GetType() != descriptorpb.FieldDescriptorProto_TYPE_ENUM {
+			return handler.HandleErrorf(file.NodeInfo(node.FieldType()).Start(), "%s: descriptor proto indicates type %v but should be %v", scope, fld.GetType(), descriptorpb.FieldDescriptorProto_TYPE_ENUM)
+		}
 		f.enumType = dsc
 	default:
 		return handler.HandleErrorf(file.NodeInfo(node.FieldType()).Start(), "%s: invalid type: %s is %s, not a message or enum", scope, dsc.FullName(), descriptorTypeWithArticle(dsc))
 	}
 	return nil
+}
+
+func packageFor(dsc protoreflect.Descriptor) protoreflect.FullName {
+	if dsc.ParentFile() != nil {
+		return dsc.ParentFile().Package()
+	}
+	// Can't access package? Make a best effort guess.
+	return dsc.FullName().Parent()
 }
 
 func isValidMap(mapField protoreflect.FieldDescriptor, mapEntry protoreflect.MessageDescriptor) bool {
@@ -444,7 +452,10 @@ func resolveMethodTypes(m *mtdDescriptor, handler *reporter.Handler, scopes []sc
 			return err
 		}
 	} else {
-		mtd.InputType = proto.String("." + string(dsc.FullName()))
+		typeName := "." + string(dsc.FullName())
+		if mtd.GetInputType() != typeName {
+			mtd.InputType = proto.String(typeName)
+		}
 		m.inputType = msg
 	}
 
@@ -463,7 +474,10 @@ func resolveMethodTypes(m *mtdDescriptor, handler *reporter.Handler, scopes []sc
 			return err
 		}
 	} else {
-		mtd.OutputType = proto.String("." + string(dsc.FullName()))
+		typeName := "." + string(dsc.FullName())
+		if mtd.GetOutputType() != typeName {
+			mtd.OutputType = proto.String(typeName)
+		}
 		m.outputType = msg
 	}
 
@@ -526,6 +540,13 @@ func (r *result) resolveOptionValue(handler *reporter.Handler, mc *internal.Mess
 		for _, fld := range optVal {
 			// check for extension name
 			if fld.Name.IsExtension() {
+				// Confusingly, an extension reference inside a message literal cannot refer to
+				// elements in the same enclosing message without a qualifier. Basically, we
+				// treat this as if there were no message scopes, so only the package name is
+				// used for resolving relative references. (Inconsistent protoc behavior, but
+				// likely due to how it re-uses C++ text format implementation, and normal text
+				// format doesn't expect that kind of relative reference.)
+				scopes := scopes[:1] // first scope is file, the rest are enclosing messages
 				fqn, err := r.resolveExtensionName(string(fld.Name.Name.AsIdentifier()), scopes)
 				if err != nil {
 					if err := handler.HandleErrorf(r.FileNode().NodeInfo(fld.Name.Name).Start(), "%v%v", mc, err); err != nil {

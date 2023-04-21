@@ -64,9 +64,38 @@ jobs:
       - name: Run Component Tests
         run: make component-test
 
-  integration-test:
-    name: Integration Tests
+  integration-tests:
     runs-on: ubuntu-22.04
+    name: Integration Tests
+    strategy:
+      matrix:
+        container:
+        - image: "rockylinux"
+          version: "8"
+        - image: "rockylinux"
+          version: "9"
+        - image: "almalinux"
+          version: "8"
+        - image: "almalinux"
+          version: "9"
+        - image: "amazonlinux"
+          version: "2"
+        - image: "oraclelinux"
+          version: "7"
+        - image: "oraclelinux"
+          version: "8"
+        - image: "oraclelinux"
+          version: "9"
+        - image: "ubuntu"
+          version: "22.04"
+        - image: "alpine"
+          version: "3.14"
+        - image: "alpine"
+          version: "3.15"
+        - image: "alpine"
+          version: "3.16"
+        - image: "alpine"
+          version: "3.17"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -74,7 +103,8 @@ jobs:
           go-version-file: 'go.mod'
       - name: Run Integration Tests
         run: |
-            go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }} 
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
 
   performance-test:
@@ -214,6 +244,6 @@ jobs:
 
   trigger-release-workflow:
     if: ${{ startsWith(github.ref_name, 'release-') && !github.event.pull_request.head.repo.fork }}
-    needs: [ lint, unit-test, component-test, performance-test ]
+    needs: [ lint, unit-test, component-test, performance-test, integration-tests ]
     uses: ./.github/workflows/release-branch.yml
     secrets: inherit

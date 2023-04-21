@@ -159,8 +159,7 @@ func TestMetricsProcessNginxDetailProcUpdate(t *testing.T) {
 			metricsPlugin.collectors = []metrics.Collector{
 				collectors.NewNginxCollector(config, env, metricsPlugin.collectorConfigsMap[firstNginxId], binary),
 			}
-
-			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), metricsPlugin)
+			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{metricsPlugin}, []core.ExtensionPlugin{})
 			messagePipe.Run()
 
 			// Update the nginx processes seen
@@ -250,7 +249,7 @@ func TestMetrics_Process_AgentConfigChanged(t *testing.T) {
 			// Setup metrics and mock pipeline
 			metricsPlugin := NewMetrics(tc.config, tutils.GetMockEnvWithProcess(), binary)
 
-			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), metricsPlugin)
+			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{metricsPlugin}, []core.ExtensionPlugin{})
 
 			messagePipe.Run()
 

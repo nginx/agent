@@ -32,7 +32,7 @@ import (
 )
 
 // Version is the semantic version of the connect module.
-const Version = "1.5.0"
+const Version = "1.6.0"
 
 // These constants are used in compile-time handshakes with connect's generated
 // code.
@@ -47,8 +47,8 @@ type StreamType uint8
 
 const (
 	StreamTypeUnary  StreamType = 0b00
-	StreamTypeClient            = 0b01
-	StreamTypeServer            = 0b10
+	StreamTypeClient StreamType = 0b01
+	StreamTypeServer StreamType = 0b10
 	StreamTypeBidi              = StreamTypeClient | StreamTypeServer
 )
 
@@ -271,6 +271,9 @@ type HTTPClient interface {
 }
 
 // Spec is a description of a client call or a handler invocation.
+//
+// If you're using Protobuf, protoc-gen-connect-go generates a constant for the
+// fully-qualified Procedure corresponding to each RPC in your schema.
 type Spec struct {
 	StreamType StreamType
 	Procedure  string // for example, "/acme.foo.v1.FooService/Bar"
@@ -291,12 +294,11 @@ type Peer struct {
 	Protocol string
 }
 
-func newPeerFromURL(urlString, protocol string) Peer {
-	peer := Peer{Protocol: protocol}
-	if u, err := url.Parse(urlString); err == nil {
-		peer.Addr = u.Host
+func newPeerFromURL(url *url.URL, protocol string) Peer {
+	return Peer{
+		Addr:     url.Host,
+		Protocol: protocol,
 	}
-	return peer
 }
 
 // handlerConnCloser extends HandlerConn with a method for handlers to

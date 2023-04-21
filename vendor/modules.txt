@@ -5,6 +5,9 @@ github.com/AlekSi/pointer
 ## explicit; go 1.16
 github.com/Azure/go-ansiterm
 github.com/Azure/go-ansiterm/winterm
+# github.com/MakeNowJust/heredoc v1.0.0
+## explicit; go 1.12
+github.com/MakeNowJust/heredoc
 # github.com/Masterminds/goutils v1.1.1
 ## explicit
 github.com/Masterminds/goutils
@@ -50,14 +53,20 @@ github.com/alvaroloes/enumer
 # github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 ## explicit; go 1.13
 github.com/asaskevich/govalidator
+# github.com/aymanbagabas/go-osc52/v2 v2.0.1
+## explicit; go 1.16
+github.com/aymanbagabas/go-osc52/v2
 # github.com/beorn7/perks v1.0.1
 ## explicit; go 1.11
 github.com/beorn7/perks/quantile
 # github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb
 ## explicit
 github.com/blakesmith/ar
-# github.com/bufbuild/buf v1.14.0
-## explicit; go 1.18
+# github.com/briandowns/spinner v1.23.0
+## explicit; go 1.17
+github.com/briandowns/spinner
+# github.com/bufbuild/buf v1.17.0
+## explicit; go 1.19
 github.com/bufbuild/buf/cmd/buf
 github.com/bufbuild/buf/private/buf/bufapp
 github.com/bufbuild/buf/private/buf/bufcli
@@ -76,11 +85,11 @@ github.com/bufbuild/buf/private/buf/cmd/buf
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/plugindelete
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginpush
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc
-github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1
+github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete
@@ -113,6 +122,7 @@ github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templ
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist
+github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/stats
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent
 github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking
 github.com/bufbuild/buf/private/buf/cmd/buf/command/build
@@ -164,15 +174,18 @@ github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache
 github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig
 github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleprotocompile
 github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref
+github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestat
 github.com/bufbuild/buf/private/bufpkg/bufmodule/internal
 github.com/bufbuild/buf/private/bufpkg/bufplugin
 github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig
 github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker
 github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref
+github.com/bufbuild/buf/private/bufpkg/bufpluginexec
 github.com/bufbuild/buf/private/bufpkg/bufreflect
 github.com/bufbuild/buf/private/bufpkg/bufremoteplugin
 github.com/bufbuild/buf/private/bufpkg/bufstudioagent
 github.com/bufbuild/buf/private/bufpkg/buftransport
+github.com/bufbuild/buf/private/bufpkg/bufwasm
 github.com/bufbuild/buf/private/gen/data/dataspdx
 github.com/bufbuild/buf/private/gen/data/datawkt
 github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect
@@ -182,6 +195,7 @@ github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1
 github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1
 github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1
 github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1
+github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/wasmplugin/v1
 github.com/bufbuild/buf/private/gen/proto/go/grpc/reflection/v1
 github.com/bufbuild/buf/private/pkg/app
 github.com/bufbuild/buf/private/pkg/app/appcmd
@@ -189,7 +203,6 @@ github.com/bufbuild/buf/private/pkg/app/appflag
 github.com/bufbuild/buf/private/pkg/app/applog
 github.com/bufbuild/buf/private/pkg/app/appname
 github.com/bufbuild/buf/private/pkg/app/appproto
-github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec
 github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos
 github.com/bufbuild/buf/private/pkg/app/appverbose
 github.com/bufbuild/buf/private/pkg/cert/certclient
@@ -212,6 +225,7 @@ github.com/bufbuild/buf/private/pkg/osextended
 github.com/bufbuild/buf/private/pkg/protodescriptor
 github.com/bufbuild/buf/private/pkg/protoencoding
 github.com/bufbuild/buf/private/pkg/protosource
+github.com/bufbuild/buf/private/pkg/protostat
 github.com/bufbuild/buf/private/pkg/prototime
 github.com/bufbuild/buf/private/pkg/protoversion
 github.com/bufbuild/buf/private/pkg/storage
@@ -229,11 +243,11 @@ github.com/bufbuild/buf/private/pkg/uuidutil
 github.com/bufbuild/buf/private/pkg/verbose
 github.com/bufbuild/buf/private/pkg/zaputil
 github.com/bufbuild/buf/private/usage
-# github.com/bufbuild/connect-go v1.5.0
-## explicit; go 1.18
+# github.com/bufbuild/connect-go v1.6.0
+## explicit; go 1.19
 github.com/bufbuild/connect-go
 github.com/bufbuild/connect-go/internal/gen/connectext/grpc/status/v1
-# github.com/bufbuild/protocompile v0.2.0
+# github.com/bufbuild/protocompile v0.5.1
 ## explicit; go 1.18
 github.com/bufbuild/protocompile
 github.com/bufbuild/protocompile/ast
@@ -254,13 +268,19 @@ github.com/cenkalti/backoff/v4
 # github.com/cespare/xxhash/v2 v2.1.2
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
+# github.com/charmbracelet/lipgloss v0.7.1
+## explicit; go 1.17
+github.com/charmbracelet/lipgloss
 # github.com/cpuguy83/go-md2man/v2 v2.0.2
 ## explicit; go 1.11
 github.com/cpuguy83/go-md2man/v2/md2man
+# github.com/creack/pty v1.1.18
+## explicit; go 1.13
+github.com/creack/pty
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/docker/cli v20.10.23+incompatible
+# github.com/docker/cli v23.0.2+incompatible
 ## explicit
 github.com/docker/cli/cli/config
 github.com/docker/cli/cli/config/configfile
@@ -271,7 +291,7 @@ github.com/docker/cli/cli/config/types
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
 github.com/docker/distribution/registry/client/auth/challenge
-# github.com/docker/docker v23.0.0+incompatible
+# github.com/docker/docker v23.0.2+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
@@ -317,6 +337,20 @@ github.com/emirpasic/gods/utils
 # github.com/envoyproxy/protoc-gen-validate v0.3.0-java
 ## explicit
 github.com/envoyproxy/protoc-gen-validate/validate
+# github.com/evilmartians/lefthook v1.3.10
+## explicit; go 1.19
+github.com/evilmartians/lefthook
+github.com/evilmartians/lefthook/cmd
+github.com/evilmartians/lefthook/internal/config
+github.com/evilmartians/lefthook/internal/git
+github.com/evilmartians/lefthook/internal/lefthook
+github.com/evilmartians/lefthook/internal/lefthook/runner
+github.com/evilmartians/lefthook/internal/log
+github.com/evilmartians/lefthook/internal/templates
+github.com/evilmartians/lefthook/internal/version
+# github.com/fatih/color v1.14.1
+## explicit; go 1.17
+github.com/fatih/color
 # github.com/felixge/fgprof v0.9.3
 ## explicit; go 1.14
 github.com/felixge/fgprof
@@ -387,7 +421,7 @@ github.com/go-git/go-git/v5/utils/merkletrie/filesystem
 github.com/go-git/go-git/v5/utils/merkletrie/index
 github.com/go-git/go-git/v5/utils/merkletrie/internal/frame
 github.com/go-git/go-git/v5/utils/merkletrie/noder
-# github.com/go-logr/logr v1.2.3
+# github.com/go-logr/logr v1.2.4
 ## explicit; go 1.16
 github.com/go-logr/logr
 github.com/go-logr/logr/funcr
@@ -471,9 +505,9 @@ github.com/gobwas/glob/util/strings
 # github.com/gofrs/flock v0.8.1
 ## explicit
 github.com/gofrs/flock
-# github.com/gofrs/uuid v4.4.0+incompatible
-## explicit
-github.com/gofrs/uuid
+# github.com/gofrs/uuid/v5 v5.0.0
+## explicit; go 1.19
+github.com/gofrs/uuid/v5
 # github.com/gogo/protobuf v1.3.2
 ## explicit; go 1.15
 github.com/gogo/protobuf/gogoproto
@@ -510,7 +544,7 @@ github.com/gogo/protobuf/vanity/command
 github.com/golang/mock/gomock
 github.com/golang/mock/mockgen
 github.com/golang/mock/mockgen/model
-# github.com/golang/protobuf v1.5.2
+# github.com/golang/protobuf v1.5.3
 ## explicit; go 1.9
 github.com/golang/protobuf/jsonpb
 github.com/golang/protobuf/proto
@@ -527,7 +561,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/go-containerregistry v0.13.0
+# github.com/google/go-containerregistry v0.14.0
 ## explicit; go 1.18
 github.com/google/go-containerregistry/internal/and
 github.com/google/go-containerregistry/internal/compression
@@ -548,19 +582,19 @@ github.com/google/go-containerregistry/pkg/v1/remote
 github.com/google/go-containerregistry/pkg/v1/remote/transport
 github.com/google/go-containerregistry/pkg/v1/stream
 github.com/google/go-containerregistry/pkg/v1/types
-# github.com/google/pprof v0.0.0-20230131232505-5a9e8f65f08f
-## explicit; go 1.18
+# github.com/google/pprof v0.0.0-20230323073829-e72429f035bd
+## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
-# github.com/goreleaser/chglog v0.4.1
-## explicit; go 1.19
+# github.com/goreleaser/chglog v0.4.2
+## explicit; go 1.20
 github.com/goreleaser/chglog
 # github.com/goreleaser/fileglob v1.3.0
 ## explicit; go 1.16
 github.com/goreleaser/fileglob
-# github.com/goreleaser/nfpm/v2 v2.26.0
+# github.com/goreleaser/nfpm/v2 v2.28.0
 ## explicit; go 1.19
 github.com/goreleaser/nfpm/v2
 github.com/goreleaser/nfpm/v2/apk
@@ -601,7 +635,7 @@ github.com/huandu/xstrings
 # github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0
 ## explicit
 github.com/iancoleman/orderedmap
-# github.com/imdario/mergo v0.3.13
+# github.com/imdario/mergo v0.3.15
 ## explicit; go 1.13
 github.com/imdario/mergo
 # github.com/inconshreveable/mousetrap v1.1.0
@@ -625,8 +659,8 @@ github.com/josharian/intern
 # github.com/kevinburke/ssh_config v1.1.0
 ## explicit
 github.com/kevinburke/ssh_config
-# github.com/klauspost/compress v1.15.15
-## explicit; go 1.17
+# github.com/klauspost/compress v1.16.3
+## explicit; go 1.18
 github.com/klauspost/compress
 github.com/klauspost/compress/flate
 github.com/klauspost/compress/fse
@@ -648,6 +682,9 @@ github.com/kr/pretty
 # github.com/kr/text v0.2.0
 ## explicit
 github.com/kr/text
+# github.com/lucasb-eyer/go-colorful v1.2.0
+## explicit; go 1.12
+github.com/lucasb-eyer/go-colorful
 # github.com/lufia/plan9stats v0.0.0-20220517141722-cf486979b281
 ## explicit; go 1.16
 github.com/lufia/plan9stats
@@ -659,6 +696,15 @@ github.com/magiconair/properties
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
+# github.com/mattn/go-colorable v0.1.13
+## explicit; go 1.15
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.18
+## explicit; go 1.15
+github.com/mattn/go-isatty
+# github.com/mattn/go-runewidth v0.0.14
+## explicit; go 1.9
+github.com/mattn/go-runewidth
 # github.com/matttproud/golang_protobuf_extensions v1.0.4
 ## explicit; go 1.9
 github.com/matttproud/golang_protobuf_extensions/pbutil
@@ -696,9 +742,18 @@ github.com/muesli/mango-cobra
 # github.com/muesli/mango-pflag v0.1.0
 ## explicit; go 1.17
 github.com/muesli/mango-pflag
+# github.com/muesli/reflow v0.3.0
+## explicit; go 1.13
+github.com/muesli/reflow/ansi
+github.com/muesli/reflow/truncate
+github.com/muesli/reflow/wordwrap
+github.com/muesli/reflow/wrap
 # github.com/muesli/roff v0.1.0
 ## explicit; go 1.17
 github.com/muesli/roff
+# github.com/muesli/termenv v0.15.1
+## explicit; go 1.17
+github.com/muesli/termenv
 # github.com/mwitkow/go-proto-validators v0.3.2
 ## explicit; go 1.13
 github.com/mwitkow/go-proto-validators
@@ -801,6 +856,9 @@ github.com/pseudomuto/protoc-gen-doc/extensions/validator_field
 # github.com/pseudomuto/protokit v0.2.0
 ## explicit
 github.com/pseudomuto/protokit
+# github.com/rivo/uniseg v0.2.0
+## explicit; go 1.12
+github.com/rivo/uniseg
 # github.com/rogpeppe/go-internal v1.9.0
 ## explicit; go 1.17
 github.com/rogpeppe/go-internal/fmtsort
@@ -837,7 +895,7 @@ github.com/shopspring/decimal
 # github.com/sirupsen/logrus v1.9.0
 ## explicit; go 1.13
 github.com/sirupsen/logrus
-# github.com/spf13/afero v1.9.3
+# github.com/spf13/afero v1.9.5
 ## explicit; go 1.16
 github.com/spf13/afero
 github.com/spf13/afero/internal/common
@@ -845,7 +903,7 @@ github.com/spf13/afero/mem
 # github.com/spf13/cast v1.5.0
 ## explicit; go 1.18
 github.com/spf13/cast
-# github.com/spf13/cobra v1.6.1
+# github.com/spf13/cobra v1.7.0
 ## explicit; go 1.15
 github.com/spf13/cobra
 github.com/spf13/cobra/doc
@@ -869,7 +927,7 @@ github.com/spf13/viper/internal/encoding/yaml
 # github.com/stretchr/objx v0.5.0
 ## explicit; go 1.12
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.8.1
+# github.com/stretchr/testify v1.8.2
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
@@ -877,6 +935,44 @@ github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.4.2
 ## explicit; go 1.18
 github.com/subosito/gotenv
+# github.com/tetratelabs/wazero v1.0.1
+## explicit; go 1.18
+github.com/tetratelabs/wazero
+github.com/tetratelabs/wazero/api
+github.com/tetratelabs/wazero/experimental
+github.com/tetratelabs/wazero/experimental/gojs
+github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1
+github.com/tetratelabs/wazero/internal/asm
+github.com/tetratelabs/wazero/internal/asm/amd64
+github.com/tetratelabs/wazero/internal/asm/arm64
+github.com/tetratelabs/wazero/internal/descriptor
+github.com/tetratelabs/wazero/internal/engine/compiler
+github.com/tetratelabs/wazero/internal/engine/interpreter
+github.com/tetratelabs/wazero/internal/filecache
+github.com/tetratelabs/wazero/internal/gojs
+github.com/tetratelabs/wazero/internal/gojs/config
+github.com/tetratelabs/wazero/internal/gojs/custom
+github.com/tetratelabs/wazero/internal/gojs/goarch
+github.com/tetratelabs/wazero/internal/gojs/goos
+github.com/tetratelabs/wazero/internal/gojs/run
+github.com/tetratelabs/wazero/internal/gojs/util
+github.com/tetratelabs/wazero/internal/gojs/values
+github.com/tetratelabs/wazero/internal/ieee754
+github.com/tetratelabs/wazero/internal/leb128
+github.com/tetratelabs/wazero/internal/moremath
+github.com/tetratelabs/wazero/internal/platform
+github.com/tetratelabs/wazero/internal/sys
+github.com/tetratelabs/wazero/internal/sysfs
+github.com/tetratelabs/wazero/internal/u32
+github.com/tetratelabs/wazero/internal/u64
+github.com/tetratelabs/wazero/internal/version
+github.com/tetratelabs/wazero/internal/wasip1
+github.com/tetratelabs/wazero/internal/wasm
+github.com/tetratelabs/wazero/internal/wasm/binary
+github.com/tetratelabs/wazero/internal/wasmdebug
+github.com/tetratelabs/wazero/internal/wasmruntime
+github.com/tetratelabs/wazero/internal/wazeroir
+github.com/tetratelabs/wazero/sys
 # github.com/tklauser/go-sysconf v0.3.10
 ## explicit; go 1.13
 github.com/tklauser/go-sysconf
@@ -909,7 +1005,7 @@ github.com/yusufpapurcu/wmi
 # gitlab.com/digitalxero/go-conventional-commit v1.0.7
 ## explicit; go 1.13
 gitlab.com/digitalxero/go-conventional-commit
-# go.mongodb.org/mongo-driver v1.11.1
+# go.mongodb.org/mongo-driver v1.11.3
 ## explicit; go 1.13
 go.mongodb.org/mongo-driver/bson
 go.mongodb.org/mongo-driver/bson/bsoncodec
@@ -918,7 +1014,7 @@ go.mongodb.org/mongo-driver/bson/bsonrw
 go.mongodb.org/mongo-driver/bson/bsontype
 go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
-# go.opentelemetry.io/otel v1.12.0
+# go.opentelemetry.io/otel v1.14.0
 ## explicit; go 1.18
 go.opentelemetry.io/otel
 go.opentelemetry.io/otel/attribute
@@ -930,14 +1026,14 @@ go.opentelemetry.io/otel/internal/baggage
 go.opentelemetry.io/otel/internal/global
 go.opentelemetry.io/otel/propagation
 go.opentelemetry.io/otel/semconv/v1.17.0
-# go.opentelemetry.io/otel/sdk v1.12.0
+# go.opentelemetry.io/otel/sdk v1.14.0
 ## explicit; go 1.18
 go.opentelemetry.io/otel/sdk/instrumentation
 go.opentelemetry.io/otel/sdk/internal
 go.opentelemetry.io/otel/sdk/internal/env
 go.opentelemetry.io/otel/sdk/resource
 go.opentelemetry.io/otel/sdk/trace
-# go.opentelemetry.io/otel/trace v1.12.0
+# go.opentelemetry.io/otel/trace v1.14.0
 ## explicit; go 1.18
 go.opentelemetry.io/otel/trace
 # go.uber.org/atomic v1.10.0
@@ -945,7 +1041,7 @@ go.opentelemetry.io/otel/trace
 go.uber.org/atomic
 # go.uber.org/goleak v1.1.12
 ## explicit; go 1.13
-# go.uber.org/multierr v1.9.0
+# go.uber.org/multierr v1.11.0
 ## explicit; go 1.19
 go.uber.org/multierr
 # go.uber.org/zap v1.24.0
@@ -957,7 +1053,7 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.5.0
+# golang.org/x/crypto v0.7.0
 ## explicit; go 1.17
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
@@ -981,13 +1077,13 @@ golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/knownhosts
-# golang.org/x/mod v0.7.0
+# golang.org/x/mod v0.9.0
 ## explicit; go 1.17
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/modfile
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.5.0
+# golang.org/x/net v0.8.0
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
@@ -1004,7 +1100,7 @@ golang.org/x/net/trace
 ## explicit
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.4.0
+# golang.org/x/sys v0.6.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -1013,17 +1109,17 @@ golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/term v0.4.0
+# golang.org/x/term v0.6.0
 ## explicit; go 1.17
 golang.org/x/term
-# golang.org/x/text v0.6.0
+# golang.org/x/text v0.8.0
 ## explicit; go 1.17
 golang.org/x/text/runes
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.5.0
+# golang.org/x/tools v0.7.0
 ## explicit; go 1.18
 golang.org/x/tools/cmd/stringer
 golang.org/x/tools/go/ast/astutil
@@ -1033,6 +1129,7 @@ golang.org/x/tools/go/internal/cgo
 golang.org/x/tools/go/internal/packagesdriver
 golang.org/x/tools/go/loader
 golang.org/x/tools/go/packages
+golang.org/x/tools/go/types/objectpath
 golang.org/x/tools/go/types/typeutil
 golang.org/x/tools/imports
 golang.org/x/tools/internal/event
@@ -1046,9 +1143,10 @@ golang.org/x/tools/internal/gopathwalk
 golang.org/x/tools/internal/imports
 golang.org/x/tools/internal/packagesinternal
 golang.org/x/tools/internal/pkgbits
+golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
-# google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef
+# google.golang.org/genproto v0.0.0-20230124163310-31e0e69b6fc2
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/api
 google.golang.org/genproto/googleapis/api/annotations
@@ -1103,10 +1201,10 @@ google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
-# google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
-## explicit; go 1.9
+# google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
+## explicit; go 1.17
 google.golang.org/grpc/cmd/protoc-gen-go-grpc
-# google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8
+# google.golang.org/protobuf v1.30.0
 ## explicit; go 1.11
 google.golang.org/protobuf/compiler/protogen
 google.golang.org/protobuf/encoding/protojson
@@ -1150,6 +1248,9 @@ google.golang.org/protobuf/types/known/timestamppb
 google.golang.org/protobuf/types/known/typepb
 google.golang.org/protobuf/types/known/wrapperspb
 google.golang.org/protobuf/types/pluginpb
+# gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61
+## explicit
+gopkg.in/alessio/shellescape.v1
 # gopkg.in/ini.v1 v1.67.0
 ## explicit
 gopkg.in/ini.v1

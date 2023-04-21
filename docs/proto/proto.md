@@ -1005,7 +1005,7 @@ Represents the host system information
 | display_name | [string](#string) |  | Display Name |
 | os_type | [string](#string) |  | OS type (e.g. freebsd, linux, etc) |
 | uuid | [string](#string) |  | Host UUID |
-| uname | [string](#string) |  | The native cpu architecture queried at runtime, as returned by `uname -m` or empty string in case of error |
+| uname | [string](#string) |  | The native cpu architecture queried at runtime, as returned by `uname -a` or empty string in case of error |
 | partitons | [DiskPartition](#f5-nginx-agent-sdk-DiskPartition) | repeated | List of disk partitions |
 | network | [Network](#f5-nginx-agent-sdk-Network) |  | Network information |
 | processor | [CpuInfo](#f5-nginx-agent-sdk-CpuInfo) | repeated | List of CPU processor information |
@@ -1165,6 +1165,8 @@ Metric type enum
 | SYSTEM | 0 | System metric type |
 | INSTANCE | 1 | NGINX instance metric type |
 | AGENT | 2 | Agent metric type |
+| CACHE_ZONE | 3 | Cache zone metric type |
+| UPSTREAMS | 4 | Upstreams metric type |
 
 
  
@@ -1221,6 +1223,8 @@ Represents App Protect WAF details
 | attack_signatures_version | [string](#string) |  | Attack signatures version (This is being deprecated and will be removed in a future release) |
 | threat_campaigns_version | [string](#string) |  | Threat signatures version (This is being deprecated and will be removed in a future release) |
 | health | [AppProtectWAFHealth](#f5-nginx-agent-sdk-AppProtectWAFHealth) |  | App Protect Health details (This is being deprecated and will be removed in a future release) |
+| waf_location | [string](#string) |  | Location of WAF metadata file |
+| precompiled_publication | [bool](#bool) |  | Determines whether the publication of NGINX App Protect pre-compiled content from an external source is supported |
 
 
 

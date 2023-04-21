@@ -13,11 +13,11 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
-	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
+
+	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -40,7 +40,10 @@ const (
 	cacheHitBytes                    = 5024
 	cacheMissBytes                   = 1256
 	upstreamQueueMaxSize             = 20
-	currentUpstreamHeaderTime        = 100
+	currentPeer1UpstreamHeaderTime   = 100
+	currentPeer2UpstreamHeaderTime   = 80
+	currentPeer1UpstreamResponseTime = 100
+	currentPeer2UpstreamResponseTime = 80
 	currentUpstreamResponseTime      = 100
 	currentUpstreamConnectTime       = 80
 	currentUpstreamFirstByteTime     = 50
@@ -60,6 +63,12 @@ const (
 	upstreamPeer2ServerAddress       = "127.0.0.1:9092"
 	streamUpstreamPeer1Name          = "127.0.0.1:9093"
 	streamUpstreamPeer1ServerAddress = "127.0.0.1:9093"
+	streamUpstreamPeer2Name          = "127.0.0.1:9094"
+	streamUpstreamPeer2ServerAddress = "127.0.0.1:9094"
+	streamUpstreamPeer1ResponseTime  = 5
+	streamUpstreamPeer2ResponseTime  = 2
+	streamUpstreamPeer1ConnectTime   = 80
+	streamUpstreamPeer2ConnectTime   = 100
 	slabPageFree                     = 95
 	slabPageUsed                     = 5
 	slabPagePctUsed                  = 5
@@ -70,7 +79,7 @@ type FakeNginxPlus struct {
 }
 
 // Collect is fake collector that hard codes a stats struct response to avoid dependency on external NGINX Plus api
-func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *proto.StatsEntity) {
+func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	stats := plusclient.Stats{
 		HTTPRequests: plusclient.HTTPRequests{
@@ -197,8 +206,8 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 							Unhealthy:  0,
 							LastPassed: false,
 						},
-						HeaderTime:   currentUpstreamHeaderTime,
-						ResponseTime: currentUpstreamResponseTime,
+						HeaderTime:   currentPeer1UpstreamHeaderTime,
+						ResponseTime: currentPeer1UpstreamResponseTime,
 					},
 					{
 						ID:       1,
@@ -226,8 +235,8 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 							Unhealthy:  0,
 							LastPassed: false,
 						},
-						HeaderTime:   currentUpstreamHeaderTime,
-						ResponseTime: currentUpstreamResponseTime,
+						HeaderTime:   currentPeer2UpstreamHeaderTime,
+						ResponseTime: currentPeer2UpstreamResponseTime,
 					},
 				},
 				Keepalives: 0,
@@ -251,9 +260,30 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 						Weight:        1,
 						State:         "up",
 						Connections:   1,
-						ConnectTime:   currentUpstreamConnectTime,
+						ConnectTime:   streamUpstreamPeer1ConnectTime,
 						FirstByteTime: currentUpstreamFirstByteTime,
-						ResponseTime:  currentUpstreamResponseTime,
+						ResponseTime:  streamUpstreamPeer1ResponseTime,
+						Sent:          currentZoneSent,
+						Received:      currentZoneReceived,
+						Fails:         0,
+						Unavail:       0,
+						HealthChecks: plusclient.HealthChecks{
+							Checks:    0,
+							Fails:     0,
+							Unhealthy: 0,
+						},
+					},
+					{
+						ID:            1,
+						Server:        streamUpstreamPeer2ServerAddress,
+						Name:          streamUpstreamPeer2Name,
+						Backup:        false,
+						Weight:        1,
+						State:         "up",
+						Connections:   1,
+						ConnectTime:   streamUpstreamPeer2ConnectTime,
+						FirstByteTime: currentUpstreamFirstByteTime,
+						ResponseTime:  streamUpstreamPeer2ResponseTime,
 						Sent:          currentZoneSent,
 						Received:      currentZoneReceived,
 						Fails:         0,
@@ -510,23 +540,31 @@ func TestNginxPlus_Collect(t *testing.T) {
 	}
 
 	expectedHttpUpstreamMetrics := map[string]float64{
-		"plus.http.upstream.keepalives":            0,
-		"plus.http.upstream.zombies":               0,
-		"plus.http.upstream.queue.maxsize":         upstreamQueueMaxSize,
-		"plus.http.upstream.queue.overflows":       0,
-		"plus.http.upstream.queue.size":            0,
-		"plus.http.upstream.peers.total.up":        2,
-		"plus.http.upstream.peers.total.draining":  0,
-		"plus.http.upstream.peers.total.down":      0,
-		"plus.http.upstream.peers.total.unavail":   0,
-		"plus.http.upstream.peers.total.checking":  0,
-		"plus.http.upstream.peers.total.unhealthy": 0,
+		"plus.http.upstream.keepalives":                 0,
+		"plus.http.upstream.zombies":                    0,
+		"plus.http.upstream.queue.maxsize":              upstreamQueueMaxSize,
+		"plus.http.upstream.queue.overflows":            0,
+		"plus.http.upstream.queue.size":                 0,
+		"plus.http.upstream.peers.total.up":             2,
+		"plus.http.upstream.peers.total.draining":       0,
+		"plus.http.upstream.peers.total.down":           0,
+		"plus.http.upstream.peers.total.unavail":        0,
+		"plus.http.upstream.peers.total.checking":       0,
+		"plus.http.upstream.peers.total.unhealthy":      0,
+		"plus.http.upstream.peers.header_time.count":    2,
+		"plus.http.upstream.peers.header_time.max":      100,
+		"plus.http.upstream.peers.header_time.median":   90,
+		"plus.http.upstream.peers.header_time.pctl95":   100,
+		"plus.http.upstream.peers.response.time.count":  2,
+		"plus.http.upstream.peers.response.time.max":    100,
+		"plus.http.upstream.peers.response.time.median": 90,
+		"plus.http.upstream.peers.response.time.pctl95": 100,
 	}
 
 	expectedHttpPeer1UpstreamMetrics := map[string]float64{
 		"plus.http.upstream.peers.conn.active":             0,
-		"plus.http.upstream.peers.header_time":             currentUpstreamHeaderTime,
-		"plus.http.upstream.peers.response.time":           currentUpstreamResponseTime,
+		"plus.http.upstream.peers.header_time":             currentPeer1UpstreamHeaderTime,
+		"plus.http.upstream.peers.response.time":           currentPeer1UpstreamResponseTime,
 		"plus.http.upstream.peers.request.count":           currentZoneRequests,
 		"plus.http.upstream.peers.response.count":          currentZoneResponses,
 		"plus.http.upstream.peers.status.1xx":              0,
@@ -551,8 +589,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 
 	expectedHttpPeer2UpstreamMetrics := map[string]float64{
 		"plus.http.upstream.peers.conn.active":             0,
-		"plus.http.upstream.peers.header_time":             currentUpstreamHeaderTime,
-		"plus.http.upstream.peers.response.time":           currentUpstreamResponseTime,
+		"plus.http.upstream.peers.header_time":             currentPeer2UpstreamHeaderTime,
+		"plus.http.upstream.peers.response.time":           currentPeer2UpstreamResponseTime,
 		"plus.http.upstream.peers.request.count":           currentZoneRequests - previousZoneRequests,
 		"plus.http.upstream.peers.response.count":          currentZoneResponses - previousZoneResponses,
 		"plus.http.upstream.peers.status.1xx":              0,
@@ -576,21 +614,50 @@ func TestNginxPlus_Collect(t *testing.T) {
 	}
 
 	expectedStreamUpstreamMetrics := map[string]float64{
-		"plus.stream.upstream.zombies":               0,
-		"plus.stream.upstream.peers.total.up":        1,
-		"plus.stream.upstream.peers.total.draining":  0,
-		"plus.stream.upstream.peers.total.down":      0,
-		"plus.stream.upstream.peers.total.unavail":   0,
-		"plus.stream.upstream.peers.total.checking":  0,
-		"plus.stream.upstream.peers.total.unhealthy": 0,
+		"plus.stream.upstream.zombies":                    0,
+		"plus.stream.upstream.peers.total.up":             2,
+		"plus.stream.upstream.peers.total.draining":       0,
+		"plus.stream.upstream.peers.total.down":           0,
+		"plus.stream.upstream.peers.total.unavail":        0,
+		"plus.stream.upstream.peers.total.checking":       0,
+		"plus.stream.upstream.peers.total.unhealthy":      0,
+		"plus.stream.upstream.peers.response.time.count":  2,
+		"plus.stream.upstream.peers.response.time.max":    5,
+		"plus.stream.upstream.peers.response.time.median": 3.5,
+		"plus.stream.upstream.peers.response.time.pctl95": 5,
+		"plus.stream.upstream.peers.connect_time.count":   2,
+		"plus.stream.upstream.peers.connect_time.max":     100,
+		"plus.stream.upstream.peers.connect_time.median":  90,
+		"plus.stream.upstream.peers.connect_time.pctl95":  100,
 	}
 
 	expectedStreamPeer1UpstreamMetrics := map[string]float64{
 		"plus.stream.upstream.peers.conn.active":             0,
 		"plus.stream.upstream.peers.conn.count":              1,
-		"plus.stream.upstream.peers.connect_time":            currentUpstreamConnectTime,
+		"plus.stream.upstream.peers.connect_time":            streamUpstreamPeer1ConnectTime,
 		"plus.stream.upstream.peers.ttfb":                    currentUpstreamFirstByteTime,
-		"plus.stream.upstream.peers.response.time":           currentUpstreamResponseTime,
+		"plus.stream.upstream.peers.response.time":           streamUpstreamPeer1ResponseTime,
+		"plus.stream.upstream.peers.bytes_sent":              currentZoneSent,
+		"plus.stream.upstream.peers.bytes_rcvd":              currentZoneReceived,
+		"plus.stream.upstream.peers.fails":                   0,
+		"plus.stream.upstream.peers.unavail":                 0,
+		"plus.stream.upstream.peers.health_checks.fails":     0,
+		"plus.stream.upstream.peers.health_checks.unhealthy": 0,
+		"plus.stream.upstream.peers.health_checks.checks":    0,
+		"plus.stream.upstream.peers.state.up":                1,
+		"plus.stream.upstream.peers.state.draining":          0,
+		"plus.stream.upstream.peers.state.down":              0,
+		"plus.stream.upstream.peers.state.unavail":           0,
+		"plus.stream.upstream.peers.state.checking":          0,
+		"plus.stream.upstream.peers.state.unhealthy":         0,
+	}
+
+	expectedStreamPeer2UpstreamMetrics := map[string]float64{
+		"plus.stream.upstream.peers.conn.active":             0,
+		"plus.stream.upstream.peers.conn.count":              1,
+		"plus.stream.upstream.peers.connect_time":            streamUpstreamPeer2ConnectTime,
+		"plus.stream.upstream.peers.ttfb":                    currentUpstreamFirstByteTime,
+		"plus.stream.upstream.peers.response.time":           streamUpstreamPeer2ResponseTime,
 		"plus.stream.upstream.peers.bytes_sent":              currentZoneSent,
 		"plus.stream.upstream.peers.bytes_rcvd":              currentZoneReceived,
 		"plus.stream.upstream.peers.fails":                   0,
@@ -639,11 +706,11 @@ func TestNginxPlus_Collect(t *testing.T) {
 	}
 	tests := []struct {
 		baseDimensions *metrics.CommonDim
-		m              chan *proto.StatsEntity
+		m              chan *metrics.StatsEntityWrapper
 	}{
 		{
 			baseDimensions: metrics.NewCommonDim(hostInfo, &config.Config{}, ""),
-			m:              make(chan *proto.StatsEntity, 127),
+			m:              make(chan *metrics.StatsEntityWrapper, 127),
 		},
 	}
 
@@ -657,8 +724,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		wg.Wait()
 
 		instanceMetrics := <-test.m
-		assert.Len(t, instanceMetrics.Simplemetrics, len(expectedInstanceMetrics))
-		for _, metric := range instanceMetrics.Simplemetrics {
+		assert.Len(t, instanceMetrics.Data.Simplemetrics, len(expectedInstanceMetrics))
+		for _, metric := range instanceMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedInstanceMetrics, metric.Name)
 			switch metric.Name {
 			case "nginx.status":
@@ -669,8 +736,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		commonMetrics := <-test.m
-		assert.Len(t, commonMetrics.Simplemetrics, len(expectedCommonMetrics))
-		for _, metric := range commonMetrics.Simplemetrics {
+		assert.Len(t, commonMetrics.Data.Simplemetrics, len(expectedCommonMetrics))
+		for _, metric := range commonMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedCommonMetrics, metric.Name)
 			switch metric.Name {
 			case "nginx.http.request.count": // delta of sum
@@ -681,20 +748,20 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		sslMetrics := <-test.m
-		assert.Len(t, sslMetrics.Simplemetrics, len(expectedSSLMetrics))
-		for _, metric := range sslMetrics.Simplemetrics {
+		assert.Len(t, sslMetrics.Data.Simplemetrics, len(expectedSSLMetrics))
+		for _, metric := range sslMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedSSLMetrics, metric.Name)
 		}
 
 		serverZoneMetrics := <-test.m
-		assert.Len(t, serverZoneMetrics.Simplemetrics, len(expectedServerZoneMetrics))
-		for _, dimension := range serverZoneMetrics.Dimensions {
+		assert.Len(t, serverZoneMetrics.Data.Simplemetrics, len(expectedServerZoneMetrics))
+		for _, dimension := range serverZoneMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "server_zone":
 				assert.Equal(t, serverZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range serverZoneMetrics.Simplemetrics {
+		for _, metric := range serverZoneMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedServerZoneMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.http.request.count":
@@ -711,14 +778,14 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		streamServerZoneMetrics := <-test.m
-		assert.Len(t, streamServerZoneMetrics.Simplemetrics, len(expectedStreamServerZoneMetrics))
-		for _, dimension := range streamServerZoneMetrics.Dimensions {
+		assert.Len(t, streamServerZoneMetrics.Data.Simplemetrics, len(expectedStreamServerZoneMetrics))
+		for _, dimension := range streamServerZoneMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "server_zone":
 				assert.Equal(t, streamServerZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range streamServerZoneMetrics.Simplemetrics {
+		for _, metric := range streamServerZoneMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedStreamServerZoneMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.stream.connections":
@@ -735,14 +802,14 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		locationZoneMetrics := <-test.m
-		assert.Len(t, locationZoneMetrics.Simplemetrics, len(expectedLocationZoneMetrics))
-		for _, dimension := range locationZoneMetrics.Dimensions {
+		assert.Len(t, locationZoneMetrics.Data.Simplemetrics, len(expectedLocationZoneMetrics))
+		for _, dimension := range locationZoneMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "location_zone":
 				assert.Equal(t, locationZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range locationZoneMetrics.Simplemetrics {
+		for _, metric := range locationZoneMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedLocationZoneMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.http.request.count":
@@ -758,15 +825,89 @@ func TestNginxPlus_Collect(t *testing.T) {
 			}
 		}
 
+		slabMetrics := <-test.m
+		assert.Len(t, slabMetrics.Data.Simplemetrics, len(expectedSlabMetrics))
+		for _, dimension := range slabMetrics.Data.Dimensions {
+			switch dimension.Name {
+			case "zone":
+				assert.Equal(t, serverZoneName, dimension.Value)
+			}
+		}
+		for _, metric := range slabMetrics.Data.Simplemetrics {
+			assert.Contains(t, expectedSlabMetrics, metric.Name)
+			switch metric.Name {
+			case "plus.slab.pages.used":
+				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.used"], metric.Value)
+			case "plus.slab.pages.free":
+				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.free"], metric.Value)
+			case "plus.slab.pages.total":
+				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.total"], metric.Value)
+			case "plus.slab.pages.pct_used":
+				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.pct_used"], metric.Value)
+			}
+		}
+
+		slabSlotsMetrics := <-test.m
+		assert.Len(t, slabSlotsMetrics.Data.Simplemetrics, len(expectedSlabSlotMetrics))
+		for _, metric := range slabSlotsMetrics.Data.Simplemetrics {
+			assert.Contains(t, expectedSlabSlotMetrics, metric.Name)
+			assert.Equal(t, expectedSlabSlotMetrics[metric.Name], metric.Value)
+		}
+
+		limitConnectionsMetrics := <-test.m
+		assert.Len(t, limitConnectionsMetrics.Data.Simplemetrics, len(expectedHTTPLimitConnsMetrics))
+		for _, dimension := range limitConnectionsMetrics.Data.Dimensions {
+			switch dimension.Name {
+			case "limit_conn_zone":
+				assert.Equal(t, limitConnectionsName, dimension.Value)
+			}
+		}
+		for _, metric := range limitConnectionsMetrics.Data.Simplemetrics {
+			assert.Contains(t, expectedHTTPLimitConnsMetrics, metric.Name)
+			switch metric.Name {
+			case "plus.http.limit_conns.passed":
+				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.passed"], metric.Value)
+			case "plus.http.limit_conns.rejected":
+				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.rejected"], metric.Value)
+			case "plus.http.limit_conns.rejected_dry_run":
+				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.rejected_dry_run"], metric.Value)
+			}
+		}
+
+		limitRequestsMetrics := <-test.m
+		assert.Len(t, limitRequestsMetrics.Data.Simplemetrics, len(expectedHTTPLimitReqsMetrics))
+		for _, dimension := range limitRequestsMetrics.Data.Dimensions {
+			switch dimension.Name {
+			case "limit_req_zone":
+				assert.Equal(t, limitRequestName, dimension.Value)
+
+			}
+		}
+		for _, metric := range limitRequestsMetrics.Data.Simplemetrics {
+			assert.Contains(t, expectedHTTPLimitReqsMetrics, metric.Name)
+			switch metric.Name {
+			case "plus.http.limit_reqs.passed":
+				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.passed"], metric.Value)
+			case "plus.http.limit_reqs.delayed":
+				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.delayed"], metric.Value)
+			case "plus.http.limit_reqs.rejected":
+				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.rejected"], metric.Value)
+			case "plus.http.limit_reqs.delayed_dry_run":
+				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.delayed_dry_run"], metric.Value)
+			case "plus.http.limit_reqs.rejected_dry_run":
+				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.rejected_dry_run"], metric.Value)
+			}
+		}
+
 		cacheZoneMetrics := <-test.m
-		assert.Len(t, cacheZoneMetrics.Simplemetrics, len(expectedCacheZoneMetrics))
-		for _, dimension := range cacheZoneMetrics.Dimensions {
+		assert.Len(t, cacheZoneMetrics.Data.Simplemetrics, len(expectedCacheZoneMetrics))
+		for _, dimension := range cacheZoneMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "cache_zone":
 				assert.Equal(t, cacheZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range cacheZoneMetrics.Simplemetrics {
+		for _, metric := range cacheZoneMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedCacheZoneMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.cache.size":
@@ -785,8 +926,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		httpPeer1upstreamMetrics := <-test.m
-		assert.Len(t, httpPeer1upstreamMetrics.Simplemetrics, len(expectedHttpPeer1UpstreamMetrics))
-		for _, dimension := range httpPeer1upstreamMetrics.Dimensions {
+		assert.Len(t, httpPeer1upstreamMetrics.Data.Simplemetrics, len(expectedHttpPeer1UpstreamMetrics))
+		for _, dimension := range httpPeer1upstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -798,7 +939,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, upstreamPeer1ServerAddress, dimension.Value)
 			}
 		}
-		for _, metric := range httpPeer1upstreamMetrics.Simplemetrics {
+		for _, metric := range httpPeer1upstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedHttpPeer1UpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.http.upstream.peers.header_time":
@@ -821,8 +962,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		httpPeer2upstreamMetrics := <-test.m
-		assert.Len(t, httpPeer2upstreamMetrics.Simplemetrics, len(expectedHttpPeer2UpstreamMetrics))
-		for _, dimension := range httpPeer2upstreamMetrics.Dimensions {
+		assert.Len(t, httpPeer2upstreamMetrics.Data.Simplemetrics, len(expectedHttpPeer2UpstreamMetrics))
+		for _, dimension := range httpPeer2upstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -834,7 +975,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, upstreamPeer2ServerAddress, dimension.Value)
 			}
 		}
-		for _, metric := range httpPeer2upstreamMetrics.Simplemetrics {
+		for _, metric := range httpPeer2upstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedHttpPeer2UpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.http.upstream.peers.header_time":
@@ -857,8 +998,8 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		httpUpstreamMetrics := <-test.m
-		assert.Len(t, httpUpstreamMetrics.Simplemetrics, len(expectedHttpUpstreamMetrics))
-		for _, dimension := range httpUpstreamMetrics.Dimensions {
+		assert.Len(t, httpUpstreamMetrics.Data.Simplemetrics, len(expectedHttpUpstreamMetrics))
+		for _, dimension := range httpUpstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -866,7 +1007,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, upstreamZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range httpUpstreamMetrics.Simplemetrics {
+		for _, metric := range httpUpstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedHttpUpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.http.upstream.queue.maxsize":
@@ -877,12 +1018,28 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.count"], metric.Value)
 			case "plus.http.upstream.peers.total.up":
 				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.total.up"], metric.Value)
+			case "plus.http.upstream.peers.header_time.count":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.header_time.count"], metric.Value)
+			case "plus.http.upstream.peers.header_time.max":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.header_time.max"], metric.Value)
+			case "plus.http.upstream.peers.header_time.median":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.header_time.median"], metric.Value)
+			case "plus.http.upstream.peers.header_time.pctl95":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.header_time.pctl95"], metric.Value)
+			case "plus.http.upstream.peers.response.time.count":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.response.time.count"], metric.Value)
+			case "plus.http.upstream.peers.response.time.max":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.response.time.max"], metric.Value)
+			case "plus.http.upstream.peers.response.time.median":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.response.time.median"], metric.Value)
+			case "plus.http.upstream.peers.response.time.pctl95":
+				assert.Equal(t, expectedHttpUpstreamMetrics["plus.http.upstream.peers.response.time.pctl95"], metric.Value)
 			}
 		}
 
 		streamPeer1upstreamMetrics := <-test.m
-		assert.Len(t, streamPeer1upstreamMetrics.Simplemetrics, len(expectedStreamPeer1UpstreamMetrics))
-		for _, dimension := range streamPeer1upstreamMetrics.Dimensions {
+		assert.Len(t, streamPeer1upstreamMetrics.Data.Simplemetrics, len(expectedStreamPeer1UpstreamMetrics))
+		for _, dimension := range streamPeer1upstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -894,7 +1051,23 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, streamUpstreamPeer1ServerAddress, dimension.Value)
 			}
 		}
-		for _, metric := range streamPeer1upstreamMetrics.Simplemetrics {
+
+		streamPeer2upstreamMetrics := <-test.m
+		assert.Len(t, streamPeer2upstreamMetrics.Data.Simplemetrics, len(expectedStreamPeer2UpstreamMetrics))
+		for _, dimension := range streamPeer2upstreamMetrics.Data.Dimensions {
+			switch dimension.Name {
+			case "upstream":
+				assert.Equal(t, upstreamName, dimension.Value)
+			case "upstream_zone":
+				assert.Equal(t, upstreamZoneName, dimension.Value)
+			case "peer.name":
+				assert.Equal(t, streamUpstreamPeer2Name, dimension.Value)
+			case "peer.address":
+				assert.Equal(t, streamUpstreamPeer2ServerAddress, dimension.Value)
+			}
+		}
+
+		for _, metric := range streamPeer1upstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedStreamPeer1UpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.stream.upstream.peers.conn.active":
@@ -916,9 +1089,31 @@ func TestNginxPlus_Collect(t *testing.T) {
 			}
 		}
 
+		for _, metric := range streamPeer2upstreamMetrics.Data.Simplemetrics {
+			assert.Contains(t, expectedStreamPeer2UpstreamMetrics, metric.Name)
+			switch metric.Name {
+			case "plus.stream.upstream.peers.conn.active":
+				assert.Equal(t, expectedStreamPeer2UpstreamMetrics["plus.stream.upstream.peers.conn.active"], metric.Value)
+			case "plus.stream.upstream.peers.conn.count":
+				assert.Equal(t, expectedStreamPeer2UpstreamMetrics["plus.stream.upstream.peers.conn.count"], metric.Value)
+			case "plus.stream.upstream.peers.connect_time":
+				assert.Equal(t, expectedStreamPeer2UpstreamMetrics["plus.stream.upstream.peers.connect_time"], metric.Value)
+			case "plus.stream.upstream.peers.ttfb":
+				assert.Equal(t, expectedStreamPeer2UpstreamMetrics["plus.stream.upstream.peers.ttfb"], metric.Value)
+			case "plus.stream.upstream.peers.response.time":
+				assert.Equal(t, expectedStreamPeer2UpstreamMetrics["plus.stream.upstream.peers.response.time"], metric.Value)
+			case "plus.stream.upstream.peers.bytes_sent":
+				assert.Equal(t, expectedStreamPeer2UpstreamMetrics["plus.stream.upstream.peers.bytes_sent"], metric.Value)
+			case "plus.stream.upstream.peers.bytes_rcvd":
+				assert.Equal(t, expectedStreamPeer2UpstreamMetrics["plus.stream.upstream.peers.bytes_rcvd"], metric.Value)
+			case "plus.stream.upstream.peers.state.up":
+				assert.Equal(t, expectedStreamPeer2UpstreamMetrics["plus.stream.upstream.peers.state.up"], metric.Value)
+			}
+		}
+
 		streamUpstreamMetrics := <-test.m
-		assert.Len(t, streamUpstreamMetrics.Simplemetrics, len(expectedStreamUpstreamMetrics))
-		for _, dimension := range streamUpstreamMetrics.Dimensions {
+		assert.Len(t, streamUpstreamMetrics.Data.Simplemetrics, len(expectedStreamUpstreamMetrics))
+		for _, dimension := range streamUpstreamMetrics.Data.Dimensions {
 			switch dimension.Name {
 			case "upstream":
 				assert.Equal(t, upstreamName, dimension.Value)
@@ -926,7 +1121,7 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, upstreamZoneName, dimension.Value)
 			}
 		}
-		for _, metric := range streamUpstreamMetrics.Simplemetrics {
+		for _, metric := range streamUpstreamMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedStreamUpstreamMetrics, metric.Name)
 			switch metric.Name {
 			case "plus.stream.upstream.zombies":
@@ -935,84 +1130,26 @@ func TestNginxPlus_Collect(t *testing.T) {
 				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.count"], metric.Value)
 			case "plus.stream.upstream.peers.total.up":
 				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.total.up"], metric.Value)
+			case "plus.stream.upstream.peers.response.time.count":
+				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.response.time.count"], metric.Value)
+			case "plus.stream.upstream.peers.response.time.max":
+				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.response.time.max"], metric.Value)
+			case "plus.stream.upstream.peers.response.time.median":
+				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.response.time.median"], metric.Value)
+			case "plus.stream.upstream.peers.response.time.pctl95":
+				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.response.time.pctl95"], metric.Value)
+			case "plus.stream.upstream.peers.connect_time.count":
+				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.connect_time.count"], metric.Value)
+			case "plus.stream.upstream.peers.connect_time.max":
+				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.connect_time.max"], metric.Value)
+			case "plus.stream.upstream.peers.connect_time.median":
+				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.connect_time.median"], metric.Value)
+			case "plus.stream.upstream.peers.connect_time.pctl95":
+				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.connect_time.pctl95"], metric.Value)
 			}
 		}
 
-		slabMetrics := <-test.m
-		assert.Len(t, slabMetrics.Simplemetrics, len(expectedSlabMetrics))
-		for _, dimension := range slabMetrics.Dimensions {
-			switch dimension.Name {
-			case "zone":
-				assert.Equal(t, serverZoneName, dimension.Value)
-			}
-		}
-		for _, metric := range slabMetrics.Simplemetrics {
-			assert.Contains(t, expectedSlabMetrics, metric.Name)
-			switch metric.Name {
-			case "plus.slab.pages.used":
-				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.used"], metric.Value)
-			case "plus.slab.pages.free":
-				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.free"], metric.Value)
-			case "plus.slab.pages.total":
-				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.total"], metric.Value)
-			case "plus.slab.pages.pct_used":
-				assert.Equal(t, expectedSlabMetrics["plus.slab.pages.pct_used"], metric.Value)
-			}
-		}
-
-		slabSlotsMetrics := <-test.m
-		assert.Len(t, slabSlotsMetrics.Simplemetrics, len(expectedSlabSlotMetrics))
-		for _, metric := range slabSlotsMetrics.Simplemetrics {
-			assert.Contains(t, expectedSlabSlotMetrics, metric.Name)
-			assert.Equal(t, expectedSlabSlotMetrics[metric.Name], metric.Value)
-		}
-
-		limitConnectionsMetrics := <-test.m
-		assert.Len(t, limitConnectionsMetrics.Simplemetrics, len(expectedHTTPLimitConnsMetrics))
-		for _, dimension := range limitConnectionsMetrics.Dimensions {
-			switch dimension.Name {
-			case "limit_conn_zone":
-				assert.Equal(t, limitConnectionsName, dimension.Value)
-			}
-		}
-		for _, metric := range limitConnectionsMetrics.Simplemetrics {
-			assert.Contains(t, expectedHTTPLimitConnsMetrics, metric.Name)
-			switch metric.Name {
-			case "plus.http.limit_conns.passed":
-				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.passed"], metric.Value)
-			case "plus.http.limit_conns.rejected":
-				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.rejected"], metric.Value)
-			case "plus.http.limit_conns.rejected_dry_run":
-				assert.Equal(t, expectedHTTPLimitConnsMetrics["plus.http.limit_conns.rejected_dry_run"], metric.Value)
-			}
-		}
-
-		limitRequestsMetrics := <-test.m
-		assert.Len(t, limitRequestsMetrics.Simplemetrics, len(expectedHTTPLimitReqsMetrics))
-		for _, dimension := range limitRequestsMetrics.Dimensions {
-			switch dimension.Name {
-			case "limit_req_zone":
-				assert.Equal(t, limitRequestName, dimension.Value)
-
-			}
-		}
-		for _, metric := range limitRequestsMetrics.Simplemetrics {
-			assert.Contains(t, expectedHTTPLimitReqsMetrics, metric.Name)
-			switch metric.Name {
-			case "plus.http.limit_reqs.passed":
-				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.passed"], metric.Value)
-			case "plus.http.limit_reqs.delayed":
-				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.delayed"], metric.Value)
-			case "plus.http.limit_reqs.rejected":
-				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.rejected"], metric.Value)
-			case "plus.http.limit_reqs.delayed_dry_run":
-				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.delayed_dry_run"], metric.Value)
-			case "plus.http.limit_reqs.rejected_dry_run":
-				assert.Equal(t, expectedHTTPLimitReqsMetrics["plus.http.limit_reqs.rejected_dry_run"], metric.Value)
-			}
-		}
-
-		var extraMetrics []*proto.StatsEntity
+		var extraMetrics []*metrics.StatsEntityWrapper
 	EMWAIT:
 		for {
 			select {

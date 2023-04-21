@@ -148,7 +148,7 @@ func GetTotal(filePath string) (uint64, error) {
 		// If the host system has less swap memory allocated then the swap memory set for the docker container
 		// we will only display the actual amount of swap memory that the container has.
 		if hostSwapStats.Total < swapTotal {
-			log.Warnf(
+			log.Debugf(
 				"Swap memory limit specified for the container, %d is greater than the host system swap memory, %d",
 				swapTotal,
 				hostSwapStats.Total,
