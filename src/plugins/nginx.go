@@ -249,7 +249,7 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	if !n.config.IsFeatureEnabled(agent_config.FeatureNginxSSLConfig) {
 		cfg.Ssl = &proto.SslCertificates{SslCerts: make([]*proto.SslCertificate, 0)}
 	}
-	
+
 	if n.isNginxAppProtectEnabled {
 		err = nap.UpdateMetadata(cfg, n.nginxAppProtectSoftwareDetails)
 		if err != nil {
