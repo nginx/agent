@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package crossplane
 
 import (
@@ -82,6 +89,7 @@ type ParseOptions struct {
 }
 
 // Parse parses an NGINX configuration file.
+//
 //nolint:funlen
 func Parse(filename string, options *ParseOptions) (*Payload, error) {
 	payload := &Payload{
@@ -260,21 +268,23 @@ func (p *parser) parse(parsing *Config, tokens <-chan NgxToken, ctx blockCtx, co
 			}
 		}
 
-		// if inside map or geo block - add contents to payload, but do not parse further
-		if len(ctx) > 0 && (ctx[len(ctx)-1] == "map" || ctx[len(ctx)-1] == "charset_map" || ctx[len(ctx)-1] == "geo") {
-			mapErr := analyzeMapContents(parsing.File, stmt, t.Value)
-			if mapErr != nil && p.options.StopParsingOnError {
-				return nil, mapErr
-			} else if mapErr != nil {
-				p.handleError(parsing, mapErr)
-				// consume invalid block
-				if t.Value == "{" && !t.IsQuoted {
-					_, _ = p.parse(parsing, tokens, nil, true)
+		// if inside "map-like" block - add contents to payload, but do not parse further
+		if len(ctx) > 0 {
+			if _, ok := mapBodies[ctx[len(ctx)-1]]; ok {
+				mapErr := analyzeMapBody(parsing.File, stmt, t.Value, ctx[len(ctx)-1])
+				if mapErr != nil && p.options.StopParsingOnError {
+					return nil, mapErr
+				} else if mapErr != nil {
+					p.handleError(parsing, mapErr)
+					// consume invalid block
+					if t.Value == "{" && !t.IsQuoted {
+						_, _ = p.parse(parsing, tokens, nil, true)
+					}
+					continue
 				}
+				parsed = append(parsed, stmt)
 				continue
 			}
-			parsed = append(parsed, stmt)
-			continue
 		}
 
 		// consume the directive if it is ignored and move on
@@ -433,22 +443,4 @@ func (p *parser) isAcyclic() bool {
 		}
 	}
 	return fileCount != len(p.includeInDegree)
-}
-
-func analyzeMapContents(fname string, stmt *Directive, term string) error {
-	if term != ";" {
-		return &ParseError{
-			What: fmt.Sprintf(`unexpected "%s"`, term),
-			File: &fname,
-			Line: &stmt.Line,
-		}
-	}
-	if len(stmt.Args) != 1 && stmt.Directive != "ranges" {
-		return &ParseError{
-			What: "invalid number of parameters",
-			File: &fname,
-			Line: &stmt.Line,
-		}
-	}
-	return nil
 }
