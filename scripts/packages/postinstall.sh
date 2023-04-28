@@ -185,7 +185,7 @@ add_default_config_file() {
 #
 # This file is to track agent configuration values that are meant to be statically set. There  
 # are additional agent configuration values that are set via the API and agent install script
-# which can be found in /etc/nginx-agent/agent-dynamic.conf. 
+# which can be found in /var/lib/nginx-agent/agent-dynamic.conf. 
 
 # specify the server grpc port to connect to
 server:
