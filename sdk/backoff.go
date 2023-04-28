@@ -42,3 +42,29 @@ func WaitUntil(
 
 	return nil
 }
+
+func WaitUntilWithJitterAndMultiplier(
+	ctx context.Context,
+	initialInterval time.Duration,
+	maxInterval time.Duration,
+	maxElapsedTime time.Duration,
+	jitter float64,
+	multiplier float64,
+	operation backoff.Operation,
+) error {
+	exponentialBackoff := backoff.NewExponentialBackOff()
+	exponentialBackoff.InitialInterval = initialInterval
+	exponentialBackoff.MaxInterval = maxInterval
+	exponentialBackoff.MaxElapsedTime = maxElapsedTime
+	exponentialBackoff.RandomizationFactor = jitter
+	exponentialBackoff.Multiplier = multiplier
+
+	expoBackoffWithContext := backoff.WithContext(exponentialBackoff, ctx)
+
+	err := backoff.Retry(backoff.Operation(operation), expoBackoffWithContext)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

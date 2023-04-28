@@ -103,9 +103,9 @@ message Backoff {
   // First backoff time interval in seconds
   int64 intial_interval = 1 [(gogoproto.jsontag) = "intial_interval"];
   // Random value used to create range around next backoff interval
-  float randomization_factor = 2 [(gogoproto.jsontag) = "randomization_factor"];
+  double randomization_factor = 2 [(gogoproto.jsontag) = "randomization_factor"];
   // Value to be multiplied with current backoff interval
-  float multiplier = 3 [(gogoproto.jsontag) = "multiplier"];
+  double multiplier = 3 [(gogoproto.jsontag) = "multiplier"];
   // Max interval in seconds between two retries
   int64 max_interval = 4 [(gogoproto.jsontag) = "max_interval"];
   // Elapsed time in seconds after which backoff stops.

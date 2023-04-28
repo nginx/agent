@@ -301,6 +301,17 @@ func getServer() Server {
 		Token:    Viper.GetString(ServerToken),
 		Metrics:  Viper.GetString(ServerMetrics),
 		Command:  Viper.GetString(ServerCommand),
+		Backoff:  getBackOff(),
+	}
+}
+
+func getBackOff() Backoff {
+	return Backoff{
+		IntialInterval:      Viper.GetDuration(BackoffIntialInterval),
+		RandomizationFactor: Viper.GetFloat64(BackoffRandomizationFactor),
+		Multiplier: 		 Viper.GetFloat64(BackoffMultiplier),
+		MaxInterval: 		 Viper.GetDuration(BackoffMaxInterval),
+		MaxElapsedTime: 	 Viper.GetDuration(BackoffMaxElapsedTime),
 	}
 }
 
