@@ -188,7 +188,7 @@ func (r *OneTimeRegistration) registerAgent() {
 						Alias:      "",
 						Server:	    &proto.Server{
 							Backoff: &proto.Backoff{
-								IntialInterval:       r.config.Server.Backoff.IntialInterval.Milliseconds(),
+								InitialInterval:       r.config.Server.Backoff.InitialInterval.Milliseconds(),
 								RandomizationFactor:  r.config.Server.Backoff.RandomizationFactor,
 								Multiplier:           r.config.Server.Backoff.Multiplier,
 								MaxInterval:          r.config.Server.Backoff.MaxInterval.Milliseconds(),
