@@ -307,7 +307,7 @@ func getServer() Server {
 
 func getBackOff() Backoff {
 	return Backoff{
-		IntialInterval:      Viper.GetDuration(BackoffIntialInterval),
+		InitialInterval:      Viper.GetDuration(BackoffInitialInterval),
 		RandomizationFactor: Viper.GetFloat64(BackoffRandomizationFactor),
 		Multiplier: 		 Viper.GetFloat64(BackoffMultiplier),
 		MaxInterval: 		 Viper.GetDuration(BackoffMaxInterval),

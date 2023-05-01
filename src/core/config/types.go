@@ -67,7 +67,7 @@ type Server struct {
 }
 
 type Backoff struct {
-	IntialInterval 		time.Duration `mapstructure:"intial_interval" yaml:"-"`
+	InitialInterval 		time.Duration `mapstructure:"initial_interval" yaml:"-"`
 	RandomizationFactor float64 `mapstructure:"randomization_factor" yaml:"-"`
 	Multiplier 			float64 `mapstructure:"multiplier" yaml:"-"`
 	MaxInterval 		time.Duration `mapstructure:"max_interval" yaml:"-"`

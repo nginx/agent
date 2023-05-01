@@ -263,7 +263,7 @@ Represents agent metadata
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| intial_interval | [int64](#int64) |  | First backoff time interval in seconds |
+| initial_interval | [int64](#int64) |  | First backoff time interval in seconds |
 | randomization_factor | [double](#double) |  | Random value used to create range around next backoff interval |
 | multiplier | [double](#double) |  | Value to be multiplied with current backoff interval |
 | max_interval | [int64](#int64) |  | Max interval in seconds between two retries |
