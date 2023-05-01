@@ -181,18 +181,18 @@ func (r *OneTimeRegistration) registerAgent() {
 					InstanceGroup: r.config.InstanceGroup,
 					Updated:       updated,
 					SystemUid:     r.env.GetSystemUUID(),
-					AgentDetails:  &proto.AgentDetails{
+					AgentDetails: &proto.AgentDetails{
 						Features:   r.config.Features,
 						Extensions: r.config.Extensions,
 						Tags:       *r.tags,
 						Alias:      "",
-						Server:	    &proto.Server{
+						Server: &proto.Server{
 							Backoff: &proto.Backoff{
-								InitialInterval:       r.config.Server.Backoff.InitialInterval.Milliseconds(),
-								RandomizationFactor:  r.config.Server.Backoff.RandomizationFactor,
-								Multiplier:           r.config.Server.Backoff.Multiplier,
-								MaxInterval:          r.config.Server.Backoff.MaxInterval.Milliseconds(),
-								MaxElapsedTime:       r.config.Server.Backoff.MaxElapsedTime.Milliseconds(),
+								InitialInterval:     r.config.Server.Backoff.InitialInterval.Milliseconds(),
+								RandomizationFactor: r.config.Server.Backoff.RandomizationFactor,
+								Multiplier:          r.config.Server.Backoff.Multiplier,
+								MaxInterval:         r.config.Server.Backoff.MaxInterval.Milliseconds(),
+								MaxElapsedTime:      r.config.Server.Backoff.MaxElapsedTime.Milliseconds(),
 							},
 						},
 					},

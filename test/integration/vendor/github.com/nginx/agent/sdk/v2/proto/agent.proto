@@ -101,7 +101,7 @@ message Server {
 
 message Backoff {
   // First backoff time interval in seconds
-  int64 intial_interval = 1 [(gogoproto.jsontag) = "intial_interval"];
+  int64 initial_interval = 1 [(gogoproto.jsontag) = "initial_interval"];
   // Random value used to create range around next backoff interval
   double randomization_factor = 2 [(gogoproto.jsontag) = "randomization_factor"];
   // Value to be multiplied with current backoff interval

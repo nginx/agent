@@ -15,15 +15,18 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/interceptors"
 	"github.com/nginx/agent/sdk/v2/proto"
 )
 
 type BackoffSettings struct {
-	initialInterval time.Duration
-	maxInterval     time.Duration
-	maxTimeout      time.Duration
-	sendMaxTimeout  time.Duration
+	initialInterval      time.Duration
+	maxInterval          time.Duration
+	maxTimeout           time.Duration
+	sendMaxTimeout       time.Duration
+	multiplier           float64
+	randomization_factor float64
 }
 
 type MsgClassification int
@@ -36,10 +39,12 @@ const (
 
 var (
 	DefaultBackoffSettings = BackoffSettings{
-		initialInterval: 10 * time.Second,
-		maxInterval:     60 * time.Second,
-		maxTimeout:      0,
-		sendMaxTimeout:  2 * time.Minute,
+		initialInterval:      10 * time.Second,
+		maxInterval:          60 * time.Second,
+		maxTimeout:           0,
+		sendMaxTimeout:       2 * time.Minute,
+		randomization_factor: sdk.BACKOFF_JITTER,
+		multiplier:           sdk.BACKOFF_MULTIPLIER,
 	}
 )
 

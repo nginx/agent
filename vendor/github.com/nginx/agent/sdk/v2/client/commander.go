@@ -14,6 +14,7 @@ import (
 	"io"
 	"strconv"
 	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -136,15 +137,15 @@ func (c *commander) Send(ctx context.Context, message Message) error {
 	switch message.Classification() {
 	case MsgClassificationCommand:
 		if cmd, ok = message.Raw().(*proto.Command); !ok {
-			return fmt.Errorf("Expected a command message, but received %T", message.Data())
+			return fmt.Errorf("expected a command message, but received %T", message.Data())
 		}
 	default:
-		return fmt.Errorf("Expected a command message, but received %T", message.Data())
+		return fmt.Errorf("expected a command message, but received %T", message.Data())
 	}
 
 	err := sdk.WaitUntil(c.ctx, c.backoffSettings.initialInterval, c.backoffSettings.maxInterval, c.backoffSettings.sendMaxTimeout, func() error {
 		if err := c.channel.Send(cmd); err != nil {
-			return c.handleGrpcError("Commander Channel Send", err)
+			return c.handleGrpcError("Commander Channel Send", err, nil)
 		}
 
 		log.Tracef("Commander sent command %v", cmd)
@@ -171,14 +172,14 @@ func (c *commander) Download(ctx context.Context, metadata *proto.Metadata) (*pr
 
 		downloader, err := c.client.Download(c.ctx, &proto.DownloadRequest{Meta: metadata})
 		if err != nil {
-			return c.handleGrpcError("Commander Downloader", err)
+			return c.handleGrpcError("Commander Downloader", err, nil)
 		}
 
 	LOOP:
 		for {
 			chunk, err := downloader.Recv()
 			if err != nil && err != io.EOF {
-				return c.handleGrpcError("Commander Downloader", err)
+				return c.handleGrpcError("Commander Downloader", err, nil)
 			}
 
 			if chunk == nil {
@@ -231,7 +232,7 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 	return sdk.WaitUntil(c.ctx, c.backoffSettings.initialInterval, c.backoffSettings.maxInterval, c.backoffSettings.sendMaxTimeout, func() error {
 		sender, err := c.client.Upload(c.ctx)
 		if err != nil {
-			return c.handleGrpcError("Commander Upload", err)
+			return c.handleGrpcError("Commander Upload", err, nil)
 		}
 
 		err = sender.Send(&proto.DataChunk{
@@ -245,7 +246,7 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 			},
 		})
 		if err != nil {
-			return c.handleGrpcError("Commander Upload Header", err)
+			return c.handleGrpcError("Commander Upload Header", err, nil)
 		}
 
 		for id, chunk := range chunks {
@@ -259,14 +260,14 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 					},
 				},
 			}); err != nil {
-				return c.handleGrpcError("Commander Upload"+strconv.Itoa(id), err)
+				return c.handleGrpcError("Commander Upload"+strconv.Itoa(id), err, nil)
 			}
 		}
 
 		log.Infof("Upload sending done %s (chunks=%d)", metadata.MessageId, len(chunks))
 		status, err := sender.CloseAndRecv()
 		if err != nil {
-			return c.handleGrpcError("Commander Upload CloseAndRecv", err)
+			return c.handleGrpcError("Commander Upload CloseAndRecv", err, nil)
 		}
 
 		if status.Status != proto.UploadStatus_OK {
@@ -314,27 +315,28 @@ func (c *commander) createClient() error {
 func (c *commander) recvLoop() {
 	log.Debug("Commander receive loop starting")
 	for {
-		err := sdk.WaitUntil(c.ctx, c.backoffSettings.initialInterval, c.backoffSettings.maxInterval, c.backoffSettings.maxTimeout, func() error {
-			cmd, err := c.channel.Recv()
-			log.Infof("Commander received %v, %v", cmd, err)
-			if err != nil {
-				return c.handleGrpcError("Commander Channel Recv", err)
-			}
+		err := sdk.WaitUntilWithJitterAndMultiplier(c.ctx, c.backoffSettings.initialInterval, c.backoffSettings.maxInterval,
+			c.backoffSettings.maxTimeout, c.backoffSettings.randomization_factor, c.backoffSettings.multiplier, func() error {
+				cmd, err := c.channel.Recv()
+				log.Infof("Commander received %v, %v", cmd, err)
+				if err != nil {
+					return c.handleGrpcError("Commander Channel Recv", err, cmd)
+				}
 
-			select {
-			case <-c.ctx.Done():
-			case c.recvChan <- MessageFromCommand(cmd):
-			}
+				select {
+				case <-c.ctx.Done():
+				case c.recvChan <- MessageFromCommand(cmd):
+				}
 
-			return nil
-		})
+				return nil
+			})
 		if err != nil {
 			log.Errorf("Error retrying to receive messages from the commander channel: %v", err)
 		}
 	}
 }
 
-func (c *commander) handleGrpcError(messagePrefix string, err error) error {
+func (c *commander) handleGrpcError(messagePrefix string, err error, cmd *proto.Command) error {
 	if st, ok := status.FromError(err); ok {
 		log.Errorf("%s: error communicating with %s, code=%s, message=%v", messagePrefix, c.grpc.Target(), st.Code().String(), st.Message())
 	} else if err == io.EOF {
@@ -346,5 +348,45 @@ func (c *commander) handleGrpcError(messagePrefix string, err error) error {
 	log.Infof("%s: retrying to connect to %s", messagePrefix, c.grpc.Target())
 	_ = c.createClient()
 
+	c.resetBackoffSettings(cmd)
 	return err
+}
+
+func (c *commander) resetBackoffSettings(cmd *proto.Command) {
+	if cmd == nil {
+		return
+	}
+	if cmd.GetAgentConfig() == nil {
+		return
+	}
+	if cmd.GetAgentConfig().GetDetails() == nil {
+		return
+	}
+	if cmd.GetAgentConfig().GetDetails().GetServer() == nil {
+		return
+	}
+	sBackoff := cmd.GetAgentConfig().GetDetails().GetServer().Backoff
+	if sBackoff == nil {
+		return
+	}
+
+	smultiplier := sdk.BACKOFF_MULTIPLIER
+	if sBackoff.GetMultiplier() != 0 {
+		smultiplier = sBackoff.GetMultiplier()
+	}
+
+	srandomization_factor := sdk.BACKOFF_JITTER
+	if sBackoff.GetRandomizationFactor() != 0 {
+		srandomization_factor = sBackoff.GetRandomizationFactor()
+	}
+
+	cBackoff := BackoffSettings{
+		initialInterval:      time.Duration(sBackoff.InitialInterval),
+		maxInterval:          time.Duration(sBackoff.MaxInterval),
+		sendMaxTimeout:       time.Duration(sBackoff.MaxElapsedTime),
+		multiplier:           smultiplier,
+		randomization_factor: srandomization_factor,
+	}
+	log.Infof("reset client backoff settings to %+v, for a pause command %+v", cBackoff, cmd)
+	c.WithBackoffSettings(cBackoff)
 }

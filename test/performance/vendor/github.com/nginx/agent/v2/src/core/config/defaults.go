@@ -50,7 +50,7 @@ var (
 			// so setting to random uuid at the moment, tls connection won't work without the auth header
 			Token: uuid.New().String(),
 			Backoff: Backoff{
-				IntialInterval:      500 * time.Millisecond,
+				InitialInterval:     500 * time.Millisecond,
 				RandomizationFactor: 0.5,
 				Multiplier:          1.5,
 				MaxInterval:         60 * time.Second,
@@ -120,12 +120,12 @@ const (
 	ServerBackoff  = ServerKey + agent_config.KeyDelimiter + "backoff"
 
 	// viper keys used in config
-	BackoffKey 			  	   = "backoff"
-	BackoffIntialInterval 	   = BackoffKey + agent_config.KeyDelimiter + "intialinterval"
+	BackoffKey                 = "backoff"
+	BackoffInitialInterval     = BackoffKey + agent_config.KeyDelimiter + "initialinterval"
 	BackoffRandomizationFactor = BackoffKey + agent_config.KeyDelimiter + "randomizationfactor"
-	BackoffMultiplier		   = BackoffKey + agent_config.KeyDelimiter + "multiplier"
-	BackoffMaxInterval  	   = BackoffKey + agent_config.KeyDelimiter + "maxinterval"
-	BackoffMaxElapsedTime  	   = BackoffKey + agent_config.KeyDelimiter + "maxelapsedtime"
+	BackoffMultiplier          = BackoffKey + agent_config.KeyDelimiter + "multiplier"
+	BackoffMaxInterval         = BackoffKey + agent_config.KeyDelimiter + "maxinterval"
+	BackoffMaxElapsedTime      = BackoffKey + agent_config.KeyDelimiter + "maxelapsedtime"
 
 	// viper keys used in config
 	APIKey = "api"
