@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package crossplane
 
 import (
@@ -179,14 +186,18 @@ func analyze(fname string, stmt *Directive, term string, ctx blockCtx, options *
 //   - which contexts it's allowed to be in
 //
 // Since some directives can have different behaviors in different contexts, we
-//   use lists of bit masks, each describing a valid way to use the directive.
+//
+//	use lists of bit masks, each describing a valid way to use the directive.
 //
 // Definitions for directives that're available in the open source version of
-//   nginx were taken directively from the source code. In fact, the variable
-//   names for the bit masks defined above were taken from the nginx source code.
+//
+//	nginx were taken directively from the source code. In fact, the variable
+//	names for the bit masks defined above were taken from the nginx source code.
 //
 // Definitions for directives that're only available for nginx+ were inferred
-//   from the documentation at http://nginx.org/en/docs/.
+//
+//	from the documentation at http://nginx.org/en/docs/.
+//
 //nolint:gochecknoglobals
 var directives = map[string][]uint{
 	"absolute_redirect": {
@@ -2063,6 +2074,9 @@ var directives = map[string][]uint{
 	"auth_jwt_type": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLmtConf | ngxConfTake1,
 	},
+	"auth_jwt_require": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPLmtConf | ngxConf1More,
+	},
 	"f4f": {
 		ngxHTTPLocConf | ngxConfNoArgs,
 	},
@@ -2101,10 +2115,10 @@ var directives = map[string][]uint{
 		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
 	},
 	"js_body_filter": {
-		ngxHTTPLocConf | ngxHTTPLmtConf | ngxConfTake1,
+		ngxHTTPLocConf | ngxHTTPLifConf | ngxHTTPLmtConf | ngxConfTake1,
 	},
 	"js_content": {
-		ngxHTTPLocConf | ngxHTTPLmtConf | ngxConfTake1,
+		ngxHTTPLocConf | ngxHTTPLifConf | ngxHTTPLmtConf | ngxConfTake1,
 	},
 	"js_fetch_ciphers": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
@@ -2126,30 +2140,30 @@ var directives = map[string][]uint{
 		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
 	},
 	"js_header_filter": {
-		ngxHTTPLocConf | ngxHTTPLmtConf | ngxConfTake1,
+		ngxHTTPLocConf | ngxHTTPLifConf | ngxHTTPLmtConf | ngxConfTake1,
 	},
 	"js_import": {
-		ngxHTTPMainConf | ngxConfTake13,
-		ngxStreamMainConf | ngxConfTake13,
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake13,
+		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake13,
 	},
 	"js_include": {
 		ngxHTTPMainConf | ngxConfTake1,
 		ngxStreamMainConf | ngxConfTake1,
 	},
 	"js_path": {
-		ngxHTTPMainConf | ngxConfTake1,
-		ngxStreamMainConf | ngxConfTake1,
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
 	},
 	"js_preread": {
 		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
 	},
 	"js_set": {
-		ngxHTTPMainConf | ngxConfTake2,
-		ngxStreamMainConf | ngxConfTake2,
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake2,
+		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake2,
 	},
 	"js_var": {
-		ngxHTTPMainConf | ngxConfTake12,
-		ngxStreamMainConf | ngxConfTake12,
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
+		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake12,
 	},
 	"keyval": {
 		ngxHTTPMainConf | ngxConfTake3,
