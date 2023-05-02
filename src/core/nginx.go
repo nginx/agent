@@ -810,7 +810,7 @@ func runtimeFromConfigure(configure []string) []string {
 // AccessLogs returns a list of access logs in the config
 func AccessLogs(p *proto.NginxConfig) map[string]string {
 	var found = make(map[string]string)
-	var name = ""
+	var name := ""
 	
 	for _, accessLog := range p.GetAccessLogs().GetAccessLog() {
 		name = strings.Split(accessLog.GetName(), " ")[0]
@@ -830,7 +830,7 @@ func AccessLogs(p *proto.NginxConfig) map[string]string {
 // ErrorLogs returns a list of error logs in the config
 func ErrorLogs(p *proto.NginxConfig) map[string]string {
 	var found = make(map[string]string)
-	var name = ""
+	var name := ""
 	
 	for _, errorLog := range p.GetErrorLogs().GetErrorLog() {
 		name = strings.Split(errorLog.GetName(), " ")[0]
