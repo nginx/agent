@@ -84,7 +84,7 @@ load_config_values() {
     if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
         if [ -f "$OLD_DYNAMIC_CONFIG_FILE" ]; then 
             mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
-            ln "$OLD_DYNAMIC_CONFIG_FILE" "$AGENT_DYNAMIC_CONFIG_FILE"
+            ln -s "$OLD_DYNAMIC_CONFIG_FILE" "$AGENT_DYNAMIC_CONFIG_FILE"
         else
             printf "Could not find %s ... Creating file\n" ${AGENT_DYNAMIC_CONFIG_FILE}
             mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
