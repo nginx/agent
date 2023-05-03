@@ -23,7 +23,7 @@
                 "Name": "VIOL_URL_METACHAR",
                 "Context": "uri",
                 "ContextData": {
-                    "Name": "",
+                    "Name": "uri",
                     "Value": "/;shutdown"
                 }
             },
@@ -39,8 +39,24 @@
                 "Name": "VIOL_JSON_MALFORMED",
                 "Context": "url",
                 "ContextData": {
-                    "Name": "",
+                    "Name": "uri",
                     "Value": "/"
+                }
+            },
+            {
+                "Name": "VIOL_URL_CONTENT_TYPE",
+                "Context": "uri",
+                "ContextData": {
+                    "Name": "$",
+                    "Value": "actual header value: beni. matched header value: beni"
+                }
+            },
+            {
+                "Name": "VIOL_URL",
+                "Context": "uri",
+                "ContextData": {
+                    "Name": "",
+                    "Value": ""
                 }
             }
         ]
