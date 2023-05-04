@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/sdk/v2"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -31,7 +32,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 )
 
 // swagger:response MetricsResponse
@@ -52,14 +52,14 @@ var (
 )
 
 type AgentAPI struct {
-	config       *config.Config
-	env          core.Environment
-	pipeline     core.MessagePipeInterface
-	server       http.Server
-	nginxBinary  core.NginxBinary
-	nginxHandler *NginxHandler
+	config                 *config.Config
+	env                    core.Environment
+	pipeline               core.MessagePipeInterface
+	server                 http.Server
+	nginxBinary            core.NginxBinary
+	nginxHandler           *NginxHandler
 	disabledFeatureHandler *DisabledFeatureHandler
-	exporter     *prometheus_metrics.Exporter
+	exporter               *prometheus_metrics.Exporter
 }
 
 type NginxHandler struct {
@@ -72,7 +72,7 @@ type NginxHandler struct {
 }
 
 type DisabledFeatureHandler struct {
-	config                 *config.Config
+	config *config.Config
 }
 
 // swagger:parameters apply-nginx-config
@@ -217,12 +217,12 @@ func (a *AgentAPI) createHttpServer() {
 
 	mux := http.NewServeMux()
 
-	if a.config.IsFeatureEnabled(agent_config.FeatureMetrics){
+	if a.config.IsFeatureEnabled(agent_config.FeatureMetrics) {
 		mux.Handle("/metrics/", a.getPrometheusHandler())
-	}else {
+	} else {
 		mux.Handle("/metrics/", a.disabledFeatureHandler)
 	}
-	
+
 	mux.Handle("/nginx/", a.nginxHandler)
 
 	handler := cors.New(cors.Options{AllowedMethods: []string{"OPTIONS", "GET", "PUT"}}).Handler(mux)
@@ -267,7 +267,7 @@ func (a *AgentAPI) getPrometheusHandler() http.Handler {
 	return promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
 }
 
-func (d *DisabledFeatureHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
+func (d *DisabledFeatureHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentTypeHeader, jsonMimeType)
 	w.WriteHeader(http.StatusNotFound)
 }
@@ -301,7 +301,7 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 			log.Error("Config Apply Feature Disabled")
 		}
-		
+
 	case configStatusRegex.MatchString(r.URL.Path):
 		if r.Method != http.MethodGet {
 			w.WriteHeader(http.StatusMethodNotAllowed)

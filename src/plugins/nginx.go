@@ -137,8 +137,8 @@ func (n *Nginx) Process(message *core.Message) {
 				// TODO: Return a status code to Agent API
 				status := &proto.Command_NginxConfigResponse{
 					NginxConfigResponse: &proto.NginxConfigResponse{
-						Status: newErrStatus(nginxConfigAsyncFeatureDisabled).CmdStatus,
-						Action: proto.NginxConfigAction_APPLY,
+						Status:     newErrStatus(nginxConfigAsyncFeatureDisabled).CmdStatus,
+						Action:     proto.NginxConfigAction_APPLY,
 						ConfigData: cmd.config.ConfigData,
 					},
 				}
