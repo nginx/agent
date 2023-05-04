@@ -268,13 +268,6 @@ oss-image: ## Build agent container image for NGINX OSS
 	--build-arg BASE_IMAGE=${BASE_IMAGE} \
 	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
-oss-image: ## Build agent container image for NGINX OSS
-	@echo Building image with $(CONTAINER_CLITOOL); \
-	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
-	--no-cache -f ./scripts/docker/nginx-oss/${OS_RELEASE}/Dockerfile \
-	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
-	--build-arg BASE_IMAGE=${BASE_IMAGE} \
-	--build-arg ENTRY_POINT=./scripts/docker/nginx-oss/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG
 	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \
