@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	Duration        = 2 * time.Second
-	InitialInterval = 100 * time.Millisecond
-	MaxInterval     = 500 * time.Millisecond
-	MaxTimeout      = 10 * time.Second
+	Duration          = 2 * time.Second
+	InitialInterval   = 100 * time.Millisecond
+	MaxInterval       = 500 * time.Millisecond
+	MaxElapsedTimeout = 10 * time.Second
 )
 
 type FileWatchThrottle struct {
@@ -86,7 +86,14 @@ func (fwt *FileWatchThrottle) Subscriptions() []string {
 }
 
 func (fwt *FileWatchThrottle) waitUntilNoMoreSignals() {
-	err := sdk.WaitUntil(context.Background(), InitialInterval, MaxInterval, MaxTimeout, fwt.retry)
+	backoff := sdk.BackoffSettings{
+		InitialInterval: InitialInterval,
+		MaxInterval:     MaxInterval,
+		MaxElapsedTime:  MaxElapsedTimeout,
+		Jitter:          sdk.BACKOFF_JITTER,
+		Multiplier:      sdk.BACKOFF_MULTIPLIER,
+	}
+	err := sdk.WaitUntil(context.Background(), backoff, fwt.retry)
 	if err != nil {
 		log.Warnf("Warring, issue occurred waiting until there were no more signals %v", err)
 	}

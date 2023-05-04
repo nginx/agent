@@ -482,7 +482,14 @@ func TestMtls_forApi(t *testing.T) {
 					t.FailNow()
 				}
 
-				err = sdk.WaitUntil(ctx, 100*time.Millisecond, 100*time.Millisecond, 1*time.Second, func() error {
+				backoff := sdk.BackoffSettings{
+					InitialInterval: 100*time.Millisecond,
+					MaxInterval:     100*time.Millisecond,
+					MaxElapsedTime:  1*time.Second,
+					Jitter:          sdk.BACKOFF_JITTER,
+					Multiplier:      sdk.BACKOFF_MULTIPLIER,
+				}
+				err = sdk.WaitUntil(ctx, backoff, func() error {
 					_, err := ioutil.ReadFile("../../build/certs/server.crt")
 					return err
 				})

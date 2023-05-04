@@ -11,6 +11,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/interceptors"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -68,7 +69,7 @@ func (m *MockMetricsReportClient) WithConnWaitDuration(d time.Duration) Client {
 	return m
 }
 
-func (m *MockMetricsReportClient) WithBackoffSettings(backoffSettings BackoffSettings) Client {
+func (m *MockMetricsReportClient) WithBackoffSettings(backoffSettings sdk.BackoffSettings) Client {
 	m.Called(backoffSettings)
 
 	return m

@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
 	f5_nginx_agent_sdk_events "github.com/nginx/agent/sdk/v2/proto/events"
 	log "github.com/sirupsen/logrus"
@@ -73,11 +74,10 @@ func TestMetricReporter_Connect_NoServer(t *testing.T) {
 	metricReporterClient := NewMetricReporterClient()
 	metricReporterClient.WithServer("unknown")
 	metricReporterClient.WithDialOptions(grpcDialOptions...)
-	metricReporterClient.WithBackoffSettings(BackoffSettings{
-		initialInterval: 100 * time.Millisecond,
-		maxInterval:     100 * time.Millisecond,
-		maxTimeout:      300 * time.Millisecond,
-		sendMaxTimeout:  300 * time.Millisecond,
+	metricReporterClient.WithBackoffSettings(sdk.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  300 * time.Millisecond,
 	})
 
 	err := metricReporterClient.Connect(ctx)
@@ -115,11 +115,10 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	metricReporterClient := createTestMetricReporterClient(dialer)
-	metricReporterClient.WithBackoffSettings(BackoffSettings{
-		initialInterval: 100 * time.Millisecond,
-		maxInterval:     100 * time.Millisecond,
-		maxTimeout:      30 * time.Second,
-		sendMaxTimeout:  30 * time.Second,
+	metricReporterClient.WithBackoffSettings(sdk.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  30 * time.Second,
 	})
 	err := metricReporterClient.Connect(ctx)
 	assert.Nil(t, err)
@@ -283,11 +282,10 @@ func createTestMetricReporterClient(dialer func(context.Context, string) (net.Co
 	metricReporterClient := NewMetricReporterClient()
 	metricReporterClient.WithServer("bufnet")
 	metricReporterClient.WithDialOptions(getDialOptions(dialer)...)
-	metricReporterClient.WithBackoffSettings(BackoffSettings{
-		initialInterval: 100 * time.Millisecond,
-		maxInterval:     100 * time.Millisecond,
-		maxTimeout:      300 * time.Millisecond,
-		sendMaxTimeout:  300 * time.Millisecond,
+	metricReporterClient.WithBackoffSettings(sdk.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  300 * time.Millisecond,
 	})
 
 	return metricReporterClient

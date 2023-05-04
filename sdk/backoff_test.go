@@ -88,7 +88,14 @@ func TestBackOff(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := WaitUntil(test.context, test.initialInterval, test.maxInterval, test.maxElapsedTime, test.operation)
+		backoff := BackoffSettings{
+			InitialInterval: test.initialInterval,
+			MaxInterval:     test.maxInterval,
+			MaxElapsedTime:  test.maxElapsedTime,
+			Jitter:          BACKOFF_JITTER,
+			Multiplier:      BACKOFF_MULTIPLIER,
+		}
+		result := WaitUntil(test.context, backoff, test.operation)
 
 		if test.expectedError {
 			assert.Errorf(t, result, test.name)

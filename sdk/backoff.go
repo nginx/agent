@@ -19,45 +19,25 @@ const (
 	BACKOFF_MULTIPLIER = backoff.DefaultMultiplier
 )
 
-func WaitUntil(
-	ctx context.Context,
-	initialInterval time.Duration,
-	maxInterval time.Duration,
-	maxElapsedTime time.Duration,
-	operation backoff.Operation,
-) error {
-	exponentialBackoff := backoff.NewExponentialBackOff()
-	exponentialBackoff.InitialInterval = initialInterval
-	exponentialBackoff.MaxInterval = maxInterval
-	exponentialBackoff.MaxElapsedTime = maxElapsedTime
-	exponentialBackoff.RandomizationFactor = BACKOFF_JITTER
-	exponentialBackoff.Multiplier = BACKOFF_MULTIPLIER
-
-	expoBackoffWithContext := backoff.WithContext(exponentialBackoff, ctx)
-
-	err := backoff.Retry(backoff.Operation(operation), expoBackoffWithContext)
-	if err != nil {
-		return err
-	}
-
-	return nil
+type BackoffSettings struct {
+	InitialInterval time.Duration
+	MaxInterval     time.Duration
+	MaxElapsedTime  time.Duration
+	Multiplier      float64
+	Jitter          float64
 }
 
-func WaitUntilWithJitterAndMultiplier(
+func WaitUntil(
 	ctx context.Context,
-	initialInterval time.Duration,
-	maxInterval time.Duration,
-	maxElapsedTime time.Duration,
-	jitter float64,
-	multiplier float64,
+	backoffSettings BackoffSettings,
 	operation backoff.Operation,
 ) error {
 	exponentialBackoff := backoff.NewExponentialBackOff()
-	exponentialBackoff.InitialInterval = initialInterval
-	exponentialBackoff.MaxInterval = maxInterval
-	exponentialBackoff.MaxElapsedTime = maxElapsedTime
-	exponentialBackoff.RandomizationFactor = jitter
-	exponentialBackoff.Multiplier = multiplier
+	exponentialBackoff.InitialInterval = backoffSettings.InitialInterval
+	exponentialBackoff.MaxInterval = backoffSettings.MaxInterval
+	exponentialBackoff.MaxElapsedTime = backoffSettings.MaxElapsedTime
+	exponentialBackoff.RandomizationFactor = backoffSettings.Jitter
+	exponentialBackoff.Multiplier = backoffSettings.Multiplier
 
 	expoBackoffWithContext := backoff.WithContext(exponentialBackoff, ctx)
 

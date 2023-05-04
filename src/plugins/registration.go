@@ -106,10 +106,16 @@ func (r *OneTimeRegistration) Subscriptions() []string {
 // reached then an error will be logged then registration will start with whatever
 // dataplane software details were successfully transmitted (if any).
 func (r *OneTimeRegistration) startRegistration() {
+	backoff := sdk.BackoffSettings{
+		InitialInterval: softwareDetailsOperationInterval,
+		MaxInterval:     softwareDetailsOperationInterval,
+		MaxElapsedTime:  dataplaneSoftwareDetailsMaxWaitTime,
+		Jitter:          sdk.BACKOFF_JITTER,
+		Multiplier:      sdk.BACKOFF_MULTIPLIER,
+	}
 	log.Debug("OneTimeRegistration waiting on dataplane software details to be ready for registration")
 	err := sdk.WaitUntil(
-		context.Background(), softwareDetailsOperationInterval, softwareDetailsOperationInterval,
-		dataplaneSoftwareDetailsMaxWaitTime, r.areDataplaneSoftwareDetailsReady,
+		context.Background(), backoff, r.areDataplaneSoftwareDetailsReady,
 	)
 	if err != nil {
 		log.Warn(err.Error())

@@ -38,7 +38,7 @@ type metricReporter struct {
 	eventsChannel   proto.MetricsService_StreamEventsClient
 	ctx             context.Context
 	mu              sync.Mutex
-	backoffSettings BackoffSettings
+	backoffSettings sdk.BackoffSettings
 }
 
 func (r *metricReporter) WithInterceptor(interceptor interceptors.Interceptor) Client {
@@ -59,9 +59,7 @@ func (r *metricReporter) Connect(ctx context.Context) error {
 	r.ctx = ctx
 	err := sdk.WaitUntil(
 		r.ctx,
-		r.backoffSettings.initialInterval,
-		r.backoffSettings.maxInterval,
-		r.backoffSettings.maxTimeout,
+		r.backoffSettings,
 		r.createClient,
 	)
 	if err != nil {
@@ -138,7 +136,7 @@ func (r *metricReporter) WithDialOptions(options ...grpc.DialOption) Client {
 	return r
 }
 
-func (r *metricReporter) WithBackoffSettings(backoffSettings BackoffSettings) Client {
+func (r *metricReporter) WithBackoffSettings(backoffSettings sdk.BackoffSettings) Client {
 	r.backoffSettings = backoffSettings
 	return r
 }
@@ -152,7 +150,7 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 		if !ok {
 			return fmt.Errorf("MetricReporter expected a metrics report message, but received %T", message.Data())
 		}
-		err = sdk.WaitUntil(r.ctx, r.backoffSettings.initialInterval, r.backoffSettings.maxInterval, r.backoffSettings.sendMaxTimeout, func() error {
+		err = sdk.WaitUntil(r.ctx, r.backoffSettings, func() error {
 			if err := r.channel.Send(report); err != nil {
 				return r.handleGrpcError("Metric Reporter Channel Send", err)
 			}
@@ -166,7 +164,7 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 		if !ok {
 			return fmt.Errorf("MetricReporter expected an events report message, but received %T", message.Data())
 		}
-		err = sdk.WaitUntil(r.ctx, r.backoffSettings.initialInterval, r.backoffSettings.maxInterval, r.backoffSettings.sendMaxTimeout, func() error {
+		err = sdk.WaitUntil(r.ctx, r.backoffSettings, func() error {
 			if err := r.eventsChannel.Send(report); err != nil {
 				return r.handleGrpcError("Metric Reporter Events Channel Send", err)
 			}

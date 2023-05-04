@@ -20,15 +20,6 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 )
 
-type BackoffSettings struct {
-	initialInterval      time.Duration
-	maxInterval          time.Duration
-	maxTimeout           time.Duration
-	sendMaxTimeout       time.Duration
-	multiplier           float64
-	randomization_factor float64
-}
-
 type MsgClassification int
 
 const (
@@ -38,13 +29,12 @@ const (
 )
 
 var (
-	DefaultBackoffSettings = BackoffSettings{
-		initialInterval:      10 * time.Second,
-		maxInterval:          60 * time.Second,
-		maxTimeout:           0,
-		sendMaxTimeout:       2 * time.Minute,
-		randomization_factor: sdk.BACKOFF_JITTER,
-		multiplier:           sdk.BACKOFF_MULTIPLIER,
+	DefaultBackoffSettings = sdk.BackoffSettings{
+		InitialInterval: 10 * time.Second,
+		MaxInterval:     60 * time.Second,
+		MaxElapsedTime:  2 * time.Minute,
+		Jitter:          sdk.BACKOFF_JITTER,
+		Multiplier:      sdk.BACKOFF_MULTIPLIER,
 	}
 )
 
@@ -73,7 +63,7 @@ type (
 		WithInterceptor(interceptor interceptors.Interceptor) Client
 		WithClientInterceptor(interceptor interceptors.ClientInterceptor) Client
 
-		WithBackoffSettings(backoffSettings BackoffSettings) Client
+		WithBackoffSettings(backoffSettings sdk.BackoffSettings) Client
 	}
 	MetricReporter interface {
 		Client
