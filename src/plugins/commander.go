@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nginx/agent/sdk/v2/backoff"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
