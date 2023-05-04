@@ -709,9 +709,9 @@ func stopMockServer(server *grpc.Server, dialer func(context.Context, string) (n
 	backoffSetting := sdk.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  1*time.Second,
-		Jitter: sdk.BACKOFF_JITTER,
-		Multiplier: sdk.BACKOFF_MULTIPLIER,
+		MaxElapsedTime:  1 * time.Second,
+		Jitter:          sdk.BACKOFF_JITTER,
+		Multiplier:      sdk.BACKOFF_MULTIPLIER,
 	}
 	err = sdk.WaitUntil(ctx, backoffSetting, func() error {
 		state := conn.GetState()

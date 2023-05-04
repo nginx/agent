@@ -483,9 +483,9 @@ func TestMtls_forApi(t *testing.T) {
 				}
 
 				backoff := sdk.BackoffSettings{
-					InitialInterval: 100*time.Millisecond,
-					MaxInterval:     100*time.Millisecond,
-					MaxElapsedTime:  1*time.Second,
+					InitialInterval: 100 * time.Millisecond,
+					MaxInterval:     100 * time.Millisecond,
+					MaxElapsedTime:  1 * time.Second,
 					Jitter:          sdk.BACKOFF_JITTER,
 					Multiplier:      sdk.BACKOFF_MULTIPLIER,
 				}
