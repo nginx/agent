@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/interceptors"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -38,7 +38,7 @@ type metricReporter struct {
 	eventsChannel   proto.MetricsService_StreamEventsClient
 	ctx             context.Context
 	mu              sync.Mutex
-	backoffSettings sdk.BackoffSettings
+	backoffSettings backoff.BackoffSettings
 }
 
 func (r *metricReporter) WithInterceptor(interceptor interceptors.Interceptor) Client {
@@ -57,7 +57,7 @@ func (r *metricReporter) Connect(ctx context.Context) error {
 	log.Debugf("Metric Reporter connecting to %s", r.server)
 
 	r.ctx = ctx
-	err := sdk.WaitUntil(
+	err := backoff.WaitUntil(
 		r.ctx,
 		r.backoffSettings,
 		r.createClient,
@@ -136,7 +136,7 @@ func (r *metricReporter) WithDialOptions(options ...grpc.DialOption) Client {
 	return r
 }
 
-func (r *metricReporter) WithBackoffSettings(backoffSettings sdk.BackoffSettings) Client {
+func (r *metricReporter) WithBackoffSettings(backoffSettings backoff.BackoffSettings) Client {
 	r.backoffSettings = backoffSettings
 	return r
 }
@@ -150,7 +150,7 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 		if !ok {
 			return fmt.Errorf("MetricReporter expected a metrics report message, but received %T", message.Data())
 		}
-		err = sdk.WaitUntil(r.ctx, r.backoffSettings, func() error {
+		err = backoff.WaitUntil(r.ctx, r.backoffSettings, func() error {
 			if err := r.channel.Send(report); err != nil {
 				return r.handleGrpcError("Metric Reporter Channel Send", err)
 			}
@@ -164,7 +164,7 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 		if !ok {
 			return fmt.Errorf("MetricReporter expected an events report message, but received %T", message.Data())
 		}
-		err = sdk.WaitUntil(r.ctx, r.backoffSettings, func() error {
+		err = backoff.WaitUntil(r.ctx, r.backoffSettings, func() error {
 			if err := r.eventsChannel.Send(report); err != nil {
 				return r.handleGrpcError("Metric Reporter Events Channel Send", err)
 			}

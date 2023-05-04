@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/proto"
 	f5_nginx_agent_sdk_events "github.com/nginx/agent/sdk/v2/proto/events"
 	log "github.com/sirupsen/logrus"
@@ -74,7 +74,7 @@ func TestMetricReporter_Connect_NoServer(t *testing.T) {
 	metricReporterClient := NewMetricReporterClient()
 	metricReporterClient.WithServer("unknown")
 	metricReporterClient.WithDialOptions(grpcDialOptions...)
-	metricReporterClient.WithBackoffSettings(sdk.BackoffSettings{
+	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  300 * time.Millisecond,
@@ -115,7 +115,7 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	metricReporterClient := createTestMetricReporterClient(dialer)
-	metricReporterClient.WithBackoffSettings(sdk.BackoffSettings{
+	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  30 * time.Second,
@@ -282,7 +282,7 @@ func createTestMetricReporterClient(dialer func(context.Context, string) (net.Co
 	metricReporterClient := NewMetricReporterClient()
 	metricReporterClient.WithServer("bufnet")
 	metricReporterClient.WithDialOptions(getDialOptions(dialer)...)
-	metricReporterClient.WithBackoffSettings(sdk.BackoffSettings{
+	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  300 * time.Millisecond,

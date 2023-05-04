@@ -11,7 +11,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/interceptors"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/mock"
@@ -94,7 +94,7 @@ func (m *MockCommandClient) WithConnWaitDuration(d time.Duration) Client {
 	return m
 }
 
-func (m *MockCommandClient) WithBackoffSettings(backoffSettings sdk.BackoffSettings) Client {
+func (m *MockCommandClient) WithBackoffSettings(backoffSettings backoff.BackoffSettings) Client {
 	m.Called(backoffSettings)
 
 	return m

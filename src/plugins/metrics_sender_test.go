@@ -76,5 +76,5 @@ func TestMetricsSenderSendMetrics(t *testing.T) {
 
 func TestMetricsSenderSubscriptions(t *testing.T) {
 	pluginUnderTest := NewMetricsSender(tutils.NewMockMetricsReportClient())
-	assert.Equal(t, []string{core.CommMetrics, core.RegistrationCompletedTopic}, pluginUnderTest.Subscriptions())
+	assert.Equal(t, []string{core.CommMetrics, core.RegistrationCompletedTopic, core.AgentConfig}, pluginUnderTest.Subscriptions())
 }

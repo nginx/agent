@@ -261,7 +261,7 @@ func TestCommander_Process(t *testing.T) {
 
 func TestCommander_Subscriptions(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
-	subs := []string{core.CommRegister, core.CommStatus, core.CommResponse, core.AgentConnected, core.Events}
+	subs := []string{core.CommRegister, core.CommStatus, core.CommResponse, core.AgentConnected, core.Events, core.AgentConfig}
 	pluginUnderTest := NewCommander(cmdr, &config.Config{})
 
 	assert.Equal(t, subs, pluginUnderTest.Subscriptions())

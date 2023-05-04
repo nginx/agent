@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/assert"
@@ -202,7 +202,7 @@ func TestCommander_Connect_NoServer(t *testing.T) {
 	commanderClient := NewCommanderClient()
 	commanderClient.WithServer("unknown")
 	commanderClient.WithDialOptions(grpcDialOptions...)
-	commanderClient.WithBackoffSettings(sdk.BackoffSettings{
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  300 * time.Millisecond,
@@ -218,7 +218,7 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(sdk.BackoffSettings{
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  30 * time.Second,
@@ -280,7 +280,7 @@ func TestCommander_Send_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(sdk.BackoffSettings{
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  30 * time.Second,
@@ -333,7 +333,7 @@ func TestCommander_Download_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(sdk.BackoffSettings{
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  30 * time.Second,
@@ -515,7 +515,7 @@ func TestCommander_Upload_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(sdk.BackoffSettings{
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  30 * time.Second,
@@ -706,14 +706,14 @@ func stopMockServer(server *grpc.Server, dialer func(context.Context, string) (n
 	defer grpcServerMutex.Unlock()
 	server.Stop()
 
-	backoffSetting := sdk.BackoffSettings{
+	backoffSetting := backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  1 * time.Second,
-		Jitter:          sdk.BACKOFF_JITTER,
-		Multiplier:      sdk.BACKOFF_MULTIPLIER,
+		Jitter:          backoff.BACKOFF_JITTER,
+		Multiplier:      backoff.BACKOFF_MULTIPLIER,
 	}
-	err = sdk.WaitUntil(ctx, backoffSetting, func() error {
+	err = backoff.WaitUntil(ctx, backoffSetting, func() error {
 		state := conn.GetState()
 		if state.String() != "TRANSIENT_FAILURE" {
 			return errors.New("Still waiting for server to stop")
@@ -728,7 +728,7 @@ func createTestCommanderClient(dialer func(context.Context, string) (net.Conn, e
 	commanderClient := NewCommanderClient()
 	commanderClient.WithServer("bufnet")
 	commanderClient.WithDialOptions(getDialOptions(dialer)...)
-	commanderClient.WithBackoffSettings(sdk.BackoffSettings{
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  300 * time.Millisecond,

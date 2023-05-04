@@ -16,7 +16,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -106,16 +106,16 @@ func (r *OneTimeRegistration) Subscriptions() []string {
 // reached then an error will be logged then registration will start with whatever
 // dataplane software details were successfully transmitted (if any).
 func (r *OneTimeRegistration) startRegistration() {
-	backoff := sdk.BackoffSettings{
+	backoffSetting := backoff.BackoffSettings{
 		InitialInterval: softwareDetailsOperationInterval,
 		MaxInterval:     softwareDetailsOperationInterval,
 		MaxElapsedTime:  dataplaneSoftwareDetailsMaxWaitTime,
-		Jitter:          sdk.BACKOFF_JITTER,
-		Multiplier:      sdk.BACKOFF_MULTIPLIER,
+		Jitter:          backoff.BACKOFF_JITTER,
+		Multiplier:      backoff.BACKOFF_MULTIPLIER,
 	}
 	log.Debug("OneTimeRegistration waiting on dataplane software details to be ready for registration")
-	err := sdk.WaitUntil(
-		context.Background(), backoff, r.areDataplaneSoftwareDetailsReady,
+	err := backoff.WaitUntil(
+		context.Background(), backoffSetting, r.areDataplaneSoftwareDetailsReady,
 	)
 	if err != nil {
 		log.Warn(err.Error())

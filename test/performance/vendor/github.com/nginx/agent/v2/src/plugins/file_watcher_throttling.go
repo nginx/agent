@@ -16,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/v2/src/core"
 )
 
@@ -86,14 +86,14 @@ func (fwt *FileWatchThrottle) Subscriptions() []string {
 }
 
 func (fwt *FileWatchThrottle) waitUntilNoMoreSignals() {
-	backoff := sdk.BackoffSettings{
+	backoffSetting := backoff.BackoffSettings{
 		InitialInterval: InitialInterval,
 		MaxInterval:     MaxInterval,
 		MaxElapsedTime:  MaxElapsedTimeout,
-		Jitter:          sdk.BACKOFF_JITTER,
-		Multiplier:      sdk.BACKOFF_MULTIPLIER,
+		Jitter:          backoff.BACKOFF_JITTER,
+		Multiplier:      backoff.BACKOFF_MULTIPLIER,
 	}
-	err := sdk.WaitUntil(context.Background(), backoff, fwt.retry)
+	err := backoff.WaitUntil(context.Background(), backoffSetting, fwt.retry)
 	if err != nil {
 		log.Warnf("Warring, issue occurred waiting until there were no more signals %v", err)
 	}

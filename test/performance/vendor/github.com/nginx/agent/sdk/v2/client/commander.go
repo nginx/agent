@@ -19,7 +19,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/checksum"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/interceptors"
@@ -49,7 +49,7 @@ type commander struct {
 	downloadChan    chan *proto.DataChunk
 	ctx             context.Context
 	mu              sync.Mutex
-	backoffSettings sdk.BackoffSettings
+	backoffSettings backoff.BackoffSettings
 }
 
 func (c *commander) WithInterceptor(interceptor interceptors.Interceptor) Client {
@@ -71,7 +71,7 @@ func (c *commander) Connect(ctx context.Context) error {
 	log.Debugf("Commander connecting to %s", c.server)
 
 	c.ctx = ctx
-	err := sdk.WaitUntil(
+	err := backoff.WaitUntil(
 		c.ctx,
 		c.backoffSettings,
 		c.createClient,
@@ -120,7 +120,7 @@ func (c *commander) ChunksSize() int {
 	return c.chunkSize
 }
 
-func (c *commander) WithBackoffSettings(backoffSettings sdk.BackoffSettings) Client {
+func (c *commander) WithBackoffSettings(backoffSettings backoff.BackoffSettings) Client {
 	c.backoffSettings = backoffSettings
 	return c
 }
@@ -140,7 +140,7 @@ func (c *commander) Send(ctx context.Context, message Message) error {
 		return fmt.Errorf("expected a command message, but received %T", message.Data())
 	}
 
-	err := sdk.WaitUntil(c.ctx, c.backoffSettings, func() error {
+	err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
 		if err := c.channel.Send(cmd); err != nil {
 			return c.handleGrpcError("Commander Channel Send", err, nil)
 		}
@@ -161,7 +161,7 @@ func (c *commander) Download(ctx context.Context, metadata *proto.Metadata) (*pr
 	log.Debugf("Downloading config (messageId=%s)", metadata.GetMessageId())
 	cfg := &proto.NginxConfig{}
 
-	err := sdk.WaitUntil(c.ctx, c.backoffSettings, func() error {
+	err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
 		var (
 			header *proto.DataChunk_Header
 			body   []byte
@@ -226,7 +226,7 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 	payloadChecksum := checksum.Checksum(payload)
 	chunks := checksum.Chunk(payload, c.chunkSize)
 
-	return sdk.WaitUntil(c.ctx, c.backoffSettings, func() error {
+	return backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
 		sender, err := c.client.Upload(c.ctx)
 		if err != nil {
 			return c.handleGrpcError("Commander Upload", err, nil)
@@ -312,7 +312,7 @@ func (c *commander) createClient() error {
 func (c *commander) recvLoop() {
 	log.Debug("Commander receive loop starting")
 	for {
-		err := sdk.WaitUntil(c.ctx, c.backoffSettings, func() error {
+		err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
 			cmd, err := c.channel.Recv()
 			log.Infof("Commander received %v, %v", cmd, err)
 			if err != nil {

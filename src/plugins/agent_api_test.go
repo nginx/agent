@@ -30,7 +30,7 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -482,14 +482,14 @@ func TestMtls_forApi(t *testing.T) {
 					t.FailNow()
 				}
 
-				backoff := sdk.BackoffSettings{
+				backoffSetting := backoff.BackoffSettings{
 					InitialInterval: 100 * time.Millisecond,
 					MaxInterval:     100 * time.Millisecond,
 					MaxElapsedTime:  1 * time.Second,
-					Jitter:          sdk.BACKOFF_JITTER,
-					Multiplier:      sdk.BACKOFF_MULTIPLIER,
+					Jitter:          backoff.BACKOFF_JITTER,
+					Multiplier:      backoff.BACKOFF_MULTIPLIER,
 				}
-				err = sdk.WaitUntil(ctx, backoff, func() error {
+				err = backoff.WaitUntil(ctx, backoffSetting, func() error {
 					_, err := ioutil.ReadFile("../../build/certs/server.crt")
 					return err
 				})

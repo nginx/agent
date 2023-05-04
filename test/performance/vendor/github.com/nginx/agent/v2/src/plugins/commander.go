@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -97,26 +97,26 @@ func (c *Commander) agentBackoff(cmd *proto.Command) {
 		log.Warnf("cannot update commander client backoff settings with server nil, for a pause command %+v", cmd)
 		return
 	}
-	backoff := cmd.GetAgentConfig().GetDetails().GetServer().Backoff
-	if backoff == nil {
+	backoffSetting := cmd.GetAgentConfig().GetDetails().GetServer().Backoff
+	if backoffSetting == nil {
 		log.Warnf("cannot update commander client backoff settings with backoff settings nil, for a pause command %+v", cmd)
 		return
 	}
 
-	multiplier := sdk.BACKOFF_MULTIPLIER
-	if backoff.GetMultiplier() != 0 {
-		multiplier = backoff.GetMultiplier()
+	multiplier := backoff.BACKOFF_MULTIPLIER
+	if backoffSetting.GetMultiplier() != 0 {
+		multiplier = backoffSetting.GetMultiplier()
 	}
 
-	jitter := sdk.BACKOFF_JITTER
-	if backoff.GetRandomizationFactor() != 0 {
-		jitter = backoff.GetRandomizationFactor()
+	jitter := backoff.BACKOFF_JITTER
+	if backoffSetting.GetRandomizationFactor() != 0 {
+		jitter = backoffSetting.GetRandomizationFactor()
 	}
 
-	cBackoff := sdk.BackoffSettings{
-		InitialInterval: time.Duration(backoff.InitialInterval),
-		MaxInterval:     time.Duration(backoff.MaxInterval),
-		MaxElapsedTime:  time.Duration(backoff.MaxElapsedTime),
+	cBackoff := backoff.BackoffSettings{
+		InitialInterval: time.Duration(backoffSetting.InitialInterval),
+		MaxInterval:     time.Duration(backoffSetting.MaxInterval),
+		MaxElapsedTime:  time.Duration(backoffSetting.MaxElapsedTime),
 		Multiplier:      multiplier,
 		Jitter:          jitter,
 	}

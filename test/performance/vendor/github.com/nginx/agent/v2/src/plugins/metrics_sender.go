@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
@@ -121,27 +121,27 @@ func (r *MetricsSender) metricSenderBackoff(cmd *proto.Command_AgentConfig) {
 		log.Warnf("cannot update metric reporter client backoff settings with server nil, for a pause command %+v", cmd)
 		return
 	}
-	backoff := agentConfig.GetDetails().GetServer().Backoff
-	if backoff == nil {
+	backoffSetting := agentConfig.GetDetails().GetServer().Backoff
+	if backoffSetting == nil {
 		log.Warnf("cannot update metric reporter client backoff settings with backoff settings nil, for a pause command %+v", cmd)
 		return
 	}
 
-	smultiplier := sdk.BACKOFF_MULTIPLIER
-	if backoff.GetMultiplier() != 0 {
-		smultiplier = backoff.GetMultiplier()
+	multiplier := backoff.BACKOFF_MULTIPLIER
+	if backoffSetting.GetMultiplier() != 0 {
+		multiplier = backoffSetting.GetMultiplier()
 	}
 
-	jitter := sdk.BACKOFF_JITTER
-	if backoff.GetRandomizationFactor() != 0 {
-		jitter = backoff.GetRandomizationFactor()
+	jitter := backoff.BACKOFF_JITTER
+	if backoffSetting.GetRandomizationFactor() != 0 {
+		jitter = backoffSetting.GetRandomizationFactor()
 	}
 
-	cBackoff := sdk.BackoffSettings{
-		InitialInterval: time.Duration(backoff.InitialInterval),
-		MaxInterval:     time.Duration(backoff.MaxInterval),
-		MaxElapsedTime:  time.Duration(backoff.MaxElapsedTime),
-		Multiplier:      smultiplier,
+	cBackoff := backoff.BackoffSettings{
+		InitialInterval: time.Duration(backoffSetting.InitialInterval),
+		MaxInterval:     time.Duration(backoffSetting.MaxInterval),
+		MaxElapsedTime:  time.Duration(backoffSetting.MaxElapsedTime),
+		Multiplier:      multiplier,
 		Jitter:          jitter,
 	}
 	log.Infof("update metric reporter client backoff settings to %+v, for a pause command %+v", cBackoff, cmd)
