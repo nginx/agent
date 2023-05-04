@@ -137,8 +137,8 @@ func (n *Nginx) Process(message *core.Message) {
 				// TODO: Return a status code to Agent API
 				status := &proto.Command_NginxConfigResponse{
 					NginxConfigResponse: &proto.NginxConfigResponse{
-						Status:     newErrStatus(nginxConfigAsyncFeatureDisabled).CmdStatus,
-						Action:     proto.NginxConfigAction_APPLY,
+						Status: newErrStatus(nginxConfigAsyncFeatureDisabled).CmdStatus,
+						Action: proto.NginxConfigAction_APPLY,
 						ConfigData: cmd.config.ConfigData,
 					},
 				}
@@ -295,7 +295,9 @@ func (n *Nginx) processCmd(cmd *proto.Command) {
 			if n.isFeatureNginxConfigEnabled {
 				status = n.applyConfig(cmd, commandData)
 			} else {
-				log.Warnf("unable to upload config as nginx-config feature is disabled")
+				log.Error("unable to upload config as nginx-config feature is disabled")
+				status.NginxConfigResponse.Status = newErrStatus("unable to upload config as nginx-config feature is disabled").CmdStatus
+				status.NginxConfigResponse.Action = proto.NginxConfigAction_APPLY
 			}
 		case proto.NginxConfigAction_TEST:
 			// TODO: Test agent config?
