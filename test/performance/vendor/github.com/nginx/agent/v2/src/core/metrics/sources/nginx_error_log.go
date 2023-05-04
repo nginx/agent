@@ -121,55 +121,68 @@ func (c *NginxErrorLog) Update(dimensions *metrics.CommonDim, collectorConf *met
 	defer c.mu.Unlock()
 
 	c.baseDimensions = dimensions
+
 	if c.collectionInterval != collectorConf.CollectionInterval {
 		c.collectionInterval = collectorConf.CollectionInterval
+		// remove old error logs
+		// add new error logs
+		c.recreateLogs()
+	} else {
+		// add, remove or update existing log trailers
+		c.syncLogs()
+	}
+}
 
-		for f, fn := range c.logs {
-			log.Infof("Removing error log tailer: %s", f)
-			fn()
-			delete(c.logs, f)
-		}
+func (c *NginxErrorLog) recreateLogs() {
+	for f, fn := range c.logs {
+		c.stopTailer(f, fn)
+	}
 
-		logs := c.binary.GetErrorLogs()
+	logs := c.binary.GetErrorLogs()
 
-		// add any new ones
-		for logFile, logFormat := range logs {
-			if _, ok := c.logs[logFile]; !ok {
-				log.Infof("Adding error log tailer: %s", logFile)
-				logCTX, fn := context.WithCancel(context.Background())
-				c.logs[logFile] = fn
-				c.logFormats[logFile] = logFormat
-				go c.logStats(logCTX, logFile)
-			}
+	for logFile, logFormat := range logs {
+		c.startTailer(logFile, logFormat)
+	}
+}
+
+func (c *NginxErrorLog) syncLogs() {
+	logs := c.binary.GetErrorLogs()
+
+	for f, fn := range c.logs {
+		if _, ok := logs[f]; !ok {
+			c.stopTailer(f, fn)
 		}
 	}
+
+	for logFile, logFormat := range logs {
+		if _, ok := c.logs[logFile]; !ok {
+			c.startTailer(logFile, logFormat)
+		} else if c.logFormats[logFile] != logFormat {
+			// cancel tailer with old log format
+			c.logs[logFile]()
+			c.startTailer(logFile, logFormat)
+		}
+	}
+}
+
+func (c *NginxErrorLog) startTailer(logFile string, logFormat string) {
+	log.Infof("Adding error log tailer: %s", logFile)
+	logCTX, fn := context.WithCancel(context.Background())
+	c.logs[logFile] = fn
+	c.logFormats[logFile] = logFormat
+	go c.logStats(logCTX, logFile)
+}
+
+func (c *NginxErrorLog) stopTailer(logFile string, cancelFunction context.CancelFunc) {
+	log.Infof("Removing error log tailer: %s", logFile)
+	cancelFunction()
+	delete(c.logs, logFile)
+	delete(c.logFormats, logFile)
 }
 
 func (c *NginxErrorLog) collectLogStats(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	logs := c.binary.GetErrorLogs()
-
-	if c.binary.UpdateLogs(c.logFormats, logs) {
-		log.Info("Error logs updated")
-		// cancel any removed error logs
-		for f, fn := range c.logs {
-			if _, ok := logs[f]; !ok {
-				log.Infof("Removing error log tailer: %s", f)
-				fn()
-				delete(c.logs, f)
-			}
-		}
-		// add any new ones
-		for logFile := range logs {
-			if _, ok := c.logs[logFile]; !ok {
-				log.Infof("Adding error log tailer: %s", logFile)
-				logCTX, fn := context.WithCancel(context.Background())
-				c.logs[logFile] = fn
-				go c.logStats(logCTX, logFile)
-			}
-		}
-	}
 
 	for _, stat := range c.buf {
 		m <- stat

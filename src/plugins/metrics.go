@@ -103,6 +103,10 @@ func (m *Metrics) Process(msg *core.Message) {
 		m.registerStatsSources()
 		return
 
+	case msg.Exact(core.NginxConfigApplySucceeded):
+		m.updateCollectorsSources()
+		return
+
 	case msg.Exact(core.NginxDetailProcUpdate):
 		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary)
 		for key, collectorConfig := range collectorConfigsMap {
@@ -161,6 +165,7 @@ func (m *Metrics) Subscriptions() []string {
 		core.NginxStatusAPIUpdate,
 		core.NginxPluginConfigured,
 		core.NginxDetailProcUpdate,
+		core.NginxConfigApplySucceeded,
 	}
 }
 
@@ -340,5 +345,14 @@ func (m *Metrics) updateCollectorsConfig() {
 			}
 		}
 		collector.UpdateConfig(m.conf)
+	}
+}
+
+func (m *Metrics) updateCollectorsSources() {
+	log.Trace("Updating nginx collector sources")
+	for _, collector := range m.collectors {
+		if nginxCollector, ok := collector.(*collectors.NginxCollector); ok {
+			nginxCollector.UpdateSources()
+		}
 	}
 }
