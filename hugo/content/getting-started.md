@@ -42,9 +42,9 @@ If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy t
 sudo mkdir /etc/nginx-agent
 sudo cp <project_root_directory>/nginx-agent.conf /etc/nginx-agent/
 ```
-Create the `agent-dynamic.conf` file in the `/etc/nginx-agent/` directory, which is required for NGINX Agent to run. 
+Create the `agent-dynamic.conf` file in the `/var/lib/nginx-agent/` directory, which is required for NGINX Agent to run. 
 ```
-sudo touch /etc/nginx-agent/agent-dynamic.conf
+sudo touch /var/lib/nginx-agent/agent-dynamic.conf
 ```
 
 ### Enable the gRPC interface
