@@ -131,6 +131,7 @@ func TestMetrics(t *testing.T) {
 		AgentAPI: config.AgentAPI{
 			Port: port,
 		},
+		Features: config.Defaults.Features,
 	}
 
 	mockEnvironment := tutils.NewMockEnvironment()
