@@ -37,8 +37,9 @@ const (
 )
 
 var (
-	reOverflow        = regexp.MustCompile(`\s*(\d+)\s*`)
-	reTimesOverflowed = regexp.MustCompile("times the listen queue of a socket overflowed")
+	reOverflow                 = regexp.MustCompile(`\s*(\d+)\s*`)
+	reTimesOverflowed          = regexp.MustCompile("times the listen queue of a socket overflowed")
+	reTimesOverflowedWithNstat = regexp.MustCompile("TcpExtListenOverflows")
 )
 
 type routeStruct struct {
@@ -57,31 +58,25 @@ type routeStruct struct {
 
 // Get net overflow. The command (netstat) to get net overflow may not be available on all platforms
 func GetNetOverflow() (float64, error) {
-	const (
-		Netstat      = "netstat"
-		NetstatFlags = "-s"
-	)
 	overflows := 0.0
 	switch runtime.GOOS {
-	case FREEBSD:
-		return freeBsdSolaris(Netstat, NetstatFlags, overflows)
-	case SOLARIS:
-		return freeBsdSolaris(Netstat, NetstatFlags, overflows)
+	case FREEBSD, SOLARIS:
+		return getNetOverflowCmd("netstat", "-s", reTimesOverflowed, overflows)
 	case DARWIN:
 		return overflows, errors.New("this operating system is not implemented")
 	case LINUX:
-		return overflows, errors.New("this operating system is not implemented")
+		return getNetOverflowCmd("nstat", "-az", reTimesOverflowedWithNstat, overflows)
 	default:
 		return overflows, errors.New("this operating system is not implemented")
 	}
 }
 
-func freeBsdSolaris(netstat string, flags string, overflows float64) (float64, error) {
-	netstatCmd := exec.Command(netstat, flags)
+func getNetOverflowCmd(cmd string, flags string, pattern *regexp.Regexp, overflows float64) (float64, error) {
+	netstatCmd := exec.Command(cmd, flags)
 	outbuf, err := netstatCmd.CombinedOutput()
 
 	if err != nil {
-		errMsg := fmt.Sprintf("netstat not available: %v", err)
+		errMsg := fmt.Sprintf("%s not available: %v", cmd, err)
 		log.Debug(errMsg)
 		return overflows, errors.New(errMsg)
 	}
@@ -90,8 +85,9 @@ func freeBsdSolaris(netstat string, flags string, overflows float64) (float64, e
 	matches := []string{}
 	for scanner.Scan() {
 		line := scanner.Text()
-		if reTimesOverflowed.MatchString(line) {
+		if pattern.MatchString(line) {
 			matches = append(matches, line)
+
 		}
 	}
 	so := strings.Join(matches, "\n")

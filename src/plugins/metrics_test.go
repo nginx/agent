@@ -336,6 +336,7 @@ func TestMetrics_Subscriptions(t *testing.T) {
 		core.NginxStatusAPIUpdate,
 		core.NginxPluginConfigured,
 		core.NginxDetailProcUpdate,
+		core.NginxConfigApplySucceeded,
 	}
 	pluginUnderTest := NewMetrics(tutils.GetMockAgentConfig(), tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary())
 	assert.Equal(t, subs, pluginUnderTest.Subscriptions())
