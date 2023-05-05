@@ -142,7 +142,7 @@ func (c *commander) Send(ctx context.Context, message Message) error {
 
 	err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
 		if err := c.channel.Send(cmd); err != nil {
-			return c.handleGrpcError("Commander Channel Send", err, nil)
+			return c.handleGrpcError("Commander Channel Send", err)
 		}
 
 		log.Tracef("Commander sent command %v", cmd)
@@ -169,14 +169,14 @@ func (c *commander) Download(ctx context.Context, metadata *proto.Metadata) (*pr
 
 		downloader, err := c.client.Download(c.ctx, &proto.DownloadRequest{Meta: metadata})
 		if err != nil {
-			return c.handleGrpcError("Commander Downloader", err, nil)
+			return c.handleGrpcError("Commander Downloader", err)
 		}
 
 	LOOP:
 		for {
 			chunk, err := downloader.Recv()
 			if err != nil && err != io.EOF {
-				return c.handleGrpcError("Commander Downloader", err, nil)
+				return c.handleGrpcError("Commander Downloader", err)
 			}
 
 			if chunk == nil {
@@ -229,7 +229,7 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 	return backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
 		sender, err := c.client.Upload(c.ctx)
 		if err != nil {
-			return c.handleGrpcError("Commander Upload", err, nil)
+			return c.handleGrpcError("Commander Upload", err)
 		}
 
 		err = sender.Send(&proto.DataChunk{
@@ -243,7 +243,7 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 			},
 		})
 		if err != nil {
-			return c.handleGrpcError("Commander Upload Header", err, nil)
+			return c.handleGrpcError("Commander Upload Header", err)
 		}
 
 		for id, chunk := range chunks {
@@ -257,14 +257,14 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 					},
 				},
 			}); err != nil {
-				return c.handleGrpcError("Commander Upload"+strconv.Itoa(id), err, nil)
+				return c.handleGrpcError("Commander Upload"+strconv.Itoa(id), err)
 			}
 		}
 
 		log.Infof("Upload sending done %s (chunks=%d)", metadata.MessageId, len(chunks))
 		status, err := sender.CloseAndRecv()
 		if err != nil {
-			return c.handleGrpcError("Commander Upload CloseAndRecv", err, nil)
+			return c.handleGrpcError("Commander Upload CloseAndRecv", err)
 		}
 
 		if status.Status != proto.UploadStatus_OK {
@@ -316,7 +316,7 @@ func (c *commander) recvLoop() {
 			cmd, err := c.channel.Recv()
 			log.Infof("Commander received %v, %v", cmd, err)
 			if err != nil {
-				return c.handleGrpcError("Commander Channel Recv", err, cmd)
+				return c.handleGrpcError("Commander Channel Recv", err)
 			}
 
 			select {
@@ -332,7 +332,7 @@ func (c *commander) recvLoop() {
 	}
 }
 
-func (c *commander) handleGrpcError(messagePrefix string, err error, cmd *proto.Command) error {
+func (c *commander) handleGrpcError(messagePrefix string, err error) error {
 	if st, ok := status.FromError(err); ok {
 		log.Errorf("%s: error communicating with %s, code=%s, message=%v", messagePrefix, c.grpc.Target(), st.Code().String(), st.Message())
 	} else if err == io.EOF {
