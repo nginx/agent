@@ -107,23 +107,28 @@ func (r *MetricsSender) Process(msg *core.Message) {
 	}
 }
 func (r *MetricsSender) metricSenderBackoff(cmd *proto.Command_AgentConfig) {
+	log.Infof("metricSenderBackoff in metrics_sender.go with command %v ", cmd)
 	agentConfig := cmd.AgentConfig
 
 	if agentConfig == nil {
-		log.Warnf("cannot update metric reporter client backoff settings with agent config nil, for a pause command %+v", cmd)
+		log.Warnf("update metric reporter client with default backoff settings as agent config nil, for a pause command %+v", cmd)
+		r.reporter.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
 	if agentConfig.GetDetails() == nil {
-		log.Warnf("cannot update metric reporter client backoff settings with agent details nil, for a pause command %+v", cmd)
+		log.Warnf("update metric reporter client with default backoff settings as agent details nil, for a pause command %+v", cmd)
+		r.reporter.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
 	if agentConfig.GetDetails().GetServer() == nil {
-		log.Warnf("cannot update metric reporter client backoff settings with server nil, for a pause command %+v", cmd)
+		log.Warnf("update metric reporter client with default backoff settings as server nil, for a pause command %+v", cmd)
+		r.reporter.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
 	backoffSetting := agentConfig.GetDetails().GetServer().Backoff
 	if backoffSetting == nil {
-		log.Warnf("cannot update metric reporter client backoff settings with backoff settings nil, for a pause command %+v", cmd)
+		log.Warnf("update metric reporter client with default backoff settings as backoff settings nil, for a pause command %+v", cmd)
+		r.reporter.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
 

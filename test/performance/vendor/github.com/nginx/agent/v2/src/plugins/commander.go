@@ -81,25 +81,26 @@ func (c *Commander) Process(msg *core.Message) {
 }
 
 func (c *Commander) agentBackoff(cmd *proto.Command) {
-	if cmd == nil {
-		log.Warn("cannot update commander client backoff settings with pause command nil")
-		return
-	}
+	log.Infof("agentBackoff in commander.go with command %v ", cmd)
+
 	if cmd.GetAgentConfig() == nil {
-		log.Warnf("cannot update commander client backoff settings with agent config nil, for a pause command %+v", cmd)
+		log.Warnf("update commander client with default backoff settings as agent config nil, for a pause command %+v", cmd)
+		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
 	if cmd.GetAgentConfig().GetDetails() == nil {
-		log.Warnf("cannot update commander client backoff settings with agent details nil, for a pause command %+v", cmd)
+		log.Warnf("update commander client with default backoff settings as agent details nil, for a pause command %+v", cmd)
+		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
 	if cmd.GetAgentConfig().GetDetails().GetServer() == nil {
-		log.Warnf("cannot update commander client backoff settings with server nil, for a pause command %+v", cmd)
+		log.Warnf("update commander client with default backoff settings as server nil, for a pause command %+v", cmd)
+		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
 	backoffSetting := cmd.GetAgentConfig().GetDetails().GetServer().Backoff
 	if backoffSetting == nil {
-		log.Warnf("cannot update commander client backoff settings with backoff settings nil, for a pause command %+v", cmd)
+		log.Warnf("update commander client with default backoff settings as backoff settings nil, for a pause command %+v", cmd)
 		return
 	}
 
