@@ -139,3 +139,23 @@ Open a web browser to view the mock control plane at [http://localhost:54790](ht
 - **metrics** - shows a buffer of metrics sent to the management plane (similar to what will be sent back in the REST API)
 
 For more NGINX Agent use cases, refer to the [NGINX Agent SDK examples](https://github.com/nginx/agent/tree/main/sdk/examples).
+
+## Start and Enable Start on Boot
+
+To start the NGINX Agent on `systemd` systems, run the following command:
+
+```
+sudo systemctl start nginx-agent
+```
+
+To enable the NGINX Agent to start on boot, run the following command:
+
+```
+sudo systemctl enable nginx-agent
+```
+
+## Logs 
+
+NGINX Agent uses formatted log files to collect metrics. Expanding log formats and instance counts will also increase the size of the NGINX Agent log files. We recommend adding a separate partition for `/var/log/nginx-agent`. 
+
+{{< important >}}Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.{{< /important >}}
