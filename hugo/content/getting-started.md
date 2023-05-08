@@ -38,12 +38,12 @@ INFO[0000] grpc listening at 54789 # grpc control plane port which NGINX Agent w
 
 ## NGINX Agent Settings
 If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory. 
-```
+```bash
 sudo mkdir /etc/nginx-agent
 sudo cp <project_root_directory>/nginx-agent.conf /etc/nginx-agent/
 ```
 Create the `agent-dynamic.conf` file in the `/var/lib/nginx-agent/` directory, which is required for NGINX Agent to run. 
-```
+```bash
 sudo touch /var/lib/nginx-agent/agent-dynamic.conf
 ```
 
@@ -150,7 +150,7 @@ sudo systemctl start nginx-agent
 
 To enable the NGINX Agent to start on boot, run the following command:
 
-```
+```bash
 sudo systemctl enable nginx-agent
 ```
 
