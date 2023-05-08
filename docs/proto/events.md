@@ -32,7 +32,7 @@ Represents an activity event
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| Message | [string](#string) |  | Activity event message |
+| Message | [string](#string) |  | Activtiy event message |
 | Dimensions | [f5.nginx.agent.sdk.common.Dimension](#f5-nginx-agent-sdk-common-Dimension) | repeated | Array of dimensions |
 
 
