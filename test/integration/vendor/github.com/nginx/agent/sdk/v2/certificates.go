@@ -12,7 +12,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 func LoadCertificates(certPath, keyPath string) (*tls.Certificate, *x509.CertPool, error) {
@@ -33,7 +33,7 @@ func LoadCertificates(certPath, keyPath string) (*tls.Certificate, *x509.CertPoo
 }
 
 func LoadCertificate(certPath string) (*x509.Certificate, error) {
-	fileContents, err := ioutil.ReadFile(certPath)
+	fileContents, err := os.ReadFile(certPath)
 	if err != nil {
 		return nil, err
 	}
