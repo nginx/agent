@@ -144,7 +144,7 @@ For more NGINX Agent use cases, refer to the [NGINX Agent SDK examples](https://
 
 To start the NGINX Agent on `systemd` systems, run the following command:
 
-```
+```bash
 sudo systemctl start nginx-agent
 ```
 
