@@ -23,28 +23,32 @@
                 "Name": "VIOL_ASM_COOKIE_MODIFIED",
                 "Context": "cookie",
                 "ContextData": {
-                    "Name": "TS0144e914_1"
+                    "Name": "Asm Cookie Modified",
+                    "Value": "TS0144e914_1"
                 }
             },
             {
                 "Name": "VIOL_ASM_COOKIE_MODIFIED",
                 "Context": "cookie",
                 "ContextData": {
-                    "Name": "TS0144e914_31"
+                    "Name": "Asm Cookie Modified",
+                    "Value": "TS0144e914_31"
                 }
             },
             {
                 "Name": "VIOL_ASM_COOKIE_MODIFIED",
                 "Context": "cookie",
                 "ContextData": {
-                    "Name": "TS0144e914_1"
+                    "Name": "Asm Cookie Modified",
+                    "Value": "TS0144e914_1"
                 }
             },
             {
                 "Name": "VIOL_ASM_COOKIE_MODIFIED",
                 "Context": "cookie",
                 "ContextData": {
-                    "Name": "TS0144e914_31"
+                    "Name": "Asm Cookie Modified",
+                    "Value": "TS0144e914_31"
                 }
             }
         ]

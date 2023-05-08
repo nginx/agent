@@ -23,6 +23,7 @@
                 "Name": "VIOL_ATTACK_SIGNATURE",
                 "Context": "parameter",
                 "ContextData": {
+                    "Name": "Attack Signature",
                     "Value": "f5paramautotest\u003e"
                 },
                 "Signatures": [
@@ -55,8 +56,8 @@
                 "Name": "VIOL_PARAMETER_EMPTY_VALUE",
                 "Context": "parameter",
                 "ContextData": {
-                    "Name": "a",
-                    "Value": ""
+                    "Name": "Parameter Empty Value",
+                    "Value": "a"
                 }
             },
             {

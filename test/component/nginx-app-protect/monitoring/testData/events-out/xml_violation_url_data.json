@@ -37,7 +37,7 @@
             },
             {
                 "Name": "VIOL_JSON_MALFORMED",
-                "Context": "url",
+                "Context": "uri",
                 "ContextData": {
                     "Name": "uri",
                     "Value": "/"
@@ -55,7 +55,7 @@
                 "Name": "VIOL_URL",
                 "Context": "uri",
                 "ContextData": {
-                    "Name": "",
+                    "Name": "Url",
                     "Value": ""
                 }
             }

@@ -149,7 +149,6 @@ Represents a security violation that is emitted by the agent
 | BotCategory | [string](#string) |  |  |
 | EnforcedBotAnomalies | [string](#string) |  |  |
 | BotSignatureName | [string](#string) |  |  |
-| ViolationContexts | [string](#string) |  |  |
 | ViolationsData | [ViolationData](#f5-nginx-agent-sdk-events-ViolationData) | repeated |  |
 | SystemID | [string](#string) |  |  |
 | InstanceTags | [string](#string) |  |  |
