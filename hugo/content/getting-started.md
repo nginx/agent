@@ -2,7 +2,7 @@
 title: "Getting Started"
 draft: false
 description: "Learn how to configure and run NGINX Agent."
-weight: 300
+weight: 500
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1089"
@@ -14,7 +14,7 @@ Follow these steps to configure and run NGINX Agent and a mock interface ("contr
 
 ## Install NGINX
 
-Follow the steps in the [Installation]({{< relref "/installation.md" >}}) section to download, install, and run NGINX.
+Follow the steps in the [Installation]({{< relref "/installation-github.md" >}}) section to download, install, and run NGINX.
 
 ## Clone the NGINX Agent Repository
 

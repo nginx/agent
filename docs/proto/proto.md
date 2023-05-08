@@ -395,7 +395,7 @@ Represents a command status response
 <a name="f5-nginx-agent-sdk-DataChunk"></a>
 
 ### DataChunk
-Represents a data chunck
+Represents a data chunk
 
 
 | Field | Type | Label | Description |
@@ -1006,7 +1006,7 @@ Represents the host system information
 | os_type | [string](#string) |  | OS type (e.g. freebsd, linux, etc) |
 | uuid | [string](#string) |  | Host UUID |
 | uname | [string](#string) |  | The native cpu architecture queried at runtime, as returned by `uname -a` or empty string in case of error |
-| partitons | [DiskPartition](#f5-nginx-agent-sdk-DiskPartition) | repeated | List of disk partitions |
+| partitions | [DiskPartition](#f5-nginx-agent-sdk-DiskPartition) | repeated | List of disk partitions |
 | network | [Network](#f5-nginx-agent-sdk-Network) |  | Network information |
 | processor | [CpuInfo](#f5-nginx-agent-sdk-CpuInfo) | repeated | List of CPU processor information |
 | release | [ReleaseInfo](#f5-nginx-agent-sdk-ReleaseInfo) |  | Release Information |

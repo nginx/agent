@@ -2,7 +2,7 @@
 title: "Contributing and Support"
 draft: false
 description: "Learn about the NGINX Agent community."
-weight: 600
+weight: 800
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1087"

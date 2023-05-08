@@ -2,10 +2,10 @@
 title: "Technical Specifications"
 draft: false
 description: "This document describes the requirements for NGINX Agent."
-weight: 500
+weight: 700
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-1092"
+docs: "DOCS-1094"
 categories: ["development"]
 doctypes: ["task"]
 ---

@@ -5,7 +5,7 @@ description: "Learn about NGINX Agent and how it works."
 weight: 100
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-1091"
+docs: "DOCS-1093"
 categories: ["configuration"]
 doctypes: ["task"]
 ---

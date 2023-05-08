@@ -1,7 +1,7 @@
 ---
-title: "Installation"
+title: "Installation from GitHub Release"
 draft: false
-description: "Learn how to install NGINX Agent."
+description: "Learn how to install NGINX Agent from GitHub Release."
 weight: 200
 toc: true
 tags: [ "docs" ]
@@ -14,9 +14,9 @@ doctypes: ["task"]
 
 NGINX Agent interfaces directly with an NGINX server process installed on the same system. If you don't have it already, follow these steps to install [NGINX Open Source](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/) or [NGINX Plus](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-plus/). Once installed, ensure the NGINX instance is running.
 
-## Install Agent from Package Files
+## Install NGINX Agent from Package Files
 
-To install NGINX Agent on your system, go to [Releases](https://github.com/nginx/agent/releases) and download the latest package supported by your OS distribution and CPU architecture.
+To install NGINX Agent on your system, go to [GitHub Releases](https://github.com/nginx/agent/releases) and download the latest package supported by your OS distribution and CPU architecture.
 
 Use your system's package manager to install the package. Some examples:
 
@@ -49,23 +49,3 @@ Use your system's package manager to install the package. Some examples:
   ```
   sudo pkg add nginx-agent-<agent-version>.pkg
   ```
-
-## Start and Enable Start on Boot
-
-To start the NGINX Agent on `systemd` systems, run the following command:
-
-```
-sudo systemctl start nginx-agent
-```
-
-To enable the NGINX Agent to start on boot, run the following command:
-
-```
-sudo systemctl enable nginx-agent
-```
-
-## Logs 
-
-NGINX Agent uses formatted log files to collect metrics. Expanding log formats and instance counts will also increase the size of the NGINX Agent log files. We recommend adding a separate partition for `/var/log/nginx-agent`. 
-
-{{< important >}}Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.{{< /important >}}

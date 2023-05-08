@@ -64,8 +64,8 @@ NGINX Agent allows a gRPC connected control system to register a listener for a 
 
 | Event                            | Description                                  |
 | -------------------------------- | -------------------------------------------- |
-| AGENT_START_MESSAGE              | NGINX Agent process started                        |
-| AGENT_STOP_MESSAGE               | NGINX Agent process stopped                        |
+| AGENT_START_MESSAGE              | NGINX Agent process started                  |
+| AGENT_STOP_MESSAGE               | NGINX Agent process stopped                  |
 | NGINX_FOUND_MESSAGE              | NGINX master process detected on system      |
 | NGINX_STOP_MESSAGE               | NGINX master process stopped                 |
 | NGINX_RELOAD_SUCCESS_MESSAGE     | NGINX master process reloaded successfully   |
