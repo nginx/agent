@@ -25,6 +25,11 @@ linters:
     - golint
     - maligned
     - scopelint
+    # deprecated
+    - deadcode
+    - varcheck
+    - structcheck
+    - nosnakecase
 
 
 # Run options

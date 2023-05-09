@@ -1,5 +1,5 @@
-# go-crossplane
-A  Go port of the NGINX config/JSON converter [crossplane](https://github.com/nginxinc/crossplane).
+# nginx-go-crossplane
+A Go port of the NGINX config/JSON converter [crossplane](https://github.com/nginxinc/crossplane).
 
 ## Parse
 This is an example that takes a path to an NGINX config file, converts it to JSON, and prints the result to stdout.
@@ -72,3 +72,13 @@ func main() {
 	fmt.Println(buf.String())
 }
 ```
+
+## Contributing
+
+If you'd like to contribute to the project, please read our [Contributing guide](docs/CONTRIBUTING.md).
+
+## License
+
+[Apache License, Version 2.0](https://github.com/nginxinc/nginx-go-crossplane/blob/main/LICENSE)
+
+&copy; [F5 Networks, Inc.](https://www.f5.com/) 2022

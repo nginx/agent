@@ -10,7 +10,6 @@ package backoff
 import (
 	"context"
 	"errors"
-
 	"testing"
 	"time"
 

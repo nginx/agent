@@ -18,10 +18,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	_ metrics.Collector = (*NginxCollector)(nil)
-)
-
 type NginxCollector struct {
 	sources       []metrics.NginxSource
 	buf           chan *metrics.StatsEntityWrapper
@@ -129,4 +125,10 @@ func (c *NginxCollector) Stop() {
 
 func (c *NginxCollector) GetNginxId() string {
 	return c.dimensions.NginxId
+}
+
+func (c *NginxCollector) UpdateSources() {
+	for _, nginxSource := range c.sources {
+		nginxSource.Update(c.dimensions, c.collectorConf)
+	}
 }

@@ -80,7 +80,7 @@ func TestNAPMonitoring(t *testing.T) {
 		SyslogIP:            "127.0.0.1",
 		SyslogPort:          EphemeralPort(),
 		ReportInterval:      time.Minute,
-		// Since the minimum report interval is one minute, MAP monitor won't have enough time within the test timeframe
+		// Since the minimum report interval is one minute, NAP monitor won't have enough time within the test timeframe
 		// to send the report. Count of attacks = count of files under ./testData/logs-in/
 		ReportCount: len(files),
 	}
