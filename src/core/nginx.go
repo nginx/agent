@@ -810,14 +810,18 @@ func runtimeFromConfigure(configure []string) []string {
 // AccessLogs returns a list of access logs in the config
 func AccessLogs(p *proto.NginxConfig) map[string]string {
 	var found = make(map[string]string)
+
 	for _, accessLog := range p.GetAccessLogs().GetAccessLog() {
-		// check if the access log is readable or not
-		if accessLog.GetReadable() && accessLog.GetName() != "off" {
+		if accessLog.GetName() == "off" {
+			continue
+		}
+
+		if accessLog.GetReadable() {
 			name := strings.Split(accessLog.GetName(), " ")[0]
 			format := accessLog.GetFormat()
 			found[name] = format
 		} else {
-			log.Warnf("NGINX Access log %s is not readable or is disabled. Please make it readable and enabled in order for NGINX metrics to be collected.", accessLog.GetName())
+			log.Warnf("NGINX Access log %s is not readable. Please make it readable in order for NGINX metrics to be collected.", accessLog.GetName())
 		}
 	}
 
@@ -827,14 +831,14 @@ func AccessLogs(p *proto.NginxConfig) map[string]string {
 // ErrorLogs returns a list of error logs in the config
 func ErrorLogs(p *proto.NginxConfig) map[string]string {
 	var found = make(map[string]string)
+
 	for _, errorLog := range p.GetErrorLogs().GetErrorLog() {
-		// check if the error log is readable or not
 		if errorLog.GetReadable() {
 			name := strings.Split(errorLog.GetName(), " ")[0]
 			// In the future, different error log formats will be supported
 			found[name] = ""
 		} else {
-			log.Warnf("NGINX Error log %s is not readable or is disabled. Please make it readable and enabled in order for NGINX metrics to be collected.", errorLog.GetName())
+			log.Warnf("NGINX Error log %s is not readable. Please make it readable in order for NGINX metrics to be collected.", errorLog.GetName())
 		}
 	}
 

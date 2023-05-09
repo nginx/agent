@@ -10,7 +10,6 @@ package sdk
 import (
 	"context"
 	"errors"
-
 	"testing"
 	"time"
 
