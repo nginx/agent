@@ -180,8 +180,6 @@ func GetConfig(clientId string) (*Config, error) {
 		InstanceGroup:         Viper.GetString(InstanceGroupKey),
 	}
 
-	log.Info(config.Features)
-
 	for _, dir := range strings.Split(config.ConfigDirs, ":") {
 		if dir != "" {
 			config.AllowedDirectoriesMap[dir] = struct{}{}
