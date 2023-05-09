@@ -5,7 +5,7 @@ description: "Learn how to install NGINX Agent from NGINX Plus repository."
 weight: 400
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-1092"
+docs: "DOCS-1217"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
@@ -16,7 +16,7 @@ NGINX Agent interfaces directly with an NGINX server process installed on the sa
 
 ## Install NGINX Agent from NGINX Plus Repository
 
-First ensure that you are running a supported distribution and architecture: [technical specifications](../technical-specifications/)
+First, ensure that you are running a supported distribution and architecture: [technical specifications](../technical-specifications/)
 
 - [RHEL, CentOS, Rocky Linux, AlmaLinux and Oracle Linux](#rhel-centos-rocky-linux-almalinux-and-oracle-linux)
 - [Ubuntu](#ubuntu)
@@ -158,7 +158,7 @@ First ensure that you are running a supported distribution and architecture: [te
     sudo zypper addrepo --refresh --check \
         'https://pkgs.nginx.com/nginx-agent/sles/$releasever_major?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer' nginx-agent
     ```
-  - Next, import an official nginx signing key so `zypper`/`rpm` could verify the packages authenticity. Fetch the key:
+  - Next, import an official NGINX signing key so `zypper`/`rpm` can verify the package's authenticity. Fetch the key:
     ```
     curl -o /tmp/nginx_signing.key https://nginx.org/keys/nginx_signing.key
     ```
@@ -211,7 +211,7 @@ First ensure that you are running a supported distribution and architecture: [te
         | sudo tee -a /etc/apk/repositories
     ```
 
-  - Next, import an official nginx signing key so apk could verify the packages authenticity. Fetch the key:
+  - Next, import an official NGINX signing key so apk can verify the package's authenticity. Fetch the key:
     ```
     curl -o /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub
     ```

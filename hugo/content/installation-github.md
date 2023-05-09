@@ -1,7 +1,7 @@
 ---
 title: "Installation from GitHub Release"
 draft: false
-description: "Learn how to install NGINX Agent from GitHub Release."
+description: "Learn how to install NGINX Agent from a GitHub Release."
 weight: 200
 toc: true
 tags: [ "docs" ]
