@@ -256,6 +256,7 @@ func TestMetricsDisabled(t *testing.T) {
 	response, err := client.R().EnableTrace().Get(url)
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusNotFound, response.StatusCode())
+	agentAPI.Close()
 }
 
 func TestConfigApply(t *testing.T) {
@@ -374,7 +375,7 @@ func TestConfigApply(t *testing.T) {
 			client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
 			go func() {
-				time.Sleep(2 * time.Second)
+				time.Sleep(1 * time.Millisecond)
 				message := core.NewMessage(core.AgentAPIConfigApplyResponse, tt.agentStatus)
 				agentAPI.Process(message)
 			}()
