@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	// "io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
