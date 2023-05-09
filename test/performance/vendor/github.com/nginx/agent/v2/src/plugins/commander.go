@@ -81,7 +81,7 @@ func (c *Commander) Process(msg *core.Message) {
 }
 
 func (c *Commander) agentBackoff(cmd *proto.Command) {
-	log.Infof("agentBackoff in commander.go with command %v ", cmd)
+	log.Debugf("agentBackoff in commander.go with command %v ", cmd)
 
 	if cmd.GetAgentConfig() == nil {
 		log.Warnf("update commander client with default backoff settings as agent config nil, for a pause command %+v", cmd)
@@ -101,6 +101,7 @@ func (c *Commander) agentBackoff(cmd *proto.Command) {
 	backoffSetting := cmd.GetAgentConfig().GetDetails().GetServer().Backoff
 	if backoffSetting == nil {
 		log.Warnf("update commander client with default backoff settings as backoff settings nil, for a pause command %+v", cmd)
+		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
 
@@ -121,7 +122,7 @@ func (c *Commander) agentBackoff(cmd *proto.Command) {
 		Multiplier:      multiplier,
 		Jitter:          jitter,
 	}
-	log.Infof("update commander client backoff settings to %+v, for a pause command %+v", cBackoff, cmd)
+	log.Debugf("update commander client backoff settings to %+v, for a pause command %+v", cBackoff, cmd)
 	c.cmdr.WithBackoffSettings(cBackoff)
 }
 

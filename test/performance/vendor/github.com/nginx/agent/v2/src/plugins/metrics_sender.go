@@ -107,7 +107,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 	}
 }
 func (r *MetricsSender) metricSenderBackoff(cmd *proto.Command_AgentConfig) {
-	log.Infof("metricSenderBackoff in metrics_sender.go with command %v ", cmd)
+	log.Debugf("metricSenderBackoff in metrics_sender.go with command %v ", cmd)
 	agentConfig := cmd.AgentConfig
 
 	if agentConfig == nil {
@@ -149,7 +149,7 @@ func (r *MetricsSender) metricSenderBackoff(cmd *proto.Command_AgentConfig) {
 		Multiplier:      multiplier,
 		Jitter:          jitter,
 	}
-	log.Infof("update metric reporter client backoff settings to %+v, for a pause command %+v", cBackoff, cmd)
+	log.Debugf("update metric reporter client backoff settings to %+v, for a pause command %+v", cBackoff, cmd)
 	r.reporter.WithBackoffSettings(cBackoff)
 }
 
