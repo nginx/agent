@@ -259,7 +259,6 @@ func (a *AgentAPI) createHttpServer() {
 //
 //	200: MetricsResponse
 func (a *AgentAPI) getPrometheusHandler() http.Handler {
-	// TODO: how to return error code when metrics feature is disabled ???
 	registerer := prometheus.DefaultRegisterer
 	gatherer := prometheus.DefaultGatherer
 
