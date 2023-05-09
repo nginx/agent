@@ -265,16 +265,16 @@ func TestConfigApply(t *testing.T) {
 	conf := &proto.NginxConfig{}
 
 	tests := []struct {
-		name               string
-		configUpdate       string
-		expectedStatus     int
-		agentConf          *config.Config
-		agentStatus        *proto.Command_NginxConfigResponse
+		name           string
+		configUpdate   string
+		expectedStatus int
+		agentConf      *config.Config
+		agentStatus    *proto.Command_NginxConfigResponse
 	}{
 		{
-			name:               "successful config apply response",
-			configUpdate:       tutils.GetDetailsNginxOssConfig(),
-			expectedStatus:     http.StatusOK,
+			name:           "successful config apply response",
+			configUpdate:   tutils.GetDetailsNginxOssConfig(),
+			expectedStatus: http.StatusOK,
 			agentConf: &config.Config{
 				AgentAPI: config.AgentAPI{
 					Port: port,
@@ -296,9 +296,9 @@ func TestConfigApply(t *testing.T) {
 			},
 		},
 		{
-			name:               "failed config apply disabled",
-			configUpdate:       tutils.GetDetailsNginxOssConfig(),
-			expectedStatus:     http.StatusNotFound,
+			name:           "failed config apply disabled",
+			configUpdate:   tutils.GetDetailsNginxOssConfig(),
+			expectedStatus: http.StatusNotFound,
 			agentConf: &config.Config{
 				AgentAPI: config.AgentAPI{
 					Port: port,
@@ -319,9 +319,9 @@ func TestConfigApply(t *testing.T) {
 			},
 		},
 		{
-			name:               "failed config apply",
-			configUpdate:       tutils.GetDetailsNginxOssConfig(),
-			expectedStatus:     http.StatusBadRequest,
+			name:           "failed config apply",
+			configUpdate:   tutils.GetDetailsNginxOssConfig(),
+			expectedStatus: http.StatusBadRequest,
 			agentConf: &config.Config{
 				AgentAPI: config.AgentAPI{
 					Port: port,
