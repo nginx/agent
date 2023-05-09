@@ -27,19 +27,22 @@ First, ensure that you are running a supported distribution and architecture: [t
 
 ### RHEL, CentOS, Rocky Linux, AlmaLinux and Oracle Linux
   - Create the `/etc/ssl/nginx` directory:
-    ```
+
+    ```bash
     sudo mkdir -p /etc/ssl/nginx
     ```
 
   - Log in to [MyF5 Customer Portal](https://account.f5.com/myf5/) and download your `nginx-repo.crt` and `nginx-repo.key` files.
 
   - Copy the files to the `/etc/ssl/nginx/` directory:
-    ```
+
+    ```bash
     sudo cp nginx-repo.crt nginx-repo.key /etc/ssl/nginx/
     ```
 
   - Install the prerequisites:
-    ```
+
+    ```bash
     sudo yum install yum-utils procps
     ```
 
@@ -55,26 +58,31 @@ First, ensure that you are running a supported distribution and architecture: [t
     ```
 
   - To install nginx agent, run the following command:
-    ```
+
+    ```bash
     sudo yum install nginx-agent
     ```
+
     When prompted to accept the GPG key, verify that the fingerprint matches `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, and if so, accept it.
 
 ### Ubuntu
   - Create the `/etc/ssl/nginx` directory:
-    ```
+
+    ```bash
     sudo mkdir -p /etc/ssl/nginx
     ```
 
   - Log in to [MyF5 Customer Portal](https://account.f5.com/myf5/) and download your `nginx-repo.crt` and `nginx-repo.key` files.
 
   - Copy the files to the `/etc/ssl/nginx/` directory:
-    ```
+
+    ```bash
     sudo cp nginx-repo.crt nginx-repo.key /etc/ssl/nginx/
     ```
 
   - Install the prerequisites:
-    ```
+
+    ```bash
     sudo apt-get install apt-transport-https lsb-release ca-certificates wget gnupg2 ubuntu-keyring
     ```
 
@@ -87,31 +95,36 @@ First, ensure that you are running a supported distribution and architecture: [t
     ```
 
   - Add the `nginx-agent` repository:
-    ```
+
+    ```bash
     echo "deb https://pkgs.nginx.com/nginx-agent/ubuntu/ `lsb_release -cs` agent" \
       | sudo tee /etc/apt/sources.list.d/nginx-agent.list
     ```
 
 ### Debian
   - Create the `/etc/ssl/nginx` directory:
-    ```
+
+    ```bash
     sudo mkdir -p /etc/ssl/nginx
     ```
 
   - Log in to [MyF5 Customer Portal](https://account.f5.com/myf5/) and download your `nginx-repo.crt` and `nginx-repo.key` files.
 
   - Copy the files to the `/etc/ssl/nginx/` directory:
-    ```
+
+    ```bash
     sudo cp nginx-repo.crt nginx-repo.key /etc/ssl/nginx/
     ```
 
   - Install the prerequisites:
-    ```
+
+    ```bash
     sudo apt install curl gnupg2 ca-certificates lsb-release debian-archive-keyring
     ```
 
   - Add the `nginx-agent` repository:
-    ```
+
+    ```bash
     echo "deb https://pkgs.nginx.com/nginx-agent/debian/ `lsb_release -cs` agent" \
       | sudo tee /etc/apt/sources.list.d/nginx-agent.list
     ```
@@ -125,46 +138,55 @@ First, ensure that you are running a supported distribution and architecture: [t
     ```
 
   - To install `nginx-agent`, run the following commands:
-    ```
+
+    ```bash
     sudo apt update
     sudo apt install nginx-agent
     ```
 
 ### SLES
   - Create the `/etc/ssl/nginx` directory:
-    ```
+
+    ```bash
     sudo mkdir -p /etc/ssl/nginx
     ```
 
   - Log in to [MyF5 Customer Portal](https://account.f5.com/myf5/) and download your `nginx-repo.crt` and `nginx-repo.key` files.
 
   - Copy the files to the `/etc/ssl/nginx/` directory:
-    ```
+
+    ```bash
     sudo cp nginx-repo.crt nginx-repo.key /etc/ssl/nginx/
     ```
 
   - Create a file bundle of the certificate and key:
-    ```
+
+    ```bash
     cat /etc/ssl/nginx/nginx-repo.crt /etc/ssl/nginx/nginx-repo.key > /etc/ssl/nginx/nginx-repo-bundle.crt
     ```
 
   - Install the prerequisites:
-    ```
+
+    ```bash
     sudo zypper install curl ca-certificates gpg2 gawk
     ```
 
   - To set up the zypper repository for `nginx-agent` packages, run the following command:
-    ```
+
+    ```bash
     sudo zypper addrepo --refresh --check \
         'https://pkgs.nginx.com/nginx-agent/sles/$releasever_major?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer' nginx-agent
     ```
+
   - Next, import an official NGINX signing key so `zypper`/`rpm` can verify the package's authenticity. Fetch the key:
-    ```
+
+    ```bash
     curl -o /tmp/nginx_signing.key https://nginx.org/keys/nginx_signing.key
     ```
 
   - Verify that the downloaded file contains the proper key:
-    ```
+
+    ```bash
     gpg --with-fingerprint /tmp/nginx_signing.key
     ```
 
@@ -176,11 +198,14 @@ First, ensure that you are running a supported distribution and architecture: [t
     ```
 
   - Finally, import the key to the rpm database:
-    ```
+
+    ```bash
     sudo rpmkeys --import /tmp/nginx_signing.key
+    ```
 
   - To install `nginx-agent`, run the following command:
-    ```
+
+    ```bash
     sudo zypper install nginx-agent
     ```
 
@@ -188,21 +213,21 @@ First, ensure that you are running a supported distribution and architecture: [t
   - Log in to [MyF5 Customer Portal](https://account.f5.com/myf5/) and download your `nginx-repo.crt` and `nginx-repo.key` files.
 
   - Copy the files to the `/etc/apk/` directory:
-    ```
-    sudo cp nginx-repo.crt nginx-repo.key /etc/apk/
-    ```
-    <!-- ```
+
+    ```sh
     sudo cp nginx-repo.key /etc/apk/cert.key
     sudo cp nginx-repo.crt /etc/apk/cert.pem
-    ``` -->
+    ```
 
   - Install the prerequisites:
-    ```
+
+    ```sh
     sudo apk add openssl curl ca-certificates
     ```
 
   - To set up the apk repository for `nginx-agent` packages, run the following command:
-    ```
+
+    ```sh
     printf "%s%s%s%s\n" \
         "@nginx-agent " \
         "https://pkgs.nginx.com/nginx-agent/alpine/v" \
@@ -212,16 +237,19 @@ First, ensure that you are running a supported distribution and architecture: [t
     ```
 
   - Next, import an official NGINX signing key so apk can verify the package's authenticity. Fetch the key:
-    ```
+
+    ```sh
     curl -o /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub
     ```
 
   - Verify that downloaded file contains the proper key:
-    ```
+
+    ```sh
     openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout
     ```
 
     The output should contain the following modulus:
+ 
     ```
     Public-Key: (2048 bit)
     Modulus:
@@ -247,34 +275,40 @@ First, ensure that you are running a supported distribution and architecture: [t
     ```
 
   - Finally, move the key to apk trusted keys storage:
-    ```
+
+    ```sh
     sudo mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/
     ```
 
   - To install nginx-agent, run the following command:
-    ```
+
+    ```sh
     sudo apk add nginx-agent@nginx-agent
     ```
 
 ### Amazon Linux
   - Create the `/etc/ssl/nginx` directory:
-    ```
+
+    ```bash
     sudo mkdir -p /etc/ssl/nginx
     ```
 
   - Log in to [MyF5 Customer Portal](https://account.f5.com/myf5/) and download your `nginx-repo.crt` and `nginx-repo.key` files.
 
   - Copy the `nginx-repo.crt` and `nginx-repo.key` files to the `/etc/ssl/nginx/` directory:
-    ```
+
+    ```bash
     sudo cp nginx-repo.crt nginx-repo.key /etc/ssl/nginx/
     ```
 
   - Install the prerequisites:
-    ```
+
+    ```bash
     sudo yum install yum-utils procps ca-certificates
     ```
 
   - To set up the yum repository for Amazon Linux 2, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
+
     ```
     [nginx-agent]
     name=nginx-agent repo
@@ -286,7 +320,8 @@ First, ensure that you are running a supported distribution and architecture: [t
     ```
 
   - To install `nginx-agent`, run the following command:
-    ```
+
+    ```bash
     sudo yum install nginx-agent
     ```
 
