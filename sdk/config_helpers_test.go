@@ -1157,19 +1157,14 @@ root foo/bar;`,
 			auxWriter, err := zip.NewWriter(filepath.Dir(f.Name()))
 			require.NoError(t, err)
 
-			seen := make(map[string]struct{})
 			allowedDirectories := make(map[string]struct{})
 			allowedDirectories[f.Name()] = struct{}{}
-			directoryPathMap := newDirectoryMap()
 
 			reader, err := os.Open(f.Name())
 			require.NoError(t, err)
 			defer reader.Close()
 
 			err = auxWriter.Add(f.Name(), fs.FileMode(os.O_RDWR), reader)
-			assert.NoError(t, err)
-
-			err = updateNginxConfigFileWithRoot(auxWriter, f.Name(), seen, allowedDirectories, directoryPathMap)
 			assert.NoError(t, err)
 
 			aux, err := auxWriter.Proto()

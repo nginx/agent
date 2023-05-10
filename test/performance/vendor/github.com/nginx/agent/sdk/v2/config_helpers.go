@@ -239,10 +239,6 @@ func updateNginxConfigFileConfig(
 				if len(directive.Args) >= 2 {
 					formatMap[directive.Args[0]] = strings.Join(directive.Args[1:], "")
 				}
-			case "root":
-				if err := updateNginxConfigFileWithRoot(aux, directive.Args[0], seen, allowedDirectories, directoryMap); err != nil {
-					return true, err
-				}
 			case "ssl_certificate", "proxy_ssl_certificate", "ssl_trusted_certificate":
 				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories); err != nil {
 					return true, err
@@ -449,65 +445,6 @@ func updateNginxConfigWithErrorLogPath(
 	}
 	nginxConfig.ErrorLogs.ErrorLog = append(nginxConfig.ErrorLogs.ErrorLog, el)
 	seen[file] = struct{}{}
-}
-
-// root directive, so we slurp up all the files in the directory
-func updateNginxConfigFileWithRoot(
-	aux *zip.Writer,
-	dir string,
-	seen map[string]struct{},
-	allowedDirectories map[string]struct{},
-	directoryMap *DirectoryMap,
-) error {
-	if _, ok := seen[dir]; ok {
-		return nil
-	}
-	seen[dir] = struct{}{}
-	if !allowedPath(dir, allowedDirectories) {
-		log.Debugf("Directory %s, is not in the allowed directory list so it will be excluded. Please add the directory to config_dirs in nginx-agent.conf", dir)
-		return nil
-	}
-
-	return filepath.WalkDir(dir,
-		func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if _, ok := seen[path]; ok {
-				return nil
-			}
-			seen[path] = struct{}{}
-
-			if d.IsDir() {
-				if err := directoryMap.addDirectory(path); err != nil {
-					return err
-				}
-				return nil
-			}
-
-			var info fs.FileInfo
-			info, err = d.Info()
-			if err != nil {
-				return err
-			}
-			reader, err := os.Open(path)
-			if err != nil {
-				return fmt.Errorf("could read file(%s): %s", path, err)
-			}
-			defer reader.Close()
-
-			if err := directoryMap.appendFile(filepath.Dir(path), info); err != nil {
-				return err
-			}
-
-			if err = aux.Add(path, info.Mode(), reader); err != nil {
-				return fmt.Errorf("adding auxillary file error: %s", err)
-			}
-
-			return nil
-		},
-	)
 }
 
 func updateNginxConfigFileWithAuxFile(
