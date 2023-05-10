@@ -28,7 +28,7 @@ NGINX Agent and the Mock Control Plane are written in Go. Go 1.19 or higher is r
 
 Start the mock control plane by running the following command from the `agent` source code root directory:
 
-```bash
+```shell
 go run sdk/examples/server.go
 
 # Command Output
@@ -37,13 +37,17 @@ INFO[0000] grpc listening at 54789 # grpc control plane port which NGINX Agent w
 ```
 
 ## NGINX Agent Settings
+
 If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory. 
-```bash
+
+```shell
 sudo mkdir /etc/nginx-agent
 sudo cp <project_root_directory>/nginx-agent.conf /etc/nginx-agent/
 ```
+
 Create the `agent-dynamic.conf` file in the `/var/lib/nginx-agent/` directory, which is required for NGINX Agent to run. 
-```bash
+
+```shell
 sudo touch /var/lib/nginx-agent/agent-dynamic.conf
 ```
 
@@ -65,6 +69,7 @@ tls:
 For more information, see [Agent Protocol Definitions and Documentation](https://github.com/nginx/agent/tree/main/docs/proto/README.md)
 
 ### Enable the REST interface
+
 The NGINX Agent REST interface can be exposed by validating the following lines in the `/etc/nginx-agent/nginx-agent.conf` file are present:
 
 ```yaml
@@ -79,15 +84,17 @@ api:
 The mock control plane can use either gRPC or REST protocols to communicate with NGINX Agent.
 
 ## Launch Swagger UI
+
 Swagger UI requires goswagger be installed. See [instructions for installing goswagger](https://goswagger.io/install.html) for additional help.
 
 To launch the Swagger UI for the REST interface run the following command
 
-```bash
+```shell
 make launch-swagger-ui
 ```
 
 ## Extensions
+
 An extension is a piece of code, not critical to the main functionality that the NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
 
 To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`. 
@@ -104,7 +111,7 @@ If already running, restart NGINX Agent to apply the new configuration. Alternat
 
 Open another terminal window and start the NGINX Agent. Issue the following command from the `agent` source code root directory.
 
-```bash
+```shell
 sudo make run
 
 # Command Output snippet
@@ -144,13 +151,13 @@ For more NGINX Agent use cases, refer to the [NGINX Agent SDK examples](https://
 
 To start the NGINX Agent on `systemd` systems, run the following command:
 
-```bash
+```shell
 sudo systemctl start nginx-agent
 ```
 
 To enable the NGINX Agent to start on boot, run the following command:
 
-```bash
+```shell
 sudo systemctl enable nginx-agent
 ```
 
