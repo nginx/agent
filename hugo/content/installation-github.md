@@ -22,30 +22,30 @@ Use your system's package manager to install the package. Some examples:
 
 - Debian, Ubuntu, and other distributions using the `dpkg` package manager.
 
-  ```
+  ```shell
   sudo dpkg -i nginx-agent-<agent-version>.deb
   ```
 
 - RHEL, CentOS RHEL, Amazon Linux, Oracle Linux, and other distributions using the `yum` package manager
   
-  ```
+  ```shell
   sudo yum localinstall nginx-agent-<agent-version>.rpm
   ```
 
 - RHEL and other distributions using the `rpm` package manager
 
-  ```
+  ```shell
   sudo rpm -i nginx-agent-<agent-version>.rpm
   ```
 
 - Alpine Linux
 
-  ```
+  ```shell
   sudo apk add nginx-agent-<agent-version>.apk
   ```
 
 - FreeBSD
  
-  ```
+  ```shell
   sudo pkg add nginx-agent-<agent-version>.pkg
   ```

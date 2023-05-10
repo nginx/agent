@@ -2,7 +2,7 @@
 title: "Development Environment Setup"
 draft: false
 description: "Learn how to setup a Development Environment for NGINX Agent."
-weight: 600
+weight: 700
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1088"

@@ -10,31 +10,32 @@ categories: ["configuration"]
 doctypes: ["task"]
 ---
 
-## Install NGINX
 
-NGINX Agent interfaces directly with an NGINX server process installed on the same system. If you don't have it already, follow these steps to install [NGINX Open Source](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/). Once installed, ensure the NGINX instance is running.
+## Prerequisites
+- NGINX installed. Once installed, ensure it is running. If you don't have it installed already, follow these steps to install [NGINX](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/)
+- A [supported operating system and architecture](../technical-specifications/#supported-distributions)
+- `root` privilege
 
-## Install NGINX Agent from NGINX Repository
+## Configure NGINX OSS Repository for installing NGINX Agent
 
-First, ensure that you are running a supported distribution and architecture: [technical specifications](../technical-specifications/)
+Before you install NGINX Agent for the first time on your system, you need to set up the `nginx-agent` packages repository. Afterward, you can install and update NGINX Agent from the repository.
 
-Before you install NGINX Agent for the first time on your system, you need to set up the nginx-agent packages repository. Afterward, you can install and update NGINX Agent from the repository.
+- [Installing NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux and Oracle Linux](#installing-nginx-agent-on-rhel-centos-rocky-linux-almalinux-and-oracle-linux)
+- [Installing NGINX Agent on Ubuntu](#installing-nginx-agent-on-ubuntu)
+- [Installing NGINX Agent on Debian](#installing-nginx-agent-on-debian)
+- [Installing NGINX Agent on SLES](#installing-nginx-agent-on-sles)
+- [Installing NGINX Agent on Alpine Linux](#installing-nginx-agent-on-alpine-linux)
+- [Installing NGINX Agent on Amazon Linux](#installing-nginx-agent-on-amazon-linux)
 
-- [RHEL, CentOS, Rocky Linux, AlmaLinux and Oracle Linux](#rhel-centos-rocky-linux-almalinux-and-oracle-linux)
-- [Ubuntu](#ubuntu)
-- [Debian](#debian)
-- [SLES](#sles)
-- [Alpine Linux](#alpine-linux)
-- [Amazon Linux](#amazon-linux)
+### Installing NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux and Oracle Linux
 
-### RHEL, CentOS, Rocky Linux, AlmaLinux and Oracle Linux
-  - Install the prerequisites:
+1. Install the prerequisites:
 
-    ```bash
+    ```shell
     sudo yum install yum-utils
     ```
 
-  - To set up the yum repository, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
+1. To set up the yum repository, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
 
     ```
     [nginx-agent]
@@ -46,94 +47,148 @@ Before you install NGINX Agent for the first time on your system, you need to se
     module_hotfixes=true
     ```
 
-  - To install nginx agent, run the following command:
+1. To install `nginx-agent`, run the following command:
 
-    ```bash
+    ```shell
     sudo yum install nginx-agent
     ```
 
     When prompted to accept the GPG key, verify that the fingerprint matches `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, and if so, accept it.
 
-### Ubuntu
-  - Add the nginx agent repository:
+### Installing NGINX Agent on Ubuntu
 
-    ```bash
-    echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] \
-      http://packages.nginx.org/nginx-agent/ubuntu/ `lsb_release -cs` agent" \
-      | sudo tee /etc/apt/sources.list.d/nginx-agent.list
+1. Install the prerequisites:
+
+    ```shell
+    sudo apt install curl gnupg2 ca-certificates lsb-release ubuntu-keyring
     ```
 
-### Debian
-  - Install the prerequisites:
+1. Import an official nginx signing key so apt could verify the packages authenticity. Fetch the key:
 
-    ```bash
-    sudo apt install curl gnupg2 ca-certificates lsb-release debian-archive-keyring
-    ```
-
-  - Import an official nginx signing key so apt could verify the packages authenticity. Fetch the key:
-
-    ```bash
+    ```shell
     curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
         | sudo tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null
     ```
 
-  - Verify that the downloaded file contains the proper key:
+1. Verify that the downloaded file contains the proper key:
 
-    ```bash
-    gpg --dry-run --quiet --no-keyring \
-      --import --import-options import-show /usr/share/keyrings/nginx-archive-keyring.gpg
+    ```shell
+    gpg --dry-run --quiet --no-keyring --import --import-options import-show /usr/share/keyrings/nginx-archive-keyring.gpg
     ```
 
-    The output should contain the full fingerprint 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 as follows:
+    The output should contain the full fingerprint `573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62` as follows:
 
     ```
     pub   rsa2048 2011-08-19 [SC] [expires: 2024-06-14]
           573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
     uid                      nginx signing key <signing-key@nginx.com>
     ```
+
     {{< important >}}If the fingerprint is different, remove the file.{{< /important >}}
 
-  - Add the `nginx-agent` repository:
+1. Add the nginx agent repository:
 
-    ```bash
+    ```shell
     echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] \
-      http://packages.nginx.org/nginx-agent/debian/ `lsb_release -cs` agent" \ | sudo tee /etc/apt/sources.list.d/nginx-agent.list
+      http://packages.nginx.org/nginx-agent/ubuntu/ `lsb_release -cs` agent" \
+      | sudo tee /etc/apt/sources.list.d/nginx-agent.list
     ```
 
-  - To install `nginx-agent`, run the following commands:
+1. To install `nginx-agent`, run the following commands:
 
-    ```bash
+    ```shell
     sudo apt update
     sudo apt install nginx-agent
     ```
 
-### SLES
-  - Install the prerequisites:
+1. Verify the installation:
 
-    ```bash
+    ```shell
+    sudo nginx-agent -v
+    ```
+
+
+### Installing NGINX Agent on Debian
+
+1. Install the prerequisites:
+
+    ```shell
+    sudo apt install curl gnupg2 ca-certificates lsb-release debian-archive-keyring
+    ```
+
+1. Import an official nginx signing key so apt could verify the packages authenticity. Fetch the key:
+
+    ```shell
+    curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
+        | sudo tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null
+    ```
+
+1. Verify that the downloaded file contains the proper key:
+
+    ```shell
+    gpg --dry-run --quiet --no-keyring \
+      --import --import-options import-show /usr/share/keyrings/nginx-archive-keyring.gpg
+    ```
+
+    The output should contain the full fingerprint `573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62` as follows:
+
+    ```
+    pub   rsa2048 2011-08-19 [SC] [expires: 2024-06-14]
+          573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
+    uid                      nginx signing key <signing-key@nginx.com>
+    ```
+
+    {{< important >}}If the fingerprint is different, remove the file.{{< /important >}}
+
+1. Add the `nginx-agent` repository:
+
+    ```shell
+    echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] \
+      http://packages.nginx.org/nginx-agent/debian/ `lsb_release -cs` agent" \ | sudo tee /etc/apt/sources.list.d/nginx-agent.list
+    ```
+
+1. To install `nginx-agent`, run the following commands:
+
+    ```shell
+    sudo apt update
+    sudo apt install nginx-agent
+    ```
+
+1. Verify the installation:
+
+    ```shell
+    sudo nginx-agent -v
+    ```
+
+
+### Installing NGINX Agent on SLES
+
+1. Install the prerequisites:
+
+    ```shell
     sudo zypper install curl ca-certificates gpg2
     ```
 
-  - To set up the zypper repository for `nginx-agent` packages, run the following command:
+1. To set up the zypper repository for `nginx-agent` packages, run the following command:
   
-    ```bash
+    ```shell
     sudo zypper addrepo --gpgcheck --refresh --check \
         'http://packages.nginx.org/nginx-agent/sles/$releasever_major' nginx-agent
     ```
 
-  - Next, import an official NGINX signing key so `zypper`/`rpm` can verify the package's authenticity. Fetch the key:
+1. Next, import an official NGINX signing key so `zypper`/`rpm` can verify the package's authenticity. Fetch the key:
 
-    ```bash
+    ```shell
     curl -o /tmp/nginx_signing.key https://nginx.org/keys/nginx_signing.key
     ```
 
-  - Verify that the downloaded file contains the proper key:
+1. Verify that the downloaded file contains the proper key:
 
-    ```bash
+    ```shell
     gpg --with-fingerprint /tmp/nginx_signing.key
     ```
 
-  - The output should contain the full fingerprint `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62` as follows:
+1. The output should contain the full fingerprint `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62` as follows:
 
     ```
     pub  2048R/7BD9BF62 2011-08-19 [expires: 2024-06-14]
@@ -141,28 +196,35 @@ Before you install NGINX Agent for the first time on your system, you need to se
     uid nginx signing key <signing-key@nginx.com>
     ```
 
-  - Finally, import the key to the rpm database:
+1. Finally, import the key to the rpm database:
 
-    ```bash
+    ```shell
     sudo rpmkeys --import /tmp/nginx_signing.key
     ```
 
-  - To install `nginx-agent`, run the following command:
+1. To install `nginx-agent`, run the following command:
 
-    ```bash
+    ```shell
     sudo zypper install nginx-agent
     ```
 
-### Alpine Linux
-  - Install the prerequisites:
+1. Verify the installation:
 
-    ```sh
+    ```shell
+    sudo nginx-agent -v
+    ```
+
+### Installing NGINX Agent on Alpine Linux
+
+1. Install the prerequisites:
+
+    ```shell
     sudo apk add openssl curl ca-certificates
     ```
 
-  - To set up the apk repository for `nginx-agent` packages, run the following command:
+1. To set up the apk repository for `nginx-agent` packages, run the following command:
 
-    ```sh
+    ```shell
     printf "%s%s%s%s\n" \
         "@nginx-agent " \
         "http://packages.nginx.org/nginx-agent/alpine/v" \
@@ -171,15 +233,15 @@ Before you install NGINX Agent for the first time on your system, you need to se
         | sudo tee -a /etc/apk/repositories
     ```
 
-  - Next, import an official NGINX signing key so apk can verify the package's authenticity. Fetch the key:
+1. Next, import an official NGINX signing key so apk can verify the package's authenticity. Fetch the key:
 
-    ```sh
+    ```shell
     curl -o /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub
     ```
 
-  - Verify that downloaded file contains the proper key:
+1. Verify that downloaded file contains the proper key:
 
-    ```sh
+    ```shell
     openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout
     ```
 
@@ -209,26 +271,33 @@ Before you install NGINX Agent for the first time on your system, you need to se
     Exponent: 65537 (0x10001)
     ```
 
-  - Finally, move the key to apk trusted keys storage:
+1. Finally, move the key to apk trusted keys storage:
 
-    ```sh
+    ```shell
     sudo mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/
     ```
 
-  - To install nginx-agent, run the following command:
+1. To install nginx-agent, run the following command:
 
-    ```sh
+    ```shell
     sudo apk add nginx-agent@nginx-agent
     ```
 
-### Amazon Linux
-  - Install the prerequisites:
+1. Verify the installation:
 
-    ```bash
+    ```shell
+    sudo nginx-agent -v
+    ```
+
+### Installing NGINX Agent on Amazon Linux
+
+1. Install the prerequisites:
+
+    ```shell
     sudo yum install yum-utils procps
     ```
 
-  - To set up the yum repository for Amazon Linux 2, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
+1. To set up the yum repository for Amazon Linux 2, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
     ```
     [nginx-agent]
     name=nginx agent repo
@@ -239,10 +308,16 @@ Before you install NGINX Agent for the first time on your system, you need to se
     module_hotfixes=true
     ```
 
-  - To install nginx, run the following command:
+1. To install nginx, run the following command:
 
-    ```bash
+    ```shell
     sudo yum install nginx-agent
     ```
 
-  - When prompted to accept the GPG key, verify that the fingerprint matches `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, and if so, accept it.
+1. When prompted to accept the GPG key, verify that the fingerprint matches `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, and if so, accept it.
+
+1. Verify the installation:
+
+    ```shell
+    sudo nginx-agent -v
+    ```
