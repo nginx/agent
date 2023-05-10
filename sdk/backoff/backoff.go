@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package sdk
+package backoff
 
 import (
 	"context"
@@ -19,19 +19,25 @@ const (
 	BACKOFF_MULTIPLIER = backoff.DefaultMultiplier
 )
 
+type BackoffSettings struct {
+	InitialInterval time.Duration
+	MaxInterval     time.Duration
+	MaxElapsedTime  time.Duration
+	Multiplier      float64
+	Jitter          float64
+}
+
 func WaitUntil(
 	ctx context.Context,
-	initialInterval time.Duration,
-	maxInterval time.Duration,
-	maxElapsedTime time.Duration,
+	backoffSettings BackoffSettings,
 	operation backoff.Operation,
 ) error {
 	exponentialBackoff := backoff.NewExponentialBackOff()
-	exponentialBackoff.InitialInterval = initialInterval
-	exponentialBackoff.MaxInterval = maxInterval
-	exponentialBackoff.MaxElapsedTime = maxElapsedTime
-	exponentialBackoff.RandomizationFactor = BACKOFF_JITTER
-	exponentialBackoff.Multiplier = BACKOFF_MULTIPLIER
+	exponentialBackoff.InitialInterval = backoffSettings.InitialInterval
+	exponentialBackoff.MaxInterval = backoffSettings.MaxInterval
+	exponentialBackoff.MaxElapsedTime = backoffSettings.MaxElapsedTime
+	exponentialBackoff.RandomizationFactor = backoffSettings.Jitter
+	exponentialBackoff.Multiplier = backoffSettings.Multiplier
 
 	expoBackoffWithContext := backoff.WithContext(exponentialBackoff, ctx)
 

@@ -39,7 +39,7 @@ require (
 
 require (
 	github.com/bufbuild/buf v1.17.0
-	github.com/evilmartians/lefthook v1.3.10
+	github.com/evilmartians/lefthook v1.3.12
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-swagger/go-swagger v0.30.4
 	github.com/goreleaser/nfpm/v2 v2.28.0

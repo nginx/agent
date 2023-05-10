@@ -12,6 +12,8 @@
     - [AgentDetails](#f5-nginx-agent-sdk-AgentDetails)
     - [AgentLogging](#f5-nginx-agent-sdk-AgentLogging)
     - [AgentMeta](#f5-nginx-agent-sdk-AgentMeta)
+    - [Backoff](#f5-nginx-agent-sdk-Backoff)
+    - [Server](#f5-nginx-agent-sdk-Server)
   
     - [AgentConnectStatus.StatusCode](#f5-nginx-agent-sdk-AgentConnectStatus-StatusCode)
     - [AgentLogging.Level](#f5-nginx-agent-sdk-AgentLogging-Level)
@@ -204,6 +206,7 @@ Represents agent details. This message is sent from the management server to the
 | extensions | [string](#string) | repeated | List of agent extensions that are enabled |
 | tags | [string](#string) | repeated | List of tags |
 | alias | [string](#string) |  | Alias name for the agent |
+| server | [Server](#f5-nginx-agent-sdk-Server) |  | Server setting for the agent |
 
 
 
@@ -246,6 +249,45 @@ Represents agent metadata
 | updated | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Last time agent was updated |
 | system_uid | [string](#string) |  | ID of the system where the agent is installed |
 | agent_details | [AgentDetails](#f5-nginx-agent-sdk-AgentDetails) |  | Provides other agent information |
+
+
+
+
+
+
+<a name="f5-nginx-agent-sdk-Backoff"></a>
+
+### Backoff
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| initial_interval | [int64](#int64) |  | First backoff time interval in seconds |
+| randomization_factor | [double](#double) |  | Random value used to create range around next backoff interval |
+| multiplier | [double](#double) |  | Value to be multiplied with current backoff interval |
+| max_interval | [int64](#int64) |  | Max interval in seconds between two retries |
+| max_elapsed_time | [int64](#int64) |  | Elapsed time in seconds after which backoff stops. It never stops if max_elapsed_time == 0. |
+
+
+
+
+
+
+<a name="f5-nginx-agent-sdk-Server"></a>
+
+### Server
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| host | [string](#string) |  | Host name or IP of the host to connect to |
+| grpc_port | [int32](#int32) |  | Grpc port to connect to |
+| token | [string](#string) |  | Shared secrect between the server and client |
+| metrics | [string](#string) |  | Metrics server name |
+| command | [string](#string) |  | Command server name |
+| backoff | [Backoff](#f5-nginx-agent-sdk-Backoff) |  | Backoff settings for exponential retry and backoff |
 
 
 

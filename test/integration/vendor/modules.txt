@@ -492,6 +492,7 @@ github.com/morikuni/aec
 ## explicit; go 1.19
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
+github.com/nginx/agent/sdk/v2/backoff
 github.com/nginx/agent/sdk/v2/checksum
 github.com/nginx/agent/sdk/v2/client
 github.com/nginx/agent/sdk/v2/files

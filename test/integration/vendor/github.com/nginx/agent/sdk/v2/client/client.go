@@ -15,16 +15,10 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/interceptors"
 	"github.com/nginx/agent/sdk/v2/proto"
 )
-
-type BackoffSettings struct {
-	initialInterval time.Duration
-	maxInterval     time.Duration
-	maxTimeout      time.Duration
-	sendMaxTimeout  time.Duration
-}
 
 type MsgClassification int
 
@@ -35,11 +29,12 @@ const (
 )
 
 var (
-	DefaultBackoffSettings = BackoffSettings{
-		initialInterval: 10 * time.Second,
-		maxInterval:     60 * time.Second,
-		maxTimeout:      0,
-		sendMaxTimeout:  2 * time.Minute,
+	DefaultBackoffSettings = backoff.BackoffSettings{
+		InitialInterval: 10 * time.Second,
+		MaxInterval:     60 * time.Second,
+		MaxElapsedTime:  2 * time.Minute,
+		Jitter:          backoff.BACKOFF_JITTER,
+		Multiplier:      backoff.BACKOFF_MULTIPLIER,
 	}
 )
 
@@ -68,7 +63,7 @@ type (
 		WithInterceptor(interceptor interceptors.Interceptor) Client
 		WithClientInterceptor(interceptor interceptors.ClientInterceptor) Client
 
-		WithBackoffSettings(backoffSettings BackoffSettings) Client
+		WithBackoffSettings(backoffSettings backoff.BackoffSettings) Client
 	}
 	MetricReporter interface {
 		Client
