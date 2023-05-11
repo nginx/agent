@@ -12,6 +12,7 @@ doctypes: ["task"]
 
 
 ## Prerequisites
+
 - An NGINX Plus subscription (purchased or trial)
 - NGINX Plus installed. Once installed, ensure it is running. If you don't have it installed already, follow these steps to install [NGINX Plus](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-plus/)
 - A [supported operating system and architecture](../technical-specifications/#supported-distributions)
@@ -52,7 +53,13 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo yum install yum-utils procps
     ```
 
-1. To set up the yum repository, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
+1. Set up the yum repository by creating the file `nginx-agent.repo` in `/etc/yum.repos.d`, for example using `vi`:
+
+    ```shell
+    sudo vi /etc/yum.repos.d/nginx-agent.repo
+    ```
+
+1. Add the following lines to `nginx-agent.repo`:
 
     ```
     [nginx-agent]

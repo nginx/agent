@@ -12,6 +12,7 @@ doctypes: ["task"]
 
 
 ## Prerequisites
+
 - NGINX installed. Once installed, ensure it is running. If you don't have it installed already, follow these steps to install [NGINX](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/)
 - A [supported operating system and architecture](../technical-specifications/#supported-distributions)
 - `root` privilege
