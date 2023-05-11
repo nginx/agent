@@ -64,7 +64,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.17.0"
+	Version = "1.18.0"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -650,9 +650,7 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 	if err != nil {
 		return nil, err
 	}
-	client := httpclient.NewClient(
-		httpclient.WithTLSConfig(config.TLS),
-	)
+	client := httpclient.NewClient(config.TLS)
 	options := []connectclient.ConfigOption{
 		connectclient.WithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
