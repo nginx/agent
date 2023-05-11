@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/backoff"
+	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
@@ -76,57 +76,57 @@ func TestMetricsSenderSendMetrics(t *testing.T) {
 }
 
 func TestMetricsSenderBackoff(t *testing.T) {
-  tests := []struct {
-    name    string
-    msg     *core.Message
-    backoff *backoff.BackoffSettings
-  }{
-    {
-      name: "sender backoff",
-      msg: core.NewMessage(core.AgentConfig, []core.Payload{
-        &proto.Command_AgentConfig{
-          AgentConfig: &proto.AgentConfig{
-            Details: &proto.AgentDetails{
-              Server: &proto.Server{
-                Backoff: &proto.Backoff{
-                  InitialInterval:     int64(time.Duration(30 * time.Minute)),
-                  RandomizationFactor: .5,
-                  Multiplier:          .5,
-                  MaxInterval:         int64(time.Duration(15 * time.Minute)),
-                  MaxElapsedTime:      int64(time.Duration(30 * time.Minute)),
-                },
-              },
-            },
-          },
-        },
-      }),
-      backoff: &backoff.BackoffSettings{
-        InitialInterval: time.Duration(30 * time.Minute),
-        Jitter:          .5,
-        Multiplier:      .5,
-        MaxInterval:     time.Duration(15 * time.Minute),
-        MaxElapsedTime:  time.Duration(30 * time.Minute),
-      },
-    },
-  }
-  for _, test := range tests {
-    t.Run(test.name, func(_ *testing.T) {
-      ctx := context.TODO()
-      mockMetricsReportClient := tutils.NewMockMetricsReportClient()
-      pluginUnderTest := NewMetricsSender(mockMetricsReportClient)
+	tests := []struct {
+		name    string
+		msg     *core.Message
+		backoff *backoff.BackoffSettings
+	}{
+		{
+			name: "sender backoff",
+			msg: core.NewMessage(core.AgentConfig, []core.Payload{
+				&proto.Command_AgentConfig{
+					AgentConfig: &proto.AgentConfig{
+						Details: &proto.AgentDetails{
+							Server: &proto.Server{
+								Backoff: &proto.Backoff{
+									InitialInterval:     int64(time.Duration(30 * time.Minute)),
+									RandomizationFactor: .5,
+									Multiplier:          .5,
+									MaxInterval:         int64(time.Duration(15 * time.Minute)),
+									MaxElapsedTime:      int64(time.Duration(30 * time.Minute)),
+								},
+							},
+						},
+					},
+				},
+			}),
+			backoff: &backoff.BackoffSettings{
+				InitialInterval: time.Duration(30 * time.Minute),
+				Jitter:          .5,
+				Multiplier:      .5,
+				MaxInterval:     time.Duration(15 * time.Minute),
+				MaxElapsedTime:  time.Duration(30 * time.Minute),
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(_ *testing.T) {
+			ctx := context.TODO()
+			mockMetricsReportClient := tutils.NewMockMetricsReportClient()
+			pluginUnderTest := NewMetricsSender(mockMetricsReportClient)
 
-      pluginUnderTest.Init(core.NewMockMessagePipe(ctx))
-      pluginUnderTest.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
+			pluginUnderTest.Init(core.NewMockMessagePipe(ctx))
+			pluginUnderTest.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
 
-      pluginUnderTest.Process(test.msg)
-      mockMetricsReportClient.On("WithBackoffSettings", test.backoff)
+			pluginUnderTest.Process(test.msg)
+			mockMetricsReportClient.On("WithBackoffSettings", test.backoff)
 
-      time.Sleep(1 * time.Second)
-      assert.True(t, mockMetricsReportClient.AssertExpectations(t))
+			time.Sleep(1 * time.Second)
+			assert.True(t, mockMetricsReportClient.AssertExpectations(t))
 
-      pluginUnderTest.Close()
-    })
-  }
+			pluginUnderTest.Close()
+		})
+	}
 }
 
 func TestMetricsSenderSubscriptions(t *testing.T) {
