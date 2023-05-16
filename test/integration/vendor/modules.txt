@@ -245,6 +245,8 @@ github.com/go-ole/go-ole/oleutil
 # github.com/go-resty/resty/v2 v2.7.0
 ## explicit; go 1.11
 github.com/go-resty/resty/v2
+# github.com/go-sql-driver/mysql v1.7.0
+## explicit; go 1.13
 # github.com/gofrs/flock v0.8.1
 ## explicit
 github.com/gofrs/flock
@@ -582,7 +584,7 @@ github.com/rivo/uniseg
 # github.com/serialx/hashring v0.0.0-20190422032157-8b2912629002
 ## explicit
 github.com/serialx/hashring
-# github.com/shirou/gopsutil/v3 v3.22.7
+# github.com/shirou/gopsutil/v3 v3.23.2
 ## explicit; go 1.15
 github.com/shirou/gopsutil/v3/cpu
 github.com/shirou/gopsutil/v3/disk
@@ -657,10 +659,10 @@ github.com/theupdateframework/notary/tuf/data
 github.com/theupdateframework/notary/tuf/signed
 github.com/theupdateframework/notary/tuf/utils
 github.com/theupdateframework/notary/tuf/validation
-# github.com/tklauser/go-sysconf v0.3.10
+# github.com/tklauser/go-sysconf v0.3.11
 ## explicit; go 1.13
 github.com/tklauser/go-sysconf
-# github.com/tklauser/numcpus v0.5.0
+# github.com/tklauser/numcpus v0.6.0
 ## explicit; go 1.13
 github.com/tklauser/numcpus
 # github.com/tonistiigi/fsutil v0.0.0-20220930225714-4638ad635be5
