@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/nginx/agent/sdk/v2/backoff"
+	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	tutils "github.com/nginx/agent/v2/test/utils"
@@ -82,7 +83,7 @@ func TestMetricsSenderBackoff(t *testing.T) {
 		backoff backoff.BackoffSettings
 	}{
 		{
-			name: "sender backoff",
+			name: "test reporter client backoff setting as sent by server",
 			msg: core.NewMessage(core.AgentConfig,
 				&proto.Command_AgentConfig{
 					AgentConfig: &proto.AgentConfig{
@@ -106,6 +107,18 @@ func TestMetricsSenderBackoff(t *testing.T) {
 				MaxInterval:     time.Duration(15 * time.Minute),
 				MaxElapsedTime:  time.Duration(30 * time.Minute),
 			},
+		},
+		{
+			name: "test reporter client backoff setting as default",
+			msg: core.NewMessage(core.AgentConfig,
+				&proto.Command_AgentConfig{
+					AgentConfig: &proto.AgentConfig{
+						Details: &proto.AgentDetails{
+							Server: &proto.Server{},
+						},
+					},
+				}),
+			backoff: client.DefaultBackoffSettings,
 		},
 	}
 	for _, test := range tests {
