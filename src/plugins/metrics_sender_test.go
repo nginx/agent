@@ -79,17 +79,17 @@ func TestMetricsSenderBackoff(t *testing.T) {
 	tests := []struct {
 		name    string
 		msg     *core.Message
-		backoff *backoff.BackoffSettings
+		backoff backoff.BackoffSettings
 	}{
 		{
 			name: "sender backoff",
-			msg: core.NewMessage(core.AgentConfig, []core.Payload{
+			msg: core.NewMessage(core.AgentConfig,
 				&proto.Command_AgentConfig{
 					AgentConfig: &proto.AgentConfig{
 						Details: &proto.AgentDetails{
 							Server: &proto.Server{
 								Backoff: &proto.Backoff{
-									InitialInterval:     int64(time.Duration(30 * time.Minute)),
+									InitialInterval:     int64(time.Duration(15 * time.Minute)),
 									RandomizationFactor: .5,
 									Multiplier:          .5,
 									MaxInterval:         int64(time.Duration(15 * time.Minute)),
@@ -98,10 +98,9 @@ func TestMetricsSenderBackoff(t *testing.T) {
 							},
 						},
 					},
-				},
-			}),
-			backoff: &backoff.BackoffSettings{
-				InitialInterval: time.Duration(30 * time.Minute),
+				}),
+			backoff: backoff.BackoffSettings{
+				InitialInterval: time.Duration(15 * time.Minute),
 				Jitter:          .5,
 				Multiplier:      .5,
 				MaxInterval:     time.Duration(15 * time.Minute),
@@ -118,8 +117,8 @@ func TestMetricsSenderBackoff(t *testing.T) {
 			pluginUnderTest.Init(core.NewMockMessagePipe(ctx))
 			pluginUnderTest.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
 
-			pluginUnderTest.Process(test.msg)
 			mockMetricsReportClient.On("WithBackoffSettings", test.backoff)
+			pluginUnderTest.Process(test.msg)
 
 			time.Sleep(1 * time.Second)
 			assert.True(t, mockMetricsReportClient.AssertExpectations(t))
