@@ -1,7 +1,6 @@
 package sys
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"io/fs"
@@ -15,7 +14,7 @@ import (
 )
 
 const (
-	FdStdin uint32 = iota
+	FdStdin int32 = iota
 	FdStdout
 	FdStderr
 	// FdPreopen is the file descriptor of the first pre-opened directory.
@@ -32,10 +31,7 @@ const (
 	FdPreopen
 )
 
-const (
-	modeDevice     = uint32(fs.ModeDevice | 0o640)
-	modeCharDevice = uint32(fs.ModeDevice | fs.ModeCharDevice | 0o640)
-)
+const modeDevice = uint32(fs.ModeDevice | 0o640)
 
 type stdioFileWriter struct {
 	w io.Writer
@@ -61,29 +57,80 @@ func (w *stdioFileWriter) Close() error {
 	return nil
 }
 
-type stdioFileReader struct {
-	r io.Reader
-	s fs.FileInfo
+// StdioFilePoller is a strategy for polling a StdioFileReader for a given duration.
+// It returns true if the reader has data ready to be read, false and/or an error otherwise.
+type StdioFilePoller interface {
+	Poll(duration time.Duration) (bool, error)
+}
+
+// PollerDefaultStdin is a poller that checks standard input.
+var PollerDefaultStdin = &pollerDefaultStdin{}
+
+type pollerDefaultStdin struct{}
+
+// Poll implements StdioFilePoller for pollerDefaultStdin.
+func (*pollerDefaultStdin) Poll(duration time.Duration) (bool, error) {
+	fdSet := platform.FdSet{}
+	fdSet.Set(int(FdStdin))
+	count, err := platform.Select(int(FdStdin+1), &fdSet, nil, nil, &duration)
+	return count > 0, err
+}
+
+// PollerAlwaysReady is a poller that ignores the given timeout, and it returns true and no error.
+var PollerAlwaysReady = &pollerAlwaysReady{}
+
+type pollerAlwaysReady struct{}
+
+// Poll implements StdioFilePoller for pollerAlwaysReady.
+func (*pollerAlwaysReady) Poll(time.Duration) (bool, error) { return true, nil }
+
+// PollerNeverReady is a poller that waits for the given duration, and it always returns false and no error.
+var PollerNeverReady = &pollerNeverReady{}
+
+type pollerNeverReady struct{}
+
+// Poll implements StdioFilePoller for pollerNeverReady.
+func (*pollerNeverReady) Poll(d time.Duration) (bool, error) { time.Sleep(d); return false, nil }
+
+// StdioFileReader implements io.Reader for stdio files.
+type StdioFileReader struct {
+	r    io.Reader
+	s    fs.FileInfo
+	poll StdioFilePoller
+}
+
+// NewStdioFileReader is a constructor for StdioFileReader.
+func NewStdioFileReader(reader io.Reader, fileInfo fs.FileInfo, poll StdioFilePoller) *StdioFileReader {
+	return &StdioFileReader{
+		r:    reader,
+		s:    fileInfo,
+		poll: poll,
+	}
+}
+
+// Poll invokes the StdioFilePoller that was given at the NewStdioFileReader constructor.
+func (r *StdioFileReader) Poll(duration time.Duration) (bool, error) {
+	return r.poll.Poll(duration)
 }
 
 // Stat implements fs.File
-func (r *stdioFileReader) Stat() (fs.FileInfo, error) { return r.s, nil }
+func (r *StdioFileReader) Stat() (fs.FileInfo, error) { return r.s, nil }
 
 // Read implements fs.File
-func (r *stdioFileReader) Read(p []byte) (n int, err error) {
+func (r *StdioFileReader) Read(p []byte) (n int, err error) {
 	return r.r.Read(p)
 }
 
 // Close implements fs.File
-func (r *stdioFileReader) Close() error {
+func (r *StdioFileReader) Close() error {
 	// Don't actually close the underlying file, as we didn't open it!
 	return nil
 }
 
 var (
-	noopStdinStat  = stdioFileInfo{FdStdin, modeDevice}
-	noopStdoutStat = stdioFileInfo{FdStdout, modeDevice}
-	noopStderrStat = stdioFileInfo{FdStderr, modeDevice}
+	noopStdinStat  = stdioFileInfo{0, modeDevice}
+	noopStdoutStat = stdioFileInfo{1, modeDevice}
+	noopStderrStat = stdioFileInfo{2, modeDevice}
 )
 
 // stdioFileInfo implements fs.FileInfo where index zero is the FD and one is the mode.
@@ -91,11 +138,11 @@ type stdioFileInfo [2]uint32
 
 func (s stdioFileInfo) Name() string {
 	switch s[0] {
-	case FdStdin:
+	case 0:
 		return "stdin"
-	case FdStdout:
+	case 1:
 		return "stdout"
-	case FdStderr:
+	case 2:
 		return "stderr"
 	default:
 		panic(fmt.Errorf("BUG: incorrect FD %d", s[0]))
@@ -243,41 +290,41 @@ type FSContext struct {
 	openedFiles FileTable
 }
 
-// FileTable is an specialization of the descriptor.Table type used to map file
+// FileTable is a specialization of the descriptor.Table type used to map file
 // descriptors to file entries.
-type FileTable = descriptor.Table[uint32, *FileEntry]
+type FileTable = descriptor.Table[int32, *FileEntry]
 
 // NewFSContext creates a FSContext with stdio streams and an optional
 // pre-opened filesystem.
 //
 // If `preopened` is not sysfs.UnimplementedFS, it is inserted into
 // the file descriptor table as FdPreopen.
-func NewFSContext(stdin io.Reader, stdout, stderr io.Writer, rootFS sysfs.FS) (fsc *FSContext, err error) {
-	fsc = &FSContext{rootFS: rootFS}
+func (c *Context) NewFSContext(stdin io.Reader, stdout, stderr io.Writer, rootFS sysfs.FS) (err error) {
+	c.fsc.rootFS = rootFS
 	inReader, err := stdinReader(stdin)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	fsc.openedFiles.Insert(inReader)
+	c.fsc.openedFiles.Insert(inReader)
 	outWriter, err := stdioWriter(stdout, noopStdoutStat)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	fsc.openedFiles.Insert(outWriter)
+	c.fsc.openedFiles.Insert(outWriter)
 	errWriter, err := stdioWriter(stderr, noopStderrStat)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	fsc.openedFiles.Insert(errWriter)
+	c.fsc.openedFiles.Insert(errWriter)
 
 	if _, ok := rootFS.(sysfs.UnimplementedFS); ok {
-		return fsc, nil
+		return nil
 	}
 
 	if comp, ok := rootFS.(*sysfs.CompositeFS); ok {
 		preopens := comp.FS()
 		for i, p := range comp.GuestPaths() {
-			fsc.openedFiles.Insert(&FileEntry{
+			c.fsc.openedFiles.Insert(&FileEntry{
 				FS:        preopens[i],
 				Name:      p,
 				IsPreopen: true,
@@ -285,7 +332,7 @@ func NewFSContext(stdin io.Reader, stdout, stderr io.Writer, rootFS sysfs.FS) (f
 			})
 		}
 	} else {
-		fsc.openedFiles.Insert(&FileEntry{
+		c.fsc.openedFiles.Insert(&FileEntry{
 			FS:        rootFS,
 			Name:      "/",
 			IsPreopen: true,
@@ -293,18 +340,24 @@ func NewFSContext(stdin io.Reader, stdout, stderr io.Writer, rootFS sysfs.FS) (f
 		})
 	}
 
-	return fsc, nil
+	return nil
 }
 
 func stdinReader(r io.Reader) (*FileEntry, error) {
 	if r == nil {
 		r = eofReader{}
 	}
-	s, err := stdioStat(r, noopStdinStat)
-	if err != nil {
-		return nil, err
+	var freader *StdioFileReader
+	if stdioFileReader, ok := r.(*StdioFileReader); ok {
+		freader = stdioFileReader
+	} else {
+		s, err := stdioStat(r, noopStdinStat)
+		if err != nil {
+			return nil, err
+		}
+		freader = NewStdioFileReader(r, s, PollerDefaultStdin)
 	}
-	return &FileEntry{Name: noopStdinStat.Name(), File: &stdioFileReader{r: r, s: s}}, nil
+	return &FileEntry{Name: noopStdinStat.Name(), File: freader}, nil
 }
 
 func stdioWriter(w io.Writer, defaultStat stdioFileInfo) (*FileEntry, error) {
@@ -338,7 +391,7 @@ func (c *FSContext) RootFS() sysfs.FS {
 
 // OpenFile opens the file into the table and returns its file descriptor.
 // The result must be closed by CloseFile or Close.
-func (c *FSContext) OpenFile(fs sysfs.FS, path string, flag int, perm fs.FileMode) (uint32, syscall.Errno) {
+func (c *FSContext) OpenFile(fs sysfs.FS, path string, flag int, perm fs.FileMode) (int32, syscall.Errno) {
 	if f, errno := fs.OpenFile(path, flag, perm); errno != 0 {
 		return 0, errno
 	} else {
@@ -348,14 +401,17 @@ func (c *FSContext) OpenFile(fs sysfs.FS, path string, flag int, perm fs.FileMod
 		} else {
 			fe.Name = path
 		}
-		newFD := c.openedFiles.Insert(fe)
-		return newFD, 0
+		if newFD, ok := c.openedFiles.Insert(fe); !ok {
+			return 0, syscall.EBADF
+		} else {
+			return newFD, 0
+		}
 	}
 }
 
 // ReOpenDir re-opens the directory while keeping the same file descriptor.
 // TODO: this might not be necessary once we have our own File type.
-func (c *FSContext) ReOpenDir(fd uint32) (*FileEntry, syscall.Errno) {
+func (c *FSContext) ReOpenDir(fd int32) (*FileEntry, syscall.Errno) {
 	f, ok := c.openedFiles.Lookup(fd)
 	if !ok {
 		return nil, syscall.EBADF
@@ -391,7 +447,7 @@ func (c *FSContext) reopen(f *FileEntry) syscall.Errno {
 
 // ChangeOpenFlag changes the open flag of the given opened file pointed by `fd`.
 // Currently, this only supports the change of syscall.O_APPEND flag.
-func (c *FSContext) ChangeOpenFlag(fd uint32, flag int) syscall.Errno {
+func (c *FSContext) ChangeOpenFlag(fd int32, flag int) syscall.Errno {
 	f, ok := c.LookupFile(fd)
 	if !ok {
 		return syscall.EBADF
@@ -421,15 +477,14 @@ func (c *FSContext) ChangeOpenFlag(fd uint32, flag int) syscall.Errno {
 }
 
 // LookupFile returns a file if it is in the table.
-func (c *FSContext) LookupFile(fd uint32) (*FileEntry, bool) {
-	f, ok := c.openedFiles.Lookup(fd)
-	return f, ok
+func (c *FSContext) LookupFile(fd int32) (*FileEntry, bool) {
+	return c.openedFiles.Lookup(fd)
 }
 
 // Renumber assigns the file pointed by the descriptor `from` to `to`.
-func (c *FSContext) Renumber(from, to uint32) syscall.Errno {
+func (c *FSContext) Renumber(from, to int32) syscall.Errno {
 	fromFile, ok := c.openedFiles.Lookup(from)
-	if !ok {
+	if !ok || to < 0 {
 		return syscall.EBADF
 	} else if fromFile.IsPreopen {
 		return syscall.ENOTSUP
@@ -448,12 +503,14 @@ func (c *FSContext) Renumber(from, to uint32) syscall.Errno {
 	}
 
 	c.openedFiles.Delete(from)
-	c.openedFiles.InsertAt(fromFile, to)
+	if !c.openedFiles.InsertAt(fromFile, to) {
+		return syscall.EBADF
+	}
 	return 0
 }
 
 // CloseFile returns any error closing the existing file.
-func (c *FSContext) CloseFile(fd uint32) syscall.Errno {
+func (c *FSContext) CloseFile(fd int32) syscall.Errno {
 	f, ok := c.openedFiles.Lookup(fd)
 	if !ok {
 		return syscall.EBADF
@@ -462,10 +519,10 @@ func (c *FSContext) CloseFile(fd uint32) syscall.Errno {
 	return platform.UnwrapOSError(f.File.Close())
 }
 
-// Close implements api.Closer
-func (c *FSContext) Close(context.Context) (err error) {
+// Close implements io.Closer
+func (c *FSContext) Close() (err error) {
 	// Close any files opened in this context
-	c.openedFiles.Range(func(fd uint32, entry *FileEntry) bool {
+	c.openedFiles.Range(func(fd int32, entry *FileEntry) bool {
 		if e := entry.File.Close(); e != nil {
 			err = e // This means err returned == the last non-nil error.
 		}
@@ -479,7 +536,7 @@ func (c *FSContext) Close(context.Context) (err error) {
 
 // WriterForFile returns a writer for the given file descriptor or nil if not
 // opened or not writeable (e.g. a directory or a file not opened for writes).
-func WriterForFile(fsc *FSContext, fd uint32) (writer io.Writer) {
+func WriterForFile(fsc *FSContext, fd int32) (writer io.Writer) {
 	if f, ok := fsc.LookupFile(fd); !ok {
 		return
 	} else if w, ok := f.File.(io.Writer); ok {

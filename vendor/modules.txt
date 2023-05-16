@@ -23,10 +23,12 @@ github.com/Masterminds/sprig
 # github.com/Masterminds/sprig/v3 v3.2.3
 ## explicit; go 1.13
 github.com/Masterminds/sprig/v3
-# github.com/Microsoft/go-winio v0.6.0
+# github.com/Microsoft/go-winio v0.6.1
 ## explicit; go 1.17
 github.com/Microsoft/go-winio
+github.com/Microsoft/go-winio/internal/fs
 github.com/Microsoft/go-winio/internal/socket
+github.com/Microsoft/go-winio/internal/stringbuffer
 github.com/Microsoft/go-winio/pkg/guid
 # github.com/ProtonMail/go-crypto v0.0.0-20210512092938-c05353c2d58c
 ## explicit; go 1.13
@@ -65,7 +67,7 @@ github.com/blakesmith/ar
 # github.com/briandowns/spinner v1.23.0
 ## explicit; go 1.17
 github.com/briandowns/spinner
-# github.com/bufbuild/buf v1.17.0
+# github.com/bufbuild/buf v1.18.0
 ## explicit; go 1.19
 github.com/bufbuild/buf/cmd/buf
 github.com/bufbuild/buf/private/buf/bufapp
@@ -88,6 +90,7 @@ github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget
 github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist
+github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/workspace/workspacepush
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget
@@ -99,9 +102,7 @@ github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/o
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugincreate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete
-github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindeprecate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginlist
-github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginundeprecate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginversion/pluginversionlist
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete
@@ -114,9 +115,7 @@ github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatedelete
-github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatedeprecate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatelist
-github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateundeprecate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversioncreate
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist
 github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate
@@ -243,7 +242,7 @@ github.com/bufbuild/buf/private/pkg/uuidutil
 github.com/bufbuild/buf/private/pkg/verbose
 github.com/bufbuild/buf/private/pkg/zaputil
 github.com/bufbuild/buf/private/usage
-# github.com/bufbuild/connect-go v1.6.0
+# github.com/bufbuild/connect-go v1.7.0
 ## explicit; go 1.19
 github.com/bufbuild/connect-go
 github.com/bufbuild/connect-go/internal/gen/connectext/grpc/status/v1
@@ -262,10 +261,10 @@ github.com/bufbuild/protocompile/walk
 # github.com/cavaliergopher/cpio v1.0.1
 ## explicit; go 1.17
 github.com/cavaliergopher/cpio
-# github.com/cenkalti/backoff/v4 v4.2.0
+# github.com/cenkalti/backoff/v4 v4.2.1
 ## explicit; go 1.18
 github.com/cenkalti/backoff/v4
-# github.com/cespare/xxhash/v2 v2.1.2
+# github.com/cespare/xxhash/v2 v2.2.0
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
 # github.com/charmbracelet/lipgloss v0.7.1
@@ -280,7 +279,7 @@ github.com/creack/pty
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/docker/cli v23.0.2+incompatible
+# github.com/docker/cli v23.0.5+incompatible
 ## explicit
 github.com/docker/cli/cli/config
 github.com/docker/cli/cli/config/configfile
@@ -291,7 +290,7 @@ github.com/docker/cli/cli/config/types
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
 github.com/docker/distribution/registry/client/auth/challenge
-# github.com/docker/docker v23.0.2+incompatible
+# github.com/docker/docker v23.0.5+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
@@ -334,10 +333,10 @@ github.com/emirpasic/gods/lists/arraylist
 github.com/emirpasic/gods/trees
 github.com/emirpasic/gods/trees/binaryheap
 github.com/emirpasic/gods/utils
-# github.com/envoyproxy/protoc-gen-validate v0.3.0-java
-## explicit
+# github.com/envoyproxy/protoc-gen-validate v0.10.0
+## explicit; go 1.19
 github.com/envoyproxy/protoc-gen-validate/validate
-# github.com/evilmartians/lefthook v1.3.12
+# github.com/evilmartians/lefthook v1.3.13
 ## explicit; go 1.19
 github.com/evilmartians/lefthook
 github.com/evilmartians/lefthook/cmd
@@ -582,7 +581,7 @@ github.com/google/go-containerregistry/pkg/v1/remote
 github.com/google/go-containerregistry/pkg/v1/remote/transport
 github.com/google/go-containerregistry/pkg/v1/stream
 github.com/google/go-containerregistry/pkg/v1/types
-# github.com/google/pprof v0.0.0-20230323073829-e72429f035bd
+# github.com/google/pprof v0.0.0-20230502171905-255e3b9b56de
 ## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/uuid v1.3.0
@@ -611,7 +610,7 @@ github.com/goreleaser/nfpm/v2/rpm
 # github.com/gorilla/handlers v1.5.1
 ## explicit; go 1.14
 github.com/gorilla/handlers
-# github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+# github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 ## explicit; go 1.14
 github.com/grpc-ecosystem/go-grpc-middleware/retry
 github.com/grpc-ecosystem/go-grpc-middleware/util/backoffutils
@@ -664,7 +663,7 @@ github.com/jstemmer/go-junit-report/parser
 # github.com/kevinburke/ssh_config v1.1.0
 ## explicit
 github.com/kevinburke/ssh_config
-# github.com/klauspost/compress v1.16.3
+# github.com/klauspost/compress v1.16.5
 ## explicit; go 1.18
 github.com/klauspost/compress
 github.com/klauspost/compress/flate
@@ -678,7 +677,7 @@ github.com/klauspost/compress/zstd/internal/xxhash
 # github.com/klauspost/cpuid/v2 v2.1.0
 ## explicit; go 1.15
 github.com/klauspost/cpuid/v2
-# github.com/klauspost/pgzip v1.2.5
+# github.com/klauspost/pgzip v1.2.6
 ## explicit
 github.com/klauspost/pgzip
 # github.com/kr/pretty v0.3.1
@@ -731,7 +730,7 @@ github.com/mitchellh/mapstructure
 # github.com/mitchellh/reflectwalk v1.0.2
 ## explicit
 github.com/mitchellh/reflectwalk
-# github.com/moby/term v0.0.0-20221205130635-1aeaba878587
+# github.com/moby/term v0.5.0
 ## explicit; go 1.18
 github.com/moby/term
 github.com/moby/term/windows
@@ -778,7 +777,7 @@ github.com/nginx/agent/sdk/v2/proto
 github.com/nginx/agent/sdk/v2/proto/common
 github.com/nginx/agent/sdk/v2/proto/events
 github.com/nginx/agent/sdk/v2/zip
-# github.com/nginxinc/nginx-go-crossplane v0.4.15
+# github.com/nginxinc/nginx-go-crossplane v0.4.17
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
 # github.com/nginxinc/nginx-plus-go-client v0.10.0
@@ -800,8 +799,8 @@ github.com/oklog/ulid
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
 github.com/opencontainers/go-digest
-# github.com/opencontainers/image-spec v1.1.0-rc2
-## explicit; go 1.17
+# github.com/opencontainers/image-spec v1.1.0-rc3
+## explicit; go 1.18
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
 # github.com/orcaman/concurrent-map v1.0.0
@@ -868,7 +867,7 @@ github.com/rivo/uniseg
 # github.com/rogpeppe/go-internal v1.9.0
 ## explicit; go 1.17
 github.com/rogpeppe/go-internal/fmtsort
-# github.com/rs/cors v1.8.3
+# github.com/rs/cors v1.9.0
 ## explicit; go 1.13
 github.com/rs/cors
 # github.com/russross/blackfriday/v2 v2.1.0
@@ -941,7 +940,7 @@ github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.4.2
 ## explicit; go 1.18
 github.com/subosito/gotenv
-# github.com/tetratelabs/wazero v1.0.1
+# github.com/tetratelabs/wazero v1.1.0
 ## explicit; go 1.18
 github.com/tetratelabs/wazero
 github.com/tetratelabs/wazero/api
@@ -964,6 +963,7 @@ github.com/tetratelabs/wazero/internal/gojs/run
 github.com/tetratelabs/wazero/internal/gojs/util
 github.com/tetratelabs/wazero/internal/gojs/values
 github.com/tetratelabs/wazero/internal/ieee754
+github.com/tetratelabs/wazero/internal/internalapi
 github.com/tetratelabs/wazero/internal/leb128
 github.com/tetratelabs/wazero/internal/moremath
 github.com/tetratelabs/wazero/internal/platform
@@ -1020,8 +1020,8 @@ go.mongodb.org/mongo-driver/bson/bsonrw
 go.mongodb.org/mongo-driver/bson/bsontype
 go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
-# go.opentelemetry.io/otel v1.14.0
-## explicit; go 1.18
+# go.opentelemetry.io/otel v1.15.1
+## explicit; go 1.19
 go.opentelemetry.io/otel
 go.opentelemetry.io/otel/attribute
 go.opentelemetry.io/otel/baggage
@@ -1032,17 +1032,18 @@ go.opentelemetry.io/otel/internal/baggage
 go.opentelemetry.io/otel/internal/global
 go.opentelemetry.io/otel/propagation
 go.opentelemetry.io/otel/semconv/v1.17.0
-# go.opentelemetry.io/otel/sdk v1.14.0
-## explicit; go 1.18
+# go.opentelemetry.io/otel/sdk v1.15.1
+## explicit; go 1.19
+go.opentelemetry.io/otel/sdk
 go.opentelemetry.io/otel/sdk/instrumentation
 go.opentelemetry.io/otel/sdk/internal
 go.opentelemetry.io/otel/sdk/internal/env
 go.opentelemetry.io/otel/sdk/resource
 go.opentelemetry.io/otel/sdk/trace
-# go.opentelemetry.io/otel/trace v1.14.0
-## explicit; go 1.18
+# go.opentelemetry.io/otel/trace v1.15.1
+## explicit; go 1.19
 go.opentelemetry.io/otel/trace
-# go.uber.org/atomic v1.10.0
+# go.uber.org/atomic v1.11.0
 ## explicit; go 1.18
 go.uber.org/atomic
 # go.uber.org/goleak v1.1.12
@@ -1059,7 +1060,7 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.7.0
+# golang.org/x/crypto v0.8.0
 ## explicit; go 1.17
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
@@ -1089,7 +1090,7 @@ golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/modfile
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.9.0
+# golang.org/x/net v0.10.0
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
@@ -1102,11 +1103,11 @@ golang.org/x/net/internal/timeseries
 golang.org/x/net/proxy
 golang.org/x/net/publicsuffix
 golang.org/x/net/trace
-# golang.org/x/sync v0.1.0
+# golang.org/x/sync v0.2.0
 ## explicit
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.7.0
+# golang.org/x/sys v0.8.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -1115,7 +1116,7 @@ golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/term v0.7.0
+# golang.org/x/term v0.8.0
 ## explicit; go 1.17
 golang.org/x/term
 # golang.org/x/text v0.9.0
@@ -1125,7 +1126,7 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.8.0
+# golang.org/x/tools v0.9.1
 ## explicit; go 1.18
 golang.org/x/tools/cmd/goimports
 golang.org/x/tools/cmd/stringer
@@ -1153,19 +1154,19 @@ golang.org/x/tools/internal/pkgbits
 golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
-# google.golang.org/genproto v0.0.0-20230124163310-31e0e69b6fc2
+# google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/api
 google.golang.org/genproto/googleapis/api/annotations
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.52.0
+# google.golang.org/grpc v1.55.0
 ## explicit; go 1.17
 google.golang.org/grpc
 google.golang.org/grpc/attributes
 google.golang.org/grpc/backoff
 google.golang.org/grpc/balancer
 google.golang.org/grpc/balancer/base
-google.golang.org/grpc/balancer/grpclb/grpclbstate
+google.golang.org/grpc/balancer/grpclb/state
 google.golang.org/grpc/balancer/roundrobin
 google.golang.org/grpc/binarylog/grpc_binarylog_v1
 google.golang.org/grpc/channelz
