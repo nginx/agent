@@ -208,6 +208,22 @@ func TestCommander_Process(t *testing.T) {
 			},
 		},
 		{
+			name: "test agent config request with default backoff",
+			cmd: &proto.Command{
+				Type: proto.Command_NORMAL,
+				Data: &proto.Command_AgentConfig{
+					AgentConfig: &proto.AgentConfig{
+						Details: &proto.AgentDetails{
+							Server: &proto.Server{},
+						},
+					},
+				},
+			},
+			topic:          core.AgentConfig,
+			msgTopics:      []string{},
+			backoffSetting: client.DefaultBackoffSettings,
+		},
+		{
 			name: "test agent command status ok",
 			cmd: &proto.Command{
 				Meta: &proto.Metadata{},
