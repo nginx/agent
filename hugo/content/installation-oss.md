@@ -27,6 +27,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
 - [Installing NGINX Agent on SLES](#installing-nginx-agent-on-sles)
 - [Installing NGINX Agent on Alpine Linux](#installing-nginx-agent-on-alpine-linux)
 - [Installing NGINX Agent on Amazon Linux](#installing-nginx-agent-on-amazon-linux)
+- [Installing NGINX Agent on FreeBSD](#installing-nginx-agent-on-freebsd)
 
 ### Installing NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux and Oracle Linux
 
@@ -316,6 +317,38 @@ Before you install NGINX Agent for the first time on your system, you need to se
     ```
 
 1. When prompted to accept the GPG key, verify that the fingerprint matches `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, and if so, accept it.
+
+1. Verify the installation:
+
+    ```shell
+    sudo nginx-agent -v
+    ```
+
+### Installing NGINX Agent on FreeBSD
+
+<!-- 1. Install the prerequisite `ca_root_nss` package:
+
+    ```shell
+    sudo pkg install ca_root_nss
+    ``` -->
+
+1. To setup the pkg repository create the file named `/etc/pkg/nginx-agent.conf` with the following content:
+
+    ```
+    nginx-agent: {
+    URL: pkg+http://packages.nginx.org/nginx-agent/freebsd/${ABI}/latest
+    ENABLED: true
+    SIGNATURE_TYPE: "fingerprints",
+    FINGERPRINTS: "/usr/share/keys/pkg",
+    MIRROR_TYPE: SRV
+    }
+    ```
+
+1. To install `nginx-agent`, run the following command:
+
+    ```shell
+    sudo pkg install nginx-agent
+    ```
 
 1. Verify the installation:
 
