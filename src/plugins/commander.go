@@ -116,9 +116,9 @@ func (c *Commander) agentBackoff(cmd *proto.Command) {
 	}
 
 	cBackoff := backoff.BackoffSettings{
-		InitialInterval: time.Duration(backoffSetting.InitialInterval),
-		MaxInterval:     time.Duration(backoffSetting.MaxInterval),
-		MaxElapsedTime:  time.Duration(backoffSetting.MaxElapsedTime),
+		InitialInterval: time.Duration(backoffSetting.InitialInterval * int64(time.Second)),
+		MaxInterval:     time.Duration(backoffSetting.MaxInterval * int64(time.Second)),
+		MaxElapsedTime:  time.Duration(backoffSetting.MaxElapsedTime * int64(time.Second)),
 		Multiplier:      multiplier,
 		Jitter:          jitter,
 	}

@@ -186,11 +186,11 @@ func TestCommander_Process(t *testing.T) {
 						Details: &proto.AgentDetails{
 							Server: &proto.Server{
 								Backoff: &proto.Backoff{
-									InitialInterval:     int64(time.Duration(30 * time.Minute)),
+									InitialInterval:     1800,
 									RandomizationFactor: .5,
 									Multiplier:          .5,
-									MaxInterval:         int64(time.Duration(15 * time.Minute)),
-									MaxElapsedTime:      int64(time.Duration(30 * time.Minute)),
+									MaxInterval:         900,
+									MaxElapsedTime:      1800,
 								},
 							},
 						},

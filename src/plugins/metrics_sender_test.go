@@ -85,16 +85,18 @@ func TestMetricsSenderBackoff(t *testing.T) {
 		{
 			name: "test reporter client backoff setting as sent by server",
 			msg: core.NewMessage(core.AgentConfig,
-				&proto.Command_AgentConfig{
-					AgentConfig: &proto.AgentConfig{
-						Details: &proto.AgentDetails{
-							Server: &proto.Server{
-								Backoff: &proto.Backoff{
-									InitialInterval:     int64(time.Duration(15 * time.Minute)),
-									RandomizationFactor: .5,
-									Multiplier:          .5,
-									MaxInterval:         int64(time.Duration(15 * time.Minute)),
-									MaxElapsedTime:      int64(time.Duration(30 * time.Minute)),
+				&proto.Command{
+					Data: &proto.Command_AgentConfig{
+						AgentConfig: &proto.AgentConfig{
+							Details: &proto.AgentDetails{
+								Server: &proto.Server{
+									Backoff: &proto.Backoff{
+										InitialInterval:     900,
+										RandomizationFactor: .5,
+										Multiplier:          .5,
+										MaxInterval:         900,
+										MaxElapsedTime:      1800,
+									},
 								},
 							},
 						},
@@ -111,10 +113,12 @@ func TestMetricsSenderBackoff(t *testing.T) {
 		{
 			name: "test reporter client backoff setting as default",
 			msg: core.NewMessage(core.AgentConfig,
-				&proto.Command_AgentConfig{
-					AgentConfig: &proto.AgentConfig{
-						Details: &proto.AgentDetails{
-							Server: &proto.Server{},
+				&proto.Command{
+					Data: &proto.Command_AgentConfig{
+						AgentConfig: &proto.AgentConfig{
+							Details: &proto.AgentDetails{
+								Server: &proto.Server{},
+							},
 						},
 					},
 				}),
