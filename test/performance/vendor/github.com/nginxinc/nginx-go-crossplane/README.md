@@ -75,7 +75,7 @@ func main() {
 
 ## Contributing
 
-If you'd like to contribute to the project, please read our [Contributing guide](docs/CONTRIBUTING.md).
+If you'd like to contribute to the project, please read our [Contributing guide](CONTRIBUTING.md).
 
 ## License
 
