@@ -37,7 +37,7 @@ func TestMetricsSenderSendMetrics(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
+		t.Run(test.name, func(_ *testing.T) {
 
 			ctx := context.TODO()
 			mockMetricsReportClient := tutils.NewMockMetricsReportClient()
@@ -76,5 +76,5 @@ func TestMetricsSenderSendMetrics(t *testing.T) {
 
 func TestMetricsSenderSubscriptions(t *testing.T) {
 	pluginUnderTest := NewMetricsSender(tutils.NewMockMetricsReportClient())
-	assert.Equal(t, []string{core.CommMetrics, core.RegistrationCompletedTopic}, pluginUnderTest.Subscriptions())
+	assert.Equal(t, []string{core.CommMetrics, core.RegistrationCompletedTopic, core.AgentConfig}, pluginUnderTest.Subscriptions())
 }
