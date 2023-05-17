@@ -15,7 +15,6 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
 	go.uber.org/atomic v1.11.0
-	google.golang.org/grpc v1.52.0
 	google.golang.org/grpc v1.55.0
 )
 
