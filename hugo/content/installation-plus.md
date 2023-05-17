@@ -107,6 +107,12 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo apt-get install apt-transport-https lsb-release ca-certificates wget gnupg2 ubuntu-keyring
     ```
 
+1. Download and add [NGINX signing key](https://cs.nginx.com/static/keys/nginx_signing.key):
+
+    ```shell
+    wget -qO - https://cs.nginx.com/static/keys/nginx_signing.key | gpg --dearmor | sudo tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null
+    ```
+
 1. Create `apt` configuration `/etc/apt/apt.conf.d/90pkgs-nginx`:
 
     ```
@@ -119,7 +125,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
 1. Add the `nginx-agent` repository:
 
     ```shell
-    echo "deb https://pkgs.nginx.com/nginx-agent/ubuntu/ `lsb_release -cs` agent" \
+    echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://pkgs.nginx.com/nginx-agent/ubuntu/ `lsb_release -cs` agent" \
       | sudo tee /etc/apt/sources.list.d/nginx-agent.list
     ```
 
