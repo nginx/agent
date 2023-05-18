@@ -10,6 +10,7 @@ package plugins
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -78,9 +79,9 @@ func TestMetricsSenderSendMetrics(t *testing.T) {
 
 func TestMetricsSenderBackoff(t *testing.T) {
 	tests := []struct {
-		name    string
-		msg     *core.Message
-		backoff backoff.BackoffSettings
+		name        string
+		msg         *core.Message
+		wantBackoff backoff.BackoffSettings
 	}{
 		{
 			name: "test reporter client backoff setting as sent by server",
@@ -102,7 +103,7 @@ func TestMetricsSenderBackoff(t *testing.T) {
 						},
 					},
 				}),
-			backoff: backoff.BackoffSettings{
+			wantBackoff: backoff.BackoffSettings{
 				InitialInterval: time.Duration(15 * time.Minute),
 				Jitter:          .5,
 				Multiplier:      .5,
@@ -122,7 +123,18 @@ func TestMetricsSenderBackoff(t *testing.T) {
 						},
 					},
 				}),
-			backoff: client.DefaultBackoffSettings,
+			wantBackoff: client.DefaultBackoffSettings,
+		},
+		{
+			name: "test reporter client backoff setting not updated",
+			msg: core.NewMessage(core.AgentConfig,
+				&proto.Command_AgentConfig{
+					AgentConfig: &proto.AgentConfig{
+						Details: &proto.AgentDetails{
+							Server: &proto.Server{},
+						},
+					},
+				}),
 		},
 	}
 	for _, test := range tests {
@@ -134,7 +146,10 @@ func TestMetricsSenderBackoff(t *testing.T) {
 			pluginUnderTest.Init(core.NewMockMessagePipe(ctx))
 			pluginUnderTest.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
 
-			mockMetricsReportClient.On("WithBackoffSettings", test.backoff)
+			if !reflect.ValueOf(test.wantBackoff).IsZero() {
+				mockMetricsReportClient.On("WithBackoffSettings", test.wantBackoff)
+			}
+
 			pluginUnderTest.Process(test.msg)
 
 			time.Sleep(1 * time.Second)
