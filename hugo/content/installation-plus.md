@@ -239,15 +239,15 @@ Before you install NGINX Agent for the first time on your system, you need to se
 1. Verify that the downloaded file contains the proper key:
 
     ```shell
-    gpg --with-fingerprint /tmp/nginx_signing.key
+    gpg --with-fingerprint --dry-run --quiet --no-keyring --import --import-options import-show /tmp/nginx_signing.key
     ```
 
 1. The output should contain the full fingerprint `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62` as follows:
 
     ```
-    pub  2048R/7BD9BF62 2011-08-19 [expires: 2024-06-14]
-          Key fingerprint = 573B FD6B 3D8F BC64 1079  A6AB ABF5 BD82 7BD9 BF62
-    uid nginx signing key <signing-key@nginx.com>
+    pub   rsa2048 2011-08-19 [SC] [expires: 2024-06-14]
+        573B FD6B 3D8F BC64 1079  A6AB ABF5 BD82 7BD9 BF62
+    uid                      nginx signing key <signing-key@nginx.com>
     ```
 
 1. Finally, import the key to the rpm database:
