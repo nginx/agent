@@ -24,14 +24,19 @@ export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
 
 if [ "$ID" = "freebsd" ]; then
     AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/usr/local/etc/nginx-agent/nginx-agent.conf"}
-    AGENT_DYNAMIC_CONFIG_DIR="/usr/local/etc/nginx-agent"
+    AGENT_DYNAMIC_CONFIG_DIR="/var/db/nginx-agent"
+    # Old location of agent-dynamic.conf 
+    OLD_DYNAMIC_CONFIG_DIR="/etc/nginx-agent"
     mkdir -p /var/log/nginx-agent/
 else
     AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/etc/nginx-agent/nginx-agent.conf"}
-    AGENT_DYNAMIC_CONFIG_DIR="/etc/nginx-agent"
+    AGENT_DYNAMIC_CONFIG_DIR="/var/lib/nginx-agent"
+    # Old location of agent-dynamic.conf 
+    OLD_DYNAMIC_CONFIG_DIR="/etc/nginx-agent"
 fi
 
 AGENT_DYNAMIC_CONFIG_FILE="${AGENT_DYNAMIC_CONFIG_DIR}/agent-dynamic.conf"
+OLD_DYNAMIC_CONFIG_FILE="${OLD_DYNAMIC_CONFIG_DIR}/agent-dynamic.conf"
 AGENT_DYNAMIC_CONFIG_COMMENT="#
 # dynamic-agent.conf
 #
@@ -73,12 +78,20 @@ ensure_sudo() {
 }
 
 load_config_values() {
-    # If the file doesn't exist attempt to create it
     if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
-        printf "Could not find %s ... Creating file\n" ${AGENT_DYNAMIC_CONFIG_FILE}
-        mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
-        printf "%s" "${AGENT_DYNAMIC_CONFIG_COMMENT}" | tee ${AGENT_DYNAMIC_CONFIG_FILE} > /dev/null
-        printf "Successfully created %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
+        if [ -f "$OLD_DYNAMIC_CONFIG_FILE" ]; then
+            printf "Moving %s to %s\n" "$OLD_DYNAMIC_CONFIG_FILE" "$AGENT_DYNAMIC_CONFIG_FILE"
+            mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
+            mv "$OLD_DYNAMIC_CONFIG_FILE" "$AGENT_DYNAMIC_CONFIG_FILE"
+            printf "Creating symlink %s at %s\n" "$AGENT_DYNAMIC_CONFIG_FILE" "$OLD_DYNAMIC_CONFIG_FILE"
+            ln -s "$AGENT_DYNAMIC_CONFIG_FILE" "$OLD_DYNAMIC_CONFIG_FILE" 
+        else
+            printf "Could not find %s ... Creating file\n" ${AGENT_DYNAMIC_CONFIG_FILE}
+            mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
+            printf "%s" "${AGENT_DYNAMIC_CONFIG_COMMENT}" | tee ${AGENT_DYNAMIC_CONFIG_FILE} > /dev/null
+            printf "Successfully created %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
+        fi
+        
     fi
 
     # Check if there are existing values
