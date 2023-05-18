@@ -292,7 +292,6 @@ func parseToLinuxRouteStruct(output []byte) (routeStruct, error) {
 	const (
 		destinationField = 1 // field containing hex destination address
 	)
-	lineNumber := 0
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 
 	// Skip header line
@@ -301,11 +300,6 @@ func parseToLinuxRouteStruct(output []byte) (routeStruct, error) {
 	}
 
 	for scanner.Scan() {
-		lineNumber++
-		if lineNumber == 1 {
-			// Skip header line.
-			continue
-		}
 		row := scanner.Text()
 		tokens := strings.Fields(strings.TrimSpace(row))
 		if len(tokens) < 11 {

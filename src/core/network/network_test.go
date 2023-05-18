@@ -21,8 +21,7 @@ func TestParseToLinuxRouteStruct(t *testing.T) {
 		err      error
 	}{
 		{
-			input: []byte(`
-			Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT                                                       
+			input: []byte(`Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT
 			enp0s3  0002000A        00000000        0001    0       0       0       00FFFFFF        0       0       0                                                                             
 			enp0s3  0202000A        00000000        0005    0       0       100     FFFFFFFF        0       0       0                                                                           
 			enp0s3  00000000        0202000A        0003    0       0       100     00000000        0       0       0                                                                        
@@ -44,8 +43,7 @@ func TestParseToLinuxRouteStruct(t *testing.T) {
 			err: nil,
 		},
 		{
-			input: []byte(`
-			Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT`),
+			input:    []byte(`Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT`),
 			expected: routeStruct{},
 			err:      errors.New("interface with default destination not found"),
 		},
@@ -53,6 +51,26 @@ func TestParseToLinuxRouteStruct(t *testing.T) {
 			input:    []byte(``),
 			expected: routeStruct{},
 			err:      errors.New("Invalid linux route file"),
+		},
+		{
+			input: []byte(`Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT
+			ens5    00000000        010010AC        0003    0       0       100     00000000        0       0       0
+			ens2    000010AC        00000000        0001    0       0       0       00FFFFFF        0       0       0
+			ens5    010010AC        00000000        0005    0       0       100     FFFFFFFF        0       0       0`),
+			expected: routeStruct{
+				Iface:       "ens5",
+				Destination: "00000000",
+				Gateway:     "010010AC",
+				Flags:       "0003",
+				RefCnt:      "0",
+				Use:         "0",
+				Metric:      "100",
+				Mask:        "00000000",
+				MTU:         "0",
+				Window:      "0",
+				IRTT:        "0",
+			},
+			err: nil,
 		},
 	}
 	for _, test := range tests {
