@@ -102,7 +102,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 		case *proto.Command:
 			r.metricSenderBackoff(cmd.GetAgentConfig())
 		default:
-			log.Warnf("unsupported pause message %+v ", msg)
+			log.Warnf("metrics sender expected %T type, but got: %T", &proto.Command{}, msg.Data())
 		}
 	}
 }
