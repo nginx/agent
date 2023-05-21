@@ -210,14 +210,14 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 		log.Info("\n UpdateAgentConfig() updateTags ***********  \n")
 		updateTags = []string{}
 	} else {
-		log.Info("\n UpdateAgentConfig() NO updateTags ***********,  %+v", updateTags)
+		log.Info("\n UpdateAgentConfig() NO updateTags ***********")
 	}
 
 	if updateFeatures == nil {
 		log.Info("\n UpdateAgentConfig() updateFeatures ***********  \n")
 		updateFeatures = []string{}
 	} else {
-		log.Infof("\n UpdateAgentConfig() NO updateFeatures ***********  %+v", updateFeatures)
+		log.Infof("\n UpdateAgentConfig() NO updateFeatures ***********")
 	}
 
 	// Sort tags and compare them
