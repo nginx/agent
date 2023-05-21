@@ -9,6 +9,7 @@ package backoff
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -41,8 +42,10 @@ func WaitUntil(
 
 	expoBackoffWithContext := backoff.WithContext(exponentialBackoff, ctx)
 
+	fmt.Printf("WaitUntil backoffSettings backoff settings .. %+v\n", exponentialBackoff)
 	err := backoff.Retry(backoff.Operation(operation), expoBackoffWithContext)
 	if err != nil {
+		fmt.Printf("WaitUntil backoffSettings backoff settings error error.. %+v\n", err)
 		return err
 	}
 

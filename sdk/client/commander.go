@@ -17,6 +17,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/nginx/agent/sdk/v2/backoff"
@@ -71,6 +72,7 @@ func (c *commander) Connect(ctx context.Context) error {
 	log.Debugf("Commander connecting to %s", c.server)
 
 	c.ctx = ctx
+	log.Infof("Connect() Commander connecting to %s , backoffsetting", c.server, c.backoffSettings)
 	err := backoff.WaitUntil(
 		c.ctx,
 		c.backoffSettings,
@@ -277,6 +279,7 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 
 func (c *commander) createClient() error {
 	log.Debug("Creating commander client")
+	log.Debugf("Creating commander client, ** backoffSetting ** %s", c.backoffSettings)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -293,6 +296,8 @@ func (c *commander) createClient() error {
 		log.Errorf("Unable to create client connection to %s: %s", c.server, err)
 		log.Infof("Commander retrying to connect to %s", c.grpc.Target())
 		return err
+	} else {
+		log.Infof("Created client connection to : %s", c.server)
 	}
 	c.grpc = grpc
 
@@ -303,20 +308,23 @@ func (c *commander) createClient() error {
 		log.Errorf("Unable to create command channel: %s", err)
 		log.Infof("Commander retrying to connect to %s", c.grpc.Target())
 		return err
+	} else {
+		log.Errorf("Created command channel")
 	}
 	c.channel = channel
-
+	log.Debug("CREATED commander client")
 	return nil
 }
 
 func (c *commander) recvLoop() {
 	log.Debug("Commander receive loop starting")
 	for {
+		log.Infof("Commander recvLoop() receive loop starting, backoff backoffSettings, %s", c.backoffSettings)
 		err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
 			cmd, err := c.channel.Recv()
-			log.Infof("Commander received %v, %v", cmd, err)
+			log.Infof("Commander received help .. %v, %v", cmd, err)
 			if err != nil {
-				return c.handleGrpcError("Commander Channel Recv", err)
+				return c.handleGrpcError("Commander Channel Recv help .. ", err)
 			}
 
 			select {
@@ -333,16 +341,34 @@ func (c *commander) recvLoop() {
 }
 
 func (c *commander) handleGrpcError(messagePrefix string, err error) error {
+	log.Infof("handleGrpcError %+v", err)
+	status1, ook := status.FromError(err)
+	log.Infof("handleGrpcError status1 : %s, ok : %s commander backoffSettings backoff settings .. %+v", status1, ook, c.backoffSettings)
 	if st, ok := status.FromError(err); ok {
-		log.Errorf("%s: error communicating with %s, code=%s, message=%v", messagePrefix, c.grpc.Target(), st.Code().String(), st.Message())
-	} else if err == io.EOF {
-		log.Errorf("%s: server %s is not processing requests, code=%s, message=%v", messagePrefix, c.grpc.Target(), st.Code().String(), st.Message())
+		log.Infof("commander backoffSettings backoff settings status.FromError .. %+v", c.backoffSettings)
+		log.Infof("%s:::::: error communicating with %s, code=%s, message=%v", messagePrefix, c.grpc.Target(), st.Code().String(), st.Message())
+		log.Infof("grpc code :: %s ", st.Code())
+		log.Infof("grpc code :: %s ", codes.Unavailable)
+		log.Infof("grpc code enum  and provided matched :: %s ", st.Code() == codes.Unavailable)
+		// backoff.WaitUntil(
+		// 	c.ctx,
+		// 	c.backoffSettings,
+		// 	c.createClient,
+		// )
+		return err
 	} else {
-		log.Errorf("%s: unknown grpc error while communicating with %s, %v", messagePrefix, c.grpc.Target(), err)
+		if err == io.EOF {
+			log.Infof("%s: server %s is not processing requests, code=%s, message=%v", messagePrefix, c.grpc.Target(), st.Code().String(), st.Message())
+		} else {
+			log.Infof("%s: unknown grpc error while communicating with %s, %v", messagePrefix, c.grpc.Target(), err)
+		}
+
+		log.Infof("%s: retrying to connect to %s", messagePrefix, c.grpc.Target())
+
+		log.Infof("commander backoffSettings backoff settings NOT status.FromError .. %+v", c.backoffSettings)
+		c.createClient()
+
+		return err
 	}
 
-	log.Infof("%s: retrying to connect to %s", messagePrefix, c.grpc.Target())
-	_ = c.createClient()
-
-	return err
 }
