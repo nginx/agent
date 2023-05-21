@@ -39,7 +39,6 @@ require (
 
 require (
 	github.com/bufbuild/buf v1.18.0
-	github.com/cilium/ebpf v0.10.0
 	github.com/evilmartians/lefthook v1.3.13
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-swagger/go-swagger v0.30.4
@@ -116,6 +115,7 @@ require (
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/firefart/nonamedreturns v1.0.4 // indirect
+	github.com/frankban/quicktest v1.14.4 // indirect
 	github.com/fzipp/gocyclo v0.6.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.8 // indirect
 	github.com/go-critic/go-critic v0.7.0 // indirect

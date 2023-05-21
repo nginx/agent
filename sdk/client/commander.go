@@ -343,32 +343,23 @@ func (c *commander) recvLoop() {
 func (c *commander) handleGrpcError(messagePrefix string, err error) error {
 	log.Infof("handleGrpcError %+v", err)
 	status1, ook := status.FromError(err)
-	log.Infof("handleGrpcError status1 : %s, ok : %s commander backoffSettings backoff settings .. %+v", status1, ook, c.backoffSettings)
+	log.Infof("handleGrpcError status1 : %s, ok : %t commander backoffSettings backoff settings .. %+v", status1, ook, c.backoffSettings)
 	if st, ok := status.FromError(err); ok {
 		log.Infof("commander backoffSettings backoff settings status.FromError .. %+v", c.backoffSettings)
 		log.Infof("%s:::::: error communicating with %s, code=%s, message=%v", messagePrefix, c.grpc.Target(), st.Code().String(), st.Message())
 		log.Infof("grpc code :: %s ", st.Code())
 		log.Infof("grpc code :: %s ", codes.Unavailable)
-		log.Infof("grpc code enum  and provided matched :: %s ", st.Code() == codes.Unavailable)
-		// backoff.WaitUntil(
-		// 	c.ctx,
-		// 	c.backoffSettings,
-		// 	c.createClient,
-		// )
-		return err
+		log.Infof("grpc code enum  and provided matched :: %t ", st.Code() == codes.Unavailable)
+	} else if err == io.EOF {
+		log.Infof("%s: server %s is not processing requests, code=%s, message=%v", messagePrefix, c.grpc.Target(), st.Code().String(), st.Message())
 	} else {
-		if err == io.EOF {
-			log.Infof("%s: server %s is not processing requests, code=%s, message=%v", messagePrefix, c.grpc.Target(), st.Code().String(), st.Message())
-		} else {
-			log.Infof("%s: unknown grpc error while communicating with %s, %v", messagePrefix, c.grpc.Target(), err)
-		}
-
-		log.Infof("%s: retrying to connect to %s", messagePrefix, c.grpc.Target())
-
-		log.Infof("commander backoffSettings backoff settings NOT status.FromError .. %+v", c.backoffSettings)
-		c.createClient()
-
-		return err
+		log.Infof("%s: unknown grpc error while communicating with %s, %v", messagePrefix, c.grpc.Target(), err)
 	}
 
+	log.Infof("%s: retrying to connect to %s", messagePrefix, c.grpc.Target())
+
+	log.Infof("commander backoffSettings backoff settings NOT status.FromError .. %+v", c.backoffSettings)
+	_ = c.createClient()
+
+	return err
 }

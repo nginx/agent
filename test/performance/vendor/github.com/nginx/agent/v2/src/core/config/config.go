@@ -197,6 +197,9 @@ func GetConfig(clientId string) (*Config, error) {
 func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []string) (bool, error) {
 	// Get current config on disk
 	config, err := GetConfig(systemId)
+	log.Infof("\nUpdateAgentConfig() ****************************************************************  %+v\n", config)
+	log.Infof("\nUpdateAgentConfig() updateFeatures ****************************************************************  %+v\n", updateFeatures)
+	log.Infof("\nUpdateAgentConfig() updateTags ****************************************************************  %+v\n", updateTags)
 	if err != nil {
 		log.Errorf("Failed to register config: %v", err)
 		return false, err
@@ -204,11 +207,17 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 
 	// Update nil valued updateTags to empty slice for comparison
 	if updateTags == nil {
+		log.Info("\n UpdateAgentConfig() updateTags ***********  \n")
 		updateTags = []string{}
+	} else {
+		log.Info("\n UpdateAgentConfig() NO updateTags ***********")
 	}
 
 	if updateFeatures == nil {
+		log.Info("\n UpdateAgentConfig() updateFeatures ***********  \n")
 		updateFeatures = []string{}
+	} else {
+		log.Infof("\n UpdateAgentConfig() NO updateFeatures ***********")
 	}
 
 	// Sort tags and compare them
@@ -230,6 +239,8 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 	if synchronizedTags && synchronizedFeatures {
 		log.Debug("Manager and Local tags and features are already synchronized")
 		return false, nil
+	} else {
+		log.Debug("UpdateAgentConfig() Manager and Local tags and features are NOT synchronized")
 	}
 
 	// Get the dynamic config path and use default dynamic config path if it's not

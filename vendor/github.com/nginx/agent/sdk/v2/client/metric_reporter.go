@@ -15,7 +15,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/nginx/agent/sdk/v2/backoff"
@@ -196,27 +195,15 @@ func (r *metricReporter) closeConnection() error {
 func (r *metricReporter) handleGrpcError(messagePrefix string, err error) error {
 	log.Errorf("handleGrpcError : error --- %+v", err)
 	status1, ook := status.FromError(err)
-	log.Debugf("handleGrpcError status1 : %s, ok : %s metric sender backoffSettings backoff settings .. %+v", status1, ook, r.backoffSettings)
+	log.Debugf("handleGrpcError status1 : %s, ok : %t metric sender backoffSettings backoff settings .. %+v", status1, ook, r.backoffSettings)
 	if st, ok := status.FromError(err); ok {
-		if st.Code() == codes.Unavailable {
-			log.Errorf("%s: server unavailable while communicating with %s, %v", messagePrefix, r.grpc.Target(), err)
-			backoff.WaitUntil(
-				r.ctx,
-				r.backoffSettings,
-				r.createClient,
-			)
-			return status.Error(codes.Unavailable, err.Error())
-		}
 		log.Errorf("%s::::::: error communicating with %s, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
-		return err
+	} else if err == io.EOF {
+		log.Errorf("%s: server %s is not processing requests, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
 	} else {
-		if err == io.EOF {
-			log.Errorf("%s: server %s is not processing requests, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
-		} else {
-			log.Errorf("%s: unknown grpc error while communicating with %s, %v", messagePrefix, r.grpc.Target(), err)
-		}
-		log.Infof("%s: retrying to connect to %s", messagePrefix, r.grpc.Target())
-		r.createClient()
-		return err
+		log.Errorf("%s: unknown grpc error while communicating with %s, %v", messagePrefix, r.grpc.Target(), err)
 	}
+	log.Infof("%s: retrying to connect to %s", messagePrefix, r.grpc.Target())
+	_ = r.createClient()
+	return err
 }

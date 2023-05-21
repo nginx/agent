@@ -336,8 +336,6 @@ github.com/charmbracelet/lipgloss
 # github.com/chavacava/garif v0.0.0-20230227094218-b8c73b2037b8
 ## explicit; go 1.16
 github.com/chavacava/garif
-# github.com/cilium/ebpf v0.10.0
-## explicit; go 1.18
 # github.com/cpuguy83/go-md2man/v2 v2.0.2
 ## explicit; go 1.11
 github.com/cpuguy83/go-md2man/v2/md2man
@@ -454,6 +452,8 @@ github.com/felixge/httpsnoop
 # github.com/firefart/nonamedreturns v1.0.4
 ## explicit; go 1.18
 github.com/firefart/nonamedreturns/analyzer
+# github.com/frankban/quicktest v1.14.4
+## explicit; go 1.13
 # github.com/fsnotify/fsnotify v1.6.0
 ## explicit; go 1.16
 github.com/fsnotify/fsnotify

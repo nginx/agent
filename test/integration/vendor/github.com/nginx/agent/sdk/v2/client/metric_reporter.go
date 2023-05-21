@@ -193,16 +193,17 @@ func (r *metricReporter) closeConnection() error {
 }
 
 func (r *metricReporter) handleGrpcError(messagePrefix string, err error) error {
+	log.Errorf("handleGrpcError : error --- %+v", err)
+	status1, ook := status.FromError(err)
+	log.Debugf("handleGrpcError status1 : %s, ok : %t metric sender backoffSettings backoff settings .. %+v", status1, ook, r.backoffSettings)
 	if st, ok := status.FromError(err); ok {
-		log.Errorf("%s: error communicating with %s, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
+		log.Errorf("%s::::::: error communicating with %s, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
 	} else if err == io.EOF {
 		log.Errorf("%s: server %s is not processing requests, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
 	} else {
 		log.Errorf("%s: unknown grpc error while communicating with %s, %v", messagePrefix, r.grpc.Target(), err)
 	}
-
 	log.Infof("%s: retrying to connect to %s", messagePrefix, r.grpc.Target())
 	_ = r.createClient()
-
 	return err
 }

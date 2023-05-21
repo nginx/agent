@@ -135,7 +135,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 
 			// Update config tags and features if they were out of sync between Manager and Agent
 			if agtCfg.Details != nil && (len(agtCfg.Details.Tags) > 0 || len(agtCfg.Details.Features) > 0) {
-				log.Infof("AgentConnectResponse UpdateAgentConfig(), %+v",agtCfg )
+				log.Infof("AgentConnectResponse UpdateAgentConfig(), %+v", agtCfg)
 				configUpdated, err := config.UpdateAgentConfig(c.config.ClientID, agtCfg.Details.Tags, agtCfg.Details.Features)
 				if err != nil {
 					log.Errorf("Failed updating Agent config - %v", err)
@@ -143,7 +143,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 
 				// If the config was updated send a new agent config updated message
 				if configUpdated {
-					log.Infof("AgentConnectResponse UpdateAgentConfig()  ** configUpdated ** , %+v",agtCfg )
+					log.Infof("AgentConnectResponse UpdateAgentConfig()  ** configUpdated ** , %+v", agtCfg)
 					c.pipeline.Process(core.NewMessage(core.AgentConfigChanged, ""))
 				}
 			}
