@@ -72,7 +72,7 @@ func (c *commander) Connect(ctx context.Context) error {
 	log.Debugf("Commander connecting to %s", c.server)
 
 	c.ctx = ctx
-	log.Infof("Connect() Commander connecting to %s , backoffsetting", c.server, c.backoffSettings)
+	log.Infof("Connect() Commander connecting to %s , backoffsetting %+v", c.server, c.backoffSettings)
 	err := backoff.WaitUntil(
 		c.ctx,
 		c.backoffSettings,
@@ -279,7 +279,7 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 
 func (c *commander) createClient() error {
 	log.Debug("Creating commander client")
-	log.Debugf("Creating commander client, ** backoffSetting ** %s", c.backoffSettings)
+	log.Debugf("Creating commander client, ** backoffSetting ** %+v", c.backoffSettings)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -319,10 +319,10 @@ func (c *commander) createClient() error {
 func (c *commander) recvLoop() {
 	log.Debug("Commander receive loop starting")
 	for {
-		log.Infof("Commander recvLoop() receive loop starting, backoff backoffSettings, %s", c.backoffSettings)
+		log.Infof("Commander recvLoop() receive loop starting, backoff backoffSettings, %+v", c.backoffSettings)
 		err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
 			cmd, err := c.channel.Recv()
-			log.Infof("Commander received help .. %v, %v", cmd, err)
+			log.Infof("Commander received help .. %+v, %+v", cmd, err)
 			if err != nil {
 				return c.handleGrpcError("Commander Channel Recv help .. ", err)
 			}
