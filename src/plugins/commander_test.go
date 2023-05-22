@@ -28,16 +28,16 @@ import (
 
 func TestCommander_Process(t *testing.T) {
 	tests := []struct {
-		name           string
-		setMocks       bool
-		cmd            *proto.Command
-		topic          string
-		nginxId        string
-		systemId       string
-		config         *proto.NginxConfig
-		msgTopics      []string
-		updateTags     []string
-		backoffSetting backoff.BackoffSettings
+		name        string
+		setMocks    bool
+		cmd         *proto.Command
+		topic       string
+		nginxId     string
+		systemId    string
+		config      *proto.NginxConfig
+		msgTopics   []string
+		updateTags  []string
+		wantBackoff backoff.BackoffSettings
 	}{
 		{
 			name: "test agent connect",
@@ -173,9 +173,9 @@ func TestCommander_Process(t *testing.T) {
 				},
 			},
 
-			topic:          core.AgentConfig,
-			msgTopics:      []string{},
-			backoffSetting: client.DefaultBackoffSettings,
+			topic:       core.AgentConfig,
+			msgTopics:   []string{},
+			wantBackoff: client.DefaultBackoffSettings,
 		},
 		{
 			name: "test agent config request with backoff",
@@ -186,11 +186,11 @@ func TestCommander_Process(t *testing.T) {
 						Details: &proto.AgentDetails{
 							Server: &proto.Server{
 								Backoff: &proto.Backoff{
-									InitialInterval:     int64(time.Duration(30 * time.Minute)),
+									InitialInterval:     1800,
 									RandomizationFactor: .5,
 									Multiplier:          .5,
-									MaxInterval:         int64(time.Duration(15 * time.Minute)),
-									MaxElapsedTime:      int64(time.Duration(30 * time.Minute)),
+									MaxInterval:         900,
+									MaxElapsedTime:      1800,
 								},
 							},
 						},
@@ -199,13 +199,29 @@ func TestCommander_Process(t *testing.T) {
 			},
 			topic:     core.AgentConfig,
 			msgTopics: []string{},
-			backoffSetting: backoff.BackoffSettings{
+			wantBackoff: backoff.BackoffSettings{
 				InitialInterval: time.Duration(30 * time.Minute),
 				MaxInterval:     time.Duration(15 * time.Minute),
-				MaxElapsedTime:  time.Duration(time.Duration(30 * time.Minute)),
+				MaxElapsedTime:  time.Duration(30 * time.Minute),
 				Multiplier:      .5,
 				Jitter:          .5,
 			},
+		},
+		{
+			name: "test agent config request with default backoff",
+			cmd: &proto.Command{
+				Type: proto.Command_NORMAL,
+				Data: &proto.Command_AgentConfig{
+					AgentConfig: &proto.AgentConfig{
+						Details: &proto.AgentDetails{
+							Server: &proto.Server{},
+						},
+					},
+				},
+			},
+			topic:       core.AgentConfig,
+			msgTopics:   []string{},
+			wantBackoff: client.DefaultBackoffSettings,
 		},
 		{
 			name: "test agent command status ok",
@@ -270,8 +286,8 @@ func TestCommander_Process(t *testing.T) {
 				cmdr.On("Send", mock.Anything, client.MessageFromCommand(test.cmd))
 			}
 
-			if !reflect.ValueOf(test.backoffSetting).IsZero() {
-				cmdr.On("WithBackoffSettings", test.backoffSetting)
+			if !reflect.ValueOf(test.wantBackoff).IsZero() {
+				cmdr.On("WithBackoffSettings", test.wantBackoff)
 			}
 
 			pluginUnderTest := NewCommander(cmdr, &config.Config{ClientID: "12345"})
