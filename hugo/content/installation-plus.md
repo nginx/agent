@@ -1,5 +1,5 @@
 ---
-title: "Install NGINX Agent From NGINX Plus Repository"
+title: "Installation from NGINX Plus Repository"
 draft: false
 description: "Learn how to install NGINX Agent from NGINX Plus repository."
 weight: 400
@@ -340,7 +340,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/
     ```
 
-1. To install nginx-agent, run the following command:
+1. To install `nginx-agent`, run the following command:
 
     ```shell
     sudo apk add nginx-agent@nginx-agent
