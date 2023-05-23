@@ -8,6 +8,8 @@ FREEBSD_DISTROS="FreeBSD:12:amd64 FreeBSD:13:amd64"
 
 cd /nginx-agent/
 
+ls -ltr /home/nginx
+
 mkdir -p ./build/packages/txz
 mkdir -p ./build/github/packages
 
