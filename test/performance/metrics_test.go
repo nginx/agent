@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/google/uuid"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -263,6 +264,7 @@ func startNginxAgent(b *testing.B) {
 		"../testdata/configs/",
 	)
 	config.Viper.Set(config.ConfigPathKey, configPath)
+	config.Viper.Set(agent_config.FeaturesKey, config.Defaults.Features)
 
 	loadedConfig, _ := config.GetConfig(env.GetSystemUUID())
 	fmt.Printf("Loaded Config: %v", loadedConfig)
