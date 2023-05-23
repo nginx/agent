@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 	"time"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/gogo/protobuf/types"
 	"github.com/google/uuid"
 	"github.com/nginx/agent/sdk/v2/client"
@@ -265,6 +265,8 @@ func startNginxAgent(b *testing.B) {
 	config.Viper.Set(config.ConfigPathKey, configPath)
 
 	loadedConfig, _ := config.GetConfig(env.GetSystemUUID())
+	fmt.Printf("Loaded Config: %v", loadedConfig)
+	log.Infof("Loaded Config: %v", loadedConfig)
 	logger.SetLogLevel("error")
 	os.Create("/var/log/nginx-agent.log")
 	logger.SetLogFile("/var/log/nginx-agent.log")
