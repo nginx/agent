@@ -48,7 +48,10 @@ var (
 			Mode:               "aggregated",
 		},
 		Features: config.Defaults.Features,
-		Nginx:    config.Defaults.Nginx,
+		Nginx: config.Nginx{
+			Debug:               false,
+			NginxCountingSocket: "unix:/var/run/nginx-agent/nginx.sock",
+		},
 	}
 	collectorConfigNoApi = &metrics.NginxCollectorConfig{
 		BinPath:            "/path/to/nginx",

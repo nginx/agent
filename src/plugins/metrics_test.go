@@ -77,6 +77,10 @@ func TestMetricsProcessNginxDetailProcUpdate(t *testing.T) {
 			CollectionInterval: 1,
 			Mode:               "aggregated",
 		},
+		Features: config.Defaults.Features,
+		Nginx: config.Nginx{
+			NginxCountingSocket: "unix:/var/run/nginx-agent/nginx.sock",
+		},
 	}
 
 	testCases := []struct {
@@ -286,10 +290,26 @@ func TestMetrics_Process_AgentCollectorsUpdate(t *testing.T) {
 }
 
 func TestMetrics_Process_NginxPluginConfigured(t *testing.T) {
+	config := &config.Config{
+		ClientID:   "12345",
+		Tags:       []string{"locally-tagged", "tagged-locally"},
+		ConfigDirs: "/testDirs",
+		AgentMetrics: config.AgentMetrics{
+			BulkSize:           1,
+			ReportInterval:     5,
+			CollectionInterval: 1,
+			Mode:               "aggregated",
+		},
+		Features: config.Defaults.Features,
+		Nginx: config.Nginx{
+			NginxCountingSocket: "unix:/var/run/nginx-agent/nginx.sock",
+		},
+	}
+
 	env := tutils.GetMockEnvWithHostAndProcess()
 	env.On("IsContainer").Return(false)
 
-	pluginUnderTest := NewMetrics(tutils.GetMockAgentConfig(), env, tutils.GetMockNginxBinary())
+	pluginUnderTest := NewMetrics(config, env, tutils.GetMockNginxBinary())
 	pluginUnderTest.Process(core.NewMessage(core.NginxPluginConfigured, nil))
 
 	assert.GreaterOrEqual(t, len(pluginUnderTest.collectors), 2)
