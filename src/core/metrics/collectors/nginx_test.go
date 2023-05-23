@@ -48,7 +48,7 @@ var (
 			Mode:               "aggregated",
 		},
 		Features: config.Defaults.Features,
-		Nginx: config.Defaults.Nginx,
+		Nginx:    config.Defaults.Nginx,
 	}
 	collectorConfigNoApi = &metrics.NginxCollectorConfig{
 		BinPath:            "/path/to/nginx",
