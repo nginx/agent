@@ -5,11 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"net"
-	"sync"
-	"testing"
-	"time"
-	log "github.com/sirupsen/logrus"
 	"github.com/gogo/protobuf/types"
 	"github.com/google/uuid"
 	"github.com/nginx/agent/sdk/v2/client"
@@ -20,11 +15,16 @@ import (
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/logger"
 	"github.com/nginx/agent/v2/src/plugins"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
+	"net"
+	"sync"
+	"testing"
+	"time"
 )
 
 var (
