@@ -104,48 +104,46 @@ func (m *Metrics) Process(msg *core.Message) {
 		return
 
 	case msg.Exact(core.NginxDetailProcUpdate):
-		if len(m.conf.Nginx.NginxCountingSocket) > 0 && m.conf.IsFeatureEnabled(agent_config.FeatureNginxCounting) {
-			collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary)
-			for key, collectorConfig := range collectorConfigsMap {
-				if _, ok := m.collectorConfigsMap[key]; !ok {
-					log.Debugf("Adding new nginx collector for nginx id: %s", collectorConfig.NginxId)
-					m.collectors = append(m.collectors,
-						collectors.NewNginxCollector(m.conf, m.env, collectorConfig, m.binary),
-					)
-				}
+		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary)
+		for key, collectorConfig := range collectorConfigsMap {
+			if _, ok := m.collectorConfigsMap[key]; !ok {
+				log.Debugf("Adding new nginx collector for nginx id: %s", collectorConfig.NginxId)
+				m.collectors = append(m.collectors,
+					collectors.NewNginxCollector(m.conf, m.env, collectorConfig, m.binary),
+				)
 			}
+		}
 
-			collectorsToStop := []string{}
-			for key, collectorConfig := range m.collectorConfigsMap {
-				if _, ok := collectorConfigsMap[key]; !ok {
-					collectorsToStop = append(collectorsToStop, collectorConfig.NginxId)
-				}
+		collectorsToStop := []string{}
+		for key, collectorConfig := range m.collectorConfigsMap {
+			if _, ok := collectorConfigsMap[key]; !ok {
+				collectorsToStop = append(collectorsToStop, collectorConfig.NginxId)
 			}
+		}
 
-			m.collectorConfigsMapMutex.Lock()
-			m.collectorConfigsMap = collectorConfigsMap
-			m.collectorConfigsMapMutex.Unlock()
+		m.collectorConfigsMapMutex.Lock()
+		m.collectorConfigsMap = collectorConfigsMap
+		m.collectorConfigsMapMutex.Unlock()
 
-			stoppedCollectorIndex := -1
+		stoppedCollectorIndex := -1
 
-			m.collectorsMutex.RLock()
-			for index, collector := range m.collectors {
-				if nginxCollector, ok := collector.(*collectors.NginxCollector); ok {
-					for _, nginxId := range collectorsToStop {
-						if nginxCollector.GetNginxId() == nginxId {
-							stoppedCollectorIndex = index
-							nginxCollector.Stop()
-							log.Debugf("Removing nginx collector for nginx id: %s", nginxCollector.GetNginxId())
-							break
-						}
+		m.collectorsMutex.RLock()
+		for index, collector := range m.collectors {
+			if nginxCollector, ok := collector.(*collectors.NginxCollector); ok {
+				for _, nginxId := range collectorsToStop {
+					if nginxCollector.GetNginxId() == nginxId {
+						stoppedCollectorIndex = index
+						nginxCollector.Stop()
+						log.Debugf("Removing nginx collector for nginx id: %s", nginxCollector.GetNginxId())
+						break
 					}
 				}
 			}
-			m.collectorsMutex.RUnlock()
+		}
+		m.collectorsMutex.RUnlock()
 
-			if stoppedCollectorIndex >= 0 {
-				m.collectors = append(m.collectors[:stoppedCollectorIndex], m.collectors[stoppedCollectorIndex+1:]...)
-			}
+		if stoppedCollectorIndex >= 0 {
+			m.collectors = append(m.collectors[:stoppedCollectorIndex], m.collectors[stoppedCollectorIndex+1:]...)
 		}
 
 		return
@@ -256,25 +254,23 @@ func (m *Metrics) registerStatsSources() {
 		}
 	}
 
-	if len(m.conf.Nginx.NginxCountingSocket) > 0 && m.conf.IsFeatureEnabled(agent_config.FeatureNginxCounting) {
-		hasNginxCollector := false
-		m.collectorConfigsMapMutex.Lock()
-		for key := range m.collectorConfigsMap {
-			tempCollectors = append(tempCollectors,
-				collectors.NewNginxCollector(m.conf, m.env, m.collectorConfigsMap[key], m.binary),
-			)
-			hasNginxCollector = true
-		}
-		m.collectorConfigsMapMutex.Unlock()
+	hasNginxCollector := false
+	m.collectorConfigsMapMutex.Lock()
+	for key := range m.collectorConfigsMap {
+		tempCollectors = append(tempCollectors,
+			collectors.NewNginxCollector(m.conf, m.env, m.collectorConfigsMap[key], m.binary),
+		)
+		hasNginxCollector = true
+	}
+	m.collectorConfigsMapMutex.Unlock()
 
-		// if NGINX is not running/detected, still run the static collector to output nginx.status = 0.
-		if !hasNginxCollector {
-			// Just use the default NGINX process path and default NGINX config path to create the NginxID.
-			nginxID := core.GenerateNginxID("%s_%s_%s", "/usr/sbin/nginx", "/etc/nginx/nginx.conf", "prefix")
-			tempCollectors = append(tempCollectors,
-				collectors.NewNginxCollector(m.conf, m.env, &metrics.NginxCollectorConfig{NginxId: nginxID}, m.binary),
-			)
-		}
+	// if NGINX is not running/detected, still run the static collector to output nginx.status = 0.
+	if !hasNginxCollector {
+		// Just use the default NGINX process path and default NGINX config path to create the NginxID.
+		nginxID := core.GenerateNginxID("%s_%s_%s", "/usr/sbin/nginx", "/etc/nginx/nginx.conf", "prefix")
+		tempCollectors = append(tempCollectors,
+			collectors.NewNginxCollector(m.conf, m.env, &metrics.NginxCollectorConfig{NginxId: nginxID}, m.binary),
+		)
 	}
 
 	m.collectorsMutex.Lock()
