@@ -217,7 +217,7 @@ func (a *AgentAPI) createHttpServer() {
 
 	mux := http.NewServeMux()
 
-	if a.config.IsFeatureEnabled(agent_config.FeatureMetrics) {
+	if a.config.IsFeatureEnabled(agent_config.FeatureMetrics) || (len(a.config.Nginx.NginxCountingSocket) > 0 && a.config.IsFeatureEnabled(agent_config.FeatureNginxCounting)) {
 		mux.Handle("/metrics/", a.getPrometheusHandler())
 	} else {
 		mux.Handle("/metrics/", a.disabledFeatureHandler)

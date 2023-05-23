@@ -25,6 +25,7 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
   - [Starting the gRPC Mock Control Plane](#starting-the-grpc-mock-control-plane)
   - [NGINX Agent Settings](#nginx-agent-settings)
   - [Extensions](#extensions)
+  - [Features](#features)
   - [Starting NGINX Agent](#starting-nginx-agent)
 - [Development Environment Setup](#development-environment-setup)
   - [Selecting an Operating System](#selecting-an-operating-system)
@@ -206,6 +207,57 @@ Here is an example of enabling the advanced metrics extension:
 extensions:
   - advanced-metrics
 ```
+
+## Features
+A feature is a core concept that is critical to the main functionality that the NGINX agent is responsible for.
+
+If no feature is present in the NGINX Agent config file then all features are enabled.
+
+If you want to only enable certain features, each feature you want enabled must be added to the features list in the `/etc/nginx-agent/nginx-agent.conf`.
+
+Some examples of enabling different features:
+
+Enable Agent REST API feature:
+```yaml
+features:
+  - agent-api
+  - nginx-config-async
+  - metrics
+```
+
+Enable only metrics and Agent REST API feature:
+```yaml
+features:
+  - agent-api
+  - metrics
+```
+
+Enable only nginx counting feature:
+```yaml
+features:
+  - registration 
+  - nginx-counting  
+  - metrics-throttle
+```
+
+Here is a list of all currently supported features:
+
+
+| Feature              | Description                                                         |
+| -------------------- | ------------------------------------------------------------------- |
+| registration         | Registering the agent with the management plane.                    |
+| nginx-config-async   | Toggle uploading of NGINX config and the pushing of config applies. |
+| nginx-ssl-config     | Toggle uploading of SSL meta information                            |
+| nginx-counting       | Enable NGINX counting feature on NGINX plus                         |
+| metrics              | Report core metrics for system and NGINX                            |
+| metrics-throttle     | Batch / throttle metrics being sent to management plane             |
+| dataplane-status     | Report changes on the health of installed software                  |
+| dataplane-update     | Report changes on the host and installed software                   |
+| process-watcher      | Watch for NGINX process changes                                     |
+| file-watcher         | Watch for NGINX configuration changes                               |
+| activity-events      | Report on Events in the Agent                                       |
+| agent-api            | Toggles the Agent REST API                                          |
+
 
 ## Starting NGINX Agent
 If already running, restart NGINX Agent to apply the new configuration. Alternatively, if NGINX Agent is not running, you may run it from the source code root directory.

@@ -225,7 +225,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		corePlugins = append(corePlugins, plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString()), version))
 	}
 
-	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) {
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || (len(loadedConfig.Nginx.NginxCountingSocket) > 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxCounting)) {
 		corePlugins = append(corePlugins, plugins.NewMetrics(loadedConfig, env, binary))
 	}
 
