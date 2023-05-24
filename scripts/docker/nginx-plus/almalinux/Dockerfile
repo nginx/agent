@@ -30,7 +30,7 @@ sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
 sslverify=true \n\
-gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-plus.repo \
+gpgkey=https://nginx.org/keys/nginx_signing.key" > /etc/yum.repos.d/nginx-plus.repo \
     && printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
 baseurl=https://$PACKAGES_REPO/nginx-agent/centos/$OS_VERSION/\$basearch \n\
@@ -39,7 +39,7 @@ sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
 sslverify=true \n\
-gpgkey=https://nginx.org/keys/nginx_signing.key">> /etc/yum.repos.d/nginx-agent.repo \
+gpgkey=https://nginx.org/keys/nginx_signing.key" > /etc/yum.repos.d/nginx-agent.repo \
     && nginxPackages=" \
         nginx-agent \
         nginx-plus \

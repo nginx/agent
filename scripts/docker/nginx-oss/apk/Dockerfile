@@ -25,8 +25,16 @@ EXPOSE 80 443
 
 ENTRYPOINT ["/agent/entrypoint.sh"]
 
-FROM install-nginx as install-agent
+FROM install-nginx as install-agent-local
 
 ARG PACKAGE_NAME
 
 RUN apk add --allow-untrusted /agent/build/$PACKAGE_NAME.apk
+
+FROM install-nginx as install-agent-repo
+
+ARG PACKAGES_REPO
+
+# RUN curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor | tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null \
+#     && printf "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://$PACKAGES_REPO/nginx-agent/ubuntu/ `lsb_release -cs` agent\n" > /etc/apt/sources.list.d/nginx-agent.list \
+#     && apt-get update && apt-get install -y nginx-agent

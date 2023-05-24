@@ -23,8 +23,10 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | suse             | sles12sp5, sle15              |                                                                |
 # | freebsd          |                               | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE  ?= debian
-OS_VERSION  ?= bullseye-slim
+# OS_RELEASE  ?= ubuntu
+# OS_VERSION  ?= 22.04
+OS_RELEASE  ?= redhatenterprise
+OS_VERSION  ?= 8
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
@@ -200,9 +202,10 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
-integration-test: local-deb-package local-rpm-package local-apk-package
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/install
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/api
+# integration-test: local-deb-package local-rpm-package local-apk-package
+integration-test:
+	PACKAGES_REPO=${PACKAGES_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/install
+	PACKAGES_REPO=${PACKAGES_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
