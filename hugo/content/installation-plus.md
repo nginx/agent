@@ -24,7 +24,7 @@ doctypes: ["task"]
 
 Before you install NGINX Agent for the first time on your system, you need to set up the `nginx-agent` packages repository. Afterward, you can install and update NGINX Agent from the repository.
 
-- [Installing NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux and Oracle Linux](#installing-nginx-agent-on-rhel-centos-rocky-linux-almalinux-and-oracle-linux)
+- [Installing NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux, and Oracle Linux](#installing-nginx-agent-on-rhel-centos-rocky-linux-almalinux-and-oracle-linux)
 - [Installing NGINX Agent on Ubuntu](#installing-nginx-agent-on-ubuntu)
 - [Installing NGINX Agent on Debian](#installing-nginx-agent-on-debian)
 - [Installing NGINX Agent on SLES](#installing-nginx-agent-on-sles)
@@ -32,7 +32,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
 - [Installing NGINX Agent on Amazon Linux](#installing-nginx-agent-on-amazon-linux)
 - [Installing NGINX Agent on FreeBSD](#installing-nginx-agent-on-freebsd)
 
-### Installing NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux and Oracle Linux
+### Installing NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux, and Oracle Linux
 
 1. Create the `/etc/ssl/nginx` directory:
 
