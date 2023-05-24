@@ -16,11 +16,11 @@ import (
 // This traps (unreachable opcode) to ensure the function is never called.
 func StubFunction(name string) *wasm.HostFunc {
 	return &wasm.HostFunc{
-		ExportNames: []string{name},
-		Name:        name,
-		ParamTypes:  []wasm.ValueType{wasm.ValueTypeI32},
-		ParamNames:  []string{"sp"},
-		Code:        wasm.Code{GoFunc: api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {})},
+		ExportName: name,
+		Name:       name,
+		ParamTypes: []wasm.ValueType{wasm.ValueTypeI32},
+		ParamNames: []string{"sp"},
+		Code:       wasm.Code{GoFunc: api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {})},
 	}
 }
 
@@ -39,6 +39,8 @@ type Stack interface {
 	// ParamString reads a string, given its memory offset and length (stack
 	// positions i, i+1)
 	ParamString(mem api.Memory, i int) string
+
+	ParamInt32(i int) int32
 
 	ParamUint32(i int) uint32
 
@@ -94,6 +96,11 @@ func (s *stack) ParamBytes(mem api.Memory, i int) (res []byte) {
 // ParamString implements Stack.ParamString
 func (s *stack) ParamString(mem api.Memory, i int) string {
 	return string(s.ParamBytes(mem, i)) // safe copy of guest memory
+}
+
+// ParamInt32 implements Stack.ParamInt32
+func (s *stack) ParamInt32(i int) int32 {
+	return int32(s.Param(i))
 }
 
 // ParamUint32 implements Stack.ParamUint32

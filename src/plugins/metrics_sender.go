@@ -10,10 +10,12 @@ package plugins
 import (
 	"context"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
@@ -95,9 +97,62 @@ func (r *MetricsSender) Process(msg *core.Message) {
 				}
 			}
 		}
+	} else if msg.Exact(core.AgentConfig) {
+		switch cmd := msg.Data().(type) {
+		case *proto.Command:
+			r.metricSenderBackoff(cmd.GetAgentConfig())
+		default:
+			log.Warnf("metrics sender expected %T type, but got: %T", &proto.Command{}, msg.Data())
+		}
 	}
 }
 
+func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
+	log.Debugf("metricSenderBackoff in metrics_sender.go with agent config %+v ", agentConfig)
+
+	if agentConfig == nil {
+		log.Warnf("update metric reporter client with default backoff settings as agent config nil, for a pause command %+v", agentConfig)
+		r.reporter.WithBackoffSettings(client.DefaultBackoffSettings)
+		return
+	}
+	if agentConfig.GetDetails() == nil {
+		log.Warnf("update metric reporter client with default backoff settings as agent details nil, for a pause command %+v", agentConfig)
+		r.reporter.WithBackoffSettings(client.DefaultBackoffSettings)
+		return
+	}
+	if agentConfig.GetDetails().GetServer() == nil {
+		log.Warnf("update metric reporter client with default backoff settings as server nil, for a pause command %+v", agentConfig)
+		r.reporter.WithBackoffSettings(client.DefaultBackoffSettings)
+		return
+	}
+	backoffSetting := agentConfig.GetDetails().GetServer().Backoff
+	if backoffSetting == nil {
+		log.Warnf("update metric reporter client with default backoff settings as backoff settings nil, for a pause command %+v", agentConfig)
+		r.reporter.WithBackoffSettings(client.DefaultBackoffSettings)
+		return
+	}
+
+	multiplier := backoff.BACKOFF_MULTIPLIER
+	if backoffSetting.GetMultiplier() != 0 {
+		multiplier = backoffSetting.GetMultiplier()
+	}
+
+	jitter := backoff.BACKOFF_JITTER
+	if backoffSetting.GetRandomizationFactor() != 0 {
+		jitter = backoffSetting.GetRandomizationFactor()
+	}
+
+	cBackoff := backoff.BackoffSettings{
+		InitialInterval: time.Duration(backoffSetting.InitialInterval * int64(time.Second)),
+		MaxInterval:     time.Duration(backoffSetting.MaxInterval * int64(time.Second)),
+		MaxElapsedTime:  time.Duration(backoffSetting.MaxElapsedTime * int64(time.Second)),
+		Multiplier:      multiplier,
+		Jitter:          jitter,
+	}
+	log.Debugf("update metric reporter client backoff settings to %+v, for a pause command %+v", cBackoff, agentConfig)
+	r.reporter.WithBackoffSettings(cBackoff)
+}
+
 func (r *MetricsSender) Subscriptions() []string {
-	return []string{core.CommMetrics, core.RegistrationCompletedTopic}
+	return []string{core.CommMetrics, core.RegistrationCompletedTopic, core.AgentConfig}
 }

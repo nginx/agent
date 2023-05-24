@@ -5,6 +5,10 @@ on:
     branches:
     - 'main'
     - 'release-*'
+    paths-ignore:
+    - "**.md"
+    - "docs/**"
+    - "hugo/**"
   pull_request:
     types:
     - opened

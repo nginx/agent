@@ -43,14 +43,13 @@ type ClientOption interface {
 // Clients accept gzipped responses by default, using a compressor backed by the
 // standard library's [gzip] package with the default compression level. Use
 // [WithSendGzip] to compress requests with gzip.
+//
+// Calling WithAcceptCompression with an empty name is a no-op.
 func WithAcceptCompression(
 	name string,
 	newDecompressor func() Decompressor,
 	newCompressor func() Compressor,
 ) ClientOption {
-	if newDecompressor == nil && newCompressor == nil {
-		return &compressionOption{Name: name}
-	}
 	return &compressionOption{
 		Name:            name,
 		CompressionPool: newCompressionPool(newDecompressor, newCompressor),
@@ -93,7 +92,7 @@ func WithSendCompression(name string) ClientOption {
 
 // WithSendGzip configures the client to gzip requests. Since clients have
 // access to a gzip compressor by default, WithSendGzip doesn't require
-// [WithSendCompresion].
+// [WithSendCompression].
 //
 // Some servers don't support gzip, so clients default to sending uncompressed
 // requests.
@@ -116,9 +115,11 @@ type HandlerOption interface {
 // compressors and decompressors.
 //
 // By default, handlers support gzip using the standard library's
-// [compress/gzip] package at the default compression level.
+// [compress/gzip] package at the default compression level. To remove support for
+// a previously-registered compression algorithm, use WithCompression with nil
+// decompressor and compressor constructors.
 //
-// Calling WithCompression with an empty name or nil constructors is a no-op.
+// Calling WithCompression with an empty name is a no-op.
 func WithCompression(
 	name string,
 	newDecompressor func() Decompressor,
@@ -230,6 +231,36 @@ func WithSendMaxBytes(max int) Option {
 	return &sendMaxBytesOption{Max: max}
 }
 
+// WithIdempotency declares the idempotency of the procedure. This can determine
+// whether a procedure call can safely be retried, and may affect which request
+// modalities are allowed for a given procedure call.
+//
+// In most cases, you should not need to manually set this. It is normally set
+// by the code generator for your schema. For protobuf schemas, it can be set like this:
+//
+//	rpc Ping(PingRequest) returns (PingResponse) {
+//	  option idempotency_level = NO_SIDE_EFFECTS;
+//	}
+func WithIdempotency(idempotencyLevel IdempotencyLevel) Option {
+	return &idempotencyOption{idempotencyLevel: idempotencyLevel}
+}
+
+// WithHTTPGet allows Connect-protocol clients to use HTTP GET requests for
+// side-effect free unary RPC calls. Typically, the service schema indicates
+// which procedures are idempotent (see [WithIdempotency] for an example
+// protobuf schema). The gRPC and gRPC-Web protocols are POST-only, so this
+// option has no effect when combined with [WithGRPC] or [WithGRPCWeb].
+//
+// Using HTTP GET requests makes it easier to take advantage of CDNs, caching
+// reverse proxies, and browsers' built-in caching. Note, however, that servers
+// don't automatically set any cache headers; you can set cache headers using
+// interceptors or by adding headers in individual procedure implementations.
+//
+// By default, all requests are made as HTTP POSTs.
+func WithHTTPGet() ClientOption {
+	return &enableGet{}
+}
+
 // WithInterceptors configures a client or handler's interceptor stack. Repeated
 // WithInterceptors options are applied in order, so
 //
@@ -320,31 +351,31 @@ type compressionOption struct {
 }
 
 func (o *compressionOption) applyToClient(config *clientConfig) {
+	o.apply(&config.CompressionNames, config.CompressionPools)
+}
+
+func (o *compressionOption) applyToHandler(config *handlerConfig) {
+	o.apply(&config.CompressionNames, config.CompressionPools)
+}
+
+func (o *compressionOption) apply(configuredNames *[]string, configuredPools map[string]*compressionPool) {
 	if o.Name == "" {
 		return
 	}
 	if o.CompressionPool == nil {
-		delete(config.CompressionPools, o.Name)
+		delete(configuredPools, o.Name)
 		var names []string
-		for _, name := range config.CompressionNames {
+		for _, name := range *configuredNames {
 			if name == o.Name {
 				continue
 			}
 			names = append(names, name)
 		}
-		config.CompressionNames = names
+		*configuredNames = names
 		return
 	}
-	config.CompressionPools[o.Name] = o.CompressionPool
-	config.CompressionNames = append(config.CompressionNames, o.Name)
-}
-
-func (o *compressionOption) applyToHandler(config *handlerConfig) {
-	if o.Name == "" || o.CompressionPool == nil {
-		return
-	}
-	config.CompressionPools[o.Name] = o.CompressionPool
-	config.CompressionNames = append(config.CompressionNames, o.Name)
+	configuredPools[o.Name] = o.CompressionPool
+	*configuredNames = append(*configuredNames, o.Name)
 }
 
 type compressMinBytesOption struct {
@@ -399,12 +430,62 @@ func (o *requireConnectProtocolHeaderOption) applyToHandler(config *handlerConfi
 	config.RequireConnectProtocolHeader = true
 }
 
+type idempotencyOption struct {
+	idempotencyLevel IdempotencyLevel
+}
+
+func (o *idempotencyOption) applyToClient(config *clientConfig) {
+	config.IdempotencyLevel = o.idempotencyLevel
+}
+
+func (o *idempotencyOption) applyToHandler(config *handlerConfig) {
+	config.IdempotencyLevel = o.idempotencyLevel
+}
+
 type grpcOption struct {
 	web bool
 }
 
 func (o *grpcOption) applyToClient(config *clientConfig) {
 	config.Protocol = &protocolGRPC{web: o.web}
+}
+
+type enableGet struct{}
+
+func (o *enableGet) applyToClient(config *clientConfig) {
+	config.EnableGet = true
+}
+
+// withHTTPGetMaxURLSize sets the maximum allowable URL length for GET requests
+// made using the Connect protocol. It has no effect on gRPC or gRPC-Web
+// clients, since those protocols are POST-only.
+//
+// Limiting the URL size is useful as most user agents, proxies, and servers
+// have limits on the allowable length of a URL. For example, Apache and Nginx
+// limit the size of a request line to around 8 KiB, meaning that maximum
+// length of a URL is a bit smaller than this. If you run into URL size
+// limitations imposed by your network infrastructure and don't know the
+// maximum allowable size, or if you'd prefer to be cautious from the start, a
+// 4096 byte (4 KiB) limit works with most common proxies and CDNs.
+//
+// If fallback is set to true and the URL would be longer than the configured
+// maximum value, the request will be sent as an HTTP POST instead. If fallback
+// is set to false, the request will fail with [CodeResourceExhausted].
+//
+// By default, Connect-protocol clients with GET requests enabled may send a
+// URL of any size.
+func withHTTPGetMaxURLSize(bytes int, fallback bool) ClientOption {
+	return &getURLMaxBytes{Max: bytes, Fallback: fallback}
+}
+
+type getURLMaxBytes struct {
+	Max      int
+	Fallback bool
+}
+
+func (o *getURLMaxBytes) applyToClient(config *clientConfig) {
+	config.GetURLMaxBytes = o.Max
+	config.GetUseFallback = o.Fallback
 }
 
 type interceptorsOption struct {

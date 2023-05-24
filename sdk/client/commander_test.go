@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/assert"
@@ -206,11 +206,10 @@ func TestCommander_Connect_NoServer(t *testing.T) {
 	commanderClient := NewCommanderClient()
 	commanderClient.WithServer("unknown")
 	commanderClient.WithDialOptions(grpcDialOptions...)
-	commanderClient.WithBackoffSettings(BackoffSettings{
-		initialInterval: 100 * time.Millisecond,
-		maxInterval:     100 * time.Millisecond,
-		maxTimeout:      300 * time.Millisecond,
-		sendMaxTimeout:  300 * time.Millisecond,
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  300 * time.Millisecond,
 	})
 
 	err := commanderClient.Connect(ctx)
@@ -223,11 +222,10 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(BackoffSettings{
-		initialInterval: 100 * time.Millisecond,
-		maxInterval:     100 * time.Millisecond,
-		maxTimeout:      30 * time.Second,
-		sendMaxTimeout:  30 * time.Second,
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  30 * time.Second,
 	})
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
@@ -288,11 +286,10 @@ func TestCommander_Send_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(BackoffSettings{
-		initialInterval: 100 * time.Millisecond,
-		maxInterval:     100 * time.Millisecond,
-		maxTimeout:      30 * time.Second,
-		sendMaxTimeout:  30 * time.Second,
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  30 * time.Second,
 	})
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
@@ -342,11 +339,10 @@ func TestCommander_Download_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(BackoffSettings{
-		initialInterval: 100 * time.Millisecond,
-		maxInterval:     100 * time.Millisecond,
-		maxTimeout:      30 * time.Second,
-		sendMaxTimeout:  30 * time.Second,
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  30 * time.Second,
 	})
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
@@ -525,11 +521,10 @@ func TestCommander_Upload_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(BackoffSettings{
-		initialInterval: 100 * time.Millisecond,
-		maxInterval:     100 * time.Millisecond,
-		maxTimeout:      30 * time.Second,
-		sendMaxTimeout:  30 * time.Second,
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  30 * time.Second,
 	})
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
@@ -725,7 +720,14 @@ func stopMockServer(server *grpc.Server, dialer func(context.Context, string) (n
 	defer grpcServerMutex.Unlock()
 	server.Stop()
 
-	err = sdk.WaitUntil(ctx, 100*time.Millisecond, 100*time.Millisecond, 1*time.Second, func() error {
+	backoffSetting := backoff.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  1 * time.Second,
+		Jitter:          backoff.BACKOFF_JITTER,
+		Multiplier:      backoff.BACKOFF_MULTIPLIER,
+	}
+	err = backoff.WaitUntil(ctx, backoffSetting, func() error {
 		state := conn.GetState()
 		if state.String() != "TRANSIENT_FAILURE" {
 			return errors.New("Still waiting for server to stop")
@@ -740,11 +742,10 @@ func createTestCommanderClient(dialer func(context.Context, string) (net.Conn, e
 	commanderClient := NewCommanderClient()
 	commanderClient.WithServer("bufnet")
 	commanderClient.WithDialOptions(getDialOptions(dialer)...)
-	commanderClient.WithBackoffSettings(BackoffSettings{
-		initialInterval: 100 * time.Millisecond,
-		maxInterval:     100 * time.Millisecond,
-		maxTimeout:      300 * time.Millisecond,
-		sendMaxTimeout:  300 * time.Millisecond,
+	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  300 * time.Millisecond,
 	})
 
 	return commanderClient

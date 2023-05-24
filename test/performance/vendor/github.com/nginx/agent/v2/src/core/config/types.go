@@ -61,8 +61,17 @@ type Server struct {
 	Token    string `mapstructure:"token" yaml:"-"`
 	Metrics  string `mapstructure:"metrics" yaml:"-"`
 	Command  string `mapstructure:"command" yaml:"-"`
-	// This is internal and shouldnt be exposed as a flag
-	Target string `mapstructure:"target" yaml:"-"`
+	// This is internal and shouldn't be exposed as a flag
+	Target  string  `mapstructure:"target" yaml:"-"`
+	Backoff Backoff `mapstructure:"backoff" yaml:"-"`
+}
+
+type Backoff struct {
+	InitialInterval     time.Duration `mapstructure:"initial_interval" yaml:"-"`
+	RandomizationFactor float64       `mapstructure:"randomization_factor" yaml:"-"`
+	Multiplier          float64       `mapstructure:"multiplier" yaml:"-"`
+	MaxInterval         time.Duration `mapstructure:"max_interval" yaml:"-"`
+	MaxElapsedTime      time.Duration `mapstructure:"max_elapsed_time" yaml:"-"`
 }
 
 type AgentAPI struct {
