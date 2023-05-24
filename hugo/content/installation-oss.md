@@ -279,7 +279,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/
     ```
 
-1. To install nginx-agent, run the following command:
+1. To install `nginx-agent`, run the following command:
 
     ```shell
     sudo apk add nginx-agent@nginx-agent
@@ -310,7 +310,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     module_hotfixes=true
     ```
 
-1. To install nginx, run the following command:
+1. To install `nginx-agent`, run the following command:
 
     ```shell
     sudo yum install nginx-agent
@@ -326,20 +326,12 @@ Before you install NGINX Agent for the first time on your system, you need to se
 
 ### Installing NGINX Agent on FreeBSD
 
-<!-- 1. Install the prerequisite `ca_root_nss` package:
-
-    ```shell
-    sudo pkg install ca_root_nss
-    ``` -->
-
 1. To setup the pkg repository create the file named `/etc/pkg/nginx-agent.conf` with the following content:
 
     ```
     nginx-agent: {
     URL: pkg+http://packages.nginx.org/nginx-agent/freebsd/${ABI}/latest
     ENABLED: true
-    SIGNATURE_TYPE: "fingerprints",
-    FINGERPRINTS: "/usr/share/keys/pkg",
     MIRROR_TYPE: SRV
     }
     ```
