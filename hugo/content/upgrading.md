@@ -5,7 +5,7 @@ description: "Learn how to upgrade NGINX Agent"
 weight: 500
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-999"
+docs: "DOCS-1227"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
