@@ -9,6 +9,9 @@ package plugins
 
 import (
 	"context"
+	"reflect"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -98,11 +101,26 @@ func (c *Commander) agentBackoff(cmd *proto.Command) {
 		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
+
 	backoffSetting := cmd.GetAgentConfig().GetDetails().GetServer().Backoff
 	if backoffSetting == nil {
 		log.Warnf("update commander client with default backoff settings as backoff settings nil, for a pause command %+v", cmd)
 		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
+	}
+
+	if cmd.GetAgentConfig().Details.GetFeatures() != nil {
+		for _, feature := range cmd.GetAgentConfig().Details.GetFeatures() {
+			c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
+
+		}
+	}
+
+	if cmd.GetAgentConfig().Details.GetExtensions() != nil {
+		for _, extension := range cmd.GetAgentConfig().Details.GetExtensions() {
+			c.pipeline.Process(core.NewMessage(core.EnableExtension, extension))
+
+		}
 	}
 
 	multiplier := backoff.BACKOFF_MULTIPLIER
@@ -132,7 +150,6 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 		log.Infof("config command %v", commandData)
 		if agtCfg := commandData.AgentConnectResponse.AgentConfig; agtCfg != nil &&
 			agtCfg.Configs != nil && len(agtCfg.Configs.Configs) > 0 {
-
 			// Update config tags and features if they were out of sync between Manager and Agent
 			if agtCfg.Details != nil && (len(agtCfg.Details.Tags) > 0 || len(agtCfg.Details.Features) > 0) {
 				configUpdated, err := config.UpdateAgentConfig(c.config.ClientID, agtCfg.Details.Tags, agtCfg.Details.Features)
@@ -157,6 +174,22 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 						extension == config.NAPMonitoringKey {
 						c.pipeline.Process(core.NewMessage(core.EnableExtension, extension))
 					}
+				}
+			}
+
+			for index, feature := range agtCfg.Details.Features {
+				agtCfg.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
+			}
+
+			sort.Strings(agtCfg.Details.Features)
+			sort.Strings(c.config.Features)
+
+			synchronizedFeatures := reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
+
+			if agtCfg.Details != nil && agtCfg.Details.Features != nil && !synchronizedFeatures {
+				for _, feature := range agtCfg.Details.Features {
+					c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
+
 				}
 			}
 		}

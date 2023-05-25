@@ -219,6 +219,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		plugins.NewConfigReader(loadedConfig),
 		plugins.NewNginx(commander, binary, env, loadedConfig),
 		plugins.NewExtensions(loadedConfig, env),
+		plugins.NewFeatures(loadedConfig, env, binary, version),
 	)
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureRegistration) {

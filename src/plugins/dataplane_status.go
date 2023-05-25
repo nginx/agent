@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -87,7 +88,7 @@ func (dps *DataPlaneStatus) Close() {
 }
 
 func (dps *DataPlaneStatus) Info() *core.Info {
-	return core.NewInfo("DataPlaneStatus", "v0.0.2")
+	return core.NewInfo(agent_config.FeatureDataPlaneStatus, "v0.0.2")
 }
 
 func (dps *DataPlaneStatus) Process(msg *core.Message) {

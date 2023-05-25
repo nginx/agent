@@ -19,6 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/fsnotify/fsnotify"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 )
@@ -95,7 +96,7 @@ func (fw *FileWatcher) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (fw *FileWatcher) Info() *core.Info {
-	return core.NewInfo("File Watcher", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureFileWatcher, "v0.0.1")
 }
 
 func (fw *FileWatcher) Close() {

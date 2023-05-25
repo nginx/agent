@@ -52,14 +52,13 @@ var (
 )
 
 type AgentAPI struct {
-	config                 *config.Config
-	env                    core.Environment
-	pipeline               core.MessagePipeInterface
-	server                 http.Server
-	nginxBinary            core.NginxBinary
-	nginxHandler           *NginxHandler
-	disabledFeatureHandler *DisabledFeatureHandler
-	exporter               *prometheus_metrics.Exporter
+	config       *config.Config
+	env          core.Environment
+	pipeline     core.MessagePipeInterface
+	server       http.Server
+	nginxBinary  core.NginxBinary
+	nginxHandler *NginxHandler
+	exporter     *prometheus_metrics.Exporter
 }
 
 type NginxHandler struct {
@@ -69,10 +68,6 @@ type NginxHandler struct {
 	nginxBinary            core.NginxBinary
 	responseChannel        chan *proto.Command_NginxConfigResponse
 	configResponseStatuses map[string]*proto.NginxConfigStatus
-}
-
-type DisabledFeatureHandler struct {
-	config *config.Config
 }
 
 // swagger:parameters apply-nginx-config
@@ -188,7 +183,7 @@ func (a *AgentAPI) Process(message *core.Message) {
 	}
 }
 func (a *AgentAPI) Info() *core.Info {
-	return core.NewInfo("Agent API Plugin", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureAgentAPI, "v0.0.1")
 }
 
 func (a *AgentAPI) Subscriptions() []string {
@@ -211,18 +206,9 @@ func (a *AgentAPI) createHttpServer() {
 		configResponseStatuses: make(map[string]*proto.NginxConfigStatus),
 	}
 
-	a.disabledFeatureHandler = &DisabledFeatureHandler{
-		config: a.config,
-	}
-
 	mux := http.NewServeMux()
 
-	if a.config.IsFeatureEnabled(agent_config.FeatureMetrics) || (len(a.config.Nginx.NginxCountingSocket) > 0 && a.config.IsFeatureEnabled(agent_config.FeatureNginxCounting)) {
-		mux.Handle("/metrics/", a.getPrometheusHandler())
-	} else {
-		mux.Handle("/metrics/", a.disabledFeatureHandler)
-	}
-
+	mux.Handle("/metrics/", a.getPrometheusHandler())
 	mux.Handle("/nginx/", a.nginxHandler)
 
 	handler := cors.New(cors.Options{AllowedMethods: []string{"OPTIONS", "GET", "PUT"}}).Handler(mux)
@@ -264,11 +250,6 @@ func (a *AgentAPI) getPrometheusHandler() http.Handler {
 
 	registerer.MustRegister(a.exporter)
 	return promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
-}
-
-func (d *DisabledFeatureHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set(contentTypeHeader, jsonMimeType)
-	w.WriteHeader(http.StatusNotFound)
 }
 
 func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

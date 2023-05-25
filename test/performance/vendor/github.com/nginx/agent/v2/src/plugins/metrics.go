@@ -95,10 +95,6 @@ func (m *Metrics) Process(msg *core.Message) {
 		m.updateCollectorsConfig()
 		return
 
-	case msg.Exact(core.NginxPluginConfigured):
-		m.registerStatsSources()
-		return
-
 	case msg.Exact(core.NginxConfigApplySucceeded):
 		m.updateCollectorsSources()
 		return
@@ -151,7 +147,7 @@ func (m *Metrics) Process(msg *core.Message) {
 }
 
 func (m *Metrics) Info() *core.Info {
-	return core.NewInfo("Metrics", "v0.0.2")
+	return core.NewInfo(agent_config.FeatureMetrics, "v0.0.2")
 }
 
 func (m *Metrics) Subscriptions() []string {
@@ -171,6 +167,7 @@ func (m *Metrics) metricsGoroutine() {
 	defer m.ticker.Stop()
 	defer m.wg.Done()
 	log.Info("Metrics waiting for handshake to be completed")
+	m.registerStatsSources()
 	for {
 		if !m.collectorsReady.Load() {
 			continue
