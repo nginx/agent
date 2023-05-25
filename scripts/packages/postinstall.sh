@@ -1,4 +1,6 @@
 #!/bin/sh
+# vim:sw=4:ts=4:et:
+
 # Determine OS platform
 # shellcheck source=/dev/null
 . /etc/os-release
@@ -271,6 +273,13 @@ upgrade_config_file() {
     fi
 }
 
+restart_agent_if_required() {
+    if service nginx-agent status >/dev/null 2>&1; then
+        printf "PostInstall: Restarting nginx agent\n"
+        service nginx-agent restart || true
+    fi
+}
+
 summary() {
     echo "----------------------------------------------------------------------"
     echo " NGINX Agent package has been successfully installed."
@@ -301,5 +310,6 @@ summary() {
     update_unit_file
     add_default_config_file
     upgrade_config_file
+    restart_agent_if_required
     summary
 }
