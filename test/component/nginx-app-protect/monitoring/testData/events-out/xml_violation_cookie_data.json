@@ -47,8 +47,8 @@
                 "Name": "VIOL_COOKIE_EXPIRED",
                 "Context": "cookie",
                 "ContextData": {
-                    "Name": "TS0142ff11",
-                    "Value": ""
+                    "Name": "Cookie Expired",
+                    "Value": "TS0142ff11"
                 }
             }
         ]

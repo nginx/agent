@@ -49,6 +49,7 @@ require (
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/rs/cors v1.9.0
 	golang.org/x/sys v0.8.0
+	golang.org/x/text v0.9.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -311,7 +312,6 @@ require (
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/term v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/tools v0.9.1 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61 // indirect
