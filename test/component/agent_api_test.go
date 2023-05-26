@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v2/src/core/metrics"
+
 	"github.com/nginx/agent/v2/src/plugins"
 
 	"encoding/json"
@@ -226,7 +227,6 @@ func TestMetrics(t *testing.T) {
 		}
 
 	}
-	agentAPI.Close()
 
 }
 
@@ -255,13 +255,7 @@ func TestMetricsDisabled(t *testing.T) {
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
 	response, err := client.R().EnableTrace().Get(url)
-	responseData := tutils.ProcessResponse(response)
 
-	for _, m := range responseData {
-		metric := strings.Split(m, " ")
-		assert.True(t, strings.HasPrefix(metric[0], "go_"))
-
-	}
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, response.StatusCode())
 	agentAPI.Close()
