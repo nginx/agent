@@ -141,5 +141,5 @@ func TestMetricsThrottle_Subscriptions(t *testing.T) {
 func TestMetricsThrottle_Info(t *testing.T) {
 	pluginUnderTest := NewMetricsThrottle(tutils.GetMockAgentConfig(), &tutils.MockEnvironment{})
 
-	assert.Equal(t, "MetricsThrottle", pluginUnderTest.Info().Name())
+	assert.Equal(t, "metrics-throttle", pluginUnderTest.Info().Name())
 }

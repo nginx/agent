@@ -10,6 +10,7 @@ package plugins
 import (
 	"github.com/google/uuid"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/client"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -17,19 +18,21 @@ import (
 )
 
 type Features struct {
-	pipeline core.MessagePipeInterface
-	conf     *config.Config
-	env      core.Environment
-	binary   core.NginxBinary
-	version  string
+	commander client.Commander
+	pipeline  core.MessagePipeInterface
+	conf      *config.Config
+	env       core.Environment
+	binary    core.NginxBinary
+	version   string
 }
 
-func NewFeatures(conf *config.Config, env core.Environment, binary core.NginxBinary, version string) *Features {
+func NewFeatures(commander client.Commander, conf *config.Config, env core.Environment, binary core.NginxBinary, version string) *Features {
 	return &Features{
-		conf:    conf,
-		env:     env,
-		binary:  binary,
-		version: version,
+		commander: commander,
+		conf:      conf,
+		env:       env,
+		binary:    binary,
+		version:   version,
 	}
 }
 
@@ -156,7 +159,7 @@ func (f *Features) Process(msg *core.Message) {
 			}
 
 			if data == agent_config.FeatureDataPlaneStatus {
-				if !f.isPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
+				if !f.isPluginAlreadyRegistered(agent_config.FeatureDataPlaneStatus) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
 						log.Warnf("Unable to get agent config, %v", err)
@@ -166,7 +169,7 @@ func (f *Features) Process(msg *core.Message) {
 					dataPlaneStatus := NewDataPlaneStatus(f.conf, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary, f.env, f.version)
 
 					log.Info()
-					log.Info(" --------> Metrics Throttle Feature is not enabled registering ")
+					log.Info(" --------> Dataplane Feature is not enabled registering ")
 
 					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{dataPlaneStatus}, nil)
 
@@ -175,6 +178,128 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					dataPlaneStatus.Init(f.pipeline)
+
+				}
+			}
+
+			if data == agent_config.FeatureProcessWatcher {
+				if !f.isPluginAlreadyRegistered(agent_config.FeatureProcessWatcher) {
+					conf, err := config.GetConfig(f.conf.ClientID)
+					if err != nil {
+						log.Warnf("Unable to get agent config, %v", err)
+					}
+					f.conf = conf
+
+					processWatcher := NewProcessWatcher(f.env, f.binary)
+
+					log.Info()
+					log.Info(" --------> Process Watcher Feature is not enabled registering ")
+
+					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{processWatcher}, nil)
+
+					if err != nil {
+						log.Warnf("Unable to register %s feature, %v", data, err)
+					}
+
+					processWatcher.Init(f.pipeline)
+
+				}
+			}
+
+			if data == agent_config.FeatureActivityEvents {
+				if !f.isPluginAlreadyRegistered(agent_config.FeatureActivityEvents) {
+					conf, err := config.GetConfig(f.conf.ClientID)
+					if err != nil {
+						log.Warnf("Unable to get agent config, %v", err)
+					}
+					f.conf = conf
+
+					events := NewEvents(f.conf, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary)
+
+					log.Info()
+					log.Info(" --------> Events Feature is not enabled registering ")
+
+					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{events}, nil)
+
+					if err != nil {
+						log.Warnf("Unable to register %s feature, %v", data, err)
+					}
+
+					events.Init(f.pipeline)
+
+				}
+			}
+
+			if data == agent_config.FeatureFileWatcher {
+				if !f.isPluginAlreadyRegistered(agent_config.FeatureFileWatcher) {
+					conf, err := config.GetConfig(f.conf.ClientID)
+					if err != nil {
+						log.Warnf("Unable to get agent config, %v", err)
+					}
+					f.conf = conf
+
+					fileWatcher := NewFileWatcher(f.conf, f.env)
+					fileWatcherThrottle := NewFileWatchThrottle()
+
+					log.Info()
+					log.Info(" --------> File Watcher Feature is not enabled registering ")
+
+					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{fileWatcher, fileWatcherThrottle}, nil)
+
+					if err != nil {
+						log.Warnf("Unable to register %s feature, %v", data, err)
+					}
+
+					fileWatcher.Init(f.pipeline)
+
+				}
+			}
+
+			if data == agent_config.FeatureNginxCounting && len(f.conf.Nginx.NginxCountingSocket) > 0 {
+				if !f.isPluginAlreadyRegistered(agent_config.FeatureNginxCounting) {
+					conf, err := config.GetConfig(f.conf.ClientID)
+					if err != nil {
+						log.Warnf("Unable to get agent config, %v", err)
+					}
+					f.conf = conf
+
+					nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
+					metrics := NewMetrics(f.conf, f.env, f.binary)
+
+					log.Info()
+					log.Info(" --------> Nginx Counting Feature is not enabled registering ")
+
+					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metrics, nginxCounting}, nil)
+
+					if err != nil {
+						log.Warnf("Unable to register %s feature, %v", data, err)
+					}
+
+					nginxCounting.Init(f.pipeline)
+
+				}
+			}
+
+			if data == agent_config.FeatureNginxConfigAsync || data == agent_config.FeatureNginxConfig {
+				if !f.isPluginAlreadyRegistered(agent_config.FeatureNginxConfigAsync) && !f.isPluginAlreadyRegistered(agent_config.FeatureNginxConfig) {
+					conf, err := config.GetConfig(f.conf.ClientID)
+					if err != nil {
+						log.Warnf("Unable to get agent config, %v", err)
+					}
+					f.conf = conf
+
+					nginx := NewNginx(f.commander, f.binary, f.env, f.conf)
+
+					log.Info()
+					log.Info(" --------> Nginx Config Async Feature is not enabled registering ")
+
+					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{nginx}, nil)
+
+					if err != nil {
+						log.Warnf("Unable to register %s feature, %v", data, err)
+					}
+
+					nginx.Init(f.pipeline)
 
 				}
 			}

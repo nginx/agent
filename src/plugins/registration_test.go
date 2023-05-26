@@ -94,5 +94,5 @@ func TestRegistration_Subscriptions(t *testing.T) {
 func TestRegistration_Info(t *testing.T) {
 	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil, "")
 
-	assert.Equal(t, "OneTimeRegistration", pluginUnderTest.Info().Name())
+	assert.Equal(t, "registration", pluginUnderTest.Info().Name())
 }

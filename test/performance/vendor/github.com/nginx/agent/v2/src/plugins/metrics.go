@@ -95,6 +95,11 @@ func (m *Metrics) Process(msg *core.Message) {
 		m.updateCollectorsConfig()
 		return
 
+	case msg.Exact(core.NginxPluginConfigured):
+		log.Info()
+		m.registerStatsSources()
+		return
+
 	case msg.Exact(core.NginxConfigApplySucceeded):
 		m.updateCollectorsSources()
 		return
@@ -233,7 +238,7 @@ func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
 }
 
 func (m *Metrics) registerStatsSources() {
-	log.Trace("Calling registerStatsSources")
+	log.Info("Calling registerStatsSources")
 
 	defer m.collectorsReady.Store(true)
 

@@ -247,12 +247,10 @@ Here is a list of all currently supported features:
 | -------------------- | ------------------------------------------------------------------- |
 | registration         | Registering the agent with the management plane.                    |
 | nginx-config-async   | Toggle uploading of NGINX config and the pushing of config applies. |
-| nginx-ssl-config     | Toggle uploading of SSL meta information                            |
 | nginx-counting       | Enable NGINX counting feature on NGINX plus                         |
 | metrics              | Report core metrics for system and NGINX                            |
 | metrics-throttle     | Batch / throttle metrics being sent to management plane             |
 | dataplane-status     | Report changes on the health of installed software                  |
-| dataplane-update     | Report changes on the host and installed software                   |
 | process-watcher      | Watch for NGINX process changes                                     |
 | file-watcher         | Watch for NGINX configuration changes                               |
 | activity-events      | Report on Events in the Agent                                       |

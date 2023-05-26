@@ -158,6 +158,14 @@ func TestMetricsProcessNginxDetailProcUpdate(t *testing.T) {
 					IsMaster: true,
 				},
 			}).Once()
+			env.On("IsContainer").Return(false)
+			env.On("GetChildProcesses").Return(map[string][]*proto.NginxDetails{
+				"1": {
+					{
+						ProcessId: "1",
+					},
+				},
+			})
 
 			metricsPlugin := NewMetrics(config, env, binary)
 			metricsPlugin.collectors = []metrics.Collector{
@@ -250,8 +258,16 @@ func TestMetrics_Process_AgentConfigChanged(t *testing.T) {
 			}
 			defer cleanupFunc()
 
+			env := tutils.GetMockEnvWithProcess()
+			env.On("IsContainer").Return(false)
+			env.On("DiskDevices").Return(false)
+			env.On("GetChildProcesses").Return(false)
+			env.Mock.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
+				Hostname: "test-host",
+			})
+
 			// Setup metrics and mock pipeline
-			metricsPlugin := NewMetrics(tc.config, tutils.GetMockEnvWithProcess(), binary)
+			metricsPlugin := NewMetrics(tc.config, env, binary)
 
 			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{metricsPlugin}, []core.ExtensionPlugin{})
 
@@ -345,7 +361,7 @@ func TestMetrics_Process_NginxStatusAPIUpdate_AgentConfigChanged(t *testing.T) {
 
 func TestMetrics_Info(t *testing.T) {
 	pluginUnderTest := NewMetrics(tutils.GetMockAgentConfig(), tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary())
-	assert.Equal(t, "Metrics", pluginUnderTest.Info().Name())
+	assert.Equal(t, "metrics", pluginUnderTest.Info().Name())
 }
 
 func TestMetrics_Subscriptions(t *testing.T) {
