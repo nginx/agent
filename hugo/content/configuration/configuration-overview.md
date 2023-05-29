@@ -10,6 +10,8 @@ categories: ["configuration"]
 doctypes: ["task"]
 ---
 
+## Overview
+
 The following sections explain how to configure the NGINX Agent using configuration files, CLI flags, and environment variables.
 
 {{<note>}}
@@ -70,6 +72,8 @@ log:
 nginx:
   # path of NGINX logs to exclude
   exclude_logs: ""
+  # Set to true when NGINX configuration should contain no warnings when performing a configuration apply (nginx -t is used to carry out this check)
+  treat_warnings_as_errors: false # Default is false
 # data plane status message / 'heartbeat'
 dataplane:
   status:
@@ -169,6 +173,7 @@ Flags:
       -nginx-app-protect-report-interval duration      The period of time the agent will check for App Protect software changes on the dataplane
       --nginx-exclude-logs string              One or more NGINX access log paths that you want to exclude from metrics collection. This key is formatted as a string and multiple values should be provided as a comma-separated list.
       --nginx-socket string                    The NGINX plus counting unix socket location. (default "unix:/var/run/nginx-agent/nginx.sock")
+      --nginx-treat-warnings-as-errors         On nginx -t, treat warnings as failures on configuration application.
       --server-command string                  The name of the command server sent in the tls configuration.
       --server-grpcport int                    The desired GRPC port to use for nginx-agent traffic. (default 443)
       --server-host string                     The IP address of the server host. IPv4 addresses and hostnames are supported. (default "127.0.0.1")
@@ -223,6 +228,7 @@ This section displays the configurable options for the NGINX Agent that can be s
 - NMS_METRICS_REPORT_INTERVAL
 - NMS_NGINX_EXCLUDE_LOGS
 - NMS_NGINX_SOCKET
+- NMS_NGINX_TREAT_WARNINGS_AS_ERRORS
 - NMS_SERVER_GRPCPORT
 - NMS_SERVER_HOST
 - NMS_SERVER_TOKEN
