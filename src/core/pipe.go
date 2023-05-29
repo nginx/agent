@@ -23,6 +23,7 @@ const (
 
 type MessagePipeInterface interface {
 	Register(int, []Plugin, []ExtensionPlugin) error
+	Deregister(plugins []string) error
 	Process(...*Message)
 	Run()
 	Context() context.Context
@@ -87,6 +88,60 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 
 	p.mu.Unlock()
 	return nil
+}
+
+func (p *MessagePipe) Deregister(pluginNames []string) error {
+	p.mu.Lock()
+
+	var plugins []Plugin
+	var regPlugin []string
+
+	for _, name := range pluginNames {
+		for _, plugin := range p.plugins {
+			if plugin.Info().Name() == name {
+				plugins = append(plugins, plugin)
+				regPlugin = append(regPlugin, plugin.Info().Name())
+			}
+		}
+	}
+
+	log.Info("================= Deregister ==================")
+	log.Infof("regPlugin: %v", regPlugin)
+	log.Infof("pluginNames: %v", pluginNames)
+
+	log.Infof("Len Before: %v", len(p.plugins))
+	for _, plugin := range plugins {
+		index := getIndex(plugin.Info().Name(), p.plugins)
+
+		if index != -1 {
+			p.plugins = append(p.plugins[:index], p.plugins[index+1:]...)
+
+			plugin.Close()
+
+			for _, subscription := range plugin.Subscriptions() {
+				err := p.bus.Unsubscribe(subscription, plugin.Process)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+	}
+	log.Infof("Len After: %v", len(p.plugins))
+
+	p.mu.Unlock()
+
+	return nil
+
+}
+
+func getIndex(pluginName string, plugins []Plugin) int {
+	for index, plugin := range plugins {
+		if pluginName == plugin.Info().Name() {
+			return index
+		}
+	}
+	return -1
 }
 
 func (p *MessagePipe) Process(messages ...*Message) {

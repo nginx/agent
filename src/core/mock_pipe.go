@@ -58,6 +58,10 @@ func (p *MockMessagePipe) Register(size int, plugins []Plugin, extensionPlugins 
 	return nil
 }
 
+func (p *MockMessagePipe) Deregister(plugins []string) error {
+	return nil
+}
+
 func (p *MockMessagePipe) Context() context.Context {
 	return p.ctx
 }

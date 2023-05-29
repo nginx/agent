@@ -97,6 +97,10 @@ func (m *Metrics) Process(msg *core.Message) {
 		m.updateCollectorsSources()
 		return
 
+	case msg.Exact(core.DisableFeature):
+		m.updateCollectorsSources()
+		return
+
 	case msg.Exact(core.NginxDetailProcUpdate):
 		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary)
 		for key, collectorConfig := range collectorConfigsMap {

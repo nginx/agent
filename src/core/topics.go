@@ -52,5 +52,6 @@ const (
 	DataplaneSoftwareDetailsUpdated = "dataplane.software.details.updated"
 	EnableExtension                 = "enable.extension"
 	EnableFeature                   = "enable.feature"
+	DisableFeature                  = "disable.feature"
 	AgentAPIConfigApplyResponse     = "agent.api.config.apply.response"
 )

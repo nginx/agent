@@ -52,6 +52,7 @@ func (f *Features) Info() *core.Info {
 func (f *Features) Subscriptions() []string {
 	return []string{
 		core.EnableFeature,
+		core.DisableFeature,
 	}
 }
 
@@ -279,29 +280,62 @@ func (f *Features) Process(msg *core.Message) {
 
 				}
 			}
+		case core.DisableFeature:
+			if data == agent_config.FeatureMetrics {
 
-			if data == agent_config.FeatureNginxConfigAsync || data == agent_config.FeatureNginxConfig {
-				if !f.isPluginAlreadyRegistered(agent_config.FeatureNginxConfigAsync) && !f.isPluginAlreadyRegistered(agent_config.FeatureNginxConfig) {
-					conf, err := config.GetConfig(f.conf.ClientID)
-					if err != nil {
-						log.Warnf("Unable to get agent config, %v", err)
-					}
-					f.conf = conf
+				log.Info("Metrics Enabled Disabling ")
+				err := f.pipeline.Deregister([]string{agent_config.FeatureMetrics})
 
-					nginx := NewNginx(f.commander, f.binary, f.env, f.conf)
+				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+			}
+			if data == agent_config.FeatureAgentAPI {
 
-					log.Info()
-					log.Info(" --------> Nginx Config Async Feature is not enabled registering ")
+				log.Info("API Enabled Disabling ")
+				err := f.pipeline.Deregister([]string{agent_config.FeatureAgentAPI})
+				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+			}
 
-					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{nginx}, nil)
+			if data == agent_config.FeatureRegistration {
 
-					if err != nil {
-						log.Warnf("Unable to register %s feature, %v", data, err)
-					}
+				log.Info("Registration Enabled Disabling ")
+				err := f.pipeline.Deregister([]string{agent_config.FeatureRegistration})
+				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+			}
+			if data == agent_config.FeatureMetricsThrottle {
 
-					nginx.Init(f.pipeline)
+				log.Info("Throttle Enabled Disabling ")
+				err := f.pipeline.Deregister([]string{agent_config.FeatureMetricsThrottle})
+				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+			}
+			if data == agent_config.FeatureDataPlaneStatus {
 
-				}
+				log.Info("DataPlane Enabled Disabling ")
+				err := f.pipeline.Deregister([]string{agent_config.FeatureDataPlaneStatus})
+				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+			}
+			if data == agent_config.FeatureProcessWatcher {
+
+				log.Info("Process Watcher Enabled Disabling ")
+				err := f.pipeline.Deregister([]string{agent_config.FeatureProcessWatcher})
+				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+			}
+			if data == agent_config.FeatureActivityEvents {
+
+				log.Info("Activity Events Enabled Disabling ")
+				err := f.pipeline.Deregister([]string{agent_config.FeatureActivityEvents})
+				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+			}
+			if data == agent_config.FeatureFileWatcher {
+
+				log.Info("File Watcher Enabled Disabling ")
+				err := f.pipeline.Deregister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
+				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+			}
+			if data == agent_config.FeatureNginxCounting {
+
+				log.Info("Activity Events Enabled Disabling ")
+				err := f.pipeline.Deregister([]string{agent_config.FeatureNginxCounting})
+				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
 			}
 		}
 	}

@@ -186,6 +186,19 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 
 			synchronizedFeatures := reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
 
+			disableFeatures := featureDiff(c.config.Features, agtCfg.Details.Features)
+
+			isCountingEnabled := isNginxCountingEnabled(agtCfg.Details.Features)
+
+			if len(disableFeatures) > 0 {
+				for _, disableFeature := range disableFeatures {
+					log.Info(!(disableFeature == agent_config.FeatureMetrics && isCountingEnabled))
+					if !(disableFeature == agent_config.FeatureMetrics && isCountingEnabled) {
+						c.pipeline.Process(core.NewMessage(core.DisableFeature, disableFeature))
+					}
+				}
+			}
+
 			if agtCfg.Details != nil && agtCfg.Details.Features != nil && !synchronizedFeatures {
 				for _, feature := range agtCfg.Details.Features {
 					c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
@@ -196,6 +209,34 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 	default:
 		log.Debugf("unhandled command: %T", cmd.Data)
 	}
+}
+
+func isNginxCountingEnabled(features []string) bool {
+	for _, feature := range features {
+		if feature == agent_config.FeatureNginxCounting {
+			log.Info("Counting Enabled")
+			return true
+		}
+	}
+	return false
+}
+
+func featureDiff(configFeatures []string, features []string) []string {
+	tempMap := make(map[string]struct{}, len(features))
+	var diff []string
+
+	for _, feature := range features {
+		tempMap[feature] = struct{}{}
+	}
+
+	for _, configFeature := range configFeatures {
+		if _, found := tempMap[configFeature]; !found {
+			diff = append(diff, configFeature)
+		}
+	}
+
+	log.Infof("Difference: %v", diff)
+	return diff
 }
 
 func (c *Commander) sendCommand(ctx context.Context, cmd *proto.Command) {
