@@ -26,7 +26,6 @@ import (
 
 type Metrics struct {
 	pipeline                 core.MessagePipeInterface
-	collectorsReady          *atomic.Bool
 	collectorsUpdate         *atomic.Bool
 	ticker                   *time.Ticker
 	interval                 time.Duration
@@ -47,7 +46,6 @@ func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBi
 
 	collectorConfigsMap := createCollectorConfigsMap(config, env, binary)
 	return &Metrics{
-		collectorsReady:          atomic.NewBool(false),
 		collectorsUpdate:         atomic.NewBool(false),
 		ticker:                   time.NewTicker(config.AgentMetrics.CollectionInterval),
 		interval:                 config.AgentMetrics.CollectionInterval,
@@ -93,11 +91,6 @@ func (m *Metrics) Process(msg *core.Message) {
 		// update collectors and collection time intervals after the report cycle triggered
 		m.collectorsUpdate.Store(true)
 		m.updateCollectorsConfig()
-		return
-
-	case msg.Exact(core.NginxPluginConfigured):
-		log.Info()
-		m.registerStatsSources()
 		return
 
 	case msg.Exact(core.NginxConfigApplySucceeded):
@@ -174,10 +167,6 @@ func (m *Metrics) metricsGoroutine() {
 	log.Info("Metrics waiting for handshake to be completed")
 	m.registerStatsSources()
 	for {
-		if !m.collectorsReady.Load() {
-			continue
-		}
-
 		select {
 		case <-m.ctx.Done():
 			err := m.ctx.Err()
@@ -238,10 +227,6 @@ func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
 }
 
 func (m *Metrics) registerStatsSources() {
-	log.Info("Calling registerStatsSources")
-
-	defer m.collectorsReady.Store(true)
-
 	tempCollectors := make([]metrics.Collector, 0)
 
 	if m.conf.IsFeatureEnabled(agent_config.FeatureMetrics) {
