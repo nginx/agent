@@ -22,8 +22,6 @@ The following sections explain how to configure the NGINX Agent using configurat
   2. Environment variables overwrite configuration file values.
   3. Config files are the lowest priority and config settings are superseded if either of the other options is used.
 
-- The NGINX Agent is configured by default to connect to the NGINX Management Suite on port 443 based on the address used to download the install script. If this setting doesn't work, you can change the `server` fields in the `nginx-agent.conf` file. Instructions are provided in the following sections.
-
 - Open any required firewall ports or SELinux/AppArmor rules for the ports and IPs you want to use.
 
 {{</note>}}
@@ -38,7 +36,7 @@ Examples of the configuration files are provided below:
     <summary>example nginx-agent.conf</summary>
 
 {{<note>}}
-In the following example `nginx-agent.conf` file, you can change the `server.host` and `server.grpcPort` to connect to the NGINX Management Suite.
+In the following example `nginx-agent.conf` file, you can change the `server.host` and `server.grpcPort` to connect to the control/management plane.
 {{</note>}}
 
 ```nginx {hl_lines=[13]}
@@ -48,13 +46,13 @@ In the following example `nginx-agent.conf` file, you can change the `server.hos
 # Configuration file for NGINX Agent.
 #
 # This file tracks agent configuration values that are meant to be statically set. There  
-# are additional agent configuration values that are set via the API and agent install script
+# are additional NGINX Agent configuration values that are set via the API and agent install script
 # which can be found in /etc/nginx-agent/agent-dynamic.conf. 
 
 # specify the server grpc port to connect to
 server:
   # host of the control plane
-  host: <NMS-FQDN>
+  host: <FQDN>
   grpcPort: 443
 # tls options
 tls:
@@ -191,19 +189,11 @@ Flags:
 Use "nginx-agent [command] --help" for more information about a command.
 ```
 
-{{< note >}}
-The following commands were deprecated In Instance Manager v2.1:
-
-- `--instance-name`
-- `--location`
-
-{{< /note >}}
-
 </details>
 
 #### NGINX Agent Config Dirs Option
 
-Use the `--config-dirs` command-line option, or the `config_dirs` key in the `nginx-agent.conf` file, to identify the directories the NGINX Agent can read from or write to. This setting also defines the location to which you can upload config files when using NGINX Management Suite Instance Manager. The NGINX Agent cannot write to directories outside the specified location when updating a config and cannot upload files to directories outside of the configured location.
+Use the `--config-dirs` command-line option, or the `config_dirs` key in the `nginx-agent.conf` file, to identify the directories the NGINX Agent can read from or write to. This setting also defines the location to which you can upload config files when using a control/management plane. The NGINX Agent cannot write to directories outside the specified location when updating a config and cannot upload files to directories outside of the configured location.
 The NGINX Agent follows NGINX configuration directives to file paths outside the designated directories and reads certificates' metadata. The NGINX Agent uses the following directives:
 
 - [`ssl_certificate`](https://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_certificate)
