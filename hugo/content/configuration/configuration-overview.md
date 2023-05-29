@@ -1,7 +1,7 @@
 ---
-title: "Configuration overview"
+title: "Configuration Overview"
 draft: false
-description: "Learn how to configure the NGINX Agent"
+description: "Learn the overview of configuration"
 weight: 100
 toc: true
 tags: [ "docs" ]
@@ -9,9 +9,6 @@ docs: "DOCS-1216"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
-
-
-## Configuration overview
 
 The following sections explain how to configure the NGINX Agent using configuration files, CLI flags, and environment variables.
 
