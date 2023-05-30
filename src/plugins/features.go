@@ -57,13 +57,11 @@ func (f *Features) Subscriptions() []string {
 }
 
 func (f *Features) Process(msg *core.Message) {
-	log.Debugf("--------> Process function in the features.go, %s %v", msg.Topic(), msg.Data())
+	log.Debugf("Process function in the features.go, %s %v", msg.Topic(), msg.Data())
 	switch data := msg.Data().(type) {
 	case string:
 		switch msg.Topic() {
 		case core.EnableFeature:
-			log.Info("---------> Data")
-			log.Info(data)
 			if data == agent_config.FeatureMetrics {
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureMetrics) {
 					conf, err := config.GetConfig(f.conf.ClientID)
@@ -73,9 +71,6 @@ func (f *Features) Process(msg *core.Message) {
 					f.conf = conf
 
 					metrics := NewMetrics(f.conf, f.env, f.binary)
-
-					log.Info()
-					log.Info("-------> Metrics Feature is not enabled registering ")
 
 					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metrics}, nil)
 
@@ -96,9 +91,6 @@ func (f *Features) Process(msg *core.Message) {
 					f.conf = conf
 
 					api := NewAgentAPI(f.conf, f.env, f.binary)
-
-					log.Info()
-					log.Info(" --------> Agent Api Feature is not enabled registering ")
 
 					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{api}, nil)
 
@@ -121,9 +113,6 @@ func (f *Features) Process(msg *core.Message) {
 
 					registration := NewOneTimeRegistration(f.conf, f.binary, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.version)
 
-					log.Info()
-					log.Info(" --------> Registration Feature is not enabled registering ")
-
 					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{registration}, nil)
 
 					if err != nil {
@@ -144,9 +133,6 @@ func (f *Features) Process(msg *core.Message) {
 					f.conf = conf
 
 					metricsThrottle := NewMetricsThrottle(f.conf, f.env)
-
-					log.Info()
-					log.Info(" --------> Metrics Throttle Feature is not enabled registering ")
 
 					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metricsThrottle}, nil)
 
@@ -169,9 +155,6 @@ func (f *Features) Process(msg *core.Message) {
 
 					dataPlaneStatus := NewDataPlaneStatus(f.conf, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary, f.env, f.version)
 
-					log.Info()
-					log.Info(" --------> Dataplane Feature is not enabled registering ")
-
 					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{dataPlaneStatus}, nil)
 
 					if err != nil {
@@ -193,9 +176,6 @@ func (f *Features) Process(msg *core.Message) {
 
 					processWatcher := NewProcessWatcher(f.env, f.binary)
 
-					log.Info()
-					log.Info(" --------> Process Watcher Feature is not enabled registering ")
-
 					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{processWatcher}, nil)
 
 					if err != nil {
@@ -216,9 +196,6 @@ func (f *Features) Process(msg *core.Message) {
 					f.conf = conf
 
 					events := NewEvents(f.conf, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary)
-
-					log.Info()
-					log.Info(" --------> Events Feature is not enabled registering ")
 
 					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{events}, nil)
 
@@ -242,9 +219,6 @@ func (f *Features) Process(msg *core.Message) {
 					fileWatcher := NewFileWatcher(f.conf, f.env)
 					fileWatcherThrottle := NewFileWatchThrottle()
 
-					log.Info()
-					log.Info(" --------> File Watcher Feature is not enabled registering ")
-
 					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{fileWatcher, fileWatcherThrottle}, nil)
 
 					if err != nil {
@@ -267,9 +241,6 @@ func (f *Features) Process(msg *core.Message) {
 					nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
 					metrics := NewMetrics(f.conf, f.env, f.binary)
 
-					log.Info()
-					log.Info(" --------> Nginx Counting Feature is not enabled registering ")
-
 					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metrics, nginxCounting}, nil)
 
 					if err != nil {
@@ -282,60 +253,60 @@ func (f *Features) Process(msg *core.Message) {
 			}
 		case core.DisableFeature:
 			if data == agent_config.FeatureMetrics {
-
-				log.Info("Metrics Enabled Disabling ")
 				err := f.pipeline.Deregister([]string{agent_config.FeatureMetrics})
-
-				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+				if err != nil {
+					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+				}
 			}
 			if data == agent_config.FeatureAgentAPI {
-
-				log.Info("API Enabled Disabling ")
 				err := f.pipeline.Deregister([]string{agent_config.FeatureAgentAPI})
-				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+				if err != nil {
+					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+				}
 			}
 
 			if data == agent_config.FeatureRegistration {
-
-				log.Info("Registration Enabled Disabling ")
 				err := f.pipeline.Deregister([]string{agent_config.FeatureRegistration})
-				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+				if err != nil {
+					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+				}
 			}
 			if data == agent_config.FeatureMetricsThrottle {
-
-				log.Info("Throttle Enabled Disabling ")
 				err := f.pipeline.Deregister([]string{agent_config.FeatureMetricsThrottle})
-				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+				if err != nil {
+					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+				}
 			}
 			if data == agent_config.FeatureDataPlaneStatus {
-
-				log.Info("DataPlane Enabled Disabling ")
 				err := f.pipeline.Deregister([]string{agent_config.FeatureDataPlaneStatus})
-				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+				if err != nil {
+					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+				}
 			}
 			if data == agent_config.FeatureProcessWatcher {
-
-				log.Info("Process Watcher Enabled Disabling ")
 				err := f.pipeline.Deregister([]string{agent_config.FeatureProcessWatcher})
-				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+				if err != nil {
+					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+				}
+
 			}
 			if data == agent_config.FeatureActivityEvents {
-
-				log.Info("Activity Events Enabled Disabling ")
 				err := f.pipeline.Deregister([]string{agent_config.FeatureActivityEvents})
-				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+				if err != nil {
+					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+				}
 			}
 			if data == agent_config.FeatureFileWatcher {
-
-				log.Info("File Watcher Enabled Disabling ")
 				err := f.pipeline.Deregister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
-				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+				if err != nil {
+					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+				}
 			}
 			if data == agent_config.FeatureNginxCounting {
-
-				log.Info("Activity Events Enabled Disabling ")
 				err := f.pipeline.Deregister([]string{agent_config.FeatureNginxCounting})
-				log.Debugf("Error Deregistering %v Plugin: %v", data, err)
+				if err != nil {
+					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+				}
 			}
 		}
 	}

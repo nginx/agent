@@ -267,8 +267,6 @@ func startNginxAgent(b *testing.B) {
 	config.Viper.Set(agent_config.FeaturesKey, config.Defaults.Features)
 
 	loadedConfig, _ := config.GetConfig(env.GetSystemUUID())
-	fmt.Printf("Loaded Config: %v", loadedConfig)
-	log.Infof("Loaded Config: %v", loadedConfig)
 	logger.SetLogLevel("error")
 	os.Create("/var/log/nginx-agent.log")
 	logger.SetLogFile("/var/log/nginx-agent.log")

@@ -214,7 +214,6 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 func isNginxCountingEnabled(features []string) bool {
 	for _, feature := range features {
 		if feature == agent_config.FeatureNginxCounting {
-			log.Info("Counting Enabled")
 			return true
 		}
 	}
@@ -234,8 +233,6 @@ func featureDiff(configFeatures []string, features []string) []string {
 			diff = append(diff, configFeature)
 		}
 	}
-
-	log.Infof("Difference: %v", diff)
 	return diff
 }
 

@@ -240,6 +240,14 @@ features:
   - metrics-throttle
 ```
 
+Enable everything except metrics:
+```yaml
+features:
+  - registration 
+  - nginx-counting  
+  - metrics-throttle
+```
+
 Here is a list of all currently supported features:
 
 
@@ -255,6 +263,7 @@ Here is a list of all currently supported features:
 | file-watcher         | Watch for NGINX configuration changes                               |
 | activity-events      | Report on Events in the Agent                                       |
 | agent-api            | Toggles the Agent REST API                                          |
+| nginx-ssl-config     |                                           |
 
 
 ## Starting NGINX Agent

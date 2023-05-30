@@ -105,11 +105,6 @@ func (p *MessagePipe) Deregister(pluginNames []string) error {
 		}
 	}
 
-	log.Info("================= Deregister ==================")
-	log.Infof("regPlugin: %v", regPlugin)
-	log.Infof("pluginNames: %v", pluginNames)
-
-	log.Infof("Len Before: %v", len(p.plugins))
 	for _, plugin := range plugins {
 		index := getIndex(plugin.Info().Name(), p.plugins)
 
@@ -127,7 +122,6 @@ func (p *MessagePipe) Deregister(pluginNames []string) error {
 		}
 
 	}
-	log.Infof("Len After: %v", len(p.plugins))
 
 	p.mu.Unlock()
 
