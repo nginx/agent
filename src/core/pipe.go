@@ -124,9 +124,7 @@ func (p *MessagePipe) Deregister(pluginNames []string) error {
 	}
 
 	p.mu.Unlock()
-
 	return nil
-
 }
 
 func getIndex(pluginName string, plugins []Plugin) int {

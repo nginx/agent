@@ -134,7 +134,6 @@ func (n *Nginx) Process(message *core.Message) {
 				}
 			} else {
 				log.Warnf("unable to process NGINX config apply request as the nginx-config-async feature is disabled")
-				// TODO: Return a status code to Agent API
 				status := &proto.Command_NginxConfigResponse{
 					NginxConfigResponse: &proto.NginxConfigResponse{
 						Status:     newErrStatus(nginxConfigAsyncFeatureDisabled).CmdStatus,

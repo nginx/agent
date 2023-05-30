@@ -143,7 +143,6 @@ func (m *Metrics) Process(msg *core.Message) {
 		if stoppedCollectorIndex >= 0 {
 			m.collectors = append(m.collectors[:stoppedCollectorIndex], m.collectors[stoppedCollectorIndex+1:]...)
 		}
-
 		return
 	}
 }
