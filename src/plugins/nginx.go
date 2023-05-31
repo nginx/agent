@@ -202,6 +202,8 @@ func (n *Nginx) Subscriptions() []string {
 		core.DataplaneSoftwareDetailsUpdated,
 		core.AgentConfigChanged,
 		core.EnableExtension,
+		core.EnableFeature,
+		core.DisableFeature,
 		core.NginxConfigValidationPending,
 		core.NginxConfigValidationSucceeded,
 		core.NginxConfigValidationFailed,
@@ -222,9 +224,8 @@ func (n *Nginx) syncProcessInfo(processInfo []core.Process) {
 
 func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) error {
 	log.Debugf("Uploading config for %v", config)
-
 	if !n.isFeatureNginxConfigEnabled {
-		log.Info("unable to upload config as nginx-config feature is disabled")
+		log.Info("unable to use nginx config functionality as nginx-config feature is disabled")
 		return nil
 	}
 
@@ -294,8 +295,8 @@ func (n *Nginx) processCmd(cmd *proto.Command) {
 			if n.isFeatureNginxConfigEnabled {
 				status = n.applyConfig(cmd, commandData)
 			} else {
-				log.Error("unable to upload config as nginx-config feature is disabled")
-				status.NginxConfigResponse.Status = newErrStatus("unable to upload config as nginx-config feature is disabled").CmdStatus
+				log.Error("unable to use nginx config functionality as nginx-config feature is disabled")
+				status.NginxConfigResponse.Status = newErrStatus("unable to use nginx config functionality as nginx-config feature is disabled").CmdStatus
 				status.NginxConfigResponse.Action = proto.NginxConfigAction_APPLY
 			}
 		case proto.NginxConfigAction_TEST:
@@ -740,7 +741,14 @@ func (n *Nginx) syncAgentConfigChange() {
 	}
 	log.Debugf("Nginx Plugins is updating to a new config - %v", conf)
 
-	n.isFeatureNginxConfigEnabled = conf.IsFeatureEnabled(agent_config.FeatureNginxConfig) || conf.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
+	// n.featureMutex.Lock()
+	// n.isFeatureNginxConfigEnabled = conf.IsFeatureEnabled(agent_config.FeatureNginxConfig) || conf.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
+	// n.messagePipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{n}, nil)
+	// n.featureMutex.Unlock()
+
+	log.Info()
+	log.Info()
+	log.Infof("In Sync config enabled has been set to: %v", n.isFeatureNginxConfigEnabled)
 
 	n.config = conf
 }

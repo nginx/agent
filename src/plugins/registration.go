@@ -210,8 +210,6 @@ func (r *OneTimeRegistration) registerAgent() {
 		},
 	}
 
-	log.Tracef("AgentConnectRequest: %v", agentConnectRequest)
-
 	r.pipeline.Process(
 		core.NewMessage(core.CommRegister, agentConnectRequest),
 		core.NewMessage(core.RegistrationCompletedTopic, nil),

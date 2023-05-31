@@ -57,7 +57,7 @@ func (f *Features) Subscriptions() []string {
 }
 
 func (f *Features) Process(msg *core.Message) {
-	log.Debugf("Process function in the features.go, %s %v", msg.Topic(), msg.Data())
+	log.Infof("Process function in the features.go, %s %v", msg.Topic(), msg.Data())
 	switch data := msg.Data().(type) {
 	case string:
 		switch msg.Topic() {
@@ -79,10 +79,8 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					metrics.Init(f.pipeline)
-
 				}
-			}
-			if data == agent_config.FeatureAgentAPI {
+			} else if data == agent_config.FeatureAgentAPI {
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureAgentAPI) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -99,12 +97,9 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					api.Init(f.pipeline)
-
 				}
-			}
-
-			if data == agent_config.FeatureRegistration {
-				if !f.isPluginAlreadyRegistered(agent_config.FeatureAgentAPI) {
+			} else if data == agent_config.FeatureRegistration {
+				if !f.isPluginAlreadyRegistered(agent_config.FeatureRegistration) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
 						log.Warnf("Unable to get agent config, %v", err)
@@ -120,11 +115,8 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					registration.Init(f.pipeline)
-
 				}
-			}
-
-			if data == agent_config.FeatureMetricsThrottle {
+			} else if data == agent_config.FeatureMetricsThrottle {
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -141,11 +133,8 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					metricsThrottle.Init(f.pipeline)
-
 				}
-			}
-
-			if data == agent_config.FeatureDataPlaneStatus {
+			} else if data == agent_config.FeatureDataPlaneStatus {
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureDataPlaneStatus) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -162,11 +151,8 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					dataPlaneStatus.Init(f.pipeline)
-
 				}
-			}
-
-			if data == agent_config.FeatureProcessWatcher {
+			} else if data == agent_config.FeatureProcessWatcher {
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureProcessWatcher) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -183,11 +169,8 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					processWatcher.Init(f.pipeline)
-
 				}
-			}
-
-			if data == agent_config.FeatureActivityEvents {
+			} else if data == agent_config.FeatureActivityEvents {
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureActivityEvents) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -204,11 +187,8 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					events.Init(f.pipeline)
-
 				}
-			}
-
-			if data == agent_config.FeatureFileWatcher {
+			} else if data == agent_config.FeatureFileWatcher {
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureFileWatcher) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -226,11 +206,8 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					fileWatcher.Init(f.pipeline)
-
 				}
-			}
-
-			if data == agent_config.FeatureNginxCounting && len(f.conf.Nginx.NginxCountingSocket) > 0 {
+			} else if data == agent_config.FeatureNginxCounting && len(f.conf.Nginx.NginxCountingSocket) > 0 {
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureNginxCounting) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -248,76 +225,40 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					nginxCounting.Init(f.pipeline)
+				}
+			} else if data == agent_config.FeatureNginxConfigAsync {
+				if !f.isPluginAlreadyRegistered(agent_config.FeatureNginxConfigAsync) {
+					conf, err := config.GetConfig(f.conf.ClientID)
+					if err != nil {
+						log.Warnf("Unable to get agent config, %v", err)
+					}
+					f.conf = conf
+
+					nginx := NewNginx(f.commander, f.binary, f.env, f.conf)
+
+					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{nginx}, nil)
+
+					if err != nil {
+						log.Warnf("Unable to register %s feature, %v", data, err)
+					}
+
+					nginx.Init(f.pipeline)
 
 				}
 			}
-		case core.DisableFeature:
-			if data == agent_config.FeatureMetrics {
-				err := f.pipeline.Deregister([]string{agent_config.FeatureMetrics})
-				if err != nil {
-					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-				}
-			}
-			if data == agent_config.FeatureAgentAPI {
-				err := f.pipeline.Deregister([]string{agent_config.FeatureAgentAPI})
-				if err != nil {
-					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-				}
-			}
 
-			if data == agent_config.FeatureRegistration {
-				err := f.pipeline.Deregister([]string{agent_config.FeatureRegistration})
-				if err != nil {
-					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-				}
-			}
-			if data == agent_config.FeatureMetricsThrottle {
-				err := f.pipeline.Deregister([]string{agent_config.FeatureMetricsThrottle})
-				if err != nil {
-					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-				}
-			}
-			if data == agent_config.FeatureDataPlaneStatus {
-				err := f.pipeline.Deregister([]string{agent_config.FeatureDataPlaneStatus})
-				if err != nil {
-					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-				}
-			}
-			if data == agent_config.FeatureProcessWatcher {
-				err := f.pipeline.Deregister([]string{agent_config.FeatureProcessWatcher})
-				if err != nil {
-					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-				}
-
-			}
-			if data == agent_config.FeatureActivityEvents {
-				err := f.pipeline.Deregister([]string{agent_config.FeatureActivityEvents})
-				if err != nil {
-					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-				}
-			}
-			if data == agent_config.FeatureFileWatcher {
-				err := f.pipeline.Deregister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
-				if err != nil {
-					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-				}
-			}
-			if data == agent_config.FeatureNginxCounting {
-				err := f.pipeline.Deregister([]string{agent_config.FeatureNginxCounting})
-				if err != nil {
-					log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-				}
-			}
 		}
 	}
 }
 
 func (f *Features) isPluginAlreadyRegistered(pluginName string) bool {
 	pluginAlreadyRegistered := false
+	log.Infof("isPluginAlreadyRegistered ------------> %v", pluginName)
 	for _, plugin := range f.pipeline.GetPlugins() {
 		if plugin.Info().Name() == pluginName {
 			pluginAlreadyRegistered = true
 		}
 	}
+	log.Infof("-----> %v IsPlugin Registered: %v", pluginName, pluginAlreadyRegistered)
 	return pluginAlreadyRegistered
 }

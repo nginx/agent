@@ -37,7 +37,7 @@ type MessagePipe struct {
 	extensionPlugins []ExtensionPlugin
 	ctx              context.Context
 	cancel           context.CancelFunc
-	mu               sync.Mutex
+	mu               sync.RWMutex
 	bus              messagebus.MessageBus
 }
 
@@ -49,13 +49,14 @@ func NewMessagePipe(ctx context.Context) *MessagePipe {
 		extensionPlugins: make([]ExtensionPlugin, 0, MaxExtensionPlugins),
 		ctx:              pipeContext,
 		cancel:           pipeCancel,
-		mu:               sync.Mutex{},
+		mu:               sync.RWMutex{},
 	}
 }
 
 func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []ExtensionPlugin) error {
 	p.mu.Lock()
 
+	// log.Info("-------> Register")
 	p.plugins = append(p.plugins, plugins...)
 	p.extensionPlugins = append(p.extensionPlugins, extensionPlugins...)
 	p.bus = messagebus.New(size)
@@ -94,13 +95,10 @@ func (p *MessagePipe) Deregister(pluginNames []string) error {
 	p.mu.Lock()
 
 	var plugins []Plugin
-	var regPlugin []string
-
 	for _, name := range pluginNames {
 		for _, plugin := range p.plugins {
 			if plugin.Info().Name() == name {
 				plugins = append(plugins, plugin)
-				regPlugin = append(regPlugin, plugin.Info().Name())
 			}
 		}
 	}
