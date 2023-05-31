@@ -756,6 +756,8 @@ func TestNginx_Subscriptions(t *testing.T) {
 		core.DataplaneSoftwareDetailsUpdated,
 		core.AgentConfigChanged,
 		core.EnableExtension,
+		core.EnableFeature,
+		core.DisableFeature,
 		core.NginxConfigValidationPending,
 		core.NginxConfigValidationSucceeded,
 		core.NginxConfigValidationFailed,
