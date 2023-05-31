@@ -36,6 +36,8 @@ RUN set -x \
                       nginx
 
 RUN chmod +x /agent/entrypoint.sh
+
+# RUN nginx -T
 # COPY ./test/integration/api/nginx.conf /etc/nginx/nginx.conf
 
 STOPSIGNAL SIGTERM
@@ -49,7 +51,7 @@ FROM install-nginx as install-agent-local
 
 ARG PACKAGE_NAME
 
-RUN yum localinstall -y /agent/build/$PACKAGE_NAME.rpm
+RUN yum localinstall -y /agent/build/${PACKAGE_NAME}.rpm
 
 FROM install-nginx as install-agent-repo
 
@@ -57,7 +59,7 @@ ARG PACKAGES_REPO
 
 RUN printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
-baseurl=https://$PACKAGES_REPO/nginx-agent/centos/$OS_VERSION/\$basearch \n\
+baseurl=http://${PACKAGES_REPO}/nginx-agent/centos/${OS_VERSION}/\$basearch \n\
 sslclientcert=/etc/ssl/nginx/nginx-repo.crt \n\
 sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\

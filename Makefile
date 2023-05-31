@@ -25,8 +25,8 @@ DATE = $(shell date +%F_%H-%M-%S)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # OS_RELEASE  ?= ubuntu
 # OS_VERSION  ?= 22.04
-OS_RELEASE  ?= redhatenterprise
-OS_VERSION  ?= 8
+OS_RELEASE  ?= alpine
+OS_VERSION  ?= 3.16
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 

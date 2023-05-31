@@ -9,11 +9,12 @@ services:
     build:
       context: ../../../
       dockerfile: ./scripts/docker/nginx-oss/apk/Dockerfile
-      target: install-agent
+      target: install-agent-repo
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         BASE_IMAGE: ${BASE_IMAGE}
         ENTRY_POINT: "./scripts/docker/entrypoint.sh"
+        PACKAGES_REPO: "packages.nginx.org"
     ports:
       - 9091:9091
     networks:
