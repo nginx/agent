@@ -72,73 +72,125 @@ message SecurityViolationEvent {
   reserved 33;
   reserved "ViolationContexts";
 
+  // The name of the NGINX App Protect policy that triggered the security violation 
   string PolicyName = 1 [(gogoproto.jsontag) = "policy_name"];
+  // The unique NGINX App Protect support ID of the violation, used for tracking purposes
   string SupportID = 2 [(gogoproto.jsontag) = "support_id"];
 
+  // The outcome that resulted for the security violation
   string Outcome = 3 [(gogoproto.jsontag) = "outcome"];
+  // The reason for the security violation resulting in the outcome
   string OutcomeReason = 4 [(gogoproto.jsontag) = "outcome_reason"];
+  // The blocking exception reason when a configured violation was not blocked
   string BlockingExceptionReason = 5 [(gogoproto.jsontag) = "blocking_exception_reason"];
 
+  // The HTTP Method of the request that triggered the security violation
   string Method = 6 [(gogoproto.jsontag) = "method"];
+  // The HTTP Protocol of the request that triggered the security violation
   string Protocol = 7 [(gogoproto.jsontag) = "protocol"];
+  // The HTTP xff_header_value of the request that triggered the security violation
   string XForwardedForHeaderValue = 8 [(gogoproto.jsontag) = "xff_header_value"];
 
+  // The URI of the request that triggered the security violation
   string URI = 9 [(gogoproto.jsontag) = "uri"];
+  // The full request that triggered the security violation, including the Method, URI and Request Body
   string Request = 10 [(gogoproto.jsontag) = "request"];
+  // If the request is truncated or not
   string IsTruncated = 11 [(gogoproto.jsontag) = "is_truncated"];
+  // The status of the request that triggered the security violation
   string RequestStatus = 12 [(gogoproto.jsontag) = "request_status"];
+  // The HTTP response status to the request that triggered the security violation
   string ResponseCode = 13 [(gogoproto.jsontag) = "response_code"];
 
+  // The server address of the instance that caught the security violation 
   string ServerAddr = 14 [(gogoproto.jsontag) = "server_addr"];
+  // The Virtual Server Name of the instance that caught the security violation
   string VSName = 15 [(gogoproto.jsontag) = "vs_name"];
+  // The targeted address by the request that triggered the security violation
   string RemoteAddr = 16 [(gogoproto.jsontag) = "remote_addr"];
+  // The targeted port number by the request that triggered the security violation
   string RemotePort = 17 [(gogoproto.jsontag) = "destination_port"];
+  // The server port of the instance that caught the security violation 
   string ServerPort = 18 [(gogoproto.jsontag) = "server_port"];
 
+  // A comma-separated list of all the violations triggered by the request
   string Violations = 19 [(gogoproto.jsontag) = "violations"];
+  // A comma-separated list of all the sub-violations triggered by the request
   string SubViolations = 20 [(gogoproto.jsontag) = "sub_violations"];
+  // The rating of the triggered security violation
   string ViolationRating = 21 [(gogoproto.jsontag) = "violation_rating"];
 
+  // A comma-separated list of all the signature names
   string SigSetNames = 22 [(gogoproto.jsontag) = "sig_set_names"];
+  // A comma-separated list of all the signature CVEs
   string SigCVEs = 23 [(gogoproto.jsontag) = "sig_cves"];
 
+  // The class of the client used to send the request that triggered the security violation 
   string ClientClass = 24 [(gogoproto.jsontag) = "client_class"];
+  // The application used to send the request that triggered the security violation 
   string ClientApplication = 25 [(gogoproto.jsontag) = "client_application"];
+  // The version of the application used to send the request that triggered the security violation
   string ClientApplicationVersion = 26 [(gogoproto.jsontag) = "client_application_version"];
 
+  // The severity of the triggered security violation
   string Severity = 27 [(gogoproto.jsontag) = "severity"];
+  // A comma-separated list of the threat campaign names
   string ThreatCampaignNames = 28 [(gogoproto.jsontag) = "threat_campaign_names"];
 
+  // Anomalies of the bot that sent the request that triggered the security violation
   string BotAnomalies = 29 [(gogoproto.jsontag) = "bot_anomalies"];
+  // Category of the bot that sent the request that triggered the security violation
   string BotCategory = 30 [(gogoproto.jsontag) = "bot_category"];
+  // Enforced anomalies of the bot that sent the request that triggered the security violation
   string EnforcedBotAnomalies = 31 [(gogoproto.jsontag) = "enforced_bot_anomalies"];
+  // Signature name of the bot that sent the request that triggered the security violation
   string BotSignatureName = 32 [(gogoproto.jsontag) = "bot_signature_name"];
 
+  // A list of objects containing descriptive data about all the security violations 
   repeated ViolationData ViolationsData = 34 [(gogoproto.jsontag) = "violations_data"];
 
+  // SystemID of the instance where NGINX is running
   string SystemID = 35 [(gogoproto.jsontag) = "system_id"];
+  // Instance tags where NGINX is running
   string InstanceTags = 36 [(gogoproto.jsontag) = "instance_tags"];
+  // Instance group where NGINX is running
   string InstanceGroup = 37 [(gogoproto.jsontag) = "instance_group"];
+  // Display name of the instance where NGINX is running
   string DisplayName = 38 [(gogoproto.jsontag) = "display_name"];
+  // The hostname where NGINX is running
   string ParentHostname = 40 [(gogoproto.jsontag) = "parent_hostname"];
 }
 
+// Represents signature data that's contained within each violation
 message SignatureData {
+  // ID of the signature data
   string ID = 1 [(gogoproto.jsontag) = "sig_data_id"];
+  // The blocking mask of the signature data
   string BlockingMask = 2 [(gogoproto.jsontag) = "sig_data_blocking_mask"];
+  // The buffer of the signature data
   string Buffer = 3 [(gogoproto.jsontag) = "sig_data_buffer"];
+  // The offset of the signature data
   string Offset = 4 [(gogoproto.jsontag) = "sig_data_offset"];
+  // The length of the signature data
   string Length = 5 [(gogoproto.jsontag) = "sig_data_length"];
 }
 
+// Represents the context data of each violation
 message ContextData {
+  // The name within the context data 
   string Name = 1 [(gogoproto.jsontag) = "parameter_data_name"];
+  // The value within the context data
   string Value = 2 [(gogoproto.jsontag) = "parameter_data_value"];
 }
 
+// Represents the violation data contained within a security violation event
 message ViolationData {
+  // The name of the violation
   string Name = 1 [(gogoproto.jsontag) = "violation_data_name"];
+  // The context of the violation
   string Context = 2 [(gogoproto.jsontag) = "violation_data_context"];
+  // The object representing the context data of the violation
   ContextData ContextData = 3 [(gogoproto.jsontag) = "violation_data_context_data"];
+  // A list representing the signature data of the violation
   repeated SignatureData Signatures = 4 [(gogoproto.jsontag) = "violation_data_signatures"];
 }

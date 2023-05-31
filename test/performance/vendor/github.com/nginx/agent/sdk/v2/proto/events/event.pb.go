@@ -336,47 +336,85 @@ func (m *ActivityEvent) GetDimensions() []*common.Dimension {
 
 // Represents a security violation that is emitted by the agent
 type SecurityViolationEvent struct {
-	PolicyName               string           `protobuf:"bytes,1,opt,name=PolicyName,proto3" json:"policy_name"`
-	SupportID                string           `protobuf:"bytes,2,opt,name=SupportID,proto3" json:"support_id"`
-	Outcome                  string           `protobuf:"bytes,3,opt,name=Outcome,proto3" json:"outcome"`
-	OutcomeReason            string           `protobuf:"bytes,4,opt,name=OutcomeReason,proto3" json:"outcome_reason"`
-	BlockingExceptionReason  string           `protobuf:"bytes,5,opt,name=BlockingExceptionReason,proto3" json:"blocking_exception_reason"`
-	Method                   string           `protobuf:"bytes,6,opt,name=Method,proto3" json:"method"`
-	Protocol                 string           `protobuf:"bytes,7,opt,name=Protocol,proto3" json:"protocol"`
-	XForwardedForHeaderValue string           `protobuf:"bytes,8,opt,name=XForwardedForHeaderValue,proto3" json:"xff_header_value"`
-	URI                      string           `protobuf:"bytes,9,opt,name=URI,proto3" json:"uri"`
-	Request                  string           `protobuf:"bytes,10,opt,name=Request,proto3" json:"request"`
-	IsTruncated              string           `protobuf:"bytes,11,opt,name=IsTruncated,proto3" json:"is_truncated"`
-	RequestStatus            string           `protobuf:"bytes,12,opt,name=RequestStatus,proto3" json:"request_status"`
-	ResponseCode             string           `protobuf:"bytes,13,opt,name=ResponseCode,proto3" json:"response_code"`
-	ServerAddr               string           `protobuf:"bytes,14,opt,name=ServerAddr,proto3" json:"server_addr"`
-	VSName                   string           `protobuf:"bytes,15,opt,name=VSName,proto3" json:"vs_name"`
-	RemoteAddr               string           `protobuf:"bytes,16,opt,name=RemoteAddr,proto3" json:"remote_addr"`
-	RemotePort               string           `protobuf:"bytes,17,opt,name=RemotePort,proto3" json:"destination_port"`
-	ServerPort               string           `protobuf:"bytes,18,opt,name=ServerPort,proto3" json:"server_port"`
-	Violations               string           `protobuf:"bytes,19,opt,name=Violations,proto3" json:"violations"`
-	SubViolations            string           `protobuf:"bytes,20,opt,name=SubViolations,proto3" json:"sub_violations"`
-	ViolationRating          string           `protobuf:"bytes,21,opt,name=ViolationRating,proto3" json:"violation_rating"`
-	SigSetNames              string           `protobuf:"bytes,22,opt,name=SigSetNames,proto3" json:"sig_set_names"`
-	SigCVEs                  string           `protobuf:"bytes,23,opt,name=SigCVEs,proto3" json:"sig_cves"`
-	ClientClass              string           `protobuf:"bytes,24,opt,name=ClientClass,proto3" json:"client_class"`
-	ClientApplication        string           `protobuf:"bytes,25,opt,name=ClientApplication,proto3" json:"client_application"`
-	ClientApplicationVersion string           `protobuf:"bytes,26,opt,name=ClientApplicationVersion,proto3" json:"client_application_version"`
-	Severity                 string           `protobuf:"bytes,27,opt,name=Severity,proto3" json:"severity"`
-	ThreatCampaignNames      string           `protobuf:"bytes,28,opt,name=ThreatCampaignNames,proto3" json:"threat_campaign_names"`
-	BotAnomalies             string           `protobuf:"bytes,29,opt,name=BotAnomalies,proto3" json:"bot_anomalies"`
-	BotCategory              string           `protobuf:"bytes,30,opt,name=BotCategory,proto3" json:"bot_category"`
-	EnforcedBotAnomalies     string           `protobuf:"bytes,31,opt,name=EnforcedBotAnomalies,proto3" json:"enforced_bot_anomalies"`
-	BotSignatureName         string           `protobuf:"bytes,32,opt,name=BotSignatureName,proto3" json:"bot_signature_name"`
-	ViolationsData           []*ViolationData `protobuf:"bytes,34,rep,name=ViolationsData,proto3" json:"violations_data"`
-	SystemID                 string           `protobuf:"bytes,35,opt,name=SystemID,proto3" json:"system_id"`
-	InstanceTags             string           `protobuf:"bytes,36,opt,name=InstanceTags,proto3" json:"instance_tags"`
-	InstanceGroup            string           `protobuf:"bytes,37,opt,name=InstanceGroup,proto3" json:"instance_group"`
-	DisplayName              string           `protobuf:"bytes,38,opt,name=DisplayName,proto3" json:"display_name"`
-	ParentHostname           string           `protobuf:"bytes,40,opt,name=ParentHostname,proto3" json:"parent_hostname"`
-	XXX_NoUnkeyedLiteral     struct{}         `json:"-"`
-	XXX_unrecognized         []byte           `json:"-"`
-	XXX_sizecache            int32            `json:"-"`
+	// The name of the NGINX App Protect policy that triggered the security violation
+	PolicyName string `protobuf:"bytes,1,opt,name=PolicyName,proto3" json:"policy_name"`
+	// The unique NGINX App Protect support ID of the violation, used for tracking purposes
+	SupportID string `protobuf:"bytes,2,opt,name=SupportID,proto3" json:"support_id"`
+	// The outcome that resulted for the security violation
+	Outcome string `protobuf:"bytes,3,opt,name=Outcome,proto3" json:"outcome"`
+	// The reason for the security violation resulting in the outcome
+	OutcomeReason string `protobuf:"bytes,4,opt,name=OutcomeReason,proto3" json:"outcome_reason"`
+	// The blocking exception reason when a configured violation was not blocked
+	BlockingExceptionReason string `protobuf:"bytes,5,opt,name=BlockingExceptionReason,proto3" json:"blocking_exception_reason"`
+	// The HTTP Method of the request that triggered the security violation
+	Method string `protobuf:"bytes,6,opt,name=Method,proto3" json:"method"`
+	// The HTTP Protocol of the request that triggered the security violation
+	Protocol string `protobuf:"bytes,7,opt,name=Protocol,proto3" json:"protocol"`
+	// The HTTP xff_header_value of the request that triggered the security violation
+	XForwardedForHeaderValue string `protobuf:"bytes,8,opt,name=XForwardedForHeaderValue,proto3" json:"xff_header_value"`
+	// The URI of the request that triggered the security violation
+	URI string `protobuf:"bytes,9,opt,name=URI,proto3" json:"uri"`
+	// The full request that triggered the security violation, including the Method, URI and Request Body
+	Request string `protobuf:"bytes,10,opt,name=Request,proto3" json:"request"`
+	// If the request is truncated or not
+	IsTruncated string `protobuf:"bytes,11,opt,name=IsTruncated,proto3" json:"is_truncated"`
+	// The status of the request that triggered the security violation
+	RequestStatus string `protobuf:"bytes,12,opt,name=RequestStatus,proto3" json:"request_status"`
+	// The HTTP response status to the request that triggered the security violation
+	ResponseCode string `protobuf:"bytes,13,opt,name=ResponseCode,proto3" json:"response_code"`
+	// The server address of the instance that caught the security violation
+	ServerAddr string `protobuf:"bytes,14,opt,name=ServerAddr,proto3" json:"server_addr"`
+	// The Virtual Server Name of the instance that caught the security violation
+	VSName string `protobuf:"bytes,15,opt,name=VSName,proto3" json:"vs_name"`
+	// The targeted address by the request that triggered the security violation
+	RemoteAddr string `protobuf:"bytes,16,opt,name=RemoteAddr,proto3" json:"remote_addr"`
+	// The targeted port number by the request that triggered the security violation
+	RemotePort string `protobuf:"bytes,17,opt,name=RemotePort,proto3" json:"destination_port"`
+	// The server port of the instance that caught the security violation
+	ServerPort string `protobuf:"bytes,18,opt,name=ServerPort,proto3" json:"server_port"`
+	// A comma-separated list of all the violations triggered by the request
+	Violations string `protobuf:"bytes,19,opt,name=Violations,proto3" json:"violations"`
+	// A comma-separated list of all the sub-violations triggered by the request
+	SubViolations string `protobuf:"bytes,20,opt,name=SubViolations,proto3" json:"sub_violations"`
+	// The rating of the triggered security violation
+	ViolationRating string `protobuf:"bytes,21,opt,name=ViolationRating,proto3" json:"violation_rating"`
+	// A comma-separated list of all the signature names
+	SigSetNames string `protobuf:"bytes,22,opt,name=SigSetNames,proto3" json:"sig_set_names"`
+	// A comma-separated list of all the signature CVEs
+	SigCVEs string `protobuf:"bytes,23,opt,name=SigCVEs,proto3" json:"sig_cves"`
+	// The class of the client used to send the request that triggered the security violation
+	ClientClass string `protobuf:"bytes,24,opt,name=ClientClass,proto3" json:"client_class"`
+	// The application used to send the request that triggered the security violation
+	ClientApplication string `protobuf:"bytes,25,opt,name=ClientApplication,proto3" json:"client_application"`
+	// The version of the application used to send the request that triggered the security violation
+	ClientApplicationVersion string `protobuf:"bytes,26,opt,name=ClientApplicationVersion,proto3" json:"client_application_version"`
+	// The severity of the triggered security violation
+	Severity string `protobuf:"bytes,27,opt,name=Severity,proto3" json:"severity"`
+	// A comma-separated list of the threat campaign names
+	ThreatCampaignNames string `protobuf:"bytes,28,opt,name=ThreatCampaignNames,proto3" json:"threat_campaign_names"`
+	// Anomalies of the bot that sent the request that triggered the security violation
+	BotAnomalies string `protobuf:"bytes,29,opt,name=BotAnomalies,proto3" json:"bot_anomalies"`
+	// Category of the bot that sent the request that triggered the security violation
+	BotCategory string `protobuf:"bytes,30,opt,name=BotCategory,proto3" json:"bot_category"`
+	// Enforced anomalies of the bot that sent the request that triggered the security violation
+	EnforcedBotAnomalies string `protobuf:"bytes,31,opt,name=EnforcedBotAnomalies,proto3" json:"enforced_bot_anomalies"`
+	// Signature name of the bot that sent the request that triggered the security violation
+	BotSignatureName string `protobuf:"bytes,32,opt,name=BotSignatureName,proto3" json:"bot_signature_name"`
+	// A list of objects containing descriptive data about all the security violations
+	ViolationsData []*ViolationData `protobuf:"bytes,34,rep,name=ViolationsData,proto3" json:"violations_data"`
+	// SystemID of the instance where NGINX is running
+	SystemID string `protobuf:"bytes,35,opt,name=SystemID,proto3" json:"system_id"`
+	// Instance tags where NGINX is running
+	InstanceTags string `protobuf:"bytes,36,opt,name=InstanceTags,proto3" json:"instance_tags"`
+	// Instance group where NGINX is running
+	InstanceGroup string `protobuf:"bytes,37,opt,name=InstanceGroup,proto3" json:"instance_group"`
+	// Display name of the instance where NGINX is running
+	DisplayName string `protobuf:"bytes,38,opt,name=DisplayName,proto3" json:"display_name"`
+	// The hostname where NGINX is running
+	ParentHostname       string   `protobuf:"bytes,40,opt,name=ParentHostname,proto3" json:"parent_hostname"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *SecurityViolationEvent) Reset()         { *m = SecurityViolationEvent{} }
@@ -678,11 +716,17 @@ func (m *SecurityViolationEvent) GetParentHostname() string {
 	return ""
 }
 
+// Represents signature data that's contained within each violation
 type SignatureData struct {
-	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"sig_data_id"`
-	BlockingMask         string   `protobuf:"bytes,2,opt,name=BlockingMask,proto3" json:"sig_data_blocking_mask"`
-	Buffer               string   `protobuf:"bytes,3,opt,name=Buffer,proto3" json:"sig_data_buffer"`
-	Offset               string   `protobuf:"bytes,4,opt,name=Offset,proto3" json:"sig_data_offset"`
+	// ID of the signature data
+	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"sig_data_id"`
+	// The blocking mask of the signature data
+	BlockingMask string `protobuf:"bytes,2,opt,name=BlockingMask,proto3" json:"sig_data_blocking_mask"`
+	// The buffer of the signature data
+	Buffer string `protobuf:"bytes,3,opt,name=Buffer,proto3" json:"sig_data_buffer"`
+	// The offset of the signature data
+	Offset string `protobuf:"bytes,4,opt,name=Offset,proto3" json:"sig_data_offset"`
+	// The length of the signature data
 	Length               string   `protobuf:"bytes,5,opt,name=Length,proto3" json:"sig_data_length"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -757,8 +801,11 @@ func (m *SignatureData) GetLength() string {
 	return ""
 }
 
+// Represents the context data of each violation
 type ContextData struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=Name,proto3" json:"parameter_data_name"`
+	// The name within the context data
+	Name string `protobuf:"bytes,1,opt,name=Name,proto3" json:"parameter_data_name"`
+	// The value within the context data
 	Value                string   `protobuf:"bytes,2,opt,name=Value,proto3" json:"parameter_data_value"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -812,10 +859,15 @@ func (m *ContextData) GetValue() string {
 	return ""
 }
 
+// Represents the violation data contained within a security violation event
 type ViolationData struct {
-	Name                 string           `protobuf:"bytes,1,opt,name=Name,proto3" json:"violation_data_name"`
-	Context              string           `protobuf:"bytes,2,opt,name=Context,proto3" json:"violation_data_context"`
-	ContextData          *ContextData     `protobuf:"bytes,3,opt,name=ContextData,proto3" json:"violation_data_context_data"`
+	// The name of the violation
+	Name string `protobuf:"bytes,1,opt,name=Name,proto3" json:"violation_data_name"`
+	// The context of the violation
+	Context string `protobuf:"bytes,2,opt,name=Context,proto3" json:"violation_data_context"`
+	// The object representing the context data of the violation
+	ContextData *ContextData `protobuf:"bytes,3,opt,name=ContextData,proto3" json:"violation_data_context_data"`
+	// A list representing the signature data of the violation
 	Signatures           []*SignatureData `protobuf:"bytes,4,rep,name=Signatures,proto3" json:"violation_data_signatures"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
