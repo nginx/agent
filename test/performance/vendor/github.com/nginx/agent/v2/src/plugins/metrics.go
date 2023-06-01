@@ -69,6 +69,7 @@ func (m *Metrics) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (m *Metrics) Close() {
+	m.collectors = nil
 	log.Info("Metrics is wrapping up")
 }
 

@@ -34,6 +34,7 @@ type FileWatcher struct {
 	ctx             context.Context
 	env             core.Environment
 	enabled         bool
+	cancelFunction  context.CancelFunc
 }
 
 var (
@@ -73,8 +74,7 @@ func (fw *FileWatcher) Init(pipeline core.MessagePipeInterface) {
 	log.Info("FileWatcher initializing")
 
 	fw.messagePipeline = pipeline
-	fw.ctx = fw.messagePipeline.Context()
-
+	fw.ctx, fw.cancelFunction = context.WithCancel(fw.messagePipeline.Context())
 	for dir := range fw.config.AllowedDirectoriesMap {
 		if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
 			log.Debugf("Skipping watching %s: %v", dir, err)
@@ -101,6 +101,8 @@ func (fw *FileWatcher) Info() *core.Info {
 
 func (fw *FileWatcher) Close() {
 	log.Info("File Watcher is wrapping up")
+	fw.enabled = false
+	fw.cancelFunction()
 	fw.watcher.Close()
 }
 

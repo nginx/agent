@@ -52,17 +52,18 @@ func (f *Features) Info() *core.Info {
 func (f *Features) Subscriptions() []string {
 	return []string{
 		core.EnableFeature,
-		core.DisableFeature,
+		// core.DisableFeature,
 	}
 }
 
 func (f *Features) Process(msg *core.Message) {
-	log.Infof("Process function in the features.go, %s %v", msg.Topic(), msg.Data())
+	log.Infof("--------> Process function in the features.go, %s %v", msg.Topic(), msg.Data())
 	switch data := msg.Data().(type) {
 	case string:
 		switch msg.Topic() {
 		case core.EnableFeature:
-			if data == agent_config.FeatureMetrics {
+			switch data {
+			case agent_config.FeatureMetrics:
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureMetrics) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -79,8 +80,9 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					metrics.Init(f.pipeline)
+
 				}
-			} else if data == agent_config.FeatureAgentAPI {
+			case agent_config.FeatureAgentAPI:
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureAgentAPI) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -98,7 +100,7 @@ func (f *Features) Process(msg *core.Message) {
 
 					api.Init(f.pipeline)
 				}
-			} else if data == agent_config.FeatureRegistration {
+			case agent_config.FeatureRegistration:
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureRegistration) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -116,7 +118,7 @@ func (f *Features) Process(msg *core.Message) {
 
 					registration.Init(f.pipeline)
 				}
-			} else if data == agent_config.FeatureMetricsThrottle {
+			case agent_config.FeatureMetricsThrottle:
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -134,7 +136,7 @@ func (f *Features) Process(msg *core.Message) {
 
 					metricsThrottle.Init(f.pipeline)
 				}
-			} else if data == agent_config.FeatureDataPlaneStatus {
+			case agent_config.FeatureDataPlaneStatus:
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureDataPlaneStatus) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -152,7 +154,7 @@ func (f *Features) Process(msg *core.Message) {
 
 					dataPlaneStatus.Init(f.pipeline)
 				}
-			} else if data == agent_config.FeatureProcessWatcher {
+			case agent_config.FeatureProcessWatcher:
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureProcessWatcher) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -170,7 +172,7 @@ func (f *Features) Process(msg *core.Message) {
 
 					processWatcher.Init(f.pipeline)
 				}
-			} else if data == agent_config.FeatureActivityEvents {
+			case agent_config.FeatureActivityEvents:
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureActivityEvents) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -188,7 +190,7 @@ func (f *Features) Process(msg *core.Message) {
 
 					events.Init(f.pipeline)
 				}
-			} else if data == agent_config.FeatureFileWatcher {
+			case agent_config.FeatureFileWatcher:
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureFileWatcher) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
@@ -207,26 +209,28 @@ func (f *Features) Process(msg *core.Message) {
 
 					fileWatcher.Init(f.pipeline)
 				}
-			} else if data == agent_config.FeatureNginxCounting && len(f.conf.Nginx.NginxCountingSocket) > 0 {
-				if !f.isPluginAlreadyRegistered(agent_config.FeatureNginxCounting) {
-					conf, err := config.GetConfig(f.conf.ClientID)
-					if err != nil {
-						log.Warnf("Unable to get agent config, %v", err)
+			case agent_config.FeatureNginxCounting:
+				if len(f.conf.Nginx.NginxCountingSocket) > 0 {
+					if !f.isPluginAlreadyRegistered(agent_config.FeatureNginxCounting) {
+						conf, err := config.GetConfig(f.conf.ClientID)
+						if err != nil {
+							log.Warnf("Unable to get agent config, %v", err)
+						}
+						f.conf = conf
+
+						nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
+						metrics := NewMetrics(f.conf, f.env, f.binary)
+
+						err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metrics, nginxCounting}, nil)
+
+						if err != nil {
+							log.Warnf("Unable to register %s feature, %v", data, err)
+						}
+
+						nginxCounting.Init(f.pipeline)
 					}
-					f.conf = conf
-
-					nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
-					metrics := NewMetrics(f.conf, f.env, f.binary)
-
-					err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metrics, nginxCounting}, nil)
-
-					if err != nil {
-						log.Warnf("Unable to register %s feature, %v", data, err)
-					}
-
-					nginxCounting.Init(f.pipeline)
 				}
-			} else if data == agent_config.FeatureNginxConfigAsync {
+			case agent_config.FeatureNginxConfigAsync:
 				if !f.isPluginAlreadyRegistered(agent_config.FeatureNginxConfigAsync) {
 					conf, err := config.GetConfig(f.conf.ClientID)
 					if err != nil {
