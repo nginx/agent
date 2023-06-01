@@ -547,9 +547,7 @@ func TestRemoveFeatures(t *testing.T) {
 #    - tags
 #
 # The agent configuration values that the agent install script can modify are as follows:
-#    - instance_group
-
-`,
+#    - instance_group`,
 			want: `#
 # /etc/nginx-agent/dynamic-agent.conf
 #
@@ -565,7 +563,6 @@ func TestRemoveFeatures(t *testing.T) {
 #
 # The agent configuration values that the agent install script can modify are as follows:
 #    - instance_group
-
 `,
 		},
 		{
@@ -585,8 +582,18 @@ func TestRemoveFeatures(t *testing.T) {
 #
 # The agent configuration values that the agent install script can modify are as follows:
 #    - instance_group
+
 features:
-- dean
+	- features_activity-events
+	- features_agent-api
+	- features_dataplane-status
+	- features_file-watcher
+	- features_metrics-throttle
+	- features_nginx-config-async
+	- features_nginx-counting
+	- features_nginx-ssl-config
+	- features_process-watcher
+	- features_registration
 `,
 			want: `#
 # /etc/nginx-agent/dynamic-agent.conf
@@ -603,6 +610,7 @@ features:
 #
 # The agent configuration values that the agent install script can modify are as follows:
 #    - instance_group
+
 
 `,
 		},

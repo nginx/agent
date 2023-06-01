@@ -431,7 +431,7 @@ func removeFeatures(readFile io.Reader) ([]byte, error) {
 	for fileScanner.Scan() {
 		if strings.HasPrefix(fileScanner.Text(), "features") {
 			for fileScanner.Scan() {
-				if !strings.HasPrefix(fileScanner.Text(), "-") {
+				if !strings.HasPrefix(strings.TrimSpace(fileScanner.Text()), "-") {
 					_, err := buf.Write(fileScanner.Bytes())
 					if err != nil {
 						return nil, err
