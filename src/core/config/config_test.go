@@ -614,6 +614,33 @@ features:
 
 `,
 		},
+		{
+			name: "dyn conf with features enabled and tags after",
+			input: `#
+# /etc/nginx-agent/dynamic-agent.conf
+#
+# Dynamic configuration file for NGINX Agent.
+
+features:
+	- features_activity-events
+	- features_process-watcher
+	- features_registration
+
+tags:
+	- tag1
+	- tag2
+`,
+			want: `#
+# /etc/nginx-agent/dynamic-agent.conf
+#
+# Dynamic configuration file for NGINX Agent.
+
+
+tags:
+	- tag1
+	- tag2
+`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
