@@ -8,6 +8,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"reflect"
@@ -15,12 +16,11 @@ import (
 	"strings"
 	"testing"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	sysutils "github.com/nginx/agent/v2/test/utils/system"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
-	sysutils "github.com/nginx/agent/v2/test/utils/system"
 )
 
 const (
@@ -87,10 +87,9 @@ func TestSeekConfigFileInPathsFail(t *testing.T) {
 
 func TestDefaultConfig(t *testing.T) {
 	configPath := "../../../nginx-agent.conf"
-	tmpDir := t.TempDir()
 
 	t.Run("parsing of default config with dynamic config dir and file creation", func(t *testing.T) {
-		tmpDynConfigDir := tmpDir + "/defaultConfigTest"
+		tmpDynConfigDir := t.TempDir() + "/defaultConfigTest"
 		defer os.RemoveAll(tmpDynConfigDir)
 		dynConfigPath := fmt.Sprintf("%s/%s", tmpDynConfigDir, DynamicConfigFileName)
 		SetDynamicConfigFileAbsPath(dynConfigPath)
@@ -161,6 +160,7 @@ func TestGetConfig(t *testing.T) {
 		assert.Equal(t, Defaults.AgentMetrics.CollectionInterval, config.AgentMetrics.CollectionInterval)
 
 		assert.Equal(t, []string{}, config.Tags)
+		assert.Equal(t, []string{}, config.Features)
 		assert.Equal(t, []string{}, config.Extensions)
 	})
 
@@ -271,14 +271,16 @@ func TestGetConfig(t *testing.T) {
 		assert.Equal(t, updatedLogLevel, config.Log.Level)
 		assert.Equal(t, updatedLogPath, config.Log.Path)
 
-		// Everything else should still be default
-		assert.Equal(t, Defaults.AgentMetrics.Mode, config.AgentMetrics.Mode)
-
 		// Check TLS defaults
 		assert.Equal(t, false, config.TLS.Enable)
 		assert.Equal(t, "", config.TLS.Ca)
 		assert.Equal(t, "", config.TLS.Cert)
 		assert.Equal(t, "", config.TLS.Key)
+
+		// Everything else should still be default
+		assert.Equal(t, Defaults.AgentMetrics.Mode, config.AgentMetrics.Mode)
+		assert.Equal(t, Defaults.Features, config.Features)
+		assert.Equal(t, Defaults.Extensions, config.Extensions)
 	})
 
 	t.Run("test override config values with ENV variables", func(t *testing.T) {
@@ -393,7 +395,7 @@ extensions:
 		require.NoError(t, err)
 
 		// Check extensions value
-		assert.Equal(t, 1, len(config.Extensions))
+		assert.Equal(t, []string{"advanced-metrics"}, config.Extensions)
 		assert.Equal(t, agent_config.AdvancedMetricsExtensionPlugin, config.Extensions[0])
 	})
 }
@@ -521,4 +523,97 @@ func cleanEnv(t *testing.T, confFileName, dynamicConfFileAbsPath string) {
 	require.NoError(t, err)
 
 	Viper.Set(ConfigPathKey, cfg)
+}
+
+func TestRemoveFeatures(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name: "default dyn config. unchanged",
+			input: `#
+# /etc/nginx-agent/dynamic-agent.conf
+#
+# Dynamic configuration file for NGINX Agent.
+#
+# The purpose of this file is to track agent configuration
+# values that can be dynamically changed via the API and the agent install script.
+# You may edit this file, but API calls that modify the tags on this system will
+# overwrite the tag values in this file.
+#
+# The agent configuration values that API calls can modify are as follows:
+#    - tags
+#
+# The agent configuration values that the agent install script can modify are as follows:
+#    - instance_group
+
+`,
+			want: `#
+# /etc/nginx-agent/dynamic-agent.conf
+#
+# Dynamic configuration file for NGINX Agent.
+#
+# The purpose of this file is to track agent configuration
+# values that can be dynamically changed via the API and the agent install script.
+# You may edit this file, but API calls that modify the tags on this system will
+# overwrite the tag values in this file.
+#
+# The agent configuration values that API calls can modify are as follows:
+#    - tags
+#
+# The agent configuration values that the agent install script can modify are as follows:
+#    - instance_group
+
+`,
+		},
+		{
+			name: "dyn conf with features enabled",
+			input: `#
+# /etc/nginx-agent/dynamic-agent.conf
+#
+# Dynamic configuration file for NGINX Agent.
+#
+# The purpose of this file is to track agent configuration
+# values that can be dynamically changed via the API and the agent install script.
+# You may edit this file, but API calls that modify the tags on this system will
+# overwrite the tag values in this file.
+#
+# The agent configuration values that API calls can modify are as follows:
+#    - tags
+#
+# The agent configuration values that the agent install script can modify are as follows:
+#    - instance_group
+features:
+- dean
+`,
+			want: `#
+# /etc/nginx-agent/dynamic-agent.conf
+#
+# Dynamic configuration file for NGINX Agent.
+#
+# The purpose of this file is to track agent configuration
+# values that can be dynamically changed via the API and the agent install script.
+# You may edit this file, but API calls that modify the tags on this system will
+# overwrite the tag values in this file.
+#
+# The agent configuration values that API calls can modify are as follows:
+#    - tags
+#
+# The agent configuration values that the agent install script can modify are as follows:
+#    - instance_group
+
+`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inputBuf := bytes.NewBufferString(tt.input)
+
+			got, err := removeFeatures(inputBuf)
+			assert.Equal(t, tt.want, string(got))
+			assert.NoError(t, err)
+		})
+	}
 }
