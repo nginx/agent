@@ -378,19 +378,23 @@ func LoadPropertiesFromFile(cfg string) error {
 			return fmt.Errorf("error attempting to open dynamic config (%s): %v", dynamicCfgPath, err)
 		}
 
-		cleanDynCfgContent, err := removeFeatures(dynCfg)
+		featuresAreSet, cleanDynCfgContent, err := removeFeatures(dynCfg)
 		if err != nil {
 			return fmt.Errorf("error updating dynamic config with features removed (%s): %v", dynamicCfgPath, err)
 		}
 		dynCfg.Close()
 
-		err = os.WriteFile(dynamicCfgPath, cleanDynCfgContent, 0644)
-		if err != nil {
-			return fmt.Errorf("error attempting to update dynamic config (%s): %v", dynamicCfgPath, err)
+		if featuresAreSet {
+			err = os.WriteFile(dynamicCfgPath, cleanDynCfgContent, 0644)
+			if err != nil {
+				return fmt.Errorf("error attempting to update dynamic config (%s): %v", dynamicCfgPath, err)
+			}
+
+			log.Infof("DEBUG: Dynamic config purged successfully. Previously enabled features have been removed")
+		} else {
+			log.Infof("DEBUG: Dynamic config unchanged. Features were not set so purging was not required")
+
 		}
-
-		log.Infof("DEBUG: Dynamic config purged successfully. Previously enabled features have been removed")
-
 	} else if errors.Is(err, fs.ErrNotExist) {
 		log.Infof("Writing the following file to disk: %s", dynamicCfgPath)
 		err = os.MkdirAll(dynamicCfgDir, 0755)
@@ -420,7 +424,7 @@ func LoadPropertiesFromFile(cfg string) error {
 }
 
 // removeFeatures removes enabled features from dynamic config content
-func removeFeatures(readFile io.Reader) ([]byte, error) {
+func removeFeatures(readFile io.Reader) (bool, []byte, error) {
 	fileScanner := bufio.NewScanner(readFile)
 
 	fileScanner.Split(bufio.ScanLines)
@@ -428,13 +432,16 @@ func removeFeatures(readFile io.Reader) ([]byte, error) {
 	var bs []byte
 	buf := bytes.NewBuffer(bs)
 
+	var featuresSet bool
+
 	for fileScanner.Scan() {
 		if strings.HasPrefix(fileScanner.Text(), "features") {
+			featuresSet = true
 			for fileScanner.Scan() {
 				if !strings.HasPrefix(strings.TrimSpace(fileScanner.Text()), "-") {
 					_, err := buf.Write(fileScanner.Bytes())
 					if err != nil {
-						return nil, err
+						return featuresSet, nil, err
 					}
 					break
 				}
@@ -442,17 +449,17 @@ func removeFeatures(readFile io.Reader) ([]byte, error) {
 		} else {
 			_, err := buf.Write(fileScanner.Bytes())
 			if err != nil {
-				return nil, err
+				return featuresSet, nil, err
 			}
 		}
 
 		_, err := buf.WriteString("\n")
 		if err != nil {
-			return nil, err
+			return featuresSet, nil, err
 		}
 	}
 
-	return buf.Bytes(), nil
+	return featuresSet, buf.Bytes(), nil
 }
 
 func SetDynamicConfigFileAbsPath(dynamicCfgPath string) {

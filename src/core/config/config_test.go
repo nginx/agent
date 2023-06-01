@@ -527,9 +527,10 @@ func cleanEnv(t *testing.T, confFileName, dynamicConfFileAbsPath string) {
 
 func TestRemoveFeatures(t *testing.T) {
 	tests := []struct {
-		name  string
-		input string
-		want  string
+		name               string
+		input              string
+		want               string
+		wantFeaturesAreSet bool
 	}{
 		{
 			name: "default dyn config. unchanged",
@@ -564,6 +565,7 @@ func TestRemoveFeatures(t *testing.T) {
 # The agent configuration values that the agent install script can modify are as follows:
 #    - instance_group
 `,
+			wantFeaturesAreSet: false,
 		},
 		{
 			name: "dyn conf with features enabled",
@@ -613,6 +615,7 @@ features:
 
 
 `,
+			wantFeaturesAreSet: true,
 		},
 		{
 			name: "dyn conf with features enabled and tags after",
@@ -640,14 +643,16 @@ tags:
 	- tag1
 	- tag2
 `,
+			wantFeaturesAreSet: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			inputBuf := bytes.NewBufferString(tt.input)
 
-			got, err := removeFeatures(inputBuf)
+			featuresAreSet, got, err := removeFeatures(inputBuf)
 			assert.Equal(t, tt.want, string(got))
+			assert.Equal(t, tt.wantFeaturesAreSet, featuresAreSet)
 			assert.NoError(t, err)
 		})
 	}
