@@ -22,7 +22,7 @@ Using your preferred method, clone the NGINX Agent repository into your developm
 
 ## Install Go
 
-NGINX Agent and the Mock Control Plane are written in Go. Go 1.19 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/). 
+NGINX Agent and the Mock Control Plane are written in Go. Go 1.19.9 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/). 
 
 ## Start the gRPC Mock Control Plane
 
