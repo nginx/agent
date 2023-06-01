@@ -393,7 +393,6 @@ func LoadPropertiesFromFile(cfg string) error {
 			log.Infof("DEBUG: Dynamic config purged successfully. Previously enabled features have been removed")
 		} else {
 			log.Infof("DEBUG: Dynamic config unchanged. Features were not set so purging was not required")
-
 		}
 	} else if errors.Is(err, fs.ErrNotExist) {
 		log.Infof("Writing the following file to disk: %s", dynamicCfgPath)

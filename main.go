@@ -17,11 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/v2/src/core"
@@ -30,7 +26,10 @@ import (
 	"github.com/nginx/agent/v2/src/extensions"
 	"github.com/nginx/agent/v2/src/plugins"
 
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -148,7 +147,8 @@ func handleSignals(
 
 func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client.Controller, client.Commander, client.MetricReporter) {
 	if !loadedConfig.IsGrpcServerConfigured() {
-		log.Infof("GRPC clients not created")
+		log.Infof("GRPC clients not created due to missing host config. server.host: %v server.grpcPort: %v",
+			loadedConfig.Server.Host, loadedConfig.Server.GrpcPort)
 		return nil, nil, nil
 	}
 
