@@ -52,7 +52,6 @@ func (f *Features) Info() *core.Info {
 func (f *Features) Subscriptions() []string {
 	return []string{
 		core.EnableFeature,
-		// core.DisableFeature,
 	}
 }
 

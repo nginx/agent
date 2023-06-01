@@ -203,7 +203,6 @@ func (n *Nginx) Subscriptions() []string {
 		core.AgentConfigChanged,
 		core.EnableExtension,
 		core.EnableFeature,
-		core.DisableFeature,
 		core.NginxConfigValidationPending,
 		core.NginxConfigValidationSucceeded,
 		core.NginxConfigValidationFailed,
