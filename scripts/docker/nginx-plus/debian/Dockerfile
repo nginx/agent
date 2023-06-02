@@ -17,7 +17,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     && apt-get update \
     && apt-get install --no-install-recommends --no-install-suggests -y \
                         ca-certificates \
-                        gnupg1 \
+                        gnupg \
                         lsb-release \
     && \
     NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \
@@ -52,7 +52,10 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
                         $nginxPackages \
                         curl \
                         gettext-base \
-    && apt-get remove --purge -y lsb-release \
+    && apt-get autoremove --purge -y \
+       gnupg \
+       lsb-release \
+    && rm -rf /root/.gnupg \
     && apt-get remove --purge --auto-remove -y && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx-plus.list \
     && rm -rf /etc/apt/apt.conf.d/90nginx /etc/ssl/nginx
 
