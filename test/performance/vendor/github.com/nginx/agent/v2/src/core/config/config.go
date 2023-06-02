@@ -371,7 +371,7 @@ func LoadPropertiesFromFile(cfg string) error {
 	// Get dynamic file, if it doesn't exist create it.
 	_, err = os.Stat(dynamicCfgPath)
 	if err == nil {
-		log.Infof("Purging enabled features from dynamic config: %s", dynamicCfgPath)
+		log.Debugf("Checking if features need to be purged from dynamic config: %s", dynamicCfgPath)
 
 		dynCfg, err := os.Open(dynamicCfgPath)
 		if err != nil {
@@ -390,9 +390,7 @@ func LoadPropertiesFromFile(cfg string) error {
 				return fmt.Errorf("error attempting to update dynamic config (%s): %v", dynamicCfgPath, err)
 			}
 
-			log.Infof("DEBUG: Dynamic config purged successfully. Previously enabled features have been removed")
-		} else {
-			log.Infof("DEBUG: Dynamic config unchanged. Features were not set so purging was not required")
+			log.Info("Dynamic config purged successfully. Previously enabled features have been removed")
 		}
 	} else if errors.Is(err, fs.ErrNotExist) {
 		log.Infof("Writing the following file to disk: %s", dynamicCfgPath)
@@ -407,7 +405,6 @@ func LoadPropertiesFromFile(cfg string) error {
 		}
 	} else if err != nil {
 		log.Warnf("Unable to read dynamic config (%s): %v", dynamicCfgPath, err)
-		// TODO: Return err?
 	}
 
 	// Load properties from existing file

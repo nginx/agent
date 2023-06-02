@@ -147,8 +147,7 @@ func handleSignals(
 
 func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client.Controller, client.Commander, client.MetricReporter) {
 	if !loadedConfig.IsGrpcServerConfigured() {
-		log.Infof("GRPC clients not created due to missing host config. server.host: %v server.grpcPort: %v",
-			loadedConfig.Server.Host, loadedConfig.Server.GrpcPort)
+		log.Info("GRPC clients not created due to missing server config")
 		return nil, nil, nil
 	}
 
