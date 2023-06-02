@@ -69,6 +69,8 @@ message SecurityViolationEvent {
   // DEPRECATED
   reserved 39;
   reserved "NginxID";
+  reserved 33;
+  reserved "ViolationContexts";
 
   string PolicyName = 1 [(gogoproto.jsontag) = "policy_name"];
   string SupportID = 2 [(gogoproto.jsontag) = "support_id"];
@@ -112,7 +114,6 @@ message SecurityViolationEvent {
   string EnforcedBotAnomalies = 31 [(gogoproto.jsontag) = "enforced_bot_anomalies"];
   string BotSignatureName = 32 [(gogoproto.jsontag) = "bot_signature_name"];
 
-  string ViolationContexts = 33 [(gogoproto.jsontag) = "violation_contexts"];
   repeated ViolationData ViolationsData = 34 [(gogoproto.jsontag) = "violations_data"];
 
   string SystemID = 35 [(gogoproto.jsontag) = "system_id"];

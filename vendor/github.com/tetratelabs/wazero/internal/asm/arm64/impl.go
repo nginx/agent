@@ -118,89 +118,77 @@ func (n *nodeImpl) String() (ret string) {
 	return
 }
 
-// operandType represents where an operand is placed for an instruction.
-// Note: this is almost the same as obj.AddrType in GO assembler.
-type operandType byte
+// operandTypes represents types of operands of a node.
+type operandTypes byte
 
 const (
-	operandTypeNone operandType = iota
-	operandTypeRegister
-	operandTypeLeftShiftedRegister
-	operandTypeTwoRegisters
-	operandTypeThreeRegisters
-	operandTypeRegisterAndConst
-	operandTypeMemory
-	operandTypeConst
-	operandTypeBranch
-	operandTypeSIMDByte
-	operandTypeTwoSIMDBytes
-	operandTypeVectorRegister
-	operandTypeTwoVectorRegisters
-	operandTypeStaticConst
-)
-
-// String implements fmt.Stringer.
-func (o operandType) String() (ret string) {
-	switch o {
-	case operandTypeNone:
-		ret = "none"
-	case operandTypeRegister:
-		ret = "register"
-	case operandTypeLeftShiftedRegister:
-		ret = "left-shifted-register"
-	case operandTypeTwoRegisters:
-		ret = "two-registers"
-	case operandTypeRegisterAndConst:
-		ret = "register-and-const"
-	case operandTypeMemory:
-		ret = "memory"
-	case operandTypeConst:
-		ret = "const"
-	case operandTypeBranch:
-		ret = "branch"
-	case operandTypeSIMDByte:
-		ret = "simd-byte"
-	case operandTypeTwoSIMDBytes:
-		ret = "two-simd-bytes"
-	case operandTypeVectorRegister:
-		ret = "vector-register"
-	case operandTypeStaticConst:
-		ret = "static-const"
-	case operandTypeTwoVectorRegisters:
-		ret = "two-vector-registers"
-	}
-	return
-}
-
-// operandTypes represents the only combinations of two operandTypes used by wazero
-type operandTypes struct{ src, dst operandType }
-
-var (
-	operandTypesNoneToNone                         = operandTypes{operandTypeNone, operandTypeNone}
-	operandTypesNoneToRegister                     = operandTypes{operandTypeNone, operandTypeRegister}
-	operandTypesNoneToBranch                       = operandTypes{operandTypeNone, operandTypeBranch}
-	operandTypesRegisterToRegister                 = operandTypes{operandTypeRegister, operandTypeRegister}
-	operandTypesLeftShiftedRegisterToRegister      = operandTypes{operandTypeLeftShiftedRegister, operandTypeRegister}
-	operandTypesTwoRegistersToRegister             = operandTypes{operandTypeTwoRegisters, operandTypeRegister}
-	operandTypesThreeRegistersToRegister           = operandTypes{operandTypeThreeRegisters, operandTypeRegister}
-	operandTypesTwoRegistersToNone                 = operandTypes{operandTypeTwoRegisters, operandTypeNone}
-	operandTypesRegisterAndConstToNone             = operandTypes{operandTypeRegisterAndConst, operandTypeNone}
-	operandTypesRegisterAndConstToRegister         = operandTypes{operandTypeRegisterAndConst, operandTypeRegister}
-	operandTypesRegisterToMemory                   = operandTypes{operandTypeRegister, operandTypeMemory}
-	operandTypesMemoryToRegister                   = operandTypes{operandTypeMemory, operandTypeRegister}
-	operandTypesConstToRegister                    = operandTypes{operandTypeConst, operandTypeRegister}
-	operandTypesRegisterToVectorRegister           = operandTypes{operandTypeRegister, operandTypeVectorRegister}
-	operandTypesVectorRegisterToRegister           = operandTypes{operandTypeVectorRegister, operandTypeRegister}
-	operandTypesMemoryToVectorRegister             = operandTypes{operandTypeMemory, operandTypeVectorRegister}
-	operandTypesVectorRegisterToMemory             = operandTypes{operandTypeVectorRegister, operandTypeMemory}
-	operandTypesVectorRegisterToVectorRegister     = operandTypes{operandTypeVectorRegister, operandTypeVectorRegister}
-	operandTypesTwoVectorRegistersToVectorRegister = operandTypes{operandTypeTwoVectorRegisters, operandTypeVectorRegister}
-	operandTypesStaticConstToVectorRegister        = operandTypes{operandTypeStaticConst, operandTypeVectorRegister}
+	operandTypesNoneToNone operandTypes = iota
+	operandTypesNoneToRegister
+	operandTypesNoneToBranch
+	operandTypesRegisterToRegister
+	operandTypesLeftShiftedRegisterToRegister
+	operandTypesTwoRegistersToRegister
+	operandTypesThreeRegistersToRegister
+	operandTypesTwoRegistersToNone
+	operandTypesRegisterAndConstToNone
+	operandTypesRegisterAndConstToRegister
+	operandTypesRegisterToMemory
+	operandTypesMemoryToRegister
+	operandTypesConstToRegister
+	operandTypesRegisterToVectorRegister
+	operandTypesVectorRegisterToRegister
+	operandTypesMemoryToVectorRegister
+	operandTypesVectorRegisterToMemory
+	operandTypesVectorRegisterToVectorRegister
+	operandTypesTwoVectorRegistersToVectorRegister
+	operandTypesStaticConstToVectorRegister
 )
 
 // String implements fmt.Stringer
-func (o operandTypes) String() string {
-	return fmt.Sprintf("from:%s,to:%s", o.src, o.dst)
+func (o operandTypes) String() (ret string) {
+	switch o {
+	case operandTypesNoneToNone:
+		ret = "NoneToNone"
+	case operandTypesNoneToRegister:
+		ret = "NoneToRegister"
+	case operandTypesNoneToBranch:
+		ret = "NoneToBranch"
+	case operandTypesRegisterToRegister:
+		ret = "RegisterToRegister"
+	case operandTypesLeftShiftedRegisterToRegister:
+		ret = "LeftShiftedRegisterToRegister"
+	case operandTypesTwoRegistersToRegister:
+		ret = "TwoRegistersToRegister"
+	case operandTypesThreeRegistersToRegister:
+		ret = "ThreeRegistersToRegister"
+	case operandTypesTwoRegistersToNone:
+		ret = "TwoRegistersToNone"
+	case operandTypesRegisterAndConstToNone:
+		ret = "RegisterAndConstToNone"
+	case operandTypesRegisterAndConstToRegister:
+		ret = "RegisterAndConstToRegister"
+	case operandTypesRegisterToMemory:
+		ret = "RegisterToMemory"
+	case operandTypesMemoryToRegister:
+		ret = "MemoryToRegister"
+	case operandTypesConstToRegister:
+		ret = "ConstToRegister"
+	case operandTypesRegisterToVectorRegister:
+		ret = "RegisterToVectorRegister"
+	case operandTypesVectorRegisterToRegister:
+		ret = "VectorRegisterToRegister"
+	case operandTypesMemoryToVectorRegister:
+		ret = "MemoryToVectorRegister"
+	case operandTypesVectorRegisterToMemory:
+		ret = "VectorRegisterToMemory"
+	case operandTypesVectorRegisterToVectorRegister:
+		ret = "VectorRegisterToVectorRegister"
+	case operandTypesTwoVectorRegistersToVectorRegister:
+		ret = "TwoVectorRegistersToVectorRegister"
+	case operandTypesStaticConstToVectorRegister:
+		ret = "StaticConstToVectorRegister"
+	}
+	return
 }
 
 const (
@@ -219,7 +207,7 @@ type AssemblerImpl struct {
 	buf               *bytes.Buffer
 	temporaryRegister asm.Register
 	nodeCount         int
-	pool              *asm.StaticConstPool
+	pool              asm.StaticConstPool
 	// MaxDisplacementForConstantPool is fixed to defaultMaxDisplacementForConstPool
 	// but have it as a field here for testability.
 	MaxDisplacementForConstantPool         int
@@ -264,11 +252,26 @@ func NewAssembler(temporaryRegister asm.Register) *AssemblerImpl {
 	}
 }
 
+// AllocateNOP implements asm.AssemblerBase.
+func (a *AssemblerImpl) AllocateNOP() asm.Node {
+	n := a.nodePool.allocNode()
+	n.instruction = NOP
+	n.types = operandTypesNoneToNone
+	return n
+}
+
+// Add implements asm.AssemblerBase.
+func (a *AssemblerImpl) Add(n asm.Node) {
+	a.addNode(n.(*nodeImpl))
+}
+
 // Reset implements asm.AssemblerBase.
 func (a *AssemblerImpl) Reset() {
 	buf, np, tmp := a.buf, a.nodePool, a.temporaryRegister
+	pool := a.pool
+	pool.Reset()
 	*a = AssemblerImpl{
-		buf: buf, nodePool: np, pool: asm.NewStaticConstPool(),
+		buf: buf, nodePool: np, pool: pool,
 		temporaryRegister:   tmp,
 		adrInstructionNodes: a.adrInstructionNodes[:0],
 		relativeJumpNodes:   a.relativeJumpNodes[:0],
@@ -308,7 +311,8 @@ func (a *AssemblerImpl) addNode(node *nodeImpl) {
 		origin := o.(*nodeImpl)
 		origin.jumpTarget = node
 	}
-	a.SetBranchTargetOnNextNodes = nil
+	// Reuse the underlying slice to avoid re-allocations.
+	a.SetBranchTargetOnNextNodes = a.SetBranchTargetOnNextNodes[:0]
 }
 
 // Assemble implements asm.AssemblerBase
@@ -326,7 +330,7 @@ func (a *AssemblerImpl) Assemble() ([]byte, error) {
 		a.maybeFlushConstPool(n.next == nil)
 	}
 
-	code := a.bytes()
+	code := a.buf.Bytes()
 
 	if err := a.FinalizeJumpTableEntry(code); err != nil {
 		return nil, err
@@ -350,7 +354,7 @@ const defaultMaxDisplacementForConstPool = (1 << 20) - 1 - 4 // -4 for unconditi
 
 // maybeFlushConstPool flushes the constant pool if endOfBinary or a boundary condition was met.
 func (a *AssemblerImpl) maybeFlushConstPool(endOfBinary bool) {
-	if a.pool.FirstUseOffsetInBinary == nil {
+	if a.pool.Empty() {
 		return
 	}
 
@@ -360,7 +364,7 @@ func (a *AssemblerImpl) maybeFlushConstPool(endOfBinary bool) {
 		// Also, if the offset between the first usage of the constant pool and
 		// the first constant would exceed 2^20 -1(= 2MiB-1), which is the maximum offset
 		// for LDR(literal)/ADR instruction, flush all the constants in the pool.
-		(a.buf.Len()+a.pool.PoolSizeInBytes-int(*a.pool.FirstUseOffsetInBinary)) >= a.MaxDisplacementForConstantPool {
+		(a.buf.Len()+a.pool.PoolSizeInBytes-int(a.pool.FirstUseOffsetInBinary)) >= a.MaxDisplacementForConstantPool {
 
 		// Before emitting consts, we have to add br instruction to skip the const pool.
 		// https://github.com/golang/go/blob/release-branch.go1.15/src/cmd/internal/obj/arm64/asm7.go#L1123-L1129
@@ -393,20 +397,8 @@ func (a *AssemblerImpl) maybeFlushConstPool(endOfBinary bool) {
 		}
 
 		// After the flush, reset the constant pool.
-		a.pool = asm.NewStaticConstPool()
+		a.pool.Reset()
 	}
-}
-
-// bytes returns the encoded binary.
-func (a *AssemblerImpl) bytes() []byte {
-	// 16 bytes alignment to match our impl with golang-asm.
-	// https://github.com/golang/go/blob/release-branch.go1.15/src/cmd/internal/obj/arm64/asm7.go#L62
-	//
-	// TODO: Delete after golang-asm removal.
-	if pad := 16 - a.buf.Len()%16; pad > 0 && pad != 16 {
-		a.buf.Write(make([]byte, pad))
-	}
-	return a.buf.Bytes()
 }
 
 // encodeNode encodes the given node into writer.
@@ -837,7 +829,7 @@ func (a *AssemblerImpl) relativeBranchFinalize(code []byte, n *nodeImpl) error {
 
 	branchInst := code[branchInstOffset : branchInstOffset+4]
 	if condBits == condBitsUnconditional {
-		imm26 := offset / 4
+		imm26 := offset >> 2 // divide by 4.
 		if imm26 < minSignedInt26 || imm26 > maxSignedInt26 {
 			// In theory this could happen if a Wasm binary has a huge single label (more than 128MB for a single block),
 			// and in that case, we use load the offset into a register and do the register jump, but to avoid the complexity,
@@ -850,7 +842,7 @@ func (a *AssemblerImpl) relativeBranchFinalize(code []byte, n *nodeImpl) error {
 		branchInst[2] = byte(imm26 >> 16)
 		branchInst[3] = (byte(imm26 >> 24 & 0b000000_11)) | 0b000101_00
 	} else {
-		imm19 := offset / 4
+		imm19 := offset >> 2 // divide by 4.
 		if imm19 < minSignedInt19 || imm19 > maxSignedInt19 {
 			// This should be a bug in our compiler as the conditional jumps are only used in the small offsets (~a few bytes),
 			// and if ever happens, compiler can be fixed.
@@ -1826,28 +1818,32 @@ func (a *AssemblerImpl) encodeLoadOrStoreWithConstOffset(
 	return
 }
 
-// https://developer.arm.com/documentation/ddi0596/2021-12/Index-by-Encoding/Loads-and-Stores?lang=en#ldst_regoff
-var storeInstructionTable = map[asm.Instruction]struct {
-	size, v                byte
-	datasize, datasizeLog2 int64
-	isTargetFloat          bool
-}{
-	STRD:  {size: 0b11, v: 0x0, datasize: 8, datasizeLog2: 3},
-	STRW:  {size: 0b10, v: 0x0, datasize: 4, datasizeLog2: 2},
-	STRH:  {size: 0b01, v: 0x0, datasize: 2, datasizeLog2: 1},
-	STRB:  {size: 0b00, v: 0x0, datasize: 1, datasizeLog2: 0},
-	FSTRD: {size: 0b11, v: 0x1, datasize: 8, datasizeLog2: 3, isTargetFloat: true},
-	FSTRS: {size: 0b10, v: 0x1, datasize: 4, datasizeLog2: 2, isTargetFloat: true},
-}
-
 func (a *AssemblerImpl) encodeRegisterToMemory(n *nodeImpl) (err error) {
-	inst, ok := storeInstructionTable[n.instruction]
-	if !ok {
+	// https://developer.arm.com/documentation/ddi0596/2021-12/Index-by-Encoding/Loads-and-Stores?lang=en#ldst_regoff
+	var (
+		size, v                byte
+		datasize, datasizeLog2 int64
+		isTargetFloat          bool
+	)
+	switch n.instruction {
+	case STRD:
+		size, v, datasize, datasizeLog2 = 0b11, 0x0, 8, 3
+	case STRW:
+		size, v, datasize, datasizeLog2 = 0b10, 0x0, 4, 2
+	case STRH:
+		size, v, datasize, datasizeLog2 = 0b01, 0x0, 2, 1
+	case STRB:
+		size, v, datasize, datasizeLog2 = 0b00, 0x0, 1, 0
+	case FSTRD:
+		size, v, datasize, datasizeLog2, isTargetFloat = 0b11, 0x1, 8, 3, true
+	case FSTRS:
+		size, v, datasize, datasizeLog2, isTargetFloat = 0b10, 0x1, 4, 2, true
+	default:
 		return errorEncodingUnsupported(n)
 	}
 
 	var srcRegBits byte
-	if inst.isTargetFloat {
+	if isTargetFloat {
 		srcRegBits, err = vectorRegisterBits(n.srcReg)
 	} else {
 		srcRegBits, err = intRegisterBits(n.srcReg)
@@ -1867,9 +1863,9 @@ func (a *AssemblerImpl) encodeRegisterToMemory(n *nodeImpl) (err error) {
 		if err != nil {
 			return err
 		}
-		a.encodeLoadOrStoreWithRegisterOffset(baseRegBits, offsetRegBits, srcRegBits, opcode, inst.size, inst.v)
+		a.encodeLoadOrStoreWithRegisterOffset(baseRegBits, offsetRegBits, srcRegBits, opcode, size, v)
 	} else {
-		err = a.encodeLoadOrStoreWithConstOffset(baseRegBits, srcRegBits, n.dstConst, opcode, inst.size, inst.v, inst.datasize, inst.datasizeLog2)
+		err = a.encodeLoadOrStoreWithConstOffset(baseRegBits, srcRegBits, n.dstConst, opcode, size, v, datasize, datasizeLog2)
 	}
 	return
 }
@@ -1945,37 +1941,44 @@ func (a *AssemblerImpl) finalizeADRInstructionNode(code []byte, n *nodeImpl) (er
 	return nil
 }
 
-// https://developer.arm.com/documentation/ddi0596/2021-12/Index-by-Encoding/Loads-and-Stores?lang=en#ldst_regoff
-var loadInstructionTable = map[asm.Instruction]struct {
-	size, v, opcode        byte
-	datasize, datasizeLog2 int64
-	isTargetFloat          bool
-}{
-	FLDRD:  {size: 0b11, v: 0x1, datasize: 8, datasizeLog2: 3, isTargetFloat: true, opcode: 0b01},
-	FLDRS:  {size: 0b10, v: 0x1, datasize: 4, datasizeLog2: 2, isTargetFloat: true, opcode: 0b01},
-	LDRD:   {size: 0b11, v: 0x0, datasize: 8, datasizeLog2: 3, opcode: 0b01},
-	LDRW:   {size: 0b10, v: 0x0, datasize: 4, datasizeLog2: 2, opcode: 0b01},
-	LDRSHD: {size: 0b01, v: 0x0, datasize: 2, datasizeLog2: 1, opcode: 0b10},
-	LDRSHW: {size: 0b01, v: 0x0, datasize: 2, datasizeLog2: 1, opcode: 0b11},
-	LDRH:   {size: 0b01, v: 0x0, datasize: 2, datasizeLog2: 1, opcode: 0b01},
-	LDRSBD: {size: 0b00, v: 0x0, datasize: 1, datasizeLog2: 0, opcode: 0b10},
-	LDRSBW: {size: 0b00, v: 0x0, datasize: 1, datasizeLog2: 0, opcode: 0b11},
-	LDRB:   {size: 0b00, v: 0x0, datasize: 1, datasizeLog2: 0, opcode: 0b01},
-	LDRSW:  {size: 0b10, v: 0x0, datasize: 4, datasizeLog2: 2, opcode: 0b10},
-}
-
 func (a *AssemblerImpl) encodeMemoryToRegister(n *nodeImpl) (err error) {
-	if n.instruction == ADR {
+	// https://developer.arm.com/documentation/ddi0596/2021-12/Index-by-Encoding/Loads-and-Stores?lang=en#ldst_regoff
+	var (
+		size, v, opcode        byte
+		datasize, datasizeLog2 int64
+		isTargetFloat          bool
+	)
+	switch n.instruction {
+	case ADR:
 		return a.encodeADR(n)
-	}
-
-	inst, ok := loadInstructionTable[n.instruction]
-	if !ok {
+	case FLDRD:
+		size, v, datasize, datasizeLog2, opcode, isTargetFloat = 0b11, 0x1, 8, 3, 0b01, true
+	case FLDRS:
+		size, v, datasize, datasizeLog2, opcode, isTargetFloat = 0b10, 0x1, 4, 2, 0b01, true
+	case LDRD:
+		size, v, datasize, datasizeLog2, opcode = 0b11, 0x0, 8, 3, 0b01
+	case LDRW:
+		size, v, datasize, datasizeLog2, opcode = 0b10, 0x0, 4, 2, 0b01
+	case LDRSHD:
+		size, v, datasize, datasizeLog2, opcode = 0b01, 0x0, 2, 1, 0b10
+	case LDRSHW:
+		size, v, datasize, datasizeLog2, opcode = 0b01, 0x0, 2, 1, 0b11
+	case LDRH:
+		size, v, datasize, datasizeLog2, opcode = 0b01, 0x0, 2, 1, 0b01
+	case LDRSBD:
+		size, v, datasize, datasizeLog2, opcode = 0b00, 0x0, 1, 0, 0b10
+	case LDRSBW:
+		size, v, datasize, datasizeLog2, opcode = 0b00, 0x0, 1, 0, 0b11
+	case LDRB:
+		size, v, datasize, datasizeLog2, opcode = 0b00, 0x0, 1, 0, 0b01
+	case LDRSW:
+		size, v, datasize, datasizeLog2, opcode = 0b10, 0x0, 4, 2, 0b10
+	default:
 		return errorEncodingUnsupported(n)
 	}
 
 	var dstRegBits byte
-	if inst.isTargetFloat {
+	if isTargetFloat {
 		dstRegBits, err = vectorRegisterBits(n.dstReg)
 	} else {
 		dstRegBits, err = intRegisterBits(n.dstReg)
@@ -1993,11 +1996,11 @@ func (a *AssemblerImpl) encodeMemoryToRegister(n *nodeImpl) (err error) {
 		if err != nil {
 			return err
 		}
-		a.encodeLoadOrStoreWithRegisterOffset(baseRegBits, offsetRegBits, dstRegBits, inst.opcode,
-			inst.size, inst.v)
+		a.encodeLoadOrStoreWithRegisterOffset(baseRegBits, offsetRegBits, dstRegBits, opcode,
+			size, v)
 	} else {
-		err = a.encodeLoadOrStoreWithConstOffset(baseRegBits, dstRegBits, n.srcConst, inst.opcode,
-			inst.size, inst.v, inst.datasize, inst.datasizeLog2)
+		err = a.encodeLoadOrStoreWithConstOffset(baseRegBits, dstRegBits, n.srcConst, opcode,
+			size, v, datasize, datasizeLog2)
 	}
 	return
 }
@@ -2085,30 +2088,6 @@ func (a *AssemblerImpl) addOrSub64BitRegisters(sfops byte, sp bool, dstRegBits, 
 	}
 }
 
-// See "Logical (immediate)" in
-// https://developer.arm.com/documentation/ddi0596/2021-12/Index-by-Encoding/Data-Processing----Immediate
-var logicalImmediate = map[asm.Instruction]struct {
-	sf, opc  byte
-	resolver func(imm asm.ConstantValue) (imms, immr, N byte, err error)
-}{
-	ANDIMM32: {sf: 0b0, opc: 0b00, resolver: func(imm asm.ConstantValue) (imms, immr, N byte, err error) {
-		if !isBitMaskImmediate(uint64(imm)) {
-			err = fmt.Errorf("const %d must be valid bitmask immediate for %s", imm, InstructionName(ANDIMM64))
-			return
-		}
-		immr, imms, N = bitmaskImmediate(uint64(imm), false)
-		return
-	}},
-	ANDIMM64: {sf: 0b1, opc: 0b00, resolver: func(imm asm.ConstantValue) (imms, immr, N byte, err error) {
-		if !isBitMaskImmediate(uint64(imm)) {
-			err = fmt.Errorf("const %d must be valid bitmask immediate for %s", imm, InstructionName(ANDIMM64))
-			return
-		}
-		immr, imms, N = bitmaskImmediate(uint64(imm), true)
-		return
-	}},
-}
-
 func bitmaskImmediate(c uint64, is64bit bool) (immr, imms, N byte) {
 	var size uint32
 	switch {
@@ -2162,24 +2141,39 @@ func (a *AssemblerImpl) encodeConstToRegister(n *nodeImpl) (err error) {
 		return err
 	}
 
-	if log, ok := logicalImmediate[n.instruction]; ok {
-		// See "Logical (immediate)" in
-		// https://developer.arm.com/documentation/ddi0596/2021-12/Index-by-Encoding/Data-Processing----Immediate
-		imms, immr, N, err := log.resolver(c)
-		if err != nil {
-			return err
+	// See "Logical (immediate)" in
+	// https://developer.arm.com/documentation/ddi0596/2021-12/Index-by-Encoding/Data-Processing----Immediate
+	switch n.instruction {
+	case ANDIMM32:
+		var sf, opc byte = 0b0, 0b00
+		if !isBitMaskImmediate(uint64(c)) {
+			err = fmt.Errorf("const %d must be valid bitmask immediate for %s", c, InstructionName(ANDIMM64))
+			return
 		}
-
+		immr, imms, N := bitmaskImmediate(uint64(c), false)
 		a.buf.Write([]byte{
 			(dstRegBits << 5) | dstRegBits,
 			imms<<2 | dstRegBits>>3,
 			N<<6 | immr,
-			log.sf<<7 | log.opc<<5 | 0b10010,
+			sf<<7 | opc<<5 | 0b10010,
 		})
-		return nil
+		return
+	case ANDIMM64:
+		var sf, opc byte = 0b1, 0b00
+		if !isBitMaskImmediate(uint64(c)) {
+			err = fmt.Errorf("const %d must be valid bitmask immediate for %s", c, InstructionName(ANDIMM64))
+			return
+		}
+		immr, imms, N := bitmaskImmediate(uint64(c), true)
+		a.buf.Write([]byte{
+			(dstRegBits << 5) | dstRegBits,
+			imms<<2 | dstRegBits>>3,
+			N<<6 | immr,
+			sf<<7 | opc<<5 | 0b10010,
+		})
+		return
 	}
 
-	// TODO: refactor and generalize the following like ^ logicalImmediate, etc.
 	switch inst := n.instruction; inst {
 	case ADD, ADDS, SUB, SUBS:
 		srcRegBits := dstRegBits

@@ -13,6 +13,7 @@ import (
 	"github.com/tetratelabs/wazero/internal/engine/compiler"
 	"github.com/tetratelabs/wazero/internal/engine/interpreter"
 	"github.com/tetratelabs/wazero/internal/filecache"
+	"github.com/tetratelabs/wazero/internal/internalapi"
 	"github.com/tetratelabs/wazero/internal/platform"
 	internalsys "github.com/tetratelabs/wazero/internal/sys"
 	"github.com/tetratelabs/wazero/internal/sysfs"
@@ -28,8 +29,12 @@ import (
 //
 //	rConfig = wazero.NewRuntimeConfig().WithCoreFeatures(api.CoreFeaturesV1)
 //
-// Note: RuntimeConfig is immutable. Each WithXXX function returns a new
-// instance including the corresponding change.
+// # Notes
+//
+//   - This is an interface for decoupling, not third-party implementations.
+//     All implementations are in wazero.
+//   - RuntimeConfig is immutable. Each WithXXX function returns a new instance
+//     including the corresponding change.
 type RuntimeConfig interface {
 	// WithCoreFeatures sets the WebAssembly Core specification features this
 	// runtime supports. Defaults to api.CoreFeaturesV2.
@@ -48,8 +53,8 @@ type RuntimeConfig interface {
 	WithCoreFeatures(api.CoreFeatures) RuntimeConfig
 
 	// WithMemoryLimitPages overrides the maximum pages allowed per memory. The
-	// default is 65536, allowing 4GB total memory per instance. Setting a
-	// value larger than default will panic.
+	// default is 65536, allowing 4GB total memory per instance if the maximum is
+	// not encoded in a Wasm binary. Setting a value larger than default will panic.
 	//
 	// This example reduces the largest possible memory size from 4GB to 128KB:
 	//	rConfig = wazero.NewRuntimeConfig().WithMemoryLimitPages(2)
@@ -67,6 +72,9 @@ type RuntimeConfig interface {
 	//	rConfig = wazero.NewRuntimeConfig().WithMemoryCapacityFromMax(true)
 	//
 	// See https://www.w3.org/TR/2019/REC-wasm-core-1-20191205/#grow-mem
+	//
+	// Note: if the memory maximum is not encoded in a Wasm binary, this
+	// results in allocating 4GB. See the doc on WithMemoryLimitPages for detail.
 	WithMemoryCapacityFromMax(memoryCapacityFromMax bool) RuntimeConfig
 
 	// WithDebugInfoEnabled toggles DWARF based stack traces in the face of
@@ -117,6 +125,15 @@ type RuntimeConfig interface {
 	//	// Creates two runtimes while sharing compilation caches.
 	//	foo := wazero.NewRuntimeWithConfig(context.Background(), config)
 	// 	bar := wazero.NewRuntimeWithConfig(context.Background(), config)
+	//
+	// # Cache Key
+	//
+	// Cached files are keyed on the version of wazero. This is obtained from go.mod of your application,
+	// and we use it to verify the compatibility of caches against the currently-running wazero.
+	// However, if you use this in tests of a package not named as `main`, then wazero cannot obtain the correct
+	// version of wazero due to the known issue of debug.BuildInfo function: https://github.com/golang/go/issues/33976.
+	// As a consequence, your cache won't contain the correct version information and always be treated as `dev` version.
+	// To avoid this issue, you can pass -ldflags "-X github.com/tetratelabs/wazero/internal/version.version=foo" when running tests.
 	WithCompilationCache(CompilationCache) RuntimeConfig
 
 	// WithCustomSections toggles parsing of "custom sections". Defaults to false.
@@ -281,7 +298,11 @@ func (c *runtimeConfig) WithCustomSections(storeCustomSections bool) RuntimeConf
 // the name "Module" for both before and after instantiation as the name conflation has caused confusion.
 // See https://www.w3.org/TR/2019/REC-wasm-core-1-20191205/#semantic-phases%E2%91%A0
 //
-// Note: Closing the wazero.Runtime closes any CompiledModule it compiled.
+// # Notes
+//
+//   - This is an interface for decoupling, not third-party implementations.
+//     All implementations are in wazero.
+//   - Closing the wazero.Runtime closes any CompiledModule it compiled.
 type CompiledModule interface {
 	// Name returns the module name encoded into the binary or empty if not.
 	Name() string
@@ -382,6 +403,7 @@ func (c *compiledModule) CustomSections() []api.CustomSection {
 
 // customSection implements wasm.CustomSection
 type customSection struct {
+	internalapi.WazeroOnlyType
 	name string
 	data []byte
 }
@@ -411,7 +433,12 @@ func (c *customSection) Data() []byte {
 // While wazero supports Windows as a platform, host functions using ModuleConfig follow a UNIX dialect.
 // See RATIONALE.md for design background and relationship to WebAssembly System Interfaces (WASI).
 //
-// Note: ModuleConfig is immutable. Each WithXXX function returns a new instance including the corresponding change.
+// # Notes
+//
+//   - This is an interface for decoupling, not third-party implementations.
+//     All implementations are in wazero.
+//   - ModuleConfig is immutable. Each WithXXX function returns a new instance
+//     including the corresponding change.
 type ModuleConfig interface {
 	// WithArgs assigns command-line arguments visible to an imported function that reads an arg vector (argv). Defaults to
 	// none. Runtime.InstantiateModule errs if any arg is empty.
@@ -609,12 +636,12 @@ type moduleConfig struct {
 	stdout             io.Writer
 	stderr             io.Writer
 	randSource         io.Reader
-	walltime           *sys.Walltime
+	walltime           sys.Walltime
 	walltimeResolution sys.ClockResolution
-	nanotime           *sys.Nanotime
+	nanotime           sys.Nanotime
 	nanotimeResolution sys.ClockResolution
-	nanosleep          *sys.Nanosleep
-	osyield            *sys.Osyield
+	nanosleep          sys.Nanosleep
+	osyield            sys.Osyield
 	args               [][]byte
 	// environ is pair-indexed to retain order similar to os.Environ.
 	environ [][]byte
@@ -728,7 +755,7 @@ func (c *moduleConfig) WithStdout(stdout io.Writer) ModuleConfig {
 // WithWalltime implements ModuleConfig.WithWalltime
 func (c *moduleConfig) WithWalltime(walltime sys.Walltime, resolution sys.ClockResolution) ModuleConfig {
 	ret := c.clone()
-	ret.walltime = &walltime
+	ret.walltime = walltime
 	ret.walltimeResolution = resolution
 	return ret
 }
@@ -745,7 +772,7 @@ func (c *moduleConfig) WithSysWalltime() ModuleConfig {
 // WithNanotime implements ModuleConfig.WithNanotime
 func (c *moduleConfig) WithNanotime(nanotime sys.Nanotime, resolution sys.ClockResolution) ModuleConfig {
 	ret := c.clone()
-	ret.nanotime = &nanotime
+	ret.nanotime = nanotime
 	ret.nanotimeResolution = resolution
 	return ret
 }
@@ -758,14 +785,14 @@ func (c *moduleConfig) WithSysNanotime() ModuleConfig {
 // WithNanosleep implements ModuleConfig.WithNanosleep
 func (c *moduleConfig) WithNanosleep(nanosleep sys.Nanosleep) ModuleConfig {
 	ret := *c // copy
-	ret.nanosleep = &nanosleep
+	ret.nanosleep = nanosleep
 	return &ret
 }
 
 // WithOsyield implements ModuleConfig.WithOsyield
 func (c *moduleConfig) WithOsyield(osyield sys.Osyield) ModuleConfig {
 	ret := *c // copy
-	ret.osyield = &osyield
+	ret.osyield = osyield
 	return &ret
 }
 

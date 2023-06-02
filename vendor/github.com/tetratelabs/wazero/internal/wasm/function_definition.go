@@ -2,6 +2,7 @@ package wasm
 
 import (
 	"github.com/tetratelabs/wazero/api"
+	"github.com/tetratelabs/wazero/internal/internalapi"
 	"github.com/tetratelabs/wazero/internal/wasmdebug"
 )
 
@@ -80,7 +81,7 @@ func (m *Module) BuildFunctionDefinitions() {
 		funcIdx := d.index
 		var funcName string
 		for ; n < nLen; n++ {
-			next := functionNames[n]
+			next := &functionNames[n]
 			if next.Index > funcIdx {
 				break // we have function names, but starting at a later index.
 			} else if next.Index == funcIdx {
@@ -106,6 +107,7 @@ func (m *Module) BuildFunctionDefinitions() {
 
 // FunctionDefinition implements api.FunctionDefinition
 type FunctionDefinition struct {
+	internalapi.WazeroOnlyType
 	moduleName  string
 	index       Index
 	name        string

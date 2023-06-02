@@ -1,5 +1,7 @@
 build/
 **/build/
+build/certs/nginx-repo.key
+build/certs/nginx-repo.crt
 bin/
 whitesource/
 .vscode/

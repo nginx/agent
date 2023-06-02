@@ -2,7 +2,7 @@ name: nginx-agent
 version: "${VERSION}"
 origin: www/nginx-agent
 comment: "Monitors NGINX"
-desc: "Unified agent for various NGINX control plane services."
+desc: "NGINX Agent for various NGINX control plane services."
 maintainer: "NGINX Inc. <maint@nginx.com>"
 www: https://nginx.com
 prefix: /

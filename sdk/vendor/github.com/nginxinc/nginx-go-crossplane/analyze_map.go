@@ -35,6 +35,9 @@ var mapBodies = map[string]mapParameterMasks{
 	"types": {
 		defaultMasks: ngxConf1More,
 	},
+	"split_clients": {
+		defaultMasks: ngxConfTake1,
+	},
 }
 
 // analyzeMapBody validates the body of a map-like directive. Map-like directives are block directives

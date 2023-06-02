@@ -80,7 +80,7 @@ func (s *StaticConst) SetOffsetInBinary(offset uint64) {
 // StaticConstPool holds a bulk of StaticConst which are yet to be emitted into the binary.
 type StaticConstPool struct {
 	// FirstUseOffsetInBinary holds the offset of the first instruction which accesses this const pool .
-	FirstUseOffsetInBinary *NodeOffsetInBinary
+	FirstUseOffsetInBinary NodeOffsetInBinary
 	Consts                 []*StaticConst
 	// addedConsts is used to deduplicate the consts to reduce the final size of binary.
 	// Note: we can use map on .consts field and remove this field,
@@ -90,9 +90,24 @@ type StaticConstPool struct {
 	PoolSizeInBytes int
 }
 
-// NewStaticConstPool returns the pointer to a new StaticConstPool.
-func NewStaticConstPool() *StaticConstPool {
-	return &StaticConstPool{addedConsts: map[*StaticConst]struct{}{}}
+func NewStaticConstPool() StaticConstPool {
+	return StaticConstPool{addedConsts: map[*StaticConst]struct{}{}, FirstUseOffsetInBinary: math.MaxUint64}
+}
+
+// Reset resets the *StaticConstPool for reuse.
+func (p *StaticConstPool) Reset() {
+	for _, c := range p.Consts {
+		delete(p.addedConsts, c)
+	}
+	// Reuse the slice to avoid re-allocations.
+	p.Consts = p.Consts[:0]
+	p.PoolSizeInBytes = 0
+	p.FirstUseOffsetInBinary = math.MaxUint64
+}
+
+// Empty returns true if StaticConstPool is empty.
+func (p *StaticConstPool) Empty() bool {
+	return p.FirstUseOffsetInBinary == math.MaxUint64
 }
 
 // AddConst adds a *StaticConst into the pool if it's not already added.
@@ -101,9 +116,11 @@ func (p *StaticConstPool) AddConst(c *StaticConst, useOffset NodeOffsetInBinary)
 		return
 	}
 
-	if p.FirstUseOffsetInBinary == nil {
-		p.FirstUseOffsetInBinary = &useOffset
+	if p.Empty() {
+		p.FirstUseOffsetInBinary = useOffset
 	}
+
+	c.offsetFinalizedCallbacks = c.offsetFinalizedCallbacks[:0]
 
 	p.Consts = append(p.Consts, c)
 	p.PoolSizeInBytes += len(c.Raw)
@@ -125,12 +142,18 @@ type AssemblerBase interface {
 
 	// SetJumpTargetOnNext instructs the assembler that the next node must be
 	// assigned to the given node's jump destination.
-	SetJumpTargetOnNext(nodes ...Node)
+	SetJumpTargetOnNext(node Node)
 
 	// BuildJumpTable calculates the offsets between the first instruction `initialInstructions[0]`
 	// and others (e.g. initialInstructions[3]), and wrote the calculated offsets into pre-allocated
 	// `table` StaticConst in little endian.
 	BuildJumpTable(table *StaticConst, initialInstructions []Node)
+
+	// AllocateNOP allocates Node for NOP instruction.
+	AllocateNOP() Node
+
+	// Add appends the given `Node` in the assembled linked list.
+	Add(Node)
 
 	// CompileStandAlone adds an instruction to take no arguments.
 	CompileStandAlone(instruction Instruction) Node

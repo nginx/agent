@@ -12,12 +12,14 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"golang.org/x/text/language"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/text/cases"
 
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 )
@@ -32,6 +34,7 @@ const (
 	encodedComma = "%2C"
 
 	violationNameSeparator    = '_'
+	violationNamePrefix       = "viol"
 	violationContextRequest   = "request"
 	violationContextHeader    = "header"
 	violationContextParameter = "parameter"
@@ -314,7 +317,6 @@ func (f *NAPConfig) getSecurityViolation(logger *logrus.Entry) *models.SecurityV
 		BotCategory:              f.BotCategory,
 		BotSignatureName:         f.BotSignatureName,
 		EnforcedBotAnomalies:     f.EnforcedBotAnomalies,
-		ViolationContexts:        f.getViolationContext(),
 		Outcome:                  f.RequestOutcome,
 		OutcomeReason:            f.RequestOutcomeReason,
 		URI:                      f.HTTPURI,
@@ -336,38 +338,37 @@ func (f *NAPConfig) getMetadata() (*models.Metadata, error) {
 	return NewMetadata(t, f.SupportID)
 }
 
-func (f *NAPConfig) getViolationContext() string {
-	contexts := []string{}
+func (f *NAPConfig) extractViolationContext() {
 	if f.ViolationDetailsXML != nil {
 		for i, v := range f.ViolationDetailsXML.RequestViolations.Violations {
+			if strings.ToLower(v.Context) == violationContextUrl {
+				f.ViolationDetailsXML.RequestViolations.Violations[i].Context = violationContextUri
+			}
 			if v.Context != "" {
-				contexts = append(contexts, strings.ToLower(v.Context))
 				continue
 			}
 			if v.ViolName != "" {
 				f.ViolationDetailsXML.RequestViolations.Violations[i].Context = extractContextFromViolationName(v.ViolName)
-				contexts = append(contexts, f.ViolationDetailsXML.RequestViolations.Violations[i].Context)
 			}
 		}
 	}
-	return strings.Join(contexts, ",")
 }
 
 func extractContextFromViolationName(violationName string) string {
-	if strings.Contains(violationName, strings.ToUpper(violationContextParameter)) {
+	if strings.Contains(strings.ToLower(violationName), violationContextParameter) {
 		return violationContextParameter
 	}
-	if strings.Contains(violationName, strings.ToUpper(violationContextHeader)) {
+	if strings.Contains(strings.ToLower(violationName), violationContextHeader) {
 		return violationContextHeader
 	}
-	if strings.Contains(violationName, strings.ToUpper(violationContextCookie)) {
+	if strings.Contains(strings.ToLower(violationName), violationContextCookie) {
 		return violationContextCookie
 	}
-	if strings.Contains(violationName, strings.ToUpper(violationContextRequest)) {
+	if strings.Contains(strings.ToLower(violationName), violationContextRequest) {
 		return violationContextRequest
 	}
-	if strings.Contains(violationName, strings.ToUpper(violationContextUri)) ||
-		strings.Contains(violationName, strings.ToUpper(violationContextUrl)) {
+	if strings.Contains(strings.ToLower(violationName), violationContextUri) ||
+		strings.Contains(strings.ToLower(violationName), violationContextUrl) {
 		return violationContextUri
 	}
 
@@ -381,17 +382,19 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 		return violations
 	}
 
+	f.extractViolationContext()
+
 	for _, v := range f.ViolationDetailsXML.RequestViolations.Violations {
 		violation := models.ViolationData{
 			Name:    v.ViolName,
 			Context: strings.ToLower(v.Context),
 		}
 
+		contextualized := true
+		var name, value string
+		var isB64Decoded bool
 		switch strings.ToLower(v.Context) {
 		case violationContextParameter:
-			var isB64Decoded bool
-			var name, value string
-
 			if v.ParameterData != (ParameterData{}) {
 				isB64Decoded = v.ParameterData.IsBase64Decoded
 				name = v.ParameterData.Name
@@ -406,35 +409,7 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 			} else {
 				logger.Warn("context is parameter but no Parameter data received")
 			}
-
-			if isB64Decoded {
-				violation.ContextData = &models.ContextData{
-					Name:  name,
-					Value: value,
-				}
-				break
-			}
-
-			decodedName, err := base64.StdEncoding.DecodeString(name)
-			if err != nil {
-				logger.Errorf("could not decode the Paramater Name %s for %v", name, f.SupportID)
-				break
-			}
-
-			decodedValue, err := base64.StdEncoding.DecodeString(value)
-			if err != nil {
-				logger.Errorf("could not decode the Paramater Value %s for %v", value, f.SupportID)
-				break
-			}
-
-			violation.ContextData = &models.ContextData{
-				Name:  string(decodedName),
-				Value: string(decodedValue),
-			}
 		case violationContextHeader:
-			var isB64Decoded bool
-			var name, value string
-
 			if v.Header != (Header{}) {
 				isB64Decoded = v.Header.IsBase64Decoded
 				if v.Header.Name != "" || v.Header.Value != "" {
@@ -457,35 +432,7 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				name = string(decodedName)
 				value = fmt.Sprintf("Header length: %s, exceeds Header length limit: %s", v.HeaderLength, v.HeaderLengthLimit)
 			}
-
-			if isB64Decoded {
-				violation.ContextData = &models.ContextData{
-					Name:  name,
-					Value: value,
-				}
-				break
-			}
-
-			decodedName, err := base64.StdEncoding.DecodeString(name)
-			if err != nil {
-				logger.Errorf("could not decode the Header Name %s for %v", name, f.SupportID)
-				break
-			}
-
-			decodedValue, err := base64.StdEncoding.DecodeString(value)
-			if err != nil {
-				logger.Errorf("could not decode the Header Value %s for %v", value, f.SupportID)
-				break
-			}
-
-			violation.ContextData = &models.ContextData{
-				Name:  string(decodedName),
-				Value: string(decodedValue),
-			}
 		case violationContextCookie:
-			var isB64Decoded bool
-			var name, value string
-
 			if v.Cookie != (Cookie{}) && v.CookieLength == "" {
 				isB64Decoded = v.Cookie.IsBase64Decoded
 				name = v.Cookie.Name
@@ -513,41 +460,12 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				name = fmt.Sprintf("Cookie length: %s, exceeds Cookie length limit: %s", v.CookieLength, v.CookieLengthLimit)
 				value = string(decodedValue)
 			}
-
-			if isB64Decoded {
-				violation.ContextData = &models.ContextData{
-					Name:  name,
-					Value: value,
-				}
-				break
-			}
-
-			decodedName, err := base64.StdEncoding.DecodeString(name)
-			if err != nil {
-				logger.Errorf("could not decode the Cookie Name %s for %v", name, f.SupportID)
-				break
-			}
-
-			decodedValue, err := base64.StdEncoding.DecodeString(value)
-			if err != nil {
-				logger.Errorf("could not decode the Cookie Value %s for %v", value, f.SupportID)
-				break
-			}
-
-			violation.ContextData = &models.ContextData{
-				Name:  string(decodedName),
-				Value: string(decodedValue),
-			}
-		case violationContextUrl, violationContextUri:
-			var (
-				name, value  string
-				isB64Decoded bool
-			)
+		case violationContextUri:
 			if v.Uri != "" {
-				name = violationContextUri
+				name = base64.StdEncoding.EncodeToString([]byte(violationContextUri))
 				value = v.Uri
 			} else if v.UriObjectData != (UriObjectData{}) {
-				name = violationContextUri
+				name = base64.StdEncoding.EncodeToString([]byte(violationContextUri))
 				value = v.UriObjectData.Object
 			} else if v.UriLength != "" {
 				isB64Decoded = true
@@ -573,24 +491,8 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				name = string(decodedName)
 				value = fmt.Sprintf("actual header value: %s. matched header value: %s", string(decodedActualValue), string(decodedMatchedValue))
 			}
-
-			if isB64Decoded {
-				violation.ContextData = &models.ContextData{
-					Name:  name,
-					Value: value,
-				}
-				break
-			}
-
-			decodedValue, err := base64.StdEncoding.DecodeString(value)
-			if err != nil {
-				logger.Errorf("could not decode the URL Value %s for %v", value, f.SupportID)
-				break
-			}
-
-			violation.ContextData = &models.ContextData{Name: name, Value: string(decodedValue)}
 		case violationContextRequest:
-			var name, value string
+			isB64Decoded = true
 			if v.DefinedLength != "" {
 				name = fmt.Sprintf("Defined length: %s", v.DefinedLength)
 				value = fmt.Sprintf("Detected length: %s", v.DetectedLength)
@@ -598,8 +500,31 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 				name = fmt.Sprintf("Total length: %s", v.TotalLen)
 				value = fmt.Sprintf("Total length limit: %s", v.TotalLenLimit)
 			}
+		default:
+			contextualized = false
+		}
 
-			violation.ContextData = &models.ContextData{Name: name, Value: value}
+		if contextualized {
+			if isB64Decoded {
+				name, value = populateNameValue(violation.Name, name, value)
+				violation.ContextData = &models.ContextData{
+					Name:  name,
+					Value: value,
+				}
+			} else {
+				decodedName, err := base64.StdEncoding.DecodeString(name)
+				if err != nil {
+					logger.Errorf("could not decode the %s Name %s for %v", v.Context, name, f.SupportID)
+				} else {
+					decodedValue, err := base64.StdEncoding.DecodeString(value)
+					if err != nil {
+						logger.Errorf("could not decode the %s Value %s for %v", v.Context, value, f.SupportID)
+					} else {
+						name, value = populateNameValue(violation.Name, string(decodedName), string(decodedValue))
+						violation.ContextData = &models.ContextData{Name: name, Value: value}
+					}
+				}
+			}
 		}
 
 		for _, s := range v.SigData {
@@ -624,6 +549,33 @@ func (f *NAPConfig) getViolations(logger *logrus.Entry) []*models.ViolationData 
 	return violations
 }
 
+func populateNameValue(violationName, dataName, dataValue string) (name string, value string) {
+	if dataName != "" && dataValue != "" {
+		name = dataName
+		value = dataValue
+		return
+	}
+	name = violationNameToDataName(violationName)
+	if dataName == "" && dataValue != "" {
+		value = dataValue
+		return
+	}
+	if dataName != "" && dataValue == "" {
+		value = dataName
+		return
+	}
+	return
+}
+
+func violationNameToDataName(violationName string) string {
+	c := cases.Title(language.English)
+	parts := strings.Split(strings.ToLower(violationName), string(violationNameSeparator))
+	if parts[0] != violationNamePrefix {
+		return c.String(strings.Join(parts, " "))
+	}
+	return c.String(strings.Join(parts[1:], " "))
+}
+
 // Parse the NAP date time string into a Proto Time type.
 func parseNAPDateTime(raw string) (*types.Timestamp, error) {
 	t, err := time.Parse(napDateTimeLayout, raw)
@@ -640,6 +592,12 @@ func parseNAP(logEntry string, logger *logrus.Entry) (*NAPConfig, error) {
 	var waf NAPConfig
 
 	values := strings.Split(logEntry, ",")
+
+	lenV := len(values)
+	lenFK := len(logFormatKeys)
+	if lenV != lenFK {
+		return nil, fmt.Errorf("log line values does not match expected values. expecting %d values got %d values", lenFK, lenV)
+	}
 
 	for idx, key := range logFormatKeys {
 		err := setValue(&waf, key, values[idx], logger)

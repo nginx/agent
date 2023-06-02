@@ -31,8 +31,8 @@
                 "Name": "VIOL_PARAMETER_NAME_METACHAR",
                 "Context": "parameter",
                 "ContextData": {
-                    "Name": "x@",
-                    "Value": ""
+                    "Name": "Parameter Name Metachar",
+                    "Value": "x@"
                 }
             },
             {
