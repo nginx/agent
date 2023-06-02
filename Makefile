@@ -83,7 +83,7 @@ show-env: $(addprefix show-var-, $(SHOW_ENV_VARS)) ## Show environment
 all: clean build run ## Compile and run code.
 
 clean: ## Remove build directory
-	rm -rf ./build
+	find ./build -mindepth 1 ! -path '${CERTS_DIR}/nginx-repo.crt' ! -path '${CERTS_DIR}/nginx-repo.key' -delete
 
 run: ## Run code
 	go run -ldflags=${LDFLAGS} main.go
