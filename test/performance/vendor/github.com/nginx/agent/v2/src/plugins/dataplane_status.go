@@ -83,6 +83,13 @@ func (dps *DataPlaneStatus) Init(pipeline core.MessagePipeInterface) {
 
 func (dps *DataPlaneStatus) Close() {
 	log.Info("DataPlaneStatus is wrapping up")
+	dps.statusUrls = nil
+	dps.nginxConfigActivityStatuses = nil
+
+	dps.softwareDetailsMutex.Lock()
+	dps.softwareDetails = nil
+	dps.softwareDetailsMutex.Unlock()
+
 	dps.healthTicker.Stop()
 	dps.sendStatus <- true
 }

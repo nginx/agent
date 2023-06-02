@@ -58,7 +58,7 @@ func (p *MockMessagePipe) Register(size int, plugins []Plugin, extensionPlugins 
 	return nil
 }
 
-func (p *MockMessagePipe) Deregister(plugins []string) error {
+func (p *MockMessagePipe) DeRegister(plugins []string) error {
 	return nil
 }
 

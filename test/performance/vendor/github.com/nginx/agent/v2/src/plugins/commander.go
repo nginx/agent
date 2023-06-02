@@ -217,20 +217,20 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 func (c *Commander) deregisterPlugin(data string) {
 	if data == agent_config.FeatureFileWatcher {
 
-		err := c.pipeline.Deregister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
+		err := c.pipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
 		if err != nil {
 			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
 		}
 
 	} else if data == agent_config.FeatureNginxConfigAsync {
 
-		err := c.pipeline.Deregister([]string{"NginxBinary"})
+		err := c.pipeline.DeRegister([]string{"NginxBinary"})
 		if err != nil {
 			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
 		}
 
 	} else {
-		err := c.pipeline.Deregister([]string{data})
+		err := c.pipeline.DeRegister([]string{data})
 		if err != nil {
 			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
 		}

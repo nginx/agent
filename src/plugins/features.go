@@ -207,6 +207,7 @@ func (f *Features) Process(msg *core.Message) {
 					}
 
 					fileWatcher.Init(f.pipeline)
+					fileWatcherThrottle.Init(f.pipeline)
 				}
 			case agent_config.FeatureNginxCounting:
 				if len(f.conf.Nginx.NginxCountingSocket) > 0 {
@@ -217,10 +218,22 @@ func (f *Features) Process(msg *core.Message) {
 						}
 						f.conf = conf
 
-						nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
-						metrics := NewMetrics(f.conf, f.env, f.binary)
+						if !f.isPluginAlreadyRegistered(agent_config.FeatureMetrics) {
+							metrics := NewMetrics(f.conf, f.env, f.binary)
+							err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metrics}, nil)
 
-						err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metrics, nginxCounting}, nil)
+							if err != nil {
+								log.Warnf("Unable to register %s feature, %v", data, err)
+							}
+
+							metrics.Init(f.pipeline)
+							log.Info("Enabling Metrics as not registered ")
+						} else {
+							log.Info("Metrics already enabled")
+						}
+						nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
+
+						err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{nginxCounting}, nil)
 
 						if err != nil {
 							log.Warnf("Unable to register %s feature, %v", data, err)

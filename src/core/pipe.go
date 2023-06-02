@@ -23,7 +23,7 @@ const (
 
 type MessagePipeInterface interface {
 	Register(int, []Plugin, []ExtensionPlugin) error
-	Deregister(plugins []string) error
+	DeRegister(plugins []string) error
 	Process(...*Message)
 	Run()
 	Context() context.Context
@@ -56,7 +56,6 @@ func NewMessagePipe(ctx context.Context) *MessagePipe {
 func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []ExtensionPlugin) error {
 	p.mu.Lock()
 
-	// log.Info("-------> Register")
 	p.plugins = append(p.plugins, plugins...)
 	p.extensionPlugins = append(p.extensionPlugins, extensionPlugins...)
 	p.bus = messagebus.New(size)
@@ -91,7 +90,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 	return nil
 }
 
-func (p *MessagePipe) Deregister(pluginNames []string) error {
+func (p *MessagePipe) DeRegister(pluginNames []string) error {
 	p.mu.Lock()
 
 	var plugins []Plugin
