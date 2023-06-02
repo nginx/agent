@@ -252,8 +252,8 @@ image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and ng
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
 		--no-cache -f ./scripts/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
-		--secret id=nginx-crt,src=build/nginx-repo.crt \
-		--secret id=nginx-key,src=build/nginx-repo.key \
+		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
+		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		--build-arg PACKAGES_REPO=${PACKAGES_REPO} \
 		--build-arg OS_RELEASE=${OS_RELEASE} \
