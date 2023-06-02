@@ -160,7 +160,7 @@ func TestGetConfig(t *testing.T) {
 		assert.Equal(t, Defaults.AgentMetrics.CollectionInterval, config.AgentMetrics.CollectionInterval)
 
 		assert.Equal(t, []string{}, config.Tags)
-		assert.Equal(t, []string{}, config.Features)
+		assert.Equal(t, Defaults.Features, config.Features)
 		assert.Equal(t, []string{}, config.Extensions)
 	})
 
@@ -280,7 +280,7 @@ func TestGetConfig(t *testing.T) {
 		// Everything else should still be default
 		assert.Equal(t, Defaults.AgentMetrics.Mode, config.AgentMetrics.Mode)
 		assert.Equal(t, Defaults.Features, config.Features)
-		assert.Equal(t, Defaults.Extensions, config.Extensions)
+		assert.Equal(t, []string{}, config.Extensions)
 	})
 
 	t.Run("test override config values with ENV variables", func(t *testing.T) {
