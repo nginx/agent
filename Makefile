@@ -23,8 +23,8 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | suse             | sles12sp5, sle15              |                                                                |
 # | freebsd          |                               | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE  ?= ubuntu
-OS_VERSION  ?= 22.04
+OS_RELEASE  ?= debian
+OS_VERSION  ?= bullseye-slim
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
@@ -83,7 +83,7 @@ show-env: $(addprefix show-var-, $(SHOW_ENV_VARS)) ## Show environment
 all: clean build run ## Compile and run code.
 
 clean: ## Remove build directory
-	find ./build -mindepth 1 ! -path '${CERTS_DIR}/nginx-repo.crt' ! -path '${CERTS_DIR}/nginx-repo.key' -delete
+	if [ -d "./build" ]; then find ./build -mindepth 1 ! -path '${CERTS_DIR}/nginx-repo.crt' ! -path '${CERTS_DIR}/nginx-repo.key' -delete; fi
 
 run: ## Run code
 	go run -ldflags=${LDFLAGS} main.go
