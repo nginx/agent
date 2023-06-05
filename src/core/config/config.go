@@ -9,7 +9,6 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -251,7 +250,7 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 
 	updatedConfBytes = append([]byte(dynamicConfigUsageComment), updatedConfBytes...)
 
-	err = ioutil.WriteFile(dynamicCfgPath, updatedConfBytes, 0)
+	err = os.WriteFile(dynamicCfgPath, updatedConfBytes, 0)
 	if err != nil {
 		return false, err
 	}

@@ -9,7 +9,7 @@ package nap
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/nginx/agent/v2/src/core"
@@ -30,7 +30,7 @@ func getThreatCampaignsVersion(versionFile string) (string, error) {
 	}
 
 	// Get the version bytes
-	versionBytes, err := ioutil.ReadFile(versionFile)
+	versionBytes, err := os.ReadFile(versionFile)
 	if err != nil {
 		return "", err
 	}
