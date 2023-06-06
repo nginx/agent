@@ -294,7 +294,6 @@ func (n *Nginx) processCmd(cmd *proto.Command) {
 			if n.isFeatureNginxConfigEnabled {
 				status = n.applyConfig(cmd, commandData)
 			} else {
-				log.Error("unable to use nginx config functionality as nginx-config feature is disabled")
 				status.NginxConfigResponse.Status = newErrStatus("unable to use nginx config functionality as nginx-config feature is disabled").CmdStatus
 				status.NginxConfigResponse.Action = proto.NginxConfigAction_APPLY
 			}
@@ -739,11 +738,6 @@ func (n *Nginx) syncAgentConfigChange() {
 		return
 	}
 	log.Debugf("Nginx Plugins is updating to a new config - %v", conf)
-
-	// n.featureMutex.Lock()
-	// n.isFeatureNginxConfigEnabled = conf.IsFeatureEnabled(agent_config.FeatureNginxConfig) || conf.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
-	// n.messagePipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{n}, nil)
-	// n.featureMutex.Unlock()
 
 	log.Info()
 	log.Info()

@@ -110,20 +110,6 @@ func (c *Commander) agentBackoff(cmd *proto.Command) {
 		return
 	}
 
-	if cmd.GetAgentConfig().Details.GetFeatures() != nil {
-		for _, feature := range cmd.GetAgentConfig().Details.GetFeatures() {
-			c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
-
-		}
-	}
-
-	if cmd.GetAgentConfig().Details.GetExtensions() != nil {
-		for _, extension := range cmd.GetAgentConfig().Details.GetExtensions() {
-			c.pipeline.Process(core.NewMessage(core.EnableExtension, extension))
-
-		}
-	}
-
 	multiplier := backoff.BACKOFF_MULTIPLIER
 	if backoffSetting.GetMultiplier() != 0 {
 		multiplier = backoffSetting.GetMultiplier()
