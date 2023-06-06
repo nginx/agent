@@ -200,15 +200,19 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 		logPattern = strings.ReplaceAll(logPattern, key, value)
 	}
 	log.Debugf("LogPattern = %s", logPattern)
+
+	// A regex pattern to match all the variables that are mentioned in the access log
+	// but are absent from logVarMap and hence are not replaced with the correct format
 	r, err := regexp.Compile(`[\$]([a-z_]+)`)
 	if err != nil {
 		log.Warnf("unable to compile access log regex: %v", err)
 	}
-
+	// Get an array of all the matched variables
 	variables := r.FindAllString(logPattern, -1)
 
 	log.Debugf("LogPattern = %s Matched variables = %v", logPattern, variables)
 	for _, variable := range variables {
+		// Replace the variables with the format {DATA:variable_name} in the logPattern
 		replacement := "%" + fmt.Sprintf("{DATA:%s}", strings.Trim(variable, "$"))
 		logPattern = strings.Replace(logPattern, variable, replacement, -1)
 	}
