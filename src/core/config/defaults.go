@@ -84,7 +84,6 @@ var (
 		},
 		AgentAPI: AgentAPI{
 			Host: "127.0.0.1",
-			Port: 8038,
 		},
 		Features: agent_config.GetDefaultFeatures(),
 	}
@@ -243,7 +242,6 @@ var (
 		&IntFlag{
 			Name:         AgentAPIPort,
 			Usage:        "The desired port to use for nginx-agent to expose for HTTP traffic.",
-			DefaultValue: Defaults.AgentAPI.Port,
 		},
 		&StringFlag{
 			Name:         AgentAPICert,
