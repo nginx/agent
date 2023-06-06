@@ -240,8 +240,8 @@ var (
 			DefaultValue: Defaults.AgentAPI.Host,
 		},
 		&IntFlag{
-			Name:         AgentAPIPort,
-			Usage:        "The desired port to use for nginx-agent to expose for HTTP traffic.",
+			Name:  AgentAPIPort,
+			Usage: "The desired port to use for nginx-agent to expose for HTTP traffic.",
 		},
 		&StringFlag{
 			Name:         AgentAPICert,
