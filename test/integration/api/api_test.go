@@ -19,7 +19,7 @@ import (
 
 const (
 	API_PORT = 9091
-	API_HOST = "127.0.0.1"
+	API_HOST = "0.0.0.0"
 )
 
 func TestAPI_Nginx(t *testing.T) {
