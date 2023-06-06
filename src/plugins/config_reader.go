@@ -113,7 +113,6 @@ func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
 
 		if !synchronizedFeatures {
 			for _, feature := range r.config.Features {
-				log.Info(feature)
 				if feature != agent_config.FeatureRegistration {
 					r.mu.Lock()
 					r.deregisterPlugin(feature)

@@ -279,6 +279,15 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			w.WriteHeader(http.StatusNotFound)
+			response := AgentAPIConfigApplyStatusResponse{
+				CorrelationId: uuid.New().String(),
+				Message:       "unable to process NGINX config apply request as the nginx-config-async feature is disabled",
+				Status:        errorStatus,
+			}
+			err := writeObjectToResponseBody(w, response)
+			if err != nil {
+				log.Warn(err)
+			}
 			log.Error("Config Apply Feature Disabled")
 		}
 

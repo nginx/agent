@@ -31,7 +31,6 @@ type Commander struct {
 	cmdr     client.Commander
 	wg       sync.WaitGroup
 	config   *config.Config
-	mu       sync.RWMutex
 }
 
 func NewCommander(cmdr client.Commander, config *config.Config) *Commander {
@@ -175,11 +174,8 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 
 			if !synchronizedFeatures {
 				for _, feature := range c.config.Features {
-					log.Info(feature)
 					if feature != agent_config.FeatureRegistration {
-						c.mu.Lock()
 						c.deregisterPlugin(feature)
-						c.mu.Unlock()
 					}
 
 				}
@@ -187,10 +183,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 
 			if agtCfg.Details != nil && agtCfg.Details.Features != nil && !synchronizedFeatures {
 				for _, feature := range agtCfg.Details.Features {
-					c.mu.Lock()
 					c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
-					c.mu.Unlock()
-
 				}
 			}
 		}
