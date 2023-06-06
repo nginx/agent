@@ -48,6 +48,7 @@ func TestCommander_Process(t *testing.T) {
 							Details: &proto.AgentDetails{
 								Tags:       []string{"new-tag1:one", "new-tag2:two"},
 								Extensions: []string{"advanced-metrics", "nginx_app_protect"},
+								Features:   []string{"nginx-config-async", "metrics", "metrics-throttle", "agent-api"},
 							},
 							Configs: &proto.ConfigReport{
 								Configs: []*proto.ConfigDescriptor{
@@ -89,6 +90,10 @@ func TestCommander_Process(t *testing.T) {
 				core.NginxConfigUpload,
 				core.EnableExtension,
 				core.EnableExtension,
+				core.EnableFeature,
+				core.EnableFeature,
+				core.EnableFeature,
+				core.EnableFeature,
 			},
 		},
 		{
@@ -193,12 +198,20 @@ func TestCommander_Process(t *testing.T) {
 									MaxElapsedTime:      1800,
 								},
 							},
+							Extensions: []string{"advanced-metrics", "nginx_app_protect"},
+							Features:   []string{"nginx-config-async", "metrics", "metrics-throttle", "agent-api"},
 						},
 					},
 				},
 			},
-			topic:     core.AgentConfig,
-			msgTopics: []string{},
+			topic: core.AgentConfig,
+			msgTopics: []string{core.EnableFeature,
+				core.EnableFeature,
+				core.EnableFeature,
+				core.EnableFeature,
+				core.EnableExtension,
+				core.EnableExtension,
+			},
 			wantBackoff: backoff.BackoffSettings{
 				InitialInterval: time.Duration(30 * time.Minute),
 				MaxInterval:     time.Duration(15 * time.Minute),
