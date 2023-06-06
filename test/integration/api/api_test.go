@@ -19,6 +19,7 @@ import (
 
 const (
 	API_PORT = 9091
+	API_HOST = "127.0.0.1"
 )
 
 func TestAPI_Nginx(t *testing.T) {
@@ -27,7 +28,7 @@ func TestAPI_Nginx(t *testing.T) {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
-	url := fmt.Sprintf("http://localhost:%d/nginx", API_PORT)
+	url := fmt.Sprintf("http://%s:%d/nginx/", API_HOST, API_PORT)
 	resp, err := client.R().EnableTrace().Get(url)
 
 	assert.NoError(t, err)
@@ -56,7 +57,7 @@ func TestAPI_Metrics(t *testing.T) {
 
 	client := resty.New()
 
-	url := fmt.Sprintf("http://localhost:%d/metrics", API_PORT)
+	url := fmt.Sprintf("http://%s:%d/metrics/", API_HOST, API_PORT)
 	client.SetRetryCount(5).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
