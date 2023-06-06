@@ -175,7 +175,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 			if !synchronizedFeatures {
 				for _, feature := range c.config.Features {
 					if feature != agent_config.FeatureRegistration {
-						c.deregisterPlugin(feature)
+						c.deRegisterPlugin(feature)
 					}
 
 				}
@@ -193,7 +193,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 	}
 }
 
-func (c *Commander) deregisterPlugin(data string) {
+func (c *Commander) deRegisterPlugin(data string) {
 	if data == agent_config.FeatureFileWatcher {
 
 		err := c.pipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})

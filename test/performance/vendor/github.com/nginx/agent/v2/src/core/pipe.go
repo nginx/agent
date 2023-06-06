@@ -29,6 +29,7 @@ type MessagePipeInterface interface {
 	Context() context.Context
 	GetPlugins() []Plugin
 	GetExtensionPlugins() []ExtensionPlugin
+	IsPluginAlreadyRegistered(string) bool
 }
 
 type MessagePipe struct {
@@ -60,6 +61,9 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 	p.extensionPlugins = append(p.extensionPlugins, extensionPlugins...)
 	p.bus = messagebus.New(size)
 
+	pluginsRegistered := []string{}
+	extensionPluginsRegistered := []string{}
+
 	for _, plugin := range p.plugins {
 		for _, subscription := range plugin.Subscriptions() {
 			err := p.bus.Subscribe(subscription, plugin.Process)
@@ -67,6 +71,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 				return err
 			}
 		}
+		pluginsRegistered = append(pluginsRegistered, *plugin.Info().name)
 	}
 
 	for _, plugin := range p.extensionPlugins {
@@ -76,11 +81,10 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 				return err
 			}
 		}
+		extensionPluginsRegistered = append(extensionPluginsRegistered, *plugin.Info().name)
 	}
-
-	log.Infof("The following core plugins have been registered: %q", plugins)
-	log.Infof("The following extension plugins have been registered: %q", extensionPlugins)
-
+	log.Debugf("The following core plugins have being registered: %q", pluginsRegistered)
+	log.Debugf("The following extension plugins have being registered: %q", extensionPluginsRegistered)
 	p.mu.Unlock()
 	return nil
 }
@@ -187,4 +191,16 @@ func (p *MessagePipe) initPlugins() {
 	for _, r := range p.extensionPlugins {
 		r.Init(p)
 	}
+}
+
+func (p *MessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
+	pluginAlreadyRegistered := false
+	for _, plugin := range p.GetPlugins() {
+		if plugin.Info().Name() == pluginName {
+			pluginAlreadyRegistered = true
+		}
+	}
+	log.Infof("pluginName: %v", pluginName)
+	log.Infof("pluginAlreadyRegistred: %v", pluginAlreadyRegistered)
+	return pluginAlreadyRegistered
 }

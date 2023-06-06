@@ -288,7 +288,7 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Warn(err)
 			}
-			log.Error("Config Apply Feature Disabled")
+			log.Warn("Config Apply Feature Disabled")
 		}
 
 	case configStatusRegex.MatchString(r.URL.Path):

@@ -25,7 +25,6 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
   - [Starting the gRPC Mock Control Plane](#starting-the-grpc-mock-control-plane)
   - [NGINX Agent Settings](#nginx-agent-settings)
   - [Extensions](#extensions)
-  - [Features](#features)
   - [Starting NGINX Agent](#starting-nginx-agent)
 - [Development Environment Setup](#development-environment-setup)
   - [Selecting an Operating System](#selecting-an-operating-system)
@@ -207,7 +206,6 @@ Here is an example of enabling the advanced metrics extension:
 extensions:
   - advanced-metrics
 ```
-
 
 ## Starting NGINX Agent
 If already running, restart NGINX Agent to apply the new configuration. Alternatively, if NGINX Agent is not running, you may run it from the source code root directory.
