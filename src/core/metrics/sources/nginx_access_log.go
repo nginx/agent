@@ -199,6 +199,19 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	for key, value := range logVarMap {
 		logPattern = strings.ReplaceAll(logPattern, key, value)
 	}
+	log.Debugf("LogPattern = %s", logPattern)
+	r, err := regexp.Compile(`[\$]([a-z_]+)`)
+	if err != nil {
+		log.Warnf("unable to compile access log regex: %v", err)
+	}
+
+	variables := r.FindAllString(logPattern, -1)
+
+	log.Debugf("LogPattern = %s Matched variables = %v", logPattern, variables)
+	for _, variable := range variables {
+		replacement := "%" + fmt.Sprintf("{DATA:%s}", strings.Trim(variable, "$"))
+		logPattern = strings.Replace(logPattern, variable, replacement, -1)
+	}
 
 	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
 	log.Debugf("Pattern used for tailing logs: %s", logPattern)
