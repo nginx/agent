@@ -226,7 +226,7 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 	// Remove Features_ prefix from the feature strings.
 	// This is needed for management servers that are sending features before sdk version v2.23.0
 	for index, feature := range updateFeatures {
-		updateFeatures[index] = strings.Replace(feature, "Features_", "", 1)
+		updateFeatures[index] = strings.Replace(feature, "features_", "", 1)
 	}
 	sort.Strings(updateFeatures)
 	sort.Strings(config.Features)
