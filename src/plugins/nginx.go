@@ -738,11 +738,6 @@ func (n *Nginx) syncAgentConfigChange() {
 		return
 	}
 	log.Debugf("Nginx Plugins is updating to a new config - %v", conf)
-
-	log.Info()
-	log.Info()
-	log.Infof("In Sync config enabled has been set to: %v", n.isFeatureNginxConfigEnabled)
-
 	n.config = conf
 }
 

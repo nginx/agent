@@ -32,28 +32,38 @@ func TestFeatures_Process(t *testing.T) {
 	}
 
 	testCases := []struct {
-		testName    string
-		featureKey  string
-		featureName string
+		testName   string
+		featureKey string
+		pluginName string
+		numPlugins int
 	}{
 		{
-			testName:    "API",
-			featureKey:  agent_config.FeatureAgentAPI,
-			featureName: agent_config.FeatureAgentAPI,
+			testName:   "API",
+			featureKey: agent_config.FeatureAgentAPI,
+			pluginName: agent_config.FeatureAgentAPI,
+			numPlugins: 2,
 		},
 		{
-			testName:    "Nginx Config Async",
-			featureKey:  agent_config.FeatureNginxConfigAsync,
-			featureName: agent_config.FeatureNginxConfigAsync,
+			testName:   "Nginx Config Async",
+			featureKey: agent_config.FeatureNginxConfigAsync,
+			pluginName: "NginxBinary",
+			numPlugins: 2,
 		},
 		{
-			testName:    "Metrics",
-			featureKey:  agent_config.FeatureMetrics,
-			featureName: agent_config.FeatureMetrics,
+			testName:   "Metrics",
+			featureKey: agent_config.FeatureMetrics,
+			pluginName: agent_config.FeatureMetrics,
+			numPlugins: 2,
+		},
+		{
+			testName:   "File Watcher",
+			featureKey: agent_config.FeatureFileWatcher,
+			pluginName: agent_config.FeatureFileWatcher,
+			numPlugins: 3,
 		},
 	}
 
-	detailsMap = map[string]*proto.NginxDetails{
+	detailsMap := map[string]*proto.NginxDetails{
 		processID: {
 			ProcessPath: "/path/to/nginx",
 			NginxId:     processID,
@@ -77,7 +87,7 @@ func TestFeatures_Process(t *testing.T) {
 	env.On("NewHostInfo", "agentVersion", &[]string{"locally-tagged", "tagged-locally"}).Return(&proto.HostInfo{})
 	env.Mock.On("Processes", mock.Anything).Return(processes)
 
-	binary.On("GetNginxDetailsFromProcess", core.Process{Name: firstNginxPid, IsMaster: true}).Return(detailsMap[processID])
+	binary.On("GetNginxDetailsFromProcess", core.Process{Name: "12345", IsMaster: true}).Return(detailsMap[processID])
 	binary.On("GetNginxDetailsMapFromProcesses", mock.Anything).Return(detailsMap)
 	binary.On("UpdateNginxDetailsFromProcesses", mock.Anything).Return()
 
@@ -98,15 +108,12 @@ func TestFeatures_Process(t *testing.T) {
 		time.Sleep(250 * time.Millisecond)
 
 		processedMessages := messagePipe.GetProcessedMessages()
-		assert.Equal(t, 2, len(messagePipe.GetPlugins()))
+		assert.Equal(t, tc.numPlugins, len(messagePipe.GetPlugins()))
 		assert.GreaterOrEqual(t, len(processedMessages), 1)
 		assert.Equal(t, core.EnableFeature, processedMessages[0].Topic())
+		assert.Equal(t, tc.pluginName, messagePipe.GetPlugins()[1].Info().Name())
 	}
 
 	cancelCTX()
 	pluginUnderTest.Close()
-}
-
-func TestFeatures_isPluginAlreadyRegistered(t *testing.T) {
-
 }
