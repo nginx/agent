@@ -14,12 +14,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"io"
 	"net/http"
 	"os"
 	"regexp"
 	"time"
+
+	"github.com/nginx/agent/v2/src/core/metrics"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/sdk/v2"
@@ -213,7 +214,7 @@ func (a *AgentAPI) createHttpServer() {
 
 	handler := cors.New(cors.Options{AllowedMethods: []string{"OPTIONS", "GET", "PUT"}}).Handler(mux)
 	a.server = http.Server{
-		Addr:    fmt.Sprintf(":%d", a.config.AgentAPI.Port),
+		Addr:    fmt.Sprintf("%s:%d", a.config.AgentAPI.Host, a.config.AgentAPI.Port),
 		Handler: handler,
 	}
 

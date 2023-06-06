@@ -331,6 +331,7 @@ func getBackOff() Backoff {
 
 func getAgentAPI() AgentAPI {
 	return AgentAPI{
+		Host: Viper.GetString(AgentAPIHost),
 		Port: Viper.GetInt(AgentAPIPort),
 		Cert: Viper.GetString(AgentAPICert),
 		Key:  Viper.GetString(AgentAPIKey),
