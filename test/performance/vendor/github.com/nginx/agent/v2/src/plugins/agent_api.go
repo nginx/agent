@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/sdk/v2"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -183,7 +184,7 @@ func (a *AgentAPI) Process(message *core.Message) {
 	}
 }
 func (a *AgentAPI) Info() *core.Info {
-	return core.NewInfo("Agent API Plugin", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureAgentAPI, "v0.0.1")
 }
 
 func (a *AgentAPI) Subscriptions() []string {
@@ -272,10 +273,25 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err := h.updateConfig(w, r)
-		if err != nil {
-			log.Warnf("Failed to update config: %v", err)
+		if h.config.IsFeatureEnabled(agent_config.FeatureNginxConfig) || h.config.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync) {
+			err := h.updateConfig(w, r)
+			if err != nil {
+				log.Warnf("Failed to update config: %v", err)
+			}
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+			response := AgentAPIConfigApplyStatusResponse{
+				CorrelationId: uuid.New().String(),
+				Message:       "unable to process NGINX config apply request as the nginx-config-async feature is disabled",
+				Status:        errorStatus,
+			}
+			err := writeObjectToResponseBody(w, response)
+			if err != nil {
+				log.Warn(err)
+			}
+			log.Warn("Config Apply Feature Disabled")
 		}
+
 	case configStatusRegex.MatchString(r.URL.Path):
 		if r.Method != http.MethodGet {
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -378,7 +394,11 @@ func (h *NginxHandler) updateConfig(w http.ResponseWriter, r *http.Request) erro
 			}
 
 			if response.NginxConfigResponse.GetStatus().GetStatus() != proto.CommandStatusResponse_CMD_OK {
-				w.WriteHeader(http.StatusBadRequest)
+				if response.NginxConfigResponse.Status.Error == nginxConfigAsyncFeatureDisabled {
+					w.WriteHeader(http.StatusForbidden)
+				} else {
+					w.WriteHeader(http.StatusBadRequest)
+				}
 				nginxResponse.Status = errorStatus
 			} else {
 				if response.NginxConfigResponse.GetStatus().GetMessage() == configAppliedProcessedResponse {

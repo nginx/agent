@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nginx/agent/sdk/v2/backoff"
@@ -76,7 +77,7 @@ func (r *OneTimeRegistration) Close() {
 }
 
 func (r *OneTimeRegistration) Info() *core.Info {
-	return core.NewInfo("OneTimeRegistration", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureRegistration, "v0.0.1")
 }
 
 func (r *OneTimeRegistration) Process(msg *core.Message) {
@@ -208,8 +209,6 @@ func (r *OneTimeRegistration) registerAgent() {
 			},
 		},
 	}
-
-	log.Tracef("AgentConnectRequest: %v", agentConnectRequest)
 
 	r.pipeline.Process(
 		core.NewMessage(core.CommRegister, agentConnectRequest),

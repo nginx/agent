@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 
@@ -67,7 +68,7 @@ func (fwt *FileWatchThrottle) Close() {
 }
 
 func (fwt *FileWatchThrottle) Info() *core.Info {
-	return core.NewInfo("File Watch Throttle", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureFileWatcherThrottle, "v0.0.1")
 }
 
 func (fwt *FileWatchThrottle) Process(msg *core.Message) {

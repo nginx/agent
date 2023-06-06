@@ -16,6 +16,8 @@ import (
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/sources"
 	log "github.com/sirupsen/logrus"
+
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 )
 
 type NginxCollector struct {
@@ -34,7 +36,7 @@ func NewNginxCollector(conf *config.Config, env core.Environment, collectorConf 
 	dimensions.NginxAccessLogPaths = collectorConf.AccessLogs
 
 	return &NginxCollector{
-		sources:       buildSources(dimensions, binary, collectorConf),
+		sources:       buildSources(dimensions, binary, collectorConf, conf),
 		buf:           make(chan *metrics.StatsEntityWrapper, 65535),
 		dimensions:    dimensions,
 		collectorConf: collectorConf,
@@ -43,24 +45,29 @@ func NewNginxCollector(conf *config.Config, env core.Environment, collectorConf 
 	}
 }
 
-func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collectorConf *metrics.NginxCollectorConfig) []metrics.NginxSource {
+func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collectorConf *metrics.NginxCollectorConfig, conf *config.Config) []metrics.NginxSource {
 	var nginxSources []metrics.NginxSource
 	// worker metrics
-	nginxSources = append(nginxSources, sources.NewNginxProcess(dimensions, sources.OSSNamespace, binary))
-	nginxSources = append(nginxSources, sources.NewNginxWorker(dimensions, sources.OSSNamespace, binary, sources.NewNginxWorkerClient()))
+	if len(conf.Nginx.NginxCountingSocket) > 0 && conf.IsFeatureEnabled(agent_config.FeatureNginxCounting) {
+		nginxSources = append(nginxSources, sources.NewNginxProcess(dimensions, sources.OSSNamespace, binary))
+	}
 
-	if collectorConf.StubStatus != "" {
-		nginxSources = append(nginxSources, sources.NewNginxOSS(dimensions, sources.OSSNamespace, collectorConf.StubStatus))
-		nginxSources = append(nginxSources, sources.NewNginxAccessLog(dimensions, sources.OSSNamespace, binary, sources.OSSNginxType, collectorConf.CollectionInterval))
-		nginxSources = append(nginxSources, sources.NewNginxErrorLog(dimensions, sources.OSSNamespace, binary, sources.OSSNginxType, collectorConf.CollectionInterval))
-	} else if collectorConf.PlusAPI != "" {
-		nginxSources = append(nginxSources, sources.NewNginxPlus(dimensions, sources.OSSNamespace, sources.PlusNamespace, collectorConf.PlusAPI, collectorConf.ClientVersion))
-		nginxSources = append(nginxSources, sources.NewNginxAccessLog(dimensions, sources.OSSNamespace, binary, sources.PlusNginxType, collectorConf.CollectionInterval))
-		nginxSources = append(nginxSources, sources.NewNginxErrorLog(dimensions, sources.OSSNamespace, binary, sources.PlusNginxType, collectorConf.CollectionInterval))
-	} else {
-		// if Plus API or stub_status are not setup, run the NGINX static collector and return nginx.status = 0
-		log.Warnf("The NGINX API is not configured. Please configure it to collect NGINX metrics.")
-		nginxSources = append(nginxSources, sources.NewNginxStatic(dimensions, sources.OSSNamespace))
+	if conf.IsFeatureEnabled(agent_config.FeatureMetrics) {
+		nginxSources = append(nginxSources, sources.NewNginxWorker(dimensions, sources.OSSNamespace, binary, sources.NewNginxWorkerClient()))
+
+		if collectorConf.StubStatus != "" {
+			nginxSources = append(nginxSources, sources.NewNginxOSS(dimensions, sources.OSSNamespace, collectorConf.StubStatus))
+			nginxSources = append(nginxSources, sources.NewNginxAccessLog(dimensions, sources.OSSNamespace, binary, sources.OSSNginxType, collectorConf.CollectionInterval))
+			nginxSources = append(nginxSources, sources.NewNginxErrorLog(dimensions, sources.OSSNamespace, binary, sources.OSSNginxType, collectorConf.CollectionInterval))
+		} else if collectorConf.PlusAPI != "" {
+			nginxSources = append(nginxSources, sources.NewNginxPlus(dimensions, sources.OSSNamespace, sources.PlusNamespace, collectorConf.PlusAPI, collectorConf.ClientVersion))
+			nginxSources = append(nginxSources, sources.NewNginxAccessLog(dimensions, sources.OSSNamespace, binary, sources.PlusNginxType, collectorConf.CollectionInterval))
+			nginxSources = append(nginxSources, sources.NewNginxErrorLog(dimensions, sources.OSSNamespace, binary, sources.PlusNginxType, collectorConf.CollectionInterval))
+		} else {
+			// if Plus API or stub_status are not setup, run the NGINX static collector and return nginx.status = 0
+			log.Warnf("The NGINX API is not configured. Please configure it to collect NGINX metrics.")
+			nginxSources = append(nginxSources, sources.NewNginxStatic(dimensions, sources.OSSNamespace))
+		}
 	}
 	return nginxSources
 }
@@ -106,11 +113,11 @@ func (c *NginxCollector) UpdateConfig(config *config.Config) {
 	}
 }
 
-func (c *NginxCollector) UpdateCollectorConfig(collectorConfig *metrics.NginxCollectorConfig) {
+func (c *NginxCollector) UpdateCollectorConfig(collectorConfig *metrics.NginxCollectorConfig, conf *config.Config) {
 	// If the metrics API has being enabled or disabled then we need to stop all nginx sources and rebuild them again
 	if c.collectorConf.StubStatus != collectorConfig.StubStatus || c.collectorConf.PlusAPI != collectorConfig.PlusAPI {
 		c.Stop()
-		c.sources = buildSources(c.dimensions, c.binary, collectorConfig)
+		c.sources = buildSources(c.dimensions, c.binary, collectorConfig, conf)
 	}
 
 	c.collectorConf = collectorConfig

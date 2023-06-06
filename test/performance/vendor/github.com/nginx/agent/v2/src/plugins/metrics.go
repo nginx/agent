@@ -20,12 +20,12 @@ import (
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/collectors"
+
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 )
 
 type Metrics struct {
 	pipeline                 core.MessagePipeInterface
-	registrationComplete     *atomic.Bool
-	collectorsReady          *atomic.Bool
 	collectorsUpdate         *atomic.Bool
 	ticker                   *time.Ticker
 	interval                 time.Duration
@@ -46,8 +46,6 @@ func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBi
 
 	collectorConfigsMap := createCollectorConfigsMap(config, env, binary)
 	return &Metrics{
-		registrationComplete:     atomic.NewBool(false),
-		collectorsReady:          atomic.NewBool(false),
 		collectorsUpdate:         atomic.NewBool(false),
 		ticker:                   time.NewTicker(config.AgentMetrics.CollectionInterval),
 		interval:                 config.AgentMetrics.CollectionInterval,
@@ -71,16 +69,13 @@ func (m *Metrics) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (m *Metrics) Close() {
+	m.collectors = nil
 	log.Info("Metrics is wrapping up")
 }
 
 func (m *Metrics) Process(msg *core.Message) {
 	log.Debugf("Process function in the metrics.go, %s %v", msg.Topic(), msg.Data())
 	switch {
-	case msg.Exact(core.RegistrationCompletedTopic):
-		m.registrationComplete.Store(true)
-		return
-
 	case msg.Exact(core.AgentConfigChanged), msg.Exact(core.NginxStatusAPIUpdate):
 		// If the agent config on disk changed or the NGINX statusAPI was updated
 		// Then update Metrics with relevant config info
@@ -97,10 +92,6 @@ func (m *Metrics) Process(msg *core.Message) {
 		// update collectors and collection time intervals after the report cycle triggered
 		m.collectorsUpdate.Store(true)
 		m.updateCollectorsConfig()
-		return
-
-	case msg.Exact(core.NginxPluginConfigured):
-		m.registerStatsSources()
 		return
 
 	case msg.Exact(core.NginxConfigApplySucceeded):
@@ -154,7 +145,7 @@ func (m *Metrics) Process(msg *core.Message) {
 }
 
 func (m *Metrics) Info() *core.Info {
-	return core.NewInfo("Metrics", "v0.0.2")
+	return core.NewInfo(agent_config.FeatureMetrics, "v0.0.2")
 }
 
 func (m *Metrics) Subscriptions() []string {
@@ -174,11 +165,8 @@ func (m *Metrics) metricsGoroutine() {
 	defer m.ticker.Stop()
 	defer m.wg.Done()
 	log.Info("Metrics waiting for handshake to be completed")
+	m.registerStatsSources()
 	for {
-		if !m.collectorsReady.Load() || !m.registrationComplete.Load() {
-			continue
-		}
-
 		select {
 		case <-m.ctx.Done():
 			err := m.ctx.Err()
@@ -239,20 +227,18 @@ func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
 }
 
 func (m *Metrics) registerStatsSources() {
-	log.Trace("Calling registerStatsSources")
-
-	defer m.collectorsReady.Store(true)
-
 	tempCollectors := make([]metrics.Collector, 0)
 
-	tempCollectors = append(tempCollectors,
-		collectors.NewSystemCollector(m.env, m.conf),
-	)
-
-	if m.env.IsContainer() {
+	if m.conf.IsFeatureEnabled(agent_config.FeatureMetrics) {
 		tempCollectors = append(tempCollectors,
-			collectors.NewContainerCollector(m.env, m.conf),
+			collectors.NewSystemCollector(m.env, m.conf),
 		)
+
+		if m.env.IsContainer() {
+			tempCollectors = append(tempCollectors,
+				collectors.NewContainerCollector(m.env, m.conf),
+			)
+		}
 	}
 
 	hasNginxCollector := false
@@ -341,7 +327,7 @@ func (m *Metrics) updateCollectorsConfig() {
 		if nginxCollector, ok := collector.(*collectors.NginxCollector); ok {
 			if collectorConfig, ok := m.collectorConfigsMap[nginxCollector.GetNginxId()]; ok {
 				log.Tracef("Updating nginx collector config for nginxId %s", collectorConfig.NginxId)
-				nginxCollector.UpdateCollectorConfig(collectorConfig)
+				nginxCollector.UpdateCollectorConfig(collectorConfig, m.conf)
 			}
 		}
 		collector.UpdateConfig(m.conf)

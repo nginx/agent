@@ -1,15 +1,22 @@
 package component
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"io/fs"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/nginx/agent/v2/src/core/metrics"
+
 	"github.com/nginx/agent/v2/src/plugins"
 
 	"encoding/json"
@@ -131,6 +138,7 @@ func TestMetrics(t *testing.T) {
 		AgentAPI: config.AgentAPI{
 			Port: port,
 		},
+		Features: config.Defaults.Features,
 	}
 
 	mockEnvironment := tutils.NewMockEnvironment()
@@ -220,4 +228,187 @@ func TestMetrics(t *testing.T) {
 
 	}
 
+}
+
+func TestMetricsDisabled(t *testing.T) {
+	port := 9090
+
+	conf := &config.Config{
+		AgentAPI: config.AgentAPI{
+			Port: port,
+		},
+		Features: []string{
+			"agent-api",
+			"nginx-config-async",
+		},
+	}
+
+	mockEnvironment := tutils.NewMockEnvironment()
+	mockNginxBinary := tutils.NewMockNginxBinary()
+
+	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
+	agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
+
+	client := resty.New()
+
+	url := fmt.Sprintf("http://localhost:%d/metrics", port)
+	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+
+	response, err := client.R().EnableTrace().Get(url)
+
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, response.StatusCode())
+	agentAPI.Close()
+}
+
+func TestConfigApply(t *testing.T) {
+	port := 9090
+
+	conf := &proto.NginxConfig{}
+
+	tests := []struct {
+		name           string
+		configUpdate   string
+		expectedStatus int
+		agentConf      *config.Config
+		agentStatus    *proto.Command_NginxConfigResponse
+	}{
+		{
+			name:           "successful config apply response",
+			configUpdate:   tutils.GetDetailsNginxOssConfig(),
+			expectedStatus: http.StatusOK,
+			agentConf: &config.Config{
+				AgentAPI: config.AgentAPI{
+					Port: port,
+				},
+				Features: []string{
+					"agent-api",
+					"nginx-config-async",
+				},
+			},
+			agentStatus: &proto.Command_NginxConfigResponse{
+				NginxConfigResponse: &proto.NginxConfigResponse{
+					Status: &proto.CommandStatusResponse{
+						Status:  proto.CommandStatusResponse_CMD_OK,
+						Message: "config applied successfully",
+					},
+					Action:     proto.NginxConfigAction_APPLY,
+					ConfigData: conf.ConfigData,
+				},
+			},
+		},
+		{
+			name:           "failed config apply disabled",
+			configUpdate:   tutils.GetDetailsNginxOssConfig(),
+			expectedStatus: http.StatusNotFound,
+			agentConf: &config.Config{
+				AgentAPI: config.AgentAPI{
+					Port: port,
+				},
+				Features: []string{
+					"agent-api",
+				},
+			},
+			agentStatus: &proto.Command_NginxConfigResponse{
+				NginxConfigResponse: &proto.NginxConfigResponse{
+					Status: &proto.CommandStatusResponse{
+						Status:  proto.CommandStatusResponse_CMD_ERROR,
+						Message: "nginx-config-async feature is disabled",
+					},
+					Action:     proto.NginxConfigAction_APPLY,
+					ConfigData: conf.ConfigData,
+				},
+			},
+		},
+		{
+			name:           "failed config apply",
+			configUpdate:   tutils.GetDetailsNginxOssConfig(),
+			expectedStatus: http.StatusBadRequest,
+			agentConf: &config.Config{
+				AgentAPI: config.AgentAPI{
+					Port: port,
+				},
+				Features: []string{
+					"agent-api",
+					"nginx-config-async",
+				},
+			},
+			agentStatus: &proto.Command_NginxConfigResponse{
+				NginxConfigResponse: &proto.NginxConfigResponse{
+					Status: &proto.CommandStatusResponse{
+						Status:  proto.CommandStatusResponse_CMD_ERROR,
+						Message: "failed config apply",
+					},
+					Action:     proto.NginxConfigAction_APPLY,
+					ConfigData: conf.ConfigData,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			confFile := createTempFile(t, tt.configUpdate, "nginx.conf")
+
+			nginxDetails := &proto.NginxDetails{
+				NginxId: "45d4sf5d4sf4e8s4f8es4564", Version: "21", ProcessId: "12345", ConfPath: confFile, StartTime: 1238043824,
+				BuiltFromSource: false,
+				Plus:            &proto.NginxPlusMetaData{Enabled: true},
+			}
+
+			mockEnvironment := tutils.NewMockEnvironment()
+			mockEnvironment.On("Processes").Return([]core.Process{{Pid: 12345, IsMaster: true}})
+			mockEnvironment.On("WriteFiles", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+			mockNginxBinary := tutils.NewMockNginxBinary()
+			mockNginxBinary.On("GetNginxDetailsFromProcess", mock.Anything).Return(nginxDetails)
+			mockNginxBinary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(conf, nil)
+
+			agentAPI := plugins.NewAgentAPI(tt.agentConf, mockEnvironment, mockNginxBinary)
+			pipeline := core.NewMockMessagePipe(context.TODO())
+			agentAPI.Init(pipeline)
+
+			fileName := createTempFile(t, tt.configUpdate, "temp.conf")
+
+			url := fmt.Sprintf("http://localhost:%d/nginx/config/", port)
+
+			client := resty.New()
+			client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+
+			go func() {
+				time.Sleep(1 * time.Millisecond)
+				message := core.NewMessage(core.AgentAPIConfigApplyResponse, tt.agentStatus)
+				agentAPI.Process(message)
+			}()
+
+			resp, err := client.R().SetFile("file", fileName).EnableTrace().Put(url)
+
+			assert.NoError(t, err)
+			fmt.Println(resp)
+			assert.Equal(t, tt.expectedStatus, resp.StatusCode())
+			agentAPI.Close()
+
+		})
+	}
+}
+
+func createTempFile(t *testing.T, configUpdate string, fileName string) string {
+	confPath := t.TempDir()
+	file, err := os.CreateTemp(confPath, fileName)
+	assert.NoError(t, err)
+	defer file.Close()
+
+	err = os.WriteFile(file.Name(), []byte(configUpdate), fs.FileMode(os.O_RDWR))
+	assert.NoError(t, err)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
+	assert.NoError(t, err)
+	_, err = io.Copy(part, file)
+	assert.NoError(t, err)
+	writer.Close()
+
+	return file.Name()
 }

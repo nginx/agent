@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
 	commonProto "github.com/nginx/agent/sdk/v2/proto/common"
@@ -111,7 +112,7 @@ func (a *Events) Process(msg *core.Message) {
 }
 
 func (a *Events) Info() *core.Info {
-	return core.NewInfo("Events", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureActivityEvents, "v0.0.1")
 }
 
 func (a *Events) Subscriptions() []string {

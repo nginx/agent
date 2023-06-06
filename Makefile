@@ -105,7 +105,7 @@ deps: ## Update dependencies in vendor folders
 	go work sync
 
 no-local-changes:
-	git diff --quiet || { echo "Depenency changes detected. Please commit these before pushing." >&2; exit 1; }
+	git diff --quiet || { echo "Dependency changes detected. Please commit these before pushing." >&2; exit 1; }
 
 lint: ## Run linter
 	GOWORK=off go vet ./...

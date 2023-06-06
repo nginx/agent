@@ -23,11 +23,13 @@ const (
 
 type MessagePipeInterface interface {
 	Register(int, []Plugin, []ExtensionPlugin) error
+	DeRegister(plugins []string) error
 	Process(...*Message)
 	Run()
 	Context() context.Context
 	GetPlugins() []Plugin
 	GetExtensionPlugins() []ExtensionPlugin
+	IsPluginAlreadyRegistered(string) bool
 }
 
 type MessagePipe struct {
@@ -36,7 +38,7 @@ type MessagePipe struct {
 	extensionPlugins []ExtensionPlugin
 	ctx              context.Context
 	cancel           context.CancelFunc
-	mu               sync.Mutex
+	mu               sync.RWMutex
 	bus              messagebus.MessageBus
 }
 
@@ -48,7 +50,7 @@ func NewMessagePipe(ctx context.Context) *MessagePipe {
 		extensionPlugins: make([]ExtensionPlugin, 0, MaxExtensionPlugins),
 		ctx:              pipeContext,
 		cancel:           pipeCancel,
-		mu:               sync.Mutex{},
+		mu:               sync.RWMutex{},
 	}
 }
 
@@ -81,12 +83,53 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 		}
 		extensionPluginsRegistered = append(extensionPluginsRegistered, *plugin.Info().name)
 	}
+	log.Debugf("The following core plugins have being registered: %q", pluginsRegistered)
+	log.Debugf("The following extension plugins have being registered: %q", extensionPluginsRegistered)
+	p.mu.Unlock()
+	return nil
+}
 
-	log.Infof("The following core plugins have being registered: %q", pluginsRegistered)
-	log.Infof("The following extension plugins have being registered: %q", extensionPluginsRegistered)
+func (p *MessagePipe) DeRegister(pluginNames []string) error {
+	p.mu.Lock()
+
+	var plugins []Plugin
+	for _, name := range pluginNames {
+		for _, plugin := range p.plugins {
+			if plugin.Info().Name() == name {
+				plugins = append(plugins, plugin)
+			}
+		}
+	}
+
+	for _, plugin := range plugins {
+		index := getIndex(plugin.Info().Name(), p.plugins)
+
+		if index != -1 {
+			p.plugins = append(p.plugins[:index], p.plugins[index+1:]...)
+
+			plugin.Close()
+
+			for _, subscription := range plugin.Subscriptions() {
+				err := p.bus.Unsubscribe(subscription, plugin.Process)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+	}
 
 	p.mu.Unlock()
 	return nil
+}
+
+func getIndex(pluginName string, plugins []Plugin) int {
+	for index, plugin := range plugins {
+		if pluginName == plugin.Info().Name() {
+			return index
+		}
+	}
+	return -1
 }
 
 func (p *MessagePipe) Process(messages ...*Message) {
@@ -148,4 +191,16 @@ func (p *MessagePipe) initPlugins() {
 	for _, r := range p.extensionPlugins {
 		r.Init(p)
 	}
+}
+
+func (p *MessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
+	pluginAlreadyRegistered := false
+	for _, plugin := range p.GetPlugins() {
+		if plugin.Info().Name() == pluginName {
+			pluginAlreadyRegistered = true
+		}
+	}
+	log.Infof("pluginName: %v", pluginName)
+	log.Infof("pluginAlreadyRegistred: %v", pluginAlreadyRegistered)
+	return pluginAlreadyRegistered
 }
