@@ -812,7 +812,7 @@ func AccessLogs(p *proto.NginxConfig) map[string]string {
 	var found = make(map[string]string)
 
 	for _, accessLog := range p.GetAccessLogs().GetAccessLog() {
-		if accessLog.GetName() == "off" {
+		if isIgnorableLogType(accessLog.GetName()) {
 			continue
 		}
 
@@ -821,7 +821,7 @@ func AccessLogs(p *proto.NginxConfig) map[string]string {
 			format := accessLog.GetFormat()
 			found[name] = format
 		} else {
-			log.Warnf("NGINX Access log %s is not readable. Please make it readable in order for NGINX metrics to be collected.", accessLog.GetName())
+			log.Warnf("NGINX Access log file %s is not readable. Please make it readable in order for NGINX metrics to be collected.", accessLog.GetName())
 		}
 	}
 
@@ -833,12 +833,16 @@ func ErrorLogs(p *proto.NginxConfig) map[string]string {
 	var found = make(map[string]string)
 
 	for _, errorLog := range p.GetErrorLogs().GetErrorLog() {
+		if isIgnorableLogType(errorLog.GetName()) {
+			continue
+		}
+
 		if errorLog.GetReadable() {
 			name := strings.Split(errorLog.GetName(), " ")[0]
 			// In the future, different error log formats will be supported
 			found[name] = ""
 		} else {
-			log.Warnf("NGINX Error log %s is not readable. Please make it readable in order for NGINX metrics to be collected.", errorLog.GetName())
+			log.Warnf("NGINX Error log file %s is not readable. Please make it readable in order for NGINX metrics to be collected.", errorLog.GetName())
 		}
 	}
 
@@ -873,4 +877,13 @@ func getDirectoryMapDiff(currentDirectoryMap []*proto.Directory, incomingDirecto
 	}
 
 	return diff
+}
+
+// Parses the specified log name and returns true if the log name cannot
+// be used for metrics collection
+func isIgnorableLogType(logName string) bool {
+	var name = strings.ToLower(logName)
+	var isIgnorableName = name == "off" || name == "stderr" || name == "stdout"
+	var isSyslog = strings.HasPrefix(name, "syslog:")
+	return isIgnorableName || isSyslog
 }
