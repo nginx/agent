@@ -163,11 +163,14 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 				}
 			}
 
-			for index, feature := range agtCfg.Details.Features {
-				agtCfg.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
+			if agtCfg.Details != nil && agtCfg.Details.Features != nil {
+				for index, feature := range agtCfg.Details.Features {
+					agtCfg.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
+				}
+
+				sort.Strings(agtCfg.Details.Features)
 			}
 
-			sort.Strings(agtCfg.Details.Features)
 			sort.Strings(c.config.Features)
 
 			synchronizedFeatures := reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
