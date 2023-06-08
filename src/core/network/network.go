@@ -12,7 +12,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"os/exec"
@@ -191,7 +191,7 @@ func getDefaultNetworkInterfaceCrossPlatform() (string, error) {
 		}
 		defer f.Close()
 
-		output, err := ioutil.ReadAll(f)
+		output, err := io.ReadAll(f)
 		if err != nil {
 			return "", fmt.Errorf("Can't read contents of %s", linuxFile)
 		}
