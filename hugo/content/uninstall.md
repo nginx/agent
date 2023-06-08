@@ -19,7 +19,6 @@ doctypes: ["task"]
 ## Uninstalling NGINX Agent
 Complete the following steps on each host where you’ve installed the NGINX Agent
 
-Before you install NGINX Agent for the first time on your system, you need to set up the `nginx-agent` packages repository. Afterward, you can install and update NGINX Agent from the repository.
 
 - [Uninstalling NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux, and Oracle Linux](#uninstalling-nginx-agent-on-rhel-centos-rocky-linux-almalinux-and-oracle-linux)
 - [Uninstalling NGINX Agent on Ubuntu](#uninstalling-nginx-agent-on-ubuntu)
