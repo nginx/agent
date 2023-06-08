@@ -170,7 +170,7 @@ jobs:
         run: |
           echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
           make clean package local-deb-package local-rpm-package local-apk-package
-          tar -cf ./build/nginx-agent-snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.pkg ./build/*.apk
+          tar -cf ./build/nginx-agent-snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.apk
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
