@@ -82,6 +82,9 @@ var (
 			CollectionInterval: 15 * time.Second,
 			Mode:               "aggregated",
 		},
+		AgentAPI: AgentAPI{
+			Host: "127.0.0.1",
+		},
 		Features: agent_config.GetDefaultFeatures(),
 	}
 	AllowedDirectoriesMap map[string]struct{}
@@ -131,6 +134,7 @@ const (
 	// viper keys used in config
 	APIKey = "api"
 
+	AgentAPIHost = APIKey + agent_config.KeyDelimiter + "host"
 	AgentAPIPort = APIKey + agent_config.KeyDelimiter + "port"
 	AgentAPICert = APIKey + agent_config.KeyDelimiter + "cert"
 	AgentAPIKey  = APIKey + agent_config.KeyDelimiter + "key"
@@ -230,6 +234,11 @@ var (
 			DefaultValue: Defaults.Server.Command,
 		},
 		// API Config
+		&StringFlag{
+			Name:         AgentAPIHost,
+			Usage:        "The host used by the Agent API.",
+			DefaultValue: Defaults.AgentAPI.Host,
+		},
 		&IntFlag{
 			Name:  AgentAPIPort,
 			Usage: "The desired port to use for nginx-agent to expose for HTTP traffic.",

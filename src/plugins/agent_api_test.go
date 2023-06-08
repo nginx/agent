@@ -47,7 +47,7 @@ func TestAgentAPI_Info(t *testing.T) {
 	agentAPI := AgentAPI{}
 	info := agentAPI.Info()
 
-	assert.Equal(t, "Agent API Plugin", info.Name())
+	assert.Equal(t, "agent-api", info.Name())
 	assert.Equal(t, "v0.0.1", info.Version())
 }
 

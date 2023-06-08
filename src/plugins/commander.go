@@ -9,6 +9,9 @@ package plugins
 
 import (
 	"context"
+	"reflect"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -98,6 +101,7 @@ func (c *Commander) agentBackoff(cmd *proto.Command) {
 		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
+
 	backoffSetting := cmd.GetAgentConfig().GetDetails().GetServer().Backoff
 	if backoffSetting == nil {
 		log.Warnf("update commander client with default backoff settings as backoff settings nil, for a pause command %+v", cmd)
@@ -132,7 +136,6 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 		log.Infof("config command %v", commandData)
 		if agtCfg := commandData.AgentConnectResponse.AgentConfig; agtCfg != nil &&
 			agtCfg.Configs != nil && len(agtCfg.Configs.Configs) > 0 {
-
 			// Update config tags and features if they were out of sync between Manager and Agent
 			if agtCfg.Details != nil && (len(agtCfg.Details.Tags) > 0 || len(agtCfg.Details.Features) > 0) {
 				configUpdated, err := config.UpdateAgentConfig(c.config.ClientID, agtCfg.Details.Tags, agtCfg.Details.Features)
@@ -159,9 +162,57 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 					}
 				}
 			}
+
+			for index, feature := range agtCfg.Details.Features {
+				agtCfg.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
+			}
+
+			sort.Strings(agtCfg.Details.Features)
+			sort.Strings(c.config.Features)
+
+			synchronizedFeatures := reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
+
+			if !synchronizedFeatures {
+				for _, feature := range c.config.Features {
+					if feature != agent_config.FeatureRegistration {
+						c.deRegisterPlugin(feature)
+					}
+
+				}
+			}
+
+			if agtCfg.Details != nil && agtCfg.Details.Features != nil && !synchronizedFeatures {
+				for _, feature := range agtCfg.Details.Features {
+					c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
+				}
+			}
 		}
+
 	default:
 		log.Debugf("unhandled command: %T", cmd.Data)
+	}
+}
+
+func (c *Commander) deRegisterPlugin(data string) {
+	if data == agent_config.FeatureFileWatcher {
+
+		err := c.pipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
+		if err != nil {
+			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+		}
+
+	} else if data == agent_config.FeatureNginxConfigAsync {
+
+		err := c.pipeline.DeRegister([]string{"NginxBinary"})
+		if err != nil {
+			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+		}
+
+	} else {
+		err := c.pipeline.DeRegister([]string{data})
+		if err != nil {
+			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+		}
 	}
 }
 

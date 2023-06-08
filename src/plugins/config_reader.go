@@ -10,6 +10,10 @@ package plugins
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"reflect"
+	"sort"
+	"strings"
+	"sync"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -21,6 +25,7 @@ import (
 type ConfigReader struct {
 	messagePipeline core.MessagePipeInterface
 	config          *config.Config
+	mu              sync.RWMutex
 }
 
 func NewConfigReader(config *config.Config) *ConfigReader {
@@ -95,6 +100,58 @@ func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
 					r.messagePipeline.Process(core.NewMessage(core.EnableExtension, extension))
 				}
 			}
+		}
+
+		for index, feature := range commandData.AgentConfig.Details.Features {
+			commandData.AgentConfig.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
+		}
+
+		sort.Strings(commandData.AgentConfig.Details.Features)
+		sort.Strings(r.config.Features)
+
+		synchronizedFeatures := reflect.DeepEqual(commandData.AgentConfig.Details.Features, r.config.Features)
+
+		if !synchronizedFeatures {
+			for _, feature := range r.config.Features {
+				if feature != agent_config.FeatureRegistration {
+					r.mu.Lock()
+					r.deregisterPlugin(feature)
+					r.mu.Unlock()
+				}
+
+			}
+		}
+
+		if commandData.AgentConfig.Details != nil && commandData.AgentConfig.Details.Features != nil && !synchronizedFeatures {
+			for _, feature := range commandData.AgentConfig.Details.Features {
+				r.mu.Lock()
+				r.messagePipeline.Process(core.NewMessage(core.EnableFeature, feature))
+				r.mu.Unlock()
+
+			}
+		}
+	}
+}
+
+func (r *ConfigReader) deregisterPlugin(data string) {
+	if data == agent_config.FeatureFileWatcher {
+
+		err := r.messagePipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
+		if err != nil {
+			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+		}
+
+	} else if data == agent_config.FeatureNginxConfigAsync {
+
+		err := r.messagePipeline.DeRegister([]string{"NginxBinary"})
+		if err != nil {
+			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+		}
+
+	} else {
+		err := r.messagePipeline.DeRegister([]string{data})
+		if err != nil {
+			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
 		}
 	}
 }

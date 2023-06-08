@@ -75,6 +75,7 @@ type Backoff struct {
 }
 
 type AgentAPI struct {
+	Host string `mapstructure:"host" yaml:"-"`
 	Port int    `mapstructure:"port" yaml:"-"`
 	Cert string `mapstructure:"cert" yaml:"-"`
 	Key  string `mapstructure:"key" yaml:"-"`

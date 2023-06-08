@@ -19,6 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/fsnotify/fsnotify"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 )
@@ -33,6 +34,7 @@ type FileWatcher struct {
 	ctx             context.Context
 	env             core.Environment
 	enabled         bool
+	cancelFunction  context.CancelFunc
 }
 
 var (
@@ -72,8 +74,7 @@ func (fw *FileWatcher) Init(pipeline core.MessagePipeInterface) {
 	log.Info("FileWatcher initializing")
 
 	fw.messagePipeline = pipeline
-	fw.ctx = fw.messagePipeline.Context()
-
+	fw.ctx, fw.cancelFunction = context.WithCancel(fw.messagePipeline.Context())
 	for dir := range fw.config.AllowedDirectoriesMap {
 		if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
 			log.Debugf("Skipping watching %s: %v", dir, err)
@@ -95,11 +96,13 @@ func (fw *FileWatcher) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (fw *FileWatcher) Info() *core.Info {
-	return core.NewInfo("File Watcher", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureFileWatcher, "v0.0.1")
 }
 
 func (fw *FileWatcher) Close() {
 	log.Info("File Watcher is wrapping up")
+	fw.enabled = false
+	fw.cancelFunction()
 	fw.watcher.Close()
 }
 

@@ -17,11 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/v2/src/core"
@@ -30,7 +26,10 @@ import (
 	"github.com/nginx/agent/v2/src/extensions"
 	"github.com/nginx/agent/v2/src/plugins"
 
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -148,7 +147,7 @@ func handleSignals(
 
 func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client.Controller, client.Commander, client.MetricReporter) {
 	if !loadedConfig.IsGrpcServerConfigured() {
-		log.Infof("GRPC clients not created")
+		log.Info("GRPC clients not created due to missing server config")
 		return nil, nil, nil
 	}
 
@@ -199,9 +198,14 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 	if commander != nil {
 		corePlugins = append(corePlugins,
 			plugins.NewCommander(commander, loadedConfig),
-			plugins.NewFileWatcher(loadedConfig, env),
-			plugins.NewFileWatchThrottle(),
 		)
+
+		if loadedConfig.IsFeatureEnabled(agent_config.FeatureFileWatcher) {
+			corePlugins = append(corePlugins,
+				plugins.NewFileWatcher(loadedConfig, env),
+				plugins.NewFileWatchThrottle(),
+			)
+		}
 	}
 
 	if reporter != nil {
@@ -213,22 +217,41 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 	corePlugins = append(corePlugins,
 		plugins.NewConfigReader(loadedConfig),
 		plugins.NewNginx(commander, binary, env, loadedConfig),
-		plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString()), version),
-		plugins.NewMetrics(loadedConfig, env, binary),
-		plugins.NewMetricsThrottle(loadedConfig, env),
-		plugins.NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, env, version),
-		plugins.NewProcessWatcher(env, binary),
 		plugins.NewExtensions(loadedConfig, env),
-		plugins.NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary),
+		plugins.NewFeatures(commander, loadedConfig, env, binary, version),
 	)
 
-	if loadedConfig.AgentAPI.Port != 0 {
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureRegistration) {
+		corePlugins = append(corePlugins, plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString()), version))
+	}
+
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || (len(loadedConfig.Nginx.NginxCountingSocket) > 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxCounting)) {
+		corePlugins = append(corePlugins, plugins.NewMetrics(loadedConfig, env, binary))
+	}
+
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
+		corePlugins = append(corePlugins, plugins.NewMetricsThrottle(loadedConfig, env))
+	}
+
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureDataPlaneStatus) {
+		corePlugins = append(corePlugins, plugins.NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, env, version))
+	}
+
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureProcessWatcher) {
+		corePlugins = append(corePlugins, plugins.NewProcessWatcher(env, binary))
+	}
+
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureActivityEvents) {
+		corePlugins = append(corePlugins, plugins.NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary))
+	}
+
+	if loadedConfig.AgentAPI.Port != 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureAgentAPI) {
 		corePlugins = append(corePlugins, plugins.NewAgentAPI(loadedConfig, env, binary))
 	} else {
 		log.Info("Agent API not configured")
 	}
 
-	if len(loadedConfig.Nginx.NginxCountingSocket) > 0 {
+	if len(loadedConfig.Nginx.NginxCountingSocket) > 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxCounting) {
 		corePlugins = append(corePlugins, plugins.NewNginxCounter(loadedConfig, binary, env))
 	}
 

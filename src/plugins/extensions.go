@@ -46,7 +46,7 @@ func (e *Extensions) Process(msg *core.Message) {
 		switch msg.Topic() {
 		case core.EnableExtension:
 			if data == agent_config.AdvancedMetricsExtensionPlugin {
-				if !e.isPluginAlreadyRegistered(agent_config.AdvancedMetricsExtensionPlugin) {
+				if !e.pipeline.IsPluginAlreadyRegistered(agent_config.AdvancedMetricsExtensionPlugin) {
 					conf, err := config.GetConfig(e.conf.ClientID)
 					if err != nil {
 						log.Warnf("Unable to get agent config, %v", err)
@@ -65,7 +65,7 @@ func (e *Extensions) Process(msg *core.Message) {
 					advancedMetrics.Init(e.pipeline)
 				}
 			} else if data == agent_config.NginxAppProtectExtensionPlugin {
-				if !e.isPluginAlreadyRegistered(agent_config.NginxAppProtectExtensionPlugin) {
+				if !e.pipeline.IsPluginAlreadyRegistered(agent_config.NginxAppProtectExtensionPlugin) {
 					conf, err := config.GetConfig(e.conf.ClientID)
 					if err != nil {
 						log.Warnf("Unable to get agent config, %v", err)
@@ -83,7 +83,7 @@ func (e *Extensions) Process(msg *core.Message) {
 					nap.Init(e.pipeline)
 				}
 			} else if data == agent_config.NginxAppProtectMonitoringExtensionPlugin {
-				if !e.isPluginAlreadyRegistered(agent_config.NginxAppProtectMonitoringExtensionPlugin) {
+				if !e.pipeline.IsPluginAlreadyRegistered(agent_config.NginxAppProtectMonitoringExtensionPlugin) {
 					conf, err := config.GetConfig(e.conf.ClientID)
 					if err != nil {
 						log.Warnf("Unable to get agent config, %v", err)
@@ -104,16 +104,6 @@ func (e *Extensions) Process(msg *core.Message) {
 			}
 		}
 	}
-}
-
-func (e *Extensions) isPluginAlreadyRegistered(pluginName string) bool {
-	pluginAlreadyRegistered := false
-	for _, plugin := range e.pipeline.GetExtensionPlugins() {
-		if plugin.Info().Name() == pluginName {
-			pluginAlreadyRegistered = true
-		}
-	}
-	return pluginAlreadyRegistered
 }
 
 func (e *Extensions) Info() *core.Info {

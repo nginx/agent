@@ -195,5 +195,5 @@ func TestProcessWatcher_Subscription(t *testing.T) {
 func TestProcessWatcher_Info(t *testing.T) {
 	pluginUnderTest := NewProcessWatcher(nil, nil)
 
-	assert.Equal(t, "ProcessWatcher", pluginUnderTest.Info().Name())
+	assert.Equal(t, "process-watcher", pluginUnderTest.Info().Name())
 }
