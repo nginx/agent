@@ -163,7 +163,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 				}
 			}
 
-			if agtCfg.Details != nil && agtCfg.Details.Features != nil {
+			if agtCfg.Details != nil {
 				for index, feature := range agtCfg.Details.Features {
 					agtCfg.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
 				}
@@ -176,23 +176,25 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 			synchronizedFeatures := reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
 
 			if !synchronizedFeatures {
-				for _, feature := range c.config.Features {
-					if feature != agent_config.FeatureRegistration {
-						c.deRegisterPlugin(feature)
-					}
-
-				}
-			}
-
-			if agtCfg.Details != nil && agtCfg.Details.Features != nil && !synchronizedFeatures {
-				for _, feature := range agtCfg.Details.Features {
-					c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
-				}
+				c.synchronizeFeatures(agtCfg)
 			}
 		}
 
 	default:
 		log.Debugf("unhandled command: %T", cmd.Data)
+	}
+}
+
+func (c *Commander) synchronizeFeatures(agtCfg *proto.AgentConfig) {
+	for _, feature := range c.config.Features {
+		if feature != agent_config.FeatureRegistration {
+			c.deRegisterPlugin(feature)
+		}
+	}
+	if agtCfg.Details != nil {
+		for _, feature := range agtCfg.Details.Features {
+			c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
+		}
 	}
 }
 
