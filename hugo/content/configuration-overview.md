@@ -2,7 +2,7 @@
 title: "Configuration Overview"
 draft: false
 description: "Learn the overview of configuration"
-weight: 950
+weight: 500
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1216"
