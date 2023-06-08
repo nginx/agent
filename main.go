@@ -130,7 +130,9 @@ func handleSignals(
 			)
 			log.Debugf("Sending agent stopped event: %v", stopCmd)
 
-			if err := cmder.Send(ctx, client.MessageFromCommand(stopCmd)); err != nil {
+			if cmder == nil {
+				log.Warn("Command channel not configured. Skipping sending AgentStopped event")
+			} else if err := cmder.Send(ctx, client.MessageFromCommand(stopCmd)); err != nil {
 				log.Errorf("Error sending AgentStopped event to command channel: %v", err)
 			}
 
