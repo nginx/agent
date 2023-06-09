@@ -5,7 +5,7 @@ description: "Learn the overview of configuration"
 weight: 500
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-1216"
+docs: "DOCS-1229"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
