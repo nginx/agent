@@ -1290,7 +1290,7 @@ func TestAccessLogStats(t *testing.T) {
 		},
 		{
 			"full_access_log_test",
-			`$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time" "$gzip_ratio" "$server_protocol" "$upstream_connect_time" "$upstream_header_time" "$upstream_response_length" "$upstream_response_time" "$upstream_status" "$upstream_cache_status"`,
+			`$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time" "$gzip_ratio" "$server_protocol" "$upstream_connect_time" "$upstream_header_time" "$upstream_response_length" "$upstream_response_time" "$upstream_status" "$upstream_cache_status" "$upstream_addr"`,
 			[]string{
 				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 200 98 \"-\" \"Go-http-client/1.1\" \"-\" \"150\" \"105\" \"0.100\" \"10\" \"HTTP/1.1\" \"350, 0.001, 0.02, -\" \"500, 0.02, -, 20\" \"28, 0, 0, 2\" \"0.00, 0.03, 0.04, -\" \"200\" \"HIT\"\n",
 				"127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"POST /nginx_status HTTP/1.1\" 201 98 \"-\" \"Go-http-client/1.1\" \"-\" \"250\" \"110\" \"0.300\" \"20\" \"HTTP/1.1\" \"350, 0.01\" \"730, 80\" \"28, 28\" \"0.01, 0.02\" \"201\" \"HIT\"\n",
