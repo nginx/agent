@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 )
 
@@ -27,7 +26,7 @@ func LoadSymbolsFile() (*Symbols, error) {
 		symFile = symbolsFileLocal
 	}
 
-	content, err := ioutil.ReadFile(symFile)
+	content, err := os.ReadFile(symFile)
 	if err != nil {
 		return nil, err
 	}

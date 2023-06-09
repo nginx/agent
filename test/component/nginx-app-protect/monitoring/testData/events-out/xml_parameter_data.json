@@ -23,6 +23,7 @@
                 "Name": "VIOL_ATTACK_SIGNATURE",
                 "Context": "parameter",
                 "ContextData": {
+                    "Name": "Attack Signature",
                     "Value": "f5paramautotest\u003e"
                 },
                 "Signatures": [
@@ -34,6 +35,94 @@
                         "Length": "15"
                     }
                 ]
+            },
+            {
+                "Name": "VIOL_PARAMETER_REPEATED",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "a",
+                    "Value": "2"
+                }
+            },
+            {
+                "Name": "VIOL_PARAMETER_MULTIPART_NULL_VALUE",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "parameter",
+                    "Value": "<?>"
+                }
+            },
+            {
+                "Name": "VIOL_PARAMETER_EMPTY_VALUE",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "Parameter Empty Value",
+                    "Value": "a"
+                }
+            },
+            {
+                "Name": "VIOL_PARAMETER_VALUE_REGEXP",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "r",
+                    "Value": "2"
+                }
+            },
+            {
+                "Name": "VIOL_PARAMETER_NUMERIC_VALUE",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "a",
+                    "Value": "2"
+                }
+            },
+            {
+                "Name": "VIOL_PARAMETER_DATA_TYPE",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "a",
+                    "Value": "f"
+                }
+            },
+            {
+                "Name": "VIOL_PARAMETER_VALUE_LENGTH",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "r",
+                    "Value": "3948394839489898"
+                }
+            },
+            {
+                "Name": "VIOL_PARAMETER_DYNAMIC_VALUE",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "r",
+                    "Value": "2"
+                }
+            },
+            {
+                "Name": "VIOL_PARAMETER_STATIC_VALUE",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "a",
+                    "Value": "f"
+                }
+            },
+            {
+                "Name": "VIOL_PARAMETER_ARRAY_VALUE",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "r",
+                    "Value": "1m\b"
+                }
+            },
+            {
+                "Name": "VIOL_PARAMETER_LOCATION",
+                "Context": "parameter",
+                "ContextData": {
+                    "Name": "a",
+                    "Value": "12"
+                }
             }
         ]
     }

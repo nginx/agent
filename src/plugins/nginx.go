@@ -36,8 +36,9 @@ import (
 )
 
 const (
-	configAppliedProcessedResponse = "config apply request successfully processed"
-	configAppliedResponse          = "config applied successfully"
+	configAppliedProcessedResponse  = "config apply request successfully processed"
+	configAppliedResponse           = "config applied successfully"
+	nginxConfigAsyncFeatureDisabled = "nginx-config-async feature is disabled"
 )
 
 var (
@@ -88,7 +89,7 @@ type NginxConfigValidationResponse struct {
 }
 
 func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config) *Nginx {
-	isFeatureNginxConfigEnabled := loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfig)
+	isFeatureNginxConfigEnabled := loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfig) || loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
 
 	isNginxAppProtectEnabled := loadedConfig.IsExtensionEnabled(agent_config.NginxAppProtectExtensionPlugin)
 
@@ -126,8 +127,20 @@ func (n *Nginx) Process(message *core.Message) {
 		case *proto.Command:
 			n.processCmd(cmd)
 		case *AgentAPIConfigApplyRequest:
-			status := n.writeConfigAndReloadNginx(cmd.correlationId, cmd.config, proto.NginxConfigAction_APPLY)
-			if status.NginxConfigResponse.GetStatus().GetMessage() != configAppliedProcessedResponse {
+			if n.isFeatureNginxConfigEnabled {
+				status := n.writeConfigAndReloadNginx(cmd.correlationId, cmd.config, proto.NginxConfigAction_APPLY)
+				if status.NginxConfigResponse.GetStatus().GetMessage() != configAppliedProcessedResponse {
+					n.messagePipeline.Process(core.NewMessage(core.AgentAPIConfigApplyResponse, status))
+				}
+			} else {
+				log.Warnf("unable to process NGINX config apply request as the nginx-config-async feature is disabled")
+				status := &proto.Command_NginxConfigResponse{
+					NginxConfigResponse: &proto.NginxConfigResponse{
+						Status:     newErrStatus(nginxConfigAsyncFeatureDisabled).CmdStatus,
+						Action:     proto.NginxConfigAction_APPLY,
+						ConfigData: cmd.config.ConfigData,
+					},
+				}
 				n.messagePipeline.Process(core.NewMessage(core.AgentAPIConfigApplyResponse, status))
 			}
 		}
@@ -189,6 +202,7 @@ func (n *Nginx) Subscriptions() []string {
 		core.DataplaneSoftwareDetailsUpdated,
 		core.AgentConfigChanged,
 		core.EnableExtension,
+		core.EnableFeature,
 		core.NginxConfigValidationPending,
 		core.NginxConfigValidationSucceeded,
 		core.NginxConfigValidationFailed,
@@ -209,9 +223,8 @@ func (n *Nginx) syncProcessInfo(processInfo []core.Process) {
 
 func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) error {
 	log.Debugf("Uploading config for %v", config)
-
 	if !n.isFeatureNginxConfigEnabled {
-		log.Info("unable to upload config as nginx-config feature is disabled")
+		log.Info("unable to use nginx config functionality as nginx-config feature is disabled")
 		return nil
 	}
 
@@ -230,6 +243,10 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	if err != nil {
 		log.Errorf("Unable to read nginx config %s: %v", nginx.GetConfPath(), err)
 		return err
+	}
+
+	if !n.config.IsFeatureEnabled(agent_config.FeatureNginxSSLConfig) {
+		cfg.Ssl = &proto.SslCertificates{SslCerts: make([]*proto.SslCertificate, 0)}
 	}
 
 	if n.isNginxAppProtectEnabled {
@@ -277,7 +294,8 @@ func (n *Nginx) processCmd(cmd *proto.Command) {
 			if n.isFeatureNginxConfigEnabled {
 				status = n.applyConfig(cmd, commandData)
 			} else {
-				log.Warnf("unable to upload config as nginx-config feature is disabled")
+				status.NginxConfigResponse.Status = newErrStatus("unable to use nginx config functionality as nginx-config feature is disabled").CmdStatus
+				status.NginxConfigResponse.Action = proto.NginxConfigAction_APPLY
 			}
 		case proto.NginxConfigAction_TEST:
 			// TODO: Test agent config?
@@ -720,9 +738,6 @@ func (n *Nginx) syncAgentConfigChange() {
 		return
 	}
 	log.Debugf("Nginx Plugins is updating to a new config - %v", conf)
-
-	n.isFeatureNginxConfigEnabled = conf.IsFeatureEnabled(agent_config.FeatureNginxConfig)
-
 	n.config = conf
 }
 

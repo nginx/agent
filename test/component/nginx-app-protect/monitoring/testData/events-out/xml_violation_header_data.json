@@ -23,16 +23,24 @@
                 "Name": "VIOL_HEADER_METACHAR",
                 "Context": "header",
                 "ContextData": {
-                    "Name": "",
-                    "Value": ""
+                    "Name": "Header Metachar",
+                    "Value": "X1893: '<!-- #echo"
                 }
             },
             {
                 "Name": "VIOL_HEADER_REPEATED",
                 "Context": "header",
                 "ContextData": {
-                    "Name": "Cookie",
-                    "Value": ""
+                    "Name": "Header Repeated",
+                    "Value": "Cookie"
+                }
+            },
+            {
+                "Name": "VIOL_HEADER_LENGTH",
+                "Context": "header",
+                "ContextData": {
+                    "Name": "Host: dflkdjfldkfldkfldkflkdflkdflkdlfkdlf",
+                    "Value": "Header length: 42, exceeds Header length limit: 10"
                 }
             }
         ]

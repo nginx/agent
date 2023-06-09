@@ -42,15 +42,15 @@ AGENT_DYNAMIC_CONFIG_COMMENT="#
 #
 # Dynamic configuration file for NGINX Agent.
 #
-# The purpose of this file is to track agent configuration
-# values that can be dynamically changed via the API and the agent install script.
+# The purpose of this file is to track NGINX Agent configuration
+# values that can be dynamically changed via the API and the NGINX Agent install script.
 # You may edit this file, but API calls that modify the tags on this system will
 # overwrite the tag values in this file.
 #
-# The agent configuration values that API calls can modify are as follows:
+# The NGINX Agent configuration values that API calls can modify are as follows:
 #    - tags
 #
-# The agent configuration value(s) that the agent install script can modify are as follows:
+# The NGINX Agent configuration value(s) that the NGINX Agent install script can modify are as follows:
 #    - instance_group
 
 "
@@ -67,8 +67,6 @@ err_exit() {
 
 title() {
     printf "\n --- NGINX Agent Package Installer --- \n\n"
-    printf " --- Will install the NGINX Agent in 5 seconds ---\n"
-    sleep 5
 }
 
 ensure_sudo() {
@@ -80,11 +78,13 @@ ensure_sudo() {
 }
 
 load_config_values() {
-    # If the file doesn't exist attempt to create it
     if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
-        if [ -f "$OLD_DYNAMIC_CONFIG_FILE" ]; then 
+        if [ -f "$OLD_DYNAMIC_CONFIG_FILE" ]; then
+            printf "Moving %s to %s\n" "$OLD_DYNAMIC_CONFIG_FILE" "$AGENT_DYNAMIC_CONFIG_FILE"
             mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
-            ln "$OLD_DYNAMIC_CONFIG_FILE" "$AGENT_DYNAMIC_CONFIG_FILE"
+            mv "$OLD_DYNAMIC_CONFIG_FILE" "$AGENT_DYNAMIC_CONFIG_FILE"
+            printf "Creating symlink %s at %s\n" "$AGENT_DYNAMIC_CONFIG_FILE" "$OLD_DYNAMIC_CONFIG_FILE"
+            ln -s "$AGENT_DYNAMIC_CONFIG_FILE" "$OLD_DYNAMIC_CONFIG_FILE" 
         else
             printf "Could not find %s ... Creating file\n" ${AGENT_DYNAMIC_CONFIG_FILE}
             mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
@@ -107,7 +107,7 @@ update_config_file() {
     printf "Updating %s ...\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
 
     if [ ! -f "$AGENT_CONFIG_FILE" ]; then
-        printf "Agent config file %s does not exist. Could not be updated\n" "$AGENT_CONFIG_FILE"        
+        printf "NGINX Agent config file %s does not exist. Could not be updated\n" "$AGENT_CONFIG_FILE"        
         exit 0
     fi
 

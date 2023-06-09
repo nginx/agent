@@ -49,6 +49,13 @@ var (
 			// token needs to be validated on the server side - can be overridden by the config value or the cli / environment variable
 			// so setting to random uuid at the moment, tls connection won't work without the auth header
 			Token: uuid.New().String(),
+			Backoff: Backoff{
+				InitialInterval:     500 * time.Millisecond,
+				RandomizationFactor: 0.5,
+				Multiplier:          1.5,
+				MaxInterval:         60 * time.Second,
+				MaxElapsedTime:      15 * time.Second,
+			},
 		},
 		Nginx: Nginx{
 			Debug:                        false,
@@ -74,6 +81,9 @@ var (
 			ReportInterval:     1 * time.Minute,
 			CollectionInterval: 15 * time.Second,
 			Mode:               "aggregated",
+		},
+		AgentAPI: AgentAPI{
+			Host: "127.0.0.1",
 		},
 		Features: agent_config.GetDefaultFeatures(),
 	}
@@ -111,10 +121,20 @@ const (
 	ServerToken    = ServerKey + agent_config.KeyDelimiter + "token"
 	ServerMetrics  = ServerKey + agent_config.KeyDelimiter + "metrics"
 	ServerCommand  = ServerKey + agent_config.KeyDelimiter + "command"
+	ServerBackoff  = ServerKey + agent_config.KeyDelimiter + "backoff"
+
+	// viper keys used in config
+	BackoffKey                 = "backoff"
+	BackoffInitialInterval     = BackoffKey + agent_config.KeyDelimiter + "initialinterval"
+	BackoffRandomizationFactor = BackoffKey + agent_config.KeyDelimiter + "randomizationfactor"
+	BackoffMultiplier          = BackoffKey + agent_config.KeyDelimiter + "multiplier"
+	BackoffMaxInterval         = BackoffKey + agent_config.KeyDelimiter + "maxinterval"
+	BackoffMaxElapsedTime      = BackoffKey + agent_config.KeyDelimiter + "maxelapsedtime"
 
 	// viper keys used in config
 	APIKey = "api"
 
+	AgentAPIHost = APIKey + agent_config.KeyDelimiter + "host"
 	AgentAPIPort = APIKey + agent_config.KeyDelimiter + "port"
 	AgentAPICert = APIKey + agent_config.KeyDelimiter + "cert"
 	AgentAPIKey  = APIKey + agent_config.KeyDelimiter + "key"
@@ -214,6 +234,11 @@ var (
 			DefaultValue: Defaults.Server.Command,
 		},
 		// API Config
+		&StringFlag{
+			Name:         AgentAPIHost,
+			Usage:        "The host used by the Agent API.",
+			DefaultValue: Defaults.AgentAPI.Host,
+		},
 		&IntFlag{
 			Name:  AgentAPIPort,
 			Usage: "The desired port to use for nginx-agent to expose for HTTP traffic.",

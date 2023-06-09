@@ -8,8 +8,10 @@
 package processor
 
 import (
+	"bytes"
 	"context"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -29,11 +31,12 @@ const (
 
 func TestNAPProcess(t *testing.T) {
 	testCases := []struct {
-		testName   string
-		testFile   string
-		expected   *pb.SecurityViolationEvent
-		isNegative bool
-		fileExists bool
+		testName    string
+		testFile    string
+		expected    *pb.SecurityViolationEvent
+		isNegative  bool
+		fileExists  bool
+		errorLogged string
 	}{
 		{
 			testName: "PassedEvent",
@@ -71,7 +74,6 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "parameter,,parameter",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_ATTACK_SIGNATURE",
@@ -153,34 +155,37 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "cookie,cookie,cookie,cookie",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_ASM_COOKIE_MODIFIED",
 						Context: "cookie",
 						ContextData: &pb.ContextData{
-							Name: "TS0144e914_1",
+							Name:  "Asm Cookie Modified",
+							Value: "TS0144e914_1",
 						},
 					},
 					{
 						Name:    "VIOL_ASM_COOKIE_MODIFIED",
 						Context: "cookie",
 						ContextData: &pb.ContextData{
-							Name: "TS0144e914_31",
+							Name:  "Asm Cookie Modified",
+							Value: "TS0144e914_31",
 						},
 					},
 					{
 						Name:    "VIOL_ASM_COOKIE_MODIFIED",
 						Context: "cookie",
 						ContextData: &pb.ContextData{
-							Name: "TS0144e914_1",
+							Name:  "Asm Cookie Modified",
+							Value: "TS0144e914_1",
 						},
 					},
 					{
 						Name:    "VIOL_ASM_COOKIE_MODIFIED",
 						Context: "cookie",
 						ContextData: &pb.ContextData{
-							Name: "TS0144e914_31",
+							Name:  "Asm Cookie Modified",
+							Value: "TS0144e914_31",
 						},
 					},
 				},
@@ -227,12 +232,12 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "parameter",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_ATTACK_SIGNATURE",
 						Context: "parameter",
 						ContextData: &pb.ContextData{
+							Name:  "Attack Signature",
 							Value: "f5paramautotest>",
 						},
 						Signatures: []*pb.SignatureData{
@@ -243,6 +248,94 @@ func TestNAPProcess(t *testing.T) {
 								Offset:       "1",
 								Length:       "15",
 							},
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_REPEATED",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "2",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_MULTIPART_NULL_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "parameter",
+							Value: "\x00",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_EMPTY_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "Parameter Empty Value",
+							Value: "a",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_VALUE_REGEXP",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "r",
+							Value: "2",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_NUMERIC_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "2",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_DATA_TYPE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "f",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_VALUE_LENGTH",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "r",
+							Value: "3948394839489898",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_DYNAMIC_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "r",
+							Value: "2",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_STATIC_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "f",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_ARRAY_VALUE",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "r",
+							Value: "1m\b",
+						},
+					},
+					{
+						Name:    "VIOL_PARAMETER_LOCATION",
+						Context: "parameter",
+						ContextData: &pb.ContextData{
+							Name:  "a",
+							Value: "12",
 						},
 					},
 				},
@@ -289,7 +382,6 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "parameter,parameter",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_PARAMETER",
@@ -351,7 +443,6 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "parameter",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_JSON_MALFORMED",
@@ -405,7 +496,6 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "header",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_ATTACK_SIGNATURE",
@@ -459,7 +549,6 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name: "VIOL_ATTACK_SIGNATURE",
@@ -538,7 +627,6 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "cookie,cookie",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_COOKIE_MALFORMED",
@@ -554,6 +642,14 @@ func TestNAPProcess(t *testing.T) {
 						ContextData: &pb.ContextData{
 							Name:  "yummy_cookie",
 							Value: "choco",
+						},
+					},
+					{
+						Name:    "VIOL_COOKIE_EXPIRED",
+						Context: "cookie",
+						ContextData: &pb.ContextData{
+							Name:  "Cookie Expired",
+							Value: "TS0142ff11",
 						},
 					},
 				},
@@ -600,7 +696,6 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "parameter,parameter,parameter,header",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_PARAMETER_VALUE_METACHAR",
@@ -614,8 +709,8 @@ func TestNAPProcess(t *testing.T) {
 						Name:    "VIOL_PARAMETER_NAME_METACHAR",
 						Context: "parameter",
 						ContextData: &pb.ContextData{
-							Name:  "x@",
-							Value: "",
+							Name:  "Parameter Name Metachar",
+							Value: "x@",
 						},
 					},
 					{
@@ -678,7 +773,6 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "request,request",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_REQUEST_MAX_LENGTH",
@@ -740,13 +834,12 @@ func TestNAPProcess(t *testing.T) {
 				BotCategory:              "HTTP Library",
 				EnforcedBotAnomalies:     "N/A",
 				BotSignatureName:         "curl",
-				ViolationContexts:        "uri,uri,url",
 				ViolationsData: []*pb.ViolationData{
 					{
 						Name:    "VIOL_URL_METACHAR",
 						Context: "uri",
 						ContextData: &pb.ContextData{
-							Name:  "",
+							Name:  "uri",
 							Value: "/;shutdown",
 						},
 					},
@@ -760,10 +853,18 @@ func TestNAPProcess(t *testing.T) {
 					},
 					{
 						Name:    "VIOL_JSON_MALFORMED",
-						Context: "url",
+						Context: "uri",
 						ContextData: &pb.ContextData{
-							Name:  "",
+							Name:  "uri",
 							Value: "/",
+						},
+					},
+					{
+						Name:    "VIOL_URL",
+						Context: "uri",
+						ContextData: &pb.ContextData{
+							Name:  "Url",
+							Value: "",
 						},
 					},
 				},
@@ -773,6 +874,323 @@ func TestNAPProcess(t *testing.T) {
 				DisplayName:    "",
 				ParentHostname: "",
 			},
+		},
+		{
+			testName: "violation: cookie length",
+			testFile: "./testdata/xml_cookie_length.log.txt",
+			expected: &pb.SecurityViolationEvent{
+				PolicyName:               "app_protect_default_policy",
+				SupportID:                "3255056874564592514",
+				Outcome:                  "REJECTED",
+				OutcomeReason:            "SECURITY_WAF_VIOLATION",
+				BlockingExceptionReason:  "N/A",
+				Method:                   "GET",
+				Protocol:                 "HTTP",
+				XForwardedForHeaderValue: "N/A",
+				URI:                      "/",
+				Request:                  "GET /?a=<script> HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nUser-Agent: curl/7.64.1\\r\\nAccept: */*\\r\\n\\r\\n",
+				IsTruncated:              "",
+				RequestStatus:            "blocked",
+				ResponseCode:             "Blocked",
+				ServerAddr:               "",
+				VSName:                   "1-localhost:1-/",
+				RemoteAddr:               "127.0.0.1",
+				RemotePort:               "61478",
+				ServerPort:               "80",
+				Violations:               "HTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected",
+				SubViolations:            "HTTP protocol compliance failed:Host header contains IP address,HTTP protocol compliance failed:Evasion technique",
+				ViolationRating:          "5",
+				SigSetNames:              "{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}",
+				SigCVEs:                  ",",
+				ClientClass:              "Untrusted Bot",
+				ClientApplication:        "N/A",
+				ClientApplicationVersion: "N/A",
+				Severity:                 "critical",
+				ThreatCampaignNames:      "campaign1,campaign2",
+				BotAnomalies:             "N/A",
+				BotCategory:              "HTTP Library",
+				EnforcedBotAnomalies:     "N/A",
+				BotSignatureName:         "curl",
+				ViolationsData: []*pb.ViolationData{
+					{
+						Name:    "VIOL_COOKIE_LENGTH",
+						Context: "cookie",
+						ContextData: &pb.ContextData{
+							Name:  "Cookie length: 28, exceeds Cookie length limit: 10",
+							Value: "Cookie: dfdfdfdfdf=dfdfdfdf;",
+						},
+					},
+				},
+				SystemID:       "",
+				InstanceTags:   "",
+				InstanceGroup:  "",
+				DisplayName:    "",
+				ParentHostname: "",
+			},
+		},
+		{
+			testName: "violation: header length",
+			testFile: "./testdata/xml_header_length.log.txt",
+			expected: &pb.SecurityViolationEvent{
+				PolicyName:               "app_protect_default_policy",
+				SupportID:                "3255056874564592515",
+				Outcome:                  "REJECTED",
+				OutcomeReason:            "SECURITY_WAF_VIOLATION",
+				BlockingExceptionReason:  "N/A",
+				Method:                   "GET",
+				Protocol:                 "HTTP",
+				XForwardedForHeaderValue: "N/A",
+				URI:                      "/",
+				Request:                  "GET /?a=<script> HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nUser-Agent: curl/7.64.1\\r\\nAccept: */*\\r\\n\\r\\n",
+				IsTruncated:              "",
+				RequestStatus:            "blocked",
+				ResponseCode:             "Blocked",
+				ServerAddr:               "",
+				VSName:                   "1-localhost:1-/",
+				RemoteAddr:               "127.0.0.1",
+				RemotePort:               "61478",
+				ServerPort:               "80",
+				Violations:               "HTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected",
+				SubViolations:            "HTTP protocol compliance failed:Host header contains IP address,HTTP protocol compliance failed:Evasion technique",
+				ViolationRating:          "5",
+				SigSetNames:              "{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}",
+				SigCVEs:                  ",",
+				ClientClass:              "Untrusted Bot",
+				ClientApplication:        "N/A",
+				ClientApplicationVersion: "N/A",
+				Severity:                 "critical",
+				ThreatCampaignNames:      "campaign1,campaign2",
+				BotAnomalies:             "N/A",
+				BotCategory:              "HTTP Library",
+				EnforcedBotAnomalies:     "N/A",
+				BotSignatureName:         "curl",
+				ViolationsData: []*pb.ViolationData{
+					{
+						Name:    "VIOL_HEADER_LENGTH",
+						Context: "header",
+						ContextData: &pb.ContextData{
+							Name:  "Host: dflkdjfldkfldkfldkflkdflkdflkdlfkdlf",
+							Value: "Header length: 42, exceeds Header length limit: 10",
+						},
+					},
+				},
+				SystemID:       "",
+				InstanceTags:   "",
+				InstanceGroup:  "",
+				DisplayName:    "",
+				ParentHostname: "",
+			},
+		},
+		{
+			testName: "violation: header base64 text",
+			testFile: "./testdata/xml_header_text.log.txt",
+			expected: &pb.SecurityViolationEvent{
+				PolicyName:               "app_protect_default_policy",
+				SupportID:                "3255056874564592516",
+				Outcome:                  "REJECTED",
+				OutcomeReason:            "SECURITY_WAF_VIOLATION",
+				BlockingExceptionReason:  "N/A",
+				Method:                   "GET",
+				Protocol:                 "HTTP",
+				XForwardedForHeaderValue: "N/A",
+				URI:                      "/",
+				Request:                  "GET /?a=<script> HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nUser-Agent: curl/7.64.1\\r\\nAccept: */*\\r\\n\\r\\n",
+				IsTruncated:              "",
+				RequestStatus:            "blocked",
+				ResponseCode:             "Blocked",
+				ServerAddr:               "",
+				VSName:                   "1-localhost:1-/",
+				RemoteAddr:               "127.0.0.1",
+				RemotePort:               "61478",
+				ServerPort:               "80",
+				Violations:               "HTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected",
+				SubViolations:            "HTTP protocol compliance failed:Host header contains IP address,HTTP protocol compliance failed:Evasion technique",
+				ViolationRating:          "5",
+				SigSetNames:              "{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}",
+				SigCVEs:                  ",",
+				ClientClass:              "Untrusted Bot",
+				ClientApplication:        "N/A",
+				ClientApplicationVersion: "N/A",
+				Severity:                 "critical",
+				ThreatCampaignNames:      "campaign1,campaign2",
+				BotAnomalies:             "N/A",
+				BotCategory:              "HTTP Library",
+				EnforcedBotAnomalies:     "N/A",
+				BotSignatureName:         "curl",
+				ViolationsData: []*pb.ViolationData{
+					{
+						Name:    "VIOL_HEADER_METACHAR",
+						Context: "header",
+						ContextData: &pb.ContextData{
+							Name:  "Header Metachar",
+							Value: "Referer: aa'bbb'",
+						},
+					},
+				},
+				SystemID:       "",
+				InstanceTags:   "",
+				InstanceGroup:  "",
+				DisplayName:    "",
+				ParentHostname: "",
+			},
+		},
+		{
+			testName: "url context header data",
+			testFile: "./testdata/xml_url_header_data.log.txt",
+			expected: &pb.SecurityViolationEvent{
+				PolicyName:               "app_protect_default_policy",
+				SupportID:                "3255056874564592517",
+				Outcome:                  "REJECTED",
+				OutcomeReason:            "SECURITY_WAF_VIOLATION",
+				BlockingExceptionReason:  "N/A",
+				Method:                   "GET",
+				Protocol:                 "HTTP",
+				XForwardedForHeaderValue: "N/A",
+				URI:                      "/",
+				Request:                  "GET /?a=<script> HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nUser-Agent: curl/7.64.1\\r\\nAccept: */*\\r\\n\\r\\n",
+				IsTruncated:              "",
+				RequestStatus:            "blocked",
+				ResponseCode:             "Blocked",
+				ServerAddr:               "",
+				VSName:                   "1-localhost:1-/",
+				RemoteAddr:               "127.0.0.1",
+				RemotePort:               "61478",
+				ServerPort:               "80",
+				Violations:               "HTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected",
+				SubViolations:            "HTTP protocol compliance failed:Host header contains IP address,HTTP protocol compliance failed:Evasion technique",
+				ViolationRating:          "5",
+				SigSetNames:              "{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}",
+				SigCVEs:                  ",",
+				ClientClass:              "Untrusted Bot",
+				ClientApplication:        "N/A",
+				ClientApplicationVersion: "N/A",
+				Severity:                 "critical",
+				ThreatCampaignNames:      "campaign1,campaign2",
+				BotAnomalies:             "N/A",
+				BotCategory:              "HTTP Library",
+				EnforcedBotAnomalies:     "N/A",
+				BotSignatureName:         "curl",
+				ViolationsData: []*pb.ViolationData{
+					{
+						Name:    "VIOL_URL_CONTENT_TYPE",
+						Context: "uri",
+						ContextData: &pb.ContextData{
+							Name:  "$",
+							Value: "actual header value: beni. matched header value: beni",
+						},
+					},
+				},
+				SystemID:       "",
+				InstanceTags:   "",
+				InstanceGroup:  "",
+				DisplayName:    "",
+				ParentHostname: "",
+			},
+		},
+		// Negative scenarios
+		{
+			testName:    "XML Malformed",
+			testFile:    "./testdata/xml_malformed.log.txt",
+			errorLogged: "failed to parse XML message: XML syntax error on line 1: element <sig_id> closed by </sig_ifset>",
+			expected: &pb.SecurityViolationEvent{
+				PolicyName:               "app_protect_default_policy",
+				SupportID:                "5543056874564592513",
+				Outcome:                  "REJECTED",
+				OutcomeReason:            "SECURITY_WAF_VIOLATION",
+				BlockingExceptionReason:  "N/A",
+				Method:                   "GET",
+				Protocol:                 "HTTP",
+				XForwardedForHeaderValue: "N/A",
+				URI:                      "/",
+				Request:                  "GET /?a=<script> HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nUser-Agent: curl/7.64.1\\r\\nAccept: */*\\r\\n\\r\\n",
+				IsTruncated:              "",
+				RequestStatus:            "blocked",
+				ResponseCode:             "Blocked",
+				ServerAddr:               "",
+				VSName:                   "1-localhost:1-/",
+				RemoteAddr:               "127.0.0.1",
+				RemotePort:               "61478",
+				ServerPort:               "80",
+				Violations:               "HTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected",
+				SubViolations:            "HTTP protocol compliance failed:Host header contains IP address,HTTP protocol compliance failed:Evasion technique",
+				ViolationRating:          "5",
+				SigSetNames:              "{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}",
+				SigCVEs:                  ",",
+				ClientClass:              "Untrusted Bot",
+				ClientApplication:        "N/A",
+				ClientApplicationVersion: "N/A",
+				Severity:                 "critical",
+				ThreatCampaignNames:      "campaign1,campaign2",
+				BotAnomalies:             "N/A",
+				BotCategory:              "HTTP Library",
+				EnforcedBotAnomalies:     "N/A",
+				BotSignatureName:         "curl",
+				ViolationsData:           []*pb.ViolationData{},
+				SystemID:                 "",
+				InstanceTags:             "",
+				InstanceGroup:            "",
+				DisplayName:              "",
+				ParentHostname:           "",
+			},
+		},
+		{
+			testName:    "XML struct unmatched",
+			testFile:    "./testdata/xml_struct_unmatched.log.txt",
+			errorLogged: "failed to parse XML message: expected element type <BAD_MSG> but have <UNMATCHED_STRUCT>",
+			expected: &pb.SecurityViolationEvent{
+				PolicyName:               "app_protect_default_policy",
+				SupportID:                "5543056874564592514",
+				Outcome:                  "REJECTED",
+				OutcomeReason:            "SECURITY_WAF_VIOLATION",
+				BlockingExceptionReason:  "N/A",
+				Method:                   "GET",
+				Protocol:                 "HTTP",
+				XForwardedForHeaderValue: "N/A",
+				URI:                      "/",
+				Request:                  "GET /?a=<script> HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nUser-Agent: curl/7.64.1\\r\\nAccept: */*\\r\\n\\r\\n",
+				IsTruncated:              "",
+				RequestStatus:            "blocked",
+				ResponseCode:             "Blocked",
+				ServerAddr:               "",
+				VSName:                   "1-localhost:1-/",
+				RemoteAddr:               "127.0.0.1",
+				RemotePort:               "61478",
+				ServerPort:               "80",
+				Violations:               "HTTP protocol compliance failed,Illegal meta character in value,Attack signature detected,Violation Rating Threat detected,Bot Client Detected",
+				SubViolations:            "HTTP protocol compliance failed:Host header contains IP address,HTTP protocol compliance failed:Evasion technique",
+				ViolationRating:          "5",
+				SigSetNames:              "{Cross Site Scripting Signatures;High Accuracy Signatures},{Cross Site Scripting Signatures;High Accuracy Signatures}",
+				SigCVEs:                  ",",
+				ClientClass:              "Untrusted Bot",
+				ClientApplication:        "N/A",
+				ClientApplicationVersion: "N/A",
+				Severity:                 "critical",
+				ThreatCampaignNames:      "campaign1,campaign2",
+				BotAnomalies:             "N/A",
+				BotCategory:              "HTTP Library",
+				EnforcedBotAnomalies:     "N/A",
+				BotSignatureName:         "curl",
+				ViolationsData:           []*pb.ViolationData{},
+				SystemID:                 "",
+				InstanceTags:             "",
+				InstanceGroup:            "",
+				DisplayName:              "",
+				ParentHostname:           "",
+			},
+		},
+		{
+			testName:    "XML less fields within logline",
+			testFile:    "./testdata/syslog_logline_less_fields.log.txt",
+			errorLogged: "log line values does not match expected values. expecting 33 values got 32 values",
+			isNegative:  true,
+			expected:    nil,
+		},
+		{
+			testName:    "XML more fields within logline",
+			testFile:    "./testdata/syslog_logline_more_fields.log.txt",
+			errorLogged: "log line values does not match expected values. expecting 33 values got 34 values",
+			isNegative:  true,
+			expected:    nil,
 		},
 	}
 
@@ -786,6 +1204,8 @@ func TestNAPProcess(t *testing.T) {
 
 			log := logrus.New()
 			log.SetLevel(logrus.DebugLevel)
+			buf := bytes.Buffer{}
+			log.SetOutput(&buf)
 
 			p, err := GetClient(&Config{
 				Logger:  log.WithField("extension", "test"),
@@ -851,18 +1271,22 @@ func TestNAPProcess(t *testing.T) {
 				require.Equal(t, tc.expected.BotCategory, se.BotCategory)
 				require.Equal(t, tc.expected.EnforcedBotAnomalies, se.EnforcedBotAnomalies)
 				require.Equal(t, tc.expected.BotSignatureName, se.BotSignatureName)
-				require.Equal(t, tc.expected.ViolationContexts, se.ViolationContexts)
 				require.Equal(t, tc.expected.ViolationsData, se.ViolationsData)
 				require.Equal(t, tc.expected.SystemID, se.SystemID)
 				require.Equal(t, tc.expected.InstanceTags, se.InstanceTags)
 				require.Equal(t, tc.expected.InstanceGroup, se.InstanceGroup)
 				require.Equal(t, tc.expected.DisplayName, se.DisplayName)
 				require.Equal(t, tc.expected.ParentHostname, se.ParentHostname)
+
+				if tc.errorLogged != "" {
+					require.True(t, strings.Contains(buf.String(), tc.errorLogged))
+				}
 			case <-time.After(eventWaitTimeout * time.Second):
 				// for negative test, there should not be an event generated.
 				if !tc.isNegative {
 					t.Error("Should receive security violation event, and should not be timeout.")
 				}
+				require.True(t, strings.Contains(buf.String(), tc.errorLogged))
 			}
 		})
 	}

@@ -14,9 +14,10 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -76,7 +77,7 @@ func (r *OneTimeRegistration) Close() {
 }
 
 func (r *OneTimeRegistration) Info() *core.Info {
-	return core.NewInfo("OneTimeRegistration", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureRegistration, "v0.0.1")
 }
 
 func (r *OneTimeRegistration) Process(msg *core.Message) {
@@ -106,10 +107,16 @@ func (r *OneTimeRegistration) Subscriptions() []string {
 // reached then an error will be logged then registration will start with whatever
 // dataplane software details were successfully transmitted (if any).
 func (r *OneTimeRegistration) startRegistration() {
+	backoffSetting := backoff.BackoffSettings{
+		InitialInterval: softwareDetailsOperationInterval,
+		MaxInterval:     softwareDetailsOperationInterval,
+		MaxElapsedTime:  dataplaneSoftwareDetailsMaxWaitTime,
+		Jitter:          backoff.BACKOFF_JITTER,
+		Multiplier:      backoff.BACKOFF_MULTIPLIER,
+	}
 	log.Debug("OneTimeRegistration waiting on dataplane software details to be ready for registration")
-	err := sdk.WaitUntil(
-		context.Background(), softwareDetailsOperationInterval, softwareDetailsOperationInterval,
-		dataplaneSoftwareDetailsMaxWaitTime, r.areDataplaneSoftwareDetailsReady,
+	err := backoff.WaitUntil(
+		context.Background(), backoffSetting, r.areDataplaneSoftwareDetailsReady,
 	)
 	if err != nil {
 		log.Warn(err.Error())
@@ -186,6 +193,15 @@ func (r *OneTimeRegistration) registerAgent() {
 						Extensions: r.config.Extensions,
 						Tags:       *r.tags,
 						Alias:      "",
+						Server: &proto.Server{
+							Backoff: &proto.Backoff{
+								InitialInterval:     r.config.Server.Backoff.InitialInterval.Milliseconds(),
+								RandomizationFactor: r.config.Server.Backoff.RandomizationFactor,
+								Multiplier:          r.config.Server.Backoff.Multiplier,
+								MaxInterval:         r.config.Server.Backoff.MaxInterval.Milliseconds(),
+								MaxElapsedTime:      r.config.Server.Backoff.MaxElapsedTime.Milliseconds(),
+							},
+						},
 					},
 				},
 				Details:                  details,
@@ -193,8 +209,6 @@ func (r *OneTimeRegistration) registerAgent() {
 			},
 		},
 	}
-
-	log.Tracef("AgentConnectRequest: %v", agentConnectRequest)
 
 	r.pipeline.Process(
 		core.NewMessage(core.CommRegister, agentConnectRequest),

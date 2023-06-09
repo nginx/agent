@@ -2,7 +2,7 @@
 title: "Technical Specifications"
 draft: false
 description: "This document describes the requirements for NGINX Agent."
-weight: 500
+weight: 800
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1092"
@@ -23,6 +23,7 @@ Alpine Linux
 - 3.14 (x86_64, aarch64)
 - 3.15 (x86_64, aarch64)
 - 3.16 (x86_64, aarch64)
+- 3.17 (x86_64, aarch64)
 
 Amazon Linux 2
 - LTS (x86_64, aarch64)
@@ -39,12 +40,13 @@ FreeBSD
 
 Oracle Linux
 - 7.4+ (x86_64)
-- 8.1+ (x86_64, aarch64)
+- 8.1+ (x86_64)
+- 9 (x86_64)
 
 Red Hat Enterprise Linux (RHEL)
-- 7.4+ (x86_64)
-- 8.1+ (x86_64)
-- 9.0+ (x86_64)
+- 7.4+ (x86_64, aarch64)
+- 8.1+ (x86_64, aarch64)
+- 9.0+ (x86_64, aarch64)
 
 Rocky Linux
 - 8 (x86_64, aarch64)

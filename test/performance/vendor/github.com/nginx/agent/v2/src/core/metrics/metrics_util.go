@@ -25,9 +25,11 @@ type Collector interface {
 	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
 	UpdateConfig(config *config.Config)
 }
+
 type Source interface {
 	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
 }
+
 type NginxSource interface {
 	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
 	Update(dimensions *CommonDim, collectorConf *NginxCollectorConfig)

@@ -8,7 +8,6 @@
 package nap
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -187,7 +186,7 @@ func setUpFile(file string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(file, content, 0644)
+	err = os.WriteFile(file, content, 0644)
 	if err != nil {
 		return err
 	}

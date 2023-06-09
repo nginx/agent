@@ -58,6 +58,10 @@ func (p *MockMessagePipe) Register(size int, plugins []Plugin, extensionPlugins 
 	return nil
 }
 
+func (p *MockMessagePipe) DeRegister(plugins []string) error {
+	return nil
+}
+
 func (p *MockMessagePipe) Context() context.Context {
 	return p.ctx
 }
@@ -111,4 +115,14 @@ func (p *MockMessagePipe) GetPlugins() []Plugin {
 
 func (p *MockMessagePipe) GetExtensionPlugins() []ExtensionPlugin {
 	return p.extensionPlugins
+}
+
+func (p *MockMessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
+	pluginAlreadyRegistered := false
+	for _, plugin := range p.GetPlugins() {
+		if plugin.Info().Name() == pluginName {
+			pluginAlreadyRegistered = true
+		}
+	}
+	return pluginAlreadyRegistered
 }

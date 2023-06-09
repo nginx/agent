@@ -3,7 +3,7 @@ package utils
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 
@@ -16,7 +16,7 @@ func LoadKeyPair() credentials.TransportCredentials {
 		log.Fatalf("Load server certification failed: %v", err)
 	}
 
-	data, err := ioutil.ReadFile("certs/client/ca.crt")
+	data, err := os.ReadFile("certs/client/ca.crt")
 	if err != nil {
 		log.Fatalf("can't read ca file: %v", err)
 	}

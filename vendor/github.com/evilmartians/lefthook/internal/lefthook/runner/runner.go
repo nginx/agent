@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -62,7 +63,7 @@ func (r *Runner) RunAll(sourceDirs []string) {
 		log.Error(err)
 	}
 
-	if r.Hook.Skip != nil && r.Hook.DoSkip(r.Repo.State()) {
+	if r.Hook.DoSkip(r.Repo.State()) {
 		r.logSkip(r.HookName, "hook setting")
 		return
 	}
@@ -402,12 +403,21 @@ func (r *Runner) run(opts ExecuteOptions, follow bool) bool {
 
 	if (follow || opts.interactive) && !r.SkipSettings.SkipExecution() {
 		log.Info(log.Cyan("\n  EXECUTE > "), log.Bold(opts.name))
-		err := r.executor.Execute(opts, os.Stdout)
+
+		var out io.Writer
+		if r.SkipSettings.SkipExecutionOutput() {
+			out = io.Discard
+		} else {
+			out = os.Stdout
+		}
+
+		err := r.executor.Execute(opts, out)
 		if err != nil {
 			r.fail(opts.name, opts.failText)
 		} else {
 			r.success(opts.name)
 		}
+
 		return err == nil
 	}
 
@@ -427,7 +437,12 @@ func (r *Runner) run(opts ExecuteOptions, follow bool) bool {
 		return false
 	}
 
-	log.Infof("%s\n%s", execName, out)
+	if r.SkipSettings.SkipExecutionOutput() {
+		log.Infof("%s\n", execName)
+	} else {
+		log.Infof("%s\n%s", execName, out)
+	}
+
 	if err != nil {
 		log.Infof("%s", err)
 	}

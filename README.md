@@ -64,8 +64,8 @@ NGINX Agent allows a gRPC connected control system to register a listener for a 
 
 | Event                            | Description                                  |
 | -------------------------------- | -------------------------------------------- |
-| AGENT_START_MESSAGE              | NGINX Agent process started                        |
-| AGENT_STOP_MESSAGE               | NGINX Agent process stopped                        |
+| AGENT_START_MESSAGE              | NGINX Agent process started                  |
+| AGENT_STOP_MESSAGE               | NGINX Agent process stopped                  |
 | NGINX_FOUND_MESSAGE              | NGINX master process detected on system      |
 | NGINX_STOP_MESSAGE               | NGINX master process stopped                 |
 | NGINX_RELOAD_SUCCESS_MESSAGE     | NGINX master process reloaded successfully   |
@@ -131,7 +131,7 @@ Follow steps in the [Installation](#installation) section to download, install, 
 Using your preferred method, clone the NGINX Agent repository into your development directory. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
 ## Installing Go
-NGINX Agent and the Mock Control Plane are written in Go. Go 1.19 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/). 
+NGINX Agent and the Mock Control Plane are written in Go. Go 1.19.9 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/). 
 
 ## Starting the gRPC Mock Control Plane
 Start the mock control plane by running the following command from the `agent` source code root directory:

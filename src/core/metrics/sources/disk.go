@@ -39,7 +39,7 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metric
 		usage, err := disk.Usage(part.Mountpoint)
 
 		if err != nil {
-			c.logger.Log(fmt.Sprintf("Failed to get disk metrics, %v", err))
+			c.logger.Log(fmt.Sprintf("Failed to get disk metrics for mount point %s, %v", part.Mountpoint, err))
 			continue
 		}
 

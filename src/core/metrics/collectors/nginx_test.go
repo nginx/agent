@@ -47,8 +47,12 @@ var (
 			CollectionInterval: 1,
 			Mode:               "aggregated",
 		},
+		Features: config.Defaults.Features,
+		Nginx: config.Nginx{
+			Debug:               false,
+			NginxCountingSocket: "unix:/var/run/nginx-agent/nginx.sock",
+		},
 	}
-
 	collectorConfigNoApi = &metrics.NginxCollectorConfig{
 		BinPath:            "/path/to/nginx",
 		NginxId:            nginxId,
@@ -231,7 +235,7 @@ func TestNginxCollector_UpdateCollectorConfig(t *testing.T) {
 		dimensions: metrics.NewCommonDim(host, &config.Config{}, "123"),
 	}
 
-	nginxCollector.UpdateCollectorConfig(&metrics.NginxCollectorConfig{StubStatus: "http://localhost:80/api"})
+	nginxCollector.UpdateCollectorConfig(&metrics.NginxCollectorConfig{StubStatus: "http://localhost:80/api"}, configuration)
 
 	// Verify that sources are stopped
 	mockNginxSource1.AssertExpectations(t)

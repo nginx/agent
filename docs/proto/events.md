@@ -43,13 +43,13 @@ Represents an activity event
 <a name="f5-nginx-agent-sdk-events-ContextData"></a>
 
 ### ContextData
-
+Represents the context data of each violation
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| Name | [string](#string) |  |  |
-| Value | [string](#string) |  |  |
+| Name | [string](#string) |  | The name within the context data |
+| Value | [string](#string) |  | The value within the context data |
 
 
 
@@ -117,45 +117,44 @@ Represents a security violation that is emitted by the agent
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| PolicyName | [string](#string) |  |  |
-| SupportID | [string](#string) |  |  |
-| Outcome | [string](#string) |  |  |
-| OutcomeReason | [string](#string) |  |  |
-| BlockingExceptionReason | [string](#string) |  |  |
-| Method | [string](#string) |  |  |
-| Protocol | [string](#string) |  |  |
-| XForwardedForHeaderValue | [string](#string) |  |  |
-| URI | [string](#string) |  |  |
-| Request | [string](#string) |  |  |
-| IsTruncated | [string](#string) |  |  |
-| RequestStatus | [string](#string) |  |  |
-| ResponseCode | [string](#string) |  |  |
-| ServerAddr | [string](#string) |  |  |
-| VSName | [string](#string) |  |  |
-| RemoteAddr | [string](#string) |  |  |
-| RemotePort | [string](#string) |  |  |
-| ServerPort | [string](#string) |  |  |
-| Violations | [string](#string) |  |  |
-| SubViolations | [string](#string) |  |  |
-| ViolationRating | [string](#string) |  |  |
-| SigSetNames | [string](#string) |  |  |
-| SigCVEs | [string](#string) |  |  |
-| ClientClass | [string](#string) |  |  |
-| ClientApplication | [string](#string) |  |  |
-| ClientApplicationVersion | [string](#string) |  |  |
-| Severity | [string](#string) |  |  |
-| ThreatCampaignNames | [string](#string) |  |  |
-| BotAnomalies | [string](#string) |  |  |
-| BotCategory | [string](#string) |  |  |
-| EnforcedBotAnomalies | [string](#string) |  |  |
-| BotSignatureName | [string](#string) |  |  |
-| ViolationContexts | [string](#string) |  |  |
-| ViolationsData | [ViolationData](#f5-nginx-agent-sdk-events-ViolationData) | repeated |  |
-| SystemID | [string](#string) |  |  |
-| InstanceTags | [string](#string) |  |  |
-| InstanceGroup | [string](#string) |  |  |
-| DisplayName | [string](#string) |  |  |
-| ParentHostname | [string](#string) |  |  |
+| PolicyName | [string](#string) |  | The name of the NGINX App Protect policy that triggered the security violation |
+| SupportID | [string](#string) |  | The unique NGINX App Protect support ID of the violation, used for tracking purposes |
+| Outcome | [string](#string) |  | The outcome that resulted for the security violation |
+| OutcomeReason | [string](#string) |  | The reason for the security violation resulting in the outcome |
+| BlockingExceptionReason | [string](#string) |  | The blocking exception reason when a configured violation was not blocked |
+| Method | [string](#string) |  | The HTTP Method of the request that triggered the security violation |
+| Protocol | [string](#string) |  | The HTTP Protocol of the request that triggered the security violation |
+| XForwardedForHeaderValue | [string](#string) |  | The HTTP xff_header_value of the request that triggered the security violation |
+| URI | [string](#string) |  | The URI of the request that triggered the security violation |
+| Request | [string](#string) |  | The full request that triggered the security violation, including the Method, URI and Request Body |
+| IsTruncated | [string](#string) |  | If the request is truncated or not |
+| RequestStatus | [string](#string) |  | The status of the request that triggered the security violation |
+| ResponseCode | [string](#string) |  | The HTTP response status to the request that triggered the security violation |
+| ServerAddr | [string](#string) |  | The server address of the instance that caught the security violation |
+| VSName | [string](#string) |  | The Virtual Server Name of the instance that caught the security violation |
+| RemoteAddr | [string](#string) |  | The targeted address by the request that triggered the security violation |
+| RemotePort | [string](#string) |  | The targeted port number by the request that triggered the security violation |
+| ServerPort | [string](#string) |  | The server port of the instance that caught the security violation |
+| Violations | [string](#string) |  | A comma-separated list of all the violations triggered by the request |
+| SubViolations | [string](#string) |  | A comma-separated list of all the sub-violations triggered by the request |
+| ViolationRating | [string](#string) |  | The rating of the triggered security violation |
+| SigSetNames | [string](#string) |  | A comma-separated list of all the signature names |
+| SigCVEs | [string](#string) |  | A comma-separated list of all the signature CVEs |
+| ClientClass | [string](#string) |  | The class of the client used to send the request that triggered the security violation |
+| ClientApplication | [string](#string) |  | The application used to send the request that triggered the security violation |
+| ClientApplicationVersion | [string](#string) |  | The version of the application used to send the request that triggered the security violation |
+| Severity | [string](#string) |  | The severity of the triggered security violation |
+| ThreatCampaignNames | [string](#string) |  | A comma-separated list of the threat campaign names |
+| BotAnomalies | [string](#string) |  | Anomalies of the bot that sent the request that triggered the security violation |
+| BotCategory | [string](#string) |  | Category of the bot that sent the request that triggered the security violation |
+| EnforcedBotAnomalies | [string](#string) |  | Enforced anomalies of the bot that sent the request that triggered the security violation |
+| BotSignatureName | [string](#string) |  | Signature name of the bot that sent the request that triggered the security violation |
+| ViolationsData | [ViolationData](#f5-nginx-agent-sdk-events-ViolationData) | repeated | A list of objects containing descriptive data about all the security violations |
+| SystemID | [string](#string) |  | SystemID of the instance where NGINX is running |
+| InstanceTags | [string](#string) |  | Instance tags where NGINX is running |
+| InstanceGroup | [string](#string) |  | Instance group where NGINX is running |
+| DisplayName | [string](#string) |  | Display name of the instance where NGINX is running |
+| ParentHostname | [string](#string) |  | The hostname where NGINX is running |
 
 
 
@@ -165,16 +164,16 @@ Represents a security violation that is emitted by the agent
 <a name="f5-nginx-agent-sdk-events-SignatureData"></a>
 
 ### SignatureData
-
+Represents signature data that&#39;s contained within each violation
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
-| BlockingMask | [string](#string) |  |  |
-| Buffer | [string](#string) |  |  |
-| Offset | [string](#string) |  |  |
-| Length | [string](#string) |  |  |
+| ID | [string](#string) |  | ID of the signature data |
+| BlockingMask | [string](#string) |  | The blocking mask of the signature data |
+| Buffer | [string](#string) |  | The buffer of the signature data |
+| Offset | [string](#string) |  | The offset of the signature data |
+| Length | [string](#string) |  | The length of the signature data |
 
 
 
@@ -184,15 +183,15 @@ Represents a security violation that is emitted by the agent
 <a name="f5-nginx-agent-sdk-events-ViolationData"></a>
 
 ### ViolationData
-
+Represents the violation data contained within a security violation event
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| Name | [string](#string) |  |  |
-| Context | [string](#string) |  |  |
-| ContextData | [ContextData](#f5-nginx-agent-sdk-events-ContextData) |  |  |
-| Signatures | [SignatureData](#f5-nginx-agent-sdk-events-SignatureData) | repeated |  |
+| Name | [string](#string) |  | The name of the violation |
+| Context | [string](#string) |  | The context of the violation |
+| ContextData | [ContextData](#f5-nginx-agent-sdk-events-ContextData) |  | The object representing the context data of the violation |
+| Signatures | [SignatureData](#f5-nginx-agent-sdk-events-SignatureData) | repeated | A list representing the signature data of the violation |
 
 
 

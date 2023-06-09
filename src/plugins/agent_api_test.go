@@ -17,7 +17,6 @@ import (
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -30,7 +29,7 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -48,7 +47,7 @@ func TestAgentAPI_Info(t *testing.T) {
 	agentAPI := AgentAPI{}
 	info := agentAPI.Info()
 
-	assert.Equal(t, "Agent API Plugin", info.Name())
+	assert.Equal(t, "agent-api", info.Name())
 	assert.Equal(t, "v0.0.1", info.Version())
 }
 
@@ -482,8 +481,15 @@ func TestMtls_forApi(t *testing.T) {
 					t.FailNow()
 				}
 
-				err = sdk.WaitUntil(ctx, 100*time.Millisecond, 100*time.Millisecond, 1*time.Second, func() error {
-					_, err := ioutil.ReadFile("../../build/certs/server.crt")
+				backoffSetting := backoff.BackoffSettings{
+					InitialInterval: 100 * time.Millisecond,
+					MaxInterval:     100 * time.Millisecond,
+					MaxElapsedTime:  1 * time.Second,
+					Jitter:          backoff.BACKOFF_JITTER,
+					Multiplier:      backoff.BACKOFF_MULTIPLIER,
+				}
+				err = backoff.WaitUntil(ctx, backoffSetting, func() error {
+					_, err := os.ReadFile("../../build/certs/server.crt")
 					return err
 				})
 
@@ -525,11 +531,11 @@ func TestMtls_forApi(t *testing.T) {
 }
 
 func getConfig(t *testing.T) *tls.Config {
-	crt, err := ioutil.ReadFile("../../build/certs/client.crt")
+	crt, err := os.ReadFile("../../build/certs/client.crt")
 	assert.NoError(t, err)
-	key, err := ioutil.ReadFile("../../build/certs/client.key")
+	key, err := os.ReadFile("../../build/certs/client.key")
 	assert.NoError(t, err)
-	ca, err := ioutil.ReadFile("../../build/certs/ca.pem")
+	ca, err := os.ReadFile("../../build/certs/ca.pem")
 	assert.NoError(t, err)
 
 	cert, err := tls.X509KeyPair(crt, key)

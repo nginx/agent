@@ -2,7 +2,7 @@
 title: "Development Environment Setup"
 draft: false
 description: "Learn how to setup a Development Environment for NGINX Agent."
-weight: 400
+weight: 700
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1088"
@@ -16,7 +16,7 @@ While most Linux or FreeBSD operating systems can be used to contribute to the N
 
 ## Install NGINX
 
-Follow the steps in the [Installation]({{< relref "/installation.md" >}}) section to download, install, and run NGINX and NGINX Agent.
+Follow the steps in the [Installation]({{< relref "/installation-github.md" >}}) section to download, install, and run NGINX and NGINX Agent.
 
 ## Clone the NGINX Agent Repository
 
@@ -56,7 +56,7 @@ make install-tools deps
 
 Run the following commands to build and run NGINX Agent:
 
-```
+```bash
 make build
 sudo make run
 ```
