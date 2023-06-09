@@ -186,11 +186,14 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 }
 
 func (c *Commander) synchronizeFeatures(agtCfg *proto.AgentConfig) {
-	for _, feature := range c.config.Features {
-		if feature != agent_config.FeatureRegistration {
-			c.deRegisterPlugin(feature)
+	if c.config.Features != nil {
+		for _, feature := range c.config.Features {
+			if feature != agent_config.FeatureRegistration {
+				c.deRegisterPlugin(feature)
+			}
 		}
 	}
+
 	if agtCfg.Details != nil {
 		for _, feature := range agtCfg.Details.Features {
 			c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
