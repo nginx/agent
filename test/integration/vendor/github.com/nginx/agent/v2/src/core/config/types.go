@@ -9,8 +9,6 @@ package config
 
 import (
 	"time"
-
-	advanced_metrics "github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/advanced-metrics"
 )
 
 type Config struct {
@@ -33,26 +31,24 @@ type Config struct {
 	AllowedDirectoriesMap map[string]struct{} `yaml:"-"`
 	DisplayName           string              `mapstructure:"display_name" yaml:"display_name,omitempty"`
 	InstanceGroup         string              `mapstructure:"instance_group" yaml:"instance_group,omitempty"`
-	AdvancedMetrics       AdvancedMetrics     `mapstructure:"advanced_metrics" yaml:"advanced_metrics,omitempty"`
-	NginxAppProtect       NginxAppProtect     `mapstructure:"nginx_app_protect" yaml:"nginx_app_protect,omitempty"`
-	NAPMonitoring         NAPMonitoring       `mapstructure:"nap_monitoring" yaml:"nap_monitoring,omitempty"`
 }
 
 func (c *Config) IsGrpcServerConfigured() bool {
 	return c.Server.Host != "" && c.Server.GrpcPort != 0
 }
 
-func (c *Config) IsNginxAppProtectConfigured() bool {
-	return c.NginxAppProtect != (NginxAppProtect{})
-}
-
-func (c *Config) IsNginxAppProtectPrecompiledPublicationConfigured() bool {
-	return c.NginxAppProtect.PrecompiledPublication
-}
-
 func (c *Config) IsFeatureEnabled(feature string) bool {
 	for _, configFeature := range c.Features {
 		if configFeature == feature {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Config) IsExtensionEnabled(extension string) bool {
+	for _, configExtension := range c.Extensions {
+		if configExtension == extension {
 			return true
 		}
 	}
@@ -65,11 +61,21 @@ type Server struct {
 	Token    string `mapstructure:"token" yaml:"-"`
 	Metrics  string `mapstructure:"metrics" yaml:"-"`
 	Command  string `mapstructure:"command" yaml:"-"`
-	// This is internal and shouldnt be exposed as a flag
-	Target string `mapstructure:"target" yaml:"-"`
+	// This is internal and shouldn't be exposed as a flag
+	Target  string  `mapstructure:"target" yaml:"-"`
+	Backoff Backoff `mapstructure:"backoff" yaml:"-"`
+}
+
+type Backoff struct {
+	InitialInterval     time.Duration `mapstructure:"initial_interval" yaml:"-"`
+	RandomizationFactor float64       `mapstructure:"randomization_factor" yaml:"-"`
+	Multiplier          float64       `mapstructure:"multiplier" yaml:"-"`
+	MaxInterval         time.Duration `mapstructure:"max_interval" yaml:"-"`
+	MaxElapsedTime      time.Duration `mapstructure:"max_elapsed_time" yaml:"-"`
 }
 
 type AgentAPI struct {
+	Host string `mapstructure:"host" yaml:"-"`
 	Port int    `mapstructure:"port" yaml:"-"`
 	Cert string `mapstructure:"cert" yaml:"-"`
 	Key  string `mapstructure:"key" yaml:"-"`
@@ -92,10 +98,12 @@ type TLSConfig struct {
 
 // Nginx settings
 type Nginx struct {
-	ExcludeLogs         string `mapstructure:"exclude_logs" yaml:"-"`
-	Debug               bool   `mapstructure:"debug" yaml:"-"`
-	NginxCountingSocket string `mapstructure:"socket" yaml:"-"`
-	NginxClientVersion  int    `mapstructure:"client_version" yaml:"-"`
+	ExcludeLogs                  string        `mapstructure:"exclude_logs" yaml:"-"`
+	Debug                        bool          `mapstructure:"debug" yaml:"-"`
+	NginxCountingSocket          string        `mapstructure:"socket" yaml:"-"`
+	NginxClientVersion           int           `mapstructure:"client_version" yaml:"-"`
+	ConfigReloadMonitoringPeriod time.Duration `mapstructure:"config_reload_monitoring_period" yaml:"-"`
+	TreatWarningsAsErrors        bool          `mapstructure:"treat_warnings_as_errors" yaml:"-"`
 }
 
 type Dataplane struct {
@@ -114,25 +122,4 @@ type AgentMetrics struct {
 	ReportInterval     time.Duration `mapstructure:"report_interval" yaml:"-"`
 	CollectionInterval time.Duration `mapstructure:"collection_interval" yaml:"-"`
 	Mode               string        `mapstructure:"mode" yaml:"-"`
-}
-
-type AdvancedMetrics struct {
-	SocketPath        string                            `mapstructure:"socket_path" yaml:"-"`
-	AggregationPeriod time.Duration                     `mapstructure:"aggregation_period" yaml:"-"`
-	PublishingPeriod  time.Duration                     `mapstructure:"publishing_period" yaml:"-"`
-	TableSizesLimits  advanced_metrics.TableSizesLimits `mapstructure:"table_sizes_limits" yaml:"-"`
-}
-
-type NginxAppProtect struct {
-	ReportInterval         time.Duration `mapstructure:"report_interval" yaml:"-"`
-	PrecompiledPublication bool          `mapstructure:"precompiled_publication" yaml:"-"`
-}
-
-type NAPMonitoring struct {
-	CollectorBufferSize int           `mapstructure:"collector_buffer_size" yaml:"-"`
-	ProcessorBufferSize int           `mapstructure:"processor_buffer_size" yaml:"-"`
-	SyslogIP            string        `mapstructure:"syslog_ip" yaml:"-"`
-	SyslogPort          int           `mapstructure:"syslog_port" yaml:"-"`
-	ReportInterval      time.Duration `mapstructure:"report_interval" yaml:"-"`
-	ReportCount         int           `mapstructure:"report_count" yaml:"-"`
 }

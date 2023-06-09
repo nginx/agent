@@ -3,18 +3,15 @@ package gojs
 import (
 	"context"
 	"fmt"
-	"io"
-	"io/fs"
 	"os"
 	"syscall"
 
 	"github.com/tetratelabs/wazero/api"
+	"github.com/tetratelabs/wazero/internal/fsapi"
 	"github.com/tetratelabs/wazero/internal/gojs/custom"
 	"github.com/tetratelabs/wazero/internal/gojs/goos"
 	"github.com/tetratelabs/wazero/internal/gojs/util"
-	"github.com/tetratelabs/wazero/internal/platform"
 	internalsys "github.com/tetratelabs/wazero/internal/sys"
-	"github.com/tetratelabs/wazero/internal/sysfs"
 	"github.com/tetratelabs/wazero/internal/wasm"
 )
 
@@ -47,16 +44,6 @@ var (
 
 	// oEXCL = jsfsConstants Get("O_EXCL").Int() // fs_js.go init
 	oEXCL = float64(os.O_EXCL)
-)
-
-// The following interfaces are used until we finalize our own FD-scoped file.
-type (
-	// chmodFile is implemented by os.File in file_posix.go
-	chmodFile interface{ Chmod(fs.FileMode) error }
-	// syncFile is implemented by os.File in file_posix.go
-	syncFile interface{ Sync() error }
-	// truncateFile is implemented by os.File in file_posix.go
-	truncateFile interface{ Truncate(size int64) error }
 )
 
 // jsfs = js.Global().Get("fs") // fs_js.go init
@@ -190,14 +177,14 @@ func syscallFstat(fsc *internalsys.FSContext, fd int32) (*jsSt, error) {
 		return nil, syscall.EBADF
 	}
 
-	if st, err := f.Stat(); err != nil {
-		return nil, platform.UnwrapOSError(err)
+	if st, errno := f.File.Stat(); errno != 0 {
+		return nil, errno
 	} else {
 		return newJsSt(st), nil
 	}
 }
 
-func newJsSt(st platform.Stat_t) *jsSt {
+func newJsSt(st fsapi.Stat_t) *jsSt {
 	ret := &jsSt{}
 	ret.isDir = st.Mode.IsDir()
 	ret.dev = st.Dev
@@ -244,33 +231,26 @@ func (jsfsRead) invoke(ctx context.Context, mod api.Module, args ...interface{})
 	fOffset := args[4] // nil unless Pread
 	callback := args[5].(funcWrapper)
 
-	n, err := syscallRead(mod, fd, fOffset, buf.Unwrap()[offset:offset+byteCount])
-	return callback.invoke(ctx, mod, goos.RefJsfs, err, n) // note: error first
+	var err error
+	n, errno := syscallRead(mod, fd, fOffset, buf.Unwrap()[offset:offset+byteCount])
+	if errno != 0 {
+		err = errno
+	}
+	// It is safe to cast to uint32 because n <= uint32(byteCount).
+	return callback.invoke(ctx, mod, goos.RefJsfs, err, uint32(n)) // note: error first
 }
 
 // syscallRead is like syscall.Read
-func syscallRead(mod api.Module, fd int32, offset interface{}, p []byte) (n uint32, err error) {
+func syscallRead(mod api.Module, fd int32, offset interface{}, buf []byte) (n int, errno syscall.Errno) {
 	fsc := mod.(*wasm.ModuleInstance).Sys.FS()
 
-	f, ok := fsc.LookupFile(fd)
-	if !ok {
-		err = syscall.EBADF
-	}
-
-	var reader io.Reader = f.File
-
-	if offset != nil {
-		reader = sysfs.ReaderAtOffset(f.File, toInt64(offset))
-	}
-
-	if nRead, e := reader.Read(p); e == nil || e == io.EOF {
-		// fs_js.go cannot parse io.EOF so coerce it to nil.
-		// See https://github.com/golang/go/issues/43913
-		n = uint32(nRead)
+	if f, ok := fsc.LookupFile(fd); !ok {
+		return 0, syscall.EBADF
+	} else if offset != nil {
+		return f.File.Pread(buf, toInt64(offset))
 	} else {
-		err = e
+		return f.File.Read(buf)
 	}
-	return
 }
 
 // jsfsWrite implements jsFn for syscall.Write and syscall.Pwrite.
@@ -292,35 +272,29 @@ func (jsfsWrite) invoke(ctx context.Context, mod api.Module, args ...interface{}
 	callback := args[5].(funcWrapper)
 
 	if byteCount > 0 { // empty is possible on EOF
-		n, err := syscallWrite(mod, fd, fOffset, buf.Unwrap()[offset:offset+byteCount])
-		return callback.invoke(ctx, mod, goos.RefJsfs, err, n) // note: error first
+		n, errno := syscallWrite(mod, fd, fOffset, buf.Unwrap()[offset:offset+byteCount])
+		var err error
+		if errno != 0 {
+			err = errno
+		}
+		// It is safe to cast to uint32 because n <= uint32(byteCount).
+		return callback.invoke(ctx, mod, goos.RefJsfs, err, uint32(n)) // note: error first
 	}
 	return callback.invoke(ctx, mod, goos.RefJsfs, nil, goos.RefValueZero)
 }
 
 // syscallWrite is like syscall.Write
-func syscallWrite(mod api.Module, fd int32, offset interface{}, p []byte) (n uint32, err error) {
+func syscallWrite(mod api.Module, fd int32, offset interface{}, buf []byte) (n int, errno syscall.Errno) {
 	fsc := mod.(*wasm.ModuleInstance).Sys.FS()
-
-	var writer io.Writer
 	if f, ok := fsc.LookupFile(fd); !ok {
-		err = syscall.EBADF
+		errno = syscall.EBADF
 	} else if offset != nil {
-		writer = sysfs.WriterAtOffset(f.File, toInt64(offset))
-	} else if writer, ok = f.File.(io.Writer); !ok {
-		err = syscall.EBADF
-	}
-
-	if err != nil {
-		return
-	}
-
-	if nWritten, e := writer.Write(p); e == nil || e == io.EOF {
-		// fs_js.go cannot parse io.EOF so coerce it to nil.
-		// See https://github.com/golang/go/issues/43913
-		n = uint32(nWritten)
+		n, errno = f.File.Pwrite(buf, toInt64(offset))
 	} else {
-		err = e
+		n, errno = f.File.Write(buf)
+	}
+	if errno == syscall.ENOSYS {
+		errno = syscall.EBADF // e.g. unimplemented for write
 	}
 	return
 }
@@ -351,12 +325,12 @@ func syscallReaddir(_ context.Context, mod api.Module, name string) (*objectArra
 	}
 	defer f.Close() //nolint
 
-	if names, errno := platform.Readdirnames(f, -1); errno != 0 {
+	if dirents, errno := f.Readdir(-1); errno != 0 {
 		return nil, errno
 	} else {
-		entries := make([]interface{}, 0, len(names))
-		for _, e := range names {
-			entries = append(entries, e)
+		entries := make([]interface{}, 0, len(dirents))
+		for _, e := range dirents {
+			entries = append(entries, e.Name)
 		}
 		return &objectArray{entries}, nil
 	}
@@ -498,10 +472,8 @@ func (jsfsFchmod) invoke(ctx context.Context, mod api.Module, args ...interface{
 	var errno syscall.Errno
 	if f, ok := fsc.LookupFile(fd); !ok {
 		errno = syscall.EBADF
-	} else if chmodFile, ok := f.File.(chmodFile); !ok {
-		errno = syscall.EBADF // possibly a fake file
 	} else {
-		errno = platform.UnwrapOSError(chmodFile.Chmod(mode))
+		errno = f.File.Chmod(mode)
 	}
 
 	return jsfsInvoke(ctx, mod, callback, errno)
@@ -543,7 +515,7 @@ func (jsfsFchown) invoke(ctx context.Context, mod api.Module, args ...interface{
 	if f, ok := fsc.LookupFile(fd); !ok {
 		errno = syscall.EBADF
 	} else {
-		errno = platform.ChownFile(f.File, int(uid), int(gid))
+		errno = f.File.Chown(int(uid), int(gid))
 	}
 
 	return jsfsInvoke(ctx, mod, callback, errno)
@@ -601,10 +573,8 @@ func (jsfsFtruncate) invoke(ctx context.Context, mod api.Module, args ...interfa
 	var errno syscall.Errno
 	if f, ok := fsc.LookupFile(fd); !ok {
 		errno = syscall.EBADF
-	} else if truncateFile, ok := f.File.(truncateFile); !ok {
-		errno = syscall.EBADF // possibly a fake file
 	} else {
-		errno = platform.UnwrapOSError(truncateFile.Truncate(length))
+		errno = f.File.Truncate(length)
 	}
 
 	return jsfsInvoke(ctx, mod, callback, errno)
@@ -678,10 +648,8 @@ func (jsfsFsync) invoke(ctx context.Context, mod api.Module, args ...interface{}
 	var errno syscall.Errno
 	if f, ok := fsc.LookupFile(fd); !ok {
 		errno = syscall.EBADF
-	} else if syncFile, ok := f.File.(syncFile); !ok {
-		errno = syscall.EBADF // possibly a fake file
 	} else {
-		errno = platform.UnwrapOSError(syncFile.Sync())
+		errno = f.File.Sync()
 	}
 
 	return jsfsInvoke(ctx, mod, callback, errno)

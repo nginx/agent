@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/docker/compose/v2/pkg/progress"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/docker/cli/cli/command"
@@ -43,6 +44,12 @@ const (
 )
 
 func (s *composeService) Copy(ctx context.Context, projectName string, options api.CopyOptions) error {
+	return progress.RunWithTitle(ctx, func(ctx context.Context) error {
+		return s.copy(ctx, projectName, options)
+	}, s.stdinfo(), "Copying")
+}
+
+func (s *composeService) copy(ctx context.Context, projectName string, options api.CopyOptions) error {
 	projectName = strings.ToLower(projectName)
 	srcService, srcPath := splitCpArg(options.Source)
 	destService, dstPath := splitCpArg(options.Destination)
@@ -78,11 +85,34 @@ func (s *composeService) Copy(ctx context.Context, projectName string, options a
 		return err
 	}
 
+	w := progress.ContextWriter(ctx)
 	g := errgroup.Group{}
-	for _, container := range containers {
-		containerID := container.ID
+	for _, cont := range containers {
+		container := cont
 		g.Go(func() error {
-			return copyFunc(ctx, containerID, srcPath, dstPath, options)
+			name := getCanonicalContainerName(container)
+			var msg string
+			if direction == fromService {
+				msg = fmt.Sprintf("copy %s:%s to %s", name, srcPath, dstPath)
+			} else {
+				msg = fmt.Sprintf("copy %s to %s:%s", srcPath, name, dstPath)
+			}
+			w.Event(progress.Event{
+				ID:         name,
+				Text:       msg,
+				Status:     progress.Working,
+				StatusText: "Copying",
+			})
+			if err := copyFunc(ctx, container.ID, srcPath, dstPath, options); err != nil {
+				return err
+			}
+			w.Event(progress.Event{
+				ID:         name,
+				Text:       msg,
+				Status:     progress.Done,
+				StatusText: "Copied",
+			})
+			return nil
 		})
 	}
 
@@ -194,14 +224,17 @@ func (s *composeService) copyToContainer(ctx context.Context, containerID string
 		// extracted. This function also infers from the source and destination
 		// info which directory to extract to, which may be the parent of the
 		// destination that the user specified.
-		dstDir, preparedArchive, err := archive.PrepareArchiveCopy(srcArchive, srcInfo, dstInfo)
-		if err != nil {
-			return err
-		}
-		defer preparedArchive.Close() //nolint:errcheck
+		// Don't create the archive if running in Dry Run mode
+		if !s.dryRun {
+			dstDir, preparedArchive, err := archive.PrepareArchiveCopy(srcArchive, srcInfo, dstInfo)
+			if err != nil {
+				return err
+			}
+			defer preparedArchive.Close() //nolint:errcheck
 
-		resolvedDstPath = dstDir
-		content = preparedArchive
+			resolvedDstPath = dstDir
+			content = preparedArchive
+		}
 	}
 
 	options := moby.CopyToContainerOptions{

@@ -21,15 +21,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/compose-spec/compose-go/types"
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config/configfile"
+	"github.com/docker/cli/cli/flags"
 	"github.com/docker/cli/cli/streams"
 	moby "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
@@ -38,17 +43,28 @@ import (
 	"github.com/docker/compose/v2/pkg/api"
 )
 
+var stdioToStdout bool
+
+func init() {
+	out, ok := os.LookupEnv("COMPOSE_STATUS_STDOUT")
+	if ok {
+		stdioToStdout, _ = strconv.ParseBool(out)
+	}
+}
+
 // NewComposeService create a local implementation of the compose.Service API
 func NewComposeService(dockerCli command.Cli) api.Service {
 	return &composeService{
 		dockerCli:      dockerCli,
 		maxConcurrency: -1,
+		dryRun:         false,
 	}
 }
 
 type composeService struct {
 	dockerCli      command.Cli
 	maxConcurrency int
+	dryRun         bool
 }
 
 func (s *composeService) apiClient() client.APIClient {
@@ -63,6 +79,24 @@ func (s *composeService) MaxConcurrency(i int) {
 	s.maxConcurrency = i
 }
 
+func (s *composeService) DryRunMode(ctx context.Context, dryRun bool) (context.Context, error) {
+	s.dryRun = dryRun
+	if dryRun {
+		cli, err := command.NewDockerCli()
+		if err != nil {
+			return ctx, err
+		}
+		err = cli.Initialize(flags.NewClientOptions(), command.WithInitializeClient(func(cli *command.DockerCli) (client.APIClient, error) {
+			return api.NewDryRunClient(s.apiClient(), cli)
+		}))
+		if err != nil {
+			return ctx, err
+		}
+		s.dockerCli = cli
+	}
+	return context.WithValue(ctx, api.DryRunKey{}, dryRun), nil
+}
+
 func (s *composeService) stdout() *streams.Out {
 	return s.dockerCli.Out()
 }
@@ -72,6 +106,13 @@ func (s *composeService) stdin() *streams.In {
 }
 
 func (s *composeService) stderr() io.Writer {
+	return s.dockerCli.Err()
+}
+
+func (s *composeService) stdinfo() io.Writer {
+	if stdioToStdout {
+		return s.dockerCli.Out()
+	}
 	return s.dockerCli.Err()
 }
 
@@ -99,14 +140,10 @@ func getContainerNameWithoutProject(c moby.Container) string {
 	return name
 }
 
-func (s *composeService) Convert(ctx context.Context, project *types.Project, options api.ConvertOptions) ([]byte, error) {
+func (s *composeService) Config(ctx context.Context, project *types.Project, options api.ConfigOptions) ([]byte, error) {
 	if options.ResolveImageDigests {
-		info, err := s.apiClient().Info(ctx)
-		if err != nil {
-			return nil, err
-		}
-		err = project.ResolveImages(func(named reference.Named) (digest.Digest, error) {
-			auth, err := encodedAuth(named, info, s.configFile())
+		err := project.ResolveImages(func(named reference.Named) (digest.Digest, error) {
+			auth, err := encodedAuth(named, s.configFile())
 			if err != nil {
 				return "", err
 			}
@@ -159,13 +196,18 @@ func (s *composeService) projectFromName(containers Containers, projectName stri
 			for _, dc := range strings.Split(dependencies, ",") {
 				dcArr := strings.Split(dc, ":")
 				condition := ServiceConditionRunningOrHealthy
+				// Let's restart the dependency by default if we don't have the info stored in the label
+				restart := true
 				dependency := dcArr[0]
 
 				// backward compatibility
 				if len(dcArr) > 1 {
 					condition = dcArr[1]
+					if len(dcArr) > 2 {
+						restart, _ = strconv.ParseBool(dcArr[2])
+					}
 				}
-				service.DependsOn[dependency] = types.ServiceDependency{Condition: condition}
+				service.DependsOn[dependency] = types.ServiceDependency{Condition: condition, Restart: restart}
 			}
 		}
 		project.Services = append(project.Services, *service)
@@ -221,4 +263,24 @@ func (s *composeService) actualNetworks(ctx context.Context, projectName string)
 		}
 	}
 	return actual, nil
+}
+
+var swarmEnabled = struct {
+	once sync.Once
+	val  bool
+	err  error
+}{}
+
+func (s *composeService) isSWarmEnabled(ctx context.Context) (bool, error) {
+	swarmEnabled.once.Do(func() {
+		info, err := s.apiClient().Info(ctx)
+		if err != nil {
+			swarmEnabled.err = err
+		}
+		if info.Swarm.LocalNodeState == swarm.LocalNodeStateInactive {
+			swarmEnabled.val = info.Swarm.LocalNodeState == swarm.LocalNodeStateInactive
+		}
+	})
+	return swarmEnabled.val, swarmEnabled.err
+
 }

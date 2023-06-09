@@ -10,16 +10,16 @@ import (
 )
 
 type Script struct {
-	Runner string `mapstructure:"runner"`
+	Runner string `mapstructure:"runner" yaml:",omitempty" json:"runner,omitempty"`
 
-	Skip interface{}       `mapstructure:"skip"`
-	Only interface{}       `mapstructure:"only"`
-	Tags []string          `mapstructure:"tags"`
-	Env  map[string]string `mapstructure:"env"`
+	Skip interface{}       `mapstructure:"skip" yaml:",omitempty" json:"skip,omitempty"`
+	Only interface{}       `mapstructure:"only" yaml:",omitempty" json:"only,omitempty"`
+	Tags []string          `mapstructure:"tags" yaml:",omitempty" json:"tags,omitempty"`
+	Env  map[string]string `mapstructure:"env"  yaml:",omitempty" json:"env,omitempty"`
 
-	FailText    string `mapstructure:"fail_text"`
-	Interactive bool   `mapstructure:"interactive"`
-	StageFixed  bool   `mapstructure:"stage_fixed"`
+	FailText    string `mapstructure:"fail_text"  yaml:"fail_text,omitempty"    json:"fail_text,omitempty"`
+	Interactive bool   `mapstructure:"interactive" yaml:",omitempty"            json:"interactive,omitempty"`
+	StageFixed  bool   `mapstructure:"stage_fixed" yaml:"stage_fixed,omitempty" json:"stage_fixed,omitempty"`
 }
 
 func (s Script) DoSkip(gitState git.State) bool {

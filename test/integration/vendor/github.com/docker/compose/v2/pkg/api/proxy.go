@@ -38,7 +38,7 @@ type ServiceProxy struct {
 	LogsFn               func(ctx context.Context, projectName string, consumer LogConsumer, options LogOptions) error
 	PsFn                 func(ctx context.Context, projectName string, options PsOptions) ([]ContainerSummary, error)
 	ListFn               func(ctx context.Context, options ListOptions) ([]Stack, error)
-	ConvertFn            func(ctx context.Context, project *types.Project, options ConvertOptions) ([]byte, error)
+	ConfigFn             func(ctx context.Context, project *types.Project, options ConfigOptions) ([]byte, error)
 	KillFn               func(ctx context.Context, project string, options KillOptions) error
 	RunOneOffContainerFn func(ctx context.Context, project *types.Project, opts RunOptions) (int, error)
 	RemoveFn             func(ctx context.Context, project string, options RemoveOptions) error
@@ -50,7 +50,10 @@ type ServiceProxy struct {
 	EventsFn             func(ctx context.Context, project string, options EventsOptions) error
 	PortFn               func(ctx context.Context, project string, service string, port uint16, options PortOptions) (string, int, error)
 	ImagesFn             func(ctx context.Context, projectName string, options ImagesOptions) ([]ImageSummary, error)
+	WatchFn              func(ctx context.Context, project *types.Project, services []string, options WatchOptions) error
 	MaxConcurrencyFn     func(parallel int)
+	DryRunModeFn         func(ctx context.Context, dryRun bool) (context.Context, error)
+	VizFn                func(ctx context.Context, project *types.Project, options VizOptions) (string, error)
 	interceptors         []Interceptor
 }
 
@@ -76,7 +79,7 @@ func (s *ServiceProxy) WithService(service Service) *ServiceProxy {
 	s.LogsFn = service.Logs
 	s.PsFn = service.Ps
 	s.ListFn = service.List
-	s.ConvertFn = service.Convert
+	s.ConfigFn = service.Config
 	s.KillFn = service.Kill
 	s.RunOneOffContainerFn = service.RunOneOffContainer
 	s.RemoveFn = service.Remove
@@ -88,7 +91,10 @@ func (s *ServiceProxy) WithService(service Service) *ServiceProxy {
 	s.EventsFn = service.Events
 	s.PortFn = service.Port
 	s.ImagesFn = service.Images
+	s.WatchFn = service.Watch
 	s.MaxConcurrencyFn = service.MaxConcurrency
+	s.DryRunModeFn = service.DryRunMode
+	s.VizFn = service.Viz
 	return s
 }
 
@@ -210,14 +216,14 @@ func (s *ServiceProxy) List(ctx context.Context, options ListOptions) ([]Stack, 
 }
 
 // Convert implements Service interface
-func (s *ServiceProxy) Convert(ctx context.Context, project *types.Project, options ConvertOptions) ([]byte, error) {
-	if s.ConvertFn == nil {
+func (s *ServiceProxy) Config(ctx context.Context, project *types.Project, options ConfigOptions) ([]byte, error) {
+	if s.ConfigFn == nil {
 		return nil, ErrNotImplemented
 	}
 	for _, i := range s.interceptors {
 		i(ctx, project)
 	}
-	return s.ConvertFn(ctx, project, options)
+	return s.ConfigFn(ctx, project, options)
 }
 
 // Kill implements Service interface
@@ -311,6 +317,26 @@ func (s *ServiceProxy) Images(ctx context.Context, project string, options Image
 	return s.ImagesFn(ctx, project, options)
 }
 
+// Watch implements Service interface
+func (s *ServiceProxy) Watch(ctx context.Context, project *types.Project, services []string, options WatchOptions) error {
+	if s.WatchFn == nil {
+		return ErrNotImplemented
+	}
+	return s.WatchFn(ctx, project, services, options)
+}
+
+// Viz implements Viz interface
+func (s *ServiceProxy) Viz(ctx context.Context, project *types.Project, options VizOptions) (string, error) {
+	if s.VizFn == nil {
+		return "", ErrNotImplemented
+	}
+	return s.VizFn(ctx, project, options)
+}
+
 func (s *ServiceProxy) MaxConcurrency(i int) {
 	s.MaxConcurrencyFn(i)
+}
+
+func (s *ServiceProxy) DryRunMode(ctx context.Context, dryRun bool) (context.Context, error) {
+	return s.DryRunModeFn(ctx, dryRun)
 }

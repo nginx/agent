@@ -28,7 +28,7 @@ import (
 var delimiter = "\\$"
 var substitutionNamed = "[_a-z][_a-z0-9]*"
 
-var substitutionBraced = "[_a-z][_a-z0-9]*(?::?[-+?](.*}|[^}]*))?"
+var substitutionBraced = "[_a-z][_a-z0-9]*(?::?[-+?](.*))?"
 
 var patternString = fmt.Sprintf(
 	"%s(?i:(?P<escaped>%s)|(?P<named>%s)|{(?:(?P<braced>%s)}|(?P<invalid>)))",
@@ -45,6 +45,19 @@ type InvalidTemplateError struct {
 
 func (e InvalidTemplateError) Error() string {
 	return fmt.Sprintf("Invalid template: %#v", e.Template)
+}
+
+// MissingRequiredError is returned when a variable template is missing
+type MissingRequiredError struct {
+	Variable string
+	Reason   string
+}
+
+func (e MissingRequiredError) Error() string {
+	if e.Reason != "" {
+		return fmt.Sprintf("required variable %s is missing a value: %s", e.Variable, e.Reason)
+	}
+	return fmt.Sprintf("required variable %s is missing a value", e.Variable)
 }
 
 // Mapping is a user-supplied function which maps from variable names to values.
@@ -351,8 +364,9 @@ func withRequired(substitution string, mapping Mapping, sep string, valid func(s
 	}
 	value, ok := mapping(name)
 	if !ok || !valid(value) {
-		return "", true, &InvalidTemplateError{
-			Template: fmt.Sprintf("required variable %s is missing a value: %s", name, errorMessage),
+		return "", true, &MissingRequiredError{
+			Reason:   errorMessage,
+			Variable: name,
 		}
 	}
 	return value, true, nil

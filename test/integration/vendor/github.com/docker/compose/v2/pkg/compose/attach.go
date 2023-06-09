@@ -66,6 +66,7 @@ func (s *composeService) attachContainer(ctx context.Context, container moby.Con
 	listener(api.ContainerEvent{
 		Type:      api.ContainerEventAttach,
 		Container: containerName,
+		ID:        container.ID,
 		Service:   serviceName,
 	})
 
@@ -73,6 +74,7 @@ func (s *composeService) attachContainer(ctx context.Context, container moby.Con
 		listener(api.ContainerEvent{
 			Type:      api.ContainerEventLog,
 			Container: containerName,
+			ID:        container.ID,
 			Service:   serviceName,
 			Line:      line,
 		})
@@ -81,12 +83,13 @@ func (s *composeService) attachContainer(ctx context.Context, container moby.Con
 		listener(api.ContainerEvent{
 			Type:      api.ContainerEventErr,
 			Container: containerName,
+			ID:        container.ID,
 			Service:   serviceName,
 			Line:      line,
 		})
 	})
 
-	inspect, err := s.dockerCli.Client().ContainerInspect(ctx, container.ID)
+	inspect, err := s.apiClient().ContainerInspect(ctx, container.ID)
 	if err != nil {
 		return err
 	}

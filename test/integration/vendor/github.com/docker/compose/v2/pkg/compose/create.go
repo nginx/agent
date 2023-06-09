@@ -49,9 +49,9 @@ import (
 )
 
 func (s *composeService) Create(ctx context.Context, project *types.Project, options api.CreateOptions) error {
-	return progress.Run(ctx, func(ctx context.Context) error {
+	return progress.RunWithTitle(ctx, func(ctx context.Context) error {
 		return s.create(ctx, project, options)
-	})
+	}, s.stdinfo(), "Creating")
 }
 
 func (s *composeService) create(ctx context.Context, project *types.Project, options api.CreateOptions) error {
@@ -236,10 +236,16 @@ func (s *composeService) ensureProjectVolumes(ctx context.Context, project *type
 	return nil
 }
 
-func (s *composeService) getCreateOptions(ctx context.Context, p *types.Project, service types.ServiceConfig,
-	number int, inherit *moby.Container, autoRemove bool, attachStdin bool) (*container.Config, *container.HostConfig, *network.NetworkingConfig, error) {
+func (s *composeService) getCreateOptions(ctx context.Context,
+	p *types.Project,
+	service types.ServiceConfig,
+	number int,
+	inherit *moby.Container,
+	autoRemove, attachStdin bool,
+	labels types.Labels,
+) (*container.Config, *container.HostConfig, *network.NetworkingConfig, error) {
 
-	labels, err := s.prepareLabels(service, number)
+	labels, err := s.prepareLabels(labels, service, number)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -364,6 +370,7 @@ func (s *composeService) getCreateOptions(ctx context.Context, p *types.Project,
 		ExtraHosts:     service.ExtraHosts.AsList(),
 		SecurityOpt:    securityOpts,
 		UsernsMode:     container.UsernsMode(service.UserNSMode),
+		UTSMode:        container.UTSMode(service.Uts),
 		Privileged:     service.Privileged,
 		PidMode:        container.PidMode(service.Pid),
 		Tmpfs:          tmpfs,
@@ -450,15 +457,7 @@ func parseSecurityOpts(p *types.Project, securityOpts []string) ([]string, bool,
 	return parsed, unconfined, nil
 }
 
-func (s *composeService) prepareLabels(service types.ServiceConfig, number int) (map[string]string, error) {
-	labels := map[string]string{}
-	for k, v := range service.Labels {
-		labels[k] = v
-	}
-	for k, v := range service.CustomLabels {
-		labels[k] = v
-	}
-
+func (s *composeService) prepareLabels(labels types.Labels, service types.ServiceConfig, number int) (map[string]string, error) {
 	hash, err := ServiceHash(service)
 	if err != nil {
 		return nil, err
@@ -469,7 +468,7 @@ func (s *composeService) prepareLabels(service types.ServiceConfig, number int) 
 
 	var dependencies []string
 	for s, d := range service.DependsOn {
-		dependencies = append(dependencies, s+":"+d.Condition)
+		dependencies = append(dependencies, fmt.Sprintf("%s:%s:%t", s, d.Condition, d.Restart))
 	}
 	labels[api.DependenciesLabel] = strings.Join(dependencies, ",")
 	return labels, nil
@@ -660,25 +659,25 @@ func setBlkio(blkio *types.BlkioConfig, resources *container.Resources) {
 	for _, b := range blkio.DeviceReadBps {
 		resources.BlkioDeviceReadBps = append(resources.BlkioDeviceReadBps, &blkiodev.ThrottleDevice{
 			Path: b.Path,
-			Rate: b.Rate,
+			Rate: uint64(b.Rate),
 		})
 	}
 	for _, b := range blkio.DeviceReadIOps {
 		resources.BlkioDeviceReadIOps = append(resources.BlkioDeviceReadIOps, &blkiodev.ThrottleDevice{
 			Path: b.Path,
-			Rate: b.Rate,
+			Rate: uint64(b.Rate),
 		})
 	}
 	for _, b := range blkio.DeviceWriteBps {
 		resources.BlkioDeviceWriteBps = append(resources.BlkioDeviceWriteBps, &blkiodev.ThrottleDevice{
 			Path: b.Path,
-			Rate: b.Rate,
+			Rate: uint64(b.Rate),
 		})
 	}
 	for _, b := range blkio.DeviceWriteIOps {
 		resources.BlkioDeviceWriteIOps = append(resources.BlkioDeviceWriteIOps, &blkiodev.ThrottleDevice{
 			Path: b.Path,
-			Rate: b.Rate,
+			Rate: uint64(b.Rate),
 		})
 	}
 }
@@ -1104,7 +1103,13 @@ func (s *composeService) ensureNetwork(ctx context.Context, n types.NetworkConfi
 				// Here we assume `driver` is relevant for a network we don't manage
 				// which is a non-sense, but this is our legacy ¯\(ツ)/¯
 				// networkAttach will later fail anyway if network actually doesn't exists
-				return nil
+				enabled, err := s.isSWarmEnabled(ctx)
+				if err != nil {
+					return err
+				}
+				if enabled {
+					return nil
+				}
 			}
 			return fmt.Errorf("network %s declared as external, but could not be found", n.Name)
 		}

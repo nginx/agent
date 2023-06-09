@@ -72,6 +72,7 @@ func (s *composeService) Logs(
 	}
 
 	if options.Follow {
+		containers = containers.filter(isRunning())
 		printer := newLogPrinter(consumer)
 		eg.Go(func() error {
 			_, err := printer.Run(false, "", nil)
@@ -82,6 +83,7 @@ func (s *composeService) Logs(
 			printer.HandleEvent(api.ContainerEvent{
 				Type:      api.ContainerEventAttach,
 				Container: getContainerNameWithoutProject(c),
+				ID:        c.ID,
 				Service:   c.Labels[api.ServiceLabel],
 			})
 		}
@@ -91,20 +93,32 @@ func (s *composeService) Logs(
 				printer.HandleEvent(api.ContainerEvent{
 					Type:      api.ContainerEventAttach,
 					Container: getContainerNameWithoutProject(c),
+					ID:        c.ID,
 					Service:   c.Labels[api.ServiceLabel],
 				})
-				err := s.logContainers(ctx, consumer, c, api.LogOptions{
-					Follow:     options.Follow,
-					Since:      t.Format(time.RFC3339Nano),
-					Until:      options.Until,
-					Tail:       options.Tail,
-					Timestamps: options.Timestamps,
+				eg.Go(func() error {
+					err := s.logContainers(ctx, consumer, c, api.LogOptions{
+						Follow:     options.Follow,
+						Since:      t.Format(time.RFC3339Nano),
+						Until:      options.Until,
+						Tail:       options.Tail,
+						Timestamps: options.Timestamps,
+					})
+					if _, ok := err.(errdefs.ErrNotImplemented); ok {
+						// ignore
+						return nil
+					}
+					return err
 				})
-				if _, ok := err.(errdefs.ErrNotImplemented); ok {
-					// ignore
-					return nil
-				}
-				return err
+				return nil
+			}, func(c types.Container, t time.Time) error {
+				printer.HandleEvent(api.ContainerEvent{
+					Type:      api.ContainerEventAttach,
+					Container: "", // actual name will be set by start event
+					ID:        c.ID,
+					Service:   c.Labels[api.ServiceLabel],
+				})
+				return nil
 			})
 			printer.Stop()
 			return err

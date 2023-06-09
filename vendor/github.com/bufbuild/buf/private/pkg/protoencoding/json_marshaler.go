@@ -23,17 +23,20 @@ import (
 )
 
 type jsonMarshaler struct {
-	resolver      Resolver
-	indent        string
-	useProtoNames bool
+	resolver        Resolver
+	indent          string
+	useProtoNames   bool
+	emitUnpopulated bool
 }
 
-func newJSONMarshaler(resolver Resolver, indent string, useProtoNames bool) Marshaler {
-	return &jsonMarshaler{
-		resolver:      resolver,
-		indent:        indent,
-		useProtoNames: useProtoNames,
+func newJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshaler {
+	jsonMarshaler := &jsonMarshaler{
+		resolver: resolver,
 	}
+	for _, option := range options {
+		option(jsonMarshaler)
+	}
+	return jsonMarshaler
 }
 
 func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
@@ -41,9 +44,9 @@ func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
 		return nil, err
 	}
 	options := protojson.MarshalOptions{
-		Resolver:      m.resolver,
-		Indent:        m.indent,
-		UseProtoNames: m.useProtoNames,
+		Resolver:        m.resolver,
+		UseProtoNames:   m.useProtoNames,
+		EmitUnpopulated: m.emitUnpopulated,
 	}
 	data, err := options.Marshal(message)
 	if err != nil {
@@ -58,8 +61,14 @@ func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
 	// We may need to do a full encoding/json encode/decode in the future if protojson
 	// produces non-deterministic output.
 	buffer := bytes.NewBuffer(nil)
-	if err := json.Compact(buffer, data); err != nil {
-		return nil, err
+	if m.indent != "" {
+		if err := json.Indent(buffer, data, "", m.indent); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := json.Compact(buffer, data); err != nil {
+			return nil, err
+		}
 	}
 	return buffer.Bytes(), nil
 }

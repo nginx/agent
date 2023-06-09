@@ -76,11 +76,12 @@ github.com/jstemmer/go-junit-report/parser
 github.com/kelseyhightower/envconfig
 # github.com/klauspost/compress v1.16.5
 ## explicit; go 1.18
+github.com/klauspost/compress/flate
 github.com/klauspost/compress/s2
-# github.com/klauspost/cpuid/v2 v2.1.0
+# github.com/klauspost/cpuid/v2 v2.2.5
 ## explicit; go 1.15
 github.com/klauspost/cpuid/v2
-# github.com/lufia/plan9stats v0.0.0-20220517141722-cf486979b281
+# github.com/lufia/plan9stats v0.0.0-20230326075908-cb1d2100619a
 ## explicit; go 1.16
 github.com/lufia/plan9stats
 # github.com/magiconair/properties v1.8.7
@@ -101,11 +102,11 @@ github.com/minio/highwayhash
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
-# github.com/nats-io/jwt/v2 v2.3.0
-## explicit; go 1.16
+# github.com/nats-io/jwt/v2 v2.4.1
+## explicit; go 1.18
 github.com/nats-io/jwt/v2
-# github.com/nats-io/nats-server/v2 v2.8.4
-## explicit; go 1.17
+# github.com/nats-io/nats-server/v2 v2.9.17
+## explicit; go 1.19
 github.com/nats-io/nats-server/v2/conf
 github.com/nats-io/nats-server/v2/internal/ldap
 github.com/nats-io/nats-server/v2/logger
@@ -113,19 +114,20 @@ github.com/nats-io/nats-server/v2/server
 github.com/nats-io/nats-server/v2/server/pse
 github.com/nats-io/nats-server/v2/server/sysmem
 github.com/nats-io/nats-server/v2/test
-# github.com/nats-io/nats.go v1.16.0
-## explicit; go 1.16
+# github.com/nats-io/nats.go v1.26.0
+## explicit; go 1.19
 github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin
+github.com/nats-io/nats.go/internal/parser
 github.com/nats-io/nats.go/util
-# github.com/nats-io/nkeys v0.3.0
-## explicit; go 1.16
+# github.com/nats-io/nkeys v0.4.4
+## explicit; go 1.19
 github.com/nats-io/nkeys
 # github.com/nats-io/nuid v1.0.1
 ## explicit
 github.com/nats-io/nuid
-# github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000 => ./../../sdk
-## explicit; go 1.19
+# github.com/nginx/agent/sdk/v2 v2.26.0 => ./../../sdk
+## explicit; go 1.20
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
 github.com/nginx/agent/sdk/v2/backoff
@@ -138,8 +140,8 @@ github.com/nginx/agent/sdk/v2/proto
 github.com/nginx/agent/sdk/v2/proto/common
 github.com/nginx/agent/sdk/v2/proto/events
 github.com/nginx/agent/sdk/v2/zip
-# github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000 => ./../../
-## explicit; go 1.19
+# github.com/nginx/agent/v2 v2.26.0 => ./../../
+## explicit; go 1.20
 github.com/nginx/agent/v2/src/core
 github.com/nginx/agent/v2/src/core/config
 github.com/nginx/agent/v2/src/core/logger
@@ -172,14 +174,14 @@ github.com/nginx/agent/v2/src/extensions/prometheus-metrics
 github.com/nginx/agent/v2/src/plugins
 github.com/nginx/agent/v2/test/utils
 github.com/nginx/agent/v2/test/utils/system
-# github.com/nginxinc/nginx-go-crossplane v0.4.17
+# github.com/nginxinc/nginx-go-crossplane v0.4.18
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
 # github.com/nginxinc/nginx-plus-go-client v0.10.0
 ## explicit; go 1.18
 github.com/nginxinc/nginx-plus-go-client/client
-# github.com/nginxinc/nginx-prometheus-exporter v0.10.0
-## explicit; go 1.17
+# github.com/nginxinc/nginx-prometheus-exporter v0.11.0
+## explicit; go 1.19
 github.com/nginxinc/nginx-prometheus-exporter/client
 # github.com/nxadm/tail v1.4.8
 ## explicit; go 1.13
@@ -191,7 +193,7 @@ github.com/nxadm/tail/winfile
 # github.com/orcaman/concurrent-map v1.0.0
 ## explicit
 github.com/orcaman/concurrent-map
-# github.com/pelletier/go-toml/v2 v2.0.6
+# github.com/pelletier/go-toml/v2 v2.0.8
 ## explicit; go 1.16
 github.com/pelletier/go-toml/v2
 github.com/pelletier/go-toml/v2/internal/characters
@@ -201,25 +203,25 @@ github.com/pelletier/go-toml/v2/unstable
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/power-devops/perfstat v0.0.0-20220216144756-c35f1ee13d7c
+# github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b
 ## explicit; go 1.14
 github.com/power-devops/perfstat
-# github.com/prometheus/client_golang v1.13.0
+# github.com/prometheus/client_golang v1.15.1
 ## explicit; go 1.17
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promauto
 github.com/prometheus/client_golang/prometheus/promhttp
-# github.com/prometheus/client_model v0.2.0
-## explicit; go 1.9
+# github.com/prometheus/client_model v0.4.0
+## explicit; go 1.18
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.37.0
-## explicit; go 1.16
+# github.com/prometheus/common v0.44.0
+## explicit; go 1.18
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
 github.com/prometheus/common/model
-# github.com/prometheus/procfs v0.8.0
-## explicit; go 1.17
+# github.com/prometheus/procfs v0.10.1
+## explicit; go 1.19
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
@@ -236,7 +238,7 @@ github.com/shirou/gopsutil/internal/common
 github.com/shirou/gopsutil/mem
 github.com/shirou/gopsutil/net
 github.com/shirou/gopsutil/process
-# github.com/shirou/gopsutil/v3 v3.23.2
+# github.com/shirou/gopsutil/v3 v3.23.5
 ## explicit; go 1.15
 github.com/shirou/gopsutil/v3/cpu
 github.com/shirou/gopsutil/v3/disk
@@ -246,7 +248,10 @@ github.com/shirou/gopsutil/v3/load
 github.com/shirou/gopsutil/v3/mem
 github.com/shirou/gopsutil/v3/net
 github.com/shirou/gopsutil/v3/process
-# github.com/sirupsen/logrus v1.9.0
+# github.com/shoenig/go-m1cpu v0.1.6
+## explicit; go 1.20
+github.com/shoenig/go-m1cpu
+# github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
 # github.com/spf13/afero v1.9.5
@@ -254,7 +259,7 @@ github.com/sirupsen/logrus
 github.com/spf13/afero
 github.com/spf13/afero/internal/common
 github.com/spf13/afero/mem
-# github.com/spf13/cast v1.5.0
+# github.com/spf13/cast v1.5.1
 ## explicit; go 1.18
 github.com/spf13/cast
 # github.com/spf13/cobra v1.7.0
@@ -266,7 +271,7 @@ github.com/spf13/jwalterweatherman
 # github.com/spf13/pflag v1.0.5
 ## explicit; go 1.12
 github.com/spf13/pflag
-# github.com/spf13/viper v1.15.0
+# github.com/spf13/viper v1.16.0
 ## explicit; go 1.17
 github.com/spf13/viper
 github.com/spf13/viper/internal/encoding
@@ -280,8 +285,8 @@ github.com/spf13/viper/internal/encoding/yaml
 # github.com/stretchr/objx v0.5.0
 ## explicit; go 1.12
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.8.2
-## explicit; go 1.13
+# github.com/stretchr/testify v1.8.4
+## explicit; go 1.20
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
@@ -291,7 +296,7 @@ github.com/subosito/gotenv
 # github.com/tklauser/go-sysconf v0.3.11
 ## explicit; go 1.13
 github.com/tklauser/go-sysconf
-# github.com/tklauser/numcpus v0.6.0
+# github.com/tklauser/numcpus v0.6.1
 ## explicit; go 1.13
 github.com/tklauser/numcpus
 # github.com/trivago/grok v1.0.0
@@ -300,22 +305,28 @@ github.com/trivago/grok
 # github.com/vardius/message-bus v1.1.5
 ## explicit; go 1.12
 github.com/vardius/message-bus
-# github.com/yusufpapurcu/wmi v1.2.2
+# github.com/yusufpapurcu/wmi v1.2.3
 ## explicit; go 1.16
 github.com/yusufpapurcu/wmi
 # go.uber.org/atomic v1.11.0
 ## explicit; go 1.18
 go.uber.org/atomic
-# golang.org/x/crypto v0.8.0
+# golang.org/x/crypto v0.9.0
 ## explicit; go 1.17
 golang.org/x/crypto/bcrypt
+golang.org/x/crypto/blake2b
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
 golang.org/x/crypto/chacha20poly1305
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/internal/alias
 golang.org/x/crypto/internal/poly1305
+golang.org/x/crypto/nacl/box
+golang.org/x/crypto/nacl/secretbox
 golang.org/x/crypto/ocsp
+golang.org/x/crypto/salsa20/salsa
 # golang.org/x/mod v0.10.0
 ## explicit; go 1.17
 golang.org/x/mod/internal/lazyregexp
@@ -357,23 +368,23 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/time v0.1.0
+# golang.org/x/time v0.3.0
 ## explicit
 golang.org/x/time/rate
-# golang.org/x/tools v0.9.1
+# golang.org/x/tools v0.9.3
 ## explicit; go 1.18
 golang.org/x/tools/cmd/goimports
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/internal/packagesdriver
 golang.org/x/tools/go/packages
-golang.org/x/tools/go/types/objectpath
 golang.org/x/tools/go/types/typeutil
 golang.org/x/tools/imports
 golang.org/x/tools/internal/event
 golang.org/x/tools/internal/event/core
 golang.org/x/tools/internal/event/keys
 golang.org/x/tools/internal/event/label
+golang.org/x/tools/internal/event/tag
 golang.org/x/tools/internal/fastwalk
 golang.org/x/tools/internal/gcimporter
 golang.org/x/tools/internal/gocommand
@@ -384,7 +395,7 @@ golang.org/x/tools/internal/pkgbits
 golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
-# google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.55.0

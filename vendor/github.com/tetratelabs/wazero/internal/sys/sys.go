@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"time"
 
+	"github.com/tetratelabs/wazero/internal/fsapi"
 	"github.com/tetratelabs/wazero/internal/platform"
-	"github.com/tetratelabs/wazero/internal/sysfs"
 	"github.com/tetratelabs/wazero/sys"
 )
 
@@ -97,7 +98,7 @@ func (c *Context) Osyield() {
 	c.osyield()
 }
 
-// FS returns the possibly empty (sysfs.UnimplementedFS) file system context.
+// FS returns the possibly empty (UnimplementedFS) file system context.
 func (c *Context) FS() *FSContext {
 	return &c.fsc
 }
@@ -108,20 +109,12 @@ func (c *Context) RandSource() io.Reader {
 	return c.randSource
 }
 
-// eofReader is safer than reading from os.DevNull as it can never overrun operating system file descriptors.
-type eofReader struct{}
-
-// Read implements io.Reader
-// Note: This doesn't use a pointer reference as it has no state and an empty struct doesn't allocate.
-func (eofReader) Read([]byte) (int, error) {
-	return 0, io.EOF
-}
-
-// DefaultContext returns Context with no values set except a possible nil fs.FS
+// DefaultContext returns Context with no values set except a possible nil
+// fsapi.FS.
 //
-// This is only used for testing.
-func DefaultContext(fs sysfs.FS) *Context {
-	if sysCtx, err := NewContext(0, nil, nil, nil, nil, nil, nil, nil, 0, nil, 0, nil, nil, fs); err != nil {
+// Note: This is only used for testing.
+func DefaultContext(fs fsapi.FS) *Context {
+	if sysCtx, err := NewContext(0, nil, nil, nil, nil, nil, nil, nil, 0, nil, 0, nil, nil, fs, nil); err != nil {
 		panic(fmt.Errorf("BUG: DefaultContext should never error: %w", err))
 	} else {
 		return sysCtx
@@ -142,7 +135,8 @@ func NewContext(
 	nanotimeResolution sys.ClockResolution,
 	nanosleep sys.Nanosleep,
 	osyield sys.Osyield,
-	rootFS sysfs.FS,
+	rootFS fsapi.FS,
+	tcpListeners []*net.TCPListener,
 ) (sysCtx *Context, err error) {
 	sysCtx = &Context{args: args, environ: environ}
 
@@ -195,9 +189,9 @@ func NewContext(
 	}
 
 	if rootFS != nil {
-		err = sysCtx.NewFSContext(stdin, stdout, stderr, rootFS)
+		err = sysCtx.NewFSContext(stdin, stdout, stderr, rootFS, tcpListeners)
 	} else {
-		err = sysCtx.NewFSContext(stdin, stdout, stderr, sysfs.UnimplementedFS{})
+		err = sysCtx.NewFSContext(stdin, stdout, stderr, fsapi.UnimplementedFS{}, tcpListeners)
 	}
 
 	return

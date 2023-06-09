@@ -135,6 +135,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		gomodguardCfg       *config.GoModGuardSettings
 		gosecCfg            *config.GoSecSettings
 		gosimpleCfg         *config.StaticCheckSettings
+		gosmopolitanCfg     *config.GosmopolitanSettings
 		govetCfg            *config.GovetSettings
 		grouperCfg          *config.GrouperSettings
 		ifshortCfg          *config.IfshortSettings
@@ -164,6 +165,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		staticcheckCfg      *config.StaticCheckSettings
 		structcheckCfg      *config.StructCheckSettings
 		stylecheckCfg       *config.StaticCheckSettings
+		tagalignCfg         *config.TagAlignSettings
 		tagliatelleCfg      *config.TagliatelleSettings
 		tenvCfg             *config.TenvSettings
 		testpackageCfg      *config.TestpackageSettings
@@ -213,6 +215,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		gomodguardCfg = &m.cfg.LintersSettings.Gomodguard
 		gosecCfg = &m.cfg.LintersSettings.Gosec
 		gosimpleCfg = &m.cfg.LintersSettings.Gosimple
+		gosmopolitanCfg = &m.cfg.LintersSettings.Gosmopolitan
 		govetCfg = &m.cfg.LintersSettings.Govet
 		grouperCfg = &m.cfg.LintersSettings.Grouper
 		ifshortCfg = &m.cfg.LintersSettings.Ifshort
@@ -242,12 +245,14 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		staticcheckCfg = &m.cfg.LintersSettings.Staticcheck
 		structcheckCfg = &m.cfg.LintersSettings.Structcheck
 		stylecheckCfg = &m.cfg.LintersSettings.Stylecheck
+		tagalignCfg = &m.cfg.LintersSettings.TagAlign
 		tagliatelleCfg = &m.cfg.LintersSettings.Tagliatelle
 		tenvCfg = &m.cfg.LintersSettings.Tenv
 		testpackageCfg = &m.cfg.LintersSettings.Testpackage
 		thelperCfg = &m.cfg.LintersSettings.Thelper
 		unparamCfg = &m.cfg.LintersSettings.Unparam
 		unusedCfg = new(config.StaticCheckSettings)
+		usestdlibvars = &m.cfg.LintersSettings.UseStdlibVars
 		varcheckCfg = &m.cfg.LintersSettings.Varcheck
 		varnamelenCfg = &m.cfg.LintersSettings.Varnamelen
 		whitespaceCfg = &m.cfg.LintersSettings.Whitespace
@@ -256,6 +261,10 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 
 		if govetCfg != nil {
 			govetCfg.Go = m.cfg.Run.Go
+		}
+
+		if gocriticCfg != nil {
+			gocriticCfg.Go = m.cfg.Run.Go
 		}
 
 		if gofumptCfg != nil && gofumptCfg.LangVersion == "" {
@@ -305,6 +314,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 
 		linter.NewConfig(golinters.NewContainedCtx()).
 			WithSince("1.44.0").
+			WithLoadForGoAnalysis().
 			WithPresets(linter.PresetStyle).
 			WithURL("https://github.com/sivchari/containedctx"),
 
@@ -417,6 +427,10 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		linter.NewConfig(golinters.NewForbidigo(forbidigoCfg)).
 			WithSince("v1.34.0").
 			WithPresets(linter.PresetStyle).
+			// Strictly speaking,
+			// the additional information is only needed when forbidigoCfg.AnalyzeTypes is chosen by the user.
+			// But we don't know that here in all cases (sometimes config is not loaded),
+			// so we have to assume that it is needed to be on the safe side.
 			WithLoadForGoAnalysis().
 			WithURL("https://github.com/ashanbrown/forbidigo"),
 
@@ -558,6 +572,12 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithAlternativeNames(megacheckName).
 			WithURL("https://github.com/dominikh/go-tools/tree/master/simple"),
 
+		linter.NewConfig(golinters.NewGosmopolitan(gosmopolitanCfg)).
+			WithSince("v1.53.0").
+			WithLoadForGoAnalysis().
+			WithPresets(linter.PresetBugs).
+			WithURL("https://github.com/xen0n/gosmopolitan"),
+
 		linter.NewConfig(golinters.NewGovet(govetCfg)).
 			WithSince("v1.0.0").
 			WithLoadForGoAnalysis().
@@ -634,6 +654,12 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithURL("https://github.com/mdempsky/maligned").
 			Deprecated("The repository of the linter has been archived by the owner.", "v1.38.0", "govet 'fieldalignment'"),
 
+		linter.NewConfig(golinters.NewMirror()).
+			WithSince("v1.53.0").
+			WithPresets(linter.PresetStyle).
+			WithLoadForGoAnalysis().
+			WithURL("https://github.com/butuzov/mirror"),
+
 		linter.NewConfig(golinters.NewMisspell(misspellCfg)).
 			WithSince("v1.8.0").
 			WithPresets(linter.PresetStyle, linter.PresetComment).
@@ -644,7 +670,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithSince("v1.51.0").
 			WithLoadForGoAnalysis().
 			WithPresets(linter.PresetStyle, linter.PresetBugs).
-			WithURL("https://github.com/junk1tm/musttag"),
+			WithURL("https://github.com/tmzane/musttag"),
 
 		linter.NewConfig(golinters.NewNakedret(nakedretCfg)).
 			WithSince("v1.19.0").
@@ -759,14 +785,19 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithLoadForGoAnalysis().
 			WithPresets(linter.PresetUnused).
 			WithURL("https://github.com/opennota/check").
-			Deprecated("The owner seems to have abandoned the linter.", "v1.49.0", "unused").
-			WithNoopFallback(m.cfg),
+			Deprecated("The owner seems to have abandoned the linter.", "v1.49.0", "unused"),
 
 		linter.NewConfig(golinters.NewStylecheck(stylecheckCfg)).
 			WithSince("v1.20.0").
 			WithLoadForGoAnalysis().
 			WithPresets(linter.PresetStyle).
 			WithURL("https://github.com/dominikh/go-tools/tree/master/stylecheck"),
+
+		linter.NewConfig(golinters.NewTagAlign(tagalignCfg)).
+			WithSince("v1.53.0").
+			WithPresets(linter.PresetStyle, linter.PresetFormatting).
+			WithAutoFix().
+			WithURL("https://github.com/4meepo/tagalign"),
 
 		linter.NewConfig(golinters.NewTagliatelle(tagliatelleCfg)).
 			WithSince("v1.40.0").
@@ -874,6 +905,12 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithSince("v1.26.0").
 			WithPresets(linter.PresetStyle).
 			WithURL("https://github.com/golangci/golangci-lint/blob/master/pkg/golinters/nolintlint/README.md"),
+
+		linter.NewConfig(golinters.NewZerologLint()).
+			WithSince("v1.53.0").
+			WithPresets(linter.PresetBugs).
+			WithLoadForGoAnalysis().
+			WithURL("https://github.com/ykadowak/zerologlint"),
 	}
 
 	enabledByDefault := map[string]bool{

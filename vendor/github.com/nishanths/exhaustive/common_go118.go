@@ -23,6 +23,7 @@ func fromNamed(pass *analysis.Pass, t *types.Named, typeparam bool) (result []ty
 	}
 
 	if typeparam {
+		// is it a named interface?
 		if intf, ok := t.Underlying().(*types.Interface); ok {
 			return fromInterface(pass, intf, typeparam)
 		}
@@ -31,34 +32,33 @@ func fromNamed(pass *analysis.Pass, t *types.Named, typeparam bool) (result []ty
 	return nil, false // not a valid enum type, so ok == false
 }
 
-func fromInterface(pass *analysis.Pass, intf *types.Interface, typeparam bool) (result []typeAndMembers, all bool) {
-	all = true
-
+func fromInterface(pass *analysis.Pass, intf *types.Interface, typeparam bool) (result []typeAndMembers, ok bool) {
+	allOk := true
 	for i := 0; i < intf.NumEmbeddeds(); i++ {
-		embed := intf.EmbeddedType(i)
-
-		switch embed.(type) {
-		case *types.Union:
-			u := embed.(*types.Union)
-			// gather from each term in the union.
-			for i := 0; i < u.Len(); i++ {
-				r, a := fromType(pass, u.Term(i).Type(), typeparam)
-				result = append(result, r...)
-				all = all && a
-			}
-
-		case *types.Named:
-			r, a := fromNamed(pass, embed.(*types.Named), typeparam)
-			result = append(result, r...)
-			all = all && a
-
-		default:
-			// don't care about these.
-			// e.g. basic type
-		}
+		r, ok := fromType(pass, intf.EmbeddedType(i), typeparam)
+		result = append(result, r...)
+		allOk = allOk && ok
 	}
+	return result, allOk
+}
 
-	return
+func fromUnion(pass *analysis.Pass, union *types.Union, typeparam bool) (result []typeAndMembers, ok bool) {
+	allOk := true
+	// gather from each term in the union.
+	for i := 0; i < union.Len(); i++ {
+		r, ok := fromType(pass, union.Term(i).Type(), typeparam)
+		result = append(result, r...)
+		allOk = allOk && ok
+	}
+	return result, allOk
+}
+
+func fromTypeParam(pass *analysis.Pass, tp *types.TypeParam, typeparam bool) (result []typeAndMembers, ok bool) {
+	// Does not appear to be explicitly documented, but based on Go language
+	// spec (see section Type constraints) and Go standard library source code,
+	// we can expect constraints to have underlying type *types.Interface
+	// Regardless it will be handled in fromType.
+	return fromType(pass, tp.Constraint().Underlying(), typeparam)
 }
 
 func fromType(pass *analysis.Pass, t types.Type, typeparam bool) (result []typeAndMembers, ok bool) {
@@ -66,19 +66,18 @@ func fromType(pass *analysis.Pass, t types.Type, typeparam bool) (result []typeA
 	case *types.Named:
 		return fromNamed(pass, t, typeparam)
 
+	case *types.Union:
+		return fromUnion(pass, t, typeparam)
+
 	case *types.TypeParam:
-		// does not appear to be explicitly documented, but based on
-		// spec (see section Type constraints) and source code, we can
-		// expect constraints to have underlying type *types.Interface.
-		intf := t.Constraint().Underlying().(*types.Interface)
-		return fromInterface(pass, intf, typeparam)
+		return fromTypeParam(pass, t, typeparam)
 
 	case *types.Interface:
-		// anonymous interface.
-		// e.g. func foo[T interface { M } | interface { N }](v T) {}
 		if !typeparam {
 			return nil, true
 		}
+		// anonymous interface.
+		// e.g. func foo[T interface { M } | interface { N }](v T) {}
 		return fromInterface(pass, t, typeparam)
 
 	default:
@@ -95,7 +94,7 @@ func composingEnumTypes(pass *analysis.Pass, t types.Type) (result []typeAndMemb
 		var kind types.BasicKind
 		var kindSet bool
 
-		// sameKind reports whether each type t that the function is called
+		// sameBasicKind reports whether each type t that the function is called
 		// with has the same underlying basic kind.
 		sameBasicKind := func(t types.Type) (ok bool) {
 			basic, ok := t.Underlying().(*types.Basic)

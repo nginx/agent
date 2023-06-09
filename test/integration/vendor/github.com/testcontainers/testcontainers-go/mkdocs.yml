@@ -5,6 +5,7 @@ plugins:
     - markdownextradata
 theme:
     name: material
+    custom_dir: docs/theme
     palette:
         scheme: testcontainers
     font:
@@ -24,14 +25,22 @@ markdown_extensions:
     - pymdownx.tabbed:
         alternate_style: true
     - pymdownx.snippets
+    - toc:
+        permalink: true
+    - attr_list
+    - pymdownx.emoji:
+        emoji_index: !!python/name:materialx.emoji.twemoji
+        emoji_generator: !!python/name:materialx.emoji.to_svg
 nav:
     - Home: index.md
     - Quickstart: quickstart.md
     - Features:
         - features/creating_container.md
+        - features/configuration.md
         - features/networking.md
         - features/garbage_collector.md
         - features/build_from_dockerfile.md
+        - features/docker_auth.md
         - features/docker_compose.md
         - features/follow_logs.md
         - features/override_container_command.md
@@ -46,18 +55,27 @@ nav:
             - Log: features/wait/log.md
             - Multi: features/wait/multi.md
             - SQL: features/wait/sql.md
+    - Modules:
+        - modules/index.md
+        - modules/couchbase.md
+        - modules/localstack.md
+        - modules/mysql.md
+        - modules/neo4j.md
+        - modules/postgres.md
+        - modules/pulsar.md
+        - modules/redis.md
+        - modules/redpanda.md
+        - modules/vault.md
     - Examples:
         - examples/index.md
         - examples/bigtable.md
         - examples/cockroachdb.md
+        - examples/consul.md
         - examples/datastore.md
         - examples/firestore.md
-        - examples/mysql.md
+        - examples/mongodb.md
         - examples/nginx.md
-        - examples/postgres.md
         - examples/pubsub.md
-        - examples/pulsar.md
-        - examples/redis.md
         - examples/spanner.md
         - examples/toxiproxy.md
     - System Requirements:
@@ -70,4 +88,4 @@ nav:
     - Getting help: getting_help.md
 edit_uri: edit/main/docs/
 extra:
-    latest_version: 0.16.0
+    latest_version: v0.20.1

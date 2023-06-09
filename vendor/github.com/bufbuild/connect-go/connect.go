@@ -26,13 +26,14 @@ package connect
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 )
 
 // Version is the semantic version of the connect module.
-const Version = "1.7.0"
+const Version = "1.8.0"
 
 // These constants are used in compile-time handshakes with connect's generated
 // code.
@@ -52,6 +53,20 @@ const (
 	StreamTypeServer StreamType = 0b10
 	StreamTypeBidi              = StreamTypeClient | StreamTypeServer
 )
+
+func (s StreamType) String() string {
+	switch s {
+	case StreamTypeUnary:
+		return "unary"
+	case StreamTypeClient:
+		return "client"
+	case StreamTypeServer:
+		return "server"
+	case StreamTypeBidi:
+		return "bidi"
+	}
+	return fmt.Sprintf("stream_%d", s)
+}
 
 // StreamingHandlerConn is the server's view of a bidirectional message
 // exchange. Interceptors for streaming RPCs may wrap StreamingHandlerConns.
@@ -135,6 +150,7 @@ type Request[T any] struct {
 	spec   Spec
 	peer   Peer
 	header http.Header
+	method string
 }
 
 // NewRequest wraps a generated request message.
@@ -172,8 +188,27 @@ func (r *Request[_]) Header() http.Header {
 	return r.header
 }
 
+// HTTPMethod returns the HTTP method for this request. This is nearly always
+// POST, but side-effect-free unary RPCs could be made via a GET.
+//
+// On a newly created request, via NewRequest, this will return the empty
+// string until the actual request is actually sent and the HTTP method
+// determined. This means that client interceptor functions will see the
+// empty string until *after* they delegate to the handler they wrapped. It
+// is even possible for this to return the empty string after such delegation,
+// if the request was never actually sent to the server (and thus no
+// determination ever made about the HTTP method).
+func (r *Request[_]) HTTPMethod() string {
+	return r.method
+}
+
 // internalOnly implements AnyRequest.
 func (r *Request[_]) internalOnly() {}
+
+// setRequestMethod sets the request method to the given value.
+func (r *Request[_]) setRequestMethod(method string) {
+	r.method = method
+}
 
 // AnyRequest is the common method set of every [Request], regardless of type
 // parameter. It's used in unary interceptors.
@@ -190,8 +225,10 @@ type AnyRequest interface {
 	Spec() Spec
 	Peer() Peer
 	Header() http.Header
+	HTTPMethod() string
 
 	internalOnly()
+	setRequestMethod(string)
 }
 
 // Response is a wrapper around a generated response message. It provides
@@ -307,7 +344,7 @@ func newPeerFromURL(url *url.URL, protocol string) Peer {
 	}
 }
 
-// handlerConnCloser extends HandlerConn with a method for handlers to
+// handlerConnCloser extends StreamingHandlerConn with a method for handlers to
 // terminate the message exchange (and optionally send an error to the client).
 type handlerConnCloser interface {
 	StreamingHandlerConn

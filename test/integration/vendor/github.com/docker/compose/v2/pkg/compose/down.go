@@ -41,7 +41,7 @@ type downOp func() error
 func (s *composeService) Down(ctx context.Context, projectName string, options api.DownOptions) error {
 	return progress.Run(ctx, func(ctx context.Context) error {
 		return s.down(ctx, strings.ToLower(projectName), options)
-	})
+	}, s.stdinfo())
 }
 
 func (s *composeService) down(ctx context.Context, projectName string, options api.DownOptions) error {
@@ -181,29 +181,43 @@ func (s *composeService) removeNetwork(ctx context.Context, name string, w progr
 	eventName := fmt.Sprintf("Network %s", name)
 	w.Event(progress.RemovingEvent(eventName))
 
-	var removed int
+	var found int
 	for _, net := range networks {
-		if net.Name == name {
-			if err := s.apiClient().NetworkRemove(ctx, net.ID); err != nil {
-				if errdefs.IsNotFound(err) {
-					continue
-				}
-				w.Event(progress.ErrorEvent(eventName))
-				return errors.Wrapf(err, fmt.Sprintf("failed to remove network %s", name))
-			}
-			removed++
+		if net.Name != name {
+			continue
 		}
+		network, err := s.apiClient().NetworkInspect(ctx, net.ID, moby.NetworkInspectOptions{})
+		if errdefs.IsNotFound(err) {
+			w.Event(progress.NewEvent(eventName, progress.Warning, "No resource found to remove"))
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if len(network.Containers) > 0 {
+			w.Event(progress.NewEvent(eventName, progress.Warning, "Resource is still in use"))
+			found++
+			continue
+		}
+
+		if err := s.apiClient().NetworkRemove(ctx, net.ID); err != nil {
+			if errdefs.IsNotFound(err) {
+				continue
+			}
+			w.Event(progress.ErrorEvent(eventName))
+			return errors.Wrapf(err, fmt.Sprintf("failed to remove network %s", name))
+		}
+		w.Event(progress.RemovedEvent(eventName))
+		found++
 	}
 
-	if removed == 0 {
+	if found == 0 {
 		// in practice, it's extremely unlikely for this to ever occur, as it'd
 		// mean the network was present when we queried at the start of this
 		// method but was then deleted by something else in the interim
-		w.Event(progress.NewEvent(eventName, progress.Done, "Warning: No resource found to remove"))
+		w.Event(progress.NewEvent(eventName, progress.Warning, "No resource found to remove"))
 		return nil
 	}
-
-	w.Event(progress.RemovedEvent(eventName))
 	return nil
 }
 
@@ -237,21 +251,25 @@ func (s *composeService) removeVolume(ctx context.Context, id string, w progress
 	return err
 }
 
+func (s *composeService) stopContainer(ctx context.Context, w progress.Writer, container moby.Container, timeout *time.Duration) error {
+	eventName := getContainerProgressName(container)
+	w.Event(progress.StoppingEvent(eventName))
+	timeoutInSecond := utils.DurationSecondToInt(timeout)
+	err := s.apiClient().ContainerStop(ctx, container.ID, containerType.StopOptions{Timeout: timeoutInSecond})
+	if err != nil {
+		w.Event(progress.ErrorMessageEvent(eventName, "Error while Stopping"))
+		return err
+	}
+	w.Event(progress.StoppedEvent(eventName))
+	return nil
+}
+
 func (s *composeService) stopContainers(ctx context.Context, w progress.Writer, containers []moby.Container, timeout *time.Duration) error {
 	eg, ctx := errgroup.WithContext(ctx)
 	for _, container := range containers {
 		container := container
 		eg.Go(func() error {
-			eventName := getContainerProgressName(container)
-			w.Event(progress.StoppingEvent(eventName))
-			timeoutInSecond := utils.DurationSecondToInt(timeout)
-			err := s.apiClient().ContainerStop(ctx, container.ID, containerType.StopOptions{Timeout: timeoutInSecond})
-			if err != nil {
-				w.Event(progress.ErrorMessageEvent(eventName, "Error while Stopping"))
-				return err
-			}
-			w.Event(progress.StoppedEvent(eventName))
-			return nil
+			return s.stopContainer(ctx, w, container, timeout)
 		})
 	}
 	return eg.Wait()
@@ -263,10 +281,8 @@ func (s *composeService) removeContainers(ctx context.Context, w progress.Writer
 		container := container
 		eg.Go(func() error {
 			eventName := getContainerProgressName(container)
-			w.Event(progress.StoppingEvent(eventName))
-			err := s.stopContainers(ctx, w, []moby.Container{container}, timeout)
+			err := s.stopContainer(ctx, w, container, timeout)
 			if err != nil {
-				w.Event(progress.ErrorMessageEvent(eventName, "Error while Stopping"))
 				return err
 			}
 			w.Event(progress.RemovingEvent(eventName))

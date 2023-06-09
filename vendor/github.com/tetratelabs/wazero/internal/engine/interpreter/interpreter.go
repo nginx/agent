@@ -29,17 +29,17 @@ var callStackCeiling = 2000
 
 // engine is an interpreter implementation of wasm.Engine
 type engine struct {
-	enabledFeatures api.CoreFeatures
-	codes           map[wasm.ModuleID][]code // guarded by mutex.
-	mux             sync.RWMutex
+	enabledFeatures   api.CoreFeatures
+	compiledFunctions map[wasm.ModuleID][]compiledFunction // guarded by mutex.
+	mux               sync.RWMutex
 	// labelAddressResolutionCache is the temporary cache used to map LabelKind -> FrameID -> the index to the body.
 	labelAddressResolutionCache [wazeroir.LabelKindNum][]uint64
 }
 
 func NewEngine(_ context.Context, enabledFeatures api.CoreFeatures, _ filecache.Cache) wasm.Engine {
 	return &engine{
-		enabledFeatures: enabledFeatures,
-		codes:           map[wasm.ModuleID][]code{},
+		enabledFeatures:   enabledFeatures,
+		compiledFunctions: map[wasm.ModuleID][]compiledFunction{},
 	}
 }
 
@@ -50,30 +50,30 @@ func (e *engine) Close() (err error) {
 
 // CompiledModuleCount implements the same method as documented on wasm.Engine.
 func (e *engine) CompiledModuleCount() uint32 {
-	return uint32(len(e.codes))
+	return uint32(len(e.compiledFunctions))
 }
 
 // DeleteCompiledModule implements the same method as documented on wasm.Engine.
 func (e *engine) DeleteCompiledModule(m *wasm.Module) {
-	e.deleteCodes(m)
+	e.deleteCompiledFunctions(m)
 }
 
-func (e *engine) deleteCodes(module *wasm.Module) {
+func (e *engine) deleteCompiledFunctions(module *wasm.Module) {
 	e.mux.Lock()
 	defer e.mux.Unlock()
-	delete(e.codes, module.ID)
+	delete(e.compiledFunctions, module.ID)
 }
 
-func (e *engine) addCodes(module *wasm.Module, fs []code) {
+func (e *engine) addCompiledFunctions(module *wasm.Module, fs []compiledFunction) {
 	e.mux.Lock()
 	defer e.mux.Unlock()
-	e.codes[module.ID] = fs
+	e.compiledFunctions[module.ID] = fs
 }
 
-func (e *engine) getCodes(module *wasm.Module) (fs []code, ok bool) {
+func (e *engine) getCompiledFunctions(module *wasm.Module) (fs []compiledFunction, ok bool) {
 	e.mux.RLock()
 	defer e.mux.RUnlock()
-	fs, ok = e.codes[module.ID]
+	fs, ok = e.compiledFunctions[module.ID]
 	return
 }
 
@@ -101,15 +101,15 @@ type callEngine struct {
 	// frames are the function call stack.
 	frames []*callFrame
 
-	// compiled is the initial function for this call engine.
-	compiled *function
+	// f is the initial function for this call engine.
+	f *function
 
 	// stackiterator for Listeners to walk frames and stack.
 	stackIterator stackIterator
 }
 
 func (e *moduleEngine) newCallEngine(compiled *function) *callEngine {
-	return &callEngine{compiled: compiled}
+	return &callEngine{f: compiled}
 }
 
 func (ce *callEngine) pushValue(v uint64) {
@@ -187,22 +187,21 @@ type callFrame struct {
 	base int
 }
 
-type code struct {
+type compiledFunction struct {
 	source              *wasm.Module
 	body                []wazeroir.UnionOperation
 	listener            experimental.FunctionListener
 	offsetsInWasmBinary []uint64
 	hostFn              interface{}
 	ensureTermination   bool
+	index               wasm.Index
 }
 
 type function struct {
-	index          wasm.Index
 	funcType       *wasm.FunctionType
-	def            api.FunctionDefinition
 	moduleInstance *wasm.ModuleInstance
 	typeID         wasm.FunctionTypeID
-	parent         *code
+	parent         *compiledFunction
 }
 
 // functionFromUintptr resurrects the original *function from the given uintptr
@@ -223,10 +222,12 @@ type stackIterator struct {
 	frames  []*callFrame
 	started bool
 	fn      *function
+	pc      uint64
 }
 
 func (si *stackIterator) reset(stack []uint64, frames []*callFrame, f *function) {
 	si.fn = f
+	si.pc = 0
 	si.stack = stack
 	si.frames = frames
 	si.started = false
@@ -239,7 +240,7 @@ func (si *stackIterator) clear() {
 	si.fn = nil
 }
 
-// Next implements experimental.StackIterator.
+// Next implements the same method as documented on experimental.StackIterator.
 func (si *stackIterator) Next() bool {
 	if !si.started {
 		si.started = true
@@ -253,20 +254,48 @@ func (si *stackIterator) Next() bool {
 	frame := si.frames[len(si.frames)-1]
 	si.stack = si.stack[:frame.base]
 	si.fn = frame.f
+	si.pc = frame.pc
 	si.frames = si.frames[:len(si.frames)-1]
 	return true
 }
 
-// FunctionDefinition implements experimental.StackIterator.
-func (si *stackIterator) FunctionDefinition() api.FunctionDefinition {
-	return si.fn.def
+// Function implements the same method as documented on
+// experimental.StackIterator.
+func (si *stackIterator) Function() experimental.InternalFunction {
+	return internalFunction{si.fn}
 }
 
-// Args implements experimental.StackIterator.
+// ProgramCounter implements the same method as documented on
+// experimental.StackIterator.
+func (si *stackIterator) ProgramCounter() experimental.ProgramCounter {
+	return experimental.ProgramCounter(si.pc)
+}
+
+// Parameters implements the same method as documented on
+// experimental.StackIterator.
 func (si *stackIterator) Parameters() []uint64 {
 	paramsCount := si.fn.funcType.ParamNumInUint64
 	top := len(si.stack)
 	return si.stack[top-paramsCount:]
+}
+
+// internalFunction implements experimental.InternalFunction.
+type internalFunction struct{ *function }
+
+// Definition implements the same method as documented on
+// experimental.InternalFunction.
+func (f internalFunction) Definition() api.FunctionDefinition {
+	return f.definition()
+}
+
+// SourceOffsetForPC implements the same method as documented on
+// experimental.InternalFunction.
+func (f internalFunction) SourceOffsetForPC(pc experimental.ProgramCounter) uint64 {
+	offsetsMap := f.parent.offsetsInWasmBinary
+	if uint64(pc) < uint64(len(offsetsMap)) {
+		return offsetsMap[pc]
+	}
+	return 0
 }
 
 // interpreter mode doesn't maintain call frames in the stack, so pass the zero size to the IR.
@@ -274,15 +303,16 @@ const callFrameStackSize = 0
 
 // CompileModule implements the same method as documented on wasm.Engine.
 func (e *engine) CompileModule(_ context.Context, module *wasm.Module, listeners []experimental.FunctionListener, ensureTermination bool) error {
-	if _, ok := e.getCodes(module); ok { // cache hit!
+	if _, ok := e.getCompiledFunctions(module); ok { // cache hit!
 		return nil
 	}
 
-	funcs := make([]code, len(module.FunctionSection))
+	funcs := make([]compiledFunction, len(module.FunctionSection))
 	irCompiler, err := wazeroir.NewCompiler(e.enabledFeatures, callFrameStackSize, module, ensureTermination)
 	if err != nil {
 		return err
 	}
+	imported := module.ImportFunctionCount
 	for i := range module.CodeSection {
 		var lsn experimental.FunctionListener
 		if i < len(listeners) {
@@ -302,15 +332,16 @@ func (e *engine) CompileModule(_ context.Context, module *wasm.Module, listeners
 			}
 			err = e.lowerIR(ir, compiled)
 			if err != nil {
-				def := module.FunctionDefinitionSection[uint32(i)+module.ImportFunctionCount]
+				def := module.FunctionDefinition(uint32(i) + module.ImportFunctionCount)
 				return fmt.Errorf("failed to lower func[%s] to wazeroir: %w", def.DebugName(), err)
 			}
 		}
 		compiled.source = module
 		compiled.ensureTermination = ensureTermination
 		compiled.listener = lsn
+		compiled.index = imported + uint32(i)
 	}
-	e.addCodes(module, funcs)
+	e.addCompiledFunctions(module, funcs)
 	return nil
 }
 
@@ -321,7 +352,7 @@ func (e *engine) NewModuleEngine(module *wasm.Module, instance *wasm.ModuleInsta
 		functions:    make([]function, len(module.FunctionSection)+int(module.ImportFunctionCount)),
 	}
 
-	codes, ok := e.getCodes(module)
+	codes, ok := e.getCompiledFunctions(module)
 	if !ok {
 		return nil, errors.New("source module must be compiled before instantiation")
 	}
@@ -331,11 +362,9 @@ func (e *engine) NewModuleEngine(module *wasm.Module, instance *wasm.ModuleInsta
 		offset := i + int(module.ImportFunctionCount)
 		typeIndex := module.FunctionSection[i]
 		me.functions[offset] = function{
-			index:          wasm.Index(offset),
 			moduleInstance: instance,
 			typeID:         instance.TypeIDs[typeIndex],
 			funcType:       &module.TypeSection[typeIndex],
-			def:            &module.FunctionDefinitionSection[offset],
 			parent:         c,
 		}
 	}
@@ -343,7 +372,7 @@ func (e *engine) NewModuleEngine(module *wasm.Module, instance *wasm.ModuleInsta
 }
 
 // lowerIR lowers the wazeroir operations to engine friendly struct.
-func (e *engine) lowerIR(ir *wazeroir.CompilationResult, ret *code) error {
+func (e *engine) lowerIR(ir *wazeroir.CompilationResult, ret *compiledFunction) error {
 	// Copy the body from the result.
 	ret.body = make([]wazeroir.UnionOperation, len(ir.Operations))
 	copy(ret.body, ir.Operations)
@@ -411,7 +440,6 @@ func (e *engine) setLabelAddress(op *uint64, label wazeroir.Label) {
 func (e *moduleEngine) ResolveImportedFunction(index, indexInImportedModule wasm.Index, importedModuleEngine wasm.ModuleEngine) {
 	imported := importedModuleEngine.(*moduleEngine)
 	e.functions[index] = imported.functions[indexInImportedModule]
-	e.functions[index].index = index
 }
 
 // FunctionInstanceReference implements the same method as documented on wasm.ModuleEngine.
@@ -428,7 +456,7 @@ func (e *moduleEngine) NewFunction(index wasm.Index) (ce api.Function) {
 }
 
 // LookupFunction implements the same method as documented on wasm.ModuleEngine.
-func (e *moduleEngine) LookupFunction(t *wasm.TableInstance, typeId wasm.FunctionTypeID, tableOffset wasm.Index) (idx wasm.Index, err error) {
+func (e *moduleEngine) LookupFunction(t *wasm.TableInstance, typeId wasm.FunctionTypeID, tableOffset wasm.Index) (f api.Function, err error) {
 	if tableOffset >= uint32(len(t.References)) {
 		err = wasmruntime.ErrRuntimeInvalidTableAccess
 		return
@@ -444,18 +472,24 @@ func (e *moduleEngine) LookupFunction(t *wasm.TableInstance, typeId wasm.Functio
 		err = wasmruntime.ErrRuntimeIndirectCallTypeMismatch
 		return
 	}
-	idx = tf.index
+
+	f = e.newCallEngine(tf)
 	return
 }
 
 // Definition implements the same method as documented on api.Function.
 func (ce *callEngine) Definition() api.FunctionDefinition {
-	return ce.compiled.def
+	return ce.f.definition()
+}
+
+func (f *function) definition() api.FunctionDefinition {
+	compiled := f.parent
+	return compiled.source.FunctionDefinition(compiled.index)
 }
 
 // Call implements the same method as documented on api.Function.
 func (ce *callEngine) Call(ctx context.Context, params ...uint64) (results []uint64, err error) {
-	ft := ce.compiled.funcType
+	ft := ce.f.funcType
 	if n := ft.ParamNumInUint64; n != len(params) {
 		return nil, fmt.Errorf("expected %d params, but passed %d", n, len(params))
 	}
@@ -464,7 +498,7 @@ func (ce *callEngine) Call(ctx context.Context, params ...uint64) (results []uin
 
 // CallWithStack implements the same method as documented on api.Function.
 func (ce *callEngine) CallWithStack(ctx context.Context, stack []uint64) error {
-	params, results, err := wasm.SplitCallStack(ce.compiled.funcType, stack)
+	params, results, err := wasm.SplitCallStack(ce.f.funcType, stack)
 	if err != nil {
 		return err
 	}
@@ -473,8 +507,8 @@ func (ce *callEngine) CallWithStack(ctx context.Context, stack []uint64) error {
 }
 
 func (ce *callEngine) call(ctx context.Context, params, results []uint64) (_ []uint64, err error) {
-	m := ce.compiled.moduleInstance
-	if ce.compiled.parent.ensureTermination {
+	m := ce.f.moduleInstance
+	if ce.f.parent.ensureTermination {
 		select {
 		case <-ctx.Done():
 			// If the provided context is already done, close the call context
@@ -493,23 +527,23 @@ func (ce *callEngine) call(ctx context.Context, params, results []uint64) (_ []u
 		// TODO: ^^ Will not fail if the function was imported from a closed module.
 
 		if v := recover(); v != nil {
-			err = ce.recoverOnCall(v)
+			err = ce.recoverOnCall(ctx, m, v)
 		}
 	}()
 
 	ce.pushValues(params)
 
-	if ce.compiled.parent.ensureTermination {
+	if ce.f.parent.ensureTermination {
 		done := m.CloseModuleOnCanceledOrTimeout(ctx)
 		defer done()
 	}
 
-	ce.callFunction(ctx, m, ce.compiled)
+	ce.callFunction(ctx, m, ce.f)
 
 	// This returns a safe copy of the results, instead of a slice view. If we
 	// returned a re-slice, the caller could accidentally or purposefully
 	// corrupt the stack of subsequent calls.
-	ft := ce.compiled.funcType
+	ft := ce.f.funcType
 	if results == nil && ft.ResultNumInUint64 > 0 {
 		results = make([]uint64, ft.ResultNumInUint64)
 	}
@@ -517,23 +551,42 @@ func (ce *callEngine) call(ctx context.Context, params, results []uint64) (_ []u
 	return results, nil
 }
 
+// functionListenerInvocation captures arguments needed to perform function
+// listener invocations when unwinding the call stack.
+type functionListenerInvocation struct {
+	experimental.FunctionListener
+	def api.FunctionDefinition
+}
+
 // recoverOnCall takes the recovered value `recoverOnCall`, and wraps it
 // with the call frame stack traces. Also, reset the state of callEngine
 // so that it can be used for the subsequent calls.
-func (ce *callEngine) recoverOnCall(v interface{}) (err error) {
+func (ce *callEngine) recoverOnCall(ctx context.Context, m *wasm.ModuleInstance, v interface{}) (err error) {
 	builder := wasmdebug.NewErrorBuilder()
 	frameCount := len(ce.frames)
+	functionListeners := make([]functionListenerInvocation, 0, 16)
+
 	for i := 0; i < frameCount; i++ {
 		frame := ce.popFrame()
 		f := frame.f
-		def := f.def
+		def := f.definition()
 		var sources []string
 		if parent := frame.f.parent; parent.body != nil && len(parent.offsetsInWasmBinary) > 0 {
 			sources = parent.source.DWARFLines.Line(parent.offsetsInWasmBinary[frame.pc])
 		}
 		builder.AddFrame(def.DebugName(), def.ParamTypes(), def.ResultTypes(), sources)
+		if f.parent.listener != nil {
+			functionListeners = append(functionListeners, functionListenerInvocation{
+				FunctionListener: f.parent.listener,
+				def:              f.definition(),
+			})
+		}
 	}
+
 	err = builder.FromRecovered(v)
+	for i := range functionListeners {
+		functionListeners[i].Abort(ctx, m, functionListeners[i].def, err)
+	}
 
 	// Allows the reuse of CallEngine.
 	ce.stack, ce.frames = ce.stack[:0], ce.frames[:0]
@@ -551,12 +604,12 @@ func (ce *callEngine) callFunction(ctx context.Context, m *wasm.ModuleInstance, 
 }
 
 func (ce *callEngine) callGoFunc(ctx context.Context, m *wasm.ModuleInstance, f *function, stack []uint64) {
-	def, typ := f.def, f.funcType
+	typ := f.funcType
 	lsn := f.parent.listener
 	if lsn != nil {
 		params := stack[:typ.ParamNumInUint64]
 		ce.stackIterator.reset(ce.stack, ce.frames, f)
-		ctx = lsn.Before(ctx, m, def, params, &ce.stackIterator)
+		lsn.Before(ctx, m, f.definition(), params, &ce.stackIterator)
 		ce.stackIterator.clear()
 	}
 	frame := &callFrame{f: f, base: len(ce.stack)}
@@ -574,7 +627,7 @@ func (ce *callEngine) callGoFunc(ctx context.Context, m *wasm.ModuleInstance, f 
 	if lsn != nil {
 		// TODO: This doesn't get the error due to use of panic to propagate them.
 		results := stack[:typ.ResultNumInUint64]
-		lsn.After(ctx, m, def, nil, results)
+		lsn.After(ctx, m, f.definition(), results)
 	}
 }
 
@@ -4047,13 +4100,13 @@ func i32Abs(v uint32) uint32 {
 }
 
 func (ce *callEngine) callNativeFuncWithListener(ctx context.Context, m *wasm.ModuleInstance, f *function, fnl experimental.FunctionListener) context.Context {
-	def, typ := &f.moduleInstance.Definitions[f.index], f.funcType
+	def, typ := f.definition(), f.funcType
 
 	ce.stackIterator.reset(ce.stack, ce.frames, f)
-	ctx = fnl.Before(ctx, m, def, ce.peekValues(len(typ.Params)), &ce.stackIterator)
+	fnl.Before(ctx, m, def, ce.peekValues(len(typ.Params)), &ce.stackIterator)
 	ce.stackIterator.clear()
 	ce.callNativeFunc(ctx, m, f)
-	fnl.After(ctx, m, def, nil, ce.peekValues(len(typ.Results)))
+	fnl.After(ctx, m, def, ce.peekValues(len(typ.Results)))
 	return ctx
 }
 

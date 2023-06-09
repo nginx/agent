@@ -7,6 +7,7 @@ import (
 
 	"github.com/tetratelabs/wazero/api"
 	experimentalapi "github.com/tetratelabs/wazero/experimental"
+	internalsock "github.com/tetratelabs/wazero/internal/sock"
 	internalsys "github.com/tetratelabs/wazero/internal/sys"
 	"github.com/tetratelabs/wazero/internal/wasm"
 	binaryformat "github.com/tetratelabs/wazero/internal/wasm/binary"
@@ -215,8 +216,8 @@ func (r *runtime) CompileModule(ctx context.Context, binary []byte) (CompiledMod
 		return nil, err
 	}
 
-	// Now that the module is validated, cache the function and memory definitions.
-	internal.BuildFunctionDefinitions()
+	// Now that the module is validated, cache the memory definitions.
+	// TODO: lazy initialization of memory definition.
 	internal.BuildMemoryDefinitions()
 
 	c := &compiledModule{module: internal, compiledEngine: r.store.Engine}
@@ -228,7 +229,7 @@ func (r *runtime) CompileModule(ctx context.Context, binary []byte) (CompiledMod
 	}
 	c.typeIDs = typeIDs
 
-	listeners, err := buildListeners(ctx, internal)
+	listeners, err := buildFunctionListeners(ctx, internal)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +240,7 @@ func (r *runtime) CompileModule(ctx context.Context, binary []byte) (CompiledMod
 	return c, nil
 }
 
-func buildListeners(ctx context.Context, internal *wasm.Module) ([]experimentalapi.FunctionListener, error) {
+func buildFunctionListeners(ctx context.Context, internal *wasm.Module) ([]experimentalapi.FunctionListener, error) {
 	// Test to see if internal code are using an experimental feature.
 	fnlf := ctx.Value(experimentalapi.FunctionListenerFactoryKey{})
 	if fnlf == nil {
@@ -249,7 +250,7 @@ func buildListeners(ctx context.Context, internal *wasm.Module) ([]experimentala
 	importCount := internal.ImportFunctionCount
 	listeners := make([]experimentalapi.FunctionListener, len(internal.FunctionSection))
 	for i := 0; i < len(listeners); i++ {
-		listeners[i] = factory.NewListener(&internal.FunctionDefinitionSection[uint32(i)+importCount])
+		listeners[i] = factory.NewFunctionListener(internal.FunctionDefinition(uint32(i) + importCount))
 	}
 	return listeners, nil
 }
@@ -289,6 +290,14 @@ func (r *runtime) InstantiateModule(
 
 	code := compiled.(*compiledModule)
 	config := mConfig.(*moduleConfig)
+
+	// Only build listeners on a guest module. A host module doesn't have
+	// memory, and a guest without memory can't use listeners anyway.
+	if !code.module.IsHostModule {
+		if sockConfig, ok := ctx.Value(internalsock.ConfigKey{}).(*internalsock.Config); ok {
+			config.sockConfig = sockConfig
+		}
+	}
 
 	var sysCtx *internalsys.Context
 	if sysCtx, err = config.toSysContext(); err != nil {

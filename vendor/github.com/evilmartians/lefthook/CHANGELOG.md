@@ -2,6 +2,19 @@
 
 ## master (unreleased)
 
+## 1.4.1 (2024-05-22)
+
+- fix: add win32 binary to artifacts (by @mrexox)
+- feat: allow dumping with JSON ([#485](https://github.com/evilmartians/lefthook/pull/485) by @mrexox
+- feat: add skip execution_info option ([#484](https://github.com/evilmartians/lefthook/pull/484)) by @mrexox
+- deps: from 05.2023 ([#487](https://github.com/evilmartians/lefthook/pull/487)) by @mrexox
+
+## 1.4.0 (2023-05-18)
+
+- feat: add adaptive colors ([#482](https://github.com/evilmartians/lefthook/pull/482)) by @mrexox
+- fix: skip output for interactive commands if configured ([#483](https://github.com/evilmartians/lefthook/pull/483)) by @mrexox
+- feat: add dump command ([#481](https://github.com/evilmartians/lefthook/pull/481)) by @mrexox
+
 ## 1.3.13 (2023-05-11)
 
 - feat: add only option ([#478](https://github.com/evilmartians/lefthook/pull/478)) by @mrexox

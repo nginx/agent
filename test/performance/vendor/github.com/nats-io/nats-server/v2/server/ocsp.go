@@ -21,7 +21,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -129,7 +129,7 @@ func (oc *OCSPMonitor) getLocalStatus() ([]byte, *ocsp.Response, error) {
 	key := fmt.Sprintf("%x", sha256.Sum256(oc.Leaf.Raw))
 
 	oc.mu.Lock()
-	raw, err := ioutil.ReadFile(filepath.Join(storeDir, defaultOCSPStoreDir, key))
+	raw, err := os.ReadFile(filepath.Join(storeDir, defaultOCSPStoreDir, key))
 	oc.mu.Unlock()
 	if err != nil {
 		return nil, nil, err
@@ -168,7 +168,7 @@ func (oc *OCSPMonitor) getRemoteStatus() ([]byte, *ocsp.Response, error) {
 			return nil, fmt.Errorf("non-ok http status: %d", resp.StatusCode)
 		}
 
-		return ioutil.ReadAll(resp.Body)
+		return io.ReadAll(resp.Body)
 	}
 
 	// Request documentation:
@@ -433,18 +433,18 @@ func (srv *Server) NewOCSPMonitor(config *tlsConfigKind) (*tls.Config, *OCSPMoni
 			}, nil
 		}
 
-		// Check whether need to verify staples from a client connection depending on the type.
+		// Check whether need to verify staples from a peer router or gateway connection.
 		switch kind {
-		case kindStringMap[ROUTER], kindStringMap[GATEWAY], kindStringMap[LEAF]:
+		case kindStringMap[ROUTER], kindStringMap[GATEWAY]:
 			tc.VerifyConnection = func(s tls.ConnectionState) error {
 				oresp := s.OCSPResponse
 				if oresp == nil {
-					return fmt.Errorf("%s client missing OCSP Staple", kind)
+					return fmt.Errorf("%s peer missing OCSP Staple", kind)
 				}
 
-				// Client route connections will verify the response of the staple.
+				// Peer connections will verify the response of the staple.
 				if len(s.VerifiedChains) == 0 {
-					return fmt.Errorf("%s client missing TLS verified chains", kind)
+					return fmt.Errorf("%s peer missing TLS verified chains", kind)
 				}
 
 				chain := s.VerifiedChains[0]
@@ -453,7 +453,7 @@ func (srv *Server) NewOCSPMonitor(config *tlsConfigKind) (*tls.Config, *OCSPMoni
 
 				resp, err := ocsp.ParseResponseForCert(oresp, leaf, parent)
 				if err != nil {
-					return fmt.Errorf("failed to parse OCSP response from %s client: %w", kind, err)
+					return fmt.Errorf("failed to parse OCSP response from %s peer: %w", kind, err)
 				}
 				if resp.Certificate == nil {
 					if err := resp.CheckSignatureFrom(parent); err != nil {
@@ -475,13 +475,13 @@ func (srv *Server) NewOCSPMonitor(config *tlsConfigKind) (*tls.Config, *OCSPMoni
 					}
 				}
 				if resp.Status != ocsp.Good {
-					return fmt.Errorf("bad status for OCSP Staple from %s client: %s", kind, ocspStatusString(resp.Status))
+					return fmt.Errorf("bad status for OCSP Staple from %s peer: %s", kind, ocspStatusString(resp.Status))
 				}
 
 				return nil
 			}
 
-			// When server makes a client connection, need to also present an OCSP Staple.
+			// When server makes a peer connection, need to also present an OCSP Staple.
 			tc.GetClientCertificate = func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 				raw, _, err := mon.getStatus()
 				if err != nil {
@@ -558,12 +558,12 @@ func (s *Server) configureOCSP() []*tlsConfigKind {
 			tlsConfig: config,
 			tlsOpts:   opts,
 			apply: func(tc *tls.Config) {
-
 				// RequireAndVerifyClientCert is used to tell a client that it
 				// should send the client cert to the server.
-				tc.ClientAuth = tls.RequireAndVerifyClientCert
-				// GetClientCertificate is used by a client to send the client cert
-				// to a server. We're a server, so we must not set this.
+				if opts.Verify {
+					tc.ClientAuth = tls.RequireAndVerifyClientCert
+				}
+				// We're a leaf hub server, so we must not set this.
 				tc.GetClientCertificate = nil
 				sopts.LeafNode.TLSConfig = tc
 			},
@@ -580,8 +580,7 @@ func (s *Server) configureOCSP() []*tlsConfigKind {
 				tlsConfig: config,
 				tlsOpts:   opts,
 				apply: func(tc *tls.Config) {
-					// GetCertificate is used by a server to send the server cert to a
-					// client. We're a client, so we must not set this.
+					// We're a leaf client, so we must not set this.
 					tc.GetCertificate = nil
 					r.TLSConfig = tc
 				},
@@ -734,7 +733,7 @@ func hasOCSPStatusRequest(cert *x509.Certificate) bool {
 // new path, in an attempt to avoid corrupting existing data.
 func (oc *OCSPMonitor) writeOCSPStatus(storeDir, file string, data []byte) error {
 	storeDir = filepath.Join(storeDir, defaultOCSPStoreDir)
-	tmp, err := ioutil.TempFile(storeDir, "tmp-cert-status")
+	tmp, err := os.CreateTemp(storeDir, "tmp-cert-status")
 	if err != nil {
 		return err
 	}
@@ -760,7 +759,7 @@ func (oc *OCSPMonitor) writeOCSPStatus(storeDir, file string, data []byte) error
 }
 
 func parseCertPEM(name string) ([]*x509.Certificate, error) {
-	data, err := ioutil.ReadFile(name)
+	data, err := os.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}
