@@ -186,7 +186,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 }
 
 func (c *Commander) synchronizeFeatures(agtCfg *proto.AgentConfig) {
-	if c.config.Features != nil {
+	if c.config != nil {
 		for _, feature := range c.config.Features {
 			if feature != agent_config.FeatureRegistration {
 				c.deRegisterPlugin(feature)
