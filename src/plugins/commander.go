@@ -173,7 +173,11 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 
 			sort.Strings(c.config.Features)
 
-			synchronizedFeatures := reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
+			synchronizedFeatures := agtCfg.Details == nil && c.config == nil
+
+			if agtCfg.Details != nil && c.config != nil {
+				synchronizedFeatures = reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
+			}
 
 			if !synchronizedFeatures {
 				c.synchronizeFeatures(agtCfg)

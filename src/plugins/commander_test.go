@@ -110,6 +110,26 @@ func TestCommander_Process(t *testing.T) {
 			msgTopics: []string{},
 		},
 		{
+			name: "test agent config apply",
+			cmd: &proto.Command{
+				Meta: &proto.Metadata{},
+				Type: proto.Command_NORMAL,
+				Data: &proto.Command_NginxConfigResponse{
+					NginxConfigResponse: &proto.NginxConfigResponse{
+						Status: newOKStatus("config applied successfully").CmdStatus,
+						Action: proto.NginxConfigAction_APPLY,
+						ConfigData: &proto.ConfigDescriptor{
+							NginxId: "12345",
+						},
+					},
+				},
+			},
+			topic:     core.CommNginxConfig,
+			nginxId:   "12345",
+			systemId:  "67890",
+			msgTopics: []string{},
+		},
+		{
 			name: "test agent register",
 			cmd: &proto.Command{
 				Meta: &proto.Metadata{},
@@ -129,24 +149,135 @@ func TestCommander_Process(t *testing.T) {
 			msgTopics: []string{},
 		},
 		{
-			name: "test agent config apply",
+			name: "test agent register with no details and config",
 			cmd: &proto.Command{
 				Meta: &proto.Metadata{},
 				Type: proto.Command_NORMAL,
-				Data: &proto.Command_NginxConfigResponse{
-					NginxConfigResponse: &proto.NginxConfigResponse{
-						Status: newOKStatus("config applied successfully").CmdStatus,
-						Action: proto.NginxConfigAction_APPLY,
-						ConfigData: &proto.ConfigDescriptor{
-							NginxId: "12345",
+				Data: &proto.Command_AgentConnectResponse{
+					AgentConnectResponse: &proto.AgentConnectResponse{
+						AgentConfig: &proto.AgentConfig{},
+					},
+				},
+			},
+			topic:     core.AgentConnected,
+			nginxId:   "12345",
+			systemId:  "67890",
+			msgTopics: []string{},
+		},
+		{
+			name: "test agent register with only configs",
+			cmd: &proto.Command{
+				Meta: &proto.Metadata{},
+				Type: proto.Command_NORMAL,
+				Data: &proto.Command_AgentConnectResponse{
+					AgentConnectResponse: &proto.AgentConnectResponse{
+						AgentConfig: &proto.AgentConfig{
+							Configs: &proto.ConfigReport{
+								Configs: []*proto.ConfigDescriptor{
+									{
+										Checksum: "",
+										NginxId:  "12345",
+										SystemId: "6789",
+									},
+								},
+							},
 						},
 					},
 				},
 			},
-			topic:     core.CommNginxConfig,
+			topic:     core.AgentConnected,
+			nginxId:   "12345",
+			systemId:  "67890",
+			msgTopics: []string{core.NginxConfigUpload},
+		},
+		{
+			name: "test agent register with only agent details",
+			cmd: &proto.Command{
+				Meta: &proto.Metadata{},
+				Type: proto.Command_NORMAL,
+				Data: &proto.Command_AgentConnectResponse{
+					AgentConnectResponse: &proto.AgentConnectResponse{
+						AgentConfig: &proto.AgentConfig{
+							Details: &proto.AgentDetails{
+								Tags:     []string{"new-tag1:one"},
+								Features: []string{"nginx-config-async"},
+							},
+						},
+					},
+				},
+			},
+			topic:     core.AgentConnected,
 			nginxId:   "12345",
 			systemId:  "67890",
 			msgTopics: []string{},
+		},
+		{
+			name: "test agent register with extension and configs",
+			cmd: &proto.Command{
+				Meta: &proto.Metadata{},
+				Type: proto.Command_NORMAL,
+				Data: &proto.Command_AgentConnectResponse{
+					AgentConnectResponse: &proto.AgentConnectResponse{
+						AgentConfig: &proto.AgentConfig{
+							Details: &proto.AgentDetails{
+								Tags:       []string{"new-tag1:one"},
+								Extensions: []string{"advanced-metrics"},
+							},
+							Configs: &proto.ConfigReport{
+								Configs: []*proto.ConfigDescriptor{
+									{
+										Checksum: "",
+										NginxId:  "12345",
+										SystemId: "6789",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			topic:    core.AgentConnected,
+			nginxId:  "12345",
+			systemId: "67890",
+			msgTopics: []string{
+				core.AgentConfigChanged,
+				core.NginxConfigUpload,
+				core.EnableExtension,
+			},
+		},
+		{
+			name: "test agent register with features and configs",
+			cmd: &proto.Command{
+				Meta: &proto.Metadata{},
+				Type: proto.Command_NORMAL,
+				Data: &proto.Command_AgentConnectResponse{
+					AgentConnectResponse: &proto.AgentConnectResponse{
+						AgentConfig: &proto.AgentConfig{
+							Details: &proto.AgentDetails{
+								Tags:     []string{"new-tag1:one"},
+								Features: []string{"nginx-config-async"},
+							},
+							Configs: &proto.ConfigReport{
+								Configs: []*proto.ConfigDescriptor{
+									{
+										Checksum: "",
+										NginxId:  "12345",
+										SystemId: "6789",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			topic:    core.AgentConnected,
+			nginxId:  "12345",
+			systemId: "67890",
+			msgTopics: []string{
+				core.AgentConfigChanged,
+				core.NginxConfigUpload,
+				core.EnableFeature,
+			},
 		},
 		{
 			name: "test agent config force",
