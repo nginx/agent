@@ -22,7 +22,7 @@ The following sections explain how to configure the NGINX Agent using configurat
   2. Environment variables overwrite configuration file values.
   3. Config files are the lowest priority and config settings are superseded if either of the other options is used.
 
-- Open any required firewall ports or SELinux/AppArmor rules for the ports and IPs you want to use.
+- You must open any required firewall ports or add SELinux/AppArmor rules for the ports and IPs you want to use.
 
 {{</note>}}
 
