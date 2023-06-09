@@ -5,7 +5,7 @@ description: "Learn how to uninstall NGINX Agent"
 weight: 500
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-1219"
+docs: "DOCS-1230"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
