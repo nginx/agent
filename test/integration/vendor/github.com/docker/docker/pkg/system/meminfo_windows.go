@@ -1,4 +1,4 @@
-package meminfo
+package system // import "github.com/docker/docker/pkg/system"
 
 import (
 	"unsafe"
@@ -26,17 +26,17 @@ type memorystatusex struct {
 	ullAvailExtendedVirtual uint64
 }
 
-// readMemInfo retrieves memory statistics of the host system and returns a
-// Memory type.
-func readMemInfo() (*Memory, error) {
+// ReadMemInfo retrieves memory statistics of the host system and returns a
+// MemInfo type.
+func ReadMemInfo() (*MemInfo, error) {
 	msi := &memorystatusex{
 		dwLength: 64,
 	}
 	r1, _, _ := procGlobalMemoryStatusEx.Call(uintptr(unsafe.Pointer(msi)))
 	if r1 == 0 {
-		return &Memory{}, nil
+		return &MemInfo{}, nil
 	}
-	return &Memory{
+	return &MemInfo{
 		MemTotal:  int64(msi.ullTotalPhys),
 		MemFree:   int64(msi.ullAvailPhys),
 		SwapTotal: int64(msi.ullTotalPageFile),

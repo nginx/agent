@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/errdefs"
 	"github.com/docker/docker/pkg/ioutils"
@@ -27,7 +28,7 @@ type session struct {
 
 type authTransport struct {
 	http.RoundTripper
-	*registry.AuthConfig
+	*types.AuthConfig
 
 	alwaysSetBasicAuth bool
 	token              []string
@@ -49,7 +50,7 @@ type authTransport struct {
 // If the server sends a token without the client having requested it, it is ignored.
 //
 // This RoundTripper also has a CancelRequest method important for correct timeout handling.
-func newAuthTransport(base http.RoundTripper, authConfig *registry.AuthConfig, alwaysSetBasicAuth bool) *authTransport {
+func newAuthTransport(base http.RoundTripper, authConfig *types.AuthConfig, alwaysSetBasicAuth bool) *authTransport {
 	if base == nil {
 		base = http.DefaultTransport
 	}
@@ -144,7 +145,7 @@ func (tr *authTransport) CancelRequest(req *http.Request) {
 	}
 }
 
-func authorizeClient(client *http.Client, authConfig *registry.AuthConfig, endpoint *v1Endpoint) error {
+func authorizeClient(client *http.Client, authConfig *types.AuthConfig, endpoint *v1Endpoint) error {
 	var alwaysSetBasicAuth bool
 
 	// If we're working with a standalone private registry over HTTPS, send Basic Auth headers
@@ -206,10 +207,10 @@ func (r *session) searchRepositories(term string, limit int) (*registry.SearchRe
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return nil, errdefs.Unknown(&jsonmessage.JSONError{
+		return nil, &jsonmessage.JSONError{
 			Message: fmt.Sprintf("Unexpected status code %d", res.StatusCode),
 			Code:    res.StatusCode,
-		})
+		}
 	}
 	result := new(registry.SearchResults)
 	return result, errors.Wrap(json.NewDecoder(res.Body).Decode(result), "error decoding registry search results")

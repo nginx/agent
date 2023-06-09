@@ -126,12 +126,7 @@ func CheckRedirect(req *http.Request, via []*http.Request) error {
 //		client.WithAPIVersionNegotiation(),
 //	)
 func NewClientWithOpts(ops ...Opt) (*Client, error) {
-	hostURL, err := ParseHostURL(DefaultDockerHost)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := defaultHTTPClient(hostURL)
+	client, err := defaultHTTPClient(DefaultDockerHost)
 	if err != nil {
 		return nil, err
 	}
@@ -139,8 +134,8 @@ func NewClientWithOpts(ops ...Opt) (*Client, error) {
 		host:    DefaultDockerHost,
 		version: api.DefaultVersion,
 		client:  client,
-		proto:   hostURL.Scheme,
-		addr:    hostURL.Host,
+		proto:   defaultProto,
+		addr:    defaultAddr,
 	}
 
 	for _, op := range ops {
@@ -166,12 +161,13 @@ func NewClientWithOpts(ops ...Opt) (*Client, error) {
 	return c, nil
 }
 
-func defaultHTTPClient(hostURL *url.URL) (*http.Client, error) {
-	transport := &http.Transport{}
-	err := sockets.ConfigureTransport(transport, hostURL.Scheme, hostURL.Host)
+func defaultHTTPClient(host string) (*http.Client, error) {
+	hostURL, err := ParseHostURL(host)
 	if err != nil {
 		return nil, err
 	}
+	transport := &http.Transport{}
+	_ = sockets.ConfigureTransport(transport, hostURL.Scheme, hostURL.Host)
 	return &http.Client{
 		Transport:     transport,
 		CheckRedirect: CheckRedirect,
@@ -287,12 +283,13 @@ func (cli *Client) HTTPClient() *http.Client {
 // ParseHostURL parses a url string, validates the string is a host url, and
 // returns the parsed URL
 func ParseHostURL(host string) (*url.URL, error) {
-	proto, addr, ok := strings.Cut(host, "://")
-	if !ok || addr == "" {
+	protoAddrParts := strings.SplitN(host, "://", 2)
+	if len(protoAddrParts) == 1 {
 		return nil, errors.Errorf("unable to parse docker host `%s`", host)
 	}
 
 	var basePath string
+	proto, addr := protoAddrParts[0], protoAddrParts[1]
 	if proto == "tcp" {
 		parsed, err := url.Parse("tcp://" + addr)
 		if err != nil {
