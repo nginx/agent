@@ -163,8 +163,8 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages
 	find $(PACKAGES_DIR)/rpm ;\
 	echo "APK packages:"; \
 	find $(PACKAGES_DIR)/apk ;\
-	echo "TXZ packages:"; \
-	find $(PACKAGES_DIR)/txz ;\
+	# echo "TXZ packages:"; \
+	# find $(PACKAGES_DIR)/txz ;\
 	echo "Github packages:"; \
 	find $(GITHUB_PACKAGES_DIR) ;\
 	cd $(PACKAGES_DIR) && tar -czvf "./${PACKAGE_PREFIX}.tar.gz" * && cd ../..;
