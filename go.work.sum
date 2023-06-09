@@ -647,6 +647,7 @@ github.com/containerd/imgcrypt v1.1.7 h1:WSf9o9EQ0KGHiUx2ESFZ+PKf4nxK9BcvV/nJDX8
 github.com/containerd/nri v0.1.0 h1:6QioHRlThlKh2RkRTR4kIT3PKAcrLo3gIWnjkM4dQmQ=
 github.com/containerd/nri v0.3.0 h1:2ZM4WImye1ypSnE7COjOvPAiLv84kaPILBDvb1tbDK8=
 github.com/containerd/stargz-snapshotter v0.12.0 h1:SRKo+YxmypnlyC7eKc9KNW0Ciy1Auo102s8E/aRGWKg=
+github.com/containerd/stargz-snapshotter v0.13.0 h1:3zr1/IkW1aEo6cMYTQeZ4L2jSuCN+F4kgGfjnuowe4U=
 github.com/containerd/zfs v1.0.0 h1:cXLJbx+4Jj7rNsTiqVfm6i+RNLx6FFA2fMmDlEf+Wm8=
 github.com/containernetworking/cni v1.1.1 h1:ky20T7c0MvKvbMOwS/FrlbNwjEoqJEUUYfsL4b0mc4k=
 github.com/containernetworking/cni v1.1.2 h1:wtRGZVv7olUHMOqouPpn3cXJWpJgM6+EUl31EQbXALQ=
@@ -671,6 +672,7 @@ github.com/cucumber/gherkin-go/v11 v11.0.0/go.mod h1:CX33k2XU2qog4e+TFjOValoq6mI
 github.com/cucumber/gherkin-go/v19 v19.0.3 h1:mMSKu1077ffLbTJULUfM5HPokgeBcIGboyeNUof1MdE=
 github.com/cucumber/godog v0.11.0 h1:xgaWyJuAD6A+aW4TfVGNDBhuMyKW0jjl0cvY3KNxEak=
 github.com/cucumber/godog v0.11.0/go.mod h1:GyxCIrsg1sgEgpL2GD/rMr3fIoNHpgkjm9nANw/89XY=
+github.com/cucumber/godog v0.12.6 h1:3IToXviU45G7FgijwTk/LdB4iojn8zUFDfQLj4MMiHc=
 github.com/cucumber/messages-go/v10 v10.0.1/go.mod h1:kA5T38CBlBbYLU12TIrJ4fk4wSkVVOgyh7Enyy8WnSg=
 github.com/cucumber/messages-go/v10 v10.0.3/go.mod h1:9jMZ2Y8ZxjLY6TG2+x344nt5rXstVVDYSdS5ySfI1WY=
 github.com/cucumber/messages-go/v16 v16.0.1 h1:fvkpwsLgnIm0qugftrw2YwNlio+ABe2Iu94Ap8GMYIY=
@@ -958,6 +960,7 @@ github.com/mitchellh/iochan v1.0.0/go.mod h1:JwYml1nuB7xOzsp52dPpHFffvOCDupsG0Qu
 github.com/mitchellh/mapstructure v0.0.0-20160808181253-ca63d7c062ee/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mitchellh/osext v0.0.0-20151018003038-5e2d6d41470f h1:2+myh5ml7lgEU/51gbeLHfKGNfgEQQIWrlbdaOsidbQ=
 github.com/moby/sys/mount v0.3.0 h1:bXZYMmq7DBQPwHRxH/MG+u9+XF90ZOwoXpHTOznMGp0=
+github.com/moby/sys/mount v0.3.3 h1:fX1SVkXFJ47XWDoeFW4Sq7PdQJnV2QIDZAqjNqgEjUs=
 github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe h1:iruDEfMl2E6fbMZ9s0scYfZQ84/6SPL6zC8ACM2oIL0=
 github.com/mozilla/tls-observatory v0.0.0-20210609171429-7bc42856d2e5 h1:0KqC6/sLy7fDpBdybhVkkv4Yz+PmB7c9Dz9z3dLW804=
 github.com/mrunalp/fileutils v0.5.0 h1:NKzVxiH7eSk+OQ4M+ZYW1K6h27RUV3MI6NUTsHhU6Z4=

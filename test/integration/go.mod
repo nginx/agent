@@ -40,6 +40,7 @@ require (
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/containerd/containerd v1.7.2 // indirect
 	github.com/containerd/continuity v0.4.1 // indirect
+	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/containerd/ttrpc v1.2.2 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
@@ -151,6 +152,7 @@ require (
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
 	github.com/tonistiigi/vt100 v0.0.0-20210615222946-8066bb97264f // indirect
 	github.com/vardius/message-bus v1.1.5 // indirect
+	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
@@ -198,7 +200,7 @@ require (
 
 replace (
 	// https://github.com/cucumber/godog/releases/tag/v0.12.0 - this version breaks
-	// github.com/cucumber/godog => github.com/cucumber/godog v0.12.6
+	github.com/cucumber/godog => github.com/cucumber/godog v0.12.6
 	// github.com/docker/cli => github.com/docker/cli v20.10.3-0.20221013132413-1d6c6e2367e2+incompatible // 22.06 master branch
 	// github.com/docker/docker => github.com/docker/docker v20.10.3-0.20221013203545-33ab36d6b304+incompatible // 22.06 branch
 	// github.com/moby/buildkit => github.com/moby/buildkit v0.10.1-0.20220816171719-55ba9d14360a // same as buildx
