@@ -633,12 +633,13 @@ func TestGetNginxConfig(t *testing.T) {
 		assert.NoError(t, err)
 
 		allowedDirs := map[string]struct{}{}
+		ignoreDirectives := []string{}
 
 		if test.expected.Zaux != nil {
 			allowedDirs[test.expected.Zaux.RootDirectory] = struct{}{}
 			allowedDirs["/tmp/testdata/nginx/"] = struct{}{}
 		}
-		result, err := GetNginxConfig(test.fileName, nginxID, systemID, allowedDirs)
+		result, err := GetNginxConfig(test.fileName, nginxID, systemID, allowedDirs, ignoreDirectives)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.expected.Action, result.Action)
@@ -1535,8 +1536,9 @@ func TestGetAppProtectPolicyAndSecurityLogFiles(t *testing.T) {
 			assert.NoError(t, err)
 
 			allowedDirs := map[string]struct{}{}
+			ignoreDirectives := []string{}
 
-			cfg, err := GetNginxConfig(tc.file, nginxID, systemID, allowedDirs)
+			cfg, err := GetNginxConfig(tc.file, nginxID, systemID, allowedDirs, ignoreDirectives)
 			assert.NoError(t, err)
 
 			policies, profiles := GetAppProtectPolicyAndSecurityLogFiles(cfg)

@@ -100,9 +100,11 @@ func GetNginxConfig(
 	nginxId,
 	systemId string,
 	allowedDirectories map[string]struct{},
+	ignoreDirectives []string,
 ) (*proto.NginxConfig, error) {
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
+			IgnoreDirectives:   ignoreDirectives,
 			SingleFile:         false,
 			StopParsingOnError: true,
 		},

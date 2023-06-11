@@ -352,6 +352,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 		config.ConfigData.NginxId,
 		config.ConfigData.SystemId,
 		n.config.AllowedDirectoriesMap,
+		n.config.IgnoreDirectives,
 	)
 	if err != nil {
 		return nil, err
@@ -482,7 +483,7 @@ func generateDeleteFromDirectoryMap(
 }
 
 func (n *NginxBinaryType) ReadConfig(confFile, nginxId, systemId string) (*proto.NginxConfig, error) {
-	configPayload, err := sdk.GetNginxConfig(confFile, nginxId, systemId, n.config.AllowedDirectoriesMap)
+	configPayload, err := sdk.GetNginxConfig(confFile, nginxId, systemId, n.config.AllowedDirectoriesMap, n.config.IgnoreDirectives)
 	if err != nil {
 		return nil, err
 	}
