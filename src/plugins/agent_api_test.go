@@ -17,7 +17,6 @@ import (
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -490,7 +489,7 @@ func TestMtls_forApi(t *testing.T) {
 					Multiplier:      backoff.BACKOFF_MULTIPLIER,
 				}
 				err = backoff.WaitUntil(ctx, backoffSetting, func() error {
-					_, err := ioutil.ReadFile("../../build/certs/server.crt")
+					_, err := os.ReadFile("../../build/certs/server.crt")
 					return err
 				})
 
@@ -532,11 +531,11 @@ func TestMtls_forApi(t *testing.T) {
 }
 
 func getConfig(t *testing.T) *tls.Config {
-	crt, err := ioutil.ReadFile("../../build/certs/client.crt")
+	crt, err := os.ReadFile("../../build/certs/client.crt")
 	assert.NoError(t, err)
-	key, err := ioutil.ReadFile("../../build/certs/client.key")
+	key, err := os.ReadFile("../../build/certs/client.key")
 	assert.NoError(t, err)
-	ca, err := ioutil.ReadFile("../../build/certs/ca.pem")
+	ca, err := os.ReadFile("../../build/certs/ca.pem")
 	assert.NoError(t, err)
 
 	cert, err := tls.X509KeyPair(crt, key)

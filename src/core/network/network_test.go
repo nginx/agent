@@ -21,8 +21,7 @@ func TestParseToLinuxRouteStruct(t *testing.T) {
 		err      error
 	}{
 		{
-			input: []byte(`
-			Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT                                                       
+			input: []byte(`Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT                                                       
 			enp0s3  0002000A        00000000        0001    0       0       0       00FFFFFF        0       0       0                                                                             
 			enp0s3  0202000A        00000000        0005    0       0       100     FFFFFFFF        0       0       0                                                                           
 			enp0s3  00000000        0202000A        0003    0       0       100     00000000        0       0       0                                                                        
@@ -44,15 +43,14 @@ func TestParseToLinuxRouteStruct(t *testing.T) {
 			err: nil,
 		},
 		{
-			input: []byte(`
-			Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT`),
+			input:    []byte(`Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT`),
 			expected: routeStruct{},
 			err:      errors.New("interface with default destination not found"),
 		},
 		{
 			input:    []byte(``),
 			expected: routeStruct{},
-			err:      errors.New("Invalid linux route file"),
+			err:      errors.New("invalid linux route file: no header line"),
 		},
 	}
 	for _, test := range tests {

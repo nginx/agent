@@ -99,7 +99,7 @@ func main() {
 			plugins.NewAgentEventMeta(version, strconv.Itoa(os.Getpid()))),
 		)
 
-		handleSignals(ctx, commander, loadedConfig, env, pipe, cancel)
+		handleSignals(ctx, commander, loadedConfig, env, pipe, cancel, controller)
 
 		pipe.Run()
 	})
@@ -119,6 +119,7 @@ func handleSignals(
 	env core.Environment,
 	pipe core.MessagePipeInterface,
 	cancel context.CancelFunc,
+	controller client.Controller,
 ) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -130,8 +131,14 @@ func handleSignals(
 			)
 			log.Debugf("Sending agent stopped event: %v", stopCmd)
 
-			if err := cmder.Send(ctx, client.MessageFromCommand(stopCmd)); err != nil {
+			if cmder == nil {
+				log.Warn("Command channel not configured. Skipping sending AgentStopped event")
+			} else if err := cmder.Send(ctx, client.MessageFromCommand(stopCmd)); err != nil {
 				log.Errorf("Error sending AgentStopped event to command channel: %v", err)
+			}
+
+			if err := controller.Close(); err != nil {
+				log.Errorf("Unable to close controller: %v", err)
 			}
 
 			log.Warn("NGINX Agent exiting")

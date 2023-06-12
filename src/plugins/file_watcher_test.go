@@ -9,7 +9,6 @@ package plugins
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -488,7 +487,7 @@ func TestWatcherProcess(t *testing.T) {
 }
 
 func writeFile(t *testing.T, file string) {
-	err := ioutil.WriteFile(file, []byte{}, 0644)
+	err := os.WriteFile(file, []byte{}, 0644)
 	if err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
@@ -508,7 +507,7 @@ func writeFiles(t *testing.T, dirs []string) (ret []string) {
 }
 
 func updateFile(t *testing.T, file, content string) {
-	err := ioutil.WriteFile(file, []byte(content), 0644)
+	err := os.WriteFile(file, []byte(content), 0644)
 	if err != nil {
 		t.Fatalf("failed to update file: %v", err)
 	}
