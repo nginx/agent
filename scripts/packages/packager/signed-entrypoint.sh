@@ -10,6 +10,7 @@ cd /nginx-agent/
 
 mkdir -p ./build/packages/txz
 mkdir -p ./build/github/packages
+mkdir -p ./build/azure/packages
 
 mkdir -p staging/usr/local/bin
 mkdir -p staging/usr/local/etc/nginx-agent
