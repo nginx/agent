@@ -174,7 +174,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: nginx-agent-snapshots
-          path: ./build/nginx-agent.tar.gz
+          path: ./build/packages/nginx-agent.tar.gz
           retention-days: 3
       - name: Azure Login
         uses: azure/login@v1
@@ -187,7 +187,7 @@ jobs:
             if ${{ github.event_name == 'pull_request'}}; then 
               echo "--------> Pull Request"
               for i in ./build/github/packages; do 
-                echo "$i"
+                echo "$i";
               done 
               az storage blob upload --auth-mode=login -f ./build/packages/nginx-agent.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_HEAD_REF}/nginx-agent.tar.gz
