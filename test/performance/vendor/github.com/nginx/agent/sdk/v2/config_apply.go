@@ -35,6 +35,7 @@ type ConfigApply struct {
 func NewConfigApply(
 	confFile string,
 	allowedDirectories map[string]struct{},
+	ignoreDirectives []string,
 ) (*ConfigApply, error) {
 	w, err := zip.NewWriter("/")
 	if err != nil {
@@ -47,7 +48,7 @@ func NewConfigApply(
 		notExistDirs: make(map[string]struct{}),
 	}
 	if confFile != "" {
-		return b, b.mapCurrentFiles(confFile, allowedDirectories)
+		return b, b.mapCurrentFiles(confFile, allowedDirectories, ignoreDirectives)
 	}
 	return b, nil
 }
@@ -179,10 +180,11 @@ func (b *ConfigApply) RemoveFromNotExists(fullPath string) {
 
 // mapCurrentFiles parse the provided file via cross-plane, generate a list of files, which should be identical to the
 // DirectoryMap, will mark off the files as the config is being applied, any leftovers after complete should be deleted.
-func (b *ConfigApply) mapCurrentFiles(confFile string, allowedDirectories map[string]struct{}) error {
+func (b *ConfigApply) mapCurrentFiles(confFile string, allowedDirectories map[string]struct{}, ignoreDirectives []string) error {
 	log.Debugf("parsing %s", confFile)
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
+			IgnoreDirectives:   ignoreDirectives,
 			SingleFile:         false,
 			StopParsingOnError: true,
 		},
