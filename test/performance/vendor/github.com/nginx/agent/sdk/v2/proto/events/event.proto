@@ -72,7 +72,7 @@ message SecurityViolationEvent {
   reserved 33;
   reserved "ViolationContexts";
 
-  // The name of the NGINX App Protect policy that triggered the security violation 
+  // The name of the NGINX App Protect policy that triggered the security violation
   string PolicyName = 1 [(gogoproto.jsontag) = "policy_name"];
   // The unique NGINX App Protect support ID of the violation, used for tracking purposes
   string SupportID = 2 [(gogoproto.jsontag) = "support_id"];
@@ -102,7 +102,7 @@ message SecurityViolationEvent {
   // The HTTP response status to the request that triggered the security violation
   string ResponseCode = 13 [(gogoproto.jsontag) = "response_code"];
 
-  // The server address of the instance that caught the security violation 
+  // The server address of the instance that caught the security violation
   string ServerAddr = 14 [(gogoproto.jsontag) = "server_addr"];
   // The Virtual Server Name of the instance that caught the security violation
   string VSName = 15 [(gogoproto.jsontag) = "vs_name"];
@@ -110,7 +110,7 @@ message SecurityViolationEvent {
   string RemoteAddr = 16 [(gogoproto.jsontag) = "remote_addr"];
   // The targeted port number by the request that triggered the security violation
   string RemotePort = 17 [(gogoproto.jsontag) = "destination_port"];
-  // The server port of the instance that caught the security violation 
+  // The server port of the instance that caught the security violation
   string ServerPort = 18 [(gogoproto.jsontag) = "server_port"];
 
   // A comma-separated list of all the violations triggered by the request
@@ -125,9 +125,9 @@ message SecurityViolationEvent {
   // A comma-separated list of all the signature CVEs
   string SigCVEs = 23 [(gogoproto.jsontag) = "sig_cves"];
 
-  // The class of the client used to send the request that triggered the security violation 
+  // The class of the client used to send the request that triggered the security violation
   string ClientClass = 24 [(gogoproto.jsontag) = "client_class"];
-  // The application used to send the request that triggered the security violation 
+  // The application used to send the request that triggered the security violation
   string ClientApplication = 25 [(gogoproto.jsontag) = "client_application"];
   // The version of the application used to send the request that triggered the security violation
   string ClientApplicationVersion = 26 [(gogoproto.jsontag) = "client_application_version"];
@@ -146,7 +146,7 @@ message SecurityViolationEvent {
   // Signature name of the bot that sent the request that triggered the security violation
   string BotSignatureName = 32 [(gogoproto.jsontag) = "bot_signature_name"];
 
-  // A list of objects containing descriptive data about all the security violations 
+  // A list of objects containing descriptive data about all the security violations
   repeated ViolationData ViolationsData = 34 [(gogoproto.jsontag) = "violations_data"];
 
   // SystemID of the instance where NGINX is running
@@ -177,7 +177,7 @@ message SignatureData {
 
 // Represents the context data of each violation
 message ContextData {
-  // The name within the context data 
+  // The name within the context data
   string Name = 1 [(gogoproto.jsontag) = "parameter_data_name"];
   // The value within the context data
   string Value = 2 [(gogoproto.jsontag) = "parameter_data_value"];
