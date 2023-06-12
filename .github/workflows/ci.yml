@@ -186,7 +186,7 @@ jobs:
           inlineScript: |
             if ${{ github.event_name == 'pull_request'}}; then 
               echo "--------> Pull Request"
-              for i in ./build/github/packages; do 
+              for i in ./build/github/packages/; do 
                 echo "$i";
               done 
               az storage blob upload --auth-mode=login -f ./build/packages/nginx-agent.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
