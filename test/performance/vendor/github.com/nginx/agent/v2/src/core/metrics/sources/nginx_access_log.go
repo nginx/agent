@@ -56,6 +56,8 @@ var logVarMap = map[string]string{
 	"]":                         "\\]",
 }
 
+var logVarRegex = regexp.MustCompile(`\$([a-zA-Z]+[_[a-zA-Z]+]*)`)
+
 // This metrics source is used to tail the NGINX access logs to retrieve metrics.
 
 type NginxAccessLog struct {
@@ -203,18 +205,19 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 	// A regex pattern to match all the variables that are mentioned in the access log
 	// but are absent from logVarMap and hence are not replaced with the correct format
-	r, err := regexp.Compile(`[\$]([a-z_]+)`)
-	if err != nil {
-		log.Warnf("unable to compile access log regex: %v", err)
-	}
+
 	// Get an array of all the matched variables
-	variables := r.FindAllString(logPattern, -1)
+	variables := logVarRegex.FindAllStringSubmatch(logPattern, -1)
 
 	log.Debugf("LogPattern = %s Matched variables = %v", logPattern, variables)
-	for _, variable := range variables {
-		// Replace the variables with the format {DATA:variable_name} in the logPattern
-		replacement := "%" + fmt.Sprintf("{DATA:%s}", strings.Trim(variable, "$"))
-		logPattern = strings.Replace(logPattern, variable, replacement, -1)
+	for _, match := range variables {
+		// fmt.Printf("matched [%s, %s]\n", match[0], match[1])
+
+		variable := match[0]
+		subMatch := match[1]
+
+		replacement := fmt.Sprintf("%%{DATA:%s}", subMatch)
+		logPattern = strings.Replace(logPattern, string(variable), replacement, 1)
 	}
 
 	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
