@@ -20,6 +20,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -119,7 +120,7 @@ func (nc *NginxCounter) Close() {
 }
 
 func (nc *NginxCounter) Info() *core.Info {
-	return core.NewInfo("NGINX Counter", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureNginxCounting, "v0.0.1")
 }
 
 func (nc *NginxCounter) Process(msg *core.Message) {

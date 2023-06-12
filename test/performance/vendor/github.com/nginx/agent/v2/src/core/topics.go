@@ -51,5 +51,6 @@ const (
 	ConfigRollbackResponse          = "config.rollback.response"
 	DataplaneSoftwareDetailsUpdated = "dataplane.software.details.updated"
 	EnableExtension                 = "enable.extension"
+	EnableFeature                   = "enable.feature"
 	AgentAPIConfigApplyResponse     = "agent.api.config.apply.response"
 )

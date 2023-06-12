@@ -21,8 +21,8 @@ const frameSeparator = ';'
 
 func TestReaderIsAbleToHandleMultipleClients(t *testing.T) {
 	mu := &sync.Mutex{}
-	rand.Seed(time.Now().Unix())
-	addr := fmt.Sprintf("/tmp/advanced_metrics_reader_test_%d.sr", rand.Int63())
+	source := rand.NewSource(time.Now().Unix())
+	addr := fmt.Sprintf("/tmp/advanced_metrics_reader_test_%d.sr", source.Int63())
 
 	r := reader.NewReader(addr)
 	outChannel := r.OutChannel()
@@ -82,8 +82,8 @@ func TestReaderIsAbleToHandleMultipleClients(t *testing.T) {
 
 func TestReaderIsAbleToHandlePartiallySendFrame(t *testing.T) {
 	mu := &sync.Mutex{}
-	rand.Seed(time.Now().Unix())
-	addr := fmt.Sprintf("/tmp/advanced_metrics_reader_test_%d.sr", rand.Int63())
+	source := rand.NewSource(time.Now().Unix())
+	addr := fmt.Sprintf("/tmp/advanced_metrics_reader_test_%d.sr", source.Int63())
 
 	r := reader.NewReader(addr)
 	outChannel := r.OutChannel()
@@ -130,8 +130,8 @@ func TestReaderIsAbleToHandlePartiallySendFrame(t *testing.T) {
 
 func TestReaderIsAbleToCloseOngoingConnections(t *testing.T) {
 	mu := &sync.Mutex{}
-	rand.Seed(time.Now().Unix())
-	addr := fmt.Sprintf("/tmp/advanced_metrics_reader_test_%d.sr", rand.Int63())
+	source := rand.NewSource(time.Now().Unix())
+	addr := fmt.Sprintf("/tmp/advanced_metrics_reader_test_%d.sr", source.Int63())
 
 	r := reader.NewReader(addr)
 	outChannel := r.OutChannel()
@@ -179,8 +179,8 @@ func TestReaderIsAbleToCloseOngoingConnections(t *testing.T) {
 
 func TestReaderWithGeneratedData(t *testing.T) {
 	mu := &sync.Mutex{}
-	rand.Seed(time.Now().Unix())
-	addr := fmt.Sprintf("/tmp/advanced_metrics_reader_test_%d.sr", rand.Int63())
+	source := rand.NewSource(time.Now().Unix())
+	addr := fmt.Sprintf("/tmp/advanced_metrics_reader_test_%d.sr", source.Int63())
 
 	r := reader.NewReader(addr)
 	outChannel := r.OutChannel()

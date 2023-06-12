@@ -12,7 +12,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"os/exec"
@@ -191,7 +191,7 @@ func getDefaultNetworkInterfaceCrossPlatform() (string, error) {
 		}
 		defer f.Close()
 
-		output, err := ioutil.ReadAll(f)
+		output, err := io.ReadAll(f)
 		if err != nil {
 			return "", fmt.Errorf("Can't read contents of %s", linuxFile)
 		}
@@ -292,20 +292,21 @@ func parseToLinuxRouteStruct(output []byte) (routeStruct, error) {
 	const (
 		destinationField = 1 // field containing hex destination address
 	)
-	lineNumber := 0
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 
 	// Skip header line
 	if !scanner.Scan() {
-		return routeStruct{}, errors.New("Invalid linux route file")
+		if scanner.Err() == nil {
+			return routeStruct{}, errors.New("invalid linux route file: no header line")
+		} else {
+			return routeStruct{}, fmt.Errorf("invalid linux route file: %w", scanner.Err())
+		}
 	}
+
+	lineNumber := 0
 
 	for scanner.Scan() {
 		lineNumber++
-		if lineNumber == 1 {
-			// Skip header line.
-			continue
-		}
 		row := scanner.Text()
 		tokens := strings.Fields(strings.TrimSpace(row))
 		if len(tokens) < 11 {
@@ -325,25 +326,28 @@ func parseToLinuxRouteStruct(output []byte) (routeStruct, error) {
 		}
 
 		// The default interface is the one that's 0
-		if destination != 0 {
-			continue
+		if destination == 0 {
+			return routeStruct{
+				Iface:       tokens[0],
+				Destination: tokens[1],
+				Gateway:     tokens[2],
+				Flags:       tokens[3],
+				RefCnt:      tokens[4],
+				Use:         tokens[5],
+				Metric:      tokens[6],
+				Mask:        tokens[7],
+				MTU:         tokens[8],
+				Window:      tokens[9],
+				IRTT:        tokens[10],
+			}, nil
 		}
-
-		return routeStruct{
-			Iface:       tokens[0],
-			Destination: tokens[1],
-			Gateway:     tokens[2],
-			Flags:       tokens[3],
-			RefCnt:      tokens[4],
-			Use:         tokens[5],
-			Metric:      tokens[6],
-			Mask:        tokens[7],
-			MTU:         tokens[8],
-			Window:      tokens[9],
-			IRTT:        tokens[10],
-		}, nil
 	}
-	return routeStruct{}, errors.New("interface with default destination not found")
+
+	if scanner.Err() == nil {
+		return routeStruct{}, errors.New("interface with default destination not found")
+	} else {
+		return routeStruct{}, fmt.Errorf("invalid linux route file: %w", scanner.Err())
+	}
 }
 
 func ipv6ToStr(ip []byte) string {

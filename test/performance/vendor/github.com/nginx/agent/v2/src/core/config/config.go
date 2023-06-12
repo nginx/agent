@@ -8,8 +8,12 @@
 package config
 
 import (
+	"bufio"
+	"bytes"
+	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -20,12 +24,11 @@ import (
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
-
-	log "github.com/sirupsen/logrus"
-	flag "github.com/spf13/pflag"
 )
 
 const (
@@ -219,6 +222,12 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 	Viper.Set(TagsKey, updateTags)
 	config.Tags = Viper.GetStringSlice(TagsKey)
 
+	// Needed for legacy reasons.
+	// Remove Features_ prefix from the feature strings.
+	// This is needed for management servers that are sending features before sdk version v2.23.0
+	for index, feature := range updateFeatures {
+		updateFeatures[index] = strings.Replace(feature, "features_", "", 1)
+	}
 	sort.Strings(updateFeatures)
 	sort.Strings(config.Features)
 	synchronizedFeatures := reflect.DeepEqual(updateFeatures, config.Features)
@@ -251,7 +260,7 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 
 	updatedConfBytes = append([]byte(dynamicConfigUsageComment), updatedConfBytes...)
 
-	err = ioutil.WriteFile(dynamicCfgPath, updatedConfBytes, 0)
+	err = os.WriteFile(dynamicCfgPath, updatedConfBytes, 0)
 	if err != nil {
 		return false, err
 	}
@@ -322,6 +331,7 @@ func getBackOff() Backoff {
 
 func getAgentAPI() AgentAPI {
 	return AgentAPI{
+		Host: Viper.GetString(AgentAPIHost),
 		Port: Viper.GetInt(AgentAPIPort),
 		Cert: Viper.GetString(AgentAPICert),
 		Key:  Viper.GetString(AgentAPIKey),
@@ -356,25 +366,46 @@ func LoadPropertiesFromFile(cfg string) error {
 			dynamicCfgPath = DynamicConfigFileAbsPath
 		}
 	}
+
 	dynamicCfgDir, dynamicCfgFile := filepath.Split(dynamicCfgPath)
 
 	// Get dynamic file, if it doesn't exist create it.
-	file, err := os.Stat(dynamicCfgPath)
-	if err != nil {
-		log.Warnf("Unable to read dynamic config (%s), got the following error: %v", dynamicCfgPath, err)
-	}
+	_, err = os.Stat(dynamicCfgPath)
+	if err == nil {
+		log.Debugf("Checking if features need to be purged from dynamic config: %s", dynamicCfgPath)
 
-	if file == nil {
+		dynCfg, err := os.Open(dynamicCfgPath)
+		if err != nil {
+			return fmt.Errorf("error attempting to open dynamic config (%s): %v", dynamicCfgPath, err)
+		}
+
+		featuresAreSet, cleanDynCfgContent, err := removeFeatures(dynCfg)
+		if err != nil {
+			return fmt.Errorf("error updating dynamic config with features removed (%s): %v", dynamicCfgPath, err)
+		}
+		dynCfg.Close()
+
+		if featuresAreSet {
+			err = os.WriteFile(dynamicCfgPath, cleanDynCfgContent, 0644)
+			if err != nil {
+				return fmt.Errorf("error attempting to update dynamic config (%s): %v", dynamicCfgPath, err)
+			}
+
+			log.Info("Dynamic config purged successfully. Previously enabled features have been removed")
+		}
+	} else if errors.Is(err, fs.ErrNotExist) {
 		log.Infof("Writing the following file to disk: %s", dynamicCfgPath)
 		err = os.MkdirAll(dynamicCfgDir, 0755)
 		if err != nil {
-			return fmt.Errorf("error attempting to create directory for dynamic config (%s), got the following error: %v", dynamicCfgDir, err)
+			return fmt.Errorf("error attempting to create directory for dynamic config (%s): %v", dynamicCfgDir, err)
 		}
 
 		err = os.WriteFile(dynamicCfgPath, []byte(dynamicConfigUsageComment), 0644)
 		if err != nil {
-			return fmt.Errorf("error attempting to create dynamic config (%s), got the following error: %v", dynamicCfgPath, err)
+			return fmt.Errorf("error attempting to create dynamic config (%s): %v", dynamicCfgPath, err)
 		}
+	} else if err != nil {
+		log.Warnf("Unable to read dynamic config (%s): %v", dynamicCfgPath, err)
 	}
 
 	// Load properties from existing file
@@ -387,6 +418,45 @@ func LoadPropertiesFromFile(cfg string) error {
 	}
 
 	return nil
+}
+
+// removeFeatures removes enabled features from dynamic config content
+func removeFeatures(readFile io.Reader) (bool, []byte, error) {
+	fileScanner := bufio.NewScanner(readFile)
+
+	fileScanner.Split(bufio.ScanLines)
+
+	var bs []byte
+	buf := bytes.NewBuffer(bs)
+
+	var featuresSet bool
+
+	for fileScanner.Scan() {
+		if strings.HasPrefix(fileScanner.Text(), "features") {
+			featuresSet = true
+			for fileScanner.Scan() {
+				if !strings.HasPrefix(strings.TrimSpace(fileScanner.Text()), "-") {
+					_, err := buf.Write(fileScanner.Bytes())
+					if err != nil {
+						return featuresSet, nil, err
+					}
+					break
+				}
+			}
+		} else {
+			_, err := buf.Write(fileScanner.Bytes())
+			if err != nil {
+				return featuresSet, nil, err
+			}
+		}
+
+		_, err := buf.WriteString("\n")
+		if err != nil {
+			return featuresSet, nil, err
+		}
+	}
+
+	return featuresSet, buf.Bytes(), nil
 }
 
 func SetDynamicConfigFileAbsPath(dynamicCfgPath string) {

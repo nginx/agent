@@ -12,7 +12,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
@@ -152,7 +152,7 @@ func appendRootCAs(tlsConfig *tls.Config, caFile string) error {
 		return nil
 	}
 
-	ca, err := ioutil.ReadFile(caFile)
+	ca, err := os.ReadFile(caFile)
 	if err != nil {
 		return fmt.Errorf("could not read CA file (%s): %w", caFile, err)
 	}

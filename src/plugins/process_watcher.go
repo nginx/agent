@@ -14,6 +14,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 )
@@ -64,12 +65,16 @@ func (pw *ProcessWatcher) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (pw *ProcessWatcher) Info() *core.Info {
-	return core.NewInfo("ProcessWatcher", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureProcessWatcher, "v0.0.1")
 }
 
 func (pw *ProcessWatcher) Close() {
+	pw.ticker.Stop()
+	pw.seenMasterProcs = nil
+	pw.seenWorkerProcs = nil
+	pw.nginxDetails = nil
+
 	log.Info("ProcessWatcher is wrapping up")
-	pw.wg.Wait()
 }
 
 func (pw *ProcessWatcher) Process(message *core.Message) {}

@@ -16,6 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -77,7 +78,7 @@ func (r *MetricsThrottle) Close() {
 }
 
 func (r *MetricsThrottle) Info() *core.Info {
-	return core.NewInfo("MetricsThrottle", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureMetricsThrottle, "v0.0.1")
 }
 
 func (r *MetricsThrottle) Process(msg *core.Message) {

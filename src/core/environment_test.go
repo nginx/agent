@@ -10,7 +10,6 @@ package core
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -926,7 +925,7 @@ func TestGetContainerID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mountInfoFile, err := ioutil.TempFile(os.TempDir(), "mountInfo-")
+			mountInfoFile, err := os.CreateTemp(os.TempDir(), "mountInfo-")
 			if err != nil {
 				t.Fatalf("Cannot create temporary file: %v", err)
 			}
@@ -1012,7 +1011,7 @@ func TestCGroupV1Check(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mountInfoFile, err := ioutil.TempFile(os.TempDir(), "cGroupV1Check-")
+			mountInfoFile, err := os.CreateTemp(os.TempDir(), "cGroupV1Check-")
 			if err != nil {
 				t.Fatalf("Cannot create temporary file: %v", err)
 			}
