@@ -300,7 +300,7 @@ func createCollectorConfigsMap(config *config.Config, env core.Environment, bina
 			stubStatusApi = detail.StatusUrl
 		}
 
-		errorLogs, accessLogs, err := sdk.GetErrorAndAccessLogs(detail.ConfPath)
+		errorLogs, accessLogs, err := sdk.GetErrorAndAccessLogs(detail.ConfPath, config.IgnoreDirectives)
 		if err != nil {
 			log.Warnf("Error reading access and error logs from config %s %v", detail.ConfPath, err)
 		}

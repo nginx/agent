@@ -484,7 +484,7 @@ func (h *NginxHandler) applyNginxConfig(nginxDetail *proto.NginxDetails, buf *by
 		Contents:    buf.Bytes(),
 	}
 
-	configApply, err := sdk.NewConfigApply(protoFile.GetName(), h.config.AllowedDirectoriesMap)
+	configApply, err := sdk.NewConfigApply(protoFile.GetName(), h.config.AllowedDirectoriesMap, h.config.IgnoreDirectives)
 	if err != nil {
 		return fmt.Errorf("unable to write config: %v", err)
 	}

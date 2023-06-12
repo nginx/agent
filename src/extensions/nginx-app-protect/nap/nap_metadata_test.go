@@ -171,8 +171,9 @@ func TestUpdateNapMetadata(t *testing.T) {
 				WafLocation:             metadataFile,
 				PrecompiledPublication:  tc.precompPub,
 			}
+			ignoreDirecitves := []string{}
 
-			err = UpdateMetadata(cfg, appProtectWAFDetails)
+			err = UpdateMetadata(cfg, appProtectWAFDetails, ignoreDirecitves)
 			assert.NoError(t, err)
 
 			data, err := os.ReadFile(metadataFile)
