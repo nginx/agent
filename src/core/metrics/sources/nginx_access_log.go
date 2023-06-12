@@ -56,6 +56,8 @@ var logVarMap = map[string]string{
 	"]":                         "\\]",
 }
 
+// Pattern to match all the variables that are mentioned in the access log
+// and are absent from logVarMap
 var logVarRegex = regexp.MustCompile(`\$([a-zA-Z]+[_[a-zA-Z]+]*)`)
 
 // This metrics source is used to tail the NGINX access logs to retrieve metrics.
@@ -201,24 +203,8 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	for key, value := range logVarMap {
 		logPattern = strings.ReplaceAll(logPattern, key, value)
 	}
-	log.Debugf("LogPattern = %s", logPattern)
 
-	// A regex pattern to match all the variables that are mentioned in the access log
-	// but are absent from logVarMap and hence are not replaced with the correct format
-
-	// Get an array of all the matched variables
-	variables := logVarRegex.FindAllStringSubmatch(logPattern, -1)
-
-	log.Debugf("LogPattern = %s Matched variables = %v", logPattern, variables)
-	for _, match := range variables {
-		// fmt.Printf("matched [%s, %s]\n", match[0], match[1])
-
-		variable := match[0]
-		subMatch := match[1]
-
-		replacement := fmt.Sprintf("%%{DATA:%s}", subMatch)
-		logPattern = strings.Replace(logPattern, string(variable), replacement, 1)
-	}
+	logPattern = replaceCustomLogVars(logPattern)
 
 	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
 	log.Debugf("Pattern used for tailing logs: %s", logPattern)
@@ -641,4 +627,19 @@ func getDefaultCounters() (map[string]float64, map[string]float64, map[string]fl
 	}
 
 	return httpCounters, upstreamCounters, upstreamCacheCounters
+}
+
+func replaceCustomLogVars(logPattern string) string {
+	// For all the variables in the log format that are not present in the logVarMap
+	// replace them with the %{DATA:.*} format
+	variables := logVarRegex.FindAllStringSubmatch(logPattern, -1)
+
+	for _, match := range variables {
+		variable := match[0]
+		subMatch := match[1] // Excludes the leading $ in the var name
+
+		replacement := fmt.Sprintf("%%{DATA:%s}", subMatch)
+		logPattern = strings.Replace(logPattern, string(variable), replacement, 1)
+	}
+	return logPattern
 }
