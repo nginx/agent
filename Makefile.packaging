@@ -179,9 +179,9 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	# find $(PACKAGES_DIR)/txz ;\
 	echo "Github packages:"; \
 	find $(GITHUB_PACKAGES_DIR) ;\
+	cd $(PACKAGES_DIR) && tar -czvf "./${PACKAGE_PREFIX}.tar.gz" * && cd ../.. && cp "${PACKAGES_DIR}/${PACKAGE_PREFIX}.tar.gz" "${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}.tar.gz"; \
 	echo "Azure packages:"; \
-	find $(AZURE_PACKAGES_DIR) ;\
-	cd $(PACKAGES_DIR) && tar -czvf "./${PACKAGE_PREFIX}.tar.gz" * && cd ../..;
+	find $(AZURE_PACKAGES_DIR) ;
 
 gpg-key: ## Generate GPG public key
 	$$(gpg --import $(NFPM_SIGNING_KEY_FILE)); \
