@@ -813,7 +813,7 @@ func AccessLogs(p *proto.NginxConfig) map[string]string {
 
 	for _, accessLog := range p.GetAccessLogs().GetAccessLog() {
 		if isIgnorableLogType(accessLog.GetName()) {
-      continue
+			continue
 		}
 
 		if accessLog.GetReadable() {
@@ -822,25 +822,28 @@ func AccessLogs(p *proto.NginxConfig) map[string]string {
 			found[name] = format
 		} else {
 			log.Warnf("NGINX Access log file %s is not readable. Please make it readable in order for NGINX metrics to be collected.", accessLog.GetName())
-    }
+		}
 	}
+
+	return found
+}
 
 // ErrorLogs returns a list of error logs in the config
 func ErrorLogs(p *proto.NginxConfig) map[string]string {
 	var found = make(map[string]string)
 
 	for _, errorLog := range p.GetErrorLogs().GetErrorLog() {
-    if isIgnorableLogType(errorLog.GetName()) {
+		if isIgnorableLogType(errorLog.GetName()) {
 			continue
 		}
-    
+
 		if errorLog.GetReadable() {
 			name := strings.Split(errorLog.GetName(), " ")[0]
 			// In the future, different error log formats will be supported
 			found[name] = ""
 		} else {
 			log.Warnf("NGINX Error log file %s is not readable. Please make it readable in order for NGINX metrics to be collected.", errorLog.GetName())
-    }
+		}
 	}
 
 	return found
