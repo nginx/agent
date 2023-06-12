@@ -189,9 +189,7 @@ jobs:
             else 
               GIT_BRANCH=${GITHUB_REF##*/}
             fi
-            echo "$GIT_BRANCH";
             for i in ./build/azure/packages/nginx-agent*; do 
-              echo "$i";
               az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GIT_BRANCH}/${i##*/}
             done 
