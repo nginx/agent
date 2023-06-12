@@ -174,9 +174,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: nginx-agent-snapshots
-          path: |
-           ./build/packages/nginx-agent.tar.gz
-           ./build/azure/packages/
+          path: ./build/azure/packages/
           retention-days: 3
       - name: Azure Login
         uses: azure/login@v1
@@ -186,17 +184,17 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            if ${{ github.event_name == 'pull_request'}}; then 
-              for i in ./build/azure/packages/nginx-agent*; do 
-                echo "$i";
-                az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
-                --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_HEAD_REF}/${i##*/}
-              done 
+            if ${{ github.event_name == 'pull_request'}}; then
+              GIT_BRANCH=${GITHUB_HEAD_REF}
             else 
-              az storage blob upload --auth-mode=login -f ./build/packages/nginx-agent.tar.gz -c ${{ secrets.AZURE_CONTAINER_NAME }} \
-              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/nginx-agent.tar.gz
-            fi 
-            
+              GIT_BRANCH=${GITHUB_REF##*/}
+            fi
+            echo "$GIT_BRANCH";
+            for i in ./build/azure/packages/nginx-agent*; do 
+              echo "$i";
+              az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GIT_BRANCH}/${i##*/}
+            done 
       - name: Azure Logout
         run: |
           az logout
