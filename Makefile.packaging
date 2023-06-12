@@ -32,6 +32,7 @@ UPLOAD_URL         := "https://up-ap.nginx.com/"
 clean-packages: 
 	rm -rf $(PACKAGES_DIR)
 	rm -rf $(GITHUB_PACKAGES_DIR)
+	rm -rf $(AZURE_PACKAGES_DIR)
 
 $(PACKAGES_DIR):
 	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk && mkdir -p $(PACKAGES_DIR)/txz
@@ -39,7 +40,10 @@ $(PACKAGES_DIR):
 $(GITHUB_PACKAGES_DIR):
 	@mkdir -p $(GITHUB_PACKAGES_DIR)
 
-package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) ## Create final packages for all supported distros
+$(AZURE_PACKAGES_DIR):
+	@mkdir -p $(AZURE_PACKAGES_DIR)
+
+package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) #### Create final packages for all supported distros
 	# Create deb packages
 	
 	@for arch in $(DEB_ARCHS); do \
