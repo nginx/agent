@@ -882,7 +882,7 @@ func getDirectoryMapDiff(currentDirectoryMap []*proto.Directory, incomingDirecto
 // be used for metrics collection
 func isIgnorableLogType(logName string) bool {
 	var name = strings.ToLower(logName)
-	var isIgnorableName = name == "off" || name == "stderr" || name == "stdout"
+	var isIgnorableName = name == "off" || name == "/dev/stderr" || name == "/dev/stdout" || name == "/dev/null"
 	var isSyslog = strings.HasPrefix(name, "syslog:")
 	return isIgnorableName || isSyslog
 }

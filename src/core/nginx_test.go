@@ -979,3 +979,419 @@ func TestNginxBinaryType_validateConfigCheckResponse(t *testing.T) {
 		})
 	}
 }
+
+func TestAccessLog(t *testing.T) {
+	type testDef struct {
+		name     string
+		config   *proto.NginxConfig
+		expected map[string]string
+	}
+
+	// no test case for process lookup, that would require running nginx or proc somewhere
+	for _, test := range []testDef{
+		{ 
+			name: "access logs not set", 
+			config: &proto.NginxConfig{ AccessLogs: &proto.AccessLogs{AccessLog: make([]*proto.AccessLog, 0)} },
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs set", 
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "/tmp/testdata/logs/access2.log",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{"/tmp/testdata/logs/access2.log": ""},
+		},
+		{ 
+			name: "access logs set not readable", 
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "/tmp/testdata/logs/access2.log",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs syslog", 
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "syslog:server=unix:/var/log/nginx.sock,nohostname;",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs syslog not readable",
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "syslog:server=unix:/var/log/nginx.sock,nohostname;",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs off",
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "off",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs off not readable",
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "off",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs dev null",
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "/dev/null",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs dev null not readable",
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "/dev/null",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs dev stdout",
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "/dev/stdout",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs dev stdout not readable",
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "/dev/stdout",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs dev stderr",
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "/dev/stderr",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "access logs dev stderr not readable",
+			config: &proto.NginxConfig{ 
+				AccessLogs: &proto.AccessLogs{
+					AccessLog: []*proto.AccessLog{
+						{
+							Name:        "/dev/stderr",
+							Format:      "",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+	} {
+		t.Run(test.name, func(tt *testing.T) {
+			logs := AccessLogs(test.config)
+			assert.Equal(tt, test.expected, logs)
+		})
+	}
+}
+
+func TestErrorLog(t *testing.T) {
+	type testDef struct {
+		name     string
+		config   *proto.NginxConfig
+		expected map[string]string
+	}
+
+	// no test case for process lookup, that would require running nginx or proc somewhere
+	for _, test := range []testDef{
+		{ 
+			name: "error logs not set", 
+			config: &proto.NginxConfig{ ErrorLogs: &proto.ErrorLogs{ErrorLog: make([]*proto.ErrorLog, 0)} },
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs set", 
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "/tmp/testdata/logs/access2.log",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{"/tmp/testdata/logs/access2.log": ""},
+		},
+		{ 
+			name: "error logs set not readable", 
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "/tmp/testdata/logs/access2.log",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs syslog", 
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "syslog:server=unix:/var/log/nginx.sock,nohostname;",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs syslog not readable",
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "syslog:server=unix:/var/log/nginx.sock,nohostname;",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs off",
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "off",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs off not readable",
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "off",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs dev null",
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "/dev/null",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs dev null not readable",
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "/dev/null",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs dev stdout",
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "/dev/stdout",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs dev stdout not readable",
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "/dev/stdout",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs dev stderr",
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "/dev/stderr",
+							Permissions: "0644",
+							Readable:    true,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+		{ 
+			name: "error logs dev stderr not readable",
+			config: &proto.NginxConfig{ 
+				ErrorLogs: &proto.ErrorLogs{
+					ErrorLog: []*proto.ErrorLog{
+						{
+							Name:        "/dev/stderr",
+							Permissions: "0644",
+							Readable:    false,
+						},
+					},
+				},
+			},
+			expected: map[string]string{},
+		},
+	} {
+		t.Run(test.name, func(tt *testing.T) {
+			logs := ErrorLogs(test.config)
+			assert.Equal(tt, test.expected, logs)
+		})
+	}
+}
