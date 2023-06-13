@@ -110,7 +110,7 @@ func TestCommander_Process(t *testing.T) {
 			msgTopics: []string{},
 		},
 		{
-			name: "test agent config apply",
+			name: "test agent config during registration",
 			cmd: &proto.Command{
 				Meta: &proto.Metadata{},
 				Type: proto.Command_NORMAL,
@@ -201,6 +201,48 @@ func TestCommander_Process(t *testing.T) {
 							Details: &proto.AgentDetails{
 								Tags:     []string{"new-tag1:one"},
 								Features: []string{"nginx-config-async"},
+							},
+						},
+					},
+				},
+			},
+			topic:     core.AgentConnected,
+			nginxId:   "12345",
+			systemId:  "67890",
+			msgTopics: []string{},
+		},
+		{
+			name: "test agent register with empty features in agent details",
+			cmd: &proto.Command{
+				Meta: &proto.Metadata{},
+				Type: proto.Command_NORMAL,
+				Data: &proto.Command_AgentConnectResponse{
+					AgentConnectResponse: &proto.AgentConnectResponse{
+						AgentConfig: &proto.AgentConfig{
+							Details: &proto.AgentDetails{
+								Tags:     []string{"new-tag1:one"},
+								Features: []string{},
+							},
+						},
+					},
+				},
+			},
+			topic:     core.AgentConnected,
+			nginxId:   "12345",
+			systemId:  "67890",
+			msgTopics: []string{},
+		},
+		{
+			name: "test agent register with nil features in agent details",
+			cmd: &proto.Command{
+				Meta: &proto.Metadata{},
+				Type: proto.Command_NORMAL,
+				Data: &proto.Command_AgentConnectResponse{
+					AgentConnectResponse: &proto.AgentConnectResponse{
+						AgentConfig: &proto.AgentConfig{
+							Details: &proto.AgentDetails{
+								Tags:     []string{"new-tag1:one"},
+								Features: nil,
 							},
 						},
 					},
