@@ -989,14 +989,14 @@ func TestAccessLog(t *testing.T) {
 
 	// no test case for process lookup, that would require running nginx or proc somewhere
 	for _, test := range []testDef{
-		{ 
-			name: "access logs not set", 
-			config: &proto.NginxConfig{ AccessLogs: &proto.AccessLogs{AccessLog: make([]*proto.AccessLog, 0)} },
+		{
+			name:     "access logs not set",
+			config:   &proto.NginxConfig{AccessLogs: &proto.AccessLogs{AccessLog: make([]*proto.AccessLog, 0)}},
 			expected: map[string]string{},
 		},
-		{ 
-			name: "access logs set", 
-			config: &proto.NginxConfig{ 
+		{
+			name: "access logs set",
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1010,9 +1010,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{"/tmp/testdata/logs/access2.log": ""},
 		},
-		{ 
-			name: "access logs set not readable", 
-			config: &proto.NginxConfig{ 
+		{
+			name: "access logs set not readable",
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1026,9 +1026,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
-			name: "access logs syslog", 
-			config: &proto.NginxConfig{ 
+		{
+			name: "access logs syslog",
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1042,9 +1042,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "access logs syslog not readable",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1058,9 +1058,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "access logs off",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1074,9 +1074,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "access logs off not readable",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1090,9 +1090,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "access logs dev null",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1106,9 +1106,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "access logs dev null not readable",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1122,9 +1122,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "access logs dev stdout",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1138,9 +1138,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "access logs dev stdout not readable",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1154,9 +1154,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "access logs dev stderr",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1170,9 +1170,9 @@ func TestAccessLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "access logs dev stderr not readable",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				AccessLogs: &proto.AccessLogs{
 					AccessLog: []*proto.AccessLog{
 						{
@@ -1203,14 +1203,14 @@ func TestErrorLog(t *testing.T) {
 
 	// no test case for process lookup, that would require running nginx or proc somewhere
 	for _, test := range []testDef{
-		{ 
-			name: "error logs not set", 
-			config: &proto.NginxConfig{ ErrorLogs: &proto.ErrorLogs{ErrorLog: make([]*proto.ErrorLog, 0)} },
+		{
+			name:     "error logs not set",
+			config:   &proto.NginxConfig{ErrorLogs: &proto.ErrorLogs{ErrorLog: make([]*proto.ErrorLog, 0)}},
 			expected: map[string]string{},
 		},
-		{ 
-			name: "error logs set", 
-			config: &proto.NginxConfig{ 
+		{
+			name: "error logs set",
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1223,9 +1223,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{"/tmp/testdata/logs/access2.log": ""},
 		},
-		{ 
-			name: "error logs set not readable", 
-			config: &proto.NginxConfig{ 
+		{
+			name: "error logs set not readable",
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1238,9 +1238,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
-			name: "error logs syslog", 
-			config: &proto.NginxConfig{ 
+		{
+			name: "error logs syslog",
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1253,9 +1253,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "error logs syslog not readable",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1268,9 +1268,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "error logs off",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1283,9 +1283,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "error logs off not readable",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1298,9 +1298,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "error logs dev null",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1313,9 +1313,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "error logs dev null not readable",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1328,9 +1328,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "error logs dev stdout",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1343,9 +1343,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "error logs dev stdout not readable",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1358,9 +1358,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "error logs dev stderr",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
@@ -1373,9 +1373,9 @@ func TestErrorLog(t *testing.T) {
 			},
 			expected: map[string]string{},
 		},
-		{ 
+		{
 			name: "error logs dev stderr not readable",
-			config: &proto.NginxConfig{ 
+			config: &proto.NginxConfig{
 				ErrorLogs: &proto.ErrorLogs{
 					ErrorLog: []*proto.ErrorLog{
 						{
