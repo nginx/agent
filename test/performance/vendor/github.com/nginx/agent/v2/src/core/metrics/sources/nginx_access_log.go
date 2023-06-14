@@ -56,8 +56,7 @@ var logVarMap = map[string]string{
 	"]":                         "\\]",
 }
 
-// Pattern to match all the variables that are mentioned in the access log
-// and are absent from logVarMap
+// Pattern to match all the variables that are mentioned in the access log format
 var logVarRegex = regexp.MustCompile(`\$([a-zA-Z]+[_[a-zA-Z]+]*)`)
 
 // This metrics source is used to tail the NGINX access logs to retrieve metrics.
@@ -629,9 +628,9 @@ func getDefaultCounters() (map[string]float64, map[string]float64, map[string]fl
 	return httpCounters, upstreamCounters, upstreamCacheCounters
 }
 
+// For all the variables in the log format that are not present in the logVarMap
+// replace them with the %{DATA:.*} format
 func replaceCustomLogVars(logPattern string) string {
-	// For all the variables in the log format that are not present in the logVarMap
-	// replace them with the %{DATA:.*} format
 	variables := logVarRegex.FindAllStringSubmatch(logPattern, -1)
 
 	for _, match := range variables {
