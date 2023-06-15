@@ -53,19 +53,20 @@ ARG PACKAGE_NAME
 
 RUN yum localinstall -y /agent/build/${PACKAGE_NAME}.rpm
 
+
 FROM install-nginx as install-agent-repo
 
 ARG PACKAGES_REPO
 
+RUN nginx -T
+
 RUN printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
 baseurl=http://${PACKAGES_REPO}/nginx-agent/centos/${OS_VERSION}/\$basearch \n\
-sslclientcert=/etc/ssl/nginx/nginx-repo.crt \n\
-sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
-sslverify=true \n\
-gpgkey=https://nginx.org/keys/nginx_signing.key" > /etc/yum.repos.d/nginx-agent.repo  \
+gpgkey=https://nginx.org/keys/nginx_signing.key \n\
+module_hotfixes=true" > /etc/yum.repos.d/nginx-agent.repo  \
     && yum install -y nginx-agent \
     && yum clean all \
     && rm -rf /var/cache/yum /etc/yum.repos.d/* /etc/ssl/nginx
