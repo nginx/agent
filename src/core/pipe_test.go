@@ -76,7 +76,7 @@ func TestMessagePipe(t *testing.T) {
 	plugin.AssertExpectations(t)
 }
 
-func TestPipe_DeRegister(t *testing.T){
+func TestPipe_DeRegister(t *testing.T) {
 	plugin := new(testPlugin)
 	plugin.On("Init").Times(1)
 	plugin.On("Close").Times(1)
@@ -110,7 +110,7 @@ func TestPipe_IsPluginAlreadyRegistered(t *testing.T) {
 	go func() {
 		messagePipe.Run()
 		pipelineDone <- true
-	}()// for the above call being asynchronous
+	}() // for the above call being asynchronous
 
 	cancel()
 	<-pipelineDone
@@ -118,7 +118,4 @@ func TestPipe_IsPluginAlreadyRegistered(t *testing.T) {
 	assert.True(t, messagePipe.IsPluginAlreadyRegistered(*plugin.Info().name))
 	assert.False(t, messagePipe.IsPluginAlreadyRegistered("metrics"))
 
-
-
 }
-
