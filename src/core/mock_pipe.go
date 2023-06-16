@@ -58,7 +58,28 @@ func (p *MockMessagePipe) Register(size int, plugins []Plugin, extensionPlugins 
 	return nil
 }
 
-func (p *MockMessagePipe) DeRegister(plugins []string) error {
+func (p *MockMessagePipe) DeRegister(pluginNames []string) error {
+
+	var plugins []Plugin
+	for _, name := range pluginNames {
+		for _, plugin := range p.plugins {
+			if plugin.Info().Name() == name {
+				plugins = append(plugins, plugin)
+			}
+		}
+	}
+
+	for _, plugin := range plugins {
+		index := getIndex(plugin.Info().Name(), p.plugins)
+
+		if index != -1 {
+			p.plugins = append(p.plugins[:index], p.plugins[index+1:]...)
+
+			plugin.Close()
+		}
+
+	}
+
 	return nil
 }
 
