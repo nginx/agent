@@ -58,9 +58,10 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 	require.NoError(t, comp.WaitForService("agent", wait.ForHTTP("/")).WithEnv(
 		map[string]string{
 			"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
-			"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
-			"OS_RELEASE":   os.Getenv("OS_RELEASE"),
-			"OS_VERSION":   os.Getenv("OS_VERSION"),
+			// "PACKAGES_REPO": os.Getenv("PACKAGES_REPO"),
+			"BASE_IMAGE": os.Getenv("BASE_IMAGE"),
+			"OS_RELEASE": os.Getenv("OS_RELEASE"),
+			"OS_VERSION": os.Getenv("OS_VERSION"),
 		},
 	).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 

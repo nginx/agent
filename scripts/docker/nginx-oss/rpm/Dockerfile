@@ -15,6 +15,14 @@ RUN if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; \
         then yum install -y oracle-epel-release-el7; \
     fi
 
+RUN if [ "$OS_RELEASE" = "redhatenterprise" ] && [ "$OS_VERSION" != "9" ]; \
+    then printf "[nginx] \n\
+name=nginx repo \n\
+baseurl=http://nginx.org/packages/mainline/rhel/${OS_VERSION}/\$basearch/ \n\
+gpgcheck=0 \n\
+enabled=1" > /etc/yum.repos.d/nginx.repo; \
+    fi
+
 RUN if [ "$OS_RELEASE" = "centos" ] && [ "$OS_VERSION" = "7" ]; \
         then yum install -y epel-release; \
     fi
@@ -38,7 +46,9 @@ RUN set -x \
 RUN chmod +x /agent/entrypoint.sh
 
 # RUN nginx -T
+# NGINX_CONF?
 # COPY ./test/integration/api/nginx.conf /etc/nginx/nginx.conf
+RUN nginx -T
 
 STOPSIGNAL SIGTERM
 

@@ -12,11 +12,11 @@ services:
       target: install-agent-repo
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
+        # PACKAGES_REPO: ${PACKAGES_REPO}
         BASE_IMAGE: ${BASE_IMAGE}
         OS_RELEASE: ${OS_RELEASE}
         OS_VERSION: ${OS_VERSION}
         ENTRY_POINT: "./scripts/docker/entrypoint.sh"
-        PACKAGES_REPO: "packages.nginx.org"
     ports:
       - 9091:9091
     networks:
