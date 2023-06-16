@@ -661,7 +661,7 @@ func parseServerHost(parent *crossplane.Directive) string {
 		case "listen":
 			host, port, err := net.SplitHostPort(dir.Args[0])
 			if err == nil {
-				if host != "*" && host != "::" {
+				if host != "*" && host != "::" && host != "" {
 					serverName = host
 				}
 				listenPort = port
@@ -691,7 +691,11 @@ func isPort(value string) bool {
 func parseLocationPath(location *crossplane.Directive) string {
 	path := "/"
 	if len(location.Args) > 0 {
-		path = location.Args[0]
+		if location.Args[0] != "=" {
+			path = location.Args[0]
+		} else {
+			path = location.Args[1]
+		}
 	}
 	return path
 }

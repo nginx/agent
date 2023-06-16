@@ -871,6 +871,54 @@ server {
 		},
 		{
 			plus: []string{
+				"http://127.0.0.1:80/api/",
+			},
+			conf: `
+server {
+    listen 127.0.0.1;
+	server_name _;
+    location = /api/ {
+        api write=on;
+        allow 127.0.0.1;
+        deny all;
+    }
+}
+`,
+		},
+		{
+			plus: []string{
+				"http://localhost:80/api/",
+			},
+			conf: `
+server {
+    listen 80;
+	server_name _;
+    location = /api/ {
+        api write=on;
+        allow 127.0.0.1;
+        deny all;
+    }
+}
+`,
+		},
+		{
+			plus: []string{
+				"http://localhost:80/api/",
+			},
+			conf: `
+server {
+    listen :80;
+	server_name _;
+    location = /api/ {
+        api write=on;
+        allow 127.0.0.1;
+        deny all;
+    }
+}
+`,
+		},
+		{
+			plus: []string{
 				"http://localhost:80/api/",
 			},
 			conf: `
@@ -934,6 +982,72 @@ server {
 			}
 		
 			location /stub_status {
+				stub_status;
+			}
+		}
+		`,
+		},
+		{
+			oss: []string{
+				"http://localhost:80/stub_status",
+			},
+			conf: `
+		server {
+			server_name   localhost;
+			listen        :80;
+		
+			error_page    500 502 503 504  /50x.html;
+			# ssl_certificate /usr/local/nginx/conf/cert.pem;
+		
+			location      / {
+				root      /tmp/testdata/foo;
+			}
+		
+			location /stub_status {
+				stub_status;
+			}
+		}
+		`,
+		},
+		{
+			oss: []string{
+				"http://localhost:80/stub_status",
+			},
+			conf: `
+		server {
+			server_name   localhost;
+			listen        80;
+		
+			error_page    500 502 503 504  /50x.html;
+			# ssl_certificate /usr/local/nginx/conf/cert.pem;
+		
+			location      / {
+				root      /tmp/testdata/foo;
+			}
+		
+			location /stub_status {
+				stub_status;
+			}
+		}
+		`,
+		},
+		{
+			oss: []string{
+				"http://localhost:80/stub_status",
+			},
+			conf: `
+		server {
+			server_name   localhost;
+			listen        80;
+		
+			error_page    500 502 503 504  /50x.html;
+			# ssl_certificate /usr/local/nginx/conf/cert.pem;
+		
+			location      / {
+				root      /tmp/testdata/foo;
+			}
+		
+			location = /stub_status {
 				stub_status;
 			}
 		}
