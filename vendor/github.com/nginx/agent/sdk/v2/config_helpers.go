@@ -391,8 +391,10 @@ func updateNginxConfigWithAccessLog(file string, format string, nginxConfig *pro
 
 	if formatMap[format] != "" {
 		al.Format = formatMap[format]
+	} else if format == "" || format == "combined" {
+		al.Format = predefinedAccessLogFormat
 	} else {
-		al.Format = format
+		al.Format = ""
 	}
 
 	nginxConfig.AccessLogs.AccessLog = append(nginxConfig.AccessLogs.AccessLog, al)
@@ -624,9 +626,10 @@ func AddAuxfileToNginxConfig(
 }
 
 const (
-	plusAPIDirective = "api"
-	ossAPIDirective  = "stub_status"
-	apiFormat        = "http://%s%s"
+	plusAPIDirective          = "api"
+	ossAPIDirective           = "stub_status"
+	apiFormat                 = "http://%s%s"
+	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$reques\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
 )
 
 func parseStatusAPIEndpoints(parent *crossplane.Directive, current *crossplane.Directive) ([]string, []string) {

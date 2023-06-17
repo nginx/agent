@@ -85,7 +85,7 @@ var accessLogs = &proto.AccessLogs{
 		},
 		{
 			Name:        "/tmp/testdata/logs/access2.log",
-			Format:      "combined",
+			Format:      predefinedAccessLogFormat,
 			Permissions: "0644",
 			Readable:    true,
 		},
@@ -540,7 +540,7 @@ var tests = []struct {
 				AccessLog: []*proto.AccessLog{
 					{
 						Name:        "/tmp/testdata/logs/access2.log",
-						Format:      "",
+						Format:      predefinedAccessLogFormat,
 						Permissions: "0644",
 						Readable:    true,
 					},
