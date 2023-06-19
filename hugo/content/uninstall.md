@@ -12,9 +12,8 @@ doctypes: ["task"]
 
 ## Prerequisites
 
-- NGINX Agent installed
-- `root` privilege
-
+- NGINX Agent installed [NGINX Agent installed](../installation-oss)
+- The user following these steps will need `root` privilege
 
 ## Uninstalling NGINX Agent
 Complete the following steps on each host where you’ve installed the NGINX Agent
