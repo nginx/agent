@@ -629,7 +629,7 @@ const (
 	plusAPIDirective          = "api"
 	ossAPIDirective           = "stub_status"
 	apiFormat                 = "http://%s%s"
-	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$reques\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
+	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
 )
 
 func parseStatusAPIEndpoints(parent *crossplane.Directive, current *crossplane.Directive) ([]string, []string) {
