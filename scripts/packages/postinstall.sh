@@ -274,6 +274,10 @@ upgrade_config_file() {
 }
 
 restart_agent_if_required() {
+    if [ "${ID}" = "freebsd" ]; then
+        # https://github.com/freebsd/pkg/pull/2128
+        return
+    fi
     if service nginx-agent status >/dev/null 2>&1; then
         printf "PostInstall: Restarting nginx agent\n"
         service nginx-agent restart || true
