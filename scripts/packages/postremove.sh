@@ -49,6 +49,14 @@ case "$ID" in
             _cleanup
         fi
         ;;
+    rhel|fedora|centos|amzn|almalinux|rocky)
+        if [ "$1" = "0" ]; then
+            _stop_agent_systemd
+            _disable_agent_systemd
+            _systemd_daemon_reload
+            _cleanup
+        fi
+        ;;
     *)
         _stop_agent_systemd
         _disable_agent_systemd
