@@ -284,6 +284,10 @@ func (n *NginxBinaryType) validateConfigCheckResponse(response *bytes.Buffer, co
 		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
 	}
 
+	if bytes.Contains(response.Bytes(), []byte("[alert]")) {
+		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
+	}
+
 	if n.config.Nginx.TreatWarningsAsErrors && bytes.Contains(response.Bytes(), []byte("[warn]")) {
 		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
 	}

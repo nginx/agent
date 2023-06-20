@@ -1112,49 +1112,75 @@ func TestNginx_monitor(t *testing.T) {
 }
 
 func TestNginx_monitorLog(t *testing.T) {
-	tmpDir := t.TempDir()
-	errorLogFileName := path.Join(tmpDir, "/error.log")
-	errorLogFile, err := os.Create(errorLogFileName)
-	errorLogs := map[string]string{errorLogFileName: errorLogFileName}
+	tests := []struct {
+		name     string
+		errorLog string
+		expected string
+	}{
+		{
+			name:     "emerg level test address already in use",
+			errorLog: "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)",
+			expected: "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)",
+		},
+		{
+			name:     "alert level test permission",
+			errorLog: "2023/06/20 11:01:56 [alert] 4138#4138: open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
+			expected: "2023/06/20 11:01:56 [alert] 4138#4138: open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
+		},
+		{
+			name:     "notice level test",
+			errorLog: "2023/06/20 11:01:56 [notice] 4138#4138: start worker process 11712",
+			expected: "",
+		},
+	}
 
-	defer func() {
-		err := errorLogFile.Close()
-		require.NoError(t, err, "Error closing error log file")
-		os.Remove(errorLogFile.Name())
-	}()
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			tmpDir := t.TempDir()
+			errorLogFileName := path.Join(tmpDir, "/error.log")
+			errorLogFile, err := os.Create(errorLogFileName)
+			errorLogs := map[string]string{errorLogFileName: errorLogFileName}
 
-	require.NoError(t, err, "Error creating error log")
-	commandClient := tutils.GetMockCommandClient(&proto.NginxConfig{})
+			defer func() {
+				err := errorLogFile.Close()
+				require.NoError(t, err, "Error closing error log file")
+				os.Remove(errorLogFile.Name())
+			}()
 
-	env := tutils.GetMockEnvWithProcess()
-	binary := tutils.NewMockNginxBinary()
-	binary.On("GetErrorLogs").Return(errorLogs)
+			require.NoError(t, err, "Error creating error log")
+			commandClient := tutils.GetMockCommandClient(&proto.NginxConfig{})
 
-	config := tutils.GetMockAgentConfig()
-	config.Nginx.ConfigReloadMonitoringPeriod = 10 * time.Second
-	pluginUnderTest := NewNginx(commandClient, binary, env, config)
-	errorsChannel := make(chan string, 1)
+			env := tutils.GetMockEnvWithProcess()
+			binary := tutils.NewMockNginxBinary()
+			binary.On("GetErrorLogs").Return(errorLogs)
 
-	pluginUnderTest.monitorLogs(errorLogs, errorsChannel)
+			config := tutils.GetMockAgentConfig()
+			config.Nginx.ConfigReloadMonitoringPeriod = 10 * time.Second
+			pluginUnderTest := NewNginx(commandClient, binary, env, config)
+			errorsChannel := make(chan string, 1)
 
-	// Validate that errors in the logs returned
-	go func() {
-		pluginUnderTest.monitorLogs(errorLogs, errorsChannel)
-	}()
+			pluginUnderTest.monitorLogs(errorLogs, errorsChannel)
 
-	time.Sleep(config.Nginx.ConfigReloadMonitoringPeriod / 2)
+			// Validate that errors in the logs returned
+			go func() {
+				pluginUnderTest.monitorLogs(errorLogs, errorsChannel)
+			}()
 
-	_, err = errorLogFile.WriteString("2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)")
-	require.NoError(t, err, "Error writing data to error log file")
+			time.Sleep(config.Nginx.ConfigReloadMonitoringPeriod / 2)
 
-	for {
-		select {
-		case x := <-errorsChannel:
-			assert.Equal(t, "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)", x)
-			return
-		case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
-			assert.Fail(t, "Expected error to be reported")
-			return
-		}
+			_, err = errorLogFile.WriteString(test.errorLog)
+			require.NoError(t, err, "Error writing data to error log file")
+
+			for {
+				select {
+				case x := <-errorsChannel:
+					assert.Equal(t, test.expected, x)
+					return
+				case <-time.After((config.Nginx.ConfigReloadMonitoringPeriod * 2) * time.Second):
+					assert.Fail(t, "Expected error to be reported")
+					return
+				}
+			}
+		})
 	}
 }
