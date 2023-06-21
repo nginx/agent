@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+
+description="nginx-agent"
+command_background=true
+
+cfgfile=${cfgfile:-/etc/nginx-agent/nginx-agent.conf}
+pidfile=/var/run/nginx-agent.pid
+command=/usr/bin/nginx-agent
+command_args=""
+required_files="$cfgfile"
+
+depend() {
+    need net
+    use dns logger netmount
+}

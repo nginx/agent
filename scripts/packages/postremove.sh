@@ -57,6 +57,9 @@ case "$ID" in
             _cleanup
         fi
         ;;
+    alpine)
+        _cleanup
+        ;;
     *)
         _stop_agent_systemd
         _disable_agent_systemd
