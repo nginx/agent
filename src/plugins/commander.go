@@ -163,33 +163,41 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 				}
 			}
 
-			for index, feature := range agtCfg.Details.Features {
-				agtCfg.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
-			}
-
-			sort.Strings(agtCfg.Details.Features)
-			sort.Strings(c.config.Features)
-
-			synchronizedFeatures := reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
-
-			if !synchronizedFeatures {
-				for _, feature := range c.config.Features {
-					if feature != agent_config.FeatureRegistration {
-						c.deRegisterPlugin(feature)
-					}
-
+			if agtCfg.Details != nil && agtCfg.Details.Features != nil {
+				for index, feature := range agtCfg.Details.Features {
+					agtCfg.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
 				}
-			}
 
-			if agtCfg.Details != nil && agtCfg.Details.Features != nil && !synchronizedFeatures {
-				for _, feature := range agtCfg.Details.Features {
-					c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
+				sort.Strings(agtCfg.Details.Features)
+
+				sort.Strings(c.config.Features)
+
+				synchronizedFeatures := reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
+
+				if !synchronizedFeatures {
+					c.synchronizeFeatures(agtCfg)
 				}
 			}
 		}
 
 	default:
 		log.Debugf("unhandled command: %T", cmd.Data)
+	}
+}
+
+func (c *Commander) synchronizeFeatures(agtCfg *proto.AgentConfig) {
+	if c.config != nil {
+		for _, feature := range c.config.Features {
+			if feature != agent_config.FeatureRegistration {
+				c.deRegisterPlugin(feature)
+			}
+		}
+	}
+
+	if agtCfg.Details != nil {
+		for _, feature := range agtCfg.Details.Features {
+			c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
+		}
 	}
 }
 
