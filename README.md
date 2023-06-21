@@ -89,7 +89,7 @@ To install NGINX Agent on your system, go to [Releases](https://github.com/nginx
 
 Use your system's package manager to install the package. Some examples:
 
-Debian, Ubuntu, and other distributions using the `dpkg` package manager. 
+Debian, Ubuntu, and other distributions using the `dpkg` package manager.
 
 ```
 sudo dpkg -i nginx-agent-<agent-version>.deb
@@ -121,7 +121,16 @@ To enable the NGINX Agent to start on boot, run the following command:
 sudo systemctl enable nginx-agent
 ```
 
-## Logging 
+On Alpine Linux, use the following command to start the agent:
+```
+sudo service nginx-agent start
+```
+To enable the agent to start at boot time on Alpine Linux, run this:
+```
+sudo rc-update add nginx-agent default
+```
+
+## Logging
 NGINX Agent uses formatted log files to collect metrics. Expanding log formats and instance counts will also increase the size of NGINX Agent log files. We recommend adding a separate partition for `/var/log/nginx-agent`. Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.
 
 ### Log Rotation
@@ -171,7 +180,7 @@ Follow steps in the [Installation](#installation) section to download, install, 
 Using your preferred method, clone the NGINX Agent repository into your development directory. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
 ## Installing Go
-NGINX Agent and the Mock Control Plane are written in Go. Go 1.21.0 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/). 
+NGINX Agent and the Mock Control Plane are written in Go. Go 1.21.0 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/).
 
 ## Starting the gRPC Mock Control Plane
 Start the mock control plane by running the following command from the `agent` source code root directory:
@@ -185,12 +194,12 @@ INFO[0000] gRPC listening at 54789 # gRPC control plane port which NGINX Agent w
 ```
 
 ## NGINX Agent Settings
-If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory. 
+If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory.
 ```
 sudo mkdir /etc/nginx-agent
 sudo cp <project_root_directory>/nginx-agent.conf /etc/nginx-agent/
 ```
-Create the `agent-dynamic.conf` file in the `/etc/nginx-agent/` directory, which is required for NGINX Agent to run. 
+Create the `agent-dynamic.conf` file in the `/etc/nginx-agent/` directory, which is required for NGINX Agent to run.
 ```
 sudo touch /var/lib/nginx-agent/agent-dynamic.conf
 ```
@@ -242,7 +251,7 @@ Open a web browser to view the Swagger UI at http://localhost:8082/docs.
 ## Extensions
 An extension is a piece of code, not critical to the main functionality that the NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
 
-To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`. 
+To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`.
 Here is an example of enabling the advanced metrics extension:
 
 ```yaml
@@ -258,24 +267,24 @@ Open another terminal window and start the NGINX Agent. Issue the following comm
 sudo make run
 
 # Command Output snippet
-WARN[0000] Log level is info                            
-INFO[0000] setting displayName to XXX            
+WARN[0000] Log level is info
+INFO[0000] setting displayName to XXX
 INFO[0000] NGINX Agent at with pid 12345, clientID=XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX name=XXX
-INFO[0000] NginxBinary initializing                     
-INFO[0000] Commander initializing                       
-INFO[0000] Comms initializing                           
-INFO[0000] OneTimeRegistration initializing             
-INFO[0000] Registering XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX 
-INFO[0000] Metrics initializing                         
-INFO[0000] MetricsThrottle initializing                 
-INFO[0000] DataPlaneStatus initializing                 
-INFO[0000] MetricsThrottle waiting for report ready     
-INFO[0000] Metrics waiting for handshake to be completed 
-INFO[0000] ProcessWatcher initializing                  
-INFO[0000] Extensions initializing                      
-INFO[0000] FileWatcher initializing                     
+INFO[0000] NginxBinary initializing
+INFO[0000] Commander initializing
+INFO[0000] Comms initializing
+INFO[0000] OneTimeRegistration initializing
+INFO[0000] Registering XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX
+INFO[0000] Metrics initializing
+INFO[0000] MetricsThrottle initializing
+INFO[0000] DataPlaneStatus initializing
+INFO[0000] MetricsThrottle waiting for report ready
+INFO[0000] Metrics waiting for handshake to be completed
+INFO[0000] ProcessWatcher initializing
+INFO[0000] Extensions initializing
+INFO[0000] FileWatcher initializing
 INFO[0000] FileWatchThrottle initializing
-INFO[0001] Events initializing                          
+INFO[0001] Events initializing
 INFO[0001] OneTimeRegistration completed
 ```
 
@@ -341,7 +350,7 @@ sudo make run
 ## Supported Distributions
 NGINX Agent can run in most environments. For a list of supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
 
-## Supported Deployment Environments 
+## Supported Deployment Environments
 NGINX Agent can be deployed in the following environments:
 
 - Bare Metal
@@ -349,7 +358,7 @@ NGINX Agent can be deployed in the following environments:
 - Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
 - Virtual Machine
 
-## Supported NGINX Versions 
+## Supported NGINX Versions
 NGINX Agent works with all supported versions of NGINX Open Source and NGINX Plus.
 
 ## Sizing Recommendations
