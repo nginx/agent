@@ -222,7 +222,6 @@ Acquire::https::pkgs.nginx.com::Verify-Host "true";
 Acquire::https::pkgs.nginx.com::SslCert     "/etc/ssl/nginx/nginx-repo.crt";
 Acquire::https::pkgs.nginx.com::SslKey      "/etc/ssl/nginx/nginx-repo.key";`
 
-			// TODO: Create
 			err := testContainer.CopyToContainer(context.Background(), []byte(aptConfigContent), aptConfigPath, 0644)
 			if err != nil {
 				return fmt.Errorf("failed to copy repo config file to container: %v", err)
