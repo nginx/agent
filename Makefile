@@ -23,10 +23,10 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | suse             | sles12sp5, sle15              |                                                                |
 # | freebsd          |                               | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# OS_RELEASE  ?= ubuntu
-# OS_VERSION  ?= 22.04
-OS_RELEASE  ?= alpine
-OS_VERSION  ?= 3.16
+OS_RELEASE  ?= ubuntu
+OS_VERSION  ?= 22.04
+# OS_RELEASE  ?= centos
+# OS_VERSION  ?= 7
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
@@ -37,7 +37,8 @@ DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.dat
 
 CERTS_DIR          := ./build/certs
 PACKAGE_PREFIX     := nginx-agent
-PACKAGES_REPO      := "pkgs.nginx.com"
+# TODO: Add protocol: "http://packages.nginx.org" "https://pkgs.nginx.com"
+PACKAGES_REPO      := "packages.nginx.org"
 OS                 := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 uname_m    := $(shell uname -m)
