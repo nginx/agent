@@ -391,8 +391,10 @@ func updateNginxConfigWithAccessLog(file string, format string, nginxConfig *pro
 
 	if formatMap[format] != "" {
 		al.Format = formatMap[format]
+	} else if format == "" || format == "combined" {
+		al.Format = predefinedAccessLogFormat
 	} else {
-		al.Format = format
+		al.Format = ""
 	}
 
 	nginxConfig.AccessLogs.AccessLog = append(nginxConfig.AccessLogs.AccessLog, al)
@@ -624,9 +626,10 @@ func AddAuxfileToNginxConfig(
 }
 
 const (
-	plusAPIDirective = "api"
-	ossAPIDirective  = "stub_status"
-	apiFormat        = "http://%s%s"
+	plusAPIDirective          = "api"
+	ossAPIDirective           = "stub_status"
+	apiFormat                 = "http://%s%s"
+	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
 )
 
 func parseStatusAPIEndpoints(parent *crossplane.Directive, current *crossplane.Directive) ([]string, []string) {
@@ -661,7 +664,7 @@ func parseServerHost(parent *crossplane.Directive) string {
 		case "listen":
 			host, port, err := net.SplitHostPort(dir.Args[0])
 			if err == nil {
-				if host != "*" && host != "::" {
+				if host != "*" && host != "::" && host != "" {
 					serverName = host
 				}
 				listenPort = port
@@ -691,7 +694,11 @@ func isPort(value string) bool {
 func parseLocationPath(location *crossplane.Directive) string {
 	path := "/"
 	if len(location.Args) > 0 {
-		path = location.Args[0]
+		if location.Args[0] != "=" {
+			path = location.Args[0]
+		} else {
+			path = location.Args[1]
+		}
 	}
 	return path
 }

@@ -814,16 +814,16 @@ func runtimeFromConfigure(configure []string) []string {
 // AccessLogs returns a list of access logs in the config
 func AccessLogs(p *proto.NginxConfig) map[string]string {
 	var found = make(map[string]string)
-	name := ""
-
 	for _, accessLog := range p.GetAccessLogs().GetAccessLog() {
-		name = strings.Split(accessLog.GetName(), " ")[0]
+		if isIgnorableLogType(accessLog.GetName()) {
+			continue
+		}
 
-		// check if the access log is readable or not
-		if accessLog.GetReadable() && accessLog.GetName() != "off" {
+		if accessLog.GetReadable() {
+			name := strings.Split(accessLog.GetName(), " ")[0]
 			format := accessLog.GetFormat()
 			found[name] = format
-		} else if !strings.Contains(name, "syslog:") {
+		} else {
 			log.Warnf("NGINX Access log %s is not readable or is disabled. Please make it readable and enabled in order for NGINX metrics to be collected.", accessLog.GetName())
 		}
 	}
@@ -834,16 +834,17 @@ func AccessLogs(p *proto.NginxConfig) map[string]string {
 // ErrorLogs returns a list of error logs in the config
 func ErrorLogs(p *proto.NginxConfig) map[string]string {
 	var found = make(map[string]string)
-	name := ""
 
 	for _, errorLog := range p.GetErrorLogs().GetErrorLog() {
-		name = strings.Split(errorLog.GetName(), " ")[0]
+		if isIgnorableLogType(errorLog.GetName()) {
+			continue
+		}
 
-		// check if the error log is readable or not
 		if errorLog.GetReadable() {
+			name := strings.Split(errorLog.GetName(), " ")[0]
 			// In the future, different error log formats will be supported
 			found[name] = ""
-		} else if !strings.Contains(name, "syslog:") {
+		} else {
 			log.Warnf("NGINX Error log %s is not readable or is disabled. Please make it readable and enabled in order for NGINX metrics to be collected.", errorLog.GetName())
 		}
 	}
@@ -879,4 +880,13 @@ func getDirectoryMapDiff(currentDirectoryMap []*proto.Directory, incomingDirecto
 	}
 
 	return diff
+}
+
+// Parses the specified log name and returns true if the log name cannot
+// be used for metrics collection
+func isIgnorableLogType(logName string) bool {
+	var name = strings.ToLower(logName)
+	var isIgnorableName = name == "off" || name == "/dev/stderr" || name == "/dev/stdout" || name == "/dev/null"
+	var isSyslog = strings.HasPrefix(name, "syslog:")
+	return isIgnorableName || isSyslog
 }
