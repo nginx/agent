@@ -1113,24 +1113,40 @@ func TestNginx_monitor(t *testing.T) {
 
 func TestNginx_monitorLog(t *testing.T) {
 	tests := []struct {
-		name     string
-		errorLog string
-		expected string
+		name                  string
+		errorLog              string
+		expected              string
+		treatWarningsAsErrors bool
 	}{
 		{
-			name:     "emerg level test address already in use",
-			errorLog: "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)",
-			expected: "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)",
+			name:                  "emerg level test address already in use",
+			errorLog:              "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)",
+			expected:              "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)",
+			treatWarningsAsErrors: false,
 		},
 		{
-			name:     "alert level test permission",
-			errorLog: "2023/06/20 11:01:56 [alert] 4138#4138: open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
-			expected: "2023/06/20 11:01:56 [alert] 4138#4138: open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
+			name:                  "alert level test permission",
+			errorLog:              "2023/06/20 11:01:56 [alert] 4138#4138: open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
+			expected:              "2023/06/20 11:01:56 [alert] 4138#4138: open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
+			treatWarningsAsErrors: false,
 		},
 		{
-			name:     "notice level test",
-			errorLog: "2023/06/20 11:01:56 [notice] 4138#4138: start worker process 11712",
-			expected: "",
+			name:                  "validation passes, warn ignored",
+			errorLog:              "nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024",
+			expected:              "",
+			treatWarningsAsErrors: false,
+		},
+		{
+			name:                  "validation fails, warn respected",
+			errorLog:              "nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024",
+			expected:              "nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024",
+			treatWarningsAsErrors: true,
+		},
+		{
+			name:                  "notice level test",
+			errorLog:              "2023/06/20 11:01:56 [notice] 4138#4138: start worker process 11712",
+			treatWarningsAsErrors: false,
+			expected:              "",
 		},
 	}
 
@@ -1155,7 +1171,8 @@ func TestNginx_monitorLog(t *testing.T) {
 			binary.On("GetErrorLogs").Return(errorLogs)
 
 			config := tutils.GetMockAgentConfig()
-			config.Nginx.ConfigReloadMonitoringPeriod = 10 * time.Second
+			config.Nginx.ConfigReloadMonitoringPeriod = 1 * time.Second
+			config.Nginx.TreatWarningsAsErrors = test.treatWarningsAsErrors
 			pluginUnderTest := NewNginx(commandClient, binary, env, config)
 			errorsChannel := make(chan string, 1)
 

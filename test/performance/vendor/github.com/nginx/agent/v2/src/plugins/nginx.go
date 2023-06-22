@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"path/filepath"
 	re "regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,6 +47,7 @@ var (
 	reloadErrorList   = []*re.Regexp{
 		re.MustCompile(`.*\[emerg\].*`),
 		re.MustCompile(`.*\[alert\].*`),
+		re.MustCompile(`.*\[warn\].*`),
 	}
 )
 
@@ -644,8 +646,14 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 		case d := <-data:
 			for _, errorRegex := range reloadErrorList {
 				if errorRegex.MatchString(d) {
-					errorChannel <- d
-					return
+					if strings.Contains(d, "[warn]") && !n.config.Nginx.TreatWarningsAsErrors {
+						errorChannel <- ""
+						log.Info(d)
+						return
+					} else {
+						errorChannel <- d
+						return
+					}
 				}
 			}
 		case <-tick.C:
