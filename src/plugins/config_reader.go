@@ -115,7 +115,7 @@ func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
 			for _, feature := range r.config.Features {
 				if feature != agent_config.FeatureRegistration {
 					r.mu.Lock()
-					r.deregisterPlugin(feature)
+					r.deRegisterPlugin(feature)
 					r.mu.Unlock()
 				}
 
@@ -132,8 +132,23 @@ func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
 		}
 	}
 }
+func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
+	if r.config != nil {
+		for _, feature := range r.config.Features {
+			if feature != agent_config.FeatureRegistration {
+				r.deRegisterPlugin(feature)
+			}
+		}
+	}
 
-func (r *ConfigReader) deregisterPlugin(data string) {
+	if agtCfg.Details != nil {
+		for _, feature := range agtCfg.Details.Features {
+			r.messagePipeline.Process(core.NewMessage(core.EnableFeature, feature))
+		}
+	}
+}
+
+func (r *ConfigReader) deRegisterPlugin(data string) {
 	if data == agent_config.FeatureFileWatcher {
 
 		err := r.messagePipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
