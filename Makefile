@@ -23,8 +23,8 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | suse             | sles12sp5, sle15              |                                                                |
 # | freebsd          |                               | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE  ?= alpine
-OS_VERSION  ?= 3.17
+OS_RELEASE  ?= debian
+OS_VERSION  ?= bullseye-slim
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
