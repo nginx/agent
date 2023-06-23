@@ -23,8 +23,8 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | suse             | sles12sp5, sle15              |                                                                |
 # | freebsd          |                               | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE  ?= debian
-OS_VERSION  ?= bullseye-slim
+OS_RELEASE  ?= alpine
+OS_VERSION  ?= 3.17
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
@@ -271,6 +271,18 @@ oss-image: ## Build agent container image for NGINX OSS
 run-container: ## Run container from specified IMAGE_TAG
 	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \
 		$(CONTAINER_CLITOOL) run -p 127.0.0.1:8081:8081/tcp --mount type=bind,source=${PWD}/nginx-agent.conf,target=/etc/nginx-agent/nginx-agent.conf ${IMAGE_TAG}
+
+official-plus-image: ## Build official NGINX Plus with NGINX Agent container image, need nginx-repo.crt and nginx-repo.key in build directory
+	@echo Building image nginx-plus-with-nginx-agent with $(CONTAINER_CLITOOL); \
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-plus-with-nginx-agent . \
+		--no-cache -f ./scripts/docker/official/nginx-plus-with-nginx-agent/alpine/Dockerfile \
+		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
+		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key
+
+official-oss-image: ## Build official NGINX OSS with NGINX Agent container image
+	@echo Building image nginx-oss-with-nginx-agent with $(CONTAINER_CLITOOL); \
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
+		--no-cache -f ./scripts/docker/official/nginx-oss-with-nginx-agent/alpine/Dockerfile
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Grafana Example Dashboard Targets                                                                               #
