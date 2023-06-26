@@ -36,6 +36,7 @@ DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.dat
 CERTS_DIR          := ./build/certs
 PACKAGE_PREFIX     := nginx-agent
 PACKAGES_REPO      := "pkgs.nginx.com"
+INSTALL_FROM_REPO  := ""
 OS                 := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 uname_m    := $(shell uname -m)
@@ -200,11 +201,14 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
-integration-test: local-deb-package local-rpm-package local-apk-package
-	PACKAGES_REPO=packages.nginx.org PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} \
-		DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/install
-	PACKAGES_REPO=packages.nginx.org PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} \
-		DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/api
+# integration-test: local-deb-package local-rpm-package local-apk-package
+integration-test:
+	PACKAGES_REPO=packages.nginx.org INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
+		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
+		go test -v ./test/integration/install
+	PACKAGES_REPO=packages.nginx.org INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
+		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
+		go test -v ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -26,7 +28,9 @@ const (
 )
 
 var (
-	AGENT_PACKAGE_REPO = os.Getenv("PACKAGES_REPO")
+	AGENT_PACKAGE_FILENAME = os.Getenv("PACKAGE_NAME")
+	AGENT_PACKAGE_REPO     = os.Getenv("PACKAGES_REPO")
+	INSTALL_FROM_REPO      = os.Getenv("INSTALL_FROM_REPO")
 )
 
 // TestAgentManualInstallUninstall tests Agent Install and Uninstall.
@@ -53,12 +57,24 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	osReleaseContent, err := getOsReleaseContent(ctx, testContainer)
 	require.NoError(t, err)
 
-	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
-		err := updateRepo(testContainer, osReleaseContent)
-		require.NoError(t, err, "failed to update repo packages cache")
+	var absLocalAgentPkgDirPath string
+	if INSTALL_FROM_REPO == "" {
+		absLocalAgentPkgDirPath, err = filepath.Abs("../../../build/")
+		assert.NoError(t, err, "Error finding local agent package build dir")
+		localAgentPkg, err := os.Stat(getPackagePath(absLocalAgentPkgDirPath, string(osReleaseContent)))
+		assert.NoError(t, err, "Error accessing package at: "+absLocalAgentPkgDirPath)
+
+		// Check the file size is less than or equal 20MB
+		assert.LessOrEqual(t, localAgentPkg.Size(), maxFileSize)
 	}
 
-	installLog, installTime, err := installAgent(ctx, testContainer, osReleaseContent)
+	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
+		err := updateDebRepo(testContainer, osReleaseContent)
+		require.NoError(t, err, "failed to update deb repo package cache")
+	}
+
+	containerAgentPackagePath := getPackagePath(absContainerAgentPackageDir, string(osReleaseContent))
+	installLog, installTime, err := installAgent(ctx, testContainer, osReleaseContent, containerAgentPackagePath)
 	require.NoError(t, err)
 
 	assert.LessOrEqual(t, installTime, maxInstallTime)
@@ -77,7 +93,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	uninstallLog, err := uninstallAgent(ctx, testContainer, osReleaseContent)
+	uninstallLog, err := uninstallAgent(ctx, testContainer, osReleaseContent, containerAgentPackagePath)
 	require.NoError(t, err)
 
 	expectedUninstallLogMsgs := map[string]string{}
@@ -101,10 +117,10 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 }
 
 // installAgent installs the agent returning total install time and install output
-func installAgent(ctx context.Context, container *testcontainers.DockerContainer, osReleaseContent string) (string, time.Duration, error) {
+func installAgent(ctx context.Context, container *testcontainers.DockerContainer, osReleaseContent string, agentPackageName string) (string, time.Duration, error) {
 	start := time.Now()
 
-	installCmd := createInstallCommand(osReleaseContent)
+	installCmd := createInstallCommand(osReleaseContent, agentPackageName)
 
 	exitCode, cmdOut, err := container.Exec(ctx, installCmd)
 	if err != nil {
@@ -120,7 +136,7 @@ func installAgent(ctx context.Context, container *testcontainers.DockerContainer
 }
 
 // uninstallAgent uninstall the agent returning output
-func uninstallAgent(ctx context.Context, container *testcontainers.DockerContainer, osReleaseContent string) (string, error) {
+func uninstallAgent(ctx context.Context, container *testcontainers.DockerContainer, osReleaseContent string, agentPackageName string) (string, error) {
 	uninstallCmd := createUninstallCommand(osReleaseContent)
 
 	exitCode, cmdOut, err := container.Exec(ctx, uninstallCmd)
@@ -135,7 +151,11 @@ func uninstallAgent(ctx context.Context, container *testcontainers.DockerContain
 	return string(stdoutStderr), err
 }
 
-func updateRepo(testContainer *testcontainers.DockerContainer, osReleaseContent string) error {
+func updateDebRepo(testContainer *testcontainers.DockerContainer, osReleaseContent string) error {
+	if INSTALL_FROM_REPO == "" {
+		return nil
+	}
+
 	updateCmd := []string{"apt-get", "update"}
 
 	exitCode, _, err := testContainer.Exec(context.Background(), updateCmd)
@@ -148,13 +168,23 @@ func updateRepo(testContainer *testcontainers.DockerContainer, osReleaseContent 
 	return nil
 }
 
-func createInstallCommand(osReleaseContent string) []string {
-	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
-		return []string{"apt-get", "install", "-y", agentPackageName}
-	} else if strings.Contains(osReleaseContent, "alpine") {
-		return []string{"apk", "add", "nginx-agent@nginx-agent"}
+func createInstallCommand(osReleaseContent string, agentPackageFilePath string) []string {
+	if INSTALL_FROM_REPO != "" {
+		if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
+			return []string{"apt-get", "install", "-y", agentPackageName}
+		} else if strings.Contains(osReleaseContent, "alpine") {
+			return []string{"apk", "add", "nginx-agent@nginx-agent"}
+		} else {
+			return []string{"yum", "install", "-y", agentPackageName}
+		}
 	} else {
-		return []string{"yum", "install", "-y", agentPackageName}
+		if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
+			return []string{"dpkg", "-i", agentPackageFilePath}
+		} else if strings.Contains(osReleaseContent, "alpine") {
+			return []string{"apk", "add", "--allow-untrusted", agentPackageFilePath}
+		} else {
+			return []string{"yum", "localinstall", "-y", agentPackageFilePath}
+		}
 	}
 }
 
@@ -190,4 +220,16 @@ func getOsReleaseContent(ctx context.Context, testContainer *testcontainers.Dock
 	}
 
 	return string(osReleaseBytes), nil
+}
+
+func getPackagePath(pkgDir, osReleaseContent string) string {
+	pkgPath := path.Join(pkgDir, AGENT_PACKAGE_FILENAME)
+
+	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
+		return pkgPath + ".deb"
+	} else if strings.Contains(osReleaseContent, "alpine") {
+		return pkgPath + ".apk"
+	} else {
+		return pkgPath + ".rpm"
+	}
 }

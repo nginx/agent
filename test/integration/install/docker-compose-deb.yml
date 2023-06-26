@@ -9,6 +9,7 @@ services:
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         PACKAGES_REPO: ${PACKAGES_REPO}
+        INSTALL_FROM_REPO: ${INSTALL_FROM_REPO}
         BASE_IMAGE: ${BASE_IMAGE}
         ENTRY_POINT: "./scripts/docker/agentless-entrypoint.sh"
     ports:

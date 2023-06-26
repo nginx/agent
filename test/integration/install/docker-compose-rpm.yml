@@ -9,6 +9,7 @@ services:
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         PACKAGES_REPO: ${PACKAGES_REPO}
+        INSTALL_FROM_REPO: ${INSTALL_FROM_REPO}
         BASE_IMAGE: ${BASE_IMAGE}
         OS_RELEASE: ${OS_RELEASE}
         OS_VERSION: ${OS_VERSION}

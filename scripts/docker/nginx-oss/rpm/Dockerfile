@@ -45,13 +45,22 @@ RUN set -x \
                       nginx
 
 # Setup nginx agent repository
-RUN printf "[nginx-agent] \n\
+RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
+    then printf "[nginx-agent] \n\
+name=nginx-agent repo \n\
+baseurl=http://${PACKAGES_REPO}/nginx-agent/amzn2/${OS_VERSION}/\$basearch \n\
+gpgcheck=1 \n\
+enabled=1 \n\
+gpgkey=https://nginx.org/keys/nginx_signing.key \n\
+module_hotfixes=true" > /etc/yum.repos.d/nginx-agent.repo; \
+    else printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
 baseurl=http://${PACKAGES_REPO}/nginx-agent/centos/${OS_VERSION}/\$basearch \n\
 gpgcheck=1 \n\
 enabled=1 \n\
 gpgkey=https://nginx.org/keys/nginx_signing.key \n\
-module_hotfixes=true" > /etc/yum.repos.d/nginx-agent.repo
+module_hotfixes=true" > /etc/yum.repos.d/nginx-agent.repo; \
+    fi
 
 RUN chmod +x /agent/entrypoint.sh
 
