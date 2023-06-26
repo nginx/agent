@@ -44,7 +44,6 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		"AgentDynamicConfigFile": "/var/lib/nginx-agent/agent-dynamic.conf",
 	}
 
-	// Check the environment variable $PACKAGE_REPO is set
 	require.NotEmpty(t, AGENT_PACKAGE_REPO, "Environment variable $PACKAGE_REPO not set")
 
 	testContainer := utils.SetupTestContainerWithoutAgent(t)
@@ -59,16 +58,11 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		require.NoError(t, err, "failed to update repo packages cache")
 	}
 
-	// TODO: Check the file size is less than or equal 20MB
-
-	// Install Agent inside container and record installation time/install output
 	installLog, installTime, err := installAgent(ctx, testContainer, osReleaseContent)
 	require.NoError(t, err)
 
-	// Check the install time under 30s
 	assert.LessOrEqual(t, installTime, maxInstallTime)
 
-	// Check install output
 	if nginxIsRunning(ctx, testContainer) {
 		expectedInstallLogMsgs["InstallAgentToRunAs"] = "nginx-agent will be configured to run as same user"
 	}
@@ -83,11 +77,9 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	// Uninstall the agent package
 	uninstallLog, err := uninstallAgent(ctx, testContainer, osReleaseContent)
 	require.NoError(t, err)
 
-	// Check uninstall output
 	expectedUninstallLogMsgs := map[string]string{}
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		expectedUninstallLogMsgs["UninstallAgent"] = "Removing nginx-agent"
@@ -129,10 +121,8 @@ func installAgent(ctx context.Context, container *testcontainers.DockerContainer
 
 // uninstallAgent uninstall the agent returning output
 func uninstallAgent(ctx context.Context, container *testcontainers.DockerContainer, osReleaseContent string) (string, error) {
-	// Get OS to create uninstall cmd
 	uninstallCmd := createUninstallCommand(osReleaseContent)
 
-	// Start agent uninstall and capture uninstall output
 	exitCode, cmdOut, err := container.Exec(ctx, uninstallCmd)
 	if err != nil {
 		return "", err
