@@ -47,8 +47,8 @@ var (
 	reloadErrorList   = []*re.Regexp{
 		re.MustCompile(`.*\[emerg\].*`),
 		re.MustCompile(`.*\[alert\].*`),
-		re.MustCompile(`.*\[warn\].*`),
 	}
+	warningRegex = re.MustCompile(`.*\[warn\].*`)
 )
 
 // Nginx is the metadata of our nginx binary
@@ -644,16 +644,15 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	for {
 		select {
 		case d := <-data:
+			if strings.Contains(d, "[warn]") && n.config.Nginx.TreatWarningsAsErrors {
+				errorChannel <- d
+				return
+			}
+
 			for _, errorRegex := range reloadErrorList {
 				if errorRegex.MatchString(d) {
-					if strings.Contains(d, "[warn]") && !n.config.Nginx.TreatWarningsAsErrors {
-						errorChannel <- ""
-						log.Info(d)
-						return
-					} else {
-						errorChannel <- d
-						return
-					}
+					errorChannel <- d
+					return
 				}
 			}
 		case <-tick.C:
