@@ -21,7 +21,7 @@ APK_VERSIONS?=3.13 3.14 3.15 3.16 3.17
 APK_ARCHS?=aarch64 x86_64
 ALMA_VERSIONS?=almalinux-8 almalinux-9
 ALMA_ARCHS?=aarch64 x86_64
-AMAZON_VERSIONS?=amazon-2
+AMAZON_VERSIONS?=amazon-2 amazon-2023
 AMAZON_ARCHS?=aarch64 x86_64
 
 UPLOAD_URL         := "https://up-ap.nginx.com/"
@@ -136,10 +136,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
-		for distro in $(AMAZON_VERSIONS); do \
-			rpm_distro=`echo $$distro | cut -d- -f 1`; \
-			rpm_major=`echo $$distro | cut -d- -f 2`; \
-			rpm_codename="amazon$$rpm_major"; \
+		for rpm_codename in $(AMAZON_VERSIONS); do \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
 			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
 			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \

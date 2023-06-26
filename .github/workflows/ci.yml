@@ -84,6 +84,8 @@ jobs:
           version: "9"
         - image: "amazonlinux"
           version: "2"
+        - image: "amazonlinux"
+          version: "2023"
         - image: "oraclelinux"
           version: "7"
         - image: "oraclelinux"
