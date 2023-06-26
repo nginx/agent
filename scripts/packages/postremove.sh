@@ -17,3 +17,5 @@ fi
 
 echo "Removing /var/run/nginx-agent directory"
 rm -rf "/var/run/nginx-agent"
+echo "Removing /var/log/nginx-agent directory"
+rm -rf "/var/log/nginx-agent"

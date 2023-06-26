@@ -2,7 +2,7 @@
 title: "Upgrade NGINX Agent Package"
 draft: false
 description: "Learn how to upgrade NGINX Agent"
-weight: 500
+weight: 600
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1227"
