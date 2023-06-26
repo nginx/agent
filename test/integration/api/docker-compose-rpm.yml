@@ -9,7 +9,7 @@ services:
     build:
       context: ../../../
       dockerfile: ./scripts/docker/nginx-oss/rpm/Dockerfile
-      target: install-agent-repo
+      target: install-agent-local
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         PACKAGES_REPO: ${PACKAGES_REPO}

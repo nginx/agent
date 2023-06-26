@@ -29,7 +29,6 @@ const (
 
 var (
 	AGENT_PACKAGE_FILENAME = os.Getenv("PACKAGE_NAME")
-	AGENT_PACKAGE_REPO     = os.Getenv("PACKAGES_REPO")
 	INSTALL_FROM_REPO      = os.Getenv("INSTALL_FROM_REPO")
 )
 
@@ -47,8 +46,6 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		"AgentConfigFile":        "/etc/nginx-agent/nginx-agent.conf",
 		"AgentDynamicConfigFile": "/var/lib/nginx-agent/agent-dynamic.conf",
 	}
-
-	require.NotEmpty(t, AGENT_PACKAGE_REPO, "Environment variable $PACKAGE_REPO not set")
 
 	testContainer := utils.SetupTestContainerWithoutAgent(t)
 

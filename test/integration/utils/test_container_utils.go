@@ -29,11 +29,10 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 	require.NoError(t,
 		comp.WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(
 			map[string]string{
-				"PACKAGES_REPO": os.Getenv("PACKAGES_REPO"),
-				"PACKAGE_NAME":  os.Getenv("PACKAGE_NAME"),
-				"BASE_IMAGE":    os.Getenv("BASE_IMAGE"),
-				"OS_RELEASE":    os.Getenv("OS_RELEASE"),
-				"OS_VERSION":    os.Getenv("OS_VERSION"),
+				"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
+				"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
+				"OS_RELEASE":   os.Getenv("OS_RELEASE"),
+				"OS_VERSION":   os.Getenv("OS_VERSION"),
 			},
 		).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
@@ -58,11 +57,11 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 
 	require.NoError(t, comp.WaitForService("agent", wait.ForHTTP("/")).WithEnv(
 		map[string]string{
-			"PACKAGES_REPO": os.Getenv("PACKAGES_REPO"),
-			"PACKAGE_NAME":  os.Getenv("PACKAGE_NAME"),
-			"BASE_IMAGE":    os.Getenv("BASE_IMAGE"),
-			"OS_RELEASE":    os.Getenv("OS_RELEASE"),
-			"OS_VERSION":    os.Getenv("OS_VERSION"),
+			"PACKAGE_NAME":      os.Getenv("PACKAGE_NAME"),
+			"INSTALL_FROM_REPO": os.Getenv("INSTALL_FROM_REPO"),
+			"BASE_IMAGE":        os.Getenv("BASE_IMAGE"),
+			"OS_RELEASE":        os.Getenv("OS_RELEASE"),
+			"OS_VERSION":        os.Getenv("OS_VERSION"),
 		},
 	).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
