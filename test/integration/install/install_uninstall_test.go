@@ -152,7 +152,7 @@ func createInstallCommand(osReleaseContent string) []string {
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return []string{"apt-get", "install", "-y", agentPackageName}
 	} else if strings.Contains(osReleaseContent, "alpine") {
-		return []string{"apk", "add", agentPackageName}
+		return []string{"apk", "add", "nginx-agent@nginx-agent"}
 	} else {
 		return []string{"yum", "install", "-y", agentPackageName}
 	}
@@ -160,11 +160,11 @@ func createInstallCommand(osReleaseContent string) []string {
 
 func createUninstallCommand(osReleaseContent string) []string {
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
-		return []string{"apt", "purge", "-y", "nginx-agent"}
+		return []string{"apt", "purge", "-y", agentPackageName}
 	} else if strings.Contains(osReleaseContent, "alpine") {
-		return []string{"apk", "del", "nginx-agent"}
+		return []string{"apk", "del", agentPackageName}
 	} else {
-		return []string{"yum", "remove", "-y", "nginx-agent"}
+		return []string{"yum", "remove", "-y", agentPackageName}
 	}
 }
 
