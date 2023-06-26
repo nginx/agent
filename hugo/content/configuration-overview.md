@@ -28,7 +28,7 @@ The following sections explain how to configure the NGINX Agent using configurat
 
 ### Configure with Config Files
 
-The configuration files for the NGINX Agent are `/etc/nginx-agent/nginx-agent.conf` and `/etc/nginx-agent/agent-dynamic.conf`. These files have comments at the top indicating their purpose.
+The configuration files for the NGINX Agent are `/etc/nginx-agent/nginx-agent.conf` and `/var/lib/nginx-agent/agent-dynamic.conf`. The `agent-dynamic.conf` file location is different for FreeBSD which is located `/var/db/nginx-agent/agent-dynamic.conf`. These files have comments at the top indicating their purpose.
 
 Examples of the configuration files are provided below:
 
@@ -91,6 +91,9 @@ metrics:
 # path to aux file dirs can also be added
 config_dirs: "/etc/nginx:/usr/local/etc/nginx"
 
+extensions:
+  - nginx-app-protect
+
 # Enable reporting NGINX App Protect details to the control plane.
 nginx_app_protect:
   # Report interval for NGINX App Protect details - the frequency the NGINX Agent checks NGINX App Protect for changes.
@@ -107,7 +110,8 @@ nginx_app_protect:
 
 ```yaml
 #
-# /etc/nginx-agent/dynamic-agent.conf
+# /var/lib/nginx-agent/agent-dynamic.conf
+# On FreeBSD /var/db/nginx-agent/agent-dynamic.conf
 #
 # Dynamic configuration file for NGINX Agent.
 #
@@ -229,14 +233,6 @@ This section displays the configurable options for the NGINX Agent that can be s
 - NMS_CONFIG_DIRS
 - NMS_DATAPLANE_REPORT_INTERVAL
 - NMS_DATAPLANE_STATUS_POLL_INTERVAL
-- NMS_NGINX_APP_PROTECT_REPORT_INTERVAL
-- NMS_ADVANCED_METRICS_AGGREGATION_PERIOD
-- NMS_ADVANCED_METRICS_PUBLISHING-PERIOD
-- NMS_ADVANCED_METRICS_SOCKET_PATH
-- NMS_ADVANCED_METRICS_TABLE_SIZES_LIMITS_PRIORITY_TABLE_MAX_SIZE
-- NMS_ADVANCED_METRICS_TABLE_SIZES_LIMITS_PRIORITY_TABLE_THRESHOLD
-- NMS_ADVANCED_METRICS_TABLE_SIZES_LIMITS_STAGING_TABLE_MAX_SIZE
-- NMS_ADVANCED_METRICS_TABLE_SIZES_LIMITS_STAGING_TABLE_THRESHOLD
 ```
 
 </details>
