@@ -8,7 +8,6 @@ services:
       target: install-nginx
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
-        # PACKAGES_REPO: packages.nginx.org
         PACKAGES_REPO: ${PACKAGES_REPO}
         BASE_IMAGE: ${BASE_IMAGE}
         OS_RELEASE: ${OS_RELEASE}

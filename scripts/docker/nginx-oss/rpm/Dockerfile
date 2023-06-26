@@ -2,6 +2,7 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE} as install-nginx
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
+ARG PACKAGES_REPO
 ARG NGINX_CONF
 ARG ENTRY_POINT
 ARG OS_VERSION
@@ -27,14 +28,6 @@ gpgcheck=0 \n\
 enabled=1" > /etc/yum.repos.d/nginx.repo; \
     fi
 
-
-
-    #         then printf "[nginx] \n\
-# name=nginx repo \n\
-# baseurl=http://nginx.org/packages/mainline/centos/${OS_VERSION}/\$basearch/ \n\
-# gpgcheck=0 \n\
-# enabled=1" > /etc/yum.repos.d/nginx.repo; \
-
 RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
         then amazon-linux-extras enable epel && yum clean metadata \
         && yum install -y epel-release shadow-utils; \
@@ -50,6 +43,15 @@ RUN set -x \
                       procps \
                       make \
                       nginx
+
+# Setup nginx agent repository
+RUN printf "[nginx-agent] \n\
+name=nginx-agent repo \n\
+baseurl=http://${PACKAGES_REPO}/nginx-agent/centos/${OS_VERSION}/\$basearch \n\
+gpgcheck=1 \n\
+enabled=1 \n\
+gpgkey=https://nginx.org/keys/nginx_signing.key \n\
+module_hotfixes=true" > /etc/yum.repos.d/nginx-agent.repo
 
 RUN chmod +x /agent/entrypoint.sh
 
@@ -69,17 +71,6 @@ RUN yum localinstall -y /agent/build/${PACKAGE_NAME}.rpm
 
 FROM install-nginx as install-agent-repo
 
-ARG PACKAGES_REPO
-
-RUN nginx -T
-
-RUN printf "[nginx-agent] \n\
-name=nginx-agent repo \n\
-baseurl=http://${PACKAGES_REPO}/nginx-agent/centos/${OS_VERSION}/\$basearch \n\
-gpgcheck=1 \n\
-enabled=1 \n\
-gpgkey=https://nginx.org/keys/nginx_signing.key \n\
-module_hotfixes=true" > /etc/yum.repos.d/nginx-agent.repo  \
-    && yum install -y nginx-agent \
+RUN yum install -y nginx-agent \
     && yum clean all \
     && rm -rf /var/cache/yum /etc/yum.repos.d/* /etc/ssl/nginx

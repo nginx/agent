@@ -54,15 +54,6 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	osReleaseContent, err := getOsReleaseContent(ctx, testContainer)
 	require.NoError(t, err)
 
-	err = installPrerequisites(testContainer, osReleaseContent)
-	require.NoError(t, err, "failed to install prerequisites")
-
-	err = downloadAndImportGPGKey(testContainer, osReleaseContent)
-	require.NoError(t, err, "failed to download and import gpg key")
-
-	err = createRepoFile(testContainer, osReleaseContent, AGENT_PACKAGE_REPO)
-	require.NoError(t, err, "failed to create nginx-agent repo file in container")
-
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		err := updateRepo(testContainer, osReleaseContent)
 		require.NoError(t, err, "failed to update repo packages cache")
@@ -154,113 +145,6 @@ func uninstallAgent(ctx context.Context, container *testcontainers.DockerContain
 	return string(stdoutStderr), err
 }
 
-func installPrerequisites(testContainer *testcontainers.DockerContainer, osReleaseContent string) error {
-	var preReqCmd []string
-
-	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
-		preReqCmd = []string{"apt-get", "install", "-y", "curl", "gnupg2", "ca-certificates", "lsb-release", "ubuntu-keyring"}
-	} else if strings.Contains(osReleaseContent, "alpine") {
-		preReqCmd = []string{"apk", "add", "openssl", "curl", "ca-certificates"}
-	} else {
-		preReqCmd = []string{"yum", "install", "yum-utils"}
-	}
-
-	exitCode, out, err := testContainer.Exec(context.Background(), preReqCmd)
-	stdOutStdErr, stdErr := io.ReadAll(out)
-	if stdErr != nil {
-		return fmt.Errorf("failed to read prerequisites cmd output: %v", stdErr)
-	}
-	if err != nil {
-		return fmt.Errorf("failed to install prerequisites: %v\n%s", err, stdOutStdErr)
-	}
-	if exitCode != 0 {
-		return fmt.Errorf("unexpected error code installing prerequisites. Expected 0, got: %v\n%s", exitCode, stdOutStdErr)
-	}
-	return nil
-}
-
-func downloadAndImportGPGKey(testContainer *testcontainers.DockerContainer, osReleaseContent string) error {
-	var preReqCmd []string
-
-	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
-		preReqCmd = []string{"curl", "https://nginx.org/keys/nginx_signing.key", "|", "gpg", "--dearmor", "|",
-			"tee", "/usr/share/keyrings/nginx-archive-keyring.gpg"}
-	} else if strings.Contains(osReleaseContent, "alpine") {
-		preReqCmd = []string{"curl", "-o", "/tmp/nginx_signing.rsa.pub", "https://nginx.org/keys/nginx_signing.rsa.pub"}
-	} else {
-		return nil // no GPG key required. yum install will fetch it
-	}
-
-	exitCode, out, err := testContainer.Exec(context.Background(), preReqCmd)
-	stdOutStdErr, stdErr := io.ReadAll(out)
-	if stdErr != nil {
-		return fmt.Errorf("failed to read gpg key import cmd output: %v", stdErr)
-	}
-
-	if err != nil {
-		return fmt.Errorf("failed to install prerequisites: %v\n%s", err, stdOutStdErr)
-	}
-	if exitCode != 0 {
-		return fmt.Errorf("unexpected error code installing prerequisites. Expected 0, got: %v\n%s", exitCode, stdOutStdErr)
-	}
-	return nil
-}
-
-func createRepoFile(testContainer *testcontainers.DockerContainer, osReleaseContent string, packageRepo string) error {
-	var repoFileContent, repoFilePath string
-
-	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
-		// TODO: Get release. lsb_release -cs`
-		repoFilePath = "/etc/apt/sources.list.d/nginx-agent.list"
-		repoFileContent = `deb http://packages.nginx.org/nginx-agent/ubuntu/ focal agent`
-
-		if strings.HasPrefix(packageRepo, "https://") {
-			aptConfigPath := "/etc/apt/apt.conf.d/90pkgs-nginx"
-
-			aptConfigContent := `Acquire::https::pkgs.nginx.com::Verify-Peer "true";
-Acquire::https::pkgs.nginx.com::Verify-Host "true";
-Acquire::https::pkgs.nginx.com::SslCert     "/etc/ssl/nginx/nginx-repo.crt";
-Acquire::https::pkgs.nginx.com::SslKey      "/etc/ssl/nginx/nginx-repo.key";`
-
-			err := testContainer.CopyToContainer(context.Background(), []byte(aptConfigContent), aptConfigPath, 0644)
-			if err != nil {
-				return fmt.Errorf("failed to copy repo config file to container: %v", err)
-			}
-		}
-
-	} else if strings.Contains(osReleaseContent, "alpine") {
-		repoFilePath = "/etc/yum.repos.d/nginx-agent.repo"
-
-		if strings.HasPrefix(packageRepo, "https://") {
-			repoFileContent = `[nginx-agent]
-name=nginx agent repo
-baseurl=https://pkgs.nginx.com/nginx-agent/centos/$releasever/$basearch/
-sslclientcert=/etc/ssl/nginx/nginx-repo.crt
-sslclientkey=/etc/ssl/nginx/nginx-repo.key
-gpgcheck=0
-enabled=1`
-		} else {
-			repoFileContent = `[nginx-agent]
-name=nginx agent repo
-baseurl=http://packages.nginx.org/nginx-agent/centos/$releasever/$basearch/
-gpgcheck=1
-enabled=1
-gpgkey=https://nginx.org/keys/nginx_signing.key
-module_hotfixes=true`
-		}
-
-	} else {
-		repoFilePath = "/etc/apk/repositories"                                                    // TODO: Append not upsert
-		repoFileContent = `@nginx-agent http://packages.nginx.org/nginx-agent/alpine/v$TODO/main` // TODO: Get alpine release
-	}
-
-	err := testContainer.CopyToContainer(context.Background(), []byte(repoFileContent), repoFilePath, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to copy repo file to container: %v", err)
-	}
-	return nil
-}
-
 func updateRepo(testContainer *testcontainers.DockerContainer, osReleaseContent string) error {
 	updateCmd := []string{"apt-get", "update"}
 
@@ -278,7 +162,7 @@ func createInstallCommand(osReleaseContent string) []string {
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 		return []string{"apt-get", "install", "-y", agentPackageName}
 	} else if strings.Contains(osReleaseContent, "alpine") {
-		return []string{"apk", "add", agentPackageName} // "--allow-untrusted"?
+		return []string{"apk", "add", agentPackageName}
 	} else {
 		return []string{"yum", "install", "-y", agentPackageName}
 	}
