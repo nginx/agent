@@ -21,7 +21,6 @@ RUN set -x \
                                                                         make \
                                                                         curl \
                                                                         lsb-release \
-                                                                        ubuntu-keyring \
                                                                         nginx
 
 # Setup nginx agent repository
