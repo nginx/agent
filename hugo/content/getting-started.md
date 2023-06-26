@@ -2,7 +2,7 @@
 title: "Getting Started"
 draft: false
 description: "Learn how to configure and run NGINX Agent."
-weight: 600
+weight: 700
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1089"
