@@ -98,8 +98,9 @@ jobs:
           version: "3.15"
         - image: "alpine"
           version: "3.16"
-        - image: "alpine"
-          version: "3.17"
+        # Disabled until v2.27.0. When this package will be added to the repository
+        # - image: "alpine"
+          # version: "3.17"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
