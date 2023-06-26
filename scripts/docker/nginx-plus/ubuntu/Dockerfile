@@ -17,14 +17,23 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     && apt-get update \
     && apt-get install --no-install-recommends --no-install-suggests -y \
                         ca-certificates \
-                        gnupg2 \
+                        gnupg1 \
                         lsb-release \
                         git \
                         wget \
                         make \
-                        apt-transport-https \
     && \
-    curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor | tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null \
+    NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \
+    found=''; \
+    for server in \
+        hkp://keyserver.ubuntu.com:80 \
+        pgp.mit.edu \
+    ; do \
+        echo "Fetching GPG key $NGINX_GPGKEY from $server"; \
+        apt-key adv --keyserver "$server" --keyserver-options timeout=10 --recv-keys "$NGINX_GPGKEY" && found=yes && break; \
+    done; \
+    test -z "$found" && echo >&2 "error: failed to fetch GPG key $NGINX_GPGKEY" && exit 1; \
+    apt-get remove --purge --auto-remove -y gnupg1 && rm -rf /var/lib/apt/lists/* \
     # Install the latest release of NGINX Plus and/or NGINX Plus modules and NGINX Agent
     && nginxPackages=" \
         nginx-plus \
@@ -34,6 +43,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     && echo "Acquire::https::$PACKAGES_REPO::Verify-Host \"true\";" >> /etc/apt/apt.conf.d/90nginx \
     && echo "Acquire::https::$PACKAGES_REPO::SslCert     \"/etc/ssl/nginx/nginx-repo.crt\";" >> /etc/apt/apt.conf.d/90nginx \
     && echo "Acquire::https::$PACKAGES_REPO::SslKey      \"/etc/ssl/nginx/nginx-repo.key\";" >> /etc/apt/apt.conf.d/90nginx \
+    && apt-get install apt-transport-https lsb-release ca-certificates \
     && apt-cache policy | awk '{print $2" "$3}' | sort -u \
     && printf "deb https://$PACKAGES_REPO/plus/ubuntu/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-plus.list \
     && printf "deb https://$PACKAGES_REPO/nginx-agent/ubuntu/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-agent.list \
@@ -42,9 +52,9 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     && cp /nginx-repo.key /etc/ssl/nginx/nginx-repo.key \
     && apt-get update \
     && apt-get install $nginxPackages -y  \
-    && rm /etc/ssl/nginx/nginx-repo.crt /etc/ssl/nginx/nginx-repo.key /nginx-repo.crt /nginx-repo.key
+    && rm /etc/ssl/nginx/nginx-repo.crt /etc/ssl/nginx/nginx-repo.key
 
-# run the nginx and agent
+# run the nginx and agent
 FROM install as runtime
 
 COPY --from=install /agent/entrypoint.sh /agent/entrypoint.sh
