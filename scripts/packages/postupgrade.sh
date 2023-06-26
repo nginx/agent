@@ -1,5 +1,4 @@
 #!/bin/sh
-# vim:sw=4:ts=4:et:
 
 NEWVER="$1"
 OLDVER="$2"

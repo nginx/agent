@@ -1,5 +1,4 @@
 #!/bin/sh
-# vim:sw=4:ts=4:et:
 # Pre Remove Steps
 
 # Determine OS platform

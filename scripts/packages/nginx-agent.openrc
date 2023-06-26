@@ -1,6 +1,6 @@
 #!/sbin/openrc-run
 
-description="nginx-agent"
+description="NGINX Agent"
 command_background=true
 
 cfgfile=${cfgfile:-/etc/nginx-agent/nginx-agent.conf}
