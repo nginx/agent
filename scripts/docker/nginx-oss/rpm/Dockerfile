@@ -2,7 +2,6 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE} as install-nginx
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
-ARG NGINX_CONF
 ARG ENTRY_POINT
 ARG OS_VERSION
 ARG OS_RELEASE
@@ -15,10 +14,8 @@ RUN if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; \
         then yum install -y oracle-epel-release-el7; \
     fi
 
-
 RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
-        then amazon-linux-extras enable epel && yum clean metadata \
-        && yum install -y epel-release shadow-utils; \
+        then yum install -y shadow-utils; \
     fi
 
 RUN set -x \

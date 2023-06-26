@@ -266,6 +266,8 @@ oss-image: ## Build agent container image for NGINX OSS
 	--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
 	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
 	--build-arg BASE_IMAGE=${BASE_IMAGE} \
+	--build-arg OS_RELEASE=${OS_RELEASE} \
+	--build-arg OS_VERSION=${OS_VERSION} \
 	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG
