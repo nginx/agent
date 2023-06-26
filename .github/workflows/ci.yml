@@ -98,9 +98,8 @@ jobs:
           version: "3.15"
         - image: "alpine"
           version: "3.16"
-        # Disabled until v2.27.0. When this package will be added to the repository
-        # - image: "alpine"
-          # version: "3.17"
+        - image: "alpine"
+          version: "3.17"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -114,7 +113,7 @@ jobs:
 
   performance-test:
     name: Performance Tests
-    if: "!github.event.pull_request.head.repo.fork"
+    if: ${{ !github.event.pull_request.head.repo.fork }}
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3

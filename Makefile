@@ -201,8 +201,7 @@ test-component-run: ## Run component tests
 performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
-# integration-test: local-deb-package local-rpm-package local-apk-package
-integration-test:
+integration-test: local-deb-package local-rpm-package local-apk-package
 	PACKAGES_REPO=packages.nginx.org INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
 		go test -v ./test/integration/install
@@ -271,7 +270,9 @@ oss-image: ## Build agent container image for NGINX OSS
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
 	--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
 	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
+	--build-arg PACKAGES_REPO=${PACKAGES_REPO} \
 	--build-arg BASE_IMAGE=${BASE_IMAGE} \
+	--build-arg INSTALL_FROM_REPO=${INSTALL_FROM_REPO} \
 	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG
