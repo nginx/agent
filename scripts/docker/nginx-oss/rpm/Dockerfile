@@ -14,6 +14,11 @@ RUN if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; \
         then yum install -y oracle-epel-release-el7; \
     fi
 
+RUN if [ "$OS_VERSION" = "2" ] && [ "$OS_RELEASE" = "amazonlinux" ]; \
+        then amazon-linux-extras enable epel && yum clean metadata \
+        && yum install -y epel-release; \
+    fi
+
 RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
         then yum install -y shadow-utils; \
     fi
