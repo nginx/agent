@@ -176,7 +176,7 @@ func createInstallCommand(osReleaseContent string, agentPackageFilePath string) 
 		if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
 			return []string{"apt-get", "install", "-y", agentPackageName}
 		} else if strings.Contains(osReleaseContent, "alpine") {
-			return []string{"apk", "add", "nginx-agent@nginx-agent"}
+			return []string{"apk", "add", agentPackageName}
 		} else {
 			return []string{"yum", "install", "-y", agentPackageName}
 		}

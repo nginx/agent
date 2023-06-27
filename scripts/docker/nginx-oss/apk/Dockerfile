@@ -21,8 +21,7 @@ RUN set -x \
 # Setup nginx agent repository
 RUN curl -o /etc/apk/keys/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub
 
-RUN printf "%s%s%s%s\n" \
-    "@nginx-agent " \
+RUN printf "%s%s%s\n" \
     "http://${PACKAGES_REPO}/nginx-agent/alpine/v" \
     `grep -o -E '^[0-9]+\.[0-9]+' /etc/alpine-release` \
     "/main" | tee -a /etc/apk/repositories

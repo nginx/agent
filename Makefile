@@ -270,10 +270,10 @@ oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
 	--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
+	--target install-agent-local
 	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
 	--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
 	--build-arg BASE_IMAGE=${BASE_IMAGE} \
-	--build-arg INSTALL_FROM_REPO=${INSTALL_FROM_REPO} \
 	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG
