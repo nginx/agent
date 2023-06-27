@@ -4,65 +4,65 @@
 # shellcheck source=/dev/null
 . /etc/os-release
 
-_stop_agent_freebsd() {
+stop_agent_freebsd() {
     echo "Stopping nginx-agent service"
     service nginx-agent onestop >/dev/null 2>&1 || true
 }
 
-_disable_agent_freebsd() {
+disable_agent_freebsd() {
     echo "Disabling nginx-agent service"
     sysrc -x nginx_agent_enable >/dev/null 2>&1 || true
 }
 
-_stop_agent_systemd() {
+stop_agent_systemd() {
     echo "Stopping nginx-agent service"
     systemctl stop nginx-agent >/dev/null 2>&1 || true
 }
 
-_disable_agent_systemd() {
+disable_agent_systemd() {
     echo "Disabling nginx-agent service"
     systemctl disable nginx-agent >/dev/null 2>&1 || true
 }
 
-_systemd_daemon_reload() {
+systemd_daemon_reload() {
     echo "Running daemon-reload"
     systemctl daemon-reload || true
 }
 
-_cleanup() {
+cleanup() {
     echo "Removing /var/run/nginx-agent directory"
     rm -rf "/var/run/nginx-agent"
 }
 
 case "$ID" in
     freebsd)
-        _stop_agent_freebsd
-        _disable_agent_freebsd
-        _cleanup
+        stop_agent_freebsd
+        disable_agent_freebsd
+        cleanup
         ;;
     debian|ubuntu)
         if [ "$1" = "remove" ]; then
-            _stop_agent_systemd
-            _disable_agent_systemd
-            _systemd_daemon_reload
-            _cleanup
+            stop_agent_systemd
+            disable_agent_systemd
+            systemd_daemon_reload
+            cleanup
         fi
         ;;
     rhel|fedora|centos|amzn|almalinux|rocky)
         if [ "$1" = "0" ]; then
-            _stop_agent_systemd
-            _disable_agent_systemd
-            _systemd_daemon_reload
-            _cleanup
+            stop_agent_systemd
+            disable_agent_systemd
+            systemd_daemon_reload
+            cleanup
         fi
         ;;
     alpine)
-        _cleanup
+        cleanup
         ;;
     *)
-        _stop_agent_systemd
-        _disable_agent_systemd
-        _systemd_daemon_reload
-        _cleanup
+        stop_agent_systemd
+        disable_agent_systemd
+        systemd_daemon_reload
+        cleanup
         ;;
 esac
