@@ -33,10 +33,12 @@ LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=$
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 
 
-CERTS_DIR          := ./build/certs
-PACKAGE_PREFIX     := nginx-agent
-PACKAGES_REPO      := "pkgs.nginx.com"
-OS                 := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+CERTS_DIR              := ./build/certs
+PACKAGE_PREFIX         := nginx-agent
+OSS_PACKAGES_REPO      := "packages.nginx.org"
+PLUS_PACKAGES_REPO     := "pkgs.nginx.com"
+INSTALL_FROM_REPO      := ""
+OS                     := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 uname_m    := $(shell uname -m)
 ifeq ($(uname_m),aarch64)
@@ -201,8 +203,12 @@ performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
 integration-test: local-deb-package local-rpm-package local-apk-package
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/install
-	PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" go test -v ./test/integration/api
+	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
+		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
+		go test -v ./test/integration/install
+	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
+		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
+		go test -v ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
@@ -255,7 +261,7 @@ image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and ng
 		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
 		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
-		--build-arg PACKAGES_REPO=${PACKAGES_REPO} \
+		--build-arg PACKAGES_REPO=${PLUS_PACKAGES_REPO} \
 		--build-arg OS_RELEASE=${OS_RELEASE} \
 		--build-arg OS_VERSION=${OS_VERSION} \
 		--build-arg CONTAINER_REGISTRY=${CONTAINER_REGISTRY}
@@ -264,7 +270,9 @@ oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
 	--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
+	--target install-agent-local
 	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
+	--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
 	--build-arg BASE_IMAGE=${BASE_IMAGE} \
 	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
