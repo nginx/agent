@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"path/filepath"
 	re "regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -44,9 +45,10 @@ const (
 var (
 	validationTimeout = 60 * time.Second
 	reloadErrorList   = []*re.Regexp{
-		re.MustCompile(`.*bind\(\) to .* failed \(98: Address already in use\).*`),
-		re.MustCompile(`.*bind\(\) to .* failed \(98: Unknown error\).*`),
+		re.MustCompile(`.*\[emerg\].*`),
+		re.MustCompile(`.*\[alert\].*`),
 	}
+	warningRegex = re.MustCompile(`.*\[warn\].*`)
 )
 
 // Nginx is the metadata of our nginx binary
@@ -642,6 +644,11 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	for {
 		select {
 		case d := <-data:
+			if strings.Contains(d, "[warn]") && n.config.Nginx.TreatWarningsAsErrors {
+				errorChannel <- d
+				return
+			}
+
 			for _, errorRegex := range reloadErrorList {
 				if errorRegex.MatchString(d) {
 					errorChannel <- d
