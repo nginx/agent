@@ -25,6 +25,9 @@ Alpine Linux
 - 3.16 (x86_64, aarch64)
 - 3.17 (x86_64, aarch64)
 
+Amazon Linux
+- 2023 (x86_64, aarch64)
+
 Amazon Linux 2
 - LTS (x86_64, aarch64)
 
