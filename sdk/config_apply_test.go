@@ -162,7 +162,7 @@ func TestNewConfigApply(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			configApply, err := NewConfigApply(tc.confFile, tc.allowedDirectories, tc.ignoreDirectives)
+			configApply, err := NewConfigApplyWithIgnoreDirectives(tc.confFile, tc.allowedDirectories, tc.ignoreDirectives)
 			assert.Equal(t, tc.expectedConfigApply.existing, configApply.GetExisting())
 			assert.Equal(t, tc.expectedConfigApply.notExists, configApply.GetNotExists())
 			assert.Equal(t, tc.expectedConfigApply.notExistDirs, configApply.GetNotExistDirs())
@@ -273,7 +273,7 @@ func TestConfigApplyCompleteAndRollback(t *testing.T) {
 	allowedDirectories := map[string]struct{}{tmpDir: {}}
 	ignoreDirectives := []string{}
 
-	configApply, err := NewConfigApply(confFile, allowedDirectories, ignoreDirectives)
+	configApply, err := NewConfigApplyWithIgnoreDirectives(confFile, allowedDirectories, ignoreDirectives)
 	assert.Equal(t, 5, len(configApply.GetExisting()))
 	assert.Nil(t, err)
 

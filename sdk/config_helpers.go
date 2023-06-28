@@ -92,10 +92,10 @@ func (dm DirectoryMap) appendFileWithProto(dir string, fileProto *proto.File) er
 	return nil
 }
 
-// GetNginxConfig parse the configFile into proto.NginxConfig payload, using the provided nginxID, and systemID for
+// GetNginxConfigWithIgnoreDirectives parse the configFile into proto.NginxConfig payload, using the provided nginxID, and systemID for
 // ConfigDescriptor in the NginxConfig. The allowedDirectories is used to allowlist the directories we include
 // in the aux payload.
-func GetNginxConfig(
+func GetNginxConfigWithIgnoreDirectives(
 	confFile,
 	nginxId,
 	systemId string,
@@ -133,6 +133,16 @@ func GetNginxConfig(
 	}
 
 	return nginxConfig, nil
+}
+
+// to ignore directives use GetNginxConfigWithIgnoreDirectives()
+func GetNginxConfig(
+	confFile,
+	nginxId,
+	systemId string,
+	allowedDirectories map[string]struct{},
+) (*proto.NginxConfig, error) {
+	return GetNginxConfigWithIgnoreDirectives(confFile, nginxId, systemId, allowedDirectories, []string{})
 }
 
 // updateNginxConfigFromPayload updates config files from payload.
@@ -737,7 +747,7 @@ func pingStatusAPIEndpoint(statusAPI string) bool {
 	return true
 }
 
-func GetStatusApiInfo(confFile string, ignoreDirectives []string) (statusApi string, err error) {
+func GetStatusApiInfoWithIgnoreDirectives(confFile string, ignoreDirectives []string) (statusApi string, err error) {
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   ignoreDirectives,
@@ -759,7 +769,12 @@ func GetStatusApiInfo(confFile string, ignoreDirectives []string) (statusApi str
 	return "", errors.New("no status api reachable from the agent found")
 }
 
-func GetErrorAndAccessLogs(confFile string, ignoreDirectives []string) (*proto.ErrorLogs, *proto.AccessLogs, error) {
+// to ignore directives use GetStatusApiInfoWithIgnoreDirectives()
+func GetStatusApiInfo(confFile string) (statusApi string, err error) {
+	return GetStatusApiInfoWithIgnoreDirectives(confFile, []string{})
+}
+
+func GetErrorAndAccessLogsWithIgnoreDirectives(confFile string, ignoreDirectives []string) (*proto.ErrorLogs, *proto.AccessLogs, error) {
 	nginxConfig := &proto.NginxConfig{
 		Action:       proto.NginxConfigAction_RETURN,
 		ConfigData:   nil,
@@ -798,6 +813,11 @@ func GetErrorAndAccessLogs(confFile string, ignoreDirectives []string) (*proto.E
 		return nginxConfig.ErrorLogs, nginxConfig.AccessLogs, err
 	}
 	return nginxConfig.ErrorLogs, nginxConfig.AccessLogs, err
+}
+
+// to ignore directives use GetErrorAndAccessLogsWithIgnoreDirectives()
+func GetErrorAndAccessLogs(confFile string) (*proto.ErrorLogs, *proto.AccessLogs, error) {
+	return GetErrorAndAccessLogsWithIgnoreDirectives(confFile, []string{})
 }
 
 func GetErrorLogs(errorLogs *proto.ErrorLogs) []string {
@@ -839,7 +859,7 @@ func convertToHexFormat(hexString string) string {
 	return formatted
 }
 
-func GetAppProtectPolicyAndSecurityLogFiles(cfg *proto.NginxConfig, ignoreDirectives []string) ([]string, []string) {
+func GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg *proto.NginxConfig, ignoreDirectives []string) ([]string, []string) {
 	policyMap := make(map[string]bool)
 	profileMap := make(map[string]bool)
 
@@ -896,4 +916,9 @@ func GetAppProtectPolicyAndSecurityLogFiles(cfg *proto.NginxConfig, ignoreDirect
 	}
 
 	return policies, profiles
+}
+
+// to ignore directives use GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives()
+func GetAppProtectPolicyAndSecurityLogFiles(cfg *proto.NginxConfig) ([]string, []string) {
+	return GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg, []string{})
 }

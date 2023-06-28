@@ -160,7 +160,7 @@ func TestUpdateNapMetadata(t *testing.T) {
 			allowedDirs := map[string]struct{}{}
 			ignoreDirectives := []string{}
 
-			cfg, err := sdk.GetNginxConfig(configFile, nginxID, systemID, allowedDirs, ignoreDirectives)
+			cfg, err := sdk.GetNginxConfigWithIgnoreDirectives(configFile, nginxID, systemID, allowedDirs, ignoreDirectives)
 			assert.NoError(t, err)
 
 			appProtectWAFDetails := &proto.AppProtectWAFDetails{

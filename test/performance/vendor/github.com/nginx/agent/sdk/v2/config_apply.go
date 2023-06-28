@@ -32,7 +32,7 @@ type ConfigApply struct {
 	notExistDirs map[string]struct{} // set of directories that exists in the config provided payload, but not on disk
 }
 
-func NewConfigApply(
+func NewConfigApplyWithIgnoreDirectives(
 	confFile string,
 	allowedDirectories map[string]struct{},
 	ignoreDirectives []string,
@@ -51,6 +51,14 @@ func NewConfigApply(
 		return b, b.mapCurrentFiles(confFile, allowedDirectories, ignoreDirectives)
 	}
 	return b, nil
+}
+
+// to ignore directives use NewConfigApplyWithIgnoreDirectives()
+func NewConfigApply(
+	confFile string,
+	allowedDirectories map[string]struct{},
+) (*ConfigApply, error) {
+	return NewConfigApplyWithIgnoreDirectives(confFile, allowedDirectories, []string{})
 }
 
 // Rollback dumps the saved file content, and delete the notExists file. Best effort, will log error and continue
