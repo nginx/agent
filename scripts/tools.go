@@ -6,7 +6,6 @@
 package tools
 
 import (
-	_ "github.com/alvaroloes/enumer"
 	_ "github.com/bufbuild/buf/cmd/buf"
 	_ "github.com/evilmartians/lefthook"
 	_ "github.com/go-swagger/go-swagger/cmd/swagger"
