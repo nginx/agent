@@ -92,7 +92,7 @@ func (dm DirectoryMap) appendFileWithProto(dir string, fileProto *proto.File) er
 	return nil
 }
 
-// GetNginxConfig parse the configFile into proto.NginxConfig payload, using the provided nginxID, and systemID for
+// GetNginxConfigWithIgnoreDirectives parse the configFile into proto.NginxConfig payload, using the provided nginxID, and systemID for
 // ConfigDescriptor in the NginxConfig. The allowedDirectories is used to allowlist the directories we include
 // in the aux payload.
 func GetNginxConfigWithIgnoreDirectives(
@@ -135,7 +135,7 @@ func GetNginxConfigWithIgnoreDirectives(
 	return nginxConfig, nil
 }
 
-// note: to ignore directives use GetNginxConfigWithIgnoreDirectives()
+// to ignore directives use GetNginxConfigWithIgnoreDirectives()
 func GetNginxConfig(
 	confFile,
 	nginxId,
@@ -769,7 +769,7 @@ func GetStatusApiInfoWithIgnoreDirectives(confFile string, ignoreDirectives []st
 	return "", errors.New("no status api reachable from the agent found")
 }
 
-// note: to ignore directives use GetStatusApiInfoWithIgnoreDirectives
+// to ignore directives use GetStatusApiInfoWithIgnoreDirectives
 func GetStatusApiInfo(confFile string) (statusApi string, err error) {
 	return GetStatusApiInfoWithIgnoreDirectives(confFile, []string{})
 }
@@ -815,7 +815,7 @@ func GetErrorAndAccessLogsWithIgnoreDirectives(confFile string, ignoreDirectives
 	return nginxConfig.ErrorLogs, nginxConfig.AccessLogs, err
 }
 
-// note: ito ignore directives use GetErrorAndAccessLogsWithIgnoreDirectives
+// to ignore directives use GetErrorAndAccessLogsWithIgnoreDirectives
 func GetErrorAndAccessLogs(confFile string) (*proto.ErrorLogs, *proto.AccessLogs, error) {
 	return GetErrorAndAccessLogsWithIgnoreDirectives(confFile, []string{})
 }
@@ -918,7 +918,7 @@ func GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg *proto.Nginx
 	return policies, profiles
 }
 
-// note: ito ignore directives use GetAppProtectPolicyAndSecurityLogFiles
+// to ignore directives use GetAppProtectPolicyAndSecurityLogFiles
 func GetAppProtectPolicyAndSecurityLogFiles(cfg *proto.NginxConfig) ([]string, []string) {
 	return GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg, []string{})
 }
