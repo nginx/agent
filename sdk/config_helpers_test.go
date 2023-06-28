@@ -639,7 +639,7 @@ func TestGetNginxConfig(t *testing.T) {
 			allowedDirs[test.expected.Zaux.RootDirectory] = struct{}{}
 			allowedDirs["/tmp/testdata/nginx/"] = struct{}{}
 		}
-		result, err := GetNginxConfig(test.fileName, nginxID, systemID, allowedDirs, ignoreDirectives)
+		result, err := GetNginxConfigWithIgnoreDirectives(test.fileName, nginxID, systemID, allowedDirs, ignoreDirectives)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.expected.Action, result.Action)
@@ -752,7 +752,7 @@ func TestGetStatusApiInfo(t *testing.T) {
 			assert.NoError(t, os.WriteFile(test.fileName, output, 0664))
 
 			ignoreDirectives := []string{}
-			result, err := GetStatusApiInfo(test.fileName, ignoreDirectives)
+			result, err := GetStatusApiInfoWithIgnoreDirectives(test.fileName, ignoreDirectives)
 
 			//Update port in expected plusApi with the port of the mock server
 			test.plusApi = strings.Replace(test.plusApi, ":80", ":"+strings.Split(splitUrl, ":")[1], 1)
@@ -1097,7 +1097,7 @@ func TestGetErrorAndAccessLogs(t *testing.T) {
 		assert.NoError(t, err)
 		ignoreDirectives := []string{}
 
-		errorLogs, accessLogs, err := GetErrorAndAccessLogs(test.fileName, ignoreDirectives)
+		errorLogs, accessLogs, err := GetErrorAndAccessLogsWithIgnoreDirectives(test.fileName, ignoreDirectives)
 		assert.NoError(t, err)
 
 		for index, accessLog := range accessLogs.AccessLog {
@@ -1654,10 +1654,10 @@ func TestGetAppProtectPolicyAndSecurityLogFiles(t *testing.T) {
 			allowedDirs := map[string]struct{}{}
 			ignoreDirectives := []string{}
 
-			cfg, err := GetNginxConfig(tc.file, nginxID, systemID, allowedDirs, ignoreDirectives)
+			cfg, err := GetNginxConfigWithIgnoreDirectives(tc.file, nginxID, systemID, allowedDirs, ignoreDirectives)
 			assert.NoError(t, err)
 
-			policies, profiles := GetAppProtectPolicyAndSecurityLogFiles(cfg, ignoreDirectives)
+			policies, profiles := GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg, ignoreDirectives)
 			assert.ElementsMatch(t, tc.expPolicies, policies)
 			assert.ElementsMatch(t, tc.expProfiles, profiles)
 		})

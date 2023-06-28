@@ -50,7 +50,7 @@ func UpdateMetadata(
 		return nil
 	}
 
-	policies, profiles := sdk.GetAppProtectPolicyAndSecurityLogFiles(cfg, ignoreDirectives)
+	policies, profiles := sdk.GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg, ignoreDirectives)
 
 	policyBundles := []*BundleMetadata{}
 	profileBundles := []*BundleMetadata{}
