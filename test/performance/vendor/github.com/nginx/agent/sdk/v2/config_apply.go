@@ -53,7 +53,7 @@ func NewConfigApplyWithIgnoreDirectives(
 	return b, nil
 }
 
-// to ignore directives use NewConfigApplyWithIgnoreDirectives
+// to ignore directives use NewConfigApplyWithIgnoreDirectives()
 func NewConfigApply(
 	confFile string,
 	allowedDirectories map[string]struct{},

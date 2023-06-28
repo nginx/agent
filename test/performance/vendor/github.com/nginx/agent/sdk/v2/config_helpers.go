@@ -769,7 +769,7 @@ func GetStatusApiInfoWithIgnoreDirectives(confFile string, ignoreDirectives []st
 	return "", errors.New("no status api reachable from the agent found")
 }
 
-// to ignore directives use GetStatusApiInfoWithIgnoreDirectives
+// to ignore directives use GetStatusApiInfoWithIgnoreDirectives()
 func GetStatusApiInfo(confFile string) (statusApi string, err error) {
 	return GetStatusApiInfoWithIgnoreDirectives(confFile, []string{})
 }
@@ -815,7 +815,7 @@ func GetErrorAndAccessLogsWithIgnoreDirectives(confFile string, ignoreDirectives
 	return nginxConfig.ErrorLogs, nginxConfig.AccessLogs, err
 }
 
-// to ignore directives use GetErrorAndAccessLogsWithIgnoreDirectives
+// to ignore directives use GetErrorAndAccessLogsWithIgnoreDirectives()
 func GetErrorAndAccessLogs(confFile string) (*proto.ErrorLogs, *proto.AccessLogs, error) {
 	return GetErrorAndAccessLogsWithIgnoreDirectives(confFile, []string{})
 }
@@ -918,7 +918,7 @@ func GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg *proto.Nginx
 	return policies, profiles
 }
 
-// to ignore directives use GetAppProtectPolicyAndSecurityLogFiles
+// to ignore directives use GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives()
 func GetAppProtectPolicyAndSecurityLogFiles(cfg *proto.NginxConfig) ([]string, []string) {
 	return GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg, []string{})
 }
