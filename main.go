@@ -139,7 +139,7 @@ func handleSignals(
 
 			if controller != nil {
 				if err := controller.Close(); err != nil {
-					log.Errorf("Unable to close controller: %v", err)
+					log.Warnf("Unable to close controller: %v", err)
 				}
 			}
 
