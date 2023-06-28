@@ -633,12 +633,13 @@ func TestGetNginxConfig(t *testing.T) {
 		assert.NoError(t, err)
 
 		allowedDirs := map[string]struct{}{}
+		ignoreDirectives := []string{}
 
 		if test.expected.Zaux != nil {
 			allowedDirs[test.expected.Zaux.RootDirectory] = struct{}{}
 			allowedDirs["/tmp/testdata/nginx/"] = struct{}{}
 		}
-		result, err := GetNginxConfig(test.fileName, nginxID, systemID, allowedDirs)
+		result, err := GetNginxConfig(test.fileName, nginxID, systemID, allowedDirs, ignoreDirectives)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.expected.Action, result.Action)
@@ -750,7 +751,8 @@ func TestGetStatusApiInfo(t *testing.T) {
 			output := bytes.Replace(input, []byte("127.0.0.1:80"), []byte(splitUrl), -1)
 			assert.NoError(t, os.WriteFile(test.fileName, output, 0664))
 
-			result, err := GetStatusApiInfo(test.fileName)
+			ignoreDirectives := []string{}
+			result, err := GetStatusApiInfo(test.fileName, ignoreDirectives)
 
 			//Update port in expected plusApi with the port of the mock server
 			test.plusApi = strings.Replace(test.plusApi, ":80", ":"+strings.Split(splitUrl, ":")[1], 1)
@@ -1093,8 +1095,9 @@ func TestGetErrorAndAccessLogs(t *testing.T) {
 
 		err = setUpFile(test.fileName, []byte(test.config))
 		assert.NoError(t, err)
+		ignoreDirectives := []string{}
 
-		errorLogs, accessLogs, err := GetErrorAndAccessLogs(test.fileName)
+		errorLogs, accessLogs, err := GetErrorAndAccessLogs(test.fileName, ignoreDirectives)
 		assert.NoError(t, err)
 
 		for index, accessLog := range accessLogs.AccessLog {
@@ -1649,11 +1652,12 @@ func TestGetAppProtectPolicyAndSecurityLogFiles(t *testing.T) {
 			assert.NoError(t, err)
 
 			allowedDirs := map[string]struct{}{}
+			ignoreDirectives := []string{}
 
-			cfg, err := GetNginxConfig(tc.file, nginxID, systemID, allowedDirs)
+			cfg, err := GetNginxConfig(tc.file, nginxID, systemID, allowedDirs, ignoreDirectives)
 			assert.NoError(t, err)
 
-			policies, profiles := GetAppProtectPolicyAndSecurityLogFiles(cfg)
+			policies, profiles := GetAppProtectPolicyAndSecurityLogFiles(cfg, ignoreDirectives)
 			assert.ElementsMatch(t, tc.expPolicies, policies)
 			assert.ElementsMatch(t, tc.expProfiles, profiles)
 		})

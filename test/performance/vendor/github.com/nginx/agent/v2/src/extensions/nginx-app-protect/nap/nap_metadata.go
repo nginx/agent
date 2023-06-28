@@ -24,6 +24,7 @@ import (
 func UpdateMetadata(
 	cfg *proto.NginxConfig,
 	appProtectWAFDetails *proto.AppProtectWAFDetails,
+	ignoreDirectives []string,
 ) error {
 	previousPrecompiledPublication := false
 	previousMeta := Metadata{}
@@ -49,7 +50,7 @@ func UpdateMetadata(
 		return nil
 	}
 
-	policies, profiles := sdk.GetAppProtectPolicyAndSecurityLogFiles(cfg)
+	policies, profiles := sdk.GetAppProtectPolicyAndSecurityLogFiles(cfg, ignoreDirectives)
 
 	policyBundles := []*BundleMetadata{}
 	profileBundles := []*BundleMetadata{}

@@ -100,9 +100,11 @@ func GetNginxConfig(
 	nginxId,
 	systemId string,
 	allowedDirectories map[string]struct{},
+	ignoreDirectives []string,
 ) (*proto.NginxConfig, error) {
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
+			IgnoreDirectives:   ignoreDirectives,
 			SingleFile:         false,
 			StopParsingOnError: true,
 		},
@@ -735,9 +737,10 @@ func pingStatusAPIEndpoint(statusAPI string) bool {
 	return true
 }
 
-func GetStatusApiInfo(confFile string) (statusApi string, err error) {
+func GetStatusApiInfo(confFile string, ignoreDirectives []string) (statusApi string, err error) {
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
+			IgnoreDirectives:   ignoreDirectives,
 			SingleFile:         false,
 			StopParsingOnError: true,
 			CombineConfigs:     true,
@@ -756,7 +759,7 @@ func GetStatusApiInfo(confFile string) (statusApi string, err error) {
 	return "", errors.New("no status api reachable from the agent found")
 }
 
-func GetErrorAndAccessLogs(confFile string) (*proto.ErrorLogs, *proto.AccessLogs, error) {
+func GetErrorAndAccessLogs(confFile string, ignoreDirectives []string) (*proto.ErrorLogs, *proto.AccessLogs, error) {
 	nginxConfig := &proto.NginxConfig{
 		Action:       proto.NginxConfigAction_RETURN,
 		ConfigData:   nil,
@@ -770,6 +773,7 @@ func GetErrorAndAccessLogs(confFile string) (*proto.ErrorLogs, *proto.AccessLogs
 
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
+			IgnoreDirectives:   ignoreDirectives,
 			SingleFile:         false,
 			StopParsingOnError: true,
 		},
@@ -835,7 +839,7 @@ func convertToHexFormat(hexString string) string {
 	return formatted
 }
 
-func GetAppProtectPolicyAndSecurityLogFiles(cfg *proto.NginxConfig) ([]string, []string) {
+func GetAppProtectPolicyAndSecurityLogFiles(cfg *proto.NginxConfig, ignoreDirectives []string) ([]string, []string) {
 	policyMap := make(map[string]bool)
 	profileMap := make(map[string]bool)
 
@@ -845,6 +849,7 @@ func GetAppProtectPolicyAndSecurityLogFiles(cfg *proto.NginxConfig) ([]string, [
 
 			payload, err := crossplane.Parse(confFile,
 				&crossplane.ParseOptions{
+					IgnoreDirectives:   ignoreDirectives,
 					SingleFile:         false,
 					StopParsingOnError: true,
 				},

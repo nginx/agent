@@ -203,7 +203,7 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess Process) *prot
 		nginxDetailsFacade.ConfPath = path
 	}
 
-	url, err := sdk.GetStatusApiInfo(nginxDetailsFacade.ConfPath)
+	url, err := sdk.GetStatusApiInfo(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
 	if err != nil {
 		log.Tracef("Unable to get status api from the configuration: NGINX metrics will be unavailable for this system. please configure a status API to get NGINX metrics: %v", err)
 	}
@@ -352,6 +352,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 		config.ConfigData.NginxId,
 		config.ConfigData.SystemId,
 		n.config.AllowedDirectoriesMap,
+		n.config.IgnoreDirectives,
 	)
 	if err != nil {
 		return nil, err
@@ -387,7 +388,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 
 	log.Info("Updating NGINX config")
 	var configApply *sdk.ConfigApply
-	configApply, err = sdk.NewConfigApply(details.ConfPath, n.config.AllowedDirectoriesMap)
+	configApply, err = sdk.NewConfigApply(details.ConfPath, n.config.AllowedDirectoriesMap, n.config.IgnoreDirectives)
 	if err != nil {
 		log.Warnf("config_apply error: %s", err)
 		return nil, err
@@ -482,7 +483,7 @@ func generateDeleteFromDirectoryMap(
 }
 
 func (n *NginxBinaryType) ReadConfig(confFile, nginxId, systemId string) (*proto.NginxConfig, error) {
-	configPayload, err := sdk.GetNginxConfig(confFile, nginxId, systemId, n.config.AllowedDirectoriesMap)
+	configPayload, err := sdk.GetNginxConfig(confFile, nginxId, systemId, n.config.AllowedDirectoriesMap, n.config.IgnoreDirectives)
 	if err != nil {
 		return nil, err
 	}
@@ -534,7 +535,7 @@ func (n *NginxBinaryType) writeBackup(config *proto.NginxConfig, confFiles []*pr
 		allowedDirs := map[string]struct{}{"/tmp": {}}
 		path := filepath.Join("/tmp", strconv.FormatInt(time.Now().Unix(), 10))
 
-		configApply, err := sdk.NewConfigApply("/tmp", n.config.AllowedDirectoriesMap)
+		configApply, err := sdk.NewConfigApply("/tmp", n.config.AllowedDirectoriesMap, n.config.IgnoreDirectives)
 		if err != nil {
 			log.Warnf("config_apply error: %s", err)
 			return

@@ -523,8 +523,9 @@ func TestNginxConfigApply(t *testing.T) {
 
 			env := tutils.GetMockEnvWithProcess()
 			allowedDirectoriesMap := map[string]struct{}{dir: {}}
+			ignoreDirectives := []string{}
 
-			config, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+			config, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap, ignoreDirectives)
 			assert.NoError(t, err)
 
 			binary := tutils.NewMockNginxBinary()
@@ -895,7 +896,8 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	tempConf, err := os.CreateTemp(dir, "nginx.conf")
 	assert.NoError(t, err)
 	allowedDirectoriesMap := map[string]struct{}{dir: {}}
-	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+	ignoreDirectives := []string{}
+	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap, ignoreDirectives)
 	assert.NoError(t, err)
 
 	response := &NginxConfigValidationResponse{
@@ -987,7 +989,8 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 	tempConf, err := os.CreateTemp(dir, "nginx.conf")
 	assert.NoError(t, err)
 	allowedDirectoriesMap := map[string]struct{}{dir: {}}
-	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap)
+	ignoreDirectives := []string{}
+	configApply, err := sdk.NewConfigApply(tempConf.Name(), allowedDirectoriesMap, ignoreDirectives)
 	assert.NoError(t, err)
 
 	response := &NginxConfigValidationResponse{
