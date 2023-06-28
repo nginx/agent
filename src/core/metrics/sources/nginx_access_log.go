@@ -56,6 +56,9 @@ var logVarMap = map[string]string{
 	"]":                         "\\]",
 }
 
+// Pattern to match all the variables that are mentioned in the access log format
+var logVarRegex = regexp.MustCompile(`\$([a-zA-Z]+[_[a-zA-Z]+]*)`)
+
 // This metrics source is used to tail the NGINX access logs to retrieve metrics.
 
 type NginxAccessLog struct {
@@ -199,6 +202,8 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	for key, value := range logVarMap {
 		logPattern = strings.ReplaceAll(logPattern, key, value)
 	}
+
+	logPattern = replaceCustomLogVars(logPattern)
 
 	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
 	log.Debugf("Pattern used for tailing logs: %s", logPattern)
@@ -621,4 +626,19 @@ func getDefaultCounters() (map[string]float64, map[string]float64, map[string]fl
 	}
 
 	return httpCounters, upstreamCounters, upstreamCacheCounters
+}
+
+// For all the variables in the log format that are not present in the logVarMap
+// replace them with the %{DATA:.*} format
+func replaceCustomLogVars(logPattern string) string {
+	variables := logVarRegex.FindAllStringSubmatch(logPattern, -1)
+
+	for _, match := range variables {
+		variable := match[0]
+		subMatch := match[1] // Excludes the leading $ in the var name
+
+		replacement := fmt.Sprintf("%%{DATA:%s}", subMatch)
+		logPattern = strings.Replace(logPattern, string(variable), replacement, 1)
+	}
+	return logPattern
 }
