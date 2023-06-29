@@ -140,11 +140,12 @@ func TestUpdateAgentConfig(t *testing.T) {
 	}
 
 	testCases := []struct {
-		testName    string
-		cmd         *proto.Command
-		expConfTags []string
-		updatedTags bool
-		msgTopics   []string
+		testName         string
+		cmd              *proto.Command
+		expConfTags      []string
+		updatedTags      bool
+		msgTopics        []string
+		expectedFeatures []string
 	}{
 		{
 			testName: "NoTagsToUpdate",
@@ -158,9 +159,10 @@ func TestUpdateAgentConfig(t *testing.T) {
 					},
 				},
 			},
-			expConfTags: curConf.Tags,
-			updatedTags: false,
-			msgTopics:   []string{},
+			expConfTags:      curConf.Tags,
+			updatedTags:      false,
+			expectedFeatures: curConf.Features,
+			msgTopics:        []string{},
 		},
 		{
 			testName: "UpdatedTagsAndExtensions",
@@ -181,6 +183,54 @@ func TestUpdateAgentConfig(t *testing.T) {
 				core.EnableExtension,
 				core.EnableExtension,
 			},
+			expectedFeatures: curConf.Features,
+		},
+		{
+			testName: "UpdatedFeatures",
+			cmd: &proto.Command{
+				Data: &proto.Command_AgentConfig{
+					AgentConfig: &proto.AgentConfig{
+						Details: &proto.AgentDetails{
+							Tags:       []string{"new-tag1:one", "new-tag2:two"},
+							Extensions: []string{"advanced-metrics", "nginx-app-protect"},
+							Features:   []string{"registration", "nginx-config-async", "metrics"},
+						},
+					},
+				},
+			},
+			expConfTags: []string{"new-tag1:one", "new-tag2:two"},
+			updatedTags: true,
+			msgTopics: []string{
+				core.AgentConfigChanged,
+				core.EnableExtension,
+				core.EnableExtension,
+				core.EnableFeature,
+				core.EnableFeature,
+				core.EnableFeature,
+			},
+			expectedFeatures: []string{"registration", "nginx-config-async", "metrics"},
+		},
+		{
+			testName: "FeaturesNil",
+			cmd: &proto.Command{
+				Data: &proto.Command_AgentConfig{
+					AgentConfig: &proto.AgentConfig{
+						Details: &proto.AgentDetails{
+							Tags:       []string{"new-tag1:one", "new-tag2:two"},
+							Extensions: []string{"advanced-metrics", "nginx-app-protect"},
+							Features:   nil,
+						},
+					},
+				},
+			},
+			expConfTags: []string{"new-tag1:one", "new-tag2:two"},
+			updatedTags: true,
+			msgTopics: []string{
+				core.AgentConfigChanged,
+				core.EnableExtension,
+				core.EnableExtension,
+			},
+			expectedFeatures: curConf.Features,
 		},
 		{
 			testName: "RemoveAllTags",
@@ -198,6 +248,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 			msgTopics: []string{
 				core.AgentConfigChanged,
 			},
+			expectedFeatures: curConf.Features,
 		},
 	}
 
@@ -235,6 +286,11 @@ func TestUpdateAgentConfig(t *testing.T) {
 			// Check equality of tags
 			assert.Equal(t, equalTags, true)
 
+			sort.Strings(tc.expectedFeatures)
+			sort.Strings(updatedConf.Features)
+			equalFeatures := reflect.DeepEqual(tc.expectedFeatures, updatedConf.Features)
+
+			assert.Equal(t, equalFeatures, true)
 			// Check that the proper messages were sent through the message pipe
 			messages := messagePipe.GetMessages()
 			if len(messages) != len(tc.msgTopics) {

@@ -86,14 +86,7 @@ func TestCommander_Process(t *testing.T) {
 				DirectoryMap: &proto.DirectoryMap{},
 			},
 			msgTopics: []string{
-				core.AgentConfigChanged,
 				core.NginxConfigUpload,
-				core.EnableExtension,
-				core.EnableExtension,
-				core.EnableFeature,
-				core.EnableFeature,
-				core.EnableFeature,
-				core.EnableFeature,
 			},
 		},
 		{
@@ -282,9 +275,7 @@ func TestCommander_Process(t *testing.T) {
 			nginxId:  "12345",
 			systemId: "67890",
 			msgTopics: []string{
-				core.AgentConfigChanged,
 				core.NginxConfigUpload,
-				core.EnableExtension,
 			},
 		},
 		{
@@ -316,9 +307,7 @@ func TestCommander_Process(t *testing.T) {
 			nginxId:  "12345",
 			systemId: "67890",
 			msgTopics: []string{
-				core.AgentConfigChanged,
 				core.NginxConfigUpload,
-				core.EnableFeature,
 			},
 		},
 		{

@@ -9,13 +9,9 @@ package plugins
 
 import (
 	"context"
-	"reflect"
-	"sort"
-	"strings"
 	"sync"
 	"time"
 
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -134,93 +130,16 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 	switch commandData := cmd.Data.(type) {
 	case *proto.Command_AgentConnectResponse:
 		log.Infof("config command %v", commandData)
+		
 		if agtCfg := commandData.AgentConnectResponse.AgentConfig; agtCfg != nil &&
 			agtCfg.Configs != nil && len(agtCfg.Configs.Configs) > 0 {
-			// Update config tags and features if they were out of sync between Manager and Agent
-			if agtCfg.Details != nil && (len(agtCfg.Details.Tags) > 0 || len(agtCfg.Details.Features) > 0) {
-				configUpdated, err := config.UpdateAgentConfig(c.config.ClientID, agtCfg.Details.Tags, agtCfg.Details.Features)
-				if err != nil {
-					log.Errorf("Failed updating Agent config - %v", err)
-				}
-
-				// If the config was updated send a new agent config updated message
-				if configUpdated {
-					c.pipeline.Process(core.NewMessage(core.AgentConfigChanged, ""))
-				}
-			}
-
 			for _, config := range agtCfg.Configs.Configs {
 				c.pipeline.Process(core.NewMessage(core.NginxConfigUpload, config))
-			}
-
-			if agtCfg.Details != nil && agtCfg.Details.Extensions != nil {
-				for _, extension := range agtCfg.Details.Extensions {
-					if extension == agent_config.AdvancedMetricsExtensionPlugin ||
-						extension == config.NginxAppProtectKey ||
-						extension == config.NAPMonitoringKey {
-						c.pipeline.Process(core.NewMessage(core.EnableExtension, extension))
-					}
-				}
-			}
-
-			if agtCfg.Details != nil && agtCfg.Details.Features != nil {
-				for index, feature := range agtCfg.Details.Features {
-					agtCfg.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
-				}
-
-				sort.Strings(agtCfg.Details.Features)
-
-				sort.Strings(c.config.Features)
-
-				synchronizedFeatures := reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
-
-				if !synchronizedFeatures {
-					c.synchronizeFeatures(agtCfg)
-				}
 			}
 		}
 
 	default:
 		log.Debugf("unhandled command: %T", cmd.Data)
-	}
-}
-
-func (c *Commander) synchronizeFeatures(agtCfg *proto.AgentConfig) {
-	if c.config != nil {
-		for _, feature := range c.config.Features {
-			if feature != agent_config.FeatureRegistration {
-				c.deRegisterPlugin(feature)
-			}
-		}
-	}
-
-	if agtCfg.Details != nil {
-		for _, feature := range agtCfg.Details.Features {
-			c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
-		}
-	}
-}
-
-func (c *Commander) deRegisterPlugin(data string) {
-	if data == agent_config.FeatureFileWatcher {
-
-		err := c.pipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
-		if err != nil {
-			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-		}
-
-	} else if data == agent_config.FeatureNginxConfigAsync {
-
-		err := c.pipeline.DeRegister([]string{"NginxBinary"})
-		if err != nil {
-			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-		}
-
-	} else {
-		err := c.pipeline.DeRegister([]string{data})
-		if err != nil {
-			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-		}
 	}
 }
 

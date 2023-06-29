@@ -67,33 +67,64 @@ func (r *ConfigReader) Process(msg *core.Message) {
 	switch cmd := msg.Data().(type) {
 	case *proto.Command:
 		switch msg.Topic() {
-		case core.AgentConfig:
+		case core.AgentConfig, core.AgentConnected:
 			// Update the agent config on disk
-			r.updateAgentConfig(cmd)
+			switch commandData := cmd.Data.(type) {
+			case *proto.Command_AgentConfig:
+				r.updateAgentConfig(commandData.AgentConfig)
+			case *proto.Command_AgentConnectResponse:
+				r.updateAgentConfig(commandData.AgentConnectResponse.AgentConfig)
+			}
 		}
 	}
 }
 
 func (r *ConfigReader) Subscriptions() []string {
-	return []string{core.CommMetrics, core.AgentConfig, core.AgentConfigChanged}
+	return []string{core.CommMetrics, core.AgentConfig, core.AgentConfigChanged, core.AgentConnected}
 }
 
-func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
-	switch commandData := cmd.Data.(type) {
-	case *proto.Command_AgentConfig:
-		configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, commandData.AgentConfig.Details.Tags, commandData.AgentConfig.Details.Features)
-		if err != nil {
-			log.Errorf("Failed updating Agent config - %v", err)
+func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) {
+	if payloadAgentConfig != nil && payloadAgentConfig.Details != nil {
+
+		onDiskAgentConfig, _ := config.GetConfig(r.config.ClientID)
+		synchronizeFeatures := false
+		synchronizeTags := false
+
+		if payloadAgentConfig.Details.Features != nil {
+
+			for index, feature := range payloadAgentConfig.Details.Features {
+				payloadAgentConfig.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
+			}
+
+			sort.Strings(onDiskAgentConfig.Features)
+			sort.Strings(payloadAgentConfig.Details.Features)
+			synchronizeFeatures = !reflect.DeepEqual(payloadAgentConfig.Details.Features, onDiskAgentConfig.Features)
+
+		} else {
+			payloadAgentConfig.Details.Features = onDiskAgentConfig.Features
 		}
 
-		// If the config was updated send a new agent config updated message
-		if configUpdated {
-			log.Debugf("Updated agent config on disk")
-			r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, ""))
+		if payloadAgentConfig.Details.Tags != nil {
+			sort.Strings(onDiskAgentConfig.Tags)
+			sort.Strings(payloadAgentConfig.Details.Tags)
+			synchronizeTags = !reflect.DeepEqual(payloadAgentConfig.Details.Tags, onDiskAgentConfig.Tags)
 		}
 
-		if commandData.AgentConfig.Details != nil && commandData.AgentConfig.Details.Extensions != nil {
-			for _, extension := range commandData.AgentConfig.Details.Extensions {
+		if synchronizeFeatures || synchronizeTags {
+			configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, payloadAgentConfig.Details.Tags, payloadAgentConfig.Details.Features)
+			if err != nil {
+				log.Errorf("Failed updating Agent config - %v", err)
+			}
+
+			// If the config was updated send a new agent config updated message
+			if configUpdated {
+				log.Debugf("Updated agent config on disk")
+				r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, ""))
+			}
+		}
+
+		if payloadAgentConfig.Details.Extensions != nil {
+			for _, extension := range payloadAgentConfig.Details.Extensions {
 				if extension == agent_config.AdvancedMetricsExtensionPlugin ||
 					extension == agent_config.NginxAppProtectExtensionPlugin ||
 					extension == agent_config.NginxAppProtectMonitoringExtensionPlugin {
@@ -102,48 +133,28 @@ func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
 			}
 		}
 
-		for index, feature := range commandData.AgentConfig.Details.Features {
-			commandData.AgentConfig.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
-		}
-
-		sort.Strings(commandData.AgentConfig.Details.Features)
-		sort.Strings(r.config.Features)
-
-		synchronizedFeatures := reflect.DeepEqual(commandData.AgentConfig.Details.Features, r.config.Features)
-
-		if !synchronizedFeatures {
-			for _, feature := range r.config.Features {
-				if feature != agent_config.FeatureRegistration {
-					r.mu.Lock()
-					r.deRegisterPlugin(feature)
-					r.mu.Unlock()
-				}
-
-			}
-		}
-
-		if commandData.AgentConfig.Details != nil && commandData.AgentConfig.Details.Features != nil && !synchronizedFeatures {
-			for _, feature := range commandData.AgentConfig.Details.Features {
-				r.mu.Lock()
-				r.messagePipeline.Process(core.NewMessage(core.EnableFeature, feature))
-				r.mu.Unlock()
-
-			}
+		if synchronizeFeatures {
+			r.synchronizeFeatures(payloadAgentConfig)
 		}
 	}
 }
+
 func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 	if r.config != nil {
 		for _, feature := range r.config.Features {
 			if feature != agent_config.FeatureRegistration {
+				r.mu.Lock()
 				r.deRegisterPlugin(feature)
+				r.mu.Unlock()
 			}
 		}
 	}
 
 	if agtCfg.Details != nil {
 		for _, feature := range agtCfg.Details.Features {
+			r.mu.Lock()
 			r.messagePipeline.Process(core.NewMessage(core.EnableFeature, feature))
+			r.mu.Unlock()
 		}
 	}
 }
