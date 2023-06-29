@@ -65,6 +65,7 @@ var (
 			TreatWarningsAsErrors:        false,
 		},
 		ConfigDirs:            "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms",
+		IgnoreDirectives:      []string{},
 		AllowedDirectoriesMap: map[string]struct{}{},
 		TLS: TLSConfig{
 			Enable:     false,
@@ -100,12 +101,13 @@ const (
 	ConfigPathKey                   = "path"
 	DynamicConfigPathKey            = "dynamic-config-path"
 
-	CloudAccountIdKey = "cloudaccountid"
-	LocationKey       = "location"
-	DisplayNameKey    = "display_name"
-	InstanceGroupKey  = "instance_group"
-	ConfigDirsKey     = "config_dirs"
-	TagsKey           = "tags"
+	CloudAccountIdKey   = "cloudaccountid"
+	LocationKey         = "location"
+	DisplayNameKey      = "display_name"
+	InstanceGroupKey    = "instance_group"
+	ConfigDirsKey       = "config_dirs"
+	TagsKey             = "tags"
+	IgnoreDirectivesKey = "ignore_directives"
 
 	// viper keys used in config
 	LogKey = "log"
@@ -268,6 +270,11 @@ var (
 			DefaultValue: agent_config.GetDefaultFeatures(),
 		},
 		// NGINX Config
+		&StringSliceFlag{
+			Name:         IgnoreDirectivesKey,
+			Usage:        "A comma-separated list of ignoring directives which contain sensitive info.",
+			DefaultValue: Defaults.IgnoreDirectives,
+		},
 		&StringFlag{
 			Name:  NginxExcludeLogs,
 			Usage: "One or more NGINX access log paths that you want to exclude from metrics collection. This key is formatted as a string and multiple values should be provided as a comma-separated list.",

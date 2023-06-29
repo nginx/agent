@@ -118,11 +118,9 @@ format: ## Format code
 	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance && go fmt ./... && cd ../../test/integration && go fmt ./...
 	buf format -w ./sdk/proto/
 
-install-tools: ## Install dependencies in tools.go
-	@echo "Getting Tools"
-	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go get %
+install-tools: ## Install dependencies in tools.go using vendored version see https://www.jvt.me/posts/2023/06/19/go-install-from-mod/
 	@echo "Installing Tools"
-	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
+	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % env GOBIN=$$(git rev-parse --show-toplevel)/bin GOWORK=off go install -mod=vendor %
 	@go run github.com/evilmartians/lefthook install pre-push
 
 generate-swagger: ## Generates swagger.json from source code

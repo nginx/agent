@@ -252,7 +252,7 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 	}
 
 	if n.isNginxAppProtectEnabled {
-		err = nap.UpdateMetadata(cfg, n.nginxAppProtectSoftwareDetails)
+		err = nap.UpdateMetadata(cfg, n.nginxAppProtectSoftwareDetails, n.config.IgnoreDirectives)
 		if err != nil {
 			log.Errorf("Unable to update NAP metadata: %v", err)
 		}
