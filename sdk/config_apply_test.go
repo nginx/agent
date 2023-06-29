@@ -98,6 +98,7 @@ func TestNewConfigApply(t *testing.T) {
 		name                string
 		confFile            string
 		allowedDirectories  map[string]struct{}
+		ignoreDirectives    []string
 		expectedConfigApply *ConfigApply
 		expectError         bool
 	}{
@@ -107,6 +108,7 @@ func TestNewConfigApply(t *testing.T) {
 			allowedDirectories: map[string]struct{}{
 				tmpDir: {},
 			},
+			ignoreDirectives: []string{},
 			expectedConfigApply: &ConfigApply{
 				existing: map[string]struct{}{
 					defaultConfFile: {},
@@ -124,6 +126,7 @@ func TestNewConfigApply(t *testing.T) {
 			name:               "no config file present",
 			confFile:           "",
 			allowedDirectories: map[string]struct{}{},
+			ignoreDirectives:   []string{},
 			expectedConfigApply: &ConfigApply{
 				existing:     map[string]struct{}{},
 				notExists:    map[string]struct{}{},
@@ -135,6 +138,7 @@ func TestNewConfigApply(t *testing.T) {
 			name:               "empty config file present",
 			confFile:           emptyConfFile,
 			allowedDirectories: map[string]struct{}{},
+			ignoreDirectives:   []string{},
 			expectedConfigApply: &ConfigApply{
 				existing:     map[string]struct{}{},
 				notExists:    map[string]struct{}{},
@@ -146,6 +150,7 @@ func TestNewConfigApply(t *testing.T) {
 			name:               "unknown config file present",
 			confFile:           "/tmp/unknown.conf",
 			allowedDirectories: map[string]struct{}{},
+			ignoreDirectives:   []string{},
 			expectedConfigApply: &ConfigApply{
 				existing:     map[string]struct{}{},
 				notExists:    map[string]struct{}{},
@@ -157,7 +162,7 @@ func TestNewConfigApply(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			configApply, err := NewConfigApply(tc.confFile, tc.allowedDirectories)
+			configApply, err := NewConfigApplyWithIgnoreDirectives(tc.confFile, tc.allowedDirectories, tc.ignoreDirectives)
 			assert.Equal(t, tc.expectedConfigApply.existing, configApply.GetExisting())
 			assert.Equal(t, tc.expectedConfigApply.notExists, configApply.GetNotExists())
 			assert.Equal(t, tc.expectedConfigApply.notExistDirs, configApply.GetNotExistDirs())
@@ -266,8 +271,9 @@ func TestConfigApplyCompleteAndRollback(t *testing.T) {
 	require.NoError(t, os.WriteFile(confFile, []byte(confFileContent), 0644))
 
 	allowedDirectories := map[string]struct{}{tmpDir: {}}
+	ignoreDirectives := []string{}
 
-	configApply, err := NewConfigApply(confFile, allowedDirectories)
+	configApply, err := NewConfigApplyWithIgnoreDirectives(confFile, allowedDirectories, ignoreDirectives)
 	assert.Equal(t, 5, len(configApply.GetExisting()))
 	assert.Nil(t, err)
 

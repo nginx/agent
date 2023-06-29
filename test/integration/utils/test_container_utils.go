@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,6 +13,8 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/compose"
 	wait "github.com/testcontainers/testcontainers-go/wait"
 )
+
+const agentServiceTimeout = 20 * time.Second
 
 // SetupTestContainerWithAgent sets up a container with nginx and nginx-agent installed
 func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
@@ -27,12 +30,13 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 	t.Cleanup(cancel)
 
 	require.NoError(t,
-		comp.WaitForService("agent", wait.ForLog("OneTimeRegistration completed")).WithEnv(
+		comp.WaitForService("agent", wait.ForLog("OneTimeRegistration completed").WithStartupTimeout(agentServiceTimeout)).WithEnv(
 			map[string]string{
-				"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
-				"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
-				"OS_RELEASE":   os.Getenv("OS_RELEASE"),
-				"OS_VERSION":   os.Getenv("OS_VERSION"),
+				"PACKAGE_NAME":  os.Getenv("PACKAGE_NAME"),
+				"PACKAGES_REPO": os.Getenv("PACKAGES_REPO"),
+				"BASE_IMAGE":    os.Getenv("BASE_IMAGE"),
+				"OS_RELEASE":    os.Getenv("OS_RELEASE"),
+				"OS_VERSION":    os.Getenv("OS_VERSION"),
 			},
 		).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
@@ -55,12 +59,14 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 	ctxCancel, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
 
-	require.NoError(t, comp.WaitForService("agent", wait.ForHTTP("/")).WithEnv(
+	require.NoError(t, comp.WaitForService("agent", wait.ForHTTP("/").WithStartupTimeout(agentServiceTimeout)).WithEnv(
 		map[string]string{
-			"PACKAGE_NAME": os.Getenv("PACKAGE_NAME"),
-			"BASE_IMAGE":   os.Getenv("BASE_IMAGE"),
-			"OS_RELEASE":   os.Getenv("OS_RELEASE"),
-			"OS_VERSION":   os.Getenv("OS_VERSION"),
+			"PACKAGE_NAME":      os.Getenv("PACKAGE_NAME"),
+			"PACKAGES_REPO":     os.Getenv("PACKAGES_REPO"),
+			"INSTALL_FROM_REPO": os.Getenv("INSTALL_FROM_REPO"),
+			"BASE_IMAGE":        os.Getenv("BASE_IMAGE"),
+			"OS_RELEASE":        os.Getenv("OS_RELEASE"),
+			"OS_VERSION":        os.Getenv("OS_VERSION"),
 		},
 	).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 

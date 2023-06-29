@@ -9,9 +9,10 @@ services:
     build:
       context: ../../../
       dockerfile: ./scripts/docker/nginx-oss/apk/Dockerfile
-      target: install-agent
+      target: install-agent-local
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
+        PACKAGES_REPO: ${PACKAGES_REPO}
         BASE_IMAGE: ${BASE_IMAGE}
         ENTRY_POINT: "./scripts/docker/entrypoint.sh"
     ports:
