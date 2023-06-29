@@ -130,7 +130,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 	switch commandData := cmd.Data.(type) {
 	case *proto.Command_AgentConnectResponse:
 		log.Infof("config command %v", commandData)
-		
+
 		if agtCfg := commandData.AgentConnectResponse.AgentConfig; agtCfg != nil &&
 			agtCfg.Configs != nil && len(agtCfg.Configs.Configs) > 0 {
 			for _, config := range agtCfg.Configs.Configs {

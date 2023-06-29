@@ -100,15 +100,17 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 			sort.Strings(payloadAgentConfig.Details.Features)
 			synchronizeFeatures = !reflect.DeepEqual(payloadAgentConfig.Details.Features, onDiskAgentConfig.Features)
 
+		} else {
+			payloadAgentConfig.Details.Features = onDiskAgentConfig.Features
 		}
-		
+
 		if payloadAgentConfig.Details.Tags != nil {
 			sort.Strings(onDiskAgentConfig.Tags)
 			sort.Strings(payloadAgentConfig.Details.Tags)
 			synchronizeTags = !reflect.DeepEqual(payloadAgentConfig.Details.Tags, onDiskAgentConfig.Tags)
 		}
 
-		if (synchronizeFeatures || synchronizeTags) {
+		if synchronizeFeatures || synchronizeTags {
 			configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, payloadAgentConfig.Details.Tags, payloadAgentConfig.Details.Features)
 			if err != nil {
 				log.Errorf("Failed updating Agent config - %v", err)
@@ -121,10 +123,6 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 			}
 		}
 
-		if synchronizeFeatures {
-			r.synchronizeFeatures(payloadAgentConfig)
-		}
-
 		if payloadAgentConfig.Details.Extensions != nil {
 			for _, extension := range payloadAgentConfig.Details.Extensions {
 				if extension == agent_config.AdvancedMetricsExtensionPlugin ||
@@ -134,6 +132,10 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 				}
 			}
 		}
+
+		if synchronizeFeatures {
+			r.synchronizeFeatures(payloadAgentConfig)
+		}
 	}
 }
 
@@ -141,14 +143,18 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 	if r.config != nil {
 		for _, feature := range r.config.Features {
 			if feature != agent_config.FeatureRegistration {
+				r.mu.Lock()
 				r.deRegisterPlugin(feature)
+				r.mu.Unlock()
 			}
 		}
 	}
 
 	if agtCfg.Details != nil {
 		for _, feature := range agtCfg.Details.Features {
+			r.mu.Lock()
 			r.messagePipeline.Process(core.NewMessage(core.EnableFeature, feature))
+			r.mu.Unlock()
 		}
 	}
 }
