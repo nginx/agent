@@ -181,6 +181,7 @@ func GetConfig(clientId string) (*Config, error) {
 		AllowedDirectoriesMap: map[string]struct{}{},
 		DisplayName:           Viper.GetString(DisplayNameKey),
 		InstanceGroup:         Viper.GetString(InstanceGroupKey),
+		IgnoreDirectives:      Viper.GetStringSlice(IgnoreDirectivesKey),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDirs, ":") {

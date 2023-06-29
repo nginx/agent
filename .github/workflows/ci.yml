@@ -113,7 +113,7 @@ jobs:
 
   performance-test:
     name: Performance Tests
-    if: "!github.event.pull_request.head.repo.fork"
+    if: ${{ !github.event.pull_request.head.repo.fork }}
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3

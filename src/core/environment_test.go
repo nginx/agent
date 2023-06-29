@@ -621,7 +621,7 @@ func TestWriteFiles(t *testing.T) {
 	for _, file := range files {
 		assert.NoFileExists(t, file.GetName())
 	}
-	backup, err := sdk.NewConfigApply("", nil)
+	backup, err := sdk.NewConfigApplyWithIgnoreDirectives("", nil, []string{})
 	assert.NoError(t, err)
 
 	env := EnvironmentType{}
@@ -655,7 +655,7 @@ func TestWriteFilesWhenExists(t *testing.T) {
 
 	AllowedDirectoriesMap := map[string]struct{}{"/tmp": {}}
 
-	backup, err := sdk.NewConfigApply("", nil)
+	backup, err := sdk.NewConfigApplyWithIgnoreDirectives("", nil, []string{})
 	assert.NoError(t, err)
 	for _, file := range files {
 		assert.NoFileExists(t, file.GetName())
@@ -685,7 +685,7 @@ func TestWriteFilesNotAllowed(t *testing.T) {
 			Permissions: "0644",
 		},
 	}
-	backup, err := sdk.NewConfigApply("", nil)
+	backup, err := sdk.NewConfigApplyWithIgnoreDirectives("", nil, []string{})
 	assert.NoError(t, err)
 
 	AllowedDirectoriesMap := map[string]struct{}{"/opt": {}}
@@ -704,7 +704,7 @@ func TestWriteFile(t *testing.T) {
 		Contents:    []byte("contents"),
 		Permissions: "0777",
 	}
-	backup, err := sdk.NewConfigApply("", nil)
+	backup, err := sdk.NewConfigApplyWithIgnoreDirectives("", nil, []string{})
 	assert.NoError(t, err)
 	assert.NoError(t, writeFile(backup, file, "/tmp"))
 	assert.FileExists(t, file.GetName())

@@ -158,8 +158,9 @@ func TestUpdateNapMetadata(t *testing.T) {
 			err := setUpFile(configFile, []byte(config))
 			assert.NoError(t, err)
 			allowedDirs := map[string]struct{}{}
+			ignoreDirectives := []string{}
 
-			cfg, err := sdk.GetNginxConfig(configFile, nginxID, systemID, allowedDirs)
+			cfg, err := sdk.GetNginxConfigWithIgnoreDirectives(configFile, nginxID, systemID, allowedDirs, ignoreDirectives)
 			assert.NoError(t, err)
 
 			appProtectWAFDetails := &proto.AppProtectWAFDetails{
@@ -169,8 +170,9 @@ func TestUpdateNapMetadata(t *testing.T) {
 				WafLocation:             metadataFile,
 				PrecompiledPublication:  tc.precompPub,
 			}
+			ignoreDirecitves := []string{}
 
-			err = UpdateMetadata(cfg, appProtectWAFDetails)
+			err = UpdateMetadata(cfg, appProtectWAFDetails, ignoreDirecitves)
 			assert.NoError(t, err)
 
 			data, err := os.ReadFile(metadataFile)
