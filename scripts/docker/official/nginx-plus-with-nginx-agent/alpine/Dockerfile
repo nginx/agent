@@ -54,10 +54,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=cert.pem \
 # Bring in curl and ca-certificates to make registering on DNS SD easier
     && apk add --no-cache curl ca-certificates \
 # Bring in iproute2 so the nginx-agent can collect network metrics
-    && apk add --no-cache bash iproute2 \
-# Forward request and error logs to Docker log collector
-    && ln -sf /dev/stdout /var/log/nginx/access.log \
-    && ln -sf /dev/stderr /var/log/nginx/error.log
+    && apk add --no-cache bash iproute2
 
 COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
 RUN ls -ltr /agent/
