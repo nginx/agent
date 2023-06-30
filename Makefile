@@ -11,7 +11,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # | OS_RELEASE       | OS_VERSION                    | NOTES                                                          |
 # | ---------------- | ----------------------------- | -------------------------------------------------------------- |
-# | amazonlinux      | 2                             |                                                                |
+# | amazonlinux      | 2, 2023                       |                                                                |
 # | ubuntu           | 18.04, 20.04, 22.04           |                                                                |
 # | debian           | bullseye-slim, buster-slim    |                                                                |
 # | centos           | 7                             |                                                                |
@@ -268,10 +268,12 @@ oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
 	--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
-	--target install-agent-local
+	--target install-agent-local \
 	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
 	--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
 	--build-arg BASE_IMAGE=${BASE_IMAGE} \
+	--build-arg OS_RELEASE=${OS_RELEASE} \
+	--build-arg OS_VERSION=${OS_VERSION} \
 	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG
