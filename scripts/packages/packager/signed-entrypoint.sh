@@ -4,12 +4,7 @@ set -e
 set -x
 set -euxo pipefail
 
-case "$(uname -m)" in
-    amd64|x86_64)  ABIARCH=amd64 ;;
-    arm64|aarch64) ABIARCH=aarch64 ;;
-esac
-
-FREEBSD_DISTROS="FreeBSD:12:${ABIARCH} FreeBSD:13:${ABIARCH}"
+FREEBSD_DISTROS="FreeBSD:12:amd64 FreeBSD:13:amd64"
 
 cd /nginx-agent/
 
