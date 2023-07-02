@@ -10,6 +10,7 @@ package tailer
 import (
 	"context"
 	"io"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/nxadm/tail"
@@ -66,6 +67,11 @@ type PatternTailer struct {
 	gc     *grok.CompiledGrok
 }
 
+type LTSVTailer struct {
+	handle          *tail.Tail
+	ltsvParseString func(line string) map[string]string
+}
+
 func NewTailer(file string) (*Tailer, error) {
 	t, err := tail.TailFile(file, tailConfig)
 	if err != nil {
@@ -93,6 +99,28 @@ func NewPatternTailer(file string, patterns map[string]string) (*PatternTailer, 
 	}
 
 	return &PatternTailer{t, gc}, nil
+}
+
+func NewLTSVTailer(file string) (*LTSVTailer, error) {
+	ltsvParseString := func(line string) map[string]string {
+		columns := strings.Split(line, "\t")
+		lvs := make(map[string]string)
+		for _, column := range columns {
+			lv := strings.SplitN(column, ":", 2)
+			if len(lv) < 2 {
+				continue
+			}
+			label, value := strings.TrimSpace(lv[0]), strings.TrimSpace(lv[1])
+			lvs[label] = value
+		}
+		return lvs
+	}
+	t, err := tail.TailFile(file, tailConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LTSVTailer{t, ltsvParseString}, nil
 }
 
 func (t *Tailer) Tail(ctx context.Context, data chan<- string) {
@@ -134,6 +162,35 @@ func (t *PatternTailer) Tail(ctx context.Context, data chan<- map[string]string)
 			}
 
 			l := t.gc.ParseString(line.Text)
+			if l != nil {
+				data <- l
+			}
+		case <-ctx.Done():
+			ctxErr := ctx.Err()
+			switch ctxErr {
+			case context.DeadlineExceeded:
+				log.Tracef("Tailer cancelled because deadline was exceeded, %v", ctxErr)
+			case context.Canceled:
+				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
+			}
+			log.Tracef("Tailer is done")
+			return
+		}
+	}
+}
+
+func (t *LTSVTailer) Tail(ctx context.Context, data chan<- map[string]string) {
+	for {
+		select {
+		case line := <-t.handle.Lines:
+			if line == nil {
+				return
+			}
+			if line.Err != nil {
+				continue
+			}
+
+			l := t.ltsvParseString(line.Text)
 			if l != nil {
 				data <- l
 			}

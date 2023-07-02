@@ -212,14 +212,22 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes := []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
 	mu := sync.Mutex{}
-
-	t, err := tailer.NewPatternTailer(logFile, map[string]string{"DEFAULT": logPattern})
-	if err != nil {
-		log.Errorf("unable to tail %q: %v", logFile, err)
-		return
-	}
 	data := make(chan map[string]string, 1024)
-	go t.Tail(ctx, data)
+	if logPattern == "ltsv" {
+		t, err := tailer.NewLTSVTailer(logFile)
+		if err != nil {
+			log.Errorf("unable to tail %q: %v", logFile, err)
+			return
+		}
+		go t.Tail(ctx, data)
+	} else {
+		t, err := tailer.NewPatternTailer(logFile, map[string]string{"DEFAULT": logPattern})
+		if err != nil {
+			log.Errorf("unable to tail %q: %v", logFile, err)
+			return
+		}
+		go t.Tail(ctx, data)
+	}
 
 	tick := time.NewTicker(c.collectionInterval)
 	defer tick.Stop()

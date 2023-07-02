@@ -57,6 +57,7 @@ var files = []string{
 	"/tmp/testdata/nginx/other/mime.types",
 	"/tmp/testdata/logs/access1.log",
 	"/tmp/testdata/logs/access2.log",
+	"/tmp/testdata/logs/access3.log",
 	"/tmp/testdata/logs/error.log",
 	"/tmp/testdata/root/test.html",
 	"/tmp/testdata/foo/test.html",
@@ -86,6 +87,12 @@ var accessLogs = &proto.AccessLogs{
 		{
 			Name:        "/tmp/testdata/logs/access2.log",
 			Format:      predefinedAccessLogFormat,
+			Permissions: "0644",
+			Readable:    true,
+		},
+		{
+			Name:        "/tmp/testdata/logs/access3.log",
+			Format:      "ltsv",
 			Permissions: "0644",
 			Readable:    true,
 		},
@@ -122,6 +129,10 @@ var tests = []struct {
 			'"$request" $status $body_bytes_sent '
 			'"$http_referer" "$http_user_agent" '
 			'rt=$request_time uct="$upstream_connect_time" uht="$upstream_header_time" urt="$upstream_response_time"';
+			log_format ltsv 'remote_addr: $remote_addr\t remote_user: $remote_user\t time_local: $time_local\t '
+			'request: $request\t status:$status\t body_bytes_sent: $body_bytes_sent\t '
+			'referer: $http_referer\t user_agent: $http_user_agent\t'
+			'rt: $request_time\t uct: $upstream_connect_time\t uht: $upstream_header_time\t urt: $upstream_response_time';
 		
 			server_tokens off;
 			charset       utf-8;
@@ -157,6 +168,7 @@ var tests = []struct {
 			}
 		
 			access_log    /tmp/testdata/logs/access2.log  combined;
+			access_log    /tmp/testdata/logs/access3.log  ltsv;
 		
 		}`,
 		plusApi: "http://127.0.0.1:80/privateapi",
@@ -171,7 +183,7 @@ var tests = []struct {
 							{
 								Name:        "nginx.conf",
 								Permissions: "0644",
-								Lines:       int32(52),
+								Lines:       int32(58),
 							},
 							{
 								Name:        "ca.crt",
@@ -286,7 +298,7 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "b12f45dee53b801dffe5091354a985b16552d5453fdf832df6f34b3b2ef9d2ee",
+				Checksum:      "44370346a326f3eec4d5a7e9554722e4b00a83e9c6f998d03f912a708c24bb39",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
@@ -316,6 +328,10 @@ var tests = []struct {
 			'"$request" $status $body_bytes_sent '
 			'"$http_referer" "$http_user_agent" '
 			'rt=$request_time uct="$upstream_connect_time" uht="$upstream_header_time" urt="$upstream_response_time"';
+			log_format ltsv 'remote_addr: $remote_addr\t remote_user: $remote_user\t time_local: $time_local\t '
+			'request: $request\t status:$status\t body_bytes_sent: $body_bytes_sent\t '
+			'referer: $http_referer\t user_agent: $http_user_agent\t'
+			'rt: $request_time\t uct: $upstream_connect_time\t uht: $upstream_header_time\t urt: $upstream_response_time';
 		
 			server_tokens off;
 			charset       utf-8;
@@ -340,6 +356,7 @@ var tests = []struct {
 			}
 		
 			access_log    /tmp/testdata/logs/access2.log  combined;
+			access_log    /tmp/testdata/logs/access3.log  ltsv;
 		
 		}`,
 		plusApi: "http://127.0.0.1:80/stub_status",
@@ -364,7 +381,7 @@ var tests = []struct {
 							{
 								Name:        "nginx2.conf",
 								Permissions: "0644",
-								Lines:       int32(41),
+								Lines:       int32(46),
 							},
 							{
 								Name:        "ca.crt",
@@ -426,7 +443,7 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "29fb1bed60766983ba835c80b3f4faf8aae145094e4d0b8b9cf5cb6b2bc3a9c3",
+				Checksum:      "1b6422f8a17527b2e9f255b7362ab7c320cd4a2efea7bff3e402438e5877f00e",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
@@ -1112,7 +1129,7 @@ func TestGetErrorAndAccessLogs(t *testing.T) {
 
 func TestGetAccessLogs(t *testing.T) {
 	result := GetAccessLogs(accessLogs)
-	assert.Equal(t, []string{"/tmp/testdata/logs/access1.log", "/tmp/testdata/logs/access2.log"}, result)
+	assert.Equal(t, []string{"/tmp/testdata/logs/access1.log", "/tmp/testdata/logs/access2.log", "/tmp/testdata/logs/access3.log"}, result)
 }
 
 func TestGetErrorLogs(t *testing.T) {
