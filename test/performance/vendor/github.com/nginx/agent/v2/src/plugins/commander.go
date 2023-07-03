@@ -82,28 +82,14 @@ func (c *Commander) Process(msg *core.Message) {
 func (c *Commander) agentBackoff(cmd *proto.Command) {
 	log.Debugf("agentBackoff in commander.go with command %v ", cmd)
 
-	if cmd.GetAgentConfig() == nil {
+	if cmd.GetAgentConfig() == nil || cmd.GetAgentConfig().GetDetails() == nil ||
+		cmd.GetAgentConfig().GetDetails().GetServer() == nil || cmd.GetAgentConfig().GetDetails().GetServer().Backoff == nil {
 		log.Warnf("update commander client with default backoff settings as agent config nil, for a pause command %+v", cmd)
-		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
-		return
-	}
-	if cmd.GetAgentConfig().GetDetails() == nil {
-		log.Warnf("update commander client with default backoff settings as agent details nil, for a pause command %+v", cmd)
-		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
-		return
-	}
-	if cmd.GetAgentConfig().GetDetails().GetServer() == nil {
-		log.Warnf("update commander client with default backoff settings as server nil, for a pause command %+v", cmd)
 		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
 		return
 	}
 
 	backoffSetting := cmd.GetAgentConfig().GetDetails().GetServer().Backoff
-	if backoffSetting == nil {
-		log.Warnf("update commander client with default backoff settings as backoff settings nil, for a pause command %+v", cmd)
-		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
-		return
-	}
 
 	multiplier := backoff.BACKOFF_MULTIPLIER
 	if backoffSetting.GetMultiplier() != 0 {
@@ -124,6 +110,7 @@ func (c *Commander) agentBackoff(cmd *proto.Command) {
 	}
 	log.Debugf("update commander client backoff settings to %+v, for a pause command %+v", cBackoff, cmd)
 	c.cmdr.WithBackoffSettings(cBackoff)
+
 }
 
 func (c *Commander) agentRegistered(cmd *proto.Command) {

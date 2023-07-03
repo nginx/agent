@@ -104,9 +104,7 @@ func (n *NginxAppProtect) Init(pipeline core.MessagePipeInterface) {
 func (n *NginxAppProtect) Process(msg *core.Message) {}
 
 func (n *NginxAppProtect) Subscriptions() []string {
-	return []string{
-		core.AgentConfigChanged,
-	}
+	return []string{}
 }
 
 func (n *NginxAppProtect) Close() {
