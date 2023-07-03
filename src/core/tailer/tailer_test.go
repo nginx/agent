@@ -160,12 +160,12 @@ func TestLTSVTailer(t *testing.T) {
 	accessLogFile.Close()
 
 	var count int
-        var res map[string]string
+	var res map[string]string
 T:
 	for {
 		select {
 		case r := <-data:
-                        res = r
+			res = r
 			count++
 		case <-time.After(timeoutDuration):
 			break T

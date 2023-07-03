@@ -68,8 +68,7 @@ type PatternTailer struct {
 }
 
 type LTSVTailer struct {
-	handle          *tail.Tail
-	ltsvParseString func(line string) map[string]string
+	handle *tail.Tail
 }
 
 func NewTailer(file string) (*Tailer, error) {
@@ -102,25 +101,11 @@ func NewPatternTailer(file string, patterns map[string]string) (*PatternTailer, 
 }
 
 func NewLTSVTailer(file string) (*LTSVTailer, error) {
-	ltsvParseString := func(line string) map[string]string {
-		columns := strings.Split(line, "\t")
-		lvs := make(map[string]string)
-		for _, column := range columns {
-			lv := strings.SplitN(column, ":", 2)
-			if len(lv) < 2 {
-				continue
-			}
-			label, value := strings.TrimSpace(lv[0]), strings.TrimSpace(lv[1])
-			lvs[label] = value
-		}
-		return lvs
-	}
 	t, err := tail.TailFile(file, tailConfig)
 	if err != nil {
 		return nil, err
 	}
-
-	return &LTSVTailer{t, ltsvParseString}, nil
+	return &LTSVTailer{t}, nil
 }
 
 func (t *Tailer) Tail(ctx context.Context, data chan<- string) {
@@ -189,8 +174,7 @@ func (t *LTSVTailer) Tail(ctx context.Context, data chan<- map[string]string) {
 			if line.Err != nil {
 				continue
 			}
-
-			l := t.ltsvParseString(line.Text)
+			l := t.parse(line.Text)
 			if l != nil {
 				data <- l
 			}
@@ -206,4 +190,18 @@ func (t *LTSVTailer) Tail(ctx context.Context, data chan<- map[string]string) {
 			return
 		}
 	}
+}
+
+func (t *LTSVTailer) parse(line string) map[string]string {
+	columns := strings.Split(line, "\t")
+	lineMap := make(map[string]string)
+	for _, column := range columns {
+		labelValue := strings.SplitN(column, ":", 2)
+		if len(labelValue) < 2 {
+			continue
+		}
+		label, value := strings.TrimSpace(labelValue[0]), strings.TrimSpace(labelValue[1])
+		lineMap[label] = value
+	}
+	return lineMap
 }
