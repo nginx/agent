@@ -86,16 +86,6 @@ func (c *NginxWorker) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- 
 			cpuSystem = stats.Workers.CPUSystem
 		}
 
-		memRss := stats.Workers.MemRss - c.prevStats[pid].Workers.MemRss
-		if stats.Workers.MemRss < c.prevStats[pid].Workers.MemRss {
-			memRss = stats.Workers.MemRss
-		}
-
-		memVms := stats.Workers.MemVms - c.prevStats[pid].Workers.MemVms
-		if stats.Workers.MemVms < c.prevStats[pid].Workers.MemVms {
-			memVms = stats.Workers.MemVms
-		}
-
 		KbsR := stats.Workers.KbsR - c.prevStats[pid].Workers.KbsR
 		if stats.Workers.KbsR < c.prevStats[pid].Workers.KbsR {
 			KbsR = stats.Workers.KbsR
@@ -113,8 +103,8 @@ func (c *NginxWorker) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- 
 			"cpu.system":    float64(cpuSystem),
 			"cpu.total":     float64(cpuSystem + cpuUser),
 			"fds_count":     float64(stats.Workers.FdsCount),
-			"mem.vms":       float64(memVms),
-			"mem.rss":       float64(memRss),
+			"mem.vms":       float64(stats.Workers.MemVms),
+			"mem.rss":       float64(stats.Workers.MemRss),
 			"mem.rss_pct":   float64(stats.Workers.MemRssPct),
 			"io.kbs_r":      float64(KbsR),
 			"io.kbs_w":      float64(KbsW),
