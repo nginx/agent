@@ -183,7 +183,7 @@ var tests = []struct {
 							{
 								Name:        "nginx.conf",
 								Permissions: "0644",
-								Lines:       int32(58),
+								Lines:       int32(57),
 							},
 							{
 								Name:        "ca.crt",
@@ -298,7 +298,7 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "44370346a326f3eec4d5a7e9554722e4b00a83e9c6f998d03f912a708c24bb39",
+				Checksum:      "5da60539dbedfe08011646f96b964af9be68dcd3bdb7b6cc2d64c06723bba659",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
