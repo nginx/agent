@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -39,7 +38,7 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 		).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
 	testContainer, err := comp.ServiceContainer(ctxCancel, "agent")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		logReader, err := testContainer.Logs(ctxCancel)
@@ -51,6 +50,7 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 
 		err = os.WriteFile("/tmp/nginx-agent/integration-test/api.log", testContainerLogs, 0660)
 		assert.NoError(t, err)
+
 		assert.NoError(t, comp.Down(ctxCancel, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
 	})
 
@@ -79,7 +79,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 	).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
 	testContainer, err := comp.ServiceContainer(ctxCancel, "agent")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		logReader, err := testContainer.Logs(ctxCancel)
@@ -88,8 +88,6 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 
 		testContainerLogs, err := io.ReadAll(logReader)
 		assert.NoError(t, err)
-
-		log.Info("Writing install/uninstall test log file")
 
 		err = os.WriteFile("/tmp/nginx-agent/integration-test/install-uninstall.log", testContainerLogs, 0660)
 		assert.NoError(t, err)
