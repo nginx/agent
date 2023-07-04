@@ -206,10 +206,12 @@ func TestCommander_Connect_NoServer(t *testing.T) {
 	commanderClient := NewCommanderClient()
 	commanderClient.WithServer("unknown")
 	commanderClient.WithDialOptions(grpcDialOptions...)
-	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  300 * time.Millisecond,
+	commanderClient.WithProtoBackoffSettings(&proto.Backoff{
+		InitialInterval:     1,
+		RandomizationFactor: .5,
+		Multiplier:          .5,
+		MaxInterval:         1,
+		MaxElapsedTime:      1,
 	})
 
 	err := commanderClient.Connect(ctx)
@@ -220,13 +222,15 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 	grpcServer, commandService, dialer := startCommanderMockServer()
 
 	ctx := context.TODO()
-
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  30 * time.Second,
+	commanderClient.WithProtoBackoffSettings(&proto.Backoff{
+		InitialInterval:     1,
+		RandomizationFactor: .5,
+		Multiplier:          .5,
+		MaxInterval:         1,
+		MaxElapsedTime:      1,
 	})
+
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
 
@@ -286,10 +290,12 @@ func TestCommander_Send_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  30 * time.Second,
+	commanderClient.WithProtoBackoffSettings(&proto.Backoff{
+		InitialInterval:     1,
+		RandomizationFactor: .5,
+		Multiplier:          .5,
+		MaxInterval:         1,
+		MaxElapsedTime:      30,
 	})
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
@@ -339,11 +345,14 @@ func TestCommander_Download_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  30 * time.Second,
+	commanderClient.WithProtoBackoffSettings(&proto.Backoff{
+		InitialInterval:     1,
+		RandomizationFactor: .5,
+		Multiplier:          .5,
+		MaxInterval:         1,
+		MaxElapsedTime:      30,
 	})
+
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
 
@@ -521,10 +530,12 @@ func TestCommander_Upload_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  30 * time.Second,
+	commanderClient.WithProtoBackoffSettings(&proto.Backoff{
+		InitialInterval:     1,
+		RandomizationFactor: .5,
+		Multiplier:          .5,
+		MaxInterval:         1,
+		MaxElapsedTime:      30,
 	})
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
@@ -742,10 +753,12 @@ func createTestCommanderClient(dialer func(context.Context, string) (net.Conn, e
 	commanderClient := NewCommanderClient()
 	commanderClient.WithServer("bufnet")
 	commanderClient.WithDialOptions(getDialOptions(dialer)...)
-	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  300 * time.Millisecond,
+	commanderClient.WithProtoBackoffSettings(&proto.Backoff{
+		InitialInterval:     1,
+		RandomizationFactor: .5,
+		Multiplier:          .5,
+		MaxInterval:         1,
+		MaxElapsedTime:      2,
 	})
 
 	return commanderClient

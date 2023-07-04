@@ -94,6 +94,12 @@ func (m *MockCommandClient) WithConnWaitDuration(d time.Duration) Client {
 	return m
 }
 
+func (m *MockCommandClient) WithProtoBackoffSettings(backoffSettings *proto.Backoff) Client {
+	m.Called(backoffSettings)
+
+	return m
+}
+
 func (m *MockCommandClient) WithBackoffSettings(backoffSettings backoff.BackoffSettings) Client {
 	m.Called(backoffSettings)
 

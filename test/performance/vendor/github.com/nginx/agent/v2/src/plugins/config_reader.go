@@ -8,12 +8,13 @@
 package plugins
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"reflect"
 	"sort"
 	"strings"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -110,16 +111,23 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 			synchronizeTags = !reflect.DeepEqual(payloadAgentConfig.Details.Tags, onDiskAgentConfig.Tags)
 		}
 
+		if payloadAgentConfig.Details.Server == nil || payloadAgentConfig.Details.Server.Backoff == nil {
+			payloadAgentConfig.Details.Server = &proto.Server{
+				Backoff: &proto.Backoff{
+					InitialInterval: 10,
+					MaxInterval:     60,
+					MaxElapsedTime:  2,
+				},
+			}
+		}
+
 		if synchronizeFeatures || synchronizeTags {
 			configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, payloadAgentConfig.Details.Tags, payloadAgentConfig.Details.Features)
 			if err != nil {
 				log.Errorf("Failed updating Agent config - %v", err)
 			}
-
-			// If the config was updated send a new agent config updated message
 			if configUpdated {
 				log.Debugf("Updated agent config on disk")
-				r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, ""))
 			}
 		}
 
@@ -136,6 +144,22 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		if synchronizeFeatures {
 			r.synchronizeFeatures(payloadAgentConfig)
 		}
+
+		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
+
+	} else {
+		payloadAgentConfig = &proto.AgentConfig{
+			Details: &proto.AgentDetails{
+				Server: &proto.Server{
+					Backoff: &proto.Backoff{
+						InitialInterval: 10,
+						MaxInterval:     60,
+						MaxElapsedTime:  2,
+					},
+				},
+			},
+		}
+		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
 	}
 }
 

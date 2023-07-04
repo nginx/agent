@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFeatures_EnableDisable(t *testing.T) {
+func TestFeatures_NginxCounting(t *testing.T) {
 	testContainer := utils.SetupTestContainerWithAgent(t)
 
 	utils.TestAgentHasNoErrorLogs(t, testContainer)
@@ -22,8 +22,8 @@ func TestFeatures_EnableDisable(t *testing.T) {
 
 	assert.NoError(t, err, "agent log file could not be read")
 	assert.NotEmpty(t, agentLogContent, "agent log file empty")
-	assert.Contains(t, string(agentLogContent), "level=info msg=\"OneTimeRegistration initializing\"", "agent log file contains OneTimeRegistration")
-	assert.Contains(t, string(agentLogContent), "level=info msg=\"Metrics initializing\"", "agent log file contains OneTimeRegistration")
-	assert.NotContains(t, string(agentLogContent), "level=info msg=\"DataPlaneStatus initializing\"", "agent log file contains OneTimeRegistration")
+	assert.Contains(t, string(agentLogContent), "level=info msg=\"OneTimeRegistration initializing\"", "agent log file does not contain OneTimeRegistration")
+	assert.Contains(t, string(agentLogContent), "level=info msg=\"Metrics initializing\"", "agent log file does not contain Metrics")
+	assert.NotContains(t, string(agentLogContent), "level=info msg=\"DataPlaneStatus initializing\"", "agent log file contains DataPlaneStatus")
 
 }

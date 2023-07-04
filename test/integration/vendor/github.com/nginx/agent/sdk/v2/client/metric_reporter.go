@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -134,6 +135,27 @@ func (r *metricReporter) WithDialOptions(options ...grpc.DialOption) Client {
 	r.dialOptions = append(r.dialOptions, options...)
 
 	return r
+}
+
+func (r *metricReporter) WithProtoBackoffSettings(backoffSettings *proto.Backoff) Client {
+
+	multiplier := backoff.BACKOFF_MULTIPLIER
+	if backoffSettings.GetMultiplier() != 0 {
+		multiplier = backoffSettings.GetMultiplier()
+	}
+
+	jitter := backoff.BACKOFF_JITTER
+	if backoffSettings.GetRandomizationFactor() != 0 {
+		jitter = backoffSettings.GetRandomizationFactor()
+	}
+	cBackoff := backoff.BackoffSettings{
+		InitialInterval: time.Duration(backoffSettings.InitialInterval * int64(time.Second)),
+		MaxInterval:     time.Duration(backoffSettings.MaxInterval * int64(time.Second)),
+		MaxElapsedTime:  time.Duration(backoffSettings.MaxElapsedTime * int64(time.Second)),
+		Multiplier:      multiplier,
+		Jitter:          jitter,
+	}
+	return r.WithBackoffSettings(cBackoff)
 }
 
 func (r *metricReporter) WithBackoffSettings(backoffSettings backoff.BackoffSettings) Client {

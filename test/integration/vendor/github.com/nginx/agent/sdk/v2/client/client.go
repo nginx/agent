@@ -64,6 +64,8 @@ type (
 		WithClientInterceptor(interceptor interceptors.ClientInterceptor) Client
 
 		WithBackoffSettings(backoffSettings backoff.BackoffSettings) Client
+
+		WithProtoBackoffSettings(backoffSettings *proto.Backoff) Client
 	}
 	MetricReporter interface {
 		Client

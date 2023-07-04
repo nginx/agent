@@ -10,9 +10,7 @@ package plugins
 import (
 	"context"
 	"sync"
-	"time"
 
-	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -53,7 +51,7 @@ func (c *Commander) Info() *core.Info {
 }
 
 func (c *Commander) Subscriptions() []string {
-	return []string{core.CommRegister, core.CommStatus, core.CommResponse, core.AgentConnected, core.Events, core.AgentConfig}
+	return []string{core.CommRegister, core.CommStatus, core.CommResponse, core.AgentConnected, core.Events, core.AgentConfig, core.AgentConfigChanged}
 }
 
 // Process -
@@ -66,50 +64,31 @@ func (c *Commander) Subscriptions() []string {
 // *Command_AgentConfig
 func (c *Commander) Process(msg *core.Message) {
 	log.Tracef("Process function in the commander.go, %s %v", msg.Topic(), msg.Data())
-	switch cmd := msg.Data().(type) {
-	case *proto.Command:
-		switch msg.Topic() {
-		case core.CommRegister, core.CommStatus, core.CommResponse, core.Events:
-			c.sendCommand(c.ctx, cmd)
-		case core.AgentConnected:
-			c.agentRegistered(cmd)
-		case core.AgentConfig:
-			c.agentBackoff(cmd)
+
+	if msg.Exact(core.AgentConfigChanged) {
+		switch config := msg.Data().(type) {
+		case *proto.AgentConfig:
+			c.agentBackoff(config)
+		default:
+			log.Warnf("commander expected %T type, but got: %T", &proto.AgentConfig{}, msg.Data())
+		}
+	} else {
+		switch cmd := msg.Data().(type) {
+		case *proto.Command:
+			switch msg.Topic() {
+			case core.CommRegister, core.CommStatus, core.CommResponse, core.Events:
+				c.sendCommand(c.ctx, cmd)
+			case core.AgentConnected:
+				c.agentRegistered(cmd)
+			}
 		}
 	}
+
 }
 
-func (c *Commander) agentBackoff(cmd *proto.Command) {
-	log.Debugf("agentBackoff in commander.go with command %v ", cmd)
-
-	if cmd.GetAgentConfig() == nil || cmd.GetAgentConfig().GetDetails() == nil ||
-		cmd.GetAgentConfig().GetDetails().GetServer() == nil || cmd.GetAgentConfig().GetDetails().GetServer().Backoff == nil {
-		log.Warnf("update commander client with default backoff settings as agent config nil, for a pause command %+v", cmd)
-		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
-		return
-	}
-
-	backoffSetting := cmd.GetAgentConfig().GetDetails().GetServer().Backoff
-
-	multiplier := backoff.BACKOFF_MULTIPLIER
-	if backoffSetting.GetMultiplier() != 0 {
-		multiplier = backoffSetting.GetMultiplier()
-	}
-
-	jitter := backoff.BACKOFF_JITTER
-	if backoffSetting.GetRandomizationFactor() != 0 {
-		jitter = backoffSetting.GetRandomizationFactor()
-	}
-
-	cBackoff := backoff.BackoffSettings{
-		InitialInterval: time.Duration(backoffSetting.InitialInterval * int64(time.Second)),
-		MaxInterval:     time.Duration(backoffSetting.MaxInterval * int64(time.Second)),
-		MaxElapsedTime:  time.Duration(backoffSetting.MaxElapsedTime * int64(time.Second)),
-		Multiplier:      multiplier,
-		Jitter:          jitter,
-	}
-	log.Debugf("update commander client backoff settings to %+v, for a pause command %+v", cBackoff, cmd)
-	c.cmdr.WithBackoffSettings(cBackoff)
+func (c *Commander) agentBackoff(agentConfig *proto.AgentConfig) {
+	log.Debugf("update commander client configuration to %+v", agentConfig)
+	c.cmdr.WithProtoBackoffSettings(agentConfig.GetDetails().GetServer().GetBackoff())
 
 }
 
