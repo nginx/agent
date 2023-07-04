@@ -115,13 +115,13 @@ jobs:
       - name: Archive install/uninstall integration test logs
         uses: actions/upload-artifact@v3
         with:
-          name: integration-test-log${{ matrix.container.image }}:${{ matrix.container.version }}
+          name: integration-test-log${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/nginx-agent-integration-test-install-uninstall.log
           retention-days: 3
       - name: Archive api integration test logs
         uses: actions/upload-artifact@v3
         with:
-          name: integration-test-log${{ matrix.container.image }}:${{ matrix.container.version }}
+          name: integration-test-log${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/nginx-agent-integration-test-api.log
           retention-days: 3
 
