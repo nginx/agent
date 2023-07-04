@@ -112,18 +112,12 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
-      - name: Archive install/uninstall test logs
+      - name: Archive integration test logs
         uses: actions/upload-artifact@v3
         with:
-          name: install-uninstall-test-log
-          path: /tmp/integration-test-install-uninstall.log
-          retention-days: 5
-      - name: Archive api test logs
-        uses: actions/upload-artifact@v3
-        with:
-          name: api-test-log
-          path: /tmp/integration-test-api.log
-          retention-days: 5
+          name: integration-test-log${{ matrix.container.image }}:${{ matrix.container.version }}
+          path: /tmp/nginx-agent/integration-test/
+          retention-days: 3
 
   performance-test:
     name: Performance Tests
