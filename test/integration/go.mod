@@ -97,7 +97,7 @@ require (
 	github.com/nginxinc/nginx-go-crossplane v0.4.17 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
-	github.com/opencontainers/runc v1.1.3 // indirect
+	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/orcaman/concurrent-map v1.0.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
