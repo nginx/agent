@@ -51,8 +51,6 @@ const (
 	Podman        = "podman"
 	ReaperDefault = "reaper_default" // Default network name when bridge is not available
 	packagePath   = "github.com/testcontainers/testcontainers-go"
-
-	logStoppedForOutOfSyncMessage = "Stopping log consumer: Headers out of sync"
 )
 
 // DockerContainer represents a container started using Docker
@@ -193,10 +191,22 @@ func (c *DockerContainer) Start(ctx context.Context) error {
 		return err
 	}
 
+	shortID := c.ID[:12]
+
 	if err := c.provider.client.ContainerStart(ctx, c.ID, types.ContainerStartOptions{}); err != nil {
 		return err
 	}
 	defer c.provider.Close()
+
+	// if a Wait Strategy has been specified, wait before returning
+	if c.WaitingFor != nil {
+		c.logger.Printf("🚧 Waiting for container id %s image: %s", shortID, c.Image)
+		if err := c.WaitingFor.WaitUntilReady(ctx, c); err != nil {
+			return err
+		}
+	}
+
+	c.isRunning = true
 
 	err = c.startedHook(ctx)
 	if err != nil {
@@ -655,7 +665,7 @@ func (c *DockerContainer) StartLogProducer(ctx context.Context) error {
 				return
 			default:
 				h := make([]byte, 8)
-				_, err := io.ReadFull(r, h)
+				_, err := r.Read(h)
 				if err != nil {
 					// proper type matching requires https://go-review.googlesource.com/c/go/+/250357/ (go 1.16)
 					if strings.Contains(err.Error(), "use of closed network connection") {
@@ -663,13 +673,9 @@ func (c *DockerContainer) StartLogProducer(ctx context.Context) error {
 						since = fmt.Sprintf("%d.%09d", now.Unix(), int64(now.Nanosecond()))
 						goto BEGIN
 					}
-					if errors.Is(err, context.DeadlineExceeded) {
-						// Probably safe to continue here
-						continue
-					}
-					_, _ = fmt.Fprintf(os.Stderr, "container log error: %+v. %s", err, logStoppedForOutOfSyncMessage)
-					// if we would continue here, the next header-read will result into random data...
-					return
+					// this explicitly ignores errors
+					// because we want to keep procesing even if one of our reads fails
+					continue
 				}
 
 				count := binary.BigEndian.Uint32(h[4:])
@@ -687,17 +693,11 @@ func (c *DockerContainer) StartLogProducer(ctx context.Context) error {
 				logTypes := []string{"", StdoutLog, StderrLog}
 
 				b := make([]byte, count)
-				_, err = io.ReadFull(r, b)
+				_, err = r.Read(b)
 				if err != nil {
 					// TODO: add-logger: use logger to log out this error
 					_, _ = fmt.Fprintf(os.Stderr, "error occurred reading log with known length %s", err.Error())
-					if errors.Is(err, context.DeadlineExceeded) {
-						// Probably safe to continue here
-						continue
-					}
-					// we can not continue here as the next read most likely will not be the next header
-					_, _ = fmt.Fprintln(os.Stderr, logStoppedForOutOfSyncMessage)
-					return
+					continue
 				}
 				for _, c := range c.consumers {
 					c.Accept(Log{
@@ -779,7 +779,43 @@ func (p *DockerProvider) SetClient(c client.APIClient) {
 var _ ContainerProvider = (*DockerProvider)(nil)
 
 func NewDockerClient() (cli *client.Client, err error) {
-	return testcontainersdocker.NewClient(context.Background())
+	tcConfig := ReadConfig()
+	opts := []client.Opt{client.FromEnv, client.WithAPIVersionNegotiation()}
+
+	if tcConfig.Host != "" {
+		opts = append(opts, client.WithHost(tcConfig.Host))
+
+		// For further information, read https://docs.docker.com/engine/security/protect-access/.
+		if tcConfig.TLSVerify == 1 {
+			caCertPath := filepath.Join(tcConfig.CertPath, "ca.pem")
+			certPath := filepath.Join(tcConfig.CertPath, "cert.pem")
+			keyPath := filepath.Join(tcConfig.CertPath, "key.pem")
+
+			opts = append(opts, client.WithTLSClientConfig(caCertPath, certPath, keyPath))
+		}
+	}
+
+	opts = append(opts, client.WithHTTPHeaders(
+		map[string]string{
+			"x-tc-sid": testcontainerssession.String(),
+		}),
+	)
+
+	cli, err = client.NewClientWithOpts(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err = cli.Ping(context.Background()); err != nil {
+		// Fallback to environment.
+		cli, err = testcontainersdocker.NewClient(context.Background())
+		if err != nil {
+			return nil, err
+		}
+	}
+	defer cli.Close()
+
+	return cli, nil
 }
 
 // BuildImage will build and image from context and Dockerfile, then return the tag
@@ -892,7 +928,7 @@ func (p *DockerProvider) CreateContainer(ctx context.Context, req ContainerReque
 		opt(&reaperOpts)
 	}
 
-	tcConfig := p.Config().Config
+	tcConfig := p.Config()
 
 	var termSignal chan bool
 	// the reaper does not need to start a reaper for itself
@@ -1018,27 +1054,6 @@ func (p *DockerProvider) CreateContainer(ctx context.Context, req ContainerReque
 					return nil
 				},
 			},
-			PostStarts: []ContainerHook{
-				// first post-start hook is to wait for the container to be ready
-				func(ctx context.Context, c Container) error {
-					dockerContainer := c.(*DockerContainer)
-
-					// if a Wait Strategy has been specified, wait before returning
-					if dockerContainer.WaitingFor != nil {
-						dockerContainer.logger.Printf(
-							"🚧 Waiting for container id %s image: %s. Waiting for: %+v",
-							dockerContainer.ID[:12], dockerContainer.Image, dockerContainer.WaitingFor,
-						)
-						if err := dockerContainer.WaitingFor.WaitUntilReady(ctx, c); err != nil {
-							return err
-						}
-					}
-
-					dockerContainer.isRunning = true
-
-					return nil
-				},
-			},
 		},
 	}
 
@@ -1122,7 +1137,7 @@ func (p *DockerProvider) ReuseOrCreateContainer(ctx context.Context, req Contain
 		return p.CreateContainer(ctx, req)
 	}
 
-	tcConfig := p.Config().Config
+	tcConfig := p.Config()
 
 	var termSignal chan bool
 	if !tcConfig.RyukDisabled {
@@ -1277,7 +1292,7 @@ func (p *DockerProvider) CreateNetwork(ctx context.Context, req NetworkRequest) 
 		req.Labels = make(map[string]string)
 	}
 
-	tcConfig := p.Config().Config
+	tcConfig := p.Config()
 
 	nc := types.NetworkCreate{
 		Driver:         req.Driver,

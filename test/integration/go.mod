@@ -8,8 +8,8 @@ require (
 	github.com/nginx/agent/v2 v2.26.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
-	github.com/testcontainers/testcontainers-go v0.21.0
-	github.com/testcontainers/testcontainers-go/modules/compose v0.21.0
+	github.com/testcontainers/testcontainers-go v0.20.1
+	github.com/testcontainers/testcontainers-go/modules/compose v0.20.1
 )
 
 require (
@@ -168,7 +168,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.20.0 // indirect
 	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.11.0 // indirect
 	golang.org/x/oauth2 v0.9.0 // indirect
@@ -198,7 +197,9 @@ require (
 )
 
 replace (
+	github.com/containerd/nydus-snapshotter => github.com/containerd/nydus-snapshotter v0.8.2
 	github.com/cucumber/godog => github.com/laurazard/godog v0.0.0-20220922095256-4c4b17abdae7
+	github.com/opencontainers/runtime-spec => github.com/opencontainers/runtime-spec v1.0.2
 	golang.org/x/oauth2 => golang.org/x/oauth2 v0.1.0
 
 	// For k8s dependencies, we use a replace directive, to prevent them being

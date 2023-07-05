@@ -771,16 +771,15 @@ github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.4.2
 ## explicit; go 1.18
 github.com/subosito/gotenv
-# github.com/testcontainers/testcontainers-go v0.21.0
+# github.com/testcontainers/testcontainers-go v0.20.1
 ## explicit; go 1.19
 github.com/testcontainers/testcontainers-go
 github.com/testcontainers/testcontainers-go/exec
 github.com/testcontainers/testcontainers-go/internal
-github.com/testcontainers/testcontainers-go/internal/config
 github.com/testcontainers/testcontainers-go/internal/testcontainersdocker
 github.com/testcontainers/testcontainers-go/internal/testcontainerssession
 github.com/testcontainers/testcontainers-go/wait
-# github.com/testcontainers/testcontainers-go/modules/compose v0.21.0
+# github.com/testcontainers/testcontainers-go/modules/compose v0.20.1
 ## explicit; go 1.19
 github.com/testcontainers/testcontainers-go/modules/compose
 # github.com/theupdateframework/notary v0.7.0
@@ -917,10 +916,6 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
-## explicit; go 1.20
-golang.org/x/exp/constraints
-golang.org/x/exp/slices
 # golang.org/x/mod v0.12.0
 ## explicit; go 1.17
 golang.org/x/mod/internal/lazyregexp
@@ -1345,7 +1340,9 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.3.0
 ## explicit; go 1.12
 sigs.k8s.io/yaml
+# github.com/containerd/nydus-snapshotter => github.com/containerd/nydus-snapshotter v0.8.2
 # github.com/cucumber/godog => github.com/laurazard/godog v0.0.0-20220922095256-4c4b17abdae7
+# github.com/opencontainers/runtime-spec => github.com/opencontainers/runtime-spec v1.0.2
 # golang.org/x/oauth2 => golang.org/x/oauth2 v0.1.0
 # k8s.io/api => k8s.io/api v0.22.4
 # k8s.io/apimachinery => k8s.io/apimachinery v0.22.4

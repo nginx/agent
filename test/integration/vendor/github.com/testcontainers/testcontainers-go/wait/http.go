@@ -41,7 +41,7 @@ type HTTPStrategy struct {
 // NewHTTPStrategy constructs a HTTP strategy waiting on port 80 and status code 200
 func NewHTTPStrategy(path string) *HTTPStrategy {
 	return &HTTPStrategy{
-		Port:              "",
+		Port:              "80/tcp",
 		Path:              path,
 		StatusCodeMatcher: defaultStatusCodeMatcher,
 		ResponseMatcher:   func(body io.Reader) bool { return true },
@@ -142,52 +142,24 @@ func (ws *HTTPStrategy) WaitUntilReady(ctx context.Context, target StrategyTarge
 		return
 	}
 
-	var mappedPort nat.Port
-	if ws.Port == "" {
-		ports, err := target.Ports(ctx)
-		for err != nil {
-			select {
-			case <-ctx.Done():
-				return fmt.Errorf("%s:%w", ctx.Err(), err)
-			case <-time.After(ws.PollInterval):
-				if err := checkTarget(ctx, target); err != nil {
-					return err
-				}
+	var port nat.Port
+	port, err = target.MappedPort(ctx, ws.Port)
 
-				ports, err = target.Ports(ctx)
+	for port == "" {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("%s:%w", ctx.Err(), err)
+		case <-time.After(ws.PollInterval):
+			if err := checkTarget(ctx, target); err != nil {
+				return err
 			}
-		}
 
-		for k, bindings := range ports {
-			if len(bindings) == 0 || k.Proto() != "tcp" {
-				continue
-			}
-			mappedPort, _ = nat.NewPort(k.Proto(), bindings[0].HostPort)
-			break
+			port, err = target.MappedPort(ctx, ws.Port)
 		}
+	}
 
-		if mappedPort == "" {
-			return errors.New("No exposed tcp ports or mapped ports - cannot wait for status")
-		}
-	} else {
-		mappedPort, err = target.MappedPort(ctx, ws.Port)
-
-		for mappedPort == "" {
-			select {
-			case <-ctx.Done():
-				return fmt.Errorf("%s:%w", ctx.Err(), err)
-			case <-time.After(ws.PollInterval):
-				if err := checkTarget(ctx, target); err != nil {
-					return err
-				}
-
-				mappedPort, err = target.MappedPort(ctx, ws.Port)
-			}
-		}
-
-		if mappedPort.Proto() != "tcp" {
-			return errors.New("Cannot use HTTP client on non-TCP ports")
-		}
+	if port.Proto() != "tcp" {
+		return errors.New("Cannot use HTTP client on non-TCP ports")
 	}
 
 	switch ws.Method {
@@ -231,7 +203,7 @@ func (ws *HTTPStrategy) WaitUntilReady(ctx context.Context, target StrategyTarge
 	}
 
 	client := http.Client{Transport: tripper, Timeout: time.Second}
-	address := net.JoinHostPort(ipAddress, strconv.Itoa(mappedPort.Int()))
+	address := net.JoinHostPort(ipAddress, strconv.Itoa(port.Int()))
 
 	endpoint := url.URL{
 		Scheme: proto,
