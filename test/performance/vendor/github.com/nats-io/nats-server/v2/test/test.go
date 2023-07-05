@@ -19,10 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -32,8 +30,6 @@ import (
 
 	"github.com/nats-io/nats-server/v2/server"
 )
-
-var tempRoot = filepath.Join(os.TempDir(), "nats-server")
 
 // So we can pass tests and benchmarks..
 type tLogger interface {
@@ -412,7 +408,6 @@ func expectLeftMostResult(t tLogger, c net.Conn, re *regexp.Regexp, buf *[]byte)
 			}
 			*buf = append(*buf, recv()...)
 		} else {
-			emptyCnt = 0
 			cutIdx := strings.Index(string(*buf), string(result)) + len(result)
 			*buf = (*buf)[cutIdx:]
 			return result
@@ -639,45 +634,11 @@ func nextServerOpts(opts *server.Options) *server.Options {
 	return nopts
 }
 
-func createDir(t *testing.T, prefix string) string {
+func createTempFile(t testing.TB, prefix string) *os.File {
 	t.Helper()
-	if err := os.MkdirAll(tempRoot, 0700); err != nil {
-		t.Fatal(err)
-	}
-	dir, err := ioutil.TempDir(tempRoot, prefix)
+	file, err := os.CreateTemp(t.TempDir(), prefix)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return dir
-}
-
-func createFile(t *testing.T, prefix string) *os.File {
-	t.Helper()
-	if err := os.MkdirAll(tempRoot, 0700); err != nil {
-		t.Fatal(err)
-	}
-	return createFileAtDir(t, tempRoot, prefix)
-}
-
-func createFileAtDir(t *testing.T, dir, prefix string) *os.File {
-	t.Helper()
-	f, err := ioutil.TempFile(dir, prefix)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return f
-}
-
-func removeDir(t *testing.T, dir string) {
-	t.Helper()
-	if err := os.RemoveAll(dir); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func removeFile(t *testing.T, p string) {
-	t.Helper()
-	if err := os.Remove(p); err != nil {
-		t.Fatal(err)
-	}
+	return file
 }

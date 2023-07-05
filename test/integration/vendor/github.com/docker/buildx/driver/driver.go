@@ -2,10 +2,12 @@ package driver
 
 import (
 	"context"
+	"io"
 
 	"github.com/docker/buildx/store"
 	"github.com/docker/buildx/util/progress"
 	clitypes "github.com/docker/cli/cli/config/types"
+	controlapi "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client"
 	"github.com/pkg/errors"
 )
@@ -57,12 +59,12 @@ type Driver interface {
 	Stop(ctx context.Context, force bool) error
 	Rm(ctx context.Context, force, rmVolume, rmDaemon bool) error
 	Client(ctx context.Context) (*client.Client, error)
-	Features() map[Feature]bool
+	Features(ctx context.Context) map[Feature]bool
 	IsMobyDriver() bool
 	Config() InitConfig
 }
 
-func Boot(ctx, clientContext context.Context, d Driver, pw progress.Writer) (*client.Client, error) {
+func Boot(ctx, clientContext context.Context, d *DriverHandle, pw progress.Writer) (*client.Client, error) {
 	try := 0
 	for {
 		info, err := d.Info(ctx)
@@ -87,5 +89,24 @@ func Boot(ctx, clientContext context.Context, d Driver, pw progress.Writer) (*cl
 			return nil, err
 		}
 		return c, nil
+	}
+}
+
+func historyAPISupported(ctx context.Context, c *client.Client) bool {
+	cl, err := c.ControlClient().ListenBuildHistory(ctx, &controlapi.BuildHistoryRequest{
+		ActiveOnly: true,
+		Ref:        "buildx-test-history-api-feature", // dummy ref to check if the server supports the API
+		EarlyExit:  true,
+	})
+	if err != nil {
+		return false
+	}
+	for {
+		_, err := cl.Recv()
+		if errors.Is(err, io.EOF) {
+			return true
+		} else if err != nil {
+			return false
+		}
 	}
 }

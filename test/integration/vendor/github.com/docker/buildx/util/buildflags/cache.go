@@ -1,16 +1,18 @@
 package buildflags
 
 import (
+	"context"
 	"encoding/csv"
 	"os"
 	"strings"
 
-	"github.com/moby/buildkit/client"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	controllerapi "github.com/docker/buildx/controller/pb"
 	"github.com/pkg/errors"
 )
 
-func ParseCacheEntry(in []string) ([]client.CacheOptionsEntry, error) {
-	imports := make([]client.CacheOptionsEntry, 0, len(in))
+func ParseCacheEntry(in []string) ([]*controllerapi.CacheOptionsEntry, error) {
+	outs := make([]*controllerapi.CacheOptionsEntry, 0, len(in))
 	for _, in := range in {
 		csvReader := csv.NewReader(strings.NewReader(in))
 		fields, err := csvReader.Read()
@@ -19,14 +21,15 @@ func ParseCacheEntry(in []string) ([]client.CacheOptionsEntry, error) {
 		}
 		if isRefOnlyFormat(fields) {
 			for _, field := range fields {
-				imports = append(imports, client.CacheOptionsEntry{
+				outs = append(outs, &controllerapi.CacheOptionsEntry{
 					Type:  "registry",
 					Attrs: map[string]string{"ref": field},
 				})
 			}
 			continue
 		}
-		im := client.CacheOptionsEntry{
+
+		out := controllerapi.CacheOptionsEntry{
 			Attrs: map[string]string{},
 		}
 		for _, field := range fields {
@@ -38,20 +41,21 @@ func ParseCacheEntry(in []string) ([]client.CacheOptionsEntry, error) {
 			value := parts[1]
 			switch key {
 			case "type":
-				im.Type = value
+				out.Type = value
 			default:
-				im.Attrs[key] = value
+				out.Attrs[key] = value
 			}
 		}
-		if im.Type == "" {
+		if out.Type == "" {
 			return nil, errors.Errorf("type required form> %q", in)
 		}
-		if !addGithubToken(&im) {
+		if !addGithubToken(&out) {
 			continue
 		}
-		imports = append(imports, im)
+		addAwsCredentials(&out)
+		outs = append(outs, &out)
 	}
-	return imports, nil
+	return outs, nil
 }
 
 func isRefOnlyFormat(in []string) bool {
@@ -63,7 +67,7 @@ func isRefOnlyFormat(in []string) bool {
 	return true
 }
 
-func addGithubToken(ci *client.CacheOptionsEntry) bool {
+func addGithubToken(ci *controllerapi.CacheOptionsEntry) bool {
 	if ci.Type != "gha" {
 		return true
 	}
@@ -78,4 +82,34 @@ func addGithubToken(ci *client.CacheOptionsEntry) bool {
 		}
 	}
 	return ci.Attrs["token"] != "" && ci.Attrs["url"] != ""
+}
+
+func addAwsCredentials(ci *controllerapi.CacheOptionsEntry) {
+	if ci.Type != "s3" {
+		return
+	}
+	_, okAccessKeyID := ci.Attrs["access_key_id"]
+	_, okSecretAccessKey := ci.Attrs["secret_access_key"]
+	// If the user provides access_key_id, secret_access_key, do not override the session token.
+	if okAccessKeyID && okSecretAccessKey {
+		return
+	}
+	ctx := context.TODO()
+	awsConfig, err := awsconfig.LoadDefaultConfig(ctx)
+	if err != nil {
+		return
+	}
+	credentials, err := awsConfig.Credentials.Retrieve(ctx)
+	if err != nil {
+		return
+	}
+	if !okAccessKeyID && credentials.AccessKeyID != "" {
+		ci.Attrs["access_key_id"] = credentials.AccessKeyID
+	}
+	if !okSecretAccessKey && credentials.SecretAccessKey != "" {
+		ci.Attrs["secret_access_key"] = credentials.SecretAccessKey
+	}
+	if _, ok := ci.Attrs["session_token"]; !ok && credentials.SessionToken != "" {
+		ci.Attrs["session_token"] = credentials.SessionToken
+	}
 }

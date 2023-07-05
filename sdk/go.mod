@@ -7,10 +7,10 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nginxinc/nginx-go-crossplane v0.4.17
-	github.com/sirupsen/logrus v1.9.0
+	github.com/nginxinc/nginx-go-crossplane v0.4.20
+	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.2
-	google.golang.org/grpc v1.55.0
+	google.golang.org/grpc v1.56.1
 )
 
 require (
@@ -18,16 +18,16 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/jstemmer/go-junit-report v1.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1 // indirect
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
-	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
-	golang.org/x/tools v0.9.1 // indirect
-	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	golang.org/x/mod v0.12.0 // indirect
+	golang.org/x/net v0.11.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/tools v0.10.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230629202037-9506855d4529 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -14,10 +14,11 @@ import (
 )
 
 type DeploymentOpt struct {
-	Namespace string
-	Name      string
-	Image     string
-	Replicas  int
+	Namespace          string
+	Name               string
+	Image              string
+	Replicas           int
+	ServiceAccountName string
 
 	// Qemu
 	Qemu struct {
@@ -80,6 +81,7 @@ func NewDeployment(opt *DeploymentOpt) (d *appsv1.Deployment, c []*corev1.Config
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
+					ServiceAccountName: opt.ServiceAccountName,
 					Containers: []corev1.Container{
 						{
 							Name:  containerName,
@@ -89,7 +91,7 @@ func NewDeployment(opt *DeploymentOpt) (d *appsv1.Deployment, c []*corev1.Config
 								Privileged: &privileged,
 							},
 							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{"buildctl", "debug", "workers"},
 									},
@@ -213,6 +215,24 @@ func toRootless(d *appsv1.Deployment) error {
 		d.Spec.Template.ObjectMeta.Annotations = make(map[string]string, 1)
 	}
 	d.Spec.Template.ObjectMeta.Annotations["container.apparmor.security.beta.kubernetes.io/"+containerName] = "unconfined"
+
+	// Dockerfile has `VOLUME /home/user/.local/share/buildkit` by default too,
+	// but the default VOLUME does not work with rootless on Google's Container-Optimized OS
+	// as it is mounted with `nosuid,nodev`.
+	// https://github.com/moby/buildkit/issues/879#issuecomment-1240347038
+	// https://github.com/moby/buildkit/pull/3097
+	const emptyDirVolName = "buildkitd"
+	d.Spec.Template.Spec.Containers[0].VolumeMounts = append(d.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+		Name:      emptyDirVolName,
+		MountPath: "/home/user/.local/share/buildkit",
+	})
+	d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
+		Name: emptyDirVolName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+
 	return nil
 }
 

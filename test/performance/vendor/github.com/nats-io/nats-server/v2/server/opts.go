@@ -20,7 +20,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net"
 	"net/url"
@@ -159,18 +158,24 @@ type LeafNodeOpts struct {
 	tlsConfigOpts *TLSConfigOpts
 }
 
+// SignatureHandler is used to sign a nonce from the server while
+// authenticating with Nkeys. The callback should sign the nonce and
+// return the JWT and the raw signature.
+type SignatureHandler func([]byte) (string, []byte, error)
+
 // RemoteLeafOpts are options for connecting to a remote server as a leaf node.
 type RemoteLeafOpts struct {
-	LocalAccount string      `json:"local_account,omitempty"`
-	NoRandomize  bool        `json:"-"`
-	URLs         []*url.URL  `json:"urls,omitempty"`
-	Credentials  string      `json:"-"`
-	TLS          bool        `json:"-"`
-	TLSConfig    *tls.Config `json:"-"`
-	TLSTimeout   float64     `json:"tls_timeout,omitempty"`
-	Hub          bool        `json:"hub,omitempty"`
-	DenyImports  []string    `json:"-"`
-	DenyExports  []string    `json:"-"`
+	LocalAccount string           `json:"local_account,omitempty"`
+	NoRandomize  bool             `json:"-"`
+	URLs         []*url.URL       `json:"urls,omitempty"`
+	Credentials  string           `json:"-"`
+	SignatureCB  SignatureHandler `json:"-"`
+	TLS          bool             `json:"-"`
+	TLSConfig    *tls.Config      `json:"-"`
+	TLSTimeout   float64          `json:"tls_timeout,omitempty"`
+	Hub          bool             `json:"hub,omitempty"`
+	DenyImports  []string         `json:"-"`
+	DenyExports  []string         `json:"-"`
 
 	// When an URL has the "ws" (or "wss") scheme, then the server will initiate the
 	// connection as a websocket connection. By default, the websocket frames will be
@@ -182,6 +187,12 @@ type RemoteLeafOpts struct {
 	}
 
 	tlsConfigOpts *TLSConfigOpts
+
+	// If we are clustered and our local account has JetStream, if apps are accessing
+	// a stream or consumer leader through this LN and it gets dropped, the apps will
+	// not be able to work. This tells the system to migrate the leaders away from this server.
+	// This only changes leader for R>1 assets.
+	JetStreamClusterMigrate bool `json:"jetstream_cluster_migrate,omitempty"`
 }
 
 type JSLimitOpts struct {
@@ -199,6 +210,7 @@ type Options struct {
 	ServerName            string        `json:"server_name"`
 	Host                  string        `json:"addr"`
 	Port                  int           `json:"port"`
+	DontListen            bool          `json:"dont_listen"`
 	ClientAdvertise       string        `json:"-"`
 	Trace                 bool          `json:"-"`
 	Debug                 bool          `json:"-"`
@@ -240,8 +252,10 @@ type Options struct {
 	JetStreamDomain       string        `json:"-"`
 	JetStreamExtHint      string        `json:"-"`
 	JetStreamKey          string        `json:"-"`
+	JetStreamCipher       StoreCipher   `json:"-"`
 	JetStreamUniqueTag    string
 	JetStreamLimits       JSLimitOpts
+	JetStreamMaxCatchup   int64
 	StoreDir              string            `json:"-"`
 	JsAccDefaultDomain    map[string]string `json:"-"` // account to domain name mapping
 	Websocket             WebsocketOpts     `json:"-"`
@@ -425,11 +439,18 @@ type MQTTOpts struct {
 	// replicas count (lower than StreamReplicas if specified, but also lower
 	// than the automatic value determined by cluster size).
 	// Note that existing consumers are not modified.
+	//
+	// UPDATE: This is no longer used while messages stream has interest policy retention
+	// which requires consumer replica count to match the parent stream.
 	ConsumerReplicas int
 
 	// Indicate if the consumers should be created with memory storage.
 	// Note that existing consumers are not modified.
 	ConsumerMemoryStorage bool
+
+	// If specified will have the system auto-cleanup the consumers after being
+	// inactive for the specified amount of time.
+	ConsumerInactiveThreshold time.Duration
 
 	// Timeout for the authentication process.
 	AuthTimeout float64
@@ -1109,8 +1130,10 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			}
 		case map[string]interface{}:
 			del := false
-			dir := ""
-			dirType := ""
+			hdel := false
+			hdel_set := false
+			dir := _EMPTY_
+			dirType := _EMPTY_
 			limit := int64(0)
 			ttl := time.Duration(0)
 			sync := time.Duration(0)
@@ -1127,6 +1150,11 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			if v, ok := v["allow_delete"]; ok {
 				_, v := unwrapValue(v, &lt)
 				del = v.(bool)
+			}
+			if v, ok := v["hard_delete"]; ok {
+				_, v := unwrapValue(v, &lt)
+				hdel_set = true
+				hdel = v.(bool)
 			}
 			if v, ok := v["limit"]; ok {
 				_, v := unwrapValue(v, &lt)
@@ -1168,12 +1196,26 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 				if del {
 					*errors = append(*errors, &configErr{tk, "CACHE does not accept allow_delete"})
 				}
+				if hdel_set {
+					*errors = append(*errors, &configErr{tk, "CACHE does not accept hard_delete"})
+				}
 				res, err = NewCacheDirAccResolver(dir, limit, ttl, opts...)
 			case "FULL":
 				if ttl != 0 {
 					*errors = append(*errors, &configErr{tk, "FULL does not accept ttl"})
 				}
-				res, err = NewDirAccResolver(dir, limit, sync, del, opts...)
+				if hdel_set && !del {
+					*errors = append(*errors, &configErr{tk, "hard_delete has no effect without delete"})
+				}
+				delete := NoDelete
+				if del {
+					if hdel {
+						delete = HardDelete
+					} else {
+						delete = RenameDeleted
+					}
+				}
+				res, err = NewDirAccResolver(dir, limit, sync, delete, opts...)
 			}
 			if err != nil {
 				*errors = append(*errors, &configErr{tk, err.Error()})
@@ -1914,6 +1956,15 @@ func parseJetStream(v interface{}, opts *Options, errors *[]error, warnings *[]e
 				doEnable = mv.(bool)
 			case "key", "ek", "encryption_key":
 				opts.JetStreamKey = mv.(string)
+			case "cipher":
+				switch strings.ToLower(mv.(string)) {
+				case "chacha", "chachapoly":
+					opts.JetStreamCipher = ChaCha
+				case "aes":
+					opts.JetStreamCipher = AES
+				default:
+					return &configErr{tk, fmt.Sprintf("Unknown cipher type: %q", mv)}
+				}
 			case "extension_hint":
 				opts.JetStreamExtHint = mv.(string)
 			case "limits":
@@ -1922,6 +1973,12 @@ func parseJetStream(v interface{}, opts *Options, errors *[]error, warnings *[]e
 				}
 			case "unique_tag":
 				opts.JetStreamUniqueTag = strings.ToLower(strings.TrimSpace(mv.(string)))
+			case "max_outstanding_catchup":
+				s, err := getStorageSize(mv)
+				if err != nil {
+					return &configErr{tk, fmt.Sprintf("%s %s", strings.ToLower(mk), err)}
+				}
+				opts.JetStreamMaxCatchup = s
 			default:
 				if !tk.IsUsedVariable() {
 					err := &unknownConfigFieldErr{
@@ -2247,6 +2304,8 @@ func parseRemoteLeafNodes(v interface{}, errors *[]error, warnings *[]error) ([]
 				remote.Websocket.Compression = v.(bool)
 			case "ws_no_masking", "websocket_no_masking":
 				remote.Websocket.NoMasking = v.(bool)
+			case "jetstream_cluster_migrate", "js_cluster_migrate":
+				remote.JetStreamClusterMigrate = true
 			default:
 				if !tk.IsUsedVariable() {
 					err := &unknownConfigFieldErr{
@@ -2968,10 +3027,10 @@ func parseAccount(v map[string]interface{}, errors, warnings *[]error) (string, 
 
 // Parse an export stream or service.
 // e.g.
-//   {stream: "public.>"} # No accounts means public.
-//   {stream: "synadia.private.>", accounts: [cncf, natsio]}
-//   {service: "pub.request"} # No accounts means public.
-//   {service: "pub.special.request", accounts: [nats.io]}
+// {stream: "public.>"} # No accounts means public.
+// {stream: "synadia.private.>", accounts: [cncf, natsio]}
+// {service: "pub.request"} # No accounts means public.
+// {service: "pub.special.request", accounts: [nats.io]}
 func parseExportStreamOrService(v interface{}, errors, warnings *[]error) (*export, *export, error) {
 	var (
 		curStream  *export
@@ -3236,9 +3295,9 @@ func parseServiceLatency(root token, v interface{}) (l *serviceLatency, retErr e
 
 // Parse an import stream or service.
 // e.g.
-//   {stream: {account: "synadia", subject:"public.synadia"}, prefix: "imports.synadia"}
-//   {stream: {account: "synadia", subject:"synadia.private.*"}}
-//   {service: {account: "synadia", subject: "pub.special.request"}, to: "synadia.request"}
+// {stream: {account: "synadia", subject:"public.synadia"}, prefix: "imports.synadia"}
+// {stream: {account: "synadia", subject:"synadia.private.*"}}
+// {service: {account: "synadia", subject: "pub.special.request"}, to: "synadia.request"}
 func parseImportStreamOrService(v interface{}, errors, warnings *[]error) (*importStream, *importService, error) {
 	var (
 		curStream  *importStream
@@ -4188,9 +4247,19 @@ func parseMQTT(v interface{}, o *Options, errors *[]error, warnings *[]error) er
 		case "stream_replicas":
 			o.MQTT.StreamReplicas = int(mv.(int64))
 		case "consumer_replicas":
-			o.MQTT.ConsumerReplicas = int(mv.(int64))
+			err := &configWarningErr{
+				field: mk,
+				configErr: configErr{
+					token:  tk,
+					reason: `consumer replicas setting ignored in this server version`,
+				},
+			}
+			*warnings = append(*warnings, err)
 		case "consumer_memory_storage":
 			o.MQTT.ConsumerMemoryStorage = mv.(bool)
+		case "consumer_inactive_threshold", "consumer_auto_cleanup":
+			o.MQTT.ConsumerInactiveThreshold = parseDuration("consumer_inactive_threshold", tk, mv, errors, warnings)
+
 		default:
 			if !tk.IsUsedVariable() {
 				err := &unknownConfigFieldErr{
@@ -4244,7 +4313,7 @@ func GenTLSConfig(tc *TLSConfigOpts) (*tls.Config, error) {
 	}
 	// Add in CAs if applicable.
 	if tc.CaFile != "" {
-		rootPEM, err := ioutil.ReadFile(tc.CaFile)
+		rootPEM, err := os.ReadFile(tc.CaFile)
 		if err != nil || rootPEM == nil {
 			return nil, err
 		}
@@ -4276,6 +4345,9 @@ func MergeOptions(fileOpts, flagOpts *Options) *Options {
 	}
 	if flagOpts.Host != "" {
 		opts.Host = flagOpts.Host
+	}
+	if flagOpts.DontListen {
+		opts.DontListen = flagOpts.DontListen
 	}
 	if flagOpts.ClientAdvertise != "" {
 		opts.ClientAdvertise = flagOpts.ClientAdvertise
@@ -4628,8 +4700,8 @@ func ConfigureOptions(fs *flag.FlagSet, args []string, printVersion, printHelp, 
 	fs.StringVar(&configFile, "c", "", "Configuration file.")
 	fs.StringVar(&configFile, "config", "", "Configuration file.")
 	fs.BoolVar(&opts.CheckConfig, "t", false, "Check configuration and exit.")
-	fs.StringVar(&signal, "sl", "", "Send signal to nats-server process (stop, quit, reopen, reload).")
-	fs.StringVar(&signal, "signal", "", "Send signal to nats-server process (stop, quit, reopen, reload).")
+	fs.StringVar(&signal, "sl", "", "Send signal to nats-server process (ldm, stop, quit, term, reopen, reload).")
+	fs.StringVar(&signal, "signal", "", "Send signal to nats-server process (ldm, stop, quit, term, reopen, reload).")
 	fs.StringVar(&opts.PidFile, "P", "", "File to store process pid.")
 	fs.StringVar(&opts.PidFile, "pid", "", "File to store process pid.")
 	fs.StringVar(&opts.PortsFileDir, "ports_file_dir", "", "Creates a ports file in the specified directory (<executable_name>_<pid>.ports).")
@@ -4951,7 +5023,7 @@ func processSignal(signal string) error {
 // 2. If such a file exists and can be read, return its contents.
 // 3. Otherwise, return the original "pidStr" string.
 func maybeReadPidFile(pidStr string) string {
-	if b, err := ioutil.ReadFile(pidStr); err == nil {
+	if b, err := os.ReadFile(pidStr); err == nil {
 		return string(b)
 	}
 	return pidStr

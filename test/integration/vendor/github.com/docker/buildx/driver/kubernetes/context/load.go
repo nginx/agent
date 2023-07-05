@@ -1,8 +1,10 @@
 package context
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/context"
@@ -17,6 +19,7 @@ import (
 type EndpointMeta struct {
 	context.EndpointMetaBase
 	DefaultNamespace string                           `json:",omitempty"`
+	ProxyURL         string                           `json:",omitempty"`
 	AuthProvider     *clientcmdapi.AuthProviderConfig `json:",omitempty"`
 	Exec             *clientcmdapi.ExecConfig         `json:",omitempty"`
 	UsernamePassword *UsernamePassword                `json:"usernamePassword,omitempty"`
@@ -60,6 +63,9 @@ func (c *Endpoint) KubernetesConfig() clientcmd.ClientConfig {
 	cfg := clientcmdapi.NewConfig()
 	cluster := clientcmdapi.NewCluster()
 	cluster.Server = c.Host
+	if c.ProxyURL != "" {
+		cluster.ProxyURL = c.ProxyURL
+	}
 	cluster.InsecureSkipTLSVerify = c.SkipTLSVerify
 	authInfo := clientcmdapi.NewAuthInfo()
 	if c.TLSData != nil {
@@ -152,4 +158,21 @@ func NewKubernetesConfig(configPath string) clientcmd.ClientConfig {
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfig},
 		&clientcmd.ConfigOverrides{})
+}
+
+// ConfigFromEndpoint loads kubernetes config from endpoint
+func ConfigFromEndpoint(endpointName string, s store.Reader) (clientcmd.ClientConfig, error) {
+	if strings.HasPrefix(endpointName, "kubernetes://") {
+		u, _ := url.Parse(endpointName)
+		if kubeconfig := u.Query().Get("kubeconfig"); kubeconfig != "" {
+			_ = os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig)
+		}
+		rules := clientcmd.NewDefaultClientConfigLoadingRules()
+		apiConfig, err := rules.Load()
+		if err != nil {
+			return nil, err
+		}
+		return clientcmd.NewDefaultClientConfig(*apiConfig, &clientcmd.ConfigOverrides{}), nil
+	}
+	return ConfigFromContext(endpointName, s)
 }

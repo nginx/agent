@@ -22,6 +22,7 @@ import (
 	"github.com/docker/docker/api"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	registrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/builder/remotecontext/urlutil"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/idtools"
@@ -65,7 +66,6 @@ type buildOptions struct {
 	squash         bool
 	target         string
 	imageIDFile    string
-	stream         bool
 	platform       string
 	untrusted      bool
 }
@@ -116,13 +116,13 @@ func NewBuildCommand(dockerCli command.Cli) *cobra.Command {
 
 	flags := cmd.Flags()
 
-	flags.VarP(&options.tags, "tag", "t", "Name and optionally a tag in the 'name:tag' format")
+	flags.VarP(&options.tags, "tag", "t", `Name and optionally a tag in the "name:tag" format`)
 	flags.Var(&options.buildArgs, "build-arg", "Set build-time variables")
 	flags.Var(options.ulimits, "ulimit", "Ulimit options")
-	flags.StringVarP(&options.dockerfileName, "file", "f", "", "Name of the Dockerfile (Default is 'PATH/Dockerfile')")
+	flags.StringVarP(&options.dockerfileName, "file", "f", "", `Name of the Dockerfile (Default is "PATH/Dockerfile")`)
 	flags.VarP(&options.memory, "memory", "m", "Memory limit")
-	flags.Var(&options.memorySwap, "memory-swap", "Swap limit equal to memory plus swap: '-1' to enable unlimited swap")
-	flags.Var(&options.shmSize, "shm-size", "Size of /dev/shm")
+	flags.Var(&options.memorySwap, "memory-swap", `Swap limit equal to memory plus swap: -1 to enable unlimited swap`)
+	flags.Var(&options.shmSize, "shm-size", `Size of "/dev/shm"`)
 	flags.Int64VarP(&options.cpuShares, "cpu-shares", "c", 0, "CPU shares (relative weight)")
 	flags.Int64Var(&options.cpuPeriod, "cpu-period", 0, "Limit the CPU CFS (Completely Fair Scheduler) period")
 	flags.Int64Var(&options.cpuQuota, "cpu-quota", 0, "Limit the CPU CFS (Completely Fair Scheduler) quota")
@@ -141,7 +141,7 @@ func NewBuildCommand(dockerCli command.Cli) *cobra.Command {
 	flags.StringSliceVar(&options.securityOpt, "security-opt", []string{}, "Security options")
 	flags.StringVar(&options.networkMode, "network", "default", "Set the networking mode for the RUN instructions during build")
 	flags.SetAnnotation("network", "version", []string{"1.25"})
-	flags.Var(&options.extraHosts, "add-host", "Add a custom host-to-IP mapping (host:ip)")
+	flags.Var(&options.extraHosts, "add-host", `Add a custom host-to-IP mapping ("host:ip")`)
 	flags.StringVar(&options.target, "target", "", "Set the target build stage to build.")
 	flags.StringVar(&options.imageIDFile, "iidfile", "", "Write the image ID to the file")
 
@@ -153,9 +153,6 @@ func NewBuildCommand(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVar(&options.squash, "squash", false, "Squash newly built layers into a single new layer")
 	flags.SetAnnotation("squash", "experimental", nil)
 	flags.SetAnnotation("squash", "version", []string{"1.25"})
-
-	flags.BoolVar(&options.stream, "stream", false, "Stream attaches to server to negotiate build context")
-	flags.MarkHidden("stream")
 
 	return cmd
 }
@@ -189,14 +186,6 @@ func runBuild(dockerCli command.Cli, options buildOptions) error {
 		buildBuff     io.Writer
 		remote        string
 	)
-
-	if options.stream {
-		_, _ = fmt.Fprint(dockerCli.Err(), `DEPRECATED: The experimental --stream flag has been removed and the build context
-            will be sent non-streaming. Enable BuildKit instead with DOCKER_BUILDKIT=1
-            to stream build context, see https://docs.docker.com/go/buildkit/
-
-`)
-	}
 
 	if options.dockerfileFromStdin() {
 		if options.contextFromStdin() {
@@ -291,7 +280,7 @@ func runBuild(dockerCli command.Cli, options buildOptions) error {
 	var resolvedTags []*resolvedTag
 	if !options.untrusted {
 		translator := func(ctx context.Context, ref reference.NamedTagged) (reference.Canonical, error) {
-			return TrustedReference(ctx, dockerCli, ref, nil)
+			return TrustedReference(ctx, dockerCli, ref)
 		}
 		// if there is a tar wrapper, the dockerfile needs to be replaced inside it
 		if buildCtx != nil {
@@ -334,9 +323,9 @@ func runBuild(dockerCli command.Cli, options buildOptions) error {
 
 	configFile := dockerCli.ConfigFile()
 	creds, _ := configFile.GetAllCredentials()
-	authConfigs := make(map[string]types.AuthConfig, len(creds))
+	authConfigs := make(map[string]registrytypes.AuthConfig, len(creds))
 	for k, auth := range creds {
-		authConfigs[k] = types.AuthConfig(auth)
+		authConfigs[k] = registrytypes.AuthConfig(auth)
 	}
 	buildOptions := imageBuildOptions(dockerCli, options)
 	buildOptions.Version = types.BuilderV1
@@ -400,7 +389,7 @@ func runBuild(dockerCli command.Cli, options buildOptions) error {
 		if imageID == "" {
 			return errors.Errorf("Server did not provide an image ID. Cannot write %s", options.imageIDFile)
 		}
-		if err := os.WriteFile(options.imageIDFile, []byte(imageID), 0666); err != nil {
+		if err := os.WriteFile(options.imageIDFile, []byte(imageID), 0o666); err != nil {
 			return err
 		}
 	}

@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/docker/buildx/driver"
@@ -16,7 +17,6 @@ import (
 	"github.com/docker/buildx/util/confutil"
 	"github.com/docker/buildx/util/imagetools"
 	"github.com/docker/buildx/util/progress"
-	"github.com/docker/docker/api/types"
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -37,7 +37,6 @@ const (
 type Driver struct {
 	driver.InitConfig
 	factory      driver.Factory
-	userNSRemap  bool // true if dockerd is running with userns-remap mode
 	netMode      string
 	image        string
 	cgroupParent string
@@ -84,7 +83,7 @@ func (d *Driver) create(ctx context.Context, l progress.SubLogger) error {
 		if err != nil {
 			return err
 		}
-		rc, err := d.DockerAPI.ImageCreate(ctx, imageName, types.ImageCreateOptions{
+		rc, err := d.DockerAPI.ImageCreate(ctx, imageName, dockertypes.ImageCreateOptions{
 			RegistryAuth: ra,
 		})
 		if err != nil {
@@ -110,6 +109,7 @@ func (d *Driver) create(ctx context.Context, l progress.SubLogger) error {
 		cfg.Cmd = d.InitConfig.BuildkitFlags
 	}
 
+	useInit := true // let it cleanup exited processes created by BuildKit's container API
 	if err := l.Wrap("creating container "+d.Name, func() error {
 		hc := &container.HostConfig{
 			Privileged: true,
@@ -120,20 +120,32 @@ func (d *Driver) create(ctx context.Context, l progress.SubLogger) error {
 					Target: confutil.DefaultBuildKitStateDir,
 				},
 			},
-		}
-		if d.userNSRemap {
-			hc.UsernsMode = "host"
+			Init: &useInit,
 		}
 		if d.netMode != "" {
 			hc.NetworkMode = container.NetworkMode(d.netMode)
 		}
-		if info, err := d.DockerAPI.Info(ctx); err == nil && info.CgroupDriver == "cgroupfs" {
-			// Place all buildkit containers inside this cgroup by default so limits can be attached
-			// to all build activity on the host.
-			hc.CgroupParent = "/docker/buildx"
-			if d.cgroupParent != "" {
-				hc.CgroupParent = d.cgroupParent
+		if info, err := d.DockerAPI.Info(ctx); err == nil {
+			if info.CgroupDriver == "cgroupfs" {
+				// Place all buildkit containers inside this cgroup by default so limits can be attached
+				// to all build activity on the host.
+				hc.CgroupParent = "/docker/buildx"
+				if d.cgroupParent != "" {
+					hc.CgroupParent = d.cgroupParent
+				}
 			}
+
+			secOpts, err := dockertypes.DecodeSecurityOptions(info.SecurityOptions)
+			if err != nil {
+				return err
+			}
+			for _, f := range secOpts {
+				if f.Name == "userns" {
+					hc.UsernsMode = "host"
+					break
+				}
+			}
+
 		}
 		_, err := d.DockerAPI.ContainerCreate(ctx, cfg, hc, &network.NetworkingConfig{}, nil, d.Name)
 		if err != nil {
@@ -186,7 +198,7 @@ func (d *Driver) wait(ctx context.Context, l progress.SubLogger) error {
 }
 
 func (d *Driver) copyLogs(ctx context.Context, l progress.SubLogger) error {
-	rc, err := d.DockerAPI.ContainerLogs(ctx, d.Name, types.ContainerLogsOptions{
+	rc, err := d.DockerAPI.ContainerLogs(ctx, d.Name, dockertypes.ContainerLogsOptions{
 		ShowStdout: true, ShowStderr: true,
 	})
 	if err != nil {
@@ -219,7 +231,7 @@ func (d *Driver) copyToContainer(ctx context.Context, files map[string][]byte) e
 }
 
 func (d *Driver) exec(ctx context.Context, cmd []string) (string, net.Conn, error) {
-	execConfig := types.ExecConfig{
+	execConfig := dockertypes.ExecConfig{
 		Cmd:          cmd,
 		AttachStdin:  true,
 		AttachStdout: true,
@@ -235,7 +247,7 @@ func (d *Driver) exec(ctx context.Context, cmd []string) (string, net.Conn, erro
 		return "", nil, errors.New("exec ID empty")
 	}
 
-	resp, err := d.DockerAPI.ContainerExecAttach(ctx, execID, types.ExecStartCheck{})
+	resp, err := d.DockerAPI.ContainerExecAttach(ctx, execID, dockertypes.ExecStartCheck{})
 	if err != nil {
 		return "", nil, err
 	}
@@ -262,7 +274,7 @@ func (d *Driver) run(ctx context.Context, cmd []string, stdout, stderr io.Writer
 }
 
 func (d *Driver) start(ctx context.Context, l progress.SubLogger) error {
-	return d.DockerAPI.ContainerStart(ctx, d.Name, types.ContainerStartOptions{})
+	return d.DockerAPI.ContainerStart(ctx, d.Name, dockertypes.ContainerStartOptions{})
 }
 
 func (d *Driver) Info(ctx context.Context) (*driver.Info, error) {
@@ -357,31 +369,40 @@ func (d *Driver) Client(ctx context.Context) (*client.Client, error) {
 		return nil, err
 	}
 
-	td, _ := exp.(client.TracerDelegate)
-
-	return client.New(ctx, "", client.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+	var opts []client.ClientOpt
+	var counter int64
+	opts = append(opts, client.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+		if atomic.AddInt64(&counter, 1) > 1 {
+			return nil, net.ErrClosed
+		}
 		return conn, nil
-	}), client.WithTracerDelegate(td))
+	}))
+	if td, ok := exp.(client.TracerDelegate); ok {
+		opts = append(opts, client.WithTracerDelegate(td))
+	}
+	return client.New(ctx, "", opts...)
 }
 
 func (d *Driver) Factory() driver.Factory {
 	return d.factory
 }
 
-func (d *Driver) Features() map[driver.Feature]bool {
+func (d *Driver) Features(ctx context.Context) map[driver.Feature]bool {
 	return map[driver.Feature]bool{
 		driver.OCIExporter:    true,
 		driver.DockerExporter: true,
-
-		driver.CacheExport:   true,
-		driver.MultiPlatform: true,
+		driver.CacheExport:    true,
+		driver.MultiPlatform:  true,
 	}
 }
 
 func demuxConn(c net.Conn) net.Conn {
 	pr, pw := io.Pipe()
 	// TODO: rewrite parser with Reader() to avoid goroutine switch
-	go stdcopy.StdCopy(pw, os.Stderr, c)
+	go func() {
+		_, err := stdcopy.StdCopy(pw, os.Stderr, c)
+		pw.CloseWithError(err)
+	}()
 	return &demux{
 		Conn:   c,
 		Reader: pr,
