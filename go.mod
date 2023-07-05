@@ -10,7 +10,7 @@ require (
 	github.com/golang/protobuf v1.5.3
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
-	github.com/klauspost/cpuid/v2 v2.1.0
+	github.com/klauspost/cpuid/v2 v2.2.5
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mwitkow/go-proto-validators v0.3.2
