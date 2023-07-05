@@ -59,7 +59,7 @@ func dedupePathsForRecursiveWatcher(paths []string) []string {
 			}
 
 			if IsChild(current, existing) {
-				// Mark the element empty for removal.
+				// Mark the element empty fo removal.
 				result[i] = ""
 				hasRemovals = true
 			}

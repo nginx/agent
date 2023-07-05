@@ -88,12 +88,6 @@ func addAwsCredentials(ci *controllerapi.CacheOptionsEntry) {
 	if ci.Type != "s3" {
 		return
 	}
-	_, okAccessKeyID := ci.Attrs["access_key_id"]
-	_, okSecretAccessKey := ci.Attrs["secret_access_key"]
-	// If the user provides access_key_id, secret_access_key, do not override the session token.
-	if okAccessKeyID && okSecretAccessKey {
-		return
-	}
 	ctx := context.TODO()
 	awsConfig, err := awsconfig.LoadDefaultConfig(ctx)
 	if err != nil {
@@ -103,10 +97,10 @@ func addAwsCredentials(ci *controllerapi.CacheOptionsEntry) {
 	if err != nil {
 		return
 	}
-	if !okAccessKeyID && credentials.AccessKeyID != "" {
+	if _, ok := ci.Attrs["access_key_id"]; !ok && credentials.AccessKeyID != "" {
 		ci.Attrs["access_key_id"] = credentials.AccessKeyID
 	}
-	if !okSecretAccessKey && credentials.SecretAccessKey != "" {
+	if _, ok := ci.Attrs["secret_access_key"]; !ok && credentials.SecretAccessKey != "" {
 		ci.Attrs["secret_access_key"] = credentials.SecretAccessKey
 	}
 	if _, ok := ci.Attrs["session_token"]; !ok && credentials.SessionToken != "" {

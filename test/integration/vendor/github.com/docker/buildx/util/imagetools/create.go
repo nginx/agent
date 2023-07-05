@@ -122,29 +122,24 @@ func (r *Resolver) Combine(ctx context.Context, srcs []*Source) ([]byte, ocispec
 		}
 	}
 
-	dockerMfsts := 0
-	for _, desc := range newDescs {
-		if strings.HasPrefix(desc.MediaType, "application/vnd.docker.") {
-			dockerMfsts++
-		}
-	}
+	mt := images.MediaTypeDockerSchema2ManifestList //ocispec.MediaTypeImageIndex
+	idx := struct {
+		// MediaType is reserved in the OCI spec but
+		// excluded from go types.
+		MediaType string `json:"mediaType,omitempty"`
 
-	var mt string
-	if dockerMfsts == len(newDescs) {
-		// all manifests are Docker types, use Docker manifest list
-		mt = images.MediaTypeDockerSchema2ManifestList
-	} else {
-		// otherwise, use OCI index
-		mt = ocispec.MediaTypeImageIndex
-	}
-
-	idxBytes, err := json.MarshalIndent(ocispec.Index{
+		ocispec.Index
+	}{
 		MediaType: mt,
-		Versioned: specs.Versioned{
-			SchemaVersion: 2,
+		Index: ocispec.Index{
+			Versioned: specs.Versioned{
+				SchemaVersion: 2,
+			},
+			Manifests: newDescs,
 		},
-		Manifests: newDescs,
-	}, "", "  ")
+	}
+
+	idxBytes, err := json.MarshalIndent(idx, "", "  ")
 	if err != nil {
 		return nil, ocispec.Descriptor{}, errors.Wrap(err, "failed to marshal index")
 	}

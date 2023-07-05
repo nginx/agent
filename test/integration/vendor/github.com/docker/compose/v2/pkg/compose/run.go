@@ -19,14 +19,11 @@ package compose
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
 
 	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli"
 	cmd "github.com/docker/cli/cli/command/container"
 	"github.com/docker/compose/v2/pkg/api"
-	"github.com/docker/compose/v2/pkg/utils"
 	"github.com/docker/docker/pkg/stringid"
 )
 
@@ -40,14 +37,6 @@ func (s *composeService) RunOneOffContainer(ctx context.Context, project *types.
 	start.OpenStdin = !opts.Detach && opts.Interactive
 	start.Attach = !opts.Detach
 	start.Containers = []string{containerID}
-
-	// remove cancellable context signal handler so we can forward signals to container without compose to exit
-	signal.Reset()
-
-	sigc := make(chan os.Signal, 128)
-	signal.Notify(sigc)
-	go cmd.ForwardAllSignals(ctx, s.dockerCli, containerID, sigc)
-	defer signal.Stop(sigc)
 
 	err = cmd.RunStart(s.dockerCli, &start)
 	if sterr, ok := err.(cli.StatusError); ok {
@@ -99,14 +88,8 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 			return "", err
 		}
 	}
-	createOpts := createOptions{
-		AutoRemove:        opts.AutoRemove,
-		AttachStdin:       opts.Interactive,
-		UseNetworkAliases: opts.UseNetworkAliases,
-		Labels:            mergeLabels(service.Labels, service.CustomLabels),
-	}
-
-	created, err := s.createContainer(ctx, project, service, service.ContainerName, 1, createOpts)
+	created, err := s.createContainer(ctx, project, service, service.ContainerName, 1,
+		opts.AutoRemove, opts.UseNetworkAliases, opts.Interactive)
 	if err != nil {
 		return "", err
 	}
@@ -123,15 +106,6 @@ func applyRunOptions(project *types.Project, service *types.ServiceConfig, opts 
 	}
 	if len(opts.User) > 0 {
 		service.User = opts.User
-	}
-
-	if len(opts.CapAdd) > 0 {
-		service.CapAdd = append(service.CapAdd, opts.CapAdd...)
-		service.CapDrop = utils.Remove(service.CapDrop, opts.CapAdd...)
-	}
-	if len(opts.CapDrop) > 0 {
-		service.CapDrop = append(service.CapDrop, opts.CapDrop...)
-		service.CapAdd = utils.Remove(service.CapAdd, opts.CapDrop...)
 	}
 	if len(opts.WorkingDir) > 0 {
 		service.WorkingDir = opts.WorkingDir

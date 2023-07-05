@@ -79,7 +79,7 @@ func (s *composeService) Watch(ctx context.Context, project *types.Project, serv
 	needRebuild := make(chan fileMapping)
 	needSync := make(chan fileMapping)
 
-	_, err := s.prepareProjectForBuild(project, nil)
+	err := s.prepareProjectForBuild(project, nil)
 	if err != nil {
 		return err
 	}
@@ -104,11 +104,7 @@ func (s *composeService) Watch(ctx context.Context, project *types.Project, serv
 			return err
 		}
 
-		if config == nil {
-			continue
-		}
-
-		if len(config.Watch) > 0 && service.Build == nil {
+		if config != nil && len(config.Watch) > 0 && service.Build == nil {
 			// service configured with watchers but no build section
 			return fmt.Errorf("can't watch service %q without a build context", service.Name)
 		}
@@ -122,8 +118,21 @@ func (s *composeService) Watch(ctx context.Context, project *types.Project, serv
 			continue
 		}
 
+		if config == nil {
+			config = &DevelopmentConfig{
+				Watch: []Trigger{
+					{
+						Path:   service.Build.Context,
+						Action: WatchActionRebuild,
+					},
+				},
+			}
+		}
+
 		name := service.Name
-		dockerIgnores, err := watch.LoadDockerIgnore(service.Build.Context)
+		bc := service.Build.Context
+
+		dockerIgnores, err := watch.LoadDockerIgnore(bc)
 		if err != nil {
 			return err
 		}
@@ -141,21 +150,12 @@ func (s *composeService) Watch(ctx context.Context, project *types.Project, serv
 			dotGitIgnore,
 		)
 
-		var paths []string
-		for _, trigger := range config.Watch {
-			if checkIfPathAlreadyBindMounted(trigger.Path, service.Volumes) {
-				logrus.Warnf("path '%s' also declared by a bind mount volume, this path won't be monitored!\n", trigger.Path)
-				continue
-			}
-			paths = append(paths, trigger.Path)
-		}
-
-		watcher, err := watch.NewWatcher(paths, ignore)
+		watcher, err := watch.NewWatcher([]string{bc}, ignore)
 		if err != nil {
 			return err
 		}
 
-		fmt.Fprintf(s.stdinfo(), "watching %s\n", paths)
+		fmt.Fprintf(s.stdinfo(), "watching %s\n", bc)
 		err = watcher.Start()
 		if err != nil {
 			return err
@@ -311,50 +311,25 @@ func (s *composeService) makeSyncFn(ctx context.Context, project *types.Project,
 			case <-ctx.Done():
 				return nil
 			case opt := <-needSync:
-				service, err := project.GetService(opt.Service)
-				if err != nil {
-					return err
-				}
-				scale := 1
-				if service.Deploy != nil && service.Deploy.Replicas != nil {
-					scale = int(*service.Deploy.Replicas)
-				}
-
-				if fi, statErr := os.Stat(opt.HostPath); statErr == nil {
-					if fi.IsDir() {
-						for i := 1; i <= scale; i++ {
-							_, err := s.Exec(ctx, project.Name, api.RunOptions{
-								Service: opt.Service,
-								Command: []string{"mkdir", "-p", opt.ContainerPath},
-								Index:   i,
-							})
-							if err != nil {
-								logrus.Warnf("failed to create %q from %s: %v", opt.ContainerPath, opt.Service, err)
-							}
-						}
-						fmt.Fprintf(s.stdinfo(), "%s created\n", opt.ContainerPath)
-					} else {
-						err := s.Copy(ctx, project.Name, api.CopyOptions{
-							Source:      opt.HostPath,
-							Destination: fmt.Sprintf("%s:%s", opt.Service, opt.ContainerPath),
-						})
-						if err != nil {
-							return err
-						}
-						fmt.Fprintf(s.stdinfo(), "%s updated\n", opt.ContainerPath)
+				if fi, statErr := os.Stat(opt.HostPath); statErr == nil && !fi.IsDir() {
+					err := s.Copy(ctx, project.Name, api.CopyOptions{
+						Source:      opt.HostPath,
+						Destination: fmt.Sprintf("%s:%s", opt.Service, opt.ContainerPath),
+					})
+					if err != nil {
+						return err
 					}
+					fmt.Fprintf(s.stdinfo(), "%s updated\n", opt.ContainerPath)
 				} else if errors.Is(statErr, fs.ErrNotExist) {
-					for i := 1; i <= scale; i++ {
-						_, err := s.Exec(ctx, project.Name, api.RunOptions{
-							Service: opt.Service,
-							Command: []string{"rm", "-rf", opt.ContainerPath},
-							Index:   i,
-						})
-						if err != nil {
-							logrus.Warnf("failed to delete %q from %s: %v", opt.ContainerPath, opt.Service, err)
-						}
+					_, err := s.Exec(ctx, project.Name, api.RunOptions{
+						Service: opt.Service,
+						Command: []string{"rm", "-rf", opt.ContainerPath},
+						Index:   1,
+					})
+					if err != nil {
+						logrus.Warnf("failed to delete %q from %s: %v", opt.ContainerPath, opt.Service, err)
 					}
-					fmt.Fprintf(s.stdinfo(), "%s deleted from service\n", opt.ContainerPath)
+					fmt.Fprintf(s.stdinfo(), "%s deleted from container\n", opt.ContainerPath)
 				}
 			}
 		}
@@ -386,13 +361,4 @@ func debounce(ctx context.Context, clock clockwork.Clock, delay time.Duration, i
 			svc.Add(e.HostPath)
 		}
 	}
-}
-
-func checkIfPathAlreadyBindMounted(watchPath string, volumes []types.ServiceVolumeConfig) bool {
-	for _, volume := range volumes {
-		if volume.Bind != nil && strings.HasPrefix(watchPath, volume.Source) {
-			return true
-		}
-	}
-	return false
 }

@@ -22,8 +22,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/docker/buildx/controller/pb"
-
 	"github.com/compose-spec/compose-go/types"
 	"github.com/containerd/containerd/platforms"
 	"github.com/docker/buildx/build"
@@ -40,7 +38,6 @@ import (
 	"github.com/moby/buildkit/util/entitlements"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/docker/compose/v2/pkg/progress"
@@ -71,7 +68,6 @@ func (s *composeService) build(ctx context.Context, project *types.Project, opti
 	// build and will lock
 	progressCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	w, err := xprogress.NewPrinter(progressCtx, s.stdout(), os.Stdout, options.Progress)
 	if err != nil {
 		return nil, err
@@ -116,11 +112,11 @@ func (s *composeService) build(ctx context.Context, project *types.Project, opti
 		}
 		buildOptions.BuildArgs = mergeArgs(buildOptions.BuildArgs, flatten(args))
 
-		digest, err := s.doBuildBuildkit(ctx, service.Name, buildOptions, w)
+		ids, err := s.doBuildBuildkit(ctx, service.Name, buildOptions, w)
 		if err != nil {
 			return err
 		}
-		builtIDs[idx] = digest
+		builtIDs[idx] = ids[service.Name]
 
 		return nil
 	}, func(traversal *graphTraversal) {
@@ -179,24 +175,20 @@ func (s *composeService) ensureImagesExists(ctx context.Context, project *types.
 		mode = xprogress.PrinterModeQuiet
 	}
 
-	buildRequired, err := s.prepareProjectForBuild(project, images)
+	err = s.prepareProjectForBuild(project, images)
+	if err != nil {
+		return err
+	}
+	builtImages, err := s.build(ctx, project, api.BuildOptions{
+		Progress: mode,
+	})
 	if err != nil {
 		return err
 	}
 
-	if buildRequired {
-		builtImages, err := s.build(ctx, project, api.BuildOptions{
-			Progress: mode,
-		})
-		if err != nil {
-			return err
-		}
-
-		for name, digest := range builtImages {
-			images[name] = digest
-		}
+	for name, digest := range builtImages {
+		images[name] = digest
 	}
-
 	// set digest as com.docker.compose.image label so we can detect outdated containers
 	for i, service := range project.Services {
 		image := api.GetImageNameOrDefault(service, project.Name)
@@ -211,11 +203,10 @@ func (s *composeService) ensureImagesExists(ctx context.Context, project *types.
 	return nil
 }
 
-func (s *composeService) prepareProjectForBuild(project *types.Project, images map[string]string) (bool, error) {
-	buildRequired := false
+func (s *composeService) prepareProjectForBuild(project *types.Project, images map[string]string) error {
 	err := api.BuildOptions{}.Apply(project)
 	if err != nil {
-		return false, err
+		return err
 	}
 	for i, service := range project.Services {
 		if service.Build == nil {
@@ -236,9 +227,8 @@ func (s *composeService) prepareProjectForBuild(project *types.Project, images m
 			service.Build.Platforms = []string{service.Platform}
 		}
 		project.Services[i] = service
-		buildRequired = true
 	}
-	return buildRequired, nil
+	return nil
 }
 
 func (s *composeService) getLocalImagesDigests(ctx context.Context, project *types.Project) (map[string]string, error) {
@@ -368,8 +358,8 @@ func (s *composeService) toBuildOptions(project *types.Project, service types.Se
 			DockerfilePath:   dockerFilePath(service.Build.Context, service.Build.Dockerfile),
 			NamedContexts:    toBuildContexts(service.Build.AdditionalContexts),
 		},
-		CacheFrom:   pb.CreateCaches(cacheFrom),
-		CacheTo:     pb.CreateCaches(cacheTo),
+		CacheFrom:   cacheFrom,
+		CacheTo:     cacheTo,
 		NoCache:     service.Build.NoCache,
 		Pull:        service.Build.Pull,
 		BuildArgs:   buildArgs,
@@ -451,9 +441,6 @@ func addSecretsConfig(project *types.Project, service types.ServiceConfig) (sess
 			})
 		default:
 			return nil, fmt.Errorf("build.secrets only supports environment or file-based secrets: %q", secret.Source)
-		}
-		if secret.UID != "" || secret.GID != "" || secret.Mode != nil {
-			logrus.Warn("secrets `uid`, `gid` and `mode` are not supported by BuildKit, they will be ignored")
 		}
 	}
 	store, err := secretsprovider.NewStore(sources)

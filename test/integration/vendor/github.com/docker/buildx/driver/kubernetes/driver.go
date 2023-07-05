@@ -204,7 +204,8 @@ func (d *Driver) Client(ctx context.Context) (*client.Client, error) {
 	}
 	containerName := pod.Spec.Containers[0].Name
 	cmd := []string{"buildctl", "dial-stdio"}
-	conn, err := execconn.ExecConn(ctx, restClient, restClientConfig, pod.Namespace, pod.Name, containerName, cmd)
+	conn, err := execconn.ExecConn(restClient, restClientConfig,
+		pod.Namespace, pod.Name, containerName, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -228,11 +229,12 @@ func (d *Driver) Factory() driver.Factory {
 	return d.factory
 }
 
-func (d *Driver) Features(ctx context.Context) map[driver.Feature]bool {
+func (d *Driver) Features() map[driver.Feature]bool {
 	return map[driver.Feature]bool{
 		driver.OCIExporter:    true,
 		driver.DockerExporter: d.DockerAPI != nil,
-		driver.CacheExport:    true,
-		driver.MultiPlatform:  true, // Untested (needs multiple Driver instances)
+
+		driver.CacheExport:   true,
+		driver.MultiPlatform: true, // Untested (needs multiple Driver instances)
 	}
 }

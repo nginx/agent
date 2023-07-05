@@ -155,31 +155,13 @@ func (s *composeService) watchContainers(ctx context.Context, //nolint:gocyclo
 		required = services
 	}
 
-	// predicate to tell if a container we receive event for should be considered or ignored
-	ofInterest := func(c moby.Container) bool {
-		if len(services) > 0 {
-			// we only watch some services
-			return utils.Contains(services, c.Labels[api.ServiceLabel])
-		}
-		return true
-	}
-
-	// predicate to tell if a container we receive event for should be watched until termination
-	isRequired := func(c moby.Container) bool {
-		if len(services) > 0 && len(required) > 0 {
-			// we only watch some services
-			return utils.Contains(required, c.Labels[api.ServiceLabel])
-		}
-		return true
-	}
-
 	var (
 		expected []string
 		watched  = map[string]int{}
 		replaced []string
 	)
 	for _, c := range containers {
-		if isRequired(c) {
+		if utils.Contains(required, c.Labels[api.ServiceLabel]) {
 			expected = append(expected, c.ID)
 		}
 		watched[c.ID] = 0
@@ -281,11 +263,6 @@ func (s *composeService) watchContainers(ctx context.Context, //nolint:gocyclo
 					}
 					watched[container.ID] = 1
 					if utils.Contains(expected, id) {
-						expected = append(expected, container.ID)
-					}
-				} else if ofInterest(container) {
-					watched[container.ID] = 1
-					if isRequired(container) {
 						expected = append(expected, container.ID)
 					}
 				}

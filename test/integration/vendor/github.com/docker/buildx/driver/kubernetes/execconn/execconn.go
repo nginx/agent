@@ -1,7 +1,6 @@
 package execconn
 
 import (
-	"context"
 	"io"
 	"net"
 	"os"
@@ -15,7 +14,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-func ExecConn(ctx context.Context, restClient rest.Interface, restConfig *rest.Config, namespace, pod, container string, cmd []string) (net.Conn, error) {
+func ExecConn(restClient rest.Interface, restConfig *rest.Config, namespace, pod, container string, cmd []string) (net.Conn, error) {
 	req := restClient.
 		Post().
 		Namespace(namespace).
@@ -43,13 +42,13 @@ func ExecConn(ctx context.Context, restClient rest.Interface, restConfig *rest.C
 		remoteAddr: dummyAddr{network: "dummy", s: "dummy-1"},
 	}
 	go func() {
-		serr := exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+		serr := exec.Stream(remotecommand.StreamOptions{
 			Stdin:  stdinR,
 			Stdout: stdoutW,
 			Stderr: os.Stderr,
 			Tty:    false,
 		})
-		if serr != nil && serr != context.Canceled {
+		if serr != nil {
 			logrus.Error(serr)
 		}
 	}()

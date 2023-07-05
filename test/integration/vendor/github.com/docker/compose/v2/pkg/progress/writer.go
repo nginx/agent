@@ -21,12 +21,12 @@ import (
 	"io"
 	"sync"
 
+	"github.com/cloudflare/cfssl/log"
+	"github.com/docker/compose/v2/pkg/api"
+
 	"github.com/containerd/console"
 	"github.com/moby/term"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/docker/compose/v2/pkg/api"
 )
 
 // Writer can write multiple progress events
@@ -107,8 +107,6 @@ const (
 	ModeTTY = "tty"
 	// ModePlain dump raw events to output
 	ModePlain = "plain"
-	// ModeQuiet don't display events
-	ModeQuiet = "quiet"
 )
 
 // Mode define how progress should be rendered, either as ModePlain or ModeTTY
@@ -121,16 +119,13 @@ func NewWriter(ctx context.Context, out io.Writer, progressTitle string) (Writer
 	if !ok {
 		dryRun = false
 	}
-	if Mode == ModeQuiet {
-		return quiet{}, nil
-	}
 	f, isConsole := out.(console.File) // see https://github.com/docker/compose/issues/10560
 	if Mode == ModeAuto && isTerminal && isConsole {
 		return newTTYWriter(f, dryRun, progressTitle)
 	}
 	if Mode == ModeTTY {
 		if !isConsole {
-			logrus.Warn("Terminal is not a POSIX console")
+			log.Warning("Terminal is not a POSIX console")
 		} else {
 			return newTTYWriter(f, dryRun, progressTitle)
 		}

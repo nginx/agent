@@ -87,10 +87,10 @@ func (d *Driver) Client(ctx context.Context) (*client.Client, error) {
 	return client.New(ctx, d.InitConfig.EndpointAddr, opts...)
 }
 
-func (d *Driver) Features(ctx context.Context) map[driver.Feature]bool {
+func (d *Driver) Features() map[driver.Feature]bool {
 	return map[driver.Feature]bool{
 		driver.OCIExporter:    true,
-		driver.DockerExporter: true,
+		driver.DockerExporter: false,
 		driver.CacheExport:    true,
 		driver.MultiPlatform:  true,
 	}

@@ -26,8 +26,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/docker/docker/api/types/registry"
-
 	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command/image/build"
@@ -155,9 +153,9 @@ func (s *composeService) doBuildClassic(ctx context.Context, service types.Servi
 	if err != nil {
 		return "", err
 	}
-	authConfigs := make(map[string]registry.AuthConfig, len(creds))
+	authConfigs := make(map[string]dockertypes.AuthConfig, len(creds))
 	for k, auth := range creds {
-		authConfigs[k] = registry.AuthConfig(auth)
+		authConfigs[k] = dockertypes.AuthConfig(auth)
 	}
 	buildOptions := imageBuildOptions(service.Build)
 	buildOptions.Tags = append(buildOptions.Tags, service.Image)

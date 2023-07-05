@@ -26,8 +26,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/docker/api/types/volume"
-
 	"github.com/compose-spec/compose-go/types"
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/docker/cli/cli/command"
@@ -232,10 +230,7 @@ SERVICES:
 }
 
 func (s *composeService) actualVolumes(ctx context.Context, projectName string) (types.Volumes, error) {
-	opts := volume.ListOptions{
-		Filters: filters.NewArgs(projectFilter(projectName)),
-	}
-	volumes, err := s.apiClient().VolumeList(ctx, opts)
+	volumes, err := s.apiClient().VolumeList(ctx, filters.NewArgs(projectFilter(projectName)))
 	if err != nil {
 		return nil, err
 	}
@@ -282,11 +277,8 @@ func (s *composeService) isSWarmEnabled(ctx context.Context) (bool, error) {
 		if err != nil {
 			swarmEnabled.err = err
 		}
-		switch info.Swarm.LocalNodeState {
-		case swarm.LocalNodeStateInactive, swarm.LocalNodeStateLocked:
-			swarmEnabled.val = false
-		default:
-			swarmEnabled.val = true
+		if info.Swarm.LocalNodeState == swarm.LocalNodeStateInactive {
+			swarmEnabled.val = info.Swarm.LocalNodeState == swarm.LocalNodeStateInactive
 		}
 	})
 	return swarmEnabled.val, swarmEnabled.err

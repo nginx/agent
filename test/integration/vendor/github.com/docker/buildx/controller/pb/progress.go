@@ -19,10 +19,6 @@ func (w *writer) Write(status *client.SolveStatus) {
 	w.ch <- ToControlStatus(status)
 }
 
-func (w *writer) WriteBuildRef(target string, ref string) {
-	return
-}
-
 func (w *writer) ValidateLogSource(digest.Digest, interface{}) bool {
 	return true
 }

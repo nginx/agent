@@ -10,7 +10,6 @@ import (
 
 type Writer interface {
 	Write(*client.SolveStatus)
-	WriteBuildRef(string, string)
 	ValidateLogSource(digest.Digest, interface{}) bool
 	ClearLogSource(interface{})
 }
@@ -40,10 +39,6 @@ func Write(w Writer, name string, f func() error) {
 	w.Write(&client.SolveStatus{
 		Vertexes: []*client.Vertex{&vtx2},
 	})
-}
-
-func WriteBuildRef(w Writer, target string, ref string) {
-	w.WriteBuildRef(target, ref)
 }
 
 func NewChannel(w Writer) (chan *client.SolveStatus, chan struct{}) {

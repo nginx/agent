@@ -45,12 +45,19 @@ func (s *composeService) Logs(
 		return err
 	}
 
-	if options.Project != nil && len(options.Services) == 0 {
-		// we run with an explicit compose.yaml, so only consider services defined in this file
-		options.Services = options.Project.ServiceNames()
-		containers = containers.filter(isService(options.Services...))
+	project := options.Project
+	if project == nil {
+		project, err = s.getProjectWithResources(ctx, containers, projectName)
+		if err != nil {
+			return err
+		}
 	}
 
+	if len(options.Services) == 0 {
+		options.Services = project.ServiceNames()
+	}
+
+	containers = containers.filter(isService(options.Services...))
 	eg, ctx := errgroup.WithContext(ctx)
 	for _, c := range containers {
 		c := c

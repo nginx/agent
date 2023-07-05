@@ -20,46 +20,44 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
+	"path/filepath"
 
-	"github.com/docker/buildx/build"
-	"github.com/docker/buildx/builder"
 	_ "github.com/docker/buildx/driver/docker"           //nolint:blank-imports
 	_ "github.com/docker/buildx/driver/docker-container" //nolint:blank-imports
 	_ "github.com/docker/buildx/driver/kubernetes"       //nolint:blank-imports
 	_ "github.com/docker/buildx/driver/remote"           //nolint:blank-imports
-	"github.com/docker/buildx/util/confutil"
-	"github.com/docker/buildx/util/dockerutil"
 	buildx "github.com/docker/buildx/util/progress"
-	"github.com/docker/compose/v2/pkg/progress"
 	"github.com/moby/buildkit/client"
+
+	"github.com/docker/buildx/build"
+	"github.com/docker/buildx/builder"
+	"github.com/docker/buildx/util/dockerutil"
+	"github.com/docker/compose/v2/pkg/progress"
 )
 
-func (s *composeService) doBuildBuildkit(ctx context.Context, service string, opts build.Options, p *buildx.Printer) (string, error) {
+func (s *composeService) doBuildBuildkit(ctx context.Context, service string, opts build.Options, p *buildx.Printer) (map[string]string, error) {
 	b, err := builder.New(s.dockerCli)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	nodes, err := b.LoadNodes(ctx, false)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var response map[string]*client.SolveResponse
 	if s.dryRun {
 		response = s.dryRunBuildResponse(ctx, service, opts)
 	} else {
-		response, err = build.Build(ctx, nodes,
-			map[string]build.Options{service: opts},
-			dockerutil.NewClient(s.dockerCli),
-			confutil.ConfigDir(s.dockerCli),
-			buildx.WithPrefix(p, service, true))
+		response, err = build.Build(ctx, nodes, map[string]build.Options{service: opts}, dockerutil.NewClient(s.dockerCli), filepath.Dir(s.configFile().Filename), buildx.WithPrefix(p, service, true))
 		if err != nil {
-			return "", WrapCategorisedComposeError(err, BuildFailure)
+			return nil, WrapCategorisedComposeError(err, BuildFailure)
 		}
 	}
 
-	for _, img := range response {
+	imagesBuilt := map[string]string{}
+	for name, img := range response {
 		if img == nil || len(img.ExporterResponse) == 0 {
 			continue
 		}
@@ -67,10 +65,10 @@ func (s *composeService) doBuildBuildkit(ctx context.Context, service string, op
 		if !ok {
 			continue
 		}
-		return digest, nil
+		imagesBuilt[name] = digest
 	}
 
-	return "", fmt.Errorf("buildkit response is missing expected result for %s", service)
+	return imagesBuilt, err
 }
 
 func (s composeService) dryRunBuildResponse(ctx context.Context, name string, options build.Options) map[string]*client.SolveResponse {

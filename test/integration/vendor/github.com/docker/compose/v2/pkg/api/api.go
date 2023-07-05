@@ -232,8 +232,6 @@ type DownOptions struct {
 	Images string
 	// Volumes remove volumes, both declared in the `volumes` section and anonymous ones
 	Volumes bool
-	// Services passed in the command line to be stopped
-	Services []string
 }
 
 // ConfigOptions group options of the Config API
@@ -305,8 +303,6 @@ type RunOptions struct {
 	WorkingDir        string
 	User              string
 	Environment       []string
-	CapAdd            []string
-	CapDrop           []string
 	Labels            types.Labels
 	Privileged        bool
 	UseNetworkAliases bool
