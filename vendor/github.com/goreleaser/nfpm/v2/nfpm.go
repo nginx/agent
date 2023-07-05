@@ -75,9 +75,7 @@ func ParseWithEnvMapping(in io.Reader, mapping func(string) string) (config Conf
 	}
 
 	config.expandEnvVars()
-
 	WithDefaults(&config.Info)
-
 	return config, nil
 }
 
@@ -304,6 +302,7 @@ type Overridables struct {
 	Suggests   []string       `yaml:"suggests,omitempty" json:"suggests,omitempty" jsonschema:"title=suggests directive,example=nfpm"`
 	Conflicts  []string       `yaml:"conflicts,omitempty" json:"conflicts,omitempty" jsonschema:"title=conflicts directive,example=nfpm"`
 	Contents   files.Contents `yaml:"contents,omitempty" json:"contents,omitempty" jsonschema:"title=files to add to the package"`
+	Umask      os.FileMode    `yaml:"umask,omitempty" json:"umask,omitempty" jsonschema:"title=umask for file contents,example=002"`
 	Scripts    Scripts        `yaml:"scripts,omitempty" json:"scripts,omitempty" jsonschema:"title=scripts to execute"`
 	RPM        RPM            `yaml:"rpm,omitempty" json:"rpm,omitempty" jsonschema:"title=rpm-specific settings"`
 	Deb        Deb            `yaml:"deb,omitempty" json:"deb,omitempty" jsonschema:"title=deb-specific settings"`
@@ -441,7 +440,7 @@ func PrepareForPackager(info *Info, packager string) (err error) {
 		return ErrFieldEmpty{"version"}
 	}
 
-	info.Contents, err = files.PrepareForPackager(info.Contents, packager, info.DisableGlobbing)
+	info.Contents, err = files.PrepareForPackager(info.Contents, info.Umask, packager, info.DisableGlobbing)
 
 	return err
 }
@@ -460,7 +459,7 @@ func Validate(info *Info) (err error) {
 	}
 
 	for packager := range packagers {
-		_, err := files.PrepareForPackager(info.Contents, packager, info.DisableGlobbing)
+		_, err := files.PrepareForPackager(info.Contents, info.Umask, packager, info.DisableGlobbing)
 		if err != nil {
 			return err
 		}
@@ -480,8 +479,17 @@ func WithDefaults(info *Info) *Info {
 	if info.Arch == "" {
 		info.Arch = "amd64"
 	}
+	if strings.HasPrefix(info.Arch, "mips") {
+		info.Arch = strings.NewReplacer(
+			"softfloat", "",
+			"hardfloat", "",
+		).Replace(info.Arch)
+	}
 	if info.Version == "" {
 		info.Version = "v0.0.0-rc0"
+	}
+	if info.Umask == 0 {
+		info.Umask = 0o02
 	}
 
 	switch info.VersionSchema {

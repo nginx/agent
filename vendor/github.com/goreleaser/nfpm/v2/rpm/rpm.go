@@ -57,15 +57,16 @@ type RPM struct{}
 // https://docs.fedoraproject.org/ro/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch01s03.html
 // nolint: gochecknoglobals
 var archToRPM = map[string]string{
-	"all":    "noarch",
-	"amd64":  "x86_64",
-	"386":    "i386",
-	"arm64":  "aarch64",
-	"arm5":   "armv5tel",
-	"arm6":   "armv6hl",
-	"arm7":   "armv7hl",
-	"mips":   "mips",
-	"mipsle": "mipsel",
+	"all":      "noarch",
+	"amd64":    "x86_64",
+	"386":      "i386",
+	"arm64":    "aarch64",
+	"arm5":     "armv5tel",
+	"arm6":     "armv6hl",
+	"arm7":     "armv7hl",
+	"mips64le": "mips64el",
+	"mipsle":   "mipsel",
+	"mips":     "mips",
 	// TODO: other arches
 }
 

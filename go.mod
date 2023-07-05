@@ -24,7 +24,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/trivago/grok v1.0.0
 	github.com/vardius/message-bus v1.1.5
 	go.uber.org/atomic v1.11.0
@@ -42,7 +42,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-swagger/go-swagger v0.30.4
 	github.com/golangci/golangci-lint v1.52.2
-	github.com/goreleaser/nfpm/v2 v2.28.0
+	github.com/goreleaser/nfpm/v2 v2.29.0
 	github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.13.0
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
@@ -66,7 +66,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Masterminds/semver/v3 v3.2.0 // indirect
+	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
