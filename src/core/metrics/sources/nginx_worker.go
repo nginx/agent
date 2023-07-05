@@ -194,7 +194,7 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 			client.logger.Log(fmt.Sprintf("Invalid pid for NGINX worker: %d", pidAsInt))
 			continue
 		}
-		  
+
 		proc, err := ps.NewProcess(int32(pidAsInt))
 		if err != nil {
 			client.logger.Log(fmt.Sprintf("Failed to retrieve process from pid %d: %v", pidAsInt, err))
