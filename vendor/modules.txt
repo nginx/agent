@@ -1074,7 +1074,7 @@ github.com/nbutton23/zxcvbn-go/matching
 github.com/nbutton23/zxcvbn-go/scoring
 github.com/nbutton23/zxcvbn-go/utils/math
 # github.com/nginx/agent/sdk/v2 v2.26.1 => ./sdk
-## explicit; go 1.19
+## explicit; go 1.20
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
 github.com/nginx/agent/sdk/v2/backoff

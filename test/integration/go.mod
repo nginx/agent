@@ -1,6 +1,6 @@
 module github.com/nginx/agent/test/integration
 
-go 1.19
+go 1.20
 
 require (
 	github.com/go-resty/resty/v2 v2.7.0
