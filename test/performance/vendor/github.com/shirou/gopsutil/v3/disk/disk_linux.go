@@ -16,9 +16,8 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/sys/unix"
-
 	"github.com/shirou/gopsutil/v3/internal/common"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -260,10 +259,10 @@ func readMountFile(root string) (lines []string, useMounts bool, filename string
 
 func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, error) {
 	// by default, try "/proc/1/..." first
-	root := common.HostProcWithContext(ctx, path.Join("1"))
+	root := common.HostProc(path.Join("1"))
 
 	// force preference for dirname of HOST_PROC_MOUNTINFO, if set  #1271
-	hpmPath := common.HostProcMountInfoWithContext(ctx)
+	hpmPath := os.Getenv("HOST_PROC_MOUNTINFO")
 	if hpmPath != "" {
 		root = filepath.Dir(hpmPath)
 	}
@@ -274,13 +273,13 @@ func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, erro
 			return nil, err
 		}
 		// fallback to "/proc/self/..."  #1159
-		lines, useMounts, filename, err = readMountFile(common.HostProcWithContext(ctx, path.Join("self")))
+		lines, useMounts, filename, err = readMountFile(common.HostProc(path.Join("self")))
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	fs, err := getFileSystems(ctx)
+	fs, err := getFileSystems()
 	if err != nil && !all {
 		return nil, err
 	}
@@ -342,7 +341,7 @@ func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, erro
 			}
 
 			if strings.HasPrefix(d.Device, "/dev/mapper/") {
-				devpath, err := filepath.EvalSymlinks(common.HostDevWithContext(ctx, strings.Replace(d.Device, "/dev", "", 1)))
+				devpath, err := filepath.EvalSymlinks(common.HostDev(strings.Replace(d.Device, "/dev", "", 1)))
 				if err == nil {
 					d.Device = devpath
 				}
@@ -351,7 +350,7 @@ func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, erro
 			// /dev/root is not the real device name
 			// so we get the real device name from its major/minor number
 			if d.Device == "/dev/root" {
-				devpath, err := os.Readlink(common.HostSysWithContext(ctx, "/dev/block/"+blockDeviceID))
+				devpath, err := os.Readlink(common.HostSys("/dev/block/" + blockDeviceID))
 				if err == nil {
 					d.Device = strings.Replace(d.Device, "root", filepath.Base(devpath), 1)
 				}
@@ -364,8 +363,8 @@ func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, erro
 }
 
 // getFileSystems returns supported filesystems from /proc/filesystems
-func getFileSystems(ctx context.Context) ([]string, error) {
-	filename := common.HostProcWithContext(ctx, "filesystems")
+func getFileSystems() ([]string, error) {
+	filename := common.HostProc("filesystems")
 	lines, err := common.ReadLines(filename)
 	if err != nil {
 		return nil, err
@@ -387,7 +386,7 @@ func getFileSystems(ctx context.Context) ([]string, error) {
 }
 
 func IOCountersWithContext(ctx context.Context, names ...string) (map[string]IOCountersStat, error) {
-	filename := common.HostProcWithContext(ctx, "diskstats")
+	filename := common.HostProc("diskstats")
 	lines, err := common.ReadLines(filename)
 	if err != nil {
 		return nil, err
@@ -492,7 +491,7 @@ func SerialNumberWithContext(ctx context.Context, name string) (string, error) {
 	minor := unix.Minor(uint64(stat.Rdev))
 
 	// Try to get the serial from udev data
-	udevDataPath := common.HostRunWithContext(ctx, fmt.Sprintf("udev/data/b%d:%d", major, minor))
+	udevDataPath := common.HostRun(fmt.Sprintf("udev/data/b%d:%d", major, minor))
 	if udevdata, err := ioutil.ReadFile(udevDataPath); err == nil {
 		scanner := bufio.NewScanner(bytes.NewReader(udevdata))
 		for scanner.Scan() {
@@ -505,7 +504,7 @@ func SerialNumberWithContext(ctx context.Context, name string) (string, error) {
 
 	// Try to get the serial from sysfs, look at the disk device (minor 0) directly
 	// because if it is a partition it is not going to contain any device information
-	devicePath := common.HostSysWithContext(ctx, fmt.Sprintf("dev/block/%d:0/device", major))
+	devicePath := common.HostSys(fmt.Sprintf("dev/block/%d:0/device", major))
 	model, _ := ioutil.ReadFile(filepath.Join(devicePath, "model"))
 	serial, _ := ioutil.ReadFile(filepath.Join(devicePath, "serial"))
 	if len(model) > 0 && len(serial) > 0 {
@@ -516,7 +515,7 @@ func SerialNumberWithContext(ctx context.Context, name string) (string, error) {
 
 func LabelWithContext(ctx context.Context, name string) (string, error) {
 	// Try label based on devicemapper name
-	dmname_filename := common.HostSysWithContext(ctx, fmt.Sprintf("block/%s/dm/name", name))
+	dmname_filename := common.HostSys(fmt.Sprintf("block/%s/dm/name", name))
 
 	if !common.PathExists(dmname_filename) {
 		return "", nil

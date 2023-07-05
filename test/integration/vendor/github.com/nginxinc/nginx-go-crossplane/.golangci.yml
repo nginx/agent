@@ -11,6 +11,7 @@ linters:
     - gomnd
     - godox
     - nlreturn
+    - exhaustivestruct
     - wrapcheck
     - thelper
     - testpackage
@@ -24,13 +25,11 @@ linters:
     - golint
     - maligned
     - scopelint
-    - exhaustruct
     # deprecated
     - deadcode
     - varcheck
     - structcheck
     - nosnakecase
-    - exhaustivestruct
 
 
 # Run options

@@ -1,4 +1,3 @@
-//go:build windows
 // +build windows
 
 /*
@@ -21,6 +20,7 @@ Example code to print names of running processes:
 			println(i, v.Name)
 		}
 	}
+
 */
 package wmi
 
@@ -338,6 +338,11 @@ func (c *Client) loadEntity(dst interface{}, src *ole.IDispatch) (errFieldMismat
 		f := v.Field(i)
 		of := f
 		isPtr := f.Kind() == reflect.Ptr
+		if isPtr {
+			ptr := reflect.New(f.Type().Elem())
+			f.Set(ptr)
+			f = f.Elem()
+		}
 		n := v.Type().Field(i).Name
 		if n[0] < 'A' || n[0] > 'Z' {
 			continue
@@ -361,12 +366,6 @@ func (c *Client) loadEntity(dst interface{}, src *ole.IDispatch) (errFieldMismat
 			continue
 		}
 		defer prop.Clear()
-
-		if isPtr && !(c.PtrNil && prop.VT == 0x1) {
-			ptr := reflect.New(f.Type().Elem())
-			f.Set(ptr)
-			f = f.Elem()
-		}
 
 		if prop.VT == 0x1 { //VT_NULL
 			continue

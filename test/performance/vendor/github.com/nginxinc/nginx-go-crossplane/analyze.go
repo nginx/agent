@@ -479,10 +479,10 @@ var directives = map[string][]uint{
 	"fastcgi_next_upstream": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
 	},
-	"fastcgi_next_upstream_timeout": {
+	"fastcgi_next_upStreamtimeout": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
 	},
-	"fastcgi_next_upstream_tries": {
+	"fastcgi_next_upStreamtries": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
 	},
 	"fastcgi_no_cache": {

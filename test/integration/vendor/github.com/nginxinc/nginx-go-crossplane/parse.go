@@ -252,10 +252,10 @@ func (p *parser) parse(parsing *Config, tokens <-chan NgxToken, ctx blockCtx, co
 			}
 		}
 		for t.IsQuoted || (t.Value != "{" && t.Value != ";" && t.Value != "}") {
-			if !strings.HasPrefix(t.Value, "#") || t.IsQuoted {
-				stmt.Args = append(stmt.Args, t.Value)
-			} else if p.options.ParseComments {
+			if strings.HasPrefix(t.Value, "#") && !t.IsQuoted {
 				commentsInArgs = append(commentsInArgs, t.Value[1:])
+			} else {
+				stmt.Args = append(stmt.Args, t.Value)
 			}
 			t, tokenOk = <-tokens
 			if !tokenOk {

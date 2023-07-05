@@ -151,6 +151,7 @@ func scanWhitespace(b []byte) ([]byte, []byte) {
 	return b, b[len(b):]
 }
 
+//nolint:unparam
 func scanComment(b []byte) ([]byte, []byte, error) {
 	// comment-start-symbol = %x23 ; #
 	// non-ascii = %x80-D7FF / %xE000-10FFFF

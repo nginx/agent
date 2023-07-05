@@ -11,8 +11,6 @@ import (
 	"github.com/shirou/gopsutil/v3/internal/common"
 )
 
-type Warnings = common.Warnings
-
 var invoke common.Invoker = common.Invoke{}
 
 // A HostInfoStat describes the host status.
