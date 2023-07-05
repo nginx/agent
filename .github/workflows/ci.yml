@@ -208,11 +208,7 @@ jobs:
             for i in ./build/azure/packages/nginx-agent*; do 
               az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GIT_BRANCH}/${i##*/}
-            done 
-      - name: Azure Logout
-        run: |
-          az logout
-        if: success() || failure()
+            done
 
   build-unsigned-snapshot:
     name: Build unsigned snapshot
