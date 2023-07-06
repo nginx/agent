@@ -93,7 +93,5 @@ func TestLimitsCollapsingLevel(t *testing.T) {
 				assert.Equal(t, test.ExpectedLevel, limit.GetCurrentCollapsingLevel(test.CurrentSize))
 			}
 		})
-
 	}
-
 }

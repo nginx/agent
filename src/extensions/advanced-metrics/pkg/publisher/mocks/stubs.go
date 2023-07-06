@@ -22,6 +22,7 @@ type LookupSetStub struct {
 func (LookupSetStub) LookupBytes(schema.FieldIndex, []byte) (int, error) {
 	return 0, errors.New("LookupSetStub::LookupBytes not implemented")
 }
+
 func (l *LookupSetStub) LookupCode(index int, code int) (string, error) {
 	values, ok := l.Lookups[index]
 	if !ok {

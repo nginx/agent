@@ -54,13 +54,13 @@ func TestLoadCertificates(t *testing.T) {
 	})
 
 	certFile := tmpDir + "/cert.pem"
-	err = os.WriteFile(certFile, certPem, 0644)
+	err = os.WriteFile(certFile, certPem, 0o644)
 	if err != nil {
 		t.Fatalf("Failed create cert file, %v", err)
 	}
 
 	keyFile := tmpDir + "/key.pem"
-	err = os.WriteFile(keyFile, keyPem, 0640)
+	err = os.WriteFile(keyFile, keyPem, 0o640)
 	if err != nil {
 		t.Fatalf("Failed create key file, %v", err)
 	}
@@ -136,14 +136,14 @@ func TestLoadCertificate(t *testing.T) {
 
 	// write valid PEM certificate to file
 	certFile := tmpDir + "/cert.pem"
-	err = os.WriteFile(certFile, certPem, 0644)
+	err = os.WriteFile(certFile, certPem, 0o644)
 	if err != nil {
 		t.Fatalf("Failed create cert file, %v", err)
 	}
 
 	// write non-PEM data to file
 	nonPEMFile := tmpDir + "/cert.nonpem"
-	err = os.WriteFile(nonPEMFile, cert, 0644)
+	err = os.WriteFile(nonPEMFile, cert, 0o644)
 	if err != nil {
 		t.Fatalf("Failed create cert file, %v", err)
 	}

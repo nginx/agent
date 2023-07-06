@@ -183,6 +183,7 @@ func (a *AgentAPI) Process(message *core.Message) {
 		}
 	}
 }
+
 func (a *AgentAPI) Info() *core.Info {
 	return core.NewInfo(agent_config.FeatureAgentAPI, "v0.0.1")
 }
@@ -504,7 +505,7 @@ func (h *NginxHandler) applyNginxConfig(nginxDetail *proto.NginxDetails, buf *by
 	}
 
 	// Write back the original nginx.conf
-	err = os.WriteFile(fullFilePath, data, 0644)
+	err = os.WriteFile(fullFilePath, data, 0o644)
 	if err != nil {
 		rollbackErr := configApply.Rollback(err)
 		return fmt.Errorf("unable to write file %s: %v", fullFilePath, rollbackErr)

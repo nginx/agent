@@ -31,8 +31,8 @@ func AssertDimensionsEqual(t *testing.T, expectedDimensions []publisher.Dimensio
 }
 
 func assertMetricsEqual(t *testing.T, expectedMetrics []ExpectedMetric,
-	actualMetrics []publisher.Metric) {
-
+	actualMetrics []publisher.Metric,
+) {
 	actualMetricsMap := make(map[string]publisher.Metric)
 
 	for _, actualMetric := range actualMetrics {

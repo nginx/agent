@@ -8,12 +8,13 @@
 package plugins
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"reflect"
 	"sort"
 	"strings"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -118,7 +119,6 @@ func (r *ConfigReader) updateAgentConfig(cmd *proto.Command) {
 					r.deregisterPlugin(feature)
 					r.mu.Unlock()
 				}
-
 			}
 		}
 

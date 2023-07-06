@@ -17,13 +17,13 @@ import (
 )
 
 func TestGetFileMode(t *testing.T) {
-	var fileModeTests = []struct {
+	fileModeTests := []struct {
 		input    string
 		expected os.FileMode
 	}{
 		{
 			input:    "0644",
-			expected: os.FileMode(0644),
+			expected: os.FileMode(0o644),
 		},
 		{
 			input:    "0",
@@ -31,15 +31,15 @@ func TestGetFileMode(t *testing.T) {
 		},
 		{
 			input:    "0777",
-			expected: os.FileMode(0777),
+			expected: os.FileMode(0o777),
 		},
 		{
 			input:    "0234",
-			expected: os.FileMode(0234),
+			expected: os.FileMode(0o234),
 		},
 		{
 			input:    "invalid",
-			expected: os.FileMode(0644),
+			expected: os.FileMode(0o644),
 		},
 	}
 
@@ -50,12 +50,12 @@ func TestGetFileMode(t *testing.T) {
 }
 
 func TestGetPermissions(t *testing.T) {
-	var fileModeTests = []struct {
+	fileModeTests := []struct {
 		input    os.FileMode
 		expected string
 	}{
 		{
-			input:    os.FileMode(0644),
+			input:    os.FileMode(0o644),
 			expected: "0644",
 		},
 		{
@@ -63,11 +63,11 @@ func TestGetPermissions(t *testing.T) {
 			expected: "0",
 		},
 		{
-			input:    os.FileMode(0777),
+			input:    os.FileMode(0o777),
 			expected: "0777",
 		},
 		{
-			input:    os.FileMode(0234),
+			input:    os.FileMode(0o234),
 			expected: "0234",
 		},
 	}
@@ -79,19 +79,19 @@ func TestGetPermissions(t *testing.T) {
 }
 
 func TestTimeConvert(t *testing.T) {
-	var fileModeTests = []struct {
+	fileModeTests := []struct {
 		input    time.Time
 		expected *types.Timestamp
 	}{
 		{
-			input: time.Date(2022, 01, 23, 12, 0, 20, 100, &time.Location{}),
+			input: time.Date(2022, 0o1, 23, 12, 0, 20, 100, &time.Location{}),
 			expected: &types.Timestamp{
 				Seconds: 1642939220,
 				Nanos:   100,
 			},
 		},
 		{
-			input:    time.Date(-2022, 01, 23, 12, 0, 20, 100, &time.Location{}),
+			input:    time.Date(-2022, 0o1, 23, 12, 0, 20, 100, &time.Location{}),
 			expected: types.TimestampNow(),
 		},
 	}

@@ -131,9 +131,7 @@ func TestCalculateUpstreamNextCount(t *testing.T) {
 			assert.Equal(t, test.expectedUpstreamRequest, upstreamRequest)
 			assert.Equal(t, test.expectedCount, test.upstreamCounters["upstream.next.count"])
 		})
-
 	}
-
 }
 
 func TestParseAccessLogFloatTimes(t *testing.T) {
@@ -182,7 +180,6 @@ func TestParseAccessLogFloatTimes(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			test.counter = nginxAccessLog.parseAccessLogFloatTimes(test.metricName, test.metric, test.counter)
 			assert.Equal(t, test.expectedCounter, test.counter)
-
 		})
 	}
 }
@@ -247,7 +244,6 @@ func TestParseAccessLogUpstream(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			test.counter = nginxAccessLog.parseAccessLogUpstream(test.metricName, test.metric, test.counter)
 			assert.Equal(t, test.expectedCounter, test.counter)
-
 		})
 	}
 }
@@ -261,7 +257,6 @@ func TestParseAccessLogFloatCounters(t *testing.T) {
 		expectedCounter map[string]float64
 	}{
 		{
-
 			"validCount",
 			"request.bytes_sent",
 			"28",
@@ -273,7 +268,6 @@ func TestParseAccessLogFloatCounters(t *testing.T) {
 			},
 		},
 		{
-
 			"noCount",
 			"request.bytes_sent",
 			"-",
@@ -285,7 +279,6 @@ func TestParseAccessLogFloatCounters(t *testing.T) {
 			},
 		},
 		{
-
 			"emptyCount",
 			"request.bytes_sent",
 			"",
@@ -297,7 +290,6 @@ func TestParseAccessLogFloatCounters(t *testing.T) {
 			},
 		},
 		{
-
 			"invalidCount",
 			"request.bytes_sent",
 			"test",
@@ -318,7 +310,6 @@ func TestParseAccessLogFloatCounters(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			nginxAccessLog.parseAccessLogFloatCounters(test.metricName, test.metric, test.counter)
 			assert.Equal(t, test.expectedCounter, test.counter)
-
 		})
 	}
 }
@@ -369,7 +360,6 @@ func TestCalculateServerProtocol(t *testing.T) {
 			calculateServerProtocol(test.protocol, test.counters)
 			assert.Equal(t, test.expectedCounter, test.counters)
 		})
-
 	}
 }
 
@@ -418,9 +408,7 @@ func TestGetParsedRequest(t *testing.T) {
 			assert.Equal(t, test.expectedURI, uri)
 			assert.Equal(t, test.expectedProtocol, protocol)
 		})
-
 	}
-
 }
 
 func TestGetAverageMetricValue(t *testing.T) {
@@ -455,7 +443,6 @@ func TestGetAverageMetricValue(t *testing.T) {
 			average := getAverageMetricValue(test.metricValues)
 			assert.Equal(t, test.expectedAverage, average)
 		})
-
 	}
 }
 
@@ -612,7 +599,6 @@ func TestCalculateHTTPStatus(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			nginxAccessLog.calculateHttpStatus(test.status, test.counter)
 			assert.Equal(t, test.expectedCounter, test.counter)
-
 		})
 	}
 }
@@ -674,7 +660,6 @@ func TestCalculateUpstreamCacheStatus(t *testing.T) {
 			calculateUpstreamCacheStatus(test.status, test.counter)
 			assert.Equal(t, test.expectedCounter, test.counter)
 		})
-
 	}
 }
 
@@ -749,7 +734,6 @@ func TestGetTimeMetricsMap(t *testing.T) {
 			calculateTimeMetricsMap(test.metricName, test.metricTimes, test.counter)
 			assert.Equal(t, test.expectedCounter, test.counter)
 		})
-
 	}
 }
 

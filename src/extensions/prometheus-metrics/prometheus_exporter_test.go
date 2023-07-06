@@ -1,8 +1,9 @@
 package prometheus_metrics
 
 import (
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"testing"
+
+	"github.com/nginx/agent/v2/src/core/metrics"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/prometheus/client_golang/prometheus"

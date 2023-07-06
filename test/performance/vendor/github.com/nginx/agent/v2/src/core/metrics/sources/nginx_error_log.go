@@ -9,10 +9,11 @@ package sources
 
 import (
 	"context"
-	"github.com/nginx/agent/sdk/v2/proto"
 	re "regexp"
 	"sync"
 	"time"
+
+	"github.com/nginx/agent/sdk/v2/proto"
 
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -28,34 +29,32 @@ const (
 	UpstreamResponseFailedMetricName   = "upstream.response.failed"
 )
 
-var (
-	regularExpressionErrorMap = map[string][]*re.Regexp{
-		HttpRequestBufferedMetricName: {
-			re.MustCompile(`.*client request body is buffered.*`),
-		},
-		UpstreamResponseBufferedMetricName: {
-			re.MustCompile(`.*upstream response is buffered.*`),
-		},
-		UpstreamRequestFailedMetricName: {
-			re.MustCompile(`.*failed.*while connecting to upstream, client.*`),
-			re.MustCompile(`.*upstream timed out.*while connecting to upstream, client.*`),
-			re.MustCompile(`.*upstream queue is full while connecting to upstream.*`),
-			re.MustCompile(`.*no live upstreams while connecting to upstream, client.*`),
-			re.MustCompile(`.*upstream connection is closed too while sending request to upstream, client.*`),
-		},
-		UpstreamResponseFailedMetricName: {
-			re.MustCompile(`.*failed.*while reading upstream.*`),
-			re.MustCompile(`.*failed.*while reading response header from upstream, client.*`),
-			re.MustCompile(`.*upstream timed out.*while reading response header from upstream, client.*`),
-			re.MustCompile(`.*upstream buffer is too small to read response.*`),
-			re.MustCompile(`.*upstream prematurely closed connection while reading response header from upstream, client.*`),
-			re.MustCompile(`.*upstream sent no valid.*header while reading response.*`),
-			re.MustCompile(`.*upstream sent invalid header.*`),
-			re.MustCompile(`.*upstream sent invalid chunked response.*`),
-			re.MustCompile(`.*upstream sent too big header while reading response header from upstream.*`),
-		},
-	}
-)
+var regularExpressionErrorMap = map[string][]*re.Regexp{
+	HttpRequestBufferedMetricName: {
+		re.MustCompile(`.*client request body is buffered.*`),
+	},
+	UpstreamResponseBufferedMetricName: {
+		re.MustCompile(`.*upstream response is buffered.*`),
+	},
+	UpstreamRequestFailedMetricName: {
+		re.MustCompile(`.*failed.*while connecting to upstream, client.*`),
+		re.MustCompile(`.*upstream timed out.*while connecting to upstream, client.*`),
+		re.MustCompile(`.*upstream queue is full while connecting to upstream.*`),
+		re.MustCompile(`.*no live upstreams while connecting to upstream, client.*`),
+		re.MustCompile(`.*upstream connection is closed too while sending request to upstream, client.*`),
+	},
+	UpstreamResponseFailedMetricName: {
+		re.MustCompile(`.*failed.*while reading upstream.*`),
+		re.MustCompile(`.*failed.*while reading response header from upstream, client.*`),
+		re.MustCompile(`.*upstream timed out.*while reading response header from upstream, client.*`),
+		re.MustCompile(`.*upstream buffer is too small to read response.*`),
+		re.MustCompile(`.*upstream prematurely closed connection while reading response header from upstream, client.*`),
+		re.MustCompile(`.*upstream sent no valid.*header while reading response.*`),
+		re.MustCompile(`.*upstream sent invalid header.*`),
+		re.MustCompile(`.*upstream sent invalid chunked response.*`),
+		re.MustCompile(`.*upstream sent too big header while reading response header from upstream.*`),
+	},
+}
 
 type NginxErrorLog struct {
 	baseDimensions *metrics.CommonDim
@@ -74,7 +73,8 @@ func NewNginxErrorLog(
 	namespace string,
 	binary core.NginxBinary,
 	nginxType string,
-	collectionInterval time.Duration) *NginxErrorLog {
+	collectionInterval time.Duration,
+) *NginxErrorLog {
 	log.Trace("Creating NewNginxErrorLog")
 	nginxErrorLog := &NginxErrorLog{
 		baseDimensions,

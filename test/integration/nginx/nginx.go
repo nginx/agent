@@ -34,7 +34,7 @@ func NewNginxCommand(conf *NginxConf) (*NginxCommand, error) {
 	}
 	logrus.Debugf("Generating config: %s", string(cfg))
 
-	err = os.WriteFile(ConfigFile, []byte(cfg), 0666)
+	err = os.WriteFile(ConfigFile, []byte(cfg), 0o666)
 	if err != nil {
 		return nil, fmt.Errorf("config write failed: %w", err)
 	}

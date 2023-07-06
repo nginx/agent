@@ -25,8 +25,10 @@ import (
 
 const nanoSecondsPerSecond = 1e9
 
-var CpuStatsPath = "/proc/stat"
-var GetNumberOfCores = runtime.NumCPU
+var (
+	CpuStatsPath     = "/proc/stat"
+	GetNumberOfCores = runtime.NumCPU
+)
 
 type DockerCpuTimes struct {
 	userUsage          float64
@@ -86,7 +88,6 @@ func (cgroupCPU *CgroupCPU) Percentages() (DockerCpuPercentages, error) {
 	}
 
 	hostSystemCpuUsage, err := getSystemCPUUsage(cgroupCPU.clockTicks)
-
 	if err != nil {
 		return DockerCpuPercentages{}, err
 	}

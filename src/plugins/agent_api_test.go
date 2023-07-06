@@ -14,19 +14,18 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"io"
 	"io/fs"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
-	"time"
-
 	"os"
 	"os/exec"
-
+	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/nginx/agent/v2/src/core/metrics"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/nginx/agent/sdk/v2/backoff"
@@ -39,9 +38,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	nginxConfigContent = tutils.GetDetailsNginxOssConfig()
-)
+var nginxConfigContent = tutils.GetDetailsNginxOssConfig()
 
 func TestAgentAPI_Info(t *testing.T) {
 	agentAPI := AgentAPI{}
@@ -317,7 +314,6 @@ func TestNginxHandler_updateConfig(t *testing.T) {
 				assert.Equal(t, tt.expectedMessage, result.NginxInstances[0].Message)
 				assert.Equal(t, tt.expectedStatus, result.NginxInstances[0].Status)
 			}
-
 		})
 	}
 }
@@ -469,7 +465,6 @@ func TestMtls_forApi(t *testing.T) {
 				url = fmt.Sprintf("https://127.0.0.1:%d/nginx", tt.conf.AgentAPI.Port)
 			} else {
 				url = fmt.Sprintf("http://localhost:%d/nginx", tt.conf.AgentAPI.Port)
-
 			}
 			client := resty.New()
 
@@ -541,7 +536,6 @@ func getConfig(t *testing.T) *tls.Config {
 	cert, err := tls.X509KeyPair(crt, key)
 	if err != nil {
 		assert.Fail(t, "error reading cert")
-
 	}
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},

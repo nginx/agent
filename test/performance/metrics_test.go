@@ -3,7 +3,11 @@ package performance
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
+	"sync"
+	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/google/uuid"
@@ -21,10 +25,6 @@ import (
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
-	"net"
-	"sync"
-	"testing"
-	"time"
 )
 
 var (
@@ -63,14 +63,16 @@ func NewMetricsServer() *MetricsServer {
 	}
 }
 
-type metricHandlerFunc func(proto.MetricsService_StreamServer, *sync.WaitGroup)
-type eventReportHandlerFunc func(proto.MetricsService_StreamEventsServer, *sync.WaitGroup)
-type metricHandler struct {
-	msgCount               atomic.Int64
-	handleCount            atomic.Int64
-	metricHandlerFunc      metricHandlerFunc
-	eventReportHandlerFunc eventReportHandlerFunc
-}
+type (
+	metricHandlerFunc      func(proto.MetricsService_StreamServer, *sync.WaitGroup)
+	eventReportHandlerFunc func(proto.MetricsService_StreamEventsServer, *sync.WaitGroup)
+	metricHandler          struct {
+		msgCount               atomic.Int64
+		handleCount            atomic.Int64
+		metricHandlerFunc      metricHandlerFunc
+		eventReportHandlerFunc eventReportHandlerFunc
+	}
+)
 
 func (m *MetricsServer) Stream(stream proto.MetricsService_StreamServer) error {
 	wg := &sync.WaitGroup{}
@@ -337,5 +339,4 @@ func startNginxAgent(b *testing.B) {
 		defer mu.Unlock()
 		messagePipe.Run()
 	}()
-
 }

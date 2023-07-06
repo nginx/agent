@@ -130,11 +130,10 @@ func TestNAPInstalled(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-
 			// Create the fake files if required by test
 			if tc.createFiles {
 				for _, file := range tc.requiredFiles {
-					err := os.WriteFile(file, []byte("fake file for testing nginx-security"), 0644)
+					err := os.WriteFile(file, []byte("fake file for testing nginx-security"), 0o644)
 					assert.Nil(t, err)
 
 					defer func(f string) {
@@ -228,11 +227,10 @@ func TestNAPStatus(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-
 			// Create the fake files if required by test
 			if tc.createFiles {
 				for _, file := range tc.requiredFiles {
-					err := os.WriteFile(file, []byte("fake file for testing nginx-security"), 0644)
+					err := os.WriteFile(file, []byte("fake file for testing nginx-security"), 0o644)
 					assert.Nil(t, err)
 
 					defer func(f string) {
@@ -240,7 +238,6 @@ func TestNAPStatus(t *testing.T) {
 						assert.Nil(t, err)
 					}(file)
 				}
-
 			}
 
 			// Create fake process(es)

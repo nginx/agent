@@ -9,9 +9,10 @@ package sources
 
 import (
 	"context"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"sort"
 	"testing"
+
+	"github.com/nginx/agent/v2/src/core/metrics"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/assert"

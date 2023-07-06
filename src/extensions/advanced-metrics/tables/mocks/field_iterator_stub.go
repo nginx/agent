@@ -27,6 +27,7 @@ func (f *FieldIteratorStub) Next() []byte {
 	f.current++
 	return res
 }
+
 func (f *FieldIteratorStub) HasNext() bool {
 	return f.current < len(f.data)
 }

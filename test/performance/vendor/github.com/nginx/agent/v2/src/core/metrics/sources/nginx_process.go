@@ -26,7 +26,8 @@ type NginxProcess struct {
 // NewNginxProc collects metrics about nginx and nginx child processes
 func NewNginxProcess(baseDimensions *metrics.CommonDim,
 	namespace string,
-	binary core.NginxBinary) *NginxProcess {
+	binary core.NginxBinary,
+) *NginxProcess {
 	return &NginxProcess{
 		baseDimensions: baseDimensions,
 		namedMetric:    &namedMetric{namespace: namespace},

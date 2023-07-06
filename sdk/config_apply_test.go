@@ -75,24 +75,24 @@ func TestNewConfigApply(t *testing.T) {
 	require.NoError(t, os.Mkdir(rootDirectory, os.ModePerm))
 
 	rootFile1 := path.Join(rootDirectory, "root1.html")
-	require.NoError(t, os.WriteFile(rootFile1, []byte{}, 0644))
+	require.NoError(t, os.WriteFile(rootFile1, []byte{}, 0o644))
 
 	rootFile2 := path.Join(rootDirectory, "root2.html")
-	require.NoError(t, os.WriteFile(rootFile2, []byte{}, 0644))
+	require.NoError(t, os.WriteFile(rootFile2, []byte{}, 0o644))
 
 	rootFile3 := path.Join(rootDirectory, "root3.html")
-	require.NoError(t, os.WriteFile(rootFile3, []byte{}, 0644))
+	require.NoError(t, os.WriteFile(rootFile3, []byte{}, 0o644))
 
 	emptyConfFile := path.Join(tmpDir, "empty_nginx.conf")
-	require.NoError(t, os.WriteFile(emptyConfFile, []byte{}, 0644))
+	require.NoError(t, os.WriteFile(emptyConfFile, []byte{}, 0o644))
 
 	defaultConfFile := path.Join(tmpDir, "default_nginx.conf")
 	defaultConfFileContent := fmt.Sprintf(defaultConfFileContentsString, rootDirectory, rootDirectory)
-	require.NoError(t, os.WriteFile(defaultConfFile, []byte(defaultConfFileContent), 0644))
+	require.NoError(t, os.WriteFile(defaultConfFile, []byte(defaultConfFileContent), 0o644))
 
 	confFile := path.Join(tmpDir, "nginx.conf")
 	confFileContent := fmt.Sprintf(confFileContentsString, defaultConfFile)
-	require.NoError(t, os.WriteFile(confFile, []byte(confFileContent), 0644))
+	require.NoError(t, os.WriteFile(confFile, []byte(confFileContent), 0o644))
 
 	testCases := []struct {
 		name                string
@@ -182,7 +182,7 @@ func TestConfigApplyMarkAndSave(t *testing.T) {
 	unknownFileUnknownDir := path.Join(tmpDir, "/unknown/unknown.conf")
 	unknownFileUnknownNestedDirs := path.Join(tmpDir, "/unknown/nested/unknown.conf")
 
-	require.NoError(t, os.WriteFile(knownFile, []byte{}, 0644))
+	require.NoError(t, os.WriteFile(knownFile, []byte{}, 0o644))
 
 	writer, err := zip.NewWriter("/")
 	require.NoError(t, err)
@@ -254,21 +254,21 @@ func TestConfigApplyCompleteAndRollback(t *testing.T) {
 	require.NoError(t, os.Mkdir(rootDirectory, os.ModePerm))
 
 	rootFile1 := path.Join(rootDirectory, "root1.html")
-	require.NoError(t, os.WriteFile(rootFile1, []byte{}, 0644))
+	require.NoError(t, os.WriteFile(rootFile1, []byte{}, 0o644))
 
 	rootFile2 := path.Join(rootDirectory, "root2.html")
-	require.NoError(t, os.WriteFile(rootFile2, []byte{}, 0644))
+	require.NoError(t, os.WriteFile(rootFile2, []byte{}, 0o644))
 
 	rootFile3 := path.Join(rootDirectory, "root3.html")
-	require.NoError(t, os.WriteFile(rootFile3, []byte{}, 0644))
+	require.NoError(t, os.WriteFile(rootFile3, []byte{}, 0o644))
 
 	defaultConfFile := path.Join(tmpDir, "default_nginx.conf")
 	defaultConfFileContent := fmt.Sprintf(defaultConfFileContentsString, rootDirectory, rootDirectory)
-	require.NoError(t, os.WriteFile(defaultConfFile, []byte(defaultConfFileContent), 0644))
+	require.NoError(t, os.WriteFile(defaultConfFile, []byte(defaultConfFileContent), 0o644))
 
 	confFile := path.Join(tmpDir, "nginx.conf")
 	confFileContent := fmt.Sprintf(confFileContentsString, defaultConfFile)
-	require.NoError(t, os.WriteFile(confFile, []byte(confFileContent), 0644))
+	require.NoError(t, os.WriteFile(confFile, []byte(confFileContent), 0o644))
 
 	allowedDirectories := map[string]struct{}{tmpDir: {}}
 	ignoreDirectives := []string{}
@@ -284,7 +284,7 @@ func TestConfigApplyCompleteAndRollback(t *testing.T) {
 	// MarkAndSave an unknown file that does not exist, then create the file afterwards
 	unknownConfFile := path.Join(tmpDir, "unknown.conf")
 	assert.NoError(t, configApply.MarkAndSave(unknownConfFile))
-	assert.NoError(t, os.WriteFile(unknownConfFile, []byte{}, 0644))
+	assert.NoError(t, os.WriteFile(unknownConfFile, []byte{}, 0o644))
 
 	// Verify that only root files are deleted
 	assert.NoError(t, configApply.Complete())

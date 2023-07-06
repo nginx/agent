@@ -115,7 +115,7 @@ lint: ## Run linter
 	cd sdk && make lint
 
 format: ## Format code
-	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance && go fmt ./... && cd ../../test/integration && go fmt ./...
+	go run mvdan.cc/gofumpt -l -w .
 	buf format -w ./sdk/proto/
 
 install-tools: ## Install dependencies in tools.go using vendored version see https://www.jvt.me/posts/2023/06/19/go-install-from-mod/

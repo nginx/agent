@@ -37,7 +37,8 @@ type NginxWorker struct {
 func NewNginxWorker(baseDimensions *metrics.CommonDim,
 	namespace string,
 	binary core.NginxBinary,
-	collector NginxWorkerCollector) *NginxWorker {
+	collector NginxWorkerCollector,
+) *NginxWorker {
 	return &NginxWorker{
 		baseDimensions: baseDimensions,
 		namedMetric:    &namedMetric{namespace: namespace},

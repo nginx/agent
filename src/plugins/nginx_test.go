@@ -491,13 +491,13 @@ func TestNginxConfigApply(t *testing.T) {
 			tempConf, err := os.CreateTemp(dir, "nginx.conf")
 			assert.NoError(t, err)
 
-			err = os.WriteFile(tempConf.Name(), fourth, 0644)
+			err = os.WriteFile(tempConf.Name(), fourth, 0o644)
 			assert.NoError(t, err)
 
 			if (test.config.GetZaux() != &proto.ZippedFile{} && len(test.config.GetZaux().GetContents()) > 0) {
 				auxDir := t.TempDir()
 				auxMainFile := fmt.Sprintf("%s/app_protect_metadata.json", auxDir)
-				err := os.WriteFile(auxMainFile, wafMetaData1, 0644)
+				err := os.WriteFile(auxMainFile, wafMetaData1, 0o644)
 				assert.NoError(t, err)
 				auxPath = auxMainFile
 
@@ -507,7 +507,7 @@ func TestNginxConfigApply(t *testing.T) {
 				for _, directory := range test.config.GetDirectoryMap().GetDirectories() {
 					for _, file := range directory.GetFiles() {
 						reader := bytes.NewReader(file.GetContents())
-						err = writer.Add(fmt.Sprintf("%s/%s", directory.GetName(), file.GetName()), 0644, reader)
+						err = writer.Add(fmt.Sprintf("%s/%s", directory.GetName(), file.GetName()), 0o644, reader)
 						assert.NoError(t, err)
 					}
 				}
@@ -794,7 +794,6 @@ func TestNginx_validateConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-
 			env := tutils.GetMockEnvWithProcess()
 			binary := tutils.NewMockNginxBinary()
 			binary.On("ValidateConfig", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(test.validationResult)

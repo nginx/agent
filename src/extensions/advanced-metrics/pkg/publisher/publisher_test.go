@@ -74,7 +74,6 @@ func TestPublisher(t *testing.T) {
 				{
 					Dimensions: []Dimension{
 						{
-
 							Name:  "dim1",
 							Value: "dim1val2",
 						},
@@ -192,12 +191,10 @@ func TestPublisher(t *testing.T) {
 				{
 					Dimensions: []Dimension{
 						{
-
 							Name:  "dim1",
 							Value: "dim1val1",
 						},
 						{
-
 							Name:  "dim2",
 							Value: "dim2val2",
 						},
@@ -228,12 +225,10 @@ func TestPublisher(t *testing.T) {
 				{
 					Dimensions: []Dimension{
 						{
-
 							Name:  "dim1",
 							Value: "dim1val2",
 						},
 						{
-
 							Name:  "dim2",
 							Value: "dim2val2",
 						},
@@ -314,12 +309,10 @@ func TestPublisher(t *testing.T) {
 				{
 					Dimensions: []Dimension{
 						{
-
 							Name:  "dim1",
 							Value: "dim1val1",
 						},
 						{
-
 							Name:  "dim2",
 							Value: "dim2val2",
 						},
@@ -340,12 +333,10 @@ func TestPublisher(t *testing.T) {
 				{
 					Dimensions: []Dimension{
 						{
-
 							Name:  "dim1",
 							Value: "dim1val2",
 						},
 						{
-
 							Name:  "dim2",
 							Value: "dim2val2",
 						},
@@ -425,7 +416,6 @@ func TestPublisher(t *testing.T) {
 				{
 					Dimensions: []Dimension{
 						{
-
 							Name:  "dim2",
 							Value: "dim2val2",
 						},
@@ -458,7 +448,6 @@ func TestPublisher(t *testing.T) {
 			assert.NoError(t, err)
 			metrics := <-outChannel
 			assert.ElementsMatch(t, test.expectedMetrics, metrics)
-
 		})
 	}
 }

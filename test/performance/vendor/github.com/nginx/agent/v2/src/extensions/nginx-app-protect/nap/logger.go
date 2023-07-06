@@ -14,10 +14,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	// package logger
-	logger = logrus.New()
-)
+// package logger
+var logger = logrus.New()
 
 func init() {
 	// Initial logger values

@@ -27,9 +27,7 @@ type testObj struct {
 	expectedError   bool
 }
 
-var (
-	invocations = 0
-)
+var invocations = 0
 
 func TestBackOff(t *testing.T) {
 	t.Parallel()
@@ -102,5 +100,4 @@ func TestBackOff(t *testing.T) {
 			assert.NoErrorf(t, result, test.name)
 		}
 	}
-
 }

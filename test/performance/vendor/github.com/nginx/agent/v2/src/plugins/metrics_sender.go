@@ -79,7 +79,6 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			case *proto.MetricsReport:
 				message := client.MessageFromMetrics(report)
 				err := r.reporter.Send(r.ctx, message)
-
 				if err != nil {
 					log.Errorf("Failed to send MetricsReport: %v", err)
 				}

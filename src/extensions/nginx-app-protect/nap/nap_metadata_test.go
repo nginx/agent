@@ -145,10 +145,10 @@ func TestUpdateNapMetadata(t *testing.T) {
 
 			switch tc.testName {
 			case "NoMetadataDir":
-				err := os.MkdirAll(basePath, 0755)
+				err := os.MkdirAll(basePath, 0o755)
 				assert.NoError(t, err)
 			case "NoMetadataFile":
-				err := os.MkdirAll(metadataPath, 0755)
+				err := os.MkdirAll(metadataPath, 0o755)
 				assert.NoError(t, err)
 			default:
 				err := setUpFile(metadataFile, []byte(tc.meta))
@@ -184,11 +184,11 @@ func TestUpdateNapMetadata(t *testing.T) {
 }
 
 func setUpFile(file string, content []byte) error {
-	err := os.MkdirAll(filepath.Dir(file), 0755)
+	err := os.MkdirAll(filepath.Dir(file), 0o755)
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(file, content, 0644)
+	err = os.WriteFile(file, content, 0o644)
 	if err != nil {
 		return err
 	}

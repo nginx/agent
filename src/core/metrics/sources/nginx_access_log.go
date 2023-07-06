@@ -79,7 +79,8 @@ func NewNginxAccessLog(
 	namespace string,
 	binary core.NginxBinary,
 	nginxType string,
-	collectionInterval time.Duration) *NginxAccessLog {
+	collectionInterval time.Duration,
+) *NginxAccessLog {
 	log.Trace("Creating NginxAccessLog")
 
 	nginxAccessLog := &NginxAccessLog{
@@ -127,7 +128,6 @@ func (c *NginxAccessLog) Update(dimensions *metrics.CommonDim, collectorConf *me
 		// add, remove or update existing log trailers
 		c.syncLogs()
 	}
-
 }
 
 func (c *NginxAccessLog) recreateLogs() {
@@ -435,11 +435,9 @@ func calculateServerProtocol(protocol string, counters map[string]float64) {
 }
 
 func getParsedRequest(request string) (method string, uri string, protocol string) {
-
 	// Looking for capital letters, a space, anything, a space, capital letters, forward slash then anything.
 	// Example: DELETE nginx_status HTTP/1.1
 	regex, err := regexp.Compile(pattern)
-
 	if err != nil {
 		return
 	}
@@ -492,7 +490,6 @@ func getAverageMetricValue(metricValues []float64) float64 {
 }
 
 func (c *NginxAccessLog) calculateHttpStatus(status string, counter map[string]float64) {
-
 	if v, err := strconv.Atoi(status); err == nil {
 		n := fmt.Sprintf("status.%dxx", v/100)
 		counter[n] = counter[n] + 1
@@ -513,7 +510,6 @@ func (c *NginxAccessLog) calculateHttpStatus(status string, counter map[string]f
 }
 
 func calculateUpstreamCacheStatus(status string, counter map[string]float64) {
-
 	n := fmt.Sprintf("cache.%s", strings.ToLower(status))
 
 	switch status {
@@ -524,7 +520,6 @@ func calculateUpstreamCacheStatus(status string, counter map[string]float64) {
 }
 
 func calculateTimeMetricsMap(metricName string, times []float64, counter map[string]float64) {
-
 	timeMetrics := map[string]float64{
 		metricName:             0,
 		metricName + ".count":  0,
@@ -540,7 +535,6 @@ func calculateTimeMetricsMap(metricName string, times []float64, counter map[str
 		counter[metric] = metrics.GetTimeMetrics(times, metricType)
 
 	}
-
 }
 
 func isOtherMethod(method string) bool {

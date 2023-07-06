@@ -16,8 +16,10 @@ import (
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/schema"
 )
 
-type FieldOption = schema.FieldOption
-type DimensionTransformFunction = schema.DimensionTransformFunction
+type (
+	FieldOption                = schema.FieldOption
+	DimensionTransformFunction = schema.DimensionTransformFunction
+)
 
 // WithTransformFunction defines pair of function which transform dimension raw value
 // from []byte to LookupCode and from LookupCode to string when dimension value will be published

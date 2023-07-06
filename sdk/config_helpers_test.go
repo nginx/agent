@@ -749,12 +749,12 @@ func TestGetStatusApiInfo(t *testing.T) {
 			splitUrl := strings.Split(server.URL, "//")[1]
 
 			output := bytes.Replace(input, []byte("127.0.0.1:80"), []byte(splitUrl), -1)
-			assert.NoError(t, os.WriteFile(test.fileName, output, 0664))
+			assert.NoError(t, os.WriteFile(test.fileName, output, 0o664))
 
 			ignoreDirectives := []string{}
 			result, err := GetStatusApiInfoWithIgnoreDirectives(test.fileName, ignoreDirectives)
 
-			//Update port in expected plusApi with the port of the mock server
+			// Update port in expected plusApi with the port of the mock server
 			test.plusApi = strings.Replace(test.plusApi, ":80", ":"+strings.Split(splitUrl, ":")[1], 1)
 
 			assert.Equal(t, test.plusApi, result)
@@ -1123,14 +1123,14 @@ func TestGetErrorLogs(t *testing.T) {
 func setUpDirectories() error {
 	tearDownDirectories()
 	for _, dir := range directories {
-		err := os.MkdirAll(dir, 0755)
+		err := os.MkdirAll(dir, 0o755)
 		if err != nil {
 			return err
 		}
 	}
 
 	for _, file := range files {
-		err := os.WriteFile(file, []byte{}, 0644)
+		err := os.WriteFile(file, []byte{}, 0o644)
 		if err != nil {
 			return err
 		}
@@ -1157,11 +1157,11 @@ func setUpFiles() error {
 }
 
 func setUpFile(file string, content []byte) error {
-	err := os.MkdirAll(filepath.Dir(file), 0755)
+	err := os.MkdirAll(filepath.Dir(file), 0o755)
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(file, content, 0644)
+	err = os.WriteFile(file, content, 0o644)
 	if err != nil {
 		return err
 	}
@@ -1300,7 +1300,7 @@ root foo/bar;`,
 }
 
 func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
-	var myTests = []struct {
+	myTests := []struct {
 		fileName         string
 		content          string
 		allowDir         string
@@ -1414,7 +1414,7 @@ func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
 }
 
 func TestAddAuxfileToNginxConfig(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		fileName         string
 		content          string
 		allowDir         string

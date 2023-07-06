@@ -222,7 +222,7 @@ func TestGetNginxInfoFromBuffer(t *testing.T) {
 		},
 	}
 
-	err := os.Mkdir("/tmp/modules", 0700)
+	err := os.Mkdir("/tmp/modules", 0o700)
 	assert.NoError(t, err)
 
 	tempDir := t.TempDir()
@@ -446,14 +446,14 @@ func TestWriteConfig(t *testing.T) {
 	}
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "nginx.conf"),
-		[]byte(fmt.Sprintf(CONF_TEMPLATE, tmpDir)), 0755); err != nil {
+		[]byte(fmt.Sprintf(CONF_TEMPLATE, tmpDir)), 0o755); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
-	if err := os.Mkdir(tmpDir+"/aux/", 0755); err != nil {
+	if err := os.Mkdir(tmpDir+"/aux/", 0o755); err != nil {
 		t.Fatalf("failed to create aux directory: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test2.html"), []byte("<html><html>"), 0755); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test2.html"), []byte("<html><html>"), 0o755); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
@@ -516,18 +516,18 @@ func TestWriteConfigWithFileAction(t *testing.T) {
 	}
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "nginx.conf"),
-		[]byte(fmt.Sprintf(CONF_TEMPLATE, tmpDir)), 0755); err != nil {
+		[]byte(fmt.Sprintf(CONF_TEMPLATE, tmpDir)), 0o755); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
-	if err := os.Mkdir(filepath.Join(tmpDir, "aux"), 0755); err != nil {
+	if err := os.Mkdir(filepath.Join(tmpDir, "aux"), 0o755); err != nil {
 		t.Fatalf("failed to create aux directory: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test2.html"), []byte("<html><html>"), 0755); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test2.html"), []byte("<html><html>"), 0o755); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
-	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test3.html"), []byte("<html><html>"), 0755); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test3.html"), []byte("<html><html>"), 0o755); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
@@ -613,14 +613,14 @@ func TestWriteConfigWithFileActionDeleteWithPermError(t *testing.T) {
 	}
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "nginx.conf"),
-		[]byte(fmt.Sprintf(CONF_TEMPLATE, tmpDir)), 0755); err != nil {
+		[]byte(fmt.Sprintf(CONF_TEMPLATE, tmpDir)), 0o755); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
-	if err := os.Mkdir(filepath.Join(tmpDir, "aux"), 0755); err != nil {
+	if err := os.Mkdir(filepath.Join(tmpDir, "aux"), 0o755); err != nil {
 		t.Fatalf("failed to create aux directory: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test2.html"), []byte("<html><html>"), 0755); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "/aux/test2.html"), []byte("<html><html>"), 0o755); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
@@ -658,10 +658,10 @@ func TestWriteConfigWithFileActionDeleteWithPermError(t *testing.T) {
 	nginxConfig.DirectoryMap.Directories = append(nginxConfig.DirectoryMap.Directories, modDir)
 
 	permFile := filepath.Join(tmpDir, "test3.html")
-	if err = os.WriteFile(permFile, []byte("<html><html>"), 0755); err != nil {
+	if err = os.WriteFile(permFile, []byte("<html><html>"), 0o755); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
-	require.NoError(t, os.Chmod(permFile, 0000))
+	require.NoError(t, os.Chmod(permFile, 0o000))
 
 	ca, err := n.WriteConfig(nginxConfig)
 	// Verify configApply
@@ -853,7 +853,7 @@ func TestDeepCopyWithNewPath(t *testing.T) {
 
 func buildConfig(rootDirectory string) (*proto.NginxConfig, error) {
 	nginxConfig := &proto.NginxConfig{}
-	defaultFileMode := fs.FileMode(0644)
+	defaultFileMode := fs.FileMode(0o644)
 
 	// Add config file
 	configWriter, err := zip.NewWriter("testconfig")

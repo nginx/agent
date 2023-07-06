@@ -55,7 +55,7 @@ func main() {
 	commandService := services.NewCommandService()
 	sdkProto.RegisterCommanderServer(grpcServer, commandService)
 
-	//Serve gRPC Server
+	// Serve gRPC Server
 	log.Println("http listening")
 	log.Println("gRPC listening")
 

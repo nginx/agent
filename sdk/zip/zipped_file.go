@@ -24,12 +24,10 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 )
 
-var (
-	ErrFlushed = errors.New("zipped file: already flushed")
-)
+var ErrFlushed = errors.New("zipped file: already flushed")
 
 const (
-	DefaultFileMode = 0644
+	DefaultFileMode = 0o644
 )
 
 // Writer is a helper for building the proto ZippedFile for sending with multiple file contents.

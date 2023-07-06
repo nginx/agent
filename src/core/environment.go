@@ -83,12 +83,14 @@ type Process struct {
 	Command    string
 }
 
-const lengthOfContainerId = 64
-const versionId = "VERSION_ID"
-const version = "VERSION"
-const codeName = "VERSION_CODENAME"
-const id = "ID"
-const name = "NAME"
+const (
+	lengthOfContainerId = 64
+	versionId           = "VERSION_ID"
+	version             = "VERSION"
+	codeName            = "VERSION_CODENAME"
+	id                  = "ID"
+	name                = "NAME"
+)
 
 var (
 	virtualizationFunc             = host.Virtualization
@@ -453,7 +455,7 @@ func writeFile(backup ConfigApplyMarker, file *proto.File, confPath string) erro
 	_, err := os.Stat(directory)
 	if os.IsNotExist(err) {
 		log.Debugf("Creating directory %s with permissions 755", directory)
-		err = os.MkdirAll(directory, 0755)
+		err = os.MkdirAll(directory, 0o755)
 		if err != nil {
 			return err
 		}
@@ -660,8 +662,7 @@ type Shell interface {
 	Exec(cmd string, arg ...string) ([]byte, error)
 }
 
-type execShellCommand struct {
-}
+type execShellCommand struct{}
 
 func (e execShellCommand) Exec(cmd string, arg ...string) ([]byte, error) {
 	execCmd := exec.Command(cmd, arg...)
@@ -786,8 +787,8 @@ func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {
 }
 
 func mergeHostAndOsReleaseInfo(hostReleaseInfo *proto.ReleaseInfo,
-	osReleaseInfo map[string]string) (release *proto.ReleaseInfo) {
-
+	osReleaseInfo map[string]string,
+) (release *proto.ReleaseInfo) {
 	// override os-release info with host info,
 	// if os-release info is empty.
 	if len(osReleaseInfo[versionId]) == 0 {

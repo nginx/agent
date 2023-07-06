@@ -21,9 +21,7 @@ const (
 	testUnsupportedVersion = "0.1.2"
 )
 
-var (
-	testUnmappedBuildRelease = ReleaseUnmappedBuild(testUnsupportedVersion)
-)
+var testUnmappedBuildRelease = ReleaseUnmappedBuild(testUnsupportedVersion)
 
 func TestInstalledNAPBuildVersion(t *testing.T) {
 	testCases := []struct {
@@ -51,10 +49,9 @@ func TestInstalledNAPBuildVersion(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-
 			// Create a fake version file if required by test
 			if tc.version != "" {
-				err := os.WriteFile(tc.versionFile, []byte(tc.version), 0644)
+				err := os.WriteFile(tc.versionFile, []byte(tc.version), 0o644)
 				assert.Nil(t, err)
 
 				defer func() {
@@ -77,6 +74,7 @@ func buildFromPTR(v string) *NAPRelease {
 	version := ReleaseUnmappedBuild(v)
 	return &version
 }
+
 func TestInstalledNAPRelease(t *testing.T) {
 	testCases := []struct {
 		testName          string
@@ -110,10 +108,9 @@ func TestInstalledNAPRelease(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-
 			// Create a fake version file if required by test
 			if tc.version != "" {
-				err := os.WriteFile(tc.versionFile, []byte(tc.version), 0644)
+				err := os.WriteFile(tc.versionFile, []byte(tc.version), 0o644)
 				assert.Nil(t, err)
 
 				defer func() {
