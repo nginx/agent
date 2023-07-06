@@ -87,7 +87,12 @@ func (r *ConfigReader) Subscriptions() []string {
 func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) {
 	if payloadAgentConfig != nil && payloadAgentConfig.Details != nil {
 
-		onDiskAgentConfig, _ := config.GetConfig(r.config.ClientID)
+		onDiskAgentConfig, err := config.GetConfig(r.config.ClientID)
+		if err != nil {
+			log.Errorf("Failed to update Agent config - %v", err)
+			return
+		}
+
 		synchronizeFeatures := false
 		synchronizeTags := false
 

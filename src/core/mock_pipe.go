@@ -59,7 +59,6 @@ func (p *MockMessagePipe) Register(size int, plugins []Plugin, extensionPlugins 
 }
 
 func (p *MockMessagePipe) DeRegister(pluginNames []string) error {
-
 	var plugins []Plugin
 	for _, name := range pluginNames {
 		for _, plugin := range p.plugins {

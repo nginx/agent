@@ -14,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
@@ -107,7 +108,8 @@ func (r *MetricsSender) Process(msg *core.Message) {
 
 func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
 	log.Debugf("update metric reporter client configuration to %+v", agentConfig)
-	r.reporter.WithProtoBackoffSettings(agentConfig.Details.Server.GetBackoff())
+	backOffSettings := sdk.ConvertBackOffSettings(agentConfig.Details.Server.GetBackoff())
+	r.reporter.WithBackoffSettings(backOffSettings)
 }
 
 func (r *MetricsSender) Subscriptions() []string {

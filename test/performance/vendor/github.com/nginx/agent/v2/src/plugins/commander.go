@@ -11,6 +11,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -88,8 +89,8 @@ func (c *Commander) Process(msg *core.Message) {
 
 func (c *Commander) agentBackoff(agentConfig *proto.AgentConfig) {
 	log.Debugf("update commander client configuration to %+v", agentConfig)
-	c.cmdr.WithProtoBackoffSettings(agentConfig.GetDetails().GetServer().GetBackoff())
-
+	backOffSettings := sdk.ConvertBackOffSettings(agentConfig.Details.Server.GetBackoff())
+	c.cmdr.WithBackoffSettings(backOffSettings)
 }
 
 func (c *Commander) agentRegistered(cmd *proto.Command) {

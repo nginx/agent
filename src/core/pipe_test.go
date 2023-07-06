@@ -82,6 +82,7 @@ func TestPipe_DeRegister(t *testing.T) {
 	plugin.On("Close").Times(1)
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	messagePipe := SetupMockMessagePipe(t, ctx, []Plugin{plugin}, []ExtensionPlugin{})
 
@@ -91,7 +92,6 @@ func TestPipe_DeRegister(t *testing.T) {
 
 	assert.Equal(t, 0, len(messagePipe.GetPlugins()))
 
-	cancel()
 }
 
 func TestPipe_IsPluginAlreadyRegistered(t *testing.T) {
@@ -117,5 +117,4 @@ func TestPipe_IsPluginAlreadyRegistered(t *testing.T) {
 
 	assert.True(t, messagePipe.IsPluginAlreadyRegistered(*plugin.Info().name))
 	assert.False(t, messagePipe.IsPluginAlreadyRegistered("metrics"))
-
 }
