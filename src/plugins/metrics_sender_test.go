@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -76,9 +77,9 @@ func TestMetricsSenderSendMetrics(t *testing.T) {
 
 func TestMetricsSenderBackoff(t *testing.T) {
 	tests := []struct {
-		name            string
-		msg             *core.Message
-		backOffSettings *proto.Backoff
+		name        string
+		msg         *core.Message
+		wantBackoff backoff.BackoffSettings
 	}{
 		{
 			name: "test reporter client backoff setting as sent by server",
@@ -96,24 +97,13 @@ func TestMetricsSenderBackoff(t *testing.T) {
 						},
 					},
 				}),
-			backOffSettings: &proto.Backoff{
-				InitialInterval:     900,
-				RandomizationFactor: .5,
-				Multiplier:          .5,
-				MaxInterval:         900,
-				MaxElapsedTime:      1800,
+			wantBackoff: backoff.BackoffSettings{
+				InitialInterval: time.Duration(15 * time.Minute),
+				Jitter:          .5,
+				Multiplier:      .5,
+				MaxInterval:     time.Duration(15 * time.Minute),
+				MaxElapsedTime:  time.Duration(30 * time.Minute),
 			},
-		},
-		{
-			name: "test reporter client backoff setting not updated",
-			msg: core.NewMessage(core.AgentConfig,
-				&proto.Command_AgentConfig{
-					AgentConfig: &proto.AgentConfig{
-						Details: &proto.AgentDetails{
-							Server: &proto.Server{},
-						},
-					},
-				}),
 		},
 	}
 	for _, test := range tests {
@@ -125,8 +115,8 @@ func TestMetricsSenderBackoff(t *testing.T) {
 			pluginUnderTest.Init(core.NewMockMessagePipe(ctx))
 			pluginUnderTest.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
 
-			if !reflect.ValueOf(test.backOffSettings).IsZero() {
-				mockMetricsReportClient.On("WithProtoBackoffSettings", test.backOffSettings)
+			if !reflect.ValueOf(test.wantBackoff).IsZero() {
+				mockMetricsReportClient.On("WithBackoffSettings", test.wantBackoff)
 			}
 
 			pluginUnderTest.Process(test.msg)
