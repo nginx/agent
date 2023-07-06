@@ -37,12 +37,14 @@ func TestNetIOCollect(t *testing.T) {
 	nioSource.netIOCountersFunc = func(ctx context.Context, pernic bool) ([]net.IOCountersStat, error) {
 		return []net.IOCountersStat{
 			{Name: "eth0"},
+			{Name: "lo"},
 		}, nil
 	}
 	nioSource.netIOInterfacesFunc = func(ctx context.Context) (net.InterfaceStatList, error) {
 		return net.InterfaceStatList{
 			{Name: "eth0", Flags: []string{"up"}},
 			{Name: "eth1", Flags: []string{"down"}},
+			{Name: "lo", Flags: []string{"up"}},
 		}, nil
 	}
 
@@ -72,5 +74,8 @@ func TestNetIOCollect(t *testing.T) {
 		"test.net.packets_out.error",
 	}
 
+	assert.Contains(t, nioSource.netIOStats, "lo")
+	assert.Contains(t, nioSource.netIOStats, "eth0")
+	assert.NotContains(t, nioSource.netIOStats, "eth1")
 	assert.Equal(t, expected, actualMetricNames)
 }

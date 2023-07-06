@@ -10,7 +10,6 @@ package sources
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -123,7 +122,7 @@ func (nio *NetIO) newNetInterfaces(ctx context.Context) (map[string]map[string]f
 	}
 
 	for _, interf := range interfaces {
-		if isUp(interf.Flags) && !strings.HasPrefix(interf.Name, "lo") {
+		if isUp(interf.Flags) {
 			for _, netio := range counters {
 				if netio.Name == interf.Name {
 					vvs := map[string]float64{
