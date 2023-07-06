@@ -153,6 +153,7 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
 
 	} else {
+		log.Debug("Failed to update Agent config")
 		payloadAgentConfig = &proto.AgentConfig{
 			Details: &proto.AgentDetails{
 				Server: &proto.Server{
