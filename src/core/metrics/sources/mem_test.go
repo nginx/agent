@@ -9,10 +9,11 @@ package sources
 
 import (
 	"context"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"sort"
 	"sync"
 	"testing"
+
+	"github.com/nginx/agent/v2/src/core/metrics"
 
 	cgroup "github.com/nginx/agent/v2/src/core/metrics/sources/cgroup"
 	tutils "github.com/nginx/agent/v2/test/utils"

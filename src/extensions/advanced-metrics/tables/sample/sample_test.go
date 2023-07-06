@@ -13,8 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const keySize = 10
-const metricsSize = 10
+const (
+	keySize     = 10
+	metricsSize = 10
+)
 
 func TestNewSample(t *testing.T) {
 	sample := NewSample(keySize, metricsSize)

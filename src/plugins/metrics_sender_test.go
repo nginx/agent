@@ -39,7 +39,6 @@ func TestMetricsSenderSendMetrics(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(_ *testing.T) {
-
 			ctx := context.TODO()
 			mockMetricsReportClient := tutils.NewMockMetricsReportClient()
 			mockMetricsReportClient.Mock.On("Send", ctx, mock.Anything).Return(test.err)

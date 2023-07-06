@@ -74,7 +74,6 @@ func GetNetOverflow() (float64, error) {
 func getNetOverflowCmd(cmd string, flags string, pattern *regexp.Regexp, overflows float64) (float64, error) {
 	netstatCmd := exec.Command(cmd, flags)
 	outbuf, err := netstatCmd.CombinedOutput()
-
 	if err != nil {
 		errMsg := fmt.Sprintf("%s not available: %v", cmd, err)
 		log.Debug(errMsg)
@@ -87,7 +86,6 @@ func getNetOverflowCmd(cmd string, flags string, pattern *regexp.Regexp, overflo
 		line := scanner.Text()
 		if pattern.MatchString(line) {
 			matches = append(matches, line)
-
 		}
 	}
 	so := strings.Join(matches, "\n")

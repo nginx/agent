@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-//go:generate enumer -type=MsgClassification -text -yaml -json -transform=snake -trimprefix=MsgClassification
-
 package client
 
 import (
@@ -28,15 +26,13 @@ const (
 	MsgClassificationEvent
 )
 
-var (
-	DefaultBackoffSettings = backoff.BackoffSettings{
-		InitialInterval: 10 * time.Second,
-		MaxInterval:     60 * time.Second,
-		MaxElapsedTime:  2 * time.Minute,
-		Jitter:          backoff.BACKOFF_JITTER,
-		Multiplier:      backoff.BACKOFF_MULTIPLIER,
-	}
-)
+var DefaultBackoffSettings = backoff.BackoffSettings{
+	InitialInterval: 10 * time.Second,
+	MaxInterval:     60 * time.Second,
+	MaxElapsedTime:  2 * time.Minute,
+	Jitter:          backoff.BACKOFF_JITTER,
+	Multiplier:      backoff.BACKOFF_MULTIPLIER,
+}
 
 type (
 	MsgType interface {

@@ -49,7 +49,7 @@ func TestWriter(t *testing.T) {
 		{
 			prefix: "/root",
 			files: []fileDef{
-				{"foo", 0600, []byte("foo")},
+				{"foo", 0o600, []byte("foo")},
 			},
 		},
 		{ // flushed, so should not able to add file
@@ -59,7 +59,7 @@ func TestWriter(t *testing.T) {
 			},
 			fileErr: true,
 			files: []fileDef{
-				{"foo", 0600, []byte("foo")},
+				{"foo", 0o600, []byte("foo")},
 			},
 		},
 	} {
@@ -158,7 +158,7 @@ func TestReader(t *testing.T) {
 			[]fileDef{
 				{
 					name:    "foo",
-					mode:    0600,
+					mode:    0o600,
 					content: []byte("bar"),
 				},
 			},
@@ -167,7 +167,7 @@ func TestReader(t *testing.T) {
 			[]fileDef{
 				{
 					name: "nginx.conf",
-					mode: 0600,
+					mode: 0o600,
 					content: []byte(`
 					worker_processes  2;
 					user              www-data;
@@ -214,7 +214,7 @@ func TestUnPack(t *testing.T) {
 			[]fileDef{
 				{
 					name: "nginx.conf",
-					mode: 0600,
+					mode: 0o600,
 					content: []byte(`
 					worker_processes  2;
 					user              www-data;

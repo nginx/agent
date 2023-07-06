@@ -127,5 +127,4 @@ func TestLookupShouldFailOnUnknowCode(t *testing.T) {
 
 	_, err := lookup.LookupCode(lookupAggrCode + 1)
 	assert.Error(t, err)
-
 }

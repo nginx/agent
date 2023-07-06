@@ -26,8 +26,10 @@ func (u *HttpTestUpstream) AsUpstream() conf.Upstream {
 	}
 }
 
-type LocationsMarkers = map[string]map[string]string
-type LocationsDirectives = map[string][]string
+type (
+	LocationsMarkers    = map[string]map[string]string
+	LocationsDirectives = map[string][]string
+)
 
 func (u *HttpTestUpstream) AsServer(address string, serverMarkers map[string]string, locationsMarkers LocationsMarkers, locationsDirectives LocationsDirectives) conf.Server {
 	return conf.Server{

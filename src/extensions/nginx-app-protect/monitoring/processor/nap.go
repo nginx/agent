@@ -12,10 +12,11 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"golang.org/x/text/language"
 	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/text/language"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/sirupsen/logrus"

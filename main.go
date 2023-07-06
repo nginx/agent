@@ -137,8 +137,10 @@ func handleSignals(
 				log.Errorf("Error sending AgentStopped event to command channel: %v", err)
 			}
 
-			if err := controller.Close(); err != nil {
-				log.Errorf("Unable to close controller: %v", err)
+			if controller != nil {
+				if err := controller.Close(); err != nil {
+					log.Warnf("Unable to close controller: %v", err)
+				}
 			}
 
 			log.Warn("NGINX Agent exiting")

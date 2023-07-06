@@ -223,7 +223,8 @@ func (grpcService *CommandGrpcService) sendAgentConnectResponse(cmd *proto.Comma
 					StatusCode: proto.AgentConnectStatus_CONNECT_OK,
 					Message:    "Connected",
 				},
-			}},
+			},
+		},
 		Meta: grpc.NewMessageMeta(cmd.Meta.MessageId),
 		Type: proto.Command_NORMAL,
 	}

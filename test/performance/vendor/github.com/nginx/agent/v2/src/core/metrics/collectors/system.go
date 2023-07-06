@@ -17,9 +17,7 @@ import (
 	"github.com/nginx/agent/v2/src/core/metrics/sources"
 )
 
-var (
-	_ metrics.Collector = (*SystemCollector)(nil)
-)
+var _ metrics.Collector = (*SystemCollector)(nil)
 
 type SystemCollector struct {
 	sources []metrics.Source

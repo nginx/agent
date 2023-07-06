@@ -11,8 +11,10 @@ import (
 	"github.com/nginxinc/nginx-go-crossplane"
 )
 
-type CrossplaneTraverseCallback = func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error)
-type CrossplaneTraverseCallbackStr = func(parent *crossplane.Directive, current *crossplane.Directive) string
+type (
+	CrossplaneTraverseCallback    = func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error)
+	CrossplaneTraverseCallbackStr = func(parent *crossplane.Directive, current *crossplane.Directive) string
+)
 
 func traverse(root *crossplane.Directive, callback CrossplaneTraverseCallback, stop *bool) error {
 	if *stop {

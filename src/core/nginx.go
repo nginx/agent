@@ -334,7 +334,7 @@ func hasConfPath(files []*proto.File, confPath string) bool {
 
 func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error) {
 	if log.IsLevelEnabled(log.TraceLevel) {
-		var loggedConfig = *config
+		loggedConfig := *config
 		loggedConfig.Zaux = &proto.ZippedFile{}
 		jsonConfig, err := json.Marshal(loggedConfig)
 		if err == nil {
@@ -810,7 +810,7 @@ func runtimeFromConfigure(configure []string) []string {
 
 // AccessLogs returns a list of access logs in the config
 func AccessLogs(p *proto.NginxConfig) map[string]string {
-	var found = make(map[string]string)
+	found := make(map[string]string)
 	for _, accessLog := range p.GetAccessLogs().GetAccessLog() {
 		if isIgnorableLogType(accessLog.GetName()) {
 			continue
@@ -830,7 +830,7 @@ func AccessLogs(p *proto.NginxConfig) map[string]string {
 
 // ErrorLogs returns a list of error logs in the config
 func ErrorLogs(p *proto.NginxConfig) map[string]string {
-	var found = make(map[string]string)
+	found := make(map[string]string)
 
 	for _, errorLog := range p.GetErrorLogs().GetErrorLog() {
 		if isIgnorableLogType(errorLog.GetName()) {
@@ -882,8 +882,8 @@ func getDirectoryMapDiff(currentDirectoryMap []*proto.Directory, incomingDirecto
 // Parses the specified log name and returns true if the log name cannot
 // be used for metrics collection
 func isIgnorableLogType(logName string) bool {
-	var name = strings.ToLower(logName)
-	var isIgnorableName = name == "off" || name == "/dev/stderr" || name == "/dev/stdout" || name == "/dev/null"
-	var isSyslog = strings.HasPrefix(name, "syslog:")
+	name := strings.ToLower(logName)
+	isIgnorableName := name == "off" || name == "/dev/stderr" || name == "/dev/stdout" || name == "/dev/null"
+	isSyslog := strings.HasPrefix(name, "syslog:")
 	return isIgnorableName || isSyslog
 }

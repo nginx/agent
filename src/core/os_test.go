@@ -48,7 +48,7 @@ func TestFileExists(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Create the fake file if required by test
 			if tc.createFile {
-				err := os.WriteFile(tc.fileToCheck, []byte("fake file for testing nginx-security"), 0644)
+				err := os.WriteFile(tc.fileToCheck, []byte("fake file for testing nginx-security"), 0o644)
 				assert.Nil(t, err)
 
 				defer func(f string) {
@@ -57,7 +57,7 @@ func TestFileExists(t *testing.T) {
 				}(tc.fileToCheck)
 			}
 
-			//Check if file exists
+			// Check if file exists
 			exists, err := FileExists(tc.fileToCheck)
 			assert.Equal(t, tc.expError, err)
 			assert.Equal(t, tc.expFileFound, exists)
@@ -102,7 +102,7 @@ func TestFilesExists(t *testing.T) {
 			// Create the fake files if required by test
 			if tc.createFiles {
 				for _, file := range tc.filesToCheck {
-					err := os.WriteFile(file, []byte("fake file for testing nginx-security"), 0644)
+					err := os.WriteFile(file, []byte("fake file for testing nginx-security"), 0o644)
 					assert.Nil(t, err)
 
 					defer func(f string) {
@@ -112,7 +112,7 @@ func TestFilesExists(t *testing.T) {
 				}
 			}
 
-			//Check if file exists
+			// Check if file exists
 			exists, err := FilesExists(tc.filesToCheck)
 			assert.Equal(t, tc.expError, err)
 			assert.Equal(t, tc.expFileFound, exists)

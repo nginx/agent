@@ -51,9 +51,7 @@ const (
 `
 )
 
-var (
-	Viper = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
-)
+var Viper = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
 
 func SetVersion(version, commit string) {
 	ROOT_COMMAND.Version = version + "-" + commit
@@ -387,7 +385,7 @@ func LoadPropertiesFromFile(cfg string) error {
 		dynCfg.Close()
 
 		if featuresAreSet {
-			err = os.WriteFile(dynamicCfgPath, cleanDynCfgContent, 0644)
+			err = os.WriteFile(dynamicCfgPath, cleanDynCfgContent, 0o644)
 			if err != nil {
 				return fmt.Errorf("error attempting to update dynamic config (%s): %v", dynamicCfgPath, err)
 			}
@@ -396,12 +394,12 @@ func LoadPropertiesFromFile(cfg string) error {
 		}
 	} else if errors.Is(err, fs.ErrNotExist) {
 		log.Infof("Writing the following file to disk: %s", dynamicCfgPath)
-		err = os.MkdirAll(dynamicCfgDir, 0755)
+		err = os.MkdirAll(dynamicCfgDir, 0o755)
 		if err != nil {
 			return fmt.Errorf("error attempting to create directory for dynamic config (%s): %v", dynamicCfgDir, err)
 		}
 
-		err = os.WriteFile(dynamicCfgPath, []byte(dynamicConfigUsageComment), 0644)
+		err = os.WriteFile(dynamicCfgPath, []byte(dynamicConfigUsageComment), 0o644)
 		if err != nil {
 			return fmt.Errorf("error attempting to create dynamic config (%s): %v", dynamicCfgPath, err)
 		}

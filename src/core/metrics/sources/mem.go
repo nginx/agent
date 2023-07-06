@@ -28,7 +28,7 @@ type VirtualMemory struct {
 }
 
 func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemory {
-	var statFunc = mem.VirtualMemory
+	statFunc := mem.VirtualMemory
 
 	if env.IsContainer() {
 		cgroupMemSource := cgroup.NewCgroupMemSource(cgroup.CgroupBasePath)

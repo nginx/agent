@@ -41,7 +41,6 @@ func TestSamplesAdd(t *testing.T) {
 	)}
 
 	assert.ElementsMatch(t, expectedSamples, samples)
-
 }
 
 func TestSamplesAddMultipleSamples(t *testing.T) {
@@ -141,7 +140,6 @@ func TestSamplesAddShouldUpdateExistingMetric(t *testing.T) {
 }
 
 func TestSamplesAddThreadSafe(t *testing.T) {
-
 	const repetitions = 100
 	key := []byte{0x1}
 	metricValue := float64(111)

@@ -11,7 +11,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # | OS_RELEASE       | OS_VERSION                    | NOTES                                                          |
 # | ---------------- | ----------------------------- | -------------------------------------------------------------- |
-# | amazonlinux      | 2                             |                                                                |
+# | amazonlinux      | 2, 2023                       |                                                                |
 # | ubuntu           | 18.04, 20.04, 22.04           |                                                                |
 # | debian           | bullseye-slim, buster-slim    |                                                                |
 # | centos           | 7                             |                                                                |
@@ -115,14 +115,12 @@ lint: ## Run linter
 	cd sdk && make lint
 
 format: ## Format code
-	go fmt ./... && cd sdk && go fmt ./... && cd ../test/performance && go fmt ./... && cd ../../test/integration && go fmt ./...
+	go run mvdan.cc/gofumpt -l -w .
 	buf format -w ./sdk/proto/
 
-install-tools: ## Install dependencies in tools.go
-	@echo "Getting Tools"
-	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go get %
+install-tools: ## Install dependencies in tools.go using vendored version see https://www.jvt.me/posts/2023/06/19/go-install-from-mod/
 	@echo "Installing Tools"
-	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % go install %
+	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % env GOBIN=$$(git rev-parse --show-toplevel)/bin GOWORK=off go install -mod=vendor %
 	@go run github.com/evilmartians/lefthook install pre-push
 
 generate-swagger: ## Generates swagger.json from source code
@@ -273,10 +271,12 @@ oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
 	--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
-	--target install-agent-local
+	--target install-agent-local \
 	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
 	--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
 	--build-arg BASE_IMAGE=${BASE_IMAGE} \
+	--build-arg OS_RELEASE=${OS_RELEASE} \
+	--build-arg OS_VERSION=${OS_VERSION} \
 	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG

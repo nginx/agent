@@ -3,7 +3,6 @@ FROM ${BASE_IMAGE} as install-nginx
 LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
 
 ARG PACKAGES_REPO
-ARG NGINX_CONF
 ARG ENTRY_POINT
 ARG OS_VERSION
 ARG OS_RELEASE
@@ -14,6 +13,15 @@ COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; \
         then yum install -y oracle-epel-release-el7; \
+    fi
+
+RUN if [ "$OS_VERSION" = "2" ] && [ "$OS_RELEASE" = "amazonlinux" ]; \
+        then amazon-linux-extras enable epel && yum clean metadata \
+        && yum install -y epel-release; \
+    fi
+
+RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
+        then yum install -y shadow-utils; \
     fi
 
 RUN if [ "$OS_RELEASE" = "centos" ] && [ "$OS_VERSION" = "7" ]; \
@@ -28,10 +36,6 @@ gpgcheck=0 \n\
 enabled=1" > /etc/yum.repos.d/nginx.repo; \
     fi
 
-RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
-        then amazon-linux-extras enable epel && yum clean metadata \
-        && yum install -y epel-release shadow-utils; \
-    fi
 
 RUN set -x \
     && groupadd --system --gid 101 nginx \
@@ -45,7 +49,15 @@ RUN set -x \
                       nginx
 
 # Setup nginx agent repository
-RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
+RUN if [ "$OS_VERSION" = "2023" ] && [ "$OS_RELEASE" = "amazonlinux" ]; \
+    then printf "[nginx-agent] \n\
+name=nginx-agent repo \n\
+baseurl=http://${PACKAGES_REPO}/nginx-agent/amzn/${OS_VERSION}/\$basearch \n\
+gpgcheck=1 \n\
+enabled=1 \n\
+gpgkey=https://nginx.org/keys/nginx_signing.key \n\
+module_hotfixes=true" > /etc/yum.repos.d/nginx-agent.repo; \
+    elif [ "$OS_VERSION" = "2" ] && [ "$OS_RELEASE" = "amazonlinux" ]; \
     then printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
 baseurl=http://${PACKAGES_REPO}/nginx-agent/amzn2/${OS_VERSION}/\$basearch \n\

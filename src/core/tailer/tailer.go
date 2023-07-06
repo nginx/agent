@@ -17,17 +17,15 @@ import (
 	"github.com/trivago/grok"
 )
 
-var (
-	tailConfig = tail.Config{
-		Follow:    true,
-		ReOpen:    true,
-		MustExist: true,
-		Poll:      true,
-		Location: &tail.SeekInfo{
-			Whence: io.SeekEnd,
-		},
-	}
-)
+var tailConfig = tail.Config{
+	Follow:    true,
+	ReOpen:    true,
+	MustExist: true,
+	Poll:      true,
+	Location: &tail.SeekInfo{
+		Whence: io.SeekEnd,
+	},
+}
 
 // NginxAccessItem represents the decoded access log data
 type NginxAccessItem struct {

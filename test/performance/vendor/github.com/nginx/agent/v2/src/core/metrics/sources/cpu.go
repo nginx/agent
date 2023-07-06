@@ -74,7 +74,6 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *me
 	var simpleMetrics []*proto.SimpleMetric
 	if c.isDocker {
 		dockerCpuPercentages, err := c.cgroupCPUSource.Percentages()
-
 		if err != nil {
 			// linux impl returns zero length without error
 			c.logger.Log(fmt.Sprintf("Failed to get cgroup CPU metrics, %v", err))
@@ -89,7 +88,6 @@ func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *me
 		log.Debugf("CPU metrics collected: %v", simpleMetrics)
 	} else {
 		timesArr, err := c.timesFunc(false)
-
 		if err != nil {
 			// linux impl returns zero length without error
 			c.logger.Log(fmt.Sprintf("Error occurred getting CPU metrics, %v", err))

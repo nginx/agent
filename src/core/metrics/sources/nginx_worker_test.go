@@ -108,7 +108,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 		case "nginx.workers.io.kbs_r":
 			assert.Equal(t, float64(0), metric.Value)
 		case "nginx.workers.mem.rss":
-			assert.Equal(t, float64(0), metric.Value)
+			assert.Equal(t, float64(1), metric.Value)
 		case "nginx.workers.mem.rss_pct":
 			assert.Equal(t, float64(1), metric.Value)
 		case "nginx.workers.rlimit_nofile":
@@ -116,7 +116,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 		case "nginx.workers.count":
 			assert.Equal(t, float64(1), metric.Value)
 		case "nginx.workers.mem.vms":
-			assert.Equal(t, float64(0), metric.Value)
+			assert.Equal(t, float64(1), metric.Value)
 		case "nginx.workers.fds_count":
 			assert.Equal(t, float64(1), metric.Value)
 		case "nginx.workers.cpu.user":
@@ -148,7 +148,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 		case "nginx.workers.io.kbs_r":
 			assert.Equal(t, float64(0), metric.Value)
 		case "nginx.workers.mem.rss":
-			assert.Equal(t, float64(0), metric.Value)
+			assert.Equal(t, float64(1), metric.Value)
 		case "nginx.workers.mem.rss_pct":
 			assert.Equal(t, float64(1), metric.Value)
 		case "nginx.workers.rlimit_nofile":
@@ -156,7 +156,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 		case "nginx.workers.count":
 			assert.Equal(t, float64(1), metric.Value)
 		case "nginx.workers.mem.vms":
-			assert.Equal(t, float64(0), metric.Value)
+			assert.Equal(t, float64(1), metric.Value)
 		case "nginx.workers.fds_count":
 			assert.Equal(t, float64(1), metric.Value)
 		case "nginx.workers.cpu.user":

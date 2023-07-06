@@ -13,9 +13,7 @@ import (
 	sdk "github.com/nginx/agent/sdk/v2/proto"
 )
 
-var (
-	meta = &sdk.Metadata{}
-)
+var meta = &sdk.Metadata{}
 
 func InitMeta(clientID, cloudAccountID string) {
 	meta.ClientId = clientID

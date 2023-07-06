@@ -82,7 +82,6 @@ func (dm DirectoryMap) appendFileWithProto(dir string, fileProto *proto.File) er
 	_, ok := dm.paths[dir]
 	if !ok {
 		err := dm.addDirectory(dir)
-
 		if err != nil {
 			return err
 		}
@@ -875,7 +874,6 @@ func GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg *proto.Nginx
 					StopParsingOnError: true,
 				},
 			)
-
 			if err != nil {
 				continue
 			}

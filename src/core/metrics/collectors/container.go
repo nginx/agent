@@ -20,9 +20,7 @@ import (
 	cgroup "github.com/nginx/agent/v2/src/core/metrics/sources/cgroup"
 )
 
-var (
-	_ metrics.Collector = (*ContainerCollector)(nil)
-)
+var _ metrics.Collector = (*ContainerCollector)(nil)
 
 type ContainerCollector struct {
 	sources []metrics.Source

@@ -29,7 +29,7 @@ type Swap struct {
 }
 
 func NewSwapSource(namespace string, env core.Environment) *Swap {
-	var statFunc = mem.SwapMemory
+	statFunc := mem.SwapMemory
 
 	if env.IsContainer() {
 		cgroupSwapSource := cgroup.NewCgroupSwapSource("/sys/fs/cgroup/")

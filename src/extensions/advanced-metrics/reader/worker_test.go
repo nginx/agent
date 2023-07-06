@@ -59,7 +59,6 @@ func TestWorkerStopAndCloseConnectionOnReadError(t *testing.T) {
 }
 
 func TestWorkerFrameProcessing(t *testing.T) {
-
 	tests := []struct {
 		name               string
 		data               [][]byte
@@ -228,7 +227,6 @@ func TestWorkerFrameProcessing(t *testing.T) {
 }
 
 func TestWorkerFrameProcessingErrorWhenMessageExceededBufferSize(t *testing.T) {
-
 	const maxBufferSize = 12
 
 	ctrl := gomock.NewController(t)
@@ -275,7 +273,6 @@ func BenchmarkWorkerFrameProcessing(b *testing.B) {
 		framePosition int
 		readSize      int
 	}{
-
 		"single frame, no partial, small buff": {
 			framePosition: 8,
 			readSize:      9,

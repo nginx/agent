@@ -22,12 +22,10 @@ const (
 	napComponentName = "collector:nap"
 )
 
-var (
-	// logging fields for the component
-	componentLogFields = logrus.Fields{
-		"component": napComponentName,
-	}
-)
+// logging fields for the component
+var componentLogFields = logrus.Fields{
+	"component": napComponentName,
+}
 
 // NAPCollector lets you to Collect log data on given port.
 type NAPCollector struct {

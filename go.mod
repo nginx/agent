@@ -3,7 +3,6 @@ module github.com/nginx/agent/v2
 go 1.19
 
 require (
-	github.com/alvaroloes/enumer v1.1.2
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gogo/protobuf v1.3.2
@@ -51,6 +50,7 @@ require (
 	golang.org/x/sys v0.8.0
 	golang.org/x/text v0.9.0
 	gopkg.in/yaml.v2 v2.4.0
+	mvdan.cc/gofumpt v0.4.0
 )
 
 require (
@@ -237,7 +237,6 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
-	github.com/pascaldekloe/name v1.0.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -320,7 +319,6 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools/v3 v3.4.0 // indirect
 	honnef.co/go/tools v0.4.3 // indirect
-	mvdan.cc/gofumpt v0.4.0 // indirect
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
 	mvdan.cc/unparam v0.0.0-20221223090309-7455f1af531d // indirect

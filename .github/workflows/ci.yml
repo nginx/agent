@@ -84,6 +84,8 @@ jobs:
           version: "9"
         - image: "amazonlinux"
           version: "2"
+        - image: "amazonlinux"
+          version: "2023"
         - image: "oraclelinux"
           version: "7"
         - image: "oraclelinux"
@@ -110,6 +112,20 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
+      - name: Archive install/uninstall integration test logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
+          path: /tmp/nginx-agent-integration-test-install-uninstall.log
+          retention-days: 3
+        if: success() || failure()
+      - name: Archive api integration test logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
+          path: /tmp/nginx-agent-integration-test-api.log
+          retention-days: 3
+        if: success() || failure()
 
   performance-test:
     name: Performance Tests
@@ -192,11 +208,7 @@ jobs:
             for i in ./build/azure/packages/nginx-agent*; do 
               az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GIT_BRANCH}/${i##*/}
-            done 
-      - name: Azure Logout
-        run: |
-          az logout
-        if: always()
+            done
 
   build-unsigned-snapshot:
     name: Build unsigned snapshot

@@ -106,8 +106,10 @@ var advancedMetricsDefaults = &AdvancedMetricsConfig{
 	},
 }
 
-const httpMetricPrefix = "http.request"
-const streamMetricPrefix = "stream"
+const (
+	httpMetricPrefix   = "http.request"
+	streamMetricPrefix = "stream"
+)
 
 type AdvancedMetricsConfig struct {
 	SocketPath        string                            `mapstructure:"socket_path"`
@@ -143,7 +145,7 @@ func NewAdvancedMetrics(env core.Environment, conf *config.Config, advancedMetri
 		NewDimension(acmApiProxyNameDimension, 256).
 		NewDimension(acmApiProxyHostnameDimension, 256).
 		NewDimension(acmProxyApiVersionDimension, 256).
-		NewDimension(countryCodeDimension, 256). //TODO should be implemented as GeoIP
+		NewDimension(countryCodeDimension, 256). // TODO should be implemented as GeoIP
 		NewDimension(httpVersionSchemaDimension, 16).
 		NewDimension(httpUpstreamAddrDimension, 1024).
 		NewIntegerDimension(upstreamResponseCodeDimension, 600).

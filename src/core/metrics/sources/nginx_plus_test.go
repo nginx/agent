@@ -880,7 +880,6 @@ func TestNginxPlus_Collect(t *testing.T) {
 			switch dimension.Name {
 			case "limit_req_zone":
 				assert.Equal(t, limitRequestName, dimension.Value)
-
 			}
 		}
 		for _, metric := range limitRequestsMetrics.Data.Simplemetrics {

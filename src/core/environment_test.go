@@ -69,6 +69,7 @@ PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-poli
 VERSION_CODENAME=focal
 UBUNTU_CODENAME=focal
 `
+
 const lscpuInfo1 = `
 Architecture:                    aarch64
 CPU op-mode(s):                  32-bit, 64-bit
@@ -107,11 +108,10 @@ L1i cache:                       "96 KiB"
 L2 cache:                        2 MiB
 `
 
-var (
-	// set at buildtime
-	envMountInfo = [10]string{
-		`NO CONTAINER ID PRESENT IN MOUNTINFO`,
-		`822 773 0:55 / / rw,relatime master:312 - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/OVIJO6CZHWIXJDDHZXRECADDI3:/var/lib/docker/overlay2/l/3D3QYHJJTMCK6GLLVY7MMM6K4V:/var/lib/docker/overlay2/l/OKH52ZN3IE727BHLU3G3LEVI6S:/var/lib/docker/overlay2/l/K3BV3TCWQS2WDAY3ZVXO5GIHLQ:/var/lib/docker/overlay2/l/2KZOTUQIESHNC4FHZHYULXIKZ5,upperdir=/var/lib/docker/overlay2/f8c1fa1c3a6eb3731265dc674bf238c60fb594eedc4639cdbefef93ad443f55d/diff,workdir=/var/lib/docker/overlay2/f8c1fa1c3a6eb3731265dc674bf238c60fb594eedc4639cdbefef93ad443f55d/work,xino=off
+// set at buildtime
+var envMountInfo = [10]string{
+	`NO CONTAINER ID PRESENT IN MOUNTINFO`,
+	`822 773 0:55 / / rw,relatime master:312 - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/OVIJO6CZHWIXJDDHZXRECADDI3:/var/lib/docker/overlay2/l/3D3QYHJJTMCK6GLLVY7MMM6K4V:/var/lib/docker/overlay2/l/OKH52ZN3IE727BHLU3G3LEVI6S:/var/lib/docker/overlay2/l/K3BV3TCWQS2WDAY3ZVXO5GIHLQ:/var/lib/docker/overlay2/l/2KZOTUQIESHNC4FHZHYULXIKZ5,upperdir=/var/lib/docker/overlay2/f8c1fa1c3a6eb3731265dc674bf238c60fb594eedc4639cdbefef93ad443f55d/diff,workdir=/var/lib/docker/overlay2/f8c1fa1c3a6eb3731265dc674bf238c60fb594eedc4639cdbefef93ad443f55d/work,xino=off
 823 822 0:57 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw
 824 822 0:58 / /dev rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 825 824 0:59 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=666
@@ -146,7 +146,7 @@ var (
 783 823 0:58 /null /proc/sched_debug rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 784 823 0:64 / /proc/scsi ro,relatime - tmpfs tmpfs ro
 785 826 0:65 / /sys/firmware ro,relatime - tmpfs tmpfs ro`,
-		`648 603 0:41 / / rw,relatime master:304 - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/PUPHWIJFCPRLWVUF4FNUZUOCK6:/var/lib/docker/overlay2/l/I2ESYRZNCXSTQZUZADJL535IFQ,upperdir=/var/lib/docker/overlay2/b4a145accf21c673470f76384380e892d599a935e4e066eac9d2761e6c8dd1f3/diff,workdir=/var/lib/docker/overlay2/b4a145accf21c673470f76384380e892d599a935e4e066eac9d2761e6c8dd1f3/work
+	`648 603 0:41 / / rw,relatime master:304 - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/PUPHWIJFCPRLWVUF4FNUZUOCK6:/var/lib/docker/overlay2/l/I2ESYRZNCXSTQZUZADJL535IFQ,upperdir=/var/lib/docker/overlay2/b4a145accf21c673470f76384380e892d599a935e4e066eac9d2761e6c8dd1f3/diff,workdir=/var/lib/docker/overlay2/b4a145accf21c673470f76384380e892d599a935e4e066eac9d2761e6c8dd1f3/work
 649 648 0:48 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw
 650 648 0:50 / /dev rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755,inode64
 651 650 0:51 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=666
@@ -170,7 +170,7 @@ var (
 614 649 0:50 /null /proc/timer_list rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755,inode64
 615 649 0:56 / /proc/scsi ro,relatime - tmpfs tmpfs ro,inode64
 616 652 0:57 / /sys/firmware ro,relatime - tmpfs tmpfs ro,inode64`,
-		`5625 5410 0:525 / / rw,relatime master:1623 - overlay overlay rw,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/589/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/588/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/587/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/586/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/585/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/584/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/583/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/582/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/581/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/580/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/579/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/57/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/592/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/592/work,xino=off
+	`5625 5410 0:525 / / rw,relatime master:1623 - overlay overlay rw,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/589/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/588/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/587/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/586/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/585/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/584/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/583/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/582/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/581/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/580/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/579/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/57/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/592/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/592/work,xino=off
 5626 5625 0:526 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw
 5627 5625 0:527 / /dev rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 5628 5627 0:528 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=666
@@ -208,7 +208,7 @@ var (
 5420 5626 0:527 /null /proc/sched_debug rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 5421 5626 0:531 / /proc/scsi ro,relatime - tmpfs tmpfs ro
 5422 5630 0:532 / /sys/firmware ro,relatime - tmpfs tmpfs ro`,
-		`1859 1574 0:466 / / rw,relatime master:300 - overlay overlay rw,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/117/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/116/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/115/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/114/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/113/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/104/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/118/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/118/work
+	`1859 1574 0:466 / / rw,relatime master:300 - overlay overlay rw,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/117/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/116/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/115/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/114/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/113/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/104/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/118/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/118/work
 1860 1859 0:468 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw
 1861 1859 0:469 / /dev rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 1862 1861 0:470 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=666
@@ -246,7 +246,7 @@ var (
 1611 1860 0:469 /null /proc/timer_list rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 1612 1860 0:469 /null /proc/sched_debug rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 1613 1864 0:473 / /sys/firmware ro,relatime - tmpfs tmpfs ro`,
-		`1939 1564 0:486 / / rw,relatime master:305 - overlay overlay rw,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/109/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/108/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/107/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/106/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/105/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/104/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/124/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/124/work
+	`1939 1564 0:486 / / rw,relatime master:305 - overlay overlay rw,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/109/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/108/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/107/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/106/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/105/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/104/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/124/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/124/work
 1940 1939 0:488 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw
 1941 1939 0:489 / /dev rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 1942 1941 0:490 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=666
@@ -284,7 +284,7 @@ var (
 1620 1940 0:489 /null /proc/timer_list rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 1621 1940 0:489 /null /proc/sched_debug rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 1622 1944 0:493 / /sys/firmware ro,relatime - tmpfs tmpfs ro`,
-		`826 709 0:61 / / rw,nodev,relatime - overlay overlay rw,lowerdir=/var/lib/containers/storage/overlay/l/GV3YTMQ7IJHJXELM6CHUHA5POE:/var/lib/containers/storage/overlay/l/LUOYE3LBGFXFVZ232OXDLHZBML:/var/lib/containers/storage/overlay/l/GBYDEUH4YSOZH77CSJGKD7FJFZ:/var/lib/containers/storage/overlay/l/VSVG2DQQ2BEBO4DN3KLIWULYGS:/var/lib/containers/storage/overlay/l/QDKTJIWHFVLEVB6CGXXR6A4ZWK:/var/lib/containers/storage/overlay/l/POOFWLQ7VH2CVRXJ4FVY5GUKUF,upperdir=/var/lib/containers/storage/overlay/11c606dbc7b58ac436103d998ce48adf3c83fa8d915e87ca313217d279be6082/diff,workdir=/var/lib/containers/storage/overlay/11c606dbc7b58ac436103d998ce48adf3c83fa8d915e87ca313217d279be6082/work,xino=off,metacopy=on
+	`826 709 0:61 / / rw,nodev,relatime - overlay overlay rw,lowerdir=/var/lib/containers/storage/overlay/l/GV3YTMQ7IJHJXELM6CHUHA5POE:/var/lib/containers/storage/overlay/l/LUOYE3LBGFXFVZ232OXDLHZBML:/var/lib/containers/storage/overlay/l/GBYDEUH4YSOZH77CSJGKD7FJFZ:/var/lib/containers/storage/overlay/l/VSVG2DQQ2BEBO4DN3KLIWULYGS:/var/lib/containers/storage/overlay/l/QDKTJIWHFVLEVB6CGXXR6A4ZWK:/var/lib/containers/storage/overlay/l/POOFWLQ7VH2CVRXJ4FVY5GUKUF,upperdir=/var/lib/containers/storage/overlay/11c606dbc7b58ac436103d998ce48adf3c83fa8d915e87ca313217d279be6082/diff,workdir=/var/lib/containers/storage/overlay/11c606dbc7b58ac436103d998ce48adf3c83fa8d915e87ca313217d279be6082/work,xino=off,metacopy=on
 827 826 0:57 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw
 828 826 0:62 / /dev rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755
 829 828 0:63 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=666
@@ -319,7 +319,7 @@ var (
 720 827 0:66 / /proc/scsi ro,relatime - tmpfs tmpfs ro
 721 831 0:67 / /sys/firmware ro,relatime - tmpfs tmpfs ro
 741 831 0:68 / /sys/dev ro,relatime - tmpfs tmpfs ro`,
-		`688 633 0:95 / / rw,relatime - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/3INAU44LWT5WVNUZGR3CU5KVTJ:/var/lib/docker/overlay2/l/UZ76YP26WVD6B2PGORRVDQKZ4C:/var/lib/docker/overlay2/l/G7LFO56NGQ637KQAPC6LJBQJMX:/var/lib/docker/overlay2/l/3VXOJK66Z2MJ6GAGA33OE2AOHL:/var/lib/docker/overlay2/l/3DZRQPPSQROUJJHWPIEQ2RSF27:/var/lib/docker/overlay2/l/7245IZGQM7NSJVTRWYNVPI5OCE:/var/lib/docker/overlay2/l/4DOOTUH5YC674WDH2TXS5EPJBC,upperdir=/var/lib/docker/overlay2/5b8946c6104e8a128b005d9735ee5371a5a773f59c69fd205cc8d722728f61fb/diff,workdir=/var/lib/docker/overlay2/5b8946c6104e8a128b005d9735ee5371a5a773f59c69fd205cc8d722728f61fb/work
+	`688 633 0:95 / / rw,relatime - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/3INAU44LWT5WVNUZGR3CU5KVTJ:/var/lib/docker/overlay2/l/UZ76YP26WVD6B2PGORRVDQKZ4C:/var/lib/docker/overlay2/l/G7LFO56NGQ637KQAPC6LJBQJMX:/var/lib/docker/overlay2/l/3VXOJK66Z2MJ6GAGA33OE2AOHL:/var/lib/docker/overlay2/l/3DZRQPPSQROUJJHWPIEQ2RSF27:/var/lib/docker/overlay2/l/7245IZGQM7NSJVTRWYNVPI5OCE:/var/lib/docker/overlay2/l/4DOOTUH5YC674WDH2TXS5EPJBC,upperdir=/var/lib/docker/overlay2/5b8946c6104e8a128b005d9735ee5371a5a773f59c69fd205cc8d722728f61fb/diff,workdir=/var/lib/docker/overlay2/5b8946c6104e8a128b005d9735ee5371a5a773f59c69fd205cc8d722728f61fb/work
 689 688 0:97 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw"
 690 688 0:99 / /dev rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755"
 797 690 0:100 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=666"
@@ -354,7 +354,7 @@ var (
 658 689 0:99 /null /proc/timer_list rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755"
 665 689 0:105 / /proc/scsi ro,relatime - tmpfs tmpfs ro"
 666 798 0:106 / /sys/firmware ro,relatime - tmpfs tmpfs ro`,
-		`1630 1497 0:233 / / rw,relatime master:435 - overlay overlay rw,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/63/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/64/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/64/work
+	`1630 1497 0:233 / / rw,relatime master:435 - overlay overlay rw,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/63/fs,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/64/fs,workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/64/work
 1631 1630 0:235 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw
 1632 1630 0:236 / /dev rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755,inode64
 1633 1632 0:237 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=666
@@ -379,7 +379,7 @@ var (
 1524 1631 0:236 /null /proc/timer_list rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755,inode64
 1525 1631 0:239 / /proc/scsi ro,relatime - tmpfs tmpfs ro,inode64
 1526 1635 0:240 / /sys/firmware ro,relatime - tmpfs tmpfs ro,inode64`,
-		`1656 1480 0:220 / / rw,relatime master:482 - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/M7KGGSN5AAQ47YCPCDG6WFLSQV:/var/lib/docker/overlay2/l/RUOVMUFQAEZDMIUFHFFU4AIRRF,upperdir=/var/lib/docker/overlay2/6061e9bb1a206bac6191c9dad4e02ed4aee8bde31149bbbf1adc10b243a76ebc/diff,workdir=/var/lib/docker/overlay2/6061e9bb1a206bac6191c9dad4e02ed4aee8bde31149bbbf1adc10b243a76ebc/work
+	`1656 1480 0:220 / / rw,relatime master:482 - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/M7KGGSN5AAQ47YCPCDG6WFLSQV:/var/lib/docker/overlay2/l/RUOVMUFQAEZDMIUFHFFU4AIRRF,upperdir=/var/lib/docker/overlay2/6061e9bb1a206bac6191c9dad4e02ed4aee8bde31149bbbf1adc10b243a76ebc/diff,workdir=/var/lib/docker/overlay2/6061e9bb1a206bac6191c9dad4e02ed4aee8bde31149bbbf1adc10b243a76ebc/work
 1657 1656 0:222 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw
 1658 1656 0:223 / /dev rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755,inode64
 1659 1658 0:224 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=666
@@ -403,8 +403,8 @@ var (
 1503 1657 0:223 /null /proc/keys rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755,inode64
 1504 1657 0:223 /null /proc/timer_list rw,nosuid - tmpfs tmpfs rw,size=65536k,mode=755,inode64
 1505 1657 0:226 / /proc/scsi ro,relatime - tmpfs tmpfs ro,inode64
-1506 1660 0:227 / /sys/firmware ro,relatime - tmpfs tmpfs ro,inode64`}
-)
+1506 1660 0:227 / /sys/firmware ro,relatime - tmpfs tmpfs ro,inode64`,
+}
 
 func TestNewHostInfo(t *testing.T) {
 	version := "test"
@@ -761,7 +761,7 @@ func TestParseOsReleaseFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			reader := strings.NewReader(tt.osReleaseContent)
 			osRelease, _ := parseOsReleaseFile(reader)
-			for releaseInfokey, _ := range tt.expect {
+			for releaseInfokey := range tt.expect {
 				assert.Equal(t, osRelease[releaseInfokey], tt.expect[releaseInfokey])
 			}
 		})
