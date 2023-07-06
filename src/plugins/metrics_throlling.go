@@ -9,9 +9,10 @@ package plugins
 
 import (
 	"context"
-	"github.com/gogo/protobuf/types"
 	"sync"
 	"time"
+
+	"github.com/gogo/protobuf/types"
 
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
@@ -45,7 +46,6 @@ type MetricsThrottle struct {
 }
 
 func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrottle {
-
 	return &MetricsThrottle{
 		metricBuffer:       make([]core.Payload, 0),
 		BulkSize:           conf.AgentMetrics.BulkSize,

@@ -84,7 +84,8 @@ func TestSaveCollections(t *testing.T) {
 					},
 				},
 			},
-		}}
+		},
+	}
 
 	metricsCollections := Collections{
 		Count: 2,

@@ -98,7 +98,7 @@ func SetupAdvancedMetrics(t *testing.T, socketLocation string) *advanced_metrics
 	}()
 
 	assert.Eventually(t, func() bool {
-		err := os.Chmod(socketLocation, 0666)
+		err := os.Chmod(socketLocation, 0o666)
 		return err == nil
 	}, time.Second*2, time.Microsecond*100, "fail to change socket file permission")
 

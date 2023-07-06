@@ -60,7 +60,8 @@ func TestCommander_Process(t *testing.T) {
 								},
 							},
 						},
-					}},
+					},
+				},
 			},
 			setMocks:   false,
 			topic:      core.AgentConnected,
@@ -100,7 +101,8 @@ func TestCommander_Process(t *testing.T) {
 			name: "test agent connect without config",
 			cmd: &proto.Command{
 				Data: &proto.Command_AgentConnectResponse{
-					AgentConnectResponse: &proto.AgentConnectResponse{}},
+					AgentConnectResponse: &proto.AgentConnectResponse{},
+				},
 			},
 			topic:     core.AgentConnected,
 			setMocks:  false,
@@ -521,7 +523,8 @@ func TestCommander_Close(t *testing.T) {
 
 	m := core.NewMessage(core.AgentConnected, &proto.Command{
 		Data: &proto.Command_AgentConnectResponse{
-			AgentConnectResponse: &proto.AgentConnectResponse{}},
+			AgentConnectResponse: &proto.AgentConnectResponse{},
+		},
 	})
 
 	messagePipe.Process(m)

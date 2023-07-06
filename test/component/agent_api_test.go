@@ -3,6 +3,7 @@ package component
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -18,8 +19,6 @@ import (
 	"github.com/nginx/agent/v2/src/core/metrics"
 
 	"github.com/nginx/agent/v2/src/plugins"
-
-	"encoding/json"
 
 	"github.com/go-resty/resty/v2"
 
@@ -227,7 +226,6 @@ func TestMetrics(t *testing.T) {
 		}
 
 	}
-
 }
 
 func TestMetricsDisabled(t *testing.T) {
@@ -348,7 +346,6 @@ func TestConfigApply(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			confFile := createTempFile(t, tt.configUpdate, "nginx.conf")
 
 			nginxDetails := &proto.NginxDetails{
@@ -388,7 +385,6 @@ func TestConfigApply(t *testing.T) {
 			fmt.Println(resp)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode())
 			agentAPI.Close()
-
 		})
 	}
 }

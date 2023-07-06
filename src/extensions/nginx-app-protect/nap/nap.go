@@ -25,7 +25,7 @@ const (
 	DefaultNMSCompilerDir = "/opt/nms-nap-compiler"
 	compilerDirPrefix     = "app_protect-"
 
-	dirPerm = 0755
+	dirPerm = 0o755
 )
 
 var (
@@ -156,7 +156,6 @@ func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterva
 				UpdatedReport:  newNAPReport,
 			}
 		}
-
 	}
 }
 
@@ -288,7 +287,6 @@ func napRunning() (bool, error) {
 // - INSTALLED
 // - RUNNING
 func napStatus(requiredFiles []string) (Status, error) {
-
 	// Check if NAP is installed
 	installed, err := napInstalled(requiredFiles)
 	if !installed && err == nil {

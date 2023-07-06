@@ -376,7 +376,7 @@ func TestGetConfig(t *testing.T) {
 extensions:
   - advanced-metrics
   - unknown-extension`
-		err := os.WriteFile(tempCfgFile, []byte(configData), 0644)
+		err := os.WriteFile(tempCfgFile, []byte(configData), 0o644)
 		require.NoError(t, err)
 		defer os.Remove(tempCfgFile)
 

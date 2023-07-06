@@ -74,8 +74,8 @@ func TestNewNAPCollector(t *testing.T) {
 
 func TestNAPCollect(t *testing.T) {
 	var logwriter *syslog.Writer
-	var testPort = 22514
-	var testIP = "127.0.0.1"
+	testPort := 22514
+	testIP := "127.0.0.1"
 
 	waf, err := collector.NewNAPCollector(&collector.NAPConfig{
 		SyslogIP:   testIP,
@@ -116,7 +116,6 @@ func TestNAPSyslogParser(t *testing.T) {
 	f := format.RFC3164{}
 	parser := f.GetParser([]byte(find))
 	err := parser.Parse()
-
 	if err != nil {
 		t.Errorf("Error while parsing syslog: %v", err)
 	}

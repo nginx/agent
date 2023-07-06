@@ -173,7 +173,6 @@ func TestPriorityTableWithCollapsing(t *testing.T) {
 			assert.ElementsMatch(t, test.expectedSamples, samples)
 		})
 	}
-
 }
 
 func testSample(t *testing.T, metrics []sample.Metric, dimensionsCodes []int, hitcount int) *sample.Sample {

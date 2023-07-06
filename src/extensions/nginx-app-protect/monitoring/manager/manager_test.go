@@ -9,9 +9,10 @@ package manager
 
 import (
 	"context"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v2/src/core/metrics"
 
 	"github.com/stretchr/testify/assert"
 )

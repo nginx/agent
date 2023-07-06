@@ -9,10 +9,11 @@ package sources
 
 import (
 	"context"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"sort"
 	"sync"
 	"testing"
+
+	"github.com/nginx/agent/v2/src/core/metrics"
 
 	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/shirou/gopsutil/v3/net"

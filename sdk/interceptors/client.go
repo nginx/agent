@@ -56,7 +56,8 @@ func (c *clientInterceptor) Unary() grpc.UnaryClientInterceptor {
 		req, reply interface{},
 		cc *grpc.ClientConn,
 		invoker grpc.UnaryInvoker,
-		opts ...grpc.CallOption) error {
+		opts ...grpc.CallOption,
+	) error {
 		c.log.Debugf("--> client unary interceptor: %s", method)
 		return invoker(c.attachToken(ctx), method, req, reply, cc, opts...)
 	}

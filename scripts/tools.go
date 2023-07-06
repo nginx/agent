@@ -18,4 +18,5 @@ import (
 	_ "github.com/mwitkow/go-proto-validators/protoc-gen-govalidators"
 	_ "github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc"
 	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
+	_ "mvdan.cc/gofumpt"
 )

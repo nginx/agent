@@ -53,7 +53,7 @@ func TestGetThreatCampaignsVersion(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Create a fake version file if required by test
 			if tc.threatCampaignDateTime != nil {
-				err := os.WriteFile(tc.versionFile, []byte(testThreatCampaignsVersionFileContents), 0644)
+				err := os.WriteFile(tc.versionFile, []byte(testThreatCampaignsVersionFileContents), 0o644)
 				require.NoError(t, err)
 
 				defer func() {

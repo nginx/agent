@@ -53,7 +53,7 @@ func TestGetAttackSignaturesVersion(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Create a fake version file if required by test
 			if tc.attackSigDateTime != nil {
-				err := os.WriteFile(tc.versionFile, []byte(testAttackSigVersionFileContents), 0644)
+				err := os.WriteFile(tc.versionFile, []byte(testAttackSigVersionFileContents), 0o644)
 				require.NoError(t, err)
 
 				defer func() {

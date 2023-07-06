@@ -43,7 +43,6 @@ type Metrics struct {
 }
 
 func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary) *Metrics {
-
 	collectorConfigsMap := createCollectorConfigsMap(config, env, binary)
 	return &Metrics{
 		collectorsUpdate:         atomic.NewBool(false),
@@ -280,7 +279,6 @@ func (m *Metrics) syncAgentConfigChange() {
 
 	// Update Metrics with relevant config info
 	m.conf = conf
-
 }
 
 func createCollectorConfigsMap(config *config.Config, env core.Environment, binary core.NginxBinary) map[string]*metrics.NginxCollectorConfig {

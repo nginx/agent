@@ -9,12 +9,13 @@ package sources
 
 import (
 	"context"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"path"
 	"runtime"
 	"sort"
 	"sync"
 	"testing"
+
+	"github.com/nginx/agent/v2/src/core/metrics"
 
 	cgroup "github.com/nginx/agent/v2/src/core/metrics/sources/cgroup"
 	tutils "github.com/nginx/agent/v2/test/utils"
@@ -55,7 +56,6 @@ func TestNewCPUTimesSource(t *testing.T) {
 }
 
 func TestCPUTimeDiff(t *testing.T) {
-
 	tests := []struct {
 		name             string
 		lastTime         cpu.TimesStat
@@ -81,10 +81,8 @@ func TestCPUTimeDiff(t *testing.T) {
 			timediff := diffTimeStat(test.lastTime, test.currentTime)
 
 			assert.Equal(tt, test.expectedTimeDiff, timediff)
-
 		})
 	}
-
 }
 
 func TestCPUTimesCollect_VM(t *testing.T) {

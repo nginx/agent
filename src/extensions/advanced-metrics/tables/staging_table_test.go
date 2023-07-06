@@ -45,7 +45,6 @@ var (
 )
 
 func TestStagingTableAdd(t *testing.T) {
-
 	type dimDef struct {
 		dimValue      []byte
 		dimLookupCode int
@@ -262,7 +261,6 @@ func TestStagingTableAdd(t *testing.T) {
 }
 
 func TestStagingTableAddFailOnLookupFail(t *testing.T) {
-
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -287,7 +285,6 @@ func TestStagingTableAddFailOnLookupFail(t *testing.T) {
 }
 
 func TestStagingTableAddFailOnMetricParseError(t *testing.T) {
-
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 

@@ -159,11 +159,13 @@ type metricReporterHandler struct {
 	metricReportStream chan *proto.MetricsReport
 }
 
-type eventReporterHandlerFunc func(proto.MetricsService_StreamEventsServer, *sync.WaitGroup)
-type eventReporterHandler struct {
-	streamEventsHandleFunc eventReporterHandlerFunc
-	eventReportStream      chan *f5_nginx_agent_sdk_events.EventReport
-}
+type (
+	eventReporterHandlerFunc func(proto.MetricsService_StreamEventsServer, *sync.WaitGroup)
+	eventReporterHandler     struct {
+		streamEventsHandleFunc eventReporterHandlerFunc
+		eventReportStream      chan *f5_nginx_agent_sdk_events.EventReport
+	}
+)
 
 type mockMetricReporterService struct {
 	sync.RWMutex

@@ -196,9 +196,9 @@ func TestWatcherFixingPermissions(t *testing.T) {
 
 			pluginUnderTest.Init(messagePipe)
 
-			changePermissions(t, 0111, test.dirs[1])
+			changePermissions(t, 0o111, test.dirs[1])
 
-			err := os.Chmod(test.dirs[1], 0111)
+			err := os.Chmod(test.dirs[1], 0o111)
 			assert.NoError(t, err)
 
 			time.Sleep(Milliseconds * time.Millisecond)
@@ -216,7 +216,7 @@ func TestWatcherFixingPermissions(t *testing.T) {
 			pluginUnderTest.Close()
 
 			// resetting permissions after the test so can teardown
-			changePermissions(t, 0777, test.dirs[1])
+			changePermissions(t, 0o777, test.dirs[1])
 		})
 	}
 }
@@ -487,7 +487,7 @@ func TestWatcherProcess(t *testing.T) {
 }
 
 func writeFile(t *testing.T, file string) {
-	err := os.WriteFile(file, []byte{}, 0644)
+	err := os.WriteFile(file, []byte{}, 0o644)
 	if err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
@@ -507,7 +507,7 @@ func writeFiles(t *testing.T, dirs []string) (ret []string) {
 }
 
 func updateFile(t *testing.T, file, content string) {
-	err := os.WriteFile(file, []byte(content), 0644)
+	err := os.WriteFile(file, []byte(content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to update file: %v", err)
 	}
@@ -529,7 +529,7 @@ func moveFileOrDir(t *testing.T, oldLocation, newLocation string) {
 
 func writeDir(t *testing.T, base, directory string) string {
 	dir := path.Join(base, directory)
-	err := os.MkdirAll(dir, 0777)
+	err := os.MkdirAll(dir, 0o777)
 	if err != nil {
 		t.Fatalf("failed to create directory: %v", err)
 	}
