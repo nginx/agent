@@ -3,11 +3,11 @@ package features
 import (
 	"context"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/nginx/agent/test/integration/utils"
 	"github.com/stretchr/testify/assert"
-	"os"
 
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -46,8 +46,10 @@ func SetupTestContainerWithAgent(t *testing.T, conf string, waitForLog string) *
 }
 
 func TestFeatures_NginxCountingEnabled(t *testing.T) {
-	enabledFeatureLogs := []string{"level=info msg=\"NGINX Counter initializing", "level=info msg=\"MetricsThrottle initializing\"", "level=info msg=\"DataPlaneStatus initializing\"",
-		"level=info msg=\"OneTimeRegistration initializing\"", "level=info msg=\"Metrics initializing\""}
+	enabledFeatureLogs := []string{
+		"level=info msg=\"NGINX Counter initializing", "level=info msg=\"MetricsThrottle initializing\"", "level=info msg=\"DataPlaneStatus initializing\"",
+		"level=info msg=\"OneTimeRegistration initializing\"", "level=info msg=\"Metrics initializing\"",
+	}
 	disabledFeatureLogs := []string{"level=info msg=\"Events initializing\"", "level=info msg=\"Agent API initializing\""}
 
 	testContainer := SetupTestContainerWithAgent(t, "./test_configs/nginx-agent-counting.conf:/etc/nginx-agent/nginx-agent.conf", "OneTimeRegistration completed")
@@ -69,7 +71,6 @@ func TestFeatures_NginxCountingEnabled(t *testing.T) {
 	for _, logLine := range disabledFeatureLogs {
 		assert.NotContains(t, string(agentLogContent), logLine, "agent log file contains disabled feature log")
 	}
-
 }
 
 func TestFeatures_MetricsEnabled(t *testing.T) {
@@ -95,7 +96,6 @@ func TestFeatures_MetricsEnabled(t *testing.T) {
 	for _, logLine := range disabledFeatureLogs {
 		assert.NotContains(t, string(agentLogContent), logLine, "agent log file contains disabled feature log")
 	}
-
 }
 
 func TestFeatures_ConfigEnabled(t *testing.T) {
@@ -121,5 +121,4 @@ func TestFeatures_ConfigEnabled(t *testing.T) {
 	for _, logLine := range disabledFeatureLogs {
 		assert.NotContains(t, string(agentLogContent), logLine, "agent log file contains disabled feature log")
 	}
-
 }

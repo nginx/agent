@@ -91,7 +91,6 @@ func TestPipe_DeRegister(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 0, len(messagePipe.GetPlugins()))
-
 }
 
 func TestPipe_IsPluginAlreadyRegistered(t *testing.T) {

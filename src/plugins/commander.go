@@ -84,7 +84,6 @@ func (c *Commander) Process(msg *core.Message) {
 			}
 		}
 	}
-
 }
 
 func (c *Commander) agentBackoff(agentConfig *proto.AgentConfig) {

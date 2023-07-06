@@ -81,7 +81,6 @@ func TestMetricsSenderBackoff(t *testing.T) {
 		backOffSettings *proto.Backoff
 	}{
 		{
-
 			name: "test reporter client backoff setting as sent by server",
 			msg: core.NewMessage(core.AgentConfigChanged,
 				&proto.AgentConfig{
