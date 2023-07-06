@@ -73,7 +73,6 @@ func (f *Features) Init(pipeline core.MessagePipeInterface) {
 			f.enableNginxConfigAsyncFeature(data)
 		},
 	}
-
 }
 
 func (f *Features) Close() {
@@ -100,7 +99,6 @@ func (f *Features) Process(msg *core.Message) {
 			initFeature(data.(string))
 		}
 	}
-
 }
 
 func (f *Features) enableNginxConfigAsyncFeature(data string) {
@@ -184,6 +182,7 @@ func (f *Features) enableRegistrationFeature(data string) {
 		registration.Init(f.pipeline)
 	}
 }
+
 func (f *Features) enableMetricsThrottleFeature(data string) {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
 		conf, err := config.GetConfig(f.conf.ClientID)

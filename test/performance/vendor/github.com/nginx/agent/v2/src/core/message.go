@@ -11,8 +11,7 @@ import (
 	"strings"
 )
 
-type Payload interface {
-}
+type Payload interface{}
 
 type Message struct {
 	topic *string

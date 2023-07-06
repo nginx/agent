@@ -91,14 +91,14 @@ func UpdateMetadata(
 	directory := filepath.Dir(appProtectWAFDetails.GetWafLocation())
 	_, err = os.Stat(directory)
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(directory, 0755)
+		err = os.MkdirAll(directory, 0o755)
 		if err != nil {
 			return err
 		}
 	}
 
 	log.Debugf("Writing NAP Metadata %s", m)
-	return os.WriteFile(appProtectWAFDetails.GetWafLocation(), m, 0644)
+	return os.WriteFile(appProtectWAFDetails.GetWafLocation(), m, 0o644)
 }
 
 // metadataAreEqual compares the metadata for equality

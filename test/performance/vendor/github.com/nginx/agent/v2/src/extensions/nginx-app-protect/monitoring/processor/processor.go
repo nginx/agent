@@ -25,12 +25,10 @@ const (
 	hostnameFormat = `(?m)\d+\-(.*)\:\d+\-.*`
 )
 
-var (
-	// logging fields for the component
-	componentLogFields = logrus.Fields{
-		"component": componentName,
-	}
-)
+// logging fields for the component
+var componentLogFields = logrus.Fields{
+	"component": componentName,
+}
 
 // Eventer is the interface implemented to generate an Event from a log entry.
 type Eventer interface {

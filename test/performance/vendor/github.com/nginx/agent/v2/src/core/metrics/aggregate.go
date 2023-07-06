@@ -66,7 +66,6 @@ func SaveCollections(metricsCollections Collections, reports ...*proto.MetricsRe
 }
 
 func GenerateMetrics(metricsCollections Collections) []*proto.StatsEntity {
-
 	results := make([]*proto.StatsEntity, 0, 200)
 
 	for _, metricsPerDimension := range metricsCollections.Data {
@@ -81,7 +80,6 @@ func GenerateMetrics(metricsCollections Collections) []*proto.StatsEntity {
 }
 
 func getAggregatedSimpleMetric(count int, internalMap map[string]float64) (simpleMetrics []*proto.SimpleMetric) {
-
 	variableMetrics := map[*regexp.Regexp]MetricsHandler{
 		regexp.MustCompile(`slab.slots.*.fails`): sum,
 		regexp.MustCompile(`slab.slots.*.free`):  avg,
@@ -125,7 +123,6 @@ func getAggregatedSimpleMetric(count int, internalMap map[string]float64) (simpl
 	}
 
 	return simpleMetrics
-
 }
 
 func sum(value float64, count int) float64 {

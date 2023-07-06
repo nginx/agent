@@ -21,7 +21,7 @@ import (
 func GetFileMode(mode string) os.FileMode {
 	result, err := strconv.ParseInt(mode, 8, 32)
 	if err != nil {
-		return os.FileMode(0644)
+		return os.FileMode(0o644)
 	}
 
 	return os.FileMode(result)

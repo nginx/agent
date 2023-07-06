@@ -84,7 +84,6 @@ func DecodeConfig[T interface{}](input interface{}) (output T, err error) {
 		DecodeHook:       mapstructure.ComposeDecodeHookFunc(mapstructure.StringToTimeDurationHookFunc()),
 		Result:           &output,
 	})
-
 	if err != nil {
 		return output, err
 	}

@@ -37,12 +37,10 @@ type FileWatcher struct {
 	cancelFunction  context.CancelFunc
 }
 
-var (
-	emptyEvent = fsnotify.Event{
-		Name: "",
-		Op:   0,
-	}
-)
+var emptyEvent = fsnotify.Event{
+	Name: "",
+	Op:   0,
+}
 
 const (
 	Create = fsnotify.Create
