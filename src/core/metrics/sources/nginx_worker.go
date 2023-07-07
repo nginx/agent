@@ -185,7 +185,7 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 		}
 		numWorkers++
 
-		pidAsInt, err := strconv.Atoi(nginxDetails.ProcessId)
+		pidAsInt, err := strconv.ParseInt(nginxDetails.ProcessId, 10, 32)
 		if err != nil {
 			client.logger.Log(fmt.Sprintf("Failed to convert %s to int: %v", nginxDetails.ProcessId, err))
 			continue
