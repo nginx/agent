@@ -86,7 +86,6 @@ func (r *ConfigReader) Subscriptions() []string {
 
 func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) {
 	if payloadAgentConfig != nil && payloadAgentConfig.Details != nil {
-
 		onDiskAgentConfig, err := config.GetConfig(r.config.ClientID)
 		if err != nil {
 			log.Errorf("Failed to update Agent config - %v", err)
@@ -118,16 +117,6 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		sort.Strings(payloadAgentConfig.Details.Tags)
 		synchronizeTags = !reflect.DeepEqual(payloadAgentConfig.Details.Tags, onDiskAgentConfig.Tags)
 
-		if payloadAgentConfig.Details.Server == nil || payloadAgentConfig.Details.Server.Backoff == nil {
-			payloadAgentConfig.Details.Server = &proto.Server{
-				Backoff: &proto.Backoff{
-					InitialInterval: 10,
-					MaxInterval:     60,
-					MaxElapsedTime:  2,
-				},
-			}
-		}
-
 		if synchronizeFeatures || synchronizeTags {
 			configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, payloadAgentConfig.Details.Tags, payloadAgentConfig.Details.Features)
 			if err != nil {
@@ -154,20 +143,6 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 
 		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
 
-	} else {
-		log.Debug("Failed to update Agent config")
-		payloadAgentConfig = &proto.AgentConfig{
-			Details: &proto.AgentDetails{
-				Server: &proto.Server{
-					Backoff: &proto.Backoff{
-						InitialInterval: 10,
-						MaxInterval:     60,
-						MaxElapsedTime:  2,
-					},
-				},
-			},
-		}
-		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
 	}
 }
 

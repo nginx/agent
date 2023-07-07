@@ -69,6 +69,11 @@ func SetDefaults() {
 	// SERVER DEFAULTS
 	Viper.SetDefault(ServerMetrics, Defaults.Server.Metrics)
 	Viper.SetDefault(ServerCommand, Defaults.Server.Command)
+	Viper.SetDefault(BackoffInitialInterval, Defaults.Server.Backoff.InitialInterval)
+	Viper.SetDefault(BackoffMaxElapsedTime, Defaults.Server.Backoff.MaxElapsedTime)
+	Viper.SetDefault(BackoffMaxInterval, Defaults.Server.Backoff.MaxInterval)
+	Viper.SetDefault(BackoffMultiplier, Defaults.Server.Backoff.Multiplier)
+	Viper.SetDefault(BackoffRandomizationFactor, Defaults.Server.Backoff.RandomizationFactor)
 
 	// DATAPLANE DEFAULTS
 	Viper.SetDefault(DataplaneStatusPoll, Defaults.Dataplane.Status.PollInterval)
@@ -189,7 +194,7 @@ func GetConfig(clientId string) (*Config, error) {
 	}
 	config.Server.Target = fmt.Sprintf("%s:%d", config.Server.Host, config.Server.GrpcPort)
 
-	log.Tracef("%v", config)
+	log.Tracef("Agent config, %v", config)
 	return config, nil
 }
 

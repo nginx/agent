@@ -27,9 +27,9 @@ const (
 )
 
 var DefaultBackoffSettings = backoff.BackoffSettings{
-	InitialInterval: 10 * time.Second,
-	MaxInterval:     60 * time.Second,
-	MaxElapsedTime:  2 * time.Minute,
+	InitialInterval: 100 * time.Millisecond,
+	MaxInterval:     1 * time.Minute,
+	MaxElapsedTime:  0,
 	Jitter:          backoff.BACKOFF_JITTER,
 	Multiplier:      backoff.BACKOFF_MULTIPLIER,
 }
