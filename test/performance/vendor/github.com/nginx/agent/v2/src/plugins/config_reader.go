@@ -110,11 +110,13 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 			payloadAgentConfig.Details.Features = onDiskAgentConfig.Features
 		}
 
-		if payloadAgentConfig.Details.Tags != nil {
-			sort.Strings(onDiskAgentConfig.Tags)
-			sort.Strings(payloadAgentConfig.Details.Tags)
-			synchronizeTags = !reflect.DeepEqual(payloadAgentConfig.Details.Tags, onDiskAgentConfig.Tags)
+		if payloadAgentConfig.Details.Tags == nil {
+			payloadAgentConfig.Details.Tags = []string{}
 		}
+
+		sort.Strings(onDiskAgentConfig.Tags)
+		sort.Strings(payloadAgentConfig.Details.Tags)
+		synchronizeTags = !reflect.DeepEqual(payloadAgentConfig.Details.Tags, onDiskAgentConfig.Tags)
 
 		if payloadAgentConfig.Details.Server == nil || payloadAgentConfig.Details.Server.Backoff == nil {
 			payloadAgentConfig.Details.Server = &proto.Server{
