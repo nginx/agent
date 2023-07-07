@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -28,16 +27,16 @@ import (
 
 func TestCommander_Process(t *testing.T) {
 	tests := []struct {
-		name        string
-		setMocks    bool
-		cmd         *proto.Command
-		topic       string
-		nginxId     string
-		systemId    string
-		config      *proto.NginxConfig
-		msgTopics   []string
-		updateTags  []string
-		wantBackoff backoff.BackoffSettings
+		name            string
+		setMocks        bool
+		cmd             *proto.Command
+		topic           string
+		nginxId         string
+		systemId        string
+		config          *proto.NginxConfig
+		msgTopics       []string
+		updateTags      []string
+		backOffSettings *proto.Backoff
 	}{
 		{
 			name: "test agent connect",
@@ -87,14 +86,7 @@ func TestCommander_Process(t *testing.T) {
 				DirectoryMap: &proto.DirectoryMap{},
 			},
 			msgTopics: []string{
-				core.AgentConfigChanged,
 				core.NginxConfigUpload,
-				core.EnableExtension,
-				core.EnableExtension,
-				core.EnableFeature,
-				core.EnableFeature,
-				core.EnableFeature,
-				core.EnableFeature,
 			},
 		},
 		{
@@ -284,9 +276,7 @@ func TestCommander_Process(t *testing.T) {
 			nginxId:  "12345",
 			systemId: "67890",
 			msgTopics: []string{
-				core.AgentConfigChanged,
 				core.NginxConfigUpload,
-				core.EnableExtension,
 			},
 		},
 		{
@@ -318,9 +308,7 @@ func TestCommander_Process(t *testing.T) {
 			nginxId:  "12345",
 			systemId: "67890",
 			msgTopics: []string{
-				core.AgentConfigChanged,
 				core.NginxConfigUpload,
-				core.EnableFeature,
 			},
 		},
 		{
@@ -353,55 +341,8 @@ func TestCommander_Process(t *testing.T) {
 				},
 			},
 
-			topic:       core.AgentConfig,
-			msgTopics:   []string{},
-			wantBackoff: client.DefaultBackoffSettings,
-		},
-		{
-			name: "test agent config request with backoff",
-			cmd: &proto.Command{
-				Type: proto.Command_NORMAL,
-				Data: &proto.Command_AgentConfig{
-					AgentConfig: &proto.AgentConfig{
-						Details: &proto.AgentDetails{
-							Server: &proto.Server{
-								Backoff: &proto.Backoff{
-									InitialInterval:     1800,
-									RandomizationFactor: .5,
-									Multiplier:          .5,
-									MaxInterval:         900,
-									MaxElapsedTime:      1800,
-								},
-							},
-						},
-					},
-				},
-			},
 			topic:     core.AgentConfig,
 			msgTopics: []string{},
-			wantBackoff: backoff.BackoffSettings{
-				InitialInterval: time.Duration(30 * time.Minute),
-				MaxInterval:     time.Duration(15 * time.Minute),
-				MaxElapsedTime:  time.Duration(30 * time.Minute),
-				Multiplier:      .5,
-				Jitter:          .5,
-			},
-		},
-		{
-			name: "test agent config request with default backoff",
-			cmd: &proto.Command{
-				Type: proto.Command_NORMAL,
-				Data: &proto.Command_AgentConfig{
-					AgentConfig: &proto.AgentConfig{
-						Details: &proto.AgentDetails{
-							Server: &proto.Server{},
-						},
-					},
-				},
-			},
-			topic:       core.AgentConfig,
-			msgTopics:   []string{},
-			wantBackoff: client.DefaultBackoffSettings,
 		},
 		{
 			name: "test agent command status ok",
@@ -466,8 +407,8 @@ func TestCommander_Process(t *testing.T) {
 				cmdr.On("Send", mock.Anything, client.MessageFromCommand(test.cmd))
 			}
 
-			if !reflect.ValueOf(test.wantBackoff).IsZero() {
-				cmdr.On("WithBackoffSettings", test.wantBackoff)
+			if !reflect.ValueOf(test.backOffSettings).IsZero() {
+				cmdr.On("WithProtoBackoffSettings", test.backOffSettings)
 			}
 
 			pluginUnderTest := NewCommander(cmdr, &config.Config{ClientID: "12345"})
@@ -496,7 +437,7 @@ func TestCommander_Process(t *testing.T) {
 
 func TestCommander_Subscriptions(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
-	subs := []string{core.CommRegister, core.CommStatus, core.CommResponse, core.AgentConnected, core.Events, core.AgentConfig}
+	subs := []string{core.CommRegister, core.CommStatus, core.CommResponse, core.AgentConnected, core.Events, core.AgentConfig, core.AgentConfigChanged}
 	pluginUnderTest := NewCommander(cmdr, &config.Config{})
 
 	assert.Equal(t, subs, pluginUnderTest.Subscriptions())

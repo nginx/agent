@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nginx/agent/sdk/v2/backoff"
 	filesSDK "github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/zip"
@@ -919,4 +920,25 @@ func GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg *proto.Nginx
 // to ignore directives use GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives()
 func GetAppProtectPolicyAndSecurityLogFiles(cfg *proto.NginxConfig) ([]string, []string) {
 	return GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg, []string{})
+}
+
+func ConvertBackOffSettings(backOffSettings *proto.Backoff) backoff.BackoffSettings {
+	multiplier := backoff.BACKOFF_MULTIPLIER
+	if backOffSettings.GetMultiplier() != 0 {
+		multiplier = backOffSettings.GetMultiplier()
+	}
+
+	jitter := backoff.BACKOFF_JITTER
+	if backOffSettings.GetRandomizationFactor() != 0 {
+		jitter = backOffSettings.GetRandomizationFactor()
+	}
+	cBackoff := backoff.BackoffSettings{
+		InitialInterval: time.Duration(backOffSettings.InitialInterval * int64(time.Second)),
+		MaxInterval:     time.Duration(backOffSettings.MaxInterval * int64(time.Second)),
+		MaxElapsedTime:  time.Duration(backOffSettings.MaxElapsedTime * int64(time.Second)),
+		Multiplier:      multiplier,
+		Jitter:          jitter,
+	}
+
+	return cBackoff
 }

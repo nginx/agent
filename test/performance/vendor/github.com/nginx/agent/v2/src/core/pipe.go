@@ -200,7 +200,5 @@ func (p *MessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
 			pluginAlreadyRegistered = true
 		}
 	}
-	log.Infof("pluginName: %v", pluginName)
-	log.Infof("pluginAlreadyRegistred: %v", pluginAlreadyRegistered)
 	return pluginAlreadyRegistered
 }

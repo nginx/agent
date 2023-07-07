@@ -9,14 +9,9 @@ package plugins
 
 import (
 	"context"
-	"reflect"
-	"sort"
-	"strings"
 	"sync"
-	"time"
 
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
-	"github.com/nginx/agent/sdk/v2/backoff"
+	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -57,7 +52,7 @@ func (c *Commander) Info() *core.Info {
 }
 
 func (c *Commander) Subscriptions() []string {
-	return []string{core.CommRegister, core.CommStatus, core.CommResponse, core.AgentConnected, core.Events, core.AgentConfig}
+	return []string{core.CommRegister, core.CommStatus, core.CommResponse, core.AgentConnected, core.Events, core.AgentConfig, core.AgentConfigChanged}
 }
 
 // Process -
@@ -70,157 +65,47 @@ func (c *Commander) Subscriptions() []string {
 // *Command_AgentConfig
 func (c *Commander) Process(msg *core.Message) {
 	log.Tracef("Process function in the commander.go, %s %v", msg.Topic(), msg.Data())
-	switch cmd := msg.Data().(type) {
-	case *proto.Command:
-		switch msg.Topic() {
-		case core.CommRegister, core.CommStatus, core.CommResponse, core.Events:
-			c.sendCommand(c.ctx, cmd)
-		case core.AgentConnected:
-			c.agentRegistered(cmd)
-		case core.AgentConfig:
-			c.agentBackoff(cmd)
+
+	if msg.Exact(core.AgentConfigChanged) {
+		switch config := msg.Data().(type) {
+		case *proto.AgentConfig:
+			c.agentBackoff(config)
+		default:
+			log.Warnf("commander expected %T type, but got: %T", &proto.AgentConfig{}, msg.Data())
+		}
+	} else {
+		switch cmd := msg.Data().(type) {
+		case *proto.Command:
+			switch msg.Topic() {
+			case core.CommRegister, core.CommStatus, core.CommResponse, core.Events:
+				c.sendCommand(c.ctx, cmd)
+			case core.AgentConnected:
+				c.agentRegistered(cmd)
+			}
 		}
 	}
 }
 
-func (c *Commander) agentBackoff(cmd *proto.Command) {
-	log.Debugf("agentBackoff in commander.go with command %v ", cmd)
-
-	if cmd.GetAgentConfig() == nil {
-		log.Warnf("update commander client with default backoff settings as agent config nil, for a pause command %+v", cmd)
-		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
-		return
-	}
-	if cmd.GetAgentConfig().GetDetails() == nil {
-		log.Warnf("update commander client with default backoff settings as agent details nil, for a pause command %+v", cmd)
-		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
-		return
-	}
-	if cmd.GetAgentConfig().GetDetails().GetServer() == nil {
-		log.Warnf("update commander client with default backoff settings as server nil, for a pause command %+v", cmd)
-		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
-		return
-	}
-
-	backoffSetting := cmd.GetAgentConfig().GetDetails().GetServer().Backoff
-	if backoffSetting == nil {
-		log.Warnf("update commander client with default backoff settings as backoff settings nil, for a pause command %+v", cmd)
-		c.cmdr.WithBackoffSettings(client.DefaultBackoffSettings)
-		return
-	}
-
-	multiplier := backoff.BACKOFF_MULTIPLIER
-	if backoffSetting.GetMultiplier() != 0 {
-		multiplier = backoffSetting.GetMultiplier()
-	}
-
-	jitter := backoff.BACKOFF_JITTER
-	if backoffSetting.GetRandomizationFactor() != 0 {
-		jitter = backoffSetting.GetRandomizationFactor()
-	}
-
-	cBackoff := backoff.BackoffSettings{
-		InitialInterval: time.Duration(backoffSetting.InitialInterval * int64(time.Second)),
-		MaxInterval:     time.Duration(backoffSetting.MaxInterval * int64(time.Second)),
-		MaxElapsedTime:  time.Duration(backoffSetting.MaxElapsedTime * int64(time.Second)),
-		Multiplier:      multiplier,
-		Jitter:          jitter,
-	}
-	log.Debugf("update commander client backoff settings to %+v, for a pause command %+v", cBackoff, cmd)
-	c.cmdr.WithBackoffSettings(cBackoff)
+func (c *Commander) agentBackoff(agentConfig *proto.AgentConfig) {
+	log.Debugf("update commander client configuration to %+v", agentConfig)
+	backOffSettings := sdk.ConvertBackOffSettings(agentConfig.Details.Server.GetBackoff())
+	c.cmdr.WithBackoffSettings(backOffSettings)
 }
 
 func (c *Commander) agentRegistered(cmd *proto.Command) {
 	switch commandData := cmd.Data.(type) {
 	case *proto.Command_AgentConnectResponse:
 		log.Infof("config command %v", commandData)
+
 		if agtCfg := commandData.AgentConnectResponse.AgentConfig; agtCfg != nil &&
 			agtCfg.Configs != nil && len(agtCfg.Configs.Configs) > 0 {
-			// Update config tags and features if they were out of sync between Manager and Agent
-			if agtCfg.Details != nil && (len(agtCfg.Details.Tags) > 0 || len(agtCfg.Details.Features) > 0) {
-				configUpdated, err := config.UpdateAgentConfig(c.config.ClientID, agtCfg.Details.Tags, agtCfg.Details.Features)
-				if err != nil {
-					log.Errorf("Failed updating Agent config - %v", err)
-				}
-
-				// If the config was updated send a new agent config updated message
-				if configUpdated {
-					c.pipeline.Process(core.NewMessage(core.AgentConfigChanged, ""))
-				}
-			}
-
 			for _, config := range agtCfg.Configs.Configs {
 				c.pipeline.Process(core.NewMessage(core.NginxConfigUpload, config))
-			}
-
-			if agtCfg.Details != nil && agtCfg.Details.Extensions != nil {
-				for _, extension := range agtCfg.Details.Extensions {
-					if extension == agent_config.AdvancedMetricsExtensionPlugin ||
-						extension == config.NginxAppProtectKey ||
-						extension == config.NAPMonitoringKey {
-						c.pipeline.Process(core.NewMessage(core.EnableExtension, extension))
-					}
-				}
-			}
-
-			if agtCfg.Details != nil && agtCfg.Details.Features != nil {
-				for index, feature := range agtCfg.Details.Features {
-					agtCfg.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
-				}
-
-				sort.Strings(agtCfg.Details.Features)
-
-				sort.Strings(c.config.Features)
-
-				synchronizedFeatures := reflect.DeepEqual(agtCfg.Details.Features, c.config.Features)
-
-				if !synchronizedFeatures {
-					c.synchronizeFeatures(agtCfg)
-				}
 			}
 		}
 
 	default:
 		log.Debugf("unhandled command: %T", cmd.Data)
-	}
-}
-
-func (c *Commander) synchronizeFeatures(agtCfg *proto.AgentConfig) {
-	if c.config != nil {
-		for _, feature := range c.config.Features {
-			if feature != agent_config.FeatureRegistration {
-				c.deRegisterPlugin(feature)
-			}
-		}
-	}
-
-	if agtCfg.Details != nil {
-		for _, feature := range agtCfg.Details.Features {
-			c.pipeline.Process(core.NewMessage(core.EnableFeature, feature))
-		}
-	}
-}
-
-func (c *Commander) deRegisterPlugin(data string) {
-	if data == agent_config.FeatureFileWatcher {
-
-		err := c.pipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
-		if err != nil {
-			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-		}
-
-	} else if data == agent_config.FeatureNginxConfigAsync {
-
-		err := c.pipeline.DeRegister([]string{"NginxBinary"})
-		if err != nil {
-			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-		}
-
-	} else {
-		err := c.pipeline.DeRegister([]string{data})
-		if err != nil {
-			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
-		}
 	}
 }
 

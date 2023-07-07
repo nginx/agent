@@ -15,11 +15,10 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/nginx/agent/sdk/v2/backoff"
-	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	tutils "github.com/nginx/agent/v2/test/utils"
@@ -84,20 +83,16 @@ func TestMetricsSenderBackoff(t *testing.T) {
 	}{
 		{
 			name: "test reporter client backoff setting as sent by server",
-			msg: core.NewMessage(core.AgentConfig,
-				&proto.Command{
-					Data: &proto.Command_AgentConfig{
-						AgentConfig: &proto.AgentConfig{
-							Details: &proto.AgentDetails{
-								Server: &proto.Server{
-									Backoff: &proto.Backoff{
-										InitialInterval:     900,
-										RandomizationFactor: .5,
-										Multiplier:          .5,
-										MaxInterval:         900,
-										MaxElapsedTime:      1800,
-									},
-								},
+			msg: core.NewMessage(core.AgentConfigChanged,
+				&proto.AgentConfig{
+					Details: &proto.AgentDetails{
+						Server: &proto.Server{
+							Backoff: &proto.Backoff{
+								InitialInterval:     900,
+								RandomizationFactor: .5,
+								Multiplier:          .5,
+								MaxInterval:         900,
+								MaxElapsedTime:      1800,
 							},
 						},
 					},
@@ -109,31 +104,6 @@ func TestMetricsSenderBackoff(t *testing.T) {
 				MaxInterval:     time.Duration(15 * time.Minute),
 				MaxElapsedTime:  time.Duration(30 * time.Minute),
 			},
-		},
-		{
-			name: "test reporter client backoff setting as default",
-			msg: core.NewMessage(core.AgentConfig,
-				&proto.Command{
-					Data: &proto.Command_AgentConfig{
-						AgentConfig: &proto.AgentConfig{
-							Details: &proto.AgentDetails{
-								Server: &proto.Server{},
-							},
-						},
-					},
-				}),
-			wantBackoff: client.DefaultBackoffSettings,
-		},
-		{
-			name: "test reporter client backoff setting not updated",
-			msg: core.NewMessage(core.AgentConfig,
-				&proto.Command_AgentConfig{
-					AgentConfig: &proto.AgentConfig{
-						Details: &proto.AgentDetails{
-							Server: &proto.Server{},
-						},
-					},
-				}),
 		},
 	}
 	for _, test := range tests {

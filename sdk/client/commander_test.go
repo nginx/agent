@@ -45,6 +45,11 @@ var (
 		DirectoryMap: &proto.DirectoryMap{},
 	}
 	grpcServerMutex = &sync.Mutex{}
+	backOffSettings = backoff.BackoffSettings{
+		InitialInterval: 100 * time.Millisecond,
+		MaxInterval:     100 * time.Millisecond,
+		MaxElapsedTime:  30 * time.Second,
+	}
 )
 
 // Positive Test Cases
@@ -222,11 +227,7 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  30 * time.Second,
-	})
+	commanderClient.WithBackoffSettings(backOffSettings)
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
 
@@ -286,11 +287,7 @@ func TestCommander_Send_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  30 * time.Second,
-	})
+	commanderClient.WithBackoffSettings(backOffSettings)
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
 
@@ -339,11 +336,7 @@ func TestCommander_Download_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  30 * time.Second,
-	})
+	commanderClient.WithBackoffSettings(backOffSettings)
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
 
@@ -521,11 +514,7 @@ func TestCommander_Upload_Reconnect(t *testing.T) {
 	ctx := context.TODO()
 
 	commanderClient := createTestCommanderClient(dialer)
-	commanderClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  30 * time.Second,
-	})
+	commanderClient.WithBackoffSettings(backOffSettings)
 	err := commanderClient.Connect(ctx)
 	assert.Nil(t, err)
 
