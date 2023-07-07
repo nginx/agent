@@ -56,7 +56,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=cert.pem \
 # Bring in iproute2 so the nginx-agent can collect network metrics
     && apk add --no-cache bash iproute2
 
-COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
+COPY ./entrypoint.sh /agent/entrypoint.sh
 RUN ls -ltr /agent/
 RUN chmod +x /agent/entrypoint.sh
 

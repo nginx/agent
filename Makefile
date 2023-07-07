@@ -274,15 +274,17 @@ run-container: ## Run container from specified IMAGE_TAG
 
 official-plus-image: ## Build official NGINX Plus with NGINX Agent container image, need nginx-repo.crt and nginx-repo.key in build directory
 	@echo Building image nginx-plus-with-nginx-agent with $(CONTAINER_CLITOOL); \
-	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-plus-with-nginx-agent . \
-		--no-cache -f ./scripts/docker/official/nginx-plus-with-nginx-agent/alpine/Dockerfile \
-		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
-		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key
+	cd scripts/docker/official/nginx-plus-with-nginx-agent/alpine/ \
+	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-plus-with-nginx-agent . \
+		--no-cache -f ./Dockerfile \
+		--secret id=nginx-crt,src=../../../../../${CERTS_DIR}/nginx-repo.crt \
+		--secret id=nginx-key,src=../../../../../${CERTS_DIR}/nginx-repo.key
 
 official-oss-image: ## Build official NGINX OSS with NGINX Agent container image
 	@echo Building image nginx-oss-with-nginx-agent with $(CONTAINER_CLITOOL); \
-	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
-		--no-cache -f ./scripts/docker/official/nginx-oss-with-nginx-agent/alpine/Dockerfile
+	cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/ \
+	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
+		--no-cache -f ./Dockerfile.mainline
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Grafana Example Dashboard Targets                                                                               #
