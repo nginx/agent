@@ -20,9 +20,6 @@ func SetupTestContainerWithAgent(t *testing.T, conf string, waitForLog string) *
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
 	ctx := context.Background()
-	t.Cleanup(func() {
-		assert.NoError(t, comp.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
-	})
 
 	ctxCancel, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
@@ -41,6 +38,20 @@ func SetupTestContainerWithAgent(t *testing.T, conf string, waitForLog string) *
 
 	testContainer, err := comp.ServiceContainer(ctxCancel, "agent")
 	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		logReader, err := testContainer.Logs(ctxCancel)
+		assert.NoError(t, err)
+		defer logReader.Close()
+
+		testContainerLogs, err := io.ReadAll(logReader)
+		assert.NoError(t, err)
+
+		err = os.WriteFile("/tmp/nginx-agent-integration-test-features.log", testContainerLogs, 0o660)
+		assert.NoError(t, err)
+
+		assert.NoError(t, comp.Down(ctxCancel, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
+	})
 
 	return testContainer
 }
