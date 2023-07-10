@@ -16,7 +16,7 @@ import (
 
 const (
 	envEnabled    = "LEFTHOOK"         // "0", "false"
-	envSkipOutput = "LEFTHOOK_QUIET"   // "meta,success,failure,summary,execution,execution_out,skips"
+	envSkipOutput = "LEFTHOOK_QUIET"   // "meta,success,failure,summary,skips,execution,execution_out,execution_info"
 	envVerbose    = "LEFTHOOK_VERBOSE" // keep all output
 )
 
@@ -74,10 +74,6 @@ func (l *Lefthook) Run(hookName string, args RunArgs, gitArgs []string) error {
 	var logSettings log.SkipSettings
 	for _, skipOption := range cfg.SkipOutput {
 		(&logSettings).ApplySetting(skipOption)
-	}
-
-	if cfg.Colors != config.DefaultColorsEnabled {
-		log.SetColors(cfg.Colors)
 	}
 
 	if !logSettings.SkipMeta() {
