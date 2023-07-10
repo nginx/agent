@@ -47,6 +47,7 @@ var (
 	reloadErrorList   = []*re.Regexp{
 		re.MustCompile(`.*\[emerg\].*`),
 		re.MustCompile(`.*\[alert\].*`),
+		re.MustCompile(`.*\[crit\].*`),
 	}
 	warningRegex = re.MustCompile(`.*\[warn\].*`)
 )
