@@ -41,8 +41,9 @@ func NewSwapSource(namespace string, env core.Environment) *Swap {
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {
 			log.Warnf("Unable to collect Swap metrics because the file %v was not found", e.Path)
+		} else {
+			log.Warnf("Unable to collect Swap metrics, %v", err)
 		}
-		log.Warnf("Unable to collect Swap metrics, %v", err)
 	}
 
 	return &Swap{NewMetricSourceLogger(), &namedMetric{namespace, "swap"}, statFunc}

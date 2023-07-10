@@ -235,7 +235,7 @@ func TestNginxCollector_UpdateCollectorConfig(t *testing.T) {
 		dimensions: metrics.NewCommonDim(host, &config.Config{}, "123"),
 	}
 
-	nginxCollector.UpdateCollectorConfig(&metrics.NginxCollectorConfig{StubStatus: "http://localhost:80/api"}, configuration)
+	nginxCollector.UpdateCollectorConfig(&metrics.NginxCollectorConfig{StubStatus: "http://localhost:80/api"}, configuration, env)
 
 	// Verify that sources are stopped
 	mockNginxSource1.AssertExpectations(t)
