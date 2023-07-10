@@ -27,22 +27,25 @@ changelog formats not being the same.
 
 ## Goals
 
-* [x] be simple to use
-* [x] provide decent default templates for deb, rpm, release and repository
-  style changelog formats
-* [x] be distributed as a single binary
-* [x] reproducible results
-  * [x] depend on the fewer external things as possible
-  * [x] store changelog in a transportable format (.yml)
-* [x] be possible to use it as a lib in other go projects (namely
-  [goreleaser](https://goreleaser.com) itself)
+- [x] be simple to use
+- [x] provide decent default templates for deb, rpm, release and repository
+      style changelog formats
+- [x] be distributed as a single binary
+- [x] reproducible results
+  - [x] depend on the fewer external things as possible
+  - [x] store changelog in a transportable format (.yml)
+- [x] be possible to use it as a lib in other go projects (namely
+      [goreleaser](https://goreleaser.com) itself)
 
 ## Install
-`go get github.com/goreleaser/chglog/cmd/chglog`
+
+```bash
+go get github.com/goreleaser/chglog/cmd/chglog@latest
+```
 
 ## Usage
 
-The first steps are to run `chglog config` to initialize a config file
+The first steps are to run `chglog config` to initialize a configuration file
 (`.chglog.yml`) and edit the generated file according to your needs:
 
 ```yaml
@@ -53,41 +56,40 @@ deb:
 debug: false
 owner: ""
 package-name: ""
-
 ```
 
 The next step is to run `chglog init`.
+
 ```yaml
 - semver: 0.0.1
   date: 2019-10-18T16:05:33-07:00
   packager: dj gilcrease <example@example.com>
   changes:
-  - commit: 2c499787328348f09ae1e8f03757c6483b9a938a
-    note: |-
-      oops i forgot to use Conventional Commits style message
+    - commit: 2c499787328348f09ae1e8f03757c6483b9a938a
+      note: |-
+        oops i forgot to use Conventional Commits style message
 
-      This should NOT break anything even if I am asking to build the changelog using Conventional Commits style message
-  - commit: 3ec1e9a60d07cc060cee727c97ffc8aac5713943
-    note: |-
-      feat: added file two feature
+        This should NOT break anything even if I am asking to build the changelog using Conventional Commits style message
+    - commit: 3ec1e9a60d07cc060cee727c97ffc8aac5713943
+      note: |-
+        feat: added file two feature
 
-      BREAKING CHANGE: this is a backwards incompatible change
-  - commit: 2cc00abc77d401a541d18c26e5c7fbef1effd3ed
-    note: |-
-      feat: added the fileone feature
+        BREAKING CHANGE: this is a backwards incompatible change
+    - commit: 2cc00abc77d401a541d18c26e5c7fbef1effd3ed
+      note: |-
+        feat: added the fileone feature
 
-      * This is a test repo
-      * so ya!
+        * This is a test repo
+        * so ya!
 ```
 
 Then to generate a `CHANGELOG.md` file you would do `chglog format --template
 repo > CHANGELOG.md`
 
-Now whenever you goto do another release you would do `chglog add --version
+Now whenever you go to do another release you would do `chglog add --version
 v#.#.#` (version MUST be semver format)
 
 And that's it!
-
 
 ## Usage as lib
 
@@ -95,12 +97,12 @@ You can look at the code of chglog itself to see how to use it as a library
 
 ## Status
 
-* alpha
+- alpha
 
 ## Donate
 
 Donations are very much appreciated! You can donate/sponsor on the main
-[goreleaser opencollective](https://opencollective.com/goreleaser)! It's
+[goreleaser OpenCollective](https://opencollective.com/goreleaser)! It's
 easy and will surely help the developers at least buy some ☕️ or 🍺!
 
 ## Stargazers over time
