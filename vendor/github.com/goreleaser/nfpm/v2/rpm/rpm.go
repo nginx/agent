@@ -57,15 +57,16 @@ type RPM struct{}
 // https://docs.fedoraproject.org/ro/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch01s03.html
 // nolint: gochecknoglobals
 var archToRPM = map[string]string{
-	"all":    "noarch",
-	"amd64":  "x86_64",
-	"386":    "i386",
-	"arm64":  "aarch64",
-	"arm5":   "armv5tel",
-	"arm6":   "armv6hl",
-	"arm7":   "armv7hl",
-	"mips":   "mips",
-	"mipsle": "mipsel",
+	"all":      "noarch",
+	"amd64":    "x86_64",
+	"386":      "i386",
+	"arm64":    "aarch64",
+	"arm5":     "armv5tel",
+	"arm6":     "armv6hl",
+	"arm7":     "armv7hl",
+	"mips64le": "mips64el",
+	"mipsle":   "mipsel",
+	"mips":     "mips",
 	// TODO: other arches
 }
 
@@ -120,7 +121,11 @@ func (*RPM) Package(info *nfpm.Info, w io.Writer) (err error) {
 	}
 
 	if info.RPM.Signature.KeyFile != "" {
-		rpm.SetPGPSigner(sign.PGPSignerWithKeyID(info.RPM.Signature.KeyFile, info.RPM.Signature.KeyPassphrase, info.RPM.Signature.KeyID))
+		rpm.SetPGPSigner(sign.PGPSignerWithKeyID(
+			info.RPM.Signature.KeyFile,
+			info.RPM.Signature.KeyPassphrase,
+			info.RPM.Signature.KeyID,
+		))
 	}
 
 	if err = createFilesInsideRPM(info, rpm); err != nil {

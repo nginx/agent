@@ -307,6 +307,10 @@ func (d *dashEscaper) Close() (err error) {
 		sig.Hash = d.hashType
 		sig.CreationTime = t
 		sig.IssuerKeyId = &k.KeyId
+		sig.IssuerFingerprint = k.Fingerprint
+		sig.Notations = d.config.Notations()
+		sigLifetimeSecs := d.config.SigLifetime()
+		sig.SigLifetimeSecs = &sigLifetimeSecs
 
 		if err = sig.Sign(d.hashers[i], k, d.config); err != nil {
 			return
@@ -421,12 +425,6 @@ func (b *Block) VerifySignature(keyring openpgp.KeyRing, config *packet.Config) 
 // if the name isn't known. See RFC 4880, section 9.4.
 func nameOfHash(h crypto.Hash) string {
 	switch h {
-	case crypto.MD5:
-		return "MD5"
-	case crypto.SHA1:
-		return "SHA1"
-	case crypto.RIPEMD160:
-		return "RIPEMD160"
 	case crypto.SHA224:
 		return "SHA224"
 	case crypto.SHA256:
@@ -435,6 +433,10 @@ func nameOfHash(h crypto.Hash) string {
 		return "SHA384"
 	case crypto.SHA512:
 		return "SHA512"
+	case crypto.SHA3_256:
+		return "SHA3-256"
+	case crypto.SHA3_512:
+		return "SHA3-512"
 	}
 	return ""
 }
@@ -443,12 +445,8 @@ func nameOfHash(h crypto.Hash) string {
 // if the name isn't known. See RFC 4880, section 9.4.
 func nameToHash(h string) crypto.Hash {
 	switch h {
-	case "MD5":
-		return crypto.MD5
 	case "SHA1":
 		return crypto.SHA1
-	case "RIPEMD160":
-		return crypto.RIPEMD160
 	case "SHA224":
 		return crypto.SHA224
 	case "SHA256":
@@ -457,6 +455,10 @@ func nameToHash(h string) crypto.Hash {
 		return crypto.SHA384
 	case "SHA512":
 		return crypto.SHA512
+	case "SHA3-256":
+		return crypto.SHA3_256
+	case "SHA3-512":
+		return crypto.SHA3_512
 	}
 	return crypto.Hash(0)
 }

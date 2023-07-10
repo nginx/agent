@@ -21,20 +21,27 @@ type packageCmd struct {
 func newPackageCmd() *packageCmd {
 	root := &packageCmd{}
 	cmd := &cobra.Command{
-		Use:           "package",
-		Aliases:       []string{"pkg", "p"},
-		Short:         "Creates a package based on the given config file and flags",
-		SilenceUsage:  true,
-		SilenceErrors: true,
-		Args:          cobra.NoArgs,
+		Use:               "package",
+		Aliases:           []string{"pkg", "p"},
+		Short:             "Creates a package based on the given config file and flags",
+		SilenceUsage:      true,
+		SilenceErrors:     true,
+		Args:              cobra.NoArgs,
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return doPackage(root.config, root.target, root.packager)
 		},
 	}
 
 	cmd.Flags().StringVarP(&root.config, "config", "f", "nfpm.yaml", "config file to be used")
+	_ = cmd.MarkFlagFilename("config", "yaml", "yml")
 	cmd.Flags().StringVarP(&root.target, "target", "t", "", "where to save the generated package (filename, folder or empty for current folder)")
+	_ = cmd.MarkFlagFilename("target")
 	cmd.Flags().StringVarP(&root.packager, "packager", "p", "", "which packager implementation to use [apk|deb|rpm|archlinux]")
+	_ = cmd.RegisterFlagCompletionFunc("packager", cobra.FixedCompletions(
+		[]string{"apk", "deb", "rpm", "archlinux"},
+		cobra.ShellCompDirectiveNoFileComp,
+	))
 
 	root.cmd = cmd
 	return root
