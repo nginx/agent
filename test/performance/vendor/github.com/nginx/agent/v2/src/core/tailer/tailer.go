@@ -10,6 +10,7 @@ package tailer
 import (
 	"context"
 	"io"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/nxadm/tail"
@@ -64,6 +65,10 @@ type PatternTailer struct {
 	gc     *grok.CompiledGrok
 }
 
+type LTSVTailer struct {
+	handle *tail.Tail
+}
+
 func NewTailer(file string) (*Tailer, error) {
 	t, err := tail.TailFile(file, tailConfig)
 	if err != nil {
@@ -91,6 +96,14 @@ func NewPatternTailer(file string, patterns map[string]string) (*PatternTailer, 
 	}
 
 	return &PatternTailer{t, gc}, nil
+}
+
+func NewLTSVTailer(file string) (*LTSVTailer, error) {
+	t, err := tail.TailFile(file, tailConfig)
+	if err != nil {
+		return nil, err
+	}
+	return &LTSVTailer{t}, nil
 }
 
 func (t *Tailer) Tail(ctx context.Context, data chan<- string) {
@@ -147,4 +160,46 @@ func (t *PatternTailer) Tail(ctx context.Context, data chan<- map[string]string)
 			return
 		}
 	}
+}
+
+func (t *LTSVTailer) Tail(ctx context.Context, data chan<- map[string]string) {
+	for {
+		select {
+		case line := <-t.handle.Lines:
+			if line == nil {
+				return
+			}
+			if line.Err != nil {
+				continue
+			}
+			l := t.parse(line.Text)
+			if l != nil {
+				data <- l
+			}
+		case <-ctx.Done():
+			ctxErr := ctx.Err()
+			switch ctxErr {
+			case context.DeadlineExceeded:
+				log.Tracef("Tailer cancelled because deadline was exceeded, %v", ctxErr)
+			case context.Canceled:
+				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
+			}
+			log.Tracef("Tailer is done")
+			return
+		}
+	}
+}
+
+func (t *LTSVTailer) parse(line string) map[string]string {
+	columns := strings.Split(line, "\t")
+	lineMap := make(map[string]string)
+	for _, column := range columns {
+		labelValue := strings.SplitN(column, ":", 2)
+		if len(labelValue) < 2 {
+			continue
+		}
+		label, value := strings.TrimSpace(labelValue[0]), strings.TrimSpace(labelValue[1])
+		lineMap[label] = value
+	}
+	return lineMap
 }

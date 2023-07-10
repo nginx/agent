@@ -249,7 +249,11 @@ func updateNginxConfigFileConfig(
 			switch directive.Directive {
 			case "log_format":
 				if len(directive.Args) >= 2 {
-					formatMap[directive.Args[0]] = strings.Join(directive.Args[1:], "")
+					if directive.Args[0] == "ltsv" {
+						formatMap[directive.Args[0]] = "ltsv"
+					} else {
+						formatMap[directive.Args[0]] = strings.Join(directive.Args[1:], "")
+					}
 				}
 			case "root":
 				if err := updateNginxConfigFileWithRoot(aux, directive.Args[0], seen, allowedDirectories, directoryMap); err != nil {
@@ -405,6 +409,8 @@ func updateNginxConfigWithAccessLog(file string, format string, nginxConfig *pro
 		al.Format = formatMap[format]
 	} else if format == "" || format == "combined" {
 		al.Format = predefinedAccessLogFormat
+	} else if format == "ltsv" {
+		al.Format = format
 	} else {
 		al.Format = ""
 	}

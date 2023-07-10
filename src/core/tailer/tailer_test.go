@@ -137,3 +137,57 @@ T:
 	os.Remove(accessLogFile.Name())
 	assert.Equal(t, 1, count)
 }
+
+func TestLTSVTailer(t *testing.T) {
+	accessLogFile, _ := os.CreateTemp(os.TempDir(), "access.log")
+	logLine := "remote_addr:127.0.0.1\t remote_user:-\t time_local:04/Nov/2020:19:40:38 +0000\t request:GET /500 HTTP/1.1\t status:500\t body_bytes_sent:4\t http_referer:-\t http_user_agent:curl/7.64.1\n"
+
+	tailer, err := NewLTSVTailer(accessLogFile.Name())
+	require.Nil(t, err)
+
+	timeoutDuration := time.Millisecond * 300
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
+	defer cancel()
+
+	data := make(chan map[string]string, 100)
+	go tailer.Tail(ctx, data)
+
+	time.Sleep(time.Millisecond * 100)
+	_, err = accessLogFile.WriteString(logLine)
+	if err != nil {
+		t.Fatalf("Error writing data to access log")
+	}
+	accessLogFile.Close()
+
+	var count int
+	var res map[string]string
+T:
+	for {
+		select {
+		case r := <-data:
+			res = r
+			count++
+		case <-time.After(timeoutDuration):
+			break T
+		case <-ctx.Done():
+			break T
+		}
+	}
+
+	os.Remove(accessLogFile.Name())
+	assert.Equal(t, 1, count)
+	assert.Equal(
+		t,
+		map[string]string{
+			"body_bytes_sent": "4",
+			"http_referer":    "-",
+			"http_user_agent": "curl/7.64.1",
+			"remote_addr":     "127.0.0.1",
+			"remote_user":     "-",
+			"request":         "GET /500 HTTP/1.1",
+			"status":          "500",
+			"time_local":      "04/Nov/2020:19:40:38 +0000",
+		},
+		res,
+	)
+}
