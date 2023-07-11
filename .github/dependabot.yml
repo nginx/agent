@@ -1,6 +1,9 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: weekly
     open-pull-requests-limit: 5
     pull-request-branch-name:
       # Separate sections of the branch name with a hyphen
