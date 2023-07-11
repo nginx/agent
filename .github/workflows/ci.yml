@@ -136,7 +136,7 @@ jobs:
 
   performance-test:
     name: Performance Tests
-    if: ${{ !github.event.pull_request.head.repo.fork }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot-') }}
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -160,7 +160,7 @@ jobs:
   build-signed-snapshot:
     name: Build signed snapshot
     runs-on: ubuntu-22.04
-    if: ${{ !startsWith(github.ref_name, 'release-') && !github.event.pull_request.head.repo.fork }}
+    if: ${{ !startsWith(github.ref_name, 'release-') && !startsWith(github.ref_name, 'dependabot-') && !github.event.pull_request.head.repo.fork }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -220,7 +220,7 @@ jobs:
   build-unsigned-snapshot:
     name: Build unsigned snapshot
     runs-on: ubuntu-22.04
-    if: ${{ !startsWith(github.ref_name, 'release-') && github.event.pull_request.head.repo.fork }}
+    if: ${{ startsWith(github.ref_name, 'dependabot-') || github.event.pull_request.head.repo.fork }}
     steps:
       - uses: actions/checkout@v3
         with:
