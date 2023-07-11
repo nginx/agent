@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/tetratelabs/wazero/api"
-	"github.com/tetratelabs/wazero/internal/platform"
 	internalsys "github.com/tetratelabs/wazero/internal/sys"
 	"github.com/tetratelabs/wazero/internal/wasip1"
 	"github.com/tetratelabs/wazero/internal/wasm"
@@ -50,7 +49,7 @@ type event struct {
 	outOffset uint32
 }
 
-func pollOneoffFn(ctx context.Context, mod api.Module, params []uint64) syscall.Errno {
+func pollOneoffFn(_ context.Context, mod api.Module, params []uint64) syscall.Errno {
 	in := uint32(params[0])
 	out := uint32(params[1])
 	nsubscriptions := uint32(params[2])
@@ -162,11 +161,14 @@ func pollOneoffFn(ctx context.Context, mod api.Module, params []uint64) syscall.
 
 	// If there are stdin subscribers, check for data with given timeout.
 	if len(stdinSubs) > 0 {
-		reader := getStdioFileReader(mod)
+		stdin, ok := fsc.LookupFile(internalsys.FdStdin)
+		if !ok {
+			return syscall.EBADF
+		}
 		// Wait for the timeout to expire, or for some data to become available on Stdin.
-		stdinReady, err := reader.Poll(timeout)
-		if err != nil {
-			return platform.UnwrapOSError(err)
+		stdinReady, errno := stdin.File.PollRead(&timeout)
+		if errno != 0 {
+			return errno
 		}
 		if stdinReady {
 			// stdin has data ready to for reading, write back all the events
@@ -232,10 +234,10 @@ func processFDEventRead(fsc *internalsys.FSContext, fd int32) wasip1.Errno {
 
 // processFDEventWrite returns ErrnoNotsup if the file exists and ErrnoBadf otherwise.
 func processFDEventWrite(fsc *internalsys.FSContext, fd int32) wasip1.Errno {
-	if internalsys.WriterForFile(fsc, fd) == nil {
-		return wasip1.ErrnoBadf
+	if _, ok := fsc.LookupFile(fd); ok {
+		return wasip1.ErrnoNotsup
 	}
-	return wasip1.ErrnoNotsup
+	return wasip1.ErrnoBadf
 }
 
 // writeEvent writes the event corresponding to the processed subscription.
@@ -246,16 +248,4 @@ func writeEvent(outBuf []byte, evt *event) {
 	outBuf[evt.outOffset+9] = 0
 	le.PutUint32(outBuf[evt.outOffset+10:], uint32(evt.eventType))
 	// TODO: When FD events are supported, write outOffset+16
-}
-
-// getStdioFileReader extracts a StdioFileReader for FdStdin from the given api.Module instance.
-// and panics if this is not possible.
-func getStdioFileReader(mod api.Module) *internalsys.StdioFileReader {
-	fsc := mod.(*wasm.ModuleInstance).Sys.FS()
-	if file, ok := fsc.LookupFile(internalsys.FdStdin); ok {
-		if reader, typeOk := file.File.(*internalsys.StdioFileReader); typeOk {
-			return reader
-		}
-	}
-	panic("unexpected error: Stdin must always be a StdioFileReader")
 }
