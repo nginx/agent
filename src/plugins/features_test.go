@@ -103,7 +103,7 @@ func TestFeatures_Process(t *testing.T) {
 		assert.Equal(t, 1, len(messagePipe.GetPlugins()))
 		assert.Equal(t, "Features Plugin", messagePipe.GetPlugins()[0].Info().Name())
 
-		messagePipe.Process(core.NewMessage(core.EnableFeature, tc.featureKey))
+		messagePipe.Process(core.NewMessage(core.EnableFeature, []string{tc.featureKey}))
 		messagePipe.Run()
 		time.Sleep(250 * time.Millisecond)
 

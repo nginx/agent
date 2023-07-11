@@ -12,7 +12,7 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
-	messagebus "github.com/vardius/message-bus"
+	message_bus "github.com/vardius/message-bus"
 )
 
 const (
@@ -39,7 +39,7 @@ type MessagePipe struct {
 	ctx              context.Context
 	cancel           context.CancelFunc
 	mu               sync.RWMutex
-	bus              messagebus.MessageBus
+	bus              message_bus.MessageBus
 }
 
 func NewMessagePipe(ctx context.Context) *MessagePipe {
@@ -59,7 +59,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 
 	p.plugins = append(p.plugins, plugins...)
 	p.extensionPlugins = append(p.extensionPlugins, extensionPlugins...)
-	p.bus = messagebus.New(size)
+	p.bus = message_bus.New(size)
 
 	pluginsRegistered := []string{}
 	extensionPluginsRegistered := []string{}
@@ -83,8 +83,8 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 		}
 		extensionPluginsRegistered = append(extensionPluginsRegistered, *plugin.Info().name)
 	}
-	log.Debugf("The following core plugins have being registered: %q", pluginsRegistered)
-	log.Debugf("The following extension plugins have being registered: %q", extensionPluginsRegistered)
+	log.Infof("The following core plugins have being registered: %q", pluginsRegistered)
+	log.Infof("The following extension plugins have being registered: %q", extensionPluginsRegistered)
 	p.mu.Unlock()
 	return nil
 }
