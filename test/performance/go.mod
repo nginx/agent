@@ -12,7 +12,7 @@ require (
 	github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.13.0
 	github.com/sanity-io/litter v1.5.5
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/atomic v1.11.0
 	google.golang.org/grpc v1.56.2
