@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -48,7 +49,7 @@ func (c *Commander) Close() {
 }
 
 func (c *Commander) Info() *core.Info {
-	return core.NewInfo("Commander", "v0.0.1")
+	return core.NewInfo(agent_config.CommanderPlugin, "v0.0.1")
 }
 
 func (c *Commander) Subscriptions() []string {

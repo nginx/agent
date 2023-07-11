@@ -46,7 +46,7 @@ func TestFeatures_Process(t *testing.T) {
 		{
 			testName:   "Nginx Config Async",
 			featureKey: agent_config.FeatureNginxConfigAsync,
-			pluginName: "NginxBinary",
+			pluginName: agent_config.NginxBinaryPlugin,
 			numPlugins: 2,
 		},
 		{
@@ -101,7 +101,7 @@ func TestFeatures_Process(t *testing.T) {
 		messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 		assert.Equal(t, 1, len(messagePipe.GetPlugins()))
-		assert.Equal(t, "Features Plugin", messagePipe.GetPlugins()[0].Info().Name())
+		assert.Equal(t, agent_config.FeaturesPlugin, messagePipe.GetPlugins()[0].Info().Name())
 
 		messagePipe.Process(core.NewMessage(core.EnableFeature, []string{tc.featureKey}))
 		messagePipe.Run()

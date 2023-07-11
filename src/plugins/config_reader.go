@@ -40,7 +40,7 @@ func (r *ConfigReader) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (r *ConfigReader) Info() *core.Info {
-	return core.NewInfo("Config Reader", "v0.0.1")
+	return core.NewInfo(agent_config.ConfigReaderPlugin, "v0.0.1")
 }
 
 func (r *ConfigReader) Close() {
@@ -199,7 +199,7 @@ func (r *ConfigReader) deRegisterPlugin(data string) {
 
 	} else if data == agent_config.FeatureNginxConfigAsync {
 
-		err := r.messagePipeline.DeRegister([]string{"NginxBinary"})
+		err := r.messagePipeline.DeRegister([]string{agent_config.NginxBinaryPlugin})
 		if err != nil {
 			log.Warnf("Error De-registering %v Plugin: %v", data, err)
 		}

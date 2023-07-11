@@ -730,7 +730,7 @@ func (n *Nginx) uploadConfigs() {
 
 // Info returns the version of this plugin
 func (n *Nginx) Info() *core.Info {
-	return core.NewInfo("NginxBinary", "v0.0.1")
+	return core.NewInfo(agent_config.NginxBinaryPlugin, "v0.0.1")
 }
 
 // Close cleans up anything outstanding once the plugin ends

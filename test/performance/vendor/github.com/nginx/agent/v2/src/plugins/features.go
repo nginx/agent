@@ -80,7 +80,7 @@ func (f *Features) Close() {
 }
 
 func (f *Features) Info() *core.Info {
-	return core.NewInfo("Features Plugin", "v0.0.1")
+	return core.NewInfo(agent_config.FeaturesPlugin, "v0.0.1")
 }
 
 func (f *Features) Subscriptions() []string {

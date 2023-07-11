@@ -770,7 +770,7 @@ func TestNginx_Subscriptions(t *testing.T) {
 func TestNginx_Info(t *testing.T) {
 	pluginUnderTest := NewNginx(nil, nil, tutils.GetMockEnvWithProcess(), &loadedConfig.Config{})
 
-	assert.Equal(t, "NginxBinary", pluginUnderTest.Info().Name())
+	assert.Equal(t, agent_config.NginxBinaryPlugin, pluginUnderTest.Info().Name())
 }
 
 func TestNginx_validateConfig(t *testing.T) {
