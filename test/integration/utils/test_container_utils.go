@@ -59,6 +59,7 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 
 // SetupTestContainerWithoutAgent sets up a container with nginx installed
 func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContainer {
+	// line change to make a PR
 	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
