@@ -295,7 +295,7 @@ func wrapIfContextError(err error) error {
 	return err
 }
 
-// wrapIfLikelyWithGRPCNotUsedError adds a wrapping error that has a message
+// wrapIfLikelyH2CNotConfiguredError adds a wrapping error that has a message
 // telling the caller that they likely need to use h2c but are using a raw http.Client{}.
 //
 // This happens when running a gRPC-only server.
@@ -399,4 +399,13 @@ func wrapIfRSTError(err error) error {
 	default:
 		return err
 	}
+}
+
+func asMaxBytesError(err error, tmpl string, args ...any) *Error {
+	var maxBytesErr *http.MaxBytesError
+	if ok := errors.As(err, &maxBytesErr); !ok {
+		return nil
+	}
+	prefix := fmt.Sprintf(tmpl, args...)
+	return errorf(CodeResourceExhausted, "%s: exceeded %d byte http.MaxBytesReader limit", prefix, maxBytesErr.Limit)
 }

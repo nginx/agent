@@ -122,13 +122,8 @@ type (
 		s *Store
 		// prev and next hold the nodes in the linked list of ModuleInstance held by Store.
 		prev, next *ModuleInstance
-		// aliases holds the module names that are aliases of this module registered in the store.
-		// Access to this field must be guarded by s.mux.
-		//
-		// Note: This is currently only used for spectests and will be nil in most cases.
-		aliases []string
-		// Definitions is derived from *Module, and is constructed during compilation phrase.
-		Definitions []FunctionDefinition
+		// Source is a pointer to the Module from which this ModuleInstance derives.
+		Source *Module
 	}
 
 	// DataInstance holds bytes corresponding to the data segment in a module.
@@ -218,10 +213,19 @@ func (m *ModuleInstance) applyElements(elems []ElementSegment) {
 				references[offset+uint32(i)] = Reference(0)
 			}
 		} else {
-			for i, fnIndex := range elem.Init {
-				if fnIndex != ElementInitNullReference {
-					references[offset+uint32(i)] = m.Engine.FunctionInstanceReference(fnIndex)
+			for i, init := range elem.Init {
+				if init == ElementInitNullReference {
+					continue
 				}
+
+				var ref Reference
+				if index, ok := unwrapElementInitGlobalReference(init); ok {
+					global := m.Globals[index]
+					ref = Reference(global.Val)
+				} else {
+					ref = m.Engine.FunctionInstanceReference(index)
+				}
+				references[offset+uint32(i)] = ref
 			}
 		}
 	}
@@ -321,7 +325,7 @@ func (s *Store) instantiate(
 	sysCtx *internalsys.Context,
 	typeIDs []FunctionTypeID,
 ) (m *ModuleInstance, err error) {
-	m = &ModuleInstance{ModuleName: name, TypeIDs: typeIDs, Sys: sysCtx, s: s, Definitions: module.FunctionDefinitionSection}
+	m = &ModuleInstance{ModuleName: name, TypeIDs: typeIDs, Sys: sysCtx, s: s, Source: module}
 
 	m.Tables = make([]*TableInstance, int(module.ImportTableCount)+len(module.TableSection))
 	m.Globals = make([]*GlobalInstance, int(module.ImportGlobalCount)+len(module.GlobalSection))
@@ -396,9 +400,10 @@ func (m *ModuleInstance) resolveImports(module *Module) (err error) {
 			switch i.Type {
 			case ExternTypeFunc:
 				expectedType := &module.TypeSection[i.DescFunc]
-				actual := &importedModule.Definitions[imported.Index]
-				if !actual.funcType.EqualsSignature(expectedType.Params, expectedType.Results) {
-					err = errorInvalidImport(i, fmt.Errorf("signature mismatch: %s != %s", expectedType, actual.funcType))
+				src := importedModule.Source
+				actual := src.typeOfFunction(imported.Index)
+				if !actual.EqualsSignature(expectedType.Params, expectedType.Results) {
+					err = errorInvalidImport(i, fmt.Errorf("signature mismatch: %s != %s", expectedType, actual))
 					return
 				}
 

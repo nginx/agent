@@ -13,6 +13,7 @@ import (
 	"github.com/tetratelabs/wazero/api"
 	"github.com/tetratelabs/wazero/experimental"
 	"github.com/tetratelabs/wazero/internal/asm"
+	"github.com/tetratelabs/wazero/internal/bitpack"
 	"github.com/tetratelabs/wazero/internal/filecache"
 	"github.com/tetratelabs/wazero/internal/internalapi"
 	"github.com/tetratelabs/wazero/internal/platform"
@@ -129,27 +130,11 @@ type (
 		// initialFn is the initial function for this call engine.
 		initialFn *function
 
-		// ctx is the context.Context passed to all the host function calls.
-		// This is modified when there's a function listener call, otherwise it's always the context.Context
-		// passed to the Call API.
-		ctx context.Context
-		// contextStack is a stack of contexts which is pushed and popped by function listeners.
-		// This is used and modified when there are function listeners.
-		contextStack *contextStack
-
 		// stackIterator provides a way to iterate over the stack for Listeners.
 		// It is setup and valid only during a call to a Listener hook.
 		stackIterator stackIterator
 
 		ensureTermination bool
-	}
-
-	// contextStack is a stack of context.Context.
-	contextStack struct {
-		// See note at top of file before modifying this struct.
-
-		self context.Context
-		prev *contextStack
 	}
 
 	// moduleContext holds the per-function call specific module information.
@@ -272,18 +257,14 @@ type (
 		moduleInstance *wasm.ModuleInstance
 		// typeID is the corresponding wasm.FunctionTypeID for funcType.
 		typeID wasm.FunctionTypeID
-		// index is the function Index in this module.
-		index wasm.Index
 		// funcType is the function type for this function. Created during compilation.
 		funcType *wasm.FunctionType
-		// def is the api.Function for this function. Created during compilation.
-		def api.FunctionDefinition
 		// parent holds code from which this is created.
 		parent *compiledFunction
 	}
 
 	compiledModule struct {
-		executable        []byte
+		executable        asm.CodeSegment
 		functions         []compiledFunction
 		source            *wasm.Module
 		ensureTermination bool
@@ -293,28 +274,46 @@ type (
 	// compiled by wazero compiler.
 	compiledFunction struct {
 		// codeSegment is holding the compiled native code as a byte slice.
-		executableOffset int
+		executableOffset uintptr
 		// See the doc for codeStaticData type.
 		// stackPointerCeil is the max of the stack pointer this function can reach. Lazily applied via maybeGrowStack.
 		stackPointerCeil uint64
 
+		index           wasm.Index
 		goFunc          interface{}
 		listener        experimental.FunctionListener
 		parent          *compiledModule
 		sourceOffsetMap sourceOffsetMap
 	}
 
-	// sourceOffsetMap holds the information to retrieve the original offset in the Wasm binary from the
-	// offset in the native binary.
+	// sourceOffsetMap holds the information to retrieve the original offset in
+	// the Wasm binary from the offset in the native binary.
+	//
+	// The fields are implemented as bit-packed arrays of 64 bits integers to
+	// reduce the memory footprint. Indexing into such arrays is not as fast as
+	// indexing into a simple slice, but the source offset map is intended to be
+	// used for debugging, lookups into the arrays should not appear on code
+	// paths that are critical to the application performance.
+	//
+	// The bitpack.OffsetArray fields may be nil, use bitpack.OffsetArrayLen to
+	// determine whether they are empty prior to indexing into the arrays to
+	// avoid panics caused by accessing nil pointers.
 	sourceOffsetMap struct {
 		// See note at top of file before modifying this struct.
 
 		// irOperationOffsetsInNativeBinary is index-correlated with irOperationSourceOffsetsInWasmBinary,
 		// and maps each index (corresponding to each IR Operation) to the offset in the compiled native code.
-		irOperationOffsetsInNativeBinary []uint64
+		irOperationOffsetsInNativeBinary bitpack.OffsetArray
 		// irOperationSourceOffsetsInWasmBinary is index-correlated with irOperationOffsetsInNativeBinary.
 		// See wazeroir.CompilationResult irOperationOffsetsInNativeBinary.
-		irOperationSourceOffsetsInWasmBinary []uint64
+		irOperationSourceOffsetsInWasmBinary bitpack.OffsetArray
+	}
+
+	// functionListenerInvocation captures arguments needed to perform function
+	// listener invocations when unwinding the call stack.
+	functionListenerInvocation struct {
+		experimental.FunctionListener
+		def api.FunctionDefinition
 	}
 )
 
@@ -353,7 +352,7 @@ const (
 	functionCodeInitialAddressOffset = 0
 	functionModuleInstanceOffset     = 8
 	functionTypeIDOffset             = 16
-	functionSize                     = 56
+	functionSize                     = 40
 
 	// Offsets for wasm.ModuleInstance.
 	moduleInstanceGlobalsOffset          = 32
@@ -474,16 +473,10 @@ func (s nativeCallStatusCode) String() (ret string) {
 
 // releaseCompiledModule is a runtime.SetFinalizer function that munmaps the compiledModule.executable.
 func releaseCompiledModule(cm *compiledModule) {
-	e := cm.executable
-	if e == nil {
-		return // already released
-	}
-
-	// Setting this to nil allows tests to know the correct finalizer function was called.
-	cm.executable = nil
-	if err := platform.MunmapCodeSegment(e); err != nil {
-		// munmap failure cannot recover, and happen asynchronously on the finalizer thread. While finalizer
-		// functions can return errors, they are ignored.
+	if err := cm.executable.Unmap(); err != nil {
+		// munmap failure cannot recover, and happen asynchronously on the
+		// finalizer thread. While finalizer functions can return errors,
+		// they are ignored.
 		panic(fmt.Errorf("compiler: failed to munmap code segment: %w", err))
 	}
 }
@@ -532,25 +525,44 @@ func (e *engine) CompileModule(_ context.Context, module *wasm.Module, listeners
 		return e.addCompiledModule(module, cm, withGoFunc)
 	}
 
-	bodies := make([][]byte, localFuncs)
 	// As this uses mmap, we need to munmap on the compiled machine code when it's GCed.
 	e.setFinalizer(cm, releaseCompiledModule)
 	ln := len(listeners)
 	cmp := newCompiler()
+	asmNodes := new(asmNodes)
+	offsets := new(offsets)
+
+	// The executable code is allocated in memory mappings held by the
+	// CodeSegment, which gros on demand when it exhausts its capacity.
+	var executable asm.CodeSegment
+	defer func() {
+		// At the end of the function, the executable is set on the compiled
+		// module and the local variable cleared; until then, the function owns
+		// the memory mapping and is reponsible for clearing it if it returns
+		// due to an error. Note that an error at this stage is not recoverable
+		// so we panic if we fail to unmap the memory segment.
+		if err := executable.Unmap(); err != nil {
+			panic(fmt.Errorf("compiler: failed to munmap code segment: %w", err))
+		}
+	}()
+
 	for i := range module.CodeSection {
 		typ := &module.TypeSection[module.FunctionSection[i]]
-		var lsn experimental.FunctionListener
-		if i < ln {
-			lsn = listeners[i]
-		}
+		buf := executable.NextCodeSection()
 		funcIndex := wasm.Index(i)
 		compiledFn := &cm.functions[i]
-		var body []byte
+		compiledFn.executableOffset = executable.Size()
+		compiledFn.parent = cm
+		compiledFn.index = importedFuncs + funcIndex
+		if i < ln {
+			compiledFn.listener = listeners[i]
+		}
+
 		if codeSeg := &module.CodeSection[i]; codeSeg.GoFunc != nil {
-			cmp.Init(typ, nil, lsn != nil)
+			cmp.Init(typ, nil, compiledFn.listener != nil)
 			withGoFunc = true
-			if body, err = compileGoDefinedHostFunction(cmp); err != nil {
-				def := module.FunctionDefinitionSection[funcIndex+importedFuncs]
+			if err = compileGoDefinedHostFunction(buf, cmp); err != nil {
+				def := module.FunctionDefinition(compiledFn.index)
 				return fmt.Errorf("error compiling host go func[%s]: %w", def.DebugName(), err)
 			}
 			compiledFn.goFunc = codeSeg.GoFunc
@@ -559,47 +571,23 @@ func (e *engine) CompileModule(_ context.Context, module *wasm.Module, listeners
 			if err != nil {
 				return fmt.Errorf("failed to lower func[%d]: %v", i, err)
 			}
-			cmp.Init(typ, ir, lsn != nil)
+			cmp.Init(typ, ir, compiledFn.listener != nil)
 
-			body, compiledFn.stackPointerCeil, compiledFn.sourceOffsetMap, err = compileWasmFunction(cmp, ir)
+			compiledFn.stackPointerCeil, compiledFn.sourceOffsetMap, err = compileWasmFunction(buf, cmp, ir, asmNodes, offsets)
 			if err != nil {
-				def := module.FunctionDefinitionSection[funcIndex+importedFuncs]
+				def := module.FunctionDefinition(compiledFn.index)
 				return fmt.Errorf("error compiling wasm func[%s]: %w", def.DebugName(), err)
 			}
 		}
-
-		// The `body` here is the view owned by assembler and will be overridden by the next iteration, so copy the body here.
-		bodyCopied := make([]byte, len(body))
-		copy(bodyCopied, body)
-		bodies[i] = bodyCopied
-		compiledFn.listener = lsn
-		compiledFn.parent = cm
-	}
-
-	var executableOffset int
-	for i, b := range bodies {
-		cm.functions[i].executableOffset = executableOffset
-		// Align 16-bytes boundary.
-		executableOffset = (executableOffset + len(b) + 15) &^ 15
-	}
-
-	executable, err := platform.MmapCodeSegment(executableOffset)
-	if err != nil {
-		return err
-	}
-
-	for i, b := range bodies {
-		offset := cm.functions[i].executableOffset
-		copy(executable[offset:], b)
 	}
 
 	if runtime.GOARCH == "arm64" {
 		// On arm64, we cannot give all of rwx at the same time, so we change it to exec.
-		if err = platform.MprotectRX(executable); err != nil {
+		if err := platform.MprotectRX(executable.Bytes()); err != nil {
 			return err
 		}
 	}
-	cm.executable = executable
+	cm.executable, executable = executable, asm.CodeSegment{}
 	return e.addCompiledModule(module, cm, withGoFunc)
 }
 
@@ -626,12 +614,10 @@ func (e *engine) NewModuleEngine(module *wasm.Module, instance *wasm.ModuleInsta
 		offset := int(module.ImportFunctionCount) + i
 		typeIndex := module.FunctionSection[i]
 		me.functions[offset] = function{
-			codeInitialAddress: uintptr(unsafe.Pointer(&cm.executable[c.executableOffset])),
+			codeInitialAddress: cm.executable.Addr() + c.executableOffset,
 			moduleInstance:     instance,
-			index:              wasm.Index(offset),
 			typeID:             instance.TypeIDs[typeIndex],
 			funcType:           &module.TypeSection[typeIndex],
-			def:                &module.FunctionDefinitionSection[offset],
 			parent:             c,
 		}
 	}
@@ -643,8 +629,6 @@ func (e *moduleEngine) ResolveImportedFunction(index, indexInImportedModule wasm
 	imported := importedModuleEngine.(*moduleEngine)
 	// Copies the content from the import target moduleEngine.
 	e.functions[index] = imported.functions[indexInImportedModule]
-	// Update the .index field to the value in this Module.
-	e.functions[index].index = index
 }
 
 // FunctionInstanceReference implements the same method as documented on wasm.ModuleEngine.
@@ -652,20 +636,21 @@ func (e *moduleEngine) FunctionInstanceReference(funcIndex wasm.Index) wasm.Refe
 	return uintptr(unsafe.Pointer(&e.functions[funcIndex]))
 }
 
+// NewFunction implements wasm.ModuleEngine.
 func (e *moduleEngine) NewFunction(index wasm.Index) api.Function {
-	// Note: The input parameters are pre-validated, so a compiled function is only absent on close. Updates to
-	// code on close aren't locked, neither is this read.
-	compiled := &e.functions[index]
+	return e.newFunction(&e.functions[index])
+}
 
+func (e *moduleEngine) newFunction(f *function) api.Function {
 	initStackSize := initialStackSize
-	if initialStackSize < compiled.parent.stackPointerCeil {
-		initStackSize = compiled.parent.stackPointerCeil * 2
+	if initialStackSize < f.parent.stackPointerCeil {
+		initStackSize = f.parent.stackPointerCeil * 2
 	}
-	return e.newCallEngine(initStackSize, compiled)
+	return e.newCallEngine(initStackSize, f)
 }
 
 // LookupFunction implements the same method as documented on wasm.ModuleEngine.
-func (e *moduleEngine) LookupFunction(t *wasm.TableInstance, typeId wasm.FunctionTypeID, tableOffset wasm.Index) (idx wasm.Index, err error) {
+func (e *moduleEngine) LookupFunction(t *wasm.TableInstance, typeId wasm.FunctionTypeID, tableOffset wasm.Index) (f api.Function, err error) {
 	if tableOffset >= uint32(len(t.References)) || t.Type != wasm.RefTypeFuncref {
 		err = wasmruntime.ErrRuntimeInvalidTableAccess
 		return
@@ -681,8 +666,7 @@ func (e *moduleEngine) LookupFunction(t *wasm.TableInstance, typeId wasm.Functio
 		err = wasmruntime.ErrRuntimeIndirectCallTypeMismatch
 		return
 	}
-	idx = tf.index
-
+	f = e.newFunction(tf)
 	return
 }
 
@@ -700,7 +684,12 @@ func functionFromUintptr(ptr uintptr) *function {
 
 // Definition implements the same method as documented on wasm.ModuleEngine.
 func (ce *callEngine) Definition() api.FunctionDefinition {
-	return ce.initialFn.def
+	return ce.initialFn.definition()
+}
+
+func (f *function) definition() api.FunctionDefinition {
+	compiled := f.parent
+	return compiled.parent.source.FunctionDefinition(compiled.index)
 }
 
 // Call implements the same method as documented on wasm.ModuleEngine.
@@ -740,7 +729,7 @@ func (ce *callEngine) call(ctx context.Context, params, results []uint64) (_ []u
 	// and we have to make sure that all the runtime errors, including the one happening inside
 	// host functions, will be captured as errors, not panics.
 	defer func() {
-		err = ce.deferredOnCall(recover())
+		err = ce.deferredOnCall(ctx, m, recover())
 		if err == nil {
 			// If the module closed during the call, and the call didn't err for another reason, set an ExitError.
 			err = m.FailIfClosed()
@@ -820,7 +809,7 @@ func callFrameOffset(funcType *wasm.FunctionType) (ret int) {
 // the state of callEngine so that it can be used for the subsequent calls.
 //
 // This is defined for testability.
-func (ce *callEngine) deferredOnCall(recovered interface{}) (err error) {
+func (ce *callEngine) deferredOnCall(ctx context.Context, m *wasm.ModuleInstance, recovered interface{}) (err error) {
 	if recovered != nil {
 		builder := wasmdebug.NewErrorBuilder()
 
@@ -829,19 +818,28 @@ func (ce *callEngine) deferredOnCall(recovered interface{}) (err error) {
 		fn := ce.fn
 		pc := uint64(ce.returnAddress)
 		stackBasePointer := int(ce.stackBasePointerInBytes >> 3)
+		functionListeners := make([]functionListenerInvocation, 0, 16)
+
 		for {
-			def := fn.def
+			def := fn.definition()
 
 			// sourceInfo holds the source code information corresponding to the frame.
 			// It is not empty only when the DWARF is enabled.
 			var sources []string
-			if p := fn.parent; p.parent.executable != nil {
-				if len(fn.parent.sourceOffsetMap.irOperationSourceOffsetsInWasmBinary) != 0 {
+			if p := fn.parent; p.parent.executable.Bytes() != nil {
+				if fn.parent.sourceOffsetMap.irOperationSourceOffsetsInWasmBinary != nil {
 					offset := fn.getSourceOffsetInWasmBinary(pc)
 					sources = p.parent.source.DWARFLines.Line(offset)
 				}
 			}
 			builder.AddFrame(def.DebugName(), def.ParamTypes(), def.ResultTypes(), sources)
+
+			if fn.parent.listener != nil {
+				functionListeners = append(functionListeners, functionListenerInvocation{
+					FunctionListener: fn.parent.listener,
+					def:              fn.definition(),
+				})
+			}
 
 			callFrameOffset := callFrameOffset(fn.funcType)
 			if stackBasePointer != 0 {
@@ -853,7 +851,11 @@ func (ce *callEngine) deferredOnCall(recovered interface{}) (err error) {
 				break
 			}
 		}
+
 		err = builder.FromRecovered(recovered)
+		for i := range functionListeners {
+			functionListeners[i].Abort(ctx, m, functionListeners[i].def, err)
+		}
 	}
 
 	// Allows the reuse of CallEngine.
@@ -867,25 +869,41 @@ func (ce *callEngine) deferredOnCall(recovered interface{}) (err error) {
 // If needPreviousInstr equals true, this returns the previous instruction's offset for the given pc.
 func (f *function) getSourceOffsetInWasmBinary(pc uint64) uint64 {
 	srcMap := &f.parent.sourceOffsetMap
-	n := len(srcMap.irOperationOffsetsInNativeBinary) + 1
+	n := bitpack.OffsetArrayLen(srcMap.irOperationOffsetsInNativeBinary) + 1
 
 	// Calculate the offset in the compiled native binary.
 	pcOffsetInNativeBinary := pc - uint64(f.codeInitialAddress)
 
-	// Then, do the binary search on the list of offsets in the native binary for all the IR operations.
-	// This returns the index of the *next* IR operation of the one corresponding to the origin of this pc.
+	// Then, do the binary search on the list of offsets in the native binary
+	// for all the IR operations. This returns the index of the *next* IR
+	// operation of the one corresponding to the origin of this pc.
 	// See sort.Search.
+	//
+	// TODO: the underlying implementation of irOperationOffsetsInNativeBinary
+	// uses uses delta encoding an calls to the Index method might require a
+	// O(N)  scan of the underlying array, turning binary search into a
+	// O(N*log(N)) operation. If this code path ends up being a bottleneck,
+	// we could add a Search method on the bitpack.OffsetArray types to delegate
+	// the lookup to the underlying data structure, allowing for the selection
+	// of a more optimized version of the algorithm. If you do so, please add a
+	// benchmark to verify the impact on compute time.
 	index := sort.Search(n, func(i int) bool {
 		if i == n-1 {
 			return true
 		}
-		return srcMap.irOperationOffsetsInNativeBinary[i] >= pcOffsetInNativeBinary
+		return srcMap.irOperationOffsetsInNativeBinary.Index(i) >= pcOffsetInNativeBinary
 	})
+	if index == 0 && bitpack.OffsetArrayLen(srcMap.irOperationSourceOffsetsInWasmBinary) > 0 {
+		// When pc is the beginning of the function, the next IR
+		// operation (returned by sort.Search) is the first of the
+		// offset map.
+		return srcMap.irOperationSourceOffsetsInWasmBinary.Index(0)
+	}
 
 	if index == n || index == 0 { // This case, somehow pc is not found in the source offset map.
 		return 0
 	} else {
-		return srcMap.irOperationSourceOffsetsInWasmBinary[index-1]
+		return srcMap.irOperationSourceOffsetsInWasmBinary.Index(index - 1)
 	}
 }
 
@@ -978,12 +996,11 @@ const (
 func (ce *callEngine) execWasmFunction(ctx context.Context, m *wasm.ModuleInstance) {
 	codeAddr := ce.initialFn.codeInitialAddress
 	modAddr := ce.initialFn.moduleInstance
-	ce.ctx = ctx
 
 entry:
 	{
 		// Call into the native code.
-		nativecall(codeAddr, uintptr(unsafe.Pointer(ce)), modAddr)
+		nativecall(codeAddr, ce, modAddr)
 
 		// Check the status code from Compiler code.
 		switch status := ce.exitContext.statusCode; status {
@@ -1004,9 +1021,9 @@ entry:
 			fn := calleeHostFunction.parent.goFunc
 			switch fn := fn.(type) {
 			case api.GoModuleFunction:
-				fn.Call(ce.ctx, ce.callerModuleInstance, stack)
+				fn.Call(ctx, ce.callerModuleInstance, stack)
 			case api.GoFunction:
-				fn.Call(ce.ctx, stack)
+				fn.Call(ctx, stack)
 			}
 
 			codeAddr, modAddr = ce.returnAddress, ce.moduleInstance
@@ -1021,9 +1038,9 @@ entry:
 			case builtinFunctionIndexTableGrow:
 				ce.builtinFunctionTableGrow(caller.moduleInstance.Tables)
 			case builtinFunctionIndexFunctionListenerBefore:
-				ce.builtinFunctionFunctionListenerBefore(ce.ctx, m, caller)
+				ce.builtinFunctionFunctionListenerBefore(ctx, m, caller)
 			case builtinFunctionIndexFunctionListenerAfter:
-				ce.builtinFunctionFunctionListenerAfter(ce.ctx, m, caller)
+				ce.builtinFunctionFunctionListenerAfter(ctx, m, caller)
 			case builtinFunctionIndexCheckExitCode:
 				// Note: this operation must be done in Go, not native code. The reason is that
 				// native code cannot be preempted and that means it can block forever if there are not
@@ -1100,13 +1117,15 @@ type stackIterator struct {
 	stack   []uint64
 	fn      *function
 	base    int
+	pc      uint64
 	started bool
 }
 
-func (si *stackIterator) reset(stack []uint64, fn *function, base int) {
+func (si *stackIterator) reset(stack []uint64, fn *function, base int, pc uint64) {
 	si.stack = stack
 	si.fn = fn
 	si.base = base
+	si.pc = pc
 	si.started = false
 }
 
@@ -1117,7 +1136,7 @@ func (si *stackIterator) clear() {
 	si.started = false
 }
 
-// Next implements experimental.StackIterator.
+// Next implements the same method as documented on experimental.StackIterator.
 func (si *stackIterator) Next() bool {
 	if !si.started {
 		si.started = true
@@ -1129,6 +1148,7 @@ func (si *stackIterator) Next() bool {
 	}
 
 	frame := si.base + callFrameOffset(si.fn.funcType)
+	si.pc = si.stack[frame+0]
 	si.base = int(si.stack[frame+1] >> 3)
 	// *function lives in the third field of callFrame struct. This must be
 	// aligned with the definition of callFrame struct.
@@ -1136,46 +1156,71 @@ func (si *stackIterator) Next() bool {
 	return si.fn != nil
 }
 
-// FunctionDefinition implements experimental.StackIterator.
-func (si *stackIterator) FunctionDefinition() api.FunctionDefinition {
-	return si.fn.def
+// ProgramCounter implements the same method as documented on experimental.StackIterator.
+func (si *stackIterator) ProgramCounter() experimental.ProgramCounter {
+	return experimental.ProgramCounter(si.pc)
 }
 
-// Parameters implements experimental.StackIterator.
+// Function implements the same method as documented on experimental.StackIterator.
+func (si *stackIterator) Function() experimental.InternalFunction {
+	return internalFunction{si.fn}
+}
+
+// Parameters implements the same method as documented on experimental.StackIterator.
 func (si *stackIterator) Parameters() []uint64 {
 	return si.stack[si.base : si.base+si.fn.funcType.ParamNumInUint64]
 }
 
+// internalFunction implements experimental.InternalFunction.
+type internalFunction struct{ *function }
+
+// Definition implements the same method as documented on experimental.InternalFunction.
+func (f internalFunction) Definition() api.FunctionDefinition {
+	return f.definition()
+}
+
+// SourceOffsetForPC implements the same method as documented on experimental.InternalFunction.
+func (f internalFunction) SourceOffsetForPC(pc experimental.ProgramCounter) uint64 {
+	p := f.parent
+	if bitpack.OffsetArrayLen(p.sourceOffsetMap.irOperationSourceOffsetsInWasmBinary) == 0 {
+		return 0 // source not available
+	}
+	return f.getSourceOffsetInWasmBinary(uint64(pc))
+}
+
 func (ce *callEngine) builtinFunctionFunctionListenerBefore(ctx context.Context, mod api.Module, fn *function) {
 	base := int(ce.stackBasePointerInBytes >> 3)
-	ce.stackIterator.reset(ce.stack, fn, base)
+	pc := uint64(ce.returnAddress)
+	ce.stackIterator.reset(ce.stack, fn, base, pc)
 
 	params := ce.stack[base : base+fn.funcType.ParamNumInUint64]
-	listerCtx := fn.parent.listener.Before(ctx, mod, fn.def, params, &ce.stackIterator)
-	prevStackTop := ce.contextStack
-	ce.contextStack = &contextStack{self: ctx, prev: prevStackTop}
+	fn.parent.listener.Before(ctx, mod, fn.definition(), params, &ce.stackIterator)
 
-	ce.ctx = listerCtx
 	ce.stackIterator.clear()
 }
 
 func (ce *callEngine) builtinFunctionFunctionListenerAfter(ctx context.Context, mod api.Module, fn *function) {
 	base := int(ce.stackBasePointerInBytes >> 3)
-	fn.parent.listener.After(ctx, mod, fn.def, nil, ce.stack[base:base+fn.funcType.ResultNumInUint64])
-	ce.ctx = ce.contextStack.self
-	ce.contextStack = ce.contextStack.prev
+	fn.parent.listener.After(ctx, mod, fn.definition(), ce.stack[base:base+fn.funcType.ResultNumInUint64])
 }
 
-func compileGoDefinedHostFunction(cmp compiler) (body []byte, err error) {
-	if err = cmp.compileGoDefinedHostFunction(); err != nil {
-		return
+func compileGoDefinedHostFunction(buf asm.Buffer, cmp compiler) error {
+	if err := cmp.compileGoDefinedHostFunction(); err != nil {
+		return err
 	}
-
-	body, _, err = cmp.compile()
-	return
+	_, err := cmp.compile(buf)
+	return err
 }
 
-func compileWasmFunction(cmp compiler, ir *wazeroir.CompilationResult) (body []byte, spCeil uint64, sm sourceOffsetMap, err error) {
+type asmNodes struct {
+	nodes []asm.Node
+}
+
+type offsets struct {
+	values []uint64
+}
+
+func compileWasmFunction(buf asm.Buffer, cmp compiler, ir *wazeroir.CompilationResult, asmNodes *asmNodes, offsets *offsets) (spCeil uint64, sm sourceOffsetMap, err error) {
 	if err = cmp.compilePreamble(); err != nil {
 		err = fmt.Errorf("failed to emit preamble: %w", err)
 		return
@@ -1184,7 +1229,8 @@ func compileWasmFunction(cmp compiler, ir *wazeroir.CompilationResult) (body []b
 	needSourceOffsets := len(ir.IROperationSourceOffsetsInWasmBinary) > 0
 	var irOpBegins []asm.Node
 	if needSourceOffsets {
-		irOpBegins = make([]asm.Node, len(ir.Operations))
+		irOpBegins = append(asmNodes.nodes[:0], make([]asm.Node, len(ir.Operations))...)
+		defer func() { asmNodes.nodes = irOpBegins }()
 	}
 
 	var skip bool
@@ -1498,20 +1544,20 @@ func compileWasmFunction(cmp compiler, ir *wazeroir.CompilationResult) (body []b
 		}
 	}
 
-	body, spCeil, err = cmp.compile()
+	spCeil, err = cmp.compile(buf)
 	if err != nil {
 		err = fmt.Errorf("failed to compile: %w", err)
 		return
 	}
 
 	if needSourceOffsets {
-		offsetInNativeBin := make([]uint64, len(irOpBegins))
+		offsetInNativeBin := append(offsets.values[:0], make([]uint64, len(irOpBegins))...)
+		offsets.values = offsetInNativeBin
 		for i, nop := range irOpBegins {
 			offsetInNativeBin[i] = nop.OffsetInBinary()
 		}
-		sm.irOperationOffsetsInNativeBinary = offsetInNativeBin
-		sm.irOperationSourceOffsetsInWasmBinary = make([]uint64, len(ir.IROperationSourceOffsetsInWasmBinary))
-		copy(sm.irOperationSourceOffsetsInWasmBinary, ir.IROperationSourceOffsetsInWasmBinary)
+		sm.irOperationOffsetsInNativeBinary = bitpack.NewOffsetArray(offsetInNativeBin)
+		sm.irOperationSourceOffsetsInWasmBinary = bitpack.NewOffsetArray(ir.IROperationSourceOffsetsInWasmBinary)
 	}
 	return
 }
