@@ -201,15 +201,15 @@ performance-test: ## Run performance tests
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/home/nginx/$(CONTAINER_VOLUME_FLAGS) --rm nginx-agent-benchmark:1.0.0
 
 integration-test: local-deb-package local-rpm-package local-apk-package
+	# PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
+	# 	OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
+	# 	go test -v ./test/integration/install
 	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-		go test -v ./test/integration/install
-	# PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
-	# 	OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-	# 	go test -v ./test/integration/api
-	# PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
-	# 	OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-	# 	go test -v ./test/integration/features
+		go test -v ./test/integration/api
+	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
+		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
+		go test -v ./test/integration/features
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
