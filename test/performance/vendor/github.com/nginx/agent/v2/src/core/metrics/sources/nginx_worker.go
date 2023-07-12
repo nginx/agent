@@ -134,6 +134,7 @@ func (c *NginxWorker) Stop() {
 // it implements an interface that we can mock for testing
 type NginxWorkerClient struct {
 	logger *MetricSourceLogger
+	env    core.Environment
 }
 
 // WorkerStats represents NGINX worker metrics
@@ -160,8 +161,8 @@ type NginxWorkerCollector interface {
 	GetWorkerStats(childProcs []*proto.NginxDetails) (*WorkerStats, error)
 }
 
-func NewNginxWorkerClient() NginxWorkerCollector {
-	return &NginxWorkerClient{NewMetricSourceLogger()}
+func NewNginxWorkerClient(env core.Environment) NginxWorkerCollector {
+	return &NginxWorkerClient{NewMetricSourceLogger(), env}
 }
 
 // GetWorkerStats fetches the nginx master & worker metrics from psutil.
@@ -240,11 +241,13 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 			client.logger.Log(fmt.Sprintf("Unable to get resource limit metrics, %v", err))
 		}
 
-		if ioc, err := proc.IOCounters(); err == nil {
-			kbsr += float64(ioc.ReadBytes / 1000)
-			kbsw += float64(ioc.WriteBytes / 1000)
-		} else {
-			client.logger.Log(fmt.Sprintf("Unable to get io counter metrics, %v", err))
+		if !client.env.IsContainer() {
+			if ioc, err := proc.IOCounters(); err == nil {
+				kbsr += float64(ioc.ReadBytes / 1000)
+				kbsw += float64(ioc.WriteBytes / 1000)
+			} else {
+				client.logger.Log(fmt.Sprintf("Unable to get io counter metrics, %v", err))
+			}
 		}
 	}
 

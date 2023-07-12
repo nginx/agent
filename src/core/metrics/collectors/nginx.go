@@ -36,7 +36,7 @@ func NewNginxCollector(conf *config.Config, env core.Environment, collectorConf 
 	dimensions.NginxAccessLogPaths = collectorConf.AccessLogs
 
 	return &NginxCollector{
-		sources:       buildSources(dimensions, binary, collectorConf, conf),
+		sources:       buildSources(dimensions, binary, collectorConf, conf, env),
 		buf:           make(chan *metrics.StatsEntityWrapper, 65535),
 		dimensions:    dimensions,
 		collectorConf: collectorConf,
@@ -45,7 +45,7 @@ func NewNginxCollector(conf *config.Config, env core.Environment, collectorConf 
 	}
 }
 
-func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collectorConf *metrics.NginxCollectorConfig, conf *config.Config) []metrics.NginxSource {
+func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collectorConf *metrics.NginxCollectorConfig, conf *config.Config, env core.Environment) []metrics.NginxSource {
 	var nginxSources []metrics.NginxSource
 	// worker metrics
 	if len(conf.Nginx.NginxCountingSocket) > 0 && conf.IsFeatureEnabled(agent_config.FeatureNginxCounting) {
@@ -53,7 +53,7 @@ func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collec
 	}
 
 	if conf.IsFeatureEnabled(agent_config.FeatureMetrics) {
-		nginxSources = append(nginxSources, sources.NewNginxWorker(dimensions, sources.OSSNamespace, binary, sources.NewNginxWorkerClient()))
+		nginxSources = append(nginxSources, sources.NewNginxWorker(dimensions, sources.OSSNamespace, binary, sources.NewNginxWorkerClient(env)))
 
 		if collectorConf.StubStatus != "" {
 			nginxSources = append(nginxSources, sources.NewNginxOSS(dimensions, sources.OSSNamespace, collectorConf.StubStatus))
@@ -113,11 +113,11 @@ func (c *NginxCollector) UpdateConfig(config *config.Config) {
 	}
 }
 
-func (c *NginxCollector) UpdateCollectorConfig(collectorConfig *metrics.NginxCollectorConfig, conf *config.Config) {
+func (c *NginxCollector) UpdateCollectorConfig(collectorConfig *metrics.NginxCollectorConfig, conf *config.Config, env core.Environment) {
 	// If the metrics API has being enabled or disabled then we need to stop all nginx sources and rebuild them again
 	if c.collectorConf.StubStatus != collectorConfig.StubStatus || c.collectorConf.PlusAPI != collectorConfig.PlusAPI {
 		c.Stop()
-		c.sources = buildSources(c.dimensions, c.binary, collectorConfig, conf)
+		c.sources = buildSources(c.dimensions, c.binary, collectorConfig, conf, env)
 	}
 
 	c.collectorConf = collectorConfig

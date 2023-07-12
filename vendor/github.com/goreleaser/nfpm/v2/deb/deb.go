@@ -4,6 +4,7 @@ package deb
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"crypto/md5" // nolint:gas
 	"crypto/sha1"
 	"errors"
@@ -22,7 +23,6 @@ import (
 	"github.com/goreleaser/nfpm/v2/files"
 	"github.com/goreleaser/nfpm/v2/internal/sign"
 	"github.com/klauspost/compress/zstd"
-	gzip "github.com/klauspost/pgzip"
 	"github.com/ulikunitz/xz"
 )
 
@@ -36,11 +36,12 @@ func init() {
 // nolint: gochecknoglobals
 var archToDebian = map[string]string{
 	"386":      "i386",
+	"arm64":    "arm64",
 	"arm5":     "armel",
 	"arm6":     "armhf",
 	"arm7":     "armhf",
-	"mipsle":   "mipsel",
 	"mips64le": "mips64el",
+	"mipsle":   "mipsel",
 	"ppc64le":  "ppc64el",
 	"s390":     "s390x",
 }
@@ -427,10 +428,10 @@ func copyToTarAndDigest(file *files.Content, tw *tar.Writer, md5w io.Writer) (in
 	}
 	digest := md5.New() // nolint:gas
 	if _, err := io.Copy(tw, io.TeeReader(tarFile, digest)); err != nil {
-		return 0, fmt.Errorf("failed to copy: %w", err)
+		return 0, fmt.Errorf("%s: failed to copy: %w", file.Source, err)
 	}
 	if _, err := fmt.Fprintf(md5w, "%x  %s\n", digest.Sum(nil), header.Name); err != nil {
-		return 0, fmt.Errorf("failed to write md5: %w", err)
+		return 0, fmt.Errorf("%s: failed to write md5: %w", file.Source, err)
 	}
 	return file.Size(), nil
 }
@@ -454,6 +455,9 @@ func createChangelogInsideDataTar(tarw *tar.Writer, g io.Writer, info *nfpm.Info
 	fileName string,
 ) (int64, error) {
 	var buf bytes.Buffer
+	// we need here a non timestamped compression -> https://github.com/klauspost/pgzip doesn't support that
+	// https://github.com/klauspost/pgzip/blob/v1.2.6/gzip.go#L322 vs.
+	// https://cs.opensource.google/go/go/+/refs/tags/go1.20.4:src/compress/gzip/gzip.go;l=157
 	out, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
 	if err != nil {
 		return 0, fmt.Errorf("could not create gzip writer: %w", err)
@@ -482,7 +486,7 @@ func createChangelogInsideDataTar(tarw *tar.Writer, g io.Writer, info *nfpm.Info
 		return 0, err
 	}
 
-	if _, err = fmt.Fprintf(g, "%x  %s\n", digest.Sum(nil), fileName); err != nil {
+	if _, err = fmt.Fprintf(g, "%x  %s\n", digest.Sum(nil), files.AsExplicitRelativePath(fileName)); err != nil {
 		return 0, err
 	}
 

@@ -258,8 +258,8 @@ type Node interface {
 // or method.
 //
 // If Blocks is nil, this indicates an external function for which no
-// Go source code is available.  In this case, FreeVars and Locals
-// are nil too.  Clients performing whole-program analysis must
+// Go source code is available.  In this case, FreeVars, Locals, and
+// Params are nil too.  Clients performing whole-program analysis must
 // handle external functions specially.
 //
 // Blocks contains the function's control-flow graph (CFG).
@@ -865,7 +865,7 @@ type Slice struct {
 type FieldAddr struct {
 	register
 	X     Value // *struct
-	Field int   // field is typeparams.CoreType(X.Type().Underlying().(*types.Pointer).Elem()).(*types.Struct).Field(Field)
+	Field int   // index into CoreType(CoreType(X.Type()).(*types.Pointer).Elem()).(*types.Struct).Fields
 }
 
 // The Field instruction yields the Field of struct X.
@@ -884,7 +884,7 @@ type FieldAddr struct {
 type Field struct {
 	register
 	X     Value // struct
-	Field int   // index into typeparams.CoreType(X.Type()).(*types.Struct).Fields
+	Field int   // index into CoreType(X.Type()).(*types.Struct).Fields
 }
 
 // The IndexAddr instruction yields the address of the element at

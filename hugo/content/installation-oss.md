@@ -227,8 +227,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
 1. To set up the apk repository for `nginx-agent` packages, run the following command:
 
     ```shell
-    printf "%s%s%s%s\n" \
-        "@nginx-agent " \
+    printf "%s%s%s\n" \
         "http://packages.nginx.org/nginx-agent/alpine/v" \
         `grep -o -E '^[0-9]+\.[0-9]+' /etc/alpine-release` \
         "/main" \
@@ -282,7 +281,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
 1. To install `nginx-agent`, run the following command:
 
     ```shell
-    sudo apk add nginx-agent@nginx-agent
+    sudo apk add nginx-agent
     ```
 
 1. Verify the installation:

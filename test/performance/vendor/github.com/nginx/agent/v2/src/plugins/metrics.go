@@ -325,7 +325,7 @@ func (m *Metrics) updateCollectorsConfig() {
 		if nginxCollector, ok := collector.(*collectors.NginxCollector); ok {
 			if collectorConfig, ok := m.collectorConfigsMap[nginxCollector.GetNginxId()]; ok {
 				log.Tracef("Updating nginx collector config for nginxId %s", collectorConfig.NginxId)
-				nginxCollector.UpdateCollectorConfig(collectorConfig, m.conf)
+				nginxCollector.UpdateCollectorConfig(collectorConfig, m.conf, m.env)
 			}
 		}
 		collector.UpdateConfig(m.conf)
