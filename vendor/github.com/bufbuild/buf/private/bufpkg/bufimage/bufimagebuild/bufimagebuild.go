@@ -20,6 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"go.uber.org/zap"
 )
 
@@ -36,14 +37,14 @@ type Builder interface {
 	// FileAnnotations will use external file paths.
 	Build(
 		ctx context.Context,
-		moduleFileSet bufmodule.ModuleFileSet,
+		module bufmodule.Module,
 		options ...BuildOption,
 	) (bufimage.Image, []bufanalysis.FileAnnotation, error)
 }
 
 // NewBuilder returns a new Builder.
-func NewBuilder(logger *zap.Logger) Builder {
-	return newBuilder(logger)
+func NewBuilder(logger *zap.Logger, moduleReader bufmodule.ModuleReader) Builder {
+	return newBuilder(logger, moduleReader)
 }
 
 // BuildOption is an option for Build.
@@ -53,5 +54,27 @@ type BuildOption func(*buildOptions)
 func WithExcludeSourceCodeInfo() BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.excludeSourceCodeInfo = true
+	}
+}
+
+// WithExpectedDirectDependencies sets the module dependencies that are expected, usually because
+// they are in a configuration file (buf.yaml). If the build detects that there are direct dependencies
+// outside of this list, a warning will be printed.
+func WithExpectedDirectDependencies(expectedDirectDependencies []bufmoduleref.ModuleReference) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.expectedDirectDependencies = expectedDirectDependencies
+	}
+}
+
+// WithWorkspace sets the workspace to be read from instead of ModuleReader, and to not warn imports for.
+//
+// TODO: this can probably be dealt with by finding out if an ImageFile has a commit
+// or not, although that is hacky, that's an implementation detail in practice, but perhaps
+// we could justify it - transitive dependencies without commits don't make sense?
+//
+// TODO: shouldn't buf.yamls in workspaces have deps properly declared in them anyways? Why not warn?
+func WithWorkspace(workspace bufmodule.Workspace) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.workspace = workspace
 	}
 }

@@ -1,15 +1,16 @@
 package sys
 
 import (
-	"fmt"
 	"io"
 	"io/fs"
-	"os"
+	"net"
+	"path"
 	"syscall"
-	"time"
 
 	"github.com/tetratelabs/wazero/internal/descriptor"
+	"github.com/tetratelabs/wazero/internal/fsapi"
 	"github.com/tetratelabs/wazero/internal/platform"
+	socketapi "github.com/tetratelabs/wazero/internal/sock"
 	"github.com/tetratelabs/wazero/internal/sysfs"
 )
 
@@ -31,245 +32,51 @@ const (
 	FdPreopen
 )
 
-const modeDevice = uint32(fs.ModeDevice | 0o640)
-
-type stdioFileWriter struct {
-	w io.Writer
-	s fs.FileInfo
-}
-
-// Stat implements fs.File
-func (w *stdioFileWriter) Stat() (fs.FileInfo, error) { return w.s, nil }
-
-// Read implements fs.File
-func (w *stdioFileWriter) Read([]byte) (n int, err error) {
-	return // emulate os.Stdout which returns zero
-}
-
-// Write implements io.Writer
-func (w *stdioFileWriter) Write(p []byte) (n int, err error) {
-	return w.w.Write(p)
-}
-
-// Close implements fs.File
-func (w *stdioFileWriter) Close() error {
-	// Don't actually close the underlying file, as we didn't open it!
-	return nil
-}
-
-// StdioFilePoller is a strategy for polling a StdioFileReader for a given duration.
-// It returns true if the reader has data ready to be read, false and/or an error otherwise.
-type StdioFilePoller interface {
-	Poll(duration time.Duration) (bool, error)
-}
-
-// PollerDefaultStdin is a poller that checks standard input.
-var PollerDefaultStdin = &pollerDefaultStdin{}
-
-type pollerDefaultStdin struct{}
-
-// Poll implements StdioFilePoller for pollerDefaultStdin.
-func (*pollerDefaultStdin) Poll(duration time.Duration) (bool, error) {
-	fdSet := platform.FdSet{}
-	fdSet.Set(int(FdStdin))
-	count, err := platform.Select(int(FdStdin+1), &fdSet, nil, nil, &duration)
-	return count > 0, err
-}
-
-// PollerAlwaysReady is a poller that ignores the given timeout, and it returns true and no error.
-var PollerAlwaysReady = &pollerAlwaysReady{}
-
-type pollerAlwaysReady struct{}
-
-// Poll implements StdioFilePoller for pollerAlwaysReady.
-func (*pollerAlwaysReady) Poll(time.Duration) (bool, error) { return true, nil }
-
-// PollerNeverReady is a poller that waits for the given duration, and it always returns false and no error.
-var PollerNeverReady = &pollerNeverReady{}
-
-type pollerNeverReady struct{}
-
-// Poll implements StdioFilePoller for pollerNeverReady.
-func (*pollerNeverReady) Poll(d time.Duration) (bool, error) { time.Sleep(d); return false, nil }
-
-// StdioFileReader implements io.Reader for stdio files.
-type StdioFileReader struct {
-	r    io.Reader
-	s    fs.FileInfo
-	poll StdioFilePoller
-}
-
-// NewStdioFileReader is a constructor for StdioFileReader.
-func NewStdioFileReader(reader io.Reader, fileInfo fs.FileInfo, poll StdioFilePoller) *StdioFileReader {
-	return &StdioFileReader{
-		r:    reader,
-		s:    fileInfo,
-		poll: poll,
-	}
-}
-
-// Poll invokes the StdioFilePoller that was given at the NewStdioFileReader constructor.
-func (r *StdioFileReader) Poll(duration time.Duration) (bool, error) {
-	return r.poll.Poll(duration)
-}
-
-// Stat implements fs.File
-func (r *StdioFileReader) Stat() (fs.FileInfo, error) { return r.s, nil }
-
-// Read implements fs.File
-func (r *StdioFileReader) Read(p []byte) (n int, err error) {
-	return r.r.Read(p)
-}
-
-// Close implements fs.File
-func (r *StdioFileReader) Close() error {
-	// Don't actually close the underlying file, as we didn't open it!
-	return nil
-}
-
-var (
-	noopStdinStat  = stdioFileInfo{0, modeDevice}
-	noopStdoutStat = stdioFileInfo{1, modeDevice}
-	noopStderrStat = stdioFileInfo{2, modeDevice}
-)
-
-// stdioFileInfo implements fs.FileInfo where index zero is the FD and one is the mode.
-type stdioFileInfo [2]uint32
-
-func (s stdioFileInfo) Name() string {
-	switch s[0] {
-	case 0:
-		return "stdin"
-	case 1:
-		return "stdout"
-	case 2:
-		return "stderr"
-	default:
-		panic(fmt.Errorf("BUG: incorrect FD %d", s[0]))
-	}
-}
-
-func (stdioFileInfo) Size() int64         { return 0 }
-func (s stdioFileInfo) Mode() fs.FileMode { return fs.FileMode(s[1]) }
-func (stdioFileInfo) ModTime() time.Time  { return time.Unix(0, 0) }
-func (stdioFileInfo) IsDir() bool         { return false }
-func (stdioFileInfo) Sys() interface{}    { return nil }
-
-type lazyDir struct {
-	fs sysfs.FS
-	f  fs.File
-}
-
-// Stat implements fs.File
-func (r *lazyDir) Stat() (fs.FileInfo, error) {
-	if f, err := r.file(); err != 0 {
-		return nil, err
-	} else {
-		return f.Stat()
-	}
-}
-
-func (r *lazyDir) file() (f fs.File, errno syscall.Errno) {
-	if f = r.f; r.f != nil {
-		return
-	}
-	r.f, errno = r.fs.OpenFile(".", os.O_RDONLY, 0)
-	f = r.f
-	return
-}
-
-// Read implements fs.File
-func (r *lazyDir) Read(p []byte) (n int, err error) {
-	if f, errno := r.file(); errno != 0 {
-		return 0, errno
-	} else {
-		return f.Read(p)
-	}
-}
-
-// Close implements fs.File
-func (r *lazyDir) Close() error {
-	f := r.f
-	if f == nil {
-		return nil // never opened
-	}
-	return f.Close()
-}
+const modeDevice = fs.ModeDevice | 0o640
 
 // FileEntry maps a path to an open file in a file system.
 type FileEntry struct {
 	// Name is the name of the directory up to its pre-open, or the pre-open
 	// name itself when IsPreopen.
 	//
-	// Note: This can drift on rename.
+	// # Notes
+	//
+	//   - This can drift on rename.
+	//   - This relates to the guest path, which is not the real file path
+	//     except if the entire host filesystem was made available.
 	Name string
 
 	// IsPreopen is a directory that is lazily opened.
 	IsPreopen bool
 
 	// FS is the filesystem associated with the pre-open.
-	FS sysfs.FS
-
-	// cachedStat includes fields that won't change while a file is open.
-	cachedStat *cachedStat
+	FS fsapi.FS
 
 	// File is always non-nil.
-	File fs.File
-
-	// ReadDir is present when this File is a fs.ReadDirFile and `ReadDir`
-	// was called.
-	ReadDir *ReadDir
-
-	openPath string
-	openFlag int
-	openPerm fs.FileMode
+	File fsapi.File
 }
 
-type cachedStat struct {
-	// Ino is the file serial number, or zero if not available.
-	Ino uint64
+const direntBufSize = 16
 
-	// Type is the same as what's documented on platform.Dirent.
-	Type fs.FileMode
-}
+// Readdir is the status of a prior fs.ReadDirFile call.
+type Readdir struct {
+	// cursor is the current position in the buffer.
+	cursor uint64
 
-// CachedStat returns the cacheable parts of platform.Stat_t or an error if
-// they couldn't be retrieved.
-func (f *FileEntry) CachedStat() (ino uint64, fileType fs.FileMode, err error) {
-	if f.cachedStat == nil {
-		if _, err = f.Stat(); err != nil {
-			return
-		}
-	}
-	return f.cachedStat.Ino, f.cachedStat.Type, nil
-}
+	// countRead is the total count of files read including Dirents.
+	//
+	// Notes:
+	//
+	// * countRead is the index of the next file in the list. This is
+	//   also the value that Cookie returns, so it should always be
+	//   higher or equal than the cookie given in Rewind.
+	//
+	// * this can overflow to negative, which means our implementation
+	//   doesn't support writing greater than max int64 entries.
+	//   countRead uint64
+	countRead uint64
 
-// Stat returns the underlying stat of this file.
-func (f *FileEntry) Stat() (st platform.Stat_t, err error) {
-	var errno syscall.Errno
-	if ld, ok := f.File.(*lazyDir); ok {
-		var sf fs.File
-		if sf, errno = ld.file(); errno == 0 {
-			st, errno = platform.StatFile(sf)
-		}
-	} else {
-		st, errno = platform.StatFile(f.File)
-	}
-
-	if errno != 0 {
-		err = errno
-	} else {
-		f.cachedStat = &cachedStat{Ino: st.Ino, Type: st.Mode & fs.ModeType}
-	}
-	return
-}
-
-// ReadDir is the status of a prior fs.ReadDirFile call.
-type ReadDir struct {
-	// CountRead is the total count of files read including Dirents.
-	CountRead uint64
-
-	// Dirents is the contents of the last platform.Readdir call. Notably,
+	// dirents is a fixed buffer of size direntBufSize. Notably,
 	// directory listing are not rewindable, so we keep entries around in case
 	// the caller mis-estimated their buffer and needs a few still cached.
 	//
@@ -277,125 +84,217 @@ type ReadDir struct {
 	// In wasi preview1, dot and dot-dot entries are required to exist, but the
 	// reverse is true for preview2. More importantly, preview2 holds separate
 	// stateful dir-entry-streams per file.
-	Dirents []*platform.Dirent
+	dirents []fsapi.Dirent
+
+	// dirInit seeks and reset the provider for dirents to the beginning
+	// and returns an initial batch (e.g. dot directories).
+	dirInit func() ([]fsapi.Dirent, syscall.Errno)
+
+	// dirReader fetches a new batch of direntBufSize elements.
+	dirReader func(n uint64) ([]fsapi.Dirent, syscall.Errno)
+}
+
+// NewReaddir is a constructor for Readdir. It takes a dirInit
+func NewReaddir(
+	dirInit func() ([]fsapi.Dirent, syscall.Errno),
+	dirReader func(n uint64) ([]fsapi.Dirent, syscall.Errno),
+) (*Readdir, syscall.Errno) {
+	d := &Readdir{dirReader: dirReader, dirInit: dirInit}
+	return d, d.init()
+}
+
+// init resets the cursor and invokes the dirInit, dirReader
+// methods to reset the internal state of the Readdir struct.
+//
+// Note: this is different from Reset, because it will not short-circuit
+// when cursor is already 0, but it will force an unconditional reload.
+func (d *Readdir) init() syscall.Errno {
+	d.cursor = 0
+	d.countRead = 0
+	// Reset the buffer to the initial state.
+	initialDirents, errno := d.dirInit()
+	if errno != 0 {
+		return errno
+	}
+	if len(initialDirents) > direntBufSize {
+		return syscall.EINVAL
+	}
+	d.dirents = initialDirents
+	// Fill the buffer with more data.
+	count := direntBufSize - len(initialDirents)
+	if count == 0 {
+		// No need to fill up the buffer further.
+		return 0
+	}
+	dirents, errno := d.dirReader(uint64(count))
+	if errno != 0 {
+		return errno
+	}
+	d.dirents = append(d.dirents, dirents...)
+	return 0
+}
+
+// newReaddirFromFileEntry is a constructor for Readdir that takes a FileEntry to initialize.
+func newReaddirFromFileEntry(f *FileEntry) (*Readdir, syscall.Errno) {
+	// Generate the dotEntries only once and return it many times in the dirInit closure.
+	dotEntries, errno := synthesizeDotEntries(f)
+	if errno != 0 {
+		return nil, errno
+	}
+	dirInit := func() ([]fsapi.Dirent, syscall.Errno) {
+		// Ensure we always rewind to the beginning when we re-init.
+		if _, errno := f.File.Seek(0, io.SeekStart); errno != 0 {
+			return nil, errno
+		}
+		// Return the dotEntries that we have already generated outside the closure.
+		return dotEntries, 0
+	}
+	dirReader := func(n uint64) ([]fsapi.Dirent, syscall.Errno) { return f.File.Readdir(int(n)) }
+	return NewReaddir(dirInit, dirReader)
+}
+
+// synthesizeDotEntries generates a slice of the two elements "." and "..".
+func synthesizeDotEntries(f *FileEntry) (result []fsapi.Dirent, errno syscall.Errno) {
+	dotIno, errno := f.File.Ino()
+	if errno != 0 {
+		return nil, errno
+	}
+	result = append(result, fsapi.Dirent{Name: ".", Ino: dotIno, Type: fs.ModeDir})
+	dotDotIno := uint64(0)
+	if !f.IsPreopen && f.Name != "." {
+		if st, errno := f.FS.Stat(path.Dir(f.Name)); errno != 0 {
+			return nil, errno
+		} else {
+			dotDotIno = st.Ino
+		}
+	}
+	result = append(result, fsapi.Dirent{Name: "..", Ino: dotDotIno, Type: fs.ModeDir})
+	return result, 0
+}
+
+// Reset seeks the internal cursor to 0 and refills the buffer.
+func (d *Readdir) Reset() syscall.Errno {
+	if d.countRead == 0 {
+		return 0
+	}
+	return d.init()
+}
+
+// Skip is equivalent to calling n times Advance.
+func (d *Readdir) Skip(n uint64) {
+	end := d.countRead + n
+	var err syscall.Errno = 0
+	for d.countRead < end && err == 0 {
+		err = d.Advance()
+	}
+}
+
+// Cookie returns a cookie representing the current state of the ReadDir struct.
+//
+// Note: this returns the countRead field, but it is an implementation detail.
+func (d *Readdir) Cookie() uint64 {
+	return d.countRead
+}
+
+// Rewind seeks the internal cursor to the state represented by the cookie.
+// It returns a syscall.Errno if the cursor was reset and an I/O error occurred while trying to re-init.
+func (d *Readdir) Rewind(cookie int64) syscall.Errno {
+	unsignedCookie := uint64(cookie)
+	switch {
+	case cookie < 0 || unsignedCookie > d.countRead:
+		// the cookie can neither be negative nor can it be larger than countRead.
+		return syscall.EINVAL
+	case cookie == 0 && d.countRead == 0:
+		return 0
+	case cookie == 0 && d.countRead != 0:
+		// This means that there was a previous call to the dir, but cookie is reset.
+		// This happens when the program calls rewinddir, for example:
+		// https://github.com/WebAssembly/wasi-libc/blob/659ff414560721b1660a19685110e484a081c3d4/libc-bottom-half/cloudlibc/src/libc/dirent/rewinddir.c#L10-L12
+		return d.Reset()
+	case unsignedCookie < d.countRead:
+		if cookie/direntBufSize != int64(d.countRead)/direntBufSize {
+			// The cookie is not 0, but it points into a window before the current one.
+			return syscall.ENOSYS
+		}
+		// We are allowed to rewind back to a previous offset within the current window.
+		d.countRead = unsignedCookie
+		d.cursor = d.countRead % direntBufSize
+		return 0
+	default:
+		// The cookie is valid.
+		return 0
+	}
+}
+
+// Peek emits the current value.
+// It returns syscall.ENOENT when there are no entries left in the directory.
+func (d *Readdir) Peek() (*fsapi.Dirent, syscall.Errno) {
+	switch {
+	case d.cursor == uint64(len(d.dirents)):
+		// We're past the buf size, fill it up again.
+		dirents, errno := d.dirReader(direntBufSize)
+		if errno != 0 {
+			return nil, errno
+		}
+		d.dirents = append(d.dirents, dirents...)
+		fallthrough
+	default: // d.cursor < direntBufSize FIXME
+		if d.cursor == uint64(len(d.dirents)) {
+			return nil, syscall.ENOENT
+		}
+		dirent := &d.dirents[d.cursor]
+		return dirent, 0
+	}
+}
+
+// Advance advances the internal counters and indices to the next value.
+// It also empties and refill the buffer with the next set of values when the internal cursor
+// reaches the end of it.
+func (d *Readdir) Advance() syscall.Errno {
+	if d.cursor == uint64(len(d.dirents)) {
+		return syscall.ENOENT
+	}
+	d.cursor++
+	d.countRead++
+	return 0
 }
 
 type FSContext struct {
 	// rootFS is the root ("/") mount.
-	rootFS sysfs.FS
+	rootFS fsapi.FS
 
 	// openedFiles is a map of file descriptor numbers (>=FdPreopen) to open files
 	// (or directories) and defaults to empty.
 	// TODO: This is unguarded, so not goroutine-safe!
 	openedFiles FileTable
+
+	// readdirs is a map of numeric identifiers to Readdir structs
+	// and defaults to empty.
+	// TODO: This is unguarded, so not goroutine-safe!
+	readdirs ReaddirTable
 }
 
 // FileTable is a specialization of the descriptor.Table type used to map file
 // descriptors to file entries.
 type FileTable = descriptor.Table[int32, *FileEntry]
 
-// NewFSContext creates a FSContext with stdio streams and an optional
-// pre-opened filesystem.
-//
-// If `preopened` is not sysfs.UnimplementedFS, it is inserted into
-// the file descriptor table as FdPreopen.
-func (c *Context) NewFSContext(stdin io.Reader, stdout, stderr io.Writer, rootFS sysfs.FS) (err error) {
-	c.fsc.rootFS = rootFS
-	inReader, err := stdinReader(stdin)
-	if err != nil {
-		return err
-	}
-	c.fsc.openedFiles.Insert(inReader)
-	outWriter, err := stdioWriter(stdout, noopStdoutStat)
-	if err != nil {
-		return err
-	}
-	c.fsc.openedFiles.Insert(outWriter)
-	errWriter, err := stdioWriter(stderr, noopStderrStat)
-	if err != nil {
-		return err
-	}
-	c.fsc.openedFiles.Insert(errWriter)
-
-	if _, ok := rootFS.(sysfs.UnimplementedFS); ok {
-		return nil
-	}
-
-	if comp, ok := rootFS.(*sysfs.CompositeFS); ok {
-		preopens := comp.FS()
-		for i, p := range comp.GuestPaths() {
-			c.fsc.openedFiles.Insert(&FileEntry{
-				FS:        preopens[i],
-				Name:      p,
-				IsPreopen: true,
-				File:      &lazyDir{fs: rootFS},
-			})
-		}
-	} else {
-		c.fsc.openedFiles.Insert(&FileEntry{
-			FS:        rootFS,
-			Name:      "/",
-			IsPreopen: true,
-			File:      &lazyDir{fs: rootFS},
-		})
-	}
-
-	return nil
-}
-
-func stdinReader(r io.Reader) (*FileEntry, error) {
-	if r == nil {
-		r = eofReader{}
-	}
-	var freader *StdioFileReader
-	if stdioFileReader, ok := r.(*StdioFileReader); ok {
-		freader = stdioFileReader
-	} else {
-		s, err := stdioStat(r, noopStdinStat)
-		if err != nil {
-			return nil, err
-		}
-		freader = NewStdioFileReader(r, s, PollerDefaultStdin)
-	}
-	return &FileEntry{Name: noopStdinStat.Name(), File: freader}, nil
-}
-
-func stdioWriter(w io.Writer, defaultStat stdioFileInfo) (*FileEntry, error) {
-	if w == nil {
-		w = io.Discard
-	}
-	s, err := stdioStat(w, defaultStat)
-	if err != nil {
-		return nil, err
-	}
-	return &FileEntry{Name: s.Name(), File: &stdioFileWriter{w: w, s: s}}, nil
-}
-
-func stdioStat(f interface{}, defaultStat stdioFileInfo) (fs.FileInfo, error) {
-	if f, ok := f.(*os.File); ok {
-		if st, err := f.Stat(); err == nil {
-			mode := uint32(st.Mode() & fs.ModeType)
-			return stdioFileInfo{defaultStat[0], mode}, nil
-		} else {
-			return nil, err
-		}
-	}
-	return defaultStat, nil
-}
+// ReaddirTable is a specialization of the descriptor.Table type used to map file
+// descriptors to Readdir structs.
+type ReaddirTable = descriptor.Table[int32, *Readdir]
 
 // RootFS returns the underlying filesystem. Any files that should be added to
 // the table should be inserted via InsertFile.
-func (c *FSContext) RootFS() sysfs.FS {
+func (c *FSContext) RootFS() fsapi.FS {
 	return c.rootFS
 }
 
 // OpenFile opens the file into the table and returns its file descriptor.
 // The result must be closed by CloseFile or Close.
-func (c *FSContext) OpenFile(fs sysfs.FS, path string, flag int, perm fs.FileMode) (int32, syscall.Errno) {
+func (c *FSContext) OpenFile(fs fsapi.FS, path string, flag int, perm fs.FileMode) (int32, syscall.Errno) {
 	if f, errno := fs.OpenFile(path, flag, perm); errno != 0 {
 		return 0, errno
 	} else {
-		fe := &FileEntry{openPath: path, FS: fs, File: f, openFlag: flag, openPerm: perm}
+		fe := &FileEntry{FS: fs, File: f}
 		if path == "/" || path == "." {
 			fe.Name = ""
 		} else {
@@ -409,76 +308,67 @@ func (c *FSContext) OpenFile(fs sysfs.FS, path string, flag int, perm fs.FileMod
 	}
 }
 
-// ReOpenDir re-opens the directory while keeping the same file descriptor.
-// TODO: this might not be necessary once we have our own File type.
-func (c *FSContext) ReOpenDir(fd int32) (*FileEntry, syscall.Errno) {
-	f, ok := c.openedFiles.Lookup(fd)
-	if !ok {
-		return nil, syscall.EBADF
-	} else if _, ft, err := f.CachedStat(); err != nil {
-		return nil, platform.UnwrapOSError(err)
-	} else if ft.Type() != fs.ModeDir {
-		return nil, syscall.EISDIR
+// SockAccept accepts a socketapi.TCPConn into the file table and returns
+// its file descriptor.
+func (c *FSContext) SockAccept(sockFD int32, nonblock bool) (int32, syscall.Errno) {
+	var sock socketapi.TCPSock
+	if e, ok := c.LookupFile(sockFD); !ok || !e.IsPreopen {
+		return 0, syscall.EBADF // Not a preopen
+	} else if sock, ok = e.File.(socketapi.TCPSock); !ok {
+		return 0, syscall.EBADF // Not a sock
 	}
 
-	if errno := c.reopen(f); errno != 0 {
-		return nil, errno
+	var conn socketapi.TCPConn
+	var errno syscall.Errno
+	if conn, errno = sock.Accept(); errno != 0 {
+		return 0, errno
+	} else if nonblock {
+		if errno = conn.SetNonblock(true); errno != 0 {
+			_ = conn.Close()
+			return 0, errno
+		}
 	}
 
-	f.ReadDir.CountRead, f.ReadDir.Dirents = 0, nil
-	return f, 0
-}
-
-func (c *FSContext) reopen(f *FileEntry) syscall.Errno {
-	if err := f.File.Close(); err != nil {
-		return platform.UnwrapOSError(err)
-	}
-
-	// Re-opens with  the same parameters as before.
-	opened, errno := f.FS.OpenFile(f.openPath, f.openFlag, f.openPerm)
-	if errno != 0 {
-		return errno
-	}
-
-	// Reset the state.
-	f.File = opened
-	return 0
-}
-
-// ChangeOpenFlag changes the open flag of the given opened file pointed by `fd`.
-// Currently, this only supports the change of syscall.O_APPEND flag.
-func (c *FSContext) ChangeOpenFlag(fd int32, flag int) syscall.Errno {
-	f, ok := c.LookupFile(fd)
-	if !ok {
-		return syscall.EBADF
-	} else if _, ft, err := f.CachedStat(); err != nil {
-		return platform.UnwrapOSError(err)
-	} else if ft.Type() == fs.ModeDir {
-		return syscall.EISDIR
-	}
-
-	if flag&syscall.O_APPEND != 0 {
-		f.openFlag |= syscall.O_APPEND
+	fe := &FileEntry{File: conn}
+	if newFD, ok := c.openedFiles.Insert(fe); !ok {
+		return 0, syscall.EBADF
 	} else {
-		f.openFlag &= ^syscall.O_APPEND
+		return newFD, 0
 	}
-
-	// Changing the flag while opening is not really supported well in Go. Even when using
-	// syscall package, the feasibility of doing so really depends on the platform. For examples:
-	//
-	// 	* This appendMode (bool) cannot be changed later.
-	// 	https://github.com/golang/go/blob/go1.20/src/os/file_unix.go#L60
-	// 	* On Windows, re-opening it is the only way to emulate the behavior.
-	// 	https://github.com/bytecodealliance/system-interface/blob/62b97f9776b86235f318c3a6e308395a1187439b/src/fs/fd_flags.rs#L196
-	//
-	// Therefore, here we re-open the file while keeping the file descriptor.
-	// TODO: this might be improved once we have our own File type.
-	return c.reopen(f)
 }
 
 // LookupFile returns a file if it is in the table.
 func (c *FSContext) LookupFile(fd int32) (*FileEntry, bool) {
 	return c.openedFiles.Lookup(fd)
+}
+
+// LookupReaddir returns a Readdir struct or creates an empty one if it was not present.
+//
+// Note: this currently assumes that idx == fd, where fd is the file descriptor of the directory.
+// CloseFile will delete this idx from the internal store. In the future, idx may be independent
+// of a file fd, and the idx may have to be disposed with an explicit CloseReaddir.
+func (c *FSContext) LookupReaddir(idx int32, f *FileEntry) (*Readdir, syscall.Errno) {
+	if item, _ := c.readdirs.Lookup(idx); item != nil {
+		return item, 0
+	} else {
+		item, err := newReaddirFromFileEntry(f)
+		if err != 0 {
+			return nil, err
+		}
+		ok := c.readdirs.InsertAt(item, idx)
+		if !ok {
+			return nil, syscall.EINVAL
+		}
+		return item, 0
+	}
+}
+
+// CloseReaddir delete the Readdir struct at the given index
+//
+// Note: Currently only necessary in tests. In the future, the idx will have to be disposed explicitly,
+// unless we maintain a map fd -> []idx, and we let CloseFile close all the idx in []idx.
+func (c *FSContext) CloseReaddir(idx int32) {
+	c.readdirs.Delete(idx)
 }
 
 // Renumber assigns the file pointed by the descriptor `from` to `to`.
@@ -516,6 +406,7 @@ func (c *FSContext) CloseFile(fd int32) syscall.Errno {
 		return syscall.EBADF
 	}
 	c.openedFiles.Delete(fd)
+	c.readdirs.Delete(fd)
 	return platform.UnwrapOSError(f.File.Close())
 }
 
@@ -523,24 +414,69 @@ func (c *FSContext) CloseFile(fd int32) syscall.Errno {
 func (c *FSContext) Close() (err error) {
 	// Close any files opened in this context
 	c.openedFiles.Range(func(fd int32, entry *FileEntry) bool {
-		if e := entry.File.Close(); e != nil {
-			err = e // This means err returned == the last non-nil error.
+		if errno := entry.File.Close(); errno != 0 {
+			err = errno // This means err returned == the last non-nil error.
 		}
 		return true
 	})
 	// A closed FSContext cannot be reused so clear the state instead of
 	// using Reset.
 	c.openedFiles = FileTable{}
+	c.readdirs = ReaddirTable{}
 	return
 }
 
-// WriterForFile returns a writer for the given file descriptor or nil if not
-// opened or not writeable (e.g. a directory or a file not opened for writes).
-func WriterForFile(fsc *FSContext, fd int32) (writer io.Writer) {
-	if f, ok := fsc.LookupFile(fd); !ok {
-		return
-	} else if w, ok := f.File.(io.Writer); ok {
-		writer = w
+// NewFSContext creates a FSContext with stdio streams and an optional
+// pre-opened filesystem.
+//
+// If `preopened` is not UnimplementedFS, it is inserted into
+// the file descriptor table as FdPreopen.
+func (c *Context) NewFSContext(
+	stdin io.Reader,
+	stdout, stderr io.Writer,
+	rootFS fsapi.FS,
+	tcpListeners []*net.TCPListener,
+) (err error) {
+	c.fsc.rootFS = rootFS
+	inFile, err := stdinFileEntry(stdin)
+	if err != nil {
+		return err
 	}
-	return
+	c.fsc.openedFiles.Insert(inFile)
+	outWriter, err := stdioWriterFileEntry("stdout", stdout)
+	if err != nil {
+		return err
+	}
+	c.fsc.openedFiles.Insert(outWriter)
+	errWriter, err := stdioWriterFileEntry("stderr", stderr)
+	if err != nil {
+		return err
+	}
+	c.fsc.openedFiles.Insert(errWriter)
+
+	if _, ok := rootFS.(fsapi.UnimplementedFS); ok {
+		// don't add to the pre-opens
+	} else if comp, ok := rootFS.(*sysfs.CompositeFS); ok {
+		preopens := comp.FS()
+		for i, p := range comp.GuestPaths() {
+			c.fsc.openedFiles.Insert(&FileEntry{
+				FS:        preopens[i],
+				Name:      p,
+				IsPreopen: true,
+				File:      &lazyDir{fs: rootFS},
+			})
+		}
+	} else {
+		c.fsc.openedFiles.Insert(&FileEntry{
+			FS:        rootFS,
+			Name:      "/",
+			IsPreopen: true,
+			File:      &lazyDir{fs: rootFS},
+		})
+	}
+
+	for _, tl := range tcpListeners {
+		c.fsc.openedFiles.Insert(&FileEntry{IsPreopen: true, File: sysfs.NewTCPListenerFile(tl)})
+	}
+	return nil
 }

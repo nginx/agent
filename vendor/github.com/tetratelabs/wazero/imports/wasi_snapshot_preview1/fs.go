@@ -2,30 +2,21 @@ package wasi_snapshot_preview1
 
 import (
 	"context"
-	"errors"
 	"io"
 	"io/fs"
 	"math"
 	"path"
-	"reflect"
 	"strings"
 	"syscall"
 	"unsafe"
 
 	"github.com/tetratelabs/wazero/api"
-	"github.com/tetratelabs/wazero/internal/platform"
+	"github.com/tetratelabs/wazero/internal/fsapi"
+	socketapi "github.com/tetratelabs/wazero/internal/sock"
 	"github.com/tetratelabs/wazero/internal/sys"
 	"github.com/tetratelabs/wazero/internal/sysfs"
 	"github.com/tetratelabs/wazero/internal/wasip1"
 	"github.com/tetratelabs/wazero/internal/wasm"
-)
-
-// The following interfaces are used until we finalize our own FD-scoped file.
-type (
-	// syncFile is implemented by os.File in file_posix.go
-	syncFile interface{ Sync() error }
-	// truncateFile is implemented by os.File in file_posix.go
-	truncateFile interface{ Truncate(size int64) error }
 )
 
 // fdAdvise is the WASI function named FdAdviseName which provides file
@@ -97,22 +88,16 @@ func fdAllocateFn(_ context.Context, mod api.Module, params []uint64) syscall.Er
 		return syscall.EINVAL
 	}
 
-	st, err := f.Stat()
-	if err != nil {
-		return platform.UnwrapOSError(err)
+	st, errno := f.File.Stat()
+	if errno != 0 {
+		return errno
 	}
 
 	if st.Size >= tail {
-		// We already have enough space.
-		return 0
+		return 0 // We already have enough space.
 	}
 
-	osf, ok := f.File.(truncateFile)
-	if !ok {
-		return syscall.EBADF
-	}
-
-	return platform.UnwrapOSError(osf.Truncate(tail))
+	return f.File.Truncate(tail)
 }
 
 // fdClose is the WASI function named FdCloseName which closes a file
@@ -154,7 +139,7 @@ func fdDatasyncFn(_ context.Context, mod api.Module, params []uint64) syscall.Er
 	if f, ok := fsc.LookupFile(fd); !ok {
 		return syscall.EBADF
 	} else {
-		return sysfs.FileDatasync(f.File)
+		return f.File.Datasync()
 	}
 }
 
@@ -211,35 +196,103 @@ func fdFdstatGetFn(_ context.Context, mod api.Module, params []uint64) syscall.E
 	}
 
 	var fdflags uint16
-	var st fs.FileInfo
-	var err error
-	if f, ok := fsc.LookupFile(fd); !ok {
+	var st fsapi.Stat_t
+	var errno syscall.Errno
+	f, ok := fsc.LookupFile(fd)
+	if !ok {
 		return syscall.EBADF
-	} else if st, err = f.File.Stat(); err != nil {
-		return platform.UnwrapOSError(err)
-	} else if _, ok := f.File.(io.Writer); ok {
-		// TODO: maybe cache flags to open instead
-		fdflags = wasip1.FD_APPEND
+	} else if st, errno = f.File.Stat(); errno != 0 {
+		return errno
+	} else if f.File.IsAppend() {
+		fdflags |= wasip1.FD_APPEND
 	}
 
-	filetype := getWasiFiletype(st.Mode())
-	writeFdstat(buf, filetype, fdflags)
+	if f.File.IsNonblock() {
+		fdflags |= wasip1.FD_NONBLOCK
+	}
 
+	var fsRightsBase uint32
+	var fsRightsInheriting uint32
+	fileType := getExtendedWasiFiletype(f.File, st.Mode)
+
+	switch fileType {
+	case wasip1.FILETYPE_DIRECTORY:
+		// To satisfy wasi-testsuite, we must advertise that directories cannot
+		// be given seek permission (RIGHT_FD_SEEK).
+		fsRightsBase = dirRightsBase
+		fsRightsInheriting = fileRightsBase | dirRightsBase
+	case wasip1.FILETYPE_CHARACTER_DEVICE:
+		// According to wasi-libc,
+		// > A tty is a character device that we can't seek or tell on.
+		// See https://github.com/WebAssembly/wasi-libc/blob/a6f871343313220b76009827ed0153586361c0d5/libc-bottom-half/sources/isatty.c#L13-L18
+		fsRightsBase = fileRightsBase &^ wasip1.RIGHT_FD_SEEK &^ wasip1.RIGHT_FD_TELL
+	default:
+		fsRightsBase = fileRightsBase
+	}
+
+	writeFdstat(buf, fileType, fdflags, fsRightsBase, fsRightsInheriting)
 	return 0
 }
 
-var blockFdstat = []byte{
-	wasip1.FILETYPE_BLOCK_DEVICE, 0, // filetype
-	0, 0, 0, 0, 0, 0, // fdflags
-	0, 0, 0, 0, 0, 0, 0, 0, // fs_rights_base
-	0, 0, 0, 0, 0, 0, 0, 0, // fs_rights_inheriting
+// isPreopenedStdio returns true if the FD is sys.FdStdin, sys.FdStdout or
+// sys.FdStderr and pre-opened. This double check is needed in case the guest
+// closes stdin and re-opens it with a random alternative file.
+//
+// Currently, we only support non-blocking mode for standard I/O streams.
+// Non-blocking mode is rarely supported for regular files, and we don't
+// yet have support for sockets, so we make a special case.
+//
+// Note: this to get or set FD_NONBLOCK, but skip FD_APPEND. Our current
+// implementation can't set FD_APPEND, without re-opening files. As stdio are
+// pre-opened, we don't know how to re-open them, neither should we close the
+// underlying file. Later, we could add support for setting FD_APPEND, similar
+// to SetNonblock.
+func isPreopenedStdio(fd int32, f *sys.FileEntry) bool {
+	return fd <= sys.FdStderr && f.IsPreopen
 }
 
-func writeFdstat(buf []byte, filetype uint8, fdflags uint16) {
-	// memory is re-used, so ensure the result is defaulted.
-	copy(buf, blockFdstat)
-	buf[0] = filetype
-	buf[2] = byte(fdflags)
+const fileRightsBase = wasip1.RIGHT_FD_DATASYNC |
+	wasip1.RIGHT_FD_READ |
+	wasip1.RIGHT_FD_SEEK |
+	wasip1.RIGHT_FDSTAT_SET_FLAGS |
+	wasip1.RIGHT_FD_SYNC |
+	wasip1.RIGHT_FD_TELL |
+	wasip1.RIGHT_FD_WRITE |
+	wasip1.RIGHT_FD_ADVISE |
+	wasip1.RIGHT_FD_ALLOCATE |
+	wasip1.RIGHT_FD_FILESTAT_GET |
+	wasip1.RIGHT_FD_FILESTAT_SET_SIZE |
+	wasip1.RIGHT_FD_FILESTAT_SET_TIMES |
+	wasip1.RIGHT_POLL_FD_READWRITE
+
+const dirRightsBase = wasip1.RIGHT_FD_DATASYNC |
+	wasip1.RIGHT_FDSTAT_SET_FLAGS |
+	wasip1.RIGHT_FD_SYNC |
+	wasip1.RIGHT_PATH_CREATE_DIRECTORY |
+	wasip1.RIGHT_PATH_CREATE_FILE |
+	wasip1.RIGHT_PATH_LINK_SOURCE |
+	wasip1.RIGHT_PATH_LINK_TARGET |
+	wasip1.RIGHT_PATH_OPEN |
+	wasip1.RIGHT_FD_READDIR |
+	wasip1.RIGHT_PATH_READLINK |
+	wasip1.RIGHT_PATH_RENAME_SOURCE |
+	wasip1.RIGHT_PATH_RENAME_TARGET |
+	wasip1.RIGHT_PATH_FILESTAT_GET |
+	wasip1.RIGHT_PATH_FILESTAT_SET_SIZE |
+	wasip1.RIGHT_PATH_FILESTAT_SET_TIMES |
+	wasip1.RIGHT_FD_FILESTAT_GET |
+	wasip1.RIGHT_FD_FILESTAT_SET_TIMES |
+	wasip1.RIGHT_PATH_SYMLINK |
+	wasip1.RIGHT_PATH_REMOVE_DIRECTORY |
+	wasip1.RIGHT_PATH_UNLINK_FILE
+
+func writeFdstat(buf []byte, fileType uint8, fdflags uint16, fsRightsBase, fsRightsInheriting uint32) {
+	b := (*[24]byte)(buf)
+	le.PutUint16(b[0:], uint16(fileType))
+	le.PutUint16(b[2:], fdflags)
+	le.PutUint32(b[4:], 0)
+	le.PutUint64(b[8:], uint64(fsRightsBase))
+	le.PutUint64(b[16:], uint64(fsRightsInheriting))
 }
 
 // fdFdstatSetFlags is the WASI function named FdFdstatSetFlagsName which
@@ -250,17 +303,27 @@ func fdFdstatSetFlagsFn(_ context.Context, mod api.Module, params []uint64) sysc
 	fd, wasiFlag := int32(params[0]), uint16(params[1])
 	fsc := mod.(*wasm.ModuleInstance).Sys.FS()
 
-	// We can only support APPEND flag.
-	if wasip1.FD_DSYNC&wasiFlag != 0 || wasip1.FD_NONBLOCK&wasiFlag != 0 || wasip1.FD_RSYNC&wasiFlag != 0 || wasip1.FD_SYNC&wasiFlag != 0 {
+	// Currently we only support APPEND and NONBLOCK.
+	if wasip1.FD_DSYNC&wasiFlag != 0 || wasip1.FD_RSYNC&wasiFlag != 0 || wasip1.FD_SYNC&wasiFlag != 0 {
 		return syscall.EINVAL
 	}
 
-	var flag int
-	if wasip1.FD_APPEND&wasiFlag != 0 {
-		flag = syscall.O_APPEND
+	if f, ok := fsc.LookupFile(fd); !ok {
+		return syscall.EBADF
+	} else {
+		nonblock := wasip1.FD_NONBLOCK&wasiFlag != 0
+		errno := f.File.SetNonblock(nonblock)
+		if errno != 0 {
+			return errno
+		}
+		if stat, err := f.File.Stat(); err == 0 && stat.Mode.IsRegular() {
+			// For normal files, proceed to apply an append flag.
+			append := wasip1.FD_APPEND&wasiFlag != 0
+			return f.File.SetAppend(append)
+		}
 	}
 
-	return fsc.ChangeOpenFlag(fd, flag)
+	return 0
 }
 
 // fdFdstatSetRights will not be implemented as rights were removed from WASI.
@@ -341,12 +404,25 @@ func fdFilestatGetFunc(mod api.Module, fd int32, resultBuf uint32) syscall.Errno
 		return syscall.EBADF
 	}
 
-	st, err := f.Stat()
-	if err != nil {
-		return platform.UnwrapOSError(err)
+	st, errno := f.File.Stat()
+	if errno != 0 {
+		return errno
 	}
 
-	return writeFilestat(buf, &st)
+	filetype := getExtendedWasiFiletype(f.File, st.Mode)
+	return writeFilestat(buf, &st, filetype)
+}
+
+func getExtendedWasiFiletype(file fsapi.File, fm fs.FileMode) (ftype uint8) {
+	ftype = getWasiFiletype(fm)
+	if ftype == wasip1.FILETYPE_UNKNOWN {
+		if _, ok := file.(socketapi.TCPSock); ok {
+			ftype = wasip1.FILETYPE_SOCKET_STREAM
+		} else if _, ok = file.(socketapi.TCPConn); ok {
+			ftype = wasip1.FILETYPE_SOCKET_STREAM
+		}
+	}
+	return
 }
 
 func getWasiFiletype(fm fs.FileMode) uint8 {
@@ -369,10 +445,10 @@ func getWasiFiletype(fm fs.FileMode) uint8 {
 	}
 }
 
-func writeFilestat(buf []byte, st *platform.Stat_t) (errno syscall.Errno) {
+func writeFilestat(buf []byte, st *fsapi.Stat_t, ftype uint8) (errno syscall.Errno) {
 	le.PutUint64(buf, st.Dev)
 	le.PutUint64(buf[8:], st.Ino)
-	le.PutUint64(buf[16:], uint64(getWasiFiletype(st.Mode)))
+	le.PutUint64(buf[16:], uint64(ftype))
 	le.PutUint64(buf[24:], st.Nlink)
 	le.PutUint64(buf[32:], uint64(st.Size))
 	le.PutUint64(buf[40:], uint64(st.Atim))
@@ -396,12 +472,9 @@ func fdFilestatSetSizeFn(_ context.Context, mod api.Module, params []uint64) sys
 	// Check to see if the file descriptor is available
 	if f, ok := fsc.LookupFile(fd); !ok {
 		return syscall.EBADF
-	} else if truncateFile, ok := f.File.(truncateFile); !ok {
-		return syscall.EBADF // possibly a fake file
-	} else if err := truncateFile.Truncate(int64(size)); err != nil {
-		return platform.UnwrapOSError(err)
+	} else {
+		return f.File.Truncate(int64(size))
 	}
-	return 0
 }
 
 // fdFilestatSetTimes is the WASI function named functionFdFilestatSetTimes
@@ -434,7 +507,7 @@ func fdFilestatSetTimesFn(_ context.Context, mod api.Module, params []uint64) sy
 	}
 
 	// Try to update the file timestamps by file-descriptor.
-	errno = platform.UtimensFile(f.File, &times)
+	errno = f.File.Utimens(&times)
 
 	// Fall back to path based, despite it being less precise.
 	switch errno {
@@ -455,9 +528,9 @@ func toTimes(atim, mtime int64, fstFlags uint16) (times [2]syscall.Timespec, err
 	} else if set {
 		times[0] = syscall.NsecToTimespec(atim)
 	} else if now {
-		times[0].Nsec = platform.UTIME_NOW
+		times[0].Nsec = sysfs.UTIME_NOW
 	} else {
-		times[0].Nsec = platform.UTIME_OMIT
+		times[0].Nsec = sysfs.UTIME_OMIT
 	}
 
 	// coerce mtim into a timespec
@@ -467,9 +540,9 @@ func toTimes(atim, mtime int64, fstFlags uint16) (times [2]syscall.Timespec, err
 	} else if set {
 		times[1] = syscall.NsecToTimespec(mtime)
 	} else if now {
-		times[1].Nsec = platform.UTIME_NOW
+		times[1].Nsec = sysfs.UTIME_NOW
 	} else {
-		times[1].Nsec = platform.UTIME_OMIT
+		times[1].Nsec = sysfs.UTIME_OMIT
 	}
 	return
 }
@@ -668,6 +741,23 @@ var fdRead = newHostFunc(
 	"fd", "iovs", "iovs_len", "result.nread",
 )
 
+// preader tracks an offset across multiple reads.
+type preader struct {
+	f      fsapi.File
+	offset int64
+}
+
+// Read implements the same function as documented on internalapi.File.
+func (w *preader) Read(buf []byte) (n int, errno syscall.Errno) {
+	if len(buf) == 0 {
+		return 0, 0 // less overhead on zero-length reads.
+	}
+
+	n, err := w.f.Pread(buf, w.offset)
+	w.offset += int64(n)
+	return n, err
+}
+
 func fdReadFn(_ context.Context, mod api.Module, params []uint64) syscall.Errno {
 	return fdReadOrPread(mod, params, false)
 }
@@ -677,31 +767,39 @@ func fdReadOrPread(mod api.Module, params []uint64, isPread bool) syscall.Errno 
 	fsc := mod.(*wasm.ModuleInstance).Sys.FS()
 
 	fd := int32(params[0])
-
-	r, ok := fsc.LookupFile(fd)
-	if !ok {
-		return syscall.EBADF
-	}
-
-	var reader io.Reader = r.File
-
 	iovs := uint32(params[1])
 	iovsCount := uint32(params[2])
 
 	var resultNread uint32
-	if isPread {
+	var reader func(buf []byte) (n int, errno syscall.Errno)
+	if f, ok := fsc.LookupFile(fd); !ok {
+		return syscall.EBADF
+	} else if isPread {
 		offset := int64(params[3])
-		reader = sysfs.ReaderAtOffset(r.File, offset)
+		reader = (&preader{f: f.File, offset: offset}).Read
 		resultNread = uint32(params[4])
 	} else {
+		reader = f.File.Read
 		resultNread = uint32(params[3])
 	}
 
+	nread, errno := readv(mem, iovs, iovsCount, reader)
+	if errno != 0 {
+		return errno
+	}
+	if !mem.WriteUint32Le(resultNread, nread) {
+		return syscall.EFAULT
+	} else {
+		return 0
+	}
+}
+
+func readv(mem api.Memory, iovs uint32, iovsCount uint32, reader func(buf []byte) (nread int, errno syscall.Errno)) (uint32, syscall.Errno) {
 	var nread uint32
 	iovsStop := iovsCount << 3 // iovsCount * 8
 	iovsBuf, ok := mem.Read(iovs, iovsStop)
 	if !ok {
-		return syscall.EFAULT
+		return 0, syscall.EFAULT
 	}
 
 	for iovsPos := uint32(0); iovsPos < iovsStop; iovsPos += 8 {
@@ -714,41 +812,21 @@ func fdReadOrPread(mod api.Module, params []uint64, isPread bool) syscall.Errno 
 
 		b, ok := mem.Read(offset, l)
 		if !ok {
-			return syscall.EFAULT
+			return 0, syscall.EFAULT
 		}
 
-		n, err := reader.Read(b)
+		n, errno := reader(b)
 		nread += uint32(n)
 
-		shouldContinue, errno := fdRead_shouldContinueRead(uint32(n), l, err)
-		if errno != 0 {
-			return errno
-		} else if !shouldContinue {
-			break
+		if errno == syscall.ENOSYS {
+			return 0, syscall.EBADF // e.g. unimplemented for read
+		} else if errno != 0 {
+			return 0, errno
+		} else if n < int(l) {
+			break // stop when we read less than capacity.
 		}
 	}
-	if !mem.WriteUint32Le(resultNread, nread) {
-		return syscall.EFAULT
-	} else {
-		return 0
-	}
-}
-
-// fdRead_shouldContinueRead decides whether to continue reading the next iovec
-// based on the amount read (n/l) and a possible error returned from io.Reader.
-//
-// Note: When there are both bytes read (n) and an error, this continues.
-// See /RATIONALE.md "Why ignore the error returned by io.Reader when n > 1?"
-func fdRead_shouldContinueRead(n, l uint32, err error) (bool, syscall.Errno) {
-	if errors.Is(err, io.EOF) {
-		return false, 0 // EOF isn't an error, and we shouldn't continue.
-	} else if err != nil && n == 0 {
-		return false, syscall.EIO
-	} else if err != nil {
-		return false, 0 // Allow the caller to process n bytes.
-	}
-	// Continue reading, unless there's a partial read or nothing to read.
-	return n == l && n != 0, 0
+	return nread, 0
 }
 
 // fdReaddir is the WASI function named FdReaddirName which reads directory
@@ -781,92 +859,33 @@ func fdReaddirFn(_ context.Context, mod api.Module, params []uint64) syscall.Err
 	}
 
 	// Validate the FD is a directory
-	rd, dir, errno := openedDir(fsc, fd)
+	f, errno := openedDir(fsc, fd)
 	if errno != 0 {
 		return errno
 	}
-
-	if cookie == 0 && dir.CountRead > 0 {
-		// This means that there was a previous call to the dir, but cookie is reset.
-		// This happens when the program calls rewinddir, for example:
-		// https://github.com/WebAssembly/wasi-libc/blob/659ff414560721b1660a19685110e484a081c3d4/libc-bottom-half/cloudlibc/src/libc/dirent/rewinddir.c#L10-L12
-		//
-		// Since we cannot unwind fs.ReadDirFile results, we re-open while keeping the same file descriptor.
-		f, errno := fsc.ReOpenDir(fd)
-		if errno != 0 {
-			return errno
-		}
-		rd, dir = f.File, f.ReadDir
-	}
-
-	// First, determine the maximum directory entries that can be encoded as
-	// dirents. The total size is DirentSize(24) + nameSize, for each file.
-	// Since a zero-length file name is invalid, the minimum size entry is
-	// 25 (DirentSize + 1 character).
-	maxDirEntries := int(bufLen/wasip1.DirentSize + 1)
-
-	// While unlikely maxDirEntries will fit into bufLen, add one more just in
-	// case, as we need to know if we hit the end of the directory or not to
-	// write the correct bufused (e.g. == bufLen unless EOF).
-	//	>> If less than the size of the read buffer, the end of the
-	//	>> directory has been reached.
-	maxDirEntries += 1
-
-	// The host keeps state for any unread entries from the prior call because
-	// we cannot seek to a previous directory position. Collect these entries.
-	dirents, errno := lastDirents(dir, cookie)
+	// Discard the bool value because we validated the fd already.
+	dir, errno := fsc.LookupReaddir(fd, f)
 	if errno != 0 {
 		return errno
 	}
-
-	// Add entries for dot and dot-dot as wasi-testsuite requires them.
-	if cookie == 0 && dirents == nil {
-		if f, ok := fsc.LookupFile(fd); !ok {
-			return syscall.EBADF
-		} else if dirents, errno = dotDirents(f); errno != 0 {
-			return errno
-		}
-		dir.Dirents = dirents
-		dir.CountRead = 2 // . and ..
-	}
-
-	// Check if we have maxDirEntries, and read more from the FS as needed.
-	if entryCount := len(dirents); entryCount < maxDirEntries {
-		// Note: platform.Readdir does not return io.EOF as it is
-		// inconsistently returned (e.g. darwin does, but linux doesn't).
-		l, errno := platform.Readdir(rd, maxDirEntries-entryCount)
-		if errno != 0 {
-			return errno
-		}
-
-		// Zero length read is possible on an empty or exhausted directory.
-		if len(l) > 0 {
-			dir.CountRead += uint64(len(l))
-			dirents = append(dirents, l...)
-			// Replace the cache with up to maxDirEntries, starting at cookie.
-			dir.Dirents = dirents
-		}
+	// Validate the cookie and possibly sync the internal state to the one the cookie represents.
+	if errno = dir.Rewind(cookie); errno != 0 {
+		return errno
 	}
 
 	// Determine how many dirents we can write, excluding a potentially
 	// truncated entry.
-	bufused, direntCount, writeTruncatedEntry := maxDirents(dirents, bufLen)
+	dirents, bufused, direntCount, writeTruncatedEntry := maxDirents(dir, bufLen)
 
 	// Now, write entries to the underlying buffer.
 	if bufused > 0 {
-
-		// d_next is the index of the next file in the list, so it should
-		// always be one higher than the requested cookie.
-		d_next := uint64(cookie + 1)
-		// ^^ yes this can overflow to negative, which means our implementation
-		// doesn't support writing greater than max int64 entries.
-
 		buf, ok := mem.Read(buf, bufused)
 		if !ok {
 			return syscall.EFAULT
 		}
 
-		writeDirents(dirents, direntCount, writeTruncatedEntry, buf, d_next)
+		// Iterate again on dir, this time writing the entries.
+		writeDirents(dirents, direntCount, writeTruncatedEntry, buf, uint64(cookie+1))
 	}
 
 	if !mem.WriteUint32Le(resultBufused, bufused) {
@@ -875,65 +894,7 @@ func fdReaddirFn(_ context.Context, mod api.Module, params []uint64) syscall.Err
 	return 0
 }
 
-// dotDirents returns "." and "..", where "." because wasi-testsuite does inode
-// validation.
-func dotDirents(f *sys.FileEntry) ([]*platform.Dirent, syscall.Errno) {
-	dotIno, ft, err := f.CachedStat()
-	if err != nil {
-		return nil, platform.UnwrapOSError(err)
-	} else if ft.Type() != fs.ModeDir {
-		return nil, syscall.ENOTDIR
-	}
-	dotDotIno := uint64(0)
-	if !f.IsPreopen && f.Name != "." {
-		if st, errno := f.FS.Stat(path.Dir(f.Name)); errno != 0 {
-			return nil, errno
-		} else {
-			dotDotIno = st.Ino
-		}
-	}
-	return []*platform.Dirent{
-		{Name: ".", Ino: dotIno, Type: fs.ModeDir},
-		{Name: "..", Ino: dotDotIno, Type: fs.ModeDir},
-	}, 0
-}
-
 const largestDirent = int64(math.MaxUint32 - wasip1.DirentSize)
-
-// lastDirents is broken out from fdReaddirFn for testability.
-func lastDirents(dir *sys.ReadDir, cookie int64) (dirents []*platform.Dirent, errno syscall.Errno) {
-	if cookie < 0 {
-		errno = syscall.EINVAL // invalid as we will never send a negative cookie.
-		return
-	}
-
-	entryCount := int64(len(dir.Dirents))
-	if entryCount == 0 { // there was no prior call
-		if cookie != 0 {
-			errno = syscall.EINVAL // invalid as we haven't sent that cookie
-		}
-		return
-	}
-
-	// Get the first absolute position in our window of results
-	firstPos := int64(dir.CountRead) - entryCount
-	cookiePos := cookie - firstPos
-
-	switch {
-	case cookiePos < 0: // cookie is asking for results outside our window.
-		errno = syscall.ENOSYS // we can't implement directory seeking backwards.
-	case cookiePos > entryCount:
-		errno = syscall.EINVAL // invalid as we read that far, yet.
-	case cookiePos > 0: // truncate so to avoid large lists.
-		dirents = dir.Dirents[cookiePos:]
-	default:
-		dirents = dir.Dirents
-	}
-	if len(dirents) == 0 {
-		dirents = nil
-	}
-	return
-}
 
 // maxDirents returns the maximum count and total entries that can fit in
 // maxLen bytes.
@@ -944,21 +905,27 @@ func lastDirents(dir *sys.ReadDir, cookie int64) (dirents []*platform.Dirent, er
 //
 // See https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md#fd_readdir
 // See https://github.com/WebAssembly/wasi-libc/blob/659ff414560721b1660a19685110e484a081c3d4/libc-bottom-half/cloudlibc/src/libc/dirent/readdir.c#L44
-func maxDirents(entries []*platform.Dirent, bufLen uint32) (bufused, direntCount uint32, writeTruncatedEntry bool) {
+func maxDirents(dir *sys.Readdir, bufLen uint32) (dirents []fsapi.Dirent, bufused, direntCount uint32, writeTruncatedEntry bool) {
 	lenRemaining := bufLen
-	for _, e := range entries {
+	for {
+		d, errno := dir.Peek()
+		if errno != 0 {
+			return
+		}
+		dirents = append(dirents, *d)
+
 		if lenRemaining < wasip1.DirentSize {
 			// We don't have enough space in bufLen for another struct,
 			// entry. A caller who wants more will retry.
 
-			// bufused == bufLen means more entries exist, which is the case
+			// bufused == bufLen means more dirents exist, which is the case
 			// when the dirent is larger than bytes remaining.
 			bufused = bufLen
 			break
 		}
 
 		// use int64 to guard against huge filenames
-		nameLen := int64(len(e.Name))
+		nameLen := int64(len(d.Name))
 		var entryLen uint32
 
 		// Check to see if DirentSize + nameLen overflows, or if it would be
@@ -979,7 +946,7 @@ func maxDirents(entries []*platform.Dirent, bufLen uint32) (bufused, direntCount
 			// In this case, we only write up to DirentSize(24) to allow the
 			// caller to resize.
 
-			// bufused == bufLen means more entries exist, which is the case
+			// bufused == bufLen means more dirents exist, which is the case
 			// when the next entry is larger than bytes remaining.
 			bufused = bufLen
 
@@ -993,6 +960,7 @@ func maxDirents(entries []*platform.Dirent, bufLen uint32) (bufused, direntCount
 		lenRemaining -= entryLen
 		bufused += entryLen
 		direntCount++
+		_ = dir.Advance()
 	}
 	return
 }
@@ -1001,7 +969,7 @@ func maxDirents(entries []*platform.Dirent, bufLen uint32) (bufused, direntCount
 // based on maxDirents.	truncatedEntryLen means write one past entryCount,
 // without its name. See maxDirents for why
 func writeDirents(
-	dirents []*platform.Dirent,
+	dirents []fsapi.Dirent,
 	direntCount uint32,
 	writeTruncatedEntry bool,
 	buf []byte,
@@ -1042,25 +1010,22 @@ func writeDirent(buf []byte, dNext uint64, ino uint64, dNamlen uint32, dType fs.
 	le.PutUint32(buf[20:], uint32(filetype)) //  d_type
 }
 
-// openedDir returns the directory and 0 if the fd points to a readable directory.
-func openedDir(fsc *sys.FSContext, fd int32) (fs.File, *sys.ReadDir, syscall.Errno) {
+// openedDir returns the sys.FileEntry for the directory and 0 if the fd points to a readable directory.
+func openedDir(fsc *sys.FSContext, fd int32) (*sys.FileEntry, syscall.Errno) {
 	if f, ok := fsc.LookupFile(fd); !ok {
-		return nil, nil, syscall.EBADF
-	} else if _, ft, err := f.CachedStat(); err != nil {
-		return nil, nil, platform.UnwrapOSError(err)
-	} else if ft.Type() != fs.ModeDir {
+		return nil, syscall.EBADF
+	} else if isDir, errno := f.File.IsDir(); errno != 0 {
+		return nil, errno
+	} else if !isDir {
 		// fd_readdir docs don't indicate whether to return syscall.ENOTDIR or
 		// syscall.EBADF. It has been noticed that rust will crash on syscall.ENOTDIR,
 		// and POSIX C ref seems to not return this, so we don't either.
 		//
 		// See https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md#fd_readdir
 		// and https://en.wikibooks.org/wiki/C_Programming/POSIX_Reference/dirent.h
-		return nil, nil, syscall.EBADF
+		return nil, syscall.EBADF
 	} else {
-		if f.ReadDir == nil {
-			f.ReadDir = &sys.ReadDir{}
-		}
-		return f.File, f.ReadDir, 0
+		return f, 0
 	}
 }
 
@@ -1104,6 +1069,7 @@ func fdRenumberFn(_ context.Context, mod api.Module, params []uint64) syscall.Er
 //   - syscall.EFAULT: `resultNewoffset` points to an offset out of memory
 //   - syscall.EINVAL: `whence` is an invalid value
 //   - syscall.EIO: a file system error
+//   - syscall.EISDIR: the file was a directory.
 //
 // For example, if fd 3 is a file with offset 0, and parameters fd=3, offset=4,
 // whence=0 (=io.SeekStart), resultNewOffset=1, this function writes the below
@@ -1132,29 +1098,13 @@ func fdSeekFn(_ context.Context, mod api.Module, params []uint64) syscall.Errno 
 	whence := uint32(params[2])
 	resultNewoffset := uint32(params[3])
 
-	var seeker io.Seeker
-	// Check to see if the file descriptor is available
 	if f, ok := fsc.LookupFile(fd); !ok {
 		return syscall.EBADF
-		// fs.FS doesn't declare io.Seeker, but implementations such as os.File implement it.
-	} else if _, ft, err := f.CachedStat(); err != nil {
-		return platform.UnwrapOSError(err)
-	} else if ft.Type() == fs.ModeDir {
-		return syscall.EBADF
-	} else if seeker, ok = f.File.(io.Seeker); !ok {
-		return syscall.EBADF
-	}
-
-	if whence > io.SeekEnd /* exceeds the largest valid whence */ {
-		return syscall.EINVAL
-	}
-
-	newOffset, err := seeker.Seek(int64(offset), int(whence))
-	if err != nil {
-		return platform.UnwrapOSError(err)
-	}
-
-	if !mod.Memory().WriteUint64Le(resultNewoffset, uint64(newOffset)) {
+	} else if isDir, _ := f.File.IsDir(); isDir {
+		return syscall.EISDIR // POSIX doesn't forbid seeking a directory, but wasi-testsuite does.
+	} else if newOffset, errno := f.File.Seek(int64(offset), int(whence)); errno != 0 {
+		return errno
+	} else if !mod.Memory().WriteUint64Le(resultNewoffset, uint64(newOffset)) {
 		return syscall.EFAULT
 	}
 	return 0
@@ -1173,12 +1123,9 @@ func fdSyncFn(_ context.Context, mod api.Module, params []uint64) syscall.Errno 
 	// Check to see if the file descriptor is available
 	if f, ok := fsc.LookupFile(fd); !ok {
 		return syscall.EBADF
-	} else if syncFile, ok := f.File.(syncFile); !ok {
-		return syscall.EBADF // possibly a fake file
-	} else if err := syncFile.Sync(); err != nil {
-		return platform.UnwrapOSError(err)
+	} else {
+		return f.File.Sync()
 	}
-	return 0
 }
 
 // fdTell is the WASI function named FdTellName which returns the current
@@ -1265,6 +1212,23 @@ func fdWriteFn(_ context.Context, mod api.Module, params []uint64) syscall.Errno
 	return fdWriteOrPwrite(mod, params, false)
 }
 
+// pwriter tracks an offset across multiple writes.
+type pwriter struct {
+	f      fsapi.File
+	offset int64
+}
+
+// Write implements the same function as documented on internalapi.File.
+func (w *pwriter) Write(buf []byte) (n int, errno syscall.Errno) {
+	if len(buf) == 0 {
+		return 0, 0 // less overhead on zero-length writes.
+	}
+
+	n, err := w.f.Pwrite(buf, w.offset)
+	w.offset += int64(n)
+	return n, err
+}
+
 func fdWriteOrPwrite(mod api.Module, params []uint64, isPwrite bool) syscall.Errno {
 	mem := mod.Memory()
 	fsc := mod.(*wasm.ModuleInstance).Sys.FS()
@@ -1274,51 +1238,54 @@ func fdWriteOrPwrite(mod api.Module, params []uint64, isPwrite bool) syscall.Err
 	iovsCount := uint32(params[2])
 
 	var resultNwritten uint32
-	var writer io.Writer
+	var writer func(buf []byte) (n int, errno syscall.Errno)
 	if f, ok := fsc.LookupFile(fd); !ok {
 		return syscall.EBADF
 	} else if isPwrite {
 		offset := int64(params[3])
-		writer = sysfs.WriterAtOffset(f.File, offset)
+		writer = (&pwriter{f: f.File, offset: offset}).Write
 		resultNwritten = uint32(params[4])
-	} else if writer, ok = f.File.(io.Writer); !ok {
-		return syscall.EBADF
 	} else {
+		writer = f.File.Write
 		resultNwritten = uint32(params[3])
 	}
 
-	var err error
-	var nwritten uint32
-	iovsStop := iovsCount << 3 // iovsCount * 8
-	iovsBuf, ok := mem.Read(iovs, iovsStop)
-	if !ok {
-		return syscall.EFAULT
-	}
-
-	for iovsPos := uint32(0); iovsPos < iovsStop; iovsPos += 8 {
-		offset := le.Uint32(iovsBuf[iovsPos:])
-		l := le.Uint32(iovsBuf[iovsPos+4:])
-
-		var n int
-		if writer == io.Discard { // special-case default
-			n = int(l)
-		} else {
-			b, ok := mem.Read(offset, l)
-			if !ok {
-				return syscall.EFAULT
-			}
-			n, err = writer.Write(b)
-			if err != nil {
-				return platform.UnwrapOSError(err)
-			}
-		}
-		nwritten += uint32(n)
+	nwritten, errno := writev(mem, iovs, iovsCount, writer)
+	if errno != 0 {
+		return errno
 	}
 
 	if !mod.Memory().WriteUint32Le(resultNwritten, nwritten) {
 		return syscall.EFAULT
 	}
 	return 0
+}
+
+func writev(mem api.Memory, iovs uint32, iovsCount uint32, writer func(buf []byte) (n int, errno syscall.Errno)) (uint32, syscall.Errno) {
+	var nwritten uint32
+	iovsStop := iovsCount << 3 // iovsCount * 8
+	iovsBuf, ok := mem.Read(iovs, iovsStop)
+	if !ok {
+		return 0, syscall.EFAULT
+	}
+
+	for iovsPos := uint32(0); iovsPos < iovsStop; iovsPos += 8 {
+		offset := le.Uint32(iovsBuf[iovsPos:])
+		l := le.Uint32(iovsBuf[iovsPos+4:])
+
+		b, ok := mem.Read(offset, l)
+		if !ok {
+			return 0, syscall.EFAULT
+		}
+		n, errno := writer(b)
+		nwritten += uint32(n)
+		if errno == syscall.ENOSYS {
+			return 0, syscall.EBADF // e.g. unimplemented for write
+		} else if errno != 0 {
+			return 0, errno
+		}
+	}
+	return nwritten, 0
 }
 
 // pathCreateDirectory is the WASI function named PathCreateDirectoryName which
@@ -1415,14 +1382,7 @@ func pathFilestatGetFn(_ context.Context, mod api.Module, params []uint64) sysca
 	}
 
 	// Stat the file without allocating a file descriptor.
-	//
-	// Note: `preopen` is a `sysfs.FS` interface, so passing the address of `st`
-	// causes the value to escape to the heap because the compiler doesn't know
-	// whether the pointer will be retained by the method.
-	//
-	// This could be optimized by modifying Stat/Lstat to return the `Stat_t`
-	// value instead of passing a pointer as output parameter.
-	var st platform.Stat_t
+	var st fsapi.Stat_t
 
 	if (flags & wasip1.LOOKUP_SYMLINK_FOLLOW) == 0 {
 		st, errno = preopen.Lstat(pathName)
@@ -1440,7 +1400,8 @@ func pathFilestatGetFn(_ context.Context, mod api.Module, params []uint64) sysca
 		return syscall.EFAULT
 	}
 
-	return writeFilestat(buf, &st)
+	filetype := getWasiFiletype(st.Mode)
+	return writeFilestat(buf, &st, filetype)
 }
 
 // pathFilestatSetTimes is the WASI function named PathFilestatSetTimesName
@@ -1606,7 +1567,7 @@ func pathOpenFn(_ context.Context, mod api.Module, params []uint64) syscall.Errn
 	}
 
 	fileOpenFlags := openFlags(dirflags, oflags, fdflags, rights)
-	isDir := fileOpenFlags&platform.O_DIRECTORY != 0
+	isDir := fileOpenFlags&fsapi.O_DIRECTORY != 0
 
 	if isDir && oflags&wasip1.O_CREAT != 0 {
 		return syscall.EINVAL // use pathCreateDirectory!
@@ -1621,10 +1582,10 @@ func pathOpenFn(_ context.Context, mod api.Module, params []uint64) syscall.Errn
 	if isDir {
 		if f, ok := fsc.LookupFile(newFD); !ok {
 			return syscall.EBADF // unexpected
-		} else if _, ft, err := f.CachedStat(); err != nil {
+		} else if isDir, errno := f.File.IsDir(); errno != 0 {
 			_ = fsc.CloseFile(newFD)
-			return platform.UnwrapOSError(err)
-		} else if ft.Type() != fs.ModeDir {
+			return errno
+		} else if !isDir {
 			_ = fsc.CloseFile(newFD)
 			return syscall.ENOTDIR
 		}
@@ -1653,7 +1614,7 @@ func pathOpenFn(_ context.Context, mod api.Module, params []uint64) syscall.Errn
 //
 // See https://github.com/WebAssembly/wasi-libc/blob/659ff414560721b1660a19685110e484a081c3d4/libc-bottom-half/sources/at_fdcwd.c
 // See https://linux.die.net/man/2/openat
-func atPath(fsc *sys.FSContext, mem api.Memory, fd int32, p, pathLen uint32) (sysfs.FS, string, syscall.Errno) {
+func atPath(fsc *sys.FSContext, mem api.Memory, fd int32, p, pathLen uint32) (fsapi.FS, string, syscall.Errno) {
 	b, ok := mem.Read(p, pathLen)
 	if !ok {
 		return nil, "", syscall.EFAULT
@@ -1681,9 +1642,9 @@ func atPath(fsc *sys.FSContext, mem api.Memory, fd int32, p, pathLen uint32) (sy
 
 	if f, ok := fsc.LookupFile(fd); !ok {
 		return nil, "", syscall.EBADF // closed or invalid
-	} else if _, ft, err := f.CachedStat(); err != nil {
-		return nil, "", platform.UnwrapOSError(err)
-	} else if ft.Type() != fs.ModeDir {
+	} else if isDir, errno := f.File.IsDir(); errno != 0 {
+		return nil, "", errno
+	} else if !isDir {
 		return nil, "", syscall.ENOTDIR
 	} else if f.IsPreopen { // don't append the pre-open name
 		return f.FS, pathName, 0
@@ -1698,6 +1659,10 @@ func preopenPath(fsc *sys.FSContext, fd int32) (string, syscall.Errno) {
 		return "", syscall.EBADF // closed
 	} else if !f.IsPreopen {
 		return "", syscall.EBADF
+	} else if isDir, errno := f.File.IsDir(); errno != 0 || !isDir {
+		// In wasip1, only directories can be returned by fd_prestat_get as
+		// there are no prestat types defined for files or sockets.
+		return "", errno
 	} else {
 		return f.Name, 0
 	}
@@ -1705,32 +1670,53 @@ func preopenPath(fsc *sys.FSContext, fd int32) (string, syscall.Errno) {
 
 func openFlags(dirflags, oflags, fdflags uint16, rights uint32) (openFlags int) {
 	if dirflags&wasip1.LOOKUP_SYMLINK_FOLLOW == 0 {
-		openFlags |= platform.O_NOFOLLOW
+		openFlags |= fsapi.O_NOFOLLOW
 	}
 	if oflags&wasip1.O_DIRECTORY != 0 {
-		openFlags |= platform.O_DIRECTORY
+		openFlags |= fsapi.O_DIRECTORY
 		return // Early return for directories as the rest of flags doesn't make sense for it.
 	} else if oflags&wasip1.O_EXCL != 0 {
 		openFlags |= syscall.O_EXCL
 	}
+	// Because we don't implement rights, we paritally rely on the open flags
+	// to determine the mode in which the file will be opened. This will create
+	// divergent behavior compared to WASI runtimes which have a more strict
+	// interpretation of the WASI capabilities model; for example, a program
+	// which sets O_CREAT but does not give read or write permissions will
+	// successfully create a file when running with wazero, but might get a
+	// permission denied error on other runtimes.
+	defaultMode := syscall.O_RDONLY
 	if oflags&wasip1.O_TRUNC != 0 {
-		openFlags |= syscall.O_RDWR | syscall.O_TRUNC
+		openFlags |= syscall.O_TRUNC
+		defaultMode = syscall.O_RDWR
 	}
 	if oflags&wasip1.O_CREAT != 0 {
-		openFlags |= syscall.O_RDWR | syscall.O_CREAT
+		openFlags |= syscall.O_CREAT
+		defaultMode = syscall.O_RDWR
+	}
+	if fdflags&wasip1.FD_NONBLOCK != 0 {
+		openFlags |= syscall.O_NONBLOCK
 	}
 	if fdflags&wasip1.FD_APPEND != 0 {
-		openFlags |= syscall.O_RDWR | syscall.O_APPEND
+		openFlags |= syscall.O_APPEND
+		defaultMode = syscall.O_RDWR
 	}
 	// Since rights were discontinued in wasi, we only interpret RIGHT_FD_WRITE
 	// because it is the only way to know that we need to set write permissions
 	// on a file if the application did not pass any of O_CREATE, O_APPEND, nor
 	// O_TRUNC.
-	if rights&wasip1.RIGHT_FD_WRITE != 0 {
+	const r = wasip1.RIGHT_FD_READ
+	const w = wasip1.RIGHT_FD_WRITE
+	const rw = r | w
+	switch {
+	case (rights & rw) == rw:
 		openFlags |= syscall.O_RDWR
-	}
-	if openFlags == 0 {
-		openFlags = syscall.O_RDONLY
+	case (rights & w) == w:
+		openFlags |= syscall.O_WRONLY
+	case (rights & r) == r:
+		openFlags |= syscall.O_RDONLY
+	default:
+		openFlags |= defaultMode
 	}
 	return
 }
@@ -1906,9 +1892,9 @@ func pathSymlinkFn(_ context.Context, mod api.Module, params []uint64) syscall.E
 	dir, ok := fsc.LookupFile(fd)
 	if !ok {
 		return syscall.EBADF // closed
-	} else if _, ft, err := dir.CachedStat(); err != nil {
-		return platform.UnwrapOSError(err)
-	} else if ft.Type() != fs.ModeDir {
+	} else if isDir, errno := dir.File.IsDir(); errno != 0 {
+		return errno
+	} else if !isDir {
 		return syscall.ENOTDIR
 	}
 
@@ -1929,18 +1915,15 @@ func pathSymlinkFn(_ context.Context, mod api.Module, params []uint64) syscall.E
 	return dir.FS.Symlink(
 		// Do not join old path since it's only resolved when dereference the link created here.
 		// And the dereference result depends on the opening directory's file descriptor at that point.
-		bufToStr(oldPathBuf, int(oldPathLen)),
-		path.Join(dir.Name, bufToStr(newPathBuf, int(newPathLen))),
+		bufToStr(oldPathBuf),
+		path.Join(dir.Name, bufToStr(newPathBuf)),
 	)
 }
 
 // bufToStr converts the given byte slice as string unsafely.
-func bufToStr(buf []byte, l int) string {
-	return *(*string)(unsafe.Pointer(&reflect.SliceHeader{ //nolint
-		Data: uintptr(unsafe.Pointer(&buf[0])),
-		Len:  l,
-		Cap:  l,
-	}))
+func bufToStr(buf []byte) string {
+	// TODO: use unsafe.String after flooring Go 1.20.
+	return *(*string)(unsafe.Pointer(&buf))
 }
 
 // pathUnlinkFile is the WASI function named PathUnlinkFileName which unlinks a

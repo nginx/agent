@@ -2,6 +2,34 @@
 
 ## master (unreleased)
 
+## 1.4.4 (2023-07-10)
+
+- fix: don't render bold ANSI sequence when colors are disabled ([#515](https://github.com/evilmartians/lefthook/pull/515)) by @adam12
+- deps: July 2023 ([#514](https://github.com/evilmartians/lefthook/pull/514)) by @mrexox
+
+## 1.4.3 (2023-06-19)
+
+- fix: auto stage non-standard files ([#506](https://github.com/evilmartians/lefthook/pull/506)) by @mrexox
+
+## 1.4.2 (2023-06-13)
+
+- deps: June 2023 ([#499](https://github.com/evilmartians/lefthook/pull/499))
+- feat: support toml dumpint ([#490](https://github.com/evilmartians/lefthook/pull/490)) by @mrexox
+- feat: support json configs ([#489](https://github.com/evilmartians/lefthook/pull/489)) by @mrexox
+
+## 1.4.1 (2023-05-22)
+
+- fix: add win32 binary to artifacts (by @mrexox)
+- feat: allow dumping with JSON ([#485](https://github.com/evilmartians/lefthook/pull/485) by @mrexox
+- feat: add skip execution_info option ([#484](https://github.com/evilmartians/lefthook/pull/484)) by @mrexox
+- deps: from 05.2023 ([#487](https://github.com/evilmartians/lefthook/pull/487)) by @mrexox
+
+## 1.4.0 (2023-05-18)
+
+- feat: add adaptive colors ([#482](https://github.com/evilmartians/lefthook/pull/482)) by @mrexox
+- fix: skip output for interactive commands if configured ([#483](https://github.com/evilmartians/lefthook/pull/483)) by @mrexox
+- feat: add dump command ([#481](https://github.com/evilmartians/lefthook/pull/481)) by @mrexox
+
 ## 1.3.13 (2023-05-11)
 
 - feat: add only option ([#478](https://github.com/evilmartians/lefthook/pull/478)) by @mrexox
@@ -110,7 +138,7 @@
 ## 1.2.1 (2022-11-17)
 
 - fix: Remove quoting for scripts ([PR #371](https://github.com/evilmartians/lefthook/pull/371) by @stonesbg + @mrexox)
-- fix: remove lefthook.checksum on uninstall ([PR #370](https://github.com/evilmartians/lefthook/pull370) by @JuliusHenke)
+- fix: remove lefthook.checksum on uninstall ([PR #370](https://github.com/evilmartians/lefthook/pull/370) by @JuliusHenke)
 - fix: Print prepare-commit-msg hook if it exists in config ([PR #368](https://github.com/evilmartians/lefthook/pull/368) by @mrexox)
 - fix: Allow changing refs for remote ([PR #363](https://github.com/evilmartians/lefthook/pull/363) by @mrexox)
 
