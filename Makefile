@@ -283,6 +283,20 @@ run-container: ## Run container from specified IMAGE_TAG
 	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \
 		$(CONTAINER_CLITOOL) run -p 127.0.0.1:8081:8081/tcp --mount type=bind,source=${PWD}/nginx-agent.conf,target=/etc/nginx-agent/nginx-agent.conf ${IMAGE_TAG}
 
+official-plus-image: ## Build official NGINX Plus with NGINX Agent container image, need nginx-repo.crt and nginx-repo.key in build directory
+	@echo Building image nginx-plus-with-nginx-agent with $(CONTAINER_CLITOOL); \
+	cd scripts/docker/official/nginx-plus-with-nginx-agent/alpine/ \
+	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-plus-with-nginx-agent . \
+		--no-cache -f ./Dockerfile \
+		--secret id=nginx-crt,src=../../../../../${CERTS_DIR}/nginx-repo.crt \
+		--secret id=nginx-key,src=../../../../../${CERTS_DIR}/nginx-repo.key
+
+official-oss-image: ## Build official NGINX OSS with NGINX Agent container image
+	@echo Building image nginx-oss-with-nginx-agent with $(CONTAINER_CLITOOL); \
+	cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/ \
+	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
+		--no-cache -f ./Dockerfile.mainline
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Grafana Example Dashboard Targets                                                                               #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
