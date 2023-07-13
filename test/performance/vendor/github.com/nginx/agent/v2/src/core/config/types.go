@@ -9,6 +9,8 @@ package config
 
 import (
 	"time"
+
+	"github.com/nginx/agent/sdk/v2/backoff"
 )
 
 type Config struct {
@@ -54,6 +56,16 @@ func (c *Config) IsExtensionEnabled(extension string) bool {
 		}
 	}
 	return false
+}
+
+func (c *Config) GetServerBackoffSettings() backoff.BackoffSettings {
+	return backoff.BackoffSettings{
+		InitialInterval: c.Server.Backoff.InitialInterval,
+		MaxInterval:     c.Server.Backoff.MaxInterval,
+		MaxElapsedTime:  c.Server.Backoff.MaxElapsedTime,
+		Multiplier:      c.Server.Backoff.Multiplier,
+		Jitter:          c.Server.Backoff.RandomizationFactor,
+	}
 }
 
 type Server struct {

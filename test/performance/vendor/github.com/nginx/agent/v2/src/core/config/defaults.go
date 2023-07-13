@@ -12,6 +12,7 @@ import (
 	"time"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/client"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -50,11 +51,11 @@ var (
 			// so setting to random uuid at the moment, tls connection won't work without the auth header
 			Token: uuid.New().String(),
 			Backoff: Backoff{
-				InitialInterval:     500 * time.Millisecond,
-				RandomizationFactor: 0.5,
-				Multiplier:          1.5,
-				MaxInterval:         60 * time.Second,
-				MaxElapsedTime:      15 * time.Second,
+				InitialInterval:     client.DefaultBackoffSettings.InitialInterval,
+				RandomizationFactor: client.DefaultBackoffSettings.Jitter,
+				Multiplier:          client.DefaultBackoffSettings.Multiplier,
+				MaxInterval:         client.DefaultBackoffSettings.MaxInterval,
+				MaxElapsedTime:      client.DefaultBackoffSettings.MaxElapsedTime,
 			},
 		},
 		Nginx: Nginx{
@@ -127,11 +128,11 @@ const (
 
 	// viper keys used in config
 	BackoffKey                 = "backoff"
-	BackoffInitialInterval     = BackoffKey + agent_config.KeyDelimiter + "initialinterval"
-	BackoffRandomizationFactor = BackoffKey + agent_config.KeyDelimiter + "randomizationfactor"
-	BackoffMultiplier          = BackoffKey + agent_config.KeyDelimiter + "multiplier"
-	BackoffMaxInterval         = BackoffKey + agent_config.KeyDelimiter + "maxinterval"
-	BackoffMaxElapsedTime      = BackoffKey + agent_config.KeyDelimiter + "maxelapsedtime"
+	BackoffInitialInterval     = ServerKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "initial_interval"
+	BackoffRandomizationFactor = ServerKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "randomization_factor"
+	BackoffMultiplier          = ServerKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "multiplier"
+	BackoffMaxInterval         = ServerKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "max_interval"
+	BackoffMaxElapsedTime      = ServerKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "max_elapsed_time"
 
 	// viper keys used in config
 	APIKey = "api"

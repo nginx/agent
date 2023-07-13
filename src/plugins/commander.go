@@ -89,8 +89,23 @@ func (c *Commander) Process(msg *core.Message) {
 
 func (c *Commander) agentBackoff(agentConfig *proto.AgentConfig) {
 	log.Debugf("update commander client configuration to %+v", agentConfig)
-	backOffSettings := sdk.ConvertBackOffSettings(agentConfig.Details.Server.GetBackoff())
+
+	if agentConfig.GetDetails() == nil || agentConfig.GetDetails().GetServer() == nil || agentConfig.GetDetails().GetServer().GetBackoff() == nil {
+		log.Debug("not updating commander client configuration as new Agent backoff settings is nil")
+		return
+	}
+
+	backOffSettings := sdk.ConvertBackOffSettings(agentConfig.GetDetails().GetServer().GetBackoff())
+
 	c.cmdr.WithBackoffSettings(backOffSettings)
+	err := c.cmdr.Close()
+	if err != nil {
+		log.Warnf("Unable to close commander, %v", err)
+	}
+	err = c.cmdr.Connect(c.ctx)
+	if err != nil {
+		log.Warnf("Commander was unable to connect, %v", err)
+	}
 }
 
 func (c *Commander) agentRegistered(cmd *proto.Command) {

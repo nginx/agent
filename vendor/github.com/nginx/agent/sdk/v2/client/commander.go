@@ -50,6 +50,7 @@ type commander struct {
 	ctx             context.Context
 	mu              sync.Mutex
 	backoffSettings backoff.BackoffSettings
+	cancel          context.CancelFunc
 }
 
 func (c *commander) WithInterceptor(interceptor interceptors.Interceptor) Client {
@@ -80,7 +81,9 @@ func (c *commander) Connect(ctx context.Context) error {
 		return err
 	}
 
-	go c.recvLoop()
+	recvLoopCtx, cancel := context.WithCancel(ctx)
+	c.cancel = cancel
+	go c.recvLoop(recvLoopCtx)
 
 	return nil
 }
@@ -90,7 +93,12 @@ func (c *commander) Close() error {
 	if err != nil {
 		return err
 	}
-	return c.grpc.Close()
+
+	err = c.grpc.Close()
+
+	c.cancel()
+
+	return err
 }
 
 func (c *commander) Server() string {
@@ -309,25 +317,33 @@ func (c *commander) createClient() error {
 	return nil
 }
 
-func (c *commander) recvLoop() {
+func (c *commander) recvLoop(ctx context.Context) {
 	log.Debug("Commander receive loop starting")
+loop:
 	for {
-		err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
-			cmd, err := c.channel.Recv()
-			log.Infof("Commander received %v, %v", cmd, err)
+		select {
+		case <-ctx.Done():
+			break loop
+		default:
+			err := backoff.WaitUntil(ctx, c.backoffSettings, func() error {
+				select {
+				case <-ctx.Done():
+					return nil
+				default:
+					cmd, err := c.channel.Recv()
+					log.Infof("Commander received %v, %v", cmd, err)
+					if err != nil {
+						return c.handleGrpcError("Commander Channel Recv", err)
+					}
+
+					c.recvChan <- MessageFromCommand(cmd)
+
+					return nil
+				}
+			})
 			if err != nil {
-				return c.handleGrpcError("Commander Channel Recv", err)
+				log.Errorf("Error retrying to receive messages from the commander channel: %v", err)
 			}
-
-			select {
-			case <-c.ctx.Done():
-			case c.recvChan <- MessageFromCommand(cmd):
-			}
-
-			return nil
-		})
-		if err != nil {
-			log.Errorf("Error retrying to receive messages from the commander channel: %v", err)
 		}
 	}
 }
