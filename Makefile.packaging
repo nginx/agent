@@ -66,7 +66,6 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 		rpm_codename='na'; \
 		if [ "$$rpm_distro" = "centos" ] || [ "$$rpm_distro" = "redhatenterprise" ]; then rpm_codename="el$$rpm_major"; \
 			elif [ "$$rpm_distro" = "oraclelinux" ]; then rpm_codename="oraclelinux$$rpm_major"; \
-			elif [ "$$rpm_distro" = "amazon" ]; then rpm_codename="amzn$$rpm_major"; \
 			elif [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; \
 		fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
@@ -136,7 +135,9 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
-		for rpm_codename in $(AMAZON_VERSIONS); do \
+		for version in $(AMAZON_VERSIONS); do \
+			rpm_major=`echo $$version | cut -d- -f 2`; \
+			rpm_codename="amzn$$rpm_major";\
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
 			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
 			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').$${rpm_codename}.ngx.$${arch}.rpm; \
