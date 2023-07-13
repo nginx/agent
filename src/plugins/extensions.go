@@ -107,7 +107,7 @@ func (e *Extensions) Process(msg *core.Message) {
 }
 
 func (e *Extensions) Info() *core.Info {
-	return core.NewInfo("Extensions Plugin", "v0.0.1")
+	return core.NewInfo(agent_config.ExtensionPlugin, "v0.0.1")
 }
 
 func (e *Extensions) Subscriptions() []string {

@@ -204,8 +204,6 @@ func TestUpdateAgentConfig(t *testing.T) {
 				core.EnableExtension,
 				core.EnableExtension,
 				core.EnableFeature,
-				core.EnableFeature,
-				core.EnableFeature,
 				core.AgentConfigChanged,
 			},
 			expectedFeatures: []string{"registration", "nginx-config-async", "metrics"},

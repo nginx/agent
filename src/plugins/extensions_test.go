@@ -63,7 +63,7 @@ func TestExtensions_Process(t *testing.T) {
 
 			// Assert that only the extensions plugin is registered
 			assert.Equal(t, 1, len(messagePipe.GetPlugins()))
-			assert.Equal(t, "Extensions Plugin", messagePipe.GetPlugins()[0].Info().Name())
+			assert.Equal(t, agent_config.ExtensionPlugin, messagePipe.GetPlugins()[0].Info().Name())
 
 			messagePipe.Process(core.NewMessage(core.EnableExtension, tc.extensionKey))
 			messagePipe.Run()
@@ -75,7 +75,7 @@ func TestExtensions_Process(t *testing.T) {
 
 			assert.Equal(t, 1, len(messagePipe.GetPlugins()))
 			assert.Equal(t, 1, len(messagePipe.GetExtensionPlugins()))
-			assert.Equal(t, "Extensions Plugin", messagePipe.GetPlugins()[0].Info().Name())
+			assert.Equal(t, agent_config.ExtensionPlugin, messagePipe.GetPlugins()[0].Info().Name())
 			assert.Equal(t, tc.extensionName, messagePipe.GetExtensionPlugins()[0].Info().Name())
 		})
 	}

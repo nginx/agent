@@ -31,6 +31,13 @@ const (
 	FeatureFileWatcherThrottle = "file-watch-throttle"
 	FeatureActivityEvents      = "activity-events"
 	FeatureAgentAPI            = "agent-api"
+	FeatureMetricSender        = "metric-sender"
+
+	CommanderPlugin    = "commander"
+	ConfigReaderPlugin = "config-reader-plugin"
+	ExtensionPlugin    = "extension-plugin"
+	FeaturesPlugin     = "features-plugin"
+	NginxBinaryPlugin  = "nginx-binary"
 
 	// Extensions
 	ExtensionsKey                            = "extensions"

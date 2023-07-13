@@ -15,6 +15,7 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/nginx/agent/sdk/v2"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
@@ -54,7 +55,7 @@ func (r *MetricsSender) Close() {
 }
 
 func (r *MetricsSender) Info() *core.Info {
-	return core.NewInfo("MetricsSender", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureMetricSender, "v0.0.1")
 }
 
 func (r *MetricsSender) Process(msg *core.Message) {

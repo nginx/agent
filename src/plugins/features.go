@@ -24,7 +24,7 @@ type Features struct {
 	env        core.Environment
 	binary     core.NginxBinary
 	version    string
-	featureMap map[string]func(data string)
+	featureMap map[string]func(data string) []core.Plugin
 }
 
 func NewFeatures(commander client.Commander, conf *config.Config, env core.Environment, binary core.NginxBinary, version string) *Features {
@@ -41,36 +41,36 @@ func (f *Features) Init(pipeline core.MessagePipeInterface) {
 	log.Info("Features initializing")
 	f.pipeline = pipeline
 
-	f.featureMap = map[string]func(data string){
-		agent_config.FeatureMetrics: func(data string) {
-			f.enableMetricsFeature(data)
+	f.featureMap = map[string]func(data string) []core.Plugin{
+		agent_config.FeatureMetrics: func(data string) []core.Plugin {
+			return f.enableMetricsFeature(data)
 		},
-		agent_config.FeatureAgentAPI: func(data string) {
-			f.enableAgentAPIFeature(data)
+		agent_config.FeatureAgentAPI: func(data string) []core.Plugin {
+			return f.enableAgentAPIFeature(data)
 		},
-		agent_config.FeatureRegistration: func(data string) {
-			f.enableRegistrationFeature(data)
+		agent_config.FeatureRegistration: func(data string) []core.Plugin {
+			return f.enableRegistrationFeature(data)
 		},
-		agent_config.FeatureMetricsThrottle: func(data string) {
-			f.enableMetricsThrottleFeature(data)
+		agent_config.FeatureMetricsThrottle: func(data string) []core.Plugin {
+			return f.enableMetricsThrottleFeature(data)
 		},
-		agent_config.FeatureDataPlaneStatus: func(data string) {
-			f.enableDataPlaneStatusFeature(data)
+		agent_config.FeatureDataPlaneStatus: func(data string) []core.Plugin {
+			return f.enableDataPlaneStatusFeature(data)
 		},
-		agent_config.FeatureProcessWatcher: func(data string) {
-			f.enableProcessWatcherFeature(data)
+		agent_config.FeatureProcessWatcher: func(data string) []core.Plugin {
+			return f.enableProcessWatcherFeature(data)
 		},
-		agent_config.FeatureActivityEvents: func(data string) {
-			f.enableActivityEventsFeature(data)
+		agent_config.FeatureActivityEvents: func(data string) []core.Plugin {
+			return f.enableActivityEventsFeature(data)
 		},
-		agent_config.FeatureFileWatcher: func(data string) {
-			f.enableFileWatcherFeature(data)
+		agent_config.FeatureFileWatcher: func(data string) []core.Plugin {
+			return f.enableFileWatcherFeature(data)
 		},
-		agent_config.FeatureNginxCounting: func(data string) {
-			f.enableNginxCountingFeature(data)
+		agent_config.FeatureNginxCounting: func(data string) []core.Plugin {
+			return f.enableNginxCountingFeature(data)
 		},
-		agent_config.FeatureNginxConfigAsync: func(data string) {
-			f.enableNginxConfigAsyncFeature(data)
+		agent_config.FeatureNginxConfigAsync: func(data string) []core.Plugin {
+			return f.enableNginxConfigAsyncFeature(data)
 		},
 	}
 }
@@ -80,7 +80,7 @@ func (f *Features) Close() {
 }
 
 func (f *Features) Info() *core.Info {
-	return core.NewInfo("Features Plugin", "v0.0.1")
+	return core.NewInfo(agent_config.FeaturesPlugin, "v0.0.1")
 }
 
 func (f *Features) Subscriptions() []string {
@@ -90,18 +90,31 @@ func (f *Features) Subscriptions() []string {
 }
 
 func (f *Features) Process(msg *core.Message) {
-	log.Debugf("Process function in the features.go, %s %v", msg.Topic(), msg.Data())
+	log.Infof("Process function in the features.go, %s %v", msg.Topic(), msg.Data())
 
 	data := msg.Data()
+	plugins := []core.Plugin{}
 
 	if msg.Topic() == core.EnableFeature {
-		if initFeature, ok := f.featureMap[data.(string)]; ok {
-			initFeature(data.(string))
+		for _, feature := range data.([]string) {
+			if initFeature, ok := f.featureMap[feature]; ok {
+				featurePlugins := initFeature(feature)
+				plugins = append(plugins, featurePlugins...)
+
+			}
+		}
+		err := f.pipeline.Register(agent_config.DefaultPluginSize, plugins, nil)
+		if err != nil {
+			log.Warnf("Unable to register feature, %v", err)
+		}
+
+		for _, plugin := range plugins {
+			plugin.Init(f.pipeline)
 		}
 	}
 }
 
-func (f *Features) enableNginxConfigAsyncFeature(data string) {
+func (f *Features) enableNginxConfigAsyncFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureNginxConfigAsync) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -110,19 +123,12 @@ func (f *Features) enableNginxConfigAsyncFeature(data string) {
 		f.conf = conf
 
 		nginx := NewNginx(f.commander, f.binary, f.env, f.conf)
-
-		err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{nginx}, nil)
-
-		if err != nil {
-			log.Warnf("Unable to register %s feature, %v", data, err)
-		}
-
-		nginx.Init(f.pipeline)
-
+		return []core.Plugin{nginx}
 	}
+	return []core.Plugin{}
 }
 
-func (f *Features) enableMetricsFeature(data string) {
+func (f *Features) enableMetricsFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -132,18 +138,12 @@ func (f *Features) enableMetricsFeature(data string) {
 
 		metrics := NewMetrics(f.conf, f.env, f.binary)
 
-		err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metrics}, nil)
-
-		if err != nil {
-			log.Warnf("Unable to register %s feature, %v", data, err)
-		}
-
-		metrics.Init(f.pipeline)
-
+		return []core.Plugin{metrics}
 	}
+	return []core.Plugin{}
 }
 
-func (f *Features) enableAgentAPIFeature(data string) {
+func (f *Features) enableAgentAPIFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureAgentAPI) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -153,17 +153,12 @@ func (f *Features) enableAgentAPIFeature(data string) {
 
 		api := NewAgentAPI(f.conf, f.env, f.binary)
 
-		err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{api}, nil)
-
-		if err != nil {
-			log.Warnf("Unable to register %s feature, %v", data, err)
-		}
-
-		api.Init(f.pipeline)
+		return []core.Plugin{api}
 	}
+	return []core.Plugin{}
 }
 
-func (f *Features) enableRegistrationFeature(data string) {
+func (f *Features) enableRegistrationFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureRegistration) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -173,17 +168,12 @@ func (f *Features) enableRegistrationFeature(data string) {
 
 		registration := NewOneTimeRegistration(f.conf, f.binary, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.version)
 
-		err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{registration}, nil)
-
-		if err != nil {
-			log.Warnf("Unable to register %s feature, %v", data, err)
-		}
-
-		registration.Init(f.pipeline)
+		return []core.Plugin{registration}
 	}
+	return []core.Plugin{}
 }
 
-func (f *Features) enableMetricsThrottleFeature(data string) {
+func (f *Features) enableMetricsThrottleFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -193,17 +183,12 @@ func (f *Features) enableMetricsThrottleFeature(data string) {
 
 		metricsThrottle := NewMetricsThrottle(f.conf, f.env)
 
-		err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metricsThrottle}, nil)
-
-		if err != nil {
-			log.Warnf("Unable to register %s feature, %v", data, err)
-		}
-
-		metricsThrottle.Init(f.pipeline)
+		return []core.Plugin{metricsThrottle}
 	}
+	return []core.Plugin{}
 }
 
-func (f *Features) enableDataPlaneStatusFeature(data string) {
+func (f *Features) enableDataPlaneStatusFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureDataPlaneStatus) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -213,17 +198,12 @@ func (f *Features) enableDataPlaneStatusFeature(data string) {
 
 		dataPlaneStatus := NewDataPlaneStatus(f.conf, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary, f.env, f.version)
 
-		err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{dataPlaneStatus}, nil)
-
-		if err != nil {
-			log.Warnf("Unable to register %s feature, %v", data, err)
-		}
-
-		dataPlaneStatus.Init(f.pipeline)
+		return []core.Plugin{dataPlaneStatus}
 	}
+	return []core.Plugin{}
 }
 
-func (f *Features) enableProcessWatcherFeature(data string) {
+func (f *Features) enableProcessWatcherFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureProcessWatcher) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -233,17 +213,12 @@ func (f *Features) enableProcessWatcherFeature(data string) {
 
 		processWatcher := NewProcessWatcher(f.env, f.binary)
 
-		err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{processWatcher}, nil)
-
-		if err != nil {
-			log.Warnf("Unable to register %s feature, %v", data, err)
-		}
-
-		processWatcher.Init(f.pipeline)
+		return []core.Plugin{processWatcher}
 	}
+	return []core.Plugin{}
 }
 
-func (f *Features) enableActivityEventsFeature(data string) {
+func (f *Features) enableActivityEventsFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureActivityEvents) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -253,17 +228,12 @@ func (f *Features) enableActivityEventsFeature(data string) {
 
 		events := NewEvents(f.conf, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary)
 
-		err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{events}, nil)
-
-		if err != nil {
-			log.Warnf("Unable to register %s feature, %v", data, err)
-		}
-
-		events.Init(f.pipeline)
+		return []core.Plugin{events}
 	}
+	return []core.Plugin{}
 }
 
-func (f *Features) enableFileWatcherFeature(data string) {
+func (f *Features) enableFileWatcherFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureFileWatcher) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -274,18 +244,13 @@ func (f *Features) enableFileWatcherFeature(data string) {
 		fileWatcher := NewFileWatcher(f.conf, f.env)
 		fileWatcherThrottle := NewFileWatchThrottle()
 
-		err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{fileWatcher, fileWatcherThrottle}, nil)
-
-		if err != nil {
-			log.Warnf("Unable to register %s feature, %v", data, err)
-		}
-
-		fileWatcher.Init(f.pipeline)
-		fileWatcherThrottle.Init(f.pipeline)
+		return []core.Plugin{fileWatcher, fileWatcherThrottle}
 	}
+	return []core.Plugin{}
 }
 
-func (f *Features) enableNginxCountingFeature(data string) {
+func (f *Features) enableNginxCountingFeature(data string) []core.Plugin {
+	countingPlugins := []core.Plugin{}
 	if len(f.conf.Nginx.NginxCountingSocket) > 0 {
 		if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureNginxCounting) {
 			conf, err := config.GetConfig(f.conf.ClientID)
@@ -296,23 +261,15 @@ func (f *Features) enableNginxCountingFeature(data string) {
 
 			if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) {
 				metrics := NewMetrics(f.conf, f.env, f.binary)
-				err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{metrics}, nil)
-
-				if err != nil {
-					log.Warnf("Unable to register %s feature, %v", data, err)
-				}
-
-				metrics.Init(f.pipeline)
+				countingPlugins = append(countingPlugins, metrics)
 			}
 			nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
 
-			err = f.pipeline.Register(agent_config.DefaultPluginSize, []core.Plugin{nginxCounting}, nil)
+			countingPlugins = append(countingPlugins, nginxCounting)
 
-			if err != nil {
-				log.Warnf("Unable to register %s feature, %v", data, err)
-			}
-
-			nginxCounting.Init(f.pipeline)
+			return countingPlugins
 		}
+		return countingPlugins
 	}
+	return countingPlugins
 }
