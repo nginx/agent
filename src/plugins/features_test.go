@@ -17,6 +17,7 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

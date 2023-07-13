@@ -12,16 +12,15 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	"go.uber.org/atomic"
-
 	"github.com/nginx/agent/sdk/v2"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/collectors"
 
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	log "github.com/sirupsen/logrus"
+	"go.uber.org/atomic"
 )
 
 type Metrics struct {

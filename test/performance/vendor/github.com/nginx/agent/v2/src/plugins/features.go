@@ -8,12 +8,13 @@
 package plugins
 
 import (
-	"github.com/google/uuid"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
