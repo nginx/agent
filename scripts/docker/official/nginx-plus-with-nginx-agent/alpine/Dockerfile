@@ -45,7 +45,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=cert.pem \
     && cat cert.pem > /etc/apk/cert.pem \
     && cat cert.key > /etc/apk/cert.key \
     && apk add -X "https://pkgs.nginx.com/plus/alpine/v$(egrep -o '^[0-9]+\.[0-9]+' /etc/alpine-release)/main" --no-cache $nginxPackages \
-    && apk add -X "https://pkgs.nginx.com/nginx-agent/alpine/v3.16/main" --no-cache nginx-agent \
+    && apk add -X "https://pkgs.nginx.com/nginx-agent/alpine/v$(egrep -o '^[0-9]+\.[0-9]+' /etc/alpine-release)/main" --no-cache nginx-agent \
     && if [ -f "/etc/apk/keys/nginx_signing.rsa.pub" ]; then rm -f /etc/apk/keys/nginx_signing.rsa.pub; fi \
     && if [ -f "/etc/apk/cert.key" ] && [ -f "/etc/apk/cert.pem" ]; then rm -f /etc/apk/cert.key /etc/apk/cert.pem; fi \
 # Bring in tzdata so users could set the timezones through the environment
