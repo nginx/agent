@@ -23,8 +23,8 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | suse             | sles12sp5, sle15              |                                                                |
 # | freebsd          |                               | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE  ?= debian
-OS_VERSION  ?= bullseye-slim
+OS_RELEASE  ?= ubuntu
+OS_VERSION  ?= 22.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
@@ -218,8 +218,8 @@ test-bench: ## Run benchmark tests
 
 benchmark-image: ## Build benchmark test container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build --no-cache -t nginx-agent-benchmark:1.0.0 \
-		--secret id=nginx-crt,src=build/nginx-repo.crt \
-		--secret id=nginx-key,src=build/nginx-repo.key \
+		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
+		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
 		-f test/docker/Dockerfile .
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
