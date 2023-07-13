@@ -88,8 +88,6 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 		assert.NoError(t, comp.Down(ctxCancel, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
 	})
 
-
-
 	return testContainer
 }
 
