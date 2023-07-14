@@ -84,7 +84,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 	testContainer, err := comp.ServiceContainer(ctxCancel, "agent")
 	require.NoError(t, err)
 
-	defer t.Cleanup(func() {
+	t.Cleanup(func() {
 		assert.NoError(t, comp.Down(ctxCancel, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
 	})
 
