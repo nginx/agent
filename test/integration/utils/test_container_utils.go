@@ -68,7 +68,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 	ctxCancel, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
 
-	comp.WaitForService("agent", wait.ForHTTP("/").WithStartupTimeout(60 * time.Second)).WithEnv(
+	comp.WaitForService("agent", wait.ForHTTP("/").WithStartupTimeout(60*time.Second)).WithEnv(
 		map[string]string{
 			"PACKAGE_NAME":      os.Getenv("PACKAGE_NAME"),
 			"PACKAGES_REPO":     os.Getenv("PACKAGES_REPO"),
