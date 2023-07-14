@@ -79,7 +79,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 		},
 	)
 
-	assert.NoError(t, comp.Up(ctxCancel), "compose.Up()")
+	assert.NoError(t, comp.Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
 	testContainer, err := comp.ServiceContainer(ctxCancel, "agent")
 	require.NoError(t, err)
