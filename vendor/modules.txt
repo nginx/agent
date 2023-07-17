@@ -323,6 +323,9 @@ github.com/bufbuild/protocompile/walk
 github.com/butuzov/ireturn/analyzer
 github.com/butuzov/ireturn/config
 github.com/butuzov/ireturn/types
+# github.com/caarlos0/go-version v0.1.1
+## explicit; go 1.20
+github.com/caarlos0/go-version
 # github.com/cavaliergopher/cpio v1.0.1
 ## explicit; go 1.17
 github.com/cavaliergopher/cpio
@@ -812,6 +815,9 @@ github.com/google/go-containerregistry/pkg/v1/types
 # github.com/google/pprof v0.0.0-20230602150820-91b7bce49751
 ## explicit; go 1.19
 github.com/google/pprof/profile
+# github.com/google/rpmpack v0.5.0
+## explicit; go 1.18
+github.com/google/rpmpack
 # github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
@@ -824,7 +830,7 @@ github.com/goreleaser/chglog
 # github.com/goreleaser/fileglob v1.3.0
 ## explicit; go 1.16
 github.com/goreleaser/fileglob
-# github.com/goreleaser/nfpm/v2 v2.31.0
+# github.com/goreleaser/nfpm/v2 v2.32.0
 ## explicit; go 1.19
 github.com/goreleaser/nfpm/v2
 github.com/goreleaser/nfpm/v2/apk
@@ -835,7 +841,6 @@ github.com/goreleaser/nfpm/v2/deprecation
 github.com/goreleaser/nfpm/v2/files
 github.com/goreleaser/nfpm/v2/internal/cmd
 github.com/goreleaser/nfpm/v2/internal/glob
-github.com/goreleaser/nfpm/v2/internal/rpmpack
 github.com/goreleaser/nfpm/v2/internal/sign
 github.com/goreleaser/nfpm/v2/rpm
 # github.com/gorilla/handlers v1.5.1
@@ -946,7 +951,7 @@ github.com/kisielk/gotool/internal/load
 # github.com/kkHAIKE/contextcheck v1.1.4
 ## explicit; go 1.20
 github.com/kkHAIKE/contextcheck
-# github.com/klauspost/compress v1.16.6
+# github.com/klauspost/compress v1.16.7
 ## explicit; go 1.18
 github.com/klauspost/compress
 github.com/klauspost/compress/flate
