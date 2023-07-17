@@ -96,16 +96,7 @@ func (c *Commander) agentBackoff(agentConfig *proto.AgentConfig) {
 	}
 
 	backOffSettings := sdk.ConvertBackOffSettings(agentConfig.GetDetails().GetServer().GetBackoff())
-
 	c.cmdr.WithBackoffSettings(backOffSettings)
-	err := c.cmdr.Close()
-	if err != nil {
-		log.Warnf("Unable to close commander, %v", err)
-	}
-	err = c.cmdr.Connect(c.ctx)
-	if err != nil {
-		log.Warnf("Commander was unable to connect, %v", err)
-	}
 }
 
 func (c *Commander) agentRegistered(cmd *proto.Command) {
