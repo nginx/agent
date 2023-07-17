@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bufbuild/connect-go"
+	connect "github.com/bufbuild/connect-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
@@ -133,13 +133,15 @@ func (i *Interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 				requestSize = proto.Size(msg)
 			}
 		}
-		span.AddEvent(messageKey,
-			trace.WithAttributes(
-				requestSpan,
-				semconv.MessageIDKey.Int(1),
-				semconv.MessageUncompressedSizeKey.Int(requestSize),
-			),
-		)
+		if !i.config.omitTraceEvents {
+			span.AddEvent(messageKey,
+				trace.WithAttributes(
+					requestSpan,
+					semconv.MessageIDKey.Int(1),
+					semconv.MessageUncompressedSizeKey.Int(requestSize),
+				),
+			)
+		}
 		response, err := next(ctx, request)
 		if statusCode, ok := statusCodeAttribute(protocol, err); ok {
 			attributes = append(attributes, statusCode)
@@ -151,15 +153,17 @@ func (i *Interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 			}
 			span.SetAttributes(headerAttributes(protocol, responseKey, response.Header(), i.config.responseHeaderKeys)...)
 		}
-		span.AddEvent(messageKey,
-			trace.WithAttributes(
-				responseSpan,
-				semconv.MessageIDKey.Int(1),
-				semconv.MessageUncompressedSizeKey.Int(responseSize),
-			),
-		)
+		if !i.config.omitTraceEvents {
+			span.AddEvent(messageKey,
+				trace.WithAttributes(
+					responseSpan,
+					semconv.MessageIDKey.Int(1),
+					semconv.MessageUncompressedSizeKey.Int(responseSize),
+				),
+			)
+		}
 		attributes = attributeFilter(req, attributes...)
-		span.SetStatus(spanStatus(err))
+		span.SetStatus(spanStatus(protocol, err))
 		span.SetAttributes(attributes...)
 		instrumentation.duration.Record(ctx, i.config.now().Sub(requestStartTime).Milliseconds(), metric.WithAttributes(attributes...))
 		instrumentation.requestSize.Record(ctx, int64(requestSize), metric.WithAttributes(attributes...))
@@ -197,6 +201,7 @@ func (i *Interceptor) WrapStreamingClient(next connect.StreamingClientFunc) conn
 		state := newStreamingState(
 			req,
 			i.config.filterAttribute,
+			i.config.omitTraceEvents,
 			requestAttributes(req),
 			instrumentation.responseSize,
 			instrumentation.responsesPerRPC,
@@ -234,7 +239,7 @@ func (i *Interceptor) WrapStreamingClient(next connect.StreamingClientFunc) conn
 				}
 				span.SetAttributes(state.attributes...)
 				span.SetAttributes(headerAttributes(protocol, responseKey, conn.ResponseHeader(), i.config.responseHeaderKeys)...)
-				span.SetStatus(spanStatus(state.error))
+				span.SetStatus(spanStatus(protocol, state.error))
 				span.End()
 				instrumentation.duration.Record(ctx, i.config.now().Sub(requestStartTime).Milliseconds(), metric.WithAttributes(state.attributes...))
 			},
@@ -273,6 +278,7 @@ func (i *Interceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) co
 		state := newStreamingState(
 			req,
 			i.config.filterAttribute,
+			i.config.omitTraceEvents,
 			requestAttributes(req),
 			instrumentation.requestSize,
 			instrumentation.requestsPerRPC,
@@ -317,7 +323,7 @@ func (i *Interceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) co
 		}
 		span.SetAttributes(state.attributes...)
 		span.SetAttributes(headerAttributes(protocol, responseKey, conn.ResponseHeader(), i.config.responseHeaderKeys)...)
-		span.SetStatus(spanStatus(err))
+		span.SetStatus(spanStatus(protocol, err))
 		instrumentation.duration.Record(ctx, i.config.now().Sub(requestStartTime).Milliseconds(), metric.WithAttributes(state.attributes...))
 		return err
 	}
@@ -336,8 +342,11 @@ func protocolToSemConv(protocol string) string {
 	}
 }
 
-func spanStatus(err error) (codes.Code, string) {
+func spanStatus(protocol string, err error) (codes.Code, string) {
 	if err == nil {
+		return codes.Unset, ""
+	}
+	if protocol == connectProtocol && connect.IsNotModifiedError(err) {
 		return codes.Unset, ""
 	}
 	if connectErr := new(connect.Error); errors.As(err, &connectErr) {

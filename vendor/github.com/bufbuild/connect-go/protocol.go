@@ -36,6 +36,7 @@ const (
 
 const (
 	headerContentType = "Content-Type"
+	headerHost        = "Host"
 	headerUserAgent   = "User-Agent"
 	headerTrailer     = "Trailer"
 
@@ -236,6 +237,16 @@ func wrapClientConnWithCodedErrors(conn streamingClientConn) streamingClientConn
 		streamingClientConn: conn,
 		fromWire:            wrapIfUncoded,
 	}
+}
+
+func mappedMethodHandlers(handlers []protocolHandler) map[string][]protocolHandler {
+	methodHandlers := make(map[string][]protocolHandler)
+	for _, handler := range handlers {
+		for method := range handler.Methods() {
+			methodHandlers[method] = append(methodHandlers[method], handler)
+		}
+	}
+	return methodHandlers
 }
 
 func sortedAcceptPostValue(handlers []protocolHandler) string {

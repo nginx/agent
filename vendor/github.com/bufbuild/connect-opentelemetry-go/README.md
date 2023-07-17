@@ -23,7 +23,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/bufbuild/connect-go"
+	connect "github.com/bufbuild/connect-go"
 	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
 	// Generated from your protobuf schema by protoc-gen-go and
 	// protoc-gen-connect-go.
@@ -117,7 +117,7 @@ more customizable attribute filtering, use
 
 Offered under the [Apache 2 license][license].
 
-[Buf Studio]: https://studio.buf.build/
+[Buf Studio]: https://buf.build/studio
 [Getting Started]: https://connect.build/docs/go/getting-started
 [WithFilter]: https://pkg.go.dev/github.com/bufbuild/connect-opentelemetry-go#WithFilter
 [WithTrustRemote]: https://pkg.go.dev/github.com/bufbuild/connect-opentelemetry-go#WithTrustRemote
