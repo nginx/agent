@@ -1,7 +1,7 @@
 ARG NGINX_VERSION=1.24.0-alpine
 
 FROM nginx:${NGINX_VERSION}
-LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
+LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG NGINX_AGENT_VERSION=2.27.0
 

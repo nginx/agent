@@ -1,5 +1,5 @@
 FROM alpine:3.17
-LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
+LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 # Define NGINX versions for NGINX Plus and NGINX Plus modules
 # Uncomment this block and the versioned nginxPackages in the main RUN
