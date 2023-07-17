@@ -101,12 +101,12 @@ func (f *Features) Process(msg *core.Message) {
 			if initFeature, ok := f.featureMap[feature]; ok {
 				featurePlugins := initFeature(feature)
 				plugins = append(plugins, featurePlugins...)
-
 			}
 		}
+
 		err := f.pipeline.Register(agent_config.DefaultPluginSize, plugins, nil)
 		if err != nil {
-			log.Warnf("Unable to register feature, %v", err)
+			log.Warnf("Unable to register features: %v", err)
 		}
 
 		for _, plugin := range plugins {
@@ -131,6 +131,10 @@ func (f *Features) enableNginxConfigAsyncFeature(data string) []core.Plugin {
 
 func (f *Features) enableMetricsFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) {
+
+		// metrics-sender
+		// metrics-throttle becomes just throttling
+		// metrics-collection just collecting
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -264,13 +268,13 @@ func (f *Features) enableNginxCountingFeature(data string) []core.Plugin {
 				metrics := NewMetrics(f.conf, f.env, f.binary)
 				countingPlugins = append(countingPlugins, metrics)
 			}
-			nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
 
+			nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
 			countingPlugins = append(countingPlugins, nginxCounting)
 
 			return countingPlugins
 		}
-		return countingPlugins
+		return []core.Plugin{}
 	}
-	return countingPlugins
+	return []core.Plugin{}
 }

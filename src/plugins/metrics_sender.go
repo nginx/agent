@@ -55,7 +55,7 @@ func (r *MetricsSender) Close() {
 }
 
 func (r *MetricsSender) Info() *core.Info {
-	return core.NewInfo(agent_config.FeatureMetricSender, "v0.0.1")
+	return core.NewInfo(agent_config.FeatureMetricsSender, "v0.0.1")
 }
 
 func (r *MetricsSender) Process(msg *core.Message) {

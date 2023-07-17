@@ -132,7 +132,7 @@ func TestMetricsThrottle_Process(t *testing.T) {
 }
 
 func TestMetricsThrottle_Subscriptions(t *testing.T) {
-	subs := []string{core.MetricReport, core.AgentConfigChanged, core.LoggerLevel}
+	subs := []string{core.MetricReport, core.AgentConfigChanged}
 	pluginUnderTest := NewMetricsThrottle(tutils.GetMockAgentConfig(), &tutils.MockEnvironment{})
 
 	assert.Equal(t, subs, pluginUnderTest.Subscriptions())

@@ -23,15 +23,6 @@ import (
 )
 
 func TestFeatures_Process(t *testing.T) {
-	processID := "12345"
-
-	processes := []core.Process{
-		{
-			Name:     processID,
-			IsMaster: true,
-		},
-	}
-
 	testCases := []struct {
 		testName   string
 		featureKey string
@@ -61,6 +52,15 @@ func TestFeatures_Process(t *testing.T) {
 			featureKey: agent_config.FeatureFileWatcher,
 			pluginName: agent_config.FeatureFileWatcher,
 			numPlugins: 3,
+		},
+	}
+
+	processID := "12345"
+
+	processes := []core.Process{
+		{
+			Name:     processID,
+			IsMaster: true,
 		},
 	}
 

@@ -87,6 +87,20 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 		r.syncAgentConfigChange()
 		r.collectorsUpdate.Store(true)
 		return
+	case msg.Exact(core.MetricReportStream):
+		switch bundle := msg.Data().(type) {
+		case *metrics.MetricsReportBundle:
+			if len(bundle.Data) > 0 {
+				for _, report := range bundle.Data {
+					if len(report.Data) > 0 {
+						r.metricBuffer = append(r.metricBuffer, report)
+					}
+				}
+			}
+		}
+		r.messagePipeline.Process(core.NewMessage(core.CommMetrics, r.metricBuffer))
+		r.metricBuffer = make([]core.Payload, 0)
+
 	case msg.Exact(core.MetricReport):
 		if r.metricsAggregation {
 			switch bundle := msg.Data().(type) {
@@ -132,7 +146,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 }
 
 func (r *MetricsThrottle) Subscriptions() []string {
-	return []string{core.MetricReport, core.AgentConfigChanged, core.LoggerLevel}
+	return []string{core.MetricReport, core.MetricReportStream, core.AgentConfigChanged}
 }
 
 func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.WaitGroup) {
