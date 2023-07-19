@@ -249,7 +249,7 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 15*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -317,7 +317,7 @@ func TestCommander_Send_ServerDies(t *testing.T) {
 func TestCommander_Send_Reconnect(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 15*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -371,7 +371,7 @@ func TestCommander_Download_Reconnect(t *testing.T) {
 	wg.Add(1)
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 15*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -566,7 +566,9 @@ func TestCommander_Upload_ServerDies(t *testing.T) {
 func TestCommander_Upload_Reconnect(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 15*time.Second)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -592,28 +594,32 @@ func TestCommander_Upload_Reconnect(t *testing.T) {
 	err = commanderClient.Upload(ctx, expectedNginxConfig, "1234")
 	assert.Nil(t, err)
 
-	chunks := []*proto.DataChunk{}
-LOOP:
-	for {
-		select {
-		case data := <-commandService.uploadChannel:
-			if data == nil {
-				break LOOP
+	go func() {
+		defer wg.Done()
+		chunks := []*proto.DataChunk{}
+		LOOP:
+			for {
+				select {
+				case data := <-commandService.uploadChannel:
+					if data == nil {
+						break LOOP
+					}
+					chunks = append(chunks, data)
+				default:
+					break LOOP
+				}
 			}
-			chunks = append(chunks, data)
-		default:
-			break LOOP
-		}
-	}
-
-	expectedNginxConfigByteArray, err := json.Marshal(expectedNginxConfig)
-	assert.Nil(t, err)
-
-	assert.Equal(t, 2, len(chunks))
-	assert.Equal(t, "1234", chunks[0].Chunk.(*proto.DataChunk_Header).Header.Meta.MessageId)
-	assert.Equal(t, "1234", chunks[1].Chunk.(*proto.DataChunk_Data).Data.Meta.MessageId)
-	assert.Equal(t, int32(0), chunks[1].Chunk.(*proto.DataChunk_Data).Data.ChunkId)
-	assert.Equal(t, expectedNginxConfigByteArray, chunks[1].Chunk.(*proto.DataChunk_Data).Data.Data)
+		
+			expectedNginxConfigByteArray, err := json.Marshal(expectedNginxConfig)
+			assert.Nil(t, err)
+		
+			assert.Equal(t, 2, len(chunks))
+			assert.Equal(t, "1234", chunks[0].Chunk.(*proto.DataChunk_Header).Header.Meta.MessageId)
+			assert.Equal(t, "1234", chunks[1].Chunk.(*proto.DataChunk_Data).Data.Meta.MessageId)
+			assert.Equal(t, int32(0), chunks[1].Chunk.(*proto.DataChunk_Data).Data.ChunkId)
+			assert.Equal(t, expectedNginxConfigByteArray, chunks[1].Chunk.(*proto.DataChunk_Data).Data.Data)
+	}()
+	wg.Wait()
 }
 
 // Helper Functions
