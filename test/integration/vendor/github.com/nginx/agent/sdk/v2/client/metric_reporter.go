@@ -181,15 +181,25 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 }
 
 func (r *metricReporter) closeConnection() error {
-	err := r.channel.CloseSend()
-	if err != nil {
-		return err
+	var err error
+	if r.channel != nil {
+		err = r.channel.CloseSend()
+		if err != nil {
+			return err
+		}
 	}
-	err = r.eventsChannel.CloseSend()
-	if err != nil {
-		return err
+
+	if r.eventsChannel != nil {
+		err = r.eventsChannel.CloseSend()
+		if err != nil {
+			return err
+		}
 	}
-	return r.grpc.Close()
+
+	if r.grpc != nil {
+		err = r.grpc.Close()
+	}
+	return err
 }
 
 func (r *metricReporter) handleGrpcError(messagePrefix string, err error) error {
