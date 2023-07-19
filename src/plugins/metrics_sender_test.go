@@ -117,6 +117,8 @@ func TestMetricsSenderBackoff(t *testing.T) {
 
 			if !reflect.ValueOf(test.wantBackoff).IsZero() {
 				mockMetricsReportClient.On("WithBackoffSettings", test.wantBackoff)
+				mockMetricsReportClient.On("Close").Return(nil)
+				mockMetricsReportClient.On("Connect", mock.Anything).Return(nil)
 			}
 
 			pluginUnderTest.Process(test.msg)

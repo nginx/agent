@@ -15,6 +15,7 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/nginx/agent/sdk/v2"
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
@@ -54,7 +55,7 @@ func (r *MetricsSender) Close() {
 }
 
 func (r *MetricsSender) Info() *core.Info {
-	return core.NewInfo("MetricsSender", "v0.0.1")
+	return core.NewInfo(agent_config.FeatureMetricSender, "v0.0.1")
 }
 
 func (r *MetricsSender) Process(msg *core.Message) {
@@ -107,8 +108,23 @@ func (r *MetricsSender) Process(msg *core.Message) {
 
 func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
 	log.Debugf("update metric reporter client configuration to %+v", agentConfig)
-	backOffSettings := sdk.ConvertBackOffSettings(agentConfig.Details.Server.GetBackoff())
+
+	if agentConfig.GetDetails() == nil || agentConfig.GetDetails().GetServer() == nil || agentConfig.GetDetails().GetServer().GetBackoff() == nil {
+		log.Debug("not updating metric reporter client configuration as new Agent backoff settings is nil")
+		return
+	}
+
+	backOffSettings := sdk.ConvertBackOffSettings(agentConfig.GetDetails().GetServer().GetBackoff())
 	r.reporter.WithBackoffSettings(backOffSettings)
+
+	err := r.reporter.Close()
+	if err != nil {
+		log.Warnf("Unable to close metric reporter, %v", err)
+	}
+	err = r.reporter.Connect(r.ctx)
+	if err != nil {
+		log.Warnf("Metric reporter was unable to connect, %v", err)
+	}
 }
 
 func (r *MetricsSender) Subscriptions() []string {

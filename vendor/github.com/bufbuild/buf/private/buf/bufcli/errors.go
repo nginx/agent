@@ -19,11 +19,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/connect-go"
@@ -95,11 +93,6 @@ func NewErrorInterceptor() appflag.Interceptor {
 	}
 }
 
-// NewModuleRefError is used when the client fails to parse a module ref.
-func NewModuleRefError(moduleRef string) error {
-	return fmt.Errorf("could not parse %q as a module; please verify this is a valid reference", moduleRef)
-}
-
 // NewTooManyEmptyAnswersError is used when the user does not answer a prompt in
 // the given number of attempts.
 func NewTooManyEmptyAnswersError(attempts int) error {
@@ -152,18 +145,6 @@ func NewUnimplementedRemoteError(err error, remote string, moduleIdentity string
 	return fmt.Errorf("%w. Are you sure %q (derived from module name %q) is a Buf Schema Registry?", err, remote, moduleIdentity)
 }
 
-// NewPluginNotFoundError informs the user that a plugin with
-// that owner and name does not exist.
-func NewPluginNotFoundError(owner string, name string) error {
-	return fmt.Errorf("the plugin %s/%s does not exist", owner, name)
-}
-
-// NewTemplateNotFoundError informs the user that a template with
-// that owner and name does not exist.
-func NewTemplateNotFoundError(owner string, name string) error {
-	return fmt.Errorf("the template %s/%s does not exist", owner, name)
-}
-
 // wrapError is used when a CLI command fails, regardless of its error code.
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
@@ -191,8 +172,7 @@ func wrapError(err error) error {
 			// If the returned error is Unavailable, then determine if this is a DNS error.  If so, get the address used
 			// so that we can display a more helpful error message.
 			if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
-				// The subdomain is added internally during transport so trim it off when showing the user the invalid address that they entered
-				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, strings.TrimPrefix(dnsError.Name, buftransport.APISubdomain+"."))
+				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, dnsError.Name)
 			}
 
 			return errors.New(msg)

@@ -40,7 +40,7 @@ func (r *ConfigReader) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (r *ConfigReader) Info() *core.Info {
-	return core.NewInfo("Config Reader", "v0.0.1")
+	return core.NewInfo(agent_config.ConfigReaderPlugin, "v0.0.1")
 }
 
 func (r *ConfigReader) Close() {
@@ -86,7 +86,6 @@ func (r *ConfigReader) Subscriptions() []string {
 
 func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) {
 	if payloadAgentConfig != nil && payloadAgentConfig.Details != nil {
-
 		onDiskAgentConfig, err := config.GetConfig(r.config.ClientID)
 		if err != nil {
 			log.Errorf("Failed to update Agent config - %v", err)
@@ -118,16 +117,6 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		sort.Strings(payloadAgentConfig.Details.Tags)
 		synchronizeTags = !reflect.DeepEqual(payloadAgentConfig.Details.Tags, onDiskAgentConfig.Tags)
 
-		if payloadAgentConfig.Details.Server == nil || payloadAgentConfig.Details.Server.Backoff == nil {
-			payloadAgentConfig.Details.Server = &proto.Server{
-				Backoff: &proto.Backoff{
-					InitialInterval: 10,
-					MaxInterval:     60,
-					MaxElapsedTime:  2,
-				},
-			}
-		}
-
 		if synchronizeFeatures || synchronizeTags {
 			configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, payloadAgentConfig.Details.Tags, payloadAgentConfig.Details.Features)
 			if err != nil {
@@ -154,20 +143,6 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 
 		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
 
-	} else {
-		log.Debug("Failed to update Agent config")
-		payloadAgentConfig = &proto.AgentConfig{
-			Details: &proto.AgentDetails{
-				Server: &proto.Server{
-					Backoff: &proto.Backoff{
-						InitialInterval: 10,
-						MaxInterval:     60,
-						MaxElapsedTime:  2,
-					},
-				},
-			},
-		}
-		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
 	}
 }
 
@@ -183,11 +158,9 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 	}
 
 	if agtCfg.Details != nil {
-		for _, feature := range agtCfg.Details.Features {
-			r.mu.Lock()
-			r.messagePipeline.Process(core.NewMessage(core.EnableFeature, feature))
-			r.mu.Unlock()
-		}
+		r.mu.Lock()
+		r.messagePipeline.Process(core.NewMessage(core.EnableFeature, agtCfg.Details.Features))
+		r.mu.Unlock()
 	}
 }
 
@@ -196,20 +169,20 @@ func (r *ConfigReader) deRegisterPlugin(data string) {
 
 		err := r.messagePipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
 		if err != nil {
-			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+			log.Warnf("Error De-registering %v Plugin: %v", data, err)
 		}
 
 	} else if data == agent_config.FeatureNginxConfigAsync {
 
-		err := r.messagePipeline.DeRegister([]string{"NginxBinary"})
+		err := r.messagePipeline.DeRegister([]string{agent_config.NginxBinaryPlugin})
 		if err != nil {
-			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+			log.Warnf("Error De-registering %v Plugin: %v", data, err)
 		}
 
 	} else {
 		err := r.messagePipeline.DeRegister([]string{data})
 		if err != nil {
-			log.Warnf("Error Deregistering %v Plugin: %v", data, err)
+			log.Warnf("Error De-registering %v Plugin: %v", data, err)
 		}
 	}
 }

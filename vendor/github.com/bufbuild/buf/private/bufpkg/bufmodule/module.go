@@ -32,17 +32,18 @@ import (
 )
 
 type module struct {
-	sourceReadBucket     storage.ReadBucket
-	dependencyModulePins []bufmoduleref.ModulePin
-	moduleIdentity       bufmoduleref.ModuleIdentity
-	commit               string
-	documentation        string
-	documentationPath    string
-	license              string
-	breakingConfig       *bufbreakingconfig.Config
-	lintConfig           *buflintconfig.Config
-	manifest             *manifest.Manifest
-	blobSet              *manifest.BlobSet
+	sourceReadBucket           storage.ReadBucket
+	declaredDirectDependencies []bufmoduleref.ModuleReference
+	dependencyModulePins       []bufmoduleref.ModulePin
+	moduleIdentity             bufmoduleref.ModuleIdentity
+	commit                     string
+	documentation              string
+	documentationPath          string
+	license                    string
+	breakingConfig             *bufbreakingconfig.Config
+	lintConfig                 *buflintconfig.Config
+	manifest                   *manifest.Manifest
+	blobSet                    *manifest.BlobSet
 }
 
 func newModuleForProto(
@@ -72,9 +73,19 @@ func newModuleForProto(
 	if err != nil {
 		return nil, err
 	}
+	allDependenciesRefs := make([]bufmoduleref.ModuleReference, len(dependencyModulePins))
+	for i, dep := range dependencyModulePins {
+		allDependenciesRefs[i], err = bufmoduleref.NewModuleReference(
+			dep.Remote(), dep.Owner(), dep.Repository(), dep.Commit(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("cannot build module reference from dependency pin %s: %w", dep.String(), err)
+		}
+	}
 	return newModule(
 		ctx,
 		readWriteBucket,
+		allDependenciesRefs, // Since proto has no distinction between direct/transitive dependencies, we'll need to set them all as direct, otherwise the build will fail.
 		dependencyModulePins,
 		nil, // The module identity is not stored on the proto. We rely on the layer above, (e.g. `ModuleReader`) to set this as needed.
 		protoModule.GetDocumentation(),
@@ -174,6 +185,7 @@ func newModuleForBucket(
 	return newModule(
 		ctx,
 		storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
+		moduleConfig.Build.DependencyModuleReferences, // straight copy from the buf.yaml file
 		dependencyModulePins,
 		moduleIdentity,
 		documentation,
@@ -214,6 +226,7 @@ func newModule(
 	ctx context.Context,
 	// must only contain .proto files
 	sourceReadBucket storage.ReadBucket,
+	declaredDirectDependencies []bufmoduleref.ModuleReference,
 	dependencyModulePins []bufmoduleref.ModulePin,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	documentation string,
@@ -223,23 +236,31 @@ func newModule(
 	lintConfig *buflintconfig.Config,
 	options ...ModuleOption,
 ) (_ *module, retErr error) {
+	if err := bufmoduleref.ValidateModuleReferencesUniqueByIdentity(declaredDirectDependencies); err != nil {
+		return nil, err
+	}
 	if err := bufmoduleref.ValidateModulePinsUniqueByIdentity(dependencyModulePins); err != nil {
 		return nil, err
 	}
 	// we rely on this being sorted here
+	bufmoduleref.SortModuleReferences(declaredDirectDependencies)
 	bufmoduleref.SortModulePins(dependencyModulePins)
 	module := &module{
-		sourceReadBucket:     sourceReadBucket,
-		dependencyModulePins: dependencyModulePins,
-		moduleIdentity:       moduleIdentity,
-		documentation:        documentation,
-		documentationPath:    documentationPath,
-		license:              license,
-		breakingConfig:       breakingConfig,
-		lintConfig:           lintConfig,
+		sourceReadBucket:           sourceReadBucket,
+		declaredDirectDependencies: declaredDirectDependencies,
+		dependencyModulePins:       dependencyModulePins,
+		moduleIdentity:             moduleIdentity,
+		documentation:              documentation,
+		documentationPath:          documentationPath,
+		license:                    license,
+		breakingConfig:             breakingConfig,
+		lintConfig:                 lintConfig,
 	}
 	for _, option := range options {
 		option(module)
+	}
+	if module.moduleIdentity == nil && module.commit != "" {
+		return nil, fmt.Errorf("module was constructed with commit %q but no associated ModuleIdentity", module.commit)
 	}
 	return module, nil
 }
@@ -296,6 +317,11 @@ func (m *module) GetModuleFile(ctx context.Context, path string) (ModuleFile, er
 	return newModuleFile(fileInfo, readObjectCloser), nil
 }
 
+func (m *module) DeclaredDirectDependencies() []bufmoduleref.ModuleReference {
+	// already sorted in constructor
+	return m.declaredDirectDependencies
+}
+
 func (m *module) DependencyModulePins() []bufmoduleref.ModulePin {
 	// already sorted in constructor
 	return m.dependencyModulePins
@@ -329,16 +355,16 @@ func (m *module) BlobSet() *manifest.BlobSet {
 	return m.blobSet
 }
 
-func (m *module) getModuleIdentity() bufmoduleref.ModuleIdentity {
+func (m *module) ModuleIdentity() bufmoduleref.ModuleIdentity {
 	return m.moduleIdentity
+}
+
+func (m *module) Commit() string {
+	return m.commit
 }
 
 func (m *module) getSourceReadBucket() storage.ReadBucket {
 	return m.sourceReadBucket
-}
-
-func (m *module) getCommit() string {
-	return m.commit
 }
 
 func (m *module) isModule() {}

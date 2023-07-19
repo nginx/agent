@@ -86,7 +86,7 @@ func (e *engine) getCompiledModuleFromCache(module *wasm.Module) (cm *compiledMo
 	// We retrieve *code structures from `cached`.
 	var staleCache bool
 	// Note: cached.Close is ensured to be called in deserializeCodes.
-	cm, staleCache, err = deserializeCompiledModule(e.wazeroVersion, cached)
+	cm, staleCache, err = deserializeCompiledModule(e.wazeroVersion, cached, module)
 	if err != nil {
 		hit = false
 		return
@@ -123,13 +123,13 @@ func serializeCompiledModule(wazeroVersion string, cm *compiledModule) io.Reader
 		buf.Write(u64.LeBytes(uint64(f.executableOffset)))
 	}
 	// The length of code segment (8 bytes).
-	buf.Write(u64.LeBytes(uint64(len(cm.executable))))
+	buf.Write(u64.LeBytes(uint64(cm.executable.Len())))
 	// Append the native code.
-	buf.Write(cm.executable)
+	buf.Write(cm.executable.Bytes())
 	return bytes.NewReader(buf.Bytes())
 }
 
-func deserializeCompiledModule(wazeroVersion string, reader io.ReadCloser) (cm *compiledModule, staleCache bool, err error) {
+func deserializeCompiledModule(wazeroVersion string, reader io.ReadCloser, module *wasm.Module) (cm *compiledModule, staleCache bool, err error) {
 	defer reader.Close()
 	cacheHeaderSize := len(wazeroMagic) + 1 /* version size */ + len(wazeroVersion) + 1 /* ensure termination */ + 4 /* number of functions */
 
@@ -160,6 +160,8 @@ func deserializeCompiledModule(wazeroVersion string, reader io.ReadCloser) (cm *
 	functionsNum := binary.LittleEndian.Uint32(header[len(header)-4:])
 	cm = &compiledModule{functions: make([]compiledFunction, functionsNum), ensureTermination: ensureTermination}
 
+	imported := module.ImportFunctionCount
+
 	var eightBytes [8]byte
 	for i := uint32(0); i < functionsNum; i++ {
 		f := &cm.functions[i]
@@ -177,7 +179,8 @@ func deserializeCompiledModule(wazeroVersion string, reader io.ReadCloser) (cm *
 			err = fmt.Errorf("compilationcache: error reading func[%d] executable offset: %v", i, err)
 			return
 		}
-		f.executableOffset = int(offset)
+		f.executableOffset = uintptr(offset)
+		f.index = imported + i
 	}
 
 	executableLen, err := readUint64(reader, &eightBytes)
@@ -187,12 +190,12 @@ func deserializeCompiledModule(wazeroVersion string, reader io.ReadCloser) (cm *
 	}
 
 	if executableLen > 0 {
-		if cm.executable, err = platform.MmapCodeSegment(int(executableLen)); err != nil {
+		if err = cm.executable.Map(int(executableLen)); err != nil {
 			err = fmt.Errorf("compilationcache: error mmapping executable (len=%d): %v", executableLen, err)
 			return
 		}
 
-		_, err = io.ReadFull(reader, cm.executable)
+		_, err = io.ReadFull(reader, cm.executable.Bytes())
 		if err != nil {
 			err = fmt.Errorf("compilationcache: error reading executable (len=%d): %v", executableLen, err)
 			return
@@ -200,7 +203,7 @@ func deserializeCompiledModule(wazeroVersion string, reader io.ReadCloser) (cm *
 
 		if runtime.GOARCH == "arm64" {
 			// On arm64, we cannot give all of rwx at the same time, so we change it to exec.
-			if err = platform.MprotectRX(cm.executable); err != nil {
+			if err = platform.MprotectRX(cm.executable.Bytes()); err != nil {
 				return
 			}
 		}

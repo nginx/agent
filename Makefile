@@ -23,8 +23,8 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | suse             | sles12sp5, sle15              |                                                                |
 # | freebsd          |                               | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE  ?= debian
-OS_VERSION  ?= bullseye-slim
+OS_RELEASE  ?= ubuntu
+OS_VERSION  ?= 22.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
@@ -218,8 +218,8 @@ test-bench: ## Run benchmark tests
 
 benchmark-image: ## Build benchmark test container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build --no-cache -t nginx-agent-benchmark:1.0.0 \
-		--secret id=nginx-crt,src=build/nginx-repo.crt \
-		--secret id=nginx-key,src=build/nginx-repo.key \
+		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
+		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
 		-f test/docker/Dockerfile .
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -282,6 +282,20 @@ oss-image: ## Build agent container image for NGINX OSS
 run-container: ## Run container from specified IMAGE_TAG
 	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \
 		$(CONTAINER_CLITOOL) run -p 127.0.0.1:8081:8081/tcp --mount type=bind,source=${PWD}/nginx-agent.conf,target=/etc/nginx-agent/nginx-agent.conf ${IMAGE_TAG}
+
+official-plus-image: ## Build official NGINX Plus with NGINX Agent container image, need nginx-repo.crt and nginx-repo.key in build directory
+	@echo Building image nginx-plus-with-nginx-agent with $(CONTAINER_CLITOOL); \
+	cd scripts/docker/official/nginx-plus-with-nginx-agent/alpine/ \
+	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-plus-with-nginx-agent . \
+		--no-cache -f ./Dockerfile \
+		--secret id=nginx-crt,src=../../../../../${CERTS_DIR}/nginx-repo.crt \
+		--secret id=nginx-key,src=../../../../../${CERTS_DIR}/nginx-repo.key
+
+official-oss-image: ## Build official NGINX OSS with NGINX Agent container image
+	@echo Building image nginx-oss-with-nginx-agent with $(CONTAINER_CLITOOL); \
+	cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/ \
+	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
+		--no-cache -f ./Dockerfile.mainline
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Grafana Example Dashboard Targets                                                                               #

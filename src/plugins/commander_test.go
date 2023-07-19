@@ -22,6 +22,7 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
@@ -448,7 +449,7 @@ func TestCommander_Info(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
 	pluginUnderTest := NewCommander(cmdr, &config.Config{})
 
-	assert.Equal(t, "Commander", pluginUnderTest.Info().Name())
+	assert.Equal(t, agent_config.CommanderPlugin, pluginUnderTest.Info().Name())
 }
 
 func TestCommander_Close(t *testing.T) {

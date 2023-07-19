@@ -71,6 +71,9 @@ func main() {
 		if logFile != nil {
 			defer logFile.Close()
 		}
+
+		log.Tracef("Config loaded from disk, %v", loadedConfig)
+
 		if loadedConfig.DisplayName == "" {
 			loadedConfig.DisplayName = env.GetHostname()
 			log.Infof("setting displayName to %s", loadedConfig.DisplayName)
@@ -186,11 +189,13 @@ func createGrpcClients(ctx context.Context, loadedConfig *config.Config) (client
 	controller := client.NewClientController()
 	controller.WithContext(ctx)
 	commander := client.NewCommanderClient()
+	commander.WithBackoffSettings(loadedConfig.GetServerBackoffSettings())
 
 	commander.WithServer(loadedConfig.Server.Target)
 	commander.WithDialOptions(append(grpcDialOptions, secureCmdDialOpts)...)
 
 	reporter := client.NewMetricReporterClient()
+	reporter.WithBackoffSettings(loadedConfig.GetServerBackoffSettings())
 	reporter.WithServer(loadedConfig.Server.Target)
 	reporter.WithDialOptions(append(grpcDialOptions, secureMetricsDialOpts)...)
 

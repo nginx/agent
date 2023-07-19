@@ -1,10 +1,13 @@
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -70,6 +73,114 @@ void main_sleepmillis(int millis) {
    printf("OK\n");
 }
 
+void main_open_rdonly() {
+  const char *path = "zig-cc.rdonly.test";
+  int fd;
+  char buf[32];
+
+  fd = open(path, O_CREAT|O_TRUNC|O_RDONLY, 0644);
+  if (fd < 0) {
+    perror("ERR: open");
+    goto cleanup;
+  }
+  if (write(fd, "hello world\n", 12) >= 0) {
+    perror("ERR: write");
+    goto cleanup;
+  }
+  if (read(fd, buf, sizeof(buf)) != 0) {
+    perror("ERR: read");
+    goto cleanup;
+  }
+  puts("OK");
+ cleanup:
+  close(fd);
+  unlink(path);
+}
+
+void main_open_wronly() {
+  const char *path = "zig-cc.wronly.test";
+  int fd;
+  char buf[32];
+
+  fd = open(path, O_CREAT|O_TRUNC|O_WRONLY, 0644);
+  if (fd < 0) {
+    perror("ERR: open");
+    goto cleanup;
+  }
+  if (write(fd, "hello world\n", 12) != 12) {
+    perror("ERR: write");
+    goto cleanup;
+  }
+  if (read(fd, buf, sizeof(buf)) >= 0) {
+    perror("ERR: read");
+    goto cleanup;
+  }
+  puts("OK");
+ cleanup:
+  close(fd);
+  unlink(path);
+}
+
+void main_sock() {
+  // Get a listener from the pre-opened file descriptor.
+  // The listener is the first pre-open, with a file-descriptor of 3.
+  int listener_fd = 3;
+
+  int nfd = -1;
+  // Some runtimes set the fd to NONBLOCK
+  // so we loop until we no longer get EAGAIN.
+  while (true) {
+    nfd = accept(listener_fd, NULL, NULL);
+    if (nfd >= 0) {
+      break;
+    }
+    if (errno == EAGAIN) {
+      sleep(1);
+      continue;
+    } else {
+      perror("ERR: accept");
+      return;
+    }
+  }
+
+  // Wait data to be available on nfd for 1 sec.
+  char buf[32];
+  struct timeval tv = {1, 0};
+  fd_set set;
+  FD_ZERO(&set);
+  FD_SET(nfd, &set);
+  int ret = select(nfd+1, &set, NULL, NULL, &tv);
+
+  // If some data is available, read it.
+  if (ret) {
+    // Assume no error: we are about to quit
+    // and we will check `buf` anyway.
+    recv(nfd, buf, sizeof(buf), 0);
+    printf("%s\n", buf);
+  } else {
+    puts("ERR: failed to read data");
+  }
+}
+
+void main_nonblock(char* fpath) {
+  struct timespec tim, tim2;
+  tim.tv_sec = 0;
+  tim.tv_nsec = 100 * 1000000; // 100 msec
+  int fd = open(fpath, O_RDONLY | O_NONBLOCK);
+  char buf[32];
+  ssize_t newLen = 0;
+  while (newLen == 0) {
+    newLen = read(fd, buf, sizeof(buf));
+    if (errno == EAGAIN || newLen == 0) {
+      printf(".");
+      nanosleep(&tim , &tim2) ;
+      continue;
+    }
+  }
+  printf("\n%s\n", buf);
+  close(fd);
+}
+
 int main(int argc, char** argv) {
   if (strcmp(argv[1],"ls")==0) {
     bool repeat = false;
@@ -95,7 +206,14 @@ int main(int argc, char** argv) {
         timeout = atoi(argv[2]);
     }
     main_sleepmillis(timeout);
-
+  } else if (strcmp(argv[1],"open-rdonly")==0) {
+    main_open_rdonly();
+  } else if (strcmp(argv[1],"open-wronly")==0) {
+    main_open_wronly();
+  } else if (strcmp(argv[1],"sock")==0) {
+    main_sock();
+  } else if (strcmp(argv[1],"nonblock")==0) {
+    main_nonblock(argv[2]);
   } else {
     fprintf(stderr, "unknown command: %s\n", argv[1]);
     return 1;
