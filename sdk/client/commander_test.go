@@ -77,16 +77,15 @@ func TestCommander_Server(t *testing.T) {
 }
 
 func TestCommander_Recv(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
 
-	//wg := &sync.WaitGroup{}
-
 	go func() {
-		//wg.Done()
 		commandService.handler.toClient <- &proto.Command{Meta: &proto.Metadata{MessageId: "1234"}}
 	}()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -100,7 +99,8 @@ func TestCommander_Recv(t *testing.T) {
 		cncl()
 	})
 
-	go func () {
+	go func() {
+		defer wg.Done()
 		select {
 		case actual := <-commanderClient.Recv():
 			if actual != nil {
@@ -109,13 +109,13 @@ func TestCommander_Recv(t *testing.T) {
 		case <-time.After(1 * time.Second):
 		}
 	}()
-	//wg.Wait()               
+	wg.Wait()
 }
 
 func TestCommander_Send(t *testing.T) {
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -152,7 +152,7 @@ func TestCommander_Download(t *testing.T) {
 		}
 	}()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -175,7 +175,7 @@ func TestCommander_Download(t *testing.T) {
 func TestCommander_Upload(t *testing.T) {
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -219,7 +219,7 @@ LOOP:
 // Negative Test Cases
 
 func TestCommander_Connect_NoServer(t *testing.T) {
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	var grpcDialOptions []grpc.DialOption
 	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DefaultClientDialOptions...)
@@ -249,7 +249,7 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 3*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -258,7 +258,7 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 
 	// Restart server
 	if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
-		t.Fatalf("Unable to stop grpc server")
+		t.Fatalf("Unable to stop grpc server TestCommander_Recv_Reconnect 1")
 	}
 	serverName, grpcServer, commandService, dialer = startCommanderMockServer()
 
@@ -272,13 +272,13 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 	t.Cleanup(func() {
 		commanderClient.Close()
 		if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
-			t.Fatalf("Unable to stop grpc server")
+			t.Fatalf("Unable to stop grpc server TestCommander_Recv_Reconnect 2")
 		}
 		cncl()
 	})
 
 	go func() {
-		defer wg.Done() 
+		defer wg.Done()
 		select {
 		case actual := <-commanderClient.Recv():
 			if actual != nil {
@@ -288,14 +288,14 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 			assert.Fail(t, "No message received from commander")
 		}
 	}()
-	
-	wg.Wait()               
+
+	wg.Wait()
 }
 
 func TestCommander_Send_ServerDies(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -317,7 +317,7 @@ func TestCommander_Send_ServerDies(t *testing.T) {
 func TestCommander_Send_Reconnect(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 3*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -347,7 +347,7 @@ func TestCommander_Send_Reconnect(t *testing.T) {
 func TestCommander_Download_ServerDies(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -367,9 +367,11 @@ func TestCommander_Download_ServerDies(t *testing.T) {
 }
 
 func TestCommander_Download_Reconnect(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 3*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -400,20 +402,26 @@ func TestCommander_Download_Reconnect(t *testing.T) {
 		cncl()
 	})
 
-	actual, err := commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
+	go func() {
+		defer wg.Done()
+		actual, err := commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 
-	assert.Nil(t, err)
-	assert.Equal(t, expectedNginxConfig, actual)
+		assert.Nil(t, err)
+		assert.Equal(t, expectedNginxConfig, actual)
+	}()
+	wg.Wait()
 }
 
 func TestCommander_Download_MissingHeaderChunk(t *testing.T) {
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 
 	go func() {
 		commandService.downloadChannel <- &proto.DataChunk{}
 	}()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -427,9 +435,13 @@ func TestCommander_Download_MissingHeaderChunk(t *testing.T) {
 		cncl()
 	})
 
-	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
-	assert.NotNil(t, err)
-	assert.ErrorContains(t, err, "unexpected number of headers")
+	go func() {
+		defer wg.Done()
+		_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
+		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, "unexpected number of headers")
+	}()
+	wg.Wait()
 }
 
 func TestCommander_Download_MultipleHeaderChunksSent(t *testing.T) {
@@ -448,7 +460,7 @@ func TestCommander_Download_MultipleHeaderChunksSent(t *testing.T) {
 		}
 	}()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -484,7 +496,7 @@ func TestCommander_Download_ChecksumMismatch(t *testing.T) {
 		commandService.downloadChannel <- &proto.DataChunk{}
 	}()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -510,7 +522,7 @@ func TestCommander_Download_InvalidObjectTypeDownloaded(t *testing.T) {
 		sendInvalidObjectInChunks(commandService)
 	}()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -532,7 +544,7 @@ func TestCommander_Download_InvalidObjectTypeDownloaded(t *testing.T) {
 func TestCommander_Upload_ServerDies(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -554,7 +566,7 @@ func TestCommander_Upload_ServerDies(t *testing.T) {
 func TestCommander_Upload_Reconnect(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 3*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -742,6 +754,9 @@ func startCommanderMockServer() (string, *grpc.Server, *mockCommanderService, fu
 			fmt.Printf("Error starting mock GRPC server: %v\n", err)
 		}
 	}()
+
+	time.Sleep(200 * time.Millisecond)
+
 	return serverName, grpcServer, commandService, func(context.Context, string) (net.Conn, error) {
 		return listener.Dial()
 	}
@@ -770,7 +785,10 @@ func stopMockServer(ctx context.Context, server *grpc.Server, dialer func(contex
 		return err
 	})
 
-	conn.Close()
+	if conn != nil {
+		conn.Close()
+	}
+
 	return err
 }
 

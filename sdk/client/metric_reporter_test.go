@@ -38,7 +38,9 @@ func TestMetricReporter_Server(t *testing.T) {
 func TestMetricReporter_Send(t *testing.T) {
 	serverName, grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 
 	metricReporterClient := createTestMetricReporterClient(serverName, dialer)
 	err := metricReporterClient.Connect(ctx)
@@ -59,16 +61,20 @@ func TestMetricReporter_Send(t *testing.T) {
 	}))
 	assert.Nil(t, err)
 
-	select {
-	case actual := <-metricReporterService.metricReporterHandler.metricReportStream:
-		assert.Equal(t, "1234", actual.GetMeta().MessageId)
-	case <-time.After(1 * time.Second):
-		t.Fatalf("No message received from stream")
-	}
+	go func() {
+		defer wg.Done()
+		select {
+		case actual := <-metricReporterService.metricReporterHandler.metricReportStream:
+			assert.Equal(t, "1234", actual.GetMeta().MessageId)
+		case <-time.After(1 * time.Second):
+			assert.Fail(t, "No message received from stream")
+		}
+	}()
+	wg.Wait()
 }
 
 func TestMetricReporter_Connect_NoServer(t *testing.T) {
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	var grpcDialOptions []grpc.DialOption
 	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DefaultClientDialOptions...)
@@ -95,7 +101,7 @@ func TestMetricReporter_Connect_NoServer(t *testing.T) {
 func TestMetricReporter_Send_ServerDies(t *testing.T) {
 	serverName, grpcServer, _, dialer := startMetricReporterMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
 	metricReporterClient := createTestMetricReporterClient(serverName, dialer)
 	err := metricReporterClient.Connect(ctx)
@@ -122,6 +128,8 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	serverName, grpcServer, _, dialer := startMetricReporterMockServer()
 
 	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 
 	metricReporterClient := createTestMetricReporterClient(serverName, dialer)
 	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
@@ -156,12 +164,16 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	}))
 	assert.Nil(t, err)
 
-	select {
-	case actual := <-metricReporterService.metricReporterHandler.metricReportStream:
-		assert.Equal(t, "1234", actual.GetMeta().MessageId)
-	case <-time.After(1 * time.Second):
-		t.Fatalf("No message received from stream")
-	}
+	go func() {
+		defer wg.Done()
+		select {
+		case actual := <-metricReporterService.metricReporterHandler.metricReportStream:
+			assert.Equal(t, "1234", actual.GetMeta().MessageId)
+		case <-time.After(1 * time.Second):
+			assert.Fail(t, "No message received from stream")
+		}
+	}()
+	wg.Wait()
 }
 
 type metricReporterHandlerFunc func(proto.MetricsService_StreamServer, *sync.WaitGroup)
@@ -287,6 +299,8 @@ func startMetricReporterMockServer() (string, *grpc.Server, *mockMetricReporterS
 			log.Errorf("Error starting mock GRPC server: %v\n", err)
 		}
 	}()
+
+	time.Sleep(200 * time.Millisecond)
 
 	return serverName, grpcServer, metricReporterService, func(context.Context, string) (net.Conn, error) {
 		return listener.Dial()
