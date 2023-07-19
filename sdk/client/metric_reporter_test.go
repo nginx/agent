@@ -136,7 +136,7 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
 		t.Fatalf("Unable to stop grpc server")
 	}
-	
+
 	serverName, grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
 	metricReporterClient.WithDialOptions(getDialOptions(dialer)...)
 	metricReporterClient.WithServer(serverName)
