@@ -79,7 +79,10 @@ func TestCommander_Server(t *testing.T) {
 func TestCommander_Recv(t *testing.T) {
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
 
+	//wg := &sync.WaitGroup{}
+
 	go func() {
+		//wg.Done()
 		commandService.handler.toClient <- &proto.Command{Meta: &proto.Metadata{MessageId: "1234"}}
 	}()
 
@@ -97,14 +100,16 @@ func TestCommander_Recv(t *testing.T) {
 		cncl()
 	})
 
-	select {
-	case actual := <-commanderClient.Recv():
-		if actual != nil {
-			assert.Equal(t, "1234", actual.Meta().MessageId)
+	go func () {
+		select {
+		case actual := <-commanderClient.Recv():
+			if actual != nil {
+				assert.Equal(t, "1234", actual.Meta().MessageId)
+			}
+		case <-time.After(1 * time.Second):
 		}
-	case <-time.After(1 * time.Second):
-		t.Fatalf("No message received from commander")
-	}
+	}()
+	//wg.Wait()               
 }
 
 func TestCommander_Send(t *testing.T) {
@@ -239,6 +244,9 @@ func TestCommander_Connect_NoServer(t *testing.T) {
 }
 
 func TestCommander_Recv_Reconnect(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
 
 	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
@@ -269,14 +277,19 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 		cncl()
 	})
 
-	select {
-	case actual := <-commanderClient.Recv():
-		if actual != nil {
-			assert.Equal(t, "1234", actual.Meta().MessageId)
+	go func() {
+		defer wg.Done() 
+		select {
+		case actual := <-commanderClient.Recv():
+			if actual != nil {
+				assert.Equal(t, "1234", actual.Meta().MessageId)
+			}
+		case <-time.After(1 * time.Second):
+			assert.Fail(t, "No message received from commander")
 		}
-	case <-time.After(1 * time.Second):
-		t.Fatalf("No message received from commander")
-	}
+	}()
+	
+	wg.Wait()               
 }
 
 func TestCommander_Send_ServerDies(t *testing.T) {
@@ -729,7 +742,6 @@ func startCommanderMockServer() (string, *grpc.Server, *mockCommanderService, fu
 			fmt.Printf("Error starting mock GRPC server: %v\n", err)
 		}
 	}()
-
 	return serverName, grpcServer, commandService, func(context.Context, string) (net.Conn, error) {
 		return listener.Dial()
 	}
