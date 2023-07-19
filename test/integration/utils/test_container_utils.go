@@ -59,7 +59,7 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 
 // SetupTestContainerWithoutAgent sets up a container with nginx installed
 func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContainer {
-	comp, err := compose.NewDockerComposeWith(compose.WithStackFiles(os.Getenv("DOCKER_COMPOSE_FILE")), WithLogger(TestLogger(t)))
+	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
 	t.Cleanup(func() {
@@ -76,7 +76,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 			"OS_RELEASE":    os.Getenv("OS_RELEASE"),
 			"OS_VERSION":    os.Getenv("OS_VERSION"),
 		}).
-		WaitForService("agent", wait.NewLogStrategy("nginx").WithOccurrence(1)).
+		WaitForService("agent", wait.NewLogStrategy("nginx_pid").WithOccurrence(1)).
 		Up(ctx, compose.Wait(true))
 
 	assert.NoError(t, err, "compose.Up()")
