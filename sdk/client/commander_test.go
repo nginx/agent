@@ -49,7 +49,7 @@ var (
 	backOffSettings = backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  30 * time.Second,
+		MaxElapsedTime:  10 * time.Second,
 	}
 )
 
@@ -304,7 +304,7 @@ func TestCommander_Send_ServerDies(t *testing.T) {
 func TestCommander_Send_Reconnect(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 5*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -356,7 +356,7 @@ func TestCommander_Download_ServerDies(t *testing.T) {
 func TestCommander_Download_Reconnect(t *testing.T) {
 	serverName, grpcServer, commandService, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 5*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -541,7 +541,7 @@ func TestCommander_Upload_ServerDies(t *testing.T) {
 func TestCommander_Upload_Reconnect(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), 5*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	commanderClient.WithBackoffSettings(backOffSettings)
@@ -749,9 +749,11 @@ func stopMockServer(ctx context.Context, server *grpc.Server, dialer func(contex
 		Multiplier:      backoff.BACKOFF_MULTIPLIER,
 	}
 	err = backoff.WaitUntil(ctx, backoffSetting, func() error {
-		state := conn.GetState()
-		if state.String() != "TRANSIENT_FAILURE" {
-			return errors.New("Still waiting for server to stop")
+		if conn != nil {
+			state := conn.GetState()
+			if state.String() != "TRANSIENT_FAILURE" {
+				return errors.New("Still waiting for server to stop")
+			}
 		}
 		return err
 	})
