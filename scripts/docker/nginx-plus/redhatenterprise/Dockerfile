@@ -3,7 +3,7 @@ ARG CONTAINER_REGISTRY
 
 FROM ${CONTAINER_REGISTRY}/ubi${OS_VERSION}/ubi:latest as install
 
-LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
+LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG PACKAGES_REPO
 ARG OS_VERSION
