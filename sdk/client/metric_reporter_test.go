@@ -9,11 +9,13 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/proto"
 	f5_nginx_agent_sdk_events "github.com/nginx/agent/sdk/v2/proto/events"
@@ -34,11 +36,11 @@ func TestMetricReporter_Server(t *testing.T) {
 }
 
 func TestMetricReporter_Send(t *testing.T) {
-	grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
+	serverName, grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
 
 	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
 
-	metricReporterClient := createTestMetricReporterClient(dialer)
+	metricReporterClient := createTestMetricReporterClient(serverName, dialer)
 	err := metricReporterClient.Connect(ctx)
 	assert.Nil(t, err)
 
@@ -91,11 +93,11 @@ func TestMetricReporter_Connect_NoServer(t *testing.T) {
 }
 
 func TestMetricReporter_Send_ServerDies(t *testing.T) {
-	grpcServer, _, dialer := startMetricReporterMockServer()
+	serverName, grpcServer, _, dialer := startMetricReporterMockServer()
 
 	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
 
-	metricReporterClient := createTestMetricReporterClient(dialer)
+	metricReporterClient := createTestMetricReporterClient(serverName, dialer)
 	err := metricReporterClient.Connect(ctx)
 	assert.Nil(t, err)
 
@@ -117,11 +119,11 @@ func TestMetricReporter_Send_ServerDies(t *testing.T) {
 }
 
 func TestMetricReporter_Send_Reconnect(t *testing.T) {
-	grpcServer, _, dialer := startMetricReporterMockServer()
+	serverName, grpcServer, _, dialer := startMetricReporterMockServer()
 
 	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
 
-	metricReporterClient := createTestMetricReporterClient(dialer)
+	metricReporterClient := createTestMetricReporterClient(serverName, dialer)
 	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
 		MaxInterval:     100 * time.Millisecond,
@@ -134,8 +136,10 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
 		t.Fatalf("Unable to stop grpc server")
 	}
-	grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
+	
+	serverName, grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
 	metricReporterClient.WithDialOptions(getDialOptions(dialer)...)
+	metricReporterClient.WithServer(serverName)
 
 	t.Cleanup(func() {
 		metricReporterClient.Close()
@@ -269,7 +273,8 @@ func (h *eventReporterHandler) streamEventsHandle(server proto.MetricsService_St
 	}
 }
 
-func startMetricReporterMockServer() (*grpc.Server, *mockMetricReporterService, func(context.Context, string) (net.Conn, error)) {
+func startMetricReporterMockServer() (string, *grpc.Server, *mockMetricReporterService, func(context.Context, string) (net.Conn, error)) {
+	serverName := fmt.Sprintf("%s_%s", uuid.New().String(), "bufnet")
 	listener := bufconn.Listen(1024 * 1024)
 	grpcServer := grpc.NewServer(sdkGRPC.DefaultServerDialOptions...)
 	metricReporterService := &mockMetricReporterService{}
@@ -283,14 +288,14 @@ func startMetricReporterMockServer() (*grpc.Server, *mockMetricReporterService, 
 		}
 	}()
 
-	return grpcServer, metricReporterService, func(context.Context, string) (net.Conn, error) {
+	return serverName, grpcServer, metricReporterService, func(context.Context, string) (net.Conn, error) {
 		return listener.Dial()
 	}
 }
 
-func createTestMetricReporterClient(dialer func(context.Context, string) (net.Conn, error)) MetricReporter {
+func createTestMetricReporterClient(serverName string, dialer func(context.Context, string) (net.Conn, error)) MetricReporter {
 	metricReporterClient := NewMetricReporterClient()
-	metricReporterClient.WithServer("bufnet")
+	metricReporterClient.WithServer(serverName)
 	metricReporterClient.WithDialOptions(getDialOptions(dialer)...)
 	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
 		InitialInterval: 100 * time.Millisecond,
