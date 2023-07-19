@@ -59,34 +59,33 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 
 // SetupTestContainerWithoutAgent sets up a container with nginx installed
 func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContainer {
-	// line change to make a PR ***************
-	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
+	comp, err := compose.NewDockerComposeWith(compose.WithStackFiles(os.Getenv("DOCKER_COMPOSE_FILE")), WithLogger(TestLogger(t)))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
-	ctx := context.Background()
-
-	ctxCancel, cancel := context.WithCancel(ctx)
+	t.Cleanup(func() {
+		assert.NoError(t, comp.Down(context.Background(), compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
+	})
+	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	comp.WaitForService("agent", wait.ForHTTP("/").WithStartupTimeout(60*time.Second)).WithEnv(
-		map[string]string{
-			"PACKAGE_NAME":      os.Getenv("PACKAGE_NAME"),
-			"PACKAGES_REPO":     os.Getenv("PACKAGES_REPO"),
-			"INSTALL_FROM_REPO": os.Getenv("INSTALL_FROM_REPO"),
-			"BASE_IMAGE":        os.Getenv("BASE_IMAGE"),
-			"OS_RELEASE":        os.Getenv("OS_RELEASE"),
-			"OS_VERSION":        os.Getenv("OS_VERSION"),
-		},
-	)
+	err = comp.
+		WithEnv(map[string]string{
+			"PACKAGE_NAME":  os.Getenv("PACKAGE_NAME"),
+			"PACKAGES_REPO": os.Getenv("PACKAGES_REPO"),
+			"BASE_IMAGE":    os.Getenv("BASE_IMAGE"),
+			"OS_RELEASE":    os.Getenv("OS_RELEASE"),
+			"OS_VERSION":    os.Getenv("OS_VERSION"),
+		}).
+		WaitForService("agent", wait.NewLogStrategy("nginx").WithOccurrence(1)).
+		Up(ctx, compose.Wait(true))
 
-	assert.NoError(t, comp.Up(ctxCancel, compose.Wait(true)), "compose.Up()")
+	assert.NoError(t, err, "compose.Up()")
 
-	testContainer, err := comp.ServiceContainer(ctxCancel, "agent")
-	require.NoError(t, err)
+	testContainer, err := comp.ServiceContainer(ctx, "agent")
+	serviceNames := comp.Services()
 
-	t.Cleanup(func() {
-		assert.NoError(t, comp.Down(ctxCancel, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
-	})
+	assert.Equal(t, 1, len(serviceNames))
+	assert.Contains(t, serviceNames, "agent")
 
 	return testContainer
 }
