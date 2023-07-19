@@ -152,7 +152,7 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	t.Cleanup(func() {
 		metricReporterClient.Close()
 		if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
-			t.Log("Unable to stop grpc server")
+			assert.Fail(t, "Unable to stop grpc server")
 		}
 		cncl()
 	})
