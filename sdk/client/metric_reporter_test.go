@@ -36,18 +36,19 @@ func TestMetricReporter_Server(t *testing.T) {
 func TestMetricReporter_Send(t *testing.T) {
 	grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
 
-	ctx := context.TODO()
+	ctx, cncl := context.WithTimeout(context.Background(), 1 * time.Second)
 
 	metricReporterClient := createTestMetricReporterClient(dialer)
 	err := metricReporterClient.Connect(ctx)
 	assert.Nil(t, err)
 
-	defer func() {
+	t.Cleanup(func() {
 		metricReporterClient.Close()
-		if err := stopMockServer(grpcServer, dialer); err != nil {
+		if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
 			t.Fatalf("Unable to stop grpc server")
 		}
-	}()
+		cncl()
+	})
 
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
 		Meta: &proto.Metadata{
@@ -65,7 +66,7 @@ func TestMetricReporter_Send(t *testing.T) {
 }
 
 func TestMetricReporter_Connect_NoServer(t *testing.T) {
-	ctx := context.TODO()
+	ctx, cncl := context.WithTimeout(context.Background(), 1 * time.Second)
 
 	var grpcDialOptions []grpc.DialOption
 	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DefaultClientDialOptions...)
@@ -82,22 +83,28 @@ func TestMetricReporter_Connect_NoServer(t *testing.T) {
 
 	err := metricReporterClient.Connect(ctx)
 	assert.NotNil(t, err)
+
+	t.Cleanup(func() {
+		metricReporterClient.Close()
+		cncl()
+	})
 }
 
 func TestMetricReporter_Send_ServerDies(t *testing.T) {
 	grpcServer, _, dialer := startMetricReporterMockServer()
 
-	ctx := context.TODO()
+	ctx, cncl := context.WithTimeout(context.Background(), 1 * time.Second)
 
 	metricReporterClient := createTestMetricReporterClient(dialer)
 	err := metricReporterClient.Connect(ctx)
 	assert.Nil(t, err)
 
-	defer func() {
+	t.Cleanup(func() {
 		metricReporterClient.Close()
-	}()
+		cncl()
+	})
 
-	if err := stopMockServer(grpcServer, dialer); err != nil {
+	if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
 		t.Fatalf("Unable to stop grpc server")
 	}
 
@@ -112,7 +119,7 @@ func TestMetricReporter_Send_ServerDies(t *testing.T) {
 func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	grpcServer, _, dialer := startMetricReporterMockServer()
 
-	ctx := context.TODO()
+	ctx, cncl := context.WithTimeout(context.Background(), 1 * time.Second)
 
 	metricReporterClient := createTestMetricReporterClient(dialer)
 	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
@@ -124,18 +131,19 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Restart server
-	if err := stopMockServer(grpcServer, dialer); err != nil {
+	if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
 		t.Fatalf("Unable to stop grpc server")
 	}
 	grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
 	metricReporterClient.WithDialOptions(getDialOptions(dialer)...)
 
-	defer func() {
+	t.Cleanup(func() {
 		metricReporterClient.Close()
-		if err := stopMockServer(grpcServer, dialer); err != nil {
+		if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
 			t.Fatalf("Unable to stop grpc server")
 		}
-	}()
+		cncl()
+	})
 
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
 		Meta: &proto.Metadata{
