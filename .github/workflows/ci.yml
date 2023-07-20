@@ -117,7 +117,8 @@ jobs:
       - name: Output Logs 
         if: failure()
         run: |
-          dockerid=$(docker ps --format "{{.ID}}")
+          docker ps -a
+          dockerid=$(docker ps -a --format "{{.ID}}")
           docker logs "$dockerid"
 
       - name: Archive install/uninstall integration test logs
