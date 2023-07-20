@@ -114,13 +114,11 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
-            dockerid=$(docker ps --format "{{.ID}}")
-            docker logs "$dockerid"
-      #   if: failure()
-      # - name: Output Logs 
-      #   run: |
-      #     dockerid=$(docker ps --format "{{.ID}}")
-      #     docker logs "$dockerid"
+        if: failure()
+      - name: Output Logs 
+        run: |
+          dockerid=$(docker ps --format "{{.ID}}")
+          docker logs "$dockerid"
 
       - name: Archive install/uninstall integration test logs
         uses: actions/upload-artifact@v3
