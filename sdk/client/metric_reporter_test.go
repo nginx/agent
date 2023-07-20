@@ -28,6 +28,10 @@ import (
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 )
 
+var (
+	grpcServerMetricsMutex = &sync.Mutex{}
+)
+
 func TestMetricReporter_Server(t *testing.T) {
 	metricReporterClient := NewMetricReporterClient()
 	metricReporterClient.WithServer("test")
@@ -48,7 +52,7 @@ func TestMetricReporter_Send(t *testing.T) {
 
 	t.Cleanup(func() {
 		metricReporterClient.Close()
-		if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
+		if err := stopMockMetricsServer(ctx, grpcServer, dialer); err != nil {
 			t.Fatalf("Unable to stop grpc server")
 		}
 		cncl()
@@ -112,10 +116,11 @@ func TestMetricReporter_Send_ServerDies(t *testing.T) {
 		cncl()
 	})
 
-	if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
+	if err := stopMockMetricsServer(ctx, grpcServer, dialer); err != nil {
 		t.Fatalf("Unable to stop grpc server")
 	}
-
+	assert.NotNil(t, err)
+	
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
 		Meta: &proto.Metadata{
 			MessageId: "1234",
@@ -141,7 +146,7 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Restart server
-	if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
+	if err := stopMockMetricsServer(ctx, grpcServer, dialer); err != nil {
 		t.Fatalf("Unable to stop grpc server")
 	}
 
@@ -151,7 +156,7 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 
 	t.Cleanup(func() {
 		metricReporterClient.Close()
-		if err := stopMockServer(ctx, grpcServer, dialer); err != nil {
+		if err := stopMockMetricsServer(ctx, grpcServer, dialer); err != nil {
 			assert.Fail(t, "Unable to stop grpc server")
 		}
 		cncl()
@@ -260,12 +265,12 @@ func (c *mockMetricReporterService) ensureEventReporterHandler() *eventReporterH
 }
 
 func (h *metricReporterHandler) streamHandle(server proto.MetricsService_StreamServer, wg *sync.WaitGroup) {
+	defer wg.Done()
 	for {
 		cmd, err := server.Recv()
 		log.Debugf("Recv Metric Report: %v\n", cmd)
 		if err != nil {
 			log.Debugf("Recv Metric Report: %v\n", err)
-			wg.Done()
 			return
 		}
 		h.metricReportStream <- cmd
@@ -273,12 +278,12 @@ func (h *metricReporterHandler) streamHandle(server proto.MetricsService_StreamS
 }
 
 func (h *eventReporterHandler) streamEventsHandle(server proto.MetricsService_StreamEventsServer, wg *sync.WaitGroup) {
+	defer wg.Done()
 	for {
 		cmd, err := server.Recv()
 		log.Debugf("Recv Event Report: %v\n", cmd)
 		if err != nil {
 			log.Debugf("Recv Event Report: %v\n", err)
-			wg.Done()
 			return
 		}
 		h.eventReportStream <- cmd
@@ -286,6 +291,8 @@ func (h *eventReporterHandler) streamEventsHandle(server proto.MetricsService_St
 }
 
 func startMetricReporterMockServer() (string, *grpc.Server, *mockMetricReporterService, func(context.Context, string) (net.Conn, error)) {
+	grpcServerMetricsMutex.Lock()
+	defer grpcServerMetricsMutex.Unlock()
 	serverName := fmt.Sprintf("%s_%s", uuid.New().String(), "bufnet")
 	listener := bufconn.Listen(1024 * 1024)
 	grpcServer := grpc.NewServer(sdkGRPC.DefaultServerDialOptions...)
@@ -318,4 +325,10 @@ func createTestMetricReporterClient(serverName string, dialer func(context.Conte
 	})
 
 	return metricReporterClient
+}
+
+func stopMockMetricsServer(ctx context.Context, server *grpc.Server, dialer func(context.Context, string) (net.Conn, error)) error {
+	grpcServerMetricsMutex.Lock()
+	defer grpcServerMetricsMutex.Unlock()
+	return stopMockServer(ctx, server, dialer)
 }
