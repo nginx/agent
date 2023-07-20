@@ -422,7 +422,7 @@ func TestCommander_Download_MissingHeaderChunk(t *testing.T) {
 		commandService.downloadChannel <- &proto.DataChunk{}
 	}()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	ctx := context.Background()
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -433,7 +433,6 @@ func TestCommander_Download_MissingHeaderChunk(t *testing.T) {
 		if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
 			t.Fatalf("Unable to stop grpc server")
 		}
-		cncl()
 	})
 
 	go func() {
@@ -461,7 +460,7 @@ func TestCommander_Download_MultipleHeaderChunksSent(t *testing.T) {
 		}
 	}()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	ctx := context.Background()
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -472,7 +471,6 @@ func TestCommander_Download_MultipleHeaderChunksSent(t *testing.T) {
 		if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
 			t.Fatalf("Unable to stop grpc server")
 		}
-		cncl()
 	})
 
 	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
@@ -544,7 +542,7 @@ func TestCommander_Download_InvalidObjectTypeDownloaded(t *testing.T) {
 func TestCommander_Upload_ServerDies(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	ctx := context.Background()
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -556,7 +554,6 @@ func TestCommander_Upload_ServerDies(t *testing.T) {
 
 	t.Cleanup(func() {
 		commanderClient.Close()
-		cncl()
 	})
 
 	err = commanderClient.Upload(ctx, expectedNginxConfig, "1234")
@@ -780,6 +777,7 @@ func stopMockServer(ctx context.Context, server *grpc.Server, dialer func(contex
 		signal.Stop(sigs)
 		server.Stop()
 		fmt.Println()
+		time.Sleep(200 * time.Millisecond)
 		done <- true
 	}()
 
