@@ -67,11 +67,12 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 
 	err = comp.
 		WithEnv(map[string]string{
-			"PACKAGE_NAME":  os.Getenv("PACKAGE_NAME"),
-			"PACKAGES_REPO": os.Getenv("PACKAGES_REPO"),
-			"BASE_IMAGE":    os.Getenv("BASE_IMAGE"),
-			"OS_RELEASE":    os.Getenv("OS_RELEASE"),
-			"OS_VERSION":    os.Getenv("OS_VERSION"),
+			"PACKAGE_NAME":      os.Getenv("PACKAGE_NAME"),
+			"PACKAGES_REPO":     os.Getenv("PACKAGES_REPO"),
+			"INSTALL_FROM_REPO": os.Getenv("INSTALL_FROM_REPO"),
+			"BASE_IMAGE":        os.Getenv("BASE_IMAGE"),
+			"OS_RELEASE":        os.Getenv("OS_RELEASE"),
+			"OS_VERSION":        os.Getenv("OS_VERSION"),
 		}).
 		WaitForService("agent", wait.NewLogStrategy("nginx_pid").WithOccurrence(1)).
 		Up(ctx, compose.Wait(true))
