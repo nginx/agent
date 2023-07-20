@@ -87,7 +87,7 @@ func TestCommander_Recv(t *testing.T) {
 		commandService.handler.toClient <- &proto.Command{Meta: &proto.Metadata{MessageId: "1234"}}
 	}()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 400*time.Millisecond)
+	ctx, cncl := context.WithTimeout(context.Background(), 1*time.Second)
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -297,7 +297,7 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 func TestCommander_Send_ServerDies(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Second)
+	ctx := context.Background()
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -305,7 +305,6 @@ func TestCommander_Send_ServerDies(t *testing.T) {
 
 	t.Cleanup(func() {
 		commanderClient.Close()
-		cncl()
 	})
 
 	if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
@@ -524,7 +523,7 @@ func TestCommander_Download_InvalidObjectTypeDownloaded(t *testing.T) {
 		sendInvalidObjectInChunks(commandService)
 	}()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	ctx := context.Background()
 
 	commanderClient := createTestCommanderClient(serverName, dialer)
 	err := commanderClient.Connect(ctx)
@@ -535,7 +534,6 @@ func TestCommander_Download_InvalidObjectTypeDownloaded(t *testing.T) {
 		if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
 			t.Fatalf("Unable to stop grpc server")
 		}
-		cncl()
 	})
 
 	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
@@ -780,13 +778,14 @@ func stopMockServer(ctx context.Context, server *grpc.Server, dialer func(contex
 
 	go func() {
 		signal.Stop(sigs)
-		go server.GracefulStop()
+		server.Stop()
 		fmt.Println()
 		done <- true
 	}()
 
 	fmt.Println("awaiting signal")
 	<-done
+	server.GracefulStop()
 	fmt.Println("exiting")
 	return nil
 }

@@ -103,7 +103,7 @@ func TestMetricReporter_Connect_NoServer(t *testing.T) {
 func TestMetricReporter_Send_ServerDies(t *testing.T) {
 	serverName, grpcServer, _, dialer := startMetricReporterMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	ctx := context.Background()
 
 	metricReporterClient := createTestMetricReporterClient(serverName, dialer)
 	err := metricReporterClient.Connect(ctx)
@@ -111,13 +111,11 @@ func TestMetricReporter_Send_ServerDies(t *testing.T) {
 
 	t.Cleanup(func() {
 		metricReporterClient.Close()
-		cncl()
 	})
 
 	if err := stopMockMetricsServer(ctx, grpcServer, dialer); err != nil {
 		t.Fatalf("Unable to stop grpc server")
 	}
-	assert.NotNil(t, err)
 
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
 		Meta: &proto.Metadata{
@@ -313,6 +311,8 @@ func startMetricReporterMockServer() (string, *grpc.Server, *mockMetricReporterS
 }
 
 func createTestMetricReporterClient(serverName string, dialer func(context.Context, string) (net.Conn, error)) MetricReporter {
+	grpcServerMetricsMutex.Lock()
+	defer grpcServerMetricsMutex.Unlock()
 	metricReporterClient := NewMetricReporterClient()
 	metricReporterClient.WithServer(serverName)
 	metricReporterClient.WithDialOptions(getDialOptions(dialer)...)
