@@ -62,9 +62,6 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
-	t.Cleanup(func() {
-		assert.NoError(t, comp.Down(context.Background(), compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
-	})
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
@@ -86,6 +83,20 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 
 	assert.Equal(t, 1, len(serviceNames))
 	assert.Contains(t, serviceNames, "agent")
+
+	t.Cleanup(func() {
+		logReader, err := testContainer.Logs(ctx)
+		assert.NoError(t, err)
+		defer logReader.Close()
+
+		testContainerLogs, err := io.ReadAll(logReader)
+		assert.NoError(t, err)
+
+		err = os.WriteFile("/tmp/nginx-agent-integration-test-api.log", testContainerLogs, 0o660)
+		assert.NoError(t, err)
+
+		assert.NoError(t, comp.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
+	})
 
 	return testContainer
 }
