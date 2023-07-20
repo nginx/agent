@@ -40,7 +40,7 @@ func TestMetricReporter_Server(t *testing.T) {
 func TestMetricReporter_Send(t *testing.T) {
 	serverName, grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	ctx := context.Background()
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
@@ -53,7 +53,6 @@ func TestMetricReporter_Send(t *testing.T) {
 		if err := stopMockMetricsServer(ctx, grpcServer, dialer); err != nil {
 			t.Fatalf("Unable to stop grpc server")
 		}
-		cncl()
 	})
 
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
@@ -128,7 +127,7 @@ func TestMetricReporter_Send_ServerDies(t *testing.T) {
 func TestMetricReporter_Send_Reconnect(t *testing.T) {
 	serverName, grpcServer, _, dialer := startMetricReporterMockServer()
 
-	ctx, cncl := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx := context.Background()
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
@@ -155,7 +154,6 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 		if err := stopMockMetricsServer(ctx, grpcServer, dialer); err != nil {
 			assert.Fail(t, "Unable to stop grpc server")
 		}
-		cncl()
 	})
 
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
