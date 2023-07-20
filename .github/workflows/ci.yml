@@ -116,10 +116,10 @@ jobs:
             make integration-test
         if: success() || failure()
       - name: Output Logs 
-        - run: |
+        run: |
           dockerid=$(docker ps --format "{{.ID}}")
           docker logs "$dockerid"
-          
+
       - name: Archive install/uninstall integration test logs
         uses: actions/upload-artifact@v3
         with:
