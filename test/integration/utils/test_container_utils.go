@@ -93,7 +93,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 		testContainerLogs, err := io.ReadAll(logReader)
 		assert.NoError(t, err)
 
-		err = os.WriteFile("/tmp/nginx-agent-integration-test-api.log", testContainerLogs, 0o660)
+		err = os.WriteFile("/tmp/nginx-agent-integration-test-install-uninstall.log", testContainerLogs, 0o660)
 		assert.NoError(t, err)
 
 		assert.NoError(t, comp.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")

@@ -139,7 +139,7 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
-          name: features-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
+          name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/nginx-agent-integration-test-features.log
           retention-days: 3
 
