@@ -28,9 +28,7 @@ import (
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 )
 
-var (
-	grpcServerMetricsMutex = &sync.Mutex{}
-)
+var grpcServerMetricsMutex = &sync.Mutex{}
 
 func TestMetricReporter_Server(t *testing.T) {
 	metricReporterClient := NewMetricReporterClient()
@@ -120,7 +118,7 @@ func TestMetricReporter_Send_ServerDies(t *testing.T) {
 		t.Fatalf("Unable to stop grpc server")
 	}
 	assert.NotNil(t, err)
-	
+
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
 		Meta: &proto.Metadata{
 			MessageId: "1234",

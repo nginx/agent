@@ -10,7 +10,6 @@ package client
 import (
 	"context"
 	"encoding/json"
-
 	"fmt"
 	"io"
 	"net"
@@ -775,20 +774,20 @@ func stopMockCommandServer(ctx context.Context, server *grpc.Server, dialer func
 }
 
 func stopMockServer(ctx context.Context, server *grpc.Server, dialer func(context.Context, string) (net.Conn, error)) error {
-    sigs := make(chan os.Signal, 1)
-    signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-    done := make(chan bool, 1)
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan bool, 1)
 
-    go func() {
+	go func() {
 		signal.Stop(sigs)
 		go server.GracefulStop()
-        fmt.Println()
-        done <- true
-    }()
+		fmt.Println()
+		done <- true
+	}()
 
-    fmt.Println("awaiting signal")
-    <-done
-    fmt.Println("exiting")
+	fmt.Println("awaiting signal")
+	<-done
+	fmt.Println("exiting")
 	return nil
 }
 
