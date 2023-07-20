@@ -19,6 +19,8 @@ nginx_pid=$!
 
 wait_term()
 {
+    trap - TERM
+    kill -9 "${nginx_pid}" 2>/dev/null
     wait ${nginx_pid}
 }
 
