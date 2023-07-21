@@ -1,6 +1,6 @@
 /var/log/nginx-agent/*.log
 {
-   size 10k
+   size 5M
    copytruncate
    maxage 10
    rotate 10
