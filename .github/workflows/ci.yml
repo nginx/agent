@@ -105,34 +105,43 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
+      # Change made to fix an issue cause by security fix in Go 1.20.6 & 1.19.11 which was causing TestContainers to fail
+      # https://github.com/testcontainers/testcontainers-go/issues/1359 
         with:
-          go-version-file: 'go.mod'
+           go-version: '1.19.10'
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
+      - name: Output Logs 
+        if: failure()
+        run: |
+          docker ps -a
+          dockerid=$(docker ps -a --format "{{.ID}}")
+          docker logs "$dockerid"
+
       - name: Archive install/uninstall integration test logs
+        if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
           name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/nginx-agent-integration-test-install-uninstall.log
           retention-days: 3
-        if: success() || failure()
       - name: Archive api integration test logs
+        if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
           name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/nginx-agent-integration-test-api.log
           retention-days: 3
-        if: success() || failure()
       - name: Archive features integration test logs
+        if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
-          name: features-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
+          name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/nginx-agent-integration-test-features.log
           retention-days: 3
-        if: success() || failure()
 
   performance-test:
     name: Performance Tests
