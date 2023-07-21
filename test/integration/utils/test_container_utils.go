@@ -62,27 +62,31 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
-	ctx := context.Background()
-
-	ctxCancel, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	assert.NoError(t, comp.WaitForService("agent", wait.ForHTTP("/").WithStartupTimeout(agentServiceTimeout)).WithEnv(
-		map[string]string{
+	err = comp.
+		WithEnv(map[string]string{
 			"PACKAGE_NAME":      os.Getenv("PACKAGE_NAME"),
 			"PACKAGES_REPO":     os.Getenv("PACKAGES_REPO"),
 			"INSTALL_FROM_REPO": os.Getenv("INSTALL_FROM_REPO"),
 			"BASE_IMAGE":        os.Getenv("BASE_IMAGE"),
 			"OS_RELEASE":        os.Getenv("OS_RELEASE"),
 			"OS_VERSION":        os.Getenv("OS_VERSION"),
-		},
-	).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
+		}).
+		WaitForService("agent", wait.NewLogStrategy("nginx_pid").WithOccurrence(1)).
+		Up(ctx, compose.Wait(true))
 
-	testContainer, err := comp.ServiceContainer(ctxCancel, "agent")
-	require.NoError(t, err)
+	assert.NoError(t, err, "compose.Up()")
+
+	testContainer, err := comp.ServiceContainer(ctx, "agent")
+	serviceNames := comp.Services()
+
+	assert.Equal(t, 1, len(serviceNames))
+	assert.Contains(t, serviceNames, "agent")
 
 	t.Cleanup(func() {
-		logReader, err := testContainer.Logs(ctxCancel)
+		logReader, err := testContainer.Logs(ctx)
 		assert.NoError(t, err)
 		defer logReader.Close()
 
@@ -92,7 +96,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 		err = os.WriteFile("/tmp/nginx-agent-integration-test-install-uninstall.log", testContainerLogs, 0o660)
 		assert.NoError(t, err)
 
-		assert.NoError(t, comp.Down(ctxCancel, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
+		assert.NoError(t, comp.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
 	})
 
 	return testContainer
