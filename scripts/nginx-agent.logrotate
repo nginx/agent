@@ -1,0 +1,8 @@
+/var/log/nginx-agent/*.log
+{
+   size 10k
+   copytruncate
+   maxage 10
+   rotate 10
+   compress
+}
