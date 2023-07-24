@@ -35,9 +35,6 @@ fi
 wait_term()
 {
     wait ${agent_pid}
-    trap - TERM
-    kill -QUIT "${nginx_pid}" 2>/dev/null
-    echo "waiting for nginx to stop..."
     wait ${nginx_pid}
 }
 
