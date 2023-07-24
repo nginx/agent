@@ -267,7 +267,7 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 
 	commanderClient.WithDialOptions(getDialOptions(dialer)...)
 	commanderClient.WithServer(serverName)
-	
+
 	t.Cleanup(func() {
 		commanderClient.Close()
 		if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
