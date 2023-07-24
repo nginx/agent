@@ -85,8 +85,8 @@ func TestMetricReporter_Connect_NoServer(t *testing.T) {
 	metricReporterClient.WithServer("unknown")
 	metricReporterClient.WithDialOptions(grpcDialOptions...)
 	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
+		InitialInterval: 50 * time.Millisecond,
+		MaxInterval:     50 * time.Millisecond,
 		MaxElapsedTime:  300 * time.Millisecond,
 	})
 
@@ -133,8 +133,8 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 
 	metricReporterClient := createTestMetricReporterClient(serverName, dialer)
 	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
+		InitialInterval: 50 * time.Millisecond,
+		MaxInterval:     50 * time.Millisecond,
 		MaxElapsedTime:  10 * time.Second,
 	})
 	err := metricReporterClient.Connect(ctx)
@@ -155,6 +155,8 @@ func TestMetricReporter_Send_Reconnect(t *testing.T) {
 			assert.Fail(t, "Unable to stop grpc server")
 		}
 	})
+
+	time.Sleep(50 * time.Millisecond)
 
 	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
 		Meta: &proto.Metadata{
@@ -315,8 +317,8 @@ func createTestMetricReporterClient(serverName string, dialer func(context.Conte
 	metricReporterClient.WithServer(serverName)
 	metricReporterClient.WithDialOptions(getDialOptions(dialer)...)
 	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
+		InitialInterval: 50 * time.Millisecond,
+		MaxInterval:     50 * time.Millisecond,
 		MaxElapsedTime:  300 * time.Millisecond,
 	})
 

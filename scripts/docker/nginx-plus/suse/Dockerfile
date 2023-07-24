@@ -3,7 +3,7 @@ ARG OS_VERSION
 ARG CONTAINER_REGISTRY
 
 FROM ${CONTAINER_REGISTRY}/${OS_RELEASE}/${OS_VERSION} as install
-LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
+LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG OS_VERSION
 ARG PACKAGES_REPO

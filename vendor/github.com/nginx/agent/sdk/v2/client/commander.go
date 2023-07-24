@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strconv"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
@@ -155,8 +154,17 @@ func (c *commander) Send(ctx context.Context, message Message) error {
 		return fmt.Errorf("expected a command message, but received %T", message.Data())
 	}
 
+	isRetrying := false
 	err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
+		if isRetrying {
+			log.Infof("Commander Channel Send: retrying to connect to %s", c.grpc.Target())
+			err := c.createClient()
+			if err != nil {
+				return err
+			}
+		}
 		if err := c.channel.Send(cmd); err != nil {
+			isRetrying = true
 			return c.handleGrpcError("Commander Channel Send", err)
 		}
 
@@ -175,8 +183,16 @@ func (c *commander) Recv() <-chan Message {
 func (c *commander) Download(ctx context.Context, metadata *proto.Metadata) (*proto.NginxConfig, error) {
 	log.Debugf("Downloading config (messageId=%s)", metadata.GetMessageId())
 	cfg := &proto.NginxConfig{}
+	isRetrying := false
 
 	err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
+		if isRetrying {
+			log.Infof("Commander Downloader: retrying to connect to %s", c.grpc.Target())
+			err := c.createClient()
+			if err != nil {
+				return err
+			}
+		}
 		var (
 			header *proto.DataChunk_Header
 			body   []byte
@@ -184,6 +200,7 @@ func (c *commander) Download(ctx context.Context, metadata *proto.Metadata) (*pr
 
 		downloader, err := c.client.Download(c.ctx, &proto.DownloadRequest{Meta: metadata})
 		if err != nil {
+			isRetrying = true
 			return c.handleGrpcError("Commander Downloader", err)
 		}
 
@@ -191,6 +208,7 @@ func (c *commander) Download(ctx context.Context, metadata *proto.Metadata) (*pr
 		for {
 			chunk, err := downloader.Recv()
 			if err != nil && err != io.EOF {
+				isRetrying = true
 				return c.handleGrpcError("Commander Downloader", err)
 			}
 
@@ -241,9 +259,20 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 	payloadChecksum := checksum.Checksum(payload)
 	chunks := checksum.Chunk(payload, c.chunkSize)
 
+	isRetrying := false
+
 	return backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
+		if isRetrying {
+			log.Infof("Commander Upload: retrying to connect to %s", c.grpc.Target())
+			err := c.createClient()
+			if err != nil {
+				return err
+			}
+		}
+
 		sender, err := c.client.Upload(c.ctx)
 		if err != nil {
+			isRetrying = true
 			return c.handleGrpcError("Commander Upload", err)
 		}
 
@@ -258,6 +287,7 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 			},
 		})
 		if err != nil {
+			isRetrying = true
 			return c.handleGrpcError("Commander Upload Header", err)
 		}
 
@@ -272,13 +302,15 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 					},
 				},
 			}); err != nil {
-				return c.handleGrpcError("Commander Upload"+strconv.Itoa(id), err)
+				isRetrying = true
+				return c.handleGrpcError(fmt.Sprintf("Commander Upload (chunks=%d)", id), err)
 			}
 		}
 
 		log.Infof("Upload sending done %s (chunks=%d)", metadata.MessageId, len(chunks))
 		status, err := sender.CloseAndRecv()
 		if err != nil {
+			isRetrying = true
 			return c.handleGrpcError("Commander Upload CloseAndRecv", err)
 		}
 
@@ -332,14 +364,24 @@ loop:
 		case <-ctx.Done():
 			break loop
 		default:
+			isRetrying := false
 			err := backoff.WaitUntil(ctx, c.backoffSettings, func() error {
 				select {
 				case <-ctx.Done():
 					return nil
 				default:
+					if isRetrying {
+						log.Infof("Commander Channel Recv: retrying to connect to %s", c.grpc.Target())
+						err := c.createClient()
+						if err != nil {
+							return err
+						}
+					}
+
 					cmd, err := c.channel.Recv()
 					log.Infof("Commander received %v, %v", cmd, err)
 					if err != nil {
+						isRetrying = true
 						return c.handleGrpcError("Commander Channel Recv", err)
 					}
 
@@ -363,9 +405,6 @@ func (c *commander) handleGrpcError(messagePrefix string, err error) error {
 	} else {
 		log.Errorf("%s: unknown grpc error while communicating with %s, %v", messagePrefix, c.grpc.Target(), err)
 	}
-
-	log.Infof("%s: retrying to connect to %s", messagePrefix, c.grpc.Target())
-	_ = c.createClient()
 
 	return err
 }
