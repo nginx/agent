@@ -32,7 +32,7 @@ github.com/jstemmer/go-junit-report/formatter
 github.com/jstemmer/go-junit-report/parser
 # github.com/kr/text v0.2.0
 ## explicit
-# github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
+# github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2
 ## explicit; go 1.17
 github.com/maxbrunsfeld/counterfeiter/v6
 github.com/maxbrunsfeld/counterfeiter/v6/arguments
