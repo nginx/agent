@@ -1133,6 +1133,18 @@ func TestNginx_monitorLog(t *testing.T) {
 			treatWarningsAsErrors: false,
 		},
 		{
+			name:                  "error level test permission",
+			errorLog:              "2023/07/11 14:00:00 [error] 123456#123456: *1 connect() failed (111: Connection refused) while connecting to upstream, client: 000.00.0.000, server: _, request: \"GET /test HTTP/2.0\", upstream: \"http://00.0.0.0:8081/test/test/test/test\", host: \"00.0000.0000.0000\", referrer: \"https://00.0000.0000.000/test/\"",
+			expected:              "2023/07/11 14:00:00 [error] 123456#123456: *1 connect() failed (111: Connection refused) while connecting to upstream, client: 000.00.0.000, server: _, request: \"GET /test HTTP/2.0\", upstream: \"http://00.0.0.0:8081/test/test/test/test\", host: \"00.0000.0000.0000\", referrer: \"https://00.0000.0000.000/test/\"",
+			treatWarningsAsErrors: false,
+		},
+		{
+			name:                  "crit level test permission",
+			errorLog:              "2023/07/07 11:30:00 [crit] 123456#123456: *1 connect() to unix:/test/test/test/test.sock failed (2: No such file or directory) while connecting to upstream, client: 0.0.0.0, server: _, request: \"POST /test HTTP/2.0\", upstream: \"grpc://unix:/test/test/test/test.sock:\", host: \"0.0.0.0:0\"",
+			expected:              "2023/07/07 11:30:00 [crit] 123456#123456: *1 connect() to unix:/test/test/test/test.sock failed (2: No such file or directory) while connecting to upstream, client: 0.0.0.0, server: _, request: \"POST /test HTTP/2.0\", upstream: \"grpc://unix:/test/test/test/test.sock:\", host: \"0.0.0.0:0\"",
+			treatWarningsAsErrors: false,
+		},
+		{
 			name:                  "validation passes, warn ignored",
 			errorLog:              "nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024",
 			expected:              "",

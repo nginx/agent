@@ -117,8 +117,6 @@ func TestMetricsSenderBackoff(t *testing.T) {
 
 			if !reflect.ValueOf(test.wantBackoff).IsZero() {
 				mockMetricsReportClient.On("WithBackoffSettings", test.wantBackoff)
-				mockMetricsReportClient.On("Close").Return(nil)
-				mockMetricsReportClient.On("Connect", mock.Anything).Return(nil)
 			}
 
 			pluginUnderTest.Process(test.msg)
@@ -133,5 +131,5 @@ func TestMetricsSenderBackoff(t *testing.T) {
 
 func TestMetricsSenderSubscriptions(t *testing.T) {
 	pluginUnderTest := NewMetricsSender(tutils.NewMockMetricsReportClient())
-	assert.Equal(t, []string{core.CommMetrics, core.RegistrationCompletedTopic, core.AgentConfig}, pluginUnderTest.Subscriptions())
+	assert.Equal(t, []string{core.CommMetrics, core.RegistrationCompletedTopic, core.AgentConfigChanged}, pluginUnderTest.Subscriptions())
 }

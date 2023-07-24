@@ -243,6 +243,8 @@ func TestCommander_Recv_Reconnect(t *testing.T) {
 
 	commanderClient.WithDialOptions(getDialOptions(dialer)...)
 
+	time.Sleep(50 * time.Millisecond)
+
 	defer func() {
 		commanderClient.Close()
 		if err := stopMockServer(grpcServer, dialer); err != nil {
@@ -297,6 +299,8 @@ func TestCommander_Send_Reconnect(t *testing.T) {
 	}
 	grpcServer, _, dialer = startCommanderMockServer()
 	commanderClient.WithDialOptions(getDialOptions(dialer)...)
+
+	time.Sleep(50 * time.Millisecond)
 
 	defer func() {
 		commanderClient.Close()
@@ -361,6 +365,8 @@ func TestCommander_Download_Reconnect(t *testing.T) {
 			t.Fatalf("Unable to stop grpc server")
 		}
 	}()
+
+	time.Sleep(10 * time.Millisecond)
 
 	actual, err := commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 
@@ -531,6 +537,8 @@ func TestCommander_Upload_Reconnect(t *testing.T) {
 			t.Fatalf("Unable to stop grpc server")
 		}
 	}()
+
+	time.Sleep(50 * time.Millisecond)
 
 	err = commanderClient.Upload(ctx, expectedNginxConfig, "1234")
 	assert.Nil(t, err)
