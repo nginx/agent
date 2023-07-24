@@ -25,6 +25,7 @@ func newDirIndex() *dirIndex {
 }
 
 func (d *dirIndex) Get(value string) uint32 {
+
 	if idx, ok := d.m[value]; ok {
 		return idx
 	}

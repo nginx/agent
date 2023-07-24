@@ -150,8 +150,19 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 		if !ok {
 			return fmt.Errorf("MetricReporter expected a metrics report message, but received %T", message.Data())
 		}
+
+		isRetrying := false
+
 		err = backoff.WaitUntil(r.ctx, r.backoffSettings, func() error {
+			if isRetrying {
+				log.Infof("Metric Reporter Channel Send: retrying to connect to %s", r.grpc.Target())
+				err := r.createClient()
+				if err != nil {
+					return err
+				}
+			}
 			if err := r.channel.Send(report); err != nil {
+				isRetrying = true
 				return r.handleGrpcError("Metric Reporter Channel Send", err)
 			}
 
@@ -164,8 +175,19 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 		if !ok {
 			return fmt.Errorf("MetricReporter expected an events report message, but received %T", message.Data())
 		}
+
+		isRetrying := false
+
 		err = backoff.WaitUntil(r.ctx, r.backoffSettings, func() error {
+			if isRetrying {
+				log.Infof("Metric Reporter Channel Send: retrying to connect to %s", r.grpc.Target())
+				err = r.createClient()
+				if err != nil {
+					return err
+				}
+			}
 			if err := r.eventsChannel.Send(report); err != nil {
+				isRetrying = true
 				return r.handleGrpcError("Metric Reporter Events Channel Send", err)
 			}
 
@@ -200,9 +222,6 @@ func (r *metricReporter) handleGrpcError(messagePrefix string, err error) error 
 	} else {
 		log.Errorf("%s: unknown grpc error while communicating with %s, %v", messagePrefix, r.grpc.Target(), err)
 	}
-
-	log.Infof("%s: retrying to connect to %s", messagePrefix, r.grpc.Target())
-	_ = r.createClient()
 
 	return err
 }
