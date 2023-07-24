@@ -263,3 +263,5 @@ Logs are rotated daily by default in NGINX Agent using logrotate, with the follo
 </details>
 
 If you need to make changes to the default configuration you can update the file here `/etc/logrotate.d/nginx-agent`
+
+For more detail on logrotate configuration see [Logrotate Configuration Options](https://linux.die.net/man/8/logrotate)
