@@ -42,7 +42,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-swagger/go-swagger v0.30.4
 	github.com/golangci/golangci-lint v1.52.2
-	github.com/goreleaser/nfpm/v2 v2.31.0
+	github.com/goreleaser/nfpm/v2 v2.32.0
 	github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.16.0
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
@@ -92,6 +92,7 @@ require (
 	github.com/bufbuild/connect-opentelemetry-go v0.4.0 // indirect
 	github.com/bufbuild/protocompile v0.5.1 // indirect
 	github.com/butuzov/ireturn v0.1.1 // indirect
+	github.com/caarlos0/go-version v0.1.1 // indirect
 	github.com/cavaliergopher/cpio v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/charithe/durationcheck v0.0.10 // indirect
@@ -164,6 +165,7 @@ require (
 	github.com/golangci/unconvert v0.0.0-20180507085042-28b1c447d1f4 // indirect
 	github.com/google/go-containerregistry v0.15.2 // indirect
 	github.com/google/pprof v0.0.0-20230705174524-200ffdc848b8 // indirect
+	github.com/google/rpmpack v0.5.0 // indirect
 	github.com/gordonklaus/ineffassign v0.0.0-20230107090616-13ace0543b28 // indirect
 	github.com/goreleaser/chglog v0.5.0 // indirect
 	github.com/goreleaser/fileglob v1.3.0 // indirect
