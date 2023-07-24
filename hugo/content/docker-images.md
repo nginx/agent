@@ -10,6 +10,10 @@ categories: ["configuration"]
 doctypes: ["task"]
 ---
 
+## Prerequisites
+1. Docker installation
+1. nginx-repo.crt and nginx-repo.key files (if using NGINX Plus)
+
 ## Building NGINX Agent image with NGINX OSS
 
 To build an image that contains the latest NGINX Agent and the latest mainline version of NGINX OSS run the following command:
@@ -42,10 +46,6 @@ docker build -t nginx-agent . \
 --secret id=nginx-crt,src=nginx-repo.crt \
 --secret id=nginx-key,src=nginx-repo.key
 ```
-
-## Prerequisites
-1. Docker installation
-1. nginx-repo.crt and nginx-repo.key files (if using NGINX Plus)
 
 ## Running NGINX Agent container
 
