@@ -234,5 +234,32 @@ This section displays the configurable options for the NGINX Agent that can be s
 - NMS_DATAPLANE_REPORT_INTERVAL
 - NMS_DATAPLANE_STATUS_POLL_INTERVAL
 ```
-
 </details>
+
+### NGINX Agent Log Rotation
+
+Logs are rotated daily by default in NGINX Agent using logrotate, with the following configuration: 
+
+<details open>
+  <summary>NGINX Agent Logrotate Configuration</summary>
+
+``` yaml
+/var/log/nginx-agent/*.log
+{
+  # files are rotated every day
+  daily
+  # log files are rotated if they grow bigger than 5M
+  size 5M
+  # truncate the original log file after creating a copy
+  copytruncate
+  # remove rotated logs older than 10 days
+  maxage 10
+  # log files are rotated 10 times before being removed
+  rotate 10
+  # old log files are compressed
+  compress
+}
+```
+</details>
+
+If you need to make changes to the default configuration you can update the file here `/etc/logrotate.d/nginx-agent`

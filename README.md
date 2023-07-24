@@ -121,6 +121,31 @@ sudo systemctl enable nginx-agent
 ## Logging 
 NGINX Agent uses formatted log files to collect metrics. Expanding log formats and instance counts will also increase the size of NGINX Agent log files. We recommend adding a separate partition for `/var/log/nginx-agent`. Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.
 
+### Log Rotation
+Logs are rotated daily by default in NGINX Agent using logrotate, with the following configuration: 
+
+```yaml
+/var/log/nginx-agent/*.log
+{
+  # files are rotated every day
+  daily
+  # log files are rotated if they grow bigger than 5M
+  size 5M
+  # truncate the original log file after creating a copy
+  copytruncate
+  # remove rotated logs older than 10 days
+  maxage 10
+  # log files are rotated 10 times before being removed
+  rotate 10
+  # old log files are compressed
+  compress
+}
+```
+
+If you need to make changes to the default configuration you can update the file here `/etc/logrotate.d/nginx-agent`
+
+For more detail on logrotate configuration see [Logrotate Configuration Options](https://linux.die.net/man/8/logrotate)
+
 # Getting Started with NGINX Agent
 Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which the NGINX Agent will report.
 
