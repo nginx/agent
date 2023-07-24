@@ -127,7 +127,7 @@ Logs are rotated daily by default in NGINX Agent using logrotate, with the follo
 ```yaml
 /var/log/nginx-agent/*.log
 {
-  # files are rotated every day
+  # log files are rotated every day
   daily
   # log files are rotated if they grow bigger than 5M
   size 5M
