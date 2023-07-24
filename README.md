@@ -18,6 +18,7 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
   - [Installing NGINX Agent from Package Files](#installing-nginx-agent-from-package-files)
   - [Starting and Enabling Start on Boot](#starting-and-enabling-start-on-boot)
   - [Logging](#logging)
+  - [Building Docker Image](#building-docker-image)
 - [Getting Started with NGINX Agent](#getting-started-with-nginx-agent)
   - [Installing NGINX](#installing-nginx)
   - [Cloning the NGINX Agent Repository](#cloning-the-nginx-agent-repository)
