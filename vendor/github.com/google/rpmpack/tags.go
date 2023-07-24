@@ -75,6 +75,7 @@ const (
 	tagObsoletes         = 0x0442 // 1090
 	tagFileINodes        = 0x0448 // 1096
 	tagFileLangs         = 0x0449 // 1097
+	tagPrefixes          = 0x044a // 1098
 	tagProvideFlags      = 0x0458 // 1112
 	tagProvideVersion    = 0x0459 // 1113
 	tagObsoleteFlags     = 0x045a // 1114
