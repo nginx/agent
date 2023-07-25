@@ -89,7 +89,7 @@ github.com/magiconair/properties
 # github.com/matttproud/golang_protobuf_extensions v1.0.4
 ## explicit; go 1.9
 github.com/matttproud/golang_protobuf_extensions/pbutil
-# github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
+# github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2
 ## explicit; go 1.17
 github.com/maxbrunsfeld/counterfeiter/v6
 github.com/maxbrunsfeld/counterfeiter/v6/arguments
