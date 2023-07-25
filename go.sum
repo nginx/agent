@@ -138,6 +138,8 @@ github.com/butuzov/ireturn v0.1.1 h1:QvrO2QF2+/Cx1WA/vETCIYBKtRjc30vesdoPUNo1EbY
 github.com/butuzov/ireturn v0.1.1/go.mod h1:Wh6Zl3IMtTpaIKbmwzqi6olnM9ptYQxxVacMsOEFPoc=
 github.com/bwesterb/go-ristretto v1.2.3/go.mod h1:fUIoIZaG73pV5biE2Blr2xEzDoMj7NFEuV9ekS419A0=
 github.com/caarlos0/go-rpmutils v0.2.1-0.20211112020245-2cd62ff89b11 h1:IRrDwVlWQr6kS1U8/EtyA1+EHcc4yl8pndcqXWrEamg=
+github.com/caarlos0/go-version v0.1.1 h1:1bikKHkGGVIIxqCmufhSSs3hpBScgHGacrvsi8FuIfc=
+github.com/caarlos0/go-version v0.1.1/go.mod h1:Ze5Qx4TsBBi5FyrSKVg1Ibc44KGV/llAaKGp86oTwZ0=
 github.com/caarlos0/testfs v0.4.4 h1:3PHvzHi5Lt+g332CiShwS8ogTgS3HjrmzZxCm6JCDr8=
 github.com/caarlos0/testfs v0.4.4/go.mod h1:bRN55zgG4XCUVVHZCeU+/Tz1Q6AxEJOEJTliBy+1DMk=
 github.com/cavaliergopher/cpio v1.0.1 h1:KQFSeKmZhv0cr+kawA3a0xTQCU4QxXF1vhU7P7av2KM=
@@ -444,6 +446,8 @@ github.com/google/pprof v0.0.0-20211214055906-6f57359322fd/go.mod h1:KgnwoLYCZ8I
 github.com/google/pprof v0.0.0-20230602150820-91b7bce49751 h1:hR7/MlvK23p6+lIw9SN1TigNLn9ZnF3W4SYRKq2gAHs=
 github.com/google/pprof v0.0.0-20230602150820-91b7bce49751/go.mod h1:Jh3hGz2jkYak8qXPD19ryItVnUgpgeqzdkY/D0EaeuA=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
+github.com/google/rpmpack v0.5.0 h1:L16KZ3QvkFGpYhmp23iQip+mx1X39foEsqszjMNBm8A=
+github.com/google/rpmpack v0.5.0/go.mod h1:uqVAUVQLq8UY2hCDfmJ/+rtO3aw7qyhc90rCVEabEfI=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/google/uuid v1.1.2/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
@@ -458,8 +462,8 @@ github.com/goreleaser/chglog v0.5.0 h1:Sk6BMIpx8+vpAf8KyPit34OgWui8c7nKTMHhYx88j
 github.com/goreleaser/chglog v0.5.0/go.mod h1:Ri46M3lrMuv76FHszs3vtABR8J8k1w9JHYAzxeeOl28=
 github.com/goreleaser/fileglob v1.3.0 h1:/X6J7U8lbDpQtBvGcwwPS6OpzkNVlVEsFUVRx9+k+7I=
 github.com/goreleaser/fileglob v1.3.0/go.mod h1:Jx6BoXv3mbYkEzwm9THo7xbr5egkAraxkGorbJb4RxU=
-github.com/goreleaser/nfpm/v2 v2.31.0 h1:cb8QSZ7tPnUlWPEdYcWwNWXiRvmVPznJ6LYiOIdOJ6Y=
-github.com/goreleaser/nfpm/v2 v2.31.0/go.mod h1:qlMQCbOTapyqRss16vAPwK/WAjWKdt0gY3vh4wipm8I=
+github.com/goreleaser/nfpm/v2 v2.32.0 h1:0eOOiSLGch55HvltFDfnd5Z0H28tO61YY6JaXznFKUc=
+github.com/goreleaser/nfpm/v2 v2.32.0/go.mod h1:EdmpSQzxrZRmsR25NJW1+RUD9vW5BY5qwIObxHX7U5c=
 github.com/gorilla/handlers v1.5.1 h1:9lRY6j8DEeeBT10CvO9hGW0gmky0BprnvDI5vfhUHH4=
 github.com/gorilla/handlers v1.5.1/go.mod h1:t8XrUpc4KVXb7HGyJ4/cEnwQiaxrX/hz1Zv/4g96P1Q=
 github.com/gostaticanalysis/analysisutil v0.7.1 h1:ZMCjoue3DtDWQ5WyU16YbjbQEQ3VuzwxALrpYd+HeKk=
@@ -550,8 +554,8 @@ github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+o
 github.com/kkHAIKE/contextcheck v1.1.4 h1:B6zAaLhOEEcjvUgIYEqystmnFk1Oemn8bvJhbt0GMb8=
 github.com/kkHAIKE/contextcheck v1.1.4/go.mod h1:1+i/gWqokIa+dm31mqGLZhZJ7Uh44DJGZVmr6QRBNJg=
 github.com/klauspost/compress v1.13.6/go.mod h1:/3/Vjq9QcHkK5uEr5lBEmyoZ1iFhe47etQ6QUkpK6sk=
-github.com/klauspost/compress v1.16.6 h1:91SKEy4K37vkp255cJ8QesJhjyRO0hn9i9G0GoUwLsk=
-github.com/klauspost/compress v1.16.6/go.mod h1:ntbaceVETuRiXiv4DpjP66DpAtAGkEQskQzEyD//IeE=
+github.com/klauspost/compress v1.16.7 h1:2mk3MPGNzKyxErAw8YaohYh69+pa4sIQSC0fPGCFR9I=
+github.com/klauspost/compress v1.16.7/go.mod h1:ntbaceVETuRiXiv4DpjP66DpAtAGkEQskQzEyD//IeE=
 github.com/klauspost/cpuid/v2 v2.1.0 h1:eyi1Ad2aNJMW95zcSbmGg7Cg6cq3ADwLpMAP96d8rF0=
 github.com/klauspost/cpuid/v2 v2.1.0/go.mod h1:RVVoqg1df56z8g3pUjL/3lE5UfnlrJX8tyFgg4nqhuY=
 github.com/klauspost/pgzip v1.2.6 h1:8RXeL5crjEUFnR2/Sn6GJNWtSQ3Dk8pq4CL3jvdDyjU=
