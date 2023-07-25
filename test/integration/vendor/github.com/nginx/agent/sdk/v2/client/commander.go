@@ -88,14 +88,21 @@ func (c *commander) Connect(ctx context.Context) error {
 }
 
 func (c *commander) Close() error {
-	err := c.channel.CloseSend()
-	if err != nil {
-		return err
+	var err error
+	if c.channel != nil {
+		err = c.channel.CloseSend()
+		if err != nil {
+			return err
+		}
 	}
 
-	err = c.grpc.Close()
+	if c.grpc != nil {
+		err = c.grpc.Close()
+	}
 
-	c.cancel()
+	if c.cancel != nil {
+		c.cancel()
+	}
 
 	return err
 }
