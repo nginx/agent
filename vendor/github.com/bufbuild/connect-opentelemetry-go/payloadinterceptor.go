@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/bufbuild/connect-go"
+	connect "github.com/bufbuild/connect-go"
 )
 
 type streamingClientInterceptor struct {

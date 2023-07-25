@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpmpack
+// Generated. DO NOT EDIT.
 
-// dirIndex holds the index from files to directory names.
-type dirIndex struct {
-	m map[string]uint32
-	l []string
-}
+package storagemanifest
 
-func newDirIndex() *dirIndex {
-	return &dirIndex{m: make(map[string]uint32)}
-}
-
-func (d *dirIndex) Get(value string) uint32 {
-	if idx, ok := d.m[value]; ok {
-		return idx
-	}
-	newIdx := uint32(len(d.l))
-	d.l = append(d.l, value)
-
-	d.m[value] = newIdx
-	return newIdx
-}
-
-func (d *dirIndex) AllDirs() []string {
-	return d.l
-}
+import _ "github.com/bufbuild/buf/private/usage"
