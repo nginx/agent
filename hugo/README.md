@@ -1,95 +1,41 @@
-# agent repo
+# NGINX Agent Docs
 
-This folder houses the product documentation for the NGINX Agent:
-
-Directory Tree:
-
-```shell
-└──hugo
-    └──content
-```
-
-## Where to Find Docs Online
-
-The public docs will be available online at [docs.nginx.com/nginx-agent](https://docs.nginx.com/nginx-agent).
-
-## Contributing
+This directory contains all of the user documentation for NGINX Agent, as well as the requirements for linting, building, and publishing the documentation.
 
 Docs are written in Markdown. We build the docs using [Hugo](https://gohugo.io) and host them on [Netlify](https://www.netlify.com/).
 
-We use a set of pre-defined content types and templates, which can help you get started when working on new docs:
-
-The content templates are based on the [Kubernetes docs templates](https://kubernetes.io/docs/contribute/style/page-content-types/).
-
-- Task: Informs the customer of the steps they must complete to achieve a specific goal.
-- Concept: Teaches customers about a product, architectural design, feature, or feature group.
-- Reference: Describes an API, command line tool, etc.  
-- Troubleshooting Guide: Addresses a specific issue that customers commonly face.
-- Tutorial: Helps customers accomplish a goal that may encompass several tasks; provides context, instructions, and detailed examples.
-
-> Refer to [Add new docs](#add-new-docs) to learn how to create new docs using Hugo.
-
-## Branch Management
-
-In this repo, the "main" branch should always be releasable. This means that **only content that has been reviewed and approved should be merged into main**.
-
-To contribute to the docs:
-
-1. Create a feature branch from main.
-2. Merge to main to publish.
-
-## Tools 
-
-In this directory, you will find the following files that support the tools we use to lint, build, and deploy the docs:
-
-- configuration files for [markdownlint](https://github.com/DavidAnson/markdownlint/) and [markdown-link-check](https://github.com/tcort/markdown-link-check);
-- a [`config`](./config/) directory that contains the [Hugo](https://gohugo.io) configuration. Each sub-directory represents a different Hugo build environment (e.g., staging, production);
-  > [Learn more about Hugo configuration](https://gohugo.io/getting-started/configuration/#configuration-directory) 
-- a [Netlify](https://netlify.com) configuration file.
-
-### Setup
+## Setup
 
 1. To install Hugo locally, refer to the [Hugo installation instructions](https://gohugo.io/getting-started/installing/).
 
-    > **NOTE**: We don't support versions newer than v0.91 yet, so we recommend using the [Binary](https://gohugo.io/getting-started/installing/#binary-cross-platform) installation option.
+    > **NOTE**: We are currently running [Hugo v0.115.3](https://github.com/gohugoio/hugo/releases/tag/v0.115.3) in production.
 
-2. We use markdownlint to check that Markdown files are correct. Use `npm` to install `markdownlint-cli` if you want to lint the files locally.
+2. We use markdownlint to check that Markdown files are correct. Use `npm` to install markdownlint-cli:
 
+    ```shell
+    npm install -g markdownlint-cli   
     ```
-    npm i -g markdownlint-cli   
-    ```
 
-### Hugo Theme
-
-The docs rely on the f5-hugo theme (hosted in GitLab) for the page layouts.
-The theme is imported as Hugo module (essentially the same thing as go mods), via the [default docs config](./_default/config.toml).
-The theme must be vendored (`hugo mod vendor`) every time it is updated for Netlify to be able to build the docs.
-
-### Local Docs Development
+## Local Docs Development
 
 To build the docs locally, run the desired `make` command from the docs directory:
 
 ```text
 make clean          -   removes the local `public` directory, which is the default output path used by Hugo
 make docs           -   runs a local hugo server so you can view docs in your browser while you work
-make docs-drafts    -   runs the local hugo server and includes all docs marked with `draft: true`
 make hugo-mod       -   cleans the Hugo module cache and fetches the latest version of the theme module
-make docs-local     -   runs the `hugo` command to generate static HTML files into the `public` directory
+make docs-drafts    -   runs the local hugo server and includes all docs marked with `draft: true`
 ```
 
-### Linting
-
-- To run the style and grammar check, run the following command from the docs directory:
-
-<!-- Todo: add VALE local steps -->
+## Linting
 
 - To run the markdownlint check, run the following command from the docs directory:
 
     ```bash
-    markdownlint -c .gitlab/ci/markdown_lint_config.json content    
+    markdownlint -c docs/mdlint_conf.json content
     ```
 
-    **Note**: You can run this tool on an entire directory or an individual file.
+    Note: You can run this tool on an entire directory or on an individual file.
 
 ## Add new docs
 
@@ -99,13 +45,17 @@ To create a new doc file that contains all of the pre-configured Hugo front-matt
 
 `hugo new <SECTIONNAME>/<FILENAME>.<FORMAT>`
 
-e.g.,
+For example:
 
-`hugo new getting-started/install.md`
+```shell
+hugo new getting-started/install.md
+```
 
-The default template -- task -- should be used for most docs. To docs from the other content templates, you can use the `--kind` flag:
+The default template -- task -- should be used for most docs. To create docs using the other content templates, you can use the `--kind` flag:
 
-`hugo new tutorials/deploy.md --kind tutorial`
+```shell
+hugo new tutorials/deploy.md --kind tutorial
+```
 
 The available content types (`kind`) are:
 
@@ -117,9 +67,9 @@ The available content types (`kind`) are:
 
 ## How to format docs
 
-### Internal links
+### How to format internal links
 
-Format links as [Hugo refs](https://gohugo.io/content-management/cross-references/). 
+Format links as [Hugo refs](https://gohugo.io/content-management/cross-references/).
 
 - File extensions are optional.
 - You can use relative paths or just the filename. (**Paths without a leading / are first resolved relative to the current page, then to the remainder of the site.**)
@@ -131,9 +81,24 @@ For example:
 To install <product>, refer to the [installation instructions]({{< ref "install" >}}).
 ```
 
-### Hugo shortcodes
+### How to include images
 
-You can use [Hugo shortcodes](/docs/themes/f5-hugo/layouts/shortcodes/) to do things like format callouts, add images, and reuse content across different docs. 
+You can use the `img` [shortcode](#how-to-use-hugo-shortcodes) to add images into your documentation.
+
+1. Add the image to the static/img directory, or to the same directory as the doc you want to use it in.
+
+   - **DO NOT include a forward slash at the beginning of the file path.** This will break the image when it's rendered.
+     See the docs for the [Hugo relURL Function](https://gohugo.io/functions/relurl/#input-begins-with-a-slash) to learn more.
+
+1. Add the img shortcode:
+
+    {{< img src="<img-file.png>" >}}
+
+> Note: The shortcode accepts all of the same parameters as the [Hugo figure shortcode](https://gohugo.io/content-management/shortcodes/#figure).
+
+### How to use Hugo shortcodes
+
+You can use [Hugo shortcodes](/docs/themes/f5-hugo/layouts/shortcodes/) to do things like format callouts, add images, and reuse content across different docs.
 
 For example, to use the note callout:
 
@@ -164,9 +129,8 @@ A few more fun shortcodes:
 
 - `fa`: inserts a Font Awesome icon
 - `img`: include an image and define things like alt text and dimensions
-- `include`: include the content of a file in another file (requires the included file to be in the content/includes directory; will be deprecated in favor of readfile)
+- `include`: include the content of a file in another file; the included file must be present in the content/includes directory
 - `link`: makes it possible to link to a file and prepend the path with the Hugo baseUrl
 - `openapi`: loads an OpenAPI spec and renders as HTML using ReDoc
 - `raw-html`: makes it possible to include a block of raw HTML
-- `readfile`: includes the content of another file in the current file (intended to replace `include`)
-- `bootstrap-table`: formats a table using Bootstrap classes; accepts any bootstrap table classes as additional arguments, e.g. `{{< bootstrap-table "table-bordered table-hover" }}`
+- `readfile`: includes the content of another file in the current file; does not require the included file to be in a specific location
