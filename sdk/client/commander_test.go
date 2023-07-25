@@ -56,9 +56,10 @@ var (
 		MaxElapsedTime:  10 * time.Second,
 	}
 )
+
 const (
-	bufSize        = 1024 * 1024
-	serverName 	   = "bufnet"
+	bufSize    = 1024 * 1024
+	serverName = "bufnet"
 )
 
 // Positive Test Cases
