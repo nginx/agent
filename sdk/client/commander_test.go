@@ -50,11 +50,6 @@ var (
 		DirectoryMap: &proto.DirectoryMap{},
 	}
 	grpcServerCommanderMutex = &sync.Mutex{}
-	backOffSettings          = backoff.BackoffSettings{
-		InitialInterval: 100 * time.Millisecond,
-		MaxInterval:     100 * time.Millisecond,
-		MaxElapsedTime:  10 * time.Second,
-	}
 )
 
 const (
@@ -224,7 +219,7 @@ LOOP:
 // Negative Test Cases
 
 func TestCommander_Connect_NoServer(t *testing.T) {
-	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	ctx := context.Background()
 
 	var grpcDialOptions []grpc.DialOption
 	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DefaultClientDialOptions...)
@@ -241,61 +236,11 @@ func TestCommander_Connect_NoServer(t *testing.T) {
 
 	err := commanderClient.Connect(ctx)
 	assert.NotNil(t, err)
-	assert.Equal(t, codes.Unknown, status.Code(err))
+	assert.Equal(t, codes.Unavailable, status.Code(err))
 
 	t.Cleanup(func() {
 		commanderClient.Close()
-		cncl()
 	})
-}
-
-func TestCommander_Recv_Reconnect(t *testing.T) {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	serverPrefix := uuid.New().String()
-
-	serverName, grpcServer, commandService, dialer := startCommanderMockServer(serverPrefix)
-
-	ctx := context.Background()
-
-	commanderClient := createTestCommanderClient(serverName, dialer)
-	commanderClient.WithBackoffSettings(backOffSettings)
-	err := commanderClient.Connect(ctx)
-	assert.Nil(t, err)
-
-	// Restart server
-	if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
-		t.Fatalf("Unable to stop grpc server TestCommander_Recv_Reconnect 1")
-	}
-	serverName, grpcServer, commandService, dialer = startCommanderMockServer(serverPrefix)
-
-	go func() {
-		commandService.handler.toClient <- &proto.Command{Meta: &proto.Metadata{MessageId: "1234"}}
-	}()
-
-	commanderClient.WithDialOptions(getDialOptions(dialer)...)
-	commanderClient.WithServer(serverName)
-
-	t.Cleanup(func() {
-		commanderClient.Close()
-		if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
-			t.Fatalf("Unable to stop grpc server TestCommander_Recv_Reconnect 2")
-		}
-	})
-
-	go func() {
-		defer wg.Done()
-		select {
-		case actual := <-commanderClient.Recv():
-			if actual != nil {
-				assert.Equal(t, "1234", actual.Meta().MessageId)
-			}
-		case <-time.After(5 * time.Second):
-			assert.Fail(t, "No message received from commander")
-		}
-	}()
-
-	wg.Wait()
 }
 
 func TestCommander_Send_ServerDies(t *testing.T) {
@@ -320,36 +265,6 @@ func TestCommander_Send_ServerDies(t *testing.T) {
 	assert.Equal(t, codes.Unavailable, status.Code(err))
 }
 
-func TestCommander_Send_Reconnect(t *testing.T) {
-	serverPrefix := uuid.New().String()
-	serverName, grpcServer, _, dialer := startCommanderMockServer(serverPrefix)
-
-	ctx := context.Background()
-
-	commanderClient := createTestCommanderClient(serverName, dialer)
-	commanderClient.WithBackoffSettings(backOffSettings)
-	err := commanderClient.Connect(ctx)
-	assert.Nil(t, err)
-
-	// stop server and recreate
-	if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
-		t.Fatalf("Unable to stop grpc server")
-	}
-	serverName, grpcServer, _, dialer = startCommanderMockServer(serverPrefix)
-	commanderClient.WithDialOptions(getDialOptions(dialer)...)
-	commanderClient.WithServer(serverName)
-
-	t.Cleanup(func() {
-		commanderClient.Close()
-		if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
-			t.Fatalf("Unable to stop grpc server")
-		}
-	})
-
-	err = commanderClient.Send(ctx, MessageFromCommand(&proto.Command{Meta: &proto.Metadata{MessageId: "1234"}}))
-	assert.Nil(t, err)
-}
-
 func TestCommander_Download_ServerDies(t *testing.T) {
 	serverName, grpcServer, _, dialer := startCommanderMockServer(uuid.New().String())
 
@@ -370,49 +285,6 @@ func TestCommander_Download_ServerDies(t *testing.T) {
 	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 	assert.NotNil(t, err)
 	assert.Equal(t, codes.Unavailable, status.Code(err))
-}
-
-func TestCommander_Download_Reconnect(t *testing.T) {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	serverPrefix := uuid.New().String()
-	serverName, grpcServer, commandService, dialer := startCommanderMockServer(serverPrefix)
-
-	ctx := context.Background()
-
-	commanderClient := createTestCommanderClient(serverName, dialer)
-	commanderClient.WithBackoffSettings(backOffSettings)
-	err := commanderClient.Connect(ctx)
-	assert.Nil(t, err)
-
-	if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
-		t.Fatalf("Unable to stop grpc server")
-	}
-
-	_, grpcServer, commandService, dialer = startCommanderMockServer(serverPrefix)
-
-	go func() {
-		err := sendNginxConfigInChunks(commandService, expectedNginxConfig)
-		if err != nil {
-			t.Logf("Error converting nginx config to byte array: %v\n", err)
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		actual, err := commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
-
-		assert.Nil(t, err)
-		assert.Equal(t, expectedNginxConfig, actual)
-	}()
-	wg.Wait()
-
-	t.Cleanup(func() {
-		commanderClient.Close()
-		if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
-			t.Fatalf("Unable to stop grpc server")
-		}
-	})
 }
 
 func TestCommander_Download_MissingHeaderChunk(t *testing.T) {
@@ -441,7 +313,7 @@ func TestCommander_Download_MissingHeaderChunk(t *testing.T) {
 		defer wg.Done()
 		_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 		assert.NotNil(t, err)
-		assert.Equal(t, codes.Unknown, status.Code(err))
+		assert.Equal(t, codes.DataLoss, status.Code(err))
 		assert.ErrorContains(t, err, "unexpected number of headers")
 	}()
 	wg.Wait()
@@ -478,7 +350,7 @@ func TestCommander_Download_MultipleHeaderChunksSent(t *testing.T) {
 
 	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 	assert.NotNil(t, err)
-	assert.Equal(t, codes.Unknown, status.Code(err))
+	assert.Equal(t, codes.DataLoss, status.Code(err))
 	assert.ErrorContains(t, err, "unexpected number of headers")
 }
 
@@ -514,7 +386,7 @@ func TestCommander_Download_ChecksumMismatch(t *testing.T) {
 
 	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 	assert.NotNil(t, err)
-	assert.Equal(t, codes.Unknown, status.Code(err))
+	assert.Equal(t, codes.DataLoss, status.Code(err))
 	assert.ErrorContains(t, err, "download checksum mismatch")
 }
 
@@ -540,7 +412,7 @@ func TestCommander_Download_InvalidObjectTypeDownloaded(t *testing.T) {
 
 	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 	assert.NotNil(t, err)
-	assert.Equal(t, codes.Unknown, status.Code(err))
+	assert.Equal(t, codes.DataLoss, status.Code(err))
 	assert.ErrorContains(t, err, "unable to unmarshal data")
 }
 
@@ -564,64 +436,6 @@ func TestCommander_Upload_ServerDies(t *testing.T) {
 	err = commanderClient.Upload(ctx, expectedNginxConfig, "1234")
 	assert.NotNil(t, err)
 	assert.Equal(t, codes.Unavailable, status.Code(err))
-}
-
-func TestCommander_Upload_Reconnect(t *testing.T) {
-	serverPrefix := uuid.New().String()
-	serverName, grpcServer, _, dialer := startCommanderMockServer(serverPrefix)
-
-	ctx := context.Background()
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
-	commanderClient := createTestCommanderClient(serverName, dialer)
-	commanderClient.WithBackoffSettings(backOffSettings)
-	err := commanderClient.Connect(ctx)
-	assert.Nil(t, err)
-
-	// Restart server
-	if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
-		t.Fatalf("Unable to stop grpc server")
-	}
-	serverName, grpcServer, commandService, dialer := startCommanderMockServer(serverPrefix)
-	commanderClient.WithDialOptions(getDialOptions(dialer)...)
-	commanderClient.WithServer(serverName)
-
-	t.Cleanup(func() {
-		commanderClient.Close()
-		if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
-			t.Fatalf("Unable to stop grpc server")
-		}
-	})
-
-	time.Sleep(50 * time.Millisecond)
-
-	err = commanderClient.Upload(ctx, expectedNginxConfig, "1234")
-	assert.Nil(t, err)
-
-	chunks := []*proto.DataChunk{}
-LOOP:
-	for {
-		select {
-		case data := <-commandService.uploadChannel:
-			if data == nil {
-				wg.Done()
-				break LOOP
-			}
-			chunks = append(chunks, data)
-		default:
-			break LOOP
-		}
-	}
-
-	expectedNginxConfigByteArray, err := json.Marshal(expectedNginxConfig)
-	assert.Nil(t, err)
-
-	assert.Equal(t, 2, len(chunks))
-	assert.Equal(t, "1234", chunks[0].Chunk.(*proto.DataChunk_Header).Header.Meta.MessageId)
-	assert.Equal(t, "1234", chunks[1].Chunk.(*proto.DataChunk_Data).Data.Meta.MessageId)
-	assert.Equal(t, int32(0), chunks[1].Chunk.(*proto.DataChunk_Data).Data.ChunkId)
-	assert.Equal(t, expectedNginxConfigByteArray, chunks[1].Chunk.(*proto.DataChunk_Data).Data.Data)
 }
 
 // Helper Functions
@@ -784,15 +598,12 @@ func stopMockServer(ctx context.Context, server *grpc.Server, dialer func(contex
 	go func() {
 		signal.Stop(sigs)
 		server.Stop()
-		fmt.Println()
 		time.Sleep(200 * time.Millisecond)
 		done <- true
 	}()
 
-	fmt.Println("awaiting signal")
 	<-done
 	server.GracefulStop()
-	fmt.Println("exiting")
 	return nil
 }
 

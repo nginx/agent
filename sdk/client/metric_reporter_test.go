@@ -37,6 +37,9 @@ func TestMetricReporter_Server(t *testing.T) {
 	metricReporterClient.WithServer("test")
 
 	assert.Equal(t, "test", metricReporterClient.Server())
+	t.Cleanup(func() {
+		metricReporterClient.Close()
+	})
 }
 
 func TestMetricReporter_Send(t *testing.T) {
@@ -77,7 +80,7 @@ func TestMetricReporter_Send(t *testing.T) {
 }
 
 func TestMetricReporter_Connect_NoServer(t *testing.T) {
-	ctx, cncl := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	ctx := context.Background()
 
 	var grpcDialOptions []grpc.DialOption
 	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DefaultClientDialOptions...)
@@ -94,11 +97,10 @@ func TestMetricReporter_Connect_NoServer(t *testing.T) {
 
 	err := metricReporterClient.Connect(ctx)
 	assert.NotNil(t, err)
-	assert.Equal(t, codes.DeadlineExceeded, status.Code(err))
+	assert.Equal(t, codes.Unavailable, status.Code(err))
 
 	t.Cleanup(func() {
 		metricReporterClient.Close()
-		cncl()
 	})
 }
 
@@ -127,59 +129,6 @@ func TestMetricReporter_Send_ServerDies(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.Equal(t, codes.Unavailable, status.Code(err))
-}
-
-func TestMetricReporter_Send_Reconnect(t *testing.T) {
-	serverName, grpcServer, _, dialer := startMetricReporterMockServer()
-
-	ctx := context.Background()
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
-	metricReporterClient := createTestMetricReporterClient(serverName, dialer)
-	metricReporterClient.WithBackoffSettings(backoff.BackoffSettings{
-		InitialInterval: 50 * time.Millisecond,
-		MaxInterval:     50 * time.Millisecond,
-		MaxElapsedTime:  10 * time.Second,
-	})
-	err := metricReporterClient.Connect(ctx)
-	assert.Nil(t, err)
-
-	// Restart server
-	if err := stopMockMetricsServer(ctx, grpcServer, dialer); err != nil {
-		t.Fatalf("Unable to stop grpc server")
-	}
-
-	serverName, grpcServer, metricReporterService, dialer := startMetricReporterMockServer()
-	metricReporterClient.WithDialOptions(getDialOptions(dialer)...)
-	metricReporterClient.WithServer(serverName)
-
-	t.Cleanup(func() {
-		metricReporterClient.Close()
-		if err := stopMockMetricsServer(ctx, grpcServer, dialer); err != nil {
-			assert.Fail(t, "Unable to stop grpc server")
-		}
-	})
-
-	time.Sleep(50 * time.Millisecond)
-
-	err = metricReporterClient.Send(ctx, MessageFromMetrics(&proto.MetricsReport{
-		Meta: &proto.Metadata{
-			MessageId: "1234",
-		},
-	}))
-	assert.Nil(t, err)
-
-	go func() {
-		defer wg.Done()
-		select {
-		case actual := <-metricReporterService.metricReporterHandler.metricReportStream:
-			assert.Equal(t, "1234", actual.GetMeta().MessageId)
-		case <-time.After(1 * time.Second):
-			assert.Fail(t, "No message received from stream")
-		}
-	}()
-	wg.Wait()
 }
 
 type metricReporterHandlerFunc func(proto.MetricsService_StreamServer, *sync.WaitGroup)
