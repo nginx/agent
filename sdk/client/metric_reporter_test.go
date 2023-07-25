@@ -19,6 +19,8 @@ import (
 	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/proto"
 	f5_nginx_agent_sdk_events "github.com/nginx/agent/sdk/v2/proto/events"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -92,6 +94,7 @@ func TestMetricReporter_Connect_NoServer(t *testing.T) {
 
 	err := metricReporterClient.Connect(ctx)
 	assert.NotNil(t, err)
+	assert.Equal(t, codes.DeadlineExceeded, status.Code(err))
 
 	t.Cleanup(func() {
 		metricReporterClient.Close()
@@ -121,7 +124,9 @@ func TestMetricReporter_Send_ServerDies(t *testing.T) {
 			MessageId: "1234",
 		},
 	}))
+
 	assert.NotNil(t, err)
+	assert.Equal(t, codes.Unavailable, status.Code(err))
 }
 
 func TestMetricReporter_Send_Reconnect(t *testing.T) {

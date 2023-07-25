@@ -26,7 +26,9 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
@@ -53,6 +55,10 @@ var (
 		MaxInterval:     100 * time.Millisecond,
 		MaxElapsedTime:  10 * time.Second,
 	}
+)
+const (
+	bufSize        = 1024 * 1024
+	serverName 	   = "bufnet"
 )
 
 // Positive Test Cases
@@ -234,6 +240,7 @@ func TestCommander_Connect_NoServer(t *testing.T) {
 
 	err := commanderClient.Connect(ctx)
 	assert.NotNil(t, err)
+	assert.Equal(t, codes.Unknown, status.Code(err))
 
 	t.Cleanup(func() {
 		commanderClient.Close()
@@ -309,6 +316,7 @@ func TestCommander_Send_ServerDies(t *testing.T) {
 
 	err = commanderClient.Send(ctx, MessageFromCommand(&proto.Command{Meta: &proto.Metadata{MessageId: "1234"}}))
 	assert.NotNil(t, err)
+	assert.Equal(t, codes.Unavailable, status.Code(err))
 }
 
 func TestCommander_Send_Reconnect(t *testing.T) {
@@ -360,6 +368,7 @@ func TestCommander_Download_ServerDies(t *testing.T) {
 
 	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 	assert.NotNil(t, err)
+	assert.Equal(t, codes.Unavailable, status.Code(err))
 }
 
 func TestCommander_Download_Reconnect(t *testing.T) {
@@ -431,6 +440,7 @@ func TestCommander_Download_MissingHeaderChunk(t *testing.T) {
 		defer wg.Done()
 		_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 		assert.NotNil(t, err)
+		assert.Equal(t, codes.Unknown, status.Code(err))
 		assert.ErrorContains(t, err, "unexpected number of headers")
 	}()
 	wg.Wait()
@@ -467,6 +477,7 @@ func TestCommander_Download_MultipleHeaderChunksSent(t *testing.T) {
 
 	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 	assert.NotNil(t, err)
+	assert.Equal(t, codes.Unknown, status.Code(err))
 	assert.ErrorContains(t, err, "unexpected number of headers")
 }
 
@@ -502,6 +513,7 @@ func TestCommander_Download_ChecksumMismatch(t *testing.T) {
 
 	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 	assert.NotNil(t, err)
+	assert.Equal(t, codes.Unknown, status.Code(err))
 	assert.ErrorContains(t, err, "download checksum mismatch")
 }
 
@@ -527,6 +539,7 @@ func TestCommander_Download_InvalidObjectTypeDownloaded(t *testing.T) {
 
 	_, err = commanderClient.Download(ctx, &proto.Metadata{MessageId: "1234"})
 	assert.NotNil(t, err)
+	assert.Equal(t, codes.Unknown, status.Code(err))
 	assert.ErrorContains(t, err, "unable to unmarshal data")
 }
 
@@ -549,6 +562,7 @@ func TestCommander_Upload_ServerDies(t *testing.T) {
 
 	err = commanderClient.Upload(ctx, expectedNginxConfig, "1234")
 	assert.NotNil(t, err)
+	assert.Equal(t, codes.Unavailable, status.Code(err))
 }
 
 func TestCommander_Upload_Reconnect(t *testing.T) {
@@ -733,8 +747,8 @@ func (h *handler) sendHandle(server proto.Commander_CommandChannelServer, wg *sy
 func startCommanderMockServer(serverPrefix string) (string, *grpc.Server, *mockCommanderService, func(context.Context, string) (net.Conn, error)) {
 	grpcServerCommanderMutex.Lock()
 	defer grpcServerCommanderMutex.Unlock()
-	serverName := fmt.Sprintf("%s_%s", serverPrefix, "bufnet")
-	listener := bufconn.Listen(1024 * 1024)
+	serverName := fmt.Sprintf("%s_%s", serverPrefix, serverName)
+	listener := bufconn.Listen(bufSize)
 	grpcServer := grpc.NewServer(sdkGRPC.DefaultServerDialOptions...)
 	commandService := &mockCommanderService{}
 	commandService.handler = commandService.ensureHandler()
