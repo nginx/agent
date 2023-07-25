@@ -32,6 +32,7 @@ type streamingState struct {
 	protocol        string
 	req             *Request
 	attributeFilter AttributeFilter
+	omitTraceEvents bool
 	attributes      []attribute.KeyValue
 	error           error
 	sentCounter     int
@@ -45,6 +46,7 @@ type streamingState struct {
 func newStreamingState(
 	req *Request,
 	attributeFilter AttributeFilter,
+	omitTraceEvents bool,
 	attributes []attribute.KeyValue,
 	receiveSize, receivesPerRPC, sendSize, sendsPerRPC metric.Int64Histogram,
 ) *streamingState {
@@ -52,6 +54,7 @@ func newStreamingState(
 	return &streamingState{
 		protocol:        protocolToSemConv(req.Peer.Protocol),
 		attributeFilter: attributeFilter,
+		omitTraceEvents: omitTraceEvents,
 		req:             req,
 		attributes:      attributes,
 		receiveSize:     receiveSize,
@@ -87,8 +90,10 @@ func (s *streamingState) receive(ctx context.Context, msg any, conn sendReceiver
 	}
 	protomsg, ok := msg.(proto.Message)
 	size := proto.Size(protomsg)
-	s.receivedCounter++
-	s.event(ctx, semconv.MessageTypeReceived, s.receivedCounter, ok, size)
+	if !s.omitTraceEvents {
+		s.receivedCounter++
+		s.event(ctx, semconv.MessageTypeReceived, s.receivedCounter, ok, size)
+	}
 	s.receiveSize.Record(ctx, int64(size), metric.WithAttributes(s.attributes...))
 	s.receivesPerRPC.Record(ctx, 1, metric.WithAttributes(s.attributes...))
 	return err
@@ -111,8 +116,10 @@ func (s *streamingState) send(ctx context.Context, msg any, conn sendReceiver) e
 	}
 	protomsg, ok := msg.(proto.Message)
 	size := proto.Size(protomsg)
-	s.sentCounter++
-	s.event(ctx, semconv.MessageTypeSent, s.sentCounter, ok, size)
+	if !s.omitTraceEvents {
+		s.sentCounter++
+		s.event(ctx, semconv.MessageTypeSent, s.sentCounter, ok, size)
+	}
 	s.sendSize.Record(ctx, int64(size), metric.WithAttributes(s.attributes...))
 	s.sendsPerRPC.Record(ctx, 1, metric.WithAttributes(s.attributes...))
 	return err
