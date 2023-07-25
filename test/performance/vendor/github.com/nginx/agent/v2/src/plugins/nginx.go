@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"path/filepath"
 	re "regexp"
-	"strings"
 	"sync"
 	"time"
 
@@ -182,7 +181,7 @@ func (n *Nginx) Process(message *core.Message) {
 	case core.NginxConfigValidationFailed:
 		switch response := message.Data().(type) {
 		case *NginxConfigValidationResponse:
-			n.rollbackConfigApply(response.correlationId, response.config.GetConfigData().GetNginxId(), response.nginxDetails, response.configApply, response.err)
+			n.rollbackConfigApply(response.correlationId, response.config.GetConfigData().GetNginxId(), response.nginxDetails, response.configApply, response.err, false)
 			status := &proto.Command_NginxConfigResponse{
 				NginxConfigResponse: &proto.NginxConfigResponse{
 					Status:     newErrStatus(fmt.Sprintf("Config apply failed (write): " + response.err.Error())).CmdStatus,
@@ -506,7 +505,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	n.messagePipeline.Process(core.NewMessage(core.NginxReloadComplete, nginxReloadEventMeta))
 
 	if rollback {
-		go n.rollbackConfigApply(response.correlationId, response.config.GetConfigData().GetNginxId(), response.nginxDetails, response.configApply, rollbackError)
+		go n.rollbackConfigApply(response.correlationId, response.config.GetConfigData().GetNginxId(), response.nginxDetails, response.configApply, rollbackError, true)
 
 		status = &proto.Command_NginxConfigResponse{
 			NginxConfigResponse: &proto.NginxConfigResponse{
@@ -616,7 +615,7 @@ func (n *Nginx) monitor(processInfo []core.Process) error {
 
 func (n *Nginx) monitorLogs(errorLogs map[string]string, errorChannel chan string) {
 	if len(errorLogs) == 0 {
-		log.Trace("No logs so returning monitoring of logs")
+		log.Info("No error logs found to monitor")
 		return
 	}
 
@@ -646,7 +645,7 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	for {
 		select {
 		case d := <-data:
-			if strings.Contains(d, "[warn]") && n.config.Nginx.TreatWarningsAsErrors {
+			if warningRegex.MatchString(d) && n.config.Nginx.TreatWarningsAsErrors {
 				errorChannel <- d
 				return
 			}
@@ -664,7 +663,7 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	}
 }
 
-func (n *Nginx) rollbackConfigApply(correlationId string, nginxId string, nginxDetails *proto.NginxDetails, configApply *sdk.ConfigApply, err error) {
+func (n *Nginx) rollbackConfigApply(correlationId string, nginxId string, nginxDetails *proto.NginxDetails, configApply *sdk.ConfigApply, err error, reloadNginx bool) {
 	nginxConfigStatusMessage := fmt.Sprintf("Config apply failed (write): %v", err.Error())
 	log.Error(nginxConfigStatusMessage)
 
@@ -675,6 +674,15 @@ func (n *Nginx) rollbackConfigApply(correlationId string, nginxId string, nginxD
 			nginxConfigStatusMessage := fmt.Sprintf("Config rollback failed: %v", rollbackErr)
 			log.Error(nginxConfigStatusMessage)
 			succeeded = false
+		}
+
+		if succeeded && reloadNginx {
+			reloadErr := n.nginxBinary.Reload(nginxDetails.ProcessId, nginxDetails.ProcessPath)
+			if reloadErr != nil {
+				nginxConfigStatusMessage = fmt.Sprintf("Config rollback failed: %v", reloadErr)
+				log.Errorf(nginxConfigStatusMessage)
+				succeeded = false
+			}
 		}
 
 		configRollbackResponse := ConfigRollbackResponse{
