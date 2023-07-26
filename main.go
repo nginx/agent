@@ -29,7 +29,7 @@ import (
 
 	_ "net/http/pprof"
 
-	"github.com/bcicen/grmon/agent"
+	grmon "github.com/bcicen/grmon/agent"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -60,7 +60,7 @@ func init() {
 
 func main() {
 	go func() {
-		log.Println(http.ListenAndServe("127.0.0.1:6060", nil))
+		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 	grmon.Start()
 	config.RegisterRunner(func(cmd *cobra.Command, _ []string) {
