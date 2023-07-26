@@ -26,6 +26,10 @@ import (
 	"github.com/nginx/agent/v2/src/extensions"
 	"github.com/nginx/agent/v2/src/plugins"
 
+	"net/http"
+	_ "net/http/pprof"
+
+	"github.com/bcicen/grmon/agent"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -55,6 +59,10 @@ func init() {
 }
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("127.0.0.1:6060", nil))
+	}()
+	grmon.Start()
 	config.RegisterRunner(func(cmd *cobra.Command, _ []string) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
