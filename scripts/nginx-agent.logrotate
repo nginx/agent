@@ -12,4 +12,8 @@
    rotate 10
    # old log files are compressed
    compress
+   # if the log file is missing it will go on to the next one without issuing an error message
+   missingok 
+   # do not rotate the log if it is empty
+   notifempty
 }

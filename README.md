@@ -127,18 +127,22 @@ Logs are rotated daily by default in NGINX Agent using logrotate, with the follo
 ```yaml
 /var/log/nginx-agent/*.log
 {
-  # log files are rotated every day
-  daily
-  # log files are rotated if they grow bigger than 5M
-  size 5M
-  # truncate the original log file after creating a copy
-  copytruncate
-  # remove rotated logs older than 10 days
-  maxage 10
-  # log files are rotated 10 times before being removed
-  rotate 10
-  # old log files are compressed
-  compress
+   # log files are rotated every day
+   daily
+   # log files are rotated if they grow bigger than 5M
+   size 5M
+   # truncate the original log file after creating a copy
+   copytruncate
+   # remove rotated logs older than 10 days
+   maxage 10
+   # log files are rotated 10 times before being removed
+   rotate 10
+   # old log files are compressed
+   compress
+   # if the log file is missing it will go on to the next one without issuing an error message
+   missingok 
+   # do not rotate the log if it is empty
+   notifempty
 }
 ```
 
