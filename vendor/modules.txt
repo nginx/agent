@@ -103,8 +103,6 @@ github.com/aymanbagabas/go-osc52/v2
 # github.com/bcicen/grmon v0.0.0-20211013120613-63facda35286
 ## explicit; go 1.17
 github.com/bcicen/grmon/agent
-# github.com/bcicen/termui v0.0.0-20180326052246-4eb80249d3f5
-## explicit
 # github.com/beorn7/perks v1.0.1
 ## explicit; go 1.11
 github.com/beorn7/perks/quantile
@@ -350,8 +348,6 @@ github.com/charmbracelet/lipgloss
 # github.com/chavacava/garif v0.0.0-20230227094218-b8c73b2037b8
 ## explicit; go 1.16
 github.com/chavacava/garif
-# github.com/chzyer/readline v1.5.1
-## explicit; go 1.15
 # github.com/cloudflare/circl v1.3.3
 ## explicit; go 1.19
 github.com/cloudflare/circl/dh/x25519
@@ -905,8 +901,6 @@ github.com/huandu/xstrings
 # github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0
 ## explicit
 github.com/iancoleman/orderedmap
-# github.com/ianlancetaylor/demangle v0.0.0-20230524184225-eabc099b10ab
-## explicit; go 1.13
 # github.com/imdario/mergo v0.3.16
 ## explicit; go 1.13
 github.com/imdario/mergo
@@ -1030,8 +1024,6 @@ github.com/maratori/testableexamples/pkg/testableexamples
 # github.com/maratori/testpackage v1.1.1
 ## explicit; go 1.20
 github.com/maratori/testpackage/pkg/testpackage
-# github.com/maruel/panicparse v1.6.2
-## explicit; go 1.11
 # github.com/matoous/godox v0.0.0-20230222163458-006bad1f9d26
 ## explicit; go 1.13
 github.com/matoous/godox
@@ -1069,8 +1061,6 @@ github.com/mitchellh/copystructure
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
-# github.com/mitchellh/go-wordwrap v1.0.1
-## explicit; go 1.14
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
@@ -1158,8 +1148,6 @@ github.com/nishanths/exhaustive
 # github.com/nishanths/predeclared v0.2.2
 ## explicit; go 1.14
 github.com/nishanths/predeclared/passes/predeclared
-# github.com/nsf/termbox-go v1.1.1
-## explicit; go 1.15
 # github.com/nunnatsa/ginkgolinter v0.9.0
 ## explicit; go 1.19
 github.com/nunnatsa/ginkgolinter

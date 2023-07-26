@@ -9,6 +9,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -26,7 +27,6 @@ import (
 	"github.com/nginx/agent/v2/src/extensions"
 	"github.com/nginx/agent/v2/src/plugins"
 
-	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/bcicen/grmon/agent"
