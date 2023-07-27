@@ -93,10 +93,9 @@ run: ## Run code
 run-debug: ## Run code
 	./build/nginx-agent
 
-build/nginx-agent:
-	GOWORK=off CGO_ENABLED=0 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
 
-build: build/nginx-agent ## Build agent executable
+build: ## Build agent executable
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} go build -ldflags=${LDFLAGS} -o ./build/nginx-agent 
 
 deps: ## Update dependencies in vendor folders
 	cd sdk && make generate

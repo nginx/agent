@@ -1,9 +1,5 @@
 [build]
-  command = "hugo --gc -b $DEPLOY_PRIME_URL/nginx-agent"
-  publish = "public"
-
-[build.environment]
-  HUGO_VERSION = "0.91.1"
+  command = "make deploy-preview"
 
 [context.production]
   command = "make all"
@@ -15,12 +11,10 @@
   command = "make all-staging"
 
 [context.deploy-preview]
-  command = "hugo --gc -b $DEPLOY_PRIME_URL/nginx-agent"
-  publish = "public"
+  command = "make deploy-preview"
 
 [context.branch-deploy]
-  command = "hugo --gc -b $DEPLOY_PRIME_URL/nginx-agent"
-  publish = "public"
+  command = "make deploy-preview"
 
 [[headers]]
   for = "/*"
@@ -37,3 +31,9 @@
   from = "/nginx-agent/*"
   to = "/nginx-agent/404.html"
   status = 404
+
+[[redirects]]
+  from = "/nginx-agent/robots.txt"
+  to = "https://docs.nginx.com/robots.txt"
+  status = 301
+  force = true

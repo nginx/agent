@@ -1,1 +1,3 @@
+github.com/nginxinc/nginx-hugo-theme v0.33.0 h1:6mZdgxf5kNhInsrAXXiSlWXRy3fsP51lWKOdrvmkR6U=
+github.com/nginxinc/nginx-hugo-theme v0.33.0/go.mod h1:DPNgSS5QYxkjH/BfH4uPDiTfODqWJ50NKZdorguom8M=
 gitlab.com/f5/nginx/controller/poc/f5-hugo v0.22.1/go.mod h1:Y9Ez7EKgsbFXNsflK0tGLe6FWqlPToWFGZyrkduYdM4=
