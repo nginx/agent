@@ -474,29 +474,16 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	nginxConfigStatusMessage := configAppliedResponse
 	rollback := false
 
-	var rollbackError error
-	// get the process info before reload
-	// so we can compare against after reload
-	processInfo := n.getNginxProccessInfo()
-
-	reloadErr := n.nginxBinary.Reload(response.nginxDetails.ProcessId, response.nginxDetails.ProcessPath)
-	if reloadErr != nil {
-		nginxConfigStatusMessage = fmt.Sprintf("Config apply failed (write): %v", reloadErr)
-		log.Errorf(nginxConfigStatusMessage)
-		rollbackError = reloadErr
+	err := n.reloadNginx(response.nginxDetails)
+	if err != nil {
+		nginxConfigStatusMessage = fmt.Sprintf("Config apply failed. Errors found during NGINX reload after applying a new configuration: %v", err)
 		rollback = true
 	} else {
-		rollbackError = n.monitor(processInfo)
-		if rollbackError != nil {
-			nginxConfigStatusMessage = fmt.Sprintf("Config apply failed. Errors found during monitoring period after applying a new configuration: %v", rollbackError)
-			rollback = true
-		} else {
-			log.Info("No errors found in NGINX errors logs after NGINX reload")
-		}
+		log.Info("No errors found in NGINX errors logs after NGINX reload")
 	}
 
 	nginxReloadEventMeta := NginxReloadResponse{
-		succeeded:     reloadErr == nil,
+		succeeded:     err == nil,
 		correlationId: response.correlationId,
 		timestamp:     types.TimestampNow(),
 		nginxDetails:  response.nginxDetails,
@@ -505,7 +492,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	n.messagePipeline.Process(core.NewMessage(core.NginxReloadComplete, nginxReloadEventMeta))
 
 	if rollback {
-		go n.rollbackConfigApply(response.correlationId, response.config.GetConfigData().GetNginxId(), response.nginxDetails, response.configApply, rollbackError, true)
+		go n.rollbackConfigApply(response.correlationId, response.config.GetConfigData().GetNginxId(), response.nginxDetails, response.configApply, err, true)
 
 		status = &proto.Command_NginxConfigResponse{
 			NginxConfigResponse: &proto.NginxConfigResponse{
@@ -581,7 +568,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	return status
 }
 
-func (n *Nginx) monitor(processInfo []core.Process) error {
+func (n *Nginx) reloadNginx(nginxDetails *proto.NginxDetails) error {
 	log.Info("Monitoring post reload for changes")
 	n.monitorMutex.Lock()
 	defer n.monitorMutex.Unlock()
@@ -592,6 +579,11 @@ func (n *Nginx) monitor(processInfo []core.Process) error {
 	defer close(logErrorChannel)
 
 	go n.monitorLogs(errorLogs, logErrorChannel)
+
+	reloadErr := n.nginxBinary.Reload(nginxDetails.ProcessId, nginxDetails.ProcessPath)
+	if reloadErr != nil {
+		return reloadErr
+	}
 
 	// Expect to receive one message from a message for each NGINX error log file in the logErrorChannel
 	numberOfExpectedMessages := len(errorLogs)
@@ -615,7 +607,7 @@ func (n *Nginx) monitor(processInfo []core.Process) error {
 
 func (n *Nginx) monitorLogs(errorLogs map[string]string, errorChannel chan string) {
 	if len(errorLogs) == 0 {
-		log.Info("No error logs found to monitor")
+		log.Info("No NGINX error logs found to monitor")
 		return
 	}
 
