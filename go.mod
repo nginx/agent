@@ -37,7 +37,6 @@ require (
 )
 
 require (
-	github.com/bcicen/grmon v0.0.0-20211013120613-63facda35286
 	github.com/bufbuild/buf v1.24.0
 	github.com/evilmartians/lefthook v1.4.5
 	github.com/go-resty/resty/v2 v2.7.0

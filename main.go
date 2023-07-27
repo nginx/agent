@@ -29,7 +29,6 @@ import (
 
 	_ "net/http/pprof"
 
-	grmon "github.com/bcicen/grmon/agent"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -59,10 +58,13 @@ func init() {
 }
 
 func main() {
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
-	grmon.Start()
+	address, debug := os.LookupEnv("PROFILE_ADDRESS")
+	if debug {
+		go func() {
+			log.Println(http.ListenAndServe(address, nil))
+		}()
+	}
+
 	config.RegisterRunner(func(cmd *cobra.Command, _ []string) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
