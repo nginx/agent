@@ -10,6 +10,7 @@ package core
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -49,11 +50,12 @@ const (
 //go:generate mv fake_environment_fixed.go fake_environment_test.go
 type Environment interface {
 	NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo
+	// NewHostInfoWithContext(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo
 	GetHostname() (hostname string)
 	GetSystemUUID() (hostId string)
 	ReadDirectory(dir string, ext string) ([]string, error)
 	WriteFiles(backup ConfigApplyMarker, files []*proto.File, prefix string, allowedDirs map[string]struct{}) error
-	Processes() (result []Process)
+	Processes() (result []*Process)
 	FileStat(path string) (os.FileInfo, error)
 	DiskDevices() ([]string, error)
 	GetContainerID() (string, error)
@@ -93,14 +95,20 @@ const (
 )
 
 var (
-	virtualizationFunc             = host.Virtualization
+	virtualizationFunc             = host.VirtualizationWithContext
 	_                  Environment = &EnvironmentType{}
 )
 
 func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
+	ctx := context.Background()
+	defer ctx.Done()
+	return env.NewHostInfoWithContext(ctx, agentVersion, tags, configDirs, clearCache)
+}
+
+func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
 	// temp cache measure
 	if env.host == nil || clearCache {
-		hostInformation, err := host.Info()
+		hostInformation, err := host.InfoWithContext(ctx)
 		if err != nil {
 			log.Warnf("Unable to collect dataplane host information: %v, defaulting value", err)
 			return &proto.HostInfo{}
@@ -125,6 +133,7 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 		log.Tracef("HostInfo created: %v", hostInfoFacacde)
 		env.host = hostInfoFacacde
 	}
+	defer ctx.Done()
 	return env.host
 }
 
@@ -169,11 +178,13 @@ func getUnixName() string {
 }
 
 func (env *EnvironmentType) GetHostname() string {
-	hostInformation, err := host.Info()
+	ctx := context.Background()
+	hostInformation, err := host.InfoWithContext(ctx)
 	if err != nil {
 		log.Warnf("Unable to read hostname from dataplane, defaulting value. Error: %v", err)
 		return ""
 	}
+	defer ctx.Done()
 	return hostInformation.Hostname
 }
 
@@ -187,7 +198,9 @@ func (env *EnvironmentType) GetSystemUUID() string {
 		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String()
 	}
 
-	hostInfo, err := host.Info()
+	ctx := context.Background()
+	hostInfo, err := host.InfoWithContext(ctx)
+	defer ctx.Done()
 	if err != nil {
 		log.Infof("Unable to read host id from dataplane, defaulting value. Error: %v", err)
 		return ""
@@ -480,10 +493,12 @@ func (env *EnvironmentType) FileStat(path string) (os.FileInfo, error) {
 }
 
 // Processes returns a slice of nginx master and nginx worker processes currently running
-func (env *EnvironmentType) Processes() (result []Process) {
-	var processList []Process
+func (env *EnvironmentType) Processes() (result []*Process) {
+	var processList []*Process
+	ctx := context.Background()
+	defer ctx.Done()
 
-	pids, err := process.Pids()
+	pids, err := process.PidsWithContext(ctx)
 	if err != nil {
 		log.Errorf("failed to read pids for dataplane host: %v", err)
 		return processList
@@ -491,9 +506,9 @@ func (env *EnvironmentType) Processes() (result []Process) {
 
 	nginxProcesses := make(map[int32]*process.Process)
 	for _, pid := range pids {
-		p, _ := process.NewProcess(pid)
 
-		name, _ := p.Name()
+		p, _ := process.NewProcessWithContext(ctx, pid)
+		name, _ := p.NameWithContext(ctx)
 
 		if name == "nginx" {
 			nginxProcesses[pid] = p
@@ -501,13 +516,13 @@ func (env *EnvironmentType) Processes() (result []Process) {
 	}
 
 	for pid, nginxProcess := range nginxProcesses {
-		name, _ := nginxProcess.Name()
-		createTime, _ := nginxProcess.CreateTime()
-		status, _ := nginxProcess.Status()
-		running, _ := nginxProcess.IsRunning()
-		user, _ := nginxProcess.Username()
-		ppid, _ := nginxProcess.Ppid()
-		cmd, _ := nginxProcess.Cmdline()
+		name, _ := nginxProcess.NameWithContext(ctx)
+		createTime, _ := nginxProcess.CreateTimeWithContext(ctx)
+		status, _ := nginxProcess.StatusWithContext(ctx)
+		running, _ := nginxProcess.IsRunningWithContext(ctx)
+		user, _ := nginxProcess.UsernameWithContext(ctx)
+		ppid, _ := nginxProcess.PpidWithContext(ctx)
+		cmd, _ := nginxProcess.CmdlineWithContext(ctx)
 		isMaster := false
 
 		_, ok := nginxProcesses[ppid]
@@ -526,7 +541,7 @@ func (env *EnvironmentType) Processes() (result []Process) {
 			}
 		}
 
-		newProcess := Process{
+		newProcess := &Process{
 			Pid:        pid,
 			Name:       name,
 			CreateTime: createTime, // Running time is probably different
@@ -541,7 +556,6 @@ func (env *EnvironmentType) Processes() (result []Process) {
 
 		processList = append(processList, newProcess)
 	}
-
 	return processList
 }
 
@@ -745,8 +759,10 @@ func formatBytes(bytes int) string {
 }
 
 func virtualization() (string, string) {
+	ctx := context.Background()
+	defer ctx.Done()
 	// doesn't check k8s
-	virtualizationSystem, virtualizationRole, err := virtualizationFunc()
+	virtualizationSystem, virtualizationRole, err := virtualizationFunc(ctx)
 	if err != nil {
 		log.Warnf("Error reading virtualization: %v", err)
 		return "", "host"
@@ -759,7 +775,9 @@ func virtualization() (string, string) {
 }
 
 func diskPartitions() (partitions []*proto.DiskPartition) {
-	parts, err := disk.Partitions(false)
+	ctx := context.Background()
+	defer ctx.Done()
+	parts, err := disk.PartitionsWithContext(ctx, false)
 	if err != nil {
 		// return an array of 0
 		log.Errorf("Could not read disk partitions for host: %v", err)
@@ -817,11 +835,13 @@ func mergeHostAndOsReleaseInfo(hostReleaseInfo *proto.ReleaseInfo,
 }
 
 func getHostReleaseInfo() (release *proto.ReleaseInfo) {
-	hostInfo, err := host.Info()
+	ctx := context.Background()
+	hostInfo, err := host.InfoWithContext(ctx)
 	if err != nil {
 		log.Errorf("Could not read release information for host: %v", err)
 		return &proto.ReleaseInfo{}
 	}
+	defer ctx.Done()
 	return &proto.ReleaseInfo{
 		VersionId: hostInfo.PlatformVersion,
 		Version:   hostInfo.KernelVersion,

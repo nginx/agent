@@ -114,21 +114,21 @@ func (m *MockNginxBinary) ValidateConfig(processId, bin, configLocation string, 
 	return args.Error(0)
 }
 
-func (m *MockNginxBinary) GetNginxDetailsMapFromProcesses(nginxProcesses []core.Process) map[string]*proto.NginxDetails {
+func (m *MockNginxBinary) GetNginxDetailsMapFromProcesses(nginxProcesses []*core.Process) map[string]*proto.NginxDetails {
 	args := m.Called(nginxProcesses)
 	return args.Get(0).(map[string]*proto.NginxDetails)
 }
 
-func (m *MockNginxBinary) UpdateNginxDetailsFromProcesses(nginxProcesses []core.Process) {
+func (m *MockNginxBinary) UpdateNginxDetailsFromProcesses(nginxProcesses []*core.Process) {
 	m.Called(nginxProcesses)
 }
 
-func (m *MockNginxBinary) GetNginxIDForProcess(nginxProcess core.Process) string {
+func (m *MockNginxBinary) GetNginxIDForProcess(nginxProcess *core.Process) string {
 	args := m.Called(nginxProcess)
 	return args.String(0)
 }
 
-func (m *MockNginxBinary) GetNginxDetailsFromProcess(nginxProcess core.Process) *proto.NginxDetails {
+func (m *MockNginxBinary) GetNginxDetailsFromProcess(nginxProcess *core.Process) *proto.NginxDetails {
 	args := m.Called(nginxProcess)
 	return args.Get(0).(*proto.NginxDetails)
 }

@@ -94,7 +94,10 @@ const (
 	name                = "NAME"
 )
 
-var _ Environment = &EnvironmentType{}
+var (
+	virtualizationFunc             = host.VirtualizationWithContext
+	_                  Environment = &EnvironmentType{}
+)
 
 func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
 	ctx := context.Background()
@@ -493,6 +496,7 @@ func (env *EnvironmentType) FileStat(path string) (os.FileInfo, error) {
 func (env *EnvironmentType) Processes() (result []*Process) {
 	var processList []*Process
 	ctx := context.Background()
+	defer ctx.Done()
 
 	pids, err := process.PidsWithContext(ctx)
 	if err != nil {
@@ -503,20 +507,13 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 	nginxProcesses := make(map[int32]*process.Process)
 	for _, pid := range pids {
 
-		processCtx, _ := context.WithCancel(ctx)
-		p, _ := process.NewProcessWithContext(processCtx, pid)
-		processCtx.Done()
-
-		nameCtx, _ := context.WithCancel(ctx)
-		name, _ := p.NameWithContext(nameCtx)
-		nameCtx.Done()
+		p, _ := process.NewProcessWithContext(ctx, pid)
+		name, _ := p.NameWithContext(ctx)
 
 		if name == "nginx" {
 			nginxProcesses[pid] = p
 		}
 	}
-
-	pids = nil
 
 	for pid, nginxProcess := range nginxProcesses {
 		name, _ := nginxProcess.NameWithContext(ctx)
@@ -559,7 +556,6 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 
 		processList = append(processList, newProcess)
 	}
-	defer ctx.Done()
 	return processList
 }
 
@@ -766,7 +762,7 @@ func virtualization() (string, string) {
 	ctx := context.Background()
 	defer ctx.Done()
 	// doesn't check k8s
-	virtualizationSystem, virtualizationRole, err := host.VirtualizationWithContext(ctx)
+	virtualizationSystem, virtualizationRole, err := virtualizationFunc(ctx)
 	if err != nil {
 		log.Warnf("Error reading virtualization: %v", err)
 		return "", "host"

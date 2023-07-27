@@ -20,6 +20,7 @@ import (
 // 02/02/2022
 // Note: Buffered memory metric is not present in the memory.stat file.
 // See here for more details: https://stackoverflow.com/a/52933753
+var getHostMemoryStats = mem.VirtualMemoryWithContext
 
 type MemoryStat struct {
 	cached uint64
@@ -142,7 +143,7 @@ func GetMemoryLimitInBytes(filePath string) (uint64, error) {
 		return 0, err
 	}
 	if memTotalString == V2DefaultMaxValue || memTotalString == GetV1DefaultMaxValue() {
-		hostMemoryStats, err := mem.VirtualMemoryWithContext(ctx)
+		hostMemoryStats, err := getHostMemoryStats(ctx)
 		if err != nil {
 			return 0, nil
 		}

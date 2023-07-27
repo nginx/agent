@@ -16,6 +16,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var getHostSwapStats = mem.SwapMemoryWithContext
+
 type swap struct {
 	memTotal, memUsage,
 	total, used uint64
@@ -133,7 +135,7 @@ func GetTotal(filePath string) (uint64, error) {
 		return 0, err
 	}
 
-	hostSwapStats, err := mem.SwapMemoryWithContext(ctx)
+	hostSwapStats, err := getHostSwapStats(ctx)
 	if err != nil {
 		return 0, err
 	}

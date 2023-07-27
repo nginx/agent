@@ -8,6 +8,7 @@
 package cgroup
 
 import (
+	"context"
 	"os"
 	"path"
 	"runtime"
@@ -104,7 +105,7 @@ func TestVirtualMemoryStat(t *testing.T) {
 		},
 	}
 
-	getHostMemoryStats = func() (*mem.VirtualMemoryStat, error) {
+	getHostMemoryStats = func(ctx context.Context) (*mem.VirtualMemoryStat, error) {
 		return &mem.VirtualMemoryStat{Total: 636870912}, nil
 	}
 

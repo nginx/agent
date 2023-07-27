@@ -33,7 +33,7 @@ type ProcessWatcher struct {
 
 func NewProcessWatcher(env core.Environment, nginxBinary core.NginxBinary) *ProcessWatcher {
 	return &ProcessWatcher{
-		ticker:          time.NewTicker(time.Millisecond * 300),
+		ticker:          time.NewTicker(time.Millisecond * 500),
 		seenMasterProcs: make(map[int32]*core.Process),
 		seenWorkerProcs: make(map[int32]*core.Process),
 		nginxDetails:    make(map[int32]*proto.NginxDetails),

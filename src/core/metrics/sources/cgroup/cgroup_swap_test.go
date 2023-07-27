@@ -8,6 +8,7 @@
 package cgroup
 
 import (
+	"context"
 	"os"
 	"path"
 	"runtime"
@@ -92,7 +93,7 @@ func TestSwapMemoryStat(t *testing.T) {
 		},
 	}
 
-	getHostSwapStats = func() (*mem.SwapMemoryStat, error) {
+	getHostSwapStats = func(context.Context) (*mem.SwapMemoryStat, error) {
 		return &mem.SwapMemoryStat{Total: 936870912}, nil
 	}
 

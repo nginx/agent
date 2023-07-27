@@ -21,9 +21,7 @@ func CheckForProcesses(processesToCheck []string) ([]string, error) {
 	ctx := context.Background()
 	defer ctx.Done()
 
-	runningProcessesCtx, _ := context.WithCancel(ctx)
-	runningProcesses, err := process.ProcessesWithContext(runningProcessesCtx)
-	runningProcessesCtx.Done()
+	runningProcesses, err := process.ProcessesWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -36,17 +34,13 @@ func CheckForProcesses(processesToCheck []string) ([]string, error) {
 			return processCheckCopy, nil
 		}
 
-		procNameCtx, _ := context.WithCancel(ctx)
-		procName, err := process.NameWithContext(procNameCtx)
-		procNameCtx.Done()
+		procName, err := process.NameWithContext(ctx)
 
 		if err != nil {
 			continue
 		}
 
-		procCmdCtx, _ := context.WithCancel(ctx)
-		procCmd, err := process.CmdlineSliceWithContext(procCmdCtx)
-		procCmdCtx.Done()
+		procCmd, err := process.CmdlineSliceWithContext(ctx)
 
 		if err != nil {
 			continue

@@ -154,6 +154,7 @@ func GetDataplaneNetworks() (res *proto.Network) {
 	if defaultNetworkInterface == "" && len(ifs) > 0 {
 		defaultNetworkInterface = ifs[0].Name
 	}
+
 	return &proto.Network{Interfaces: interfaces, Default: defaultNetworkInterface}
 }
 
