@@ -57,7 +57,7 @@ var (
 type Nginx struct {
 	messagePipeline                core.MessagePipeInterface
 	nginxBinary                    core.NginxBinary
-	processes                      []core.Process
+	processes                      []*core.Process
 	processesMutex                 sync.RWMutex
 	monitorMutex                   sync.Mutex
 	env                            core.Environment
@@ -158,7 +158,7 @@ func (n *Nginx) Process(message *core.Message) {
 			}
 		}
 	case core.NginxDetailProcUpdate:
-		procs := message.Data().([]core.Process)
+		procs := message.Data().([]*core.Process)
 		n.syncProcessInfo(procs)
 		n.nginxBinary.UpdateNginxDetailsFromProcesses(procs)
 	case core.DataplaneChanged:
@@ -213,13 +213,13 @@ func (n *Nginx) Subscriptions() []string {
 	}
 }
 
-func (n *Nginx) getNginxProccessInfo() []core.Process {
+func (n *Nginx) getNginxProccessInfo() []*core.Process {
 	n.processesMutex.RLock()
 	defer n.processesMutex.RUnlock()
 	return n.processes
 }
 
-func (n *Nginx) syncProcessInfo(processInfo []core.Process) {
+func (n *Nginx) syncProcessInfo(processInfo []*core.Process) {
 	n.processesMutex.Lock()
 	defer n.processesMutex.Unlock()
 	n.processes = processInfo
@@ -582,7 +582,7 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	return status
 }
 
-func (n *Nginx) monitor(processInfo []core.Process) error {
+func (n *Nginx) monitor(processInfo []*core.Process) error {
 	log.Info("Monitoring post reload for changes")
 	n.monitorMutex.Lock()
 	defer n.monitorMutex.Unlock()
@@ -659,6 +659,8 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 			}
 		case <-tick.C:
 			errorChannel <- ""
+			return
+		case <- ctx.Done():
 			return
 		}
 	}

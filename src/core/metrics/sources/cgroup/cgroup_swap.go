@@ -8,14 +8,13 @@
 package cgroup
 
 import (
+	"context"
 	"path"
 	"strconv"
 
 	"github.com/shirou/gopsutil/v3/mem"
 	log "github.com/sirupsen/logrus"
 )
-
-var getHostSwapStats = mem.SwapMemory
 
 type swap struct {
 	memTotal, memUsage,
@@ -127,12 +126,14 @@ func GetMemTotal(filePath string) (uint64, error) {
 }
 
 func GetTotal(filePath string) (uint64, error) {
+	ctx := context.Background()
+	defer ctx.Done()
 	totalString, err := ReadSingleValueCgroupFile(filePath)
 	if err != nil {
 		return 0, err
 	}
 
-	hostSwapStats, err := getHostSwapStats()
+	hostSwapStats, err := mem.SwapMemoryWithContext(ctx)
 	if err != nil {
 		return 0, err
 	}

@@ -8,6 +8,7 @@
 package core
 
 import (
+	"context"
 	"strings"
 
 	"github.com/shirou/gopsutil/v3/process"
@@ -17,7 +18,12 @@ import (
 // names to check for then returns a slice of strings of the processes that
 // were checked for and NOT found.
 func CheckForProcesses(processesToCheck []string) ([]string, error) {
-	runningProcesses, err := process.Processes()
+	ctx := context.Background()
+	defer ctx.Done()
+
+	runningProcessesCtx, _ := context.WithCancel(ctx)
+	runningProcesses, err := process.ProcessesWithContext(runningProcessesCtx)
+	runningProcessesCtx.Done()
 	if err != nil {
 		return nil, err
 	}
@@ -30,12 +36,18 @@ func CheckForProcesses(processesToCheck []string) ([]string, error) {
 			return processCheckCopy, nil
 		}
 
-		procName, err := process.Name()
+		procNameCtx, _ := context.WithCancel(ctx)
+		procName, err := process.NameWithContext(procNameCtx)
+		procNameCtx.Done()
+
 		if err != nil {
 			continue
 		}
 
-		procCmd, err := process.CmdlineSlice()
+		procCmdCtx, _ := context.WithCancel(ctx)
+		procCmd, err := process.CmdlineSliceWithContext(procCmdCtx)
+		procCmdCtx.Done()
+
 		if err != nil {
 			continue
 		}

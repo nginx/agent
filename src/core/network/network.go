@@ -185,13 +185,13 @@ func getDefaultNetworkInterfaceCrossPlatform() (string, error) {
 	case LINUX:
 		f, err := os.Open(linuxFile)
 		if err != nil {
-			return "", fmt.Errorf("Can't access %s", linuxFile)
+			return "", fmt.Errorf("can't access %s", linuxFile)
 		}
 		defer f.Close()
 
 		output, err := io.ReadAll(f)
 		if err != nil {
-			return "", fmt.Errorf("Can't read contents of %s", linuxFile)
+			return "", fmt.Errorf("can't read contents of %s", linuxFile)
 		}
 
 		parsedStruct, err := parseToLinuxRouteStruct(output)

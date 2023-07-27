@@ -23,8 +23,8 @@ import (
 type ProcessWatcher struct {
 	messagePipeline core.MessagePipeInterface
 	ticker          *time.Ticker
-	seenMasterProcs map[int32]core.Process
-	seenWorkerProcs map[int32]core.Process
+	seenMasterProcs map[int32]*core.Process
+	seenWorkerProcs map[int32]*core.Process
 	nginxDetails    map[int32]*proto.NginxDetails
 	wg              sync.WaitGroup
 	env             core.Environment
@@ -34,8 +34,8 @@ type ProcessWatcher struct {
 func NewProcessWatcher(env core.Environment, nginxBinary core.NginxBinary) *ProcessWatcher {
 	return &ProcessWatcher{
 		ticker:          time.NewTicker(time.Millisecond * 300),
-		seenMasterProcs: make(map[int32]core.Process),
-		seenWorkerProcs: make(map[int32]core.Process),
+		seenMasterProcs: make(map[int32]*core.Process),
+		seenWorkerProcs: make(map[int32]*core.Process),
 		nginxDetails:    make(map[int32]*proto.NginxDetails),
 		wg:              sync.WaitGroup{},
 		env:             env,
@@ -105,12 +105,12 @@ func (pw *ProcessWatcher) watchProcLoop(ctx context.Context) {
 }
 
 // getProcUpdates returns a slice of updates to process, currently running master proc map, currently running worker process map
-func (pw *ProcessWatcher) getProcUpdates(nginxProcs []core.Process) ([]*core.Message, map[int32]core.Process, map[int32]core.Process) {
+func (pw *ProcessWatcher) getProcUpdates(nginxProcs []*core.Process) ([]*core.Message, map[int32]*core.Process, map[int32]*core.Process) {
 	procUpdates := []*core.Message{}
 
 	// create maps of currently running processes
-	runningMasterProcs := make(map[int32]core.Process)
-	runningWorkerProcs := make(map[int32]core.Process)
+	runningMasterProcs := make(map[int32]*core.Process)
+	runningWorkerProcs := make(map[int32]*core.Process)
 	for _, proc := range nginxProcs {
 		if proc.IsMaster {
 			runningMasterProcs[proc.Pid] = proc
