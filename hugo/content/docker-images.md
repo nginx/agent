@@ -20,15 +20,13 @@ To build an image that contains the latest NGINX Agent and the latest mainline v
 
 ```shell
 cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
-docker build -t nginx-agent . \
--f ./Dockerfile.mainline
+docker build -t nginx-agent . --no-cache -f ./Dockerfile.mainline
 ```
 
 To build an image that contains the latest NGINX Agent and the latest stable version of NGINX OSS run the following command:
 ```shell
 cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
-docker build -t nginx-agent . \
--f ./Dockerfile.stable
+docker build -t nginx-agent . --no-cache -f ./Dockerfile.stable
 ```
 
 ## Building NGINX Agent image with NGINX Plus
