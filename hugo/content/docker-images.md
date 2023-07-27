@@ -19,14 +19,14 @@ doctypes: ["task"]
 To build an image that contains the latest NGINX Agent and the latest mainline version of NGINX OSS run the following command:
 
 ```shell
-cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
-docker build -t nginx-agent . --no-cache -f ./Dockerfile.mainline
+$ cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
+$ docker build -t nginx-agent . --no-cache -f ./Dockerfile.mainline
 ```
 
 To build an image that contains the latest NGINX Agent and the latest stable version of NGINX OSS run the following command:
 ```shell
-cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
-docker build -t nginx-agent . --no-cache -f ./Dockerfile.stable
+$ cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
+$ docker build -t nginx-agent . --no-cache -f ./Dockerfile.stable
 ```
 
 ## Building NGINX Agent image with NGINX Plus
@@ -38,11 +38,11 @@ docker build -t nginx-agent . --no-cache -f ./Dockerfile.stable
 1. To build an image that contains the latest NGINX Agent and the latest version of NGINX Plus run the following command:
 
 ```shell
-cd scripts/docker/official/nginx-plus-with-nginx-agent/alpine/
-docker build -t nginx-agent . \
---no-cache -f ./Dockerfile \
---secret id=nginx-crt,src=nginx-repo.crt \
---secret id=nginx-key,src=nginx-repo.key
+$ cd scripts/docker/official/nginx-plus-with-nginx-agent/alpine/
+$ docker build -t nginx-agent . \
+  --no-cache -f ./Dockerfile \
+  --secret id=nginx-crt,src=nginx-repo.crt \
+  --secret id=nginx-key,src=nginx-repo.key
 ```
 
 ## Running NGINX Agent container
@@ -66,6 +66,6 @@ Once the nginx-agent.conf is updated with the API setting, here is an example of
 ```console
 $ docker run --name nginx-agent -d \
   --mount type=bind,source="$(pwd)"/nginx-agent.conf,target=/etc/nginx-agent/nginx-agent.conf,readonly \
--p 127.0.0.1:8038:8038/tcp \
-nginx-agent
+  -p 127.0.0.1:8038:8038/tcp \
+  nginx-agent
 ```
