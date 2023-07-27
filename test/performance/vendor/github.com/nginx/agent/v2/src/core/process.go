@@ -35,13 +35,11 @@ func CheckForProcesses(processesToCheck []string) ([]string, error) {
 		}
 
 		procName, err := process.NameWithContext(ctx)
-
 		if err != nil {
 			continue
 		}
 
 		procCmd, err := process.CmdlineSliceWithContext(ctx)
-
 		if err != nil {
 			continue
 		}

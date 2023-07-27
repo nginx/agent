@@ -659,7 +659,7 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 		case <-tick.C:
 			errorChannel <- ""
 			return
-		case <- ctx.Done():
+		case <-ctx.Done():
 			return
 		}
 	}
