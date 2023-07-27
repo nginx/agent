@@ -37,13 +37,6 @@ import (
 	"github.com/nginx/agent/v2/src/core/network"
 )
 
-const (
-	CTLKern          = 1  // "high kernel": proc, limits
-	KernProc         = 14 // struct: process entries
-	KernProcPathname = 12 // path to executable
-	SYS_SYSCTL       = 202
-)
-
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 //counterfeiter:generate -o fake_environment_test.go . Environment
 //go:generate sh -c "grep -v agent/product/nginx-agent/v2/core fake_environment_test.go | sed -e s\\/core\\\\.\\/\\/g > fake_environment_fixed.go"
@@ -92,11 +85,20 @@ const (
 	codeName            = "VERSION_CODENAME"
 	id                  = "ID"
 	name                = "NAME"
+	CTLKern             = 1  // "high kernel": proc, limits
+	KernProc            = 14 // struct: process entries
+	KernProcPathname    = 12 // path to executable
+	SYS_SYSCTL          = 202
 )
 
 var (
 	virtualizationFunc             = host.VirtualizationWithContext
 	_                  Environment = &EnvironmentType{}
+	basePattern                    = regexp.MustCompile("/([a-f0-9]{64})$")
+	colonPattern                   = regexp.MustCompile(":([a-f0-9]{64})$")
+	scopePattern                   = regexp.MustCompile(`/.+-(.+?).scope$`)
+	containersPattern              = regexp.MustCompile("containers/([a-f0-9]{64})")
+	containerdPattern              = regexp.MustCompile("sandboxes/([a-f0-9]{64})")
 )
 
 func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
@@ -319,12 +321,6 @@ func getContainerID(mountInfo string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to close file %s: %v", mountInfo, err)
 	}
-
-	basePattern := regexp.MustCompile("/([a-f0-9]{64})$")
-	colonPattern := regexp.MustCompile(":([a-f0-9]{64})$")
-	scopePattern := regexp.MustCompile(`/.+-(.+?).scope$`)
-	containersPattern := regexp.MustCompile("containers/([a-f0-9]{64})")
-	containerdPattern := regexp.MustCompile("sandboxes/([a-f0-9]{64})")
 
 	for _, line := range lines {
 		splitLine := strings.Split(line, " ")
