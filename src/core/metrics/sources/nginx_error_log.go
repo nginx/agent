@@ -193,12 +193,7 @@ func (c *NginxErrorLog) collectLogStats(ctx context.Context, m chan<- *metrics.S
 func (c *NginxErrorLog) logStats(ctx context.Context, logFile string) {
 	log.Debugf("Collecting from error log: %s", logFile)
 
-	counters := map[string]float64{
-		HttpRequestBufferedMetricName:      0,
-		UpstreamResponseBufferedMetricName: 0,
-		UpstreamRequestFailedMetricName:    0,
-		UpstreamResponseFailedMetricName:   0,
-	}
+	counters := map[string]float64{}
 	mu := sync.Mutex{}
 
 	t, err := tailer.NewTailer(logFile)
@@ -220,7 +215,12 @@ func (c *NginxErrorLog) logStats(ctx context.Context, logFile string) {
 			for metricName, regularExpressionList := range regularExpressionErrorMap {
 				for _, re := range regularExpressionList {
 					if re.MatchString(d) {
-						counters[metricName] = counters[metricName] + 1
+						existingValue, ok := counters[metricName]
+						if ok {
+							counters[metricName] = existingValue + 1
+						} else {
+							counters[metricName] = 1
+						}
 						break
 					}
 				}
@@ -237,12 +237,7 @@ func (c *NginxErrorLog) logStats(ctx context.Context, logFile string) {
 			log.Tracef("Error log metrics collected: %v", simpleMetrics)
 
 			// reset the counters
-			counters = map[string]float64{
-				HttpRequestBufferedMetricName:      0,
-				UpstreamResponseBufferedMetricName: 0,
-				UpstreamRequestFailedMetricName:    0,
-				UpstreamResponseFailedMetricName:   0,
-			}
+			counters = map[string]float64{}
 
 			c.buf = append(c.buf, metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE))
 
