@@ -17,6 +17,8 @@ contents:
       mode: 0640
   - src: ./scripts/packages/nginx-agent.service
     dst: /etc/systemd/system/nginx-agent.service
+  - src: ./scripts/nginx-agent.logrotate
+    dst: /etc/logrotate.d/nginx-agent
   - src: ./scripts/selinux/nginx_agent_selinux.8.gz
     dst: /usr/share/man/man8/nginx_agent_selinux.8.gz
     packager: rpm
