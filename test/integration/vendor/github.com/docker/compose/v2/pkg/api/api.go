@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/compose-spec/compose-go/types"
+	"github.com/docker/compose/v2/pkg/utils"
 )
 
 // Service manages a compose project
@@ -52,7 +53,7 @@ type Service interface {
 	// List executes the equivalent to a `docker stack ls`
 	List(ctx context.Context, options ListOptions) ([]Stack, error)
 	// Convert translate compose model into backend's native format
-	Convert(ctx context.Context, project *types.Project, options ConvertOptions) ([]byte, error)
+	Config(ctx context.Context, project *types.Project, options ConfigOptions) ([]byte, error)
 	// Kill executes the equivalent to a `compose kill`
 	Kill(ctx context.Context, projectName string, options KillOptions) error
 	// RunOneOffContainer creates a service oneoff container and starts its dependencies
@@ -77,12 +78,22 @@ type Service interface {
 	Images(ctx context.Context, projectName string, options ImagesOptions) ([]ImageSummary, error)
 	// MaxConcurrency defines upper limit for concurrent operations against engine API
 	MaxConcurrency(parallel int)
+	// DryRunMode defines if dry run applies to the command
+	DryRunMode(ctx context.Context, dryRun bool) (context.Context, error)
+	// Watch services' development context and sync/notify/rebuild/restart on changes
+	Watch(ctx context.Context, project *types.Project, services []string, options WatchOptions) error
+}
+
+// WatchOptions group options of the Watch API
+type WatchOptions struct {
 }
 
 // BuildOptions group options of the Build API
 type BuildOptions struct {
 	// Pull always attempt to pull a newer version of the image
 	Pull bool
+	// Push pushes service images
+	Push bool
 	// Progress set type of progress output ("auto", "plain", "tty")
 	Progress string
 	// Args set build-time args
@@ -95,6 +106,38 @@ type BuildOptions struct {
 	Services []string
 	// Ssh authentications passed in the command line
 	SSHs []types.SSHKey
+}
+
+// Apply mutates project according to build options
+func (o BuildOptions) Apply(project *types.Project) error {
+	platform := project.Environment["DOCKER_DEFAULT_PLATFORM"]
+	for i, service := range project.Services {
+		if service.Image == "" && service.Build == nil {
+			return fmt.Errorf("invalid service %q. Must specify either image or build", service.Name)
+		}
+
+		if service.Build == nil {
+			continue
+		}
+		service.Image = GetImageNameOrDefault(service, project.Name)
+		if platform != "" {
+			if len(service.Build.Platforms) > 0 && !utils.StringContains(service.Build.Platforms, platform) {
+				return fmt.Errorf("service %q build.platforms does not support value set by DOCKER_DEFAULT_PLATFORM: %s", service.Name, platform)
+			}
+			service.Platform = platform
+		}
+		if service.Platform != "" {
+			if len(service.Build.Platforms) > 0 && !utils.StringContains(service.Build.Platforms, service.Platform) {
+				return fmt.Errorf("service %q build configuration does not support platform: %s", service.Name, service.Platform)
+			}
+		}
+
+		service.Build.Pull = service.Build.Pull || o.Pull
+		service.Build.NoCache = service.Build.NoCache || o.NoCache
+
+		project.Services[i] = service
+	}
+	return nil
 }
 
 // CreateOptions group options of the Create API
@@ -130,7 +173,8 @@ type StartOptions struct {
 	// ExitCodeFrom return exit code from specified service
 	ExitCodeFrom string
 	// Wait won't return until containers reached the running|healthy state
-	Wait bool
+	Wait        bool
+	WaitTimeout time.Duration
 	// Services passed in the command line to be started
 	Services []string
 }
@@ -175,8 +219,8 @@ type DownOptions struct {
 	Volumes bool
 }
 
-// ConvertOptions group options of the Convert API
-type ConvertOptions struct {
+// ConfigOptions group options of the Config API
+type ConfigOptions struct {
 	// Format define the output format used to dump converted application model (json|yaml)
 	Format string
 	// Output defines the path to save the application model
@@ -219,8 +263,8 @@ type KillOptions struct {
 type RemoveOptions struct {
 	// Project is the compose project used to define this app. Might be nil if user ran command just with project name
 	Project *types.Project
-	// DryRun just list removable resources
-	DryRun bool
+	// Stop option passed in the command line
+	Stop bool
 	// Volumes remove anonymous volumes
 	Volumes bool
 	// Force don't ask to confirm removal
@@ -458,6 +502,7 @@ type ContainerEvent struct {
 	// This is only suitable for display purposes within Compose, as it's
 	// not guaranteed to be unique across services.
 	Container string
+	ID        string
 	Service   string
 	Line      string
 	// ContainerEventExit only
@@ -474,6 +519,8 @@ const (
 	ContainerEventAttach
 	// ContainerEventStopped is a ContainerEvent of type stopped.
 	ContainerEventStopped
+	// ContainerEventRecreated let consumer know container stopped but his being replaced
+	ContainerEventRecreated
 	// ContainerEventExit is a ContainerEvent of type exit. ExitCode is set
 	ContainerEventExit
 	// UserCancel user cancelled compose up, we are stopping containers

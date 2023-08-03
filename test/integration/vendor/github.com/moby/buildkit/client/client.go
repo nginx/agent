@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	contentapi "github.com/containerd/containerd/api/services/content/v1"
 	"github.com/containerd/containerd/defaults"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	controlapi "github.com/moby/buildkit/api/services/control"
@@ -168,12 +169,16 @@ func (c *Client) setupDelegatedTracing(ctx context.Context, td TracerDelegate) e
 	return td.SetSpanExporter(ctx, e)
 }
 
-func (c *Client) controlClient() controlapi.ControlClient {
+func (c *Client) ControlClient() controlapi.ControlClient {
 	return controlapi.NewControlClient(c.conn)
 }
 
+func (c *Client) ContentClient() contentapi.ContentClient {
+	return contentapi.NewContentClient(c.conn)
+}
+
 func (c *Client) Dialer() session.Dialer {
-	return grpchijack.Dialer(c.controlClient())
+	return grpchijack.Dialer(c.ControlClient())
 }
 
 func (c *Client) Close() error {
@@ -234,7 +239,6 @@ func loadCredentials(opts *withCredentials) (grpc.DialOption, error) {
 			return nil, errors.Wrap(err, "could not read certificate/key")
 		}
 		cfg.Certificates = []tls.Certificate{cert}
-		cfg.BuildNameToCertificate()
 	}
 
 	return grpc.WithTransportCredentials(credentials.NewTLS(cfg)), nil

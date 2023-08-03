@@ -56,13 +56,13 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 
 	applyRunOptions(project, &service, opts)
 
-	if err := s.dockerCli.In().CheckTty(opts.Interactive, service.Tty); err != nil {
+	if err := s.stdin().CheckTty(opts.Interactive, service.Tty); err != nil {
 		return "", err
 	}
 
 	slug := stringid.GenerateRandomID()
 	if service.ContainerName == "" {
-		service.ContainerName = fmt.Sprintf("%s_%s_run_%s", project.Name, service.Name, stringid.TruncateID(slug))
+		service.ContainerName = fmt.Sprintf("%[1]s%[4]s%[2]s%[4]srun%[4]s%[3]s", project.Name, service.Name, stringid.TruncateID(slug), api.Separator)
 	}
 	service.Scale = 1
 	service.Restart = ""
@@ -76,11 +76,6 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 	if err := s.ensureImagesExists(ctx, project, opts.QuietPull); err != nil { // all dependencies already checked, but might miss service img
 		return "", err
 	}
-	if !opts.NoDeps {
-		if err := s.waitDependencies(ctx, project, service.DependsOn); err != nil {
-			return "", err
-		}
-	}
 
 	observedState, err := s.getContainers(ctx, project.Name, oneOffInclude, true)
 	if err != nil {
@@ -88,6 +83,11 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 	}
 	updateServices(&service, observedState)
 
+	if !opts.NoDeps {
+		if err := s.waitDependencies(ctx, project, service.DependsOn, observedState); err != nil {
+			return "", err
+		}
+	}
 	created, err := s.createContainer(ctx, project, service, service.ContainerName, 1,
 		opts.AutoRemove, opts.UseNetworkAliases, opts.Interactive)
 	if err != nil {
