@@ -238,7 +238,7 @@ This section displays the configurable options for the NGINX Agent that can be s
 
 ### NGINX Agent Log Rotation
 
-Logs are rotated daily by default in NGINX Agent using logrotate, with the following configuration: 
+By default, NGINX Agent rotates logs daily using logrotate with the following configuration: 
 
 <details open>
   <summary>NGINX Agent Logrotate Configuration</summary>
