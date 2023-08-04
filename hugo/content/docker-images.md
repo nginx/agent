@@ -5,25 +5,24 @@ description: "Learn how to build and run NGINX Agent docker images"
 weight: 800
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-1230"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
 
 ## Prerequisites
-1. Docker installation
-1. nginx-repo.crt and nginx-repo.key files (if using NGINX Plus)
+1. Docker must be [installed and running](https://docs.docker.com/engine/install/)
+1. (Optional) If you plan to use NGINX Plus, you will need the nginx-repo.crt and nginx-repo.key files. You can download them from [MyF5](https://my.f5.com).
 
-## Building NGINX Agent image with NGINX OSS
+## Building NGINX Agent image with NGINX Open Source
 
-To build an image that contains the latest NGINX Agent and the latest mainline version of NGINX OSS run the following command:
+To build an image that contains the latest NGINX Agent and the latest mainline version of NGINX run the following command:
 
 ```shell
 $ cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
 $ docker build -t nginx-agent . --no-cache -f ./Dockerfile.mainline
 ```
 
-To build an image that contains the latest NGINX Agent and the latest stable version of NGINX OSS run the following command:
+To build an image that contains the latest NGINX Agent and the latest stable version of NGINX run the following command:
 ```shell
 $ cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
 $ docker build -t nginx-agent . --no-cache -f ./Dockerfile.stable
@@ -31,7 +30,7 @@ $ docker build -t nginx-agent . --no-cache -f ./Dockerfile.stable
 
 ## Building NGINX Agent image with NGINX Plus
 
-1. Log in to [MyF5 Customer Portal](https://account.f5.com/myf5) and download your `nginx-repo.crt` and `nginx-repo.key` files. For a trial of NGINX Plus, the files are provided with your trial package.
+1. Log in to [MyF5 Customer Portal](https://account.f5.com/myf5) and download your `nginx-repo.crt` and `nginx-repo.key` files. These files are also provided with the NGINX Plus trial package.
 
 1. Copy the files to the directory where the Dockerfile is located `scripts/docker/official/nginx-plus-with-nginx-agent/alpine/`.
 
@@ -53,7 +52,7 @@ Here is an example of how to run a NGINX Agent container:
 $ docker run --name nginx-agent -d nginx-agent
 ```
 
-By default the NGINX Agent REST API is not enabled. To enable it, the NGINX Agent configuration needs to be updated to include the API configuration. Here is an example of what needs to be added to the `nginx-agent.conf`:
+By default, the NGINX Agent REST API is not enabled. To enable the API, the NGINX Agent configuration file `nginx-agent.conf` needs to be updated to include the API configuration, for example:
 
 ```yaml
 api:
@@ -61,7 +60,7 @@ api:
   port: 8038
 ```
 
-Once the nginx-agent.conf is updated with the API setting, here is an example of how to run the container with the updated `nginx-agent.conf` mounted and the port `8038` exposed:
+Once the `nginx-agent.conf` file is updated with the API setting, following the previous example, you can run the container with the updated `nginx-agent.conf` mounted and the port `8038` exposed with the following command:
 
 ```console
 $ docker run --name nginx-agent -d \
