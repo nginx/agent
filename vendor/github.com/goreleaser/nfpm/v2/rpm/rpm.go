@@ -7,15 +7,14 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/google/rpmpack"
 	"github.com/goreleaser/chglog"
 	"github.com/goreleaser/nfpm/v2"
 	"github.com/goreleaser/nfpm/v2/files"
-	"github.com/goreleaser/nfpm/v2/internal/rpmpack"
 	"github.com/goreleaser/nfpm/v2/internal/sign"
 )
 
@@ -240,6 +239,7 @@ func buildRPMMeta(info *nfpm.Info) (*rpmpack.RPMMetaData, error) {
 		URL:         info.Homepage,
 		Vendor:      info.Vendor,
 		Packager:    defaultTo(info.RPM.Packager, info.Maintainer),
+		Prefixes:    info.RPM.Prefixes,
 		Group:       info.RPM.Group,
 		Provides:    provides,
 		Recommends:  recommends,
@@ -377,7 +377,7 @@ func createFilesInsideRPM(info *nfpm.Info, rpm *rpmpack.RPM) (err error) {
 		}
 
 		// clean assures that even folders do not have a trailing slash
-		file.Name = filepath.Clean(file.Name)
+		file.Name = files.ToNixPath(file.Name)
 		rpm.AddFile(*file)
 
 	}

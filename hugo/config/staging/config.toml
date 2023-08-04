@@ -1,4 +1,4 @@
 baseURL = "https://docs-staging.nginx.com/nginx-agent"
-title = "NGINX Agent Staging Docs"
+title = "NGINX Agent"
 publishDir = "public/nginx-agent"
 canonifyURLs = false

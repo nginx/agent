@@ -451,7 +451,10 @@ func withChangelogIfRequested(info *nfpm.Info) *nfpm.Info {
 	return info
 }
 
-func createChangelogInsideDataTar(tarw *tar.Writer, g io.Writer, info *nfpm.Info,
+func createChangelogInsideDataTar(
+	tarw *tar.Writer,
+	g io.Writer,
+	info *nfpm.Info,
 	fileName string,
 ) (int64, error) {
 	var buf bytes.Buffer
@@ -486,7 +489,12 @@ func createChangelogInsideDataTar(tarw *tar.Writer, g io.Writer, info *nfpm.Info
 		return 0, err
 	}
 
-	if _, err = fmt.Fprintf(g, "%x  %s\n", digest.Sum(nil), files.AsExplicitRelativePath(fileName)); err != nil {
+	if _, err = fmt.Fprintf(
+		g,
+		"%x  %s\n",
+		digest.Sum(nil),
+		files.AsExplicitRelativePath(fileName),
+	); err != nil {
 		return 0, err
 	}
 
@@ -649,7 +657,7 @@ func conffiles(info *nfpm.Info) []byte {
 	for _, file := range info.Contents {
 		switch file.Type {
 		case files.TypeConfig, files.TypeConfigNoReplace:
-			confs = append(confs, filepath.Join("/", file.Destination))
+			confs = append(confs, files.NormalizeAbsoluteFilePath(file.Destination))
 		}
 	}
 	return []byte(strings.Join(confs, "\n") + "\n")

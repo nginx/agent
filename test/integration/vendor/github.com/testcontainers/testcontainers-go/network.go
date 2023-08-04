@@ -2,9 +2,9 @@ package testcontainers
 
 import (
 	"context"
-	"github.com/docker/docker/api/types/network"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/network"
 )
 
 // NetworkProvider allows the creation of networks on an arbitrary system
@@ -39,6 +39,7 @@ type NetworkRequest struct {
 	Attachable     bool
 	IPAM           *network.IPAM
 
-	SkipReaper  bool   // indicates whether we skip setting up a reaper for this
-	ReaperImage string //alternative reaper registry
+	SkipReaper    bool              // Deprecated: The reaper is globally controlled by the .testcontainers.properties file or the TESTCONTAINERS_RYUK_DISABLED environment variable
+	ReaperImage   string            // Deprecated: use WithImageName ContainerOption instead. Alternative reaper registry
+	ReaperOptions []ContainerOption // Reaper options to use for this network
 }
