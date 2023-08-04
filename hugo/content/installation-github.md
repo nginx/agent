@@ -2,7 +2,7 @@
 title: "Installation from GitHub Release"
 draft: false
 description: "Learn how to install NGINX Agent from a GitHub Release."
-weight: 200
+weight: 300
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1090"

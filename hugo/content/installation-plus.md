@@ -2,7 +2,7 @@
 title: "Installation from NGINX Plus Repository"
 draft: false
 description: "Learn how to install NGINX Agent from NGINX Plus repository."
-weight: 400
+weight: 500
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1217"
