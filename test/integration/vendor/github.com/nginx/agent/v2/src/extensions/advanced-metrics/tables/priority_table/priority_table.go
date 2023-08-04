@@ -89,7 +89,6 @@ func (p *PriorityTable) CollapseSamples() error {
 			priorityQueue.ReplaceTop(sample)
 			heap.Fix(&priorityQueue, 0)
 		}
-
 	}
 	p.samples = newSamples
 	log.Debugf("Collapsing priority table. Size of table after collapsing: %d", len(p.samples))

@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/docker/buildx/util/confutil"
@@ -16,6 +17,10 @@ type NodeGroup struct {
 	Driver  string
 	Nodes   []Node
 	Dynamic bool
+
+	// skip the following fields from being saved in the store
+	DockerContext bool      `json:"-"`
+	LastActivity  time.Time `json:"-"`
 }
 
 type Node struct {

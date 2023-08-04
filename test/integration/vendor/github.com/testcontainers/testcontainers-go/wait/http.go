@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -34,12 +35,13 @@ type HTTPStrategy struct {
 	Method            string      // http method
 	Body              io.Reader   // http request body
 	PollInterval      time.Duration
+	UserInfo          *url.Userinfo
 }
 
 // NewHTTPStrategy constructs a HTTP strategy waiting on port 80 and status code 200
 func NewHTTPStrategy(path string) *HTTPStrategy {
 	return &HTTPStrategy{
-		Port:              "80/tcp",
+		Port:              "",
 		Path:              path,
 		StatusCodeMatcher: defaultStatusCodeMatcher,
 		ResponseMatcher:   func(body io.Reader) bool { return true },
@@ -48,6 +50,7 @@ func NewHTTPStrategy(path string) *HTTPStrategy {
 		Method:            http.MethodGet,
 		Body:              nil,
 		PollInterval:      defaultPollInterval(),
+		UserInfo:          nil,
 	}
 }
 
@@ -103,6 +106,11 @@ func (ws *HTTPStrategy) WithBody(reqdata io.Reader) *HTTPStrategy {
 	return ws
 }
 
+func (ws *HTTPStrategy) WithBasicAuth(username, password string) *HTTPStrategy {
+	ws.UserInfo = url.UserPassword(username, password)
+	return ws
+}
+
 // WithPollInterval can be used to override the default polling interval of 100 milliseconds
 func (ws *HTTPStrategy) WithPollInterval(pollInterval time.Duration) *HTTPStrategy {
 	ws.PollInterval = pollInterval
@@ -134,20 +142,52 @@ func (ws *HTTPStrategy) WaitUntilReady(ctx context.Context, target StrategyTarge
 		return
 	}
 
-	var port nat.Port
-	port, err = target.MappedPort(ctx, ws.Port)
+	var mappedPort nat.Port
+	if ws.Port == "" {
+		ports, err := target.Ports(ctx)
+		for err != nil {
+			select {
+			case <-ctx.Done():
+				return fmt.Errorf("%s:%w", ctx.Err(), err)
+			case <-time.After(ws.PollInterval):
+				if err := checkTarget(ctx, target); err != nil {
+					return err
+				}
 
-	for port == "" {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("%s:%w", ctx.Err(), err)
-		case <-time.After(ws.PollInterval):
-			port, err = target.MappedPort(ctx, ws.Port)
+				ports, err = target.Ports(ctx)
+			}
 		}
-	}
 
-	if port.Proto() != "tcp" {
-		return errors.New("Cannot use HTTP client on non-TCP ports")
+		for k, bindings := range ports {
+			if len(bindings) == 0 || k.Proto() != "tcp" {
+				continue
+			}
+			mappedPort, _ = nat.NewPort(k.Proto(), bindings[0].HostPort)
+			break
+		}
+
+		if mappedPort == "" {
+			return errors.New("No exposed tcp ports or mapped ports - cannot wait for status")
+		}
+	} else {
+		mappedPort, err = target.MappedPort(ctx, ws.Port)
+
+		for mappedPort == "" {
+			select {
+			case <-ctx.Done():
+				return fmt.Errorf("%s:%w", ctx.Err(), err)
+			case <-time.After(ws.PollInterval):
+				if err := checkTarget(ctx, target); err != nil {
+					return err
+				}
+
+				mappedPort, err = target.MappedPort(ctx, ws.Port)
+			}
+		}
+
+		if mappedPort.Proto() != "tcp" {
+			return errors.New("Cannot use HTTP client on non-TCP ports")
+		}
 	}
 
 	switch ws.Method {
@@ -191,8 +231,17 @@ func (ws *HTTPStrategy) WaitUntilReady(ctx context.Context, target StrategyTarge
 	}
 
 	client := http.Client{Transport: tripper, Timeout: time.Second}
-	address := net.JoinHostPort(ipAddress, strconv.Itoa(port.Int()))
-	endpoint := fmt.Sprintf("%s://%s%s", proto, address, ws.Path)
+	address := net.JoinHostPort(ipAddress, strconv.Itoa(mappedPort.Int()))
+
+	endpoint := url.URL{
+		Scheme: proto,
+		Host:   address,
+		Path:   ws.Path,
+	}
+
+	if ws.UserInfo != nil {
+		endpoint.User = ws.UserInfo
+	}
 
 	// cache the body into a byte-slice so that it can be iterated over multiple times
 	var body []byte
@@ -208,7 +257,10 @@ func (ws *HTTPStrategy) WaitUntilReady(ctx context.Context, target StrategyTarge
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-time.After(ws.PollInterval):
-			req, err := http.NewRequestWithContext(ctx, ws.Method, endpoint, bytes.NewReader(body))
+			if err := checkTarget(ctx, target); err != nil {
+				return err
+			}
+			req, err := http.NewRequestWithContext(ctx, ws.Method, endpoint.String(), bytes.NewReader(body))
 			if err != nil {
 				return err
 			}
@@ -217,9 +269,11 @@ func (ws *HTTPStrategy) WaitUntilReady(ctx context.Context, target StrategyTarge
 				continue
 			}
 			if ws.StatusCodeMatcher != nil && !ws.StatusCodeMatcher(resp.StatusCode) {
+				_ = resp.Body.Close()
 				continue
 			}
 			if ws.ResponseMatcher != nil && !ws.ResponseMatcher(resp.Body) {
+				_ = resp.Body.Close()
 				continue
 			}
 			if err := resp.Body.Close(); err != nil {
