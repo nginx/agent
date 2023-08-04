@@ -76,21 +76,21 @@ func (c Config) RequestFunc(evaluate EvaluateFunc) RequestFunc {
 		}
 	}
 
-	return func(ctx context.Context, fn func(context.Context) error) error {
-		// Do not use NewExponentialBackOff since it calls Reset and the code here
-		// must call Reset after changing the InitialInterval (this saves an
-		// unnecessary call to Now).
-		b := &backoff.ExponentialBackOff{
-			InitialInterval:     c.InitialInterval,
-			RandomizationFactor: backoff.DefaultRandomizationFactor,
-			Multiplier:          backoff.DefaultMultiplier,
-			MaxInterval:         c.MaxInterval,
-			MaxElapsedTime:      c.MaxElapsedTime,
-			Stop:                backoff.Stop,
-			Clock:               backoff.SystemClock,
-		}
-		b.Reset()
+	// Do not use NewExponentialBackOff since it calls Reset and the code here
+	// must call Reset after changing the InitialInterval (this saves an
+	// unnecessary call to Now).
+	b := &backoff.ExponentialBackOff{
+		InitialInterval:     c.InitialInterval,
+		RandomizationFactor: backoff.DefaultRandomizationFactor,
+		Multiplier:          backoff.DefaultMultiplier,
+		MaxInterval:         c.MaxInterval,
+		MaxElapsedTime:      c.MaxElapsedTime,
+		Stop:                backoff.Stop,
+		Clock:               backoff.SystemClock,
+	}
+	b.Reset()
 
+	return func(ctx context.Context, fn func(context.Context) error) error {
 		for {
 			err := fn(ctx)
 			if err == nil {
@@ -119,8 +119,8 @@ func (c Config) RequestFunc(evaluate EvaluateFunc) RequestFunc {
 				delay = throttle
 			}
 
-			if ctxErr := waitFunc(ctx, delay); ctxErr != nil {
-				return fmt.Errorf("%w: %s", ctxErr, err)
+			if err := waitFunc(ctx, delay); err != nil {
+				return err
 			}
 		}
 	}
@@ -129,9 +129,6 @@ func (c Config) RequestFunc(evaluate EvaluateFunc) RequestFunc {
 // Allow override for testing.
 var waitFunc = wait
 
-// wait takes the caller's context, and the amount of time to wait.  It will
-// return nil if the timer fires before or at the same time as the context's
-// deadline.  This indicates that the call can be retried.
 func wait(ctx context.Context, delay time.Duration) error {
 	timer := time.NewTimer(delay)
 	defer timer.Stop()
