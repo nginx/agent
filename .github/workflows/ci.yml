@@ -79,10 +79,9 @@ jobs:
       - name: Run Vagrant up 
         run: vagrant up 
       - name: Test 
-        run: |
-          vagrant ssh -c "sestatus" 
-          vagrant ssh -c "echo 'I dunno will this work ?'" 
-          vagrant ssh -c "ls /home" 
+        run: vagrant ssh -c "sestatus" 
+      - name: Check Package
+        run: vagrant ssh -c "ls /home" 
       
   integration-tests:
     runs-on: ubuntu-22.04
