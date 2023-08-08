@@ -16,6 +16,13 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 )
 
+var (
+	failsRegex = regexp.MustCompile(`slab.slots.*.fails`)
+	freeRegex  = regexp.MustCompile(`slab.slots.*.free`)
+	reqsRegex  = regexp.MustCompile(`slab.slots.*.reqs`)
+	usedRegex  = regexp.MustCompile(`slab.slots.*.used`)
+)
+
 type PerDimension struct {
 	Dimensions    []*proto.Dimension
 	RunningSumMap map[string]float64
@@ -81,10 +88,10 @@ func GenerateMetrics(metricsCollections Collections) []*proto.StatsEntity {
 
 func getAggregatedSimpleMetric(count int, internalMap map[string]float64) (simpleMetrics []*proto.SimpleMetric) {
 	variableMetrics := map[*regexp.Regexp]MetricsHandler{
-		regexp.MustCompile(`slab.slots.*.fails`): sum,
-		regexp.MustCompile(`slab.slots.*.free`):  avg,
-		regexp.MustCompile(`slab.slots.*.reqs`):  sum,
-		regexp.MustCompile(`slab.slots.*.used`):  avg,
+		failsRegex: sum,
+		freeRegex:  avg,
+		reqsRegex:  sum,
+		usedRegex:  avg,
 	}
 
 	calMap := GetCalculationMap()

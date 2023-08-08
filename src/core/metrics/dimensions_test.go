@@ -8,6 +8,7 @@
 package metrics
 
 import (
+	"context"
 	"testing"
 
 	"github.com/shirou/gopsutil/host"
@@ -95,7 +96,9 @@ func TestNewCommonDim(t *testing.T) {
 }
 
 func TestCommonDim_ToDimensions(t *testing.T) {
-	h, _ := host.Info()
+	ctx := context.Background()
+	defer ctx.Done()
+	h, _ := host.InfoWithContext(ctx)
 	hostInfo := &proto.HostInfo{
 		Hostname:    h.Hostname,
 		DisplayName: h.Hostname,
