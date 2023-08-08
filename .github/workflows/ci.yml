@@ -77,7 +77,7 @@ jobs:
       - name: Run Vagrant up 
         run: vagrant up 
       - name: Test 
-        run: vagrant ssh -c "echo 'hi'"
+        run: vagrant ssh -c "sestatus"
       
   integration-tests:
     runs-on: ubuntu-22.04
