@@ -72,6 +72,8 @@ jobs:
     runs-on: macos-latest
     name: SELinux Tests
     steps: 
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
       - name: Run Vagrant up 
         run: vagrant up 
       - name: Test 
