@@ -3,6 +3,8 @@ package wait
 import (
 	"context"
 	"time"
+
+	"github.com/docker/docker/api/types"
 )
 
 // Implement interface
@@ -76,7 +78,10 @@ func (ws *HealthStrategy) WaitUntilReady(ctx context.Context, target StrategyTar
 			if err != nil {
 				return err
 			}
-			if state.Health.Status != "healthy" {
+			if err := checkState(state); err != nil {
+				return err
+			}
+			if state.Health == nil || state.Health.Status != types.Healthy {
 				time.Sleep(ws.PollInterval)
 				continue
 			}

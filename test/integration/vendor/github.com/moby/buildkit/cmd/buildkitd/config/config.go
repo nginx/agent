@@ -24,6 +24,8 @@ type Config struct {
 	Registries map[string]resolverconfig.RegistryConfig `toml:"registry"`
 
 	DNS *DNSConfig `toml:"dns"`
+
+	History *HistoryConfig `toml:"history"`
 }
 
 type GRPCConfig struct {
@@ -53,6 +55,7 @@ type NetworkConfig struct {
 	Mode          string `toml:"networkMode"`
 	CNIConfigPath string `toml:"cniConfigPath"`
 	CNIBinaryPath string `toml:"cniBinaryPath"`
+	CNIPoolSize   int    `toml:"cniPoolSize"`
 }
 
 type OCIConfig struct {
@@ -81,6 +84,9 @@ type OCIConfig struct {
 	// The profile should already be loaded (by a higher level system) before creating a worker.
 	ApparmorProfile string `toml:"apparmor-profile"`
 
+	// SELinux enables applying SELinux labels.
+	SELinux bool `toml:"selinux"`
+
 	// MaxParallelism is the maximum number of parallel build steps that can be run at the same time.
 	MaxParallelism int `toml:"max-parallelism"`
 }
@@ -99,6 +105,9 @@ type ContainerdConfig struct {
 	// The profile should already be loaded (by a higher level system) before creating a worker.
 	ApparmorProfile string `toml:"apparmor-profile"`
 
+	// SELinux enables applying SELinux labels.
+	SELinux bool `toml:"selinux"`
+
 	MaxParallelism int `toml:"max-parallelism"`
 
 	Rootless bool `toml:"rootless"`
@@ -115,4 +124,9 @@ type DNSConfig struct {
 	Nameservers   []string `toml:"nameservers"`
 	Options       []string `toml:"options"`
 	SearchDomains []string `toml:"searchDomains"`
+}
+
+type HistoryConfig struct {
+	MaxAge     int64 `toml:"maxAge"`
+	MaxEntries int64 `toml:"maxEntries"`
 }

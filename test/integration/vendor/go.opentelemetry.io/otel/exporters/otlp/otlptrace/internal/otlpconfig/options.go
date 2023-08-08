@@ -25,9 +25,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 
-	"go.opentelemetry.io/otel/exporters/otlp/internal"
 	"go.opentelemetry.io/otel/exporters/otlp/internal/retry"
-	otinternal "go.opentelemetry.io/otel/exporters/otlp/otlptrace/internal"
 )
 
 const (
@@ -67,39 +65,24 @@ type (
 	}
 )
 
-// NewHTTPConfig returns a new Config with all settings applied from opts and
-// any unset setting using the default HTTP config values.
-func NewHTTPConfig(opts ...HTTPOption) Config {
-	cfg := Config{
+func NewDefaultConfig() Config {
+	c := Config{
 		Traces: SignalConfig{
-			Endpoint:    fmt.Sprintf("%s:%d", DefaultCollectorHost, DefaultCollectorHTTPPort),
+			Endpoint:    fmt.Sprintf("%s:%d", DefaultCollectorHost, DefaultCollectorPort),
 			URLPath:     DefaultTracesPath,
 			Compression: NoCompression,
 			Timeout:     DefaultTimeout,
 		},
 		RetryConfig: retry.DefaultConfig,
 	}
-	cfg = ApplyHTTPEnvConfigs(cfg)
-	for _, opt := range opts {
-		cfg = opt.ApplyHTTPOption(cfg)
-	}
-	cfg.Traces.URLPath = internal.CleanPath(cfg.Traces.URLPath, DefaultTracesPath)
-	return cfg
+
+	return c
 }
 
 // NewGRPCConfig returns a new Config with all settings applied from opts and
 // any unset setting using the default gRPC config values.
 func NewGRPCConfig(opts ...GRPCOption) Config {
-	cfg := Config{
-		Traces: SignalConfig{
-			Endpoint:    fmt.Sprintf("%s:%d", DefaultCollectorHost, DefaultCollectorGRPCPort),
-			URLPath:     DefaultTracesPath,
-			Compression: NoCompression,
-			Timeout:     DefaultTimeout,
-		},
-		RetryConfig: retry.DefaultConfig,
-		DialOptions: []grpc.DialOption{grpc.WithUserAgent(otinternal.GetUserAgentHeader())},
-	}
+	cfg := NewDefaultConfig()
 	cfg = ApplyGRPCEnvConfigs(cfg)
 	for _, opt := range opts {
 		cfg = opt.ApplyGRPCOption(cfg)

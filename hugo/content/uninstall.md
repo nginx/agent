@@ -2,7 +2,7 @@
 title: "Uninstall NGINX Agent Package"
 draft: false
 description: "Learn how to uninstall NGINX Agent"
-weight: 500
+weight: 700
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1230"

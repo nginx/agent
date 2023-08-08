@@ -2,6 +2,7 @@ package utils
 
 import (
 	"github.com/nginx/agent/sdk/v2"
+	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/stretchr/testify/mock"
@@ -9,6 +10,30 @@ import (
 
 type MockNginxBinary struct {
 	mock.Mock
+}
+
+func GetNginxConfig(contents []byte) *proto.NginxConfig {
+	return &proto.NginxConfig{
+		Action: proto.NginxConfigAction_APPLY,
+		ConfigData: &proto.ConfigDescriptor{
+			NginxId:  "12345",
+			Checksum: "2314365",
+		},
+		Zconfig: &proto.ZippedFile{
+			Contents:      contents,
+			Checksum:      checksum.Checksum(contents),
+			RootDirectory: "nginx.conf",
+		},
+		Zaux: &proto.ZippedFile{
+			Contents:      contents,
+			Checksum:      checksum.Checksum(contents),
+			RootDirectory: "nginx.conf",
+		},
+		AccessLogs:   &proto.AccessLogs{},
+		ErrorLogs:    &proto.ErrorLogs{},
+		Ssl:          &proto.SslCertificates{},
+		DirectoryMap: &proto.DirectoryMap{},
+	}
 }
 
 func GetDetailsMap() map[string]*proto.NginxDetails {
@@ -89,21 +114,21 @@ func (m *MockNginxBinary) ValidateConfig(processId, bin, configLocation string, 
 	return args.Error(0)
 }
 
-func (m *MockNginxBinary) GetNginxDetailsMapFromProcesses(nginxProcesses []core.Process) map[string]*proto.NginxDetails {
+func (m *MockNginxBinary) GetNginxDetailsMapFromProcesses(nginxProcesses []*core.Process) map[string]*proto.NginxDetails {
 	args := m.Called(nginxProcesses)
 	return args.Get(0).(map[string]*proto.NginxDetails)
 }
 
-func (m *MockNginxBinary) UpdateNginxDetailsFromProcesses(nginxProcesses []core.Process) {
+func (m *MockNginxBinary) UpdateNginxDetailsFromProcesses(nginxProcesses []*core.Process) {
 	m.Called(nginxProcesses)
 }
 
-func (m *MockNginxBinary) GetNginxIDForProcess(nginxProcess core.Process) string {
+func (m *MockNginxBinary) GetNginxIDForProcess(nginxProcess *core.Process) string {
 	args := m.Called(nginxProcess)
 	return args.String(0)
 }
 
-func (m *MockNginxBinary) GetNginxDetailsFromProcess(nginxProcess core.Process) *proto.NginxDetails {
+func (m *MockNginxBinary) GetNginxDetailsFromProcess(nginxProcess *core.Process) *proto.NginxDetails {
 	args := m.Called(nginxProcess)
 	return args.Get(0).(*proto.NginxDetails)
 }

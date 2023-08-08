@@ -35,9 +35,7 @@ const (
 	CapSourceHTTPPerm     apicaps.CapID = "source.http.perm"
 	CapSourceHTTPUIDGID   apicaps.CapID = "soruce.http.uidgid"
 
-	CapSourceOCILayout           apicaps.CapID = "source.ocilayout"
-	CapSourceOCILayoutSessionID  apicaps.CapID = "source.ocilayout.sessionid"
-	CapSourceOCILayoutLayerLimit apicaps.CapID = "source.ocilayout.layerlimit"
+	CapSourceOCILayout apicaps.CapID = "source.ocilayout"
 
 	CapBuildOpLLBFileName apicaps.CapID = "source.buildop.llbfilename"
 
@@ -49,6 +47,7 @@ const (
 	CapExecMetaSecurityDeviceWhitelistV1 apicaps.CapID = "exec.meta.security.devices.v1"
 	CapExecMetaSetsDefaultPath           apicaps.CapID = "exec.meta.setsdefaultpath"
 	CapExecMetaUlimit                    apicaps.CapID = "exec.meta.ulimit"
+	CapExecMetaRemoveMountStubsRecursive apicaps.CapID = "exec.meta.removemountstubs.recursive"
 	CapExecMountBind                     apicaps.CapID = "exec.mount.bind"
 	CapExecMountBindReadWriteNoOuput     apicaps.CapID = "exec.mount.bind.readwrite-nooutput"
 	CapExecMountCache                    apicaps.CapID = "exec.mount.cache"
@@ -73,13 +72,20 @@ const (
 	CapMetaDescription apicaps.CapID = "meta.description"
 	CapMetaExportCache apicaps.CapID = "meta.exportcache"
 
-	CapRemoteCacheGHA apicaps.CapID = "cache.gha"
-	CapRemoteCacheS3  apicaps.CapID = "cache.s3"
+	CapRemoteCacheGHA    apicaps.CapID = "cache.gha"
+	CapRemoteCacheS3     apicaps.CapID = "cache.s3"
+	CapRemoteCacheAzBlob apicaps.CapID = "cache.azblob"
 
 	CapMergeOp apicaps.CapID = "mergeop"
 	CapDiffOp  apicaps.CapID = "diffop"
 
-	CapAnnotations apicaps.CapID = "exporter.image.annotations"
+	CapAnnotations  apicaps.CapID = "exporter.image.annotations"
+	CapAttestations apicaps.CapID = "exporter.image.attestations"
+
+	// CapSourceDateEpoch is the capability to automatically handle the date epoch
+	CapSourceDateEpoch apicaps.CapID = "exporter.sourcedateepoch"
+
+	CapSourcePolicy apicaps.CapID = "source.policy"
 )
 
 func init() {
@@ -211,18 +217,6 @@ func init() {
 
 	Caps.Init(apicaps.Cap{
 		ID:      CapSourceOCILayout,
-		Enabled: true,
-		Status:  apicaps.CapStatusExperimental,
-	})
-
-	Caps.Init(apicaps.Cap{
-		ID:      CapSourceOCILayoutSessionID,
-		Enabled: true,
-		Status:  apicaps.CapStatusExperimental,
-	})
-
-	Caps.Init(apicaps.Cap{
-		ID:      CapSourceOCILayoutLayerLimit,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
 	})
@@ -424,6 +418,12 @@ func init() {
 	})
 
 	Caps.Init(apicaps.Cap{
+		ID:      CapRemoteCacheAzBlob,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
 		ID:      CapMergeOp,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
@@ -437,6 +437,25 @@ func init() {
 
 	Caps.Init(apicaps.Cap{
 		ID:      CapAnnotations,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
+		ID:      CapAttestations,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
+		ID:      CapSourceDateEpoch,
+		Name:    "source date epoch",
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
+		ID:      CapSourcePolicy,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
 	})

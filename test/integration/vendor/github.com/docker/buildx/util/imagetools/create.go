@@ -11,6 +11,7 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/platforms"
+	"github.com/containerd/containerd/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/moby/buildkit/util/contentutil"
 	"github.com/opencontainers/go-digest"
@@ -138,7 +139,7 @@ func (r *Resolver) Combine(ctx context.Context, srcs []*Source) ([]byte, ocispec
 		},
 	}
 
-	idxBytes, err := json.MarshalIndent(idx, "", "   ")
+	idxBytes, err := json.MarshalIndent(idx, "", "  ")
 	if err != nil {
 		return nil, ocispec.Descriptor{}, errors.Wrap(err, "failed to marshal index")
 	}
@@ -151,8 +152,9 @@ func (r *Resolver) Combine(ctx context.Context, srcs []*Source) ([]byte, ocispec
 }
 
 func (r *Resolver) Push(ctx context.Context, ref reference.Named, desc ocispec.Descriptor, dt []byte) error {
-	ref = reference.TagNameOnly(ref)
+	ctx = remotes.WithMediaTypeKeyPrefix(ctx, "application/vnd.in-toto+json", "intoto")
 
+	ref = reference.TagNameOnly(ref)
 	p, err := r.resolver().Pusher(ctx, ref.String())
 	if err != nil {
 		return err
@@ -173,6 +175,8 @@ func (r *Resolver) Push(ctx context.Context, ref reference.Named, desc ocispec.D
 }
 
 func (r *Resolver) Copy(ctx context.Context, src *Source, dest reference.Named) error {
+	ctx = remotes.WithMediaTypeKeyPrefix(ctx, "application/vnd.in-toto+json", "intoto")
+
 	dest = reference.TagNameOnly(dest)
 	p, err := r.resolver().Pusher(ctx, dest.String())
 	if err != nil {

@@ -50,7 +50,7 @@ func (io IgnoreOrphans) applyToStackUp(co *api.CreateOptions, _ *api.StartOption
 	co.IgnoreOrphans = bool(io)
 }
 
-// RemoveOrphans will cleanup containers that are not declared on the compose model but own the same labels
+// RemoveOrphans will clean up containers that are not declared on the compose model but own the same labels
 type RemoveOrphans bool
 
 func (ro RemoveOrphans) applyToStackUp(o *stackUpOptions) {
@@ -66,6 +66,12 @@ type Wait bool
 
 func (w Wait) applyToStackUp(o *stackUpOptions) {
 	o.Wait = bool(w)
+}
+
+type RemoveVolumes bool
+
+func (ro RemoveVolumes) applyToStackDown(o *stackDownOptions) {
+	o.Volumes = bool(ro)
 }
 
 // RemoveImages used by services
@@ -114,9 +120,15 @@ type dockerCompose struct {
 	// paths to stack files that will be considered when compiling the final compose project
 	configs []string
 
+	// used to set logger in DockerContainer
+	logger testcontainers.Logging
+
 	// wait strategies that are applied per service when starting the stack
 	// only one strategy can be added to a service, to use multiple use wait.ForAll(...)
 	waitStrategies map[string]wait.Strategy
+
+	// used to synchronise writes to the containers map
+	containersLock sync.RWMutex
 
 	// cache for containers that are part of the stack
 	// used in ServiceContainer(...) function to avoid calls to the Docker API
@@ -266,6 +278,9 @@ func (d *dockerCompose) WithOsEnv() ComposeStack {
 }
 
 func (d *dockerCompose) lookupContainer(ctx context.Context, svcName string) (*testcontainers.DockerContainer, error) {
+	d.containersLock.Lock()
+	defer d.containersLock.Unlock()
+
 	if container, ok := d.containers[svcName]; ok {
 		return container, nil
 	}
@@ -289,10 +304,16 @@ func (d *dockerCompose) lookupContainer(ctx context.Context, svcName string) (*t
 
 	containerInstance := containers[0]
 	container := &testcontainers.DockerContainer{
-		ID: containerInstance.ID,
+		ID:    containerInstance.ID,
+		Image: containerInstance.Image,
+	}
+	container.SetLogger(d.logger)
+
+	dockerProvider, err := testcontainers.NewDockerProvider(testcontainers.WithLogger(d.logger))
+	if err != nil {
+		return nil, err
 	}
 
-	dockerProvider := &testcontainers.DockerProvider{}
 	dockerProvider.SetClient(d.dockerClient)
 
 	container.SetProvider(dockerProvider)
@@ -328,9 +349,11 @@ func (d *dockerCompose) compileProject() (*types.Project, error) {
 			api.ConfigFilesLabel: strings.Join(proj.ComposeFiles, ","),
 			api.OneoffLabel:      "False", // default, will be overridden by `run` command
 		}
-		if compiledOptions.EnvFile != "" {
-			s.CustomLabels[api.EnvironmentFileLabel] = compiledOptions.EnvFile
+		for i, envFile := range compiledOptions.EnvFiles {
+			// add a label for each env file, indexed by its position
+			s.CustomLabels[fmt.Sprintf("%s.%d", api.EnvironmentFileLabel, i)] = envFile
 		}
+
 		proj.Services[i] = s
 	}
 
@@ -352,7 +375,7 @@ func withEnv(env map[string]string) func(*cli.ProjectOptions) error {
 }
 
 func makeClient(*command.DockerCli) (client.APIClient, error) {
-	dockerClient, _, _, err := testcontainers.NewDockerClient()
+	dockerClient, err := testcontainers.NewDockerClient()
 	if err != nil {
 		return nil, err
 	}

@@ -10,6 +10,7 @@ package core
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -47,11 +48,11 @@ type NginxBinary interface {
 	Stop(processId, bin string) error
 	Reload(processId, bin string) error
 	ValidateConfig(processId, bin, configLocation string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error
-	GetNginxDetailsFromProcess(nginxProcess Process) *proto.NginxDetails
+	GetNginxDetailsFromProcess(nginxProcess *Process) *proto.NginxDetails
 	GetNginxDetailsByID(nginxID string) *proto.NginxDetails
-	GetNginxIDForProcess(nginxProcess Process) string
-	GetNginxDetailsMapFromProcesses(nginxProcesses []Process) map[string]*proto.NginxDetails
-	UpdateNginxDetailsFromProcesses(nginxProcesses []Process)
+	GetNginxIDForProcess(nginxProcess *Process) string
+	GetNginxDetailsMapFromProcesses(nginxProcesses []*Process) map[string]*proto.NginxDetails
+	UpdateNginxDetailsFromProcesses(nginxProcesses []*Process)
 	WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error)
 	ReadConfig(path, nginxId, systemId string) (*proto.NginxConfig, error)
 	UpdateLogs(existingLogs map[string]string, newLogs map[string]string) bool
@@ -100,13 +101,13 @@ func NewNginxBinary(env Environment, config *config.Config) *NginxBinaryType {
 	}
 }
 
-func (n *NginxBinaryType) GetNginxDetailsMapFromProcesses(nginxProcesses []Process) map[string]*proto.NginxDetails {
+func (n *NginxBinaryType) GetNginxDetailsMapFromProcesses(nginxProcesses []*Process) map[string]*proto.NginxDetails {
 	n.detailsMapMutex.Lock()
 	defer n.detailsMapMutex.Unlock()
 	return n.nginxDetailsMap
 }
 
-func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []Process) {
+func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []*Process) {
 	n.detailsMapMutex.Lock()
 	defer n.detailsMapMutex.Unlock()
 	n.nginxDetailsMap = map[string]*proto.NginxDetails{}
@@ -131,8 +132,8 @@ func (n *NginxBinaryType) GetChildProcesses() map[string][]*proto.NginxDetails {
 	return n.nginxWorkersMap
 }
 
-func (n *NginxBinaryType) GetNginxIDForProcess(nginxProcess Process) string {
-	defaulted := n.sanitizeProcessPath(&nginxProcess)
+func (n *NginxBinaryType) GetNginxIDForProcess(nginxProcess *Process) string {
+	defaulted := n.sanitizeProcessPath(nginxProcess)
 	info := n.getNginxInfoFrom(nginxProcess.Path)
 
 	// reset the process path from the default to what NGINX tells us
@@ -145,7 +146,7 @@ func (n *NginxBinaryType) GetNginxIDForProcess(nginxProcess Process) string {
 	return n.getNginxIDFromProcessInfo(nginxProcess, info)
 }
 
-func (n *NginxBinaryType) getNginxIDFromProcessInfo(nginxProcess Process, info *nginxInfo) string {
+func (n *NginxBinaryType) getNginxIDFromProcessInfo(nginxProcess *Process, info *nginxInfo) string {
 	return GenerateNginxID("%s_%s_%s", nginxProcess.Path, info.confPath, info.prefix)
 }
 
@@ -168,8 +169,8 @@ func (n *NginxBinaryType) sanitizeProcessPath(nginxProcess *Process) bool {
 	return defaulted
 }
 
-func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess Process) *proto.NginxDetails {
-	defaulted := n.sanitizeProcessPath(&nginxProcess)
+func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *proto.NginxDetails {
+	defaulted := n.sanitizeProcessPath(nginxProcess)
 	info := n.getNginxInfoFrom(nginxProcess.Path)
 
 	// reset the process path from the default to what NGINX tells us
@@ -202,7 +203,7 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess Process) *prot
 		nginxDetailsFacade.ConfPath = path
 	}
 
-	url, err := sdk.GetStatusApiInfo(nginxDetailsFacade.ConfPath)
+	url, err := sdk.GetStatusApiInfoWithIgnoreDirectives(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
 	if err != nil {
 		log.Tracef("Unable to get status api from the configuration: NGINX metrics will be unavailable for this system. please configure a status API to get NGINX metrics: %v", err)
 	}
@@ -268,8 +269,24 @@ func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, 
 		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
 	}
 
+	err = n.validateConfigCheckResponse(response, configLocation)
+	if err != nil {
+		return err
+	}
+
 	log.Infof("Config validated:\n%s", response)
 
+	return nil
+}
+
+func (n *NginxBinaryType) validateConfigCheckResponse(response *bytes.Buffer, configLocation string) error {
+	if bytes.Contains(response.Bytes(), []byte("[emerg]")) || bytes.Contains(response.Bytes(), []byte("[alert]")) || bytes.Contains(response.Bytes(), []byte("[crit]")) || bytes.Contains(response.Bytes(), []byte("[error]")) {
+		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
+	}
+
+	if n.config.Nginx.TreatWarningsAsErrors && bytes.Contains(response.Bytes(), []byte("[warn]")) {
+		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
+	}
 	return nil
 }
 
@@ -316,17 +333,26 @@ func hasConfPath(files []*proto.File, confPath string) bool {
 }
 
 func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error) {
-	log.Tracef("Writing config: %+v\n", config)
-	details, ok := n.nginxDetailsMap[config.ConfigData.NginxId]
-	if !ok || details == nil {
+	if log.IsLevelEnabled(log.TraceLevel) {
+		loggedConfig := *config
+		loggedConfig.Zaux = &proto.ZippedFile{}
+		jsonConfig, err := json.Marshal(loggedConfig)
+		if err == nil {
+			log.Tracef("Writing JSON config: %+v", string(jsonConfig))
+		}
+	}
+
+	details := n.GetNginxDetailsByID(config.ConfigData.NginxId)
+	if details == nil {
 		return nil, fmt.Errorf("NGINX instance %s not found", config.ConfigData.NginxId)
 	}
 
-	systemNginxConfig, err := sdk.GetNginxConfig(
+	systemNginxConfig, err := sdk.GetNginxConfigWithIgnoreDirectives(
 		details.ConfPath,
 		config.ConfigData.NginxId,
 		config.ConfigData.SystemId,
 		n.config.AllowedDirectoriesMap,
+		n.config.IgnoreDirectives,
 	)
 	if err != nil {
 		return nil, err
@@ -362,7 +388,7 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 
 	log.Info("Updating NGINX config")
 	var configApply *sdk.ConfigApply
-	configApply, err = sdk.NewConfigApply(details.ConfPath, n.config.AllowedDirectoriesMap)
+	configApply, err = sdk.NewConfigApplyWithIgnoreDirectives(details.ConfPath, n.config.AllowedDirectoriesMap, n.config.IgnoreDirectives)
 	if err != nil {
 		log.Warnf("config_apply error: %s", err)
 		return nil, err
@@ -457,7 +483,7 @@ func generateDeleteFromDirectoryMap(
 }
 
 func (n *NginxBinaryType) ReadConfig(confFile, nginxId, systemId string) (*proto.NginxConfig, error) {
-	configPayload, err := sdk.GetNginxConfig(confFile, nginxId, systemId, n.config.AllowedDirectoriesMap)
+	configPayload, err := sdk.GetNginxConfigWithIgnoreDirectives(confFile, nginxId, systemId, n.config.AllowedDirectoriesMap, n.config.IgnoreDirectives)
 	if err != nil {
 		return nil, err
 	}
@@ -509,7 +535,7 @@ func (n *NginxBinaryType) writeBackup(config *proto.NginxConfig, confFiles []*pr
 		allowedDirs := map[string]struct{}{"/tmp": {}}
 		path := filepath.Join("/tmp", strconv.FormatInt(time.Now().Unix(), 10))
 
-		configApply, err := sdk.NewConfigApply("/tmp", n.config.AllowedDirectoriesMap)
+		configApply, err := sdk.NewConfigApplyWithIgnoreDirectives("/tmp", n.config.AllowedDirectoriesMap, n.config.IgnoreDirectives)
 		if err != nil {
 			log.Warnf("config_apply error: %s", err)
 			return
@@ -784,10 +810,13 @@ func runtimeFromConfigure(configure []string) []string {
 
 // AccessLogs returns a list of access logs in the config
 func AccessLogs(p *proto.NginxConfig) map[string]string {
-	var found = make(map[string]string)
+	found := make(map[string]string)
 	for _, accessLog := range p.GetAccessLogs().GetAccessLog() {
-		// check if the access log is readable or not
-		if accessLog.GetReadable() && accessLog.GetName() != "off" {
+		if isIgnorableLogType(accessLog.GetName()) {
+			continue
+		}
+
+		if accessLog.GetReadable() {
 			name := strings.Split(accessLog.GetName(), " ")[0]
 			format := accessLog.GetFormat()
 			found[name] = format
@@ -801,9 +830,13 @@ func AccessLogs(p *proto.NginxConfig) map[string]string {
 
 // ErrorLogs returns a list of error logs in the config
 func ErrorLogs(p *proto.NginxConfig) map[string]string {
-	var found = make(map[string]string)
+	found := make(map[string]string)
+
 	for _, errorLog := range p.GetErrorLogs().GetErrorLog() {
-		// check if the error log is readable or not
+		if isIgnorableLogType(errorLog.GetName()) {
+			continue
+		}
+
 		if errorLog.GetReadable() {
 			name := strings.Split(errorLog.GetName(), " ")[0]
 			// In the future, different error log formats will be supported
@@ -844,4 +877,13 @@ func getDirectoryMapDiff(currentDirectoryMap []*proto.Directory, incomingDirecto
 	}
 
 	return diff
+}
+
+// Parses the specified log name and returns true if the log name cannot
+// be used for metrics collection
+func isIgnorableLogType(logName string) bool {
+	name := strings.ToLower(logName)
+	isIgnorableName := name == "off" || name == "/dev/stderr" || name == "/dev/stdout" || name == "/dev/null"
+	isSyslog := strings.HasPrefix(name, "syslog:")
+	return isIgnorableName || isSyslog
 }
