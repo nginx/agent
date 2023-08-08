@@ -69,7 +69,7 @@ jobs:
         run: make component-test
 
   selinux-test: 
-    runs-on: ubuntu-22.04
+    runs-on: macos-latest
     name: SELinux Tests
     steps: 
       - name: Run Vagrant up 
