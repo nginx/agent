@@ -68,6 +68,15 @@ jobs:
       - name: Run Component Tests
         run: make component-test
 
+  selinux-test: 
+    runs-on: ubuntu-22.04
+    name: SELinux Tests
+    steps: 
+      - name: Run Vagrant up 
+        run: vagrant up 
+      - name: Test 
+        run: vagrant ssh -c "echo 'hi'"
+      
   integration-tests:
     runs-on: ubuntu-22.04
     name: Integration Tests
