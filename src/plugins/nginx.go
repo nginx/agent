@@ -49,6 +49,7 @@ var (
 		re.MustCompile(`.*\[crit\].*`),
 		re.MustCompile(`.*\[error\].*`),
 	}
+	warningRegex = re.MustCompile(`.*\[warn\].*`)
 )
 
 // Nginx is the metadata of our nginx binary
