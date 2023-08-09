@@ -85,8 +85,18 @@ jobs:
         run: vagrant up 
       - name: Test 
         run: vagrant ssh -c "sestatus" 
-      - name: Check Directory 
+      - name: Install Agent 
         run: vagrant ssh -c "sudo yum localinstall -y /home/vagrant/build/nginx-agent--SNAPSHOT-${{steps.get-commit.outputs.commit}}.rpm" 
+      - name: Enable SELinux for Agent 
+        run: |
+          vagrant ssh -c "sudo semodule -n -i /usr/share/selinux/packages/nginx_agent.pp"
+          vagrant ssh -c "sudo /usr/sbin/load_policy"
+          vagrant ssh -c "sudo restorecon -R /usr/bin/nginx-agent;"
+          vagrant ssh -c "sudo restorecon -R /var/log/nginx-agent;"
+          vagrant ssh -c "sudo restorecon -R /etc/nginx-agent;"
+      - name: Check Install 
+        run: vagrant ssh -c "ps auxZ | grep nginx-agent"
+    
       
   integration-tests:
     runs-on: ubuntu-22.04
