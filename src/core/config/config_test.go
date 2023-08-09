@@ -139,7 +139,7 @@ func TestGetConfig(t *testing.T) {
 		assert.Equal(t, Defaults.CloudAccountID, config.CloudAccountID)
 
 		assert.Equal(t, Defaults.Log.Level, config.Log.Level)
-		assert.Equal(t, Defaults.Log.Path, config.Log.Path)
+		assert.Equal(t, "", config.Log.Path)
 
 		assert.Equal(t, Defaults.Server.Host, config.Server.Host)
 		assert.Equal(t, Defaults.Server.GrpcPort, config.Server.GrpcPort)

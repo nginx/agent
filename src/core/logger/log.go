@@ -37,26 +37,26 @@ func SetLogLevel(level string) {
 // SetLogFile returns a file descriptor for the log file that must be handled by the caller
 func SetLogFile(logFile string) *os.File {
 	logPath := logFile
-	if logFile == "" {
-		logPath = path.Join(defaultLogDir, defaultLogFile)
-	}
+	if logFile != "" {
+		fileInfo, err := os.Stat(logPath)
+		if err != nil {
+			log.Errorf("error reading log directory %v", err)
+			return nil
+		}
 
-	fileInfo, err := os.Stat(logPath)
-	if err != nil {
-		log.Errorf("error reading log directory %v", err)
+		if fileInfo.IsDir() {
+			// is a directory
+			logPath = path.Join(logPath, defaultLogFile)
+		}
+
+		logFileHandle, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o640)
+		if err != nil {
+			log.Errorf("Failed to set log file, proceeding to log only to stdout/stderr: %v", err)
+			return nil
+		}
+		log.SetOutput(io.MultiWriter(os.Stdout, logFileHandle))
+		return logFileHandle
+	} else {
 		return nil
 	}
-
-	if fileInfo.IsDir() {
-		// is a directory
-		logPath = path.Join(logPath, defaultLogFile)
-	}
-
-	logFileHandle, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o640)
-	if err != nil {
-		log.Errorf("Failed to set log file, proceeding to log only to stdout/stderr: %v", err)
-		return nil
-	}
-	log.SetOutput(io.MultiWriter(os.Stdout, logFileHandle))
-	return logFileHandle
 }
