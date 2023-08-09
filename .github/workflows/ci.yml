@@ -98,6 +98,6 @@ jobs:
           vagrant ssh -c "sudo restorecon -R /etc/nginx-agent;"
       - name: Check Install 
         run: |
-          vagrant ssh -c "ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent" 
+          vagrant ssh -c "sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent" 
           vagrant ssh -c "ps auxZ | grep nginx-agent"
 
