@@ -12,8 +12,8 @@ type MockEnvironment struct {
 	mock.Mock
 }
 
-func GetProcesses() []core.Process {
-	return []core.Process{
+func GetProcesses() []*core.Process {
+	return []*core.Process{
 		{Pid: 1, Name: "12345", IsMaster: true},
 		{Pid: 2, ParentPid: 1, Name: "worker-1", IsMaster: false},
 		{Pid: 3, ParentPid: 1, Name: "worker-2", IsMaster: false},
@@ -85,9 +85,9 @@ func (m *MockEnvironment) ReadFile(file string) ([]byte, error) {
 	return []byte{}, nil
 }
 
-func (m *MockEnvironment) Processes() (result []core.Process) {
+func (m *MockEnvironment) Processes() (result []*core.Process) {
 	ret := m.Called()
-	return ret.Get(0).([]core.Process)
+	return ret.Get(0).([]*core.Process)
 }
 
 func (m *MockEnvironment) WriteFiles(backup core.ConfigApplyMarker, files []*proto.File, prefix string, allowedDirs map[string]struct{}) error {

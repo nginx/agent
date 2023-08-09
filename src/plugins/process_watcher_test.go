@@ -21,20 +21,20 @@ import (
 func TestProcessWatcher_getProcUpdates(t *testing.T) {
 	tests := []struct {
 		name                string
-		seenMasterProcs     map[int32]core.Process
-		seenWorkerProcs     map[int32]core.Process
+		seenMasterProcs     map[int32]*core.Process
+		seenWorkerProcs     map[int32]*core.Process
 		seenNginxDetails    map[int32]*proto.NginxDetails
-		nginxProcs          []core.Process
+		nginxProcs          []*core.Process
 		expectedProcUpdates map[string]string
 		expectedMasterPids  []int32
 		expectedWorkerPids  []int32
 	}{
 		{
 			name:             "nginx startup",
-			seenMasterProcs:  map[int32]core.Process{},
-			seenWorkerProcs:  map[int32]core.Process{},
+			seenMasterProcs:  map[int32]*core.Process{},
+			seenWorkerProcs:  map[int32]*core.Process{},
 			seenNginxDetails: map[int32]*proto.NginxDetails{},
-			nginxProcs: []core.Process{
+			nginxProcs: []*core.Process{
 				tutils.GetProcesses()[0],
 				tutils.GetProcesses()[1],
 				tutils.GetProcesses()[2],
@@ -49,10 +49,10 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 		},
 		{
 			name: "nginx reload",
-			seenMasterProcs: map[int32]core.Process{
+			seenMasterProcs: map[int32]*core.Process{
 				1: tutils.GetProcesses()[0],
 			},
-			seenWorkerProcs: map[int32]core.Process{
+			seenWorkerProcs: map[int32]*core.Process{
 				2: tutils.GetProcesses()[1],
 				3: tutils.GetProcesses()[2],
 			},
@@ -61,7 +61,7 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 				2: {ProcessId: "2"},
 				3: {ProcessId: "3"},
 			},
-			nginxProcs: []core.Process{
+			nginxProcs: []*core.Process{
 				tutils.GetProcesses()[0],
 				{Pid: 4, ParentPid: 1, Name: "worker-1", IsMaster: false},
 				{Pid: 5, ParentPid: 1, Name: "worker-2", IsMaster: false},
@@ -77,10 +77,10 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 		},
 		{
 			name: "nginx stop && nginx start",
-			seenMasterProcs: map[int32]core.Process{
+			seenMasterProcs: map[int32]*core.Process{
 				1: tutils.GetProcesses()[0],
 			},
-			seenWorkerProcs: map[int32]core.Process{
+			seenWorkerProcs: map[int32]*core.Process{
 				2: tutils.GetProcesses()[1],
 				3: tutils.GetProcesses()[2],
 			},
@@ -89,7 +89,7 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 				2: {ProcessId: "2"},
 				3: {ProcessId: "3"},
 			},
-			nginxProcs: []core.Process{
+			nginxProcs: []*core.Process{
 				{Pid: 6, Name: "master", IsMaster: true},
 				{Pid: 7, ParentPid: 6, Name: "worker-1", IsMaster: false},
 				{Pid: 8, ParentPid: 6, Name: "worker-2", IsMaster: false},
@@ -107,10 +107,10 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 		},
 		{
 			name: "nginx stop",
-			seenMasterProcs: map[int32]core.Process{
+			seenMasterProcs: map[int32]*core.Process{
 				1: tutils.GetProcesses()[0],
 			},
-			seenWorkerProcs: map[int32]core.Process{
+			seenWorkerProcs: map[int32]*core.Process{
 				2: tutils.GetProcesses()[1],
 				3: tutils.GetProcesses()[2],
 			},
@@ -119,7 +119,7 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 				2: {ProcessId: "2"},
 				3: {ProcessId: "3"},
 			},
-			nginxProcs: []core.Process{},
+			nginxProcs: []*core.Process{},
 			expectedProcUpdates: map[string]string{
 				"1": "nginx.master.killed",
 				"2": "nginx.worker.killed",

@@ -130,7 +130,7 @@ func (nc *NginxCounter) Process(msg *core.Message) {
 	case msg.Exact(core.NginxDetailProcUpdate):
 		// get the processes from this payload
 		nc.processMutex.Lock()
-		processes := msg.Data().([]core.Process)
+		processes := msg.Data().([]*core.Process)
 		nc.nginxBinary.UpdateNginxDetailsFromProcesses(processes)
 		nc.nginxes = nc.nginxBinary.GetNginxDetailsMapFromProcesses(processes)
 		defer nc.processMutex.Unlock()

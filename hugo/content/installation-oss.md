@@ -2,7 +2,7 @@
 title: "Installation From NGINX Repository"
 draft: false
 description: "Learn how to install NGINX Agent from OSS Repository."
-weight: 300
+weight: 400
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1216"

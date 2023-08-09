@@ -8,6 +8,7 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -441,7 +442,7 @@ func TestNetworks(t *testing.T) {
 
 func TestVirtualization(t *testing.T) {
 	// Test normal VM
-	virtualizationFunc = func() (string, string, error) {
+	virtualizationFunc = func(ctx context.Context) (string, string, error) {
 		return "LXC", "host", nil
 	}
 
@@ -451,7 +452,7 @@ func TestVirtualization(t *testing.T) {
 	assert.Equal(t, "host", virtualizationRole)
 
 	// Test container
-	virtualizationFunc = func() (string, string, error) {
+	virtualizationFunc = func(ctx context.Context) (string, string, error) {
 		return "docker", "host", nil
 	}
 

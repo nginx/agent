@@ -754,256 +754,20 @@ func TestAccessLogStats(t *testing.T) {
 			&proto.StatsEntity{
 				Simplemetrics: []*proto.SimpleMetric{
 					{
-						Name:  "nginx.http.gzip.ratio",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.pctl95",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.http.request.body_bytes_sent",
 						Value: 196,
-					},
-					{
-						Name:  "nginx.http.request.bytes_sent",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.length",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.malformed",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.post",
-						Value: 0,
 					},
 					{
 						Name:  "nginx.http.method.get",
 						Value: 2,
 					},
 					{
-						Name:  "nginx.http.method.delete",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.put",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.head",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.options",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.others",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.1xx",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.http.status.2xx",
 						Value: 2,
 					},
 					{
-						Name:  "nginx.http.status.3xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.4xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.5xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.403",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.404",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.500",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.502",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.503",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.504",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.discarded",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.v0_9",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.v1_0",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.http.v1_1",
 						Value: 2,
-					},
-					{
-						Name:  "nginx.http.v2",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.pctl95",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.pctl95",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.request.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.next.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.length",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.pctl95",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.1xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.2xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.3xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.4xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.5xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.bypass",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.expired",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.hit",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.miss",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.revalidated",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.stale",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.updating",
-						Value: 0,
 					},
 				},
 			},
@@ -1018,256 +782,24 @@ func TestAccessLogStats(t *testing.T) {
 			&proto.StatsEntity{
 				Simplemetrics: []*proto.SimpleMetric{
 					{
-						Name:  "nginx.http.gzip.ratio",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.pctl95",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.http.request.body_bytes_sent",
 						Value: 196,
-					},
-					{
-						Name:  "nginx.http.request.bytes_sent",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.length",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.malformed",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.post",
-						Value: 0,
 					},
 					{
 						Name:  "nginx.http.method.get",
 						Value: 1,
 					},
 					{
-						Name:  "nginx.http.method.delete",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.put",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.head",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.options",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.http.method.others",
 						Value: 1,
-					},
-					{
-						Name:  "nginx.http.status.1xx",
-						Value: 0,
 					},
 					{
 						Name:  "nginx.http.status.2xx",
 						Value: 2,
 					},
 					{
-						Name:  "nginx.http.status.3xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.4xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.5xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.403",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.404",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.500",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.502",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.503",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.504",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.discarded",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.v0_9",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.v1_0",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.http.v1_1",
 						Value: 1,
-					},
-					{
-						Name:  "nginx.http.v2",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.pctl95",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.pctl95",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.next.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.request.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.pctl95",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.length",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.1xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.2xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.3xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.4xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.5xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.bypass",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.expired",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.hit",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.miss",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.revalidated",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.stale",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.updating",
-						Value: 0,
 					},
 				},
 			},
@@ -1362,16 +894,8 @@ func TestAccessLogStats(t *testing.T) {
 						Value: 2,
 					},
 					{
-						Name:  "nginx.http.status.1xx",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.http.status.2xx",
 						Value: 5,
-					},
-					{
-						Name:  "nginx.http.status.3xx",
-						Value: 0,
 					},
 					{
 						Name:  "nginx.http.status.4xx",
@@ -1498,16 +1022,8 @@ func TestAccessLogStats(t *testing.T) {
 						Value: 23.444444444444443,
 					},
 					{
-						Name:  "nginx.upstream.status.1xx",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.upstream.status.2xx",
 						Value: 6,
-					},
-					{
-						Name:  "nginx.upstream.status.3xx",
-						Value: 0,
 					},
 					{
 						Name:  "nginx.upstream.status.4xx",
@@ -1518,28 +1034,12 @@ func TestAccessLogStats(t *testing.T) {
 						Value: 4,
 					},
 					{
-						Name:  "nginx.cache.bypass",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.expired",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.cache.hit",
 						Value: 11,
 					},
 					{
 						Name:  "nginx.cache.miss",
 						Value: 2,
-					},
-					{
-						Name:  "nginx.cache.revalidated",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.stale",
-						Value: 0,
 					},
 					{
 						Name:  "nginx.cache.updating",
@@ -1558,256 +1058,20 @@ func TestAccessLogStats(t *testing.T) {
 			&proto.StatsEntity{
 				Simplemetrics: []*proto.SimpleMetric{
 					{
-						Name:  "nginx.http.gzip.ratio",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.time.pctl95",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.http.request.body_bytes_sent",
 						Value: 196,
-					},
-					{
-						Name:  "nginx.http.request.bytes_sent",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.length",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.request.malformed",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.post",
-						Value: 0,
 					},
 					{
 						Name:  "nginx.http.method.get",
 						Value: 2,
 					},
 					{
-						Name:  "nginx.http.method.delete",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.put",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.head",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.options",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.method.others",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.1xx",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.http.status.2xx",
 						Value: 2,
 					},
 					{
-						Name:  "nginx.http.status.3xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.4xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.5xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.403",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.404",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.500",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.502",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.503",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.504",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.status.discarded",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.v0_9",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.http.v1_0",
-						Value: 0,
-					},
-					{
 						Name:  "nginx.http.v1_1",
 						Value: 2,
-					},
-					{
-						Name:  "nginx.http.v2",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.connect.time.pctl95",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.header.time.pctl95",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.request.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.next.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.length",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.count",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.max",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.median",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.response.time.pctl95",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.1xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.2xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.3xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.4xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.upstream.status.5xx",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.bypass",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.expired",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.hit",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.miss",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.revalidated",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.stale",
-						Value: 0,
-					},
-					{
-						Name:  "nginx.cache.updating",
-						Value: 0,
 					},
 				},
 			},

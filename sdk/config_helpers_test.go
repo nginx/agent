@@ -141,8 +141,8 @@ var tests = []struct {
 			ssl_certificate     /tmp/testdata/nginx/ca.crt;
 		
 			server {
-				server_name   localhost;
 				listen        127.0.0.1:80;
+				server_name   localhost;
 		
 				error_page    500 502 503 504  /50x.html;
 				# ssl_certificate /usr/local/nginx/conf/cert.pem;
@@ -298,7 +298,7 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "5da60539dbedfe08011646f96b964af9be68dcd3bdb7b6cc2d64c06723bba659",
+				Checksum:      "9e05884e8c5d1db866d1b4a55fbef7f8b54b88b7a2e0a17bc7a11e6ff5b5b500",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
@@ -340,8 +340,8 @@ var tests = []struct {
 			ssl_certificate     /tmp/testdata/nginx/ca.crt;
 		
 			server {
-				server_name   localhost;
 				listen        127.0.0.1:80;
+				server_name   localhost;
 		
 				error_page    500 502 503 504  /50x.html;
 				# ssl_certificate /usr/local/nginx/conf/cert.pem;
@@ -443,7 +443,7 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "1b6422f8a17527b2e9f255b7362ab7c320cd4a2efea7bff3e402438e5877f00e",
+				Checksum:      "433837974aaab32148c9bb034f1c59ab878482af506a13d9a834a8a99384efbd",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
@@ -795,6 +795,7 @@ func TestParseStatusAPIEndpoints(t *testing.T) {
 	}{
 		{
 			plus: []string{
+				"http://127.0.0.1:80/api/",
 				"http://localhost:80/api/",
 			},
 			conf: `
@@ -811,7 +812,7 @@ server {
 		},
 		{
 			plus: []string{
-				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
 			},
 			conf: `
 server {
@@ -826,7 +827,7 @@ server {
 		},
 		{
 			plus: []string{
-				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
 			},
 			conf: `
 server {
@@ -842,22 +843,40 @@ server {
 		},
 		{
 			plus: []string{
+				"http://127.0.0.1:8888/api/",
+				"http://status.internal.com:8888/api/",
+			},
+			conf: `
+server {
+    listen 8888 default_server;
+    server_name status.internal.com;
+    location /api/ {
+        api write=on;
+        allow 127.0.0.1;
+        deny all;
+    }
+}
+`,
+		},
+		{
+			plus: []string{
 				"http://127.0.0.1:8080/privateapi",
 			},
 			conf: `
-		server {
-		       listen 127.0.0.1:8080;
-		       location /privateapi {
-		           api write=on;
-		           allow 127.0.0.1;
-		           deny all;
-		       }
-		}
+	server {
+			listen 127.0.0.1:8080;
+			location /privateapi {
+				api write=on;
+				allow 127.0.0.1;
+				deny all;
+			}
+	}
 		`,
 		},
 		{
 			plus: []string{
-				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
+				"http://[::1]:80/api/",
 			},
 			conf: `
 server {
@@ -906,7 +925,7 @@ server {
 		},
 		{
 			plus: []string{
-				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
 			},
 			conf: `
 server {
@@ -922,7 +941,7 @@ server {
 		},
 		{
 			plus: []string{
-				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
 			},
 			conf: `
 server {
@@ -970,7 +989,7 @@ server {
 		},
 		{
 			plus: []string{
-				"http://localhost:8000/api/",
+				"http://[::1]:8000/api/",
 			},
 			conf: `
 server {
@@ -986,90 +1005,94 @@ server {
 		},
 		{
 			oss: []string{
+				"http://localhost:80/stub_status",
 				"http://127.0.0.1:80/stub_status",
 			},
 			conf: `
-		server {
-			server_name   localhost;
-			listen        127.0.0.1:80;
-		
-			error_page    500 502 503 504  /50x.html;
-			# ssl_certificate /usr/local/nginx/conf/cert.pem;
-		
-			location      / {
-				root      /tmp/testdata/foo;
-			}
-		
-			location /stub_status {
-				stub_status;
-			}
-		}
+server {
+	server_name   localhost;
+	listen        127.0.0.1:80;
+
+	error_page    500 502 503 504  /50x.html;
+	# ssl_certificate /usr/local/nginx/conf/cert.pem;
+
+	location      / {
+		root      /tmp/testdata/foo;
+	}
+
+	location /stub_status {
+		stub_status;
+	}
+}
 		`,
 		},
 		{
 			oss: []string{
 				"http://localhost:80/stub_status",
+				"http://127.0.0.1:80/stub_status",
 			},
 			conf: `
-		server {
-			server_name   localhost;
-			listen        :80;
-		
-			error_page    500 502 503 504  /50x.html;
-			# ssl_certificate /usr/local/nginx/conf/cert.pem;
-		
-			location      / {
-				root      /tmp/testdata/foo;
-			}
-		
-			location /stub_status {
-				stub_status;
-			}
-		}
+server {
+	server_name   localhost;
+	listen        :80;
+
+	error_page    500 502 503 504  /50x.html;
+	# ssl_certificate /usr/local/nginx/conf/cert.pem;
+
+	location      / {
+		root      /tmp/testdata/foo;
+	}
+
+	location /stub_status {
+		stub_status;
+	}
+}
 		`,
 		},
 		{
 			oss: []string{
 				"http://localhost:80/stub_status",
+				"http://127.0.0.1:80/stub_status",
 			},
 			conf: `
-		server {
-			server_name   localhost;
-			listen        80;
-		
-			error_page    500 502 503 504  /50x.html;
-			# ssl_certificate /usr/local/nginx/conf/cert.pem;
-		
-			location      / {
-				root      /tmp/testdata/foo;
-			}
-		
-			location /stub_status {
-				stub_status;
-			}
-		}
+server {
+	server_name   localhost;
+	listen        80;
+
+	error_page    500 502 503 504  /50x.html;
+	# ssl_certificate /usr/local/nginx/conf/cert.pem;
+
+	location      / {
+		root      /tmp/testdata/foo;
+	}
+
+	location /stub_status {
+		stub_status;
+	}
+}
 		`,
 		},
 		{
 			oss: []string{
 				"http://localhost:80/stub_status",
+				"http://127.0.0.1:80/stub_status",
 			},
 			conf: `
-		server {
-			server_name   localhost;
-			listen        80;
-		
-			error_page    500 502 503 504  /50x.html;
-			# ssl_certificate /usr/local/nginx/conf/cert.pem;
-		
-			location      / {
-				root      /tmp/testdata/foo;
-			}
-		
-			location = /stub_status {
-				stub_status;
-			}
-		}
+server {
+	server_name   localhost;
+	listen        80;
+
+	error_page    500 502 503 504  /50x.html;
+	# ssl_certificate /usr/local/nginx/conf/cert.pem;
+
+	location      / {
+		root      /tmp/testdata/foo;
+	}
+
+	location = /stub_status {
+		stub_status;
+	}
+}
 		`,
 		},
 	} {
