@@ -76,6 +76,8 @@ jobs:
       - uses: actions/setup-go@v3
       - name: Make Package
         run: make local-rpm-package
+      - name: Check
+        run: ls
       - name: Run Vagrant up 
         run: vagrant up 
       - name: Test 
