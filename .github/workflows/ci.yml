@@ -86,7 +86,7 @@ jobs:
       - name: Test 
         run: vagrant ssh -c "sestatus" 
       - name: Check Directory 
-        run: vagrant ssh -c "sudo yum localinstall /home/vagrant/build/./build/nginx-agent--SNAPSHOT-${{steps.get-commit.outputs.commit}}.rpm" 
+        run: vagrant ssh -c "sudo yum localinstall /home/vagrant/build/nginx-agent--SNAPSHOT-${{steps.get-commit.outputs.commit}}.rpm" 
       
   integration-tests:
     runs-on: ubuntu-22.04
