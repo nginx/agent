@@ -160,27 +160,12 @@ func (m *Metrics) Subscriptions() []string {
 	}
 }
 
-// switch bundle := msg.Data().(type) {
-// case *metrics.MetricsReportBundle:
-// 	if len(bundle.Data) > 0 {
-// 		for _, report := range bundle.Data {
-// 			if len(report.Data) > 0 {
-// 				r.metricBuffer = append(r.metricBuffer, report)
-// 			}
-// 		}
-// 	}
-// }
-// r.messagePipeline.Process(core.NewMessage(core.CommMetrics, r.metricBuffer))
-// r.metricBuffer = make([]core.Payload, 0)
-
 func (m *Metrics) metricsGoroutine() {
 	m.wg.Add(1)
 	defer m.ticker.Stop()
 	defer m.wg.Done()
 	log.Info("Metrics waiting for handshake to be completed")
 	m.registerStatsSources()
-
-	metricBuffer := make([]core.Payload, 0)
 
 	for {
 		select {
@@ -193,27 +178,26 @@ func (m *Metrics) metricsGoroutine() {
 		case <-m.ticker.C:
 			stats := m.collectStats()
 			if bundlePayload := metrics.GenerateMetricsReportBundle(stats); bundlePayload != nil {
-				// topic := core.MetricReport
-				// if m.passthrough {
-				// 	topic = core.MetricReportStream
-				// }
-				// m.pipeline.Process(core.NewMessage(topic, bundle))
+				if m.passthrough {
+					metricBuffer := make([]core.Payload, 0)
 
-				metricBuffer = make([]core.Payload, 0)
-
-				switch bundle := bundlePayload.(type) {
-				case *metrics.MetricsReportBundle:
-					if len(bundle.Data) > 0 {
-						for _, report := range bundle.Data {
-							if len(report.Data) > 0 {
-								metricBuffer = append(metricBuffer, report)
+					switch bundle := bundlePayload.(type) {
+					case *metrics.MetricsReportBundle:
+						if len(bundle.Data) > 0 {
+							for _, report := range bundle.Data {
+								if len(report.Data) > 0 {
+									metricBuffer = append(metricBuffer, report)
+								}
 							}
 						}
+					default:
+						log.Errorf("BUNDLE TYPE COERCION FAILED: %T", bundlePayload)
 					}
-				default:
-					log.Errorf("BUNDLE TYPE COERCION FAILED: %T", bundlePayload)
+
+					m.pipeline.Process(core.NewMessage(core.CommMetrics, metricBuffer))
+				} else {
+					m.pipeline.Process(core.NewMessage(core.MetricReport, bundlePayload))
 				}
-				m.pipeline.Process(core.NewMessage(core.CommMetrics, metricBuffer))
 			}
 			if m.collectorsUpdate.Load() {
 				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)
