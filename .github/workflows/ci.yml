@@ -88,7 +88,7 @@ jobs:
       - name: Install Agent 
         run: vagrant ssh -c "sudo yum localinstall -y /home/vagrant/build/nginx-agent--SNAPSHOT-${{steps.get-commit.outputs.commit}}.rpm" 
       - name: Start Agent 
-        run: sudo systemctl start nginx-agent
+        run: vagrant ssh -c "sudo systemctl start nginx-agent"
       - name: Enable SELinux for Agent 
         run: |
           vagrant ssh -c "sudo semodule -n -i /usr/share/selinux/packages/nginx_agent.pp"
