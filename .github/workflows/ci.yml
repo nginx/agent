@@ -97,7 +97,7 @@ jobs:
           vagrant ssh -c "sudo restorecon -R /var/log/nginx-agent;"
           vagrant ssh -c "sudo restorecon -R /etc/nginx-agent;"
       - name: Check Install 
-        run: |
-          vagrant ssh -c "sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent" 
-          vagrant ssh -c "ps auxZ | grep nginx-agent"
+        run: vagrant ssh -c "sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent" 
+      - name: Check ?
+        run: vagrant ssh -c "ps auxZ | grep nginx-agent"
 
