@@ -77,7 +77,6 @@ func GetDefaultFeatures() []string {
 		FeatureNginxSSLConfig,
 		FeatureNginxCounting,
 		FeatureMetrics,
-		FeatureMetricsThrottle,
 		FeatureDataPlaneStatus,
 		FeatureProcessWatcher,
 		FeatureFileWatcher,
@@ -97,7 +96,6 @@ func DecodeConfig[T interface{}](input interface{}) (output T, err error) {
 	}
 
 	err = decoder.Decode(input)
-
 	if err != nil {
 		return output, err
 	}
