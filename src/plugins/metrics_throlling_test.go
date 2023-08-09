@@ -102,6 +102,23 @@ func TestMetricsThrottle_Process(t *testing.T) {
 			config: tutils.GetMockAgentConfig(),
 		},
 		{
+			name: "metrics passthrough",
+			msgs: []*core.Message{
+				core.NewMessage(core.MetricReportStream, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{}}}),
+				core.NewMessage(core.MetricReportStream, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{}}}),
+				core.NewMessage(core.MetricReportStream, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{{}}}),
+			},
+			msgTopics: []string{
+				core.MetricReportStream,
+				core.MetricReportStream,
+				core.MetricReportStream,
+				core.CommMetrics,
+				core.CommMetrics,
+				core.CommMetrics,
+			},
+			config: tutils.GetMockAgentConfig(),
+		},
+		{
 			name: "config changed",
 			msgs: []*core.Message{
 				core.NewMessage(core.AgentConfigChanged, nil),
@@ -132,7 +149,7 @@ func TestMetricsThrottle_Process(t *testing.T) {
 }
 
 func TestMetricsThrottle_Subscriptions(t *testing.T) {
-	subs := []string{core.MetricReport, core.AgentConfigChanged}
+	subs := []string{core.MetricReport, core.MetricReportStream, core.AgentConfigChanged}
 	pluginUnderTest := NewMetricsThrottle(tutils.GetMockAgentConfig(), &tutils.MockEnvironment{})
 
 	assert.Equal(t, subs, pluginUnderTest.Subscriptions())

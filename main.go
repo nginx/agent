@@ -240,11 +240,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || (len(loadedConfig.Nginx.NginxCountingSocket) > 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxCounting)) {
-		corePlugins = append(corePlugins, plugins.NewMetrics(loadedConfig, env, binary))
-	}
-
-	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
-		corePlugins = append(corePlugins, plugins.NewMetricsThrottle(loadedConfig, env))
+		corePlugins = append(corePlugins, plugins.NewMetrics(loadedConfig, env, binary, false))
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureDataPlaneStatus) {

@@ -24,6 +24,8 @@ const (
 	FeatureNginxSSLConfig      = "nginx-ssl-config"
 	FeatureNginxCounting       = "nginx-counting"
 	FeatureMetrics             = "metrics"
+	FeatureMetricsCollection   = "metrics-collection"
+	FeatureMetricsSender       = "metrics-sender"
 	FeatureMetricsThrottle     = "metrics-throttle"
 	FeatureDataPlaneStatus     = "dataplane-status"
 	FeatureProcessWatcher      = "process-watcher"
@@ -31,7 +33,6 @@ const (
 	FeatureFileWatcherThrottle = "file-watch-throttle"
 	FeatureActivityEvents      = "activity-events"
 	FeatureAgentAPI            = "agent-api"
-	FeatureMetricSender        = "metric-sender"
 
 	CommanderPlugin    = "commander"
 	ConfigReaderPlugin = "config-reader-plugin"

@@ -39,9 +39,10 @@ type Metrics struct {
 	env                      core.Environment
 	conf                     *config.Config
 	binary                   core.NginxBinary
+	passthrough              bool
 }
 
-func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary) *Metrics {
+func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary, passthrough bool) *Metrics {
 	collectorConfigsMap := createCollectorConfigsMap(config, env, binary)
 	return &Metrics{
 		collectorsUpdate:         atomic.NewBool(false),
@@ -56,6 +57,7 @@ func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBi
 		env:                      env,
 		conf:                     config,
 		binary:                   binary,
+		passthrough:              passthrough,
 	}
 }
 
@@ -158,12 +160,28 @@ func (m *Metrics) Subscriptions() []string {
 	}
 }
 
+// switch bundle := msg.Data().(type) {
+// case *metrics.MetricsReportBundle:
+// 	if len(bundle.Data) > 0 {
+// 		for _, report := range bundle.Data {
+// 			if len(report.Data) > 0 {
+// 				r.metricBuffer = append(r.metricBuffer, report)
+// 			}
+// 		}
+// 	}
+// }
+// r.messagePipeline.Process(core.NewMessage(core.CommMetrics, r.metricBuffer))
+// r.metricBuffer = make([]core.Payload, 0)
+
 func (m *Metrics) metricsGoroutine() {
 	m.wg.Add(1)
 	defer m.ticker.Stop()
 	defer m.wg.Done()
 	log.Info("Metrics waiting for handshake to be completed")
 	m.registerStatsSources()
+
+	metricBuffer := make([]core.Payload, 0)
+
 	for {
 		select {
 		case <-m.ctx.Done():
@@ -174,8 +192,28 @@ func (m *Metrics) metricsGoroutine() {
 			return
 		case <-m.ticker.C:
 			stats := m.collectStats()
-			if bundle := metrics.GenerateMetricsReportBundle(stats); bundle != nil {
-				m.pipeline.Process(core.NewMessage(core.MetricReport, bundle))
+			if bundlePayload := metrics.GenerateMetricsReportBundle(stats); bundlePayload != nil {
+				// topic := core.MetricReport
+				// if m.passthrough {
+				// 	topic = core.MetricReportStream
+				// }
+				// m.pipeline.Process(core.NewMessage(topic, bundle))
+
+				metricBuffer = make([]core.Payload, 0)
+
+				switch bundle := bundlePayload.(type) {
+				case *metrics.MetricsReportBundle:
+					if len(bundle.Data) > 0 {
+						for _, report := range bundle.Data {
+							if len(report.Data) > 0 {
+								metricBuffer = append(metricBuffer, report)
+							}
+						}
+					}
+				default:
+					log.Errorf("BUNDLE TYPE COERCION FAILED: %T", bundlePayload)
+				}
+				m.pipeline.Process(core.NewMessage(core.CommMetrics, metricBuffer))
 			}
 			if m.collectorsUpdate.Load() {
 				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)

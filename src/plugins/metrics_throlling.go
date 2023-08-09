@@ -88,6 +88,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 		r.collectorsUpdate.Store(true)
 		return
 	case msg.Exact(core.MetricReportStream):
+		// TODO: Is r.metricsAggregation ineffectual in this case?
 		switch bundle := msg.Data().(type) {
 		case *metrics.MetricsReportBundle:
 			if len(bundle.Data) > 0 {
@@ -217,5 +218,5 @@ func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 		}
 	}
 
-	return
+	return reports
 }
