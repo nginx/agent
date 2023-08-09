@@ -83,7 +83,7 @@ jobs:
       - name: Test 
         run: vagrant ssh -c "sestatus" 
       - name: Check Directory 
-        run: ls /home
+        run: vagrant ssh -c "ls /home/vagrant/build" 
       
   integration-tests:
     runs-on: ubuntu-22.04
