@@ -10,6 +10,7 @@ package core
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -36,24 +37,18 @@ import (
 	"github.com/nginx/agent/v2/src/core/network"
 )
 
-const (
-	CTLKern          = 1  // "high kernel": proc, limits
-	KernProc         = 14 // struct: process entries
-	KernProcPathname = 12 // path to executable
-	SYS_SYSCTL       = 202
-)
-
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 //counterfeiter:generate -o fake_environment_test.go . Environment
 //go:generate sh -c "grep -v agent/product/nginx-agent/v2/core fake_environment_test.go | sed -e s\\/core\\\\.\\/\\/g > fake_environment_fixed.go"
 //go:generate mv fake_environment_fixed.go fake_environment_test.go
 type Environment interface {
 	NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo
+	// NewHostInfoWithContext(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo
 	GetHostname() (hostname string)
 	GetSystemUUID() (hostId string)
 	ReadDirectory(dir string, ext string) ([]string, error)
 	WriteFiles(backup ConfigApplyMarker, files []*proto.File, prefix string, allowedDirs map[string]struct{}) error
-	Processes() (result []Process)
+	Processes() (result []*Process)
 	FileStat(path string) (os.FileInfo, error)
 	DiskDevices() ([]string, error)
 	GetContainerID() (string, error)
@@ -90,17 +85,33 @@ const (
 	codeName            = "VERSION_CODENAME"
 	id                  = "ID"
 	name                = "NAME"
+	CTLKern             = 1  // "high kernel": proc, limits
+	KernProc            = 14 // struct: process entries
+	KernProcPathname    = 12 // path to executable
+	SYS_SYSCTL          = 202
 )
 
 var (
-	virtualizationFunc             = host.Virtualization
+	virtualizationFunc             = host.VirtualizationWithContext
 	_                  Environment = &EnvironmentType{}
+	basePattern                    = regexp.MustCompile("/([a-f0-9]{64})$")
+	colonPattern                   = regexp.MustCompile(":([a-f0-9]{64})$")
+	scopePattern                   = regexp.MustCompile(`/.+-(.+?).scope$`)
+	containersPattern              = regexp.MustCompile("containers/([a-f0-9]{64})")
+	containerdPattern              = regexp.MustCompile("sandboxes/([a-f0-9]{64})")
 )
 
 func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
+	ctx := context.Background()
+	defer ctx.Done()
+	return env.NewHostInfoWithContext(ctx, agentVersion, tags, configDirs, clearCache)
+}
+
+func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
+	defer ctx.Done()
 	// temp cache measure
 	if env.host == nil || clearCache {
-		hostInformation, err := host.Info()
+		hostInformation, err := host.InfoWithContext(ctx)
 		if err != nil {
 			log.Warnf("Unable to collect dataplane host information: %v, defaulting value", err)
 			return &proto.HostInfo{}
@@ -169,7 +180,9 @@ func getUnixName() string {
 }
 
 func (env *EnvironmentType) GetHostname() string {
-	hostInformation, err := host.Info()
+	ctx := context.Background()
+	defer ctx.Done()
+	hostInformation, err := host.InfoWithContext(ctx)
 	if err != nil {
 		log.Warnf("Unable to read hostname from dataplane, defaulting value. Error: %v", err)
 		return ""
@@ -178,6 +191,9 @@ func (env *EnvironmentType) GetHostname() string {
 }
 
 func (env *EnvironmentType) GetSystemUUID() string {
+	ctx := context.Background()
+	defer ctx.Done()
+
 	if env.IsContainer() {
 		containerID, err := env.GetContainerID()
 		if err != nil {
@@ -187,7 +203,7 @@ func (env *EnvironmentType) GetSystemUUID() string {
 		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String()
 	}
 
-	hostInfo, err := host.Info()
+	hostInfo, err := host.InfoWithContext(ctx)
 	if err != nil {
 		log.Infof("Unable to read host id from dataplane, defaulting value. Error: %v", err)
 		return ""
@@ -306,12 +322,6 @@ func getContainerID(mountInfo string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to close file %s: %v", mountInfo, err)
 	}
-
-	basePattern := regexp.MustCompile("/([a-f0-9]{64})$")
-	colonPattern := regexp.MustCompile(":([a-f0-9]{64})$")
-	scopePattern := regexp.MustCompile(`/.+-(.+?).scope$`)
-	containersPattern := regexp.MustCompile("containers/([a-f0-9]{64})")
-	containerdPattern := regexp.MustCompile("sandboxes/([a-f0-9]{64})")
 
 	for _, line := range lines {
 		splitLine := strings.Split(line, " ")
@@ -480,10 +490,12 @@ func (env *EnvironmentType) FileStat(path string) (os.FileInfo, error) {
 }
 
 // Processes returns a slice of nginx master and nginx worker processes currently running
-func (env *EnvironmentType) Processes() (result []Process) {
-	var processList []Process
+func (env *EnvironmentType) Processes() (result []*Process) {
+	var processList []*Process
+	ctx := context.Background()
+	defer ctx.Done()
 
-	pids, err := process.Pids()
+	pids, err := process.PidsWithContext(ctx)
 	if err != nil {
 		log.Errorf("failed to read pids for dataplane host: %v", err)
 		return processList
@@ -491,9 +503,9 @@ func (env *EnvironmentType) Processes() (result []Process) {
 
 	nginxProcesses := make(map[int32]*process.Process)
 	for _, pid := range pids {
-		p, _ := process.NewProcess(pid)
 
-		name, _ := p.Name()
+		p, _ := process.NewProcessWithContext(ctx, pid)
+		name, _ := p.NameWithContext(ctx)
 
 		if name == "nginx" {
 			nginxProcesses[pid] = p
@@ -501,13 +513,13 @@ func (env *EnvironmentType) Processes() (result []Process) {
 	}
 
 	for pid, nginxProcess := range nginxProcesses {
-		name, _ := nginxProcess.Name()
-		createTime, _ := nginxProcess.CreateTime()
-		status, _ := nginxProcess.Status()
-		running, _ := nginxProcess.IsRunning()
-		user, _ := nginxProcess.Username()
-		ppid, _ := nginxProcess.Ppid()
-		cmd, _ := nginxProcess.Cmdline()
+		name, _ := nginxProcess.NameWithContext(ctx)
+		createTime, _ := nginxProcess.CreateTimeWithContext(ctx)
+		status, _ := nginxProcess.StatusWithContext(ctx)
+		running, _ := nginxProcess.IsRunningWithContext(ctx)
+		user, _ := nginxProcess.UsernameWithContext(ctx)
+		ppid, _ := nginxProcess.PpidWithContext(ctx)
+		cmd, _ := nginxProcess.CmdlineWithContext(ctx)
 		isMaster := false
 
 		_, ok := nginxProcesses[ppid]
@@ -526,7 +538,7 @@ func (env *EnvironmentType) Processes() (result []Process) {
 			}
 		}
 
-		newProcess := Process{
+		newProcess := &Process{
 			Pid:        pid,
 			Name:       name,
 			CreateTime: createTime, // Running time is probably different
@@ -541,7 +553,6 @@ func (env *EnvironmentType) Processes() (result []Process) {
 
 		processList = append(processList, newProcess)
 	}
-
 	return processList
 }
 
@@ -745,8 +756,10 @@ func formatBytes(bytes int) string {
 }
 
 func virtualization() (string, string) {
+	ctx := context.Background()
+	defer ctx.Done()
 	// doesn't check k8s
-	virtualizationSystem, virtualizationRole, err := virtualizationFunc()
+	virtualizationSystem, virtualizationRole, err := virtualizationFunc(ctx)
 	if err != nil {
 		log.Warnf("Error reading virtualization: %v", err)
 		return "", "host"
@@ -759,7 +772,9 @@ func virtualization() (string, string) {
 }
 
 func diskPartitions() (partitions []*proto.DiskPartition) {
-	parts, err := disk.Partitions(false)
+	ctx := context.Background()
+	defer ctx.Done()
+	parts, err := disk.PartitionsWithContext(ctx, false)
 	if err != nil {
 		// return an array of 0
 		log.Errorf("Could not read disk partitions for host: %v", err)
@@ -817,7 +832,10 @@ func mergeHostAndOsReleaseInfo(hostReleaseInfo *proto.ReleaseInfo,
 }
 
 func getHostReleaseInfo() (release *proto.ReleaseInfo) {
-	hostInfo, err := host.Info()
+	ctx := context.Background()
+	defer ctx.Done()
+
+	hostInfo, err := host.InfoWithContext(ctx)
 	if err != nil {
 		log.Errorf("Could not read release information for host: %v", err)
 		return &proto.ReleaseInfo{}

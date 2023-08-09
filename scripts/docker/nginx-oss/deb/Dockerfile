@@ -1,6 +1,6 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE} as install-nginx
-LABEL maintainer="NGINX Agent Maintainers <agent@nginx.com>"
+LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG ENTRY_POINT

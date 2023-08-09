@@ -59,6 +59,7 @@ func getDefaultFilters(projectName string, oneOff oneOff, selectedServices ...st
 	if len(selectedServices) == 1 {
 		f = append(f, serviceFilter(selectedServices[0]))
 	}
+	f = append(f, hasConfigHashLabel())
 	switch oneOff {
 	case oneOffOnly:
 		f = append(f, oneOffFilter(true))
@@ -95,6 +96,12 @@ func isService(services ...string) containerPredicate {
 	return func(c moby.Container) bool {
 		service := c.Labels[api.ServiceLabel]
 		return utils.StringContains(services, service)
+	}
+}
+
+func isRunning() containerPredicate {
+	return func(c moby.Container) bool {
+		return c.State == "running"
 	}
 }
 
@@ -139,16 +146,5 @@ func (containers Containers) sorted() Containers {
 	sort.Slice(containers, func(i, j int) bool {
 		return getCanonicalContainerName(containers[i]) < getCanonicalContainerName(containers[j])
 	})
-	return containers
-}
-
-func (containers Containers) remove(id string) Containers {
-	for i, c := range containers {
-		if c.ID == id {
-			l := len(containers) - 1
-			containers[i] = containers[l]
-			return containers[:l]
-		}
-	}
 	return containers
 }

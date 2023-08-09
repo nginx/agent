@@ -662,46 +662,61 @@ func parseStatusAPIEndpoints(parent *crossplane.Directive, current *crossplane.D
 		if locChild.Directive != plusAPIDirective && locChild.Directive != ossAPIDirective {
 			continue
 		}
-		host := parseServerHost(parent)
-		path := parseLocationPath(current)
-		switch locChild.Directive {
-		case plusAPIDirective:
-			plusUrls = append(plusUrls, fmt.Sprintf(apiFormat, host, path))
-		case ossAPIDirective:
-			ossUrls = append(ossUrls, fmt.Sprintf(apiFormat, host, path))
+
+		addresses := parseAddressesFromServerDirective(parent)
+
+		for _, address := range addresses {
+			path := parsePathFromLocationDirective(current)
+
+			switch locChild.Directive {
+			case plusAPIDirective:
+				plusUrls = append(plusUrls, fmt.Sprintf(apiFormat, address, path))
+			case ossAPIDirective:
+				ossUrls = append(ossUrls, fmt.Sprintf(apiFormat, address, path))
+			}
 		}
 	}
 	return plusUrls, ossUrls
 }
 
-func parseServerHost(parent *crossplane.Directive) string {
-	listenPort := "80"
-	serverName := "localhost"
+func parseAddressesFromServerDirective(parent *crossplane.Directive) []string {
+	addresses := []string{}
+	port := "80"
+
 	for _, dir := range parent.Block {
+		address := "127.0.0.1"
+
 		switch dir.Directive {
 		case "listen":
-			host, port, err := net.SplitHostPort(dir.Args[0])
+			host, listenPort, err := net.SplitHostPort(dir.Args[0])
 			if err == nil {
-				if host != "*" && host != "::" && host != "" {
-					serverName = host
+				if host == "*" || host == "" {
+					address = "127.0.0.1"
+				} else if host == "::" || host == "::1" {
+					address = "[::1]"
+				} else {
+					address = host
 				}
-				listenPort = port
+				port = listenPort
 			} else {
 				if isPort(dir.Args[0]) {
-					listenPort = dir.Args[0]
+					port = dir.Args[0]
 				} else {
-					serverName = dir.Args[0]
+					address = dir.Args[0]
 				}
 			}
+			addresses = append(addresses, fmt.Sprintf("%s:%s", address, port))
 		case "server_name":
 			if dir.Args[0] == "_" {
 				// default server
 				continue
 			}
-			serverName = dir.Args[0]
+			address = dir.Args[0]
+			addresses = append(addresses, fmt.Sprintf("%s:%s", address, port))
 		}
 	}
-	return fmt.Sprintf("%s:%s", serverName, listenPort)
+
+	return addresses
 }
 
 func isPort(value string) bool {
@@ -709,7 +724,7 @@ func isPort(value string) bool {
 	return err == nil && port >= 1 && port <= 65535
 }
 
-func parseLocationPath(location *crossplane.Directive) string {
+func parsePathFromLocationDirective(location *crossplane.Directive) string {
 	path := "/"
 	if len(location.Args) > 0 {
 		if location.Args[0] != "=" {

@@ -10,9 +10,10 @@ package core
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/klauspost/cpuid/v2"
@@ -28,6 +30,7 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/process"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 
 	"github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -40,11 +43,12 @@ import (
 //go:generate mv fake_environment_fixed.go fake_environment_test.go
 type Environment interface {
 	NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo
+	// NewHostInfoWithContext(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo
 	GetHostname() (hostname string)
 	GetSystemUUID() (hostId string)
 	ReadDirectory(dir string, ext string) ([]string, error)
 	WriteFiles(backup ConfigApplyMarker, files []*proto.File, prefix string, allowedDirs map[string]struct{}) error
-	Processes() (result []Process)
+	Processes() (result []*Process)
 	FileStat(path string) (os.FileInfo, error)
 	DiskDevices() ([]string, error)
 	GetContainerID() (string, error)
@@ -74,17 +78,40 @@ type Process struct {
 	Command    string
 }
 
-const lengthOfContainerId = 64
+const (
+	lengthOfContainerId = 64
+	versionId           = "VERSION_ID"
+	version             = "VERSION"
+	codeName            = "VERSION_CODENAME"
+	id                  = "ID"
+	name                = "NAME"
+	CTLKern             = 1  // "high kernel": proc, limits
+	KernProc            = 14 // struct: process entries
+	KernProcPathname    = 12 // path to executable
+	SYS_SYSCTL          = 202
+)
 
 var (
-	virtualizationFunc             = host.Virtualization
+	virtualizationFunc             = host.VirtualizationWithContext
 	_                  Environment = &EnvironmentType{}
+	basePattern                    = regexp.MustCompile("/([a-f0-9]{64})$")
+	colonPattern                   = regexp.MustCompile(":([a-f0-9]{64})$")
+	scopePattern                   = regexp.MustCompile(`/.+-(.+?).scope$`)
+	containersPattern              = regexp.MustCompile("containers/([a-f0-9]{64})")
+	containerdPattern              = regexp.MustCompile("sandboxes/([a-f0-9]{64})")
 )
 
 func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
+	ctx := context.Background()
+	defer ctx.Done()
+	return env.NewHostInfoWithContext(ctx, agentVersion, tags, configDirs, clearCache)
+}
+
+func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
+	defer ctx.Done()
 	// temp cache measure
 	if env.host == nil || clearCache {
-		hostInformation, err := host.Info()
+		hostInformation, err := host.InfoWithContext(ctx)
 		if err != nil {
 			log.Warnf("Unable to collect dataplane host information: %v, defaulting value", err)
 			return &proto.HostInfo{}
@@ -97,11 +124,11 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 			DisplayName:         hostInformation.Hostname,
 			OsType:              hostInformation.OS,
 			Uuid:                env.GetSystemUUID(),
-			Uname:               hostInformation.KernelArch,
+			Uname:               getUnixName(),
 			Partitons:           diskPartitions(),
 			Network:             env.networks(),
-			Processor:           processors(),
-			Release:             releaseInfo(),
+			Processor:           processors(hostInformation.KernelArch),
+			Release:             releaseInfo("/etc/os-release"),
 			Tags:                *tags,
 			AgentAccessibleDirs: configDirs,
 		}
@@ -112,8 +139,50 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 	return env.host
 }
 
+// getUnixName returns details about this operating system formatted as "sysname
+// nodename release version machine". Returns "" if unix name cannot be
+// determined.
+//
+//   - sysname: Name of the operating system implementation.
+//   - nodename: Network name of this machine.
+//   - release: Release level of the operating system.
+//   - version: Version level of the operating system.
+//   - machine: Machine hardware platform.
+//
+// Different platforms have different [Utsname] struct definitions.
+//
+// TODO :- Make this function platform agnostic to pull uname (uname -a).
+//
+// [Utsname]: https://cs.opensource.google/search?q=utsname&ss=go%2Fx%2Fsys&start=1
+func getUnixName() string {
+	var utsname unix.Utsname
+	err := unix.Uname(&utsname)
+	if err != nil {
+		log.Warnf("Unable to read Uname. Error: %v", err)
+		return ""
+	}
+
+	toStr := func(buf []byte) string {
+		idx := bytes.IndexByte(buf, 0)
+		if idx == -1 {
+			return "unknown"
+		}
+		return string(buf[:idx])
+	}
+
+	sysName := toStr(utsname.Sysname[:])
+	nodeName := toStr(utsname.Nodename[:])
+	release := toStr(utsname.Release[:])
+	version := toStr(utsname.Version[:])
+	machine := toStr(utsname.Machine[:])
+
+	return strings.Join([]string{sysName, nodeName, release, version, machine}, " ")
+}
+
 func (env *EnvironmentType) GetHostname() string {
-	hostInformation, err := host.Info()
+	ctx := context.Background()
+	defer ctx.Done()
+	hostInformation, err := host.InfoWithContext(ctx)
 	if err != nil {
 		log.Warnf("Unable to read hostname from dataplane, defaulting value. Error: %v", err)
 		return ""
@@ -122,6 +191,9 @@ func (env *EnvironmentType) GetHostname() string {
 }
 
 func (env *EnvironmentType) GetSystemUUID() string {
+	ctx := context.Background()
+	defer ctx.Done()
+
 	if env.IsContainer() {
 		containerID, err := env.GetContainerID()
 		if err != nil {
@@ -131,7 +203,7 @@ func (env *EnvironmentType) GetSystemUUID() string {
 		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String()
 	}
 
-	hostInfo, err := host.Info()
+	hostInfo, err := host.InfoWithContext(ctx)
 	if err != nil {
 		log.Infof("Unable to read host id from dataplane, defaulting value. Error: %v", err)
 		return ""
@@ -140,18 +212,18 @@ func (env *EnvironmentType) GetSystemUUID() string {
 }
 
 func (env *EnvironmentType) ReadDirectory(dir string, ext string) ([]string, error) {
-	var files []string
-	fileInfo, err := ioutil.ReadDir(dir)
+	var filesList []string
+	fileInfo, err := os.ReadDir(dir)
 	if err != nil {
 		log.Warnf("Unable to reading directory %s: %v ", dir, err)
-		return files, err
+		return filesList, err
 	}
 
 	for _, file := range fileInfo {
-		files = append(files, strings.Replace(file.Name(), ext, "", -1))
+		filesList = append(filesList, strings.Replace(file.Name(), ext, "", -1))
 	}
 
-	return files, nil
+	return filesList, nil
 }
 
 func (env *EnvironmentType) WriteFiles(backup ConfigApplyMarker, files []*proto.File, confPath string, allowedDirs map[string]struct{}) error {
@@ -198,7 +270,7 @@ func cGroupV1Check(cgroupFile string) (bool, error) {
 		conatinerd = "containerd"
 	)
 
-	data, err := ioutil.ReadFile(cgroupFile)
+	data, err := os.ReadFile(cgroupFile)
 	if err != nil {
 		return false, err
 	}
@@ -246,13 +318,10 @@ func getContainerID(mountInfo string) (string, error) {
 	for fileScanner.Scan() {
 		lines = append(lines, fileScanner.Text())
 	}
-	mInfoFile.Close()
-
-	basePattern := regexp.MustCompile("/([a-f0-9]{64})$")
-	colonPattern := regexp.MustCompile(":([a-f0-9]{64})$")
-	scopePattern := regexp.MustCompile(`/.+-(.+?).scope$`)
-	containersPattern := regexp.MustCompile("containers/([a-f0-9]{64})")
-	containerdPattern := regexp.MustCompile("sandboxes/([a-f0-9]{64})")
+	err = mInfoFile.Close()
+	if err != nil {
+		return "", fmt.Errorf("unable to close file %s: %v", mountInfo, err)
+	}
 
 	for _, line := range lines {
 		splitLine := strings.Split(line, " ")
@@ -313,7 +382,7 @@ func getLinuxDiskDevices() ([]string, error) {
 	dd := []string{}
 	log.Debugf("Reading directory for linux disk information: %s", SysBlockDir)
 
-	dir, err := ioutil.ReadDir(SysBlockDir)
+	dir, err := os.ReadDir(SysBlockDir)
 	if err != nil {
 		return dd, err
 	}
@@ -396,13 +465,13 @@ func writeFile(backup ConfigApplyMarker, file *proto.File, confPath string) erro
 	_, err := os.Stat(directory)
 	if os.IsNotExist(err) {
 		log.Debugf("Creating directory %s with permissions 755", directory)
-		err = os.MkdirAll(directory, 0755)
+		err = os.MkdirAll(directory, 0o755)
 		if err != nil {
 			return err
 		}
 	}
 
-	if err := ioutil.WriteFile(fileFullPath, file.GetContents(), permissions); err != nil {
+	if err := os.WriteFile(fileFullPath, file.GetContents(), permissions); err != nil {
 		// If the file didn't exist originally and failed to be created
 		// Then remove that file from the backup so that the rollback doesn't try to delete the file
 		if _, err := os.Stat(fileFullPath); !errors.Is(err, os.ErrNotExist) {
@@ -421,63 +490,143 @@ func (env *EnvironmentType) FileStat(path string) (os.FileInfo, error) {
 }
 
 // Processes returns a slice of nginx master and nginx worker processes currently running
-func (env *EnvironmentType) Processes() (result []Process) {
-	var processList []Process
+func (env *EnvironmentType) Processes() (result []*Process) {
+	var processList []*Process
+	ctx := context.Background()
+	defer ctx.Done()
 
-	pids, err := process.Pids()
+	pids, err := process.PidsWithContext(ctx)
 	if err != nil {
 		log.Errorf("failed to read pids for dataplane host: %v", err)
 		return processList
 	}
 
-	seenPids := make(map[int32]bool)
+	nginxProcesses := make(map[int32]*process.Process)
 	for _, pid := range pids {
-		p, _ := process.NewProcess(pid)
-		name, _ := p.Name()
+
+		p, _ := process.NewProcessWithContext(ctx, pid)
+		name, _ := p.NameWithContext(ctx)
 
 		if name == "nginx" {
-			createTime, _ := p.CreateTime()
-			status, _ := p.Status()
-			running, _ := p.IsRunning()
-			user, _ := p.Username()
-			ppid, _ := p.Ppid()
-			cmd, _ := p.Cmdline()
-			exe, _ := p.Exe()
-
-			// if the exe is empty, try get the exe from the parent
-			if exe == "" {
-				parentProcess, _ := process.NewProcess(ppid)
-				exe, _ = parentProcess.Exe()
-			}
-
-			processList = append(processList, Process{
-				Pid:        pid,
-				Name:       name,
-				CreateTime: createTime, // Running time is probably different
-				Status:     strings.Join(status, " "),
-				IsRunning:  running,
-				Path:       exe,
-				User:       user,
-				ParentPid:  ppid,
-				Command:    cmd,
-			})
-			seenPids[pid] = true
+			nginxProcesses[pid] = p
 		}
 	}
 
-	for i := 0; i < len(processList); i++ {
-		item := &processList[i]
-		if seenPids[item.ParentPid] {
-			item.IsMaster = false
+	for pid, nginxProcess := range nginxProcesses {
+		name, _ := nginxProcess.NameWithContext(ctx)
+		createTime, _ := nginxProcess.CreateTimeWithContext(ctx)
+		status, _ := nginxProcess.StatusWithContext(ctx)
+		running, _ := nginxProcess.IsRunningWithContext(ctx)
+		user, _ := nginxProcess.UsernameWithContext(ctx)
+		ppid, _ := nginxProcess.PpidWithContext(ctx)
+		cmd, _ := nginxProcess.CmdlineWithContext(ctx)
+		isMaster := false
+
+		_, ok := nginxProcesses[ppid]
+		if !ok {
+			isMaster = true
+		}
+
+		var exe string
+		if isMaster {
+			exe = getNginxProcessExe(nginxProcess)
 		} else {
-			item.IsMaster = true
+			for potentialParentPid, potentialParentNginxProcess := range nginxProcesses {
+				if potentialParentPid == ppid {
+					exe = getNginxProcessExe(potentialParentNginxProcess)
+				}
+			}
 		}
-	}
 
+		newProcess := &Process{
+			Pid:        pid,
+			Name:       name,
+			CreateTime: createTime, // Running time is probably different
+			Status:     strings.Join(status, " "),
+			IsRunning:  running,
+			Path:       exe,
+			User:       user,
+			ParentPid:  ppid,
+			Command:    cmd,
+			IsMaster:   isMaster,
+		}
+
+		processList = append(processList, newProcess)
+	}
 	return processList
 }
 
-func processors() (res []*proto.CpuInfo) {
+func getNginxProcessExe(nginxProcess *process.Process) string {
+	exe, exeErr := nginxProcess.Exe()
+	if exeErr != nil {
+		out, commandErr := exec.Command("sh", "-c", "command -v nginx").CombinedOutput()
+		if commandErr != nil {
+			// process.Exe() is not implemented yet for FreeBSD.
+			// This is a temporary workaround  until the gopsutil library supports it.
+			var err error
+			exe, err = getExe(nginxProcess.Pid)
+			if err != nil {
+				log.Tracef("Failed to find exe information for process: %d. Failed for the following errors: %v, %v, %v", nginxProcess.Pid, exeErr, commandErr, err)
+				log.Errorf("Unable to find NGINX executable for process %d", nginxProcess.Pid)
+			}
+		} else {
+			exe = strings.TrimSuffix(string(out), "\n")
+		}
+	}
+
+	return exe
+}
+
+func getExe(pid int32) (string, error) {
+	mib := []int32{CTLKern, KernProc, KernProcPathname, pid}
+	buf, _, err := callSyscall(mib)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Trim(string(buf), "\x00"), nil
+}
+
+func callSyscall(mib []int32) ([]byte, uint64, error) {
+	mibptr := unsafe.Pointer(&mib[0])
+	miblen := uint64(len(mib))
+
+	// get required buffer size
+	length := uint64(0)
+	_, _, err := unix.Syscall6(
+		SYS_SYSCTL,
+		uintptr(mibptr),
+		uintptr(miblen),
+		0,
+		uintptr(unsafe.Pointer(&length)),
+		0,
+		0)
+	if err != 0 {
+		var b []byte
+		return b, length, err
+	}
+	if length == 0 {
+		var b []byte
+		return b, length, err
+	}
+	// get proc info itself
+	buf := make([]byte, length)
+	_, _, err = unix.Syscall6(
+		SYS_SYSCTL,
+		uintptr(mibptr),
+		uintptr(miblen),
+		uintptr(unsafe.Pointer(&buf[0])),
+		uintptr(unsafe.Pointer(&length)),
+		0,
+		0)
+	if err != 0 {
+		return buf, length, err
+	}
+
+	return buf, length, nil
+}
+
+func processors(architecture string) (res []*proto.CpuInfo) {
 	log.Debug("Reading CPU information for dataplane host")
 	cpus, err := cpu.Info()
 	if err != nil {
@@ -492,9 +641,12 @@ func processors() (res []*proto.CpuInfo) {
 			// TODO: Model is a number
 			// wait to see if unmarshalling error on control plane side is fixed with switch in models
 			// https://stackoverflow.com/questions/21151765/cannot-unmarshal-string-into-go-value-of-type-int64
-			Model:        item.Model,
-			Cores:        item.Cores,
-			Architecture: item.Family,
+			Model: item.Model,
+			Cores: item.Cores,
+			// cpu_info does not provide architecture info.
+			// Fix was to add KernelArch field in InfoStat struct that returns 'uname -m'
+			// https://github.com/shirou/gopsutil/issues/737
+			Architecture: architecture,
 			Cpus:         int32(len(cpus)),
 			Mhz:          item.Mhz,
 			// TODO - check if this is correct
@@ -510,27 +662,104 @@ func processors() (res []*proto.CpuInfo) {
 }
 
 func processorCache(item cpu.InfoStat) map[string]string {
-	// Find a library that supports multiple CPUs
-	cache := map[string]string{
-		// values are in bytes
-		"L1d":       fmt.Sprintf("%v", cpuid.CPU.Cache.L1D),
-		"L1i":       fmt.Sprintf("%v", cpuid.CPU.Cache.L1D),
-		"L2":        fmt.Sprintf("%v", cpuid.CPU.Cache.L2),
-		"L3":        fmt.Sprintf("%v", cpuid.CPU.Cache.L3),
-		"Features:": strings.Join(cpuid.CPU.FeatureSet(), ","),
-		// "Flags:": strings.Join(item.Flags, ","),
-		"Cacheline bytes:": fmt.Sprintf("%v", cpuid.CPU.CacheLine),
-	}
-
+	cache := getProcessorCacheInfo(cpuid.CPU)
 	if cpuid.CPU.Supports(cpuid.SSE, cpuid.SSE2) {
 		cache["SIMD 2:"] = "Streaming SIMD 2 Extensions"
 	}
 	return cache
 }
 
+type Shell interface {
+	Exec(cmd string, arg ...string) ([]byte, error)
+}
+
+type execShellCommand struct{}
+
+func (e execShellCommand) Exec(cmd string, arg ...string) ([]byte, error) {
+	execCmd := exec.Command(cmd, arg...)
+	return execCmd.Output()
+}
+
+var shell Shell = execShellCommand{}
+
+func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
+	cache := getDefaultProcessorCacheInfo(cpuInfo)
+	return getCacheInfo(cache)
+}
+
+func getCacheInfo(cache map[string]string) map[string]string {
+	out, err := shell.Exec("lscpu")
+	if err != nil {
+		log.Tracef("Install lscpu on host to get processor info: %v", err)
+		return cache
+	}
+	return parseLscpu(string(out), cache)
+}
+
+func parseLscpu(lscpuInfo string, cache map[string]string) map[string]string {
+	lscpuInfos := strings.TrimSpace(lscpuInfo)
+	lines := strings.Split(lscpuInfos, "\n")
+	lscpuInfoMap := map[string]string{}
+	for _, line := range lines {
+		fields := strings.Split(line, ":")
+		if len(fields) < 2 {
+			continue
+		}
+		key := strings.TrimSpace(fields[0])
+		value := strings.TrimSpace(fields[1])
+		lscpuInfoMap[key] = strings.Trim(value, "\"")
+	}
+
+	if l1dCache, ok := lscpuInfoMap["L1d cache"]; ok {
+		cache["L1d"] = l1dCache
+	}
+	if l1iCache, ok := lscpuInfoMap["L1i cache"]; ok {
+		cache["L1i"] = l1iCache
+	}
+	if l2Cache, ok := lscpuInfoMap["L2 cache"]; ok {
+		cache["L2"] = l2Cache
+	}
+	if l3Cache, ok := lscpuInfoMap["L3 cache"]; ok {
+		cache["L3"] = l3Cache
+	}
+
+	return cache
+}
+
+func getDefaultProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
+	// Find a library that supports multiple CPUs
+	return map[string]string{
+		"L1d":       formatBytes(cpuInfo.Cache.L1D),
+		"L1i":       formatBytes(cpuInfo.Cache.L1D),
+		"L2":        formatBytes(cpuInfo.Cache.L2),
+		"L3":        formatBytes(cpuInfo.Cache.L3),
+		"Features:": strings.Join(cpuInfo.FeatureSet(), ","),
+		// "Flags:": strings.Join(item.Flags, ","),
+		"Cacheline bytes:": fmt.Sprintf("%v", cpuInfo.CacheLine),
+	}
+}
+
+func formatBytes(bytes int) string {
+	if bytes <= -1 {
+		return "-1"
+	}
+	mib := 1024 * 1024
+	kib := 1024
+
+	if bytes >= mib {
+		return fmt.Sprint(bytes/mib) + " MiB"
+	} else if bytes >= kib {
+		return fmt.Sprint(bytes/kib) + " KiB"
+	} else {
+		return fmt.Sprint(bytes) + " B"
+	}
+}
+
 func virtualization() (string, string) {
+	ctx := context.Background()
+	defer ctx.Done()
 	// doesn't check k8s
-	virtualizationSystem, virtualizationRole, err := virtualizationFunc()
+	virtualizationSystem, virtualizationRole, err := virtualizationFunc(ctx)
 	if err != nil {
 		log.Warnf("Error reading virtualization: %v", err)
 		return "", "host"
@@ -543,7 +772,9 @@ func virtualization() (string, string) {
 }
 
 func diskPartitions() (partitions []*proto.DiskPartition) {
-	parts, err := disk.Partitions(false)
+	ctx := context.Background()
+	defer ctx.Done()
+	parts, err := disk.PartitionsWithContext(ctx, false)
 	if err != nil {
 		// return an array of 0
 		log.Errorf("Could not read disk partitions for host: %v", err)
@@ -560,13 +791,55 @@ func diskPartitions() (partitions []*proto.DiskPartition) {
 	return partitions
 }
 
-func releaseInfo() (release *proto.ReleaseInfo) {
-	hostInfo, err := host.Info()
+func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {
+	hostReleaseInfo := getHostReleaseInfo()
+	osRelease, err := getOsRelease(osReleaseFile)
+	if err != nil {
+		log.Warnf("Could not read from %s file: %v", osReleaseFile, err)
+		return hostReleaseInfo
+	}
+	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease)
+}
+
+func mergeHostAndOsReleaseInfo(hostReleaseInfo *proto.ReleaseInfo,
+	osReleaseInfo map[string]string,
+) (release *proto.ReleaseInfo) {
+	// override os-release info with host info,
+	// if os-release info is empty.
+	if len(osReleaseInfo[versionId]) == 0 {
+		osReleaseInfo[versionId] = hostReleaseInfo.VersionId
+	}
+	if len(osReleaseInfo[version]) == 0 {
+		osReleaseInfo[version] = hostReleaseInfo.Version
+	}
+	if len(osReleaseInfo[codeName]) == 0 {
+		osReleaseInfo[codeName] = hostReleaseInfo.Codename
+	}
+	if len(osReleaseInfo[name]) == 0 {
+		osReleaseInfo[name] = hostReleaseInfo.Name
+	}
+	if len(osReleaseInfo[id]) == 0 {
+		osReleaseInfo[id] = hostReleaseInfo.Id
+	}
+
+	return &proto.ReleaseInfo{
+		VersionId: osReleaseInfo[versionId],
+		Version:   osReleaseInfo[version],
+		Codename:  osReleaseInfo[codeName],
+		Name:      osReleaseInfo[name],
+		Id:        osReleaseInfo[id],
+	}
+}
+
+func getHostReleaseInfo() (release *proto.ReleaseInfo) {
+	ctx := context.Background()
+	defer ctx.Done()
+
+	hostInfo, err := host.InfoWithContext(ctx)
 	if err != nil {
 		log.Errorf("Could not read release information for host: %v", err)
 		return &proto.ReleaseInfo{}
 	}
-
 	return &proto.ReleaseInfo{
 		VersionId: hostInfo.PlatformVersion,
 		Version:   hostInfo.KernelVersion,
@@ -574,6 +847,46 @@ func releaseInfo() (release *proto.ReleaseInfo) {
 		Name:      hostInfo.PlatformFamily,
 		Id:        hostInfo.Platform,
 	}
+}
+
+// getOsRelease reads the path and returns release information for host.
+func getOsRelease(path string) (map[string]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("release file %s unreadable: %w", path, err)
+	}
+
+	defer func() {
+		cerr := f.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+
+	info, err := parseOsReleaseFile(f)
+	if err != nil {
+		return nil, fmt.Errorf("release file %s unparsable: %w", path, err)
+	}
+	return info, nil
+}
+
+func parseOsReleaseFile(reader io.Reader) (map[string]string, error) {
+	osReleaseInfoMap := map[string]string{"NAME": "unix"}
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		field := strings.Split(line, "=")
+		if len(field) < 2 {
+			continue
+		}
+		osReleaseInfoMap[field[0]] = strings.Trim(field[1], "\"")
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("could not parse os-release file %w", err)
+	}
+
+	return osReleaseInfoMap, nil
 }
 
 func (env *EnvironmentType) networks() (res *proto.Network) {

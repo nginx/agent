@@ -116,17 +116,8 @@ func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
 
 	backOffSettings := sdk.ConvertBackOffSettings(agentConfig.GetDetails().GetServer().GetBackoff())
 	r.reporter.WithBackoffSettings(backOffSettings)
-
-	err := r.reporter.Close()
-	if err != nil {
-		log.Warnf("Unable to close metric reporter, %v", err)
-	}
-	err = r.reporter.Connect(r.ctx)
-	if err != nil {
-		log.Warnf("Metric reporter was unable to connect, %v", err)
-	}
 }
 
 func (r *MetricsSender) Subscriptions() []string {
-	return []string{core.CommMetrics, core.RegistrationCompletedTopic, core.AgentConfig}
+	return []string{core.CommMetrics, core.RegistrationCompletedTopic, core.AgentConfigChanged}
 }

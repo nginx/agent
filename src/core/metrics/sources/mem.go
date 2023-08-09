@@ -24,15 +24,15 @@ import (
 type VirtualMemory struct {
 	logger *MetricSourceLogger
 	*namedMetric
-	statFunc func() (*mem.VirtualMemoryStat, error)
+	statFunc func(context.Context) (*mem.VirtualMemoryStat, error)
 }
 
 func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemory {
-	statFunc := mem.VirtualMemory
+	statFunc := mem.VirtualMemoryWithContext
 
 	if env.IsContainer() {
 		cgroupMemSource := cgroup.NewCgroupMemSource(cgroup.CgroupBasePath)
-		statFunc = cgroupMemSource.VirtualMemoryStat
+		statFunc = cgroupMemSource.VirtualMemoryStatWithContext
 	}
 
 	return &VirtualMemory{NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}, statFunc}
@@ -40,7 +40,7 @@ func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemo
 
 func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
-	memstats, err := c.statFunc()
+	memstats, err := c.statFunc(ctx)
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {
 			c.logger.Log(fmt.Sprintf("Unable to collect VirtualMemory metrics because the file %v was not found", e.Path))

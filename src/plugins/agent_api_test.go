@@ -115,11 +115,11 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 
 			env := tutils.GetMockEnv()
 			mockNginxBinary := tutils.NewMockNginxBinary()
-			processes := []core.Process{}
+			processes := []*core.Process{}
 
 			for _, nginxDetail := range tt.nginxDetails {
 				mockNginxBinary.On("GetNginxDetailsFromProcess", mock.Anything).Return(nginxDetail).Once()
-				processes = append(processes, core.Process{Pid: 1, Name: "12345", IsMaster: true})
+				processes = append(processes, &core.Process{Pid: 1, Name: "12345", IsMaster: true})
 			}
 
 			env.On("Processes").Return(processes)
@@ -271,7 +271,7 @@ func TestNginxHandler_updateConfig(t *testing.T) {
 				env = tutils.GetMockEnvWithProcess()
 			} else {
 				env = tutils.GetMockEnv()
-				env.On("Processes", mock.Anything).Return([]core.Process{})
+				env.On("Processes", mock.Anything).Return([]*core.Process{})
 			}
 			env.On("WriteFiles", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 

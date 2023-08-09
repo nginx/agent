@@ -409,13 +409,31 @@ require {
 #============= nginx_agent_t ==============
 files_rw_etc_files(nginx_agent_t)
 
-
 require {
 	type nginx_agent_t;
-    type dosfs_t;
 }
 
 #============= nginx_agent_t ==============
 files_read_var_lib_files(nginx_agent_t)
-allow nginx_agent_t var_lib_t:file write;
-allow nginx_agent_t dosfs_t:filesystem getattr;
+
+require {
+	type nginx_agent_t;
+}
+
+#============= nginx_agent_t ==============
+files_manage_usr_files(nginx_agent_t)
+files_read_var_lib_files(nginx_agent_t)
+
+require {
+	type nginx_agent_t;
+}
+
+#============= nginx_agent_t ==============
+apache_manage_lib(nginx_agent_t)
+
+require {
+	type nginx_agent_t;
+}
+
+#============= nginx_agent_t ==============
+files_manage_mounttab(nginx_agent_t)

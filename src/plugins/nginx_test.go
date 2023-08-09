@@ -38,99 +38,99 @@ var (
 	first  = []byte("nginx conf contents")
 	second = []byte("")
 	third  = []byte(`user       www www;  ## Default: nobody
-	worker_processes  5;  ## Default: 1
-	error_log  logs/error.log;
-	pid        logs/nginx.pid;
-	worker_rlimit_nofile 8192;
-
-	events {
-	worker_connections  4096;  ## Default: 1024
-	}
-	
-	http {
-	include    conf/mime.types;
-	include    /etc/nginx/proxy.conf;
-	include    /etc/nginx/fastcgi.conf;
-	index    index.html index.htm index.php;
-
-	default_type application/octet-stream;
-	log_format   main '$remote_addr - $remote_user [$time_local]  $status '
-		'\"$request\" $body_bytes_sent \"$http_referer\" '
-		'\"$http_user_agent\" \"$http_x_forwarded_for\"';
-	access_log   logs/access.log  main;
-	sendfile     on;
-	tcp_nopush   on;
-	server_names_hash_bucket_size 128; # this seems to be required for some vhosts
-	
-	server { # php/fastcgi
-		listen       80;
-		server_name  domain1.com www.domain1.com;
-		access_log   logs/domain1.access.log  main;
-		root         html;
-
-		location ~ \.php$ {
-		fastcgi_pass   127.0.0.1:1025;
-		}
-	}`)
+	 worker_processes  5;  ## Default: 1
+	 error_log  logs/error.log;
+	 pid        logs/nginx.pid;
+	 worker_rlimit_nofile 8192;
+ 
+	 events {
+	 worker_connections  4096;  ## Default: 1024
+	 }
+	 
+	 http {
+	 include    conf/mime.types;
+	 include    /etc/nginx/proxy.conf;
+	 include    /etc/nginx/fastcgi.conf;
+	 index    index.html index.htm index.php;
+ 
+	 default_type application/octet-stream;
+	 log_format   main '$remote_addr - $remote_user [$time_local]  $status '
+		 '\"$request\" $body_bytes_sent \"$http_referer\" '
+		 '\"$http_user_agent\" \"$http_x_forwarded_for\"';
+	 access_log   logs/access.log  main;
+	 sendfile     on;
+	 tcp_nopush   on;
+	 server_names_hash_bucket_size 128; # this seems to be required for some vhosts
+	 
+	 server { # php/fastcgi
+		 listen       80;
+		 server_name  domain1.com www.domain1.com;
+		 access_log   logs/domain1.access.log  main;
+		 root         html;
+ 
+		 location ~ \.php$ {
+		 fastcgi_pass   127.0.0.1:1025;
+		 }
+	 }`)
 	fourth = []byte(`daemon            off;
-	worker_processes  2;
-	user              www-data;
-	
-	events {
-		use           epoll;
-		worker_connections  128;
-	}
-	
-	error_log         logs/error.log info;
-	
-	http {
-		server_tokens off;
-		charset       utf-8;
-	
-		access_log    logs/access.log  combined;
-	
-		server {
-			server_name   localhost;
-			listen        127.0.0.1:80;
-	
-			error_page    500 502 503 504;
-	
-			location      / {
-				root      html;
-			}
-		}
-	}`)
+	 worker_processes  2;
+	 user              www-data;
+	 
+	 events {
+		 use           epoll;
+		 worker_connections  128;
+	 }
+	 
+	 error_log         logs/error.log info;
+	 
+	 http {
+		 server_tokens off;
+		 charset       utf-8;
+	 
+		 access_log    logs/access.log  combined;
+	 
+		 server {
+			 server_name   localhost;
+			 listen        127.0.0.1:80;
+	 
+			 error_page    500 502 503 504;
+	 
+			 location      / {
+				 root      html;
+			 }
+		 }
+	 }`)
 	wafMetaData1 = []byte(`{
-		"napVersion": "3.1088.2",
-		"globalStateFileName": "",
-		"globalStateFileUID": "",
-		"attackSignatureRevisionTimestamp ": "2021.04.04",
-		"threatCampaignRevisionTimestamp": "2021.04.16",
-		"policyMetadata": [
-		  {
-			"name": "default-enforcemen t3",
-			"uid": "d102e132-12a0-483d-8329-d365d29801e0",
-			"revisionTimestamp": 1669071164488
-		  },
-		  {
-			"name": "ignore-xss3",
-			" uid": "de178e35-dc3b-40da-a53e-2bcede19e072",
-			"revisionTimestamp": 1668723801915
-		  }
-		],
-		"logProfileMetadata": [
-		  {
-			"nam e": "log_all",
-			"uid": "ee07fd58-fbd2-4db9-a2c2-0d06dc4d4321",
-			"revisionTimestamp": 1668723322517
-		  }
-		]
-	  }`)
+		 "napVersion": "3.1088.2",
+		 "globalStateFileName": "",
+		 "globalStateFileUID": "",
+		 "attackSignatureRevisionTimestamp ": "2021.04.04",
+		 "threatCampaignRevisionTimestamp": "2021.04.16",
+		 "policyMetadata": [
+		   {
+			 "name": "default-enforcemen t3",
+			 "uid": "d102e132-12a0-483d-8329-d365d29801e0",
+			 "revisionTimestamp": 1669071164488
+		   },
+		   {
+			 "name": "ignore-xss3",
+			 " uid": "de178e35-dc3b-40da-a53e-2bcede19e072",
+			 "revisionTimestamp": 1668723801915
+		   }
+		 ],
+		 "logProfileMetadata": [
+		   {
+			 "nam e": "log_all",
+			 "uid": "ee07fd58-fbd2-4db9-a2c2-0d06dc4d4321",
+			 "revisionTimestamp": 1668723322517
+		   }
+		 ]
+	   }`)
 )
 
 func TestNginxConfigApply(t *testing.T) {
 	validationTimeout = 100 * time.Millisecond
-	updatedProcesses := []core.Process{
+	updatedProcesses := []*core.Process{
 		{Pid: 1, Name: "12345", IsMaster: true},
 		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
 		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
@@ -702,7 +702,7 @@ func TestNginxDetailProcUpdate(t *testing.T) {
 
 	for _, msg := range processedMessages {
 		if msg.Topic() == core.NginxDetailProcUpdate {
-			messageReceived := msg.Data().([]core.Process)
+			messageReceived := msg.Data().([]*core.Process)
 			assert.Equal(t, tutils.GetProcesses(), messageReceived)
 			foundMessage = true
 		}
@@ -842,7 +842,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	env := tutils.GetMockEnvWithProcess()
 	env.On("GetSystemUUID").Return("456")
 
-	updatedProcesses := []core.Process{
+	updatedProcesses := []*core.Process{
 		{Pid: 1, Name: "12345", IsMaster: true},
 		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
 		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
@@ -1074,6 +1074,7 @@ func TestNginx_monitor(t *testing.T) {
 
 	env := tutils.GetMockEnvWithProcess()
 	binary := tutils.NewMockNginxBinary()
+	binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
 	binary.On("GetErrorLogs").Return(make(map[string]string)).Once()
 	binary.On("GetErrorLogs").Return(map[string]string{errorLogFileName: errorLogFileName}).Once()
 
@@ -1083,7 +1084,7 @@ func TestNginx_monitor(t *testing.T) {
 
 	// Validate that errors in the logs returned
 	go func() {
-		errorFound := pluginUnderTest.monitor(pluginUnderTest.getNginxProccessInfo())
+		errorFound := pluginUnderTest.reloadNginx(&proto.NginxDetails{})
 		assert.NoError(t, errorFound)
 	}()
 
@@ -1093,7 +1094,7 @@ func TestNginx_monitor(t *testing.T) {
 
 	// Validate that errors in the logs returned
 	go func() {
-		errorFound := pluginUnderTest.monitor(pluginUnderTest.getNginxProccessInfo())
+		errorFound := pluginUnderTest.reloadNginx(&proto.NginxDetails{})
 		errorsChannel <- errorFound
 	}()
 	time.Sleep(1 * time.Second)
@@ -1130,6 +1131,18 @@ func TestNginx_monitorLog(t *testing.T) {
 			name:                  "alert level test permission",
 			errorLog:              "2023/06/20 11:01:56 [alert] 4138#4138: open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
 			expected:              "2023/06/20 11:01:56 [alert] 4138#4138: open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
+			treatWarningsAsErrors: false,
+		},
+		{
+			name:                  "error level test permission",
+			errorLog:              "2023/07/11 14:00:00 [error] 123456#123456: *1 connect() failed (111: Connection refused) while connecting to upstream, client: 000.00.0.000, server: _, request: \"GET /test HTTP/2.0\", upstream: \"http://00.0.0.0:8081/test/test/test/test\", host: \"00.0000.0000.0000\", referrer: \"https://00.0000.0000.000/test/\"",
+			expected:              "2023/07/11 14:00:00 [error] 123456#123456: *1 connect() failed (111: Connection refused) while connecting to upstream, client: 000.00.0.000, server: _, request: \"GET /test HTTP/2.0\", upstream: \"http://00.0.0.0:8081/test/test/test/test\", host: \"00.0000.0000.0000\", referrer: \"https://00.0000.0000.000/test/\"",
+			treatWarningsAsErrors: false,
+		},
+		{
+			name:                  "crit level test permission",
+			errorLog:              "2023/07/07 11:30:00 [crit] 123456#123456: *1 connect() to unix:/test/test/test/test.sock failed (2: No such file or directory) while connecting to upstream, client: 0.0.0.0, server: _, request: \"POST /test HTTP/2.0\", upstream: \"grpc://unix:/test/test/test/test.sock:\", host: \"0.0.0.0:0\"",
+			expected:              "2023/07/07 11:30:00 [crit] 123456#123456: *1 connect() to unix:/test/test/test/test.sock failed (2: No such file or directory) while connecting to upstream, client: 0.0.0.0, server: _, request: \"POST /test HTTP/2.0\", upstream: \"grpc://unix:/test/test/test/test.sock:\", host: \"0.0.0.0:0\"",
 			treatWarningsAsErrors: false,
 		},
 		{

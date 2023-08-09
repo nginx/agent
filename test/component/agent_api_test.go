@@ -64,9 +64,9 @@ func TestGetNginxInstances(t *testing.T) {
 
 			mockEnvironment := tutils.NewMockEnvironment()
 			if tt.nginxDetails == nil {
-				mockEnvironment.On("Processes").Return([]core.Process{{Pid: pid, IsMaster: false}})
+				mockEnvironment.On("Processes").Return([]*core.Process{{Pid: pid, IsMaster: false}})
 			} else {
-				mockEnvironment.On("Processes").Return([]core.Process{{Pid: pid, IsMaster: true}})
+				mockEnvironment.On("Processes").Return([]*core.Process{{Pid: pid, IsMaster: true}})
 			}
 
 			mockNginxBinary := tutils.NewMockNginxBinary()
@@ -355,7 +355,7 @@ func TestConfigApply(t *testing.T) {
 			}
 
 			mockEnvironment := tutils.NewMockEnvironment()
-			mockEnvironment.On("Processes").Return([]core.Process{{Pid: 12345, IsMaster: true}})
+			mockEnvironment.On("Processes").Return([]*core.Process{{Pid: 12345, IsMaster: true}})
 			mockEnvironment.On("WriteFiles", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 			mockNginxBinary := tutils.NewMockNginxBinary()

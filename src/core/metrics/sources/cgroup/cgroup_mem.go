@@ -8,6 +8,7 @@
 package cgroup
 
 import (
+	"context"
 	"fmt"
 	"path"
 	"strconv"
@@ -19,8 +20,7 @@ import (
 // 02/02/2022
 // Note: Buffered memory metric is not present in the memory.stat file.
 // See here for more details: https://stackoverflow.com/a/52933753
-
-var getHostMemoryStats = mem.VirtualMemory
+var getHostMemoryStats = mem.VirtualMemoryWithContext
 
 type MemoryStat struct {
 	cached uint64
@@ -36,7 +36,7 @@ func NewCgroupMemSource(basePath string) *CgroupMem {
 	return &CgroupMem{basePath, IsCgroupV2(basePath)}
 }
 
-func (cgroupMem *CgroupMem) VirtualMemoryStat() (*mem.VirtualMemoryStat, error) {
+func (cgroupMem *CgroupMem) VirtualMemoryStatWithContext(ctx context.Context) (*mem.VirtualMemoryStat, error) {
 	var cgroupStat mem.VirtualMemoryStat
 	var memoryLimitInBytes, memoryUsageInBytes uint64
 	var memoryStat MemoryStat
@@ -98,6 +98,12 @@ func (cgroupMem *CgroupMem) VirtualMemoryStat() (*mem.VirtualMemoryStat, error) 
 	return &cgroupStat, nil
 }
 
+func (cgroupMem *CgroupMem) VirtualMemoryStat() (*mem.VirtualMemoryStat, error) {
+	ctx := context.Background()
+	defer ctx.Done()
+	return cgroupMem.VirtualMemoryStatWithContext(ctx)
+}
+
 func GetMemoryStat(statFile string, cachedKey string, sharedKey string) (MemoryStat, error) {
 	memoryStat := MemoryStat{}
 	lines, err := ReadLines(statFile)
@@ -130,12 +136,14 @@ func GetMemoryStat(statFile string, cachedKey string, sharedKey string) (MemoryS
 }
 
 func GetMemoryLimitInBytes(filePath string) (uint64, error) {
+	ctx := context.Background()
+	defer ctx.Done()
 	memTotalString, err := ReadSingleValueCgroupFile(filePath)
 	if err != nil {
 		return 0, err
 	}
 	if memTotalString == V2DefaultMaxValue || memTotalString == GetV1DefaultMaxValue() {
-		hostMemoryStats, err := getHostMemoryStats()
+		hostMemoryStats, err := getHostMemoryStats(ctx)
 		if err != nil {
 			return 0, nil
 		}

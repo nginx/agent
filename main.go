@@ -9,6 +9,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -25,6 +26,8 @@ import (
 	"github.com/nginx/agent/v2/src/core/logger"
 	"github.com/nginx/agent/v2/src/extensions"
 	"github.com/nginx/agent/v2/src/plugins"
+
+	_ "net/http/pprof"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -55,6 +58,13 @@ func init() {
 }
 
 func main() {
+	address, debug := os.LookupEnv("PROFILE_ADDRESS")
+	if debug {
+		go func() {
+			log.Println(http.ListenAndServe(address, nil))
+		}()
+	}
+
 	config.RegisterRunner(func(cmd *cobra.Command, _ []string) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()

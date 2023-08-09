@@ -48,11 +48,11 @@ type NginxBinary interface {
 	Stop(processId, bin string) error
 	Reload(processId, bin string) error
 	ValidateConfig(processId, bin, configLocation string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error
-	GetNginxDetailsFromProcess(nginxProcess Process) *proto.NginxDetails
+	GetNginxDetailsFromProcess(nginxProcess *Process) *proto.NginxDetails
 	GetNginxDetailsByID(nginxID string) *proto.NginxDetails
-	GetNginxIDForProcess(nginxProcess Process) string
-	GetNginxDetailsMapFromProcesses(nginxProcesses []Process) map[string]*proto.NginxDetails
-	UpdateNginxDetailsFromProcesses(nginxProcesses []Process)
+	GetNginxIDForProcess(nginxProcess *Process) string
+	GetNginxDetailsMapFromProcesses(nginxProcesses []*Process) map[string]*proto.NginxDetails
+	UpdateNginxDetailsFromProcesses(nginxProcesses []*Process)
 	WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error)
 	ReadConfig(path, nginxId, systemId string) (*proto.NginxConfig, error)
 	UpdateLogs(existingLogs map[string]string, newLogs map[string]string) bool
@@ -101,13 +101,13 @@ func NewNginxBinary(env Environment, config *config.Config) *NginxBinaryType {
 	}
 }
 
-func (n *NginxBinaryType) GetNginxDetailsMapFromProcesses(nginxProcesses []Process) map[string]*proto.NginxDetails {
+func (n *NginxBinaryType) GetNginxDetailsMapFromProcesses(nginxProcesses []*Process) map[string]*proto.NginxDetails {
 	n.detailsMapMutex.Lock()
 	defer n.detailsMapMutex.Unlock()
 	return n.nginxDetailsMap
 }
 
-func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []Process) {
+func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []*Process) {
 	n.detailsMapMutex.Lock()
 	defer n.detailsMapMutex.Unlock()
 	n.nginxDetailsMap = map[string]*proto.NginxDetails{}
@@ -132,8 +132,8 @@ func (n *NginxBinaryType) GetChildProcesses() map[string][]*proto.NginxDetails {
 	return n.nginxWorkersMap
 }
 
-func (n *NginxBinaryType) GetNginxIDForProcess(nginxProcess Process) string {
-	defaulted := n.sanitizeProcessPath(&nginxProcess)
+func (n *NginxBinaryType) GetNginxIDForProcess(nginxProcess *Process) string {
+	defaulted := n.sanitizeProcessPath(nginxProcess)
 	info := n.getNginxInfoFrom(nginxProcess.Path)
 
 	// reset the process path from the default to what NGINX tells us
@@ -146,7 +146,7 @@ func (n *NginxBinaryType) GetNginxIDForProcess(nginxProcess Process) string {
 	return n.getNginxIDFromProcessInfo(nginxProcess, info)
 }
 
-func (n *NginxBinaryType) getNginxIDFromProcessInfo(nginxProcess Process, info *nginxInfo) string {
+func (n *NginxBinaryType) getNginxIDFromProcessInfo(nginxProcess *Process, info *nginxInfo) string {
 	return GenerateNginxID("%s_%s_%s", nginxProcess.Path, info.confPath, info.prefix)
 }
 
@@ -169,8 +169,8 @@ func (n *NginxBinaryType) sanitizeProcessPath(nginxProcess *Process) bool {
 	return defaulted
 }
 
-func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess Process) *proto.NginxDetails {
-	defaulted := n.sanitizeProcessPath(&nginxProcess)
+func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *proto.NginxDetails {
+	defaulted := n.sanitizeProcessPath(nginxProcess)
 	info := n.getNginxInfoFrom(nginxProcess.Path)
 
 	// reset the process path from the default to what NGINX tells us
@@ -280,7 +280,7 @@ func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, 
 }
 
 func (n *NginxBinaryType) validateConfigCheckResponse(response *bytes.Buffer, configLocation string) error {
-	if bytes.Contains(response.Bytes(), []byte("[emerg]")) || bytes.Contains(response.Bytes(), []byte("[alert]")) {
+	if bytes.Contains(response.Bytes(), []byte("[emerg]")) || bytes.Contains(response.Bytes(), []byte("[alert]")) || bytes.Contains(response.Bytes(), []byte("[crit]")) || bytes.Contains(response.Bytes(), []byte("[error]")) {
 		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
 	}
 
