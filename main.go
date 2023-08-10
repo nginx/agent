@@ -253,6 +253,10 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		corePlugins = append(corePlugins, plugins.NewMetrics(loadedConfig, env, binary, false))
 	}
 
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
+		corePlugins = append(corePlugins, plugins.NewMetricsThrottle(loadedConfig, env))
+	}
+
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureDataPlaneStatus) {
 		corePlugins = append(corePlugins, plugins.NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, env, version))
 	}
