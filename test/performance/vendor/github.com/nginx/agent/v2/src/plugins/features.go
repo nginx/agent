@@ -154,7 +154,7 @@ func (f *Features) enableNginxConfigAsyncFeature(data string) []core.Plugin {
 // }
 
 func (f *Features) enableMetricsCollectionFeature(data string) []core.Plugin {
-	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) ||
+	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsCollection) {
 
 		conf, err := config.GetConfig(f.conf.ClientID)
@@ -175,7 +175,7 @@ func (f *Features) enableMetricsCollectionFeature(data string) []core.Plugin {
 }
 
 func (f *Features) enableMetricsThrottleFeature(data string) []core.Plugin {
-	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) ||
+	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
 
 		conf, err := config.GetConfig(f.conf.ClientID)
@@ -309,9 +309,15 @@ func (f *Features) enableNginxCountingFeature(data string) []core.Plugin {
 			}
 			f.conf = conf
 
-			if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) ||
+			if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 				!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsCollection) {
-				metrics := NewMetrics(f.conf, f.env, f.binary, false)
+
+				passthrough := false
+				if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
+					passthrough = true
+				}
+				metrics := NewMetrics(f.conf, f.env, f.binary, passthrough)
+
 				countingPlugins = append(countingPlugins, metrics)
 			}
 

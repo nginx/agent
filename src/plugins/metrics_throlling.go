@@ -133,7 +133,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 }
 
 func (r *MetricsThrottle) Subscriptions() []string {
-	return []string{core.MetricReport, core.MetricReportStream, core.AgentConfigChanged}
+	return []string{core.MetricReport, core.AgentConfigChanged}
 }
 
 func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.WaitGroup) {
