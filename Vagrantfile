@@ -16,7 +16,7 @@ echo "********************** Check Stuff **********************"
 sudo semodule -lfull | grep "nginx_agent"
 ps -efZ | grep nginx-agent
 ps auxZ | grep nginx-agent
-sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent
+sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent --input-logs
 SCRIPT
 
 Vagrant.configure("2") do |config|

@@ -82,4 +82,4 @@ jobs:
       - name: Vagrant up 
         run: COMMIT='${{steps.get-commit.outputs.commit}}' vagrant up --debug
       - name: Check
-        run: vagrant ssh -c "sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent"
+        run: vagrant ssh -c "sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent --input-logs"
