@@ -80,27 +80,6 @@ jobs:
       - name: Make Package
         run: make local-rpm-package
       - name: Vagrant up 
-        run: vagrant up 
-      - name: Check SELinux is Enabled 
-        run: vagrant ssh -c "sestatus" 
-      - name: Install Agent 
-        run: vagrant ssh -c "sudo yum localinstall -y /home/vagrant/build/nginx-agent--SNAPSHOT-${{steps.get-commit.outputs.commit}}.rpm" 
-      - name: Start Agent 
-        run: vagrant ssh -c "sudo systemctl start nginx-agent"
-      - name: Install Agent Policy 
-        run: |
-          vagrant ssh -c "sudo semodule -n -i /usr/share/selinux/packages/nginx_agent.pp"
-          vagrant ssh -c "sudo /usr/sbin/load_policy"
-          vagrant ssh -c "sudo restorecon -R /usr/bin/nginx-agent;"
-          vagrant ssh -c "sudo restorecon -R /var/log/nginx-agent;"
-          vagrant ssh -c "sudo restorecon -R /etc/nginx-agent;"
-      - name: Check Logs
-        run: vagrant ssh -c "sudo cat /var/log/audit/audit.log | grep nginx-agent"
-      - name: Check Stuff
-        run: | 
-          vagrant ssh -c "sudo semodule -lfull | grep "nginx_agent""
-          vagrant ssh -c "ps -efZ | grep nginx-agent"
-          vagrant ssh -c "ps auxZ | grep nginx-agent"
-          vagrant ssh -c "sudo ausearch -m AVC,USER_AVC --raw -ts recent"
-
-       
+        run: COMMIT='${{steps.get-commit.outputs.commit}}' vagrant up --debug
+      - name: Check
+        run: vagrant ssh -c "sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent"
