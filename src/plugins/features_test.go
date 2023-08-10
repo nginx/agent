@@ -94,14 +94,15 @@ func TestFeatures_Process(t *testing.T) {
 
 	cmdr := tutils.NewMockCommandClient()
 
-	configuration, _ := config.GetConfig("1234")
+	configuration, err := config.GetConfig("1234")
+	assert.NoError(t, err)
 
 	pluginUnderTest := NewFeatures(cmdr, configuration, env, binary, "agentVersion")
 
 	for _, tc := range testCases {
 		messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
-		assert.Equal(t, 1, len(messagePipe.GetPlugins()))
+		assert.Len(t, messagePipe.GetPlugins(), 1)
 		assert.Equal(t, agent_config.FeaturesPlugin, messagePipe.GetPlugins()[0].Info().Name())
 
 		messagePipe.Process(core.NewMessage(core.EnableFeature, []string{tc.featureKey}))
