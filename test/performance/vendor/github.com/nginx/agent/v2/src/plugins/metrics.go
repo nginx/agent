@@ -190,11 +190,12 @@ func (m *Metrics) metricsGoroutine() {
 								}
 							}
 						}
+
+						m.pipeline.Process(core.NewMessage(core.CommMetrics, metricBuffer))
 					default:
 						log.Errorf("BUNDLE TYPE COERCION FAILED: %T", bundlePayload)
 					}
 
-					m.pipeline.Process(core.NewMessage(core.CommMetrics, metricBuffer))
 				} else {
 					m.pipeline.Process(core.NewMessage(core.MetricReport, bundlePayload))
 				}

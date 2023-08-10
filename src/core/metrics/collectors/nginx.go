@@ -11,13 +11,13 @@ import (
 	"context"
 	"sync"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/sources"
-	log "github.com/sirupsen/logrus"
 
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	log "github.com/sirupsen/logrus"
 )
 
 type NginxCollector struct {

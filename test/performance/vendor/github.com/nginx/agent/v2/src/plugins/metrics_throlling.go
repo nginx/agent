@@ -87,20 +87,6 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 		r.syncAgentConfigChange()
 		r.collectorsUpdate.Store(true)
 		return
-	case msg.Exact(core.MetricReportStream):
-		// TODO: Is r.metricsAggregation ineffectual in this case?
-		switch bundle := msg.Data().(type) {
-		case *metrics.MetricsReportBundle:
-			if len(bundle.Data) > 0 {
-				for _, report := range bundle.Data {
-					if len(report.Data) > 0 {
-						r.metricBuffer = append(r.metricBuffer, report)
-					}
-				}
-			}
-		}
-		r.messagePipeline.Process(core.NewMessage(core.CommMetrics, r.metricBuffer))
-		r.metricBuffer = make([]core.Payload, 0)
 
 	case msg.Exact(core.MetricReport):
 		if r.metricsAggregation {

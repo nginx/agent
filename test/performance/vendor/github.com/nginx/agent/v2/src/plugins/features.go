@@ -43,9 +43,9 @@ func (f *Features) Init(pipeline core.MessagePipeInterface) {
 	f.pipeline = pipeline
 
 	f.featureMap = map[string]func(data string) []core.Plugin{
-		agent_config.FeatureMetrics: func(data string) []core.Plugin {
-			return f.enableMetricsFeature(data)
-		},
+		// agent_config.FeatureMetrics: func(data string) []core.Plugin {
+		// 	return f.enableMetricsFeature(data)
+		// },
 		agent_config.FeatureAgentAPI: func(data string) []core.Plugin {
 			return f.enableAgentAPIFeature(data)
 		},
@@ -55,9 +55,10 @@ func (f *Features) Init(pipeline core.MessagePipeInterface) {
 		agent_config.FeatureMetricsThrottle: func(data string) []core.Plugin {
 			return f.enableMetricsThrottleFeature(data)
 		},
-		agent_config.FeatureMetricsSender: func(data string) []core.Plugin {
-			return f.enableMetricsSenderFeature(data)
-		},
+		// TODO: Not required?
+		// agent_config.FeatureMetricsSender: func(data string) []core.Plugin {
+		// 	return f.enableMetricsSenderFeature(data)
+		// },
 		agent_config.FeatureMetricsCollection: func(data string) []core.Plugin {
 			return f.enableMetricsCollectionFeature(data)
 		},
@@ -135,22 +136,22 @@ func (f *Features) enableNginxConfigAsyncFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableMetricsFeature(data string) []core.Plugin {
-	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) {
+// func (f *Features) enableMetricsFeature(data string) []core.Plugin {
+// 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) {
 
-		conf, err := config.GetConfig(f.conf.ClientID)
-		if err != nil {
-			log.Warnf("Unable to get agent config, %v", err)
-		}
-		f.conf = conf
+// 		conf, err := config.GetConfig(f.conf.ClientID)
+// 		if err != nil {
+// 			log.Warnf("Unable to get agent config, %v", err)
+// 		}
+// 		f.conf = conf
 
-		metrics := NewMetrics(f.conf, f.env, f.binary, false)
-		metricsThrottle := NewMetricsThrottle(f.conf, f.env)
+// 		metrics := NewMetrics(f.conf, f.env, f.binary, false)
+// 		metricsThrottle := NewMetricsThrottle(f.conf, f.env)
 
-		return []core.Plugin{metrics, metricsThrottle}
-	}
-	return []core.Plugin{}
-}
+// 		return []core.Plugin{metrics, metricsThrottle}
+// 	}
+// 	return []core.Plugin{}
+// }
 
 func (f *Features) enableMetricsCollectionFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) ||
@@ -162,7 +163,11 @@ func (f *Features) enableMetricsCollectionFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		metrics := NewMetrics(f.conf, f.env, f.binary, false)
+		passthrough := false
+		if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
+			passthrough = true
+		}
+		metrics := NewMetrics(f.conf, f.env, f.binary, passthrough)
 
 		return []core.Plugin{metrics}
 	}
@@ -186,21 +191,22 @@ func (f *Features) enableMetricsThrottleFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableMetricsSenderFeature(data string) []core.Plugin {
-	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsSender) {
+// TODO: Not required?
+// func (f *Features) enableMetricsSenderFeature(data string) []core.Plugin {
+// 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsSender) {
 
-		conf, err := config.GetConfig(f.conf.ClientID)
-		if err != nil {
-			log.Warnf("Unable to get agent config, %v", err)
-		}
-		f.conf = conf
+// 		conf, err := config.GetConfig(f.conf.ClientID)
+// 		if err != nil {
+// 			log.Warnf("Unable to get agent config, %v", err)
+// 		}
+// 		f.conf = conf
 
-		metricsSender := NewMetricsSender(f.commander)
+// 		metricsSender := NewMetricsSender(f.commander)
 
-		return []core.Plugin{metricsSender}
-	}
-	return []core.Plugin{}
-}
+// 		return []core.Plugin{metricsSender}
+// 	}
+// 	return []core.Plugin{}
+// }
 
 func (f *Features) enableAgentAPIFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureAgentAPI) {
