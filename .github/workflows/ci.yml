@@ -100,7 +100,7 @@ jobs:
       - name: 5
         run: vagrant ssh -c "sudo restorecon -R /etc/nginx-agent;"
       - name: Check ?
-        run: vagrant ssh -c "ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent"
+        run: vagrant ssh -c "sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent"
       - name: Check ?
         run: vagrant ssh -c "ps auxZ | grep nginx-agent"
 
