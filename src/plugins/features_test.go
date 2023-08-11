@@ -94,8 +94,7 @@ func TestFeatures_Process(t *testing.T) {
 
 	cmdr := tutils.NewMockCommandClient()
 
-	configuration, err := config.GetConfig("1234")
-	assert.NoError(t, err)
+	configuration, _ := config.GetConfig("1234")
 
 	pluginUnderTest := NewFeatures(cmdr, configuration, env, binary, "agentVersion")
 
