@@ -315,8 +315,6 @@ func createCollectorConfigsMap(config *config.Config, env core.Environment, bina
 			ClientVersion:      config.Nginx.NginxClientVersion,
 		}
 	}
-	processes = nil
-
 	return collectorConfigsMap
 }
 

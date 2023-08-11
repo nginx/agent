@@ -100,7 +100,6 @@ func (pw *ProcessWatcher) watchProcLoop(ctx context.Context) {
 
 				pw.messagePipeline.Process(core.NewMessage(core.NginxDetailProcUpdate, nginxProcs))
 			}
-			nginxProcs = nil
 		}
 	}
 }
