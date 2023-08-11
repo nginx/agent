@@ -1,17 +1,21 @@
 $script = <<-SCRIPT
 echo "********************** Check **********************"
 sestatus
+echo ""
 echo "********************** Agent Install **********************"
-sudo yum localinstall -y /home/vagrant/build/nginx-agent-2.27.1-SNAPSHOT-$COMMIT.rpm
-sudo systemctl start nginx-agent
+sudo yum localinstall -y /home/vagrant/build/nginx-agent--SNAPSHOT-$COMMIT.rpm
+echo ""
 echo "********************** Install Agent Policy **********************"
 sudo semodule -n -i /usr/share/selinux/packages/nginx_agent.pp
 sudo /usr/sbin/load_policy
 sudo restorecon -R /usr/bin/nginx-agent;
 sudo restorecon -R /var/log/nginx-agent;
 sudo restorecon -R /etc/nginx-agent;
+sudo systemctl start nginx-agent
+echo ""
 echo "********************** Check Logs **********************"
 sudo cat /var/log/audit/audit.log | grep nginx-agent
+echo ""
 echo "********************** Check Stuff **********************"
 sudo semodule -lfull | grep "nginx_agent"
 ps -efZ | grep nginx-agent
