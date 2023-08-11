@@ -60,6 +60,7 @@ func init() {
 func main() {
 	address, debug := os.LookupEnv("PROFILE_ADDRESS")
 	if debug {
+		log.Debug("Serving pprof server")
 		go func() {
 			log.Println(http.ListenAndServe(address, nil))
 		}()

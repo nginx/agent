@@ -117,6 +117,10 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			return &proto.HostInfo{}
 		}
 
+		if tags == nil {
+			tags = &[]string{}
+		}
+
 		hostInfoFacacde := &proto.HostInfo{
 			Agent:               agentVersion,
 			Boot:                hostInformation.BootTime,
@@ -175,8 +179,7 @@ func getUnixName() string {
 	release := toStr(utsname.Release[:])
 	version := toStr(utsname.Version[:])
 	machine := toStr(utsname.Machine[:])
-
-	return strings.Join([]string{sysName, nodeName, release, version, machine}, " ")
+	return fmt.Sprintf("%s %s %s %s %s", sysName, nodeName, release, version, machine)
 }
 
 func (env *EnvironmentType) GetHostname() string {
@@ -540,7 +543,7 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 
 		newProcess := &Process{
 			Pid:        pid,
-			Name:       name,
+			Name:       string([]byte(name)),
 			CreateTime: createTime, // Running time is probably different
 			Status:     strings.Join(status, " "),
 			IsRunning:  running,
@@ -795,7 +798,7 @@ func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {
 	hostReleaseInfo := getHostReleaseInfo()
 	osRelease, err := getOsRelease(osReleaseFile)
 	if err != nil {
-		log.Warnf("Could not read from %s file: %v", osReleaseFile, err)
+		log.Warnf("Could not read from osRelease file: %v", err)
 		return hostReleaseInfo
 	}
 	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease)
