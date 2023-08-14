@@ -32,6 +32,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	plusAPIDirective          = "api"
+	stubStatusAPIDirective    = "stub_status"
+	apiFormat                 = "http://%s%s"
+	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
+)
+
 type DirectoryMap struct {
 	paths map[string]*proto.Directory
 }
@@ -643,42 +650,6 @@ func AddAuxfileToNginxConfig(
 	return cfg, nil
 }
 
-const (
-	plusAPIDirective          = "api"
-	ossAPIDirective           = "stub_status"
-	apiFormat                 = "http://%s%s"
-	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
-)
-
-func parseStatusAPIEndpoints(parent *crossplane.Directive, current *crossplane.Directive) ([]string, []string) {
-	var plusUrls []string
-	var ossUrls []string
-	// process from the location block
-	if current.Directive != "location" {
-		return plusUrls, ossUrls
-	}
-
-	for _, locChild := range current.Block {
-		if locChild.Directive != plusAPIDirective && locChild.Directive != ossAPIDirective {
-			continue
-		}
-
-		addresses := parseAddressesFromServerDirective(parent)
-
-		for _, address := range addresses {
-			path := parsePathFromLocationDirective(current)
-
-			switch locChild.Directive {
-			case plusAPIDirective:
-				plusUrls = append(plusUrls, fmt.Sprintf(apiFormat, address, path))
-			case ossAPIDirective:
-				ossUrls = append(ossUrls, fmt.Sprintf(apiFormat, address, path))
-			}
-		}
-	}
-	return plusUrls, ossUrls
-}
-
 func parseAddressesFromServerDirective(parent *crossplane.Directive) []string {
 	addresses := []string{}
 	port := "80"
@@ -737,7 +708,8 @@ func parsePathFromLocationDirective(location *crossplane.Directive) string {
 }
 
 func statusAPICallback(parent *crossplane.Directive, current *crossplane.Directive) string {
-	plusUrls, ossUrls := parseStatusAPIEndpoints(parent, current)
+	ossUrls := getUrlsForLocationDirective(parent, current, stubStatusAPIDirective)
+	plusUrls := getUrlsForLocationDirective(parent, current, plusAPIDirective)
 
 	for _, url := range plusUrls {
 		if pingStatusAPIEndpoint(url) {
@@ -768,6 +740,7 @@ func pingStatusAPIEndpoint(statusAPI string) bool {
 	return true
 }
 
+// Deprecated: use either GetStubStatusApiUrl or GetNginxPlusApiUrl
 func GetStatusApiInfoWithIgnoreDirectives(confFile string, ignoreDirectives []string) (statusApi string, err error) {
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
@@ -790,9 +763,108 @@ func GetStatusApiInfoWithIgnoreDirectives(confFile string, ignoreDirectives []st
 	return "", errors.New("no status api reachable from the agent found")
 }
 
+// Deprecated: use either GetStubStatusApiUrl or GetNginxPlusApiUrl
 // to ignore directives use GetStatusApiInfoWithIgnoreDirectives()
 func GetStatusApiInfo(confFile string) (statusApi string, err error) {
 	return GetStatusApiInfoWithIgnoreDirectives(confFile, []string{})
+}
+
+func GetStubStatusApiUrl(confFile string, ignoreDirectives []string) (stubStatusApiUrl string, err error) {
+	payload, err := crossplane.Parse(confFile,
+		&crossplane.ParseOptions{
+			IgnoreDirectives:   ignoreDirectives,
+			SingleFile:         false,
+			StopParsingOnError: true,
+			CombineConfigs:     true,
+		},
+	)
+	if err != nil {
+		return "", fmt.Errorf("error reading config from %s, error: %s", confFile, err)
+	}
+
+	for _, xpConf := range payload.Config {
+		stubStatusApiUrl = CrossplaneConfigTraverseStr(&xpConf, stubStatusApiCallback)
+		if stubStatusApiUrl != "" {
+			return stubStatusApiUrl, nil
+		}
+	}
+	return "", errors.New("no stub status api reachable from the agent found")
+}
+
+func GetNginxPlusApiUrl(confFile string, ignoreDirectives []string) (nginxPlusApiUrl string, err error) {
+	payload, err := crossplane.Parse(confFile,
+		&crossplane.ParseOptions{
+			IgnoreDirectives:   ignoreDirectives,
+			SingleFile:         false,
+			StopParsingOnError: true,
+			CombineConfigs:     true,
+		},
+	)
+	if err != nil {
+		return "", fmt.Errorf("error reading config from %s, error: %s", confFile, err)
+	}
+
+	for _, xpConf := range payload.Config {
+		nginxPlusApiUrl = CrossplaneConfigTraverseStr(&xpConf, nginxPlusApiCallback)
+		if nginxPlusApiUrl != "" {
+			return nginxPlusApiUrl, nil
+		}
+	}
+	return "", errors.New("no plus api reachable from the agent found")
+}
+
+func stubStatusApiCallback(parent *crossplane.Directive, current *crossplane.Directive) string {
+	urls := getUrlsForLocationDirective(parent, current, stubStatusAPIDirective)
+
+	for _, url := range urls {
+		if pingStatusAPIEndpoint(url) {
+			log.Debugf("stub_status at %q found", url)
+			return url
+		}
+		log.Debugf("stub_status at %q is not reachable", url)
+	}
+
+	return ""
+}
+
+func nginxPlusApiCallback(parent *crossplane.Directive, current *crossplane.Directive) string {
+	urls := getUrlsForLocationDirective(parent, current, plusAPIDirective)
+
+	for _, url := range urls {
+		if pingStatusAPIEndpoint(url) {
+			log.Debugf("plus API at %q found", url)
+			return url
+		}
+		log.Debugf("plus API at %q is not reachable", url)
+	}
+
+	return ""
+}
+
+func getUrlsForLocationDirective(parent *crossplane.Directive, current *crossplane.Directive, locationDirectiveName string) []string {
+	var urls []string
+	// process from the location block
+	if current.Directive != "location" {
+		return urls
+	}
+
+	for _, locChild := range current.Block {
+		if locChild.Directive != plusAPIDirective && locChild.Directive != stubStatusAPIDirective {
+			continue
+		}
+
+		addresses := parseAddressesFromServerDirective(parent)
+
+		for _, address := range addresses {
+			path := parsePathFromLocationDirective(current)
+
+			switch locChild.Directive {
+			case locationDirectiveName:
+				urls = append(urls, fmt.Sprintf(apiFormat, address, path))
+			}
+		}
+	}
+	return urls
 }
 
 func GetErrorAndAccessLogsWithIgnoreDirectives(confFile string, ignoreDirectives []string) (*proto.ErrorLogs, *proto.AccessLogs, error) {

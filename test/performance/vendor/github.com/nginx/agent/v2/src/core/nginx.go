@@ -203,11 +203,21 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *pro
 		nginxDetailsFacade.ConfPath = path
 	}
 
-	url, err := sdk.GetStatusApiInfoWithIgnoreDirectives(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
+	stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
 	if err != nil {
-		log.Tracef("Unable to get status api from the configuration: NGINX metrics will be unavailable for this system. please configure a status API to get NGINX metrics: %v", err)
+		log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure aStub Status API to get NGINX OSS metrics: %v", err)
 	}
-	nginxDetailsFacade.StatusUrl = url
+
+	nginxPlusApiUrl, err := sdk.GetNginxPlusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
+	if err != nil {
+		log.Tracef("Unable to get NGINX Plus API URL from the configuration: NGINX Plus metrics will be unavailable for this system. please configure a NGINX Plus API to get NGINX Plus metrics: %v", err)
+	}
+
+	if nginxDetailsFacade.Plus.Enabled {
+		nginxDetailsFacade.StatusUrl = nginxPlusApiUrl
+	} else {
+		nginxDetailsFacade.StatusUrl = stubStatusApiUrl
+	}
 
 	return nginxDetailsFacade
 }
