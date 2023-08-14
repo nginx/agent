@@ -543,7 +543,7 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 
 		newProcess := &Process{
 			Pid:        pid,
-			Name:       string([]byte(name)),
+			Name:       name,
 			CreateTime: createTime, // Running time is probably different
 			Status:     strings.Join(status, " "),
 			IsRunning:  running,
