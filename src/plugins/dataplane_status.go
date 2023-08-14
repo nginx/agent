@@ -186,7 +186,6 @@ func (dps *DataPlaneStatus) healthGoRoutine(pipeline core.MessagePipeInterface) 
 
 func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneStatus {
 	processes := dps.env.Processes()
-	log.Tracef("dataplaneStatus: processes %v", processes)
 	forceDetails = forceDetails || time.Now().UTC().Add(-dps.reportInterval).After(dps.lastSendDetails)
 
 	agentActivityStatuses := []*proto.AgentActivityStatus{}
@@ -209,7 +208,6 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 		DataplaneSoftwareDetails: dataplaneSoftwareDetails,
 		AgentActivityStatus:      agentActivityStatuses,
 	}
-
 	return dataplaneStatus
 }
 
@@ -223,7 +221,7 @@ func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
 	dps.envHostInfo = hostInfo
 	log.Tracef("hostInfo: %v", hostInfo)
 
-	return dps.envHostInfo
+	return hostInfo
 }
 
 func (dps *DataPlaneStatus) detailsForProcess(processes []*core.Process, send bool) (details []*proto.NginxDetails) {

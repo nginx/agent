@@ -113,6 +113,9 @@ func (g *Generator) Generate(ctx context.Context, output chan *Message) error {
 		for {
 			select {
 			case <-ctx.Done():
+				if !timer.Stop() {
+					<-timer.C
+				}
 				return
 			case <-timer.C:
 				g.regenerateCache()
