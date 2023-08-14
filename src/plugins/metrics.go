@@ -290,6 +290,7 @@ func createCollectorConfigsMap(config *config.Config, env core.Environment, bina
 			continue
 		}
 		detail := binary.GetNginxDetailsFromProcess(p)
+		detail = binary.SetStatusUrl(detail)
 
 		stubStatusApi, plusApi := "", ""
 		if detail.Plus.Enabled {
