@@ -535,6 +535,8 @@ func TestNginxConfigApply(t *testing.T) {
 			binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap())
+			binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(tutils.GetDetailsMap()["12345"])
+			binary.On("SetStatusUrl", mock.Anything).Return(tutils.GetDetailsMap()["12345"])
 			binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
 			binary.On("GetErrorLogs").Return(make(map[string]string))
 
@@ -851,7 +853,8 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	binary.On("uploadConfig", mock.Anything, mock.Anything).Return(nil)
 	binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
 	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
-
+	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(tutils.GetDetailsMap()["12345"])
+	binary.On("SetStatusUrl", mock.Anything).Return(tutils.GetDetailsMap()["12345"])
 	binary.On("UpdateNginxDetailsFromProcesses", env.Processes()).Once()
 	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap()).Once()
 
