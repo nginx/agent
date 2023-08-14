@@ -255,7 +255,7 @@ func (a *Events) sendConfigApplyEvent(msg *core.Message) {
 		)
 	} else if nginxConfigResponse.Status.Status == proto.CommandStatusResponse_CMD_ERROR {
 		nginxId := ""
-		if nginxConfigResponse.GetConfigData()!= nil {
+		if nginxConfigResponse.GetConfigData() != nil {
 			nginxId = nginxConfigResponse.GetConfigData().NginxId
 		}
 		event = a.createConfigApplyEvent(
