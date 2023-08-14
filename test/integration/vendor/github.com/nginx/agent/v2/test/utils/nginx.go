@@ -148,6 +148,11 @@ func (m *MockNginxBinary) GetErrorLogs() map[string]string {
 	return args.Get(0).(map[string]string)
 }
 
+func (m *MockNginxBinary) SetStatusUrl(nginxDetail *proto.NginxDetails) *proto.NginxDetails {
+	args := m.Called(nginxDetail)
+	return args.Get(0).(*proto.NginxDetails)
+}
+
 func NewMockNginxBinary() *MockNginxBinary {
 	return &MockNginxBinary{}
 }

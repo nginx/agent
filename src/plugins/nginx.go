@@ -66,6 +66,7 @@ type Nginx struct {
 	isFeatureNginxConfigEnabled    bool
 	configApplyStatusChannel       chan *proto.Command_NginxConfigResponse
 	nginxAppProtectSoftwareDetails *proto.AppProtectWAFDetails
+	statusUrls                     map[string]string
 }
 
 type ConfigRollbackResponse struct {
@@ -106,6 +107,7 @@ func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Envi
 		isFeatureNginxConfigEnabled:    isFeatureNginxConfigEnabled,
 		configApplyStatusChannel:       make(chan *proto.Command_NginxConfigResponse, 1),
 		nginxAppProtectSoftwareDetails: &proto.AppProtectWAFDetails{},
+		statusUrls:                     make(map[string]string),
 	}
 }
 
@@ -563,6 +565,26 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 		}
 	}
 
+	statusAPIUpdated := false
+
+	for _, p := range n.processes {
+		if !p.IsMaster {
+			continue
+		}
+		detail := n.nginxBinary.GetNginxDetailsFromProcess(p)
+		detail = n.nginxBinary.SetStatusUrl(detail)
+		if n.statusUrls[detail.NginxId] != detail.StatusUrl {
+			log.Infof("NGINX status API updated.  Old status API: %v, new status API: %v", n.statusUrls[detail.NginxId], detail.StatusUrl)
+			n.statusUrls[detail.NginxId] = detail.StatusUrl
+			statusAPIUpdated = true
+		}
+	}
+
+	if statusAPIUpdated {
+		n.messagePipeline.Process(core.NewMessage(core.NginxStatusAPIUpdate, ""))
+	}
+
+	// If the statusAPI was updated send a new NGINX status API updated message
 	log.Debug("Config Apply Complete")
 
 	return status
@@ -740,6 +762,18 @@ func (n *Nginx) Info() *core.Info {
 // Close cleans up anything outstanding once the plugin ends
 func (n *Nginx) Close() {
 	log.Info("NginxBinary is wrapping up")
+	n.messagePipeline = nil
+	n.nginxBinary = nil
+	n.processes = nil
+	n.env = nil
+	n.env = nil
+	n.cmdr = nil
+	n.config = nil
+	n.nginxAppProtectSoftwareDetails = nil
+	n.statusUrls = nil
+	if n.configApplyStatusChannel != nil {
+		close(n.configApplyStatusChannel)
+	}
 }
 
 func (n *Nginx) syncAgentConfigChange() {

@@ -59,6 +59,7 @@ type NginxBinary interface {
 	GetAccessLogs() map[string]string
 	GetErrorLogs() map[string]string
 	GetChildProcesses() map[string][]*proto.NginxDetails
+	SetStatusUrl(nginxDetail *proto.NginxDetails) *proto.NginxDetails
 }
 
 type NginxBinaryType struct {
@@ -203,23 +204,26 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *pro
 		nginxDetailsFacade.ConfPath = path
 	}
 
-	stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
+	return nginxDetailsFacade
+}
+
+func (n *NginxBinaryType) SetStatusUrl(nginxDetail *proto.NginxDetails) *proto.NginxDetails {
+	stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetail.ConfPath, n.config.IgnoreDirectives)
 	if err != nil {
 		log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure aStub Status API to get NGINX OSS metrics: %v", err)
 	}
 
-	nginxPlusApiUrl, err := sdk.GetNginxPlusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
+	nginxPlusApiUrl, err := sdk.GetNginxPlusApiUrl(nginxDetail.ConfPath, n.config.IgnoreDirectives)
 	if err != nil {
 		log.Tracef("Unable to get NGINX Plus API URL from the configuration: NGINX Plus metrics will be unavailable for this system. please configure a NGINX Plus API to get NGINX Plus metrics: %v", err)
 	}
 
-	if nginxDetailsFacade.Plus.Enabled {
-		nginxDetailsFacade.StatusUrl = nginxPlusApiUrl
+	if nginxDetail.Plus.Enabled {
+		nginxDetail.StatusUrl = nginxPlusApiUrl
 	} else {
-		nginxDetailsFacade.StatusUrl = stubStatusApiUrl
+		nginxDetail.StatusUrl = stubStatusApiUrl
 	}
-
-	return nginxDetailsFacade
+	return nginxDetail
 }
 
 func defaultToNginxCommandForProcessPath() string {
