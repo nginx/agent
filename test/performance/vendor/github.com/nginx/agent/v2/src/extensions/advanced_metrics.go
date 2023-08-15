@@ -76,6 +76,12 @@ const (
 	proxiedProtocolDimension           = "proxied_protocol"
 	bytesRcvdMetric                    = "bytes_rcvd"
 	bytesSentMetric                    = "bytes_sent"
+	environmentNameDimension           = "environment_name"
+	appNameDimension                   = "app_name"
+	componentNameDimension             = "component_name"
+	gatewayNameDimension               = "gateway_name"
+	siteDimension                      = "site"
+	siteNameDimension                  = "site_name"
 )
 
 var maxOnlyMetrics = map[string]struct{}{
@@ -172,7 +178,13 @@ func NewAdvancedMetrics(env core.Environment, conf *config.Config, advancedMetri
 		NewDimension(familyDimension, 4).
 		NewDimension(proxiedProtocolDimension, 4).
 		NewMetric(bytesRcvdMetric).
-		NewMetric(bytesSentMetric)
+		NewMetric(bytesSentMetric).
+		NewDimension(environmentNameDimension, 256).
+		NewDimension(appNameDimension, 256).
+		NewDimension(componentNameDimension, 256).
+		NewDimension(gatewayNameDimension, 256).
+		NewDimension(siteDimension, 32).
+		NewDimension(siteNameDimension, 256)
 
 	advancedMetricsConfig := advancedMetricsDefaults
 
