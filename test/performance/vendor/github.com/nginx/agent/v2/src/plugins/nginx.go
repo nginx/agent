@@ -563,6 +563,9 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 		}
 	}
 
+	n.syncProcessInfo(n.env.Processes())
+	n.nginxBinary.UpdateNginxDetailsFromProcesses(n.processes)
+
 	log.Debug("Config Apply Complete")
 
 	return status

@@ -64,6 +64,7 @@ type NginxBinary interface {
 type NginxBinaryType struct {
 	detailsMapMutex   sync.Mutex
 	workersMapMutex   sync.Mutex
+	statusUrlMutex    sync.RWMutex
 	env               Environment
 	config            *config.Config
 	nginxDetailsMap   map[string]*proto.NginxDetails
@@ -71,6 +72,7 @@ type NginxBinaryType struct {
 	nginxInfoMap      map[string]*nginxInfo
 	accessLogs        map[string]string
 	errorLogs         map[string]string
+	statusUrls        map[string]string
 	accessLogsUpdated bool
 	errorLogsUpdated  bool
 }
@@ -97,6 +99,7 @@ func NewNginxBinary(env Environment, config *config.Config) *NginxBinaryType {
 		nginxInfoMap: make(map[string]*nginxInfo),
 		accessLogs:   make(map[string]string),
 		errorLogs:    make(map[string]string),
+		statusUrls:   make(map[string]string),
 		config:       config,
 	}
 }
@@ -115,6 +118,11 @@ func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []*Proc
 	n.workersMapMutex.Lock()
 	defer n.workersMapMutex.Unlock()
 	n.nginxWorkersMap = map[string][]*proto.NginxDetails{}
+
+	n.statusUrlMutex.Lock()
+	defer n.workersMapMutex.Unlock()
+	n.statusUrls = map[string]string{}
+	n.statusUrlMutex.Unlock()
 
 	for _, process := range nginxProcesses {
 		nginxDetails := n.GetNginxDetailsFromProcess(process)
@@ -203,20 +211,30 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *pro
 		nginxDetailsFacade.ConfPath = path
 	}
 
-	stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
-	if err != nil {
-		log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure aStub Status API to get NGINX OSS metrics: %v", err)
-	}
+	if len(n.statusUrls[nginxID]) == 0 || n.statusUrls[nginxID] == "" {
+		stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
+		if err != nil {
+			log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure aStub Status API to get NGINX OSS metrics: %v", err)
+		}
 
-	nginxPlusApiUrl, err := sdk.GetNginxPlusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
-	if err != nil {
-		log.Tracef("Unable to get NGINX Plus API URL from the configuration: NGINX Plus metrics will be unavailable for this system. please configure a NGINX Plus API to get NGINX Plus metrics: %v", err)
-	}
+		nginxPlusApiUrl, err := sdk.GetNginxPlusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
+		if err != nil {
+			log.Tracef("Unable to get NGINX Plus API URL from the configuration: NGINX Plus metrics will be unavailable for this system. please configure a NGINX Plus API to get NGINX Plus metrics: %v", err)
+		}
 
-	if nginxDetailsFacade.Plus.Enabled {
-		nginxDetailsFacade.StatusUrl = nginxPlusApiUrl
+		if nginxDetailsFacade.Plus.Enabled {
+			nginxDetailsFacade.StatusUrl = nginxPlusApiUrl
+		} else {
+			nginxDetailsFacade.StatusUrl = stubStatusApiUrl
+		}
+
+		n.statusUrlMutex.Lock()
+		n.statusUrls[nginxID] = nginxDetailsFacade.StatusUrl
+		n.statusUrlMutex.Unlock()
 	} else {
-		nginxDetailsFacade.StatusUrl = stubStatusApiUrl
+		n.statusUrlMutex.RLock()
+		nginxDetailsFacade.StatusUrl = n.statusUrls[nginxID]
+		n.statusUrlMutex.RUnlock()
 	}
 
 	return nginxDetailsFacade

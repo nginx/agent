@@ -38,7 +38,6 @@ type DataPlaneStatus struct {
 	configDirs                  string
 	lastSendDetails             time.Time
 	envHostInfo                 *proto.HostInfo
-	statusUrls                  map[string]string
 	reportInterval              time.Duration
 	softwareDetails             map[string]*proto.DataplaneSoftwareDetails
 	nginxConfigActivityStatuses map[string]*proto.AgentActivityStatus
@@ -66,7 +65,6 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		version:                     version,
 		tags:                        &config.Tags,
 		configDirs:                  config.ConfigDirs,
-		statusUrls:                  make(map[string]string),
 		reportInterval:              config.Dataplane.Status.ReportInterval,
 		softwareDetailsMutex:        sync.RWMutex{},
 		nginxConfigActivityStatuses: make(map[string]*proto.AgentActivityStatus),
@@ -83,7 +81,6 @@ func (dps *DataPlaneStatus) Init(pipeline core.MessagePipeInterface) {
 
 func (dps *DataPlaneStatus) Close() {
 	log.Info("DataPlaneStatus is wrapping up")
-	dps.statusUrls = nil
 	dps.nginxConfigActivityStatuses = nil
 
 	dps.softwareDetailsMutex.Lock()
@@ -230,29 +227,17 @@ func (dps *DataPlaneStatus) detailsForProcess(processes []*core.Process, send bo
 	log.Tracef("detailsForProcess processes: %v", processes)
 
 	nowUTC := time.Now().UTC()
-	statusAPIUpdated := false
 	// this sets send if we are forcing details, or it has been 24 hours since the last send
 	for _, p := range processes {
 		if !p.IsMaster {
 			continue
 		}
-		detail := dps.binary.GetNginxDetailsFromProcess(p)
-		if dps.statusUrls[detail.NginxId] != detail.StatusUrl {
-			log.Infof("NGINX status API updated.  Old status API: %v, new status API: %v", dps.statusUrls[detail.NginxId], detail.StatusUrl)
-			dps.statusUrls[detail.NginxId] = detail.StatusUrl
-			statusAPIUpdated = true
-		}
-		details = append(details, detail)
+		details = append(details, dps.binary.GetNginxDetailsFromProcess(p))
 		// spec says process CreateTime is unix UTC in MS
 		if time.Unix(p.CreateTime/1000, 0).After(dps.lastSendDetails) {
 			// set send because this process has started since the last send
 			send = true
 		}
-	}
-
-	// If the statusAPI was updated send a new NGINX status API updated message
-	if statusAPIUpdated {
-		dps.messagePipeline.Process(core.NewMessage(core.NginxStatusAPIUpdate, ""))
 	}
 
 	if !send {
