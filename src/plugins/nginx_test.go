@@ -852,7 +852,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
 	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 
-	binary.On("UpdateNginxDetailsFromProcesses", env.Processes()).Once()
+	binary.On("UpdateNginxDetailsFromProcesses", env.Processes()).Twice()
 	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap()).Once()
 
 	binary.On("Reload", mock.Anything, mock.Anything)
