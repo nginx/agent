@@ -49,8 +49,8 @@ github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2 h1:CEy7VRV/Vbm7YLuZo3pGKa5GlPX4z
 github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2/go.mod h1:otjOyjeqm3LALYcmX2AQIGH0VlojDoSd8aGOzsHAnBc=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
-github.com/nginxinc/nginx-go-crossplane v0.4.17 h1:kBISwQT36Uv4h57ran0bT4MIWUqaoJrMwoTMpryBZcg=
-github.com/nginxinc/nginx-go-crossplane v0.4.17/go.mod h1:UzbZnyFv0vPlt1Urbnp/mrFCzBL4tYCReFuNBpFQEfI=
+github.com/nginxinc/nginx-go-crossplane v0.4.24 h1:6gwZ8Boh8FS/kiZlfwSImO6UFnCjPeZ2uleHGSx4b+4=
+github.com/nginxinc/nginx-go-crossplane v0.4.24/go.mod h1:UzbZnyFv0vPlt1Urbnp/mrFCzBL4tYCReFuNBpFQEfI=
 github.com/onsi/gomega v1.27.8 h1:gegWiwZjBsf2DgiSbf5hpokZ98JVDMcWkUiigk6/KXc=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
