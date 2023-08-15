@@ -80,6 +80,6 @@ jobs:
       - name: Make Package
         run: make local-rpm-package
       - name: Vagrant up 
-        run: COMMIT='${{steps.get-commit.outputs.commit}}' vagrant up --debug
+        run: COMMIT='${{steps.get-commit.outputs.commit}}' vagrant up
       - name: Check
         run: vagrant ssh -c "sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts recent --input-logs"
