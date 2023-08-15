@@ -1134,6 +1134,39 @@ server {
 }
 		`,
 		},
+		{
+			oss: []string{
+				"http://localhost:80/stub_status",
+				"http://127.0.0.1:80/stub_status",
+			},
+			plus: []string{
+				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
+			},
+			conf: `
+server {
+	server_name   localhost;
+	listen        80;
+
+	error_page    500 502 503 504  /50x.html;
+	# ssl_certificate /usr/local/nginx/conf/cert.pem;
+
+	location      / {
+		root      /tmp/testdata/foo;
+	}
+
+	location = /stub_status {
+		stub_status;
+	}
+
+	location /api/ {
+        api write=on;
+        allow 127.0.0.1;
+        deny all;
+    }
+}
+		`,
+		},
 	} {
 		f, err := os.CreateTemp(tmpDir, "conf")
 		assert.NoError(t, err)
@@ -1153,7 +1186,8 @@ server {
 		for _, xpConf := range payload.Config {
 			assert.Equal(t, len(xpConf.Parsed), 1)
 			err = CrossplaneConfigTraverse(&xpConf, func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error) {
-				_plus, _oss := parseStatusAPIEndpoints(parent, current)
+				_oss := getUrlsForLocationDirective(parent, current, stubStatusAPIDirective)
+				_plus := getUrlsForLocationDirective(parent, current, plusAPIDirective)
 				oss = append(oss, _oss...)
 				plus = append(plus, _plus...)
 				return true, nil
