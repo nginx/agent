@@ -120,7 +120,6 @@ func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []*Proc
 	n.nginxWorkersMap = map[string][]*proto.NginxDetails{}
 
 	n.statusUrlMutex.Lock()
-	defer n.workersMapMutex.Unlock()
 	n.statusUrls = map[string]string{}
 	n.statusUrlMutex.Unlock()
 
