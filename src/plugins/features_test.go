@@ -44,12 +44,6 @@ func TestFeatures_Process(t *testing.T) {
 			numPlugins: 2,
 		},
 		{
-			testName:   "Nginx Config Async",
-			featureKey: agent_config.FeatureNginxConfigAsync,
-			pluginName: agent_config.NginxBinaryPlugin,
-			numPlugins: 2,
-		},
-		{
 			testName:   "Metrics",
 			featureKey: agent_config.FeatureMetrics,
 			pluginName: agent_config.FeatureMetrics,

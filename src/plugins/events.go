@@ -247,16 +247,16 @@ func (a *Events) sendConfigApplyEvent(msg *core.Message) {
 
 	if nginxConfigResponse.Status.Status == proto.CommandStatusResponse_CMD_OK {
 		event = a.createConfigApplyEvent(
-			nginxConfigResponse.GetConfigData().NginxId,
-			command.GetMeta().Timestamp,
+			nginxConfigResponse.GetConfigData().GetNginxId(),
+			command.GetMeta().GetTimestamp(),
 			INFO_EVENT_LEVEL,
 			fmt.Sprintf(CONFIG_APPLY_SUCCESS_MESSAGE, a.env.GetHostname()),
 			command.Meta.GetMessageId(),
 		)
 	} else if nginxConfigResponse.Status.Status == proto.CommandStatusResponse_CMD_ERROR {
 		event = a.createConfigApplyEvent(
-			nginxConfigResponse.GetConfigData().NginxId,
-			command.GetMeta().Timestamp,
+			nginxConfigResponse.GetConfigData().GetNginxId(),
+			command.GetMeta().GetTimestamp(),
 			ERROR_EVENT_LEVEL,
 			fmt.Sprintf(CONFIG_APPLY_FAILURE_MESSAGE, a.env.GetHostname()),
 			command.Meta.GetMessageId(),

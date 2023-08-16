@@ -199,7 +199,7 @@ func updateNginxConfigFromPayload(
 			return fmt.Errorf("configs: could not read file info(%s): %s", xpConf.File, err)
 		}
 
-		if err := directoryMap.appendFile(base, info); err != nil {
+		if err = directoryMap.appendFile(base, info); err != nil {
 			return err
 		}
 
@@ -266,7 +266,7 @@ func updateNginxConfigFileConfig(
 				if err := updateNginxConfigFileWithRoot(aux, directive.Args[0], seen, allowedDirectories, directoryMap); err != nil {
 					return true, err
 				}
-			case "ssl_certificate", "proxy_ssl_certificate", "ssl_trusted_certificate":
+			case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
 				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories); err != nil {
 					return true, err
 				}
@@ -319,10 +319,17 @@ func updateNginxConfigWithCert(
 		}
 	}
 
-	if directive == "ssl_certificate" || directive == "proxy_ssl_certificate" {
-		cert, err := LoadCertificate(file)
-		if err != nil {
-			return fmt.Errorf("configs: could not load cert(%s): %s", file, err)
+	certDirectives := []string{
+		"ssl_certificate",
+		"proxy_ssl_certificate",
+		"ssl_client_certificate",
+		"ssl_trusted_certificate",
+	}
+
+	if contains(certDirectives, directive) {
+		cert, cErr := LoadCertificate(file)
+		if cErr != nil {
+			return fmt.Errorf("configs: could not load cert(%s): %s", file, cErr)
 		}
 
 		fingerprint := sha256.Sum256(cert.Raw)
@@ -378,6 +385,16 @@ func updateNginxConfigWithCert(
 	}
 
 	return nil
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }
 
 func getAccessLogDirectiveFormat(directive *crossplane.Directive) string {

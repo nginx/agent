@@ -13,9 +13,13 @@ import (
 )
 
 type ParseError struct {
-	What        string
-	File        *string
-	Line        *int
+	What string
+	File *string
+	Line *int
+	// Raw directive statement causing the parse error.
+	Statement string
+	// Block in which parse error occurred.
+	BlockCtx    string
 	originalErr error
 }
 
