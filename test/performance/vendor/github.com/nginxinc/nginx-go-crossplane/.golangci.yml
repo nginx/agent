@@ -4,6 +4,9 @@
 linters:
   enable-all: true
   disable:
+    - cyclop
+    - depguard
+    - varnamelen
     - goimports # handled by `make format`
     - gofmt # handled by `make format`
     - wsl # hyper specific to a the creator and not configurable enough to be useful - https://github.com/bombsimon/wsl
@@ -11,7 +14,6 @@ linters:
     - gomnd
     - godox
     - nlreturn
-    - exhaustivestruct
     - wrapcheck
     - thelper
     - testpackage
@@ -25,11 +27,13 @@ linters:
     - golint
     - maligned
     - scopelint
+    - exhaustruct
     # deprecated
     - deadcode
     - varcheck
     - structcheck
     - nosnakecase
+    - exhaustivestruct
 
 
 # Run options
