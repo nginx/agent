@@ -31,12 +31,12 @@ func TestNewVirtualMemorySource(t *testing.T) {
 		{
 			"VM",
 			false,
-			&VirtualMemory{NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}, mem.VirtualMemory},
+			&VirtualMemory{NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}, mem.VirtualMemoryWithContext},
 		},
 		{
 			"container",
 			true,
-			&VirtualMemory{NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}, cgroup.NewCgroupMemSource(cgroup.CgroupBasePath).VirtualMemoryStat},
+			&VirtualMemory{NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}, cgroup.NewCgroupMemSource(cgroup.CgroupBasePath).VirtualMemoryStatWithContext},
 		},
 	}
 	for _, test := range tests {

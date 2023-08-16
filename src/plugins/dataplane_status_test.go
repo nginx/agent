@@ -159,7 +159,7 @@ func TestDataPlaneStatus(t *testing.T) {
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
 
 	env := tutils.NewMockEnvironment()
-	env.On("Processes", mock.Anything).Return([]core.Process{})
+	env.On("Processes", mock.Anything).Return([]*core.Process{})
 	env.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 		Hostname: "test-host",
 	})
@@ -257,7 +257,7 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
 
 	env := tutils.NewMockEnvironment()
-	env.On("Processes", mock.Anything).Return([]core.Process{})
+	env.On("Processes", mock.Anything).Return([]*core.Process{})
 	env.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 		Hostname: "test-host",
 	})
@@ -330,7 +330,7 @@ func TestDPSSyncNAPDetails(t *testing.T) {
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
 
 	env := tutils.NewMockEnvironment()
-	env.On("Processes", mock.Anything).Return([]core.Process{})
+	env.On("Processes", mock.Anything).Return([]*core.Process{})
 	env.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 		Hostname: "test-host",
 	})
@@ -399,7 +399,7 @@ func TestDataPlaneSubscriptions(t *testing.T) {
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
 
 	env := tutils.NewMockEnvironment()
-	env.On("Processes", mock.Anything).Return([]core.Process{})
+	env.On("Processes", mock.Anything).Return([]*core.Process{})
 	env.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 		Hostname: "test-host",
 	})

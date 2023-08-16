@@ -133,7 +133,7 @@ func TestNewNginxCollector(t *testing.T) {
 	binary := tutils.NewMockNginxBinary()
 	binary.On("GetAccessLogs").Return(map[string]string{})
 	binary.On("GetErrorLogs").Return(map[string]string{})
-	binary.On("GetNginxDetailsFromProcess", core.Process{Name: nginxPid, IsMaster: true}).Return(detailsMap[nginxPid])
+	binary.On("GetNginxDetailsFromProcess", &core.Process{Name: nginxPid, IsMaster: true}).Return(detailsMap[nginxPid])
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
@@ -218,7 +218,7 @@ func TestNginxCollector_UpdateCollectorConfig(t *testing.T) {
 	binary := tutils.NewMockNginxBinary()
 	binary.On("GetAccessLogs").Return(map[string]string{})
 	binary.On("GetErrorLogs").Return(map[string]string{})
-	binary.On("GetNginxDetailsFromProcess", core.Process{Name: nginxPid, IsMaster: true}).Return(detailsMap[nginxPid])
+	binary.On("GetNginxDetailsFromProcess", &core.Process{Name: nginxPid, IsMaster: true}).Return(detailsMap[nginxPid])
 
 	host := env.NewHostInfo("agentVersion", &tutils.InitialConfTags, "/etc/nginx/", false)
 

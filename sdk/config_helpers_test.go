@@ -139,10 +139,11 @@ var tests = []struct {
 		
 			access_log    /tmp/testdata/logs/access1.log  $upstream_time;
 			ssl_certificate     /tmp/testdata/nginx/ca.crt;
+			ssl_trusted_certificate     /tmp/testdata/nginx/trusted.crt;
 		
 			server {
-				server_name   localhost;
 				listen        127.0.0.1:80;
+				server_name   localhost;
 		
 				error_page    500 502 503 504  /50x.html;
 				# ssl_certificate /usr/local/nginx/conf/cert.pem;
@@ -183,10 +184,15 @@ var tests = []struct {
 							{
 								Name:        "nginx.conf",
 								Permissions: "0644",
-								Lines:       int32(57),
+								Lines:       int32(58),
 							},
 							{
 								Name:        "ca.crt",
+								Permissions: "0644",
+								Lines:       int32(31),
+							},
+							{
+								Name:        "trusted.crt",
 								Permissions: "0644",
 								Lines:       int32(31),
 							},
@@ -259,6 +265,38 @@ var tests = []struct {
 						Version:                3,
 					},
 					{
+						FileName: "/tmp/testdata/nginx/trusted.crt",
+						Validity: &proto.CertificateDates{
+							NotBefore: 1632834204,
+							NotAfter:  1635426204,
+						},
+						Issuer: &proto.CertificateName{
+							CommonName:         "ca.local",
+							Country:            []string{"IE"},
+							Locality:           []string{"Cork"},
+							Organization:       []string{"NGINX"},
+							OrganizationalUnit: nil,
+						},
+						Subject: &proto.CertificateName{
+							CommonName:         "ca.local",
+							Country:            []string{"IE"},
+							Locality:           []string{"Cork"},
+							Organization:       []string{"NGINX"},
+							State:              []string{"Cork"},
+							OrganizationalUnit: nil,
+						},
+						Mtime:                  &types.Timestamp{Seconds: 1633343804, Nanos: 15240107},
+						SubjAltNames:           nil,
+						PublicKeyAlgorithm:     "RSA",
+						SignatureAlgorithm:     "SHA512-RSA",
+						SerialNumber:           "12554968962670027276",
+						SubjectKeyIdentifier:   "75:50:E2:24:8F:6F:13:1D:81:20:E1:01:0B:57:2B:98:39:E5:2E:C3",
+						Fingerprint:            "48:6D:05:D4:78:10:91:15:69:74:9C:6A:54:F7:F2:FC:C8:93:46:E8:28:42:24:41:68:41:51:1E:1E:43:E0:12",
+						FingerprintAlgorithm:   "SHA512-RSA",
+						AuthorityKeyIdentifier: "3A:79:E0:3E:61:CD:94:29:1D:BB:45:37:0B:E9:78:E9:2F:40:67:CA",
+						Version:                3,
+					},
+					{
 						FileName: "/tmp/testdata/nginx/proxy.crt",
 						Validity: &proto.CertificateDates{
 							NotBefore: 1632834204,
@@ -298,13 +336,14 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "5da60539dbedfe08011646f96b964af9be68dcd3bdb7b6cc2d64c06723bba659",
+				Checksum:      "10a784ba872f62e36fd94fade5d048e6384205bfe39dd06a128aa78a81358931",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
 		expectedAuxFiles: map[string]struct{}{
 			"/tmp/testdata/root/test.html":          {},
 			"/tmp/testdata/nginx/ca.crt":            {},
+			"/tmp/testdata/nginx/trusted.crt":       {},
 			"/tmp/testdata/nginx/proxy.crt":         {},
 			"/tmp/testdata/root/my-nap-policy.json": {},
 			"/tmp/testdata/root/log-default.json":   {},
@@ -337,11 +376,11 @@ var tests = []struct {
 			charset       utf-8;
 		
 			access_log    /tmp/testdata/logs/access1.log  $upstream_time;
-			ssl_certificate     /tmp/testdata/nginx/ca.crt;
+			ssl_certificate     /tmp/testdata/nginx/ca.crt;	
 		
 			server {
-				server_name   localhost;
 				listen        127.0.0.1:80;
+				server_name   localhost;
 		
 				error_page    500 502 503 504  /50x.html;
 				# ssl_certificate /usr/local/nginx/conf/cert.pem;
@@ -443,7 +482,7 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "1b6422f8a17527b2e9f255b7362ab7c320cd4a2efea7bff3e402438e5877f00e",
+				Checksum:      "737493b580f29636e998efd2e85cf552217ad9a22e69c3bf6192eedaec681976",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
@@ -657,7 +696,7 @@ func TestGetNginxConfig(t *testing.T) {
 			allowedDirs["/tmp/testdata/nginx/"] = struct{}{}
 		}
 		result, err := GetNginxConfigWithIgnoreDirectives(test.fileName, nginxID, systemID, allowedDirs, ignoreDirectives)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, test.expected.Action, result.Action)
 		assert.Equal(t, len(test.expected.DirectoryMap.Directories), len(result.DirectoryMap.Directories))
@@ -795,6 +834,7 @@ func TestParseStatusAPIEndpoints(t *testing.T) {
 	}{
 		{
 			plus: []string{
+				"http://127.0.0.1:80/api/",
 				"http://localhost:80/api/",
 			},
 			conf: `
@@ -811,7 +851,7 @@ server {
 		},
 		{
 			plus: []string{
-				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
 			},
 			conf: `
 server {
@@ -826,7 +866,7 @@ server {
 		},
 		{
 			plus: []string{
-				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
 			},
 			conf: `
 server {
@@ -842,22 +882,40 @@ server {
 		},
 		{
 			plus: []string{
+				"http://127.0.0.1:8888/api/",
+				"http://status.internal.com:8888/api/",
+			},
+			conf: `
+server {
+    listen 8888 default_server;
+    server_name status.internal.com;
+    location /api/ {
+        api write=on;
+        allow 127.0.0.1;
+        deny all;
+    }
+}
+`,
+		},
+		{
+			plus: []string{
 				"http://127.0.0.1:8080/privateapi",
 			},
 			conf: `
-		server {
-		       listen 127.0.0.1:8080;
-		       location /privateapi {
-		           api write=on;
-		           allow 127.0.0.1;
-		           deny all;
-		       }
-		}
+	server {
+			listen 127.0.0.1:8080;
+			location /privateapi {
+				api write=on;
+				allow 127.0.0.1;
+				deny all;
+			}
+	}
 		`,
 		},
 		{
 			plus: []string{
-				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
+				"http://[::1]:80/api/",
 			},
 			conf: `
 server {
@@ -906,7 +964,7 @@ server {
 		},
 		{
 			plus: []string{
-				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
 			},
 			conf: `
 server {
@@ -922,7 +980,7 @@ server {
 		},
 		{
 			plus: []string{
-				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
 			},
 			conf: `
 server {
@@ -970,7 +1028,7 @@ server {
 		},
 		{
 			plus: []string{
-				"http://localhost:8000/api/",
+				"http://[::1]:8000/api/",
 			},
 			conf: `
 server {
@@ -986,90 +1044,127 @@ server {
 		},
 		{
 			oss: []string{
+				"http://localhost:80/stub_status",
 				"http://127.0.0.1:80/stub_status",
 			},
 			conf: `
-		server {
-			server_name   localhost;
-			listen        127.0.0.1:80;
-		
-			error_page    500 502 503 504  /50x.html;
-			# ssl_certificate /usr/local/nginx/conf/cert.pem;
-		
-			location      / {
-				root      /tmp/testdata/foo;
-			}
-		
-			location /stub_status {
-				stub_status;
-			}
-		}
+server {
+	server_name   localhost;
+	listen        127.0.0.1:80;
+
+	error_page    500 502 503 504  /50x.html;
+	# ssl_certificate /usr/local/nginx/conf/cert.pem;
+
+	location      / {
+		root      /tmp/testdata/foo;
+	}
+
+	location /stub_status {
+		stub_status;
+	}
+}
 		`,
 		},
 		{
 			oss: []string{
 				"http://localhost:80/stub_status",
+				"http://127.0.0.1:80/stub_status",
 			},
 			conf: `
-		server {
-			server_name   localhost;
-			listen        :80;
-		
-			error_page    500 502 503 504  /50x.html;
-			# ssl_certificate /usr/local/nginx/conf/cert.pem;
-		
-			location      / {
-				root      /tmp/testdata/foo;
-			}
-		
-			location /stub_status {
-				stub_status;
-			}
-		}
+server {
+	server_name   localhost;
+	listen        :80;
+
+	error_page    500 502 503 504  /50x.html;
+	# ssl_certificate /usr/local/nginx/conf/cert.pem;
+
+	location      / {
+		root      /tmp/testdata/foo;
+	}
+
+	location /stub_status {
+		stub_status;
+	}
+}
 		`,
 		},
 		{
 			oss: []string{
 				"http://localhost:80/stub_status",
+				"http://127.0.0.1:80/stub_status",
 			},
 			conf: `
-		server {
-			server_name   localhost;
-			listen        80;
-		
-			error_page    500 502 503 504  /50x.html;
-			# ssl_certificate /usr/local/nginx/conf/cert.pem;
-		
-			location      / {
-				root      /tmp/testdata/foo;
-			}
-		
-			location /stub_status {
-				stub_status;
-			}
-		}
+server {
+	server_name   localhost;
+	listen        80;
+
+	error_page    500 502 503 504  /50x.html;
+	# ssl_certificate /usr/local/nginx/conf/cert.pem;
+
+	location      / {
+		root      /tmp/testdata/foo;
+	}
+
+	location /stub_status {
+		stub_status;
+	}
+}
 		`,
 		},
 		{
 			oss: []string{
 				"http://localhost:80/stub_status",
+				"http://127.0.0.1:80/stub_status",
 			},
 			conf: `
-		server {
-			server_name   localhost;
-			listen        80;
-		
-			error_page    500 502 503 504  /50x.html;
-			# ssl_certificate /usr/local/nginx/conf/cert.pem;
-		
-			location      / {
-				root      /tmp/testdata/foo;
-			}
-		
-			location = /stub_status {
-				stub_status;
-			}
-		}
+server {
+	server_name   localhost;
+	listen        80;
+
+	error_page    500 502 503 504  /50x.html;
+	# ssl_certificate /usr/local/nginx/conf/cert.pem;
+
+	location      / {
+		root      /tmp/testdata/foo;
+	}
+
+	location = /stub_status {
+		stub_status;
+	}
+}
+		`,
+		},
+		{
+			oss: []string{
+				"http://localhost:80/stub_status",
+				"http://127.0.0.1:80/stub_status",
+			},
+			plus: []string{
+				"http://localhost:80/api/",
+				"http://127.0.0.1:80/api/",
+			},
+			conf: `
+server {
+	server_name   localhost;
+	listen        80;
+
+	error_page    500 502 503 504  /50x.html;
+	# ssl_certificate /usr/local/nginx/conf/cert.pem;
+
+	location      / {
+		root      /tmp/testdata/foo;
+	}
+
+	location = /stub_status {
+		stub_status;
+	}
+
+	location /api/ {
+        api write=on;
+        allow 127.0.0.1;
+        deny all;
+    }
+}
 		`,
 		},
 	} {
@@ -1091,7 +1186,8 @@ server {
 		for _, xpConf := range payload.Config {
 			assert.Equal(t, len(xpConf.Parsed), 1)
 			err = CrossplaneConfigTraverse(&xpConf, func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error) {
-				_plus, _oss := parseStatusAPIEndpoints(parent, current)
+				_oss := getUrlsForLocationDirective(parent, current, stubStatusAPIDirective)
+				_plus := getUrlsForLocationDirective(parent, current, plusAPIDirective)
 				oss = append(oss, _oss...)
 				plus = append(plus, _plus...)
 				return true, nil
@@ -1245,6 +1341,14 @@ func generateCertificates() error {
 
 	// create proxy.crt copy
 	copyCmd := exec.Command("cp", "/tmp/testdata/nginx/ca.crt", "/tmp/testdata/nginx/proxy.crt")
+
+	err = copyCmd.Run()
+	if err != nil {
+		return err
+	}
+
+	// create trusted.crt copy
+	copyCmd = exec.Command("cp", "/tmp/testdata/nginx/ca.crt", "/tmp/testdata/nginx/trusted.crt")
 
 	err = copyCmd.Run()
 	if err != nil {

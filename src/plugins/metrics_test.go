@@ -65,8 +65,8 @@ var (
 
 func TestMetricsProcessNginxDetailProcUpdate(t *testing.T) {
 	binary := tutils.NewMockNginxBinary()
-	binary.On("GetNginxDetailsFromProcess", core.Process{Name: firstNginxPid, IsMaster: true}).Return(detailsMap[firstNginxPid])
-	binary.On("GetNginxDetailsFromProcess", core.Process{Name: secondNginxPid, IsMaster: true}).Return(detailsMap[secondNginxPid])
+	binary.On("GetNginxDetailsFromProcess", &core.Process{Name: firstNginxPid, IsMaster: true}).Return(detailsMap[firstNginxPid])
+	binary.On("GetNginxDetailsFromProcess", &core.Process{Name: secondNginxPid, IsMaster: true}).Return(detailsMap[secondNginxPid])
 
 	config := &config.Config{
 		ClientID: "456789",
@@ -82,14 +82,14 @@ func TestMetricsProcessNginxDetailProcUpdate(t *testing.T) {
 	testCases := []struct {
 		testName                   string
 		message                    *core.Message
-		processes                  []core.Process
+		processes                  []*core.Process
 		expectedNumberOfCollectors int
 		expectedCollectorConfigMap map[string]*metrics.NginxCollectorConfig
 	}{
 		{
 			testName: "NginxRestart",
-			message:  core.NewMessage(core.NginxDetailProcUpdate, []core.Process{}),
-			processes: []core.Process{
+			message:  core.NewMessage(core.NginxDetailProcUpdate, []*core.Process{}),
+			processes: []*core.Process{
 				{
 					Name:     firstNginxPid,
 					IsMaster: true,
@@ -102,8 +102,8 @@ func TestMetricsProcessNginxDetailProcUpdate(t *testing.T) {
 		},
 		{
 			testName: "NewNginxInstanceAdded",
-			message:  core.NewMessage(core.NginxDetailProcUpdate, []core.Process{}),
-			processes: []core.Process{
+			message:  core.NewMessage(core.NginxDetailProcUpdate, []*core.Process{}),
+			processes: []*core.Process{
 				{
 					Name:     firstNginxPid,
 					IsMaster: true,
@@ -121,8 +121,8 @@ func TestMetricsProcessNginxDetailProcUpdate(t *testing.T) {
 		},
 		{
 			testName: "NginxInstanceRemovedAndNewOneAdded",
-			message:  core.NewMessage(core.NginxDetailProcUpdate, []core.Process{}),
-			processes: []core.Process{
+			message:  core.NewMessage(core.NginxDetailProcUpdate, []*core.Process{}),
+			processes: []*core.Process{
 				{
 					Name:     secondNginxPid,
 					IsMaster: true,
@@ -148,7 +148,7 @@ func TestMetricsProcessNginxDetailProcUpdate(t *testing.T) {
 			env.Mock.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 				Hostname: "test-host",
 			})
-			env.On("Processes", mock.Anything).Return([]core.Process{
+			env.On("Processes", mock.Anything).Return([]*core.Process{
 				{
 					Name:     firstNginxPid,
 					IsMaster: true,

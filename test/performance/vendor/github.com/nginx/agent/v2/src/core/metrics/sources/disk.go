@@ -26,7 +26,9 @@ type Disk struct {
 }
 
 func NewDiskSource(namespace string) *Disk {
-	disks, _ := disk.Partitions(false)
+	ctx := context.Background()
+	defer ctx.Done()
+	disks, _ := disk.PartitionsWithContext(ctx, false)
 	return &Disk{NewMetricSourceLogger(), &namedMetric{namespace, "disk"}, disks}
 }
 
@@ -36,7 +38,7 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metric
 		if part.Device == "" || part.Fstype == "" {
 			continue
 		}
-		usage, err := disk.Usage(part.Mountpoint)
+		usage, err := disk.UsageWithContext(ctx, part.Mountpoint)
 		if err != nil {
 			c.logger.Log(fmt.Sprintf("Failed to get disk metrics for mount point %s, %v", part.Mountpoint, err))
 			continue

@@ -2,7 +2,7 @@
 title: "Changelog"
 draft: false
 description: "NGINX Agent updates changelog."
-weight: 1100
+weight: 1200
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1093"

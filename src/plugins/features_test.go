@@ -24,7 +24,7 @@ import (
 func TestFeatures_Process(t *testing.T) {
 	processID := "12345"
 
-	processes := []core.Process{
+	processes := []*core.Process{
 		{
 			Name:     processID,
 			IsMaster: true,
@@ -81,7 +81,7 @@ func TestFeatures_Process(t *testing.T) {
 	env.On("NewHostInfo", "agentVersion", &[]string{"locally-tagged", "tagged-locally"}).Return(&proto.HostInfo{})
 	env.Mock.On("Processes", mock.Anything).Return(processes)
 
-	binary.On("GetNginxDetailsFromProcess", core.Process{Name: "12345", IsMaster: true}).Return(detailsMap[processID])
+	binary.On("GetNginxDetailsFromProcess", &core.Process{Name: "12345", IsMaster: true}).Return(detailsMap[processID])
 	binary.On("GetNginxDetailsMapFromProcesses", mock.Anything).Return(detailsMap)
 	binary.On("UpdateNginxDetailsFromProcesses", mock.Anything).Return()
 

@@ -209,9 +209,8 @@ var (
 			DefaultValue: Defaults.Log.Level,
 		},
 		&StringFlag{
-			Name:         LogPath,
-			Usage:        "The path to output log messages to. If the default path doesn't exist, log messages are output to stdout/stderr.",
-			DefaultValue: Defaults.Log.Path,
+			Name:  LogPath,
+			Usage: "The path to output log messages to. If the default path doesn't exist, log messages are output to stdout/stderr.",
 		},
 		&StringFlag{
 			Name:  ServerHost,

@@ -31,7 +31,7 @@ func TestNginxCounter(t *testing.T) {
 	tests := []struct {
 		name            string
 		detailsMap      map[string]*proto.NginxDetails
-		processes       []core.Process
+		processes       []*core.Process
 		socket          string
 		expectedPayload Payload
 	}{
@@ -46,7 +46,7 @@ func TestNginxCounter(t *testing.T) {
 					},
 				},
 			},
-			processes: []core.Process{
+			processes: []*core.Process{
 				{
 					Name:     "12345",
 					IsMaster: true,

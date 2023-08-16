@@ -94,7 +94,7 @@ func BenchmarkPluginOneTimeRegistration(b *testing.B) {
 	env.Mock.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 		Hostname: "test-host",
 	})
-	env.Mock.On("Processes", mock.Anything).Return([]core.Process{
+	env.Mock.On("Processes", mock.Anything).Return([]*core.Process{
 		{
 			Name:     processID,
 			IsMaster: true,

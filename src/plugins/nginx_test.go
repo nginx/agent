@@ -130,7 +130,7 @@ var (
 
 func TestNginxConfigApply(t *testing.T) {
 	validationTimeout = 100 * time.Millisecond
-	updatedProcesses := []core.Process{
+	updatedProcesses := []*core.Process{
 		{Pid: 1, Name: "12345", IsMaster: true},
 		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
 		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},
@@ -702,7 +702,7 @@ func TestNginxDetailProcUpdate(t *testing.T) {
 
 	for _, msg := range processedMessages {
 		if msg.Topic() == core.NginxDetailProcUpdate {
-			messageReceived := msg.Data().([]core.Process)
+			messageReceived := msg.Data().([]*core.Process)
 			assert.Equal(t, tutils.GetProcesses(), messageReceived)
 			foundMessage = true
 		}
@@ -842,7 +842,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	env := tutils.GetMockEnvWithProcess()
 	env.On("GetSystemUUID").Return("456")
 
-	updatedProcesses := []core.Process{
+	updatedProcesses := []*core.Process{
 		{Pid: 1, Name: "12345", IsMaster: true},
 		{Pid: 4, ParentPid: 1, Name: "worker-4", IsMaster: false},
 		{Pid: 5, ParentPid: 1, Name: "worker-5", IsMaster: false},

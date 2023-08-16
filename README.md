@@ -18,6 +18,7 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
   - [Installing NGINX Agent from Package Files](#installing-nginx-agent-from-package-files)
   - [Starting and Enabling Start on Boot](#starting-and-enabling-start-on-boot)
   - [Logging](#logging)
+  - [Building Docker Image](#building-docker-image)
 - [Getting Started with NGINX Agent](#getting-started-with-nginx-agent)
   - [Installing NGINX](#installing-nginx)
   - [Cloning the NGINX Agent Repository](#cloning-the-nginx-agent-repository)
@@ -149,6 +150,14 @@ By default, NGINX Agent rotates logs daily using logrotate with the following co
 If you need to make changes to the default configuration you can update the file here `/etc/logrotate.d/nginx-agent`
 
 For more detail on logrotate configuration see [Logrotate Configuration Options](https://linux.die.net/man/8/logrotate)
+
+## Building Docker Image
+To build an image that contains the latest NGINX Agent and the latest mainline version of NGINX OSS run the following command:
+```
+make official-oss-image
+```
+
+For more information on how to run NGINX Agent containers and how build an image that uses NGINX Plus instead of NGINX OSS see [Docker Images](https://docs.nginx.com/nginx-agent/docker-images/)
 
 # Getting Started with NGINX Agent
 Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which the NGINX Agent will report.
