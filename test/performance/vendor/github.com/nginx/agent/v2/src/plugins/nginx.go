@@ -749,6 +749,8 @@ func (n *Nginx) syncAgentConfigChange() {
 		return
 	}
 	log.Debugf("Nginx Plugins is updating to a new config - %v", conf)
+	n.isFeatureNginxConfigEnabled = conf.IsFeatureEnabled(agent_config.FeatureNginxConfig) || conf.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
+	n.isNginxAppProtectEnabled = conf.IsExtensionEnabled(agent_config.NginxAppProtectExtensionPlugin)
 	n.config = conf
 }
 

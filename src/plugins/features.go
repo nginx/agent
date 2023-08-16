@@ -69,9 +69,6 @@ func (f *Features) Init(pipeline core.MessagePipeInterface) {
 		agent_config.FeatureNginxCounting: func(data string) []core.Plugin {
 			return f.enableNginxCountingFeature(data)
 		},
-		agent_config.FeatureNginxConfigAsync: func(data string) []core.Plugin {
-			return f.enableNginxConfigAsyncFeature(data)
-		},
 	}
 }
 
@@ -112,20 +109,6 @@ func (f *Features) Process(msg *core.Message) {
 			plugin.Init(f.pipeline)
 		}
 	}
-}
-
-func (f *Features) enableNginxConfigAsyncFeature(data string) []core.Plugin {
-	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureNginxConfigAsync) {
-		conf, err := config.GetConfig(f.conf.ClientID)
-		if err != nil {
-			log.Warnf("Unable to get agent config, %v", err)
-		}
-		f.conf = conf
-
-		nginx := NewNginx(f.commander, f.binary, f.env, f.conf)
-		return []core.Plugin{nginx}
-	}
-	return []core.Plugin{}
 }
 
 func (f *Features) enableMetricsFeature(data string) []core.Plugin {
