@@ -552,6 +552,9 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 			},
 		}
 
+		n.syncProcessInfo(n.env.Processes())
+		n.nginxBinary.UpdateNginxDetailsFromProcesses(n.processes)
+		
 		n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplySucceeded, agentActivityStatus))
 
 		status = &proto.Command_NginxConfigResponse{
@@ -562,9 +565,6 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 			},
 		}
 	}
-
-	n.syncProcessInfo(n.env.Processes())
-	n.nginxBinary.UpdateNginxDetailsFromProcesses(n.processes)
 
 	log.Debug("Config Apply Complete")
 
