@@ -210,7 +210,7 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *pro
 		nginxDetailsFacade.ConfPath = path
 	}
 
-	if len(n.statusUrls[nginxID]) == 0 || n.statusUrls[nginxID] == "" {
+	if len(n.statusUrls) == 0 || n.statusUrls[nginxID] == "" {
 		stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
 		if err != nil {
 			log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure aStub Status API to get NGINX OSS metrics: %v", err)

@@ -232,7 +232,7 @@ func (dps *DataPlaneStatus) detailsForProcess(processes []*core.Process, send bo
 		}
 		details = append(details, dps.binary.GetNginxDetailsFromProcess(p))
 		// spec says process CreateTime is unix UTC in MS
-		if time.Unix(p.CreateTime/1000, 0).After(dps.lastSendDetails) {
+		if time.UnixMilli(p.CreateTime).After(dps.lastSendDetails) {
 			// set send because this process has started since the last send
 			send = true
 		}
