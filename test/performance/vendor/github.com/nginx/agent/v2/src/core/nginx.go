@@ -209,7 +209,7 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *pro
 		log.Tracef("Custom conf path set: %v", path)
 		nginxDetailsFacade.ConfPath = path
 	}
-	
+
 	n.statusUrlMutex.RLock()
 	urlsLength := len(n.statusUrls)
 	nginxStatus := n.statusUrls[nginxID]
