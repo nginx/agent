@@ -631,9 +631,6 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	data := make(chan string, 1024)
 	go t.Tail(ctx, data)
 
-	tick := time.NewTicker(n.config.Nginx.ConfigReloadMonitoringPeriod)
-	defer tick.Stop()
-
 	for {
 		select {
 		case d := <-data:
@@ -648,10 +645,8 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 					return
 				}
 			}
-		case <-tick.C:
-			errorChannel <- ""
-			return
 		case <-ctx.Done():
+			errorChannel <- ""
 			return
 		}
 	}
