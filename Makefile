@@ -12,14 +12,14 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | OS_RELEASE       | OS_VERSION                    | NOTES                                                          |
 # | ---------------- | ----------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                       |                                                                |
-# | ubuntu           | 18.04, 20.04, 22.04           |                                                                |
+# | ubuntu           | 20.04, 22.04                  |                                                                |
 # | debian           | bullseye-slim, buster-slim    |                                                                |
 # | centos           | 7                             |                                                                |
 # | redhatenterprise | 7, 8, 9                       |                                                                |
 # | rockylinux       | 8, 9                          |                                                                |
 # | almalinux        | 8, 9                          |                                                                |
-# | alpine           | 3.13, 3.14, 3.15, 3.16, 3.17  |                                                                |
-# | oraclelinux      | 7, 8 , 9                      |                                                                |
+# | alpine           | 3.15, 3.16, 3.17              |                                                                |
+# | oraclelinux      | 7, 8, 9                       |                                                                |
 # | suse             | sles12sp5, sle15              |                                                                |
 # | freebsd          |                               | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
