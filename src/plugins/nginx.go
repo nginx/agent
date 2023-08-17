@@ -343,11 +343,6 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		return status
 	}
 
-	if err != nil {
-		status.NginxConfigResponse.Status = newErrStatus("Config apply failed: " + err.Error()).CmdStatus
-		return status
-	}
-
 	status = n.writeConfigAndReloadNginx(cmd.Meta.MessageId, config, cmd.GetNginxConfig().GetAction())
 
 	log.Debug("Config Apply Complete")

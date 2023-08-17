@@ -116,7 +116,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gpgv1 monkeysphere 
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.18.0
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.32.0
       - name: Tag release
         run: |
           git config --global user.name 'github-actions'
