@@ -209,8 +209,13 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *pro
 		log.Tracef("Custom conf path set: %v", path)
 		nginxDetailsFacade.ConfPath = path
 	}
+	
+	n.statusUrlMutex.RLock()
+	urlsLength := len(n.statusUrls)
+	nginxStatus := n.statusUrls[nginxID]
+	n.statusUrlMutex.RUnlock()
 
-	if len(n.statusUrls) == 0 || n.statusUrls[nginxID] == "" {
+	if urlsLength == 0 || nginxStatus == "" {
 		stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
 		if err != nil {
 			log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure aStub Status API to get NGINX OSS metrics: %v", err)
