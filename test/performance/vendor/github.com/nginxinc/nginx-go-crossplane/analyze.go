@@ -61,7 +61,8 @@ const ngxAnyConf = ngxMainConf | ngxEventConf | ngxMailMainConf | ngxMailSrvConf
 	ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPUpsConf
 
 // map for getting bitmasks from certain context tuples
-// nolint:gochecknoglobals
+//
+//nolint:gochecknoglobals
 var contexts = map[string]uint{
 	blockCtx{}.key():                                   ngxMainConf,
 	blockCtx{"events"}.key():                           ngxEventConf,
@@ -88,7 +89,7 @@ func enterBlockCtx(stmt *Directive, ctx blockCtx) blockCtx {
 	return append(ctx, stmt.Directive)
 }
 
-// nolint:gocyclo,funlen,gocognit
+//nolint:gocyclo,funlen,gocognit
 func analyze(fname string, stmt *Directive, term string, ctx blockCtx, options *ParseOptions) error {
 	masks, knownDirective := directives[stmt.Directive]
 	currCtx, knownContext := contexts[ctx.key()]
@@ -96,9 +97,11 @@ func analyze(fname string, stmt *Directive, term string, ctx blockCtx, options *
 	// if strict and directive isn't recognized then throw error
 	if options.ErrorOnUnknownDirectives && !knownDirective {
 		return &ParseError{
-			What: fmt.Sprintf(`unknown directive "%s"`, stmt.Directive),
-			File: &fname,
-			Line: &stmt.Line,
+			What:      fmt.Sprintf(`unknown directive "%s"`, stmt.Directive),
+			File:      &fname,
+			Line:      &stmt.Line,
+			Statement: stmt.String(),
+			BlockCtx:  ctx.getLastBlock(),
 		}
 	}
 
@@ -120,9 +123,11 @@ func analyze(fname string, stmt *Directive, term string, ctx blockCtx, options *
 		}
 		if len(ctxMasks) == 0 && !options.SkipDirectiveContextCheck {
 			return &ParseError{
-				What: fmt.Sprintf(`"%s" directive is not allowed here`, stmt.Directive),
-				File: &fname,
-				Line: &stmt.Line,
+				What:      fmt.Sprintf(`"%s" directive is not allowed here`, stmt.Directive),
+				File:      &fname,
+				Line:      &stmt.Line,
+				Statement: stmt.String(),
+				BlockCtx:  ctx.getLastBlock(),
 			}
 		}
 	}
@@ -136,7 +141,6 @@ func analyze(fname string, stmt *Directive, term string, ctx blockCtx, options *
 	var what string
 	for i := 0; i < len(ctxMasks); i++ {
 		mask := ctxMasks[i]
-
 		// if the directive is an expression type, there must be '(' 'expr' ')' args
 		if (mask&ngxConfExpr) > 0 && !validExpr(stmt) {
 			what = fmt.Sprintf(`directive "%s"'s is not enclosed in parentheses`, stmt.Directive)
@@ -156,7 +160,7 @@ func analyze(fname string, stmt *Directive, term string, ctx blockCtx, options *
 		}
 
 		// use mask to check the directive's arguments
-		// nolint:gocritic
+		//nolint:gocritic
 		if ((mask>>len(stmt.Args)&1) != 0 && len(stmt.Args) <= 7) || // NOARGS to TAKE7
 			((mask&ngxConfFlag) != 0 && len(stmt.Args) == 1 && validFlag(stmt.Args[0])) ||
 			((mask & ngxConfAny) != 0) ||
@@ -171,9 +175,11 @@ func analyze(fname string, stmt *Directive, term string, ctx blockCtx, options *
 	}
 
 	return &ParseError{
-		What: what,
-		File: &fname,
-		Line: &stmt.Line,
+		What:      what,
+		File:      &fname,
+		Line:      &stmt.Line,
+		Statement: stmt.String(),
+		BlockCtx:  ctx.getLastBlock(),
 	}
 }
 
@@ -479,10 +485,10 @@ var directives = map[string][]uint{
 	"fastcgi_next_upstream": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConf1More,
 	},
-	"fastcgi_next_upStreamtimeout": {
+	"fastcgi_next_upstream_timeout": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
 	},
-	"fastcgi_next_upStreamtries": {
+	"fastcgi_next_upstream_tries": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
 	},
 	"fastcgi_no_cache": {
@@ -539,6 +545,10 @@ var directives = map[string][]uint{
 	"geo": {
 		ngxHTTPMainConf | ngxConfBlock | ngxConfTake12,
 		ngxStreamMainConf | ngxConfBlock | ngxConfTake12,
+	},
+	"geoip2": {
+		ngxHTTPMainConf | ngxConfBlock | ngxConfTake1,
+		ngxStreamMainConf | ngxConfBlock | ngxConfTake1,
 	},
 	"geoip_city": {
 		ngxHTTPMainConf | ngxConfTake12,
