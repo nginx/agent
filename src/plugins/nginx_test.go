@@ -852,7 +852,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	binary.On("GetNginxDetailsByID", "12345").Return(tutils.GetDetailsMap()["12345"])
 	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 
-	binary.On("UpdateNginxDetailsFromProcesses", env.Processes()).Once()
+	binary.On("UpdateNginxDetailsFromProcesses", env.Processes()).Twice()
 	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap()).Once()
 
 	binary.On("Reload", mock.Anything, mock.Anything)
@@ -1131,12 +1131,6 @@ func TestNginx_monitorLog(t *testing.T) {
 			name:                  "alert level test permission",
 			errorLog:              "2023/06/20 11:01:56 [alert] 4138#4138: open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
 			expected:              "2023/06/20 11:01:56 [alert] 4138#4138: open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
-			treatWarningsAsErrors: false,
-		},
-		{
-			name:                  "error level test permission",
-			errorLog:              "2023/07/11 14:00:00 [error] 123456#123456: *1 connect() failed (111: Connection refused) while connecting to upstream, client: 000.00.0.000, server: _, request: \"GET /test HTTP/2.0\", upstream: \"http://00.0.0.0:8081/test/test/test/test\", host: \"00.0000.0000.0000\", referrer: \"https://00.0000.0000.000/test/\"",
-			expected:              "2023/07/11 14:00:00 [error] 123456#123456: *1 connect() failed (111: Connection refused) while connecting to upstream, client: 000.00.0.000, server: _, request: \"GET /test HTTP/2.0\", upstream: \"http://00.0.0.0:8081/test/test/test/test\", host: \"00.0000.0000.0000\", referrer: \"https://00.0000.0000.000/test/\"",
 			treatWarningsAsErrors: false,
 		},
 		{

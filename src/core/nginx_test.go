@@ -961,8 +961,6 @@ func TestNginxBinaryType_validateConfigCheckResponse(t *testing.T) {
 		{name: "validation fails, alert respected, config irrelevant", response: "nginx [alert]", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx [alert]")},
 		{name: "validation fails, crit respected", response: "nginx [crit]", treatWarningsAsErrors: false, expected: errors.New("error running nginx -t -c :\nnginx [crit]")},
 		{name: "validation fails, crit respected, config irrelevant", response: "nginx [crit]", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx [crit]")},
-		{name: "validation fails, error respected", response: "nginx [error]", treatWarningsAsErrors: false, expected: errors.New("error running nginx -t -c :\nnginx [error]")},
-		{name: "validation fails, error respected, config irrelevant", response: "nginx [error]", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx [error]")},
 		{name: "validation passes, warn ignored", response: "nginx [warn]", treatWarningsAsErrors: false, expected: nil},
 		{name: "validation fails, warn respected", response: "nginx [warn]", treatWarningsAsErrors: true, expected: errors.New("error running nginx -t -c :\nnginx [warn]")},
 		{name: "validation passes, info irrelevant", response: "nginx [info]", treatWarningsAsErrors: false, expected: nil},

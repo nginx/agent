@@ -47,7 +47,6 @@ var (
 		re.MustCompile(`.*\[emerg\].*`),
 		re.MustCompile(`.*\[alert\].*`),
 		re.MustCompile(`.*\[crit\].*`),
-		re.MustCompile(`.*\[error\].*`),
 	}
 	warningRegex = re.MustCompile(`.*\[warn\].*`)
 )
@@ -546,6 +545,9 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 				},
 			},
 		}
+
+		n.syncProcessInfo(n.env.Processes())
+		n.nginxBinary.UpdateNginxDetailsFromProcesses(n.processes)
 
 		n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplySucceeded, agentActivityStatus))
 

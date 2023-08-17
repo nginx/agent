@@ -64,6 +64,7 @@ type NginxBinary interface {
 type NginxBinaryType struct {
 	detailsMapMutex   sync.Mutex
 	workersMapMutex   sync.Mutex
+	statusUrlMutex    sync.RWMutex
 	env               Environment
 	config            *config.Config
 	nginxDetailsMap   map[string]*proto.NginxDetails
@@ -71,6 +72,7 @@ type NginxBinaryType struct {
 	nginxInfoMap      map[string]*nginxInfo
 	accessLogs        map[string]string
 	errorLogs         map[string]string
+	statusUrls        map[string]string
 	accessLogsUpdated bool
 	errorLogsUpdated  bool
 }
@@ -97,6 +99,7 @@ func NewNginxBinary(env Environment, config *config.Config) *NginxBinaryType {
 		nginxInfoMap: make(map[string]*nginxInfo),
 		accessLogs:   make(map[string]string),
 		errorLogs:    make(map[string]string),
+		statusUrls:   make(map[string]string),
 		config:       config,
 	}
 }
@@ -115,6 +118,10 @@ func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []*Proc
 	n.workersMapMutex.Lock()
 	defer n.workersMapMutex.Unlock()
 	n.nginxWorkersMap = map[string][]*proto.NginxDetails{}
+
+	n.statusUrlMutex.Lock()
+	n.statusUrls = map[string]string{}
+	n.statusUrlMutex.Unlock()
 
 	for _, process := range nginxProcesses {
 		nginxDetails := n.GetNginxDetailsFromProcess(process)
@@ -203,20 +210,35 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *pro
 		nginxDetailsFacade.ConfPath = path
 	}
 
-	stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
-	if err != nil {
-		log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure aStub Status API to get NGINX OSS metrics: %v", err)
-	}
+	n.statusUrlMutex.RLock()
+	urlsLength := len(n.statusUrls)
+	nginxStatus := n.statusUrls[nginxID]
+	n.statusUrlMutex.RUnlock()
 
-	nginxPlusApiUrl, err := sdk.GetNginxPlusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
-	if err != nil {
-		log.Tracef("Unable to get NGINX Plus API URL from the configuration: NGINX Plus metrics will be unavailable for this system. please configure a NGINX Plus API to get NGINX Plus metrics: %v", err)
-	}
+	if urlsLength == 0 || nginxStatus == "" {
+		stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
+		if err != nil {
+			log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure aStub Status API to get NGINX OSS metrics: %v", err)
+		}
 
-	if nginxDetailsFacade.Plus.Enabled {
-		nginxDetailsFacade.StatusUrl = nginxPlusApiUrl
+		nginxPlusApiUrl, err := sdk.GetNginxPlusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
+		if err != nil {
+			log.Tracef("Unable to get NGINX Plus API URL from the configuration: NGINX Plus metrics will be unavailable for this system. please configure a NGINX Plus API to get NGINX Plus metrics: %v", err)
+		}
+
+		if nginxDetailsFacade.Plus.Enabled {
+			nginxDetailsFacade.StatusUrl = nginxPlusApiUrl
+		} else {
+			nginxDetailsFacade.StatusUrl = stubStatusApiUrl
+		}
+
+		n.statusUrlMutex.Lock()
+		n.statusUrls[nginxID] = nginxDetailsFacade.StatusUrl
+		n.statusUrlMutex.Unlock()
 	} else {
-		nginxDetailsFacade.StatusUrl = stubStatusApiUrl
+		n.statusUrlMutex.RLock()
+		nginxDetailsFacade.StatusUrl = n.statusUrls[nginxID]
+		n.statusUrlMutex.RUnlock()
 	}
 
 	return nginxDetailsFacade
@@ -290,7 +312,7 @@ func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, 
 }
 
 func (n *NginxBinaryType) validateConfigCheckResponse(response *bytes.Buffer, configLocation string) error {
-	if bytes.Contains(response.Bytes(), []byte("[emerg]")) || bytes.Contains(response.Bytes(), []byte("[alert]")) || bytes.Contains(response.Bytes(), []byte("[crit]")) || bytes.Contains(response.Bytes(), []byte("[error]")) {
+	if bytes.Contains(response.Bytes(), []byte("[emerg]")) || bytes.Contains(response.Bytes(), []byte("[alert]")) || bytes.Contains(response.Bytes(), []byte("[crit]")) {
 		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
 	}
 
