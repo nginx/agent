@@ -437,3 +437,14 @@ require {
 
 #============= nginx_agent_t ==============
 files_manage_mounttab(nginx_agent_t)
+
+require {
+	type nginx_agent_t;
+}
+
+#============= nginx_agent_t ==============
+apache_manage_config(nginx_agent_t)
+fs_getattr_dos_fs(nginx_agent_t)
+kernel_read_network_state_symlinks(nginx_agent_t)
+files_read_generic_tmp_files(nginx_agent_t)
+
