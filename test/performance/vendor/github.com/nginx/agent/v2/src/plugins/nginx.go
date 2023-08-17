@@ -47,7 +47,6 @@ var (
 		re.MustCompile(`.*\[emerg\].*`),
 		re.MustCompile(`.*\[alert\].*`),
 		re.MustCompile(`.*\[crit\].*`),
-		re.MustCompile(`.*\[error\].*`),
 	}
 	warningRegex = re.MustCompile(`.*\[warn\].*`)
 )
