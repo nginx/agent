@@ -5,24 +5,24 @@ VERSION = $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
 COMMIT = $(shell git rev-parse --short HEAD)
 DATE = $(shell date +%F_%H-%M-%S)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://docs.nginx.com/nginx/releases/                                                                              #
-# These images are based on https://github.com/nginxinc/docker-nginx and are NOT recommended for production           #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# | OS_RELEASE       | OS_VERSION                    | NOTES                                                          |
-# | ---------------- | ----------------------------- | -------------------------------------------------------------- |
-# | amazonlinux      | 2, 2023                       |                                                                |
-# | ubuntu           | 18.04, 20.04, 22.04           |                                                                |
-# | debian           | bullseye-slim, buster-slim    |                                                                |
-# | centos           | 7                             |                                                                |
-# | redhatenterprise | 7, 8, 9                       |                                                                |
-# | rockylinux       | 8, 9                          |                                                                |
-# | almalinux        | 8, 9                          |                                                                |
-# | alpine           | 3.13, 3.14, 3.15, 3.16, 3.17  |                                                                |
-# | oraclelinux      | 7, 8 , 9                      |                                                                |
-# | suse             | sles12sp5, sle15              |                                                                |
-# | freebsd          |                               | Not supported                                                  |
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# https://docs.nginx.com/nginx/releases/                                                                                    #
+# These images are based on https://github.com/nginxinc/docker-nginx and are NOT recommended for production                 #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# | OS_RELEASE       | OS_VERSION                          | NOTES                                                          |
+# | ---------------- | ----------------------------------- | -------------------------------------------------------------- |
+# | amazonlinux      | 2, 2023                             |                                                                |
+# | ubuntu           | 18.04, 20.04, 22.04                 |                                                                |
+# | debian           | bullseye-slim, buster-slim          |                                                                |
+# | centos           | 7                                   |                                                                |
+# | redhatenterprise | 7, 8, 9                             |                                                                |
+# | rockylinux       | 8, 9                                |                                                                |
+# | almalinux        | 8, 9                                |                                                                |
+# | alpine           | 3.13, 3.14, 3.15, 3.16, 3.17, 3.18  |                                                                |
+# | oraclelinux      | 7, 8 , 9                            |                                                                |
+# | suse             | sles12sp5, sle15                    |                                                                |
+# | freebsd          |                                     | Not supported                                                  |
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 22.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
