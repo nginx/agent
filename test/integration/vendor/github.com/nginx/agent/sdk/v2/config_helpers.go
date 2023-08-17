@@ -23,13 +23,14 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/nginx/agent/sdk/v2/backoff"
 	filesSDK "github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/zip"
 
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -298,8 +299,8 @@ func updateNginxConfigWithCert(
 	directoryMap *DirectoryMap,
 	allowedDirectories map[string]struct{},
 ) error {
-	if strings.HasPrefix("$", file) {
-		// variable loading, not actual cert file
+	if strings.Contains(file, "$") {
+		// cannot process any filepath with variables
 		return nil
 	}
 
