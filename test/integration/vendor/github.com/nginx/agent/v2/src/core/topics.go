@@ -41,7 +41,6 @@ const (
 	AgentConfigChanged              = "agent.config.changed"
 	AgentCollectorsUpdate           = "agent.collectors.update"
 	MetricReport                    = "metrics.report"
-	MetricReportStream              = "metrics.report.stream"
 	LoggerPrefix                    = "logger."
 	LoggerLevel                     = LoggerPrefix + "level" // TODO: Never set/used?
 	LoggerPath                      = LoggerPrefix + "path"  // TODO: Never set/used?
