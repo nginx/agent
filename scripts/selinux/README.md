@@ -2,6 +2,14 @@
 
 https://www.redhat.com/en/topics/linux/what-is-selinux
 
+# Table of Contents
+- [Prerequisites](#rerequisites)
+- [Enable SELinux](#enable-selinux)
+- [Updating existing policy](#updating-existing-policy)
+- [Known Issues](#known-issues)
+- [Debugging](#debugging)
+- [References](#references)
+
 ## Prerequisites
 ```
 sudo yum install policycoreutils-devel rpm-build
@@ -36,11 +44,35 @@ sudo restorecon -R /etc/nginx-agent
 ```
 
 ## Updating existing policy
-Copy the folder `scripts/selinux` over to your rhel server.
+Copy the folder `scripts/selinux` over to your rhel 8 server.
 Then run the following command to update the policy:
 ```
 sudo ./nginx_agent.sh --update
 ```
+Then copy the `nginx_agent.te` and `nginx_agent.pp` files back and create a PR with the changes.
+
+To just rebuild the policy file `nginx_agent.pp` run the following command:
+```
+sudo ./nginx_agent.sh
+```
+
+## Known Issues
+If running the command 
+```
+sudo semodule -n -i /usr/share/selinux/packages/nginx_agent.pp
+```
+results in the following error
+```
+libsemanage.semanage_pipe_data: Child process /usr/libexec/selinux/hll/pp failed with code: 255. (No such file or directory).
+nginx_agent: libsepol.policydb_read: policydb module version 21 does not match my version range 4-19
+nginx_agent: libsepol.sepol_module_package_read: invalid module in module package (at section 0)
+nginx_agent: Failed to read policy package
+libsemanage.semanage_direct_commit: Failed to compile hll files into cil files.
+ (No such file or directory).
+semodule:  Failed!
+```
+this usually means that the policy file was built on a rhel 9 environment. To resolve this issue the policy file needs to be rebuilt on a rhel 8 environment. See [Updating existing policy](#updating-existing-policy) for instruction on how to rebuild a policy file.
+
 
 ## Debugging
 * To check for policy violation look at the file `/var/log/audit/audit.log`
