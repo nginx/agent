@@ -57,7 +57,7 @@ sudo ./nginx_agent.sh
 ```
 
 ## Known Issues
-If running the command 
+If running the command
 ```
 sudo semodule -n -i /usr/share/selinux/packages/nginx_agent.pp
 ```
@@ -71,7 +71,9 @@ libsemanage.semanage_direct_commit: Failed to compile hll files into cil files.
  (No such file or directory).
 semodule:  Failed!
 ```
-this usually means that the policy file was built on a rhel 9 environment. To resolve this issue the policy file needs to be rebuilt on a rhel 8 environment. See [Updating existing policy](#updating-existing-policy) for instruction on how to rebuild a policy file.
+on a rhel 8 environment this usually means that the policy file was built on a rhel 9 environment.
+
+To resolve this issue the policy file needs to be rebuilt on a rhel 8 environment. See [Updating existing policy](#updating-existing-policy) for instruction on how to rebuild a policy file.
 
 
 ## Debugging
