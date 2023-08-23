@@ -61,7 +61,7 @@ If running the command
 ```
 sudo semodule -n -i /usr/share/selinux/packages/nginx_agent.pp
 ```
-results in the following error
+on a rhel 8 environment results in the following error
 ```
 libsemanage.semanage_pipe_data: Child process /usr/libexec/selinux/hll/pp failed with code: 255. (No such file or directory).
 nginx_agent: libsepol.policydb_read: policydb module version 21 does not match my version range 4-19
@@ -71,7 +71,7 @@ libsemanage.semanage_direct_commit: Failed to compile hll files into cil files.
  (No such file or directory).
 semodule:  Failed!
 ```
-on a rhel 8 environment this usually means that the policy file was built on a rhel 9 environment.
+this usually means that the policy file was built on a rhel 9 environment.
 
 To resolve this issue the policy file needs to be rebuilt on a rhel 8 environment. See [Updating existing policy](#updating-existing-policy) for instruction on how to rebuild a policy file.
 
