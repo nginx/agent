@@ -45,7 +45,11 @@ sudo restorecon -R /etc/nginx-agent
 
 ## Updating existing policy
 Copy the folder `scripts/selinux` over to your rhel 8 server.
-Then run the following command to update the policy:
+Update the file permissions for the `nginx_agent.sh` script
+```
+chmod 555 nginx_agent.sh
+```
+and run the following command to update the policy:
 ```
 sudo ./nginx_agent.sh --update
 ```
