@@ -10,8 +10,10 @@ package sdk
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"net"
 	"net/http"
@@ -669,39 +671,44 @@ func AddAuxfileToNginxConfig(
 
 func parseAddressesFromServerDirective(parent *crossplane.Directive) []string {
 	addresses := []string{}
+	hosts := []string{}
 	port := "80"
 
 	for _, dir := range parent.Block {
-		address := "127.0.0.1"
+		hostname := "127.0.0.1"
 
 		switch dir.Directive {
 		case "listen":
 			host, listenPort, err := net.SplitHostPort(dir.Args[0])
 			if err == nil {
 				if host == "*" || host == "" {
-					address = "127.0.0.1"
+					hostname = "127.0.0.1"
 				} else if host == "::" || host == "::1" {
-					address = "[::1]"
+					hostname = "[::1]"
 				} else {
-					address = host
+					hostname = host
 				}
 				port = listenPort
 			} else {
 				if isPort(dir.Args[0]) {
 					port = dir.Args[0]
 				} else {
-					address = dir.Args[0]
+					hostname = dir.Args[0]
 				}
 			}
-			addresses = append(addresses, fmt.Sprintf("%s:%s", address, port))
+			hosts = append(hosts, hostname)
 		case "server_name":
 			if dir.Args[0] == "_" {
 				// default server
 				continue
 			}
-			address = dir.Args[0]
-			addresses = append(addresses, fmt.Sprintf("%s:%s", address, port))
+			hostname = dir.Args[0]
+			hosts = append(hosts, hostname)
 		}
+	}
+
+	for _, host := range hosts {
+		addresses = append(addresses, fmt.Sprintf("%s:%s", host, port))
 	}
 
 	return addresses
@@ -729,7 +736,7 @@ func statusAPICallback(parent *crossplane.Directive, current *crossplane.Directi
 	plusUrls := getUrlsForLocationDirective(parent, current, plusAPIDirective)
 
 	for _, url := range plusUrls {
-		if pingStatusAPIEndpoint(url) {
+		if pingNginxPlusApiEndpoint(url) {
 			log.Debugf("api at %q found", url)
 			return url
 		}
@@ -737,7 +744,7 @@ func statusAPICallback(parent *crossplane.Directive, current *crossplane.Directi
 	}
 
 	for _, url := range ossUrls {
-		if pingStatusAPIEndpoint(url) {
+		if pingStubStatusApiEndpoint(url) {
 			log.Debugf("stub_status at %q found", url)
 			return url
 		}
@@ -745,16 +752,6 @@ func statusAPICallback(parent *crossplane.Directive, current *crossplane.Directi
 	}
 
 	return ""
-}
-
-// pingStatusAPIEndpoint ensures the statusAPI is reachable from the agent
-func pingStatusAPIEndpoint(statusAPI string) bool {
-	client := http.Client{Timeout: 50 * time.Millisecond}
-
-	if _, err := client.Head(statusAPI); err != nil {
-		return false
-	}
-	return true
 }
 
 // Deprecated: use either GetStubStatusApiUrl or GetNginxPlusApiUrl
@@ -834,7 +831,7 @@ func stubStatusApiCallback(parent *crossplane.Directive, current *crossplane.Dir
 	urls := getUrlsForLocationDirective(parent, current, stubStatusAPIDirective)
 
 	for _, url := range urls {
-		if pingStatusAPIEndpoint(url) {
+		if pingStubStatusApiEndpoint(url) {
 			log.Debugf("stub_status at %q found", url)
 			return url
 		}
@@ -848,7 +845,7 @@ func nginxPlusApiCallback(parent *crossplane.Directive, current *crossplane.Dire
 	urls := getUrlsForLocationDirective(parent, current, plusAPIDirective)
 
 	for _, url := range urls {
-		if pingStatusAPIEndpoint(url) {
+		if pingNginxPlusApiEndpoint(url) {
 			log.Debugf("plus API at %q found", url)
 			return url
 		}
@@ -856,6 +853,56 @@ func nginxPlusApiCallback(parent *crossplane.Directive, current *crossplane.Dire
 	}
 
 	return ""
+}
+
+func pingStubStatusApiEndpoint(statusAPI string) bool {
+	client := http.Client{Timeout: 50 * time.Millisecond}
+	resp, err := client.Get(statusAPI)
+	if err != nil {
+		return false
+	}
+
+	if resp.StatusCode != 200 {
+		return false
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false
+	}
+
+	// Expecting API to return data like this:
+	//
+	// Active connections: 2
+	// server accepts handled requests
+	//  18 18 3266
+	// Reading: 0 Writing: 1 Waiting: 1
+	body := string(bodyBytes)
+	return strings.Contains(body, "Active connections") && strings.Contains(body, "server accepts handled requests")
+}
+
+func pingNginxPlusApiEndpoint(statusAPI string) bool {
+	client := http.Client{Timeout: 50 * time.Millisecond}
+	resp, err := client.Get(statusAPI)
+	if err != nil {
+		return false
+	}
+
+	if resp.StatusCode != 200 {
+		return false
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false
+	}
+
+	// Expecting API to return the api versions in an array of positive integers
+	// subset example: [ ... 6,7,8,9 ...]
+	var responseBody []int
+	err = json.Unmarshal(bodyBytes, &responseBody)
+
+	return err == nil
 }
 
 func getUrlsForLocationDirective(parent *crossplane.Directive, current *crossplane.Directive, locationDirectiveName string) []string {
