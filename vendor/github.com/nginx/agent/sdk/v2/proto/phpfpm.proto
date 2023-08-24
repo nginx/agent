@@ -1,0 +1,51 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "gogo.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// PhpFpmDetails registers a phpfpm master process + child pools
+message PhpFpmDetails {
+  string type = 1 [(gogoproto.jsontag) = "type"];
+  string uuid = 2 [(gogoproto.jsontag) = "uuid"];
+  string local_id = 3 [(gogoproto.jsontag) = "local_id"];
+  string name = 4 [(gogoproto.jsontag) = "name"];
+  string cmd = 5 [(gogoproto.jsontag) = "cmd"];
+  string conf_path = 6 [(gogoproto.jsontag) = "conf_path"];
+  string bin_path = 7 [(gogoproto.jsontag) = "bin_path"];
+  string version = 8 [(gogoproto.jsontag) = "version"];
+  string version_line = 9 [(gogoproto.jsontag) = "version_line"];
+  int32 pid = 10 [(gogoproto.jsontag) = "pid"];
+  string agent = 11 [(gogoproto.jsontag) = "agent"];
+  repeated PhpFpmPool children = 12 [(gogoproto.jsontag) = "children"];
+  int32 workers = 13 [(gogoproto.jsontag) = "workers"];
+  PhpFpmHealth health = 14 [(gogoproto.jsontag) = "health"];
+}
+
+// PhpFpmPool registers one of the worker pools of a Php-Fpm master process
+message PhpFpmPool {
+  string type = 1 [(gogoproto.jsontag) = "type"];
+  string uuid = 2 [(gogoproto.jsontag) = "uuid"];
+  string local_id = 3 [(gogoproto.jsontag) = "local_id"];
+  string name = 4 [(gogoproto.jsontag) = "name"];
+  string display_name = 5 [(gogoproto.jsontag) = "display_name"];
+  string parent_local_id = 6 [(gogoproto.jsontag) = "parent_local_id"];
+  string listen = 7 [(gogoproto.jsontag) = "listen"];
+  string flisten = 8 [(gogoproto.jsontag) = "flisten"];
+  string status_path = 9 [(gogoproto.jsontag) = "status_path"];
+  bool can_have_children = 10 [(gogoproto.jsontag) = "can_have_children"];
+  string agent = 11 [(gogoproto.jsontag) = "agent"];
+}
+
+// PhpFpmHealth reports the health details of PHPFPM process
+message PhpFpmHealth {
+  enum PhpFpmHealthStatus {
+    UNKNOWN = 0;
+    ACTIVE = 1;
+    DEGRADED = 2;
+  }
+  string system_id = 1 [(gogoproto.jsontag) = "system_id"];
+  PhpFpmHealthStatus phpfpm_health_status = 2 [(gogoproto.jsontag) = "phpfpm_health_status"];
+  string degraded_reason = 3 [(gogoproto.jsontag) = "degraded_reason"];
+}
