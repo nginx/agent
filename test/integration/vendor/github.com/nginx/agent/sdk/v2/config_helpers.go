@@ -897,9 +897,8 @@ func pingNginxPlusApiEndpoint(statusAPI string) bool {
 		return false
 	}
 
-	// Expecting API to return the api versions in an array like this:
-	//
-	// [1,2,3,4,5,6,7,8]
+	// Expecting API to return the api versions in an array of positive integers
+	// subset example: [ ... 6,7,8,9 ...]
 	var responseBody []int
 	err = json.Unmarshal(bodyBytes, &responseBody)
 
