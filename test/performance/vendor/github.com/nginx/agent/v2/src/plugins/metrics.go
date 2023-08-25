@@ -175,7 +175,7 @@ func (m *Metrics) metricsGoroutine() {
 		case <-m.ticker.C:
 			stats := m.collectStats()
 			if bundlePayload := metrics.GenerateMetricsReportBundle(stats); bundlePayload != nil {
-				if m.conf.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
+				if m.conf.IsFeatureEnabled(agent_config.FeatureMetrics) || m.conf.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
 					m.pipeline.Process(core.NewMessage(core.MetricReport, bundlePayload))
 				} else {
 					metricBuffer := make([]core.Payload, 0)
