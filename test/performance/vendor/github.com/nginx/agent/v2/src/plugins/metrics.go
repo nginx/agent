@@ -39,10 +39,9 @@ type Metrics struct {
 	env                      core.Environment
 	conf                     *config.Config
 	binary                   core.NginxBinary
-	passthrough              bool
 }
 
-func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary, passthrough bool) *Metrics {
+func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary) *Metrics {
 	collectorConfigsMap := createCollectorConfigsMap(config, env, binary)
 	return &Metrics{
 		collectorsUpdate:         atomic.NewBool(false),
@@ -57,7 +56,6 @@ func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBi
 		env:                      env,
 		conf:                     config,
 		binary:                   binary,
-		passthrough:              passthrough,
 	}
 }
 
@@ -177,7 +175,9 @@ func (m *Metrics) metricsGoroutine() {
 		case <-m.ticker.C:
 			stats := m.collectStats()
 			if bundlePayload := metrics.GenerateMetricsReportBundle(stats); bundlePayload != nil {
-				if m.passthrough {
+				if m.conf.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
+					m.pipeline.Process(core.NewMessage(core.MetricReport, bundlePayload))
+				} else {
 					metricBuffer := make([]core.Payload, 0)
 
 					switch bundle := bundlePayload.(type) {
@@ -194,11 +194,9 @@ func (m *Metrics) metricsGoroutine() {
 					default:
 						log.Errorf("BUNDLE TYPE COERCION FAILED: %T", bundlePayload)
 					}
-
-				} else {
-					m.pipeline.Process(core.NewMessage(core.MetricReport, bundlePayload))
 				}
 			}
+
 			if m.collectorsUpdate.Load() {
 				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)
 				m.collectorsUpdate.Store(false)
