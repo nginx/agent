@@ -36,9 +36,9 @@ func TestFeatures_Process(t *testing.T) {
 			numPlugins: 2,
 		},
 		{
-			testName:   "Metrics",
-			featureKey: agent_config.FeatureMetrics,
-			pluginName: agent_config.FeatureMetrics,
+			testName:   "Metrics collection",
+			featureKey: agent_config.FeatureMetricsCollection,
+			pluginName: agent_config.FeatureMetricsCollection,
 			numPlugins: 2,
 		},
 		{
@@ -51,7 +51,7 @@ func TestFeatures_Process(t *testing.T) {
 
 	processID := "12345"
 
-	processes := []core.Process{
+	processes := []*core.Process{
 		{
 			Name:     processID,
 			IsMaster: true,
