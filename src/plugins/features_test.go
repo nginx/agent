@@ -36,9 +36,15 @@ func TestFeatures_Process(t *testing.T) {
 			numPlugins: 2,
 		},
 		{
+			testName:   "Metrics",
+			featureKey: agent_config.FeatureMetrics,
+			pluginName: agent_config.FeatureMetrics,
+			numPlugins: 4,
+		},
+		{
 			testName:   "Metrics collection",
 			featureKey: agent_config.FeatureMetricsCollection,
-			pluginName: agent_config.FeatureMetricsCollection,
+			pluginName: agent_config.FeatureMetrics,
 			numPlugins: 2,
 		},
 		{
