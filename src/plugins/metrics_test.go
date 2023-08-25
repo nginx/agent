@@ -300,7 +300,7 @@ func TestMetrics_Process_AgentCollectorsUpdate(t *testing.T) {
 	assert.True(t, pluginUnderTest.collectorsUpdate.Load())
 }
 
-func TestMetrics_Process_NginxStatusAPIUpdate_AgentConfigChanged(t *testing.T) {
+func TestMetrics_Process_NginxConfigApplySucceeded_AgentConfigChanged(t *testing.T) {
 	binary := tutils.NewMockNginxBinary()
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[secondNginxPid])
 
@@ -315,7 +315,7 @@ func TestMetrics_Process_NginxStatusAPIUpdate_AgentConfigChanged(t *testing.T) {
 
 	detailsMap[secondNginxPid].ConfPath = "/something/new/1"
 
-	pluginUnderTest.Process(core.NewMessage(core.NginxStatusAPIUpdate, nil))
+	pluginUnderTest.Process(core.NewMessage(core.NginxConfigApplySucceeded, nil))
 
 	conf = pluginUnderTest.collectorConfigsMap[secondNginxId]
 	assert.Equal(t, detailsMap[secondNginxPid].ConfPath, conf.ConfPath)
@@ -338,7 +338,6 @@ func TestMetrics_Subscriptions(t *testing.T) {
 		core.RegistrationCompletedTopic,
 		core.AgentCollectorsUpdate,
 		core.AgentConfigChanged,
-		core.NginxStatusAPIUpdate,
 		core.NginxPluginConfigured,
 		core.NginxDetailProcUpdate,
 		core.NginxConfigApplySucceeded,

@@ -9,6 +9,8 @@ refLinksErrorLevel = "ERROR"
 enableRobotsTXT = "true"
 #canonifyURLs = true
 pluralizeListTitles = false
+pygmentsCodeFences = true
+pygmentsUseClasses = true
 
 [caches]
   [caches.modules]

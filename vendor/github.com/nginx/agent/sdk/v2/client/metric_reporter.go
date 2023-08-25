@@ -228,7 +228,12 @@ func (r *metricReporter) handleGrpcError(messagePrefix string, err error) error 
 	if st, ok := status.FromError(err); ok {
 		log.Errorf("%s: error communicating with %s, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
 	} else if err == io.EOF {
-		log.Errorf("%s: server %s is not processing requests, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
+		_, err = r.channel.CloseAndRecv()
+		if st, ok = status.FromError(err); ok {
+			log.Errorf("%s: server %s is not processing requests, code=%s, message=%v", messagePrefix, r.grpc.Target(), st.Code().String(), st.Message())
+		} else {
+			log.Errorf("%s: unable to receive error message for EOF from %s, %v", messagePrefix, r.grpc.Target(), err)
+		}
 	} else {
 		log.Errorf("%s: unknown grpc error while communicating with %s, %v", messagePrefix, r.grpc.Target(), err)
 	}

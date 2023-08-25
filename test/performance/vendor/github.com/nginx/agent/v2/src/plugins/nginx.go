@@ -47,7 +47,6 @@ var (
 		re.MustCompile(`.*\[emerg\].*`),
 		re.MustCompile(`.*\[alert\].*`),
 		re.MustCompile(`.*\[crit\].*`),
-		re.MustCompile(`.*\[error\].*`),
 	}
 	warningRegex = re.MustCompile(`.*\[warn\].*`)
 )
@@ -343,11 +342,6 @@ func (n *Nginx) applyConfig(cmd *proto.Command, cfg *proto.Command_NginxConfig) 
 		return status
 	}
 
-	if err != nil {
-		status.NginxConfigResponse.Status = newErrStatus("Config apply failed: " + err.Error()).CmdStatus
-		return status
-	}
-
 	status = n.writeConfigAndReloadNginx(cmd.Meta.MessageId, config, cmd.GetNginxConfig().GetAction())
 
 	log.Debug("Config Apply Complete")
@@ -552,6 +546,9 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 			},
 		}
 
+		n.syncProcessInfo(n.env.Processes())
+		n.nginxBinary.UpdateNginxDetailsFromProcesses(n.processes)
+
 		n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplySucceeded, agentActivityStatus))
 
 		status = &proto.Command_NginxConfigResponse{
@@ -631,9 +628,6 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	data := make(chan string, 1024)
 	go t.Tail(ctx, data)
 
-	tick := time.NewTicker(n.config.Nginx.ConfigReloadMonitoringPeriod)
-	defer tick.Stop()
-
 	for {
 		select {
 		case d := <-data:
@@ -648,10 +642,8 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 					return
 				}
 			}
-		case <-tick.C:
-			errorChannel <- ""
-			return
 		case <-ctx.Done():
+			errorChannel <- ""
 			return
 		}
 	}
@@ -749,6 +741,8 @@ func (n *Nginx) syncAgentConfigChange() {
 		return
 	}
 	log.Debugf("Nginx Plugins is updating to a new config - %v", conf)
+	n.isFeatureNginxConfigEnabled = conf.IsFeatureEnabled(agent_config.FeatureNginxConfig) || conf.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
+	n.isNginxAppProtectEnabled = conf.IsExtensionEnabled(agent_config.NginxAppProtectExtensionPlugin)
 	n.config = conf
 }
 

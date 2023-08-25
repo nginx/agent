@@ -149,7 +149,7 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 	if r.config != nil {
 		for _, feature := range r.config.Features {
-			if feature != agent_config.FeatureRegistration {
+			if feature != agent_config.FeatureRegistration && feature != agent_config.FeatureNginxConfigAsync {
 				r.mu.Lock()
 				r.deRegisterPlugin(feature)
 				r.mu.Unlock()
@@ -168,13 +168,6 @@ func (r *ConfigReader) deRegisterPlugin(data string) {
 	if data == agent_config.FeatureFileWatcher {
 
 		err := r.messagePipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
-		if err != nil {
-			log.Warnf("Error De-registering %v Plugin: %v", data, err)
-		}
-
-	} else if data == agent_config.FeatureNginxConfigAsync {
-
-		err := r.messagePipeline.DeRegister([]string{agent_config.NginxBinaryPlugin})
 		if err != nil {
 			log.Warnf("Error De-registering %v Plugin: %v", data, err)
 		}

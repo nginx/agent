@@ -25,7 +25,7 @@ type BuildOptions struct {
 
 const MaxIndent = 100
 
-// nolint:gochecknoglobals
+//nolint:gochecknoglobals
 var (
 	marginSpaces = strings.Repeat(" ", MaxIndent)
 	marginTabs   = strings.Repeat("\t", MaxIndent)
@@ -108,7 +108,6 @@ func Build(w io.Writer, config Config, options *BuildOptions) error {
 	return err
 }
 
-//nolint:gocognit
 func buildBlock(sb io.StringWriter, parent *Directive, block Directives, depth int, lastLine int, options *BuildOptions) {
 	for i, stmt := range block {
 		// if the this statement is a comment on the same line as the preview, do not emit EOL for this stmt
@@ -185,7 +184,7 @@ func Enquote(arg string) string {
 	return strings.ReplaceAll(repr(arg), `\\`, `\`)
 }
 
-// nolint:gocyclo,gocognit
+//nolint:gocyclo
 func needsQuote(s string) bool {
 	if s == "" {
 		return true
@@ -201,7 +200,7 @@ func needsQuote(s string) bool {
 	}
 
 	// get first rune
-	char, off := utf8.DecodeRune([]byte(chars))
+	char, off := utf8.DecodeRuneInString(chars)
 
 	// arguments can't start with variable expansion syntax
 	if unicode.IsSpace(char) || strings.ContainsRune("{};\"'", char) || strings.HasPrefix(chars, "${") {
@@ -211,7 +210,7 @@ func needsQuote(s string) bool {
 	chars = chars[off:]
 
 	expanding := false
-	var prev rune = 0
+	var prev rune
 	for _, c := range chars {
 		char = c
 

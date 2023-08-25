@@ -76,7 +76,7 @@ func (m *Metrics) Close() {
 func (m *Metrics) Process(msg *core.Message) {
 	log.Debugf("Process function in the metrics.go, %s %v", msg.Topic(), msg.Data())
 	switch {
-	case msg.Exact(core.AgentConfigChanged), msg.Exact(core.NginxStatusAPIUpdate):
+	case msg.Exact(core.AgentConfigChanged), msg.Exact(core.NginxConfigApplySucceeded):
 		// If the agent config on disk changed or the NGINX statusAPI was updated
 		// Then update Metrics with relevant config info
 		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary)
@@ -153,7 +153,6 @@ func (m *Metrics) Subscriptions() []string {
 		core.RegistrationCompletedTopic,
 		core.AgentCollectorsUpdate,
 		core.AgentConfigChanged,
-		core.NginxStatusAPIUpdate,
 		core.NginxPluginConfigured,
 		core.NginxDetailProcUpdate,
 		core.NginxConfigApplySucceeded,
@@ -337,7 +336,6 @@ func createCollectorConfigsMap(config *config.Config, env core.Environment, bina
 			ClientVersion:      config.Nginx.NginxClientVersion,
 		}
 	}
-
 	return collectorConfigsMap
 }
 

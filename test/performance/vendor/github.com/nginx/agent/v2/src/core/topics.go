@@ -18,7 +18,6 @@ const (
 	NginxStart                      = "nginx.start"
 	NginxStop                       = "nginx.stop"
 	NginxPluginConfigured           = "nginx.plugin.config"
-	NginxStatusAPIUpdate            = "nginx.status.api.update"
 	NginxInstancesFound             = "nginx.instances.found"
 	NginxMasterProcCreated          = "nginx.master.created"
 	NginxMasterProcKilled           = "nginx.master.killed"

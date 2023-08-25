@@ -77,9 +77,6 @@ func (f *Features) Init(pipeline core.MessagePipeInterface) {
 		agent_config.FeatureNginxCounting: func(data string) []core.Plugin {
 			return f.enableNginxCountingFeature(data)
 		},
-		agent_config.FeatureNginxConfigAsync: func(data string) []core.Plugin {
-			return f.enableNginxConfigAsyncFeature(data)
-		},
 	}
 }
 
