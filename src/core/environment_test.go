@@ -10,7 +10,6 @@ package core
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -471,22 +470,6 @@ func TestProcessors(t *testing.T) {
 	assert.Equal(t, "arm64", processorInfo[0].GetArchitecture())
 }
 
-type fakeShell struct {
-	output map[string]string
-	errors map[string]error
-}
-
-func (f *fakeShell) Exec(cmd string, arg ...string) ([]byte, error) {
-	key := strings.Join(append([]string{cmd}, arg...), " ")
-	if err, ok := f.errors[key]; ok {
-		return nil, err
-	}
-	if out, ok := f.output[key]; ok {
-		return []byte(out), nil
-	}
-	return nil, fmt.Errorf("unexpected command %s", key)
-}
-
 func TestGetCacheInfo(t *testing.T) {
 	tempShellCommander := shell
 	defer func() { shell = tempShellCommander }()
@@ -498,8 +481,8 @@ func TestGetCacheInfo(t *testing.T) {
 	}{
 		{
 			name: "lscpu error",
-			shell: &fakeShell{
-				errors: map[string]error{
+			shell: &FakeShell{
+				Errors: map[string]error{
 					"lscpu": errors.New("nope"),
 				},
 			},
@@ -518,8 +501,8 @@ func TestGetCacheInfo(t *testing.T) {
 		},
 		{
 			name: "default cache info absent",
-			shell: &fakeShell{
-				output: map[string]string{
+			shell: &FakeShell{
+				Output: map[string]string{
 					"lscpu": lscpuInfo1,
 				},
 			},
@@ -538,8 +521,8 @@ func TestGetCacheInfo(t *testing.T) {
 		},
 		{
 			name: "os-release present with quote",
-			shell: &fakeShell{
-				output: map[string]string{
+			shell: &FakeShell{
+				Output: map[string]string{
 					"lscpu": lscpuInfo2,
 				},
 			},
