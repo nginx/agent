@@ -11,12 +11,23 @@ init_daemon_domain(nginx_agent_t, nginx_agent_exec_t)
 
 permissive nginx_agent_t;
 
+type nginx_agent_log_t;
+logging_log_file(nginx_agent_log_t)
+
+type nginx_agent_unit_file_t;
+systemd_unit_file(nginx_agent_unit_file_t)
+
 ########################################
 #
 # nginx_agent local policy
 #
 allow nginx_agent_t self:fifo_file rw_fifo_file_perms;
 allow nginx_agent_t self:unix_stream_socket create_stream_socket_perms;
+
+manage_dirs_pattern(nginx_agent_t, nginx_agent_log_t, nginx_agent_log_t)
+manage_files_pattern(nginx_agent_t, nginx_agent_log_t, nginx_agent_log_t)
+manage_lnk_files_pattern(nginx_agent_t, nginx_agent_log_t, nginx_agent_log_t)
+logging_log_filetrans(nginx_agent_t, nginx_agent_log_t, { dir file lnk_file })
 
 domain_use_interactive_fds(nginx_agent_t)
 
@@ -25,127 +36,140 @@ files_read_etc_files(nginx_agent_t)
 miscfiles_read_localization(nginx_agent_t)
 
 require {
-	type system_dbusd_t;
-	type nginx_agent_t;
-	type tuned_t;
-	type rpcbind_t;
-	type var_run_t;
 	type unconfined_t;
-	type systemd_logind_t;
+	type var_run_t;
+	type rpcbind_t;
+	type system_cronjob_t;
 	type policykit_t;
 	type irqbalance_t;
-	type httpd_exec_t;
-	type rhsmcertd_t;
-	class capability sys_ptrace;
-	class tcp_socket { connect create getattr getopt setopt };
-	class netlink_route_socket { bind create getattr nlmsg_read };
-	class dir { getattr search };
-	class file { getattr map open read };
+	type tuned_t;
+	type postfix_pickup_t;
+	type dhcpc_t;
+	type system_dbusd_t;
+	type postfix_qmgr_t;
+	type nginx_agent_t;
 	class sock_file { create setattr unlink };
+	class netlink_route_socket { bind create getattr nlmsg_read };
+	class capability sys_ptrace;
+	class dir { getattr search };
+	class file { getattr open read };
 }
 
 #============= nginx_agent_t ==============
-
-#!!!! This avc can be allowed using the boolean 'domain_can_mmap_files'
-allow nginx_agent_t httpd_exec_t:file map;
+allow nginx_agent_t dhcpc_t:dir { getattr search };
+allow nginx_agent_t dhcpc_t:file { getattr open read };
 allow nginx_agent_t irqbalance_t:dir { getattr search };
 allow nginx_agent_t irqbalance_t:file { getattr open read };
 allow nginx_agent_t policykit_t:dir { getattr search };
 allow nginx_agent_t policykit_t:file { getattr open read };
-allow nginx_agent_t rhsmcertd_t:dir { getattr search };
-allow nginx_agent_t rhsmcertd_t:file { getattr open read };
+allow nginx_agent_t postfix_pickup_t:dir { getattr search };
+allow nginx_agent_t postfix_pickup_t:file { getattr open read };
+allow nginx_agent_t postfix_qmgr_t:dir { getattr search };
+allow nginx_agent_t postfix_qmgr_t:file { getattr open read };
 allow nginx_agent_t rpcbind_t:dir { getattr search };
 allow nginx_agent_t rpcbind_t:file { getattr open read };
 allow nginx_agent_t self:capability sys_ptrace;
 allow nginx_agent_t self:netlink_route_socket { bind create getattr nlmsg_read };
-allow nginx_agent_t self:tcp_socket { connect create getattr getopt setopt };
+allow nginx_agent_t system_cronjob_t:dir { getattr search };
+allow nginx_agent_t system_cronjob_t:file { getattr open read };
 allow nginx_agent_t system_dbusd_t:dir { getattr search };
 allow nginx_agent_t system_dbusd_t:file { getattr open read };
-allow nginx_agent_t systemd_logind_t:dir { getattr search };
-allow nginx_agent_t systemd_logind_t:file { getattr open read };
 allow nginx_agent_t tuned_t:dir { getattr search };
 allow nginx_agent_t tuned_t:file { getattr open read };
 allow nginx_agent_t unconfined_t:dir { getattr search };
 allow nginx_agent_t unconfined_t:file { getattr open read };
 allow nginx_agent_t var_run_t:sock_file { create setattr unlink };
-NetworkManager_read_state(nginx_agent_t)
-apache_exec(nginx_agent_t)
-apache_read_config(nginx_agent_t)
-apache_read_log(nginx_agent_t)
-apache_systemctl(nginx_agent_t)
-auth_read_passwd_file(nginx_agent_t)
 chronyd_systemctl(nginx_agent_t)
-corecmd_exec_bin(nginx_agent_t)
-corecmd_mmap_bin_files(nginx_agent_t)
-corenet_tcp_connect_http_port(nginx_agent_t)
+corecmd_exec_ls(nginx_agent_t)
 cron_read_state_crond(nginx_agent_t)
 dev_list_sysfs(nginx_agent_t)
 dev_read_sysfs(nginx_agent_t)
+files_manage_generic_tmp_files(nginx_agent_t)
 files_read_var_lib_files(nginx_agent_t)
 files_rw_pid_dirs(nginx_agent_t)
+fs_getattr_xattr_fs(nginx_agent_t)
 getty_systemctl(nginx_agent_t)
 gssproxy_systemctl(nginx_agent_t)
 init_read_state(nginx_agent_t)
+kernel_getattr_proc(nginx_agent_t)
 kernel_list_proc(nginx_agent_t)
 kernel_read_net_sysctls(nginx_agent_t)
 kernel_read_network_state(nginx_agent_t)
-kernel_read_proc_files(nginx_agent_t)
 kernel_read_state(nginx_agent_t)
+kernel_read_system_state(nginx_agent_t)
 kernel_search_network_sysctl(nginx_agent_t)
-logging_create_generic_logs(nginx_agent_t)
 logging_systemctl_audit(nginx_agent_t)
-logging_systemctl_syslogd(nginx_agent_t)
+postfix_read_master_state(nginx_agent_t)
 ssh_systemctl(nginx_agent_t)
+systemd_logind_read_state(nginx_agent_t)
 udev_read_state(nginx_agent_t)
 
 require {
-	type nginx_agent_t;
-	type systemd_logind_t;
-	class file { getattr open read };
-	class capability dac_read_search;
-}
-
-#============= nginx_agent_t ==============
-allow nginx_agent_t self:capability dac_read_search;
-
-#!!!! This avc is allowed in the current policy
-allow nginx_agent_t systemd_logind_t:file { getattr open read };
-files_manage_generic_tmp_files(nginx_agent_t)
-fs_getattr_xattr_fs(nginx_agent_t)
-
-require {
-	type system_cronjob_t;
+	type policykit_t;
+	type dhcpc_t;
+	type rpcbind_t;
 	type nginx_agent_t;
 	class dir { getattr search };
 	class file { getattr open read };
 }
 
 #============= nginx_agent_t ==============
-allow nginx_agent_t system_cronjob_t:dir { getattr search };
-allow nginx_agent_t system_cronjob_t:file { getattr open read };
+
+#!!!! This avc is allowed in the current policy
+allow nginx_agent_t dhcpc_t:dir { getattr search };
+
+#!!!! This avc is allowed in the current policy
+allow nginx_agent_t policykit_t:file { getattr open read };
+
+#!!!! This avc is allowed in the current policy
+allow nginx_agent_t rpcbind_t:file { getattr open read };
+kernel_read_network_state(nginx_agent_t)
 
 require {
-	type nginx_agent_t;
-}
-
-#============= nginx_agent_t ==============
-files_manage_mounttab(nginx_agent_t)
-
-require {
-	type nginx_agent_t;
+	type unconfined_t;
 	type httpd_var_run_t;
-	class file { open read write };
-	class tcp_socket bind;
-	class capability net_bind_service;
+	type http_port_t;
+	type nginx_agent_t;
+	type netutils_t;
+	class capability { dac_override net_bind_service };
+	class tcp_socket { bind connect create getattr getopt name_bind name_connect setopt };
+	class lnk_file read;
+	class dir { getattr search };
+	class file { getattr open read write };
 }
 
 #============= nginx_agent_t ==============
+allow nginx_agent_t http_port_t:tcp_socket { name_bind name_connect };
 allow nginx_agent_t httpd_var_run_t:file { open read write };
-allow nginx_agent_t self:capability net_bind_service;
-allow nginx_agent_t self:tcp_socket bind;
+allow nginx_agent_t netutils_t:dir { getattr search };
+allow nginx_agent_t netutils_t:file { getattr open read };
+allow nginx_agent_t self:capability { dac_override net_bind_service };
+allow nginx_agent_t self:tcp_socket { bind connect create getattr getopt setopt };
+allow nginx_agent_t unconfined_t:lnk_file read;
+apache_exec(nginx_agent_t)
 apache_manage_config(nginx_agent_t)
+apache_read_config(nginx_agent_t)
+apache_read_log(nginx_agent_t)
 apache_signal(nginx_agent_t)
+apache_systemctl(nginx_agent_t)
+auth_read_passwd(nginx_agent_t)
 corenet_tcp_bind_generic_node(nginx_agent_t)
-corenet_tcp_bind_http_port(nginx_agent_t)
+files_manage_urandom_seed(nginx_agent_t)
 miscfiles_read_certs(nginx_agent_t)
-miscfiles_search_generic_cert_dirs(nginx_agent_t)
+
+require {
+	type sshd_net_t;
+	type rpm_script_t;
+	type mandb_t;
+}
+
+allow nginx_agent_t mandb_t:dir { getattr search };
+allow nginx_agent_t mandb_t:file { getattr open read };
+allow nginx_agent_t rpm_script_t:dir { getattr search };
+allow nginx_agent_t rpm_script_t:file { getattr open read };
+allow nginx_agent_t sshd_net_t:dir { getattr search };
+allow nginx_agent_t sshd_net_t:file { getattr open read };
+
+apache_list_cache(nginx_agent_t)
+fs_getattr_dos_fs(nginx_agent_t)
+init_read_script_state(nginx_agent_t)
