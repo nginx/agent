@@ -52,7 +52,7 @@ func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collec
 		nginxSources = append(nginxSources, sources.NewNginxProcess(dimensions, sources.OSSNamespace, binary))
 	}
 
-	if conf.IsFeatureEnabled(agent_config.FeatureMetrics) {
+	if conf.IsFeatureEnabled(agent_config.FeatureMetrics) || conf.IsFeatureEnabled(agent_config.FeatureMetricsCollection) {
 		nginxSources = append(nginxSources, sources.NewNginxWorker(dimensions, sources.OSSNamespace, binary, sources.NewNginxWorkerClient(env)))
 
 		if collectorConf.StubStatus != "" {

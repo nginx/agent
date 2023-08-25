@@ -189,10 +189,9 @@ func (m *Metrics) metricsGoroutine() {
 								}
 							}
 						}
-
 						m.pipeline.Process(core.NewMessage(core.CommMetrics, metricBuffer))
 					default:
-						log.Errorf("BUNDLE TYPE COERCION FAILED: %T", bundlePayload)
+						log.Errorf("Error converting metric report: %T", bundlePayload)
 					}
 				}
 			}
@@ -247,7 +246,7 @@ func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
 func (m *Metrics) registerStatsSources() {
 	tempCollectors := make([]metrics.Collector, 0)
 
-	if m.conf.IsFeatureEnabled(agent_config.FeatureMetrics) {
+	if m.conf.IsFeatureEnabled(agent_config.FeatureMetrics) || m.conf.IsFeatureEnabled(agent_config.FeatureMetricsCollection) {
 		tempCollectors = append(tempCollectors,
 			collectors.NewSystemCollector(m.env, m.conf),
 		)
