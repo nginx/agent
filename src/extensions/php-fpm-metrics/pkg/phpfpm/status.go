@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/nginx/agent/v2/src/core"
+	log "github.com/sirupsen/logrus"
 )
 
 var shell core.Shell = core.ExecShellCommand{}
@@ -14,7 +15,6 @@ type Status int
 
 const (
 	UNKNOWN Status = iota
-	MISSING
 	INSTALLED
 	RUNNING
 )
@@ -22,8 +22,6 @@ const (
 // String get the string representation of the enum
 func (s Status) String() string {
 	switch s {
-	case MISSING:
-		return "MISSING"
 	case INSTALLED:
 		return "INSTALLED"
 	case RUNNING:
@@ -32,11 +30,12 @@ func (s Status) String() string {
 	return "UNKNOWN"
 }
 
-// GetPhpFpmStatus returns phpfpm process status
-func GetPhpFpmStatus() (Status, error) {
-	output, err := shell.Exec("bash", "-c", "ps aux | grep php-fpm")
+// GetStatus returns phpfpm process status
+func GetStatus(pid, version string) Status {
+	output, err := shell.Exec("ps xao pid,ppid,command | grep 'php-fpm[:]'")
 	if err != nil {
-		return MISSING, fmt.Errorf("failed to retrieve ps info about php-fpm: %v", err)
+		log.Warnf("failed to retrieve ps info about php-fpm: %v for pid %s", err, pid)
+		return UNKNOWN
 	}
 
 	outputSplit := strings.Split(string(output), "\n")
@@ -47,20 +46,24 @@ func GetPhpFpmStatus() (Status, error) {
 
 		// master info, otherwise a pool worker
 		if strings.Contains(l, "master process") {
-			return RUNNING, nil
+			parsed := strings.Fields(l)
+			if parsed[1] == pid {
+				return RUNNING
+			}
 		}
 	}
 
 	// not running; maybe it's installed
-	output, err = shell.Exec("ls", "/etc/php/")
+	output, err = shell.Exec("ls", fmt.Sprintf("/etc/php/%s", version))
 	if err != nil {
-		return MISSING, fmt.Errorf("failed to retrieve ps info about php: %v", err)
+		log.Warnf("failed to retrieve ps info about php: %v for pid %s", err, pid)
+		return UNKNOWN
 	}
 
 	installs := strings.Fields(string(output))
 	if len(installs) > 0 {
-		return INSTALLED, nil
+		return INSTALLED
 	}
 
-	return MISSING, nil
+	return UNKNOWN
 }
