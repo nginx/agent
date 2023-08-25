@@ -317,18 +317,17 @@ func startNginxAgent(b *testing.B) {
 		fmt.Printf("Unable to connect to control plane: %v", err)
 		return
 	}
-	var corePlugins []core.Plugin
 
-	corePlugins = append(corePlugins,
+	corePlugins := []core.Plugin{
 		plugins.NewConfigReader(loadedConfig),
 		plugins.NewNginx(commander, binary, env, &config.Config{}),
 		plugins.NewCommander(commander, loadedConfig),
 		plugins.NewMetricsSender(reporter),
 		plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.New().String()), "1.0.0"),
-		plugins.NewMetrics(loadedConfig, env, binary, false),
+		plugins.NewMetrics(loadedConfig, env, binary),
 		plugins.NewMetricsThrottle(loadedConfig, env),
 		plugins.NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.New().String()), binary, env, "1.0.0"),
-	)
+	}
 
 	messagePipe := core.NewMessagePipe(ctx)
 	err = messagePipe.Register(100, corePlugins, []core.ExtensionPlugin{})
