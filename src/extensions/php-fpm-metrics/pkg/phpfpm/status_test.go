@@ -60,7 +60,7 @@ func TestPhpFpmStatus(t *testing.T) {
 			name: "error retreiving php-fpm process",
 			shell: &core.FakeShell{
 				Errors: map[string]error{
-					"bash -c ps xao pid,ppid,command | grep 'php-fpm[:]'": fmt.Errorf("unexpected error"),
+					"ps xao pid,ppid,command | grep 'php-fpm[:]'": fmt.Errorf("unexpected error"),
 				},
 			},
 			expect:  UNKNOWN,
@@ -71,7 +71,7 @@ func TestPhpFpmStatus(t *testing.T) {
 			name: "no php process",
 			shell: &core.FakeShell{
 				Output: map[string]string{
-					"bash -c ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
+					"ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
 				},
 				Errors: map[string]error{
 					"ls /etc/php/": fmt.Errorf(" No such file or directory"),
