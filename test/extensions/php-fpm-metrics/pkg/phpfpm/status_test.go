@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/v2/src/core"
+	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
+	pf "github.com/nginx/agent/v2/src/extensions/php-fpm-metrics/phpfpm/pkg"
 )
 
 var phpFpmProcessRunning = `
@@ -23,69 +25,81 @@ cli  fpm  mods-available
 `
 
 func TestPhpFpmStatus(t *testing.T) {
-	tempShellCommander := shell
-	defer func() { shell = tempShellCommander }()
+	tempShellCommander := pf.Shell
+	defer func() { pf.Shell = tempShellCommander }()
 	tests := []struct {
 		name        string
 		ppid        string
 		version     string
 		shell       core.Shell
 		processInfo map[string]string
-		expect      Status
+		expect      pf.Status
 	}{
-		{
+			{
 			name: "php status running",
-			shell: &core.FakeShell{
+			shell: &tutils.FakeShell{
 				Output: map[string]string{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": phpFpmProcessRunning,
 				},
 			},
-			expect:  RUNNING,
+			expect:  pf.RUNNING,
 			ppid:    "654040",
 			version: "7.4",
 		},
 		{
 			name: "php process installed",
-			shell: &core.FakeShell{
+			shell: &tutils.FakeShell{
 				Output: map[string]string{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
 					"ls /etc/php/7.4": phpFpmProcessInstalled,
 				},
 			},
-			expect:  INSTALLED,
+			expect:  pf.INSTALLED,
 			ppid:    "654040",
 			version: "7.4",
 		},
 		{
 			name: "error retreiving php-fpm process",
-			shell: &core.FakeShell{
+			shell: &tutils.FakeShell{
 				Errors: map[string]error{
-					"bash -c ps xao pid,ppid,command | grep 'php-fpm[:]'": fmt.Errorf("unexpected error"),
+					"ps xao pid,ppid,command | grep 'php-fpm[:]'": fmt.Errorf("unexpected error"),
 				},
 			},
-			expect:  UNKNOWN,
+			expect:  pf.UNKNOWN,
 			ppid:    "654040",
 			version: "7.4",
 		},
 		{
-			name: "no php process",
-			shell: &core.FakeShell{
+			name: "error retreiving php process",
+			shell: &tutils.FakeShell{
 				Output: map[string]string{
-					"bash -c ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
+					"ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
 				},
 				Errors: map[string]error{
-					"ls /etc/php/": fmt.Errorf(" No such file or directory"),
+					"ls /etc/php/7.4": fmt.Errorf(" No such file or directory"),
 				},
 			},
-			expect:  UNKNOWN,
+			expect:  pf.UNKNOWN,
+			ppid:    "654040",
+			version: "7.4",
+		},
+		{
+			name: "missing php process",
+			shell: &tutils.FakeShell{
+				Output: map[string]string{
+					"ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
+					"ls /etc/php/7.4": ``,
+				},
+			},
+			expect:  pf.MISSING,
 			ppid:    "654040",
 			version: "7.4",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			shell = tt.shell
-			actual := GetStatus(tt.ppid, tt.version)
+			pf.Shell = tt.shell
+			actual, _ := pf.GetStatus(tt.ppid, tt.version)
 			assert.Equal(t, tt.expect, actual)
 		})
 	}
