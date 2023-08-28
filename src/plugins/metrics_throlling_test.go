@@ -11,14 +11,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nginx/agent/v2/src/core/metrics"
-
 	"github.com/nginx/agent/sdk/v2/proto"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMetricsThrottle_Process(t *testing.T) {
@@ -133,7 +132,7 @@ func TestMetricsThrottle_Process(t *testing.T) {
 }
 
 func TestMetricsThrottle_Subscriptions(t *testing.T) {
-	subs := []string{core.MetricReport, core.AgentConfigChanged, core.LoggerLevel}
+	subs := []string{core.MetricReport, core.AgentConfigChanged}
 	pluginUnderTest := NewMetricsThrottle(tutils.GetMockAgentConfig(), &tutils.MockEnvironment{})
 
 	assert.Equal(t, subs, pluginUnderTest.Subscriptions())

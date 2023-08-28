@@ -11,13 +11,13 @@ import (
 	"context"
 	"sync"
 
+	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/sources"
-	log "github.com/sirupsen/logrus"
 
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	log "github.com/sirupsen/logrus"
 )
 
 type NginxCollector struct {
@@ -52,7 +52,7 @@ func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collec
 		nginxSources = append(nginxSources, sources.NewNginxProcess(dimensions, sources.OSSNamespace, binary))
 	}
 
-	if conf.IsFeatureEnabled(agent_config.FeatureMetrics) {
+	if conf.IsFeatureEnabled(agent_config.FeatureMetrics) || conf.IsFeatureEnabled(agent_config.FeatureMetricsCollection) {
 		nginxSources = append(nginxSources, sources.NewNginxWorker(dimensions, sources.OSSNamespace, binary, sources.NewNginxWorkerClient(env)))
 
 		if collectorConf.StubStatus != "" {

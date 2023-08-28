@@ -300,8 +300,8 @@ func updateNginxConfigWithCert(
 	directoryMap *DirectoryMap,
 	allowedDirectories map[string]struct{},
 ) error {
-	if strings.HasPrefix("$", file) {
-		// variable loading, not actual cert file
+	if strings.Contains(file, "$") {
+		// cannot process any filepath with variables
 		return nil
 	}
 
