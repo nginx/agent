@@ -175,8 +175,8 @@ github.com/nginx/agent/v2/test/utils/system
 # github.com/nginxinc/nginx-go-crossplane v0.4.24
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
-# github.com/nginxinc/nginx-plus-go-client v0.10.0
-## explicit; go 1.18
+# github.com/nginxinc/nginx-plus-go-client v0.11.0
+## explicit; go 1.19
 github.com/nginxinc/nginx-plus-go-client/client
 # github.com/nginxinc/nginx-prometheus-exporter v0.11.0
 ## explicit; go 1.19
