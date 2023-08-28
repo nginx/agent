@@ -1,13 +1,13 @@
-package phpfpm
+package phpfpm_test
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/nginx/agent/v2/src/core"
-	tutils "github.com/nginx/agent/v2/test/utils"
+	"github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
-	pf "github.com/nginx/agent/v2/src/extensions/php-fpm-metrics/phpfpm/pkg"
+	pf "github.com/nginx/agent/v2/src/extensions/php-fpm-metrics/pkg/phpfpm"
 )
 
 var phpFpmProcessRunning = `
@@ -36,8 +36,8 @@ func TestPhpFpmStatus(t *testing.T) {
 		expect      pf.Status
 	}{
 			{
-			name: "php status running",
-			shell: &tutils.FakeShell{
+			name: "phpfpm process running",
+			shell: &utils.FakeShell{
 				Output: map[string]string{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": phpFpmProcessRunning,
 				},
@@ -47,8 +47,8 @@ func TestPhpFpmStatus(t *testing.T) {
 			version: "7.4",
 		},
 		{
-			name: "php process installed",
-			shell: &tutils.FakeShell{
+			name: "phpfpm process installed",
+			shell: &utils.FakeShell{
 				Output: map[string]string{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
 					"ls /etc/php/7.4": phpFpmProcessInstalled,
@@ -59,8 +59,8 @@ func TestPhpFpmStatus(t *testing.T) {
 			version: "7.4",
 		},
 		{
-			name: "error retreiving php-fpm process",
-			shell: &tutils.FakeShell{
+			name: "error retrieving phpfpm process",
+			shell: &utils.FakeShell{
 				Errors: map[string]error{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": fmt.Errorf("unexpected error"),
 				},
@@ -70,8 +70,8 @@ func TestPhpFpmStatus(t *testing.T) {
 			version: "7.4",
 		},
 		{
-			name: "error retreiving php process",
-			shell: &tutils.FakeShell{
+			name: "error retrieving phpfpm version",
+			shell: &utils.FakeShell{
 				Output: map[string]string{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
 				},
@@ -84,8 +84,8 @@ func TestPhpFpmStatus(t *testing.T) {
 			version: "7.4",
 		},
 		{
-			name: "missing php process",
-			shell: &tutils.FakeShell{
+			name: "missing phpfpm process",
+			shell: &utils.FakeShell{
 				Output: map[string]string{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
 					"ls /etc/php/7.4": ``,
