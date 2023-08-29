@@ -12,16 +12,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-
-	log "github.com/sirupsen/logrus"
-	"go.uber.org/atomic"
-
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
+
+	"github.com/gogo/protobuf/types"
+	log "github.com/sirupsen/logrus"
+	"go.uber.org/atomic"
 )
 
 const (
@@ -88,6 +87,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 		r.syncAgentConfigChange()
 		r.collectorsUpdate.Store(true)
 		return
+
 	case msg.Exact(core.MetricReport):
 		if r.metricsAggregation {
 			switch bundle := msg.Data().(type) {
@@ -133,7 +133,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 }
 
 func (r *MetricsThrottle) Subscriptions() []string {
-	return []string{core.MetricReport, core.AgentConfigChanged, core.LoggerLevel}
+	return []string{core.MetricReport, core.AgentConfigChanged}
 }
 
 func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.WaitGroup) {
@@ -204,5 +204,5 @@ func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 		}
 	}
 
-	return
+	return reports
 }

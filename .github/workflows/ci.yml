@@ -100,6 +100,8 @@ jobs:
           version: "3.16"
         - image: "alpine"
           version: "3.17"
+        - image: "debian"
+          version: "bookworm-slim"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3

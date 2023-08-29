@@ -12,15 +12,15 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/metrics/collectors"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 var (
@@ -215,7 +215,7 @@ func TestMetrics_Process_AgentConfigChanged(t *testing.T) {
 			updatedTags: true,
 		},
 		{
-			testName: "NoValuesToUpate",
+			testName: "NoValuesToUpdate",
 			config: &config.Config{
 				ClientID: "12345",
 				Tags:     tutils.InitialConfTags,

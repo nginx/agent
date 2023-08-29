@@ -779,12 +779,16 @@ func TestGetStatusApiInfo(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.String() == "/privateapi" {
-			data := []byte("api OK")
+			data := []byte("[1,2,3,4,5,6,7,8]")
 			_, err := rw.Write(data)
 			assert.Nil(t, err)
 		} else if req.URL.String() == "/stub_status" {
-			rw.WriteHeader(http.StatusInternalServerError)
-			data := []byte("stub_status OK")
+			data := []byte(`
+Active connections: 2
+server accepts handled requests
+	18 18 3266
+Reading: 0 Writing: 1 Waiting: 1
+					`)
 			_, err := rw.Write(data)
 			assert.Nil(t, err)
 		}
@@ -1164,6 +1168,22 @@ server {
         allow 127.0.0.1;
         deny all;
     }
+}
+		`,
+		},
+		{
+			plus: []string{
+				"http://127.0.0.1:49151/api",
+				"http://127.0.0.1:49151/api",
+			},
+			conf: `
+server {
+	server_name 127.0.0.1;
+	listen 127.0.0.1:49151;
+	access_log off;
+	location /api {
+		api;
+	}
 }
 		`,
 		},
@@ -1781,6 +1801,109 @@ func TestGetAppProtectPolicyAndSecurityLogFiles(t *testing.T) {
 			policies, profiles := GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg, ignoreDirectives)
 			assert.ElementsMatch(t, tc.expPolicies, policies)
 			assert.ElementsMatch(t, tc.expProfiles, profiles)
+		})
+	}
+}
+
+func TestPingNginxPlusApiEndpoint(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.String() == "/good_api" {
+			data := []byte("[1,2,3,4,5,6,7,8]")
+			_, err := rw.Write(data)
+			assert.Nil(t, err)
+		} else if req.URL.String() == "/invalid_body_api" {
+			data := []byte("Invalid")
+			_, err := rw.Write(data)
+			assert.Nil(t, err)
+		} else {
+			rw.WriteHeader(http.StatusInternalServerError)
+			data := []byte("")
+			_, err := rw.Write(data)
+			assert.Nil(t, err)
+		}
+	}))
+	defer server.Close()
+
+	testCases := []struct {
+		name     string
+		endpoint string
+		expected bool
+	}{
+		{
+			name:     "valid API",
+			endpoint: "/good_api",
+			expected: true,
+		},
+		{
+			name:     "invalid response status code",
+			endpoint: "/bad_api",
+			expected: false,
+		},
+		{
+			name:     "invalid response body",
+			endpoint: "/invalid_body_api",
+			expected: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			result := pingNginxPlusApiEndpoint(fmt.Sprintf("%s%s", server.URL, testCase.endpoint))
+			assert.Equal(t, testCase.expected, result)
+		})
+	}
+}
+
+func TestPingStubStatusApiEndpoint(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.String() == "/good_api" {
+			data := []byte(`
+Active connections: 2
+server accepts handled requests
+	18 18 3266
+Reading: 0 Writing: 1 Waiting: 1
+			`)
+			_, err := rw.Write(data)
+			assert.Nil(t, err)
+		} else if req.URL.String() == "/invalid_body_api" {
+			data := []byte("Invalid")
+			_, err := rw.Write(data)
+			assert.Nil(t, err)
+		} else {
+			rw.WriteHeader(http.StatusInternalServerError)
+			data := []byte("")
+			_, err := rw.Write(data)
+			assert.Nil(t, err)
+		}
+	}))
+	defer server.Close()
+
+	testCases := []struct {
+		name     string
+		endpoint string
+		expected bool
+	}{
+		{
+			name:     "valid API",
+			endpoint: "/good_api",
+			expected: true,
+		},
+		{
+			name:     "invalid response status code",
+			endpoint: "/bad_api",
+			expected: false,
+		},
+		{
+			name:     "invalid response body",
+			endpoint: "/invalid_body_api",
+			expected: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			result := pingStubStatusApiEndpoint(fmt.Sprintf("%s%s", server.URL, testCase.endpoint))
+			assert.Equal(t, testCase.expected, result)
 		})
 	}
 }

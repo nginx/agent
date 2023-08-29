@@ -744,7 +744,7 @@ func (n *NginxBinaryType) getNginxInfoFromBuffer(exePath string, buffer *bytes.B
 func (n *NginxBinaryType) parseModulePath(dir string) ([]string, error) {
 	result, err := n.env.ReadDirectory(dir, ".so")
 	if err != nil {
-		log.Errorf("Unable to parse module path %v", err)
+		log.Warnf("Unable to parse module path %v", err)
 		return nil, err
 	}
 	return result, nil

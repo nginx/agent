@@ -17,20 +17,12 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestFeatures_Process(t *testing.T) {
-	processID := "12345"
-
-	processes := []*core.Process{
-		{
-			Name:     processID,
-			IsMaster: true,
-		},
-	}
-
 	testCases := []struct {
 		testName   string
 		featureKey string
@@ -47,6 +39,12 @@ func TestFeatures_Process(t *testing.T) {
 			testName:   "Metrics",
 			featureKey: agent_config.FeatureMetrics,
 			pluginName: agent_config.FeatureMetrics,
+			numPlugins: 4,
+		},
+		{
+			testName:   "Metrics collection",
+			featureKey: agent_config.FeatureMetricsCollection,
+			pluginName: agent_config.FeatureMetrics,
 			numPlugins: 2,
 		},
 		{
@@ -54,6 +52,15 @@ func TestFeatures_Process(t *testing.T) {
 			featureKey: agent_config.FeatureFileWatcher,
 			pluginName: agent_config.FeatureFileWatcher,
 			numPlugins: 3,
+		},
+	}
+
+	processID := "12345"
+
+	processes := []*core.Process{
+		{
+			Name:     processID,
+			IsMaster: true,
 		},
 	}
 
@@ -94,7 +101,7 @@ func TestFeatures_Process(t *testing.T) {
 	for _, tc := range testCases {
 		messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
-		assert.Equal(t, 1, len(messagePipe.GetPlugins()))
+		assert.Len(t, messagePipe.GetPlugins(), 1)
 		assert.Equal(t, agent_config.FeaturesPlugin, messagePipe.GetPlugins()[0].Info().Name())
 
 		messagePipe.Process(core.NewMessage(core.EnableFeature, []string{tc.featureKey}))

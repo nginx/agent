@@ -34,6 +34,7 @@ CentOS
 
 Debian
 - 11 (x86_64, aarch64)
+- 12 (x86_64, aarch64)
 
 FreeBSD
 - 12.1+ (amd64)
