@@ -12,8 +12,8 @@ import (
 	"fmt"
 )
 
-// GenerateNginxID used to get the NGINX ID
-func GenerateNginxID(format string, a ...interface{}) string {
+// GenerateID used to get the ID
+func GenerateID(format string, a ...interface{}) string {
 	h := sha256.New()
 	s := fmt.Sprintf(format, a...)
 	_, _ = h.Write([]byte(s))

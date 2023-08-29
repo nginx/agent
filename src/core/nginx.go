@@ -154,7 +154,7 @@ func (n *NginxBinaryType) GetNginxIDForProcess(nginxProcess *Process) string {
 }
 
 func (n *NginxBinaryType) getNginxIDFromProcessInfo(nginxProcess *Process, info *nginxInfo) string {
-	return GenerateNginxID("%s_%s_%s", nginxProcess.Path, info.confPath, info.prefix)
+	return GenerateID("%s_%s_%s", nginxProcess.Path, info.confPath, info.prefix)
 }
 
 func (n *NginxBinaryType) GetNginxDetailsByID(nginxID string) *proto.NginxDetails {

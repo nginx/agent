@@ -676,14 +676,14 @@ type Shell interface {
 	Exec(cmd string, arg ...string) ([]byte, error)
 }
 
-type execShellCommand struct{}
+type ExecShellCommand struct{}
 
-func (e execShellCommand) Exec(cmd string, arg ...string) ([]byte, error) {
+func (e ExecShellCommand) Exec(cmd string, arg ...string) ([]byte, error) {
 	execCmd := exec.Command(cmd, arg...)
 	return execCmd.Output()
 }
 
-var shell Shell = execShellCommand{}
+var shell Shell = ExecShellCommand{}
 
 func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 	cache := getDefaultProcessorCacheInfo(cpuInfo)
