@@ -16,7 +16,6 @@ import (
 
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
-	"github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -482,7 +481,7 @@ func TestGetCacheInfo(t *testing.T) {
 	}{
 		{
 			name: "lscpu error",
-			shell: &utils.FakeShell{
+			shell: &FakeShell{
 				Errors: map[string]error{
 					"lscpu": errors.New("nope"),
 				},
@@ -502,7 +501,7 @@ func TestGetCacheInfo(t *testing.T) {
 		},
 		{
 			name: "default cache info absent",
-			shell: &utils.FakeShell{
+			shell: &FakeShell{
 				Output: map[string]string{
 					"lscpu": lscpuInfo1,
 				},
@@ -522,7 +521,7 @@ func TestGetCacheInfo(t *testing.T) {
 		},
 		{
 			name: "os-release present with quote",
-			shell: &utils.FakeShell{
+			shell: &FakeShell{
 				Output: map[string]string{
 					"lscpu": lscpuInfo2,
 				},

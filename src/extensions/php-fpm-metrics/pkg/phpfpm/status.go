@@ -35,7 +35,7 @@ func (s Status) String() string {
 
 // GetStatus returns phpfpm process status
 func GetStatus(pid, version string) (Status, error) {
-	// Todo: Make it os platform agnostic command.
+	// Todo: Leverage gopsutil.
 	output, err := Shell.Exec("ps xao pid,ppid,command | grep 'php-fpm[:]'")
 	if err != nil {
 		log.Warnf("failed to retrieve ps info about php-fpm: %v for pid %s", err, pid)
