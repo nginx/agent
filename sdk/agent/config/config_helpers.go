@@ -24,6 +24,8 @@ const (
 	FeatureNginxSSLConfig      = "nginx-ssl-config"
 	FeatureNginxCounting       = "nginx-counting"
 	FeatureMetrics             = "metrics"
+	FeatureMetricsCollection   = "metrics-collection"
+	FeatureMetricsSender       = "metrics-sender"
 	FeatureMetricsThrottle     = "metrics-throttle"
 	FeatureDataPlaneStatus     = "dataplane-status"
 	FeatureProcessWatcher      = "process-watcher"
@@ -31,7 +33,6 @@ const (
 	FeatureFileWatcherThrottle = "file-watch-throttle"
 	FeatureActivityEvents      = "activity-events"
 	FeatureAgentAPI            = "agent-api"
-	FeatureMetricSender        = "metric-sender"
 
 	CommanderPlugin    = "commander"
 	ConfigReaderPlugin = "config-reader-plugin"
@@ -76,7 +77,6 @@ func GetDefaultFeatures() []string {
 		FeatureNginxSSLConfig,
 		FeatureNginxCounting,
 		FeatureMetrics,
-		FeatureMetricsThrottle,
 		FeatureDataPlaneStatus,
 		FeatureProcessWatcher,
 		FeatureFileWatcher,
@@ -96,7 +96,6 @@ func DecodeConfig[T interface{}](input interface{}) (output T, err error) {
 	}
 
 	err = decoder.Decode(input)
-
 	if err != nil {
 		return output, err
 	}

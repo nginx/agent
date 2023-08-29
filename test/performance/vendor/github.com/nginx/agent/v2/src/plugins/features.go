@@ -8,12 +8,13 @@
 package plugins
 
 import (
-	"github.com/google/uuid"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -53,6 +54,12 @@ func (f *Features) Init(pipeline core.MessagePipeInterface) {
 		},
 		agent_config.FeatureMetricsThrottle: func(data string) []core.Plugin {
 			return f.enableMetricsThrottleFeature(data)
+		},
+		agent_config.FeatureMetricsSender: func(data string) []core.Plugin {
+			return f.enableMetricsSenderFeature(data)
+		},
+		agent_config.FeatureMetricsCollection: func(data string) []core.Plugin {
+			return f.enableMetricsCollectionFeature(data)
 		},
 		agent_config.FeatureDataPlaneStatus: func(data string) []core.Plugin {
 			return f.enableDataPlaneStatusFeature(data)
@@ -97,12 +104,12 @@ func (f *Features) Process(msg *core.Message) {
 			if initFeature, ok := f.featureMap[feature]; ok {
 				featurePlugins := initFeature(feature)
 				plugins = append(plugins, featurePlugins...)
-
 			}
 		}
+
 		err := f.pipeline.Register(agent_config.DefaultPluginSize, plugins, nil)
 		if err != nil {
-			log.Warnf("Unable to register feature, %v", err)
+			log.Warnf("Unable to register features: %v", err)
 		}
 
 		for _, plugin := range plugins {
@@ -113,6 +120,26 @@ func (f *Features) Process(msg *core.Message) {
 
 func (f *Features) enableMetricsFeature(data string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) {
+
+		conf, err := config.GetConfig(f.conf.ClientID)
+		if err != nil {
+			log.Warnf("Unable to get agent config, %v", err)
+		}
+		f.conf = conf
+
+		metrics := NewMetrics(f.conf, f.env, f.binary)
+		metricsThrottle := NewMetricsThrottle(f.conf, f.env)
+		metricsSender := NewMetricsSender(f.commander)
+
+		return []core.Plugin{metrics, metricsThrottle, metricsSender}
+	}
+	return []core.Plugin{}
+}
+
+func (f *Features) enableMetricsCollectionFeature(data string) []core.Plugin {
+	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
+		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsCollection) {
+
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -122,6 +149,40 @@ func (f *Features) enableMetricsFeature(data string) []core.Plugin {
 		metrics := NewMetrics(f.conf, f.env, f.binary)
 
 		return []core.Plugin{metrics}
+	}
+	return []core.Plugin{}
+}
+
+func (f *Features) enableMetricsThrottleFeature(data string) []core.Plugin {
+	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
+		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
+
+		conf, err := config.GetConfig(f.conf.ClientID)
+		if err != nil {
+			log.Warnf("Unable to get agent config, %v", err)
+		}
+		f.conf = conf
+
+		metricsThrottle := NewMetricsThrottle(f.conf, f.env)
+
+		return []core.Plugin{metricsThrottle}
+	}
+	return []core.Plugin{}
+}
+
+func (f *Features) enableMetricsSenderFeature(data string) []core.Plugin {
+	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
+		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsSender) {
+
+		conf, err := config.GetConfig(f.conf.ClientID)
+		if err != nil {
+			log.Warnf("Unable to get agent config, %v", err)
+		}
+		f.conf = conf
+
+		metricsSender := NewMetricsSender(f.commander)
+
+		return []core.Plugin{metricsSender}
 	}
 	return []core.Plugin{}
 }
@@ -152,21 +213,6 @@ func (f *Features) enableRegistrationFeature(data string) []core.Plugin {
 		registration := NewOneTimeRegistration(f.conf, f.binary, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.version)
 
 		return []core.Plugin{registration}
-	}
-	return []core.Plugin{}
-}
-
-func (f *Features) enableMetricsThrottleFeature(data string) []core.Plugin {
-	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
-		conf, err := config.GetConfig(f.conf.ClientID)
-		if err != nil {
-			log.Warnf("Unable to get agent config, %v", err)
-		}
-		f.conf = conf
-
-		metricsThrottle := NewMetricsThrottle(f.conf, f.env)
-
-		return []core.Plugin{metricsThrottle}
 	}
 	return []core.Plugin{}
 }
@@ -242,17 +288,20 @@ func (f *Features) enableNginxCountingFeature(data string) []core.Plugin {
 			}
 			f.conf = conf
 
-			if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) {
+			if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
+				!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsCollection) {
+
 				metrics := NewMetrics(f.conf, f.env, f.binary)
+
 				countingPlugins = append(countingPlugins, metrics)
 			}
-			nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
 
+			nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
 			countingPlugins = append(countingPlugins, nginxCounting)
 
 			return countingPlugins
 		}
-		return countingPlugins
+		return []core.Plugin{}
 	}
-	return countingPlugins
+	return []core.Plugin{}
 }

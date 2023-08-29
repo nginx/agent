@@ -11,15 +11,15 @@ import (
 	"context"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-	"go.uber.org/atomic"
-
 	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
+
+	log "github.com/sirupsen/logrus"
+	"go.uber.org/atomic"
 )
 
 type MetricsSender struct {
@@ -55,7 +55,7 @@ func (r *MetricsSender) Close() {
 }
 
 func (r *MetricsSender) Info() *core.Info {
-	return core.NewInfo(agent_config.FeatureMetricSender, "v0.0.1")
+	return core.NewInfo(agent_config.FeatureMetricsSender, "v0.0.1")
 }
 
 func (r *MetricsSender) Process(msg *core.Message) {

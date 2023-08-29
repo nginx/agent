@@ -222,7 +222,7 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		}
 	}
 
-	if reporter != nil {
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsSender) && reporter != nil {
 		corePlugins = append(corePlugins,
 			plugins.NewMetricsSender(reporter),
 		)
@@ -239,11 +239,12 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 		corePlugins = append(corePlugins, plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString()), version))
 	}
 
-	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || (len(loadedConfig.Nginx.NginxCountingSocket) > 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxCounting)) {
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsCollection) ||
+		(len(loadedConfig.Nginx.NginxCountingSocket) > 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxCounting)) {
 		corePlugins = append(corePlugins, plugins.NewMetrics(loadedConfig, env, binary))
 	}
 
-	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
+	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
 		corePlugins = append(corePlugins, plugins.NewMetricsThrottle(loadedConfig, env))
 	}
 
