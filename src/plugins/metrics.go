@@ -252,7 +252,7 @@ func (m *Metrics) registerStatsSources() {
 	// if NGINX is not running/detected, still run the static collector to output nginx.status = 0.
 	if !hasNginxCollector {
 		// Just use the default NGINX process path and default NGINX config path to create the NginxID.
-		nginxID := core.GenerateNginxID("%s_%s_%s", "/usr/sbin/nginx", "/etc/nginx/nginx.conf", "prefix")
+		nginxID := core.GenerateID("%s_%s_%s", "/usr/sbin/nginx", "/etc/nginx/nginx.conf", "prefix")
 		tempCollectors = append(tempCollectors,
 			collectors.NewNginxCollector(m.conf, m.env, &metrics.NginxCollectorConfig{NginxId: nginxID}, m.binary),
 		)
