@@ -6,6 +6,7 @@ import (
 
 	"github.com/nginx/agent/v2/src/core"
 	pf "github.com/nginx/agent/v2/src/extensions/php-fpm-metrics/pkg/phpfpm"
+	sysutils "github.com/nginx/agent/v2/test/utils/system"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +37,7 @@ func TestPhpFpmStatus(t *testing.T) {
 	}{
 		{
 			name: "phpfpm process running",
-			shell: &core.FakeShell{
+			shell: &sysutils.FakeShell{
 				Output: map[string]string{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": phpFpmProcessRunning,
 				},
@@ -47,7 +48,7 @@ func TestPhpFpmStatus(t *testing.T) {
 		},
 		{
 			name: "phpfpm process installed",
-			shell: &core.FakeShell{
+			shell: &sysutils.FakeShell{
 				Output: map[string]string{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
 					"ls /etc/php/7.4": phpFpmProcessInstalled,
@@ -59,7 +60,7 @@ func TestPhpFpmStatus(t *testing.T) {
 		},
 		{
 			name: "error retrieving phpfpm process",
-			shell: &core.FakeShell{
+			shell: &sysutils.FakeShell{
 				Errors: map[string]error{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": fmt.Errorf("unexpected error"),
 				},
@@ -70,7 +71,7 @@ func TestPhpFpmStatus(t *testing.T) {
 		},
 		{
 			name: "error retrieving phpfpm version",
-			shell: &core.FakeShell{
+			shell: &sysutils.FakeShell{
 				Output: map[string]string{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
 				},
@@ -84,7 +85,7 @@ func TestPhpFpmStatus(t *testing.T) {
 		},
 		{
 			name: "missing phpfpm process",
-			shell: &core.FakeShell{
+			shell: &sysutils.FakeShell{
 				Output: map[string]string{
 					"ps xao pid,ppid,command | grep 'php-fpm[:]'": ``,
 					"ls /etc/php/7.4": ``,
