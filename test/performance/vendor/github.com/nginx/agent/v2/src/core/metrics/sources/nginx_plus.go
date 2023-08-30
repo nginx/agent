@@ -130,6 +130,7 @@ func (c *NginxPlus) collectMetrics(stats, prevStats *plusclient.Stats) (entries 
 	entries = append(entries, c.cacheMetrics(stats, prevStats)...)
 	entries = append(entries, c.httpUpstreamMetrics(stats, prevStats)...)
 	entries = append(entries, c.streamUpstreamMetrics(stats, prevStats)...)
+	entries = append(entries, c.workerMetrics(stats, prevStats)...)
 
 	return
 }
@@ -801,6 +802,30 @@ func (c *NginxPlus) httpLimitRequestMetrics(stats, prevStats *plusclient.Stats) 
 	return limitRequestMetrics
 }
 
+func (c *NginxPlus) workerMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+	workerMetrics := make([]*metrics.StatsEntityWrapper, 0)
+
+	for _, w := range stats.Workers {
+		l := &namedMetric{namespace: c.plusNamespace, group: "worker"}
+
+		simpleMetrics := l.convertSamplesToSimpleMetrics(map[string]float64{
+			"id":                   float64(w.ID),
+			"process_id":           float64(w.ProcessID),
+			"conn.accepted":        float64(w.Connections.Accepted),
+			"conn.dropped":         float64(w.Connections.Dropped),
+			"conn.active":          float64(w.Connections.Active),
+			"conn.idle":            float64(w.Connections.Idle),
+			"http.request.total":   float64(w.HTTP.HTTPRequests.Total),
+			"http.request.current": float64(w.HTTP.HTTPRequests.Current),
+		})
+
+		dims := c.baseDimensions.ToDimensions()
+		workerMetrics = append(workerMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
+	}
+
+	return workerMetrics
+}
+
 func getHttpUpstreamPeerKey(peer plusclient.Peer) (key string) {
 	key = fmt.Sprintf("%s-%s-%s", peer.Server, peer.Service, peer.Name)
 	return
@@ -827,8 +852,8 @@ func createStreamPeerMap(peers []plusclient.StreamPeer) map[string]plusclient.St
 	return m
 }
 
-func boolToFloat64(mybool bool) float64 {
-	if mybool {
+func boolToFloat64(myBool bool) float64 {
+	if myBool {
 		return valueFloat64One
 	} else {
 		return valueFloat64Zero

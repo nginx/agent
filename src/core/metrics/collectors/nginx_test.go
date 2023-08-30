@@ -12,16 +12,15 @@ import (
 	"reflect"
 	"sync"
 	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 var (
@@ -49,8 +48,10 @@ var (
 		},
 		Features: config.Defaults.Features,
 		Nginx: config.Nginx{
-			Debug:               false,
-			NginxCountingSocket: "unix:/var/run/nginx-agent/nginx.sock",
+			Debug:                 false,
+			NginxCountingSocket:   "unix:/var/run/nginx-agent/nginx.sock",
+			NginxClientVersion:    9,
+			TreatWarningsAsErrors: false,
 		},
 	}
 	collectorConfigNoApi = &metrics.NginxCollectorConfig{
@@ -174,8 +175,8 @@ func TestNginxCollector_Collect(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go nginxCollector.Collect(ctx, wg, make(chan<- *metrics.StatsEntityWrapper))
+	wg.Wait()
 
-	time.Sleep(10 * time.Millisecond)
 	mockNginxSource1.AssertExpectations(t)
 	mockNginxSource2.AssertExpectations(t)
 }

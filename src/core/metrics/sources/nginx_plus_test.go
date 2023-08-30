@@ -331,6 +331,24 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 				RejectedDryRun: 2,
 			},
 		},
+		Workers: []*plusclient.Workers{
+			{
+				ID:        21,
+				ProcessID: 12345,
+				HTTP: plusclient.WorkersHTTP{
+					HTTPRequests: plusclient.HTTPRequests{
+						Total:   112,
+						Current: 213,
+					},
+				},
+				Connections: plusclient.Connections{
+					Accepted: 21,
+					Dropped:  25,
+					Active:   12,
+					Idle:     1,
+				},
+			},
+		},
 	}
 
 	prevStats := plusclient.Stats{
@@ -428,6 +446,24 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 				Delayed:        2,
 				DelayedDryRun:  3,
 				RejectedDryRun: 0,
+			},
+		},
+		Workers: []*plusclient.Workers{
+			{
+				ID:        0,
+				ProcessID: 0,
+				HTTP: plusclient.WorkersHTTP{
+					HTTPRequests: plusclient.HTTPRequests{
+						Total:   0,
+						Current: 0,
+					},
+				},
+				Connections: plusclient.Connections{
+					Accepted: 0,
+					Dropped:  0,
+					Active:   0,
+					Idle:     0,
+				},
 			},
 		},
 	}
@@ -701,16 +737,30 @@ func TestNginxPlus_Collect(t *testing.T) {
 		"plus.http.limit_reqs.rejected_dry_run": 2,
 	}
 
-	hostInfo := &proto.HostInfo{
-		Hostname: "MyServer",
+	expectedWorkerMetrics := map[string]float64{
+		"plus.worker.id":                   21,
+		"plus.worker.process_id":           12345,
+		"plus.worker.conn.accepted":        21,
+		"plus.worker.conn.dropped":         25,
+		"plus.worker.conn.active":          12,
+		"plus.worker.conn.idle":            1,
+		"plus.worker.http.request.total":   112,
+		"plus.worker.http.request.current": 213,
 	}
+
 	tests := []struct {
 		baseDimensions *metrics.CommonDim
 		m              chan *metrics.StatsEntityWrapper
 	}{
 		{
-			baseDimensions: metrics.NewCommonDim(hostInfo, &config.Config{}, ""),
-			m:              make(chan *metrics.StatsEntityWrapper, 127),
+			baseDimensions: metrics.NewCommonDim(
+				&proto.HostInfo{
+					Hostname: "MyServer",
+				},
+				&config.Config{},
+				"",
+			),
+			m: make(chan *metrics.StatsEntityWrapper, 127),
 		},
 	}
 
@@ -1146,6 +1196,12 @@ func TestNginxPlus_Collect(t *testing.T) {
 			case "plus.stream.upstream.peers.connect_time.pctl95":
 				assert.Equal(t, expectedStreamUpstreamMetrics["plus.stream.upstream.peers.connect_time.pctl95"], metric.Value)
 			}
+		}
+
+		workerMetrics := <-test.m
+		for _, metric := range workerMetrics.Data.Simplemetrics {
+			assert.Contains(t, expectedWorkerMetrics, metric.Name)
+			assert.Equal(t, expectedWorkerMetrics[metric.Name], metric.Value)
 		}
 
 		var extraMetrics []*metrics.StatsEntityWrapper
