@@ -509,9 +509,8 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 
 		p, _ := process.NewProcessWithContext(ctx, pid)
 		name, _ := p.NameWithContext(ctx)
-		cmd, _ := p.CmdlineWithContext(ctx)
 
-		if name == "nginx" && !strings.Contains(cmd, "upgrade") {
+		if name == "nginx" {
 			nginxProcesses[pid] = p
 		}
 	}
