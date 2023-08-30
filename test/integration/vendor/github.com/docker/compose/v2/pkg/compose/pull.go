@@ -42,9 +42,9 @@ func (s *composeService) Pull(ctx context.Context, project *types.Project, optio
 	if options.Quiet {
 		return s.pull(ctx, project, options)
 	}
-	return progress.Run(ctx, func(ctx context.Context) error {
+	return progress.RunWithTitle(ctx, func(ctx context.Context) error {
 		return s.pull(ctx, project, options)
-	}, s.stderr())
+	}, s.stdinfo(), "Pulling")
 }
 
 func (s *composeService) pull(ctx context.Context, project *types.Project, opts api.PullOptions) error { //nolint:gocyclo
@@ -305,7 +305,7 @@ func (s *composeService) pullRequiredImages(ctx context.Context, project *types.
 			}
 		}
 		return err
-	}, s.stderr())
+	}, s.stdinfo())
 }
 
 func isServiceImageToBuild(service types.ServiceConfig, services []types.ServiceConfig) bool {
@@ -313,8 +313,15 @@ func isServiceImageToBuild(service types.ServiceConfig, services []types.Service
 		return true
 	}
 
-	for _, depService := range services {
-		if depService.Image == service.Image && depService.Build != nil {
+	if service.Image == "" {
+		// N.B. this should be impossible as service must have either `build` or `image` (or both)
+		return false
+	}
+
+	// look through the other services to see if another has a build definition for the same
+	// image name
+	for _, svc := range services {
+		if svc.Image == service.Image && svc.Build != nil {
 			return true
 		}
 	}

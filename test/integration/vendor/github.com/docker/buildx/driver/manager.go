@@ -2,17 +2,17 @@ package driver
 
 import (
 	"context"
+	"net"
 	"os"
 	"sort"
 	"strings"
 	"sync"
 
-	"k8s.io/client-go/rest"
-
 	dockerclient "github.com/docker/docker/client"
 	"github.com/moby/buildkit/client"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/rest"
 )
 
 type Factory interface {
@@ -104,7 +104,7 @@ func GetFactory(name string, instanceRequired bool) (Factory, error) {
 	return nil, errors.Errorf("failed to find driver %q", name)
 }
 
-func GetDriver(ctx context.Context, name string, f Factory, endpointAddr string, api dockerclient.APIClient, auth Auth, kcc KubeClientConfig, flags []string, files map[string][]byte, do map[string]string, platforms []specs.Platform, contextPathHash string) (Driver, error) {
+func GetDriver(ctx context.Context, name string, f Factory, endpointAddr string, api dockerclient.APIClient, auth Auth, kcc KubeClientConfig, flags []string, files map[string][]byte, do map[string]string, platforms []specs.Platform, contextPathHash string) (*DriverHandle, error) {
 	ic := InitConfig{
 		EndpointAddr:     endpointAddr,
 		DockerAPI:        api,
@@ -128,7 +128,7 @@ func GetDriver(ctx context.Context, name string, f Factory, endpointAddr string,
 	if err != nil {
 		return nil, err
 	}
-	return &cachedDriver{Driver: d}, nil
+	return &DriverHandle{Driver: d}, nil
 }
 
 func GetFactories(instanceRequired bool) []Factory {
@@ -145,16 +145,72 @@ func GetFactories(instanceRequired bool) []Factory {
 	return ds
 }
 
-type cachedDriver struct {
+type DriverHandle struct {
 	Driver
-	client *client.Client
-	err    error
-	once   sync.Once
+	client                  *client.Client
+	err                     error
+	once                    sync.Once
+	featuresOnce            sync.Once
+	features                map[Feature]bool
+	historyAPISupportedOnce sync.Once
+	historyAPISupported     bool
+	hostGatewayIPOnce       sync.Once
+	hostGatewayIP           net.IP
+	hostGatewayIPErr        error
 }
 
-func (d *cachedDriver) Client(ctx context.Context) (*client.Client, error) {
+func (d *DriverHandle) Client(ctx context.Context) (*client.Client, error) {
 	d.once.Do(func() {
 		d.client, d.err = d.Driver.Client(ctx)
 	})
 	return d.client, d.err
+}
+
+func (d *DriverHandle) Features(ctx context.Context) map[Feature]bool {
+	d.featuresOnce.Do(func() {
+		d.features = d.Driver.Features(ctx)
+	})
+	return d.features
+}
+
+func (d *DriverHandle) HistoryAPISupported(ctx context.Context) bool {
+	d.historyAPISupportedOnce.Do(func() {
+		if c, err := d.Client(ctx); err == nil {
+			d.historyAPISupported = historyAPISupported(ctx, c)
+		}
+	})
+	return d.historyAPISupported
+}
+
+func (d *DriverHandle) HostGatewayIP(ctx context.Context) (net.IP, error) {
+	d.hostGatewayIPOnce.Do(func() {
+		if !d.Driver.IsMobyDriver() {
+			d.hostGatewayIPErr = errors.New("host-gateway is only supported with the docker driver")
+			return
+		}
+		c, err := d.Client(ctx)
+		if err != nil {
+			d.hostGatewayIPErr = err
+			return
+		}
+		workers, err := c.ListWorkers(ctx)
+		if err != nil {
+			d.hostGatewayIPErr = errors.Wrap(err, "listing workers")
+			return
+		}
+		for _, w := range workers {
+			// should match github.com/docker/docker/builder/builder-next/worker/label.HostGatewayIP const
+			if v, ok := w.Labels["org.mobyproject.buildkit.worker.moby.host-gateway-ip"]; ok && v != "" {
+				ip := net.ParseIP(v)
+				if ip == nil {
+					d.hostGatewayIPErr = errors.Errorf("failed to parse host-gateway IP: %s", v)
+					return
+				}
+				d.hostGatewayIP = ip
+				return
+			}
+		}
+		d.hostGatewayIPErr = errors.New("host-gateway IP not found")
+	})
+	return d.hostGatewayIP, d.hostGatewayIPErr
 }

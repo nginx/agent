@@ -8,6 +8,8 @@ services:
         RUN echo "hello" > /world.txt
 
   foo:
+    annotations:
+      - com.example.foo=bar
     build:
       context: ./dir
       dockerfile: Dockerfile
@@ -22,7 +24,7 @@ services:
         - bar
       labels: [FOO=BAR]
       additional_contexts:
-        foo: /bar
+        foo: ./bar
       secrets:
         - secret1
         - source: secret2
@@ -179,6 +181,7 @@ services:
       timeout: 1s
       retries: 5
       start_period: 15s
+      start_interval: 5s
 
     # Any valid image reference - repo, tag, id, sha
     image: redis

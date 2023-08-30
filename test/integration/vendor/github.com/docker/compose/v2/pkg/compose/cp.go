@@ -44,9 +44,9 @@ const (
 )
 
 func (s *composeService) Copy(ctx context.Context, projectName string, options api.CopyOptions) error {
-	return progress.Run(ctx, func(ctx context.Context) error {
+	return progress.RunWithTitle(ctx, func(ctx context.Context) error {
 		return s.copy(ctx, projectName, options)
-	}, s.stderr())
+	}, s.stdinfo(), "Copying")
 }
 
 func (s *composeService) copy(ctx context.Context, projectName string, options api.CopyOptions) error {
@@ -325,5 +325,5 @@ func resolveLocalPath(localPath string) (absPath string, err error) {
 	if absPath, err = filepath.Abs(localPath); err != nil {
 		return
 	}
-	return archive.PreserveTrailingDotOrSeparator(absPath, localPath, filepath.Separator), nil
+	return archive.PreserveTrailingDotOrSeparator(absPath, localPath), nil
 }

@@ -22,8 +22,8 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/internal/retry"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/internal/otlpconfig"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/internal/otlpconfig"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/internal/retry"
 )
 
 // Option applies an option to the gRPC driver.
@@ -84,8 +84,7 @@ func WithReconnectionPeriod(rp time.Duration) Option {
 }
 
 func compressorToCompression(compressor string) otlpconfig.Compression {
-	switch compressor {
-	case "gzip":
+	if compressor == "gzip" {
 		return otlpconfig.GzipCompression
 	}
 

@@ -45,6 +45,10 @@ func AsTyped(v value.Value, s *schema.Schema, typeRef schema.TypeRef) (*TypedVal
 // conforms to the schema, for cases where that has already been checked or
 // where you're going to call a method that validates as a side-effect (like
 // ToFieldSet).
+//
+// Deprecated: This function was initially created because validation
+// was expensive. Now that this has been solved, objects should always
+// be created as validated, using `AsTyped`.
 func AsTypedUnvalidated(v value.Value, s *schema.Schema, typeRef schema.TypeRef) *TypedValue {
 	tv := &TypedValue{
 		value:   v,
@@ -99,12 +103,13 @@ func (tv TypedValue) ToFieldSet() (*fieldpath.Set, error) {
 
 // Merge returns the result of merging tv and pso ("partially specified
 // object") together. Of note:
-//  * No fields can be removed by this operation.
-//  * If both tv and pso specify a given leaf field, the result will keep pso's
-//    value.
-//  * Container typed elements will have their items ordered:
-//    * like tv, if pso doesn't change anything in the container
-//    * like pso, if pso does change something in the container.
+//   - No fields can be removed by this operation.
+//   - If both tv and pso specify a given leaf field, the result will keep pso's
+//     value.
+//   - Container typed elements will have their items ordered:
+//     1. like tv, if pso doesn't change anything in the container
+//     2. like pso, if pso does change something in the container.
+//
 // tv and pso must both be of the same type (their Schema and TypeRef must
 // match), or an error will be returned. Validation errors will be returned if
 // the objects don't conform to the schema.
@@ -124,12 +129,13 @@ func (tv TypedValue) Compare(rhs *TypedValue) (c *Comparison, err error) {
 		Modified: fieldpath.NewSet(),
 		Added:    fieldpath.NewSet(),
 	}
+	a := value.NewFreelistAllocator()
 	_, err = merge(&tv, rhs, func(w *mergingWalker) {
 		if w.lhs == nil {
 			c.Added.Insert(w.path)
 		} else if w.rhs == nil {
 			c.Removed.Insert(w.path)
-		} else if !value.Equals(w.rhs, w.lhs) {
+		} else if !value.EqualsUsing(a, w.rhs, w.lhs) {
 			// TODO: Equality is not sufficient for this.
 			// Need to implement equality check on the value type.
 			c.Modified.Insert(w.path)

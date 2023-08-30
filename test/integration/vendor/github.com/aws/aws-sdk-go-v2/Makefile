@@ -1,6 +1,9 @@
 # Lint rules to ignore
 LINTIGNORESINGLEFIGHT='internal/sync/singleflight/singleflight.go:.+error should be the last type'
 LINT_IGNORE_S3MANAGER_INPUT='feature/s3/manager/upload.go:.+struct field SSEKMSKeyId should be SSEKMSKeyID'
+# Names of these are tied to endpoint rules and they're internal so ignore them
+LINT_IGNORE_AWSRULESFN_ARN='internal/endpoints/awsrulesfn/arn.go'
+LINT_IGNORE_AWSRULESFN_PARTITION='internal/endpoints/awsrulesfn/partition.go'
 
 UNIT_TEST_TAGS=
 BUILD_TAGS=-tags "example,codegen,integration,ec2env,perftest"
@@ -72,22 +75,29 @@ all: generate unit
 # Code Generation #
 ###################
 .PHONY: generate smithy-generate smithy-build smithy-build-% smithy-clean smithy-go-publish-local format \
-gen-config-asserts gen-repo-mod-replace gen-mod-replace-smithy gen-mod-dropreplace-smithy gen-aws-ptrs tidy-modules-% \
+gen-config-asserts gen-repo-mod-replace gen-mod-replace-smithy gen-mod-dropreplace-smithy-% gen-aws-ptrs tidy-modules-% \
 add-module-license-files sync-models sync-endpoints-model sync-endpoints.json clone-v1-models gen-internal-codegen \
 sync-api-models copy-attributevalue-feature min-go-version-% update-requires smithy-annotate-stable \
 update-module-metadata download-modules-%
 
 generate: smithy-generate update-requires gen-repo-mod-replace update-module-metadata smithy-annotate-stable \
-gen-config-asserts gen-internal-codegen copy-attributevalue-feature gen-mod-dropreplace-smithy min-go-version-. \
+gen-config-asserts gen-internal-codegen copy-attributevalue-feature gen-mod-dropreplace-smithy-. min-go-version-. \
 tidy-modules-. add-module-license-files gen-aws-ptrs format
+
+generate-tmpreplace-smithy: smithy-generate update-requires gen-repo-mod-replace update-module-metadata smithy-annotate-stable \
+gen-config-asserts gen-internal-codegen copy-attributevalue-feature gen-mod-replace-smithy-. min-go-version-. \
+tidy-modules-. add-module-license-files gen-aws-ptrs format gen-mod-dropreplace-smithy-. reset-sum
+
+reset-sum:
+	find . -name go.sum -exec git checkout -- {} \;
 
 smithy-generate:
 	cd codegen && ./gradlew clean build -Plog-tests && ./gradlew clean
 
-smithy-build: gen-repo-mod-replace
+smithy-build:
 	cd codegen && ./gradlew clean build -Plog-tests
 
-smithy-build-%: gen-repo-mod-replace
+smithy-build-%:
 	@# smithy-build- command that uses the pattern to define build filter that
 	@# the smithy API model service id starts with. Strips off the
 	@# "smithy-build-".
@@ -120,19 +130,32 @@ gen-config-asserts:
 gen-internal-codegen:
 	@echo "Generating internal/codegen"
 	cd internal/codegen \
+		&& go mod tidy \
 		&& go generate
 
 gen-repo-mod-replace:
 	@echo "Generating go.mod replace for repo modules"
 	go run ${REPOTOOLS_CMD_MAKE_RELATIVE}
 
-gen-mod-replace-smithy:
+gen-mod-replace-smithy-%:
+	@# gen-mod-replace-smithy- command that uses the pattern to define build filter that
+	@# for modules to add replace to. Strips off the "gen-mod-replace-smithy-".
+	@#
+	@# SMITHY_GO_SRC environment variable is the path to add replace to
+	@#
+	@# e.g. gen-mod-replace-smithy-service_ssooidc
 	cd ./internal/repotools/cmd/eachmodule \
-    		&& go run . "go mod edit -replace github.com/aws/smithy-go=${SMITHY_GO_SRC}"
+		&& go run . -p $(subst _,/,$(subst gen-mod-replace-smithy-,,$@)) ${EACHMODULE_FLAGS} \
+			"go mod edit -replace github.com/aws/smithy-go=${SMITHY_GO_SRC}"
 
-gen-mod-dropreplace-smithy:
+gen-mod-dropreplace-smithy-%:
+	@# gen-mod-dropreplace-smithy- command that uses the pattern to define build filter that
+	@# for modules to add replace to. Strips off the "gen-mod-dropreplace-smithy-".
+	@#
+	@# e.g. gen-mod-dropreplace-smithy-service_ssooidc
 	cd ./internal/repotools/cmd/eachmodule \
-    		&& go run . "go mod edit -dropreplace github.com/aws/smithy-go"
+		&& go run . -p $(subst _,/,$(subst gen-mod-dropreplace-smithy-,,$@)) ${EACHMODULE_FLAGS} \
+			"go mod edit -dropreplace github.com/aws/smithy-go"
 
 gen-aws-ptrs:
 	cd aws && go generate
@@ -232,7 +255,6 @@ unit-race-modules-%:
 		"go vet ${BUILD_TAGS} --all ./..." \
 		"go test ${BUILD_TAGS} ${RUN_NONE} ./..." \
 		"go test -timeout=1m ${UNIT_TEST_TAGS} -race -cpu=4 ./..."
-
 
 unit-modules-%:
 	@# unit command that uses the pattern to define the root path that the
@@ -395,7 +417,6 @@ bench-modules-%:
 		&& go run . -p $(subst _,/,$(subst bench-modules-,,$@)) ${EACHMODULE_FLAGS} \
 		"go test -timeout=10m -bench . --benchmem ${BUILD_TAGS} ${RUN_NONE} ./..."
 
-
 #####################
 #  Release Process  #
 #####################
@@ -449,7 +470,9 @@ lint:
 	@lint=`golint ./...`; \
 	dolint=`echo "$$lint" | grep -E -v \
 	-e ${LINT_IGNORE_S3MANAGER_INPUT} \
-	-e ${LINTIGNORESINGLEFIGHT}`; \
+	-e ${LINTIGNORESINGLEFIGHT} \
+	-e ${LINT_IGNORE_AWSRULESFN_ARN} \
+	-e ${LINT_IGNORE_AWSRULESFN_PARTITION}`; \
 	echo "$$dolint"; \
 	if [ "$$dolint" != "" ]; then exit 1; fi
 
@@ -486,14 +509,22 @@ list-deps-%:
 ###################
 .PHONY: sandbox-tests sandbox-build-% sandbox-run-% sandbox-test-% update-aws-golang-tip
 
-sandbox-tests: sandbox-test-go1.15 sandbox-test-go1.16 sandbox-test-go1.17 sandbox-test-gotip
+sandbox-tests: sandbox-test-go1.15 sandbox-test-go1.16 sandbox-test-go1.17 sandbox-test-go1.18 sandbox-test-go1.19 sandbox-test-go1.20 sandbox-test-gotip
 
 sandbox-build-%:
 	@# sandbox-build-go1.17
 	@# sandbox-build-gotip
-	docker build \
-		-f ./internal/awstesting/sandbox/Dockerfile.test.$(subst sandbox-build-,,$@) \
-		-t "aws-sdk-go-$(subst sandbox-build-,,$@)" .
+	@if [ $@ == sandbox-build-gotip ]; then\
+		docker build \
+			-f ./internal/awstesting/sandbox/Dockerfile.test.gotip \
+			-t "aws-sdk-go-$(subst sandbox-build-,,$@)" . ;\
+	else\
+		docker build \
+			--build-arg GO_VERSION=$(subst sandbox-build-go,,$@) \
+			-f ./internal/awstesting/sandbox/Dockerfile.test.goversion \
+			-t "aws-sdk-go-$(subst sandbox-build-,,$@)" . ;\
+	fi
+
 sandbox-run-%: sandbox-build-%
 	@# sandbox-run-go1.17
 	@# sandbox-run-gotip

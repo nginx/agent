@@ -43,6 +43,7 @@ type ttyWriter struct {
 	tailEvents      []string
 	dryRun          bool
 	skipChildEvents bool
+	progressTitle   string
 }
 
 func (w *ttyWriter) Start(ctx context.Context) error {
@@ -72,6 +73,10 @@ func (w *ttyWriter) Stop() {
 func (w *ttyWriter) Event(e Event) {
 	w.mtx.Lock()
 	defer w.mtx.Unlock()
+	w.event(e)
+}
+
+func (w *ttyWriter) event(e Event) {
 	if !utils.StringContains(w.eventIDs, e.ID) {
 		w.eventIDs = append(w.eventIDs, e.ID)
 	}
@@ -79,8 +84,13 @@ func (w *ttyWriter) Event(e Event) {
 		last := w.events[e.ID]
 		switch e.Status {
 		case Done, Error, Warning:
-			if last.Status != e.Status {
+			if last.endTime.IsZero() {
 				last.stop()
+			}
+		case Working:
+			if !last.endTime.IsZero() {
+				// already done, don't overwrite
+				return
 			}
 		}
 		last.Status = e.Status
@@ -105,8 +115,10 @@ func (w *ttyWriter) Event(e Event) {
 }
 
 func (w *ttyWriter) Events(events []Event) {
+	w.mtx.Lock()
+	defer w.mtx.Unlock()
 	for _, e := range events {
-		w.Event(e)
+		w.event(e)
 	}
 }
 
@@ -149,7 +161,7 @@ func (w *ttyWriter) print() { //nolint:gocyclo
 	fmt.Fprint(w.out, aec.Hide)
 	defer fmt.Fprint(w.out, aec.Show)
 
-	firstLine := fmt.Sprintf("[+] Running %d/%d", numDone(w.events), w.numLines)
+	firstLine := fmt.Sprintf("[+] %s %d/%d", w.progressTitle, numDone(w.events), w.numLines)
 	if w.numLines != 0 && numDone(w.events) == w.numLines {
 		firstLine = DoneColor(firstLine)
 	}

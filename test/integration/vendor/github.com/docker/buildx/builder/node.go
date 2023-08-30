@@ -10,6 +10,7 @@ import (
 	"github.com/docker/buildx/util/dockerutil"
 	"github.com/docker/buildx/util/imagetools"
 	"github.com/docker/buildx/util/platformutil"
+	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/util/grpcerrors"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -20,9 +21,12 @@ import (
 
 type Node struct {
 	store.Node
-	Driver      driver.Driver
+	Builder     string
+	Driver      *driver.DriverHandle
 	DriverInfo  *driver.Info
 	Platforms   []ocispecs.Platform
+	GCPolicy    []client.PruneInfo
+	Labels      map[string]string
 	ImageOpt    imagetools.Opt
 	ProxyConfig map[string]string
 	Version     string
@@ -63,6 +67,7 @@ func (b *Builder) LoadNodes(ctx context.Context, withData bool) (_ []Node, err e
 					Node:        n,
 					ProxyConfig: storeutil.GetProxyConfig(b.opts.dockerCli),
 					Platforms:   n.Platforms,
+					Builder:     b.Name,
 				}
 				defer func() {
 					b.nodes[i] = node
@@ -77,12 +82,12 @@ func (b *Builder) LoadNodes(ctx context.Context, withData bool) (_ []Node, err e
 				contextStore := b.opts.dockerCli.ContextStore()
 
 				var kcc driver.KubeClientConfig
-				kcc, err = ctxkube.ConfigFromContext(n.Endpoint, contextStore)
+				kcc, err = ctxkube.ConfigFromEndpoint(n.Endpoint, contextStore)
 				if err != nil {
 					// err is returned if n.Endpoint is non-context name like "unix:///var/run/docker.sock".
 					// try again with name="default".
 					// FIXME(@AkihiroSuda): n should retain real context name.
-					kcc, err = ctxkube.ConfigFromContext("default", contextStore)
+					kcc, err = ctxkube.ConfigFromEndpoint("default", contextStore)
 					if err != nil {
 						logrus.Error(err)
 					}
@@ -182,8 +187,12 @@ func (n *Node) loadData(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "listing workers")
 		}
-		for _, w := range workers {
+		for idx, w := range workers {
 			n.Platforms = append(n.Platforms, w.Platforms...)
+			if idx == 0 {
+				n.GCPolicy = w.GCPolicy
+				n.Labels = w.Labels
+			}
 		}
 		n.Platforms = platformutil.Dedupe(n.Platforms)
 		inf, err := driverClient.Info(ctx)
