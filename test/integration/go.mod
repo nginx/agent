@@ -204,6 +204,7 @@ require (
 )
 
 replace (
+	github.com/cucumber/godog => github.com/laurazard/godog v0.0.0-20220922095256-4c4b17abdae7
 	github.com/nginx/agent/sdk/v2 => ./../../sdk
 	github.com/nginx/agent/v2 => ./../../
 )
