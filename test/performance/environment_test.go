@@ -112,7 +112,7 @@ func BenchmarkFileStat(b *testing.B) {
 	err := os.WriteFile(tempFile, []byte("hello"), 0o644)
 	assert.NoError(b, err)
 	b.ResetTimer()
-	
+
 	env := &core.EnvironmentType{}
 	for i := 0; i < b.N; i++ {
 		env.FileStat(tempFile)
