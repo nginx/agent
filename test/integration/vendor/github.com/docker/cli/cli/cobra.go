@@ -28,7 +28,7 @@ func setupCommonRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *p
 	flags := rootCmd.Flags()
 
 	flags.StringVar(&opts.ConfigDir, "config", config.Dir(), "Location of client config files")
-	opts.Common.InstallFlags(flags)
+	opts.InstallFlags(flags)
 
 	cobra.AddTemplateFunc("add", func(a, b int) int { return a + b })
 	cobra.AddTemplateFunc("hasAliases", hasAliases)
@@ -61,7 +61,10 @@ func setupCommonRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *p
 	rootCmd.PersistentFlags().MarkShorthandDeprecated("help", "please use --help")
 	rootCmd.PersistentFlags().Lookup("help").Hidden = true
 
-	rootCmd.Annotations = map[string]string{"additionalHelp": "To get more help with docker, check out our guides at https://docs.docker.com/go/guides/"}
+	rootCmd.Annotations = map[string]string{
+		"additionalHelp":      "For more help on how to use Docker, head to https://docs.docker.com/go/guides/",
+		"docs.code-delimiter": `"`, // https://github.com/docker/cli-docs-tool/blob/77abede22166eaea4af7335096bdcedd043f5b19/annotation/annotation.go#L20-L22
+	}
 
 	// Configure registry.CertsDir() when running in rootless-mode
 	if os.Getenv("ROOTLESSKIT_STATE_DIR") != "" {
@@ -116,7 +119,13 @@ type TopLevelCommand struct {
 
 // NewTopLevelCommand returns a new TopLevelCommand object
 func NewTopLevelCommand(cmd *cobra.Command, dockerCli *command.DockerCli, opts *cliflags.ClientOptions, flags *pflag.FlagSet) *TopLevelCommand {
-	return &TopLevelCommand{cmd, dockerCli, opts, flags, os.Args[1:]}
+	return &TopLevelCommand{
+		cmd:       cmd,
+		dockerCli: dockerCli,
+		opts:      opts,
+		flags:     flags,
+		args:      os.Args[1:],
+	}
 }
 
 // SetArgs sets the args (default os.Args[:1] used to invoke the command
@@ -172,7 +181,7 @@ func (tcmd *TopLevelCommand) HandleGlobalFlags() (*cobra.Command, []string, erro
 
 // Initialize finalises global option parsing and initializes the docker client.
 func (tcmd *TopLevelCommand) Initialize(ops ...command.InitializeOpt) error {
-	tcmd.opts.Common.SetDefaultOptions(tcmd.flags)
+	tcmd.opts.SetDefaultOptions(tcmd.flags)
 	return tcmd.dockerCli.Initialize(tcmd.opts, ops...)
 }
 
@@ -193,6 +202,16 @@ func DisableFlagsInUseLine(cmd *cobra.Command) {
 		// do not add a `[flags]` to the end of the usage line.
 		ccmd.DisableFlagsInUseLine = true
 	})
+}
+
+// HasCompletionArg returns true if a cobra completion arg request is found.
+func HasCompletionArg(args []string) bool {
+	for _, arg := range args {
+		if arg == cobra.ShellCompRequestCmd || arg == cobra.ShellCompNoDescRequestCmd {
+			return true
+		}
+	}
+	return false
 }
 
 var helpCommand = &cobra.Command{
@@ -225,9 +244,13 @@ func isExperimental(cmd *cobra.Command) bool {
 }
 
 func additionalHelp(cmd *cobra.Command) string {
-	if additionalHelp, ok := cmd.Annotations["additionalHelp"]; ok {
+	if msg, ok := cmd.Annotations["additionalHelp"]; ok {
+		out := cmd.OutOrStderr()
+		if _, isTerminal := term.GetFdInfo(out); !isTerminal {
+			return msg
+		}
 		style := aec.EmptyBuilder.Bold().ANSI
-		return style.Apply(additionalHelp)
+		return style.Apply(msg)
 	}
 	return ""
 }
@@ -403,7 +426,7 @@ func invalidPluginReason(cmd *cobra.Command) string {
 	return cmd.Annotations[pluginmanager.CommandAnnotationPluginInvalid]
 }
 
-var usageTemplate = `Usage:
+const usageTemplate = `Usage:
 
 {{- if not .HasSubCommands}}  {{.UseLine}}{{end}}
 {{- if .HasSubCommands}}  {{ .CommandPath}}{{- if .HasAvailableFlags}} [OPTIONS]{{end}} COMMAND{{end}}
@@ -498,8 +521,9 @@ Run '{{.CommandPath}} COMMAND --help' for more information on a command.
 {{- if hasAdditionalHelp .}}
 
 {{ additionalHelp . }}
+
 {{- end}}
 `
 
-var helpTemplate = `
+const helpTemplate = `
 {{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`

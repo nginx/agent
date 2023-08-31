@@ -12,6 +12,7 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/image"
+	"github.com/docker/cli/cli/streams"
 	"github.com/docker/cli/opts"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
@@ -19,7 +20,6 @@ import (
 	"github.com/docker/docker/api/types/versions"
 	apiclient "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
-	"github.com/docker/docker/registry"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -67,7 +67,7 @@ func NewCreateCommand(dockerCli command.Cli) *cobra.Command {
 	flags.SetInterspersed(false)
 
 	flags.StringVar(&options.name, "name", "", "Assign a name to the container")
-	flags.StringVar(&options.pull, "pull", PullImageMissing, `Pull image before creating ("`+PullImageAlways+`"|"`+PullImageMissing+`"|"`+PullImageNever+`")`)
+	flags.StringVar(&options.pull, "pull", PullImageMissing, `Pull image before creating ("`+PullImageAlways+`", "|`+PullImageMissing+`", "`+PullImageNever+`")`)
 	flags.BoolVarP(&options.quiet, "quiet", "q", false, "Suppress the pull output")
 
 	// Add an explicit help that doesn't have a `-h` to prevent the conflict
@@ -95,16 +95,16 @@ func runCreate(dockerCli command.Cli, flags *pflag.FlagSet, options *createOptio
 		}
 	}
 	copts.env = *opts.NewListOptsRef(&newEnv, nil)
-	containerConfig, err := parse(flags, copts, dockerCli.ServerInfo().OSType)
+	containerCfg, err := parse(flags, copts, dockerCli.ServerInfo().OSType)
 	if err != nil {
 		reportError(dockerCli.Err(), "create", err.Error(), true)
 		return cli.StatusError{StatusCode: 125}
 	}
-	if err = validateAPIVersion(containerConfig, dockerCli.Client().ClientVersion()); err != nil {
+	if err = validateAPIVersion(containerCfg, dockerCli.Client().ClientVersion()); err != nil {
 		reportError(dockerCli.Err(), "create", err.Error(), true)
 		return cli.StatusError{StatusCode: 125}
 	}
-	response, err := createContainer(context.Background(), dockerCli, containerConfig, options)
+	response, err := createContainer(context.Background(), dockerCli, containerCfg, options)
 	if err != nil {
 		return err
 	}
@@ -112,41 +112,27 @@ func runCreate(dockerCli command.Cli, flags *pflag.FlagSet, options *createOptio
 	return nil
 }
 
-func pullImage(ctx context.Context, dockerCli command.Cli, image string, platform string, out io.Writer) error {
-	ref, err := reference.ParseNormalizedNamed(image)
+// FIXME(thaJeztah): this is the only code-path that uses APIClient.ImageCreate. Rewrite this to use the regular "pull" code (or vice-versa).
+func pullImage(ctx context.Context, dockerCli command.Cli, image string, opts *createOptions) error {
+	encodedAuth, err := command.RetrieveAuthTokenFromImage(ctx, dockerCli, image)
 	if err != nil {
 		return err
 	}
 
-	// Resolve the Repository name from fqn to RepositoryInfo
-	repoInfo, err := registry.ParseRepositoryInfo(ref)
-	if err != nil {
-		return err
-	}
-
-	authConfig := command.ResolveAuthConfig(ctx, dockerCli, repoInfo.Index)
-	encodedAuth, err := command.EncodeAuthToBase64(authConfig)
-	if err != nil {
-		return err
-	}
-
-	options := types.ImageCreateOptions{
+	responseBody, err := dockerCli.Client().ImageCreate(ctx, image, types.ImageCreateOptions{
 		RegistryAuth: encodedAuth,
-		Platform:     platform,
-	}
-
-	responseBody, err := dockerCli.Client().ImageCreate(ctx, image, options)
+		Platform:     opts.platform,
+	})
 	if err != nil {
 		return err
 	}
 	defer responseBody.Close()
 
-	return jsonmessage.DisplayJSONMessagesStream(
-		responseBody,
-		out,
-		dockerCli.Out().FD(),
-		dockerCli.Out().IsTerminal(),
-		nil)
+	out := dockerCli.Err()
+	if opts.quiet {
+		out = io.Discard
+	}
+	return jsonmessage.DisplayJSONMessagesToStream(responseBody, streams.NewOut(out), nil)
 }
 
 type cidFile struct {
@@ -199,10 +185,10 @@ func newCIDFile(path string) (*cidFile, error) {
 }
 
 //nolint:gocyclo
-func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig *containerConfig, opts *createOptions) (*container.CreateResponse, error) {
-	config := containerConfig.Config
-	hostConfig := containerConfig.HostConfig
-	networkingConfig := containerConfig.NetworkingConfig
+func createContainer(ctx context.Context, dockerCli command.Cli, containerCfg *containerConfig, opts *createOptions) (*container.CreateResponse, error) {
+	config := containerCfg.Config
+	hostConfig := containerCfg.HostConfig
+	networkingConfig := containerCfg.NetworkingConfig
 
 	warnOnOomKillDisable(*hostConfig, dockerCli.Err())
 	warnOnLocalhostDNS(*hostConfig, dockerCli.Err())
@@ -227,7 +213,7 @@ func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig
 
 		if taggedRef, ok := namedRef.(reference.NamedTagged); ok && !opts.untrusted {
 			var err error
-			trustedRef, err = image.TrustedReference(ctx, dockerCli, taggedRef, nil)
+			trustedRef, err = image.TrustedReference(ctx, dockerCli, taggedRef)
 			if err != nil {
 				return nil, err
 			}
@@ -236,11 +222,7 @@ func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig
 	}
 
 	pullAndTagImage := func() error {
-		pullOut := dockerCli.Err()
-		if opts.quiet {
-			pullOut = io.Discard
-		}
-		if err := pullImage(ctx, dockerCli, config.Image, opts.platform, pullOut); err != nil {
+		if err := pullImage(ctx, dockerCli, config.Image, opts); err != nil {
 			return err
 		}
 		if taggedRef, ok := namedRef.(reference.NamedTagged); ok && trustedRef != nil {
@@ -293,8 +275,8 @@ func createContainer(ctx context.Context, dockerCli command.Cli, containerConfig
 		}
 	}
 
-	for _, warning := range response.Warnings {
-		fmt.Fprintf(dockerCli.Err(), "WARNING: %s\n", warning)
+	for _, w := range response.Warnings {
+		fmt.Fprintf(dockerCli.Err(), "WARNING: %s\n", w)
 	}
 	err = containerIDFile.Write(response.ID)
 	return &response, err

@@ -20,8 +20,18 @@ func (s Set[T]) Add(v T) {
 	s[v] = struct{}{}
 }
 
-func (s Set[T]) Remove(v T) {
-	delete(s, v)
+func (s Set[T]) AddAll(v ...T) {
+	for _, e := range v {
+		s[e] = struct{}{}
+	}
+}
+
+func (s Set[T]) Remove(v T) bool {
+	_, ok := s[v]
+	if ok {
+		delete(s, v)
+	}
+	return ok
 }
 
 func (s Set[T]) Clear() {
@@ -36,4 +46,10 @@ func (s Set[T]) Elements() []T {
 		elements = append(elements, v)
 	}
 	return elements
+}
+
+func (s Set[T]) RemoveAll(elements ...T) {
+	for _, e := range elements {
+		s.Remove(e)
+	}
 }

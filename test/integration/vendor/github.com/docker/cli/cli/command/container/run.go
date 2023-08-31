@@ -60,7 +60,7 @@ func NewRunCommand(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVar(&options.sigProxy, "sig-proxy", true, "Proxy received signals to the process")
 	flags.StringVar(&options.name, "name", "", "Assign a name to the container")
 	flags.StringVar(&options.detachKeys, "detach-keys", "", "Override the key sequence for detaching a container")
-	flags.StringVar(&options.pull, "pull", PullImageMissing, `Pull image before running ("`+PullImageAlways+`"|"`+PullImageMissing+`"|"`+PullImageNever+`")`)
+	flags.StringVar(&options.pull, "pull", PullImageMissing, `Pull image before running ("`+PullImageAlways+`", "`+PullImageMissing+`", "`+PullImageNever+`")`)
 	flags.BoolVarP(&options.quiet, "quiet", "q", false, "Suppress the pull output")
 
 	// Add an explicit help that doesn't have a `-h` to prevent the conflict
@@ -105,22 +105,22 @@ func runRun(dockerCli command.Cli, flags *pflag.FlagSet, ropts *runOptions, copt
 		}
 	}
 	copts.env = *opts.NewListOptsRef(&newEnv, nil)
-	containerConfig, err := parse(flags, copts, dockerCli.ServerInfo().OSType)
+	containerCfg, err := parse(flags, copts, dockerCli.ServerInfo().OSType)
 	// just in case the parse does not exit
 	if err != nil {
 		reportError(dockerCli.Err(), "run", err.Error(), true)
 		return cli.StatusError{StatusCode: 125}
 	}
-	if err = validateAPIVersion(containerConfig, dockerCli.Client().ClientVersion()); err != nil {
+	if err = validateAPIVersion(containerCfg, dockerCli.CurrentVersion()); err != nil {
 		reportError(dockerCli.Err(), "run", err.Error(), true)
 		return cli.StatusError{StatusCode: 125}
 	}
-	return runContainer(dockerCli, ropts, copts, containerConfig)
+	return runContainer(dockerCli, ropts, copts, containerCfg)
 }
 
 //nolint:gocyclo
-func runContainer(dockerCli command.Cli, opts *runOptions, copts *containerOptions, containerConfig *containerConfig) error {
-	config := containerConfig.Config
+func runContainer(dockerCli command.Cli, opts *runOptions, copts *containerOptions, containerCfg *containerConfig) error {
+	config := containerCfg.Config
 	stdout, stderr := dockerCli.Out(), dockerCli.Err()
 	client := dockerCli.Client()
 
@@ -144,7 +144,7 @@ func runContainer(dockerCli command.Cli, opts *runOptions, copts *containerOptio
 	ctx, cancelFun := context.WithCancel(context.Background())
 	defer cancelFun()
 
-	createResponse, err := createContainer(ctx, dockerCli, containerConfig, &opts.createOptions)
+	createResponse, err := createContainer(ctx, dockerCli, containerCfg, &opts.createOptions)
 	if err != nil {
 		reportError(stderr, "run", err.Error(), true)
 		return runStartContainerErr(err)
@@ -173,11 +173,11 @@ func runContainer(dockerCli command.Cli, opts *runOptions, copts *containerOptio
 			dockerCli.ConfigFile().DetachKeys = opts.detachKeys
 		}
 
-		close, err := attachContainer(ctx, dockerCli, &errCh, config, createResponse.ID)
+		closeFn, err := attachContainer(ctx, dockerCli, &errCh, config, createResponse.ID)
 		if err != nil {
 			return err
 		}
-		defer close()
+		defer closeFn()
 	}
 
 	statusChan := waitExitOrRemoved(ctx, dockerCli, createResponse.ID, copts.autoRemove)
@@ -308,7 +308,8 @@ func runStartContainerErr(err error) error {
 		strings.Contains(trimmedErr, "no such file or directory") ||
 		strings.Contains(trimmedErr, "system cannot find the file specified") {
 		statusError = cli.StatusError{StatusCode: 127}
-	} else if strings.Contains(trimmedErr, syscall.EACCES.Error()) {
+	} else if strings.Contains(trimmedErr, syscall.EACCES.Error()) ||
+		strings.Contains(trimmedErr, syscall.EISDIR.Error()) {
 		statusError = cli.StatusError{StatusCode: 126}
 	}
 

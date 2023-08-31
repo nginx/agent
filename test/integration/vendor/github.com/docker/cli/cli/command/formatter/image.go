@@ -27,6 +27,9 @@ type ImageContext struct {
 }
 
 func isDangling(image types.ImageSummary) bool {
+	if len(image.RepoTags) == 0 && len(image.RepoDigests) == 0 {
+		return true
+	}
 	return len(image.RepoTags) == 1 && image.RepoTags[0] == "<none>:<none>" && len(image.RepoDigests) == 1 && image.RepoDigests[0] == "<none>@<none>"
 }
 
@@ -202,7 +205,7 @@ func newImageContext() *imageContext {
 		"CreatedAt":    CreatedAtHeader,
 		"Size":         SizeHeader,
 		"Containers":   containersHeader,
-		"VirtualSize":  SizeHeader,
+		"VirtualSize":  SizeHeader, // Deprecated: VirtualSize is deprecated, and equivalent to Size.
 		"SharedSize":   sharedSizeHeader,
 		"UniqueSize":   uniqueSizeHeader,
 	}
@@ -257,8 +260,13 @@ func (c *imageContext) Containers() string {
 	return fmt.Sprintf("%d", c.i.Containers)
 }
 
+// VirtualSize shows the virtual size of the image and all of its parent
+// images. Starting with docker 1.10, images are self-contained, and
+// the VirtualSize is identical to Size.
+//
+// Deprecated: VirtualSize is deprecated, and equivalent to [imageContext.Size].
 func (c *imageContext) VirtualSize() string {
-	return units.HumanSize(float64(c.i.VirtualSize))
+	return units.HumanSize(float64(c.i.Size))
 }
 
 func (c *imageContext) SharedSize() string {
@@ -269,8 +277,8 @@ func (c *imageContext) SharedSize() string {
 }
 
 func (c *imageContext) UniqueSize() string {
-	if c.i.VirtualSize == -1 || c.i.SharedSize == -1 {
+	if c.i.Size == -1 || c.i.SharedSize == -1 {
 		return "N/A"
 	}
-	return units.HumanSize(float64(c.i.VirtualSize - c.i.SharedSize))
+	return units.HumanSize(float64(c.i.Size - c.i.SharedSize))
 }

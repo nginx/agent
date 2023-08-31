@@ -13,6 +13,9 @@ import (
 // Client represents an active docker object.
 type Client struct {
 	cli command.Cli
+
+	featuresOnce  sync.Once
+	featuresCache map[Feature]bool
 }
 
 // NewClient initializes a new docker client.
@@ -61,6 +64,30 @@ func (c *Client) LoadImage(ctx context.Context, name string, status progress.Wri
 	return w, func() {
 		pr.Close()
 	}, nil
+}
+
+func (c *Client) Features(ctx context.Context, name string) map[Feature]bool {
+	c.featuresOnce.Do(func() {
+		c.featuresCache = c.features(ctx, name)
+	})
+	return c.featuresCache
+}
+
+func (c *Client) features(ctx context.Context, name string) map[Feature]bool {
+	features := make(map[Feature]bool)
+	if dapi, err := c.API(name); err == nil {
+		if info, err := dapi.Info(ctx); err == nil {
+			for _, v := range info.DriverStatus {
+				switch v[0] {
+				case "driver-type":
+					if v[1] == "io.containerd.snapshotter.v1" {
+						features[OCIImporter] = true
+					}
+				}
+			}
+		}
+	}
+	return features
 }
 
 type waitingWriter struct {

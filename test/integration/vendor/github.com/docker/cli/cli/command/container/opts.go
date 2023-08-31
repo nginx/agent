@@ -123,6 +123,7 @@ type containerOptions struct {
 	runtime            string
 	autoRemove         bool
 	init               bool
+	annotations        *opts.MapOpts
 
 	Image string
 	Args  []string
@@ -163,6 +164,7 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 		ulimits:           opts.NewUlimitOpt(nil),
 		volumes:           opts.NewListOpts(nil),
 		volumesFrom:       opts.NewListOpts(nil),
+		annotations:       opts.NewMapOpts(nil, nil),
 	}
 
 	// General purpose flags
@@ -297,6 +299,10 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 
 	flags.BoolVar(&copts.init, "init", false, "Run an init inside the container that forwards signals and reaps processes")
 	flags.SetAnnotation("init", "version", []string{"1.25"})
+
+	flags.Var(copts.annotations, "annotation", "Add an annotation to the container (passed through to the OCI runtime)")
+	flags.SetAnnotation("annotation", "version", []string{"1.43"})
+
 	return copts
 }
 
@@ -348,20 +354,22 @@ func parse(flags *pflag.FlagSet, copts *containerOptions, serverOS string) (*con
 	volumes := copts.volumes.GetMap()
 	// add any bind targets to the list of container volumes
 	for bind := range copts.volumes.GetMap() {
-		parsed, _ := loader.ParseVolume(bind)
+		parsed, err := loader.ParseVolume(bind)
+		if err != nil {
+			return nil, err
+		}
 
 		if parsed.Source != "" {
 			toBind := bind
 
 			if parsed.Type == string(mounttypes.TypeBind) {
-				if arr := strings.SplitN(bind, ":", 2); len(arr) == 2 {
-					hostPart := arr[0]
+				if hostPart, targetPath, ok := strings.Cut(bind, ":"); ok {
 					if strings.HasPrefix(hostPart, "."+string(filepath.Separator)) || hostPart == "." {
 						if absHostPart, err := filepath.Abs(hostPart); err == nil {
 							hostPart = absHostPart
 						}
 					}
-					toBind = hostPart + ":" + arr[1]
+					toBind = hostPart + ":" + targetPath
 				}
 			}
 
@@ -377,11 +385,8 @@ func parse(flags *pflag.FlagSet, copts *containerOptions, serverOS string) (*con
 	// Can't evaluate options passed into --tmpfs until we actually mount
 	tmpfs := make(map[string]string)
 	for _, t := range copts.tmpfs.GetAll() {
-		if arr := strings.SplitN(t, ":", 2); len(arr) > 1 {
-			tmpfs[arr[0]] = arr[1]
-		} else {
-			tmpfs[arr[0]] = ""
-		}
+		k, v, _ := strings.Cut(t, ":")
+		tmpfs[k] = v
 	}
 
 	var (
@@ -390,7 +395,7 @@ func parse(flags *pflag.FlagSet, copts *containerOptions, serverOS string) (*con
 	)
 
 	if len(copts.Args) > 0 {
-		runCmd = strslice.StrSlice(copts.Args)
+		runCmd = copts.Args
 	}
 
 	if copts.entrypoint != "" {
@@ -529,13 +534,11 @@ func parse(flags *pflag.FlagSet, copts *containerOptions, serverOS string) (*con
 		if haveHealthSettings {
 			return nil, errors.Errorf("--no-healthcheck conflicts with --health-* options")
 		}
-		test := strslice.StrSlice{"NONE"}
-		healthConfig = &container.HealthConfig{Test: test}
+		healthConfig = &container.HealthConfig{Test: strslice.StrSlice{"NONE"}}
 	} else if haveHealthSettings {
 		var probe strslice.StrSlice
 		if copts.healthCmd != "" {
-			args := []string{"CMD-SHELL", copts.healthCmd}
-			probe = strslice.StrSlice(args)
+			probe = []string{"CMD-SHELL", copts.healthCmd}
 		}
 		if copts.healthInterval < 0 {
 			return nil, errors.Errorf("--health-interval cannot be negative")
@@ -598,24 +601,20 @@ func parse(flags *pflag.FlagSet, copts *containerOptions, serverOS string) (*con
 		ExposedPorts: ports,
 		User:         copts.user,
 		Tty:          copts.tty,
-		// TODO: deprecated, it comes from -n, --networking
-		// it's still needed internally to set the network to disabled
-		// if e.g. bridge is none in daemon opts, and in inspect
-		NetworkDisabled: false,
-		OpenStdin:       copts.stdin,
-		AttachStdin:     attachStdin,
-		AttachStdout:    attachStdout,
-		AttachStderr:    attachStderr,
-		Env:             envVariables,
-		Cmd:             runCmd,
-		Image:           copts.Image,
-		Volumes:         volumes,
-		MacAddress:      copts.macAddress,
-		Entrypoint:      entrypoint,
-		WorkingDir:      copts.workingDir,
-		Labels:          opts.ConvertKVStringsToMap(labels),
-		StopSignal:      copts.stopSignal,
-		Healthcheck:     healthConfig,
+		OpenStdin:    copts.stdin,
+		AttachStdin:  attachStdin,
+		AttachStdout: attachStdout,
+		AttachStderr: attachStderr,
+		Env:          envVariables,
+		Cmd:          runCmd,
+		Image:        copts.Image,
+		Volumes:      volumes,
+		MacAddress:   copts.macAddress,
+		Entrypoint:   entrypoint,
+		WorkingDir:   copts.workingDir,
+		Labels:       opts.ConvertKVStringsToMap(labels),
+		StopSignal:   copts.stopSignal,
+		Healthcheck:  healthConfig,
 	}
 	if flags.Changed("stop-timeout") {
 		config.StopTimeout = &copts.stopTimeout
@@ -664,6 +663,7 @@ func parse(flags *pflag.FlagSet, copts *containerOptions, serverOS string) (*con
 		Mounts:         mounts,
 		MaskedPaths:    maskedPaths,
 		ReadonlyPaths:  readonlyPaths,
+		Annotations:    copts.annotations.GetAll(),
 	}
 
 	if copts.autoRemove && !hostConfig.RestartPolicy.IsNone() {
@@ -826,12 +826,11 @@ func convertToStandardNotation(ports []string) ([]string, error) {
 		if strings.Contains(publish, "=") {
 			params := map[string]string{"protocol": "tcp"}
 			for _, param := range strings.Split(publish, ",") {
-				opt := strings.Split(param, "=")
-				if len(opt) < 2 {
+				k, v, ok := strings.Cut(param, "=")
+				if !ok || k == "" {
 					return optsList, errors.Errorf("invalid publish opts format (should be name=value but got '%s')", param)
 				}
-
-				params[opt[0]] = opt[1]
+				params[k] = v
 			}
 			optsList = append(optsList, fmt.Sprintf("%s:%s/%s", params["published"], params["target"], params["protocol"]))
 		} else {
@@ -852,22 +851,22 @@ func parseLoggingOpts(loggingDriver string, loggingOpts []string) (map[string]st
 // takes a local seccomp daemon, reads the file contents for sending to the daemon
 func parseSecurityOpts(securityOpts []string) ([]string, error) {
 	for key, opt := range securityOpts {
-		con := strings.SplitN(opt, "=", 2)
-		if len(con) == 1 && con[0] != "no-new-privileges" {
-			if strings.Contains(opt, ":") {
-				con = strings.SplitN(opt, ":", 2)
-			} else {
-				return securityOpts, errors.Errorf("Invalid --security-opt: %q", opt)
-			}
+		k, v, ok := strings.Cut(opt, "=")
+		if !ok && k != "no-new-privileges" {
+			k, v, ok = strings.Cut(opt, ":")
 		}
-		if con[0] == "seccomp" && con[1] != "unconfined" {
-			f, err := os.ReadFile(con[1])
+		if (!ok || v == "") && k != "no-new-privileges" {
+			// "no-new-privileges" is the only option that does not require a value.
+			return securityOpts, errors.Errorf("Invalid --security-opt: %q", opt)
+		}
+		if k == "seccomp" && v != "unconfined" {
+			f, err := os.ReadFile(v)
 			if err != nil {
-				return securityOpts, errors.Errorf("opening seccomp profile (%s) failed: %v", con[1], err)
+				return securityOpts, errors.Errorf("opening seccomp profile (%s) failed: %v", v, err)
 			}
 			b := bytes.NewBuffer(nil)
 			if err := json.Compact(b, f); err != nil {
-				return securityOpts, errors.Errorf("compacting json for seccomp profile (%s) failed: %v", con[1], err)
+				return securityOpts, errors.Errorf("compacting json for seccomp profile (%s) failed: %v", v, err)
 			}
 			securityOpts[key] = fmt.Sprintf("seccomp=%s", b.Bytes())
 		}
@@ -899,12 +898,11 @@ func parseSystemPaths(securityOpts []string) (filtered, maskedPaths, readonlyPat
 func parseStorageOpts(storageOpts []string) (map[string]string, error) {
 	m := make(map[string]string)
 	for _, option := range storageOpts {
-		if strings.Contains(option, "=") {
-			opt := strings.SplitN(option, "=", 2)
-			m[opt[0]] = opt[1]
-		} else {
+		k, v, ok := strings.Cut(option, "=")
+		if !ok {
 			return nil, errors.Errorf("invalid storage option")
 		}
+		m[k] = v
 	}
 	return m, nil
 }
@@ -925,7 +923,8 @@ func parseDevice(device, serverOS string) (container.DeviceMapping, error) {
 func parseLinuxDevice(device string) (container.DeviceMapping, error) {
 	var src, dst string
 	permissions := "rwm"
-	arr := strings.Split(device, ":")
+	// We expect 3 parts at maximum; limit to 4 parts to detect invalid options.
+	arr := strings.SplitN(device, ":", 4)
 	switch len(arr) {
 	case 3:
 		permissions = arr[2]
