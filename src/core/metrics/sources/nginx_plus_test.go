@@ -9,15 +9,18 @@ package sources
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"sync"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
-
 	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -1218,5 +1221,81 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		assert.Len(t, extraMetrics, 0, "metrics returned but not tested")
+	}
+}
+
+func TestGetLatestAPIVersion(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		switch req.URL.String() {
+		case "/api":
+			data := []byte("[1,2,3,4,5,6,7,8,9]")
+			_, err := rw.Write(data)
+			require.NoError(t, err)
+		case "/oldapi":
+			data := []byte("[1,2,3,4,5]")
+			_, err := rw.Write(data)
+			require.NoError(t, err)
+		case "/api25":
+			data := []byte("[1,2,3,4,5,6,7]")
+			_, err := rw.Write(data)
+			require.NoError(t, err)
+		default:
+			rw.WriteHeader(http.StatusInternalServerError)
+			data := []byte("")
+			_, err := rw.Write(data)
+			require.NoError(t, err)
+		}
+	}))
+	defer server.Close()
+
+	tests := []struct {
+		name               string
+		clientVersion      int
+		endpoint           string
+		expectedAPIVersion int
+		expectErr          bool
+	}{
+		{
+			name:               "NGINX Plus R30",
+			clientVersion:      7,
+			endpoint:           "/api",
+			expectedAPIVersion: 9,
+			expectErr:          false,
+		},
+		{
+			name:               "NGINX Plus R25",
+			clientVersion:      7,
+			endpoint:           "/api25",
+			expectedAPIVersion: 7,
+			expectErr:          false,
+		},
+		{
+			name:               "old nginx plus",
+			clientVersion:      7,
+			endpoint:           "/oldapi",
+			expectedAPIVersion: 0,
+			expectErr:          true,
+		},
+		{
+			name:               "invalid path",
+			clientVersion:      7,
+			endpoint:           "/notexisting",
+			expectedAPIVersion: 0,
+			expectErr:          true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &NginxPlus{
+				clientVersion: tt.clientVersion,
+			}
+			got, err := c.getLatestAPIVersion(context.Background(), &http.Client{}, fmt.Sprintf("%s%s", server.URL, tt.endpoint))
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.expectedAPIVersion, got)
+		})
 	}
 }
