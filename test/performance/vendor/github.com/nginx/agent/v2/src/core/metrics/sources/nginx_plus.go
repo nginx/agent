@@ -35,8 +35,6 @@ const (
 
 	valueFloat64One  = float64(1)
 	valueFloat64Zero = float64(0)
-
-	minimumAPIVersion = 7 // NGINX Plus R25+
 )
 
 // NginxPlus generates metrics from NGINX Plus API
@@ -59,14 +57,14 @@ func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespa
 func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.init.Do(func() {
-		latestAPIVersion, err := getLatestAPIVersion(ctx, &http.Client{}, c.plusAPI)
+		latestAPIVersion, err := c.getLatestAPIVersion(ctx, &http.Client{}, c.plusAPI)
 		if err != nil {
 			c.logger.Log(fmt.Sprintf("Failed to check available api versions: %v", err))
-			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
-			return
+		} else {
+			c.clientVersion = latestAPIVersion
 		}
 
-		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, latestAPIVersion)
+		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
 		if err != nil {
 			c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -82,7 +80,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 		}
 	})
 
-	cl, err := plusclient.NewNginxClient(&http.Client{}, c.plusAPI)
+	cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
 	if err != nil {
 		c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -874,8 +872,8 @@ func boolToFloat64(myBool bool) float64 {
 	}
 }
 
-func getLatestAPIVersion(ctx context.Context, httpClient *http.Client, endpoint string) (int, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+func (c *NginxPlus) getLatestAPIVersion(ctx context.Context, httpClient *http.Client, endpoint string) (int, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
@@ -905,8 +903,8 @@ func getLatestAPIVersion(ctx context.Context, httpClient *http.Client, endpoint 
 	}
 
 	latestAPIVer := vers[len(vers)-1]
-	if latestAPIVer < minimumAPIVersion {
-		return 0, fmt.Errorf("%v is an unsupported api version. Must be at least version %v", endpoint, minimumAPIVersion)
+	if latestAPIVer < c.clientVersion {
+		return 0, fmt.Errorf("%s/%v does not have a supported api version. Must be at least version %v", endpoint, latestAPIVer, c.clientVersion)
 	}
 
 	return latestAPIVer, nil

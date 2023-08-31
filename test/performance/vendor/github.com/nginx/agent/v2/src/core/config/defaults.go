@@ -61,7 +61,7 @@ var (
 		Nginx: Nginx{
 			Debug:                        false,
 			NginxCountingSocket:          "unix:/var/run/nginx-agent/nginx.sock",
-			NginxClientVersion:           6,
+			NginxClientVersion:           7, // NGINX Plus R25+
 			ConfigReloadMonitoringPeriod: 10 * time.Second,
 			TreatWarningsAsErrors:        false,
 		},
