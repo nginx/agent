@@ -673,7 +673,7 @@ func requestFields(req *http.Request) log.Fields {
 		}
 	}
 
-	return fields
+	return log.Fields(fields)
 }
 
 func responseFields(resp *http.Response) log.Fields {
@@ -691,7 +691,7 @@ func responseFields(resp *http.Response) log.Fields {
 		}
 	}
 
-	return fields
+	return log.Fields(fields)
 }
 
 // IsLocalhost checks if the registry host is local.
