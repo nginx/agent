@@ -21,8 +21,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
+	"sync"
+
+	"github.com/jonboulle/clockwork"
+
+	"github.com/docker/docker/api/types/volume"
 
 	"github.com/compose-spec/compose-go/types"
 	"github.com/distribution/distribution/v3/reference"
@@ -32,6 +38,7 @@ import (
 	"github.com/docker/cli/cli/streams"
 	moby "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
@@ -40,10 +47,20 @@ import (
 	"github.com/docker/compose/v2/pkg/api"
 )
 
+var stdioToStdout bool
+
+func init() {
+	out, ok := os.LookupEnv("COMPOSE_STATUS_STDOUT")
+	if ok {
+		stdioToStdout, _ = strconv.ParseBool(out)
+	}
+}
+
 // NewComposeService create a local implementation of the compose.Service API
 func NewComposeService(dockerCli command.Cli) api.Service {
 	return &composeService{
 		dockerCli:      dockerCli,
+		clock:          clockwork.NewRealClock(),
 		maxConcurrency: -1,
 		dryRun:         false,
 	}
@@ -51,6 +68,7 @@ func NewComposeService(dockerCli command.Cli) api.Service {
 
 type composeService struct {
 	dockerCli      command.Cli
+	clock          clockwork.Clock
 	maxConcurrency int
 	dryRun         bool
 }
@@ -74,8 +92,11 @@ func (s *composeService) DryRunMode(ctx context.Context, dryRun bool) (context.C
 		if err != nil {
 			return ctx, err
 		}
-		err = cli.Initialize(flags.NewClientOptions(), command.WithInitializeClient(func(cli *command.DockerCli) (client.APIClient, error) {
-			return api.NewDryRunClient(s.apiClient(), cli)
+
+		options := flags.NewClientOptions()
+		options.Context = s.dockerCli.CurrentContext()
+		err = cli.Initialize(options, command.WithInitializeClient(func(cli *command.DockerCli) (client.APIClient, error) {
+			return api.NewDryRunClient(s.apiClient(), s.dockerCli)
 		}))
 		if err != nil {
 			return ctx, err
@@ -94,6 +115,13 @@ func (s *composeService) stdin() *streams.In {
 }
 
 func (s *composeService) stderr() io.Writer {
+	return s.dockerCli.Err()
+}
+
+func (s *composeService) stdinfo() io.Writer {
+	if stdioToStdout {
+		return s.dockerCli.Out()
+	}
 	return s.dockerCli.Err()
 }
 
@@ -179,6 +207,7 @@ func (s *composeService) projectFromName(containers Containers, projectName stri
 				condition := ServiceConditionRunningOrHealthy
 				// Let's restart the dependency by default if we don't have the info stored in the label
 				restart := true
+				required := true
 				dependency := dcArr[0]
 
 				// backward compatibility
@@ -188,7 +217,7 @@ func (s *composeService) projectFromName(containers Containers, projectName stri
 						restart, _ = strconv.ParseBool(dcArr[2])
 					}
 				}
-				service.DependsOn[dependency] = types.ServiceDependency{Condition: condition, Restart: restart}
+				service.DependsOn[dependency] = types.ServiceDependency{Condition: condition, Restart: restart, Required: required}
 			}
 		}
 		project.Services = append(project.Services, *service)
@@ -211,7 +240,10 @@ SERVICES:
 }
 
 func (s *composeService) actualVolumes(ctx context.Context, projectName string) (types.Volumes, error) {
-	volumes, err := s.apiClient().VolumeList(ctx, filters.NewArgs(projectFilter(projectName)))
+	opts := volume.ListOptions{
+		Filters: filters.NewArgs(projectFilter(projectName)),
+	}
+	volumes, err := s.apiClient().VolumeList(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -244,4 +276,27 @@ func (s *composeService) actualNetworks(ctx context.Context, projectName string)
 		}
 	}
 	return actual, nil
+}
+
+var swarmEnabled = struct {
+	once sync.Once
+	val  bool
+	err  error
+}{}
+
+func (s *composeService) isSWarmEnabled(ctx context.Context) (bool, error) {
+	swarmEnabled.once.Do(func() {
+		info, err := s.apiClient().Info(ctx)
+		if err != nil {
+			swarmEnabled.err = err
+		}
+		switch info.Swarm.LocalNodeState {
+		case swarm.LocalNodeStateInactive, swarm.LocalNodeStateLocked:
+			swarmEnabled.val = false
+		default:
+			swarmEnabled.val = true
+		}
+	})
+	return swarmEnabled.val, swarmEnabled.err
+
 }

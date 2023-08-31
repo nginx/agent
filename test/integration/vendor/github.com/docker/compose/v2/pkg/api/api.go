@@ -52,7 +52,7 @@ type Service interface {
 	Ps(ctx context.Context, projectName string, options PsOptions) ([]ContainerSummary, error)
 	// List executes the equivalent to a `docker stack ls`
 	List(ctx context.Context, options ListOptions) ([]Stack, error)
-	// Convert translate compose model into backend's native format
+	// Config executes the equivalent to a `compose config`
 	Config(ctx context.Context, project *types.Project, options ConfigOptions) ([]byte, error)
 	// Kill executes the equivalent to a `compose kill`
 	Kill(ctx context.Context, projectName string, options KillOptions) error
@@ -82,6 +82,28 @@ type Service interface {
 	DryRunMode(ctx context.Context, dryRun bool) (context.Context, error)
 	// Watch services' development context and sync/notify/rebuild/restart on changes
 	Watch(ctx context.Context, project *types.Project, services []string, options WatchOptions) error
+	// Viz generates a graphviz graph of the project services
+	Viz(ctx context.Context, project *types.Project, options VizOptions) (string, error)
+	// Wait blocks until at least one of the services' container exits
+	Wait(ctx context.Context, projectName string, options WaitOptions) (int64, error)
+}
+
+type WaitOptions struct {
+	// Services passed in the command line to be waited
+	Services []string
+	// Executes a down when a container exits
+	DownProjectOnContainerExit bool
+}
+
+type VizOptions struct {
+	// IncludeNetworks if true, network names a container is attached to should appear in the graph node
+	IncludeNetworks bool
+	// IncludePorts if true, ports a container exposes should appear in the graph node
+	IncludePorts bool
+	// IncludeImageName if true, name of the image used to create a container should appear in the graph node
+	IncludeImageName bool
+	// Indentation string to be used to indent graphviz code, e.g. "\t", "    "
+	Indentation string
 }
 
 // WatchOptions group options of the Watch API
@@ -106,6 +128,10 @@ type BuildOptions struct {
 	Services []string
 	// Ssh authentications passed in the command line
 	SSHs []types.SSHKey
+	// Memory limit for the build container
+	Memory int64
+	// Builder name passed in the command line
+	Builder string
 }
 
 // Apply mutates project according to build options
@@ -119,7 +145,6 @@ func (o BuildOptions) Apply(project *types.Project) error {
 		if service.Build == nil {
 			continue
 		}
-		service.Image = GetImageNameOrDefault(service, project.Name)
 		if platform != "" {
 			if len(service.Build.Platforms) > 0 && !utils.StringContains(service.Build.Platforms, platform) {
 				return fmt.Errorf("service %q build.platforms does not support value set by DOCKER_DEFAULT_PLATFORM: %s", service.Name, platform)
@@ -217,6 +242,8 @@ type DownOptions struct {
 	Images string
 	// Volumes remove volumes, both declared in the `volumes` section and anonymous ones
 	Volumes bool
+	// Services passed in the command line to be stopped
+	Services []string
 }
 
 // ConfigOptions group options of the Config API
@@ -288,6 +315,8 @@ type RunOptions struct {
 	WorkingDir        string
 	User              string
 	Environment       []string
+	CapAdd            []string
+	CapDrop           []string
 	Labels            types.Labels
 	Privileged        bool
 	UseNetworkAliases bool

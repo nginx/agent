@@ -26,6 +26,10 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/docker/cli/cli/command"
+
+	"github.com/docker/docker/api/types/registry"
+
 	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command/image/build"
@@ -43,7 +47,7 @@ import (
 )
 
 //nolint:gocyclo
-func (s *composeService) doBuildClassic(ctx context.Context, service types.ServiceConfig) (string, error) {
+func (s *composeService) doBuildClassic(ctx context.Context, project *types.Project, service types.ServiceConfig, options api.BuildOptions) (string, error) {
 	var (
 		buildCtx      io.ReadCloser
 		dockerfileCtx io.ReadCloser
@@ -153,14 +157,16 @@ func (s *composeService) doBuildClassic(ctx context.Context, service types.Servi
 	if err != nil {
 		return "", err
 	}
-	authConfigs := make(map[string]dockertypes.AuthConfig, len(creds))
+	authConfigs := make(map[string]registry.AuthConfig, len(creds))
 	for k, auth := range creds {
-		authConfigs[k] = dockertypes.AuthConfig(auth)
+		authConfigs[k] = registry.AuthConfig(auth)
 	}
-	buildOptions := imageBuildOptions(service.Build)
-	buildOptions.Tags = append(buildOptions.Tags, service.Image)
+	buildOptions := imageBuildOptions(s.dockerCli, project, service, options)
+	imageName := api.GetImageNameOrDefault(service, project.Name)
+	buildOptions.Tags = append(buildOptions.Tags, imageName)
 	buildOptions.Dockerfile = relDockerfile
 	buildOptions.AuthConfigs = authConfigs
+	buildOptions.Memory = options.Memory
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -211,14 +217,15 @@ func isLocalDir(c string) bool {
 	return err == nil
 }
 
-func imageBuildOptions(config *types.BuildConfig) dockertypes.ImageBuildOptions {
+func imageBuildOptions(dockerCli command.Cli, project *types.Project, service types.ServiceConfig, options api.BuildOptions) dockertypes.ImageBuildOptions {
+	config := service.Build
 	return dockertypes.ImageBuildOptions{
 		Version:     dockertypes.BuilderV1,
 		Tags:        config.Tags,
 		NoCache:     config.NoCache,
 		Remove:      true,
 		PullParent:  config.Pull,
-		BuildArgs:   config.Args,
+		BuildArgs:   resolveAndMergeBuildArgs(dockerCli, project, service, options),
 		Labels:      config.Labels,
 		NetworkMode: config.Network,
 		ExtraHosts:  config.ExtraHosts.AsList(),

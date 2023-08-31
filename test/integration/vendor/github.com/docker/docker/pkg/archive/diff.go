@@ -87,7 +87,7 @@ func UnpackLayer(dest string, layer io.Reader, options *TarOptions) (size int64,
 				basename := filepath.Base(hdr.Name)
 				aufsHardlinks[basename] = hdr
 				if aufsTempdir == "" {
-					if aufsTempdir, err = os.MkdirTemp("", "dockerplnk"); err != nil {
+					if aufsTempdir, err = os.MkdirTemp(dest, "dockerplnk"); err != nil {
 						return 0, err
 					}
 					defer os.RemoveAll(aufsTempdir)
@@ -121,7 +121,7 @@ func UnpackLayer(dest string, layer io.Reader, options *TarOptions) (size int64,
 				if err != nil {
 					return 0, err
 				}
-				err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+				err = filepath.WalkDir(dir, func(path string, info os.DirEntry, err error) error {
 					if err != nil {
 						if os.IsNotExist(err) {
 							err = nil // parent was deleted
@@ -132,8 +132,7 @@ func UnpackLayer(dest string, layer io.Reader, options *TarOptions) (size int64,
 						return nil
 					}
 					if _, exists := unpackedPaths[path]; !exists {
-						err := os.RemoveAll(path)
-						return err
+						return os.RemoveAll(path)
 					}
 					return nil
 				})
@@ -229,13 +228,8 @@ func applyLayerHandler(dest string, layer io.Reader, options *TarOptions, decomp
 	dest = filepath.Clean(dest)
 
 	// We need to be able to set any perms
-	if runtime.GOOS != "windows" {
-		oldmask, err := system.Umask(0)
-		if err != nil {
-			return 0, err
-		}
-		defer system.Umask(oldmask)
-	}
+	restore := overrideUmask(0)
+	defer restore()
 
 	if decompress {
 		decompLayer, err := DecompressStream(layer)
