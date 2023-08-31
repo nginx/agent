@@ -18,7 +18,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | redhatenterprise | 7, 8, 9                                   |                                                                |
 # | rockylinux       | 8, 9                                      |                                                                |
 # | almalinux        | 8, 9                                      |                                                                |
-# | alpine           | 3.15, 3.16, 3.17                          |                                                                |
+# | alpine           | 3.15, 3.16, 3.17, 3.18                    |                                                                |
 # | oraclelinux      | 7, 8, 9                                   |                                                                |
 # | suse             | sles12sp5, sle15                          |                                                                |
 # | freebsd          |                                           | Not supported                                                  |
