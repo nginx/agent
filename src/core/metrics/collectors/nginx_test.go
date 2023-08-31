@@ -54,6 +54,7 @@ var (
 			TreatWarningsAsErrors: false,
 		},
 	}
+
 	collectorConfigNoApi = &metrics.NginxCollectorConfig{
 		BinPath:            "/path/to/nginx",
 		NginxId:            nginxId,

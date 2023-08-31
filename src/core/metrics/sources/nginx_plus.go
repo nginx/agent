@@ -9,10 +9,13 @@ package sources
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -29,8 +32,11 @@ const (
 	peerStateUnavail   = "unavail"
 	peerStateChecking  = "checking"
 	peerStateUnhealthy = "unhealthy"
-	valueFloat64One    = float64(1)
-	valueFloat64Zero   = float64(0)
+
+	valueFloat64One  = float64(1)
+	valueFloat64Zero = float64(0)
+
+	minimumAPIVersion = 7 // NGINX Plus R25+
 )
 
 // NginxPlus generates metrics from NGINX Plus API
@@ -53,31 +59,39 @@ func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespa
 func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.init.Do(func() {
-		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
+		latestAPIVersion, err := getLatestAPIVersion(ctx, &http.Client{}, c.plusAPI)
 		if err != nil {
-			c.logger.Log(fmt.Sprintf("Failed to create plus metrics client, %v", err))
+			c.logger.Log(fmt.Sprintf("Failed to check available api versions: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 			return
 		}
+
+		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, latestAPIVersion)
+		if err != nil {
+			c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
+			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
+			return
+		}
+
 		c.prevStats, err = cl.GetStats()
 		if err != nil {
-			c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics, %v", err))
+			c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 			c.prevStats = nil
 			return
 		}
 	})
 
-	cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
+	cl, err := plusclient.NewNginxClient(&http.Client{}, c.plusAPI)
 	if err != nil {
-		c.logger.Log(fmt.Sprintf("Failed to create plus metrics client, %v", err))
+		c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
 
 	stats, err := cl.GetStats()
 	if err != nil {
-		c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics, %v", err))
+		c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
@@ -858,4 +872,42 @@ func boolToFloat64(myBool bool) float64 {
 	} else {
 		return valueFloat64Zero
 	}
+}
+
+func getLatestAPIVersion(ctx context.Context, httpClient *http.Client, endpoint string) (int, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create a get request: %w", err)
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("%v is not accessible: %w", endpoint, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("%v is not accessible: expected %v response, got %v", endpoint, http.StatusOK, resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, fmt.Errorf("error while reading body of the response: %w", err)
+	}
+
+	var vers []int
+	err = json.Unmarshal(body, &vers)
+	if err != nil {
+		return 0, fmt.Errorf("error unmarshalling versions, got %q response: %w", string(body), err)
+	}
+
+	latestAPIVer := vers[len(vers)-1]
+	if latestAPIVer < minimumAPIVersion {
+		return 0, fmt.Errorf("%v is an unsupported api version. Must be at least version %v", endpoint, minimumAPIVersion)
+	}
+
+	return latestAPIVer, nil
 }
