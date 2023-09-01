@@ -14,6 +14,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/google/uuid"
+	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
 	commonProto "github.com/nginx/agent/sdk/v2/proto/common"
@@ -335,7 +336,7 @@ func TestActivityEvents_Process(t *testing.T) {
 		},
 		{
 			name:    "test AgentStart message",
-			message: core.NewMessage(core.AgentStarted, &AgentEventMeta{version: "v0.0.1", pid: "75231"}),
+			message: core.NewMessage(core.AgentStarted, &events.AgentEventMeta{version: "v0.0.1", pid: "75231"}),
 			msgTopics: []string{
 				core.AgentStarted,
 				core.Events,
@@ -597,8 +598,19 @@ func TestGenerateAgentStopEvent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			env := tutils.NewMockEnvironment()
-
-			agentStopCmd := GenerateAgentStopEventCommand(&AgentEventMeta{version: tt.agentVersion, pid: tt.pid}, tt.conf, env)
+			// agentEventMeta := tt.expectedEvent.GetData().(*events.AgentEventMeta)
+			// message := tt.expectedEvent.GetData()
+			meta := events.NewAgentEventMeta(
+				config.MODULE,
+				tt.agentVersion,
+				tt.pid,
+				"",
+				env.GetHostname(),
+				env.GetSystemUUID(),
+				tt.conf.InstanceGroup,
+				tt.conf.Tags,
+			)
+			agentStopCmd := events.GenerateAgentStopEventCommand(meta)
 			actualEvent := agentStopCmd.GetEventReport().Events[0]
 
 			// assert metadata

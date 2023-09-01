@@ -125,3 +125,61 @@ func BenchmarkPluginOneTimeRegistration(b *testing.B) {
 	cancel()
 	<-pipelineDone
 }
+
+func BenchmarkPluginOneTimeRegistration(b *testing.B) {
+	var pluginsUnderTest []core.Plugin
+
+	ctx, cancel := context.WithCancel(context.Background())
+	pipelineDone := make(chan bool)
+
+	config := config.Config{Nginx: config.Nginx{Debug: true}}
+
+	processID := "12345"
+	detailsMap := map[string]*proto.NginxDetails{
+		processID: {
+			ProcessPath: "/path/to/nginx",
+			NginxId:     processID,
+		},
+	}
+
+	binary := utils.NewMockNginxBinary()
+	binary.On("GetNginxDetailsMapFromProcesses", mock.Anything).Return(detailsMap)
+	binary.On("GetNginxIDForProcess", mock.Anything).Return(processID)
+	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
+	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
+
+	env := utils.NewMockEnvironment()
+	env.Mock.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
+		Hostname: "test-host",
+	})
+	env.Mock.On("Processes", mock.Anything).Return([]*core.Process{
+		{
+			Name:     processID,
+			IsMaster: true,
+		},
+	})
+
+	meta := proto.Metadata{}
+	version := "1234"
+
+	messagePipe := core.NewMessagePipe(ctx)
+	for n := 0; n < b.N; n++ {
+		pluginsUnderTest = append(pluginsUnderTest, plugins.NewOneTimeRegistration(&config, binary, env, &meta, version))
+	}
+
+	err := messagePipe.Register(b.N, pluginsUnderTest, []core.ExtensionPlugin{})
+	assert.NoError(b, err)
+
+	go func() {
+		messagePipe.Run()
+		pipelineDone <- true
+	}()
+
+	for n := 0; n < b.N; n++ {
+		messagePipe.Process(core.NewMessage(core.UNKNOWN, n))
+		time.Sleep(200 * time.Millisecond) // for the above call being asynchronous
+	}
+
+	cancel()
+	<-pipelineDone
+}

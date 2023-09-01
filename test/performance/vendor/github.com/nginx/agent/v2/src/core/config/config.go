@@ -62,6 +62,22 @@ func Execute() error {
 	return ROOT_COMMAND.Execute()
 }
 
+func InitConfiguration(version, commit string) {
+	SetVersion(version, commit)
+	SetDefaults()
+	RegisterFlags()
+	dynamicConfigPath := DynamicConfigFileAbsPath
+	if runtime.GOOS == "freebsd" {
+		dynamicConfigPath = DynamicConfigFileAbsFreeBsdPath
+	}
+	configPath, err := RegisterConfigFile(dynamicConfigPath, ConfigFileName, ConfigFilePaths()...)
+	if err != nil {
+		log.Fatalf("Failed to load configuration file: %v", err)
+	}
+	log.Debugf("Configuration file loaded %v", configPath)
+	Viper.Set(ConfigPathKey, configPath)
+}
+
 func SetDefaults() {
 	// CLOUDACCOUNTID DEFAULT
 	Viper.SetDefault(CloudAccountIdKey, Defaults.CloudAccountID)

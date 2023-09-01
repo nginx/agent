@@ -93,6 +93,8 @@ var (
 )
 
 const (
+	MODULE = "NGINX-AGENT"
+
 	DynamicConfigFileName           = "agent-dynamic.conf"
 	DynamicConfigFileAbsPath        = "/var/lib/nginx-agent/agent-dynamic.conf"
 	DynamicConfigFileAbsFreeBsdPath = "/var/db/nginx-agent/agent-dynamic.conf"
