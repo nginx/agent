@@ -117,5 +117,4 @@ func BenchmarkFileStat(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		env.FileStat(tempFile)
 	}
-	defer os.Remove(tempFile)
 }
