@@ -59,12 +59,13 @@ Generate new rule based on the errors by using `audit2allow`:
 sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR --raw -se nms -ts recent | audit2allow
 ```
 
-Copy the file `scripts/selinux/nginx_agent.te` to a centos 7 machine and update it with the output from the `audit2allow` command.
+Update the `scripts/selinux/nginx_agent.te` file with the output from the `audit2allow` command.
 
-Build a new `nginx_agent.pp` file by running the following command:
+Copy the `scripts/selinux/nginx_agent.te` file to a Centos 7 machine and build a new `nginx_agent.pp` file by running the following command:
 ```
 make -f /usr/share/selinux/devel/Makefile nginx_agent.pp
 ```
+**[NOTE: The policy has to be built on a Centos 7 machine. If it is built on a different OS like RHEL 8/9 then we will encounter this issue [Policy version does not match](#policy-version-does-not-match) when installing it on different an older OS like Centos 7. Even if the audit2allow command was run on a RHEL 8/9 machine the updates to the policy need to be made on a Centos 7 machine.]**
 
 Install the policy by following the steps here [Install NGINX Agent Policy](#install-nginx-agent-policy)
 
@@ -88,7 +89,7 @@ semodule:  Failed!
 ```
 this usually means that the policy file was built on a newer environment than isn't complicate with the environment the policy is being installed on.
 
-To resolve this issue the policy file needs to be rebuilt on a centos 7 environment. See [Updating existing policy](#updating-existing-policy) for instruction on how to rebuild a policy file.
+To resolve this issue the policy file needs to be rebuilt on a Centos 7 environment. See [Updating existing policy](#updating-existing-policy) for instruction on how to rebuild a policy file.
 
 ### Unknown Type
 If running the command
