@@ -336,7 +336,16 @@ func TestActivityEvents_Process(t *testing.T) {
 		},
 		{
 			name:    "test AgentStart message",
-			message: core.NewMessage(core.AgentStarted, &events.AgentEventMeta{version: "v0.0.1", pid: "75231"}),
+			message: core.NewMessage(core.AgentStarted, events.NewAgentEventMeta(
+				config.MODULE,
+				"v0.0.1",
+				"75231",
+				"nginx-agent v0.0.1 started on test-host with pid 75231",
+				"",
+				"",
+				"",
+				[]string{},
+			)),
 			msgTopics: []string{
 				core.AgentStarted,
 				core.Events,
@@ -598,8 +607,6 @@ func TestGenerateAgentStopEvent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			env := tutils.NewMockEnvironment()
-			// agentEventMeta := tt.expectedEvent.GetData().(*events.AgentEventMeta)
-			// message := tt.expectedEvent.GetData()
 			meta := events.NewAgentEventMeta(
 				config.MODULE,
 				tt.agentVersion,

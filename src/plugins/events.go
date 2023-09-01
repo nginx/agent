@@ -121,7 +121,7 @@ func (a *Events) sendAgentStartedEvent(msg *core.Message) {
 	event := a.createAgentEvent(
 		types.TimestampNow(),
 		events.INFO_EVENT_LEVEL,
-		fmt.Sprintf(AGENT_START_MESSAGE, agentEventMeta.version, a.env.GetHostname(), agentEventMeta.pid),
+		fmt.Sprintf(AGENT_START_MESSAGE, agentEventMeta.GetVersion(), a.env.GetHostname(), agentEventMeta.GetPid()),
 		uuid.NewString(),
 	)
 

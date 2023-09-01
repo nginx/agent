@@ -34,16 +34,16 @@ func TestNewAgentEventMeta(t *testing.T) {
 
 func TestGenerateAgentStopEventCommand(t *testing.T) {
 	// Create a mock AgentEventMeta object
-	agentEvent := &AgentEventMeta{
-		module:        "agent-module",
-		version:       "v2.0",
-		pid:           "54321",
-		message:       "Sample message: Version=%s, PID=%s, Hostname=%s",
-		hostname:      "test-host",
-		systemUuid:    "test-uuid",
-		instanceGroup: "group2",
-		tags:          []string{"tag3", "tag4"},
-	}
+	agentEvent := NewAgentEventMeta(
+		"agent-module",
+		"v2.0",
+		"54321",
+		"Sample message: Version=%s, PID=%s, Hostname=%s",
+		"test-host",
+		"test-uuid",
+		"group2",
+		[]string{"tag3", "tag4"},
+	)
 
 	expected := &eventsProto.EventReport{
 		Events: []*eventsProto.Event{
@@ -64,14 +64,10 @@ func TestGenerateAgentStopEventCommand(t *testing.T) {
 		},
 	}
 
-	// Generate the AgentStopEventCommand using the function
-	cmd := GenerateAgentStopEventCommand(agentEvent)
+	cmd := agentEvent.GenerateAgentStopEventCommand()
 
-	// Assert that the generated command is not nil
 	assert.NotNil(t, cmd)
 
-	// You can add more specific assertions based on the expected structure and values of the generated command.
-	// For example, checking the UUIDs, message format, and other fields.
 	assert.NotNil(t, cmd.Meta)
 	assert.Equal(t, proto.Command_NORMAL, cmd.Type)
 	assert.NotNil(t, cmd.Data)
