@@ -46,25 +46,33 @@ func NewAgentEventMeta(
 	}
 }
 
-func GenerateAgentStopEventCommand(agentEvent *AgentEventMeta) *proto.Command {
+func (aem *AgentEventMeta) GetVersion() string {
+	return aem.version
+}
+
+func (aem *AgentEventMeta) GetPid() string {
+	return aem.pid
+}
+
+func  (aem *AgentEventMeta) GenerateAgentStopEventCommand() *proto.Command {
 	activityEvent := &eventsProto.ActivityEvent{
-		Message: fmt.Sprintf(agentEvent.message, agentEvent.version, agentEvent.pid, agentEvent.hostname),
+		Message: fmt.Sprintf(aem.message, aem.version, aem.pid, aem.hostname),
 		Dimensions: []*commonProto.Dimension{
 			{
 				Name:  "system_id",
-				Value: agentEvent.systemUuid,
+				Value: aem.systemUuid,
 			},
 			{
 				Name:  "hostname",
-				Value: agentEvent.hostname,
+				Value: aem.hostname,
 			},
 			{
 				Name:  "instance_group",
-				Value: agentEvent.instanceGroup,
+				Value: aem.instanceGroup,
 			},
 			{
 				Name:  "system.tags",
-				Value: strings.Join(agentEvent.tags, ","),
+				Value: strings.Join(aem.tags, ","),
 			},
 		},
 	}
@@ -73,7 +81,7 @@ func GenerateAgentStopEventCommand(agentEvent *AgentEventMeta) *proto.Command {
 		Metadata: &eventsProto.Metadata{
 			UUID:          uuid.NewString(),
 			CorrelationID: uuid.NewString(),
-			Module:        agentEvent.module,
+			Module:        aem.module,
 			Timestamp:     types.TimestampNow(),
 			EventLevel:    WARN_EVENT_LEVEL,
 			Type:          AGENT_EVENT_TYPE,

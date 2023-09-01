@@ -47,7 +47,7 @@ func HandleSignals(
 				loadedConfig.InstanceGroup,
 				loadedConfig.Tags)
 
-			stopCmd := events.GenerateAgentStopEventCommand(event)
+			stopCmd := event.GenerateAgentStopEventCommand()
 			log.Debugf("Sending agent stopped event: %v", stopCmd)
 
 			if cmder == nil {

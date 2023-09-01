@@ -610,7 +610,7 @@ func TestGenerateAgentStopEvent(t *testing.T) {
 				tt.conf.InstanceGroup,
 				tt.conf.Tags,
 			)
-			agentStopCmd := events.GenerateAgentStopEventCommand(meta)
+			agentStopCmd := meta.GenerateAgentStopEventCommand()
 			actualEvent := agentStopCmd.GetEventReport().Events[0]
 
 			// assert metadata
