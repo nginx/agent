@@ -54,7 +54,7 @@ func (aem *AgentEventMeta) GetPid() string {
 	return aem.pid
 }
 
-func  (aem *AgentEventMeta) GenerateAgentStopEventCommand() *proto.Command {
+func (aem *AgentEventMeta) GenerateAgentStopEventCommand() *proto.Command {
 	activityEvent := &eventsProto.ActivityEvent{
 		Message: fmt.Sprintf(aem.message, aem.version, aem.pid, aem.hostname),
 		Dimensions: []*commonProto.Dimension{

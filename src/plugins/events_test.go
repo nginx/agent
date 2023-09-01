@@ -335,7 +335,7 @@ func TestActivityEvents_Process(t *testing.T) {
 			},
 		},
 		{
-			name:    "test AgentStart message",
+			name: "test AgentStart message",
 			message: core.NewMessage(core.AgentStarted, events.NewAgentEventMeta(
 				config.MODULE,
 				"v0.0.1",
