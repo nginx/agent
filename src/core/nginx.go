@@ -399,81 +399,115 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 		return nil, err
 	}
 
-	// Ensure this config request does not remove the process config
-	if !hasConfPath(confFiles, details.ConfPath) {
-		return nil, fmt.Errorf("should not delete %s", details.ConfPath)
-	}
-
-	// Ensure all config files are within the allowed list directories.
-	confDir := filepath.Dir(details.ConfPath)
-	if err := ensureFilesAllowed(confFiles, n.config.AllowedDirectoriesMap, confDir); err != nil {
-		return nil, err
-	}
-
-	// Ensure all aux files are within the allowed list directories.
-	if err := ensureFilesAllowed(auxFiles, n.config.AllowedDirectoriesMap, config.GetZaux().GetRootDirectory()); err != nil {
-		return nil, err
-	}
-
 	unpackMutex.Lock()
 	defer unpackMutex.Unlock()
 
 	log.Info("Updating NGINX config")
 	var configApply *sdk.ConfigApply
-	configApply, err = sdk.NewConfigApplyWithIgnoreDirectives(details.ConfPath, n.config.AllowedDirectoriesMap, n.config.IgnoreDirectives)
-	if err != nil {
-		log.Warnf("config_apply error: %s", err)
-		return nil, err
-	}
 
-	// TODO: return to Control Plane that there was a rollback
-	err = n.env.WriteFiles(configApply, confFiles, filepath.Dir(details.ConfPath), n.config.AllowedDirectoriesMap)
-	if err != nil {
-		log.Warnf("configuration write failed: %s", err)
-		n.writeBackup(config, confFiles, auxFiles)
-		return configApply, err
-	}
+	filesToUpdate, filesToDelete, allFilesHaveAnAction := generateActionMaps(config.DirectoryMap, n.config.AllowedDirectoriesMap)
 
-	if len(auxFiles) > 0 {
-		auxPath := config.GetZaux().GetRootDirectory()
-		err = n.env.WriteFiles(configApply, auxFiles, auxPath, n.config.AllowedDirectoriesMap)
+	// If the file action is unset for all files then all files are written to disk and a diff is performed to determine what files need to be deleted
+	if !allFilesHaveAnAction {
+		log.Debug("all files in directory map have no action set")
+
+		configApply, err = sdk.NewConfigApplyWithIgnoreDirectives(details.ConfPath, n.config.AllowedDirectoriesMap, n.config.IgnoreDirectives)
 		if err != nil {
-			log.Warnf("Auxiliary files write failed: %s", err)
+			log.Warnf("config_apply error: %s", err)
+			return nil, err
+		}
+
+		// Ensure this config request does not remove the process config
+		if !hasConfPath(confFiles, details.ConfPath) {
+			return nil, fmt.Errorf("should not delete %s", details.ConfPath)
+		}
+
+		// Ensure all config files are within the allowed list directories.
+		confDir := filepath.Dir(details.ConfPath)
+		if err := ensureFilesAllowed(confFiles, n.config.AllowedDirectoriesMap, confDir); err != nil {
+			return nil, err
+		}
+
+		// Ensure all aux files are within the allowed list directories.
+		if err := ensureFilesAllowed(auxFiles, n.config.AllowedDirectoriesMap, config.GetZaux().GetRootDirectory()); err != nil {
+			return nil, err
+		}
+
+		// TODO: return to Control Plane that there was a rollback
+		err = n.env.WriteFiles(configApply, confFiles, filepath.Dir(details.ConfPath), n.config.AllowedDirectoriesMap)
+		if err != nil {
+			log.Warnf("configuration write failed: %s", err)
+			n.writeBackup(config, confFiles, auxFiles)
 			return configApply, err
 		}
-	}
 
-	filesToDelete, ok := generateDeleteFromDirectoryMap(config.DirectoryMap, n.config.AllowedDirectoriesMap)
-	if ok {
-		log.Debugf("use explicit set action for delete files %s", filesToDelete)
-	} else {
-		// Delete files that are not in the directory map
-		filesToDelete = getDirectoryMapDiff(systemNginxConfig.DirectoryMap.Directories, config.DirectoryMap.Directories)
-	}
-
-	fileDeleted := make(map[string]struct{})
-	for _, file := range filesToDelete {
-		log.Infof("Deleting file: %s", file)
-		if _, ok = fileDeleted[file]; ok {
-			continue
+		if len(auxFiles) > 0 {
+			auxPath := config.GetZaux().GetRootDirectory()
+			err = n.env.WriteFiles(configApply, auxFiles, auxPath, n.config.AllowedDirectoriesMap)
+			if err != nil {
+				log.Warnf("Auxiliary files write failed: %s", err)
+				return configApply, err
+			}
 		}
 
-		if found, foundErr := FileExists(file); !found {
-			if foundErr == nil {
-				log.Debugf("skip delete for non-existing file: %s", file)
+		filesToDelete, ok := generateDeleteFromDirectoryMap(config.DirectoryMap, n.config.AllowedDirectoriesMap)
+		if ok {
+			log.Debugf("use explicit set action for delete files %s", filesToDelete)
+		} else {
+			// Delete files that are not in the directory map
+			filesToDelete = getDirectoryMapDiff(systemNginxConfig.DirectoryMap.Directories, config.DirectoryMap.Directories)
+		}
+
+		fileDeleted := make(map[string]struct{})
+		for _, file := range filesToDelete {
+			log.Infof("Deleting file: %s", file)
+			if _, ok = fileDeleted[file]; ok {
 				continue
 			}
-			// possible perm deny, depends on platform
-			log.Warnf("file exists returned for %s: %s", file, foundErr)
-			return configApply, foundErr
+
+			if err := n.env.DeleteFile(configApply, file); err != nil {
+				return configApply, err
+			}
+
+			fileDeleted[file] = struct{}{}
 		}
-		if err = configApply.MarkAndSave(file); err != nil {
-			return configApply, err
+	} else {
+		configApply, err = sdk.NewConfigApplyWithIgnoreDirectives("", n.config.AllowedDirectoriesMap, n.config.IgnoreDirectives)
+		if err != nil {
+			log.Warnf("config_apply error: %s", err)
+			return nil, err
 		}
-		if err = os.Remove(file); err != nil {
-			return configApply, err
+
+		for _, file := range confFiles {
+			rootDirectoryPath := filepath.Dir(details.ConfPath)
+			if _, found := filesToUpdate[file.Name]; !found {
+				continue
+			}
+
+			if err := n.env.WriteFile(configApply, file, rootDirectoryPath); err != nil {
+				log.Warnf("configuration write failed: %s", err)
+				return configApply, err
+			}
 		}
-		fileDeleted[file] = struct{}{}
+
+		for _, file := range auxFiles {
+			rootDirectoryPath := config.GetZaux().GetRootDirectory()
+			if _, found := filesToUpdate[file.Name]; !found {
+				continue
+			}
+
+			if err := n.env.WriteFile(configApply, file, rootDirectoryPath); err != nil {
+				log.Warnf("configuration write failed: %s", err)
+				return configApply, err
+			}
+		}
+
+		for file := range filesToDelete {
+			log.Infof("Deleting file: %s", file)
+			if err := n.env.DeleteFile(configApply, file); err != nil {
+				return configApply, err
+			}
+		}
 	}
 
 	return configApply, nil
@@ -512,6 +546,51 @@ func generateDeleteFromDirectoryMap(
 		}
 	}
 	return deleteFiles, actionIsSet
+}
+
+func generateActionMaps(
+	directoryMap *proto.DirectoryMap,
+	allowedDirectory map[string]struct{},
+) (
+	filesToUpdate map[string]proto.File_Action,
+	filesToDelete map[string]proto.File_Action,
+	allFilesHaveAnAction bool,
+) {
+	allFilesHaveAnAction = true
+	filesToUpdate = make(map[string]proto.File_Action)
+	filesToDelete = make(map[string]proto.File_Action)
+
+	for _, dir := range directoryMap.Directories {
+		for _, f := range dir.Files {
+			path := filepath.Join(dir.Name, f.Name)
+
+			log.Tracef("file %s has action %v", path, f.Action)
+
+			// Can't support relative paths
+			if !filepath.IsAbs(path) {
+				continue
+			}
+
+			if !allowedFile(path, allowedDirectory) {
+				continue
+			}
+
+			if f.Action == proto.File_unset {
+				allFilesHaveAnAction = false
+			}
+
+			if f.Action == proto.File_add || f.Action == proto.File_update {
+				filesToUpdate[path] = f.Action
+			}
+
+			if f.Action == proto.File_delete {
+				filesToDelete[path] = f.Action
+			}
+
+		}
+	}
+
+	return filesToUpdate, filesToDelete, allFilesHaveAnAction
 }
 
 func (n *NginxBinaryType) ReadConfig(confFile, nginxId, systemId string) (*proto.NginxConfig, error) {

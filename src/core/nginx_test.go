@@ -538,7 +538,7 @@ func TestWriteConfigWithFileAction(t *testing.T) {
 	var auxDir *proto.Directory
 	for _, dir := range nginxConfig.DirectoryMap.Directories {
 		for _, f := range dir.Files {
-			f.Action = proto.File_unchanged
+			f.Action = proto.File_unset
 		}
 		if filepath.Clean(dir.Name) == filepath.Join(tmpDir, "aux") {
 			auxDir = dir
@@ -632,7 +632,7 @@ func TestWriteConfigWithFileActionDeleteWithPermError(t *testing.T) {
 	auxTmpDir := filepath.Join(tmpDir, "aux")
 	for _, dir := range nginxConfig.DirectoryMap.Directories {
 		for _, f := range dir.Files {
-			f.Action = proto.File_unchanged
+			f.Action = proto.File_unset
 		}
 		// set aux dir directory map
 		if filepath.Clean(dir.Name) == auxTmpDir {
@@ -1396,6 +1396,108 @@ func TestErrorLog(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			logs := ErrorLogs(test.config)
 			assert.Equal(tt, test.expected, logs)
+		})
+	}
+}
+
+func TestGenerateActionMaps(t *testing.T) {
+	allowedDirectories := make(map[string]struct{}, 0)
+	allowedDirectories["/testDir/"] = struct{}{}
+
+	testCases := []struct {
+		name                  string
+		directoryMap          *proto.DirectoryMap
+		expectedFilesToUpdate map[string]proto.File_Action
+		expectedFilesToDelete map[string]proto.File_Action
+		allFilesHaveAnAction  bool
+	}{
+		{
+			name: "allActionsAreSet",
+			directoryMap: &proto.DirectoryMap{
+				Directories: []*proto.Directory{
+					{
+						Name: "/testDir/",
+						Files: []*proto.File{
+							{
+								Name:   "test-add.conf",
+								Action: proto.File_add,
+							},
+							{
+								Name:   "test-unchanged.conf",
+								Action: proto.File_unchanged,
+							},
+							{
+								Name:   "test-update.conf",
+								Action: proto.File_update,
+							},
+							{
+								Name:   "test-delete.conf",
+								Action: proto.File_delete,
+							},
+						},
+					},
+				},
+			},
+			expectedFilesToUpdate: map[string]proto.File_Action{
+				"/testDir/test-add.conf":    proto.File_add,
+				"/testDir/test-update.conf": proto.File_update,
+			},
+			expectedFilesToDelete: map[string]proto.File_Action{
+				"/testDir/test-delete.conf": proto.File_delete,
+			},
+			allFilesHaveAnAction: true,
+		},
+		{
+			name: "NotAllActionsAreSet",
+			directoryMap: &proto.DirectoryMap{
+				Directories: []*proto.Directory{
+					{
+						Name: "/testDir/",
+						Files: []*proto.File{
+							{
+								Name: "test-unset.conf",
+							},
+							{
+								Name:   "test-delete.conf",
+								Action: proto.File_delete,
+							},
+						},
+					},
+				},
+			},
+			expectedFilesToUpdate: map[string]proto.File_Action{},
+			expectedFilesToDelete: map[string]proto.File_Action{
+				"/testDir/test-delete.conf": proto.File_delete,
+			},
+			allFilesHaveAnAction: false,
+		},
+		{
+			name: "NoSupportForRelativePaths",
+			directoryMap: &proto.DirectoryMap{
+				Directories: []*proto.Directory{
+					{
+						Name: "testDir/",
+						Files: []*proto.File{
+							{
+								Name:   "test-unsupported.conf",
+								Action: proto.File_delete,
+							},
+						},
+					},
+				},
+			},
+			expectedFilesToUpdate: map[string]proto.File_Action{},
+			expectedFilesToDelete: map[string]proto.File_Action{},
+			allFilesHaveAnAction:  true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(tt *testing.T) {
+			filesToUpdate, filesToDelete, allFilesHaveAnAction := generateActionMaps(testCase.directoryMap, allowedDirectories)
+			assert.Equal(tt, testCase.expectedFilesToUpdate, filesToUpdate)
+			assert.Equal(tt, testCase.expectedFilesToDelete, filesToDelete)
+			assert.Equal(tt, testCase.allFilesHaveAnAction, allFilesHaveAnAction)
 		})
 	}
 }
