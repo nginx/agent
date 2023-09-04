@@ -349,7 +349,7 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 					Accepted: 21,
 					Dropped:  25,
 					Active:   12,
-					Idle:     1,
+					Idle:     2,
 				},
 			},
 		},
@@ -454,19 +454,18 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 		},
 		Workers: []*plusclient.Workers{
 			{
-				ID:        0,
-				ProcessID: 0,
+				ProcessID: 12345,
 				HTTP: plusclient.WorkersHTTP{
 					HTTPRequests: plusclient.HTTPRequests{
-						Total:   0,
-						Current: 0,
+						Total:   1,
+						Current: 1,
 					},
 				},
 				Connections: plusclient.Connections{
-					Accepted: 0,
-					Dropped:  0,
-					Active:   0,
-					Idle:     0,
+					Accepted: 2,
+					Dropped:  2,
+					Active:   2,
+					Idle:     2,
 				},
 			},
 		},
@@ -742,12 +741,12 @@ func TestNginxPlus_Collect(t *testing.T) {
 	}
 
 	expectedWorkerMetrics := map[string]float64{
-		"plus.worker.conn.accepted":        21,
-		"plus.worker.conn.dropped":         25,
-		"plus.worker.conn.active":          12,
-		"plus.worker.conn.idle":            1,
-		"plus.worker.http.request.total":   112,
-		"plus.worker.http.request.current": 213,
+		"plus.worker.conn.accepted":        19,
+		"plus.worker.conn.dropped":         23,
+		"plus.worker.conn.active":          10,
+		"plus.worker.conn.idle":            0,
+		"plus.worker.http.request.total":   111,
+		"plus.worker.http.request.current": 212,
 	}
 
 	tests := []struct {
