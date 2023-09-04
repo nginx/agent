@@ -1,9 +1,12 @@
 package events
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	commonProto "github.com/nginx/agent/sdk/v2/proto/common"
 	eventsProto "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/stretchr/testify/assert"
 )
@@ -33,17 +36,38 @@ func TestNewAgentEventMeta(t *testing.T) {
 }
 
 func TestGenerateAgentStopEventCommand(t *testing.T) {
-	// Create a mock AgentEventMeta object
 	agentEvent := NewAgentEventMeta(
 		"agent-module",
 		"v2.0",
 		"54321",
-		"Sample message: Version=%s, PID=%s, Hostname=%s",
+		"agent-module",
 		"test-host",
 		"test-uuid",
 		"group2",
 		[]string{"tag3", "tag4"},
 	)
+
+	expectedActivityEvent:= &eventsProto.ActivityEvent{
+		Message: fmt.Sprintf("%s %s (pid: %s) stopped on %s", "agent-module", "v2.0", "54321", "test-host"),
+		Dimensions: []*commonProto.Dimension{
+			{
+				Name:  "system_id",
+				Value: "test-uuid",
+			},
+			{
+				Name:  "hostname",
+				Value: "test-host",
+			},
+			{
+				Name:  "instance_group",
+				Value: "group2",
+			},
+			{
+				Name:  "system.tags",
+				Value: strings.Join([]string{"tag3", "tag4"}, ","),
+			},
+		},
+	}
 
 	expected := &eventsProto.EventReport{
 		Events: []*eventsProto.Event{
@@ -55,21 +79,17 @@ func TestGenerateAgentStopEventCommand(t *testing.T) {
 					EventLevel: ERROR_EVENT_LEVEL,
 				},
 				Data: &eventsProto.Event_ActivityEvent{
-					ActivityEvent: &eventsProto.ActivityEvent{
-						Message:    "failed to rollback nginx config on test-host",
-						Dimensions: nil,
-					},
+					ActivityEvent: expectedActivityEvent,
 				},
 			},
 		},
 	}
 
 	cmd := agentEvent.GenerateAgentStopEventCommand()
-
 	assert.NotNil(t, cmd)
-
 	assert.NotNil(t, cmd.Meta)
 	assert.Equal(t, proto.Command_NORMAL, cmd.Type)
-	assert.NotNil(t, cmd.Data)
-	assert.Equal(t, expected, cmd.GetData())
+	assert.NotNil(t, cmd.GetData())
+	
+	assert.Equal(t, expected.GetEvents()[0].GetData(), cmd.GetData().(*proto.Command_EventReport).EventReport.GetEvents()[0].GetData())
 }

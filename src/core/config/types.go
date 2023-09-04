@@ -14,6 +14,7 @@ import (
 )
 
 type Config struct {
+	Version               string
 	Path                  string              `yaml:"-"`
 	DynamicConfigPath     string              `yaml:"-"`
 	ClientID              string              `mapstructure:"agent_id" yaml:"-"`

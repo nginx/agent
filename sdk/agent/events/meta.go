@@ -56,7 +56,7 @@ func (aem *AgentEventMeta) GetPid() string {
 
 func (aem *AgentEventMeta) GenerateAgentStopEventCommand() *proto.Command {
 	activityEvent := &eventsProto.ActivityEvent{
-		Message: fmt.Sprintf(aem.message, aem.version, aem.pid, aem.hostname),
+		Message: fmt.Sprintf("%s %s (pid: %s) stopped on %s", aem.message, aem.version, aem.pid, aem.hostname),
 		Dimensions: []*commonProto.Dimension{
 			{
 				Name:  "system_id",

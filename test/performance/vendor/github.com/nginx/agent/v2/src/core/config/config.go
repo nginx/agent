@@ -55,6 +55,7 @@ var Viper = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
 
 func SetVersion(version, commit string) {
 	ROOT_COMMAND.Version = version + "-" + commit
+	Viper.SetDefault(VersionKey, version)
 }
 
 func Execute() error {
@@ -181,6 +182,7 @@ func GetConfig(clientId string) (*Config, error) {
 	}
 
 	config := &Config{
+		Version:               Viper.GetString(VersionKey),
 		Path:                  Viper.GetString(ConfigPathKey),
 		DynamicConfigPath:     Viper.GetString(DynamicConfigPathKey),
 		ClientID:              clientId,

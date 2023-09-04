@@ -104,6 +104,7 @@ const (
 	ConfigPathKey                   = "path"
 	DynamicConfigPathKey            = "dynamic-config-path"
 
+	VersionKey          = "version"
 	CloudAccountIdKey   = "cloudaccountid"
 	LocationKey         = "location"
 	DisplayNameKey      = "display_name"

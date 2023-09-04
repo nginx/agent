@@ -611,14 +611,14 @@ func TestGenerateAgentStopEvent(t *testing.T) {
 				config.MODULE,
 				tt.agentVersion,
 				tt.pid,
-				"",
+				"nginx-agent",
 				env.GetHostname(),
 				env.GetSystemUUID(),
 				tt.conf.InstanceGroup,
 				tt.conf.Tags,
 			)
 			agentStopCmd := meta.GenerateAgentStopEventCommand()
-			actualEvent := agentStopCmd.GetEventReport().Events[0]
+			actualEvent := agentStopCmd.GetEventReport().GetEvents()[0]
 
 			// assert metadata
 			assert.Equal(t, tt.expectedEvent.Metadata.Module, actualEvent.Metadata.Module)
@@ -627,8 +627,8 @@ func TestGenerateAgentStopEvent(t *testing.T) {
 			assert.Equal(t, tt.expectedEvent.Metadata.EventLevel, actualEvent.Metadata.EventLevel)
 
 			// assert activity event
-			assert.Equal(t, tt.expectedEvent.GetActivityEvent().Message, actualEvent.GetActivityEvent().Message)
-			assert.Equal(t, tt.expectedEvent.GetActivityEvent().Dimensions, actualEvent.GetActivityEvent().Dimensions)
+			assert.Equal(t, tt.expectedEvent.GetActivityEvent().GetMessage(), actualEvent.GetActivityEvent().GetMessage())
+			assert.Equal(t, tt.expectedEvent.GetActivityEvent().GetDimensions(), actualEvent.GetActivityEvent().GetDimensions())
 		})
 	}
 }
