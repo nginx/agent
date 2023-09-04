@@ -21,7 +21,6 @@ import (
 	"github.com/nginx/agent/v2/src/core/logger"
 	"github.com/nginx/agent/v2/src/plugins"
 
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

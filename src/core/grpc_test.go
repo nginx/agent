@@ -16,7 +16,7 @@ func TestCreateGrpcClients(t *testing.T) {
 		},
 		Server: config.Server{
 			GrpcPort: 6789,
-			Host: "192.0.2.4",
+			Host:     "192.0.2.4",
 		},
 	}
 
@@ -38,7 +38,7 @@ func TestSetDialOptions(t *testing.T) {
 		},
 		Server: config.Server{
 			GrpcPort: 67890,
-			Host: "192.0.2.5",
+			Host:     "192.0.2.5",
 		},
 	}
 

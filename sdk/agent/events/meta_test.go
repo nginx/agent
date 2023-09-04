@@ -47,7 +47,7 @@ func TestGenerateAgentStopEventCommand(t *testing.T) {
 		[]string{"tag3", "tag4"},
 	)
 
-	expectedActivityEvent:= &eventsProto.ActivityEvent{
+	expectedActivityEvent := &eventsProto.ActivityEvent{
 		Message: fmt.Sprintf("%s %s (pid: %s) stopped on %s", "agent-module", "v2.0", "54321", "test-host"),
 		Dimensions: []*commonProto.Dimension{
 			{
@@ -90,6 +90,6 @@ func TestGenerateAgentStopEventCommand(t *testing.T) {
 	assert.NotNil(t, cmd.Meta)
 	assert.Equal(t, proto.Command_NORMAL, cmd.Type)
 	assert.NotNil(t, cmd.GetData())
-	
+
 	assert.Equal(t, expected.GetEvents()[0].GetData(), cmd.GetData().(*proto.Command_EventReport).EventReport.GetEvents()[0].GetData())
 }
