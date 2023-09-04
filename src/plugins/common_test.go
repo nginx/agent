@@ -3,22 +3,63 @@ package plugins
 import (
 	"testing"
 
+	sdk "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core/config"
 	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLoadPlugins(t *testing.T) {
-	// Create mock objects or use testing stubs for dependencies like 'commander', 'binary', 'env', 'reporter', 'loadedConfig', etc.
-	binary := tutils.NewMockNginxBinary()
-	env := tutils.GetMockEnvWithProcess()
+	binary := tutils.GetMockNginxBinary()
+	env := tutils.GetMockEnvWithHostAndProcess()
 	cmdr := tutils.NewMockCommandClient()
 	reporter := tutils.NewMockMetricsReportClient()
-	loadedConfig := &config.Config{ /* Set loadedConfig fields accordingly */ }
 
-	corePlugins, extensionPlugins := LoadPlugins(cmdr, binary, env, reporter, loadedConfig)
+	tests := []struct {
+		name                  string
+		loadedConfig          *config.Config
+		expectedPluginSize    int
+		expectedExtensionSize int
+	}{
+		{
+			name:                  "default plugins",
+			loadedConfig:          &config.Config{},
+			expectedPluginSize:    5,
+			expectedExtensionSize: 0,
+		},
+		{
+			name: "no plugins or extensions",
+			loadedConfig: &config.Config{
+				Features:   []string{},
+				Extensions: []string{},
+			},
+			expectedPluginSize:    5,
+			expectedExtensionSize: 0,
+		},
+		{
+			name: "all plugins and extensions",
+			loadedConfig: &config.Config{
+				Features:   sdk.GetDefaultFeatures(),
+				Extensions: sdk.GetKnownExtensions(),
+				AgentMetrics: config.AgentMetrics{
+					BulkSize:           1,
+					ReportInterval:     1,
+					CollectionInterval: 1,
+					Mode:               "aggregated",
+				},
+			},
+			expectedPluginSize:    14,
+			expectedExtensionSize: len(sdk.GetKnownExtensions()),
+		},
+	}
 
-	assert.NotNil(t, corePlugins)
-	assert.Len(t, corePlugins, 5)
-	assert.Len(t, extensionPlugins, 0)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			corePlugins, extensionPlugins := LoadPlugins(cmdr, binary, env, reporter, tt.loadedConfig)
+
+			assert.NotNil(t, corePlugins)
+			assert.Len(t, corePlugins, tt.expectedPluginSize)
+			assert.Len(t, extensionPlugins, tt.expectedExtensionSize)
+		})
+	}
 }

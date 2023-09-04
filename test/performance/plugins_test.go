@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
+	sdk "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/plugins"
-	"github.com/nginx/agent/v2/test/utils"
+	tutils "github.com/nginx/agent/v2/test/utils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -68,13 +69,73 @@ func BenchmarkPlugin(b *testing.B) {
 	plugin.AssertExpectations(b)
 }
 
+func BenchmarkFeaturesExtensionsAndPlugins(b *testing.B) {
+	binary := tutils.GetMockNginxBinary()
+	env := tutils.GetMockEnvWithHostAndProcess()
+	cmdr := tutils.NewMockCommandClient()
+	reporter := tutils.NewMockMetricsReportClient()
+
+	tests := []struct {
+		name                  string
+		loadedConfig          *config.Config
+		expectedPluginSize    int
+		expectedExtensionSize int
+	}{
+		{
+			name:                  "default plugins",
+			loadedConfig:          &config.Config{},
+			expectedPluginSize:    5,
+			expectedExtensionSize: 0,
+		},
+		{
+			name: "no plugins or extensions",
+			loadedConfig: &config.Config{
+				Features:   []string{},
+				Extensions: []string{},
+			},
+			expectedPluginSize:    5,
+			expectedExtensionSize: 0,
+		},
+		{
+			name: "all plugins and extensions",
+			loadedConfig: &config.Config{
+				Features:   sdk.GetDefaultFeatures(),
+				Extensions: sdk.GetKnownExtensions(),
+				AgentMetrics: config.AgentMetrics{
+					BulkSize:           1,
+					ReportInterval:     1,
+					CollectionInterval: 1,
+					Mode:               "aggregated",
+				},
+			},
+			expectedPluginSize:    14,
+			expectedExtensionSize: len(sdk.GetKnownExtensions()),
+		},
+	}
+
+	for _, tt := range tests {
+		b.Run(tt.name, func(t *testing.B) {
+			for i := 0; i < b.N; i++ {
+				corePlugins, extensionPlugins := plugins.LoadPlugins(cmdr, binary, env, reporter, tt.loadedConfig)
+
+				assert.NotNil(t, corePlugins)
+				assert.Len(t, corePlugins, tt.expectedPluginSize)
+				assert.Len(t, extensionPlugins, tt.expectedExtensionSize)
+			}
+		})
+	}
+}
+
 func BenchmarkPluginOneTimeRegistration(b *testing.B) {
 	var pluginsUnderTest []core.Plugin
 
 	ctx, cancel := context.WithCancel(context.Background())
 	pipelineDone := make(chan bool)
 
-	config := config.Config{Nginx: config.Nginx{Debug: true}}
+	config := config.Config{
+		Nginx:   config.Nginx{Debug: true},
+		Version: "1234",
+	}
 
 	processID := "12345"
 	detailsMap := map[string]*proto.NginxDetails{
@@ -84,13 +145,13 @@ func BenchmarkPluginOneTimeRegistration(b *testing.B) {
 		},
 	}
 
-	binary := utils.NewMockNginxBinary()
+	binary := tutils.NewMockNginxBinary()
 	binary.On("GetNginxDetailsMapFromProcesses", mock.Anything).Return(detailsMap)
 	binary.On("GetNginxIDForProcess", mock.Anything).Return(processID)
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
 	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 
-	env := utils.NewMockEnvironment()
+	env := tutils.NewMockEnvironment()
 	env.Mock.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 		Hostname: "test-host",
 	})
@@ -102,11 +163,10 @@ func BenchmarkPluginOneTimeRegistration(b *testing.B) {
 	})
 
 	meta := proto.Metadata{}
-	version := "1234"
 
 	messagePipe := core.NewMessagePipe(ctx)
 	for n := 0; n < b.N; n++ {
-		pluginsUnderTest = append(pluginsUnderTest, plugins.NewOneTimeRegistration(&config, binary, env, &meta, version))
+		pluginsUnderTest = append(pluginsUnderTest, plugins.NewOneTimeRegistration(&config, binary, env, &meta))
 	}
 
 	err := messagePipe.Register(b.N, pluginsUnderTest, []core.ExtensionPlugin{})
