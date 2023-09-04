@@ -75,6 +75,7 @@ const (
 	slabPageFree                     = 95
 	slabPageUsed                     = 5
 	slabPagePctUsed                  = 5
+	workerProcessID                  = 12345
 )
 
 type FakeNginxPlus struct {
@@ -1007,6 +1008,15 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		workerMetrics := <-test.m
+		assert.Len(t, workerMetrics.Data.Simplemetrics, len(expectedWorkerMetrics))
+
+		for _, dimension := range streamUpstreamMetrics.Data.Dimensions {
+			switch dimension.Name {
+			case "process_id":
+				assert.Equal(t, workerProcessID, dimension.Value)
+			}
+		}
+
 		for _, metric := range workerMetrics.Data.Simplemetrics {
 			assert.Contains(t, expectedWorkerMetrics, metric.Name)
 			assert.Equal(t, expectedWorkerMetrics[metric.Name], metric.Value)
