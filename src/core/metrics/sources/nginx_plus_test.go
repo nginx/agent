@@ -741,8 +741,6 @@ func TestNginxPlus_Collect(t *testing.T) {
 	}
 
 	expectedWorkerMetrics := map[string]float64{
-		"plus.worker.id":                   21,
-		"plus.worker.process_id":           12345,
 		"plus.worker.conn.accepted":        21,
 		"plus.worker.conn.dropped":         25,
 		"plus.worker.conn.active":          12,

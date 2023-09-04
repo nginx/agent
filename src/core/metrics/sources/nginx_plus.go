@@ -136,7 +136,7 @@ func (c *NginxPlus) collectMetrics(stats, prevStats *plusclient.Stats) (entries 
 	entries = append(entries, c.serverZoneMetrics(stats, prevStats)...)
 	entries = append(entries, c.streamServerZoneMetrics(stats, prevStats)...)
 	entries = append(entries, c.locationZoneMetrics(stats, prevStats)...)
-	entries = append(entries, c.slabMetrics(stats, prevStats)...)
+	entries = append(entries, c.slabMetrics(stats)...)
 	entries = append(entries, c.httpLimitConnsMetrics(stats, prevStats)...)
 	entries = append(entries, c.httpLimitRequestMetrics(stats, prevStats)...)
 	entries = append(entries, c.cacheMetrics(stats, prevStats)...)
@@ -738,7 +738,7 @@ func (c *NginxPlus) cacheMetrics(stats, prevStats *plusclient.Stats) []*metrics.
 	return zoneMetrics
 }
 
-func (c *NginxPlus) slabMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+func (c *NginxPlus) slabMetrics(stats *plusclient.Stats) []*metrics.StatsEntityWrapper {
 	l := &namedMetric{namespace: c.plusNamespace, group: ""}
 	slabMetrics := make([]*metrics.StatsEntityWrapper, 0)
 
@@ -816,13 +816,25 @@ func (c *NginxPlus) httpLimitRequestMetrics(stats, prevStats *plusclient.Stats) 
 
 func (c *NginxPlus) workerMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
 	workerMetrics := make([]*metrics.StatsEntityWrapper, 0)
+	prevWorkerProcs := make(map[uint64]*plusclient.Workers)
+
+	for _, pw := range prevStats.Workers {
+		prevWorkerProcs[pw.ProcessID] = pw
+	}
 
 	for _, w := range stats.Workers {
 		l := &namedMetric{namespace: c.plusNamespace, group: "worker"}
 
+		if _, exists := prevWorkerProcs[w.ProcessID]; exists {
+			w.Connections.Accepted = w.Connections.Accepted - prevWorkerProcs[w.ProcessID].Connections.Accepted
+			w.Connections.Dropped = w.Connections.Dropped - prevWorkerProcs[w.ProcessID].Connections.Dropped
+			w.Connections.Active = w.Connections.Active - prevWorkerProcs[w.ProcessID].Connections.Active
+			w.Connections.Idle = w.Connections.Idle - prevWorkerProcs[w.ProcessID].Connections.Idle
+			w.HTTP.HTTPRequests.Total = w.HTTP.HTTPRequests.Total - prevWorkerProcs[w.ProcessID].HTTP.HTTPRequests.Total
+			w.HTTP.HTTPRequests.Current = w.HTTP.HTTPRequests.Current - prevWorkerProcs[w.ProcessID].HTTP.HTTPRequests.Current
+		}
+
 		simpleMetrics := l.convertSamplesToSimpleMetrics(map[string]float64{
-			"id":                   float64(w.ID),
-			"process_id":           float64(w.ProcessID),
 			"conn.accepted":        float64(w.Connections.Accepted),
 			"conn.dropped":         float64(w.Connections.Dropped),
 			"conn.active":          float64(w.Connections.Active),
@@ -832,6 +844,7 @@ func (c *NginxPlus) workerMetrics(stats, prevStats *plusclient.Stats) []*metrics
 		})
 
 		dims := c.baseDimensions.ToDimensions()
+		dims = append(dims, &proto.Dimension{Name: "process_id", Value: fmt.Sprint(w.ProcessID)})
 		workerMetrics = append(workerMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
 
