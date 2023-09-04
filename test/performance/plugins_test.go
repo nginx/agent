@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sdk "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -70,35 +71,66 @@ func BenchmarkPlugin(b *testing.B) {
 }
 
 func BenchmarkFeaturesExtensionsAndPlugins(b *testing.B) {
+	processID := "12345"
+	detailsMap := map[string]*proto.NginxDetails{
+		processID: {
+			ProcessPath: "/path/to/nginx",
+			NginxId:     processID,
+		},
+	}
+
+	procMap := map[string][]*proto.NginxDetails{
+		processID: {
+			{
+				ProcessId: processID,
+			},
+		},
+	}
+
 	binary := tutils.GetMockNginxBinary()
+	binary.On("GetNginxDetailsMapFromProcesses", mock.Anything).Return(detailsMap)
+	binary.On("GetNginxIDForProcess", mock.Anything).Return(processID)
+	binary.On("UpdateNginxDetailsFromProcesses", mock.Anything).Return()
+	binary.On("GetChildProcesses").Return(procMap)
+	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
+
 	env := tutils.GetMockEnvWithHostAndProcess()
-	cmdr := tutils.NewMockCommandClient()
-	reporter := tutils.NewMockMetricsReportClient()
+	env.Mock.On("IsContainer").Return(false)
+	env.Mock.On("DiskDevices").Return([]string{"disk1", "disk2"}, nil)
 
 	tests := []struct {
 		name                  string
 		loadedConfig          *config.Config
 		expectedPluginSize    int
 		expectedExtensionSize int
+		context               context.Context
 	}{
 		{
-			name:                  "default plugins",
-			loadedConfig:          &config.Config{},
+			name: "default plugins",
+			loadedConfig: &config.Config{
+				Server: tutils.GetMockAgentConfig().Server,
+			},
 			expectedPluginSize:    5,
 			expectedExtensionSize: 0,
+			context:               context.Background(),
 		},
 		{
 			name: "no plugins or extensions",
 			loadedConfig: &config.Config{
+				Version:    "v9.99.99999",
+				Server:     tutils.GetMockAgentConfig().Server,
 				Features:   []string{},
 				Extensions: []string{},
 			},
 			expectedPluginSize:    5,
 			expectedExtensionSize: 0,
+			context:               context.Background(),
 		},
 		{
 			name: "all plugins and extensions",
 			loadedConfig: &config.Config{
+				Version:  "v9.99.999",
+				Server:   tutils.GetMockAgentConfig().Server,
 				Features: sdk.GetDefaultFeatures(),
 				// temporarily to figure out what's going on with the monitoring extension
 				Extensions: sdk.GetKnownExtensions()[:len(sdk.GetKnownExtensions())-1],
@@ -112,17 +144,41 @@ func BenchmarkFeaturesExtensionsAndPlugins(b *testing.B) {
 			expectedPluginSize: 14,
 			// temporarily to figure out what's going on with the monitoring extension
 			expectedExtensionSize: len(sdk.GetKnownExtensions()[:len(sdk.GetKnownExtensions())-1]),
+			context:               context.Background(),
 		},
 	}
 
 	for _, tt := range tests {
 		b.Run(tt.name, func(t *testing.B) {
 			for i := 0; i < b.N; i++ {
+				b.ResetTimer()
+				ctx, cancel := context.WithCancel(tt.context)
+
+				controller, cmdr, reporter := core.CreateGrpcClients(ctx, tt.loadedConfig)
 				corePlugins, extensionPlugins := plugins.LoadPlugins(cmdr, binary, env, reporter, tt.loadedConfig)
+
+				pipe := core.InitializePipe(ctx, corePlugins, extensionPlugins, 20)
+
+				event := events.NewAgentEventMeta(config.MODULE,
+					tt.loadedConfig.Version,
+					"1234",
+					"Initialize Agent",
+					env.GetHostname(),
+					env.GetSystemUUID(),
+					tt.loadedConfig.InstanceGroup,
+					tt.loadedConfig.Tags)
+
+				pipe.Process(core.NewMessage(core.AgentStarted, event))
+				core.HandleSignals(ctx, cmdr, tt.loadedConfig, env, pipe, cancel, controller)
+
+				go func() {
+					pipe.Run()
+				}()
 
 				assert.NotNil(t, corePlugins)
 				assert.Len(t, corePlugins, tt.expectedPluginSize)
 				assert.Len(t, extensionPlugins, tt.expectedExtensionSize)
+				cancel()
 			}
 		})
 	}
