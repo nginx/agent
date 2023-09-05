@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/nginx/agent/sdk/v2/proto"
 )
 
 // StartFakeProcesses creates a fake process for each of the string names and
@@ -27,5 +29,15 @@ func StartFakeProcesses(names []string, fakeProcsDuration string) func() {
 		for _, p := range pList {
 			_ = p.Kill()
 		}
+	}
+}
+
+func GetProcessMap() map[string][]*proto.NginxDetails {
+	return map[string][]*proto.NginxDetails{
+		"12345": {
+			{
+				ProcessId: "1",
+			},
+		},
 	}
 }
