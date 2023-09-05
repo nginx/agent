@@ -65,7 +65,7 @@ Copy the `scripts/selinux/nginx_agent.te` file to a Centos 7 machine and build a
 ```
 make -f /usr/share/selinux/devel/Makefile nginx_agent.pp
 ```
-**[NOTE: The policy has to be built on a Centos 7 machine. If it is built on a different OS like RHEL 8/9 then we will encounter this issue [Policy version does not match](#policy-version-does-not-match) when installing it on different an older OS like Centos 7. Even if the `audit2allow` command was run on a RHEL 8/9 machine the updates to the policy need to be made on a Centos 7 machine.]**
+**[NOTE: The policy has to be built on a Centos 7 machine. If it is built on a different OS like RHEL 8/9 then we will encounter this issue [Policy version does not match](#policy-version-does-not-match) when installing it on an older OS like Centos 7. Even if the `audit2allow` command was run on a RHEL 8/9 machine the updates to the policy need to be made on a Centos 7 machine.]**
 
 Install the policy by following the steps here [Install NGINX Agent Policy](#install-nginx-agent-policy)
 
