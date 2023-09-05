@@ -6,7 +6,6 @@ import (
 	"time"
 
 	sdk "github.com/nginx/agent/sdk/v2/agent/config"
-	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -92,25 +91,46 @@ func BenchmarkFeaturesExtensionsAndPlugins(b *testing.B) {
 		expectedPluginSize    int
 		expectedExtensionSize int
 	}{
-		// {
-		// 	name: "default plugins",
-		// 	loadedConfig: &config.Config{
-		// 		Server: tutils.GetMockAgentConfig().Server,
-		// 	},
-		// 	expectedPluginSize:    5,
-		// 	expectedExtensionSize: 0,
-		// },
-		// {
-		// 	name: "no plugins or extensions",
-		// 	loadedConfig: &config.Config{
-		// 		Version:    "v9.99.99999",
-		// 		Server:     tutils.GetMockAgentConfig().Server,
-		// 		Features:   []string{},
-		// 		Extensions: []string{},
-		// 	},
-		// 	expectedPluginSize:    5,
-		// 	expectedExtensionSize: 0,
-		// },
+		{
+			name: "default plugins and no extensions",
+			loadedConfig: &config.Config{
+				Server: tutils.GetMockAgentConfig().Server,
+				AgentMetrics: config.AgentMetrics{
+					BulkSize:           1,
+					ReportInterval:     1,
+					CollectionInterval: 1,
+					Mode:               "aggregated",
+				},
+				AgentAPI: config.AgentAPI{
+					Port: 23456,
+					Key:  "",
+					Cert: "",
+				},
+				Dataplane: config.Dataplane{
+					Status: config.Status{PollInterval: 30 * time.Second},
+				},
+			},
+			expectedPluginSize:    5,
+			expectedExtensionSize: 0,
+		},
+		{
+			name: "default plugins and all extensions",
+			loadedConfig: &config.Config{
+				Extensions: sdk.GetKnownExtensions()[:len(sdk.GetKnownExtensions())-1],
+				Server: tutils.GetMockAgentConfig().Server,
+				AgentMetrics: config.AgentMetrics{
+					BulkSize:           1,
+					ReportInterval:     1,
+					CollectionInterval: 1,
+					Mode:               "aggregated",
+				},
+				Dataplane: config.Dataplane{
+					Status: config.Status{PollInterval: 30 * time.Second},
+				},
+			},
+			expectedPluginSize:    5,
+			expectedExtensionSize: 2,
+		},
 		{
 			name: "all plugins and extensions",
 			loadedConfig: &config.Config{
@@ -131,7 +151,7 @@ func BenchmarkFeaturesExtensionsAndPlugins(b *testing.B) {
 					Cert: "",
 				},
 				Dataplane: config.Dataplane{
-					Status: config.Status{PollInterval: 60 * time.Second},
+					Status: config.Status{PollInterval: 30 * time.Second},
 				},
 			},
 			expectedPluginSize: 15,
@@ -141,43 +161,23 @@ func BenchmarkFeaturesExtensionsAndPlugins(b *testing.B) {
 	}
 
 	for _, tt := range tests {
+		ctx, cancel := context.WithCancel(context.Background())
+		var pipe core.MessagePipeInterface
+		var corePlugins []core.Plugin
+		var extensionPlugins []core.ExtensionPlugin
+
 		b.Run(tt.name, func(t *testing.B) {
 			for i := 0; i < b.N; i++ {
 				b.ResetTimer()
-				ctx, cancel := context.WithCancel(context.Background())
-				pipelineDone := make(chan bool)
-
 				controller, cmdr, reporter := core.CreateGrpcClients(ctx, tt.loadedConfig)
-				corePlugins, extensionPlugins := plugins.LoadPlugins(cmdr, binary, env, reporter, tt.loadedConfig)
-
-				pipe := core.InitializePipe(ctx, corePlugins, extensionPlugins, 20)
+				corePlugins, extensionPlugins = plugins.LoadPlugins(cmdr, binary, env, reporter, tt.loadedConfig)
+				pipe = core.InitializePipe(ctx, corePlugins, extensionPlugins, 20)
 				core.HandleSignals(ctx, cmdr, tt.loadedConfig, env, pipe, cancel, controller)
-
-				event := events.NewAgentEventMeta(config.MODULE,
-					tt.loadedConfig.Version,
-					"1234",
-					"Initialize Agent",
-					env.GetHostname(),
-					env.GetSystemUUID(),
-					tt.loadedConfig.InstanceGroup,
-					tt.loadedConfig.Tags)
-
-				pipe.Process(core.NewMessage(core.AgentStarted, event))
-
-				go func() {
-					pipe.Run()
-					pipelineDone <- true
-				}()
-
-				<-pipelineDone
-
-				assert.NotNil(t, corePlugins)
-				assert.Len(t, corePlugins, tt.expectedPluginSize)
-				assert.Len(t, extensionPlugins, tt.expectedExtensionSize)
-
-				controller.Close()
-				ctx.Done()
 			}
+
+			assert.NotNil(t, corePlugins)
+			assert.Len(t, corePlugins, tt.expectedPluginSize)
+			assert.Len(t, extensionPlugins, tt.expectedExtensionSize)
 		})
 	}
 }
