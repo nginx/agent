@@ -117,7 +117,7 @@ func BenchmarkFeaturesExtensionsAndPlugins(b *testing.B) {
 			name: "default plugins and all extensions",
 			loadedConfig: &config.Config{
 				Extensions: sdk.GetKnownExtensions()[:len(sdk.GetKnownExtensions())-1],
-				Server: tutils.GetMockAgentConfig().Server,
+				Server:     tutils.GetMockAgentConfig().Server,
 				AgentMetrics: config.AgentMetrics{
 					BulkSize:           1,
 					ReportInterval:     1,
