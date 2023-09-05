@@ -57,7 +57,7 @@ func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespa
 func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.init.Do(func() {
-		latestAPIVersion, err := c.getLatestAPIVersion(ctx, &http.Client{}, c.plusAPI)
+		latestAPIVersion, err := c.getLatestAPIVersion(ctx, c.plusAPI)
 		if err != nil {
 			c.logger.Log(fmt.Sprintf("Failed to check available api versions: %v", err))
 		} else {
@@ -885,7 +885,7 @@ func boolToFloat64(myBool bool) float64 {
 	}
 }
 
-func (c *NginxPlus) getLatestAPIVersion(ctx context.Context, httpClient *http.Client, endpoint string) (int, error) {
+func (c *NginxPlus) getLatestAPIVersion(ctx context.Context, endpoint string) (int, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -893,6 +893,8 @@ func (c *NginxPlus) getLatestAPIVersion(ctx context.Context, httpClient *http.Cl
 	if err != nil {
 		return 0, fmt.Errorf("failed to create a get request: %w", err)
 	}
+
+	httpClient := &http.Client{}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {

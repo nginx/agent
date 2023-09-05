@@ -18,6 +18,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
+
 	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1103,7 +1104,7 @@ func TestGetLatestAPIVersion(t *testing.T) {
 			c := &NginxPlus{
 				clientVersion: tt.clientVersion,
 			}
-			got, err := c.getLatestAPIVersion(context.Background(), &http.Client{}, fmt.Sprintf("%s%s", server.URL, tt.endpoint))
+			got, err := c.getLatestAPIVersion(context.Background(), fmt.Sprintf("%s%s", server.URL, tt.endpoint))
 			if tt.expectErr {
 				assert.Error(t, err)
 			} else {
