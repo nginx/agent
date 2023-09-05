@@ -174,7 +174,7 @@ func BenchmarkFeaturesExtensionsAndPlugins(b *testing.B) {
 				assert.NotNil(t, corePlugins)
 				assert.Len(t, corePlugins, tt.expectedPluginSize)
 				assert.Len(t, extensionPlugins, tt.expectedExtensionSize)
-				
+
 				controller.Close()
 				ctx.Done()
 			}
