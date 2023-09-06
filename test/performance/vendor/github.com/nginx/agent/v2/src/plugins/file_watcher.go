@@ -189,6 +189,7 @@ func (fw *FileWatcher) watchLoop() {
 				if event == emptyEvent ||
 					event.Name == "" ||
 					strings.HasSuffix(event.Name, ".swp") ||
+					strings.HasSuffix(event.Name, ".swx") ||
 					strings.HasSuffix(event.Name, "~") {
 					log.Tracef("Skipping FSNotify EVENT! %v\n", event)
 					continue
