@@ -1466,10 +1466,8 @@ func TestGenerateActionMaps(t *testing.T) {
 				},
 			},
 			expectedFilesToUpdate: map[string]proto.File_Action{},
-			expectedFilesToDelete: map[string]proto.File_Action{
-				"/testDir/test-delete.conf": proto.File_delete,
-			},
-			allFilesHaveAnAction: false,
+			expectedFilesToDelete: map[string]proto.File_Action{},
+			allFilesHaveAnAction:  false,
 		},
 		{
 			name: "NoSupportForRelativePaths",
