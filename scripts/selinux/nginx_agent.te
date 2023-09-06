@@ -62,6 +62,7 @@ require {
 	type sssd_public_t;
 	type sssd_var_lib_t;
 	type net_conf_t;
+	type fixed_disk_device_t;
 }
 
 allow nginx_agent_t bin_t:file { execute execute_no_trans };
@@ -141,3 +142,4 @@ allow nginx_agent_t sssd_public_t:dir search;
 allow nginx_agent_t sssd_var_lib_t:dir search;
 allow nginx_agent_t net_conf_t:file { getattr open read };
 allow nginx_agent_t self:udp_socket { connect create getattr setopt };
+allow nginx_agent_t fixed_disk_device_t:blk_file getattr;
