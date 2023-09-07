@@ -10,7 +10,6 @@ package plugins
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/google/uuid"
@@ -19,15 +18,12 @@ import (
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/proto"
-	commonProto "github.com/nginx/agent/sdk/v2/proto/common"
 	eventsProto "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 )
 
 const (
-	AGENT_START_MESSAGE             = "nginx-agent %s started on %s with pid %s"
-	AGENT_STOP_MESSAGE              = "nginx-agent %s (pid: %s) stopped on %s"
 	NGINX_FOUND_MESSAGE             = "nginx-v%s master process was found with a pid %s"
 	NGINX_STOP_MESSAGE              = "nginx-v%s master process (pid: %s) stopped"
 	NGINX_RELOAD_SUCCESS_MESSAGE    = "nginx-v%s master process (pid: %s) reloaded successfully"
@@ -41,12 +37,13 @@ const (
 )
 
 type Events struct {
-	pipeline    core.MessagePipeInterface
-	ctx         context.Context
-	conf        *config.Config
-	env         core.Environment
-	meta        *proto.Metadata
-	nginxBinary core.NginxBinary
+	pipeline    	core.MessagePipeInterface
+	ctx         	context.Context
+	conf        	*config.Config
+	env         	core.Environment
+	meta        	*proto.Metadata
+	nginxBinary 	core.NginxBinary
+	agentEventsMeta *events.AgentEventMeta
 }
 
 func NewEvents(conf *config.Config, env core.Environment, meta *proto.Metadata, nginxBinary core.NginxBinary) *Events {
@@ -118,23 +115,11 @@ func (a *Events) sendAgentStartedEvent(msg *core.Message) {
 		return
 	}
 
-	event := a.createAgentEvent(
-		types.TimestampNow(),
-		events.INFO_EVENT_LEVEL,
-		fmt.Sprintf(AGENT_START_MESSAGE, agentEventMeta.GetVersion(), a.env.GetHostname(), agentEventMeta.GetPid()),
-		uuid.NewString(),
-	)
+	event := agentEventMeta.GenerateAgentStartEventCommand()
 
 	log.Debugf("Created event: %v", event)
-	a.pipeline.Process(core.NewMessage(core.Events, &proto.Command{
-		Meta: a.meta,
-		Type: proto.Command_NORMAL,
-		Data: &proto.Command_EventReport{
-			EventReport: &eventsProto.EventReport{
-				Events: []*eventsProto.Event{event},
-			},
-		},
-	}))
+	a.pipeline.Process(core.NewMessage(core.Events, event))
+	a.agentEventsMeta = agentEventMeta
 }
 
 func (a *Events) sendNingxFoundEvent(msg *core.Message) {
@@ -409,7 +394,7 @@ func (a *Events) sendNginxWorkerStopEvent(msg *core.Message) {
 }
 
 func (e *Events) createNginxEvent(nginxId string, timestamp *types.Timestamp, level string, message string, correlationId string) *eventsProto.Event {
-	activityEvent := e.createActivityEvent(message, nginxId)
+	activityEvent := e.agentEventsMeta.CreateActivityEvent(message, nginxId)
 
 	return &eventsProto.Event{
 		Metadata: &eventsProto.Metadata{
@@ -428,7 +413,7 @@ func (e *Events) createNginxEvent(nginxId string, timestamp *types.Timestamp, le
 }
 
 func (e *Events) createConfigApplyEvent(nginxId string, timestamp *types.Timestamp, level string, message string, correlationId string) *eventsProto.Event {
-	activityEvent := e.createActivityEvent(message, nginxId)
+	activityEvent := e.agentEventsMeta.CreateActivityEvent(message, nginxId)
 
 	return &eventsProto.Event{
 		Metadata: &eventsProto.Metadata{
@@ -444,54 +429,4 @@ func (e *Events) createConfigApplyEvent(nginxId string, timestamp *types.Timesta
 			ActivityEvent: activityEvent,
 		},
 	}
-}
-
-func (e *Events) createAgentEvent(timestamp *types.Timestamp, level string, message string, correlationId string) *eventsProto.Event {
-	activityEvent := e.createActivityEvent(message, "") // blank nginxId, this relates to agent not it's nginx instances
-
-	return &eventsProto.Event{
-		Metadata: &eventsProto.Metadata{
-			UUID:          uuid.NewString(),
-			CorrelationID: correlationId,
-			Module:        config.MODULE,
-			Timestamp:     timestamp,
-			EventLevel:    level,
-			Type:          events.AGENT_EVENT_TYPE,
-			Category:      events.STATUS_CATEGORY,
-		},
-		Data: &eventsProto.Event_ActivityEvent{
-			ActivityEvent: activityEvent,
-		},
-	}
-}
-
-func (e *Events) createActivityEvent(message string, nginxId string) *eventsProto.ActivityEvent {
-	activityEvent := &eventsProto.ActivityEvent{
-		Message: message,
-		Dimensions: []*commonProto.Dimension{
-			{
-				Name:  "system_id",
-				Value: e.env.GetSystemUUID(),
-			},
-			{
-				Name:  "hostname",
-				Value: e.env.GetHostname(),
-			},
-			{
-				Name:  "instance_group",
-				Value: e.conf.InstanceGroup,
-			},
-			{
-				Name:  "system.tags",
-				Value: strings.Join(e.conf.Tags, ","),
-			},
-		},
-	}
-
-	if nginxId != "" {
-		nginxDim := []*commonProto.Dimension{{Name: "nginx_id", Value: nginxId}}
-		activityEvent.Dimensions = append(nginxDim, activityEvent.Dimensions...)
-	}
-
-	return activityEvent
 }

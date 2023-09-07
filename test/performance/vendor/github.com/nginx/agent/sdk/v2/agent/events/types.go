@@ -16,4 +16,8 @@ const (
 	WARN_EVENT_LEVEL     = "WARN"
 	ERROR_EVENT_LEVEL    = "ERROR"
 	CRITICAL_EVENT_LEVEL = "CRITICAL"
+
+	// Messages
+	AGENT_START_MESSAGE  = "nginx-agent %s started on %s with pid %s"
+	AGENT_STOP_MESSAGE   = "nginx-agent %s (pid: %s) stopped on %s"
 )
