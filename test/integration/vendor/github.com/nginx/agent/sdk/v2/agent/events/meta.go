@@ -56,7 +56,7 @@ func (aem *AgentEventMeta) GetPid() string {
 
 func (aem *AgentEventMeta) GenerateAgentStartEventCommand() *proto.Command {
 	activityEvent := &eventsProto.ActivityEvent{
-		Message: fmt.Sprintf(AGENT_START_MESSAGE, aem.version, aem.pid, aem.hostname),
+		Message: fmt.Sprintf(AGENT_START_MESSAGE, aem.version, aem.hostname, aem.pid),
 		Dimensions: []*commonProto.Dimension{
 			{
 				Name:  "system_id",
