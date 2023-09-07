@@ -1,14 +1,10 @@
 package pool
 
 import (
-	"fmt"
-	"strings"
+	"os"
 
-	"github.com/nginx/agent/v2/src/core"
+	log "github.com/sirupsen/logrus"
 )
-
-// Todo: Leverage gopsutil
-var Shell core.Shell = core.ExecShellCommand{}
 
 type Pool struct {
 	dir string
@@ -22,14 +18,15 @@ func New(dir string) *Pool {
 
 // GetConfigs returns workers configuration in dir
 func (p *Pool) GetConfigs(dir string) ([]string, error) {
-	output, err := Shell.Exec("ls", dir)
+	var files []string
+	fileInfo, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve pool conf files in dir %s: %v", dir, err)
+		log.Warnf("Unable to reading directory %s: %v ", dir, err)
+		return nil, err
 	}
 
-	files := strings.Fields(string(output))
-	if len(files) == 0 {
-		return nil, fmt.Errorf("no conf files in dir %s. pool configurations must be located in this dir. Err: %v", dir, err)
+	for _, file := range fileInfo {
+		files = append(files, file.Name())
 	}
 
 	return files, nil

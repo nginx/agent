@@ -1,43 +1,32 @@
 package manager_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v2/src/core"
 
 	"github.com/nginx/agent/v2/src/extensions/php-fpm-metrics/manager"
-	"github.com/nginx/agent/v2/src/extensions/php-fpm-metrics/pool"
 	"github.com/nginx/agent/v2/src/extensions/php-fpm-metrics/pool/worker"
-	sysutils "github.com/nginx/agent/v2/test/utils/system"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPhpFpmPoolMetaData(t *testing.T) {
 	localDirectory := "../../../../test/testdata/configs/php/pool"
-	phpConfigFiles := "sample_pool.conf   www.conf"
-	tempShellCommander := pool.Shell
 	agentVersion := "2.28.0"
 	parentLocalId := uuid.New().String()
 	uuid := uuid.New().String()
-	defer func() { pool.Shell = tempShellCommander }()
 	tests := []struct {
 		name    string
 		shell   core.Shell
 		manager *manager.Pool
-		expect  []*worker.MetaData
+		expect  map[string]*worker.MetaData
 	}{
 		{
-			name: "get metadata",
-			shell: &sysutils.FakeShell{
-				Output: map[string]string{
-					"ls " + localDirectory: phpConfigFiles,
-				},
-			},
+			name:    "get metadata",
 			manager: manager.NewPool(uuid, agentVersion, parentLocalId, localDirectory, "Ubuntu"),
-			expect: []*worker.MetaData{
-				{
+			expect: map[string]*worker.MetaData{
+				core.GenerateID("%s_%s", parentLocalId, "sample-site"): {
 					Type:            "phpfpm_pool",
 					Uuid:            uuid,
 					Name:            "sample-site",
@@ -51,7 +40,7 @@ func TestPhpFpmPoolMetaData(t *testing.T) {
 					Includes:        []string{},
 					LocalId:         core.GenerateID("%s_%s", parentLocalId, "sample-site"),
 				},
-				{
+				core.GenerateID("%s_%s", parentLocalId, "www"): {
 					Type:            "phpfpm_pool",
 					Uuid:            uuid,
 					Name:            "www",
@@ -65,23 +54,37 @@ func TestPhpFpmPoolMetaData(t *testing.T) {
 					Includes:        []string{localDirectory + "/site1", localDirectory + "/site2", localDirectory + "/sample_site3.conf"},
 					LocalId:         core.GenerateID("%s_%s", parentLocalId, "www"),
 				},
+				core.GenerateID("%s_%s", parentLocalId, "www-site3"): {
+					Type:            "phpfpm_pool",
+					Uuid:            uuid,
+					Name:            "www-site3",
+					DisplayName:     "phpfpm www-site3 @ Ubuntu",
+					Listen:          "/run/php/php7.4-fpm.sock",
+					Flisten:         "/run/php/php7.4-fpm.sock",
+					StatusPath:      "/site3_status",
+					CanHaveChildren: false,
+					Agent:           agentVersion,
+					ParentLocalId:   parentLocalId,
+					LocalId:         core.GenerateID("%s_%s", parentLocalId, "www-site3"),
+					Includes:        []string{},
+				},
 			},
 		},
 		{
-			name: "no metadata found",
-			shell: &sysutils.FakeShell{
-				Errors: map[string]error{
-					"ls " + localDirectory: errors.New("no such directory or file"),
-				},
-			},
-			manager: manager.NewPool(uuid, agentVersion, parentLocalId, localDirectory, "Ubuntu"),
+			name:    "no metadata found",
+			manager: manager.NewPool(uuid, agentVersion, parentLocalId, "do not exist", "Ubuntu"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pool.Shell = tt.shell
 			actual, _ := tt.manager.GetMetaData()
-			assert.Equal(t, tt.expect, actual)
+			if actual == nil {
+				assert.Nil(t, tt.expect)
+			} else {
+				for _, md := range actual {
+					assert.Equal(t, tt.expect[md.LocalId], md)
+				}
+			}
 		})
 	}
 }
