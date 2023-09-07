@@ -361,7 +361,7 @@ func TestActivityEvents_Process(t *testing.T) {
 				"test-host",
 				"12345678",
 				"group-a",
-				[]string{"tag-a","tag-b"},
+				[]string{"tag-a", "tag-b"},
 			)),
 			msgTopics: []string{
 				core.AgentStarted,
@@ -535,7 +535,7 @@ func TestActivityEvents_Process(t *testing.T) {
 
 			pluginUnderTest := NewEvents(config, env, grpc.NewMessageMeta(uuid.New().String()), core.NewNginxBinary(env, config))
 			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
-			
+
 			if test.name != "test AgentStart message" {
 				agentMeta := events.NewAgentEventMeta(
 					"NGINX-AGENT",
@@ -544,11 +544,11 @@ func TestActivityEvents_Process(t *testing.T) {
 					"test-host",
 					"12345678",
 					"group-a",
-					[]string{"tag-a","tag-b"})
-				
+					[]string{"tag-a", "tag-b"})
+
 				messagePipe.Process(core.NewMessage(core.AgentStarted, agentMeta))
 			}
-			
+
 			messagePipe.Process(test.message)
 			messagePipe.Run()
 			time.Sleep(250 * time.Millisecond)
@@ -563,19 +563,18 @@ func TestActivityEvents_Process(t *testing.T) {
 				}
 				if test.expectedEventReport != nil && msg.Exact(core.Events) {
 					var expectedEvent *eventsProto.Event
-					if (len(test.expectedEventReport.GetEvents()) == 1) {
+					if len(test.expectedEventReport.GetEvents()) == 1 {
 						expectedEvent = test.expectedEventReport.Events[0]
-
 					} else {
 						// get the latest event
-						events :=  test.expectedEventReport.Events[:len(test.expectedEventReport.GetEvents())-1]
+						events := test.expectedEventReport.Events[:len(test.expectedEventReport.GetEvents())-1]
 						expectedEvent = events[0]
 					}
 					actualEvent := msg.Data().(*proto.Command).GetEventReport().Events[0]
 
-					if (actualEvent.GetMetadata().GetType() != expectedEvent.GetMetadata().GetType() || 
+					if actualEvent.GetMetadata().GetType() != expectedEvent.GetMetadata().GetType() ||
 						actualEvent.GetMetadata().GetCategory() != expectedEvent.GetMetadata().GetCategory() ||
-						actualEvent.GetMetadata().GetEventLevel() != expectedEvent.GetMetadata().GetEventLevel()) {
+						actualEvent.GetMetadata().GetEventLevel() != expectedEvent.GetMetadata().GetEventLevel() {
 						continue
 					}
 
