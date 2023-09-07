@@ -38,10 +38,10 @@ func HandleSignals(
 	go func() {
 		select {
 		case <-sigChan:
-			event := events.NewAgentEventMeta(config.MODULE,
+			event := events.NewAgentEventMeta(
+				config.MODULE,
 				version,
 				strconv.Itoa(os.Getpid()),
-				"Initialize Agent",
 				env.GetHostname(),
 				env.GetSystemUUID(),
 				loadedConfig.InstanceGroup,

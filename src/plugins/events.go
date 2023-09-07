@@ -37,12 +37,12 @@ const (
 )
 
 type Events struct {
-	pipeline    	core.MessagePipeInterface
-	ctx         	context.Context
-	conf        	*config.Config
-	env         	core.Environment
-	meta        	*proto.Metadata
-	nginxBinary 	core.NginxBinary
+	pipeline        core.MessagePipeInterface
+	ctx             context.Context
+	conf            *config.Config
+	env             core.Environment
+	meta            *proto.Metadata
+	nginxBinary     core.NginxBinary
 	agentEventsMeta *events.AgentEventMeta
 }
 

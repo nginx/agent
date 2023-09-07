@@ -26,7 +26,7 @@ type AgentEventMeta struct {
 	hostname      string
 	systemUuid    string
 	instanceGroup string
-	tags		  string
+	tags          string
 	tagsRaw       []string
 }
 
@@ -56,7 +56,7 @@ func (aem *AgentEventMeta) GetPid() string {
 
 func (aem *AgentEventMeta) GenerateAgentStartEventCommand() *proto.Command {
 	activityEvent := &eventsProto.ActivityEvent{
-		Message:  fmt.Sprintf(AGENT_START_MESSAGE, aem.version, aem.pid, aem.hostname),
+		Message: fmt.Sprintf(AGENT_START_MESSAGE, aem.version, aem.pid, aem.hostname),
 		Dimensions: []*commonProto.Dimension{
 			{
 				Name:  "system_id",
@@ -105,7 +105,7 @@ func (aem *AgentEventMeta) GenerateAgentStartEventCommand() *proto.Command {
 
 func (aem *AgentEventMeta) GenerateAgentStopEventCommand() *proto.Command {
 	activityEvent := &eventsProto.ActivityEvent{
-		Message:  fmt.Sprintf(AGENT_STOP_MESSAGE, aem.version, aem.pid, aem.hostname),
+		Message: fmt.Sprintf(AGENT_STOP_MESSAGE, aem.version, aem.pid, aem.hostname),
 		Dimensions: []*commonProto.Dimension{
 			{
 				Name:  "system_id",
@@ -201,4 +201,3 @@ func (aem *AgentEventMeta) CreateActivityEvent(message string, nginxId string) *
 
 	return activityEvent
 }
-
