@@ -290,6 +290,13 @@ func loadPlugins(commander client.Commander, binary *core.NginxBinaryType, env *
 				} else {
 					extensionPlugins = append(extensionPlugins, nginxAppProtectMonitoringExtensionPlugin)
 				}
+			case extension == agent_config.PhpFpmMetricsExtensionPlugin:
+				phpFpmMetricstExtensionPlugin, err := extensions.NewPhpFpmMetrics(env, loadedConfig)
+				if err != nil {
+					log.Errorf("Unable to load the PhpFpm Metrics plugin due to the following error: %v", err)
+				} else {
+					extensionPlugins = append(extensionPlugins, phpFpmMetricstExtensionPlugin)
+				}
 			default:
 				log.Warnf("unknown extension configured: %s", extension)
 			}
