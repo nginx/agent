@@ -30,7 +30,8 @@ func TestNewAgentEventMeta(t *testing.T) {
 	assert.Equal(t, hostname, meta.hostname)
 	assert.Equal(t, systemUuid, meta.systemUuid)
 	assert.Equal(t, instanceGroup, meta.instanceGroup)
-	assert.Equal(t, tags, meta.tags)
+	assert.Equal(t, tags, meta.tagsRaw)
+	assert.Equal(t, strings.Join(tags, ","), meta.tags)
 }
 
 func TestGenerateAgentStartEventCommand(t *testing.T) {
@@ -45,7 +46,7 @@ func TestGenerateAgentStartEventCommand(t *testing.T) {
 	)
 
 	expectedActivityEvent := &eventsProto.ActivityEvent{
-		Message: fmt.Sprintf("%s %s started on %s with pid %s", "nginx-agent", "v2.0", "54321", "test-host"),
+		Message: fmt.Sprintf("%s %s started on %s with pid %s", "nginx-agent", "v2.0", "test-host", "54321"),
 		Dimensions: []*commonProto.Dimension{
 			{
 				Name:  "system_id",
