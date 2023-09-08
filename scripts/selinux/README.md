@@ -56,7 +56,7 @@ sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR --raw -se nginx_agent
 ```
 Generate new rule based on the errors by using `audit2allow`:
 ```
-sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR --raw -se nms -ts recent | audit2allow
+sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR --raw -se nginx_agent -ts recent | audit2allow
 ```
 
 Update the `scripts/selinux/nginx_agent.te` file with the output from the `audit2allow` command.
