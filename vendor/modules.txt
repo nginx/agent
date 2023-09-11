@@ -1122,6 +1122,7 @@ github.com/nbutton23/zxcvbn-go/utils/math
 ## explicit; go 1.21
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
+github.com/nginx/agent/sdk/v2/agent/events
 github.com/nginx/agent/sdk/v2/backoff
 github.com/nginx/agent/sdk/v2/checksum
 github.com/nginx/agent/sdk/v2/client
