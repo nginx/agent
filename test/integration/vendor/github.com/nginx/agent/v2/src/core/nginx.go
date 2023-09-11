@@ -401,7 +401,6 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 	var configApply *sdk.ConfigApply
 
 	filesToUpdate, filesToDelete, allFilesHaveAnAction := generateActionMaps(config.DirectoryMap, n.config.AllowedDirectoriesMap)
-
 	if allFilesHaveAnAction {
 		configApply, err = n.writeConfigWithWithFileActions(config, details, filesToUpdate, filesToDelete)
 	} else {
@@ -486,7 +485,12 @@ func (n *NginxBinaryType) writeConfigWithNoFileActions(details *proto.NginxDetai
 	return configApply, nil
 }
 
-func (n *NginxBinaryType) writeConfigWithWithFileActions(config *proto.NginxConfig, details *proto.NginxDetails, filesToUpdate map[string]proto.File_Action, filesToDelete map[string]proto.File_Action) (*sdk.ConfigApply, error) {
+func (n *NginxBinaryType) writeConfigWithWithFileActions(
+	config *proto.NginxConfig,
+	details *proto.NginxDetails,
+	filesToUpdate map[string]proto.File_Action,
+	filesToDelete map[string]proto.File_Action,
+) (*sdk.ConfigApply, error) {
 	confFiles, auxFiles, err := sdk.GetNginxConfigFiles(config)
 	if err != nil {
 		return nil, err
@@ -500,14 +504,16 @@ func (n *NginxBinaryType) writeConfigWithWithFileActions(config *proto.NginxConf
 
 	for _, file := range confFiles {
 		rootDirectoryPath := filepath.Dir(details.ConfPath)
-		if _, found := filesToUpdate[file.Name]; !found {
-			log.Debugf("No action found for config file %s.", file.Name)
-			continue
+		fileFullPath := file.Name
+		if !filepath.IsAbs(fileFullPath) {
+			fileFullPath = filepath.Join(rootDirectoryPath, fileFullPath)
 		}
-
-		delete(filesToUpdate, file.Name)
-
-		if err := n.env.WriteFile(configApply, file, rootDirectoryPath); err != nil {
+		if _, found := filesToUpdate[fileFullPath]; !found {
+			log.Warnf("No action found for config file %s, assume update.",
+				fileFullPath)
+		}
+		delete(filesToUpdate, fileFullPath)
+		if err = n.env.WriteFile(configApply, file, rootDirectoryPath); err != nil {
 			log.Warnf("configuration write failed: %s", err)
 			return configApply, err
 		}
@@ -515,14 +521,17 @@ func (n *NginxBinaryType) writeConfigWithWithFileActions(config *proto.NginxConf
 
 	for _, file := range auxFiles {
 		rootDirectoryPath := config.GetZaux().GetRootDirectory()
-		if _, found := filesToUpdate[file.Name]; !found {
-			log.Debugf("No action found for aux file %s.", file.Name)
+		fileFullPath := file.Name
+		if !filepath.IsAbs(fileFullPath) {
+			fileFullPath = filepath.Join(rootDirectoryPath, fileFullPath)
+		}
+		if _, found := filesToUpdate[fileFullPath]; !found {
+			log.Debugf("No action found for aux file %s.", fileFullPath)
 			continue
 		}
 
-		delete(filesToUpdate, file.Name)
-
-		if err := n.env.WriteFile(configApply, file, rootDirectoryPath); err != nil {
+		delete(filesToUpdate, fileFullPath)
+		if err = n.env.WriteFile(configApply, file, rootDirectoryPath); err != nil {
 			log.Warnf("configuration write failed: %s", err)
 			return configApply, err
 		}
@@ -617,7 +626,6 @@ func generateActionMaps(
 				filesToDelete[path] = f.Action
 				continue
 			}
-
 		}
 	}
 
