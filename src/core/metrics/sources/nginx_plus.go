@@ -257,19 +257,34 @@ func (c *NginxPlus) serverZoneMetrics(stats, prevStats *plusclient.Stats) []*met
 		if sz.Responses.Responses5xx < prevStats.ServerZones[name].Responses.Responses5xx {
 			status5xx = sz.Responses.Responses5xx
 		}
+		handshakes := sz.SSL.Handshakes - prevStats.ServerZones[name].SSL.Handshakes
+		if sz.SSL.Handshakes < prevStats.ServerZones[name].SSL.Handshakes {
+			handshakes = sz.SSL.Handshakes
+		}
+		handshakesFailed := sz.SSL.HandshakesFailed - prevStats.ServerZones[name].SSL.HandshakesFailed
+		if sz.SSL.HandshakesFailed < prevStats.ServerZones[name].SSL.HandshakesFailed {
+			handshakesFailed = sz.SSL.Handshakes
+		}
+		sessionReuses := sz.SSL.SessionReuses - prevStats.ServerZones[name].SSL.SessionReuses
+		if sz.SSL.SessionReuses < prevStats.ServerZones[name].SSL.SessionReuses {
+			sessionReuses = sz.SSL.SessionReuses
+		}
 
 		simpleMetrics := l.convertSamplesToSimpleMetrics(map[string]float64{
-			"request.count":      float64(requestCount),
-			"response.count":     float64(responseCount),
-			"status.discarded":   float64(statusDiscarded),
-			"status.processing":  float64(sz.Processing),
-			"request.bytes_rcvd": float64(requestBytesRcvd),
-			"request.bytes_sent": float64(requestBytesSent),
-			"status.1xx":         float64(status1xx),
-			"status.2xx":         float64(status2xx),
-			"status.3xx":         float64(status3xx),
-			"status.4xx":         float64(status4xx),
-			"status.5xx":         float64(status5xx),
+			"request.count":         float64(requestCount),
+			"response.count":        float64(responseCount),
+			"status.discarded":      float64(statusDiscarded),
+			"status.processing":     float64(sz.Processing),
+			"request.bytes_rcvd":    float64(requestBytesRcvd),
+			"request.bytes_sent":    float64(requestBytesSent),
+			"status.1xx":            float64(status1xx),
+			"status.2xx":            float64(status2xx),
+			"status.3xx":            float64(status3xx),
+			"status.4xx":            float64(status4xx),
+			"status.5xx":            float64(status5xx),
+			"ssl.handshakes":        float64(handshakes),
+			"ssl.handshakes.failed": float64(handshakesFailed),
+			"ssl.session.reuses":    float64(sessionReuses),
 		})
 
 		dims := c.baseDimensions.ToDimensions()
@@ -425,6 +440,15 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*m
 				if peer.Responses.Total >= prevPeer.Responses.Total {
 					tempPeer.Responses.Total = peer.Responses.Total - prevPeer.Responses.Total
 				}
+				if peer.SSL.Handshakes >= prevPeer.SSL.Handshakes {
+					tempPeer.SSL.Handshakes = peer.SSL.Handshakes - prevPeer.SSL.Handshakes
+				}
+				if peer.SSL.HandshakesFailed >= prevPeer.SSL.HandshakesFailed {
+					tempPeer.SSL.HandshakesFailed = peer.SSL.HandshakesFailed - prevPeer.SSL.HandshakesFailed
+				}
+				if peer.SSL.SessionReuses >= prevPeer.SSL.SessionReuses {
+					tempPeer.SSL.SessionReuses = peer.SSL.SessionReuses - prevPeer.SSL.SessionReuses
+				}
 				if peer.Responses.Responses1xx >= prevPeer.Responses.Responses1xx {
 					tempPeer.Responses.Responses1xx = peer.Responses.Responses1xx - prevPeer.Responses.Responses1xx
 				}
@@ -472,6 +496,9 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*m
 				"upstream.peers.response.time":           float64(tempPeer.ResponseTime),
 				"upstream.peers.request.count":           float64(tempPeer.Requests),
 				"upstream.peers.response.count":          float64(tempPeer.Responses.Total),
+				"upstream.peers.ssl.handshakes":          float64(tempPeer.SSL.Handshakes),
+				"upstream.peers.ssl.handshakes.failed":   float64(tempPeer.SSL.HandshakesFailed),
+				"upstream.peers.ssl.session.reuses":      float64(tempPeer.SSL.SessionReuses),
 				"upstream.peers.status.1xx":              float64(tempPeer.Responses.Responses1xx),
 				"upstream.peers.status.2xx":              float64(tempPeer.Responses.Responses2xx),
 				"upstream.peers.status.3xx":              float64(tempPeer.Responses.Responses3xx),
