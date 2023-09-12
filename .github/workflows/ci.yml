@@ -95,20 +95,20 @@ jobs:
         - image: "ubuntu"
           version: "22.04"
         - image: "alpine"
-          version: "3.14"
-        - image: "alpine"
           version: "3.15"
         - image: "alpine"
           version: "3.16"
         - image: "alpine"
           version: "3.17"
+        - image: "alpine"
+          version: "3.18"
+        - image: "debian"
+          version: "bookworm-slim"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
-      # Change made to fix an issue cause by security fix in Go 1.20.6 & 1.19.11 which was causing TestContainers to fail
-      # https://github.com/testcontainers/testcontainers-go/issues/1359 
         with:
-           go-version: '1.19.10'
+           go-version: '1.21.0'
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}

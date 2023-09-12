@@ -42,7 +42,7 @@ func NewPruneCommand(dockerCli command.Cli) *cobra.Command {
 
 	flags := cmd.Flags()
 	flags.BoolVarP(&options.force, "force", "f", false, "Do not prompt for confirmation")
-	flags.Var(&options.filter, "filter", "Provide filter values (e.g. 'until=<timestamp>')")
+	flags.Var(&options.filter, "filter", `Provide filter values (e.g. "until=<timestamp>")`)
 
 	return cmd
 }
@@ -75,6 +75,6 @@ func runPrune(dockerCli command.Cli, options pruneOptions) (spaceReclaimed uint6
 
 // RunPrune calls the Container Prune API
 // This returns the amount of space reclaimed and a detailed output string
-func RunPrune(dockerCli command.Cli, all bool, filter opts.FilterOpt) (uint64, string, error) {
+func RunPrune(dockerCli command.Cli, _ bool, filter opts.FilterOpt) (uint64, string, error) {
 	return runPrune(dockerCli, pruneOptions{force: true, filter: filter})
 }

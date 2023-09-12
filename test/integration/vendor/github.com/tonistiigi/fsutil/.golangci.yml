@@ -7,14 +7,10 @@ linters:
   enable:
     - gofmt
     - govet
-    - deadcode
     - goimports
     - ineffassign
     - misspell
     - unused
-    - varcheck
-    - golint
     - staticcheck
     - typecheck
-    - structcheck
   disable-all: true

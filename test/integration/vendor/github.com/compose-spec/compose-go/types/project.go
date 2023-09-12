@@ -24,6 +24,8 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/compose-spec/compose-go/utils"
+
 	"github.com/compose-spec/compose-go/dotenv"
 	"github.com/distribution/distribution/v3/reference"
 	godigest "github.com/opencontainers/go-digest"
@@ -34,16 +36,22 @@ import (
 
 // Project is the result of loading a set of compose files
 type Project struct {
-	Name         string     `yaml:"name,omitempty" json:"name,omitempty"`
-	WorkingDir   string     `yaml:"-" json:"-"`
-	Services     Services   `json:"services"`
-	Networks     Networks   `yaml:",omitempty" json:"networks,omitempty"`
-	Volumes      Volumes    `yaml:",omitempty" json:"volumes,omitempty"`
-	Secrets      Secrets    `yaml:",omitempty" json:"secrets,omitempty"`
-	Configs      Configs    `yaml:",omitempty" json:"configs,omitempty"`
-	Extensions   Extensions `mapstructure:"#extensions" yaml:",inline" json:"-"` // https://github.com/golang/go/issues/6213
-	ComposeFiles []string   `yaml:"-" json:"-"`
-	Environment  Mapping    `yaml:"-" json:"-"`
+	Name       string     `yaml:"name,omitempty" json:"name,omitempty"`
+	WorkingDir string     `yaml:"-" json:"-"`
+	Services   Services   `yaml:"services" json:"services"`
+	Networks   Networks   `yaml:"networks,omitempty" json:"networks,omitempty"`
+	Volumes    Volumes    `yaml:"volumes,omitempty" json:"volumes,omitempty"`
+	Secrets    Secrets    `yaml:"secrets,omitempty" json:"secrets,omitempty"`
+	Configs    Configs    `yaml:"configs,omitempty" json:"configs,omitempty"`
+	Extensions Extensions `yaml:"#extensions,inline" json:"-"` // https://github.com/golang/go/issues/6213
+
+	// IncludeReferences is keyed by Compose YAML filename and contains config for
+	// other Compose YAML files it directly triggered a load of via `include`.
+	//
+	// Note: this is
+	IncludeReferences map[string][]IncludeConfig `yaml:"-" json:"-"`
+	ComposeFiles      []string                   `yaml:"-" json:"-"`
+	Environment       Mapping                    `yaml:"-" json:"-"`
 
 	// DisabledServices track services which have been disable as profile is not active
 	DisabledServices Services `yaml:"-" json:"-"`
@@ -102,10 +110,19 @@ func (p *Project) ConfigNames() []string {
 
 // GetServices retrieve services by names, or return all services if no name specified
 func (p *Project) GetServices(names ...string) (Services, error) {
+	services, servicesNotFound := p.getServicesByNames(names...)
+	if len(servicesNotFound) > 0 {
+		return services, fmt.Errorf("no such service: %s", servicesNotFound[0])
+	}
+	return services, nil
+}
+
+func (p *Project) getServicesByNames(names ...string) (Services, []string) {
 	if len(names) == 0 {
 		return p.Services, nil
 	}
 	services := Services{}
+	var servicesNotFound []string
 	for _, name := range names {
 		var serviceConfig *ServiceConfig
 		for _, s := range p.Services {
@@ -115,11 +132,12 @@ func (p *Project) GetServices(names ...string) (Services, error) {
 			}
 		}
 		if serviceConfig == nil {
-			return services, fmt.Errorf("no such service: %s", name)
+			servicesNotFound = append(servicesNotFound, name)
+			continue
 		}
 		services = append(services, *serviceConfig)
 	}
-	return services, nil
+	return services, servicesNotFound
 }
 
 // GetDisabledService retrieve disabled service by name
@@ -159,26 +177,30 @@ func (p *Project) WithServices(names []string, fn ServiceFunc, options ...Depend
 		// backward compatibility
 		options = []DependencyOption{IncludeDependencies}
 	}
-	return p.withServices(names, fn, map[string]bool{}, options)
+	return p.withServices(names, fn, map[string]bool{}, options, map[string]ServiceDependency{})
 }
 
-func (p *Project) withServices(names []string, fn ServiceFunc, seen map[string]bool, options []DependencyOption) error {
-	services, err := p.GetServices(names...)
-	if err != nil {
-		return err
+func (p *Project) withServices(names []string, fn ServiceFunc, seen map[string]bool, options []DependencyOption, dependencies map[string]ServiceDependency) error {
+	services, servicesNotFound := p.getServicesByNames(names...)
+	if len(servicesNotFound) > 0 {
+		for _, serviceNotFound := range servicesNotFound {
+			if dependency, ok := dependencies[serviceNotFound]; !ok || dependency.Required {
+				return fmt.Errorf("no such service: %s", serviceNotFound)
+			}
+		}
 	}
 	for _, service := range services {
 		if seen[service.Name] {
 			continue
 		}
 		seen[service.Name] = true
-		var dependencies []string
+		var dependencies map[string]ServiceDependency
 		for _, policy := range options {
 			switch policy {
 			case IncludeDependents:
-				dependencies = append(dependencies, p.GetDependentsForService(service)...)
+				dependencies = utils.MapsAppend(dependencies, p.dependentsForService(service))
 			case IncludeDependencies:
-				dependencies = append(dependencies, service.GetDependencies()...)
+				dependencies = utils.MapsAppend(dependencies, service.DependsOn)
 			case IgnoreDependencies:
 				// Noop
 			default:
@@ -186,7 +208,7 @@ func (p *Project) withServices(names []string, fn ServiceFunc, seen map[string]b
 			}
 		}
 		if len(dependencies) > 0 {
-			err := p.withServices(dependencies, fn, seen, options)
+			err := p.withServices(utils.MapKeys(dependencies), fn, seen, options, dependencies)
 			if err != nil {
 				return err
 			}
@@ -199,11 +221,15 @@ func (p *Project) withServices(names []string, fn ServiceFunc, seen map[string]b
 }
 
 func (p *Project) GetDependentsForService(s ServiceConfig) []string {
-	var dependent []string
+	return utils.MapKeys(p.dependentsForService(s))
+}
+
+func (p *Project) dependentsForService(s ServiceConfig) map[string]ServiceDependency {
+	dependent := make(map[string]ServiceDependency)
 	for _, service := range p.Services {
-		for name := range service.DependsOn {
+		for name, dependency := range service.DependsOn {
 			if name == s.Name {
-				dependent = append(dependent, service.Name)
+				dependent[service.Name] = dependency
 			}
 		}
 	}
@@ -396,13 +422,29 @@ func (p *Project) ForServices(names []string, options ...DependencyOption) error
 	var enabled Services
 	for _, s := range p.Services {
 		if _, ok := set[s.Name]; ok {
+			for _, option := range options {
+				if option == IgnoreDependencies {
+					s.DependsOn = nil
+				}
+			}
 			enabled = append(enabled, s)
 		} else {
-			p.DisabledServices = append(p.DisabledServices, s)
+			p.DisableService(s)
 		}
 	}
 	p.Services = enabled
 	return nil
+}
+
+func (p *Project) DisableService(service ServiceConfig) {
+	// We should remove all dependencies which reference the disabled service
+	for i, s := range p.Services {
+		if _, ok := s.DependsOn[service.Name]; ok {
+			delete(s.DependsOn, service.Name)
+			p.Services[i] = s
+		}
+	}
+	p.DisabledServices = append(p.DisabledServices, service)
 }
 
 // ResolveImages updates services images to include digest computed by a resolver function
@@ -502,7 +544,7 @@ func (p Project) ResolveServicesEnvironment(discardEnvFiles bool) error {
 
 			fileVars, err := dotenv.ParseWithLookup(bytes.NewBuffer(b), resolve)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to read %s", envFile)
 			}
 			environment.OverrideBy(Mapping(fileVars).ToMappingWithEquals())
 		}

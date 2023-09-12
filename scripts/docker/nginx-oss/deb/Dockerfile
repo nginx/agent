@@ -21,6 +21,7 @@ RUN set -x \
                                                                         make \
                                                                         curl \
                                                                         lsb-release \
+                                                                        procps \
                                                                         nginx
 
 # Setup nginx agent repository

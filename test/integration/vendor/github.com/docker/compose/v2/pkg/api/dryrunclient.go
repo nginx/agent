@@ -58,9 +58,10 @@ type DryRunKey struct{}
 
 // DryRunClient implements APIClient by delegating to implementation functions. This allows lazy init and per-method overrides
 type DryRunClient struct {
-	apiClient client.APIClient
-	execs     sync.Map
-	resolver  *imagetools.Resolver
+	apiClient  client.APIClient
+	containers []moby.Container
+	execs      sync.Map
+	resolver   *imagetools.Resolver
 }
 
 type execDetails struct {
@@ -69,7 +70,7 @@ type execDetails struct {
 }
 
 // NewDryRunClient produces a DryRunClient
-func NewDryRunClient(apiClient client.APIClient, cli *command.DockerCli) (*DryRunClient, error) {
+func NewDryRunClient(apiClient client.APIClient, cli command.Cli) (*DryRunClient, error) {
 	b, err := builder.New(cli, builder.WithSkippedValidation())
 	if err != nil {
 		return nil, err
@@ -79,9 +80,10 @@ func NewDryRunClient(apiClient client.APIClient, cli *command.DockerCli) (*DryRu
 		return nil, err
 	}
 	return &DryRunClient{
-		apiClient: apiClient,
-		execs:     sync.Map{},
-		resolver:  imagetools.New(configFile),
+		apiClient:  apiClient,
+		containers: []moby.Container{},
+		execs:      sync.Map{},
+		resolver:   imagetools.New(configFile),
 	}, nil
 }
 
@@ -99,15 +101,36 @@ func (d *DryRunClient) ContainerAttach(ctx context.Context, container string, op
 
 func (d *DryRunClient) ContainerCreate(ctx context.Context, config *containerType.Config, hostConfig *containerType.HostConfig,
 	networkingConfig *network.NetworkingConfig, platform *specs.Platform, containerName string) (containerType.CreateResponse, error) {
-	return containerType.CreateResponse{ID: "dryRunId"}, nil
+	d.containers = append(d.containers, moby.Container{
+		ID:     containerName,
+		Names:  []string{containerName},
+		Labels: config.Labels,
+		HostConfig: struct {
+			NetworkMode string `json:",omitempty"`
+		}{},
+	})
+	return containerType.CreateResponse{ID: containerName}, nil
 }
 
 func (d *DryRunClient) ContainerInspect(ctx context.Context, container string) (moby.ContainerJSON, error) {
 	containerJSON, err := d.apiClient.ContainerInspect(ctx, container)
 	if err != nil {
+		id := "dryRunId"
+		for _, c := range d.containers {
+			if c.ID == container {
+				id = container
+			}
+		}
 		return moby.ContainerJSON{
 			ContainerJSONBase: &moby.ContainerJSONBase{
-				ID: "dryRunId",
+				ID:   id,
+				Name: container,
+				State: &moby.ContainerState{
+					Status: "running", // needed for --wait option
+					Health: &moby.Health{
+						Status: moby.Healthy, // needed for healthcheck control
+					},
+				},
 			},
 			Mounts:          nil,
 			Config:          &containerType.Config{},
@@ -119,6 +142,21 @@ func (d *DryRunClient) ContainerInspect(ctx context.Context, container string) (
 
 func (d *DryRunClient) ContainerKill(ctx context.Context, container, signal string) error {
 	return nil
+}
+
+func (d *DryRunClient) ContainerList(ctx context.Context, options moby.ContainerListOptions) ([]moby.Container, error) {
+	caller := getCallingFunction()
+	switch caller {
+	case "start":
+		return d.containers, nil
+	case "getContainers":
+		if len(d.containers) == 0 {
+			var err error
+			d.containers, err = d.apiClient.ContainerList(ctx, options)
+			return d.containers, err
+		}
+	}
+	return d.apiClient.ContainerList(ctx, options)
 }
 
 func (d *DryRunClient) ContainerPause(ctx context.Context, container string) error {
@@ -165,7 +203,20 @@ func (d *DryRunClient) CopyToContainer(ctx context.Context, container, path stri
 }
 
 func (d *DryRunClient) ImageBuild(ctx context.Context, reader io.Reader, options moby.ImageBuildOptions) (moby.ImageBuildResponse, error) {
-	return moby.ImageBuildResponse{}, ErrNotImplemented
+	jsonMessage, err := json.Marshal(&jsonmessage.JSONMessage{
+		Status:   fmt.Sprintf("%[1]sSuccessfully built: dryRunID\n%[1]sSuccessfully tagged: %[2]s\n", DRYRUN_PREFIX, options.Tags[0]),
+		Progress: &jsonmessage.JSONProgress{},
+		ID:       "",
+	})
+	if err != nil {
+		return moby.ImageBuildResponse{}, err
+	}
+	rc := io.NopCloser(bytes.NewReader(jsonMessage))
+
+	return moby.ImageBuildResponse{
+		Body:   rc,
+		OSType: "",
+	}, nil
 }
 
 func (d *DryRunClient) ImageInspectWithRaw(ctx context.Context, imageName string) (moby.ImageInspect, []byte, error) {
@@ -233,7 +284,13 @@ func (d *DryRunClient) NetworkRemove(ctx context.Context, networkName string) er
 }
 
 func (d *DryRunClient) VolumeCreate(ctx context.Context, options volume.CreateOptions) (volume.Volume, error) {
-	return volume.Volume{}, ErrNotImplemented
+	return volume.Volume{
+		ClusterVolume: nil,
+		Driver:        options.Driver,
+		Labels:        options.Labels,
+		Name:          options.Name,
+		Options:       options.DriverOpts,
+	}, nil
 }
 
 func (d *DryRunClient) VolumeRemove(ctx context.Context, volumeID string, force bool) error {
@@ -287,7 +344,7 @@ func (d *DryRunClient) ContainerCommit(ctx context.Context, container string, op
 	return d.apiClient.ContainerCommit(ctx, container, options)
 }
 
-func (d *DryRunClient) ContainerDiff(ctx context.Context, container string) ([]containerType.ContainerChangeResponseItem, error) {
+func (d *DryRunClient) ContainerDiff(ctx context.Context, container string) ([]containerType.FilesystemChange, error) {
 	return d.apiClient.ContainerDiff(ctx, container)
 }
 
@@ -309,10 +366,6 @@ func (d *DryRunClient) ContainerExport(ctx context.Context, container string) (i
 
 func (d *DryRunClient) ContainerInspectWithRaw(ctx context.Context, container string, getSize bool) (moby.ContainerJSON, []byte, error) {
 	return d.apiClient.ContainerInspectWithRaw(ctx, container, getSize)
-}
-
-func (d *DryRunClient) ContainerList(ctx context.Context, options moby.ContainerListOptions) ([]moby.Container, error) {
-	return d.apiClient.ContainerList(ctx, options)
 }
 
 func (d *DryRunClient) ContainerLogs(ctx context.Context, container string, options moby.ContainerLogsOptions) (io.ReadCloser, error) {
@@ -563,7 +616,7 @@ func (d *DryRunClient) Info(ctx context.Context) (moby.Info, error) {
 	return d.apiClient.Info(ctx)
 }
 
-func (d *DryRunClient) RegistryLogin(ctx context.Context, auth moby.AuthConfig) (registry.AuthenticateOKBody, error) {
+func (d *DryRunClient) RegistryLogin(ctx context.Context, auth registry.AuthConfig) (registry.AuthenticateOKBody, error) {
 	return d.apiClient.RegistryLogin(ctx, auth)
 }
 
@@ -583,8 +636,8 @@ func (d *DryRunClient) VolumeInspectWithRaw(ctx context.Context, volumeID string
 	return d.apiClient.VolumeInspectWithRaw(ctx, volumeID)
 }
 
-func (d *DryRunClient) VolumeList(ctx context.Context, filter filters.Args) (volume.ListResponse, error) {
-	return d.apiClient.VolumeList(ctx, filter)
+func (d *DryRunClient) VolumeList(ctx context.Context, opts volume.ListOptions) (volume.ListResponse, error) {
+	return d.apiClient.VolumeList(ctx, opts)
 }
 
 func (d *DryRunClient) VolumesPrune(ctx context.Context, pruneFilter filters.Args) (moby.VolumesPruneReport, error) {

@@ -43,6 +43,12 @@ const (
 	cacheMiss                        = 1
 	cacheHitBytes                    = 5024
 	cacheMissBytes                   = 1256
+	currentSSLHandshakes             = 5
+	currentSSLHandshakesFailed       = 5
+	currentSSLSessionReuses          = 5
+	previousSSLHandshakes            = 5
+	previousSSLHandshakesFailed      = 5
+	previousSSLSessionReuses         = 5
 	upstreamQueueMaxSize             = 20
 	currentPeer1UpstreamHeaderTime   = 100
 	currentPeer2UpstreamHeaderTime   = 80
@@ -118,6 +124,11 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 				Discarded: 0,
 				Received:  currentZoneReceived,
 				Sent:      currentZoneSent,
+				SSL: plusclient.SSL{
+					Handshakes:       currentSSLHandshakes,
+					HandshakesFailed: currentSSLHandshakesFailed,
+					SessionReuses:    currentSSLSessionReuses,
+				},
 			},
 		},
 		StreamServerZones: plusclient.StreamServerZones{
@@ -198,12 +209,17 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 			upstreamName: plusclient.Upstream{
 				Peers: []plusclient.Peer{
 					{
-						ID:       0,
-						Server:   upstreamPeer1ServerAddress,
-						Name:     upstreamPeer1Name,
-						Backup:   false,
-						Weight:   1,
-						State:    "up",
+						ID:     0,
+						Server: upstreamPeer1ServerAddress,
+						Name:   upstreamPeer1Name,
+						Backup: false,
+						Weight: 1,
+						State:  "up",
+						SSL: plusclient.SSL{
+							Handshakes:       currentSSLHandshakes,
+							HandshakesFailed: currentSSLHandshakesFailed,
+							SessionReuses:    currentSSLSessionReuses,
+						},
 						Requests: currentZoneRequests,
 						Responses: plusclient.Responses{
 							Responses1xx: 0,
@@ -227,12 +243,17 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 						ResponseTime: currentPeer1UpstreamResponseTime,
 					},
 					{
-						ID:       1,
-						Server:   upstreamPeer2ServerAddress,
-						Name:     upstreamPeer2Name,
-						Backup:   false,
-						Weight:   1,
-						State:    "up",
+						ID:     1,
+						Server: upstreamPeer2ServerAddress,
+						Name:   upstreamPeer2Name,
+						Backup: false,
+						Weight: 1,
+						State:  "up",
+						SSL: plusclient.SSL{
+							Handshakes:       currentSSLHandshakes,
+							HandshakesFailed: currentSSLHandshakesFailed,
+							SessionReuses:    currentSSLSessionReuses,
+						},
 						Requests: currentZoneRequests,
 						Responses: plusclient.Responses{
 							Responses1xx: 0,
@@ -387,6 +408,11 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 				Discarded: 0,
 				Received:  previousZoneReceived,
 				Sent:      previousZoneSent,
+				SSL: plusclient.SSL{
+					Handshakes:       previousSSLHandshakes,
+					HandshakesFailed: previousSSLHandshakesFailed,
+					SessionReuses:    previousSSLSessionReuses,
+				},
 			},
 		},
 		LocationZones: plusclient.LocationZones{
@@ -409,12 +435,51 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 			upstreamName: plusclient.Upstream{
 				Peers: []plusclient.Peer{
 					{
-						ID:       0,
-						Server:   upstreamPeer2ServerAddress,
-						Name:     upstreamPeer2Name,
-						Backup:   false,
-						Weight:   1,
-						State:    "up",
+						ID:     0,
+						Server: upstreamPeer1ServerAddress,
+						Name:   upstreamPeer1Name,
+						Backup: false,
+						Weight: 1,
+						State:  "up",
+						SSL: plusclient.SSL{
+							Handshakes:       previousSSLHandshakes,
+							HandshakesFailed: previousSSLHandshakesFailed,
+							SessionReuses:    previousSSLSessionReuses,
+						},
+						Requests: previousZoneRequests,
+						Responses: plusclient.Responses{
+							Responses1xx: 0,
+							Responses2xx: previousZoneResponses,
+							Responses3xx: 0,
+							Responses4xx: 0,
+							Responses5xx: 0,
+							Total:        previousZoneResponses,
+						},
+						Sent:     previousZoneSent,
+						Received: previousZoneReceived,
+						Fails:    0,
+						Unavail:  0,
+						HealthChecks: plusclient.HealthChecks{
+							Checks:     0,
+							Fails:      0,
+							Unhealthy:  0,
+							LastPassed: false,
+						},
+						HeaderTime:   previousUpstreamHeaderTime,
+						ResponseTime: previousUpstreamResponseTime,
+					},
+					{
+						ID:     1,
+						Server: upstreamPeer2ServerAddress,
+						Name:   upstreamPeer2Name,
+						Backup: false,
+						Weight: 1,
+						State:  "up",
+						SSL: plusclient.SSL{
+							Handshakes:       previousSSLHandshakes,
+							HandshakesFailed: previousSSLHandshakesFailed,
+							SessionReuses:    previousSSLSessionReuses,
+						},
 						Requests: previousZoneRequests,
 						Responses: plusclient.Responses{
 							Responses1xx: 0,
@@ -533,17 +598,20 @@ func TestNginxPlus_Collect(t *testing.T) {
 	}
 
 	expectedServerZoneMetrics := map[string]float64{
-		"plus.http.request.count":      currentZoneRequests - previousZoneRequests,
-		"plus.http.response.count":     currentZoneResponses - previousZoneResponses,
-		"plus.http.status.discarded":   0,
-		"plus.http.status.processing":  0,
-		"plus.http.request.bytes_rcvd": currentZoneReceived - previousZoneReceived,
-		"plus.http.request.bytes_sent": currentZoneSent - previousZoneSent,
-		"plus.http.status.1xx":         0,
-		"plus.http.status.2xx":         currentZoneResponses - previousZoneResponses,
-		"plus.http.status.3xx":         0,
-		"plus.http.status.4xx":         0,
-		"plus.http.status.5xx":         0,
+		"plus.http.request.count":         currentZoneRequests - previousZoneRequests,
+		"plus.http.response.count":        currentZoneResponses - previousZoneResponses,
+		"plus.http.status.discarded":      0,
+		"plus.http.status.processing":     0,
+		"plus.http.request.bytes_rcvd":    currentZoneReceived - previousZoneReceived,
+		"plus.http.request.bytes_sent":    currentZoneSent - previousZoneSent,
+		"plus.http.status.1xx":            0,
+		"plus.http.status.2xx":            currentZoneResponses - previousZoneResponses,
+		"plus.http.status.3xx":            0,
+		"plus.http.status.4xx":            0,
+		"plus.http.status.5xx":            0,
+		"plus.http.ssl.handshakes":        currentSSLHandshakes - previousSSLHandshakes,
+		"plus.http.ssl.handshakes.failed": currentSSLHandshakesFailed - previousSSLHandshakesFailed,
+		"plus.http.ssl.session.reuses":    currentSSLSessionReuses - previousSSLSessionReuses,
 	}
 
 	expectedStreamServerZoneMetrics := map[string]float64{
@@ -616,15 +684,15 @@ func TestNginxPlus_Collect(t *testing.T) {
 		"plus.http.upstream.peers.conn.active":             0,
 		"plus.http.upstream.peers.header_time":             currentPeer1UpstreamHeaderTime,
 		"plus.http.upstream.peers.response.time":           currentPeer1UpstreamResponseTime,
-		"plus.http.upstream.peers.request.count":           currentZoneRequests,
-		"plus.http.upstream.peers.response.count":          currentZoneResponses,
+		"plus.http.upstream.peers.request.count":           currentZoneRequests - previousZoneRequests,
+		"plus.http.upstream.peers.response.count":          currentZoneResponses - previousZoneResponses,
 		"plus.http.upstream.peers.status.1xx":              0,
-		"plus.http.upstream.peers.status.2xx":              currentZoneResponses,
+		"plus.http.upstream.peers.status.2xx":              currentZoneResponses - previousZoneResponses,
 		"plus.http.upstream.peers.status.3xx":              0,
 		"plus.http.upstream.peers.status.4xx":              0,
 		"plus.http.upstream.peers.status.5xx":              0,
-		"plus.http.upstream.peers.bytes_sent":              currentZoneSent,
-		"plus.http.upstream.peers.bytes_rcvd":              currentZoneReceived,
+		"plus.http.upstream.peers.bytes_sent":              currentZoneSent - previousZoneSent,
+		"plus.http.upstream.peers.bytes_rcvd":              currentZoneReceived - previousZoneReceived,
 		"plus.http.upstream.peers.fails":                   0,
 		"plus.http.upstream.peers.unavail":                 0,
 		"plus.http.upstream.peers.health_checks.fails":     0,
@@ -636,6 +704,9 @@ func TestNginxPlus_Collect(t *testing.T) {
 		"plus.http.upstream.peers.state.unavail":           0,
 		"plus.http.upstream.peers.state.checking":          0,
 		"plus.http.upstream.peers.state.unhealthy":         0,
+		"plus.http.upstream.peers.ssl.handshakes":          currentSSLHandshakes - previousSSLHandshakes,
+		"plus.http.upstream.peers.ssl.handshakes.failed":   currentSSLHandshakesFailed - previousSSLHandshakesFailed,
+		"plus.http.upstream.peers.ssl.session.reuses":      currentSSLSessionReuses - previousSSLSessionReuses,
 	}
 
 	expectedHttpPeer2UpstreamMetrics := map[string]float64{
@@ -662,6 +733,9 @@ func TestNginxPlus_Collect(t *testing.T) {
 		"plus.http.upstream.peers.state.unavail":           0,
 		"plus.http.upstream.peers.state.checking":          0,
 		"plus.http.upstream.peers.state.unhealthy":         0,
+		"plus.http.upstream.peers.ssl.handshakes":          currentSSLHandshakes - previousSSLHandshakes,
+		"plus.http.upstream.peers.ssl.handshakes.failed":   currentSSLHandshakesFailed - previousSSLHandshakesFailed,
+		"plus.http.upstream.peers.ssl.session.reuses":      currentSSLSessionReuses - previousSSLSessionReuses,
 	}
 
 	expectedStreamUpstreamMetrics := map[string]float64{

@@ -19,11 +19,10 @@ AlmaLinux
 - 9 (x86_64, aarch64)
 
 Alpine Linux
-- 3.13 (x86_64, aarch64)
-- 3.14 (x86_64, aarch64)
 - 3.15 (x86_64, aarch64)
 - 3.16 (x86_64, aarch64)
 - 3.17 (x86_64, aarch64)
+- 3.18 (x86_64, aarch64)
 
 Amazon Linux
 - 2023 (x86_64, aarch64)
@@ -36,6 +35,7 @@ CentOS
 
 Debian
 - 11 (x86_64, aarch64)
+- 12 (x86_64, aarch64)
 
 FreeBSD
 - 12.1+ (amd64)
@@ -60,7 +60,6 @@ SUSE Linux Enterprise Server (SLES)
 - 15 SP2 (x86_64)
 
 Ubuntu
-- 18.04 LTS (x86_64, aarch64)
 - 20.04 LTS (x86_64, aarch64)
 - 22.04 LTS (x86_64, aarch64)
 

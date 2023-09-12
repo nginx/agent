@@ -246,7 +246,7 @@ func Export(name string, s Reader) io.ReadCloser {
 		}
 		if err = tw.WriteHeader(&tar.Header{
 			Name: metaFile,
-			Mode: 0644,
+			Mode: 0o644,
 			Size: int64(len(metaBytes)),
 		}); err != nil {
 			writer.CloseWithError(err)
@@ -263,7 +263,7 @@ func Export(name string, s Reader) io.ReadCloser {
 		}
 		if err = tw.WriteHeader(&tar.Header{
 			Name:     "tls",
-			Mode:     0700,
+			Mode:     0o700,
 			Size:     0,
 			Typeflag: tar.TypeDir,
 		}); err != nil {
@@ -273,7 +273,7 @@ func Export(name string, s Reader) io.ReadCloser {
 		for endpointName, endpointFiles := range tlsFiles {
 			if err = tw.WriteHeader(&tar.Header{
 				Name:     path.Join("tls", endpointName),
-				Mode:     0700,
+				Mode:     0o700,
 				Size:     0,
 				Typeflag: tar.TypeDir,
 			}); err != nil {
@@ -288,7 +288,7 @@ func Export(name string, s Reader) io.ReadCloser {
 				}
 				if err = tw.WriteHeader(&tar.Header{
 					Name: path.Join("tls", endpointName, fileName),
-					Mode: 0600,
+					Mode: 0o600,
 					Size: int64(len(data)),
 				}); err != nil {
 					writer.CloseWithError(err)
@@ -492,20 +492,6 @@ func importEndpointTLS(tlsData *ContextTLSData, path string, data []byte) error 
 	}
 	tlsData.Endpoints[epName].Files[fileName] = data
 	return nil
-}
-
-// IsErrContextDoesNotExist checks if the given error is a "context does not exist" condition.
-//
-// Deprecated: use github.com/docker/docker/errdefs.IsNotFound()
-func IsErrContextDoesNotExist(err error) bool {
-	return errdefs.IsNotFound(err)
-}
-
-// IsErrTLSDataDoesNotExist checks if the given error is a "context does not exist" condition
-//
-// Deprecated: use github.com/docker/docker/errdefs.IsNotFound()
-func IsErrTLSDataDoesNotExist(err error) bool {
-	return errdefs.IsNotFound(err)
 }
 
 type contextdir string

@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/docker/buildx/driver"
@@ -108,6 +109,7 @@ func (d *Driver) create(ctx context.Context, l progress.SubLogger) error {
 		cfg.Cmd = d.InitConfig.BuildkitFlags
 	}
 
+	useInit := true // let it cleanup exited processes created by BuildKit's container API
 	if err := l.Wrap("creating container "+d.Name, func() error {
 		hc := &container.HostConfig{
 			Privileged: true,
@@ -118,6 +120,7 @@ func (d *Driver) create(ctx context.Context, l progress.SubLogger) error {
 					Target: confutil.DefaultBuildKitStateDir,
 				},
 			},
+			Init: &useInit,
 		}
 		if d.netMode != "" {
 			hc.NetworkMode = container.NetworkMode(d.netMode)
@@ -367,7 +370,11 @@ func (d *Driver) Client(ctx context.Context) (*client.Client, error) {
 	}
 
 	var opts []client.ClientOpt
+	var counter int64
 	opts = append(opts, client.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+		if atomic.AddInt64(&counter, 1) > 1 {
+			return nil, net.ErrClosed
+		}
 		return conn, nil
 	}))
 	if td, ok := exp.(client.TracerDelegate); ok {
@@ -380,20 +387,22 @@ func (d *Driver) Factory() driver.Factory {
 	return d.factory
 }
 
-func (d *Driver) Features() map[driver.Feature]bool {
+func (d *Driver) Features(ctx context.Context) map[driver.Feature]bool {
 	return map[driver.Feature]bool{
 		driver.OCIExporter:    true,
 		driver.DockerExporter: true,
-
-		driver.CacheExport:   true,
-		driver.MultiPlatform: true,
+		driver.CacheExport:    true,
+		driver.MultiPlatform:  true,
 	}
 }
 
 func demuxConn(c net.Conn) net.Conn {
 	pr, pw := io.Pipe()
 	// TODO: rewrite parser with Reader() to avoid goroutine switch
-	go stdcopy.StdCopy(pw, os.Stderr, c)
+	go func() {
+		_, err := stdcopy.StdCopy(pw, os.Stderr, c)
+		pw.CloseWithError(err)
+	}()
 	return &demux{
 		Conn:   c,
 		Reader: pr,

@@ -104,6 +104,14 @@
     - [NginxHealth.NginxStatus](#f5-nginx-agent-sdk-NginxHealth-NginxStatus)
     - [NginxSslMetaData.NginxSslType](#f5-nginx-agent-sdk-NginxSslMetaData-NginxSslType)
   
+- [phpfpm.proto](#phpfpm-proto)
+    - [PhpFpmDetails](#f5-nginx-agent-sdk-PhpFpmDetails)
+    - [PhpFpmHealth](#f5-nginx-agent-sdk-PhpFpmHealth)
+    - [PhpFpmPool](#f5-nginx-agent-sdk-PhpFpmPool)
+  
+    - [PhpFpmHealth.PhpFpmHealthStatus](#f5-nginx-agent-sdk-PhpFpmHealth-PhpFpmHealthStatus)
+    - [PhpFpmProcessType](#f5-nginx-agent-sdk-PhpFpmProcessType)
+  
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -939,6 +947,7 @@ Represents dataplane software details which contains details for additional soft
 | ----- | ---- | ----- | ----------- |
 | app_protect_waf_details | [AppProtectWAFDetails](#f5-nginx-agent-sdk-AppProtectWAFDetails) |  | App Protect WAF software details |
 | nginx_details | [NginxDetails](#f5-nginx-agent-sdk-NginxDetails) |  | NGINX software details |
+| php_fpm_details | [PhpFpmDetails](#f5-nginx-agent-sdk-PhpFpmDetails) |  | PhpFpmDetails software details |
 
 
 
@@ -1523,6 +1532,117 @@ SSL type enum
 | ---- | ------ | ----------- |
 | BUILT | 0 | SSL complied with NGINX |
 | RUN | 1 | SSL not complied with NGINX |
+
+
+ 
+
+ 
+
+ 
+
+
+
+<a name="phpfpm-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## phpfpm.proto
+
+
+
+<a name="f5-nginx-agent-sdk-PhpFpmDetails"></a>
+
+### PhpFpmDetails
+PhpFpmDetails registers a phpfpm master process &#43; child pools
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [PhpFpmProcessType](#f5-nginx-agent-sdk-PhpFpmProcessType) |  | PhpFpm process type |
+| uuid | [string](#string) |  | System ID |
+| php_id | [string](#string) |  | PhpFpm ID |
+| name | [string](#string) |  | PhpFpm process name |
+| cmd | [string](#string) |  | PhpFpm process descpription Example: php-fpm: master process (/etc/php/7.4/fpm/php-fpm.conf) |
+| conf_path | [string](#string) |  | Location of PhpFpm config path Example: /etc/php/7.4/fpm/php-fpm.conf |
+| process_path | [string](#string) |  | Location of PhpFpm binary path Example: /usr/sbin/php-fpm7.4 |
+| version | [string](#string) |  | PhpFpm version |
+| version_line | [string](#string) |  | PhpFpm version line Example: PHP 7.4.33 (fpm-fcgi) (built: Feb 14 2023 18:31:23) |
+| pid | [int32](#int32) |  | PhpFpm process id |
+| agent | [string](#string) |  | NGINX agent version |
+| children | [PhpFpmPool](#f5-nginx-agent-sdk-PhpFpmPool) | repeated | PhpFpm children process |
+| workers | [int32](#int32) |  | PhpFpm master process total workers/children |
+| health | [PhpFpmHealth](#f5-nginx-agent-sdk-PhpFpmHealth) |  | PhpFpm master process health |
+
+
+
+
+
+
+<a name="f5-nginx-agent-sdk-PhpFpmHealth"></a>
+
+### PhpFpmHealth
+PhpFpmHealth reports the health details of PHPFPM process
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| system_id | [string](#string) |  | System ID |
+| phpfpm_health_status | [PhpFpmHealth.PhpFpmHealthStatus](#f5-nginx-agent-sdk-PhpFpmHealth-PhpFpmHealthStatus) |  | PhpFpm health status |
+| degraded_reason | [string](#string) |  | Provides an error message of why PhpFpm is degraded |
+
+
+
+
+
+
+<a name="f5-nginx-agent-sdk-PhpFpmPool"></a>
+
+### PhpFpmPool
+PhpFpmPool registers one of the worker pools of a Php-Fpm master process
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [PhpFpmProcessType](#f5-nginx-agent-sdk-PhpFpmProcessType) |  | PhpFpm process type (e.g. phpfpm-pool) |
+| uuid | [string](#string) |  | System ID |
+| php_id | [string](#string) |  | PhpFpm ID |
+| name | [string](#string) |  | PhpFpm process name |
+| display_name | [string](#string) |  | PhpFpm display name Example: phpfpm master @ Ubuntu |
+| parent_php_id | [string](#string) |  | Phpfpm master process ID |
+| listen | [string](#string) |  | Location for PhpFpm process to listen to connections |
+| flisten | [string](#string) |  | PhpFpm formatted listen |
+| status_path | [string](#string) |  | PhpFpm status path |
+| can_have_children | [bool](#bool) |  | Provides info on if PhpFpm process can have child |
+| agent | [string](#string) |  | NGINX agent version |
+
+
+
+
+
+ 
+
+
+<a name="f5-nginx-agent-sdk-PhpFpmHealth-PhpFpmHealthStatus"></a>
+
+### PhpFpmHealth.PhpFpmHealthStatus
+Status enum
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNKNOWN | 0 | Unknown status |
+| ACTIVE | 1 | Active status |
+| DEGRADED | 2 | Degraded status |
+
+
+
+<a name="f5-nginx-agent-sdk-PhpFpmProcessType"></a>
+
+### PhpFpmProcessType
+Represents PhpFpm process type
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PHPFPM | 0 | Master |
+| PHPFPM_POOL | 1 | Child |
 
 
  

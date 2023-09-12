@@ -75,10 +75,9 @@ func (s *composeService) Remove(ctx context.Context, projectName string, options
 	stoppedContainers.forEach(func(c moby.Container) {
 		names = append(names, getCanonicalContainerName(c))
 	})
-	fmt.Fprintln(s.stderr(), names)
 
 	if len(names) == 0 {
-		fmt.Fprintln(s.stderr(), "No stopped containers")
+		fmt.Fprintln(s.stdinfo(), "No stopped containers")
 		return nil
 	}
 	msg := fmt.Sprintf("Going to remove %s", strings.Join(names, ", "))
@@ -93,9 +92,9 @@ func (s *composeService) Remove(ctx context.Context, projectName string, options
 			return nil
 		}
 	}
-	return progress.Run(ctx, func(ctx context.Context) error {
+	return progress.RunWithTitle(ctx, func(ctx context.Context) error {
 		return s.remove(ctx, stoppedContainers, options)
-	}, s.stderr())
+	}, s.stdinfo(), "Removing")
 }
 
 func (s *composeService) remove(ctx context.Context, containers Containers, options api.RemoveOptions) error {

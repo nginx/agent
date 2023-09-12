@@ -29,9 +29,9 @@ import (
 )
 
 func (s *composeService) Restart(ctx context.Context, projectName string, options api.RestartOptions) error {
-	return progress.Run(ctx, func(ctx context.Context) error {
+	return progress.RunWithTitle(ctx, func(ctx context.Context) error {
 		return s.restart(ctx, strings.ToLower(projectName), options)
-	}, s.stderr())
+	}, s.stdinfo(), "Restarting")
 }
 
 func (s *composeService) restart(ctx context.Context, projectName string, options api.RestartOptions) error {
@@ -48,7 +48,7 @@ func (s *composeService) restart(ctx context.Context, projectName string, option
 		}
 	}
 
-	// ignore depends_on relations which are not impacted by restarting service
+	// ignore depends_on relations which are not impacted by restarting service or not required
 	for i, service := range project.Services {
 		for name, r := range service.DependsOn {
 			if !r.Restart {

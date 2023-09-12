@@ -323,10 +323,10 @@ func startNginxAgent(b *testing.B) {
 		plugins.NewNginx(commander, binary, env, &config.Config{}),
 		plugins.NewCommander(commander, loadedConfig),
 		plugins.NewMetricsSender(reporter),
-		plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.New().String()), "1.0.0"),
+		plugins.NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.New().String())),
 		plugins.NewMetrics(loadedConfig, env, binary),
 		plugins.NewMetricsThrottle(loadedConfig, env),
-		plugins.NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.New().String()), binary, env, "1.0.0"),
+		plugins.NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.New().String()), binary, env),
 	}
 
 	messagePipe := core.NewMessagePipe(ctx)

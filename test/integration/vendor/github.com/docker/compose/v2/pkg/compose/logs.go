@@ -45,19 +45,12 @@ func (s *composeService) Logs(
 		return err
 	}
 
-	project := options.Project
-	if project == nil {
-		project, err = s.getProjectWithResources(ctx, containers, projectName)
-		if err != nil {
-			return err
-		}
+	if options.Project != nil && len(options.Services) == 0 {
+		// we run with an explicit compose.yaml, so only consider services defined in this file
+		options.Services = options.Project.ServiceNames()
+		containers = containers.filter(isService(options.Services...))
 	}
 
-	if len(options.Services) == 0 {
-		options.Services = project.ServiceNames()
-	}
-
-	containers = containers.filter(isService(options.Services...))
 	eg, ctx := errgroup.WithContext(ctx)
 	for _, c := range containers {
 		c := c
@@ -96,18 +89,21 @@ func (s *composeService) Logs(
 					ID:        c.ID,
 					Service:   c.Labels[api.ServiceLabel],
 				})
-				err := s.logContainers(ctx, consumer, c, api.LogOptions{
-					Follow:     options.Follow,
-					Since:      t.Format(time.RFC3339Nano),
-					Until:      options.Until,
-					Tail:       options.Tail,
-					Timestamps: options.Timestamps,
+				eg.Go(func() error {
+					err := s.logContainers(ctx, consumer, c, api.LogOptions{
+						Follow:     options.Follow,
+						Since:      t.Format(time.RFC3339Nano),
+						Until:      options.Until,
+						Tail:       options.Tail,
+						Timestamps: options.Timestamps,
+					})
+					if _, ok := err.(errdefs.ErrNotImplemented); ok {
+						// ignore
+						return nil
+					}
+					return err
 				})
-				if _, ok := err.(errdefs.ErrNotImplemented); ok {
-					// ignore
-					return nil
-				}
-				return err
+				return nil
 			}, func(c types.Container, t time.Time) error {
 				printer.HandleEvent(api.ContainerEvent{
 					Type:      api.ContainerEventAttach,
