@@ -18,7 +18,6 @@ func NewClientController() Controller {
 
 type ctrl struct {
 	ctx     context.Context
-	cncl    context.CancelFunc
 	clients []Client
 }
 
@@ -29,7 +28,7 @@ func (c *ctrl) WithClient(client Client) Controller {
 }
 
 func (c *ctrl) WithContext(ctx context.Context) Controller {
-	c.ctx, c.cncl = context.WithCancel(ctx)
+	c.ctx, = ctx
 	return c
 }
 
@@ -49,7 +48,6 @@ func (c *ctrl) Connect() error {
 }
 
 func (c *ctrl) Close() error {
-	defer c.cncl()
 	var retErr error
 	for _, client := range c.clients {
 		if err := client.Close(); err != nil {
