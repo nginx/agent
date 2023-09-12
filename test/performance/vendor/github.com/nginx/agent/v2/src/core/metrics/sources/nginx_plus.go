@@ -449,9 +449,6 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*m
 				if peer.SSL.SessionReuses >= prevPeer.SSL.SessionReuses {
 					tempPeer.SSL.SessionReuses = peer.SSL.SessionReuses - prevPeer.SSL.SessionReuses
 				}
-				if peer.SSL.Handshakes >= prevPeer.SSL.Handshakes {
-					tempPeer.SSL.Handshakes = peer.SSL.Handshakes - prevPeer.SSL.Handshakes
-				}
 				if peer.Responses.Responses1xx >= prevPeer.Responses.Responses1xx {
 					tempPeer.Responses.Responses1xx = peer.Responses.Responses1xx - prevPeer.Responses.Responses1xx
 				}
