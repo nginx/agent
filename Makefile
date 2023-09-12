@@ -42,7 +42,15 @@ OS                     := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 uname_m    := $(shell uname -m)
 
-OSARCH = amd64
+ifeq ($(uname_m),aarch64)
+	OSARCH = arm64
+else
+	ifeq ($(uname_m),x86_64)
+		OSARCH = amd64
+	else
+		OSARCH = $(uname_m)
+	endif
+endif
 
 VENDOR_LOCATIONS         := sdk test/integration test/performance .
 TEST_BUILD_DIR           := build/test
