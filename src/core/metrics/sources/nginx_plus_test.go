@@ -76,6 +76,18 @@ const (
 	slabPageFree                     = 95
 	slabPageUsed                     = 5
 	slabPagePctUsed                  = 5
+	currentWorkerConnAccepted        = 283
+	currentWorkerConnDropped         = 21
+	currentWorkerConnActive          = 8
+	currentWorkerConnIdle            = 22
+	currentWorkerHTTPRequestTotal    = 20022
+	currentWorkerHTTPRequestCurrent  = 75
+	previousWorkerConnAccepted       = 2
+	previousWorkerConnDropped        = 5
+	previousWorkerConnActive         = 8
+	previousWorkerConnIdle           = 1
+	previousWorkerHTTPRequestTotal   = 2001
+	previousWorkerHTTPRequestCurrent = 21
 	workerProcessID                  = 12345
 )
 
@@ -338,19 +350,18 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 		},
 		Workers: []*plusclient.Workers{
 			{
-				ID:        21,
 				ProcessID: 12345,
 				HTTP: plusclient.WorkersHTTP{
 					HTTPRequests: plusclient.HTTPRequests{
-						Total:   112,
-						Current: 213,
+						Total:   currentWorkerHTTPRequestTotal,
+						Current: currentWorkerHTTPRequestCurrent,
 					},
 				},
 				Connections: plusclient.Connections{
-					Accepted: 21,
-					Dropped:  25,
-					Active:   12,
-					Idle:     2,
+					Accepted: currentWorkerConnAccepted,
+					Dropped:  currentWorkerConnDropped,
+					Active:   currentWorkerConnActive,
+					Idle:     currentWorkerConnIdle,
 				},
 			},
 		},
@@ -458,15 +469,15 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 				ProcessID: 12345,
 				HTTP: plusclient.WorkersHTTP{
 					HTTPRequests: plusclient.HTTPRequests{
-						Total:   1,
-						Current: 1,
+						Total:   previousWorkerHTTPRequestTotal,
+						Current: previousWorkerHTTPRequestCurrent,
 					},
 				},
 				Connections: plusclient.Connections{
-					Accepted: 2,
-					Dropped:  2,
-					Active:   2,
-					Idle:     2,
+					Accepted: previousWorkerConnAccepted,
+					Dropped:  previousWorkerConnDropped,
+					Active:   previousWorkerConnActive,
+					Idle:     previousWorkerConnIdle,
 				},
 			},
 		},
@@ -742,12 +753,12 @@ func TestNginxPlus_Collect(t *testing.T) {
 	}
 
 	expectedWorkerMetrics := map[string]float64{
-		"plus.worker.conn.accepted":        19,
-		"plus.worker.conn.dropped":         23,
-		"plus.worker.conn.active":          10,
-		"plus.worker.conn.idle":            0,
-		"plus.worker.http.request.total":   111,
-		"plus.worker.http.request.current": 212,
+		"plus.worker.conn.accepted":        currentWorkerConnAccepted - previousWorkerConnAccepted,
+		"plus.worker.conn.dropped":         currentWorkerConnDropped - previousWorkerConnDropped,
+		"plus.worker.conn.active":          currentWorkerConnActive - previousWorkerConnActive,
+		"plus.worker.conn.idle":            currentWorkerConnIdle - previousWorkerConnIdle,
+		"plus.worker.http.request.total":   currentWorkerHTTPRequestTotal - previousWorkerHTTPRequestTotal,
+		"plus.worker.http.request.current": currentWorkerHTTPRequestCurrent - previousWorkerHTTPRequestCurrent,
 	}
 
 	tests := []struct {
