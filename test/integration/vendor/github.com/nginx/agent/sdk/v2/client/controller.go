@@ -28,7 +28,7 @@ func (c *ctrl) WithClient(client Client) Controller {
 }
 
 func (c *ctrl) WithContext(ctx context.Context) Controller {
-	c.ctx, = ctx
+	c.ctx = ctx
 	return c
 }
 
