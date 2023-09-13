@@ -9,10 +9,13 @@ package sources
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -29,8 +32,9 @@ const (
 	peerStateUnavail   = "unavail"
 	peerStateChecking  = "checking"
 	peerStateUnhealthy = "unhealthy"
-	valueFloat64One    = float64(1)
-	valueFloat64Zero   = float64(0)
+
+	valueFloat64One  = float64(1)
+	valueFloat64Zero = float64(0)
 )
 
 // NginxPlus generates metrics from NGINX Plus API
@@ -53,15 +57,23 @@ func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespa
 func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	c.init.Do(func() {
+		latestAPIVersion, err := c.getLatestAPIVersion(ctx, c.plusAPI)
+		if err != nil {
+			c.logger.Log(fmt.Sprintf("Failed to check available api versions: %v", err))
+		} else {
+			c.clientVersion = latestAPIVersion
+		}
+
 		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
 		if err != nil {
-			c.logger.Log(fmt.Sprintf("Failed to create plus metrics client, %v", err))
+			c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 			return
 		}
+
 		c.prevStats, err = cl.GetStats()
 		if err != nil {
-			c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics, %v", err))
+			c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 			c.prevStats = nil
 			return
@@ -70,14 +82,14 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 
 	cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
 	if err != nil {
-		c.logger.Log(fmt.Sprintf("Failed to create plus metrics client, %v", err))
+		c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
 
 	stats, err := cl.GetStats()
 	if err != nil {
-		c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics, %v", err))
+		c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
@@ -124,12 +136,13 @@ func (c *NginxPlus) collectMetrics(stats, prevStats *plusclient.Stats) (entries 
 	entries = append(entries, c.serverZoneMetrics(stats, prevStats)...)
 	entries = append(entries, c.streamServerZoneMetrics(stats, prevStats)...)
 	entries = append(entries, c.locationZoneMetrics(stats, prevStats)...)
-	entries = append(entries, c.slabMetrics(stats, prevStats)...)
+	entries = append(entries, c.slabMetrics(stats)...)
 	entries = append(entries, c.httpLimitConnsMetrics(stats, prevStats)...)
 	entries = append(entries, c.httpLimitRequestMetrics(stats, prevStats)...)
 	entries = append(entries, c.cacheMetrics(stats, prevStats)...)
 	entries = append(entries, c.httpUpstreamMetrics(stats, prevStats)...)
 	entries = append(entries, c.streamUpstreamMetrics(stats, prevStats)...)
+	entries = append(entries, c.workerMetrics(stats, prevStats)...)
 
 	return
 }
@@ -752,7 +765,7 @@ func (c *NginxPlus) cacheMetrics(stats, prevStats *plusclient.Stats) []*metrics.
 	return zoneMetrics
 }
 
-func (c *NginxPlus) slabMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+func (c *NginxPlus) slabMetrics(stats *plusclient.Stats) []*metrics.StatsEntityWrapper {
 	l := &namedMetric{namespace: c.plusNamespace, group: ""}
 	slabMetrics := make([]*metrics.StatsEntityWrapper, 0)
 
@@ -828,6 +841,43 @@ func (c *NginxPlus) httpLimitRequestMetrics(stats, prevStats *plusclient.Stats) 
 	return limitRequestMetrics
 }
 
+func (c *NginxPlus) workerMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
+	workerMetrics := make([]*metrics.StatsEntityWrapper, 0)
+	prevWorkerProcs := make(map[uint64]*plusclient.Workers)
+
+	for _, pw := range prevStats.Workers {
+		prevWorkerProcs[pw.ProcessID] = pw
+	}
+
+	for _, w := range stats.Workers {
+		l := &namedMetric{namespace: c.plusNamespace, group: "worker"}
+
+		if _, exists := prevWorkerProcs[w.ProcessID]; exists {
+			w.Connections.Accepted = w.Connections.Accepted - prevWorkerProcs[w.ProcessID].Connections.Accepted
+			w.Connections.Dropped = w.Connections.Dropped - prevWorkerProcs[w.ProcessID].Connections.Dropped
+			w.Connections.Active = w.Connections.Active - prevWorkerProcs[w.ProcessID].Connections.Active
+			w.Connections.Idle = w.Connections.Idle - prevWorkerProcs[w.ProcessID].Connections.Idle
+			w.HTTP.HTTPRequests.Total = w.HTTP.HTTPRequests.Total - prevWorkerProcs[w.ProcessID].HTTP.HTTPRequests.Total
+			w.HTTP.HTTPRequests.Current = w.HTTP.HTTPRequests.Current - prevWorkerProcs[w.ProcessID].HTTP.HTTPRequests.Current
+		}
+
+		simpleMetrics := l.convertSamplesToSimpleMetrics(map[string]float64{
+			"conn.accepted":        float64(w.Connections.Accepted),
+			"conn.dropped":         float64(w.Connections.Dropped),
+			"conn.active":          float64(w.Connections.Active),
+			"conn.idle":            float64(w.Connections.Idle),
+			"http.request.total":   float64(w.HTTP.HTTPRequests.Total),
+			"http.request.current": float64(w.HTTP.HTTPRequests.Current),
+		})
+
+		dims := c.baseDimensions.ToDimensions()
+		dims = append(dims, &proto.Dimension{Name: "process_id", Value: fmt.Sprint(w.ProcessID)})
+		workerMetrics = append(workerMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
+	}
+
+	return workerMetrics
+}
+
 func getHttpUpstreamPeerKey(peer plusclient.Peer) (key string) {
 	key = fmt.Sprintf("%s-%s-%s", peer.Server, peer.Service, peer.Name)
 	return
@@ -854,10 +904,50 @@ func createStreamPeerMap(peers []plusclient.StreamPeer) map[string]plusclient.St
 	return m
 }
 
-func boolToFloat64(mybool bool) float64 {
-	if mybool {
+func boolToFloat64(myBool bool) float64 {
+	if myBool {
 		return valueFloat64One
 	} else {
 		return valueFloat64Zero
 	}
+}
+
+func (c *NginxPlus) getLatestAPIVersion(ctx context.Context, endpoint string) (int, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create a get request: %w", err)
+	}
+
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("%v is not accessible: %w", endpoint, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("%v is not accessible: expected %v response, got %v", endpoint, http.StatusOK, resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, fmt.Errorf("error while reading body of the response: %w", err)
+	}
+
+	var vers []int
+	err = json.Unmarshal(body, &vers)
+	if err != nil {
+		return 0, fmt.Errorf("error unmarshalling versions, got %q response: %w", string(body), err)
+	}
+
+	latestAPIVer := vers[len(vers)-1]
+	if latestAPIVer < c.clientVersion {
+		return 0, fmt.Errorf("%s/%v does not have a supported api version. Must be at least version %v", endpoint, latestAPIVer, c.clientVersion)
+	}
+
+	return latestAPIVer, nil
 }
