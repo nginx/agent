@@ -2142,11 +2142,6 @@ func TestSslDirectives(t *testing.T) {
 										Lines:       int32(31),
 									},
 									{
-										Name:        "ca.key",
-										Permissions: "0600",
-										Lines:       int32(52),
-									},
-									{
 										Name:        "trusted.crt",
 										Permissions: "0644",
 										Lines:       int32(31),
@@ -2189,11 +2184,6 @@ func TestSslDirectives(t *testing.T) {
 										Name:        "ca.crt",
 										Permissions: "0644",
 										Lines:       int32(44),
-									},
-									{
-										Name:        "ca.key",
-										Permissions: "0600",
-										Lines:       int32(26),
 									},
 									{
 										Name:        "trusted.crt",

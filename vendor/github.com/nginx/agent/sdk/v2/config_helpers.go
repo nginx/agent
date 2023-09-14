@@ -25,14 +25,13 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/nginx/agent/sdk/v2/backoff"
 	filesSDK "github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/zip"
 
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -269,7 +268,7 @@ func updateNginxConfigFileConfig(
 				if err := updateNginxConfigFileWithRoot(aux, directive.Args[0], seen, allowedDirectories, directoryMap); err != nil {
 					return true, err
 				}
-			case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
+			case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate", "ssl_certificate_key":
 				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories); err != nil {
 					return true, err
 				}
