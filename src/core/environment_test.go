@@ -700,6 +700,7 @@ func TestWriteFilesNotAllowed(t *testing.T) {
 }
 
 func TestWriteFile(t *testing.T) {
+	env := &EnvironmentType{}
 	file := &proto.File{
 		Name:        "/tmp/sub-1/sub-2/write.conf",
 		Contents:    []byte("contents"),
@@ -707,7 +708,7 @@ func TestWriteFile(t *testing.T) {
 	}
 	backup, err := sdk.NewConfigApplyWithIgnoreDirectives("", nil, []string{})
 	assert.NoError(t, err)
-	assert.NoError(t, writeFile(backup, file, "/tmp"))
+	assert.NoError(t, env.WriteFile(backup, file, "/tmp"))
 	assert.FileExists(t, file.GetName())
 
 	contents, err := os.ReadFile(file.GetName())
@@ -716,6 +717,34 @@ func TestWriteFile(t *testing.T) {
 
 	os.Remove(file.GetName())
 	assert.NoFileExists(t, file.GetName())
+}
+
+func TestDeleteFile(t *testing.T) {
+	env := &EnvironmentType{}
+	tempDir := t.TempDir()
+	fileName := tempDir + "/test.txt"
+	file := &proto.File{
+		Name:        fileName,
+		Contents:    []byte("contents"),
+		Permissions: "0777",
+	}
+	backup, err := sdk.NewConfigApplyWithIgnoreDirectives("", nil, []string{})
+	assert.NoError(t, err)
+	assert.NoError(t, env.WriteFile(backup, file, "/tmp"))
+	assert.FileExists(t, file.GetName())
+
+	contents, err := os.ReadFile(file.GetName())
+	assert.NoError(t, err)
+	assert.Equal(t, file.GetContents(), contents)
+
+	assert.NoError(t, env.DeleteFile(backup, fileName))
+	assert.NoFileExists(t, file.GetName())
+
+	// verify that file being deleted is backed up in case we need to rollback
+	_, ok := backup.GetNotExists()[fileName]
+	assert.True(t, ok)
+	_, ok = backup.GetExisting()[fileName]
+	assert.False(t, ok)
 }
 
 func TestParseOsReleaseFile(t *testing.T) {
