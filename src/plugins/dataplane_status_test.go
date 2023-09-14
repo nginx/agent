@@ -176,7 +176,7 @@ func TestDataPlaneStatus(t *testing.T) {
 		Tags:         []string{},
 	}
 
-	dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env, "")
+	dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env)
 
 	messagePipe := core.NewMockMessagePipe(context.Background())
 	err := messagePipe.Register(10, []core.Plugin{dataPlaneStatus}, []core.ExtensionPlugin{})
@@ -273,7 +273,7 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 			defer cleanupFunc()
 
 			// Setup data plane status and mock pipeline
-			dataPlaneStatus := NewDataPlaneStatus(tc.config, grpc.NewMessageMeta(uuid.New().String()), binary, env, "")
+			dataPlaneStatus := NewDataPlaneStatus(tc.config, grpc.NewMessageMeta(uuid.New().String()), binary, env)
 			messagePipe := core.NewMockMessagePipe(context.Background())
 
 			err = messagePipe.Register(10, []core.Plugin{dataPlaneStatus}, []core.ExtensionPlugin{})
@@ -350,7 +350,7 @@ func TestDPSSyncNAPDetails(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Setup DataPlaneStatus
-			dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env, "")
+			dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env)
 			dataPlaneStatus.softwareDetails[agent_config.NginxAppProtectExtensionPlugin] = &proto.DataplaneSoftwareDetails{Data: tc.initialNAPDetails}
 			defer dataPlaneStatus.Close()
 
@@ -416,7 +416,7 @@ func TestDataPlaneSubscriptions(t *testing.T) {
 		Tags:         []string{},
 	}
 
-	dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env, "")
+	dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env)
 
 	assert.Equal(t, expectedSubscriptions, dataPlaneStatus.Subscriptions())
 }

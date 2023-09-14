@@ -49,13 +49,12 @@ func NewOneTimeRegistration(
 	binary core.NginxBinary,
 	env core.Environment,
 	meta *proto.Metadata,
-	version string,
 ) *OneTimeRegistration {
 	// this might be slow so do on startup
-	host := env.NewHostInfo(version, &config.Tags, config.ConfigDirs, true)
+	host := env.NewHostInfo(config.Version, &config.Tags, config.ConfigDirs, true)
 	return &OneTimeRegistration{
 		tags:                          &config.Tags,
-		agentVersion:                  version,
+		agentVersion:                  config.Version,
 		meta:                          meta,
 		config:                        config,
 		env:                           env,

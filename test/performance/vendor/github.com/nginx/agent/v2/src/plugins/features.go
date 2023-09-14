@@ -210,7 +210,7 @@ func (f *Features) enableRegistrationFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		registration := NewOneTimeRegistration(f.conf, f.binary, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.version)
+		registration := NewOneTimeRegistration(f.conf, f.binary, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()))
 
 		return []core.Plugin{registration}
 	}
@@ -225,7 +225,7 @@ func (f *Features) enableDataPlaneStatusFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		dataPlaneStatus := NewDataPlaneStatus(f.conf, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary, f.env, f.version)
+		dataPlaneStatus := NewDataPlaneStatus(f.conf, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary, f.env)
 
 		return []core.Plugin{dataPlaneStatus}
 	}

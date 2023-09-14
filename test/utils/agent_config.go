@@ -46,6 +46,10 @@ func GetMockAgentConfig() *config.Config {
 			CollectionInterval: 1,
 			Mode:               "aggregated",
 		},
+		Server: config.Server{
+			Host:     "127.0.0.1",
+			GrpcPort: 67890,
+		},
 	}
 }
 

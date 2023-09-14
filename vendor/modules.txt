@@ -1122,6 +1122,7 @@ github.com/nbutton23/zxcvbn-go/utils/math
 ## explicit; go 1.21
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
+github.com/nginx/agent/sdk/v2/agent/events
 github.com/nginx/agent/sdk/v2/backoff
 github.com/nginx/agent/sdk/v2/checksum
 github.com/nginx/agent/sdk/v2/client
@@ -1135,8 +1136,8 @@ github.com/nginx/agent/sdk/v2/zip
 # github.com/nginxinc/nginx-go-crossplane v0.4.24
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
-# github.com/nginxinc/nginx-plus-go-client v0.10.0
-## explicit; go 1.18
+# github.com/nginxinc/nginx-plus-go-client v0.11.0
+## explicit; go 1.19
 github.com/nginxinc/nginx-plus-go-client/client
 # github.com/nginxinc/nginx-prometheus-exporter v0.11.0
 ## explicit; go 1.19

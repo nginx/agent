@@ -55,11 +55,28 @@ var Viper = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
 
 func SetVersion(version, commit string) {
 	ROOT_COMMAND.Version = version + "-" + commit
+	Viper.SetDefault(VersionKey, version)
 }
 
 func Execute() error {
 	ROOT_COMMAND.AddCommand(COMPLETION_COMMAND)
 	return ROOT_COMMAND.Execute()
+}
+
+func InitConfiguration(version, commit string) {
+	SetVersion(version, commit)
+	SetDefaults()
+	RegisterFlags()
+	dynamicConfigPath := DynamicConfigFileAbsPath
+	if runtime.GOOS == "freebsd" {
+		dynamicConfigPath = DynamicConfigFileAbsFreeBsdPath
+	}
+	configPath, err := RegisterConfigFile(dynamicConfigPath, ConfigFileName, ConfigFilePaths()...)
+	if err != nil {
+		log.Fatalf("Failed to load configuration file: %v", err)
+	}
+	log.Debugf("Configuration file loaded %v", configPath)
+	Viper.Set(ConfigPathKey, configPath)
 }
 
 func SetDefaults() {
@@ -165,6 +182,7 @@ func GetConfig(clientId string) (*Config, error) {
 	}
 
 	config := &Config{
+		Version:               Viper.GetString(VersionKey),
 		Path:                  Viper.GetString(ConfigPathKey),
 		DynamicConfigPath:     Viper.GetString(DynamicConfigPathKey),
 		ClientID:              clientId,

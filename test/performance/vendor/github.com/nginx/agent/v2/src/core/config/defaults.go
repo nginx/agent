@@ -61,7 +61,7 @@ var (
 		Nginx: Nginx{
 			Debug:                        false,
 			NginxCountingSocket:          "unix:/var/run/nginx-agent/nginx.sock",
-			NginxClientVersion:           6,
+			NginxClientVersion:           7, // NGINX Plus R25+
 			ConfigReloadMonitoringPeriod: 10 * time.Second,
 			TreatWarningsAsErrors:        false,
 		},
@@ -93,6 +93,8 @@ var (
 )
 
 const (
+	MODULE = "NGINX-AGENT"
+
 	DynamicConfigFileName           = "agent-dynamic.conf"
 	DynamicConfigFileAbsPath        = "/var/lib/nginx-agent/agent-dynamic.conf"
 	DynamicConfigFileAbsFreeBsdPath = "/var/db/nginx-agent/agent-dynamic.conf"
@@ -102,6 +104,7 @@ const (
 	ConfigPathKey                   = "path"
 	DynamicConfigPathKey            = "dynamic-config-path"
 
+	VersionKey          = "version"
 	CloudAccountIdKey   = "cloudaccountid"
 	LocationKey         = "location"
 	DisplayNameKey      = "display_name"

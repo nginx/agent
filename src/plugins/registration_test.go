@@ -45,7 +45,7 @@ func TestRegistration_Process(t *testing.T) {
 				Extensions: []string{agent_config.NginxAppProtectExtensionPlugin},
 			}
 
-			pluginUnderTest := NewOneTimeRegistration(cfg, binary, env, &proto.Metadata{}, "0.0.0")
+			pluginUnderTest := NewOneTimeRegistration(cfg, binary, env, &proto.Metadata{})
 			pluginUnderTest.dataplaneSoftwareDetails[agent_config.NginxAppProtectExtensionPlugin] = &proto.DataplaneSoftwareDetails{
 				Data: testNAPDetailsActive,
 			}
@@ -77,7 +77,7 @@ func TestRegistration_areDataplaneSoftwareDetailsReady(t *testing.T) {
 	conf := tutils.GetMockAgentConfig()
 	conf.Extensions = []string{agent_config.NginxAppProtectExtensionPlugin}
 
-	pluginUnderTest := NewOneTimeRegistration(conf, nil, tutils.GetMockEnv(), nil, "")
+	pluginUnderTest := NewOneTimeRegistration(conf, nil, tutils.GetMockEnv(), nil)
 	softwareDetails := make(map[string]*proto.DataplaneSoftwareDetails)
 	softwareDetails[agent_config.NginxAppProtectExtensionPlugin] = &proto.DataplaneSoftwareDetails{}
 	pluginUnderTest.dataplaneSoftwareDetails = softwareDetails
@@ -86,13 +86,13 @@ func TestRegistration_areDataplaneSoftwareDetailsReady(t *testing.T) {
 }
 
 func TestRegistration_Subscriptions(t *testing.T) {
-	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil, "")
+	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil)
 
 	assert.Equal(t, []string{core.RegistrationCompletedTopic, core.DataplaneSoftwareDetailsUpdated}, pluginUnderTest.Subscriptions())
 }
 
 func TestRegistration_Info(t *testing.T) {
-	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil, "")
+	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil)
 
 	assert.Equal(t, "registration", pluginUnderTest.Info().Name())
 }
