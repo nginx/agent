@@ -23,7 +23,6 @@ import (
 
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/client"
-	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/zip"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
@@ -498,21 +497,12 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	} else {
 		if response.configApply != nil {
 			if err := response.configApply.Complete(); err != nil {
-				nginxConfigStatusMessage = fmt.Sprintf("Config complete failed: %v", err)
-				log.Errorf(nginxConfigStatusMessage)
+				log.Errorf("Config complete failed: %v", err)
 			}
 		}
 
 		// Upload NGINX config only if GPRC server is configured
 		if n.config.IsGrpcServerConfigured() {
-			uploadResponse := &proto.Command_NginxConfigResponse{
-				NginxConfigResponse: &proto.NginxConfigResponse{
-					Action:     proto.NginxConfigAction_UNKNOWN,
-					Status:     newOKStatus("config uploaded status").CmdStatus,
-					ConfigData: nil,
-				},
-			}
-
 			err := n.uploadConfig(
 				&proto.ConfigDescriptor{
 					SystemId: n.env.GetSystemUUID(),
@@ -521,15 +511,8 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 				response.correlationId,
 			)
 			if err != nil {
-				uploadResponse.NginxConfigResponse.Status = newErrStatus("Config uploaded error: " + err.Error()).CmdStatus
-				nginxConfigStatusMessage = fmt.Sprintf("Config uploaded error: %v", err)
-				log.Errorf(nginxConfigStatusMessage)
+				log.Errorf("Config uploaded error: %v", err)
 			}
-
-			uploadResponseCommand := &proto.Command{Meta: grpc.NewMessageMeta(response.correlationId)}
-			uploadResponseCommand.Data = uploadResponse
-
-			n.messagePipeline.Process(core.NewMessage(core.CommResponse, uploadResponseCommand))
 		}
 
 		log.Debug("Enabling file watcher")

@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  agent:
+    build:
+      context: ../../../
+      dockerfile: ./scripts/docker/nginx-oss/deb/Dockerfile
+      target: install-agent-local
+      args:
+        PACKAGE_NAME: ${PACKAGE_NAME}
+        BASE_IMAGE: ${BASE_IMAGE}
+        ENTRY_POINT: "./scripts/docker/entrypoint.sh"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf

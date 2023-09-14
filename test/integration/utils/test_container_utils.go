@@ -2,6 +2,8 @@ package utils
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -10,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
+	tcexec "github.com/testcontainers/testcontainers-go/exec"
 	"github.com/testcontainers/testcontainers-go/modules/compose"
 	wait "github.com/testcontainers/testcontainers-go/wait"
 )
@@ -27,7 +30,7 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 	t.Cleanup(cancel)
 
 	require.NoError(t,
-		comp.WaitForService("agent", wait.ForLog("OneTimeRegistration completed").WithStartupTimeout(agentServiceTimeout)).WithEnv(
+		comp.WaitForService("agent", wait.ForLog("The following core plugins have being registered").WithStartupTimeout(agentServiceTimeout)).WithEnv(
 			map[string]string{
 				"PACKAGE_NAME":  os.Getenv("PACKAGE_NAME"),
 				"PACKAGES_REPO": os.Getenv("PACKAGES_REPO"),
@@ -114,4 +117,21 @@ func TestAgentHasNoErrorLogs(t *testing.T, agentContainer *testcontainers.Docker
 	assert.NotContains(t, string(agentLogContent), "level=error", "agent log file contains logs at error level")
 	assert.NotContains(t, string(agentLogContent), "level=panic", "agent log file contains logs at panic level")
 	assert.NotContains(t, string(agentLogContent), "level=fatal", "agent log file contains logs at fatal level")
+}
+
+func ExecuteCommand(agentContainer *testcontainers.DockerContainer, cmd []string) (string, error) {
+	exitCode, response, err := agentContainer.Exec(context.Background(), cmd, tcexec.Multiplexed())
+	if err != nil {
+		return "", err
+	}
+	if exitCode != 0 {
+		return "", errors.New(fmt.Sprintf("Incorrect exit code returned: %d", exitCode))
+	}
+
+	responseContent, err := io.ReadAll(response)
+	if err != nil {
+		return "", err
+	}
+
+	return string(responseContent), nil
 }
