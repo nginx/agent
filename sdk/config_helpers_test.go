@@ -2214,6 +2214,7 @@ func TestSslDirectives(t *testing.T) {
 			assert.NoError(t, err)
 
 			err = generateCertificates(test.algoName)
+			fmt.Println("HERE")
 			assert.NoError(t, err)
 
 			allowedDirs := map[string]struct{}{

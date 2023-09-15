@@ -15,7 +15,12 @@ OUT=""
 
 parse_args() {
     shift
-    shift
+
+    # if algorithm name parameter is included then
+    # shift positional parameter
+    if [ "$#" -eq 5 ]; then
+        shift
+    fi
 
     while [ "$#" -gt 0 ]; do
         case $1 in
@@ -182,9 +187,7 @@ case $1 in
         elif [ $2 == "dsa" ]; then
             create_self_signed_dsa "ca"
         else
-            echo "! illegal algorithm name" 
-            echo "valid ones are rsa, dsa"
-            exit 1
+            create_self_signed "ca"
         fi
         ;;
     "intermediate")
