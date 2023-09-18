@@ -84,12 +84,15 @@ parse_args() {
 }
 
 create_self_signed_dsa() {
+    openssl dsaparam 4096 > $OUT/parameterfile.pem
     if ! openssl gendsa \
-        -out "$OUT/$1.key" <(openssl dsaparam 4096 ); then
+        -out "$OUT/$1.key" $OUT/parameterfile.pem; then
 
         echo "! Failed to generate self signed cert. Verify $CONFIG is a valid config"
+        rm $OUT/parameterfile.pem
         exit 1
     fi
+    rm $OUT/parameterfile.pem
 
     if ! openssl req \
         -x509 \
