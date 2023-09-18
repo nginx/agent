@@ -131,6 +131,10 @@ func (fw *FileWatcher) addWatcher(info os.FileInfo, path string) (err error) {
 	if info == nil {
 		info, err = fw.env.FileStat(path)
 		if err != nil {
+			if os.IsNotExist(err) {
+				log.Debugf("Unable to add file watcher for %v as file doesn't exist: %v", path, err)
+				return nil
+			}
 			log.Warnf("Error unable to add file watcher for %v : %v", path, err)
 			return err
 		}
