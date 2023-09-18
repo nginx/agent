@@ -201,7 +201,6 @@ func (env *EnvironmentType) GetSystemUUID() string {
 
 	if env.IsContainer() {
 		containerID, err := env.GetContainerID()
-		log.Infof("-----> containerID: %v", containerID)
 		if err != nil {
 			log.Errorf("Unable to read docker container ID: %v", err)
 			return ""
@@ -214,7 +213,6 @@ func (env *EnvironmentType) GetSystemUUID() string {
 		log.Infof("Unable to read host id from dataplane, defaulting value. Error: %v", err)
 		return ""
 	}
-	log.Infof("-----> hostInfo.HostID: %v", hostInfo.HostID)
 	return uuid.NewMD5(uuid.Nil, []byte(hostInfo.HostID)).String()
 }
 
