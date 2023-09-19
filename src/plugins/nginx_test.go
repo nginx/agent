@@ -726,7 +726,6 @@ func TestNginxDetailProcUpdate(t *testing.T) {
 			foundMessage = true
 		}
 	}
-	// should be 5
 	assert.Len(t, processedMessages, 4)
 	assert.True(t, foundMessage)
 }

@@ -34,7 +34,6 @@ var (
 
 func init() {
 	config.InitConfiguration(version, commit)
-	env = &core.EnvironmentType{}
 }
 
 func main() {
