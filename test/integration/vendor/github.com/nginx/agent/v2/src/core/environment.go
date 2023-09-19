@@ -185,14 +185,12 @@ func getUnixName() string {
 }
 
 func (env *EnvironmentType) GetHostname() string {
-	ctx := context.Background()
-	defer ctx.Done()
-	hostInformation, err := host.InfoWithContext(ctx)
+	hostname, err := os.Hostname()
 	if err != nil {
-		log.Warnf("Unable to read hostname from dataplane, defaulting value. Error: %v", err)
-		return ""
+		log.Warnf("unable to get hostname: %v", err)
+		hostname = ""
 	}
-	return hostInformation.Hostname
+	return hostname
 }
 
 func (env *EnvironmentType) GetSystemUUID() string {
