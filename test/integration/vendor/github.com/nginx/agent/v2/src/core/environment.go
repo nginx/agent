@@ -206,12 +206,12 @@ func (env *EnvironmentType) GetSystemUUID() string {
 		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String()
 	}
 
-	hostInfo, err := host.InfoWithContext(ctx)
+	hostID, err := host.HostIDWithContext(ctx)
 	if err != nil {
 		log.Infof("Unable to read host id from dataplane, defaulting value. Error: %v", err)
 		return ""
 	}
-	return uuid.NewMD5(uuid.Nil, []byte(hostInfo.HostID)).String()
+	return uuid.NewMD5(uuid.Nil, []byte(hostID)).String()
 }
 
 func (env *EnvironmentType) ReadDirectory(dir string, ext string) ([]string, error) {
