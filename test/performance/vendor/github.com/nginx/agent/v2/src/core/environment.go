@@ -187,7 +187,7 @@ func getUnixName() string {
 func (env *EnvironmentType) GetHostname() string {
 	hostname, err := os.Hostname()
 	if err != nil {
-		log.Warnf("unable to get hostname: %v", err)
+		log.Warnf("Unable to read hostname from dataplane, defaulting value. Error: %v", err)
 		hostname = ""
 	}
 	return hostname
