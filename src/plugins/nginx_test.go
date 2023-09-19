@@ -569,7 +569,7 @@ func TestNginxConfigApply(t *testing.T) {
 			}
 
 			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
-
+			messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
 
 			go messagePipe.Run()
