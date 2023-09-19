@@ -645,7 +645,7 @@ func TestUploadConfigs(t *testing.T) {
 
 	pluginUnderTest.Init(messagePipe)
 
-	// calling Run x 2 means AgentStarted finishes before the DataplaneChanged event gets processed. 
+	// calling Run x 2 means AgentStarted finishes before the DataplaneChanged event gets processed.
 	// This is the expected order of the real MessagePipe
 	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
 	messagePipe.Run()
@@ -680,7 +680,7 @@ func TestDisableUploadConfigs(t *testing.T) {
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
-	// calling Run x 2 means AgentStarted finishes before the DataplaneChanged event gets processed. 
+	// calling Run x 2 means AgentStarted finishes before the DataplaneChanged event gets processed.
 	// This is the expected order of the real MessagePipe
 	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
 	messagePipe.Run()
