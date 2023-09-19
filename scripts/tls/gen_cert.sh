@@ -185,9 +185,9 @@ check_args() {
 case $1 in
     "ca")
         parse_args "$@"
-        if [ $2 == "rsa" ]; then
+        if [ $2 = "rsa" ]; then
             create_self_signed "ca"
-        elif [ $2 == "dsa" ]; then
+        elif [ $2 = "dsa" ]; then
             create_self_signed_dsa "ca"
         else
             create_self_signed "ca"
