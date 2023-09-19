@@ -555,7 +555,7 @@ func TestNginxConfigApply(t *testing.T) {
 				Nginx: loadedConfig.Nginx{
 					ConfigReloadMonitoringPeriod: 5 * time.Second,
 				},
-				Features:   []string{agent_config.FeatureNginxConfig},
+				Features:   []string{agent_config.FeatureNginxConfigAsync},
 				Extensions: []string{agent_config.NginxAppProtectExtensionPlugin},
 			}
 
