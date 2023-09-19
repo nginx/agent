@@ -114,7 +114,7 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
-      - name: Docker Output Logs 
+      - name: Container Output Logs 
         if: failure()
         run: |
           docker ps -a
