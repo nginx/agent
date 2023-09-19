@@ -622,11 +622,9 @@ func TestUploadConfigs(t *testing.T) {
 
 	msgTopics := []string{
 		core.AgentStarted,
-		core.DataplaneChanged,
 		core.NginxPluginConfigured,
 		core.NginxInstancesFound,
-		// core.NginxPluginConfigured,
-		// core.NginxInstancesFound,
+		core.DataplaneChanged,
 	}
 
 	env := tutils.GetMockEnvWithProcess()
@@ -640,13 +638,17 @@ func TestUploadConfigs(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
 	cmdr.On("Upload", mock.Anything, mock.Anything).Return(nil)
 
-	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfigAsync}}
 
 	pluginUnderTest := NewNginx(cmdr, binary, env, conf)
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
+
+	// calling Run x 2 means AgentStarted finishes before the DataplaneChanged event gets processed. 
+	// This is the expected order of the real MessagePipe
 	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
+	messagePipe.Run()
 
 	messagePipe.Process(core.NewMessage(core.DataplaneChanged, nil))
 	messagePipe.Run()
@@ -661,11 +663,9 @@ func TestUploadConfigs(t *testing.T) {
 func TestDisableUploadConfigs(t *testing.T) {
 	msgTopics := []string{
 		core.AgentStarted,
-		// core.NginxPluginConfigured,
-		// core.NginxInstancesFound,
-		core.DataplaneChanged,
 		core.NginxPluginConfigured,
 		core.NginxInstancesFound,
+		core.DataplaneChanged,
 	}
 
 	env := tutils.GetMockEnvWithProcess()
@@ -680,7 +680,10 @@ func TestDisableUploadConfigs(t *testing.T) {
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
+	// calling Run x 2 means AgentStarted finishes before the DataplaneChanged event gets processed. 
+	// This is the expected order of the real MessagePipe
 	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
+	messagePipe.Run()
 
 	messagePipe.Process(core.NewMessage(core.DataplaneChanged, nil))
 	messagePipe.Run()
@@ -753,7 +756,7 @@ func TestNginx_Process_NginxConfigUpload(t *testing.T) {
 	binary.On("ReadConfig", "/var/conf", "12345", "12345678").Return(config, nil)
 
 	env := tutils.GetMockEnvWithProcess()
-	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfigAsync}}
 
 	pluginUnderTest := NewNginx(cmdr, binary, env, conf)
 	pluginUnderTest.Process(core.NewMessage(core.NginxConfigUpload, configDesc))
@@ -818,7 +821,7 @@ func TestNginx_validateConfig(t *testing.T) {
 			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap())
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
-			conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+			conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfigAsync}}
 
 			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, conf)
 
@@ -902,7 +905,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 			Host:     "127.0.0.1",
 			GrpcPort: 9092,
 		},
-		Features: []string{agent_config.FeatureNginxConfig},
+		Features: []string{agent_config.FeatureNginxConfigAsync},
 		Nginx: loadedConfig.Nginx{
 			ConfigReloadMonitoringPeriod: 5 * time.Second,
 		},
@@ -1001,7 +1004,7 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 		},
 	)
 
-	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfigAsync}}
 
 	pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 
