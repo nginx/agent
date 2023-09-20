@@ -9,6 +9,7 @@ package plugins
 
 import (
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/client"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/v2/src/core"
@@ -26,15 +27,17 @@ type Features struct {
 	binary     core.NginxBinary
 	version    string
 	featureMap map[string]func(data string) []core.Plugin
+	agentEventsMeta *events.AgentEventMeta
 }
 
-func NewFeatures(commander client.Commander, conf *config.Config, env core.Environment, binary core.NginxBinary, version string) *Features {
+func NewFeatures(commander client.Commander, conf *config.Config, env core.Environment, binary core.NginxBinary, version string, agentEventsMeta *events.AgentEventMeta) *Features {
 	return &Features{
 		commander: commander,
 		conf:      conf,
 		env:       env,
 		binary:    binary,
 		version:   version,
+		agentEventsMeta: agentEventsMeta,
 	}
 }
 
@@ -255,7 +258,7 @@ func (f *Features) enableActivityEventsFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		events := NewEvents(f.conf, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary)
+		events := NewEvents(f.conf, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary, f.agentEventsMeta)
 
 		return []core.Plugin{events}
 	}

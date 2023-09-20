@@ -8,13 +8,14 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/agent/events"
 
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 
 	"github.com/google/uuid"
 )
 
-func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.Environment, reporter client.MetricReporter, loadedConfig *config.Config) ([]core.Plugin, []core.ExtensionPlugin) {
+func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.Environment, reporter client.MetricReporter, loadedConfig *config.Config, agentEventsMeta *events.AgentEventMeta) ([]core.Plugin, []core.ExtensionPlugin) {
 	var corePlugins []core.Plugin
 	var extensionPlugins []core.ExtensionPlugin
 
@@ -41,7 +42,7 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 		NewConfigReader(loadedConfig),
 		NewNginx(commander, binary, env, loadedConfig),
 		NewExtensions(loadedConfig, env),
-		NewFeatures(commander, loadedConfig, env, binary, loadedConfig.Version),
+		NewFeatures(commander, loadedConfig, env, binary, loadedConfig.Version, agentEventsMeta),
 	)
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureRegistration) {
@@ -66,7 +67,7 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureActivityEvents) {
-		corePlugins = append(corePlugins, NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary))
+		corePlugins = append(corePlugins, NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, agentEventsMeta))
 	}
 
 	if loadedConfig.AgentAPI.Port != 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureAgentAPI) {

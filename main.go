@@ -83,7 +83,7 @@ func main() {
 
 		binary := core.NewNginxBinary(env, loadedConfig)
 
-		corePlugins, extensionPlugins := plugins.LoadPlugins(commander, binary, env, reporter, loadedConfig)
+		corePlugins, extensionPlugins := plugins.LoadPlugins(commander, binary, env, reporter, loadedConfig, eventMeta)
 
 		pipe := core.InitializePipe(ctx, corePlugins, extensionPlugins, agent_config.DefaultPluginSize)
 

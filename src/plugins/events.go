@@ -46,12 +46,13 @@ type Events struct {
 	agentEventsMeta *events.AgentEventMeta
 }
 
-func NewEvents(conf *config.Config, env core.Environment, meta *proto.Metadata, nginxBinary core.NginxBinary) *Events {
+func NewEvents(conf *config.Config, env core.Environment, meta *proto.Metadata, nginxBinary core.NginxBinary, agentEventsMeta *events.AgentEventMeta) *Events {
 	return &Events{
-		conf:        conf,
-		env:         env,
-		meta:        meta,
-		nginxBinary: nginxBinary,
+		conf:            conf,
+		env:             env,
+		meta:            meta,
+		nginxBinary: 	 nginxBinary,
+		agentEventsMeta: agentEventsMeta,
 	}
 }
 
@@ -119,7 +120,6 @@ func (a *Events) sendAgentStartedEvent(msg *core.Message) {
 
 	log.Debugf("Created event: %v", event)
 	a.pipeline.Process(core.NewMessage(core.Events, event))
-	a.agentEventsMeta = agentEventMeta
 }
 
 func (a *Events) sendNingxFoundEvent(msg *core.Message) {
