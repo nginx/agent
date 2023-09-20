@@ -194,11 +194,11 @@ func (p *MessagePipe) GetExtensionPlugins() []ExtensionPlugin {
 
 func (p *MessagePipe) initPlugins() {
 	for _, r := range p.plugins {
-		r.Init(p)
+		go r.Init(p)
 	}
 
 	for _, r := range p.extensionPlugins {
-		r.Init(p)
+		go r.Init(p)
 	}
 }
 
