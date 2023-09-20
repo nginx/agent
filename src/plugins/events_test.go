@@ -534,10 +534,10 @@ func TestActivityEvents_Process(t *testing.T) {
 			}
 
 			pluginUnderTest := NewEvents(
-				config, 
-				env, 
-				grpc.NewMessageMeta(uuid.New().String()), 
-				core.NewNginxBinary(env, config), 
+				config,
+				env,
+				grpc.NewMessageMeta(uuid.New().String()),
+				core.NewNginxBinary(env, config),
 				events.NewAgentEventMeta(
 					"test-agent",
 					"v0.0.1",
@@ -546,7 +546,7 @@ func TestActivityEvents_Process(t *testing.T) {
 					"12345678",
 					"group-a",
 					[]string{"tag-a", "tag-b"},
-			))
+				))
 			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 			if test.name != "test AgentStart message" {

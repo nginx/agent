@@ -20,23 +20,23 @@ import (
 )
 
 type Features struct {
-	commander  client.Commander
-	pipeline   core.MessagePipeInterface
-	conf       *config.Config
-	env        core.Environment
-	binary     core.NginxBinary
-	version    string
-	featureMap map[string]func(data string) []core.Plugin
+	commander       client.Commander
+	pipeline        core.MessagePipeInterface
+	conf            *config.Config
+	env             core.Environment
+	binary          core.NginxBinary
+	version         string
+	featureMap      map[string]func(data string) []core.Plugin
 	agentEventsMeta *events.AgentEventMeta
 }
 
 func NewFeatures(commander client.Commander, conf *config.Config, env core.Environment, binary core.NginxBinary, version string, agentEventsMeta *events.AgentEventMeta) *Features {
 	return &Features{
-		commander: commander,
-		conf:      conf,
-		env:       env,
-		binary:    binary,
-		version:   version,
+		commander:       commander,
+		conf:            conf,
+		env:             env,
+		binary:          binary,
+		version:         version,
 		agentEventsMeta: agentEventsMeta,
 	}
 }

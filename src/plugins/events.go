@@ -51,7 +51,7 @@ func NewEvents(conf *config.Config, env core.Environment, meta *proto.Metadata, 
 		conf:            conf,
 		env:             env,
 		meta:            meta,
-		nginxBinary: 	 nginxBinary,
+		nginxBinary:     nginxBinary,
 		agentEventsMeta: agentEventsMeta,
 	}
 }
