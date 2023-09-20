@@ -59,8 +59,10 @@ func SaveCollections(metricsCollections Collections, reports ...*proto.MetricsRe
 				}
 			}
 
-			if stats.GetSimplemetrics() != nil {
-				for _, simpleMetric := range stats.Simplemetrics {
+			simpleMetrics := stats.GetSimplemetrics()
+
+			if simpleMetrics != nil {
+				for _, simpleMetric := range simpleMetrics {
 					if metrics, ok := metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name]; ok {
 						metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = metrics + simpleMetric.GetValue()
 					} else {
