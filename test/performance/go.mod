@@ -44,7 +44,7 @@ require (
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.24 // indirect
-	github.com/nginxinc/nginx-plus-go-client v0.10.0 // indirect
+	github.com/nginxinc/nginx-plus-go-client v0.11.0 // indirect
 	github.com/nginxinc/nginx-prometheus-exporter v0.11.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/orcaman/concurrent-map v1.0.0 // indirect
@@ -56,7 +56,7 @@ require (
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/rs/cors v1.9.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
-	github.com/shirou/gopsutil/v3 v3.23.6 // indirect
+	github.com/shirou/gopsutil/v3 v3.23.8 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/spf13/afero v1.9.5 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
@@ -66,8 +66,8 @@ require (
 	github.com/spf13/viper v1.16.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/tklauser/go-sysconf v0.3.11 // indirect
-	github.com/tklauser/numcpus v0.6.0 // indirect
+	github.com/tklauser/go-sysconf v0.3.12 // indirect
+	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/trivago/grok v1.0.0 // indirect
 	github.com/vardius/message-bus v1.1.5 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect

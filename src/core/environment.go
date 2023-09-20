@@ -39,7 +39,7 @@ import (
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 //counterfeiter:generate -o fake_environment_test.go . Environment
-//go:generate sh -c "grep -v agent/product/nginx-agent/v2/core fake_environment_test.go | sed -e s\\/core\\\\.\\/\\/g > fake_environment_fixed.go"
+//go:generate sh -c "grep -v github.com/nginx/agent/v2/src/core fake_environment_test.go | sed -e s\\/core\\\\.\\/\\/g > fake_environment_fixed.go"
 //go:generate mv fake_environment_fixed.go fake_environment_test.go
 type Environment interface {
 	NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo
@@ -48,6 +48,8 @@ type Environment interface {
 	GetSystemUUID() (hostId string)
 	ReadDirectory(dir string, ext string) ([]string, error)
 	WriteFiles(backup ConfigApplyMarker, files []*proto.File, prefix string, allowedDirs map[string]struct{}) error
+	WriteFile(backup ConfigApplyMarker, file *proto.File, confPath string) error
+	DeleteFile(backup ConfigApplyMarker, fileName string) error
 	Processes() (result []*Process)
 	FileStat(path string) (os.FileInfo, error)
 	DiskDevices() ([]string, error)
@@ -236,10 +238,66 @@ func (env *EnvironmentType) WriteFiles(backup ConfigApplyMarker, files []*proto.
 	}
 
 	for _, file := range files {
-		if err = writeFile(backup, file, confPath); err != nil {
+		if err = env.WriteFile(backup, file, confPath); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+// WriteFile writes the provided file content to disk. If the file.GetName() returns an absolute path, it'll be written
+// to the path. Otherwise, it'll be written to the path relative to the provided confPath.
+func (env *EnvironmentType) WriteFile(backup ConfigApplyMarker, file *proto.File, confPath string) error {
+	fileFullPath := file.GetName()
+	if !filepath.IsAbs(fileFullPath) {
+		fileFullPath = filepath.Join(confPath, fileFullPath)
+	}
+
+	if err := backup.MarkAndSave(fileFullPath); err != nil {
+		return err
+	}
+	permissions := files.GetFileMode(file.GetPermissions())
+
+	directory := filepath.Dir(fileFullPath)
+	_, err := os.Stat(directory)
+	if os.IsNotExist(err) {
+		log.Debugf("Creating directory %s with permissions 755", directory)
+		err = os.MkdirAll(directory, 0o755)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := os.WriteFile(fileFullPath, file.GetContents(), permissions); err != nil {
+		// If the file didn't exist originally and failed to be created
+		// Then remove that file from the backup so that the rollback doesn't try to delete the file
+		if _, err := os.Stat(fileFullPath); !errors.Is(err, os.ErrNotExist) {
+			backup.RemoveFromNotExists(fileFullPath)
+		}
+		return err
+	}
+
+	log.Debugf("Wrote file %s", fileFullPath)
+	return nil
+}
+
+func (env *EnvironmentType) DeleteFile(backup ConfigApplyMarker, fileName string) error {
+	if found, foundErr := FileExists(fileName); !found {
+		if foundErr == nil {
+			log.Debugf("skip delete for non-existing file: %s", fileName)
+			return nil
+		}
+		// possible perm deny, depends on platform
+		log.Warnf("file exists returned for %s: %s", fileName, foundErr)
+		return foundErr
+	}
+	if err := backup.MarkAndSave(fileName); err != nil {
+		return err
+	}
+	if err := os.Remove(fileName); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -449,42 +507,6 @@ func allowedFile(path string, allowedDirs map[string]struct{}) bool {
 		}
 	}
 	return false
-}
-
-// writeFile writes the provided file content to disk. If the file.GetName() returns an absolute path, it'll be written
-// to the path. Otherwise, it'll be written to the path relative to the provided confPath.
-func writeFile(backup ConfigApplyMarker, file *proto.File, confPath string) error {
-	fileFullPath := file.GetName()
-	if !filepath.IsAbs(fileFullPath) {
-		fileFullPath = filepath.Join(confPath, fileFullPath)
-	}
-
-	if err := backup.MarkAndSave(fileFullPath); err != nil {
-		return err
-	}
-	permissions := files.GetFileMode(file.GetPermissions())
-
-	directory := filepath.Dir(fileFullPath)
-	_, err := os.Stat(directory)
-	if os.IsNotExist(err) {
-		log.Debugf("Creating directory %s with permissions 755", directory)
-		err = os.MkdirAll(directory, 0o755)
-		if err != nil {
-			return err
-		}
-	}
-
-	if err := os.WriteFile(fileFullPath, file.GetContents(), permissions); err != nil {
-		// If the file didn't exist originally and failed to be created
-		// Then remove that file from the backup so that the rollback doesn't try to delete the file
-		if _, err := os.Stat(fileFullPath); !errors.Is(err, os.ErrNotExist) {
-			backup.RemoveFromNotExists(fileFullPath)
-		}
-		return err
-	}
-
-	log.Debugf("Wrote file %s", fileFullPath)
-	return nil
 }
 
 func (env *EnvironmentType) FileStat(path string) (os.FileInfo, error) {

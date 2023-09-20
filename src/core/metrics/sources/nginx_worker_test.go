@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
-	"github.com/nginx/agent/v2/test/utils"
+	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -27,13 +27,7 @@ var (
 	instanceGroup = "my_instances"
 	nginxId       = uuid.New().String()
 	systemId      = uuid.New().String()
-	procMap       = map[string][]*proto.NginxDetails{
-		"1": {
-			{
-				ProcessId: "1",
-			},
-		},
-	}
+	procMap       = tutils.GetProcessMap()
 )
 
 type MockWorkerClient struct {
@@ -58,14 +52,14 @@ func TestNginxWorkerCollector(t *testing.T) {
 		NginxId:       nginxId,
 	}
 
-	mockBinary := &utils.MockNginxBinary{}
+	mockBinary := &tutils.MockNginxBinary{}
 	mockClient := &MockWorkerClient{}
 
 	n := NewNginxWorker(dimensions, OSSNamespace, mockBinary, mockClient)
 
 	mockBinary.On("GetChildProcesses").Return(procMap)
 
-	mockClient.On("GetWorkerStats", procMap["1"]).Return(&WorkerStats{
+	mockClient.On("GetWorkerStats", procMap["12345"]).Return(&WorkerStats{
 		Workers: &Workers{
 			Count:        1.00,
 			KbsR:         1.00,

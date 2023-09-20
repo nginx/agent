@@ -155,13 +155,7 @@ func TestMetricsProcessNginxDetailProcUpdate(t *testing.T) {
 				},
 			}).Once()
 			env.On("IsContainer").Return(false)
-			env.On("GetChildProcesses").Return(map[string][]*proto.NginxDetails{
-				"1": {
-					{
-						ProcessId: "1",
-					},
-				},
-			})
+			env.On("GetChildProcesses").Return(tutils.GetProcessMap())
 
 			metricsPlugin := NewMetrics(config, env, binary)
 			metricsPlugin.collectors = []metrics.Collector{

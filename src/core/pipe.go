@@ -54,6 +54,15 @@ func NewMessagePipe(ctx context.Context) *MessagePipe {
 	}
 }
 
+func InitializePipe(ctx context.Context, corePlugins []Plugin, extensionPlugins []ExtensionPlugin, size int) MessagePipeInterface {
+	pipe := NewMessagePipe(ctx)
+	err := pipe.Register(size, corePlugins, extensionPlugins)
+	if err != nil {
+		log.Warnf("Failed to start agent successfully, error loading plugins %v", err)
+	}
+	return pipe
+}
+
 func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []ExtensionPlugin) error {
 	p.mu.Lock()
 
@@ -185,11 +194,11 @@ func (p *MessagePipe) GetExtensionPlugins() []ExtensionPlugin {
 
 func (p *MessagePipe) initPlugins() {
 	for _, r := range p.plugins {
-		r.Init(p)
+		go r.Init(p)
 	}
 
 	for _, r := range p.extensionPlugins {
-		r.Init(p)
+		go r.Init(p)
 	}
 }
 

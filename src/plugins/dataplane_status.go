@@ -48,7 +48,7 @@ const (
 	defaultMinInterval = time.Second * 30
 )
 
-func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core.NginxBinary, env core.Environment, version string) *DataPlaneStatus {
+func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core.NginxBinary, env core.Environment) *DataPlaneStatus {
 	log.Tracef("Dataplane status interval %s", config.Dataplane.Status.PollInterval)
 	pollInt := config.Dataplane.Status.PollInterval
 	if pollInt < defaultMinInterval {
@@ -62,7 +62,7 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		meta:                        meta,
 		binary:                      binary,
 		env:                         env,
-		version:                     version,
+		version:                     config.Version,
 		tags:                        &config.Tags,
 		configDirs:                  config.ConfigDirs,
 		reportInterval:              config.Dataplane.Status.ReportInterval,

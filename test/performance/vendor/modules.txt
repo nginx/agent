@@ -128,6 +128,7 @@ github.com/nats-io/nuid
 ## explicit; go 1.21
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
+github.com/nginx/agent/sdk/v2/agent/events
 github.com/nginx/agent/sdk/v2/backoff
 github.com/nginx/agent/sdk/v2/checksum
 github.com/nginx/agent/sdk/v2/client
@@ -175,8 +176,8 @@ github.com/nginx/agent/v2/test/utils/system
 # github.com/nginxinc/nginx-go-crossplane v0.4.24
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
-# github.com/nginxinc/nginx-plus-go-client v0.10.0
-## explicit; go 1.18
+# github.com/nginxinc/nginx-plus-go-client v0.11.0
+## explicit; go 1.19
 github.com/nginxinc/nginx-plus-go-client/client
 # github.com/nginxinc/nginx-prometheus-exporter v0.11.0
 ## explicit; go 1.19
@@ -236,7 +237,7 @@ github.com/shirou/gopsutil/internal/common
 github.com/shirou/gopsutil/mem
 github.com/shirou/gopsutil/net
 github.com/shirou/gopsutil/process
-# github.com/shirou/gopsutil/v3 v3.23.6
+# github.com/shirou/gopsutil/v3 v3.23.8
 ## explicit; go 1.15
 github.com/shirou/gopsutil/v3/common
 github.com/shirou/gopsutil/v3/cpu
@@ -292,10 +293,10 @@ github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.4.2
 ## explicit; go 1.18
 github.com/subosito/gotenv
-# github.com/tklauser/go-sysconf v0.3.11
+# github.com/tklauser/go-sysconf v0.3.12
 ## explicit; go 1.13
 github.com/tklauser/go-sysconf
-# github.com/tklauser/numcpus v0.6.0
+# github.com/tklauser/numcpus v0.6.1
 ## explicit; go 1.13
 github.com/tklauser/numcpus
 # github.com/trivago/grok v1.0.0

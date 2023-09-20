@@ -45,6 +45,7 @@ const (
 	AdvancedMetricsExtensionPlugin           = "advanced-metrics"
 	NginxAppProtectExtensionPlugin           = "nginx-app-protect"
 	NginxAppProtectMonitoringExtensionPlugin = "nap-monitoring"
+	PhpFpmMetricsExtensionPlugin             = "php-fpm-metrics"
 
 	// Configuration Keys
 	AdvancedMetricsExtensionPluginConfigKey           = "advanced_metrics"
@@ -57,6 +58,8 @@ func GetKnownExtensions() []string {
 		AdvancedMetricsExtensionPlugin,
 		NginxAppProtectExtensionPlugin,
 		NginxAppProtectMonitoringExtensionPlugin,
+		// TODO : Enable php-fpm metric extension functionality
+		// PhpFpmMetricsExtensionPlugin,
 	}
 }
 

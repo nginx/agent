@@ -124,8 +124,8 @@ func (m *MockNginxBinary) UpdateNginxDetailsFromProcesses(nginxProcesses []*core
 }
 
 func (m *MockNginxBinary) GetNginxIDForProcess(nginxProcess *core.Process) string {
-	args := m.Called(nginxProcess)
-	return args.String(0)
+	m.Called(nginxProcess)
+	return nginxProcess.Name
 }
 
 func (m *MockNginxBinary) GetNginxDetailsFromProcess(nginxProcess *core.Process) *proto.NginxDetails {

@@ -14,6 +14,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/google/uuid"
+	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/proto"
 	commonProto "github.com/nginx/agent/sdk/v2/proto/common"
@@ -62,7 +63,9 @@ func TestActivityEvents_Process(t *testing.T) {
 			name:    "test NginxInstancesFound message",
 			message: core.NewMessage(core.NginxInstancesFound, tutils.GetDetailsMap()),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.NginxInstancesFound,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -93,7 +96,9 @@ func TestActivityEvents_Process(t *testing.T) {
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.NginxReloadComplete,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -123,7 +128,9 @@ func TestActivityEvents_Process(t *testing.T) {
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.NginxReloadComplete,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -160,7 +167,9 @@ func TestActivityEvents_Process(t *testing.T) {
 				},
 			}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommResponse,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -197,7 +206,9 @@ func TestActivityEvents_Process(t *testing.T) {
 				},
 			}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommResponse,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -234,7 +245,9 @@ func TestActivityEvents_Process(t *testing.T) {
 				},
 			}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommResponse,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -269,7 +282,9 @@ func TestActivityEvents_Process(t *testing.T) {
 				},
 			}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommResponse,
+				core.Events,
 			},
 			expectedEventReport: nil,
 		},
@@ -281,7 +296,9 @@ func TestActivityEvents_Process(t *testing.T) {
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.ConfigRollbackResponse,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -311,7 +328,9 @@ func TestActivityEvents_Process(t *testing.T) {
 				correlationId: uuid.NewString(),
 			}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.ConfigRollbackResponse,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -334,8 +353,16 @@ func TestActivityEvents_Process(t *testing.T) {
 			},
 		},
 		{
-			name:    "test AgentStart message",
-			message: core.NewMessage(core.AgentStarted, &AgentEventMeta{version: "v0.0.1", pid: "75231"}),
+			name: "test AgentStart message",
+			message: core.NewMessage(core.AgentStarted, events.NewAgentEventMeta(
+				config.MODULE,
+				"v0.0.1",
+				"75231",
+				"test-host",
+				"12345678",
+				"group-a",
+				[]string{"tag-a", "tag-b"},
+			)),
 			msgTopics: []string{
 				core.AgentStarted,
 				core.Events,
@@ -363,7 +390,9 @@ func TestActivityEvents_Process(t *testing.T) {
 			name:    "test NginxMasterProcCreated message",
 			message: core.NewMessage(core.NginxMasterProcCreated, &proto.NginxDetails{Version: "1.0.1", ProcessId: "75231"}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.NginxMasterProcCreated,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -389,7 +418,9 @@ func TestActivityEvents_Process(t *testing.T) {
 			name:    "test NginxMasterProcKilled message",
 			message: core.NewMessage(core.NginxMasterProcKilled, &proto.NginxDetails{Version: "1.0.1", ProcessId: "75231"}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.NginxMasterProcKilled,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -415,7 +446,9 @@ func TestActivityEvents_Process(t *testing.T) {
 			name:    "test NginxWorkerProcCreated message",
 			message: core.NewMessage(core.NginxWorkerProcCreated, &proto.NginxDetails{Version: "1.0.1", ProcessId: "75231"}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.NginxWorkerProcCreated,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -441,7 +474,9 @@ func TestActivityEvents_Process(t *testing.T) {
 			name:    "test NginxWorkerProcKilled message",
 			message: core.NewMessage(core.NginxWorkerProcKilled, &proto.NginxDetails{Version: "1.0.1", ProcessId: "75231"}),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.NginxWorkerProcKilled,
+				core.Events,
 				core.Events,
 			},
 			expectedEventReport: &eventsProto.EventReport{
@@ -467,7 +502,9 @@ func TestActivityEvents_Process(t *testing.T) {
 			name:    "test unknown message",
 			message: core.NewMessage(core.UNKNOWN, "unknown message"),
 			msgTopics: []string{
+				core.AgentStarted,
 				core.UNKNOWN,
+				core.Events,
 			},
 		},
 	}
@@ -497,8 +534,20 @@ func TestActivityEvents_Process(t *testing.T) {
 			}
 
 			pluginUnderTest := NewEvents(config, env, grpc.NewMessageMeta(uuid.New().String()), core.NewNginxBinary(env, config))
-
 			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
+
+			if test.name != "test AgentStart message" {
+				agentMeta := events.NewAgentEventMeta(
+					"NGINX-AGENT",
+					"v0.0.1",
+					"75231",
+					"test-host",
+					"12345678",
+					"group-a",
+					[]string{"tag-a", "tag-b"})
+
+				messagePipe.Process(core.NewMessage(core.AgentStarted, agentMeta))
+			}
 
 			messagePipe.Process(test.message)
 			messagePipe.Run()
@@ -513,8 +562,21 @@ func TestActivityEvents_Process(t *testing.T) {
 					tt.Errorf("unexpected message topic: %s :: should have been: %s", msg.Topic(), test.msgTopics[idx])
 				}
 				if test.expectedEventReport != nil && msg.Exact(core.Events) {
-					expectedEvent := test.expectedEventReport.Events[0]
+					var expectedEvent *eventsProto.Event
+					if len(test.expectedEventReport.GetEvents()) == 1 {
+						expectedEvent = test.expectedEventReport.Events[0]
+					} else {
+						// get the latest event
+						events := test.expectedEventReport.Events[:len(test.expectedEventReport.GetEvents())-1]
+						expectedEvent = events[0]
+					}
 					actualEvent := msg.Data().(*proto.Command).GetEventReport().Events[0]
+
+					if actualEvent.GetMetadata().GetType() != expectedEvent.GetMetadata().GetType() ||
+						actualEvent.GetMetadata().GetCategory() != expectedEvent.GetMetadata().GetCategory() ||
+						actualEvent.GetMetadata().GetEventLevel() != expectedEvent.GetMetadata().GetEventLevel() {
+						continue
+					}
 
 					// assert metadata
 					assert.Equal(tt, expectedEvent.Metadata.Module, actualEvent.Metadata.Module)
@@ -597,9 +659,17 @@ func TestGenerateAgentStopEvent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			env := tutils.NewMockEnvironment()
-
-			agentStopCmd := GenerateAgentStopEventCommand(&AgentEventMeta{version: tt.agentVersion, pid: tt.pid}, tt.conf, env)
-			actualEvent := agentStopCmd.GetEventReport().Events[0]
+			meta := events.NewAgentEventMeta(
+				config.MODULE,
+				tt.agentVersion,
+				tt.pid,
+				env.GetHostname(),
+				env.GetSystemUUID(),
+				tt.conf.InstanceGroup,
+				tt.conf.Tags,
+			)
+			agentStopCmd := meta.GenerateAgentStopEventCommand()
+			actualEvent := agentStopCmd.GetEventReport().GetEvents()[0]
 
 			// assert metadata
 			assert.Equal(t, tt.expectedEvent.Metadata.Module, actualEvent.Metadata.Module)
@@ -608,8 +678,8 @@ func TestGenerateAgentStopEvent(t *testing.T) {
 			assert.Equal(t, tt.expectedEvent.Metadata.EventLevel, actualEvent.Metadata.EventLevel)
 
 			// assert activity event
-			assert.Equal(t, tt.expectedEvent.GetActivityEvent().Message, actualEvent.GetActivityEvent().Message)
-			assert.Equal(t, tt.expectedEvent.GetActivityEvent().Dimensions, actualEvent.GetActivityEvent().Dimensions)
+			assert.Equal(t, tt.expectedEvent.GetActivityEvent().GetMessage(), actualEvent.GetActivityEvent().GetMessage())
+			assert.Equal(t, tt.expectedEvent.GetActivityEvent().GetDimensions(), actualEvent.GetActivityEvent().GetDimensions())
 		})
 	}
 }
