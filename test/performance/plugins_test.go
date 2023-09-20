@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sdk "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -170,7 +171,17 @@ func BenchmarkFeaturesExtensionsAndPlugins(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				b.ResetTimer()
 				controller, cmdr, reporter := core.CreateGrpcClients(ctx, tt.loadedConfig)
-				corePlugins, extensionPlugins = plugins.LoadPlugins(cmdr, binary, env, reporter, tt.loadedConfig)
+				corePlugins, extensionPlugins = plugins.LoadPlugins(cmdr, binary, env, reporter, tt.loadedConfig,
+					events.NewAgentEventMeta(
+						"NGINX-AGENT",
+						"v0.0.1",
+						"75231",
+						"test-host",
+						"12345678",
+						"group-a",
+						[]string{"tag-a", "tag-b"},
+					),
+				)
 				pipe = core.InitializePipe(ctx, corePlugins, extensionPlugins, 20)
 				core.HandleSignals(ctx, cmdr, tt.loadedConfig, env, pipe, cancel, controller)
 			}
