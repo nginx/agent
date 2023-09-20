@@ -95,6 +95,16 @@ func (m *MockEnvironment) WriteFiles(backup core.ConfigApplyMarker, files []*pro
 	return nil
 }
 
+func (m *MockEnvironment) WriteFile(backup core.ConfigApplyMarker, file *proto.File, confPath string) error {
+	m.Called(backup, file, confPath)
+	return nil
+}
+
+func (m *MockEnvironment) DeleteFile(backup core.ConfigApplyMarker, fileName string) error {
+	m.Called(backup, fileName)
+	return nil
+}
+
 func (m *MockEnvironment) FileStat(path string) (os.FileInfo, error) {
 	m.Called(path)
 	return os.Stat(path)

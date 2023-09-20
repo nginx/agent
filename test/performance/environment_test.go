@@ -106,6 +106,38 @@ func BenchmarkWriteFiles(b *testing.B) {
 	}
 }
 
+func BenchmarkWriteFile(b *testing.B) {
+	file := &proto.File{
+		Name:        "/tmp/test.conf",
+		Contents:    []byte("contents"),
+		Permissions: "0644",
+	}
+
+	backup, err := sdk.NewConfigApplyWithIgnoreDirectives("", nil, []string{})
+	assert.NoError(b, err)
+	b.ResetTimer()
+
+	env := &core.EnvironmentType{}
+	for i := 0; i < b.N; i++ {
+		env.WriteFile(backup, file, "/tmp")
+		os.Remove("/tmp/test.conf")
+	}
+}
+
+func BenchmarkDeleteFile(b *testing.B) {
+	fileName := "/tmp/test.conf"
+
+	backup, err := sdk.NewConfigApplyWithIgnoreDirectives("", nil, []string{})
+	assert.NoError(b, err)
+	b.ResetTimer()
+
+	env := &core.EnvironmentType{}
+	for i := 0; i < b.N; i++ {
+		os.Create(fileName)
+		env.DeleteFile(backup, fileName)
+	}
+}
+
 func BenchmarkFileStat(b *testing.B) {
 	tempDir := b.TempDir()
 	tempFile := tempDir + "/test.txt"

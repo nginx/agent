@@ -15,6 +15,7 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
 
+
 RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     --mount=type=secret,id=nginx-key,dst=nginx-repo.key \
     set -x \
@@ -81,6 +82,8 @@ RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
 EXPOSE 80
 
 STOPSIGNAL SIGQUIT
+
+RUN git config --global --add safe.directory /home/nginx
 
 # Install Go
 RUN wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz \

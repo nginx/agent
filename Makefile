@@ -2,6 +2,9 @@
 # Variable Definitions                                                                                            #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 VERSION = $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
+ifeq ($(VERSION),)
+	VERSION = $(shell curl https://api.github.com/repos/nginx/agent/releases/latest -s | jq .name -r)
+endif
 COMMIT = $(shell git rev-parse --short HEAD)
 DATE = $(shell date +%F_%H-%M-%S)
 
@@ -41,6 +44,7 @@ INSTALL_FROM_REPO      := ""
 OS                     := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 # override this value if you want to change the architecture. GOOS options here: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 uname_m    := $(shell uname -m)
+
 ifeq ($(uname_m),aarch64)
 	OSARCH = arm64
 else
@@ -95,7 +99,7 @@ run-debug: ## Run code
 
 
 build: ## Build agent executable
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} go build -ldflags=${LDFLAGS} -o ./build/nginx-agent 
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent 
 
 deps: ## Update dependencies in vendor folders
 	cd sdk && make generate
@@ -132,19 +136,19 @@ launch-swagger-ui: generate-swagger ## Launch Swagger UI
 # Local Packaging                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 local-apk-package: ## Create local apk package
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
 	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.apk;
 
 local-deb-package: ## Create local deb package
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
 	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.deb;
 
 local-rpm-package: ## Create local rpm package
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
 	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
 
 local-txz-package: ## Create local txz package
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=freebsd go build -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=freebsd go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
 	$(CONTAINER_CLITOOL) run -v ${PWD}:/nginx-agent/$(CONTAINER_VOLUME_FLAGS) build-local-packager:1.0.0
 
 txz-packager-image: ## Builds txz packager container image

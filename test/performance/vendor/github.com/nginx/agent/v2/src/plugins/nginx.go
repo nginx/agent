@@ -112,17 +112,17 @@ func (n *Nginx) Init(pipeline core.MessagePipeInterface) {
 	log.Info("NginxBinary initializing")
 	n.messagePipeline = pipeline
 	n.nginxBinary.UpdateNginxDetailsFromProcesses(n.getNginxProccessInfo())
-	nginxDetails := n.nginxBinary.GetNginxDetailsMapFromProcesses(n.getNginxProccessInfo())
-
-	pipeline.Process(
-		core.NewMessage(core.NginxPluginConfigured, n),
-		core.NewMessage(core.NginxInstancesFound, nginxDetails),
-	)
 }
 
 // Process processes the messages from the messaging pipe
 func (n *Nginx) Process(message *core.Message) {
 	switch message.Topic() {
+	case core.AgentStarted:
+		nginxDetails := n.nginxBinary.GetNginxDetailsMapFromProcesses(n.getNginxProccessInfo())
+		n.messagePipeline.Process(
+			core.NewMessage(core.NginxPluginConfigured, n),
+			core.NewMessage(core.NginxInstancesFound, nginxDetails),
+		)
 	case core.CommNginxConfig:
 		switch cmd := message.Data().(type) {
 		case *proto.Command:
@@ -207,6 +207,7 @@ func (n *Nginx) Subscriptions() []string {
 		core.NginxConfigValidationPending,
 		core.NginxConfigValidationSucceeded,
 		core.NginxConfigValidationFailed,
+		core.AgentStarted,
 	}
 }
 

@@ -14,12 +14,12 @@ require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mwitkow/go-proto-validators v0.3.2
-	github.com/nginxinc/nginx-plus-go-client v0.10.0
+	github.com/nginxinc/nginx-plus-go-client v0.11.0
 	github.com/nginxinc/nginx-prometheus-exporter v0.11.0
 	github.com/nxadm/tail v1.4.8
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	github.com/shirou/gopsutil/v3 v3.23.6
+	github.com/shirou/gopsutil/v3 v3.23.8
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
@@ -295,8 +295,8 @@ require (
 	github.com/tetratelabs/wazero v1.2.1 // indirect
 	github.com/timakin/bodyclose v0.0.0-20221125081123-e39cf3fc478e // indirect
 	github.com/timonwong/loggercheck v0.9.4 // indirect
-	github.com/tklauser/go-sysconf v0.3.11 // indirect
-	github.com/tklauser/numcpus v0.6.0 // indirect
+	github.com/tklauser/go-sysconf v0.3.12 // indirect
+	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/tomarrell/wrapcheck/v2 v2.8.1 // indirect
 	github.com/tommy-muehle/go-mnd/v2 v2.5.1 // indirect
 	github.com/toqueteos/webbrowser v1.2.0 // indirect

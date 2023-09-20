@@ -100,7 +100,7 @@ func (c *Commander) agentBackoff(agentConfig *proto.AgentConfig) {
 }
 
 func (c *Commander) agentRegistered(cmd *proto.Command) {
-	switch commandData := cmd.Data.(type) {
+	switch commandData := cmd.GetData().(type) {
 	case *proto.Command_AgentConnectResponse:
 		log.Infof("config command %v", commandData)
 
@@ -112,7 +112,7 @@ func (c *Commander) agentRegistered(cmd *proto.Command) {
 		}
 
 	default:
-		log.Debugf("unhandled command: %T", cmd.Data)
+		log.Debugf("unhandled command: %T", cmd.GetData())
 	}
 }
 
@@ -152,24 +152,24 @@ func (c *Commander) dispatchLoop() {
 
 		log.Debugf("Command msg from data plane: %v", cmd)
 		var topic string
-		switch cmd.Data.(type) {
+		switch cmd.GetData().(type) {
 		case *proto.Command_NginxConfig, *proto.Command_NginxConfigResponse:
 			topic = core.CommNginxConfig
 		case *proto.Command_AgentConnectRequest, *proto.Command_AgentConnectResponse:
 			topic = core.AgentConnected
 		case *proto.Command_AgentConfigRequest, *proto.Command_AgentConfig:
-			log.Debugf("agent config %T command data type received and ignored", cmd.Data)
+			log.Debugf("agent config %T command data type received and ignored", cmd.GetData())
 			topic = core.AgentConfig
 		case *proto.Command_CmdStatus:
-			data := cmd.Data.(*proto.Command_CmdStatus)
+			data := cmd.GetData().(*proto.Command_CmdStatus)
 			if data.CmdStatus.Status != proto.CommandStatusResponse_CMD_OK {
-				log.Debugf("command status %T :: %+v", cmd.Data, cmd.Data)
+				log.Debugf("command status %T :: %+v", cmd.GetData(), cmd.GetData())
 			}
 			topic = core.UNKNOWN
 			continue
 		default:
-			if cmd.Data != nil {
-				log.Infof("unknown %T command data type received", cmd.Data)
+			if cmd.GetData() != nil {
+				log.Infof("unknown %T command data type received", cmd.GetData())
 			}
 			topic = core.UNKNOWN
 			continue
