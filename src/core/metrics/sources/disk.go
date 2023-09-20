@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/shirou/gopsutil/v3/disk"
 )
@@ -23,9 +24,10 @@ type Disk struct {
 	logger *MetricSourceLogger
 	*namedMetric
 	disks []disk.PartitionStat
+	
 }
 
-func NewDiskSource(namespace string) *Disk {
+func NewDiskSource(namespace string, env core.Environment) *Disk {
 	ctx := context.Background()
 	defer ctx.Done()
 	disks, _ := disk.PartitionsWithContext(ctx, false)

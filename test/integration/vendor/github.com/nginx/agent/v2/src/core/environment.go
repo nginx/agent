@@ -30,6 +30,7 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/process"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/singleflight"
 	"golang.org/x/sys/unix"
 
 	"github.com/nginx/agent/sdk/v2/files"
@@ -64,7 +65,7 @@ type ConfigApplyMarker interface {
 }
 
 type EnvironmentType struct {
-	host *proto.HostInfo
+	host 		      *proto.HostInfo
 }
 
 type Process struct {
@@ -95,7 +96,7 @@ const (
 
 var (
 	virtualizationFunc             = host.VirtualizationWithContext
-	_                  Environment = &EnvironmentType{}
+	singleflightGroup 			   = &singleflight.Group{}
 	basePattern                    = regexp.MustCompile("/([a-f0-9]{64})$")
 	colonPattern                   = regexp.MustCompile(":([a-f0-9]{64})$")
 	scopePattern                   = regexp.MustCompile(`/.+-(.+?).scope$`)
@@ -307,18 +308,21 @@ func (env *EnvironmentType) IsContainer() bool {
 		k8sServiceAcct = "/var/run/secrets/kubernetes.io/serviceaccount"
 	)
 
-	for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
-		if _, err := os.Stat(filename); err == nil {
-			log.Debugf("is a container because (%s) exists", filename)
-			return true
+	res, _, _ := singleflightGroup.Do("isContainer", func() (interface{}, error) {
+		for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
+			if _, err := os.Stat(filename); err == nil {
+				log.Debugf("is a container because (%s) exists", filename)
+				return true, nil
+			}
 		}
-	}
-	// v1 check
-	if result, err := cGroupV1Check(selfCgroup); err == nil && result {
-		return result
-	}
+		// v1 check
+		if result, err := cGroupV1Check(selfCgroup); err == nil && result {
+			return result, err
+		}
+		return false, nil
+	})
 
-	return false
+	return res.(bool)
 }
 
 // cGroupV1Check returns if running cgroup v1
