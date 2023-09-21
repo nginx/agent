@@ -2,7 +2,7 @@
 
 help() {
     echo "Usage:
-$0 (ca | intermediate | end-entity) --config <config_path> [opts...] --out <output_dir>
+$0 (ca | intermediate | end-entity) (rsa | dsa) --config <config_path> [opts...] --out <output_dir>
     opts:
         --ca-cert <cert_path>       Path to signing entity certificate
         --ca-key <key_path>         Path to signing entity key"
@@ -15,6 +15,12 @@ OUT=""
 
 parse_args() {
     shift
+
+    # if algorithm name parameter is included then
+    # shift positional parameter
+    if [ "$#" -eq 5 ]; then
+        shift
+    fi
 
     while [ "$#" -gt 0 ]; do
         case $1 in
@@ -75,6 +81,31 @@ parse_args() {
         echo "! --out <output_directory> not specified"
         exit 1
     fi
+}
+
+create_self_signed_dsa() {
+    openssl dsaparam 4096 > $OUT/parameterfile.pem
+    if ! openssl gendsa \
+        -out "$OUT/$1.key" $OUT/parameterfile.pem; then
+
+        echo "! Failed to generate self signed cert. Verify $CONFIG is a valid config"
+        rm $OUT/parameterfile.pem
+        exit 1
+    fi
+    rm $OUT/parameterfile.pem
+
+    if ! openssl req \
+        -x509 \
+        -sha512 \
+        -key "$OUT/$1.key" \
+        -out "$OUT/$1.crt" \
+        -config "$CONFIG" \
+        -extensions v3_req; then
+
+        echo "! Failed to generate self signed cert. Verify $CONFIG is a valid config"
+        exit 1
+    fi
+    chmod 644 "$OUT/$1.crt"
 }
 
 create_self_signed() {
@@ -154,7 +185,13 @@ check_args() {
 case $1 in
     "ca")
         parse_args "$@"
-        create_self_signed "ca"
+        if [ $2 = "rsa" ]; then
+            create_self_signed "ca"
+        elif [ $2 = "dsa" ]; then
+            create_self_signed_dsa "ca"
+        else
+            create_self_signed "ca"
+        fi
         ;;
     "intermediate")
         parse_args "$@"
