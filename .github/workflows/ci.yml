@@ -121,26 +121,12 @@ jobs:
           dockerid=$(docker ps -a --format "{{.ID}}")
           docker logs "$dockerid"
 
-      - name: Archive install/uninstall integration test logs
+      - name: Archive integration test logs
         if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
-          name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
-          path: /tmp/nginx-agent-integration-test-install-uninstall.log
-          retention-days: 3
-      - name: Archive api integration test logs
-        if: success() || failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
-          path: /tmp/nginx-agent-integration-test-api.log
-          retention-days: 3
-      - name: Archive features integration test logs
-        if: success() || failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
-          path: /tmp/nginx-agent-integration-test-features.log
+          name: integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
+          path: /tmp/integration-test-logs/
           retention-days: 3
 
   performance-test:

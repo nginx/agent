@@ -20,7 +20,7 @@ import (
 const agentServiceTimeout = 20 * time.Second
 
 // SetupTestContainerWithAgent sets up a container with nginx and nginx-agent installed
-func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
+func SetupTestContainerWithAgent(t *testing.T, testName string, conf string, waitForLog string) *testcontainers.DockerContainer {
 	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
@@ -30,13 +30,14 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 	t.Cleanup(cancel)
 
 	require.NoError(t,
-		comp.WaitForService("agent", wait.ForLog("The following core plugins have being registered").WithStartupTimeout(agentServiceTimeout)).WithEnv(
+		comp.WaitForService("agent", wait.ForLog(waitForLog)).WithEnv(
 			map[string]string{
 				"PACKAGE_NAME":  os.Getenv("PACKAGE_NAME"),
 				"PACKAGES_REPO": os.Getenv("PACKAGES_REPO"),
 				"BASE_IMAGE":    os.Getenv("BASE_IMAGE"),
 				"OS_RELEASE":    os.Getenv("OS_RELEASE"),
 				"OS_VERSION":    os.Getenv("OS_VERSION"),
+				"CONF_FILE":     conf,
 			},
 		).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
@@ -51,7 +52,9 @@ func SetupTestContainerWithAgent(t *testing.T) *testcontainers.DockerContainer {
 		testContainerLogs, err := io.ReadAll(logReader)
 		assert.NoError(t, err)
 
-		err = os.WriteFile("/tmp/nginx-agent-integration-test-api.log", testContainerLogs, 0o660)
+		err = os.MkdirAll("/tmp/integration-test-logs/", os.ModePerm)
+		assert.NoError(t, err)
+		err = os.WriteFile(fmt.Sprintf("/tmp/integration-test-logs/nginx-agent-integration-test-%s.log", testName), testContainerLogs, 0o660)
 		assert.NoError(t, err)
 
 		assert.NoError(t, comp.Down(ctxCancel, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
@@ -96,7 +99,9 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 		testContainerLogs, err := io.ReadAll(logReader)
 		assert.NoError(t, err)
 
-		err = os.WriteFile("/tmp/nginx-agent-integration-test-install-uninstall.log", testContainerLogs, 0o660)
+		err = os.MkdirAll("/tmp/integration-test-logs/", os.ModePerm)
+		assert.NoError(t, err)
+		err = os.WriteFile("/tmp/integration-test-logs/nginx-agent-integration-test-install-uninstall.log", testContainerLogs, 0o660)
 		assert.NoError(t, err)
 
 		assert.NoError(t, comp.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")

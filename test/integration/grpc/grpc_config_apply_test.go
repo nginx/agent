@@ -38,7 +38,12 @@ func TestRegistrationAndConfigApply(t *testing.T) {
 		}
 	}()
 
-	testContainer := utils.SetupTestContainerWithAgent(t)
+	testContainer := utils.SetupTestContainerWithAgent(
+		t,
+		"grpc-registration-and-config-apply",
+		"./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf",
+		"The following core plugins have being registered",
+	)
 
 	// Validate that registration is complete
 
