@@ -24,7 +24,6 @@ type Disk struct {
 	logger *MetricSourceLogger
 	*namedMetric
 	disks []disk.PartitionStat
-	
 }
 
 func NewDiskSource(namespace string, env core.Environment) *Disk {

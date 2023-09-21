@@ -33,7 +33,7 @@ func TestDiskCollect(t *testing.T) {
 	namespace := "test"
 	env := tutils.GetMockEnv()
 	disk := NewDiskSource(namespace, env)
-	
+
 	ctx := context.TODO()
 	wg := &sync.WaitGroup{}
 	wg.Add(1)

@@ -65,7 +65,7 @@ type ConfigApplyMarker interface {
 }
 
 type EnvironmentType struct {
-	host 		      *proto.HostInfo
+	host *proto.HostInfo
 }
 
 type Process struct {
@@ -95,13 +95,13 @@ const (
 )
 
 var (
-	virtualizationFunc             = host.VirtualizationWithContext
-	singleflightGroup 			   = &singleflight.Group{}
-	basePattern                    = regexp.MustCompile("/([a-f0-9]{64})$")
-	colonPattern                   = regexp.MustCompile(":([a-f0-9]{64})$")
-	scopePattern                   = regexp.MustCompile(`/.+-(.+?).scope$`)
-	containersPattern              = regexp.MustCompile("containers/([a-f0-9]{64})")
-	containerdPattern              = regexp.MustCompile("sandboxes/([a-f0-9]{64})")
+	virtualizationFunc = host.VirtualizationWithContext
+	singleflightGroup  = &singleflight.Group{}
+	basePattern        = regexp.MustCompile("/([a-f0-9]{64})$")
+	colonPattern       = regexp.MustCompile(":([a-f0-9]{64})$")
+	scopePattern       = regexp.MustCompile(`/.+-(.+?).scope$`)
+	containersPattern  = regexp.MustCompile("containers/([a-f0-9]{64})")
+	containerdPattern  = regexp.MustCompile("sandboxes/([a-f0-9]{64})")
 )
 
 func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
