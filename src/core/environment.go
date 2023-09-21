@@ -92,6 +92,9 @@ const (
 	KernProc            = 14 // struct: process entries
 	KernProcPathname    = 12 // path to executable
 	SYS_SYSCTL          = 202
+	IsContainerKey      = "isContainer"
+	GetContainerIDKey   = "GetContainerID"
+	GetSystemUUIDKey    = "GetSystemUUIDKey"
 )
 
 var (
@@ -194,25 +197,28 @@ func (env *EnvironmentType) GetHostname() string {
 	return hostname
 }
 
-func (env *EnvironmentType) GetSystemUUID() string {
-	ctx := context.Background()
-	defer ctx.Done()
+func (env *EnvironmentType) GetSystemUUID() string {	
+	res, _, _ := singleflightGroup.Do(GetSystemUUIDKey, func() (interface{}, error) {
+		var err error
+		ctx := context.Background()
+		defer ctx.Done()
 
-	if env.IsContainer() {
-		containerID, err := env.GetContainerID()
-		if err != nil {
-			log.Errorf("Unable to read docker container ID: %v", err)
-			return ""
+		if env.IsContainer() {
+			containerID, err := env.GetContainerID()
+			if err != nil {
+				return "", errors.New(fmt.Sprintf("Unable to read docker container ID: %v", err))
+			}
+			return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
 		}
-		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String()
-	}
 
-	hostID, err := host.HostIDWithContext(ctx)
-	if err != nil {
-		log.Infof("Unable to read host id from dataplane, defaulting value. Error: %v", err)
-		return ""
-	}
-	return uuid.NewMD5(uuid.Nil, []byte(hostID)).String()
+		hostID, err := host.HostIDWithContext(ctx)
+		if err != nil {
+			log.Infof("Unable to read host id from dataplane, defaulting value. Error: %v", err)
+			return "", err
+		}
+		return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), err
+	})
+	return res.(string)
 }
 
 func (env *EnvironmentType) ReadDirectory(dir string, ext string) ([]string, error) {
@@ -308,7 +314,7 @@ func (env *EnvironmentType) IsContainer() bool {
 		k8sServiceAcct = "/var/run/secrets/kubernetes.io/serviceaccount"
 	)
 
-	res, _, _ := singleflightGroup.Do("isContainer", func() (interface{}, error) {
+	res, _, _ := singleflightGroup.Do(IsContainerKey, func() (interface{}, error) {
 		for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
 			if _, err := os.Stat(filename); err == nil {
 				log.Debugf("is a container because (%s) exists", filename)
@@ -349,20 +355,24 @@ func cGroupV1Check(cgroupFile string) (bool, error) {
 
 // GetContainerID returns the ID of the current environment if running in a container
 func (env *EnvironmentType) GetContainerID() (string, error) {
-	const mountInfo = "/proc/self/mountinfo"
+	res, err, _ := singleflightGroup.Do(GetContainerIDKey, func() (interface{}, error) {
+		const mountInfo = "/proc/self/mountinfo"
 
-	if !env.IsContainer() {
-		return "", errors.New("not in docker")
-	}
+		if !env.IsContainer() {
+			return "", errors.New("not in docker")
+		}
 
-	containerID, err := getContainerID(mountInfo)
-	if err != nil {
-		return "", fmt.Errorf("could not get container ID: %v", err)
-	}
+		containerID, err := getContainerID(mountInfo)
+		if err != nil {
+			return "", fmt.Errorf("could not get container ID: %v", err)
+		}
 
-	log.Debugf("Container ID: %s", containerID)
+		log.Debugf("Container ID: %s", containerID)
 
-	return containerID, err
+		return containerID, err
+	})
+
+	return res.(string), err
 }
 
 // getContainerID returns the container ID of the current running environment.
