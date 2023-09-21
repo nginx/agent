@@ -59,11 +59,15 @@ func SaveCollections(metricsCollections Collections, reports ...*proto.MetricsRe
 				}
 			}
 
-			for _, simpleMetric := range stats.Simplemetrics {
-				if metrics, ok := metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name]; ok {
-					metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = metrics + simpleMetric.GetValue()
-				} else {
-					metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = simpleMetric.GetValue()
+			simpleMetrics := stats.GetSimplemetrics()
+
+			if simpleMetrics != nil {
+				for _, simpleMetric := range simpleMetrics {
+					if metrics, ok := metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name]; ok {
+						metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = metrics + simpleMetric.GetValue()
+					} else {
+						metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = simpleMetric.GetValue()
+					}
 				}
 			}
 		}
