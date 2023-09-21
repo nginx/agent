@@ -197,26 +197,26 @@ func (env *EnvironmentType) GetHostname() string {
 	return hostname
 }
 
-func (env *EnvironmentType) GetSystemUUID() string {	
+func (env *EnvironmentType) GetSystemUUID() string {
 	res, _, _ := singleflightGroup.Do(GetSystemUUIDKey, func() (interface{}, error) {
+		var err error
 		ctx := context.Background()
 		defer ctx.Done()
 
 		if env.IsContainer() {
 			containerID, err := env.GetContainerID()
 			if err != nil {
-				log.Errorf("Unable to read docker container ID: %v", err)
-				return ""
+				return "", errors.New(fmt.Sprintf("Unable to read docker container ID: %v", err))
 			}
-			return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), nil
+			return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
 		}
 
 		hostID, err := host.HostIDWithContext(ctx)
 		if err != nil {
 			log.Infof("Unable to read host id from dataplane, defaulting value. Error: %v", err)
-			return ""
+			return "", err
 		}
-		return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), nil
+		return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), err
 	})
 	return res.(string)
 }

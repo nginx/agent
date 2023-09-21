@@ -197,7 +197,7 @@ func (env *EnvironmentType) GetHostname() string {
 	return hostname
 }
 
-func (env *EnvironmentType) GetSystemUUID() string {	
+func (env *EnvironmentType) GetSystemUUID() string {
 	res, _, _ := singleflightGroup.Do(GetSystemUUIDKey, func() (interface{}, error) {
 		var err error
 		ctx := context.Background()
