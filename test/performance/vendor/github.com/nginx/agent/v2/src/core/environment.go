@@ -192,7 +192,7 @@ func getUnixName() string {
 func (env *EnvironmentType) GetHostname() string {
 	hostname, err := os.Hostname()
 	if err != nil {
-		log.Warnf("unable to get hostname: %v", err)
+		log.Warnf("Unable to read hostname from dataplane, defaulting value. Error: %v", err)
 		hostname = ""
 	}
 	return hostname
@@ -207,7 +207,7 @@ func (env *EnvironmentType) GetSystemUUID() string {
 		if env.IsContainer() {
 			containerID, err := env.GetContainerID()
 			if err != nil {
-				return "", errors.New(fmt.Sprintf("Unable to read docker container ID: %v", err))
+				return "", fmt.Errorf("unable to read docker container ID: %v", err)
 			}
 			return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
 		}

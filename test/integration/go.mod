@@ -10,6 +10,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/testcontainers/testcontainers-go/modules/compose v0.23.0
+	google.golang.org/grpc v1.57.0
 )
 
 require (
@@ -186,7 +187,6 @@ require (
 	google.golang.org/genproto v0.0.0-20230822172742-b8732ec3820d // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230822172742-b8732ec3820d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
-	google.golang.org/grpc v1.57.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
@@ -208,5 +208,4 @@ replace (
 	github.com/cucumber/godog => github.com/laurazard/godog v0.0.0-20220922095256-4c4b17abdae7
 	github.com/nginx/agent/sdk/v2 => ./../../sdk
 	github.com/nginx/agent/v2 => ./../../
-// github.com/tonistiigi/fsutil => github.com/tonistiigi/fsutil
 )
