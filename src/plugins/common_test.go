@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	sdk "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/v2/src/core/config"
 	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
@@ -57,7 +58,17 @@ func TestLoadPlugins(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			corePlugins, extensionPlugins := LoadPlugins(cmdr, binary, env, reporter, tt.loadedConfig)
+			corePlugins, extensionPlugins := LoadPlugins(cmdr, binary, env,
+				reporter,
+				tt.loadedConfig,
+				events.NewAgentEventMeta(
+					"NGINX-AGENT",
+					"v0.0.1",
+					"75231",
+					"test-host",
+					"12345678",
+					"group-a",
+					[]string{"tag-a", "tag-b"}))
 
 			assert.NotNil(t, corePlugins)
 			assert.Len(t, corePlugins, tt.expectedPluginSize)
