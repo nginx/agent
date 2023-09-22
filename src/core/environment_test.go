@@ -17,6 +17,7 @@ import (
 
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/shirou/gopsutil/v3/process"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1060,5 +1061,48 @@ func TestCGroupV1Check(t *testing.T) {
 
 			os.Remove(mountInfoFile.Name())
 		})
+	}
+}
+
+func TestGetNginxProcess(t *testing.T) {
+	tests := []struct {
+		name   string
+		pName  string
+		pid    int32
+		cmd    string
+		expect int
+	}{
+		{
+			name:   "nginx process",
+			pName:  "nginx",
+			pid:    4321,
+			cmd:    "nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf",
+			expect: 1,
+		},
+		{
+			name:   "non nginx process",
+			pName:  "nginx-asg-sync",
+			pid:    1234,
+			cmd:    "/usr/sbin/nginx-asg-sync -log_path=/var/log/nginx-asg-sync/nginx-asg-sync.log",
+			expect: 0,
+		},
+		{
+			name:   "upgrade process",
+			pName:  "nginx-test",
+			pid:    3412,
+			cmd:    "nginx: upgrade",
+			expect: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		ctx := context.Background()
+		nginxProcesses := make(map[int32]*process.Process)
+		env := EnvironmentType{}
+		t.Run(tt.name, func(t *testing.T) {
+			p, _ := process.NewProcessWithContext(ctx, tt.pid)
+			nginxProcesses = env.getNginxProcess(nginxProcesses, tt.pName, tt.pid, p, tt.cmd)
+		})
+		assert.Equal(t, tt.expect, len(nginxProcesses))
 	}
 }
