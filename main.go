@@ -10,7 +10,6 @@ package main
 import (
 	"context"
 	"os"
-	"runtime"
 	"strconv"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
@@ -61,9 +60,6 @@ func main() {
 		if logFile != nil {
 			defer logFile.Close()
 		}
-
-		runtime.SetMutexProfileFraction(5)
-		runtime.SetBlockProfileRate(5)
 
 		log.Tracef("Config loaded from disk, %v", loadedConfig)
 
