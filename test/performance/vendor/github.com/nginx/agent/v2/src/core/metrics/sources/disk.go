@@ -27,9 +27,7 @@ type Disk struct {
 }
 
 func NewDiskSource(namespace string, env core.Environment) *Disk {
-	ctx := context.Background()
-	defer ctx.Done()
-	disks, _ := disk.PartitionsWithContext(ctx, false)
+	disks, _ := env.Disks()
 	return &Disk{NewMetricSourceLogger(), &namedMetric{namespace, "disk"}, disks}
 }
 

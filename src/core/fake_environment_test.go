@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/shirou/gopsutil/v3/disk"
 )
 
 type FakeEnvironment struct {
@@ -31,6 +32,18 @@ type FakeEnvironment struct {
 	}
 	diskDevicesReturnsOnCall map[int]struct {
 		result1 []string
+		result2 error
+	}
+	DisksStub        func() ([]disk.PartitionStat, error)
+	disksMutex       sync.RWMutex
+	disksArgsForCall []struct {
+	}
+	disksReturns struct {
+		result1 []disk.PartitionStat
+		result2 error
+	}
+	disksReturnsOnCall map[int]struct {
+		result1 []disk.PartitionStat
 		result2 error
 	}
 	FileStatStub        func(string) (fs.FileInfo, error)
@@ -283,6 +296,62 @@ func (fake *FakeEnvironment) DiskDevicesReturnsOnCall(i int, result1 []string, r
 	}
 	fake.diskDevicesReturnsOnCall[i] = struct {
 		result1 []string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeEnvironment) Disks() ([]disk.PartitionStat, error) {
+	fake.disksMutex.Lock()
+	ret, specificReturn := fake.disksReturnsOnCall[len(fake.disksArgsForCall)]
+	fake.disksArgsForCall = append(fake.disksArgsForCall, struct {
+	}{})
+	stub := fake.DisksStub
+	fakeReturns := fake.disksReturns
+	fake.recordInvocation("Disks", []interface{}{})
+	fake.disksMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeEnvironment) DisksCallCount() int {
+	fake.disksMutex.RLock()
+	defer fake.disksMutex.RUnlock()
+	return len(fake.disksArgsForCall)
+}
+
+func (fake *FakeEnvironment) DisksCalls(stub func() ([]disk.PartitionStat, error)) {
+	fake.disksMutex.Lock()
+	defer fake.disksMutex.Unlock()
+	fake.DisksStub = stub
+}
+
+func (fake *FakeEnvironment) DisksReturns(result1 []disk.PartitionStat, result2 error) {
+	fake.disksMutex.Lock()
+	defer fake.disksMutex.Unlock()
+	fake.DisksStub = nil
+	fake.disksReturns = struct {
+		result1 []disk.PartitionStat
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeEnvironment) DisksReturnsOnCall(i int, result1 []disk.PartitionStat, result2 error) {
+	fake.disksMutex.Lock()
+	defer fake.disksMutex.Unlock()
+	fake.DisksStub = nil
+	if fake.disksReturnsOnCall == nil {
+		fake.disksReturnsOnCall = make(map[int]struct {
+			result1 []disk.PartitionStat
+			result2 error
+		})
+	}
+	fake.disksReturnsOnCall[i] = struct {
+		result1 []disk.PartitionStat
 		result2 error
 	}{result1, result2}
 }
@@ -943,6 +1012,8 @@ func (fake *FakeEnvironment) Invocations() map[string][][]interface{} {
 	defer fake.deleteFileMutex.RUnlock()
 	fake.diskDevicesMutex.RLock()
 	defer fake.diskDevicesMutex.RUnlock()
+	fake.disksMutex.RLock()
+	defer fake.disksMutex.RUnlock()
 	fake.fileStatMutex.RLock()
 	defer fake.fileStatMutex.RUnlock()
 	fake.getContainerIDMutex.RLock()

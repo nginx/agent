@@ -5,11 +5,24 @@ import (
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
+	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/stretchr/testify/mock"
 )
 
 type MockEnvironment struct {
 	mock.Mock
+}
+
+// Disks implements core.Environment.
+func (*MockEnvironment) Disks() ([]disk.PartitionStat, error) {
+	return []disk.PartitionStat{
+		{
+			Device:     "sd01",
+			Mountpoint: "/",
+			Fstype:     "ext4",
+			Opts:       []string{"ro"},
+		},
+	}, nil
 }
 
 func GetProcesses() []*core.Process {

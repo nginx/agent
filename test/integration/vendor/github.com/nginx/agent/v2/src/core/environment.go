@@ -53,6 +53,7 @@ type Environment interface {
 	DeleteFile(backup ConfigApplyMarker, fileName string) error
 	Processes() (result []*Process)
 	FileStat(path string) (os.FileInfo, error)
+	Disks() ([]disk.PartitionStat, error)
 	DiskDevices() ([]string, error)
 	GetContainerID() (string, error)
 	GetNetOverflow() (float64, error)
@@ -440,6 +441,13 @@ func (env *EnvironmentType) DiskDevices() ([]string, error) {
 	default:
 		return getLinuxDiskDevices()
 	}
+}
+
+func (env *EnvironmentType) Disks() ([]disk.PartitionStat, error) {
+	ctx := context.Background()
+	defer ctx.Done()
+	disks, err := disk.PartitionsWithContext(ctx, false)
+	return disks, err
 }
 
 func (env *EnvironmentType) GetNetOverflow() (float64, error) {
