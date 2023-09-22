@@ -159,7 +159,6 @@ func TestDataPlaneStatus(t *testing.T) {
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
 
 	env := tutils.NewMockEnvironment()
-	env.On("Processes", mock.Anything).Return([]*core.Process{})
 	env.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 		Hostname: "test-host",
 	})
@@ -176,7 +175,7 @@ func TestDataPlaneStatus(t *testing.T) {
 		Tags:         []string{},
 	}
 
-	dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env)
+	dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env, []*core.Process{})
 
 	messagePipe := core.NewMockMessagePipe(context.Background())
 	err := messagePipe.Register(10, []core.Plugin{dataPlaneStatus}, []core.ExtensionPlugin{})
@@ -257,7 +256,6 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
 
 	env := tutils.NewMockEnvironment()
-	env.On("Processes", mock.Anything).Return([]*core.Process{})
 	env.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 		Hostname: "test-host",
 	})
@@ -273,7 +271,7 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 			defer cleanupFunc()
 
 			// Setup data plane status and mock pipeline
-			dataPlaneStatus := NewDataPlaneStatus(tc.config, grpc.NewMessageMeta(uuid.New().String()), binary, env)
+			dataPlaneStatus := NewDataPlaneStatus(tc.config, grpc.NewMessageMeta(uuid.New().String()), binary, env, []*core.Process{})
 			messagePipe := core.NewMockMessagePipe(context.Background())
 
 			err = messagePipe.Register(10, []core.Plugin{dataPlaneStatus}, []core.ExtensionPlugin{})
@@ -330,7 +328,6 @@ func TestDPSSyncNAPDetails(t *testing.T) {
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
 
 	env := tutils.NewMockEnvironment()
-	env.On("Processes", mock.Anything).Return([]*core.Process{})
 	env.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 		Hostname: "test-host",
 	})
@@ -350,7 +347,7 @@ func TestDPSSyncNAPDetails(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Setup DataPlaneStatus
-			dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env)
+			dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env, []*core.Process{})
 			dataPlaneStatus.softwareDetails[agent_config.NginxAppProtectExtensionPlugin] = &proto.DataplaneSoftwareDetails{Data: tc.initialNAPDetails}
 			defer dataPlaneStatus.Close()
 
@@ -389,6 +386,7 @@ func TestDataPlaneSubscriptions(t *testing.T) {
 		core.NginxConfigValidationPending,
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,
+		core.NginxDetailProcUpdate,
 	}
 
 	processID := "12345"
@@ -399,7 +397,6 @@ func TestDataPlaneSubscriptions(t *testing.T) {
 	binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(detailsMap[processID])
 
 	env := tutils.NewMockEnvironment()
-	env.On("Processes", mock.Anything).Return([]*core.Process{})
 	env.On("NewHostInfo", mock.Anything, mock.Anything, mock.Anything).Return(&proto.HostInfo{
 		Hostname: "test-host",
 	})
@@ -416,7 +413,7 @@ func TestDataPlaneSubscriptions(t *testing.T) {
 		Tags:         []string{},
 	}
 
-	dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env)
+	dataPlaneStatus := NewDataPlaneStatus(config, grpc.NewMessageMeta(uuid.New().String()), binary, env, []*core.Process{})
 
 	assert.Equal(t, expectedSubscriptions, dataPlaneStatus.Subscriptions())
 }

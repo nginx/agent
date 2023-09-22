@@ -2104,7 +2104,7 @@ func TestSslDirectives(t *testing.T) {
 	}`
 
 	// preparing test cases as well as expected results
-	var tests = []struct {
+	tests := []struct {
 		algoName string
 		config   string
 		expected struct {
@@ -2251,6 +2251,5 @@ func TestSslDirectives(t *testing.T) {
 				assert.Equal(t, certMeta.PublicKeyAlgorithm, cert.PublicKeyAlgorithm)
 			}
 		})
-
 	}
 }
