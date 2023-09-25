@@ -5,7 +5,6 @@ import (
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
-	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -14,14 +13,27 @@ type MockEnvironment struct {
 }
 
 // Disks implements core.Environment.
-func (*MockEnvironment) Disks() ([]disk.PartitionStat, error) {
-	return []disk.PartitionStat{
+func (*MockEnvironment) Disks() ([]*proto.DiskPartition, error) {
+	return []*proto.DiskPartition{
 		{
 			Device:     "sd01",
-			Mountpoint: "/",
-			Fstype:     "ext4",
-			Opts:       []string{"ro"},
+			MountPoint: "/sd01",
+			FsType:     "ext4",
 		},
+		{
+			Device:     "sd02",
+			MountPoint: "/sd02",
+			FsType:     "ext4",
+		},
+	}, nil
+}
+
+func (*MockEnvironment) DiskUsage(mountpoint string) (*core.DiskUsage, error) {
+	return &core.DiskUsage{
+		Total:          20,
+		Used:           10,
+		Free:           10,
+		UsedPercentage: 100,
 	}, nil
 }
 

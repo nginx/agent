@@ -26,7 +26,7 @@ func TestNewDiskSource(t *testing.T) {
 
 	assert.Equal(t, "disk", actual.group)
 	assert.Equal(t, namespace, actual.namespace)
-	assert.Greater(t, len(actual.disks), 1)
+	assert.Equal(t, len(actual.disks), 2)
 }
 
 func TestDiskCollect(t *testing.T) {

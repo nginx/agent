@@ -15,7 +15,6 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
-	"github.com/shirou/gopsutil/v3/disk"
 )
 
 const MOUNT_POINT = "mount_point"
@@ -23,23 +22,24 @@ const MOUNT_POINT = "mount_point"
 type Disk struct {
 	logger *MetricSourceLogger
 	*namedMetric
-	disks []disk.PartitionStat
+	disks []*proto.DiskPartition
+	env   core.Environment
 }
 
 func NewDiskSource(namespace string, env core.Environment) *Disk {
 	disks, _ := env.Disks()
-	return &Disk{NewMetricSourceLogger(), &namedMetric{namespace, "disk"}, disks}
+	return &Disk{NewMetricSourceLogger(), &namedMetric{namespace, "disk"}, disks, env}
 }
 
 func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
 	for _, part := range c.disks {
-		if part.Device == "" || part.Fstype == "" {
+		if part.Device == "" || part.FsType == "" {
 			continue
 		}
-		usage, err := disk.UsageWithContext(ctx, part.Mountpoint)
+		usage, err := c.env.DiskUsage(part.MountPoint)
 		if err != nil {
-			c.logger.Log(fmt.Sprintf("Failed to get disk metrics for mount point %s, %v", part.Mountpoint, err))
+			c.logger.Log(fmt.Sprintf("Failed to get disk metrics for mount point %s, %v", part.MountPoint, err))
 			continue
 		}
 
@@ -47,14 +47,14 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metric
 			"total":  float64(usage.Total),
 			"used":   float64(usage.Used),
 			"free":   float64(usage.Free),
-			"in_use": float64(usage.UsedPercent),
+			"in_use": float64(usage.UsedPercentage),
 		})
 
 		select {
 		case <-ctx.Done():
 			return
 		// mount point is not a common dim
-		case m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{{Name: MOUNT_POINT, Value: part.Mountpoint}}, simpleMetrics, proto.MetricsReport_SYSTEM):
+		case m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{{Name: MOUNT_POINT, Value: part.MountPoint}}, simpleMetrics, proto.MetricsReport_SYSTEM):
 		}
 	}
 }

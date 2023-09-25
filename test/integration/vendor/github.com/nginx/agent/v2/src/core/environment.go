@@ -53,8 +53,9 @@ type Environment interface {
 	DeleteFile(backup ConfigApplyMarker, fileName string) error
 	Processes() (result []*Process)
 	FileStat(path string) (os.FileInfo, error)
-	Disks() ([]disk.PartitionStat, error)
+	Disks() ([]*proto.DiskPartition, error)
 	DiskDevices() ([]string, error)
+	DiskUsage(mountPoint string) (*DiskUsage, error)
 	GetContainerID() (string, error)
 	GetNetOverflow() (float64, error)
 	IsContainer() bool
@@ -80,6 +81,13 @@ type Process struct {
 	User       string
 	ParentPid  int32
 	Command    string
+}
+
+type DiskUsage struct {
+	Total          float64
+	Used           float64
+	Free           float64
+	UsedPercentage float64
 }
 
 const (
@@ -136,7 +144,7 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			OsType:              hostInformation.OS,
 			Uuid:                env.GetSystemUUID(),
 			Uname:               getUnixName(),
-			Partitons:           diskPartitions(),
+			Partitons:           env.Disks(),
 			Network:             env.networks(),
 			Processor:           processors(hostInformation.KernelArch),
 			Release:             releaseInfo("/etc/os-release"),
@@ -199,7 +207,7 @@ func (env *EnvironmentType) GetHostname() string {
 }
 
 func (env *EnvironmentType) GetSystemUUID() string {
-	res, _, _ := singleflightGroup.Do(GetSystemUUIDKey, func() (interface{}, error) {
+	res, err, _ := singleflightGroup.Do(GetSystemUUIDKey, func() (interface{}, error) {
 		var err error
 		ctx := context.Background()
 		defer ctx.Done()
@@ -219,6 +227,11 @@ func (env *EnvironmentType) GetSystemUUID() string {
 		}
 		return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), err
 	})
+	if err != nil {
+		log.Warnf("unable to set hostname due to %v", err)
+		return ""
+	}
+
 	return res.(string)
 }
 
@@ -443,11 +456,40 @@ func (env *EnvironmentType) DiskDevices() ([]string, error) {
 	}
 }
 
-func (env *EnvironmentType) Disks() ([]disk.PartitionStat, error) {
+func (env *EnvironmentType) Disks() (partitions []*proto.DiskPartition, err error) {
 	ctx := context.Background()
 	defer ctx.Done()
-	disks, err := disk.PartitionsWithContext(ctx, false)
-	return disks, err
+	parts, err := disk.PartitionsWithContext(ctx, false)
+	if err != nil {
+		// return an array of 0
+		log.Errorf("Could not read disk partitions for host: %v", err)
+		return []*proto.DiskPartition{}, err
+	}
+	for _, part := range parts {
+		pm := proto.DiskPartition{
+			MountPoint: part.Mountpoint,
+			Device:     part.Device,
+			FsType:     part.Fstype,
+		}
+		partitions = append(partitions, &pm)
+	}
+	return partitions, nil
+}
+
+func (env *EnvironmentType) DiskUsage(mountPoint string) (*DiskUsage, error) {
+	ctx := context.Background()
+	defer ctx.Done()
+	usage, err := disk.UsageWithContext(ctx, mountPoint)
+	if err != nil {
+		return nil, errors.New("unable to obtain disk usage stats")
+	}
+
+	return &DiskUsage{
+		Total:          float64(usage.Total),
+		Used:           float64(usage.Used),
+		Free:           float64(usage.Free),
+		UsedPercentage: float64(usage.UsedPercent),
+	}, nil
 }
 
 func (env *EnvironmentType) GetNetOverflow() (float64, error) {
@@ -815,26 +857,6 @@ func virtualization() (string, string) {
 		return "container", virtualizationRole
 	}
 	return virtualizationSystem, virtualizationRole
-}
-
-func diskPartitions() (partitions []*proto.DiskPartition) {
-	ctx := context.Background()
-	defer ctx.Done()
-	parts, err := disk.PartitionsWithContext(ctx, false)
-	if err != nil {
-		// return an array of 0
-		log.Errorf("Could not read disk partitions for host: %v", err)
-		return []*proto.DiskPartition{}
-	}
-	for _, part := range parts {
-		pm := proto.DiskPartition{
-			MountPoint: part.Mountpoint,
-			Device:     part.Device,
-			FsType:     part.Fstype,
-		}
-		partitions = append(partitions, &pm)
-	}
-	return partitions
 }
 
 func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {
