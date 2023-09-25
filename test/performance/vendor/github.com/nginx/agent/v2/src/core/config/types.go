@@ -16,7 +16,7 @@ import (
 type Config struct {
 	Version               string
 	Path                  string              `yaml:"-"`
-	DynamicConfigPath     string              `yaml:"-"`
+	DynamicConfigPath     string              `mapstructure:"dynamic-config-path" yaml:"-"`
 	ClientID              string              `mapstructure:"agent_id" yaml:"-"`
 	CloudAccountID        string              `mapstructure:"cloud_account" yaml:"-"`
 	Server                Server              `mapstructure:"server" yaml:"-"`

@@ -17,7 +17,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -32,6 +31,7 @@ import (
 )
 
 const (
+	// TODO: Remove file path header?
 	dynamicConfigUsageComment = `#
 # /etc/nginx-agent/dynamic-agent.conf
 #
@@ -67,11 +67,8 @@ func InitConfiguration(version, commit string) {
 	SetVersion(version, commit)
 	SetDefaults()
 	RegisterFlags()
-	dynamicConfigPath := DynamicConfigFileAbsPath
-	if runtime.GOOS == "freebsd" {
-		dynamicConfigPath = DynamicConfigFileAbsFreeBsdPath
-	}
-	configPath, err := RegisterConfigFile(dynamicConfigPath, ConfigFileName, ConfigFilePaths()...)
+
+	configPath, err := RegisterConfigFile("", ConfigFileName, ConfigFilePaths()...)
 	if err != nil {
 		log.Fatalf("Failed to load configuration file: %v", err)
 	}
@@ -152,10 +149,16 @@ func RegisterFlags() {
 	})
 }
 
-func RegisterConfigFile(dynamicConfFilePath string, confFileName string, confPaths ...string) (string, error) {
+func RegisterConfigFile(_ string, confFileName string, confPaths ...string) (string, error) {
 	cfg, err := SeekConfigFileInPaths(confFileName, confPaths...)
 	if err != nil {
 		return cfg, err
+	}
+
+	dynamicConfFilePath := Viper.GetString(DynamicConfigPathKey)
+	if dynamicConfFilePath == "" {
+		log.Info("DEBUG: Dyn config not set")
+		dynamicConfFilePath = getDefaultDynamicConfPath()
 	}
 
 	SetDynamicConfigFileAbsPath(dynamicConfFilePath)
@@ -267,11 +270,7 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 	// already set.
 	dynamicCfgPath := Viper.GetString(DynamicConfigPathKey)
 	if dynamicCfgPath == "" {
-		if runtime.GOOS == "freebsd" {
-			dynamicCfgPath = DynamicConfigFileAbsFreeBsdPath
-		} else {
-			dynamicCfgPath = DynamicConfigFileAbsPath
-		}
+		dynamicCfgPath = getDefaultDynamicConfPath()
 	}
 
 	// Overwrite existing nginx-agent.conf with updated config
@@ -382,11 +381,7 @@ func LoadPropertiesFromFile(cfg string) error {
 	// already set.
 	dynamicCfgPath := Viper.GetString(DynamicConfigPathKey)
 	if dynamicCfgPath == "" {
-		if runtime.GOOS == "freebsd" {
-			dynamicCfgPath = DynamicConfigFileAbsFreeBsdPath
-		} else {
-			dynamicCfgPath = DynamicConfigFileAbsPath
-		}
+		dynamicCfgPath = getDefaultDynamicConfPath()
 	}
 
 	dynamicCfgDir, dynamicCfgFile := filepath.Split(dynamicCfgPath)
@@ -490,7 +485,7 @@ func wordSepNormalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 	from := []string{"_", "."}
 	to := "-"
 	for _, sep := range from {
-		name = strings.Replace(name, sep, to, -1)
+		name = strings.ReplaceAll(name, sep, to)
 	}
 	return flag.NormalizedName(name)
 }

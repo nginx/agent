@@ -9,6 +9,7 @@ package config
 
 import (
 	"os"
+	"runtime"
 	"time"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
@@ -259,6 +260,11 @@ var (
 			DefaultValue: "",
 		},
 		&StringFlag{
+			Name:         DynamicConfigPathKey,
+			Usage:        "Defines the path of the Agent dynamic config file.",
+			DefaultValue: getDefaultDynamicConfPath(),
+		},
+		&StringFlag{
 			Name:         ConfigDirsKey,
 			Usage:        "Defines the paths that you want to grant nginx-agent read/write access to. This key is formatted as a string and follows Unix PATH format.",
 			DefaultValue: Defaults.ConfigDirs,
@@ -420,3 +426,11 @@ var (
 		},
 	}
 )
+
+func getDefaultDynamicConfPath() string {
+	if runtime.GOOS == "freebsd" {
+		return DynamicConfigFileAbsPath
+	} else {
+		return DynamicConfigFileAbsFreeBsdPath
+	}
+}
