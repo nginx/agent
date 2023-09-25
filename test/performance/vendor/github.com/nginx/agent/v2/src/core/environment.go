@@ -136,6 +136,12 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			tags = &[]string{}
 		}
 
+		disks, err := env.Disks()
+		if err != nil {
+			log.Warnf("Unable to get disks information from the host: %v", err)
+			disks = nil
+		}
+
 		hostInfoFacacde := &proto.HostInfo{
 			Agent:               agentVersion,
 			Boot:                hostInformation.BootTime,
@@ -144,7 +150,7 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			OsType:              hostInformation.OS,
 			Uuid:                env.GetSystemUUID(),
 			Uname:               getUnixName(),
-			Partitons:           env.Disks(),
+			Partitons:           disks,
 			Network:             env.networks(),
 			Processor:           processors(hostInformation.KernelArch),
 			Release:             releaseInfo("/etc/os-release"),
