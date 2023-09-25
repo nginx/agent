@@ -162,6 +162,7 @@ func TestNginxConfigApply(t *testing.T) {
 				DirectoryMap: &proto.DirectoryMap{},
 			},
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
@@ -170,7 +171,6 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
 				core.NginxReloadComplete,
-				core.CommResponse,
 				core.FileWatcherEnabled,
 				core.NginxConfigApplySucceeded,
 			},
@@ -195,6 +195,7 @@ func TestNginxConfigApply(t *testing.T) {
 				DirectoryMap: &proto.DirectoryMap{},
 			},
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
@@ -203,7 +204,6 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
 				core.NginxReloadComplete,
-				core.CommResponse,
 				core.FileWatcherEnabled,
 				core.NginxConfigApplySucceeded,
 			},
@@ -228,6 +228,7 @@ func TestNginxConfigApply(t *testing.T) {
 				DirectoryMap: &proto.DirectoryMap{},
 			},
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
@@ -236,7 +237,6 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
 				core.NginxReloadComplete,
-				core.CommResponse,
 				core.FileWatcherEnabled,
 				core.NginxConfigApplySucceeded,
 			},
@@ -281,6 +281,7 @@ func TestNginxConfigApply(t *testing.T) {
 				},
 			},
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
@@ -289,7 +290,6 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
 				core.NginxReloadComplete,
-				core.CommResponse,
 				core.FileWatcherEnabled,
 				core.NginxConfigApplySucceeded,
 			},
@@ -318,6 +318,7 @@ func TestNginxConfigApply(t *testing.T) {
 				DirectoryMap: &proto.DirectoryMap{},
 			},
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
@@ -326,7 +327,6 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
 				core.NginxReloadComplete,
-				core.CommResponse,
 				core.FileWatcherEnabled,
 				core.NginxConfigApplySucceeded,
 			},
@@ -351,6 +351,7 @@ func TestNginxConfigApply(t *testing.T) {
 				DirectoryMap: &proto.DirectoryMap{},
 			},
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
@@ -359,7 +360,6 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
 				core.NginxReloadComplete,
-				core.CommResponse,
 				core.FileWatcherEnabled,
 				core.NginxConfigApplySucceeded,
 			},
@@ -404,6 +404,7 @@ func TestNginxConfigApply(t *testing.T) {
 				},
 			},
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
@@ -412,7 +413,6 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigValidationSucceeded,
 				core.CommResponse,
 				core.NginxReloadComplete,
-				core.CommResponse,
 				core.FileWatcherEnabled,
 				core.NginxConfigApplySucceeded,
 			},
@@ -458,6 +458,7 @@ func TestNginxConfigApply(t *testing.T) {
 				},
 			},
 			msgTopics: []string{
+				core.AgentStarted,
 				core.CommNginxConfig,
 				core.NginxPluginConfigured,
 				core.NginxInstancesFound,
@@ -547,7 +548,7 @@ func TestNginxConfigApply(t *testing.T) {
 				Nginx: loadedConfig.Nginx{
 					ConfigReloadMonitoringPeriod: 5 * time.Second,
 				},
-				Features:   []string{agent_config.FeatureNginxConfig},
+				Features:   []string{agent_config.FeatureNginxConfigAsync},
 				Extensions: []string{agent_config.NginxAppProtectExtensionPlugin},
 			}
 
@@ -561,7 +562,7 @@ func TestNginxConfigApply(t *testing.T) {
 			}
 
 			messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
-
+			messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
 			messagePipe.Process(core.NewMessage(core.CommNginxConfig, cmd))
 
 			go messagePipe.Run()
@@ -613,11 +614,10 @@ func TestUploadConfigs(t *testing.T) {
 	}
 
 	msgTopics := []string{
+		core.AgentStarted,
 		core.NginxPluginConfigured,
 		core.NginxInstancesFound,
 		core.DataplaneChanged,
-		core.NginxPluginConfigured,
-		core.NginxInstancesFound,
 	}
 
 	env := tutils.GetMockEnvWithProcess()
@@ -631,12 +631,18 @@ func TestUploadConfigs(t *testing.T) {
 	cmdr := tutils.NewMockCommandClient()
 	cmdr.On("Upload", mock.Anything, mock.Anything).Return(nil)
 
-	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfigAsync}}
 
 	pluginUnderTest := NewNginx(cmdr, binary, env, conf)
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
+
+	// calling Run x 2 means AgentStarted finishes before the DataplaneChanged event gets processed.
+	// This is the expected order of the real MessagePipe
+	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
+	messagePipe.Run()
+
 	messagePipe.Process(core.NewMessage(core.DataplaneChanged, nil))
 	messagePipe.Run()
 
@@ -649,11 +655,10 @@ func TestUploadConfigs(t *testing.T) {
 
 func TestDisableUploadConfigs(t *testing.T) {
 	msgTopics := []string{
+		core.AgentStarted,
 		core.NginxPluginConfigured,
 		core.NginxInstancesFound,
 		core.DataplaneChanged,
-		core.NginxPluginConfigured,
-		core.NginxInstancesFound,
 	}
 
 	env := tutils.GetMockEnvWithProcess()
@@ -668,6 +673,11 @@ func TestDisableUploadConfigs(t *testing.T) {
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
+	// calling Run x 2 means AgentStarted finishes before the DataplaneChanged event gets processed.
+	// This is the expected order of the real MessagePipe
+	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
+	messagePipe.Run()
+
 	messagePipe.Process(core.NewMessage(core.DataplaneChanged, nil))
 	messagePipe.Run()
 
@@ -691,6 +701,8 @@ func TestNginxDetailProcUpdate(t *testing.T) {
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
+	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
+
 	messagePipe.Process(core.NewMessage(core.NginxDetailProcUpdate, tutils.GetProcesses()))
 	messagePipe.Run()
 
@@ -707,7 +719,7 @@ func TestNginxDetailProcUpdate(t *testing.T) {
 			foundMessage = true
 		}
 	}
-	assert.Len(t, processedMessages, 5)
+	assert.Len(t, processedMessages, 4)
 	assert.True(t, foundMessage)
 }
 
@@ -736,7 +748,7 @@ func TestNginx_Process_NginxConfigUpload(t *testing.T) {
 	binary.On("ReadConfig", "/var/conf", "12345", "12345678").Return(config, nil)
 
 	env := tutils.GetMockEnvWithProcess()
-	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfigAsync}}
 
 	pluginUnderTest := NewNginx(cmdr, binary, env, conf)
 	pluginUnderTest.Process(core.NewMessage(core.NginxConfigUpload, configDesc))
@@ -761,6 +773,7 @@ func TestNginx_Subscriptions(t *testing.T) {
 		core.NginxConfigValidationPending,
 		core.NginxConfigValidationSucceeded,
 		core.NginxConfigValidationFailed,
+		core.AgentStarted,
 	}
 	pluginUnderTest := NewNginx(nil, nil, tutils.GetMockEnvWithProcess(), &loadedConfig.Config{})
 
@@ -800,7 +813,7 @@ func TestNginx_validateConfig(t *testing.T) {
 			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 			binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap())
 			binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
-			conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+			conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfigAsync}}
 
 			pluginUnderTest := NewNginx(&tutils.MockCommandClient{}, binary, env, conf)
 
@@ -830,11 +843,11 @@ func TestNginx_validateConfig(t *testing.T) {
 
 func TestNginx_completeConfigApply(t *testing.T) {
 	expectedTopics := []string{
+		core.AgentStarted,
 		core.NginxConfigValidationSucceeded,
 		core.NginxPluginConfigured,
 		core.NginxInstancesFound,
 		core.NginxReloadComplete,
-		core.CommResponse,
 		core.FileWatcherEnabled,
 		core.NginxConfigApplySucceeded,
 	}
@@ -883,7 +896,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 			Host:     "127.0.0.1",
 			GrpcPort: 9092,
 		},
-		Features: []string{agent_config.FeatureNginxConfig},
+		Features: []string{agent_config.FeatureNginxConfigAsync},
 		Nginx: loadedConfig.Nginx{
 			ConfigReloadMonitoringPeriod: 5 * time.Second,
 		},
@@ -919,6 +932,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 	}
 
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
+	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
 	messagePipe.Process(core.NewMessage(core.NginxConfigValidationSucceeded, response))
 	go messagePipe.Run()
 
@@ -941,6 +955,7 @@ func TestNginx_completeConfigApply(t *testing.T) {
 
 func TestNginx_rollbackConfigApply(t *testing.T) {
 	expectedTopics := []string{
+		core.AgentStarted,
 		core.NginxConfigValidationFailed,
 		core.NginxPluginConfigured,
 		core.NginxInstancesFound,
@@ -980,7 +995,7 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 		},
 	)
 
-	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfig}}
+	conf := &loadedConfig.Config{Server: loadedConfig.Server{Host: "127.0.0.1", GrpcPort: 9092}, Features: []string{agent_config.FeatureNginxConfigAsync}}
 
 	pluginUnderTest := NewNginx(commandClient, binary, env, conf)
 
@@ -1012,6 +1027,7 @@ func TestNginx_rollbackConfigApply(t *testing.T) {
 	}
 
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
+	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
 	messagePipe.Process(core.NewMessage(core.NginxConfigValidationFailed, response))
 	messagePipe.Run()
 

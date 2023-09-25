@@ -114,33 +114,19 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
-      - name: Output Logs 
+      - name: Container Output Logs 
         if: failure()
         run: |
           docker ps -a
           dockerid=$(docker ps -a --format "{{.ID}}")
           docker logs "$dockerid"
 
-      - name: Archive install/uninstall integration test logs
+      - name: Archive integration test logs
         if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
-          name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
-          path: /tmp/nginx-agent-integration-test-install-uninstall.log
-          retention-days: 3
-      - name: Archive api integration test logs
-        if: success() || failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
-          path: /tmp/nginx-agent-integration-test-api.log
-          retention-days: 3
-      - name: Archive features integration test logs
-        if: success() || failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: integration-test-log-${{ matrix.container.image }}-${{ matrix.container.version }}
-          path: /tmp/nginx-agent-integration-test-features.log
+          name: integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
+          path: /tmp/integration-test-logs/
           retention-days: 3
 
   performance-test:

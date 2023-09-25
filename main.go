@@ -29,6 +29,7 @@ var (
 	// set at buildtime
 	commit  = ""
 	version = ""
+	env     = &core.EnvironmentType{}
 )
 
 func init() {
@@ -40,12 +41,19 @@ func main() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		env := &core.EnvironmentType{}
-
 		loadedConfig, err := config.GetConfig(env.GetSystemUUID())
 		if err != nil {
 			log.Fatalf("Failed to load configuration: %v", err)
 		}
+
+		eventMeta := events.NewAgentEventMeta(
+			config.MODULE,
+			version,
+			strconv.Itoa(os.Getpid()),
+			env.GetHostname(),
+			env.GetSystemUUID(),
+			loadedConfig.InstanceGroup,
+			loadedConfig.Tags)
 
 		logger.SetLogLevel(loadedConfig.Log.Level)
 		logFile := logger.SetLogFile(loadedConfig.Log.Path)
@@ -75,20 +83,11 @@ func main() {
 
 		binary := core.NewNginxBinary(env, loadedConfig)
 
-		corePlugins, extensionPlugins := plugins.LoadPlugins(commander, binary, env, reporter, loadedConfig)
+		corePlugins, extensionPlugins := plugins.LoadPlugins(commander, binary, env, reporter, loadedConfig, eventMeta)
 
 		pipe := core.InitializePipe(ctx, corePlugins, extensionPlugins, agent_config.DefaultPluginSize)
 
-		event := events.NewAgentEventMeta(
-			config.MODULE,
-			version,
-			strconv.Itoa(os.Getpid()),
-			env.GetHostname(),
-			env.GetSystemUUID(),
-			loadedConfig.InstanceGroup,
-			loadedConfig.Tags)
-
-		pipe.Process(core.NewMessage(core.AgentStarted, event))
+		defer pipe.Process(core.NewMessage(core.AgentStarted, eventMeta))
 		core.HandleSignals(ctx, commander, loadedConfig, env, pipe, cancel, controller)
 
 		pipe.Run()
