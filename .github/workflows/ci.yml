@@ -86,9 +86,9 @@ jobs:
           retention-days: 1
 
   integration-tests:
-    runs-on: ubuntu-22.04
-    needs: build-packages
     name: Integration Tests
+    needs: build-packages
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         container:
