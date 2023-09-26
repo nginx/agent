@@ -141,7 +141,7 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			log.Warnf("Unable to get disks information from the host: %v", err)
 			disks = nil
 		}
-
+		
 		hostInfoFacacde := &proto.HostInfo{
 			Agent:               agentVersion,
 			Boot:                hostInformation.BootTime,
@@ -334,7 +334,7 @@ func (env *EnvironmentType) IsContainer() bool {
 		k8sServiceAcct = "/var/run/secrets/kubernetes.io/serviceaccount"
 	)
 
-	res, _, _ := singleflightGroup.Do(IsContainerKey, func() (interface{}, error) {
+	res, err, _ := singleflightGroup.Do(IsContainerKey, func() (interface{}, error) {
 		for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
 			if _, err := os.Stat(filename); err == nil {
 				log.Debugf("is a container because (%s) exists", filename)
@@ -347,6 +347,10 @@ func (env *EnvironmentType) IsContainer() bool {
 		}
 		return false, nil
 	})
+
+	if err != nil {
+		log.Warnf("unable to retrieve values from cache (%v)", err)
+	}
 
 	return res.(bool)
 }
