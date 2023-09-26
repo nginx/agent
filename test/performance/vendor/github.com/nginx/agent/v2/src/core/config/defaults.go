@@ -40,7 +40,8 @@ func ConfigFilePaths() []string {
 
 var (
 	Defaults = &Config{
-		CloudAccountID: uuid.New().String(),
+		DynamicConfigPath: getDefaultDynamicConfPath(),
+		CloudAccountID:    uuid.New().String(),
 		Log: LogConfig{
 			Level: "info",
 			Path:  "/var/log/nginx-agent",

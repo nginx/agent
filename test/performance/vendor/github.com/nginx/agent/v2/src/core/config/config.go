@@ -100,6 +100,9 @@ func SetDefaults() {
 	// NGINX DEFAULTS
 	Viper.SetDefault(NginxClientVersion, Defaults.Nginx.NginxClientVersion)
 	Viper.SetDefault(NginxConfigReloadMonitoringPeriod, Defaults.Nginx.ConfigReloadMonitoringPeriod)
+
+	// NGINX AGENT DEFAULTS
+	Viper.SetDefault(DynamicConfigPathKey, Defaults.DynamicConfigPath)
 }
 
 func setFlagDeprecated(name string, usageMessage string) {
