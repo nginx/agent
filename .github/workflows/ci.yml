@@ -87,6 +87,7 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-22.04
+    needs: build-packages
     name: Integration Tests
     strategy:
       matrix:
