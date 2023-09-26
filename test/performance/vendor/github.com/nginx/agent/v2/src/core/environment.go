@@ -228,13 +228,13 @@ func (env *EnvironmentType) GetSystemUUID() string {
 
 		hostID, err := host.HostIDWithContext(ctx)
 		if err != nil {
-			log.Infof("Unable to read host id from dataplane, defaulting value. Error: %v", err)
+			log.Warnf("Unable to read host id from dataplane, defaulting value. Error: %v", err)
 			return "", err
 		}
 		return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), err
 	})
 	if err != nil {
-		log.Warnf("unable to set hostname due to %v", err)
+		log.Warnf("Unable to set hostname due to %v", err)
 		return ""
 	}
 
@@ -337,7 +337,7 @@ func (env *EnvironmentType) IsContainer() bool {
 	res, err, _ := singleflightGroup.Do(IsContainerKey, func() (interface{}, error) {
 		for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
 			if _, err := os.Stat(filename); err == nil {
-				log.Debugf("is a container because (%s) exists", filename)
+				log.Debugf("Is a container because (%s) exists", filename)
 				return true, nil
 			}
 		}
@@ -349,7 +349,7 @@ func (env *EnvironmentType) IsContainer() bool {
 	})
 
 	if err != nil {
-		log.Warnf("unable to retrieve values from cache (%v)", err)
+		log.Warnf("Unable to retrieve values from cache (%v)", err)
 	}
 
 	return res.(bool)
