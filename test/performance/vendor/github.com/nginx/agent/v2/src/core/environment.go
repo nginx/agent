@@ -141,7 +141,7 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			log.Warnf("Unable to get disks information from the host: %v", err)
 			disks = nil
 		}
-		
+
 		hostInfoFacacde := &proto.HostInfo{
 			Agent:               agentVersion,
 			Boot:                hostInformation.BootTime,
