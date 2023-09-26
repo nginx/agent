@@ -122,6 +122,11 @@ jobs:
         - image: "debian"
           version: "bookworm-slim"
     steps:
+     - name: Download Packages
+        uses: actions/download-artifact@v3
+        with:
+          name: packages
+          path: ./build/
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
@@ -152,10 +157,6 @@ jobs:
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, '*dependabot-') }}
     runs-on: ubuntu-22.04
     steps:
-      - name: Download Packages
-        uses: actions/download-artifact@v3
-        with:
-          name: packages
       - uses: actions/checkout@v3
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@v2
