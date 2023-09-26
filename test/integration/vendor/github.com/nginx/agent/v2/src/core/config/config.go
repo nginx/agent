@@ -68,7 +68,15 @@ func InitConfiguration(version, commit string) {
 	SetDefaults()
 	RegisterFlags()
 
-	configPath, err := RegisterConfigFile("", ConfigFileName, ConfigFilePaths()...)
+	dynamicConfFilePath := Viper.GetString(DynamicConfigPathKey)
+	if dynamicConfFilePath == "" {
+		log.Info("DEBUG: Dyn config not set")
+		dynamicConfFilePath = getDefaultDynamicConfPath()
+	} else {
+		log.Infof("DEBUG: Dyn config set to %s", dynamicConfFilePath)
+	}
+
+	configPath, err := RegisterConfigFile(dynamicConfFilePath, ConfigFileName, ConfigFilePaths()...)
 	if err != nil {
 		log.Fatalf("Failed to load configuration file: %v", err)
 	}
@@ -152,19 +160,13 @@ func RegisterFlags() {
 	})
 }
 
-func RegisterConfigFile(_ string, confFileName string, confPaths ...string) (string, error) {
+func RegisterConfigFile(dynamicConfFilePath string, confFileName string, confPaths ...string) (string, error) {
 	cfg, err := SeekConfigFileInPaths(confFileName, confPaths...)
 	if err != nil {
 		return cfg, err
 	}
 
-	dynamicConfFilePath := Viper.GetString(DynamicConfigPathKey)
-	if dynamicConfFilePath == "" {
-		log.Info("DEBUG: Dyn config not set")
-		dynamicConfFilePath = getDefaultDynamicConfPath()
-	}
-
-	SetDynamicConfigFileAbsPath(dynamicConfFilePath)
+	setDynamicConfigFileAbsPath(dynamicConfFilePath)
 	if err := LoadPropertiesFromFile(cfg); err != nil {
 		log.Fatalf("Unable to load properties from config files (%s, %s) - %v", cfg, dynamicConfFilePath, err)
 	}
@@ -217,6 +219,8 @@ func GetConfig(clientId string) (*Config, error) {
 		}
 	}
 	config.Server.Target = fmt.Sprintf("%s:%d", config.Server.Host, config.Server.GrpcPort)
+
+	log.Infof("DEBUG: GetConfig: %s", Viper.GetString(DynamicConfigPathKey))
 
 	log.Tracef("Agent config, %v", config)
 	return config, nil
@@ -479,7 +483,7 @@ func removeFeatures(readFile io.Reader) (bool, []byte, error) {
 	return featuresSet, buf.Bytes(), nil
 }
 
-func SetDynamicConfigFileAbsPath(dynamicCfgPath string) {
+func setDynamicConfigFileAbsPath(dynamicCfgPath string) {
 	Viper.Set(DynamicConfigPathKey, dynamicCfgPath)
 	log.Debugf("Set dynamic agent config file: %s", dynamicCfgPath)
 }

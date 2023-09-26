@@ -92,14 +92,14 @@ func TestDefaultConfig(t *testing.T) {
 		tmpDynConfigDir := t.TempDir() + "/defaultConfigTest"
 		defer os.RemoveAll(tmpDynConfigDir)
 		dynConfigPath := fmt.Sprintf("%s/%s", tmpDynConfigDir, DynamicConfigFileName)
-		SetDynamicConfigFileAbsPath(dynConfigPath)
+		setDynamicConfigFileAbsPath(dynConfigPath)
 		assert.NoError(t, LoadPropertiesFromFile(configPath))
 		assert.FileExists(t, dynConfigPath)
 	})
 
 	t.Run("parsing of default config and existing dynamic config", func(t *testing.T) {
 		dynConfigPath := fmt.Sprintf("%s/%s", testCfgDir, DynamicConfigFileName)
-		SetDynamicConfigFileAbsPath(dynConfigPath)
+		setDynamicConfigFileAbsPath(dynConfigPath)
 		assert.NoError(t, LoadPropertiesFromFile(configPath))
 	})
 }
@@ -256,7 +256,7 @@ func TestGetConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		testDynamicCfg := fmt.Sprintf("%s/%s", curDir, updatedTempDynamicCfgFile)
-		SetDynamicConfigFileAbsPath(testDynamicCfg)
+		setDynamicConfigFileAbsPath(testDynamicCfg)
 		err = LoadPropertiesFromFile(updatedTempCfgFile)
 		require.NoError(t, err)
 
