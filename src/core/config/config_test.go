@@ -18,6 +18,7 @@ import (
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	sysutils "github.com/nginx/agent/v2/test/utils/system"
+
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -114,9 +115,7 @@ func TestGetConfig(t *testing.T) {
 		tempConfDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, emptyConfigFile), tempCfgFile)
 		defer func() {
 			err := tempConfDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of temp config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of temp config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -125,7 +124,7 @@ func TestGetConfig(t *testing.T) {
 		defer func() {
 			err := tempDynamicDeleteFunc()
 			if err != nil {
-				t.Fatalf("deletion of temp dynamic config file failed: %v", err)
+				require.NoError(t, err, "deletion of temp dynamic config file failed")
 			}
 		}()
 		require.NoError(t, err)
@@ -171,9 +170,7 @@ func TestGetConfig(t *testing.T) {
 		tempConfDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, emptyConfigFile), tempCfgFile)
 		defer func() {
 			err := tempConfDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of temp config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of temp config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -181,9 +178,7 @@ func TestGetConfig(t *testing.T) {
 		tempDynamicDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, emptyConfigFile), tempDynamicCfgFile)
 		defer func() {
 			err := tempDynamicDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of temp dynamic config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of temp dynamic config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -196,6 +191,7 @@ func TestGetConfig(t *testing.T) {
 		Viper.Set(LogLevel, updatedLogLevel)
 		Viper.Set(DisplayNameKey, updatedTag)
 		Viper.Set(TagsKey, []string{updatedTag})
+		Viper.Set(DynamicConfigPathKey, tempDynamicCfgFile)
 
 		config, err := GetConfig("23456")
 		require.NoError(t, err)
@@ -204,6 +200,7 @@ func TestGetConfig(t *testing.T) {
 		assert.Equal(t, updatedLogLevel, config.Log.Level)
 		assert.Equal(t, updatedTag, config.DisplayName)
 		assert.Equal(t, []string{updatedTag}, config.Tags)
+		assert.Equal(t, tempDynamicCfgFile, config.DynamicConfigPath)
 
 		// Everything else should still be default
 		assert.Equal(t, Defaults.Server.Host, config.Server.Host)
@@ -216,9 +213,7 @@ func TestGetConfig(t *testing.T) {
 		tempConfDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, emptyConfigFile), tempCfgFile)
 		defer func() {
 			err := tempConfDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of temp config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of temp config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -226,9 +221,7 @@ func TestGetConfig(t *testing.T) {
 		tempDynamicDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, emptyConfigFile), tempDynamicCfgFile)
 		defer func() {
 			err := tempDynamicDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of temp dynamic config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of temp dynamic config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -239,9 +232,7 @@ func TestGetConfig(t *testing.T) {
 		updatedTempConfDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, updateCfgFile), updatedTempCfgFile)
 		defer func() {
 			err := updatedTempConfDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of updated temp config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of updated temp config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -249,9 +240,7 @@ func TestGetConfig(t *testing.T) {
 		updatedTempDynamicDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, updatedDynamicFile), updatedTempDynamicCfgFile)
 		defer func() {
 			err := updatedTempDynamicDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of updated temp dynamic config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of updated temp dynamic config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -290,9 +279,7 @@ func TestGetConfig(t *testing.T) {
 		tempConfDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, ConfigFileName), tempCfgFile)
 		defer func() {
 			err := tempConfDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of temp config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of temp config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -300,9 +287,7 @@ func TestGetConfig(t *testing.T) {
 		tempDynamicDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, DynamicConfigFileName), tempDynamicCfgFile)
 		defer func() {
 			err := tempDynamicDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of temp dynamic config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of temp dynamic config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -333,9 +318,7 @@ func TestGetConfig(t *testing.T) {
 		tempConfDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, emptyConfigFile), tempCfgFile)
 		defer func() {
 			err := tempConfDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of temp config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of temp config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -343,9 +326,7 @@ func TestGetConfig(t *testing.T) {
 		tempDynamicDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, emptyConfigFile), tempDynamicCfgFile)
 		defer func() {
 			err := tempDynamicDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of temp dynamic config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of temp dynamic config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -384,9 +365,7 @@ extensions:
 		tempDynamicDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, DynamicConfigFileName), tempDynamicCfgFile)
 		defer func() {
 			err := tempDynamicDeleteFunc()
-			if err != nil {
-				t.Fatalf("deletion of temp dynamic config file failed: %v", err)
-			}
+			require.NoError(t, err, "deletion of temp dynamic config file failed")
 		}()
 		require.NoError(t, err)
 
@@ -411,9 +390,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 	tempDynamicDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, DynamicConfigFileName), tempDynamicCfgFile)
 	defer func() {
 		err := tempDynamicDeleteFunc()
-		if err != nil {
-			t.Fatalf("deletion of temp dynamic config file failed: %v", err)
-		}
+		require.NoError(t, err, "deletion of temp dynamic config file failed")
 	}()
 	require.NoError(t, err)
 
@@ -421,9 +398,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 
 	// Get the current config so we can correctly set a few testcase variables
 	curConf, err := GetConfig("12345")
-	if err != nil {
-		t.Fatalf("Failed to load config: %v", err)
-	}
+	require.NoError(t, err, "failed to load config")
 
 	testCases := []struct {
 		testName            string
