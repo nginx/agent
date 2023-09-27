@@ -47,7 +47,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	# Create deb packages
 	
 	@for arch in $(DEB_ARCHS); do \
-		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
 		for distro in $(DEB_DISTROS); do \
 			deb_codename=`echo $$distro | cut -d- -f 2`; \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename} ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(shell echo ${VERSION} | tr -d 'v')~$${deb_codename}_$${arch}.deb; \
@@ -59,7 +59,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	
 	# Create rpm packages
 
-	@GOWORK=off CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
+	@GOWORK=off CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent
 	@for distro in $(RPM_DISTROS); do \
 		rpm_distro=`echo $$distro | cut -d- -f 1`; \
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
@@ -82,7 +82,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	@for arch in $(REDHAT_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
-		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
 		for distro in $(REDHAT_VERSIONS); do \
 			rpm_distro=`echo $$distro | cut -d- -f 1`; \
 			rpm_major=`echo $$distro | cut -d- -f 2`; \
@@ -99,7 +99,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	@for arch in $(ALMA_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
-		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
 		for distro in $(ALMA_VERSIONS); do \
 			rpm_distro=`echo $$distro | cut -d- -f 1`; \
 			rpm_major=`echo $$distro | cut -d- -f 2`; \
@@ -116,7 +116,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	@for arch in $(ROCKY_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
-		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
 		for distro in $(ROCKY_VERSIONS); do \
 			rpm_distro=`echo $$distro | cut -d- -f 1`; \
 			rpm_major=`echo $$distro | cut -d- -f 2`; \
@@ -134,7 +134,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	@for arch in $(AMAZON_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
-		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
 		for version in $(AMAZON_VERSIONS); do \
 			rpm_major=`echo $$version | cut -d- -f 2`; \
 			rpm_codename="amzn$$rpm_major";\
@@ -150,7 +150,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	@for arch in $(APK_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
-		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
+		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent; \
     	for version in $(APK_VERSIONS); do \
 			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
 			VERSION=$(shell echo ${VERSION} | tr -d 'v') ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v').apk; \
@@ -163,7 +163,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	# Create txz packages
 	
 	rm -rf ./build/nginx-agent
-	@GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -ldflags=${LDFLAGS} -o ./build/nginx-agent
+	@GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent
 	
 	docker run -v ${PWD}:/nginx-agent/ build-signed-packager:1.0.0
 	
