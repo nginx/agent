@@ -123,25 +123,15 @@ func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []*Proc
 	n.statusUrls = map[string]string{}
 	n.statusUrlMutex.Unlock()
 
-	numberOfMasterProcesses := 0
-
 	for _, process := range nginxProcesses {
 		nginxDetails := n.GetNginxDetailsFromProcess(process)
 		if process.IsMaster {
-			numberOfMasterProcesses++
 			n.nginxDetailsMap[nginxDetails.GetNginxId()] = nginxDetails
 		} else {
 			n.nginxWorkersMap[nginxDetails.GetNginxId()] = append(n.nginxWorkersMap[nginxDetails.GetNginxId()], nginxDetails)
 		}
 	}
 
-	if len(n.nginxDetailsMap) != numberOfMasterProcesses {
-		log.Errorf(
-			"Multiple NGINX master processes detected with the same NGINX ID. Number of master processes is %d. Number of unique NGINX IDs is %d.",
-			numberOfMasterProcesses,
-			len(n.nginxDetailsMap),
-		)
-	}
 }
 
 func (n *NginxBinaryType) GetChildProcesses() map[string][]*proto.NginxDetails {
