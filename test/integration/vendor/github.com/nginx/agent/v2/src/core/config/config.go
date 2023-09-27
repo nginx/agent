@@ -63,11 +63,13 @@ func Execute() error {
 	return ROOT_COMMAND.Execute()
 }
 
-func InitConfiguration(version, commit string) {
+func InitFlags(version, commit string) {
 	SetVersion(version, commit)
 	SetDefaults()
 	RegisterFlags()
+}
 
+func InitConfigurationFiles() {
 	dynamicConfFilePath := Viper.GetString(DynamicConfigPathKey)
 	if dynamicConfFilePath == "" {
 		log.Info("DEBUG: Dyn config not set")
@@ -116,7 +118,7 @@ func SetDefaults() {
 func setFlagDeprecated(name string, usageMessage string) {
 	err := ROOT_COMMAND.Flags().MarkDeprecated(name, usageMessage)
 	if err != nil {
-		log.Warnf("error occurred deprecating flag %s: %v", name, err)
+		log.Warnf("Error occurred deprecating flag %s: %v", name, err)
 	}
 }
 
@@ -155,7 +157,7 @@ func RegisterFlags() {
 		}
 		err := Viper.BindEnv(flag.Name)
 		if err != nil {
-			log.Warnf("error occurred binding env %s: %v", flag.Name, err)
+			log.Warnf("Error occurred binding env %s: %v", flag.Name, err)
 		}
 	})
 }

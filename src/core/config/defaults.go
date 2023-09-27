@@ -104,7 +104,7 @@ const (
 	ConfigFileType                  = "yaml"
 	EnvPrefix                       = "nms"
 	ConfigPathKey                   = "path"
-	DynamicConfigPathKey            = "dynamic-config-path"
+	DynamicConfigPathKey            = "dynamic_config_path"
 
 	VersionKey          = "version"
 	CloudAccountIdKey   = "cloudaccountid"
