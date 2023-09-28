@@ -131,7 +131,6 @@ func (n *NginxBinaryType) UpdateNginxDetailsFromProcesses(nginxProcesses []*Proc
 			n.nginxWorkersMap[nginxDetails.GetNginxId()] = append(n.nginxWorkersMap[nginxDetails.GetNginxId()], nginxDetails)
 		}
 	}
-
 }
 
 func (n *NginxBinaryType) GetChildProcesses() map[string][]*proto.NginxDetails {

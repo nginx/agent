@@ -39,10 +39,12 @@ type Metrics struct {
 	env                      core.Environment
 	conf                     *config.Config
 	binary                   core.NginxBinary
+	processesMutex           sync.RWMutex
+	processes                []*core.Process
 }
 
-func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary) *Metrics {
-	collectorConfigsMap := createCollectorConfigsMap(config, env, binary)
+func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary, processes []*core.Process) *Metrics {
+	collectorConfigsMap := createCollectorConfigsMap(config, env, binary, processes)
 	return &Metrics{
 		collectorsUpdate:         atomic.NewBool(false),
 		ticker:                   time.NewTicker(config.AgentMetrics.CollectionInterval),
@@ -56,6 +58,7 @@ func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBi
 		env:                      env,
 		conf:                     config,
 		binary:                   binary,
+		processes:                processes,
 	}
 }
 
@@ -77,7 +80,7 @@ func (m *Metrics) Process(msg *core.Message) {
 	case msg.Exact(core.AgentConfigChanged), msg.Exact(core.NginxConfigApplySucceeded):
 		// If the agent config on disk changed or the NGINX statusAPI was updated
 		// Then update Metrics with relevant config info
-		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary)
+		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary, m.getNginxProccessInfo())
 		m.collectorConfigsMapMutex.Lock()
 		m.collectorConfigsMap = collectorConfigsMap
 		m.collectorConfigsMapMutex.Unlock()
@@ -97,7 +100,8 @@ func (m *Metrics) Process(msg *core.Message) {
 		return
 
 	case msg.Exact(core.NginxDetailProcUpdate):
-		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary)
+		m.syncProcessInfo(msg.Data().([]*core.Process))
+		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary, m.getNginxProccessInfo())
 		for key, collectorConfig := range collectorConfigsMap {
 			if _, ok := m.collectorConfigsMap[key]; !ok {
 				log.Debugf("Adding new nginx collector for nginx id: %s", collectorConfig.NginxId)
@@ -299,10 +303,9 @@ func (m *Metrics) syncAgentConfigChange() {
 	m.conf = conf
 }
 
-func createCollectorConfigsMap(config *config.Config, env core.Environment, binary core.NginxBinary) map[string]*metrics.NginxCollectorConfig {
+func createCollectorConfigsMap(config *config.Config, env core.Environment, binary core.NginxBinary, processes []*core.Process) map[string]*metrics.NginxCollectorConfig {
 	collectorConfigsMap := make(map[string]*metrics.NginxCollectorConfig)
 
-	processes := env.Processes()
 	for _, p := range processes {
 		if !p.IsMaster {
 			continue
@@ -356,4 +359,16 @@ func (m *Metrics) updateCollectorsSources() {
 			nginxCollector.UpdateSources()
 		}
 	}
+}
+
+func (m *Metrics) getNginxProccessInfo() []*core.Process {
+	m.processesMutex.RLock()
+	defer m.processesMutex.RUnlock()
+	return m.processes
+}
+
+func (m *Metrics) syncProcessInfo(processInfo []*core.Process) {
+	m.processesMutex.Lock()
+	defer m.processesMutex.Unlock()
+	m.processes = processInfo
 }

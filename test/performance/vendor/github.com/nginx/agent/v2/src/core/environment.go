@@ -30,6 +30,7 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/process"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/singleflight"
 	"golang.org/x/sys/unix"
 
 	"github.com/nginx/agent/sdk/v2/files"
@@ -52,7 +53,9 @@ type Environment interface {
 	DeleteFile(backup ConfigApplyMarker, fileName string) error
 	Processes() (result []*Process)
 	FileStat(path string) (os.FileInfo, error)
+	Disks() ([]*proto.DiskPartition, error)
 	DiskDevices() ([]string, error)
+	DiskUsage(mountPoint string) (*DiskUsage, error)
 	GetContainerID() (string, error)
 	GetNetOverflow() (float64, error)
 	IsContainer() bool
@@ -80,6 +83,13 @@ type Process struct {
 	Command    string
 }
 
+type DiskUsage struct {
+	Total          float64
+	Used           float64
+	Free           float64
+	UsedPercentage float64
+}
+
 const (
 	lengthOfContainerId = 64
 	versionId           = "VERSION_ID"
@@ -91,16 +101,19 @@ const (
 	KernProc            = 14 // struct: process entries
 	KernProcPathname    = 12 // path to executable
 	SYS_SYSCTL          = 202
+	IsContainerKey      = "isContainer"
+	GetContainerIDKey   = "GetContainerID"
+	GetSystemUUIDKey    = "GetSystemUUIDKey"
 )
 
 var (
-	virtualizationFunc             = host.VirtualizationWithContext
-	_                  Environment = &EnvironmentType{}
-	basePattern                    = regexp.MustCompile("/([a-f0-9]{64})$")
-	colonPattern                   = regexp.MustCompile(":([a-f0-9]{64})$")
-	scopePattern                   = regexp.MustCompile(`/.+-(.+?).scope$`)
-	containersPattern              = regexp.MustCompile("containers/([a-f0-9]{64})")
-	containerdPattern              = regexp.MustCompile("sandboxes/([a-f0-9]{64})")
+	virtualizationFunc = host.VirtualizationWithContext
+	singleflightGroup  = &singleflight.Group{}
+	basePattern        = regexp.MustCompile("/([a-f0-9]{64})$")
+	colonPattern       = regexp.MustCompile(":([a-f0-9]{64})$")
+	scopePattern       = regexp.MustCompile(`/.+-(.+?).scope$`)
+	containersPattern  = regexp.MustCompile("containers/([a-f0-9]{64})")
+	containerdPattern  = regexp.MustCompile("sandboxes/([a-f0-9]{64})")
 )
 
 func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
@@ -123,6 +136,12 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			tags = &[]string{}
 		}
 
+		disks, err := env.Disks()
+		if err != nil {
+			log.Warnf("Unable to get disks information from the host: %v", err)
+			disks = nil
+		}
+
 		hostInfoFacacde := &proto.HostInfo{
 			Agent:               agentVersion,
 			Boot:                hostInformation.BootTime,
@@ -131,7 +150,7 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			OsType:              hostInformation.OS,
 			Uuid:                env.GetSystemUUID(),
 			Uname:               getUnixName(),
-			Partitons:           diskPartitions(),
+			Partitons:           disks,
 			Network:             env.networks(),
 			Processor:           processors(hostInformation.KernelArch),
 			Release:             releaseInfo("/etc/os-release"),
@@ -194,24 +213,32 @@ func (env *EnvironmentType) GetHostname() string {
 }
 
 func (env *EnvironmentType) GetSystemUUID() string {
-	ctx := context.Background()
-	defer ctx.Done()
+	res, err, _ := singleflightGroup.Do(GetSystemUUIDKey, func() (interface{}, error) {
+		var err error
+		ctx := context.Background()
+		defer ctx.Done()
 
-	if env.IsContainer() {
-		containerID, err := env.GetContainerID()
-		if err != nil {
-			log.Errorf("Unable to read docker container ID: %v", err)
-			return ""
+		if env.IsContainer() {
+			containerID, err := env.GetContainerID()
+			if err != nil {
+				return "", fmt.Errorf("unable to read docker container ID: %v", err)
+			}
+			return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
 		}
-		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String()
-	}
 
-	hostInfo, err := host.InfoWithContext(ctx)
+		hostID, err := host.HostIDWithContext(ctx)
+		if err != nil {
+			log.Warnf("Unable to read host id from dataplane, defaulting value. Error: %v", err)
+			return "", err
+		}
+		return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), err
+	})
 	if err != nil {
-		log.Infof("Unable to read host id from dataplane, defaulting value. Error: %v", err)
+		log.Warnf("Unable to set hostname due to %v", err)
 		return ""
 	}
-	return uuid.NewMD5(uuid.Nil, []byte(hostInfo.HostID)).String()
+
+	return res.(string)
 }
 
 func (env *EnvironmentType) ReadDirectory(dir string, ext string) ([]string, error) {
@@ -307,18 +334,25 @@ func (env *EnvironmentType) IsContainer() bool {
 		k8sServiceAcct = "/var/run/secrets/kubernetes.io/serviceaccount"
 	)
 
-	for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
-		if _, err := os.Stat(filename); err == nil {
-			log.Debugf("is a container because (%s) exists", filename)
-			return true
+	res, err, _ := singleflightGroup.Do(IsContainerKey, func() (interface{}, error) {
+		for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
+			if _, err := os.Stat(filename); err == nil {
+				log.Debugf("Is a container because (%s) exists", filename)
+				return true, nil
+			}
 		}
-	}
-	// v1 check
-	if result, err := cGroupV1Check(selfCgroup); err == nil && result {
-		return result
+		// v1 check
+		if result, err := cGroupV1Check(selfCgroup); err == nil && result {
+			return result, err
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		log.Warnf("Unable to retrieve values from cache (%v)", err)
 	}
 
-	return false
+	return res.(bool)
 }
 
 // cGroupV1Check returns if running cgroup v1
@@ -345,20 +379,24 @@ func cGroupV1Check(cgroupFile string) (bool, error) {
 
 // GetContainerID returns the ID of the current environment if running in a container
 func (env *EnvironmentType) GetContainerID() (string, error) {
-	const mountInfo = "/proc/self/mountinfo"
+	res, err, _ := singleflightGroup.Do(GetContainerIDKey, func() (interface{}, error) {
+		const mountInfo = "/proc/self/mountinfo"
 
-	if !env.IsContainer() {
-		return "", errors.New("not in docker")
-	}
+		if !env.IsContainer() {
+			return "", errors.New("not in docker")
+		}
 
-	containerID, err := getContainerID(mountInfo)
-	if err != nil {
-		return "", fmt.Errorf("could not get container ID: %v", err)
-	}
+		containerID, err := getContainerID(mountInfo)
+		if err != nil {
+			return "", fmt.Errorf("could not get container ID: %v", err)
+		}
 
-	log.Debugf("Container ID: %s", containerID)
+		log.Debugf("Container ID: %s", containerID)
 
-	return containerID, err
+		return containerID, err
+	})
+
+	return res.(string), err
 }
 
 // getContainerID returns the container ID of the current running environment.
@@ -426,6 +464,42 @@ func (env *EnvironmentType) DiskDevices() ([]string, error) {
 	default:
 		return getLinuxDiskDevices()
 	}
+}
+
+func (env *EnvironmentType) Disks() (partitions []*proto.DiskPartition, err error) {
+	ctx := context.Background()
+	defer ctx.Done()
+	parts, err := disk.PartitionsWithContext(ctx, false)
+	if err != nil {
+		// return an array of 0
+		log.Errorf("Could not read disk partitions for host: %v", err)
+		return []*proto.DiskPartition{}, err
+	}
+	for _, part := range parts {
+		pm := proto.DiskPartition{
+			MountPoint: part.Mountpoint,
+			Device:     part.Device,
+			FsType:     part.Fstype,
+		}
+		partitions = append(partitions, &pm)
+	}
+	return partitions, nil
+}
+
+func (env *EnvironmentType) DiskUsage(mountPoint string) (*DiskUsage, error) {
+	ctx := context.Background()
+	defer ctx.Done()
+	usage, err := disk.UsageWithContext(ctx, mountPoint)
+	if err != nil {
+		return nil, errors.New("unable to obtain disk usage stats")
+	}
+
+	return &DiskUsage{
+		Total:          float64(usage.Total),
+		Used:           float64(usage.Used),
+		Free:           float64(usage.Free),
+		UsedPercentage: float64(usage.UsedPercent),
+	}, nil
 }
 
 func (env *EnvironmentType) GetNetOverflow() (float64, error) {
@@ -798,26 +872,6 @@ func virtualization() (string, string) {
 		return "container", virtualizationRole
 	}
 	return virtualizationSystem, virtualizationRole
-}
-
-func diskPartitions() (partitions []*proto.DiskPartition) {
-	ctx := context.Background()
-	defer ctx.Done()
-	parts, err := disk.PartitionsWithContext(ctx, false)
-	if err != nil {
-		// return an array of 0
-		log.Errorf("Could not read disk partitions for host: %v", err)
-		return []*proto.DiskPartition{}
-	}
-	for _, part := range parts {
-		pm := proto.DiskPartition{
-			MountPoint: part.Mountpoint,
-			Device:     part.Device,
-			FsType:     part.Fstype,
-		}
-		partitions = append(partitions, &pm)
-	}
-	return partitions
 }
 
 func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {

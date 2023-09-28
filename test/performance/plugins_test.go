@@ -223,7 +223,7 @@ func BenchmarkPluginOneTimeRegistration(b *testing.B) {
 
 	messagePipe := core.NewMessagePipe(ctx)
 	for n := 0; n < b.N; n++ {
-		pluginsUnderTest = append(pluginsUnderTest, plugins.NewOneTimeRegistration(&config, binary, env, &meta))
+		pluginsUnderTest = append(pluginsUnderTest, plugins.NewOneTimeRegistration(&config, binary, env, &meta, tutils.GetProcesses()))
 	}
 
 	err := messagePipe.Register(b.N, pluginsUnderTest, []core.ExtensionPlugin{})

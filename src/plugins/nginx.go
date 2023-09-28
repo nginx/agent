@@ -89,14 +89,14 @@ type NginxConfigValidationResponse struct {
 	elapsedTime   time.Duration
 }
 
-func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config) *Nginx {
+func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config, processes []*core.Process) *Nginx {
 	isFeatureNginxConfigEnabled := loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfig) || loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
 
 	isNginxAppProtectEnabled := loadedConfig.IsExtensionEnabled(agent_config.NginxAppProtectExtensionPlugin)
 
 	return &Nginx{
 		nginxBinary:                    nginxBinary,
-		processes:                      env.Processes(),
+		processes:                      processes,
 		env:                            env,
 		cmdr:                           cmdr,
 		config:                         loadedConfig,
@@ -530,9 +530,6 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 			},
 		}
 
-		n.syncProcessInfo(n.env.Processes())
-		n.nginxBinary.UpdateNginxDetailsFromProcesses(n.processes)
-
 		n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplySucceeded, agentActivityStatus))
 
 		status = &proto.Command_NginxConfigResponse{
@@ -693,7 +690,6 @@ func (n *Nginx) handleErrorStatus(status *proto.Command_NginxConfigResponse, mes
 
 func (n *Nginx) uploadConfigs() {
 	systemId := n.env.GetSystemUUID()
-	n.syncProcessInfo(n.env.Processes())
 	for nginxID := range n.nginxBinary.GetNginxDetailsMapFromProcesses(n.getNginxProccessInfo()) {
 		err := n.uploadConfig(
 			&proto.ConfigDescriptor{
