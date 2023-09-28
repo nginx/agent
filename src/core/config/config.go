@@ -31,11 +31,7 @@ import (
 )
 
 const (
-	// TODO: Remove file path header?
-	dynamicConfigUsageComment = `#
-# /etc/nginx-agent/dynamic-agent.conf
-#
-# Dynamic configuration file for NGINX Agent.
+	dynamicConfigUsageComment = `# Dynamic configuration file for NGINX Agent.
 #
 # The purpose of this file is to track agent configuration
 # values that can be dynamically changed via the API and the agent install script.

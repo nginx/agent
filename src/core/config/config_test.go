@@ -511,10 +511,7 @@ func TestRemoveFeatures(t *testing.T) {
 	}{
 		{
 			name: "default dyn config. unchanged",
-			input: `#
-# /etc/nginx-agent/dynamic-agent.conf
-#
-# Dynamic configuration file for NGINX Agent.
+			input: `# Dynamic configuration file for NGINX Agent.
 #
 # The purpose of this file is to track agent configuration
 # values that can be dynamically changed via the API and the agent install script.
@@ -526,10 +523,7 @@ func TestRemoveFeatures(t *testing.T) {
 #
 # The agent configuration values that the agent install script can modify are as follows:
 #    - instance_group`,
-			want: `#
-# /etc/nginx-agent/dynamic-agent.conf
-#
-# Dynamic configuration file for NGINX Agent.
+			want: `# Dynamic configuration file for NGINX Agent.
 #
 # The purpose of this file is to track agent configuration
 # values that can be dynamically changed via the API and the agent install script.
@@ -546,10 +540,7 @@ func TestRemoveFeatures(t *testing.T) {
 		},
 		{
 			name: "dyn conf with features enabled",
-			input: `#
-# /etc/nginx-agent/dynamic-agent.conf
-#
-# Dynamic configuration file for NGINX Agent.
+			input: `# Dynamic configuration file for NGINX Agent.
 #
 # The purpose of this file is to track agent configuration
 # values that can be dynamically changed via the API and the agent install script.
@@ -574,10 +565,7 @@ features:
 	- features_process-watcher
 	- features_registration
 `,
-			want: `#
-# /etc/nginx-agent/dynamic-agent.conf
-#
-# Dynamic configuration file for NGINX Agent.
+			want: `# Dynamic configuration file for NGINX Agent.
 #
 # The purpose of this file is to track agent configuration
 # values that can be dynamically changed via the API and the agent install script.
@@ -596,10 +584,7 @@ features:
 		},
 		{
 			name: "dyn conf with features enabled and tags after",
-			input: `#
-# /etc/nginx-agent/dynamic-agent.conf
-#
-# Dynamic configuration file for NGINX Agent.
+			input: `# Dynamic configuration file for NGINX Agent.
 
 features:
 	- features_activity-events
@@ -610,10 +595,7 @@ tags:
 	- tag1
 	- tag2
 `,
-			want: `#
-# /etc/nginx-agent/dynamic-agent.conf
-#
-# Dynamic configuration file for NGINX Agent.
+			want: `# Dynamic configuration file for NGINX Agent.
 
 
 tags:
