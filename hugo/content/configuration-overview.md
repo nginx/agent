@@ -28,7 +28,7 @@ The following sections explain how to configure the NGINX Agent using configurat
 
 ### Configure with Config Files
 
-The configuration files for the NGINX Agent are `/etc/nginx-agent/nginx-agent.conf` and `/var/lib/nginx-agent/agent-dynamic.conf`. The `agent-dynamic.conf` file location is different for FreeBSD which is located `/var/db/nginx-agent/agent-dynamic.conf`. These files have comments at the top indicating their purpose.
+The default locations of configuration files for the NGINX Agent are `/etc/nginx-agent/nginx-agent.conf` and `/var/lib/nginx-agent/agent-dynamic.conf`. The `agent-dynamic.conf` file default location is different for FreeBSD which is located `/var/db/nginx-agent/agent-dynamic.conf`. These files have comments at the top indicating their purpose.
 
 Examples of the configuration files are provided below:
 
@@ -108,11 +108,12 @@ nginx_app_protect:
 <details open>
     <summary>example dynamic-agent.conf</summary>
 
+{{<note>}}
+Default location: `/var/lib/nginx-agent/agent-dynamic.conf`
+Default location on FreeBSD `/var/db/nginx-agent/agent-dynamic.conf`
+{{</note>}}
+
 ```yaml
-#
-# /var/lib/nginx-agent/agent-dynamic.conf
-# On FreeBSD /var/db/nginx-agent/agent-dynamic.conf
-#
 # Dynamic configuration file for NGINX Agent.
 #
 # The purpose of this file is to track agent configuration
@@ -160,6 +161,7 @@ Flags:
       --dataplane-report-interval duration               The amount of time the agent will report on the dataplane. After this period of time it will send a snapshot of the dataplane information. (default 24h0m0s)
       --dataplane-status-poll-interval duration          The frequency the agent will check the dataplane for changes. Used as a "heartbeat" to keep the gRPC connections alive. (default 30s)
       --display-name string                              The instance's 'name' value.
+      --dynamic-config-path string                       Defines the path of the Agent dynamic config file. (default "/var/db/nginx-agent/agent-dynamic.conf")
       --features strings                                 A comma-separated list of features enabled for the agent. (default [registration,nginx-config-async,nginx-ssl-config,nginx-counting,metrics,metrics-throttle,dataplane-status,process-watcher,file-watcher,activity-events,agent-api])
   -h, --help                                             help for nginx-agent
       --instance-group string                            The instance's 'group' value.
