@@ -109,8 +109,9 @@ nginx_app_protect:
     <summary>example dynamic-agent.conf</summary>
 
 {{<note>}}
-Default location: `/var/lib/nginx-agent/agent-dynamic.conf`
-Default location on FreeBSD `/var/db/nginx-agent/agent-dynamic.conf`
+Default location in Linux environments: `/var/lib/nginx-agent/agent-dynamic.conf`
+
+Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.conf`
 {{</note>}}
 
 ```yaml
