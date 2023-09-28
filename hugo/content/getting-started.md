@@ -45,10 +45,16 @@ sudo mkdir /etc/nginx-agent
 sudo cp <project_root_directory>/nginx-agent.conf /etc/nginx-agent/
 ```
 
-Create the `agent-dynamic.conf` file in the `/var/lib/nginx-agent/` directory, which is required for NGINX Agent to run. 
+Create the `agent-dynamic.conf` file, which is required for NGINX Agent to run. 
 
+In Linux environments:
 ```shell
 sudo touch /var/lib/nginx-agent/agent-dynamic.conf
+```
+
+In FreeBSD environments:
+```shell
+sudo touch /var/db/nginx-agent/agent-dynamic.conf
 ```
 
 ### Enable the gRPC interface
