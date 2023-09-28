@@ -55,6 +55,7 @@ func TestAgentAPI_Subscriptions(t *testing.T) {
 		core.NginxConfigValidationPending,
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,
+		core.NginxDetailProcUpdate,
 	}
 
 	agentAPI := AgentAPI{}
@@ -122,9 +123,7 @@ func TestNginxHandler_sendInstanceDetailsPayload(t *testing.T) {
 				processes = append(processes, &core.Process{Pid: 1, Name: "12345", IsMaster: true})
 			}
 
-			env.On("Processes").Return(processes)
-
-			nginxHandler := NginxHandler{env: env, nginxBinary: mockNginxBinary}
+			nginxHandler := NginxHandler{env: env, nginxBinary: mockNginxBinary, processes: processes}
 			err := nginxHandler.sendInstanceDetailsPayload(respRec, req)
 			assert.NoError(t, err)
 
@@ -266,12 +265,12 @@ func TestNginxHandler_updateConfig(t *testing.T) {
 				ConfigureArgs:   []string{},
 			}
 
-			var env *tutils.MockEnvironment
+			env := tutils.GetMockEnv()
+			var processes []*core.Process
 			if tt.nginxInstancesPresent {
-				env = tutils.GetMockEnvWithProcess()
+				processes = tutils.GetProcesses()
 			} else {
-				env = tutils.GetMockEnv()
-				env.On("Processes", mock.Anything).Return([]*core.Process{})
+				processes = []*core.Process{}
 			}
 			env.On("WriteFiles", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -287,6 +286,7 @@ func TestNginxHandler_updateConfig(t *testing.T) {
 				pipeline:        pipeline,
 				nginxBinary:     mockNginxBinary,
 				responseChannel: make(chan *proto.Command_NginxConfigResponse),
+				processes:       processes,
 			}
 
 			if tt.response != nil {
@@ -412,7 +412,7 @@ func TestProcess_metricReport(t *testing.T) {
 	metricReport := &proto.MetricsReport{Meta: &proto.Metadata{MessageId: "123"}}
 	metricReportBundle := &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{metricReport}}
 
-	agentAPI := NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
+	agentAPI := NewAgentAPI(conf, mockEnvironment, mockNginxBinary, []*core.Process{})
 
 	// Check that latest metric report isn't set
 	assert.NotEqual(t, metricReport, agentAPI.exporter.GetLatestMetricReports()[0])
@@ -493,7 +493,7 @@ func TestMtls_forApi(t *testing.T) {
 				client.SetTransport(transport)
 			}
 
-			pluginUnderTest := NewAgentAPI(tt.conf, tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary())
+			pluginUnderTest := NewAgentAPI(tt.conf, tutils.GetMockEnvWithProcess(), tutils.GetMockNginxBinary(), tutils.GetProcesses())
 			pluginUnderTest.Init(core.NewMockMessagePipe(ctx))
 
 			client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
