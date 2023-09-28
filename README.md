@@ -214,7 +214,10 @@ The NGINX Agent REST interface can be exposed by validating the following lines 
 
 ```yaml
 api:
-  port: 8081 # port to expose REST API
+  # Set API address to allow remote management
+  host: 127.0.0.1
+  # Set this value to a secure port number to prevent information leaks
+  port: 8038
   
   # REST TLS parameters
   cert: "<TLS-CERTIFICATE>.crt"
