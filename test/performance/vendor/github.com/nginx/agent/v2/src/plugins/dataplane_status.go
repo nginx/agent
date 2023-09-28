@@ -42,13 +42,14 @@ type DataPlaneStatus struct {
 	softwareDetails             map[string]*proto.DataplaneSoftwareDetails
 	nginxConfigActivityStatuses map[string]*proto.AgentActivityStatus
 	softwareDetailsMutex        sync.RWMutex
+	processes                   []*core.Process
 }
 
 const (
 	defaultMinInterval = time.Second * 30
 )
 
-func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core.NginxBinary, env core.Environment) *DataPlaneStatus {
+func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core.NginxBinary, env core.Environment, processes []*core.Process) *DataPlaneStatus {
 	log.Tracef("Dataplane status interval %s", config.Dataplane.Status.PollInterval)
 	pollInt := config.Dataplane.Status.PollInterval
 	if pollInt < defaultMinInterval {
@@ -69,6 +70,7 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		softwareDetailsMutex:        sync.RWMutex{},
 		nginxConfigActivityStatuses: make(map[string]*proto.AgentActivityStatus),
 		softwareDetails:             make(map[string]*proto.DataplaneSoftwareDetails),
+		processes:                   processes,
 	}
 }
 
@@ -129,6 +131,8 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 		default:
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, data)
 		}
+	case msg.Exact(core.NginxDetailProcUpdate):
+		dps.processes = msg.Data().([]*core.Process)
 	}
 }
 
@@ -139,6 +143,7 @@ func (dps *DataPlaneStatus) Subscriptions() []string {
 		core.NginxConfigValidationPending,
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,
+		core.NginxDetailProcUpdate,
 	}
 }
 
@@ -182,7 +187,6 @@ func (dps *DataPlaneStatus) healthGoRoutine(pipeline core.MessagePipeInterface) 
 }
 
 func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneStatus {
-	processes := dps.env.Processes()
 	forceDetails = forceDetails || time.Now().UTC().Add(-dps.reportInterval).After(dps.lastSendDetails)
 
 	agentActivityStatuses := []*proto.AgentActivityStatus{}
@@ -200,8 +204,8 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 
 	dataplaneStatus := &proto.DataplaneStatus{
 		Host:                     dps.hostInfo(forceDetails),
-		Details:                  dps.detailsForProcess(processes, forceDetails),
-		Healths:                  dps.healthForProcess(processes),
+		Details:                  dps.detailsForProcess(dps.processes, forceDetails),
+		Healths:                  dps.healthForProcess(dps.processes),
 		DataplaneSoftwareDetails: dataplaneSoftwareDetails,
 		AgentActivityStatus:      agentActivityStatuses,
 	}
@@ -210,7 +214,7 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 
 func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
 	// this sets send if we are forcing details, or it has been 24 hours since the last send
-	hostInfo := dps.env.NewHostInfo(dps.version, dps.tags, dps.configDirs, true)
+	hostInfo := dps.env.NewHostInfo(dps.version, dps.tags, dps.configDirs, send)
 	if !send && cmp.Equal(dps.envHostInfo, hostInfo) {
 		return nil
 	}

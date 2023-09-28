@@ -19,6 +19,8 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 	var corePlugins []core.Plugin
 	var extensionPlugins []core.ExtensionPlugin
 
+	processes := env.Processes()
+
 	if commander != nil {
 		corePlugins = append(corePlugins,
 			NewCommander(commander, loadedConfig),
@@ -40,18 +42,18 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 
 	corePlugins = append(corePlugins,
 		NewConfigReader(loadedConfig),
-		NewNginx(commander, binary, env, loadedConfig),
+		NewNginx(commander, binary, env, loadedConfig, processes),
 		NewExtensions(loadedConfig, env),
-		NewFeatures(commander, loadedConfig, env, binary, loadedConfig.Version, agentEventsMeta),
+		NewFeatures(commander, loadedConfig, env, binary, loadedConfig.Version, processes, agentEventsMeta),
 	)
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureRegistration) {
-		corePlugins = append(corePlugins, NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString())))
+		corePlugins = append(corePlugins, NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString()), processes))
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsCollection) ||
 		(len(loadedConfig.Nginx.NginxCountingSocket) > 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxCounting)) {
-		corePlugins = append(corePlugins, NewMetrics(loadedConfig, env, binary))
+		corePlugins = append(corePlugins, NewMetrics(loadedConfig, env, binary, processes))
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
@@ -59,11 +61,11 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureDataPlaneStatus) {
-		corePlugins = append(corePlugins, NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, env))
+		corePlugins = append(corePlugins, NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, env, processes))
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureProcessWatcher) {
-		corePlugins = append(corePlugins, NewProcessWatcher(env, binary))
+		corePlugins = append(corePlugins, NewProcessWatcher(env, binary, processes))
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureActivityEvents) {
@@ -71,7 +73,7 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 	}
 
 	if loadedConfig.AgentAPI.Port != 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureAgentAPI) {
-		corePlugins = append(corePlugins, NewAgentAPI(loadedConfig, env, binary))
+		corePlugins = append(corePlugins, NewAgentAPI(loadedConfig, env, binary, processes))
 	} else {
 		log.Info("Agent API not configured")
 	}
