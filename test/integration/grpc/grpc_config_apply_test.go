@@ -149,6 +149,9 @@ messageLoop:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			cmd, er := utils.ExecuteCommand(testContainer, []string{"ps", "-ef"})
+			t.Logf("ps -ef: %v", cmd)
+			assert.NoError(t, er)
 			// Send config apply message
 
 			err := commandService.SendConfigApply(nginxId, tt.nginxConfigFileName, tt.messageId)
