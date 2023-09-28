@@ -68,10 +68,7 @@ func InitFlags(version, commit string) {
 func InitConfigurationFiles() {
 	dynamicConfFilePath := Viper.GetString(DynamicConfigPathKey)
 	if dynamicConfFilePath == "" {
-		log.Info("DEBUG: Dyn config not set")
 		dynamicConfFilePath = getDefaultDynamicConfPath()
-	} else {
-		log.Infof("DEBUG: Dyn config set to %s", dynamicConfFilePath)
 	}
 
 	configPath, err := RegisterConfigFile(dynamicConfFilePath, ConfigFileName, ConfigFilePaths()...)
@@ -217,8 +214,6 @@ func GetConfig(clientId string) (*Config, error) {
 		}
 	}
 	config.Server.Target = fmt.Sprintf("%s:%d", config.Server.Host, config.Server.GrpcPort)
-
-	log.Infof("DEBUG: GetConfig: %s", Viper.GetString(DynamicConfigPathKey))
 
 	log.Tracef("Agent config, %v", config)
 	return config, nil
