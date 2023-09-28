@@ -12,6 +12,31 @@ type MockEnvironment struct {
 	mock.Mock
 }
 
+// Disks implements core.Environment.
+func (*MockEnvironment) Disks() ([]*proto.DiskPartition, error) {
+	return []*proto.DiskPartition{
+		{
+			Device:     "sd01",
+			MountPoint: "/sd01",
+			FsType:     "ext4",
+		},
+		{
+			Device:     "sd02",
+			MountPoint: "/sd02",
+			FsType:     "ext4",
+		},
+	}, nil
+}
+
+func (*MockEnvironment) DiskUsage(mountpoint string) (*core.DiskUsage, error) {
+	return &core.DiskUsage{
+		Total:          20,
+		Used:           10,
+		Free:           10,
+		UsedPercentage: 100,
+	}, nil
+}
+
 func GetProcesses() []*core.Process {
 	return []*core.Process{
 		{Pid: 1, Name: "12345", IsMaster: true},

@@ -210,7 +210,7 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 
 func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
 	// this sets send if we are forcing details, or it has been 24 hours since the last send
-	hostInfo := dps.env.NewHostInfo(dps.version, dps.tags, dps.configDirs, true)
+	hostInfo := dps.env.NewHostInfo(dps.version, dps.tags, dps.configDirs, send)
 	if !send && cmp.Equal(dps.envHostInfo, hostInfo) {
 		return nil
 	}
