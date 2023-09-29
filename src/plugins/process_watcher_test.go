@@ -187,7 +187,7 @@ func TestProcessWatcher_Process(t *testing.T) {
 func TestProcessWatcher_Subscription(t *testing.T) {
 	pluginUnderTest := NewProcessWatcher(nil, nil, nil)
 
-	assert.Equal(t, []string{}, pluginUnderTest.Subscriptions())
+	assert.Equal(t, []string{core.NginxConfigApplySucceeded}, pluginUnderTest.Subscriptions())
 }
 
 func TestProcessWatcher_Info(t *testing.T) {

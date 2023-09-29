@@ -30,6 +30,7 @@ type ProcessWatcher struct {
 	env             core.Environment
 	binary          core.NginxBinary
 	processes       []*core.Process
+	forceCheck      chan bool
 }
 
 func NewProcessWatcher(env core.Environment, nginxBinary core.NginxBinary, processes []*core.Process) *ProcessWatcher {
@@ -42,6 +43,7 @@ func NewProcessWatcher(env core.Environment, nginxBinary core.NginxBinary, proce
 		env:             env,
 		binary:          nginxBinary,
 		processes:       processes,
+		forceCheck:      make(chan bool, 1),
 	}
 }
 
@@ -77,10 +79,17 @@ func (pw *ProcessWatcher) Close() {
 	log.Info("ProcessWatcher is wrapping up")
 }
 
-func (pw *ProcessWatcher) Process(message *core.Message) {}
+func (pw *ProcessWatcher) Process(message *core.Message) {
+	switch message.Topic() {
+	case core.NginxConfigApplySucceeded:
+		pw.forceCheck <- true
+	}
+}
 
 func (pw *ProcessWatcher) Subscriptions() []string {
-	return []string{}
+	return []string{
+		core.NginxConfigApplySucceeded,
+	}
 }
 
 func (pw *ProcessWatcher) watchProcLoop(ctx context.Context) {
@@ -90,17 +99,24 @@ func (pw *ProcessWatcher) watchProcLoop(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
+		case <-pw.forceCheck:
+			log.Debug("Force check for new NGINX processes")
+			pw.checkForProcUpdates()
 		case <-pw.ticker.C:
-			nginxProcs := pw.env.Processes()
-			procUpdates, runningMasterProcs, runningWorkerProcs := pw.getProcUpdates(nginxProcs)
-			if len(procUpdates) > 0 {
-				pw.messagePipeline.Process(procUpdates...)
-				pw.seenMasterProcs = runningMasterProcs
-				pw.seenWorkerProcs = runningWorkerProcs
-
-				pw.messagePipeline.Process(core.NewMessage(core.NginxDetailProcUpdate, nginxProcs))
-			}
+			pw.checkForProcUpdates()
 		}
+	}
+}
+
+func (pw *ProcessWatcher) checkForProcUpdates() {
+	nginxProcs := pw.env.Processes()
+	procUpdates, runningMasterProcs, runningWorkerProcs := pw.getProcUpdates(nginxProcs)
+	if len(procUpdates) > 0 {
+		pw.messagePipeline.Process(procUpdates...)
+		pw.seenMasterProcs = runningMasterProcs
+		pw.seenWorkerProcs = runningWorkerProcs
+
+		pw.messagePipeline.Process(core.NewMessage(core.NginxDetailProcUpdate, nginxProcs))
 	}
 }
 
