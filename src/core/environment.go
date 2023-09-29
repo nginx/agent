@@ -660,7 +660,7 @@ func (env *EnvironmentType) isNginxProcess(name string, cmd string) bool {
 	log.Info("======================================================")
 	log.Infof("name: %v", name)
 	log.Infof("cmd: %v", cmd)
-	return name == "nginx" && !strings.Contains(cmd, "upgrade")
+	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
 }
 
 func getNginxProcessExe(nginxProcess *process.Process) string {
