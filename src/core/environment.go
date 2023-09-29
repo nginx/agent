@@ -656,7 +656,7 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 }
 
 func (env *EnvironmentType) isNginxProcess(name string, cmd string) bool {
-	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
+	return name == "nginx" && !strings.Contains(cmd, "upgrade")
 }
 
 func getNginxProcessExe(nginxProcess *process.Process) string {
