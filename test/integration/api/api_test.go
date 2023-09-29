@@ -30,6 +30,10 @@ func TestAPI_Nginx(t *testing.T) {
 		"Starting Agent API HTTP server with port from config and TLS disabled",
 	)
 
+	cmd, er := utils.ExecuteCommand(testContainer, []string{"ps", "-ef"})
+	t.Logf("ps -ef: %v", cmd)
+	assert.NoError(t, er)
+	
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
