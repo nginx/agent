@@ -62,17 +62,20 @@ func TestGetNginxInstances(t *testing.T) {
 				},
 			}
 
+			var processes []*core.Process
+
 			mockEnvironment := tutils.NewMockEnvironment()
+
 			if tt.nginxDetails == nil {
-				mockEnvironment.On("Processes").Return([]*core.Process{{Pid: pid, IsMaster: false}})
+				processes = []*core.Process{{Pid: pid, IsMaster: false}}
 			} else {
-				mockEnvironment.On("Processes").Return([]*core.Process{{Pid: pid, IsMaster: true}})
+				processes = []*core.Process{{Pid: pid, IsMaster: true}}
 			}
 
 			mockNginxBinary := tutils.NewMockNginxBinary()
 			mockNginxBinary.On("GetNginxDetailsFromProcess", mock.Anything).Return(tt.nginxDetails)
 
-			agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
+			agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary, processes)
 			agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
 
 			client := resty.New()
@@ -114,7 +117,7 @@ func TestInvalidPath(t *testing.T) {
 	mockEnvironment := tutils.NewMockEnvironment()
 	mockNginxBinary := tutils.NewMockNginxBinary()
 
-	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
+	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary, []*core.Process{})
 	agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
 
 	client := resty.New()
@@ -143,7 +146,7 @@ func TestMetrics(t *testing.T) {
 	mockEnvironment := tutils.NewMockEnvironment()
 	mockNginxBinary := tutils.NewMockNginxBinary()
 
-	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
+	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary, []*core.Process{})
 	agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
 	agentAPI.Process(core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{
 		{
@@ -244,7 +247,7 @@ func TestMetricsDisabled(t *testing.T) {
 	mockEnvironment := tutils.NewMockEnvironment()
 	mockNginxBinary := tutils.NewMockNginxBinary()
 
-	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary)
+	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary, []*core.Process{})
 	agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
 
 	client := resty.New()
@@ -354,15 +357,16 @@ func TestConfigApply(t *testing.T) {
 				Plus:            &proto.NginxPlusMetaData{Enabled: true},
 			}
 
+			processes := []*core.Process{{Pid: 12345, IsMaster: true}}
+
 			mockEnvironment := tutils.NewMockEnvironment()
-			mockEnvironment.On("Processes").Return([]*core.Process{{Pid: 12345, IsMaster: true}})
 			mockEnvironment.On("WriteFiles", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 			mockNginxBinary := tutils.NewMockNginxBinary()
 			mockNginxBinary.On("GetNginxDetailsFromProcess", mock.Anything).Return(nginxDetails)
 			mockNginxBinary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(conf, nil)
 
-			agentAPI := plugins.NewAgentAPI(tt.agentConf, mockEnvironment, mockNginxBinary)
+			agentAPI := plugins.NewAgentAPI(tt.agentConf, mockEnvironment, mockNginxBinary, processes)
 			pipeline := core.NewMockMessagePipe(context.TODO())
 			agentAPI.Init(pipeline)
 

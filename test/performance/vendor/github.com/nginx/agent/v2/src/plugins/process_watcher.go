@@ -29,27 +29,27 @@ type ProcessWatcher struct {
 	wg              sync.WaitGroup
 	env             core.Environment
 	binary          core.NginxBinary
+	processes       []*core.Process
 }
 
-func NewProcessWatcher(env core.Environment, nginxBinary core.NginxBinary) *ProcessWatcher {
+func NewProcessWatcher(env core.Environment, nginxBinary core.NginxBinary, processes []*core.Process) *ProcessWatcher {
 	return &ProcessWatcher{
-		ticker:          time.NewTicker(time.Millisecond * 500),
+		ticker:          time.NewTicker(5 * time.Second),
 		seenMasterProcs: make(map[int32]*core.Process),
 		seenWorkerProcs: make(map[int32]*core.Process),
 		nginxDetails:    make(map[int32]*proto.NginxDetails),
 		wg:              sync.WaitGroup{},
 		env:             env,
 		binary:          nginxBinary,
+		processes:       processes,
 	}
 }
 
 func (pw *ProcessWatcher) Init(pipeline core.MessagePipeInterface) {
 	log.Info("ProcessWatcher initializing")
-
 	pw.messagePipeline = pipeline
 
-	nginxProcesses := pw.env.Processes()
-	for _, proc := range nginxProcesses {
+	for _, proc := range pw.processes {
 		if proc.IsMaster {
 			pw.seenMasterProcs[proc.Pid] = proc
 		} else {
@@ -61,7 +61,7 @@ func (pw *ProcessWatcher) Init(pipeline core.MessagePipeInterface) {
 	pw.wg.Add(1)
 	go pw.watchProcLoop(pipeline.Context())
 
-	pw.messagePipeline.Process(core.NewMessage(core.NginxDetailProcUpdate, nginxProcesses))
+	pw.messagePipeline.Process(core.NewMessage(core.NginxDetailProcUpdate, pw.processes))
 }
 
 func (pw *ProcessWatcher) Info() *core.Info {

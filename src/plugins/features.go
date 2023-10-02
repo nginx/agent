@@ -27,16 +27,26 @@ type Features struct {
 	binary          core.NginxBinary
 	version         string
 	featureMap      map[string]func(data string) []core.Plugin
+	processes       []*core.Process
 	agentEventsMeta *events.AgentEventMeta
 }
 
-func NewFeatures(commander client.Commander, conf *config.Config, env core.Environment, binary core.NginxBinary, version string, agentEventsMeta *events.AgentEventMeta) *Features {
+func NewFeatures(
+	commander client.Commander,
+	conf *config.Config,
+	env core.Environment,
+	binary core.NginxBinary,
+	version string,
+	processes []*core.Process,
+	agentEventsMeta *events.AgentEventMeta,
+) *Features {
 	return &Features{
 		commander:       commander,
 		conf:            conf,
 		env:             env,
 		binary:          binary,
 		version:         version,
+		processes:       processes,
 		agentEventsMeta: agentEventsMeta,
 	}
 }
@@ -118,6 +128,8 @@ func (f *Features) Process(msg *core.Message) {
 		for _, plugin := range plugins {
 			plugin.Init(f.pipeline)
 		}
+	} else if msg.Topic() == core.NginxDetailProcUpdate {
+		f.processes = msg.Data().([]*core.Process)
 	}
 }
 
@@ -130,7 +142,7 @@ func (f *Features) enableMetricsFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		metrics := NewMetrics(f.conf, f.env, f.binary)
+		metrics := NewMetrics(f.conf, f.env, f.binary, f.processes)
 		metricsThrottle := NewMetricsThrottle(f.conf, f.env)
 		metricsSender := NewMetricsSender(f.commander)
 
@@ -149,7 +161,7 @@ func (f *Features) enableMetricsCollectionFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		metrics := NewMetrics(f.conf, f.env, f.binary)
+		metrics := NewMetrics(f.conf, f.env, f.binary, f.processes)
 
 		return []core.Plugin{metrics}
 	}
@@ -198,7 +210,7 @@ func (f *Features) enableAgentAPIFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		api := NewAgentAPI(f.conf, f.env, f.binary)
+		api := NewAgentAPI(f.conf, f.env, f.binary, f.processes)
 
 		return []core.Plugin{api}
 	}
@@ -213,7 +225,7 @@ func (f *Features) enableRegistrationFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		registration := NewOneTimeRegistration(f.conf, f.binary, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()))
+		registration := NewOneTimeRegistration(f.conf, f.binary, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.processes)
 
 		return []core.Plugin{registration}
 	}
@@ -228,7 +240,7 @@ func (f *Features) enableDataPlaneStatusFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		dataPlaneStatus := NewDataPlaneStatus(f.conf, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary, f.env)
+		dataPlaneStatus := NewDataPlaneStatus(f.conf, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary, f.env, f.processes)
 
 		return []core.Plugin{dataPlaneStatus}
 	}
@@ -243,7 +255,7 @@ func (f *Features) enableProcessWatcherFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		processWatcher := NewProcessWatcher(f.env, f.binary)
+		processWatcher := NewProcessWatcher(f.env, f.binary, f.processes)
 
 		return []core.Plugin{processWatcher}
 	}
@@ -294,7 +306,7 @@ func (f *Features) enableNginxCountingFeature(data string) []core.Plugin {
 			if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 				!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsCollection) {
 
-				metrics := NewMetrics(f.conf, f.env, f.binary)
+				metrics := NewMetrics(f.conf, f.env, f.binary, f.processes)
 
 				countingPlugins = append(countingPlugins, metrics)
 			}
