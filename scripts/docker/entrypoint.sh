@@ -21,11 +21,11 @@ echo "starting nginx ..."
 
 nginx_pid=$!
 
-# echo "${nginx_pid}"
+echo "${nginx_pid}"
 
-# test=$(ps -ef | grep nginx)
+test=$(ps -ef | grep nginx)
 
-# echo "${test}"
+echo "${test}"
 
 
 cat /etc/nginx-agent/nginx-agent.conf;
