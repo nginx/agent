@@ -103,10 +103,6 @@ func TestRegistrationAndConfigApply(t *testing.T) {
 	receivedAgentConnectRequest := false
 	var nginxId string
 
-	cmd, er := utils.ExecuteCommand(testContainer, []string{"ps", "-ef"})
-	t.Logf("ps -ef: %v", cmd)
-	assert.NoError(t, er)
-
 messageLoop:
 	for message := range commandService.fromClient {
 		t.Logf("Message Received: %v", message)
