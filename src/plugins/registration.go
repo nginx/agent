@@ -42,6 +42,7 @@ type OneTimeRegistration struct {
 	dataplaneSoftwareDetails      map[string]*proto.DataplaneSoftwareDetails
 	pipeline                      core.MessagePipeInterface
 	dataplaneSoftwareDetailsMutex sync.Mutex
+	processes                     []*core.Process
 }
 
 func NewOneTimeRegistration(
@@ -49,6 +50,7 @@ func NewOneTimeRegistration(
 	binary core.NginxBinary,
 	env core.Environment,
 	meta *proto.Metadata,
+	processes []*core.Process,
 ) *OneTimeRegistration {
 	// this might be slow so do on startup
 	host := env.NewHostInfo(config.Version, &config.Tags, config.ConfigDirs, true)
@@ -62,6 +64,7 @@ func NewOneTimeRegistration(
 		binary:                        binary,
 		dataplaneSoftwareDetails:      make(map[string]*proto.DataplaneSoftwareDetails),
 		dataplaneSoftwareDetailsMutex: sync.Mutex{},
+		processes:                     processes,
 	}
 }
 
@@ -150,7 +153,7 @@ func (r *OneTimeRegistration) areDataplaneSoftwareDetailsReady() error {
 func (r *OneTimeRegistration) registerAgent() {
 	var details []*proto.NginxDetails
 
-	for _, proc := range r.env.Processes() {
+	for _, proc := range r.processes {
 		// only need master process for registration
 		if proc.IsMaster {
 			nginxDetails := r.binary.GetNginxDetailsFromProcess(proc)

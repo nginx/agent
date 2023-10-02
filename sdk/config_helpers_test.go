@@ -34,16 +34,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	TMPDIR   = "/tmp/testdata"
+	nginxID  = "1"
+	systemID = "2"
+)
+
 var directories = []string{
-	"/tmp/testdata/configs",
-	"/tmp/testdata/configs/other",
-	"/tmp/testdata/logs",
-	"/tmp/testdata/nginx",
-	"/tmp/testdata/nginx/other",
-	"/tmp/testdata/certs",
-	"/tmp/testdata/root",
-	"/tmp/testdata/foo",
-	"/tmp/testdata/directoryMap/",
+	TMPDIR + "/configs",
+	TMPDIR + "/configs/other",
+	TMPDIR + "/logs",
+	TMPDIR + "/nginx",
+	TMPDIR + "/nginx/other",
+	TMPDIR + "/certs",
+	TMPDIR + "/root",
+	TMPDIR + "/foo",
+	TMPDIR + "/directoryMap/",
 }
 
 var files = []string{
@@ -98,11 +104,6 @@ var accessLogs = &proto.AccessLogs{
 		},
 	},
 }
-
-const (
-	nginxID  = "1"
-	systemID = "2"
-)
 
 var tests = []struct {
 	fileName         string
@@ -626,6 +627,148 @@ var tests = []struct {
 			},
 		},
 	},
+	{
+		fileName: "/tmp/testdata/nginx/nginx2.conf",
+		config: `daemon            off;
+		worker_processes  2;
+		user              www-data;
+		
+		events {
+			use           epoll;
+			worker_connections  128;
+		}
+		
+		error_log         /tmp/testdata/logs/error.log info;
+				
+		http {
+			log_format upstream_time '$remote_addr - $remote_user [$time_local] '
+			'"$request" $status $body_bytes_sent '
+			'"$http_referer" "$http_user_agent" '
+			'rt=$request_time uct="$upstream_connect_time" uht="$upstream_header_time" urt="$upstream_response_time"';
+			log_format ltsv 'remote_addr: $remote_addr\t remote_user: $remote_user\t time_local: $time_local\t '
+			'request: $request\t status:$status\t body_bytes_sent: $body_bytes_sent\t '
+			'referer: $http_referer\t user_agent: $http_user_agent\t'
+			'rt: $request_time\t uct: $upstream_connect_time\t uht: $upstream_header_time\t urt: $upstream_response_time';
+		
+			server_tokens off;
+			charset       utf-8;
+		
+			access_log    /tmp/testdata/logs/access1.log  $upstream_time;
+			ssl_certificate     /tmp/testdata/nginx/ca.crt;	
+		
+			server {
+				listen        127.0.0.1:80;
+				server_name   localhost;
+		
+				error_page    500 502 503 504  /50x.html;
+				# ssl_certificate /usr/local/nginx/conf/cert.pem;
+		
+				location      / {
+					root      /tmp/testdata/foo;
+				}
+
+				location /stub_status {
+					stub_status;
+				}
+			}
+		
+			access_log    /tmp/testdata/logs/access2.log  combined;
+			access_log    /tmp/testdata/logs/access3.log  ltsv;
+		
+		}`,
+		plusApi: "http://127.0.0.1:80/stub_status",
+		expected: &proto.NginxConfig{
+			Action: proto.NginxConfigAction_RETURN,
+			DirectoryMap: &proto.DirectoryMap{
+				Directories: []*proto.Directory{
+					{
+						Name:        "/tmp/testdata/foo",
+						Permissions: "0755",
+						Files: []*proto.File{
+							{
+								Name:        "test.html",
+								Permissions: "0644",
+							},
+						},
+					},
+					{
+						Name:        "/tmp/testdata/nginx",
+						Permissions: "0755",
+						Files: []*proto.File{
+							{
+								Name:        "nginx2.conf",
+								Permissions: "0644",
+								Lines:       int32(46),
+							},
+							{
+								Name:        "ca.crt",
+								Permissions: "0644",
+								Lines:       int32(31),
+							},
+						},
+					},
+				},
+			},
+			AccessLogs: accessLogs,
+			ErrorLogs:  errorLogs,
+			ConfigData: &proto.ConfigDescriptor{
+				NginxId:  nginxID,
+				SystemId: systemID,
+				Checksum: "",
+			},
+			Ssl: &proto.SslCertificates{
+				SslCerts: []*proto.SslCertificate{
+					{
+						FileName: "/tmp/testdata/nginx/ca.crt",
+						Validity: &proto.CertificateDates{
+							NotBefore: 1632834204,
+							NotAfter:  1635426204,
+						},
+						Issuer: &proto.CertificateName{
+							CommonName:         "ca.local",
+							Country:            []string{"IE"},
+							Locality:           []string{"Cork"},
+							Organization:       []string{"NGINX"},
+							OrganizationalUnit: nil,
+						},
+						Subject: &proto.CertificateName{
+							CommonName:         "ca.local",
+							Country:            []string{"IE"},
+							Locality:           []string{"Cork"},
+							Organization:       []string{"NGINX"},
+							State:              []string{"Cork"},
+							OrganizationalUnit: nil,
+						},
+						Mtime:                  &types.Timestamp{Seconds: 1633343804, Nanos: 15240107},
+						SubjAltNames:           nil,
+						PublicKeyAlgorithm:     "RSA",
+						SignatureAlgorithm:     "SHA512-RSA",
+						SerialNumber:           "12554968962670027276",
+						SubjectKeyIdentifier:   "75:50:E2:24:8F:6F:13:1D:81:20:E1:01:0B:57:2B:98:39:E5:2E:C3",
+						Fingerprint:            "48:6D:05:D4:78:10:91:15:69:74:9C:6A:54:F7:F2:FC:C8:93:46:E8:28:42:24:41:68:41:51:1E:1E:43:E0:12",
+						AuthorityKeyIdentifier: "3A:79:E0:3E:61:CD:94:29:1D:BB:45:37:0B:E9:78:E9:2F:40:67:CA",
+						FingerprintAlgorithm:   "SHA512-RSA",
+						Version:                3,
+					},
+				},
+			},
+			// using RootDirectory for allowed in the tests, but the "root" directive is /tmp/testdata/foo, so
+			// should have an empty file list from the aux
+			Zaux: &proto.ZippedFile{
+				Checksum:      "51c05b653bc43deb5ec497988692fc5dec05ab8b6a0b78e908e4628b3d9e0d4c",
+				RootDirectory: "/tmp/testdata/foo",
+			},
+			Zconfig: &proto.ZippedFile{
+				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
+				Checksum:      "737493b580f29636e998efd2e85cf552217ad9a22e69c3bf6192eedaec681976",
+				RootDirectory: "/tmp/testdata/nginx",
+			},
+		},
+		expectedAuxFiles: map[string]struct{}{
+			"/tmp/testdata/foo/test.html": {},
+			"/tmp/testdata/nginx/ca.crt":  {},
+		},
+	},
 }
 
 func TestGetNginxConfigFiles(t *testing.T) {
@@ -685,7 +828,7 @@ func TestGetNginxConfig(t *testing.T) {
 		err = setUpFile(test.fileName, []byte(test.config))
 		assert.NoError(t, err)
 
-		err = generateCertificates()
+		err = generateCertificates("rsaEncryption")
 		assert.NoError(t, err)
 
 		allowedDirs := map[string]struct{}{}
@@ -1324,6 +1467,7 @@ type crtMetaFields struct {
 	fingerprint          string
 	subjectKeyIdentifier string
 	authKeyIdentifier    string
+	PublicKeyAlgorithm   string
 }
 
 func getCertMeta(file string) crtMetaFields {
@@ -1341,10 +1485,11 @@ func getCertMeta(file string) crtMetaFields {
 		subjectKeyIdentifier: convertToHexFormat(hex.EncodeToString(cert.SubjectKeyId)),
 		fingerprint:          convertToHexFormat(hex.EncodeToString(fingerprint[:])),
 		authKeyIdentifier:    convertToHexFormat(hex.EncodeToString(cert.AuthorityKeyId)),
+		PublicKeyAlgorithm:   cert.PublicKeyAlgorithm.String(),
 	}
 }
 
-func generateCertificates() error {
+func generateCertificates(algoname string) error {
 	cmd := exec.Command("../scripts/tls/gen_cnf.sh", "ca", "--cn", "'ca.local'", "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "certs/conf")
 
 	err := cmd.Run()
@@ -1352,7 +1497,15 @@ func generateCertificates() error {
 		return err
 	}
 
-	cmd1 := exec.Command("../scripts/tls/gen_cert.sh", "ca", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
+	var cmd1 *exec.Cmd
+
+	if algoname == "rsaEncryption" {
+		// generate rsa key
+		cmd1 = exec.Command("../scripts/tls/gen_cert.sh", "ca", "rsa", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
+	} else if algoname == "dsaEncryption" {
+		// generate dsa
+		cmd1 = exec.Command("../scripts/tls/gen_cert.sh", "ca", "dsa", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
+	}
 
 	err = cmd1.Run()
 	if err != nil {
@@ -1904,6 +2057,199 @@ Reading: 0 Writing: 1 Waiting: 1
 		t.Run(testCase.name, func(t *testing.T) {
 			result := pingStubStatusApiEndpoint(fmt.Sprintf("%s%s", server.URL, testCase.endpoint))
 			assert.Equal(t, testCase.expected, result)
+		})
+	}
+}
+
+// Test SSL directives, as well as verious key algorithms
+func TestSslDirectives(t *testing.T) {
+	// Config content is static, and can be used repeatedly
+	const config = `daemon            off;
+	worker_processes  2;
+	user              www-data;
+
+	events {
+		use           epoll;
+		worker_connections  128;
+	}
+
+	http {
+		log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+											'$status $body_bytes_sent "$http_referer" '
+											'"$http_user_agent" "$http_x_forwarded_for"';
+
+		server_tokens off;
+		charset       utf-8;
+
+		access_log    /tmp/testdata/logs/access1.log  $upstream_time;
+		error_log         /tmp/testdata/logs/error.log info;
+
+		server {
+			listen        127.0.0.1:443;
+			server_name   ca.local;
+
+			ssl_certificate     /tmp/testdata/nginx/ca.crt;
+			ssl_certificate_key /tmp/testdata/nginx/ca.key;
+			ssl_trusted_certificate     /tmp/testdata/nginx/trusted.crt;
+
+			location      / {
+				root      /tmp/testdata/root;
+				app_protect_enable on;
+				app_protect_policy_file /tmp/testdata/root/my-nap-policy.json;
+				app_protect_security_log_enable on;
+				app_protect_security_log "/tmp/testdata/root/log-default.json" /var/log/app_protect/security.log;
+				proxy_ssl_certificate /tmp/testdata/nginx/proxy.crt;
+			}
+		}
+	}`
+
+	// preparing test cases as well as expected results
+	tests := []struct {
+		algoName string
+		config   string
+		expected struct {
+			nginxConf *proto.NginxConfig
+			algoName  string
+		}
+		expectedAuxFiles map[string]struct{}
+		fileName         string
+	}{
+		{
+			algoName: "rsaEncryption",
+			fileName: "/tmp/testdata/nginx/ssl.conf",
+			config:   config,
+			expected: struct {
+				nginxConf *proto.NginxConfig
+				algoName  string
+			}{
+				algoName: "rsaEncryption",
+				nginxConf: &proto.NginxConfig{
+					Action: proto.NginxConfigAction_RETURN,
+					DirectoryMap: &proto.DirectoryMap{
+						Directories: []*proto.Directory{
+							{
+								Name:        "/tmp/testdata/nginx",
+								Permissions: "0755",
+								Files: []*proto.File{
+									{
+										Name:        "ssl.conf",
+										Permissions: "0644",
+										Lines:       int32(37),
+									},
+									{
+										Name:        "ca.crt",
+										Permissions: "0644",
+										Lines:       int32(31),
+									},
+									{
+										Name:        "trusted.crt",
+										Permissions: "0644",
+										Lines:       int32(31),
+									},
+									{
+										Name:        "proxy.crt",
+										Permissions: "0644",
+										Lines:       int32(31),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			algoName: "dsaEncryption",
+			fileName: "/tmp/testdata/nginx/ssl.conf",
+			config:   config,
+			expected: struct {
+				nginxConf *proto.NginxConfig
+				algoName  string
+			}{
+				algoName: "dsaEncryption",
+				nginxConf: &proto.NginxConfig{
+					Action: proto.NginxConfigAction_RETURN,
+					DirectoryMap: &proto.DirectoryMap{
+						Directories: []*proto.Directory{
+							{
+								Name:        "/tmp/testdata/nginx",
+								Permissions: "0755",
+								Files: []*proto.File{
+									{
+										Name:        "ssl.conf",
+										Permissions: "0644",
+										Lines:       int32(37),
+									},
+									{
+										Name:        "ca.crt",
+										Permissions: "0644",
+										Lines:       int32(44),
+									},
+									{
+										Name:        "trusted.crt",
+										Permissions: "0644",
+										Lines:       int32(44),
+									},
+									{
+										Name:        "proxy.crt",
+										Permissions: "0644",
+										Lines:       int32(44),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.algoName, func(t *testing.T) {
+			err := setUpDirectories()
+			assert.NoError(t, err)
+			defer tearDownDirectories()
+
+			err = setUpFile(test.fileName, []byte(test.config))
+			assert.NoError(t, err)
+
+			err = generateCertificates(test.algoName)
+			assert.NoError(t, err)
+
+			allowedDirs := map[string]struct{}{
+				"/tmp/testdata/nginx": {},
+			}
+			ignoreDirectives := []string{}
+
+			result, err := GetNginxConfigWithIgnoreDirectives(test.fileName, nginxID, systemID, allowedDirs, ignoreDirectives)
+			assert.NoError(t, err)
+			assert.NotNil(t, result)
+
+			assert.Equal(t, test.expected.nginxConf.Action, result.Action)
+			assert.Equal(t, len(test.expected.nginxConf.DirectoryMap.Directories), len(result.DirectoryMap.Directories))
+			// Check directories structure
+			for dirIndex, dir := range result.DirectoryMap.Directories {
+				assert.Equal(t, dir.Name, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Name)
+				assert.Equal(t, dir.Permissions, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Permissions)
+
+				// Check files structure
+				for fileIndex, file := range dir.Files {
+					assert.Equal(t, file.Name, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Files[fileIndex].Name)
+					assert.Equal(t, file.Permissions, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Files[fileIndex].Permissions)
+					assert.Equal(t, file.Lines, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Files[fileIndex].Lines)
+				}
+			}
+
+			// Check certificates metadata
+			for _, cert := range result.Ssl.SslCerts {
+				certMeta := getCertMeta(cert.FileName)
+				assert.Equal(t, certMeta.serialNumber, cert.SerialNumber)
+				assert.Equal(t, certMeta.notAfter, cert.Validity.NotAfter)
+				assert.Equal(t, certMeta.notBefore, cert.Validity.NotBefore)
+				assert.Equal(t, certMeta.subjectKeyIdentifier, cert.SubjectKeyIdentifier)
+				assert.Equal(t, certMeta.authKeyIdentifier, cert.AuthorityKeyIdentifier)
+				assert.Equal(t, certMeta.PublicKeyAlgorithm, cert.PublicKeyAlgorithm)
+			}
 		})
 	}
 }

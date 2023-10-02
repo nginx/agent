@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -60,6 +61,7 @@ type AgentAPI struct {
 	nginxBinary  core.NginxBinary
 	nginxHandler *NginxHandler
 	exporter     *prometheus_metrics.Exporter
+	processes    []*core.Process
 }
 
 type NginxHandler struct {
@@ -69,6 +71,8 @@ type NginxHandler struct {
 	nginxBinary            core.NginxBinary
 	responseChannel        chan *proto.Command_NginxConfigResponse
 	configResponseStatuses map[string]*proto.NginxConfigStatus
+	processesMutex         sync.RWMutex
+	processes              []*core.Process
 }
 
 // swagger:parameters apply-nginx-config
@@ -133,12 +137,13 @@ const (
 	jsonMimeType      = "application/json"
 )
 
-func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.NginxBinary) *AgentAPI {
+func NewAgentAPI(config *config.Config, env core.Environment, nginxBinary core.NginxBinary, processes []*core.Process) *AgentAPI {
 	return &AgentAPI{
 		config:      config,
 		env:         env,
 		nginxBinary: nginxBinary,
 		exporter:    prometheus_metrics.NewExporter(&proto.MetricsReport{}),
+		processes:   processes,
 	}
 }
 
@@ -181,6 +186,11 @@ func (a *AgentAPI) Process(message *core.Message) {
 		default:
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, response)
 		}
+	case core.NginxDetailProcUpdate:
+		a.processes = message.Data().([]*core.Process)
+		if a.nginxHandler != nil {
+			a.nginxHandler.syncProcessInfo(a.processes)
+		}
 	}
 }
 
@@ -195,6 +205,7 @@ func (a *AgentAPI) Subscriptions() []string {
 		core.NginxConfigValidationPending,
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,
+		core.NginxDetailProcUpdate,
 	}
 }
 
@@ -206,6 +217,7 @@ func (a *AgentAPI) createHttpServer() {
 		nginxBinary:            a.nginxBinary,
 		responseChannel:        make(chan *proto.Command_NginxConfigResponse),
 		configResponseStatuses: make(map[string]*proto.NginxConfigStatus),
+		processes:              a.processes,
 	}
 
 	mux := http.NewServeMux()
@@ -462,7 +474,7 @@ func readFileFromRequest(r *http.Request) (*bytes.Buffer, error) {
 func (h *NginxHandler) getNginxDetails() []*proto.NginxDetails {
 	var nginxDetails []*proto.NginxDetails
 
-	for _, proc := range h.env.Processes() {
+	for _, proc := range h.getNginxProccessInfo() {
 		if proc.IsMaster {
 			nginxDetails = append(nginxDetails, h.nginxBinary.GetNginxDetailsFromProcess(proc))
 		}
@@ -579,6 +591,18 @@ func (h *NginxHandler) getConfigStatus(w http.ResponseWriter, r *http.Request) e
 
 	w.WriteHeader(http.StatusOK)
 	return writeObjectToResponseBody(w, agentAPIConfigApplyStatusResponse)
+}
+
+func (h *NginxHandler) getNginxProccessInfo() []*core.Process {
+	h.processesMutex.RLock()
+	defer h.processesMutex.RUnlock()
+	return h.processes
+}
+
+func (h *NginxHandler) syncProcessInfo(processInfo []*core.Process) {
+	h.processesMutex.Lock()
+	defer h.processesMutex.Unlock()
+	h.processes = processInfo
 }
 
 func writeObjectToResponseBody(w http.ResponseWriter, response any) error {

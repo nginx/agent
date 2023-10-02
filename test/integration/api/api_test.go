@@ -23,7 +23,12 @@ const (
 )
 
 func TestAPI_Nginx(t *testing.T) {
-	testContainer := utils.SetupTestContainerWithAgent(t)
+	testContainer := utils.SetupTestContainerWithAgent(
+		t,
+		"api-nginx",
+		"./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf",
+		"Starting Agent API HTTP server with port from config and TLS disabled",
+	)
 
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
@@ -53,7 +58,12 @@ func TestAPI_Nginx(t *testing.T) {
 }
 
 func TestAPI_Metrics(t *testing.T) {
-	testContainer := utils.SetupTestContainerWithAgent(t)
+	testContainer := utils.SetupTestContainerWithAgent(
+		t,
+		"api-metrics",
+		"./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf",
+		"Starting Agent API HTTP server with port from config and TLS disabled",
+	)
 
 	client := resty.New()
 

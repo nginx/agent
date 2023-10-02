@@ -13,6 +13,7 @@ import (
 	"time"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -86,7 +87,6 @@ func TestFeatures_Process(t *testing.T) {
 
 	env.Mock.On("IsContainer").Return(true)
 	env.On("NewHostInfo", "agentVersion", &[]string{"locally-tagged", "tagged-locally"}).Return(&proto.HostInfo{})
-	env.Mock.On("Processes", mock.Anything).Return(processes)
 
 	binary.On("GetNginxDetailsFromProcess", &core.Process{Name: "12345", IsMaster: true}).Return(detailsMap[processID])
 	binary.On("GetNginxDetailsMapFromProcesses", mock.Anything).Return(detailsMap)
@@ -96,7 +96,15 @@ func TestFeatures_Process(t *testing.T) {
 
 	configuration, _ := config.GetConfig("1234")
 
-	pluginUnderTest := NewFeatures(cmdr, configuration, env, binary, "agentVersion")
+	pluginUnderTest := NewFeatures(cmdr, configuration, env, binary, "agentVersion", processes, events.NewAgentEventMeta(
+		config.MODULE,
+		"v0.0.1",
+		"75231",
+		"test-host",
+		"12345678",
+		"group-a",
+		[]string{"tag-a", "tag-b"}),
+	)
 
 	for _, tc := range testCases {
 		messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})

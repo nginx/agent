@@ -40,7 +40,7 @@ func NewSystemCollector(env core.Environment, conf *config.Config) *SystemCollec
 		systemSources = []metrics.Source{
 			sources.NewVirtualMemorySource(sources.SystemNamespace, env),
 			sources.NewCPUTimesSource(sources.SystemNamespace, env),
-			sources.NewDiskSource(sources.SystemNamespace),
+			sources.NewDiskSource(sources.SystemNamespace, env),
 			sources.NewDiskIOSource(sources.SystemNamespace, env),
 			sources.NewNetIOSource(sources.SystemNamespace, env),
 			sources.NewLoadSource(sources.SystemNamespace),

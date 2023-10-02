@@ -8,15 +8,18 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
+	"github.com/nginx/agent/sdk/v2/agent/events"
 
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 
 	"github.com/google/uuid"
 )
 
-func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.Environment, reporter client.MetricReporter, loadedConfig *config.Config) ([]core.Plugin, []core.ExtensionPlugin) {
+func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.Environment, reporter client.MetricReporter, loadedConfig *config.Config, agentEventsMeta *events.AgentEventMeta) ([]core.Plugin, []core.ExtensionPlugin) {
 	var corePlugins []core.Plugin
 	var extensionPlugins []core.ExtensionPlugin
+
+	processes := env.Processes()
 
 	if commander != nil {
 		corePlugins = append(corePlugins,
@@ -39,18 +42,18 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 
 	corePlugins = append(corePlugins,
 		NewConfigReader(loadedConfig),
-		NewNginx(commander, binary, env, loadedConfig),
+		NewNginx(commander, binary, env, loadedConfig, processes),
 		NewExtensions(loadedConfig, env),
-		NewFeatures(commander, loadedConfig, env, binary, loadedConfig.Version),
+		NewFeatures(commander, loadedConfig, env, binary, loadedConfig.Version, processes, agentEventsMeta),
 	)
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureRegistration) {
-		corePlugins = append(corePlugins, NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString())))
+		corePlugins = append(corePlugins, NewOneTimeRegistration(loadedConfig, binary, env, sdkGRPC.NewMessageMeta(uuid.NewString()), processes))
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsCollection) ||
 		(len(loadedConfig.Nginx.NginxCountingSocket) > 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxCounting)) {
-		corePlugins = append(corePlugins, NewMetrics(loadedConfig, env, binary))
+		corePlugins = append(corePlugins, NewMetrics(loadedConfig, env, binary, processes))
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
@@ -58,19 +61,19 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureDataPlaneStatus) {
-		corePlugins = append(corePlugins, NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, env))
+		corePlugins = append(corePlugins, NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, env, processes))
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureProcessWatcher) {
-		corePlugins = append(corePlugins, NewProcessWatcher(env, binary))
+		corePlugins = append(corePlugins, NewProcessWatcher(env, binary, processes))
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureActivityEvents) {
-		corePlugins = append(corePlugins, NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary))
+		corePlugins = append(corePlugins, NewEvents(loadedConfig, env, sdkGRPC.NewMessageMeta(uuid.NewString()), binary, agentEventsMeta))
 	}
 
 	if loadedConfig.AgentAPI.Port != 0 && loadedConfig.IsFeatureEnabled(agent_config.FeatureAgentAPI) {
-		corePlugins = append(corePlugins, NewAgentAPI(loadedConfig, env, binary))
+		corePlugins = append(corePlugins, NewAgentAPI(loadedConfig, env, binary, processes))
 	} else {
 		log.Info("Agent API not configured")
 	}

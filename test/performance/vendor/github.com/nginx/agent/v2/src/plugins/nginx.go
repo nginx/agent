@@ -23,7 +23,6 @@ import (
 
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/client"
-	"github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/sdk/v2/zip"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
@@ -90,14 +89,14 @@ type NginxConfigValidationResponse struct {
 	elapsedTime   time.Duration
 }
 
-func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config) *Nginx {
+func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config, processes []*core.Process) *Nginx {
 	isFeatureNginxConfigEnabled := loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfig) || loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
 
 	isNginxAppProtectEnabled := loadedConfig.IsExtensionEnabled(agent_config.NginxAppProtectExtensionPlugin)
 
 	return &Nginx{
 		nginxBinary:                    nginxBinary,
-		processes:                      env.Processes(),
+		processes:                      processes,
 		env:                            env,
 		cmdr:                           cmdr,
 		config:                         loadedConfig,
@@ -113,17 +112,17 @@ func (n *Nginx) Init(pipeline core.MessagePipeInterface) {
 	log.Info("NginxBinary initializing")
 	n.messagePipeline = pipeline
 	n.nginxBinary.UpdateNginxDetailsFromProcesses(n.getNginxProccessInfo())
-	nginxDetails := n.nginxBinary.GetNginxDetailsMapFromProcesses(n.getNginxProccessInfo())
-
-	pipeline.Process(
-		core.NewMessage(core.NginxPluginConfigured, n),
-		core.NewMessage(core.NginxInstancesFound, nginxDetails),
-	)
 }
 
 // Process processes the messages from the messaging pipe
 func (n *Nginx) Process(message *core.Message) {
 	switch message.Topic() {
+	case core.AgentStarted:
+		nginxDetails := n.nginxBinary.GetNginxDetailsMapFromProcesses(n.getNginxProccessInfo())
+		n.messagePipeline.Process(
+			core.NewMessage(core.NginxPluginConfigured, n),
+			core.NewMessage(core.NginxInstancesFound, nginxDetails),
+		)
 	case core.CommNginxConfig:
 		switch cmd := message.Data().(type) {
 		case *proto.Command:
@@ -208,6 +207,7 @@ func (n *Nginx) Subscriptions() []string {
 		core.NginxConfigValidationPending,
 		core.NginxConfigValidationSucceeded,
 		core.NginxConfigValidationFailed,
+		core.AgentStarted,
 	}
 }
 
@@ -498,21 +498,12 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 	} else {
 		if response.configApply != nil {
 			if err := response.configApply.Complete(); err != nil {
-				nginxConfigStatusMessage = fmt.Sprintf("Config complete failed: %v", err)
-				log.Errorf(nginxConfigStatusMessage)
+				log.Errorf("Config complete failed: %v", err)
 			}
 		}
 
 		// Upload NGINX config only if GPRC server is configured
 		if n.config.IsGrpcServerConfigured() {
-			uploadResponse := &proto.Command_NginxConfigResponse{
-				NginxConfigResponse: &proto.NginxConfigResponse{
-					Action:     proto.NginxConfigAction_UNKNOWN,
-					Status:     newOKStatus("config uploaded status").CmdStatus,
-					ConfigData: nil,
-				},
-			}
-
 			err := n.uploadConfig(
 				&proto.ConfigDescriptor{
 					SystemId: n.env.GetSystemUUID(),
@@ -521,15 +512,8 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 				response.correlationId,
 			)
 			if err != nil {
-				uploadResponse.NginxConfigResponse.Status = newErrStatus("Config uploaded error: " + err.Error()).CmdStatus
-				nginxConfigStatusMessage = fmt.Sprintf("Config uploaded error: %v", err)
-				log.Errorf(nginxConfigStatusMessage)
+				log.Errorf("Config uploaded error: %v", err)
 			}
-
-			uploadResponseCommand := &proto.Command{Meta: grpc.NewMessageMeta(response.correlationId)}
-			uploadResponseCommand.Data = uploadResponse
-
-			n.messagePipeline.Process(core.NewMessage(core.CommResponse, uploadResponseCommand))
 		}
 
 		log.Debug("Enabling file watcher")
@@ -545,9 +529,6 @@ func (n *Nginx) completeConfigApply(response *NginxConfigValidationResponse) (st
 				},
 			},
 		}
-
-		n.syncProcessInfo(n.env.Processes())
-		n.nginxBinary.UpdateNginxDetailsFromProcesses(n.processes)
 
 		n.messagePipeline.Process(core.NewMessage(core.NginxConfigApplySucceeded, agentActivityStatus))
 
@@ -709,7 +690,6 @@ func (n *Nginx) handleErrorStatus(status *proto.Command_NginxConfigResponse, mes
 
 func (n *Nginx) uploadConfigs() {
 	systemId := n.env.GetSystemUUID()
-	n.syncProcessInfo(n.env.Processes())
 	for nginxID := range n.nginxBinary.GetNginxDetailsMapFromProcesses(n.getNginxProccessInfo()) {
 		err := n.uploadConfig(
 			&proto.ConfigDescriptor{

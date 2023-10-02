@@ -14,22 +14,25 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/v2/src/core/metrics"
+	tutils "github.com/nginx/agent/v2/test/utils"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewDiskSource(t *testing.T) {
 	namespace := "test"
-	actual := NewDiskSource(namespace)
+	env := tutils.GetMockEnv()
+	actual := NewDiskSource(namespace, env)
 
 	assert.Equal(t, "disk", actual.group)
 	assert.Equal(t, namespace, actual.namespace)
-	assert.Greater(t, len(actual.disks), 1)
+	assert.Equal(t, len(actual.disks), 2)
 }
 
 func TestDiskCollect(t *testing.T) {
 	namespace := "test"
-	disk := NewDiskSource(namespace)
+	env := tutils.GetMockEnv()
+	disk := NewDiskSource(namespace, env)
 
 	ctx := context.TODO()
 	wg := &sync.WaitGroup{}
