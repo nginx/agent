@@ -17,16 +17,16 @@ trap 'handle_term' TERM
 echo "starting nginx ..."
 /usr/sbin/nginx -g "daemon off;" &
 
-# sleep 5s
-
 nginx_pid=$!
 
-echo "${nginx_pid}"
+SECONDS=0
 
-test=$(ps -ef | grep nginx)
-
-echo "${test}"
-
+while ! ps -ef | grep "nginx: master process" | grep -v grep; do 
+    if (( SECONDS > 5 )); then 
+        echo "couldn't find nginx master process"
+        exit 1
+    fi
+done
 
 cat /etc/nginx-agent/nginx-agent.conf;
 
