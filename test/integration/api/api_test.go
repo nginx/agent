@@ -29,7 +29,7 @@ func TestAPI_Nginx(t *testing.T) {
 		"./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf",
 		"Starting Agent API HTTP server with port from config and TLS disabled",
 	)
-	
+
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
