@@ -90,10 +90,6 @@ func TestAPI_Metrics(t *testing.T) {
 			value, _ := strconv.ParseFloat(metric[1], 64)
 			assert.Greater(t, value, float64(0))
 
-		case strings.Contains(metric[0], "system_mem_used_all"):
-			value, _ := strconv.ParseFloat(metric[1], 64)
-			assert.Greater(t, value, float64(0))
-
 		case strings.Contains(metric[0], "container_cpu_cores"):
 			value, _ := strconv.ParseFloat(metric[1], 64)
 			assert.Greater(t, value, float64(0))

@@ -53,7 +53,6 @@ func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 	simpleMetrics := c.convertSamplesToSimpleMetrics(map[string]float64{
 		"total":     float64(memstats.Total),
 		"used":      float64(memstats.Used),
-		"used.all":  float64(memstats.Total - memstats.Available),
 		"cached":    float64(memstats.Cached),
 		"buffered":  float64(memstats.Buffers),
 		"shared":    float64(memstats.Shared),

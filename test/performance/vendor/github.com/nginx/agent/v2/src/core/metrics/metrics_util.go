@@ -140,7 +140,6 @@ func GetCalculationMap() map[string]string {
 		"system.mem.shared":                                  "avg",
 		"system.mem.total":                                   "avg",
 		"system.mem.used":                                    "avg",
-		"system.mem.used.all":                                "avg",
 		"system.load.1":                                      "avg",
 		"system.load.15":                                     "avg",
 		"system.load.5":                                      "avg",
