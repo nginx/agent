@@ -162,7 +162,7 @@ Flags:
       --dataplane-report-interval duration               The amount of time the agent will report on the dataplane. After this period of time it will send a snapshot of the dataplane information. (default 24h0m0s)
       --dataplane-status-poll-interval duration          The frequency the agent will check the dataplane for changes. Used as a "heartbeat" to keep the gRPC connections alive. (default 30s)
       --display-name string                              The instance's 'name' value.
-      --dynamic-config-path string                       Defines the path of the Agent dynamic config file. (default "/var/db/nginx-agent/agent-dynamic.conf")
+      --dynamic-config-path string                       Defines the path of the Agent dynamic config file. (default "/var/lib/nginx-agent/agent-dynamic.conf")
       --features strings                                 A comma-separated list of features enabled for the agent. (default [registration,nginx-config-async,nginx-ssl-config,nginx-counting,metrics,dataplane-status,process-watcher,file-watcher,activity-events,agent-api])
   -h, --help                                             help for nginx-agent
       --ignore-directives strings                        A comma-separated list of ignoring directives which contain sensitive info.

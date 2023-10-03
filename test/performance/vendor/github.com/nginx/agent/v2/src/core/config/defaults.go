@@ -430,8 +430,8 @@ var (
 
 func getDefaultDynamicConfPath() string {
 	if runtime.GOOS == "freebsd" {
-		return DynamicConfigFileAbsPath
-	} else {
 		return DynamicConfigFileAbsFreeBsdPath
+	} else {
+		return DynamicConfigFileAbsPath
 	}
 }
