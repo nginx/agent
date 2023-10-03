@@ -82,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: packages
-          path: ./build/
+          path: ./build/*
           retention-days: 1
 
   integration-tests:
@@ -127,7 +127,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: packages
-          path: ./build/nginx-agent-2.29.0-SNAPSHOT-${github.GITHUB_SHA}.deb
+          path: ./build/
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
@@ -135,6 +135,7 @@ jobs:
       - name: Run Integration Tests
         run: |
           ls
+          ls ./build/
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
