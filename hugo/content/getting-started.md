@@ -66,7 +66,7 @@ tls:
   skip_verify: true
 ```
 
-For more information, see [Agent Protocol Definitions and Documentation](https://github.com/nginx/agent/tree/main/docs/proto/README.md)
+For more information, see [Agent Protocol Definitions and Documentation](https://github.com/nginx/agent/tree/main/docs/proto/README.md).
 
 ### Enable the REST interface
 
@@ -87,7 +87,7 @@ The mock control plane can use either gRPC or REST protocols to communicate with
 
 Swagger UI requires goswagger be installed. See [instructions for installing goswagger](https://goswagger.io/install.html) for additional help.
 
-To launch the Swagger UI for the REST interface run the following command
+To launch the Swagger UI for the REST interface run the following command:
 
 ```shell
 make launch-swagger-ui
@@ -165,4 +165,8 @@ sudo systemctl enable nginx-agent
 
 NGINX Agent uses formatted log files to collect metrics. Expanding log formats and instance counts will also increase the size of the NGINX Agent log files. We recommend adding a separate partition for `/var/log/nginx-agent`. 
 
-{{< important >}}Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.{{< /important >}}
+{{< important >}}
+Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.
+
+For more information, see [NGINX Agent Log Rotation]({{< relref "/configuration-overview.md#nginx-agent-log-rotation" >}}).
+{{< /important >}}
