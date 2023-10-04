@@ -104,7 +104,7 @@ jobs:
           path: build
           retention-days: 3
 
-  build-unsigned-snapshot:
+  integration-tests:
     name: Integration Tests
     needs: build-packages
     runs-on: ubuntu-22.04
