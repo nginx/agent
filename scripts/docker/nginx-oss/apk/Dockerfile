@@ -6,6 +6,7 @@ ARG ENTRY_POINT
 ARG PACKAGES_REPO
 
 WORKDIR /agent
+RUN ls
 COPY ./build /agent/build
 COPY $ENTRY_POINT /agent/entrypoint.sh
 

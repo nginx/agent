@@ -86,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: packages
-          path: build
+          path: ./build
           retention-days: 1
 
   integration-tests:
@@ -131,7 +131,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: packages
-          path: build
+          path: ./build
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
