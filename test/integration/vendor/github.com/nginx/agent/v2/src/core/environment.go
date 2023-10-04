@@ -604,11 +604,11 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 		p, _ := process.NewProcessWithContext(ctx, pid)
 		name, _ := p.NameWithContext(ctx)
 		cmd, _ := p.CmdlineWithContext(ctx)
-		
+
 		if env.isNginxProcess(name, cmd) {
 			nginxProcesses[pid] = p
 		}
-		
+
 	}
 
 	for pid, nginxProcess := range nginxProcesses {
