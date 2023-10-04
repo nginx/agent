@@ -614,7 +614,6 @@ func TestUploadConfigs(t *testing.T) {
 	}
 
 	msgTopics := []string{
-		core.AgentStarted,
 		core.NginxPluginConfigured,
 		core.NginxInstancesFound,
 		core.DataplaneChanged,
@@ -637,14 +636,9 @@ func TestUploadConfigs(t *testing.T) {
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
-
-	// calling Run x 2 means AgentStarted finishes before the DataplaneChanged event gets processed.
-	// This is the expected order of the real MessagePipe
-	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
-	messagePipe.Run()
-
+	messagePipe.RunWithoutInit()
 	messagePipe.Process(core.NewMessage(core.DataplaneChanged, nil))
-	messagePipe.Run()
+	messagePipe.RunWithoutInit()
 
 	binary.AssertExpectations(t)
 	cmdr.AssertExpectations(t)
@@ -654,7 +648,6 @@ func TestUploadConfigs(t *testing.T) {
 
 func TestDisableUploadConfigs(t *testing.T) {
 	msgTopics := []string{
-		core.AgentStarted,
 		core.NginxPluginConfigured,
 		core.NginxInstancesFound,
 		core.DataplaneChanged,
@@ -665,6 +658,7 @@ func TestDisableUploadConfigs(t *testing.T) {
 	binary := tutils.NewMockNginxBinary()
 	binary.On("UpdateNginxDetailsFromProcesses", mock.Anything)
 	binary.On("GetNginxDetailsMapFromProcesses", mock.Anything).Return(tutils.GetDetailsMap())
+	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 
 	cmdr := tutils.NewMockCommandClient()
 
@@ -672,13 +666,10 @@ func TestDisableUploadConfigs(t *testing.T) {
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
-	// calling Run x 2 means AgentStarted finishes before the DataplaneChanged event gets processed.
-	// This is the expected order of the real MessagePipe
-	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
-	messagePipe.Run()
+	messagePipe.RunWithoutInit()
 
 	messagePipe.Process(core.NewMessage(core.DataplaneChanged, nil))
-	messagePipe.Run()
+	messagePipe.RunWithoutInit()
 
 	binary.AssertExpectations(t)
 
@@ -692,6 +683,7 @@ func TestNginxDetailProcUpdate(t *testing.T) {
 	binary := tutils.NewMockNginxBinary()
 	binary.On("GetNginxDetailsMapFromProcesses", mock.Anything).Return(tutils.GetDetailsMap())
 	binary.On("UpdateNginxDetailsFromProcesses", tutils.GetProcesses())
+	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 
 	cmdr := tutils.NewMockCommandClient()
 
@@ -699,10 +691,8 @@ func TestNginxDetailProcUpdate(t *testing.T) {
 	messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
 
 	pluginUnderTest.Init(messagePipe)
-	messagePipe.Process(core.NewMessage(core.AgentStarted, nil))
-
 	messagePipe.Process(core.NewMessage(core.NginxDetailProcUpdate, tutils.GetProcesses()))
-	messagePipe.Run()
+	messagePipe.RunWithoutInit()
 
 	binary.AssertExpectations(t)
 	cmdr.AssertExpectations(t)
@@ -716,7 +706,7 @@ func TestNginxDetailProcUpdate(t *testing.T) {
 			foundMessage = true
 		}
 	}
-	assert.Len(t, processedMessages, 4)
+	assert.Len(t, processedMessages, 3)
 	assert.True(t, foundMessage)
 }
 
@@ -1048,6 +1038,7 @@ func TestBlock_ConfigApply(t *testing.T) {
 	binary := tutils.NewMockNginxBinary()
 	binary.On("UpdateNginxDetailsFromProcesses", env.Processes())
 	binary.On("GetNginxDetailsMapFromProcesses", env.Processes()).Return(tutils.GetDetailsMap())
+	binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
 	binary.On("Reload", mock.Anything, mock.Anything).Return(nil)
 
 	config := tutils.GetMockAgentConfig()
