@@ -106,7 +106,7 @@ jobs:
 
   integration-tests:
     name: Integration Tests
-    needs: build-packages
+    needs: build-unsigned-snapshot
     runs-on: ubuntu-22.04
     strategy:
       matrix:
