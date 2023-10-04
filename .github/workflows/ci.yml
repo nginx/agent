@@ -127,14 +127,15 @@ jobs:
         - image: "debian"
           version: "bookworm-slim"
     steps:
-      - name: Download Packages
-        uses: actions/download-artifact@v3
-        with:
-          name: packages
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
            go-version: '1.21.0'
+      - name: Download Packages
+        uses: actions/download-artifact@v3
+        with:
+          name: packages
+          path: build
       - name: Run Integration Tests
         run: |
           pwd
