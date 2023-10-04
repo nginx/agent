@@ -68,25 +68,43 @@ jobs:
       - name: Run Component Tests
         run: make component-test
 
-  build-packages:
+  build-unsigned-snapshot:
+    name: Build unsigned snapshot
     runs-on: ubuntu-22.04
-    name: Build Packages
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v3
         with:
-           go-version: '1.21.0'
-      - name: Make Packages
+          go-version-file: 'go.mod'
+      - name: Setup build environment
         run: |
-          make local-deb-package local-rpm-package local-apk-package
-      - name: Upload Artifacts 
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          file: scripts/packages/packager/Dockerfile
+          tags: build-local-packager:1.0.0
+          context: '.'
+          push: false
+          load: true
+          no-cache: true
+          build-args: |
+            package_type=local-package
+      - name: Build Packages
+        run: |
+          make clean local-deb-package local-rpm-package local-txz-package local-apk-package
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: packages
+          name: nginx-agent-snapshots
           path: build
-          retention-days: 1
+          retention-days: 3
 
-  integration-tests:
+  build-unsigned-snapshot:
     name: Integration Tests
     needs: build-packages
     runs-on: ubuntu-22.04
@@ -131,7 +149,7 @@ jobs:
       - name: Download Packages
         uses: actions/download-artifact@v3
         with:
-          name: packages
+          name: nginx-agent-snapshots
           path: build
       - name: Run Integration Tests
         run: |
@@ -235,44 +253,6 @@ jobs:
               az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GIT_BRANCH}/${i##*/}
             done
-
-  build-unsigned-snapshot:
-    name: Build unsigned snapshot
-    runs-on: ubuntu-22.04
-    if: ${{ startsWith(github.ref_name, '*dependabot-') || github.event.pull_request.head.repo.fork }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@v3
-        with:
-          go-version-file: 'go.mod'
-      - name: Setup build environment
-        run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Build Docker Image
-        uses: docker/build-push-action@v3
-        with:
-          file: scripts/packages/packager/Dockerfile
-          tags: build-local-packager:1.0.0
-          context: '.'
-          push: false
-          load: true
-          no-cache: true
-          build-args: |
-            package_type=local-package
-      - name: Build Packages
-        run: |
-          make clean local-deb-package local-rpm-package local-txz-package local-apk-package
-          tar -cf ./build/nginx-agent-snapshots.tar.gz ./build/*.deb ./build/*.rpm ./build/*.pkg ./build/*.apk
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: nginx-agent-snapshots
-          path: ./build/nginx-agent-snapshots.tar.gz
-          retention-days: 3
 
 
   build-example:
