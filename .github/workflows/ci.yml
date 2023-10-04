@@ -137,6 +137,7 @@ jobs:
            go-version: '1.21.0'
       - name: Run Integration Tests
         run: |
+          pwd
           ls
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
