@@ -79,9 +79,6 @@ jobs:
       - name: Make Packages
         run: |
           make local-deb-package local-rpm-package local-apk-package
-          ls
-          ls build
-          ls ./build
       - name: Upload Artifacts 
         uses: actions/upload-artifact@v3
         with:
@@ -138,8 +135,6 @@ jobs:
           path: build
       - name: Run Integration Tests
         run: |
-          pwd
-          ls
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
