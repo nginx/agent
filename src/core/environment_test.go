@@ -1062,3 +1062,40 @@ func TestCGroupV1Check(t *testing.T) {
 		})
 	}
 }
+
+func TestGetNginxProcess(t *testing.T) {
+	tests := []struct {
+		name   string
+		pName  string
+		cmd    string
+		expect bool
+	}{
+		{
+			name:   "nginx process",
+			pName:  "nginx",
+			cmd:    "nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf",
+			expect: true,
+		},
+		{
+			name:   "non nginx process",
+			pName:  "nginx-asg-sync",
+			cmd:    "/usr/sbin/nginx-asg-sync -log_path=/var/log/nginx-asg-sync/nginx-asg-sync.log",
+			expect: false,
+		},
+		{
+			name:   "upgrade process",
+			pName:  "nginx-test",
+			cmd:    "nginx: upgrade",
+			expect: false,
+		},
+	}
+
+	for _, tt := range tests {
+		env := EnvironmentType{}
+		isNginxProcess := false
+		t.Run(tt.name, func(t *testing.T) {
+			isNginxProcess = env.isNginxProcess(tt.pName, tt.cmd)
+		})
+		assert.Equal(t, tt.expect, isNginxProcess)
+	}
+}

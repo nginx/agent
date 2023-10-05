@@ -79,7 +79,6 @@ func TestVirtualMemoryCollect(t *testing.T) {
 		"test.mem.shared",
 		"test.mem.total",
 		"test.mem.used",
-		"test.mem.used.all",
 	}
 
 	assert.Equal(t, expected, actualMetricNames)

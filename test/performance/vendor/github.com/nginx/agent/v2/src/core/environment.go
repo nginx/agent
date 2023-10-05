@@ -605,9 +605,10 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 		name, _ := p.NameWithContext(ctx)
 		cmd, _ := p.CmdlineWithContext(ctx)
 
-		if name == "nginx" && !strings.Contains(cmd, "upgrade") {
+		if env.isNginxProcess(name, cmd) {
 			nginxProcesses[pid] = p
 		}
+
 	}
 
 	for pid, nginxProcess := range nginxProcesses {
@@ -652,6 +653,10 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 		processList = append(processList, newProcess)
 	}
 	return processList
+}
+
+func (env *EnvironmentType) isNginxProcess(name string, cmd string) bool {
+	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
 }
 
 func getNginxProcessExe(nginxProcess *process.Process) string {
