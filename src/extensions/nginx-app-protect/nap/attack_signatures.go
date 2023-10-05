@@ -37,7 +37,7 @@ func getAttackSignaturesVersion(versionFile string) (string, error) {
 
 	// Read bytes into object
 	attackSigVersionDateTime := napRevisionDateTime{}
-	err = yaml.UnmarshalStrict([]byte(versionBytes), &attackSigVersionDateTime)
+	err = yaml.Unmarshal([]byte(versionBytes), &attackSigVersionDateTime)
 	if err != nil {
 		return "", err
 	}

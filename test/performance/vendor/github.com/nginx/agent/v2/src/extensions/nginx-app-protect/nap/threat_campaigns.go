@@ -37,7 +37,7 @@ func getThreatCampaignsVersion(versionFile string) (string, error) {
 
 	// Read bytes into object
 	threatCampVersionDateTime := napRevisionDateTime{}
-	err = yaml.UnmarshalStrict([]byte(versionBytes), &threatCampVersionDateTime)
+	err = yaml.Unmarshal([]byte(versionBytes), &threatCampVersionDateTime)
 	if err != nil {
 		return "", err
 	}
