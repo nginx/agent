@@ -68,24 +68,6 @@ jobs:
       - name: Run Component Tests
         run: make component-test
 
-  build-packages:
-    runs-on: ubuntu-22.04
-    name: Build Packages
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-           go-version: '1.21.0'
-      - name: Make Packages
-        run: |
-          make local-deb-package local-rpm-package local-apk-package
-      - name: Upload Artifacts 
-        uses: actions/upload-artifact@v3
-        with:
-          name: test
-          path: build
-          retention-days: 1
-
   build-unsigned-snapshot:
     name: Build unsigned snapshot
     runs-on: ubuntu-22.04
