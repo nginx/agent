@@ -20,7 +20,9 @@ const (
 	testThreatCampaignsVersionFileContents = `---
 checksum: ALCdgk8CQgQQLRJ1ydZA4g
 filename: threat_campaigns.bin.tgz
-revisionDatetime: 2022-03-01T20:32:01Z`
+revisionDatetime: 2022-03-01T20:32:01Z
+distro: focal
+osType: debian`
 )
 
 func TestGetThreatCampaignsVersion(t *testing.T) {
