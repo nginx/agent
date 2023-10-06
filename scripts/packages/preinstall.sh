@@ -80,7 +80,7 @@ ensure_sudo() {
 create_config_file() {
     mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
     printf "%s" "${AGENT_DYNAMIC_CONFIG_COMMENT}" | tee ${AGENT_DYNAMIC_CONFIG_FILE} > /dev/null
-    # chmod 0640 ${AGENT_DYNAMIC_CONFIG_FILE}
+    chmod 0640 ${AGENT_DYNAMIC_CONFIG_FILE}
     printf "Successfully created %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
 }
 
