@@ -1,6 +1,6 @@
 module github.com/nginx/agent/test/performance
 
-go 1.21
+go 1.21.2
 
 require (
 	github.com/gogo/protobuf v1.3.2
@@ -44,7 +44,7 @@ require (
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.24 // indirect
-	github.com/nginxinc/nginx-plus-go-client v1.0.1-0.20231006144436-df96e6ba65c1 // indirect
+	github.com/nginxinc/nginx-plus-go-client v1.1.0 // indirect
 	github.com/nginxinc/nginx-prometheus-exporter v0.11.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/orcaman/concurrent-map v1.0.0 // indirect
@@ -72,7 +72,6 @@ require (
 	github.com/vardius/message-bus v1.1.5 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/crypto v0.13.0 // indirect
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.15.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect

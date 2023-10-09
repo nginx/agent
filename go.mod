@@ -1,6 +1,6 @@
 module github.com/nginx/agent/v2
 
-go 1.21
+go 1.21.2
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
@@ -14,7 +14,7 @@ require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mwitkow/go-proto-validators v0.3.2
-	github.com/nginxinc/nginx-plus-go-client v1.0.1-0.20231006144436-df96e6ba65c1
+	github.com/nginxinc/nginx-plus-go-client v1.1.0
 	github.com/nginxinc/nginx-prometheus-exporter v0.11.0
 	github.com/nxadm/tail v1.4.8
 	github.com/orcaman/concurrent-map v1.0.0
