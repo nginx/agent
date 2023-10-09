@@ -135,7 +135,7 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 			env := tutils.NewMockEnvironment()
 			binary := core.NewNginxBinary(env, &config.Config{})
 
-			pw := NewProcessWatcher(env, binary, tt.nginxProcs)
+			pw := NewProcessWatcher(env, binary, tt.nginxProcs, &config.Config{})
 			pw.seenMasterProcs = tt.seenMasterProcs
 			pw.seenWorkerProcs = tt.seenWorkerProcs
 			pw.nginxDetails = tt.seenNginxDetails
@@ -162,7 +162,7 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 
 func TestProcessWatcher_Process(t *testing.T) {
 	env := tutils.GetMockEnv()
-	pluginUnderTest := NewProcessWatcher(env, tutils.GetMockNginxBinary(), tutils.GetProcesses())
+	pluginUnderTest := NewProcessWatcher(env, tutils.GetMockNginxBinary(), tutils.GetProcesses(), &config.Config{})
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{pluginUnderTest}, []core.ExtensionPlugin{})
@@ -185,13 +185,13 @@ func TestProcessWatcher_Process(t *testing.T) {
 }
 
 func TestProcessWatcher_Subscription(t *testing.T) {
-	pluginUnderTest := NewProcessWatcher(nil, nil, nil)
+	pluginUnderTest := NewProcessWatcher(nil, nil, nil, &config.Config{})
 
 	assert.Equal(t, []string{}, pluginUnderTest.Subscriptions())
 }
 
 func TestProcessWatcher_Info(t *testing.T) {
-	pluginUnderTest := NewProcessWatcher(nil, nil, nil)
+	pluginUnderTest := NewProcessWatcher(nil, nil, nil, &config.Config{})
 
 	assert.Equal(t, "process-watcher", pluginUnderTest.Info().Name())
 }

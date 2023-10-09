@@ -331,7 +331,7 @@ func startNginxAgent(b *testing.B) {
 		plugins.NewDataPlaneStatus(loadedConfig, sdkGRPC.NewMessageMeta(uuid.New().String()), binary, env, processes),
 	}
 
-	messagePipe := core.NewMessagePipe(ctx)
+	messagePipe := core.NewMessagePipe(ctx, 100)
 	err = messagePipe.Register(100, corePlugins, []core.ExtensionPlugin{})
 	assert.NoError(b, err)
 
