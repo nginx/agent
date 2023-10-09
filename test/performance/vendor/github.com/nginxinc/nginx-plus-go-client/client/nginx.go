@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 )
@@ -41,10 +42,13 @@ var ErrUnsupportedVer = errors.New("API version of the client is not supported b
 
 // NginxClient lets you access NGINX Plus API.
 type NginxClient struct {
-	version     int
+	apiVersion  int
 	apiEndpoint string
 	httpClient  *http.Client
+	checkAPI    bool
 }
+
+type Option func(*NginxClient)
 
 type versions []int
 
@@ -508,35 +512,66 @@ type WorkersHTTP struct {
 	HTTPRequests HTTPRequests `json:"requests"`
 }
 
-// NewNginxClient creates an NginxClient with the latest supported version.
-func NewNginxClient(httpClient *http.Client, apiEndpoint string) (*NginxClient, error) {
-	return NewNginxClientWithVersion(httpClient, apiEndpoint, APIVersion)
+// WithHTTPClient sets the HTTP client to use for accessing the API.
+func WithHTTPClient(httpClient *http.Client) Option {
+	return func(o *NginxClient) {
+		o.httpClient = httpClient
+	}
 }
 
-// NewNginxClientWithVersion creates an NginxClient with the given version of NGINX Plus API.
-func NewNginxClientWithVersion(httpClient *http.Client, apiEndpoint string, version int) (*NginxClient, error) {
-	if !versionSupported(version) {
-		return nil, fmt.Errorf("API version %v is not supported by the client", version)
+// WithAPIVersion sets the API version to use for accessing the API.
+func WithAPIVersion(apiVersion int) Option {
+	return func(o *NginxClient) {
+		o.apiVersion = apiVersion
 	}
-	versions, err := getAPIVersions(httpClient, apiEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error accessing the API: %w", err)
+}
+
+// WithCheckAPI sets the flag to check the API version of the server.
+func WithCheckAPI() Option {
+	return func(o *NginxClient) {
+		o.checkAPI = true
 	}
-	found := false
-	for _, v := range *versions {
-		if v == version {
-			found = true
-			break
+}
+
+// NewNginxClient creates a new NginxClient.
+func NewNginxClient(apiEndpoint string, opts ...Option) (*NginxClient, error) {
+	c := &NginxClient{
+		httpClient:  http.DefaultClient,
+		apiEndpoint: apiEndpoint,
+		apiVersion:  APIVersion,
+		checkAPI:    false,
+	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	if c.httpClient == nil {
+		return nil, fmt.Errorf("http client is not set")
+	}
+
+	if !versionSupported(c.apiVersion) {
+		return nil, fmt.Errorf("API version %v is not supported by the client", c.apiVersion)
+	}
+
+	if c.checkAPI {
+		versions, err := getAPIVersions(c.httpClient, apiEndpoint)
+		if err != nil {
+			return nil, fmt.Errorf("error accessing the API: %w", err)
+		}
+		found := false
+		for _, v := range *versions {
+			if v == c.apiVersion {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("API version %v is not supported by the server", c.apiVersion)
 		}
 	}
-	if !found {
-		return nil, ErrUnsupportedVer
-	}
-	return &NginxClient{
-		apiEndpoint: apiEndpoint,
-		httpClient:  httpClient,
-		version:     version,
-	}, nil
+
+	return c, nil
 }
 
 func versionSupported(n int) bool {
@@ -807,7 +842,7 @@ func (client *NginxClient) get(path string, data interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	url := fmt.Sprintf("%v/%v/%v", client.apiEndpoint, client.version, path)
+	url := fmt.Sprintf("%v/%v/%v", client.apiEndpoint, client.apiVersion, path)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -841,7 +876,7 @@ func (client *NginxClient) post(path string, input interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	url := fmt.Sprintf("%v/%v/%v", client.apiEndpoint, client.version, path)
+	url := fmt.Sprintf("%v/%v/%v", client.apiEndpoint, client.apiVersion, path)
 
 	jsonInput, err := json.Marshal(input)
 	if err != nil {
@@ -873,7 +908,7 @@ func (client *NginxClient) delete(path string, expectedStatusCode int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	path = fmt.Sprintf("%v/%v/%v/", client.apiEndpoint, client.version, path)
+	path = fmt.Sprintf("%v/%v/%v/", client.apiEndpoint, client.apiVersion, path)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -898,7 +933,7 @@ func (client *NginxClient) patch(path string, input interface{}, expectedStatusC
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	path = fmt.Sprintf("%v/%v/%v/", client.apiEndpoint, client.version, path)
+	path = fmt.Sprintf("%v/%v/%v/", client.apiEndpoint, client.apiVersion, path)
 
 	jsonInput, err := json.Marshal(input)
 	if err != nil {
@@ -1115,6 +1150,11 @@ func determineStreamUpdates(updatedServers []StreamUpstreamServer, nginxServers 
 
 // GetStats gets process, slab, connection, request, ssl, zone, stream zone, upstream and stream upstream related stats from the NGINX Plus API.
 func (client *NginxClient) GetStats() (*Stats, error) {
+	endpoints, err := client.GetAvailableEndpoints()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stats: %w", err)
+	}
+
 	info, err := client.GetNginxInfo()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stats: %w", err)
@@ -1160,21 +1200,6 @@ func (client *NginxClient) GetStats() (*Stats, error) {
 		return nil, fmt.Errorf("failed to get stats: %w", err)
 	}
 
-	streamZones, err := client.GetStreamServerZones()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get stats: %w", err)
-	}
-
-	streamUpstreams, err := client.GetStreamUpstreams()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get stats: %w", err)
-	}
-
-	streamZoneSync, err := client.GetStreamZoneSync()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get stats: %w", err)
-	}
-
 	locationZones, err := client.GetLocationZones()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stats: %w", err)
@@ -1195,14 +1220,49 @@ func (client *NginxClient) GetStats() (*Stats, error) {
 		return nil, fmt.Errorf("failed to get stats: %w", err)
 	}
 
-	limitConnsStream, err := client.GetStreamConnectionsLimit()
+	workers, err := client.GetWorkers()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stats: %w", err)
 	}
 
-	workers, err := client.GetWorkers()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get stats: %w", err)
+	streamZones := &StreamServerZones{}
+	streamUpstreams := &StreamUpstreams{}
+	limitConnsStream := &StreamLimitConnections{}
+	streamZoneSync := &StreamZoneSync{}
+
+	if slices.Contains(endpoints, "stream") {
+		streamEndpoints, err := client.GetAvailableStreamEndpoints()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get stats: %w", err)
+		}
+
+		if slices.Contains(streamEndpoints, "server_zones") {
+			streamZones, err = client.GetStreamServerZones()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get stats: %w", err)
+			}
+		}
+
+		if slices.Contains(streamEndpoints, "upstreams") {
+			streamUpstreams, err = client.GetStreamUpstreams()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get stats: %w", err)
+			}
+		}
+
+		if slices.Contains(streamEndpoints, "limit_conns") {
+			limitConnsStream, err = client.GetStreamConnectionsLimit()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get stats: %w", err)
+			}
+		}
+
+		if slices.Contains(streamEndpoints, "zone_sync") {
+			streamZoneSync, err = client.GetStreamZoneSync()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get stats: %w", err)
+			}
+		}
 	}
 
 	return &Stats{
@@ -1225,6 +1285,26 @@ func (client *NginxClient) GetStats() (*Stats, error) {
 		StreamLimitConnections: *limitConnsStream,
 		Workers:                workers,
 	}, nil
+}
+
+// GetAvailableEndpoints returns available endpoints in the API.
+func (client *NginxClient) GetAvailableEndpoints() ([]string, error) {
+	var endpoints []string
+	err := client.get("", &endpoints)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get endpoints: %w", err)
+	}
+	return endpoints, nil
+}
+
+// GetAvailableStreamEndpoints returns available stream endpoints in the API.
+func (client *NginxClient) GetAvailableStreamEndpoints() ([]string, error) {
+	var endpoints []string
+	err := client.get("stream", &endpoints)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get endpoints: %w", err)
+	}
+	return endpoints, nil
 }
 
 // GetNginxInfo returns Nginx stats.
@@ -1359,7 +1439,7 @@ func (client *NginxClient) GetStreamZoneSync() (*StreamZoneSync, error) {
 // GetLocationZones returns http/location_zones stats.
 func (client *NginxClient) GetLocationZones() (*LocationZones, error) {
 	var locationZones LocationZones
-	if client.version < 5 {
+	if client.apiVersion < 5 {
 		return &locationZones, nil
 	}
 	err := client.get("http/location_zones", &locationZones)
@@ -1373,7 +1453,7 @@ func (client *NginxClient) GetLocationZones() (*LocationZones, error) {
 // GetResolvers returns Resolvers stats.
 func (client *NginxClient) GetResolvers() (*Resolvers, error) {
 	var resolvers Resolvers
-	if client.version < 5 {
+	if client.apiVersion < 5 {
 		return &resolvers, nil
 	}
 	err := client.get("resolvers", &resolvers)
@@ -1596,7 +1676,7 @@ func (client *NginxClient) UpdateStreamServer(upstream string, server StreamUpst
 
 // Version returns client's current N+ API version.
 func (client *NginxClient) Version() int {
-	return client.version
+	return client.apiVersion
 }
 
 func addPortToServer(server string) string {
@@ -1618,7 +1698,7 @@ func addPortToServer(server string) string {
 // GetHTTPLimitReqs returns http/limit_reqs stats.
 func (client *NginxClient) GetHTTPLimitReqs() (*HTTPLimitRequests, error) {
 	var limitReqs HTTPLimitRequests
-	if client.version < 6 {
+	if client.apiVersion < 6 {
 		return &limitReqs, nil
 	}
 	err := client.get("http/limit_reqs", &limitReqs)
@@ -1631,7 +1711,7 @@ func (client *NginxClient) GetHTTPLimitReqs() (*HTTPLimitRequests, error) {
 // GetHTTPConnectionsLimit returns http/limit_conns stats.
 func (client *NginxClient) GetHTTPConnectionsLimit() (*HTTPLimitConnections, error) {
 	var limitConns HTTPLimitConnections
-	if client.version < 6 {
+	if client.apiVersion < 6 {
 		return &limitConns, nil
 	}
 	err := client.get("http/limit_conns", &limitConns)
@@ -1644,7 +1724,7 @@ func (client *NginxClient) GetHTTPConnectionsLimit() (*HTTPLimitConnections, err
 // GetStreamConnectionsLimit returns stream/limit_conns stats.
 func (client *NginxClient) GetStreamConnectionsLimit() (*StreamLimitConnections, error) {
 	var limitConns StreamLimitConnections
-	if client.version < 6 {
+	if client.apiVersion < 6 {
 		return &limitConns, nil
 	}
 	err := client.get("stream/limit_conns", &limitConns)
@@ -1663,7 +1743,7 @@ func (client *NginxClient) GetStreamConnectionsLimit() (*StreamLimitConnections,
 // GetWorkers returns workers stats.
 func (client *NginxClient) GetWorkers() ([]*Workers, error) {
 	var workers []*Workers
-	if client.version < 9 {
+	if client.apiVersion < 9 {
 		return workers, nil
 	}
 	err := client.get("workers", &workers)
