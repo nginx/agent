@@ -278,7 +278,7 @@ func TestNginxHandler_updateConfig(t *testing.T) {
 			mockNginxBinary.On("GetNginxDetailsFromProcess", mock.Anything).Return(nginxDetail)
 			mockNginxBinary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(conf, nil)
 
-			pipeline := core.NewMessagePipe(context.TODO())
+			pipeline := core.NewMessagePipe(context.TODO(), 100)
 
 			h := &NginxHandler{
 				config:          config.Defaults,
@@ -366,7 +366,7 @@ func TestNginxHandler_getConfigStatus(t *testing.T) {
 			h := &NginxHandler{
 				config:                 config.Defaults,
 				env:                    tutils.GetMockEnv(),
-				pipeline:               core.NewMessagePipe(context.TODO()),
+				pipeline:               core.NewMessagePipe(context.TODO(), 100),
 				nginxBinary:            tutils.NewMockNginxBinary(),
 				responseChannel:        make(chan *proto.Command_NginxConfigResponse),
 				configResponseStatuses: tt.configResponseStatuses,

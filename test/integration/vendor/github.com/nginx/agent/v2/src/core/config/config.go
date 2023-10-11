@@ -103,6 +103,8 @@ func SetDefaults() {
 	// NGINX DEFAULTS
 	Viper.SetDefault(NginxClientVersion, Defaults.Nginx.NginxClientVersion)
 	Viper.SetDefault(NginxConfigReloadMonitoringPeriod, Defaults.Nginx.ConfigReloadMonitoringPeriod)
+
+	Viper.SetDefault(QueueSizeKey, Defaults.QueueSize)
 }
 
 func setFlagDeprecated(name string, usageMessage string) {
@@ -203,6 +205,7 @@ func GetConfig(clientId string) (*Config, error) {
 		DisplayName:           Viper.GetString(DisplayNameKey),
 		InstanceGroup:         Viper.GetString(InstanceGroupKey),
 		IgnoreDirectives:      Viper.GetStringSlice(IgnoreDirectivesKey),
+		QueueSize:             Viper.GetInt(QueueSizeKey),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDirs, ":") {

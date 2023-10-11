@@ -57,7 +57,7 @@ func TestMessagePipe(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	pipelineDone := make(chan bool)
 
-	messagePipe := NewMessagePipe(ctx)
+	messagePipe := NewMessagePipe(ctx, 100)
 	err := messagePipe.Register(10, []Plugin{plugin}, nil)
 
 	assert.NoError(t, err)
@@ -101,7 +101,7 @@ func TestPipe_IsPluginAlreadyRegistered(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	pipelineDone := make(chan bool)
 
-	messagePipe := NewMessagePipe(ctx)
+	messagePipe := NewMessagePipe(ctx, 100)
 	err := messagePipe.Register(10, []Plugin{plugin}, nil)
 
 	assert.NoError(t, err)

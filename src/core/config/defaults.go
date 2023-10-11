@@ -87,7 +87,8 @@ var (
 		AgentAPI: AgentAPI{
 			Host: "127.0.0.1",
 		},
-		Features: agent_config.GetDefaultFeatures(),
+		Features:  agent_config.GetDefaultFeatures(),
+		QueueSize: 100,
 	}
 	AllowedDirectoriesMap map[string]struct{}
 )
@@ -112,6 +113,7 @@ const (
 	ConfigDirsKey       = "config_dirs"
 	TagsKey             = "tags"
 	IgnoreDirectivesKey = "ignore_directives"
+	QueueSizeKey        = "queue_size"
 
 	// viper keys used in config
 	LogKey = "log"
@@ -360,6 +362,10 @@ var (
 		&StringFlag{
 			Name:  InstanceGroupKey,
 			Usage: "The instance's 'group' value.",
+		},
+		&IntFlag{
+			Name:  QueueSizeKey,
+			Usage: "The size of the NGINX Agent internal queue.",
 		},
 	}
 	deprecatedFlags = []Registrable{

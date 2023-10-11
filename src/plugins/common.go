@@ -65,7 +65,7 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureProcessWatcher) {
-		corePlugins = append(corePlugins, NewProcessWatcher(env, binary, processes))
+		corePlugins = append(corePlugins, NewProcessWatcher(env, binary, processes, loadedConfig))
 	}
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureActivityEvents) {

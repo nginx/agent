@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	DefaultPluginSize = 100
-	KeyDelimiter      = "_"
+	KeyDelimiter = "_"
 
 	// viper keys used in config
 	FeaturesKey         = "features"

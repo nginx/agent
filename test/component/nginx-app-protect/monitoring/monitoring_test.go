@@ -258,7 +258,7 @@ func EphemeralPort() int {
 }
 
 func initializeMessagePipe(t *testing.T, ctx context.Context, corePlugins []core.Plugin, extensionPlugins []core.ExtensionPlugin) *core.MessagePipe {
-	pipe := core.NewMessagePipe(ctx)
+	pipe := core.NewMessagePipe(ctx, 100)
 	err := pipe.Register(DEFAULT_PLUGIN_SIZE, corePlugins, extensionPlugins)
 	assert.NoError(t, err)
 	return pipe
