@@ -198,7 +198,10 @@ func (c *commander) Download(ctx context.Context, metadata *proto.Metadata) (*pr
 			body   []byte
 		)
 
-		downloader, err := c.client.Download(c.ctx, &proto.DownloadRequest{Meta: metadata})
+		reqCtx, cancel := context.WithCancel(c.ctx)
+		defer cancel()
+
+		downloader, err := c.client.Download(reqCtx, &proto.DownloadRequest{Meta: metadata})
 		if err != nil {
 			isRetrying = true
 			return c.handleGrpcError("Commander Downloader", err)
@@ -270,7 +273,10 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 			}
 		}
 
-		sender, err := c.client.Upload(c.ctx)
+		reqCtx, cancel := context.WithCancel(c.ctx)
+		defer cancel()
+
+		sender, err := c.client.Upload(reqCtx)
 		if err != nil {
 			isRetrying = true
 			return c.handleGrpcError("Commander Upload", err)
