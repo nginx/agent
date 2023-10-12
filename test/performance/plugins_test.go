@@ -50,7 +50,7 @@ func BenchmarkPlugin(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.Background())
 	pipelineDone := make(chan bool)
 
-	messagePipe := core.NewMessagePipe(ctx)
+	messagePipe := core.NewMessagePipe(ctx, 100)
 	err := messagePipe.Register(b.N, []core.Plugin{plugin}, []core.ExtensionPlugin{})
 	assert.NoError(b, err)
 
@@ -221,7 +221,7 @@ func BenchmarkPluginOneTimeRegistration(b *testing.B) {
 	env := tutils.GetMockEnvWithHostAndProcess()
 	meta := proto.Metadata{}
 
-	messagePipe := core.NewMessagePipe(ctx)
+	messagePipe := core.NewMessagePipe(ctx, 100)
 	for n := 0; n < b.N; n++ {
 		pluginsUnderTest = append(pluginsUnderTest, plugins.NewOneTimeRegistration(&config, binary, env, &meta, tutils.GetProcesses()))
 	}

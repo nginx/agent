@@ -120,7 +120,7 @@ func (f *Features) Process(msg *core.Message) {
 			}
 		}
 
-		err := f.pipeline.Register(agent_config.DefaultPluginSize, plugins, nil)
+		err := f.pipeline.Register(f.conf.QueueSize, plugins, nil)
 		if err != nil {
 			log.Warnf("Unable to register features: %v", err)
 		}
@@ -255,7 +255,7 @@ func (f *Features) enableProcessWatcherFeature(data string) []core.Plugin {
 		}
 		f.conf = conf
 
-		processWatcher := NewProcessWatcher(f.env, f.binary, f.processes)
+		processWatcher := NewProcessWatcher(f.env, f.binary, f.processes, f.conf)
 
 		return []core.Plugin{processWatcher}
 	}

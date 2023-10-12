@@ -91,6 +91,9 @@ metrics:
 # path to aux file dirs can also be added
 config_dirs: "/etc/nginx:/usr/local/etc/nginx"
 
+# Internal queue size
+queue_size: 100
+
 extensions:
   - nginx-app-protect
 
@@ -174,6 +177,7 @@ Flags:
       --nginx-exclude-logs string                        One or more NGINX access log paths that you want to exclude from metrics collection. This key is formatted as a string and multiple values should be provided as a comma-separated list.
       --nginx-socket string                              The NGINX Plus counting unix socket location. (default "unix:/var/run/nginx-agent/nginx.sock")
       --nginx-treat-warnings-as-errors                   On nginx -t, treat warnings as failures on configuration application.
+      --queue-size int                                   The size of the NGINX Agent internal queue.
       --server-command string                            The name of the command server sent in the tls configuration.
       --server-grpcport int                              The desired GRPC port to use for nginx-agent traffic.
       --server-host string                               The IP address of the server host. IPv4 addresses and hostnames are supported.
@@ -232,6 +236,7 @@ This section displays the configurable options for the NGINX Agent that can be s
 - NMS_TLS_KEY
 - NMS_TLS_SKIP_VERIFY
 - NMS_CONFIG_DIRS
+- NMS_QUEUE_SIZE
 - NMS_DATAPLANE_REPORT_INTERVAL
 - NMS_DATAPLANE_STATUS_POLL_INTERVAL
 ```

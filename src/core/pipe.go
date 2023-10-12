@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	MessageQueueSize    = 100
 	MaxPlugins          = 50
 	MaxExtensionPlugins = 50
 )
@@ -42,10 +41,10 @@ type MessagePipe struct {
 	bus              message_bus.MessageBus
 }
 
-func NewMessagePipe(ctx context.Context) *MessagePipe {
+func NewMessagePipe(ctx context.Context, size int) *MessagePipe {
 	pipeContext, pipeCancel := context.WithCancel(ctx)
 	return &MessagePipe{
-		messageChannel:   make(chan *Message, MessageQueueSize),
+		messageChannel:   make(chan *Message, size),
 		plugins:          make([]Plugin, 0, MaxPlugins),
 		extensionPlugins: make([]ExtensionPlugin, 0, MaxExtensionPlugins),
 		ctx:              pipeContext,
@@ -55,7 +54,7 @@ func NewMessagePipe(ctx context.Context) *MessagePipe {
 }
 
 func InitializePipe(ctx context.Context, corePlugins []Plugin, extensionPlugins []ExtensionPlugin, size int) MessagePipeInterface {
-	pipe := NewMessagePipe(ctx)
+	pipe := NewMessagePipe(ctx, size)
 	err := pipe.Register(size, corePlugins, extensionPlugins)
 	if err != nil {
 		log.Warnf("Failed to start agent successfully, error loading plugins %v", err)

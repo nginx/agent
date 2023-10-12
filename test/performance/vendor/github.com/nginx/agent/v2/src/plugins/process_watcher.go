@@ -17,6 +17,7 @@ import (
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
+	"github.com/nginx/agent/v2/src/core/config"
 )
 
 // ProcessWatcher listens for changes to nginx processes on the data plane
@@ -30,9 +31,10 @@ type ProcessWatcher struct {
 	env             core.Environment
 	binary          core.NginxBinary
 	processes       []*core.Process
+	config          *config.Config
 }
 
-func NewProcessWatcher(env core.Environment, nginxBinary core.NginxBinary, processes []*core.Process) *ProcessWatcher {
+func NewProcessWatcher(env core.Environment, nginxBinary core.NginxBinary, processes []*core.Process, config *config.Config) *ProcessWatcher {
 	return &ProcessWatcher{
 		ticker:          time.NewTicker(5 * time.Second),
 		seenMasterProcs: make(map[int32]*core.Process),
@@ -42,6 +44,7 @@ func NewProcessWatcher(env core.Environment, nginxBinary core.NginxBinary, proce
 		env:             env,
 		binary:          nginxBinary,
 		processes:       processes,
+		config:          config,
 	}
 }
 
@@ -99,6 +102,14 @@ func (pw *ProcessWatcher) watchProcLoop(ctx context.Context) {
 				pw.seenWorkerProcs = runningWorkerProcs
 
 				pw.messagePipeline.Process(core.NewMessage(core.NginxDetailProcUpdate, nginxProcs))
+			}
+
+			if len(pw.seenWorkerProcs) > pw.config.QueueSize {
+				log.Warnf(
+					"Number of NGINX worker processes (%d) is greater than queue size (%d). Update NGINX Agent config to increase the queue size so that it is greater than the number of NGINX worker processes.",
+					len(pw.seenWorkerProcs),
+					pw.config.QueueSize,
+				)
 			}
 		}
 	}

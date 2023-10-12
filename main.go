@@ -12,7 +12,6 @@ import (
 	"os"
 	"strconv"
 
-	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/agent/events"
 
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
@@ -85,7 +84,7 @@ func main() {
 
 		corePlugins, extensionPlugins := plugins.LoadPlugins(commander, binary, env, reporter, loadedConfig, eventMeta)
 
-		pipe := core.InitializePipe(ctx, corePlugins, extensionPlugins, agent_config.DefaultPluginSize)
+		pipe := core.InitializePipe(ctx, corePlugins, extensionPlugins, loadedConfig.QueueSize)
 		pipe.Process(core.NewMessage(core.AgentStarted, eventMeta))
 		core.HandleSignals(ctx, commander, loadedConfig, env, pipe, cancel, controller)
 
