@@ -829,10 +829,10 @@ func TestNginxPlus_Collect(t *testing.T) {
 	expectedWorkerMetrics := map[string]float64{
 		"plus.worker.conn.accepted":        currentWorkerConnAccepted - previousWorkerConnAccepted,
 		"plus.worker.conn.dropped":         currentWorkerConnDropped - previousWorkerConnDropped,
-		"plus.worker.conn.active":          currentWorkerConnActive - previousWorkerConnActive,
-		"plus.worker.conn.idle":            currentWorkerConnIdle - previousWorkerConnIdle,
+		"plus.worker.conn.active":          currentWorkerConnActive,
+		"plus.worker.conn.idle":            currentWorkerConnIdle,
 		"plus.worker.http.request.total":   currentWorkerHTTPRequestTotal - previousWorkerHTTPRequestTotal,
-		"plus.worker.http.request.current": currentWorkerHTTPRequestCurrent - previousWorkerHTTPRequestCurrent,
+		"plus.worker.http.request.current": currentWorkerHTTPRequestCurrent,
 	}
 
 	tests := []struct {

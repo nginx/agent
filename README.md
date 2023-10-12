@@ -54,6 +54,8 @@ NGINX Agent provides an API interface for submission of updated configuration fi
 ## Collecting Metrics
 NGINX Agent interfaces with NGINX process information and parses NGINX logs to calculate and report metrics. When interfacing with NGINX Plus, NGINX Agent pulls relevant information from the NGINX Plus API. Reported metrics may be aggregated by [Prometheus](https://prometheus.io/) and visualized with tools like [Grafana](https://grafana.com/).
 
+The NGINX Agent keeps a connection open to the NGINX Plus API and queries based on the collection interval. This connection gets reported in the metrics and depending on the phase of reporting this connection can show up as idle or active.
+
 ### NGINX Open Source
 When running alongside an open source instance of NGINX, NGINX Agent requires that NGINX Access and Error logs are turned on and contain all default variables.
 
