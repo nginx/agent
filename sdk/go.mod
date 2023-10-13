@@ -20,6 +20,7 @@ require (
 	github.com/jstemmer/go-junit-report v1.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2 // indirect
+	github.com/onsi/gomega v1.27.10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
