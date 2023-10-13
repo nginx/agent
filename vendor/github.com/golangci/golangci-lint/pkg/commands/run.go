@@ -191,15 +191,6 @@ func initFlagSet(fs *pflag.FlagSet, cfg *config.Config, m *lintersdb.Manager, is
 		true, "Goconst: ignore when constant is not used as function argument")
 	hideFlag("goconst.ignore-calls")
 
-	// (@dixonwille) These flag is only used for testing purposes.
-	fs.StringSliceVar(&lsc.Depguard.Packages, "depguard.packages", nil,
-		"Depguard: packages to add to the list")
-	hideFlag("depguard.packages")
-
-	fs.BoolVar(&lsc.Depguard.IncludeGoRoot, "depguard.include-go-root", false,
-		"Depguard: check list against standard lib")
-	hideFlag("depguard.include-go-root")
-
 	fs.IntVar(&lsc.Lll.TabWidth, "lll.tab-width", 1,
 		"Lll: tab width in spaces")
 	hideFlag("lll.tab-width")
@@ -411,7 +402,7 @@ func (e *Executor) runAndPrint(ctx context.Context, args []string) error {
 			out = append(out, "")
 		}
 
-		err := e.printReports(ctx, issues, out[1], out[0])
+		err := e.printReports(issues, out[1], out[0])
 		if err != nil {
 			return err
 		}
@@ -424,7 +415,7 @@ func (e *Executor) runAndPrint(ctx context.Context, args []string) error {
 	return nil
 }
 
-func (e *Executor) printReports(ctx context.Context, issues []result.Issue, path, format string) error {
+func (e *Executor) printReports(issues []result.Issue, path, format string) error {
 	w, shouldClose, err := e.createWriter(path)
 	if err != nil {
 		return fmt.Errorf("can't create output for %s: %w", path, err)
@@ -438,7 +429,7 @@ func (e *Executor) printReports(ctx context.Context, issues []result.Issue, path
 		return err
 	}
 
-	if err = p.Print(ctx, issues); err != nil {
+	if err = p.Print(issues); err != nil {
 		if file, ok := w.(io.Closer); shouldClose && ok {
 			_ = file.Close()
 		}
@@ -475,8 +466,10 @@ func (e *Executor) createPrinter(format string, w io.Writer) (printers.Printer, 
 		p = printers.NewText(e.cfg.Output.PrintIssuedLine,
 			format == config.OutFormatColoredLineNumber, e.cfg.Output.PrintLinterName,
 			e.log.Child(logutils.DebugKeyTextPrinter), w)
-	case config.OutFormatTab:
-		p = printers.NewTab(e.cfg.Output.PrintLinterName, e.log.Child(logutils.DebugKeyTabPrinter), w)
+	case config.OutFormatTab, config.OutFormatColoredTab:
+		p = printers.NewTab(e.cfg.Output.PrintLinterName,
+			format == config.OutFormatColoredTab,
+			e.log.Child(logutils.DebugKeyTabPrinter), w)
 	case config.OutFormatCheckstyle:
 		p = printers.NewCheckstyle(w)
 	case config.OutFormatCodeClimate:
