@@ -2,7 +2,6 @@ package golinters
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	gcicfg "github.com/daixiang0/gci/pkg/config"
@@ -61,7 +60,7 @@ func NewGci(settings *config.GciSettings) *goanalysis.Linter {
 		[]*analysis.Analyzer{analyzer},
 		nil,
 	).WithContextSetter(func(lintCtx *linter.Context) {
-		analyzer.Run = func(pass *analysis.Pass) (interface{}, error) {
+		analyzer.Run = func(pass *analysis.Pass) (any, error) {
 			issues, err := runGci(pass, lintCtx, cfg, &lock)
 			if err != nil {
 				return nil, err
@@ -119,7 +118,7 @@ func diffFormattedFilesToArray(paths []string, cfg gcicfg.Config, diffs *[]strin
 	log.InitLogger()
 	defer func() { _ = log.L().Sync() }()
 
-	return gci.ProcessFiles(io.GoFilesInPathsGenerator(paths), cfg, func(filePath string, unmodifiedFile, formattedFile []byte) error {
+	return gci.ProcessFiles(io.GoFilesInPathsGenerator(paths, true), cfg, func(filePath string, unmodifiedFile, formattedFile []byte) error {
 		fileURI := span.URIFromPath(filePath)
 		edits := myers.ComputeEdits(fileURI, string(unmodifiedFile), string(formattedFile))
 		unifiedEdits := gotextdiff.ToUnified(filePath, filePath, string(unmodifiedFile), edits)
@@ -145,7 +144,13 @@ func getErrorTextForGci(settings config.GciSettings) string {
 	}
 
 	if len(settings.Sections) > 0 {
-		text += " -s " + strings.Join(settings.Sections, ",")
+		for _, section := range settings.Sections {
+			text += " -s " + section
+		}
+	}
+
+	if settings.CustomOrder {
+		text += " --custom-order"
 	}
 
 	return text

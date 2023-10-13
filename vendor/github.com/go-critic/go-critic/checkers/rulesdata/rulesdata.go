@@ -61,37 +61,20 @@ var PrecompiledRules = &ir.File{
 						{Line: 17, Value: "fmt.Sprintf(\"%s\", $x)"},
 						{Line: 17, Value: "fmt.Sprintf(\"%v\", $x)"},
 					},
-					ReportTemplate:  "use $x.Error() instead",
-					SuggestTemplate: "$x.Error()",
-					WhereExpr: ir.FilterExpr{
-						Line:  18,
-						Op:    ir.FilterVarTypeImplementsOp,
-						Src:   "m[\"x\"].Type.Implements(`error`)",
-						Value: "x",
-						Args:  []ir.FilterExpr{{Line: 18, Op: ir.FilterStringOp, Src: "`error`", Value: "error"}},
-					},
-				},
-				{
-					Line: 22,
-					SyntaxPatterns: []ir.PatternString{
-						{Line: 22, Value: "fmt.Sprint($x)"},
-						{Line: 22, Value: "fmt.Sprintf(\"%s\", $x)"},
-						{Line: 22, Value: "fmt.Sprintf(\"%v\", $x)"},
-					},
 					ReportTemplate:  "$x is already string",
 					SuggestTemplate: "$x",
 					WhereExpr: ir.FilterExpr{
-						Line:  23,
+						Line:  18,
 						Op:    ir.FilterVarTypeIsOp,
 						Src:   "m[\"x\"].Type.Is(`string`)",
 						Value: "x",
-						Args:  []ir.FilterExpr{{Line: 23, Op: ir.FilterStringOp, Src: "`string`", Value: "string"}},
+						Args:  []ir.FilterExpr{{Line: 18, Op: ir.FilterStringOp, Src: "`string`", Value: "string"}},
 					},
 				},
 			},
 		},
 		{
-			Line:        32,
+			Line:        27,
 			Name:        "deferUnlambda",
 			MatcherName: "m",
 			DocTags:     []string{"style", "experimental"},
@@ -100,55 +83,55 @@ var PrecompiledRules = &ir.File{
 			DocAfter:    "defer f()",
 			Rules: []ir.Rule{
 				{
-					Line:           33,
-					SyntaxPatterns: []ir.PatternString{{Line: 33, Value: "defer func() { $f($*args) }()"}},
+					Line:           28,
+					SyntaxPatterns: []ir.PatternString{{Line: 28, Value: "defer func() { $f($*args) }()"}},
 					ReportTemplate: "can rewrite as `defer $f($args)`",
 					WhereExpr: ir.FilterExpr{
-						Line: 34,
+						Line: 29,
 						Op:   ir.FilterAndOp,
 						Src:  "m[\"f\"].Node.Is(`Ident`) && m[\"f\"].Text != \"panic\" && m[\"f\"].Text != \"recover\" && m[\"args\"].Const",
 						Args: []ir.FilterExpr{
 							{
-								Line: 34,
+								Line: 29,
 								Op:   ir.FilterAndOp,
 								Src:  "m[\"f\"].Node.Is(`Ident`) && m[\"f\"].Text != \"panic\" && m[\"f\"].Text != \"recover\"",
 								Args: []ir.FilterExpr{
 									{
-										Line: 34,
+										Line: 29,
 										Op:   ir.FilterAndOp,
 										Src:  "m[\"f\"].Node.Is(`Ident`) && m[\"f\"].Text != \"panic\"",
 										Args: []ir.FilterExpr{
 											{
-												Line:  34,
+												Line:  29,
 												Op:    ir.FilterVarNodeIsOp,
 												Src:   "m[\"f\"].Node.Is(`Ident`)",
 												Value: "f",
-												Args:  []ir.FilterExpr{{Line: 34, Op: ir.FilterStringOp, Src: "`Ident`", Value: "Ident"}},
+												Args:  []ir.FilterExpr{{Line: 29, Op: ir.FilterStringOp, Src: "`Ident`", Value: "Ident"}},
 											},
 											{
-												Line: 34,
+												Line: 29,
 												Op:   ir.FilterNeqOp,
 												Src:  "m[\"f\"].Text != \"panic\"",
 												Args: []ir.FilterExpr{
-													{Line: 34, Op: ir.FilterVarTextOp, Src: "m[\"f\"].Text", Value: "f"},
-													{Line: 34, Op: ir.FilterStringOp, Src: "\"panic\"", Value: "panic"},
+													{Line: 29, Op: ir.FilterVarTextOp, Src: "m[\"f\"].Text", Value: "f"},
+													{Line: 29, Op: ir.FilterStringOp, Src: "\"panic\"", Value: "panic"},
 												},
 											},
 										},
 									},
 									{
-										Line: 34,
+										Line: 29,
 										Op:   ir.FilterNeqOp,
 										Src:  "m[\"f\"].Text != \"recover\"",
 										Args: []ir.FilterExpr{
-											{Line: 34, Op: ir.FilterVarTextOp, Src: "m[\"f\"].Text", Value: "f"},
-											{Line: 34, Op: ir.FilterStringOp, Src: "\"recover\"", Value: "recover"},
+											{Line: 29, Op: ir.FilterVarTextOp, Src: "m[\"f\"].Text", Value: "f"},
+											{Line: 29, Op: ir.FilterStringOp, Src: "\"recover\"", Value: "recover"},
 										},
 									},
 								},
 							},
 							{
-								Line:  34,
+								Line:  29,
 								Op:    ir.FilterVarConstOp,
 								Src:   "m[\"args\"].Const",
 								Value: "args",
@@ -157,28 +140,28 @@ var PrecompiledRules = &ir.File{
 					},
 				},
 				{
-					Line:           37,
-					SyntaxPatterns: []ir.PatternString{{Line: 37, Value: "defer func() { $pkg.$f($*args) }()"}},
+					Line:           32,
+					SyntaxPatterns: []ir.PatternString{{Line: 32, Value: "defer func() { $pkg.$f($*args) }()"}},
 					ReportTemplate: "can rewrite as `defer $pkg.$f($args)`",
 					WhereExpr: ir.FilterExpr{
-						Line: 38,
+						Line: 33,
 						Op:   ir.FilterAndOp,
 						Src:  "m[\"f\"].Node.Is(`Ident`) && m[\"args\"].Const && m[\"pkg\"].Object.Is(`PkgName`)",
 						Args: []ir.FilterExpr{
 							{
-								Line: 38,
+								Line: 33,
 								Op:   ir.FilterAndOp,
 								Src:  "m[\"f\"].Node.Is(`Ident`) && m[\"args\"].Const",
 								Args: []ir.FilterExpr{
 									{
-										Line:  38,
+										Line:  33,
 										Op:    ir.FilterVarNodeIsOp,
 										Src:   "m[\"f\"].Node.Is(`Ident`)",
 										Value: "f",
-										Args:  []ir.FilterExpr{{Line: 38, Op: ir.FilterStringOp, Src: "`Ident`", Value: "Ident"}},
+										Args:  []ir.FilterExpr{{Line: 33, Op: ir.FilterStringOp, Src: "`Ident`", Value: "Ident"}},
 									},
 									{
-										Line:  38,
+										Line:  33,
 										Op:    ir.FilterVarConstOp,
 										Src:   "m[\"args\"].Const",
 										Value: "args",
@@ -186,11 +169,11 @@ var PrecompiledRules = &ir.File{
 								},
 							},
 							{
-								Line:  38,
+								Line:  33,
 								Op:    ir.FilterVarObjectIsOp,
 								Src:   "m[\"pkg\"].Object.Is(`PkgName`)",
 								Value: "pkg",
-								Args:  []ir.FilterExpr{{Line: 38, Op: ir.FilterStringOp, Src: "`PkgName`", Value: "PkgName"}},
+								Args:  []ir.FilterExpr{{Line: 33, Op: ir.FilterStringOp, Src: "`PkgName`", Value: "PkgName"}},
 							},
 						},
 					},
@@ -198,7 +181,7 @@ var PrecompiledRules = &ir.File{
 			},
 		},
 		{
-			Line:        46,
+			Line:        41,
 			Name:        "badLock",
 			MatcherName: "m",
 			DocTags:     []string{"diagnostic", "experimental"},
@@ -207,8 +190,23 @@ var PrecompiledRules = &ir.File{
 			DocAfter:    "mu.Lock(); defer mu.Unlock()",
 			Rules: []ir.Rule{
 				{
+					Line:           45,
+					SyntaxPatterns: []ir.PatternString{{Line: 45, Value: "$mu1.Lock(); $mu2.Unlock()"}},
+					ReportTemplate: "defer is missing, mutex is unlocked immediately",
+					WhereExpr: ir.FilterExpr{
+						Line: 46,
+						Op:   ir.FilterEqOp,
+						Src:  "m[\"mu1\"].Text == m[\"mu2\"].Text",
+						Args: []ir.FilterExpr{
+							{Line: 46, Op: ir.FilterVarTextOp, Src: "m[\"mu1\"].Text", Value: "mu1"},
+							{Line: 46, Op: ir.FilterVarTextOp, Src: "m[\"mu2\"].Text", Value: "mu2"},
+						},
+					},
+					LocationVar: "mu2",
+				},
+				{
 					Line:           50,
-					SyntaxPatterns: []ir.PatternString{{Line: 50, Value: "$mu1.Lock(); $mu2.Unlock()"}},
+					SyntaxPatterns: []ir.PatternString{{Line: 50, Value: "$mu1.RLock(); $mu2.RUnlock()"}},
 					ReportTemplate: "defer is missing, mutex is unlocked immediately",
 					WhereExpr: ir.FilterExpr{
 						Line: 51,
@@ -222,24 +220,24 @@ var PrecompiledRules = &ir.File{
 					LocationVar: "mu2",
 				},
 				{
-					Line:           55,
-					SyntaxPatterns: []ir.PatternString{{Line: 55, Value: "$mu1.RLock(); $mu2.RUnlock()"}},
-					ReportTemplate: "defer is missing, mutex is unlocked immediately",
+					Line:           56,
+					SyntaxPatterns: []ir.PatternString{{Line: 56, Value: "$mu1.Lock(); defer $mu2.RUnlock()"}},
+					ReportTemplate: "suspicious unlock, maybe Unlock was intended?",
 					WhereExpr: ir.FilterExpr{
-						Line: 56,
+						Line: 57,
 						Op:   ir.FilterEqOp,
 						Src:  "m[\"mu1\"].Text == m[\"mu2\"].Text",
 						Args: []ir.FilterExpr{
-							{Line: 56, Op: ir.FilterVarTextOp, Src: "m[\"mu1\"].Text", Value: "mu1"},
-							{Line: 56, Op: ir.FilterVarTextOp, Src: "m[\"mu2\"].Text", Value: "mu2"},
+							{Line: 57, Op: ir.FilterVarTextOp, Src: "m[\"mu1\"].Text", Value: "mu1"},
+							{Line: 57, Op: ir.FilterVarTextOp, Src: "m[\"mu2\"].Text", Value: "mu2"},
 						},
 					},
 					LocationVar: "mu2",
 				},
 				{
 					Line:           61,
-					SyntaxPatterns: []ir.PatternString{{Line: 61, Value: "$mu1.Lock(); defer $mu2.RUnlock()"}},
-					ReportTemplate: "suspicious unlock, maybe Unlock was intended?",
+					SyntaxPatterns: []ir.PatternString{{Line: 61, Value: "$mu1.RLock(); defer $mu2.Unlock()"}},
+					ReportTemplate: "suspicious unlock, maybe RUnlock was intended?",
 					WhereExpr: ir.FilterExpr{
 						Line: 62,
 						Op:   ir.FilterEqOp,
@@ -252,24 +250,24 @@ var PrecompiledRules = &ir.File{
 					LocationVar: "mu2",
 				},
 				{
-					Line:           66,
-					SyntaxPatterns: []ir.PatternString{{Line: 66, Value: "$mu1.RLock(); defer $mu2.Unlock()"}},
-					ReportTemplate: "suspicious unlock, maybe RUnlock was intended?",
+					Line:           67,
+					SyntaxPatterns: []ir.PatternString{{Line: 67, Value: "$mu1.Lock(); defer $mu2.Lock()"}},
+					ReportTemplate: "maybe defer $mu1.Unlock() was intended?",
 					WhereExpr: ir.FilterExpr{
-						Line: 67,
+						Line: 68,
 						Op:   ir.FilterEqOp,
 						Src:  "m[\"mu1\"].Text == m[\"mu2\"].Text",
 						Args: []ir.FilterExpr{
-							{Line: 67, Op: ir.FilterVarTextOp, Src: "m[\"mu1\"].Text", Value: "mu1"},
-							{Line: 67, Op: ir.FilterVarTextOp, Src: "m[\"mu2\"].Text", Value: "mu2"},
+							{Line: 68, Op: ir.FilterVarTextOp, Src: "m[\"mu1\"].Text", Value: "mu1"},
+							{Line: 68, Op: ir.FilterVarTextOp, Src: "m[\"mu2\"].Text", Value: "mu2"},
 						},
 					},
 					LocationVar: "mu2",
 				},
 				{
 					Line:           72,
-					SyntaxPatterns: []ir.PatternString{{Line: 72, Value: "$mu1.Lock(); defer $mu2.Lock()"}},
-					ReportTemplate: "maybe defer $mu1.Unlock() was intended?",
+					SyntaxPatterns: []ir.PatternString{{Line: 72, Value: "$mu1.RLock(); defer $mu2.RLock()"}},
+					ReportTemplate: "maybe defer $mu1.RUnlock() was intended?",
 					WhereExpr: ir.FilterExpr{
 						Line: 73,
 						Op:   ir.FilterEqOp,
@@ -281,25 +279,10 @@ var PrecompiledRules = &ir.File{
 					},
 					LocationVar: "mu2",
 				},
-				{
-					Line:           77,
-					SyntaxPatterns: []ir.PatternString{{Line: 77, Value: "$mu1.RLock(); defer $mu2.RLock()"}},
-					ReportTemplate: "maybe defer $mu1.RUnlock() was intended?",
-					WhereExpr: ir.FilterExpr{
-						Line: 78,
-						Op:   ir.FilterEqOp,
-						Src:  "m[\"mu1\"].Text == m[\"mu2\"].Text",
-						Args: []ir.FilterExpr{
-							{Line: 78, Op: ir.FilterVarTextOp, Src: "m[\"mu1\"].Text", Value: "mu1"},
-							{Line: 78, Op: ir.FilterVarTextOp, Src: "m[\"mu2\"].Text", Value: "mu2"},
-						},
-					},
-					LocationVar: "mu2",
-				},
 			},
 		},
 		{
-			Line:        87,
+			Line:        82,
 			Name:        "httpNoBody",
 			MatcherName: "m",
 			DocTags:     []string{"style", "experimental"},
@@ -308,10 +291,25 @@ var PrecompiledRules = &ir.File{
 			DocAfter:    "http.NewRequest(\"GET\", url, http.NoBody)",
 			Rules: []ir.Rule{
 				{
-					Line:            88,
-					SyntaxPatterns:  []ir.PatternString{{Line: 88, Value: "http.NewRequest($method, $url, $nil)"}},
+					Line:            83,
+					SyntaxPatterns:  []ir.PatternString{{Line: 83, Value: "http.NewRequest($method, $url, $nil)"}},
 					ReportTemplate:  "http.NoBody should be preferred to the nil request body",
 					SuggestTemplate: "http.NewRequest($method, $url, http.NoBody)",
+					WhereExpr: ir.FilterExpr{
+						Line: 84,
+						Op:   ir.FilterEqOp,
+						Src:  "m[\"nil\"].Text == \"nil\"",
+						Args: []ir.FilterExpr{
+							{Line: 84, Op: ir.FilterVarTextOp, Src: "m[\"nil\"].Text", Value: "nil"},
+							{Line: 84, Op: ir.FilterStringOp, Src: "\"nil\"", Value: "nil"},
+						},
+					},
+				},
+				{
+					Line:            88,
+					SyntaxPatterns:  []ir.PatternString{{Line: 88, Value: "http.NewRequestWithContext($ctx, $method, $url, $nil)"}},
+					ReportTemplate:  "http.NoBody should be preferred to the nil request body",
+					SuggestTemplate: "http.NewRequestWithContext($ctx, $method, $url, http.NoBody)",
 					WhereExpr: ir.FilterExpr{
 						Line: 89,
 						Op:   ir.FilterEqOp,
@@ -324,9 +322,9 @@ var PrecompiledRules = &ir.File{
 				},
 				{
 					Line:            93,
-					SyntaxPatterns:  []ir.PatternString{{Line: 93, Value: "http.NewRequestWithContext($ctx, $method, $url, $nil)"}},
+					SyntaxPatterns:  []ir.PatternString{{Line: 93, Value: "httptest.NewRequest($method, $url, $nil)"}},
 					ReportTemplate:  "http.NoBody should be preferred to the nil request body",
-					SuggestTemplate: "http.NewRequestWithContext($ctx, $method, $url, http.NoBody)",
+					SuggestTemplate: "httptest.NewRequest($method, $url, http.NoBody)",
 					WhereExpr: ir.FilterExpr{
 						Line: 94,
 						Op:   ir.FilterEqOp,

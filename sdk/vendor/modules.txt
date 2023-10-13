@@ -47,6 +47,8 @@ github.com/mitchellh/mapstructure
 # github.com/nginxinc/nginx-go-crossplane v0.4.24
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
+# github.com/onsi/gomega v1.27.10
+## explicit; go 1.18
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
