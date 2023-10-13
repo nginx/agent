@@ -140,7 +140,7 @@ github.com/nginx/agent/sdk/v2/proto/common
 github.com/nginx/agent/sdk/v2/proto/events
 github.com/nginx/agent/sdk/v2/zip
 # github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000 => ./../../
-## explicit; go 1.21.2
+## explicit; go 1.21.3
 github.com/nginx/agent/v2/src/core
 github.com/nginx/agent/v2/src/core/config
 github.com/nginx/agent/v2/src/core/logger
