@@ -91,7 +91,6 @@ type NginxConfigValidationResponse struct {
 
 func NewNginx(cmdr client.Commander, nginxBinary core.NginxBinary, env core.Environment, loadedConfig *config.Config, processes []*core.Process) *Nginx {
 	isFeatureNginxConfigEnabled := loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfig) || loadedConfig.IsFeatureEnabled(agent_config.FeatureNginxConfigAsync)
-
 	isNginxAppProtectEnabled := loadedConfig.IsExtensionEnabled(agent_config.NginxAppProtectExtensionPlugin)
 
 	return &Nginx{
@@ -112,17 +111,25 @@ func (n *Nginx) Init(pipeline core.MessagePipeInterface) {
 	log.Info("NginxBinary initializing")
 	n.messagePipeline = pipeline
 	n.nginxBinary.UpdateNginxDetailsFromProcesses(n.getNginxProccessInfo())
+	nginxDetails := n.nginxBinary.GetNginxDetailsMapFromProcesses(n.getNginxProccessInfo())
+
+	for _, nginxDetail := range nginxDetails {
+		log.Infof("Reading config in directory %v for nginx instance %v", nginxDetail.GetConfPath(), nginxDetail.GetNginxId())
+		_, err := n.nginxBinary.ReadConfig(nginxDetail.GetConfPath(), nginxDetail.GetNginxId(), n.env.GetSystemUUID())
+		if err != nil {
+			log.Errorf("Unable to read nginx config %s: %v", nginxDetail.GetConfPath(), err)
+		}
+	}
+
+	n.messagePipeline.Process(
+		core.NewMessage(core.NginxPluginConfigured, n),
+		core.NewMessage(core.NginxInstancesFound, nginxDetails),
+	)
 }
 
 // Process processes the messages from the messaging pipe
 func (n *Nginx) Process(message *core.Message) {
 	switch message.Topic() {
-	case core.AgentStarted:
-		nginxDetails := n.nginxBinary.GetNginxDetailsMapFromProcesses(n.getNginxProccessInfo())
-		n.messagePipeline.Process(
-			core.NewMessage(core.NginxPluginConfigured, n),
-			core.NewMessage(core.NginxInstancesFound, nginxDetails),
-		)
 	case core.CommNginxConfig:
 		switch cmd := message.Data().(type) {
 		case *proto.Command:

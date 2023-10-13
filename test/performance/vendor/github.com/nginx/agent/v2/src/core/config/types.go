@@ -35,6 +35,7 @@ type Config struct {
 	DisplayName           string              `mapstructure:"display_name" yaml:"display_name,omitempty"`
 	InstanceGroup         string              `mapstructure:"instance_group" yaml:"instance_group,omitempty"`
 	IgnoreDirectives      []string            `mapstructure:"ignore_directives" yaml:"ignore_directives,omitempty"`
+	QueueSize             int                 `mapstructure:"queue_size" yaml:"queue_size,omitempty"`
 }
 
 func (c *Config) IsGrpcServerConfigured() bool {

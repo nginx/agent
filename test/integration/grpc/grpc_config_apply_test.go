@@ -150,8 +150,9 @@ messageLoop:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Send config apply message
-
-			err := commandService.SendConfigApply(nginxId, tt.nginxConfigFileName, tt.messageId)
+			response, err := utils.ExecuteCommand(testContainer, []string{"ps", "-ef", "|", "grep", "nginx"})
+			t.Logf("response: %v", response)
+			err = commandService.SendConfigApply(nginxId, tt.nginxConfigFileName, tt.messageId)
 			assert.NoError(t, err)
 
 			// Validate that the config apply is successful

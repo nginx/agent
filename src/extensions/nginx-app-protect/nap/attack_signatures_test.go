@@ -20,7 +20,9 @@ const (
 	testAttackSigVersionFileContents = `---
 checksum: t+N7AHGIKPhdDwb8zMZh2w
 filename: signatures.bin.tgz
-revisionDatetime: 2022-02-24T20:32:01Z`
+revisionDatetime: 2022-02-24T20:32:01Z
+distro: focal
+osType: debian`
 )
 
 func TestGetAttackSignaturesVersion(t *testing.T) {

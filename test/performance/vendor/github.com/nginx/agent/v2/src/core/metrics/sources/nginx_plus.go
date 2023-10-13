@@ -64,7 +64,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 			c.clientVersion = latestAPIVersion
 		}
 
-		cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
+		cl, err := plusclient.NewNginxClient(c.plusAPI, plusclient.WithAPIVersion(c.clientVersion))
 		if err != nil {
 			c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -80,7 +80,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 		}
 	})
 
-	cl, err := plusclient.NewNginxClientWithVersion(&http.Client{}, c.plusAPI, c.clientVersion)
+	cl, err := plusclient.NewNginxClient(c.plusAPI, plusclient.WithAPIVersion(c.clientVersion))
 	if err != nil {
 		c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -855,10 +855,7 @@ func (c *NginxPlus) workerMetrics(stats, prevStats *plusclient.Stats) []*metrics
 		if _, exists := prevWorkerProcs[w.ProcessID]; exists {
 			w.Connections.Accepted = w.Connections.Accepted - prevWorkerProcs[w.ProcessID].Connections.Accepted
 			w.Connections.Dropped = w.Connections.Dropped - prevWorkerProcs[w.ProcessID].Connections.Dropped
-			w.Connections.Active = w.Connections.Active - prevWorkerProcs[w.ProcessID].Connections.Active
-			w.Connections.Idle = w.Connections.Idle - prevWorkerProcs[w.ProcessID].Connections.Idle
 			w.HTTP.HTTPRequests.Total = w.HTTP.HTTPRequests.Total - prevWorkerProcs[w.ProcessID].HTTP.HTTPRequests.Total
-			w.HTTP.HTTPRequests.Current = w.HTTP.HTTPRequests.Current - prevWorkerProcs[w.ProcessID].HTTP.HTTPRequests.Current
 		}
 
 		simpleMetrics := l.convertSamplesToSimpleMetrics(map[string]float64{

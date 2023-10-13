@@ -38,7 +38,7 @@ fi
 AGENT_DYNAMIC_CONFIG_FILE="${AGENT_DYNAMIC_CONFIG_DIR}/agent-dynamic.conf"
 OLD_DYNAMIC_CONFIG_FILE="${OLD_DYNAMIC_CONFIG_DIR}/agent-dynamic.conf"
 AGENT_DYNAMIC_CONFIG_COMMENT="#
-# dynamic-agent.conf
+# agent-dynamic.conf
 #
 # Dynamic configuration file for NGINX Agent.
 #
@@ -77,6 +77,13 @@ ensure_sudo() {
     fi
 }
 
+create_config_file() {
+    mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
+    printf "%s" "${AGENT_DYNAMIC_CONFIG_COMMENT}" | tee ${AGENT_DYNAMIC_CONFIG_FILE} > /dev/null
+    chmod 0640 ${AGENT_DYNAMIC_CONFIG_FILE}
+    printf "Successfully created %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
+}
+
 load_config_values() {
     if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
         if [ -f "$OLD_DYNAMIC_CONFIG_FILE" ]; then
@@ -87,9 +94,7 @@ load_config_values() {
             ln -s "$AGENT_DYNAMIC_CONFIG_FILE" "$OLD_DYNAMIC_CONFIG_FILE" 
         else
             printf "Could not find %s ... Creating file\n" ${AGENT_DYNAMIC_CONFIG_FILE}
-            mkdir -p ${AGENT_DYNAMIC_CONFIG_DIR}
-            printf "%s" "${AGENT_DYNAMIC_CONFIG_COMMENT}" | tee ${AGENT_DYNAMIC_CONFIG_FILE} > /dev/null
-            printf "Successfully created %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
+            create_config_file
         fi
         
     fi
@@ -101,13 +106,14 @@ load_config_values() {
         INSTANCE_GROUP=$_instance_group
     fi
 }
+
 update_config_file() {
     sed_cmd="sed -i.bak "
 
     printf "Updating %s ...\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
 
     if [ ! -f "$AGENT_CONFIG_FILE" ]; then
-        printf "NGINX Agent config file %s does not exist. Could not be updated\n" "$AGENT_CONFIG_FILE"        
+        printf "NGINX Agent config file %s does not exist. Could not be updated\n" "$AGENT_CONFIG_FILE"
         exit 0
     fi
 
@@ -131,7 +137,7 @@ update_config_file() {
             printf "Setting instance_group: %s\n" "${INSTANCE_GROUP}"
             printf "instance_group: %s\n" "${INSTANCE_GROUP}" >> "${AGENT_DYNAMIC_CONFIG_FILE}"
         fi
-        printf "Successfully updated %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"    
+        printf "Successfully updated %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
     fi
     # Check the log-level and set accordingly
     if [ "${LOG_LEVEL}" ]; then

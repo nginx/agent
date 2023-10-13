@@ -106,6 +106,7 @@ func SetDefaults() {
 
 	// NGINX AGENT DEFAULTS
 	Viper.SetDefault(DynamicConfigPathKey, Defaults.DynamicConfigPath)
+	Viper.SetDefault(QueueSizeKey, Defaults.QueueSize)
 }
 
 func setFlagDeprecated(name string, usageMessage string) {
@@ -206,6 +207,7 @@ func GetConfig(clientId string) (*Config, error) {
 		DisplayName:           Viper.GetString(DisplayNameKey),
 		InstanceGroup:         Viper.GetString(InstanceGroupKey),
 		IgnoreDirectives:      Viper.GetStringSlice(IgnoreDirectivesKey),
+		QueueSize:             Viper.GetInt(QueueSizeKey),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDirs, ":") {
@@ -403,7 +405,7 @@ func LoadPropertiesFromFile(cfg string) error {
 		dynCfg.Close()
 
 		if featuresAreSet {
-			err = os.WriteFile(dynamicCfgPath, cleanDynCfgContent, 0o644)
+			err = os.WriteFile(dynamicCfgPath, cleanDynCfgContent, 0o640)
 			if err != nil {
 				return fmt.Errorf("error attempting to update dynamic config (%s): %v", dynamicCfgPath, err)
 			}
@@ -417,7 +419,7 @@ func LoadPropertiesFromFile(cfg string) error {
 			return fmt.Errorf("error attempting to create directory for dynamic config (%s): %v", dynamicCfgDir, err)
 		}
 
-		err = os.WriteFile(dynamicCfgPath, []byte(dynamicConfigUsageComment), 0o644)
+		err = os.WriteFile(dynamicCfgPath, []byte(dynamicConfigUsageComment), 0o640)
 		if err != nil {
 			return fmt.Errorf("error attempting to create dynamic config (%s): %v", dynamicCfgPath, err)
 		}

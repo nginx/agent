@@ -80,6 +80,10 @@ func TestAPI_Metrics(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 	assert.Contains(t, resp.String(), "system_cpu_system")
 	assert.NotContains(t, resp.String(), "test_fail_metric")
+	// Validate that the agent can call the stub status API
+	assert.Contains(t, resp.String(), "nginx_http_request_count")
+	// Validate that the agent can read the NGINX access logs
+	assert.Contains(t, resp.String(), "nginx_http_status_2xx")
 
 	metrics := tutils.ProcessResponse(resp)
 
@@ -87,10 +91,6 @@ func TestAPI_Metrics(t *testing.T) {
 		metric := strings.Split(m, " ")
 		switch {
 		case strings.Contains(metric[0], "system_cpu_system"):
-			value, _ := strconv.ParseFloat(metric[1], 64)
-			assert.Greater(t, value, float64(0))
-
-		case strings.Contains(metric[0], "system_mem_used_all"):
 			value, _ := strconv.ParseFloat(metric[1], 64)
 			assert.Greater(t, value, float64(0))
 

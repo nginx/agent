@@ -54,6 +54,8 @@ NGINX Agent provides an API interface for submission of updated configuration fi
 ## Collecting Metrics
 NGINX Agent interfaces with NGINX process information and parses NGINX logs to calculate and report metrics. When interfacing with NGINX Plus, NGINX Agent pulls relevant information from the NGINX Plus API. Reported metrics may be aggregated by [Prometheus](https://prometheus.io/) and visualized with tools like [Grafana](https://grafana.com/).
 
+The NGINX Agent keeps a connection open to the NGINX Plus API and queries based on the collection interval. This connection gets reported in the metrics and depending on the phase of reporting this connection can show up as idle or active.
+
 ### NGINX Open Source
 When running alongside an open source instance of NGINX, NGINX Agent requires that NGINX Access and Error logs are turned on and contain all default variables.
 
@@ -214,7 +216,10 @@ The NGINX Agent REST interface can be exposed by validating the following lines 
 
 ```yaml
 api:
-  port: 8081 # port to expose REST API
+  # Set API address to allow remote management
+  host: 127.0.0.1
+  # Set this value to a secure port number to prevent information leaks
+  port: 8038
   
   # REST TLS parameters
   cert: "<TLS-CERTIFICATE>.crt"
