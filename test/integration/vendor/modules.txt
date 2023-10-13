@@ -682,6 +682,8 @@ github.com/nginx/agent/v2/test/utils/system
 # github.com/nginxinc/nginx-go-crossplane v0.4.24
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
+# github.com/onsi/ginkgo/v2 v2.11.0
+## explicit; go 1.18
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
 github.com/opencontainers/go-digest
