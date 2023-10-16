@@ -63,7 +63,8 @@ func (GenericVolumeMountSource) Type() MountType {
 
 // GenericTmpfsMountSource implements ContainerMountSource and represents a TmpFS mount
 // Optionally mount.TmpfsOptions might be added for advanced scenarios
-type GenericTmpfsMountSource struct{}
+type GenericTmpfsMountSource struct {
+}
 
 func (s GenericTmpfsMountSource) Source() string {
 	return ""

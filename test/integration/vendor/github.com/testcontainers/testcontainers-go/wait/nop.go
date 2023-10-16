@@ -7,14 +7,11 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/go-connections/nat"
-
 	"github.com/testcontainers/testcontainers-go/exec"
 )
 
-var (
-	_ Strategy        = (*NopStrategy)(nil)
-	_ StrategyTimeout = (*NopStrategy)(nil)
-)
+var _ Strategy = (*NopStrategy)(nil)
+var _ StrategyTimeout = (*NopStrategy)(nil)
 
 type NopStrategy struct {
 	timeout        *time.Duration

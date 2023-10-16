@@ -55,8 +55,6 @@ type ServiceProxy struct {
 	DryRunModeFn         func(ctx context.Context, dryRun bool) (context.Context, error)
 	VizFn                func(ctx context.Context, project *types.Project, options VizOptions) (string, error)
 	WaitFn               func(ctx context.Context, projectName string, options WaitOptions) (int64, error)
-	PublishFn            func(ctx context.Context, project *types.Project, repository string, options PublishOptions) error
-	ScaleFn              func(ctx context.Context, project *types.Project, options ScaleOptions) error
 	interceptors         []Interceptor
 }
 
@@ -93,14 +91,12 @@ func (s *ServiceProxy) WithService(service Service) *ServiceProxy {
 	s.TopFn = service.Top
 	s.EventsFn = service.Events
 	s.PortFn = service.Port
-	s.PublishFn = service.Publish
 	s.ImagesFn = service.Images
 	s.WatchFn = service.Watch
 	s.MaxConcurrencyFn = service.MaxConcurrency
 	s.DryRunModeFn = service.DryRunMode
 	s.VizFn = service.Viz
 	s.WaitFn = service.Wait
-	s.ScaleFn = service.Scale
 	return s
 }
 
@@ -315,10 +311,6 @@ func (s *ServiceProxy) Port(ctx context.Context, projectName string, service str
 	return s.PortFn(ctx, projectName, service, port, options)
 }
 
-func (s *ServiceProxy) Publish(ctx context.Context, project *types.Project, repository string, options PublishOptions) error {
-	return s.PublishFn(ctx, project, repository, options)
-}
-
 // Images implements Service interface
 func (s *ServiceProxy) Images(ctx context.Context, project string, options ImagesOptions) ([]ImageSummary, error) {
 	if s.ImagesFn == nil {
@@ -349,13 +341,6 @@ func (s *ServiceProxy) Wait(ctx context.Context, projectName string, options Wai
 		return 0, ErrNotImplemented
 	}
 	return s.WaitFn(ctx, projectName, options)
-}
-
-func (s *ServiceProxy) Scale(ctx context.Context, project *types.Project, options ScaleOptions) error {
-	if s.ScaleFn == nil {
-		return ErrNotImplemented
-	}
-	return s.ScaleFn(ctx, project, options)
 }
 
 func (s *ServiceProxy) MaxConcurrency(i int) {

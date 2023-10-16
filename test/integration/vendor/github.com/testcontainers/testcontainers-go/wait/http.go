@@ -17,10 +17,8 @@ import (
 )
 
 // Implement interface
-var (
-	_ Strategy        = (*HTTPStrategy)(nil)
-	_ StrategyTimeout = (*HTTPStrategy)(nil)
-)
+var _ Strategy = (*HTTPStrategy)(nil)
+var _ StrategyTimeout = (*HTTPStrategy)(nil)
 
 type HTTPStrategy struct {
 	// all Strategies should have a startupTimeout to avoid waiting infinitely
@@ -146,13 +144,11 @@ func (ws *HTTPStrategy) WaitUntilReady(ctx context.Context, target StrategyTarge
 
 	var mappedPort nat.Port
 	if ws.Port == "" {
-		var err error
-		var ports nat.PortMap
-		// we wait one polling interval before we grab the ports otherwise they might not be bound yet on startup
-		for err != nil || ports == nil {
+		ports, err := target.Ports(ctx)
+		for err != nil {
 			select {
 			case <-ctx.Done():
-				return fmt.Errorf("%w: %w", ctx.Err(), err)
+				return fmt.Errorf("%s:%w", ctx.Err(), err)
 			case <-time.After(ws.PollInterval):
 				if err := checkTarget(ctx, target); err != nil {
 					return err
@@ -179,7 +175,7 @@ func (ws *HTTPStrategy) WaitUntilReady(ctx context.Context, target StrategyTarge
 		for mappedPort == "" {
 			select {
 			case <-ctx.Done():
-				return fmt.Errorf("%w: %w", ctx.Err(), err)
+				return fmt.Errorf("%s:%w", ctx.Err(), err)
 			case <-time.After(ws.PollInterval):
 				if err := checkTarget(ctx, target); err != nil {
 					return err

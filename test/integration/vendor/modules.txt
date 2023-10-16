@@ -137,7 +137,7 @@ github.com/compose-spec/compose-go/utils
 # github.com/containerd/console v1.0.3
 ## explicit; go 1.13
 github.com/containerd/console
-# github.com/containerd/containerd v1.7.6 => github.com/containerd/containerd v1.7.4
+# github.com/containerd/containerd v1.7.4 => github.com/containerd/containerd v1.7.4
 ## explicit; go 1.19
 github.com/containerd/containerd/api/services/content/v1
 github.com/containerd/containerd/archive/compression
@@ -178,6 +178,10 @@ github.com/cpuguy83/dockercfg
 # github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 ## explicit
 github.com/davecgh/go-spew/spew
+# github.com/distribution/distribution/v3 v3.0.0-20230601133803-97b1d649c493
+## explicit; go 1.18
+github.com/distribution/distribution/v3/reference
+github.com/distribution/distribution/v3/uuid
 # github.com/distribution/reference v0.5.0
 ## explicit; go 1.20
 github.com/distribution/reference
@@ -249,7 +253,7 @@ github.com/docker/cli/cli/trust
 github.com/docker/cli/cli/version
 github.com/docker/cli/opts
 github.com/docker/cli/templates
-# github.com/docker/compose/v2 v2.22.0
+# github.com/docker/compose/v2 v2.21.0
 ## explicit; go 1.21
 github.com/docker/compose/v2/internal
 github.com/docker/compose/v2/internal/sync
@@ -814,7 +818,7 @@ github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.6.0
 ## explicit; go 1.18
 github.com/subosito/gotenv
-# github.com/testcontainers/testcontainers-go v0.25.0
+# github.com/testcontainers/testcontainers-go v0.23.0
 ## explicit; go 1.20
 github.com/testcontainers/testcontainers-go
 github.com/testcontainers/testcontainers-go/exec
@@ -823,7 +827,7 @@ github.com/testcontainers/testcontainers-go/internal/config
 github.com/testcontainers/testcontainers-go/internal/testcontainersdocker
 github.com/testcontainers/testcontainers-go/internal/testcontainerssession
 github.com/testcontainers/testcontainers-go/wait
-# github.com/testcontainers/testcontainers-go/modules/compose v0.25.0
+# github.com/testcontainers/testcontainers-go/modules/compose v0.23.0
 ## explicit; go 1.20
 github.com/testcontainers/testcontainers-go/modules/compose
 # github.com/theupdateframework/notary v0.7.0
@@ -864,6 +868,8 @@ github.com/tonistiigi/vt100
 # github.com/vardius/message-bus v1.1.5
 ## explicit; go 1.12
 github.com/vardius/message-bus
+# github.com/weppos/publicsuffix-go v0.30.1
+## explicit; go 1.16
 # github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb
 ## explicit
 github.com/xeipuuv/gojsonpointer

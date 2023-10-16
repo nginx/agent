@@ -18,7 +18,6 @@ package compose
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -44,6 +43,7 @@ import (
 	"github.com/moby/buildkit/session/sshforward/sshprovider"
 	"github.com/moby/buildkit/util/entitlements"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	// required to get default driver registered
@@ -56,13 +56,13 @@ func (s *composeService) Build(ctx context.Context, project *types.Project, opti
 		return err
 	}
 	return progress.RunWithTitle(ctx, func(ctx context.Context) error {
-		_, err := s.build(ctx, project, options, nil)
+		_, err := s.build(ctx, project, options)
 		return err
 	}, s.stdinfo(), "Building")
 }
 
 //nolint:gocyclo
-func (s *composeService) build(ctx context.Context, project *types.Project, options api.BuildOptions, localImages map[string]string) (map[string]string, error) {
+func (s *composeService) build(ctx context.Context, project *types.Project, options api.BuildOptions) (map[string]string, error) {
 	buildkitEnabled, err := s.dockerCli.BuildKitEnabled()
 	if err != nil {
 		return nil, err
@@ -114,12 +114,6 @@ func (s *composeService) build(ctx context.Context, project *types.Project, opti
 		service, idx := getServiceIndex(project, name)
 
 		if service.Build == nil {
-			return nil
-		}
-
-		image := api.GetImageNameOrDefault(service, project.Name)
-		_, localImagePresent := localImages[image]
-		if localImagePresent && service.PullPolicy != types.PullPolicyBuild {
 			return nil
 		}
 
@@ -189,7 +183,7 @@ func getServiceIndex(project *types.Project, name string) (types.ServiceConfig, 
 	return service, idx
 }
 
-func (s *composeService) ensureImagesExists(ctx context.Context, project *types.Project, buildOpts *api.BuildOptions, quietPull bool) error {
+func (s *composeService) ensureImagesExists(ctx context.Context, project *types.Project, quietPull bool) error {
 	for _, service := range project.Services {
 		if service.Image == "" && service.Build == nil {
 			return fmt.Errorf("invalid service %q. Must specify either image or build", service.Name)
@@ -210,10 +204,22 @@ func (s *composeService) ensureImagesExists(ctx context.Context, project *types.
 		return err
 	}
 
-	if buildOpts != nil {
+	mode := xprogress.PrinterModeAuto
+	if quietPull {
+		mode = xprogress.PrinterModeQuiet
+	}
+
+	buildRequired, err := s.prepareProjectForBuild(project, images)
+	if err != nil {
+		return err
+	}
+
+	if buildRequired {
 		err = tracing.SpanWrapFunc("project/build", tracing.ProjectOptions(project),
 			func(ctx context.Context) error {
-				builtImages, err := s.build(ctx, project, *buildOpts, images)
+				builtImages, err := s.build(ctx, project, api.BuildOptions{
+					Progress: mode,
+				})
 				if err != nil {
 					return err
 				}
@@ -241,6 +247,37 @@ func (s *composeService) ensureImagesExists(ctx context.Context, project *types.
 		}
 	}
 	return nil
+}
+
+func (s *composeService) prepareProjectForBuild(project *types.Project, images map[string]string) (bool, error) {
+	buildRequired := false
+	err := api.BuildOptions{}.Apply(project)
+	if err != nil {
+		return false, err
+	}
+	for i, service := range project.Services {
+		if service.Build == nil {
+			continue
+		}
+
+		image := api.GetImageNameOrDefault(service, project.Name)
+		_, localImagePresent := images[image]
+		if localImagePresent && service.PullPolicy != types.PullPolicyBuild {
+			service.Build = nil
+			project.Services[i] = service
+			continue
+		}
+
+		if service.Platform == "" {
+			// let builder to build for default platform
+			service.Build.Platforms = nil
+		} else {
+			service.Build.Platforms = []string{service.Platform}
+		}
+		project.Services[i] = service
+		buildRequired = true
+	}
+	return buildRequired, nil
 }
 
 func (s *composeService) getLocalImagesDigests(ctx context.Context, project *types.Project) (map[string]string, error) {
@@ -281,10 +318,8 @@ func (s *composeService) getLocalImagesDigests(ctx context.Context, project *typ
 				Variant:      inspect.Variant,
 			}
 			if !platforms.NewMatcher(platform).Match(actual) {
-				// there is a local image, but it's for the wrong platform, so
-				// pretend it doesn't exist so that we can pull/build an image
-				// for the correct platform instead
-				delete(images, imgName)
+				return nil, errors.Errorf("image with reference %s was found but does not match the specified platform: wanted %s, actual: %s",
+					imgName, platforms.Format(platform), platforms.Format(actual))
 			}
 		}
 
@@ -327,7 +362,7 @@ func resolveAndMergeBuildArgs(
 }
 
 func (s *composeService) toBuildOptions(project *types.Project, service types.ServiceConfig, options api.BuildOptions) (build.Options, error) {
-	plats, err := parsePlatforms(service)
+	plats, err := addPlatforms(project, service)
 	if err != nil {
 		return build.Options{}, err
 	}
@@ -480,6 +515,24 @@ func addSecretsConfig(project *types.Project, service types.ServiceConfig) (sess
 	return secretsprovider.NewSecretProvider(store), nil
 }
 
+func addPlatforms(project *types.Project, service types.ServiceConfig) ([]specs.Platform, error) {
+	plats, err := useDockerDefaultOrServicePlatform(project, service, false)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, buildPlatform := range service.Build.Platforms {
+		p, err := platforms.Parse(buildPlatform)
+		if err != nil {
+			return nil, err
+		}
+		if !utils.Contains(plats, p) {
+			plats = append(plats, p)
+		}
+	}
+	return plats, nil
+}
+
 func getImageBuildLabels(project *types.Project, service types.ServiceConfig) types.Labels {
 	ret := make(types.Labels)
 	if service.Build != nil {
@@ -502,25 +555,37 @@ func toBuildContexts(additionalContexts types.Mapping) map[string]build.NamedCon
 	return namedContexts
 }
 
-func parsePlatforms(service types.ServiceConfig) ([]specs.Platform, error) {
-	if service.Build == nil || len(service.Build.Platforms) == 0 {
-		return nil, nil
-	}
-
-	var errs []error
-	ret := make([]specs.Platform, len(service.Build.Platforms))
-	for i := range service.Build.Platforms {
-		p, err := platforms.Parse(service.Build.Platforms[i])
-		if err != nil {
-			errs = append(errs, err)
-		} else {
-			ret[i] = p
+func useDockerDefaultPlatform(project *types.Project, platformList types.StringList) ([]specs.Platform, error) {
+	var plats []specs.Platform
+	if platform, ok := project.Environment["DOCKER_DEFAULT_PLATFORM"]; ok {
+		if len(platformList) > 0 && !utils.StringContains(platformList, platform) {
+			return nil, fmt.Errorf("the DOCKER_DEFAULT_PLATFORM %q value should be part of the service.build.platforms: %q", platform, platformList)
 		}
+		p, err := platforms.Parse(platform)
+		if err != nil {
+			return nil, err
+		}
+		plats = append(plats, p)
+	}
+	return plats, nil
+}
+
+func useDockerDefaultOrServicePlatform(project *types.Project, service types.ServiceConfig, useOnePlatform bool) ([]specs.Platform, error) {
+	plats, err := useDockerDefaultPlatform(project, service.Build.Platforms)
+	if (len(plats) > 0 && useOnePlatform) || err != nil {
+		return plats, err
 	}
 
-	if err := errors.Join(errs...); err != nil {
-		return nil, err
+	if service.Platform != "" {
+		if len(service.Build.Platforms) > 0 && !utils.StringContains(service.Build.Platforms, service.Platform) {
+			return nil, fmt.Errorf("service.platform %q should be part of the service.build.platforms: %q", service.Platform, service.Build.Platforms)
+		}
+		// User defined a service platform and no build platforms, so we should keep the one define on the service level
+		p, err := platforms.Parse(service.Platform)
+		if !utils.Contains(plats, p) {
+			plats = append(plats, p)
+		}
+		return plats, err
 	}
-
-	return ret, nil
+	return plats, nil
 }

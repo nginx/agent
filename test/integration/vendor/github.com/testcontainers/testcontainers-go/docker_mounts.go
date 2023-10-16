@@ -2,12 +2,14 @@ package testcontainers
 
 import "github.com/docker/docker/api/types/mount"
 
-var mountTypeMapping = map[MountType]mount.Type{
-	MountTypeBind:   mount.TypeBind,
-	MountTypeVolume: mount.TypeVolume,
-	MountTypeTmpfs:  mount.TypeTmpfs,
-	MountTypePipe:   mount.TypeNamedPipe,
-}
+var (
+	mountTypeMapping = map[MountType]mount.Type{
+		MountTypeBind:   mount.TypeBind,
+		MountTypeVolume: mount.TypeVolume,
+		MountTypeTmpfs:  mount.TypeTmpfs,
+		MountTypePipe:   mount.TypeNamedPipe,
+	}
+)
 
 // BindMounter can optionally be implemented by mount sources
 // to support advanced scenarios based on mount.BindOptions

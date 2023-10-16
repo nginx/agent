@@ -19,7 +19,6 @@ package api
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -32,6 +31,8 @@ import (
 	"github.com/docker/buildx/builder"
 	"github.com/docker/buildx/util/imagetools"
 	"github.com/docker/cli/cli/command"
+
+	"github.com/distribution/distribution/v3/uuid"
 	moby "github.com/docker/docker/api/types"
 	containerType "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
@@ -297,9 +298,7 @@ func (d *DryRunClient) VolumeRemove(ctx context.Context, volumeID string, force 
 }
 
 func (d *DryRunClient) ContainerExecCreate(ctx context.Context, container string, config moby.ExecConfig) (moby.IDResponse, error) {
-	b := make([]byte, 32)
-	_, _ = rand.Read(b)
-	id := fmt.Sprintf("%x", b)
+	id := uuid.Generate().String()
 	d.execs.Store(id, execDetails{
 		container: container,
 		command:   config.Cmd,

@@ -58,6 +58,9 @@ func (s *composeService) RunOneOffContainer(ctx context.Context, project *types.
 }
 
 func (s *composeService) prepareRun(ctx context.Context, project *types.Project, opts api.RunOptions) (string, error) {
+	if err := prepareVolumes(project); err != nil { // all dependencies already checked, but might miss service img
+		return "", err
+	}
 	service, err := project.GetService(opts.Service)
 	if err != nil {
 		return "", err
@@ -82,7 +85,7 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 		Add(api.SlugLabel, slug).
 		Add(api.OneoffLabel, "True")
 
-	if err := s.ensureImagesExists(ctx, project, opts.Build, opts.QuietPull); err != nil { // all dependencies already checked, but might miss service img
+	if err := s.ensureImagesExists(ctx, project, opts.QuietPull); err != nil { // all dependencies already checked, but might miss service img
 		return "", err
 	}
 
@@ -90,6 +93,7 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 	if err != nil {
 		return "", err
 	}
+	updateServices(&service, observedState)
 
 	if !opts.NoDeps {
 		if err := s.waitDependencies(ctx, project, service.DependsOn, observedState); err != nil {
@@ -101,11 +105,6 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 		AttachStdin:       opts.Interactive,
 		UseNetworkAliases: opts.UseNetworkAliases,
 		Labels:            mergeLabels(service.Labels, service.CustomLabels),
-	}
-
-	err = newConvergence(project.ServiceNames(), observedState, s).resolveServiceReferences(&service)
-	if err != nil {
-		return "", err
 	}
 
 	created, err := s.createContainer(ctx, project, service, service.ContainerName, 1, createOpts)
