@@ -48,6 +48,7 @@ type commander struct {
 	recvChan        chan Message
 	downloadChan    chan *proto.DataChunk
 	ctx             context.Context
+	mu              sync.Mutex
 	backoffSettings backoff.BackoffSettings
 	cancel          context.CancelFunc
 	isRetrying      bool
@@ -157,16 +158,10 @@ func (c *commander) Send(ctx context.Context, message Message) error {
 	}
 
 	err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
-		c.retryLock.Lock()
-		if c.isRetrying {
-			log.Infof("Commander Channel Send: retrying to connect to %s", c.grpc.Target())
-			err := c.createClient()
-			if err != nil {
-				c.retryLock.Unlock()
-				return err
-			}
+		err := c.checkClientConnection()
+		if err != nil {
+			return err
 		}
-		c.retryLock.Unlock()
 
 		if err := c.channel.Send(cmd); err != nil {
 			c.setIsRetrying(true)
@@ -190,16 +185,10 @@ func (c *commander) Download(ctx context.Context, metadata *proto.Metadata) (*pr
 	cfg := &proto.NginxConfig{}
 
 	err := backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
-		c.retryLock.Lock()
-		if c.isRetrying {
-			log.Infof("Commander Downloader: retrying to connect to %s", c.grpc.Target())
-			err := c.createClient()
-			if err != nil {
-				c.retryLock.Unlock()
-				return err
-			}
+		err := c.checkClientConnection()
+		if err != nil {
+			return err
 		}
-		c.retryLock.Unlock()
 
 		var (
 			header *proto.DataChunk_Header
@@ -268,16 +257,10 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 	chunks := checksum.Chunk(payload, c.chunkSize)
 
 	return backoff.WaitUntil(c.ctx, c.backoffSettings, func() error {
-		c.retryLock.Lock()
-		if c.isRetrying {
-			log.Infof("Commander Upload: retrying to connect to %s", c.grpc.Target())
-			err := c.createClient()
-			if err != nil {
-				c.retryLock.Unlock()
-				return err
-			}
+		err := c.checkClientConnection()
+		if err != nil {
+			return err
 		}
-		c.retryLock.Unlock()
 
 		sender, err := c.client.Upload(c.ctx)
 		if err != nil {
@@ -331,8 +314,25 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 	})
 }
 
+func (c *commander) checkClientConnection() error {
+	c.retryLock.Lock()
+	defer c.retryLock.Unlock()
+
+	if c.isRetrying {
+		log.Infof("Retrying to connect to %s", c.grpc.Target())
+		err := c.createClient()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c *commander) createClient() error {
 	log.Debug("Creating commander client")
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	// Making sure that the previous client connection is closed before creating a new one
 	if c.grpc != nil {
@@ -378,16 +378,10 @@ loop:
 				case <-ctx.Done():
 					return nil
 				default:
-					c.retryLock.Lock()
-					if c.isRetrying {
-						log.Infof("Commander Channel Recv: retrying to connect to %s", c.grpc.Target())
-						err := c.createClient()
-						if err != nil {
-							c.retryLock.Unlock()
-							return err
-						}
+					err := c.checkClientConnection()
+					if err != nil {
+						return err
 					}
-					c.retryLock.Unlock()
 
 					cmd, err := c.channel.Recv()
 					log.Infof("Commander received %v, %v", cmd, err)
