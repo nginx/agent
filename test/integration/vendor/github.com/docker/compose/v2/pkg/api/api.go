@@ -390,25 +390,18 @@ type PortPublisher struct {
 
 // ContainerSummary hold high-level description of a container
 type ContainerSummary struct {
-	ID           string
-	Name         string
-	Names        []string
-	Image        string
-	Command      string
-	Project      string
-	Service      string
-	Created      int64
-	State        string
-	Status       string
-	Health       string
-	ExitCode     int
-	Publishers   PortPublishers
-	Labels       map[string]string
-	SizeRw       int64 `json:",omitempty"`
-	SizeRootFs   int64 `json:",omitempty"`
-	Mounts       []string
-	Networks     []string
-	LocalVolumes int
+	ID         string
+	Name       string
+	Image      any
+	Command    string
+	Project    string
+	Service    string
+	Created    int64
+	State      string
+	Status     string
+	Health     string
+	ExitCode   int
+	Publishers PortPublishers
 }
 
 // PortPublishers is a slice of PortPublisher

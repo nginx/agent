@@ -24,9 +24,10 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/compose-spec/compose-go/dotenv"
 	"github.com/compose-spec/compose-go/utils"
-	"github.com/distribution/reference"
+
+	"github.com/compose-spec/compose-go/dotenv"
+	"github.com/distribution/distribution/v3/reference"
 	godigest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -423,14 +424,7 @@ func (p *Project) ForServices(names []string, options ...DependencyOption) error
 		if _, ok := set[s.Name]; ok {
 			for _, option := range options {
 				if option == IgnoreDependencies {
-					// remove all dependencies but those implied by explicitly selected services
-					dependencies := s.DependsOn
-					for d := range dependencies {
-						if _, ok := set[d]; !ok {
-							delete(dependencies, d)
-						}
-					}
-					s.DependsOn = dependencies
+					s.DependsOn = nil
 				}
 			}
 			enabled = append(enabled, s)

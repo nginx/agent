@@ -354,7 +354,6 @@ func resolveAndMergeBuildArgs(
 	// so they're handled last
 	for k, v := range storeutil.GetProxyConfig(dockerCli) {
 		if _, ok := result[k]; !ok {
-			v := v
 			result[k] = &v
 		}
 	}

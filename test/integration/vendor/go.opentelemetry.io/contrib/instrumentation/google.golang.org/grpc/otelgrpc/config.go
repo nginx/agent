@@ -72,10 +72,7 @@ func newConfig(opts []Option) *config {
 		metric.WithSchemaURL(semconv.SchemaURL),
 	)
 	var err error
-	c.rpcServerDuration, err = c.meter.Int64Histogram("rpc.server.duration",
-		metric.WithDescription("Measures the duration of inbound RPC."),
-		metric.WithUnit("ms"))
-	if err != nil {
+	if c.rpcServerDuration, err = c.meter.Int64Histogram("rpc.server.duration", metric.WithUnit("ms")); err != nil {
 		otel.Handle(err)
 	}
 

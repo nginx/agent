@@ -740,8 +740,6 @@ func mergeSections(dst *ini.Sections, src ini.Sections) error {
 			defaultsModeKey,
 			retryModeKey,
 			caBundleKey,
-			roleDurationSecondsKey,
-			retryMaxAttemptsKey,
 
 			ssoSessionNameKey,
 			ssoAccountIDKey,
@@ -751,6 +749,16 @@ func mergeSections(dst *ini.Sections, src ini.Sections) error {
 		}
 		for i := range stringKeys {
 			if err := mergeStringKey(&srcSection, &dstSection, sectionName, stringKeys[i]); err != nil {
+				return err
+			}
+		}
+
+		intKeys := []string{
+			roleDurationSecondsKey,
+			retryMaxAttemptsKey,
+		}
+		for i := range intKeys {
+			if err := mergeIntKey(&srcSection, &dstSection, sectionName, intKeys[i]); err != nil {
 				return err
 			}
 		}
@@ -776,6 +784,26 @@ func mergeStringKey(srcSection *ini.Section, dstSection *ini.Section, sectionNam
 		}
 
 		dstSection.UpdateValue(key, val)
+		dstSection.UpdateSourceFile(key, srcSection.SourceFile[key])
+	}
+	return nil
+}
+
+func mergeIntKey(srcSection *ini.Section, dstSection *ini.Section, sectionName, key string) error {
+	if srcSection.Has(key) {
+		srcValue := srcSection.Int(key)
+		v, err := ini.NewIntValue(srcValue)
+		if err != nil {
+			return fmt.Errorf("error merging %s, %w", key, err)
+		}
+
+		if dstSection.Has(key) {
+			dstSection.Logs = append(dstSection.Logs, newMergeKeyLogMessage(sectionName, key,
+				dstSection.SourceFile[key], srcSection.SourceFile[key]))
+
+		}
+
+		dstSection.UpdateValue(key, v)
 		dstSection.UpdateSourceFile(key, srcSection.SourceFile[key])
 	}
 	return nil
@@ -934,16 +962,9 @@ func (c *SharedConfig) setFromIniSection(profile string, section ini.Section) er
 	updateString(&c.SSOAccountID, section, ssoAccountIDKey)
 	updateString(&c.SSORoleName, section, ssoRoleNameKey)
 
-	// we're retaining a behavioral quirk with this field that existed before
-	// the removal of literal parsing for #2276:
-	//   - if the key is missing, the config field will not be set
-	//   - if the key is set to a non-numeric, the config field will be set to 0
 	if section.Has(roleDurationSecondsKey) {
-		if v, ok := section.Int(roleDurationSecondsKey); ok {
-			c.RoleDurationSeconds = aws.Duration(time.Duration(v) * time.Second)
-		} else {
-			c.RoleDurationSeconds = aws.Duration(time.Duration(0))
-		}
+		d := time.Duration(section.Int(roleDurationSecondsKey)) * time.Second
+		c.RoleDurationSeconds = &d
 	}
 
 	updateString(&c.CredentialProcess, section, credentialProcessKey)
@@ -1293,13 +1314,12 @@ func updateInt(dst *int, section ini.Section, key string) error {
 	if !section.Has(key) {
 		return nil
 	}
+	if vt, _ := section.ValueType(key); vt != ini.IntegerType {
+		return fmt.Errorf("invalid value %s=%s, expect integer",
+			key, section.String(key))
 
-	v, ok := section.Int(key)
-	if !ok {
-		return fmt.Errorf("invalid value %s=%s, expect integer", key, section.String(key))
 	}
-
-	*dst = int(v)
+	*dst = int(section.Int(key))
 	return nil
 }
 
@@ -1309,10 +1329,7 @@ func updateBool(dst *bool, section ini.Section, key string) {
 	if !section.Has(key) {
 		return
 	}
-
-	// retains pre-#2276 behavior where non-bool value would resolve to false
-	v, _ := section.Bool(key)
-	*dst = v
+	*dst = section.Bool(key)
 }
 
 // updateBoolPtr will only update the dst with the value in the section key,
@@ -1321,11 +1338,8 @@ func updateBoolPtr(dst **bool, section ini.Section, key string) {
 	if !section.Has(key) {
 		return
 	}
-
-	// retains pre-#2276 behavior where non-bool value would resolve to false
-	v, _ := section.Bool(key)
 	*dst = new(bool)
-	**dst = v
+	**dst = section.Bool(key)
 }
 
 // updateEndpointDiscoveryType will only update the dst with the value in the section, if
@@ -1357,8 +1371,7 @@ func updateUseDualStackEndpoint(dst *aws.DualStackEndpointState, section ini.Sec
 		return
 	}
 
-	// retains pre-#2276 behavior where non-bool value would resolve to false
-	if v, _ := section.Bool(key); v {
+	if section.Bool(key) {
 		*dst = aws.DualStackEndpointStateEnabled
 	} else {
 		*dst = aws.DualStackEndpointStateDisabled
@@ -1374,8 +1387,7 @@ func updateUseFIPSEndpoint(dst *aws.FIPSEndpointState, section ini.Section, key 
 		return
 	}
 
-	// retains pre-#2276 behavior where non-bool value would resolve to false
-	if v, _ := section.Bool(key); v {
+	if section.Bool(key) {
 		*dst = aws.FIPSEndpointStateEnabled
 	} else {
 		*dst = aws.FIPSEndpointStateDisabled

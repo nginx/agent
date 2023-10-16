@@ -16,23 +16,6 @@ package utils
 
 type Set[T comparable] map[T]struct{}
 
-func NewSet[T comparable](v ...T) Set[T] {
-	if len(v) == 0 {
-		return make(Set[T])
-	}
-
-	out := make(Set[T], len(v))
-	for i := range v {
-		out.Add(v[i])
-	}
-	return out
-}
-
-func (s Set[T]) Has(v T) bool {
-	_, ok := s[v]
-	return ok
-}
-
 func (s Set[T]) Add(v T) {
 	s[v] = struct{}{}
 }
@@ -69,25 +52,4 @@ func (s Set[T]) RemoveAll(elements ...T) {
 	for _, e := range elements {
 		s.Remove(e)
 	}
-}
-
-func (s Set[T]) Diff(other Set[T]) Set[T] {
-	out := make(Set[T])
-	for k := range s {
-		if _, ok := other[k]; !ok {
-			out[k] = struct{}{}
-		}
-	}
-	return out
-}
-
-func (s Set[T]) Union(other Set[T]) Set[T] {
-	out := make(Set[T])
-	for k := range s {
-		out[k] = struct{}{}
-	}
-	for k := range other {
-		out[k] = struct{}{}
-	}
-	return out
 }

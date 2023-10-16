@@ -61,8 +61,6 @@ type Options struct {
 	SkipExtends bool
 	// SkipInclude will ignore `include` and only load model from file(s) set by ConfigDetails
 	SkipInclude bool
-	// SkipResolveEnvironment will ignore computing `environment` for services
-	SkipResolveEnvironment bool
 	// Interpolation options
 	Interpolate *interp.Options
 	// Discard 'env_file' entries after resolving to 'environment' section
@@ -257,6 +255,7 @@ func load(ctx context.Context, configDetails types.ConfigDetails, opts *Options,
 	loaded = append(loaded, mainFile)
 
 	includeRefs := make(map[string][]types.IncludeConfig)
+	first := true
 	for _, file := range configDetails.ConfigFiles {
 		var postProcessor PostProcessor
 		configDict := file.Config
@@ -286,21 +285,22 @@ func load(ctx context.Context, configDetails types.ConfigDetails, opts *Options,
 				}
 			}
 
-			if model == nil {
+			if first {
+				first = false
 				model = cfg
-			} else {
-				merged, err := merge([]*types.Config{model, cfg})
-				if err != nil {
-					return err
-				}
-				model = merged
+				return nil
+			}
+			merged, err := merge([]*types.Config{model, cfg})
+			if err != nil {
+				return err
 			}
 			if postProcessor != nil {
-				err = postProcessor.Apply(model)
+				err = postProcessor.Apply(merged)
 				if err != nil {
 					return err
 				}
 			}
+			model = merged
 			return nil
 		}
 
@@ -335,10 +335,6 @@ func load(ctx context.Context, configDetails types.ConfigDetails, opts *Options,
 				return nil, err
 			}
 		}
-	}
-
-	if model == nil {
-		return nil, errors.New("empty compose file")
 	}
 
 	project := &types.Project{
@@ -389,14 +385,9 @@ func load(ctx context.Context, configDetails types.ConfigDetails, opts *Options,
 
 	project.ApplyProfiles(opts.Profiles)
 
-	if !opts.SkipResolveEnvironment {
-		err := project.ResolveServicesEnvironment(opts.discardEnvFiles)
-		if err != nil {
-			return nil, err
-		}
-	}
+	err := project.ResolveServicesEnvironment(opts.discardEnvFiles)
 
-	return project, nil
+	return project, err
 }
 
 func InvalidProjectNameErr(v string) error {
