@@ -1,4 +1,4 @@
-// Copyright 2019-2022 The NATS Authors
+// Copyright 2019-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,6 +21,8 @@ import (
 	"io"
 	"strings"
 	"time"
+
+	"github.com/nats-io/nats-server/v2/server/avl"
 )
 
 // StorageType determines how messages are stored for retention.
@@ -61,8 +63,8 @@ var (
 	ErrInvalidSequence = errors.New("invalid sequence")
 	// ErrSequenceMismatch is returned when storing a raw message and the expected sequence is wrong.
 	ErrSequenceMismatch = errors.New("expected sequence does not match store")
-	// ErrPurgeArgMismatch is returned when PurgeEx is called with sequence > 1 and keep > 0.
-	ErrPurgeArgMismatch = errors.New("sequence > 1 && keep > 0 not allowed")
+	// ErrCorruptStreamState
+	ErrCorruptStreamState = errors.New("stream state snapshot is corrupt")
 )
 
 // StoreMsg is the stored message format for messages that are retained by the Store layer.
@@ -95,8 +97,12 @@ type StreamStore interface {
 	GetSeqFromTime(t time.Time) uint64
 	FilteredState(seq uint64, subject string) SimpleState
 	SubjectsState(filterSubject string) map[string]SimpleState
+	SubjectsTotals(filterSubject string) map[string]uint64
+	NumPending(sseq uint64, filter string, lastPerSubject bool) (total, validThrough uint64)
 	State() StreamState
 	FastState(*StreamState)
+	EncodedStreamState(failed uint64) (enc []byte, err error)
+	SyncDeleted(dbs DeleteBlocks)
 	Type() StorageType
 	RegisterStorageUpdates(StorageUpdateHandler)
 	UpdateConfig(cfg *StreamConfig) error
@@ -154,6 +160,9 @@ type SimpleState struct {
 	Msgs  uint64 `json:"messages"`
 	First uint64 `json:"first_seq"`
 	Last  uint64 `json:"last_seq"`
+
+	// Internal usage for when the first needs to be updated before use.
+	firstNeedsUpdate bool
 }
 
 // LostStreamData indicates msgs that have been lost.
@@ -168,6 +177,157 @@ type SnapshotResult struct {
 	State  StreamState
 }
 
+const (
+	// Magic is used to identify stream state encodings.
+	streamStateMagic = uint8(42)
+	// Version
+	streamStateVersion = uint8(1)
+	// Magic / Identifier for run length encodings.
+	runLengthMagic = uint8(33)
+	// Magic / Identifier for AVL seqsets.
+	seqSetMagic = uint8(22)
+)
+
+// Interface for DeleteBlock.
+// These will be of three types:
+// 1. AVL seqsets.
+// 2. Run length encoding of a deleted range.
+// 3. Legacy []uint64
+type DeleteBlock interface {
+	State() (first, last, num uint64)
+	Range(f func(uint64) bool)
+}
+
+type DeleteBlocks []DeleteBlock
+
+// StreamReplicatedState represents what is encoded in a binary stream snapshot used
+// for stream replication in an NRG.
+type StreamReplicatedState struct {
+	Msgs     uint64
+	Bytes    uint64
+	FirstSeq uint64
+	LastSeq  uint64
+	Failed   uint64
+	Deleted  DeleteBlocks
+}
+
+// Determine if this is an encoded stream state.
+func IsEncodedStreamState(buf []byte) bool {
+	return len(buf) >= hdrLen && buf[0] == streamStateMagic && buf[1] == streamStateVersion
+}
+
+var ErrBadStreamStateEncoding = errors.New("bad stream state encoding")
+
+func DecodeStreamState(buf []byte) (*StreamReplicatedState, error) {
+	ss := &StreamReplicatedState{}
+	if len(buf) < hdrLen || buf[0] != streamStateMagic || buf[1] != streamStateVersion {
+		return nil, ErrBadStreamStateEncoding
+	}
+	var bi = hdrLen
+
+	readU64 := func() uint64 {
+		if bi < 0 || bi >= len(buf) {
+			bi = -1
+			return 0
+		}
+		num, n := binary.Uvarint(buf[bi:])
+		if n <= 0 {
+			bi = -1
+			return 0
+		}
+		bi += n
+		return num
+	}
+
+	parserFailed := func() bool {
+		return bi < 0
+	}
+
+	ss.Msgs = readU64()
+	ss.Bytes = readU64()
+	ss.FirstSeq = readU64()
+	ss.LastSeq = readU64()
+	ss.Failed = readU64()
+
+	if parserFailed() {
+		return nil, ErrCorruptStreamState
+	}
+
+	if numDeleted := readU64(); numDeleted > 0 {
+		// If we have some deleted blocks.
+		for l := len(buf); l > bi; {
+			switch buf[bi] {
+			case seqSetMagic:
+				dmap, n, err := avl.Decode(buf[bi:])
+				if err != nil {
+					return nil, ErrCorruptStreamState
+				}
+				bi += n
+				ss.Deleted = append(ss.Deleted, dmap)
+			case runLengthMagic:
+				bi++
+				var rl DeleteRange
+				rl.First = readU64()
+				rl.Num = readU64()
+				if parserFailed() {
+					return nil, ErrCorruptStreamState
+				}
+				ss.Deleted = append(ss.Deleted, &rl)
+			default:
+				return nil, ErrCorruptStreamState
+			}
+		}
+	}
+
+	return ss, nil
+}
+
+// DeleteRange is a run length encoded delete range.
+type DeleteRange struct {
+	First uint64
+	Num   uint64
+}
+
+func (dr *DeleteRange) State() (first, last, num uint64) {
+	return dr.First, dr.First + dr.Num, dr.Num
+}
+
+// Range will range over all the deleted sequences represented by this block.
+func (dr *DeleteRange) Range(f func(uint64) bool) {
+	for seq := dr.First; seq <= dr.First+dr.Num; seq++ {
+		if !f(seq) {
+			return
+		}
+	}
+}
+
+// Legacy []uint64
+type DeleteSlice []uint64
+
+func (ds DeleteSlice) State() (first, last, num uint64) {
+	if len(ds) == 0 {
+		return 0, 0, 0
+	}
+	return ds[0], ds[len(ds)-1], uint64(len(ds))
+}
+
+// Range will range over all the deleted sequences represented by this []uint64.
+func (ds DeleteSlice) Range(f func(uint64) bool) {
+	for _, seq := range ds {
+		if !f(seq) {
+			return
+		}
+	}
+}
+
+func (dbs DeleteBlocks) NumDeleted() (total uint64) {
+	for _, db := range dbs {
+		_, _, num := db.State()
+		total += num
+	}
+	return total
+}
+
 // ConsumerStore stores state on consumers for streams.
 type ConsumerStore interface {
 	SetStarting(sseq uint64) error
@@ -177,6 +337,7 @@ type ConsumerStore interface {
 	UpdateConfig(cfg *ConsumerConfig) error
 	Update(*ConsumerState) error
 	State() (*ConsumerState, error)
+	BorrowState() (*ConsumerState, error)
 	EncodedState() ([]byte, error)
 	Type() StorageType
 	Stop() error
@@ -204,6 +365,7 @@ type ConsumerState struct {
 	Redelivered map[uint64]uint64 `json:"redelivered,omitempty"`
 }
 
+// Encode consumer state.
 func encodeConsumerState(state *ConsumerState) []byte {
 	var hdr [seqsHdrSize]byte
 	var buf []byte
@@ -237,7 +399,7 @@ func encodeConsumerState(state *ConsumerState) []byte {
 
 	// These are optional, but always write len. This is to avoid a truncate inline.
 	if len(state.Pending) > 0 {
-		// To save space we will use now rounded to seconds to be base timestamp.
+		// To save space we will use now rounded to seconds to be our base timestamp.
 		mints := time.Now().Round(time.Second).Unix()
 		// Write minimum timestamp we found from above.
 		n += binary.PutVarint(buf[n:], mints)
@@ -247,7 +409,7 @@ func encodeConsumerState(state *ConsumerState) []byte {
 			n += binary.PutUvarint(buf[n:], v.Sequence-adflr)
 			// Downsample to seconds to save on space.
 			// Subsecond resolution not needed for recovery etc.
-			ts := v.Timestamp / 1_000_000_000
+			ts := v.Timestamp / int64(time.Second)
 			n += binary.PutVarint(buf[n:], mints-ts)
 		}
 	}
@@ -372,11 +534,11 @@ const (
 func (st StorageType) String() string {
 	switch st {
 	case MemoryStorage:
-		return strings.Title(memoryStorageString)
+		return "Memory"
 	case FileStorage:
-		return strings.Title(fileStorageString)
+		return "File"
 	case AnyStorage:
-		return strings.Title(anyStorageString)
+		return "Any"
 	default:
 		return "Unknown Storage Type"
 	}

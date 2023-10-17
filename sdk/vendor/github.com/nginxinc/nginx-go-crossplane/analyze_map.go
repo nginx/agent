@@ -41,6 +41,9 @@ var mapBodies = map[string]mapParameterMasks{
 	"geoip2": {
 		defaultMasks: ngxConf1More,
 	},
+	"otel_exporter": {
+		defaultMasks: ngxConfTake1,
+	},
 }
 
 // analyzeMapBody validates the body of a map-like directive. Map-like directives are block directives

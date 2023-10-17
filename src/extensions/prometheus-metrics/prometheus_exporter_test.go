@@ -90,7 +90,7 @@ func TestExporter_createPrometheusMetric(t *testing.T) {
 		{Name: "dimension.3", Value: "789"},
 	}
 
-	expected := "Desc{fqName: \"metric_name\", help: \"\", constLabels: {dimension1=\"123\",dimension_2=\"456\",dimension_3=\"789\"}, variableLabels: []}"
+	expected := "Desc{fqName: \"metric_name\", help: \"\", constLabels: {dimension1=\"123\",dimension_2=\"456\",dimension_3=\"789\"}, variableLabels: {}}"
 	actual := createPrometheusMetric(metric, dimensions)
 
 	assert.Equal(t, expected, actual.Desc().String())
