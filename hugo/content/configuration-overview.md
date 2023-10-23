@@ -206,6 +206,14 @@ The NGINX Agent follows NGINX configuration directives to file paths outside the
 
 - [`ssl_certificate`](https://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_certificate)
 
+#### NGINX Agent Dynamic Config Path Option
+
+Use the `--dynamic-config-path` command-line option to set the location of the dynamic config file. This setting also requires you to move your dynamic config to the new path, or create a new dynamic config file at the specified location.
+
+Default location in Linux environments: `/var/lib/nginx-agent/agent-dynamic.conf`
+
+Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.conf`
+
 ### NGINX Agent Environment Variables
 
 This section displays the configurable options for the NGINX Agent that can be set with environment variables. A list of the configurable environment variables can be seen below:
