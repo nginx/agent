@@ -265,13 +265,13 @@ var directives = map[string][]uint{
 	"auth_http": {
 		ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
 	},
-	"auth_Httpheader": {
+	"auth_http_header": {
 		ngxMailMainConf | ngxMailSrvConf | ngxConfTake2,
 	},
-	"auth_Httppass_client_cert": {
+	"auth_http_pass_client_cert": {
 		ngxMailMainConf | ngxMailSrvConf | ngxConfFlag,
 	},
-	"auth_Httptimeout": {
+	"auth_http_timeout": {
 		ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
 	},
 	"auth_request": {
@@ -698,6 +698,9 @@ var directives = map[string][]uint{
 	"http": {
 		ngxMainConf | ngxConfBlock | ngxConfNoArgs,
 	},
+	"http2": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfFlag,
+	},
 	"http2_body_preread_size": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
 	},
@@ -732,6 +735,18 @@ var directives = map[string][]uint{
 		ngxHTTPMainConf | ngxConfTake1,
 	},
 	"http2_recv_timeout": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
+	},
+	"http3": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfFlag,
+	},
+	"http3_hq": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfFlag,
+	},
+	"http3_max_concurrent_streams": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
+	},
+	"http3_stream_buffer_size": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
 	},
 	"if": {
@@ -781,6 +796,9 @@ var directives = map[string][]uint{
 	},
 	"internal": {
 		ngxHTTPLocConf | ngxConfNoArgs,
+	},
+	"internal_redirect": {
+		ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
 	},
 	"ip_hash": {
 		ngxHTTPUpsConf | ngxConfNoArgs,
@@ -904,6 +922,9 @@ var directives = map[string][]uint{
 	"master_process": {
 		ngxMainConf | ngxDirectConf | ngxConfFlag,
 	},
+	"max_errors": {
+		ngxMailMainConf | ngxMailSrvConf | ngxConfTake1,
+	},
 	"max_ranges": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
 	},
@@ -991,6 +1012,24 @@ var directives = map[string][]uint{
 	"open_log_file_cache": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1234,
 		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1234,
+	},
+	"otel_exporter": {
+		ngxHTTPMainConf | ngxConfBlock | ngxConfNoArgs,
+	},
+	"otel_service_name": {
+		ngxHTTPMainConf | ngxConfTake1,
+	},
+	"otel_span_attr": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake2,
+	},
+	"otel_span_name": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+	},
+	"otel_trace": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
+	},
+	"otel_trace_context": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
 	},
 	"output_buffers": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake2,
@@ -1187,6 +1226,7 @@ var directives = map[string][]uint{
 	},
 	"proxy_protocol": {
 		ngxStreamMainConf | ngxStreamSrvConf | ngxConfFlag,
+		ngxMailMainConf | ngxMailSrvConf | ngxConfFlag,
 	},
 	"proxy_protocol_timeout": {
 		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
@@ -1217,6 +1257,9 @@ var directives = map[string][]uint{
 	},
 	"proxy_set_header": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake2,
+	},
+	"proxy_smtp_auth": {
+		ngxMailMainConf | ngxMailSrvConf | ngxConfFlag,
 	},
 	"proxy_socket_keepalive": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
@@ -1295,6 +1338,21 @@ var directives = map[string][]uint{
 	},
 	"proxy_upload_rate": {
 		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
+	},
+	"quic_active_connection_id_limit": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
+	},
+	"quic_bpf": {
+		ngxMainConf | ngxDirectConf | ngxConfFlag,
+	},
+	"quic_gso": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfFlag,
+	},
+	"quic_host_key": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
+	},
+	"quic_retry": {
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfFlag,
 	},
 	"random": {
 		ngxHTTPUpsConf | ngxConfNoArgs | ngxConfTake12,
@@ -2179,6 +2237,10 @@ var directives = map[string][]uint{
 	"js_path": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
 		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
+	},
+	"js_periodic": {
+		ngxHTTPLocConf | ngxConfAny,
+		ngxStreamSrvConf | ngxConfAny,
 	},
 	"js_preload_object": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake13,

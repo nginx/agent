@@ -19,10 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -32,8 +30,6 @@ import (
 
 	"github.com/nats-io/nats-server/v2/server"
 )
-
-var tempRoot = filepath.Join(os.TempDir(), "nats-server")
 
 // So we can pass tests and benchmarks..
 type tLogger interface {
@@ -83,6 +79,11 @@ func RunServerCallback(opts *server.Options, callback func(*server.Server)) *ser
 	opts.NoLog = !doLog
 	opts.Trace = doTrace
 	opts.Debug = doDebug
+	// For all tests in the "test" package, we will disable route pooling.
+	opts.Cluster.PoolSize = -1
+	// Also disable compression for "test" package.
+	opts.Cluster.Compression.Mode = server.CompressionOff
+	opts.LeafNode.Compression.Mode = server.CompressionOff
 
 	s, err := server.NewServer(opts)
 	if err != nil || s == nil {
@@ -346,25 +347,26 @@ func sendProto(t tLogger, c net.Conn, op string) {
 }
 
 var (
-	anyRe     = regexp.MustCompile(`.*`)
-	infoRe    = regexp.MustCompile(`INFO\s+([^\r\n]+)\r\n`)
-	pingRe    = regexp.MustCompile(`^PING\r\n`)
-	pongRe    = regexp.MustCompile(`^PONG\r\n`)
-	hmsgRe    = regexp.MustCompile(`(?:(?:HMSG\s+([^\s]+)\s+([^\s]+)\s+(([^\s]+)[^\S\r\n]+)?(\d+)\s+(\d+)\s*\r\n([^\\r\\n]*?)\r\n)+?)`)
-	msgRe     = regexp.MustCompile(`(?:(?:MSG\s+([^\s]+)\s+([^\s]+)\s+(([^\s]+)[^\S\r\n]+)?(\d+)\s*\r\n([^\\r\\n]*?)\r\n)+?)`)
-	rawMsgRe  = regexp.MustCompile(`(?:(?:MSG\s+([^\s]+)\s+([^\s]+)\s+(([^\s]+)[^\S\r\n]+)?(\d+)\s*\r\n(.*?)))`)
-	okRe      = regexp.MustCompile(`\A\+OK\r\n`)
-	errRe     = regexp.MustCompile(`\A\-ERR\s+([^\r\n]+)\r\n`)
-	connectRe = regexp.MustCompile(`CONNECT\s+([^\r\n]+)\r\n`)
-	rsubRe    = regexp.MustCompile(`RS\+\s+([^\s]+)\s+([^\s]+)\s*([^\s]+)?\s*(\d+)?\r\n`)
-	runsubRe  = regexp.MustCompile(`RS\-\s+([^\s]+)\s+([^\s]+)\s*([^\s]+)?\r\n`)
-	rmsgRe    = regexp.MustCompile(`(?:(?:RMSG\s+([^\s]+)\s+([^\s]+)\s+(?:([|+]\s+([\w\s]+)|[^\s]+)[^\S\r\n]+)?(\d+)\s*\r\n([^\\r\\n]*?)\r\n)+?)`)
-	asubRe    = regexp.MustCompile(`A\+\s+([^\r\n]+)\r\n`)
-	aunsubRe  = regexp.MustCompile(`A\-\s+([^\r\n]+)\r\n`)
-	lsubRe    = regexp.MustCompile(`LS\+\s+([^\s]+)\s*([^\s]+)?\s*(\d+)?\r\n`)
-	lunsubRe  = regexp.MustCompile(`LS\-\s+([^\s]+)\s*([^\s]+)?\r\n`)
-	lmsgRe    = regexp.MustCompile(`(?:(?:LMSG\s+([^\s]+)\s+(?:([|+]\s+([\w\s]+)|[^\s]+)[^\S\r\n]+)?(\d+)\s*\r\n([^\\r\\n]*?)\r\n)+?)`)
-	rlsubRe   = regexp.MustCompile(`LS\+\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s*([^\s]+)?\s*(\d+)?\r\n`)
+	anyRe       = regexp.MustCompile(`.*`)
+	infoRe      = regexp.MustCompile(`INFO\s+([^\r\n]+)\r\n`)
+	infoStartRe = regexp.MustCompile(`^INFO\s+([^\r\n]+)\r\n`)
+	pingRe      = regexp.MustCompile(`^PING\r\n`)
+	pongRe      = regexp.MustCompile(`^PONG\r\n`)
+	hmsgRe      = regexp.MustCompile(`(?:(?:HMSG\s+([^\s]+)\s+([^\s]+)\s+(([^\s]+)[^\S\r\n]+)?(\d+)\s+(\d+)\s*\r\n([^\\r\\n]*?)\r\n)+?)`)
+	msgRe       = regexp.MustCompile(`(?:(?:MSG\s+([^\s]+)\s+([^\s]+)\s+(([^\s]+)[^\S\r\n]+)?(\d+)\s*\r\n([^\\r\\n]*?)\r\n)+?)`)
+	rawMsgRe    = regexp.MustCompile(`(?:(?:MSG\s+([^\s]+)\s+([^\s]+)\s+(([^\s]+)[^\S\r\n]+)?(\d+)\s*\r\n(.*?)))`)
+	okRe        = regexp.MustCompile(`\A\+OK\r\n`)
+	errRe       = regexp.MustCompile(`\A\-ERR\s+([^\r\n]+)\r\n`)
+	connectRe   = regexp.MustCompile(`CONNECT\s+([^\r\n]+)\r\n`)
+	rsubRe      = regexp.MustCompile(`RS\+\s+([^\s]+)\s+([^\s]+)\s*([^\s]+)?\s*(\d+)?\r\n`)
+	runsubRe    = regexp.MustCompile(`RS\-\s+([^\s]+)\s+([^\s]+)\s*([^\s]+)?\r\n`)
+	rmsgRe      = regexp.MustCompile(`(?:(?:RMSG\s+([^\s]+)\s+([^\s]+)\s+(?:([|+]\s+([\w\s]+)|[^\s]+)[^\S\r\n]+)?(\d+)\s*\r\n([^\\r\\n]*?)\r\n)+?)`)
+	asubRe      = regexp.MustCompile(`A\+\s+([^\r\n]+)\r\n`)
+	aunsubRe    = regexp.MustCompile(`A\-\s+([^\r\n]+)\r\n`)
+	lsubRe      = regexp.MustCompile(`LS\+\s+([^\s]+)\s*([^\s]+)?\s*(\d+)?\r\n`)
+	lunsubRe    = regexp.MustCompile(`LS\-\s+([^\s]+)\s*([^\s]+)?\r\n`)
+	lmsgRe      = regexp.MustCompile(`(?:(?:LMSG\s+([^\s]+)\s+(?:([|+]\s+([\w\s]+)|[^\s]+)[^\S\r\n]+)?(\d+)\s*\r\n([^\\r\\n]*?)\r\n)+?)`)
+	rlsubRe     = regexp.MustCompile(`LS\+\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s*([^\s]+)?\s*(\d+)?\r\n`)
 )
 
 const (
@@ -412,7 +414,6 @@ func expectLeftMostResult(t tLogger, c net.Conn, re *regexp.Regexp, buf *[]byte)
 			}
 			*buf = append(*buf, recv()...)
 		} else {
-			emptyCnt = 0
 			cutIdx := strings.Index(string(*buf), string(result)) + len(result)
 			*buf = (*buf)[cutIdx:]
 			return result
@@ -639,45 +640,11 @@ func nextServerOpts(opts *server.Options) *server.Options {
 	return nopts
 }
 
-func createDir(t *testing.T, prefix string) string {
+func createTempFile(t testing.TB, prefix string) *os.File {
 	t.Helper()
-	if err := os.MkdirAll(tempRoot, 0700); err != nil {
-		t.Fatal(err)
-	}
-	dir, err := ioutil.TempDir(tempRoot, prefix)
+	file, err := os.CreateTemp(t.TempDir(), prefix)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return dir
-}
-
-func createFile(t *testing.T, prefix string) *os.File {
-	t.Helper()
-	if err := os.MkdirAll(tempRoot, 0700); err != nil {
-		t.Fatal(err)
-	}
-	return createFileAtDir(t, tempRoot, prefix)
-}
-
-func createFileAtDir(t *testing.T, dir, prefix string) *os.File {
-	t.Helper()
-	f, err := ioutil.TempFile(dir, prefix)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return f
-}
-
-func removeDir(t *testing.T, dir string) {
-	t.Helper()
-	if err := os.RemoveAll(dir); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func removeFile(t *testing.T, p string) {
-	t.Helper()
-	if err := os.Remove(p); err != nil {
-		t.Fatal(err)
-	}
+	return file
 }
