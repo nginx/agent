@@ -73,7 +73,7 @@ func (a *Events) Process(msg *core.Message) {
 	case msg.Exact(core.AgentStarted):
 		a.sendAgentStartedEvent(msg)
 	case msg.Exact(core.NginxInstancesFound):
-		a.sendNingxFoundEvent(msg)
+		a.sendNginxFoundEvent(msg)
 	case msg.Exact(core.NginxReloadComplete):
 		a.sendNginxReloadEvent(msg)
 	case msg.Exact(core.CommResponse):
@@ -122,7 +122,7 @@ func (a *Events) sendAgentStartedEvent(msg *core.Message) {
 	a.pipeline.Process(core.NewMessage(core.Events, event))
 }
 
-func (a *Events) sendNingxFoundEvent(msg *core.Message) {
+func (a *Events) sendNginxFoundEvent(msg *core.Message) {
 	nginxDetailsMap, ok := msg.Data().(map[string]*proto.NginxDetails)
 	if !ok {
 		log.Warnf("Invalid message received, %T, for topic, %s", msg.Data(), msg.Topic())

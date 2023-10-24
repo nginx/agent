@@ -9,6 +9,7 @@ package config
 
 import (
 	"os"
+	"runtime"
 	"time"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
@@ -39,7 +40,8 @@ func ConfigFilePaths() []string {
 
 var (
 	Defaults = &Config{
-		CloudAccountID: uuid.New().String(),
+		DynamicConfigPath: getDefaultDynamicConfPath(),
+		CloudAccountID:    uuid.New().String(),
 		Log: LogConfig{
 			Level: "info",
 			Path:  "/var/log/nginx-agent",
@@ -103,7 +105,7 @@ const (
 	ConfigFileType                  = "yaml"
 	EnvPrefix                       = "nms"
 	ConfigPathKey                   = "path"
-	DynamicConfigPathKey            = "dynamic-config-path"
+	DynamicConfigPathKey            = "dynamic_config_path"
 
 	VersionKey          = "version"
 	CloudAccountIdKey   = "cloudaccountid"
@@ -259,6 +261,11 @@ var (
 			Name:         AgentAPIKey,
 			Usage:        "The key used by the Agent API.",
 			DefaultValue: "",
+		},
+		&StringFlag{
+			Name:         DynamicConfigPathKey,
+			Usage:        "Defines the path of the Agent dynamic config file.",
+			DefaultValue: getDefaultDynamicConfPath(),
 		},
 		&StringFlag{
 			Name:         ConfigDirsKey,
@@ -426,3 +433,11 @@ var (
 		},
 	}
 )
+
+func getDefaultDynamicConfPath() string {
+	if runtime.GOOS == "freebsd" {
+		return DynamicConfigFileAbsFreeBsdPath
+	} else {
+		return DynamicConfigFileAbsPath
+	}
+}

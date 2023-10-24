@@ -13,7 +13,6 @@ import (
 	"strconv"
 
 	"github.com/nginx/agent/sdk/v2/agent/events"
-
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -31,12 +30,12 @@ var (
 	env     = &core.EnvironmentType{}
 )
 
-func init() {
-	config.InitConfiguration(version, commit)
-}
-
 func main() {
+	config.InitFlags(version, commit)
+
 	config.RegisterRunner(func(cmd *cobra.Command, _ []string) {
+		config.InitConfigurationFiles()
+
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

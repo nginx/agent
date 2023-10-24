@@ -17,7 +17,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -32,10 +31,7 @@ import (
 )
 
 const (
-	dynamicConfigUsageComment = `#
-# /etc/nginx-agent/dynamic-agent.conf
-#
-# Dynamic configuration file for NGINX Agent.
+	dynamicConfigUsageComment = `# Dynamic configuration file for NGINX Agent.
 #
 # The purpose of this file is to track agent configuration
 # values that can be dynamically changed via the API and the agent install script.
@@ -63,15 +59,19 @@ func Execute() error {
 	return ROOT_COMMAND.Execute()
 }
 
-func InitConfiguration(version, commit string) {
+func InitFlags(version, commit string) {
 	SetVersion(version, commit)
 	SetDefaults()
 	RegisterFlags()
-	dynamicConfigPath := DynamicConfigFileAbsPath
-	if runtime.GOOS == "freebsd" {
-		dynamicConfigPath = DynamicConfigFileAbsFreeBsdPath
+}
+
+func InitConfigurationFiles() {
+	dynamicConfFilePath := Viper.GetString(DynamicConfigPathKey)
+	if dynamicConfFilePath == "" {
+		dynamicConfFilePath = getDefaultDynamicConfPath()
 	}
-	configPath, err := RegisterConfigFile(dynamicConfigPath, ConfigFileName, ConfigFilePaths()...)
+
+	configPath, err := RegisterConfigFile(dynamicConfFilePath, ConfigFileName, ConfigFilePaths()...)
 	if err != nil {
 		log.Fatalf("Failed to load configuration file: %v", err)
 	}
@@ -104,13 +104,15 @@ func SetDefaults() {
 	Viper.SetDefault(NginxClientVersion, Defaults.Nginx.NginxClientVersion)
 	Viper.SetDefault(NginxConfigReloadMonitoringPeriod, Defaults.Nginx.ConfigReloadMonitoringPeriod)
 
+	// NGINX AGENT DEFAULTS
+	Viper.SetDefault(DynamicConfigPathKey, Defaults.DynamicConfigPath)
 	Viper.SetDefault(QueueSizeKey, Defaults.QueueSize)
 }
 
 func setFlagDeprecated(name string, usageMessage string) {
 	err := ROOT_COMMAND.Flags().MarkDeprecated(name, usageMessage)
 	if err != nil {
-		log.Warnf("error occurred deprecating flag %s: %v", name, err)
+		log.Warnf("Error occurred deprecating flag %s: %v", name, err)
 	}
 }
 
@@ -149,7 +151,7 @@ func RegisterFlags() {
 		}
 		err := Viper.BindEnv(flag.Name)
 		if err != nil {
-			log.Warnf("error occurred binding env %s: %v", flag.Name, err)
+			log.Warnf("Error occurred binding env %s: %v", flag.Name, err)
 		}
 	})
 }
@@ -160,7 +162,7 @@ func RegisterConfigFile(dynamicConfFilePath string, confFileName string, confPat
 		return cfg, err
 	}
 
-	SetDynamicConfigFileAbsPath(dynamicConfFilePath)
+	setDynamicConfigFileAbsPath(dynamicConfFilePath)
 	if err := LoadPropertiesFromFile(cfg); err != nil {
 		log.Fatalf("Unable to load properties from config files (%s, %s) - %v", cfg, dynamicConfFilePath, err)
 	}
@@ -270,11 +272,7 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 	// already set.
 	dynamicCfgPath := Viper.GetString(DynamicConfigPathKey)
 	if dynamicCfgPath == "" {
-		if runtime.GOOS == "freebsd" {
-			dynamicCfgPath = DynamicConfigFileAbsFreeBsdPath
-		} else {
-			dynamicCfgPath = DynamicConfigFileAbsPath
-		}
+		dynamicCfgPath = getDefaultDynamicConfPath()
 	}
 
 	// Overwrite existing nginx-agent.conf with updated config
@@ -385,11 +383,7 @@ func LoadPropertiesFromFile(cfg string) error {
 	// already set.
 	dynamicCfgPath := Viper.GetString(DynamicConfigPathKey)
 	if dynamicCfgPath == "" {
-		if runtime.GOOS == "freebsd" {
-			dynamicCfgPath = DynamicConfigFileAbsFreeBsdPath
-		} else {
-			dynamicCfgPath = DynamicConfigFileAbsPath
-		}
+		dynamicCfgPath = getDefaultDynamicConfPath()
 	}
 
 	dynamicCfgDir, dynamicCfgFile := filepath.Split(dynamicCfgPath)
@@ -484,7 +478,7 @@ func removeFeatures(readFile io.Reader) (bool, []byte, error) {
 	return featuresSet, buf.Bytes(), nil
 }
 
-func SetDynamicConfigFileAbsPath(dynamicCfgPath string) {
+func setDynamicConfigFileAbsPath(dynamicCfgPath string) {
 	Viper.Set(DynamicConfigPathKey, dynamicCfgPath)
 	log.Debugf("Set dynamic agent config file: %s", dynamicCfgPath)
 }
@@ -493,7 +487,7 @@ func wordSepNormalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 	from := []string{"_", "."}
 	to := "-"
 	for _, sep := range from {
-		name = strings.Replace(name, sep, to, -1)
+		name = strings.ReplaceAll(name, sep, to)
 	}
 	return flag.NormalizedName(name)
 }
