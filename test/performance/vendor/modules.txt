@@ -74,7 +74,7 @@ github.com/jstemmer/go-junit-report/parser
 # github.com/kelseyhightower/envconfig v1.4.0
 ## explicit
 github.com/kelseyhightower/envconfig
-# github.com/klauspost/compress v1.17.1
+# github.com/klauspost/compress v1.17.2
 ## explicit; go 1.18
 github.com/klauspost/compress/flate
 github.com/klauspost/compress/s2
@@ -105,7 +105,7 @@ github.com/mitchellh/mapstructure
 # github.com/nats-io/jwt/v2 v2.5.2
 ## explicit; go 1.18
 github.com/nats-io/jwt/v2
-# github.com/nats-io/nats-server/v2 v2.10.3
+# github.com/nats-io/nats-server/v2 v2.10.4
 ## explicit; go 1.20
 github.com/nats-io/nats-server/v2/conf
 github.com/nats-io/nats-server/v2/internal/ldap
@@ -123,7 +123,7 @@ github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin
 github.com/nats-io/nats.go/internal/parser
 github.com/nats-io/nats.go/util
-# github.com/nats-io/nkeys v0.4.5
+# github.com/nats-io/nkeys v0.4.6
 ## explicit; go 1.19
 github.com/nats-io/nkeys
 # github.com/nats-io/nuid v1.0.1
