@@ -20,6 +20,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=/etc/apk/cert.pem \
     && apk add --no-cache --virtual .cert-deps \
         openssl \
     && wget -O /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub \
+    # sed replace is required for openssl=v1.x which is used in alpine<=3.16
     && if [ "$(openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout | sed -e 's/RSA Public-Key/Public-Key/' | openssl sha512 -r)" = "$KEY_SHA512" ]; then \
         echo "key verification succeeded!"; \
         mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/; \
