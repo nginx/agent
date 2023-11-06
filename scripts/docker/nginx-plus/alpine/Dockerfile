@@ -20,7 +20,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=/etc/apk/cert.pem \
     && apk add --no-cache --virtual .cert-deps \
         openssl \
     && wget -O /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub \
-    && if [ "$(openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout | openssl sha512 -r)" = "$KEY_SHA512" ]; then \
+    && if [ "$(openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout | sed -e 's/Public-Key/RSA Public-Key/' | openssl sha512 -r)" = "$KEY_SHA512" ]; then \
         echo "key verification succeeded!"; \
         mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/; \
     else \
