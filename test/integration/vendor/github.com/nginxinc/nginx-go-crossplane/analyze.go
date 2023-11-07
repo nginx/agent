@@ -55,10 +55,10 @@ const (
 )
 
 // helpful directive location alias describing "any" context
-// doesn't include ngxHTTPSifConf, ngxHTTPLifConf, or ngxHTTPLmtConf.
 const ngxAnyConf = ngxMainConf | ngxEventConf | ngxMailMainConf | ngxMailSrvConf |
 	ngxStreamMainConf | ngxStreamSrvConf | ngxStreamUpsConf |
-	ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPUpsConf
+	ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxHTTPUpsConf |
+	ngxHTTPSifConf | ngxHTTPLifConf | ngxHTTPLmtConf
 
 // map for getting bitmasks from certain context tuples
 //
