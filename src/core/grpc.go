@@ -68,7 +68,7 @@ func CreateGrpcClients(ctx context.Context, loadedConfig *config.Config) (client
 }
 
 func setDialOptions(loadedConfig *config.Config) []grpc.DialOption {
-	grpcDialOptions := []grpc.DialOption{grpc.WithUserAgent("nginx-agent/" + strings.TrimPrefix(version, "v"))}
+	grpcDialOptions := []grpc.DialOption{grpc.WithUserAgent("nginx-agent/" + strings.TrimPrefix(loadedConfig.Version, "v"))}
 	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DefaultClientDialOptions...)
 	grpcDialOptions = append(grpcDialOptions, sdkGRPC.DataplaneConnectionDialOptions(loadedConfig.Server.Token, sdkGRPC.NewMessageMeta(uuid.NewString()))...)
 	return grpcDialOptions
