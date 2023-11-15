@@ -16,11 +16,12 @@ RUN --mount=type=secret,id=nginx-crt,dst=/etc/apk/cert.pem \
     && addgroup -g 101 -S nginx \
     && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx \
     # Check signing key
-    && KEY_SHA512="e7fa8303923d9b95db37a77ad46c68fd4755ff935d0a534d26eba83de193c76166c68bfe7f65471bf8881004ef4aa6df3e34689c305662750c0172fca5d8552a *stdin" \
+    && KEY_SHA512="de7031fdac1354096d3388d6f711a508328ce66c168967ee0658c294226d6e7a161ce7f2628d577d56f8b63ff6892cc576af6f7ef2a6aa2e17c62ff7b6bf0d98 *stdin" \
     && apk add --no-cache --virtual .cert-deps \
         openssl \
     && wget -O /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub \
-    && if [ "$(openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout | openssl sha512 -r)" = "$KEY_SHA512" ]; then \
+    # sed replace is required for openssl=v1.x which is used in alpine<=3.16
+    && if [ "$(openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout | sed -e 's/RSA Public-Key/Public-Key/' | openssl sha512 -r)" = "$KEY_SHA512" ]; then \
         echo "key verification succeeded!"; \
         mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/; \
     else \
