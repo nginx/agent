@@ -10,8 +10,8 @@ package nap
 import (
 	"encoding/json"
 	"errors"
-	"os"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/nginx/agent/sdk/v2"
@@ -101,10 +101,10 @@ func UpdateMetadata(
 	}
 
 	log.Debugf("Writing NAP Metadata %s", m)
-	
+
 	err = os.WriteFile(appProtectWAFDetails.GetWafLocation(), m, 0o664)
 	if err != nil {
-		return fmt.Errorf("failed to write NAP Metadata update: %v", err )
+		return fmt.Errorf("failed to write NAP Metadata update: %v", err)
 	}
 
 	return nil
