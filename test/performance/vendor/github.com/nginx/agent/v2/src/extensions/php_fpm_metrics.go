@@ -13,11 +13,11 @@ import (
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	// Version
 	phpFpmMetricsExtensionPluginVersion = "v0.1.0"
 )
 

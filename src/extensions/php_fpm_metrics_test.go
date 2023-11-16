@@ -13,6 +13,7 @@ import (
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/extensions"
 	tutils "github.com/nginx/agent/v2/test/utils"
+
 	"github.com/stretchr/testify/assert"
 )
 
