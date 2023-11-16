@@ -14,6 +14,7 @@ import (
 
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
+
 	"github.com/stretchr/testify/assert"
 )
 

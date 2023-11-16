@@ -15,17 +15,16 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/nginx/agent/v2/src/core"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	DefaultOptNAPDir      = "/opt/app_protect"
 	DefaultNMSCompilerDir = "/opt/nms-nap-compiler"
 	compilerDirPrefix     = "app_protect-"
-
-	dirPerm = 0o755
+	dirPerm               = 0o644
 )
 
 var (

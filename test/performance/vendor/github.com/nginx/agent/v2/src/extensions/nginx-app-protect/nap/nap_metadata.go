@@ -91,7 +91,7 @@ func UpdateMetadata(
 	directory := filepath.Dir(appProtectWAFDetails.GetWafLocation())
 	_, err = os.Stat(directory)
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(directory, 0o755)
+		err = os.MkdirAll(directory, 0o644)
 		if err != nil {
 			return err
 		}
