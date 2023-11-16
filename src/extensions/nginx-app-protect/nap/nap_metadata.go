@@ -94,7 +94,7 @@ func UpdateMetadata(
 	directory := filepath.Dir(appProtectWAFDetails.GetWafLocation())
 	_, err = os.Stat(directory)
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(directory, 0o755)
+		err = os.MkdirAll(directory, 0o750)
 		if err != nil {
 			return fmt.Errorf("failed to create directory for metadata update: %v", err)
 		}
@@ -102,7 +102,7 @@ func UpdateMetadata(
 
 	log.Debugf("Writing NAP Metadata %s", m)
 
-	err = os.WriteFile(appProtectWAFDetails.GetWafLocation(), m, 0o664)
+	err = os.WriteFile(appProtectWAFDetails.GetWafLocation(), m, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to write NAP Metadata update: %v", err)
 	}

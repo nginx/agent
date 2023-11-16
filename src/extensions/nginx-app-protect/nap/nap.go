@@ -24,7 +24,7 @@ const (
 	DefaultOptNAPDir      = "/opt/app_protect"
 	DefaultNMSCompilerDir = "/opt/nms-nap-compiler"
 	compilerDirPrefix     = "app_protect-"
-	dirPerm               = 0o644
+	dirPerm               = 0o750
 )
 
 var (
