@@ -1,4 +1,5 @@
 #!/bin/sh
+
 # Determine OS platform
 # shellcheck source=/dev/null
 . /etc/os-release
@@ -271,6 +272,17 @@ upgrade_config_file() {
     fi
 }
 
+restart_agent_if_required() {
+    if [ "${ID}" = "freebsd" ]; then
+        # https://github.com/freebsd/pkg/pull/2128
+        return
+    fi
+    if service nginx-agent status >/dev/null 2>&1; then
+        printf "PostInstall: Restarting nginx agent\n"
+        service nginx-agent restart || true
+    fi
+}
+
 summary() {
     echo "----------------------------------------------------------------------"
     echo " NGINX Agent package has been successfully installed."
@@ -301,5 +313,6 @@ summary() {
     update_unit_file
     add_default_config_file
     upgrade_config_file
+    restart_agent_if_required
     summary
 }
