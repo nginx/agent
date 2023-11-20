@@ -126,7 +126,7 @@ func main() {
 	}))
 
 	httpHandler.Handle("/metrics/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
-		payload, err := json.Marshal("Hello")
+		payload, err := json.Marshal(metricsService.GetMetrics())
 		if err != nil {
 			log.Warnf("%v", err)
 			return
