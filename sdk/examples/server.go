@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -43,6 +44,8 @@ func main() {
 	httpListener, httpClose := createListener(HTTP_ADDR)
 	defer httpClose()
 
+	httpHandler := http.NewServeMux()
+
 	grpcListener, grpcClose := createListener(GRPC_ADDR)
 	defer grpcClose()
 
@@ -65,9 +68,9 @@ func main() {
 		}
 	}()
 
-	http.Handle("/", http.FileServer(http.FS(content)))
+	httpHandler.Handle("/", http.FileServer(http.FS(content)))
 
-	http.Handle("/registered/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	httpHandler.Handle("/registered/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		payload, err := json.Marshal(commandService.GetRegistration())
 		if err != nil {
 			log.Warnf("%v", err)
@@ -76,7 +79,7 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Handle("/nginxes/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	httpHandler.Handle("/nginxes/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		payload, err := json.Marshal(commandService.GetNginxes())
 		if err != nil {
 			log.Warnf("%v", err)
@@ -85,7 +88,7 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Handle("/configs/chunked/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	httpHandler.Handle("/configs/chunked/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		payload, err := json.Marshal(commandService.GetChunks())
 		if err != nil {
 			log.Warnf("%v", err)
@@ -94,7 +97,7 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Handle("/configs/raw/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	httpHandler.Handle("/configs/raw/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		confFiles, auxFiles := commandService.GetContents()
 		response := map[string]interface{}{}
 		for _, confFile := range confFiles {
@@ -113,7 +116,7 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Handle("/configs/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	httpHandler.Handle("/configs/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		payload, err := json.Marshal(commandService.GetConfigs())
 		if err != nil {
 			log.Warnf("%v", err)
@@ -122,8 +125,8 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Handle("/metrics/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
-		payload, err := json.Marshal(metricsService.GetMetrics())
+	httpHandler.Handle("/metrics/", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		payload, err := json.Marshal("Hello")
 		if err != nil {
 			log.Warnf("%v", err)
 			return
@@ -131,5 +134,11 @@ func main() {
 		rw.Write(payload)
 	}))
 
-	http.Serve(httpListener, nil)
+	server := http.Server{
+		Handler:      httpHandler,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	server.Serve(httpListener)
 }
