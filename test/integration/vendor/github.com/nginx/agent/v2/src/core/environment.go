@@ -286,8 +286,8 @@ func (env *EnvironmentType) WriteFile(backup ConfigApplyMarker, file *proto.File
 	directory := filepath.Dir(fileFullPath)
 	_, err := os.Stat(directory)
 	if os.IsNotExist(err) {
-		log.Debugf("Creating directory %s with permissions 755", directory)
-		err = os.MkdirAll(directory, 0o755)
+		log.Debugf("Creating directory %s with permissions 750", directory)
+		err = os.MkdirAll(directory, 0o750)
 		if err != nil {
 			return err
 		}
