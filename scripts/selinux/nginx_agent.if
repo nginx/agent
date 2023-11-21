@@ -97,6 +97,30 @@ interface(`nginx_agent_manage_log',`
 	manage_files_pattern($1, nginx_agent_log_t, nginx_agent_log_t)
 	manage_lnk_files_pattern($1, nginx_agent_log_t, nginx_agent_log_t)
 ')
+########################################
+## <summary>
+##	Execute nginx_agent server in the nginx_agent domain.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed to transition.
+##	</summary>
+## </param>
+#
+interface(`nginx_agent_systemctl',`
+	gen_require(`
+		type nginx_agent_t;
+		type nginx_agent_unit_file_t;
+	')
+
+	systemd_exec_systemctl($1)
+        systemd_read_fifo_file_passwd_run($1)
+	allow $1 nginx_agent_unit_file_t:file read_file_perms;
+	allow $1 nginx_agent_unit_file_t:service manage_service_perms;
+
+	ps_process_pattern($1, nginx_agent_t)
+')
+
 
 ########################################
 ## <summary>
@@ -119,6 +143,7 @@ interface(`nginx_agent_admin',`
 	gen_require(`
 		type nginx_agent_t;
 		type nginx_agent_log_t;
+	type nginx_agent_unit_file_t;
 	')
 
 	allow $1 nginx_agent_t:process { signal_perms };
@@ -130,6 +155,10 @@ interface(`nginx_agent_admin',`
 
 	logging_search_logs($1)
 	admin_pattern($1, nginx_agent_log_t)
+
+	nginx_agent_systemctl($1)
+	admin_pattern($1, nginx_agent_unit_file_t)
+	allow $1 nginx_agent_unit_file_t:service all_service_perms;
 	optional_policy(`
 		systemd_passwd_agent_exec($1)
 		systemd_read_fifo_file_passwd_run($1)
