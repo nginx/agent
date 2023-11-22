@@ -104,7 +104,7 @@ func run(program string) (*model.Package, error) {
 	}
 
 	// Run the program.
-	cmd := exec.Command(program, "-output", filename)
+	cmd := exec.Command(program, "-output", filename, *execOnly)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
