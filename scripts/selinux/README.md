@@ -72,6 +72,30 @@ Install the policy by following the steps here [Install NGINX Agent Policy](#ins
 Then create a PR with the changes made to the `nginx_agent.te` and `nginx_agent.pp` files.
 
 ## Troubleshooting
+### Updated Policy Not Working
+
+If after installing an updated policy the following command 
+```
+ps -efZ | grep nginx-agent
+```
+shows nginx-agent is unconfined `system_u:system_r:unconfined_service_t`
+
+On a Centos 7 machine run the following command to generate a new policy
+```
+sepolicy generate --init /usr/bin/nginx-agent
+``` 
+
+Replace the `nginx_agent.te` file on the Centos 7 machine with  the `scripts/selinux/nginx_agent.te` file 
+
+Run the following command on the Centos 7 machine to build the new policy 
+```
+sudo ./nginx_agent.sh
+```
+
+Make a PR with the changes to `nginx_agent.fc` `nginx_agent.if` `nginx_agent.pp` and `nginx_agent.te`
+
+**[NOTE: If you need to make additional changes to the policy, you will need to delete the generated files on the Centos 7 machine and repeat all the steps above again]**
+
 ### Policy version does not match
 If running the command
 ```
