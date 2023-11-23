@@ -19,9 +19,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-//go:generate mockgen -source reader.go -destination mocks/reader_mock.go -package mocks
-//go:generate mockgen -destination mocks/net_mocks.go -build_flags=--mod=mod -package mocks net Listener,Conn
-
+//go:generate go run go.uber.org/mock/mockgen -source reader.go -destination mocks/reader_mock.go -package mocks -copyright_file=../../../../COPYRIGHT
+//go:generate go run go.uber.org/mock/mockgen -destination mocks/net_mocks.go -build_flags=--mod=mod -package mocks net Listener,Conn
 const (
 	networkType = "unix"
 )

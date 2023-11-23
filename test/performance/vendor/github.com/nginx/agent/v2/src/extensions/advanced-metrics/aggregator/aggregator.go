@@ -19,7 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//go:generate mockgen -source aggregator.go -destination mocks/aggregator_mock.go -package mocks
+//go:generate go run go.uber.org/mock/mockgen -source aggregator.go -destination mocks/aggregator_mock.go -package mocks -copyright_file=../../../../COPYRIGHT
 
 type ReadTable interface {
 	ReadSnapshot(resetLookups bool) (tables.SamplesView, tables.LookupSet)

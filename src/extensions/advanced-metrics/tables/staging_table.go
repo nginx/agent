@@ -20,7 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//go:generate mockgen -source staging_table.go -destination mocks/staging_table_mocks.go -package mocks
+//go:generate go run go.uber.org/mock/mockgen -source staging_table.go -destination mocks/staging_table_mocks.go -package mocks -copyright_file=../../../../COPYRIGHT
 const (
 	hexBase = 16
 )
