@@ -16,8 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//go:generate mockgen -source ingester.go -destination mocks/ingester_mock.go -package mocks
-
+//go:generate go run go.uber.org/mock/mockgen -source ingester.go -destination mocks/ingester_mock.go -package mocks -copyright_file=../../../../COPYRIGHT
 const workers = 3
 
 type StagingTable interface {
