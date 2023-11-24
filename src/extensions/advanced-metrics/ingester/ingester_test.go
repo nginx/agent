@@ -13,10 +13,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/ingester/mocks"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/reader"
 	readerMock "github.com/nginx/agent/v2/src/extensions/advanced-metrics/reader/mocks"
+	"go.uber.org/mock/gomock"
 )
 
 func TestIngesterRunCanProcessIncomingData(t *testing.T) {
