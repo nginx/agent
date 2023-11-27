@@ -15,10 +15,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/reader/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestWorkerStopAndCloseConnectionOnContexCancelation(t *testing.T) {

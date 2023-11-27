@@ -14,13 +14,13 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/limits"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/lookup"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/mocks"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/sample"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/schema"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 const (
