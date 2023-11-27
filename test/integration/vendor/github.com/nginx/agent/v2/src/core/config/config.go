@@ -414,7 +414,7 @@ func LoadPropertiesFromFile(cfg string) error {
 		}
 	} else if errors.Is(err, fs.ErrNotExist) {
 		log.Infof("Writing the following file to disk: %s", dynamicCfgPath)
-		err = os.MkdirAll(dynamicCfgDir, 0o755)
+		err = os.MkdirAll(dynamicCfgDir, 0o750)
 		if err != nil {
 			return fmt.Errorf("error attempting to create directory for dynamic config (%s): %v", dynamicCfgDir, err)
 		}

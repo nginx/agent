@@ -49,7 +49,7 @@ func SetLogFile(logFile string) *os.File {
 			logPath = path.Join(logPath, defaultLogFile)
 		}
 
-		logFileHandle, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o640)
+		logFileHandle, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o600)
 		if err != nil {
 			log.Errorf("Failed to set log file, proceeding to log only to stdout/stderr: %v", err)
 			return nil
