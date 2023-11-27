@@ -14,9 +14,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/reader/mocks"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 const address = "/tmp/advanced-metrics.sr"
