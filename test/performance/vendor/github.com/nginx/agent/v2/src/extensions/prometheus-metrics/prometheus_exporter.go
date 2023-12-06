@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/nginx/agent/sdk/v2/proto"
-
 	"github.com/nginx/agent/v2/src/core/metrics"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 

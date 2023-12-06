@@ -12,10 +12,10 @@ import (
 	"os"
 	"testing"
 
+	testutils "github.com/nginx/agent/v2/test/utils"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-
-	testutils "github.com/nginx/agent/v2/test/utils"
 )
 
 const (

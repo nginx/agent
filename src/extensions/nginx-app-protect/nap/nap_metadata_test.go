@@ -14,6 +14,7 @@ import (
 
 	"github.com/nginx/agent/sdk/v2"
 	"github.com/nginx/agent/sdk/v2/proto"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -170,9 +171,10 @@ func TestUpdateNapMetadata(t *testing.T) {
 				WafLocation:             metadataFile,
 				PrecompiledPublication:  tc.precompPub,
 			}
-			ignoreDirecitves := []string{}
 
-			err = UpdateMetadata(cfg, appProtectWAFDetails, ignoreDirecitves)
+			ignoreDirectives = []string{}
+
+			err = UpdateMetadata(cfg, appProtectWAFDetails, ignoreDirectives)
 			assert.NoError(t, err)
 
 			data, err := os.ReadFile(metadataFile)

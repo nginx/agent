@@ -10,6 +10,7 @@ package nap
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -33,11 +34,11 @@ func UpdateMetadata(
 	data, err := os.ReadFile(appProtectWAFDetails.GetWafLocation())
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			return err
+			return fmt.Errorf("failed to update metadata: %v", err)
 		}
 	} else {
 		if err := json.Unmarshal(data, &previousMeta); err != nil {
-			return err
+			return fmt.Errorf("failed to unmarshal current metadata: %v", err)
 		}
 		previousPrecompiledPublication = previousMeta.PrecompiledPublication
 	}
@@ -53,7 +54,6 @@ func UpdateMetadata(
 	policies, profiles := sdk.GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg, ignoreDirectives)
 
 	policyBundles := []*BundleMetadata{}
-	profileBundles := []*BundleMetadata{}
 
 	for _, policy := range policies {
 		bundle := &BundleMetadata{
@@ -61,6 +61,9 @@ func UpdateMetadata(
 		}
 		policyBundles = append(policyBundles, bundle)
 	}
+
+	profileBundles := []*BundleMetadata{}
+
 	for _, profile := range profiles {
 		bundle := &BundleMetadata{
 			Name: profile,
@@ -84,21 +87,27 @@ func UpdateMetadata(
 
 	m, err := json.Marshal(metadata)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal metadata update: %v", err)
 	}
 
 	// Make dir if not exists
 	directory := filepath.Dir(appProtectWAFDetails.GetWafLocation())
 	_, err = os.Stat(directory)
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(directory, 0o755)
+		err = os.MkdirAll(directory, 0o750)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create directory for metadata update: %v", err)
 		}
 	}
 
 	log.Debugf("Writing NAP Metadata %s", m)
-	return os.WriteFile(appProtectWAFDetails.GetWafLocation(), m, 0o644)
+
+	err = os.WriteFile(appProtectWAFDetails.GetWafLocation(), m, 0o644)
+	if err != nil {
+		return fmt.Errorf("failed to write NAP Metadata update: %v", err)
+	}
+
+	return nil
 }
 
 // metadataAreEqual compares the metadata for equality
