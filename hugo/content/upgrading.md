@@ -12,7 +12,7 @@ doctypes: ["task"]
 
 ## Upgrade NGINX Agent from version v2.31.0 or greater
 
-{{< important >}} Starting from version v2.31.0, NGINX Agent will automatically restart itself during an upgrade. {{< /important >}}
+{{< note >}} Starting from version v2.31.0, NGINX Agent will automatically restart itself during an upgrade. {{< /note >}}
 
 To upgrade NGINX Agent, follow these steps:
 
