@@ -47,7 +47,7 @@ sudo apt install -y protobuf-compiler
 
 Install NGINX Agent tools and dependencies:
 
-Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. You can do this by running the following `make` command:
+Before starting development on NGINX Agent, it is important to download and install the necessary tool and dependencies required by NGINX Agent. You can do this by running the following `make` command:
 ```bash
 make install-tools deps
 ```

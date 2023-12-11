@@ -10,7 +10,7 @@ categories: ["configuration"]
 doctypes: ["task"]
 ---
 
-Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which the NGINX Agent will report.
+Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which NGINX Agent will report.
 
 ## Install NGINX
 
@@ -103,7 +103,7 @@ make launch-swagger-ui
 
 ## Extensions
 
-An extension is a piece of code, not critical to the main functionality that the NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
+An extension is a piece of code, not critical to the main functionality that NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
 
 To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`. 
 Here is an example of enabling the advanced metrics extension:
@@ -117,7 +117,7 @@ extensions:
 
 If already running, restart NGINX Agent to apply the new configuration. Alternatively, if NGINX Agent is not running, you may run it from the source code root directory.
 
-Open another terminal window and start the NGINX Agent. Issue the following command from the `agent` source code root directory.
+Open another terminal window and start NGINX Agent. Issue the following command from the `agent` source code root directory.
 
 ```shell
 sudo make run
@@ -157,13 +157,13 @@ For more NGINX Agent use cases, refer to the [NGINX Agent SDK examples](https://
 
 ## Start and Enable Start on Boot
 
-To start the NGINX Agent on `systemd` systems, run the following command:
+To start NGINX Agent on `systemd` systems, run the following command:
 
 ```shell
 sudo systemctl start nginx-agent
 ```
 
-To enable the NGINX Agent to start on boot, run the following command:
+To enable NGINX Agent to start on boot, run the following command:
 
 ```shell
 sudo systemctl enable nginx-agent
