@@ -16,7 +16,7 @@ doctypes: ["task"]
 - The user following these steps will need `root` privilege
 
 ## Uninstalling NGINX Agent
-Complete the following steps on each host where you’ve installed the NGINX Agent
+Complete the following steps on each host where you’ve installed NGINX Agent
 
 
 - [Uninstalling NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux, and Oracle Linux](#uninstalling-nginx-agent-on-rhel-centos-rocky-linux-almalinux-and-oracle-linux)
@@ -29,15 +29,15 @@ Complete the following steps on each host where you’ve installed the NGINX Age
 
 ### Uninstalling NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux, and Oracle Linux
 
-Complete the following steps on each host where you've installed the NGINX Agent:
+Complete the following steps on each host where you've installed NGINX Agent:
 
-1. Stop the NGINX Agent:
+1. Stop NGINX Agent:
 
    ```bash
    sudo systemctl stop nginx-agent
    ```
 
-2. To uninstall the NGINX Agent, run the following command:
+2. To uninstall NGINX Agent, run the following command:
 
    ```bash
    sudo yum remove nginx-agent
@@ -45,15 +45,15 @@ Complete the following steps on each host where you've installed the NGINX Agent
 
 ### Uninstalling NGINX Agent on Ubuntu
 
-Complete the following steps on each host where you've installed the NGINX Agent:
+Complete the following steps on each host where you've installed NGINX Agent:
 
-1. Stop the NGINX Agent:
+1. Stop NGINX Agent:
 
    ```bash
    sudo systemctl stop nginx-agent
    ```
 
-2. To uninstall the NGINX Agent, run the following command:
+2. To uninstall NGINX Agent, run the following command:
 
    ```bash
    sudo apt-get remove nginx-agent
@@ -63,15 +63,15 @@ Complete the following steps on each host where you've installed the NGINX Agent
 
 ### Uninstalling NGINX Agent on Debian
 
-Complete the following steps on each host where you've installed the NGINX Agent:
+Complete the following steps on each host where you've installed NGINX Agent:
 
-1. Stop the NGINX Agent:
+1. Stop NGINX Agent:
 
    ```bash
    sudo systemctl stop nginx-agent
    ```
 
-2. To uninstall the NGINX Agent, run the following command:
+2. To uninstall NGINX Agent, run the following command:
 
    ```bash
    sudo apt-get remove nginx-agent
@@ -81,15 +81,15 @@ Complete the following steps on each host where you've installed the NGINX Agent
 
 ### Uninstalling NGINX Agent on SLES
 
-Complete the following steps on each host where you've installed the NGINX Agent:
+Complete the following steps on each host where you've installed NGINX Agent:
 
-1. Stop the NGINX Agent:
+1. Stop NGINX agent:
 
    ```bash
    sudo systemctl stop nginx-agent
    ```
 
-2. To uninstall the NGINX Agent, run the following command:
+2. To uninstall NGINX agent, run the following command:
 
    ```bash
    sudo zypper remove nginx-agent
@@ -97,15 +97,15 @@ Complete the following steps on each host where you've installed the NGINX Agent
 
 ### Uninstalling NGINX Agent on Alpine Linux
 
-Complete the following steps on each host where you've installed the NGINX Agent:
+Complete the following steps on each host where you've installed NGINX agent:
 
-1. Stop the NGINX Agent:
+1. Stop NGINX agent:
 
    ```bash
    sudo rc-service nginx-agent stop
    ```
 
-2. To uninstall the NGINX Agent, run the following command:
+2. To uninstall NGINX agent, run the following command:
 
    ```bash
    sudo apk del nginx-agent
@@ -113,15 +113,15 @@ Complete the following steps on each host where you've installed the NGINX Agent
 
 ### Uninstalling NGINX Agent on Amazon Linux
 
-Complete the following steps on each host where you've installed the NGINX Agent:
+Complete the following steps on each host where you've installed NGINX agent:
 
-1. Stop the NGINX Agent:
+1. Stop NGINX agent:
 
    ```bash
    sudo systemctl stop nginx-agent
    ```
 
-2. To uninstall the NGINX Agent, run the following command:
+2. To uninstall NGINX agent, run the following command:
 
    ```bash
    sudo yum remove nginx-agent
@@ -129,15 +129,15 @@ Complete the following steps on each host where you've installed the NGINX Agent
 
 ### Uninstalling NGINX Agent on FreeBSD
  
-Complete the following steps on each host where you've installed the NGINX Agent:
+Complete the following steps on each host where you've installed NGINX agent:
 
-1. Stop the NGINX Agent:
+1. Stop NGINX agent:
 
    ```bash
    sudo service nginx-agent stop
    ```
 
-2. To uninstall the NGINX Agent, run the following command:
+2. To uninstall NGINX agent, run the following command:
 
    ```bash
    sudo pkg delete nginx-agent

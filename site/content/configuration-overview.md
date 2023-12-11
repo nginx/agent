@@ -12,11 +12,11 @@ doctypes: ["task"]
 
 ## Overview
 
-The following sections explain how to configure the NGINX Agent using configuration files, CLI flags, and environment variables.
+The following sections explain how to configure NGINX Agent using configuration files, CLI flags, and environment variables.
 
 {{<note>}}
 
-- The NGINX Agent interprets configuration values set by configuration files, CLI flags, and environment variables in the following priorities:
+- NGINX Agent interprets configuration values set by configuration files, CLI flags, and environment variables in the following priorities:
 
   1. CLI flags overwrite configuration files and environment variable values.
   2. Environment variables overwrite configuration file values.
@@ -28,7 +28,7 @@ The following sections explain how to configure the NGINX Agent using configurat
 
 ### Configure with Config Files
 
-The default locations of configuration files for the NGINX Agent are `/etc/nginx-agent/nginx-agent.conf` and `/var/lib/nginx-agent/agent-dynamic.conf`. The `agent-dynamic.conf` file default location is different for FreeBSD which is located `/var/db/nginx-agent/agent-dynamic.conf`. These files have comments at the top indicating their purpose.
+The default locations of configuration files for NGINX Agent are `/etc/nginx-agent/nginx-agent.conf` and `/var/lib/nginx-agent/agent-dynamic.conf`. The `agent-dynamic.conf` file default location is different for FreeBSD which is located `/var/db/nginx-agent/agent-dynamic.conf`. These files have comments at the top indicating their purpose.
 
 Examples of the configuration files are provided below:
 
@@ -99,7 +99,7 @@ extensions:
 
 # Enable reporting NGINX App Protect details to the control plane.
 nginx_app_protect:
-  # Report interval for NGINX App Protect details - the frequency the NGINX Agent checks NGINX App Protect for changes.
+  # Report interval for NGINX App Protect details - the frequency NGINX Agent checks NGINX App Protect for changes.
   report_interval: 15s
   # Enable precompiled publication from the NGINX Management Suite (true) or perform compilation on the data plane host (false).
   precompiled_publication: true
@@ -142,7 +142,7 @@ tags:
 
 ### NGINX Agent CLI Flags & Usage {#nginx-agent-cli-flags-usage}
 
-This section displays the configurable options for the NGINX Agent that can be set with CLI flags. See the CLI flags and their uses in the figure below:
+This section displays the configurable options for NGINX Agent that can be set with CLI flags. See the CLI flags and their uses in the figure below:
 
 <details open>
   <summary>NGINX Agent CLI flags & usage</summary>
@@ -201,8 +201,8 @@ Use "nginx-agent [command] --help" for more information about a command.
 
 #### NGINX Agent Config Dirs Option
 
-Use the `--config-dirs` command-line option, or the `config_dirs` key in the `nginx-agent.conf` file, to identify the directories the NGINX Agent can read from or write to. This setting also defines the location to which you can upload config files when using a control/management plane. The NGINX Agent cannot write to directories outside the specified location when updating a config and cannot upload files to directories outside of the configured location.
-The NGINX Agent follows NGINX configuration directives to file paths outside the designated directories and reads certificates' metadata. The NGINX Agent uses the following directives:
+Use the `--config-dirs` command-line option, or the `config_dirs` key in the `nginx-agent.conf` file, to identify the directories NGINX Agent can read from or write to. This setting also defines the location to which you can upload config files when using a control/management plane. NGINX Agent cannot write to directories outside the specified location when updating a config and cannot upload files to directories outside of the configured location.
+NGINX Agent follows NGINX configuration directives to file paths outside the designated directories and reads certificates' metadata. NGINX Agent uses the following directives:
 
 - [`ssl_certificate`](https://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_certificate)
 
@@ -216,7 +216,7 @@ Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.con
 
 ### NGINX Agent Environment Variables
 
-This section displays the configurable options for the NGINX Agent that can be set with environment variables. A list of the configurable environment variables can be seen below:
+This section displays the configurable options for NGINX Agent that can be set with environment variables. A list of the configurable environment variables can be seen below:
 
 <details open>
   <summary>NGINX Agent Environment Variables</summary>
