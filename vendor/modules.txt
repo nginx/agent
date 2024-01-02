@@ -4,6 +4,9 @@
 # 4d63.com/gochecknoglobals v0.2.1
 ## explicit; go 1.15
 4d63.com/gochecknoglobals/checknoglobals
+# dario.cat/mergo v1.0.0
+## explicit; go 1.13
+dario.cat/mergo
 # github.com/4meepo/tagalign v1.3.2
 ## explicit; go 1.19
 github.com/4meepo/tagalign
@@ -64,7 +67,7 @@ github.com/Microsoft/go-winio/pkg/guid
 ## explicit; go 1.20
 github.com/OpenPeeDeeP/depguard/v2
 github.com/OpenPeeDeeP/depguard/v2/internal/utils
-# github.com/ProtonMail/go-crypto v0.0.0-20230710112148-e01326fd72eb
+# github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371
 ## explicit; go 1.13
 github.com/ProtonMail/go-crypto/bitcurves
 github.com/ProtonMail/go-crypto/brainpool
@@ -85,9 +88,6 @@ github.com/ProtonMail/go-crypto/openpgp/internal/ecc
 github.com/ProtonMail/go-crypto/openpgp/internal/encoding
 github.com/ProtonMail/go-crypto/openpgp/packet
 github.com/ProtonMail/go-crypto/openpgp/s2k
-# github.com/acomagu/bufpipe v1.0.4
-## explicit; go 1.12
-github.com/acomagu/bufpipe
 # github.com/alexkohler/nakedret/v2 v2.0.2
 ## explicit; go 1.18
 github.com/alexkohler/nakedret/v2
@@ -397,6 +397,9 @@ github.com/creack/pty
 ## explicit; go 1.18
 github.com/curioswitch/go-reassign
 github.com/curioswitch/go-reassign/internal/analyzer
+# github.com/cyphar/filepath-securejoin v0.2.4
+## explicit; go 1.13
+github.com/cyphar/filepath-securejoin
 # github.com/daixiang0/gci v0.11.0
 ## explicit; go 1.18
 github.com/daixiang0/gci/pkg/config
@@ -462,8 +465,6 @@ github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-units v0.5.0
 ## explicit
 github.com/docker/go-units
-# github.com/elazarl/goproxy v0.0.0-20230731152917-f99041a5c027
-## explicit
 # github.com/emirpasic/gods v1.18.1
 ## explicit; go 1.2
 github.com/emirpasic/gods/containers
@@ -531,18 +532,19 @@ github.com/go-git/gcfg
 github.com/go-git/gcfg/scanner
 github.com/go-git/gcfg/token
 github.com/go-git/gcfg/types
-# github.com/go-git/go-billy/v5 v5.4.1
-## explicit; go 1.13
+# github.com/go-git/go-billy/v5 v5.5.0
+## explicit; go 1.19
 github.com/go-git/go-billy/v5
 github.com/go-git/go-billy/v5/helper/chroot
 github.com/go-git/go-billy/v5/helper/polyfill
 github.com/go-git/go-billy/v5/memfs
 github.com/go-git/go-billy/v5/osfs
 github.com/go-git/go-billy/v5/util
-# github.com/go-git/go-git/v5 v5.7.0
-## explicit; go 1.18
+# github.com/go-git/go-git/v5 v5.11.0
+## explicit; go 1.19
 github.com/go-git/go-git/v5
 github.com/go-git/go-git/v5/config
+github.com/go-git/go-git/v5/internal/path_util
 github.com/go-git/go-git/v5/internal/revision
 github.com/go-git/go-git/v5/internal/url
 github.com/go-git/go-git/v5/plumbing
@@ -585,6 +587,7 @@ github.com/go-git/go-git/v5/utils/merkletrie/index
 github.com/go-git/go-git/v5/utils/merkletrie/internal/frame
 github.com/go-git/go-git/v5/utils/merkletrie/noder
 github.com/go-git/go-git/v5/utils/sync
+github.com/go-git/go-git/v5/utils/trace
 # github.com/go-logr/logr v1.3.0
 ## explicit; go 1.18
 github.com/go-logr/logr
@@ -1359,7 +1362,7 @@ github.com/sivchari/nosnakecase
 # github.com/sivchari/tenv v1.7.1
 ## explicit; go 1.18
 github.com/sivchari/tenv
-# github.com/skeema/knownhosts v1.1.1
+# github.com/skeema/knownhosts v1.2.1
 ## explicit; go 1.17
 github.com/skeema/knownhosts
 # github.com/sonatard/noctx v0.0.2
@@ -1654,8 +1657,8 @@ golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/modfile
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.17.0
-## explicit; go 1.17
+# golang.org/x/net v0.19.0
+## explicit; go 1.18
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
