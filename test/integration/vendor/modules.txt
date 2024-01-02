@@ -23,6 +23,9 @@ github.com/Microsoft/go-winio/internal/fs
 github.com/Microsoft/go-winio/internal/socket
 github.com/Microsoft/go-winio/internal/stringbuffer
 github.com/Microsoft/go-winio/pkg/guid
+# github.com/Microsoft/hcsshim v0.11.4
+## explicit; go 1.18
+github.com/Microsoft/hcsshim/osversion
 # github.com/aws/aws-sdk-go-v2 v1.21.0
 ## explicit; go 1.15
 github.com/aws/aws-sdk-go-v2
@@ -137,7 +140,7 @@ github.com/compose-spec/compose-go/utils
 # github.com/containerd/console v1.0.3
 ## explicit; go 1.13
 github.com/containerd/console
-# github.com/containerd/containerd v1.7.5 => github.com/containerd/containerd v1.7.4
+# github.com/containerd/containerd v1.7.5 => github.com/containerd/containerd v1.7.11
 ## explicit; go 1.19
 github.com/containerd/containerd/api/services/content/v1
 github.com/containerd/containerd/archive/compression
@@ -169,6 +172,9 @@ github.com/containerd/containerd/version
 ## explicit; go 1.19
 github.com/containerd/continuity/fs
 github.com/containerd/continuity/sysx
+# github.com/containerd/log v0.1.0
+## explicit; go 1.20
+github.com/containerd/log
 # github.com/containerd/typeurl/v2 v2.1.1
 ## explicit; go 1.13
 github.com/containerd/typeurl/v2
@@ -906,24 +912,22 @@ go.opentelemetry.io/otel/internal/attribute
 go.opentelemetry.io/otel/internal/baggage
 go.opentelemetry.io/otel/internal/global
 go.opentelemetry.io/otel/propagation
-go.opentelemetry.io/otel/semconv/internal/v2
 go.opentelemetry.io/otel/semconv/v1.17.0
-go.opentelemetry.io/otel/semconv/v1.17.0/httpconv
 go.opentelemetry.io/otel/semconv/v1.18.0
 go.opentelemetry.io/otel/semconv/v1.21.0
-# go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.17.0
-## explicit; go 1.19
+# go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.19.0
+## explicit; go 1.20
 go.opentelemetry.io/otel/exporters/otlp/otlptrace
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/internal/tracetransform
-# go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.17.0
-## explicit; go 1.19
+# go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.19.0
+## explicit; go 1.20
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/internal
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/internal/envconfig
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/internal/otlpconfig
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/internal/retry
-# go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.17.0
-## explicit; go 1.19
+# go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.19.0
+## explicit; go 1.20
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp/internal
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp/internal/envconfig
@@ -982,8 +986,8 @@ golang.org/x/exp/slog/internal/buffer
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.17.0
-## explicit; go 1.17
+# golang.org/x/net v0.19.0
+## explicit; go 1.18
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -1459,7 +1463,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.3.0
 ## explicit; go 1.12
 sigs.k8s.io/yaml
-# github.com/containerd/containerd => github.com/containerd/containerd v1.7.4
+# github.com/containerd/containerd => github.com/containerd/containerd v1.7.11
 # github.com/cucumber/godog => github.com/laurazard/godog v0.0.0-20220922095256-4c4b17abdae7
 # github.com/nginx/agent/sdk/v2 => ./../../sdk
 # github.com/nginx/agent/v2 => ./../../
