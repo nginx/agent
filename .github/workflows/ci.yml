@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - 'main'
+    - 'release-*'
+    paths-ignore:
+    - "**.md"
+    - "docs/**"
+    - "hugo/**"
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+env:
+  GOLANGCI_LINT_VERSION: 'v1.54.2'
+  NFPM_VERSION: 'v2.32.0'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: Lint Agent Code
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: "${{ env.GOLANGCI_LINT_VERSION }}"
+          args: -c ./scripts/.golangci.yml
+          skip-pkg-cache: true

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# PROVIDE: nginx_agent
+# REQUIRE: nginx
+# KEYWORD: shutdown
+
+# Enable this script by adding:
+# nginx_agent_enable="YES"
+# ... to /etc/rc.conf
+# shellcheck source=/dev/null
+. /etc/rc.subr
+
+name=nginx_agent
+rcvar=${name}_enable
+nginx_agent_command="/usr/local/bin/nginx-agent"
+pidfile="/var/run/${name}.pid"
+command="/usr/sbin/daemon"
+command_args="-P ${pidfile} -r -f ${nginx_agent_command}"
+
+load_rc_config $name
+: ${nginx_agent_enable:="NO"}
+
+run_rc_command "$1"

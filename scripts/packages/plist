@@ -1,0 +1,3 @@
+/usr/local/etc/rc.d/nginx-agent
+/usr/local/etc/nginx-agent/nginx-agent.conf
+/usr/local/bin/nginx-agent
