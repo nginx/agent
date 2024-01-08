@@ -1,0 +1,27 @@
+syntax = "proto3";
+package f5.nginx.agent.internal.models.instances;
+
+option go_package = "github.com/nginx/agent/v3/internal/models/instances";
+
+message Instance {
+    string instance_id = 1;
+	Meta meta = 2;
+	Type type = 3;
+	string version = 4;
+}
+
+message Meta {
+    oneof meta {
+        NginxMeta nginx_meta = 1;
+    }
+}
+message NginxMeta {
+    string loadable_modules = 1;
+    string runnable_modules = 2;
+}
+
+enum Type {
+    UNKNOWN = 0;
+    NGINX = 1;
+    NGINXPLUS = 2;
+}

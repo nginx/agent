@@ -1,0 +1,17 @@
+openapi: 3.0.2
+info:
+  title: Dataplane API
+  version: 1.0.0
+paths:
+  /instances:
+    get:
+      summary: Returns a list of instances.
+      responses:
+        '200':
+          description: A JSON array of instances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../common/common.yaml#/components/schemas/Instance'
