@@ -3,7 +3,7 @@ module github.com/nginx/agent/test/integration
 go 1.21.3
 
 require (
-	github.com/go-resty/resty/v2 v2.10.0
+	github.com/go-resty/resty/v2 v2.11.0
 	github.com/nginx/agent/sdk/v2 v2.30.3
 	github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
