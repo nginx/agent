@@ -46,7 +46,7 @@ dev:
 
 generate:
 	@echo "Generating proto files"
-	@protoc --go_out=paths=source_relative:. ./internal/models/*.proto
+	@protoc --go_out=paths=source_relative:. ./internal/models/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specifications"
 	@oapi-codegen -generate types,skip-prune -package common ./internal/apis/http/common/common.yaml > ./internal/apis/http/common/common.gen.go
 	@oapi-codegen -generate server,types -package dataplane -import-mapping=$(IMPORT_MAPPING) ./internal/apis/http/dataplane/dataplane-api.yaml > ./internal/apis/http/dataplane/dataplane.gen.go

@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nginx/agent/v3/internal/apis/http/common"
 	"github.com/nginx/agent/v3/internal/apis/http/dataplane"
-	instances "github.com/nginx/agent/v3/internal/models"
+	"github.com/nginx/agent/v3/internal/models/instances"
 	"github.com/nginx/agent/v3/internal/services"
 )
 

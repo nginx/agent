@@ -4,28 +4,22 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nginx/agent/v3/internal/models"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/nginx/agent/v3/internal/models/instances"
+	"github.com/nginx/agent/v3/internal/models/os"
 )
 
-func GetInstances(processes []*process.Process) ([]*instances.Instance, error) {
+func GetInstances(processes []*os.Process) ([]*instances.Instance, error) {
 	var processList []*instances.Instance
 
-	nginxProcesses := make(map[int32]*process.Process)
+	nginxProcesses := make(map[int32]*os.Process)
 	for _, p := range processes {
-
-		name, _ := p.Name()
-		cmd, _ := p.Cmdline()
-
-		if isNginxProcess(name, cmd) {
+		if isNginxProcess(p.Name, p.Cmd) {
 			nginxProcesses[p.Pid] = p
 		}
 	}
 
 	for pid, nginxProcess := range nginxProcesses {
-		ppid, _ := nginxProcess.Ppid()
-
-		_, ok := nginxProcesses[ppid]
+		_, ok := nginxProcesses[nginxProcess.Ppid]
 		if ok {
 			newProcess := &instances.Instance{
 				InstanceId: fmt.Sprint(pid),
