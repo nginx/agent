@@ -143,9 +143,9 @@ func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 
 func mapTypeEnums(typeString string) common.InstanceType {
 	if typeString == instances.Type_NGINX.String() {
-		return common.InstanceTypeNGINX
+		return common.NGINX
 	}
-	return common.InstanceTypeCUSTOM
+	return common.CUSTOM
 }
 
 func toPtr[T any](value T) *T {

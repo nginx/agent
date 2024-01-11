@@ -17,6 +17,8 @@ PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
 IMPORT_MAPPING 	:= ../common/common.yaml:github.com/nginx/agent/v3/internal/api/http/common
 
+include Makefile.tools
+
 help: ## Show help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\033[36m\033[0m\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
@@ -34,25 +36,20 @@ build: ## Build agent executable
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
-	GOWORK=off go run github.com/golangci/golangci-lint/cmd/golangci-lint run -c ./scripts/.golangci.yml
+	GOWORK=off $(GORUN) $(GOLANGCILINT) run -c ./scripts/.golangci.yml
 
 format: ## Format code
-	@$(GORUN) mvdan.cc/gofumpt -l -w .
+	@$(GORUN) $(FOFUMPT) -l -w .
 	@echo "🏯 Format Done"
-
-install-tools: ## Install dependencies in tools.go using vendored version see https://www.jvt.me/posts/2023/06/19/go-install-from-mod/
-	@echo "Installing Tools"
-	@grep _ ./tools/tools.go | awk '{print $$2}' | xargs -tI % env GOBIN=$$(git rev-parse --show-toplevel)/bin GOWORK=off go get %
-	@go run github.com/evilmartians/lefthook install pre-push
 
 $(TEST_BUILD_DIR):
 	mkdir -p $(TEST_BUILD_DIR)
 
 unit-test: $(TEST_BUILD_DIR) ## Run unit tests
-	GOWORK=off CGO_ENABLED=0 go test -count=1 -coverprofile=$(TEST_BUILD_DIR)/tmp_coverage.out -coverpkg=./... -covermode count ./...
+	GOWORK=off CGO_ENABLED=0 $(GOTEST) -count=1 -coverprofile=$(TEST_BUILD_DIR)/tmp_coverage.out -coverpkg=./... -covermode count ./...
 	cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v "mock_" > $(TEST_BUILD_DIR)/coverage.out
-	go tool cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
-	@printf "\nTotal code coverage: " && go tool cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
+	$(GOTOOL) cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
+	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
 
 run: $(BINARY) ## Run code
 	@echo "🏃 Running App"
@@ -66,9 +63,9 @@ generate: ## Genenerate proto files and server and client stubs from OpenAPI spe
 	@echo "Generating proto files"
 	@protoc --go_out=paths=source_relative:. ./internal/model/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specifications"
-	@oapi-codegen -generate types,skip-prune -package common ./internal/api/http/common/common.yaml > ./internal/api/http/common/common.gen.go
-	@oapi-codegen -generate gin -package dataplane -import-mapping=$(IMPORT_MAPPING) ./internal/api/http/dataplane/dataplane-api.yaml > ./internal/api/http/dataplane/dataplane.gen.go
-	@oapi-codegen -generate client -package dataplane -import-mapping=$(IMPORT_MAPPING) ./internal/api/http/dataplane/dataplane-api.yaml > ./internal/api/http/dataplane/client.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate types,skip-prune -package common ./internal/api/http/common/common.yaml > ./internal/api/http/common/common.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane -import-mapping=$(IMPORT_MAPPING) ./internal/api/http/dataplane/dataplane-api.yaml > ./internal/api/http/dataplane/dataplane.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate client -package dataplane -import-mapping=$(IMPORT_MAPPING) ./internal/api/http/dataplane/dataplane-api.yaml > ./internal/api/http/dataplane/client.gen.go
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	GOWORK=off go generate ./...

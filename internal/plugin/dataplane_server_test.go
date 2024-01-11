@@ -64,7 +64,7 @@ func TestDataplaneServer_Process(t *testing.T) {
 }
 
 func TestDataplaneServer_GetInstances(t *testing.T) {
-	expected := &common.Instance{InstanceId: toPtr("ae6c58c1-bc92-30c1-a9c9-85591422068e"), Type: toPtr(common.InstanceTypeNGINX), Version: toPtr("1.23.1")}
+	expected := &common.Instance{InstanceId: toPtr("ae6c58c1-bc92-30c1-a9c9-85591422068e"), Type: toPtr(common.NGINX), Version: toPtr("1.23.1")}
 	instance := &instances.Instance{InstanceId: "ae6c58c1-bc92-30c1-a9c9-85591422068e", Type: instances.Type_NGINX, Version: "1.23.1"}
 
 	instanceService := &service.FakeInstanceServiceInterface{}

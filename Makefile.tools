@@ -1,0 +1,14 @@
+OAPICODEGEN	 = github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.0.0
+LEFTHOOK	 = github.com/evilmartians/lefthook@v1.5.5
+GOLANGCILINT = github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
+PROTOCGENGO	 = google.golang.org/protobuf/cmd/protoc-gen-go@v1.32.0
+FOFUMPT	     = mvdan.cc/gofumpt@v0.5.0
+
+install-tools: ## Install dependencies in tools.go using vendored version see https://www.jvt.me/posts/2023/06/19/go-install-from-mod/
+	@echo "Installing Tools"
+	@$(GOINST) $(OAPICODEGEN)
+	@$(GOINST) $(LEFTHOOK)
+	@$(GOINST) $(GOLANGCILINT)
+	@$(GOINST) $(PROTOCGENGO)
+	@$(GOINST) $(FOFUMPT)
+	@$(GORUN) $(LEFTHOOK) install pre-push
