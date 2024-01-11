@@ -19,10 +19,10 @@ AlmaLinux
 - 9 (x86_64, aarch64)
 
 Alpine Linux
-- 3.15 (x86_64, aarch64)
 - 3.16 (x86_64, aarch64)
 - 3.17 (x86_64, aarch64)
 - 3.18 (x86_64, aarch64)
+- 3.19 (x86_64, aarch64)
 
 Amazon Linux
 - 2023 (x86_64, aarch64)
@@ -38,8 +38,8 @@ Debian
 - 12 (x86_64, aarch64)
 
 FreeBSD
-- 12.1+ (amd64)
 - 13 (amd64)
+- 14 (amd64)
 
 Oracle Linux
 - 7.4+ (x86_64)
