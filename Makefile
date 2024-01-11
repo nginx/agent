@@ -16,12 +16,12 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
 # | ubuntu           | 20.04, 22.04                              |                                                                |
-# | debian           | bookworm-slim, bullseye-slim, buster-slim |                                                                |
+# | debian           | bullseye-slim, buster-slim  				 |                                                                |
 # | centos           | 7                                         |                                                                |
 # | redhatenterprise | 7, 8, 9                                   |                                                                |
 # | rockylinux       | 8, 9                                      |                                                                |
 # | almalinux        | 8, 9                                      |                                                                |
-# | alpine           | 3.15, 3.16, 3.17, 3.18                    |                                                                |
+# | alpine           | 3.16, 3.17, 3.18, 3.19                    |                                                                |
 # | oraclelinux      | 7, 8, 9                                   |                                                                |
 # | suse             | sles12sp5, sle15                          |                                                                |
 # | freebsd          |                                           | Not supported                                                  |
