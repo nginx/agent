@@ -5,13 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package main
-
-import (
-	"github.com/nginx/agent/v3/internal"
-)
-
-func main() {
-	app := internal.NewApp()
-	app.Run()
-}
+package internal

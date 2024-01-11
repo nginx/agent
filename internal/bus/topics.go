@@ -5,13 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package main
+package bus
 
-import (
-	"github.com/nginx/agent/v3/internal"
+const (
+	OS_PROCESSES_TOPIC = "os-processes"
 )
-
-func main() {
-	app := internal.NewApp()
-	app.Run()
-}
