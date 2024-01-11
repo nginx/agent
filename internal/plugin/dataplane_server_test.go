@@ -85,7 +85,7 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 
 	assert.NotNil(t, dataplaneServer.server.Addr().(*net.TCPAddr).Port)
 
-	target := "http://" + dataplaneServer.server.Addr().(*net.TCPAddr).AddrPort().String() + "/instances"
+	target := "http://" + dataplaneServer.server.Addr().(*net.TCPAddr).AddrPort().String() + "/api/v1/instances"
 	res, err := http.Get(target)
 
 	assert.NoError(t, err)

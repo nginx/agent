@@ -93,7 +93,7 @@ func (dps *DataplaneServer) run(ctx context.Context) {
 	gin.SetMode(gin.ReleaseMode)
 	server := gin.New()
 	server.Use(sloggin.NewWithConfig(dps.logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
-	dataplane.RegisterHandlers(server, dps)
+	dataplane.RegisterHandlersWithOptions(server, dps, dataplane.GinServerOptions{BaseURL: "/api/v1"})
 
 	slog.Info("starting dataplane server", "address", dps.address)
 	listener, err := net.Listen("tcp", dps.address)
