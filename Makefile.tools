@@ -5,7 +5,7 @@ PROTOCGENGO	  = google.golang.org/protobuf/cmd/protoc-gen-go@v1.32.0
 FOFUMPT	      = mvdan.cc/gofumpt@v0.5.0
 COUNTERFEITER = github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0
 
-install-tools: ## Install dependencies in tools.go using vendored version see https://www.jvt.me/posts/2023/06/19/go-install-from-mod/
+install-tools: ## Install tool dependencies
 	@echo "Installing Tools"
 	@$(GOINST) $(OAPICODEGEN)
 	@$(GOINST) $(LEFTHOOK)

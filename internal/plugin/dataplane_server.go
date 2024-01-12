@@ -33,6 +33,12 @@ type (
 		Message string `json:"message,omitempty"`
 	}
 
+	DataplaneServerParameters struct {
+		Address         string
+		Logger          *slog.Logger
+		instanceService service.InstanceServiceInterface
+	}
+
 	DataplaneServer struct {
 		address         string
 		logger          *slog.Logger
@@ -42,12 +48,6 @@ type (
 		processes       []*os.Process
 	}
 )
-
-type DataplaneServerParameters struct {
-	Address         string
-	Logger          *slog.Logger
-	instanceService service.InstanceServiceInterface
-}
 
 func NewDataplaneServer(dataplaneServerParameters *DataplaneServerParameters) *DataplaneServer {
 	if dataplaneServerParameters.instanceService == nil {
