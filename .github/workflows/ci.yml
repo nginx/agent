@@ -130,15 +130,17 @@ jobs:
         - image: "ubuntu"
           version: "22.04"
         - image: "alpine"
-          version: "3.15"
-        - image: "alpine"
           version: "3.16"
         - image: "alpine"
           version: "3.17"
         - image: "alpine"
           version: "3.18"
+        - image: "alpine"
+          version: "3.19"
         - image: "debian"
-          version: "bookworm-slim"
+          version: "bullseye-slim"
+        - image: "debian"
+          version: "buster-slim"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
