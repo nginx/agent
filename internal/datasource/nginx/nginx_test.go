@@ -10,7 +10,8 @@ package nginx
 import (
 	"testing"
 
-	"github.com/nginx/agent/v3/internal/model/instances"
+	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/internal/datasource/nginx/process"
 	"github.com/nginx/agent/v3/internal/model/os"
 	"github.com/stretchr/testify/assert"
 )
@@ -39,12 +40,12 @@ func TestGetInstances(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		input    *NginxInfo
+		input    *process.Info
 		expected []*instances.Instance
 	}{
 		{
 			name: "NGINX open source",
-			input: &NginxInfo{
+			input: &process.Info{
 				Version:     "1.23.3",
 				PlusVersion: "",
 				Prefix:      "/usr/local/Cellar/nginx/1.23.3",
@@ -59,7 +60,7 @@ func TestGetInstances(t *testing.T) {
 			},
 		}, {
 			name: "NGINX plus",
-			input: &NginxInfo{
+			input: &process.Info{
 				Version:     "",
 				PlusVersion: "R30",
 				Prefix:      "/usr/local/Cellar/nginx/1.23.3",
@@ -77,8 +78,8 @@ func TestGetInstances(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			n := NewNginx(NginxParameters{
-				GetInfo: func(pid int32, exe string) (*NginxInfo, error) {
+			n := New(NginxParameters{
+				GetInfo: func(pid int32, exe string) (*process.Info, error) {
 					return test.input, nil
 				},
 			})

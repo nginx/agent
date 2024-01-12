@@ -8,20 +8,16 @@
 package nginx
 
 import (
-	"regexp"
 	"strings"
 
-	"github.com/nginx/agent/v3/internal/model/instances"
+	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/internal/datasource/nginx/process"
+	"github.com/nginx/agent/v3/internal/datasource/os/exec"
 	"github.com/nginx/agent/v3/internal/model/os"
-	"github.com/nginx/agent/v3/internal/util"
+	"github.com/nginx/agent/v3/internal/uuid"
 )
 
-var (
-	re     = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+)`)
-	plusre = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+).\((?P<plus>\S+plus\S+)\)`)
-)
-
-type GetInfo func(pid int32, exe string) (*NginxInfo, error)
+type GetInfo func(pid int32, exe string) (*process.Info, error)
 
 type Nginx struct {
 	parameters NginxParameters
@@ -31,9 +27,9 @@ type NginxParameters struct {
 	GetInfo GetInfo
 }
 
-func NewNginx(parameters NginxParameters) *Nginx {
+func New(parameters NginxParameters) *Nginx {
 	if parameters.GetInfo == nil {
-		parameters.GetInfo = NewNginxProcess(&util.Helper{}).GetNginxInfo
+		parameters.GetInfo = process.New(&exec.Exec{}).GetInfo
 	}
 	return &Nginx{
 		parameters: parameters,
@@ -53,7 +49,7 @@ func (n *Nginx) GetInstances(processes []*os.Process) ([]*instances.Instance, er
 	for _, nginxProcess := range nginxProcesses {
 		_, ok := nginxProcesses[nginxProcess.Ppid]
 		if !ok {
-			nginxInfo, err := n.parameters.GetInfo(nginxProcess.GetPid(), nginxProcess.GetExe())
+			nginxInfo, err := n.parameters.GetInfo(nginxProcess.Pid, nginxProcess.Exe)
 
 			nginxType := instances.Type_NGINX
 			version := nginxInfo.Version
@@ -65,7 +61,7 @@ func (n *Nginx) GetInstances(processes []*os.Process) ([]*instances.Instance, er
 
 			if err == nil {
 				newProcess := &instances.Instance{
-					InstanceId: util.GenerateUUID("%s_%s_%s", nginxProcess.GetExe(), nginxInfo.ConfPath, nginxInfo.Prefix),
+					InstanceId: uuid.Generate("%s_%s_%s", nginxProcess.Exe, nginxInfo.ConfPath, nginxInfo.Prefix),
 					Type:       nginxType,
 					Version:    version,
 				}

@@ -5,23 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package nginx
+package process
 
 import (
 	"bytes"
 	"fmt"
 	"testing"
 
-	"github.com/nginx/agent/v3/internal/util"
+	"github.com/nginx/agent/v3/internal/datasource/os/exec"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetNginxInfo(t *testing.T) {
+func TestGetInfo(t *testing.T) {
 	tests := []struct {
 		name                      string
 		nginxVersionCommandOutput string
 		exe                       string
-		expected                  *NginxInfo
+		expected                  *Info
 	}{
 		{
 			name: "NGINX open source",
@@ -31,7 +31,7 @@ func TestGetNginxInfo(t *testing.T) {
 					TLS SNI support enabled
 					configure arguments: --prefix=/usr/local/Cellar/nginx/1.23.3 --sbin-path=/usr/local/Cellar/nginx/1.23.3/bin/nginx --with-cc-opt='-I/usr/local/opt/pcre2/include -I/usr/local/opt/openssl@1.1/include' --with-ld-opt='-L/usr/local/opt/pcre2/lib -L/usr/local/opt/openssl@1.1/lib' --conf-path=/usr/local/etc/nginx/nginx.conf --pid-path=/usr/local/var/run/nginx.pid --lock-path=/usr/local/var/run/nginx.lock --http-client-body-temp-path=/usr/local/var/run/nginx/client_body_temp --http-proxy-temp-path=/usr/local/var/run/nginx/proxy_temp --http-fastcgi-temp-path=/usr/local/var/run/nginx/fastcgi_temp --http-uwsgi-temp-path=/usr/local/var/run/nginx/uwsgi_temp --http-scgi-temp-path=/usr/local/var/run/nginx/scgi_temp --http-log-path=/usr/local/var/log/nginx/access.log --error-log-path=/usr/local/var/log/nginx/error.log --with-compat --with-debug --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_degradation_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-ipv6 --with-mail --with-mail_ssl_module --with-pcre --with-pcre-jit --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module`,
 			exe: "",
-			expected: &NginxInfo{
+			expected: &Info{
 				Version:     "1.23.3",
 				PlusVersion: "",
 				Prefix:      "/usr/local/Cellar/nginx/1.23.3",
@@ -135,7 +135,7 @@ func TestGetNginxInfo(t *testing.T) {
 				configure arguments: --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-compat --with-file-aio --with-threads --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-http_v3_module --with-mail --with-mail_ssl_module --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module --build=nginx-plus-r30-p1 --with-http_auth_jwt_module --with-http_f4f_module --with-http_hls_module --with-http_proxy_protocol_vendor_module --with-http_session_log_module --with-stream_mqtt_filter_module --with-stream_mqtt_preread_module --with-stream_proxy_protocol_vendor_module --with-cc-opt='-g -O2 -fdebug-prefix-map=/data/builder/debuild/nginx-plus-1.25.1/debian/debuild-base/nginx-plus-1.25.1=. -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fPIC' --with-ld-opt='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie'
 			`,
 			exe: "",
-			expected: &NginxInfo{
+			expected: &Info{
 				Version:     "1.25.1",
 				PlusVersion: "nginx-plus-r30-p1",
 				Prefix:      "/etc/nginx",
@@ -252,11 +252,11 @@ func TestGetNginxInfo(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			mockHelper := &util.FakeHelperInterface{}
-			mockHelper.RunCmdReturns(bytes.NewBuffer([]byte(test.nginxVersionCommandOutput)), nil)
+			mockExec := &exec.FakeExecInterface{}
+			mockExec.RunCmdReturns(bytes.NewBuffer([]byte(test.nginxVersionCommandOutput)), nil)
 
-			n := NewNginxProcess(mockHelper)
-			result, err := n.GetNginxInfo(123, test.exe)
+			n := New(mockExec)
+			result, err := n.GetInfo(123, test.exe)
 
 			assert.Equal(t, test.expected, result)
 			assert.NoError(t, err)
@@ -286,11 +286,11 @@ func TestGetExe(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			mockHelper := &util.FakeHelperInterface{}
-			mockHelper.RunCmdReturns(bytes.NewBuffer(test.commandOutput), test.commandError)
-			mockHelper.FindExecutableReturns("/usr/bin/nginx", nil)
+			mockExec := &exec.FakeExecInterface{}
+			mockExec.RunCmdReturns(bytes.NewBuffer(test.commandOutput), test.commandError)
+			mockExec.FindExecutableReturns("/usr/bin/nginx", nil)
 
-			n := NewNginxProcess(mockHelper)
+			n := New(mockExec)
 			result := n.getExe()
 
 			assert.Equal(t, test.expected, result)
@@ -298,15 +298,15 @@ func TestGetExe(t *testing.T) {
 	}
 }
 
-func TestGetNginxInfo_DeletedNginxProcess(t *testing.T) {
-	mockHelper := &util.FakeHelperInterface{}
-	mockHelper.RunCmdReturnsOnCall(0, bytes.NewBuffer([]byte("/usr/sbin/nginx (deleted)")), nil)
-	mockHelper.RunCmdReturnsOnCall(1, bytes.NewBuffer([]byte("nginx version: nginx/1.23.3")), nil)
+func TestGetInfo_DeletedNginxProcess(t *testing.T) {
+	mockExec := &exec.FakeExecInterface{}
+	mockExec.RunCmdReturnsOnCall(0, bytes.NewBuffer([]byte("/usr/sbin/nginx (deleted)")), nil)
+	mockExec.RunCmdReturnsOnCall(1, bytes.NewBuffer([]byte("nginx version: nginx/1.23.3")), nil)
 
-	n := NewNginxProcess(mockHelper)
-	result, err := n.GetNginxInfo(123, "")
+	n := New(mockExec)
+	result, err := n.GetInfo(123, "")
 
-	expected := &NginxInfo{
+	expected := &Info{
 		Version:  "1.23.3",
 		Prefix:   "/usr/local/nginx",
 		ConfPath: "/usr/local/nginx/conf/nginx.conf",

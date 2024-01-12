@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"strings"
 
-	externalRef0 "github.com/nginx/agent/v3/internal/api/http/common"
+	externalRef0 "github.com/nginx/agent/v3/api/http/common"
 )
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function

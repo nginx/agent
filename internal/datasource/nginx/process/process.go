@@ -5,19 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package nginx
+package process
 
 import (
 	"bufio"
 	"bytes"
 	"fmt"
 	"path"
+	"regexp"
 	"strings"
 
-	"github.com/nginx/agent/v3/internal/util"
+	"github.com/nginx/agent/v3/internal/datasource/os/exec"
 )
 
-type NginxInfo struct {
+var (
+	re     = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+)`)
+	plusre = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+).\((?P<plus>\S+plus\S+)\)`)
+)
+
+type Info struct {
 	Version       string
 	PlusVersion   string
 	Prefix        string
@@ -26,17 +32,17 @@ type NginxInfo struct {
 	ConfigureArgs []string
 }
 
-type NginxProcess struct {
-	helper util.HelperInterface
+type Process struct {
+	exec exec.ExecInterface
 }
 
-func NewNginxProcess(helper util.HelperInterface) *NginxProcess {
-	return &NginxProcess{helper: helper}
+func New(exec exec.ExecInterface) *Process {
+	return &Process{exec: exec}
 }
 
-func (np *NginxProcess) GetNginxInfo(pid int32, exe string) (*NginxInfo, error) {
+func (np *Process) GetInfo(pid int32, exe string) (*Info, error) {
 	var err error
-	var nginxInfo *NginxInfo
+	var nginxInfo *Info
 
 	if exe == "" {
 		exe = np.getExe()
@@ -45,7 +51,7 @@ func (np *NginxProcess) GetNginxInfo(pid int32, exe string) (*NginxInfo, error) 
 	if exe == "" {
 		return nil, fmt.Errorf("unable to find NGINX exe for pid %d", pid)
 	} else {
-		outputBuffer, err := np.helper.RunCmd(exe, "-V")
+		outputBuffer, err := np.exec.RunCmd(exe, "-V")
 		if err != nil {
 			return nil, err
 		} else {
@@ -56,10 +62,10 @@ func (np *NginxProcess) GetNginxInfo(pid int32, exe string) (*NginxInfo, error) 
 	return nginxInfo, err
 }
 
-func (np *NginxProcess) getExe() string {
+func (np *Process) getExe() string {
 	exe := ""
 
-	out, commandErr := np.helper.RunCmd("sh", "-c", "command -v nginx")
+	out, commandErr := np.exec.RunCmd("sh", "-c", "command -v nginx")
 	if commandErr == nil {
 		exe = strings.TrimSuffix(out.String(), "\n")
 	}
@@ -75,8 +81,8 @@ func (np *NginxProcess) getExe() string {
 	return exe
 }
 
-func (np *NginxProcess) parseNginxVersionCommandOutput(output *bytes.Buffer) *NginxInfo {
-	nginxInfo := &NginxInfo{}
+func (np *Process) parseNginxVersionCommandOutput(output *bytes.Buffer) *Info {
+	nginxInfo := &Info{}
 
 	scanner := bufio.NewScanner(output)
 	for scanner.Scan() {
@@ -104,15 +110,15 @@ func (np *NginxProcess) parseNginxVersionCommandOutput(output *bytes.Buffer) *Ng
 	return nginxInfo
 }
 
-func (np *NginxProcess) defaultToNginxCommandForProcessPath() string {
-	path, err := np.helper.FindExecutable("nginx")
+func (np *Process) defaultToNginxCommandForProcessPath() string {
+	path, err := np.exec.FindExecutable("nginx")
 	if err != nil {
 		return ""
 	}
 	return path
 }
 
-func (np *NginxProcess) sanitizeExeDeletedPath(exe string) string {
+func (np *Process) sanitizeExeDeletedPath(exe string) string {
 	firstSpace := strings.Index(exe, "(deleted)")
 	if firstSpace != -1 {
 		return strings.TrimSpace(exe[0:firstSpace])
@@ -120,7 +126,7 @@ func (np *NginxProcess) sanitizeExeDeletedPath(exe string) string {
 	return strings.TrimSpace(exe)
 }
 
-func (np *NginxProcess) parseNginxVersion(line string) (version, plusVersion string) {
+func (np *Process) parseNginxVersion(line string) (version, plusVersion string) {
 	matches := re.FindStringSubmatch(line)
 	plusMatches := plusre.FindStringSubmatch(line)
 
@@ -149,7 +155,7 @@ func (np *NginxProcess) parseNginxVersion(line string) (version, plusVersion str
 	return version, plusVersion
 }
 
-func (np *NginxProcess) parseConfigureArguments(line string) (result map[string]interface{}, flags []string) {
+func (np *Process) parseConfigureArguments(line string) (result map[string]interface{}, flags []string) {
 	// need to check for empty strings
 	flags = strings.Split(line[len("configure arguments:"):], " --")
 	result = map[string]interface{}{}

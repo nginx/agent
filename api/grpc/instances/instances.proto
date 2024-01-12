@@ -8,7 +8,7 @@
 syntax = "proto3";
 package f5.nginx.agent.internal.model.instances;
 
-option go_package = "github.com/nginx/agent/v3/internal/model/instances";
+option go_package = "github.com/nginx/agent/v3/api/grpc/instances";
 
 message Instance {
     string instance_id = 1;

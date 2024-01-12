@@ -8,12 +8,12 @@
 package service
 
 import (
+	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/datasource/nginx"
-	"github.com/nginx/agent/v3/internal/model/instances"
 	"github.com/nginx/agent/v3/internal/model/os"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate -o mock_instance.go . InstanceServiceInterface
 //go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/service mock_instance.go | sed -e s\\/service\\\\.\\/\\/g > mock_instance_fixed.go"
 //go:generate mv mock_instance_fixed.go mock_instance.go
@@ -35,7 +35,7 @@ func (is *InstanceService) UpdateProcesses(newProcesses []*os.Process) {
 }
 
 func (is *InstanceService) GetInstances() ([]*instances.Instance, error) {
-	n := nginx.NewNginx(nginx.NginxParameters{})
+	n := nginx.New(nginx.NginxParameters{})
 	instances, err := n.GetInstances(is.processes)
 	return instances, err
 }

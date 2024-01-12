@@ -23,7 +23,7 @@ func NewApp() *App {
 	return &App{}
 }
 
-func (*App) Run() {
+func (*App) Run() error {
 	ctx := context.Background()
 
 	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug})
@@ -45,8 +45,9 @@ func (*App) Run() {
 	err := messagePipe.Register(100, []bus.Plugin{processMonitor, dataplaneServer})
 	if err != nil {
 		slog.Error("failed to register plugins", "error", err)
-		os.Exit(0)
+		return err
 	}
 
 	messagePipe.Run()
+	return nil
 }

@@ -4,7 +4,7 @@ package service
 import (
 	"sync"
 
-	"github.com/nginx/agent/v3/internal/model/instances"
+	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model/os"
 )
 

@@ -14,10 +14,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nginx/agent/v3/internal/api/http/common"
-	"github.com/nginx/agent/v3/internal/api/http/dataplane"
+	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/http/common"
+	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
-	"github.com/nginx/agent/v3/internal/model/instances"
 	"github.com/nginx/agent/v3/internal/model/os"
 	"github.com/nginx/agent/v3/internal/service"
 

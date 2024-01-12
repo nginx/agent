@@ -5,18 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package main
+package os
 
-import (
-	"os"
-
-	"github.com/nginx/agent/v3/internal"
-)
-
-func main() {
-	app := internal.NewApp()
-	err := app.Run()
-	if err != nil {
-		os.Exit(1)
-	}
+type Process struct {
+	Pid  int32
+	Ppid int32
+	Name string
+	Cmd  string
+	Exe  string
 }
