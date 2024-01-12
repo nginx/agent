@@ -1,6 +1,6 @@
 module github.com/nginx/agent/v3
 
-go 1.21.4
+go 1.21.6
 
 require (
 	github.com/google/uuid v1.5.0
