@@ -1,0 +1,23 @@
+syntax = "proto3";
+package f5.nginx.agent.internal.models.instances;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nginx/agent/v3/internal/models/instances";
+
+message Files {
+    repeated File files = 1;
+}
+
+message File {
+    google.protobuf.Timestamp last_modified = 1;
+    string path = 2;
+    string version = 3;
+}
+
+message FileDownloadResponse {
+    bool encoded = 1;
+    bytes file_content = 2;
+    string file_path = 3;
+    string instance_id = 4;
+}
