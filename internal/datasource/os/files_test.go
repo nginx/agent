@@ -20,7 +20,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/internal/client"
+	// "github.com/nginx/agent/v3/internal/client"
 
 	// "github.com/nginx/agent/v3/internal/client"
 	"github.com/stretchr/testify/assert"
@@ -31,12 +31,15 @@ import (
 func createCacheFile(t *testing.T, cachePath string) map[string]*instances.File {
 	timeFile1, err := time.Parse(time.RFC3339, "2024-01-08T13:22:23Z")
 	protoTimeFile1 := timestamppb.New(timeFile1)
+	assert.NoError(t, err)
 
 	timeFile2, err := time.Parse(time.RFC3339, "2024-01-08T13:22:25Z")
 	protoTimeFile2 := timestamppb.New(timeFile2)
+	assert.NoError(t, err)
 
 	timeFile3, err := time.Parse(time.RFC3339, "2024-01-08T13:22:21Z")
 	protoTimeFile3 := timestamppb.New(timeFile3)
+	assert.NoError(t, err)
 
 	cacheData := map[string]*instances.File{
 		"/usr/local/etc/nginx/locations/metrics.conf": {
@@ -111,9 +114,11 @@ func TestUpdateCache(t *testing.T) {
 
 	timeFile1, err := time.Parse(time.RFC3339, "2024-01-08T13:22:23Z")
 	protoTimeFile1 := timestamppb.New(timeFile1)
+	assert.NoError(t, err)
 
 	timeFile2, err := time.Parse(time.RFC3339, "2024-01-08T13:22:25Z")
 	protoTimeFile2 := timestamppb.New(timeFile2)
+	assert.NoError(t, err)
 
 	updateCacheData := map[string]*instances.File{
 		"/usr/local/etc/nginx/locations/metrics.conf": {

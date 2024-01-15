@@ -38,12 +38,15 @@ func CreateTestIds() (uuid.UUID, uuid.UUID, error) {
 
 func TestGetFilesMetadata(t *testing.T) {
 	tenantId, instanceId, err := CreateTestIds()
+	assert.NoError(t, err)
 
 	timeFile1, err := time.Parse(time.RFC3339, "2024-01-08T13:22:25Z")
 	protoTimeFile1 := timestamppb.New(timeFile1)
+	assert.NoError(t, err)
 
 	timeFile2, err := time.Parse(time.RFC3339, "2024-01-08T13:22:21Z")
 	protoTimeFile2 := timestamppb.New(timeFile2)
+	assert.NoError(t, err)
 
 	testDataResponse := &instances.Files{
 		Files: []*instances.File{
@@ -98,6 +101,7 @@ func TestGetFile(t *testing.T) {
 
 	time, err := time.Parse(time.RFC3339, "2024-01-08T13:22:25Z")
 	protoTime := timestamppb.New(time)
+	assert.NoError(t, err)
 
 	file := instances.File{
 		LastModified: protoTime,
