@@ -41,7 +41,7 @@ lint: ## Run linter
 
 format: ## Format code
 	@$(GORUN) $(FOFUMPT) -l -w .
-	@echo "🧑🏽‍💻 Format Done"
+	@echo "💻 Format Done"
 
 $(TEST_BUILD_DIR):
 	mkdir -p $(TEST_BUILD_DIR)
