@@ -18,13 +18,13 @@ import (
 var resourceMetrics []*v1.ResourceMetrics
 
 func TestOTelMetrics(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		metrics  map[string]bool
 		delay    time.Duration
 		endpoint string
 		protocol string
-		options []grpc.ServerOption
+		options  []grpc.ServerOption
 	}{
 		{
 			"nginx metrics test",
@@ -48,7 +48,7 @@ func TestOTelMetrics(t *testing.T) {
 				grpcServer := grpc.NewServer(test.options...)
 
 				sdk.RegisterMetricsServiceServer(grpcServer, OTelServer{})
-				
+
 				if err := grpcServer.Serve(lis); err != nil {
 					t.Fail()
 				}
@@ -72,7 +72,7 @@ func TestOTelMetrics(t *testing.T) {
 					}
 				}
 			}
-		
+
 			for key, value := range test.metrics {
 				assert.Truef(t, value, "NGINX %s metric not found", key)
 			}
