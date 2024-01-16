@@ -22,6 +22,18 @@ type Message struct {
 	Data  Payload
 }
 
+type Info struct {
+	Name string
+}
+
+type Plugin interface {
+	Init(*MessagePipe)
+	Close()
+	Info() *Info
+	Process(*Message)
+	Subscriptions() []string
+}
+
 type MessagePipe struct {
 	bus            message_bus.MessageBus
 	messageChannel chan *Message
