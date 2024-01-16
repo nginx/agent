@@ -55,7 +55,7 @@ func TestGetFilesMetadata(t *testing.T) {
 
 	filesUrl := fmt.Sprintf("%v/instance/%s/files/", ts.URL, instanceId)
 
-	hcd := NewHttpConfigDownloader()
+	hcd := NewHttpConfigClient()
 
 	resp, err := hcd.GetFilesMetadata(filesUrl, tenantId)
 	assert.NoError(t, err)
@@ -91,7 +91,7 @@ func TestGetFile(t *testing.T) {
 		FileContent: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
 	}
 
-	hcd := NewHttpConfigDownloader()
+	hcd := NewHttpConfigClient()
 
 	resp, err := hcd.GetFile(&file, filesUrl, tenantId)
 	assert.NoError(t, err)

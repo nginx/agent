@@ -22,18 +22,18 @@ import (
 
 type (
 	FileSourceParameters struct {
-		configDownloader client.HttpConfigDownloaderInterface
+		configDownloader client.HttpConfigClientInterface
 	}
 
 	// TODO: Naming of this ?
 	FileSource struct {
-		configDownloader client.HttpConfigDownloaderInterface
+		configDownloader client.HttpConfigClientInterface
 	}
 )
 
 func NewFileSource(fileSourceParameters *FileSourceParameters) *FileSource {
 	if fileSourceParameters == nil {
-		fileSourceParameters.configDownloader = client.NewHttpConfigDownloader()
+		fileSourceParameters.configDownloader = client.NewHttpConfigClient()
 	}
 
 	return &FileSource{
@@ -43,7 +43,7 @@ func NewFileSource(fileSourceParameters *FileSourceParameters) *FileSource {
 
 func WriteFile(fileContent []byte, filePath string) error {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		slog.Debug("File does not exist, creating")
+		slog.Debug("File does not exist, creating new file", "file", filePath)
 		err = os.MkdirAll(path.Dir(filePath), 0o750)
 		if err != nil {
 			return fmt.Errorf("error creating directory, directory: %v, error: %v", path.Dir(filePath), err)

@@ -45,7 +45,8 @@ func TestReadCache(t *testing.T) {
 	assert.NoError(t, err)
 	cachePath := fmt.Sprintf("/tmp/%v/cache.json", instanceId.String())
 
-	cacheData := createCacheFile(t, cachePath)
+	cacheData, err := createCacheFile(cachePath)
+	assert.NoError(t, err)
 
 	lastConfigApply, err := ReadCache(cachePath)
 	assert.NoError(t, err)
@@ -61,7 +62,8 @@ func TestUpdateCache(t *testing.T) {
 	assert.NoError(t, err)
 	cachePath := fmt.Sprintf("/tmp/%v/cache.json", instanceId.String())
 
-	cacheData := createCacheFile(t, cachePath)
+	cacheData, err := createCacheFile(cachePath)
+	assert.NoError(t, err)
 
 	timeFile1, err := createProtoTime("2024-01-08T13:22:23Z")
 	assert.NoError(t, err)
@@ -193,15 +195,20 @@ func createProtoTime(timeString string) (*timestamppb.Timestamp, error) {
 	return protoTime, err
 }
 
-func createCacheFile(t *testing.T, cachePath string) map[string]*instances.File {
+func createCacheFile(cachePath string) (map[string]*instances.File, error) {
 	timeFile1, err := createProtoTime("2024-01-08T13:22:23Z")
-	assert.NoError(t, err)
-
+	if err != nil {
+		return nil, fmt.Errorf("error creating time, error: %v", err)
+	}
 	timeFile2, err := createProtoTime("2024-01-08T13:22:25Z")
-	assert.NoError(t, err)
+	if err != nil {
+		return nil, fmt.Errorf("error creating time, error: %v", err)
+	}
 
 	timeFile3, err := createProtoTime("2024-01-08T13:22:21Z")
-	assert.NoError(t, err)
+	if err != nil {
+		return nil, fmt.Errorf("error creating time, error: %v", err)
+	}
 
 	cacheData := map[string]*instances.File{
 		"/tmp/nginx/locations/metrics.conf": {
@@ -222,14 +229,19 @@ func createCacheFile(t *testing.T, cachePath string) map[string]*instances.File 
 	}
 
 	cache, err := json.MarshalIndent(cacheData, "", "  ")
-	assert.NoError(t, err)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling cache, error: %v", err)
+	}
 
 	err = os.MkdirAll(path.Dir(cachePath), 0o750)
-	assert.NoError(t, err)
+	if err != nil {
+		return nil, fmt.Errorf("error creating cache directory, error: %v", err)
+	}
 
 	err = os.WriteFile(cachePath, cache, 0o644)
-	assert.FileExists(t, cachePath)
-	assert.NoError(t, err)
+	if err != nil {
+		return nil, fmt.Errorf("error writing to file, error: %v", err)
+	}
 
-	return cacheData
+	return cacheData, err
 }

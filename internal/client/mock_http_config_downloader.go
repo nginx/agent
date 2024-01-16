@@ -199,4 +199,4 @@ func (fake *FakeHttpConfigDownloaderInterface) recordInvocation(key string, args
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ HttpConfigDownloaderInterface = new(FakeHttpConfigDownloaderInterface)
+var _ HttpConfigClientInterface = new(FakeHttpConfigDownloaderInterface)
