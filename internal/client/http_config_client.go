@@ -49,19 +49,19 @@ func (hcd *HttpConfigDownloader) GetFilesMetadata(filesUrl string, tenantID uuid
 	req, err := http.NewRequest(http.MethodGet, filesUrl, nil)
 	req.Header.Set("tenantId", tenantID.String())
 	if err != nil {
-		slog.Error("Error making request", "err", err)
+		slog.Error("Error making request", "error", err)
 		return nil, err
 	}
 
 	resp, err := hcd.httpClient.Do(req)
 	if err != nil {
-		slog.Error("Error response from request", "err", err)
+		slog.Error("Error response from request", "error", err)
 		return nil, err
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Error("Error reading response body", "err", err)
+		slog.Error("Error reading response body", "error", err)
 		return nil, err
 	}
 
@@ -70,7 +70,7 @@ func (hcd *HttpConfigDownloader) GetFilesMetadata(filesUrl string, tenantID uuid
 	err = pb.Unmarshal(data, &files)
 
 	if err != nil {
-		slog.Error("Error unmarshal data", "err", err)
+		slog.Error("Error unmarshal data", "error", err)
 		return nil, err
 	}
 
@@ -91,19 +91,19 @@ func (hcd *HttpConfigDownloader) GetFile(file *instances.File, filesUrl string, 
 	req, err := http.NewRequest(http.MethodGet, fileUrl, nil)
 	req.Header.Set("tenantId", tenantID.String())
 	if err != nil {
-		slog.Error("Error making request", "err", err)
+		slog.Error("Error making request", "error", err)
 		return nil, err
 	}
 
 	resp, err := hcd.httpClient.Do(req)
 	if err != nil {
-		slog.Error("Error response from request", "err", err)
+		slog.Error("Error response from request", "error", err)
 		return nil, err
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Error("Error reading response body", "err", err)
+		slog.Error("Error reading response body", "error", err)
 		return nil, err
 	}
 
@@ -112,7 +112,7 @@ func (hcd *HttpConfigDownloader) GetFile(file *instances.File, filesUrl string, 
 	err = pb.Unmarshal(data, &response)
 
 	if err != nil {
-		slog.Error("Error unmarshal data", "err", err)
+		slog.Error("Error unmarshal data", "error", err)
 		return nil, err
 	}
 

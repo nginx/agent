@@ -64,7 +64,7 @@ func ReadCache(cachePath string) (map[string]*instances.File, error) {
 	lastConfigApply := make(map[string]*instances.File)
 
 	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
-		slog.Debug("previous config apply cache.json does not exist", "cachePath", cachePath, "error", err)
+		slog.Debug("Previous config apply cache.json does not exist", "cachePath", cachePath, "error", err)
 		return lastConfigApply, err
 	}
 
@@ -124,12 +124,12 @@ filesLoop:
 
 			fileDownloadResponse, err := fs.configDownloader.GetFile(fileData, filesUrl, tenantID)
 			if err != nil {
-				slog.Error("Error getting file data", "filesUrl", filesUrl, "err", err)
+				slog.Error("Error getting file data", "filesUrl", filesUrl, "error", err)
 			}
 
 			err = WriteFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
 			if err != nil {
-				slog.Error("Error writing to file", "filesPath", fileDownloadResponse.FilePath, "err", err)
+				slog.Error("Error writing to file", "filesPath", fileDownloadResponse.FilePath, "error", err)
 			}
 
 			currentConfigApply[fileData.Path] = &instances.File{
