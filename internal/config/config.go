@@ -51,7 +51,7 @@ func RegisterConfigFile() error {
 		return err
 	}
 
-	slog.Debug("configuration file loaded", "configPath", configPath)
+	slog.Debug("Configuration file loaded", "configPath", configPath)
 	viperInstance.Set(ConfigPathKey, configPath)
 
 	return nil
@@ -65,7 +65,7 @@ func GetConfig() *Config {
 		DataplaneAPI:   getDataplaneAPI(),
 	}
 
-	slog.Debug("agent config", "config", config)
+	slog.Debug("Agent config", "config", config)
 	return config
 }
 
@@ -105,7 +105,7 @@ func registerFlags() {
 		}
 		err := viperInstance.BindEnv(flag.Name)
 		if err != nil {
-			slog.Warn("error occurred binding env", "env", flag.Name, "error", err)
+			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
 }
@@ -129,7 +129,7 @@ func getConfigFilePaths() []string {
 	if err == nil {
 		paths = append(paths, path)
 	} else {
-		slog.Warn("unable to determine process's current directory")
+		slog.Warn("Unable to determine process's current directory")
 	}
 
 	return paths

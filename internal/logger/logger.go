@@ -51,7 +51,7 @@ func getLogWriter(logFile string) io.Writer {
 	if logFile != "" {
 		fileInfo, err := os.Stat(logPath)
 		if err != nil {
-			slog.Error("error reading log directory, proceeding to log only to stdout/stderr", "error", err)
+			slog.Error("Error reading log directory, proceeding to log only to stdout/stderr", "error", err)
 			return os.Stderr
 		}
 
@@ -61,7 +61,7 @@ func getLogWriter(logFile string) io.Writer {
 
 		logFileHandle, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o600)
 		if err != nil {
-			slog.Error("failed to open log file, proceeding to log only to stdout/stderr", "error", err)
+			slog.Error("Failed to open log file, proceeding to log only to stdout/stderr", "error", err)
 			return os.Stderr
 		}
 		return logFileHandle

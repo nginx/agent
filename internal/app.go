@@ -36,7 +36,7 @@ func (a *App) Run() error {
 
 		err := config.RegisterConfigFile()
 		if err != nil {
-			slog.Error("failed to load configuration file", "error", err)
+			slog.Error("Failed to load configuration file", "error", err)
 			return
 		}
 
@@ -45,12 +45,12 @@ func (a *App) Run() error {
 		slogger := logger.New(agentConfig.Log)
 		slog.SetDefault(slogger)
 
-		slog.Info("starting NGINX Agent")
+		slog.Info("Starting NGINX Agent")
 
 		messagePipe := bus.NewMessagePipe(ctx, 100)
 		err = messagePipe.Register(100, plugin.LoadPlugins(agentConfig, slogger))
 		if err != nil {
-			slog.Error("failed to register plugins", "error", err)
+			slog.Error("Failed to register plugins", "error", err)
 			return
 		}
 

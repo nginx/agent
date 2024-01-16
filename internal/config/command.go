@@ -69,7 +69,7 @@ $ nginx-agent completion fish > ~/.config/fish/completions/nginx-agent.fish
 		}
 
 		if err != nil {
-			slog.Warn("error sending command", "error", err)
+			slog.Warn("Error sending command", "error", err)
 		}
 	},
 }
