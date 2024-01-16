@@ -9,6 +9,7 @@ package os
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"os"
 	"path"
@@ -105,7 +106,7 @@ func (fs *FileSource) UpdateInstanceConfig(lastConfigApply map[string]*instances
 	filesMetaData, err := fs.configDownloader.GetFilesMetadata(filesUrl, tenantID)
 	if err != nil {
 		slog.Error("Error getting files metadata", "filesUrl", filesUrl, "error", err)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("Error getting files metadata, filesUrl: %v, error: %v", filesUrl, err)
 	}
 
 filesLoop:
@@ -124,12 +125,12 @@ filesLoop:
 
 			fileDownloadResponse, err := fs.configDownloader.GetFile(fileData, filesUrl, tenantID)
 			if err != nil {
-				slog.Error("Error getting file data", "filesUrl", filesUrl, "error", err)
+				return nil, nil, fmt.Errorf("Error getting file data, filesUrl:%v, error: %v", filesUrl, err)
 			}
 
 			err = WriteFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
 			if err != nil {
-				slog.Error("Error writing to file", "filesPath", fileDownloadResponse.FilePath, "error", err)
+				return nil, nil, fmt.Errorf("Error writing to file, filePath:%v, error: %v", fileDownloadResponse.FilePath, err)
 			}
 
 			currentConfigApply[fileData.Path] = &instances.File{
