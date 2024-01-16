@@ -23,7 +23,7 @@ type App struct {
 	version string
 }
 
-func NewApp(commit string, version string) *App {
+func NewApp(commit, version string) *App {
 	return &App{commit, version}
 }
 
