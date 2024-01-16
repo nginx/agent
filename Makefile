@@ -41,7 +41,7 @@ lint: ## Run linter
 
 format: ## Format code
 	@$(GORUN) $(FOFUMPT) -l -w .
-	@echo "🏯 Format Done"
+	@echo "🧑🏽‍💻 Format Done"
 
 $(TEST_BUILD_DIR):
 	mkdir -p $(TEST_BUILD_DIR)
@@ -70,3 +70,9 @@ generate: ## Genenerate proto files and server and client stubs from OpenAPI spe
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	$(GOGEN) ./...
+
+integration: integration-metrics
+
+integration-metrics:
+	@echo "🧪 Running metrics integration tests"
+	@$(GOTEST) -count=1 ./test/integration/metrics
