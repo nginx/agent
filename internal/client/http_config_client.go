@@ -10,7 +10,6 @@ package client
 import (
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
@@ -49,20 +48,17 @@ func (hcd *HttpConfigDownloader) GetFilesMetadata(filesUrl string, tenantID uuid
 	req, err := http.NewRequest(http.MethodGet, filesUrl, nil)
 	req.Header.Set("tenantId", tenantID.String())
 	if err != nil {
-		slog.Error("Error making request", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error creating GetFilesMetadata request, filesUrl:%v, error: %v", filesUrl, err)
 	}
 
 	resp, err := hcd.httpClient.Do(req)
 	if err != nil {
-		slog.Error("Error response from request", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error making GetFilesMetadata request, filesUrl:%v, error: %v", filesUrl, err)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Error("Error reading response body", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error reading GetFilesMetadata response body, filesUrl:%v, error: %v", filesUrl, err)
 	}
 
 	// TODO: look into why version is an unknown field and why this is needed
@@ -70,8 +66,7 @@ func (hcd *HttpConfigDownloader) GetFilesMetadata(filesUrl string, tenantID uuid
 	err = pb.Unmarshal(data, &files)
 
 	if err != nil {
-		slog.Error("Error unmarshal data", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error unmarshalling GetFilesMetadata response, responseData:%v, error: %v", data, err)
 	}
 
 	return &files, nil
@@ -91,20 +86,17 @@ func (hcd *HttpConfigDownloader) GetFile(file *instances.File, filesUrl string, 
 	req, err := http.NewRequest(http.MethodGet, fileUrl, nil)
 	req.Header.Set("tenantId", tenantID.String())
 	if err != nil {
-		slog.Error("Error making request", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error creating GetFile request, filesUrl:%v, error: %v", filesUrl, err)
 	}
 
 	resp, err := hcd.httpClient.Do(req)
 	if err != nil {
-		slog.Error("Error response from request", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error making GetFile request, filesUrl:%v, error: %v", filesUrl, err)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Error("Error reading response body", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error reading GetFile response body, filesUrl:%v, error: %v", filesUrl, err)
 	}
 
 	// TODO: look into why type is an unknown field and why this is needed
@@ -112,8 +104,7 @@ func (hcd *HttpConfigDownloader) GetFile(file *instances.File, filesUrl string, 
 	err = pb.Unmarshal(data, &response)
 
 	if err != nil {
-		slog.Error("Error unmarshal data", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error unmarshalling GetFile response, responseData:%v, error: %v", data, err)
 	}
 
 	return &response, err

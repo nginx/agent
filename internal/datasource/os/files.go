@@ -46,15 +46,13 @@ func WriteFile(fileContent []byte, filePath string) error {
 		slog.Debug("File does not exist, creating")
 		err = os.MkdirAll(path.Dir(filePath), 0o750)
 		if err != nil {
-			slog.Error("Error creating directory", "dir", path.Dir(filePath), "error", err)
-			return err
+			return fmt.Errorf("error creating directory, directory: %v, error: %v", path.Dir(filePath), err)
 		}
 	}
 
 	err := os.WriteFile(filePath, fileContent, 0o644)
 	if err != nil {
-		slog.Error("Error writing to file", "filePath", filePath, "error", err)
-		return err
+		return fmt.Errorf("error writing to file, filePath: %v, error:%v", filePath, err)
 	}
 	slog.Debug("Content written to file", "filePath", filePath)
 
@@ -65,19 +63,16 @@ func ReadCache(cachePath string) (map[string]*instances.File, error) {
 	lastConfigApply := make(map[string]*instances.File)
 
 	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
-		slog.Debug("Previous config apply cache.json does not exist", "cachePath", cachePath, "error", err)
-		return lastConfigApply, err
+		return lastConfigApply, fmt.Errorf("previous config apply cache.json does not exist, cachePath: %v, error: %v", cachePath, err)
 	}
 
 	cacheData, err := os.ReadFile(cachePath)
 	if err != nil {
-		slog.Error("Unable to read file cache.json", "cachePath", cachePath, "error", err)
-		return lastConfigApply, err
+		return lastConfigApply, fmt.Errorf("error reading file cache.json, cachePath: %v, error: %v", cachePath, err)
 	}
 	err = json.Unmarshal(cacheData, &lastConfigApply)
 	if err != nil {
-		slog.Error("Unable to unmarshal data from cache.json", "cachePath", cachePath, "error", err)
-		return lastConfigApply, err
+		return lastConfigApply, fmt.Errorf("error unmarshalling data from cache.json, cachePath: %v, error: %v", cachePath, err)
 	}
 
 	return lastConfigApply, err
@@ -86,14 +81,12 @@ func ReadCache(cachePath string) (map[string]*instances.File, error) {
 func UpdateCache(currentConfigApply map[string]*instances.File, cachePath string) error {
 	cache, err := json.MarshalIndent(currentConfigApply, "", "  ")
 	if err != nil {
-		slog.Error("Unable marshal cache data", "cachePath", cachePath, "error", err)
-		return err
+		return fmt.Errorf("error marshalling cache data, cachePath: %v, error: %v", cachePath, err)
 	}
 
 	err = WriteFile(cache, cachePath)
 	if err != nil {
-		slog.Error("Unable to write cache", "cachePath", cachePath, "error", err)
-		return err
+		return fmt.Errorf("error writing cache, cachePath: %v, error: %v", cachePath, err)
 	}
 
 	return err
@@ -105,8 +98,7 @@ func (fs *FileSource) UpdateInstanceConfig(lastConfigApply map[string]*instances
 
 	filesMetaData, err := fs.configDownloader.GetFilesMetadata(filesUrl, tenantID)
 	if err != nil {
-		slog.Error("Error getting files metadata", "filesUrl", filesUrl, "error", err)
-		return nil, nil, fmt.Errorf("Error getting files metadata, filesUrl: %v, error: %v", filesUrl, err)
+		return nil, nil, fmt.Errorf("error getting files metadata, filesUrl: %v, error: %v", filesUrl, err)
 	}
 
 filesLoop:
@@ -125,12 +117,12 @@ filesLoop:
 
 			fileDownloadResponse, err := fs.configDownloader.GetFile(fileData, filesUrl, tenantID)
 			if err != nil {
-				return nil, nil, fmt.Errorf("Error getting file data, filesUrl:%v, error: %v", filesUrl, err)
+				return nil, nil, fmt.Errorf("error getting file data, filesUrl:%v, error: %v", filesUrl, err)
 			}
 
 			err = WriteFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
 			if err != nil {
-				return nil, nil, fmt.Errorf("Error writing to file, filePath:%v, error: %v", fileDownloadResponse.FilePath, err)
+				return nil, nil, fmt.Errorf("error writing to file, filePath:%v, error: %v", fileDownloadResponse.FilePath, err)
 			}
 
 			currentConfigApply[fileData.Path] = &instances.File{
