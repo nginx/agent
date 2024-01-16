@@ -9,7 +9,6 @@ package os
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"os"
 	"path"
@@ -19,6 +18,27 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/client"
 )
+
+type (
+	FileSourceParameters struct {
+		configDownloader client.HttpConfigDownloaderInterface
+	}
+
+	// TODO: Naming of this ?
+	FileSource struct {
+		configDownloader client.HttpConfigDownloaderInterface
+	}
+)
+
+func NewFileSource(fileSourceParameters *FileSourceParameters) *FileSource {
+	if fileSourceParameters == nil {
+		fileSourceParameters.configDownloader = client.NewHttpConfigDownloader()
+	}
+
+	return &FileSource{
+		configDownloader: fileSourceParameters.configDownloader,
+	}
+}
 
 func WriteFile(fileContent []byte, filePath string) error {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -38,30 +58,6 @@ func WriteFile(fileContent []byte, filePath string) error {
 	slog.Debug("Content written to file", "filePath", filePath)
 
 	return nil
-}
-
-// Temp for testing
-func UpdateNginxConfig(tenantID uuid.UUID, instanceID uuid.UUID, filesUrl string) error {
-	cachePath := fmt.Sprintf("/var/lib/nginx-agent/config/%v/cache.json", instanceID.String())
-
-	lastConfigApply, err := ReadCache(cachePath)
-	if err != nil {
-		slog.Error("Failed to read cache.json", "cachePath", cachePath, "error", err)
-	}
-
-	currentConfigApply, skippedFiles, err := UpdateInstanceConfig(lastConfigApply, filesUrl, tenantID)
-	if err != nil {
-		slog.Error("Failed to update config", "cachePath", cachePath, "error", err)
-	}
-
-	err = UpdateCache(currentConfigApply, cachePath)
-	if err != nil {
-		slog.Error("Failed to update cache.json", "cachePath", cachePath, "error", err)
-	}
-
-	slog.Info("Skipped Files", "files", skippedFiles)
-
-	return err
 }
 
 func ReadCache(cachePath string) (map[string]*instances.File, error) {
@@ -102,13 +98,11 @@ func UpdateCache(currentConfigApply map[string]*instances.File, cachePath string
 	return err
 }
 
-func UpdateInstanceConfig(lastConfigApply map[string]*instances.File, filesUrl string, tenantID uuid.UUID) (currentConfigApply map[string]*instances.File, skippedFiles map[string]struct{}, err error) {
+func (fs *FileSource) UpdateInstanceConfig(lastConfigApply map[string]*instances.File, filesUrl string, tenantID uuid.UUID) (currentConfigApply map[string]*instances.File, skippedFiles map[string]struct{}, err error) {
 	currentConfigApply = make(map[string]*instances.File)
 	skippedFiles = make(map[string]struct{})
 
-	configDownloader := client.NewHttpConfigDownloader()
-
-	filesMetaData, err := configDownloader.GetFilesMetadata(filesUrl, tenantID)
+	filesMetaData, err := fs.configDownloader.GetFilesMetadata(filesUrl, tenantID)
 	if err != nil {
 		slog.Error("Error getting files metadata", "filesUrl", filesUrl, "error", err)
 		return nil, nil, err
@@ -128,14 +122,14 @@ filesLoop:
 
 			}
 
-			fileDownloadResponse, err := configDownloader.GetFile(fileData, filesUrl, tenantID)
+			fileDownloadResponse, err := fs.configDownloader.GetFile(fileData, filesUrl, tenantID)
 			if err != nil {
 				slog.Error("Error getting file data", "filesUrl", filesUrl, "err", err)
 			}
 
 			err = WriteFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
 			if err != nil {
-				slog.Error("Error writing to file", "filesUrl", filesUrl, "err", err)
+				slog.Error("Error writing to file", "filesPath", fileDownloadResponse.FilePath, "err", err)
 			}
 
 			currentConfigApply[fileData.Path] = &instances.File{

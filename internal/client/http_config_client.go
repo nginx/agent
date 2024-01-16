@@ -25,8 +25,8 @@ import (
 //go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/client mock_http_config_downloader.go | sed -e s\\/client\\\\.\\/\\/g > mock_http_config_downloader_fixed.go"
 //go:generate mv mock_http_config_downloader_fixed.go mock_http_config_downloader.go
 type HttpConfigDownloaderInterface interface {
-	GetFilesMetadata(filesUrl string, tenantID uuid.UUID)
-	GetFile(file *instances.File, filesUrl string, tenantID uuid.UUID)
+	GetFilesMetadata(filesUrl string, tenantID uuid.UUID) (*instances.Files, error)
+	GetFile(file *instances.File, filesUrl string, tenantID uuid.UUID) (*instances.FileDownloadResponse, error)
 }
 
 type HttpConfigDownloader struct {

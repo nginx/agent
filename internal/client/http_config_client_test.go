@@ -9,7 +9,6 @@ package client
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,41 +21,25 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func CreateTestIds() (uuid.UUID, uuid.UUID, error) {
-	tenantId, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
-	if err != nil {
-		fmt.Printf("Error creating tenantId: %v", err)
-	}
-
-	instanceId, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
-	if err != nil {
-		fmt.Printf("Error creating instanceId: %v", err)
-	}
-
-	return tenantId, instanceId, err
-}
-
 func TestGetFilesMetadata(t *testing.T) {
-	tenantId, instanceId, err := CreateTestIds()
+	tenantId, instanceId, err := createTestIds()
 	assert.NoError(t, err)
 
-	timeFile1, err := time.Parse(time.RFC3339, "2024-01-08T13:22:25Z")
-	protoTimeFile1 := timestamppb.New(timeFile1)
+	timeFile1, err := createProtoTime("2024-01-08T13:22:25Z")
 	assert.NoError(t, err)
 
-	timeFile2, err := time.Parse(time.RFC3339, "2024-01-08T13:22:21Z")
-	protoTimeFile2 := timestamppb.New(timeFile2)
+	timeFile2, err := createProtoTime("2024-01-08T13:22:21Z")
 	assert.NoError(t, err)
 
 	testDataResponse := &instances.Files{
 		Files: []*instances.File{
 			{
-				LastModified: protoTimeFile1,
+				LastModified: timeFile1,
 				Path:         "/usr/local/etc/nginx/locations/test.conf",
 				Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
 			},
 			{
-				LastModified: protoTimeFile2,
+				LastModified: timeFile2,
 				Path:         "/usr/local/etc/nginx/nginx.conf",
 				Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
 			},
@@ -75,20 +58,13 @@ func TestGetFilesMetadata(t *testing.T) {
 	hcd := NewHttpConfigDownloader()
 
 	resp, err := hcd.GetFilesMetadata(filesUrl, tenantId)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	assert.NoError(t, err)
 	assert.Equal(t, resp.String(), testDataResponse.String())
 }
 
 func TestGetFile(t *testing.T) {
-	tenantId, instanceId, err := CreateTestIds()
-	if err != nil {
-		fmt.Printf("Failed to create ID's")
-		log.Fatal(err)
-	}
+	tenantId, instanceId, err := createTestIds()
+	assert.NoError(t, err)
 
 	test := "{\"encoded\":true,\"fileContent\":\"bG9jYXRpb24gL3Rlc3QgewogICAgcmV0dXJuIDIwMCAiVGVzdCBsb2NhdGlvblxuIjsKfQ==\",\"filePath\":\"/usr/local/etc/nginx/locations/test.conf\",\"instanceId\":\"aecea348-62c1-4e3d-b848-6d6cdeb1cb9c\",\"type\":\"\"}\n"
 
@@ -99,12 +75,11 @@ func TestGetFile(t *testing.T) {
 
 	filesUrl := fmt.Sprintf("%v/instance/%s/files/", ts.URL, instanceId)
 
-	time, err := time.Parse(time.RFC3339, "2024-01-08T13:22:25Z")
-	protoTime := timestamppb.New(time)
+	time, err := createProtoTime("2024-01-08T13:22:25Z")
 	assert.NoError(t, err)
 
 	file := instances.File{
-		LastModified: protoTime,
+		LastModified: time,
 		Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
 		Path:         "/usr/local/etc/nginx/locations/test.conf",
 	}
@@ -117,11 +92,29 @@ func TestGetFile(t *testing.T) {
 	}
 
 	hcd := NewHttpConfigDownloader()
-	resp, err := hcd.GetFile(&file, filesUrl, tenantId)
-	if err != nil {
-		log.Fatal(err)
-	}
 
+	resp, err := hcd.GetFile(&file, filesUrl, tenantId)
 	assert.NoError(t, err)
 	assert.Equal(t, resp.String(), testDataResponse.String())
+}
+
+func createTestIds() (uuid.UUID, uuid.UUID, error) {
+	tenantId, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
+	if err != nil {
+		fmt.Printf("Error creating tenantId: %v", err)
+	}
+
+	instanceId, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	if err != nil {
+		fmt.Printf("Error creating instanceId: %v", err)
+	}
+
+	return tenantId, instanceId, err
+}
+
+func createProtoTime(timeString string) (*timestamppb.Timestamp, error) {
+	time, err := time.Parse(time.RFC3339, timeString)
+	protoTime := timestamppb.New(time)
+
+	return protoTime, err
 }
