@@ -9,6 +9,7 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -34,7 +35,8 @@ type (
 	}
 
 	DataplaneServerParameters struct {
-		Address         string
+		Host            string
+		Port            int
 		Logger          *slog.Logger
 		instanceService service.InstanceServiceInterface
 	}
@@ -55,7 +57,7 @@ func NewDataplaneServer(dataplaneServerParameters *DataplaneServerParameters) *D
 	}
 
 	return &DataplaneServer{
-		address:         dataplaneServerParameters.Address,
+		address:         fmt.Sprintf("%s:%d", dataplaneServerParameters.Host, dataplaneServerParameters.Port),
 		logger:          dataplaneServerParameters.Logger,
 		instanceService: dataplaneServerParameters.instanceService,
 	}
