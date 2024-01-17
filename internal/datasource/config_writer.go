@@ -77,10 +77,7 @@ func isFilePathValid(filePath string) bool {
 func doesFileRequireUpdate(previousFileCache os.FileCache, fileData *instances.File) (latest bool) {
 	if previousFileCache != nil && len(previousFileCache) > 0 {
 		fileOnSystem, ok := previousFileCache[fileData.Path]
-		if ok && !fileData.LastModified.AsTime().After(fileOnSystem.LastModified.AsTime()) {
-			return false
-		}
-		return true
+		return (ok && fileData.LastModified.AsTime().After(fileOnSystem.LastModified.AsTime())
 	}
 	return true
 }
