@@ -61,7 +61,7 @@ func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl string, tenantID uuid.UUI
 		return nil, fmt.Errorf("error reading GetFilesMetadata response body, filesUrl:%v, error: %v", filesUrl, err)
 	}
 
-	// TODO: look into why version is an unknown field and why this is needed
+	// version is an unknown field
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 	err = pb.Unmarshal(data, &files)
 
@@ -99,7 +99,7 @@ func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl string, tena
 		return nil, fmt.Errorf("error reading GetFile response body, filesUrl:%v, error: %v", filesUrl, err)
 	}
 
-	// TODO: look into why type is an unknown field and why this is needed
+	// type is an unknown field
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 	err = pb.Unmarshal(data, &response)
 
