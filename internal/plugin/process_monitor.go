@@ -61,7 +61,7 @@ func (pm *ProcessMonitor) Subscriptions() []string {
 }
 
 func (pm *ProcessMonitor) run(ctx context.Context) {
-	slog.Debug("process monitor started")
+	slog.Debug("Process monitor started", "monitoringPeriod", pm.params.MonitoringFrequency)
 
 	processes, err := pm.params.getProcessesFunc()
 	if err == nil {
@@ -69,7 +69,7 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 		pm.messagePipe.Process(&bus.Message{Topic: bus.OS_PROCESSES_TOPIC, Data: processes})
 	}
 
-	slog.Debug("processes updated")
+	slog.Debug("Processes updated")
 
 	ticker := time.NewTicker(pm.params.MonitoringFrequency)
 
@@ -80,13 +80,13 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 		case <-ticker.C:
 			processes, err := pm.params.getProcessesFunc()
 			if err != nil {
-				slog.Error("unable to get process information", "error", err)
+				slog.Error("Unable to get process information", "error", err)
 				continue
 			}
 
 			pm.processes = processes
 			pm.messagePipe.Process(&bus.Message{Topic: bus.OS_PROCESSES_TOPIC, Data: processes})
-			slog.Debug("processes updated")
+			slog.Debug("Processes updated")
 		}
 	}
 }

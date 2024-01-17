@@ -10,44 +10,56 @@ package internal
 import (
 	"context"
 	"log/slog"
-	"os"
-	"time"
 
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/plugin"
+	"github.com/spf13/cobra"
 )
 
-type App struct{}
-
-func NewApp() *App {
-	return &App{}
+type App struct {
+	commit  string
+	version string
 }
 
-func (*App) Run() error {
-	ctx := context.Background()
+func NewApp(commit, version string) *App {
+	return &App{commit, version}
+}
 
-	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug})
-	logger := slog.New(handler)
-	slog.SetDefault(logger)
+func (a *App) Run() error {
+	config.Init(a.version, a.commit)
 
-	slog.Info("starting NGINX Agent")
+	config.RegisterRunner(func(cmd *cobra.Command, _ []string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-	processMonitor := plugin.NewProcessMonitor(&plugin.ProcessMonitorParameters{
-		MonitoringFrequency: 1 * time.Minute,
+		err := config.RegisterConfigFile()
+		if err != nil {
+			slog.Error("Failed to load configuration file", "error", err)
+			return
+		}
+
+		agentConfig := config.GetConfig()
+
+		slogger := logger.New(agentConfig.Log)
+		slog.SetDefault(slogger)
+
+		slog.Info("Starting NGINX Agent")
+
+		messagePipe := bus.NewMessagePipe(ctx, 100)
+		err = messagePipe.Register(100, plugin.LoadPlugins(agentConfig, slogger))
+		if err != nil {
+			slog.Error("Failed to register plugins", "error", err)
+			return
+		}
+
+		messagePipe.Run()
 	})
 
-	dataplaneServer := plugin.NewDataplaneServer(&plugin.DataplaneServerParameters{
-		Address: "0.0.0.0:8091",
-		Logger:  logger,
-	})
-
-	messagePipe := bus.NewMessagePipe(ctx, 100)
-	err := messagePipe.Register(100, []bus.Plugin{processMonitor, dataplaneServer})
-	if err != nil {
-		slog.Error("failed to register plugins", "error", err)
+	if err := config.Execute(); err != nil {
 		return err
 	}
 
-	messagePipe.Run()
 	return nil
 }

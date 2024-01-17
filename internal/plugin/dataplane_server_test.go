@@ -27,7 +27,8 @@ import (
 
 func TestDataplaneServer_Init(t *testing.T) {
 	dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Address:         ":0",
+		Host:            "",
+		Port:            0,
 		Logger:          slog.Default(),
 		instanceService: &service.InstanceService{},
 	})
@@ -46,7 +47,8 @@ func TestDataplaneServer_Process(t *testing.T) {
 	testProcesses := []*os.Process{{Pid: 123, Name: "nginx"}}
 
 	dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Address:         ":0",
+		Host:            "",
+		Port:            0,
 		Logger:          slog.Default(),
 		instanceService: &service.InstanceService{},
 	})
@@ -71,7 +73,8 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 	instanceService.GetInstancesReturns([]*instances.Instance{instance}, nil)
 
 	dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Address:         ":0",
+		Host:            "",
+		Port:            0,
 		Logger:          slog.Default(),
 		instanceService: instanceService,
 	})
