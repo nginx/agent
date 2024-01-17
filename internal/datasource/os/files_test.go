@@ -41,7 +41,7 @@ func TestWriteFile(t *testing.T) {
 func TestReadCache(t *testing.T) {
 	instanceId, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	assert.NoError(t, err)
-	cachePath := fmt.Sprintf("/tmp/%v/cache.json", instanceId.String())
+	cachePath := fmt.Sprintf("/tmp/%s/cache.json", instanceId.String())
 
 	cacheData, err := createCacheFile(cachePath)
 	assert.NoError(t, err)

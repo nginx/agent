@@ -40,14 +40,13 @@ func (cw *ConfigWriter) Write(previousFileCache os.FileCache, filesUrl string, t
 		return nil, nil, fmt.Errorf("error getting files metadata from %s: %w", filesUrl, err)
 	}
 
-filesLoop:
 	for _, fileData := range filesMetaData.Files {
 		if isFilePathValid(fileData.Path) {
 			if !doesFileRequireUpdate(previousFileCache, fileData) {
 				slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.Path)
 				currentFileCache[fileData.Path] = previousFileCache[fileData.Path]
 				skippedFiles[fileData.Path] = struct{}{}
-				continue filesLoop
+				continue
 			}
 
 			fileDownloadResponse, err := cw.configDownloader.GetFile(fileData, filesUrl, tenantID)

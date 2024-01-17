@@ -41,7 +41,7 @@ func ReadInstanceCache(cachePath string) (FileCache, error) {
 	previousFileCache := FileCache{}
 
 	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
-		return previousFileCache, fmt.Errorf("cache.json does not exist %v: %w", cachePath, err)
+		return previousFileCache, fmt.Errorf("cache.json does not exist %s: %w", cachePath, err)
 	}
 
 	cacheData, err := os.ReadFile(cachePath)
