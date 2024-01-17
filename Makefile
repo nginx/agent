@@ -71,7 +71,7 @@ generate: ## Genenerate proto files and server and client stubs from OpenAPI spe
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	$(GOGEN) ./...
 
-integration: integration-metrics
+integration-test: integration-metrics
 
 integration-metrics:
 	@echo "🧪 Running metrics integration tests"
