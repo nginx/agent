@@ -56,17 +56,6 @@ func TestSetVersion(t *testing.T) {
 	assert.Equal(t, "v1.2.3", viperInstance.GetString(VersionConfigKey))
 }
 
-func TestSetDefaults(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
-	setDefaults()
-
-	assert.Equal(t, "info", viperInstance.GetString(LogLevelConfigKey))
-	assert.Equal(t, "", viperInstance.GetString(LogPathConfigKey))
-	assert.Equal(t, time.Minute, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyConfigKey))
-	assert.Equal(t, "", viperInstance.GetString(DataplaneAPIHostConfigKey))
-	assert.Equal(t, 0, viperInstance.GetInt(DataplaneAPIPortConfigKey))
-}
-
 func TestRegisterFlags(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
 	os.Setenv("NGINX_AGENT_LOG_LEVEL", "warn")

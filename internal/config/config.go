@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
@@ -22,6 +23,14 @@ import (
 const (
 	ConfigFileName = "nginx-agent.conf"
 	EnvPrefix      = "NGINX_AGENT"
+
+	ConfigPathKey                              = "path"
+	VersionConfigKey                           = "version"
+	LogLevelConfigKey                          = "log_level"
+	LogPathConfigKey                           = "log_path"
+	ProcessMonitorMonitoringFrequencyConfigKey = "process_monitor_monitoring_frequency"
+	DataplaneAPIHostConfigKey                  = "dataplane_api_host"
+	DataplaneAPIPortConfigKey                  = "dataplane_api_port"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
@@ -37,7 +46,6 @@ func Execute() error {
 
 func Init(version, commit string) {
 	setVersion(version, commit)
-	setDefaults()
 	registerFlags()
 }
 
@@ -74,28 +82,17 @@ func setVersion(version, commit string) {
 	viperInstance.SetDefault(VersionConfigKey, version)
 }
 
-func setDefaults() {
-	for _, agentFlag := range agentFlags {
-		switch agentFlag := agentFlag.(type) {
-		case *StringFlag:
-			viperInstance.SetDefault(agentFlag.Name, agentFlag.DefaultValue)
-		case *IntFlag:
-			viperInstance.SetDefault(agentFlag.Name, agentFlag.DefaultValue)
-		case *DurationFlag:
-			viperInstance.SetDefault(agentFlag.Name, agentFlag.DefaultValue)
-		}
-	}
-}
-
 func registerFlags() {
 	viperInstance.SetEnvPrefix(EnvPrefix)
 	viperInstance.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viperInstance.AutomaticEnv()
 
 	fs := ROOT_COMMAND.Flags()
-	for _, f := range agentFlags {
-		f.register(fs)
-	}
+	fs.String(LogLevelConfigKey, "info", "The desired verbosity level for logging messages from nginx-agent. Available options, in order of severity from highest to lowest, are: panic, fatal, error, info, debug, and trace.")
+	fs.String(LogPathConfigKey, "", "The path to output log messages to. If the default path doesn't exist, log messages are output to stdout/stderr.")
+	fs.Duration(ProcessMonitorMonitoringFrequencyConfigKey, time.Minute, "How often the NGINX Agent will check for process changes.")
+	fs.String(DataplaneAPIHostConfigKey, "", "The host used by the Dataplane API.")
+	fs.Int(DataplaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
