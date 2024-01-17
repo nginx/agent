@@ -13,33 +13,9 @@ import (
 	"log/slog"
 	"os"
 	"path"
-	"strings"
 
-	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/internal/client"
 )
-
-type (
-	FileSourceParameters struct {
-		configDownloader client.HttpConfigClientInterface
-	}
-
-	// TODO: Naming of this ?
-	FileSource struct {
-		configDownloader client.HttpConfigClientInterface
-	}
-)
-
-func NewFileSource(fileSourceParameters *FileSourceParameters) *FileSource {
-	if fileSourceParameters == nil {
-		fileSourceParameters.configDownloader = client.NewHttpConfigClient()
-	}
-
-	return &FileSource{
-		configDownloader: fileSourceParameters.configDownloader,
-	}
-}
 
 func WriteFile(fileContent []byte, filePath string) error {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -59,7 +35,7 @@ func WriteFile(fileContent []byte, filePath string) error {
 	return nil
 }
 
-func ReadCache(cachePath string) (map[string]*instances.File, error) {
+func ReadInstanceCache(cachePath string) (map[string]*instances.File, error) {
 	lastConfigApply := make(map[string]*instances.File)
 
 	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
@@ -90,48 +66,4 @@ func UpdateCache(currentConfigApply map[string]*instances.File, cachePath string
 	}
 
 	return err
-}
-
-func (fs *FileSource) UpdateInstanceConfig(lastConfigApply map[string]*instances.File, filesUrl string, tenantID uuid.UUID) (currentConfigApply map[string]*instances.File, skippedFiles map[string]struct{}, err error) {
-	currentConfigApply = make(map[string]*instances.File)
-	skippedFiles = make(map[string]struct{})
-
-	filesMetaData, err := fs.configDownloader.GetFilesMetadata(filesUrl, tenantID)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error getting files metadata, filesUrl: %v, error: %v", filesUrl, err)
-	}
-
-filesLoop:
-	for _, fileData := range filesMetaData.Files {
-		if fileData.Path != "" && !strings.HasSuffix(fileData.Path, "/") {
-			if lastConfigApply != nil && len(lastConfigApply) > 0 {
-				fileOnSystem, ok := lastConfigApply[fileData.Path]
-				if ok && !fileData.LastModified.AsTime().After(fileOnSystem.LastModified.AsTime()) {
-					slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.Path)
-					currentConfigApply[fileData.Path] = lastConfigApply[fileData.Path]
-					skippedFiles[fileData.Path] = struct{}{}
-					continue filesLoop
-				}
-
-			}
-
-			fileDownloadResponse, err := fs.configDownloader.GetFile(fileData, filesUrl, tenantID)
-			if err != nil {
-				return nil, nil, fmt.Errorf("error getting file data, filesUrl:%v, error: %v", filesUrl, err)
-			}
-
-			err = WriteFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
-			if err != nil {
-				return nil, nil, fmt.Errorf("error writing to file, filePath:%v, error: %v", fileDownloadResponse.FilePath, err)
-			}
-
-			currentConfigApply[fileData.Path] = &instances.File{
-				Version:      fileData.Version,
-				Path:         fileData.Path,
-				LastModified: fileData.LastModified,
-			}
-		}
-	}
-
-	return currentConfigApply, skippedFiles, err
 }
