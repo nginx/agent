@@ -17,6 +17,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/instances"
 )
 
+// map of files with filepath as key
 type FileCache = map[string]*instances.File
 
 func WriteFile(fileContent []byte, filePath string) error {
