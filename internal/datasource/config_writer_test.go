@@ -70,7 +70,7 @@ func TestUpdateInstanceConfig(t *testing.T) {
 	cacheTime2, err := createProtoTime("2024-01-08T12:22:21Z")
 	assert.NoError(t, err)
 
-	lastConfigApply := map[string]*instances.File{
+	previouseFileCache := datasource_os.FileCache{
 		"/tmp/nginx/nginx.conf": {
 			LastModified: cacheTime1,
 			Path:         "/tmp/nginx/nginx.conf",
@@ -83,10 +83,10 @@ func TestUpdateInstanceConfig(t *testing.T) {
 		},
 	}
 
-	currentCache, skippedFiles, err := configWriter.Write(lastConfigApply, filesUrl, tenantId)
+	currentCache, skippedFiles, err := configWriter.Write(previouseFileCache, filesUrl, tenantId)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(skippedFiles))
-	assert.NotEqual(t, currentCache, lastConfigApply)
+	assert.NotEqual(t, currentCache, previouseFileCache)
 	path := "/tmp/test.conf"
 	err = os.Remove(path)
 	assert.NoError(t, err)
@@ -130,20 +130,20 @@ func TestIsPathValid(t *testing.T) {
 }
 
 func TestDoesFileRequireUpdate(t *testing.T) {
-	timeFile1, err := createProtoTime("2024-01-08T14:22:21Z")
+	fileTime1, err := createProtoTime("2024-01-08T14:22:21Z")
 	assert.NoError(t, err)
 
-	timeFile2, err := createProtoTime("2024-01-08T13:22:23Z")
+	fileTime2, err := createProtoTime("2024-01-08T13:22:23Z")
 	assert.NoError(t, err)
 
-	lastConfigApply := map[string]*instances.File{
+	previousFileCache := datasource_os.FileCache{
 		"/tmp/nginx/locations/metrics.conf": {
-			LastModified: timeFile1,
+			LastModified: fileTime1,
 			Path:         "/tmp/nginx/locations/metrics.conf",
 			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
 		},
 		"/tmp/nginx/test.conf": {
-			LastModified: timeFile2,
+			LastModified: fileTime2,
 			Path:         "/tmp/nginx/test.conf",
 			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
 		},
@@ -154,15 +154,15 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		lastConfigApply map[string]*instances.File
+		lastConfigApply datasource_os.FileCache
 		fileData        *instances.File
 		expectedResult  bool
 	}{
 		{
 			name:            "file is latest",
-			lastConfigApply: lastConfigApply,
+			lastConfigApply: previousFileCache,
 			fileData: &instances.File{
-				LastModified: timeFile1,
+				LastModified: fileTime1,
 				Path:         "/tmp/nginx/locations/metrics.conf",
 				Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
 			},
@@ -170,7 +170,7 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 		},
 		{
 			name:            "file needs updating",
-			lastConfigApply: lastConfigApply,
+			lastConfigApply: previousFileCache,
 			fileData: &instances.File{
 				LastModified: updateTimeFile1,
 				Path:         "/tmp/nginx/test.conf",

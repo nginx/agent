@@ -31,36 +31,36 @@ func NewConfigWriter(configWriterParameters *ConfigWriterParameters) *ConfigWrit
 	}
 }
 
-func (cw *ConfigWriter) Write(lastConfigApply map[string]*instances.File, filesUrl string, tenantID uuid.UUID) (currentConfigApply map[string]*instances.File, skippedFiles map[string]struct{}, err error) {
-	currentConfigApply = make(map[string]*instances.File)
+func (cw *ConfigWriter) Write(previousFileCache os.FileCache, filesUrl string, tenantID uuid.UUID) (currentFileCache os.FileCache, skippedFiles map[string]struct{}, err error) {
+	currentFileCache = os.FileCache{}
 	skippedFiles = make(map[string]struct{})
 
 	filesMetaData, err := cw.configDownloader.GetFilesMetadata(filesUrl, tenantID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error getting files metadata, filesUrl: %v, error: %v", filesUrl, err)
+		return nil, nil, fmt.Errorf("error getting files metadata from %s: %w", filesUrl, err)
 	}
 
 filesLoop:
 	for _, fileData := range filesMetaData.Files {
 		if isFilePathValid(fileData.Path) {
-			if !doesFileRequireUpdate(lastConfigApply, fileData) {
+			if !doesFileRequireUpdate(previousFileCache, fileData) {
 				slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.Path)
-				currentConfigApply[fileData.Path] = lastConfigApply[fileData.Path]
+				currentFileCache[fileData.Path] = previousFileCache[fileData.Path]
 				skippedFiles[fileData.Path] = struct{}{}
 				continue filesLoop
 			}
 
 			fileDownloadResponse, err := cw.configDownloader.GetFile(fileData, filesUrl, tenantID)
 			if err != nil {
-				return nil, nil, fmt.Errorf("error getting file data, filesUrl:%v, error: %v", filesUrl, err)
+				return nil, nil, fmt.Errorf("error getting file data from %s: %w", filesUrl, err)
 			}
 
 			err = os.WriteFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
 			if err != nil {
-				return nil, nil, fmt.Errorf("error writing to file, filePath:%v, error: %v", fileDownloadResponse.FilePath, err)
+				return nil, nil, fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.FilePath, err)
 			}
 
-			currentConfigApply[fileData.Path] = &instances.File{
+			currentFileCache[fileData.Path] = &instances.File{
 				Version:      fileData.Version,
 				Path:         fileData.Path,
 				LastModified: fileData.LastModified,
@@ -68,19 +68,16 @@ filesLoop:
 		}
 	}
 
-	return currentConfigApply, skippedFiles, err
+	return currentFileCache, skippedFiles, err
 }
 
 func isFilePathValid(filePath string) bool {
-	if filePath != "" && !strings.HasSuffix(filePath, "/") {
-		return true
-	}
-	return false
+	return filePath != "" && !strings.HasSuffix(filePath, "/")
 }
 
-func doesFileRequireUpdate(lastConfigApply map[string]*instances.File, fileData *instances.File) (latest bool) {
-	if lastConfigApply != nil && len(lastConfigApply) > 0 {
-		fileOnSystem, ok := lastConfigApply[fileData.Path]
+func doesFileRequireUpdate(previousFileCache os.FileCache, fileData *instances.File) (latest bool) {
+	if previousFileCache != nil && len(previousFileCache) > 0 {
+		fileOnSystem, ok := previousFileCache[fileData.Path]
 		if ok && !fileData.LastModified.AsTime().After(fileOnSystem.LastModified.AsTime()) {
 			return false
 		}

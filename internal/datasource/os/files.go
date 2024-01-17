@@ -17,52 +17,54 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/instances"
 )
 
+type FileCache = map[string]*instances.File
+
 func WriteFile(fileContent []byte, filePath string) error {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		slog.Debug("File does not exist, creating new file", "file", filePath)
 		err = os.MkdirAll(path.Dir(filePath), 0o750)
 		if err != nil {
-			return fmt.Errorf("error creating directory, directory: %v, error: %v", path.Dir(filePath), err)
+			return fmt.Errorf("error creating directory %s: %w", path.Dir(filePath), err)
 		}
 	}
 
 	err := os.WriteFile(filePath, fileContent, 0o644)
 	if err != nil {
-		return fmt.Errorf("error writing to file, filePath: %v, error:%v", filePath, err)
+		return fmt.Errorf("error writing to file %s: %w", filePath, err)
 	}
 	slog.Debug("Content written to file", "filePath", filePath)
 
 	return nil
 }
 
-func ReadInstanceCache(cachePath string) (map[string]*instances.File, error) {
-	lastConfigApply := make(map[string]*instances.File)
+func ReadInstanceCache(cachePath string) (FileCache, error) {
+	previousFileCache := FileCache{}
 
 	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
-		return lastConfigApply, fmt.Errorf("previous config apply cache.json does not exist, cachePath: %v, error: %v", cachePath, err)
+		return previousFileCache, fmt.Errorf("cache.json does not exist %v: %w", cachePath, err)
 	}
 
 	cacheData, err := os.ReadFile(cachePath)
 	if err != nil {
-		return lastConfigApply, fmt.Errorf("error reading file cache.json, cachePath: %v, error: %v", cachePath, err)
+		return previousFileCache, fmt.Errorf("error reading file cache.json %s: %w", cachePath, err)
 	}
-	err = json.Unmarshal(cacheData, &lastConfigApply)
+	err = json.Unmarshal(cacheData, &previousFileCache)
 	if err != nil {
-		return lastConfigApply, fmt.Errorf("error unmarshalling data from cache.json, cachePath: %v, error: %v", cachePath, err)
+		return previousFileCache, fmt.Errorf("error unmarshalling data from cache.json %s: %w", cachePath, err)
 	}
 
-	return lastConfigApply, err
+	return previousFileCache, err
 }
 
-func UpdateCache(currentConfigApply map[string]*instances.File, cachePath string) error {
-	cache, err := json.MarshalIndent(currentConfigApply, "", "  ")
+func UpdateCache(currentFileCache FileCache, cachePath string) error {
+	cache, err := json.MarshalIndent(currentFileCache, "", "  ")
 	if err != nil {
-		return fmt.Errorf("error marshalling cache data, cachePath: %v, error: %v", cachePath, err)
+		return fmt.Errorf("error marshalling cache data from %s: %w", cachePath, err)
 	}
 
 	err = WriteFile(cache, cachePath)
 	if err != nil {
-		return fmt.Errorf("error writing cache, cachePath: %v, error: %v", cachePath, err)
+		return fmt.Errorf("error writing cache to %s: %w", cachePath, err)
 	}
 
 	return err

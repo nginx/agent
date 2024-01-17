@@ -10,6 +10,7 @@ package client
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
@@ -48,17 +49,17 @@ func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl string, tenantID uuid.UUI
 	req, err := http.NewRequest(http.MethodGet, filesUrl, nil)
 	req.Header.Set("tenantId", tenantID.String())
 	if err != nil {
-		return nil, fmt.Errorf("error creating GetFilesMetadata request, filesUrl:%v, error: %v", filesUrl, err)
+		return nil, fmt.Errorf("error creating GetFilesMetadata request %s: %w", filesUrl, err)
 	}
 
 	resp, err := hcd.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making GetFilesMetadata request, filesUrl:%v, error: %v", filesUrl, err)
+		return nil, fmt.Errorf("error making GetFilesMetadata request %s: %w", filesUrl, err)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading GetFilesMetadata response body, filesUrl:%v, error: %v", filesUrl, err)
+		return nil, fmt.Errorf("error reading GetFilesMetadata response body from %s: %w", filesUrl, err)
 	}
 
 	// type is returned for the rest api but is not in the proto definitions so needs to be discarded
@@ -66,7 +67,8 @@ func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl string, tenantID uuid.UUI
 	err = pb.Unmarshal(data, &files)
 
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling GetFilesMetadata response, responseData:%v, error: %v", data, err)
+		slog.Debug("Error unmarshalling GetFilesMetadata Response", "data", string(data))
+		return nil, fmt.Errorf("error unmarshalling GetFilesMetadata response: %w", err)
 	}
 
 	return &files, nil
@@ -86,17 +88,17 @@ func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl string, tena
 	req, err := http.NewRequest(http.MethodGet, fileUrl, nil)
 	req.Header.Set("tenantId", tenantID.String())
 	if err != nil {
-		return nil, fmt.Errorf("error creating GetFile request, filesUrl:%v, error: %v", filesUrl, err)
+		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesUrl, err)
 	}
 
 	resp, err := hcd.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making GetFile request, filesUrl:%v, error: %v", filesUrl, err)
+		return nil, fmt.Errorf("error making GetFile request %s: %w", filesUrl, err)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading GetFile response body, filesUrl:%v, error: %v", filesUrl, err)
+		return nil, fmt.Errorf("error reading GetFile response body from %s: %w", filesUrl, err)
 	}
 
 	// type is returned for the rest api but is not in the proto definitions so needs to be discarded
@@ -104,7 +106,8 @@ func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl string, tena
 	err = pb.Unmarshal(data, &response)
 
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling GetFile response, responseData:%v, error: %v", data, err)
+		slog.Debug("Error unmarshalling GetFile Response", "data", string(data))
+		return nil, fmt.Errorf("error unmarshalling GetFile response: %w", err)
 	}
 
 	return &response, err

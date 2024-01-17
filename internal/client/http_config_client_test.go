@@ -25,21 +25,21 @@ func TestGetFilesMetadata(t *testing.T) {
 	tenantId, instanceId, err := createTestIds()
 	assert.NoError(t, err)
 
-	timeFile1, err := createProtoTime("2024-01-08T13:22:25Z")
+	fileTime1, err := createProtoTime("2024-01-08T13:22:25Z")
 	assert.NoError(t, err)
 
-	timeFile2, err := createProtoTime("2024-01-08T13:22:21Z")
+	fileTime2, err := createProtoTime("2024-01-08T13:22:21Z")
 	assert.NoError(t, err)
 
 	testDataResponse := &instances.Files{
 		Files: []*instances.File{
 			{
-				LastModified: timeFile1,
+				LastModified: fileTime1,
 				Path:         "/usr/local/etc/nginx/locations/test.conf",
 				Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
 			},
 			{
-				LastModified: timeFile2,
+				LastModified: fileTime2,
 				Path:         "/usr/local/etc/nginx/nginx.conf",
 				Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
 			},
