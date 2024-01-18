@@ -13,8 +13,14 @@ import (
 	"github.com/nginx/agent/v3/internal"
 )
 
+var (
+	// set at buildtime
+	commit  = ""
+	version = ""
+)
+
 func main() {
-	app := internal.NewApp()
+	app := internal.NewApp(commit, version)
 	err := app.Run()
 	if err != nil {
 		os.Exit(1)
