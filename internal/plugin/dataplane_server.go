@@ -9,6 +9,7 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -33,7 +34,8 @@ type (
 	}
 
 	DataplaneServerParameters struct {
-		Address         string
+		Host            string
+		Port            int
 		Logger          *slog.Logger
 		instanceService service.InstanceServiceInterface
 	}
@@ -54,7 +56,7 @@ func NewDataplaneServer(dataplaneServerParameters *DataplaneServerParameters) *D
 	}
 
 	return &DataplaneServer{
-		address:         dataplaneServerParameters.Address,
+		address:         fmt.Sprintf("%s:%d", dataplaneServerParameters.Host, dataplaneServerParameters.Port),
 		logger:          dataplaneServerParameters.Logger,
 		instanceService: dataplaneServerParameters.instanceService,
 	}
@@ -93,10 +95,10 @@ func (dps *DataplaneServer) run(ctx context.Context) {
 	server.Use(sloggin.NewWithConfig(dps.logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
 	dataplane.RegisterHandlersWithOptions(server, dps, dataplane.GinServerOptions{BaseURL: "/api/v1"})
 
-	slog.Info("starting dataplane server", "address", dps.address)
+	slog.Info("Starting dataplane server", "address", dps.address)
 	listener, err := net.Listen("tcp", dps.address)
 	if err != nil {
-		slog.Error("startup of dataplane server failed", "error", err)
+		slog.Error("Startup of dataplane server failed", "error", err)
 		return
 	}
 
@@ -104,7 +106,7 @@ func (dps *DataplaneServer) run(ctx context.Context) {
 
 	err = server.RunListener(listener)
 	if err != nil {
-		slog.Error("startup of dataplane server failed", "error", err)
+		slog.Error("Startup of dataplane server failed", "error", err)
 	}
 }
 

@@ -29,7 +29,8 @@ import (
 
 func TestDataplaneServer_Init(t *testing.T) {
 	dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Address:         ":0",
+		Host:            "",
+		Port:            0,
 		Logger:          slog.Default(),
 		instanceService: service.NewInstanceService(),
 	})
@@ -48,7 +49,8 @@ func TestDataplaneServer_Process(t *testing.T) {
 	testInstances := []*instances.Instance{{InstanceId: "123", Type: instances.Type_NGINX}}
 
 	dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Address:         ":0",
+		Host:            "",
+		Port:            0,
 		Logger:          slog.Default(),
 		instanceService: service.NewInstanceService(),
 	})
@@ -73,7 +75,8 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 	instanceService.GetInstancesReturns([]*instances.Instance{instance})
 
 	dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Address:         ":0",
+		Host:            "",
+		Port:            0,
 		Logger:          slog.Default(),
 		instanceService: instanceService,
 	})
@@ -118,7 +121,8 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	instanceService.UpdateInstanceConfigurationReturnsOnCall(2, "", fmt.Errorf("Unknown error"))
 
 	dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Address:         ":0",
+		Host:            "",
+		Port:            0,
 		Logger:          slog.Default(),
 		instanceService: instanceService,
 	})
