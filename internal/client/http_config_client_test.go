@@ -55,7 +55,7 @@ func TestGetFilesMetadata(t *testing.T) {
 
 	filesUrl := fmt.Sprintf("%v/instance/%s/files/", ts.URL, instanceId)
 
-	hcd := NewHttpConfigClient()
+	hcd := NewHttpConfigClient(time.Second * 10)
 
 	resp, err := hcd.GetFilesMetadata(filesUrl, tenantId)
 	assert.NoError(t, err)
@@ -75,11 +75,11 @@ func TestGetFile(t *testing.T) {
 
 	filesUrl := fmt.Sprintf("%v/instance/%s/files/", ts.URL, instanceId)
 
-	time, err := createProtoTime("2024-01-08T13:22:25Z")
+	fileTime, err := createProtoTime("2024-01-08T13:22:25Z")
 	assert.NoError(t, err)
 
 	file := instances.File{
-		LastModified: time,
+		LastModified: fileTime,
 		Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
 		Path:         "/usr/local/etc/nginx/locations/test.conf",
 	}
@@ -91,7 +91,7 @@ func TestGetFile(t *testing.T) {
 		FileContent: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
 	}
 
-	hcd := NewHttpConfigClient()
+	hcd := NewHttpConfigClient(time.Second * 10)
 
 	resp, err := hcd.GetFile(&file, filesUrl, tenantId)
 	assert.NoError(t, err)

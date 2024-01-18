@@ -21,9 +21,11 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate -o mock_http_config_downloader.go . HttpConfigDownloaderInterface
-//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/client mock_http_config_downloader.go | sed -e s\\/client\\\\.\\/\\/g > mock_http_config_downloader_fixed.go"
-//go:generate mv mock_http_config_downloader_fixed.go mock_http_config_downloader.go
+//counterfeiter:generate -o mock_http_config_client.go . HttpConfigClientInterface
+//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/client mock_http_config_client.go | sed -e s\\/client\\\\.\\/\\/g > mock_http_config_client_fixed.go"
+//go:generate mv mock_http_config_client_fixed.go mock_http_config_client.go
+const tenantHeader = "tenantId"
+
 type HttpConfigClientInterface interface {
 	GetFilesMetadata(filesUrl string, tenantID uuid.UUID) (*instances.Files, error)
 	GetFile(file *instances.File, filesUrl string, tenantID uuid.UUID) (*instances.FileDownloadResponse, error)
@@ -33,9 +35,9 @@ type HttpConfigClient struct {
 	httpClient http.Client
 }
 
-func NewHttpConfigClient() *HttpConfigClient {
+func NewHttpConfigClient(timeout time.Duration) *HttpConfigClient {
 	httpClient := http.Client{
-		Timeout: time.Second * 10,
+		Timeout: timeout,
 	}
 
 	return &HttpConfigClient{
@@ -47,7 +49,7 @@ func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl string, tenantID uuid.UUI
 	files := instances.Files{}
 
 	req, err := http.NewRequest(http.MethodGet, filesUrl, nil)
-	req.Header.Set("tenantId", tenantID.String())
+	req.Header.Set(tenantHeader, tenantID.String())
 	if err != nil {
 		return nil, fmt.Errorf("error creating GetFilesMetadata request %s: %w", filesUrl, err)
 	}
@@ -86,7 +88,7 @@ func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl string, tena
 	fileUrl := fmt.Sprintf("%v%v?%v", filesUrl, filePath, params.Encode())
 
 	req, err := http.NewRequest(http.MethodGet, fileUrl, nil)
-	req.Header.Set("tenantId", tenantID.String())
+	req.Header.Set(tenantHeader, tenantID.String())
 	if err != nil {
 		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesUrl, err)
 	}

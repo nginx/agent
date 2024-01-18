@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 package datasource
 
 import (
@@ -56,12 +62,15 @@ func TestUpdateInstanceConfig(t *testing.T) {
 		FileContent: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
 	}
 
-	fakeConfigDownloader := &client.FakeHttpConfigDownloaderInterface{}
+	fakeConfigDownloader := &client.FakeHttpConfigClientInterface{}
 	fakeConfigDownloader.GetFilesMetadataReturns(metaDataReturn, nil)
 	fakeConfigDownloader.GetFileReturns(getFileReturn, nil)
 
 	configWriter := NewConfigWriter(&ConfigWriterParameters{
 		configDownloader: fakeConfigDownloader,
+		client: Client{
+			Timeout: time.Second * 10,
+		},
 	})
 
 	cacheTime1, err := createProtoTime("2024-01-08T14:22:21Z")
