@@ -15,6 +15,7 @@ type Config struct {
 	Log            Log            `mapstructure:"log" yaml:"-"`
 	ProcessMonitor ProcessMonitor `mapstructure:"process_monitor" yaml:"-"`
 	DataplaneAPI   DataplaneAPI   `mapstructure:"dataplane_api" yaml:"-"`
+	Client         Client         `mapstructure:"client" yaml:"-"`
 }
 
 type Log struct {
@@ -29,4 +30,8 @@ type ProcessMonitor struct {
 type DataplaneAPI struct {
 	Host string `mapstructure:"host" yaml:"-"`
 	Port int    `mapstructure:"port" yaml:"-"`
+}
+
+type Client struct {
+	Timeout time.Duration `mapstructure:"timeout" yaml:"-"`
 }

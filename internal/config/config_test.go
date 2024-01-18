@@ -47,6 +47,8 @@ func TestGetConfig(t *testing.T) {
 	assert.Equal(t, 8038, result.DataplaneAPI.Port)
 
 	assert.Equal(t, 30*time.Second, result.ProcessMonitor.MonitoringFrequency)
+
+	assert.Equal(t, 10*time.Second, result.Client.Timeout)
 }
 
 func TestSetVersion(t *testing.T) {
@@ -63,6 +65,7 @@ func TestRegisterFlags(t *testing.T) {
 	os.Setenv("NGINX_AGENT_PROCESS_MONITOR_MONITORING_FREQUENCY", "10s")
 	os.Setenv("NGINX_AGENT_DATAPLANE_API_HOST", "example.com")
 	os.Setenv("NGINX_AGENT_DATAPLANE_API_PORT", "9090")
+	os.Setenv("NGINX_AGENT_CLIENT_TIMEOUT", "10s")
 	registerFlags()
 
 	assert.Equal(t, "warn", viperInstance.GetString(LogLevelConfigKey))
@@ -70,6 +73,7 @@ func TestRegisterFlags(t *testing.T) {
 	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyConfigKey))
 	assert.Equal(t, "example.com", viperInstance.GetString(DataplaneAPIHostConfigKey))
 	assert.Equal(t, 9090, viperInstance.GetInt(DataplaneAPIPortConfigKey))
+	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutConfigKey))
 }
 
 func TestSeekFileInPaths(t *testing.T) {
@@ -108,6 +112,8 @@ func TestLoadPropertiesFromFile(t *testing.T) {
 
 	assert.Equal(t, 30*time.Second, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyConfigKey))
 
+	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutConfigKey))
+
 	err = loadPropertiesFromFile("./testdata/unknown.conf")
 	assert.Error(t, err)
 }
@@ -145,4 +151,12 @@ func TestGetDataplaneAPI(t *testing.T) {
 	result := getDataplaneAPI()
 	assert.Equal(t, "testhost", result.Host)
 	assert.Equal(t, 9091, result.Port)
+}
+
+func TestGetClient(t *testing.T) {
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance.Set(ClientTimeoutConfigKey, time.Hour)
+
+	result := getClient()
+	assert.Equal(t, time.Hour, result.Timeout)
 }
