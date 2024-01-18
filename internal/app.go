@@ -36,13 +36,15 @@ func (*App) Run() error {
 		MonitoringFrequency: 1 * time.Minute,
 	})
 
+	instanceMonitor := plugin.NewInstanceMonitor(&plugin.InstanceMonitorParameters{})
+
 	dataplaneServer := plugin.NewDataplaneServer(&plugin.DataplaneServerParameters{
 		Address: "0.0.0.0:8091",
 		Logger:  logger,
 	})
 
 	messagePipe := bus.NewMessagePipe(ctx, 100)
-	err := messagePipe.Register(100, []bus.Plugin{processMonitor, dataplaneServer})
+	err := messagePipe.Register(100, []bus.Plugin{processMonitor, instanceMonitor, dataplaneServer})
 	if err != nil {
 		slog.Error("failed to register plugins", "error", err)
 		return err

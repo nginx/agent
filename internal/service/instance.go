@@ -8,9 +8,12 @@
 package service
 
 import (
+	"fmt"
+	"net/http"
+
+	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/internal/datasource/nginx"
-	"github.com/nginx/agent/v3/internal/model/os"
+	"github.com/nginx/agent/v3/api/http/common"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
@@ -18,24 +21,41 @@ import (
 //go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/service mock_instance.go | sed -e s\\/service\\\\.\\/\\/g > mock_instance_fixed.go"
 //go:generate mv mock_instance_fixed.go mock_instance.go
 type InstanceServiceInterface interface {
-	UpdateProcesses(newProcesses []*os.Process)
-	GetInstances() ([]*instances.Instance, error)
+	UpdateInstances(newInstances []*instances.Instance)
+	GetInstances() []*instances.Instance
+	UpdateInstanceConfiguration(instanceId string, location string) (string, error)
 }
 
 type InstanceService struct {
-	processes []*os.Process
+	instances      []*instances.Instance
+	nginxInstances map[string]*instances.Instance
 }
 
 func NewInstanceService() *InstanceService {
-	return &InstanceService{}
+	return &InstanceService{
+		nginxInstances: make(map[string]*instances.Instance),
+	}
 }
 
-func (is *InstanceService) UpdateProcesses(newProcesses []*os.Process) {
-	is.processes = newProcesses
+func (is *InstanceService) UpdateInstances(newInstances []*instances.Instance) {
+	is.instances = newInstances
+	if is.instances != nil {
+		for _, instance := range is.instances {
+			is.nginxInstances[instance.InstanceId] = instance
+		}
+	}
 }
 
-func (is *InstanceService) GetInstances() ([]*instances.Instance, error) {
-	n := nginx.New(nginx.NginxParameters{})
-	instances, err := n.GetInstances(is.processes)
-	return instances, err
+func (is *InstanceService) GetInstances() []*instances.Instance {
+	return is.instances
+}
+
+func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, location string) (string, error) {
+	correlationId := uuid.New().String()
+	if _, ok := is.nginxInstances[instanceId]; ok {
+		// TODO update NGINX instance configuration
+	} else {
+		return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("unable to find instance with id %s", instanceId)}
+	}
+	return correlationId, nil
 }

@@ -66,7 +66,7 @@ generate: ## Genenerate proto files and server and client stubs from OpenAPI spe
 	@echo "Generating Go server and client stubs from OpenAPI specifications"
 	@$(GORUN) $(OAPICODEGEN) -generate types,skip-prune -package common ./api/http/common/common.yaml > ./api/http/common/common.gen.go
 	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane -import-mapping=$(IMPORT_MAPPING) ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
-	@$(GORUN) $(OAPICODEGEN) -generate client -package dataplane -import-mapping=$(IMPORT_MAPPING) ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane -import-mapping=$(IMPORT_MAPPING) ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	$(GOGEN) ./...

@@ -52,6 +52,11 @@ type AgentMeta struct {
 	Type MetaType `json:"type"`
 }
 
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
 // Instance defines model for Instance.
 type Instance struct {
 	InstanceId *string        `json:"instanceId,omitempty"`
@@ -84,6 +89,12 @@ type NginxMeta struct {
 	// Type The type of metadata
 	Type MetaType `json:"type"`
 }
+
+// InternalServerError defines model for InternalServerError.
+type InternalServerError = ErrorResponse
+
+// NotFound defines model for NotFound.
+type NotFound = ErrorResponse
 
 // AsNginxMeta returns the union data inside the Instance_Meta as a NginxMeta
 func (t Instance_Meta) AsNginxMeta() (NginxMeta, error) {

@@ -18,7 +18,6 @@ import (
 	"github.com/nginx/agent/v3/api/http/common"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
-	"github.com/nginx/agent/v3/internal/model/os"
 	"github.com/nginx/agent/v3/internal/service"
 
 	sloggin "github.com/samber/slog-gin"
@@ -43,9 +42,9 @@ type (
 		address         string
 		logger          *slog.Logger
 		instanceService service.InstanceServiceInterface
+		instances       []*instances.Instance
 		messagePipe     *bus.MessagePipe
 		server          net.Listener
-		processes       []*os.Process
 	}
 )
 
@@ -76,16 +75,15 @@ func (dps *DataplaneServer) Info() *bus.Info {
 
 func (dps *DataplaneServer) Process(msg *bus.Message) {
 	switch {
-	case msg.Topic == bus.OS_PROCESSES_TOPIC:
-		newProcesses := msg.Data.([]*os.Process)
-		dps.processes = newProcesses
-		dps.instanceService.UpdateProcesses(newProcesses)
+	case msg.Topic == bus.INSTANCES_TOPIC:
+		dps.instances = msg.Data.([]*instances.Instance)
+		dps.instanceService.UpdateInstances(dps.instances)
 	}
 }
 
 func (dps *DataplaneServer) Subscriptions() []string {
 	return []string{
-		bus.OS_PROCESSES_TOPIC,
+		bus.INSTANCES_TOPIC,
 	}
 }
 
@@ -112,11 +110,8 @@ func (dps *DataplaneServer) run(ctx context.Context) {
 
 // GET /instances
 func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
-	var statusCode int
-	var responseBody any
-
 	slog.Debug("get instances request")
-	instances, err := dps.instanceService.GetInstances()
+	instances := dps.instanceService.GetInstances()
 	slog.Debug("got instances", "instances", instances)
 
 	response := []common.Instance{}
@@ -129,16 +124,36 @@ func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 		})
 	}
 
-	if err != nil {
-		statusCode = http.StatusInternalServerError
-		responseBody = ErrorResponse{internalServerError}
-	} else {
-		statusCode = http.StatusOK
-		responseBody = response
+	ctx.JSON(http.StatusOK, response)
+}
 
+// (PUT /instances/{instanceId}/configurations)
+func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceId string) {
+	slog.Debug("update instance configuration request", "instanceId", instanceId)
+
+	var request dataplane.UpdateInstanceConfigurationJSONRequestBody
+	if err := ctx.Bind(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, "")
+		return
 	}
 
-	ctx.JSON(statusCode, responseBody)
+	if request.Location == nil {
+		ctx.JSON(http.StatusBadRequest, common.ErrorResponse{Message: "missing location field in request body"})
+	} else {
+		correlationId, err := dps.instanceService.UpdateInstanceConfiguration(instanceId, *request.Location)
+		if err != nil {
+			switch e := err.(type) {
+			case *common.RequestError:
+				slog.Debug("unable to update instance configuration", "instanceId", instanceId, "correlationId", correlationId)
+				ctx.JSON(e.StatusCode, common.ErrorResponse{Message: e.Error()})
+			default:
+				slog.Error("unable to update instance configuration", "instanceId", instanceId, "correlationId", correlationId, "error", err)
+				ctx.JSON(http.StatusInternalServerError, common.ErrorResponse{Message: internalServerError})
+			}
+		} else {
+			ctx.JSON(http.StatusOK, dataplane.CorrelationId{CorrelationId: &correlationId})
+		}
+	}
 }
 
 func mapTypeEnums(typeString string) common.InstanceType {
