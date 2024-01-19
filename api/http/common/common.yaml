@@ -52,6 +52,8 @@ components:
           type: string
         runnable_modules:
           type: string
+        exe_path:
+          type: string
     Instance:
       type: object
       properties:

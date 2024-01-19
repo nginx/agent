@@ -17,7 +17,7 @@ import (
 	"github.com/nginx/agent/v3/internal/uuid"
 )
 
-type GetInfo func(pid int32, exe string) (*process.Info, error)
+type GetInfo func(pid int32, exePath string) (*process.Info, error)
 
 type Nginx struct {
 	parameters NginxParameters
@@ -62,8 +62,15 @@ func (n *Nginx) GetInstances(processes []*os.Process) ([]*instances.Instance, er
 			if err == nil {
 				newProcess := &instances.Instance{
 					InstanceId: uuid.Generate("%s_%s_%s", nginxProcess.Exe, nginxInfo.ConfPath, nginxInfo.Prefix),
-					Type:       nginxType,
-					Version:    version,
+					Meta: &instances.Meta{
+						Meta: &instances.Meta_NginxMeta{
+							NginxMeta: &instances.NginxMeta{
+								ExePath: nginxProcess.Exe,
+							},
+						},
+					},
+					Type:    nginxType,
+					Version: version,
 				}
 				processList = append(processList, newProcess)
 			}

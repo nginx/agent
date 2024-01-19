@@ -68,7 +68,7 @@ func TestUpdateInstanceConfig(t *testing.T) {
 
 	configWriter := NewConfigWriter(&ConfigWriterParameters{
 		configDownloader: fakeConfigDownloader,
-		client: Client{
+		Client: Client{
 			Timeout: time.Second * 10,
 		},
 	})

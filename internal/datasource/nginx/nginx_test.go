@@ -54,8 +54,17 @@ func TestGetInstances(t *testing.T) {
 			expected: []*instances.Instance{
 				{
 					InstanceId: "ae6c58c1-bc92-30c1-a9c9-85591422068e",
-					Type:       instances.Type_NGINX,
-					Version:    "1.23.3",
+					Meta: &instances.Meta{
+						Meta: &instances.Meta_NginxMeta{
+							NginxMeta: &instances.NginxMeta{
+								ExePath:         "",
+								LoadableModules: "",
+								RunnableModules: "",
+							},
+						},
+					},
+					Type:    instances.Type_NGINX,
+					Version: "1.23.3",
 				},
 			},
 		}, {
@@ -70,7 +79,16 @@ func TestGetInstances(t *testing.T) {
 				{
 					InstanceId: "ae6c58c1-bc92-30c1-a9c9-85591422068e",
 					Type:       instances.Type_NGINXPLUS,
-					Version:    "R30",
+					Meta: &instances.Meta{
+						Meta: &instances.Meta_NginxMeta{
+							NginxMeta: &instances.NginxMeta{
+								ExePath:         "",
+								LoadableModules: "",
+								RunnableModules: "",
+							},
+						},
+					},
+					Version: "R30",
 				},
 			},
 		},
@@ -79,7 +97,7 @@ func TestGetInstances(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			n := New(NginxParameters{
-				GetInfo: func(pid int32, exe string) (*process.Info, error) {
+				GetInfo: func(pid int32, exePath string) (*process.Info, error) {
 					return test.input, nil
 				},
 			})

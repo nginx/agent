@@ -25,6 +25,7 @@ message Meta {
 message NginxMeta {
     string loadable_modules = 1;
     string runnable_modules = 2;
+    string exe_path = 3;
 }
 
 enum Type {

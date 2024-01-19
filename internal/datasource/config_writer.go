@@ -26,7 +26,7 @@ type (
 
 	ConfigWriterParameters struct {
 		configDownloader client.HttpConfigClientInterface
-		client           Client
+		Client           Client
 	}
 
 	ConfigWriter struct {
@@ -36,7 +36,7 @@ type (
 
 func NewConfigWriter(configWriterParameters *ConfigWriterParameters) *ConfigWriter {
 	if configWriterParameters == nil {
-		configWriterParameters.configDownloader = client.NewHttpConfigClient(configWriterParameters.client.Timeout)
+		configWriterParameters.configDownloader = client.NewHttpConfigClient(configWriterParameters.Client.Timeout)
 	}
 
 	return &ConfigWriter{

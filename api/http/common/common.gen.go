@@ -83,6 +83,7 @@ type MetaType string
 
 // NginxMeta defines model for NginxMeta.
 type NginxMeta struct {
+	ExePath         *string `json:"exe_path,omitempty"`
 	LoadableModules *string `json:"loadable_modules,omitempty"`
 	RunnableModules *string `json:"runnable_modules,omitempty"`
 

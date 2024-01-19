@@ -11,6 +11,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"log/slog"
 	"path"
 	"regexp"
 	"strings"
@@ -30,6 +31,7 @@ type Info struct {
 	ConfPath      string
 	Cfgf          map[string]interface{}
 	ConfigureArgs []string
+	ExePath       string
 }
 
 type Process struct {
@@ -40,18 +42,19 @@ func New(exec exec.ExecInterface) *Process {
 	return &Process{exec: exec}
 }
 
-func (np *Process) GetInfo(pid int32, exe string) (*Info, error) {
+func (np *Process) GetInfo(pid int32, exePath string) (*Info, error) {
 	var err error
 	var nginxInfo *Info
 
-	if exe == "" {
-		exe = np.getExe()
+	slog.Info("Exe Path", "exe", exePath)
+	if exePath == "" {
+		exePath = np.getExe()
 	}
 
-	if exe == "" {
+	if exePath == "" {
 		return nil, fmt.Errorf("unable to find NGINX exe for pid %d", pid)
 	} else {
-		outputBuffer, err := np.exec.RunCmd(exe, "-V")
+		outputBuffer, err := np.exec.RunCmd(exePath, "-V")
 		if err != nil {
 			return nil, err
 		} else {
@@ -59,26 +62,32 @@ func (np *Process) GetInfo(pid int32, exe string) (*Info, error) {
 		}
 	}
 
+	nginxInfo.ExePath = exePath
+
 	return nginxInfo, err
 }
 
 func (np *Process) getExe() string {
-	exe := ""
+	exePath := ""
 
 	out, commandErr := np.exec.RunCmd("sh", "-c", "command -v nginx")
+	slog.Info("Command Out", "out", out)
 	if commandErr == nil {
-		exe = strings.TrimSuffix(out.String(), "\n")
+		exePath = strings.TrimSuffix(out.String(), "\n")
+		slog.Info("Exe Trim", "exepath", exePath)
 	}
 
-	if exe == "" {
-		exe = np.defaultToNginxCommandForProcessPath()
+	if exePath == "" {
+		slog.Info("Exe Empty", "exepath", exePath)
+		exePath = np.defaultToNginxCommandForProcessPath()
 	}
 
-	if strings.Contains(exe, "(deleted)") {
-		exe = np.sanitizeExeDeletedPath(exe)
+	if strings.Contains(exePath, "(deleted)") {
+		exePath = np.sanitizeExeDeletedPath(exePath)
 	}
 
-	return exe
+	slog.Info("End of GetEXe", "exepath", exePath)
+	return exePath
 }
 
 func (np *Process) parseNginxVersionCommandOutput(output *bytes.Buffer) *Info {
@@ -118,12 +127,12 @@ func (np *Process) defaultToNginxCommandForProcessPath() string {
 	return path
 }
 
-func (np *Process) sanitizeExeDeletedPath(exe string) string {
-	firstSpace := strings.Index(exe, "(deleted)")
+func (np *Process) sanitizeExeDeletedPath(exePath string) string {
+	firstSpace := strings.Index(exePath, "(deleted)")
 	if firstSpace != -1 {
-		return strings.TrimSpace(exe[0:firstSpace])
+		return strings.TrimSpace(exePath[0:firstSpace])
 	}
-	return strings.TrimSpace(exe)
+	return strings.TrimSpace(exePath)
 }
 
 func (np *Process) parseNginxVersion(line string) (version, plusVersion string) {
