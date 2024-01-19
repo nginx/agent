@@ -62,12 +62,12 @@ func TestUpdateInstanceConfig(t *testing.T) {
 		FileContent: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
 	}
 
-	fakeConfigDownloader := &client.FakeHttpConfigClientInterface{}
-	fakeConfigDownloader.GetFilesMetadataReturns(metaDataReturn, nil)
-	fakeConfigDownloader.GetFileReturns(getFileReturn, nil)
+	fakeConfigClient := &client.FakeHttpConfigClientInterface{}
+	fakeConfigClient.GetFilesMetadataReturns(metaDataReturn, nil)
+	fakeConfigClient.GetFileReturns(getFileReturn, nil)
 
 	configWriter := NewConfigWriter(&ConfigWriterParameters{
-		configDownloader: fakeConfigDownloader,
+		configClient: fakeConfigClient,
 		Client: Client{
 			Timeout: time.Second * 10,
 		},

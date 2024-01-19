@@ -25,22 +25,22 @@ type (
 	}
 
 	ConfigWriterParameters struct {
-		configDownloader client.HttpConfigClientInterface
-		Client           Client
+		configClient client.HttpConfigClientInterface
+		Client       Client
 	}
 
 	ConfigWriter struct {
-		configDownloader client.HttpConfigClientInterface
+		configClient client.HttpConfigClientInterface
 	}
 )
 
 func NewConfigWriter(configWriterParameters *ConfigWriterParameters) *ConfigWriter {
 	if configWriterParameters == nil {
-		configWriterParameters.configDownloader = client.NewHttpConfigClient(configWriterParameters.Client.Timeout)
+		configWriterParameters.configClient = client.NewHttpConfigClient(configWriterParameters.Client.Timeout)
 	}
 
 	return &ConfigWriter{
-		configDownloader: configWriterParameters.configDownloader,
+		configClient: configWriterParameters.configClient,
 	}
 }
 
@@ -48,7 +48,7 @@ func (cw *ConfigWriter) Write(previousFileCache os.FileCache, filesUrl string, t
 	currentFileCache = os.FileCache{}
 	skippedFiles = make(map[string]struct{})
 
-	filesMetaData, err := cw.configDownloader.GetFilesMetadata(filesUrl, tenantID)
+	filesMetaData, err := cw.configClient.GetFilesMetadata(filesUrl, tenantID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting files metadata from %s: %w", filesUrl, err)
 	}
@@ -62,7 +62,7 @@ func (cw *ConfigWriter) Write(previousFileCache os.FileCache, filesUrl string, t
 				continue
 			}
 
-			fileDownloadResponse, err := cw.configDownloader.GetFile(fileData, filesUrl, tenantID)
+			fileDownloadResponse, err := cw.configClient.GetFile(fileData, filesUrl, tenantID)
 			if err != nil {
 				return nil, nil, fmt.Errorf("error getting file data from %s: %w", filesUrl, err)
 			}

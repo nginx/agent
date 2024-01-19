@@ -11,7 +11,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"log/slog"
 	"path"
 	"regexp"
 	"strings"
@@ -46,7 +45,6 @@ func (np *Process) GetInfo(pid int32, exePath string) (*Info, error) {
 	var err error
 	var nginxInfo *Info
 
-	slog.Info("Exe Path", "exe", exePath)
 	if exePath == "" {
 		exePath = np.getExe()
 	}
@@ -71,14 +69,11 @@ func (np *Process) getExe() string {
 	exePath := ""
 
 	out, commandErr := np.exec.RunCmd("sh", "-c", "command -v nginx")
-	slog.Info("Command Out", "out", out)
 	if commandErr == nil {
 		exePath = strings.TrimSuffix(out.String(), "\n")
-		slog.Info("Exe Trim", "exepath", exePath)
 	}
 
 	if exePath == "" {
-		slog.Info("Exe Empty", "exepath", exePath)
 		exePath = np.defaultToNginxCommandForProcessPath()
 	}
 
@@ -86,7 +81,6 @@ func (np *Process) getExe() string {
 		exePath = np.sanitizeExeDeletedPath(exePath)
 	}
 
-	slog.Info("End of GetEXe", "exepath", exePath)
 	return exePath
 }
 
