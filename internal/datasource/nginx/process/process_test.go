@@ -20,7 +20,7 @@ func TestGetInfo(t *testing.T) {
 	tests := []struct {
 		name                      string
 		nginxVersionCommandOutput string
-		exePath                       string
+		exePath                   string
 		expected                  *Info
 	}{
 		{
