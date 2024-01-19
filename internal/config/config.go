@@ -31,6 +31,7 @@ const (
 	ProcessMonitorMonitoringFrequencyConfigKey = "process_monitor_monitoring_frequency"
 	DataplaneAPIHostConfigKey                  = "dataplane_api_host"
 	DataplaneAPIPortConfigKey                  = "dataplane_api_port"
+	ClientTimeoutConfigKey                     = "client_timeout"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
@@ -71,6 +72,7 @@ func GetConfig() *Config {
 		Log:            getLog(),
 		ProcessMonitor: getProcessMonitor(),
 		DataplaneAPI:   getDataplaneAPI(),
+		Client:         getClient(),
 	}
 
 	slog.Debug("Agent config", "config", config)
@@ -93,6 +95,7 @@ func registerFlags() {
 	fs.Duration(ProcessMonitorMonitoringFrequencyConfigKey, time.Minute, "How often the NGINX Agent will check for process changes.")
 	fs.String(DataplaneAPIHostConfigKey, "", "The host used by the Dataplane API.")
 	fs.Int(DataplaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
+	fs.Duration(ClientTimeoutConfigKey, time.Minute, "Client timeout")
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -169,5 +172,11 @@ func getDataplaneAPI() DataplaneAPI {
 	return DataplaneAPI{
 		Host: viperInstance.GetString(DataplaneAPIHostConfigKey),
 		Port: viperInstance.GetInt(DataplaneAPIPortConfigKey),
+	}
+}
+
+func getClient() Client {
+	return Client{
+		Timeout: viperInstance.GetDuration(ClientTimeoutConfigKey),
 	}
 }
