@@ -41,7 +41,9 @@ func (is *InstanceService) UpdateInstances(newInstances []*instances.Instance) {
 	is.instances = newInstances
 	if is.instances != nil {
 		for _, instance := range is.instances {
-			is.nginxInstances[instance.InstanceId] = instance
+			if instance.Type == instances.Type_NGINX || instance.Type == instances.Type_NGINXPLUS {
+				is.nginxInstances[instance.InstanceId] = instance
+			}
 		}
 	}
 }
@@ -50,12 +52,12 @@ func (is *InstanceService) GetInstances() []*instances.Instance {
 	return is.instances
 }
 
-func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, location string) (string, error) {
-	correlationId := uuid.New().String()
+func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, location string) (correlationId string, err error) {
+	correlationId = uuid.New().String()
 	if _, ok := is.nginxInstances[instanceId]; ok {
 		// TODO update NGINX instance configuration
 	} else {
 		return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("unable to find instance with id %s", instanceId)}
 	}
-	return correlationId, nil
+	return correlationId, err
 }
