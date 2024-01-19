@@ -6,7 +6,7 @@
  */
 
 syntax = "proto3";
-package f5.nginx.agent.internal.model.instances;
+package f5.nginx.agent.api.grpc.instances;
 
 option go_package = "github.com/nginx/agent/v3/api/grpc/instances";
 
@@ -22,6 +22,7 @@ message Meta {
         NginxMeta nginx_meta = 1;
     }
 }
+
 message NginxMeta {
     string loadable_modules = 1;
     string runnable_modules = 2;

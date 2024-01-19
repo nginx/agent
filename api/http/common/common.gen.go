@@ -22,35 +22,10 @@ const (
 	UNIT      InstanceType = "UNIT"
 )
 
-// Defines values for MessageType.
-const (
-	ATTACHMENT       MessageType = "ATTACHMENT"
-	CERTIFICATE      MessageType = "CERTIFICATE"
-	CONFIG           MessageType = "CONFIG"
-	CONFIGRESPONSE   MessageType = "CONFIG_RESPONSE"
-	CONTROL          MessageType = "CONTROL"
-	CONTROLRESPONSE  MessageType = "CONTROL_RESPONSE"
-	DATAPLANEREQUEST MessageType = "DATAPLANE_REQUEST"
-	DATAPLANEUPDATE  MessageType = "DATAPLANE_UPDATE"
-	FILESRESPONSE    MessageType = "FILES_RESPONSE"
-	HEARTBEAT        MessageType = "HEARTBEAT"
-)
-
 // Defines values for MetaType.
 const (
-	AGENTMETA MetaType = "AGENT_META"
 	NGINXMETA MetaType = "NGINX_META"
 )
-
-// AgentMeta defines model for AgentMeta.
-type AgentMeta struct {
-	Config       *string `json:"config,omitempty"`
-	Metrics      *string `json:"metrics,omitempty"`
-	Registration *string `json:"registration,omitempty"`
-
-	// Type The type of metadata
-	Type MetaType `json:"type"`
-}
 
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
@@ -74,9 +49,6 @@ type Instance_Meta struct {
 
 // InstanceType The type of a data plane instance
 type InstanceType string
-
-// MessageType The available message types on the Management and Data plane APIs
-type MessageType string
 
 // MetaType The type of metadata
 type MetaType string
@@ -124,34 +96,6 @@ func (t *Instance_Meta) MergeNginxMeta(v NginxMeta) error {
 	return err
 }
 
-// AsAgentMeta returns the union data inside the Instance_Meta as a AgentMeta
-func (t Instance_Meta) AsAgentMeta() (AgentMeta, error) {
-	var body AgentMeta
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromAgentMeta overwrites any union data inside the Instance_Meta as the provided AgentMeta
-func (t *Instance_Meta) FromAgentMeta(v AgentMeta) error {
-	v.Type = "AgentMeta"
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeAgentMeta performs a merge with any union data inside the Instance_Meta, using the provided AgentMeta
-func (t *Instance_Meta) MergeAgentMeta(v AgentMeta) error {
-	v.Type = "AgentMeta"
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JsonMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
 func (t Instance_Meta) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"type"`
@@ -166,8 +110,6 @@ func (t Instance_Meta) ValueByDiscriminator() (interface{}, error) {
 		return nil, err
 	}
 	switch discriminator {
-	case "AgentMeta":
-		return t.AsAgentMeta()
 	case "NginxMeta":
 		return t.AsNginxMeta()
 	default:

@@ -158,11 +158,46 @@ func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 	}
 }
 
+// (GET /instances/{instanceId}/configurations/status)
+func (dps *DataplaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, instanceId string) {
+	status, err := dps.instanceService.GetInstanceConfigurationStatus(instanceId)
+	if err != nil {
+		switch e := err.(type) {
+		case *common.RequestError:
+			slog.Debug("unable to get instance configuration status", "instanceId", instanceId)
+			ctx.JSON(e.StatusCode, common.ErrorResponse{Message: e.Error()})
+		default:
+			slog.Error("unable to get instance configuration status", "instanceId", instanceId, "error", err)
+			ctx.JSON(http.StatusInternalServerError, common.ErrorResponse{Message: internalServerError})
+		}
+	} else {
+		responseBody := &dataplane.ConfigurationStatus{
+			CorrelationId: &status.CorrelationId,
+			LastUpdated:   toPtr(status.LateUpdated.AsTime()),
+			Message:       &status.Message,
+			Status:        mapStatusEnums(status.Status.String()),
+		}
+		ctx.JSON(http.StatusOK, responseBody)
+	}
+}
+
 func mapTypeEnums(typeString string) common.InstanceType {
 	if typeString == instances.Type_NGINX.String() {
 		return common.NGINX
 	}
 	return common.CUSTOM
+}
+
+func mapStatusEnums(typeString string) *dataplane.ConfigurationStatusType {
+	if typeString == instances.Status_SUCCESS.String() {
+		return toPtr(dataplane.SUCCESS)
+	} else if typeString == instances.Status_FAILED.String() {
+		return toPtr(dataplane.FAILED)
+	} else if typeString == instances.Status_ROLLBACK_FAILED.String() {
+		return toPtr(dataplane.ROLLBACKFAILED)
+	} else {
+		return toPtr(dataplane.INPROGESS)
+	}
 }
 
 func toPtr[T any](value T) *T {

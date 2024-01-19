@@ -45,6 +45,28 @@ paths:
           $ref: '../common/common.yaml#/components/responses/NotFound'
         '500':
           $ref: '../common/common.yaml#/components/responses/InternalServerError'
+  /instances/{instanceId}/configurations/status:
+    get:
+      summary: Returns the latest status of the instance's configuration
+      operationId: GetInstanceConfigurationStatus
+      parameters:
+        - name: instanceId
+          in: path
+          description: ID of instance
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Configuration status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigurationStatus'
+        '404':
+          $ref: '../common/common.yaml#/components/responses/NotFound'
+        '500':
+          $ref: '../common/common.yaml#/components/responses/InternalServerError'
 
 components:
   schemas:
@@ -54,6 +76,30 @@ components:
         location:
           type: string
           example: "https://file-server.com/aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+    ConfigurationStatus:
+      type: object
+      properties:
+        correlationId:
+          type: string
+          example: "9e2d49c9-ada2-4ed1-b6f2-391d5cf634d9"
+        lastUpdated:
+          type: string
+          format: date-time
+          example: "2023-10-19T11:26:32.676Z"
+        status:
+          $ref: "#/components/schemas/ConfigurationStatusType"
+          example: SUCCESS
+        message:
+          type: string
+          example: "Config updated successfully"
+    ConfigurationStatusType:
+      type: string
+      description: "The type of configuration status"
+      enum:
+        - IN_PROGESS
+        - SUCCESS
+        - FAILED
+        - ROLLBACK_FAILED
     CorrelationId:
       type: object
       properties:

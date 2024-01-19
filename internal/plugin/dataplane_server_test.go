@@ -176,6 +176,118 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	assert.Equal(t, "Internal Server Error", result3.Message)
 }
 
+func TestDataplaneServer_GetInstanceConfigurationStatus(t *testing.T) {
+	instanceId := "ae6c58c1-bc92-30c1-a9c9-85591422068e"
+	correlationId := "dfsbhj6-bc92-30c1-a9c9-85591422068e"
+	status := &instances.ConfigurationStatus{
+		InstanceId:    instanceId,
+		CorrelationId: correlationId,
+		Status:        instances.Status_SUCCESS,
+		Message:       "Success",
+	}
+	instance := &instances.Instance{InstanceId: instanceId, Type: instances.Type_NGINX, Version: "1.23.1"}
+
+	instanceService := &service.FakeInstanceServiceInterface{}
+	instanceService.GetInstancesReturns([]*instances.Instance{instance})
+	instanceService.GetInstanceConfigurationStatusReturnsOnCall(0, status, nil)
+	instanceService.GetInstanceConfigurationStatusReturnsOnCall(1, nil, &common.RequestError{
+		StatusCode: http.StatusNotFound,
+		Message:    "Can not find instance",
+	})
+	instanceService.GetInstanceConfigurationStatusReturnsOnCall(2, nil, fmt.Errorf("Unknown error"))
+
+	dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
+		Host:            "",
+		Port:            0,
+		Logger:          slog.Default(),
+		instanceService: instanceService,
+	})
+
+	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	err := messagePipe.Register(100, []bus.Plugin{dataplaneServer})
+	assert.NoError(t, err)
+	go messagePipe.Run()
+
+	time.Sleep(10 * time.Millisecond)
+
+	assert.NotNil(t, dataplaneServer.server.Addr().(*net.TCPAddr).Port)
+
+	// Test happy path
+	res, err := performGetInstanceConfigurationStatusRequest(dataplaneServer, instanceId)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+
+	resBody, err := io.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	result := &dataplane.ConfigurationStatus{}
+	err = json.Unmarshal(resBody, &result)
+	assert.NoError(t, err)
+	assert.Equal(t, toPtr(status.CorrelationId), result.CorrelationId)
+	assert.Equal(t, toPtr(status.Message), result.Message)
+	assert.Equal(t, toPtr(dataplane.SUCCESS), result.Status)
+	assert.NotNil(t, result.LastUpdated)
+
+	// Test instance not found
+	res, err = performGetInstanceConfigurationStatusRequest(dataplaneServer, instanceId)
+	assert.NoError(t, err)
+	assert.Equal(t, 404, res.StatusCode)
+
+	resBody, err = io.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	result2 := common.ErrorResponse{}
+	err = json.Unmarshal(resBody, &result2)
+	assert.NoError(t, err)
+	assert.Equal(t, "Can not find instance", result2.Message)
+
+	// Test internal server error
+	res, err = performGetInstanceConfigurationStatusRequest(dataplaneServer, instanceId)
+	assert.NoError(t, err)
+	assert.Equal(t, 500, res.StatusCode)
+
+	resBody, err = io.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	result3 := common.ErrorResponse{}
+	err = json.Unmarshal(resBody, &result3)
+	assert.NoError(t, err)
+	assert.Equal(t, "Internal Server Error", result3.Message)
+}
+
+func TestDataplaneServer_MapStatusEnums(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected dataplane.ConfigurationStatusType
+	}{
+		{
+			name:     "Success type",
+			input:    "SUCCESS",
+			expected: dataplane.SUCCESS,
+		}, {
+			name:     "In progress type",
+			input:    "IN_PROGRESS",
+			expected: dataplane.INPROGESS,
+		}, {
+			name:     "Failed type",
+			input:    "FAILED",
+			expected: dataplane.FAILED,
+		}, {
+			name:     "Rollback Failed type",
+			input:    "ROLLBACK_FAILED",
+			expected: dataplane.ROLLBACKFAILED,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			result := mapStatusEnums(test.input)
+			assert.Equal(t, toPtr(test.expected), result)
+		})
+	}
+}
+
 func performPutRequest(dataplaneServer *DataplaneServer, instanceId string, data []byte) (*http.Response, error) {
 	target := "http://" + dataplaneServer.server.Addr().(*net.TCPAddr).AddrPort().String() + "/api/v1/instances/" + instanceId + "/configurations"
 	req, err := http.NewRequest(http.MethodPut, target, bytes.NewBuffer(data))
@@ -186,4 +298,9 @@ func performPutRequest(dataplaneServer *DataplaneServer, instanceId string, data
 
 	client := &http.Client{}
 	return client.Do(req)
+}
+
+func performGetInstanceConfigurationStatusRequest(dataplaneServer *DataplaneServer, instanceId string) (*http.Response, error) {
+	target := "http://" + dataplaneServer.server.Addr().(*net.TCPAddr).AddrPort().String() + "/api/v1/instances/" + instanceId + "/configurations/status"
+	return http.Get(target)
 }

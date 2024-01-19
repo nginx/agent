@@ -4,26 +4,25 @@
  * This source code is licensed under the Apache License, Version 2.0 license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 syntax = "proto3";
 package f5.nginx.agent.api.grpc.instances;
-
+ 
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/nginx/agent/v3/api/grpc/instances";
-
-message Files {
-    repeated File files = 1;
+ 
+message ConfigurationStatus {
+    string instance_id = 1;
+    string correlation_id = 2;
+    google.protobuf.Timestamp late_updated = 3;
+    Status status = 4;
+    string message = 5;
 }
 
-message File {
-    google.protobuf.Timestamp last_modified = 1;
-    string path = 2;
-    string version = 3;
-}
-
-message FileDownloadResponse {
-    bool encoded = 1;
-    bytes file_content = 2;
-    string file_path = 3;
-    string instance_id = 4;
+enum Status {
+    IN_PROGRESS = 0;
+    SUCCESS = 1;
+    FAILED = 2;
+    ROLLBACK_FAILED = 3;
 }

@@ -12,15 +12,37 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	externalRef0 "github.com/nginx/agent/v3/api/http/common"
 	"github.com/oapi-codegen/runtime"
+)
+
+// Defines values for ConfigurationStatusType.
+const (
+	FAILED         ConfigurationStatusType = "FAILED"
+	INPROGESS      ConfigurationStatusType = "IN_PROGESS"
+	ROLLBACKFAILED ConfigurationStatusType = "ROLLBACK_FAILED"
+	SUCCESS        ConfigurationStatusType = "SUCCESS"
 )
 
 // Configuration defines model for Configuration.
 type Configuration struct {
 	Location *string `json:"location,omitempty"`
 }
+
+// ConfigurationStatus defines model for ConfigurationStatus.
+type ConfigurationStatus struct {
+	CorrelationId *string    `json:"correlationId,omitempty"`
+	LastUpdated   *time.Time `json:"lastUpdated,omitempty"`
+	Message       *string    `json:"message,omitempty"`
+
+	// Status The type of configuration status
+	Status *ConfigurationStatusType `json:"status,omitempty"`
+}
+
+// ConfigurationStatusType The type of configuration status
+type ConfigurationStatusType string
 
 // CorrelationId defines model for CorrelationId.
 type CorrelationId struct {
@@ -110,6 +132,9 @@ type ClientInterface interface {
 	UpdateInstanceConfigurationWithBody(ctx context.Context, instanceId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateInstanceConfiguration(ctx context.Context, instanceId string, body UpdateInstanceConfigurationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetInstanceConfigurationStatus request
+	GetInstanceConfigurationStatus(ctx context.Context, instanceId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetInstances(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -138,6 +163,18 @@ func (c *Client) UpdateInstanceConfigurationWithBody(ctx context.Context, instan
 
 func (c *Client) UpdateInstanceConfiguration(ctx context.Context, instanceId string, body UpdateInstanceConfigurationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateInstanceConfigurationRequest(c.Server, instanceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetInstanceConfigurationStatus(ctx context.Context, instanceId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetInstanceConfigurationStatusRequest(c.Server, instanceId)
 	if err != nil {
 		return nil, err
 	}
@@ -222,6 +259,40 @@ func NewUpdateInstanceConfigurationRequestWithBody(server string, instanceId str
 	return req, nil
 }
 
+// NewGetInstanceConfigurationStatusRequest generates requests for GetInstanceConfigurationStatus
+func NewGetInstanceConfigurationStatusRequest(server string, instanceId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "instanceId", runtime.ParamLocationPath, instanceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/instances/%s/configurations/status", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -272,6 +343,9 @@ type ClientWithResponsesInterface interface {
 	UpdateInstanceConfigurationWithBodyWithResponse(ctx context.Context, instanceId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInstanceConfigurationResponse, error)
 
 	UpdateInstanceConfigurationWithResponse(ctx context.Context, instanceId string, body UpdateInstanceConfigurationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInstanceConfigurationResponse, error)
+
+	// GetInstanceConfigurationStatusWithResponse request
+	GetInstanceConfigurationStatusWithResponse(ctx context.Context, instanceId string, reqEditors ...RequestEditorFn) (*GetInstanceConfigurationStatusResponse, error)
 }
 
 type GetInstancesResponse struct {
@@ -321,6 +395,30 @@ func (r UpdateInstanceConfigurationResponse) StatusCode() int {
 	return 0
 }
 
+type GetInstanceConfigurationStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ConfigurationStatus
+	JSON404      *externalRef0.NotFound
+	JSON500      *externalRef0.InternalServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetInstanceConfigurationStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetInstanceConfigurationStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // GetInstancesWithResponse request returning *GetInstancesResponse
 func (c *ClientWithResponses) GetInstancesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetInstancesResponse, error) {
 	rsp, err := c.GetInstances(ctx, reqEditors...)
@@ -345,6 +443,15 @@ func (c *ClientWithResponses) UpdateInstanceConfigurationWithResponse(ctx contex
 		return nil, err
 	}
 	return ParseUpdateInstanceConfigurationResponse(rsp)
+}
+
+// GetInstanceConfigurationStatusWithResponse request returning *GetInstanceConfigurationStatusResponse
+func (c *ClientWithResponses) GetInstanceConfigurationStatusWithResponse(ctx context.Context, instanceId string, reqEditors ...RequestEditorFn) (*GetInstanceConfigurationStatusResponse, error) {
+	rsp, err := c.GetInstanceConfigurationStatus(ctx, instanceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetInstanceConfigurationStatusResponse(rsp)
 }
 
 // ParseGetInstancesResponse parses an HTTP response from a GetInstancesWithResponse call
@@ -396,6 +503,46 @@ func ParseUpdateInstanceConfigurationResponse(rsp *http.Response) (*UpdateInstan
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest CorrelationId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest externalRef0.NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest externalRef0.InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetInstanceConfigurationStatusResponse parses an HTTP response from a GetInstanceConfigurationStatusWithResponse call
+func ParseGetInstanceConfigurationStatusResponse(rsp *http.Response) (*GetInstanceConfigurationStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetInstanceConfigurationStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ConfigurationStatus
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

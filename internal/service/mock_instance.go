@@ -8,6 +8,19 @@ import (
 )
 
 type FakeInstanceServiceInterface struct {
+	GetInstanceConfigurationStatusStub        func(string) (*instances.ConfigurationStatus, error)
+	getInstanceConfigurationStatusMutex       sync.RWMutex
+	getInstanceConfigurationStatusArgsForCall []struct {
+		arg1 string
+	}
+	getInstanceConfigurationStatusReturns struct {
+		result1 *instances.ConfigurationStatus
+		result2 error
+	}
+	getInstanceConfigurationStatusReturnsOnCall map[int]struct {
+		result1 *instances.ConfigurationStatus
+		result2 error
+	}
 	GetInstancesStub        func() []*instances.Instance
 	getInstancesMutex       sync.RWMutex
 	getInstancesArgsForCall []struct {
@@ -39,6 +52,70 @@ type FakeInstanceServiceInterface struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceConfigurationStatus(arg1 string) (*instances.ConfigurationStatus, error) {
+	fake.getInstanceConfigurationStatusMutex.Lock()
+	ret, specificReturn := fake.getInstanceConfigurationStatusReturnsOnCall[len(fake.getInstanceConfigurationStatusArgsForCall)]
+	fake.getInstanceConfigurationStatusArgsForCall = append(fake.getInstanceConfigurationStatusArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.GetInstanceConfigurationStatusStub
+	fakeReturns := fake.getInstanceConfigurationStatusReturns
+	fake.recordInvocation("GetInstanceConfigurationStatus", []interface{}{arg1})
+	fake.getInstanceConfigurationStatusMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceConfigurationStatusCallCount() int {
+	fake.getInstanceConfigurationStatusMutex.RLock()
+	defer fake.getInstanceConfigurationStatusMutex.RUnlock()
+	return len(fake.getInstanceConfigurationStatusArgsForCall)
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceConfigurationStatusCalls(stub func(string) (*instances.ConfigurationStatus, error)) {
+	fake.getInstanceConfigurationStatusMutex.Lock()
+	defer fake.getInstanceConfigurationStatusMutex.Unlock()
+	fake.GetInstanceConfigurationStatusStub = stub
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceConfigurationStatusArgsForCall(i int) string {
+	fake.getInstanceConfigurationStatusMutex.RLock()
+	defer fake.getInstanceConfigurationStatusMutex.RUnlock()
+	argsForCall := fake.getInstanceConfigurationStatusArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceConfigurationStatusReturns(result1 *instances.ConfigurationStatus, result2 error) {
+	fake.getInstanceConfigurationStatusMutex.Lock()
+	defer fake.getInstanceConfigurationStatusMutex.Unlock()
+	fake.GetInstanceConfigurationStatusStub = nil
+	fake.getInstanceConfigurationStatusReturns = struct {
+		result1 *instances.ConfigurationStatus
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceConfigurationStatusReturnsOnCall(i int, result1 *instances.ConfigurationStatus, result2 error) {
+	fake.getInstanceConfigurationStatusMutex.Lock()
+	defer fake.getInstanceConfigurationStatusMutex.Unlock()
+	fake.GetInstanceConfigurationStatusStub = nil
+	if fake.getInstanceConfigurationStatusReturnsOnCall == nil {
+		fake.getInstanceConfigurationStatusReturnsOnCall = make(map[int]struct {
+			result1 *instances.ConfigurationStatus
+			result2 error
+		})
+	}
+	fake.getInstanceConfigurationStatusReturnsOnCall[i] = struct {
+		result1 *instances.ConfigurationStatus
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeInstanceServiceInterface) GetInstances() []*instances.Instance {
@@ -199,6 +276,8 @@ func (fake *FakeInstanceServiceInterface) UpdateInstancesArgsForCall(i int) []*i
 func (fake *FakeInstanceServiceInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.getInstanceConfigurationStatusMutex.RLock()
+	defer fake.getInstanceConfigurationStatusMutex.RUnlock()
 	fake.getInstancesMutex.RLock()
 	defer fake.getInstancesMutex.RUnlock()
 	fake.updateInstanceConfigurationMutex.RLock()

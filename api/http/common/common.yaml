@@ -28,19 +28,6 @@ components:
       properties:
         message:
           type: string
-    AgentMeta:
-      type: object
-      required:
-        - type
-      properties:
-        type:
-          $ref: "#/components/schemas/MetaType"
-        config:
-          type: string
-        metrics:
-          type: string
-        registration:
-          type: string
     NginxMeta:
       type: object
       required:
@@ -68,7 +55,6 @@ components:
           type: object
           oneOf:
             - $ref: "#/components/schemas/NginxMeta"
-            - $ref: "#/components/schemas/AgentMeta"
           discriminator:
             propertyName: type
     InstanceType:
@@ -83,23 +69,8 @@ components:
         - UNIT
         - NIC
         - NGF
-    MessageType:
-      type: string
-      description: "The available message types on the Management and Data plane APIs"
-      enum:
-        - CONFIG
-        - CONFIG_RESPONSE
-        - HEARTBEAT
-        - ATTACHMENT
-        - CERTIFICATE
-        - DATAPLANE_REQUEST
-        - DATAPLANE_UPDATE
-        - CONTROL
-        - CONTROL_RESPONSE
-        - FILES_RESPONSE
     MetaType:
       type: string
       description: "The type of metadata"
       enum:
         - NGINX_META
-        - AGENT_META
