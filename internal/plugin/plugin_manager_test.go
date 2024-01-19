@@ -23,9 +23,12 @@ func TestLoadPLugins(t *testing.T) {
 		expected []bus.Plugin
 	}{
 		{
-			name:     "Only process manager plugin enabled",
-			input:    &config.Config{},
-			expected: []bus.Plugin{&ProcessMonitor{}},
+			name:  "Only process manager plugin enabled",
+			input: &config.Config{},
+			expected: []bus.Plugin{
+				&ProcessMonitor{},
+				&InstanceMonitor{},
+			},
 		}, {
 			name: "Dataplane API plugin enabled",
 			input: &config.Config{
@@ -36,6 +39,7 @@ func TestLoadPLugins(t *testing.T) {
 			},
 			expected: []bus.Plugin{
 				&ProcessMonitor{},
+				&InstanceMonitor{},
 				&DataplaneServer{},
 			},
 		},

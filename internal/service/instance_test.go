@@ -10,19 +10,25 @@ package service
 import (
 	"testing"
 
-	"github.com/nginx/agent/v3/internal/model/os"
+	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/stretchr/testify/assert"
 )
 
-var processes = []*os.Process{
+var testInstances = []*instances.Instance{
 	{
-		Pid:  123,
-		Name: "nginx",
+		InstanceId: "123",
+		Type:       instances.Type_NGINX,
 	},
 }
 
-func TestInstanceServiceUpdateProcesses(t *testing.T) {
+func TestInstanceService_UpdateInstances(t *testing.T) {
 	instanceService := NewInstanceService()
-	instanceService.UpdateProcesses(processes)
-	assert.Equal(t, processes, instanceService.processes)
+	instanceService.UpdateInstances(testInstances)
+	assert.Equal(t, testInstances, instanceService.instances)
+}
+
+func TestInstanceService_GetInstances(t *testing.T) {
+	instanceService := NewInstanceService()
+	instanceService.UpdateInstances(testInstances)
+	assert.Equal(t, testInstances, instanceService.GetInstances())
 }

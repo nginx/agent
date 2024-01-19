@@ -5,32 +5,43 @@ import (
 	"sync"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/internal/model/os"
 )
 
 type FakeInstanceServiceInterface struct {
-	GetInstancesStub        func() ([]*instances.Instance, error)
+	GetInstancesStub        func() []*instances.Instance
 	getInstancesMutex       sync.RWMutex
 	getInstancesArgsForCall []struct {
 	}
 	getInstancesReturns struct {
 		result1 []*instances.Instance
-		result2 error
 	}
 	getInstancesReturnsOnCall map[int]struct {
 		result1 []*instances.Instance
+	}
+	UpdateInstanceConfigurationStub        func(string, string) (string, error)
+	updateInstanceConfigurationMutex       sync.RWMutex
+	updateInstanceConfigurationArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	updateInstanceConfigurationReturns struct {
+		result1 string
 		result2 error
 	}
-	UpdateProcessesStub        func([]*os.Process)
-	updateProcessesMutex       sync.RWMutex
-	updateProcessesArgsForCall []struct {
-		arg1 []*os.Process
+	updateInstanceConfigurationReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
+	UpdateInstancesStub        func([]*instances.Instance)
+	updateInstancesMutex       sync.RWMutex
+	updateInstancesArgsForCall []struct {
+		arg1 []*instances.Instance
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInstanceServiceInterface) GetInstances() ([]*instances.Instance, error) {
+func (fake *FakeInstanceServiceInterface) GetInstances() []*instances.Instance {
 	fake.getInstancesMutex.Lock()
 	ret, specificReturn := fake.getInstancesReturnsOnCall[len(fake.getInstancesArgsForCall)]
 	fake.getInstancesArgsForCall = append(fake.getInstancesArgsForCall, struct {
@@ -43,9 +54,9 @@ func (fake *FakeInstanceServiceInterface) GetInstances() ([]*instances.Instance,
 		return stub()
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fakeReturns.result1, fakeReturns.result2
+	return fakeReturns.result1
 }
 
 func (fake *FakeInstanceServiceInterface) GetInstancesCallCount() int {
@@ -54,72 +65,134 @@ func (fake *FakeInstanceServiceInterface) GetInstancesCallCount() int {
 	return len(fake.getInstancesArgsForCall)
 }
 
-func (fake *FakeInstanceServiceInterface) GetInstancesCalls(stub func() ([]*instances.Instance, error)) {
+func (fake *FakeInstanceServiceInterface) GetInstancesCalls(stub func() []*instances.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = stub
 }
 
-func (fake *FakeInstanceServiceInterface) GetInstancesReturns(result1 []*instances.Instance, result2 error) {
+func (fake *FakeInstanceServiceInterface) GetInstancesReturns(result1 []*instances.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = nil
 	fake.getInstancesReturns = struct {
 		result1 []*instances.Instance
-		result2 error
-	}{result1, result2}
+	}{result1}
 }
 
-func (fake *FakeInstanceServiceInterface) GetInstancesReturnsOnCall(i int, result1 []*instances.Instance, result2 error) {
+func (fake *FakeInstanceServiceInterface) GetInstancesReturnsOnCall(i int, result1 []*instances.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = nil
 	if fake.getInstancesReturnsOnCall == nil {
 		fake.getInstancesReturnsOnCall = make(map[int]struct {
 			result1 []*instances.Instance
-			result2 error
 		})
 	}
 	fake.getInstancesReturnsOnCall[i] = struct {
 		result1 []*instances.Instance
+	}{result1}
+}
+
+func (fake *FakeInstanceServiceInterface) UpdateInstanceConfiguration(arg1 string, arg2 string) (string, error) {
+	fake.updateInstanceConfigurationMutex.Lock()
+	ret, specificReturn := fake.updateInstanceConfigurationReturnsOnCall[len(fake.updateInstanceConfigurationArgsForCall)]
+	fake.updateInstanceConfigurationArgsForCall = append(fake.updateInstanceConfigurationArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.UpdateInstanceConfigurationStub
+	fakeReturns := fake.updateInstanceConfigurationReturns
+	fake.recordInvocation("UpdateInstanceConfiguration", []interface{}{arg1, arg2})
+	fake.updateInstanceConfigurationMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationCallCount() int {
+	fake.updateInstanceConfigurationMutex.RLock()
+	defer fake.updateInstanceConfigurationMutex.RUnlock()
+	return len(fake.updateInstanceConfigurationArgsForCall)
+}
+
+func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationCalls(stub func(string, string) (string, error)) {
+	fake.updateInstanceConfigurationMutex.Lock()
+	defer fake.updateInstanceConfigurationMutex.Unlock()
+	fake.UpdateInstanceConfigurationStub = stub
+}
+
+func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationArgsForCall(i int) (string, string) {
+	fake.updateInstanceConfigurationMutex.RLock()
+	defer fake.updateInstanceConfigurationMutex.RUnlock()
+	argsForCall := fake.updateInstanceConfigurationArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationReturns(result1 string, result2 error) {
+	fake.updateInstanceConfigurationMutex.Lock()
+	defer fake.updateInstanceConfigurationMutex.Unlock()
+	fake.UpdateInstanceConfigurationStub = nil
+	fake.updateInstanceConfigurationReturns = struct {
+		result1 string
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeInstanceServiceInterface) UpdateProcesses(arg1 []*os.Process) {
-	var arg1Copy []*os.Process
+func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationReturnsOnCall(i int, result1 string, result2 error) {
+	fake.updateInstanceConfigurationMutex.Lock()
+	defer fake.updateInstanceConfigurationMutex.Unlock()
+	fake.UpdateInstanceConfigurationStub = nil
+	if fake.updateInstanceConfigurationReturnsOnCall == nil {
+		fake.updateInstanceConfigurationReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.updateInstanceConfigurationReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeInstanceServiceInterface) UpdateInstances(arg1 []*instances.Instance) {
+	var arg1Copy []*instances.Instance
 	if arg1 != nil {
-		arg1Copy = make([]*os.Process, len(arg1))
+		arg1Copy = make([]*instances.Instance, len(arg1))
 		copy(arg1Copy, arg1)
 	}
-	fake.updateProcessesMutex.Lock()
-	fake.updateProcessesArgsForCall = append(fake.updateProcessesArgsForCall, struct {
-		arg1 []*os.Process
+	fake.updateInstancesMutex.Lock()
+	fake.updateInstancesArgsForCall = append(fake.updateInstancesArgsForCall, struct {
+		arg1 []*instances.Instance
 	}{arg1Copy})
-	stub := fake.UpdateProcessesStub
-	fake.recordInvocation("UpdateProcesses", []interface{}{arg1Copy})
-	fake.updateProcessesMutex.Unlock()
+	stub := fake.UpdateInstancesStub
+	fake.recordInvocation("UpdateInstances", []interface{}{arg1Copy})
+	fake.updateInstancesMutex.Unlock()
 	if stub != nil {
-		fake.UpdateProcessesStub(arg1)
+		fake.UpdateInstancesStub(arg1)
 	}
 }
 
-func (fake *FakeInstanceServiceInterface) UpdateProcessesCallCount() int {
-	fake.updateProcessesMutex.RLock()
-	defer fake.updateProcessesMutex.RUnlock()
-	return len(fake.updateProcessesArgsForCall)
+func (fake *FakeInstanceServiceInterface) UpdateInstancesCallCount() int {
+	fake.updateInstancesMutex.RLock()
+	defer fake.updateInstancesMutex.RUnlock()
+	return len(fake.updateInstancesArgsForCall)
 }
 
-func (fake *FakeInstanceServiceInterface) UpdateProcessesCalls(stub func([]*os.Process)) {
-	fake.updateProcessesMutex.Lock()
-	defer fake.updateProcessesMutex.Unlock()
-	fake.UpdateProcessesStub = stub
+func (fake *FakeInstanceServiceInterface) UpdateInstancesCalls(stub func([]*instances.Instance)) {
+	fake.updateInstancesMutex.Lock()
+	defer fake.updateInstancesMutex.Unlock()
+	fake.UpdateInstancesStub = stub
 }
 
-func (fake *FakeInstanceServiceInterface) UpdateProcessesArgsForCall(i int) []*os.Process {
-	fake.updateProcessesMutex.RLock()
-	defer fake.updateProcessesMutex.RUnlock()
-	argsForCall := fake.updateProcessesArgsForCall[i]
+func (fake *FakeInstanceServiceInterface) UpdateInstancesArgsForCall(i int) []*instances.Instance {
+	fake.updateInstancesMutex.RLock()
+	defer fake.updateInstancesMutex.RUnlock()
+	argsForCall := fake.updateInstancesArgsForCall[i]
 	return argsForCall.arg1
 }
 
@@ -128,8 +201,10 @@ func (fake *FakeInstanceServiceInterface) Invocations() map[string][][]interface
 	defer fake.invocationsMutex.RUnlock()
 	fake.getInstancesMutex.RLock()
 	defer fake.getInstancesMutex.RUnlock()
-	fake.updateProcessesMutex.RLock()
-	defer fake.updateProcessesMutex.RUnlock()
+	fake.updateInstanceConfigurationMutex.RLock()
+	defer fake.updateInstanceConfigurationMutex.RUnlock()
+	fake.updateInstancesMutex.RLock()
+	defer fake.updateInstancesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

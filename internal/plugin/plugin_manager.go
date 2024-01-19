@@ -21,7 +21,9 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 		MonitoringFrequency: agentConfig.ProcessMonitor.MonitoringFrequency,
 	})
 
-	plugins = append(plugins, processMonitor)
+	instanceMonitor := NewInstanceMonitor(&InstanceMonitorParameters{})
+
+	plugins = append(plugins, processMonitor, instanceMonitor)
 
 	if agentConfig.DataplaneAPI.Host != "" && agentConfig.DataplaneAPI.Port != 0 {
 		dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
