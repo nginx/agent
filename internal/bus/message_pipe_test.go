@@ -19,16 +19,19 @@ type testPlugin struct {
 	mock.Mock
 }
 
-func (p *testPlugin) Init(pipe *MessagePipe) {
+func (p *testPlugin) Init(pipe MessagePipeInterface) error {
 	p.Called()
+	return nil
 }
 
-func (p *testPlugin) Process(message *Message) {
+func (p *testPlugin) Process(message *Message) error {
 	p.Called()
+	return nil
 }
 
-func (p *testPlugin) Close() {
+func (p *testPlugin) Close() error {
 	p.Called()
+	return nil
 }
 
 func (p *testPlugin) Info() *Info {

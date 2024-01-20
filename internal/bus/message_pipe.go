@@ -9,39 +9,52 @@ package bus
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 
 	message_bus "github.com/vardius/message-bus"
 )
 
-type Payload interface{}
+type (
+	Payload interface{}
 
-type Message struct {
-	Topic string
-	Data  Payload
-}
+	Message struct {
+		Topic string
+		Data  Payload
+	}
 
-type Info struct {
-	Name string
-}
+	Info struct {
+		Name string
+	}
 
-type Plugin interface {
-	Init(*MessagePipe)
-	Close()
-	Info() *Info
-	Process(*Message)
-	Subscriptions() []string
-}
+	MessagePipeInterface interface {
+		Register(int, []Plugin) error
+		DeRegister(plugins []string) error
+		Process(...*Message)
+		Run()
+		Context() context.Context
+		GetPlugins() []Plugin
+		IsPluginAlreadyRegistered(string) bool
+	}
 
-type MessagePipe struct {
-	bus            message_bus.MessageBus
-	messageChannel chan *Message
-	plugins        []Plugin
-	mu             sync.RWMutex
-	ctx            context.Context
-	cancel         context.CancelFunc
-}
+	Plugin interface {
+		Init(MessagePipeInterface) error
+		Close() error
+		Info() *Info
+		Process(*Message) error
+		Subscriptions() []string
+	}
+
+	MessagePipe struct {
+		bus            message_bus.MessageBus
+		messageChannel chan *Message
+		plugins        []Plugin
+		mu             sync.RWMutex
+		ctx            context.Context
+		cancel         context.CancelFunc
+	}
+)
 
 func NewMessagePipe(ctx context.Context, size int) *MessagePipe {
 	pipeContext, pipeCancel := context.WithCancel(ctx)
@@ -163,8 +176,16 @@ func (p *MessagePipe) GetPlugins() []Plugin {
 }
 
 func (p *MessagePipe) initPlugins() {
+	var err error
 	for _, r := range p.plugins {
-		r.Init(p)
+		initErr := r.Init(p)
+		if initErr != nil {
+			err = errors.Join(err, initErr)
+		}
+	}
+
+	if err != nil {
+		slog.Error("plugin failures occurred", "errors", err)
 	}
 }
 

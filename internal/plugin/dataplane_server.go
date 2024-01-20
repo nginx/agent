@@ -45,7 +45,7 @@ type (
 		logger          *slog.Logger
 		instanceService service.InstanceServiceInterface
 		instances       []*instances.Instance
-		messagePipe     *bus.MessagePipe
+		messagePipe     bus.MessagePipeInterface
 		server          net.Listener
 	}
 )
@@ -62,12 +62,13 @@ func NewDataplaneServer(dataplaneServerParameters *DataplaneServerParameters) *D
 	}
 }
 
-func (dps *DataplaneServer) Init(messagePipe *bus.MessagePipe) {
+func (dps *DataplaneServer) Init(messagePipe bus.MessagePipeInterface) error {
 	dps.messagePipe = messagePipe
 	go dps.run(messagePipe.Context())
+	return nil
 }
 
-func (dps *DataplaneServer) Close() {}
+func (dps *DataplaneServer) Close() error { return nil }
 
 func (dps *DataplaneServer) Info() *bus.Info {
 	return &bus.Info{
@@ -75,12 +76,13 @@ func (dps *DataplaneServer) Info() *bus.Info {
 	}
 }
 
-func (dps *DataplaneServer) Process(msg *bus.Message) {
+func (dps *DataplaneServer) Process(msg *bus.Message) error {
 	switch {
 	case msg.Topic == bus.INSTANCES_TOPIC:
 		dps.instances = msg.Data.([]*instances.Instance)
 		dps.instanceService.UpdateInstances(dps.instances)
 	}
+	return nil
 }
 
 func (dps *DataplaneServer) Subscriptions() []string {

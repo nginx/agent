@@ -27,7 +27,7 @@ type ProcessMonitorParameters struct {
 type ProcessMonitor struct {
 	params      *ProcessMonitorParameters
 	processes   []*os.Process
-	messagePipe *bus.MessagePipe
+	messagePipe bus.MessagePipeInterface
 }
 
 func NewProcessMonitor(params *ProcessMonitorParameters) *ProcessMonitor {
@@ -41,12 +41,13 @@ func NewProcessMonitor(params *ProcessMonitorParameters) *ProcessMonitor {
 	}
 }
 
-func (pm *ProcessMonitor) Init(messagePipe *bus.MessagePipe) {
+func (pm *ProcessMonitor) Init(messagePipe bus.MessagePipeInterface) error {
 	pm.messagePipe = messagePipe
 	go pm.run(messagePipe.Context())
+	return nil
 }
 
-func (pm *ProcessMonitor) Close() {}
+func (pm *ProcessMonitor) Close() error { return nil }
 
 func (pm *ProcessMonitor) Info() *bus.Info {
 	return &bus.Info{
@@ -54,7 +55,7 @@ func (pm *ProcessMonitor) Info() *bus.Info {
 	}
 }
 
-func (pm *ProcessMonitor) Process(*bus.Message) {}
+func (pm *ProcessMonitor) Process(*bus.Message) error { return nil }
 
 func (pm *ProcessMonitor) Subscriptions() []string {
 	return []string{}
