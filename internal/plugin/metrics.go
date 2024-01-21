@@ -15,12 +15,13 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/datasource/metric"
 	"github.com/nginx/agent/v3/internal/datasource/prometheus"
 	"go.opentelemetry.io/otel"
 )
 
-const otelServiceName = "prometheus"
+const otelServiceName = "nginx-agent"
 
 type (
 	MetricsSource interface {
@@ -28,16 +29,14 @@ type (
 		Start(ctx context.Context, updateInterval time.Duration) error
 		// Stops the data source from collecting data.
 		Stop()
-	}
-
-	MetricsPluginConf struct {
-		reportRate time.Duration
+		// The type of data source.
+		Type() string
 	}
 
 	// The Metrics plugin. Discovers and owns the data sources that produce metrics for the Agent.
 	Metrics struct {
-		Sources []MetricsSource
-		conf    MetricsPluginConf
+		Sources map[string]MetricsSource // key = MetricsSource type
+		conf    config.Metrics
 		pipe    bus.MessagePipeInterface
 		prod    *metric.MetricsProducer
 	}
@@ -47,14 +46,10 @@ type (
 )
 
 // Constructor for the Metrics plugin.
-func NewMetrics(options ...MetricsOption) (*Metrics, error) {
-	defaultConfig := MetricsPluginConf{
-		reportRate: 30 * time.Second,
-	}
-
+func NewMetrics(c config.Metrics, options ...MetricsOption) (*Metrics, error) {
 	m := Metrics{
-		Sources: make([]MetricsSource, 0),
-		conf:    defaultConfig,
+		Sources: make(map[string]MetricsSource, 0),
+		conf:    c,
 		pipe:    nil,
 	}
 
@@ -73,11 +68,11 @@ func (m *Metrics) Init(mp bus.MessagePipeInterface) error {
 	m.pipe = mp
 
 	m.prod = metric.NewMetricsProducer()
-	go m.prod.StartListen()
+	go m.prod.StartListen(mp.Context())
 
-	meterProvider, err := metric.NewMeterProvider(m.pipe.Context(), otelServiceName, m.prod)
+	meterProvider, err := metric.NewMeterProvider(m.pipe.Context(), otelServiceName, m.conf, m.prod)
 	if err != nil {
-		log.Printf("Failed to create meterProvider: %v", err)
+		log.Printf("failed to create a meterProvider: %v", err)
 	}
 
 	// Sets the global meter provider.
@@ -113,13 +108,8 @@ func (m *Metrics) Process(msg *bus.Message) error {
 	switch msg.Topic {
 	case bus.OS_PROCESSES_TOPIC:
 		slog.Debug("OS Processes have been updated")
-		m.Sources = make([]MetricsSource, 0)
-		err := m.discoverSources()
-		if err != nil {
-			return fmt.Errorf("data source discovery failed: %w", err)
-		}
-
-		return m.startDataSources()
+		// TODO: We would need to add rediscovery logic here where any new data sources are added to the plugin's
+		// sources slice.
 	}
 
 	return nil
@@ -128,6 +118,7 @@ func (m *Metrics) Process(msg *bus.Message) error {
 // Returns the list of topics the plugin is subscribed to. Required for the `Plugin` interface.
 func (m *Metrics) Subscriptions() []string {
 	return []string{
+		bus.OS_PROCESSES_TOPIC,
 		bus.METRICS_TOPIC,
 	}
 }
@@ -135,9 +126,11 @@ func (m *Metrics) Subscriptions() []string {
 // Dynamically populates the `[]*MetricsSource` of `*Metrics`.
 func (m *Metrics) discoverSources() error {
 	// Always initialized currently, should dynamically determine if we have a Prometheus source or not.
-	prometheusSource := prometheus.NewScraper(otel.GetMeterProvider(), m.prod)
+	// Data sources can also be passed in as options on plugin init.
+	if _, ok := m.Sources[prometheus.DataSourceType]; !ok {
+		m.Sources[prometheus.DataSourceType] = prometheus.NewScraper(otel.GetMeterProvider(), m.prod)
+	}
 
-	m.Sources = append(m.Sources, prometheusSource)
 	return nil
 }
 
@@ -145,7 +138,7 @@ func (m *Metrics) discoverSources() error {
 func (m *Metrics) startDataSources() error {
 	for _, datasrc := range m.Sources {
 		go func(ds MetricsSource) {
-			err := ds.Start(m.pipe.Context(), m.conf.reportRate)
+			err := ds.Start(m.pipe.Context(), m.conf.ReportInterval)
 			if err != nil {
 				// Probably need to figure out how to handle these errors better (e.g. with a `chan error`).
 				slog.Error("failed to start metrics source", "error", err)
@@ -162,15 +155,7 @@ func (m *Metrics) startDataSources() error {
 // Appends a Metrics data source that will automatically collect metrics.
 func WithDataSource(ds MetricsSource) MetricsOption {
 	return func(m *Metrics) error {
-		m.Sources = append(m.Sources, ds)
-		return nil
-	}
-}
-
-// Sets a full config for the Metrics plugin.
-func WithMetricsConfig(mpc MetricsPluginConf) MetricsOption {
-	return func(m *Metrics) error {
-		m.conf = mpc
+		m.Sources[ds.Type()] = ds
 		return nil
 	}
 }

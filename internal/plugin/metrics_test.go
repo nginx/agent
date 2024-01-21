@@ -1,0 +1,86 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+package plugin
+
+import (
+	"testing"
+	"time"
+
+	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/config"
+	opsys "github.com/nginx/agent/v3/internal/model/os"
+	"github.com/stretchr/testify/assert"
+)
+
+var mConf = config.Metrics{
+	OTelExporterTarget: "",
+	ReportInterval:     5 * time.Second,
+}
+
+// TODO needs mock OTel gRPC endpoint.
+// func TestMetrics_Init(t *testing.T) {
+// 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		fmt.Fprintln(w, "")
+// 	})
+
+// 	// Create a test server using the handler
+// 	fakePrometheus := httptest.NewServer(handler)
+// 	defer fakePrometheus.Close()
+
+// 	testConf := config.Metrics{
+// 		OTelExporterTarget: "",
+// 		ReportInterval:     5 * time.Second,
+// 	}
+
+// 	err := os.Setenv("PROMETHEUS_TARGETS", fakePrometheus.URL)
+// 	if err != nil {
+// 		log.Fatalf("err %v", err)
+// 	}
+
+// 	metrics, err := NewMetrics(testConf)
+// 	assert.NoError(t, err)
+
+// 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+// 	err = messagePipe.Register(100, []bus.Plugin{metrics})
+// 	assert.NoError(t, err)
+// 	go messagePipe.Run()
+
+// 	time.Sleep(10 * time.Millisecond)
+
+// 	err = metrics.Init(messagePipe)
+
+// 	assert.NotNil(t, err)
+// }
+
+func TestMetrics_Info(t *testing.T) {
+	metrics, err := NewMetrics(mConf)
+	assert.NoError(t, err)
+
+	i := metrics.Info()
+	assert.NotNil(t, i)
+
+	assert.Equal(t, "metrics", i.Name)
+}
+
+func TestMetrics_Subscriptions(t *testing.T) {
+	metrics, err := NewMetrics(mConf)
+	assert.NoError(t, err)
+
+	subscriptions := metrics.Subscriptions()
+	assert.Equal(t, []string{bus.OS_PROCESSES_TOPIC, bus.METRICS_TOPIC}, subscriptions)
+}
+
+func TestMetrics_Process(t *testing.T) {
+	metrics, err := NewMetrics(mConf)
+	assert.NoError(t, err)
+
+	err = metrics.Process(&bus.Message{Topic: bus.OS_PROCESSES_TOPIC, Data: []*opsys.Process{{Pid: 123, Name: "nginx"}}})
+
+	// Currently doesn't do anything.
+	assert.NoError(t, err)
+}

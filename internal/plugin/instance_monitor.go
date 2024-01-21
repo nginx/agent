@@ -19,7 +19,7 @@ import (
 
 type InstanceMonitor struct {
 	instances       []*instances.Instance
-	messagePipe     *bus.MessagePipe
+	messagePipe     bus.MessagePipeInterface
 	nginxDatasource datasource.Datasource
 }
 
@@ -37,11 +37,12 @@ func NewInstanceMonitor(instanceMonitorParameters *InstanceMonitorParameters) *I
 	}
 }
 
-func (im *InstanceMonitor) Init(messagePipe *bus.MessagePipe) {
+func (im *InstanceMonitor) Init(messagePipe bus.MessagePipeInterface) error {
 	im.messagePipe = messagePipe
+	return nil
 }
 
-func (im *InstanceMonitor) Close() {}
+func (im *InstanceMonitor) Close() error { return nil }
 
 func (im *InstanceMonitor) Info() *bus.Info {
 	return &bus.Info{
@@ -49,7 +50,7 @@ func (im *InstanceMonitor) Info() *bus.Info {
 	}
 }
 
-func (im *InstanceMonitor) Process(msg *bus.Message) {
+func (im *InstanceMonitor) Process(msg *bus.Message) error {
 	switch {
 	case msg.Topic == bus.OS_PROCESSES_TOPIC:
 		newProcesses := msg.Data.([]*os.Process)
@@ -62,6 +63,7 @@ func (im *InstanceMonitor) Process(msg *bus.Message) {
 			im.messagePipe.Process(&bus.Message{Topic: bus.INSTANCES_TOPIC, Data: instances})
 		}
 	}
+	return nil
 }
 
 func (im *InstanceMonitor) Subscriptions() []string {

@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package prometheus
 
 import (
@@ -21,12 +28,16 @@ import (
 	metricSdk "go.opentelemetry.io/otel/sdk/metric"
 )
 
-const defaultTarget = "http://192.168.59.101:30882/metrics"
+const (
+	defaultTarget  = "http://127.0.0.1:30882/metrics"
+	DataSourceType = "PROMETHEUS"
+)
 
 // Used for deserializion of parsed Prometheus data.
 type (
 	// A single data point for an entry. An entry can have multiple points.
 	DataPoint struct {
+		Name   string
 		Labels map[string]string
 		Value  float64
 	}
@@ -108,6 +119,10 @@ func (s *Scraper) Stop() {
 	s.cancelFunc()
 }
 
+func (s *Scraper) Type() string {
+	return DataSourceType
+}
+
 func (s *Scraper) addGauge(de DataEntry) {
 	gauge := metrics.NewFloat64Gauge()
 
@@ -171,13 +186,13 @@ func (s *Scraper) addHistogram(de DataEntry) {
 			metricAttributes = append(metricAttributes, attribute.KeyValue{Key: attribute.Key(labelKey), Value: attribute.StringValue(labelValue)})
 		}
 
-		if strings.HasSuffix(de.Name, "_bucket") && bound != "" {
+		if strings.HasSuffix(point.Name, "_bucket") && bound != "" {
 			histogram.BucketCounts = append(histogram.BucketCounts, uint64(point.Value))
 			boundValue, _ := strconv.ParseFloat(bound, 64)
 			histogram.Bounds = append(histogram.Bounds, boundValue)
-		} else if strings.HasSuffix(de.Name, "_sum") {
+		} else if strings.HasSuffix(point.Name, "_sum") {
 			histogram.Sum = point.Value
-		} else if strings.HasSuffix(de.Name, "_count") {
+		} else if strings.HasSuffix(point.Name, "_count") {
 			histogram.Count = uint64(point.Value)
 			histogram.Attributes = attribute.NewSet(metricAttributes...)
 		}
@@ -212,6 +227,7 @@ func scrapeEndpoint(target string) []DataEntry {
 	currEntry := new(DataEntry)
 	for _, line := range splitResponse {
 		if strings.HasPrefix(line, "# HELP") {
+			// If entry already has content, then we add it to the result slice and reset.
 			if currEntry.Name != "" {
 				entries = append(entries, *currEntry)
 				currEntry = new(DataEntry)
@@ -229,6 +245,7 @@ func scrapeEndpoint(target string) []DataEntry {
 			nameAndLabels := splitMetric[0]
 			splitNameAndLabels := strings.Split(nameAndLabels, "{")
 
+			pointName := splitNameAndLabels[0]
 			if len(splitNameAndLabels) > 1 {
 				labelsJson := strings.ReplaceAll("{\""+splitNameAndLabels[1], "=", "\":")
 				labelsJson = strings.ReplaceAll(labelsJson, ",", ",\"")
@@ -241,6 +258,7 @@ func scrapeEndpoint(target string) []DataEntry {
 
 			value, _ := strconv.ParseFloat(splitMetric[1], 64)
 			currEntry.Values = append(currEntry.Values, DataPoint{
+				Name:   pointName,
 				Labels: labels,
 				Value:  value,
 			})
@@ -248,6 +266,6 @@ func scrapeEndpoint(target string) []DataEntry {
 		}
 	}
 
-	log.Printf("%d metrics scraped from %s successfully", len(entries), target)
+	slog.Debug("Prometheus endpoint scraped", "number of data entries", len(entries), "Prometheus URL", target)
 	return entries
 }

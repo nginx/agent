@@ -23,6 +23,14 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 
 	instanceMonitor := NewInstanceMonitor(&InstanceMonitorParameters{})
 
+	if agentConfig.Metrics != nil {
+		metrics, err := NewMetrics(*agentConfig.Metrics)
+		if err != nil {
+			slogger.Error("failed to initialize metrics plugin")
+		}
+		plugins = append(plugins, metrics)
+	}
+
 	plugins = append(plugins, processMonitor, instanceMonitor)
 
 	if agentConfig.DataplaneAPI.Host != "" && agentConfig.DataplaneAPI.Port != 0 {

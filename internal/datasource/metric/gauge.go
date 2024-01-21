@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package metric
 
 import (
@@ -29,11 +36,7 @@ func (f *Float64Gauge) Delete(attrs attribute.Set) {
 
 func (f *Float64Gauge) Callback(ctx context.Context, o metric.Float64Observer) error {
 	for attrs, val := range f.observations {
-		if attrs.Len() > 0 {
-			o.Observe(val, metric.WithAttributeSet(attrs))
-		} else {
-			o.Observe(val)
-		}
+		o.Observe(val, metric.WithAttributeSet(attrs))
 	}
 	return nil
 }

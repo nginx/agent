@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package metric
 
 import (
@@ -23,11 +30,16 @@ func NewMetricsProducer() *MetricsProducer {
 }
 
 // Starts listening to metrics on its internal metrics channel.
-func (hp *MetricsProducer) StartListen() {
-	for metrics := range hp.dataChannel {
-		hp.metricsLock.Lock()
-		hp.metrics = append(hp.metrics, metrics)
-		hp.metricsLock.Unlock()
+func (hp *MetricsProducer) StartListen(ctx context.Context) {
+	for {
+		select {
+		case metrics := <-hp.dataChannel:
+			hp.metricsLock.Lock()
+			hp.metrics = append(hp.metrics, metrics)
+			hp.metricsLock.Unlock()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 

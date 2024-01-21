@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) F5, Inc.
+ *
+ * This source code is licensed under the Apache License, Version 2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 package metric
 
 import (
@@ -6,6 +13,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/config"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"google.golang.org/grpc"
@@ -13,8 +21,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Returns a gRPC OTel exporter that transmits via gRPC.
-func NewGRPCExporter(ctx context.Context) (*otlpmetricgrpc.Exporter, error) {
+// Returns a OTel exporter that transmits via gRPC.
+func NewGRPCExporter(ctx context.Context, conf config.Metrics) (*otlpmetricgrpc.Exporter, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	// Exponential back-off strategy.
@@ -22,17 +30,11 @@ func NewGRPCExporter(ctx context.Context) (*otlpmetricgrpc.Exporter, error) {
 	// You can also change the base delay, multiplier, and jitter here.
 	backoffConf.MaxDelay = 240 * time.Second
 
-	target := "0.0.0.0:4317"
-	if value, ok := os.LookupEnv("GRPC_TARGET"); ok {
-		target = value
-	}
-
 	conn, err := grpc.DialContext(
 		ctx,
-		target,
+		conf.OTelExporterTarget,
 		// TODO: Add TLS support
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
 		grpc.WithConnectParams(grpc.ConnectParams{
 			Backoff: backoffConf,
 			// Connection timeout.
@@ -43,11 +45,11 @@ func NewGRPCExporter(ctx context.Context) (*otlpmetricgrpc.Exporter, error) {
 		return nil, fmt.Errorf("failed to create grpc connection: %v", err)
 	}
 
-	return otlpmetricgrpc.New(context.Background(), otlpmetricgrpc.WithGRPCConn(conn), otlpmetricgrpc.WithTimeout(7*time.Second))
+	return otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(conn), otlpmetricgrpc.WithTimeout(7*time.Second))
 }
 
 // Returns a OTel exporter that transmits via HTTP.
-func NewHTTPExporter(ctx context.Context) (*otlpmetrichttp.Exporter, error) {
+func NewHTTPExporter(ctx context.Context, conf config.Metrics) (*otlpmetrichttp.Exporter, error) {
 	target := "0.0.0.0:4317"
 	if value, ok := os.LookupEnv("HTTP_TARGET"); ok {
 		target = value

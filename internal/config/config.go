@@ -32,6 +32,9 @@ const (
 	DataplaneAPIHostConfigKey                  = "dataplane_api_host"
 	DataplaneAPIPortConfigKey                  = "dataplane_api_port"
 	ClientTimeoutConfigKey                     = "client_timeout"
+	MetricsConfigKey                           = "metrics"
+	OTelExporterTargetConfigKey                = "metrics_otel_exporter_target"
+	MetricsReportIntervalConfigKey             = "metrics_report_interval"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
@@ -73,6 +76,7 @@ func GetConfig() *Config {
 		ProcessMonitor: getProcessMonitor(),
 		DataplaneAPI:   getDataplaneAPI(),
 		Client:         getClient(),
+		Metrics:        getMetrics(),
 	}
 
 	slog.Debug("Agent config", "config", config)
@@ -96,6 +100,8 @@ func registerFlags() {
 	fs.String(DataplaneAPIHostConfigKey, "", "The host used by the Dataplane API.")
 	fs.Int(DataplaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
 	fs.Duration(ClientTimeoutConfigKey, time.Minute, "Client timeout")
+	fs.String(OTelExporterTargetConfigKey, "", "The OTel collector's gRPC endpoint where NGINX Agent will send its metrics.")
+	fs.Duration(MetricsReportIntervalConfigKey, 30*time.Second, "How often the NGINX Agent reports metrics to the OTel collecttor.")
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -178,5 +184,16 @@ func getDataplaneAPI() DataplaneAPI {
 func getClient() Client {
 	return Client{
 		Timeout: viperInstance.GetDuration(ClientTimeoutConfigKey),
+	}
+}
+
+func getMetrics() *Metrics {
+	if !viper.IsSet(MetricsConfigKey) {
+		return nil
+	}
+
+	return &Metrics{
+		OTelExporterTarget: viperInstance.GetString(OTelExporterTargetConfigKey),
+		ReportInterval:     viperInstance.GetDuration(MetricsReportIntervalConfigKey),
 	}
 }

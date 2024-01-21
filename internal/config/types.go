@@ -16,6 +16,7 @@ type Config struct {
 	ProcessMonitor ProcessMonitor `mapstructure:"process_monitor" yaml:"-"`
 	DataplaneAPI   DataplaneAPI   `mapstructure:"dataplane_api" yaml:"-"`
 	Client         Client         `mapstructure:"client" yaml:"-"`
+	Metrics        *Metrics       `mapstructure:"metrics" yaml:"-"`
 }
 
 type Log struct {
@@ -34,4 +35,9 @@ type DataplaneAPI struct {
 
 type Client struct {
 	Timeout time.Duration `mapstructure:"timeout" yaml:"-"`
+}
+
+type Metrics struct {
+	OTelExporterTarget string        `mapstructure:"otel_exporter_target" yaml:"-"`
+	ReportInterval     time.Duration `mapstructure:"report_interval" yaml:"-"`
 }
