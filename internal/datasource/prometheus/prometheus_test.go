@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/embedded"
 )
 
 const prometheusTestDataFile = "prometheus_test_data.txt"
@@ -30,9 +29,8 @@ const prometheusTestDataFile = "prometheus_test_data.txt"
 //counterfeiter:generate -o ./mock_meter_provider.go ./ MeterProviderInterface
 //go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/datasource/prometheus mock_meter_provider.go | sed -e s\\/prometheus\\\\.\\/\\/g > mock_mock_meter_provider.go"
 //go:generate mv mock_mock_meter_provider.go mock_meter_provider.go
-
 type MeterProviderInterface interface {
-	embedded.MeterProvider
+	meterProvider()
 	Meter(name string, opts ...metric.MeterOption) metric.Meter
 }
 

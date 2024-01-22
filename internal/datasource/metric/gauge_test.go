@@ -8,25 +8,35 @@
 package metric
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/embedded"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+type MockFloat64Observer struct {
+	embedded.Float64Observer
+	mock.Mock
+}
 
-//counterfeiter:generate -o ./mock_float64_observer.go ./ Float64ObserverInterface
-//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/datasource/metric mock_float64_observer.go | sed -e s\\/metric\\\\.\\/\\/g > mock_float64_observer_fixed.go"
-//go:generate mv mock_float64_observer_fixed.go mock_float64_observer.go
+func (mfo *MockFloat64Observer) Observe(value float64, options ...metric.ObserveOption) {
+	mfo.On("Observe").Return()
+	mfo.Called()
+}
 
-// TODO: counterfeiter is unable to properly implement the embedded interface for `Float64Observer`, so this does not work.
-// Need to figure out another solution for mocking `Float64Observer`.
-// type Float64ObserverInterface interface {
-// 	Observe(value float64, options ...metric.ObserveOption)
+type MockInt64Observer struct {
+	embedded.Int64Observer
+	mock.Mock
+}
 
-// 	float64Observer()
-// }
+func (mfo *MockInt64Observer) Observe(value int64, options ...metric.ObserveOption) {
+	mfo.On("Observe").Return()
+	mfo.Called()
+}
 
 func TestFloat64Gauge(t *testing.T) {
 	f64gauge := NewFloat64Gauge()
@@ -48,12 +58,13 @@ func TestFloat64Gauge(t *testing.T) {
 	assert.Equal(t, f64gauge.observations, testObs)
 	assert.Equal(t, f64gauge.Get(), testObs)
 
-	// TODO: Need a working mocking solution for testing the Callback() method.
-	// mockObserver := &FakeFloat64ObserverInterface{}
-	// f64gauge.Callback(context.Background(), mockObserver)
+	mockObserver := new(MockFloat64Observer)
+	err := f64gauge.Callback(context.Background(), mockObserver)
+	assert.NoError(t, err)
 
 	f64gauge.Delete(testSet)
 	assert.Equal(t, f64gauge.observations, make(map[attribute.Set]float64))
+	mockObserver.AssertExpectations(t)
 }
 
 func TestInt64Gauge(t *testing.T) {
@@ -76,8 +87,9 @@ func TestInt64Gauge(t *testing.T) {
 	assert.Equal(t, i64gauge.observations, testObs)
 	assert.Equal(t, i64gauge.Get(), testObs)
 
-	// TODO: Need a working mocking solution for testing the Callback() method.
-	// i64gauge.Callback(context.Background(), mockObserver)
+	mockObserver := &MockInt64Observer{}
+	err := i64gauge.Callback(context.Background(), mockObserver)
+	assert.NoError(t, err)
 
 	i64gauge.Delete(testSet)
 	assert.Equal(t, i64gauge.observations, make(map[attribute.Set]int64))

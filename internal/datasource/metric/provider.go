@@ -27,7 +27,9 @@ const (
 
 // Constructs an OTel MeterProvider that generates metrics from the given `producer` every 10 seconds and exports
 // them via gRPC to an OTel Collector.
-func NewMeterProvider(ctx context.Context, serviceName string, c config.Metrics, producer *MetricsProducer) (*metric.MeterProvider, error) {
+func NewMeterProvider(
+	ctx context.Context, serviceName string, c config.Metrics, producer *MetricsProducer,
+) (*metric.MeterProvider, error) {
 	exp, err := NewGRPCExporter(ctx, c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GRPC Exporter: %w", err)
