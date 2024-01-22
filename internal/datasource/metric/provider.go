@@ -10,7 +10,6 @@ package metric
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -22,7 +21,6 @@ const (
 	// tenantID is static for now.
 	tenantID         = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 	serviceNamespace = "nginx"
-	readInterval     = 10 * time.Second
 )
 
 // Constructs an OTel MeterProvider that generates metrics from the given `producer` every 10 seconds and exports
