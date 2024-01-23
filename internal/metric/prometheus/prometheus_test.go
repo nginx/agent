@@ -16,13 +16,16 @@ import (
 	"testing"
 	"time"
 
-	met "github.com/nginx/agent/v3/internal/datasource/metric"
+	met "github.com/nginx/agent/v3/internal/metric"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 )
 
-const prometheusTestDataFile = "prometheus_test_data.txt"
+const (
+	prometheusTestDataFile = "prometheus_test_data.txt"
+	agentVersion           = "0.1"
+)
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 
@@ -51,7 +54,7 @@ func TestPrometheus_Scrape(t *testing.T) {
 
 func TestPrometheus_Constructor(t *testing.T) {
 	mp := otel.GetMeterProvider()
-	p := met.NewMetricsProducer()
+	p := met.NewMetricsProducer(agentVersion)
 
 	scraper := NewScraper(mp, p)
 	assert.NotNil(t, scraper)
@@ -62,7 +65,7 @@ func TestPrometheus_Constructor(t *testing.T) {
 
 func TestPrometheus_Start(t *testing.T) {
 	mp := otel.GetMeterProvider()
-	p := met.NewMetricsProducer()
+	p := met.NewMetricsProducer(agentVersion)
 
 	scraper := NewScraper(mp, p)
 	testdata, err := os.ReadFile(prometheusTestDataFile)
@@ -91,7 +94,7 @@ func TestPrometheus_Start(t *testing.T) {
 
 func TestPrometheus_Stop(t *testing.T) {
 	mp := otel.GetMeterProvider()
-	p := met.NewMetricsProducer()
+	p := met.NewMetricsProducer(agentVersion)
 
 	scraper := NewScraper(mp, p)
 	testdata, err := os.ReadFile(prometheusTestDataFile)
@@ -119,7 +122,7 @@ func TestPrometheus_Stop(t *testing.T) {
 
 func TestPrometheus_Type(t *testing.T) {
 	mp := otel.GetMeterProvider()
-	p := met.NewMetricsProducer()
+	p := met.NewMetricsProducer(agentVersion)
 
 	scraper := NewScraper(mp, p)
 	assert.Equal(t, "PROMETHEUS", scraper.Type())

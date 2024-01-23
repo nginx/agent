@@ -24,9 +24,8 @@ func (p *testPlugin) Init(pipe MessagePipeInterface) error {
 	return nil
 }
 
-func (p *testPlugin) Process(message *Message) error {
+func (p *testPlugin) Process(message *Message) {
 	p.Called()
-	return nil
 }
 
 func (p *testPlugin) Close() error {

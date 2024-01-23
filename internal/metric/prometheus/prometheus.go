@@ -10,6 +10,7 @@ package prometheus
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -20,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	metrics "github.com/nginx/agent/v3/internal/datasource/metric"
+	metrics "github.com/nginx/agent/v3/internal/metric"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -31,6 +32,7 @@ import (
 const (
 	defaultTarget  = "http://127.0.0.1:30882/metrics"
 	DataSourceType = "PROMETHEUS"
+	meterName      = "nginx-agent-prometheus-scraper"
 )
 
 // Used for deserializion of parsed Prometheus data.
@@ -59,7 +61,7 @@ type (
 )
 
 func NewScraper(meterProvider metric.MeterProvider, producer *metrics.MetricsProducer) *Scraper {
-	meter := meterProvider.Meter("nginx-agent-prometheus-scraper", metric.WithInstrumentationVersion("v0.1"))
+	meter := meterProvider.Meter(meterName, metric.WithInstrumentationVersion("v0.1"))
 	return &Scraper{
 		meter:                       meter,
 		producer:                    producer,
@@ -106,7 +108,7 @@ func (s *Scraper) Start(ctx context.Context, updateInterval time.Duration) error
 					case "histogram":
 						s.addHistogram(entry)
 					case "summary":
-						// no-op currently
+						slog.Debug("cannot report 'summary' metric: unsupported")
 					}
 				}
 			}
@@ -211,12 +213,12 @@ func (s *Scraper) addHistogram(de DataEntry) {
 func scrapeEndpoint(target string) []DataEntry {
 	resp, err := http.Get(target)
 	if err != nil {
-		log.Fatalln(err)
+		slog.Error("GET to Prometheus HTTP scrape endpoint failed", "endpoint", target)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		slog.Warn("failed to parse Prometheus scrape endpoint response body")
 	}
 
 	responseString := string(body)
@@ -246,22 +248,31 @@ func scrapeEndpoint(target string) []DataEntry {
 			splitNameAndLabels := strings.Split(nameAndLabels, "{")
 
 			pointName := splitNameAndLabels[0]
+			var pointErr error
 			if len(splitNameAndLabels) > 1 {
 				labelsJson := strings.ReplaceAll("{\""+splitNameAndLabels[1], "=", "\":")
 				labelsJson = strings.ReplaceAll(labelsJson, ",", ",\"")
 				err := json.Unmarshal([]byte(labelsJson), &labels)
 				if err != nil {
-					// Malformed labels will not be saved.
-					slog.Warn("failed to parse Prometheus metric labels", "labels", splitNameAndLabels, "error", err)
+					pointErr = errors.Join(pointErr, fmt.Errorf("failed to parse Prometheus data point labels [%s]: %w", splitNameAndLabels, err))
 				}
 			}
 
-			value, _ := strconv.ParseFloat(splitMetric[1], 64)
-			currEntry.Values = append(currEntry.Values, DataPoint{
-				Name:   pointName,
-				Labels: labels,
-				Value:  value,
-			})
+			value, err := strconv.ParseFloat(splitMetric[1], 64)
+			if err != nil {
+				pointErr = errors.Join(pointErr, fmt.Errorf("failed to parse Prometheus data point value [%s]: %w", splitMetric[1], err))
+			}
+
+			if pointErr == nil {
+				currEntry.Values = append(currEntry.Values, DataPoint{
+					Name:   pointName,
+					Labels: labels,
+					Value:  value,
+				})
+			} else {
+				// Discard a data point that has malformed content, so we don't present dirty data to end users.
+				slog.Warn("Prometheus data point parsing error, discarding point", "errors", pointErr)
+			}
 
 		}
 	}

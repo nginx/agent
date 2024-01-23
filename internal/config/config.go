@@ -188,7 +188,7 @@ func getClient() Client {
 }
 
 func getMetrics() *Metrics {
-	if !viper.IsSet(MetricsConfigKey) {
+	if !viperInstance.IsSet(MetricsConfigKey) {
 		return nil
 	}
 

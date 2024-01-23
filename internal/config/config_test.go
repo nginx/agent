@@ -49,6 +49,10 @@ func TestGetConfig(t *testing.T) {
 	assert.Equal(t, 30*time.Second, result.ProcessMonitor.MonitoringFrequency)
 
 	assert.Equal(t, 10*time.Second, result.Client.Timeout)
+
+	assert.NotNil(t, result.Metrics)
+	assert.Equal(t, "http://localhost:4317", result.Metrics.OTelExporterTarget)
+	assert.Equal(t, 10*time.Second, result.Metrics.ReportInterval)
 }
 
 func TestSetVersion(t *testing.T) {
@@ -114,6 +118,9 @@ func TestLoadPropertiesFromFile(t *testing.T) {
 
 	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutConfigKey))
 
+	assert.Equal(t, "http://localhost:4317", viperInstance.GetString(OTelExporterTargetConfigKey))
+	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(MetricsReportIntervalConfigKey))
+
 	err = loadPropertiesFromFile("./testdata/unknown.conf")
 	assert.Error(t, err)
 }
@@ -159,4 +166,15 @@ func TestGetClient(t *testing.T) {
 
 	result := getClient()
 	assert.Equal(t, time.Hour, result.Timeout)
+}
+
+func TestMetrics(t *testing.T) {
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance.Set("metrics", "")
+	viperInstance.Set(OTelExporterTargetConfigKey, "http://localhost:4317")
+	viperInstance.Set(MetricsReportIntervalConfigKey, 10*time.Second)
+
+	result := getMetrics()
+	assert.Equal(t, "http://localhost:4317", result.OTelExporterTarget)
+	assert.Equal(t, 10*time.Second, result.ReportInterval)
 }

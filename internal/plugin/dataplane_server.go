@@ -76,13 +76,12 @@ func (dps *DataplaneServer) Info() *bus.Info {
 	}
 }
 
-func (dps *DataplaneServer) Process(msg *bus.Message) error {
+func (dps *DataplaneServer) Process(msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.INSTANCES_TOPIC:
 		dps.instances = msg.Data.([]*instances.Instance)
 		dps.instanceService.UpdateInstances(dps.instances)
 	}
-	return nil
 }
 
 func (dps *DataplaneServer) Subscriptions() []string {

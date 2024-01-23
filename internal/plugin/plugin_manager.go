@@ -24,7 +24,7 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 	instanceMonitor := NewInstanceMonitor(&InstanceMonitorParameters{})
 
 	if agentConfig.Metrics != nil {
-		metrics, err := NewMetrics(*agentConfig.Metrics)
+		metrics, err := NewMetrics(*agentConfig)
 		if err != nil {
 			slogger.Error("failed to initialize metrics plugin")
 		}

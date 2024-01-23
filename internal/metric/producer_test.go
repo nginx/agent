@@ -16,14 +16,16 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
+const agentVersion = "v0.1"
+
 func TestMetricsProducer_Constructor(t *testing.T) {
-	mp := NewMetricsProducer()
+	mp := NewMetricsProducer(agentVersion)
 
 	assert.Equal(t, []metricdata.Metrics{}, mp.metrics)
 }
 
 func TestMetricsProducer_Produce(t *testing.T) {
-	mp := NewMetricsProducer()
+	mp := NewMetricsProducer(agentVersion)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

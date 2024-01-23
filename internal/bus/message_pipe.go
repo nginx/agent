@@ -9,7 +9,6 @@ package bus
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"sync"
 
@@ -42,7 +41,7 @@ type (
 		Init(MessagePipeInterface) error
 		Close() error
 		Info() *Info
-		Process(*Message) error
+		Process(*Message)
 		Subscriptions() []string
 	}
 
@@ -176,16 +175,11 @@ func (p *MessagePipe) GetPlugins() []Plugin {
 }
 
 func (p *MessagePipe) initPlugins() {
-	var err error
 	for _, r := range p.plugins {
-		initErr := r.Init(p)
-		if initErr != nil {
-			err = errors.Join(err, initErr)
+		err := r.Init(p)
+		if err != nil {
+			slog.Error("plugin failures occurred", "plugin", r.Info().Name, "errors", err)
 		}
-	}
-
-	if err != nil {
-		slog.Error("plugin failures occurred", "errors", err)
 	}
 }
 

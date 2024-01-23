@@ -19,15 +19,19 @@ import (
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/datasource/metric"
-	"github.com/nginx/agent/v3/internal/datasource/prometheus"
+	"github.com/nginx/agent/v3/internal/metric"
+	"github.com/nginx/agent/v3/internal/metric/prometheus"
 	opsys "github.com/nginx/agent/v3/internal/model/os"
 	"github.com/stretchr/testify/assert"
 )
 
-var mConf = config.Metrics{
-	OTelExporterTarget: "",
-	ReportInterval:     5 * time.Second,
+var agentConf = config.Config{
+	Version: "0.1",
+	Path:    "/etc/nginx-agent/",
+	Metrics: &config.Metrics{
+		OTelExporterTarget: "",
+		ReportInterval:     5 * time.Second,
+	},
 }
 
 // TODO needs mock OTel gRPC endpoint.
@@ -40,18 +44,22 @@ func TestMetrics_Init(t *testing.T) {
 	fakePrometheus := httptest.NewServer(handler)
 	defer fakePrometheus.Close()
 
-	testConf := config.Metrics{
-		OTelExporterTarget: "dummy-target",
-		ReportInterval:     15 * time.Second,
+	testConf := config.Config{
+		Version: "0.1",
+		Path:    "/etc/nginx-agent/",
+		Metrics: &config.Metrics{
+			OTelExporterTarget: "dummy-target",
+			ReportInterval:     15 * time.Second,
+		},
 	}
 
 	err := os.Setenv("PROMETHEUS_TARGETS", fakePrometheus.URL)
 	if err != nil {
 		log.Fatalf("err %v", err)
 	}
-	producer := metric.NewMetricsProducer()
+	producer := metric.NewMetricsProducer(testConf.Version)
 
-	provider, err := metric.NewMeterProvider(context.Background(), "test-service", testConf, metric.NewMetricsProducer())
+	provider, err := metric.NewMeterProvider(context.Background(), "test-service", *testConf.Metrics, metric.NewMetricsProducer(agentConf.Version))
 	assert.NoError(t, err)
 
 	scraper := prometheus.NewScraper(provider, producer)
@@ -73,7 +81,7 @@ func TestMetrics_Init(t *testing.T) {
 }
 
 func TestMetrics_Info(t *testing.T) {
-	metrics, err := NewMetrics(mConf)
+	metrics, err := NewMetrics(agentConf)
 	assert.NoError(t, err)
 
 	i := metrics.Info()
@@ -83,7 +91,7 @@ func TestMetrics_Info(t *testing.T) {
 }
 
 func TestMetrics_Subscriptions(t *testing.T) {
-	metrics, err := NewMetrics(mConf)
+	metrics, err := NewMetrics(agentConf)
 	assert.NoError(t, err)
 
 	subscriptions := metrics.Subscriptions()
@@ -91,10 +99,10 @@ func TestMetrics_Subscriptions(t *testing.T) {
 }
 
 func TestMetrics_Process(t *testing.T) {
-	metrics, err := NewMetrics(mConf)
+	metrics, err := NewMetrics(agentConf)
 	assert.NoError(t, err)
 
-	err = metrics.Process(&bus.Message{Topic: bus.OS_PROCESSES_TOPIC, Data: []*opsys.Process{{Pid: 123, Name: "nginx"}}})
+	metrics.Process(&bus.Message{Topic: bus.OS_PROCESSES_TOPIC, Data: []*opsys.Process{{Pid: 123, Name: "nginx"}}})
 
 	// Currently doesn't do anything.
 	assert.NoError(t, err)

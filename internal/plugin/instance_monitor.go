@@ -50,7 +50,7 @@ func (im *InstanceMonitor) Info() *bus.Info {
 	}
 }
 
-func (im *InstanceMonitor) Process(msg *bus.Message) error {
+func (im *InstanceMonitor) Process(msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.OS_PROCESSES_TOPIC:
 		newProcesses := msg.Data.([]*os.Process)
@@ -63,7 +63,6 @@ func (im *InstanceMonitor) Process(msg *bus.Message) error {
 			im.messagePipe.Process(&bus.Message{Topic: bus.INSTANCES_TOPIC, Data: instances})
 		}
 	}
-	return nil
 }
 
 func (im *InstanceMonitor) Subscriptions() []string {

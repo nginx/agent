@@ -55,7 +55,7 @@ func (pm *ProcessMonitor) Info() *bus.Info {
 	}
 }
 
-func (pm *ProcessMonitor) Process(*bus.Message) error { return nil }
+func (pm *ProcessMonitor) Process(*bus.Message) {}
 
 func (pm *ProcessMonitor) Subscriptions() []string {
 	return []string{}

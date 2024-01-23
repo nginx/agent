@@ -15,17 +15,24 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
+const agentScope = "github.com/agent/v3"
+
 type MetricsProducer struct {
 	dataChannel chan metricdata.Metrics
 	metrics     []metricdata.Metrics
 	metricsLock sync.RWMutex
+	scope       instrumentation.Scope
 }
 
-func NewMetricsProducer() *MetricsProducer {
+func NewMetricsProducer(agentVersion string) *MetricsProducer {
 	return &MetricsProducer{
 		dataChannel: make(chan metricdata.Metrics),
 		metrics:     []metricdata.Metrics{},
 		metricsLock: sync.RWMutex{},
+		scope: instrumentation.Scope{
+			Name:    agentScope,
+			Version: agentVersion,
+		},
 	}
 }
 
@@ -55,10 +62,7 @@ func (hp *MetricsProducer) Produce(context.Context) ([]metricdata.ScopeMetrics, 
 
 	scopeMetrics := []metricdata.ScopeMetrics{
 		{
-			Scope: instrumentation.Scope{
-				Name:    "github.com/agent/v3",
-				Version: "v0.1",
-			},
+			Scope:   hp.scope,
 			Metrics: hp.metrics,
 		},
 	}

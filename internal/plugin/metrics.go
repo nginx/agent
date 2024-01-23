@@ -16,8 +16,8 @@ import (
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/datasource/metric"
-	"github.com/nginx/agent/v3/internal/datasource/prometheus"
+	"github.com/nginx/agent/v3/internal/metric"
+	"github.com/nginx/agent/v3/internal/metric/prometheus"
 	"go.opentelemetry.io/otel"
 )
 
@@ -36,7 +36,7 @@ type (
 	// The Metrics plugin. Discovers and owns the data sources that produce metrics for the Agent.
 	Metrics struct {
 		Sources map[string]MetricsSource // key = MetricsSource type
-		conf    config.Metrics
+		conf    config.Config
 		pipe    bus.MessagePipeInterface
 		prod    *metric.MetricsProducer
 	}
@@ -46,7 +46,7 @@ type (
 )
 
 // Constructor for the Metrics plugin.
-func NewMetrics(c config.Metrics, options ...MetricsOption) (*Metrics, error) {
+func NewMetrics(c config.Config, options ...MetricsOption) (*Metrics, error) {
 	m := Metrics{
 		Sources: make(map[string]MetricsSource, 0),
 		conf:    c,
@@ -67,10 +67,10 @@ func NewMetrics(c config.Metrics, options ...MetricsOption) (*Metrics, error) {
 func (m *Metrics) Init(mp bus.MessagePipeInterface) error {
 	m.pipe = mp
 
-	m.prod = metric.NewMetricsProducer()
+	m.prod = metric.NewMetricsProducer(m.conf.Version)
 	go m.prod.StartListen(mp.Context())
 
-	meterProvider, err := metric.NewMeterProvider(m.pipe.Context(), otelServiceName, m.conf, m.prod)
+	meterProvider, err := metric.NewMeterProvider(m.pipe.Context(), otelServiceName, *m.conf.Metrics, m.prod)
 	if err != nil {
 		log.Printf("failed to create a meterProvider: %v", err)
 	}
@@ -104,15 +104,13 @@ func (m *Metrics) Info() *bus.Info {
 }
 
 // Processes an incoming Message Bus message in the plugin. Required for the `Plugin` interface.
-func (m *Metrics) Process(msg *bus.Message) error {
+func (m *Metrics) Process(msg *bus.Message) {
 	switch msg.Topic {
 	case bus.OS_PROCESSES_TOPIC:
 		slog.Debug("OS Processes have been updated")
 		// TODO: We would need to add rediscovery logic here where any new data sources are added to the plugin's
 		// sources slice.
 	}
-
-	return nil
 }
 
 // Returns the list of topics the plugin is subscribed to. Required for the `Plugin` interface.
@@ -138,7 +136,7 @@ func (m *Metrics) discoverSources() error {
 func (m *Metrics) startDataSources() error {
 	for _, datasrc := range m.Sources {
 		go func(ds MetricsSource) {
-			err := ds.Start(m.pipe.Context(), m.conf.ReportInterval)
+			err := ds.Start(m.pipe.Context(), m.conf.Metrics.ReportInterval)
 			if err != nil {
 				// Probably need to figure out how to handle these errors better (e.g. with a `chan error`).
 				slog.Error("failed to start metrics source", "error", err)
