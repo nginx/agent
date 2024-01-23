@@ -3,7 +3,6 @@ package config
 
 import (
 	"sync"
-
 )
 
 type FakeConfigInterface struct {

@@ -51,7 +51,6 @@ type (
 )
 
 func NewDataplaneServer(dataplaneServerParameters *DataplaneServerParameters) *DataplaneServer {
-
 	if dataplaneServerParameters.instanceService == nil {
 		dataplaneServerParameters.instanceService = service.NewInstanceService()
 	}

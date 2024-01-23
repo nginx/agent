@@ -32,6 +32,7 @@ func NewNginxConfig(instanceId string, configWriter config.ConfigWriter) NginxCo
 		configWriter: configWriter,
 	}
 }
+
 func (nc NginxConfig) Write(previousFileCache os.FileCache, filesUrl string, tenantID uuid.UUID) (currentFileCache os.FileCache, skippedFiles map[string]struct{}, err error) {
 	return nc.configWriter.Write(previousFileCache, filesUrl, tenantID)
 }

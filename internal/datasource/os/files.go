@@ -27,7 +27,6 @@ type FilesInterface interface {
 	UpdateCache(currentFileCache FileCache, cachePath string) error
 }
 
-
 // map of files with filepath as key
 type FileCache = map[string]*instances.File
 

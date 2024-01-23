@@ -57,7 +57,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 	fakeConfig.GetClientReturns(client)
 
 	files := os.FakeFilesInterface{}
-	
+
 	cacheTime1, err := createProtoTime("2024-01-08T14:22:21Z")
 	assert.NoError(t, err)
 
@@ -78,7 +78,8 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 	}
 
 	updateTimeFile1, err := createProtoTime("2024-01-08T14:22:23Z")
-	
+	assert.NoError(t, err)
+
 	currentFileCache := os.FileCache{
 		"/tmp/nginx/nginx.conf": {
 			LastModified: cacheTime1,
@@ -99,9 +100,8 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 
 	configWriter := configWriter.FakeConfigWriterInterface{}
 
-
 	configWriter.WriteReturns(currentFileCache, skippedFiles, nil)
-	
+
 	nginxConfig := nginx.FakeNginxConfigInterface{}
 
 	nginxConfig.ValidateReturns(nil)
@@ -118,7 +118,6 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, correlationId)
-
 }
 
 func createTestIds() (uuid.UUID, uuid.UUID, error) {

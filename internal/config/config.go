@@ -42,7 +42,6 @@ type ConfigInterface interface {
 	getClient() Client
 }
 
-
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
 
 func RegisterRunner(r func(cmd *cobra.Command, args []string)) {

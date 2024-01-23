@@ -4,7 +4,6 @@ package exec
 import (
 	"bytes"
 	"sync"
-
 )
 
 type FakeExecInterface struct {

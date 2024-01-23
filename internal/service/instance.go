@@ -9,16 +9,16 @@ package service
 
 import (
 	"fmt"
-	"net/http"
 	"log/slog"
+	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/http/common"
 	"github.com/nginx/agent/v3/internal/config"
+	configWriter "github.com/nginx/agent/v3/internal/datasource/config"
 	"github.com/nginx/agent/v3/internal/datasource/nginx"
 	"github.com/nginx/agent/v3/internal/datasource/os"
-	configWriter "github.com/nginx/agent/v3/internal/datasource/config"
 )
 
 const (
@@ -36,20 +36,20 @@ type InstanceServiceInterface interface {
 }
 
 type InstanceServiceParameters struct {
-	files os.FilesInterface
-	config config.ConfigInterface
-	nginxConfig nginx.NginxConfig
+	files        os.FilesInterface
+	config       config.ConfigInterface
+	nginxConfig  nginx.NginxConfig
 	configWriter configWriter.ConfigWriter
 }
 
 type InstanceService struct {
-	instances      []*instances.Instance
-	nginxInstances map[string]*instances.Instance
+	instances          []*instances.Instance
+	nginxInstances     map[string]*instances.Instance
 	configWriterParams configWriter.ConfigWriterParameters
 }
-//  instanceServiceParameters *InstanceServiceParameters 
-func NewInstanceService() *InstanceService {
 
+// instanceServiceParameters *InstanceServiceParameters
+func NewInstanceService() *InstanceService {
 	// if instanceServiceParameters.files == nil {
 	// 	instanceServiceParameters.files = os.
 	// }
@@ -91,11 +91,10 @@ func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, locati
 		if cachePath == "" {
 			cachePath = fmt.Sprintf("/var/lib/nginx-agent/config/%v/cache.json", instanceId)
 		}
-		
 
 		previousCache, err := os.ReadInstanceCache(cachePath)
 		if err != nil {
-			slog.Info("Error ", "err", err , "cache", cachePath, "previousCache", previousCache)
+			slog.Info("Error ", "err", err, "cache", cachePath, "previousCache", previousCache)
 			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to Read cache for instance with id %s", instanceId)}
 		}
 
@@ -119,12 +118,10 @@ func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, locati
 			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to reload NGINX for instance with id %s", instanceId)}
 		}
 
-
 		err = os.UpdateCache(currentCache, cachePath)
 		if err != nil {
 			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to update cache for instance with id %s", instanceId)}
 		}
-
 
 	} else {
 		return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("unable to find instance with id %s", instanceId)}
