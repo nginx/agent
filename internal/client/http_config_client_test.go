@@ -57,7 +57,7 @@ func TestGetFilesMetadata(t *testing.T) {
 
 	hcd := NewHttpConfigClient(time.Second * 10)
 
-	resp, err := hcd.GetFilesMetadata(filesUrl, tenantId)
+	resp, err := hcd.GetFilesMetadata(filesUrl, tenantId.String())
 	assert.NoError(t, err)
 	assert.Equal(t, resp.String(), testDataResponse.String())
 }
@@ -93,7 +93,7 @@ func TestGetFile(t *testing.T) {
 
 	hcd := NewHttpConfigClient(time.Second * 10)
 
-	resp, err := hcd.GetFile(&file, filesUrl, tenantId)
+	resp, err := hcd.GetFile(&file, filesUrl, tenantId.String())
 	assert.NoError(t, err)
 	assert.Equal(t, resp.String(), testDataResponse.String())
 }

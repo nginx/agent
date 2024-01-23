@@ -17,6 +17,17 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/instances"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//counterfeiter:generate -o mock_files.go . FilesInterface
+//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/datasource/os mock_files.go | sed -e s\\/os\\\\.\\/\\/g > mock_files_fixed.go"
+//go:generate mv mock_files_fixed.go mock_files.go
+type FilesInterface interface {
+	WriteFile(fileContent []byte, filePath string) error
+	ReadInstanceCache(cachePath string) (FileCache, error)
+	UpdateCache(currentFileCache FileCache, cachePath string) error
+}
+
+
 // map of files with filepath as key
 type FileCache = map[string]*instances.File
 

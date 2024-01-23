@@ -15,7 +15,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -27,8 +26,8 @@ import (
 const tenantHeader = "tenantId"
 
 type HttpConfigClientInterface interface {
-	GetFilesMetadata(filesUrl string, tenantID uuid.UUID) (*instances.Files, error)
-	GetFile(file *instances.File, filesUrl string, tenantID uuid.UUID) (*instances.FileDownloadResponse, error)
+	GetFilesMetadata(filesUrl string, tenantID string) (*instances.Files, error)
+	GetFile(file *instances.File, filesUrl string, tenantID string) (*instances.FileDownloadResponse, error)
 }
 
 type HttpConfigClient struct {
@@ -45,11 +44,14 @@ func NewHttpConfigClient(timeout time.Duration) *HttpConfigClient {
 	}
 }
 
-func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl string, tenantID uuid.UUID) (*instances.Files, error) {
+func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl string, tenantID string) (*instances.Files, error) {
 	files := instances.Files{}
 
 	req, err := http.NewRequest(http.MethodGet, filesUrl, nil)
-	req.Header.Set(tenantHeader, tenantID.String())
+
+	if tenantID != "" {
+		req.Header.Set(tenantHeader, tenantID)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("error creating GetFilesMetadata request %s: %w", filesUrl, err)
 	}
@@ -76,7 +78,7 @@ func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl string, tenantID uuid.UUI
 	return &files, nil
 }
 
-func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl string, tenantID uuid.UUID) (*instances.FileDownloadResponse, error) {
+func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl string, tenantID string) (*instances.FileDownloadResponse, error) {
 	response := instances.FileDownloadResponse{}
 	params := url.Values{}
 
@@ -88,7 +90,7 @@ func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl string, tena
 	fileUrl := fmt.Sprintf("%v%v?%v", filesUrl, filePath, params.Encode())
 
 	req, err := http.NewRequest(http.MethodGet, fileUrl, nil)
-	req.Header.Set(tenantHeader, tenantID.String())
+	req.Header.Set(tenantHeader, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesUrl, err)
 	}

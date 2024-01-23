@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package datasource
+package config
 
 import (
 	"fmt"
@@ -18,6 +18,17 @@ import (
 	"github.com/nginx/agent/v3/internal/client"
 	"github.com/nginx/agent/v3/internal/datasource/os"
 )
+
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//counterfeiter:generate -o mock_config_writer.go . ConfigWriterInterface
+//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/datasource/config mock_config_writer.go | sed -e s\\/config\\\\.\\/\\/g > mock_config_writer_fixed.go"
+//go:generate mv mock_config_writer_fixed.go mock_config_writer.go
+
+type ConfigWriterInterface interface {
+	Write(previousFileCache os.FileCache, filesUrl string, tenantID uuid.UUID) (currentFileCache os.FileCache, skippedFiles map[string]struct{}, err error)
+	isFilePathValid(filePath string) bool
+	doesFileRequireUpdate(previousFileCache os.FileCache, fileData *instances.File) (latest bool)
+}
 
 type (
 	Client struct {
@@ -48,7 +59,7 @@ func (cw *ConfigWriter) Write(previousFileCache os.FileCache, filesUrl string, t
 	currentFileCache = os.FileCache{}
 	skippedFiles = make(map[string]struct{})
 
-	filesMetaData, err := cw.configClient.GetFilesMetadata(filesUrl, tenantID)
+	filesMetaData, err := cw.configClient.GetFilesMetadata(filesUrl, tenantID.String())
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting files metadata from %s: %w", filesUrl, err)
 	}
@@ -62,7 +73,7 @@ func (cw *ConfigWriter) Write(previousFileCache os.FileCache, filesUrl string, t
 				continue
 			}
 
-			fileDownloadResponse, err := cw.configClient.GetFile(fileData, filesUrl, tenantID)
+			fileDownloadResponse, err := cw.configClient.GetFile(fileData, filesUrl, tenantID.String())
 			if err != nil {
 				return nil, nil, fmt.Errorf("error getting file data from %s: %w", filesUrl, err)
 			}

@@ -34,6 +34,15 @@ const (
 	ClientTimeoutConfigKey                     = "client_timeout"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//counterfeiter:generate -o mock_config.go . ConfigInterface
+//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/config mock_config.go | sed -e s\\/config\\\\.\\/\\/g > mock_config_fixed.go"
+//go:generate mv mock_config_fixed.go mock_config.go
+type ConfigInterface interface {
+	getClient() Client
+}
+
+
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
 
 func RegisterRunner(r func(cmd *cobra.Command, args []string)) {

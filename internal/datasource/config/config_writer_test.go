@@ -4,7 +4,7 @@
  * This source code is licensed under the Apache License, Version 2.0 license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package datasource
+package config
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func TestUpdateInstanceConfig(t *testing.T) {
+func TestWriteConfig(t *testing.T) {
 	filePath := "/tmp/test.conf"
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 

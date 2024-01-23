@@ -18,11 +18,12 @@ type FakeInstanceServiceInterface struct {
 	getInstancesReturnsOnCall map[int]struct {
 		result1 []*instances.Instance
 	}
-	UpdateInstanceConfigurationStub        func(string, string) (string, error)
+	UpdateInstanceConfigurationStub        func(string, string, string) (string, error)
 	updateInstanceConfigurationMutex       sync.RWMutex
 	updateInstanceConfigurationArgsForCall []struct {
 		arg1 string
 		arg2 string
+		arg3 string
 	}
 	updateInstanceConfigurationReturns struct {
 		result1 string
@@ -94,19 +95,20 @@ func (fake *FakeInstanceServiceInterface) GetInstancesReturnsOnCall(i int, resul
 	}{result1}
 }
 
-func (fake *FakeInstanceServiceInterface) UpdateInstanceConfiguration(arg1 string, arg2 string) (string, error) {
+func (fake *FakeInstanceServiceInterface) UpdateInstanceConfiguration(arg1 string, arg2 string, arg3 string) (string, error) {
 	fake.updateInstanceConfigurationMutex.Lock()
 	ret, specificReturn := fake.updateInstanceConfigurationReturnsOnCall[len(fake.updateInstanceConfigurationArgsForCall)]
 	fake.updateInstanceConfigurationArgsForCall = append(fake.updateInstanceConfigurationArgsForCall, struct {
 		arg1 string
 		arg2 string
-	}{arg1, arg2})
+		arg3 string
+	}{arg1, arg2, arg3})
 	stub := fake.UpdateInstanceConfigurationStub
 	fakeReturns := fake.updateInstanceConfigurationReturns
-	fake.recordInvocation("UpdateInstanceConfiguration", []interface{}{arg1, arg2})
+	fake.recordInvocation("UpdateInstanceConfiguration", []interface{}{arg1, arg2, arg3})
 	fake.updateInstanceConfigurationMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -120,17 +122,17 @@ func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationCallCount()
 	return len(fake.updateInstanceConfigurationArgsForCall)
 }
 
-func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationCalls(stub func(string, string) (string, error)) {
+func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationCalls(stub func(string, string, string) (string, error)) {
 	fake.updateInstanceConfigurationMutex.Lock()
 	defer fake.updateInstanceConfigurationMutex.Unlock()
 	fake.UpdateInstanceConfigurationStub = stub
 }
 
-func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationArgsForCall(i int) (string, string) {
+func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationArgsForCall(i int) (string, string, string) {
 	fake.updateInstanceConfigurationMutex.RLock()
 	defer fake.updateInstanceConfigurationMutex.RUnlock()
 	argsForCall := fake.updateInstanceConfigurationArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeInstanceServiceInterface) UpdateInstanceConfigurationReturns(result1 string, result2 error) {
