@@ -9,6 +9,31 @@ import (
 )
 
 type FakeConfigWriterInterface struct {
+	ReadInstanceCacheStub        func(string) (map[string]*instances.File, error)
+	readInstanceCacheMutex       sync.RWMutex
+	readInstanceCacheArgsForCall []struct {
+		arg1 string
+	}
+	readInstanceCacheReturns struct {
+		result1 map[string]*instances.File
+		result2 error
+	}
+	readInstanceCacheReturnsOnCall map[int]struct {
+		result1 map[string]*instances.File
+		result2 error
+	}
+	UpdateCacheStub        func(map[string]*instances.File, string) error
+	updateCacheMutex       sync.RWMutex
+	updateCacheArgsForCall []struct {
+		arg1 map[string]*instances.File
+		arg2 string
+	}
+	updateCacheReturns struct {
+		result1 error
+	}
+	updateCacheReturnsOnCall map[int]struct {
+		result1 error
+	}
 	WriteStub        func(map[string]*instances.File, string, uuid.UUID) (map[string]*instances.File, map[string]struct{}, error)
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
@@ -25,6 +50,18 @@ type FakeConfigWriterInterface struct {
 		result1 map[string]*instances.File
 		result2 map[string]struct{}
 		result3 error
+	}
+	WriteFileStub        func([]byte, string) error
+	writeFileMutex       sync.RWMutex
+	writeFileArgsForCall []struct {
+		arg1 []byte
+		arg2 string
+	}
+	writeFileReturns struct {
+		result1 error
+	}
+	writeFileReturnsOnCall map[int]struct {
+		result1 error
 	}
 	doesFileRequireUpdateStub        func(map[string]*instances.File, *instances.File) bool
 	doesFileRequireUpdateMutex       sync.RWMutex
@@ -51,6 +88,132 @@ type FakeConfigWriterInterface struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeConfigWriterInterface) ReadInstanceCache(arg1 string) (map[string]*instances.File, error) {
+	fake.readInstanceCacheMutex.Lock()
+	ret, specificReturn := fake.readInstanceCacheReturnsOnCall[len(fake.readInstanceCacheArgsForCall)]
+	fake.readInstanceCacheArgsForCall = append(fake.readInstanceCacheArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.ReadInstanceCacheStub
+	fakeReturns := fake.readInstanceCacheReturns
+	fake.recordInvocation("ReadInstanceCache", []interface{}{arg1})
+	fake.readInstanceCacheMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeConfigWriterInterface) ReadInstanceCacheCallCount() int {
+	fake.readInstanceCacheMutex.RLock()
+	defer fake.readInstanceCacheMutex.RUnlock()
+	return len(fake.readInstanceCacheArgsForCall)
+}
+
+func (fake *FakeConfigWriterInterface) ReadInstanceCacheCalls(stub func(string) (map[string]*instances.File, error)) {
+	fake.readInstanceCacheMutex.Lock()
+	defer fake.readInstanceCacheMutex.Unlock()
+	fake.ReadInstanceCacheStub = stub
+}
+
+func (fake *FakeConfigWriterInterface) ReadInstanceCacheArgsForCall(i int) string {
+	fake.readInstanceCacheMutex.RLock()
+	defer fake.readInstanceCacheMutex.RUnlock()
+	argsForCall := fake.readInstanceCacheArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeConfigWriterInterface) ReadInstanceCacheReturns(result1 map[string]*instances.File, result2 error) {
+	fake.readInstanceCacheMutex.Lock()
+	defer fake.readInstanceCacheMutex.Unlock()
+	fake.ReadInstanceCacheStub = nil
+	fake.readInstanceCacheReturns = struct {
+		result1 map[string]*instances.File
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeConfigWriterInterface) ReadInstanceCacheReturnsOnCall(i int, result1 map[string]*instances.File, result2 error) {
+	fake.readInstanceCacheMutex.Lock()
+	defer fake.readInstanceCacheMutex.Unlock()
+	fake.ReadInstanceCacheStub = nil
+	if fake.readInstanceCacheReturnsOnCall == nil {
+		fake.readInstanceCacheReturnsOnCall = make(map[int]struct {
+			result1 map[string]*instances.File
+			result2 error
+		})
+	}
+	fake.readInstanceCacheReturnsOnCall[i] = struct {
+		result1 map[string]*instances.File
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeConfigWriterInterface) UpdateCache(arg1 map[string]*instances.File, arg2 string) error {
+	fake.updateCacheMutex.Lock()
+	ret, specificReturn := fake.updateCacheReturnsOnCall[len(fake.updateCacheArgsForCall)]
+	fake.updateCacheArgsForCall = append(fake.updateCacheArgsForCall, struct {
+		arg1 map[string]*instances.File
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.UpdateCacheStub
+	fakeReturns := fake.updateCacheReturns
+	fake.recordInvocation("UpdateCache", []interface{}{arg1, arg2})
+	fake.updateCacheMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeConfigWriterInterface) UpdateCacheCallCount() int {
+	fake.updateCacheMutex.RLock()
+	defer fake.updateCacheMutex.RUnlock()
+	return len(fake.updateCacheArgsForCall)
+}
+
+func (fake *FakeConfigWriterInterface) UpdateCacheCalls(stub func(map[string]*instances.File, string) error) {
+	fake.updateCacheMutex.Lock()
+	defer fake.updateCacheMutex.Unlock()
+	fake.UpdateCacheStub = stub
+}
+
+func (fake *FakeConfigWriterInterface) UpdateCacheArgsForCall(i int) (map[string]*instances.File, string) {
+	fake.updateCacheMutex.RLock()
+	defer fake.updateCacheMutex.RUnlock()
+	argsForCall := fake.updateCacheArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeConfigWriterInterface) UpdateCacheReturns(result1 error) {
+	fake.updateCacheMutex.Lock()
+	defer fake.updateCacheMutex.Unlock()
+	fake.UpdateCacheStub = nil
+	fake.updateCacheReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeConfigWriterInterface) UpdateCacheReturnsOnCall(i int, result1 error) {
+	fake.updateCacheMutex.Lock()
+	defer fake.updateCacheMutex.Unlock()
+	fake.UpdateCacheStub = nil
+	if fake.updateCacheReturnsOnCall == nil {
+		fake.updateCacheReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.updateCacheReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeConfigWriterInterface) Write(arg1 map[string]*instances.File, arg2 string, arg3 uuid.UUID) (map[string]*instances.File, map[string]struct{}, error) {
@@ -120,6 +283,73 @@ func (fake *FakeConfigWriterInterface) WriteReturnsOnCall(i int, result1 map[str
 		result2 map[string]struct{}
 		result3 error
 	}{result1, result2, result3}
+}
+
+func (fake *FakeConfigWriterInterface) WriteFile(arg1 []byte, arg2 string) error {
+	var arg1Copy []byte
+	if arg1 != nil {
+		arg1Copy = make([]byte, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.writeFileMutex.Lock()
+	ret, specificReturn := fake.writeFileReturnsOnCall[len(fake.writeFileArgsForCall)]
+	fake.writeFileArgsForCall = append(fake.writeFileArgsForCall, struct {
+		arg1 []byte
+		arg2 string
+	}{arg1Copy, arg2})
+	stub := fake.WriteFileStub
+	fakeReturns := fake.writeFileReturns
+	fake.recordInvocation("WriteFile", []interface{}{arg1Copy, arg2})
+	fake.writeFileMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeConfigWriterInterface) WriteFileCallCount() int {
+	fake.writeFileMutex.RLock()
+	defer fake.writeFileMutex.RUnlock()
+	return len(fake.writeFileArgsForCall)
+}
+
+func (fake *FakeConfigWriterInterface) WriteFileCalls(stub func([]byte, string) error) {
+	fake.writeFileMutex.Lock()
+	defer fake.writeFileMutex.Unlock()
+	fake.WriteFileStub = stub
+}
+
+func (fake *FakeConfigWriterInterface) WriteFileArgsForCall(i int) ([]byte, string) {
+	fake.writeFileMutex.RLock()
+	defer fake.writeFileMutex.RUnlock()
+	argsForCall := fake.writeFileArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeConfigWriterInterface) WriteFileReturns(result1 error) {
+	fake.writeFileMutex.Lock()
+	defer fake.writeFileMutex.Unlock()
+	fake.WriteFileStub = nil
+	fake.writeFileReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeConfigWriterInterface) WriteFileReturnsOnCall(i int, result1 error) {
+	fake.writeFileMutex.Lock()
+	defer fake.writeFileMutex.Unlock()
+	fake.WriteFileStub = nil
+	if fake.writeFileReturnsOnCall == nil {
+		fake.writeFileReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.writeFileReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeConfigWriterInterface) doesFileRequireUpdate(arg1 map[string]*instances.File, arg2 *instances.File) bool {
@@ -248,8 +478,14 @@ func (fake *FakeConfigWriterInterface) IsFilePathValidReturnsOnCall(i int, resul
 func (fake *FakeConfigWriterInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.readInstanceCacheMutex.RLock()
+	defer fake.readInstanceCacheMutex.RUnlock()
+	fake.updateCacheMutex.RLock()
+	defer fake.updateCacheMutex.RUnlock()
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
+	fake.writeFileMutex.RLock()
+	defer fake.writeFileMutex.RUnlock()
 	fake.doesFileRequireUpdateMutex.RLock()
 	defer fake.doesFileRequireUpdateMutex.RUnlock()
 	fake.isFilePathValidMutex.RLock()

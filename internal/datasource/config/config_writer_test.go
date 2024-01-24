@@ -7,8 +7,10 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -17,7 +19,6 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/client"
-	datasource_os "github.com/nginx/agent/v3/internal/datasource/os"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -29,10 +30,6 @@ func TestWriteConfig(t *testing.T) {
 	tenantId, instanceId, err := createTestIds()
 	assert.NoError(t, err)
 	filesUrl := fmt.Sprintf("/instance/%s/files/", instanceId)
-
-	err = datasource_os.WriteFile(fileContent, filePath)
-	assert.NoError(t, err)
-	assert.FileExists(t, filePath)
 
 	metaDataTime1, err := createProtoTime("2024-01-08T14:22:21Z")
 	assert.NoError(t, err)
@@ -73,13 +70,17 @@ func TestWriteConfig(t *testing.T) {
 		},
 	})
 
+	err = configWriter.WriteFile(fileContent, filePath)
+	assert.NoError(t, err)
+	assert.FileExists(t, filePath)
+
 	cacheTime1, err := createProtoTime("2024-01-08T14:22:21Z")
 	assert.NoError(t, err)
 
 	cacheTime2, err := createProtoTime("2024-01-08T12:22:21Z")
 	assert.NoError(t, err)
 
-	previouseFileCache := datasource_os.FileCache{
+	previouseFileCache := FileCache{
 		"/tmp/nginx/nginx.conf": {
 			LastModified: cacheTime1,
 			Path:         "/tmp/nginx/nginx.conf",
@@ -103,6 +104,7 @@ func TestWriteConfig(t *testing.T) {
 }
 
 func TestIsPathValid(t *testing.T) {
+	configWriter := NewConfigWriter(&ConfigWriterParameters{})
 	tests := []struct {
 		name           string
 		path           string
@@ -132,20 +134,21 @@ func TestIsPathValid(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			valid := isFilePathValid(test.path)
+			valid := configWriter.isFilePathValid(test.path)
 			assert.Equal(t, test.expectedResult, valid)
 		})
 	}
 }
 
 func TestDoesFileRequireUpdate(t *testing.T) {
+	configWriter := NewConfigWriter(&ConfigWriterParameters{})
 	fileTime1, err := createProtoTime("2024-01-08T14:22:21Z")
 	assert.NoError(t, err)
 
 	fileTime2, err := createProtoTime("2024-01-08T13:22:23Z")
 	assert.NoError(t, err)
 
-	previousFileCache := datasource_os.FileCache{
+	previousFileCache := FileCache{
 		"/tmp/nginx/locations/metrics.conf": {
 			LastModified: fileTime1,
 			Path:         "/tmp/nginx/locations/metrics.conf",
@@ -163,7 +166,7 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		lastConfigApply datasource_os.FileCache
+		lastConfigApply FileCache
 		fileData        *instances.File
 		expectedResult  bool
 	}{
@@ -191,10 +194,87 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			valid := doesFileRequireUpdate(test.lastConfigApply, test.fileData)
+			valid := configWriter.doesFileRequireUpdate(test.lastConfigApply, test.fileData)
 			assert.Equal(t, test.expectedResult, valid)
 		})
 	}
+}
+
+func TestWriteFile(t *testing.T) {
+	configWriter := NewConfigWriter(&ConfigWriterParameters{})
+	filePath := "/tmp/test.conf"
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+
+	err := configWriter.WriteFile(fileContent, filePath)
+	assert.NoError(t, err)
+	assert.FileExists(t, filePath)
+
+	data, err := os.ReadFile(filePath)
+	assert.NoError(t, err)
+	assert.Equal(t, fileContent, data)
+
+	err = os.Remove(filePath)
+	assert.NoError(t, err)
+	assert.NoFileExists(t, filePath)
+}
+
+func TestReadCache(t *testing.T) {
+	instanceId, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+
+	configWriter := NewConfigWriter(&ConfigWriterParameters{})
+	assert.NoError(t, err)
+	cachePath := fmt.Sprintf("/tmp/%s/cache.json", instanceId.String())
+
+	cacheData, err := createCacheFile(cachePath)
+	assert.NoError(t, err)
+
+	previousFileCache, err := configWriter.ReadInstanceCache(cachePath)
+	assert.NoError(t, err)
+	assert.Equal(t, cacheData, previousFileCache)
+
+	err = os.Remove(cachePath)
+	assert.NoError(t, err)
+	assert.NoFileExists(t, cachePath)
+}
+
+func TestUpdateCache(t *testing.T) {
+	configWriter := NewConfigWriter(&ConfigWriterParameters{})
+	instanceId, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	assert.NoError(t, err)
+	cachePath := fmt.Sprintf("/tmp/%s/cache.json", instanceId.String())
+
+	cacheData, err := createCacheFile(cachePath)
+	assert.NoError(t, err)
+
+	fileTime1, err := createProtoTime("2024-01-08T13:22:23Z")
+	assert.NoError(t, err)
+
+	fileTime2, err := createProtoTime("2024-01-08T13:22:23Z")
+	assert.NoError(t, err)
+
+	currentFileCache := FileCache{
+		"/tmp/nginx/locations/metrics.conf": {
+			LastModified: fileTime1,
+			Path:         "/tmp/nginx/locations/metrics.conf",
+			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
+		},
+		"/tmp/nginx/test.conf": {
+			LastModified: fileTime2,
+			Path:         "/tmp/nginx/test.conf",
+			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+		},
+	}
+
+	err = configWriter.UpdateCache(currentFileCache, cachePath)
+	assert.NoError(t, err)
+
+	data, err := configWriter.ReadInstanceCache(cachePath)
+	assert.NoError(t, err)
+	assert.NotEqual(t, cacheData, data)
+
+	err = os.Remove(cachePath)
+	assert.NoError(t, err)
+	assert.NoFileExists(t, cachePath)
 }
 
 func createTestIds() (uuid.UUID, uuid.UUID, error) {
@@ -216,4 +296,55 @@ func createProtoTime(timeString string) (*timestamppb.Timestamp, error) {
 	protoTime := timestamppb.New(time)
 
 	return protoTime, err
+}
+
+func createCacheFile(cachePath string) (FileCache, error) {
+	fileTime1, err := createProtoTime("2024-01-08T13:22:23Z")
+	if err != nil {
+		return nil, fmt.Errorf("error creating time, error: %w", err)
+	}
+	fileTime2, err := createProtoTime("2024-01-08T13:22:25Z")
+	if err != nil {
+		return nil, fmt.Errorf("error creating time, error: %w", err)
+	}
+
+	fileTime3, err := createProtoTime("2024-01-08T13:22:21Z")
+	if err != nil {
+		return nil, fmt.Errorf("error creating time, error: %w", err)
+	}
+
+	cacheData := FileCache{
+		"/tmp/nginx/locations/metrics.conf": {
+			LastModified: fileTime1,
+			Path:         "/tmp/nginx/locations/metrics.conf",
+			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
+		},
+		"/tmp/nginx/locations/test.conf": {
+			LastModified: fileTime2,
+			Path:         "/tmp/nginx/locations/test.conf",
+			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+		},
+		"/tmp/nginx/nginx.conf": {
+			LastModified: fileTime3,
+			Path:         "/tmp/nginx/nginx.conf",
+			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
+		},
+	}
+
+	cache, err := json.MarshalIndent(cacheData, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling cache, error: %w", err)
+	}
+
+	err = os.MkdirAll(path.Dir(cachePath), 0o750)
+	if err != nil {
+		return nil, fmt.Errorf("error creating cache directory, error: %w", err)
+	}
+
+	err = os.WriteFile(cachePath, cache, 0o644)
+	if err != nil {
+		return nil, fmt.Errorf("error writing to file, error: %w", err)
+	}
+
+	return cacheData, err
 }

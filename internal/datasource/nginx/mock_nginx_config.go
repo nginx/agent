@@ -9,6 +9,16 @@ import (
 )
 
 type FakeNginxConfigInterface struct {
+	CompleteStub        func() error
+	completeMutex       sync.RWMutex
+	completeArgsForCall []struct {
+	}
+	completeReturns struct {
+		result1 error
+	}
+	completeReturnsOnCall map[int]struct {
+		result1 error
+	}
 	ReloadStub        func() error
 	reloadMutex       sync.RWMutex
 	reloadArgsForCall []struct {
@@ -48,6 +58,59 @@ type FakeNginxConfigInterface struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeNginxConfigInterface) Complete() error {
+	fake.completeMutex.Lock()
+	ret, specificReturn := fake.completeReturnsOnCall[len(fake.completeArgsForCall)]
+	fake.completeArgsForCall = append(fake.completeArgsForCall, struct {
+	}{})
+	stub := fake.CompleteStub
+	fakeReturns := fake.completeReturns
+	fake.recordInvocation("Complete", []interface{}{})
+	fake.completeMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeNginxConfigInterface) CompleteCallCount() int {
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
+	return len(fake.completeArgsForCall)
+}
+
+func (fake *FakeNginxConfigInterface) CompleteCalls(stub func() error) {
+	fake.completeMutex.Lock()
+	defer fake.completeMutex.Unlock()
+	fake.CompleteStub = stub
+}
+
+func (fake *FakeNginxConfigInterface) CompleteReturns(result1 error) {
+	fake.completeMutex.Lock()
+	defer fake.completeMutex.Unlock()
+	fake.CompleteStub = nil
+	fake.completeReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeNginxConfigInterface) CompleteReturnsOnCall(i int, result1 error) {
+	fake.completeMutex.Lock()
+	defer fake.completeMutex.Unlock()
+	fake.CompleteStub = nil
+	if fake.completeReturnsOnCall == nil {
+		fake.completeReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.completeReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeNginxConfigInterface) Reload() error {
@@ -228,6 +291,8 @@ func (fake *FakeNginxConfigInterface) WriteReturnsOnCall(i int, result1 map[stri
 func (fake *FakeNginxConfigInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
 	fake.reloadMutex.RLock()
 	defer fake.reloadMutex.RUnlock()
 	fake.validateMutex.RLock()

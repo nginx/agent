@@ -9,16 +9,12 @@ package service
 
 import (
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/http/common"
-	"github.com/nginx/agent/v3/internal/config"
-	configWriter "github.com/nginx/agent/v3/internal/datasource/config"
 	"github.com/nginx/agent/v3/internal/datasource/nginx"
-	"github.com/nginx/agent/v3/internal/datasource/os"
 )
 
 const (
@@ -36,31 +32,20 @@ type InstanceServiceInterface interface {
 }
 
 type InstanceServiceParameters struct {
-	files        os.FilesInterface
-	config       config.ConfigInterface
-	nginxConfig  nginx.NginxConfig
-	configWriter configWriter.ConfigWriter
+	nginxConfigInterface nginx.NginxConfigInterface
 }
 
 type InstanceService struct {
-	instances          []*instances.Instance
-	nginxInstances     map[string]*instances.Instance
-	configWriterParams configWriter.ConfigWriterParameters
+	instances      []*instances.Instance
+	nginxInstances map[string]*instances.Instance
+	nginxConfig    nginx.NginxConfigInterface
 }
 
-// instanceServiceParameters *InstanceServiceParameters
-func NewInstanceService() *InstanceService {
-	// if instanceServiceParameters.files == nil {
-	// 	instanceServiceParameters.files = os.
-	// }
-
+func NewInstanceService(instanceServiceParameters *InstanceServiceParameters) *InstanceService {
+	// TODO: Check if params are nil is an issue because of the cachepath and instance ID fix when instance service is updated
 	return &InstanceService{
 		nginxInstances: make(map[string]*instances.Instance),
-		configWriterParams: configWriter.ConfigWriterParameters{
-			Client: configWriter.Client{
-				Timeout: config.GetConfig().Client.Timeout,
-			},
-		},
+		nginxConfig:    instanceServiceParameters.nginxConfigInterface,
 	}
 }
 
@@ -79,6 +64,7 @@ func (is *InstanceService) GetInstances() []*instances.Instance {
 	return is.instances
 }
 
+// TODO: Not sure this works currently but waiting to fix till the instance service is done
 func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, location string, cachePath string) (correlationId string, err error) {
 	// TODO: Remove when getting tenantId
 	exampleTenantId, err := uuid.Parse(tenantId)
@@ -92,18 +78,10 @@ func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, locati
 			cachePath = fmt.Sprintf("/var/lib/nginx-agent/config/%v/cache.json", instanceId)
 		}
 
-		previousCache, err := os.ReadInstanceCache(cachePath)
-		if err != nil {
-			slog.Info("Error ", "err", err, "cache", cachePath, "previousCache", previousCache)
-			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to Read cache for instance with id %s", instanceId)}
-		}
+		nginxConfig := nginx.NewNginxConfig(nginx.NginxConfigParameters{}, instanceId, cachePath)
 
-		configWriter := configWriter.NewConfigWriter(&is.configWriterParams)
-
-		// Skipped files currently not being used will be changed when doing rollback
-		nginxConfig := nginx.NewNginxConfig(instanceId, *configWriter)
-
-		currentCache, _, err := nginxConfig.Write(previousCache, location, exampleTenantId)
+		// TODO: Skipped files currently not being used will be changed when doing rollback
+		_, err := nginxConfig.Write(location, exampleTenantId)
 		if err != nil {
 			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to update config for instance with id %s", instanceId)}
 		}
@@ -118,7 +96,7 @@ func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, locati
 			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to reload NGINX for instance with id %s", instanceId)}
 		}
 
-		err = os.UpdateCache(currentCache, cachePath)
+		err = nginxConfig.Complete(cachePath)
 		if err != nil {
 			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to update cache for instance with id %s", instanceId)}
 		}
