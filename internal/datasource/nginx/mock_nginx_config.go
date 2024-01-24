@@ -5,20 +5,9 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/nginx/agent/v3/api/grpc/instances"
 )
 
 type FakeNginxConfigInterface struct {
-	CompleteStub        func() error
-	completeMutex       sync.RWMutex
-	completeArgsForCall []struct {
-	}
-	completeReturns struct {
-		result1 error
-	}
-	completeReturnsOnCall map[int]struct {
-		result1 error
-	}
 	ReloadStub        func() error
 	reloadMutex       sync.RWMutex
 	reloadArgsForCall []struct {
@@ -39,78 +28,22 @@ type FakeNginxConfigInterface struct {
 	validateReturnsOnCall map[int]struct {
 		result1 error
 	}
-	WriteStub        func(map[string]*instances.File, string, uuid.UUID) (map[string]*instances.File, map[string]struct{}, error)
+	WriteStub        func(string, uuid.UUID) (map[string]struct{}, error)
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
-		arg1 map[string]*instances.File
-		arg2 string
-		arg3 uuid.UUID
+		arg1 string
+		arg2 uuid.UUID
 	}
 	writeReturns struct {
-		result1 map[string]*instances.File
-		result2 map[string]struct{}
-		result3 error
+		result1 map[string]struct{}
+		result2 error
 	}
 	writeReturnsOnCall map[int]struct {
-		result1 map[string]*instances.File
-		result2 map[string]struct{}
-		result3 error
+		result1 map[string]struct{}
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-func (fake *FakeNginxConfigInterface) Complete() error {
-	fake.completeMutex.Lock()
-	ret, specificReturn := fake.completeReturnsOnCall[len(fake.completeArgsForCall)]
-	fake.completeArgsForCall = append(fake.completeArgsForCall, struct {
-	}{})
-	stub := fake.CompleteStub
-	fakeReturns := fake.completeReturns
-	fake.recordInvocation("Complete", []interface{}{})
-	fake.completeMutex.Unlock()
-	if stub != nil {
-		return stub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakeNginxConfigInterface) CompleteCallCount() int {
-	fake.completeMutex.RLock()
-	defer fake.completeMutex.RUnlock()
-	return len(fake.completeArgsForCall)
-}
-
-func (fake *FakeNginxConfigInterface) CompleteCalls(stub func() error) {
-	fake.completeMutex.Lock()
-	defer fake.completeMutex.Unlock()
-	fake.CompleteStub = stub
-}
-
-func (fake *FakeNginxConfigInterface) CompleteReturns(result1 error) {
-	fake.completeMutex.Lock()
-	defer fake.completeMutex.Unlock()
-	fake.CompleteStub = nil
-	fake.completeReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeNginxConfigInterface) CompleteReturnsOnCall(i int, result1 error) {
-	fake.completeMutex.Lock()
-	defer fake.completeMutex.Unlock()
-	fake.CompleteStub = nil
-	if fake.completeReturnsOnCall == nil {
-		fake.completeReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.completeReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
 }
 
 func (fake *FakeNginxConfigInterface) Reload() error {
@@ -219,25 +152,24 @@ func (fake *FakeNginxConfigInterface) ValidateReturnsOnCall(i int, result1 error
 	}{result1}
 }
 
-func (fake *FakeNginxConfigInterface) Write(arg1 map[string]*instances.File, arg2 string, arg3 uuid.UUID) (map[string]*instances.File, map[string]struct{}, error) {
+func (fake *FakeNginxConfigInterface) Write(arg1 string, arg2 uuid.UUID) (map[string]struct{}, error) {
 	fake.writeMutex.Lock()
 	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
 	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
-		arg1 map[string]*instances.File
-		arg2 string
-		arg3 uuid.UUID
-	}{arg1, arg2, arg3})
+		arg1 string
+		arg2 uuid.UUID
+	}{arg1, arg2})
 	stub := fake.WriteStub
 	fakeReturns := fake.writeReturns
-	fake.recordInvocation("Write", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("Write", []interface{}{arg1, arg2})
 	fake.writeMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2, ret.result3
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeNginxConfigInterface) WriteCallCount() int {
@@ -246,53 +178,48 @@ func (fake *FakeNginxConfigInterface) WriteCallCount() int {
 	return len(fake.writeArgsForCall)
 }
 
-func (fake *FakeNginxConfigInterface) WriteCalls(stub func(map[string]*instances.File, string, uuid.UUID) (map[string]*instances.File, map[string]struct{}, error)) {
+func (fake *FakeNginxConfigInterface) WriteCalls(stub func(string, uuid.UUID) (map[string]struct{}, error)) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = stub
 }
 
-func (fake *FakeNginxConfigInterface) WriteArgsForCall(i int) (map[string]*instances.File, string, uuid.UUID) {
+func (fake *FakeNginxConfigInterface) WriteArgsForCall(i int) (string, uuid.UUID) {
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	argsForCall := fake.writeArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeNginxConfigInterface) WriteReturns(result1 map[string]*instances.File, result2 map[string]struct{}, result3 error) {
+func (fake *FakeNginxConfigInterface) WriteReturns(result1 map[string]struct{}, result2 error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = nil
 	fake.writeReturns = struct {
-		result1 map[string]*instances.File
-		result2 map[string]struct{}
-		result3 error
-	}{result1, result2, result3}
+		result1 map[string]struct{}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeNginxConfigInterface) WriteReturnsOnCall(i int, result1 map[string]*instances.File, result2 map[string]struct{}, result3 error) {
+func (fake *FakeNginxConfigInterface) WriteReturnsOnCall(i int, result1 map[string]struct{}, result2 error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = nil
 	if fake.writeReturnsOnCall == nil {
 		fake.writeReturnsOnCall = make(map[int]struct {
-			result1 map[string]*instances.File
-			result2 map[string]struct{}
-			result3 error
+			result1 map[string]struct{}
+			result2 error
 		})
 	}
 	fake.writeReturnsOnCall[i] = struct {
-		result1 map[string]*instances.File
-		result2 map[string]struct{}
-		result3 error
-	}{result1, result2, result3}
+		result1 map[string]struct{}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeNginxConfigInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.completeMutex.RLock()
-	defer fake.completeMutex.RUnlock()
 	fake.reloadMutex.RLock()
 	defer fake.reloadMutex.RUnlock()
 	fake.validateMutex.RLock()

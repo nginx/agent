@@ -15,10 +15,9 @@ import (
 //go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/datasource/nginx mock_nginx_config.go | sed -e s\\/nginx\\\\.\\/\\/g > mock_nginx_config_fixed.go"
 //go:generate mv mock_nginx_config_fixed.go mock_nginx_config.go
 type NginxConfigInterface interface {
-	Write(previousFileCache config_writer.FileCache, filesUrl string, tenantID uuid.UUID) (currentFileCache config_writer.FileCache, skippedFiles map[string]struct{}, err error)
+	Write(filesUrl string, tenantID uuid.UUID) (skippedFiles map[string]struct{}, err error)
 	Validate() error
 	Reload() error
-	Complete() error
 }
 
 type NginxConfigParameters struct {
@@ -26,31 +25,22 @@ type NginxConfigParameters struct {
 }
 
 type NginxConfig struct {
-	instanceId         string
-	previouseFileCache config_writer.FileCache
-	currentFileCache   config_writer.FileCache
-	configWriter       config_writer.ConfigWriterInterface
+	configWriter config_writer.ConfigWriterInterface
 }
 
-func NewNginxConfig(nginxConfigParameters NginxConfigParameters, instanceId string, cachePath string) *NginxConfig {
+func NewNginxConfig(nginxConfigParameters NginxConfigParameters) *NginxConfig {
 	if nginxConfigParameters.configWriter == nil {
-		nginxConfigParameters.configWriter = config_writer.NewConfigWriter(&config_writer.ConfigWriterParameters{})
-	}
-
-	previouseFileCache, err := nginxConfigParameters.configWriter.ReadInstanceCache(cachePath)
-	if err != nil {
-		slog.Info("Failed to Read cache %s for instance with id %s ", cachePath, instanceId, "err", err)
+		// TODO: Figure out where we are going to get the Cache Path From
+		nginxConfigParameters.configWriter = config_writer.NewConfigWriter(&config_writer.ConfigWriterParameters{}, "")
 	}
 
 	return &NginxConfig{
-		instanceId:         instanceId,
-		previouseFileCache: previouseFileCache,
-		configWriter:       nginxConfigParameters.configWriter,
+		configWriter: nginxConfigParameters.configWriter,
 	}
 }
 
 func (nc NginxConfig) Write(filesUrl string, tenantID uuid.UUID) (skippedFiles map[string]struct{}, err error) {
-	nc.currentFileCache, skippedFiles, err = nc.configWriter.Write(nc.previouseFileCache, filesUrl, tenantID)
+	skippedFiles, err = nc.configWriter.Write(filesUrl, tenantID)
 
 	return skippedFiles, err
 }
@@ -72,9 +62,4 @@ func (nc NginxConfig) Reload() error {
 	slog.Info("NGINX reloaded")
 
 	return nil
-}
-
-// TODO: Naming of this function ?
-func (nc NginxConfig) Complete(cachePath string) error {
-	return nc.configWriter.UpdateCache(nc.currentFileCache, cachePath)
 }

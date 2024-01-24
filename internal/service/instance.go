@@ -42,7 +42,9 @@ type InstanceService struct {
 }
 
 func NewInstanceService(instanceServiceParameters *InstanceServiceParameters) *InstanceService {
-	// TODO: Check if params are nil is an issue because of the cachepath and instance ID fix when instance service is updated
+	if instanceServiceParameters.nginxConfigInterface == nil {
+		instanceServiceParameters.nginxConfigInterface = nginx.NewNginxConfig(nginx.NginxConfigParameters{})
+	}
 	return &InstanceService{
 		nginxInstances: make(map[string]*instances.Instance),
 		nginxConfig:    instanceServiceParameters.nginxConfigInterface,
@@ -74,11 +76,11 @@ func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, locati
 
 	correlationId = uuid.New().String()
 	if _, ok := is.nginxInstances[instanceId]; ok {
-		if cachePath == "" {
-			cachePath = fmt.Sprintf("/var/lib/nginx-agent/config/%v/cache.json", instanceId)
-		}
+		// if cachePath == "" {
+		// 	cachePath = fmt.Sprintf("/var/lib/nginx-agent/config/%v/cache.json", instanceId)
+		// }
 
-		nginxConfig := nginx.NewNginxConfig(nginx.NginxConfigParameters{}, instanceId, cachePath)
+		nginxConfig := nginx.NewNginxConfig(nginx.NginxConfigParameters{})
 
 		// TODO: Skipped files currently not being used will be changed when doing rollback
 		_, err := nginxConfig.Write(location, exampleTenantId)
@@ -96,10 +98,7 @@ func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, locati
 			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to reload NGINX for instance with id %s", instanceId)}
 		}
 
-		err = nginxConfig.Complete(cachePath)
-		if err != nil {
-			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to update cache for instance with id %s", instanceId)}
-		}
+		// TODO: Need to Update Cache Not sure how yet until instance service is done
 
 	} else {
 		return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("unable to find instance with id %s", instanceId)}

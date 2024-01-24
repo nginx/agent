@@ -26,6 +26,7 @@ import (
 func TestWriteConfig(t *testing.T) {
 	filePath := "/tmp/test.conf"
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	cachePath := "/tmp/cache.json"
 
 	tenantId, instanceId, err := createTestIds()
 	assert.NoError(t, err)
@@ -63,14 +64,17 @@ func TestWriteConfig(t *testing.T) {
 	fakeConfigClient.GetFilesMetadataReturns(metaDataReturn, nil)
 	fakeConfigClient.GetFileReturns(getFileReturn, nil)
 
+	_, err = createCacheFile(cachePath)
+	assert.NoError(t, err)
+
 	configWriter := NewConfigWriter(&ConfigWriterParameters{
 		configClient: fakeConfigClient,
 		Client: Client{
 			Timeout: time.Second * 10,
 		},
-	})
+	}, cachePath)
 
-	err = configWriter.WriteFile(fileContent, filePath)
+	err = writeFile(fileContent, filePath)
 	assert.NoError(t, err)
 	assert.FileExists(t, filePath)
 
@@ -93,10 +97,10 @@ func TestWriteConfig(t *testing.T) {
 		},
 	}
 
-	currentCache, skippedFiles, err := configWriter.Write(previouseFileCache, filesUrl, tenantId)
+	skippedFiles, err := configWriter.Write(filesUrl, tenantId)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(skippedFiles))
-	assert.NotEqual(t, currentCache, previouseFileCache)
+	assert.NotEqual(t, configWriter.currentFileCache, previouseFileCache)
 	path := "/tmp/test.conf"
 	err = os.Remove(path)
 	assert.NoError(t, err)
@@ -104,7 +108,6 @@ func TestWriteConfig(t *testing.T) {
 }
 
 func TestIsPathValid(t *testing.T) {
-	configWriter := NewConfigWriter(&ConfigWriterParameters{})
 	tests := []struct {
 		name           string
 		path           string
@@ -134,14 +137,13 @@ func TestIsPathValid(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			valid := configWriter.isFilePathValid(test.path)
+			valid := isFilePathValid(test.path)
 			assert.Equal(t, test.expectedResult, valid)
 		})
 	}
 }
 
 func TestDoesFileRequireUpdate(t *testing.T) {
-	configWriter := NewConfigWriter(&ConfigWriterParameters{})
 	fileTime1, err := createProtoTime("2024-01-08T14:22:21Z")
 	assert.NoError(t, err)
 
@@ -194,18 +196,17 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			valid := configWriter.doesFileRequireUpdate(test.lastConfigApply, test.fileData)
+			valid := doesFileRequireUpdate(test.lastConfigApply, test.fileData)
 			assert.Equal(t, test.expectedResult, valid)
 		})
 	}
 }
 
 func TestWriteFile(t *testing.T) {
-	configWriter := NewConfigWriter(&ConfigWriterParameters{})
 	filePath := "/tmp/test.conf"
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 
-	err := configWriter.WriteFile(fileContent, filePath)
+	err := writeFile(fileContent, filePath)
 	assert.NoError(t, err)
 	assert.FileExists(t, filePath)
 
@@ -220,15 +221,13 @@ func TestWriteFile(t *testing.T) {
 
 func TestReadCache(t *testing.T) {
 	instanceId, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
-
-	configWriter := NewConfigWriter(&ConfigWriterParameters{})
 	assert.NoError(t, err)
 	cachePath := fmt.Sprintf("/tmp/%s/cache.json", instanceId.String())
 
 	cacheData, err := createCacheFile(cachePath)
 	assert.NoError(t, err)
 
-	previousFileCache, err := configWriter.ReadInstanceCache(cachePath)
+	previousFileCache, err := readInstanceCache(cachePath)
 	assert.NoError(t, err)
 	assert.Equal(t, cacheData, previousFileCache)
 
@@ -238,7 +237,6 @@ func TestReadCache(t *testing.T) {
 }
 
 func TestUpdateCache(t *testing.T) {
-	configWriter := NewConfigWriter(&ConfigWriterParameters{})
 	instanceId, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	assert.NoError(t, err)
 	cachePath := fmt.Sprintf("/tmp/%s/cache.json", instanceId.String())
@@ -265,10 +263,10 @@ func TestUpdateCache(t *testing.T) {
 		},
 	}
 
-	err = configWriter.UpdateCache(currentFileCache, cachePath)
+	err = updateCache(currentFileCache, cachePath)
 	assert.NoError(t, err)
 
-	data, err := configWriter.ReadInstanceCache(cachePath)
+	data, err := readInstanceCache(cachePath)
 	assert.NoError(t, err)
 	assert.NotEqual(t, cacheData, data)
 
