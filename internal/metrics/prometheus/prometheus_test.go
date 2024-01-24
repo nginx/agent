@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	met "github.com/nginx/agent/v3/internal/metric"
+	"github.com/nginx/agent/v3/internal/metrics"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
@@ -54,18 +54,18 @@ func TestPrometheus_Scrape(t *testing.T) {
 
 func TestPrometheus_Constructor(t *testing.T) {
 	mp := otel.GetMeterProvider()
-	p := met.NewMetricsProducer(agentVersion)
+	p := metrics.NewMetricsProducer(agentVersion)
 
 	scraper := NewScraper(mp, p)
 	assert.NotNil(t, scraper)
 
 	assert.Equal(t, p, scraper.producer)
-	assert.Equal(t, make(map[string]DataPoint), scraper.previousCounterMetricValues)
+	assert.Equal(t, make(map[string]metrics.DataPoint), scraper.previousCounterMetricValues)
 }
 
 func TestPrometheus_Start(t *testing.T) {
 	mp := otel.GetMeterProvider()
-	p := met.NewMetricsProducer(agentVersion)
+	p := metrics.NewMetricsProducer(agentVersion)
 
 	scraper := NewScraper(mp, p)
 	testdata, err := os.ReadFile(prometheusTestDataFile)
@@ -94,7 +94,7 @@ func TestPrometheus_Start(t *testing.T) {
 
 func TestPrometheus_Stop(t *testing.T) {
 	mp := otel.GetMeterProvider()
-	p := met.NewMetricsProducer(agentVersion)
+	p := metrics.NewMetricsProducer(agentVersion)
 
 	scraper := NewScraper(mp, p)
 	testdata, err := os.ReadFile(prometheusTestDataFile)
@@ -122,7 +122,7 @@ func TestPrometheus_Stop(t *testing.T) {
 
 func TestPrometheus_Type(t *testing.T) {
 	mp := otel.GetMeterProvider()
-	p := met.NewMetricsProducer(agentVersion)
+	p := metrics.NewMetricsProducer(agentVersion)
 
 	scraper := NewScraper(mp, p)
 	assert.Equal(t, "PROMETHEUS", scraper.Type())
