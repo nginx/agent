@@ -32,7 +32,7 @@ func TestDataplaneServer_Init(t *testing.T) {
 		Host:            "",
 		Port:            0,
 		Logger:          slog.Default(),
-		instanceService: service.NewInstanceService(&service.InstanceServiceParameters{}),
+		instanceService: service.NewInstanceService(),
 	})
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
@@ -52,7 +52,7 @@ func TestDataplaneServer_Process(t *testing.T) {
 		Host:            "",
 		Port:            0,
 		Logger:          slog.Default(),
-		instanceService: service.NewInstanceService(&service.InstanceServiceParameters{}),
+		instanceService: service.NewInstanceService(),
 	})
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)

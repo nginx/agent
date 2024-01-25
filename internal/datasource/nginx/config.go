@@ -4,45 +4,21 @@ import (
 	"fmt"
 	"log/slog"
 	"os/exec"
-
-	config_writer "github.com/nginx/agent/v3/internal/datasource/config"
-
-	"github.com/google/uuid"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate -o mock_nginx_config.go . NginxConfigInterface
+//counterfeiter:generate -o mock_nginx_config.go . DataplaneConfigInterface
 //go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/datasource/nginx mock_nginx_config.go | sed -e s\\/nginx\\\\.\\/\\/g > mock_nginx_config_fixed.go"
 //go:generate mv mock_nginx_config_fixed.go mock_nginx_config.go
-type NginxConfigInterface interface {
-	Write(filesUrl string, tenantID uuid.UUID) (err error)
+type DataplaneConfigInterface interface {
 	Validate() error
 	Reload() error
 }
 
-type NginxConfigParameters struct {
-	configWriter config_writer.ConfigWriterInterface
-}
+type NginxConfig struct{}
 
-type NginxConfig struct {
-	configWriter config_writer.ConfigWriterInterface
-}
-
-func NewNginxConfig(nginxConfigParameters NginxConfigParameters) *NginxConfig {
-	if nginxConfigParameters.configWriter == nil {
-		// TODO: This will have the instance Id not an empty string
-		nginxConfigParameters.configWriter = config_writer.NewConfigWriter(&config_writer.ConfigWriterParameters{}, "")
-	}
-
-	return &NginxConfig{
-		configWriter: nginxConfigParameters.configWriter,
-	}
-}
-
-func (nc NginxConfig) Write(filesUrl string, tenantID uuid.UUID) (err error) {
-	err = nc.configWriter.Write(filesUrl, tenantID)
-
-	return err
+func NewNginxConfig() *NginxConfig {
+	return &NginxConfig{}
 }
 
 func (nc NginxConfig) Validate() error {

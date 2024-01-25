@@ -28,19 +28,15 @@ var testInstances = []*instances.Instance{
 }
 
 func TestInstanceService_UpdateInstances(t *testing.T) {
-	instanceService := NewInstanceService(&InstanceServiceParameters{})
+	instanceService := NewInstanceService()
 	instanceService.UpdateInstances(testInstances)
 	assert.Equal(t, testInstances, instanceService.instances)
 }
 
 func TestInstanceService_GetInstances(t *testing.T) {
-	instanceService := NewInstanceService(&InstanceServiceParameters{})
+	instanceService := NewInstanceService()
 	instanceService.UpdateInstances(testInstances)
 	assert.Equal(t, testInstances, instanceService.GetInstances())
-}
-
-func TestUpdateInstanceConfiguration(t *testing.T) {
-	// TODO: Add test when instance service is done
 }
 
 func createTestIds() (uuid.UUID, uuid.UUID, error) {

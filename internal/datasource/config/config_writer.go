@@ -19,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/client"
+	"github.com/nginx/agent/v3/internal/datasource/nginx"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
@@ -45,6 +46,7 @@ type (
 		previouseFileCache FileCache
 		currentFileCache   FileCache
 		cachePath          string
+		dataplaneConfig    nginx.DataplaneConfigInterface
 	}
 
 	// map of files with filepath as key
@@ -123,6 +125,19 @@ func (cw *ConfigWriter) Complete() error {
 	}
 
 	return err
+}
+
+func (cw *ConfigWriter) SetDataplaneConfig(dataplaneConfig nginx.DataplaneConfigInterface) error {
+	cw.dataplaneConfig = dataplaneConfig
+	return nil
+}
+
+func (cw *ConfigWriter) Reload() error {
+	return cw.dataplaneConfig.Reload()
+}
+
+func (cw *ConfigWriter) Validate() error {
+	return cw.dataplaneConfig.Validate()
 }
 
 func writeFile(fileContent []byte, filePath string) error {

@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/http/common"
-	"github.com/nginx/agent/v3/internal/datasource/nginx"
 )
 
 const (
@@ -31,23 +30,14 @@ type InstanceServiceInterface interface {
 	UpdateInstanceConfiguration(instanceId string, location string, cachePath string) (string, error)
 }
 
-type InstanceServiceParameters struct {
-	nginxConfigInterface nginx.NginxConfigInterface
-}
-
 type InstanceService struct {
 	instances      []*instances.Instance
 	nginxInstances map[string]*instances.Instance
-	nginxConfig    nginx.NginxConfigInterface
 }
 
-func NewInstanceService(instanceServiceParameters *InstanceServiceParameters) *InstanceService {
-	if instanceServiceParameters.nginxConfigInterface == nil {
-		instanceServiceParameters.nginxConfigInterface = nginx.NewNginxConfig(nginx.NginxConfigParameters{})
-	}
+func NewInstanceService() *InstanceService {
 	return &InstanceService{
 		nginxInstances: make(map[string]*instances.Instance),
-		nginxConfig:    instanceServiceParameters.nginxConfigInterface,
 	}
 }
 
@@ -66,36 +56,10 @@ func (is *InstanceService) GetInstances() []*instances.Instance {
 	return is.instances
 }
 
-// TODO: Not sure this works currently but waiting to fix till the instance service is done
 func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, location string, cachePath string) (correlationId string, err error) {
-	// TODO: Remove when getting tenantId
-	exampleTenantId, err := uuid.Parse(tenantId)
-	if err != nil {
-		fmt.Printf("Error creating tenantId: %v", err)
-	}
-
 	correlationId = uuid.New().String()
 	if _, ok := is.nginxInstances[instanceId]; ok {
-
-		nginxConfig := nginx.NewNginxConfig(nginx.NginxConfigParameters{})
-
-		err := nginxConfig.Write(location, exampleTenantId)
-		if err != nil {
-			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to update config for instance with id %s", instanceId)}
-		}
-
-		err = nginxConfig.Validate()
-		if err != nil {
-			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Config validation failed for instance with id %s", instanceId)}
-		}
-
-		err = nginxConfig.Reload()
-		if err != nil {
-			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to reload NGINX for instance with id %s", instanceId)}
-		}
-
-		// TODO: Need to Update Cache Not sure how yet until instance service is done
-
+		// TODO update NGINX instance configuration
 	} else {
 		return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("unable to find instance with id %s", instanceId)}
 	}

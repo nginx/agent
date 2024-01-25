@@ -3,11 +3,9 @@ package nginx
 
 import (
 	"sync"
-
-	"github.com/google/uuid"
 )
 
-type FakeNginxConfigInterface struct {
+type FakeDataplaneConfigInterface struct {
 	ReloadStub        func() error
 	reloadMutex       sync.RWMutex
 	reloadArgsForCall []struct {
@@ -28,23 +26,11 @@ type FakeNginxConfigInterface struct {
 	validateReturnsOnCall map[int]struct {
 		result1 error
 	}
-	WriteStub        func(string, uuid.UUID) error
-	writeMutex       sync.RWMutex
-	writeArgsForCall []struct {
-		arg1 string
-		arg2 uuid.UUID
-	}
-	writeReturns struct {
-		result1 error
-	}
-	writeReturnsOnCall map[int]struct {
-		result1 error
-	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeNginxConfigInterface) Reload() error {
+func (fake *FakeDataplaneConfigInterface) Reload() error {
 	fake.reloadMutex.Lock()
 	ret, specificReturn := fake.reloadReturnsOnCall[len(fake.reloadArgsForCall)]
 	fake.reloadArgsForCall = append(fake.reloadArgsForCall, struct {
@@ -62,19 +48,19 @@ func (fake *FakeNginxConfigInterface) Reload() error {
 	return fakeReturns.result1
 }
 
-func (fake *FakeNginxConfigInterface) ReloadCallCount() int {
+func (fake *FakeDataplaneConfigInterface) ReloadCallCount() int {
 	fake.reloadMutex.RLock()
 	defer fake.reloadMutex.RUnlock()
 	return len(fake.reloadArgsForCall)
 }
 
-func (fake *FakeNginxConfigInterface) ReloadCalls(stub func() error) {
+func (fake *FakeDataplaneConfigInterface) ReloadCalls(stub func() error) {
 	fake.reloadMutex.Lock()
 	defer fake.reloadMutex.Unlock()
 	fake.ReloadStub = stub
 }
 
-func (fake *FakeNginxConfigInterface) ReloadReturns(result1 error) {
+func (fake *FakeDataplaneConfigInterface) ReloadReturns(result1 error) {
 	fake.reloadMutex.Lock()
 	defer fake.reloadMutex.Unlock()
 	fake.ReloadStub = nil
@@ -83,7 +69,7 @@ func (fake *FakeNginxConfigInterface) ReloadReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeNginxConfigInterface) ReloadReturnsOnCall(i int, result1 error) {
+func (fake *FakeDataplaneConfigInterface) ReloadReturnsOnCall(i int, result1 error) {
 	fake.reloadMutex.Lock()
 	defer fake.reloadMutex.Unlock()
 	fake.ReloadStub = nil
@@ -97,7 +83,7 @@ func (fake *FakeNginxConfigInterface) ReloadReturnsOnCall(i int, result1 error) 
 	}{result1}
 }
 
-func (fake *FakeNginxConfigInterface) Validate() error {
+func (fake *FakeDataplaneConfigInterface) Validate() error {
 	fake.validateMutex.Lock()
 	ret, specificReturn := fake.validateReturnsOnCall[len(fake.validateArgsForCall)]
 	fake.validateArgsForCall = append(fake.validateArgsForCall, struct {
@@ -115,19 +101,19 @@ func (fake *FakeNginxConfigInterface) Validate() error {
 	return fakeReturns.result1
 }
 
-func (fake *FakeNginxConfigInterface) ValidateCallCount() int {
+func (fake *FakeDataplaneConfigInterface) ValidateCallCount() int {
 	fake.validateMutex.RLock()
 	defer fake.validateMutex.RUnlock()
 	return len(fake.validateArgsForCall)
 }
 
-func (fake *FakeNginxConfigInterface) ValidateCalls(stub func() error) {
+func (fake *FakeDataplaneConfigInterface) ValidateCalls(stub func() error) {
 	fake.validateMutex.Lock()
 	defer fake.validateMutex.Unlock()
 	fake.ValidateStub = stub
 }
 
-func (fake *FakeNginxConfigInterface) ValidateReturns(result1 error) {
+func (fake *FakeDataplaneConfigInterface) ValidateReturns(result1 error) {
 	fake.validateMutex.Lock()
 	defer fake.validateMutex.Unlock()
 	fake.ValidateStub = nil
@@ -136,7 +122,7 @@ func (fake *FakeNginxConfigInterface) ValidateReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeNginxConfigInterface) ValidateReturnsOnCall(i int, result1 error) {
+func (fake *FakeDataplaneConfigInterface) ValidateReturnsOnCall(i int, result1 error) {
 	fake.validateMutex.Lock()
 	defer fake.validateMutex.Unlock()
 	fake.ValidateStub = nil
@@ -150,77 +136,13 @@ func (fake *FakeNginxConfigInterface) ValidateReturnsOnCall(i int, result1 error
 	}{result1}
 }
 
-func (fake *FakeNginxConfigInterface) Write(arg1 string, arg2 uuid.UUID) error {
-	fake.writeMutex.Lock()
-	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
-	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
-		arg1 string
-		arg2 uuid.UUID
-	}{arg1, arg2})
-	stub := fake.WriteStub
-	fakeReturns := fake.writeReturns
-	fake.recordInvocation("Write", []interface{}{arg1, arg2})
-	fake.writeMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakeNginxConfigInterface) WriteCallCount() int {
-	fake.writeMutex.RLock()
-	defer fake.writeMutex.RUnlock()
-	return len(fake.writeArgsForCall)
-}
-
-func (fake *FakeNginxConfigInterface) WriteCalls(stub func(string, uuid.UUID) error) {
-	fake.writeMutex.Lock()
-	defer fake.writeMutex.Unlock()
-	fake.WriteStub = stub
-}
-
-func (fake *FakeNginxConfigInterface) WriteArgsForCall(i int) (string, uuid.UUID) {
-	fake.writeMutex.RLock()
-	defer fake.writeMutex.RUnlock()
-	argsForCall := fake.writeArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
-}
-
-func (fake *FakeNginxConfigInterface) WriteReturns(result1 error) {
-	fake.writeMutex.Lock()
-	defer fake.writeMutex.Unlock()
-	fake.WriteStub = nil
-	fake.writeReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeNginxConfigInterface) WriteReturnsOnCall(i int, result1 error) {
-	fake.writeMutex.Lock()
-	defer fake.writeMutex.Unlock()
-	fake.WriteStub = nil
-	if fake.writeReturnsOnCall == nil {
-		fake.writeReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.writeReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeNginxConfigInterface) Invocations() map[string][][]interface{} {
+func (fake *FakeDataplaneConfigInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.reloadMutex.RLock()
 	defer fake.reloadMutex.RUnlock()
 	fake.validateMutex.RLock()
 	defer fake.validateMutex.RUnlock()
-	fake.writeMutex.RLock()
-	defer fake.writeMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
@@ -228,7 +150,7 @@ func (fake *FakeNginxConfigInterface) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *FakeNginxConfigInterface) recordInvocation(key string, args []interface{}) {
+func (fake *FakeDataplaneConfigInterface) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -240,4 +162,4 @@ func (fake *FakeNginxConfigInterface) recordInvocation(key string, args []interf
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ NginxConfigInterface = new(FakeNginxConfigInterface)
+var _ DataplaneConfigInterface = new(FakeDataplaneConfigInterface)
