@@ -8,25 +8,86 @@ import (
 )
 
 type FakeConfigWriterInterface struct {
-	WriteStub        func(string, uuid.UUID) (map[string]struct{}, error)
+	CompleteStub        func() error
+	completeMutex       sync.RWMutex
+	completeArgsForCall []struct {
+	}
+	completeReturns struct {
+		result1 error
+	}
+	completeReturnsOnCall map[int]struct {
+		result1 error
+	}
+	WriteStub        func(string, uuid.UUID) error
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
 		arg1 string
 		arg2 uuid.UUID
 	}
 	writeReturns struct {
-		result1 map[string]struct{}
-		result2 error
+		result1 error
 	}
 	writeReturnsOnCall map[int]struct {
-		result1 map[string]struct{}
-		result2 error
+		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeConfigWriterInterface) Write(arg1 string, arg2 uuid.UUID) (map[string]struct{}, error) {
+func (fake *FakeConfigWriterInterface) Complete() error {
+	fake.completeMutex.Lock()
+	ret, specificReturn := fake.completeReturnsOnCall[len(fake.completeArgsForCall)]
+	fake.completeArgsForCall = append(fake.completeArgsForCall, struct {
+	}{})
+	stub := fake.CompleteStub
+	fakeReturns := fake.completeReturns
+	fake.recordInvocation("Complete", []interface{}{})
+	fake.completeMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeConfigWriterInterface) CompleteCallCount() int {
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
+	return len(fake.completeArgsForCall)
+}
+
+func (fake *FakeConfigWriterInterface) CompleteCalls(stub func() error) {
+	fake.completeMutex.Lock()
+	defer fake.completeMutex.Unlock()
+	fake.CompleteStub = stub
+}
+
+func (fake *FakeConfigWriterInterface) CompleteReturns(result1 error) {
+	fake.completeMutex.Lock()
+	defer fake.completeMutex.Unlock()
+	fake.CompleteStub = nil
+	fake.completeReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeConfigWriterInterface) CompleteReturnsOnCall(i int, result1 error) {
+	fake.completeMutex.Lock()
+	defer fake.completeMutex.Unlock()
+	fake.CompleteStub = nil
+	if fake.completeReturnsOnCall == nil {
+		fake.completeReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.completeReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeConfigWriterInterface) Write(arg1 string, arg2 uuid.UUID) error {
 	fake.writeMutex.Lock()
 	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
 	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
@@ -41,9 +102,9 @@ func (fake *FakeConfigWriterInterface) Write(arg1 string, arg2 uuid.UUID) (map[s
 		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fakeReturns.result1, fakeReturns.result2
+	return fakeReturns.result1
 }
 
 func (fake *FakeConfigWriterInterface) WriteCallCount() int {
@@ -52,7 +113,7 @@ func (fake *FakeConfigWriterInterface) WriteCallCount() int {
 	return len(fake.writeArgsForCall)
 }
 
-func (fake *FakeConfigWriterInterface) WriteCalls(stub func(string, uuid.UUID) (map[string]struct{}, error)) {
+func (fake *FakeConfigWriterInterface) WriteCalls(stub func(string, uuid.UUID) error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = stub
@@ -65,35 +126,34 @@ func (fake *FakeConfigWriterInterface) WriteArgsForCall(i int) (string, uuid.UUI
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeConfigWriterInterface) WriteReturns(result1 map[string]struct{}, result2 error) {
+func (fake *FakeConfigWriterInterface) WriteReturns(result1 error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = nil
 	fake.writeReturns = struct {
-		result1 map[string]struct{}
-		result2 error
-	}{result1, result2}
+		result1 error
+	}{result1}
 }
 
-func (fake *FakeConfigWriterInterface) WriteReturnsOnCall(i int, result1 map[string]struct{}, result2 error) {
+func (fake *FakeConfigWriterInterface) WriteReturnsOnCall(i int, result1 error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = nil
 	if fake.writeReturnsOnCall == nil {
 		fake.writeReturnsOnCall = make(map[int]struct {
-			result1 map[string]struct{}
-			result2 error
+			result1 error
 		})
 	}
 	fake.writeReturnsOnCall[i] = struct {
-		result1 map[string]struct{}
-		result2 error
-	}{result1, result2}
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeConfigWriterInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

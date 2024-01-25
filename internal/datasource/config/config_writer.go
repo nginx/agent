@@ -26,7 +26,8 @@ import (
 //go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/datasource/config mock_config_writer.go | sed -e s\\/config\\\\.\\/\\/g > mock_config_writer_fixed.go"
 //go:generate mv mock_config_writer_fixed.go mock_config_writer.go
 type ConfigWriterInterface interface {
-	Write(filesUrl string, tenantID uuid.UUID) (skippedFiles map[string]struct{}, err error)
+	Write(filesUrl string, tenantID uuid.UUID) (err error)
+	Complete() (err error)
 }
 
 type (
@@ -43,16 +44,20 @@ type (
 		configClient       client.HttpConfigClientInterface
 		previouseFileCache FileCache
 		currentFileCache   FileCache
+		cachePath          string
 	}
 
 	// map of files with filepath as key
 	FileCache = map[string]*instances.File
 )
 
-func NewConfigWriter(configWriterParameters *ConfigWriterParameters, cachePath string) *ConfigWriter {
+func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceId string) *ConfigWriter {
+	cachePath := fmt.Sprintf("/var/lib/nginx-agent/config/%v/cache.json", instanceId)
+
 	if configWriterParameters.configClient == nil {
 		configWriterParameters.configClient = client.NewHttpConfigClient(configWriterParameters.Client.Timeout)
 	}
+
 	previouseFileCache, err := readInstanceCache(cachePath)
 	if err != nil {
 		slog.Info("Failed to Read cache %s ", cachePath, "err", err)
@@ -61,16 +66,17 @@ func NewConfigWriter(configWriterParameters *ConfigWriterParameters, cachePath s
 	return &ConfigWriter{
 		configClient:       configWriterParameters.configClient,
 		previouseFileCache: previouseFileCache,
+		cachePath:          cachePath,
 	}
 }
 
-func (cw *ConfigWriter) Write(filesUrl string, tenantID uuid.UUID) (skippedFiles map[string]struct{}, err error) {
+func (cw *ConfigWriter) Write(filesUrl string, tenantID uuid.UUID) (err error) {
 	currentFileCache := FileCache{}
-	skippedFiles = make(map[string]struct{})
+	skippedFiles := make(map[string]struct{})
 
 	filesMetaData, err := cw.configClient.GetFilesMetadata(filesUrl, tenantID.String())
 	if err != nil {
-		return nil, fmt.Errorf("error getting files metadata from %s: %w", filesUrl, err)
+		return fmt.Errorf("error getting files metadata from %s: %w", filesUrl, err)
 	}
 
 	for _, fileData := range filesMetaData.Files {
@@ -84,12 +90,12 @@ func (cw *ConfigWriter) Write(filesUrl string, tenantID uuid.UUID) (skippedFiles
 
 			fileDownloadResponse, err := cw.configClient.GetFile(fileData, filesUrl, tenantID.String())
 			if err != nil {
-				return nil, fmt.Errorf("error getting file data from %s: %w", filesUrl, err)
+				return fmt.Errorf("error getting file data from %s: %w", filesUrl, err)
 			}
 
 			err = writeFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
 			if err != nil {
-				return nil, fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.FilePath, err)
+				return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.FilePath, err)
 			}
 
 			currentFileCache[fileData.Path] = &instances.File{
@@ -102,7 +108,21 @@ func (cw *ConfigWriter) Write(filesUrl string, tenantID uuid.UUID) (skippedFiles
 
 	cw.currentFileCache = currentFileCache
 
-	return skippedFiles, err
+	return err
+}
+
+func (cw *ConfigWriter) Complete() error {
+	cache, err := json.MarshalIndent(cw.currentFileCache, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshalling cache data from %s: %w", cw.cachePath, err)
+	}
+
+	err = writeFile(cache, cw.cachePath)
+	if err != nil {
+		return fmt.Errorf("error writing cache to %s: %w", cw.cachePath, err)
+	}
+
+	return err
 }
 
 func writeFile(fileContent []byte, filePath string) error {
@@ -123,8 +143,8 @@ func writeFile(fileContent []byte, filePath string) error {
 	return nil
 }
 
-func readInstanceCache(cachePath string) (FileCache, error) {
-	previousFileCache := FileCache{}
+func readInstanceCache(cachePath string) (previousFileCache FileCache, err error) {
+	previousFileCache = FileCache{}
 
 	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
 		return previousFileCache, fmt.Errorf("cache.json does not exist %s: %w", cachePath, err)
@@ -142,25 +162,11 @@ func readInstanceCache(cachePath string) (FileCache, error) {
 	return previousFileCache, err
 }
 
-func updateCache(currentFileCache FileCache, cachePath string) error {
-	cache, err := json.MarshalIndent(currentFileCache, "", "  ")
-	if err != nil {
-		return fmt.Errorf("error marshalling cache data from %s: %w", cachePath, err)
-	}
-
-	err = writeFile(cache, cachePath)
-	if err != nil {
-		return fmt.Errorf("error writing cache to %s: %w", cachePath, err)
-	}
-
-	return err
-}
-
-func isFilePathValid(filePath string) bool {
+func isFilePathValid(filePath string) (validPath bool) {
 	return filePath != "" && !strings.HasSuffix(filePath, "/")
 }
 
-func doesFileRequireUpdate(previousFileCache FileCache, fileData *instances.File) (latest bool) {
+func doesFileRequireUpdate(previousFileCache FileCache, fileData *instances.File) (updateRequired bool) {
 	if previousFileCache != nil && len(previousFileCache) > 0 {
 		fileOnSystem, ok := previousFileCache[fileData.Path]
 		return ok && fileOnSystem.LastModified.AsTime().Before(fileData.LastModified.AsTime())

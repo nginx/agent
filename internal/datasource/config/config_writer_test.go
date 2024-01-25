@@ -72,7 +72,7 @@ func TestWriteConfig(t *testing.T) {
 		Client: Client{
 			Timeout: time.Second * 10,
 		},
-	}, cachePath)
+	}, instanceId.String())
 
 	err = writeFile(fileContent, filePath)
 	assert.NoError(t, err)
@@ -97,9 +97,8 @@ func TestWriteConfig(t *testing.T) {
 		},
 	}
 
-	skippedFiles, err := configWriter.Write(filesUrl, tenantId)
+	err = configWriter.Write(filesUrl, tenantId)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(skippedFiles))
 	assert.NotEqual(t, configWriter.currentFileCache, previouseFileCache)
 	path := "/tmp/test.conf"
 	err = os.Remove(path)
@@ -236,10 +235,16 @@ func TestReadCache(t *testing.T) {
 	assert.NoFileExists(t, cachePath)
 }
 
-func TestUpdateCache(t *testing.T) {
+func TestComplete(t *testing.T) {
 	instanceId, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	assert.NoError(t, err)
 	cachePath := fmt.Sprintf("/tmp/%s/cache.json", instanceId.String())
+
+	configWriter := NewConfigWriter(&ConfigWriterParameters{
+		Client: Client{
+			Timeout: time.Second * 10,
+		},
+	}, instanceId.String())
 
 	cacheData, err := createCacheFile(cachePath)
 	assert.NoError(t, err)
@@ -250,7 +255,7 @@ func TestUpdateCache(t *testing.T) {
 	fileTime2, err := createProtoTime("2024-01-08T13:22:23Z")
 	assert.NoError(t, err)
 
-	currentFileCache := FileCache{
+	configWriter.currentFileCache = FileCache{
 		"/tmp/nginx/locations/metrics.conf": {
 			LastModified: fileTime1,
 			Path:         "/tmp/nginx/locations/metrics.conf",
@@ -262,8 +267,9 @@ func TestUpdateCache(t *testing.T) {
 			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
 		},
 	}
+	configWriter.cachePath = cachePath
 
-	err = updateCache(currentFileCache, cachePath)
+	err = configWriter.Complete()
 	assert.NoError(t, err)
 
 	data, err := readInstanceCache(cachePath)

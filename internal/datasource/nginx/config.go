@@ -15,7 +15,7 @@ import (
 //go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/datasource/nginx mock_nginx_config.go | sed -e s\\/nginx\\\\.\\/\\/g > mock_nginx_config_fixed.go"
 //go:generate mv mock_nginx_config_fixed.go mock_nginx_config.go
 type NginxConfigInterface interface {
-	Write(filesUrl string, tenantID uuid.UUID) (skippedFiles map[string]struct{}, err error)
+	Write(filesUrl string, tenantID uuid.UUID) (err error)
 	Validate() error
 	Reload() error
 }
@@ -39,10 +39,10 @@ func NewNginxConfig(nginxConfigParameters NginxConfigParameters) *NginxConfig {
 	}
 }
 
-func (nc NginxConfig) Write(filesUrl string, tenantID uuid.UUID) (skippedFiles map[string]struct{}, err error) {
-	skippedFiles, err = nc.configWriter.Write(filesUrl, tenantID)
+func (nc NginxConfig) Write(filesUrl string, tenantID uuid.UUID) (err error) {
+	err = nc.configWriter.Write(filesUrl, tenantID)
 
-	return skippedFiles, err
+	return err
 }
 
 func (nc NginxConfig) Validate() error {

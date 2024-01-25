@@ -76,14 +76,11 @@ func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, locati
 
 	correlationId = uuid.New().String()
 	if _, ok := is.nginxInstances[instanceId]; ok {
-		// if cachePath == "" {
-		// 	cachePath = fmt.Sprintf("/var/lib/nginx-agent/config/%v/cache.json", instanceId)
-		// }
 
 		nginxConfig := nginx.NewNginxConfig(nginx.NginxConfigParameters{})
 
 		// TODO: Skipped files currently not being used will be changed when doing rollback
-		_, err := nginxConfig.Write(location, exampleTenantId)
+		err := nginxConfig.Write(location, exampleTenantId)
 		if err != nil {
 			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to update config for instance with id %s", instanceId)}
 		}
