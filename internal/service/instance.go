@@ -79,7 +79,6 @@ func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, locati
 
 		nginxConfig := nginx.NewNginxConfig(nginx.NginxConfigParameters{})
 
-		// TODO: Skipped files currently not being used will be changed when doing rollback
 		err := nginxConfig.Write(location, exampleTenantId)
 		if err != nil {
 			return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("Failed to update config for instance with id %s", instanceId)}

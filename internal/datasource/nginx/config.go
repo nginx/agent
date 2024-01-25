@@ -30,7 +30,7 @@ type NginxConfig struct {
 
 func NewNginxConfig(nginxConfigParameters NginxConfigParameters) *NginxConfig {
 	if nginxConfigParameters.configWriter == nil {
-		// TODO: Figure out where we are going to get the Cache Path From
+		// TODO: This will have the instance Id not an empty string 
 		nginxConfigParameters.configWriter = config_writer.NewConfigWriter(&config_writer.ConfigWriterParameters{}, "")
 	}
 
