@@ -68,7 +68,7 @@ func NewMetrics(c config.Config, options ...MetricsOption) (*Metrics, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	prod := metrics.NewMetricsProducer(c.Version)
-	meterProvider, err := metrics.NewMeterProvider(ctx, otelServiceName, *c.Metrics, m.prod)
+	meterProvider, err := metrics.NewMeterProvider(ctx, otelServiceName, *c.Metrics, prod)
 	if err != nil {
 		log.Printf("failed to create a meterProvider: %v", err)
 	}

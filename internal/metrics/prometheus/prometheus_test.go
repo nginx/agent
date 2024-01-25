@@ -16,26 +16,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v3/internal/metrics"
 	"github.com/stretchr/testify/assert"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/metric"
 )
 
 const (
 	prometheusTestDataFile = "prometheus_test_data.txt"
 	agentVersion           = "0.1"
 )
-
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-
-//counterfeiter:generate -o ./mock_meter_provider.go ./ MeterProviderInterface
-//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/datasource/prometheus mock_meter_provider.go | sed -e s\\/prometheus\\\\.\\/\\/g > mock_mock_meter_provider.go"
-//go:generate mv mock_mock_meter_provider.go mock_meter_provider.go
-type MeterProviderInterface interface {
-	meterProvider()
-	Meter(name string, opts ...metric.MeterOption) metric.Meter
-}
 
 func TestPrometheus_Scrape(t *testing.T) {
 	testdata, err := os.ReadFile(prometheusTestDataFile)
@@ -53,21 +40,18 @@ func TestPrometheus_Scrape(t *testing.T) {
 }
 
 func TestPrometheus_Constructor(t *testing.T) {
-	mp := otel.GetMeterProvider()
-	p := metrics.NewMetricsProducer(agentVersion)
+	mb := initMsgBus()
 
-	scraper := NewScraper(mp, p)
+	scraper := NewScraper(mb)
 	assert.NotNil(t, scraper)
 
-	assert.Equal(t, p, scraper.producer)
-	assert.Equal(t, make(map[string]metrics.DataPoint), scraper.previousCounterMetricValues)
+	assert.Equal(t, mb, scraper.bus)
 }
 
 func TestPrometheus_Start(t *testing.T) {
-	mp := otel.GetMeterProvider()
-	p := metrics.NewMetricsProducer(agentVersion)
+	mb := initMsgBus()
 
-	scraper := NewScraper(mp, p)
+	scraper := NewScraper(mb)
 	testdata, err := os.ReadFile(prometheusTestDataFile)
 	assert.NoError(t, err)
 
@@ -93,10 +77,9 @@ func TestPrometheus_Start(t *testing.T) {
 }
 
 func TestPrometheus_Stop(t *testing.T) {
-	mp := otel.GetMeterProvider()
-	p := metrics.NewMetricsProducer(agentVersion)
+	mb := initMsgBus()
 
-	scraper := NewScraper(mp, p)
+	scraper := NewScraper(mb)
 	testdata, err := os.ReadFile(prometheusTestDataFile)
 	assert.NoError(t, err)
 
@@ -121,9 +104,16 @@ func TestPrometheus_Stop(t *testing.T) {
 }
 
 func TestPrometheus_Type(t *testing.T) {
-	mp := otel.GetMeterProvider()
-	p := metrics.NewMetricsProducer(agentVersion)
+	mb := initMsgBus()
 
-	scraper := NewScraper(mp, p)
+	scraper := NewScraper(mb)
 	assert.Equal(t, "PROMETHEUS", scraper.Type())
+}
+
+func initMsgBus() *FakeMessageBusContract {
+	mb := FakeMessageBusContract{}
+	mb.ContextStub = func() context.Context {
+		return context.Background()
+	}
+	return &mb
 }

@@ -19,7 +19,6 @@ import (
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/metrics"
 	"github.com/nginx/agent/v3/internal/metrics/prometheus"
 	opsys "github.com/nginx/agent/v3/internal/model/os"
 	"github.com/stretchr/testify/assert"
@@ -57,17 +56,13 @@ func TestMetrics_Init(t *testing.T) {
 	if err != nil {
 		log.Fatalf("err %v", err)
 	}
-	producer := metrics.NewMetricsProducer(testConf.Version)
 
-	provider, err := metrics.NewMeterProvider(context.Background(), "test-service", *testConf.Metrics, metrics.NewMetricsProducer(agentConf.Version))
-	assert.NoError(t, err)
-
-	scraper := prometheus.NewScraper(provider, producer)
+	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	scraper := prometheus.NewScraper(messagePipe)
 
 	metrics, err := NewMetrics(testConf, WithDataSource(scraper))
 	assert.NoError(t, err)
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err = messagePipe.Register(100, []bus.Plugin{metrics})
 	assert.NoError(t, err)
 	go messagePipe.Run()

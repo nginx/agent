@@ -30,6 +30,20 @@ const (
 	DataSourceType = "PROMETHEUS"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//counterfeiter:generate -o mock_message_bus.go . MessageBusContract
+//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/metrics/prometheus mock_message_bus.go | sed -e s\\/prometheus\\\\.\\/\\/g > mock_message_bus_fixed.go"
+//go:generate mv mock_message_bus_fixed.go mock_message_bus.go
+type MessageBusContract interface {
+	Register(int, []bus.Plugin) error
+	DeRegister(plugins []string) error
+	Process(...*bus.Message)
+	Run()
+	Context() context.Context
+	GetPlugins() []bus.Plugin
+	IsPluginAlreadyRegistered(string) bool
+}
+
 // Used for deserializion of parsed Prometheus data.
 type Scraper struct {
 	bus bus.MessagePipeInterface
@@ -38,10 +52,8 @@ type Scraper struct {
 }
 
 func NewScraper(mp bus.MessagePipeInterface) *Scraper {
-	// meter := meterProvider.Meter(meterName, metrics.WithInstrumentationVersion("v0.1"))
 	return &Scraper{
 		bus: mp,
-		// previousCounterMetricValues: map[string]DataPoint{},
 	}
 }
 
