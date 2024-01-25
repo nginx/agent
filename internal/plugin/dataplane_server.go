@@ -142,7 +142,7 @@ func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 	if request.Location == nil {
 		ctx.JSON(http.StatusBadRequest, common.ErrorResponse{Message: "missing location field in request body"})
 	} else {
-		correlationId, err := dps.instanceService.UpdateInstanceConfiguration(instanceId, *request.Location, "")
+		correlationId, err := dps.instanceService.UpdateInstanceConfiguration(instanceId, *request.Location)
 		if err != nil {
 			switch e := err.(type) {
 			case *common.RequestError:

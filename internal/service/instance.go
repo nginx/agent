@@ -16,10 +16,6 @@ import (
 	"github.com/nginx/agent/v3/api/http/common"
 )
 
-const (
-	tenantId = ("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
-)
-
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate -o mock_instance.go . InstanceServiceInterface
 //go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/service mock_instance.go | sed -e s\\/service\\\\.\\/\\/g > mock_instance_fixed.go"
@@ -27,7 +23,7 @@ const (
 type InstanceServiceInterface interface {
 	UpdateInstances(newInstances []*instances.Instance)
 	GetInstances() []*instances.Instance
-	UpdateInstanceConfiguration(instanceId string, location string, cachePath string) (string, error)
+	UpdateInstanceConfiguration(instanceId string, location string) (string, error)
 }
 
 type InstanceService struct {
@@ -56,7 +52,7 @@ func (is *InstanceService) GetInstances() []*instances.Instance {
 	return is.instances
 }
 
-func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, location string, cachePath string) (correlationId string, err error) {
+func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, location string) (correlationId string, err error) {
 	correlationId = uuid.New().String()
 	if _, ok := is.nginxInstances[instanceId]; ok {
 		// TODO update NGINX instance configuration
