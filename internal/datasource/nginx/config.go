@@ -30,7 +30,7 @@ type NginxConfig struct {
 
 func NewNginxConfig(nginxConfigParameters NginxConfigParameters) *NginxConfig {
 	if nginxConfigParameters.configWriter == nil {
-		// TODO: This will have the instance Id not an empty string 
+		// TODO: This will have the instance Id not an empty string
 		nginxConfigParameters.configWriter = config_writer.NewConfigWriter(&config_writer.ConfigWriterParameters{}, "")
 	}
 
