@@ -15,17 +15,15 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/http/common"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service"
 
 	sloggin "github.com/samber/slog-gin"
-)
-
-const (
-	internalServerError = "Internal Server Error"
 )
 
 type (
@@ -45,7 +43,7 @@ type (
 		logger          *slog.Logger
 		instanceService service.InstanceServiceInterface
 		instances       []*instances.Instance
-		messagePipe     *bus.MessagePipe
+		messagePipe     bus.MessagePipeInterface
 		server          net.Listener
 	}
 )
@@ -62,7 +60,7 @@ func NewDataplaneServer(dataplaneServerParameters *DataplaneServerParameters) *D
 	}
 }
 
-func (dps *DataplaneServer) Init(messagePipe *bus.MessagePipe) {
+func (dps *DataplaneServer) Init(messagePipe bus.MessagePipeInterface) {
 	dps.messagePipe = messagePipe
 	go dps.run(messagePipe.Context())
 }
@@ -79,7 +77,6 @@ func (dps *DataplaneServer) Process(msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.INSTANCES_TOPIC:
 		dps.instances = msg.Data.([]*instances.Instance)
-		dps.instanceService.UpdateInstances(dps.instances)
 	}
 }
 
@@ -113,12 +110,10 @@ func (dps *DataplaneServer) run(ctx context.Context) {
 // GET /instances
 func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 	slog.Debug("get instances request")
-	instances := dps.instanceService.GetInstances()
-	slog.Debug("got instances", "instances", instances)
 
 	response := []common.Instance{}
 
-	for _, instance := range instances {
+	for _, instance := range dps.instances {
 		response = append(response, common.Instance{
 			InstanceId: &instance.InstanceId,
 			Type:       toPtr(mapTypeEnums(instance.Type.String())),
@@ -126,12 +121,15 @@ func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 		})
 	}
 
+	slog.Debug("got instances", "instances", response)
+
 	ctx.JSON(http.StatusOK, response)
 }
 
-// (PUT /instances/{instanceId}/configurations)
+// PUT /instances/{instanceId}/configurations
 func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceId string) {
-	slog.Debug("update instance configuration request", "instanceId", instanceId)
+	correlationId := uuid.New().String()
+	slog.Debug("update instance configuration request", "correlationId", correlationId, "instanceId", instanceId)
 
 	var request dataplane.UpdateInstanceConfigurationJSONRequestBody
 	if err := ctx.Bind(&request); err != nil {
@@ -142,20 +140,29 @@ func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 	if request.Location == nil {
 		ctx.JSON(http.StatusBadRequest, common.ErrorResponse{Message: "missing location field in request body"})
 	} else {
-		correlationId, err := dps.instanceService.UpdateInstanceConfiguration(instanceId, *request.Location)
-		if err != nil {
-			switch e := err.(type) {
-			case *common.RequestError:
-				slog.Debug("unable to update instance configuration", "instanceId", instanceId, "correlationId", correlationId)
-				ctx.JSON(e.StatusCode, common.ErrorResponse{Message: e.Error()})
-			default:
-				slog.Error("unable to update instance configuration", "instanceId", instanceId, "correlationId", correlationId, "error", err)
-				ctx.JSON(http.StatusInternalServerError, common.ErrorResponse{Message: internalServerError})
+		instance := dps.getInstance(instanceId)
+		if instance != nil {
+			request := &model.InstanceConfigUpdateRequest{
+				Instance:      dps.getInstance(instanceId),
+				Location:      *request.Location,
+				CorrelationId: correlationId,
 			}
-		} else {
+			dps.messagePipe.Process(&bus.Message{Topic: bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC, Data: request})
 			ctx.JSON(http.StatusOK, dataplane.CorrelationId{CorrelationId: &correlationId})
+		} else {
+			slog.Debug("unable to update instance configuration", "instanceId", instanceId, "correlationId", correlationId)
+			ctx.JSON(http.StatusNotFound, common.ErrorResponse{Message: fmt.Sprintf("Unable to find instance %s", instanceId)})
 		}
 	}
+}
+
+func (dps *DataplaneServer) getInstance(instanceId string) *instances.Instance {
+	for _, instance := range dps.instances {
+		if instance.GetInstanceId() == instanceId {
+			return instance
+		}
+	}
+	return nil
 }
 
 func mapTypeEnums(typeString string) common.InstanceType {

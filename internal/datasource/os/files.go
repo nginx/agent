@@ -70,3 +70,7 @@ func UpdateCache(currentFileCache FileCache, cachePath string) error {
 
 	return err
 }
+
+func GetPermissions(fileMode os.FileMode) string {
+	return fmt.Sprintf("%#o", fileMode.Perm())
+}

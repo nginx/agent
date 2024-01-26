@@ -24,6 +24,7 @@ import (
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/service"
+	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -71,8 +72,7 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 	expected := &common.Instance{InstanceId: toPtr("ae6c58c1-bc92-30c1-a9c9-85591422068e"), Type: toPtr(common.NGINX), Version: toPtr("1.23.1")}
 	instance := &instances.Instance{InstanceId: "ae6c58c1-bc92-30c1-a9c9-85591422068e", Type: instances.Type_NGINX, Version: "1.23.1"}
 
-	instanceService := &service.FakeInstanceServiceInterface{}
-	instanceService.GetInstancesReturns([]*instances.Instance{instance})
+	instanceService := &servicefakes.FakeInstanceServiceInterface{}
 
 	dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
 		Host:            "",
@@ -80,6 +80,8 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 		Logger:          slog.Default(),
 		instanceService: instanceService,
 	})
+
+	dataplaneServer.instances = []*instances.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataplaneServer})
@@ -102,23 +104,18 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 	result := []*common.Instance{}
 	err = json.Unmarshal(resBody, &result)
 	assert.NoError(t, err)
+	assert.Equal(t, 1, len(result))
 	assert.Equal(t, expected, result[0])
 }
 
 func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
+	unknownInstanceId := "fe4c58c1-bc92-30c1-a9c9-85591422068e"
 	instanceId := "ae6c58c1-bc92-30c1-a9c9-85591422068e"
-	correlationId := "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 	data := []byte(`{"location": "http://file-server.com"}`)
 	instance := &instances.Instance{InstanceId: instanceId, Type: instances.Type_NGINX, Version: "1.23.1"}
 
-	instanceService := &service.FakeInstanceServiceInterface{}
+	instanceService := &servicefakes.FakeInstanceServiceInterface{}
 	instanceService.GetInstancesReturns([]*instances.Instance{instance})
-	instanceService.UpdateInstanceConfigurationReturnsOnCall(0, correlationId, nil)
-	instanceService.UpdateInstanceConfigurationReturnsOnCall(1, "", &common.RequestError{
-		StatusCode: http.StatusNotFound,
-		Message:    "Can not find instance",
-	})
-	instanceService.UpdateInstanceConfigurationReturnsOnCall(2, "", fmt.Errorf("Unknown error"))
 
 	dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
 		Host:            "",
@@ -126,6 +123,8 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 		Logger:          slog.Default(),
 		instanceService: instanceService,
 	})
+
+	dataplaneServer.instances = []*instances.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataplaneServer})
@@ -136,44 +135,47 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 
 	assert.NotNil(t, dataplaneServer.server.Addr().(*net.TCPAddr).Port)
 
-	// Test happy path
-	res, err := performPutRequest(dataplaneServer, instanceId, data)
-	assert.NoError(t, err)
-	assert.Equal(t, 200, res.StatusCode)
+	tests := []struct {
+		name               string
+		instanceId         string
+		expectedStatusCode int
+		expectedMessage    string
+	}{
+		{
+			name:               "Update known instance configuration",
+			instanceId:         instanceId,
+			expectedStatusCode: 200,
+		},
+		{
+			name:               "Update unknown instance configuration",
+			instanceId:         unknownInstanceId,
+			expectedStatusCode: 404,
+			expectedMessage:    fmt.Sprintf("Unable to find instance %s", unknownInstanceId),
+		},
+	}
 
-	resBody, err := io.ReadAll(res.Body)
-	assert.NoError(t, err)
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			res, err := performPutRequest(dataplaneServer, test.instanceId, data)
+			assert.NoError(tt, err)
+			assert.Equal(tt, test.expectedStatusCode, res.StatusCode)
 
-	result := dataplane.CorrelationId{}
-	err = json.Unmarshal(resBody, &result)
-	assert.NoError(t, err)
-	assert.Equal(t, toPtr(correlationId), result.CorrelationId)
+			resBody, err := io.ReadAll(res.Body)
+			assert.NoError(t, err)
 
-	// Test instance not found
-	res, err = performPutRequest(dataplaneServer, instanceId, data)
-	assert.NoError(t, err)
-	assert.Equal(t, 404, res.StatusCode)
-
-	resBody, err = io.ReadAll(res.Body)
-	assert.NoError(t, err)
-
-	result2 := common.ErrorResponse{}
-	err = json.Unmarshal(resBody, &result2)
-	assert.NoError(t, err)
-	assert.Equal(t, "Can not find instance", result2.Message)
-
-	// Test internal server error
-	res, err = performPutRequest(dataplaneServer, instanceId, data)
-	assert.NoError(t, err)
-	assert.Equal(t, 500, res.StatusCode)
-
-	resBody, err = io.ReadAll(res.Body)
-	assert.NoError(t, err)
-
-	result3 := common.ErrorResponse{}
-	err = json.Unmarshal(resBody, &result3)
-	assert.NoError(t, err)
-	assert.Equal(t, "Internal Server Error", result3.Message)
+			if test.expectedMessage == "" {
+				result := dataplane.CorrelationId{}
+				err = json.Unmarshal(resBody, &result)
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, result.CorrelationId)
+			} else {
+				result := common.ErrorResponse{}
+				err = json.Unmarshal(resBody, &result)
+				assert.NoError(tt, err)
+				assert.Equal(tt, test.expectedMessage, result.Message)
+			}
+		})
+	}
 }
 
 func performPutRequest(dataplaneServer *DataplaneServer, instanceId string, data []byte) (*http.Response, error) {

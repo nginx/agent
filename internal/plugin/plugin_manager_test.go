@@ -27,7 +27,8 @@ func TestLoadPLugins(t *testing.T) {
 			input: &config.Config{},
 			expected: []bus.Plugin{
 				&ProcessMonitor{},
-				&InstanceMonitor{},
+				&Instance{},
+				&Config{},
 			},
 		}, {
 			name: "Dataplane API plugin enabled",
@@ -39,7 +40,8 @@ func TestLoadPLugins(t *testing.T) {
 			},
 			expected: []bus.Plugin{
 				&ProcessMonitor{},
-				&InstanceMonitor{},
+				&Instance{},
+				&Config{},
 				&DataplaneServer{},
 			},
 		},

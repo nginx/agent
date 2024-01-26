@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/bus"
-	osDataSource "github.com/nginx/agent/v3/internal/datasource/os"
-	"github.com/nginx/agent/v3/internal/model/os"
+	"github.com/nginx/agent/v3/internal/datasource/os"
+	"github.com/nginx/agent/v3/internal/model"
 )
 
-type GetProcessesFunc func() ([]*os.Process, error)
+type GetProcessesFunc func() ([]*model.Process, error)
 
 type ProcessMonitorParameters struct {
 	MonitoringFrequency time.Duration
@@ -26,22 +26,22 @@ type ProcessMonitorParameters struct {
 
 type ProcessMonitor struct {
 	params      *ProcessMonitorParameters
-	processes   []*os.Process
-	messagePipe *bus.MessagePipe
+	processes   []*model.Process
+	messagePipe bus.MessagePipeInterface
 }
 
 func NewProcessMonitor(params *ProcessMonitorParameters) *ProcessMonitor {
 	if params.getProcessesFunc == nil {
-		params.getProcessesFunc = osDataSource.GetProcesses
+		params.getProcessesFunc = os.GetProcesses
 	}
 
 	return &ProcessMonitor{
 		params:    params,
-		processes: []*os.Process{},
+		processes: []*model.Process{},
 	}
 }
 
-func (pm *ProcessMonitor) Init(messagePipe *bus.MessagePipe) {
+func (pm *ProcessMonitor) Init(messagePipe bus.MessagePipeInterface) {
 	pm.messagePipe = messagePipe
 	go pm.run(messagePipe.Context())
 }

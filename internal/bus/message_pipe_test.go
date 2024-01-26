@@ -19,7 +19,7 @@ type testPlugin struct {
 	mock.Mock
 }
 
-func (p *testPlugin) Init(pipe *MessagePipe) {
+func (p *testPlugin) Init(pipe MessagePipeInterface) {
 	p.Called()
 }
 
