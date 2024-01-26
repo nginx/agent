@@ -40,18 +40,12 @@ func TestPrometheus_Scrape(t *testing.T) {
 }
 
 func TestPrometheus_Constructor(t *testing.T) {
-	mb := initMsgBus()
-
-	scraper := NewScraper(mb)
+	scraper := NewScraper()
 	assert.NotNil(t, scraper)
-
-	assert.Equal(t, mb, scraper.bus)
 }
 
 func TestPrometheus_Start(t *testing.T) {
-	mb := initMsgBus()
-
-	scraper := NewScraper(mb)
+	scraper := NewScraper()
 	testdata, err := os.ReadFile(prometheusTestDataFile)
 	assert.NoError(t, err)
 
@@ -77,9 +71,7 @@ func TestPrometheus_Start(t *testing.T) {
 }
 
 func TestPrometheus_Stop(t *testing.T) {
-	mb := initMsgBus()
-
-	scraper := NewScraper(mb)
+	scraper := NewScraper()
 	testdata, err := os.ReadFile(prometheusTestDataFile)
 	assert.NoError(t, err)
 
@@ -104,16 +96,6 @@ func TestPrometheus_Stop(t *testing.T) {
 }
 
 func TestPrometheus_Type(t *testing.T) {
-	mb := initMsgBus()
-
-	scraper := NewScraper(mb)
+	scraper := NewScraper()
 	assert.Equal(t, "PROMETHEUS", scraper.Type())
-}
-
-func initMsgBus() *FakeMessageBusContract {
-	mb := FakeMessageBusContract{}
-	mb.ContextStub = func() context.Context {
-		return context.Background()
-	}
-	return &mb
 }

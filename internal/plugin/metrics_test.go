@@ -58,7 +58,7 @@ func TestMetrics_Init(t *testing.T) {
 	}
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
-	scraper := prometheus.NewScraper(messagePipe)
+	scraper := prometheus.NewScraper()
 
 	metrics, err := NewMetrics(testConf, WithDataSource(scraper))
 	assert.NoError(t, err)
@@ -90,7 +90,7 @@ func TestMetrics_Subscriptions(t *testing.T) {
 	assert.NoError(t, err)
 
 	subscriptions := metrics.Subscriptions()
-	assert.Equal(t, []string{bus.OS_PROCESSES_TOPIC, bus.METRICS_TOPIC}, subscriptions)
+	assert.Equal(t, []string{bus.OS_PROCESSES_TOPIC}, subscriptions)
 }
 
 func TestMetrics_Process(t *testing.T) {
