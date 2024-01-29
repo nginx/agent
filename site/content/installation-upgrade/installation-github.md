@@ -1,14 +1,17 @@
 ---
-title: "Installation from GitHub Release"
+title: "Installation From GitHub Release"
 draft: false
-description: "Learn how to install NGINX Agent from a GitHub Release."
-weight: 300
+weight: 200
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1090"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
+
+## Overview
+
+Learn how to install NGINX Agent from a GitHub Release.
 
 ## Install NGINX
 

@@ -1,7 +1,6 @@
 ---
 title: "Uninstall NGINX Agent Package"
 draft: false
-description: "Learn how to uninstall NGINX Agent"
 weight: 700
 toc: true
 tags: [ "docs" ]
@@ -9,6 +8,10 @@ docs: "DOCS-1230"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
+
+## Overview
+
+Learn how to uninstall NGINX Agent from your system.
 
 ## Prerequisites
 

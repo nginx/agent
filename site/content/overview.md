@@ -1,7 +1,6 @@
 ---
 title: "Overview"
 draft: false
-description: "Learn about NGINX Agent and how it works."
 weight: 100
 toc: true
 tags: [ "docs" ]
@@ -9,6 +8,8 @@ docs: "DOCS-1091"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
+
+## Overview
 
 NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus instance. It enables:
 
