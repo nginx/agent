@@ -31,6 +31,10 @@ type ConfigWriterInterface interface {
 	Complete() (err error)
 }
 
+const (
+	cacheLocation = "/var/lib/nginx-agent/config/%v/cache.json"
+)
+
 type (
 	Client struct {
 		Timeout time.Duration
@@ -39,6 +43,7 @@ type (
 	ConfigWriterParameters struct {
 		configClient client.HttpConfigClientInterface
 		Client       Client
+		cachePath string
 	}
 
 	ConfigWriter struct {
@@ -54,21 +59,25 @@ type (
 )
 
 func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceId string) *ConfigWriter {
-	cachePath := fmt.Sprintf("/var/lib/nginx-agent/config/%v/cache.json", instanceId)
+
+	if configWriterParameters.cachePath == "" {
+		configWriterParameters.cachePath = fmt.Sprintf(cacheLocation, instanceId)
+	}
+	
 
 	if configWriterParameters.configClient == nil {
 		configWriterParameters.configClient = client.NewHttpConfigClient(configWriterParameters.Client.Timeout)
 	}
 
-	previouseFileCache, err := readInstanceCache(cachePath)
+	previouseFileCache, err := readInstanceCache(configWriterParameters.cachePath)
 	if err != nil {
-		slog.Info("Failed to Read cache %s ", cachePath, "err", err)
+		slog.Info("Failed to Read cache %s ", configWriterParameters.cachePath, "err", err)
 	}
 
 	return &ConfigWriter{
 		configClient:       configWriterParameters.configClient,
 		previouseFileCache: previouseFileCache,
-		cachePath:          cachePath,
+		cachePath:          configWriterParameters.cachePath,
 	}
 }
 
@@ -182,7 +191,7 @@ func isFilePathValid(filePath string) (validPath bool) {
 }
 
 func doesFileRequireUpdate(previousFileCache FileCache, fileData *instances.File) (updateRequired bool) {
-	if previousFileCache != nil && len(previousFileCache) > 0 {
+	if len(previousFileCache) > 0 {
 		fileOnSystem, ok := previousFileCache[fileData.Path]
 		return ok && fileOnSystem.LastModified.AsTime().Before(fileData.LastModified.AsTime())
 	}

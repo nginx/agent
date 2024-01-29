@@ -25,86 +25,146 @@ import (
 )
 
 func TestWriteConfig(t *testing.T) {
-	filePath := "/tmp/test.conf"
+	filePath := "/tmp/nginx/locations/test.conf"
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	cachePath := "/tmp/cache.json"
-
+	
 	tenantId, instanceId, err := createTestIds()
 	assert.NoError(t, err)
+
 	filesUrl := fmt.Sprintf("/instance/%s/files/", instanceId)
 
-	metaDataTime1, err := createProtoTime("2024-01-08T14:22:21Z")
+
+	time1, err := createProtoTime("2024-01-08T13:22:23Z")
 	assert.NoError(t, err)
 
-	metaDataTime2, err := createProtoTime("2024-01-08T13:22:25Z")
+	test1Time2, err := createProtoTime("2024-01-08T14:22:20Z")
 	assert.NoError(t, err)
 
-	metaDataReturn := &instances.Files{
-		Files: []*instances.File{
-			{
-				LastModified: metaDataTime1,
-				Path:         "/tmp/nginx/nginx.conf",
-				Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
+	test2Time2, err := createProtoTime("2024-01-08T13:22:25Z")
+	assert.NoError(t, err)
+
+	time3, err := createProtoTime("2024-01-08T13:22:21Z")
+	assert.NoError(t, err)
+
+	previousFileCache, err := createCacheFile(cachePath)
+	assert.NoError(t, err)
+
+
+	tests := []struct {
+		name string
+		metaDataReturn *instances.Files
+		getFileReturn *instances.FileDownloadResponse
+		shouldBeEqual bool 
+	}{
+		{
+			name: "file needs updating", 
+			metaDataReturn: &instances.Files{
+				Files: []*instances.File{
+					{
+						LastModified: time1,
+						Path:         "/tmp/nginx/nginx.conf",
+						Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
+					},
+					{
+						LastModified: test1Time2,
+						Path:         "/tmp/nginx/locations/test.conf",
+						Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+					},
+					{
+						LastModified: time3,
+						Path:         "/tmp/nginx/locations/metrics.conf",
+						Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
+					},
+				},
 			},
-			{
-				LastModified: metaDataTime2,
-				Path:         "/tmp/test.conf",
-				Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+			getFileReturn: &instances.FileDownloadResponse{
+				Encoded:     true,
+				FilePath:    "/tmp/nginx/locations/test.conf",
+				InstanceId:  instanceId.String(),
+				FileContent: []byte("location /test {\n    return 200 \"New Test location\\n\";\n}"),
+			}, 
+			shouldBeEqual: false,
+		},
+		{
+			name: "file doesn't need updating", 
+			metaDataReturn: &instances.Files{
+				Files: []*instances.File{
+					{
+						LastModified: time1,
+						Path:         "/tmp/nginx/nginx.conf",
+						Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
+					},
+					{
+						LastModified: test2Time2,
+						Path:         "/tmp/nginx/locations/test.conf",
+						Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+					},
+					{
+						LastModified: time3,
+						Path:         "/tmp/nginx/locations/metrics.conf",
+						Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
+					},
+				},
 			},
+			getFileReturn: &instances.FileDownloadResponse{
+				Encoded:     true,
+				FilePath:    "/tmp/nginx/locations/test.conf",
+				InstanceId:  instanceId.String(),
+				FileContent: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
+			}, 
+			shouldBeEqual: true,
 		},
 	}
 
-	getFileReturn := &instances.FileDownloadResponse{
-		Encoded:     true,
-		FilePath:    "/tmp/test.conf",
-		InstanceId:  instanceId.String(),
-		FileContent: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fmt.Println()
+			fmt.Printf("Test: %v", test.name)
+			fakeConfigClient := &client.FakeHttpConfigClientInterface{}
+			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
+			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
+
+			configWriter := NewConfigWriter(&ConfigWriterParameters{
+				configClient: fakeConfigClient,
+				Client: Client{
+					Timeout: time.Second * 10,
+				},
+				cachePath: cachePath,
+			}, instanceId.String())
+		
+			err = writeFile(fileContent, filePath)
+			assert.NoError(t, err)
+			assert.FileExists(t, filePath)
+		
+			err = configWriter.Write(filesUrl, tenantId)
+			assert.NoError(t, err)
+
+			if test.shouldBeEqual {
+				assert.Equal(t, previousFileCache, configWriter.currentFileCache)
+				testData, err := os.ReadFile(test.getFileReturn.FilePath)
+				assert.NoError(t, err)
+				assert.Equal(t, fileContent, testData)
+				
+			} else {
+				assert.NotEqual(t, configWriter.currentFileCache, previousFileCache)
+				testData, err := os.ReadFile(test.getFileReturn.FilePath)
+				assert.NoError(t, err)
+				assert.NotEqual(t, testData, fileContent)
+			}
+			
+		
+			err = os.Remove(test.getFileReturn.FilePath)
+			assert.NoError(t, err)
+			assert.NoFileExists(t, test.getFileReturn.FilePath)
+
+
+		})
 	}
 
-	fakeConfigClient := &client.FakeHttpConfigClientInterface{}
-	fakeConfigClient.GetFilesMetadataReturns(metaDataReturn, nil)
-	fakeConfigClient.GetFileReturns(getFileReturn, nil)
-
-	_, err = createCacheFile(cachePath)
+	err = os.Remove(cachePath)
 	assert.NoError(t, err)
-
-	configWriter := NewConfigWriter(&ConfigWriterParameters{
-		configClient: fakeConfigClient,
-		Client: Client{
-			Timeout: time.Second * 10,
-		},
-	}, instanceId.String())
-
-	err = writeFile(fileContent, filePath)
-	assert.NoError(t, err)
-	assert.FileExists(t, filePath)
-
-	cacheTime1, err := createProtoTime("2024-01-08T14:22:21Z")
-	assert.NoError(t, err)
-
-	cacheTime2, err := createProtoTime("2024-01-08T12:22:21Z")
-	assert.NoError(t, err)
-
-	previouseFileCache := FileCache{
-		"/tmp/nginx/nginx.conf": {
-			LastModified: cacheTime1,
-			Path:         "/tmp/nginx/nginx.conf",
-			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-		},
-		"/tmp/test.conf": {
-			LastModified: cacheTime2,
-			Path:         "/tmp/test.conf",
-			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
-		},
-	}
-
-	err = configWriter.Write(filesUrl, tenantId)
-	assert.NoError(t, err)
-	assert.NotEqual(t, configWriter.currentFileCache, previouseFileCache)
-	path := "/tmp/test.conf"
-	err = os.Remove(path)
-	assert.NoError(t, err)
-	assert.NoFileExists(t, path)
+	assert.NoFileExists(t, cachePath)
 }
 
 func TestComplete(t *testing.T) {
@@ -197,7 +257,7 @@ func TestReadCache(t *testing.T) {
 	assert.NoFileExists(t, cachePath)
 }
 
-func TestIsPathValid(t *testing.T) {
+func TestIsFilePathValid(t *testing.T) {
 	tests := []struct {
 		name           string
 		path           string
@@ -329,21 +389,22 @@ func createCacheFile(cachePath string) (FileCache, error) {
 	}
 
 	cacheData := FileCache{
-		"/tmp/nginx/locations/metrics.conf": {
+		"/tmp/nginx/nginx.conf": {
 			LastModified: fileTime1,
-			Path:         "/tmp/nginx/locations/metrics.conf",
-			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
+			Path:         "/tmp/nginx/nginx.conf",
+			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
 		},
 		"/tmp/nginx/locations/test.conf": {
 			LastModified: fileTime2,
 			Path:         "/tmp/nginx/locations/test.conf",
 			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
 		},
-		"/tmp/nginx/nginx.conf": {
+		"/tmp/nginx/locations/metrics.conf": {
 			LastModified: fileTime3,
-			Path:         "/tmp/nginx/nginx.conf",
-			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
+			Path:         "/tmp/nginx/locations/metrics.conf",
+			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
 		},
+		
 	}
 
 	cache, err := json.MarshalIndent(cacheData, "", "  ")
