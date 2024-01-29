@@ -22,7 +22,7 @@ type Config struct {
 
 func NewConfig() *Config {
 	return &Config{
-		configServices: make(map[string]service.ConfigServiceInterface),
+		configServices: make(map[string]service.ConfigServiceInterface), // key is instance id
 	}
 }
 

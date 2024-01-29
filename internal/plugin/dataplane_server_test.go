@@ -161,7 +161,7 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 			assert.Equal(tt, test.expectedStatusCode, res.StatusCode)
 
 			resBody, err := io.ReadAll(res.Body)
-			assert.NoError(t, err)
+			assert.NoError(tt, err)
 
 			if test.expectedMessage == "" {
 				result := dataplane.CorrelationId{}

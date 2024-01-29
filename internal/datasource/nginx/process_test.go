@@ -45,7 +45,7 @@ func TestGetExe(t *testing.T) {
 			n := New(mockExec)
 			result := n.GetExe()
 
-			assert.Equal(t, test.expected, result)
+			assert.Equal(tt, test.expected, result)
 		})
 	}
 }

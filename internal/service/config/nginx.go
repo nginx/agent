@@ -44,10 +44,8 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		return nil, fmt.Errorf("error reading config from %s, error: %s", instance.Meta.GetNginxMeta().GetConfigPath(), err)
 	}
 
-	nginxConfig := &model.NginxConfigContext{
-		AccessLogs: []*model.AccessLog{},
-		ErrorLogs:  []*model.ErrorLog{},
-	}
+	accessLogs := []*model.AccessLog{}
+	errorLogs := []*model.ErrorLog{}
 
 	for _, xpConf := range payload.Config {
 		formatMap := map[string]string{}
@@ -59,10 +57,10 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 					formatMap = getFormatMap(directive)
 				case "access_log":
 					accessLog := getAccessLog(directive.Args[0], getAccessLogDirectiveFormat(directive), formatMap)
-					nginxConfig.AccessLogs = append(nginxConfig.AccessLogs, accessLog)
+					accessLogs = append(accessLogs, accessLog)
 				case "error_log":
 					errorLog := getErrorLog(directive.Args[0], getErrorLogDirectiveLevel(directive))
-					nginxConfig.ErrorLogs = append(nginxConfig.ErrorLogs, errorLog)
+					errorLogs = append(errorLogs, errorLog)
 				}
 				return true, nil
 			})
@@ -71,7 +69,10 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		}
 	}
 
-	return nginxConfig, nil
+	return &model.NginxConfigContext{
+		AccessLogs: accessLogs,
+		ErrorLogs:  errorLogs,
+	}, nil
 }
 
 func getFormatMap(directive *crossplane.Directive) map[string]string {

@@ -29,8 +29,7 @@ func TestConfig_ParseConfig(t *testing.T) {
 	}
 
 	fakeDataplaneConfig := &FakeDataplaneConfig{}
-	testConfig := &Config[DataplaneConfig]{fakeDataplaneConfig}
-	result, err := testConfig.ParseConfig(&instances.Instance{Type: instances.Type_NGINX})
+	result, err := fakeDataplaneConfig.ParseConfig(&instances.Instance{Type: instances.Type_NGINX})
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)

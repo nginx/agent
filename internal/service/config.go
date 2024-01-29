@@ -28,13 +28,13 @@ type ConfigService struct {
 }
 
 func NewConfigService() *ConfigService {
-	nginxConfigService := &config.Config[*config.Nginx]{DataplaneConfig: config.NewNginx()}
+	nginxConfigService := config.NewNginx()
 
 	return &ConfigService{
 		dataplaneConfigServices: map[instances.Type]config.DataplaneConfig{
 			instances.Type_NGINX:                nginxConfigService,
 			instances.Type_NGINX_PLUS:           nginxConfigService,
-			instances.Type_NGINX_GATEWAY_FABRIC: &config.Config[*config.NginxGatewayFabric]{DataplaneConfig: config.NewNginxGatewayFabric()},
+			instances.Type_NGINX_GATEWAY_FABRIC: config.NewNginxGatewayFabric(),
 		},
 	}
 }

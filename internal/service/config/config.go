@@ -16,11 +16,3 @@ import (
 type DataplaneConfig interface {
 	ParseConfig(instance *instances.Instance) (any, error)
 }
-
-type Config[C DataplaneConfig] struct {
-	DataplaneConfig C
-}
-
-func (c *Config[C]) ParseConfig(instance *instances.Instance) (any, error) {
-	return c.DataplaneConfig.ParseConfig(instance)
-}
