@@ -28,12 +28,11 @@ func TestWriteConfig(t *testing.T) {
 	filePath := "/tmp/nginx/locations/test.conf"
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	cachePath := "/tmp/cache.json"
-	
+
 	tenantId, instanceId, err := createTestIds()
 	assert.NoError(t, err)
 
 	filesUrl := fmt.Sprintf("/instance/%s/files/", instanceId)
-
 
 	time1, err := createProtoTime("2024-01-08T13:22:23Z")
 	assert.NoError(t, err)
@@ -50,15 +49,14 @@ func TestWriteConfig(t *testing.T) {
 	previousFileCache, err := createCacheFile(cachePath)
 	assert.NoError(t, err)
 
-
 	tests := []struct {
-		name string
+		name           string
 		metaDataReturn *instances.Files
-		getFileReturn *instances.FileDownloadResponse
-		shouldBeEqual bool 
+		getFileReturn  *instances.FileDownloadResponse
+		shouldBeEqual  bool
 	}{
 		{
-			name: "file needs updating", 
+			name: "file needs updating",
 			metaDataReturn: &instances.Files{
 				Files: []*instances.File{
 					{
@@ -83,11 +81,11 @@ func TestWriteConfig(t *testing.T) {
 				FilePath:    "/tmp/nginx/locations/test.conf",
 				InstanceId:  instanceId.String(),
 				FileContent: []byte("location /test {\n    return 200 \"New Test location\\n\";\n}"),
-			}, 
+			},
 			shouldBeEqual: false,
 		},
 		{
-			name: "file doesn't need updating", 
+			name: "file doesn't need updating",
 			metaDataReturn: &instances.Files{
 				Files: []*instances.File{
 					{
@@ -112,7 +110,7 @@ func TestWriteConfig(t *testing.T) {
 				FilePath:    "/tmp/nginx/locations/test.conf",
 				InstanceId:  instanceId.String(),
 				FileContent: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
-			}, 
+			},
 			shouldBeEqual: true,
 		},
 	}
@@ -132,11 +130,11 @@ func TestWriteConfig(t *testing.T) {
 				},
 				cachePath: cachePath,
 			}, instanceId.String())
-		
+
 			err = writeFile(fileContent, filePath)
 			assert.NoError(t, err)
 			assert.FileExists(t, filePath)
-		
+
 			err = configWriter.Write(filesUrl, tenantId)
 			assert.NoError(t, err)
 
@@ -145,20 +143,17 @@ func TestWriteConfig(t *testing.T) {
 				testData, err := os.ReadFile(test.getFileReturn.FilePath)
 				assert.NoError(t, err)
 				assert.Equal(t, fileContent, testData)
-				
+
 			} else {
 				assert.NotEqual(t, configWriter.currentFileCache, previousFileCache)
 				testData, err := os.ReadFile(test.getFileReturn.FilePath)
 				assert.NoError(t, err)
 				assert.NotEqual(t, testData, fileContent)
 			}
-			
-		
+
 			err = os.Remove(test.getFileReturn.FilePath)
 			assert.NoError(t, err)
 			assert.NoFileExists(t, test.getFileReturn.FilePath)
-
-
 		})
 	}
 
@@ -404,7 +399,6 @@ func createCacheFile(cachePath string) (FileCache, error) {
 			Path:         "/tmp/nginx/locations/metrics.conf",
 			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
 		},
-		
 	}
 
 	cache, err := json.MarshalIndent(cacheData, "", "  ")

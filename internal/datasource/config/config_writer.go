@@ -43,7 +43,7 @@ type (
 	ConfigWriterParameters struct {
 		configClient client.HttpConfigClientInterface
 		Client       Client
-		cachePath string
+		cachePath    string
 	}
 
 	ConfigWriter struct {
@@ -59,11 +59,9 @@ type (
 )
 
 func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceId string) *ConfigWriter {
-
 	if configWriterParameters.cachePath == "" {
 		configWriterParameters.cachePath = fmt.Sprintf(cacheLocation, instanceId)
 	}
-	
 
 	if configWriterParameters.configClient == nil {
 		configWriterParameters.configClient = client.NewHttpConfigClient(configWriterParameters.Client.Timeout)

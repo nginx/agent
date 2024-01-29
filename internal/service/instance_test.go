@@ -9,6 +9,7 @@ package service
 
 import (
 	"testing"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 
 	"github.com/stretchr/testify/assert"
