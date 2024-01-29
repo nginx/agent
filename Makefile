@@ -7,7 +7,6 @@ GORUN	   = ${GOCMD} run
 GOINST     = ${GOCMD} install
 GOGEN      = ${GOCMD} generate
 GOVET      = ${GOCMD} vet
-GOBENCH    = ${GOTEST} 
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
@@ -82,4 +81,4 @@ performance-test: performance-bench
 
 performance-bench:
 	@echo "📊 Running http vs gRPC performance tests"
-	@cd test/performance/protocols && $(GOBENCH) -count 5 -timeout 2m -bench=. -benchmem protocols_bench_test.go
+	@cd test/performance/protocols && ${GOTEST} -benchmem -bench=. -count 5 -timeout 2m protocols_bench_test.go

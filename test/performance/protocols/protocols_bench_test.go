@@ -326,14 +326,14 @@ func (grpcService *GrpcServer) MessageChannel(stream proto.Messenger_MessageChan
 
 func (grpcService *GrpcServer) recvHandle(server proto.Messenger_MessageChannelServer) {
 	for {
-		cmd, err := server.Recv()
+		msg, err := server.Recv()
 		if err != nil {
 			// recommend handling error
 			log.Printf("Error in recvHandle %v", err)
 			return
 		}
-		grpcService.handleMessage(cmd)
-		grpcService.fromClient <- cmd
+		grpcService.handleMessage(msg)
+		// grpcService.fromClient <- msg
 	}
 }
 
