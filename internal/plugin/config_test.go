@@ -8,6 +8,7 @@
 package plugin
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -104,7 +105,7 @@ func TestConfig_Process(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			messagePipe := &bus.FakeMessagePipe{}
+			messagePipe := bus.NewFakeMessagePipe(context.TODO())
 			configPlugin := NewConfig()
 
 			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
