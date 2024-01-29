@@ -75,6 +75,8 @@ func (c *Config) parseInstanceConfiguration(request *model.InstanceConfigUpdateR
 		switch config := parsedConfig.(type) {
 		case model.NginxConfigContext:
 			c.configServices[request.Instance.GetInstanceId()].SetConfigContext(config)
+		default:
+			slog.Debug("Unknown config context", "configContext", config)
 		}
 		c.messagePipe.Process(&bus.Message{Topic: bus.INSTANCE_CONFIG_CONTEXT_TOPIC, Data: parsedConfig})
 	}
