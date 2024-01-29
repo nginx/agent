@@ -32,8 +32,7 @@ type Info struct {
 	PlusVersion   string
 	Prefix        string
 	ConfPath      string
-	Cfgf          map[string]interface{}
-	ConfigureArgs []string
+	ConfigureArgs map[string]interface{}
 }
 
 type Nginx struct {
@@ -67,12 +66,13 @@ func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance,
 		_, ok := nginxProcesses[nginxProcess.Ppid]
 		if !ok {
 			if nginxProcess.Exe == "" {
-				nginxProcess.Exe = process.New(n.executer).GetExe()
-			}
-
-			if nginxProcess.Exe == "" {
-				slog.Debug("Unable to find NGINX exe", "pid", nginxProcess.Pid)
-				continue
+				exe := process.New(n.executer).GetExe()
+				if exe == "" {
+					slog.Debug("Unable to find NGINX exe", "pid", nginxProcess.Pid)
+					continue
+				} else {
+					nginxProcess.Exe = exe
+				}
 			}
 
 			nginxInfo, err := n.getInfo(nginxProcess.Pid, nginxProcess.Exe)
@@ -136,18 +136,18 @@ func parseNginxVersionCommandOutput(output *bytes.Buffer) *Info {
 		case strings.HasPrefix(line, "nginx version"):
 			nginxInfo.Version, nginxInfo.PlusVersion = parseNginxVersion(line)
 		case strings.HasPrefix(line, "configure arguments"):
-			nginxInfo.Cfgf, nginxInfo.ConfigureArgs = parseConfigureArguments(line)
+			nginxInfo.ConfigureArgs = parseConfigureArguments(line)
 		}
 	}
 
-	if nginxInfo.Cfgf["prefix"] != nil {
-		nginxInfo.Prefix = nginxInfo.Cfgf["prefix"].(string)
+	if nginxInfo.ConfigureArgs["prefix"] != nil {
+		nginxInfo.Prefix = nginxInfo.ConfigureArgs["prefix"].(string)
 	} else {
 		nginxInfo.Prefix = "/usr/local/nginx"
 	}
 
-	if nginxInfo.Cfgf["conf-path"] != nil {
-		nginxInfo.ConfPath = nginxInfo.Cfgf["conf-path"].(string)
+	if nginxInfo.ConfigureArgs["conf-path"] != nil {
+		nginxInfo.ConfPath = nginxInfo.ConfigureArgs["conf-path"].(string)
 	} else {
 		nginxInfo.ConfPath = path.Join(nginxInfo.Prefix, "/conf/nginx.conf")
 	}
@@ -184,10 +184,10 @@ func parseNginxVersion(line string) (version, plusVersion string) {
 	return version, plusVersion
 }
 
-func parseConfigureArguments(line string) (result map[string]interface{}, flags []string) {
+func parseConfigureArguments(line string) map[string]interface{} {
 	// need to check for empty strings
-	flags = strings.Split(line[len("configure arguments:"):], " --")
-	result = map[string]interface{}{}
+	flags := strings.Split(line[len("configure arguments:"):], " --")
+	result := map[string]interface{}{}
 	for _, flag := range flags {
 		vals := strings.Split(flag, "=")
 		switch len(vals) {
@@ -199,5 +199,5 @@ func parseConfigureArguments(line string) (result map[string]interface{}, flags 
 			result[vals[0]] = vals[1]
 		}
 	}
-	return result, flags
+	return result
 }
