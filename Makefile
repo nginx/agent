@@ -76,3 +76,9 @@ integration-test: integration-metrics
 integration-metrics:
 	@echo "🧪 Running metrics integration tests"
 	@$(GOTEST) -count=1 ./test/integration/metrics
+
+performance-test: performance-bench
+
+performance-bench:
+	@echo "📊 Running http vs gRPC performance tests"
+	@$(GOTEST) -count=1 ./test/performance/protocols

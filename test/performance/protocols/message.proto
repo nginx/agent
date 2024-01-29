@@ -1,0 +1,57 @@
+syntax = "proto3";
+package f5.nginx.agent.v3.test;
+
+option go_package = "github.com/nginx/agent/v3/test/proto;proto";
+
+service Messenger {
+  // A Bidirectional streaming RPC established by the agent and is kept open
+  rpc MessageChannel(stream Message) returns (stream Message) {}
+}
+
+message Message {
+    // NGINX Agent version
+    string timestamp = 1;
+    string correlationid = 2;
+    string tenantid = 3;
+    MessageType type = 4;
+
+    enum MessageType {
+        ATTACHMENT       = 0;
+        CERTIFICATE      = 1;
+        CONFIG           = 2;
+        CONFIGRESPONSE   = 3;
+        CONTROL          = 4;
+        CONTROLRESPONSE  = 5;
+        DATAPLANEREQUEST = 6;
+        DATAPLANEUPDATE  = 7;
+        FILESRESPONSE    = 8;
+        HEARTBEAT        = 9;
+    }
+
+    oneof union {
+        Attachment attachement = 5;
+    }
+  }
+
+message Attachment {
+   repeated Instances instances = 1;
+}
+
+message Instances {
+    Instance instance = 1;
+}
+
+
+message Instance {
+    string instanceId = 1;
+    string version = 2;
+    oneof meta {
+        NginxMeta nginx_meta = 3;
+    }
+ }
+
+ message NginxMeta {
+    string loadableModules = 1;
+    string runnableModules = 2;
+
+}

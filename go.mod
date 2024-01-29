@@ -4,6 +4,7 @@ go 1.21.6
 
 require (
 	github.com/google/uuid v1.5.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/proto/otlp v1.0.0
