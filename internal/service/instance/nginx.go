@@ -125,7 +125,7 @@ func (n *Nginx) getInfo(exePath string) (*Info, error) {
 	return nginxInfo, err
 }
 
-func isNginxProcess(name string, cmd string) bool {
+func isNginxProcess(name, cmd string) bool {
 	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
 }
 

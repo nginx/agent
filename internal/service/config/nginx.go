@@ -26,7 +26,7 @@ const (
 )
 
 type (
-	crossplaneTraverseCallback = func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error)
+	crossplaneTraverseCallback = func(parent, current *crossplane.Directive) (bool, error)
 )
 
 type Nginx struct {
@@ -58,7 +58,7 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		formatMap := map[string]string{}
 
 		err := crossplaneConfigTraverse(&xpConf,
-			func(parent *crossplane.Directive, directive *crossplane.Directive) (bool, error) {
+			func(parent, directive *crossplane.Directive) (bool, error) {
 				switch directive.Directive {
 				case "log_format":
 					formatMap = getFormatMap(directive)
@@ -128,7 +128,7 @@ func getFormatMap(directive *crossplane.Directive) map[string]string {
 	return formatMap
 }
 
-func getAccessLog(file string, format string, formatMap map[string]string) *model.AccessLog {
+func getAccessLog(file, format string, formatMap map[string]string) *model.AccessLog {
 	accessLog := &model.AccessLog{
 		Name:     file,
 		Readable: false,
@@ -153,7 +153,7 @@ func getAccessLog(file string, format string, formatMap map[string]string) *mode
 	return accessLog
 }
 
-func getErrorLog(file string, level string) *model.ErrorLog {
+func getErrorLog(file, level string) *model.ErrorLog {
 	errorLog := &model.ErrorLog{
 		Name:     file,
 		LogLevel: level,
