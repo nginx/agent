@@ -258,11 +258,11 @@ func TestReadCache(t *testing.T) {
 		},
 	}
 
-	for _, tests := range tests {
-		t.Run(tests.name, func(t *testing.T) {
-			previousFileCache, err := readInstanceCache(tests.path)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			previousFileCache, err := readInstanceCache(test.path)
 
-			if tests.shouldHaveError {
+			if test.shouldHaveError {
 				assert.Error(t, err)
 				assert.NotEqual(t, cacheData, previousFileCache)
 			} else {
