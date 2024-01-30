@@ -107,8 +107,14 @@ func BenchmarkGRPC(b *testing.B) {
 		}
 	})
 	cleanup()
-	defer serverClose()
-	defer clientClose()
+	err := serverClose()
+	if err != nil {
+		b.Fail()
+	}
+	err = clientClose()
+	if err != nil {
+		b.Fail()
+	}
 }
 
 func getInstances(c *gin.Context) {
@@ -141,7 +147,10 @@ func getInstances(c *gin.Context) {
 		log.Fatal(err)
 	}
 	c.Header("Content-Type", "application/json")
-	c.Writer.Write(bytes)
+	_, err = c.Writer.Write(bytes)
+	if err != nil {
+		log.Print(err)
+	}
 }
 
 func startRESTServer() {
