@@ -134,9 +134,8 @@ func (cw *ConfigWriter) Complete() error {
 	return err
 }
 
-func (cw *ConfigWriter) SetDataplaneConfig(dataplaneConfig nginx.DataplaneConfigInterface) error {
+func (cw *ConfigWriter) SetDataplaneConfig(dataplaneConfig nginx.DataplaneConfigInterface) {
 	cw.dataplaneConfig = dataplaneConfig
-	return nil
 }
 
 func (cw *ConfigWriter) Reload() error {

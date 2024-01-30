@@ -27,10 +27,11 @@ import (
 func TestWriteConfig(t *testing.T) {
 	filePath := "/tmp/nginx/locations/test.conf"
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
-	cachePath := "/tmp/cache.json"
 
 	tenantId, instanceId, err := createTestIds()
 	assert.NoError(t, err)
+
+	cachePath := fmt.Sprintf("/tmp/%s/cache.json", instanceId.String())
 
 	filesUrl := fmt.Sprintf("/instance/%s/files/", instanceId)
 
@@ -117,8 +118,6 @@ func TestWriteConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fmt.Println()
-			fmt.Printf("Test: %v", test.name)
 			fakeConfigClient := &client.FakeHttpConfigClientInterface{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
@@ -212,8 +211,7 @@ func TestDataplaneConfig(t *testing.T) {
 	configWriter := NewConfigWriter(&ConfigWriterParameters{}, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	nginxConfig := nginx.NewNginxConfig()
 
-	err := configWriter.SetDataplaneConfig(nginxConfig)
-	assert.NoError(t, err)
+	configWriter.SetDataplaneConfig(nginxConfig)
 
 	assert.Equal(t, configWriter.dataplaneConfig, nginxConfig)
 }
@@ -243,9 +241,36 @@ func TestReadCache(t *testing.T) {
 	cacheData, err := createCacheFile(cachePath)
 	assert.NoError(t, err)
 
-	previousFileCache, err := readInstanceCache(cachePath)
-	assert.NoError(t, err)
-	assert.Equal(t, cacheData, previousFileCache)
+	tests := []struct {
+		name            string
+		path            string
+		shouldHaveError bool
+	}{
+		{
+			name:            "cache file exists",
+			path:            cachePath,
+			shouldHaveError: false,
+		},
+		{
+			name:            "cache file doesn't exist",
+			path:            "/tmp/cache.json",
+			shouldHaveError: true,
+		},
+	}
+
+	for _, tests := range tests {
+		t.Run(tests.name, func(t *testing.T) {
+			previousFileCache, err := readInstanceCache(tests.path)
+
+			if tests.shouldHaveError {
+				assert.Error(t, err)
+				assert.NotEqual(t, cacheData, previousFileCache)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, cacheData, previousFileCache)
+			}
+		})
+	}
 
 	err = os.Remove(cachePath)
 	assert.NoError(t, err)

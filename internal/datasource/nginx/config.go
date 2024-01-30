@@ -1,6 +1,7 @@
 package nginx
 
 import (
+	"bytes"
 	"fmt"
 	"log/slog"
 	"os/exec"
@@ -26,6 +27,7 @@ func (nc NginxConfig) Validate() error {
 	if err != nil {
 		return fmt.Errorf("NGINX config test failed %w: %s", err, out)
 	}
+	err = validateConfigCheckResponse(out)
 	slog.Info("NGINX config tested", "output", out)
 	return nil
 }
@@ -37,5 +39,12 @@ func (nc NginxConfig) Reload() error {
 	}
 	slog.Info("NGINX reloaded")
 
+	return nil
+}
+
+func validateConfigCheckResponse(out []byte) error {
+	if bytes.Contains(out, []byte("[emerg]")) || bytes.Contains(out, []byte("[alert]")) || bytes.Contains(out, []byte("[crit]")) {
+		return fmt.Errorf("error running nginx -t -c %v:\n%s", out)
+	}
 	return nil
 }
