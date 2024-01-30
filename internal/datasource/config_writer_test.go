@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/internal/client"
+	"github.com/nginx/agent/v3/internal/client/clientfakes"
 	datasource_os "github.com/nginx/agent/v3/internal/datasource/os"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -62,7 +62,7 @@ func TestUpdateInstanceConfig(t *testing.T) {
 		FileContent: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
 	}
 
-	fakeConfigDownloader := &client.FakeHttpConfigClientInterface{}
+	fakeConfigDownloader := &clientfakes.FakeHttpConfigClientInterface{}
 	fakeConfigDownloader.GetFilesMetadataReturns(metaDataReturn, nil)
 	fakeConfigDownloader.GetFileReturns(getFileReturn, nil)
 

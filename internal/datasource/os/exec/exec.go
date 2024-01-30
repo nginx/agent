@@ -13,9 +13,7 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate -o mock_exec.go . ExecInterface
-//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/datasource/os/exec mock_exec.go | sed -e s\\/exec\\\\.\\/\\/g > mock_exec_fixed.go"
-//go:generate mv mock_exec_fixed.go mock_exec.go
+//counterfeiter:generate . ExecInterface
 type ExecInterface interface {
 	RunCmd(cmd string, args ...string) (*bytes.Buffer, error)
 	FindExecutable(name string) (string, error)

@@ -37,10 +37,6 @@ components:
           $ref: "#/components/schemas/MetaType"
         config:
           type: string
-        metrics:
-          type: string
-        registration:
-          type: string
     NginxMeta:
       type: object
       required:
@@ -48,9 +44,7 @@ components:
       properties:
         type:
           $ref: "#/components/schemas/MetaType"
-        loadable_modules:
-          type: string
-        runnable_modules:
+        conf_path:
           type: string
     Instance:
       type: object

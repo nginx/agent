@@ -21,9 +21,7 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate -o mock_http_config_client.go . HttpConfigClientInterface
-//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/client mock_http_config_client.go | sed -e s\\/client\\\\.\\/\\/g > mock_http_config_client_fixed.go"
-//go:generate mv mock_http_config_client_fixed.go mock_http_config_client.go
+//counterfeiter:generate . HttpConfigClientInterface
 const tenantHeader = "tenantId"
 
 type HttpConfigClientInterface interface {

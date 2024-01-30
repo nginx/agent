@@ -13,15 +13,15 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/bus"
-	"github.com/nginx/agent/v3/internal/model/os"
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestProcessMonitor_Init(t *testing.T) {
-	testProcesses := []*os.Process{{Pid: 123, Name: "nginx"}}
+	testProcesses := []*model.Process{{Pid: 123, Name: "nginx"}}
 
 	processMonitor := NewProcessMonitor(&ProcessMonitorParameters{
-		getProcessesFunc: func() ([]*os.Process, error) {
+		getProcessesFunc: func() ([]*model.Process, error) {
 			return testProcesses, nil
 		},
 		MonitoringFrequency: time.Millisecond,

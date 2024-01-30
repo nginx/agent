@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package os
+package model
 
-type Process struct {
-	Pid  int32
-	Ppid int32
-	Name string
-	Cmd  string
-	Exe  string
+import "github.com/nginx/agent/v3/api/grpc/instances"
+
+type InstanceConfigUpdateRequest struct {
+	Instance      *instances.Instance
+	Location      string
+	CorrelationId string
 }

@@ -44,9 +44,7 @@ const (
 
 // AgentMeta defines model for AgentMeta.
 type AgentMeta struct {
-	Config       *string `json:"config,omitempty"`
-	Metrics      *string `json:"metrics,omitempty"`
-	Registration *string `json:"registration,omitempty"`
+	Config *string `json:"config,omitempty"`
 
 	// Type The type of metadata
 	Type MetaType `json:"type"`
@@ -83,8 +81,7 @@ type MetaType string
 
 // NginxMeta defines model for NginxMeta.
 type NginxMeta struct {
-	LoadableModules *string `json:"loadable_modules,omitempty"`
-	RunnableModules *string `json:"runnable_modules,omitempty"`
+	ConfPath *string `json:"conf_path,omitempty"`
 
 	// Type The type of metadata
 	Type MetaType `json:"type"`

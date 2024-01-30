@@ -9,55 +9,45 @@ package service
 
 import (
 	"fmt"
-	"net/http"
+	"log/slog"
 
-	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/api/http/common"
+	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/internal/service/instance"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate -o mock_instance.go . InstanceServiceInterface
-//go:generate sh -c "grep -v github.com/nginx/agent/v3/internal/service mock_instance.go | sed -e s\\/service\\\\.\\/\\/g > mock_instance_fixed.go"
-//go:generate mv mock_instance_fixed.go mock_instance.go
+//counterfeiter:generate . InstanceServiceInterface
 type InstanceServiceInterface interface {
-	UpdateInstances(newInstances []*instances.Instance)
-	GetInstances() []*instances.Instance
-	UpdateInstanceConfiguration(instanceId string, location string) (string, error)
+	GetInstances(processes []*model.Process) []*instances.Instance
 }
 
 type InstanceService struct {
-	instances      []*instances.Instance
-	nginxInstances map[string]*instances.Instance
+	instances                 []*instances.Instance
+	dataplaneInstanceServices []instance.DataplaneInstanceService
 }
 
 func NewInstanceService() *InstanceService {
 	return &InstanceService{
-		nginxInstances: make(map[string]*instances.Instance),
+		instances: []*instances.Instance{},
+		dataplaneInstanceServices: []instance.DataplaneInstanceService{
+			instance.NewNginx(instance.NginxParameters{}),
+		},
 	}
 }
 
-func (is *InstanceService) UpdateInstances(newInstances []*instances.Instance) {
-	is.instances = newInstances
-	if is.instances != nil {
-		for _, instance := range is.instances {
-			if instance.Type == instances.Type_NGINX || instance.Type == instances.Type_NGINXPLUS {
-				is.nginxInstances[instance.InstanceId] = instance
-			}
+func (is *InstanceService) GetInstances(processes []*model.Process) []*instances.Instance {
+	newInstances := []*instances.Instance{}
+
+	for _, dataplaneInstanceService := range is.dataplaneInstanceServices {
+		newDataplaneInstances, err := dataplaneInstanceService.GetInstances(processes)
+		if err != nil {
+			slog.Warn("Unable to get all instances", "dataplane type", fmt.Sprintf("%T", dataplaneInstanceService), "error", err)
+		} else {
+			newInstances = append(newInstances, newDataplaneInstances...)
 		}
 	}
-}
 
-func (is *InstanceService) GetInstances() []*instances.Instance {
+	is.instances = newInstances
 	return is.instances
-}
-
-func (is *InstanceService) UpdateInstanceConfiguration(instanceId string, location string) (correlationId string, err error) {
-	correlationId = uuid.New().String()
-	if _, ok := is.nginxInstances[instanceId]; ok {
-		// TODO update NGINX instance configuration
-	} else {
-		return correlationId, &common.RequestError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("unable to find instance with id %s", instanceId)}
-	}
-	return correlationId, err
 }

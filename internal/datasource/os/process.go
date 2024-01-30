@@ -8,17 +8,17 @@
 package os
 
 import (
-	"github.com/nginx/agent/v3/internal/model/os"
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
-func GetProcesses() ([]*os.Process, error) {
+func GetProcesses() ([]*model.Process, error) {
 	processes, err := process.Processes()
 	if err != nil {
 		return nil, err
 	}
 
-	internalProcesses := []*os.Process{}
+	internalProcesses := []*model.Process{}
 
 	for _, proc := range processes {
 		ppid, _ := proc.Ppid()
@@ -26,7 +26,7 @@ func GetProcesses() ([]*os.Process, error) {
 		cmd, _ := proc.Cmdline()
 		exe, _ := proc.Exe()
 
-		internalProcesses = append(internalProcesses, &os.Process{
+		internalProcesses = append(internalProcesses, &model.Process{
 			Pid:  proc.Pid,
 			Ppid: ppid,
 			Name: name,
