@@ -9,4 +9,5 @@ package bus
 
 const (
 	OS_PROCESSES_TOPIC = "os-processes"
+	INSTANCES_TOPIC    = "instances"
 )

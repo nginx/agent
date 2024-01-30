@@ -71,7 +71,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin) error {
 		pluginsRegistered = append(pluginsRegistered, plugin.Info().Name)
 	}
 
-	slog.Info("finished registering plugins", "plugins", pluginsRegistered)
+	slog.Info("Finished registering plugins", "plugins", pluginsRegistered)
 
 	p.mu.Unlock()
 	return nil
