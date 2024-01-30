@@ -2,12 +2,12 @@ package nginx
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateConfigCheckResponse(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		out      string
