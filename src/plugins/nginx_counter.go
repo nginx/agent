@@ -80,13 +80,11 @@ func (nc *NginxCounter) agentServer(serverAddress []string) {
 	signal.Notify(nc.signalChannel, syscall.SIGINT, os.Interrupt, syscall.SIGTERM)
 
 	nc.socketListener, err = net.Listen(serverAddress[0], serverAddress[1])
-
 	if err != nil {
 		log.Warn("failed to start NGINX counter listener")
 	}
 
 	err = core.EnableWritePermissionForSocket(serverAddress[1])
-
 	if err != nil {
 		log.Warn("unable to set correct write permissions for NGINX counter socket")
 	}

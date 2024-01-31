@@ -106,7 +106,6 @@ func (s *Manager) initCollector() error {
 		SyslogPort: s.syslogPort,
 		Logger:     s.logger,
 	})
-
 	if err != nil {
 		s.logger.Errorf("Could not setup a %s collector. Got %v.", monitoring.NAP, err)
 		return err
@@ -132,7 +131,6 @@ func (s *Manager) initProcessor(commonDims *metrics.CommonDim) error {
 		Workers:    runtime.NumCPU(),
 		CommonDims: commonDims,
 	})
-
 	if err != nil {
 		s.logger.Errorf("Could not get a Processor Client: %s", err)
 		return err
