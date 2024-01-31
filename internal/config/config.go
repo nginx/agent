@@ -20,10 +20,15 @@ import (
 	"github.com/spf13/viper"
 )
 
-const (
-	ConfigFileName = "nginx-agent.conf"
-	EnvPrefix      = "NGINX_AGENT"
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//counterfeiter:generate . ConfigInterface
+type ConfigInterface interface {
+	GetClient() Client
+}
 
+const (
+	ConfigFileName                             = "nginx-agent.conf"
+	EnvPrefix                                  = "NGINX_AGENT"
 	ConfigPathKey                              = "path"
 	VersionConfigKey                           = "version"
 	LogLevelConfigKey                          = "log_level"
@@ -72,7 +77,7 @@ func GetConfig() *Config {
 		Log:            getLog(),
 		ProcessMonitor: getProcessMonitor(),
 		DataplaneAPI:   getDataplaneAPI(),
-		Client:         getClient(),
+		Client:         GetClient(),
 	}
 
 	slog.Debug("Agent config", "config", config)
@@ -175,7 +180,7 @@ func getDataplaneAPI() DataplaneAPI {
 	}
 }
 
-func getClient() Client {
+func GetClient() Client {
 	return Client{
 		Timeout: viperInstance.GetDuration(ClientTimeoutConfigKey),
 	}

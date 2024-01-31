@@ -22,3 +22,11 @@ func NewNginxGatewayFabric() *NginxGatewayFabric {
 func (*NginxGatewayFabric) ParseConfig(instance *instances.Instance) (any, error) {
 	return nil, fmt.Errorf("not implemented")
 }
+
+func (*NginxGatewayFabric) Validate() error {
+	return fmt.Errorf("not implemented")
+}
+
+func (*NginxGatewayFabric) Reload() error {
+	return fmt.Errorf("not implemented")
+}

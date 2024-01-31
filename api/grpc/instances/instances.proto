@@ -24,6 +24,7 @@ message Meta {
 }
 message NginxMeta {
     string config_path = 3;
+    string exe_path = 4;
 }
 
 enum Type {

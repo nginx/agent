@@ -15,4 +15,6 @@ import (
 //counterfeiter:generate . DataplaneConfig
 type DataplaneConfig interface {
 	ParseConfig(instance *instances.Instance) (any, error)
+	Validate() error
+	Reload() error
 }

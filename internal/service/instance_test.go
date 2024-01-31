@@ -19,7 +19,7 @@ import (
 
 var testInstances = []*instances.Instance{
 	{
-		InstanceId: "123",
+		InstanceId: "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
 		Type:       instances.Type_NGINX,
 	},
 }

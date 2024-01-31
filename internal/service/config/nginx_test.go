@@ -8,9 +8,13 @@
 package config
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/datasource/os/exec/execfakes"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
@@ -125,4 +129,123 @@ func TestNginx_ParseConfig(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)
+}
+
+func TestValidateConfigCheckResponse(t *testing.T) {
+	tests := []struct {
+		name     string
+		out      string
+		expected interface{}
+	}{
+		{
+			name:     "valid reponse",
+			out:      "nginx [info]",
+			expected: nil,
+		},
+		{
+			name:     "err reponse",
+			out:      "nginx [emerg]",
+			expected: errors.New("error running nginx -t -c:\nnginx [emerg]"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := validateConfigCheckResponse([]byte(test.out))
+			assert.Equal(t, test.expected, err)
+		})
+	}
+}
+
+func TestNginx_Reload(t *testing.T) {
+	tests := []struct {
+		name     string
+		out      *bytes.Buffer
+		error    error
+		expected error
+	}{
+		{
+			name:     "successful reload",
+			out:      bytes.NewBuffer([]byte("")),
+			error:    nil,
+			expected: nil,
+		},
+		{
+			name:     "failed reload",
+			out:      bytes.NewBuffer([]byte("")),
+			error:    errors.New("error reloading"),
+			expected: fmt.Errorf("failed to reload NGINX %w: ", errors.New("error reloading")),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockExec := &execfakes.FakeExecInterface{}
+			mockExec.RunCmdReturns(test.out, test.error)
+			nginxConfig := NewNginx()
+			nginxConfig.executor = mockExec
+
+			err := nginxConfig.Reload()
+
+			if test.error != nil {
+				assert.Equal(t, fmt.Errorf("failed to reload NGINX %w: %s", test.error, test.out), err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestNginx_Validate(t *testing.T) {
+	tests := []struct {
+		name     string
+		out      *bytes.Buffer
+		error    error
+		expected error
+	}{
+		{
+			name:     "validate successful",
+			out:      bytes.NewBuffer([]byte("")),
+			error:    nil,
+			expected: nil,
+		},
+		{
+			name:     "validate failed",
+			out:      bytes.NewBuffer([]byte("[emerg]")),
+			error:    errors.New("error validating"),
+			expected: fmt.Errorf("NGINX config test failed %w: [emerg]", errors.New("error validating")),
+		},
+		{
+			name:     "validate Config failed",
+			out:      bytes.NewBuffer([]byte("nginx [emerg]")),
+			error:    nil,
+			expected: fmt.Errorf("error running nginx -t -c:\nnginx [emerg]"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockExec := &execfakes.FakeExecInterface{}
+			mockExec.RunCmdReturns(test.out, test.error)
+			nginxConfig := NewNginx()
+			nginxConfig.executor = mockExec
+
+			err := nginxConfig.Validate()
+
+			assert.Equal(t, test.expected, err)
+		})
+	}
+}
+
+func TestGetPermissions(t *testing.T) {
+	file, err := os.CreateTemp(".", "get_permissions_test.txt")
+	defer os.Remove(file.Name())
+	assert.NoError(t, err)
+
+	info, err := os.Stat(file.Name())
+	assert.NoError(t, err)
+
+	permissions := getPermissions(info.Mode())
+
+	assert.Equal(t, "0600", permissions)
 }
