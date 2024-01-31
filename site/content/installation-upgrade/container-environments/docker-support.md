@@ -1,5 +1,5 @@
 ---
-title: Docker Support
+title: Container Support and Troubleshooting
 categories:
 - installation
 draft: false
@@ -12,13 +12,17 @@ docs: "DOCS-909"
 
 ## Overview
 
-Learn about the limitations of NGINX Agent when running in a Docker environment.
+The NGINX Agent repository includes [Dockerfiles](https://github.com/nginx/agent/tree/main/scripts/docker) that can be used to [build custom container images]({{< relref "installation-upgrade/container-environments/docker-images.md" >}}). Images are created with an NGINX Open Source or NGINX Plus instance and are available for various operating systems.
+
+See the [Technical Specifications]({{< relref "/technical-specifications.md#container-support" >}}) for a list of supported operationg systems.
+
+NGINX Agent running in a container has some limitations that need to be considered, and are listed below.
 
 ## Supported cgroups
 
-To collect metrics about the Docker container that the NGINX Agent is running in, the NGINX Agent uses the available cgroup files to calculate metrics like CPU and memory usage.
+To collect metrics about the Docker container that the NGINX Agent is running in, NGINX Agent uses the available cgroup files to calculate metrics like CPU and memory usage.
 
-The NGINX Agent supports both versions of cgroups.
+NGINX Agent supports both versions of cgroups.
 
 - https://www.kernel.org/doc/Documentation/cgroup-v1/ 
 - https://www.kernel.org/doc/Documentation/cgroup-v2.txt 
@@ -27,7 +31,7 @@ The NGINX Agent supports both versions of cgroups.
 
 ### Unsupported Metrics
 
-The following system metrics are not supported when running the NGINX Agent in a Docker container. The NGINX Agent returns no values for these metrics:
+The following system metrics are not supported when running NGINX Agent in a Docker container. NGINX Agent returns no values for these metrics:
 
 - system.cpu.idle
 - system.cpu.iowait

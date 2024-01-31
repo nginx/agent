@@ -1,5 +1,5 @@
 ---
-title: "Docker Images"
+title: "Build Container Images"
 draft: false
 weight: 100
 toc: true
@@ -10,13 +10,17 @@ doctypes: ["task"]
 
 ## Overview
 
-Learn how to build and run NGINX Agent docker images
+Learn how to build NGINX Agent container images with Docker.
 
 ## Prerequisites
 1. Docker must be [installed and running](https://docs.docker.com/engine/install/)
 1. (Optional) If you plan to use NGINX Plus, you will need the nginx-repo.crt and nginx-repo.key files. You can download them from [MyF5](https://my.f5.com).
 
-## Building NGINX Agent image with NGINX Open Source
+## Building NGINX Agent image with Docker
+
+{{<tabs name="build-image">}}
+
+{{%tab name="NGINX Open Source"%}}
 
 To build an image that contains the latest NGINX Agent and the latest mainline version of NGINX run the following command:
 
@@ -30,8 +34,10 @@ To build an image that contains the latest NGINX Agent and the latest stable ver
 $ cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
 $ docker build -t nginx-agent . --no-cache -f ./Dockerfile.stable
 ```
-
-## Building NGINX Agent image with NGINX Plus
+  
+{{% /tab %}}
+  
+{{%tab name="NGINX Plus"%}}
 
 1. Log in to [MyF5 Customer Portal](https://account.f5.com/myf5) and download your `nginx-repo.crt` and `nginx-repo.key` files. These files are also provided with the NGINX Plus trial package.
 
@@ -46,10 +52,15 @@ $ docker build -t nginx-agent . \
   --secret id=nginx-crt,src=nginx-repo.crt \
   --secret id=nginx-key,src=nginx-repo.key
 ```
+{{% /tab %}}
+{{% /tabs %}}
+
+<hr>
+
 
 ## Running NGINX Agent container
 
-Here is an example of how to run a NGINX Agent container:
+Here is an example of how to run a NGINX Agent container with Docker:
 
 ```console
 $ docker run --name nginx-agent -d nginx-agent
