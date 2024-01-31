@@ -1,6 +1,6 @@
 run:
   timeout: 3m
-  go: '1.21.6'
+  go: '1.21.3'
 linters:
   disable:
     - gosimple
