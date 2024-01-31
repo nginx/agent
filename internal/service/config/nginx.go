@@ -18,6 +18,7 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
 
+	datasource_os "github.com/nginx/agent/v3/internal/datasource/os"
 	"github.com/nginx/agent/v3/internal/datasource/os/exec"
 )
 
@@ -26,7 +27,7 @@ const (
 )
 
 type (
-	crossplaneTraverseCallback = func(parent, current *crossplane.Directive) (bool, error)
+	crossplaneTraverseCallback = func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error)
 )
 
 type Nginx struct {
@@ -58,7 +59,7 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		formatMap := map[string]string{}
 
 		err := crossplaneConfigTraverse(&xpConf,
-			func(parent, directive *crossplane.Directive) (bool, error) {
+			func(parent *crossplane.Directive, directive *crossplane.Directive) (bool, error) {
 				switch directive.Directive {
 				case "log_format":
 					formatMap = getFormatMap(directive)
@@ -128,7 +129,7 @@ func getFormatMap(directive *crossplane.Directive) map[string]string {
 	return formatMap
 }
 
-func getAccessLog(file, format string, formatMap map[string]string) *model.AccessLog {
+func getAccessLog(file string, format string, formatMap map[string]string) *model.AccessLog {
 	accessLog := &model.AccessLog{
 		Name:     file,
 		Readable: false,
@@ -137,7 +138,7 @@ func getAccessLog(file, format string, formatMap map[string]string) *model.Acces
 	info, err := os.Stat(file)
 	if err == nil {
 		accessLog.Readable = true
-		accessLog.Permissions = getPermissions(info.Mode())
+		accessLog.Permissions = datasource_os.GetPermissions(info.Mode())
 	}
 
 	if formatMap[format] != "" {
@@ -153,7 +154,7 @@ func getAccessLog(file, format string, formatMap map[string]string) *model.Acces
 	return accessLog
 }
 
-func getErrorLog(file, level string) *model.ErrorLog {
+func getErrorLog(file string, level string) *model.ErrorLog {
 	errorLog := &model.ErrorLog{
 		Name:     file,
 		LogLevel: level,
@@ -161,7 +162,7 @@ func getErrorLog(file, level string) *model.ErrorLog {
 	}
 	info, err := os.Stat(file)
 	if err == nil {
-		errorLog.Permissions = getPermissions(info.Mode())
+		errorLog.Permissions = datasource_os.GetPermissions(info.Mode())
 		errorLog.Readable = true
 	}
 
@@ -229,8 +230,4 @@ func traverse(root *crossplane.Directive, callback crossplaneTraverseCallback, s
 		}
 	}
 	return nil
-}
-
-func getPermissions(fileMode os.FileMode) string {
-	return fmt.Sprintf("%#o", fileMode.Perm())
 }

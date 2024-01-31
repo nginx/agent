@@ -24,8 +24,8 @@ import (
 const tenantHeader = "tenantId"
 
 type HttpConfigClientInterface interface {
-	GetFilesMetadata(filesUrl, tenantID string) (*instances.Files, error)
-	GetFile(file *instances.File, filesUrl, tenantID string) (*instances.FileDownloadResponse, error)
+	GetFilesMetadata(filesUrl string, tenantID string) (*instances.Files, error)
+	GetFile(file *instances.File, filesUrl string, tenantID string) (*instances.FileDownloadResponse, error)
 }
 
 type HttpConfigClient struct {
@@ -42,7 +42,7 @@ func NewHttpConfigClient(timeout time.Duration) *HttpConfigClient {
 	}
 }
 
-func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl, tenantID string) (*instances.Files, error) {
+func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl string, tenantID string) (*instances.Files, error) {
 	files := instances.Files{}
 
 	req, err := http.NewRequest(http.MethodGet, filesUrl, nil)
@@ -77,7 +77,7 @@ func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl, tenantID string) (*insta
 	return &files, nil
 }
 
-func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl, tenantID string) (*instances.FileDownloadResponse, error) {
+func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl string, tenantID string) (*instances.FileDownloadResponse, error) {
 	response := instances.FileDownloadResponse{}
 	params := url.Values{}
 
