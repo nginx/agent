@@ -4,18 +4,17 @@ package clientfakes
 import (
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/client"
 )
 
 type FakeHttpConfigClientInterface struct {
-	GetFileStub        func(*instances.File, string, uuid.UUID) (*instances.FileDownloadResponse, error)
+	GetFileStub        func(*instances.File, string, string) (*instances.FileDownloadResponse, error)
 	getFileMutex       sync.RWMutex
 	getFileArgsForCall []struct {
 		arg1 *instances.File
 		arg2 string
-		arg3 uuid.UUID
+		arg3 string
 	}
 	getFileReturns struct {
 		result1 *instances.FileDownloadResponse
@@ -25,11 +24,11 @@ type FakeHttpConfigClientInterface struct {
 		result1 *instances.FileDownloadResponse
 		result2 error
 	}
-	GetFilesMetadataStub        func(string, uuid.UUID) (*instances.Files, error)
+	GetFilesMetadataStub        func(string, string) (*instances.Files, error)
 	getFilesMetadataMutex       sync.RWMutex
 	getFilesMetadataArgsForCall []struct {
 		arg1 string
-		arg2 uuid.UUID
+		arg2 string
 	}
 	getFilesMetadataReturns struct {
 		result1 *instances.Files
@@ -43,13 +42,13 @@ type FakeHttpConfigClientInterface struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeHttpConfigClientInterface) GetFile(arg1 *instances.File, arg2 string, arg3 uuid.UUID) (*instances.FileDownloadResponse, error) {
+func (fake *FakeHttpConfigClientInterface) GetFile(arg1 *instances.File, arg2 string, arg3 string) (*instances.FileDownloadResponse, error) {
 	fake.getFileMutex.Lock()
 	ret, specificReturn := fake.getFileReturnsOnCall[len(fake.getFileArgsForCall)]
 	fake.getFileArgsForCall = append(fake.getFileArgsForCall, struct {
 		arg1 *instances.File
 		arg2 string
-		arg3 uuid.UUID
+		arg3 string
 	}{arg1, arg2, arg3})
 	stub := fake.GetFileStub
 	fakeReturns := fake.getFileReturns
@@ -70,13 +69,13 @@ func (fake *FakeHttpConfigClientInterface) GetFileCallCount() int {
 	return len(fake.getFileArgsForCall)
 }
 
-func (fake *FakeHttpConfigClientInterface) GetFileCalls(stub func(*instances.File, string, uuid.UUID) (*instances.FileDownloadResponse, error)) {
+func (fake *FakeHttpConfigClientInterface) GetFileCalls(stub func(*instances.File, string, string) (*instances.FileDownloadResponse, error)) {
 	fake.getFileMutex.Lock()
 	defer fake.getFileMutex.Unlock()
 	fake.GetFileStub = stub
 }
 
-func (fake *FakeHttpConfigClientInterface) GetFileArgsForCall(i int) (*instances.File, string, uuid.UUID) {
+func (fake *FakeHttpConfigClientInterface) GetFileArgsForCall(i int) (*instances.File, string, string) {
 	fake.getFileMutex.RLock()
 	defer fake.getFileMutex.RUnlock()
 	argsForCall := fake.getFileArgsForCall[i]
@@ -109,12 +108,12 @@ func (fake *FakeHttpConfigClientInterface) GetFileReturnsOnCall(i int, result1 *
 	}{result1, result2}
 }
 
-func (fake *FakeHttpConfigClientInterface) GetFilesMetadata(arg1 string, arg2 uuid.UUID) (*instances.Files, error) {
+func (fake *FakeHttpConfigClientInterface) GetFilesMetadata(arg1 string, arg2 string) (*instances.Files, error) {
 	fake.getFilesMetadataMutex.Lock()
 	ret, specificReturn := fake.getFilesMetadataReturnsOnCall[len(fake.getFilesMetadataArgsForCall)]
 	fake.getFilesMetadataArgsForCall = append(fake.getFilesMetadataArgsForCall, struct {
 		arg1 string
-		arg2 uuid.UUID
+		arg2 string
 	}{arg1, arg2})
 	stub := fake.GetFilesMetadataStub
 	fakeReturns := fake.getFilesMetadataReturns
@@ -135,13 +134,13 @@ func (fake *FakeHttpConfigClientInterface) GetFilesMetadataCallCount() int {
 	return len(fake.getFilesMetadataArgsForCall)
 }
 
-func (fake *FakeHttpConfigClientInterface) GetFilesMetadataCalls(stub func(string, uuid.UUID) (*instances.Files, error)) {
+func (fake *FakeHttpConfigClientInterface) GetFilesMetadataCalls(stub func(string, string) (*instances.Files, error)) {
 	fake.getFilesMetadataMutex.Lock()
 	defer fake.getFilesMetadataMutex.Unlock()
 	fake.GetFilesMetadataStub = stub
 }
 
-func (fake *FakeHttpConfigClientInterface) GetFilesMetadataArgsForCall(i int) (string, uuid.UUID) {
+func (fake *FakeHttpConfigClientInterface) GetFilesMetadataArgsForCall(i int) (string, string) {
 	fake.getFilesMetadataMutex.RLock()
 	defer fake.getFilesMetadataMutex.RUnlock()
 	argsForCall := fake.getFilesMetadataArgsForCall[i]

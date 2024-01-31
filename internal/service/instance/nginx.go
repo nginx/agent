@@ -33,6 +33,7 @@ type Info struct {
 	Prefix        string
 	ConfPath      string
 	ConfigureArgs map[string]interface{}
+	ExePath       string
 }
 
 type Nginx struct {
@@ -65,6 +66,7 @@ func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance,
 	for _, nginxProcess := range nginxProcesses {
 		_, ok := nginxProcesses[nginxProcess.Ppid]
 		if !ok {
+
 			if nginxProcess.Exe == "" {
 				exe := process.New(n.executer).GetExe()
 				if exe == "" {
@@ -75,7 +77,7 @@ func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance,
 				}
 			}
 
-			nginxInfo, err := n.getInfo(nginxProcess.Pid, nginxProcess.Exe)
+			nginxInfo, err := n.getInfo(nginxProcess.Exe)
 			if err != nil {
 				slog.Debug("Unable to get NGINX info", "pid", nginxProcess.Pid, "exe", nginxProcess.Exe)
 				continue
@@ -97,6 +99,7 @@ func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance,
 					Meta: &instances.Meta_NginxMeta{
 						NginxMeta: &instances.NginxMeta{
 							ConfigPath: nginxInfo.ConfPath,
+							ExePath:    nginxProcess.Exe,
 						},
 					},
 				},
@@ -109,10 +112,10 @@ func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance,
 	return processList, nil
 }
 
-func (n *Nginx) getInfo(pid int32, exe string) (*Info, error) {
+func (n *Nginx) getInfo(exePath string) (*Info, error) {
 	var nginxInfo *Info
 
-	outputBuffer, err := n.executer.RunCmd(exe, "-V")
+	outputBuffer, err := n.executer.RunCmd(exePath, "-V")
 	if err != nil {
 		return nil, err
 	} else {

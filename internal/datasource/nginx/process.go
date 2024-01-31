@@ -22,22 +22,21 @@ func New(executer exec.ExecInterface) *Process {
 }
 
 func (np *Process) GetExe() string {
-	exe := ""
+	exePath := ""
 
 	out, commandErr := np.executer.RunCmd("sh", "-c", "command -v nginx")
 	if commandErr == nil {
-		exe = strings.TrimSuffix(out.String(), "\n")
+		exePath = strings.TrimSuffix(out.String(), "\n")
 	}
 
-	if exe == "" {
-		exe = np.defaultToNginxCommandForProcessPath()
+	if exePath == "" {
+		exePath = np.defaultToNginxCommandForProcessPath()
 	}
 
-	if strings.Contains(exe, "(deleted)") {
-		exe = np.sanitizeExeDeletedPath(exe)
+	if strings.Contains(exePath, "(deleted)") {
+		exePath = np.sanitizeExeDeletedPath(exePath)
 	}
-
-	return exe
+	return exePath
 }
 
 func (np *Process) defaultToNginxCommandForProcessPath() string {

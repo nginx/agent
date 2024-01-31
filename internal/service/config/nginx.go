@@ -8,14 +8,18 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	datasource_os "github.com/nginx/agent/v3/internal/datasource/os"
 	"github.com/nginx/agent/v3/internal/model"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
+
+	datasource_os "github.com/nginx/agent/v3/internal/datasource/os"
+	"github.com/nginx/agent/v3/internal/datasource/os/exec"
 )
 
 const (
@@ -26,10 +30,14 @@ type (
 	crossplaneTraverseCallback = func(parent *crossplane.Directive, current *crossplane.Directive) (bool, error)
 )
 
-type Nginx struct{}
+type Nginx struct {
+	executor exec.ExecInterface
+}
 
 func NewNginx() *Nginx {
-	return &Nginx{}
+	return &Nginx{
+		executor: &exec.Exec{},
+	}
 }
 
 func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
@@ -73,6 +81,38 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		AccessLogs: accessLogs,
 		ErrorLogs:  errorLogs,
 	}, nil
+}
+
+func (n *Nginx) Validate(instance *instances.Instance) error {
+	exePath := instance.Meta.GetNginxMeta().GetExePath()
+	out, err := n.executor.RunCmd(exePath, "-t")
+	if err != nil {
+		return fmt.Errorf("NGINX config test failed %w: %s", err, out)
+	}
+	err = validateConfigCheckResponse(out.Bytes())
+	if err != nil {
+		return err
+	}
+	slog.Info("NGINX config tested", "output", out)
+	return nil
+}
+
+func (n *Nginx) Reload(instance *instances.Instance) error {
+	exePath := instance.Meta.GetNginxMeta().GetExePath()
+	out, err := n.executor.RunCmd(exePath, "-s", "reload")
+	if err != nil {
+		return fmt.Errorf("failed to reload NGINX %w: %s", err, out)
+	}
+	slog.Info("NGINX reloaded")
+
+	return nil
+}
+
+func validateConfigCheckResponse(out []byte) error {
+	if bytes.Contains(out, []byte("[emerg]")) || bytes.Contains(out, []byte("[alert]")) || bytes.Contains(out, []byte("[crit]")) {
+		return fmt.Errorf("error running nginx -t -c:\n%s", out)
+	}
+	return nil
 }
 
 func getFormatMap(directive *crossplane.Directive) map[string]string {

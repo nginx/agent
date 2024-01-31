@@ -21,9 +21,8 @@ import (
 )
 
 const (
-	ConfigFileName = "nginx-agent.conf"
-	EnvPrefix      = "NGINX_AGENT"
-
+	ConfigFileName                             = "nginx-agent.conf"
+	EnvPrefix                                  = "NGINX_AGENT"
 	ConfigPathKey                              = "path"
 	VersionConfigKey                           = "version"
 	LogLevelConfigKey                          = "log_level"

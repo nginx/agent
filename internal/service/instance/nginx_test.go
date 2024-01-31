@@ -24,18 +24,21 @@ func TestGetInstances(t *testing.T) {
 			Ppid: 456,
 			Name: "nginx",
 			Cmd:  "nginx: worker process",
+			Exe:  "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
 		},
 		{
 			Pid:  789,
 			Ppid: 123,
 			Name: "nginx",
 			Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+			Exe:  "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
 		},
 		{
 			Pid:  543,
 			Ppid: 454,
 			Name: "grep",
 			Cmd:  "grep --color=auto --exclude-dir=.bzr --exclude-dir=CVS --exclude-dir=.git --exclude-dir=.hg --exclude-dir=.svn --exclude-dir=.idea --exclude-dir=.tox nginx",
+			Exe:  "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
 		},
 	}
 
@@ -53,13 +56,14 @@ func TestGetInstances(t *testing.T) {
 					configure arguments: --prefix=/usr/local/Cellar/nginx/1.23.3 --sbin-path=/usr/local/Cellar/nginx/1.23.3/bin/nginx --with-cc-opt='-I/usr/local/opt/pcre2/include -I/usr/local/opt/openssl@1.1/include' --with-ld-opt='-L/usr/local/opt/pcre2/lib -L/usr/local/opt/openssl@1.1/lib' --conf-path=/usr/local/etc/nginx/nginx.conf --pid-path=/usr/local/var/run/nginx.pid --lock-path=/usr/local/var/run/nginx.lock --http-client-body-temp-path=/usr/local/var/run/nginx/client_body_temp --http-proxy-temp-path=/usr/local/var/run/nginx/proxy_temp --http-fastcgi-temp-path=/usr/local/var/run/nginx/fastcgi_temp --http-uwsgi-temp-path=/usr/local/var/run/nginx/uwsgi_temp --http-scgi-temp-path=/usr/local/var/run/nginx/scgi_temp --http-log-path=/usr/local/var/log/nginx/access.log --error-log-path=/usr/local/var/log/nginx/error.log --with-compat --with-debug --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_degradation_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-ipv6 --with-mail --with-mail_ssl_module --with-pcre --with-pcre-jit --with-stream --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module`,
 			expected: []*instances.Instance{
 				{
-					InstanceId: "0033b068-5f65-302e-9c73-1d9e22b3a663",
+					InstanceId: "5975af28-e028-3f87-a848-a39e50cdf0e9",
 					Type:       instances.Type_NGINX,
 					Version:    "1.23.3",
 					Meta: &instances.Meta{
 						Meta: &instances.Meta_NginxMeta{
 							NginxMeta: &instances.NginxMeta{
 								ConfigPath: "/usr/local/etc/nginx/nginx.conf",
+								ExePath:    "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
 							},
 						},
 					},
@@ -76,13 +80,14 @@ func TestGetInstances(t *testing.T) {
 			`,
 			expected: []*instances.Instance{
 				{
-					InstanceId: "8df64b34-5d04-371c-b1dd-c89116e0d26a",
+					InstanceId: "2dbc5cb9-464f-30da-b703-5e63c62bf31e",
 					Type:       instances.Type_NGINX_PLUS,
 					Version:    "nginx-plus-r30-p1",
 					Meta: &instances.Meta{
 						Meta: &instances.Meta_NginxMeta{
 							NginxMeta: &instances.NginxMeta{
 								ConfigPath: "/etc/nginx/nginx.conf",
+								ExePath:    "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
 							},
 						},
 					},
@@ -247,7 +252,7 @@ func TestGetInfo(t *testing.T) {
 			mockExec.RunCmdReturns(bytes.NewBuffer([]byte(test.nginxVersionCommandOutput)), nil)
 
 			n := NewNginx(NginxParameters{executer: mockExec})
-			result, err := n.getInfo(123, test.exe)
+			result, err := n.getInfo(test.exe)
 
 			assert.Equal(t, test.expected, result)
 			assert.NoError(t, err)
