@@ -1,13 +1,16 @@
 ---
 title: "Docker Images"
 draft: false
-description: "Learn how to build and run NGINX Agent docker images"
-weight: 800
+weight: 100
 toc: true
 tags: [ "docs" ]
 categories: ["configuration"]
 doctypes: ["task"]
 ---
+
+## Overview
+
+Learn how to build and run NGINX Agent docker images
 
 ## Prerequisites
 1. Docker must be [installed and running](https://docs.docker.com/engine/install/)

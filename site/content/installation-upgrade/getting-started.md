@@ -1,14 +1,15 @@
 ---
 title: "Getting Started"
 draft: false
-description: "Learn how to configure and run NGINX Agent."
-weight: 200
+weight: 100
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1089"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
+
+## Overview
 
 Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which NGINX Agent will report.
 
@@ -176,5 +177,5 @@ NGINX Agent uses formatted log files to collect metrics. Expanding log formats a
 {{< important >}}
 Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.
 
-For more information, see [NGINX Agent Log Rotation]({{< relref "/configuration-overview.md#nginx-agent-log-rotation" >}}).
+For more information, see [NGINX Agent Log Rotation]({{< relref "configuration/configuration-overview.md#nginx-agent-log-rotation" >}}).
 {{< /important >}}

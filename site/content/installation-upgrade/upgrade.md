@@ -1,7 +1,6 @@
 ---
 title: "Upgrade NGINX Agent Package"
 draft: false
-description: "Learn how to upgrade NGINX Agent"
 weight: 600
 toc: true
 tags: [ "docs" ]
@@ -9,6 +8,10 @@ docs: "DOCS-1227"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
+
+## Overview
+
+Learn how to upgrade NGINX Agent.
 
 ## Upgrade NGINX Agent from version v2.31.0 or greater
 

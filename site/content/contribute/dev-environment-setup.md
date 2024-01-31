@@ -1,14 +1,17 @@
 ---
 title: "Development Environment Setup"
 draft: false
-description: "Learn how to setup a Development Environment for NGINX Agent."
-weight: 900
+weight: 200
 toc: true
 tags: [ "docs" ]
 docs: "DOCS-1088"
 categories: ["development"]
 doctypes: ["task"]
 ---
+
+## Overview
+
+Learn how to setup a Development Environment for NGINX Agent.
 
 ## Select an Operating System
 
