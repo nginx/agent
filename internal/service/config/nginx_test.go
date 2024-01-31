@@ -185,7 +185,16 @@ func TestNginx_Reload(t *testing.T) {
 			nginxConfig := NewNginx()
 			nginxConfig.executor = mockExec
 
-			err := nginxConfig.Reload()
+			err := nginxConfig.Reload(&instances.Instance{
+				Type: instances.Type_NGINX,
+				Meta: &instances.Meta{
+					Meta: &instances.Meta_NginxMeta{
+						NginxMeta: &instances.NginxMeta{
+							ExePath: "nginx",
+						},
+					},
+				},
+			})
 
 			if test.error != nil {
 				assert.Equal(t, fmt.Errorf("failed to reload NGINX %w: %s", test.error, test.out), err)
@@ -230,7 +239,16 @@ func TestNginx_Validate(t *testing.T) {
 			nginxConfig := NewNginx()
 			nginxConfig.executor = mockExec
 
-			err := nginxConfig.Validate()
+			err := nginxConfig.Validate(&instances.Instance{
+				Type: instances.Type_NGINX,
+				Meta: &instances.Meta{
+					Meta: &instances.Meta_NginxMeta{
+						NginxMeta: &instances.NginxMeta{
+							ExePath: "nginx",
+						},
+					},
+				},
+			})
 
 			assert.Equal(t, test.expected, err)
 		})

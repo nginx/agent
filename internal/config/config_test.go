@@ -157,6 +157,6 @@ func TestGetClient(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
 	viperInstance.Set(ClientTimeoutConfigKey, time.Hour)
 
-	result := GetClient()
+	result := getClient()
 	assert.Equal(t, time.Hour, result.Timeout)
 }

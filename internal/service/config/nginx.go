@@ -82,8 +82,9 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 	}, nil
 }
 
-func (n *Nginx) Validate() error {
-	out, err := n.executor.RunCmd("nginx", "-t")
+func (n *Nginx) Validate(instance *instances.Instance) error {
+	exePath := instance.Meta.GetNginxMeta().GetExePath()
+	out, err := n.executor.RunCmd(exePath, "-t")
 	if err != nil {
 		return fmt.Errorf("NGINX config test failed %w: %s", err, out)
 	}
@@ -95,8 +96,9 @@ func (n *Nginx) Validate() error {
 	return nil
 }
 
-func (n *Nginx) Reload() error {
-	out, err := n.executor.RunCmd("nginx", "-s", "reload")
+func (n *Nginx) Reload(instance *instances.Instance) error {
+	exePath := instance.Meta.GetNginxMeta().GetExePath()
+	out, err := n.executor.RunCmd(exePath, "-s", "reload")
 	if err != nil {
 		return fmt.Errorf("failed to reload NGINX %w: %s", err, out)
 	}

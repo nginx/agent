@@ -23,10 +23,10 @@ func (*NginxGatewayFabric) ParseConfig(instance *instances.Instance) (any, error
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Validate() error {
+func (*NginxGatewayFabric) Validate(instance *instances.Instance) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Reload() error {
+func (*NginxGatewayFabric) Reload(instance *instances.Instance) error {
 	return fmt.Errorf("not implemented")
 }

@@ -23,18 +23,18 @@ import (
 	"github.com/nginx/agent/v3/internal/client"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate . ConfigWriterInterface
-type ConfigWriterInterface interface {
-	Write(filesUrl string, tenantID uuid.UUID) (err error)
-	Complete() (err error)
-}
-
 const (
 	cacheLocation = "/var/lib/nginx-agent/config/%v/cache.json"
 )
 
 type (
+	//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+	//counterfeiter:generate . ConfigWriterInterface
+	ConfigWriterInterface interface {
+		Write(filesUrl string, tenantID uuid.UUID) (err error)
+		Complete() (err error)
+	}
+
 	Client struct {
 		Timeout time.Duration
 	}
@@ -57,9 +57,9 @@ type (
 	FileCache = map[string]*instances.File
 )
 
-func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceId string) *ConfigWriter {
+func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceID string) *ConfigWriter {
 	if configWriterParameters.cachePath == "" {
-		configWriterParameters.cachePath = fmt.Sprintf(cacheLocation, instanceId)
+		configWriterParameters.cachePath = fmt.Sprintf(cacheLocation, instanceID)
 	}
 
 	if configWriterParameters.configClient == nil {
@@ -68,7 +68,7 @@ func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceId 
 
 	previouseFileCache, err := readInstanceCache(configWriterParameters.cachePath)
 	if err != nil {
-		slog.Info("Failed to Read cache %s ", configWriterParameters.cachePath, "err", err)
+		slog.Warn("Failed to Read cache %s ", configWriterParameters.cachePath, "err", err)
 	}
 
 	return &ConfigWriter{
@@ -137,12 +137,12 @@ func (cw *ConfigWriter) SetDataplaneConfig(dataplaneConfig config.DataplaneConfi
 	cw.dataplaneConfig = dataplaneConfig
 }
 
-func (cw *ConfigWriter) Reload() error {
-	return cw.dataplaneConfig.Reload()
+func (cw *ConfigWriter) Reload(instance *instances.Instance) error {
+	return cw.dataplaneConfig.Reload(instance)
 }
 
-func (cw *ConfigWriter) Validate() error {
-	return cw.dataplaneConfig.Validate()
+func (cw *ConfigWriter) Validate(instance *instances.Instance) error {
+	return cw.dataplaneConfig.Validate(instance)
 }
 
 func writeFile(fileContent []byte, filePath string) error {
