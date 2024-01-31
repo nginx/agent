@@ -33,3 +33,11 @@ func TestInstanceService_GetInstances(t *testing.T) {
 
 	assert.Equal(t, testInstances, instanceService.GetInstances([]*model.Process{}))
 }
+
+func TestInstanceService_GetInstance(t *testing.T) {
+	instanceService := NewInstanceService()
+	instanceService.instances = testInstances
+
+	assert.Equal(t, testInstances[0], instanceService.GetInstance("123"))
+	assert.Nil(t, instanceService.GetInstance("unknown"))
+}

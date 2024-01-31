@@ -10,19 +10,22 @@ package plugin
 import (
 	"log/slog"
 
+	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service"
 )
 
 type Config struct {
-	messagePipe    bus.MessagePipeInterface
-	configServices map[string]service.ConfigServiceInterface
+	messagePipe     bus.MessagePipeInterface
+	configServices  map[string]service.ConfigServiceInterface
+	instanceService service.InstanceServiceInterface
 }
 
 func NewConfig() *Config {
 	return &Config{
-		configServices: make(map[string]service.ConfigServiceInterface), // key is instance id
+		configServices:  make(map[string]service.ConfigServiceInterface), // key is instance id
+		instanceService: service.NewInstanceService(),
 	}
 }
 
@@ -40,11 +43,13 @@ func (c *Config) Info() *bus.Info {
 
 func (c *Config) Process(msg *bus.Message) {
 	switch {
-	case msg.Topic == bus.INSTANCE_CONFIG_UPDATED_TOPIC:
-		if request, ok := msg.Data.(*model.InstanceConfigUpdateRequest); !ok {
+	case msg.Topic == bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC:
+		if configurationStatus, ok := msg.Data.(*instances.ConfigurationStatus); !ok {
 			slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
 		} else {
-			c.parseInstanceConfiguration(request)
+			if configurationStatus.GetStatus() == instances.Status_SUCCESS {
+				c.parseInstanceConfiguration(configurationStatus.CorrelationId, c.instanceService.GetInstance(configurationStatus.GetInstanceId()))
+			}
 		}
 
 	case msg.Topic == bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC:
@@ -59,22 +64,22 @@ func (c *Config) Process(msg *bus.Message) {
 func (c *Config) Subscriptions() []string {
 	return []string{
 		bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC,
-		bus.INSTANCE_CONFIG_UPDATED_TOPIC,
+		bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC,
 	}
 }
 
-func (c *Config) parseInstanceConfiguration(request *model.InstanceConfigUpdateRequest) {
-	if c.configServices[request.Instance.GetInstanceId()] == nil {
-		c.configServices[request.Instance.GetInstanceId()] = service.NewConfigService()
+func (c *Config) parseInstanceConfiguration(correlationId string, instance *instances.Instance) {
+	if c.configServices[instance.GetInstanceId()] == nil {
+		c.configServices[instance.GetInstanceId()] = service.NewConfigService()
 	}
 
-	parsedConfig, err := c.configServices[request.Instance.GetInstanceId()].ParseInstanceConfiguration(request.CorrelationId, request.Instance)
+	parsedConfig, err := c.configServices[instance.GetInstanceId()].ParseInstanceConfiguration(correlationId, instance)
 	if err != nil {
-		slog.Error("Unable to parse instance configuration", "correlationId", request.CorrelationId, "instanceId", request.Instance.InstanceId, "error", err)
+		slog.Error("Unable to parse instance configuration", "correlationId", correlationId, "instanceId", instance.GetInstanceId(), "error", err)
 	} else {
 		switch config := parsedConfig.(type) {
 		case model.NginxConfigContext:
-			c.configServices[request.Instance.GetInstanceId()].SetConfigContext(config)
+			c.configServices[instance.GetInstanceId()].SetConfigContext(config)
 		default:
 			slog.Debug("Unknown config context", "configContext", config)
 		}
@@ -87,10 +92,6 @@ func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest
 		c.configServices[request.Instance.GetInstanceId()] = service.NewConfigService()
 	}
 
-	err := c.configServices[request.Instance.GetInstanceId()].UpdateInstanceConfiguration(request.CorrelationId, request.Location, request.Instance)
-	if err != nil {
-		slog.Error("Unable to update instance configuration", "correlationId", request.CorrelationId, "instanceId", request.Instance.InstanceId, "error", err)
-	} else {
-		c.messagePipe.Process(&bus.Message{Topic: bus.INSTANCE_CONFIG_UPDATED_TOPIC, Data: request})
-	}
+	status := c.configServices[request.Instance.GetInstanceId()].UpdateInstanceConfiguration(request.CorrelationId, request.Location, request.Instance)
+	c.messagePipe.Process(&bus.Message{Topic: bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC, Data: status})
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestConfig_Init(t *testing.T) {
@@ -34,7 +35,7 @@ func TestConfig_Info(t *testing.T) {
 func TestConfig_Subscriptions(t *testing.T) {
 	configPlugin := NewConfig()
 	subscriptions := configPlugin.Subscriptions()
-	assert.Equal(t, []string{bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC, bus.INSTANCE_CONFIG_UPDATED_TOPIC}, subscriptions)
+	assert.Equal(t, []string{bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC, bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC}, subscriptions)
 }
 
 func TestConfig_Process(t *testing.T) {
@@ -54,6 +55,14 @@ func TestConfig_Process(t *testing.T) {
 		CorrelationId: "456",
 	}
 
+	configurationStatus := &instances.ConfigurationStatus{
+		InstanceId:    testInstance.InstanceId,
+		CorrelationId: "456",
+		Status:        instances.Status_SUCCESS,
+		Message:       "Successfully updated instance configuration.",
+		LateUpdated:   timestamppb.Now(),
+	}
+
 	tests := []struct {
 		name     string
 		input    *bus.Message
@@ -62,8 +71,8 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated",
 			input: &bus.Message{
-				Topic: bus.INSTANCE_CONFIG_UPDATED_TOPIC,
-				Data:  instanceConfigUpdateRequest,
+				Topic: bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC,
+				Data:  configurationStatus,
 			},
 			expected: []*bus.Message{
 				{
@@ -75,7 +84,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated - unknown message type",
 			input: &bus.Message{
-				Topic: bus.INSTANCE_CONFIG_UPDATED_TOPIC,
+				Topic: bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC,
 				Data:  nil,
 			},
 			expected: nil,
@@ -88,8 +97,8 @@ func TestConfig_Process(t *testing.T) {
 			},
 			expected: []*bus.Message{
 				{
-					Topic: bus.INSTANCE_CONFIG_UPDATED_TOPIC,
-					Data:  instanceConfigUpdateRequest,
+					Topic: bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC,
+					Data:  configurationStatus,
 				},
 			},
 		},
@@ -114,9 +123,13 @@ func TestConfig_Process(t *testing.T) {
 
 			configService := &servicefakes.FakeConfigServiceInterface{}
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
-			configService.UpdateInstanceConfigurationReturns(nil)
+			configService.UpdateInstanceConfigurationReturns(configurationStatus)
+
+			instanceService := &servicefakes.FakeInstanceServiceInterface{}
+			instanceService.GetInstanceReturns(testInstance)
 
 			configPlugin.configServices["123"] = configService
+			configPlugin.instanceService = instanceService
 
 			configPlugin.Process(test.input)
 

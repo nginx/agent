@@ -1,4 +1,4 @@
-package common
+package http
 
 type RequestError struct {
 	StatusCode int

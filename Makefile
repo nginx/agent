@@ -13,7 +13,6 @@ TEST_BUILD_DIR  := build/test
 BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
-IMPORT_MAPPING 	:= ../common/common.yaml:github.com/nginx/agent/v3/api/http/common
 
 VERSION = "v3.0.0"
 COMMIT  = $(shell git rev-parse --short HEAD)
@@ -69,9 +68,8 @@ generate: ## Genenerate proto files and server and client stubs from OpenAPI spe
 	@echo "Generating proto files"
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specifications"
-	@$(GORUN) $(OAPICODEGEN) -generate types,skip-prune -package common ./api/http/common/common.yaml > ./api/http/common/common.gen.go
-	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane -import-mapping=$(IMPORT_MAPPING) ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
-	@$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane -import-mapping=$(IMPORT_MAPPING) ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate gin -package http ./api/http/dataplane-api.yaml > ./api/http/dataplane.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate types,client -package http ./api/http/dataplane-api.yaml > ./api/http/client.gen.go
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	$(GOGEN) ./...
