@@ -49,9 +49,12 @@ func (i *Instance) Info() *bus.Info {
 }
 
 func (i *Instance) Process(msg *bus.Message) {
-	switch {
-	case msg.Topic == bus.OS_PROCESSES_TOPIC:
-		newProcesses := msg.Data.([]*model.Process)
+	if msg.Topic == bus.OS_PROCESSES_TOPIC {
+		newProcesses, ok := msg.Data.([]*model.Process)
+		if !ok {
+			slog.Error("unable to cast message payload to model.Process", "payload", msg.Data)
+			return
+		}
 
 		instances := i.instanceService.GetInstances(newProcesses)
 		if len(instances) > 0 {

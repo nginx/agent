@@ -139,7 +139,7 @@ func loadPropertiesFromFile(cfg string) error {
 	viperInstance.SetConfigType("yaml")
 	err := viperInstance.MergeInConfig()
 	if err != nil {
-		return fmt.Errorf("error loading config file %s: %v", cfg, err)
+		return fmt.Errorf("error loading config file %s: %w", cfg, err)
 	}
 
 	return nil

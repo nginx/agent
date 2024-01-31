@@ -74,9 +74,14 @@ func (dps *DataplaneServer) Info() *bus.Info {
 }
 
 func (dps *DataplaneServer) Process(msg *bus.Message) {
-	switch {
-	case msg.Topic == bus.INSTANCES_TOPIC:
-		dps.instances = msg.Data.([]*instances.Instance)
+	if msg.Topic == bus.INSTANCES_TOPIC {
+		var ok bool
+		instancesResp, ok := msg.Data.([]*instances.Instance)
+		if !ok {
+			slog.Error("unable to cast message payload to instances.Instance", "payload", msg.Data)
+			return
+		}
+		dps.instances = instancesResp
 	}
 }
 
@@ -86,7 +91,7 @@ func (dps *DataplaneServer) Subscriptions() []string {
 	}
 }
 
-func (dps *DataplaneServer) run(ctx context.Context) {
+func (dps *DataplaneServer) run(_ context.Context) {
 	gin.SetMode(gin.ReleaseMode)
 	server := gin.New()
 	server.Use(sloggin.NewWithConfig(dps.logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))

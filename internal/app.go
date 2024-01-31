@@ -30,7 +30,7 @@ func NewApp(commit, version string) *App {
 func (a *App) Run() error {
 	config.Init(a.version, a.commit)
 
-	config.RegisterRunner(func(cmd *cobra.Command, _ []string) {
+	config.RegisterRunner(func(_ *cobra.Command, _ []string) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

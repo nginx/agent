@@ -19,7 +19,7 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate . InstanceServiceInterface
 type InstanceServiceInterface interface {
-	GetInstances(processes []*model.Process) []*instances.Instance
+	GetInstances([]*model.Process) []*instances.Instance
 }
 
 type InstanceService struct {

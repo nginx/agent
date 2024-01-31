@@ -24,6 +24,7 @@ import (
 
 const (
 	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
+	ltsvArg                   = "ltsv"
 )
 
 type (
@@ -49,7 +50,7 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error reading config from %s, error: %s", instance.Meta.GetNginxMeta().GetConfigPath(), err)
+		return nil, fmt.Errorf("error reading config from %s, error: %w", instance.Meta.GetNginxMeta().GetConfigPath(), err)
 	}
 
 	accessLogs := []*model.AccessLog{}
@@ -73,7 +74,7 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 				return true, nil
 			})
 		if err != nil {
-			return nil, fmt.Errorf("failed to traverse nginx config: %s", err)
+			return nil, fmt.Errorf("failed to traverse nginx config: %w", err)
 		}
 	}
 
@@ -119,8 +120,8 @@ func getFormatMap(directive *crossplane.Directive) map[string]string {
 	formatMap := map[string]string{}
 
 	if len(directive.Args) >= 2 {
-		if directive.Args[0] == "ltsv" {
-			formatMap[directive.Args[0]] = "ltsv"
+		if directive.Args[0] == ltsvArg {
+			formatMap[directive.Args[0]] = ltsvArg
 		} else {
 			formatMap[directive.Args[0]] = strings.Join(directive.Args[1:], "")
 		}
@@ -145,7 +146,7 @@ func getAccessLog(file, format string, formatMap map[string]string) *model.Acces
 		accessLog.Format = formatMap[format]
 	} else if format == "" || format == "combined" {
 		accessLog.Format = predefinedAccessLogFormat
-	} else if format == "ltsv" {
+	} else if format == ltsvArg {
 		accessLog.Format = format
 	} else {
 		accessLog.Format = ""

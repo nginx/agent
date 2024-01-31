@@ -140,14 +140,14 @@ func TestWriteConfig(t *testing.T) {
 
 			if test.shouldBeEqual {
 				assert.Equal(t, previousFileCache, configWriter.currentFileCache)
-				testData, err := os.ReadFile(test.getFileReturn.FilePath)
-				assert.NoError(t, err)
+				testData, readErr := os.ReadFile(test.getFileReturn.FilePath)
+				assert.NoError(t, readErr)
 				assert.Equal(t, fileContent, testData)
 
 			} else {
 				assert.NotEqual(t, configWriter.currentFileCache, previousFileCache)
-				testData, err := os.ReadFile(test.getFileReturn.FilePath)
-				assert.NoError(t, err)
+				testData, readErr := os.ReadFile(test.getFileReturn.FilePath)
+				assert.NoError(t, readErr)
 				assert.NotEqual(t, testData, fileContent)
 			}
 
@@ -261,13 +261,13 @@ func TestReadCache(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			previousFileCache, err := readInstanceCache(test.path)
+			previousFileCache, readErr := readInstanceCache(test.path)
 
 			if test.shouldHaveError {
-				assert.Error(t, err)
+				assert.Error(t, readErr)
 				assert.NotEqual(t, cacheData, previousFileCache)
 			} else {
-				assert.NoError(t, err)
+				assert.NoError(t, readErr)
 				assert.Equal(t, cacheData, previousFileCache)
 			}
 		})

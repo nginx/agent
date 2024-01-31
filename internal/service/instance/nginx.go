@@ -144,13 +144,23 @@ func parseNginxVersionCommandOutput(output *bytes.Buffer) *Info {
 	}
 
 	if nginxInfo.ConfigureArgs["prefix"] != nil {
-		nginxInfo.Prefix = nginxInfo.ConfigureArgs["prefix"].(string)
+		var ok bool
+		nginxInfo.Prefix, ok = nginxInfo.ConfigureArgs["prefix"].(string)
+		if !ok {
+			slog.Error("failed to cast nginxInfo prefix to string")
+			return nil
+		}
 	} else {
 		nginxInfo.Prefix = "/usr/local/nginx"
 	}
 
 	if nginxInfo.ConfigureArgs["conf-path"] != nil {
-		nginxInfo.ConfPath = nginxInfo.ConfigureArgs["conf-path"].(string)
+		var ok bool
+		nginxInfo.ConfPath, ok = nginxInfo.ConfigureArgs["conf-path"].(string)
+		if !ok {
+			slog.Error("failed to cast nginxInfo conf-path to string")
+			return nil
+		}
 	} else {
 		nginxInfo.ConfPath = path.Join(nginxInfo.Prefix, "/conf/nginx.conf")
 	}

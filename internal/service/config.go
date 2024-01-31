@@ -43,11 +43,11 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 	cs.configContext = instanceConfigContext
 }
 
-func (cs *ConfigService) UpdateInstanceConfiguration(correlationId, location string, instance *instances.Instance) error {
+func (cs *ConfigService) UpdateInstanceConfiguration(_, _ string, _ *instances.Instance) error {
 	return nil
 }
 
-func (cs *ConfigService) ParseInstanceConfiguration(correlationId string, instance *instances.Instance) (instanceConfigContext any, err error) {
+func (cs *ConfigService) ParseInstanceConfiguration(_ string, instance *instances.Instance) (instanceConfigContext any, err error) {
 	if conf, ok := cs.dataplaneConfigServices[instance.GetType()]; !ok {
 		return nil, fmt.Errorf("unknown instance type %s", instance.Type)
 	} else {

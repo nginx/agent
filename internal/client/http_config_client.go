@@ -65,6 +65,11 @@ func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl, tenantID string) (*insta
 		return nil, fmt.Errorf("error reading GetFilesMetadata response body from %s: %w", filesUrl, err)
 	}
 
+	err = resp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
 	// type is returned for the rest api but is not in the proto definitions so needs to be discarded
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 	err = pb.Unmarshal(data, &files)
@@ -106,6 +111,11 @@ func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl, tenantID st
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading GetFile response body from %s: %w", filesUrl, err)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return nil, err
 	}
 
 	// type is returned for the rest api but is not in the proto definitions so needs to be discarded

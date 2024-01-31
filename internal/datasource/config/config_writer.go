@@ -96,14 +96,14 @@ func (cw *ConfigWriter) Write(filesUrl string, tenantID uuid.UUID) (err error) {
 				continue
 			}
 
-			fileDownloadResponse, err := cw.configClient.GetFile(fileData, filesUrl, tenantID.String())
-			if err != nil {
-				return fmt.Errorf("error getting file data from %s: %w", filesUrl, err)
+			fileDownloadResponse, fetchErr := cw.configClient.GetFile(fileData, filesUrl, tenantID.String())
+			if fetchErr != nil {
+				return fmt.Errorf("error getting file data from %s: %w", filesUrl, fetchErr)
 			}
 
-			err = writeFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
-			if err != nil {
-				return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.FilePath, err)
+			fetchErr = writeFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
+			if fetchErr != nil {
+				return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.FilePath, fetchErr)
 			}
 
 			currentFileCache[fileData.Path] = &instances.File{
@@ -166,8 +166,8 @@ func writeFile(fileContent []byte, filePath string) error {
 func readInstanceCache(cachePath string) (previousFileCache FileCache, err error) {
 	previousFileCache = FileCache{}
 
-	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
-		return previousFileCache, fmt.Errorf("cache.json does not exist %s: %w", cachePath, err)
+	if _, statErr := os.Stat(cachePath); os.IsNotExist(statErr) {
+		return previousFileCache, fmt.Errorf("cache.json does not exist %s: %w", cachePath, statErr)
 	}
 
 	cacheData, err := os.ReadFile(cachePath)

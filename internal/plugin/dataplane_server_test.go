@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/http/common"
 	"github.com/nginx/agent/v3/api/http/dataplane"
@@ -43,7 +45,9 @@ func TestDataplaneServer_Init(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	assert.NotNil(t, dataplaneServer.server.Addr().(*net.TCPAddr).Port)
+	addr, ok := dataplaneServer.server.Addr().(*net.TCPAddr)
+	assert.True(t, ok)
+	assert.NotNil(t, addr.Port)
 }
 
 func TestDataplaneServer_Process(t *testing.T) {
@@ -90,9 +94,11 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	assert.NotNil(t, dataplaneServer.server.Addr().(*net.TCPAddr).Port)
+	addr, ok := dataplaneServer.server.Addr().(*net.TCPAddr)
+	assert.True(t, ok)
+	assert.NotNil(t, addr.Port)
 
-	target := "http://" + dataplaneServer.server.Addr().(*net.TCPAddr).AddrPort().String() + "/api/v1/instances"
+	target := "http://" + addr.AddrPort().String() + "/api/v1/instances"
 	res, err := http.Get(target)
 
 	assert.NoError(t, err)
@@ -100,6 +106,9 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 
 	resBody, err := io.ReadAll(res.Body)
 	assert.NoError(t, err)
+
+	err = res.Body.Close()
+	require.NoError(t, err)
 
 	result := []*common.Instance{}
 	err = json.Unmarshal(resBody, &result)
@@ -133,7 +142,10 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	assert.NotNil(t, dataplaneServer.server.Addr().(*net.TCPAddr).Port)
+	addr, ok := dataplaneServer.server.Addr().(*net.TCPAddr)
+	assert.True(t, ok)
+
+	assert.NotNil(t, addr.Port)
 
 	tests := []struct {
 		name               string
@@ -156,12 +168,15 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			res, err := performPutRequest(dataplaneServer, test.instanceId, data)
+			res, err := performPutRequest(tt, dataplaneServer, test.instanceId, data)
 			assert.NoError(tt, err)
 			assert.Equal(tt, test.expectedStatusCode, res.StatusCode)
 
 			resBody, err := io.ReadAll(res.Body)
 			assert.NoError(tt, err)
+
+			err = res.Body.Close()
+			require.NoError(t, err)
 
 			if test.expectedMessage == "" {
 				result := dataplane.CorrelationId{}
@@ -178,8 +193,11 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	}
 }
 
-func performPutRequest(dataplaneServer *DataplaneServer, instanceId string, data []byte) (*http.Response, error) {
-	target := "http://" + dataplaneServer.server.Addr().(*net.TCPAddr).AddrPort().String() + "/api/v1/instances/" + instanceId + "/configurations"
+func performPutRequest(t *testing.T, dataplaneServer *DataplaneServer, instanceId string, data []byte) (*http.Response, error) {
+	t.Helper()
+	addr, ok := dataplaneServer.server.Addr().(*net.TCPAddr)
+	assert.True(t, ok)
+	target := "http://" + addr.AddrPort().String() + "/api/v1/instances/" + instanceId + "/configurations"
 	req, err := http.NewRequest(http.MethodPut, target, bytes.NewBuffer(data))
 	if err != nil {
 		return &http.Response{}, err
