@@ -16,7 +16,7 @@ DATE = $(shell date +%F_%H-%M-%S)
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
 # | ubuntu           | 20.04, 22.04                              |                                                                |
-# | debian           | bullseye-slim, buster-slim  				 |                                                                |
+# | debian           | bullseye-slim, bookworm-slim 			 |                                                                |
 # | centos           | 7                                         |                                                                |
 # | redhatenterprise | 7, 8, 9                                   |                                                                |
 # | rockylinux       | 8, 9                                      |                                                                |
