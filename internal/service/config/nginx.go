@@ -18,6 +18,7 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
 
+	datasource_os "github.com/nginx/agent/v3/internal/datasource/os"
 	"github.com/nginx/agent/v3/internal/datasource/os/exec"
 )
 
@@ -137,7 +138,7 @@ func getAccessLog(file string, format string, formatMap map[string]string) *mode
 	info, err := os.Stat(file)
 	if err == nil {
 		accessLog.Readable = true
-		accessLog.Permissions = getPermissions(info.Mode())
+		accessLog.Permissions = datasource_os.GetPermissions(info.Mode())
 	}
 
 	if formatMap[format] != "" {
@@ -161,7 +162,7 @@ func getErrorLog(file string, level string) *model.ErrorLog {
 	}
 	info, err := os.Stat(file)
 	if err == nil {
-		errorLog.Permissions = getPermissions(info.Mode())
+		errorLog.Permissions = datasource_os.GetPermissions(info.Mode())
 		errorLog.Readable = true
 	}
 
@@ -229,8 +230,4 @@ func traverse(root *crossplane.Directive, callback crossplaneTraverseCallback, s
 		}
 	}
 	return nil
-}
-
-func getPermissions(fileMode os.FileMode) string {
-	return fmt.Sprintf("%#o", fileMode.Perm())
 }
