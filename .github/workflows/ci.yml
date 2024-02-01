@@ -231,7 +231,7 @@ jobs:
           echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
           make clean package
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nginx-agent-snapshots
           path: ./build/azure/packages/nginx-agent.tar.gz
