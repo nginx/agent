@@ -1,13 +1,12 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package client
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -23,10 +22,13 @@ import (
 //counterfeiter:generate . HTTPConfigClientInterface
 const tenantHeader = "tenantId"
 
-// nolint: unused
 type HTTPConfigClientInterface interface {
-	GetFilesMetadata(filesURL, tenantID string) (*instances.Files, error)
-	GetFile(file *instances.File, filesURL, tenantID string) (*instances.FileDownloadResponse, error)
+	GetFilesMetadata(ctx context.Context, filesURL, tenantID string) (*instances.Files, error)
+	GetFile(
+		ctx context.Context,
+		file *instances.File,
+		filesURL, tenantID string,
+	) (*instances.FileDownloadResponse, error)
 }
 
 type HTTPConfigClient struct {
@@ -43,10 +45,13 @@ func NewHTTPConfigClient(timeout time.Duration) *HTTPConfigClient {
 	}
 }
 
-func (hcd *HTTPConfigClient) GetFilesMetadata(filesURL, tenantID string) (*instances.Files, error) {
+func (hcd *HTTPConfigClient) GetFilesMetadata(
+	ctx context.Context,
+	filesURL, tenantID string,
+) (*instances.Files, error) {
 	files := instances.Files{}
 
-	req, err := http.NewRequest(http.MethodGet, filesURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, filesURL, nil)
 
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
@@ -77,13 +82,18 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(filesURL, tenantID string) (*insta
 
 	if err != nil {
 		slog.Debug("Error unmarshalling GetFilesMetadata Response", "data", string(data))
+
 		return nil, fmt.Errorf("error unmarshalling GetFilesMetadata response: %w", err)
 	}
 
 	return &files, nil
 }
 
-func (hcd *HTTPConfigClient) GetFile(file *instances.File, filesURL, tenantID string) (*instances.FileDownloadResponse, error) {
+func (hcd *HTTPConfigClient) GetFile(
+	ctx context.Context,
+	file *instances.File,
+	filesURL, tenantID string,
+) (*instances.FileDownloadResponse, error) {
 	response := instances.FileDownloadResponse{}
 	params := url.Values{}
 
@@ -94,7 +104,7 @@ func (hcd *HTTPConfigClient) GetFile(file *instances.File, filesURL, tenantID st
 
 	fileURL := fmt.Sprintf("%v%v?%v", filesURL, filePath, params.Encode())
 
-	req, err := http.NewRequest(http.MethodGet, fileURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
 
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
@@ -125,6 +135,7 @@ func (hcd *HTTPConfigClient) GetFile(file *instances.File, filesURL, tenantID st
 
 	if err != nil {
 		slog.Debug("Error unmarshalling GetFile Response", "data", string(data))
+
 		return nil, fmt.Errorf("error unmarshalling GetFile response: %w", err)
 	}
 

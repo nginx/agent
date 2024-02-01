@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package plugin
 
@@ -73,8 +71,18 @@ func TestDataplaneServer_Process(t *testing.T) {
 }
 
 func TestDataplaneServer_GetInstances(t *testing.T) {
-	expected := &common.Instance{InstanceId: toPtr("ae6c58c1-bc92-30c1-a9c9-85591422068e"), Type: toPtr(common.NGINX), Version: toPtr("1.23.1")}
-	instance := &instances.Instance{InstanceId: "ae6c58c1-bc92-30c1-a9c9-85591422068e", Type: instances.Type_NGINX, Version: "1.23.1"}
+	ctx := context.TODO()
+	expected := &common.Instance{
+		InstanceId: toPtr("ae6c58c1-bc92-30c1-a9c9-85591422068e"),
+		Type:       toPtr(common.NGINX),
+		Version:    toPtr("1.23.1"),
+	}
+
+	instance := &instances.Instance{
+		InstanceId: "ae6c58c1-bc92-30c1-a9c9-85591422068e",
+		Type:       instances.Type_NGINX,
+		Version:    "1.23.1",
+	}
 
 	instanceService := &servicefakes.FakeInstanceServiceInterface{}
 
@@ -87,7 +95,7 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 
 	dataplaneServer.instances = []*instances.Instance{instance}
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewMessagePipe(ctx, 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataplaneServer})
 	require.NoError(t, err)
 	go messagePipe.Run()
@@ -99,8 +107,10 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 	assert.NotNil(t, addr.Port)
 
 	target := "http://" + addr.AddrPort().String() + "/api/v1/instances"
-	res, err := http.Get(target)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	require.NoError(t, err)
 
+	res, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
 
@@ -118,6 +128,7 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 }
 
 func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
+	ctx := context.TODO()
 	unknownInstanceID := "fe4c58c1-bc92-30c1-a9c9-85591422068e"
 	instanceID := "ae6c58c1-bc92-30c1-a9c9-85591422068e"
 	data := []byte(`{"location": "http://file-server.com"}`)
@@ -168,7 +179,7 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			res, err := performPutRequest(tt, dataplaneServer, test.instanceID, data)
+			res, err := performPutRequest(ctx, dataplaneServer, test.instanceID, data)
 			require.NoError(tt, err)
 			assert.Equal(tt, test.expectedStatusCode, res.StatusCode)
 
@@ -193,17 +204,24 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	}
 }
 
-func performPutRequest(t *testing.T, dataplaneServer *DataplaneServer, instanceID string, data []byte) (*http.Response, error) {
-	t.Helper()
+func performPutRequest(
+	ctx context.Context,
+	dataplaneServer *DataplaneServer,
+	instanceID string,
+	data []byte,
+) (*http.Response, error) {
 	addr, ok := dataplaneServer.server.Addr().(*net.TCPAddr)
-	assert.True(t, ok)
+	if !ok {
+		return nil, fmt.Errorf("unable to get server address")
+	}
 	target := "http://" + addr.AddrPort().String() + "/api/v1/instances/" + instanceID + "/configurations"
-	req, err := http.NewRequest(http.MethodPut, target, bytes.NewBuffer(data))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, target, bytes.NewBuffer(data))
 	if err != nil {
 		return &http.Response{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
+
 	return client.Do(req)
 }

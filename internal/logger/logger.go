@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package logger
 
@@ -19,6 +17,7 @@ import (
 
 const (
 	defaultLogFile = "agent.log"
+	filePermission = 0o600
 )
 
 var logLevels = map[string]slog.Level{
@@ -43,6 +42,7 @@ func getLogLevel(level string) slog.Level {
 	if level == "" {
 		return slog.LevelInfo
 	}
+
 	return logLevels[strings.ToLower(level)]
 }
 
@@ -52,6 +52,7 @@ func getLogWriter(logFile string) io.Writer {
 		fileInfo, err := os.Stat(logPath)
 		if err != nil {
 			slog.Error("Error reading log directory, proceeding to log only to stdout/stderr", "error", err)
+
 			return os.Stderr
 		}
 
@@ -59,12 +60,15 @@ func getLogWriter(logFile string) io.Writer {
 			logPath = path.Join(logPath, defaultLogFile)
 		}
 
-		logFileHandle, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o600)
+		logFileHandle, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, filePermission)
 		if err != nil {
 			slog.Error("Failed to open log file, proceeding to log only to stdout/stderr", "error", err)
+
 			return os.Stderr
 		}
+
 		return logFileHandle
 	}
+
 	return os.Stderr
 }

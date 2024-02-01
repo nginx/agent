@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 package bus
 
 import (
@@ -21,12 +19,10 @@ type testPlugin struct {
 	mock.Mock
 }
 
-//nolint:unused
 func (p *testPlugin) Init(_ MessagePipeInterface) {
 	p.Called()
 }
 
-//nolint:unused
 func (p *testPlugin) Process(_ *Message) {
 	p.Called()
 }

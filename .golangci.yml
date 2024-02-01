@@ -8,6 +8,43 @@ linters:
   # By default, the enabled linters are:
   # errcheck, gosimple, govet, ineffassign, staticcheck, unused
   enable:
+    - bodyclose
+    - cyclop
+    - contextcheck
+    - dupl
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - forcetypeassert
+#    - gci
+    - gocheckcompilerdirectives
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godox
+    - gofumpt
+    - goheader
+    - gomnd
+    - gomoddirectives
+    - gosec
+    - grouper
+    - importas
+    - inamedparam
+    - ireturn
+    - lll
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nosprintfhostport
     - prealloc
     - predeclared
     - promlinter
@@ -42,7 +79,7 @@ linters-settings:
     # Mark all exported fields as used. Default: true
     exported-fields-are-used: false
     # Mark all function parameters as used. Default: true
-    parameters-are-used: false
+    parameters-are-used: true
     # Mark all local variables as used. Default: true
     local-variables-are-used: false
     # Mark all identifiers inside generated files as used. Default: true
@@ -156,20 +193,13 @@ linters-settings:
     # Choose whether to use the extra rules. Default: false
     extra-rules: true
   goheader:
-    # Supports two types 'const` and `regexp`. Values can be used recursively. Default: {}
-    values:
-      const:
-        # Define here const type values in format k:v.
-        # For example:
-        COMPANY: F5, Inc.
     # The template use for checking.
     # Default: ""
     template: |-
-      *
-      * Copyright (c) {{ COMPANY }}
-      *
-      * This source code is licensed under the Apache License, Version 2.0 license found in the
-      * LICENSE file in the root directory of this source tree.
+      Copyright (c) F5, Inc.
+
+      This source code is licensed under the Apache License, Version 2.0 license found in the
+      LICENSE file in the root directory of this source tree.
   gomnd:
     # List of enabled checks, see https://github.com/tommy-muehle/go-mnd/#checks for description.
     # Default: ["argument", "case", "condition", "operation", "return", "assign"]
@@ -418,7 +448,6 @@ linters-settings:
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#add-constant:
       - name: add-constant
         severity: warning
-        # TODO: re-enbale
         disabled: true
         arguments:
           - maxLitCount: "3"

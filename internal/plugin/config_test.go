@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package plugin
 
@@ -36,7 +34,10 @@ func TestConfig_Info(t *testing.T) {
 func TestConfig_Subscriptions(t *testing.T) {
 	configPlugin := NewConfig()
 	subscriptions := configPlugin.Subscriptions()
-	assert.Equal(t, []string{bus.InstanceConfigUpdateRequestTopic, bus.InstanceConfigUpdatedTopic}, subscriptions)
+	assert.Equal(t, []string{
+		bus.InstanceConfigUpdateRequestTopic,
+		bus.InstanceConfigUpdatedTopic,
+	}, subscriptions)
 }
 
 func TestConfig_Process(t *testing.T) {

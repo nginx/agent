@@ -1,13 +1,12 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -24,15 +23,16 @@ import (
 )
 
 const (
-	cacheLocation = "/var/lib/nginx-agent/config/%v/cache.json"
+	cacheLocation   = "/var/lib/nginx-agent/config/%v/cache.json"
+	filePermissions = 0o600
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//counterfeiter:generate . ConfigWriterInterface
+
 type (
-	//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-	//counterfeiter:generate . ConfigWriterInterface
-	//nolint:unused
 	ConfigWriterInterface interface {
-		Write(filesURL string, tenantID uuid.UUID) (err error)
+		Write(ctx context.Context, filesURL string, tenantID uuid.UUID) (err error)
 		Complete() (err error)
 	}
 
@@ -79,11 +79,11 @@ func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceID 
 	}
 }
 
-func (cw *ConfigWriter) Write(filesURL string, tenantID uuid.UUID) (err error) {
+func (cw *ConfigWriter) Write(ctx context.Context, filesURL string, tenantID uuid.UUID) (err error) {
 	currentFileCache := FileCache{}
 	skippedFiles := make(map[string]struct{})
 
-	filesMetaData, err := cw.configClient.GetFilesMetadata(filesURL, tenantID.String())
+	filesMetaData, err := cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID.String())
 	if err != nil {
 		return fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
 	}
@@ -94,10 +94,11 @@ func (cw *ConfigWriter) Write(filesURL string, tenantID uuid.UUID) (err error) {
 				slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.GetPath())
 				currentFileCache[fileData.GetPath()] = cw.previouseFileCache[fileData.GetPath()]
 				skippedFiles[fileData.GetPath()] = struct{}{}
+
 				continue
 			}
 
-			fileDownloadResponse, fetchErr := cw.configClient.GetFile(fileData, filesURL, tenantID.String())
+			fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID.String())
 			if fetchErr != nil {
 				return fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
 			}
@@ -123,7 +124,7 @@ func (cw *ConfigWriter) Write(filesURL string, tenantID uuid.UUID) (err error) {
 func (cw *ConfigWriter) Complete() error {
 	cache, err := json.MarshalIndent(cw.currentFileCache, "", "  ")
 	if err != nil {
-		return fmt.Errorf("error marshalling cache data from %s: %w", cw.cachePath, err)
+		return fmt.Errorf("error marshaling cache data from %s: %w", cw.cachePath, err)
 	}
 
 	err = writeFile(cache, cw.cachePath)
@@ -149,13 +150,13 @@ func (cw *ConfigWriter) Validate(instance *instances.Instance) error {
 func writeFile(fileContent []byte, filePath string) error {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		slog.Debug("File does not exist, creating new file", "file", filePath)
-		err = os.MkdirAll(path.Dir(filePath), 0o750)
+		err = os.MkdirAll(path.Dir(filePath), filePermissions)
 		if err != nil {
 			return fmt.Errorf("error creating directory %s: %w", path.Dir(filePath), err)
 		}
 	}
 
-	err := os.WriteFile(filePath, fileContent, 0o644)
+	err := os.WriteFile(filePath, fileContent, filePermissions)
 	if err != nil {
 		return fmt.Errorf("error writing to file %s: %w", filePath, err)
 	}
@@ -192,5 +193,6 @@ func doesFileRequireUpdate(previousFileCache FileCache, fileData *instances.File
 		fileOnSystem, ok := previousFileCache[fileData.GetPath()]
 		return ok && fileOnSystem.GetLastModified().AsTime().Before(fileData.GetLastModified().AsTime())
 	}
+
 	return false
 }

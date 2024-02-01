@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package plugin
 
@@ -91,7 +89,6 @@ func (*DataplaneServer) Subscriptions() []string {
 	}
 }
 
-// nolint: unused
 func (dps *DataplaneServer) run(_ context.Context) {
 	gin.SetMode(gin.ReleaseMode)
 	server := gin.New()
@@ -102,6 +99,7 @@ func (dps *DataplaneServer) run(_ context.Context) {
 	listener, err := net.Listen("tcp", dps.address)
 	if err != nil {
 		slog.Error("Startup of dataplane server failed", "error", err)
+
 		return
 	}
 
@@ -114,7 +112,7 @@ func (dps *DataplaneServer) run(_ context.Context) {
 }
 
 // GET /instances
-// nolint: revive
+// nolint: revive // Get func not returning value
 func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 	slog.Debug("get instances request")
 
@@ -157,8 +155,15 @@ func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 			dps.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateRequestTopic, Data: request})
 			ctx.JSON(http.StatusOK, dataplane.CorrelationId{CorrelationId: &correlationID})
 		} else {
-			slog.Debug("unable to update instance configuration", "instanceID", instanceID, "correlationID", correlationID)
-			ctx.JSON(http.StatusNotFound, common.ErrorResponse{Message: fmt.Sprintf("Unable to find instance %s", instanceID)})
+			slog.Debug(
+				"unable to update instance configuration",
+				"instanceID", instanceID,
+				"correlationID", correlationID,
+			)
+			ctx.JSON(
+				http.StatusNotFound,
+				common.ErrorResponse{Message: fmt.Sprintf("Unable to find instance %s", instanceID)},
+			)
 		}
 	}
 }
@@ -169,6 +174,7 @@ func (dps *DataplaneServer) getInstance(instanceID string) *instances.Instance {
 			return instance
 		}
 	}
+
 	return nil
 }
 
@@ -176,6 +182,7 @@ func mapTypeEnums(typeString string) common.InstanceType {
 	if typeString == instances.Type_NGINX.String() {
 		return common.NGINX
 	}
+
 	return common.CUSTOM
 }
 

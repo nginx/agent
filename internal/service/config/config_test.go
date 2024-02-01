@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package config
 
@@ -19,7 +17,7 @@ import (
 
 type FakeDataplaneConfig struct{}
 
-//nolint:unparam,unused // always nil but its a test so ignore
+// nolint: unparam // always returns nil but is a test
 func (*FakeDataplaneConfig) ParseConfig(_ *instances.Instance) (any, error) {
 	return &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},

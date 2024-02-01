@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package internal
 
@@ -18,6 +16,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	defaultMessagePipeChannelSize = 100
+	defaultQueueSize              = 100
+)
+
 type App struct {
 	commit  string
 	version string
@@ -27,7 +30,6 @@ func NewApp(commit, version string) *App {
 	return &App{commit, version}
 }
 
-//nolint:unused
 func (a *App) Run() error {
 	config.Init(a.version, a.commit)
 
@@ -48,8 +50,8 @@ func (a *App) Run() error {
 
 		slog.Info("Starting NGINX Agent")
 
-		messagePipe := bus.NewMessagePipe(ctx, 100)
-		err = messagePipe.Register(100, plugin.LoadPlugins(agentConfig, slogger))
+		messagePipe := bus.NewMessagePipe(ctx, defaultMessagePipeChannelSize)
+		err = messagePipe.Register(defaultQueueSize, plugin.LoadPlugins(agentConfig, slogger))
 		if err != nil {
 			slog.Error("Failed to register plugins", "error", err)
 			return

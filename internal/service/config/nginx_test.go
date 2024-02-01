@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package config
 
@@ -67,7 +65,7 @@ func TestNginx_ParseConfig(t *testing.T) {
 
 		http {
 			log_format ltsv "time:$time_local"
-					"\thost:$remote_addr"                                                                                   
+					"\thost:$remote_addr"
 					"\tmethod:$request_method"
 					"\turi:$request_uri"
 					"\tprotocol:$server_protocol"
@@ -83,7 +81,8 @@ func TestNginx_ParseConfig(t *testing.T) {
 			}
 		}
 	`, errorLog.Name(), accessLog.Name(), combinedAccessLog.Name(), ltsvAccessLog.Name()))
-	err = os.WriteFile(file.Name(), data, 0o644)
+
+	err = os.WriteFile(file.Name(), data, 0o600)
 	require.NoError(t, err)
 
 	expectedConfigContext := &model.NginxConfigContext{
@@ -95,8 +94,9 @@ func TestNginx_ParseConfig(t *testing.T) {
 				Permissions: "0600",
 			},
 			{
-				Name:        combinedAccessLog.Name(),
-				Format:      "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\"",
+				Name: combinedAccessLog.Name(),
+				Format: "$remote_addr - $remote_user [$time_local] " +
+					"\"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\"",
 				Readable:    true,
 				Permissions: "0600",
 			},
@@ -140,12 +140,12 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 		expected interface{}
 	}{
 		{
-			name:     "valid reponse",
+			name:     "valid response",
 			out:      "nginx [info]",
 			expected: nil,
 		},
 		{
-			name:     "err reponse",
+			name:     "err response",
 			out:      "nginx [emerg]",
 			expected: errors.New("error running nginx -t -c:\nnginx [emerg]"),
 		},
@@ -168,13 +168,13 @@ func TestNginx_Reload(t *testing.T) {
 	}{
 		{
 			name:     "successful reload",
-			out:      bytes.NewBuffer([]byte("")),
+			out:      bytes.NewBufferString(""),
 			error:    nil,
 			expected: nil,
 		},
 		{
 			name:     "failed reload",
-			out:      bytes.NewBuffer([]byte("")),
+			out:      bytes.NewBufferString(""),
 			error:    errors.New("error reloading"),
 			expected: fmt.Errorf("failed to reload NGINX %w: ", errors.New("error reloading")),
 		},
@@ -216,19 +216,19 @@ func TestNginx_Validate(t *testing.T) {
 	}{
 		{
 			name:     "validate successful",
-			out:      bytes.NewBuffer([]byte("")),
+			out:      bytes.NewBufferString(""),
 			error:    nil,
 			expected: nil,
 		},
 		{
 			name:     "validate failed",
-			out:      bytes.NewBuffer([]byte("[emerg]")),
+			out:      bytes.NewBufferString("[emerg]"),
 			error:    errors.New("error validating"),
 			expected: fmt.Errorf("NGINX config test failed %w: [emerg]", errors.New("error validating")),
 		},
 		{
 			name:     "validate Config failed",
-			out:      bytes.NewBuffer([]byte("nginx [emerg]")),
+			out:      bytes.NewBufferString("nginx [emerg]"),
 			error:    nil,
 			expected: fmt.Errorf("error running nginx -t -c:\nnginx [emerg]"),
 		},

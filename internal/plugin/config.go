@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package plugin
 
@@ -63,19 +61,26 @@ func (*Config) Subscriptions() []string {
 	}
 }
 
-// nolint:revive
 func (c *Config) parseInstanceConfiguration(request *model.InstanceConfigUpdateRequest) {
-	if c.configServices[request.Instance.GetInstanceId()] == nil {
-		c.configServices[request.Instance.GetInstanceId()] = service.NewConfigService()
+	instanceID := request.Instance.GetInstanceId()
+	if c.configServices[instanceID] == nil {
+		c.configServices[instanceID] = service.NewConfigService()
 	}
 
-	parsedConfig, err := c.configServices[request.Instance.GetInstanceId()].ParseInstanceConfiguration(request.CorrelationID, request.Instance)
+	configService := c.configServices[instanceID]
+
+	parsedConfig, err := configService.ParseInstanceConfiguration(request.CorrelationID, request.Instance)
 	if err != nil {
-		slog.Error("Unable to parse instance configuration", "correlationId", request.CorrelationID, "instanceID", request.Instance.GetInstanceId(), "error", err)
+		slog.Error(
+			"Unable to parse instance configuration",
+			"correlationID", request.CorrelationID,
+			"instanceID", instanceID,
+			"error", err,
+		)
 	} else {
 		switch config := parsedConfig.(type) {
 		case model.NginxConfigContext:
-			c.configServices[request.Instance.GetInstanceId()].SetConfigContext(config)
+			configService.SetConfigContext(config)
 		default:
 			slog.Debug("Unknown config context", "configContext", config)
 		}
@@ -84,13 +89,21 @@ func (c *Config) parseInstanceConfiguration(request *model.InstanceConfigUpdateR
 }
 
 func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest) {
-	if c.configServices[request.Instance.GetInstanceId()] == nil {
-		c.configServices[request.Instance.GetInstanceId()] = service.NewConfigService()
+	instanceID := request.Instance.GetInstanceId()
+	if c.configServices[instanceID] == nil {
+		c.configServices[instanceID] = service.NewConfigService()
 	}
 
-	err := c.configServices[request.Instance.GetInstanceId()].UpdateInstanceConfiguration(request.CorrelationID, request.Location, request.Instance)
+	configService := c.configServices[instanceID]
+
+	err := configService.UpdateInstanceConfiguration(request.CorrelationID, request.Location, request.Instance)
 	if err != nil {
-		slog.Error("Unable to update instance configuration", "correlationId", request.CorrelationID, "instanceID", request.Instance.GetInstanceId(), "error", err)
+		slog.Error(
+			"Unable to update instance configuration",
+			"correlationId", request.CorrelationID,
+			"instanceId", instanceID,
+			"error", err,
+		)
 	} else {
 		c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdatedTopic, Data: request})
 	}

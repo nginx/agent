@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package config
 
@@ -75,6 +73,7 @@ func GetConfig() *Config {
 	}
 
 	slog.Debug("Agent config", "config", config)
+
 	return config
 }
 
@@ -89,9 +88,24 @@ func registerFlags() {
 	viperInstance.AutomaticEnv()
 
 	fs := RootCommand.Flags()
-	fs.String(LogLevelConfigKey, "info", "The desired verbosity level for logging messages from nginx-agent. Available options, in order of severity from highest to lowest, are: panic, fatal, error, info, debug, and trace.")
-	fs.String(LogPathConfigKey, "", "The path to output log messages to. If the default path doesn't exist, log messages are output to stdout/stderr.")
-	fs.Duration(ProcessMonitorMonitoringFrequencyConfigKey, time.Minute, "How often the NGINX Agent will check for process changes.")
+	fs.String(
+		LogLevelConfigKey,
+		"info",
+		`The desired verbosity level for logging messages from nginx-agent. 
+		Available options, in order of severity from highest to lowest, are: 
+		panic, fatal, error, info, debug, and trace.`,
+	)
+	fs.String(
+		LogPathConfigKey,
+		"",
+		`The path to output log messages to. 
+		If the default path doesn't exist, log messages are output to stdout/stderr.`,
+	)
+	fs.Duration(
+		ProcessMonitorMonitoringFrequencyConfigKey,
+		time.Minute,
+		"How often the NGINX Agent will check for process changes.",
+	)
 	fs.String(DataplaneAPIHostConfigKey, "", "The host used by the Dataplane API.")
 	fs.Int(DataplaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
 	fs.Duration(ClientTimeoutConfigKey, time.Minute, "Client timeout")
@@ -116,6 +130,7 @@ func seekFileInPaths(fileName string, directories ...string) (string, error) {
 			return f, nil
 		}
 	}
+
 	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths")
 }
 
@@ -145,13 +160,13 @@ func loadPropertiesFromFile(cfg string) error {
 	return nil
 }
 
-// nolint: unused
 func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 	from := []string{"_", "."}
 	to := "-"
 	for _, sep := range from {
 		name = strings.ReplaceAll(name, sep, to)
 	}
+
 	return flag.NormalizedName(name)
 }
 

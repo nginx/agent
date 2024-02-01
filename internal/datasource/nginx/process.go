@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package nginx
 
@@ -36,6 +34,7 @@ func (np *Process) GetExe() string {
 	if strings.Contains(exePath, "(deleted)") {
 		exePath = np.sanitizeExeDeletedPath(exePath)
 	}
+
 	return exePath
 }
 
@@ -44,6 +43,7 @@ func (np *Process) defaultToNginxCommandForProcessPath() string {
 	if err != nil {
 		return ""
 	}
+
 	return path
 }
 
@@ -52,5 +52,6 @@ func (*Process) sanitizeExeDeletedPath(exe string) string {
 	if firstSpace != -1 {
 		return strings.TrimSpace(exe[0:firstSpace])
 	}
+
 	return strings.TrimSpace(exe)
 }

@@ -1,13 +1,12 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package client
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -24,6 +23,7 @@ import (
 )
 
 func TestGetFilesMetadata(t *testing.T) {
+	ctx := context.TODO()
 	tenantID, instanceID, err := createTestIds()
 	require.NoError(t, err)
 
@@ -48,8 +48,23 @@ func TestGetFilesMetadata(t *testing.T) {
 		},
 	}
 
-	test := "{\"files\":[{\"lastModified\":\"2024-01-08T13:22:25Z\",\"path\":\"/usr/local/etc/nginx/locations/test.conf\",\"version\":\"Rh3phZuCRwNGANTkdst51he_0WKWy.tZ\"},{\"lastModified\":\"2024-01-08T13:22:21Z\",\"path\":\"/usr/local/etc/nginx/nginx.conf\",\"version\":\"BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c\"}],\"instanceID\":\"aecea348-62c1-4e3d-b848-6d6cdeb1cb9c\",\"type\":\"\"}\n"
-	//nolint: unused
+	test := `{
+		"files":[
+			{
+				"lastModified":"2024-01-08T13:22:25Z",
+				"path":"/usr/local/etc/nginx/locations/test.conf",
+				"version":"Rh3phZuCRwNGANTkdst51he_0WKWy.tZ"
+			},
+			{
+				"lastModified":"2024-01-08T13:22:21Z",
+				"path":"/usr/local/etc/nginx/nginx.conf",
+				"version":"BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c"
+			}
+		],
+		"instanceID":"aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
+		"type":""
+	}`
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprintln(w, test)
 	}))
@@ -59,18 +74,24 @@ func TestGetFilesMetadata(t *testing.T) {
 
 	hcd := NewHTTPConfigClient(time.Second * 10)
 
-	resp, err := hcd.GetFilesMetadata(filesURL, tenantID.String())
+	resp, err := hcd.GetFilesMetadata(ctx, filesURL, tenantID.String())
 	require.NoError(t, err)
 	assert.Equal(t, resp.String(), testDataResponse.String())
 }
 
 func TestGetFile(t *testing.T) {
+	ctx := context.TODO()
 	tenantID, instanceID, err := createTestIds()
 	require.NoError(t, err)
 
-	test := "{\"encoded\":true,\"fileContent\":\"bG9jYXRpb24gL3Rlc3QgewogICAgcmV0dXJuIDIwMCAiVGVzdCBsb2NhdGlvblxuIjsKfQ==\",\"filePath\":\"/usr/local/etc/nginx/locations/test.conf\",\"instanceID\":\"aecea348-62c1-4e3d-b848-6d6cdeb1cb9c\",\"type\":\"\"}\n"
+	test := `{
+		"encoded":true,
+		"fileContent":"bG9jYXRpb24gL3Rlc3QgewogICAgcmV0dXJuIDIwMCAiVGVzdCBsb2NhdGlvblxuIjsKfQ==",
+		"filePath":"/usr/local/etc/nginx/locations/test.conf",
+		"instanceID":"aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
+		"type":""
+	}`
 
-	//nolint: unused
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, test)
 	}))
@@ -96,7 +117,7 @@ func TestGetFile(t *testing.T) {
 
 	hcd := NewHTTPConfigClient(time.Second * 10)
 
-	resp, err := hcd.GetFile(&file, filesURL, tenantID.String())
+	resp, err := hcd.GetFile(ctx, &file, filesURL, tenantID.String())
 	require.NoError(t, err)
 	assert.Equal(t, testDataResponse.String(), resp.String())
 }

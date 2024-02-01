@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package config
 
@@ -23,12 +21,13 @@ import (
 )
 
 const (
-	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
-	ltsvArg                   = "ltsv"
+	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local]" +
+		" \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
+	ltsvArg                           = "ltsv"
+	defaultNumberOfDirectiveArguments = 2
 )
 
 type (
-	//nolint:unused // is used not sure why it cant
 	crossplaneTraverseCallback = func(parent, current *crossplane.Directive) (bool, error)
 )
 
@@ -42,7 +41,6 @@ func NewNginx() *Nginx {
 	}
 }
 
-// nolint: unused
 func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 	payload, err := crossplane.Parse(instance.GetMeta().GetNginxMeta().GetConfigPath(),
 		&crossplane.ParseOptions{
@@ -52,17 +50,21 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error reading config from %s, error: %w", instance.GetMeta().GetNginxMeta().GetConfigPath(), err)
+		return nil, fmt.Errorf(
+			"error reading config from %s, error: %w",
+			instance.GetMeta().GetNginxMeta().GetConfigPath(),
+			err,
+		)
 	}
 
 	accessLogs := []*model.AccessLog{}
 	errorLogs := []*model.ErrorLog{}
 
-	for _, xpConf := range payload.Config {
+	for index := range payload.Config {
 		formatMap := make(map[string]string)
 
-		err := crossplaneConfigTraverse(&xpConf,
-			func(_, directive *crossplane.Directive) (bool, error) {
+		err := crossplaneConfigTraverse(&payload.Config[index],
+			func(parent, directive *crossplane.Directive) (bool, error) {
 				switch directive.Directive {
 				case "log_format":
 					formatMap = getFormatMap(directive)
@@ -73,6 +75,7 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 					errorLog := getErrorLog(directive.Args[0], getErrorLogDirectiveLevel(directive))
 					errorLogs = append(errorLogs, errorLog)
 				}
+
 				return true, nil
 			})
 		if err != nil {
@@ -88,15 +91,19 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 
 func (n *Nginx) Validate(instance *instances.Instance) error {
 	exePath := instance.GetMeta().GetNginxMeta().GetExePath()
+
 	out, err := n.executor.RunCmd(exePath, "-t")
 	if err != nil {
 		return fmt.Errorf("NGINX config test failed %w: %s", err, out)
 	}
+
 	err = validateConfigCheckResponse(out.Bytes())
 	if err != nil {
 		return err
 	}
+
 	slog.Info("NGINX config tested", "output", out)
+
 	return nil
 }
 
@@ -112,16 +119,19 @@ func (n *Nginx) Reload(instance *instances.Instance) error {
 }
 
 func validateConfigCheckResponse(out []byte) error {
-	if bytes.Contains(out, []byte("[emerg]")) || bytes.Contains(out, []byte("[alert]")) || bytes.Contains(out, []byte("[crit]")) {
+	if bytes.Contains(out, []byte("[emerg]")) ||
+		bytes.Contains(out, []byte("[alert]")) ||
+		bytes.Contains(out, []byte("[crit]")) {
 		return fmt.Errorf("error running nginx -t -c:\n%s", out)
 	}
+
 	return nil
 }
 
 func getFormatMap(directive *crossplane.Directive) map[string]string {
 	formatMap := make(map[string]string)
 
-	if len(directive.Args) >= 2 {
+	if hasAdditionArguments(directive.Args) {
 		if directive.Args[0] == ltsvArg {
 			formatMap[directive.Args[0]] = ltsvArg
 		} else {
@@ -144,6 +154,12 @@ func getAccessLog(file, format string, formatMap map[string]string) *model.Acces
 		accessLog.Permissions = host.GetPermissions(info.Mode())
 	}
 
+	accessLog = Test(format, formatMap, accessLog)
+
+	return accessLog
+}
+
+func Test(format string, formatMap map[string]string, accessLog *model.AccessLog) *model.AccessLog {
 	if formatMap[format] != "" {
 		accessLog.Format = formatMap[format]
 	} else if format == "" || format == "combined" {
@@ -173,16 +189,18 @@ func getErrorLog(file, level string) *model.ErrorLog {
 }
 
 func getAccessLogDirectiveFormat(directive *crossplane.Directive) string {
-	if len(directive.Args) >= 2 {
+	if hasAdditionArguments(directive.Args) {
 		return strings.ReplaceAll(directive.Args[1], "$", "")
 	}
+
 	return ""
 }
 
 func getErrorLogDirectiveLevel(directive *crossplane.Directive) string {
-	if len(directive.Args) >= 2 {
+	if hasAdditionArguments(directive.Args) {
 		return directive.Args[1]
 	}
+
 	return ""
 }
 
@@ -204,6 +222,7 @@ func crossplaneConfigTraverse(root *crossplane.Config, callback crossplaneTraver
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -232,5 +251,10 @@ func traverse(root *crossplane.Directive, callback crossplaneTraverseCallback, s
 			return nil
 		}
 	}
+
 	return nil
+}
+
+func hasAdditionArguments(args []string) bool {
+	return len(args) >= defaultNumberOfDirectiveArguments
 }
