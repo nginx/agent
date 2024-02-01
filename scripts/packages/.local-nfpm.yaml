@@ -1,0 +1,34 @@
+# this is the base "template" for the package
+name: nginx-agent
+description: NGINX Agent
+arch: ${ARCH}
+version: ${VERSION}
+priority: optional
+vendor: NGINX Software, Inc.
+maintainer: NGINX Inc. <agent@nginx.org>
+homepage: https://github.com/nginx/agent
+license: Apache 2.0
+contents:
+    - src: ./build/nginx-agent
+      dst: /usr/bin/nginx-agent
+    - src: nginx-agent.conf
+      dst: /etc/nginx-agent/nginx-agent.conf
+      type: config|noreplace
+      file_info:
+          mode: 0640
+    - src: ./scripts/packages/nginx-agent.service
+      dst: /etc/systemd/system/nginx-agent.service
+    - dst: /var/log/nginx-agent
+      type: dir
+overrides:
+    deb:
+        depends:
+            - apt-transport-https
+scripts:
+    preinstall: "./scripts/packages/preinstall.sh"
+    postinstall: "./scripts/packages/postinstall.sh"
+    preremove: "./scripts/packages/preremove.sh"
+    postremove: "./scripts/packages/postremove.sh"
+apk:
+    scripts:
+        postupgrade: "./scripts/packages/postupgrade.sh"

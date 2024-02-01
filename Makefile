@@ -19,6 +19,20 @@ VERSION = "v3.0.0"
 COMMIT  = $(shell git rev-parse --short HEAD)
 DATE    = $(shell date +%F_%H-%M-%S)
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
+DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
+PACKAGE_PREFIX := nginx-agent
+
+uname_m    := $(shell uname -m)
+
+ifeq ($(uname_m),aarch64)
+	OSARCH = arm64
+else
+	ifeq ($(uname_m),x86_64)
+		OSARCH = amd64
+	else
+		OSARCH = $(uname_m)
+	endif
+endif
 
 include Makefile.tools
 
@@ -75,3 +89,16 @@ generate: ## Genenerate proto files and server and client stubs from OpenAPI spe
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	$(GOGEN) ./...
+
+local-apk-package: ## Create local apk package
+	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
+
+local-deb-package: ## Create local deb package
+	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
+
+local-rpm-package: ## Create local rpm package
+	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
+

@@ -34,3 +34,33 @@ jobs:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
           args: -c ./scripts/.golangci.yml
           skip-pkg-cache: true
+  unit-test:
+      name: Unit Tests
+      runs-on: ubuntu-22.04
+      steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-go@v5
+            with:
+                go-version-file: 'go.mod'
+          - name: Run Unit Tests
+            run: make unit-test
+  build-unsigned-snapshot:
+      name: Build Unsigned Snapshot
+      runs-on: ubuntu-22.04
+      steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-go@v5
+            with:
+                go-version-file: 'go.mod'
+          - name: Setup Build Environment
+            run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          - name: Build Packages
+            run: |
+                make clean local-deb-package local-rpm-package local-apk-package
+          - name: Upload Artifacts
+            uses: actions/upload-artifact@v3
+            with:
+              name: nginx-agent-snapshots
+              path: build
+              retention-days: 3
+                  
