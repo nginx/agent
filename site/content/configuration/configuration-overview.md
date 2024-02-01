@@ -175,7 +175,7 @@ Flags:
       --metrics-collection-interval duration             Sets the interval, in seconds, at which metrics are collected. (default 15s)
       --metrics-mode string                              Sets the desired metrics collection mode: streaming or aggregation. (default "aggregated")
       --metrics-report-interval duration                 The polling period specified for a single set of metrics being collected. (default 1m0s)
-      --nginx-config-reload-monitoring-period duration   The duration the NGINX Agent will monitor error logs after a NGINX reload (default 10s)
+      --nginx-config-reload-monitoring-period duration   The duration NGINX Agent will monitor error logs after a NGINX reload (default 10s)
       --nginx-exclude-logs string                        One or more NGINX access log paths that you want to exclude from metrics collection. This key is formatted as a string and multiple values should be provided as a comma-separated list.
       --nginx-socket string                              The NGINX Plus counting unix socket location. (default "unix:/var/run/nginx-agent/nginx.sock")
       --nginx-treat-warnings-as-errors                   On nginx -t, treat warnings as failures on configuration application.

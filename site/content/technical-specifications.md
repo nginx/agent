@@ -12,56 +12,21 @@ doctypes: ["task"]
 
 ## Supported Distributions
 
-NGINX Agent can run in most environments. The below list are the supported distributions.
+NGINX Agent can run in most environments. We support the following distributions:
 
-AlmaLinux
-- 8 (x86_64, aarch64)
-- 9 (x86_64, aarch64)
+{{< bootstrap-table "table table-striped table-bordered" >}}
+| | AlmaLinux | Alpine Linux | Amazon Linux | Amazon Linux 2 | CentOS | Debian | 
+|-|-----------|--------------|--------------|----------------|--------|--------|
+|**Version**|8 <br><br>9 |  3.16<br><br>3.17<br><br> 3.18<br><br> 3.19|  2023|  LTS|  7.4+|  11<br><br> 12|
+|**Architecture**| x86_84<br><br>aarch64| x86_64<br><br>aarch64 | x86_64<br><br>aarch64 | x86_64<br><br>aarch64 | x86_64<br><br>aarch64 | x86_64<br><br>aarch64 |
+{{< /bootstrap-table >}}
 
-Alpine Linux
-- 3.16 (x86_64, aarch64)
-- 3.17 (x86_64, aarch64)
-- 3.18 (x86_64, aarch64)
-- 3.19 (x86_64, aarch64)
-
-Amazon Linux
-- 2023 (x86_64, aarch64)
-
-Amazon Linux 2
-- LTS (x86_64, aarch64)
-
-CentOS
-- 7.4+ (x86_64, aarch64)
-
-Debian
-- 11 (x86_64, aarch64)
-- 12 (x86_64, aarch64)
-
-FreeBSD
-- 13 (amd64)
-- 14 (amd64)
-
-Oracle Linux
-- 7.4+ (x86_64)
-- 8.1+ (x86_64)
-- 9 (x86_64)
-
-Red Hat Enterprise Linux (RHEL)
-- 7.4+ (x86_64, aarch64)
-- 8.1+ (x86_64, aarch64)
-- 9.0+ (x86_64, aarch64)
-
-Rocky Linux
-- 8 (x86_64, aarch64)
-- 9 (x86_64, aarch64)
-
-SUSE Linux Enterprise Server (SLES)
-- 12 SP5 (x86_64)
-- 15 SP2 (x86_64)
-
-Ubuntu
-- 20.04 LTS (x86_64, aarch64)
-- 22.04 LTS (x86_64, aarch64)
+{{< bootstrap-table "table table-striped table-bordered" >}}
+| |FreeBSD | Oracle Linux | Red Hat <br>Enterprise Linux (RHEL) | Rocky Linux | SUSE Linux <br>Enterprise Server (SLES) | Ubuntu |
+|-|--------|--------------|---------------------------------|-------------|-------------------------------------|--------|
+|**Version**|13<br><br>14|7.4+<br><br>8.1+<br><br>9|7.4+<br><br>8.1+<br><br>9.0+|8<br><br>9|12 SP5<br><br>15 SP2|20.04 LTS<br><br>22.04 LTS|
+|**Architecture**|amd64|x86_64|x86_64<br><br>aarch64|x86_64<br><br>aarch64|x86_64|x86_64<br><br>aarch64|
+{{< /bootstrap-table >}}
 
 ## Supported Deployment Environments 
 
@@ -80,7 +45,12 @@ NGINX Agent works with all supported versions of NGINX Open Source and NGINX Plu
 ## Sizing Recommendations
 
 Minimum system sizing recommendations for NGINX Agent:
-
+{{< bootstrap-table "table table-striped table-bordered" >}}
 | CPU        | Memory   | Network   | Storage |
 |------------|----------|-----------|---------|
 | 1 CPU core | 1 GB RAM | 1 GbE NIC | 20 GB   |
+{{< /bootstrap-table >}}
+
+## Logging
+
+NGINX Agent utilizes log files and formats to collect metrics. Increasing the log formats and instance counts will result in increased log file sizes. To prevent system storage issues due to a growing log directory, it is recommended to add a separate partition for `/var/log/nginx-agent` and enable [log rotation](http://nginx.org/en/docs/control.html#logs).

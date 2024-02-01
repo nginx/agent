@@ -9,7 +9,7 @@ docs: "DOCS-802"
 
 ## Overview
 
-Follow the steps in this guide to encrypt communication between the NGINX Agent and Instance Manager with TLS.
+Follow the steps in this guide to encrypt communication between NGINX Agent and Instance Manager with TLS.
 
 ## Before You Begin
 
@@ -21,7 +21,7 @@ See the examples below for how to set these values using a configuration file, C
 
 ### Enabling mTLS via Config Values
 
-You can edit the `/etc/nginx-agent/nginx-agent.conf` file to enable mTLS for the NGINX Agent. Make the following changes:
+You can edit the `/etc/nginx-agent/nginx-agent.conf` file to enable mTLS for NGINX Agent. Make the following changes:
 
 ```yaml
 server:
@@ -47,7 +47,7 @@ nginx-agent --tls-cert "path-to-cert" --tls-key "path-to-key" --tls-ca "path-to-
 
 ### Enabling mTLS with Environment Variables
 
-To enable mTLS for the NGINX Agent using environment variables, run the following commands:
+To enable mTLS for NGINX Agent using environment variables, run the following commands:
 
 ```bash
 NMS_TLS_CA="my-env-ca"
