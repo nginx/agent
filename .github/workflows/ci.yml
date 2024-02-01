@@ -34,3 +34,17 @@ jobs:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
           args: -c ./scripts/.golangci.yml
           skip-pkg-cache: true
+  performance-test:
+    name: Performance Tests
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: Setup build environment
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+      - name: Run Performance Tests
+        run: make performance-test
