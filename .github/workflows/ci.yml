@@ -56,5 +56,11 @@ jobs:
             run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           - name: Build Packages
             run: |
-                make clean local-deb-package local-rpm-package local-apk-package 
+                make clean local-deb-package local-rpm-package local-apk-package
+          - name: Upload Artifacts
+            uses: actions/upload-artifact@v3
+            with:
+              name: nginx-agent-snapshots
+              path: build
+              retention-days: 3
                   
