@@ -12,6 +12,7 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/opts"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/moby/sys/signal"
 	"github.com/moby/term"
@@ -42,7 +43,7 @@ func NewRunCommand(dockerCli command.Cli) *cobra.Command {
 			if len(args) > 1 {
 				copts.Args = args[1:]
 			}
-			return runRun(cmd.Context(), dockerCli, cmd.Flags(), &options, copts)
+			return runRun(dockerCli, cmd.Flags(), &options, copts)
 		},
 		ValidArgsFunction: completion.ImageNames(dockerCli),
 		Annotations: map[string]string{
@@ -89,7 +90,7 @@ func NewRunCommand(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runRun(ctx context.Context, dockerCli command.Cli, flags *pflag.FlagSet, ropts *runOptions, copts *containerOptions) error {
+func runRun(dockerCli command.Cli, flags *pflag.FlagSet, ropts *runOptions, copts *containerOptions) error {
 	if err := validatePullOpt(ropts.pull); err != nil {
 		reportError(dockerCli.Err(), "run", err.Error(), true)
 		return cli.StatusError{StatusCode: 125}
@@ -100,7 +101,7 @@ func runRun(ctx context.Context, dockerCli command.Cli, flags *pflag.FlagSet, ro
 		if v == nil {
 			newEnv = append(newEnv, k)
 		} else {
-			newEnv = append(newEnv, k+"="+*v)
+			newEnv = append(newEnv, fmt.Sprintf("%s=%s", k, *v))
 		}
 	}
 	copts.env = *opts.NewListOptsRef(&newEnv, nil)
@@ -114,18 +115,18 @@ func runRun(ctx context.Context, dockerCli command.Cli, flags *pflag.FlagSet, ro
 		reportError(dockerCli.Err(), "run", err.Error(), true)
 		return cli.StatusError{StatusCode: 125}
 	}
-	return runContainer(ctx, dockerCli, ropts, copts, containerCfg)
+	return runContainer(dockerCli, ropts, copts, containerCfg)
 }
 
 //nolint:gocyclo
-func runContainer(ctx context.Context, dockerCli command.Cli, runOpts *runOptions, copts *containerOptions, containerCfg *containerConfig) error {
+func runContainer(dockerCli command.Cli, opts *runOptions, copts *containerOptions, containerCfg *containerConfig) error {
 	config := containerCfg.Config
 	stdout, stderr := dockerCli.Out(), dockerCli.Err()
-	apiClient := dockerCli.Client()
+	client := dockerCli.Client()
 
 	config.ArgsEscaped = false
 
-	if !runOpts.detach {
+	if !opts.detach {
 		if err := dockerCli.In().CheckTty(config.AttachStdin, config.Tty); err != nil {
 			return err
 		}
@@ -140,17 +141,17 @@ func runContainer(ctx context.Context, dockerCli command.Cli, runOpts *runOption
 		config.StdinOnce = false
 	}
 
-	ctx, cancelFun := context.WithCancel(ctx)
+	ctx, cancelFun := context.WithCancel(context.Background())
 	defer cancelFun()
 
-	containerID, err := createContainer(ctx, dockerCli, containerCfg, &runOpts.createOptions)
+	createResponse, err := createContainer(ctx, dockerCli, containerCfg, &opts.createOptions)
 	if err != nil {
 		reportError(stderr, "run", err.Error(), true)
 		return runStartContainerErr(err)
 	}
-	if runOpts.sigProxy {
+	if opts.sigProxy {
 		sigc := notifyAllSignals()
-		go ForwardAllSignals(ctx, apiClient, containerID, sigc)
+		go ForwardAllSignals(ctx, dockerCli, createResponse.ID, sigc)
 		defer signal.StopCatch(sigc)
 	}
 
@@ -163,33 +164,26 @@ func runContainer(ctx context.Context, dockerCli command.Cli, runOpts *runOption
 		waitDisplayID = make(chan struct{})
 		go func() {
 			defer close(waitDisplayID)
-			_, _ = fmt.Fprintln(stdout, containerID)
+			fmt.Fprintln(stdout, createResponse.ID)
 		}()
 	}
 	attach := config.AttachStdin || config.AttachStdout || config.AttachStderr
 	if attach {
-		detachKeys := dockerCli.ConfigFile().DetachKeys
-		if runOpts.detachKeys != "" {
-			detachKeys = runOpts.detachKeys
+		if opts.detachKeys != "" {
+			dockerCli.ConfigFile().DetachKeys = opts.detachKeys
 		}
 
-		closeFn, err := attachContainer(ctx, dockerCli, containerID, &errCh, config, container.AttachOptions{
-			Stream:     true,
-			Stdin:      config.AttachStdin,
-			Stdout:     config.AttachStdout,
-			Stderr:     config.AttachStderr,
-			DetachKeys: detachKeys,
-		})
+		closeFn, err := attachContainer(ctx, dockerCli, &errCh, config, createResponse.ID)
 		if err != nil {
 			return err
 		}
 		defer closeFn()
 	}
 
-	statusChan := waitExitOrRemoved(ctx, apiClient, containerID, copts.autoRemove)
+	statusChan := waitExitOrRemoved(ctx, dockerCli, createResponse.ID, copts.autoRemove)
 
 	// start the container
-	if err := apiClient.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
+	if err := client.ContainerStart(ctx, createResponse.ID, types.ContainerStartOptions{}); err != nil {
 		// If we have hijackedIOStreamer, we should notify
 		// hijackedIOStreamer we are going to exit and wait
 		// to avoid the terminal are not restored.
@@ -207,8 +201,8 @@ func runContainer(ctx context.Context, dockerCli command.Cli, runOpts *runOption
 	}
 
 	if (config.AttachStdin || config.AttachStdout || config.AttachStderr) && config.Tty && dockerCli.Out().IsTerminal() {
-		if err := MonitorTtySize(ctx, dockerCli, containerID, false); err != nil {
-			_, _ = fmt.Fprintln(stderr, "Error monitoring TTY size:", err)
+		if err := MonitorTtySize(ctx, dockerCli, createResponse.ID, false); err != nil {
+			fmt.Fprintln(stderr, "Error monitoring TTY size:", err)
 		}
 	}
 
@@ -238,7 +232,15 @@ func runContainer(ctx context.Context, dockerCli command.Cli, runOpts *runOption
 	return nil
 }
 
-func attachContainer(ctx context.Context, dockerCli command.Cli, containerID string, errCh *chan error, config *container.Config, options container.AttachOptions) (func(), error) {
+func attachContainer(ctx context.Context, dockerCli command.Cli, errCh *chan error, config *container.Config, containerID string) (func(), error) {
+	options := types.ContainerAttachOptions{
+		Stream:     true,
+		Stdin:      config.AttachStdin,
+		Stdout:     config.AttachStdout,
+		Stderr:     config.AttachStderr,
+		DetachKeys: dockerCli.ConfigFile().DetachKeys,
+	}
+
 	resp, errAttach := dockerCli.Client().ContainerAttach(ctx, containerID, options)
 	if errAttach != nil {
 		return nil, errAttach
@@ -248,13 +250,13 @@ func attachContainer(ctx context.Context, dockerCli command.Cli, containerID str
 		out, cerr io.Writer
 		in        io.ReadCloser
 	)
-	if options.Stdin {
+	if config.AttachStdin {
 		in = dockerCli.In()
 	}
-	if options.Stdout {
+	if config.AttachStdout {
 		out = dockerCli.Out()
 	}
-	if options.Stderr {
+	if config.AttachStderr {
 		if config.Tty {
 			cerr = dockerCli.Out()
 		} else {

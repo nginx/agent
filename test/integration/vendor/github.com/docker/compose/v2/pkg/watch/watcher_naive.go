@@ -27,6 +27,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tilt-dev/fsnotify"
@@ -77,7 +78,7 @@ func (d *naiveNotify) Start() error {
 	for _, name := range pathsToWatch {
 		fi, err := os.Stat(name)
 		if err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("notify.Add(%q): %w", name, err)
+			return errors.Wrapf(err, "notify.Add(%q)", name)
 		}
 
 		// if it's a file that doesn't exist,
@@ -89,12 +90,12 @@ func (d *naiveNotify) Start() error {
 		if fi.IsDir() {
 			err = d.watchRecursively(name)
 			if err != nil {
-				return fmt.Errorf("notify.Add(%q): %w", name, err)
+				return errors.Wrapf(err, "notify.Add(%q)", name)
 			}
 		} else {
 			err = d.add(filepath.Dir(name))
 			if err != nil {
-				return fmt.Errorf("notify.Add(%q): %w", filepath.Dir(name), err)
+				return errors.Wrapf(err, "notify.Add(%q)", filepath.Dir(name))
 			}
 		}
 	}
@@ -110,7 +111,7 @@ func (d *naiveNotify) watchRecursively(dir string) error {
 		if err == nil || os.IsNotExist(err) {
 			return nil
 		}
-		return fmt.Errorf("watcher.Add(%q): %w", dir, err)
+		return errors.Wrapf(err, "watcher.Add(%q)", dir)
 	}
 
 	return filepath.WalkDir(dir, func(path string, info fs.DirEntry, err error) error {
@@ -137,7 +138,7 @@ func (d *naiveNotify) watchRecursively(dir string) error {
 			if os.IsNotExist(err) {
 				return nil
 			}
-			return fmt.Errorf("watcher.Add(%q): %w", path, err)
+			return errors.Wrapf(err, "watcher.Add(%q)", path)
 		}
 		return nil
 	})
@@ -261,7 +262,7 @@ func (d *naiveNotify) shouldSkipDir(path string) (bool, error) {
 
 	skip, err := d.ignore.MatchesEntireDir(path)
 	if err != nil {
-		return false, fmt.Errorf("shouldSkipDir: %w", err)
+		return false, errors.Wrap(err, "shouldSkipDir")
 	}
 
 	if skip {
@@ -310,7 +311,7 @@ func newWatcher(paths []string, ignore PathMatcher) (Notify, error) {
 				"Run 'sysctl fs.inotify.max_user_instances' to check your inotify limits.\n" +
 				"To raise them, run 'sudo sysctl fs.inotify.max_user_instances=1024'")
 		}
-		return nil, fmt.Errorf("creating file watcher: %w", err)
+		return nil, errors.Wrap(err, "creating file watcher")
 	}
 	MaybeIncreaseBufferSize(fsw)
 
@@ -325,7 +326,7 @@ func newWatcher(paths []string, ignore PathMatcher) (Notify, error) {
 	for _, path := range paths {
 		path, err := filepath.Abs(path)
 		if err != nil {
-			return nil, fmt.Errorf("newWatcher: %w", err)
+			return nil, errors.Wrap(err, "newWatcher")
 		}
 		notifyList[path] = true
 	}
@@ -350,7 +351,7 @@ func greatestExistingAncestors(paths []string) ([]string, error) {
 	for _, p := range paths {
 		newP, err := greatestExistingAncestor(p)
 		if err != nil {
-			return nil, fmt.Errorf("Finding ancestor of %s: %w", p, err)
+			return nil, fmt.Errorf("Finding ancestor of %s: %v", p, err)
 		}
 		result = append(result, newP)
 	}

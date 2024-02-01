@@ -1,6 +1,3 @@
-// FIXME(thaJeztah): remove once we are a module; the go:build directive prevents go from downgrading language version to go1.16:
-//go:build go1.19
-
 package store
 
 import (
@@ -43,12 +40,12 @@ func (s *metadataStore) createOrUpdate(meta Metadata) error {
 	return ioutils.AtomicWriteFile(filepath.Join(contextDir, metaFile), bytes, 0o644)
 }
 
-func parseTypedOrMap(payload []byte, getter TypeGetter) (any, error) {
+func parseTypedOrMap(payload []byte, getter TypeGetter) (interface{}, error) {
 	if len(payload) == 0 || string(payload) == "null" {
 		return nil, nil
 	}
 	if getter == nil {
-		var res map[string]any
+		var res map[string]interface{}
 		if err := json.Unmarshal(payload, &res); err != nil {
 			return nil, err
 		}
@@ -80,7 +77,7 @@ func (s *metadataStore) getByID(id contextdir) (Metadata, error) {
 	}
 	var untyped untypedContextMetadata
 	r := Metadata{
-		Endpoints: make(map[string]any),
+		Endpoints: make(map[string]interface{}),
 	}
 	if err := json.Unmarshal(bytes, &untyped); err != nil {
 		return Metadata{}, fmt.Errorf("parsing %s: %v", fileName, err)
@@ -112,7 +109,7 @@ func (s *metadataStore) list() ([]Metadata, error) {
 		}
 		return nil, err
 	}
-	res := make([]Metadata, 0, len(ctxDirs))
+	var res []Metadata
 	for _, dir := range ctxDirs {
 		c, err := s.getByID(contextdir(dir))
 		if err != nil {

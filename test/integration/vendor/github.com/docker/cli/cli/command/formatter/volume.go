@@ -100,7 +100,7 @@ func (c *volumeContext) Labels() string {
 		return ""
 	}
 
-	joinLabels := make([]string, 0, len(c.v.Labels))
+	var joinLabels []string
 	for k, v := range c.v.Labels {
 		joinLabels = append(joinLabels, k+"="+v)
 	}

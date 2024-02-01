@@ -100,13 +100,6 @@ func LoadRSAPSSKeyFromFile(path string) (*SSLibKey, error) {
 		return nil, fmt.Errorf("unable to load RSA key from file: %w", err)
 	}
 
-	return LoadRSAPSSKeyFromBytes(contents)
-}
-
-// LoadRSAPSSKeyFromBytes is a function that takes a byte array as input. This byte array should represent a PEM encoded RSA key, as PEM encoding is required.
-// The function returns an SSLibKey instance, which is a struct that holds the key data.
-
-func LoadRSAPSSKeyFromBytes(contents []byte) (*SSLibKey, error) {
 	pemData, keyObj, err := decodeAndParsePEM(contents)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load RSA key from file: %w", err)
@@ -119,13 +112,20 @@ func LoadRSAPSSKeyFromBytes(contents []byte) (*SSLibKey, error) {
 		KeyVal:              KeyVal{},
 	}
 
-	pubKeyBytes, err := marshalAndGeneratePEM(keyObj)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load RSA key from file: %w", err)
-	}
-	key.KeyVal.Public = strings.TrimSpace(string(pubKeyBytes))
+	switch k := keyObj.(type) {
+	case *rsa.PublicKey:
+		pubKeyBytes, err := x509.MarshalPKIXPublicKey(k)
+		if err != nil {
+			return nil, fmt.Errorf("unable to load RSA key from file: %w", err)
+		}
+		key.KeyVal.Public = strings.TrimSpace(string(generatePEMBlock(pubKeyBytes, PublicKeyPEM)))
 
-	if _, ok := keyObj.(*rsa.PrivateKey); ok {
+	case *rsa.PrivateKey:
+		pubKeyBytes, err := x509.MarshalPKIXPublicKey(k.Public())
+		if err != nil {
+			return nil, fmt.Errorf("unable to load RSA key from file: %w", err)
+		}
+		key.KeyVal.Public = strings.TrimSpace(string(generatePEMBlock(pubKeyBytes, PublicKeyPEM)))
 		key.KeyVal.Private = strings.TrimSpace(string(generatePEMBlock(pemData.Bytes, RSAPrivateKeyPEM)))
 	}
 
@@ -138,24 +138,4 @@ func LoadRSAPSSKeyFromBytes(contents []byte) (*SSLibKey, error) {
 	}
 
 	return key, nil
-}
-
-func marshalAndGeneratePEM(key interface{}) ([]byte, error) {
-	var pubKeyBytes []byte
-	var err error
-
-	switch k := key.(type) {
-	case *rsa.PublicKey:
-		pubKeyBytes, err = x509.MarshalPKIXPublicKey(k)
-	case *rsa.PrivateKey:
-		pubKeyBytes, err = x509.MarshalPKIXPublicKey(k.Public())
-	default:
-		return nil, fmt.Errorf("unexpected key type: %T", k)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return generatePEMBlock(pubKeyBytes, PublicKeyPEM), nil
 }

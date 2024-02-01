@@ -4,16 +4,16 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/docker/cli/cli/command"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/versions"
-	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
 )
 
-func waitExitOrRemoved(ctx context.Context, apiClient client.APIClient, containerID string, waitRemove bool) <-chan int {
+func waitExitOrRemoved(ctx context.Context, dockerCli command.Cli, containerID string, waitRemove bool) <-chan int {
 	if len(containerID) == 0 {
 		// containerID can never be empty
 		panic("Internal Error: waitExitOrRemoved needs a containerID as parameter")
@@ -22,8 +22,8 @@ func waitExitOrRemoved(ctx context.Context, apiClient client.APIClient, containe
 	// Older versions used the Events API, and even older versions did not
 	// support server-side removal. This legacyWaitExitOrRemoved method
 	// preserves that old behavior and any issues it may have.
-	if versions.LessThan(apiClient.ClientVersion(), "1.30") {
-		return legacyWaitExitOrRemoved(ctx, apiClient, containerID, waitRemove)
+	if versions.LessThan(dockerCli.Client().ClientVersion(), "1.30") {
+		return legacyWaitExitOrRemoved(ctx, dockerCli, containerID, waitRemove)
 	}
 
 	condition := container.WaitConditionNextExit
@@ -31,7 +31,7 @@ func waitExitOrRemoved(ctx context.Context, apiClient client.APIClient, containe
 		condition = container.WaitConditionRemoved
 	}
 
-	resultC, errC := apiClient.ContainerWait(ctx, containerID, condition)
+	resultC, errC := dockerCli.Client().ContainerWait(ctx, containerID, condition)
 
 	statusC := make(chan int)
 	go func() {
@@ -52,7 +52,7 @@ func waitExitOrRemoved(ctx context.Context, apiClient client.APIClient, containe
 	return statusC
 }
 
-func legacyWaitExitOrRemoved(ctx context.Context, apiClient client.APIClient, containerID string, waitRemove bool) <-chan int {
+func legacyWaitExitOrRemoved(ctx context.Context, dockerCli command.Cli, containerID string, waitRemove bool) <-chan int {
 	var removeErr error
 	statusChan := make(chan int)
 	exitCode := 125
@@ -65,7 +65,7 @@ func legacyWaitExitOrRemoved(ctx context.Context, apiClient client.APIClient, co
 		Filters: f,
 	}
 	eventCtx, cancel := context.WithCancel(ctx)
-	eventq, errq := apiClient.Events(eventCtx, options)
+	eventq, errq := dockerCli.Client().Events(eventCtx, options)
 
 	eventProcessor := func(e events.Message) bool {
 		stopProcessing := false
@@ -81,16 +81,18 @@ func legacyWaitExitOrRemoved(ctx context.Context, apiClient client.APIClient, co
 			}
 			if !waitRemove {
 				stopProcessing = true
-			} else if versions.LessThan(apiClient.ClientVersion(), "1.25") {
+			} else {
 				// If we are talking to an older daemon, `AutoRemove` is not supported.
 				// We need to fall back to the old behavior, which is client-side removal
-				go func() {
-					removeErr = apiClient.ContainerRemove(ctx, containerID, container.RemoveOptions{RemoveVolumes: true})
-					if removeErr != nil {
-						logrus.Errorf("error removing container: %v", removeErr)
-						cancel() // cancel the event Q
-					}
-				}()
+				if versions.LessThan(dockerCli.Client().ClientVersion(), "1.25") {
+					go func() {
+						removeErr = dockerCli.Client().ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{RemoveVolumes: true})
+						if removeErr != nil {
+							logrus.Errorf("error removing container: %v", removeErr)
+							cancel() // cancel the event Q
+						}
+					}()
+				}
 			}
 		case "detach":
 			exitCode = 0
@@ -127,7 +129,7 @@ func legacyWaitExitOrRemoved(ctx context.Context, apiClient client.APIClient, co
 	return statusChan
 }
 
-func parallelOperation(ctx context.Context, containers []string, op func(ctx context.Context, containerID string) error) chan error {
+func parallelOperation(ctx context.Context, containers []string, op func(ctx context.Context, container string) error) chan error {
 	if len(containers) == 0 {
 		return nil
 	}

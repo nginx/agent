@@ -71,7 +71,7 @@ func numProcs(ctx context.Context) (uint64, error) {
 }
 
 func BootTimeWithContext(ctx context.Context) (uint64, error) {
-	return common.BootTimeWithContext(ctx, enableBootTimeCache)
+	return common.BootTimeWithContext(ctx)
 }
 
 func UptimeWithContext(ctx context.Context) (uint64, error) {
@@ -212,12 +212,6 @@ func PlatformInformationWithContext(ctx context.Context) (platform string, famil
 		} else if lsb.ID == `"Cumulus Linux"` {
 			platform = "cumuluslinux"
 			version = lsb.Release
-		} else if lsb.ID == "uos" {
-			platform = "uos"
-			version = lsb.Release
-		} else if lsb.ID == "Deepin" {
-			platform = "Deepin"
-			version = lsb.Release
 		} else {
 			if common.PathExistsWithContents("/usr/bin/raspi-config") {
 				platform = "raspbian"
@@ -229,47 +223,47 @@ func PlatformInformationWithContext(ctx context.Context) (platform string, famil
 				version = contents[0]
 			}
 		}
-	} else if common.PathExistsWithContents(common.HostEtcWithContext(ctx, "neokylin-release")) {
+	} else if common.PathExists(common.HostEtcWithContext(ctx, "neokylin-release")) {
 		contents, err := common.ReadLines(common.HostEtcWithContext(ctx, "neokylin-release"))
 		if err == nil {
 			version = getRedhatishVersion(contents)
 			platform = getRedhatishPlatform(contents)
 		}
-	} else if common.PathExistsWithContents(common.HostEtcWithContext(ctx, "redhat-release")) {
+	} else if common.PathExists(common.HostEtcWithContext(ctx, "redhat-release")) {
 		contents, err := common.ReadLines(common.HostEtcWithContext(ctx, "redhat-release"))
 		if err == nil {
 			version = getRedhatishVersion(contents)
 			platform = getRedhatishPlatform(contents)
 		}
-	} else if common.PathExistsWithContents(common.HostEtcWithContext(ctx, "system-release")) {
+	} else if common.PathExists(common.HostEtcWithContext(ctx, "system-release")) {
 		contents, err := common.ReadLines(common.HostEtcWithContext(ctx, "system-release"))
 		if err == nil {
 			version = getRedhatishVersion(contents)
 			platform = getRedhatishPlatform(contents)
 		}
-	} else if common.PathExistsWithContents(common.HostEtcWithContext(ctx, "gentoo-release")) {
+	} else if common.PathExists(common.HostEtcWithContext(ctx, "gentoo-release")) {
 		platform = "gentoo"
 		contents, err := common.ReadLines(common.HostEtcWithContext(ctx, "gentoo-release"))
 		if err == nil {
 			version = getRedhatishVersion(contents)
 		}
-	} else if common.PathExistsWithContents(common.HostEtcWithContext(ctx, "SuSE-release")) {
+	} else if common.PathExists(common.HostEtcWithContext(ctx, "SuSE-release")) {
 		contents, err := common.ReadLines(common.HostEtcWithContext(ctx, "SuSE-release"))
 		if err == nil {
 			version = getSuseVersion(contents)
 			platform = getSusePlatform(contents)
 		}
 		// TODO: slackware detecion
-	} else if common.PathExistsWithContents(common.HostEtcWithContext(ctx, "arch-release")) {
+	} else if common.PathExists(common.HostEtcWithContext(ctx, "arch-release")) {
 		platform = "arch"
 		version = lsb.Release
-	} else if common.PathExistsWithContents(common.HostEtcWithContext(ctx, "alpine-release")) {
+	} else if common.PathExists(common.HostEtcWithContext(ctx, "alpine-release")) {
 		platform = "alpine"
 		contents, err := common.ReadLines(common.HostEtcWithContext(ctx, "alpine-release"))
 		if err == nil && len(contents) > 0 && contents[0] != "" {
 			version = contents[0]
 		}
-	} else if common.PathExistsWithContents(common.HostEtcWithContext(ctx, "os-release")) {
+	} else if common.PathExists(common.HostEtcWithContext(ctx, "os-release")) {
 		p, v, err := common.GetOSReleaseWithContext(ctx)
 		if err == nil {
 			platform = p
@@ -295,7 +289,7 @@ func PlatformInformationWithContext(ctx context.Context) (platform string, famil
 	platform = strings.Trim(platform, `"`)
 
 	switch platform {
-	case "debian", "ubuntu", "linuxmint", "raspbian", "Kylin", "cumuluslinux", "uos", "Deepin":
+	case "debian", "ubuntu", "linuxmint", "raspbian", "Kylin", "cumuluslinux":
 		family = "debian"
 	case "fedora":
 		family = "fedora"
@@ -339,15 +333,13 @@ func getSlackwareVersion(contents []string) string {
 	return c
 }
 
-var redhatishReleaseMatch = regexp.MustCompile(`release (\w[\d.]*)`)
-
 func getRedhatishVersion(contents []string) string {
 	c := strings.ToLower(strings.Join(contents, ""))
 
 	if strings.Contains(c, "rawhide") {
 		return "rawhide"
 	}
-	if matches := redhatishReleaseMatch.FindStringSubmatch(c); matches != nil {
+	if matches := regexp.MustCompile(`release (\w[\d.]*)`).FindStringSubmatch(c); matches != nil {
 		return matches[1]
 	}
 	return ""
@@ -364,17 +356,12 @@ func getRedhatishPlatform(contents []string) string {
 	return f[0]
 }
 
-var (
-	suseVersionMatch    = regexp.MustCompile(`VERSION = ([\d.]+)`)
-	susePatchLevelMatch = regexp.MustCompile(`PATCHLEVEL = (\d+)`)
-)
-
 func getSuseVersion(contents []string) string {
 	version := ""
 	for _, line := range contents {
-		if matches := suseVersionMatch.FindStringSubmatch(line); matches != nil {
+		if matches := regexp.MustCompile(`VERSION = ([\d.]+)`).FindStringSubmatch(line); matches != nil {
 			version = matches[1]
-		} else if matches = susePatchLevelMatch.FindStringSubmatch(line); matches != nil {
+		} else if matches := regexp.MustCompile(`PATCHLEVEL = ([\d]+)`).FindStringSubmatch(line); matches != nil {
 			version = version + "." + matches[1]
 		}
 	}

@@ -3,7 +3,6 @@ package retry
 import (
 	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws/middleware/private/metrics"
 	"strconv"
 	"strings"
 	"time"
@@ -226,13 +225,6 @@ func (r *Attempt) handleAttempt(
 	// that time. Potentially early exist if the sleep is canceled via the
 	// context.
 	retryDelay, reqErr := r.retryer.RetryDelay(attemptNum, err)
-	mctx := metrics.Context(ctx)
-	if mctx != nil {
-		attempt, err := mctx.Data().LatestAttempt()
-		if err != nil {
-			attempt.RetryDelay = retryDelay
-		}
-	}
 	if reqErr != nil {
 		return out, attemptResult, releaseRetryToken, reqErr
 	}
@@ -328,12 +320,10 @@ func AddRetryMiddlewares(stack *smithymiddle.Stack, options AddRetryMiddlewaresO
 		middleware.LogAttempts = options.LogRetryAttempts
 	})
 
-	// index retry to before signing, if signing exists
-	if err := stack.Finalize.Insert(attempt, "Signing", smithymiddle.Before); err != nil {
+	if err := stack.Finalize.Add(attempt, smithymiddle.After); err != nil {
 		return err
 	}
-
-	if err := stack.Finalize.Insert(&MetricsHeader{}, attempt.ID(), smithymiddle.After); err != nil {
+	if err := stack.Finalize.Add(&MetricsHeader{}, smithymiddle.After); err != nil {
 		return err
 	}
 	return nil

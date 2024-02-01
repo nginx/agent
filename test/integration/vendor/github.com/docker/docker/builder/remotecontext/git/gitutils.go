@@ -35,6 +35,7 @@ func WithIsolatedConfig(v bool) CloneOption {
 // will be under "docker-build-git"
 func Clone(remoteURL string, opts ...CloneOption) (string, error) {
 	repo, err := parseRemoteURL(remoteURL)
+
 	if err != nil {
 		return "", err
 	}

@@ -3,7 +3,6 @@ package manager
 import (
 	"context"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -11,10 +10,10 @@ import (
 
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
-	"github.com/docker/cli/cli/config/configfile"
 	"github.com/fvbommel/sortorder"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
+	exec "golang.org/x/sys/execabs"
 )
 
 // ReexecEnvvar is the name of an ennvar which is set to the command
@@ -43,10 +42,10 @@ func IsNotFound(err error) bool {
 	return ok
 }
 
-func getPluginDirs(cfg *configfile.ConfigFile) ([]string, error) {
+func getPluginDirs(dockerCli command.Cli) ([]string, error) {
 	var pluginDirs []string
 
-	if cfg != nil {
+	if cfg := dockerCli.ConfigFile(); cfg != nil {
 		pluginDirs = append(pluginDirs, cfg.CLIPluginsExtraDirs...)
 	}
 	pluginDir, err := config.Path("cli-plugins")
@@ -109,7 +108,7 @@ func listPluginCandidates(dirs []string) (map[string][]string, error) {
 
 // GetPlugin returns a plugin on the system by its name
 func GetPlugin(name string, dockerCli command.Cli, rootcmd *cobra.Command) (*Plugin, error) {
-	pluginDirs, err := getPluginDirs(dockerCli.ConfigFile())
+	pluginDirs, err := getPluginDirs(dockerCli)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +138,7 @@ func GetPlugin(name string, dockerCli command.Cli, rootcmd *cobra.Command) (*Plu
 
 // ListPlugins produces a list of the plugins available on the system
 func ListPlugins(dockerCli command.Cli, rootcmd *cobra.Command) ([]Plugin, error) {
-	pluginDirs, err := getPluginDirs(dockerCli.ConfigFile())
+	pluginDirs, err := getPluginDirs(dockerCli)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +198,7 @@ func PluginRunCommand(dockerCli command.Cli, name string, rootcmd *cobra.Command
 		return nil, errPluginNotFound(name)
 	}
 	exename := addExeSuffix(NamePrefix + name)
-	pluginDirs, err := getPluginDirs(dockerCli.ConfigFile())
+	pluginDirs, err := getPluginDirs(dockerCli)
 	if err != nil {
 		return nil, err
 	}

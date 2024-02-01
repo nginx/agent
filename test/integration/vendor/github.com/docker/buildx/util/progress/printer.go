@@ -2,6 +2,7 @@ package progress
 
 import (
 	"context"
+	"io"
 	"os"
 	"sync"
 
@@ -10,7 +11,15 @@ import (
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/util/progress/progressui"
 	"github.com/opencontainers/go-digest"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	PrinterModeAuto  = "auto"
+	PrinterModeTty   = "tty"
+	PrinterModePlain = "plain"
+	PrinterModeQuiet = "quiet"
 )
 
 type Printer struct {
@@ -80,19 +89,28 @@ func (p *Printer) ClearLogSource(v interface{}) {
 	}
 }
 
-func NewPrinter(ctx context.Context, out console.File, mode progressui.DisplayMode, opts ...PrinterOpt) (*Printer, error) {
+func NewPrinter(ctx context.Context, w io.Writer, out console.File, mode string, opts ...PrinterOpt) (*Printer, error) {
 	opt := &printerOpts{}
 	for _, o := range opts {
 		o(opt)
 	}
 
-	if v := os.Getenv("BUILDKIT_PROGRESS"); v != "" && mode == progressui.AutoMode {
-		mode = progressui.DisplayMode(v)
+	if v := os.Getenv("BUILDKIT_PROGRESS"); v != "" && mode == PrinterModeAuto {
+		mode = v
 	}
 
-	d, err := progressui.NewDisplay(out, mode, opt.displayOpts...)
-	if err != nil {
-		return nil, err
+	var c console.Console
+	switch mode {
+	case PrinterModeQuiet:
+		w = io.Discard
+	case PrinterModeAuto, PrinterModeTty:
+		if cons, err := console.ConsoleFromFile(out); err == nil {
+			c = cons
+		} else {
+			if mode == PrinterModeTty {
+				return nil, errors.Wrap(err, "failed to get console")
+			}
+		}
 	}
 
 	pw := &Printer{
@@ -110,7 +128,7 @@ func NewPrinter(ctx context.Context, out console.File, mode progressui.DisplayMo
 			resumeLogs := logutil.Pause(logrus.StandardLogger())
 			close(pw.ready)
 			// not using shared context to not disrupt display but let is finish reporting errors
-			pw.warnings, pw.err = d.UpdateFrom(ctx, pw.status)
+			pw.warnings, pw.err = progressui.DisplaySolveStatus(ctx, c, w, pw.status, opt.displayOpts...)
 			resumeLogs()
 			close(pw.done)
 
@@ -124,8 +142,6 @@ func NewPrinter(ctx context.Context, out console.File, mode progressui.DisplayMo
 			pw.ready = make(chan struct{})
 			<-pw.paused
 			pw.paused = nil
-
-			d, _ = progressui.NewDisplay(out, mode, opt.displayOpts...)
 		}
 	}()
 	<-pw.ready
@@ -146,7 +162,7 @@ func (p *Printer) BuildRefs() map[string]string {
 }
 
 type printerOpts struct {
-	displayOpts []progressui.DisplayOpt
+	displayOpts []progressui.DisplaySolveStatusOpt
 
 	onclose func()
 }

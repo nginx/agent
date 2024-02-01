@@ -62,13 +62,6 @@ func (t TemperatureStat) String() string {
 	return string(s)
 }
 
-var enableBootTimeCache bool
-
-// EnableBootTimeCache change cache behavior of BootTime. If true, cache BootTime value. Default is false.
-func EnableBootTimeCache(enable bool) {
-	enableBootTimeCache = enable
-}
-
 func Info() (*InfoStat, error) {
 	return InfoWithContext(context.Background())
 }

@@ -7,9 +7,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/distribution/reference"
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/volume"
 	units "github.com/docker/go-units"
 )
@@ -35,7 +34,7 @@ type DiskUsageContext struct {
 	Context
 	Verbose     bool
 	LayersSize  int64
-	Images      []*image.Summary
+	Images      []*types.ImageSummary
 	Containers  []*types.Container
 	Volumes     []*volume.Volume
 	BuildCache  []*types.BuildCache
@@ -262,7 +261,7 @@ func (ctx *DiskUsageContext) verboseWriteTable(duc *diskUsageContext) error {
 type diskUsageImagesContext struct {
 	HeaderContext
 	totalSize int64
-	images    []*image.Summary
+	images    []*types.ImageSummary
 }
 
 func (c *diskUsageImagesContext) MarshalJSON() ([]byte, error) {

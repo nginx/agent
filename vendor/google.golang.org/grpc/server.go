@@ -74,6 +74,9 @@ func init() {
 		return srv.isRegisteredMethod(method)
 	}
 	internal.ServerFromContext = serverFromContext
+	internal.DrainServerTransports = func(srv *Server, addr string) {
+		srv.drainServerTransports(addr)
+	}
 	internal.AddGlobalServerOptions = func(opt ...ServerOption) {
 		globalServerOptions = append(globalServerOptions, opt...)
 	}
@@ -136,8 +139,7 @@ type Server struct {
 	quit               *grpcsync.Event
 	done               *grpcsync.Event
 	channelzRemoveOnce sync.Once
-	serveWG            sync.WaitGroup // counts active Serve goroutines for Stop/GracefulStop
-	handlersWG         sync.WaitGroup // counts active method handler goroutines
+	serveWG            sync.WaitGroup // counts active Serve goroutines for GracefulStop
 
 	channelzID *channelz.Identifier
 	czData     *channelzData
@@ -174,7 +176,6 @@ type serverOptions struct {
 	headerTableSize       *uint32
 	numServerWorkers      uint32
 	recvBufferPool        SharedBufferPool
-	waitForHandlers       bool
 }
 
 var defaultServerOptions = serverOptions{
@@ -572,21 +573,6 @@ func NumStreamWorkers(numServerWorkers uint32) ServerOption {
 	})
 }
 
-// WaitForHandlers cause Stop to wait until all outstanding method handlers have
-// exited before returning.  If false, Stop will return as soon as all
-// connections have closed, but method handlers may still be running. By
-// default, Stop does not wait for method handlers to return.
-//
-// # Experimental
-//
-// Notice: This API is EXPERIMENTAL and may be changed or removed in a
-// later release.
-func WaitForHandlers(w bool) ServerOption {
-	return newFuncServerOption(func(o *serverOptions) {
-		o.waitForHandlers = w
-	})
-}
-
 // RecvBufferPool returns a ServerOption that configures the server
 // to use the provided shared buffer pool for parsing incoming messages. Depending
 // on the application's workload, this could result in reduced memory allocation.
@@ -946,12 +932,6 @@ func (s *Server) handleRawConn(lisAddr string, rawConn net.Conn) {
 		return
 	}
 
-	if cc, ok := rawConn.(interface {
-		PassServerTransport(transport.ServerTransport)
-	}); ok {
-		cc.PassServerTransport(st)
-	}
-
 	if !s.addConn(lisAddr, st) {
 		return
 	}
@@ -959,6 +939,15 @@ func (s *Server) handleRawConn(lisAddr string, rawConn net.Conn) {
 		s.serveStreams(context.Background(), st, rawConn)
 		s.removeConn(lisAddr, st)
 	}()
+}
+
+func (s *Server) drainServerTransports(addr string) {
+	s.mu.Lock()
+	conns := s.conns[addr]
+	for st := range conns {
+		st.Drain("")
+	}
+	s.mu.Unlock()
 }
 
 // newHTTP2Transport sets up a http/2 transport (using the
@@ -1021,11 +1010,9 @@ func (s *Server) serveStreams(ctx context.Context, st transport.ServerTransport,
 
 	streamQuota := newHandlerQuota(s.opts.maxConcurrentStreams)
 	st.HandleStreams(ctx, func(stream *transport.Stream) {
-		s.handlersWG.Add(1)
 		streamQuota.acquire()
 		f := func() {
 			defer streamQuota.release()
-			defer s.handlersWG.Done()
 			s.handleStream(st, stream)
 		}
 
@@ -1922,10 +1909,6 @@ func (s *Server) stop(graceful bool) {
 		// goroutines executing the callback passed to st.HandleStreams (where
 		// the channel is written to).
 		s.serverWorkerChannelClose()
-	}
-
-	if graceful || s.opts.waitForHandlers {
-		s.handlersWG.Wait()
 	}
 
 	if s.events != nil {

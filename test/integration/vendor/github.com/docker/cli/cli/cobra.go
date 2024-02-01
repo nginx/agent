@@ -9,6 +9,7 @@ import (
 
 	pluginmanager "github.com/docker/cli/cli-plugins/manager"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/config"
 	cliflags "github.com/docker/cli/cli/flags"
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/docker/docker/registry"
@@ -22,9 +23,12 @@ import (
 
 // setupCommonRootCommand contains the setup common to
 // SetupRootCommand and SetupPluginRootCommand.
-func setupCommonRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *cobra.Command) {
+func setupCommonRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *pflag.FlagSet, *cobra.Command) {
 	opts := cliflags.NewClientOptions()
-	opts.InstallFlags(rootCmd.Flags())
+	flags := rootCmd.Flags()
+
+	flags.StringVar(&opts.ConfigDir, "config", config.Dir(), "Location of client config files")
+	opts.InstallFlags(flags)
 
 	cobra.AddTemplateFunc("add", func(a, b int) int { return a + b })
 	cobra.AddTemplateFunc("hasAliases", hasAliases)
@@ -69,20 +73,20 @@ func setupCommonRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *c
 		}
 	}
 
-	return opts, helpCommand
+	return opts, flags, helpCommand
 }
 
 // SetupRootCommand sets default usage, help, and error handling for the
 // root command.
-func SetupRootCommand(rootCmd *cobra.Command) (opts *cliflags.ClientOptions, helpCmd *cobra.Command) {
+func SetupRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *pflag.FlagSet, *cobra.Command) {
 	rootCmd.SetVersionTemplate("Docker version {{.Version}}\n")
 	return setupCommonRootCommand(rootCmd)
 }
 
 // SetupPluginRootCommand sets default usage, help and error handling for a plugin root command.
 func SetupPluginRootCommand(rootCmd *cobra.Command) (*cliflags.ClientOptions, *pflag.FlagSet) {
-	opts, _ := setupCommonRootCommand(rootCmd)
-	return opts, rootCmd.Flags()
+	opts, flags, _ := setupCommonRootCommand(rootCmd)
+	return opts, flags
 }
 
 // FlagErrorFunc prints an error message which matches the format of the
@@ -176,7 +180,7 @@ func (tcmd *TopLevelCommand) HandleGlobalFlags() (*cobra.Command, []string, erro
 }
 
 // Initialize finalises global option parsing and initializes the docker client.
-func (tcmd *TopLevelCommand) Initialize(ops ...command.CLIOption) error {
+func (tcmd *TopLevelCommand) Initialize(ops ...command.InitializeOpt) error {
 	tcmd.opts.SetDefaultOptions(tcmd.flags)
 	return tcmd.dockerCli.Initialize(tcmd.opts, ops...)
 }

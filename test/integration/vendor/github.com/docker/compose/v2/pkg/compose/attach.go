@@ -18,15 +18,13 @@ package compose
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
 
-	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli/streams"
 	moby "github.com/docker/docker/api/types"
-	containerType "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/moby/term"
 
@@ -100,7 +98,7 @@ func (s *composeService) attachContainer(ctx context.Context, container moby.Con
 	return err
 }
 
-func (s *composeService) attachContainerStreams(ctx context.Context, container string, tty bool, stdin io.ReadCloser, stdout, stderr io.WriteCloser) (func(), chan bool, error) {
+func (s *composeService) attachContainerStreams(ctx context.Context, container string, tty bool, stdin io.ReadCloser, stdout, stderr io.Writer) (func(), chan bool, error) {
 	detached := make(chan bool)
 	var (
 		restore = func() { /* noop */ }
@@ -134,8 +132,7 @@ func (s *composeService) attachContainerStreams(ctx context.Context, container s
 	if streamIn != nil && stdin != nil {
 		go func() {
 			_, err := io.Copy(streamIn, stdin)
-			var escapeErr term.EscapeError
-			if errors.As(err, &escapeErr) {
+			if _, ok := err.(term.EscapeError); ok {
 				close(detached)
 			}
 		}()
@@ -143,8 +140,6 @@ func (s *composeService) attachContainerStreams(ctx context.Context, container s
 
 	if stdout != nil {
 		go func() {
-			defer stdout.Close() //nolint:errcheck
-			defer stderr.Close() //nolint:errcheck
 			if tty {
 				io.Copy(stdout, streamOut) //nolint:errcheck
 			} else {
@@ -158,7 +153,7 @@ func (s *composeService) attachContainerStreams(ctx context.Context, container s
 func (s *composeService) getContainerStreams(ctx context.Context, container string) (io.WriteCloser, io.ReadCloser, error) {
 	var stdout io.ReadCloser
 	var stdin io.WriteCloser
-	cnx, err := s.apiClient().ContainerAttach(ctx, container, containerType.AttachOptions{
+	cnx, err := s.apiClient().ContainerAttach(ctx, container, moby.ContainerAttachOptions{
 		Stream: true,
 		Stdin:  true,
 		Stdout: true,
@@ -172,7 +167,7 @@ func (s *composeService) getContainerStreams(ctx context.Context, container stri
 	}
 
 	// Fallback to logs API
-	logs, err := s.apiClient().ContainerLogs(ctx, container, containerType.LogsOptions{
+	logs, err := s.apiClient().ContainerLogs(ctx, container, moby.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Follow:     true,

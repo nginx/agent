@@ -41,7 +41,7 @@ func Ellipsis(s string, maxDisplayWidth int) string {
 	}
 
 	var (
-		display      = make([]int, 0, len(rs))
+		display      []int
 		displayWidth int
 	)
 	for _, r := range rs {

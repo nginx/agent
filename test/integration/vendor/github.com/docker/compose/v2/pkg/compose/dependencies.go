@@ -22,8 +22,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/compose/v2/pkg/api"
+	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/docker/compose/v2/pkg/utils"
@@ -323,10 +324,10 @@ func (g *Graph) AddEdge(source string, destination string) error {
 	destinationVertex := g.Vertices[destination]
 
 	if sourceVertex == nil {
-		return fmt.Errorf("could not find %s: %w", source, api.ErrNotFound)
+		return errors.Wrapf(api.ErrNotFound, "could not find %s", source)
 	}
 	if destinationVertex == nil {
-		return fmt.Errorf("could not find %s: %w", destination, api.ErrNotFound)
+		return errors.Wrapf(api.ErrNotFound, "could not find %s", destination)
 	}
 
 	// If they are already connected

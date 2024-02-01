@@ -29,8 +29,6 @@ type SSLibKey struct {
 
 type KeyVal struct {
 	Private     string `json:"private,omitempty"`
-	Public      string `json:"public,omitempty"`
+	Public      string `json:"public"`
 	Certificate string `json:"certificate,omitempty"`
-	Identity    string `json:"identity,omitempty"`
-	Issuer      string `json:"issuer,omitempty"`
 }

@@ -36,8 +36,6 @@ func Times(percpu bool) ([]TimesStat, error) {
 	return TimesWithContext(context.Background(), percpu)
 }
 
-var kstatSplit = regexp.MustCompile(`[:\s]+`)
-
 func TimesWithContext(ctx context.Context, percpu bool) ([]TimesStat, error) {
 	kstatSysOut, err := invoke.CommandWithContext(ctx, "kstat", "-p", "cpu_stat:*:*:/^idle$|^user$|^kernel$|^iowait$|^swap$/")
 	if err != nil {
@@ -49,8 +47,9 @@ func TimesWithContext(ctx context.Context, percpu bool) ([]TimesStat, error) {
 	kern := make(map[float64]float64)
 	iowt := make(map[float64]float64)
 	// swap := make(map[float64]float64)
+	re := regexp.MustCompile(`[:\s]+`)
 	for _, line := range strings.Split(string(kstatSysOut), "\n") {
-		fields := kstatSplit.Split(line, -1)
+		fields := re.Split(line, -1)
 		if fields[0] != "cpu_stat" {
 			continue
 		}

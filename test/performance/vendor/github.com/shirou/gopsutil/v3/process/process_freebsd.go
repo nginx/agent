@@ -286,11 +286,11 @@ func (p *Process) ChildrenWithContext(ctx context.Context) ([]*Process, error) {
 }
 
 func (p *Process) ConnectionsWithContext(ctx context.Context) ([]net.ConnectionStat, error) {
-	return net.ConnectionsPidWithContext(ctx, "all", p.Pid)
+	return nil, common.ErrNotImplementedError
 }
 
 func (p *Process) ConnectionsMaxWithContext(ctx context.Context, max int) ([]net.ConnectionStat, error) {
-	return net.ConnectionsPidMaxWithContext(ctx, "all", p.Pid, max)
+	return nil, common.ErrNotImplementedError
 }
 
 func ProcessesWithContext(ctx context.Context) ([]*Process, error) {

@@ -16,10 +16,6 @@ var (
 	DefaultCNIConfigPath = filepath.Join(ConfigDir, "cni.json")
 )
 
-var (
-	UserCNIConfigPath = DefaultCNIConfigPath
-)
-
 func UserAddress() string {
 	return Address
 }
@@ -34,8 +30,4 @@ func UserRoot() string {
 
 func UserConfigDir() string {
 	return ConfigDir
-}
-
-func TraceSocketPath(inUserNS bool) string {
-	return `\\.\pipe\buildkit-otel-grpc`
 }

@@ -17,15 +17,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AttachOptions group options for `attach` command
-type AttachOptions struct {
-	NoStdin    bool
-	Proxy      bool
-	DetachKeys string
+type attachOptions struct {
+	noStdin    bool
+	proxy      bool
+	detachKeys string
+
+	container string
 }
 
-func inspectContainerAndCheckState(ctx context.Context, apiClient client.APIClient, args string) (*types.ContainerJSON, error) {
-	c, err := apiClient.ContainerInspect(ctx, args)
+func inspectContainerAndCheckState(ctx context.Context, cli client.APIClient, args string) (*types.ContainerJSON, error) {
+	c, err := cli.ContainerInspect(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -44,73 +45,71 @@ func inspectContainerAndCheckState(ctx context.Context, apiClient client.APIClie
 
 // NewAttachCommand creates a new cobra.Command for `docker attach`
 func NewAttachCommand(dockerCli command.Cli) *cobra.Command {
-	var opts AttachOptions
-	var ctr string
+	var opts attachOptions
 
 	cmd := &cobra.Command{
 		Use:   "attach [OPTIONS] CONTAINER",
 		Short: "Attach local standard input, output, and error streams to a running container",
 		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctr = args[0]
-			return RunAttach(cmd.Context(), dockerCli, ctr, &opts)
+			opts.container = args[0]
+			return runAttach(dockerCli, &opts)
 		},
 		Annotations: map[string]string{
 			"aliases": "docker container attach, docker attach",
 		},
-		ValidArgsFunction: completion.ContainerNames(dockerCli, false, func(ctr types.Container) bool {
-			return ctr.State != "paused"
+		ValidArgsFunction: completion.ContainerNames(dockerCli, false, func(container types.Container) bool {
+			return container.State != "paused"
 		}),
 	}
 
 	flags := cmd.Flags()
-	flags.BoolVar(&opts.NoStdin, "no-stdin", false, "Do not attach STDIN")
-	flags.BoolVar(&opts.Proxy, "sig-proxy", true, "Proxy all received signals to the process")
-	flags.StringVar(&opts.DetachKeys, "detach-keys", "", "Override the key sequence for detaching a container")
+	flags.BoolVar(&opts.noStdin, "no-stdin", false, "Do not attach STDIN")
+	flags.BoolVar(&opts.proxy, "sig-proxy", true, "Proxy all received signals to the process")
+	flags.StringVar(&opts.detachKeys, "detach-keys", "", "Override the key sequence for detaching a container")
 	return cmd
 }
 
-// RunAttach executes an `attach` command
-func RunAttach(ctx context.Context, dockerCLI command.Cli, target string, opts *AttachOptions) error {
-	apiClient := dockerCLI.Client()
+func runAttach(dockerCli command.Cli, opts *attachOptions) error {
+	ctx := context.Background()
+	client := dockerCli.Client()
 
 	// request channel to wait for client
-	resultC, errC := apiClient.ContainerWait(ctx, target, "")
+	resultC, errC := client.ContainerWait(ctx, opts.container, "")
 
-	c, err := inspectContainerAndCheckState(ctx, apiClient, target)
+	c, err := inspectContainerAndCheckState(ctx, client, opts.container)
 	if err != nil {
 		return err
 	}
 
-	if err := dockerCLI.In().CheckTty(!opts.NoStdin, c.Config.Tty); err != nil {
+	if err := dockerCli.In().CheckTty(!opts.noStdin, c.Config.Tty); err != nil {
 		return err
 	}
 
-	detachKeys := dockerCLI.ConfigFile().DetachKeys
-	if opts.DetachKeys != "" {
-		detachKeys = opts.DetachKeys
+	if opts.detachKeys != "" {
+		dockerCli.ConfigFile().DetachKeys = opts.detachKeys
 	}
 
-	options := container.AttachOptions{
+	options := types.ContainerAttachOptions{
 		Stream:     true,
-		Stdin:      !opts.NoStdin && c.Config.OpenStdin,
+		Stdin:      !opts.noStdin && c.Config.OpenStdin,
 		Stdout:     true,
 		Stderr:     true,
-		DetachKeys: detachKeys,
+		DetachKeys: dockerCli.ConfigFile().DetachKeys,
 	}
 
 	var in io.ReadCloser
 	if options.Stdin {
-		in = dockerCLI.In()
+		in = dockerCli.In()
 	}
 
-	if opts.Proxy && !c.Config.Tty {
+	if opts.proxy && !c.Config.Tty {
 		sigc := notifyAllSignals()
-		go ForwardAllSignals(ctx, apiClient, target, sigc)
+		go ForwardAllSignals(ctx, dockerCli, opts.container, sigc)
 		defer signal.StopCatch(sigc)
 	}
 
-	resp, errAttach := apiClient.ContainerAttach(ctx, target, options)
+	resp, errAttach := client.ContainerAttach(ctx, opts.container, options)
 	if errAttach != nil {
 		return errAttach
 	}
@@ -124,20 +123,20 @@ func RunAttach(ctx context.Context, dockerCLI command.Cli, target string, opts *
 	// the container and not exit.
 	//
 	// Recheck the container's state to avoid attach block.
-	_, err = inspectContainerAndCheckState(ctx, apiClient, target)
+	_, err = inspectContainerAndCheckState(ctx, client, opts.container)
 	if err != nil {
 		return err
 	}
 
-	if c.Config.Tty && dockerCLI.Out().IsTerminal() {
-		resizeTTY(ctx, dockerCLI, target)
+	if c.Config.Tty && dockerCli.Out().IsTerminal() {
+		resizeTTY(ctx, dockerCli, opts.container)
 	}
 
 	streamer := hijackedIOStreamer{
-		streams:      dockerCLI,
+		streams:      dockerCli,
 		inputStream:  in,
-		outputStream: dockerCLI.Out(),
-		errorStream:  dockerCLI.Err(),
+		outputStream: dockerCli.Out(),
+		errorStream:  dockerCli.Err(),
 		resp:         resp,
 		tty:          c.Config.Tty,
 		detachKeys:   options.DetachKeys,

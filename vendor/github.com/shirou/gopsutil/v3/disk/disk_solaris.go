@@ -83,8 +83,6 @@ func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, erro
 	return ret, err
 }
 
-var kstatSplit = regexp.MustCompile(`[:\s]+`)
-
 func IOCountersWithContext(ctx context.Context, names ...string) (map[string]IOCountersStat, error) {
 	var issolaris bool
 	if runtime.GOOS == "illumos" {
@@ -109,6 +107,7 @@ func IOCountersWithContext(ctx context.Context, names ...string) (map[string]IOC
 	writesarr := make(map[string]uint64)
 	rtimearr := make(map[string]uint64)
 	wtimearr := make(map[string]uint64)
+	re := regexp.MustCompile(`[:\s]+`)
 
 	// in case the name is "/dev/sda1", then convert to "sda1"
 	for i, name := range names {
@@ -116,7 +115,7 @@ func IOCountersWithContext(ctx context.Context, names ...string) (map[string]IOC
 	}
 
 	for _, line := range lines {
-		fields := kstatSplit.Split(line, -1)
+		fields := re.Split(line, -1)
 		if len(fields) == 0 {
 			continue
 		}

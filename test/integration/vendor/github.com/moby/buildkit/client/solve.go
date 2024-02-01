@@ -35,8 +35,7 @@ import (
 
 type SolveOpt struct {
 	Exports               []ExportEntry
-	LocalDirs             map[string]string // Deprecated: use LocalMounts
-	LocalMounts           map[string]fsutil.FS
+	LocalDirs             map[string]string
 	OCIStores             map[string]content.Store
 	SharedKey             string
 	Frontend              string
@@ -56,8 +55,8 @@ type SolveOpt struct {
 type ExportEntry struct {
 	Type      string
 	Attrs     map[string]string
-	Output    filesync.FileOutputFunc // for ExporterOCI and ExporterDocker
-	OutputDir string                  // for ExporterLocal
+	Output    func(map[string]string) (io.WriteCloser, error) // for ExporterOCI and ExporterDocker
+	OutputDir string                                          // for ExporterLocal
 }
 
 type CacheOptionsEntry struct {
@@ -91,11 +90,7 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 		return nil, errors.New("invalid with def and cb")
 	}
 
-	mounts, err := prepareMounts(&opt)
-	if err != nil {
-		return nil, err
-	}
-	syncedDirs, err := prepareSyncedFiles(def, mounts)
+	syncedDirs, err := prepareSyncedDirs(def, opt.LocalDirs)
 	if err != nil {
 		return nil, err
 	}
@@ -106,8 +101,8 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 	}
 	eg, ctx := errgroup.WithContext(ctx)
 
-	statusContext, cancelStatus := context.WithCancelCause(context.Background())
-	defer cancelStatus(errors.WithStack(context.Canceled))
+	statusContext, cancelStatus := context.WithCancel(context.Background())
+	defer cancelStatus()
 
 	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() {
 		statusContext = trace.ContextWithSpan(statusContext, span)
@@ -128,6 +123,14 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 	cacheOpt, err := parseCacheOptions(ctx, runGateway != nil, opt)
 	if err != nil {
 		return nil, err
+	}
+
+	var ex ExportEntry
+	if len(opt.Exports) > 1 {
+		return nil, errors.New("currently only single Exports can be specified")
+	}
+	if len(opt.Exports) == 1 {
+		ex = opt.Exports[0]
 	}
 
 	storesToUpdate := []string{}
@@ -153,61 +156,56 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 			contentStores[key2] = store
 		}
 
-		var syncTargets []filesync.FSSyncTarget
-		for exID, ex := range opt.Exports {
-			var supportFile bool
-			var supportDir bool
+		var supportFile bool
+		var supportDir bool
+		switch ex.Type {
+		case ExporterLocal:
+			supportDir = true
+		case ExporterTar:
+			supportFile = true
+		case ExporterOCI, ExporterDocker:
+			supportDir = ex.OutputDir != ""
+			supportFile = ex.Output != nil
+		}
+
+		if supportFile && supportDir {
+			return nil, errors.Errorf("both file and directory output is not supported by %s exporter", ex.Type)
+		}
+		if !supportFile && ex.Output != nil {
+			return nil, errors.Errorf("output file writer is not supported by %s exporter", ex.Type)
+		}
+		if !supportDir && ex.OutputDir != "" {
+			return nil, errors.Errorf("output directory is not supported by %s exporter", ex.Type)
+		}
+
+		if supportFile {
+			if ex.Output == nil {
+				return nil, errors.Errorf("output file writer is required for %s exporter", ex.Type)
+			}
+			s.Allow(filesync.NewFSSyncTarget(ex.Output))
+		}
+		if supportDir {
+			if ex.OutputDir == "" {
+				return nil, errors.Errorf("output directory is required for %s exporter", ex.Type)
+			}
 			switch ex.Type {
-			case ExporterLocal:
-				supportDir = true
-			case ExporterTar:
-				supportFile = true
 			case ExporterOCI, ExporterDocker:
-				supportDir = ex.OutputDir != ""
-				supportFile = ex.Output != nil
-			}
-			if supportFile && supportDir {
-				return nil, errors.Errorf("both file and directory output is not supported by %s exporter", ex.Type)
-			}
-			if !supportFile && ex.Output != nil {
-				return nil, errors.Errorf("output file writer is not supported by %s exporter", ex.Type)
-			}
-			if !supportDir && ex.OutputDir != "" {
-				return nil, errors.Errorf("output directory is not supported by %s exporter", ex.Type)
-			}
-			if supportFile {
-				if ex.Output == nil {
-					return nil, errors.Errorf("output file writer is required for %s exporter", ex.Type)
+				if err := os.MkdirAll(ex.OutputDir, 0755); err != nil {
+					return nil, err
 				}
-				syncTargets = append(syncTargets, filesync.WithFSSync(exID, ex.Output))
-			}
-			if supportDir {
-				if ex.OutputDir == "" {
-					return nil, errors.Errorf("output directory is required for %s exporter", ex.Type)
+				cs, err := contentlocal.NewStore(ex.OutputDir)
+				if err != nil {
+					return nil, err
 				}
-				switch ex.Type {
-				case ExporterOCI, ExporterDocker:
-					if err := os.MkdirAll(ex.OutputDir, 0755); err != nil {
-						return nil, err
-					}
-					cs, err := contentlocal.NewStore(ex.OutputDir)
-					if err != nil {
-						return nil, err
-					}
-					contentStores["export"] = cs
-					storesToUpdate = append(storesToUpdate, ex.OutputDir)
-				default:
-					syncTargets = append(syncTargets, filesync.WithFSSyncDir(exID, ex.OutputDir))
-				}
+				contentStores["export"] = cs
+				storesToUpdate = append(storesToUpdate, ex.OutputDir)
+			default:
+				s.Allow(filesync.NewFSSyncTargetDir(ex.OutputDir))
 			}
 		}
 
 		if len(contentStores) > 0 {
 			s.Allow(sessioncontent.NewAttachable(contentStores))
-		}
-
-		if len(syncTargets) > 0 {
-			s.Allow(filesync.NewFSSyncTarget(syncTargets...))
 		}
 
 		eg.Go(func() error {
@@ -227,16 +225,16 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 		frontendAttrs[k] = v
 	}
 
-	solveCtx, cancelSolve := context.WithCancelCause(ctx)
+	solveCtx, cancelSolve := context.WithCancel(ctx)
 	var res *SolveResponse
 	eg.Go(func() error {
 		ctx := solveCtx
-		defer cancelSolve(errors.WithStack(context.Canceled))
+		defer cancelSolve()
 
 		defer func() { // make sure the Status ends cleanly on build errors
 			go func() {
 				<-time.After(3 * time.Second)
-				cancelStatus(errors.WithStack(context.Canceled))
+				cancelStatus()
 			}()
 			if !opt.SessionPreInitialized {
 				bklog.G(ctx).Debugf("stopping session")
@@ -257,34 +255,19 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 			frontendInputs[key] = def.ToPB()
 		}
 
-		exports := make([]*controlapi.Exporter, 0, len(opt.Exports))
-		exportDeprecated := ""
-		exportAttrDeprecated := map[string]string{}
-		for i, exp := range opt.Exports {
-			if i == 0 {
-				exportDeprecated = exp.Type
-				exportAttrDeprecated = exp.Attrs
-			}
-			exports = append(exports, &controlapi.Exporter{
-				Type:  exp.Type,
-				Attrs: exp.Attrs,
-			})
-		}
-
 		resp, err := c.ControlClient().Solve(ctx, &controlapi.SolveRequest{
-			Ref:                     ref,
-			Definition:              pbd,
-			Exporters:               exports,
-			ExporterDeprecated:      exportDeprecated,
-			ExporterAttrsDeprecated: exportAttrDeprecated,
-			Session:                 s.ID(),
-			Frontend:                opt.Frontend,
-			FrontendAttrs:           frontendAttrs,
-			FrontendInputs:          frontendInputs,
-			Cache:                   cacheOpt.options,
-			Entitlements:            opt.AllowedEntitlements,
-			Internal:                opt.Internal,
-			SourcePolicy:            opt.SourcePolicy,
+			Ref:            ref,
+			Definition:     pbd,
+			Exporter:       ex.Type,
+			ExporterAttrs:  ex.Attrs,
+			Session:        s.ID(),
+			Frontend:       opt.Frontend,
+			FrontendAttrs:  frontendAttrs,
+			FrontendInputs: frontendInputs,
+			Cache:          cacheOpt.options,
+			Entitlements:   opt.AllowedEntitlements,
+			Internal:       opt.Internal,
+			SourcePolicy:   opt.SourcePolicy,
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to solve")
@@ -310,7 +293,7 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 			select {
 			case <-solveCtx.Done():
 			case <-time.After(5 * time.Second):
-				cancelSolve(errors.WithStack(context.Canceled))
+				cancelSolve()
 			}
 
 			return err
@@ -378,23 +361,26 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 	return res, nil
 }
 
-func prepareSyncedFiles(def *llb.Definition, localMounts map[string]fsutil.FS) (filesync.StaticDirSource, error) {
+func prepareSyncedDirs(def *llb.Definition, localDirs map[string]string) (filesync.StaticDirSource, error) {
+	for _, d := range localDirs {
+		fi, err := os.Stat(d)
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not find %s", d)
+		}
+		if !fi.IsDir() {
+			return nil, errors.Errorf("%s not a directory", d)
+		}
+	}
 	resetUIDAndGID := func(p string, st *fstypes.Stat) fsutil.MapResult {
 		st.Uid = 0
 		st.Gid = 0
 		return fsutil.MapResultKeep
 	}
 
-	result := make(filesync.StaticDirSource, len(localMounts))
+	dirs := make(filesync.StaticDirSource, len(localDirs))
 	if def == nil {
-		for name, mount := range localMounts {
-			mount, err := fsutil.NewFilterFS(mount, &fsutil.FilterOpt{
-				Map: resetUIDAndGID,
-			})
-			if err != nil {
-				return nil, err
-			}
-			result[name] = mount
+		for name, d := range localDirs {
+			dirs[name] = filesync.SyncedDir{Dir: d, Map: resetUIDAndGID}
 		}
 	} else {
 		for _, dt := range def.Def {
@@ -405,22 +391,16 @@ func prepareSyncedFiles(def *llb.Definition, localMounts map[string]fsutil.FS) (
 			if src := op.GetSource(); src != nil {
 				if strings.HasPrefix(src.Identifier, "local://") {
 					name := strings.TrimPrefix(src.Identifier, "local://")
-					mount, ok := localMounts[name]
+					d, ok := localDirs[name]
 					if !ok {
 						return nil, errors.Errorf("local directory %s not enabled", name)
 					}
-					mount, err := fsutil.NewFilterFS(mount, &fsutil.FilterOpt{
-						Map: resetUIDAndGID,
-					})
-					if err != nil {
-						return nil, err
-					}
-					result[name] = mount
+					dirs[name] = filesync.SyncedDir{Dir: d, Map: resetUIDAndGID}
 				}
 			}
 		}
 	}
-	return result, nil
+	return dirs, nil
 }
 
 func defaultSessionName() string {
@@ -542,23 +522,4 @@ func parseCacheOptions(ctx context.Context, isGateway bool, opt SolveOpt) (*cach
 		frontendAttrs:  frontendAttrs,
 	}
 	return &res, nil
-}
-
-func prepareMounts(opt *SolveOpt) (map[string]fsutil.FS, error) {
-	// merge local mounts and fallback local directories together
-	mounts := make(map[string]fsutil.FS)
-	for k, mount := range opt.LocalMounts {
-		mounts[k] = mount
-	}
-	for k, dir := range opt.LocalDirs {
-		mount, err := fsutil.NewFS(dir)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := mounts[k]; ok {
-			return nil, errors.Errorf("local mount %s already exists", k)
-		}
-		mounts[k] = mount
-	}
-	return mounts, nil
 }

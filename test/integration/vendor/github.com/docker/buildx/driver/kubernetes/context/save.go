@@ -68,7 +68,6 @@ func FromKubeConfig(kubeconfig, kubeContext, namespaceOverride string) (Endpoint
 			AuthProvider:     clientcfg.AuthProvider,
 			Exec:             clientcfg.ExecProvider,
 			UsernamePassword: usernamePassword,
-			Token:            clientcfg.BearerToken,
 		},
 		TLSData: tlsData,
 	}, nil

@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+var whiteSpaces = regexp.MustCompile(`\s+`)
 var startBlank = regexp.MustCompile(`^\s+`)
 
 var ignoreFSType = map[string]bool{"procfs": true}
@@ -59,7 +60,7 @@ func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, erro
 		if startBlank.MatchString(line) {
 			line = "localhost" + line
 		}
-		p := strings.Fields(lines[idx])
+		p := whiteSpaces.Split(lines[idx], 6)
 		if len(p) < 5 || ignoreFSType[p[colidx["vfs"]]] {
 			continue
 		}

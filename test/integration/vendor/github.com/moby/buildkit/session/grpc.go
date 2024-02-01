@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/containerd/containerd/defaults"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/moby/buildkit/util/bklog"
 	"github.com/moby/buildkit/util/grpcerrors"
@@ -45,8 +44,6 @@ func grpcClientConn(ctx context.Context, conn net.Conn) (context.Context, *grpc.
 	dialOpts := []grpc.DialOption{
 		dialer,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaults.DefaultMaxRecvMsgSize)),
-		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(defaults.DefaultMaxSendMsgSize)),
 	}
 
 	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() {
@@ -74,14 +71,14 @@ func grpcClientConn(ctx context.Context, conn net.Conn) (context.Context, *grpc.
 		return nil, nil, errors.Wrap(err, "failed to create grpc client")
 	}
 
-	ctx, cancel := context.WithCancelCause(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	go monitorHealth(ctx, cc, cancel)
 
 	return ctx, cc, nil
 }
 
-func monitorHealth(ctx context.Context, cc *grpc.ClientConn, cancelConn func(error)) {
-	defer cancelConn(errors.WithStack(context.Canceled))
+func monitorHealth(ctx context.Context, cc *grpc.ClientConn, cancelConn func()) {
+	defer cancelConn()
 	defer cc.Close()
 
 	ticker := time.NewTicker(5 * time.Second)
@@ -104,11 +101,9 @@ func monitorHealth(ctx context.Context, cc *grpc.ClientConn, cancelConn func(err
 			healthcheckStart := time.Now()
 
 			timeout := time.Duration(math.Max(float64(defaultHealthcheckDuration), float64(lastHealthcheckDuration)*1.5))
-
-			ctx, cancel := context.WithCancelCause(ctx)
-			ctx, _ = context.WithTimeoutCause(ctx, timeout, errors.WithStack(context.DeadlineExceeded))
+			ctx, cancel := context.WithTimeout(ctx, timeout)
 			_, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
-			cancel(errors.WithStack(context.Canceled))
+			cancel()
 
 			lastHealthcheckDuration = time.Since(healthcheckStart)
 			logFields := logrus.Fields{

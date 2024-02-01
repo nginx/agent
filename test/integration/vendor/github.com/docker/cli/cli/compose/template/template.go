@@ -1,6 +1,3 @@
-// FIXME(thaJeztah): remove once we are a module; the go:build directive prevents go from downgrading language version to go1.16:
-//go:build go1.19
-
 package template
 
 import (
@@ -9,15 +6,17 @@ import (
 	"strings"
 )
 
-const (
-	delimiter = "\\$"
-	subst     = "[_a-z][_a-z0-9]*(?::?[-?][^}]*)?"
+var (
+	delimiter    = "\\$"
+	substitution = "[_a-z][_a-z0-9]*(?::?[-?][^}]*)?"
 )
 
-var defaultPattern = regexp.MustCompile(fmt.Sprintf(
+var patternString = fmt.Sprintf(
 	"%s(?i:(?P<escaped>%s)|(?P<named>%s)|{(?P<braced>%s)}|(?P<invalid>))",
-	delimiter, delimiter, subst, subst,
-))
+	delimiter, delimiter, substitution, substitution,
+)
+
+var defaultPattern = regexp.MustCompile(patternString)
 
 // DefaultSubstituteFuncs contains the default SubstituteFunc used by the docker cli
 var DefaultSubstituteFuncs = []SubstituteFunc{
@@ -98,14 +97,14 @@ func Substitute(template string, mapping Mapping) (string, error) {
 
 // ExtractVariables returns a map of all the variables defined in the specified
 // composefile (dict representation) and their default value if any.
-func ExtractVariables(configDict map[string]any, pattern *regexp.Regexp) map[string]string {
+func ExtractVariables(configDict map[string]interface{}, pattern *regexp.Regexp) map[string]string {
 	if pattern == nil {
 		pattern = defaultPattern
 	}
 	return recurseExtract(configDict, pattern)
 }
 
-func recurseExtract(value any, pattern *regexp.Regexp) map[string]string {
+func recurseExtract(value interface{}, pattern *regexp.Regexp) map[string]string {
 	m := map[string]string{}
 
 	switch value := value.(type) {
@@ -115,7 +114,7 @@ func recurseExtract(value any, pattern *regexp.Regexp) map[string]string {
 				m[v.name] = v.value
 			}
 		}
-	case map[string]any:
+	case map[string]interface{}:
 		for _, elem := range value {
 			submap := recurseExtract(elem, pattern)
 			for key, value := range submap {
@@ -123,7 +122,7 @@ func recurseExtract(value any, pattern *regexp.Regexp) map[string]string {
 			}
 		}
 
-	case []any:
+	case []interface{}:
 		for _, elem := range value {
 			if values, is := extractVariable(elem, pattern); is {
 				for _, v := range values {
@@ -141,7 +140,7 @@ type extractedValue struct {
 	value string
 }
 
-func extractVariable(value any, pattern *regexp.Regexp) ([]extractedValue, bool) {
+func extractVariable(value interface{}, pattern *regexp.Regexp) ([]extractedValue, bool) {
 	sValue, ok := value.(string)
 	if !ok {
 		return []extractedValue{}, false

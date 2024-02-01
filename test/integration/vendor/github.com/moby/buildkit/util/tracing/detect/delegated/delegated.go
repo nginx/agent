@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/moby/buildkit/util/tracing/detect"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -14,8 +13,8 @@ const maxBuffer = 256
 var exp = &Exporter{}
 
 func init() {
-	detect.Register("delegated", func() (sdktrace.SpanExporter, sdkmetric.Exporter, error) {
-		return exp, nil, nil
+	detect.Register("delegated", func() (sdktrace.SpanExporter, error) {
+		return exp, nil
 	}, 100)
 }
 

@@ -9,10 +9,8 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
-var (
-	_ Strategy        = (*waitForSql)(nil)
-	_ StrategyTimeout = (*waitForSql)(nil)
-)
+var _ Strategy = (*waitForSql)(nil)
+var _ StrategyTimeout = (*waitForSql)(nil)
 
 const defaultForSqlQuery = "SELECT 1"
 
@@ -64,7 +62,7 @@ func (w *waitForSql) Timeout() *time.Duration {
 // WaitUntilReady repeatedly tries to run "SELECT 1" or user defined query on the given port using sql and driver.
 //
 // If it doesn't succeed until the timeout value which defaults to 60 seconds, it will return an error.
-func (w *waitForSql) WaitUntilReady(ctx context.Context, target StrategyTarget) error {
+func (w *waitForSql) WaitUntilReady(ctx context.Context, target StrategyTarget) (err error) {
 	timeout := defaultStartupTimeout()
 	if w.timeout != nil {
 		timeout = *w.timeout
@@ -75,7 +73,7 @@ func (w *waitForSql) WaitUntilReady(ctx context.Context, target StrategyTarget) 
 
 	host, err := target.Host(ctx)
 	if err != nil {
-		return err
+		return
 	}
 
 	ticker := time.NewTicker(w.PollInterval)
@@ -87,7 +85,7 @@ func (w *waitForSql) WaitUntilReady(ctx context.Context, target StrategyTarget) 
 	for port == "" {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("%w: %w", ctx.Err(), err)
+			return fmt.Errorf("%s:%w", ctx.Err(), err)
 		case <-ticker.C:
 			if err := checkTarget(ctx, target); err != nil {
 				return err
@@ -98,7 +96,7 @@ func (w *waitForSql) WaitUntilReady(ctx context.Context, target StrategyTarget) 
 
 	db, err := sql.Open(w.Driver, w.URL(host, port))
 	if err != nil {
-		return fmt.Errorf("sql.Open: %w", err)
+		return fmt.Errorf("sql.Open: %v", err)
 	}
 	defer db.Close()
 	for {

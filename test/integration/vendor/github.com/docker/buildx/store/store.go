@@ -185,7 +185,10 @@ func (t *Txn) reset(key string) error {
 	if err != nil {
 		return err
 	}
-	return ioutils.AtomicWriteFile(filepath.Join(t.s.root, "current"), dt, 0600)
+	if err := ioutils.AtomicWriteFile(filepath.Join(t.s.root, "current"), dt, 0600); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (t *Txn) Current(key string) (*NodeGroup, error) {

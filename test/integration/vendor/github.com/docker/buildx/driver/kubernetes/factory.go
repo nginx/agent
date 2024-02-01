@@ -34,7 +34,7 @@ func (*factory) Usage() string {
 	return DriverName
 }
 
-func (*factory) Priority(ctx context.Context, endpoint string, api dockerclient.APIClient, dialMeta map[string][]string) int {
+func (*factory) Priority(ctx context.Context, endpoint string, api dockerclient.APIClient) int {
 	if api == nil {
 		return priorityUnsupported
 	}
@@ -148,20 +148,15 @@ func (f *factory) processDriverOpts(deploymentName string, namespace string, cfg
 		case "serviceaccount":
 			deploymentOpt.ServiceAccountName = v
 		case "nodeselector":
-			deploymentOpt.NodeSelector, err = splitMultiValues(v, ",", "=")
-			if err != nil {
-				return nil, "", "", errors.Wrap(err, "cannot parse node selector")
+			kvs := strings.Split(strings.Trim(v, `"`), ",")
+			s := map[string]string{}
+			for i := range kvs {
+				kv := strings.Split(kvs[i], "=")
+				if len(kv) == 2 {
+					s[kv[0]] = kv[1]
+				}
 			}
-		case "annotations":
-			deploymentOpt.CustomAnnotations, err = splitMultiValues(v, ",", "=")
-			if err != nil {
-				return nil, "", "", errors.Wrap(err, "cannot parse annotations")
-			}
-		case "labels":
-			deploymentOpt.CustomLabels, err = splitMultiValues(v, ",", "=")
-			if err != nil {
-				return nil, "", "", errors.Wrap(err, "cannot parse labels")
-			}
+			deploymentOpt.NodeSelector = s
 		case "tolerations":
 			ts := strings.Split(v, ";")
 			deploymentOpt.Tolerations = []corev1.Toleration{}
@@ -220,19 +215,6 @@ func (f *factory) processDriverOpts(deploymentName string, namespace string, cfg
 	}
 
 	return deploymentOpt, loadbalance, namespace, nil
-}
-
-func splitMultiValues(in string, itemsep string, kvsep string) (map[string]string, error) {
-	kvs := strings.Split(strings.Trim(in, `"`), itemsep)
-	s := map[string]string{}
-	for i := range kvs {
-		kv := strings.Split(kvs[i], kvsep)
-		if len(kv) != 2 {
-			return nil, errors.Errorf("invalid key-value pair: %s", kvs[i])
-		}
-		s[kv[0]] = kv[1]
-	}
-	return s, nil
 }
 
 func (f *factory) AllowsInstances() bool {

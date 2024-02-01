@@ -1,6 +1,3 @@
-// FIXME(thaJeztah): remove once we are a module; the go:build directive prevents go from downgrading language version to go1.16:
-//go:build go1.19
-
 package formatter
 
 import "strings"
@@ -25,7 +22,7 @@ const (
 
 // SubContext defines what Context implementation should provide
 type SubContext interface {
-	FullHeader() any
+	FullHeader() interface{}
 }
 
 // SubHeaderContext is a map destined to formatter header (table format)
@@ -42,10 +39,10 @@ func (c SubHeaderContext) Label(name string) string {
 
 // HeaderContext provides the subContext interface for managing headers
 type HeaderContext struct {
-	Header any
+	Header interface{}
 }
 
 // FullHeader returns the header as an interface
-func (c *HeaderContext) FullHeader() any {
+func (c *HeaderContext) FullHeader() interface{} {
 	return c.Header
 }

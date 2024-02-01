@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/moby/buildkit/util/bklog"
-	"github.com/pkg/errors"
 )
 
 var appContextCache context.Context
@@ -28,17 +27,16 @@ func Context() context.Context {
 			ctx = f(ctx)
 		}
 
-		ctx, cancel := context.WithCancelCause(ctx)
+		ctx, cancel := context.WithCancel(ctx)
 		appContextCache = ctx
 
 		go func() {
 			for {
 				<-signals
+				cancel()
 				retries++
-				err := errors.Errorf("got %d SIGTERM/SIGINTs, forcing shutdown", retries)
-				cancel(err)
 				if retries >= exitLimit {
-					bklog.G(ctx).Errorf(err.Error())
+					bklog.G(ctx).Errorf("got %d SIGTERM/SIGINTs, forcing shutdown", retries)
 					os.Exit(1)
 				}
 			}

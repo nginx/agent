@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/docker/docker/client"
-
 	"github.com/testcontainers/testcontainers-go/internal/config"
 )
 
@@ -30,15 +29,11 @@ var (
 	ErrTestcontainersHostNotSetInProperties = errors.New("tc.host not set in ~/.testcontainers.properties")
 )
 
-var (
-	dockerHostCache string
-	dockerHostOnce  sync.Once
-)
+var dockerHostCache string
+var dockerHostOnce sync.Once
 
-var (
-	dockerSocketPathCache string
-	dockerSocketPathOnce  sync.Once
-)
+var dockerSocketPathCache string
+var dockerSocketPathOnce sync.Once
 
 // deprecated
 // see https://github.com/testcontainers/testcontainers-java/blob/main/core/src/main/java/org/testcontainers/dockerclient/DockerClientConfigUtils.java#L46
@@ -112,7 +107,7 @@ func extractDockerHost(ctx context.Context) string {
 	for _, dockerHostFn := range dockerHostFns {
 		dockerHost, err := dockerHostFn(ctx)
 		if err != nil {
-			outerErr = fmt.Errorf("%w: %w", outerErr, err)
+			outerErr = fmt.Errorf("%w: %v", outerErr, err)
 			continue
 		}
 
@@ -212,7 +207,12 @@ func dockerHostFromProperties(ctx context.Context) (string, error) {
 	cfg := config.Read()
 	socketPath := cfg.Host
 	if socketPath != "" {
-		return socketPath, nil
+		parsed, err := parseURL(socketPath)
+		if err != nil {
+			return "", err
+		}
+
+		return parsed, nil
 	}
 
 	return "", ErrDockerSocketNotSetInProperties

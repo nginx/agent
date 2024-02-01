@@ -1,11 +1,11 @@
 package formatter
 
 import (
-	"strconv"
+	"fmt"
 	"time"
 
-	"github.com/distribution/reference"
-	"github.com/docker/docker/api/types/image"
+	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/stringid"
 	units "github.com/docker/go-units"
 )
@@ -26,11 +26,11 @@ type ImageContext struct {
 	Digest bool
 }
 
-func isDangling(img image.Summary) bool {
-	if len(img.RepoTags) == 0 && len(img.RepoDigests) == 0 {
+func isDangling(image types.ImageSummary) bool {
+	if len(image.RepoTags) == 0 && len(image.RepoDigests) == 0 {
 		return true
 	}
-	return len(img.RepoTags) == 1 && img.RepoTags[0] == "<none>:<none>" && len(img.RepoDigests) == 1 && img.RepoDigests[0] == "<none>@<none>"
+	return len(image.RepoTags) == 1 && image.RepoTags[0] == "<none>:<none>" && len(image.RepoDigests) == 1 && image.RepoDigests[0] == "<none>@<none>"
 }
 
 // NewImageFormat returns a format for rendering an ImageContext
@@ -75,7 +75,7 @@ virtual_size: {{.Size}}
 }
 
 // ImageWrite writes the formatter images using the ImageContext
-func ImageWrite(ctx ImageContext, images []image.Summary) error {
+func ImageWrite(ctx ImageContext, images []types.ImageSummary) error {
 	render := func(format func(subContext SubContext) error) error {
 		return imageFormat(ctx, images, format)
 	}
@@ -87,19 +87,19 @@ func needDigest(ctx ImageContext) bool {
 	return ctx.Digest || ctx.Format.Contains("{{.Digest}}")
 }
 
-func imageFormat(ctx ImageContext, images []image.Summary, format func(subContext SubContext) error) error {
-	for _, img := range images {
+func imageFormat(ctx ImageContext, images []types.ImageSummary, format func(subContext SubContext) error) error {
+	for _, image := range images {
 		formatted := []*imageContext{}
-		if isDangling(img) {
+		if isDangling(image) {
 			formatted = append(formatted, &imageContext{
 				trunc:  ctx.Trunc,
-				i:      img,
+				i:      image,
 				repo:   "<none>",
 				tag:    "<none>",
 				digest: "<none>",
 			})
 		} else {
-			formatted = imageFormatTaggedAndDigest(ctx, img)
+			formatted = imageFormatTaggedAndDigest(ctx, image)
 		}
 		for _, imageCtx := range formatted {
 			if err := format(imageCtx); err != nil {
@@ -110,12 +110,12 @@ func imageFormat(ctx ImageContext, images []image.Summary, format func(subContex
 	return nil
 }
 
-func imageFormatTaggedAndDigest(ctx ImageContext, img image.Summary) []*imageContext {
+func imageFormatTaggedAndDigest(ctx ImageContext, image types.ImageSummary) []*imageContext {
 	repoTags := map[string][]string{}
 	repoDigests := map[string][]string{}
 	images := []*imageContext{}
 
-	for _, refString := range img.RepoTags {
+	for _, refString := range image.RepoTags {
 		ref, err := reference.ParseNormalizedNamed(refString)
 		if err != nil {
 			continue
@@ -125,7 +125,7 @@ func imageFormatTaggedAndDigest(ctx ImageContext, img image.Summary) []*imageCon
 			repoTags[familiarRef] = append(repoTags[familiarRef], nt.Tag())
 		}
 	}
-	for _, refString := range img.RepoDigests {
+	for _, refString := range image.RepoDigests {
 		ref, err := reference.ParseNormalizedNamed(refString)
 		if err != nil {
 			continue
@@ -137,13 +137,14 @@ func imageFormatTaggedAndDigest(ctx ImageContext, img image.Summary) []*imageCon
 	}
 
 	addImage := func(repo, tag, digest string) {
-		images = append(images, &imageContext{
+		image := &imageContext{
 			trunc:  ctx.Trunc,
-			i:      img,
+			i:      image,
 			repo:   repo,
 			tag:    tag,
 			digest: digest,
-		})
+		}
+		images = append(images, image)
 	}
 
 	for repo, tags := range repoTags {
@@ -166,6 +167,7 @@ func imageFormatTaggedAndDigest(ctx ImageContext, img image.Summary) []*imageCon
 			for _, dgst := range digests {
 				addImage(repo, tag, dgst)
 			}
+
 		}
 	}
 
@@ -186,7 +188,7 @@ func imageFormatTaggedAndDigest(ctx ImageContext, img image.Summary) []*imageCon
 type imageContext struct {
 	HeaderContext
 	trunc  bool
-	i      image.Summary
+	i      types.ImageSummary
 	repo   string
 	tag    string
 	digest string
@@ -255,7 +257,7 @@ func (c *imageContext) Containers() string {
 	if c.i.Containers == -1 {
 		return "N/A"
 	}
-	return strconv.FormatInt(c.i.Containers, 10)
+	return fmt.Sprintf("%d", c.i.Containers)
 }
 
 // VirtualSize shows the virtual size of the image and all of its parent

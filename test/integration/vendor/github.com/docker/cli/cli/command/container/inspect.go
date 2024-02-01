@@ -1,6 +1,3 @@
-// FIXME(thaJeztah): remove once we are a module; the go:build directive prevents go from downgrading language version to go1.16:
-//go:build go1.19
-
 package container
 
 import (
@@ -30,7 +27,7 @@ func newInspectCommand(dockerCli command.Cli) *cobra.Command {
 		Args:  cli.RequiresMinArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.refs = args
-			return runInspect(cmd.Context(), dockerCli, opts)
+			return runInspect(dockerCli, opts)
 		},
 		ValidArgsFunction: completion.ContainerNames(dockerCli, true),
 	}
@@ -42,10 +39,11 @@ func newInspectCommand(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runInspect(ctx context.Context, dockerCli command.Cli, opts inspectOptions) error {
+func runInspect(dockerCli command.Cli, opts inspectOptions) error {
 	client := dockerCli.Client()
+	ctx := context.Background()
 
-	getRefFunc := func(ref string) (any, []byte, error) {
+	getRefFunc := func(ref string) (interface{}, []byte, error) {
 		return client.ContainerInspectWithRaw(ctx, ref, opts.size)
 	}
 	return inspect.Inspect(dockerCli.Out(), opts.refs, opts.format, getRefFunc)

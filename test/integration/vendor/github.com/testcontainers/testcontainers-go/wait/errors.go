@@ -3,11 +3,8 @@
 
 package wait
 
-import (
-	"errors"
-	"syscall"
-)
+import "syscall"
 
 func isConnRefusedErr(err error) bool {
-	return errors.Is(err, syscall.ECONNREFUSED)
+	return err == syscall.ECONNREFUSED
 }

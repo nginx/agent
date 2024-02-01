@@ -151,7 +151,7 @@ func NewCopyCommand(dockerCli command.Cli) *cobra.Command {
 				// User did not specify "quiet" flag; suppress output if no terminal is attached
 				opts.quiet = !dockerCli.Out().IsTerminal()
 			}
-			return runCopy(cmd.Context(), dockerCli, opts)
+			return runCopy(dockerCli, opts)
 		},
 		Annotations: map[string]string{
 			"aliases": "docker container cp, docker cp",
@@ -169,7 +169,7 @@ func progressHumanSize(n int64) string {
 	return units.HumanSizeWithPrecision(float64(n), 3)
 }
 
-func runCopy(ctx context.Context, dockerCli command.Cli, opts copyOptions) error {
+func runCopy(dockerCli command.Cli, opts copyOptions) error {
 	srcContainer, srcPath := splitCpArg(opts.source)
 	destContainer, destPath := splitCpArg(opts.destination)
 
@@ -190,6 +190,8 @@ func runCopy(ctx context.Context, dockerCli command.Cli, opts copyOptions) error
 		direction |= toContainer
 		copyConfig.container = destContainer
 	}
+
+	ctx := context.Background()
 
 	switch direction {
 	case fromContainer:
@@ -244,6 +246,7 @@ func copyFromContainer(ctx context.Context, dockerCli command.Cli, copyConfig cp
 			linkTarget, rebaseName = archive.GetRebaseName(srcPath, linkTarget)
 			srcPath = linkTarget
 		}
+
 	}
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)

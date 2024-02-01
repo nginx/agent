@@ -1,6 +1,3 @@
-// FIXME(thaJeztah): remove once we are a module; the go:build directive prevents go from downgrading language version to go1.16:
-//go:build go1.19
-
 package formatter
 
 import (
@@ -13,7 +10,7 @@ import (
 
 // MarshalJSON marshals x into json
 // It differs a bit from encoding/json MarshalJSON function for formatter
-func MarshalJSON(x any) ([]byte, error) {
+func MarshalJSON(x interface{}) ([]byte, error) {
 	m, err := marshalMap(x)
 	if err != nil {
 		return nil, err
@@ -21,8 +18,8 @@ func MarshalJSON(x any) ([]byte, error) {
 	return json.Marshal(m)
 }
 
-// marshalMap marshals x to map[string]any
-func marshalMap(x any) (map[string]any, error) {
+// marshalMap marshals x to map[string]interface{}
+func marshalMap(x interface{}) (map[string]interface{}, error) {
 	val := reflect.ValueOf(x)
 	if val.Kind() != reflect.Ptr {
 		return nil, errors.Errorf("expected a pointer to a struct, got %v", val.Kind())
@@ -35,7 +32,7 @@ func marshalMap(x any) (map[string]any, error) {
 		return nil, errors.Errorf("expected a pointer to a struct, got a pointer to %v", valElem.Kind())
 	}
 	typ := val.Type()
-	m := make(map[string]any)
+	m := make(map[string]interface{})
 	for i := 0; i < val.NumMethod(); i++ {
 		k, v, err := marshalForMethod(typ.Method(i), val.Method(i))
 		if err != nil {
@@ -52,7 +49,7 @@ var unmarshallableNames = map[string]struct{}{"FullHeader": {}}
 
 // marshalForMethod returns the map key and the map value for marshalling the method.
 // It returns ("", nil, nil) for valid but non-marshallable parameter. (e.g. "unexportedFunc()")
-func marshalForMethod(typ reflect.Method, val reflect.Value) (string, any, error) {
+func marshalForMethod(typ reflect.Method, val reflect.Value) (string, interface{}, error) {
 	if val.Kind() != reflect.Func {
 		return "", nil, errors.Errorf("expected func, got %v", val.Kind())
 	}

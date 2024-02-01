@@ -7,6 +7,7 @@ import (
 	"github.com/containerd/console"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/util/progress/progressui"
+	"github.com/pkg/errors"
 )
 
 type printer struct {
@@ -69,14 +70,24 @@ func NewPrinter(ctx context.Context, out console.File, mode string) (Writer, err
 		mode = v
 	}
 
-	d, err := progressui.NewDisplay(out, progressui.DisplayMode(mode))
-	if err != nil {
-		return nil, err
+	var c console.Console
+	switch mode {
+	case "auto", "tty", "":
+		if cons, err := console.ConsoleFromFile(out); err == nil {
+			c = cons
+		} else {
+			if mode == "tty" {
+				return nil, errors.Wrap(err, "failed to get console")
+			}
+		}
+	case "plain":
+	default:
+		return nil, errors.Errorf("invalid progress mode %s", mode)
 	}
 
 	go func() {
 		// not using shared context to not disrupt display but let is finish reporting errors
-		_, pw.err = d.UpdateFrom(ctx, statusCh)
+		_, pw.err = progressui.DisplaySolveStatus(ctx, c, out, statusCh)
 		close(doneCh)
 	}()
 	return pw, nil

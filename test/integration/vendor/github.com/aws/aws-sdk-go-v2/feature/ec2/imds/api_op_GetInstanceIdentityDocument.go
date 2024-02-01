@@ -54,7 +54,6 @@ type GetInstanceIdentityDocumentOutput struct {
 func addGetInstanceIdentityDocumentMiddleware(stack *middleware.Stack, options Options) error {
 	return addAPIRequestMiddleware(stack,
 		options,
-		"GetInstanceIdentityDocument",
 		buildGetInstanceIdentityDocumentPath,
 		buildGetInstanceIdentityDocumentOutput,
 	)

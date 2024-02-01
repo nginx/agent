@@ -224,17 +224,13 @@ type ValidatorFctType func(val string) (string, error)
 // ValidatorFctListType defines a validator function that returns a validated list of string and/or an error
 type ValidatorFctListType func(val string) ([]string, error)
 
-// ValidateIPAddress validates if the given value is a correctly formatted
-// IP address, and returns the value in normalized form. Leading and trailing
-// whitespace is allowed, but it does not allow IPv6 addresses surrounded by
-// square brackets ("[::1]").
-//
-// Refer to [net.ParseIP] for accepted formats.
+// ValidateIPAddress validates an Ip address.
 func ValidateIPAddress(val string) (string, error) {
-	if ip := net.ParseIP(strings.TrimSpace(val)); ip != nil {
+	ip := net.ParseIP(strings.TrimSpace(val))
+	if ip != nil {
 		return ip.String(), nil
 	}
-	return "", fmt.Errorf("IP address is not correctly formatted: %s", val)
+	return "", fmt.Errorf("%s is not an ip address", val)
 }
 
 // ValidateMACAddress validates a MAC address.

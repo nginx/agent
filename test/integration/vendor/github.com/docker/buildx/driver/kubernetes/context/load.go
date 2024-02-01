@@ -23,7 +23,6 @@ type EndpointMeta struct {
 	AuthProvider     *clientcmdapi.AuthProviderConfig `json:",omitempty"`
 	Exec             *clientcmdapi.ExecConfig         `json:",omitempty"`
 	UsernamePassword *UsernamePassword                `json:"usernamePassword,omitempty"`
-	Token            string                           `json:"token,omitempty"`
 }
 
 // UsernamePassword contains username/password auth info
@@ -77,9 +76,6 @@ func (c *Endpoint) KubernetesConfig() clientcmd.ClientConfig {
 	if c.UsernamePassword != nil {
 		authInfo.Username = c.UsernamePassword.Username
 		authInfo.Password = c.UsernamePassword.Password
-	}
-	if c.Token != "" {
-		authInfo.Token = c.Token
 	}
 	authInfo.AuthProvider = c.AuthProvider
 	authInfo.Exec = c.Exec

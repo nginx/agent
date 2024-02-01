@@ -17,6 +17,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/internal/testcontainersdocker"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
@@ -29,13 +30,15 @@ type ComposeVersion interface {
 	Format(parts ...string) string
 }
 
-type composeVersion1 struct{}
+type composeVersion1 struct {
+}
 
 func (c composeVersion1) Format(parts ...string) string {
 	return strings.Join(parts, "_")
 }
 
-type composeVersion2 struct{}
+type composeVersion2 struct {
+}
 
 func (c composeVersion2) Format(parts ...string) string {
 	return strings.Join(parts, "-")
@@ -122,7 +125,7 @@ func (dc *LocalDockerCompose) containerNameFromServiceName(service, separator st
 }
 
 func (dc *LocalDockerCompose) applyStrategyToRunningContainer() error {
-	cli, err := testcontainers.NewDockerClientWithOpts(context.Background())
+	cli, err := testcontainersdocker.NewClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -138,7 +141,7 @@ func (dc *LocalDockerCompose) applyStrategyToRunningContainer() error {
 		containerListOptions := types.ContainerListOptions{Filters: f, All: true}
 		containers, err := cli.ContainerList(context.Background(), containerListOptions)
 		if err != nil {
-			return fmt.Errorf("error %w occurred while filtering the service %s: %d by name and published port", err, k.service, k.publishedPort)
+			return fmt.Errorf("error %w occured while filtering the service %s: %d by name and published port", err, k.service, k.publishedPort)
 		}
 
 		if len(containers) == 0 {
@@ -276,8 +279,8 @@ type ExecError struct {
 
 // execute executes a program with arguments and environment variables inside a specific directory
 func execute(
-	dirContext string, environment map[string]string, binary string, args []string,
-) ExecError {
+	dirContext string, environment map[string]string, binary string, args []string) ExecError {
+
 	var errStdout, errStderr error
 
 	cmd := exec.Command(binary, args...)

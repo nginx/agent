@@ -1,8 +1,8 @@
 package formatter
 
 import (
+	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -171,13 +171,13 @@ func (c *buildCacheContext) LastUsedSince() string {
 }
 
 func (c *buildCacheContext) UsageCount() string {
-	return strconv.Itoa(c.v.UsageCount)
+	return fmt.Sprintf("%d", c.v.UsageCount)
 }
 
 func (c *buildCacheContext) InUse() string {
-	return strconv.FormatBool(c.v.InUse)
+	return fmt.Sprintf("%t", c.v.InUse)
 }
 
 func (c *buildCacheContext) Shared() string {
-	return strconv.FormatBool(c.v.Shared)
+	return fmt.Sprintf("%t", c.v.Shared)
 }

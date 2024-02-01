@@ -20,7 +20,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/docker/compose/v2/pkg/progress"
 	"github.com/docker/compose/v2/pkg/utils"
@@ -48,13 +48,6 @@ func (s *composeService) restart(ctx context.Context, projectName string, option
 		}
 	}
 
-	if options.NoDeps {
-		project, err = project.WithSelectedServices(options.Services, types.IgnoreDependencies)
-		if err != nil {
-			return err
-		}
-	}
-
 	// ignore depends_on relations which are not impacted by restarting service or not required
 	for i, service := range project.Services {
 		for name, r := range service.DependsOn {
@@ -66,7 +59,7 @@ func (s *composeService) restart(ctx context.Context, projectName string, option
 	}
 
 	if len(options.Services) != 0 {
-		project, err = project.WithSelectedServices(options.Services, types.IncludeDependents)
+		err = project.ForServices(options.Services, types.IncludeDependents)
 		if err != nil {
 			return err
 		}

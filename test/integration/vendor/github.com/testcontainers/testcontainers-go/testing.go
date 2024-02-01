@@ -3,6 +3,8 @@ package testcontainers
 import (
 	"context"
 	"testing"
+
+	"github.com/testcontainers/testcontainers-go/internal/testcontainersdocker"
 )
 
 // SkipIfProviderIsNotHealthy is a utility function capable of skipping tests
@@ -24,7 +26,7 @@ func SkipIfProviderIsNotHealthy(t *testing.T) {
 // SkipIfDockerDesktop is a utility function capable of skipping tests
 // if tests are run using Docker Desktop.
 func SkipIfDockerDesktop(t *testing.T, ctx context.Context) {
-	cli, err := NewDockerClientWithOpts(ctx)
+	cli, err := testcontainersdocker.NewClient(ctx)
 	if err != nil {
 		t.Fatalf("failed to create docker client: %s", err)
 	}

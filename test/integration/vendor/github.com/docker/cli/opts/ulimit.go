@@ -34,7 +34,7 @@ func (o *UlimitOpt) Set(val string) error {
 
 // String returns Ulimit values as a string. Values are sorted by name.
 func (o *UlimitOpt) String() string {
-	out := make([]string, 0, len(*o.values))
+	var out []string
 	for _, v := range *o.values {
 		out = append(out, v.String())
 	}
@@ -44,7 +44,7 @@ func (o *UlimitOpt) String() string {
 
 // GetList returns a slice of pointers to Ulimits. Values are sorted by name.
 func (o *UlimitOpt) GetList() []*units.Ulimit {
-	ulimits := make([]*units.Ulimit, 0, len(*o.values))
+	var ulimits []*units.Ulimit
 	for _, v := range *o.values {
 		ulimits = append(ulimits, v)
 	}

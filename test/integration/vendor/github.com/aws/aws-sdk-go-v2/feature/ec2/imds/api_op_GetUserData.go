@@ -45,7 +45,6 @@ type GetUserDataOutput struct {
 func addGetUserDataMiddleware(stack *middleware.Stack, options Options) error {
 	return addAPIRequestMiddleware(stack,
 		options,
-		"GetUserData",
 		buildGetUserDataPath,
 		buildGetUserDataOutput)
 }

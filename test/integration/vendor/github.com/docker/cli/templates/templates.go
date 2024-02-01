@@ -1,6 +1,3 @@
-// FIXME(thaJeztah): remove once we are a module; the go:build directive prevents go from downgrading language version to go1.16:
-//go:build go1.19
-
 package templates
 
 import (
@@ -13,21 +10,17 @@ import (
 // basicFunctions are the set of initial
 // functions provided to every template.
 var basicFunctions = template.FuncMap{
-	"json": func(v any) string {
+	"json": func(v interface{}) string {
 		buf := &bytes.Buffer{}
 		enc := json.NewEncoder(buf)
 		enc.SetEscapeHTML(false)
-		err := enc.Encode(v)
-		if err != nil {
-			panic(err)
-		}
-
+		enc.Encode(v)
 		// Remove the trailing new line added by the encoder
 		return strings.TrimSpace(buf.String())
 	},
 	"split":    strings.Split,
 	"join":     strings.Join,
-	"title":    strings.Title, //nolint:nolintlint,staticcheck // strings.Title is deprecated, but we only use it for ASCII, so replacing with golang.org/x/text is out of scope
+	"title":    strings.Title, //nolint:staticcheck // strings.Title is deprecated, but we only use it for ASCII, so replacing with golang.org/x/text is out of scope
 	"lower":    strings.ToLower,
 	"upper":    strings.ToUpper,
 	"pad":      padWithSpace,

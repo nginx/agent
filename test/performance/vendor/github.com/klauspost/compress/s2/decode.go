@@ -10,8 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-
-	"github.com/klauspost/compress/internal/race"
 )
 
 var (
@@ -65,10 +63,6 @@ func Decode(dst, src []byte) ([]byte, error) {
 	} else {
 		dst = make([]byte, dLen)
 	}
-
-	race.WriteSlice(dst)
-	race.ReadSlice(src[s:])
-
 	if s2Decode(dst, src[s:]) != 0 {
 		return nil, ErrCorrupt
 	}

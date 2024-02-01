@@ -22,7 +22,8 @@ const (
 
 // NewHistoryFormat returns a format for rendering an HistoryContext
 func NewHistoryFormat(source string, quiet bool, human bool) formatter.Format {
-	if source == formatter.TableFormatKey {
+	switch source {
+	case formatter.TableFormatKey:
 		switch {
 		case quiet:
 			return formatter.DefaultQuietFormat
@@ -96,7 +97,7 @@ func (c *historyContext) CreatedSince() string {
 }
 
 func (c *historyContext) CreatedBy() string {
-	createdBy := strings.ReplaceAll(c.h.CreatedBy, "\t", " ")
+	createdBy := strings.Replace(c.h.CreatedBy, "\t", " ", -1)
 	if c.trunc {
 		return formatter.Ellipsis(createdBy, 45)
 	}

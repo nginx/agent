@@ -25,13 +25,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
-
-	"google.golang.org/grpc/internal"
 )
-
-func init() {
-	internal.FromOutgoingContextRaw = fromOutgoingContextRaw
-}
 
 // DecodeKeyValue returns k, v, nil.
 //
@@ -244,13 +238,16 @@ func copyOf(v []string) []string {
 	return vals
 }
 
-// fromOutgoingContextRaw returns the un-merged, intermediary contents of rawMD.
+// FromOutgoingContextRaw returns the un-merged, intermediary contents of rawMD.
 //
 // Remember to perform strings.ToLower on the keys, for both the returned MD (MD
 // is a map, there's no guarantee it's created using our helper functions) and
 // the extra kv pairs (AppendToOutgoingContext doesn't turn them into
 // lowercase).
-func fromOutgoingContextRaw(ctx context.Context) (MD, [][]string, bool) {
+//
+// This is intended for gRPC-internal use ONLY. Users should use
+// FromOutgoingContext instead.
+func FromOutgoingContextRaw(ctx context.Context) (MD, [][]string, bool) {
 	raw, ok := ctx.Value(mdOutgoingKey{}).(rawMD)
 	if !ok {
 		return nil, nil, false

@@ -960,12 +960,7 @@ func (t *http2Server) WriteHeader(s *Stream, md metadata.MD) error {
 		}
 	}
 	if err := t.writeHeaderLocked(s); err != nil {
-		switch e := err.(type) {
-		case ConnectionError:
-			return status.Error(codes.Unavailable, e.Desc)
-		default:
-			return status.Convert(err).Err()
-		}
+		return status.Convert(err).Err()
 	}
 	return nil
 }

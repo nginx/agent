@@ -640,16 +640,12 @@ func encode(c baseCodec, msg any) ([]byte, error) {
 	return b, nil
 }
 
-// compress returns the input bytes compressed by compressor or cp.
-// If both compressors are nil, or if the message has zero length, returns nil,
-// indicating no compression was done.
+// compress returns the input bytes compressed by compressor or cp.  If both
+// compressors are nil, returns nil.
 //
 // TODO(dfawley): eliminate cp parameter by wrapping Compressor in an encoding.Compressor.
 func compress(in []byte, cp Compressor, compressor encoding.Compressor) ([]byte, error) {
 	if compressor == nil && cp == nil {
-		return nil, nil
-	}
-	if len(in) == 0 {
 		return nil, nil
 	}
 	wrapErr := func(err error) error {

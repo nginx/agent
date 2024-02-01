@@ -206,9 +206,9 @@ func calculateBlockIO(blkio types.BlkioStats) (uint64, uint64) {
 		}
 		switch bioEntry.Op[0] {
 		case 'r', 'R':
-			blkRead += bioEntry.Value
+			blkRead = blkRead + bioEntry.Value
 		case 'w', 'W':
-			blkWrite += bioEntry.Value
+			blkWrite = blkWrite + bioEntry.Value
 		}
 	}
 	return blkRead, blkWrite

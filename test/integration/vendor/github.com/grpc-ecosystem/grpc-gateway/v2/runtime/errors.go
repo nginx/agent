@@ -137,7 +137,7 @@ func DefaultHTTPErrorHandler(ctx context.Context, mux *ServeMux, marshaler Marsh
 	doForwardTrailers := requestAcceptsTrailers(r)
 
 	if doForwardTrailers {
-		handleForwardResponseTrailerHeader(w, mux, md)
+		handleForwardResponseTrailerHeader(w, md)
 		w.Header().Set("Transfer-Encoding", "chunked")
 	}
 
@@ -152,7 +152,7 @@ func DefaultHTTPErrorHandler(ctx context.Context, mux *ServeMux, marshaler Marsh
 	}
 
 	if doForwardTrailers {
-		handleForwardResponseTrailer(w, mux, md)
+		handleForwardResponseTrailer(w, md)
 	}
 }
 

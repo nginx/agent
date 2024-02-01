@@ -62,8 +62,9 @@ type ThrottledeviceOpt struct {
 
 // NewThrottledeviceOpt creates a new ThrottledeviceOpt
 func NewThrottledeviceOpt(validator ValidatorThrottleFctType) ThrottledeviceOpt {
+	values := []*blkiodev.ThrottleDevice{}
 	return ThrottledeviceOpt{
-		values:    []*blkiodev.ThrottleDevice{},
+		values:    values,
 		validator: validator,
 	}
 }
@@ -84,7 +85,7 @@ func (opt *ThrottledeviceOpt) Set(val string) error {
 
 // String returns ThrottledeviceOpt values as a string.
 func (opt *ThrottledeviceOpt) String() string {
-	out := make([]string, 0, len(opt.values))
+	var out []string
 	for _, v := range opt.values {
 		out = append(out, v.String())
 	}
@@ -94,9 +95,7 @@ func (opt *ThrottledeviceOpt) String() string {
 
 // GetList returns a slice of pointers to ThrottleDevices.
 func (opt *ThrottledeviceOpt) GetList() []*blkiodev.ThrottleDevice {
-	out := make([]*blkiodev.ThrottleDevice, 0, len(opt.values))
-	copy(out, opt.values)
-	return out
+	return append([]*blkiodev.ThrottleDevice{}, opt.values...)
 }
 
 // Type returns the option type

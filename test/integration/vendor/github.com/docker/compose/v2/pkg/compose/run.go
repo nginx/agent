@@ -23,7 +23,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli"
 	cmd "github.com/docker/cli/cli/command/container"
 	"github.com/docker/compose/v2/pkg/api"
@@ -42,10 +42,10 @@ func (s *composeService) RunOneOffContainer(ctx context.Context, project *types.
 
 	sigc := make(chan os.Signal, 128)
 	signal.Notify(sigc)
-	go cmd.ForwardAllSignals(ctx, s.apiClient(), containerID, sigc)
+	go cmd.ForwardAllSignals(ctx, s.dockerCli, containerID, sigc)
 	defer signal.Stop(sigc)
 
-	err = cmd.RunStart(ctx, s.dockerCli, &cmd.StartOptions{
+	err = cmd.RunStart(s.dockerCli, &cmd.StartOptions{
 		OpenStdin:  !opts.Detach && opts.Interactive,
 		Attach:     !opts.Detach,
 		Containers: []string{containerID},
@@ -58,6 +58,9 @@ func (s *composeService) RunOneOffContainer(ctx context.Context, project *types.
 }
 
 func (s *composeService) prepareRun(ctx context.Context, project *types.Project, opts api.RunOptions) (string, error) {
+	if err := prepareVolumes(project); err != nil { // all dependencies already checked, but might miss service img
+		return "", err
+	}
 	service, err := project.GetService(opts.Service)
 	if err != nil {
 		return "", err
@@ -73,8 +76,7 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 	if service.ContainerName == "" {
 		service.ContainerName = fmt.Sprintf("%[1]s%[4]s%[2]s%[4]srun%[4]s%[3]s", project.Name, service.Name, stringid.TruncateID(slug), api.Separator)
 	}
-	one := 1
-	service.Scale = &one
+	service.Scale = 1
 	service.Restart = ""
 	if service.Deploy != nil {
 		service.Deploy.RestartPolicy = nil
@@ -83,7 +85,7 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 		Add(api.SlugLabel, slug).
 		Add(api.OneoffLabel, "True")
 
-	if err := s.ensureImagesExists(ctx, project, opts.Build, opts.QuietPull); err != nil { // all dependencies already checked, but might miss service img
+	if err := s.ensureImagesExists(ctx, project, opts.QuietPull); err != nil { // all dependencies already checked, but might miss service img
 		return "", err
 	}
 
@@ -91,9 +93,10 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 	if err != nil {
 		return "", err
 	}
+	updateServices(&service, observedState)
 
 	if !opts.NoDeps {
-		if err := s.waitDependencies(ctx, project, service.Name, service.DependsOn, observedState); err != nil {
+		if err := s.waitDependencies(ctx, project, service.DependsOn, observedState); err != nil {
 			return "", err
 		}
 	}
@@ -102,11 +105,6 @@ func (s *composeService) prepareRun(ctx context.Context, project *types.Project,
 		AttachStdin:       opts.Interactive,
 		UseNetworkAliases: opts.UseNetworkAliases,
 		Labels:            mergeLabels(service.Labels, service.CustomLabels),
-	}
-
-	err = newConvergence(project.ServiceNames(), observedState, s).resolveServiceReferences(&service)
-	if err != nil {
-		return "", err
 	}
 
 	created, err := s.createContainer(ctx, project, service, service.ContainerName, 1, createOpts)

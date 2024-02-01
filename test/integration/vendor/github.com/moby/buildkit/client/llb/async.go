@@ -61,7 +61,7 @@ func (as *asyncState) Do(ctx context.Context, c *Constraints) error {
 		if err != nil {
 			select {
 			case <-ctx.Done():
-				if errors.Is(err, context.Cause(ctx)) {
+				if errors.Is(err, ctx.Err()) {
 					return res, err
 				}
 			default:

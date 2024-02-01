@@ -1,14 +1,11 @@
-// FIXME(thaJeztah): remove once we are a module; the go:build directive prevents go from downgrading language version to go1.16:
-//go:build go1.19
-
 package loader
 
 import (
 	"reflect"
 	"sort"
 
-	"dario.cat/mergo"
 	"github.com/docker/cli/cli/compose/types"
+	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
 )
 
@@ -86,55 +83,55 @@ func mergeServices(base, override []types.ServiceConfig) ([]types.ServiceConfig,
 	return services, nil
 }
 
-func toServiceSecretConfigsMap(s any) (map[any]any, error) {
+func toServiceSecretConfigsMap(s interface{}) (map[interface{}]interface{}, error) {
 	secrets, ok := s.([]types.ServiceSecretConfig)
 	if !ok {
 		return nil, errors.Errorf("not a serviceSecretConfig: %v", s)
 	}
-	m := map[any]any{}
+	m := map[interface{}]interface{}{}
 	for _, secret := range secrets {
 		m[secret.Source] = secret
 	}
 	return m, nil
 }
 
-func toServiceConfigObjConfigsMap(s any) (map[any]any, error) {
+func toServiceConfigObjConfigsMap(s interface{}) (map[interface{}]interface{}, error) {
 	secrets, ok := s.([]types.ServiceConfigObjConfig)
 	if !ok {
 		return nil, errors.Errorf("not a serviceSecretConfig: %v", s)
 	}
-	m := map[any]any{}
+	m := map[interface{}]interface{}{}
 	for _, secret := range secrets {
 		m[secret.Source] = secret
 	}
 	return m, nil
 }
 
-func toServicePortConfigsMap(s any) (map[any]any, error) {
+func toServicePortConfigsMap(s interface{}) (map[interface{}]interface{}, error) {
 	ports, ok := s.([]types.ServicePortConfig)
 	if !ok {
 		return nil, errors.Errorf("not a servicePortConfig slice: %v", s)
 	}
-	m := map[any]any{}
+	m := map[interface{}]interface{}{}
 	for _, p := range ports {
 		m[p.Published] = p
 	}
 	return m, nil
 }
 
-func toServiceVolumeConfigsMap(s any) (map[any]any, error) {
+func toServiceVolumeConfigsMap(s interface{}) (map[interface{}]interface{}, error) {
 	volumes, ok := s.([]types.ServiceVolumeConfig)
 	if !ok {
 		return nil, errors.Errorf("not a serviceVolumeConfig slice: %v", s)
 	}
-	m := map[any]any{}
+	m := map[interface{}]interface{}{}
 	for _, v := range volumes {
 		m[v.Target] = v
 	}
 	return m, nil
 }
 
-func toServiceSecretConfigsSlice(dst reflect.Value, m map[any]any) error {
+func toServiceSecretConfigsSlice(dst reflect.Value, m map[interface{}]interface{}) error {
 	s := []types.ServiceSecretConfig{}
 	for _, v := range m {
 		s = append(s, v.(types.ServiceSecretConfig))
@@ -144,7 +141,7 @@ func toServiceSecretConfigsSlice(dst reflect.Value, m map[any]any) error {
 	return nil
 }
 
-func toSServiceConfigObjConfigsSlice(dst reflect.Value, m map[any]any) error {
+func toSServiceConfigObjConfigsSlice(dst reflect.Value, m map[interface{}]interface{}) error {
 	s := []types.ServiceConfigObjConfig{}
 	for _, v := range m {
 		s = append(s, v.(types.ServiceConfigObjConfig))
@@ -154,7 +151,7 @@ func toSServiceConfigObjConfigsSlice(dst reflect.Value, m map[any]any) error {
 	return nil
 }
 
-func toServicePortConfigsSlice(dst reflect.Value, m map[any]any) error {
+func toServicePortConfigsSlice(dst reflect.Value, m map[interface{}]interface{}) error {
 	s := []types.ServicePortConfig{}
 	for _, v := range m {
 		s = append(s, v.(types.ServicePortConfig))
@@ -164,7 +161,7 @@ func toServicePortConfigsSlice(dst reflect.Value, m map[any]any) error {
 	return nil
 }
 
-func toServiceVolumeConfigsSlice(dst reflect.Value, m map[any]any) error {
+func toServiceVolumeConfigsSlice(dst reflect.Value, m map[interface{}]interface{}) error {
 	s := []types.ServiceVolumeConfig{}
 	for _, v := range m {
 		s = append(s, v.(types.ServiceVolumeConfig))
@@ -175,8 +172,8 @@ func toServiceVolumeConfigsSlice(dst reflect.Value, m map[any]any) error {
 }
 
 type (
-	tomapFn             func(s any) (map[any]any, error)
-	writeValueFromMapFn func(reflect.Value, map[any]any) error
+	tomapFn             func(s interface{}) (map[interface{}]interface{}, error)
+	writeValueFromMapFn func(reflect.Value, map[interface{}]interface{}) error
 )
 
 func safelyMerge(mergeFn func(dst, src reflect.Value) error) func(dst, src reflect.Value) error {
@@ -209,7 +206,7 @@ func mergeSlice(tomap tomapFn, writeValue writeValueFromMapFn) func(dst, src ref
 	}
 }
 
-func sliceToMap(tomap tomapFn, v reflect.Value) (map[any]any, error) {
+func sliceToMap(tomap tomapFn, v reflect.Value) (map[interface{}]interface{}, error) {
 	// check if valid
 	if !v.IsValid() {
 		return nil, errors.Errorf("invalid value : %+v", v)

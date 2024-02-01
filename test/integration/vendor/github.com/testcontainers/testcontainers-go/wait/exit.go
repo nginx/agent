@@ -7,10 +7,8 @@ import (
 )
 
 // Implement interface
-var (
-	_ Strategy        = (*ExitStrategy)(nil)
-	_ StrategyTimeout = (*ExitStrategy)(nil)
-)
+var _ Strategy = (*ExitStrategy)(nil)
+var _ StrategyTimeout = (*ExitStrategy)(nil)
 
 // ExitStrategy will wait until container exit
 type ExitStrategy struct {
@@ -26,6 +24,7 @@ func NewExitStrategy() *ExitStrategy {
 	return &ExitStrategy{
 		PollInterval: defaultPollInterval(),
 	}
+
 }
 
 // fluent builders for each property
@@ -60,7 +59,7 @@ func (ws *ExitStrategy) Timeout() *time.Duration {
 }
 
 // WaitUntilReady implements Strategy.WaitUntilReady
-func (ws *ExitStrategy) WaitUntilReady(ctx context.Context, target StrategyTarget) error {
+func (ws *ExitStrategy) WaitUntilReady(ctx context.Context, target StrategyTarget) (err error) {
 	if ws.timeout != nil {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, *ws.timeout)

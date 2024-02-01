@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"reflect"
 
 	"github.com/compose-spec/compose-go/dotenv"
 	interp "github.com/compose-spec/compose-go/interpolation"
@@ -110,55 +109,37 @@ func loadInclude(ctx context.Context, filename string, configDetails types.Confi
 func importResources(model *types.Config, imported *types.Project, path []string) error {
 	services := mapByName(model.Services)
 	for _, service := range imported.Services {
-		if present, ok := services[service.Name]; ok {
-			if reflect.DeepEqual(present, service) {
-				continue
-			}
+		if _, ok := services[service.Name]; ok {
 			return fmt.Errorf("imported compose file %s defines conflicting service %s", path, service.Name)
 		}
 		model.Services = append(model.Services, service)
 	}
 	for _, service := range imported.DisabledServices {
-		if disabled, ok := services[service.Name]; ok {
-			if reflect.DeepEqual(disabled, service) {
-				continue
-			}
+		if _, ok := services[service.Name]; ok {
 			return fmt.Errorf("imported compose file %s defines conflicting service %s", path, service.Name)
 		}
 		model.Services = append(model.Services, service)
 	}
 	for n, network := range imported.Networks {
-		if present, ok := model.Networks[n]; ok {
-			if reflect.DeepEqual(present, network) {
-				continue
-			}
+		if _, ok := model.Networks[n]; ok {
 			return fmt.Errorf("imported compose file %s defines conflicting network %s", path, n)
 		}
 		model.Networks[n] = network
 	}
 	for n, volume := range imported.Volumes {
-		if present, ok := model.Volumes[n]; ok {
-			if reflect.DeepEqual(present, volume) {
-				continue
-			}
+		if _, ok := model.Volumes[n]; ok {
 			return fmt.Errorf("imported compose file %s defines conflicting volume %s", path, n)
 		}
 		model.Volumes[n] = volume
 	}
 	for n, secret := range imported.Secrets {
-		if present, ok := model.Secrets[n]; ok {
-			if reflect.DeepEqual(present, secret) {
-				continue
-			}
+		if _, ok := model.Secrets[n]; ok {
 			return fmt.Errorf("imported compose file %s defines conflicting secret %s", path, n)
 		}
 		model.Secrets[n] = secret
 	}
 	for n, config := range imported.Configs {
-		if present, ok := model.Configs[n]; ok {
-			if reflect.DeepEqual(present, config) {
-				continue
-			}
+		if _, ok := model.Configs[n]; ok {
 			return fmt.Errorf("imported compose file %s defines conflicting config %s", path, n)
 		}
 		model.Configs[n] = config

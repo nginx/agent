@@ -11,7 +11,6 @@ import (
 	"unicode"
 
 	"github.com/moby/buildkit/session"
-	"github.com/moby/buildkit/util/bklog"
 	"github.com/pkg/errors"
 	"github.com/tonistiigi/fsutil"
 	fstypes "github.com/tonistiigi/fsutil/types"
@@ -22,13 +21,12 @@ import (
 )
 
 const (
+	keyOverrideExcludes   = "override-excludes"
 	keyIncludePatterns    = "include-patterns"
 	keyExcludePatterns    = "exclude-patterns"
 	keyFollowPaths        = "followpaths"
 	keyDirName            = "dir-name"
 	keyExporterMetaPrefix = "exporter-md-"
-
-	keyExporterID = "buildkit-attachable-exporter-id"
 )
 
 type fsSyncProvider struct {
@@ -37,22 +35,21 @@ type fsSyncProvider struct {
 	doneCh chan error
 }
 
-type FileOutputFunc func(map[string]string) (io.WriteCloser, error)
-
 type SyncedDir struct {
-	Dir string
-	Map func(string, *fstypes.Stat) fsutil.MapResult
+	Dir      string
+	Excludes []string
+	Map      func(string, *fstypes.Stat) fsutil.MapResult
 }
 
 type DirSource interface {
-	LookupDir(string) (fsutil.FS, bool)
+	LookupDir(string) (SyncedDir, bool)
 }
 
-type StaticDirSource map[string]fsutil.FS
+type StaticDirSource map[string]SyncedDir
 
 var _ DirSource = StaticDirSource{}
 
-func (dirs StaticDirSource) LookupDir(name string) (fsutil.FS, bool) {
+func (dirs StaticDirSource) LookupDir(name string) (SyncedDir, bool) {
 	dir, found := dirs[name]
 	return dir, found
 }
@@ -96,22 +93,18 @@ func (sp *fsSyncProvider) handle(method string, stream grpc.ServerStream) (retEr
 		dirName = name[0]
 	}
 
-	excludes := opts[keyExcludePatterns]
-	includes := opts[keyIncludePatterns]
-	followPaths := opts[keyFollowPaths]
-
 	dir, ok := sp.dirs.LookupDir(dirName)
 	if !ok {
 		return InvalidSessionError{status.Errorf(codes.NotFound, "no access allowed to dir %q", dirName)}
 	}
-	dir, err := fsutil.NewFilterFS(dir, &fsutil.FilterOpt{
-		ExcludePatterns: excludes,
-		IncludePatterns: includes,
-		FollowPaths:     followPaths,
-	})
-	if err != nil {
-		return err
+
+	excludes := opts[keyExcludePatterns]
+	if len(dir.Excludes) != 0 && (len(opts[keyOverrideExcludes]) == 0 || opts[keyOverrideExcludes][0] != "true") {
+		excludes = dir.Excludes
 	}
+	includes := opts[keyIncludePatterns]
+
+	followPaths := opts[keyFollowPaths]
 
 	var progress progressCb
 	if sp.p != nil {
@@ -124,7 +117,12 @@ func (sp *fsSyncProvider) handle(method string, stream grpc.ServerStream) (retEr
 		doneCh = sp.doneCh
 		sp.doneCh = nil
 	}
-	err = pr.sendFn(stream, dir, progress)
+	err := pr.sendFn(stream, fsutil.NewFS(dir.Dir, &fsutil.WalkOpt{
+		ExcludePatterns: excludes,
+		IncludePatterns: includes,
+		FollowPaths:     followPaths,
+		Map:             dir.Map,
+	}), progress)
 	if doneCh != nil {
 		if err != nil {
 			doneCh <- err
@@ -157,15 +155,16 @@ var supportedProtocols = []protocol{
 
 // FSSendRequestOpt defines options for FSSend request
 type FSSendRequestOpt struct {
-	Name            string
-	IncludePatterns []string
-	ExcludePatterns []string
-	FollowPaths     []string
-	DestDir         string
-	CacheUpdater    CacheUpdater
-	ProgressCb      func(int, bool)
-	Filter          func(string, *fstypes.Stat) bool
-	Differ          fsutil.DiffType
+	Name             string
+	IncludePatterns  []string
+	ExcludePatterns  []string
+	FollowPaths      []string
+	OverrideExcludes bool // deprecated: this is used by docker/cli for automatically loading .dockerignore from the directory
+	DestDir          string
+	CacheUpdater     CacheUpdater
+	ProgressCb       func(int, bool)
+	Filter           func(string, *fstypes.Stat) bool
+	Differ           fsutil.DiffType
 }
 
 // CacheUpdater is an object capable of sending notifications for the cache hash changes
@@ -189,6 +188,9 @@ func FSSync(ctx context.Context, c session.Caller, opt FSSendRequestOpt) error {
 	}
 
 	opts := make(map[string][]string)
+	if opt.OverrideExcludes {
+		opts[keyOverrideExcludes] = []string{"true"}
+	}
 
 	if opt.IncludePatterns != nil {
 		opts[keyIncludePatterns] = opt.IncludePatterns
@@ -204,8 +206,8 @@ func FSSync(ctx context.Context, c session.Caller, opt FSSendRequestOpt) error {
 
 	opts[keyDirName] = []string{opt.Name}
 
-	ctx, cancel := context.WithCancelCause(ctx)
-	defer cancel(errors.WithStack(context.Canceled))
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	client := NewFileSyncClient(c.Conn())
 
@@ -235,87 +237,39 @@ func FSSync(ctx context.Context, c session.Caller, opt FSSendRequestOpt) error {
 	return pr.recvFn(stream, opt.DestDir, opt.CacheUpdater, opt.ProgressCb, opt.Differ, opt.Filter)
 }
 
-type FSSyncTarget interface {
-	target() *fsSyncTarget
+// NewFSSyncTargetDir allows writing into a directory
+func NewFSSyncTargetDir(outdir string) session.Attachable {
+	p := &fsSyncTarget{
+		outdir: outdir,
+	}
+	return p
+}
+
+// NewFSSyncTarget allows writing into an io.WriteCloser
+func NewFSSyncTarget(f func(map[string]string) (io.WriteCloser, error)) session.Attachable {
+	p := &fsSyncTarget{
+		f: f,
+	}
+	return p
 }
 
 type fsSyncTarget struct {
-	id     int
 	outdir string
-	f      FileOutputFunc
+	f      func(map[string]string) (io.WriteCloser, error)
 }
 
-func (target *fsSyncTarget) target() *fsSyncTarget {
-	return target
-}
-
-func WithFSSync(id int, f FileOutputFunc) FSSyncTarget {
-	return &fsSyncTarget{
-		id: id,
-		f:  f,
-	}
-}
-
-func WithFSSyncDir(id int, outdir string) FSSyncTarget {
-	return &fsSyncTarget{
-		id:     id,
-		outdir: outdir,
-	}
-}
-
-func NewFSSyncTarget(targets ...FSSyncTarget) session.Attachable {
-	fs := make(map[int]FileOutputFunc)
-	outdirs := make(map[int]string)
-	for _, t := range targets {
-		t := t.target()
-		if t.f != nil {
-			fs[t.id] = t.f
-		}
-		if t.outdir != "" {
-			outdirs[t.id] = t.outdir
-		}
-	}
-	return &fsSyncAttachable{
-		fs:      fs,
-		outdirs: outdirs,
-	}
-}
-
-type fsSyncAttachable struct {
-	fs      map[int]FileOutputFunc
-	outdirs map[int]string
-}
-
-func (sp *fsSyncAttachable) Register(server *grpc.Server) {
+func (sp *fsSyncTarget) Register(server *grpc.Server) {
 	RegisterFileSendServer(server, sp)
 }
 
-func (sp *fsSyncAttachable) chooser(ctx context.Context) int {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return 0
-	}
-	values := md[keyExporterID]
-	if len(values) == 0 {
-		return 0
-	}
-	id, err := strconv.ParseInt(values[0], 10, 64)
-	if err != nil {
-		return 0
-	}
-	return int(id)
-}
-
-func (sp *fsSyncAttachable) DiffCopy(stream FileSend_DiffCopyServer) (err error) {
-	id := sp.chooser(stream.Context())
-	if outdir, ok := sp.outdirs[id]; ok {
-		return syncTargetDiffCopy(stream, outdir)
-	}
-	f, ok := sp.fs[id]
-	if !ok {
-		return errors.Errorf("exporter %d not found", id)
+func (sp *fsSyncTarget) DiffCopy(stream FileSend_DiffCopyServer) (err error) {
+	if sp.outdir != "" {
+		return syncTargetDiffCopy(stream, sp.outdir)
 	}
 
+	if sp.f == nil {
+		return errors.New("empty outfile and outdir")
+	}
 	opts, _ := metadata.FromIncomingContext(stream.Context()) // if no metadata continue with empty object
 	md := map[string]string{}
 	for k, v := range opts {
@@ -323,7 +277,7 @@ func (sp *fsSyncAttachable) DiffCopy(stream FileSend_DiffCopyServer) (err error)
 			md[strings.TrimPrefix(k, keyExporterMetaPrefix)] = strings.Join(v, ",")
 		}
 	}
-	wc, err := f(md)
+	wc, err := sp.f(md)
 	if err != nil {
 		return err
 	}
@@ -339,23 +293,13 @@ func (sp *fsSyncAttachable) DiffCopy(stream FileSend_DiffCopyServer) (err error)
 	return writeTargetFile(stream, wc)
 }
 
-func CopyToCaller(ctx context.Context, fs fsutil.FS, id int, c session.Caller, progress func(int, bool)) error {
+func CopyToCaller(ctx context.Context, fs fsutil.FS, c session.Caller, progress func(int, bool)) error {
 	method := session.MethodURL(_FileSend_serviceDesc.ServiceName, "diffcopy")
 	if !c.Supports(method) {
 		return errors.Errorf("method %s not supported by the client", method)
 	}
 
 	client := NewFileSendClient(c.Conn())
-
-	opts, ok := metadata.FromOutgoingContext(ctx)
-	if !ok {
-		opts = make(map[string][]string)
-	}
-	if existingVal, ok := opts[keyExporterID]; ok {
-		bklog.G(ctx).Warnf("overwriting grpc metadata key %q from value %+v to %+v", keyExporterID, existingVal, id)
-	}
-	opts[keyExporterID] = []string{fmt.Sprint(id)}
-	ctx = metadata.NewOutgoingContext(ctx, opts)
 
 	cc, err := client.DiffCopy(ctx)
 	if err != nil {
@@ -365,7 +309,7 @@ func CopyToCaller(ctx context.Context, fs fsutil.FS, id int, c session.Caller, p
 	return sendDiffCopy(cc, fs, progress)
 }
 
-func CopyFileWriter(ctx context.Context, md map[string]string, id int, c session.Caller) (io.WriteCloser, error) {
+func CopyFileWriter(ctx context.Context, md map[string]string, c session.Caller) (io.WriteCloser, error) {
 	method := session.MethodURL(_FileSend_serviceDesc.ServiceName, "diffcopy")
 	if !c.Supports(method) {
 		return nil, errors.Errorf("method %s not supported by the client", method)
@@ -373,21 +317,11 @@ func CopyFileWriter(ctx context.Context, md map[string]string, id int, c session
 
 	client := NewFileSendClient(c.Conn())
 
-	opts, ok := metadata.FromOutgoingContext(ctx)
-	if !ok {
-		opts = make(map[string][]string, len(md))
-	}
+	opts := make(map[string][]string, len(md))
 	for k, v := range md {
-		k := keyExporterMetaPrefix + k
-		if existingVal, ok := opts[k]; ok {
-			bklog.G(ctx).Warnf("overwriting grpc metadata key %q from value %+v to %+v", k, existingVal, v)
-		}
-		opts[k] = []string{v}
+		opts[keyExporterMetaPrefix+k] = []string{v}
 	}
-	if existingVal, ok := opts[keyExporterID]; ok {
-		bklog.G(ctx).Warnf("overwriting grpc metadata key %q from value %+v to %+v", keyExporterID, existingVal, id)
-	}
-	opts[keyExporterID] = []string{fmt.Sprint(id)}
+
 	ctx = metadata.NewOutgoingContext(ctx, opts)
 
 	cc, err := client.DiffCopy(ctx)
@@ -426,13 +360,13 @@ func decodeOpts(opts map[string][]string) map[string][]string {
 	md := make(map[string][]string, len(opts))
 	for k, v := range opts {
 		out := make([]string, len(v))
-		var isEncoded bool
+		var isDecoded bool
 		if v, ok := opts[k+"-encoded"]; ok && len(v) > 0 {
 			if b, _ := strconv.ParseBool(v[0]); b {
-				isEncoded = true
+				isDecoded = true
 			}
 		}
-		if isEncoded {
+		if isDecoded {
 			for i, s := range v {
 				out[i], _ = url.QueryUnescape(s)
 			}
@@ -448,14 +382,13 @@ func decodeOpts(opts map[string][]string) map[string][]string {
 // is backwards compatible and avoids encoding ASCII characters.
 func encodeStringForHeader(inputs []string) ([]string, bool) {
 	var encode bool
-loop:
 	for _, input := range inputs {
 		for _, runeVal := range input {
 			// Only encode non-ASCII characters, and characters that have special
 			// meaning during decoding.
 			if runeVal > unicode.MaxASCII {
 				encode = true
-				break loop
+				break
 			}
 		}
 	}

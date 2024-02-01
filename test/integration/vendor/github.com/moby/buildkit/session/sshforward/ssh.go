@@ -26,7 +26,7 @@ func (s *server) run(ctx context.Context, l net.Listener, id string) error {
 
 	eg.Go(func() error {
 		<-ctx.Done()
-		return context.Cause(ctx)
+		return ctx.Err()
 	})
 
 	eg.Go(func() error {

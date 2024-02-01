@@ -7,7 +7,7 @@ package prompt
 import (
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockUI is a mock of UI interface

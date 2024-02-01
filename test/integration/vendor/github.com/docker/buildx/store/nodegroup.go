@@ -102,7 +102,10 @@ func (ng *NodeGroup) Update(name, endpoint string, platforms []string, endpoints
 		}
 
 		ng.Nodes[i] = n
-		return ng.validateDuplicates(endpoint, i)
+		if err := ng.validateDuplicates(endpoint, i); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	if name == "" {
@@ -124,7 +127,11 @@ func (ng *NodeGroup) Update(name, endpoint string, platforms []string, endpoints
 	}
 
 	ng.Nodes = append(ng.Nodes, n)
-	return ng.validateDuplicates(endpoint, len(ng.Nodes)-1)
+
+	if err := ng.validateDuplicates(endpoint, len(ng.Nodes)-1); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (ng *NodeGroup) Copy() *NodeGroup {

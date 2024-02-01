@@ -38,10 +38,7 @@ const (
 
 type Driver struct {
 	driver.InitConfig
-	factory driver.Factory
-
-	// if you add fields, remember to update docs:
-	// https://github.com/docker/docs/blob/main/content/build/drivers/kubernetes.md
+	factory          driver.Factory
 	minReplicas      int
 	deployment       *appsv1.Deployment
 	configMaps       []*corev1.ConfigMap
@@ -90,7 +87,10 @@ func (d *Driver) Bootstrap(ctx context.Context, l progress.Logger) error {
 		return sub.Wrap(
 			fmt.Sprintf("waiting for %d pods to be ready", d.minReplicas),
 			func() error {
-				return d.wait(ctx)
+				if err := d.wait(ctx); err != nil {
+					return err
+				}
+				return nil
 			})
 	})
 }
@@ -228,15 +228,11 @@ func (d *Driver) Factory() driver.Factory {
 	return d.factory
 }
 
-func (d *Driver) Features(_ context.Context) map[driver.Feature]bool {
+func (d *Driver) Features(ctx context.Context) map[driver.Feature]bool {
 	return map[driver.Feature]bool{
 		driver.OCIExporter:    true,
 		driver.DockerExporter: d.DockerAPI != nil,
 		driver.CacheExport:    true,
 		driver.MultiPlatform:  true, // Untested (needs multiple Driver instances)
 	}
-}
-
-func (d *Driver) HostGatewayIP(_ context.Context) (net.IP, error) {
-	return nil, errors.New("host-gateway is not supported by the kubernetes driver")
 }

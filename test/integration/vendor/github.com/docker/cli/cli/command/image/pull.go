@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/distribution/reference"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/trust"
+	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -33,7 +33,7 @@ func NewPullCommand(dockerCli command.Cli) *cobra.Command {
 		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.remote = args[0]
-			return RunPull(cmd.Context(), dockerCli, opts)
+			return RunPull(dockerCli, opts)
 		},
 		Annotations: map[string]string{
 			"category-top": "5",
@@ -54,7 +54,7 @@ func NewPullCommand(dockerCli command.Cli) *cobra.Command {
 }
 
 // RunPull performs a pull against the engine based on the specified options
-func RunPull(ctx context.Context, dockerCLI command.Cli, opts PullOptions) error {
+func RunPull(cli command.Cli, opts PullOptions) error {
 	distributionRef, err := reference.ParseNormalizedNamed(opts.remote)
 	switch {
 	case err != nil:
@@ -64,11 +64,12 @@ func RunPull(ctx context.Context, dockerCLI command.Cli, opts PullOptions) error
 	case !opts.all && reference.IsNameOnly(distributionRef):
 		distributionRef = reference.TagNameOnly(distributionRef)
 		if tagged, ok := distributionRef.(reference.Tagged); ok && !opts.quiet {
-			fmt.Fprintf(dockerCLI.Out(), "Using default tag: %s\n", tagged.Tag())
+			fmt.Fprintf(cli.Out(), "Using default tag: %s\n", tagged.Tag())
 		}
 	}
 
-	imgRefAndAuth, err := trust.GetImageReferencesAndAuth(ctx, AuthResolver(dockerCLI), distributionRef.String())
+	ctx := context.Background()
+	imgRefAndAuth, err := trust.GetImageReferencesAndAuth(ctx, AuthResolver(cli), distributionRef.String())
 	if err != nil {
 		return err
 	}
@@ -76,9 +77,9 @@ func RunPull(ctx context.Context, dockerCLI command.Cli, opts PullOptions) error
 	// Check if reference has a digest
 	_, isCanonical := distributionRef.(reference.Canonical)
 	if !opts.untrusted && !isCanonical {
-		err = trustedPull(ctx, dockerCLI, imgRefAndAuth, opts)
+		err = trustedPull(ctx, cli, imgRefAndAuth, opts)
 	} else {
-		err = imagePullPrivileged(ctx, dockerCLI, imgRefAndAuth, opts)
+		err = imagePullPrivileged(ctx, cli, imgRefAndAuth, opts)
 	}
 	if err != nil {
 		if strings.Contains(err.Error(), "when fetching 'plugin'") {
@@ -86,6 +87,6 @@ func RunPull(ctx context.Context, dockerCLI command.Cli, opts PullOptions) error
 		}
 		return err
 	}
-	fmt.Fprintln(dockerCLI.Out(), imgRefAndAuth.Reference().String())
+	fmt.Fprintln(cli.Out(), imgRefAndAuth.Reference().String())
 	return nil
 }

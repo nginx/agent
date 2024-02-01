@@ -115,13 +115,6 @@ func ResolveServiceRelativePaths(workingDir string, s *types.ServiceConfig) {
 		}
 		s.Volumes[i].Source = resolveMaybeUnixPath(workingDir, vol.Source)
 	}
-
-	if s.Develop != nil {
-		for i, w := range s.Develop.Watch {
-			w.Path = absPath(workingDir, w.Path)
-			s.Develop.Watch[i] = w
-		}
-	}
 }
 
 func absPath(workingDir string, filePath string) string {

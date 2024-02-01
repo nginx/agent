@@ -56,7 +56,6 @@ type GetMetadataOutput struct {
 func addGetMetadataMiddleware(stack *middleware.Stack, options Options) error {
 	return addAPIRequestMiddleware(stack,
 		options,
-		"GetMetadata",
 		buildGetMetadataPath,
 		buildGetMetadataOutput)
 }

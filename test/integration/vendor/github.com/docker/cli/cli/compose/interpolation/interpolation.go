@@ -1,6 +1,3 @@
-// FIXME(thaJeztah): remove once we are a module; the go:build directive prevents go from downgrading language version to go1.16:
-//go:build go1.19
-
 package interpolation
 
 import (
@@ -28,10 +25,10 @@ type Options struct {
 type LookupValue func(key string) (string, bool)
 
 // Cast a value to a new type, or return an error if the value can't be cast
-type Cast func(value string) (any, error)
+type Cast func(value string) (interface{}, error)
 
 // Interpolate replaces variables in a string with the values from a mapping
-func Interpolate(config map[string]any, opts Options) (map[string]any, error) {
+func Interpolate(config map[string]interface{}, opts Options) (map[string]interface{}, error) {
 	if opts.LookupValue == nil {
 		opts.LookupValue = os.LookupEnv
 	}
@@ -42,7 +39,7 @@ func Interpolate(config map[string]any, opts Options) (map[string]any, error) {
 		opts.Substitute = template.Substitute
 	}
 
-	out := map[string]any{}
+	out := map[string]interface{}{}
 
 	for key, value := range config {
 		interpolatedValue, err := recursiveInterpolate(value, NewPath(key), opts)
@@ -55,7 +52,7 @@ func Interpolate(config map[string]any, opts Options) (map[string]any, error) {
 	return out, nil
 }
 
-func recursiveInterpolate(value any, path Path, opts Options) (any, error) {
+func recursiveInterpolate(value interface{}, path Path, opts Options) (interface{}, error) {
 	switch value := value.(type) {
 	case string:
 		newValue, err := opts.Substitute(value, template.Mapping(opts.LookupValue))
@@ -69,8 +66,8 @@ func recursiveInterpolate(value any, path Path, opts Options) (any, error) {
 		casted, err := caster(newValue)
 		return casted, newPathError(path, errors.Wrap(err, "failed to cast to expected type"))
 
-	case map[string]any:
-		out := map[string]any{}
+	case map[string]interface{}:
+		out := map[string]interface{}{}
 		for key, elem := range value {
 			interpolatedElem, err := recursiveInterpolate(elem, path.Next(key), opts)
 			if err != nil {
@@ -80,8 +77,8 @@ func recursiveInterpolate(value any, path Path, opts Options) (any, error) {
 		}
 		return out, nil
 
-	case []any:
-		out := make([]any, len(value))
+	case []interface{}:
+		out := make([]interface{}, len(value))
 		for i, elem := range value {
 			interpolatedElem, err := recursiveInterpolate(elem, path.Next(PathMatchList), opts)
 			if err != nil {

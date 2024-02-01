@@ -95,7 +95,7 @@ func LoadECDSAKeyFromFile(path string) (*SSLibKey, error) {
 		return nil, fmt.Errorf("unable to load ECDSA key from file: %w", err)
 	}
 
-	return LoadKeyFromSSLibBytes(contents)
+	return loadKeyFromSSLibBytes(contents)
 }
 
 func getECDSAHashedData(data []byte, curveSize int) []byte {

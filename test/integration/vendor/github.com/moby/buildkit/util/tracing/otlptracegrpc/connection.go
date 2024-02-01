@@ -22,7 +22,6 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -186,7 +185,7 @@ func (c *Connection) Shutdown(ctx context.Context) error {
 	select {
 	case <-c.backgroundConnectionDoneCh:
 	case <-ctx.Done():
-		return context.Cause(ctx)
+		return ctx.Err()
 	}
 
 	c.mu.Lock()
@@ -201,17 +200,17 @@ func (c *Connection) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (c *Connection) ContextWithStop(ctx context.Context) (context.Context, context.CancelCauseFunc) {
+func (c *Connection) ContextWithStop(ctx context.Context) (context.Context, context.CancelFunc) {
 	// Unify the parent context Done signal with the Connection's
 	// stop channel.
-	ctx, cancel := context.WithCancelCause(ctx)
-	go func(ctx context.Context, cancel context.CancelCauseFunc) {
+	ctx, cancel := context.WithCancel(ctx)
+	go func(ctx context.Context, cancel context.CancelFunc) {
 		select {
 		case <-ctx.Done():
 			// Nothing to do, either cancelled or deadline
 			// happened.
 		case <-c.stopCh:
-			cancel(errors.WithStack(context.Canceled))
+			cancel()
 		}
 	}(ctx, cancel)
 	return ctx, cancel

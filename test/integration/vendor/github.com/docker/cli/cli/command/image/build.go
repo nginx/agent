@@ -14,11 +14,11 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/distribution/reference"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/image/build"
 	"github.com/docker/cli/opts"
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -33,6 +33,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
+
+var errStdinConflict = errors.New("invalid argument: can't use stdin for both build context and dockerfile")
 
 type buildOptions struct {
 	context        string
@@ -101,7 +103,7 @@ func NewBuildCommand(dockerCli command.Cli) *cobra.Command {
 		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			options.context = args[0]
-			return runBuild(cmd.Context(), dockerCli, options)
+			return runBuild(dockerCli, options)
 		},
 		Annotations: map[string]string{
 			"category-top": "4",
@@ -172,7 +174,7 @@ func (out *lastProgressOutput) WriteProgress(prog progress.Progress) error {
 }
 
 //nolint:gocyclo
-func runBuild(ctx context.Context, dockerCli command.Cli, options buildOptions) error {
+func runBuild(dockerCli command.Cli, options buildOptions) error {
 	var (
 		err           error
 		buildCtx      io.ReadCloser
@@ -187,7 +189,7 @@ func runBuild(ctx context.Context, dockerCli command.Cli, options buildOptions) 
 
 	if options.dockerfileFromStdin() {
 		if options.contextFromStdin() {
-			return errors.New("invalid argument: can't use stdin for both build context and dockerfile")
+			return errStdinConflict
 		}
 		dockerfileCtx = dockerCli.In()
 	}
@@ -272,7 +274,7 @@ func runBuild(ctx context.Context, dockerCli command.Cli, options buildOptions) 
 		}
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	var resolvedTags []*resolvedTag

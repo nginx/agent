@@ -16,9 +16,6 @@ const SigV4 = "sigv4"
 // Authentication Scheme Signature Version 4A
 const SigV4A = "sigv4a"
 
-// SigV4S3Express identifies the S3 S3Express auth scheme.
-const SigV4S3Express = "sigv4-s3express"
-
 // None is a constant representing the
 // None Authentication Scheme
 const None = "none"
@@ -27,10 +24,9 @@ const None = "none"
 // that indicates the list of supported AWS
 // authentication schemes
 var SupportedSchemes = map[string]bool{
-	SigV4:          true,
-	SigV4A:         true,
-	SigV4S3Express: true,
-	None:           true,
+	SigV4:  true,
+	SigV4A: true,
+	None:   true,
 }
 
 // AuthenticationScheme is a representation of
@@ -97,11 +93,10 @@ func GetAuthenticationSchemes(p *smithy.Properties) ([]AuthenticationScheme, err
 	for _, scheme := range authSchemes {
 		authScheme, _ := scheme.(map[string]interface{})
 
-		version := authScheme["name"].(string)
-		switch version {
-		case SigV4, SigV4S3Express:
+		switch authScheme["name"] {
+		case SigV4:
 			v4Scheme := AuthenticationSchemeV4{
-				Name:                  version,
+				Name:                  SigV4,
 				SigningName:           getSigningName(authScheme),
 				SigningRegion:         getSigningRegion(authScheme),
 				DisableDoubleEncoding: getDisableDoubleEncoding(authScheme),

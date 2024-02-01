@@ -26,7 +26,7 @@ func NewExportCommand(dockerCli command.Cli) *cobra.Command {
 		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.container = args[0]
-			return runExport(cmd.Context(), dockerCli, opts)
+			return runExport(dockerCli, opts)
 		},
 		Annotations: map[string]string{
 			"aliases": "docker container export, docker export",
@@ -41,7 +41,7 @@ func NewExportCommand(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runExport(ctx context.Context, dockerCli command.Cli, opts exportOptions) error {
+func runExport(dockerCli command.Cli, opts exportOptions) error {
 	if opts.output == "" && dockerCli.Out().IsTerminal() {
 		return errors.New("cowardly refusing to save to a terminal. Use the -o flag or redirect")
 	}
@@ -52,7 +52,7 @@ func runExport(ctx context.Context, dockerCli command.Cli, opts exportOptions) e
 
 	clnt := dockerCli.Client()
 
-	responseBody, err := clnt.ContainerExport(ctx, opts.container)
+	responseBody, err := clnt.ContainerExport(context.Background(), opts.container)
 	if err != nil {
 		return err
 	}

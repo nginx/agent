@@ -40,7 +40,8 @@ func getConnectionHelper(daemonURL string, sshFlags []string) (*ConnectionHelper
 	if err != nil {
 		return nil, err
 	}
-	if u.Scheme == "ssh" {
+	switch scheme := u.Scheme; scheme {
+	case "ssh":
 		sp, err := ssh.ParseURL(daemonURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "ssh host connection is not valid")

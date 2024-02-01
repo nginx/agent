@@ -45,7 +45,6 @@ type GetRegionOutput struct {
 func addGetRegionMiddleware(stack *middleware.Stack, options Options) error {
 	return addAPIRequestMiddleware(stack,
 		options,
-		"GetRegion",
 		buildGetInstanceIdentityDocumentPath,
 		buildGetRegionOutput,
 	)
