@@ -208,7 +208,6 @@ func UnPack(zipFile *proto.ZippedFile) ([]*proto.File, error) {
 
 		b := bytes.NewBuffer([]byte{})
 		_, err = io.Copy(b, rc)
-
 		if err != nil {
 			return false
 		}

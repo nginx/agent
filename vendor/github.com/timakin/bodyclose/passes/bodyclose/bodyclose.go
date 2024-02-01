@@ -23,7 +23,7 @@ var Analyzer = &analysis.Analyzer{
 }
 
 const (
-	Doc = "bodyclose checks whether HTTP response body is closed successfully"
+	Doc = "checks whether HTTP response body is closed successfully"
 
 	nethttpPath = "net/http"
 	closeMethod = "Close"

@@ -1,10 +1,4 @@
 linters-settings:
-  depguard:
-    list-type: blacklist
-    include-go-root: true
-    packages:
-      # we are using "github.com/json-iterator/go" instead of json encoder from stdlib
-      - "encoding/json"
   dupl:
     threshold: 100
   gocritic:
@@ -38,26 +32,36 @@ linters-settings:
 linters:
   enable-all: true
   disable:
+    - depguard
     # prealloc is not recommended by `golangci-lint` developers.
     - prealloc
     - gochecknoglobals
+
+    # deprecated
+    - maligned
+    - exhaustivestruct
+    - nosnakecase
+    - scopelint
+    - structcheck
+    - ifshort
+    - varcheck
+    - deadcode
+    - golint
+    - interfacer
 
 issues:
   exclude-rules:
     - path: _test\.go
       linters:
+        - exhaustruct
         - goconst
         - dupl
 
-    - path: fixtures
-      linters:
-        - gocritic
-        - varcheck
-        - deadcode
-        - unused
-
 run:
   modules-download-mode: readonly
+
+  skip-dirs:
+    - "fixtures"
 
 # output configuration options
 output:
