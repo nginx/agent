@@ -10,7 +10,7 @@ package nginx
 import (
 	"strings"
 
-	"github.com/nginx/agent/v3/internal/datasource/os/exec"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
 
 type Process struct {
@@ -47,7 +47,7 @@ func (np *Process) defaultToNginxCommandForProcessPath() string {
 	return path
 }
 
-func (np *Process) sanitizeExeDeletedPath(exe string) string {
+func (*Process) sanitizeExeDeletedPath(exe string) string {
 	firstSpace := strings.Index(exe, "(deleted)")
 	if firstSpace != -1 {
 		return strings.TrimSpace(exe[0:firstSpace])

@@ -30,8 +30,9 @@ const (
 type (
 	//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 	//counterfeiter:generate . ConfigWriterInterface
+	//nolint:unused
 	ConfigWriterInterface interface {
-		Write(filesUrl string, tenantID uuid.UUID) (err error)
+		Write(filesURL string, tenantID uuid.UUID) (err error)
 		Complete() (err error)
 	}
 
@@ -40,13 +41,13 @@ type (
 	}
 
 	ConfigWriterParameters struct {
-		configClient client.HttpConfigClientInterface
+		configClient client.HTTPConfigClientInterface
 		Client       Client
 		cachePath    string
 	}
 
 	ConfigWriter struct {
-		configClient       client.HttpConfigClientInterface
+		configClient       client.HTTPConfigClientInterface
 		previouseFileCache FileCache
 		currentFileCache   FileCache
 		cachePath          string
@@ -63,7 +64,7 @@ func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceID 
 	}
 
 	if configWriterParameters.configClient == nil {
-		configWriterParameters.configClient = client.NewHttpConfigClient(configWriterParameters.Client.Timeout)
+		configWriterParameters.configClient = client.NewHTTPConfigClient(configWriterParameters.Client.Timeout)
 	}
 
 	previouseFileCache, err := readInstanceCache(configWriterParameters.cachePath)
@@ -78,38 +79,38 @@ func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceID 
 	}
 }
 
-func (cw *ConfigWriter) Write(filesUrl string, tenantID uuid.UUID) (err error) {
+func (cw *ConfigWriter) Write(filesURL string, tenantID uuid.UUID) (err error) {
 	currentFileCache := FileCache{}
 	skippedFiles := make(map[string]struct{})
 
-	filesMetaData, err := cw.configClient.GetFilesMetadata(filesUrl, tenantID.String())
+	filesMetaData, err := cw.configClient.GetFilesMetadata(filesURL, tenantID.String())
 	if err != nil {
-		return fmt.Errorf("error getting files metadata from %s: %w", filesUrl, err)
+		return fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
 	}
 
-	for _, fileData := range filesMetaData.Files {
-		if isFilePathValid(fileData.Path) {
+	for _, fileData := range filesMetaData.GetFiles() {
+		if isFilePathValid(fileData.GetPath()) {
 			if !doesFileRequireUpdate(cw.previouseFileCache, fileData) {
-				slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.Path)
-				currentFileCache[fileData.Path] = cw.previouseFileCache[fileData.Path]
-				skippedFiles[fileData.Path] = struct{}{}
+				slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.GetPath())
+				currentFileCache[fileData.GetPath()] = cw.previouseFileCache[fileData.GetPath()]
+				skippedFiles[fileData.GetPath()] = struct{}{}
 				continue
 			}
 
-			fileDownloadResponse, fetchErr := cw.configClient.GetFile(fileData, filesUrl, tenantID.String())
+			fileDownloadResponse, fetchErr := cw.configClient.GetFile(fileData, filesURL, tenantID.String())
 			if fetchErr != nil {
-				return fmt.Errorf("error getting file data from %s: %w", filesUrl, fetchErr)
+				return fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
 			}
 
-			fetchErr = writeFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
+			fetchErr = writeFile(fileDownloadResponse.GetFileContent(), fileDownloadResponse.GetFilePath())
 			if fetchErr != nil {
-				return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.FilePath, fetchErr)
+				return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.GetFilePath(), fetchErr)
 			}
 
-			currentFileCache[fileData.Path] = &instances.File{
-				Version:      fileData.Version,
-				Path:         fileData.Path,
-				LastModified: fileData.LastModified,
+			currentFileCache[fileData.GetPath()] = &instances.File{
+				Version:      fileData.GetVersion(),
+				Path:         fileData.GetPath(),
+				LastModified: fileData.GetLastModified(),
 			}
 		}
 	}
@@ -188,8 +189,8 @@ func isFilePathValid(filePath string) (validPath bool) {
 
 func doesFileRequireUpdate(previousFileCache FileCache, fileData *instances.File) (updateRequired bool) {
 	if len(previousFileCache) > 0 {
-		fileOnSystem, ok := previousFileCache[fileData.Path]
-		return ok && fileOnSystem.LastModified.AsTime().Before(fileData.LastModified.AsTime())
+		fileOnSystem, ok := previousFileCache[fileData.GetPath()]
+		return ok && fileOnSystem.GetLastModified().AsTime().Before(fileData.GetLastModified().AsTime())
 	}
 	return false
 }

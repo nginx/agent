@@ -25,5 +25,5 @@ message FileDownloadResponse {
     bool encoded = 1;
     bytes file_content = 2;
     string file_path = 3;
-    string instance_id = 4;
+    string instance_id = 4 [json_name="instanceID"];
 }

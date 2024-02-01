@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +31,7 @@ func TestProcessMonitor_Init(t *testing.T) {
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{processMonitor})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	go messagePipe.Run()
 
 	time.Sleep(10 * time.Millisecond)

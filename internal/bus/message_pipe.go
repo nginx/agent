@@ -12,7 +12,7 @@ import (
 	"log/slog"
 	"sync"
 
-	message_bus "github.com/vardius/message-bus"
+	"github.com/vardius/message-bus"
 )
 
 type Payload interface{}
@@ -34,6 +34,7 @@ type Plugin interface {
 	Subscriptions() []string
 }
 
+//nolint:unused
 type MessagePipeInterface interface {
 	Register(int, []Plugin) error
 	DeRegister(plugins []string) error
@@ -45,7 +46,7 @@ type MessagePipeInterface interface {
 }
 
 type MessagePipe struct {
-	bus            message_bus.MessageBus
+	bus            messagebus.MessageBus
 	messageChannel chan *Message
 	plugins        []Plugin
 	mu             sync.RWMutex
@@ -67,7 +68,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin) error {
 	p.mu.Lock()
 
 	p.plugins = append(p.plugins, plugins...)
-	p.bus = message_bus.New(size)
+	p.bus = messagebus.New(size)
 
 	pluginsRegistered := []string{}
 

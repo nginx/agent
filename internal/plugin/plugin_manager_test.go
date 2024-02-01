@@ -50,9 +50,9 @@ func TestLoadPLugins(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			result := LoadPlugins(test.input, slog.New(&slog.TextHandler{}))
-			assert.Equal(t, len(test.expected), len(result))
+			assert.Equal(tt, len(test.expected), len(result))
 			for i, expectedPlugin := range test.expected {
-				assert.IsType(t, expectedPlugin, result[i])
+				assert.IsType(tt, expectedPlugin, result[i])
 			}
 		})
 	}

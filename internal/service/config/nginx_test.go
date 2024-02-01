@@ -14,7 +14,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nginx/agent/v3/internal/datasource/os/exec/execfakes"
+	"github.com/stretchr/testify/require"
+
+	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
@@ -24,23 +26,23 @@ import (
 func TestNginx_ParseConfig(t *testing.T) {
 	file, err := os.CreateTemp("./", "nginx-parse-config.conf")
 	defer os.Remove(file.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	errorLog, err := os.CreateTemp("./", "error.log")
 	defer os.Remove(errorLog.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	accessLog, err := os.CreateTemp("./", "access.log")
 	defer os.Remove(accessLog.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	combinedAccessLog, err := os.CreateTemp("./", "combined_access.log")
 	defer os.Remove(combinedAccessLog.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ltsvAccessLog, err := os.CreateTemp("./", "ltsv_access.log")
 	defer os.Remove(ltsvAccessLog.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	data := []byte(fmt.Sprintf(`
 		user  nginx;
@@ -82,7 +84,7 @@ func TestNginx_ParseConfig(t *testing.T) {
 		}
 	`, errorLog.Name(), accessLog.Name(), combinedAccessLog.Name(), ltsvAccessLog.Name()))
 	err = os.WriteFile(file.Name(), data, 0o644)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	expectedConfigContext := &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{
@@ -127,7 +129,7 @@ func TestNginx_ParseConfig(t *testing.T) {
 		},
 	})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)
 }
 
@@ -199,7 +201,7 @@ func TestNginx_Reload(t *testing.T) {
 			if test.error != nil {
 				assert.Equal(t, fmt.Errorf("failed to reload NGINX %w: %s", test.error, test.out), err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

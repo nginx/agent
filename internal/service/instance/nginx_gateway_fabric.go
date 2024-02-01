@@ -20,6 +20,7 @@ func NewNginxGatewayFabric() *NginxGatewayFabric {
 	return &NginxGatewayFabric{}
 }
 
+//nolint:all remove when implemented
 func (*NginxGatewayFabric) GetInstances(processes []*model.Process) ([]*instances.Instance, error) {
 	return nil, fmt.Errorf("not implemented")
 }

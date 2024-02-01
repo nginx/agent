@@ -8,9 +8,9 @@
 package bus
 
 const (
-	OS_PROCESSES_TOPIC                   = "os-processes"
-	INSTANCES_TOPIC                      = "instances"
-	INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC = "instance-config-update-request"
-	INSTANCE_CONFIG_UPDATED_TOPIC        = "instance-config-updated"
-	INSTANCE_CONFIG_CONTEXT_TOPIC        = "instance-config-context"
+	OsProcessesTopic                 = "host-processes"
+	InstancesTopic                   = "instances"
+	InstanceConfigUpdateRequestTopic = "instance-config-update-request"
+	InstanceConfigUpdatedTopic       = "instance-config-updated"
+	InstanceConfigContextTopic       = "instance-config-context"
 )

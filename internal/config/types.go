@@ -12,26 +12,26 @@ import "time"
 type Config struct {
 	Version        string         `yaml:"-"`
 	Path           string         `yaml:"-"`
-	Log            Log            `mapstructure:"log" yaml:"-"`
-	ProcessMonitor ProcessMonitor `mapstructure:"process_monitor" yaml:"-"`
-	DataplaneAPI   DataplaneAPI   `mapstructure:"dataplane_api" yaml:"-"`
-	Client         Client         `mapstructure:"client" yaml:"-"`
+	Log            Log            `yaml:"-" mapstructure:"log"`
+	ProcessMonitor ProcessMonitor `yaml:"-" mapstructure:"process_monitor"`
+	DataplaneAPI   DataplaneAPI   `yaml:"-" mapstructure:"dataplane_api"`
+	Client         Client         `yaml:"-" mapstructure:"client"`
 }
 
 type Log struct {
-	Level string `mapstructure:"level" yaml:"-"`
-	Path  string `mapstructure:"path" yaml:"-"`
+	Level string `yaml:"-" mapstructure:"level"`
+	Path  string `yaml:"-" mapstructure:"path"`
 }
 
 type ProcessMonitor struct {
-	MonitoringFrequency time.Duration `mapstructure:"monitoring_frequency" yaml:"-"`
+	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 }
 
 type DataplaneAPI struct {
-	Host string `mapstructure:"host" yaml:"-"`
-	Port int    `mapstructure:"port" yaml:"-"`
+	Host string `yaml:"-" mapstructure:"host"`
+	Port int    `yaml:"-" mapstructure:"port"`
 }
 
 type Client struct {
-	Timeout time.Duration `mapstructure:"timeout" yaml:"-"`
+	Timeout time.Duration `yaml:"-" mapstructure:"timeout"`
 }

@@ -12,6 +12,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/stretchr/testify/assert"
 )
@@ -57,7 +59,7 @@ func TestGetLogLevel(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			result := getLogLevel(test.input)
-			assert.IsType(t, test.expected, result)
+			assert.IsType(tt, test.expected, result)
 		})
 	}
 }
@@ -67,7 +69,7 @@ func TestGetLogWriter(t *testing.T) {
 	defer os.Remove(file.Name())
 	defer os.Remove("agent.log")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := []struct {
 		name     string
@@ -99,7 +101,7 @@ func TestGetLogWriter(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			result := getLogWriter(test.input)
-			assert.IsType(t, test.expected, result)
+			assert.IsType(tt, test.expected, result)
 		})
 	}
 }

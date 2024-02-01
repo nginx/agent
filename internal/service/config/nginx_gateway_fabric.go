@@ -19,14 +19,17 @@ func NewNginxGatewayFabric() *NginxGatewayFabric {
 	return &NginxGatewayFabric{}
 }
 
-func (*NginxGatewayFabric) ParseConfig(instance *instances.Instance) (any, error) {
+// nolint: unused
+func (*NginxGatewayFabric) ParseConfig(_ *instances.Instance) (any, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Validate(instance *instances.Instance) error {
+// nolint: unused
+func (*NginxGatewayFabric) Validate(_ *instances.Instance) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Reload(instance *instances.Instance) error {
+// nolint: unused
+func (*NginxGatewayFabric) Reload(_ *instances.Instance) error {
 	return fmt.Errorf("not implemented")
 }

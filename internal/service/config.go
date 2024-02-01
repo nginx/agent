@@ -16,10 +16,11 @@ import (
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate . ConfigServiceInterface
+//nolint:unused
 type ConfigServiceInterface interface {
 	SetConfigContext(instanceConfigContext any)
-	UpdateInstanceConfiguration(correlationId, location string, instance *instances.Instance) error
-	ParseInstanceConfiguration(correlationId string, instance *instances.Instance) (instanceConfigContext any, err error)
+	UpdateInstanceConfiguration(correlationID, location string, instance *instances.Instance) error
+	ParseInstanceConfiguration(correlationID string, instance *instances.Instance) (instanceConfigContext any, err error)
 }
 
 type ConfigService struct {
@@ -43,14 +44,16 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 	cs.configContext = instanceConfigContext
 }
 
-func (cs *ConfigService) UpdateInstanceConfiguration(_, _ string, _ *instances.Instance) error {
+//nolint:unused // function not implemented remove when implemented
+func (*ConfigService) UpdateInstanceConfiguration(_, _ string, _ *instances.Instance) error {
 	return nil
 }
 
+//nolint:unused
 func (cs *ConfigService) ParseInstanceConfiguration(_ string, instance *instances.Instance) (instanceConfigContext any, err error) {
-	if conf, ok := cs.dataplaneConfigServices[instance.GetType()]; !ok {
-		return nil, fmt.Errorf("unknown instance type %s", instance.Type)
-	} else {
-		return conf.ParseConfig(instance)
+	conf, ok := cs.dataplaneConfigServices[instance.GetType()]
+	if !ok {
+		return nil, fmt.Errorf("unknown instance type %s", instance.GetType())
 	}
+	return conf.ParseConfig(instance)
 }

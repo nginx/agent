@@ -10,6 +10,8 @@ package service
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/config/configfakes"
@@ -41,10 +43,10 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	result, err := configService.ParseInstanceConfiguration("123", &instances.Instance{Type: instances.Type_NGINX})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)
 
 	_, err = configService.ParseInstanceConfiguration("123", &instances.Instance{Type: instances.Type_UNKNOWN})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 }

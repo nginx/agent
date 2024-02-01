@@ -65,7 +65,6 @@ func getLogWriter(logFile string) io.Writer {
 			return os.Stderr
 		}
 		return logFileHandle
-	} else {
-		return os.Stderr
 	}
+	return os.Stderr
 }

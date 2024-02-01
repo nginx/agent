@@ -10,6 +10,8 @@ package config
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +19,8 @@ import (
 
 type FakeDataplaneConfig struct{}
 
-func (*FakeDataplaneConfig) ParseConfig(instance *instances.Instance) (any, error) {
+//nolint:unparam,unused // always nil but its a test so ignore
+func (*FakeDataplaneConfig) ParseConfig(_ *instances.Instance) (any, error) {
 	return &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 	}, nil
@@ -31,6 +34,6 @@ func TestConfig_ParseConfig(t *testing.T) {
 	fakeDataplaneConfig := &FakeDataplaneConfig{}
 	result, err := fakeDataplaneConfig.ParseConfig(&instances.Instance{Type: instances.Type_NGINX})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)
 }

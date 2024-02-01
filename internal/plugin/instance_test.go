@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
@@ -24,7 +26,7 @@ func TestInstance_Init(t *testing.T) {
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{instanceMonitor})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	go messagePipe.Run()
 
 	time.Sleep(10 * time.Millisecond)
@@ -41,7 +43,7 @@ func TestInstance_Info(t *testing.T) {
 func TestInstance_Subscriptions(t *testing.T) {
 	instanceMonitor := NewInstance(&InstanceParameters{})
 	subscriptions := instanceMonitor.Subscriptions()
-	assert.Equal(t, []string{bus.OS_PROCESSES_TOPIC, bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC}, subscriptions)
+	assert.Equal(t, []string{bus.OsProcessesTopic, bus.InstanceConfigUpdateRequestTopic}, subscriptions)
 }
 
 func TestInstance_Process(t *testing.T) {
@@ -53,10 +55,10 @@ func TestInstance_Process(t *testing.T) {
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{instanceMonitor})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	go messagePipe.Run()
 
-	messagePipe.Process(&bus.Message{Topic: bus.OS_PROCESSES_TOPIC, Data: []*model.Process{{Pid: 123, Name: "nginx"}}})
+	messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{{Pid: 123, Name: "nginx"}}})
 
 	time.Sleep(10 * time.Millisecond)
 

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package os
+package host
 
 import (
 	"github.com/nginx/agent/v3/internal/model"

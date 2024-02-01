@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -19,11 +21,13 @@ type testPlugin struct {
 	mock.Mock
 }
 
-func (p *testPlugin) Init(pipe MessagePipeInterface) {
+//nolint:unused
+func (p *testPlugin) Init(_ MessagePipeInterface) {
 	p.Called()
 }
 
-func (p *testPlugin) Process(message *Message) {
+//nolint:unused
+func (p *testPlugin) Process(_ *Message) {
 	p.Called()
 }
 
@@ -31,11 +35,11 @@ func (p *testPlugin) Close() {
 	p.Called()
 }
 
-func (p *testPlugin) Info() *Info {
+func (*testPlugin) Info() *Info {
 	return &Info{"test"}
 }
 
-func (p *testPlugin) Subscriptions() []string {
+func (*testPlugin) Subscriptions() []string {
 	return []string{"test.message"}
 }
 
@@ -59,7 +63,7 @@ func TestMessagePipe(t *testing.T) {
 	messagePipe := NewMessagePipe(ctx, 100)
 	err := messagePipe.Register(10, []Plugin{plugin})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	go func() {
 		messagePipe.Run()
@@ -85,13 +89,13 @@ func TestMessagePipe_DeRegister(t *testing.T) {
 	messagePipe := NewMessagePipe(ctx, 100)
 	err := messagePipe.Register(100, []Plugin{plugin})
 
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(messagePipe.GetPlugins()))
+	require.NoError(t, err)
+	assert.Len(t, messagePipe.GetPlugins(), 1)
 
 	err = messagePipe.DeRegister([]string{plugin.Info().Name})
 
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(messagePipe.GetPlugins()))
+	require.NoError(t, err)
+	assert.Empty(t, len(messagePipe.GetPlugins()))
 	plugin.AssertExpectations(t)
 }
 
@@ -106,7 +110,7 @@ func TestMessagePipe_IsPluginAlreadyRegistered(t *testing.T) {
 	messagePipe := NewMessagePipe(ctx, 100)
 	err := messagePipe.Register(10, []Plugin{plugin})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	go func() {
 		messagePipe.Run()

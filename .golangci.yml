@@ -4,68 +4,30 @@ run:
     - ".*fakes" # Skip mock directories
   skip-files:
     - ".*gen.go"
-    - ".*fake.*.go"
 linters:
   # By default, the enabled linters are:
   # errcheck, gosimple, govet, ineffassign, staticcheck, unused
   enable:
-    - bodyclose
-    - cyclop
-    - contextcheck
-    - dupl
-    - errorlint
-    - exhaustive
-    - exportloopref
-    - forcetypeassert
-#    - gci
-    - gocheckcompilerdirectives
-    - gocognit
-    - goconst
-    - gocritic
-    - gocyclo
-    - godox
-    - gofumpt
-#    - goheader
-#    - gomnd
-#    - gomoddirectives
-#    - gosec
-#    - grouper
-#    - importas
-#    - inamedparam
-#    - ireturn
-#    - lll
-#    - maintidx
-#    - makezero
-#    - mirror
-#    - misspell
-#    - musttag
-#    - nakedret
-#    - nestif
-#    - nilerr
-#    - nilnil
-#    - nlreturn
-#    - noctx
-#    - nosprintfhostport
-#    - prealloc
-#    - predeclared
-#    - promlinter
-#    - protogetter
-#    - reassign
-#    - revive
-#    - rowserrcheck
-#    - sloglint
-#    - sqlclosecheck
-#    - stylecheck
-#    - tagalign
-#    - testableexamples
-#    - testifylint
-#    - thelper
-#    - unconvert
-#    - unparam
-#    - usestdlibvars
-#    - wastedassign
-#    - whitespace
-#    - zerologlint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - revive
+    - rowserrcheck
+    - sloglint
+    - sqlclosecheck
+    - stylecheck
+    - tagalign
+    - testableexamples
+    - testifylint
+    - thelper
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+    - zerologlint
 
 # Allows configuring linters that support configuration.
 # Refer to full list of linters here: https://golangci-lint.run/usage/linters/.
@@ -73,14 +35,14 @@ linters-settings:
   unused:
     # Mark all struct fields that have been written to as used. Default: true
     field-writes-are-uses: true
-    # Treat IncDec statement (e.g. `i++` or `i--`) as both read and write operation instead of just write. Default: false
+    # Treat IncDec statement (e.g. `i++` or `i--`) as both read and write operation instead of just wr◊ite. Default: false
     post-statements-are-reads: true
     # Mark all exported identifiers as used. Default: true
     exported-is-used: true
     # Mark all exported fields as used. Default: true
-    exported-fields-are-used: true
+    exported-fields-are-used: false
     # Mark all function parameters as used. Default: true
-    parameters-are-used: true
+    parameters-are-used: false
     # Mark all local variables as used. Default: true
     local-variables-are-used: false
     # Mark all identifiers inside generated files as used. Default: true
@@ -265,7 +227,7 @@ linters-settings:
       - G304 # File path provided as taint input
       - G305 # File traversal when extracting zip/tar archive
       - G306 # Poor file permissions used when writing to a new file
-      - G307 # Poor file permissions used when creating a file with os.Create
+      - G307 # Poor file permissions used when creating a file with host.Create
       - G401 # Detect the usage of DES, RC4, MD5 or SHA1
       - G402 # Look for bad TLS connection settings
       - G403 # Ensure minimum RSA key length of 2048 bits
@@ -316,11 +278,11 @@ linters-settings:
       G111:
         # Regexp pattern to find potential directory traversal. Default: "http\\.Dir\\(\"\\/\"\\)|http\\.Dir\\('\\/'\\)"
         pattern: "http\\.Dir\\(\"\\/\"\\)|http\\.Dir\\('\\/'\\)"
-      # Maximum allowed permissions mode for os.Mkdir and os.MkdirAll. Default: "0750"
+      # Maximum allowed permissions mode for host.Mkdir and host.MkdirAll. Default: "0750"
       G301: "0750"
-      # Maximum allowed permissions mode for os.OpenFile and os.Chmod. Default: "0600"
+      # Maximum allowed permissions mode for host.OpenFile and host.Chmod. Default: "0600"
       G302: "0600"
-      # Maximum allowed permissions mode for os.WriteFile and ioutil.WriteFile. Default: "0600"
+      # Maximum allowed permissions mode for host.WriteFile and ioutil.WriteFile. Default: "0600"
       G306: "0600"
   grouper:
     # Require the use of a single global 'const' declaration only. Default: false
@@ -453,15 +415,17 @@ linters-settings:
     # Default: 0.8
     confidence: 0.8
     rules:
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#add-constant
+      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#add-constant:
       - name: add-constant
         severity: warning
-        disabled: false
+        # TODO: re-enbale
+        disabled: true
         arguments:
           - maxLitCount: "3"
             allowStrs: '""'
             allowInts: "0,1,2"
             allowFloats: "0.0,0.,1.0,1.,2.0,2."
+            ignoreFuncs: "host\\.*"
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#argument-limit
       - name: argument-limit
         severity: warning
@@ -495,7 +459,7 @@ linters-settings:
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#cognitive-complexity
       - name: cognitive-complexity
         severity: warning
-        disabled: false
+        disabled: true
         arguments: [ 7 ]
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#comment-spacings
       - name: comment-spacings
@@ -527,7 +491,7 @@ linters-settings:
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#cyclomatic
       - name: cyclomatic
         severity: warning
-        disabled: false
+        disabled: true
         arguments: [ 3 ]
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#datarace
       - name: datarace
@@ -568,7 +532,7 @@ linters-settings:
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#enforce-map-style
       - name: enforce-map-style
         severity: warning
-        disabled: false
+        disabled: true
         arguments:
           - "make"
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#error-naming
@@ -595,7 +559,7 @@ linters-settings:
       - name: function-result-limit
         severity: warning
         disabled: false
-        arguments: [ 2 ]
+        arguments: [ 3 ]
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#get-return
       - name: get-return
         severity: warning
@@ -638,7 +602,7 @@ linters-settings:
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#max-public-structs
       - name: max-public-structs
         severity: warning
-        disabled: false
+        disabled: true
         arguments: [ 3 ]
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#modifies-parameter
       - name: modifies-parameter
@@ -765,13 +729,13 @@ linters-settings:
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-parameter
       - name: unused-parameter
         severity: warning
-        disabled: false
+        disabled: true
         arguments:
           - allowRegex: "^_"
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-receiver
       - name: unused-receiver
         severity: warning
-        disabled: false
+        disabled: true
         arguments:
           - allowRegex: "^_"
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#useless-break

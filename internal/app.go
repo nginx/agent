@@ -27,6 +27,7 @@ func NewApp(commit, version string) *App {
 	return &App{commit, version}
 }
 
+//nolint:unused
 func (a *App) Run() error {
 	config.Init(a.version, a.commit)
 
@@ -56,8 +57,8 @@ func (a *App) Run() error {
 
 		messagePipe.Run()
 	})
-
-	if err := config.Execute(); err != nil {
+	err := config.Execute()
+	if err != nil {
 		return err
 	}
 

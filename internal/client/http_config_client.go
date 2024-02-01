@@ -20,49 +20,50 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate . HttpConfigClientInterface
+//counterfeiter:generate . HTTPConfigClientInterface
 const tenantHeader = "tenantId"
 
-type HttpConfigClientInterface interface {
-	GetFilesMetadata(filesUrl, tenantID string) (*instances.Files, error)
-	GetFile(file *instances.File, filesUrl, tenantID string) (*instances.FileDownloadResponse, error)
+// nolint: unused
+type HTTPConfigClientInterface interface {
+	GetFilesMetadata(filesURL, tenantID string) (*instances.Files, error)
+	GetFile(file *instances.File, filesURL, tenantID string) (*instances.FileDownloadResponse, error)
 }
 
-type HttpConfigClient struct {
+type HTTPConfigClient struct {
 	httpClient http.Client
 }
 
-func NewHttpConfigClient(timeout time.Duration) *HttpConfigClient {
+func NewHTTPConfigClient(timeout time.Duration) *HTTPConfigClient {
 	httpClient := http.Client{
 		Timeout: timeout,
 	}
 
-	return &HttpConfigClient{
+	return &HTTPConfigClient{
 		httpClient: httpClient,
 	}
 }
 
-func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl, tenantID string) (*instances.Files, error) {
+func (hcd *HTTPConfigClient) GetFilesMetadata(filesURL, tenantID string) (*instances.Files, error) {
 	files := instances.Files{}
 
-	req, err := http.NewRequest(http.MethodGet, filesUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, filesURL, nil)
 
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("error creating GetFilesMetadata request %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error creating GetFilesMetadata request %s: %w", filesURL, err)
 	}
 
 	resp, err := hcd.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making GetFilesMetadata request %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error making GetFilesMetadata request %s: %w", filesURL, err)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading GetFilesMetadata response body from %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error reading GetFilesMetadata response body from %s: %w", filesURL, err)
 	}
 
 	err = resp.Body.Close()
@@ -82,35 +83,35 @@ func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl, tenantID string) (*insta
 	return &files, nil
 }
 
-func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl, tenantID string) (*instances.FileDownloadResponse, error) {
+func (hcd *HTTPConfigClient) GetFile(file *instances.File, filesURL, tenantID string) (*instances.FileDownloadResponse, error) {
 	response := instances.FileDownloadResponse{}
 	params := url.Values{}
 
-	params.Add("version", file.Version)
+	params.Add("version", file.GetVersion())
 	params.Add("encoded", "true")
 
-	filePath := url.QueryEscape(file.Path)
+	filePath := url.QueryEscape(file.GetPath())
 
-	fileUrl := fmt.Sprintf("%v%v?%v", filesUrl, filePath, params.Encode())
+	fileURL := fmt.Sprintf("%v%v?%v", filesURL, filePath, params.Encode())
 
-	req, err := http.NewRequest(http.MethodGet, fileUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, fileURL, nil)
 
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesURL, err)
 	}
 
 	resp, err := hcd.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making GetFile request %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error making GetFile request %s: %w", filesURL, err)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading GetFile response body from %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error reading GetFile response body from %s: %w", filesURL, err)
 	}
 
 	err = resp.Body.Close()
@@ -126,6 +127,8 @@ func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl, tenantID st
 		slog.Debug("Error unmarshalling GetFile Response", "data", string(data))
 		return nil, fmt.Errorf("error unmarshalling GetFile response: %w", err)
 	}
+
+	slog.Info("response", "data", string(data))
 
 	return &response, err
 }

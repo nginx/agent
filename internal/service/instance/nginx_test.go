@@ -11,10 +11,16 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/internal/datasource/os/exec/execfakes"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	exePath = "/usr/local/Cellar/nginx/1.23.3/bin/nginx"
 )
 
 func TestGetInstances(t *testing.T) {
@@ -24,21 +30,21 @@ func TestGetInstances(t *testing.T) {
 			Ppid: 456,
 			Name: "nginx",
 			Cmd:  "nginx: worker process",
-			Exe:  "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
+			Exe:  exePath,
 		},
 		{
 			Pid:  789,
 			Ppid: 123,
 			Name: "nginx",
 			Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
-			Exe:  "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
+			Exe:  exePath,
 		},
 		{
 			Pid:  543,
 			Ppid: 454,
 			Name: "grep",
 			Cmd:  "grep --color=auto --exclude-dir=.bzr --exclude-dir=CVS --exclude-dir=.git --exclude-dir=.hg --exclude-dir=.svn --exclude-dir=.idea --exclude-dir=.tox nginx",
-			Exe:  "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
+			Exe:  exePath,
 		},
 	}
 
@@ -63,7 +69,7 @@ func TestGetInstances(t *testing.T) {
 						Meta: &instances.Meta_NginxMeta{
 							NginxMeta: &instances.NginxMeta{
 								ConfigPath: "/usr/local/etc/nginx/nginx.conf",
-								ExePath:    "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
+								ExePath:    exePath,
 							},
 						},
 					},
@@ -87,7 +93,7 @@ func TestGetInstances(t *testing.T) {
 						Meta: &instances.Meta_NginxMeta{
 							NginxMeta: &instances.NginxMeta{
 								ConfigPath: "/etc/nginx/nginx.conf",
-								ExePath:    "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
+								ExePath:    exePath,
 							},
 						},
 					},
@@ -104,8 +110,8 @@ func TestGetInstances(t *testing.T) {
 			n := NewNginx(NginxParameters{executer: mockExec})
 			result, err := n.GetInstances(processes)
 
-			assert.Equal(t, test.expected, result)
-			assert.NoError(t, err)
+			assert.Equal(tt, test.expected, result)
+			require.NoError(tt, err)
 		})
 	}
 }
@@ -142,7 +148,7 @@ func TestGetInfo(t *testing.T) {
 					"lock-path":                      "/usr/local/var/run/nginx.lock",
 					"pid-path":                       "/usr/local/var/run/nginx.pid",
 					"prefix":                         "/usr/local/Cellar/nginx/1.23.3",
-					"sbin-path":                      "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
+					"sbin-path":                      exePath,
 					"with-cc-opt":                    "'-I/usr/local/opt/pcre2/include -I/usr/local/opt/openssl@1.1/include'",
 					"with-compat":                    true,
 					"with-debug":                     true,
@@ -254,8 +260,8 @@ func TestGetInfo(t *testing.T) {
 			n := NewNginx(NginxParameters{executer: mockExec})
 			result, err := n.getInfo(test.exe)
 
-			assert.Equal(t, test.expected, result)
-			assert.NoError(t, err)
+			assert.Equal(tt, test.expected, result)
+			require.NoError(tt, err)
 		})
 	}
 }

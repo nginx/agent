@@ -27,6 +27,7 @@ func NewFakeMessagePipe(ctx context.Context) *FakeMessagePipe {
 	}
 }
 
+//nolint:unused // unused param but a test
 func (p *FakeMessagePipe) Register(size int, plugins []Plugin) error {
 	p.plugins = append(p.plugins, plugins...)
 	return nil

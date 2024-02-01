@@ -11,6 +11,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
@@ -34,7 +36,7 @@ func TestConfig_Info(t *testing.T) {
 func TestConfig_Subscriptions(t *testing.T) {
 	configPlugin := NewConfig()
 	subscriptions := configPlugin.Subscriptions()
-	assert.Equal(t, []string{bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC, bus.INSTANCE_CONFIG_UPDATED_TOPIC}, subscriptions)
+	assert.Equal(t, []string{bus.InstanceConfigUpdateRequestTopic, bus.InstanceConfigUpdatedTopic}, subscriptions)
 }
 
 func TestConfig_Process(t *testing.T) {
@@ -51,7 +53,7 @@ func TestConfig_Process(t *testing.T) {
 	instanceConfigUpdateRequest := &model.InstanceConfigUpdateRequest{
 		Instance:      testInstance,
 		Location:      "http://file-server.com",
-		CorrelationId: "456",
+		CorrelationID: "456",
 	}
 
 	tests := []struct {
@@ -62,12 +64,12 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated",
 			input: &bus.Message{
-				Topic: bus.INSTANCE_CONFIG_UPDATED_TOPIC,
+				Topic: bus.InstanceConfigUpdatedTopic,
 				Data:  instanceConfigUpdateRequest,
 			},
 			expected: []*bus.Message{
 				{
-					Topic: bus.INSTANCE_CONFIG_CONTEXT_TOPIC,
+					Topic: bus.InstanceConfigContextTopic,
 					Data:  nginxConfigContext,
 				},
 			},
@@ -75,7 +77,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated - unknown message type",
 			input: &bus.Message{
-				Topic: bus.INSTANCE_CONFIG_UPDATED_TOPIC,
+				Topic: bus.InstanceConfigUpdatedTopic,
 				Data:  nil,
 			},
 			expected: nil,
@@ -83,12 +85,12 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config update request",
 			input: &bus.Message{
-				Topic: bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC,
+				Topic: bus.InstanceConfigUpdateRequestTopic,
 				Data:  instanceConfigUpdateRequest,
 			},
 			expected: []*bus.Message{
 				{
-					Topic: bus.INSTANCE_CONFIG_UPDATED_TOPIC,
+					Topic: bus.InstanceConfigUpdatedTopic,
 					Data:  instanceConfigUpdateRequest,
 				},
 			},
@@ -96,7 +98,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config update request - unknown message type",
 			input: &bus.Message{
-				Topic: bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC,
+				Topic: bus.InstanceConfigUpdateRequestTopic,
 				Data:  nil,
 			},
 			expected: nil,
@@ -109,7 +111,7 @@ func TestConfig_Process(t *testing.T) {
 			configPlugin := NewConfig()
 
 			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
-			assert.NoError(tt, err)
+			require.NoError(tt, err)
 			messagePipe.Run()
 
 			configService := &servicefakes.FakeConfigServiceInterface{}

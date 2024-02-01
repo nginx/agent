@@ -36,12 +36,12 @@ const (
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
 
 func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
-	ROOT_COMMAND.Run = r
+	RootCommand.Run = r
 }
 
 func Execute() error {
-	ROOT_COMMAND.AddCommand(COMPLETION_COMMAND)
-	return ROOT_COMMAND.Execute()
+	RootCommand.AddCommand(CompletionCommand)
+	return RootCommand.Execute()
 }
 
 func Init(version, commit string) {
@@ -79,7 +79,7 @@ func GetConfig() *Config {
 }
 
 func setVersion(version, commit string) {
-	ROOT_COMMAND.Version = version + "-" + commit
+	RootCommand.Version = version + "-" + commit
 	viperInstance.SetDefault(VersionConfigKey, version)
 }
 
@@ -88,7 +88,7 @@ func registerFlags() {
 	viperInstance.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viperInstance.AutomaticEnv()
 
-	fs := ROOT_COMMAND.Flags()
+	fs := RootCommand.Flags()
 	fs.String(LogLevelConfigKey, "info", "The desired verbosity level for logging messages from nginx-agent. Available options, in order of severity from highest to lowest, are: panic, fatal, error, info, debug, and trace.")
 	fs.String(LogPathConfigKey, "", "The path to output log messages to. If the default path doesn't exist, log messages are output to stdout/stderr.")
 	fs.Duration(ProcessMonitorMonitoringFrequencyConfigKey, time.Minute, "How often the NGINX Agent will check for process changes.")
@@ -145,6 +145,7 @@ func loadPropertiesFromFile(cfg string) error {
 	return nil
 }
 
+// nolint: unused
 func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 	from := []string{"_", "."}
 	to := "-"

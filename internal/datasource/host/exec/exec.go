@@ -14,6 +14,7 @@ import (
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate . ExecInterface
+//nolint:unused
 type ExecInterface interface {
 	RunCmd(cmd string, args ...string) (*bytes.Buffer, error)
 	FindExecutable(name string) (string, error)

@@ -12,5 +12,5 @@ import "github.com/nginx/agent/v3/api/grpc/instances"
 type InstanceConfigUpdateRequest struct {
 	Instance      *instances.Instance
 	Location      string
-	CorrelationId string
+	CorrelationID string
 }

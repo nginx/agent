@@ -16,8 +16,8 @@ import (
 	"strings"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	process "github.com/nginx/agent/v3/internal/datasource/nginx"
-	"github.com/nginx/agent/v3/internal/datasource/os/exec"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/uuid"
 )
@@ -53,6 +53,7 @@ func NewNginx(parameters NginxParameters) *Nginx {
 	}
 }
 
+// nolint: unparam //  always returns nil but is a test
 func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance, error) {
 	var processList []*instances.Instance
 
@@ -66,15 +67,13 @@ func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance,
 	for _, nginxProcess := range nginxProcesses {
 		_, ok := nginxProcesses[nginxProcess.Ppid]
 		if !ok {
-
 			if nginxProcess.Exe == "" {
 				exe := process.New(n.executer).GetExe()
 				if exe == "" {
 					slog.Debug("Unable to find NGINX exe", "pid", nginxProcess.Pid)
 					continue
-				} else {
-					nginxProcess.Exe = exe
 				}
+				nginxProcess.Exe = exe
 			}
 
 			nginxInfo, err := n.getInfo(nginxProcess.Exe)
@@ -118,9 +117,9 @@ func (n *Nginx) getInfo(exePath string) (*Info, error) {
 	outputBuffer, err := n.executer.RunCmd(exePath, "-V")
 	if err != nil {
 		return nil, err
-	} else {
-		nginxInfo = parseNginxVersionCommandOutput(outputBuffer)
 	}
+
+	nginxInfo = parseNginxVersionCommandOutput(outputBuffer)
 
 	return nginxInfo, err
 }
@@ -200,7 +199,7 @@ func parseNginxVersion(line string) (version, plusVersion string) {
 func parseConfigureArguments(line string) map[string]interface{} {
 	// need to check for empty strings
 	flags := strings.Split(line[len("configure arguments:"):], " --")
-	result := map[string]interface{}{}
+	result := make(map[string]interface{})
 	for _, flag := range flags {
 		vals := strings.Split(flag, "=")
 		switch len(vals) {

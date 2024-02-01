@@ -18,8 +18,8 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
 
-	datasource_os "github.com/nginx/agent/v3/internal/datasource/os"
-	"github.com/nginx/agent/v3/internal/datasource/os/exec"
+	"github.com/nginx/agent/v3/internal/datasource/host"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
 
 const (
@@ -28,6 +28,7 @@ const (
 )
 
 type (
+	//nolint:unused // is used not sure why it cant
 	crossplaneTraverseCallback = func(parent, current *crossplane.Directive) (bool, error)
 )
 
@@ -41,8 +42,9 @@ func NewNginx() *Nginx {
 	}
 }
 
+// nolint: unused
 func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
-	payload, err := crossplane.Parse(instance.Meta.GetNginxMeta().GetConfigPath(),
+	payload, err := crossplane.Parse(instance.GetMeta().GetNginxMeta().GetConfigPath(),
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   []string{},
 			SingleFile:         false,
@@ -50,17 +52,17 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error reading config from %s, error: %w", instance.Meta.GetNginxMeta().GetConfigPath(), err)
+		return nil, fmt.Errorf("error reading config from %s, error: %w", instance.GetMeta().GetNginxMeta().GetConfigPath(), err)
 	}
 
 	accessLogs := []*model.AccessLog{}
 	errorLogs := []*model.ErrorLog{}
 
 	for _, xpConf := range payload.Config {
-		formatMap := map[string]string{}
+		formatMap := make(map[string]string)
 
 		err := crossplaneConfigTraverse(&xpConf,
-			func(parent, directive *crossplane.Directive) (bool, error) {
+			func(_, directive *crossplane.Directive) (bool, error) {
 				switch directive.Directive {
 				case "log_format":
 					formatMap = getFormatMap(directive)
@@ -85,7 +87,7 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 }
 
 func (n *Nginx) Validate(instance *instances.Instance) error {
-	exePath := instance.Meta.GetNginxMeta().GetExePath()
+	exePath := instance.GetMeta().GetNginxMeta().GetExePath()
 	out, err := n.executor.RunCmd(exePath, "-t")
 	if err != nil {
 		return fmt.Errorf("NGINX config test failed %w: %s", err, out)
@@ -99,7 +101,7 @@ func (n *Nginx) Validate(instance *instances.Instance) error {
 }
 
 func (n *Nginx) Reload(instance *instances.Instance) error {
-	exePath := instance.Meta.GetNginxMeta().GetExePath()
+	exePath := instance.GetMeta().GetNginxMeta().GetExePath()
 	out, err := n.executor.RunCmd(exePath, "-s", "reload")
 	if err != nil {
 		return fmt.Errorf("failed to reload NGINX %w: %s", err, out)
@@ -117,7 +119,7 @@ func validateConfigCheckResponse(out []byte) error {
 }
 
 func getFormatMap(directive *crossplane.Directive) map[string]string {
-	formatMap := map[string]string{}
+	formatMap := make(map[string]string)
 
 	if len(directive.Args) >= 2 {
 		if directive.Args[0] == ltsvArg {
@@ -139,7 +141,7 @@ func getAccessLog(file, format string, formatMap map[string]string) *model.Acces
 	info, err := os.Stat(file)
 	if err == nil {
 		accessLog.Readable = true
-		accessLog.Permissions = datasource_os.GetPermissions(info.Mode())
+		accessLog.Permissions = host.GetPermissions(info.Mode())
 	}
 
 	if formatMap[format] != "" {
@@ -163,7 +165,7 @@ func getErrorLog(file, level string) *model.ErrorLog {
 	}
 	info, err := os.Stat(file)
 	if err == nil {
-		errorLog.Permissions = datasource_os.GetPermissions(info.Mode())
+		errorLog.Permissions = host.GetPermissions(info.Mode())
 		errorLog.Readable = true
 	}
 

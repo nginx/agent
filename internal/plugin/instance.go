@@ -40,35 +40,35 @@ func (i *Instance) Init(messagePipe bus.MessagePipeInterface) {
 	i.messagePipe = messagePipe
 }
 
-func (i *Instance) Close() {}
+func (*Instance) Close() {}
 
-func (i *Instance) Info() *bus.Info {
+func (*Instance) Info() *bus.Info {
 	return &bus.Info{
 		Name: "instance",
 	}
 }
 
 func (i *Instance) Process(msg *bus.Message) {
-	if msg.Topic == bus.OS_PROCESSES_TOPIC {
+	if msg.Topic == bus.OsProcessesTopic {
 		newProcesses, ok := msg.Data.([]*model.Process)
 		if !ok {
 			slog.Error("unable to cast message payload to model.Process", "payload", msg.Data)
 			return
 		}
 
-		instances := i.instanceService.GetInstances(newProcesses)
-		if len(instances) > 0 {
-			i.instances = instances
-			i.messagePipe.Process(&bus.Message{Topic: bus.INSTANCES_TOPIC, Data: instances})
+		instanceList := i.instanceService.GetInstances(newProcesses)
+		if len(instanceList) > 0 {
+			i.instances = instanceList
+			i.messagePipe.Process(&bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
 		} else {
-			slog.Info("No instances found")
+			slog.Info("No instanceList found")
 		}
 	}
 }
 
-func (i *Instance) Subscriptions() []string {
+func (*Instance) Subscriptions() []string {
 	return []string{
-		bus.OS_PROCESSES_TOPIC,
-		bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC,
+		bus.OsProcessesTopic,
+		bus.InstanceConfigUpdateRequestTopic,
 	}
 }
