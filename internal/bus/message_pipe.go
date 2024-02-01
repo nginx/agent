@@ -27,11 +27,21 @@ type Info struct {
 }
 
 type Plugin interface {
-	Init(*MessagePipe)
+	Init(MessagePipeInterface)
 	Close()
 	Info() *Info
 	Process(*Message)
 	Subscriptions() []string
+}
+
+type MessagePipeInterface interface {
+	Register(int, []Plugin) error
+	DeRegister(plugins []string) error
+	Process(...*Message)
+	Run()
+	Context() context.Context
+	GetPlugins() []Plugin
+	IsPluginAlreadyRegistered(string) bool
 }
 
 type MessagePipe struct {

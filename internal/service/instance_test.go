@@ -11,24 +11,25 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/internal/service/instance"
+	"github.com/nginx/agent/v3/internal/service/instance/instancefakes"
 	"github.com/stretchr/testify/assert"
 )
 
 var testInstances = []*instances.Instance{
 	{
-		InstanceId: "123",
+		InstanceId: "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
 		Type:       instances.Type_NGINX,
 	},
 }
 
-func TestInstanceService_UpdateInstances(t *testing.T) {
-	instanceService := NewInstanceService()
-	instanceService.UpdateInstances(testInstances)
-	assert.Equal(t, testInstances, instanceService.instances)
-}
-
 func TestInstanceService_GetInstances(t *testing.T) {
+	fakeDataplaneService := &instancefakes.FakeDataplaneInstanceService{}
+	fakeDataplaneService.GetInstancesReturns(testInstances, nil)
+
 	instanceService := NewInstanceService()
-	instanceService.UpdateInstances(testInstances)
-	assert.Equal(t, testInstances, instanceService.GetInstances())
+	instanceService.dataplaneInstanceServices = []instance.DataplaneInstanceService{fakeDataplaneService}
+
+	assert.Equal(t, testInstances, instanceService.GetInstances([]*model.Process{}))
 }
