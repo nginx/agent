@@ -80,7 +80,7 @@ func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceID 
 }
 
 func (cw *ConfigWriter) Write(ctx context.Context, filesURL string, tenantID uuid.UUID) (err error) {
-	currentFileCache := FileCache{}
+	currentFileCache := make(FileCache)
 	skippedFiles := make(map[string]struct{})
 
 	filesMetaData, err := cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID.String())
@@ -166,7 +166,7 @@ func writeFile(fileContent []byte, filePath string) error {
 }
 
 func readInstanceCache(cachePath string) (previousFileCache FileCache, err error) {
-	previousFileCache = FileCache{}
+	previousFileCache = make(FileCache)
 
 	if _, statErr := os.Stat(cachePath); os.IsNotExist(statErr) {
 		return previousFileCache, fmt.Errorf("cache.json does not exist %s: %w", cachePath, statErr)

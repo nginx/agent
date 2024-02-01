@@ -561,7 +561,7 @@ linters-settings:
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#enforce-map-style
       - name: enforce-map-style
         severity: warning
-        disabled: true
+        disabled: false
         arguments:
           - "make"
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#error-naming
