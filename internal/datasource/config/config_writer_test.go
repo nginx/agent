@@ -35,7 +35,7 @@ func TestWriteConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	tmpDir := os.TempDir()
-	instanceIDDir := fmt.Sprintf("%s%s/", tmpDir, instanceID.String())
+	instanceIDDir := path.Join(tmpDir, instanceID.String())
 	err = os.Mkdir(instanceIDDir, 0o755)
 	require.NoError(t, err)
 	defer os.Remove(instanceIDDir)
