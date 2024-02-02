@@ -1,13 +1,12 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package client
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -20,49 +19,61 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate . HttpConfigClientInterface
+//counterfeiter:generate . HTTPConfigClientInterface
 const tenantHeader = "tenantId"
 
-type HttpConfigClientInterface interface {
-	GetFilesMetadata(filesUrl string, tenantID string) (*instances.Files, error)
-	GetFile(file *instances.File, filesUrl string, tenantID string) (*instances.FileDownloadResponse, error)
+type HTTPConfigClientInterface interface {
+	GetFilesMetadata(ctx context.Context, filesURL, tenantID string) (*instances.Files, error)
+	GetFile(
+		ctx context.Context,
+		file *instances.File,
+		filesURL, tenantID string,
+	) (*instances.FileDownloadResponse, error)
 }
 
-type HttpConfigClient struct {
+type HTTPConfigClient struct {
 	httpClient http.Client
 }
 
-func NewHttpConfigClient(timeout time.Duration) *HttpConfigClient {
+func NewHTTPConfigClient(timeout time.Duration) *HTTPConfigClient {
 	httpClient := http.Client{
 		Timeout: timeout,
 	}
 
-	return &HttpConfigClient{
+	return &HTTPConfigClient{
 		httpClient: httpClient,
 	}
 }
 
-func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl string, tenantID string) (*instances.Files, error) {
+func (hcd *HTTPConfigClient) GetFilesMetadata(
+	ctx context.Context,
+	filesURL, tenantID string,
+) (*instances.Files, error) {
 	files := instances.Files{}
 
-	req, err := http.NewRequest(http.MethodGet, filesUrl, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, filesURL, nil)
 
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("error creating GetFilesMetadata request %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error creating GetFilesMetadata request %s: %w", filesURL, err)
 	}
 
 	resp, err := hcd.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making GetFilesMetadata request %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error making GetFilesMetadata request %s: %w", filesURL, err)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading GetFilesMetadata response body from %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error reading GetFilesMetadata response body from %s: %w", filesURL, err)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return nil, err
 	}
 
 	// type is returned for the rest api but is not in the proto definitions so needs to be discarded
@@ -71,41 +82,51 @@ func (hcd *HttpConfigClient) GetFilesMetadata(filesUrl string, tenantID string) 
 
 	if err != nil {
 		slog.Debug("Error unmarshalling GetFilesMetadata Response", "data", string(data))
+
 		return nil, fmt.Errorf("error unmarshalling GetFilesMetadata response: %w", err)
 	}
 
 	return &files, nil
 }
 
-func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl string, tenantID string) (*instances.FileDownloadResponse, error) {
+func (hcd *HTTPConfigClient) GetFile(
+	ctx context.Context,
+	file *instances.File,
+	filesURL, tenantID string,
+) (*instances.FileDownloadResponse, error) {
 	response := instances.FileDownloadResponse{}
 	params := url.Values{}
 
-	params.Add("version", file.Version)
+	params.Add("version", file.GetVersion())
 	params.Add("encoded", "true")
 
-	filePath := url.QueryEscape(file.Path)
+	filePath := url.QueryEscape(file.GetPath())
 
-	fileUrl := fmt.Sprintf("%v%v?%v", filesUrl, filePath, params.Encode())
+	fileURL := fmt.Sprintf("%v%v?%v", filesURL, filePath, params.Encode())
 
-	req, err := http.NewRequest(http.MethodGet, fileUrl, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
 
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesURL, err)
 	}
 
 	resp, err := hcd.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making GetFile request %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error making GetFile request %s: %w", filesURL, err)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading GetFile response body from %s: %w", filesUrl, err)
+		return nil, fmt.Errorf("error reading GetFile response body from %s: %w", filesURL, err)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return nil, err
 	}
 
 	// type is returned for the rest api but is not in the proto definitions so needs to be discarded
@@ -114,8 +135,11 @@ func (hcd *HttpConfigClient) GetFile(file *instances.File, filesUrl string, tena
 
 	if err != nil {
 		slog.Debug("Error unmarshalling GetFile Response", "data", string(data))
+
 		return nil, fmt.Errorf("error unmarshalling GetFile response: %w", err)
 	}
+
+	slog.Info("response", "data", string(data))
 
 	return &response, err
 }

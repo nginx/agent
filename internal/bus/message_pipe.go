@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package bus
 
@@ -12,7 +10,7 @@ import (
 	"log/slog"
 	"sync"
 
-	message_bus "github.com/vardius/message-bus"
+	messagebus "github.com/vardius/message-bus"
 )
 
 type Payload interface{}
@@ -27,25 +25,25 @@ type Info struct {
 }
 
 type Plugin interface {
-	Init(MessagePipeInterface)
+	Init(messagePipe MessagePipeInterface)
 	Close()
 	Info() *Info
-	Process(*Message)
+	Process(message *Message)
 	Subscriptions() []string
 }
 
 type MessagePipeInterface interface {
-	Register(int, []Plugin) error
+	Register(size int, plugins []Plugin) error
 	DeRegister(plugins []string) error
-	Process(...*Message)
+	Process(messages ...*Message)
 	Run()
 	Context() context.Context
 	GetPlugins() []Plugin
-	IsPluginAlreadyRegistered(string) bool
+	IsPluginAlreadyRegistered(pluginName string) bool
 }
 
 type MessagePipe struct {
-	bus            message_bus.MessageBus
+	bus            messagebus.MessageBus
 	messageChannel chan *Message
 	plugins        []Plugin
 	mu             sync.RWMutex
@@ -67,7 +65,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin) error {
 	p.mu.Lock()
 
 	p.plugins = append(p.plugins, plugins...)
-	p.bus = message_bus.New(size)
+	p.bus = messagebus.New(size)
 
 	pluginsRegistered := []string{}
 
@@ -84,6 +82,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin) error {
 	slog.Info("Finished registering plugins", "plugins", pluginsRegistered)
 
 	p.mu.Unlock()
+
 	return nil
 }
 
@@ -117,6 +116,7 @@ func (p *MessagePipe) DeRegister(pluginNames []string) error {
 	}
 
 	p.mu.Unlock()
+
 	return nil
 }
 
@@ -126,6 +126,7 @@ func getIndex(pluginName string, plugins []Plugin) int {
 			return index
 		}
 	}
+
 	return -1
 }
 
@@ -134,6 +135,7 @@ func (p *MessagePipe) Process(messages ...*Message) {
 		select {
 		case p.messageChannel <- m:
 		case <-p.ctx.Done():
+
 			return
 		}
 	}
@@ -180,10 +182,12 @@ func (p *MessagePipe) initPlugins() {
 
 func (p *MessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
 	pluginAlreadyRegistered := false
+
 	for _, plugin := range p.GetPlugins() {
 		if plugin.Info().Name == pluginName {
 			pluginAlreadyRegistered = true
 		}
 	}
+
 	return pluginAlreadyRegistered
 }

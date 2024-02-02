@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/nginx/agent/v3/internal/datasource/os/exec"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
 
 type FakeExecInterface struct {

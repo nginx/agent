@@ -1,13 +1,12 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -24,14 +23,16 @@ import (
 )
 
 const (
-	cacheLocation = "/var/lib/nginx-agent/config/%v/cache.json"
+	cacheLocation   = "/var/lib/nginx-agent/config/%v/cache.json"
+	filePermissions = 0o600
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//counterfeiter:generate . ConfigWriterInterface
+
 type (
-	//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-	//counterfeiter:generate . ConfigWriterInterface
 	ConfigWriterInterface interface {
-		Write(filesUrl string, tenantID uuid.UUID) (err error)
+		Write(ctx context.Context, filesURL string, tenantID uuid.UUID) (err error)
 		Complete() (err error)
 	}
 
@@ -40,13 +41,13 @@ type (
 	}
 
 	ConfigWriterParameters struct {
-		configClient client.HttpConfigClientInterface
+		configClient client.HTTPConfigClientInterface
 		Client       Client
 		cachePath    string
 	}
 
 	ConfigWriter struct {
-		configClient       client.HttpConfigClientInterface
+		configClient       client.HTTPConfigClientInterface
 		previouseFileCache FileCache
 		currentFileCache   FileCache
 		cachePath          string
@@ -63,7 +64,7 @@ func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceID 
 	}
 
 	if configWriterParameters.configClient == nil {
-		configWriterParameters.configClient = client.NewHttpConfigClient(configWriterParameters.Client.Timeout)
+		configWriterParameters.configClient = client.NewHTTPConfigClient(configWriterParameters.Client.Timeout)
 	}
 
 	previouseFileCache, err := readInstanceCache(configWriterParameters.cachePath)
@@ -78,38 +79,39 @@ func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceID 
 	}
 }
 
-func (cw *ConfigWriter) Write(filesUrl string, tenantID uuid.UUID) (err error) {
-	currentFileCache := FileCache{}
+func (cw *ConfigWriter) Write(ctx context.Context, filesURL string, tenantID uuid.UUID) (err error) {
+	currentFileCache := make(FileCache)
 	skippedFiles := make(map[string]struct{})
 
-	filesMetaData, err := cw.configClient.GetFilesMetadata(filesUrl, tenantID.String())
+	filesMetaData, err := cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID.String())
 	if err != nil {
-		return fmt.Errorf("error getting files metadata from %s: %w", filesUrl, err)
+		return fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
 	}
 
-	for _, fileData := range filesMetaData.Files {
-		if isFilePathValid(fileData.Path) {
+	for _, fileData := range filesMetaData.GetFiles() {
+		if isFilePathValid(fileData.GetPath()) {
 			if !doesFileRequireUpdate(cw.previouseFileCache, fileData) {
-				slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.Path)
-				currentFileCache[fileData.Path] = cw.previouseFileCache[fileData.Path]
-				skippedFiles[fileData.Path] = struct{}{}
+				slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.GetPath())
+				currentFileCache[fileData.GetPath()] = cw.previouseFileCache[fileData.GetPath()]
+				skippedFiles[fileData.GetPath()] = struct{}{}
+
 				continue
 			}
 
-			fileDownloadResponse, err := cw.configClient.GetFile(fileData, filesUrl, tenantID.String())
-			if err != nil {
-				return fmt.Errorf("error getting file data from %s: %w", filesUrl, err)
+			fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID.String())
+			if fetchErr != nil {
+				return fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
 			}
 
-			err = writeFile(fileDownloadResponse.FileContent, fileDownloadResponse.FilePath)
-			if err != nil {
-				return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.FilePath, err)
+			fetchErr = writeFile(fileDownloadResponse.GetFileContent(), fileDownloadResponse.GetFilePath())
+			if fetchErr != nil {
+				return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.GetFilePath(), fetchErr)
 			}
 
-			currentFileCache[fileData.Path] = &instances.File{
-				Version:      fileData.Version,
-				Path:         fileData.Path,
-				LastModified: fileData.LastModified,
+			currentFileCache[fileData.GetPath()] = &instances.File{
+				Version:      fileData.GetVersion(),
+				Path:         fileData.GetPath(),
+				LastModified: fileData.GetLastModified(),
 			}
 		}
 	}
@@ -122,7 +124,7 @@ func (cw *ConfigWriter) Write(filesUrl string, tenantID uuid.UUID) (err error) {
 func (cw *ConfigWriter) Complete() error {
 	cache, err := json.MarshalIndent(cw.currentFileCache, "", "  ")
 	if err != nil {
-		return fmt.Errorf("error marshalling cache data from %s: %w", cw.cachePath, err)
+		return fmt.Errorf("error marshaling cache data from %s: %w", cw.cachePath, err)
 	}
 
 	err = writeFile(cache, cw.cachePath)
@@ -148,13 +150,13 @@ func (cw *ConfigWriter) Validate(instance *instances.Instance) error {
 func writeFile(fileContent []byte, filePath string) error {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		slog.Debug("File does not exist, creating new file", "file", filePath)
-		err = os.MkdirAll(path.Dir(filePath), 0o750)
+		err = os.MkdirAll(path.Dir(filePath), filePermissions)
 		if err != nil {
 			return fmt.Errorf("error creating directory %s: %w", path.Dir(filePath), err)
 		}
 	}
 
-	err := os.WriteFile(filePath, fileContent, 0o644)
+	err := os.WriteFile(filePath, fileContent, filePermissions)
 	if err != nil {
 		return fmt.Errorf("error writing to file %s: %w", filePath, err)
 	}
@@ -164,10 +166,10 @@ func writeFile(fileContent []byte, filePath string) error {
 }
 
 func readInstanceCache(cachePath string) (previousFileCache FileCache, err error) {
-	previousFileCache = FileCache{}
+	previousFileCache = make(FileCache)
 
-	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
-		return previousFileCache, fmt.Errorf("cache.json does not exist %s: %w", cachePath, err)
+	if _, statErr := os.Stat(cachePath); os.IsNotExist(statErr) {
+		return previousFileCache, fmt.Errorf("cache.json does not exist %s: %w", cachePath, statErr)
 	}
 
 	cacheData, err := os.ReadFile(cachePath)
@@ -188,8 +190,9 @@ func isFilePathValid(filePath string) (validPath bool) {
 
 func doesFileRequireUpdate(previousFileCache FileCache, fileData *instances.File) (updateRequired bool) {
 	if len(previousFileCache) > 0 {
-		fileOnSystem, ok := previousFileCache[fileData.Path]
-		return ok && fileOnSystem.LastModified.AsTime().Before(fileData.LastModified.AsTime())
+		fileOnSystem, ok := previousFileCache[fileData.GetPath()]
+		return ok && fileOnSystem.GetLastModified().AsTime().Before(fileData.GetLastModified().AsTime())
 	}
+
 	return false
 }

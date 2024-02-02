@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package plugin
 
@@ -11,6 +9,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
@@ -29,7 +29,7 @@ func TestProcessMonitor_Init(t *testing.T) {
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{processMonitor})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	go messagePipe.Run()
 
 	time.Sleep(10 * time.Millisecond)
