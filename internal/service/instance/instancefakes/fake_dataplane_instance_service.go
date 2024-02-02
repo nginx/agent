@@ -10,24 +10,22 @@ import (
 )
 
 type FakeDataplaneInstanceService struct {
-	GetInstancesStub        func([]*model.Process) ([]*instances.Instance, error)
+	GetInstancesStub        func([]*model.Process) []*instances.Instance
 	getInstancesMutex       sync.RWMutex
 	getInstancesArgsForCall []struct {
 		arg1 []*model.Process
 	}
 	getInstancesReturns struct {
 		result1 []*instances.Instance
-		result2 error
 	}
 	getInstancesReturnsOnCall map[int]struct {
 		result1 []*instances.Instance
-		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeDataplaneInstanceService) GetInstances(arg1 []*model.Process) ([]*instances.Instance, error) {
+func (fake *FakeDataplaneInstanceService) GetInstances(arg1 []*model.Process) []*instances.Instance {
 	var arg1Copy []*model.Process
 	if arg1 != nil {
 		arg1Copy = make([]*model.Process, len(arg1))
@@ -46,9 +44,9 @@ func (fake *FakeDataplaneInstanceService) GetInstances(arg1 []*model.Process) ([
 		return stub(arg1)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fakeReturns.result1, fakeReturns.result2
+	return fakeReturns.result1
 }
 
 func (fake *FakeDataplaneInstanceService) GetInstancesCallCount() int {
@@ -57,7 +55,7 @@ func (fake *FakeDataplaneInstanceService) GetInstancesCallCount() int {
 	return len(fake.getInstancesArgsForCall)
 }
 
-func (fake *FakeDataplaneInstanceService) GetInstancesCalls(stub func([]*model.Process) ([]*instances.Instance, error)) {
+func (fake *FakeDataplaneInstanceService) GetInstancesCalls(stub func([]*model.Process) []*instances.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = stub
@@ -70,30 +68,27 @@ func (fake *FakeDataplaneInstanceService) GetInstancesArgsForCall(i int) []*mode
 	return argsForCall.arg1
 }
 
-func (fake *FakeDataplaneInstanceService) GetInstancesReturns(result1 []*instances.Instance, result2 error) {
+func (fake *FakeDataplaneInstanceService) GetInstancesReturns(result1 []*instances.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = nil
 	fake.getInstancesReturns = struct {
 		result1 []*instances.Instance
-		result2 error
-	}{result1, result2}
+	}{result1}
 }
 
-func (fake *FakeDataplaneInstanceService) GetInstancesReturnsOnCall(i int, result1 []*instances.Instance, result2 error) {
+func (fake *FakeDataplaneInstanceService) GetInstancesReturnsOnCall(i int, result1 []*instances.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = nil
 	if fake.getInstancesReturnsOnCall == nil {
 		fake.getInstancesReturnsOnCall = make(map[int]struct {
 			result1 []*instances.Instance
-			result2 error
 		})
 	}
 	fake.getInstancesReturnsOnCall[i] = struct {
 		result1 []*instances.Instance
-		result2 error
-	}{result1, result2}
+	}{result1}
 }
 
 func (fake *FakeDataplaneInstanceService) Invocations() map[string][][]interface{} {

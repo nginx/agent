@@ -6,9 +6,6 @@
 package service
 
 import (
-	"fmt"
-	"log/slog"
-
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/instance"
@@ -38,16 +35,7 @@ func (is *InstanceService) GetInstances(processes []*model.Process) []*instances
 	newInstances := []*instances.Instance{}
 
 	for _, dataplaneInstanceService := range is.dataplaneInstanceServices {
-		newDataplaneInstances, err := dataplaneInstanceService.GetInstances(processes)
-		if err != nil {
-			slog.Warn(
-				"Unable to get all instances",
-				"dataplane type", fmt.Sprintf("%T", dataplaneInstanceService),
-				"error", err,
-			)
-		} else {
-			newInstances = append(newInstances, newDataplaneInstances...)
-		}
+		newInstances = append(newInstances, dataplaneInstanceService.GetInstances(processes)...)
 	}
 
 	is.instances = newInstances
