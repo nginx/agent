@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package instance
 
@@ -16,8 +14,8 @@ import (
 	"strings"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	process "github.com/nginx/agent/v3/internal/datasource/nginx"
-	"github.com/nginx/agent/v3/internal/datasource/os/exec"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/uuid"
 )
@@ -48,11 +46,13 @@ func NewNginx(parameters NginxParameters) *Nginx {
 	if parameters.executer == nil {
 		parameters.executer = &exec.Exec{}
 	}
+
 	return &Nginx{
 		executer: parameters.executer,
 	}
 }
 
+// nolint: unparam // always returns nil but is a test
 func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance, error) {
 	var processList []*instances.Instance
 
@@ -66,46 +66,25 @@ func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance,
 	for _, nginxProcess := range nginxProcesses {
 		_, ok := nginxProcesses[nginxProcess.Ppid]
 		if !ok {
-
-			if nginxProcess.Exe == "" {
-				exe := process.New(n.executer).GetExe()
+			exe := nginxProcess.Exe
+			if exe == "" {
+				exe = process.New(n.executer).GetExe()
 				if exe == "" {
 					slog.Debug("Unable to find NGINX exe", "pid", nginxProcess.Pid)
+
 					continue
-				} else {
-					nginxProcess.Exe = exe
 				}
+				nginxProcess.Exe = exe
 			}
 
-			nginxInfo, err := n.getInfo(nginxProcess.Exe)
+			nginxInfo, err := n.getInfo(exe)
 			if err != nil {
-				slog.Debug("Unable to get NGINX info", "pid", nginxProcess.Pid, "exe", nginxProcess.Exe)
+				slog.Debug("Unable to get NGINX info", "pid", nginxProcess.Pid, "exe", exe)
+
 				continue
 			}
 
-			nginxType := instances.Type_NGINX
-			version := nginxInfo.Version
-
-			if nginxInfo.PlusVersion != "" {
-				nginxType = instances.Type_NGINX_PLUS
-				version = nginxInfo.PlusVersion
-			}
-
-			newProcess := &instances.Instance{
-				InstanceId: uuid.Generate("%s_%s_%s", nginxProcess.Exe, nginxInfo.ConfPath, nginxInfo.Prefix),
-				Type:       nginxType,
-				Version:    version,
-				Meta: &instances.Meta{
-					Meta: &instances.Meta_NginxMeta{
-						NginxMeta: &instances.NginxMeta{
-							ConfigPath: nginxInfo.ConfPath,
-							ExePath:    nginxProcess.Exe,
-						},
-					},
-				},
-			}
-
-			processList = append(processList, newProcess)
+			processList = append(processList, convertInfoToProcess(*nginxInfo))
 		}
 	}
 
@@ -118,14 +97,40 @@ func (n *Nginx) getInfo(exePath string) (*Info, error) {
 	outputBuffer, err := n.executer.RunCmd(exePath, "-V")
 	if err != nil {
 		return nil, err
-	} else {
-		nginxInfo = parseNginxVersionCommandOutput(outputBuffer)
 	}
+
+	nginxInfo = parseNginxVersionCommandOutput(outputBuffer)
+
+	nginxInfo.ExePath = exePath
 
 	return nginxInfo, err
 }
 
-func isNginxProcess(name string, cmd string) bool {
+func convertInfoToProcess(nginxInfo Info) *instances.Instance {
+	nginxType := instances.Type_NGINX
+	version := nginxInfo.Version
+
+	if nginxInfo.PlusVersion != "" {
+		nginxType = instances.Type_NGINX_PLUS
+		version = nginxInfo.PlusVersion
+	}
+
+	return &instances.Instance{
+		InstanceId: uuid.Generate("%s_%s_%s", nginxInfo.ExePath, nginxInfo.ConfPath, nginxInfo.Prefix),
+		Type:       nginxType,
+		Version:    version,
+		Meta: &instances.Meta{
+			Meta: &instances.Meta_NginxMeta{
+				NginxMeta: &instances.NginxMeta{
+					ConfigPath: nginxInfo.ConfPath,
+					ExePath:    nginxInfo.ExePath,
+				},
+			},
+		},
+	}
+}
+
+func isNginxProcess(name, cmd string) bool {
 	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
 }
 
@@ -144,13 +149,23 @@ func parseNginxVersionCommandOutput(output *bytes.Buffer) *Info {
 	}
 
 	if nginxInfo.ConfigureArgs["prefix"] != nil {
-		nginxInfo.Prefix = nginxInfo.ConfigureArgs["prefix"].(string)
+		var ok bool
+		nginxInfo.Prefix, ok = nginxInfo.ConfigureArgs["prefix"].(string)
+		if !ok {
+			slog.Error("failed to cast nginxInfo prefix to string")
+			return nil
+		}
 	} else {
 		nginxInfo.Prefix = "/usr/local/nginx"
 	}
 
 	if nginxInfo.ConfigureArgs["conf-path"] != nil {
-		nginxInfo.ConfPath = nginxInfo.ConfigureArgs["conf-path"].(string)
+		var ok bool
+		nginxInfo.ConfPath, ok = nginxInfo.ConfigureArgs["conf-path"].(string)
+		if !ok {
+			slog.Error("failed to cast nginxInfo conf-path to string")
+			return nil
+		}
 	} else {
 		nginxInfo.ConfPath = path.Join(nginxInfo.Prefix, "/conf/nginx.conf")
 	}
@@ -172,6 +187,7 @@ func parseNginxVersion(line string) (version, plusVersion string) {
 				version = v
 			}
 		}
+
 		return version, plusVersion
 	}
 
@@ -190,17 +206,25 @@ func parseNginxVersion(line string) (version, plusVersion string) {
 func parseConfigureArguments(line string) map[string]interface{} {
 	// need to check for empty strings
 	flags := strings.Split(line[len("configure arguments:"):], " --")
-	result := map[string]interface{}{}
+	result := make(map[string]interface{})
+
 	for _, flag := range flags {
 		vals := strings.Split(flag, "=")
-		switch len(vals) {
-		case 1:
-			if vals[0] != "" {
-				result[vals[0]] = true
-			}
-		case 2:
+		if isFlag(vals) {
+			result[vals[0]] = true
+		} else if isKeyValueFlag(vals) {
 			result[vals[0]] = vals[1]
 		}
 	}
+
 	return result
+}
+
+func isFlag(vals []string) bool {
+	return len(vals) == 1 && vals[0] != ""
+}
+
+// nolint: gomnd
+func isKeyValueFlag(vals []string) bool {
+	return len(vals) == 2
 }

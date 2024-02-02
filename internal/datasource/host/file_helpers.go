@@ -3,13 +3,13 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package common
+package host
 
-type RequestError struct {
-	StatusCode int
-	Message    string
-}
+import (
+	"fmt"
+	"os"
+)
 
-func (r *RequestError) Error() string {
-	return r.Message
+func GetPermissions(fileMode os.FileMode) string {
+	return fmt.Sprintf("%#o", fileMode.Perm())
 }

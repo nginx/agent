@@ -1,14 +1,14 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package service
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
@@ -41,10 +41,10 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	result, err := configService.ParseInstanceConfiguration("123", &instances.Instance{Type: instances.Type_NGINX})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)
 
 	_, err = configService.ParseInstanceConfiguration("123", &instances.Instance{Type: instances.Type_UNKNOWN})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 }

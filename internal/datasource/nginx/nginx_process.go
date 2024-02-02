@@ -1,16 +1,14 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package nginx
 
 import (
 	"strings"
 
-	"github.com/nginx/agent/v3/internal/datasource/os/exec"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
 
 type Process struct {
@@ -36,6 +34,7 @@ func (np *Process) GetExe() string {
 	if strings.Contains(exePath, "(deleted)") {
 		exePath = np.sanitizeExeDeletedPath(exePath)
 	}
+
 	return exePath
 }
 
@@ -44,13 +43,15 @@ func (np *Process) defaultToNginxCommandForProcessPath() string {
 	if err != nil {
 		return ""
 	}
+
 	return path
 }
 
-func (np *Process) sanitizeExeDeletedPath(exe string) string {
+func (*Process) sanitizeExeDeletedPath(exe string) string {
 	firstSpace := strings.Index(exe, "(deleted)")
 	if firstSpace != -1 {
 		return strings.TrimSpace(exe[0:firstSpace])
 	}
+
 	return strings.TrimSpace(exe)
 }

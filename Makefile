@@ -55,11 +55,11 @@ build: ## Build agent executable
 
 lint: ## Run linter
 	@$(GOVET) ./...
-	@$(GORUN) $(GOLANGCILINT) run -c ./scripts/.golangci.yml
+	@$(GORUN) $(GOLANGCILINT) run -c ./.golangci.yml
 	@echo "🏯 Linting Done"
 
 format: ## Format code
-	@$(GORUN) $(FOFUMPT) -l -w .
+	@$(GORUN) $(FOFUMPT) -l -w -extra .
 	@echo "🏯 Format Done"
 
 $(TEST_BUILD_DIR):
@@ -79,7 +79,7 @@ dev: ## Run agent executable
 	@echo "🚀 Running App"
 	$(GORUN) $(PROJECT_DIR)/${PROJECT_FILE}
 
-generate: ## Genenerate proto files and server and client stubs from OpenAPI specifications
+generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specifications"
