@@ -90,6 +90,40 @@ func (p *MessagePipe) DeRegister(pluginNames []string) error {
 	p.mu.Lock()
 
 	var plugins []Plugin
+	plugins = p.findPlugins(pluginNames, plugins)
+
+	for _, plugin := range plugins {
+		index := getIndex(plugin.Info().Name, p.plugins)
+
+		err := p.unsubscribePlugin(index, plugin)
+		if err != nil {
+			return err
+		}
+	}
+
+	p.mu.Unlock()
+
+	return nil
+}
+
+func (p *MessagePipe) unsubscribePlugin(index int, plugin Plugin) error {
+	if index != -1 {
+		p.plugins = append(p.plugins[:index], p.plugins[index+1:]...)
+
+		plugin.Close()
+
+		for _, subscription := range plugin.Subscriptions() {
+			err := p.bus.Unsubscribe(subscription, plugin.Process)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (p *MessagePipe) findPlugins(pluginNames []string, plugins []Plugin) []Plugin {
 	for _, name := range pluginNames {
 		for _, plugin := range p.plugins {
 			if plugin.Info().Name == name {
@@ -98,26 +132,7 @@ func (p *MessagePipe) DeRegister(pluginNames []string) error {
 		}
 	}
 
-	for _, plugin := range plugins {
-		index := getIndex(plugin.Info().Name, p.plugins)
-
-		if index != -1 {
-			p.plugins = append(p.plugins[:index], p.plugins[index+1:]...)
-
-			plugin.Close()
-
-			for _, subscription := range plugin.Subscriptions() {
-				err := p.bus.Unsubscribe(subscription, plugin.Process)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	p.mu.Unlock()
-
-	return nil
+	return plugins
 }
 
 func getIndex(pluginName string, plugins []Plugin) int {
