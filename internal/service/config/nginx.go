@@ -57,12 +57,22 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		)
 	}
 
+	accessLogs, errorLogs, err := getLogs(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.NginxConfigContext{
+		AccessLogs: accessLogs,
+		ErrorLogs:  errorLogs,
+	}, nil
+}
+
+func getLogs(payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog, error) {
 	accessLogs := []*model.AccessLog{}
 	errorLogs := []*model.ErrorLog{}
-
 	for index := range payload.Config {
 		formatMap := make(map[string]string)
-
 		err := crossplaneConfigTraverse(&payload.Config[index],
 			func(parent, directive *crossplane.Directive) (bool, error) {
 				switch directive.Directive {
@@ -79,14 +89,11 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 				return true, nil
 			})
 		if err != nil {
-			return nil, fmt.Errorf("failed to traverse nginx config: %w", err)
+			return accessLogs, errorLogs, fmt.Errorf("failed to traverse nginx config: %w", err)
 		}
 	}
 
-	return &model.NginxConfigContext{
-		AccessLogs: accessLogs,
-		ErrorLogs:  errorLogs,
-	}, nil
+	return accessLogs, errorLogs, nil
 }
 
 func (n *Nginx) Validate(instance *instances.Instance) error {
