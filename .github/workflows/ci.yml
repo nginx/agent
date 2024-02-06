@@ -94,8 +94,8 @@ jobs:
             package_type=local-package
       - name: Build Packages
         run: |
-          echo "${{ env.GITHUB_RUN_ID }}"
-          PACKAGE_POSTFIX=${{ env.GITHUB_RUN_ID }} make clean local-deb-package local-rpm-package local-txz-package local-apk-package
+          echo "${{ github.run_id }}"
+          PACKAGE_POSTFIX=${{ github.run_id }} make clean local-deb-package local-rpm-package local-txz-package local-apk-package
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
