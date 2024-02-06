@@ -94,11 +94,11 @@ jobs:
             package_type=local-package
       - name: Build Packages
         run: |
-          PACKAGE_POSTFIX=${{ github.run_id }} make clean local-deb-package local-rpm-package local-txz-package local-apk-package
+            make clean local-deb-package local-rpm-package local-txz-package local-apk-package
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: nginx-agent-snapshots
+          name: nginx-agent-unsigned-snapshots
           path: build
           retention-days: 1
 
@@ -233,7 +233,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: nginx-agent
+          name: nginx-agent-signed-snapshots
           path: ./build/azure/packages/nginx-agent.tar.gz
           retention-days: 1
       - name: Azure Login
