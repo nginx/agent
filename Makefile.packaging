@@ -7,7 +7,6 @@ PACKAGES_DIR        := ./build/packages
 GITHUB_PACKAGES_DIR := ./build/github/packages
 AZURE_PACKAGES_DIR  := ./build/azure/packages
 GPG_PUBLIC_KEY      := .key
-PACKAGE_POSTFIX     := ""
 
 DEB_DISTROS?=ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-bookworm-12 debian-bullseye-11
 DEB_ARCHS?=arm64 amd64
