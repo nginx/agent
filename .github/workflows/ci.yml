@@ -94,13 +94,13 @@ jobs:
             package_type=local-package
       - name: Build Packages
         run: |
-          make clean local-deb-package local-rpm-package local-txz-package local-apk-package
+            make clean local-deb-package local-rpm-package local-txz-package local-apk-package
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nginx-agent-snapshots
+          name: nginx-agent-unsigned-snapshots
           path: build
-          retention-days: 3
+          retention-days: 1
 
   integration-tests:
     name: Integration Tests
@@ -145,11 +145,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-           go-version: '1.21.6'
+          go-version-file: 'go.mod'
       - name: Download Packages
         uses: actions/download-artifact@v4
         with:
-          name: nginx-agent-snapshots
+          name: nginx-agent-unsigned-snapshots
           path: build
       - name: Run Integration Tests
         run: |
@@ -233,9 +233,9 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nginx-agent-snapshots
+          name: nginx-agent-signed-snapshots
           path: ./build/azure/packages/nginx-agent.tar.gz
-          retention-days: 3
+          retention-days: 1
       - name: Azure Login
         uses: azure/login@v1
         with:

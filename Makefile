@@ -97,7 +97,6 @@ run: ## Run code
 run-debug: ## Run code
 	./build/nginx-agent
 
-
 build: ## Build agent executable
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent 
 
