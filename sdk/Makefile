@@ -5,7 +5,7 @@ clean: ## Remove all .pb.go files
 	find . -name "*.pb.go" -not -path "*/vendor/*" -exec rm -f {} \;
 
 lint: ## Run linter
-	GOWORK=off golangci-lint run -c ../scripts/.golangci.yml
+	GOWORK=off go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2 run -c ../scripts/.golangci.yml
 
 generate: clean ## Generate .pb.go files
 	for packageName in "common" "events"; do \
