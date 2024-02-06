@@ -149,7 +149,7 @@ jobs:
       - name: Download Packages
         uses: actions/download-artifact@v3
         with:
-          name: nginx-agent-snapshots
+          name: nginx-agent-unsigned-snapshots
           path: build
       - name: Run Integration Tests
         run: |
