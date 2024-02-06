@@ -8,6 +8,7 @@ package instance
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"log/slog"
 	"path"
 	"regexp"
@@ -21,8 +22,8 @@ import (
 )
 
 var (
-	re     = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+)`)
-	plusre = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+).\((?P<plus>\S+plus\S+)\)`)
+	ossVersionRegex  = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+)`)
+	plusVersionRegex = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+).\((?P<plus>\S+plus\S+)\)`)
 )
 
 type Info struct {
@@ -52,34 +53,17 @@ func NewNginx(parameters NginxParameters) *Nginx {
 	}
 }
 
-// nolint: unparam // always returns nil but is a test
-func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance, error) {
+func (n *Nginx) GetInstances(processes []*model.Process) []*instances.Instance {
 	var processList []*instances.Instance
 
-	nginxProcesses := make(map[int32]*model.Process)
-	for _, p := range processes {
-		if isNginxProcess(p.Name, p.Cmd) {
-			nginxProcesses[p.Pid] = p
-		}
-	}
+	nginxProcesses := n.getNginxProcesses(processes)
 
 	for _, nginxProcess := range nginxProcesses {
 		_, ok := nginxProcesses[nginxProcess.Ppid]
 		if !ok {
-			exe := nginxProcess.Exe
-			if exe == "" {
-				exe = process.New(n.executer).GetExe()
-				if exe == "" {
-					slog.Debug("Unable to find NGINX exe", "pid", nginxProcess.Pid)
-
-					continue
-				}
-				nginxProcess.Exe = exe
-			}
-
-			nginxInfo, err := n.getInfo(exe)
+			nginxInfo, err := n.getInfo(nginxProcess)
 			if err != nil {
-				slog.Debug("Unable to get NGINX info", "pid", nginxProcess.Pid, "exe", exe)
+				slog.Debug("Unable to get NGINX info", "pid", nginxProcess.Pid, "error", err)
 
 				continue
 			}
@@ -88,10 +72,31 @@ func (n *Nginx) GetInstances(processes []*model.Process) ([]*instances.Instance,
 		}
 	}
 
-	return processList, nil
+	return processList
 }
 
-func (n *Nginx) getInfo(exePath string) (*Info, error) {
+func (*Nginx) getNginxProcesses(processes []*model.Process) map[int32]*model.Process {
+	nginxProcesses := make(map[int32]*model.Process)
+
+	for _, p := range processes {
+		if isNginxProcess(p.Name, p.Cmd) {
+			nginxProcesses[p.Pid] = p
+		}
+	}
+
+	return nginxProcesses
+}
+
+func (n *Nginx) getInfo(nginxProcess *model.Process) (*Info, error) {
+	exePath := nginxProcess.Exe
+
+	if exePath == "" {
+		exePath = process.New(n.executer).GetExe()
+		if exePath == "" {
+			return nil, fmt.Errorf("unable to find NGINX exe for process %d", nginxProcess.Pid)
+		}
+	}
+
 	var nginxInfo *Info
 
 	outputBuffer, err := n.executer.RunCmd(exePath, "-V")
@@ -148,55 +153,31 @@ func parseNginxVersionCommandOutput(output *bytes.Buffer) *Info {
 		}
 	}
 
-	if nginxInfo.ConfigureArgs["prefix"] != nil {
-		var ok bool
-		nginxInfo.Prefix, ok = nginxInfo.ConfigureArgs["prefix"].(string)
-		if !ok {
-			slog.Error("failed to cast nginxInfo prefix to string")
-			return nil
-		}
-	} else {
-		nginxInfo.Prefix = "/usr/local/nginx"
-	}
-
-	if nginxInfo.ConfigureArgs["conf-path"] != nil {
-		var ok bool
-		nginxInfo.ConfPath, ok = nginxInfo.ConfigureArgs["conf-path"].(string)
-		if !ok {
-			slog.Error("failed to cast nginxInfo conf-path to string")
-			return nil
-		}
-	} else {
-		nginxInfo.ConfPath = path.Join(nginxInfo.Prefix, "/conf/nginx.conf")
-	}
+	nginxInfo.Prefix = getNginxPrefix(nginxInfo)
+	nginxInfo.ConfPath = getNginxConfPath(nginxInfo)
 
 	return nginxInfo
 }
 
 func parseNginxVersion(line string) (version, plusVersion string) {
-	matches := re.FindStringSubmatch(line)
-	plusMatches := plusre.FindStringSubmatch(line)
+	ossVersionMatches := ossVersionRegex.FindStringSubmatch(line)
+	plusVersionMatches := plusVersionRegex.FindStringSubmatch(line)
 
-	if len(plusMatches) > 0 {
-		subNames := plusre.SubexpNames()
-		for i, v := range plusMatches {
-			switch subNames[i] {
-			case "plus":
-				plusVersion = v
-			case "version":
-				version = v
-			}
+	ossSubNames := ossVersionRegex.SubexpNames()
+	plusSubNames := plusVersionRegex.SubexpNames()
+
+	for index, value := range ossVersionMatches {
+		if ossSubNames[index] == "version" {
+			version = value
 		}
-
-		return version, plusVersion
 	}
 
-	if len(matches) > 0 {
-		for i, key := range re.SubexpNames() {
-			val := matches[i]
-			if key == "version" {
-				version = val
-			}
+	for index, value := range plusVersionMatches {
+		switch plusSubNames[index] {
+		case "plus":
+			plusVersion = value
+		case "version":
+			version = value
 		}
 	}
 
@@ -218,6 +199,38 @@ func parseConfigureArguments(line string) map[string]interface{} {
 	}
 
 	return result
+}
+
+func getNginxPrefix(nginxInfo *Info) string {
+	var prefix string
+
+	if nginxInfo.ConfigureArgs["prefix"] != nil {
+		var ok bool
+		prefix, ok = nginxInfo.ConfigureArgs["prefix"].(string)
+		if !ok {
+			slog.Warn("Failed to cast nginxInfo prefix to string")
+		}
+	} else {
+		prefix = "/usr/local/nginx"
+	}
+
+	return prefix
+}
+
+func getNginxConfPath(nginxInfo *Info) string {
+	var confPath string
+
+	if nginxInfo.ConfigureArgs["conf-path"] != nil {
+		var ok bool
+		confPath, ok = nginxInfo.ConfigureArgs["conf-path"].(string)
+		if !ok {
+			slog.Warn("failed to cast nginxInfo conf-path to string")
+		}
+	} else {
+		confPath = path.Join(nginxInfo.Prefix, "/conf/nginx.conf")
+	}
+
+	return confPath
 }
 
 func isFlag(vals []string) bool {

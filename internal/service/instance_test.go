@@ -24,7 +24,7 @@ var testInstances = []*instances.Instance{
 
 func TestInstanceService_GetInstances(t *testing.T) {
 	fakeDataplaneService := &instancefakes.FakeDataplaneInstanceService{}
-	fakeDataplaneService.GetInstancesReturns(testInstances, nil)
+	fakeDataplaneService.GetInstancesReturns(testInstances)
 
 	instanceService := NewInstanceService()
 	instanceService.dataplaneInstanceServices = []instance.DataplaneInstanceService{fakeDataplaneService}
