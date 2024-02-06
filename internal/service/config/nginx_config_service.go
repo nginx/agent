@@ -28,7 +28,7 @@ const (
 )
 
 type (
-	crossplaneTraverseCallback = func(parent, current *crossplane.Directive) (bool, error)
+	crossplaneTraverseCallback = func(parent, current *crossplane.Directive) error
 )
 
 type Nginx struct {
@@ -57,14 +57,24 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		)
 	}
 
+	accessLogs, errorLogs, err := getLogs(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.NginxConfigContext{
+		AccessLogs: accessLogs,
+		ErrorLogs:  errorLogs,
+	}, nil
+}
+
+func getLogs(payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog, error) {
 	accessLogs := []*model.AccessLog{}
 	errorLogs := []*model.ErrorLog{}
-
 	for index := range payload.Config {
 		formatMap := make(map[string]string)
-
 		err := crossplaneConfigTraverse(&payload.Config[index],
-			func(parent, directive *crossplane.Directive) (bool, error) {
+			func(parent, directive *crossplane.Directive) error {
 				switch directive.Directive {
 				case "log_format":
 					formatMap = getFormatMap(directive)
@@ -76,17 +86,14 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 					errorLogs = append(errorLogs, errorLog)
 				}
 
-				return true, nil
+				return nil
 			})
 		if err != nil {
-			return nil, fmt.Errorf("failed to traverse nginx config: %w", err)
+			return accessLogs, errorLogs, fmt.Errorf("failed to traverse nginx config: %w", err)
 		}
 	}
 
-	return &model.NginxConfigContext{
-		AccessLogs: accessLogs,
-		ErrorLogs:  errorLogs,
-	}, nil
+	return accessLogs, errorLogs, nil
 }
 
 func (n *Nginx) Validate(instance *instances.Instance) error {
@@ -205,18 +212,13 @@ func getErrorLogDirectiveLevel(directive *crossplane.Directive) string {
 }
 
 func crossplaneConfigTraverse(root *crossplane.Config, callback crossplaneTraverseCallback) error {
-	stop := false
 	for _, dir := range root.Parsed {
-		result, err := callback(nil, dir)
+		err := callback(nil, dir)
 		if err != nil {
 			return err
 		}
 
-		if !result {
-			return nil
-		}
-
-		err = traverse(dir, callback, &stop)
+		err = traverse(dir, callback)
 
 		if err != nil {
 			return err
@@ -226,29 +228,17 @@ func crossplaneConfigTraverse(root *crossplane.Config, callback crossplaneTraver
 	return nil
 }
 
-func traverse(root *crossplane.Directive, callback crossplaneTraverseCallback, stop *bool) error {
-	if *stop {
-		return nil
-	}
+func traverse(root *crossplane.Directive, callback crossplaneTraverseCallback) error {
 	for _, child := range root.Block {
-		result, err := callback(root, child)
+		err := callback(root, child)
 		if err != nil {
 			return err
 		}
 
-		if !result {
-			*stop = true
-			return nil
-		}
-
-		err = traverse(child, callback, stop)
+		err = traverse(child, callback)
 
 		if err != nil {
 			return err
-		}
-
-		if *stop {
-			return nil
 		}
 	}
 

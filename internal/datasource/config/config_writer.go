@@ -89,36 +89,46 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL string, tenantID uui
 	}
 
 	for _, fileData := range filesMetaData.GetFiles() {
-		if isFilePathValid(fileData.GetPath()) {
-			if !doesFileRequireUpdate(cw.previouseFileCache, fileData) {
-				slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.GetPath())
-				currentFileCache[fileData.GetPath()] = cw.previouseFileCache[fileData.GetPath()]
-				skippedFiles[fileData.GetPath()] = struct{}{}
+		if !doesFileRequireUpdate(cw.previouseFileCache, fileData) {
+			slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.GetPath())
+			currentFileCache[fileData.GetPath()] = cw.previouseFileCache[fileData.GetPath()]
+			skippedFiles[fileData.GetPath()] = struct{}{}
 
-				continue
-			}
-
-			fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID.String())
-			if fetchErr != nil {
-				return fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
-			}
-
-			fetchErr = writeFile(fileDownloadResponse.GetFileContent(), fileDownloadResponse.GetFilePath())
-			if fetchErr != nil {
-				return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.GetFilePath(), fetchErr)
-			}
-
-			currentFileCache[fileData.GetPath()] = &instances.File{
-				Version:      fileData.GetVersion(),
-				Path:         fileData.GetPath(),
-				LastModified: fileData.GetLastModified(),
-			}
+			continue
 		}
+		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID.String())
+		if updateErr != nil {
+			return updateErr
+		}
+		currentFileCache[fileData.GetPath()] = file
 	}
 
 	cw.currentFileCache = currentFileCache
 
 	return err
+}
+
+func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File,
+	filesURL, tenantID string,
+) (*instances.File, error) {
+	if !isFilePathValid(fileData.GetPath()) {
+		return nil, fmt.Errorf("invalid file path: %s", fileData.GetPath())
+	}
+	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID)
+	if fetchErr != nil {
+		return nil, fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
+	}
+
+	fetchErr = writeFile(fileDownloadResponse.GetFileContent(), fileDownloadResponse.GetFilePath())
+	if fetchErr != nil {
+		return nil, fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.GetFilePath(), fetchErr)
+	}
+
+	return &instances.File{
+		Version:      fileData.GetVersion(),
+		Path:         fileData.GetPath(),
+		LastModified: fileData.GetLastModified(),
+	}, nil
 }
 
 func (cw *ConfigWriter) Complete() error {

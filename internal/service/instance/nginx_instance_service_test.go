@@ -151,10 +151,9 @@ func TestGetInstances(t *testing.T) {
 			mockExec.RunCmdReturns(bytes.NewBufferString(test.nginxVersionCommandOutput), nil)
 
 			n := NewNginx(NginxParameters{executer: mockExec})
-			result, err := n.GetInstances(processes)
+			result := n.GetInstances(processes)
 
 			assert.Equal(tt, test.expected, result)
-			require.NoError(tt, err)
 		})
 	}
 }
@@ -163,22 +162,26 @@ func TestGetInfo(t *testing.T) {
 	tests := []struct {
 		name                      string
 		nginxVersionCommandOutput string
-		exe                       string
+		process                   *model.Process
 		expected                  *Info
 	}{
 		{
 			name: "NGINX open source",
-			nginxVersionCommandOutput: fmt.Sprintf(`nginx version: nginx/1.23.3
-					built by clang 14.0.0 (clang-1400.0.29.202)
-					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
-					TLS SNI support enabled
-					configure arguments: %s`, ossConfigArgs),
-			exe: "",
+			nginxVersionCommandOutput: fmt.Sprintf(`
+				nginx version: nginx/1.23.3
+				built by clang 14.0.0 (clang-1400.0.29.202)
+				built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
+				TLS SNI support enabled
+				configure arguments: %s`, ossConfigArgs),
+			process: &model.Process{
+				Exe: exePath,
+			},
 			expected: &Info{
 				Version:     "1.23.3",
 				PlusVersion: "",
 				Prefix:      "/usr/local/Cellar/nginx/1.23.3",
 				ConfPath:    "/usr/local/etc/nginx/nginx.conf",
+				ExePath:     exePath,
 				ConfigureArgs: map[string]interface{}{
 					"conf-path":                  "/usr/local/etc/nginx/nginx.conf",
 					"error-log-path":             "/usr/local/var/log/nginx/error.log",
@@ -233,12 +236,15 @@ func TestGetInfo(t *testing.T) {
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
 				configure arguments: %s`, plusConfigArgs),
-			exe: "",
+			process: &model.Process{
+				Exe: exePath,
+			},
 			expected: &Info{
 				Version:     "1.25.1",
 				PlusVersion: "nginx-plus-r30-p1",
 				Prefix:      "/etc/nginx",
 				ConfPath:    "/etc/nginx/nginx.conf",
+				ExePath:     exePath,
 				ConfigureArgs: map[string]interface{}{
 					"build":                                  "nginx-plus-r30-p1",
 					"conf-path":                              "/etc/nginx/nginx.conf",
@@ -302,7 +308,7 @@ func TestGetInfo(t *testing.T) {
 			mockExec.RunCmdReturns(bytes.NewBufferString(test.nginxVersionCommandOutput), nil)
 
 			n := NewNginx(NginxParameters{executer: mockExec})
-			result, err := n.getInfo(test.exe)
+			result, err := n.getInfo(test.process)
 
 			assert.Equal(tt, test.expected, result)
 			require.NoError(tt, err)
