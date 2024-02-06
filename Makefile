@@ -114,7 +114,7 @@ no-local-changes:
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
-	GOWORK=off go run github.com/golangci/golangci-lint/cmd/golangci-lint run -c ./scripts/.golangci.yml
+	GOWORK=off go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2 run -c ./scripts/.golangci.yml
 	cd sdk && make lint
 
 format: ## Format code

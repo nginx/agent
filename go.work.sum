@@ -942,6 +942,8 @@ github.com/golang/snappy v0.0.3/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEW
 github.com/golang/snappy v0.0.4 h1:yAGX7huGHXlcLOEtBnF4w7FQwA26wojNCwOYAEhLjQM=
 github.com/golang/snappy v0.0.4/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/golangci/golangci-lint v1.52.2/go.mod h1:S5fhC5sHM5kE22/HcATKd1XLWQxX+y7mHj8B5H91Q/0=
+github.com/golangci/golangci-lint v1.54.2/go.mod h1:vnsaCTPKCI2wreL9tv7RkHDwUrz3htLjed6+6UsvcwU=
+github.com/golangci/golangci-lint v1.55.1/go.mod h1:z00biPRqjo5MISKV1+RWgONf2KvrPDmfqxHpHKB6bI4=
 github.com/golangci/misspell v0.4.0/go.mod h1:W6O/bwV6lGDxUCChm2ykw9NQdd5bYd1Xkjo88UcWyJc=
 github.com/gomodule/redigo v1.8.2 h1:H5XSIre1MB5NbPYFp+i1NBbb5qN1W8Y8YAQoAYbkm8k=
 github.com/gomodule/redigo v1.8.2/go.mod h1:P9dn9mFrCBvWhGE1wpxx6fgq7BAeLBk+UUUzlpkBYO0=
