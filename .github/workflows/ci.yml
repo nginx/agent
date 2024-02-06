@@ -24,8 +24,8 @@ jobs:
     name: Lint
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: Lint Agent Code
@@ -46,8 +46,8 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: Run Unit Tests
@@ -61,8 +61,8 @@ jobs:
     name: Component Tests
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: Run Component Tests
@@ -72,17 +72,17 @@ jobs:
     name: Build unsigned snapshot
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: Setup build environment
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Build Docker Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           file: scripts/packages/packager/Dockerfile
           tags: build-local-packager:1.0.0
@@ -96,7 +96,7 @@ jobs:
         run: |
             make clean local-deb-package local-rpm-package local-txz-package local-apk-package
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -140,14 +140,14 @@ jobs:
         - image: "debian"
           version: "bullseye-slim"
         - image: "debian"
-          version: "buster-slim"
+          version: "bookworm-slim"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: Download Packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -165,7 +165,7 @@ jobs:
 
       - name: Archive integration test logs
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/integration-test-logs/
@@ -176,11 +176,11 @@ jobs:
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Docker Build
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Build Docker Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           file: test/docker/Dockerfile
           tags: nginx-agent-benchmark:1.0.0
@@ -199,10 +199,10 @@ jobs:
     runs-on: ubuntu-22.04
     if: ${{ !startsWith(github.ref_name, 'release-') && !startsWith(github.ref_name, 'dependabot/') && !github.event.pull_request.head.repo.fork }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: Setup build environment
@@ -211,9 +211,9 @@ jobs:
           sudo apt-get install -y gpgv1 monkeysphere 
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Build Docker Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           file: scripts/packages/packager/Dockerfile
           tags: build-signed-packager:1.0.0
@@ -231,7 +231,7 @@ jobs:
           echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
           make clean package
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nginx-agent-signed-snapshots
           path: ./build/azure/packages/nginx-agent.tar.gz
@@ -259,8 +259,8 @@ jobs:
     name: Build Grafana Dashboard Example
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: Setup build environment

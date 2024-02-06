@@ -1,3 +1,5 @@
+// Package godox is a linter that scans Go code for comments containing certain keywords
+// (like TODO, BUG, FIXME) which typically indicate areas that require attention.
 package godox
 
 import (

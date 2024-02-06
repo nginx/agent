@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.6.0] - 2024-01-28
+
+This release is based on Go 1.21's gofmt, and requires Go 1.20 or later.
+
+The following changes are included:
+
+* Support `go` version strings from newer go.mod files - [#280]
+* Consider simple error checks even if they use the `=` operator - [#271]
+* Ignore `//line` directives to avoid panics - [#288]
+
 ## [v0.5.0] - 2023-04-09
 
 This release is based on Go 1.20's gofmt, and requires Go 1.19 or later.
@@ -139,8 +149,16 @@ those building programs with gofumpt.
 Finally, this release adds the `-version` flag, to print the tool's own version.
 The flag will work for "master" builds too.
 
+[v0.6.0]: https://github.com/mvdan/gofumpt/releases/tag/v0.6.0
+[#271]: https://github.com/mvdan/gofumpt/issues/271
+[#280]: https://github.com/mvdan/gofumpt/issues/280
+[#288]: https://github.com/mvdan/gofumpt/issues/288
+
 [v0.5.0]: https://github.com/mvdan/gofumpt/releases/tag/v0.5.0
-[#212]: https://github.com/mvdan/gofumpt/issues/212
+[#235]: https://github.com/mvdan/gofumpt/issues/235
+[#253]: https://github.com/mvdan/gofumpt/issues/253
+[#256]: https://github.com/mvdan/gofumpt/issues/256
+[#260]: https://github.com/mvdan/gofumpt/issues/260
 
 [v0.4.0]: https://github.com/mvdan/gofumpt/releases/tag/v0.4.0
 [#212]: https://github.com/mvdan/gofumpt/issues/212

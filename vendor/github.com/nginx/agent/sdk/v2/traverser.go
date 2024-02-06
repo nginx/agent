@@ -32,7 +32,6 @@ func traverse(root *crossplane.Directive, callback CrossplaneTraverseCallback, s
 		}
 
 		err = traverse(child, callback, stop)
-
 		if err != nil {
 			return err
 		}
@@ -76,7 +75,6 @@ func CrossplaneConfigTraverse(root *crossplane.Config, callback CrossplaneTraver
 		}
 
 		err = traverse(dir, callback, &stop)
-
 		if err != nil {
 			return err
 		}
