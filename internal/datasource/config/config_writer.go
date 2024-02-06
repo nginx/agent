@@ -23,8 +23,9 @@ import (
 )
 
 const (
-	cacheLocation   = "/var/lib/nginx-agent/config/%v/cache.json"
-	filePermissions = 0o600
+	cacheLocation        = "/var/lib/nginx-agent/config/%v/cache.json"
+	filePermissions      = 0o600
+	defaultClientTimeOut = 10 * time.Second
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
@@ -36,46 +37,40 @@ type (
 		Complete() (err error)
 	}
 
-	Client struct {
-		Timeout time.Duration
-	}
-
-	ConfigWriterParameters struct {
-		configClient client.HTTPConfigClientInterface
-		Client       Client
-		cachePath    string
-	}
-
 	ConfigWriter struct {
 		configClient       client.HTTPConfigClientInterface
 		previouseFileCache FileCache
 		currentFileCache   FileCache
 		cachePath          string
 		dataplaneConfig    config.DataplaneConfig
+		allowedDirectories []string
 	}
 
 	// map of files with filepath as key
 	FileCache = map[string]*instances.File
 )
 
-func NewConfigWriter(configWriterParameters *ConfigWriterParameters, instanceID string) *ConfigWriter {
-	if configWriterParameters.cachePath == "" {
-		configWriterParameters.cachePath = fmt.Sprintf(cacheLocation, instanceID)
+func NewConfigWriter(configClient client.HTTPConfigClientInterface, cachePath string,
+	allowedDirectories []string, instanceID string,
+) *ConfigWriter {
+	if cachePath == "" {
+		cachePath = fmt.Sprintf(cacheLocation, instanceID)
 	}
 
-	if configWriterParameters.configClient == nil {
-		configWriterParameters.configClient = client.NewHTTPConfigClient(configWriterParameters.Client.Timeout)
+	if configClient == nil {
+		configClient = client.NewHTTPConfigClient(defaultClientTimeOut)
 	}
 
-	previouseFileCache, err := readInstanceCache(configWriterParameters.cachePath)
+	previousFileCache, err := readInstanceCache(cachePath)
 	if err != nil {
-		slog.Warn("Failed to Read cache %s ", configWriterParameters.cachePath, "err", err)
+		slog.Warn("Failed to Read cache %s ", cachePath, "err", err)
 	}
 
 	return &ConfigWriter{
-		configClient:       configWriterParameters.configClient,
-		previouseFileCache: previouseFileCache,
-		cachePath:          configWriterParameters.cachePath,
+		configClient:       configClient,
+		previouseFileCache: previousFileCache,
+		cachePath:          cachePath,
+		allowedDirectories: allowedDirectories,
 	}
 }
 
@@ -111,7 +106,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL string, tenantID uui
 func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File,
 	filesURL, tenantID string,
 ) (*instances.File, error) {
-	if !isFilePathValid(fileData.GetPath()) {
+	if !cw.isFilePathValid(fileData.GetPath()) {
 		return nil, fmt.Errorf("invalid file path: %s", fileData.GetPath())
 	}
 	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID)
@@ -120,6 +115,7 @@ func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File
 	}
 
 	fetchErr = writeFile(fileDownloadResponse.GetFileContent(), fileDownloadResponse.GetFilePath())
+
 	if fetchErr != nil {
 		return nil, fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.GetFilePath(), fetchErr)
 	}
@@ -194,8 +190,17 @@ func readInstanceCache(cachePath string) (previousFileCache FileCache, err error
 	return previousFileCache, err
 }
 
-func isFilePathValid(filePath string) (validPath bool) {
-	return filePath != "" && !strings.HasSuffix(filePath, "/")
+func (cw *ConfigWriter) isFilePathValid(filePath string) (validPath bool) {
+	if filePath == "" || strings.HasSuffix(filePath, "/") {
+		return false
+	}
+	for _, dir := range cw.allowedDirectories {
+		if strings.HasPrefix(filePath, dir) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func doesFileRequireUpdate(previousFileCache FileCache, fileData *instances.File) (updateRequired bool) {

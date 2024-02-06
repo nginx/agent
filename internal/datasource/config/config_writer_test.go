@@ -160,14 +160,9 @@ func TestWriteConfig(t *testing.T) {
 			fakeConfigClient := &clientfakes.FakeHTTPConfigClientInterface{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
+			allowedDirs := []string{"./"}
 
-			configWriter := NewConfigWriter(&ConfigWriterParameters{
-				configClient: fakeConfigClient,
-				Client: Client{
-					Timeout: time.Second * 10,
-				},
-				cachePath: cachePath,
-			}, instanceID.String())
+			configWriter := NewConfigWriter(fakeConfigClient, cachePath, allowedDirs, instanceID.String())
 
 			err = writeFile(fileContent, testConfPath)
 			require.NoError(t, err)
@@ -215,11 +210,10 @@ func TestComplete(t *testing.T) {
 
 	cachePath := cacheFile.Name()
 
-	configWriter := NewConfigWriter(&ConfigWriterParameters{
-		Client: Client{
-			Timeout: time.Second * 10,
-		},
-	}, instanceID.String())
+	allowedDirs := []string{"./"}
+
+	fakeConfigClient := &clientfakes.FakeHTTPConfigClientInterface{}
+	configWriter := NewConfigWriter(fakeConfigClient, cachePath, allowedDirs, instanceID.String())
 
 	testConf, err := os.CreateTemp(".", "test.conf")
 	require.NoError(t, err)
@@ -290,7 +284,10 @@ func TestComplete(t *testing.T) {
 }
 
 func TestDataplaneConfig(t *testing.T) {
-	configWriter := NewConfigWriter(&ConfigWriterParameters{}, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	fakeConfigClient := &clientfakes.FakeHTTPConfigClientInterface{}
+	allowedDirs := []string{"./"}
+	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	configWriter := NewConfigWriter(fakeConfigClient, cachePath, allowedDirs, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	nginxConfig := config.NewNginx()
 
 	configWriter.SetDataplaneConfig(nginxConfig)
@@ -435,11 +432,20 @@ func TestIsFilePathValid(t *testing.T) {
 			path:           "",
 			expectedResult: false,
 		},
+		{
+			name:           "not allowed dir",
+			path:           "./test/test.conf",
+			expectedResult: false,
+		},
 	}
 
+	fakeConfigClient := &clientfakes.FakeHTTPConfigClientInterface{}
+	allowedDirs := []string{"/tmp/"}
+	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	configWriter := NewConfigWriter(fakeConfigClient, cachePath, allowedDirs, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			valid := isFilePathValid(test.path)
+			valid := configWriter.isFilePathValid(test.path)
 			assert.Equal(t, test.expectedResult, valid)
 		})
 	}

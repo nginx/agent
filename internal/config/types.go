@@ -8,12 +8,14 @@ package config
 import "time"
 
 type Config struct {
-	Version        string         `yaml:"-"`
-	Path           string         `yaml:"-"`
-	Log            Log            `yaml:"-" mapstructure:"log"`
-	ProcessMonitor ProcessMonitor `yaml:"-" mapstructure:"process_monitor"`
-	DataplaneAPI   DataplaneAPI   `yaml:"-" mapstructure:"dataplane_api"`
-	Client         Client         `yaml:"-" mapstructure:"client"`
+	Version            string         `yaml:"-"`
+	Path               string         `yaml:"-"`
+	Log                Log            `yaml:"-" mapstructure:"log"`
+	ProcessMonitor     ProcessMonitor `yaml:"-" mapstructure:"process_monitor"`
+	DataplaneAPI       DataplaneAPI   `yaml:"-" mapstructure:"dataplane_api"`
+	Client             Client         `yaml:"-" mapstructure:"client"`
+	ConfigDir          string         `yaml:"-" mapstructure:"config-dirs"`
+	AllowedDirectories []string       `yaml:"-"`
 }
 
 type Log struct {
