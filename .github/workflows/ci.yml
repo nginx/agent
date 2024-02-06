@@ -233,7 +233,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: nginx-agent-snapshots
+          name: nginx-agent
           path: ./build/azure/packages/nginx-agent.tar.gz
           retention-days: 1
       - name: Azure Login
