@@ -76,7 +76,7 @@ func GetConfig() *Config {
 	}
 
 	for _, dir := range strings.Split(config.ConfigDir, ":") {
-		if dir != "" {
+		if dir != "" && filepath.IsAbs(dir) {
 			config.AllowedDirectories = append(config.AllowedDirectories, dir)
 		}
 	}

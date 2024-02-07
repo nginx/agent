@@ -19,10 +19,10 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate . HTTPConfigClientInterface
+//counterfeiter:generate . ConfigClientInterface
 const tenantHeader = "tenantId"
 
-type HTTPConfigClientInterface interface {
+type ConfigClientInterface interface {
 	GetFilesMetadata(ctx context.Context, filesURL, tenantID string) (*instances.Files, error)
 	GetFile(
 		ctx context.Context,

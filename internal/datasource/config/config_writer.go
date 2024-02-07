@@ -38,7 +38,7 @@ type (
 	}
 
 	ConfigWriter struct {
-		configClient       client.HTTPConfigClientInterface
+		configClient       client.ConfigClientInterface
 		previouseFileCache FileCache
 		currentFileCache   FileCache
 		cachePath          string
@@ -50,12 +50,10 @@ type (
 	FileCache = map[string]*instances.File
 )
 
-func NewConfigWriter(configClient client.HTTPConfigClientInterface, cachePath string,
+func NewConfigWriter(configClient client.ConfigClientInterface,
 	allowedDirectories []string, instanceID string,
 ) *ConfigWriter {
-	if cachePath == "" {
-		cachePath = fmt.Sprintf(cacheLocation, instanceID)
-	}
+	cachePath := fmt.Sprintf(cacheLocation, instanceID)
 
 	if configClient == nil {
 		configClient = client.NewHTTPConfigClient(defaultClientTimeOut)
