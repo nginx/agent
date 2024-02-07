@@ -78,6 +78,8 @@ func GetConfig() *Config {
 	for _, dir := range strings.Split(config.ConfigDir, ":") {
 		if dir != "" && filepath.IsAbs(dir) {
 			config.AllowedDirectories = append(config.AllowedDirectories, dir)
+		} else {
+			slog.Warn("Invalid directory: ", "dir", dir)
 		}
 	}
 	slog.Debug("Agent config", "config", config)
