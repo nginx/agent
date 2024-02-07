@@ -29,6 +29,7 @@ const (
 	DataplaneAPIHostConfigKey                  = "dataplane_api_host"
 	DataplaneAPIPortConfigKey                  = "dataplane_api_port"
 	ClientTimeoutConfigKey                     = "client_timeout"
+	ConfigDirectoriesConfigKey                 = "config_dirs"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
@@ -65,13 +66,22 @@ func RegisterConfigFile() error {
 
 func GetConfig() *Config {
 	config := &Config{
-		Version:        viperInstance.GetString(VersionConfigKey),
-		Log:            getLog(),
-		ProcessMonitor: getProcessMonitor(),
-		DataplaneAPI:   getDataplaneAPI(),
-		Client:         getClient(),
+		Version:            viperInstance.GetString(VersionConfigKey),
+		Log:                getLog(),
+		ProcessMonitor:     getProcessMonitor(),
+		DataplaneAPI:       getDataplaneAPI(),
+		Client:             getClient(),
+		ConfigDir:          getConfigDir(),
+		AllowedDirectories: []string{},
 	}
 
+	for _, dir := range strings.Split(config.ConfigDir, ":") {
+		if dir != "" && filepath.IsAbs(dir) {
+			config.AllowedDirectories = append(config.AllowedDirectories, dir)
+		} else {
+			slog.Warn("Invalid directory: ", "dir", dir)
+		}
+	}
 	slog.Debug("Agent config", "config", config)
 
 	return config
@@ -109,6 +119,9 @@ func registerFlags() {
 	fs.String(DataplaneAPIHostConfigKey, "", "The host used by the Dataplane API.")
 	fs.Int(DataplaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
 	fs.Duration(ClientTimeoutConfigKey, time.Minute, "Client timeout")
+	fs.String(ConfigDirectoriesConfigKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules",
+		"Defines the paths that you want to grant nginx-agent read/write access to."+
+			" This key is formatted as a string and follows Unix PATH format")
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -194,4 +207,8 @@ func getClient() Client {
 	return Client{
 		Timeout: viperInstance.GetDuration(ClientTimeoutConfigKey),
 	}
+}
+
+func getConfigDir() string {
+	return viperInstance.GetString(ConfigDirectoriesConfigKey)
 }
