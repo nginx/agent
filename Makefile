@@ -90,13 +90,13 @@ generate-mocks: ## Regenerate all needed mocks, in order to add new mocks genera
 
 local-apk-package: ## Create local apk package
 	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
 
 local-deb-package: ## Create local deb package
 	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
 
 local-rpm-package: ## Create local rpm package
 	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
 
