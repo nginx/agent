@@ -1,16 +1,11 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package service
 
 import (
-	"fmt"
-	"log/slog"
-
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/instance"
@@ -20,7 +15,7 @@ import (
 //counterfeiter:generate . InstanceServiceInterface
 type InstanceServiceInterface interface {
 	GetInstances(processes []*model.Process) []*instances.Instance
-	GetInstance(instanceId string) *instances.Instance
+	GetInstance(instanceID string) *instances.Instance
 }
 
 type InstanceService struct {
@@ -41,23 +36,20 @@ func (is *InstanceService) GetInstances(processes []*model.Process) []*instances
 	newInstances := []*instances.Instance{}
 
 	for _, dataplaneInstanceService := range is.dataplaneInstanceServices {
-		newDataplaneInstances, err := dataplaneInstanceService.GetInstances(processes)
-		if err != nil {
-			slog.Warn("Unable to get all instances", "dataplane type", fmt.Sprintf("%T", dataplaneInstanceService), "error", err)
-		} else {
-			newInstances = append(newInstances, newDataplaneInstances...)
-		}
+		newInstances = append(newInstances, dataplaneInstanceService.GetInstances(processes)...)
 	}
 
 	is.instances = newInstances
+
 	return is.instances
 }
 
-func (is *InstanceService) GetInstance(instanceId string) *instances.Instance {
-	for _, instance := range is.instances {
-		if instance.GetInstanceId() == instanceId {
-			return instance
+func (is *InstanceService) GetInstance(instanceID string) *instances.Instance {
+	for _, instanceEntity := range is.instances {
+		if instanceEntity.GetInstanceId() == instanceID {
+			return instanceEntity
 		}
 	}
+
 	return nil
 }

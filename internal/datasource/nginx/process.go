@@ -1,16 +1,14 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package nginx
 
 import (
 	"strings"
 
-	"github.com/nginx/agent/v3/internal/datasource/os/exec"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
 
 type Process struct {
@@ -22,22 +20,22 @@ func New(executer exec.ExecInterface) *Process {
 }
 
 func (np *Process) GetExe() string {
-	exe := ""
+	exePath := ""
 
 	out, commandErr := np.executer.RunCmd("sh", "-c", "command -v nginx")
 	if commandErr == nil {
-		exe = strings.TrimSuffix(out.String(), "\n")
+		exePath = strings.TrimSuffix(out.String(), "\n")
 	}
 
-	if exe == "" {
-		exe = np.defaultToNginxCommandForProcessPath()
+	if exePath == "" {
+		exePath = np.defaultToNginxCommandForProcessPath()
 	}
 
-	if strings.Contains(exe, "(deleted)") {
-		exe = np.sanitizeExeDeletedPath(exe)
+	if strings.Contains(exePath, "(deleted)") {
+		exePath = np.sanitizeExeDeletedPath(exePath)
 	}
 
-	return exe
+	return exePath
 }
 
 func (np *Process) defaultToNginxCommandForProcessPath() string {
@@ -45,13 +43,15 @@ func (np *Process) defaultToNginxCommandForProcessPath() string {
 	if err != nil {
 		return ""
 	}
+
 	return path
 }
 
-func (np *Process) sanitizeExeDeletedPath(exe string) string {
+func (*Process) sanitizeExeDeletedPath(exe string) string {
 	firstSpace := strings.Index(exe, "(deleted)")
 	if firstSpace != -1 {
 		return strings.TrimSpace(exe[0:firstSpace])
 	}
+
 	return strings.TrimSpace(exe)
 }

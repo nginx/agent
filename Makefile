@@ -18,6 +18,20 @@ VERSION = "v3.0.0"
 COMMIT  = $(shell git rev-parse --short HEAD)
 DATE    = $(shell date +%F_%H-%M-%S)
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
+DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
+PACKAGE_PREFIX := nginx-agent
+
+uname_m    := $(shell uname -m)
+
+ifeq ($(uname_m),aarch64)
+	OSARCH = arm64
+else
+	ifeq ($(uname_m),x86_64)
+		OSARCH = amd64
+	else
+		OSARCH = $(uname_m)
+	endif
+endif
 
 include Makefile.tools
 
@@ -40,11 +54,11 @@ build: ## Build agent executable
 
 lint: ## Run linter
 	@$(GOVET) ./...
-	@$(GORUN) $(GOLANGCILINT) run -c ./scripts/.golangci.yml
+	@$(GORUN) $(GOLANGCILINT) run -c ./.golangci.yml
 	@echo "🏯 Linting Done"
 
 format: ## Format code
-	@$(GORUN) $(FOFUMPT) -l -w .
+	@$(GORUN) $(FOFUMPT) -l -w -extra .
 	@echo "🏯 Format Done"
 
 $(TEST_BUILD_DIR):
@@ -64,12 +78,25 @@ dev: ## Run agent executable
 	@echo "🚀 Running App"
 	$(GORUN) $(PROJECT_DIR)/${PROJECT_FILE}
 
-generate: ## Genenerate proto files and server and client stubs from OpenAPI specifications
+generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specifications"
-	@$(GORUN) $(OAPICODEGEN) -generate gin -package http ./api/http/dataplane-api.yaml > ./api/http/dataplane.gen.go
-	@$(GORUN) $(OAPICODEGEN) -generate types,client -package http ./api/http/dataplane-api.yaml > ./api/http/client.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	$(GOGEN) ./...
+
+local-apk-package: ## Create local apk package
+	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
+
+local-deb-package: ## Create local deb package
+	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
+
+local-rpm-package: ## Create local rpm package
+	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
+

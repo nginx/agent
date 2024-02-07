@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 syntax = "proto3";
 package f5.nginx.agent.api.grpc.instances;
 
@@ -25,5 +23,5 @@ message FileDownloadResponse {
     bool encoded = 1;
     bytes file_content = 2;
     string file_path = 3;
-    string instance_id = 4;
+    string instance_id = 4 [json_name="instanceID"];
 }

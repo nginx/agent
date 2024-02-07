@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package plugin
 
@@ -17,7 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	http_api "github.com/nginx/agent/v3/api/http"
+	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service"
@@ -67,9 +65,9 @@ func (dps *DataplaneServer) Init(messagePipe bus.MessagePipeInterface) {
 	go dps.run(messagePipe.Context())
 }
 
-func (dps *DataplaneServer) Close() {}
+func (*DataplaneServer) Close() {}
 
-func (dps *DataplaneServer) Info() *bus.Info {
+func (*DataplaneServer) Info() *bus.Info {
 	return &bus.Info{
 		Name: "dataplane-server",
 	}
@@ -77,31 +75,35 @@ func (dps *DataplaneServer) Info() *bus.Info {
 
 func (dps *DataplaneServer) Process(msg *bus.Message) {
 	switch {
-	case msg.Topic == bus.INSTANCES_TOPIC:
-		dps.instances = msg.Data.([]*instances.Instance)
-	case msg.Topic == bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC:
-		msgData := msg.Data.(*instances.ConfigurationStatus)
-		dps.configurationStatues[msgData.GetInstanceId()] = msgData
+	case msg.Topic == bus.InstancesTopic:
+		if newInstances, ok := msg.Data.([]*instances.Instance); ok {
+			dps.instances = newInstances
+		}
+	case msg.Topic == bus.InstanceConfigUpdateCompleteTopic:
+		if configStatus, ok := msg.Data.(*instances.ConfigurationStatus); ok {
+			dps.configurationStatues[configStatus.GetInstanceId()] = configStatus
+		}
 	}
 }
 
-func (dps *DataplaneServer) Subscriptions() []string {
+func (*DataplaneServer) Subscriptions() []string {
 	return []string{
-		bus.INSTANCES_TOPIC,
-		bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC,
+		bus.InstancesTopic,
+		bus.InstanceConfigUpdateCompleteTopic,
 	}
 }
 
-func (dps *DataplaneServer) run(ctx context.Context) {
+func (dps *DataplaneServer) run(_ context.Context) {
 	gin.SetMode(gin.ReleaseMode)
 	server := gin.New()
 	server.Use(sloggin.NewWithConfig(dps.logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
-	http_api.RegisterHandlersWithOptions(server, dps, http_api.GinServerOptions{BaseURL: "/api/v1"})
+	dataplane.RegisterHandlersWithOptions(server, dps, dataplane.GinServerOptions{BaseURL: "/api/v1"})
 
 	slog.Info("Starting dataplane server", "address", dps.address)
 	listener, err := net.Listen("tcp", dps.address)
 	if err != nil {
 		slog.Error("Startup of dataplane server failed", "error", err)
+
 		return
 	}
 
@@ -114,15 +116,16 @@ func (dps *DataplaneServer) run(ctx context.Context) {
 }
 
 // GET /instances
+// nolint: revive // Get func not returning value
 func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 	slog.Debug("Get instances request")
 
-	response := []http_api.Instance{}
+	response := []dataplane.Instance{}
 
 	for _, instance := range dps.instances {
-		response = append(response, http_api.Instance{
+		response = append(response, dataplane.Instance{
 			InstanceId: &instance.InstanceId,
-			Type:       toPtr(mapTypeEnums(instance.Type.String())),
+			Type:       toPtr(mapTypeEnums(instance.GetType().String())),
 			Version:    &instance.Version,
 		})
 	}
@@ -132,95 +135,105 @@ func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-// PUT /instances/{instanceId}/configurations
-func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceId string) {
-	correlationId := uuid.New().String()
-	slog.Debug("Update instance configuration request", "correlationId", correlationId, "instanceId", instanceId)
+// PUT /instances/{instanceID}/configurations
+func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceID string) {
+	correlationID := uuid.New().String()
+	slog.Debug("Update instance configuration request", "correlationID", correlationID, "instanceID", instanceID)
 
-	var request http_api.UpdateInstanceConfigurationJSONRequestBody
+	var request dataplane.UpdateInstanceConfigurationJSONRequestBody
 	if err := ctx.Bind(&request); err != nil {
 		ctx.JSON(http.StatusBadRequest, "")
 		return
 	}
 
 	if request.Location == nil {
-		ctx.JSON(http.StatusBadRequest, http_api.ErrorResponse{Message: "Missing location field in request body"})
+		ctx.JSON(http.StatusBadRequest, dataplane.ErrorResponse{Message: "Missing location field in request body"})
 	} else {
-		instance := dps.getInstance(instanceId)
+		instance := dps.getInstance(instanceID)
 		if instance != nil {
 			request := &model.InstanceConfigUpdateRequest{
-				Instance:      dps.getInstance(instanceId),
+				Instance:      dps.getInstance(instanceID),
 				Location:      *request.Location,
-				CorrelationId: correlationId,
+				CorrelationID: correlationID,
 			}
 
-			dps.messagePipe.Process(&bus.Message{Topic: bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC, Data: request})
+			dps.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateRequestTopic, Data: request})
 
-			dps.configurationStatues[instanceId] = &instances.ConfigurationStatus{
-				InstanceId:    instanceId,
-				CorrelationId: correlationId,
+			dps.configurationStatues[instanceID] = &instances.ConfigurationStatus{
+				InstanceId:    instanceID,
+				CorrelationId: correlationID,
 				Status:        instances.Status_IN_PROGRESS,
-				LateUpdated:   timestamppb.Now(),
+				LastUpdated:   timestamppb.Now(),
 				Message:       "Instance configuration update in progress",
 			}
 
-			ctx.JSON(http.StatusOK, http_api.CorrelationId{CorrelationId: &correlationId})
+			ctx.JSON(http.StatusOK, dataplane.CorrelationId{CorrelationId: &correlationID})
 		} else {
-			slog.Debug("Unable to update instance configuration", "instanceId", instanceId, "correlationId", correlationId)
-			ctx.JSON(http.StatusNotFound, http_api.ErrorResponse{Message: fmt.Sprintf("Unable to find instance %s", instanceId)})
+			slog.Debug(
+				"Unable to update instance configuration",
+				"instanceID", instanceID,
+				"correlationID", correlationID,
+			)
+			ctx.JSON(
+				http.StatusNotFound,
+				dataplane.ErrorResponse{Message: fmt.Sprintf("Unable to find instance %s", instanceID)},
+			)
 		}
 	}
 }
 
 // (GET /instances/{instanceId}/configurations/status)
-func (dps *DataplaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, instanceId string) {
-	status := dps.getInstanceConfigurationStatus(instanceId)
+// nolint: revive // Get func not returning value
+func (dps *DataplaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, instanceID string) {
+	status := dps.getConfigurationStatus(instanceID)
 
 	if status != nil {
-		responseBody := &http_api.ConfigurationStatus{
+		responseBody := &dataplane.ConfigurationStatus{
 			CorrelationId: &status.CorrelationId,
-			LastUpdated:   toPtr(status.LateUpdated.AsTime()),
+			LastUpdated:   toPtr(status.GetLastUpdated().AsTime()),
 			Message:       &status.Message,
-			Status:        mapStatusEnums(status.Status.String()),
+			Status:        mapStatusEnums(status.GetStatus().String()),
 		}
 
 		ctx.JSON(http.StatusOK, responseBody)
 	} else {
-		slog.Debug("Unable to get instance configuration status", "instanceId", instanceId)
-		ctx.JSON(http.StatusNotFound, http_api.ErrorResponse{Message: "Unable to find configuration status"})
+		slog.Debug("Unable to get instance configuration status", "instanceID", instanceID)
+		ctx.JSON(http.StatusNotFound, dataplane.ErrorResponse{Message: "Unable to find configuration status"})
 	}
 }
 
-func (dps *DataplaneServer) getInstanceConfigurationStatus(instanceId string) *instances.ConfigurationStatus {
-	return dps.configurationStatues[instanceId]
+func (dps *DataplaneServer) getConfigurationStatus(instanceID string) *instances.ConfigurationStatus {
+	return dps.configurationStatues[instanceID]
 }
 
-func (dps *DataplaneServer) getInstance(instanceId string) *instances.Instance {
+func (dps *DataplaneServer) getInstance(instanceID string) *instances.Instance {
 	for _, instance := range dps.instances {
-		if instance.GetInstanceId() == instanceId {
+		if instance.GetInstanceId() == instanceID {
 			return instance
 		}
 	}
+
 	return nil
 }
 
-func mapTypeEnums(typeString string) http_api.InstanceType {
+func mapTypeEnums(typeString string) dataplane.InstanceType {
 	if typeString == instances.Type_NGINX.String() {
-		return http_api.NGINX
+		return dataplane.NGINX
 	}
-	return http_api.CUSTOM
+
+	return dataplane.CUSTOM
 }
 
-func mapStatusEnums(typeString string) *http_api.ConfigurationStatusType {
+func mapStatusEnums(typeString string) *dataplane.ConfigurationStatusType {
 	if typeString == instances.Status_SUCCESS.String() {
-		return toPtr(http_api.SUCCESS)
+		return toPtr(dataplane.SUCCESS)
 	} else if typeString == instances.Status_FAILED.String() {
-		return toPtr(http_api.FAILED)
+		return toPtr(dataplane.FAILED)
 	} else if typeString == instances.Status_ROLLBACK_FAILED.String() {
-		return toPtr(http_api.ROLLBACKFAILED)
-	} else {
-		return toPtr(http_api.INPROGESS)
+		return toPtr(dataplane.ROLLBACKFAILED)
 	}
+
+	return toPtr(dataplane.INPROGESS)
 }
 
 func toPtr[T any](value T) *T {

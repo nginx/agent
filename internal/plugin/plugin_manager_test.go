@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package plugin
 
@@ -50,9 +48,9 @@ func TestLoadPLugins(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			result := LoadPlugins(test.input, slog.New(&slog.TextHandler{}))
-			assert.Equal(t, len(test.expected), len(result))
+			assert.Equal(tt, len(test.expected), len(result))
 			for i, expectedPlugin := range test.expected {
-				assert.IsType(t, expectedPlugin, result[i])
+				assert.IsType(tt, expectedPlugin, result[i])
 			}
 		})
 	}

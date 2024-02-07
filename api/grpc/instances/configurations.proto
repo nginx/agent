@@ -15,7 +15,7 @@ option go_package = "github.com/nginx/agent/v3/api/grpc/instances";
 message ConfigurationStatus {
     string instance_id = 1;
     string correlation_id = 2;
-    google.protobuf.Timestamp late_updated = 3;
+    google.protobuf.Timestamp last_updated = 3;
     Status status = 4;
     string message = 5;
 }

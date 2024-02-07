@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package config
 
@@ -14,12 +12,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var ROOT_COMMAND = &cobra.Command{
+var RootCommand = &cobra.Command{
 	Use:   "nginx-agent [flags]",
 	Short: "nginx-agent",
 }
 
-var COMPLETION_COMMAND = &cobra.Command{
+var CompletionCommand = &cobra.Command{
 	Use:   "completion [bash|zsh|fish]",
 	Short: "Generate completion script.",
 	Long: `To load completions:

@@ -16,7 +16,7 @@ on:
     - synchronize
 
 env:
-  GOLANGCI_LINT_VERSION: 'v1.54.2'
+  GOLANGCI_LINT_VERSION: 'v1.55.2'
   NFPM_VERSION: 'v2.32.0'
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1 
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: 'go.mod'
@@ -32,5 +32,35 @@ jobs:
         uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3.7.0
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
-          args: -c ./scripts/.golangci.yml
+          args: -c ./.golangci.yml
           skip-pkg-cache: true
+  unit-test:
+      name: Unit Tests
+      runs-on: ubuntu-22.04
+      steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-go@v5
+            with:
+                go-version-file: 'go.mod'
+          - name: Run Unit Tests
+            run: make unit-test
+  build-unsigned-snapshot:
+      name: Build Unsigned Snapshot
+      runs-on: ubuntu-22.04
+      steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-go@v5
+            with:
+                go-version-file: 'go.mod'
+          - name: Setup Build Environment
+            run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          - name: Build Packages
+            run: |
+                make clean local-deb-package local-rpm-package local-apk-package
+          - name: Upload Artifacts
+            uses: actions/upload-artifact@v3
+            with:
+              name: nginx-agent-snapshots
+              path: build
+              retention-days: 3
+                  

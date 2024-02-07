@@ -3,12 +3,13 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package model
+package dataplane
 
-type Process struct {
-	Pid  int32
-	Ppid int32
-	Name string
-	Cmd  string
-	Exe  string
+type RequestError struct {
+	StatusCode int
+	Message    string
+}
+
+func (r *RequestError) Error() string {
+	return r.Message
 }

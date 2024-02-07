@@ -1,15 +1,15 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package plugin
 
 import (
 	"context"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/bus"
@@ -35,7 +35,10 @@ func TestConfig_Info(t *testing.T) {
 func TestConfig_Subscriptions(t *testing.T) {
 	configPlugin := NewConfig()
 	subscriptions := configPlugin.Subscriptions()
-	assert.Equal(t, []string{bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC, bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC}, subscriptions)
+	assert.Equal(t, []string{
+		bus.InstanceConfigUpdateRequestTopic,
+		bus.InstanceConfigUpdateCompleteTopic,
+	}, subscriptions)
 }
 
 func TestConfig_Process(t *testing.T) {
@@ -52,15 +55,15 @@ func TestConfig_Process(t *testing.T) {
 	instanceConfigUpdateRequest := &model.InstanceConfigUpdateRequest{
 		Instance:      testInstance,
 		Location:      "http://file-server.com",
-		CorrelationId: "456",
+		CorrelationID: "456",
 	}
 
 	configurationStatus := &instances.ConfigurationStatus{
-		InstanceId:    testInstance.InstanceId,
+		InstanceId:    testInstance.GetInstanceId(),
 		CorrelationId: "456",
 		Status:        instances.Status_SUCCESS,
 		Message:       "Successfully updated instance configuration.",
-		LateUpdated:   timestamppb.Now(),
+		LastUpdated:   timestamppb.Now(),
 	}
 
 	tests := []struct {
@@ -71,12 +74,12 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated",
 			input: &bus.Message{
-				Topic: bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC,
+				Topic: bus.InstanceConfigUpdateCompleteTopic,
 				Data:  configurationStatus,
 			},
 			expected: []*bus.Message{
 				{
-					Topic: bus.INSTANCE_CONFIG_CONTEXT_TOPIC,
+					Topic: bus.InstanceConfigContextTopic,
 					Data:  nginxConfigContext,
 				},
 			},
@@ -84,7 +87,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated - unknown message type",
 			input: &bus.Message{
-				Topic: bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC,
+				Topic: bus.InstanceConfigUpdateCompleteTopic,
 				Data:  nil,
 			},
 			expected: nil,
@@ -92,12 +95,12 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config update request",
 			input: &bus.Message{
-				Topic: bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC,
+				Topic: bus.InstanceConfigUpdateRequestTopic,
 				Data:  instanceConfigUpdateRequest,
 			},
 			expected: []*bus.Message{
 				{
-					Topic: bus.INSTANCE_CONFIG_UPDATE_COMPLETE_TOPIC,
+					Topic: bus.InstanceConfigUpdateCompleteTopic,
 					Data:  configurationStatus,
 				},
 			},
@@ -105,7 +108,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config update request - unknown message type",
 			input: &bus.Message{
-				Topic: bus.INSTANCE_CONFIG_UPDATE_REQUEST_TOPIC,
+				Topic: bus.InstanceConfigUpdateRequestTopic,
 				Data:  nil,
 			},
 			expected: nil,
@@ -118,7 +121,7 @@ func TestConfig_Process(t *testing.T) {
 			configPlugin := NewConfig()
 
 			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
-			assert.NoError(tt, err)
+			require.NoError(tt, err)
 			messagePipe.Run()
 
 			configService := &servicefakes.FakeConfigServiceInterface{}

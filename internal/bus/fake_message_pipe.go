@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package bus
 
@@ -35,6 +33,24 @@ func (p *FakeMessagePipe) Register(size int, plugins []Plugin) error {
 func (p *FakeMessagePipe) DeRegister(pluginNames []string) error {
 	var plugins []Plugin
 
+	plugins = p.findPlugins(pluginNames, plugins)
+
+	for _, plugin := range plugins {
+		index := getIndex(plugin.Info().Name, p.plugins)
+		p.unsubscribePlugin(index, plugin)
+	}
+
+	return nil
+}
+
+func (p *FakeMessagePipe) unsubscribePlugin(index int, plugin Plugin) {
+	if index != -1 {
+		p.plugins = append(p.plugins[:index], p.plugins[index+1:]...)
+		plugin.Close()
+	}
+}
+
+func (p *FakeMessagePipe) findPlugins(pluginNames []string, plugins []Plugin) []Plugin {
 	for _, name := range pluginNames {
 		for _, plugin := range p.plugins {
 			if plugin.Info().Name == name {
@@ -43,15 +59,7 @@ func (p *FakeMessagePipe) DeRegister(pluginNames []string) error {
 		}
 	}
 
-	for _, plugin := range plugins {
-		index := getIndex(plugin.Info().Name, p.plugins)
-		if index != -1 {
-			p.plugins = append(p.plugins[:index], p.plugins[index+1:]...)
-			plugin.Close()
-		}
-	}
-
-	return nil
+	return plugins
 }
 
 func (p *FakeMessagePipe) Context() context.Context {

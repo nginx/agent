@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package config
 
@@ -13,30 +11,36 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	viperKeyDeliDelimiter = "_"
+)
+
 func TestRegisterConfigFile(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	file, err := os.Create("nginx-agent.conf")
 	defer os.Remove(file.Name())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	currentDirectory, err := os.Getwd()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = RegisterConfigFile()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, path.Join(currentDirectory, "nginx-agent.conf"), viperInstance.GetString(ConfigPathKey))
 }
 
 func TestGetConfig(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	result := GetConfig()
 
@@ -52,14 +56,14 @@ func TestGetConfig(t *testing.T) {
 }
 
 func TestSetVersion(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	setVersion("v1.2.3", "asdf1234")
 
 	assert.Equal(t, "v1.2.3", viperInstance.GetString(VersionConfigKey))
 }
 
 func TestRegisterFlags(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	os.Setenv("NGINX_AGENT_LOG_LEVEL", "warn")
 	os.Setenv("NGINX_AGENT_LOG_PATH", "/var/log/test/agent.log")
 	os.Setenv("NGINX_AGENT_PROCESS_MONITOR_MONITORING_FREQUENCY", "10s")
@@ -77,32 +81,32 @@ func TestRegisterFlags(t *testing.T) {
 }
 
 func TestSeekFileInPaths(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	result, err := seekFileInPaths("nginx-agent.conf", []string{"./", "./testdata"}...)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "testdata/nginx-agent.conf", result)
 
 	_, err = seekFileInPaths("nginx-agent.conf", []string{"./"}...)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestGetConfigFilePaths(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	currentDirectory, err := os.Getwd()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	result := getConfigFilePaths()
 
-	assert.Equal(t, 2, len(result))
+	assert.Len(t, result, 2)
 	assert.Equal(t, "/etc/nginx-agent/", result[0])
 	assert.Equal(t, currentDirectory, result[1])
 }
 
 func TestLoadPropertiesFromFile(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "debug", viperInstance.GetString(LogLevelConfigKey))
 	assert.Equal(t, "./", viperInstance.GetString(LogPathConfigKey))
@@ -115,18 +119,18 @@ func TestLoadPropertiesFromFile(t *testing.T) {
 	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutConfigKey))
 
 	err = loadPropertiesFromFile("./testdata/unknown.conf")
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestNormalizeFunc(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	var expected pflag.NormalizedName = "test-flag-name"
 	result := normalizeFunc(&pflag.FlagSet{}, "test_flag.name")
 	assert.Equal(t, expected, result)
 }
 
 func TestGetLog(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	viperInstance.Set(LogLevelConfigKey, "error")
 	viperInstance.Set(LogPathConfigKey, "/var/log/test/test.log")
 
@@ -136,7 +140,7 @@ func TestGetLog(t *testing.T) {
 }
 
 func TestGetProcessMonitor(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	viperInstance.Set(ProcessMonitorMonitoringFrequencyConfigKey, time.Hour)
 
 	result := getProcessMonitor()
@@ -144,7 +148,7 @@ func TestGetProcessMonitor(t *testing.T) {
 }
 
 func TestGetDataplaneAPI(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	viperInstance.Set(DataplaneAPIHostConfigKey, "testhost")
 	viperInstance.Set(DataplaneAPIPortConfigKey, 9091)
 
@@ -154,7 +158,7 @@ func TestGetDataplaneAPI(t *testing.T) {
 }
 
 func TestGetClient(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	viperInstance.Set(ClientTimeoutConfigKey, time.Hour)
 
 	result := getClient()

@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 syntax = "proto3";
 package f5.nginx.agent.api.grpc.instances;
@@ -23,7 +21,8 @@ message Meta {
     }
 }
 message NginxMeta {
-    string config_path = 3;
+    string config_path = 1;
+    string exe_path = 2;
 }
 
 enum Type {

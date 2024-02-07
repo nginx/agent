@@ -1,9 +1,7 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package service
 
@@ -18,8 +16,14 @@ import (
 //counterfeiter:generate . ConfigServiceInterface
 type ConfigServiceInterface interface {
 	SetConfigContext(instanceConfigContext any)
-	UpdateInstanceConfiguration(correlationId string, location string, instance *instances.Instance) *instances.ConfigurationStatus
-	ParseInstanceConfiguration(correlationId string, instance *instances.Instance) (instanceConfigContext any, err error)
+	UpdateInstanceConfiguration(
+		correlationID, location string,
+		instance *instances.Instance,
+	) *instances.ConfigurationStatus
+	ParseInstanceConfiguration(
+		correlationID string,
+		instance *instances.Instance,
+	) (instanceConfigContext any, err error)
 }
 
 type ConfigService struct {
@@ -43,14 +47,19 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 	cs.configContext = instanceConfigContext
 }
 
-func (cs *ConfigService) UpdateInstanceConfiguration(correlationId string, location string, instance *instances.Instance) *instances.ConfigurationStatus {
+func (*ConfigService) UpdateInstanceConfiguration(_, _ string, _ *instances.Instance) *instances.ConfigurationStatus {
 	return nil
 }
 
-func (cs *ConfigService) ParseInstanceConfiguration(correlationId string, instance *instances.Instance) (instanceConfigContext any, err error) {
-	if conf, ok := cs.dataplaneConfigServices[instance.GetType()]; !ok {
-		return nil, fmt.Errorf("unknown instance type %s", instance.Type)
-	} else {
-		return conf.ParseConfig(instance)
+func (cs *ConfigService) ParseInstanceConfiguration(
+	_ string,
+	instance *instances.Instance,
+) (instanceConfigContext any, err error) {
+	conf, ok := cs.dataplaneConfigServices[instance.GetType()]
+
+	if !ok {
+		return nil, fmt.Errorf("unknown instance type %s", instance.GetType())
 	}
+
+	return conf.ParseConfig(instance)
 }
