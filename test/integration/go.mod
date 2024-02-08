@@ -108,7 +108,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/moby/buildkit v0.12.2 // indirect
+	github.com/moby/buildkit v0.12.5 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
@@ -212,6 +212,7 @@ require (
 replace (
 	github.com/containerd/containerd => github.com/containerd/containerd v1.7.11
 	github.com/cucumber/godog => github.com/laurazard/godog v0.0.0-20220922095256-4c4b17abdae7
+	github.com/moby/buildkit => github.com/moby/buildkit v0.12.5
 	github.com/nginx/agent/sdk/v2 => ./../../sdk
 	github.com/nginx/agent/v2 => ./../../
 )
