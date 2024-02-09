@@ -15,6 +15,7 @@ import (
 //counterfeiter:generate . InstanceServiceInterface
 type InstanceServiceInterface interface {
 	GetInstances(processes []*model.Process) []*instances.Instance
+	GetInstance(instanceID string) *instances.Instance
 }
 
 type InstanceService struct {
@@ -41,4 +42,14 @@ func (is *InstanceService) GetInstances(processes []*model.Process) []*instances
 	is.instances = newInstances
 
 	return is.instances
+}
+
+func (is *InstanceService) GetInstance(instanceID string) *instances.Instance {
+	for _, instanceEntity := range is.instances {
+		if instanceEntity.GetInstanceId() == instanceID {
+			return instanceEntity
+		}
+	}
+
+	return nil
 }

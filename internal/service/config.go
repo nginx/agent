@@ -16,7 +16,10 @@ import (
 //counterfeiter:generate . ConfigServiceInterface
 type ConfigServiceInterface interface {
 	SetConfigContext(instanceConfigContext any)
-	UpdateInstanceConfiguration(correlationID, location string, instance *instances.Instance) error
+	UpdateInstanceConfiguration(
+		correlationID, location string,
+		instance *instances.Instance,
+	) *instances.ConfigurationStatus
 	ParseInstanceConfiguration(
 		correlationID string,
 		instance *instances.Instance,
@@ -45,7 +48,7 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 	}
 }
 
-func (*ConfigService) UpdateInstanceConfiguration(_, _ string, _ *instances.Instance) error {
+func (*ConfigService) UpdateInstanceConfiguration(_, _ string, _ *instances.Instance) *instances.ConfigurationStatus {
 	return nil
 }
 
