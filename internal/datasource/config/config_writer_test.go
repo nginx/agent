@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	helpers "github.com/nginx/agent/v3/test"
 	"os"
 	"path"
 	"testing"
@@ -26,8 +27,7 @@ func TestWriteConfig(t *testing.T) {
 	ctx := context.TODO()
 	testConf, err := os.CreateTemp(".", "test.conf")
 	require.NoError(t, err)
-	defer os.Remove(testConf.Name())
-
+	defer helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 	testConfPath := testConf.Name()
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 
@@ -38,21 +38,21 @@ func TestWriteConfig(t *testing.T) {
 	instanceIDDir := path.Join(tmpDir, instanceID.String())
 	err = os.Mkdir(instanceIDDir, 0o755)
 	require.NoError(t, err)
-	defer os.Remove(instanceIDDir)
+	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
 	cacheFile, err := os.Create(path.Join(instanceIDDir, "cache.json"))
 	require.NoError(t, err)
-	defer os.Remove(cacheFile.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 
 	cachePath := cacheFile.Name()
 
 	nginxConf, err := os.CreateTemp("./", "nginx.conf")
 	require.NoError(t, err)
-	defer os.Remove(nginxConf.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 
 	metricsConf, err := os.CreateTemp("./", "metrics.conf")
 	require.NoError(t, err)
-	defer os.Remove(metricsConf.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 
 	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
@@ -163,6 +163,7 @@ func TestWriteConfig(t *testing.T) {
 			allowedDirs := []string{"./"}
 
 			configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, instanceID.String())
+			assert.NotNil(t, configWriter)
 			configWriter.cachePath = cachePath
 			configWriter.previouseFileCache = previousFileCache
 
@@ -185,14 +186,12 @@ func TestWriteConfig(t *testing.T) {
 				assert.NotEqual(t, testData, fileContent)
 			}
 
-			err = os.Remove(test.getFileReturn.GetFilePath())
-			require.NoError(t, err)
+			helpers.RemoveFileWithErrorCheck(t, test.getFileReturn.GetFilePath())
 			assert.NoFileExists(t, test.getFileReturn.GetFilePath())
 		})
 	}
 
-	err = os.Remove(cachePath)
-	require.NoError(t, err)
+	helpers.RemoveFileWithErrorCheck(t, cachePath)
 	assert.NoFileExists(t, cachePath)
 }
 
@@ -204,11 +203,11 @@ func TestComplete(t *testing.T) {
 
 	err = os.Mkdir(instanceIDDir, 0o755)
 	require.NoError(t, err)
-	defer os.Remove(instanceIDDir)
+	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
 	cacheFile, err := os.CreateTemp(instanceIDDir, "cache.json")
 	require.NoError(t, err)
-	defer os.Remove(cacheFile.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 
 	cachePath := cacheFile.Name()
 
@@ -220,15 +219,15 @@ func TestComplete(t *testing.T) {
 
 	testConf, err := os.CreateTemp(".", "test.conf")
 	require.NoError(t, err)
-	defer os.Remove(testConf.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 
 	nginxConf, err := os.CreateTemp("./", "nginx.conf")
 	require.NoError(t, err)
-	defer os.Remove(nginxConf.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 
 	metricsConf, err := os.CreateTemp("./", "metrics.conf")
 	require.NoError(t, err)
-	defer os.Remove(metricsConf.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 
 	fileTime1, err := createProtoTime("2024-01-08T13:22:23Z")
 	require.NoError(t, err)
@@ -281,22 +280,24 @@ func TestComplete(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheData, data)
 
-	err = os.Remove(cachePath)
-	require.NoError(t, err)
+	helpers.RemoveFileWithErrorCheck(t, cachePath)
 	assert.NoFileExists(t, cachePath)
 }
 
-func TestDataplaneConfig(t *testing.T) {
+func TestDataPlaneConfig(t *testing.T) {
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 	allowedDirs := []string{"./"}
 	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	assert.NotNil(t, configWriter)
+
 	configWriter.cachePath = cachePath
 	nginxConfig := config.NewNginx()
 
 	configWriter.SetDataplaneConfig(nginxConfig)
 
 	assert.Equal(t, configWriter.dataplaneConfig, nginxConfig)
+	defer helpers.RemoveFileWithErrorCheck(t, configWriter.cachePath)
 }
 
 func TestWriteFile(t *testing.T) {
@@ -311,8 +312,7 @@ func TestWriteFile(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, fileContent, data)
 
-	err = os.Remove(filePath)
-	require.NoError(t, err)
+	helpers.RemoveFileWithErrorCheck(t, filePath)
 	assert.NoFileExists(t, filePath)
 }
 
@@ -324,11 +324,11 @@ func TestReadCache(t *testing.T) {
 
 	err = os.Mkdir(instanceIDDir, 0o755)
 	require.NoError(t, err)
-	defer os.Remove(instanceIDDir)
+	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
 	cacheFile, err := os.CreateTemp(instanceIDDir, "cache.json")
 	require.NoError(t, err)
-	defer os.Remove(cacheFile.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 
 	cachePath := cacheFile.Name()
 
@@ -343,15 +343,15 @@ func TestReadCache(t *testing.T) {
 
 	testConf, err := os.CreateTemp(".", "test.conf")
 	require.NoError(t, err)
-	defer os.Remove(testConf.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 
 	nginxConf, err := os.CreateTemp("./", "nginx.conf")
 	require.NoError(t, err)
-	defer os.Remove(nginxConf.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 
 	metricsConf, err := os.CreateTemp("./", "metrics.conf")
 	require.NoError(t, err)
-	defer os.Remove(metricsConf.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 
 	cacheData := FileCache{
 		nginxConf.Name(): {
@@ -405,8 +405,7 @@ func TestReadCache(t *testing.T) {
 		})
 	}
 
-	err = os.Remove(cachePath)
-	require.NoError(t, err)
+	helpers.RemoveFileWithErrorCheck(t, cachePath)
 	assert.NoFileExists(t, cachePath)
 }
 
@@ -445,8 +444,10 @@ func TestIsFilePathValid(t *testing.T) {
 
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 	allowedDirs := []string{"/tmp/"}
+
 	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	assert.NotNil(t, configWriter)
 	configWriter.cachePath = cachePath
 
 	for _, test := range tests {

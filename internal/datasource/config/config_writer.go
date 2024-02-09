@@ -62,6 +62,7 @@ func NewConfigWriter(configClient client.ConfigClientInterface,
 	previousFileCache, err := readInstanceCache(cachePath)
 	if err != nil {
 		slog.Warn("Failed to Read cache %s ", cachePath, "err", err)
+		return nil
 	}
 
 	return &ConfigWriter{

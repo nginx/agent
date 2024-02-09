@@ -99,10 +99,10 @@ func (dps *DataplaneServer) run(_ context.Context) {
 	server.Use(sloggin.NewWithConfig(dps.logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
 	dataplane.RegisterHandlersWithOptions(server, dps, dataplane.GinServerOptions{BaseURL: "/api/v1"})
 
-	slog.Info("Starting dataplane server", "address", dps.address)
+	slog.Info("Starting data plane server", "address", dps.address)
 	listener, err := net.Listen("tcp", dps.address)
 	if err != nil {
-		slog.Error("Startup of dataplane server failed", "error", err)
+		slog.Error("Startup of data plane server failed", "error", err)
 
 		return
 	}
@@ -111,7 +111,7 @@ func (dps *DataplaneServer) run(_ context.Context) {
 
 	err = server.RunListener(listener)
 	if err != nil {
-		slog.Error("Startup of dataplane server failed", "error", err)
+		slog.Error("Startup of data plane server failed", "error", err)
 	}
 }
 

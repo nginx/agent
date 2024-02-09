@@ -5,6 +5,7 @@
 package logger
 
 import (
+	helpers "github.com/nginx/agent/v3/test"
 	"io"
 	"log/slog"
 	"os"
@@ -64,8 +65,8 @@ func TestGetLogLevel(t *testing.T) {
 
 func TestGetLogWriter(t *testing.T) {
 	file, err := os.CreateTemp(".", "TestGetLogWriter.*.log")
-	defer os.Remove(file.Name())
-	defer os.Remove("agent.log")
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, "agent.log")
 
 	require.NoError(t, err)
 

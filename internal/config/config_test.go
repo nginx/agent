@@ -6,6 +6,7 @@
 package config
 
 import (
+	helpers "github.com/nginx/agent/v3/test"
 	"os"
 	"path"
 	"testing"
@@ -25,7 +26,7 @@ const (
 func TestRegisterConfigFile(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	file, err := os.Create("nginx-agent.conf")
-	defer os.Remove(file.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
 
 	currentDirectory, err := os.Getwd()

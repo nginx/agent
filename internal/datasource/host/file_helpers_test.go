@@ -6,6 +6,7 @@
 package host
 
 import (
+	helpers "github.com/nginx/agent/v3/test"
 	"os"
 	"testing"
 
@@ -16,7 +17,7 @@ import (
 
 func TestGetPermissions(t *testing.T) {
 	file, err := os.CreateTemp(".", "get_permissions_test.txt")
-	defer os.Remove(file.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
 
 	info, err := os.Stat(file.Name())
