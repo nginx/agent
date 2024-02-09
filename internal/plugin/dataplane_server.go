@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -39,8 +40,10 @@ type (
 )
 
 func NewDataplaneServer(agentConfig *config.Config, logger *slog.Logger) *DataplaneServer {
+	address := net.JoinHostPort(agentConfig.DataplaneAPI.Host, strconv.Itoa(agentConfig.DataplaneAPI.Port))
+
 	return &DataplaneServer{
-		address:              fmt.Sprintf("%s:%d", agentConfig.DataplaneAPI.Host, agentConfig.DataplaneAPI.Port),
+		address:              address,
 		logger:               logger,
 		configurationStatues: make(map[string]*instances.ConfigurationStatus),
 	}
