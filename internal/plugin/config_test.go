@@ -16,6 +16,7 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestConfig_Init(t *testing.T) {
@@ -36,7 +37,7 @@ func TestConfig_Subscriptions(t *testing.T) {
 	subscriptions := configPlugin.Subscriptions()
 	assert.Equal(t, []string{
 		bus.InstanceConfigUpdateRequestTopic,
-		bus.InstanceConfigUpdatedTopic,
+		bus.InstanceConfigUpdateCompleteTopic,
 	}, subscriptions)
 }
 
@@ -57,6 +58,14 @@ func TestConfig_Process(t *testing.T) {
 		CorrelationID: "456",
 	}
 
+	configurationStatus := &instances.ConfigurationStatus{
+		InstanceId:    testInstance.GetInstanceId(),
+		CorrelationId: "456",
+		Status:        instances.Status_SUCCESS,
+		Message:       "Successfully updated instance configuration.",
+		LastUpdated:   timestamppb.Now(),
+	}
+
 	tests := []struct {
 		name     string
 		input    *bus.Message
@@ -65,8 +74,8 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated",
 			input: &bus.Message{
-				Topic: bus.InstanceConfigUpdatedTopic,
-				Data:  instanceConfigUpdateRequest,
+				Topic: bus.InstanceConfigUpdateCompleteTopic,
+				Data:  configurationStatus,
 			},
 			expected: []*bus.Message{
 				{
@@ -78,7 +87,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated - unknown message type",
 			input: &bus.Message{
-				Topic: bus.InstanceConfigUpdatedTopic,
+				Topic: bus.InstanceConfigUpdateCompleteTopic,
 				Data:  nil,
 			},
 			expected: nil,
@@ -91,8 +100,8 @@ func TestConfig_Process(t *testing.T) {
 			},
 			expected: []*bus.Message{
 				{
-					Topic: bus.InstanceConfigUpdatedTopic,
-					Data:  instanceConfigUpdateRequest,
+					Topic: bus.InstanceConfigUpdateCompleteTopic,
+					Data:  configurationStatus,
 				},
 			},
 		},
@@ -117,9 +126,13 @@ func TestConfig_Process(t *testing.T) {
 
 			configService := &servicefakes.FakeConfigServiceInterface{}
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
-			configService.UpdateInstanceConfigurationReturns(nil)
+			configService.UpdateInstanceConfigurationReturns(configurationStatus)
+
+			instanceService := &servicefakes.FakeInstanceServiceInterface{}
+			instanceService.GetInstanceReturns(testInstance)
 
 			configPlugin.configServices["123"] = configService
+			configPlugin.instanceService = instanceService
 
 			configPlugin.Process(test.input)
 

@@ -8,19 +8,22 @@ package plugin
 import (
 	"log/slog"
 
+	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service"
 )
 
 type Config struct {
-	messagePipe    bus.MessagePipeInterface
-	configServices map[string]service.ConfigServiceInterface
+	messagePipe     bus.MessagePipeInterface
+	configServices  map[string]service.ConfigServiceInterface
+	instanceService service.InstanceServiceInterface
 }
 
 func NewConfig() *Config {
 	return &Config{
-		configServices: make(map[string]service.ConfigServiceInterface), // key is instance id
+		configServices:  make(map[string]service.ConfigServiceInterface), // key is instance id
+		instanceService: service.NewInstanceService(),
 	}
 }
 
@@ -38,49 +41,56 @@ func (*Config) Info() *bus.Info {
 
 func (c *Config) Process(msg *bus.Message) {
 	switch {
-	case msg.Topic == bus.InstanceConfigUpdatedTopic:
-		if request, ok := msg.Data.(*model.InstanceConfigUpdateRequest); !ok {
-			slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
-		} else {
-			c.parseInstanceConfiguration(request)
-		}
-
+	case msg.Topic == bus.InstanceConfigUpdateCompleteTopic:
+		c.processConfigurationStatus(msg)
 	case msg.Topic == bus.InstanceConfigUpdateRequestTopic:
-		if request, ok := msg.Data.(*model.InstanceConfigUpdateRequest); !ok {
-			slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
-		} else {
-			c.updateInstanceConfig(request)
-		}
+		c.processInstanceConfigUpdateRequest(msg)
 	}
 }
 
 func (*Config) Subscriptions() []string {
 	return []string{
 		bus.InstanceConfigUpdateRequestTopic,
-		bus.InstanceConfigUpdatedTopic,
+		bus.InstanceConfigUpdateCompleteTopic,
 	}
 }
 
-func (c *Config) parseInstanceConfiguration(request *model.InstanceConfigUpdateRequest) {
-	instanceID := request.Instance.GetInstanceId()
-	if c.configServices[instanceID] == nil {
-		c.configServices[instanceID] = service.NewConfigService()
+func (c *Config) processConfigurationStatus(msg *bus.Message) {
+	if configurationStatus, ok := msg.Data.(*instances.ConfigurationStatus); !ok {
+		slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
+	} else if configurationStatus.GetStatus() == instances.Status_SUCCESS {
+		c.parseInstanceConfiguration(
+			configurationStatus.GetCorrelationId(),
+			c.instanceService.GetInstance(configurationStatus.GetInstanceId()),
+		)
+	}
+}
+
+func (c *Config) processInstanceConfigUpdateRequest(msg *bus.Message) {
+	if request, ok := msg.Data.(*model.InstanceConfigUpdateRequest); !ok {
+		slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
+	} else {
+		c.updateInstanceConfig(request)
+	}
+}
+
+func (c *Config) parseInstanceConfiguration(correlationID string, instance *instances.Instance) {
+	if c.configServices[instance.GetInstanceId()] == nil {
+		c.configServices[instance.GetInstanceId()] = service.NewConfigService()
 	}
 
-	configService := c.configServices[instanceID]
-
-	parsedConfig, err := configService.ParseInstanceConfiguration(request.CorrelationID, request.Instance)
+	parsedConfig, err := c.configServices[instance.GetInstanceId()].ParseInstanceConfiguration(correlationID, instance)
 	if err != nil {
 		slog.Error(
 			"Unable to parse instance configuration",
-			"correlationID", request.CorrelationID,
-			"instanceID", instanceID,
+			"correlationID", correlationID,
+			"instanceID", instance.GetInstanceId(),
 			"error", err,
 		)
 	} else {
 		switch config := parsedConfig.(type) {
 		case model.NginxConfigContext:
-			configService.SetConfigContext(config)
+			c.configServices[instance.GetInstanceId()].SetConfigContext(config)
 		default:
 			slog.Debug("Unknown config context", "configContext", config)
 		}
@@ -94,17 +104,10 @@ func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest
 		c.configServices[instanceID] = service.NewConfigService()
 	}
 
-	configService := c.configServices[instanceID]
-
-	err := configService.UpdateInstanceConfiguration(request.CorrelationID, request.Location, request.Instance)
-	if err != nil {
-		slog.Error(
-			"Unable to update instance configuration",
-			"correlationId", request.CorrelationID,
-			"instanceId", instanceID,
-			"error", err,
-		)
-	} else {
-		c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdatedTopic, Data: request})
-	}
+	status := c.configServices[request.Instance.GetInstanceId()].UpdateInstanceConfiguration(
+		request.CorrelationID,
+		request.Location,
+		request.Instance,
+	)
+	c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateCompleteTopic, Data: status})
 }

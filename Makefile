@@ -13,7 +13,6 @@ TEST_BUILD_DIR  := build/test
 BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
-IMPORT_MAPPING 	:= ../common/common.yaml:github.com/nginx/agent/v3/api/http/common
 
 VERSION = "v3.0.0"
 COMMIT  = $(shell git rev-parse --short HEAD)
@@ -83,22 +82,21 @@ generate: ## Generate proto files and server and client stubs from OpenAPI speci
 	@echo "Generating proto files"
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specifications"
-	@$(GORUN) $(OAPICODEGEN) -generate types,skip-prune -package common ./api/http/common/common.yaml > ./api/http/common/common.gen.go
-	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane -import-mapping=$(IMPORT_MAPPING) ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
-	@$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane -import-mapping=$(IMPORT_MAPPING) ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	$(GOGEN) ./...
 
 local-apk-package: ## Create local apk package
 	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
 
 local-deb-package: ## Create local deb package
 	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
 
 local-rpm-package: ## Create local rpm package
 	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
 
