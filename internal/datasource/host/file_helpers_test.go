@@ -17,7 +17,7 @@ import (
 )
 
 func TestGetPermissions(t *testing.T) {
-	file, err := os.CreateTemp(".", "get_permissions_test.txt")
+	file, err := os.CreateTemp(t.TempDir(), "get_permissions_test.txt")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
 

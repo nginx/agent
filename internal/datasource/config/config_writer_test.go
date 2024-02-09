@@ -26,7 +26,7 @@ import (
 
 func TestWriteConfig(t *testing.T) {
 	ctx := context.TODO()
-	testConf, err := os.CreateTemp(".", "test.conf")
+	testConf, err := os.CreateTemp(t.TempDir(), "test.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 	testConfPath := testConf.Name()
@@ -35,7 +35,7 @@ func TestWriteConfig(t *testing.T) {
 	tenantID, instanceID, err := createTestIDs()
 	require.NoError(t, err)
 
-	tmpDir := os.TempDir()
+	tmpDir := t.TempDir()
 	instanceIDDir := path.Join(tmpDir, instanceID.String())
 	err = os.Mkdir(instanceIDDir, 0o755)
 	require.NoError(t, err)
@@ -47,11 +47,11 @@ func TestWriteConfig(t *testing.T) {
 
 	cachePath := cacheFile.Name()
 
-	nginxConf, err := os.CreateTemp("./", "nginx.conf")
+	nginxConf, err := os.CreateTemp(t.TempDir(), "nginx.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 
-	metricsConf, err := os.CreateTemp("./", "metrics.conf")
+	metricsConf, err := os.CreateTemp(t.TempDir(), "metrics.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 
@@ -218,15 +218,15 @@ func TestComplete(t *testing.T) {
 	configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, instanceID.String())
 	configWriter.cachePath = cachePath
 
-	testConf, err := os.CreateTemp(".", "test.conf")
+	testConf, err := os.CreateTemp(t.TempDir(), "test.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 
-	nginxConf, err := os.CreateTemp("./", "nginx.conf")
+	nginxConf, err := os.CreateTemp(t.TempDir(), "nginx.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 
-	metricsConf, err := os.CreateTemp("./", "metrics.conf")
+	metricsConf, err := os.CreateTemp(t.TempDir(), "metrics.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 
@@ -342,15 +342,15 @@ func TestReadCache(t *testing.T) {
 	fileTime3, err := createProtoTime("2024-01-08T13:22:21Z")
 	require.NoError(t, err)
 
-	testConf, err := os.CreateTemp(".", "test.conf")
+	testConf, err := os.CreateTemp(t.TempDir(), "test.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 
-	nginxConf, err := os.CreateTemp("./", "nginx.conf")
+	nginxConf, err := os.CreateTemp(os.TempDir(), "nginx.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 
-	metricsConf, err := os.CreateTemp("./", "metrics.conf")
+	metricsConf, err := os.CreateTemp(os.TempDir(), "metrics.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 
