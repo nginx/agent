@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/api/http/common"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -61,9 +60,9 @@ func TestDataplaneServer_Process(t *testing.T) {
 
 func TestDataplaneServer_GetInstances(t *testing.T) {
 	ctx := context.TODO()
-	expected := &common.Instance{
+	expected := &dataplane.Instance{
 		InstanceId: toPtr("ae6c58c1-bc92-30c1-a9c9-85591422068e"),
-		Type:       toPtr(common.NGINX),
+		Type:       toPtr(dataplane.NGINX),
 		Version:    toPtr("1.23.1"),
 	}
 
@@ -101,7 +100,7 @@ func TestDataplaneServer_GetInstances(t *testing.T) {
 	err = res.Body.Close()
 	require.NoError(t, err)
 
-	result := []*common.Instance{}
+	result := []*dataplane.Instance{}
 	err = json.Unmarshal(resBody, &result)
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -167,11 +166,107 @@ func TestDataplaneServer_UpdateInstanceConfiguration(t *testing.T) {
 				require.NoError(tt, err)
 				assert.NotEmpty(tt, result.CorrelationId)
 			} else {
-				result := common.ErrorResponse{}
+				result := dataplane.ErrorResponse{}
 				err = json.Unmarshal(resBody, &result)
 				require.NoError(tt, err)
 				assert.Equal(tt, test.expectedMessage, result.Message)
 			}
+		})
+	}
+}
+
+func TestDataplaneServer_GetInstanceConfigurationStatus(t *testing.T) {
+	ctx := context.TODO()
+	instanceID := "ae6c58c1-bc92-30c1-a9c9-85591422068e"
+	correlationID := "dfsbhj6-bc92-30c1-a9c9-85591422068e"
+	status := &instances.ConfigurationStatus{
+		InstanceId:    instanceID,
+		CorrelationId: correlationID,
+		Status:        instances.Status_SUCCESS,
+		Message:       "Success",
+	}
+	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
+
+	dataplaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
+	dataplaneServer.instances = []*instances.Instance{instance}
+
+	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	err := messagePipe.Register(100, []bus.Plugin{dataplaneServer})
+	require.NoError(t, err)
+	go messagePipe.Run()
+
+	time.Sleep(10 * time.Millisecond)
+
+	tcpAddr, ok := dataplaneServer.server.Addr().(*net.TCPAddr)
+
+	assert.True(t, ok)
+	assert.NotNil(t, tcpAddr.Port)
+
+	dataplaneServer.configurationStatues = map[string]*instances.ConfigurationStatus{
+		instanceID: status,
+	}
+
+	// Test happy path
+	res, err := performGetInstanceConfigurationStatusRequest(ctx, dataplaneServer, instanceID)
+	require.NoError(t, err)
+	defer res.Body.Close()
+	assert.Equal(t, 200, res.StatusCode)
+
+	resBody, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+
+	result := &dataplane.ConfigurationStatus{}
+	err = json.Unmarshal(resBody, &result)
+	require.NoError(t, err)
+	assert.Equal(t, toPtr(status.GetCorrelationId()), result.CorrelationId)
+	assert.Equal(t, toPtr(status.GetMessage()), result.Message)
+	assert.Equal(t, toPtr(dataplane.SUCCESS), result.Status)
+	assert.NotNil(t, result.LastUpdated)
+
+	// Test configuration status not found
+	res, err = performGetInstanceConfigurationStatusRequest(ctx, dataplaneServer, "unknown-instance-id")
+	require.NoError(t, err)
+	defer res.Body.Close()
+	assert.Equal(t, 404, res.StatusCode)
+
+	resBody, err = io.ReadAll(res.Body)
+	require.NoError(t, err)
+
+	result2 := dataplane.ErrorResponse{}
+	err = json.Unmarshal(resBody, &result2)
+	require.NoError(t, err)
+	assert.Equal(t, "Unable to find configuration status", result2.Message)
+}
+
+func TestDataplaneServer_MapStatusEnums(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected dataplane.ConfigurationStatusType
+	}{
+		{
+			name:     "Success type",
+			input:    "SUCCESS",
+			expected: dataplane.SUCCESS,
+		}, {
+			name:     "In progress type",
+			input:    "IN_PROGRESS",
+			expected: dataplane.INPROGESS,
+		}, {
+			name:     "Failed type",
+			input:    "FAILED",
+			expected: dataplane.FAILED,
+		}, {
+			name:     "Rollback Failed type",
+			input:    "ROLLBACK_FAILED",
+			expected: dataplane.ROLLBACKFAILED,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			result := mapStatusEnums(test.input)
+			assert.Equal(t, toPtr(test.expected), result)
 		})
 	}
 }
@@ -191,6 +286,30 @@ func performPutRequest(
 	if err != nil {
 		return &http.Response{}, err
 	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+
+	return client.Do(req)
+}
+
+func performGetInstanceConfigurationStatusRequest(
+	ctx context.Context,
+	dataplaneServer *DataplaneServer,
+	instanceID string,
+) (*http.Response, error) {
+	addr, ok := dataplaneServer.server.Addr().(*net.TCPAddr)
+	if !ok {
+		return nil, fmt.Errorf("unable to get server address")
+	}
+
+	target := "http://" + addr.AddrPort().String() +
+		"/api/v1/instances/" + instanceID + "/configurations/status"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return &http.Response{}, err
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
