@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type FakeDataplaneConfig struct{}
+type FakeDataPlaneConfig struct{}
 
 // nolint: unparam // always returns nil but is a test
-func (*FakeDataplaneConfig) ParseConfig(_ *instances.Instance) (any, error) {
+func (*FakeDataPlaneConfig) ParseConfig(_ *instances.Instance) (any, error) {
 	return &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 	}, nil
@@ -29,8 +29,8 @@ func TestConfig_ParseConfig(t *testing.T) {
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 	}
 
-	fakeDataplaneConfig := &FakeDataplaneConfig{}
-	result, err := fakeDataplaneConfig.ParseConfig(&instances.Instance{Type: instances.Type_NGINX})
+	fakeDataPlaneConfig := &FakeDataPlaneConfig{}
+	result, err := fakeDataPlaneConfig.ParseConfig(&instances.Instance{Type: instances.Type_NGINX})
 
 	require.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)

@@ -166,7 +166,7 @@ func TestWriteConfig(t *testing.T) {
 			configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, instanceID.String())
 			assert.NotNil(t, configWriter)
 			configWriter.cachePath = cachePath
-			configWriter.previouseFileCache = previousFileCache
+			configWriter.previousFileCache = previousFileCache
 
 			err = writeFile(fileContent, testConfPath)
 			require.NoError(t, err)
@@ -295,9 +295,9 @@ func TestDataPlaneConfig(t *testing.T) {
 	configWriter.cachePath = cachePath
 	nginxConfig := config.NewNginx()
 
-	configWriter.SetDataplaneConfig(nginxConfig)
+	configWriter.SetDataPlaneConfig(nginxConfig)
 
-	assert.Equal(t, configWriter.dataplaneConfig, nginxConfig)
+	assert.Equal(t, configWriter.dataPlaneConfig, nginxConfig)
 	defer helpers.RemoveFileWithErrorCheck(t, configWriter.cachePath)
 }
 
