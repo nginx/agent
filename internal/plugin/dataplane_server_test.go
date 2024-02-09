@@ -273,12 +273,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	// Test happy path
 	res, err := performGetInstanceConfigurationStatusRequest(ctx, dataPlaneServer, instanceID)
 	require.NoError(t, err)
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			assert.Fail(t, "Failed to close body")
-		}
-	}(res.Body)
+	defer res.Body.Close()
 	assert.Equal(t, 200, res.StatusCode)
 
 	resBody, err := io.ReadAll(res.Body)
@@ -295,7 +290,6 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	// Test configuration status not found
 	res, err = performGetInstanceConfigurationStatusRequest(ctx, dataPlaneServer, "unknown-instance-id")
 	require.NoError(t, err)
-	defer res.Body.Close()
 	assert.Equal(t, 404, res.StatusCode)
 
 	resBody, err = io.ReadAll(res.Body)
@@ -305,6 +299,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	err = json.Unmarshal(resBody, &result2)
 	require.NoError(t, err)
 	assert.Equal(t, "Unable to find configuration status", result2.Message)
+	defer res.Body.Close()
 }
 
 func TestDataPlaneServer_MapStatusEnums(t *testing.T) {
