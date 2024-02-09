@@ -18,8 +18,8 @@ import (
 	"github.com/nginx/agent/v3/api/http/common"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/internal/service"
 
 	sloggin "github.com/samber/slog-gin"
 )
@@ -29,32 +29,19 @@ type (
 		Message string `json:"message,omitempty"`
 	}
 
-	DataplaneServerParameters struct {
-		Host            string
-		Port            int
-		Logger          *slog.Logger
-		instanceService service.InstanceServiceInterface
-	}
-
 	DataplaneServer struct {
-		address         string
-		logger          *slog.Logger
-		instanceService service.InstanceServiceInterface
-		instances       []*instances.Instance
-		messagePipe     bus.MessagePipeInterface
-		server          net.Listener
+		address     string
+		logger      *slog.Logger
+		instances   []*instances.Instance
+		messagePipe bus.MessagePipeInterface
+		server      net.Listener
 	}
 )
 
-func NewDataplaneServer(dataplaneServerParameters *DataplaneServerParameters) *DataplaneServer {
-	if dataplaneServerParameters.instanceService == nil {
-		dataplaneServerParameters.instanceService = service.NewInstanceService()
-	}
-
+func NewDataplaneServer(agentConfig *config.Config, logger *slog.Logger) *DataplaneServer {
 	return &DataplaneServer{
-		address:         fmt.Sprintf("%s:%d", dataplaneServerParameters.Host, dataplaneServerParameters.Port),
-		logger:          dataplaneServerParameters.Logger,
-		instanceService: dataplaneServerParameters.instanceService,
+		address: fmt.Sprintf("%s:%d", agentConfig.DataplaneAPI.Host, agentConfig.DataplaneAPI.Port),
+		logger:  logger,
 	}
 }
 
