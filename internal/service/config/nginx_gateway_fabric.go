@@ -21,6 +21,8 @@ func (*NginxGatewayFabric) ParseConfig(_ *instances.Instance) (any, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (*NginxGatewayFabric) SetConfigContext(_ any) {}
+
 func (*NginxGatewayFabric) Validate(_ *instances.Instance) error {
 	return fmt.Errorf("not implemented")
 }

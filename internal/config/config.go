@@ -19,17 +19,21 @@ import (
 )
 
 const (
-	ConfigFileName                             = "nginx-agent.conf"
-	EnvPrefix                                  = "NGINX_AGENT"
-	ConfigPathKey                              = "path"
-	VersionConfigKey                           = "version"
-	LogLevelConfigKey                          = "log_level"
-	LogPathConfigKey                           = "log_path"
-	ProcessMonitorMonitoringFrequencyConfigKey = "process_monitor_monitoring_frequency"
-	DataplaneAPIHostConfigKey                  = "dataplane_api_host"
-	DataplaneAPIPortConfigKey                  = "dataplane_api_port"
-	ClientTimeoutConfigKey                     = "client_timeout"
-	ConfigDirectoriesConfigKey                 = "config_dirs"
+	ConfigFileName                                      = "nginx-agent.conf"
+	EnvPrefix                                           = "NGINX_AGENT"
+	ConfigPathKey                                       = "path"
+	VersionConfigKey                                    = "version"
+	LogLevelConfigKey                                   = "log_level"
+	LogPathConfigKey                                    = "log_path"
+	ProcessMonitorMonitoringFrequencyConfigKey          = "process_monitor_monitoring_frequency"
+	DataplaneAPIHostConfigKey                           = "dataplane_api_host"
+	DataplaneAPIPortConfigKey                           = "dataplane_api_port"
+	DataplaneConfigNginxReloadMonitoringPeriodConfigKey = "dataplane_config_nginx_reload_monitoring_period"
+	DataplaneConfigNginxTreatWarningsAsErrorsConfigKey  = "dataplane_config_nginx_treat_warnings_as_error"
+	ClientTimeoutConfigKey                              = "client_timeout"
+	ConfigDirectoriesConfigKey                          = "config_dirs"
+
+	DefaultDataplaneConfigNginxReloadMonitoringPeriod = 10 * time.Second
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
@@ -70,6 +74,7 @@ func GetConfig() *Config {
 		Log:                getLog(),
 		ProcessMonitor:     getProcessMonitor(),
 		DataplaneAPI:       getDataplaneAPI(),
+		DataplaneConfig:    getDataplaneConfig(),
 		Client:             getClient(),
 		ConfigDir:          getConfigDir(),
 		AllowedDirectories: []string{},
@@ -98,6 +103,7 @@ func registerFlags() {
 	viperInstance.AutomaticEnv()
 
 	fs := RootCommand.Flags()
+
 	fs.String(
 		LogLevelConfigKey,
 		"info",
@@ -111,14 +117,29 @@ func registerFlags() {
 		`The path to output log messages to. 
 		If the default path doesn't exist, log messages are output to stdout/stderr.`,
 	)
+
 	fs.Duration(
 		ProcessMonitorMonitoringFrequencyConfigKey,
 		time.Minute,
 		"How often the NGINX Agent will check for process changes.",
 	)
+
 	fs.String(DataplaneAPIHostConfigKey, "", "The host used by the Dataplane API.")
 	fs.Int(DataplaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
+
+	fs.Duration(
+		DataplaneConfigNginxReloadMonitoringPeriodConfigKey,
+		DefaultDataplaneConfigNginxReloadMonitoringPeriod,
+		"The amount of time to monitor NGINX after a reload of configuration.",
+	)
+	fs.Bool(
+		DataplaneConfigNginxTreatWarningsAsErrorsConfigKey,
+		true,
+		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
+	)
+
 	fs.Duration(ClientTimeoutConfigKey, time.Minute, "Client timeout")
+
 	fs.String(ConfigDirectoriesConfigKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules",
 		"Defines the paths that you want to grant nginx-agent read/write access to."+
 			" This key is formatted as a string and follows Unix PATH format")
@@ -200,6 +221,15 @@ func getDataplaneAPI() DataplaneAPI {
 	return DataplaneAPI{
 		Host: viperInstance.GetString(DataplaneAPIHostConfigKey),
 		Port: viperInstance.GetInt(DataplaneAPIPortConfigKey),
+	}
+}
+
+func getDataplaneConfig() DataplaneConfig {
+	return DataplaneConfig{
+		Nginx: NginxDataplaneConfig{
+			ReloadMonitoringPeriod: viperInstance.GetDuration(DataplaneConfigNginxReloadMonitoringPeriodConfigKey),
+			TreatWarningsAsError:   viperInstance.GetBool(DataplaneConfigNginxTreatWarningsAsErrorsConfigKey),
+		},
 	}
 }
 

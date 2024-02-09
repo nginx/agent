@@ -33,6 +33,11 @@ type FakeDataplaneConfig struct {
 	reloadReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SetConfigContextStub        func(any)
+	setConfigContextMutex       sync.RWMutex
+	setConfigContextArgsForCall []struct {
+		arg1 any
+	}
 	ValidateStub        func(*instances.Instance) error
 	validateMutex       sync.RWMutex
 	validateArgsForCall []struct {
@@ -173,6 +178,38 @@ func (fake *FakeDataplaneConfig) ReloadReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeDataplaneConfig) SetConfigContext(arg1 any) {
+	fake.setConfigContextMutex.Lock()
+	fake.setConfigContextArgsForCall = append(fake.setConfigContextArgsForCall, struct {
+		arg1 any
+	}{arg1})
+	stub := fake.SetConfigContextStub
+	fake.recordInvocation("SetConfigContext", []interface{}{arg1})
+	fake.setConfigContextMutex.Unlock()
+	if stub != nil {
+		fake.SetConfigContextStub(arg1)
+	}
+}
+
+func (fake *FakeDataplaneConfig) SetConfigContextCallCount() int {
+	fake.setConfigContextMutex.RLock()
+	defer fake.setConfigContextMutex.RUnlock()
+	return len(fake.setConfigContextArgsForCall)
+}
+
+func (fake *FakeDataplaneConfig) SetConfigContextCalls(stub func(any)) {
+	fake.setConfigContextMutex.Lock()
+	defer fake.setConfigContextMutex.Unlock()
+	fake.SetConfigContextStub = stub
+}
+
+func (fake *FakeDataplaneConfig) SetConfigContextArgsForCall(i int) any {
+	fake.setConfigContextMutex.RLock()
+	defer fake.setConfigContextMutex.RUnlock()
+	argsForCall := fake.setConfigContextArgsForCall[i]
+	return argsForCall.arg1
+}
+
 func (fake *FakeDataplaneConfig) Validate(arg1 *instances.Instance) error {
 	fake.validateMutex.Lock()
 	ret, specificReturn := fake.validateReturnsOnCall[len(fake.validateArgsForCall)]
@@ -241,6 +278,8 @@ func (fake *FakeDataplaneConfig) Invocations() map[string][][]interface{} {
 	defer fake.parseConfigMutex.RUnlock()
 	fake.reloadMutex.RLock()
 	defer fake.reloadMutex.RUnlock()
+	fake.setConfigContextMutex.RLock()
+	defer fake.setConfigContextMutex.RUnlock()
 	fake.validateMutex.RLock()
 	defer fake.validateMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

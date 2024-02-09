@@ -7,10 +7,13 @@ package config
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
+	re "regexp"
 	"strings"
+	"time"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
@@ -18,6 +21,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/datasource/host"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
+	"github.com/nginx/agent/v3/internal/datasource/nginx"
 )
 
 const (
@@ -25,6 +29,16 @@ const (
 		" \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
 	ltsvArg                           = "ltsv"
 	defaultNumberOfDirectiveArguments = 2
+	logTailerChannelSize              = 1024
+)
+
+var (
+	reloadErrorList = []*re.Regexp{
+		re.MustCompile(`.*\[emerg\].*`),
+		re.MustCompile(`.*\[alert\].*`),
+		re.MustCompile(`.*\[crit\].*`),
+	}
+	warningRegex = re.MustCompile(`.*\[warn\].*`)
 )
 
 type (
@@ -32,12 +46,14 @@ type (
 )
 
 type Nginx struct {
-	executor exec.ExecInterface
+	executor      exec.ExecInterface
+	configContext *model.NginxConfigContext
 }
 
 func NewNginx() *Nginx {
 	return &Nginx{
-		executor: &exec.Exec{},
+		configContext: &model.NginxConfigContext{},
+		executor:      &exec.Exec{},
 	}
 }
 
@@ -66,6 +82,12 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 		AccessLogs: accessLogs,
 		ErrorLogs:  errorLogs,
 	}, nil
+}
+
+func (n *Nginx) SetConfigContext(configContext any) {
+	if newConfigContext, ok := configContext.(*model.NginxConfigContext); ok {
+		n.configContext = newConfigContext
+	}
 }
 
 func getLogs(payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog, error) {
@@ -115,14 +137,98 @@ func (n *Nginx) Validate(instance *instances.Instance) error {
 }
 
 func (n *Nginx) Reload(instance *instances.Instance) error {
+	var errorsFound []string
+
 	exePath := instance.GetMeta().GetNginxMeta().GetExePath()
+	errorLogs := n.configContext.ErrorLogs
+
+	logErrorChannel := make(chan string, len(errorLogs))
+	defer close(logErrorChannel)
+
+	go n.monitorLogs(errorLogs, logErrorChannel)
+
 	out, err := n.executor.RunCmd(exePath, "-s", "reload")
 	if err != nil {
 		return fmt.Errorf("failed to reload NGINX %w: %s", err, out)
 	}
 	slog.Info("NGINX reloaded")
 
+	numberOfExpectedMessages := len(errorLogs)
+
+	for i := 0; i < numberOfExpectedMessages; i++ {
+		err := <-logErrorChannel
+		slog.Debug("Message received in logErrorChannel", "error", err)
+		if err != "" {
+			errorsFound = append(errorsFound, err)
+		}
+	}
+
+	slog.Info("Finished monitoring post reload")
+
+	if len(errorsFound) > 0 {
+		return fmt.Errorf(errorsFound[0])
+	}
+
 	return nil
+}
+
+func (n *Nginx) monitorLogs(errorLogs []*model.ErrorLog, errorChannel chan string) {
+	if len(errorLogs) == 0 {
+		slog.Info("No NGINX error logs found to monitor")
+		return
+	}
+
+	for _, errorLog := range errorLogs {
+		go n.tailLog(errorLog.Name, errorChannel)
+	}
+}
+
+func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
+	t, err := nginx.NewTailer(logFile)
+	if err != nil {
+		slog.Error("Unable to tail error log after NGINX reload", "logFile", logFile, "error", err)
+		// this is not an error in the logs, ignoring tailing
+		errorChannel <- ""
+
+		return
+	}
+
+	// TODO: get monitoring period from configuration
+	ctx, cncl := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cncl()
+
+	slog.Debug("Monitoring NGINX error log file for any errors", "file", logFile)
+
+	data := make(chan string, logTailerChannelSize)
+	go t.Tail(ctx, data)
+
+	for {
+		select {
+		case d := <-data:
+			if n.doesLogLineContainError(d) {
+				errorChannel <- d
+				return
+			}
+		case <-ctx.Done():
+			errorChannel <- ""
+			return
+		}
+	}
+}
+
+func (n *Nginx) doesLogLineContainError(line string) bool {
+	// TODO: get TreatWarningsAsErrors from configuration
+	if warningRegex.MatchString(line) {
+		return true
+	}
+
+	for _, errorRegex := range reloadErrorList {
+		if errorRegex.MatchString(line) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func validateConfigCheckResponse(out []byte) error {

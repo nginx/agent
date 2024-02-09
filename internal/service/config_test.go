@@ -12,19 +12,25 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/internal/service/config"
 	"github.com/nginx/agent/v3/internal/service/config/configfakes"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConfigService_SetConfigContext(t *testing.T) {
-	expectedConfigContext := &model.NginxConfigContext{
+	configContext := &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 	}
 
-	configService := NewConfigService()
-	configService.SetConfigContext(expectedConfigContext)
+	fakeDataplaneConfig := &configfakes.FakeDataplaneConfig{}
 
-	assert.Equal(t, expectedConfigContext, configService.configContext)
+	configService := NewConfigService()
+	configService.dataplaneConfigServices = map[instances.Type]config.DataplaneConfig{
+		instances.Type_NGINX: fakeDataplaneConfig,
+	}
+	configService.SetConfigContext(configContext)
+
+	assert.Equal(t, 1, fakeDataplaneConfig.SetConfigContextCallCount())
 }
 
 func TestConfigService_ParseInstanceConfiguration(t *testing.T) {

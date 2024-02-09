@@ -24,7 +24,6 @@ type ConfigServiceInterface interface {
 }
 
 type ConfigService struct {
-	configContext           any
 	dataplaneConfigServices map[instances.Type]config.DataplaneConfig
 }
 
@@ -41,7 +40,9 @@ func NewConfigService() *ConfigService {
 }
 
 func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
-	cs.configContext = instanceConfigContext
+	for _, dataplaneConfigService := range cs.dataplaneConfigServices {
+		dataplaneConfigService.SetConfigContext(instanceConfigContext)
+	}
 }
 
 func (*ConfigService) UpdateInstanceConfiguration(_, _ string, _ *instances.Instance) error {
