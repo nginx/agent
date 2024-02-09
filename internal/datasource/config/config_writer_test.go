@@ -8,11 +8,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	helpers "github.com/nginx/agent/v3/test"
 	"os"
 	"path"
 	"testing"
 	"time"
+
+	helpers "github.com/nginx/agent/v3/test"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"

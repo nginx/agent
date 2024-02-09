@@ -6,11 +6,12 @@
 package config
 
 import (
-	helpers "github.com/nginx/agent/v3/test"
 	"os"
 	"path"
 	"testing"
 	"time"
+
+	helpers "github.com/nginx/agent/v3/test"
 
 	"github.com/stretchr/testify/require"
 

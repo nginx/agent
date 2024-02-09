@@ -9,9 +9,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	helpers "github.com/nginx/agent/v3/test"
 	"os"
 	"testing"
+
+	helpers "github.com/nginx/agent/v3/test"
 
 	"github.com/stretchr/testify/require"
 

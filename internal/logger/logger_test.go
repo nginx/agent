@@ -5,11 +5,12 @@
 package logger
 
 import (
-	helpers "github.com/nginx/agent/v3/test"
 	"io"
 	"log/slog"
 	"os"
 	"testing"
+
+	helpers "github.com/nginx/agent/v3/test"
 
 	"github.com/stretchr/testify/require"
 
