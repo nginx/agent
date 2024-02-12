@@ -20,18 +20,10 @@ type Instance struct {
 	instanceService service.InstanceServiceInterface
 }
 
-type InstanceParameters struct {
-	instanceService service.InstanceServiceInterface
-}
-
-func NewInstance(instanceMonitorParameters *InstanceParameters) *Instance {
-	if instanceMonitorParameters.instanceService == nil {
-		instanceMonitorParameters.instanceService = service.NewInstanceService()
-	}
-
+func NewInstance() *Instance {
 	return &Instance{
 		instances:       []*instances.Instance{},
-		instanceService: instanceMonitorParameters.instanceService,
+		instanceService: service.NewInstanceService(),
 	}
 }
 

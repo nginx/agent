@@ -11,31 +11,25 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/datasource/host"
 	"github.com/nginx/agent/v3/internal/model"
 )
 
 type GetProcessesFunc func() ([]*model.Process, error)
 
-type ProcessMonitorParameters struct {
-	MonitoringFrequency time.Duration
+type ProcessMonitor struct {
+	monitoringFrequency time.Duration
+	processes           []*model.Process
+	messagePipe         bus.MessagePipeInterface
 	getProcessesFunc    GetProcessesFunc
 }
 
-type ProcessMonitor struct {
-	params      *ProcessMonitorParameters
-	processes   []*model.Process
-	messagePipe bus.MessagePipeInterface
-}
-
-func NewProcessMonitor(params *ProcessMonitorParameters) *ProcessMonitor {
-	if params.getProcessesFunc == nil {
-		params.getProcessesFunc = host.GetProcesses
-	}
-
+func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
 	return &ProcessMonitor{
-		params:    params,
-		processes: []*model.Process{},
+		monitoringFrequency: agentConfig.ProcessMonitor.MonitoringFrequency,
+		processes:           []*model.Process{},
+		getProcessesFunc:    host.GetProcesses,
 	}
 }
 
@@ -59,9 +53,9 @@ func (*ProcessMonitor) Subscriptions() []string {
 }
 
 func (pm *ProcessMonitor) run(ctx context.Context) {
-	slog.Debug("Process monitor started", "monitoringPeriod", pm.params.MonitoringFrequency)
+	slog.Debug("Process monitor started", "monitoringPeriod", pm.monitoringFrequency)
 
-	processes, err := pm.params.getProcessesFunc()
+	processes, err := pm.getProcessesFunc()
 	if err == nil {
 		pm.processes = processes
 		pm.messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
@@ -69,14 +63,14 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 
 	slog.Debug("Processes updated")
 
-	ticker := time.NewTicker(pm.params.MonitoringFrequency)
+	ticker := time.NewTicker(pm.monitoringFrequency)
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			processes, err := pm.params.getProcessesFunc()
+			processes, err := pm.getProcessesFunc()
 			if err != nil {
 				slog.Error("Unable to get process information", "error", err)
 
