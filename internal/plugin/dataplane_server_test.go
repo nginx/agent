@@ -22,18 +22,12 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
-	"github.com/nginx/agent/v3/internal/service"
-	"github.com/nginx/agent/v3/internal/service/servicefakes"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDataPlaneServer_Init(t *testing.T) {
-	dataPlaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Host:            "",
-		Port:            0,
-		Logger:          slog.Default(),
-		instanceService: service.NewInstanceService(),
-	})
+	dataPlaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
@@ -48,12 +42,7 @@ func TestDataPlaneServer_Init(t *testing.T) {
 }
 
 func TestDataPlaneServer_Process(t *testing.T) {
-	dataPlaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Host:            "",
-		Port:            0,
-		Logger:          slog.Default(),
-		instanceService: service.NewInstanceService(),
-	})
+	dataPlaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
@@ -112,15 +101,7 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 		Version:    "1.23.1",
 	}
 
-	instanceService := &servicefakes.FakeInstanceServiceInterface{}
-
-	dataPlaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Host:            "",
-		Port:            0,
-		Logger:          slog.Default(),
-		instanceService: instanceService,
-	})
-
+	dataPlaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(ctx, 100)
@@ -162,16 +143,7 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	data := []byte(`{"location": "http://file-server.com"}`)
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 
-	instanceService := &servicefakes.FakeInstanceServiceInterface{}
-	instanceService.GetInstancesReturns([]*instances.Instance{instance})
-
-	dataPlaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Host:            "",
-		Port:            0,
-		Logger:          slog.Default(),
-		instanceService: instanceService,
-	})
-
+	dataPlaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
@@ -244,15 +216,8 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	}
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 
-	instanceService := &servicefakes.FakeInstanceServiceInterface{}
-	instanceService.GetInstancesReturns([]*instances.Instance{instance})
-
-	dataPlaneServer := NewDataplaneServer(&DataplaneServerParameters{
-		Host:            "",
-		Port:            0,
-		Logger:          slog.Default(),
-		instanceService: instanceService,
-	})
+	dataPlaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
+	dataPlaneServer.instances = []*instances.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})

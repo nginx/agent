@@ -11,17 +11,17 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/internal/service"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	sloggin "github.com/samber/slog-gin"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type (
@@ -29,17 +29,9 @@ type (
 		Message string `json:"message,omitempty"`
 	}
 
-	DataplaneServerParameters struct {
-		Host            string
-		Port            int
-		Logger          *slog.Logger
-		instanceService service.InstanceServiceInterface
-	}
-
 	DataplaneServer struct {
 		address              string
 		logger               *slog.Logger
-		instanceService      service.InstanceServiceInterface
 		instances            []*instances.Instance
 		configurationStatues map[string]*instances.ConfigurationStatus
 		messagePipe          bus.MessagePipeInterface
@@ -47,15 +39,12 @@ type (
 	}
 )
 
-func NewDataplaneServer(dataplaneServerParameters *DataplaneServerParameters) *DataplaneServer {
-	if dataplaneServerParameters.instanceService == nil {
-		dataplaneServerParameters.instanceService = service.NewInstanceService()
-	}
+func NewDataplaneServer(agentConfig *config.Config, logger *slog.Logger) *DataplaneServer {
+	address := net.JoinHostPort(agentConfig.DataplaneAPI.Host, strconv.Itoa(agentConfig.DataplaneAPI.Port))
 
 	return &DataplaneServer{
-		address:              fmt.Sprintf("%s:%d", dataplaneServerParameters.Host, dataplaneServerParameters.Port),
-		logger:               dataplaneServerParameters.Logger,
-		instanceService:      dataplaneServerParameters.instanceService,
+		address:              address,
+		logger:               logger,
 		configurationStatues: make(map[string]*instances.ConfigurationStatus),
 	}
 }
