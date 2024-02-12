@@ -270,7 +270,7 @@ func TestDataPlaneConfig(t *testing.T) {
 	configWriter.SetDataPlaneConfig(nginxConfig)
 
 	assert.Equal(t, configWriter.dataPlaneConfig, nginxConfig)
-	assert.NoError(t, os.Remove(tempDir))
+	require.NoError(t, os.Remove(tempDir))
 }
 
 func TestWriteFile(t *testing.T) {
