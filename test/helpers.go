@@ -12,13 +12,15 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func CreateFileWithErrorCheck(t *testing.T, dir, fileName string) *os.File {
 	t.Helper()
 	testConf, err := os.CreateTemp(dir, fileName)
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	return testConf
 }
 
