@@ -35,6 +35,8 @@ func RemoveFileWithErrorCheck(t *testing.T, fileName string) {
 func CreateProtoTime(t *testing.T, timeString string) *timestamppb.Timestamp {
 	t.Helper()
 	newTime, err := time.Parse(time.RFC3339, timeString)
+	require.NoError(t, err)
+
 	protoTime := timestamppb.New(newTime)
 	if err != nil {
 		assert.Fail(t, fmt.Sprintf("failed on creating timestamp %s", protoTime))
