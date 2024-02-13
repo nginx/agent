@@ -116,6 +116,7 @@ func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 			InstanceId: &instance.InstanceId,
 			Type:       toPtr(mapTypeEnums(instance.GetType().String())),
 			Version:    &instance.Version,
+			Meta:       toPtr(convertMeta(instance.GetMeta())),
 		})
 	}
 
@@ -223,6 +224,25 @@ func mapStatusEnums(typeString string) *dataplane.ConfigurationStatusType {
 	}
 
 	return toPtr(dataplane.INPROGESS)
+}
+
+func convertMeta(meta *instances.Meta) dataplane.Instance_Meta {
+	apiMeta := dataplane.Instance_Meta{}
+
+	if nginxMeta := meta.GetNginxMeta(); nginxMeta != nil {
+		err := apiMeta.MergeNginxMeta(
+			dataplane.NginxMeta{
+				Type:     dataplane.NGINXMETA,
+				ConfPath: &nginxMeta.ConfigPath,
+				ExePath:  &nginxMeta.ExePath,
+			},
+		)
+		if err != nil {
+			slog.Warn("Unable to merge nginx meta", "error", err)
+		}
+	}
+
+	return apiMeta
 }
 
 func toPtr[T any](value T) *T {

@@ -95,6 +95,7 @@ type MetaType string
 // NginxMeta defines model for NginxMeta.
 type NginxMeta struct {
 	ConfPath *string `json:"conf_path,omitempty"`
+	ExePath  *string `json:"exe_path,omitempty"`
 
 	// Type The type of metadata
 	Type MetaType `json:"type"`

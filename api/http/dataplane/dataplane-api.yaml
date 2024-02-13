@@ -99,6 +99,8 @@ components:
           $ref: "#/components/schemas/MetaType"
         conf_path:
           type: string
+        exe_path:
+          type: string
     Instance:
       type: object
       properties:
