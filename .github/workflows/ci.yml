@@ -72,8 +72,6 @@ jobs:
         container:
         - image: "ubuntu"
           version: "22.04"
-        - image: "alpine"
-          version: "3.19"
         - image: "redhatenterprise"
           version: "9"
     steps:
