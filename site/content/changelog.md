@@ -2,7 +2,7 @@
 title: "Changelog"
 weight: 1200
 toc: true
-docs: "DOCS-000"
+docs: "DOCS-1093"
 ---
 
 {{< note >}}You can find the full changelog, contributor list and assets for NGINX Agent in the [GitHub repository](https://github.com/nginx/agent/releases).{{< /note >}}
