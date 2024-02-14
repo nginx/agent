@@ -6,7 +6,6 @@
 package test
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -15,30 +14,40 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func GetFileCache(files ...*os.File) map[string]*instances.File {
+func GetFileCache(files ...*os.File) (map[string]*instances.File, error) {
 	cache := make(map[string]*instances.File)
 	for _, file := range files {
+		lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")
+		if err != nil {
+			return nil, err
+		}
+
 		cache[file.Name()] = &instances.File{
-			LastModified: CreateProtoTime("2024-01-08T13:22:23Z"),
+			LastModified: lastModified,
 			Path:         file.Name(),
 			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
 		}
 	}
 
-	return cache
+	return cache, nil
 }
 
-func GetFiles(files ...*os.File) *instances.Files {
+func GetFiles(files ...*os.File) (*instances.Files, error) {
 	instanceFiles := &instances.Files{}
+
 	for _, file := range files {
+		lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")
+		if err != nil {
+			return nil, err
+		}
 		instanceFiles.Files = append(instanceFiles.GetFiles(), &instances.File{
-			LastModified: CreateProtoTime("2024-01-08T13:22:23Z"),
+			LastModified: lastModified,
 			Path:         file.Name(),
 			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
 		})
 	}
 
-	return instanceFiles
+	return instanceFiles, nil
 }
 
 func GetFileDownloadResponse(path, instanceID string, content []byte) *instances.FileDownloadResponse {
@@ -50,16 +59,12 @@ func GetFileDownloadResponse(path, instanceID string, content []byte) *instances
 	}
 }
 
-func CreateProtoTime(timeString string) *timestamppb.Timestamp {
+func CreateProtoTime(timeString string) (*timestamppb.Timestamp, error) {
 	newTime, err := time.Parse(time.RFC3339, timeString)
 	if err != nil {
 		slog.Error("failed to parse time")
+		return timestamppb.Now(), err
 	}
 
-	protoTime := timestamppb.New(newTime)
-	if err != nil {
-		slog.Error(fmt.Sprintf("failed on creating timestamp %s", protoTime))
-	}
-
-	return protoTime
+	return timestamppb.New(newTime), nil
 }

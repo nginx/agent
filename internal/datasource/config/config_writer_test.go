@@ -43,6 +43,9 @@ func TestWriteConfig(t *testing.T) {
 
 	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
+	files, err := helpers.GetFiles(nginxConf, testConf, metricsConf)
+	require.NoError(t, err)
+
 	tests := []struct {
 		name           string
 		metaDataReturn *instances.Files
@@ -51,13 +54,13 @@ func TestWriteConfig(t *testing.T) {
 	}{
 		{
 			name:           "file needs updating",
-			metaDataReturn: helpers.GetFiles(nginxConf, testConf, metricsConf),
+			metaDataReturn: files,
 			getFileReturn:  helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
 			shouldBeEqual:  false,
 		},
 		{
 			name:           "file doesn't need updating",
-			metaDataReturn: helpers.GetFiles(nginxConf, testConf, metricsConf),
+			metaDataReturn: files,
 			getFileReturn:  helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
 			shouldBeEqual:  true,
 		},
@@ -65,7 +68,9 @@ func TestWriteConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			previousFileCache := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+			previousFileCache, err := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+			require.NoError(t, err)
+
 			fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
@@ -81,13 +86,16 @@ func TestWriteConfig(t *testing.T) {
 			assert.FileExists(t, testConfPath)
 
 			if !test.shouldBeEqual {
-				previousFileCache[nginxConf.Name()].LastModified = helpers.CreateProtoTime("2024-01-09T13:22:21Z")
+				modified, protoErr := helpers.CreateProtoTime("2024-01-09T13:22:21Z")
+				require.NoError(t, protoErr)
+				previousFileCache[nginxConf.Name()].LastModified = modified
 			}
 
 			err = configWriter.Write(ctx, filesURL, tenantID)
 			require.NoError(t, err)
 
-			defaults := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+			defaults, err := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+			require.NoError(t, err)
 
 			equalityCheck := reflect.DeepEqual(defaults, configWriter.currentFileCache)
 			assert.Equal(t, test.shouldBeEqual, equalityCheck)
@@ -130,8 +138,11 @@ func TestComplete(t *testing.T) {
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
 
-	cacheData := helpers.GetFileCache(testConf, nginxConf, metricsConf)
-	configWriter.currentFileCache = helpers.GetFileCache(testConf, metricsConf)
+	cacheData, err := helpers.GetFileCache(testConf, nginxConf, metricsConf)
+	require.NoError(t, err)
+
+	configWriter.currentFileCache, err = helpers.GetFileCache(testConf, metricsConf)
+	require.NoError(t, err)
 
 	configWriter.cachePath = cachePath
 
@@ -201,7 +212,8 @@ func TestReadCache(t *testing.T) {
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
 
-	cacheData := helpers.GetFileCache(testConf, nginxConf, metricsConf)
+	cacheData, err := helpers.GetFileCache(testConf, nginxConf, metricsConf)
+	require.NoError(t, err)
 
 	helpers.CreateCacheFiles(t, cachePath, cacheData)
 
@@ -293,8 +305,11 @@ func TestIsFilePathValid(t *testing.T) {
 }
 
 func TestDoesFileRequireUpdate(t *testing.T) {
-	fileTime1 := helpers.CreateProtoTime("2024-01-08T14:22:21Z")
-	fileTime2 := helpers.CreateProtoTime("2024-01-08T13:22:23Z")
+	fileTime1, err := helpers.CreateProtoTime("2024-01-08T14:22:21Z")
+	require.NoError(t, err)
+
+	fileTime2, err := helpers.CreateProtoTime("2024-01-08T13:22:23Z")
+	require.NoError(t, err)
 
 	previousFileCache := FileCache{
 		"/tmp/nginx/locations/metrics.conf": {
@@ -309,7 +324,8 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 		},
 	}
 
-	updateTimeFile1 := helpers.CreateProtoTime("2024-01-08T14:22:23Z")
+	updateTimeFile1, err := helpers.CreateProtoTime("2024-01-08T14:22:23Z")
+	require.NoError(t, err)
 
 	tests := []struct {
 		name            string

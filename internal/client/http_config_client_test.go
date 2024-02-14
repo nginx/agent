@@ -13,13 +13,13 @@ import (
 	"testing"
 	"time"
 
+	helpers "github.com/nginx/agent/v3/test"
 	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestGetFilesMetadata(t *testing.T) {
@@ -27,10 +27,10 @@ func TestGetFilesMetadata(t *testing.T) {
 	tenantID, instanceID, err := createTestIds()
 	require.NoError(t, err)
 
-	fileTime1, err := createProtoTime("2024-01-08T13:22:25Z")
+	fileTime1, err := helpers.CreateProtoTime("2024-01-08T13:22:25Z")
 	require.NoError(t, err)
 
-	fileTime2, err := createProtoTime("2024-01-08T13:22:21Z")
+	fileTime2, err := helpers.CreateProtoTime("2024-01-08T13:22:21Z")
 	require.NoError(t, err)
 
 	testDataResponse := &instances.Files{
@@ -99,7 +99,7 @@ func TestGetFile(t *testing.T) {
 
 	filesURL := fmt.Sprintf("%v/instance/%s/files/", ts.URL, instanceID)
 
-	fileTime, err := createProtoTime("2024-01-08T13:22:25Z")
+	fileTime, err := helpers.CreateProtoTime("2024-01-08T13:22:25Z")
 	require.NoError(t, err)
 
 	file := instances.File{
@@ -134,11 +134,4 @@ func createTestIds() (uuid.UUID, uuid.UUID, error) {
 	}
 
 	return tenantID, instanceID, err
-}
-
-func createProtoTime(timeString string) (*timestamppb.Timestamp, error) {
-	newTime, err := time.Parse(time.RFC3339, timeString)
-	protoTime := timestamppb.New(newTime)
-
-	return protoTime, err
 }
