@@ -12,13 +12,11 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func CreateDirWithErrorCheck(t *testing.T, dirName string) {
@@ -52,7 +50,6 @@ func CreateCacheFiles(t *testing.T, cachePath string, cacheData map[string]*inst
 
 	for _, file := range cacheData {
 		CreateFileWithErrorCheck(t, filepath.Dir(file.GetPath()), filepath.Base(file.GetPath()))
-		t.Logf("creating writing to file, error: %v", file)
 	}
 	err = os.WriteFile(cachePath, cache, os.ModePerm)
 	if err != nil {
@@ -67,17 +64,4 @@ func RemoveFileWithErrorCheck(t *testing.T, fileName string) {
 	if err != nil {
 		assert.Fail(t, fmt.Sprintf("failed on os.Remove of file %s", fileName))
 	}
-}
-
-func CreateProtoTime(t *testing.T, timeString string) *timestamppb.Timestamp {
-	t.Helper()
-	newTime, err := time.Parse(time.RFC3339, timeString)
-	require.NoError(t, err)
-
-	protoTime := timestamppb.New(newTime)
-	if err != nil {
-		assert.Fail(t, fmt.Sprintf("failed on creating timestamp %s", protoTime))
-	}
-
-	return protoTime
 }

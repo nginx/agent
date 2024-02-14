@@ -51,13 +51,13 @@ func TestWriteConfig(t *testing.T) {
 	}{
 		{
 			name:           "file needs updating",
-			metaDataReturn: helpers.GetFiles(t, nginxConf, testConf, metricsConf),
+			metaDataReturn: helpers.GetFiles(nginxConf, testConf, metricsConf),
 			getFileReturn:  helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
 			shouldBeEqual:  false,
 		},
 		{
 			name:           "file doesn't need updating",
-			metaDataReturn: helpers.GetFiles(t, nginxConf, testConf, metricsConf),
+			metaDataReturn: helpers.GetFiles(nginxConf, testConf, metricsConf),
 			getFileReturn:  helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
 			shouldBeEqual:  true,
 		},
@@ -65,7 +65,7 @@ func TestWriteConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			previousFileCache := helpers.GetFileCache(t, nginxConf, testConf, metricsConf)
+			previousFileCache := helpers.GetFileCache(nginxConf, testConf, metricsConf)
 			fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
@@ -81,15 +81,16 @@ func TestWriteConfig(t *testing.T) {
 			assert.FileExists(t, testConfPath)
 
 			if !test.shouldBeEqual {
-				previousFileCache[nginxConf.Name()].LastModified = helpers.CreateProtoTime(t, "2024-01-09T13:22:23Z")
+				previousFileCache[nginxConf.Name()].LastModified = helpers.CreateProtoTime("2024-01-09T13:22:21Z")
 			}
 
 			err = configWriter.Write(ctx, filesURL, tenantID)
 			require.NoError(t, err)
 
-			expected := helpers.GetFileCache(t, nginxConf, testConf, metricsConf)
-			cmp := reflect.DeepEqual(expected, configWriter.currentFileCache)
-			assert.Equal(t, cmp, test.shouldBeEqual)
+			defaults := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+
+			equalityCheck := reflect.DeepEqual(defaults, configWriter.currentFileCache)
+			assert.Equal(t, test.shouldBeEqual, equalityCheck)
 
 			testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
 			require.NoError(t, readErr)
@@ -114,8 +115,7 @@ func TestComplete(t *testing.T) {
 
 	instanceIDDir := fmt.Sprintf("%s/%s/", tempDir, instanceID.String())
 
-	err = os.Mkdir(instanceIDDir, 0o700)
-	require.NoError(t, err)
+	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
 
 	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
 	cachePath := cacheFile.Name()
@@ -130,8 +130,8 @@ func TestComplete(t *testing.T) {
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
 
-	cacheData := helpers.GetFileCache(t, testConf, nginxConf, metricsConf)
-	configWriter.currentFileCache = helpers.GetFileCache(t, testConf, metricsConf)
+	cacheData := helpers.GetFileCache(testConf, nginxConf, metricsConf)
+	configWriter.currentFileCache = helpers.GetFileCache(testConf, metricsConf)
 
 	configWriter.cachePath = cachePath
 
@@ -188,11 +188,8 @@ func TestReadCache(t *testing.T) {
 	require.NoError(t, err)
 
 	tempDir := t.TempDir()
-
 	instanceIDDir := fmt.Sprintf("%s/%s/", tempDir, instanceID.String())
-
-	err = os.Mkdir(instanceIDDir, 0o755)
-	require.NoError(t, err)
+	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
 	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
 	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
@@ -204,7 +201,7 @@ func TestReadCache(t *testing.T) {
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
 
-	cacheData := helpers.GetFileCache(t, testConf, nginxConf, metricsConf)
+	cacheData := helpers.GetFileCache(testConf, nginxConf, metricsConf)
 
 	helpers.CreateCacheFiles(t, cachePath, cacheData)
 
@@ -218,11 +215,11 @@ func TestReadCache(t *testing.T) {
 			path:            cachePath,
 			shouldHaveError: false,
 		},
-		// {
-		// 	name:            "cache file doesn't exist",
-		// 	path:            "/tmp/cache.json",
-		// 	shouldHaveError: true,
-		// },
+		{
+			name:            "cache file doesn't exist",
+			path:            "/tmp/cache.json",
+			shouldHaveError: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -234,10 +231,6 @@ func TestReadCache(t *testing.T) {
 				assert.NotEqual(t, cacheData, previousFileCache)
 			} else {
 				require.NoError(t, readErr)
-				result := reflect.DeepEqual(cacheData, previousFileCache)
-				assert.True(t, result)
-				result = MapsEqual(cacheData, previousFileCache)
-				assert.True(t, result)
 				assert.Equal(t, cacheData, previousFileCache)
 			}
 		})
@@ -248,23 +241,6 @@ func TestReadCache(t *testing.T) {
 	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 	assert.NoFileExists(t, cachePath)
-}
-
-func MapsEqual(m1, m2 map[string]*instances.File) bool {
-	if len(m1) != len(m2) {
-		return false
-	}
-	for k, v1 := range m1 {
-		v2, ok := m2[k]
-		if !ok ||
-			v1.GetLastModified().GetNanos() != v2.GetLastModified().GetNanos() ||
-			v1.GetPath() != v2.GetPath() ||
-			v1.GetVersion() != v2.GetVersion() {
-			return false
-		}
-	}
-
-	return true
 }
 
 func TestIsFilePathValid(t *testing.T) {
@@ -317,8 +293,8 @@ func TestIsFilePathValid(t *testing.T) {
 }
 
 func TestDoesFileRequireUpdate(t *testing.T) {
-	fileTime1 := helpers.CreateProtoTime(t, "2024-01-08T14:22:21Z")
-	fileTime2 := helpers.CreateProtoTime(t, "2024-01-08T13:22:23Z")
+	fileTime1 := helpers.CreateProtoTime("2024-01-08T14:22:21Z")
+	fileTime2 := helpers.CreateProtoTime("2024-01-08T13:22:23Z")
 
 	previousFileCache := FileCache{
 		"/tmp/nginx/locations/metrics.conf": {
@@ -333,7 +309,7 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 		},
 	}
 
-	updateTimeFile1 := helpers.CreateProtoTime(t, "2024-01-08T14:22:23Z")
+	updateTimeFile1 := helpers.CreateProtoTime("2024-01-08T14:22:23Z")
 
 	tests := []struct {
 		name            string

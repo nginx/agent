@@ -6,18 +6,20 @@
 package test
 
 import (
+	"fmt"
+	"log/slog"
 	"os"
-	"testing"
+	"time"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func GetFileCache(t *testing.T, files ...*os.File) map[string]*instances.File {
-	t.Helper()
+func GetFileCache(files ...*os.File) map[string]*instances.File {
 	cache := make(map[string]*instances.File)
 	for _, file := range files {
 		cache[file.Name()] = &instances.File{
-			LastModified: CreateProtoTime(t, "2024-01-08T13:22:23Z"),
+			LastModified: CreateProtoTime("2024-01-08T13:22:23Z"),
 			Path:         file.Name(),
 			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
 		}
@@ -26,12 +28,11 @@ func GetFileCache(t *testing.T, files ...*os.File) map[string]*instances.File {
 	return cache
 }
 
-func GetFiles(t *testing.T, files ...*os.File) *instances.Files {
-	t.Helper()
+func GetFiles(files ...*os.File) *instances.Files {
 	instanceFiles := &instances.Files{}
 	for _, file := range files {
 		instanceFiles.Files = append(instanceFiles.GetFiles(), &instances.File{
-			LastModified: CreateProtoTime(t, "2024-01-08T13:22:23Z"),
+			LastModified: CreateProtoTime("2024-01-08T13:22:23Z"),
 			Path:         file.Name(),
 			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
 		})
@@ -47,4 +48,18 @@ func GetFileDownloadResponse(path, instanceID string, content []byte) *instances
 		InstanceId:  instanceID,
 		FileContent: content,
 	}
+}
+
+func CreateProtoTime(timeString string) *timestamppb.Timestamp {
+	newTime, err := time.Parse(time.RFC3339, timeString)
+	if err != nil {
+		slog.Error("failed to parse time")
+	}
+
+	protoTime := timestamppb.New(newTime)
+	if err != nil {
+		slog.Error(fmt.Sprintf("failed on creating timestamp %s", protoTime))
+	}
+
+	return protoTime
 }
