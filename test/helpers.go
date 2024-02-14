@@ -7,7 +7,6 @@ package test
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,31 +35,21 @@ func CreateFileWithErrorCheck(t *testing.T, dir, fileName string) *os.File {
 func CreateCacheFiles(t *testing.T, cachePath string, cacheData map[string]*instances.File) {
 	t.Helper()
 	cache, err := json.MarshalIndent(cacheData, "", "  ")
-	if err != nil {
-		t.Logf("error marshaling cache, error: %v", err)
-		t.Fail()
-	}
+	require.NoError(t, err)
 
 	err = os.MkdirAll(path.Dir(cachePath), os.ModePerm)
-	if err != nil {
-		t.Logf("error creating cache directory, error: %v", err)
-		t.Fail()
-	}
+	require.NoError(t, err)
 
 	for _, file := range cacheData {
 		CreateFileWithErrorCheck(t, filepath.Dir(file.GetPath()), filepath.Base(file.GetPath()))
 	}
+
 	err = os.WriteFile(cachePath, cache, os.ModePerm)
-	if err != nil {
-		t.Logf("error writing to file, error: %v", err)
-		t.Fail()
-	}
+	require.NoError(t, err)
 }
 
 func RemoveFileWithErrorCheck(t *testing.T, fileName string) {
 	t.Helper()
 	err := os.Remove(fileName)
-	if err != nil {
-		assert.Fail(t, fmt.Sprintf("failed on os.Remove of file %s", fileName))
-	}
+	require.NoError(t, err)
 }
