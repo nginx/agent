@@ -32,6 +32,7 @@ cat /etc/nginx-agent/nginx-agent.conf;
 
 # start nginx-agent, pass args
 echo "starting nginx-agent ..."
+ls -ltr /usr/bin/nginx-agent
 nginx-agent "$@" &
 
 agent_pid=$!

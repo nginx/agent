@@ -18,14 +18,6 @@ RUN set -x \
                bash \
                nginx
 
-# Setup nginx agent repository
-RUN curl -o /etc/apk/keys/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub
-
-RUN printf "%s%s%s\n" \
-    "http://${PACKAGES_REPO}/nginx-agent/alpine/v" \
-    `grep -o -E '^[0-9]+\.[0-9]+' /etc/alpine-release` \
-    "/main" | tee -a /etc/apk/repositories
-
 RUN chmod +x /agent/entrypoint.sh
 STOPSIGNAL SIGTERM
 
@@ -40,5 +32,13 @@ ARG PACKAGE_NAME
 RUN apk add --allow-untrusted /agent/build/${PACKAGE_NAME}.apk
 
 FROM install-nginx as install-agent-repo
+
+# Setup nginx agent repository
+RUN curl -o /etc/apk/keys/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub
+
+RUN printf "%s%s%s\n" \
+    "http://${PACKAGES_REPO}/nginx-agent/alpine/v" \
+    `grep -o -E '^[0-9]+\.[0-9]+' /etc/alpine-release` \
+    "/main" | tee -a /etc/apk/repositories
 
 RUN apk add nginx-agent@nginx-agent
