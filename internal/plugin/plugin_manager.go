@@ -23,8 +23,8 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 	plugins = append(plugins, processMonitor, instanceMonitor, configPlugin)
 
 	if agentConfig.DataplaneAPI.Host != "" && agentConfig.DataplaneAPI.Port != 0 {
-		dataplaneServer := NewDataplaneServer(agentConfig, slogger)
-		plugins = append(plugins, dataplaneServer)
+		dataPlaneServer := NewDataPlaneServer(agentConfig, slogger)
+		plugins = append(plugins, dataPlaneServer)
 	}
 
 	return plugins

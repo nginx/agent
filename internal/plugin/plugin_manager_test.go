@@ -40,7 +40,7 @@ func TestLoadPLugins(t *testing.T) {
 				&ProcessMonitor{},
 				&Instance{},
 				&Config{},
-				&DataplaneServer{},
+				&DataPlaneServer{},
 			},
 		},
 	}

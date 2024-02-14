@@ -27,7 +27,7 @@ import (
 )
 
 func TestDataPlaneServer_Init(t *testing.T) {
-	dataPlaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
+	dataPlaneServer := NewDataPlaneServer(&config.Config{}, slog.Default())
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
@@ -42,7 +42,7 @@ func TestDataPlaneServer_Init(t *testing.T) {
 }
 
 func TestDataPlaneServer_Process(t *testing.T) {
-	dataPlaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
+	dataPlaneServer := NewDataPlaneServer(&config.Config{}, slog.Default())
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
@@ -101,7 +101,7 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 		Version:    "1.23.1",
 	}
 
-	dataPlaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
+	dataPlaneServer := NewDataPlaneServer(&config.Config{}, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(ctx, 100)
@@ -143,7 +143,7 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	data := []byte(`{"location": "http://file-server.com"}`)
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 
-	dataPlaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
+	dataPlaneServer := NewDataPlaneServer(&config.Config{}, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
@@ -216,7 +216,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	}
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 
-	dataPlaneServer := NewDataplaneServer(&config.Config{}, slog.Default())
+	dataPlaneServer := NewDataPlaneServer(&config.Config{}, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
@@ -302,7 +302,7 @@ func TestDataPlaneServer_MapStatusEnums(t *testing.T) {
 
 func performPutRequest(
 	ctx context.Context,
-	dataPlaneServer *DataplaneServer,
+	dataPlaneServer *DataPlaneServer,
 	instanceID string,
 	data []byte,
 ) (*http.Response, error) {
@@ -324,7 +324,7 @@ func performPutRequest(
 
 func performGetInstanceConfigurationStatusRequest(
 	ctx context.Context,
-	dataPlaneServer *DataplaneServer,
+	dataPlaneServer *DataPlaneServer,
 	instanceID string,
 ) (*http.Response, error) {
 	addr, ok := dataPlaneServer.server.Addr().(*net.TCPAddr)
