@@ -23,7 +23,7 @@ import (
 
 func CreateDirWithErrorCheck(t *testing.T, dirName string) {
 	t.Helper()
-	err := os.Mkdir(dirName, 0o700)
+	err := os.Mkdir(dirName, os.ModePerm)
 	require.NoError(t, err)
 }
 
@@ -37,23 +37,24 @@ func CreateFileWithErrorCheck(t *testing.T, dir, fileName string) *os.File {
 }
 
 func CreateCacheFiles(t *testing.T, cachePath string, cacheData map[string]*instances.File) {
+	t.Helper()
 	cache, err := json.MarshalIndent(cacheData, "", "  ")
 	if err != nil {
 		t.Logf("error marshaling cache, error: %v", err)
 		t.Fail()
 	}
 
-	err = os.MkdirAll(path.Dir(cachePath), 0o750)
+	err = os.MkdirAll(path.Dir(cachePath), os.ModePerm)
 	if err != nil {
 		t.Logf("error creating cache directory, error: %v", err)
 		t.Fail()
 	}
 
 	for _, file := range cacheData {
-		CreateFileWithErrorCheck(t, filepath.Dir(file.Path), filepath.Base(file.Path))
+		CreateFileWithErrorCheck(t, filepath.Dir(file.GetPath()), filepath.Base(file.GetPath()))
 		t.Logf("creating writing to file, error: %v", file)
 	}
-	err = os.WriteFile(cachePath, cache, 0o600)
+	err = os.WriteFile(cachePath, cache, os.ModePerm)
 	if err != nil {
 		t.Logf("error writing to file, error: %v", err)
 		t.Fail()

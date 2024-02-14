@@ -43,23 +43,23 @@ func TestWriteConfig(t *testing.T) {
 
 	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
-	var tests = []struct {
+	tests := []struct {
 		name           string
 		metaDataReturn *instances.Files
 		getFileReturn  *instances.FileDownloadResponse
 		shouldBeEqual  bool
 	}{
 		{
-			name: "file needs updating",
-			metaDataReturn: helpers.GetFiles(t, nginxConf, testConf, metricsConf), 
-			getFileReturn: helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
-			shouldBeEqual: false,
+			name:           "file needs updating",
+			metaDataReturn: helpers.GetFiles(t, nginxConf, testConf, metricsConf),
+			getFileReturn:  helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
+			shouldBeEqual:  false,
 		},
 		{
-			name: "file doesn't need updating",
+			name:           "file doesn't need updating",
 			metaDataReturn: helpers.GetFiles(t, nginxConf, testConf, metricsConf),
-			getFileReturn: helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
-			shouldBeEqual: true,
+			getFileReturn:  helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
+			shouldBeEqual:  true,
 		},
 	}
 
@@ -75,7 +75,7 @@ func TestWriteConfig(t *testing.T) {
 			assert.NotNil(t, configWriter)
 			configWriter.cachePath = cachePath
 			configWriter.previousFileCache = previousFileCache
- 
+
 			err = writeFile(fileContent, testConfPath)
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
@@ -251,16 +251,20 @@ func TestReadCache(t *testing.T) {
 }
 
 func MapsEqual(m1, m2 map[string]*instances.File) bool {
-    if len(m1) != len(m2) {
-        return false
-    }
-    for k, v1 := range m1 {
-        v2, ok := m2[k]
-        if !ok || v1.LastModified.Nanos != v2.LastModified.Nanos || v1.Path != v2.Path || v1.Version != v2.Version {
-            return false
-        }
-    }
-    return true
+	if len(m1) != len(m2) {
+		return false
+	}
+	for k, v1 := range m1 {
+		v2, ok := m2[k]
+		if !ok ||
+			v1.GetLastModified().GetNanos() != v2.GetLastModified().GetNanos() ||
+			v1.GetPath() != v2.GetPath() ||
+			v1.GetVersion() != v2.GetVersion() {
+			return false
+		}
+	}
+
+	return true
 }
 
 func TestIsFilePathValid(t *testing.T) {
