@@ -20,7 +20,7 @@ import (
 )
 
 func TestInstance_Init(t *testing.T) {
-	instanceMonitor := NewInstance(&InstanceParameters{})
+	instanceMonitor := NewInstance()
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{instanceMonitor})
@@ -33,13 +33,13 @@ func TestInstance_Init(t *testing.T) {
 }
 
 func TestInstance_Info(t *testing.T) {
-	instanceMonitor := NewInstance(&InstanceParameters{})
+	instanceMonitor := NewInstance()
 	info := instanceMonitor.Info()
 	assert.Equal(t, "instance", info.Name)
 }
 
 func TestInstance_Subscriptions(t *testing.T) {
-	instanceMonitor := NewInstance(&InstanceParameters{})
+	instanceMonitor := NewInstance()
 	subscriptions := instanceMonitor.Subscriptions()
 	assert.Equal(t, []string{bus.OsProcessesTopic, bus.InstanceConfigUpdateRequestTopic}, subscriptions)
 }
@@ -49,7 +49,8 @@ func TestInstance_Process(t *testing.T) {
 
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
 	fakeInstanceService.GetInstancesReturns(testInstances)
-	instanceMonitor := NewInstance(&InstanceParameters{instanceService: fakeInstanceService})
+	instanceMonitor := NewInstance()
+	instanceMonitor.instanceService = fakeInstanceService
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{instanceMonitor})

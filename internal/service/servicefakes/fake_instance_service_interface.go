@@ -10,6 +10,17 @@ import (
 )
 
 type FakeInstanceServiceInterface struct {
+	GetInstanceStub        func(string) *instances.Instance
+	getInstanceMutex       sync.RWMutex
+	getInstanceArgsForCall []struct {
+		arg1 string
+	}
+	getInstanceReturns struct {
+		result1 *instances.Instance
+	}
+	getInstanceReturnsOnCall map[int]struct {
+		result1 *instances.Instance
+	}
 	GetInstancesStub        func([]*model.Process) []*instances.Instance
 	getInstancesMutex       sync.RWMutex
 	getInstancesArgsForCall []struct {
@@ -23,6 +34,67 @@ type FakeInstanceServiceInterface struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstance(arg1 string) *instances.Instance {
+	fake.getInstanceMutex.Lock()
+	ret, specificReturn := fake.getInstanceReturnsOnCall[len(fake.getInstanceArgsForCall)]
+	fake.getInstanceArgsForCall = append(fake.getInstanceArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.GetInstanceStub
+	fakeReturns := fake.getInstanceReturns
+	fake.recordInvocation("GetInstance", []interface{}{arg1})
+	fake.getInstanceMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceCallCount() int {
+	fake.getInstanceMutex.RLock()
+	defer fake.getInstanceMutex.RUnlock()
+	return len(fake.getInstanceArgsForCall)
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceCalls(stub func(string) *instances.Instance) {
+	fake.getInstanceMutex.Lock()
+	defer fake.getInstanceMutex.Unlock()
+	fake.GetInstanceStub = stub
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceArgsForCall(i int) string {
+	fake.getInstanceMutex.RLock()
+	defer fake.getInstanceMutex.RUnlock()
+	argsForCall := fake.getInstanceArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceReturns(result1 *instances.Instance) {
+	fake.getInstanceMutex.Lock()
+	defer fake.getInstanceMutex.Unlock()
+	fake.GetInstanceStub = nil
+	fake.getInstanceReturns = struct {
+		result1 *instances.Instance
+	}{result1}
+}
+
+func (fake *FakeInstanceServiceInterface) GetInstanceReturnsOnCall(i int, result1 *instances.Instance) {
+	fake.getInstanceMutex.Lock()
+	defer fake.getInstanceMutex.Unlock()
+	fake.GetInstanceStub = nil
+	if fake.getInstanceReturnsOnCall == nil {
+		fake.getInstanceReturnsOnCall = make(map[int]struct {
+			result1 *instances.Instance
+		})
+	}
+	fake.getInstanceReturnsOnCall[i] = struct {
+		result1 *instances.Instance
+	}{result1}
 }
 
 func (fake *FakeInstanceServiceInterface) GetInstances(arg1 []*model.Process) []*instances.Instance {
@@ -94,6 +166,8 @@ func (fake *FakeInstanceServiceInterface) GetInstancesReturnsOnCall(i int, resul
 func (fake *FakeInstanceServiceInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.getInstanceMutex.RLock()
+	defer fake.getInstanceMutex.RUnlock()
 	fake.getInstancesMutex.RLock()
 	defer fake.getInstancesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

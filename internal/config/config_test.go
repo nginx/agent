@@ -40,6 +40,7 @@ func TestRegisterConfigFile(t *testing.T) {
 func TestGetConfig(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
+	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/usr/share/nginx/modules"}
 	require.NoError(t, err)
 
 	result := GetConfig()
@@ -53,6 +54,10 @@ func TestGetConfig(t *testing.T) {
 	assert.Equal(t, 30*time.Second, result.ProcessMonitor.MonitoringFrequency)
 
 	assert.Equal(t, 10*time.Second, result.Client.Timeout)
+
+	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules", result.ConfigDir)
+
+	assert.Equal(t, allowedDir, result.AllowedDirectories)
 }
 
 func TestSetVersion(t *testing.T) {
@@ -163,4 +168,12 @@ func TestGetClient(t *testing.T) {
 
 	result := getClient()
 	assert.Equal(t, time.Hour, result.Timeout)
+}
+
+func TestGetAllowedDirectories(t *testing.T) {
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
+	viperInstance.Set(ConfigDirectoriesConfigKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules")
+
+	result := getConfigDir()
+	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules", result)
 }

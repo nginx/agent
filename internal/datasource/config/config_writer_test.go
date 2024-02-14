@@ -157,17 +157,14 @@ func TestWriteConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fakeConfigClient := &clientfakes.FakeHTTPConfigClientInterface{}
+			fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
+			allowedDirs := []string{"./"}
 
-			configWriter := NewConfigWriter(&ConfigWriterParameters{
-				configClient: fakeConfigClient,
-				Client: Client{
-					Timeout: time.Second * 10,
-				},
-				cachePath: cachePath,
-			}, instanceID.String())
+			configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, instanceID.String())
+			configWriter.cachePath = cachePath
+			configWriter.previouseFileCache = previousFileCache
 
 			err = writeFile(fileContent, testConfPath)
 			require.NoError(t, err)
@@ -182,7 +179,7 @@ func TestWriteConfig(t *testing.T) {
 				require.NoError(t, readErr)
 				assert.Equal(t, fileContent, testData)
 			} else {
-				assert.NotEqual(t, configWriter.currentFileCache, previousFileCache)
+				assert.NotEqual(t, previousFileCache, configWriter.currentFileCache)
 				testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
 				require.NoError(t, readErr)
 				assert.NotEqual(t, testData, fileContent)
@@ -215,11 +212,11 @@ func TestComplete(t *testing.T) {
 
 	cachePath := cacheFile.Name()
 
-	configWriter := NewConfigWriter(&ConfigWriterParameters{
-		Client: Client{
-			Timeout: time.Second * 10,
-		},
-	}, instanceID.String())
+	allowedDirs := []string{"./"}
+
+	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
+	configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, instanceID.String())
+	configWriter.cachePath = cachePath
 
 	testConf, err := os.CreateTemp(".", "test.conf")
 	require.NoError(t, err)
@@ -290,7 +287,11 @@ func TestComplete(t *testing.T) {
 }
 
 func TestDataplaneConfig(t *testing.T) {
-	configWriter := NewConfigWriter(&ConfigWriterParameters{}, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
+	allowedDirs := []string{"./"}
+	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	configWriter.cachePath = cachePath
 	nginxConfig := config.NewNginx()
 
 	configWriter.SetDataplaneConfig(nginxConfig)
@@ -435,11 +436,22 @@ func TestIsFilePathValid(t *testing.T) {
 			path:           "",
 			expectedResult: false,
 		},
+		{
+			name:           "not allowed dir",
+			path:           "./test/test.conf",
+			expectedResult: false,
+		},
 	}
+
+	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
+	allowedDirs := []string{"/tmp/"}
+	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	configWriter.cachePath = cachePath
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			valid := isFilePathValid(test.path)
+			valid := configWriter.isFilePathValid(test.path)
 			assert.Equal(t, test.expectedResult, valid)
 		})
 	}
