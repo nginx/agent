@@ -35,36 +35,43 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 	ctx := context.TODO()
 
 	if os.Getenv("TEST_ENV") == "Container" {
+		tb.Log("Running tests in a container environment")
 		container = utils.StartContainer(
 			ctx,
 			tb,
 			"Processes updated",
 		)
+
+		ipAddress, err := container.Host(ctx)
+		require.NoError(tb, err)
+		ports, err := container.Ports(ctx)
+		require.NoError(tb, err)
+
+		apiHost = ipAddress
+		apiPort = ports["9091/tcp"][0].HostPort
+	} else {
+		apiHost = "0.0.0.0"
+		apiPort = "9091"
+		tb.Log("Running tests on local machine")
 	}
-
-	ipAddress, err := container.Host(ctx)
-	require.NoError(tb, err)
-	ports, err := container.Ports(ctx)
-	require.NoError(tb, err)
-
-	apiHost = ipAddress
-	apiPort = ports["9091/tcp"][0].HostPort
 
 	return func(tb testing.TB) {
 		tb.Helper()
 
-		logReader, err := container.Logs(ctx)
-		require.NoError(tb, err)
+		if os.Getenv("TEST_ENV") == "Container" {
+			logReader, err := container.Logs(ctx)
+			require.NoError(tb, err)
 
-		buf, err := io.ReadAll(logReader)
-		require.NoError(tb, err)
-		logs := string(buf)
+			buf, err := io.ReadAll(logReader)
+			require.NoError(tb, err)
+			logs := string(buf)
 
-		tb.Log(logs)
-		assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
+			tb.Log(logs)
+			assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
 
-		err = container.Terminate(ctx)
-		require.NoError(tb, err)
+			err = container.Terminate(ctx)
+			require.NoError(tb, err)
+		}
 	}
 }
 

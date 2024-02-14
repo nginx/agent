@@ -33,13 +33,11 @@ EXPOSE 80 443
 
 ENTRYPOINT ["/agent/entrypoint.sh"]
 
-
 FROM install-nginx as install-agent-local
 
 ARG PACKAGE_NAME
 
 RUN apk add --allow-untrusted /agent/build/${PACKAGE_NAME}.apk
-
 
 FROM install-nginx as install-agent-repo
 
