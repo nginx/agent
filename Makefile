@@ -8,6 +8,28 @@ GOINST  = ${GOCMD} install
 GOGEN   = ${GOCMD} generate
 GOVET   = ${GOCMD} vet
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# https://docs.nginx.com/nginx/releases/                                                                                          #
+# These images are based on https://github.com/nginxinc/docker-nginx and are NOT recommended for production                       #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# | OS_RELEASE       | OS_VERSION                                | NOTES                                                          |
+# | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
+# | amazonlinux      | 2, 2023                                   |                                                                |
+# | ubuntu           | 20.04, 22.04                              |                                                                |
+# | debian           | bullseye-slim, bookworm-slim 			 |                                                                |
+# | centos           | 7                                         |                                                                |
+# | redhatenterprise | 7, 8, 9                                   |                                                                |
+# | rockylinux       | 8, 9                                      |                                                                |
+# | almalinux        | 8, 9                                      |                                                                |
+# | alpine           | 3.16, 3.17, 3.18, 3.19                    |                                                                |
+# | oraclelinux      | 7, 8, 9                                   |                                                                |
+# | suse             | sles12sp5, sle15                          |                                                                |
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+OS_RELEASE  ?= ubuntu
+OS_VERSION  ?= 22.04
+BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
+IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
+
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
 BINARY_NAME		:= nginx-agent
@@ -19,7 +41,10 @@ COMMIT  = $(shell git rev-parse --short HEAD)
 DATE    = $(shell date +%F_%H-%M-%S)
 LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
+
+OSS_PACKAGES_REPO := "packages.nginx.org"
 PACKAGE_PREFIX := nginx-agent
+PACKAGE_NAME := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
 uname_m    := $(shell uname -m)
 
@@ -34,6 +59,7 @@ else
 endif
 
 include Makefile.tools
+include Makefile.containers
 
 .PHONY: help clean no-local-changes build lint format unit-test run dev generate generate-mocks install-tools
 
@@ -65,10 +91,16 @@ $(TEST_BUILD_DIR):
 	mkdir -p $(TEST_BUILD_DIR)
 
 unit-test: $(TEST_BUILD_DIR) ## Run unit tests
-	@CGO_ENABLED=0 $(GOTEST) -count=1 -coverprofile=$(TEST_BUILD_DIR)/tmp_coverage.out -coverpkg=./... -covermode count ./...
+	@CGO_ENABLED=0 $(GOTEST) -count=1 -coverprofile=$(TEST_BUILD_DIR)/tmp_coverage.out -coverpkg=./... -covermode count ./internal/... ./api/... ./cmd/...
 	@cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v "fake_" > $(TEST_BUILD_DIR)/coverage.out
 	@$(GOTOOL) cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
 	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
+
+integration-test:
+	TEST_ENV="Container" CONTAINER_OS_TYPE=${CONTAINER_OS_TYPE} BUILD_TARGET="install-agent-local" \
+	PACKAGES_REPO=${OSS_PACKAGES_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
+	OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} \
+	go test -v ./test/integration
 
 run: build ## Run code
 	@echo "🏃 Running App"
@@ -89,14 +121,14 @@ generate-mocks: ## Regenerate all needed mocks, in order to add new mocks genera
 	$(GOGEN) ./...
 
 local-apk-package: ## Create local apk package
-	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
+	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
 
 local-deb-package: ## Create local deb package
-	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
+	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
 
 local-rpm-package: ## Create local rpm package
-	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
+	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
 
