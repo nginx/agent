@@ -1,0 +1,120 @@
+
+syntax = "proto3";
+package f5.nginx.agent.api.grpc.mpi.v1;
+
+option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1/command;command";
+
+import "common.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+// following https://protobuf.dev/programming-guides/style/
+service CommandService {
+    rpc Connect(ConnectionRequest) returns (ConnectionResponse) {}
+    rpc Status(DataPlaneStatus) returns (google.protobuf.Empty) {}
+    rpc Health(DataPlaneHealth) returns (DataPlaneHealthResponse) {}
+    // rpc Metadata(InstanceMetadata) returns (google.protobuf.Empty) {} // this
+    // is useful for registering new instances or instance updates, better to do
+    // it not through subs
+    rpc Subscribe(stream DataPlaneMessage) returns (stream ManagementPlaneMessage) {}  
+    // send one message at a time... having a list doesn't make sense?!?
+}
+
+message ConnectionRequest {
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    AgentMetadata agent_metadata = 2;
+    AgentConfig agent_config = 3;
+}
+
+message AgentConfig {
+    Server server = 1;  // can we connect to more than one management plane?
+
+    // Max NAck setting
+    // Features enabled/disabled
+    repeated google.protobuf.Struct labels = 2;
+    // List of available APIRequest actions
+
+    // Message
+    // MP Connection settings
+    // Metrics endpoint settings
+    // Endpoint
+
+    // gRPC/ (m)TLS settings (Optional)
+
+    // Formats supported (oltp, arrow)
+
+    // OLTP Settings (Exact values TBD)
+
+    // Arrow Settings
+
+    // File upload/download endpoint settings
+
+    // Endpoints
+
+    // grpc:// URL for separate gRPC endpoint
+    // https:// URL for separate HTTP endpoint
+
+    // Max file size in bytes (also used to configure gRPC FileService and
+    // FileClient , see above) Local file edits allowed Remote Instances Supported
+    // (Bool)
+
+    // List of agent feature that are enabled
+    //   repeated string features = 1 [(gogoproto.jsontag) = "features"];
+    //   // List of agent extensions that are enabled
+    //   repeated string extensions = 2 [(gogoproto.jsontag) = "extensions"];
+    //   // List of tags
+    //   repeated string tags = 3 [(gogoproto.jsontag) = "tags"];
+    //   // Alias name for the agent
+    //   string alias = 4 [(gogoproto.jsontag) = "alias"];
+    //   // Server setting for the agent
+    //   Server server = 5 [(gogoproto.jsontag) = "server"];
+}
+
+message Server {
+    string endpoint = 1;
+    string port = 2;
+    // Security           security = 3;
+    ConnectionSettings connection_settings = 4;
+}
+
+message ConnectionSettings {}
+
+message AgentMetadata {
+    string uuid = 1;
+    string version = 2;
+    string binary_path = 3;  // is this necessary? should it be in the instance
+    // metadata for agent?!?
+}
+
+message ConnectionResponse {
+    f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse response = 1;
+    AgentConfig agent_config = 2;
+}
+
+message Overview {}
+
+message DataPlaneStatus {
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    repeated Instance instances = 2;
+}
+
+// only send changed values
+message Instance {
+    enum InstanceType {
+        UNKNOWN = 0;
+        AGENT = 1;
+        NGINX_OSS = 2;
+        NGINX_PLUS = 3;
+        UNIT = 4;
+    }
+}
+
+message DataPlaneHealth {
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+}
+
+message DataPlaneHealthResponse {}
+
+message DataPlaneMessage {}
+
+message ManagementPlaneMessage {}

@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package f5.nginx.agent.api.grpc.mpi.v1.common;
+
+option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1/common";
+
+message MessageRequest {
+    string uuid           = 1;
+    string correlation_id = 2;
+}
+
+message CommandResponse {
+    // Command status enum
+    enum CommandStatus {
+        // Unknown status of command
+        CMD_UNKNOWN = 0;
+        // Command was successful
+        CMD_OK = 1;
+        // Command failed
+        CMD_ERROR = 2;
+    }
+
+    // Command error code enum
+    enum CommandErrorCode {
+        // No Error (This is the default value)
+        ERR_OK = 0;
+        // Unknown error
+        ERR_UNKNOWN = 1;
+    }
+
+    // Command status
+    CommandStatus status = 1;
+    // Error code
+    CommandErrorCode error_code = 2;
+    // Provides a user friendly message to describe the response
+    string message = 3;
+    // Provides an error message of why the command failed
+    string error = 4;
+}

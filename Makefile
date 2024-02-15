@@ -112,7 +112,7 @@ dev: ## Run agent executable
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
-	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
+	@protoc --go_out=paths=source_relative:. ./api/grpc/**/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specifications"
 	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
 	@$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go

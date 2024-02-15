@@ -1,0 +1,63 @@
+syntax = "proto3";
+package f5.nginx.agent.api.grpc.mpi.v1.file;
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1/file;file";
+
+service FileService {
+    rpc Overview(ConfigVersion) returns (FileOverview) {}
+    rpc GetFile(FileRequest) returns (FileContents) {}
+    rpc SendFile(File) returns (FileResponse) {}
+}
+
+message ConfigVersion {
+    string instance_uuid = 1;
+    string version = 2;
+}
+
+message FileOverview {
+    repeated File file = 1;
+    string previous_version = 2;  // optional
+    string current_version = 3;   // optional
+}
+
+message File {
+    // Name of the file
+    string name = 1;
+    string hash = 2;
+    google.protobuf.Timestamp modified_time = 3;
+    string permissions = 4;
+    // Size of the file in bytes
+    int64 size = 5;
+    FileContents contents = 6;  // optional
+    // Action enum
+    enum Action {
+        // Default value
+        UNSET = 0;
+        // No changes to the file
+        UNCHANGED = 1;  // required?!?
+        // New file
+        ADD = 2;
+        // Updated file
+        UPDATE = 3;
+        // File deleted
+        DELETE = 4;
+    }
+    // optional action
+    Action action = 7;
+}
+
+message FileRequest {
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    string name = 2;
+}
+
+message FileContents {
+    string hash = 1;
+    // https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string
+    bytes contents = 2;
+}
+
+message FileResponse {}
