@@ -1,4 +1,3 @@
-
 syntax = "proto3";
 package f5.nginx.agent.api.grpc.mpi.v1;
 
@@ -16,7 +15,7 @@ service CommandService {
     // rpc Metadata(InstanceMetadata) returns (google.protobuf.Empty) {} // this
     // is useful for registering new instances or instance updates, better to do
     // it not through subs
-    rpc Subscribe(stream DataPlaneMessage) returns (stream ManagementPlaneMessage) {}  
+    rpc Subscribe(stream DataPlaneMessage) returns (stream ManagementPlaneMessage) {}
     // send one message at a time... having a list doesn't make sense?!?
 }
 
