@@ -25,6 +25,6 @@ func (*NginxGatewayFabric) Validate(_ *instances.Instance) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Reload(_ *instances.Instance) error {
+func (*NginxGatewayFabric) Apply(_ *instances.Instance) error {
 	return fmt.Errorf("not implemented")
 }

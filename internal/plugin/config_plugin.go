@@ -8,6 +8,8 @@ package plugin
 import (
 	"log/slog"
 
+	"github.com/nginx/agent/v3/internal/config"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
@@ -18,12 +20,14 @@ type Config struct {
 	messagePipe     bus.MessagePipeInterface
 	configServices  map[string]service.ConfigServiceInterface
 	instanceService service.InstanceServiceInterface
+	agentConfig     *config.Config
 }
 
-func NewConfig() *Config {
+func NewConfig(agentConfig *config.Config) *Config {
 	return &Config{
 		configServices:  make(map[string]service.ConfigServiceInterface), // key is instance id
 		instanceService: service.NewInstanceService(),
+		agentConfig:     agentConfig,
 	}
 }
 
@@ -76,7 +80,7 @@ func (c *Config) processInstanceConfigUpdateRequest(msg *bus.Message) {
 
 func (c *Config) parseInstanceConfiguration(correlationID string, instance *instances.Instance) {
 	if c.configServices[instance.GetInstanceId()] == nil {
-		c.configServices[instance.GetInstanceId()] = service.NewConfigService()
+		c.configServices[instance.GetInstanceId()] = service.NewConfigService(instance.GetInstanceId(), c.agentConfig)
 	}
 
 	parsedConfig, err := c.configServices[instance.GetInstanceId()].ParseInstanceConfiguration(correlationID, instance)
@@ -88,11 +92,11 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 			"error", err,
 		)
 	} else {
-		switch config := parsedConfig.(type) {
+		switch instanceConfig := parsedConfig.(type) {
 		case model.NginxConfigContext:
-			c.configServices[instance.GetInstanceId()].SetConfigContext(config)
+			c.configServices[instance.GetInstanceId()].SetConfigContext(instanceConfig)
 		default:
-			slog.Debug("Unknown config context", "configContext", config)
+			slog.Debug("Unknown config context", "configContext", instanceConfig)
 		}
 		c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigContextTopic, Data: parsedConfig})
 	}
@@ -101,7 +105,7 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest) {
 	instanceID := request.Instance.GetInstanceId()
 	if c.configServices[instanceID] == nil {
-		c.configServices[instanceID] = service.NewConfigService()
+		c.configServices[instanceID] = service.NewConfigService(instanceID, c.agentConfig)
 	}
 
 	status := c.configServices[request.Instance.GetInstanceId()].UpdateInstanceConfiguration(

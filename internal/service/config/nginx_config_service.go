@@ -12,6 +12,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nginx/agent/v3/internal/config"
+	writer "github.com/nginx/agent/v3/internal/datasource/config"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
@@ -32,12 +35,19 @@ type (
 )
 
 type Nginx struct {
-	executor exec.ExecInterface
+	executor     exec.ExecInterface
+	configWriter writer.ConfigWriterInterface
+	fileCache    writer.FileCacheInterface
 }
 
-func NewNginx() *Nginx {
+func NewNginx(instanceID string, agentConfig *config.Config) *Nginx {
+	fileCache := writer.NewFileCache(instanceID)
+	configWriter := writer.NewConfigWriter(agentConfig, fileCache)
+
 	return &Nginx{
-		executor: &exec.Exec{},
+		executor:     &exec.Exec{},
+		fileCache:    fileCache,
+		configWriter: configWriter,
 	}
 }
 
@@ -114,7 +124,7 @@ func (n *Nginx) Validate(instance *instances.Instance) error {
 	return nil
 }
 
-func (n *Nginx) Reload(instance *instances.Instance) error {
+func (n *Nginx) Apply(instance *instances.Instance) error {
 	exePath := instance.GetMeta().GetNginxMeta().GetExePath()
 	out, err := n.executor.RunCmd(exePath, "-s", "reload")
 	if err != nil {

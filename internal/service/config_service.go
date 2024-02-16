@@ -8,8 +8,10 @@ package service
 import (
 	"fmt"
 
+	"github.com/nginx/agent/v3/internal/config"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/internal/service/config"
+	service "github.com/nginx/agent/v3/internal/service/config"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
@@ -28,17 +30,17 @@ type ConfigServiceInterface interface {
 
 type ConfigService struct {
 	configContext           any
-	dataplaneConfigServices map[instances.Type]config.DataplaneConfig
+	dataplaneConfigServices map[instances.Type]service.DataplaneConfig
 }
 
-func NewConfigService() *ConfigService {
-	nginxConfigService := config.NewNginx()
+func NewConfigService(instanceID string, agentConfig *config.Config) *ConfigService {
+	nginxConfigService := service.NewNginx(instanceID, agentConfig)
 
 	return &ConfigService{
-		dataplaneConfigServices: map[instances.Type]config.DataplaneConfig{
+		dataplaneConfigServices: map[instances.Type]service.DataplaneConfig{
 			instances.Type_NGINX:                nginxConfigService,
 			instances.Type_NGINX_PLUS:           nginxConfigService,
-			instances.Type_NGINX_GATEWAY_FABRIC: config.NewNginxGatewayFabric(),
+			instances.Type_NGINX_GATEWAY_FABRIC: service.NewNginxGatewayFabric(),
 		},
 	}
 }

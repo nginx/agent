@@ -12,6 +12,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/config"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
@@ -20,6 +22,8 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/stretchr/testify/assert"
 )
+
+const instanceID = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 
 func TestNginx_ParseConfig(t *testing.T) {
 	file, err := os.CreateTemp("./", "nginx-parse-config.conf")
@@ -117,9 +121,10 @@ func TestNginx_ParseConfig(t *testing.T) {
 		},
 	}
 
-	nginxConfig := NewNginx()
+	nginxConfig := NewNginx(instanceID, &config.Config{})
 	result, err := nginxConfig.ParseConfig(&instances.Instance{
-		Type: instances.Type_NGINX,
+		Type:       instances.Type_NGINX,
+		InstanceId: instanceID,
 		Meta: &instances.Meta{
 			Meta: &instances.Meta_NginxMeta{
 				NginxMeta: &instances.NginxMeta{
@@ -159,7 +164,7 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 	}
 }
 
-func TestNginx_Reload(t *testing.T) {
+func TestNginx_Apply(t *testing.T) {
 	tests := []struct {
 		name     string
 		out      *bytes.Buffer
@@ -184,11 +189,12 @@ func TestNginx_Reload(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.RunCmdReturns(test.out, test.error)
-			nginxConfig := NewNginx()
+			nginxConfig := NewNginx(instanceID, &config.Config{})
 			nginxConfig.executor = mockExec
 
-			err := nginxConfig.Reload(&instances.Instance{
-				Type: instances.Type_NGINX,
+			err := nginxConfig.Apply(&instances.Instance{
+				Type:       instances.Type_NGINX,
+				InstanceId: instanceID,
 				Meta: &instances.Meta{
 					Meta: &instances.Meta_NginxMeta{
 						NginxMeta: &instances.NginxMeta{
@@ -238,11 +244,12 @@ func TestNginx_Validate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.RunCmdReturns(test.out, test.error)
-			nginxConfig := NewNginx()
+			nginxConfig := NewNginx(instanceID, &config.Config{})
 			nginxConfig.executor = mockExec
 
 			err := nginxConfig.Validate(&instances.Instance{
-				Type: instances.Type_NGINX,
+				Type:       instances.Type_NGINX,
+				InstanceId: instanceID,
 				Meta: &instances.Meta{
 					Meta: &instances.Meta_NginxMeta{
 						NginxMeta: &instances.NginxMeta{

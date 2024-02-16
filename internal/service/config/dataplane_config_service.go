@@ -14,5 +14,5 @@ import (
 type DataplaneConfig interface {
 	ParseConfig(instance *instances.Instance) (any, error)
 	Validate(instance *instances.Instance) error
-	Reload(instance *instances.Instance) error
+	Apply(instance *instances.Instance) error
 }
