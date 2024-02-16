@@ -9,7 +9,7 @@ option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1/file;file";
 service FileService {
     rpc Overview(ConfigVersion) returns (FileOverview) {}
     rpc GetFile(FileRequest) returns (FileContents) {}
-    rpc SendFile(File) returns (FileResponse) {}
+    rpc SendFile(File) returns (FileMeta) {}
 }
 
 message ConfigVersion {
@@ -25,13 +25,12 @@ message FileOverview {
 
 message File {
     // Name of the file
-    string name = 1;
-    string hash = 2;
-    google.protobuf.Timestamp modified_time = 3;
-    string permissions = 4;
+    FileMeta file_meta = 1;
+    google.protobuf.Timestamp modified_time = 2;
+    string permissions = 3;
     // Size of the file in bytes
-    int64 size = 5;
-    FileContents contents = 6;  // optional
+    int64 size = 4;
+    FileContents contents = 5;  // optional
     // Action enum
     enum Action {
         // Default value
@@ -55,9 +54,12 @@ message FileRequest {
 }
 
 message FileContents {
-    string hash = 1;
+    FileMeta file_meta = 1;
     // https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string
     bytes contents = 2;
 }
 
-message FileResponse {}
+message FileMeta {
+    string name = 1;
+    string hash = 2;
+}

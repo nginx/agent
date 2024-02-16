@@ -11,8 +11,8 @@ import "google/protobuf/struct.proto";
 service CommandService {
     rpc Connect(ConnectionRequest) returns (ConnectionResponse) {}
     rpc Status(DataPlaneStatus) returns (google.protobuf.Empty) {}
-    rpc Health(DataPlaneHealth) returns (DataPlaneHealthResponse) {}
-    // rpc Metadata(InstanceMetadata) returns (google.protobuf.Empty) {} // this
+    rpc Health(DataPlaneHealth) returns (google.protobuf.Empty) {}
+    // rpc Metadata(Instance) returns (google.protobuf.Empty) {} // this
     // is useful for registering new instances or instance updates, better to do
     // it not through subs
     rpc Subscribe(stream DataPlaneMessage) returns (stream ManagementPlaneMessage) {}
@@ -21,59 +21,22 @@ service CommandService {
 
 message ConnectionRequest {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
-    AgentMetadata agent_metadata = 2;
+    Instance agent_metadata = 2;
     AgentConfig agent_config = 3;
 }
 
 message AgentConfig {
     Server server = 1;  // can we connect to more than one management plane?
-
     // Max NAck setting
     // Features enabled/disabled
     repeated google.protobuf.Struct labels = 2;
-    // List of available APIRequest actions
-
-    // Message
-    // MP Connection settings
-    // Metrics endpoint settings
-    // Endpoint
-
-    // gRPC/ (m)TLS settings (Optional)
-
-    // Formats supported (oltp, arrow)
-
-    // OLTP Settings (Exact values TBD)
-
-    // Arrow Settings
-
-    // File upload/download endpoint settings
-
-    // Endpoints
-
-    // grpc:// URL for separate gRPC endpoint
-    // https:// URL for separate HTTP endpoint
-
-    // Max file size in bytes (also used to configure gRPC FileService and
-    // FileClient , see above) Local file edits allowed Remote Instances Supported
-    // (Bool)
-
-    // List of agent feature that are enabled
-    //   repeated string features = 1 [(gogoproto.jsontag) = "features"];
-    //   // List of agent extensions that are enabled
-    //   repeated string extensions = 2 [(gogoproto.jsontag) = "extensions"];
-    //   // List of tags
-    //   repeated string tags = 3 [(gogoproto.jsontag) = "tags"];
-    //   // Alias name for the agent
-    //   string alias = 4 [(gogoproto.jsontag) = "alias"];
-    //   // Server setting for the agent
-    //   Server server = 5 [(gogoproto.jsontag) = "server"];
 }
 
 message Server {
     string endpoint = 1;
     string port = 2;
     // Security           security = 3;
-    ConnectionSettings connection_settings = 4;
+    ConnectionSettings connection_settings = 3;
 }
 
 message ConnectionSettings {}
@@ -99,6 +62,37 @@ message DataPlaneStatus {
 
 // only send changed values
 message Instance {
+    InstanceMeta instance_meta = 1;
+    string binary_path = 2; // required?!? 
+    repeated string actions = 3; // optional?
+    string hostname = 4;
+    string ip_address = 5;
+}
+
+message InstanceHealths {
+    repeated InstanceMeta instances = 1;
+    repeated InstanceHealth instance_health = 2;
+}
+
+message InstanceHealth {
+    // Health status enum
+    enum InstancHealthStatus {
+        // Unknown status
+        UNKNOWN = 0;
+        // Healthy status
+        HEALTHY = 1;
+        // Unhealthy status
+        UNHEALTHY = 2;
+        // Degraded status
+        DEGRADED = 3;
+    }
+    // NGINX status
+    InstancHealthStatus instance_health_status = 1;
+    // Provides a human readable context around why a health status is a particular state
+    string description = 2;
+}
+
+message InstanceMeta {
     enum InstanceType {
         UNKNOWN = 0;
         AGENT = 1;
@@ -106,14 +100,21 @@ message Instance {
         NGINX_PLUS = 3;
         UNIT = 4;
     }
+    InstanceType instance_type = 1;
+    string uuid = 2;
+    string version = 3;
 }
 
 message DataPlaneHealth {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    repeated InstanceHealths instance_healths = 2;
 }
 
-message DataPlaneHealthResponse {}
+message DataPlaneMessage {
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
 
-message DataPlaneMessage {}
+}
 
-message ManagementPlaneMessage {}
+message ManagementPlaneMessage {
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+}

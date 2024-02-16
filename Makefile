@@ -30,6 +30,7 @@ OS_VERSION  ?= 22.04
 BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
+CURR_DIR        := $(notdir $(shell pwd)).
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
 BINARY_NAME		:= nginx-agent
@@ -112,10 +113,10 @@ dev: ## Run agent executable
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
-	@protoc --go_out=paths=source_relative:. ./api/grpc/**/**/*.proto
-	@echo "Generating Go server and client stubs from OpenAPI specifications"
-	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
-	@$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go
+	@protoc --go_out=paths=source_relative:./api/grpc/mpi/v1/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/mpi/v1
+	# @echo "Generating Go server and client stubs from OpenAPI specifications"
+	# @$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
+	# @$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	$(GOGEN) ./...
