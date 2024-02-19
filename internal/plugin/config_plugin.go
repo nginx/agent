@@ -65,7 +65,6 @@ func (*Config) Subscriptions() []string {
 }
 
 func (c *Config) processConfigurationStatus(msg *bus.Message) {
-	slog.Warn("Msg", "msg", msg)
 	if configurationStatus, ok := msg.Data.(*instances.ConfigurationStatus); !ok {
 		slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
 	} else if configurationStatus.GetStatus() == instances.Status_SUCCESS {
@@ -124,7 +123,6 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest) {
 	instanceID := request.Instance.GetInstanceId()
 	if c.configServices[instanceID] == nil {
-		slog.Warn("instance", "instance", request.Instance)
 		c.configServices[instanceID] = service.NewConfigService(instanceID, c.agentConfig, request.Instance.GetType())
 	}
 

@@ -54,8 +54,7 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(
 	location := fmt.Sprintf("%v/instance/%s/files/", filesURL, instanceID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, location, nil)
-	slog.Warn("Get Files Response req", "req", req)
-	slog.Warn("File URL", "url", filesURL)
+
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
 	}
@@ -107,13 +106,10 @@ func (hcd *HTTPConfigClient) GetFile(
 
 	location := fmt.Sprintf("%v/instance/%s/files/", filesURL, instanceID)
 	fileURL := fmt.Sprintf("%v%v?%v", location, filePath, params.Encode())
-	slog.Warn("url", "", fileURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesURL, err)
 	}
-
-	slog.Warn("tenantID", "", req.Header)
 
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)

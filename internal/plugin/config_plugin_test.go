@@ -131,9 +131,6 @@ func TestConfig_Process(t *testing.T) {
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
 			configService.UpdateInstanceConfigurationReturns(configurationStatus)
 
-			// instanceService := &servicefakes.FakeInstanceServiceInterface{}
-			// instanceService.GetInstanceReturns(testInstance)
-
 			instanceService := []*instances.Instance{testInstance}
 
 			configPlugin.configServices["123"] = configService

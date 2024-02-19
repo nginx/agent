@@ -39,8 +39,6 @@ type ConfigService struct {
 func NewConfigService(instanceID string, agentConfig *config.Config, instanceType instances.Type) *ConfigService {
 	cs := &ConfigService{}
 
-	slog.Warn("instance type", "type", instanceType)
-
 	switch instanceType {
 	case instances.Type_NGINX:
 		cs.configService = service.NewNginx(instanceID, agentConfig)
