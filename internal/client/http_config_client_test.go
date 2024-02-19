@@ -70,11 +70,11 @@ func TestGetFilesMetadata(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	filesURL := fmt.Sprintf("%v/instance/%s/files/", ts.URL, instanceID)
+	filesURL := fmt.Sprintf("%v/instance/%s/files/", ts.URL, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 
 	hcd := NewHTTPConfigClient(time.Second * 10)
 
-	resp, err := hcd.GetFilesMetadata(ctx, filesURL, tenantID.String())
+	resp, err := hcd.GetFilesMetadata(ctx, filesURL, tenantID.String(), instanceID.String())
 	require.NoError(t, err)
 	assert.Equal(t, resp.String(), testDataResponse.String())
 }
@@ -117,7 +117,7 @@ func TestGetFile(t *testing.T) {
 
 	hcd := NewHTTPConfigClient(time.Second * 10)
 
-	resp, err := hcd.GetFile(ctx, &file, filesURL, tenantID.String())
+	resp, err := hcd.GetFile(ctx, &file, filesURL, tenantID.String(), instanceID.String())
 	require.NoError(t, err)
 	assert.Equal(t, testDataResponse.String(), resp.String())
 }

@@ -7,6 +7,7 @@ package config
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -49,6 +50,20 @@ func NewNginx(instanceID string, agentConfig *config.Config) *Nginx {
 		fileCache:    fileCache,
 		configWriter: configWriter,
 	}
+}
+
+func (n *Nginx) Write(ctx context.Context, filesURL, tenantID, instanceID string) (skippedFiles map[string]struct{},
+	err error,
+) {
+	return n.configWriter.Write(ctx, filesURL, tenantID, instanceID)
+}
+
+func (n *Nginx) Complete() error {
+	return n.configWriter.Complete()
+}
+
+func (n *Nginx) SetConfigWriter(configWriter writer.ConfigWriterInterface) {
+	n.configWriter = configWriter
 }
 
 func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {

@@ -6,7 +6,11 @@
 package config
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
+
+	writer "github.com/nginx/agent/v3/internal/datasource/config"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 )
@@ -27,4 +31,16 @@ func (*NginxGatewayFabric) Validate(_ *instances.Instance) error {
 
 func (*NginxGatewayFabric) Apply(_ *instances.Instance) error {
 	return fmt.Errorf("not implemented")
+}
+
+func (*NginxGatewayFabric) Complete() error {
+	return fmt.Errorf("not implemented")
+}
+
+func (*NginxGatewayFabric) Write(_ context.Context, _, _, _ string) (skippedFiles map[string]struct{}, err error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (*NginxGatewayFabric) SetConfigWriter(configWriter writer.ConfigWriterInterface) {
+	slog.Warn("not implemented")
 }

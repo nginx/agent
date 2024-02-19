@@ -7,7 +7,6 @@ package config
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -16,14 +15,12 @@ import (
 
 	"github.com/nginx/agent/v3/internal/config"
 
-	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/client"
 )
 
 const (
 	filePermissions = 0o600
-	// defaultClientTimeOut = 10 * time.Second
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
@@ -31,8 +28,9 @@ const (
 
 type (
 	ConfigWriterInterface interface {
-		Write(ctx context.Context, filesURL string, tenantID uuid.UUID) (err error)
+		Write(ctx context.Context, filesURL, tenantID, instanceID string) (skippedFiles map[string]struct{}, err error)
 		Complete() (err error)
+		SetConfigClient(configClient client.ConfigClientInterface)
 	}
 
 	ConfigWriter struct {
@@ -53,17 +51,23 @@ func NewConfigWriter(agentConfig *config.Config, fileCache FileCacheInterface,
 	}
 }
 
-func (cw *ConfigWriter) Write(ctx context.Context, filesURL string, tenantID uuid.UUID) (err error) {
+func (cw *ConfigWriter) SetConfigClient(configClient client.ConfigClientInterface) {
+	cw.configClient = configClient
+}
+
+func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
+	tenantID, instaneID string,
+) (skippedFiles map[string]struct{}, err error) {
 	currentFileCache := make(CacheContent)
-	skippedFiles := make(map[string]struct{})
+	skippedFiles = make(map[string]struct{})
 	cacheContent, err := cw.fileCache.ReadFileCache()
 	if err != nil {
 		slog.Warn("Failed to read file cache")
 	}
 
-	filesMetaData, err := cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID.String())
+	filesMetaData, err := cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID, instaneID)
 	if err != nil {
-		return fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
+		return nil, fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
 	}
 
 	for _, fileData := range filesMetaData.GetFiles() {
@@ -74,25 +78,26 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL string, tenantID uui
 
 			continue
 		}
-		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID.String())
+		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instaneID)
 		if updateErr != nil {
-			return updateErr
+			slog.Debug("Update Error", "err", updateErr)
+			continue
 		}
 		currentFileCache[fileData.GetPath()] = file
 	}
 
 	cw.currentFileCache = currentFileCache
 
-	return err
+	return skippedFiles, err
 }
 
 func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File,
-	filesURL, tenantID string,
+	filesURL, tenantID, instanceID string,
 ) (*instances.File, error) {
 	if !cw.isFilePathValid(fileData.GetPath()) {
 		return nil, fmt.Errorf("invalid file path: %s", fileData.GetPath())
 	}
-	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID)
+	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID, instanceID)
 	if fetchErr != nil {
 		return nil, fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
 	}
@@ -111,20 +116,9 @@ func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File
 }
 
 func (cw *ConfigWriter) Complete() error {
-	cachePath := cw.fileCache.GetCachePath()
-	cache, err := json.MarshalIndent(cw.currentFileCache, "", "  ")
+	err := cw.fileCache.UpdateFileCache(cw.currentFileCache)
 	if err != nil {
-		return fmt.Errorf("error marshaling cache data from %s: %w", cachePath, err)
-	}
-
-	err = writeFile(cache, cachePath)
-	if err != nil {
-		return fmt.Errorf("error writing cache to %s: %w", cachePath, err)
-	}
-
-	err = cw.fileCache.UpdateFileCache(cw.currentFileCache)
-	if err != nil {
-		return fmt.Errorf("error updating cache to %s: %w", cachePath, err)
+		return fmt.Errorf("error updating cache to %s: %w", cw.fileCache.GetCachePath(), err)
 	}
 
 	return nil
@@ -161,9 +155,16 @@ func (cw *ConfigWriter) isFilePathValid(filePath string) (validPath bool) {
 	return false
 }
 
-func doesFileRequireUpdate(previousFileCache CacheContent, fileData *instances.File) (updateRequired bool) {
-	if len(previousFileCache) > 0 {
-		fileOnSystem, ok := previousFileCache[fileData.GetPath()]
+func doesFileRequireUpdate(fileCache CacheContent, fileData *instances.File) (updateRequired bool) {
+	if fileCache == nil {
+		return true
+	}
+	if len(fileCache) > 0 {
+		fileOnSystem, ok := fileCache[fileData.GetPath()]
+		if !ok {
+			return true
+		}
+
 		return ok && fileOnSystem.GetLastModified().AsTime().Before(fileData.GetLastModified().AsTime())
 	}
 

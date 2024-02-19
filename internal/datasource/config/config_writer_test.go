@@ -10,8 +10,11 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"reflect"
 	"testing"
 	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	config2 "github.com/nginx/agent/v3/internal/config"
 
@@ -69,6 +72,12 @@ func TestWriteConfig(t *testing.T) {
 	time3, err := createProtoTime("2024-01-08T13:22:21Z")
 	require.NoError(t, err)
 
+	time1test2, err := createProtoTime("2024-01-08T13:22:25Z")
+	require.NoError(t, err)
+
+	time3test2, err := createProtoTime("2024-01-08T13:22:25Z")
+	require.NoError(t, err)
+
 	cacheContent := CacheContent{
 		nginxConf.Name(): {
 			LastModified: time1,
@@ -87,9 +96,6 @@ func TestWriteConfig(t *testing.T) {
 		},
 	}
 
-	err = createCacheFile(cachePath, cacheContent)
-	require.NoError(t, err)
-
 	tests := []struct {
 		name           string
 		metaDataReturn *instances.Files
@@ -101,7 +107,7 @@ func TestWriteConfig(t *testing.T) {
 			metaDataReturn: &instances.Files{
 				Files: []*instances.File{
 					{
-						LastModified: time1,
+						LastModified: time1test2,
 						Path:         nginxConf.Name(),
 						Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
 					},
@@ -111,7 +117,7 @@ func TestWriteConfig(t *testing.T) {
 						Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
 					},
 					{
-						LastModified: time3,
+						LastModified: time3test2,
 						Path:         metricsConf.Name(),
 						Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
 					},
@@ -158,6 +164,8 @@ func TestWriteConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			err = createCacheFile(cachePath, cacheContent)
+			require.NoError(t, err)
 			fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
@@ -173,26 +181,22 @@ func TestWriteConfig(t *testing.T) {
 
 			configWriter := NewConfigWriter(&agentconfig, fileCache)
 
-			configWriter.configClient = fakeConfigClient
-
+			configWriter.SetConfigClient(fakeConfigClient)
 			err = writeFile(fileContent, testConfPath)
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
-			err = configWriter.Write(ctx, filesURL, tenantID)
+			_, err = configWriter.Write(ctx, filesURL, tenantID.String(), instanceID.String())
 			require.NoError(t, err)
 
-			if test.shouldBeEqual {
-				assert.Equal(t, cacheContent, configWriter.currentFileCache)
-				testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
-				require.NoError(t, readErr)
-				assert.Equal(t, fileContent, testData)
-			} else {
-				assert.NotEqual(t, cacheContent, configWriter.currentFileCache)
-				testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
-				require.NoError(t, readErr)
-				assert.NotEqual(t, testData, fileContent)
+			for _, file := range configWriter.currentFileCache {
+				checkProtoEquality(t, cacheContent[file.GetPath()], file, test.shouldBeEqual)
 			}
+			testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
+			require.NoError(t, readErr)
+
+			result := reflect.DeepEqual(testData, fileContent)
+			assert.Equal(t, result, test.shouldBeEqual)
 
 			err = os.Remove(test.getFileReturn.GetFilePath())
 			require.NoError(t, err)
@@ -469,4 +473,10 @@ func createCacheFile(cachePath string, cacheData CacheContent) error {
 	}
 
 	return err
+}
+
+func checkProtoEquality(t *testing.T, expected, actual proto.Message, shouldBeEqual bool) {
+	t.Helper()
+	res := proto.Equal(expected, actual)
+	assert.Equal(t, shouldBeEqual, res, "Expected %v, Actual %v", expected, actual)
 }

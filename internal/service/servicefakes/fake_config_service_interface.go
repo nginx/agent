@@ -2,6 +2,7 @@
 package servicefakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -28,12 +29,13 @@ type FakeConfigServiceInterface struct {
 	setConfigContextArgsForCall []struct {
 		arg1 any
 	}
-	UpdateInstanceConfigurationStub        func(string, string, *instances.Instance) *instances.ConfigurationStatus
+	UpdateInstanceConfigurationStub        func(context.Context, string, string, *instances.Instance) *instances.ConfigurationStatus
 	updateInstanceConfigurationMutex       sync.RWMutex
 	updateInstanceConfigurationArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
 		arg2 string
-		arg3 *instances.Instance
+		arg3 string
+		arg4 *instances.Instance
 	}
 	updateInstanceConfigurationReturns struct {
 		result1 *instances.ConfigurationStatus
@@ -142,20 +144,21 @@ func (fake *FakeConfigServiceInterface) SetConfigContextArgsForCall(i int) any {
 	return argsForCall.arg1
 }
 
-func (fake *FakeConfigServiceInterface) UpdateInstanceConfiguration(arg1 string, arg2 string, arg3 *instances.Instance) *instances.ConfigurationStatus {
+func (fake *FakeConfigServiceInterface) UpdateInstanceConfiguration(arg1 context.Context, arg2 string, arg3 string, arg4 *instances.Instance) *instances.ConfigurationStatus {
 	fake.updateInstanceConfigurationMutex.Lock()
 	ret, specificReturn := fake.updateInstanceConfigurationReturnsOnCall[len(fake.updateInstanceConfigurationArgsForCall)]
 	fake.updateInstanceConfigurationArgsForCall = append(fake.updateInstanceConfigurationArgsForCall, struct {
-		arg1 string
+		arg1 context.Context
 		arg2 string
-		arg3 *instances.Instance
-	}{arg1, arg2, arg3})
+		arg3 string
+		arg4 *instances.Instance
+	}{arg1, arg2, arg3, arg4})
 	stub := fake.UpdateInstanceConfigurationStub
 	fakeReturns := fake.updateInstanceConfigurationReturns
-	fake.recordInvocation("UpdateInstanceConfiguration", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("UpdateInstanceConfiguration", []interface{}{arg1, arg2, arg3, arg4})
 	fake.updateInstanceConfigurationMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1
@@ -169,17 +172,17 @@ func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationCallCount() i
 	return len(fake.updateInstanceConfigurationArgsForCall)
 }
 
-func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationCalls(stub func(string, string, *instances.Instance) *instances.ConfigurationStatus) {
+func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationCalls(stub func(context.Context, string, string, *instances.Instance) *instances.ConfigurationStatus) {
 	fake.updateInstanceConfigurationMutex.Lock()
 	defer fake.updateInstanceConfigurationMutex.Unlock()
 	fake.UpdateInstanceConfigurationStub = stub
 }
 
-func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationArgsForCall(i int) (string, string, *instances.Instance) {
+func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationArgsForCall(i int) (context.Context, string, string, *instances.Instance) {
 	fake.updateInstanceConfigurationMutex.RLock()
 	defer fake.updateInstanceConfigurationMutex.RUnlock()
 	argsForCall := fake.updateInstanceConfigurationArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationReturns(result1 *instances.ConfigurationStatus) {

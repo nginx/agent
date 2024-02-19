@@ -63,8 +63,20 @@ func (f *FileCache) ReadFileCache() (fileCache CacheContent, err error) {
 	return fileCache, err
 }
 
-func (f *FileCache) UpdateFileCache(cache CacheContent) error {
-	f.cacheContent = cache
+func (f *FileCache) UpdateFileCache(cacheContent CacheContent) error {
+	cachePath := f.GetCachePath()
+	cache, err := json.MarshalIndent(cacheContent, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshaling cache data from %s: %w", cachePath, err)
+	}
+
+	err = writeFile(cache, cachePath)
+	if err != nil {
+		return fmt.Errorf("error writing cache to %s: %w", cachePath, err)
+	}
+
+	f.cacheContent = cacheContent
+
 	return nil
 }
 

@@ -20,6 +20,20 @@ const (
 )
 
 func TestUpdateCache(t *testing.T) {
+	instanceIDDir := fmt.Sprintf("./%s/", instanceID)
+
+	err := os.Mkdir(instanceIDDir, 0o755)
+	require.NoError(t, err)
+	defer os.Remove(instanceIDDir)
+	cacheFile, err := os.CreateTemp(instanceIDDir, "cache.json")
+	require.NoError(t, err)
+	defer os.Remove(cacheFile.Name())
+
+	cacheData := CacheContent{}
+
+	err = createCacheFile(cacheFile.Name(), cacheData)
+	require.NoError(t, err)
+
 	fileTime1, err := createProtoTime("2024-01-08T13:22:23Z")
 	require.NoError(t, err)
 
@@ -60,6 +74,7 @@ func TestUpdateCache(t *testing.T) {
 	}
 
 	fileCache := NewFileCache(instanceID)
+	fileCache.SetCachePath(cacheFile.Name())
 
 	err = fileCache.UpdateFileCache(expected)
 	require.NoError(t, err)

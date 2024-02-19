@@ -6,6 +6,8 @@
 package service
 
 import (
+	"log/slog"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/instance"
@@ -45,6 +47,8 @@ func (is *InstanceService) GetInstances(processes []*model.Process) []*instances
 }
 
 func (is *InstanceService) GetInstance(instanceID string) *instances.Instance {
+	slog.Warn("instance", "insatnceID", instanceID)
+	slog.Warn("instance", "is.instances", is.instances)
 	for _, instanceEntity := range is.instances {
 		if instanceEntity.GetInstanceId() == instanceID {
 			return instanceEntity

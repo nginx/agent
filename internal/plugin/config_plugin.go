@@ -19,14 +19,14 @@ import (
 type Config struct {
 	messagePipe     bus.MessagePipeInterface
 	configServices  map[string]service.ConfigServiceInterface
-	instanceService service.InstanceServiceInterface
+	instanceService []*instances.Instance
 	agentConfig     *config.Config
 }
 
 func NewConfig(agentConfig *config.Config) *Config {
 	return &Config{
 		configServices:  make(map[string]service.ConfigServiceInterface), // key is instance id
-		instanceService: service.NewInstanceService(),
+		instanceService: []*instances.Instance{},
 		agentConfig:     agentConfig,
 	}
 }
@@ -49,6 +49,10 @@ func (c *Config) Process(msg *bus.Message) {
 		c.processConfigurationStatus(msg)
 	case msg.Topic == bus.InstanceConfigUpdateRequestTopic:
 		c.processInstanceConfigUpdateRequest(msg)
+	case msg.Topic == bus.InstancesTopic:
+		if newInstances, ok := msg.Data.([]*instances.Instance); ok {
+			c.instanceService = newInstances
+		}
 	}
 }
 
@@ -56,18 +60,30 @@ func (*Config) Subscriptions() []string {
 	return []string{
 		bus.InstanceConfigUpdateRequestTopic,
 		bus.InstanceConfigUpdateCompleteTopic,
+		bus.InstancesTopic,
 	}
 }
 
 func (c *Config) processConfigurationStatus(msg *bus.Message) {
+	slog.Warn("Msg", "msg", msg)
 	if configurationStatus, ok := msg.Data.(*instances.ConfigurationStatus); !ok {
 		slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
 	} else if configurationStatus.GetStatus() == instances.Status_SUCCESS {
 		c.parseInstanceConfiguration(
 			configurationStatus.GetCorrelationId(),
-			c.instanceService.GetInstance(configurationStatus.GetInstanceId()),
+			c.GetInstance(configurationStatus.GetInstanceId()),
 		)
 	}
+}
+
+func (c *Config) GetInstance(instanceID string) *instances.Instance {
+	for _, instanceEntity := range c.instanceService {
+		if instanceEntity.GetInstanceId() == instanceID {
+			return instanceEntity
+		}
+	}
+
+	return nil
 }
 
 func (c *Config) processInstanceConfigUpdateRequest(msg *bus.Message) {
@@ -80,8 +96,11 @@ func (c *Config) processInstanceConfigUpdateRequest(msg *bus.Message) {
 
 func (c *Config) parseInstanceConfiguration(correlationID string, instance *instances.Instance) {
 	if c.configServices[instance.GetInstanceId()] == nil {
-		c.configServices[instance.GetInstanceId()] = service.NewConfigService(instance.GetInstanceId(), c.agentConfig)
+		c.configServices[instance.GetInstanceId()] = service.NewConfigService(instance.GetInstanceId(),
+			c.agentConfig, instance.GetType())
 	}
+
+	slog.Warn("instance", "instance", instance)
 
 	parsedConfig, err := c.configServices[instance.GetInstanceId()].ParseInstanceConfiguration(correlationID, instance)
 	if err != nil {
@@ -92,11 +111,11 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 			"error", err,
 		)
 	} else {
-		switch instanceConfig := parsedConfig.(type) {
+		switch configContext := parsedConfig.(type) {
 		case model.NginxConfigContext:
-			c.configServices[instance.GetInstanceId()].SetConfigContext(instanceConfig)
+			c.configServices[instance.GetInstanceId()].SetConfigContext(configContext)
 		default:
-			slog.Debug("Unknown config context", "configContext", instanceConfig)
+			slog.Debug("Unknown config context", "configContext", configContext)
 		}
 		c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigContextTopic, Data: parsedConfig})
 	}
@@ -105,10 +124,12 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest) {
 	instanceID := request.Instance.GetInstanceId()
 	if c.configServices[instanceID] == nil {
-		c.configServices[instanceID] = service.NewConfigService(instanceID, c.agentConfig)
+		slog.Warn("instance", "instance", request.Instance)
+		c.configServices[instanceID] = service.NewConfigService(instanceID, c.agentConfig, request.Instance.GetType())
 	}
 
 	status := c.configServices[request.Instance.GetInstanceId()].UpdateInstanceConfiguration(
+		c.messagePipe.Context(),
 		request.CorrelationID,
 		request.Location,
 		request.Instance,

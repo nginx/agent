@@ -23,11 +23,11 @@ import (
 const tenantHeader = "tenantId"
 
 type ConfigClientInterface interface {
-	GetFilesMetadata(ctx context.Context, filesURL, tenantID string) (*instances.Files, error)
+	GetFilesMetadata(ctx context.Context, filesURL, tenantID, instanceID string) (*instances.Files, error)
 	GetFile(
 		ctx context.Context,
 		file *instances.File,
-		filesURL, tenantID string,
+		filesURL, tenantID, instanceID string,
 	) (*instances.FileDownloadResponse, error)
 }
 
@@ -47,12 +47,15 @@ func NewHTTPConfigClient(timeout time.Duration) *HTTPConfigClient {
 
 func (hcd *HTTPConfigClient) GetFilesMetadata(
 	ctx context.Context,
-	filesURL, tenantID string,
+	filesURL, tenantID, instanceID string,
 ) (*instances.Files, error) {
 	files := instances.Files{}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, filesURL, nil)
+	location := fmt.Sprintf("%v/instance/%s/files/", filesURL, instanceID)
 
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, location, nil)
+	slog.Warn("Get Files Response req", "req", req)
+	slog.Warn("File URL", "url", filesURL)
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
 	}
@@ -92,7 +95,7 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(
 func (hcd *HTTPConfigClient) GetFile(
 	ctx context.Context,
 	file *instances.File,
-	filesURL, tenantID string,
+	filesURL, tenantID, instanceID string,
 ) (*instances.FileDownloadResponse, error) {
 	response := instances.FileDownloadResponse{}
 	params := url.Values{}
@@ -102,16 +105,18 @@ func (hcd *HTTPConfigClient) GetFile(
 
 	filePath := url.QueryEscape(file.GetPath())
 
-	fileURL := fmt.Sprintf("%v%v?%v", filesURL, filePath, params.Encode())
-
+	location := fmt.Sprintf("%v/instance/%s/files/", filesURL, instanceID)
+	fileURL := fmt.Sprintf("%v%v?%v", location, filePath, params.Encode())
+	slog.Warn("url", "", fileURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesURL, err)
+	}
+
+	slog.Warn("tenantID", "", req.Header)
 
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesURL, err)
 	}
 
 	resp, err := hcd.httpClient.Do(req)
