@@ -20,20 +20,10 @@ message CommandResponse {
         CMD_ERROR = 2;
     }
 
-    // Command error code enum
-    enum CommandErrorCode {
-        // No Error (This is the default value)
-        ERR_OK = 0;
-        // Unknown error
-        ERR_UNKNOWN = 1;
-    }
-
     // Command status
     CommandStatus status = 1;
-    // Error code
-    CommandErrorCode error_code = 2;
     // Provides a user friendly message to describe the response
-    string message = 3;
+    string message = 2;
     // Provides an error message of why the command failed
-    string error = 4;
+    string error = 3;
 }

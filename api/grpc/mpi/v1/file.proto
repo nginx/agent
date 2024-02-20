@@ -30,7 +30,6 @@ message File {
     string permissions = 3;
     // Size of the file in bytes
     int64 size = 4;
-    FileContents contents = 5;  // optional
     // Action enum
     enum Action {
         // Default value
@@ -45,18 +44,18 @@ message File {
         DELETE = 4;
     }
     // optional action
-    Action action = 7;
+    Action action = 5;
+    FileContents contents = 6;
 }
 
 message FileRequest {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
-    string name = 2;
+    FileMeta meta = 2;
 }
 
 message FileContents {
-    FileMeta file_meta = 1;
     // https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string
-    bytes contents = 2;
+    bytes contents = 1;
 }
 
 message FileMeta {

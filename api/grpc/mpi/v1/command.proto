@@ -4,56 +4,64 @@ package f5.nginx.agent.api.grpc.mpi.v1;
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1/command;command";
 
 import "common.proto";
+import "file.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 
 // following https://protobuf.dev/programming-guides/style/
 service CommandService {
+    // connects Agents to the Management Plane
     rpc Connect(ConnectionRequest) returns (ConnectionResponse) {}
+    // reports on instances and their configurations
     rpc Status(DataPlaneStatus) returns (google.protobuf.Empty) {}
+    // reports on instance health
     rpc Health(DataPlaneHealth) returns (google.protobuf.Empty) {}
-    // rpc Metadata(Instance) returns (google.protobuf.Empty) {} // this
-    // is useful for registering new instances or instance updates, better to do
-    // it not through subs
+    // other messages
     rpc Subscribe(stream DataPlaneMessage) returns (stream ManagementPlaneMessage) {}
-    // send one message at a time... having a list doesn't make sense?!?
 }
 
 message ConnectionRequest {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
-    Instance agent_metadata = 2;
-    AgentConfig agent_config = 3;
+    Instance agent = 2;
 }
 
+// need to build this out
 message AgentConfig {
     Server server = 1;  // can we connect to more than one management plane?
     // Max NAck setting
-    // Features enabled/disabled
     repeated google.protobuf.Struct labels = 2;
+    repeated string features = 3;
 }
 
 message Server {
     string endpoint = 1;
     string port = 2;
-    // Security           security = 3;
-    ConnectionSettings connection_settings = 3;
 }
 
-message ConnectionSettings {}
+// this to be built out
+message NGINXConfig {
+    string binary_path = 1;
+    string hostname = 2;
+    string ip_address = 3;
+    string stub_status = 4;
+    repeated string access_logs = 5;
+    repeated string error_logs = 6;
+}
 
-message AgentMetadata {
-    string uuid = 1;
-    string version = 2;
-    string binary_path = 3;  // is this necessary? should it be in the instance
-    // metadata for agent?!?
+// this to be built out
+message NGINXPlusConfig {
+    string binary_path = 1;
+    string hostname = 2;
+    string ip_address = 3;
+    string api = 4;
+    repeated string access_logs = 5; // is this correct for plus?
+    repeated string error_logs = 6;  // is this correct for plus?
 }
 
 message ConnectionResponse {
     f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse response = 1;
     AgentConfig agent_config = 2;
 }
-
-message Overview {}
 
 message DataPlaneStatus {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
@@ -63,15 +71,26 @@ message DataPlaneStatus {
 // only send changed values
 message Instance {
     InstanceMeta instance_meta = 1;
-    string binary_path = 2; // required?!? 
-    repeated string actions = 3; // optional?
-    string hostname = 4;
-    string ip_address = 5;
+    InstanceConfig instance_config = 2;
 }
 
-message InstanceHealths {
-    repeated InstanceMeta instances = 1;
-    repeated InstanceHealth instance_health = 2;
+message InstanceConfig {
+    // repeated enum of actions?!?
+    repeated InstanceAction actions = 1; // can put into a common object and reuse
+    oneof config {
+        AgentConfig agent_config = 2;
+        NGINXConfig nginx_config = 3;
+        NGINXPlusConfig nginx_plus_config = 4;
+        // ... others NIC, NGF, Unit
+    }
+}
+
+message InstanceAction {
+    enum InstanceActions {
+        UNKNOWN = 0;
+        // TBD
+    }
+    InstanceActions action = 1;
 }
 
 message InstanceHealth {
@@ -86,10 +105,11 @@ message InstanceHealth {
         // Degraded status
         DEGRADED = 3;
     }
-    // NGINX status
-    InstancHealthStatus instance_health_status = 1;
+    string uuid = 1;
+    // Health status
+    InstancHealthStatus instance_health_status = 2;
     // Provides a human readable context around why a health status is a particular state
-    string description = 2;
+    string description = 3;
 }
 
 message InstanceMeta {
@@ -107,14 +127,48 @@ message InstanceMeta {
 
 message DataPlaneHealth {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
-    repeated InstanceHealths instance_healths = 2;
+    repeated InstanceHealth instance_health = 2;
 }
 
 message DataPlaneMessage {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
-
+    f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse command_response = 2; // triggers a RPC, acks message has been acted on
 }
 
 message ManagementPlaneMessage {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    enum RequestType {
+        UNKNOWN = 0;
+        STATUS = 1;
+        HEALTH = 2;
+        CONFIG_UPLOAD = 3;
+        CONFIG_DOWNLOAD = 4;
+        ACTION = 5;
+    }
+    RequestType type = 2;
+    oneof payload {
+        StatusRequest status_request = 3;
+        ConfigRequest config_request = 4;
+        ActionRequest action_request = 5; 
+    }
+}
+
+message StatusRequest {
+    // empty?
+}
+
+message ConfigRequest {
+    f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion config_version = 1; 
+}
+
+message ActionRequest {
+    InstanceAction action = 1;
+    oneof payload {
+        // add actions as we support new capabilities
+        DefaultAction dafault_action = 2;
+    }   
+}
+
+message DefaultAction {
+    repeated google.protobuf.Struct params = 1;
 }
