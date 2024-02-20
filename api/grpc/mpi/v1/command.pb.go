@@ -4,11 +4,9 @@
 // 	protoc        v4.25.2
 // source: command.proto
 
-package command
+package v1
 
 import (
-	common "github.com/nginx/agent/v3/api/grpc/mpi/v1/common"
-	file "github.com/nginx/agent/v3/api/grpc/mpi/v1/file"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -242,8 +240,8 @@ type ConnectionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MessageMetadata *common.MessageRequest `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
-	Agent           *Instance              `protobuf:"bytes,2,opt,name=agent,proto3" json:"agent,omitempty"`
+	MessageMetadata *MessageRequest `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
+	Agent           *Instance       `protobuf:"bytes,2,opt,name=agent,proto3" json:"agent,omitempty"`
 }
 
 func (x *ConnectionRequest) Reset() {
@@ -278,7 +276,7 @@ func (*ConnectionRequest) Descriptor() ([]byte, []int) {
 	return file_command_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ConnectionRequest) GetMessageMetadata() *common.MessageRequest {
+func (x *ConnectionRequest) GetMessageMetadata() *MessageRequest {
 	if x != nil {
 		return x.MessageMetadata
 	}
@@ -593,8 +591,8 @@ type ConnectionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Response    *common.CommandResponse `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
-	AgentConfig *AgentConfig            `protobuf:"bytes,2,opt,name=agent_config,json=agentConfig,proto3" json:"agent_config,omitempty"`
+	Response    *CommandResponse `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
+	AgentConfig *AgentConfig     `protobuf:"bytes,2,opt,name=agent_config,json=agentConfig,proto3" json:"agent_config,omitempty"`
 }
 
 func (x *ConnectionResponse) Reset() {
@@ -629,7 +627,7 @@ func (*ConnectionResponse) Descriptor() ([]byte, []int) {
 	return file_command_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ConnectionResponse) GetResponse() *common.CommandResponse {
+func (x *ConnectionResponse) GetResponse() *CommandResponse {
 	if x != nil {
 		return x.Response
 	}
@@ -648,8 +646,8 @@ type DataPlaneStatus struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MessageMetadata *common.MessageRequest `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
-	Instances       []*Instance            `protobuf:"bytes,2,rep,name=instances,proto3" json:"instances,omitempty"`
+	MessageMetadata *MessageRequest `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
+	Instances       []*Instance     `protobuf:"bytes,2,rep,name=instances,proto3" json:"instances,omitempty"`
 }
 
 func (x *DataPlaneStatus) Reset() {
@@ -684,7 +682,7 @@ func (*DataPlaneStatus) Descriptor() ([]byte, []int) {
 	return file_command_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *DataPlaneStatus) GetMessageMetadata() *common.MessageRequest {
+func (x *DataPlaneStatus) GetMessageMetadata() *MessageRequest {
 	if x != nil {
 		return x.MessageMetadata
 	}
@@ -1038,8 +1036,8 @@ type DataPlaneHealth struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MessageMetadata *common.MessageRequest `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
-	InstanceHealth  []*InstanceHealth      `protobuf:"bytes,2,rep,name=instance_health,json=instanceHealth,proto3" json:"instance_health,omitempty"`
+	MessageMetadata *MessageRequest   `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
+	InstanceHealth  []*InstanceHealth `protobuf:"bytes,2,rep,name=instance_health,json=instanceHealth,proto3" json:"instance_health,omitempty"`
 }
 
 func (x *DataPlaneHealth) Reset() {
@@ -1074,7 +1072,7 @@ func (*DataPlaneHealth) Descriptor() ([]byte, []int) {
 	return file_command_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *DataPlaneHealth) GetMessageMetadata() *common.MessageRequest {
+func (x *DataPlaneHealth) GetMessageMetadata() *MessageRequest {
 	if x != nil {
 		return x.MessageMetadata
 	}
@@ -1093,8 +1091,8 @@ type DataPlaneMessage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MessageMetadata *common.MessageRequest  `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
-	CommandResponse *common.CommandResponse `protobuf:"bytes,2,opt,name=command_response,json=commandResponse,proto3" json:"command_response,omitempty"` // triggers a RPC, acks message has been acted on
+	MessageMetadata *MessageRequest  `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
+	CommandResponse *CommandResponse `protobuf:"bytes,2,opt,name=command_response,json=commandResponse,proto3" json:"command_response,omitempty"` // triggers a RPC, acks message has been acted on
 }
 
 func (x *DataPlaneMessage) Reset() {
@@ -1129,14 +1127,14 @@ func (*DataPlaneMessage) Descriptor() ([]byte, []int) {
 	return file_command_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *DataPlaneMessage) GetMessageMetadata() *common.MessageRequest {
+func (x *DataPlaneMessage) GetMessageMetadata() *MessageRequest {
 	if x != nil {
 		return x.MessageMetadata
 	}
 	return nil
 }
 
-func (x *DataPlaneMessage) GetCommandResponse() *common.CommandResponse {
+func (x *DataPlaneMessage) GetCommandResponse() *CommandResponse {
 	if x != nil {
 		return x.CommandResponse
 	}
@@ -1148,7 +1146,7 @@ type ManagementPlaneMessage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MessageMetadata *common.MessageRequest             `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
+	MessageMetadata *MessageRequest                    `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
 	Type            ManagementPlaneMessage_RequestType `protobuf:"varint,2,opt,name=type,proto3,enum=f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage_RequestType" json:"type,omitempty"`
 	// Types that are assignable to Payload:
 	//
@@ -1190,7 +1188,7 @@ func (*ManagementPlaneMessage) Descriptor() ([]byte, []int) {
 	return file_command_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *ManagementPlaneMessage) GetMessageMetadata() *common.MessageRequest {
+func (x *ManagementPlaneMessage) GetMessageMetadata() *MessageRequest {
 	if x != nil {
 		return x.MessageMetadata
 	}
@@ -1297,7 +1295,7 @@ type ConfigRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ConfigVersion *file.ConfigVersion `protobuf:"bytes,1,opt,name=config_version,json=configVersion,proto3" json:"config_version,omitempty"`
+	ConfigVersion *ConfigVersion `protobuf:"bytes,1,opt,name=config_version,json=configVersion,proto3" json:"config_version,omitempty"`
 }
 
 func (x *ConfigRequest) Reset() {
@@ -1332,7 +1330,7 @@ func (*ConfigRequest) Descriptor() ([]byte, []int) {
 	return file_command_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *ConfigRequest) GetConfigVersion() *file.ConfigVersion {
+func (x *ConfigRequest) GetConfigVersion() *ConfigVersion {
 	if x != nil {
 		return x.ConfigVersion
 	}
@@ -1735,11 +1733,10 @@ var file_command_proto_rawDesc = []byte{
 	0x36, 0x2e, 0x66, 0x35, 0x2e, 0x6e, 0x67, 0x69, 0x6e, 0x78, 0x2e, 0x61, 0x67, 0x65, 0x6e, 0x74,
 	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x6d, 0x70, 0x69, 0x2e, 0x76, 0x31,
 	0x2e, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x50, 0x6c, 0x61, 0x6e, 0x65,
-	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x3b, 0x5a,
-	0x39, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6e, 0x67, 0x69, 0x6e,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x2b, 0x5a,
+	0x29, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6e, 0x67, 0x69, 0x6e,
 	0x78, 0x2f, 0x61, 0x67, 0x65, 0x6e, 0x74, 0x2f, 0x76, 0x33, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x67,
-	0x72, 0x70, 0x63, 0x2f, 0x6d, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61,
-	0x6e, 0x64, 0x3b, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x72, 0x70, 0x63, 0x2f, 0x6d, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x33,
 }
 
@@ -1781,10 +1778,10 @@ var file_command_proto_goTypes = []interface{}{
 	(*ConfigRequest)(nil),                   // 20: f5.nginx.agent.api.grpc.mpi.v1.ConfigRequest
 	(*ActionRequest)(nil),                   // 21: f5.nginx.agent.api.grpc.mpi.v1.ActionRequest
 	(*DefaultAction)(nil),                   // 22: f5.nginx.agent.api.grpc.mpi.v1.DefaultAction
-	(*common.MessageRequest)(nil),           // 23: f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
+	(*MessageRequest)(nil),                  // 23: f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
 	(*structpb.Struct)(nil),                 // 24: google.protobuf.Struct
-	(*common.CommandResponse)(nil),          // 25: f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse
-	(*file.ConfigVersion)(nil),              // 26: f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion
+	(*CommandResponse)(nil),                 // 25: f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse
+	(*ConfigVersion)(nil),                   // 26: f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion
 	(*emptypb.Empty)(nil),                   // 27: google.protobuf.Empty
 }
 var file_command_proto_depIdxs = []int32{
@@ -1838,6 +1835,8 @@ func file_command_proto_init() {
 	if File_command_proto != nil {
 		return
 	}
+	file_common_proto_init()
+	file_file_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_command_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConnectionRequest); i {

@@ -4,10 +4,9 @@
 // 	protoc        v4.25.2
 // source: file.proto
 
-package file
+package v1
 
 import (
-	common "github.com/nginx/agent/v3/api/grpc/mpi/v1/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -296,8 +295,8 @@ type FileRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MessageMetadata *common.MessageRequest `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
-	Meta            *FileMeta              `protobuf:"bytes,2,opt,name=meta,proto3" json:"meta,omitempty"`
+	MessageMetadata *MessageRequest `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
+	Meta            *FileMeta       `protobuf:"bytes,2,opt,name=meta,proto3" json:"meta,omitempty"`
 }
 
 func (x *FileRequest) Reset() {
@@ -332,7 +331,7 @@ func (*FileRequest) Descriptor() ([]byte, []int) {
 	return file_file_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *FileRequest) GetMessageMetadata() *common.MessageRequest {
+func (x *FileRequest) GetMessageMetadata() *MessageRequest {
 	if x != nil {
 		return x.MessageMetadata
 	}
@@ -539,11 +538,10 @@ var file_file_proto_rawDesc = []byte{
 	0x65, 0x1a, 0x2d, 0x2e, 0x66, 0x35, 0x2e, 0x6e, 0x67, 0x69, 0x6e, 0x78, 0x2e, 0x61, 0x67, 0x65,
 	0x6e, 0x74, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x6d, 0x70, 0x69, 0x2e,
 	0x76, 0x31, 0x2e, 0x66, 0x69, 0x6c, 0x65, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x4d, 0x65, 0x74, 0x61,
-	0x22, 0x00, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
+	0x22, 0x00, 0x42, 0x2b, 0x5a, 0x29, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
 	0x2f, 0x6e, 0x67, 0x69, 0x6e, 0x78, 0x2f, 0x61, 0x67, 0x65, 0x6e, 0x74, 0x2f, 0x76, 0x33, 0x2f,
-	0x61, 0x70, 0x69, 0x2f, 0x67, 0x72, 0x70, 0x63, 0x2f, 0x6d, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x2f,
-	0x66, 0x69, 0x6c, 0x65, 0x3b, 0x66, 0x69, 0x6c, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x61, 0x70, 0x69, 0x2f, 0x67, 0x72, 0x70, 0x63, 0x2f, 0x6d, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -569,7 +567,7 @@ var file_file_proto_goTypes = []interface{}{
 	(*FileContents)(nil),          // 5: f5.nginx.agent.api.grpc.mpi.v1.file.FileContents
 	(*FileMeta)(nil),              // 6: f5.nginx.agent.api.grpc.mpi.v1.file.FileMeta
 	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
-	(*common.MessageRequest)(nil), // 8: f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
+	(*MessageRequest)(nil),        // 8: f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
 }
 var file_file_proto_depIdxs = []int32{
 	3,  // 0: f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview.file:type_name -> f5.nginx.agent.api.grpc.mpi.v1.file.File
@@ -597,6 +595,7 @@ func file_file_proto_init() {
 	if File_file_proto != nil {
 		return
 	}
+	file_common_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_file_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfigVersion); i {

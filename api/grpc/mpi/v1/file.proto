@@ -4,7 +4,7 @@ package f5.nginx.agent.api.grpc.mpi.v1.file;
 import "common.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1/file;file";
+option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
 service FileService {
     rpc Overview(ConfigVersion) returns (FileOverview) {}
