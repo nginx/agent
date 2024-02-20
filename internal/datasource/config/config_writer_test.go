@@ -86,7 +86,7 @@ func TestWriteConfig(t *testing.T) {
 			assert.FileExists(t, testConfPath)
 
 			if !test.shouldBeEqual {
-				modified, protoErr := helpers.CreateProtoTime("2024-01-09T13:22:21Z")
+				modified, protoErr := helpers.CreateProtoTime("2024-01-09T13:22:26Z")
 				require.NoError(t, protoErr)
 				previousFileCache[nginxConf.Name()].LastModified = modified
 			}
