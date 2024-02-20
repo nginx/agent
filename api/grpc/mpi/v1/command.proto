@@ -9,6 +9,7 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 
 // following https://protobuf.dev/programming-guides/style/
+// and https://static.sched.com/hosted_files/kccncna17/ad/2017%20CloudNativeCon%20-%20Mod%20gRPC%20Services.pdf
 service CommandService {
     // connects Agents to the Management Plane
     rpc Connect(ConnectionRequest) returns (ConnectionResponse) {}
@@ -138,11 +139,19 @@ message DataPlaneMessage {
 message ManagementPlaneMessage {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
     oneof request {
-        StatusRequest status_request = 2;
-        HealthRequest health_request = 3;
+        // triggers a DataPlaneStatus rpc
+        StatusRequest status_request = 2;              
+        // triggers a DataPlaneHealth rpc
+        HealthRequest health_request = 3;               
+        // triggers a rpc GetFile(FileRequest) for overview list, 
+        // if overview is missing, triggers a rpc Overview(ConfigVersion) first
         ConfigApplyRequest config_apply_request = 5;
-        ConfigUploadRequest config_upload_request = 6;
+         // triggers a series of rpc SendFile(File) for that instances
+        ConfigUploadRequest config_upload_request = 6; 
+        // triggers a DataPlaneMessage with a command_response for a particular action
         ActionRequest action_request = 7;
+        // triggers a DataPlaneMessage with a command_response for a particular correlation_id
+        CommandStatusRequest command_status_request = 8; 
     }
 }
 
@@ -166,6 +175,10 @@ message ActionRequest {
         // add actions as we support new capabilities
         DefaultAction default_action = 3;
     }   
+}
+
+message CommandStatusRequest {
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
 }
 
 message DefaultAction {

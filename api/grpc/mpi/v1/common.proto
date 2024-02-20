@@ -18,6 +18,8 @@ message CommandResponse {
         CMD_OK = 1;
         // Command failed
         CMD_ERROR = 2;
+        // Command in-progress
+        CMD_IN_PROGRESS = 3;
     }
 
     // Command status
