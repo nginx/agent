@@ -7,6 +7,8 @@ ARG ENTRY_POINT
 ARG PACKAGE_NAME
 ARG PACKAGES_REPO
 
+COPY ./scripts/docker/supervisor.d/*.conf etc/supervisor.d/
+
 WORKDIR /agent
 COPY ./build /agent/build
 COPY $ENTRY_POINT /agent/entrypoint.sh
