@@ -121,6 +121,7 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 }
 
 func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest) {
+	slog.Debug("Updating instance configuration")
 	instanceID := request.Instance.GetInstanceId()
 	if c.configServices[instanceID] == nil {
 		c.configServices[instanceID] = service.NewConfigService(instanceID, c.agentConfig, request.Instance.GetType())

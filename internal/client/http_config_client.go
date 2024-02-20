@@ -52,6 +52,7 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(
 	ctx context.Context,
 	filesURL, tenantID, instanceID string,
 ) (*instances.Files, error) {
+	slog.Debug("Getting files metadata")
 	files := instances.Files{}
 
 	location := fmt.Sprintf(fileLocation, filesURL, instanceID)
@@ -99,6 +100,7 @@ func (hcd *HTTPConfigClient) GetFile(
 	file *instances.File,
 	filesURL, tenantID, instanceID string,
 ) (*instances.FileDownloadResponse, error) {
+	slog.Debug("Getting file", "file path", file.GetPath())
 	response := instances.FileDownloadResponse{}
 	params := url.Values{}
 

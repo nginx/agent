@@ -8,6 +8,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -45,6 +46,7 @@ func NewFileCache(instanceID string) *FileCache {
 }
 
 func (f *FileCache) ReadFileCache() (fileCache CacheContent, err error) {
+	slog.Debug("Reading file cache")
 	fileCache = make(CacheContent)
 
 	if _, statErr := os.Stat(f.cachePath); os.IsNotExist(statErr) {
@@ -64,6 +66,7 @@ func (f *FileCache) ReadFileCache() (fileCache CacheContent, err error) {
 }
 
 func (f *FileCache) UpdateFileCache(cacheContent CacheContent) error {
+	slog.Debug("Updating file cache")
 	cachePath := f.GetCachePath()
 	cache, err := json.MarshalIndent(cacheContent, "", "  ")
 	if err != nil {

@@ -122,6 +122,7 @@ func getLogs(payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog
 }
 
 func (n *Nginx) Validate(instance *instances.Instance) error {
+	slog.Debug("Validating NGINX config")
 	exePath := instance.GetMeta().GetNginxMeta().GetExePath()
 
 	out, err := n.executor.RunCmd(exePath, "-t")
@@ -140,6 +141,7 @@ func (n *Nginx) Validate(instance *instances.Instance) error {
 }
 
 func (n *Nginx) Apply(instance *instances.Instance) error {
+	slog.Debug("Applying NGINX config")
 	exePath := instance.GetMeta().GetNginxMeta().GetExePath()
 	out, err := n.executor.RunCmd(exePath, "-s", "reload")
 	if err != nil {

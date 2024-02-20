@@ -70,7 +70,13 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 		return nil, fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
 	}
 
+	slog.Debug("fileData", "data", filesMetaData)
+	if len(filesMetaData.GetFiles()) == 0 {
+		slog.Debug("No file metadata for instance", "instanceID", instaneID)
+		return nil, fmt.Errorf("error getting files metadata, no metadata exists for instance", "instanceID", instaneID)
+	}
 	for _, fileData := range filesMetaData.GetFiles() {
+		slog.Debug("Files Data")
 		if !doesFileRequireUpdate(cacheContent, fileData) {
 			slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.GetPath())
 			currentFileCache[fileData.GetPath()] = cacheContent[fileData.GetPath()]
@@ -78,10 +84,11 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 
 			continue
 		}
+		slog.Debug("Updating file, latest version not on disk", "filePath", fileData.GetPath())
 		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instaneID)
 		if updateErr != nil {
 			slog.Debug("Update Error", "err", updateErr)
-			continue
+			return nil, updateErr
 		}
 		currentFileCache[fileData.GetPath()] = file
 	}
@@ -116,6 +123,7 @@ func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File
 }
 
 func (cw *ConfigWriter) Complete() error {
+	slog.Debug("Completing config apply")
 	err := cw.fileCache.UpdateFileCache(cw.currentFileCache)
 	if err != nil {
 		return fmt.Errorf("error updating cache to %s: %w", cw.fileCache.GetCachePath(), err)
@@ -125,6 +133,7 @@ func (cw *ConfigWriter) Complete() error {
 }
 
 func writeFile(fileContent []byte, filePath string) error {
+	slog.Debug("Writing to file", "filePath", filePath)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		slog.Debug("File does not exist, creating new file", "file", filePath)
 		err = os.MkdirAll(path.Dir(filePath), filePermissions)
@@ -143,6 +152,7 @@ func writeFile(fileContent []byte, filePath string) error {
 }
 
 func (cw *ConfigWriter) isFilePathValid(filePath string) (validPath bool) {
+	slog.Debug("Checking is file path is valid")
 	if filePath == "" || strings.HasSuffix(filePath, "/") {
 		return false
 	}
@@ -150,6 +160,9 @@ func (cw *ConfigWriter) isFilePathValid(filePath string) (validPath bool) {
 		if strings.HasPrefix(filePath, dir) {
 			return true
 		}
+		slog.Debug("file not in allowed directories:", "path", filePath)
+		return false
+
 	}
 
 	return false
