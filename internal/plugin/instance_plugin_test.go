@@ -63,3 +63,37 @@ func TestInstance_Process(t *testing.T) {
 
 	assert.Equal(t, testInstances, instanceMonitor.instances)
 }
+
+func TestInstance_Process_Error_Expected(t *testing.T) {
+	instanceMonitor := NewInstance()
+
+	messagePipe := bus.NewMessagePipe(context.TODO(), 2)
+	err := messagePipe.Register(2, []bus.Plugin{instanceMonitor})
+	require.NoError(t, err)
+	go messagePipe.Run()
+
+	messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: nil})
+
+	time.Sleep(10 * time.Millisecond)
+
+	assert.Equal(t, []*instances.Instance{}, instanceMonitor.instances)
+}
+
+func TestInstance_Process_Empty_Instances(t *testing.T) {
+	testInstances := []*instances.Instance{}
+
+	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
+	fakeInstanceService.GetInstancesReturns(testInstances)
+	instanceMonitor := NewInstance()
+
+	messagePipe := bus.NewMessagePipe(context.TODO(), 2)
+	err := messagePipe.Register(2, []bus.Plugin{instanceMonitor})
+	require.NoError(t, err)
+	go messagePipe.Run()
+
+	messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{}})
+
+	time.Sleep(10 * time.Millisecond)
+
+	assert.Equal(t, testInstances, instanceMonitor.instances)
+}
