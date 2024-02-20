@@ -662,9 +662,7 @@ Action enum
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | UNSET | 0 | Default value |
-| UNCHANGED | 1 | No changes to the file
-
-required?!? |
+| UNCHANGED | 1 | No changes to the file |
 | ADD | 2 | New file |
 | UPDATE | 3 | Updated file |
 | DELETE | 4 | File deleted |

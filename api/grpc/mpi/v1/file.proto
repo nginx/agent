@@ -35,7 +35,7 @@ message File {
         // Default value
         UNSET = 0;
         // No changes to the file
-        UNCHANGED = 1;  // required?!?
+        UNCHANGED = 1;
         // New file
         ADD = 2;
         // Updated file

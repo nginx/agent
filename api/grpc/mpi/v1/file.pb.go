@@ -28,7 +28,7 @@ const (
 	// Default value
 	File_UNSET File_Action = 0
 	// No changes to the file
-	File_UNCHANGED File_Action = 1 // required?!?
+	File_UNCHANGED File_Action = 1
 	// New file
 	File_ADD File_Action = 2
 	// Updated file
