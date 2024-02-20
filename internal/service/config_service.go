@@ -33,7 +33,7 @@ type ConfigServiceInterface interface {
 
 type ConfigService struct {
 	configContext any
-	configService service.DataplaneConfig
+	configService service.DataPlaneConfig
 }
 
 func NewConfigService(instanceID string, agentConfig *config.Config, instanceType instances.Type) *ConfigService {

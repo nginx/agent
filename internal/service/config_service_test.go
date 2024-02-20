@@ -101,7 +101,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockService := configfakes.FakeDataplaneConfig{}
+			mockService := configfakes.FakeDataPlaneConfig{}
 			mockConfigWriter := configfakes2.FakeConfigWriterInterface{}
 
 			mockService.SetConfigWriter(&mockConfigWriter)
@@ -127,7 +127,7 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	configService := NewConfigService(instanceID, &config.Config{}, instances.Type_NGINX)
 
-	fakeDataplaneConfig := &configfakes.FakeDataplaneConfig{}
+	fakeDataplaneConfig := &configfakes.FakeDataPlaneConfig{}
 	fakeDataplaneConfig.ParseConfigReturns(expectedConfigContext, nil)
 
 	configService.configService = fakeDataplaneConfig
