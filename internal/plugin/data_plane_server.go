@@ -29,7 +29,7 @@ type (
 		Message string `json:"message,omitempty"`
 	}
 
-	DataplaneServer struct {
+	DataPlaneServer struct {
 		address              string
 		logger               *slog.Logger
 		instances            []*instances.Instance
@@ -39,30 +39,30 @@ type (
 	}
 )
 
-func NewDataplaneServer(agentConfig *config.Config, logger *slog.Logger) *DataplaneServer {
+func NewDataPlaneServer(agentConfig *config.Config, logger *slog.Logger) *DataPlaneServer {
 	address := net.JoinHostPort(agentConfig.DataplaneAPI.Host, strconv.Itoa(agentConfig.DataplaneAPI.Port))
 
-	return &DataplaneServer{
+	return &DataPlaneServer{
 		address:              address,
 		logger:               logger,
 		configurationStatues: make(map[string]*instances.ConfigurationStatus),
 	}
 }
 
-func (dps *DataplaneServer) Init(messagePipe bus.MessagePipeInterface) {
+func (dps *DataPlaneServer) Init(messagePipe bus.MessagePipeInterface) {
 	dps.messagePipe = messagePipe
 	go dps.run(messagePipe.Context())
 }
 
-func (*DataplaneServer) Close() {}
+func (*DataPlaneServer) Close() {}
 
-func (*DataplaneServer) Info() *bus.Info {
+func (*DataPlaneServer) Info() *bus.Info {
 	return &bus.Info{
 		Name: "dataplane-server",
 	}
 }
 
-func (dps *DataplaneServer) Process(msg *bus.Message) {
+func (dps *DataPlaneServer) Process(msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*instances.Instance); ok {
@@ -75,23 +75,23 @@ func (dps *DataplaneServer) Process(msg *bus.Message) {
 	}
 }
 
-func (*DataplaneServer) Subscriptions() []string {
+func (*DataPlaneServer) Subscriptions() []string {
 	return []string{
 		bus.InstancesTopic,
 		bus.InstanceConfigUpdateCompleteTopic,
 	}
 }
 
-func (dps *DataplaneServer) run(_ context.Context) {
+func (dps *DataPlaneServer) run(_ context.Context) {
 	gin.SetMode(gin.ReleaseMode)
 	server := gin.New()
 	server.Use(sloggin.NewWithConfig(dps.logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
 	dataplane.RegisterHandlersWithOptions(server, dps, dataplane.GinServerOptions{BaseURL: "/api/v1"})
 
-	slog.Info("Starting dataplane server", "address", dps.address)
+	slog.Info("Starting data plane server", "address", dps.address)
 	listener, err := net.Listen("tcp", dps.address)
 	if err != nil {
-		slog.Error("Startup of dataplane server failed", "error", err)
+		slog.Error("Startup of data plane server failed", "error", err)
 
 		return
 	}
@@ -100,13 +100,13 @@ func (dps *DataplaneServer) run(_ context.Context) {
 
 	err = server.RunListener(listener)
 	if err != nil {
-		slog.Error("Startup of dataplane server failed", "error", err)
+		slog.Error("Startup of data plane server failed", "error", err)
 	}
 }
 
 // GET /instances
 // nolint: revive // Get func not returning value
-func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
+func (dps *DataPlaneServer) GetInstances(ctx *gin.Context) {
 	slog.Debug("Get instances request")
 
 	response := []dataplane.Instance{}
@@ -126,7 +126,7 @@ func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 }
 
 // PUT /instances/{instanceID}/configurations
-func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceID string) {
+func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceID string) {
 	correlationID := uuid.New().String()
 	slog.Debug("Update instance configuration request", "correlationID", correlationID, "instanceID", instanceID)
 
@@ -174,7 +174,7 @@ func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 
 // (GET /instances/{instanceId}/configurations/status)
 // nolint: revive // Get func not returning value
-func (dps *DataplaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, instanceID string) {
+func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, instanceID string) {
 	status := dps.getConfigurationStatus(instanceID)
 
 	if status != nil {
@@ -192,11 +192,11 @@ func (dps *DataplaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, ins
 	}
 }
 
-func (dps *DataplaneServer) getConfigurationStatus(instanceID string) *instances.ConfigurationStatus {
+func (dps *DataPlaneServer) getConfigurationStatus(instanceID string) *instances.ConfigurationStatus {
 	return dps.configurationStatues[instanceID]
 }
 
-func (dps *DataplaneServer) getInstance(instanceID string) *instances.Instance {
+func (dps *DataPlaneServer) getInstance(instanceID string) *instances.Instance {
 	for _, instance := range dps.instances {
 		if instance.GetInstanceId() == instanceID {
 			return instance

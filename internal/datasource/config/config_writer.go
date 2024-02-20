@@ -39,14 +39,14 @@ type (
 
 	ConfigWriter struct {
 		configClient       client.ConfigClientInterface
-		previouseFileCache FileCache
+		previousFileCache  FileCache
 		currentFileCache   FileCache
 		cachePath          string
-		dataplaneConfig    config.DataplaneConfig
+		dataPlaneConfig    config.DataPlaneConfig
 		allowedDirectories []string
 	}
 
-	// map of files with filepath as key
+	// FileCache map of files with filepath as key
 	FileCache = map[string]*instances.File
 )
 
@@ -62,11 +62,12 @@ func NewConfigWriter(configClient client.ConfigClientInterface,
 	previousFileCache, err := readInstanceCache(cachePath)
 	if err != nil {
 		slog.Warn("Failed to Read cache %s ", cachePath, "err", err)
+		previousFileCache = nil
 	}
 
 	return &ConfigWriter{
 		configClient:       configClient,
-		previouseFileCache: previousFileCache,
+		previousFileCache:  previousFileCache,
 		cachePath:          cachePath,
 		allowedDirectories: allowedDirectories,
 	}
@@ -82,9 +83,9 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL string, tenantID uui
 	}
 
 	for _, fileData := range filesMetaData.GetFiles() {
-		if !doesFileRequireUpdate(cw.previouseFileCache, fileData) {
+		if !cw.doesFileRequireUpdate(fileData) {
 			slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.GetPath())
-			currentFileCache[fileData.GetPath()] = cw.previouseFileCache[fileData.GetPath()]
+			currentFileCache[fileData.GetPath()] = cw.previousFileCache[fileData.GetPath()]
 			skippedFiles[fileData.GetPath()] = struct{}{}
 
 			continue
@@ -139,16 +140,16 @@ func (cw *ConfigWriter) Complete() error {
 	return err
 }
 
-func (cw *ConfigWriter) SetDataplaneConfig(dataplaneConfig config.DataplaneConfig) {
-	cw.dataplaneConfig = dataplaneConfig
+func (cw *ConfigWriter) SetDataPlaneConfig(dataPlaneConfig config.DataPlaneConfig) {
+	cw.dataPlaneConfig = dataPlaneConfig
 }
 
 func (cw *ConfigWriter) Reload(instance *instances.Instance) error {
-	return cw.dataplaneConfig.Reload(instance)
+	return cw.dataPlaneConfig.Reload(instance)
 }
 
 func (cw *ConfigWriter) Validate(instance *instances.Instance) error {
-	return cw.dataplaneConfig.Validate(instance)
+	return cw.dataPlaneConfig.Validate(instance)
 }
 
 func writeFile(fileContent []byte, filePath string) error {
@@ -201,9 +202,9 @@ func (cw *ConfigWriter) isFilePathValid(filePath string) (validPath bool) {
 	return false
 }
 
-func doesFileRequireUpdate(previousFileCache FileCache, fileData *instances.File) (updateRequired bool) {
-	if len(previousFileCache) > 0 {
-		fileOnSystem, ok := previousFileCache[fileData.GetPath()]
+func (cw *ConfigWriter) doesFileRequireUpdate(fileData *instances.File) (updateRequired bool) {
+	if len(cw.previousFileCache) > 0 {
+		fileOnSystem, ok := cw.previousFileCache[fileData.GetPath()]
 		return ok && fileOnSystem.GetLastModified().AsTime().Before(fileData.GetLastModified().AsTime())
 	}
 

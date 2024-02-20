@@ -10,8 +10,8 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate . DataplaneConfig
-type DataplaneConfig interface {
+//counterfeiter:generate . DataPlaneConfig
+type DataPlaneConfig interface {
 	ParseConfig(instance *instances.Instance) (any, error)
 	Validate(instance *instances.Instance) error
 	Reload(instance *instances.Instance) error
