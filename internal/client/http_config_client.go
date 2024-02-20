@@ -20,7 +20,10 @@ import (
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate . ConfigClientInterface
-const tenantHeader = "tenantId"
+const (
+	tenantHeader = "tenantId"
+	fileLocation = "%v/instance/%s/files/"
+)
 
 type ConfigClientInterface interface {
 	GetFilesMetadata(ctx context.Context, filesURL, tenantID, instanceID string) (*instances.Files, error)
@@ -51,7 +54,7 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(
 ) (*instances.Files, error) {
 	files := instances.Files{}
 
-	location := fmt.Sprintf("%v/instance/%s/files/", filesURL, instanceID)
+	location := fmt.Sprintf(fileLocation, filesURL, instanceID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, location, nil)
 
@@ -104,7 +107,7 @@ func (hcd *HTTPConfigClient) GetFile(
 
 	filePath := url.QueryEscape(file.GetPath())
 
-	location := fmt.Sprintf("%v/instance/%s/files/", filesURL, instanceID)
+	location := fmt.Sprintf(fileLocation, filesURL, instanceID)
 	fileURL := fmt.Sprintf("%v%v?%v", location, filePath, params.Encode())
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
 	if err != nil {

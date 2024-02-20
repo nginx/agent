@@ -134,7 +134,7 @@ func TestConfig_Process(t *testing.T) {
 			instanceService := []*instances.Instance{testInstance}
 
 			configPlugin.configServices["123"] = configService
-			configPlugin.instanceService = instanceService
+			configPlugin.instances = instanceService
 
 			configPlugin.Process(test.input)
 

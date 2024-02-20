@@ -17,17 +17,17 @@ import (
 )
 
 type Config struct {
-	messagePipe     bus.MessagePipeInterface
-	configServices  map[string]service.ConfigServiceInterface
-	instanceService []*instances.Instance
-	agentConfig     *config.Config
+	messagePipe    bus.MessagePipeInterface
+	configServices map[string]service.ConfigServiceInterface
+	instances      []*instances.Instance
+	agentConfig    *config.Config
 }
 
 func NewConfig(agentConfig *config.Config) *Config {
 	return &Config{
-		configServices:  make(map[string]service.ConfigServiceInterface), // key is instance id
-		instanceService: []*instances.Instance{},
-		agentConfig:     agentConfig,
+		configServices: make(map[string]service.ConfigServiceInterface), // key is instance id
+		instances:      []*instances.Instance{},
+		agentConfig:    agentConfig,
 	}
 }
 
@@ -51,7 +51,7 @@ func (c *Config) Process(msg *bus.Message) {
 		c.processInstanceConfigUpdateRequest(msg)
 	case msg.Topic == bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*instances.Instance); ok {
-			c.instanceService = newInstances
+			c.instances = newInstances
 		}
 	}
 }
@@ -76,7 +76,7 @@ func (c *Config) processConfigurationStatus(msg *bus.Message) {
 }
 
 func (c *Config) GetInstance(instanceID string) *instances.Instance {
-	for _, instanceEntity := range c.instanceService {
+	for _, instanceEntity := range c.instances {
 		if instanceEntity.GetInstanceId() == instanceID {
 			return instanceEntity
 		}
