@@ -105,7 +105,7 @@ message InstanceHealth {
         // Degraded status
         DEGRADED = 3;
     }
-    string uuid = 1;
+    string instance_id = 1;
     // Health status
     InstancHealthStatus instance_health_status = 2;
     // Provides a human readable context around why a health status is a particular state
@@ -113,6 +113,7 @@ message InstanceHealth {
 }
 
 message InstanceMeta {
+    string instance_id = 1;
     enum InstanceType {
         UNKNOWN = 0;
         AGENT = 1;
@@ -120,8 +121,7 @@ message InstanceMeta {
         NGINX_PLUS = 3;
         UNIT = 4;
     }
-    InstanceType instance_type = 1;
-    string uuid = 2;
+    InstanceType instance_type = 2;
     string version = 3;
 }
 
@@ -137,35 +137,34 @@ message DataPlaneMessage {
 
 message ManagementPlaneMessage {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
-    enum RequestType {
-        UNKNOWN = 0;
-        STATUS = 1;
-        HEALTH = 2;
-        CONFIG_UPLOAD = 3;
-        CONFIG_DOWNLOAD = 4;
-        ACTION = 5;
-    }
-    RequestType type = 2;
-    oneof payload {
-        StatusRequest status_request = 3;
-        ConfigRequest config_request = 4;
-        ActionRequest action_request = 5; 
+    oneof request {
+        StatusRequest status_request = 2;
+        HealthRequest health_request = 3;
+        ConfigApplyRequest config_apply_request = 5;
+        ConfigUploadRequest config_upload_request = 6;
+        ActionRequest action_request = 7;
     }
 }
 
-message StatusRequest {
-    // empty?
+message StatusRequest {}
+
+message HealthRequest {}
+
+message ConfigApplyRequest {
+    f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion config_version = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2; // optional
 }
 
-message ConfigRequest {
-    f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion config_version = 1; 
+message ConfigUploadRequest {
+    string instance_id = 1;
 }
 
 message ActionRequest {
-    InstanceAction action = 1;
+    string instance_id = 1;
+    InstanceAction action = 2;
     oneof payload {
         // add actions as we support new capabilities
-        DefaultAction dafault_action = 2;
+        DefaultAction default_action = 3;
     }   
 }
 

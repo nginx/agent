@@ -13,7 +13,7 @@ service FileService {
 }
 
 message ConfigVersion {
-    string instance_uuid = 1;
+    string instance_id = 1;
     string version = 2;
 }
 

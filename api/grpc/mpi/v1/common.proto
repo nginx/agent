@@ -5,7 +5,7 @@ package f5.nginx.agent.api.grpc.mpi.v1.common;
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
 message MessageRequest {
-    string uuid = 1;
+    string message_id = 1;
     string correlation_id = 2;
 }
 
