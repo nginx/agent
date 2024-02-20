@@ -32,6 +32,7 @@ IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
 CURR_DIR        := $(notdir $(shell pwd)).
 BUILD_DIR		:= build
+DOCS_DIR        := docs
 TEST_BUILD_DIR  := build/test
 BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
@@ -113,7 +114,10 @@ dev: ## Run agent executable
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
-	@protoc --go_out=paths=source_relative:./api/grpc/mpi/v1/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/mpi/v1
+	@mkdir -p ./${BUILD_DIR}/$(DOCS_DIR)
+	@mkdir -p ./${BUILD_DIR}/$(DOCS_DIR)/proto
+	@protoc --go_out=paths=source_relative:./api/grpc/mpi/v1/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/mpi/v1 --doc_out=./build/docs/proto/ --doc_opt=markdown,protos.md 
+	@cp -a ./${BUILD_DIR}/$(DOCS_DIR)/proto/* ./$(DOCS_DIR)/proto/ 
 	# @echo "Generating Go server and client stubs from OpenAPI specifications"
 	# @$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
 	# @$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go
