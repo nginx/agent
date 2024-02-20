@@ -56,7 +56,7 @@ func (cw *ConfigWriter) SetConfigClient(configClient client.ConfigClientInterfac
 }
 
 func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
-	tenantID, instaneID string,
+	tenantID, instanceID string,
 ) (skippedFiles map[string]struct{}, err error) {
 	currentFileCache := make(CacheContent)
 	skippedFiles = make(map[string]struct{})
@@ -65,16 +65,11 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 		slog.Warn("Failed to read file cache")
 	}
 
-	filesMetaData, err := cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID, instaneID)
+	filesMetaData, err := cw.getFileMetaData(ctx, filesURL, tenantID, instanceID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
+		return nil, err
 	}
 
-	slog.Debug("fileData", "data", filesMetaData)
-	if len(filesMetaData.GetFiles()) == 0 {
-		slog.Debug("No file metadata for instance", "instanceID", instaneID)
-		return nil, fmt.Errorf("error getting files metadata, no metadata exists for instance", "instanceID", instaneID)
-	}
 	for _, fileData := range filesMetaData.GetFiles() {
 		slog.Debug("Files Data")
 		if !doesFileRequireUpdate(cacheContent, fileData) {
@@ -85,7 +80,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 			continue
 		}
 		slog.Debug("Updating file, latest version not on disk", "filePath", fileData.GetPath())
-		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instaneID)
+		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID)
 		if updateErr != nil {
 			slog.Debug("Update Error", "err", updateErr)
 			return nil, updateErr
@@ -96,6 +91,21 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	cw.currentFileCache = currentFileCache
 
 	return skippedFiles, err
+}
+
+func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID, instaneID string,
+) (filesMetaData *instances.Files, err error) {
+	filesMetaData, err = cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID, instaneID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
+	}
+
+	if len(filesMetaData.GetFiles()) == 0 {
+		slog.Debug("No file metadata for instance", "instanceID", instaneID)
+		return nil, fmt.Errorf("error getting files metadata, no metadata exists for instance: %v", instaneID)
+	}
+
+	return filesMetaData, nil
 }
 
 func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File,
@@ -160,10 +170,9 @@ func (cw *ConfigWriter) isFilePathValid(filePath string) (validPath bool) {
 		if strings.HasPrefix(filePath, dir) {
 			return true
 		}
-		slog.Debug("file not in allowed directories:", "path", filePath)
-		return false
-
 	}
+
+	slog.Debug("file not in allowed directories:", "path", filePath)
 
 	return false
 }
