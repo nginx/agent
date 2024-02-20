@@ -110,15 +110,22 @@ dev: ## Run agent executable
 	@echo "🚀 Running App"
 	$(GORUN) $(PROJECT_DIR)/${PROJECT_FILE}
 
+run-mock-management-server: ## Run mock management server
+	@echo "🚀 Running mock management server"
+	$(GORUN) test/cmd/main.go
+
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
-	@echo "Generating Go server and client stubs from OpenAPI specifications"
+	@echo "Generating Go server and client stubs from OpenAPI specification"
 	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
 	@$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/client.gen.go
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
-	$(GOGEN) ./...
+	@echo "Generating mocks"
+	@$(GOGEN) ./...
+	@echo "\nGenerating mock management plane Go server stubs from OpenAPI specification\n"
+	@$(GORUN) $(OAPICODEGEN) -generate gin,types -package mock ./test/mock/mock-management-plane-api.yaml > ./test/mock/mock_management_plane.gen.go
 
 local-apk-package: ## Create local apk package
 	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}

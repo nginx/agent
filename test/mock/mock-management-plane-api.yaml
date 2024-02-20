@@ -1,0 +1,170 @@
+openapi: 3.0.2
+info:
+  title: Management Plane API
+  version: 0.0.1
+security:
+  - Bearer: []
+paths:
+  /instances/{instanceId}/files/:
+    get:
+      summary: Return all files metadata for a data plane instance.
+      operationId: GetInstanceFilesMetadata
+      parameters:
+        - in: header
+          name: tenantId
+          schema:
+            type: string
+            format: uuid
+          required: false
+        - in: path
+          name: instanceId
+          schema:
+            type: string
+          required: true
+          description: Instance ID
+          example: "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+      responses:
+        '200':
+          description: Files metadata for a data plane instance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilesResponse'
+  /instances/{instanceId}/files/{filePath}:
+    get:
+      summary: Download a specific file for a data plane instance.
+      operationId: GetInstanceFile
+      parameters:
+        - in: header
+          name: tenantId
+          schema:
+            type: string
+            format: uuid
+          required: false
+        - in: path
+          name: instanceId
+          schema:
+            type: string
+          required: true
+          description: Instance ID
+          example: "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+        - in: path
+          name: filePath
+          schema:
+            type: string
+          required: true
+          description: file location
+          example: "/etc/nginx/nginx.conf"
+        - in: query
+          name: version
+          schema:
+            type: string
+          required: false
+          description: version ID
+          example: ".WC2wyv_tB8kZpc87emyUPWi7BedaRSs"
+        - in: query
+          name: encoded
+          schema:
+            type: boolean
+          required: true
+          description: file content encoded
+      responses:
+        '200':
+          description: File downloaded
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/DownloadResponse'
+                  - $ref: '#/components/schemas/DownloadResponseEncoded'
+                discriminator:
+                  propertyName: type
+
+components:
+  # The definition of the used security schemes
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    FilesResponse:
+      type: object
+      required:
+        - type
+      properties:
+        instanceId:
+          type: string
+          example: "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/File'
+    File:
+      type: object
+      properties:
+        path:
+          type: string
+          example: "/etc/nginx/nginx.conf"
+        version:
+          type: string
+          example: ".WC2wyv_tB8kZpc87emyUPWi7BedaRSs"
+        lastModified:
+          type: string
+          format: date-time
+          example: "2023-10-19T11:26:32.676Z"
+    DownloadResponse:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          example: DOWNLOAD_RESPONSE
+          $ref: "#/components/schemas/DownloadResponseType"
+        instanceId:
+          type: string
+          example: "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+        filePath:
+          type: string
+          example: "/usr/local/etc/nginx/nginx.conf"
+        encoded:
+          type: boolean
+          description: file content encoded
+          example: true
+        fileContent:
+          type: string
+          description: Downloaded file content
+    DownloadResponseEncoded:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          example: ENCODED_DOWNLOAD_RESPONSE
+          $ref: "#/components/schemas/DownloadResponseType"
+        instanceId:
+          type: string
+          example: "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+        filePath:
+          type: string
+          example: "/usr/local/etc/nginx/nginx.conf"
+        encoded:
+          type: boolean
+          description: file content encoded
+          example: true
+        fileContent:
+          type: string
+          format: byte
+          description: Downloaded file content encoded
+    Content:
+      type: object
+      properties:
+        content:
+          type: string
+    DownloadResponseType:
+      type: string
+      description: The type of download response, one of [DOWNLOAD_RESPONSE, ENCODED_DOWNLOAD_RESPONSE].
+      example: ENCODED_DOWNLOAD_RESPONSE
+      enum:
+        - DOWNLOAD_RESPONSE
+        - ENCODED_DOWNLOAD_RESPONSE

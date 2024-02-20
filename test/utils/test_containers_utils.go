@@ -39,12 +39,12 @@ func StartContainer(ctx context.Context, tb testing.TB, waitForLog string) testc
 			KeepImage:     false,
 			PrintBuildLog: true,
 			BuildArgs: map[string]*string{
-				"PACKAGE_NAME":  toPtr(packageName),
-				"PACKAGES_REPO": toPtr(packageRepo),
-				"BASE_IMAGE":    toPtr(baseImage),
-				"OS_RELEASE":    toPtr(osRelease),
-				"OS_VERSION":    toPtr(osVersion),
-				"ENTRY_POINT":   toPtr("./scripts/docker/entrypoint.sh"),
+				"PACKAGE_NAME":  ToPtr(packageName),
+				"PACKAGES_REPO": ToPtr(packageRepo),
+				"BASE_IMAGE":    ToPtr(baseImage),
+				"OS_RELEASE":    ToPtr(osRelease),
+				"OS_VERSION":    ToPtr(osVersion),
+				"ENTRY_POINT":   ToPtr("./scripts/docker/entrypoint.sh"),
 			},
 			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
 				buildOptions.Target = buildTarget
@@ -75,7 +75,7 @@ func StartContainer(ctx context.Context, tb testing.TB, waitForLog string) testc
 	return container
 }
 
-func toPtr[T any](value T) *T {
+func ToPtr[T any](value T) *T {
 	return &value
 }
 
