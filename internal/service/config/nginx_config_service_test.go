@@ -12,6 +12,8 @@ import (
 	"os"
 	"testing"
 
+	helpers "github.com/nginx/agent/v3/test"
+
 	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/stretchr/testify/require"
@@ -27,23 +29,23 @@ const instanceID = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 
 func TestNginx_ParseConfig(t *testing.T) {
 	file, err := os.CreateTemp("./", "nginx-parse-config.conf")
-	defer os.Remove(file.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
 
 	errorLog, err := os.CreateTemp("./", "error.log")
-	defer os.Remove(errorLog.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, errorLog.Name())
 	require.NoError(t, err)
 
 	accessLog, err := os.CreateTemp("./", "access.log")
-	defer os.Remove(accessLog.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, accessLog.Name())
 	require.NoError(t, err)
 
 	combinedAccessLog, err := os.CreateTemp("./", "combined_access.log")
-	defer os.Remove(combinedAccessLog.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, combinedAccessLog.Name())
 	require.NoError(t, err)
 
 	ltsvAccessLog, err := os.CreateTemp("./", "ltsv_access.log")
-	defer os.Remove(ltsvAccessLog.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, ltsvAccessLog.Name())
 	require.NoError(t, err)
 
 	data := []byte(fmt.Sprintf(`

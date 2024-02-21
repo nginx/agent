@@ -71,7 +71,6 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	}
 
 	for _, fileData := range filesMetaData.GetFiles() {
-		slog.Debug("Files Data")
 		if !doesFileRequireUpdate(cacheContent, fileData) {
 			slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.GetPath())
 			currentFileCache[fileData.GetPath()] = cacheContent[fileData.GetPath()]

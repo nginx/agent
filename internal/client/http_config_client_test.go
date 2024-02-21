@@ -70,7 +70,7 @@ func TestGetFilesMetadata(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	filesURL := fmt.Sprintf("%v/instance/%s/files/", ts.URL, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	filesURL := fmt.Sprintf("%v/instance/%s/files/", ts.URL, instanceID.String())
 
 	hcd := NewHTTPConfigClient(time.Second * 10)
 
