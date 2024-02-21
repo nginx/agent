@@ -1,3 +1,5 @@
+// These proto definitions follow https://protobuf.dev/programming-guides/style/
+// and recommendations outlined in https://static.sched.com/hosted_files/kccncna17/ad/2017%20CloudNativeCon%20-%20Mod%20gRPC%20Services.pdf
 syntax = "proto3";
 package f5.nginx.agent.api.grpc.mpi.v1;
 
@@ -8,92 +10,122 @@ import "file.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 
-// following https://protobuf.dev/programming-guides/style/
-// and https://static.sched.com/hosted_files/kccncna17/ad/2017%20CloudNativeCon%20-%20Mod%20gRPC%20Services.pdf
+// A service outlining the command and control options for a DataPlane
 service CommandService {
-    // connects Agents to the Management Plane
+    // Connects NGINX Agents to the Management Plane agnostic of instance data
     rpc Connect(ConnectionRequest) returns (ConnectionResponse) {}
-    // reports on instances and their configurations
+    // Reports on instances and their configurations
     rpc Status(DataPlaneStatus) returns (google.protobuf.Empty) {}
-    // reports on instance health
+    // Reports on instance health
     rpc Health(DataPlaneHealth) returns (google.protobuf.Empty) {}
-    // other messages
+    // A decoupled communication mechanism between the data plane and management plane.
     rpc Subscribe(stream DataPlaneMessage) returns (stream ManagementPlaneMessage) {}
 }
 
+// The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
 message ConnectionRequest {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    // instance information associated with the NGINX Agent
     Instance agent = 2;
 }
 
-// need to build this out
-message AgentConfig {
-    Server server = 1;  // can we connect to more than one management plane?
-    // Max NAck setting
+// This contains a series of NGINX Agent configurations
+message AgentConfig {     
+    // server information to connect to management plane
+    Server server = 1;
+    // A series of key/value pairs to add more data to the NGINX Agent instance
     repeated google.protobuf.Struct labels = 2;
+    // A list of features that the NGINX Agent has
     repeated string features = 3;
+    // Max NAck setting?
 }
 
 message Server {
-    string endpoint = 1;
+    string host = 1;
     string port = 2;
+    // Auth auth = 3;
+    // TlsCert tls_cert = 4;
 }
 
-// this to be built out
+// A set of runtime NGINX configuration that gets populated 
 message NGINXConfig {
+    // where the binary location is, if empty, this is a remote instance
     string binary_path = 1;
+    // the hostname associated with NGINX
     string hostname = 2;
+    // the ip address associated with NGINX
     string ip_address = 3;
+    // the stub status API location
     string stub_status = 4;
+    // a list of access_logs
     repeated string access_logs = 5;
+    // a list of error_logs
     repeated string error_logs = 6;
 }
 
-// this to be built out
+// A set of runtime NGINX configuration that gets populated 
 message NGINXPlusConfig {
+    // where the binary location is, if empty, this is a remote instance
     string binary_path = 1;
+    // the hostname associated with NGINX Plus
     string hostname = 2;
+    // the ip address associated with NGINX Plus
     string ip_address = 3;
+    // the API inforation for NGINX Plus API  
     string api = 4;
-    repeated string access_logs = 5; // is this correct for plus?
-    repeated string error_logs = 6;  // is this correct for plus?
+    // is this correct for plus?
+    repeated string access_logs = 5;
+     // is this correct for plus?
+    repeated string error_logs = 6;
 }
 
+// A response to a ConnectionRequest
 message ConnectionResponse {
+    // the success or failure of the ConnectionRequest
     f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse response = 1;
+    // the recommendation NGINX Agent configurations provided by the ManagementPlane
     AgentConfig agent_config = 2;
 }
 
+// Report on the status of the Data Plane
 message DataPlaneStatus {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    // Report on instances on the Data Plane
     repeated Instance instances = 2;
 }
 
-// only send changed values
+// This represents an instance being reported on
 message Instance {
+    // Meta-information associated with an instance
     InstanceMeta instance_meta = 1;
+    // Runtime configuration associated with an instance
     InstanceConfig instance_config = 2;
 }
 
+// Instance Configuration options
 message InstanceConfig {
-    // repeated enum of actions?!?
-    repeated InstanceAction actions = 1; // can put into a common object and reuse
+    // provided actions associated with a particular instance. These are runtime based and provided by a particular version of the NGINX Agent
+    repeated InstanceAction actions = 1;
     oneof config {
+        // NGINX Agent runtime configuration settings
         AgentConfig agent_config = 2;
+        // NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process
         NGINXConfig nginx_config = 3;
+        // NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API
         NGINXPlusConfig nginx_plus_config = 4;
-        // ... others NIC, NGF, Unit
     }
 }
 
+// A set of actions that can be performed on an instance
 message InstanceAction {
     enum InstanceActions {
+        // Default action
         UNKNOWN = 0;
-        // TBD
     }
     InstanceActions action = 1;
 }
 
+// Report on the health of a particular instance
 message InstanceHealth {
     // Health status enum
     enum InstancHealthStatus {
@@ -113,29 +145,43 @@ message InstanceHealth {
     string description = 3;
 }
 
+// Metainformation relating to the reported instance
 message InstanceMeta {
+    // the identifier associated with the instance
     string instance_id = 1;
+    // the types of instances possible
     enum InstanceType {
         UNKNOWN = 0;
+        // NGINX Agent
         AGENT = 1;
-        NGINX_OSS = 2;
+        // NGINX
+        NGINX = 2;
+        // NGINX Plus
         NGINX_PLUS = 3;
+        // NGINX Unit
         UNIT = 4;
     }
+    // the types of instances possible
     InstanceType instance_type = 2;
+    // the version of the instance
     string version = 3;
 }
 
+// Health report of a set of instances
 message DataPlaneHealth {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    // Health report of a set of instances
     repeated InstanceHealth instance_health = 2;
 }
 
+// Reports the status of an associated command. This may be in response to a ManagementPlaneMessage request
 message DataPlaneMessage {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
-    f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse command_response = 2; // triggers a RPC, acks message has been acted on
+    // The command response with the associated request
+    f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse command_response = 2;
 }
 
+// A Management Plane request for information, triggers an associated rpc on the DataPlane
 message ManagementPlaneMessage {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
     oneof request {
@@ -155,32 +201,44 @@ message ManagementPlaneMessage {
     }
 }
 
+// Additional information associated with a StatusRequest
 message StatusRequest {}
 
+// Additional information associated with a HealthRequest
 message HealthRequest {}
 
+// Additional information associated with a ConfigApplyRequest
 message ConfigApplyRequest {
+    // the config version
     f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion config_version = 1;
+    // an optional set of files related to the request
     f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2; // optional
 }
 
+// Additional information associated with a ConfigUploadRequest
 message ConfigUploadRequest {
+    // the instance identifier
     string instance_id = 1;
 }
 
+// Perform an associated action on an instance
 message ActionRequest {
+    // the instance identifier
     string instance_id = 1;
+    // the action to be performed on the instance
     InstanceAction action = 2;
     oneof payload {
-        // add actions as we support new capabilities
+        // A default action placeholder
         DefaultAction default_action = 3;
     }   
 }
 
+// Request an update on a particular command
 message CommandStatusRequest {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
 }
 
+// A default action placeholder
 message DefaultAction {
     repeated google.protobuf.Struct params = 1;
 }

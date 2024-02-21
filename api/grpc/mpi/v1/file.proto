@@ -7,32 +7,40 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
 service FileService {
+    // Returns the collection of files for a particular configuration version of an instance
     rpc Overview(ConfigVersion) returns (FileOverview) {}
+    // Get the file contents for a particular file
     rpc GetFile(FileRequest) returns (FileContents) {}
+    // Send a file from the 
     rpc SendFile(File) returns (FileMeta) {}
 }
 
+// Represents a specific configuration version associated with an instance
 message ConfigVersion {
     string instance_id = 1;
     string version = 2;
 }
 
+// Represents a collection of files
 message FileOverview {
     repeated File file = 1;
-    string previous_version = 2;  // optional
-    string current_version = 3;   // optional
+    string previous_version = 2;
+    string current_version = 3;
 }
 
+// Represents meta data about a file
 message File {
-    // Name of the file
+    // Meta information about the file, the name (including path) and hash
     FileMeta file_meta = 1;
+    // last modified time of the file (created time if never modified)
     google.protobuf.Timestamp modified_time = 2;
+    // the permission set associated with a particular file
     string permissions = 3;
     // Size of the file in bytes
     int64 size = 4;
     // Action enum
-    enum Action {
-        // Default value
+    enum FileAction {
+        // Default value, no action
         UNSET = 0;
         // No changes to the file
         UNCHANGED = 1;
@@ -44,7 +52,7 @@ message File {
         DELETE = 4;
     }
     // optional action
-    Action action = 5;
+    FileAction action = 5;
     FileContents contents = 6;
 }
 
@@ -53,11 +61,12 @@ message FileRequest {
     FileMeta meta = 2;
 }
 
+// Represents the bytes contents of the file https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string
 message FileContents {
-    // https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string
     bytes contents = 1;
 }
 
+// Meta information about the file, the name (including path) and hash
 message FileMeta {
     string name = 1;
     string hash = 2;

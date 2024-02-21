@@ -77,12 +77,15 @@ func (CommandResponse_CommandStatus) EnumDescriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{1, 0}
 }
 
+// Meta-information associated with a request
 type MessageRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MessageId     string `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	// monotonically increasing integer
+	MessageId string `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	// if 2 or more messages associated with the same workflow, use this field as an association
 	CorrelationId string `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 }
 
@@ -132,6 +135,7 @@ func (x *MessageRequest) GetCorrelationId() string {
 	return ""
 }
 
+// Represents a the status response of an command
 type CommandResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

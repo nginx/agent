@@ -4,11 +4,15 @@ package f5.nginx.agent.api.grpc.mpi.v1.common;
 
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
+// Meta-information associated with a request
 message MessageRequest {
+    // monotonically increasing integer
     string message_id = 1;
+    // if 2 or more messages associated with the same workflow, use this field as an association
     string correlation_id = 2;
 }
 
+// Represents a the status response of an command
 message CommandResponse {
     // Command status enum
     enum CommandStatus {
