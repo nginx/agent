@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"path/filepath"
 
 	"github.com/nginx/agent/v3/test/mock"
 )
@@ -23,11 +22,10 @@ func main() {
 		slog.Error("Unable to get current directory", "error", err)
 	}
 
-	defaultDirectory := filepath.Join(currentPath, "/test/mock/config/")
 	flag.StringVar(
 		&configDirectory,
 		"configDirectory",
-		defaultDirectory,
+		currentPath,
 		"set the directory where the config files are stored",
 	)
 	flag.Parse()
@@ -38,5 +36,6 @@ func main() {
 		slog.Error("Failed to create listener", "error", err)
 		os.Exit(1)
 	}
+
 	server.StartServer(listener)
 }

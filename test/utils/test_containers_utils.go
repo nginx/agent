@@ -21,7 +21,7 @@ import (
 const configFilePermissions = 0o700
 
 //nolint:ireturn
-func StartContainer(ctx context.Context, tb testing.TB, waitForLog string) testcontainers.Container {
+func StartContainer(ctx context.Context, tb testing.TB, waitForLog, nginxConfigPath string) testcontainers.Container {
 	tb.Helper()
 
 	containerOSType := getEnv(tb, "CONTAINER_OS_TYPE")
@@ -59,7 +59,7 @@ func StartContainer(ctx context.Context, tb testing.TB, waitForLog string) testc
 				FileMode:          configFilePermissions,
 			},
 			{
-				HostFilePath:      "./nginx.conf",
+				HostFilePath:      nginxConfigPath,
 				ContainerFilePath: "/etc/nginx/nginx.conf",
 				FileMode:          configFilePermissions,
 			},

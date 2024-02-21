@@ -40,6 +40,7 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 			ctx,
 			tb,
 			"Processes updated",
+			"../config/nginx/nginx.conf",
 		)
 
 		ipAddress, err := container.Host(ctx)
