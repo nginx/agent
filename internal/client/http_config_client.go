@@ -22,7 +22,7 @@ import (
 //counterfeiter:generate . ConfigClientInterface
 const (
 	tenantHeader = "tenantId"
-	fileLocation = "%v/instance/%s/files/"
+	fileLocation = "%s/instance/%s/files/"
 )
 
 type ConfigClientInterface interface {
@@ -110,7 +110,7 @@ func (hcd *HTTPConfigClient) GetFile(
 	filePath := url.QueryEscape(file.GetPath())
 
 	location := fmt.Sprintf(fileLocation, filesURL, instanceID)
-	fileURL := fmt.Sprintf("%v%v?%v", location, filePath, params.Encode())
+	fileURL := fmt.Sprintf("%s%s?%s", location, filePath, params.Encode())
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesURL, err)

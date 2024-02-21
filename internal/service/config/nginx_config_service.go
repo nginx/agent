@@ -43,7 +43,10 @@ type Nginx struct {
 
 func NewNginx(instanceID string, agentConfig *config.Config) *Nginx {
 	fileCache := writer.NewFileCache(instanceID)
-	configWriter := writer.NewConfigWriter(agentConfig, fileCache)
+	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache)
+	if err != nil {
+		slog.Error("failed to create new config writer for", "instanceID", instanceID, "err", err)
+	}
 
 	return &Nginx{
 		executor:     &exec.Exec{},

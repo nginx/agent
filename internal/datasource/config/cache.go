@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	cacheLocation = "/var/lib/nginx-agent/config/%v/cache.json"
+	cacheLocation = "/var/lib/nginx-agent/config/%s/cache.json"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
@@ -26,12 +26,11 @@ type (
 		UpdateFileCache(cache CacheContent) error
 		ReadFileCache() (CacheContent, error)
 		SetCachePath(cachePath string)
-		GetCachePath() string
 	}
 
 	FileCache struct {
 		cacheContent CacheContent
-		cachePath    string
+		CachePath    string
 	}
 
 	// map of files with filepath as key
@@ -41,7 +40,7 @@ type (
 func NewFileCache(instanceID string) *FileCache {
 	cachePath := fmt.Sprintf(cacheLocation, instanceID)
 	return &FileCache{
-		cachePath: cachePath,
+		CachePath: cachePath,
 	}
 }
 
@@ -49,17 +48,23 @@ func (f *FileCache) ReadFileCache() (fileCache CacheContent, err error) {
 	slog.Debug("Reading file cache")
 	fileCache = make(CacheContent)
 
-	if _, statErr := os.Stat(f.cachePath); os.IsNotExist(statErr) {
-		return fileCache, fmt.Errorf("cache.json does not exist %s: %w", f.cachePath, statErr)
+	_, statErr := os.Stat(f.CachePath)
+
+	if statErr != nil {
+		if os.IsNotExist(statErr) {
+			return fileCache, fmt.Errorf("cache.json does not exist %s: %w", f.CachePath, statErr)
+		}
+
+		return fileCache, fmt.Errorf("error reading cache.json %s: %w", f.CachePath, statErr)
 	}
 
-	cacheData, err := os.ReadFile(f.cachePath)
+	cacheData, err := os.ReadFile(f.CachePath)
 	if err != nil {
-		return fileCache, fmt.Errorf("error reading file cache.json %s: %w", f.cachePath, err)
+		return fileCache, fmt.Errorf("error reading file cache.json %s: %w", f.CachePath, err)
 	}
 	err = json.Unmarshal(cacheData, &fileCache)
 	if err != nil {
-		return fileCache, fmt.Errorf("error unmarshalling data from cache.json %s: %w", f.cachePath, err)
+		return fileCache, fmt.Errorf("error unmarshalling data from cache.json %s: %w", f.CachePath, err)
 	}
 
 	return fileCache, err
@@ -67,7 +72,7 @@ func (f *FileCache) ReadFileCache() (fileCache CacheContent, err error) {
 
 func (f *FileCache) UpdateFileCache(cacheContent CacheContent) error {
 	slog.Debug("Updating file cache")
-	cachePath := f.GetCachePath()
+	cachePath := f.CachePath
 	cache, err := json.MarshalIndent(cacheContent, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error marshaling cache data from %s: %w", cachePath, err)
@@ -84,9 +89,5 @@ func (f *FileCache) UpdateFileCache(cacheContent CacheContent) error {
 }
 
 func (f *FileCache) SetCachePath(cachePath string) {
-	f.cachePath = cachePath
-}
-
-func (f *FileCache) GetCachePath() string {
-	return f.cachePath
+	f.CachePath = cachePath
 }

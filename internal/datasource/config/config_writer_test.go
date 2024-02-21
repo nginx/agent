@@ -94,7 +94,8 @@ func TestWriteConfig(t *testing.T) {
 				cacheContent[nginxConf.Name()].LastModified = modified
 			}
 
-			configWriter := NewConfigWriter(&agentconfig, fileCache)
+			configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+			require.NoError(t, err)
 
 			configWriter.SetConfigClient(fakeConfigClient)
 			err = writeFile(fileContent, testConfPath)
@@ -149,7 +150,8 @@ func TestComplete(t *testing.T) {
 	}
 	fileCache.SetCachePath(cachePath)
 
-	configWriter := NewConfigWriter(&agentconfig, fileCache)
+	configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+	require.NoError(t, err)
 	configWriter.configClient = fakeConfigClient
 
 	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
@@ -238,7 +240,8 @@ func TestIsFilePathValid(t *testing.T) {
 		AllowedDirectories: allowedDirs,
 	}
 
-	configWriter := NewConfigWriter(&agentConfig, fileCache)
+	configWriter, err := NewConfigWriter(&agentConfig, fileCache)
+	require.NoError(t, err)
 	configWriter.configClient = fakeConfigClient
 
 	for _, test := range tests {

@@ -57,7 +57,7 @@ func TestSetCachePath(t *testing.T) {
 
 	fileCache.SetCachePath(expected)
 
-	assert.Equal(t, expected, fileCache.cachePath)
+	assert.Equal(t, expected, fileCache.CachePath)
 }
 
 func TestGetCachePath(t *testing.T) {
@@ -68,7 +68,7 @@ func TestGetCachePath(t *testing.T) {
 
 	fileCache.SetCachePath(expected)
 
-	result := fileCache.GetCachePath()
+	result := fileCache.CachePath
 
 	assert.Equal(t, expected, result)
 }

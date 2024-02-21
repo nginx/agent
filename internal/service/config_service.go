@@ -7,7 +7,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -45,8 +44,10 @@ func NewConfigService(instanceID string, agentConfig *config.Config, instanceTyp
 	case instances.Type_NGINX_GATEWAY_FABRIC:
 		cs.configService = service.NewNginxGatewayFabric()
 	case instances.Type_NGINX_PLUS:
-		slog.Warn("Not * Implemented")
+		fallthrough
 	case instances.Type_UNKNOWN:
+		fallthrough
+	default:
 		slog.Warn("Not Implemented")
 	}
 
@@ -70,7 +71,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 			InstanceId:    instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
-			Message:       fmt.Sprintf("%s", err),
+			Message:       err.Error(),
 		}
 	}
 
@@ -82,7 +83,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 			InstanceId:    instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
-			Message:       fmt.Sprintf("%s", err),
+			Message:       err.Error(),
 		}
 	}
 
@@ -93,7 +94,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 			InstanceId:    instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
-			Message:       fmt.Sprintf("%s", err),
+			Message:       err.Error(),
 		}
 	}
 
@@ -104,7 +105,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 			InstanceId:    instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
-			Message:       fmt.Sprintf("%s", err),
+			Message:       err.Error(),
 		}
 	}
 

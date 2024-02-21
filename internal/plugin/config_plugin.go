@@ -99,8 +99,6 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 			c.agentConfig, instance.GetType())
 	}
 
-	slog.Warn("instance", "instance", instance)
-
 	parsedConfig, err := c.configServices[instance.GetInstanceId()].ParseInstanceConfiguration(correlationID, instance)
 	if err != nil {
 		slog.Error(

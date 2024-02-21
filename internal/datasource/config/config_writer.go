@@ -42,13 +42,18 @@ type (
 )
 
 func NewConfigWriter(agentConfig *config.Config, fileCache FileCacheInterface,
-) *ConfigWriter {
+) (*ConfigWriter, error) {
+	if agentConfig == nil {
+		return nil, fmt.Errorf("failed to create config writer, agent config is nil")
+	}
+
 	configClient := client.NewHTTPConfigClient(agentConfig.Client.Timeout)
+
 	return &ConfigWriter{
 		configClient:       configClient,
 		allowedDirectories: agentConfig.AllowedDirectories,
 		fileCache:          fileCache,
-	}
+	}, nil
 }
 
 func (cw *ConfigWriter) SetConfigClient(configClient client.ConfigClientInterface) {
@@ -92,16 +97,16 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	return skippedFiles, err
 }
 
-func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID, instaneID string,
+func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID, instanceID string,
 ) (filesMetaData *instances.Files, err error) {
-	filesMetaData, err = cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID, instaneID)
+	filesMetaData, err = cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID, instanceID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
 	}
 
 	if len(filesMetaData.GetFiles()) == 0 {
-		slog.Debug("No file metadata for instance", "instanceID", instaneID)
-		return nil, fmt.Errorf("error getting files metadata, no metadata exists for instance: %v", instaneID)
+		slog.Debug("No file metadata for instance", "instanceID", instanceID)
+		return nil, fmt.Errorf("error getting files metadata, no metadata exists for instance: %s", instanceID)
 	}
 
 	return filesMetaData, nil
@@ -135,7 +140,7 @@ func (cw *ConfigWriter) Complete() error {
 	slog.Debug("Completing config apply")
 	err := cw.fileCache.UpdateFileCache(cw.currentFileCache)
 	if err != nil {
-		return fmt.Errorf("error updating cache to %s: %w", cw.fileCache.GetCachePath(), err)
+		return fmt.Errorf("error updating cache.json to %w", err)
 	}
 
 	return nil
