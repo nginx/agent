@@ -53,7 +53,7 @@ paths:
           schema:
             type: string
           required: true
-          description: file location
+          description: url encoded file location
           example: "/etc/nginx/nginx.conf"
         - in: query
           name: version

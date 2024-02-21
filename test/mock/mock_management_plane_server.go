@@ -122,10 +122,10 @@ func (ms *ManagementServer) GetInstanceFile(
 			ctx.JSON(http.StatusOK, response)
 
 			return
-		} else {
-			ctx.JSON(http.StatusNotFound, "")
 		}
 	}
+
+	ctx.JSON(http.StatusNotFound, "")
 }
 
 func (ms *ManagementServer) StartServer(listener net.Listener) {
