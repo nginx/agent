@@ -26,12 +26,12 @@ const (
 // DownloadResponse defines model for DownloadResponse.
 type DownloadResponse struct {
 	// Encoded file content encoded
-	Encoded *bool `json:"encoded,omitempty"`
+	Encoded bool `json:"encoded"`
 
 	// FileContent Downloaded file content
-	FileContent *string `json:"fileContent,omitempty"`
-	FilePath    *string `json:"filePath,omitempty"`
-	InstanceId  *string `json:"instanceId,omitempty"`
+	FileContent string `json:"fileContent"`
+	FilePath    string `json:"filePath"`
+	InstanceId  string `json:"instanceId"`
 
 	// Type The type of download response, one of [DOWNLOAD_RESPONSE, ENCODED_DOWNLOAD_RESPONSE].
 	Type DownloadResponseType `json:"type"`
@@ -40,12 +40,12 @@ type DownloadResponse struct {
 // DownloadResponseEncoded defines model for DownloadResponseEncoded.
 type DownloadResponseEncoded struct {
 	// Encoded file content encoded
-	Encoded *bool `json:"encoded,omitempty"`
+	Encoded bool `json:"encoded"`
 
 	// FileContent Downloaded file content encoded
-	FileContent *[]byte `json:"fileContent,omitempty"`
-	FilePath    *string `json:"filePath,omitempty"`
-	InstanceId  *string `json:"instanceId,omitempty"`
+	FileContent []byte `json:"fileContent"`
+	FilePath    string `json:"filePath"`
+	InstanceId  string `json:"instanceId"`
 
 	// Type The type of download response, one of [DOWNLOAD_RESPONSE, ENCODED_DOWNLOAD_RESPONSE].
 	Type DownloadResponseType `json:"type"`
@@ -56,15 +56,15 @@ type DownloadResponseType string
 
 // File defines model for File.
 type File struct {
-	LastModified *time.Time `json:"lastModified,omitempty"`
-	Path         *string    `json:"path,omitempty"`
-	Version      *string    `json:"version,omitempty"`
+	LastModified time.Time `json:"lastModified"`
+	Path         string    `json:"path"`
+	Version      string    `json:"version"`
 }
 
 // FilesResponse defines model for FilesResponse.
 type FilesResponse struct {
-	Files      *[]File `json:"files,omitempty"`
-	InstanceId *string `json:"instanceId,omitempty"`
+	Files      []File `json:"files"`
+	InstanceId string `json:"instanceId"`
 }
 
 // GetInstanceFilesMetadataParams defines parameters for GetInstanceFilesMetadata.

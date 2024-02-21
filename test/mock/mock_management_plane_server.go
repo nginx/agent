@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nginx/agent/v3/test/utils"
 	sloggin "github.com/samber/slog-gin"
 )
 
@@ -64,8 +63,8 @@ func (ms *ManagementServer) GetInstanceFilesMetadata(
 		ctx.JSON(http.StatusInternalServerError, err)
 	} else {
 		response := &FilesResponse{
-			InstanceId: &instanceID,
-			Files:      &files,
+			InstanceId: instanceID,
+			Files:      files,
 		}
 
 		ctx.JSON(http.StatusOK, response)
@@ -89,7 +88,7 @@ func (ms *ManagementServer) GetInstanceFile(
 	}
 
 	for _, file := range files {
-		if *file.Path == filePath {
+		if file.Path == filePath {
 			content, err := os.ReadFile(filepath.Join(ms.configDirectory, filePath))
 			if err != nil {
 				slog.Error("Unable to read file", "filePath", filePath, "error", err)
@@ -100,10 +99,10 @@ func (ms *ManagementServer) GetInstanceFile(
 
 			if params.Encoded {
 				response := &DownloadResponseEncoded{
-					Encoded:     utils.ToPtr(true),
-					FileContent: utils.ToPtr(content),
-					FilePath:    &filePath,
-					InstanceId:  &instanceID,
+					Encoded:     true,
+					FileContent: content,
+					FilePath:    filePath,
+					InstanceId:  instanceID,
 					Type:        ENCODEDDOWNLOADRESPONSE,
 				}
 
@@ -113,10 +112,10 @@ func (ms *ManagementServer) GetInstanceFile(
 			}
 
 			response := &DownloadResponse{
-				Encoded:     utils.ToPtr(false),
-				FileContent: utils.ToPtr(string(content)),
-				FilePath:    &filePath,
-				InstanceId:  &instanceID,
+				Encoded:     false,
+				FileContent: string(content),
+				FilePath:    filePath,
+				InstanceId:  instanceID,
 				Type:        DOWNLOADRESPONSE,
 			}
 
@@ -147,9 +146,9 @@ func (ms *ManagementServer) getFiles() ([]File, error) {
 		}
 		if !info.IsDir() {
 			files = append(files, File{
-				Path:         utils.ToPtr(strings.Split(path, ms.configDirectory)[1]),
-				Version:      utils.ToPtr("1"),
-				LastModified: utils.ToPtr(time.Now()),
+				Path:         strings.Split(path, ms.configDirectory)[1],
+				Version:      "1",
+				LastModified: time.Now(),
 			})
 		}
 

@@ -46,6 +46,9 @@ OSS_PACKAGES_REPO := "packages.nginx.org"
 PACKAGE_PREFIX := nginx-agent
 PACKAGE_NAME := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
 
+
+MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= test/config/nginx
+
 uname_m    := $(shell uname -m)
 
 ifeq ($(uname_m),aarch64)
@@ -112,7 +115,7 @@ dev: ## Run agent executable
 
 run-mock-management-server: ## Run mock management server
 	@echo "🚀 Running mock management server"
-	$(GORUN) test/cmd/main.go
+	$(GORUN) test/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"

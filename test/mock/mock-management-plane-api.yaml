@@ -91,7 +91,8 @@ components:
     FilesResponse:
       type: object
       required:
-        - type
+        - instanceId
+        - files
       properties:
         instanceId:
           type: string
@@ -102,6 +103,10 @@ components:
             $ref: '#/components/schemas/File'
     File:
       type: object
+      required:
+        - path
+        - version
+        - lastModified
       properties:
         path:
           type: string
@@ -117,6 +122,10 @@ components:
       type: object
       required:
         - type
+        - instanceId
+        - filePath
+        - encoded
+        - fileContent
       properties:
         type:
           example: DOWNLOAD_RESPONSE
@@ -138,6 +147,10 @@ components:
       type: object
       required:
         - type
+        - instanceId
+        - filePath
+        - encoded
+        - fileContent
       properties:
         type:
           example: ENCODED_DOWNLOAD_RESPONSE
@@ -158,6 +171,8 @@ components:
           description: Downloaded file content encoded
     Content:
       type: object
+      required:
+        - content
       properties:
         content:
           type: string
