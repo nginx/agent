@@ -7,83 +7,52 @@ package config
 
 import (
 	"fmt"
-	"os"
+	"path"
 	"testing"
 
-	"github.com/google/uuid"
+	helpers "github.com/nginx/agent/v3/test"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	instanceID = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
-)
-
 func TestUpdateCache(t *testing.T) {
-	instanceIDDir := fmt.Sprintf("./%s/", instanceID)
+	_, instanceID, err := helpers.CreateTestIDs()
+	require.NoError(t, err)
+	tempDir := t.TempDir()
+	instanceIDDir := path.Join(tempDir, instanceID.String())
+	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
+	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
-	err := os.Mkdir(instanceIDDir, 0o755)
-	require.NoError(t, err)
-	defer os.Remove(instanceIDDir)
-	cacheFile, err := os.CreateTemp(instanceIDDir, "cache.json")
-	require.NoError(t, err)
-	defer os.Remove(cacheFile.Name())
+	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
 
 	cacheData := CacheContent{}
 
-	err = createCacheFile(cacheFile.Name(), cacheData)
-	require.NoError(t, err)
+	helpers.CreateCacheFiles(t, cacheFile.Name(), cacheData)
 
-	fileTime1, err := createProtoTime("2024-01-08T13:22:23Z")
-	require.NoError(t, err)
+	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
+	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
 
-	fileTime2, err := createProtoTime("2024-01-08T13:22:25Z")
-	require.NoError(t, err)
+	expected, getCacheErr := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+	require.NoError(t, getCacheErr)
 
-	fileTime3, err := createProtoTime("2024-01-08T13:22:21Z")
-	require.NoError(t, err)
-
-	testConf, err := os.CreateTemp(".", "test.conf")
-	require.NoError(t, err)
-	defer os.Remove(testConf.Name())
-
-	nginxConf, err := os.CreateTemp("./", "nginx.conf")
-	require.NoError(t, err)
-	defer os.Remove(nginxConf.Name())
-
-	metricsConf, err := os.CreateTemp("./", "metrics.conf")
-	require.NoError(t, err)
-	defer os.Remove(metricsConf.Name())
-
-	expected := CacheContent{
-		nginxConf.Name(): {
-			LastModified: fileTime1,
-			Path:         nginxConf.Name(),
-			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-		},
-		testConf.Name(): {
-			LastModified: fileTime2,
-			Path:         testConf.Name(),
-			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
-		},
-		metricsConf.Name(): {
-			LastModified: fileTime3,
-			Path:         metricsConf.Name(),
-			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
-		},
-	}
-
-	fileCache := NewFileCache(instanceID)
+	fileCache := NewFileCache(instanceID.String())
 	fileCache.SetCachePath(cacheFile.Name())
 
 	err = fileCache.UpdateFileCache(expected)
 	require.NoError(t, err)
 
+	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
+	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
+	helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 	assert.Equal(t, expected, fileCache.cacheContent)
 }
 
 func TestSetCachePath(t *testing.T) {
-	fileCache := NewFileCache(instanceID)
+	_, instanceID, err := helpers.CreateTestIDs()
+	require.NoError(t, err)
+	fileCache := NewFileCache(instanceID.String())
 	expected := fmt.Sprintf(cacheLocation, instanceID)
 
 	fileCache.SetCachePath(expected)
@@ -92,7 +61,9 @@ func TestSetCachePath(t *testing.T) {
 }
 
 func TestGetCachePath(t *testing.T) {
-	fileCache := NewFileCache(instanceID)
+	_, instanceID, err := helpers.CreateTestIDs()
+	require.NoError(t, err)
+	fileCache := NewFileCache(instanceID.String())
 	expected := fmt.Sprintf(cacheLocation, instanceID)
 
 	fileCache.SetCachePath(expected)
@@ -103,62 +74,25 @@ func TestGetCachePath(t *testing.T) {
 }
 
 func TestReadCache(t *testing.T) {
-	instanceID, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	_, instanceID, err := helpers.CreateTestIDs()
 	require.NoError(t, err)
 
-	instanceIDDir := fmt.Sprintf("./%s/", instanceID.String())
+	tempDir := t.TempDir()
+	instanceIDDir := fmt.Sprintf("%s/%s/", tempDir, instanceID.String())
+	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
+	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
-	err = os.Mkdir(instanceIDDir, 0o755)
-	require.NoError(t, err)
-	defer os.Remove(instanceIDDir)
-
-	cacheFile, err := os.CreateTemp(instanceIDDir, "cache.json")
-	require.NoError(t, err)
-	defer os.Remove(cacheFile.Name())
-
+	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
 	cachePath := cacheFile.Name()
 
-	fileTime1, err := createProtoTime("2024-01-08T13:22:23Z")
+	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
+
+	cacheData, err := helpers.GetFileCache(testConf, nginxConf, metricsConf)
 	require.NoError(t, err)
 
-	fileTime2, err := createProtoTime("2024-01-08T13:22:25Z")
-	require.NoError(t, err)
-
-	fileTime3, err := createProtoTime("2024-01-08T13:22:21Z")
-	require.NoError(t, err)
-
-	testConf, err := os.CreateTemp(".", "test.conf")
-	require.NoError(t, err)
-	defer os.Remove(testConf.Name())
-
-	nginxConf, err := os.CreateTemp("./", "nginx.conf")
-	require.NoError(t, err)
-	defer os.Remove(nginxConf.Name())
-
-	metricsConf, err := os.CreateTemp("./", "metrics.conf")
-	require.NoError(t, err)
-	defer os.Remove(metricsConf.Name())
-
-	cacheData := CacheContent{
-		nginxConf.Name(): {
-			LastModified: fileTime1,
-			Path:         nginxConf.Name(),
-			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-		},
-		testConf.Name(): {
-			LastModified: fileTime2,
-			Path:         testConf.Name(),
-			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
-		},
-		metricsConf.Name(): {
-			LastModified: fileTime3,
-			Path:         metricsConf.Name(),
-			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
-		},
-	}
-
-	err = createCacheFile(cachePath, cacheData)
-	require.NoError(t, err)
+	helpers.CreateCacheFiles(t, cachePath, cacheData)
 
 	tests := []struct {
 		name            string
@@ -179,7 +113,7 @@ func TestReadCache(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fileCache := NewFileCache("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+			fileCache := NewFileCache(instanceID.String())
 			fileCache.SetCachePath(test.path)
 			cacheFile, readErr := fileCache.ReadFileCache()
 
@@ -193,7 +127,8 @@ func TestReadCache(t *testing.T) {
 		})
 	}
 
-	err = os.Remove(cachePath)
-	require.NoError(t, err)
+	helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
+	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
+	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 	assert.NoFileExists(t, cachePath)
 }

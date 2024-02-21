@@ -7,10 +7,13 @@ package test
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/google/uuid"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 
@@ -52,4 +55,18 @@ func RemoveFileWithErrorCheck(t *testing.T, fileName string) {
 	t.Helper()
 	err := os.Remove(fileName)
 	require.NoError(t, err)
+}
+
+func CreateTestIDs() (uuid.UUID, uuid.UUID, error) {
+	tenantID, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
+	if err != nil {
+		fmt.Printf("Error creating tenantID: %v", err)
+	}
+
+	instanceID, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	if err != nil {
+		fmt.Printf("Error creating instanceID: %v", err)
+	}
+
+	return tenantID, instanceID, err
 }
