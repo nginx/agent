@@ -194,12 +194,13 @@ optional |
 <a name="f5-nginx-agent-api-grpc-mpi-v1-ConfigSyncRequest"></a>
 
 ### ConfigSyncRequest
-Additional information associated with a ConfigSyncRequest
+
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| instance_id | [string](#string) |  | the instance identifier |
+| config_version | [file.ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) |  | the config version |
+| overview | [file.FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) |  | an optional set of files related to the request |
 
 
 
@@ -859,7 +860,7 @@ Action enumeration
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | GetOverview | [ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | Get the overview of files for a particular configuration version of an instance |
-| SendOverview | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | Send the overview of files for a particular set of file changes on the data plane |
+| SendOverview | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | [.google.protobuf.Empty](#google-protobuf-Empty) | Send the overview of files for a particular set of file changes on the data plane |
 | GetFile | [FileRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-FileRequest) | [FileContents](#f5-nginx-agent-api-grpc-mpi-v1-file-FileContents) | Get the file contents for a particular file |
 | SendFile | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) | Send a file from the |
 

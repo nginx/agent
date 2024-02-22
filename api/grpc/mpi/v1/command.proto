@@ -321,10 +321,11 @@ message ConfigApplyRequest {
     f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2; // optional
 }
 
-// Additional information associated with a ConfigSyncRequest
 message ConfigSyncRequest {
-    // the instance identifier
-    string instance_id = 1;
+    // the config version
+    f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion config_version = 1;
+    // an optional set of files related to the request
+    f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2;
 }
 
 // Additional information associated with a ConfigUploadRequest
