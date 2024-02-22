@@ -8,6 +8,7 @@
     - [AgentConfig](#f5-nginx-agent-api-grpc-mpi-v1-AgentConfig)
     - [Auth](#f5-nginx-agent-api-grpc-mpi-v1-Auth)
     - [Backoff](#f5-nginx-agent-api-grpc-mpi-v1-Backoff)
+    - [Command](#f5-nginx-agent-api-grpc-mpi-v1-Command)
     - [CommandStatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-CommandStatusRequest)
     - [ConfigApplyRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigApplyRequest)
     - [ConfigUploadRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigUploadRequest)
@@ -18,6 +19,7 @@
     - [DataPlaneMessage](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneMessage)
     - [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus)
     - [DefaultAction](#f5-nginx-agent-api-grpc-mpi-v1-DefaultAction)
+    - [Exporter](#f5-nginx-agent-api-grpc-mpi-v1-Exporter)
     - [HealthRequest](#f5-nginx-agent-api-grpc-mpi-v1-HealthRequest)
     - [Instance](#f5-nginx-agent-api-grpc-mpi-v1-Instance)
     - [InstanceAction](#f5-nginx-agent-api-grpc-mpi-v1-InstanceAction)
@@ -25,9 +27,11 @@
     - [InstanceHealth](#f5-nginx-agent-api-grpc-mpi-v1-InstanceHealth)
     - [InstanceMeta](#f5-nginx-agent-api-grpc-mpi-v1-InstanceMeta)
     - [ManagementPlaneMessage](#f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneMessage)
+    - [Metrics](#f5-nginx-agent-api-grpc-mpi-v1-Metrics)
     - [NGINXConfig](#f5-nginx-agent-api-grpc-mpi-v1-NGINXConfig)
     - [NGINXPlusConfig](#f5-nginx-agent-api-grpc-mpi-v1-NGINXPlusConfig)
     - [Server](#f5-nginx-agent-api-grpc-mpi-v1-Server)
+    - [Source](#f5-nginx-agent-api-grpc-mpi-v1-Source)
     - [StatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-StatusRequest)
     - [TLSSetting](#f5-nginx-agent-api-grpc-mpi-v1-TLSSetting)
   
@@ -92,7 +96,8 @@ This contains a series of NGINX Agent configurations
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| connection_settings | [ConnectionSettings](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings) |  | server information to connect to management plane |
+| command | [Command](#f5-nginx-agent-api-grpc-mpi-v1-Command) |  | Command server settings |
+| metrics | [Metrics](#f5-nginx-agent-api-grpc-mpi-v1-Metrics) |  | Metrics server settings |
 | labels | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | A series of key/value pairs to add more data to the NGINX Agent instance |
 | features | [string](#string) | repeated | A list of features that the NGINX Agent has
 
@@ -106,7 +111,7 @@ Max NAck setting? |
 <a name="f5-nginx-agent-api-grpc-mpi-v1-Auth"></a>
 
 ### Auth
-
+Authentication settings
 
 
 | Field | Type | Label | Description |
@@ -121,7 +126,7 @@ Max NAck setting? |
 <a name="f5-nginx-agent-api-grpc-mpi-v1-Backoff"></a>
 
 ### Backoff
-
+backoff settings
 
 
 | Field | Type | Label | Description |
@@ -131,6 +136,21 @@ Max NAck setting? |
 | multiplier | [double](#double) |  | Value to be multiplied with current backoff interval |
 | max_interval | [int64](#int64) |  | Max interval in seconds between two retries |
 | max_elapsed_time | [int64](#int64) |  | Elapsed time in seconds after which backoff stops. It never stops if max_elapsed_time == 0. |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-Command"></a>
+
+### Command
+The command settings, associated with messaging from an external source
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| connection_settings | [ConnectionSettings](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings) |  | The connection and security settingss for the command server |
 
 
 
@@ -220,7 +240,7 @@ A response to a ConnectionRequest
 <a name="f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings"></a>
 
 ### ConnectionSettings
-
+A set of connection information and it&#39;s associated auth, tls and backoff configurations
 
 
 | Field | Type | Label | Description |
@@ -228,6 +248,8 @@ A response to a ConnectionRequest
 | server | [Server](#f5-nginx-agent-api-grpc-mpi-v1-Server) |  | Server settings that include connection information |
 | auth | [Auth](#f5-nginx-agent-api-grpc-mpi-v1-Auth) |  | Authentication settings |
 | tls | [TLSSetting](#f5-nginx-agent-api-grpc-mpi-v1-TLSSetting) |  | Optional TLS settings |
+| backoff | [Backoff](#f5-nginx-agent-api-grpc-mpi-v1-Backoff) |  | backoff settings associated with this connection |
+| transport | [string](#string) |  | Transport to use. Known protocols are &#34;tcp&#34;, &#34;tcp4&#34; (IPv4-only), &#34;tcp6&#34; (IPv6-only), &#34;udp&#34;, &#34;udp4&#34; (IPv4-only), &#34;udp6&#34; (IPv6-only), &#34;ip&#34;, &#34;ip4&#34; (IPv4-only), &#34;ip6&#34; (IPv6-only), &#34;unix&#34;, &#34;unixgram&#34; and &#34;unixpacket&#34;. |
 
 
 
@@ -291,6 +313,22 @@ A default action placeholder
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | params | [google.protobuf.Struct](#google-protobuf-Struct) | repeated |  |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-Exporter"></a>
+
+### Exporter
+A destination configuration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| report_interval | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | how often to report in google.protobuf.Timestamp format |
+| connection_settings | [ConnectionSettings](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings) |  | connection information to send data to a particular destination |
 
 
 
@@ -411,6 +449,25 @@ A Management Plane request for information, triggers an associated rpc on the Da
 
 
 
+<a name="f5-nginx-agent-api-grpc-mpi-v1-Metrics"></a>
+
+### Metrics
+The metrics settings associated with orgins (sources) of the metrics and destinations (exporter)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| sources | [Source](#f5-nginx-agent-api-grpc-mpi-v1-Source) | repeated | The connection and security settingss for the sources |
+| exporters | [Exporter](#f5-nginx-agent-api-grpc-mpi-v1-Exporter) | repeated | The connection and security settingss for the exporters server |
+| bulk_size | [string](#string) |  | the local buffer size that we will cache if connectivity issues exist
+
+// the amount of retry buffer size that we will cache if connectivity issues exist string retry_count = 4; |
+
+
+
+
+
+
 <a name="f5-nginx-agent-api-grpc-mpi-v1-NGINXConfig"></a>
 
 ### NGINXConfig
@@ -454,13 +511,29 @@ A set of runtime NGINX configuration that gets populated
 <a name="f5-nginx-agent-api-grpc-mpi-v1-Server"></a>
 
 ### Server
-
+Server settings like hostname
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | host | [string](#string) |  | the host information |
 | port | [int32](#int32) |  | the port information |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-Source"></a>
+
+### Source
+A source configuration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| collection_interval | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | how often to collect data from a particular source. In google.protobuf.Timestamp format |
+| connection_settings | [ConnectionSettings](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings) |  | connection information to connect to a particular source |
 
 
 

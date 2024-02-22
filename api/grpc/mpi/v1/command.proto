@@ -9,6 +9,7 @@ import "common.proto";
 import "file.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
 // A service outlining the command and control options for a DataPlane
 service CommandService {
@@ -31,16 +32,53 @@ message ConnectionRequest {
 }
 
 // This contains a series of NGINX Agent configurations
-message AgentConfig {     
-    // server information to connect to management plane
-    ConnectionSettings connection_settings = 1;
+message AgentConfig { 
+    // Command server settings
+    Command command = 1;
+    // Metrics server settings
+    Metrics metrics = 2;
     // A series of key/value pairs to add more data to the NGINX Agent instance
-    repeated google.protobuf.Struct labels = 2;
+    repeated google.protobuf.Struct labels = 3;
     // A list of features that the NGINX Agent has
-    repeated string features = 3;
+    repeated string features = 4;
     // Max NAck setting?
 }
 
+// The command settings, associated with messaging from an external source 
+message Command {
+    // The connection and security settingss for the command server
+    ConnectionSettings connection_settings = 1;
+}
+
+// The metrics settings associated with orgins (sources) of the metrics and destinations (exporter)
+message Metrics {
+    // The connection and security settingss for the sources
+    repeated Source sources = 1;
+    // The connection and security settingss for the exporters server
+    repeated Exporter exporters = 2;
+    // the local buffer size that we will cache if connectivity issues exist
+    string bulk_size = 3;
+    // // the amount of retry buffer size that we will cache if connectivity issues exist
+    // string retry_count = 4;
+}
+
+// A source configuration
+message Source {
+    // how often to collect data from a particular source. In google.protobuf.Timestamp format
+    google.protobuf.Timestamp collection_interval = 1;
+    // connection information to connect to a particular source
+    ConnectionSettings connection_settings = 2;
+}
+
+// A destination configuration
+message Exporter {
+    // how often to report in google.protobuf.Timestamp format
+    google.protobuf.Timestamp report_interval = 1;
+    // connection information to send data to a particular destination
+    ConnectionSettings connection_settings = 2;
+}
+
+// A set of connection information and it's associated auth, tls and backoff configurations
 message ConnectionSettings {
     // Server settings that include connection information
     Server server = 1;
@@ -48,32 +86,37 @@ message ConnectionSettings {
     Auth auth = 2;
     // Optional TLS settings
     TLSSetting tls = 3;
+    // backoff settings associated with this connection
+    Backoff backoff = 4;
+
+    // enum ConnectionType {
+    //     // Default connection type
+    //     UNKNOWN = 0;
+    //     // Http connection type
+    //     HTTP = 1;
+    //     TCP = 2; 
+    //     GRPC = 3;
+    //     UNIX = 4;
+    // }
+    // ConnectionType connection_type = 5;
+    
+    // Transport to use. Known protocols are "tcp", "tcp4" (IPv4-only), "tcp6" (IPv6-only), "udp", "udp4" (IPv4-only),
+	// "udp6" (IPv6-only), "ip", "ip4" (IPv4-only), "ip6" (IPv6-only), "unix", "unixgram" and "unixpacket".
+	string transport = 5;
 }
 
-message Auth {
-    // A token
-    string token = 1;
-}
-
-message Backoff {
-    // First backoff time interval in seconds
-    int64 initial_interval = 1;
-    // Random value used to create range around next backoff interval
-    double randomization_factor = 2;
-    // Value to be multiplied with current backoff interval
-    double multiplier = 3;
-    // Max interval in seconds between two retries
-    int64 max_interval = 4;
-    // Elapsed time in seconds after which backoff stops.
-    // It never stops if max_elapsed_time == 0.
-    int64 max_elapsed_time = 5;
-}
-
+// Server settings like hostname
 message Server {
     // the host information
     string host = 1;
     // the port information
     int32 port = 2;
+}
+
+// Authentication settings
+message Auth {
+    // A token
+    string token = 1;
 }
 
 message TLSSetting {
@@ -87,6 +130,21 @@ message TLSSetting {
     string ca        = 4;
     // enable verification of a server's certificate chain and host name
     bool skip_verify = 5;
+}
+
+// backoff settings
+message Backoff {
+    // First backoff time interval in seconds
+    int64 initial_interval = 1;
+    // Random value used to create range around next backoff interval
+    double randomization_factor = 2;
+    // Value to be multiplied with current backoff interval
+    double multiplier = 3;
+    // Max interval in seconds between two retries
+    int64 max_interval = 4;
+    // Elapsed time in seconds after which backoff stops.
+    // It never stops if max_elapsed_time == 0.
+    int64 max_elapsed_time = 5;
 }
 
 // A set of runtime NGINX configuration that gets populated 
