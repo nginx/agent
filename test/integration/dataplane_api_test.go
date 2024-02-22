@@ -18,7 +18,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/nginx/agent/v3/api/http/dataplane"
-	"github.com/nginx/agent/v3/test/integration/utils"
+	"github.com/nginx/agent/v3/test/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -40,6 +40,7 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 			ctx,
 			tb,
 			"Processes updated",
+			"../config/nginx/nginx.conf",
 		)
 
 		ipAddress, err := container.Host(ctx)
