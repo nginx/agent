@@ -292,12 +292,14 @@ message ManagementPlaneMessage {
         // triggers a rpc GetFile(FileRequest) for overview list, 
         // if overview is missing, triggers a rpc Overview(ConfigVersion) first
         ConfigApplyRequest config_apply_request = 5;
-         // triggers a series of rpc SendFile(File) for that instances
-        ConfigUploadRequest config_upload_request = 6; 
+        // triggers a series of rpc SendFile(File) for that instances
+        ConfigUploadRequest config_upload_request = 6;
+        // triggers a reconciliation of  with a command_response for a particular action
+        ConfigSyncRequest config_sync_request = 7; 
         // triggers a DataPlaneMessage with a command_response for a particular action
-        ActionRequest action_request = 7;
+        ActionRequest action_request = 8;
         // triggers a DataPlaneMessage with a command_response for a particular correlation_id
-        CommandStatusRequest command_status_request = 8; 
+        CommandStatusRequest command_status_request = 9; 
     }
 }
 
@@ -313,6 +315,12 @@ message ConfigApplyRequest {
     f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion config_version = 1;
     // an optional set of files related to the request
     f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2; // optional
+}
+
+// Additional information associated with a ConfigSyncRequest
+message ConfigSyncRequest {
+    // the instance identifier
+    string instance_id = 1;
 }
 
 // Additional information associated with a ConfigUploadRequest

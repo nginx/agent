@@ -11,6 +11,7 @@
     - [Command](#f5-nginx-agent-api-grpc-mpi-v1-Command)
     - [CommandStatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-CommandStatusRequest)
     - [ConfigApplyRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigApplyRequest)
+    - [ConfigSyncRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigSyncRequest)
     - [ConfigUploadRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigUploadRequest)
     - [ConnectionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionRequest)
     - [ConnectionResponse](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionResponse)
@@ -185,6 +186,21 @@ Additional information associated with a ConfigApplyRequest
 | overview | [file.FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) |  | an optional set of files related to the request
 
 optional |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-ConfigSyncRequest"></a>
+
+### ConfigSyncRequest
+Additional information associated with a ConfigSyncRequest
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance_id | [string](#string) |  | the instance identifier |
 
 
 
@@ -441,6 +457,7 @@ A Management Plane request for information, triggers an associated rpc on the Da
 | health_request | [HealthRequest](#f5-nginx-agent-api-grpc-mpi-v1-HealthRequest) |  | triggers a DataPlaneHealth rpc |
 | config_apply_request | [ConfigApplyRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigApplyRequest) |  | triggers a rpc GetFile(FileRequest) for overview list, if overview is missing, triggers a rpc Overview(ConfigVersion) first |
 | config_upload_request | [ConfigUploadRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc SendFile(File) for that instances |
+| config_sync_request | [ConfigSyncRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigSyncRequest) |  | triggers a reconciliation of with a command_response for a particular action |
 | action_request | [ActionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ActionRequest) |  | triggers a DataPlaneMessage with a command_response for a particular action |
 | command_status_request | [CommandStatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneMessage with a command_response for a particular correlation_id |
 
@@ -790,8 +807,7 @@ Represents a collection of files
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | file | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) | repeated | A list of files |
-| previous_version | [string](#string) |  | optional previous file version |
-| current_version | [string](#string) |  | optional cureent file version |
+| version | [ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) |  | the configuration version of the current set of files |
 
 
 
@@ -842,7 +858,8 @@ Action enumeration
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Overview | [ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | Returns the collection of files for a particular configuration version of an instance |
+| GetOverview | [ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | Get the overview of files for a particular configuration version of an instance |
+| SendOverview | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | Send the overview of files for a particular set of file changes on the data plane |
 | GetFile | [FileRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-FileRequest) | [FileContents](#f5-nginx-agent-api-grpc-mpi-v1-file-FileContents) | Get the file contents for a particular file |
 | SendFile | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) | Send a file from the |
 

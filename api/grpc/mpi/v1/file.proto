@@ -7,8 +7,10 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
 service FileService {
-    // Returns the collection of files for a particular configuration version of an instance
-    rpc Overview(ConfigVersion) returns (FileOverview) {}
+    // Get the overview of files for a particular configuration version of an instance
+    rpc GetOverview(ConfigVersion) returns (FileOverview) {}
+    // Send the overview of files for a particular set of file changes on the data plane
+    rpc SendOverview(FileOverview) returns (FileOverview) {}
     // Get the file contents for a particular file
     rpc GetFile(FileRequest) returns (FileContents) {}
     // Send a file from the 
@@ -27,10 +29,8 @@ message ConfigVersion {
 message FileOverview {
     // A list of files
     repeated File file = 1;
-    // optional previous file version
-    string previous_version = 2;
-    // optional cureent file version
-    string current_version = 3;
+    // the configuration version of the current set of files
+    ConfigVersion version = 2;
 }
 
 // Represents meta data about a file
