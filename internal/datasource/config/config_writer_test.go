@@ -32,8 +32,7 @@ func TestWriteConfig(t *testing.T) {
 	testConfPath := testConf.Name()
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 
-	tenantID, instanceID, err := helpers.CreateTestIDs()
-	require.NoError(t, err)
+	tenantID, instanceID := helpers.CreateTestIDs(t)
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
 	helpers.CreateDirWithErrorCheck(t, instanceIDDir)

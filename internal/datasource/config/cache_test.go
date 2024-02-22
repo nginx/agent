@@ -17,8 +17,7 @@ import (
 )
 
 func TestUpdateCache(t *testing.T) {
-	_, instanceID, err := helpers.CreateTestIDs()
-	require.NoError(t, err)
+	_, instanceID := helpers.CreateTestIDs(t)
 	tempDir := t.TempDir()
 	instanceIDDir := path.Join(tempDir, instanceID.String())
 	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
@@ -40,7 +39,7 @@ func TestUpdateCache(t *testing.T) {
 	fileCache := NewFileCache(instanceID.String())
 	fileCache.SetCachePath(cacheFile.Name())
 
-	err = fileCache.UpdateFileCache(expected)
+	err := fileCache.UpdateFileCache(expected)
 	require.NoError(t, err)
 
 	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
@@ -50,8 +49,7 @@ func TestUpdateCache(t *testing.T) {
 }
 
 func TestSetCachePath(t *testing.T) {
-	_, instanceID, err := helpers.CreateTestIDs()
-	require.NoError(t, err)
+	_, instanceID := helpers.CreateTestIDs(t)
 	fileCache := NewFileCache(instanceID.String())
 	expected := fmt.Sprintf(cacheLocation, instanceID)
 
@@ -60,22 +58,8 @@ func TestSetCachePath(t *testing.T) {
 	assert.Equal(t, expected, fileCache.CachePath)
 }
 
-func TestGetCachePath(t *testing.T) {
-	_, instanceID, err := helpers.CreateTestIDs()
-	require.NoError(t, err)
-	fileCache := NewFileCache(instanceID.String())
-	expected := fmt.Sprintf(cacheLocation, instanceID)
-
-	fileCache.SetCachePath(expected)
-
-	result := fileCache.CachePath
-
-	assert.Equal(t, expected, result)
-}
-
 func TestReadCache(t *testing.T) {
-	_, instanceID, err := helpers.CreateTestIDs()
-	require.NoError(t, err)
+	_, instanceID := helpers.CreateTestIDs(t)
 
 	tempDir := t.TempDir()
 	instanceIDDir := fmt.Sprintf("%s/%s/", tempDir, instanceID.String())

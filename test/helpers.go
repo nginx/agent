@@ -7,7 +7,6 @@ package test
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -57,16 +56,13 @@ func RemoveFileWithErrorCheck(t *testing.T, fileName string) {
 	require.NoError(t, err)
 }
 
-func CreateTestIDs() (uuid.UUID, uuid.UUID, error) {
+func CreateTestIDs(t *testing.T) (uuid.UUID, uuid.UUID) {
+	t.Helper()
 	tenantID, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
-	if err != nil {
-		fmt.Printf("Error creating tenantID: %v", err)
-	}
+	require.NoError(t, err)
 
 	instanceID, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
-	if err != nil {
-		fmt.Printf("Error creating instanceID: %v", err)
-	}
+	require.NoError(t, err)
 
-	return tenantID, instanceID, err
+	return tenantID, instanceID
 }

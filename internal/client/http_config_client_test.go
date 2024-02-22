@@ -23,8 +23,7 @@ import (
 
 func TestGetFilesMetadata(t *testing.T) {
 	ctx := context.TODO()
-	tenantID, instanceID, err := helpers.CreateTestIDs()
-	require.NoError(t, err)
+	tenantID, instanceID := helpers.CreateTestIDs(t)
 
 	fileTime1, err := helpers.CreateProtoTime("2024-01-08T13:22:25Z")
 	require.NoError(t, err)
@@ -80,8 +79,7 @@ func TestGetFilesMetadata(t *testing.T) {
 
 func TestGetFile(t *testing.T) {
 	ctx := context.TODO()
-	tenantID, instanceID, err := helpers.CreateTestIDs()
-	require.NoError(t, err)
+	tenantID, instanceID := helpers.CreateTestIDs(t)
 
 	test := `{
 		"encoded":true,
