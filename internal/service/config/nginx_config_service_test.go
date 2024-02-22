@@ -94,8 +94,7 @@ func TestNginx_ParseConfig(t *testing.T) {
 		},
 	}
 
-	nginxConfig := NewNginx(instanceID, &config.Config{})
-	result, err := nginxConfig.ParseConfig(&instances.Instance{
+	instance := &instances.Instance{
 		Type:       instances.Type_NGINX,
 		InstanceId: instanceID,
 		Meta: &instances.Meta{
@@ -105,7 +104,10 @@ func TestNginx_ParseConfig(t *testing.T) {
 				},
 			},
 		},
-	})
+	}
+
+	nginxConfig := NewNginx(instance, &config.Config{})
+	result, err := nginxConfig.ParseConfig()
 
 	require.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)
@@ -162,10 +164,8 @@ func TestNginx_Apply(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.RunCmdReturns(test.out, test.error)
-			nginxConfig := NewNginx(instanceID, &config.Config{})
-			nginxConfig.executor = mockExec
 
-			err := nginxConfig.Apply(&instances.Instance{
+			instance := &instances.Instance{
 				Type:       instances.Type_NGINX,
 				InstanceId: instanceID,
 				Meta: &instances.Meta{
@@ -175,7 +175,11 @@ func TestNginx_Apply(t *testing.T) {
 						},
 					},
 				},
-			})
+			}
+			nginxConfig := NewNginx(instance, &config.Config{})
+			nginxConfig.executor = mockExec
+
+			err := nginxConfig.Apply()
 
 			if test.error != nil {
 				assert.Equal(t, fmt.Errorf("failed to reload NGINX %w: %s", test.error, test.out), err)
@@ -217,10 +221,7 @@ func TestNginx_Validate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.RunCmdReturns(test.out, test.error)
-			nginxConfig := NewNginx(instanceID, &config.Config{})
-			nginxConfig.executor = mockExec
-
-			err := nginxConfig.Validate(&instances.Instance{
+			instance := &instances.Instance{
 				Type:       instances.Type_NGINX,
 				InstanceId: instanceID,
 				Meta: &instances.Meta{
@@ -230,7 +231,11 @@ func TestNginx_Validate(t *testing.T) {
 						},
 					},
 				},
-			})
+			}
+			nginxConfig := NewNginx(instance, &config.Config{})
+			nginxConfig.executor = mockExec
+
+			err := nginxConfig.Validate()
 
 			assert.Equal(t, test.expected, err)
 		})

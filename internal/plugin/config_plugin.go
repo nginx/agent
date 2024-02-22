@@ -95,11 +95,11 @@ func (c *Config) processInstanceConfigUpdateRequest(msg *bus.Message) {
 
 func (c *Config) parseInstanceConfiguration(correlationID string, instance *instances.Instance) {
 	if c.configServices[instance.GetInstanceId()] == nil {
-		c.configServices[instance.GetInstanceId()] = service.NewConfigService(instance.GetInstanceId(),
-			c.agentConfig, instance.GetType())
+		c.configServices[instance.GetInstanceId()] = service.NewConfigService(instance,
+			c.agentConfig)
 	}
 
-	parsedConfig, err := c.configServices[instance.GetInstanceId()].ParseInstanceConfiguration(correlationID, instance)
+	parsedConfig, err := c.configServices[instance.GetInstanceId()].ParseInstanceConfiguration(correlationID)
 	if err != nil {
 		slog.Error(
 			"Unable to parse instance configuration",
@@ -122,14 +122,13 @@ func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest
 	slog.Debug("Updating instance configuration")
 	instanceID := request.Instance.GetInstanceId()
 	if c.configServices[instanceID] == nil {
-		c.configServices[instanceID] = service.NewConfigService(instanceID, c.agentConfig, request.Instance.GetType())
+		c.configServices[instanceID] = service.NewConfigService(request.Instance, c.agentConfig)
 	}
 
 	status := c.configServices[request.Instance.GetInstanceId()].UpdateInstanceConfiguration(
 		c.messagePipe.Context(),
 		request.CorrelationID,
 		request.Location,
-		request.Instance,
 	)
 	c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateCompleteTopic, Data: status})
 }

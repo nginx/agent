@@ -22,25 +22,24 @@ type ConfigServiceInterface interface {
 	UpdateInstanceConfiguration(
 		ctx context.Context,
 		correlationID, location string,
-		instance *instances.Instance,
 	) *instances.ConfigurationStatus
 	ParseInstanceConfiguration(
 		correlationID string,
-		instance *instances.Instance,
 	) (instanceConfigContext any, err error)
 }
 
 type ConfigService struct {
 	configContext any
 	configService service.DataPlaneConfig
+	instance      *instances.Instance
 }
 
-func NewConfigService(instanceID string, agentConfig *config.Config, instanceType instances.Type) *ConfigService {
+func NewConfigService(instance *instances.Instance, agentConfig *config.Config) *ConfigService {
 	cs := &ConfigService{}
 
-	switch instanceType {
+	switch instance.GetType() {
 	case instances.Type_NGINX:
-		cs.configService = service.NewNginx(instanceID, agentConfig)
+		cs.configService = service.NewNginx(instance, agentConfig)
 	case instances.Type_NGINX_GATEWAY_FABRIC:
 		cs.configService = service.NewNginxGatewayFabric()
 	case instances.Type_NGINX_PLUS:
@@ -51,6 +50,8 @@ func NewConfigService(instanceID string, agentConfig *config.Config, instanceTyp
 		slog.Warn("Not Implemented")
 	}
 
+	cs.instance = instance
+
 	return cs
 }
 
@@ -59,38 +60,37 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 }
 
 func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correlationID, location string,
-	instance *instances.Instance,
 ) *instances.ConfigurationStatus {
 	// remove when tenantID is being set
 	tenantID := "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 
-	_, err := cs.configService.Write(ctx, location, tenantID, instance.GetInstanceId())
+	_, err := cs.configService.Write(ctx, location, tenantID)
 	if err != nil {
 		// Rollback
 		return &instances.ConfigurationStatus{
-			InstanceId:    instance.GetInstanceId(),
+			InstanceId:    cs.instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
 		}
 	}
 
-	err = cs.configService.Validate(instance)
+	err = cs.configService.Validate()
 	if err != nil {
 		// Rollback
 		return &instances.ConfigurationStatus{
-			InstanceId:    instance.GetInstanceId(),
+			InstanceId:    cs.instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
 		}
 	}
 
-	err = cs.configService.Apply(instance)
+	err = cs.configService.Apply()
 	if err != nil {
 		// Rollback
 		return &instances.ConfigurationStatus{
-			InstanceId:    instance.GetInstanceId(),
+			InstanceId:    cs.instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
@@ -101,7 +101,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 	if err != nil {
 		// Rollback
 		return &instances.ConfigurationStatus{
-			InstanceId:    instance.GetInstanceId(),
+			InstanceId:    cs.instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
@@ -109,7 +109,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 	}
 
 	return &instances.ConfigurationStatus{
-		InstanceId:    instance.GetInstanceId(),
+		InstanceId:    cs.instance.GetInstanceId(),
 		CorrelationId: correlationID,
 		Status:        instances.Status_SUCCESS,
 		Message:       "Config applied successfully",
@@ -118,7 +118,6 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 
 func (cs *ConfigService) ParseInstanceConfiguration(
 	_ string,
-	instance *instances.Instance,
 ) (instanceConfigContext any, err error) {
-	return cs.configService.ParseConfig(instance)
+	return cs.configService.ParseConfig()
 }

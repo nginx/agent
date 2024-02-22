@@ -27,7 +27,12 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 	}
 
-	configService := NewConfigService(instanceID, &config.Config{}, instances.Type_NGINX)
+	instance := &instances.Instance{
+		InstanceId: instanceID,
+		Type:       instances.Type_NGINX,
+	}
+
+	configService := NewConfigService(instance, &config.Config{})
 	configService.SetConfigContext(expectedConfigContext)
 
 	assert.Equal(t, expectedConfigContext, configService.configContext)
@@ -112,9 +117,9 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 
 			filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
-			cs := NewConfigService(instanceID, &agentConfig, instance.GetType())
+			cs := NewConfigService(&instance, &agentConfig)
 			cs.configService = &mockService
-			result := cs.UpdateInstanceConfiguration(ctx, correlationID, filesURL, &instance)
+			result := cs.UpdateInstanceConfiguration(ctx, correlationID, filesURL)
 			assert.Equal(t, test.expected, result)
 		})
 	}
@@ -125,14 +130,19 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 	}
 
-	configService := NewConfigService(instanceID, &config.Config{}, instances.Type_NGINX)
+	instance := &instances.Instance{
+		InstanceId: instanceID,
+		Type:       instances.Type_NGINX,
+	}
+
+	configService := NewConfigService(instance, &config.Config{})
 
 	fakeDataplaneConfig := &configfakes.FakeDataPlaneConfig{}
 	fakeDataplaneConfig.ParseConfigReturns(expectedConfigContext, nil)
 
 	configService.configService = fakeDataplaneConfig
 
-	result, err := configService.ParseInstanceConfiguration("123", &instances.Instance{Type: instances.Type_NGINX})
+	result, err := configService.ParseInstanceConfiguration("123")
 
 	require.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)

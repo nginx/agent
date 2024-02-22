@@ -9,16 +9,6 @@ import (
 )
 
 type FakeFileCacheInterface struct {
-	GetCachePathStub        func() string
-	getCachePathMutex       sync.RWMutex
-	getCachePathArgsForCall []struct {
-	}
-	getCachePathReturns struct {
-		result1 string
-	}
-	getCachePathReturnsOnCall map[int]struct {
-		result1 string
-	}
 	ReadFileCacheStub        func() (map[string]*instances.File, error)
 	readFileCacheMutex       sync.RWMutex
 	readFileCacheArgsForCall []struct {
@@ -49,59 +39,6 @@ type FakeFileCacheInterface struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-func (fake *FakeFileCacheInterface) GetCachePath() string {
-	fake.getCachePathMutex.Lock()
-	ret, specificReturn := fake.getCachePathReturnsOnCall[len(fake.getCachePathArgsForCall)]
-	fake.getCachePathArgsForCall = append(fake.getCachePathArgsForCall, struct {
-	}{})
-	stub := fake.GetCachePathStub
-	fakeReturns := fake.getCachePathReturns
-	fake.recordInvocation("GetCachePath", []interface{}{})
-	fake.getCachePathMutex.Unlock()
-	if stub != nil {
-		return stub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakeFileCacheInterface) GetCachePathCallCount() int {
-	fake.getCachePathMutex.RLock()
-	defer fake.getCachePathMutex.RUnlock()
-	return len(fake.getCachePathArgsForCall)
-}
-
-func (fake *FakeFileCacheInterface) GetCachePathCalls(stub func() string) {
-	fake.getCachePathMutex.Lock()
-	defer fake.getCachePathMutex.Unlock()
-	fake.GetCachePathStub = stub
-}
-
-func (fake *FakeFileCacheInterface) GetCachePathReturns(result1 string) {
-	fake.getCachePathMutex.Lock()
-	defer fake.getCachePathMutex.Unlock()
-	fake.GetCachePathStub = nil
-	fake.getCachePathReturns = struct {
-		result1 string
-	}{result1}
-}
-
-func (fake *FakeFileCacheInterface) GetCachePathReturnsOnCall(i int, result1 string) {
-	fake.getCachePathMutex.Lock()
-	defer fake.getCachePathMutex.Unlock()
-	fake.GetCachePathStub = nil
-	if fake.getCachePathReturnsOnCall == nil {
-		fake.getCachePathReturnsOnCall = make(map[int]struct {
-			result1 string
-		})
-	}
-	fake.getCachePathReturnsOnCall[i] = struct {
-		result1 string
-	}{result1}
 }
 
 func (fake *FakeFileCacheInterface) ReadFileCache() (map[string]*instances.File, error) {
@@ -256,8 +193,6 @@ func (fake *FakeFileCacheInterface) UpdateFileCacheReturnsOnCall(i int, result1 
 func (fake *FakeFileCacheInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getCachePathMutex.RLock()
-	defer fake.getCachePathMutex.RUnlock()
 	fake.readFileCacheMutex.RLock()
 	defer fake.readFileCacheMutex.RUnlock()
 	fake.setCachePathMutex.RLock()
