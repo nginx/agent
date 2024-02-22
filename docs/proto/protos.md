@@ -249,7 +249,6 @@ A set of connection information and it&#39;s associated auth, tls and backoff co
 | auth | [Auth](#f5-nginx-agent-api-grpc-mpi-v1-Auth) |  | Authentication settings |
 | tls | [TLSSetting](#f5-nginx-agent-api-grpc-mpi-v1-TLSSetting) |  | Optional TLS settings |
 | backoff | [Backoff](#f5-nginx-agent-api-grpc-mpi-v1-Backoff) |  | backoff settings associated with this connection |
-| transport | [string](#string) |  | Transport to use. Known protocols are &#34;tcp&#34;, &#34;tcp4&#34; (IPv4-only), &#34;tcp6&#34; (IPv6-only), &#34;udp&#34;, &#34;udp4&#34; (IPv4-only), &#34;udp6&#34; (IPv6-only), &#34;ip&#34;, &#34;ip4&#34; (IPv4-only), &#34;ip6&#34; (IPv6-only), &#34;unix&#34;, &#34;unixgram&#34; and &#34;unixpacket&#34;. |
 
 
 
@@ -518,6 +517,9 @@ Server settings like hostname
 | ----- | ---- | ----- | ----------- |
 | host | [string](#string) |  | the host information |
 | port | [int32](#int32) |  | the port information |
+| transport | [string](#string) |  | Transport to use. Known protocols are &#34;tcp&#34;, &#34;tcp4&#34; (IPv4-only), &#34;tcp6&#34; (IPv6-only), &#34;udp&#34;, &#34;udp4&#34; (IPv4-only), &#34;udp6&#34; (IPv6-only), &#34;ip&#34;, &#34;ip4&#34; (IPv4-only), &#34;ip6&#34; (IPv6-only), &#34;unix&#34;, &#34;unixgram&#34; and &#34;unixpacket&#34;.
+
+enum ConnectionType { // Default connection type UNKNOWN = 0; // Http connection type HTTP = 1; TCP = 2; GRPC = 3; UNIX = 4; } ConnectionType connection_type = 5; |
 
 
 
