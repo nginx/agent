@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
+	testconfig "github.com/nginx/agent/v3/test/config"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
@@ -48,45 +49,15 @@ func TestNginx_ParseConfig(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, ltsvAccessLog.Name())
 	require.NoError(t, err)
 
-	data := []byte(fmt.Sprintf(`
-		user  nginx;
-		worker_processes  auto;
-		
-		error_log  %s notice;
-		pid        /var/run/nginx.pid;
-		
-		
-		events {
-			worker_connections  1024;
-		}
+	content, err := testconfig.GetNginxConfigWithMultipleAccessLogs(
+		errorLog.Name(),
+		accessLog.Name(),
+		combinedAccessLog.Name(),
+		ltsvAccessLog.Name(),
+	)
+	require.NoError(t, err)
 
-		http {
-			log_format upstream_time '$remote_addr - $remote_user [$time_local]';
-		
-			server {
-				access_log %s upstream_time;
-				access_log %s combined;
-			}
-		}
-
-		http {
-			log_format ltsv "time:$time_local"
-					"\thost:$remote_addr"
-					"\tmethod:$request_method"
-					"\turi:$request_uri"
-					"\tprotocol:$server_protocol"
-					"\tstatus:$status"
-					"\tsize:$body_bytes_sent"
-					"\treferer:$http_referer"
-					"\tua:$http_user_agent"
-					"\treqtime:$request_time"
-					"\tapptime:$upstream_response_time";
-		
-			server {
-				access_log %s ltsv;
-			}
-		}
-	`, errorLog.Name(), accessLog.Name(), combinedAccessLog.Name(), ltsvAccessLog.Name()))
+	data := []byte(content)
 
 	err = os.WriteFile(file.Name(), data, 0o600)
 	require.NoError(t, err)
