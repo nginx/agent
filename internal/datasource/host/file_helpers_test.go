@@ -9,14 +9,16 @@ import (
 	"os"
 	"testing"
 
+	helpers "github.com/nginx/agent/v3/test"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetPermissions(t *testing.T) {
-	file, err := os.CreateTemp(".", "get_permissions_test.txt")
-	defer os.Remove(file.Name())
+	file, err := os.CreateTemp(t.TempDir(), "get_permissions_test.txt")
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
 
 	info, err := os.Stat(file.Name())

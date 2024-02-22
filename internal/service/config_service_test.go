@@ -34,10 +34,10 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	configService := NewConfigService()
 
-	fakeDataplaneConfig := &configfakes.FakeDataplaneConfig{}
-	fakeDataplaneConfig.ParseConfigReturns(expectedConfigContext, nil)
+	fakeDataPlaneConfig := &configfakes.FakeDataPlaneConfig{}
+	fakeDataPlaneConfig.ParseConfigReturns(expectedConfigContext, nil)
 
-	configService.dataplaneConfigServices[instances.Type_NGINX] = fakeDataplaneConfig
+	configService.dataplaneConfigServices[instances.Type_NGINX] = fakeDataPlaneConfig
 
 	result, err := configService.ParseInstanceConfiguration("123", &instances.Instance{Type: instances.Type_NGINX})
 
