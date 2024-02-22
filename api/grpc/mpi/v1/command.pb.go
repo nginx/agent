@@ -26,6 +26,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Connection Type enumeration
 type Server_ConnectionType int32
 
 const (
@@ -694,7 +695,8 @@ type Server struct {
 	// the host information
 	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// the port information
-	Port           int32                 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
+	Port int32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
+	// Specific connection type
 	ConnectionType Server_ConnectionType `protobuf:"varint,3,opt,name=connection_type,json=connectionType,proto3,enum=f5.nginx.agent.api.grpc.mpi.v1.Server_ConnectionType" json:"connection_type,omitempty"`
 }
 

@@ -94,6 +94,7 @@ message Server {
     string host = 1;
     // the port information
     int32 port = 2;
+    // Connection Type enumeration
     enum ConnectionType {
         // Default connection type
         UNKNOWN = 0;
@@ -104,6 +105,7 @@ message Server {
         // unix socket connection type
         UNIX = 3;
     }
+    // Specific connection type
     ConnectionType connection_type = 3;
 }
 

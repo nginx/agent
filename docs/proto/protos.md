@@ -516,7 +516,7 @@ Server settings like hostname
 | ----- | ---- | ----- | ----------- |
 | host | [string](#string) |  | the host information |
 | port | [int32](#int32) |  | the port information |
-| connection_type | [Server.ConnectionType](#f5-nginx-agent-api-grpc-mpi-v1-Server-ConnectionType) |  |  |
+| connection_type | [Server.ConnectionType](#f5-nginx-agent-api-grpc-mpi-v1-Server-ConnectionType) |  | Specific connection type |
 
 
 
@@ -613,7 +613,7 @@ the types of instances possible
 <a name="f5-nginx-agent-api-grpc-mpi-v1-Server-ConnectionType"></a>
 
 ### Server.ConnectionType
-
+Connection Type enumeration
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
