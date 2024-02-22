@@ -58,8 +58,6 @@ message Metrics {
     repeated Exporter exporters = 2;
     // the local buffer size that we will cache if connectivity issues exist
     string bulk_size = 3;
-    // // the amount of retry buffer size that we will cache if connectivity issues exist
-    // string retry_count = 4;
 }
 
 // A source configuration
@@ -96,19 +94,17 @@ message Server {
     string host = 1;
     // the port information
     int32 port = 2;
-    // Transport to use. Known protocols are "tcp", "tcp4" (IPv4-only), "tcp6" (IPv6-only), "udp", "udp4" (IPv4-only),
-	// "udp6" (IPv6-only), "ip", "ip4" (IPv4-only), "ip6" (IPv6-only), "unix", "unixgram" and "unixpacket".
-	string transport = 3;
-        // enum ConnectionType {
-    //     // Default connection type
-    //     UNKNOWN = 0;
-    //     // Http connection type
-    //     HTTP = 1;
-    //     TCP = 2; 
-    //     GRPC = 3;
-    //     UNIX = 4;
-    // }
-    // ConnectionType connection_type = 5;
+    enum ConnectionType {
+        // Default connection type
+        UNKNOWN = 0;
+        // HTTP connection type
+        HTTP = 1;
+        // gRPC connection type
+        GRPC = 2;
+        // unix socket connection type
+        UNIX = 3;
+    }
+    ConnectionType connection_type = 3;
 }
 
 // Authentication settings

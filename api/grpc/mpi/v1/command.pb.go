@@ -26,6 +26,62 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Server_ConnectionType int32
+
+const (
+	// Default connection type
+	Server_UNKNOWN Server_ConnectionType = 0
+	// HTTP connection type
+	Server_HTTP Server_ConnectionType = 1
+	// gRPC connection type
+	Server_GRPC Server_ConnectionType = 2
+	// unix socket connection type
+	Server_UNIX Server_ConnectionType = 3
+)
+
+// Enum value maps for Server_ConnectionType.
+var (
+	Server_ConnectionType_name = map[int32]string{
+		0: "UNKNOWN",
+		1: "HTTP",
+		2: "GRPC",
+		3: "UNIX",
+	}
+	Server_ConnectionType_value = map[string]int32{
+		"UNKNOWN": 0,
+		"HTTP":    1,
+		"GRPC":    2,
+		"UNIX":    3,
+	}
+)
+
+func (x Server_ConnectionType) Enum() *Server_ConnectionType {
+	p := new(Server_ConnectionType)
+	*p = x
+	return p
+}
+
+func (x Server_ConnectionType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Server_ConnectionType) Descriptor() protoreflect.EnumDescriptor {
+	return file_command_proto_enumTypes[0].Descriptor()
+}
+
+func (Server_ConnectionType) Type() protoreflect.EnumType {
+	return &file_command_proto_enumTypes[0]
+}
+
+func (x Server_ConnectionType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Server_ConnectionType.Descriptor instead.
+func (Server_ConnectionType) EnumDescriptor() ([]byte, []int) {
+	return file_command_proto_rawDescGZIP(), []int{7, 0}
+}
+
 type InstanceAction_InstanceActions int32
 
 const (
@@ -54,11 +110,11 @@ func (x InstanceAction_InstanceActions) String() string {
 }
 
 func (InstanceAction_InstanceActions) Descriptor() protoreflect.EnumDescriptor {
-	return file_command_proto_enumTypes[0].Descriptor()
+	return file_command_proto_enumTypes[1].Descriptor()
 }
 
 func (InstanceAction_InstanceActions) Type() protoreflect.EnumType {
-	return &file_command_proto_enumTypes[0]
+	return &file_command_proto_enumTypes[1]
 }
 
 func (x InstanceAction_InstanceActions) Number() protoreflect.EnumNumber {
@@ -111,11 +167,11 @@ func (x InstanceHealth_InstancHealthStatus) String() string {
 }
 
 func (InstanceHealth_InstancHealthStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_command_proto_enumTypes[1].Descriptor()
+	return file_command_proto_enumTypes[2].Descriptor()
 }
 
 func (InstanceHealth_InstancHealthStatus) Type() protoreflect.EnumType {
-	return &file_command_proto_enumTypes[1]
+	return &file_command_proto_enumTypes[2]
 }
 
 func (x InstanceHealth_InstancHealthStatus) Number() protoreflect.EnumNumber {
@@ -171,11 +227,11 @@ func (x InstanceMeta_InstanceType) String() string {
 }
 
 func (InstanceMeta_InstanceType) Descriptor() protoreflect.EnumDescriptor {
-	return file_command_proto_enumTypes[2].Descriptor()
+	return file_command_proto_enumTypes[3].Descriptor()
 }
 
 func (InstanceMeta_InstanceType) Type() protoreflect.EnumType {
-	return &file_command_proto_enumTypes[2]
+	return &file_command_proto_enumTypes[3]
 }
 
 func (x InstanceMeta_InstanceType) Number() protoreflect.EnumNumber {
@@ -638,10 +694,8 @@ type Server struct {
 	// the host information
 	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// the port information
-	Port int32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	// Transport to use. Known protocols are "tcp", "tcp4" (IPv4-only), "tcp6" (IPv6-only), "udp", "udp4" (IPv4-only),
-	// "udp6" (IPv6-only), "ip", "ip4" (IPv4-only), "ip6" (IPv6-only), "unix", "unixgram" and "unixpacket".
-	Transport string `protobuf:"bytes,3,opt,name=transport,proto3" json:"transport,omitempty"`
+	Port           int32                 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
+	ConnectionType Server_ConnectionType `protobuf:"varint,3,opt,name=connection_type,json=connectionType,proto3,enum=f5.nginx.agent.api.grpc.mpi.v1.Server_ConnectionType" json:"connection_type,omitempty"`
 }
 
 func (x *Server) Reset() {
@@ -690,11 +744,11 @@ func (x *Server) GetPort() int32 {
 	return 0
 }
 
-func (x *Server) GetTransport() string {
+func (x *Server) GetConnectionType() Server_ConnectionType {
 	if x != nil {
-		return x.Transport
+		return x.ConnectionType
 	}
-	return ""
+	return Server_UNKNOWN
 }
 
 // Authentication settings
@@ -2303,12 +2357,20 @@ var file_command_proto_rawDesc = []byte{
 	0x66, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x66, 0x35, 0x2e, 0x6e, 0x67, 0x69,
 	0x6e, 0x78, 0x2e, 0x61, 0x67, 0x65, 0x6e, 0x74, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x67, 0x72, 0x70,
 	0x63, 0x2e, 0x6d, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x63, 0x6b, 0x6f, 0x66, 0x66,
-	0x52, 0x07, 0x62, 0x61, 0x63, 0x6b, 0x6f, 0x66, 0x66, 0x22, 0x4e, 0x0a, 0x06, 0x53, 0x65, 0x72,
-	0x76, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x1c, 0x0a, 0x09, 0x74,
-	0x72, 0x61, 0x6e, 0x73, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09,
-	0x74, 0x72, 0x61, 0x6e, 0x73, 0x70, 0x6f, 0x72, 0x74, 0x22, 0x1c, 0x0a, 0x04, 0x41, 0x75, 0x74,
+	0x52, 0x07, 0x62, 0x61, 0x63, 0x6b, 0x6f, 0x66, 0x66, 0x22, 0xcd, 0x01, 0x0a, 0x06, 0x53, 0x65,
+	0x72, 0x76, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x6f, 0x72, 0x74,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x5e, 0x0a, 0x0f,
+	0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x35, 0x2e, 0x66, 0x35, 0x2e, 0x6e, 0x67, 0x69, 0x6e, 0x78,
+	0x2e, 0x61, 0x67, 0x65, 0x6e, 0x74, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e,
+	0x6d, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x43, 0x6f,
+	0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x0e, 0x63, 0x6f,
+	0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70, 0x65, 0x22, 0x3b, 0x0a, 0x0e,
+	0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0b,
+	0x0a, 0x07, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x48,
+	0x54, 0x54, 0x50, 0x10, 0x01, 0x12, 0x08, 0x0a, 0x04, 0x47, 0x52, 0x50, 0x43, 0x10, 0x02, 0x12,
+	0x08, 0x0a, 0x04, 0x55, 0x4e, 0x49, 0x58, 0x10, 0x03, 0x22, 0x1c, 0x0a, 0x04, 0x41, 0x75, 0x74,
 	0x68, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x7b, 0x0a, 0x0a, 0x54, 0x4c, 0x53, 0x53, 0x65,
 	0x74, 0x74, 0x69, 0x6e, 0x67, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x18,
@@ -2616,110 +2678,112 @@ func file_command_proto_rawDescGZIP() []byte {
 	return file_command_proto_rawDescData
 }
 
-var file_command_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_command_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_command_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_command_proto_goTypes = []interface{}{
-	(InstanceAction_InstanceActions)(0),     // 0: f5.nginx.agent.api.grpc.mpi.v1.InstanceAction.InstanceActions
-	(InstanceHealth_InstancHealthStatus)(0), // 1: f5.nginx.agent.api.grpc.mpi.v1.InstanceHealth.InstancHealthStatus
-	(InstanceMeta_InstanceType)(0),          // 2: f5.nginx.agent.api.grpc.mpi.v1.InstanceMeta.InstanceType
-	(*ConnectionRequest)(nil),               // 3: f5.nginx.agent.api.grpc.mpi.v1.ConnectionRequest
-	(*AgentConfig)(nil),                     // 4: f5.nginx.agent.api.grpc.mpi.v1.AgentConfig
-	(*Command)(nil),                         // 5: f5.nginx.agent.api.grpc.mpi.v1.Command
-	(*Metrics)(nil),                         // 6: f5.nginx.agent.api.grpc.mpi.v1.Metrics
-	(*Source)(nil),                          // 7: f5.nginx.agent.api.grpc.mpi.v1.Source
-	(*Exporter)(nil),                        // 8: f5.nginx.agent.api.grpc.mpi.v1.Exporter
-	(*ConnectionSettings)(nil),              // 9: f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings
-	(*Server)(nil),                          // 10: f5.nginx.agent.api.grpc.mpi.v1.Server
-	(*Auth)(nil),                            // 11: f5.nginx.agent.api.grpc.mpi.v1.Auth
-	(*TLSSetting)(nil),                      // 12: f5.nginx.agent.api.grpc.mpi.v1.TLSSetting
-	(*Backoff)(nil),                         // 13: f5.nginx.agent.api.grpc.mpi.v1.Backoff
-	(*NGINXConfig)(nil),                     // 14: f5.nginx.agent.api.grpc.mpi.v1.NGINXConfig
-	(*NGINXPlusConfig)(nil),                 // 15: f5.nginx.agent.api.grpc.mpi.v1.NGINXPlusConfig
-	(*ConnectionResponse)(nil),              // 16: f5.nginx.agent.api.grpc.mpi.v1.ConnectionResponse
-	(*DataPlaneStatus)(nil),                 // 17: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneStatus
-	(*Instance)(nil),                        // 18: f5.nginx.agent.api.grpc.mpi.v1.Instance
-	(*InstanceConfig)(nil),                  // 19: f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig
-	(*InstanceAction)(nil),                  // 20: f5.nginx.agent.api.grpc.mpi.v1.InstanceAction
-	(*InstanceHealth)(nil),                  // 21: f5.nginx.agent.api.grpc.mpi.v1.InstanceHealth
-	(*InstanceMeta)(nil),                    // 22: f5.nginx.agent.api.grpc.mpi.v1.InstanceMeta
-	(*DataPlaneHealth)(nil),                 // 23: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneHealth
-	(*DataPlaneMessage)(nil),                // 24: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneMessage
-	(*ManagementPlaneMessage)(nil),          // 25: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage
-	(*StatusRequest)(nil),                   // 26: f5.nginx.agent.api.grpc.mpi.v1.StatusRequest
-	(*HealthRequest)(nil),                   // 27: f5.nginx.agent.api.grpc.mpi.v1.HealthRequest
-	(*ConfigApplyRequest)(nil),              // 28: f5.nginx.agent.api.grpc.mpi.v1.ConfigApplyRequest
-	(*ConfigUploadRequest)(nil),             // 29: f5.nginx.agent.api.grpc.mpi.v1.ConfigUploadRequest
-	(*ActionRequest)(nil),                   // 30: f5.nginx.agent.api.grpc.mpi.v1.ActionRequest
-	(*CommandStatusRequest)(nil),            // 31: f5.nginx.agent.api.grpc.mpi.v1.CommandStatusRequest
-	(*DefaultAction)(nil),                   // 32: f5.nginx.agent.api.grpc.mpi.v1.DefaultAction
-	(*MessageRequest)(nil),                  // 33: f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
-	(*structpb.Struct)(nil),                 // 34: google.protobuf.Struct
-	(*timestamppb.Timestamp)(nil),           // 35: google.protobuf.Timestamp
-	(*CommandResponse)(nil),                 // 36: f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse
-	(*ConfigVersion)(nil),                   // 37: f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion
-	(*FileOverview)(nil),                    // 38: f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview
-	(*emptypb.Empty)(nil),                   // 39: google.protobuf.Empty
+	(Server_ConnectionType)(0),              // 0: f5.nginx.agent.api.grpc.mpi.v1.Server.ConnectionType
+	(InstanceAction_InstanceActions)(0),     // 1: f5.nginx.agent.api.grpc.mpi.v1.InstanceAction.InstanceActions
+	(InstanceHealth_InstancHealthStatus)(0), // 2: f5.nginx.agent.api.grpc.mpi.v1.InstanceHealth.InstancHealthStatus
+	(InstanceMeta_InstanceType)(0),          // 3: f5.nginx.agent.api.grpc.mpi.v1.InstanceMeta.InstanceType
+	(*ConnectionRequest)(nil),               // 4: f5.nginx.agent.api.grpc.mpi.v1.ConnectionRequest
+	(*AgentConfig)(nil),                     // 5: f5.nginx.agent.api.grpc.mpi.v1.AgentConfig
+	(*Command)(nil),                         // 6: f5.nginx.agent.api.grpc.mpi.v1.Command
+	(*Metrics)(nil),                         // 7: f5.nginx.agent.api.grpc.mpi.v1.Metrics
+	(*Source)(nil),                          // 8: f5.nginx.agent.api.grpc.mpi.v1.Source
+	(*Exporter)(nil),                        // 9: f5.nginx.agent.api.grpc.mpi.v1.Exporter
+	(*ConnectionSettings)(nil),              // 10: f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings
+	(*Server)(nil),                          // 11: f5.nginx.agent.api.grpc.mpi.v1.Server
+	(*Auth)(nil),                            // 12: f5.nginx.agent.api.grpc.mpi.v1.Auth
+	(*TLSSetting)(nil),                      // 13: f5.nginx.agent.api.grpc.mpi.v1.TLSSetting
+	(*Backoff)(nil),                         // 14: f5.nginx.agent.api.grpc.mpi.v1.Backoff
+	(*NGINXConfig)(nil),                     // 15: f5.nginx.agent.api.grpc.mpi.v1.NGINXConfig
+	(*NGINXPlusConfig)(nil),                 // 16: f5.nginx.agent.api.grpc.mpi.v1.NGINXPlusConfig
+	(*ConnectionResponse)(nil),              // 17: f5.nginx.agent.api.grpc.mpi.v1.ConnectionResponse
+	(*DataPlaneStatus)(nil),                 // 18: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneStatus
+	(*Instance)(nil),                        // 19: f5.nginx.agent.api.grpc.mpi.v1.Instance
+	(*InstanceConfig)(nil),                  // 20: f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig
+	(*InstanceAction)(nil),                  // 21: f5.nginx.agent.api.grpc.mpi.v1.InstanceAction
+	(*InstanceHealth)(nil),                  // 22: f5.nginx.agent.api.grpc.mpi.v1.InstanceHealth
+	(*InstanceMeta)(nil),                    // 23: f5.nginx.agent.api.grpc.mpi.v1.InstanceMeta
+	(*DataPlaneHealth)(nil),                 // 24: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneHealth
+	(*DataPlaneMessage)(nil),                // 25: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneMessage
+	(*ManagementPlaneMessage)(nil),          // 26: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage
+	(*StatusRequest)(nil),                   // 27: f5.nginx.agent.api.grpc.mpi.v1.StatusRequest
+	(*HealthRequest)(nil),                   // 28: f5.nginx.agent.api.grpc.mpi.v1.HealthRequest
+	(*ConfigApplyRequest)(nil),              // 29: f5.nginx.agent.api.grpc.mpi.v1.ConfigApplyRequest
+	(*ConfigUploadRequest)(nil),             // 30: f5.nginx.agent.api.grpc.mpi.v1.ConfigUploadRequest
+	(*ActionRequest)(nil),                   // 31: f5.nginx.agent.api.grpc.mpi.v1.ActionRequest
+	(*CommandStatusRequest)(nil),            // 32: f5.nginx.agent.api.grpc.mpi.v1.CommandStatusRequest
+	(*DefaultAction)(nil),                   // 33: f5.nginx.agent.api.grpc.mpi.v1.DefaultAction
+	(*MessageRequest)(nil),                  // 34: f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
+	(*structpb.Struct)(nil),                 // 35: google.protobuf.Struct
+	(*timestamppb.Timestamp)(nil),           // 36: google.protobuf.Timestamp
+	(*CommandResponse)(nil),                 // 37: f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse
+	(*ConfigVersion)(nil),                   // 38: f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion
+	(*FileOverview)(nil),                    // 39: f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview
+	(*emptypb.Empty)(nil),                   // 40: google.protobuf.Empty
 }
 var file_command_proto_depIdxs = []int32{
-	33, // 0: f5.nginx.agent.api.grpc.mpi.v1.ConnectionRequest.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
-	18, // 1: f5.nginx.agent.api.grpc.mpi.v1.ConnectionRequest.agent:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Instance
-	5,  // 2: f5.nginx.agent.api.grpc.mpi.v1.AgentConfig.command:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Command
-	6,  // 3: f5.nginx.agent.api.grpc.mpi.v1.AgentConfig.metrics:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Metrics
-	34, // 4: f5.nginx.agent.api.grpc.mpi.v1.AgentConfig.labels:type_name -> google.protobuf.Struct
-	9,  // 5: f5.nginx.agent.api.grpc.mpi.v1.Command.connection_settings:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings
-	7,  // 6: f5.nginx.agent.api.grpc.mpi.v1.Metrics.sources:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Source
-	8,  // 7: f5.nginx.agent.api.grpc.mpi.v1.Metrics.exporters:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Exporter
-	35, // 8: f5.nginx.agent.api.grpc.mpi.v1.Source.collection_interval:type_name -> google.protobuf.Timestamp
-	9,  // 9: f5.nginx.agent.api.grpc.mpi.v1.Source.connection_settings:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings
-	35, // 10: f5.nginx.agent.api.grpc.mpi.v1.Exporter.report_interval:type_name -> google.protobuf.Timestamp
-	9,  // 11: f5.nginx.agent.api.grpc.mpi.v1.Exporter.connection_settings:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings
-	10, // 12: f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings.server:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Server
-	11, // 13: f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings.auth:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Auth
-	12, // 14: f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings.tls:type_name -> f5.nginx.agent.api.grpc.mpi.v1.TLSSetting
-	13, // 15: f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings.backoff:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Backoff
-	36, // 16: f5.nginx.agent.api.grpc.mpi.v1.ConnectionResponse.response:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse
-	4,  // 17: f5.nginx.agent.api.grpc.mpi.v1.ConnectionResponse.agent_config:type_name -> f5.nginx.agent.api.grpc.mpi.v1.AgentConfig
-	33, // 18: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneStatus.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
-	18, // 19: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneStatus.instances:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Instance
-	22, // 20: f5.nginx.agent.api.grpc.mpi.v1.Instance.instance_meta:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceMeta
-	19, // 21: f5.nginx.agent.api.grpc.mpi.v1.Instance.instance_config:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig
-	20, // 22: f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig.actions:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceAction
-	4,  // 23: f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig.agent_config:type_name -> f5.nginx.agent.api.grpc.mpi.v1.AgentConfig
-	14, // 24: f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig.nginx_config:type_name -> f5.nginx.agent.api.grpc.mpi.v1.NGINXConfig
-	15, // 25: f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig.nginx_plus_config:type_name -> f5.nginx.agent.api.grpc.mpi.v1.NGINXPlusConfig
-	0,  // 26: f5.nginx.agent.api.grpc.mpi.v1.InstanceAction.action:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceAction.InstanceActions
-	1,  // 27: f5.nginx.agent.api.grpc.mpi.v1.InstanceHealth.instance_health_status:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceHealth.InstancHealthStatus
-	2,  // 28: f5.nginx.agent.api.grpc.mpi.v1.InstanceMeta.instance_type:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceMeta.InstanceType
-	33, // 29: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneHealth.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
-	21, // 30: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneHealth.instance_health:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceHealth
-	33, // 31: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneMessage.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
-	36, // 32: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneMessage.command_response:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse
-	33, // 33: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
-	26, // 34: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.status_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.StatusRequest
-	27, // 35: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.health_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.HealthRequest
-	28, // 36: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.config_apply_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ConfigApplyRequest
-	29, // 37: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.config_upload_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ConfigUploadRequest
-	30, // 38: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.action_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ActionRequest
-	31, // 39: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.command_status_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.CommandStatusRequest
-	37, // 40: f5.nginx.agent.api.grpc.mpi.v1.ConfigApplyRequest.config_version:type_name -> f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion
-	38, // 41: f5.nginx.agent.api.grpc.mpi.v1.ConfigApplyRequest.overview:type_name -> f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview
-	20, // 42: f5.nginx.agent.api.grpc.mpi.v1.ActionRequest.action:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceAction
-	32, // 43: f5.nginx.agent.api.grpc.mpi.v1.ActionRequest.default_action:type_name -> f5.nginx.agent.api.grpc.mpi.v1.DefaultAction
-	33, // 44: f5.nginx.agent.api.grpc.mpi.v1.CommandStatusRequest.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
-	34, // 45: f5.nginx.agent.api.grpc.mpi.v1.DefaultAction.params:type_name -> google.protobuf.Struct
-	3,  // 46: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Connect:input_type -> f5.nginx.agent.api.grpc.mpi.v1.ConnectionRequest
-	17, // 47: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Status:input_type -> f5.nginx.agent.api.grpc.mpi.v1.DataPlaneStatus
-	23, // 48: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Health:input_type -> f5.nginx.agent.api.grpc.mpi.v1.DataPlaneHealth
-	24, // 49: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Subscribe:input_type -> f5.nginx.agent.api.grpc.mpi.v1.DataPlaneMessage
-	16, // 50: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Connect:output_type -> f5.nginx.agent.api.grpc.mpi.v1.ConnectionResponse
-	39, // 51: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Status:output_type -> google.protobuf.Empty
-	39, // 52: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Health:output_type -> google.protobuf.Empty
-	25, // 53: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Subscribe:output_type -> f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage
-	50, // [50:54] is the sub-list for method output_type
-	46, // [46:50] is the sub-list for method input_type
-	46, // [46:46] is the sub-list for extension type_name
-	46, // [46:46] is the sub-list for extension extendee
-	0,  // [0:46] is the sub-list for field type_name
+	34, // 0: f5.nginx.agent.api.grpc.mpi.v1.ConnectionRequest.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
+	19, // 1: f5.nginx.agent.api.grpc.mpi.v1.ConnectionRequest.agent:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Instance
+	6,  // 2: f5.nginx.agent.api.grpc.mpi.v1.AgentConfig.command:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Command
+	7,  // 3: f5.nginx.agent.api.grpc.mpi.v1.AgentConfig.metrics:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Metrics
+	35, // 4: f5.nginx.agent.api.grpc.mpi.v1.AgentConfig.labels:type_name -> google.protobuf.Struct
+	10, // 5: f5.nginx.agent.api.grpc.mpi.v1.Command.connection_settings:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings
+	8,  // 6: f5.nginx.agent.api.grpc.mpi.v1.Metrics.sources:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Source
+	9,  // 7: f5.nginx.agent.api.grpc.mpi.v1.Metrics.exporters:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Exporter
+	36, // 8: f5.nginx.agent.api.grpc.mpi.v1.Source.collection_interval:type_name -> google.protobuf.Timestamp
+	10, // 9: f5.nginx.agent.api.grpc.mpi.v1.Source.connection_settings:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings
+	36, // 10: f5.nginx.agent.api.grpc.mpi.v1.Exporter.report_interval:type_name -> google.protobuf.Timestamp
+	10, // 11: f5.nginx.agent.api.grpc.mpi.v1.Exporter.connection_settings:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings
+	11, // 12: f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings.server:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Server
+	12, // 13: f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings.auth:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Auth
+	13, // 14: f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings.tls:type_name -> f5.nginx.agent.api.grpc.mpi.v1.TLSSetting
+	14, // 15: f5.nginx.agent.api.grpc.mpi.v1.ConnectionSettings.backoff:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Backoff
+	0,  // 16: f5.nginx.agent.api.grpc.mpi.v1.Server.connection_type:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Server.ConnectionType
+	37, // 17: f5.nginx.agent.api.grpc.mpi.v1.ConnectionResponse.response:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse
+	5,  // 18: f5.nginx.agent.api.grpc.mpi.v1.ConnectionResponse.agent_config:type_name -> f5.nginx.agent.api.grpc.mpi.v1.AgentConfig
+	34, // 19: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneStatus.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
+	19, // 20: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneStatus.instances:type_name -> f5.nginx.agent.api.grpc.mpi.v1.Instance
+	23, // 21: f5.nginx.agent.api.grpc.mpi.v1.Instance.instance_meta:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceMeta
+	20, // 22: f5.nginx.agent.api.grpc.mpi.v1.Instance.instance_config:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig
+	21, // 23: f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig.actions:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceAction
+	5,  // 24: f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig.agent_config:type_name -> f5.nginx.agent.api.grpc.mpi.v1.AgentConfig
+	15, // 25: f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig.nginx_config:type_name -> f5.nginx.agent.api.grpc.mpi.v1.NGINXConfig
+	16, // 26: f5.nginx.agent.api.grpc.mpi.v1.InstanceConfig.nginx_plus_config:type_name -> f5.nginx.agent.api.grpc.mpi.v1.NGINXPlusConfig
+	1,  // 27: f5.nginx.agent.api.grpc.mpi.v1.InstanceAction.action:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceAction.InstanceActions
+	2,  // 28: f5.nginx.agent.api.grpc.mpi.v1.InstanceHealth.instance_health_status:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceHealth.InstancHealthStatus
+	3,  // 29: f5.nginx.agent.api.grpc.mpi.v1.InstanceMeta.instance_type:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceMeta.InstanceType
+	34, // 30: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneHealth.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
+	22, // 31: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneHealth.instance_health:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceHealth
+	34, // 32: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneMessage.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
+	37, // 33: f5.nginx.agent.api.grpc.mpi.v1.DataPlaneMessage.command_response:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse
+	34, // 34: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
+	27, // 35: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.status_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.StatusRequest
+	28, // 36: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.health_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.HealthRequest
+	29, // 37: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.config_apply_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ConfigApplyRequest
+	30, // 38: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.config_upload_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ConfigUploadRequest
+	31, // 39: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.action_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.ActionRequest
+	32, // 40: f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage.command_status_request:type_name -> f5.nginx.agent.api.grpc.mpi.v1.CommandStatusRequest
+	38, // 41: f5.nginx.agent.api.grpc.mpi.v1.ConfigApplyRequest.config_version:type_name -> f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion
+	39, // 42: f5.nginx.agent.api.grpc.mpi.v1.ConfigApplyRequest.overview:type_name -> f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview
+	21, // 43: f5.nginx.agent.api.grpc.mpi.v1.ActionRequest.action:type_name -> f5.nginx.agent.api.grpc.mpi.v1.InstanceAction
+	33, // 44: f5.nginx.agent.api.grpc.mpi.v1.ActionRequest.default_action:type_name -> f5.nginx.agent.api.grpc.mpi.v1.DefaultAction
+	34, // 45: f5.nginx.agent.api.grpc.mpi.v1.CommandStatusRequest.message_metadata:type_name -> f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest
+	35, // 46: f5.nginx.agent.api.grpc.mpi.v1.DefaultAction.params:type_name -> google.protobuf.Struct
+	4,  // 47: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Connect:input_type -> f5.nginx.agent.api.grpc.mpi.v1.ConnectionRequest
+	18, // 48: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Status:input_type -> f5.nginx.agent.api.grpc.mpi.v1.DataPlaneStatus
+	24, // 49: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Health:input_type -> f5.nginx.agent.api.grpc.mpi.v1.DataPlaneHealth
+	25, // 50: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Subscribe:input_type -> f5.nginx.agent.api.grpc.mpi.v1.DataPlaneMessage
+	17, // 51: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Connect:output_type -> f5.nginx.agent.api.grpc.mpi.v1.ConnectionResponse
+	40, // 52: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Status:output_type -> google.protobuf.Empty
+	40, // 53: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Health:output_type -> google.protobuf.Empty
+	26, // 54: f5.nginx.agent.api.grpc.mpi.v1.CommandService.Subscribe:output_type -> f5.nginx.agent.api.grpc.mpi.v1.ManagementPlaneMessage
+	51, // [51:55] is the sub-list for method output_type
+	47, // [47:51] is the sub-list for method input_type
+	47, // [47:47] is the sub-list for extension type_name
+	47, // [47:47] is the sub-list for extension extendee
+	0,  // [0:47] is the sub-list for field type_name
 }
 
 func init() { file_command_proto_init() }
@@ -3112,7 +3176,7 @@ func file_command_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_command_proto_rawDesc,
-			NumEnums:      3,
+			NumEnums:      4,
 			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   1,

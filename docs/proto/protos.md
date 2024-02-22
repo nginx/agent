@@ -38,6 +38,7 @@
     - [InstanceAction.InstanceActions](#f5-nginx-agent-api-grpc-mpi-v1-InstanceAction-InstanceActions)
     - [InstanceHealth.InstancHealthStatus](#f5-nginx-agent-api-grpc-mpi-v1-InstanceHealth-InstancHealthStatus)
     - [InstanceMeta.InstanceType](#f5-nginx-agent-api-grpc-mpi-v1-InstanceMeta-InstanceType)
+    - [Server.ConnectionType](#f5-nginx-agent-api-grpc-mpi-v1-Server-ConnectionType)
   
     - [CommandService](#f5-nginx-agent-api-grpc-mpi-v1-CommandService)
   
@@ -458,9 +459,7 @@ The metrics settings associated with orgins (sources) of the metrics and destina
 | ----- | ---- | ----- | ----------- |
 | sources | [Source](#f5-nginx-agent-api-grpc-mpi-v1-Source) | repeated | The connection and security settingss for the sources |
 | exporters | [Exporter](#f5-nginx-agent-api-grpc-mpi-v1-Exporter) | repeated | The connection and security settingss for the exporters server |
-| bulk_size | [string](#string) |  | the local buffer size that we will cache if connectivity issues exist
-
-// the amount of retry buffer size that we will cache if connectivity issues exist string retry_count = 4; |
+| bulk_size | [string](#string) |  | the local buffer size that we will cache if connectivity issues exist |
 
 
 
@@ -517,9 +516,7 @@ Server settings like hostname
 | ----- | ---- | ----- | ----------- |
 | host | [string](#string) |  | the host information |
 | port | [int32](#int32) |  | the port information |
-| transport | [string](#string) |  | Transport to use. Known protocols are &#34;tcp&#34;, &#34;tcp4&#34; (IPv4-only), &#34;tcp6&#34; (IPv6-only), &#34;udp&#34;, &#34;udp4&#34; (IPv4-only), &#34;udp6&#34; (IPv6-only), &#34;ip&#34;, &#34;ip4&#34; (IPv4-only), &#34;ip6&#34; (IPv6-only), &#34;unix&#34;, &#34;unixgram&#34; and &#34;unixpacket&#34;.
-
-enum ConnectionType { // Default connection type UNKNOWN = 0; // Http connection type HTTP = 1; TCP = 2; GRPC = 3; UNIX = 4; } ConnectionType connection_type = 5; |
+| connection_type | [Server.ConnectionType](#f5-nginx-agent-api-grpc-mpi-v1-Server-ConnectionType) |  |  |
 
 
 
@@ -610,6 +607,20 @@ the types of instances possible
 | NGINX | 2 | NGINX |
 | NGINX_PLUS | 3 | NGINX Plus |
 | UNIT | 4 | NGINX Unit |
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-Server-ConnectionType"></a>
+
+### Server.ConnectionType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNKNOWN | 0 | Default connection type |
+| HTTP | 1 | HTTP connection type |
+| GRPC | 2 | gRPC connection type |
+| UNIX | 3 | unix socket connection type |
 
 
  
@@ -732,7 +743,7 @@ Represents meta data about a file
 | permissions | [string](#string) |  | the permission set associated with a particular file |
 | size | [int64](#int64) |  | Size of the file in bytes |
 | action | [File.FileAction](#f5-nginx-agent-api-grpc-mpi-v1-file-File-FileAction) |  | optional action |
-| contents | [FileContents](#f5-nginx-agent-api-grpc-mpi-v1-file-FileContents) |  |  |
+| contents | [FileContents](#f5-nginx-agent-api-grpc-mpi-v1-file-FileContents) |  | optional contents |
 
 
 
@@ -795,8 +806,8 @@ Represents a collection of files
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  |  |
-| meta | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) |  |  |
+| message_metadata | [f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
+| meta | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) |  | Meta-information associated with the file |
 
 
 
@@ -808,7 +819,7 @@ Represents a collection of files
 <a name="f5-nginx-agent-api-grpc-mpi-v1-file-File-FileAction"></a>
 
 ### File.FileAction
-Action enum
+Action enumeration
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |

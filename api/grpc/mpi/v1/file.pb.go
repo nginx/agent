@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Action enum
+// Action enumeration
 type File_FileAction int32
 
 const (
@@ -222,8 +222,9 @@ type File struct {
 	// Size of the file in bytes
 	Size int64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
 	// optional action
-	Action   File_FileAction `protobuf:"varint,5,opt,name=action,proto3,enum=f5.nginx.agent.api.grpc.mpi.v1.file.File_FileAction" json:"action,omitempty"`
-	Contents *FileContents   `protobuf:"bytes,6,opt,name=contents,proto3" json:"contents,omitempty"`
+	Action File_FileAction `protobuf:"varint,5,opt,name=action,proto3,enum=f5.nginx.agent.api.grpc.mpi.v1.file.File_FileAction" json:"action,omitempty"`
+	// optional contents
+	Contents *FileContents `protobuf:"bytes,6,opt,name=contents,proto3" json:"contents,omitempty"`
 }
 
 func (x *File) Reset() {
@@ -305,8 +306,10 @@ type FileRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Meta-information associated with a message
 	MessageMetadata *MessageRequest `protobuf:"bytes,1,opt,name=message_metadata,json=messageMetadata,proto3" json:"message_metadata,omitempty"`
-	Meta            *FileMeta       `protobuf:"bytes,2,opt,name=meta,proto3" json:"meta,omitempty"`
+	// Meta-information associated with the file
+	Meta *FileMeta `protobuf:"bytes,2,opt,name=meta,proto3" json:"meta,omitempty"`
 }
 
 func (x *FileRequest) Reset() {

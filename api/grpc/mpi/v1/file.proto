@@ -43,7 +43,7 @@ message File {
     string permissions = 3;
     // Size of the file in bytes
     int64 size = 4;
-    // Action enum
+    // Action enumeration
     enum FileAction {
         // Default value, no action
         UNSET = 0;
@@ -58,12 +58,14 @@ message File {
     }
     // optional action
     FileAction action = 5;
+    // optional contents
     FileContents contents = 6;
 }
 
 message FileRequest {
-
+    // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    // Meta-information associated with the file
     FileMeta meta = 2;
 }
 
