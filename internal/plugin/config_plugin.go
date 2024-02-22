@@ -103,8 +103,8 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 	if err != nil {
 		slog.Error(
 			"Unable to parse instance configuration",
-			"correlationID", correlationID,
-			"instanceID", instance.GetInstanceId(),
+			"correlation_id", correlationID,
+			"instance_id", instance.GetInstanceId(),
 			"error", err,
 		)
 	} else {
@@ -112,7 +112,7 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 		case model.NginxConfigContext:
 			c.configServices[instance.GetInstanceId()].SetConfigContext(configContext)
 		default:
-			slog.Debug("Unknown config context", "configContext", configContext)
+			slog.Debug("Unknown config context", "config_context", configContext)
 		}
 		c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigContextTopic, Data: parsedConfig})
 	}

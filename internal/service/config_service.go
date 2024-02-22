@@ -76,7 +76,6 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 	}
 
 	err = cs.configService.Validate(instance)
-
 	if err != nil {
 		// Rollback
 		return &instances.ConfigurationStatus{

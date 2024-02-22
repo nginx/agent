@@ -77,13 +77,13 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 
 	for _, fileData := range filesMetaData.GetFiles() {
 		if !doesFileRequireUpdate(cacheContent, fileData) {
-			slog.Debug("Skipping file as latest version is already on disk", "filePath", fileData.GetPath())
+			slog.Debug("Skipping file as latest version is already on disk", "file_path", fileData.GetPath())
 			currentFileCache[fileData.GetPath()] = cacheContent[fileData.GetPath()]
 			skippedFiles[fileData.GetPath()] = struct{}{}
 
 			continue
 		}
-		slog.Debug("Updating file, latest version not on disk", "filePath", fileData.GetPath())
+		slog.Debug("Updating file, latest version not on disk", "file_path", fileData.GetPath())
 		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID)
 		if updateErr != nil {
 			slog.Debug("Update Error", "err", updateErr)
@@ -105,7 +105,7 @@ func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID,
 	}
 
 	if len(filesMetaData.GetFiles()) == 0 {
-		slog.Debug("No file metadata for instance", "instanceID", instanceID)
+		slog.Debug("No file metadata for instance", "instance_id", instanceID)
 		return nil, fmt.Errorf("error getting files metadata, no metadata exists for instance: %s", instanceID)
 	}
 
@@ -147,9 +147,9 @@ func (cw *ConfigWriter) Complete() error {
 }
 
 func writeFile(fileContent []byte, filePath string) error {
-	slog.Debug("Writing to file", "filePath", filePath)
+	slog.Debug("Writing to file", "file_path", filePath)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		slog.Debug("File does not exist, creating new file", "file", filePath)
+		slog.Debug("File does not exist, creating new file", "file_path", filePath)
 		err = os.MkdirAll(path.Dir(filePath), filePermissions)
 		if err != nil {
 			return fmt.Errorf("error creating directory %s: %w", path.Dir(filePath), err)
@@ -160,7 +160,7 @@ func writeFile(fileContent []byte, filePath string) error {
 	if err != nil {
 		return fmt.Errorf("error writing to file %s: %w", filePath, err)
 	}
-	slog.Debug("Content written to file", "filePath", filePath)
+	slog.Debug("Content written to file", "file_path", filePath)
 
 	return nil
 }

@@ -7,7 +7,6 @@ package config
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"path"
 	"testing"
@@ -112,8 +111,6 @@ func TestWriteConfig(t *testing.T) {
 			testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
 			require.NoError(t, readErr)
 
-			slog.Warn("", "file Content", fileContent)
-			slog.Warn("", "file Content", testData)
 			assert.Equal(t, fileContent, testData)
 
 			helpers.RemoveFileWithErrorCheck(t, test.getFileReturn.GetFilePath())

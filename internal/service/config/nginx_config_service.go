@@ -45,7 +45,7 @@ func NewNginx(instanceID string, agentConfig *config.Config) *Nginx {
 	fileCache := writer.NewFileCache(instanceID)
 	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache)
 	if err != nil {
-		slog.Error("failed to create new config writer for", "instanceID", instanceID, "err", err)
+		slog.Error("failed to create new config writer for", "instance_id", instanceID, "err", err)
 	}
 
 	return &Nginx{
@@ -249,7 +249,6 @@ func crossplaneConfigTraverse(root *crossplane.Config, callback crossplaneTraver
 		}
 
 		err = traverse(dir, callback)
-
 		if err != nil {
 			return err
 		}
@@ -266,7 +265,6 @@ func traverse(root *crossplane.Directive, callback crossplaneTraverseCallback) e
 		}
 
 		err = traverse(child, callback)
-
 		if err != nil {
 			return err
 		}
