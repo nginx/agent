@@ -101,9 +101,8 @@ This contains a series of NGINX Agent configurations
 | command | [Command](#f5-nginx-agent-api-grpc-mpi-v1-Command) |  | Command server settings |
 | metrics | [Metrics](#f5-nginx-agent-api-grpc-mpi-v1-Metrics) |  | Metrics server settings |
 | labels | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | A series of key/value pairs to add more data to the NGINX Agent instance |
-| features | [string](#string) | repeated | A list of features that the NGINX Agent has
-
-Max NAck setting? |
+| features | [string](#string) | repeated | A list of features that the NGINX Agent has |
+| message_buffer_size | [string](#string) |  | Message buffer size, maximum not acknowledged messages from the subscribe perspective |
 
 
 
@@ -314,6 +313,7 @@ Report on the status of the Data Plane
 | ----- | ---- | ----- | ----------- |
 | message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
 | instances | [Instance](#f5-nginx-agent-api-grpc-mpi-v1-Instance) | repeated | Report on instances on the Data Plane |
+| latest_message_index | [string](#string) |  | The AckIndex latest message index that has been processed |
 
 
 

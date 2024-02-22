@@ -41,7 +41,9 @@ message AgentConfig {
     repeated google.protobuf.Struct labels = 3;
     // A list of features that the NGINX Agent has
     repeated string features = 4;
-    // Max NAck setting?
+    // Message buffer size, maximum not acknowledged messages from the subscribe perspective
+    string message_buffer_size = 5;
+    // 
 }
 
 // The command settings, associated with messaging from an external source 
@@ -189,6 +191,8 @@ message DataPlaneStatus {
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
     // Report on instances on the Data Plane
     repeated Instance instances = 2;
+    // The AckIndex latest message index that has been processed
+    string latest_message_index = 3;
 }
 
 // This represents an instance being reported on
