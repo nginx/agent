@@ -77,7 +77,7 @@ func (CommandResponse_CommandStatus) EnumDescriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{1, 0}
 }
 
-// Meta-information associated with a request
+// Meta-information associated with a message
 type MessageRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

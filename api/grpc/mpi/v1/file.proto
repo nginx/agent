@@ -17,14 +17,19 @@ service FileService {
 
 // Represents a specific configuration version associated with an instance
 message ConfigVersion {
+    // the instance identifier
     string instance_id = 1;
+    // the version of the configuration
     string version = 2;
 }
 
 // Represents a collection of files
 message FileOverview {
+    // A list of files
     repeated File file = 1;
+    // optional previous file version
     string previous_version = 2;
+    // optional cureent file version
     string current_version = 3;
 }
 
@@ -57,17 +62,21 @@ message File {
 }
 
 message FileRequest {
+
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
     FileMeta meta = 2;
 }
 
 // Represents the bytes contents of the file https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string
 message FileContents {
+    // byte representation of a file without encoding
     bytes contents = 1;
 }
 
 // Meta information about the file, the name (including path) and hash
 message FileMeta {
+    // the name of the file
     string name = 1;
+    // the hash of the file contents
     string hash = 2;
 }

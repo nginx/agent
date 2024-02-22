@@ -4,7 +4,7 @@ package f5.nginx.agent.api.grpc.mpi.v1.common;
 
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
-// Meta-information associated with a request
+// Meta-information associated with a message
 message MessageRequest {
     // monotonically increasing integer
     string message_id = 1;

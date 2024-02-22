@@ -24,6 +24,7 @@ service CommandService {
 
 // The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
 message ConnectionRequest {
+    // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
     // instance information associated with the NGINX Agent
     Instance agent = 2;
@@ -32,7 +33,7 @@ message ConnectionRequest {
 // This contains a series of NGINX Agent configurations
 message AgentConfig {     
     // server information to connect to management plane
-    Server server = 1;
+    ConnectionSettings connection_settings = 1;
     // A series of key/value pairs to add more data to the NGINX Agent instance
     repeated google.protobuf.Struct labels = 2;
     // A list of features that the NGINX Agent has
@@ -40,11 +41,52 @@ message AgentConfig {
     // Max NAck setting?
 }
 
+message ConnectionSettings {
+    // Server settings that include connection information
+    Server server = 1;
+    // Authentication settings
+    Auth auth = 2;
+    // Optional TLS settings
+    TLSSetting tls = 3;
+}
+
+message Auth {
+    // A token
+    string token = 1;
+}
+
+message Backoff {
+    // First backoff time interval in seconds
+    int64 initial_interval = 1;
+    // Random value used to create range around next backoff interval
+    double randomization_factor = 2;
+    // Value to be multiplied with current backoff interval
+    double multiplier = 3;
+    // Max interval in seconds between two retries
+    int64 max_interval = 4;
+    // Elapsed time in seconds after which backoff stops.
+    // It never stops if max_elapsed_time == 0.
+    int64 max_elapsed_time = 5;
+}
+
 message Server {
+    // the host information
     string host = 1;
-    string port = 2;
-    // Auth auth = 3;
-    // TlsCert tls_cert = 4;
+    // the port information
+    int32 port = 2;
+}
+
+message TLSSetting {
+    // enable tls
+    bool enable      = 1;
+    // tls cert
+    string cert      = 2;
+    // tls key
+    string key       = 3;
+    // certificate authoirty cert
+    string ca        = 4;
+    // enable verification of a server's certificate chain and host name
+    bool skip_verify = 5;
 }
 
 // A set of runtime NGINX configuration that gets populated 
@@ -89,6 +131,7 @@ message ConnectionResponse {
 
 // Report on the status of the Data Plane
 message DataPlaneStatus {
+    // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
     // Report on instances on the Data Plane
     repeated Instance instances = 2;
@@ -169,6 +212,7 @@ message InstanceMeta {
 
 // Health report of a set of instances
 message DataPlaneHealth {
+    // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
     // Health report of a set of instances
     repeated InstanceHealth instance_health = 2;
@@ -176,6 +220,7 @@ message DataPlaneHealth {
 
 // Reports the status of an associated command. This may be in response to a ManagementPlaneMessage request
 message DataPlaneMessage {
+    // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
     // The command response with the associated request
     f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse command_response = 2;
@@ -183,6 +228,7 @@ message DataPlaneMessage {
 
 // A Management Plane request for information, triggers an associated rpc on the DataPlane
 message ManagementPlaneMessage {
+    // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
     oneof request {
         // triggers a DataPlaneStatus rpc
@@ -235,6 +281,7 @@ message ActionRequest {
 
 // Request an update on a particular command
 message CommandStatusRequest {
+    // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
 }
 

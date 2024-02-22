@@ -6,11 +6,14 @@
 - [command.proto](#command-proto)
     - [ActionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ActionRequest)
     - [AgentConfig](#f5-nginx-agent-api-grpc-mpi-v1-AgentConfig)
+    - [Auth](#f5-nginx-agent-api-grpc-mpi-v1-Auth)
+    - [Backoff](#f5-nginx-agent-api-grpc-mpi-v1-Backoff)
     - [CommandStatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-CommandStatusRequest)
     - [ConfigApplyRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigApplyRequest)
     - [ConfigUploadRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigUploadRequest)
     - [ConnectionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionRequest)
     - [ConnectionResponse](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionResponse)
+    - [ConnectionSettings](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings)
     - [DataPlaneHealth](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth)
     - [DataPlaneMessage](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneMessage)
     - [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus)
@@ -26,6 +29,7 @@
     - [NGINXPlusConfig](#f5-nginx-agent-api-grpc-mpi-v1-NGINXPlusConfig)
     - [Server](#f5-nginx-agent-api-grpc-mpi-v1-Server)
     - [StatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-StatusRequest)
+    - [TLSSetting](#f5-nginx-agent-api-grpc-mpi-v1-TLSSetting)
   
     - [InstanceAction.InstanceActions](#f5-nginx-agent-api-grpc-mpi-v1-InstanceAction-InstanceActions)
     - [InstanceHealth.InstancHealthStatus](#f5-nginx-agent-api-grpc-mpi-v1-InstanceHealth-InstancHealthStatus)
@@ -88,11 +92,45 @@ This contains a series of NGINX Agent configurations
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| server | [Server](#f5-nginx-agent-api-grpc-mpi-v1-Server) |  | server information to connect to management plane |
+| connection_settings | [ConnectionSettings](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings) |  | server information to connect to management plane |
 | labels | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | A series of key/value pairs to add more data to the NGINX Agent instance |
 | features | [string](#string) | repeated | A list of features that the NGINX Agent has
 
 Max NAck setting? |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-Auth"></a>
+
+### Auth
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| token | [string](#string) |  | A token |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-Backoff"></a>
+
+### Backoff
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| initial_interval | [int64](#int64) |  | First backoff time interval in seconds |
+| randomization_factor | [double](#double) |  | Random value used to create range around next backoff interval |
+| multiplier | [double](#double) |  | Value to be multiplied with current backoff interval |
+| max_interval | [int64](#int64) |  | Max interval in seconds between two retries |
+| max_elapsed_time | [int64](#int64) |  | Elapsed time in seconds after which backoff stops. It never stops if max_elapsed_time == 0. |
 
 
 
@@ -107,7 +145,7 @@ Request an update on a particular command
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  |  |
+| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
 
 
 
@@ -155,7 +193,7 @@ The connection request is an intial handshake to establish a connection, sending
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  |  |
+| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
 | agent | [Instance](#f5-nginx-agent-api-grpc-mpi-v1-Instance) |  | instance information associated with the NGINX Agent |
 
 
@@ -179,6 +217,23 @@ A response to a ConnectionRequest
 
 
 
+<a name="f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings"></a>
+
+### ConnectionSettings
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| server | [Server](#f5-nginx-agent-api-grpc-mpi-v1-Server) |  | Server settings that include connection information |
+| auth | [Auth](#f5-nginx-agent-api-grpc-mpi-v1-Auth) |  | Authentication settings |
+| tls | [TLSSetting](#f5-nginx-agent-api-grpc-mpi-v1-TLSSetting) |  | Optional TLS settings |
+
+
+
+
+
+
 <a name="f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth"></a>
 
 ### DataPlaneHealth
@@ -187,7 +242,7 @@ Health report of a set of instances
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  |  |
+| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
 | instance_health | [InstanceHealth](#f5-nginx-agent-api-grpc-mpi-v1-InstanceHealth) | repeated | Health report of a set of instances |
 
 
@@ -203,7 +258,7 @@ Reports the status of an associated command. This may be in response to a Manage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  |  |
+| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
 | command_response | [common.CommandResponse](#f5-nginx-agent-api-grpc-mpi-v1-common-CommandResponse) |  | The command response with the associated request |
 
 
@@ -219,7 +274,7 @@ Report on the status of the Data Plane
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  |  |
+| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
 | instances | [Instance](#f5-nginx-agent-api-grpc-mpi-v1-Instance) | repeated | Report on instances on the Data Plane |
 
 
@@ -343,7 +398,7 @@ A Management Plane request for information, triggers an associated rpc on the Da
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  |  |
+| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
 | status_request | [StatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-StatusRequest) |  | triggers a DataPlaneStatus rpc |
 | health_request | [HealthRequest](#f5-nginx-agent-api-grpc-mpi-v1-HealthRequest) |  | triggers a DataPlaneHealth rpc |
 | config_apply_request | [ConfigApplyRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigApplyRequest) |  | triggers a rpc GetFile(FileRequest) for overview list, if overview is missing, triggers a rpc Overview(ConfigVersion) first |
@@ -404,8 +459,8 @@ A set of runtime NGINX configuration that gets populated
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| host | [string](#string) |  |  |
-| port | [string](#string) |  | Auth auth = 3; TlsCert tls_cert = 4; |
+| host | [string](#string) |  | the host information |
+| port | [int32](#int32) |  | the port information |
 
 
 
@@ -416,6 +471,25 @@ A set of runtime NGINX configuration that gets populated
 
 ### StatusRequest
 Additional information associated with a StatusRequest
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-TLSSetting"></a>
+
+### TLSSetting
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enable | [bool](#bool) |  | enable tls |
+| cert | [string](#string) |  | tls cert |
+| key | [string](#string) |  | tls key |
+| ca | [string](#string) |  | certificate authoirty cert |
+| skip_verify | [bool](#bool) |  | enable verification of a server&#39;s certificate chain and host name |
 
 
 
@@ -511,7 +585,7 @@ Represents a the status response of an command
 <a name="f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest"></a>
 
 ### MessageRequest
-Meta-information associated with a request
+Meta-information associated with a message
 
 
 | Field | Type | Label | Description |
@@ -562,8 +636,8 @@ Represents a specific configuration version associated with an instance
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| instance_id | [string](#string) |  |  |
-| version | [string](#string) |  |  |
+| instance_id | [string](#string) |  | the instance identifier |
+| version | [string](#string) |  | the version of the configuration |
 
 
 
@@ -598,7 +672,7 @@ Represents the bytes contents of the file https://protobuf.dev/programming-guide
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| contents | [bytes](#bytes) |  |  |
+| contents | [bytes](#bytes) |  | byte representation of a file without encoding |
 
 
 
@@ -613,8 +687,8 @@ Meta information about the file, the name (including path) and hash
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| hash | [string](#string) |  |  |
+| name | [string](#string) |  | the name of the file |
+| hash | [string](#string) |  | the hash of the file contents |
 
 
 
@@ -629,9 +703,9 @@ Represents a collection of files
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| file | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) | repeated |  |
-| previous_version | [string](#string) |  |  |
-| current_version | [string](#string) |  |  |
+| file | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) | repeated | A list of files |
+| previous_version | [string](#string) |  | optional previous file version |
+| current_version | [string](#string) |  | optional cureent file version |
 
 
 
