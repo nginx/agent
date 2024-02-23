@@ -10,12 +10,12 @@ option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 service FileService {
     // Get the overview of files for a particular configuration version of an instance
     rpc GetOverview(ConfigVersion) returns (FileOverview) {}
-    // Send the overview of files for a particular set of file changes on the data plane
-    rpc SendOverview(FileOverview) returns (google.protobuf.Empty) {}
+    // Update the overview of files for a particular set of file changes on the data plane
+    rpc UpdateOverview(FileOverview) returns (google.protobuf.Empty) {}
     // Get the file contents for a particular file
     rpc GetFile(FileRequest) returns (FileContents) {}
-    // Send a file from the 
-    rpc SendFile(File) returns (FileMeta) {}
+    // Update a file from the Agent to the Server
+    rpc UpdateFile(File) returns (FileMeta) {}
 }
 
 // Represents a specific configuration version associated with an instance

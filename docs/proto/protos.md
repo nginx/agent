@@ -653,9 +653,9 @@ A service outlining the command and control options for a DataPlane
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Connect | [ConnectionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionRequest) | [ConnectionResponse](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionResponse) | Connects NGINX Agents to the Management Plane agnostic of instance data |
-| Status | [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus) | [.google.protobuf.Empty](#google-protobuf-Empty) | Reports on instances and their configurations |
-| Health | [DataPlaneHealth](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth) | [.google.protobuf.Empty](#google-protobuf-Empty) | Reports on instance health |
+| CreateConnection | [ConnectionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionRequest) | [ConnectionResponse](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionResponse) | Connects NGINX Agent to the Management Plane agnostic of instance data |
+| UpdateStatus | [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus) | [.google.protobuf.Empty](#google-protobuf-Empty) | Reports on instances and their configurations |
+| UpdateHealth | [DataPlaneHealth](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth) | [.google.protobuf.Empty](#google-protobuf-Empty) | Reports on instance health |
 | Subscribe | [DataPlaneMessage](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneMessage) stream | [ManagementPlaneMessage](#f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneMessage) stream | A decoupled communication mechanism between the data plane and management plane. |
 
  
@@ -860,9 +860,9 @@ Action enumeration
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | GetOverview | [ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | Get the overview of files for a particular configuration version of an instance |
-| SendOverview | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | [.google.protobuf.Empty](#google-protobuf-Empty) | Send the overview of files for a particular set of file changes on the data plane |
+| UpdateOverview | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | [.google.protobuf.Empty](#google-protobuf-Empty) | Update the overview of files for a particular set of file changes on the data plane |
 | GetFile | [FileRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-FileRequest) | [FileContents](#f5-nginx-agent-api-grpc-mpi-v1-file-FileContents) | Get the file contents for a particular file |
-| SendFile | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) | Send a file from the |
+| UpdateFile | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) | Update a file from the Agent to the Server |
 
  
 

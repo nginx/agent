@@ -13,12 +13,12 @@ import "google/protobuf/timestamp.proto";
 
 // A service outlining the command and control options for a DataPlane
 service CommandService {
-    // Connects NGINX Agents to the Management Plane agnostic of instance data
-    rpc Connect(ConnectionRequest) returns (ConnectionResponse) {}
+    // Connects NGINX Agent to the Management Plane agnostic of instance data
+    rpc CreateConnection(ConnectionRequest) returns (ConnectionResponse) {}
     // Reports on instances and their configurations
-    rpc Status(DataPlaneStatus) returns (google.protobuf.Empty) {}
+    rpc UpdateStatus(DataPlaneStatus) returns (google.protobuf.Empty) {}
     // Reports on instance health
-    rpc Health(DataPlaneHealth) returns (google.protobuf.Empty) {}
+    rpc UpdateHealth(DataPlaneHealth) returns (google.protobuf.Empty) {}
     // A decoupled communication mechanism between the data plane and management plane.
     rpc Subscribe(stream DataPlaneMessage) returns (stream ManagementPlaneMessage) {}
 }
