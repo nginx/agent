@@ -53,7 +53,7 @@ func (*ProcessMonitor) Subscriptions() []string {
 }
 
 func (pm *ProcessMonitor) run(ctx context.Context) {
-	slog.Debug("Process monitor started", "monitoringPeriod", pm.monitoringFrequency)
+	slog.Debug("Process monitor started", "monitoring_period", pm.monitoringFrequency)
 
 	processes, err := pm.getProcessesFunc()
 	if err == nil {

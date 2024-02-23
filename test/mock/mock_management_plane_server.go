@@ -91,7 +91,7 @@ func (ms *ManagementServer) GetInstanceFile(
 		if file.Path == filePath {
 			content, err := os.ReadFile(filepath.Join(ms.configDirectory, filePath))
 			if err != nil {
-				slog.Error("Unable to read file", "filePath", filePath, "error", err)
+				slog.Error("Unable to read file", "file_path", filePath, "error", err)
 				ctx.JSON(http.StatusInternalServerError, err)
 
 				return

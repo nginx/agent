@@ -128,7 +128,7 @@ func (dps *DataPlaneServer) GetInstances(ctx *gin.Context) {
 // PUT /instances/{instanceID}/configurations
 func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceID string) {
 	correlationID := uuid.New().String()
-	slog.Debug("Update instance configuration request", "correlationID", correlationID, "instanceID", instanceID)
+	slog.Debug("Update instance configuration request", "correlation_id", correlationID, "instance_id", instanceID)
 
 	var request dataplane.UpdateInstanceConfigurationJSONRequestBody
 	if err := ctx.Bind(&request); err != nil {
@@ -161,8 +161,8 @@ func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 		} else {
 			slog.Debug(
 				"Unable to update instance configuration",
-				"instanceID", instanceID,
-				"correlationID", correlationID,
+				"instance_id", instanceID,
+				"correlation_id", correlationID,
 			)
 			ctx.JSON(
 				http.StatusNotFound,
@@ -187,7 +187,7 @@ func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, ins
 
 		ctx.JSON(http.StatusOK, responseBody)
 	} else {
-		slog.Debug("Unable to get instance configuration status", "instanceID", instanceID)
+		slog.Debug("Unable to get instance configuration status", "instance_id", instanceID)
 		ctx.JSON(http.StatusNotFound, dataplane.ErrorResponse{Message: "Unable to find configuration status"})
 	}
 }

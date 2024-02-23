@@ -6,10 +6,13 @@
 package service
 
 import (
-	"fmt"
+	"context"
+	"log/slog"
+
+	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/internal/service/config"
+	service "github.com/nginx/agent/v3/internal/service/config"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
@@ -17,49 +20,104 @@ import (
 type ConfigServiceInterface interface {
 	SetConfigContext(instanceConfigContext any)
 	UpdateInstanceConfiguration(
+		ctx context.Context,
 		correlationID, location string,
-		instance *instances.Instance,
 	) *instances.ConfigurationStatus
 	ParseInstanceConfiguration(
 		correlationID string,
-		instance *instances.Instance,
 	) (instanceConfigContext any, err error)
 }
 
 type ConfigService struct {
-	configContext           any
-	dataplaneConfigServices map[instances.Type]config.DataPlaneConfig
+	configContext any
+	configService service.DataPlaneConfig
+	instance      *instances.Instance
 }
 
-func NewConfigService() *ConfigService {
-	nginxConfigService := config.NewNginx()
+func NewConfigService(instance *instances.Instance, agentConfig *config.Config) *ConfigService {
+	cs := &ConfigService{}
 
-	return &ConfigService{
-		dataplaneConfigServices: map[instances.Type]config.DataPlaneConfig{
-			instances.Type_NGINX:                nginxConfigService,
-			instances.Type_NGINX_PLUS:           nginxConfigService,
-			instances.Type_NGINX_GATEWAY_FABRIC: config.NewNginxGatewayFabric(),
-		},
+	switch instance.GetType() {
+	case instances.Type_NGINX:
+		cs.configService = service.NewNginx(instance, agentConfig)
+	case instances.Type_NGINX_GATEWAY_FABRIC:
+		cs.configService = service.NewNginxGatewayFabric()
+	case instances.Type_NGINX_PLUS:
+		fallthrough
+	case instances.Type_UNKNOWN:
+		fallthrough
+	default:
+		slog.Warn("Not Implemented")
 	}
+
+	cs.instance = instance
+
+	return cs
 }
 
 func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 	cs.configContext = instanceConfigContext
 }
 
-func (*ConfigService) UpdateInstanceConfiguration(_, _ string, _ *instances.Instance) *instances.ConfigurationStatus {
-	return nil
+func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correlationID, location string,
+) *instances.ConfigurationStatus {
+	// remove when tenantID is being set
+	tenantID := "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
+
+	_, err := cs.configService.Write(ctx, location, tenantID)
+	if err != nil {
+		// Rollback
+		return &instances.ConfigurationStatus{
+			InstanceId:    cs.instance.GetInstanceId(),
+			CorrelationId: correlationID,
+			Status:        instances.Status_FAILED,
+			Message:       err.Error(),
+		}
+	}
+
+	err = cs.configService.Validate()
+	if err != nil {
+		// Rollback
+		return &instances.ConfigurationStatus{
+			InstanceId:    cs.instance.GetInstanceId(),
+			CorrelationId: correlationID,
+			Status:        instances.Status_FAILED,
+			Message:       err.Error(),
+		}
+	}
+
+	err = cs.configService.Apply()
+	if err != nil {
+		// Rollback
+		return &instances.ConfigurationStatus{
+			InstanceId:    cs.instance.GetInstanceId(),
+			CorrelationId: correlationID,
+			Status:        instances.Status_FAILED,
+			Message:       err.Error(),
+		}
+	}
+
+	err = cs.configService.Complete()
+	if err != nil {
+		// Rollback
+		return &instances.ConfigurationStatus{
+			InstanceId:    cs.instance.GetInstanceId(),
+			CorrelationId: correlationID,
+			Status:        instances.Status_FAILED,
+			Message:       err.Error(),
+		}
+	}
+
+	return &instances.ConfigurationStatus{
+		InstanceId:    cs.instance.GetInstanceId(),
+		CorrelationId: correlationID,
+		Status:        instances.Status_SUCCESS,
+		Message:       "Config applied successfully",
+	}
 }
 
 func (cs *ConfigService) ParseInstanceConfiguration(
 	_ string,
-	instance *instances.Instance,
 ) (instanceConfigContext any, err error) {
-	conf, ok := cs.dataplaneConfigServices[instance.GetType()]
-
-	if !ok {
-		return nil, fmt.Errorf("unknown instance type %s", instance.GetType())
-	}
-
-	return conf.ParseConfig(instance)
+	return cs.configService.ParseConfig()
 }

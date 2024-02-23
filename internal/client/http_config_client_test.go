@@ -16,7 +16,6 @@ import (
 	helpers "github.com/nginx/agent/v3/test"
 	"github.com/stretchr/testify/require"
 
-	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 
 	"github.com/stretchr/testify/assert"
@@ -24,8 +23,7 @@ import (
 
 func TestGetFilesMetadata(t *testing.T) {
 	ctx := context.TODO()
-	tenantID, instanceID, err := createTestIds()
-	require.NoError(t, err)
+	tenantID, instanceID := helpers.CreateTestIDs(t)
 
 	fileTime1, err := helpers.CreateProtoTime("2024-01-08T13:22:25Z")
 	require.NoError(t, err)
@@ -70,19 +68,18 @@ func TestGetFilesMetadata(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	filesURL := fmt.Sprintf("%v/instance/%s/files/", ts.URL, instanceID)
+	filesURL := fmt.Sprintf("%s/instance/%s/files/", ts.URL, instanceID.String())
 
 	hcd := NewHTTPConfigClient(time.Second * 10)
 
-	resp, err := hcd.GetFilesMetadata(ctx, filesURL, tenantID.String())
+	resp, err := hcd.GetFilesMetadata(ctx, filesURL, tenantID.String(), instanceID.String())
 	require.NoError(t, err)
 	assert.Equal(t, resp.String(), testDataResponse.String())
 }
 
 func TestGetFile(t *testing.T) {
 	ctx := context.TODO()
-	tenantID, instanceID, err := createTestIds()
-	require.NoError(t, err)
+	tenantID, instanceID := helpers.CreateTestIDs(t)
 
 	test := `{
 		"encoded":true,
@@ -97,7 +94,7 @@ func TestGetFile(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	filesURL := fmt.Sprintf("%v/instance/%s/files/", ts.URL, instanceID)
+	filesURL := fmt.Sprintf("%s/instance/%s/files/", ts.URL, instanceID.String())
 
 	fileTime, err := helpers.CreateProtoTime("2024-01-08T13:22:25Z")
 	require.NoError(t, err)
@@ -117,21 +114,7 @@ func TestGetFile(t *testing.T) {
 
 	hcd := NewHTTPConfigClient(time.Second * 10)
 
-	resp, err := hcd.GetFile(ctx, &file, filesURL, tenantID.String())
+	resp, err := hcd.GetFile(ctx, &file, filesURL, tenantID.String(), instanceID.String())
 	require.NoError(t, err)
 	assert.Equal(t, testDataResponse.String(), resp.String())
-}
-
-func createTestIds() (uuid.UUID, uuid.UUID, error) {
-	tenantID, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
-	if err != nil {
-		fmt.Printf("Error creating tenantID: %v", err)
-	}
-
-	instanceID, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
-	if err != nil {
-		fmt.Printf("Error creating instanceID: %v", err)
-	}
-
-	return tenantID, instanceID, err
 }
