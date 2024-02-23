@@ -16,7 +16,7 @@
     - [ConnectionResponse](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionResponse)
     - [ConnectionSettings](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings)
     - [DataPlaneHealth](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth)
-    - [DataPlaneRequest](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneRequest)
+    - [DataPlaneResponse](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneResponse)
     - [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus)
     - [DefaultAction](#f5-nginx-agent-api-grpc-mpi-v1-DefaultAction)
     - [Exporter](#f5-nginx-agent-api-grpc-mpi-v1-Exporter)
@@ -269,9 +269,9 @@ Health report of a set of instances
 
 
 
-<a name="f5-nginx-agent-api-grpc-mpi-v1-DataPlaneRequest"></a>
+<a name="f5-nginx-agent-api-grpc-mpi-v1-DataPlaneResponse"></a>
 
-### DataPlaneRequest
+### DataPlaneResponse
 Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
 
 
@@ -457,8 +457,8 @@ A Management Plane request for information, triggers an associated rpc on the Da
 | config_apply_request | [ConfigApplyRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigApplyRequest) |  | triggers a rpc GetFile(FileRequest) for overview list, if overview is missing, triggers a rpc Overview(ConfigVersion) first |
 | config_upload_request | [ConfigUploadRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc SendFile(File) for that instances |
 | config_sync_request | [ConfigSyncRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigSyncRequest) |  | triggers a reconciliation of with a command_response for a particular action |
-| action_request | [ActionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ActionRequest) |  | triggers a DataPlaneRequest with a command_response for a particular action |
-| command_status_request | [CommandStatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneRequest with a command_response for a particular correlation_id |
+| action_request | [ActionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ActionRequest) |  | triggers a DataPlaneResponse with a command_response for a particular action |
+| command_status_request | [CommandStatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneResponse with a command_response for a particular correlation_id |
 
 
 
@@ -496,6 +496,8 @@ A set of runtime NGINX configuration that gets populated
 | stub_status | [string](#string) |  | the stub status API location |
 | access_logs | [string](#string) | repeated | a list of access_logs |
 | error_logs | [string](#string) | repeated | a list of error_logs |
+| loadable_modules | [string](#string) | repeated | List of NGINX potentially lodable modules (installed but not loaded). |
+| dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
 
 
 
@@ -516,6 +518,8 @@ A set of runtime NGINX configuration that gets populated
 | api | [string](#string) |  | the API information for NGINX Plus API |
 | access_logs | [string](#string) | repeated | is this correct for plus? |
 | error_logs | [string](#string) | repeated | is this correct for plus? |
+| loadable_modules | [string](#string) | repeated | List of NGINX potentially lodable modules (installed but not loaded). |
+| dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
 
 
 
@@ -662,7 +666,7 @@ Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as t
 | CreateConnection | [ConnectionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionRequest) | [ConnectionResponse](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionResponse) | Connects NGINX Agent to the Management Plane agnostic of instance data |
 | UpdateStatus | [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus) | [.google.protobuf.Empty](#google-protobuf-Empty) | Reports on instances and their configurations |
 | UpdateHealth | [DataPlaneHealth](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth) | [.google.protobuf.Empty](#google-protobuf-Empty) | Reports on instance health |
-| Subscribe | [DataPlaneRequest](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneRequest) stream | [ManagementPlaneRequest](#f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneRequest) stream | A decoupled communication mechanism between the data plane and management plane. |
+| Subscribe | [DataPlaneResponse](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneResponse) stream | [ManagementPlaneRequest](#f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneRequest) stream | A decoupled communication mechanism between the data plane and management plane. |
 
  
 

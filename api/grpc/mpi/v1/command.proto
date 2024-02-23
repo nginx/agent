@@ -33,7 +33,7 @@ service CommandService {
     // Reports on instance health
     rpc UpdateHealth(DataPlaneHealth) returns (google.protobuf.Empty) {}
     // A decoupled communication mechanism between the data plane and management plane.
-    rpc Subscribe(stream DataPlaneRequest) returns (stream ManagementPlaneRequest) {}
+    rpc Subscribe(stream DataPlaneResponse) returns (stream ManagementPlaneRequest) {}
 }
 
 // The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
@@ -171,6 +171,10 @@ message NGINXConfig {
     repeated string access_logs = 5;
     // a list of error_logs
     repeated string error_logs = 6;
+    // List of NGINX potentially lodable modules (installed but not loaded).
+    repeated string loadable_modules = 7;
+    // List of NGINX dynamic modules.
+    repeated string dynamic_modules = 8;
 }
 
 // A set of runtime NGINX configuration that gets populated 
@@ -187,6 +191,10 @@ message NGINXPlusConfig {
     repeated string access_logs = 5;
      // is this correct for plus?
     repeated string error_logs = 6;
+    // List of NGINX potentially lodable modules (installed but not loaded).
+    repeated string loadable_modules = 7;
+    // List of NGINX dynamic modules.
+    repeated string dynamic_modules = 8;
 }
 
 // A response to a ConnectionRequest
@@ -290,7 +298,7 @@ message DataPlaneHealth {
 }
 
 // Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
-message DataPlaneRequest {
+message DataPlaneResponse {
     // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
     // The command response with the associated request
@@ -313,9 +321,9 @@ message ManagementPlaneRequest {
         ConfigUploadRequest config_upload_request = 6;
         // triggers a reconciliation of  with a command_response for a particular action
         ConfigSyncRequest config_sync_request = 7; 
-        // triggers a DataPlaneRequest with a command_response for a particular action
+        // triggers a DataPlaneResponse with a command_response for a particular action
         ActionRequest action_request = 8;
-        // triggers a DataPlaneRequest with a command_response for a particular correlation_id
+        // triggers a DataPlaneResponse with a command_response for a particular correlation_id
         CommandStatusRequest command_status_request = 9; 
     }
 }
