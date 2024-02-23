@@ -1,4 +1,10 @@
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
+
 syntax = "proto3";
+
 package f5.nginx.agent.api.grpc.mpi.v1.file;
 
 import "common.proto";
@@ -7,6 +13,12 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
+// This specifies the FileService operations for transferring file data between a client and server.
+// All operations are written from a client perspective and flow Client -> Server
+// The server must set a max file size (in bytes), and that size must be used to configure 
+// the gRPC server and client for the FileService such that the FileContents object can be sent with bytes of the configured size. 
+// The actual configured max size for gRPC objects must be maxFileSize + sizeOfSha256HashString since a FileContents object contains both. 
+// A SHA256 hash string is 64 bytes, therefore the configured max message size should be maxFileSize + 64.
 service FileService {
     // Get the overview of files for a particular configuration version of an instance
     rpc GetOverview(ConfigVersion) returns (FileOverview) {}
@@ -65,7 +77,7 @@ message File {
 
 message FileRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
     // Meta-information associated with the file
     FileMeta file_meta = 2;
 }

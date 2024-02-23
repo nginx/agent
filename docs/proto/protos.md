@@ -7,7 +7,6 @@
     - [ActionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ActionRequest)
     - [AgentConfig](#f5-nginx-agent-api-grpc-mpi-v1-AgentConfig)
     - [Auth](#f5-nginx-agent-api-grpc-mpi-v1-Auth)
-    - [Backoff](#f5-nginx-agent-api-grpc-mpi-v1-Backoff)
     - [Command](#f5-nginx-agent-api-grpc-mpi-v1-Command)
     - [CommandStatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-CommandStatusRequest)
     - [ConfigApplyRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigApplyRequest)
@@ -17,7 +16,7 @@
     - [ConnectionResponse](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionResponse)
     - [ConnectionSettings](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings)
     - [DataPlaneHealth](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth)
-    - [DataPlaneMessage](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneMessage)
+    - [DataPlaneRequest](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneRequest)
     - [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus)
     - [DefaultAction](#f5-nginx-agent-api-grpc-mpi-v1-DefaultAction)
     - [Exporter](#f5-nginx-agent-api-grpc-mpi-v1-Exporter)
@@ -27,7 +26,8 @@
     - [InstanceConfig](#f5-nginx-agent-api-grpc-mpi-v1-InstanceConfig)
     - [InstanceHealth](#f5-nginx-agent-api-grpc-mpi-v1-InstanceHealth)
     - [InstanceMeta](#f5-nginx-agent-api-grpc-mpi-v1-InstanceMeta)
-    - [ManagementPlaneMessage](#f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneMessage)
+    - [KeepAlive](#f5-nginx-agent-api-grpc-mpi-v1-KeepAlive)
+    - [ManagementPlaneRequest](#f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneRequest)
     - [Metrics](#f5-nginx-agent-api-grpc-mpi-v1-Metrics)
     - [NGINXConfig](#f5-nginx-agent-api-grpc-mpi-v1-NGINXConfig)
     - [NGINXPlusConfig](#f5-nginx-agent-api-grpc-mpi-v1-NGINXPlusConfig)
@@ -45,7 +45,7 @@
   
 - [common.proto](#common-proto)
     - [CommandResponse](#f5-nginx-agent-api-grpc-mpi-v1-common-CommandResponse)
-    - [MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest)
+    - [MessageMeta](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta)
   
     - [CommandResponse.CommandStatus](#f5-nginx-agent-api-grpc-mpi-v1-common-CommandResponse-CommandStatus)
   
@@ -124,25 +124,6 @@ Authentication settings
 
 
 
-<a name="f5-nginx-agent-api-grpc-mpi-v1-Backoff"></a>
-
-### Backoff
-backoff settings
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| initial_interval | [int64](#int64) |  | First backoff time interval in seconds |
-| randomization_factor | [double](#double) |  | Random value used to create range around next backoff interval |
-| multiplier | [double](#double) |  | Value to be multiplied with current backoff interval |
-| max_interval | [int64](#int64) |  | Max interval in seconds between two retries |
-| max_elapsed_time | [int64](#int64) |  | Elapsed time in seconds after which backoff stops. It never stops if max_elapsed_time == 0. |
-
-
-
-
-
-
 <a name="f5-nginx-agent-api-grpc-mpi-v1-Command"></a>
 
 ### Command
@@ -166,7 +147,7 @@ Request an update on a particular command
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
+| message_meta | [common.MessageMeta](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta) |  | Meta-information associated with a message |
 
 
 
@@ -230,7 +211,7 @@ The connection request is an intial handshake to establish a connection, sending
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
+| message_meta | [common.MessageMeta](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta) |  | Meta-information associated with a message |
 | agent | [Instance](#f5-nginx-agent-api-grpc-mpi-v1-Instance) |  | instance information associated with the NGINX Agent |
 
 
@@ -265,7 +246,7 @@ A set of connection information and it&#39;s associated auth, tls and backoff co
 | server | [Server](#f5-nginx-agent-api-grpc-mpi-v1-Server) |  | Server settings that include connection information |
 | auth | [Auth](#f5-nginx-agent-api-grpc-mpi-v1-Auth) |  | Authentication settings |
 | tls | [TLSSetting](#f5-nginx-agent-api-grpc-mpi-v1-TLSSetting) |  | Optional TLS settings |
-| backoff | [Backoff](#f5-nginx-agent-api-grpc-mpi-v1-Backoff) |  | backoff settings associated with this connection |
+| keep_alive | [KeepAlive](#f5-nginx-agent-api-grpc-mpi-v1-KeepAlive) |  | keepalive settings for this connection |
 
 
 
@@ -280,7 +261,7 @@ Health report of a set of instances
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
+| message_meta | [common.MessageMeta](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta) |  | Meta-information associated with a message |
 | instance_health | [InstanceHealth](#f5-nginx-agent-api-grpc-mpi-v1-InstanceHealth) | repeated | Health report of a set of instances |
 
 
@@ -288,15 +269,15 @@ Health report of a set of instances
 
 
 
-<a name="f5-nginx-agent-api-grpc-mpi-v1-DataPlaneMessage"></a>
+<a name="f5-nginx-agent-api-grpc-mpi-v1-DataPlaneRequest"></a>
 
-### DataPlaneMessage
-Reports the status of an associated command. This may be in response to a ManagementPlaneMessage request
+### DataPlaneRequest
+Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
+| message_meta | [common.MessageMeta](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta) |  | Meta-information associated with a message |
 | command_response | [common.CommandResponse](#f5-nginx-agent-api-grpc-mpi-v1-common-CommandResponse) |  | The command response with the associated request |
 
 
@@ -312,7 +293,7 @@ Report on the status of the Data Plane
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
+| message_meta | [common.MessageMeta](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta) |  | Meta-information associated with a message |
 | instances | [Instance](#f5-nginx-agent-api-grpc-mpi-v1-Instance) | repeated | Report on instances on the Data Plane |
 | latest_message_index | [string](#string) |  | The AckIndex latest message index that has been processed |
 
@@ -445,22 +426,39 @@ Metainformation relating to the reported instance
 
 
 
-<a name="f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneMessage"></a>
+<a name="f5-nginx-agent-api-grpc-mpi-v1-KeepAlive"></a>
 
-### ManagementPlaneMessage
+### KeepAlive
+keepalive settings based on https://pkg.go.dev/google.golang.org/grpc/keepalive#ClientParameters
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | After a duration of this time if the client doesn&#39;t see any activity it pings the server to see if the transport is still alive. If set below 10s, a minimum value of 10s will be used instead. |
+| timeout | [double](#double) |  | After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed. |
+| permit_without_stream | [bool](#bool) |  | If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent. |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneRequest"></a>
+
+### ManagementPlaneRequest
 A Management Plane request for information, triggers an associated rpc on the DataPlane
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
+| message_meta | [common.MessageMeta](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta) |  | Meta-information associated with a message |
 | status_request | [StatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-StatusRequest) |  | triggers a DataPlaneStatus rpc |
 | health_request | [HealthRequest](#f5-nginx-agent-api-grpc-mpi-v1-HealthRequest) |  | triggers a DataPlaneHealth rpc |
 | config_apply_request | [ConfigApplyRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigApplyRequest) |  | triggers a rpc GetFile(FileRequest) for overview list, if overview is missing, triggers a rpc Overview(ConfigVersion) first |
 | config_upload_request | [ConfigUploadRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc SendFile(File) for that instances |
 | config_sync_request | [ConfigSyncRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConfigSyncRequest) |  | triggers a reconciliation of with a command_response for a particular action |
-| action_request | [ActionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ActionRequest) |  | triggers a DataPlaneMessage with a command_response for a particular action |
-| command_status_request | [CommandStatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneMessage with a command_response for a particular correlation_id |
+| action_request | [ActionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ActionRequest) |  | triggers a DataPlaneRequest with a command_response for a particular action |
+| command_status_request | [CommandStatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneRequest with a command_response for a particular correlation_id |
 
 
 
@@ -649,14 +647,22 @@ Connection Type enumeration
 <a name="f5-nginx-agent-api-grpc-mpi-v1-CommandService"></a>
 
 ### CommandService
-A service outlining the command and control options for a DataPlane
+A service outlining the command and control options for a DataPlane Client
+All operations are written from a client perspective
+The RPC calls generally flow Client -&gt; Server, except for Subscribe which contains a bidirectional stream
+The ManagementPlaneRequest sent in the Subscribe stream triggers one or more client actions.
+Messages provided by the Management Plane must be a FIFO ordered queue. Messages in the queue must have a monotonically-increasing integer index. 
+The indexes do not need to be sequential. The index must be a 64-bit signed integer.
+The index must not reset for the entire lifetime of a unique Agent (i.e. the index does not reset to 0 only because of a temporary disconnection or new session). 
+Messages must not be removed from the Mangement Plane queue until Ack’d by the Agent. 
+Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as they may need to be retried.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | CreateConnection | [ConnectionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionRequest) | [ConnectionResponse](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionResponse) | Connects NGINX Agent to the Management Plane agnostic of instance data |
 | UpdateStatus | [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus) | [.google.protobuf.Empty](#google-protobuf-Empty) | Reports on instances and their configurations |
 | UpdateHealth | [DataPlaneHealth](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth) | [.google.protobuf.Empty](#google-protobuf-Empty) | Reports on instance health |
-| Subscribe | [DataPlaneMessage](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneMessage) stream | [ManagementPlaneMessage](#f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneMessage) stream | A decoupled communication mechanism between the data plane and management plane. |
+| Subscribe | [DataPlaneRequest](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneRequest) stream | [ManagementPlaneRequest](#f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneRequest) stream | A decoupled communication mechanism between the data plane and management plane. |
 
  
 
@@ -686,9 +692,9 @@ Represents a the status response of an command
 
 
 
-<a name="f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest"></a>
+<a name="f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta"></a>
 
-### MessageRequest
+### MessageMeta
 Meta-information associated with a message
 
 
@@ -823,7 +829,7 @@ Represents a collection of files
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_metadata | [f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
+| message_meta | [f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta) |  | Meta-information associated with a message |
 | file_meta | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) |  | Meta-information associated with the file |
 
 
@@ -855,7 +861,12 @@ Action enumeration
 <a name="f5-nginx-agent-api-grpc-mpi-v1-file-FileService"></a>
 
 ### FileService
-
+This specifies the FileService operations for transferring file data between a client and server.
+All operations are written from a client perspective and flow Client -&gt; Server
+The server must set a max file size (in bytes), and that size must be used to configure 
+the gRPC server and client for the FileService such that the FileContents object can be sent with bytes of the configured size. 
+The actual configured max size for gRPC objects must be maxFileSize &#43; sizeOfSha256HashString since a FileContents object contains both. 
+A SHA256 hash string is 64 bytes, therefore the configured max message size should be maxFileSize &#43; 64.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|

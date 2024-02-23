@@ -1,3 +1,8 @@
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
+
 // These proto definitions follow https://protobuf.dev/programming-guides/style/
 // and recommendations outlined in https://static.sched.com/hosted_files/kccncna17/ad/2017%20CloudNativeCon%20-%20Mod%20gRPC%20Services.pdf
 syntax = "proto3";
@@ -11,7 +16,15 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
-// A service outlining the command and control options for a DataPlane
+// A service outlining the command and control options for a DataPlane Client
+// All operations are written from a client perspective
+// The RPC calls generally flow Client -> Server, except for Subscribe which contains a bidirectional stream
+// The ManagementPlaneRequest sent in the Subscribe stream triggers one or more client actions.
+// Messages provided by the Management Plane must be a FIFO ordered queue. Messages in the queue must have a monotonically-increasing integer index. 
+// The indexes do not need to be sequential. The index must be a 64-bit signed integer.
+// The index must not reset for the entire lifetime of a unique Agent (i.e. the index does not reset to 0 only because of a temporary disconnection or new session). 
+// Messages must not be removed from the Mangement Plane queue until Ack’d by the Agent. 
+// Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as they may need to be retried.
 service CommandService {
     // Connects NGINX Agent to the Management Plane agnostic of instance data
     rpc CreateConnection(ConnectionRequest) returns (ConnectionResponse) {}
@@ -20,13 +33,13 @@ service CommandService {
     // Reports on instance health
     rpc UpdateHealth(DataPlaneHealth) returns (google.protobuf.Empty) {}
     // A decoupled communication mechanism between the data plane and management plane.
-    rpc Subscribe(stream DataPlaneMessage) returns (stream ManagementPlaneMessage) {}
+    rpc Subscribe(stream DataPlaneRequest) returns (stream ManagementPlaneRequest) {}
 }
 
 // The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
 message ConnectionRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
     // instance information associated with the NGINX Agent
     Instance agent = 2;
 }
@@ -43,7 +56,6 @@ message AgentConfig {
     repeated string features = 4;
     // Message buffer size, maximum not acknowledged messages from the subscribe perspective
     string message_buffer_size = 5;
-    // 
 }
 
 // The command settings, associated with messaging from an external source 
@@ -86,8 +98,8 @@ message ConnectionSettings {
     Auth auth = 2;
     // Optional TLS settings
     TLSSetting tls = 3;
-    // backoff settings associated with this connection
-    Backoff backoff = 4;
+    // keepalive settings for this connection
+    KeepAlive keep_alive = 4;
 }
 
 // Server settings like hostname
@@ -130,19 +142,19 @@ message TLSSetting {
     bool skip_verify = 5;
 }
 
-// backoff settings
-message Backoff {
-    // First backoff time interval in seconds
-    int64 initial_interval = 1;
-    // Random value used to create range around next backoff interval
-    double randomization_factor = 2;
-    // Value to be multiplied with current backoff interval
-    double multiplier = 3;
-    // Max interval in seconds between two retries
-    int64 max_interval = 4;
-    // Elapsed time in seconds after which backoff stops.
-    // It never stops if max_elapsed_time == 0.
-    int64 max_elapsed_time = 5;
+// keepalive settings based on https://pkg.go.dev/google.golang.org/grpc/keepalive#ClientParameters
+message KeepAlive {
+	// After a duration of this time if the client doesn't see any activity it
+	// pings the server to see if the transport is still alive.
+	// If set below 10s, a minimum value of 10s will be used instead.
+    google.protobuf.Timestamp time = 1;
+	// After having pinged for keepalive check, the client waits for a duration
+	// of Timeout and if no activity is seen even after that the connection is closed.
+    double timeout = 2;
+	// If true, client sends keepalive pings even with no active RPCs. If false,
+	// when there are no active RPCs, Time and Timeout will be ignored and no
+	// keepalive pings will be sent.
+    bool permit_without_stream = 3;
 }
 
 // A set of runtime NGINX configuration that gets populated 
@@ -188,7 +200,7 @@ message ConnectionResponse {
 // Report on the status of the Data Plane
 message DataPlaneStatus {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
     // Report on instances on the Data Plane
     repeated Instance instances = 2;
     // The AckIndex latest message index that has been processed
@@ -272,23 +284,23 @@ message InstanceMeta {
 // Health report of a set of instances
 message DataPlaneHealth {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
     // Health report of a set of instances
     repeated InstanceHealth instance_health = 2;
 }
 
-// Reports the status of an associated command. This may be in response to a ManagementPlaneMessage request
-message DataPlaneMessage {
+// Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
+message DataPlaneRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
     // The command response with the associated request
     f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse command_response = 2;
 }
 
 // A Management Plane request for information, triggers an associated rpc on the DataPlane
-message ManagementPlaneMessage {
+message ManagementPlaneRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
     oneof request {
         // triggers a DataPlaneStatus rpc
         StatusRequest status_request = 2;              
@@ -301,9 +313,9 @@ message ManagementPlaneMessage {
         ConfigUploadRequest config_upload_request = 6;
         // triggers a reconciliation of  with a command_response for a particular action
         ConfigSyncRequest config_sync_request = 7; 
-        // triggers a DataPlaneMessage with a command_response for a particular action
+        // triggers a DataPlaneRequest with a command_response for a particular action
         ActionRequest action_request = 8;
-        // triggers a DataPlaneMessage with a command_response for a particular correlation_id
+        // triggers a DataPlaneRequest with a command_response for a particular correlation_id
         CommandStatusRequest command_status_request = 9; 
     }
 }
@@ -350,7 +362,7 @@ message ActionRequest {
 // Request an update on a particular command
 message CommandStatusRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
 }
 
 // A default action placeholder
