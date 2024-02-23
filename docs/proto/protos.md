@@ -689,7 +689,7 @@ Represents a the status response of an command
 | ----- | ---- | ----- | ----------- |
 | status | [CommandResponse.CommandStatus](#f5-nginx-agent-api-grpc-mpi-v1-common-CommandResponse-CommandStatus) |  | Command status |
 | message | [string](#string) |  | Provides a user friendly message to describe the response |
-| error | [string](#string) |  | Provides an error message of why the command failed |
+| error | [string](#string) |  | Provides an error message of why the command failed, only populated when CommandStatus is COMMAND_STATUS_ERROR |
 
 
 

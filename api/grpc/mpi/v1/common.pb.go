@@ -150,7 +150,7 @@ type CommandResponse struct {
 	Status CommandResponse_CommandStatus `protobuf:"varint,1,opt,name=status,proto3,enum=f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse_CommandStatus" json:"status,omitempty"`
 	// Provides a user friendly message to describe the response
 	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	// Provides an error message of why the command failed
+	// Provides an error message of why the command failed, only populated when CommandStatus is COMMAND_STATUS_ERROR
 	Error string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
 }
 
