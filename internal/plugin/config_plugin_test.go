@@ -9,6 +9,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/config"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -20,24 +22,25 @@ import (
 )
 
 func TestConfig_Init(t *testing.T) {
-	configPlugin := NewConfig()
+	configPlugin := NewConfig(&config.Config{})
 	configPlugin.Init(&bus.MessagePipe{})
 
 	assert.NotNil(t, configPlugin.messagePipe)
 }
 
 func TestConfig_Info(t *testing.T) {
-	configPlugin := NewConfig()
+	configPlugin := NewConfig(&config.Config{})
 	info := configPlugin.Info()
 	assert.Equal(t, "config", info.Name)
 }
 
 func TestConfig_Subscriptions(t *testing.T) {
-	configPlugin := NewConfig()
+	configPlugin := NewConfig(&config.Config{})
 	subscriptions := configPlugin.Subscriptions()
 	assert.Equal(t, []string{
 		bus.InstanceConfigUpdateRequestTopic,
 		bus.InstanceConfigUpdateCompleteTopic,
+		bus.InstancesTopic,
 	}, subscriptions)
 }
 
@@ -118,7 +121,7 @@ func TestConfig_Process(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			messagePipe := bus.NewFakeMessagePipe(context.TODO())
-			configPlugin := NewConfig()
+			configPlugin := NewConfig(&config.Config{})
 
 			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
 			require.NoError(tt, err)
@@ -128,11 +131,10 @@ func TestConfig_Process(t *testing.T) {
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
 			configService.UpdateInstanceConfigurationReturns(configurationStatus)
 
-			instanceService := &servicefakes.FakeInstanceServiceInterface{}
-			instanceService.GetInstanceReturns(testInstance)
+			instanceService := []*instances.Instance{testInstance}
 
 			configPlugin.configServices["123"] = configService
-			configPlugin.instanceService = instanceService
+			configPlugin.instances = instanceService
 
 			configPlugin.Process(test.input)
 

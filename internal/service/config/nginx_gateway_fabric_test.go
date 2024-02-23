@@ -8,13 +8,12 @@ package config
 import (
 	"testing"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNginxGatewayFabric_ParseConfig(t *testing.T) {
-	result, err := NewNginxGatewayFabric().ParseConfig(&instances.Instance{})
+	result, err := NewNginxGatewayFabric().ParseConfig()
 	// Not implemented yet so error is expected
 	assert.Nil(t, result)
 	require.Error(t, err)

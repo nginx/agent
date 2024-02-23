@@ -20,14 +20,17 @@ import (
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate . ConfigClientInterface
-const tenantHeader = "tenantId"
+const (
+	tenantHeader = "tenantId"
+	fileLocation = "%s/instance/%s/files/"
+)
 
 type ConfigClientInterface interface {
-	GetFilesMetadata(ctx context.Context, filesURL, tenantID string) (*instances.Files, error)
+	GetFilesMetadata(ctx context.Context, filesURL, tenantID, instanceID string) (*instances.Files, error)
 	GetFile(
 		ctx context.Context,
 		file *instances.File,
-		filesURL, tenantID string,
+		filesURL, tenantID, instanceID string,
 	) (*instances.FileDownloadResponse, error)
 }
 
@@ -47,11 +50,14 @@ func NewHTTPConfigClient(timeout time.Duration) *HTTPConfigClient {
 
 func (hcd *HTTPConfigClient) GetFilesMetadata(
 	ctx context.Context,
-	filesURL, tenantID string,
+	filesURL, tenantID, instanceID string,
 ) (*instances.Files, error) {
+	slog.Debug("Getting files metadata")
 	files := instances.Files{}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, filesURL, nil)
+	location := fmt.Sprintf(fileLocation, filesURL, instanceID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, location, nil)
 
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
@@ -79,7 +85,6 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(
 	// type is returned for the rest api but is not in the proto definitions so needs to be discarded
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 	err = pb.Unmarshal(data, &files)
-
 	if err != nil {
 		slog.Debug("Error unmarshalling GetFilesMetadata Response", "data", string(data))
 
@@ -92,8 +97,9 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(
 func (hcd *HTTPConfigClient) GetFile(
 	ctx context.Context,
 	file *instances.File,
-	filesURL, tenantID string,
+	filesURL, tenantID, instanceID string,
 ) (*instances.FileDownloadResponse, error) {
+	slog.Debug("Getting file", "file_path", file.GetPath())
 	response := instances.FileDownloadResponse{}
 	params := url.Values{}
 
@@ -102,16 +108,15 @@ func (hcd *HTTPConfigClient) GetFile(
 
 	filePath := url.QueryEscape(file.GetPath())
 
-	fileURL := fmt.Sprintf("%v%v?%v", filesURL, filePath, params.Encode())
-
+	location := fmt.Sprintf(fileLocation, filesURL, instanceID)
+	fileURL := fmt.Sprintf("%s%s?%s", location, filePath, params.Encode())
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesURL, err)
+	}
 
 	if tenantID != "" {
 		req.Header.Set(tenantHeader, tenantID)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesURL, err)
 	}
 
 	resp, err := hcd.httpClient.Do(req)
@@ -132,7 +137,6 @@ func (hcd *HTTPConfigClient) GetFile(
 	// type is returned for the rest api but is not in the proto definitions so needs to be discarded
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 	err = pb.Unmarshal(data, &response)
-
 	if err != nil {
 		slog.Debug("Error unmarshalling GetFile Response", "data", string(data))
 

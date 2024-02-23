@@ -58,7 +58,7 @@ func RegisterConfigFile() error {
 		return err
 	}
 
-	slog.Debug("Configuration file loaded", "configPath", configPath)
+	slog.Debug("Configuration file loaded", "config_path", configPath)
 	viperInstance.Set(ConfigPathKey, configPath)
 
 	return nil

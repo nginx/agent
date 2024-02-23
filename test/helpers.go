@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 
 	"github.com/stretchr/testify/require"
@@ -52,4 +54,15 @@ func RemoveFileWithErrorCheck(t *testing.T, fileName string) {
 	t.Helper()
 	err := os.Remove(fileName)
 	require.NoError(t, err)
+}
+
+func CreateTestIDs(t *testing.T) (uuid.UUID, uuid.UUID) {
+	t.Helper()
+	tenantID, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
+	require.NoError(t, err)
+
+	instanceID, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	require.NoError(t, err)
+
+	return tenantID, instanceID
 }

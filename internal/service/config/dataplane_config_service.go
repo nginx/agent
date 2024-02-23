@@ -6,13 +6,18 @@
 package config
 
 import (
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"context"
+
+	writer "github.com/nginx/agent/v3/internal/datasource/config"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate . DataPlaneConfig
 type DataPlaneConfig interface {
-	ParseConfig(instance *instances.Instance) (any, error)
-	Validate(instance *instances.Instance) error
-	Reload(instance *instances.Instance) error
+	ParseConfig() (any, error)
+	Validate() error
+	Apply() error
+	Write(ctx context.Context, filesURL, tenantID string) (skippedFiles map[string]struct{}, err error)
+	Complete() error
+	SetConfigWriter(configWriter writer.ConfigWriterInterface)
 }
