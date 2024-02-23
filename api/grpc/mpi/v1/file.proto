@@ -47,15 +47,15 @@ message File {
     // Action enumeration
     enum FileAction {
         // Default value, no action
-        UNSET = 0;
+        FILE_ACTION_UNSPECIFIED = 0;
         // No changes to the file
-        UNCHANGED = 1;
+        FILE_ACTION_UNCHANGED = 1;
         // New file
-        ADD = 2;
+        FILE_ACTION_ADD = 2;
         // Updated file
-        UPDATE = 3;
+        FILE_ACTION_UPDATE = 3;
         // File deleted
-        DELETE = 4;
+        FILE_ACTION_DELETE = 4;
     }
     // optional action
     FileAction action = 5;
@@ -67,7 +67,7 @@ message FileRequest {
     // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest message_metadata = 1;
     // Meta-information associated with the file
-    FileMeta meta = 2;
+    FileMeta file_meta = 2;
 }
 
 // Represents the bytes contents of the file https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string

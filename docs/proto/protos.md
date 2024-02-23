@@ -36,7 +36,7 @@
     - [StatusRequest](#f5-nginx-agent-api-grpc-mpi-v1-StatusRequest)
     - [TLSSetting](#f5-nginx-agent-api-grpc-mpi-v1-TLSSetting)
   
-    - [InstanceAction.InstanceActions](#f5-nginx-agent-api-grpc-mpi-v1-InstanceAction-InstanceActions)
+    - [InstanceAction.InstanceActionType](#f5-nginx-agent-api-grpc-mpi-v1-InstanceAction-InstanceActionType)
     - [InstanceHealth.InstancHealthStatus](#f5-nginx-agent-api-grpc-mpi-v1-InstanceHealth-InstancHealthStatus)
     - [InstanceMeta.InstanceType](#f5-nginx-agent-api-grpc-mpi-v1-InstanceMeta-InstanceType)
     - [Server.ConnectionType](#f5-nginx-agent-api-grpc-mpi-v1-Server-ConnectionType)
@@ -386,7 +386,7 @@ A set of actions that can be performed on an instance
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| action | [InstanceAction.InstanceActions](#f5-nginx-agent-api-grpc-mpi-v1-InstanceAction-InstanceActions) |  |  |
+| action_type | [InstanceAction.InstanceActionType](#f5-nginx-agent-api-grpc-mpi-v1-InstanceAction-InstanceActionType) |  |  |
 
 
 
@@ -515,7 +515,7 @@ A set of runtime NGINX configuration that gets populated
 | binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
 | hostname | [string](#string) |  | the hostname associated with NGINX Plus |
 | ip_address | [string](#string) |  | the ip address associated with NGINX Plus |
-| api | [string](#string) |  | the API inforation for NGINX Plus API |
+| api | [string](#string) |  | the API information for NGINX Plus API |
 | access_logs | [string](#string) | repeated | is this correct for plus? |
 | error_logs | [string](#string) | repeated | is this correct for plus? |
 
@@ -588,14 +588,14 @@ Additional information associated with a StatusRequest
  
 
 
-<a name="f5-nginx-agent-api-grpc-mpi-v1-InstanceAction-InstanceActions"></a>
+<a name="f5-nginx-agent-api-grpc-mpi-v1-InstanceAction-InstanceActionType"></a>
 
-### InstanceAction.InstanceActions
+### InstanceAction.InstanceActionType
 
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| UNKNOWN | 0 | Default action |
+| INSTANCE_ACTION_TYPE_UNSPECIFIED | 0 | Default action |
 
 
 
@@ -606,10 +606,10 @@ Health status enum
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| UNKNOWN | 0 | Unknown status |
-| HEALTHY | 1 | Healthy status |
-| UNHEALTHY | 2 | Unhealthy status |
-| DEGRADED | 3 | Degraded status |
+| INSTANCE_HEALTH_STATUS_UNSPECIFIED | 0 | Unspecified status |
+| INSTANCE_HEALTH_STATUS_HEALTHY | 1 | Healthy status |
+| INSTANCE_HEALTH_STATUS_UNHEALTHY | 2 | Unhealthy status |
+| INSTANCE_HEALTH_STATUS_DEGRADED | 3 | Degraded status |
 
 
 
@@ -620,11 +620,11 @@ the types of instances possible
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| UNKNOWN | 0 |  |
-| AGENT | 1 | NGINX Agent |
-| NGINX | 2 | NGINX |
-| NGINX_PLUS | 3 | NGINX Plus |
-| UNIT | 4 | NGINX Unit |
+| INSTANCE_TYPE_UNSPECIFIED | 0 | Unspecified instance type |
+| INSTANCE_TYPE_AGENT | 1 | NGINX Agent |
+| INSTANCE_TYPE_NGINX | 2 | NGINX |
+| INSTANCE_TYPE_NGINX_PLUS | 3 | NGINX Plus |
+| INSTANCE_TYPE_UNIT | 4 | NGINX Unit |
 
 
 
@@ -635,10 +635,10 @@ Connection Type enumeration
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| UNKNOWN | 0 | Default connection type |
-| HTTP | 1 | HTTP connection type |
-| GRPC | 2 | gRPC connection type |
-| UNIX | 3 | unix socket connection type |
+| CONNECTION_TYPE_UNSPECIFIED | 0 | Default connection type |
+| CONNECTION_TYPE_HTTP | 1 | HTTP connection type |
+| CONNECTION_TYPE_GRPC | 2 | gRPC connection type |
+| CONNECTION_TYPE_UNIX | 3 | unix socket connection type |
 
 
  
@@ -711,10 +711,10 @@ Command status enum
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| CMD_UNKNOWN | 0 | Unknown status of command |
-| CMD_OK | 1 | Command was successful |
-| CMD_ERROR | 2 | Command failed |
-| CMD_IN_PROGRESS | 3 | Command in-progress |
+| COMMAND_STATUS_UNSPECIFIED | 0 | Unspecified status of command |
+| COMMAND_STATUS_OK | 1 | Command was successful |
+| COMMAND_STATUS_ERROR | 2 | Command failed |
+| COMMAND_STATUS_IN_PROGRESS | 3 | Command in-progress |
 
 
  
@@ -824,7 +824,7 @@ Represents a collection of files
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | message_metadata | [f5.nginx.agent.api.grpc.mpi.v1.common.MessageRequest](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageRequest) |  | Meta-information associated with a message |
-| meta | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) |  | Meta-information associated with the file |
+| file_meta | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) |  | Meta-information associated with the file |
 
 
 
@@ -840,11 +840,11 @@ Action enumeration
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| UNSET | 0 | Default value, no action |
-| UNCHANGED | 1 | No changes to the file |
-| ADD | 2 | New file |
-| UPDATE | 3 | Updated file |
-| DELETE | 4 | File deleted |
+| FILE_ACTION_UNSPECIFIED | 0 | Default value, no action |
+| FILE_ACTION_UNCHANGED | 1 | No changes to the file |
+| FILE_ACTION_ADD | 2 | New file |
+| FILE_ACTION_UPDATE | 3 | Updated file |
+| FILE_ACTION_DELETE | 4 | File deleted |
 
 
  

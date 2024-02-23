@@ -16,14 +16,14 @@ message MessageRequest {
 message CommandResponse {
     // Command status enum
     enum CommandStatus {
-        // Unknown status of command
-        CMD_UNKNOWN = 0;
+        // Unspecified status of command
+        COMMAND_STATUS_UNSPECIFIED = 0;
         // Command was successful
-        CMD_OK = 1;
+        COMMAND_STATUS_OK = 1;
         // Command failed
-        CMD_ERROR = 2;
+        COMMAND_STATUS_ERROR = 2;
         // Command in-progress
-        CMD_IN_PROGRESS = 3;
+        COMMAND_STATUS_IN_PROGRESS = 3;
     }
 
     // Command status

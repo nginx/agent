@@ -99,13 +99,13 @@ message Server {
     // Connection Type enumeration
     enum ConnectionType {
         // Default connection type
-        UNKNOWN = 0;
+        CONNECTION_TYPE_UNSPECIFIED = 0;
         // HTTP connection type
-        HTTP = 1;
+        CONNECTION_TYPE_HTTP = 1;
         // gRPC connection type
-        GRPC = 2;
+        CONNECTION_TYPE_GRPC = 2;
         // unix socket connection type
-        UNIX = 3;
+        CONNECTION_TYPE_UNIX = 3;
     }
     // Specific connection type
     ConnectionType connection_type = 3;
@@ -169,7 +169,7 @@ message NGINXPlusConfig {
     string hostname = 2;
     // the ip address associated with NGINX Plus
     string ip_address = 3;
-    // the API inforation for NGINX Plus API  
+    // the API information for NGINX Plus API  
     string api = 4;
     // is this correct for plus?
     repeated string access_logs = 5;
@@ -219,25 +219,25 @@ message InstanceConfig {
 
 // A set of actions that can be performed on an instance
 message InstanceAction {
-    enum InstanceActions {
+    enum InstanceActionType {
         // Default action
-        UNKNOWN = 0;
+        INSTANCE_ACTION_TYPE_UNSPECIFIED = 0;
     }
-    InstanceActions action = 1;
+    InstanceActionType action_type = 1;
 }
 
 // Report on the health of a particular instance
 message InstanceHealth {
     // Health status enum
     enum InstancHealthStatus {
-        // Unknown status
-        UNKNOWN = 0;
+        // Unspecified status
+        INSTANCE_HEALTH_STATUS_UNSPECIFIED = 0;
         // Healthy status
-        HEALTHY = 1;
+        INSTANCE_HEALTH_STATUS_HEALTHY = 1;
         // Unhealthy status
-        UNHEALTHY = 2;
+        INSTANCE_HEALTH_STATUS_UNHEALTHY = 2;
         // Degraded status
-        DEGRADED = 3;
+        INSTANCE_HEALTH_STATUS_DEGRADED = 3;
     }
     string instance_id = 1;
     // Health status
@@ -252,15 +252,16 @@ message InstanceMeta {
     string instance_id = 1;
     // the types of instances possible
     enum InstanceType {
-        UNKNOWN = 0;
+        // Unspecified instance type
+        INSTANCE_TYPE_UNSPECIFIED = 0;
         // NGINX Agent
-        AGENT = 1;
+        INSTANCE_TYPE_AGENT = 1;
         // NGINX
-        NGINX = 2;
+        INSTANCE_TYPE_NGINX = 2;
         // NGINX Plus
-        NGINX_PLUS = 3;
+        INSTANCE_TYPE_NGINX_PLUS = 3;
         // NGINX Unit
-        UNIT = 4;
+        INSTANCE_TYPE_UNIT = 4;
     }
     // the types of instances possible
     InstanceType instance_type = 2;
