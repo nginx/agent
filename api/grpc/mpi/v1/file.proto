@@ -4,13 +4,12 @@
 // LICENSE file in the root directory of this source tree.
 
 syntax = "proto3";
+package f5.nginx.agent.api.grpc.mpi.v1;
 
-package f5.nginx.agent.api.grpc.mpi.v1.file;
+option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
 import "common.proto";
 import "google/protobuf/timestamp.proto";
-
-option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
 // This specifies the FileService operations for transferring file data between a client and server.
 // All operations are written from a client perspective and flow Client -> Server
@@ -98,7 +97,7 @@ message File {
 // Represents the get file request
 message GetFileRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
     // Meta-information associated with the file
     FileMeta file_meta = 2;
 }

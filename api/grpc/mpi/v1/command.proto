@@ -38,7 +38,7 @@ service CommandService {
 // The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
 message ConnectionRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
     // instance information associated with the NGINX Agent
     Instance agent = 2;
 }
@@ -199,7 +199,7 @@ message NGINXPlusConfig {
 // A response to a ConnectionRequest
 message ConnectionResponse {
     // the success or failure of the ConnectionRequest
-    f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse response = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.CommandResponse response = 1;
     // the recommendation NGINX Agent configurations provided by the ManagementPlane
     AgentConfig agent_config = 2;
 }
@@ -207,7 +207,7 @@ message ConnectionResponse {
 // Report on the status of the Data Plane
 message DataPlaneStatus {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
     // Report on instances on the Data Plane
     repeated Instance instances = 2;
     // The AckIndex latest message index that has been processed
@@ -294,7 +294,7 @@ message InstanceMeta {
 // Health report of a set of instances
 message DataPlaneHealth {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
     // Health report of a set of instances
     repeated InstanceHealth instance_healths = 2;
 }
@@ -305,15 +305,15 @@ message DataPlaneHealthResponse {}
 // Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
 message DataPlaneResponse {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
     // The command response with the associated request
-    f5.nginx.agent.api.grpc.mpi.v1.common.CommandResponse command_response = 2;
+    f5.nginx.agent.api.grpc.mpi.v1.CommandResponse command_response = 2;
 }
 
 // A Management Plane request for information, triggers an associated rpc on the DataPlane
 message ManagementPlaneRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
     oneof request {
         // triggers a DataPlaneStatus rpc
         StatusRequest status_request = 2;              
@@ -342,16 +342,16 @@ message HealthRequest {}
 // Additional information associated with a ConfigApplyRequest
 message ConfigApplyRequest {
     // the config version
-    f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion config_version = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.ConfigVersion config_version = 1;
     // an optional set of files related to the request
-    optional f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2;
+    optional f5.nginx.agent.api.grpc.mpi.v1.FileOverview overview = 2;
 }
 
 message ConfigSyncRequest {
     // the config version
-    f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion config_version = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.ConfigVersion config_version = 1;
     // an optional set of files related to the request
-    optional f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2;
+    optional f5.nginx.agent.api.grpc.mpi.v1.FileOverview overview = 2;
 }
 
 // Additional information associated with a ConfigUploadRequest
@@ -375,7 +375,7 @@ message ActionRequest {
 // Request an update on a particular command
 message CommandStatusRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
+    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
 }
 
 // A default action placeholder
