@@ -57,7 +57,14 @@
     - [FileContents](#f5-nginx-agent-api-grpc-mpi-v1-file-FileContents)
     - [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta)
     - [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview)
-    - [FileRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-FileRequest)
+    - [GetFileRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-GetFileRequest)
+    - [GetFileResponse](#f5-nginx-agent-api-grpc-mpi-v1-file-GetFileResponse)
+    - [OverviewRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-OverviewRequest)
+    - [OverviewResponse](#f5-nginx-agent-api-grpc-mpi-v1-file-OverviewResponse)
+    - [OverviewUpdateRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-OverviewUpdateRequest)
+    - [OverviewUpdateResponse](#f5-nginx-agent-api-grpc-mpi-v1-file-OverviewUpdateResponse)
+    - [UpdateFileRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-UpdateFileRequest)
+    - [UpdateFileResponse](#f5-nginx-agent-api-grpc-mpi-v1-file-UpdateFileResponse)
   
     - [File.FileAction](#f5-nginx-agent-api-grpc-mpi-v1-file-File-FileAction)
   
@@ -165,9 +172,7 @@ Additional information associated with a ConfigApplyRequest
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | config_version | [file.ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) |  | the config version |
-| overview | [file.FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) |  | an optional set of files related to the request
-
-optional |
+| overview | [file.FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | optional | an optional set of files related to the request |
 
 
 
@@ -183,7 +188,7 @@ optional |
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | config_version | [file.ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) |  | the config version |
-| overview | [file.FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) |  | an optional set of files related to the request |
+| overview | [file.FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | optional | an optional set of files related to the request |
 
 
 
@@ -792,8 +797,8 @@ Represents meta data about a file
 | modified_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | last modified time of the file (created time if never modified) |
 | permissions | [string](#string) |  | the permission set associated with a particular file |
 | size | [int64](#int64) |  | Size of the file in bytes |
-| action | [File.FileAction](#f5-nginx-agent-api-grpc-mpi-v1-file-File-FileAction) |  | optional action |
-| contents | [FileContents](#f5-nginx-agent-api-grpc-mpi-v1-file-FileContents) |  | optional contents |
+| action | [File.FileAction](#f5-nginx-agent-api-grpc-mpi-v1-file-File-FileAction) | optional | optional action |
+| contents | [FileContents](#f5-nginx-agent-api-grpc-mpi-v1-file-FileContents) | optional | optional contents |
 
 
 
@@ -847,16 +852,116 @@ Represents a collection of files
 
 
 
-<a name="f5-nginx-agent-api-grpc-mpi-v1-file-FileRequest"></a>
+<a name="f5-nginx-agent-api-grpc-mpi-v1-file-GetFileRequest"></a>
 
-### FileRequest
-
+### GetFileRequest
+Represents the get file request
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | message_meta | [f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta) |  | Meta-information associated with a message |
 | file_meta | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) |  | Meta-information associated with the file |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-file-GetFileResponse"></a>
+
+### GetFileResponse
+Represents the response to a get file request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| contents | [FileContents](#f5-nginx-agent-api-grpc-mpi-v1-file-FileContents) |  | the contents of a file |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-file-OverviewRequest"></a>
+
+### OverviewRequest
+Represents a request payload for a file overview
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config_version | [ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) |  | The config version of the overview you are requesting |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-file-OverviewResponse"></a>
+
+### OverviewResponse
+Represents a response payload for an overview of files for a particular configuration version of an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| overview | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) |  | The file overview of |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-file-OverviewUpdateRequest"></a>
+
+### OverviewUpdateRequest
+Represents a the payload for an overview an update of  files for a particular configuration version of an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| overview | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) |  | The file overview of |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-file-OverviewUpdateResponse"></a>
+
+### OverviewUpdateResponse
+Represents a the response from an OverviewUpdateRequest - intentionally left empty
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-file-UpdateFileRequest"></a>
+
+### UpdateFileRequest
+Represents the update file request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| file | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) |  | The file requested to be updated |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-file-UpdateFileResponse"></a>
+
+### UpdateFileResponse
+Represents the response to an update file request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| file_meta | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) |  | Meta-information associated with the updated file |
 
 
 
@@ -896,10 +1001,10 @@ A SHA256 hash string is 64 bytes, therefore the configured max message size shou
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| GetOverview | [ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | Get the overview of files for a particular configuration version of an instance |
-| UpdateOverview | [FileOverview](#f5-nginx-agent-api-grpc-mpi-v1-file-FileOverview) | [.google.protobuf.Empty](#google-protobuf-Empty) | Update the overview of files for a particular set of file changes on the data plane |
-| GetFile | [FileRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-FileRequest) | [FileContents](#f5-nginx-agent-api-grpc-mpi-v1-file-FileContents) | Get the file contents for a particular file |
-| UpdateFile | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) | [FileMeta](#f5-nginx-agent-api-grpc-mpi-v1-file-FileMeta) | Update a file from the Agent to the Server |
+| GetOverview | [OverviewRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-OverviewRequest) | [OverviewResponse](#f5-nginx-agent-api-grpc-mpi-v1-file-OverviewResponse) | Get the overview of files for a particular configuration version of an instance |
+| UpdateOverview | [OverviewUpdateRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-OverviewUpdateRequest) | [OverviewUpdateResponse](#f5-nginx-agent-api-grpc-mpi-v1-file-OverviewUpdateResponse) | Update the overview of files for a particular set of file changes on the data plane |
+| GetFile | [GetFileRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-GetFileRequest) | [GetFileResponse](#f5-nginx-agent-api-grpc-mpi-v1-file-GetFileResponse) | Get the file contents for a particular file |
+| UpdateFile | [UpdateFileRequest](#f5-nginx-agent-api-grpc-mpi-v1-file-UpdateFileRequest) | [UpdateFileResponse](#f5-nginx-agent-api-grpc-mpi-v1-file-UpdateFileResponse) | Update a file from the Agent to the Server |
 
  
 

@@ -8,7 +8,6 @@ syntax = "proto3";
 package f5.nginx.agent.api.grpc.mpi.v1.file;
 
 import "common.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
@@ -21,14 +20,35 @@ option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 // A SHA256 hash string is 64 bytes, therefore the configured max message size should be maxFileSize + 64.
 service FileService {
     // Get the overview of files for a particular configuration version of an instance
-    rpc GetOverview(ConfigVersion) returns (FileOverview) {}
+    rpc GetOverview(OverviewRequest) returns (OverviewResponse) {}
     // Update the overview of files for a particular set of file changes on the data plane
-    rpc UpdateOverview(FileOverview) returns (google.protobuf.Empty) {}
+    rpc UpdateOverview(OverviewUpdateRequest) returns (OverviewUpdateResponse) {}
     // Get the file contents for a particular file
-    rpc GetFile(FileRequest) returns (FileContents) {}
+    rpc GetFile(GetFileRequest) returns (GetFileResponse) {}
     // Update a file from the Agent to the Server
-    rpc UpdateFile(File) returns (FileMeta) {}
+    rpc UpdateFile(UpdateFileRequest) returns (UpdateFileResponse) {}
 }
+
+// Represents a request payload for a file overview
+message OverviewRequest {
+    // The config version of the overview you are requesting
+    ConfigVersion config_version = 1;
+}
+
+// Represents a response payload for an overview of files for a particular configuration version of an instance
+message OverviewResponse {
+    // The file overview of 
+    FileOverview overview = 1;
+}
+
+// Represents a the payload for an overview an update of  files for a particular configuration version of an instance
+message OverviewUpdateRequest {
+    // The file overview of 
+    FileOverview overview = 1;
+}
+
+// Represents a the response from an OverviewUpdateRequest - intentionally left empty
+message OverviewUpdateResponse {}
 
 // Represents a specific configuration version associated with an instance
 message ConfigVersion {
@@ -70,16 +90,23 @@ message File {
         FILE_ACTION_DELETE = 4;
     }
     // optional action
-    FileAction action = 5;
+    optional FileAction action = 5;
     // optional contents
-    FileContents contents = 6;
+    optional FileContents contents = 6;
 }
 
-message FileRequest {
+// Represents the get file request
+message GetFileRequest {
     // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
     // Meta-information associated with the file
     FileMeta file_meta = 2;
+}
+
+// Represents the response to a get file request
+message GetFileResponse {
+    // the contents of a file
+    FileContents contents = 1;
 }
 
 // Represents the bytes contents of the file https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string
@@ -94,4 +121,16 @@ message FileMeta {
     string name = 1;
     // the hash of the file contents
     string hash = 2;
+}
+
+// Represents the update file request
+message UpdateFileRequest {
+    // The file requested to be updated
+    File file = 1;
+}
+
+// Represents the response to an update file request
+message UpdateFileResponse {
+    // Meta-information associated with the updated file
+    FileMeta file_meta = 1;
 }

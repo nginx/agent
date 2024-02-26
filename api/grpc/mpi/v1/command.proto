@@ -215,8 +215,7 @@ message DataPlaneStatus {
 }
 
 // Respond to a DataPlaneStatus request - intentionally empty
-message DataPlaneStatusResponse {
-}
+message DataPlaneStatusResponse {}
 
 // This represents an instance being reported on
 message Instance {
@@ -301,8 +300,7 @@ message DataPlaneHealth {
 }
 
 // Response to a DataPlaneHealth request - intentionally empty
-message DataPlaneHealthResponse {
-}
+message DataPlaneHealthResponse {}
 
 // Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
 message DataPlaneResponse {
@@ -346,14 +344,14 @@ message ConfigApplyRequest {
     // the config version
     f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion config_version = 1;
     // an optional set of files related to the request
-    f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2; // optional
+    optional f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2;
 }
 
 message ConfigSyncRequest {
     // the config version
     f5.nginx.agent.api.grpc.mpi.v1.file.ConfigVersion config_version = 1;
     // an optional set of files related to the request
-    f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2;
+    optional f5.nginx.agent.api.grpc.mpi.v1.file.FileOverview overview = 2;
 }
 
 // Additional information associated with a ConfigUploadRequest
