@@ -41,7 +41,7 @@ message ConfigVersion {
 // Represents a collection of files
 message FileOverview {
     // A list of files
-    repeated File file = 1;
+    repeated File files = 1;
     // the configuration version of the current set of files
     ConfigVersion version = 2;
 }

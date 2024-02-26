@@ -12,7 +12,6 @@ option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
 import "common.proto";
 import "file.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -29,9 +28,9 @@ service CommandService {
     // Connects NGINX Agent to the Management Plane agnostic of instance data
     rpc CreateConnection(ConnectionRequest) returns (ConnectionResponse) {}
     // Reports on instances and their configurations
-    rpc UpdateStatus(DataPlaneStatus) returns (google.protobuf.Empty) {}
+    rpc UpdateStatus(DataPlaneStatus) returns (DataPlaneStatusResponse) {}
     // Reports on instance health
-    rpc UpdateHealth(DataPlaneHealth) returns (google.protobuf.Empty) {}
+    rpc UpdateHealth(DataPlaneHealth) returns (DataPlaneHealthResponse) {}
     // A decoupled communication mechanism between the data plane and management plane.
     rpc Subscribe(stream DataPlaneResponse) returns (stream ManagementPlaneRequest) {}
 }
@@ -215,6 +214,10 @@ message DataPlaneStatus {
     string latest_message_index = 3;
 }
 
+// Respond to a DataPlaneStatus request - intentionally empty
+message DataPlaneStatusResponse {
+}
+
 // This represents an instance being reported on
 message Instance {
     // Meta-information associated with an instance
@@ -294,7 +297,11 @@ message DataPlaneHealth {
     // Meta-information associated with a message
     f5.nginx.agent.api.grpc.mpi.v1.common.MessageMeta message_meta = 1;
     // Health report of a set of instances
-    repeated InstanceHealth instance_health = 2;
+    repeated InstanceHealth instance_healths = 2;
+}
+
+// Response to a DataPlaneHealth request - intentionally empty
+message DataPlaneHealthResponse {
 }
 
 // Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
@@ -375,5 +382,6 @@ message CommandStatusRequest {
 
 // A default action placeholder
 message DefaultAction {
-    repeated google.protobuf.Struct params = 1;
+    // a set of key/value pairs where the action is the key and parameters are the values used in the request
+    repeated google.protobuf.Struct parameters = 1;
 }

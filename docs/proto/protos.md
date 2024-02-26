@@ -16,8 +16,10 @@
     - [ConnectionResponse](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionResponse)
     - [ConnectionSettings](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionSettings)
     - [DataPlaneHealth](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth)
+    - [DataPlaneHealthResponse](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealthResponse)
     - [DataPlaneResponse](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneResponse)
     - [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus)
+    - [DataPlaneStatusResponse](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatusResponse)
     - [DefaultAction](#f5-nginx-agent-api-grpc-mpi-v1-DefaultAction)
     - [Exporter](#f5-nginx-agent-api-grpc-mpi-v1-Exporter)
     - [HealthRequest](#f5-nginx-agent-api-grpc-mpi-v1-HealthRequest)
@@ -262,7 +264,17 @@ Health report of a set of instances
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | message_meta | [common.MessageMeta](#f5-nginx-agent-api-grpc-mpi-v1-common-MessageMeta) |  | Meta-information associated with a message |
-| instance_health | [InstanceHealth](#f5-nginx-agent-api-grpc-mpi-v1-InstanceHealth) | repeated | Health report of a set of instances |
+| instance_healths | [InstanceHealth](#f5-nginx-agent-api-grpc-mpi-v1-InstanceHealth) | repeated | Health report of a set of instances |
+
+
+
+
+
+
+<a name="f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealthResponse"></a>
+
+### DataPlaneHealthResponse
+Response to a DataPlaneHealth request - intentionally empty
 
 
 
@@ -302,6 +314,16 @@ Report on the status of the Data Plane
 
 
 
+<a name="f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatusResponse"></a>
+
+### DataPlaneStatusResponse
+Respond to a DataPlaneStatus request - intentionally empty
+
+
+
+
+
+
 <a name="f5-nginx-agent-api-grpc-mpi-v1-DefaultAction"></a>
 
 ### DefaultAction
@@ -310,7 +332,7 @@ A default action placeholder
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| params | [google.protobuf.Struct](#google-protobuf-Struct) | repeated |  |
+| parameters | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | a set of key/value pairs where the action is the key and parameters are the values used in the request |
 
 
 
@@ -664,8 +686,8 @@ Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as t
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | CreateConnection | [ConnectionRequest](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionRequest) | [ConnectionResponse](#f5-nginx-agent-api-grpc-mpi-v1-ConnectionResponse) | Connects NGINX Agent to the Management Plane agnostic of instance data |
-| UpdateStatus | [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus) | [.google.protobuf.Empty](#google-protobuf-Empty) | Reports on instances and their configurations |
-| UpdateHealth | [DataPlaneHealth](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth) | [.google.protobuf.Empty](#google-protobuf-Empty) | Reports on instance health |
+| UpdateStatus | [DataPlaneStatus](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatus) | [DataPlaneStatusResponse](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneStatusResponse) | Reports on instances and their configurations |
+| UpdateHealth | [DataPlaneHealth](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealth) | [DataPlaneHealthResponse](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneHealthResponse) | Reports on instance health |
 | Subscribe | [DataPlaneResponse](#f5-nginx-agent-api-grpc-mpi-v1-DataPlaneResponse) stream | [ManagementPlaneRequest](#f5-nginx-agent-api-grpc-mpi-v1-ManagementPlaneRequest) stream | A decoupled communication mechanism between the data plane and management plane. |
 
  
@@ -817,7 +839,7 @@ Represents a collection of files
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| file | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) | repeated | A list of files |
+| files | [File](#f5-nginx-agent-api-grpc-mpi-v1-file-File) | repeated | A list of files |
 | version | [ConfigVersion](#f5-nginx-agent-api-grpc-mpi-v1-file-ConfigVersion) |  | the configuration version of the current set of files |
 
 
