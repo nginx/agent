@@ -67,15 +67,11 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 	slog.Debug("Rolling back NGINX config changes due to error")
 	for key, value := range cw.fileCache.CacheContent() {
 		if _, ok := skippedFiles[key]; ok {
+			slog.Info("Skipped File", "filePath", key)
 			continue
 		}
 
-		err := fileExists(value.GetPath())
-		if err != nil {
-			return err
-		}
-
-		_, err = cw.updateFile(ctx, value, filesURL, tenantID, instanceID)
+		_, err := cw.updateFile(ctx, value, filesURL, tenantID, instanceID)
 		if err != nil {
 			return err
 		}
@@ -172,12 +168,15 @@ func (cw *ConfigWriter) Complete() error {
 func writeFile(fileContent []byte, filePath string) error {
 	slog.Debug("Writing to file", "file_path", filePath)
 
-	err := fileExists(filePath)
-	if err != nil {
-		return err
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		slog.Debug("File does not exist, creating new file", "file_path", filePath)
+		err = os.MkdirAll(path.Dir(filePath), filePermissions)
+		if err != nil {
+			return fmt.Errorf("error creating directory %s: %w", path.Dir(filePath), err)
+		}
 	}
 
-	err = os.WriteFile(filePath, fileContent, filePermissions)
+	err := os.WriteFile(filePath, fileContent, filePermissions)
 	if err != nil {
 		return fmt.Errorf("error writing to file %s: %w", filePath, err)
 	}
@@ -219,23 +218,4 @@ func doesFileRequireUpdate(fileCache CacheContent, fileData *instances.File) (up
 	}
 
 	return false
-}
-
-func fileExists(filePath string) error {
-	_, statErr := os.Stat(filePath)
-	if statErr != nil {
-		if os.IsNotExist(statErr) {
-			slog.Debug("File does not exist, creating", "file_path", filePath)
-			err := os.MkdirAll(path.Dir(filePath), filePermissions)
-			if err != nil {
-				return fmt.Errorf("error creating directory %s: %w", path.Dir(filePath), err)
-			}
-
-			return nil
-		}
-
-		return statErr
-	}
-
-	return statErr
 }
