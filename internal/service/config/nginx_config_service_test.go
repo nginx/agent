@@ -236,12 +236,21 @@ func TestNginx_Apply(t *testing.T) {
 					},
 				},
 			}
-			nginxConfig := NewNginx(instance, &config.Config{})
+			nginxConfig := NewNginx(
+				instance,
+				&config.Config{
+					DataPlaneConfig: config.DataPlaneConfig{
+						Nginx: config.NginxDataPlaneConfig{
+							TreatWarningsAsError:   true,
+							ReloadMonitoringPeriod: 400 * time.Millisecond,
+						},
+					},
+				},
+			)
 			nginxConfig.executor = mockExec
 			nginxConfig.SetConfigContext(&model.NginxConfigContext{
 				ErrorLogs: test.errorLogs,
 			})
-			nginxConfig.executor = mockExec
 
 			var wg sync.WaitGroup
 			wg.Add(1)
@@ -251,7 +260,7 @@ func TestNginx_Apply(t *testing.T) {
 				assert.Equal(t, expected, reloadError)
 			}(test.expected)
 
-			time.Sleep(1 * time.Second)
+			time.Sleep(200 * time.Millisecond)
 
 			if test.errorLogContents != "" {
 				_, err = errorLogFile.WriteString(test.errorLogContents)

@@ -28,12 +28,12 @@ const (
 	ProcessMonitorMonitoringFrequencyConfigKey          = "process_monitor_monitoring_frequency"
 	DataplaneAPIHostConfigKey                           = "dataplane_api_host"
 	DataplaneAPIPortConfigKey                           = "dataplane_api_port"
-	DataplaneConfigNginxReloadMonitoringPeriodConfigKey = "dataplane_config_nginx_reload_monitoring_period"
-	DataplaneConfigNginxTreatWarningsAsErrorsConfigKey  = "dataplane_config_nginx_treat_warnings_as_error"
+	DataPlaneConfigNginxReloadMonitoringPeriodConfigKey = "dataplane_config_nginx_reload_monitoring_period"
+	DataPlaneConfigNginxTreatWarningsAsErrorsConfigKey  = "dataplane_config_nginx_treat_warnings_as_error"
 	ClientTimeoutConfigKey                              = "client_timeout"
 	ConfigDirectoriesConfigKey                          = "config_dirs"
 
-	DefaultDataplaneConfigNginxReloadMonitoringPeriod = 10 * time.Second
+	DefaultDataPlaneConfigNginxReloadMonitoringPeriod = 10 * time.Second
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
@@ -74,7 +74,7 @@ func GetConfig() *Config {
 		Log:                getLog(),
 		ProcessMonitor:     getProcessMonitor(),
 		DataplaneAPI:       getDataplaneAPI(),
-		DataplaneConfig:    getDataplaneConfig(),
+		DataPlaneConfig:    getDataPlaneConfig(),
 		Client:             getClient(),
 		ConfigDir:          getConfigDir(),
 		AllowedDirectories: []string{},
@@ -128,12 +128,12 @@ func registerFlags() {
 	fs.Int(DataplaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
 
 	fs.Duration(
-		DataplaneConfigNginxReloadMonitoringPeriodConfigKey,
-		DefaultDataplaneConfigNginxReloadMonitoringPeriod,
+		DataPlaneConfigNginxReloadMonitoringPeriodConfigKey,
+		DefaultDataPlaneConfigNginxReloadMonitoringPeriod,
 		"The amount of time to monitor NGINX after a reload of configuration.",
 	)
 	fs.Bool(
-		DataplaneConfigNginxTreatWarningsAsErrorsConfigKey,
+		DataPlaneConfigNginxTreatWarningsAsErrorsConfigKey,
 		true,
 		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
 	)
@@ -224,11 +224,11 @@ func getDataplaneAPI() DataplaneAPI {
 	}
 }
 
-func getDataplaneConfig() DataplaneConfig {
-	return DataplaneConfig{
-		Nginx: NginxDataplaneConfig{
-			ReloadMonitoringPeriod: viperInstance.GetDuration(DataplaneConfigNginxReloadMonitoringPeriodConfigKey),
-			TreatWarningsAsError:   viperInstance.GetBool(DataplaneConfigNginxTreatWarningsAsErrorsConfigKey),
+func getDataPlaneConfig() DataPlaneConfig {
+	return DataPlaneConfig{
+		Nginx: NginxDataPlaneConfig{
+			ReloadMonitoringPeriod: viperInstance.GetDuration(DataPlaneConfigNginxReloadMonitoringPeriodConfigKey),
+			TreatWarningsAsError:   viperInstance.GetBool(DataPlaneConfigNginxTreatWarningsAsErrorsConfigKey),
 		},
 	}
 }

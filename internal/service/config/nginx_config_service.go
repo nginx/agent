@@ -13,7 +13,6 @@ import (
 	"os"
 	re "regexp"
 	"strings"
-	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
 	writer "github.com/nginx/agent/v3/internal/datasource/config"
@@ -51,9 +50,10 @@ type (
 type Nginx struct {
 	executor      exec.ExecInterface
 	configContext *model.NginxConfigContext
-	configWriter writer.ConfigWriterInterface
-	fileCache    writer.FileCacheInterface
-	instance     *instances.Instance
+	configWriter  writer.ConfigWriterInterface
+	fileCache     writer.FileCacheInterface
+	instance      *instances.Instance
+	agentConfig   *config.Config
 }
 
 func NewNginx(instance *instances.Instance, agentConfig *config.Config) *Nginx {
@@ -65,10 +65,11 @@ func NewNginx(instance *instances.Instance, agentConfig *config.Config) *Nginx {
 
 	return &Nginx{
 		configContext: &model.NginxConfigContext{},
-		executor:     &exec.Exec{},
-		fileCache:    fileCache,
-		configWriter: configWriter,
-		instance:     instance,
+		executor:      &exec.Exec{},
+		fileCache:     fileCache,
+		configWriter:  configWriter,
+		instance:      instance,
+		agentConfig:   agentConfig,
 	}
 }
 
@@ -217,15 +218,14 @@ func (n *Nginx) monitorLogs(errorLogs []*model.ErrorLog, errorChannel chan strin
 func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	t, err := nginx.NewTailer(logFile)
 	if err != nil {
-		slog.Error("Unable to tail error log after NGINX reload", "logFile", logFile, "error", err)
+		slog.Error("Unable to tail error log after NGINX reload", "log_file", logFile, "error", err)
 		// this is not an error in the logs, ignoring tailing
 		errorChannel <- ""
 
 		return
 	}
 
-	// TODO: get monitoring period from configuration
-	ctx, cncl := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cncl := context.WithTimeout(context.Background(), n.agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	defer cncl()
 
 	slog.Debug("Monitoring NGINX error log file for any errors", "file", logFile)
@@ -248,8 +248,7 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 }
 
 func (n *Nginx) doesLogLineContainError(line string) bool {
-	// TODO: get TreatWarningsAsErrors from configuration
-	if warningRegex.MatchString(line) {
+	if n.agentConfig.DataPlaneConfig.Nginx.TreatWarningsAsError && warningRegex.MatchString(line) {
 		return true
 	}
 

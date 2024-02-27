@@ -53,8 +53,8 @@ func TestGetConfig(t *testing.T) {
 	assert.Equal(t, "127.0.0.1", result.DataplaneAPI.Host)
 	assert.Equal(t, 8038, result.DataplaneAPI.Port)
 
-	assert.Equal(t, 30*time.Second, result.DataplaneConfig.Nginx.ReloadMonitoringPeriod)
-	assert.False(t, result.DataplaneConfig.Nginx.TreatWarningsAsError)
+	assert.Equal(t, 30*time.Second, result.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
+	assert.False(t, result.DataPlaneConfig.Nginx.TreatWarningsAsError)
 
 	assert.Equal(t, 30*time.Second, result.ProcessMonitor.MonitoringFrequency)
 	assert.Equal(t, 10*time.Second, result.Client.Timeout)

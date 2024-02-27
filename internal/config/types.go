@@ -13,7 +13,7 @@ type Config struct {
 	Log                Log             `yaml:"-" mapstructure:"log"`
 	ProcessMonitor     ProcessMonitor  `yaml:"-" mapstructure:"process_monitor"`
 	DataplaneAPI       DataplaneAPI    `yaml:"-" mapstructure:"dataplane_api"`
-	DataplaneConfig    DataplaneConfig `yaml:"-" mapstructure:"dataplane_config"`
+	DataPlaneConfig    DataPlaneConfig `yaml:"-" mapstructure:"dataplane_config"`
 	Client             Client          `yaml:"-" mapstructure:"client"`
 	ConfigDir          string          `yaml:"-" mapstructure:"config-dirs"`
 	AllowedDirectories []string        `yaml:"-"`
@@ -33,11 +33,11 @@ type DataplaneAPI struct {
 	Port int    `yaml:"-" mapstructure:"port"`
 }
 
-type DataplaneConfig struct {
-	Nginx NginxDataplaneConfig `yaml:"-" mapstructure:"nginx"`
+type DataPlaneConfig struct {
+	Nginx NginxDataPlaneConfig `yaml:"-" mapstructure:"nginx"`
 }
 
-type NginxDataplaneConfig struct {
+type NginxDataPlaneConfig struct {
 	ReloadMonitoringPeriod time.Duration `yaml:"-" mapstructure:"reload_monitoring_period"`
 	TreatWarningsAsError   bool          `yaml:"-" mapstructure:"treat_warnings_as_error"`
 }
