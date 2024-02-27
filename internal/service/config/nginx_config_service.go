@@ -44,6 +44,15 @@ type Nginx struct {
 
 func NewNginx(instance *instances.Instance, agentConfig *config.Config) *Nginx {
 	fileCache := writer.NewFileCache(instance.GetInstanceId())
+	cache, err := fileCache.ReadFileCache()
+	// Will in future work check cache and if its nil upload file
+	if err != nil {
+		err = fileCache.UpdateFileCache(cache)
+		if err != nil {
+			slog.Debug("error updating file cache %w", err)
+		}
+	}
+
 	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache)
 	if err != nil {
 		slog.Error("failed to create new config writer for", "instance_id", instance.GetInstanceId(), "err", err)
@@ -65,6 +74,13 @@ func (n *Nginx) Write(ctx context.Context, filesURL, tenantID string) (skippedFi
 
 func (n *Nginx) Complete() error {
 	return n.configWriter.Complete()
+}
+
+func (n *Nginx) Rollback(ctx context.Context, skippedFiles writer.CacheContent,
+	filesURL, tenantID, instanceID string,
+) error {
+	err := n.configWriter.Rollback(ctx, skippedFiles, filesURL, tenantID, instanceID)
+	return err
 }
 
 func (n *Nginx) SetConfigWriter(configWriter writer.ConfigWriterInterface) {

@@ -9,6 +9,16 @@ import (
 )
 
 type FakeFileCacheInterface struct {
+	CacheContentStub        func() map[string]*instances.File
+	cacheContentMutex       sync.RWMutex
+	cacheContentArgsForCall []struct {
+	}
+	cacheContentReturns struct {
+		result1 map[string]*instances.File
+	}
+	cacheContentReturnsOnCall map[int]struct {
+		result1 map[string]*instances.File
+	}
 	ReadFileCacheStub        func() (map[string]*instances.File, error)
 	readFileCacheMutex       sync.RWMutex
 	readFileCacheArgsForCall []struct {
@@ -39,6 +49,59 @@ type FakeFileCacheInterface struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeFileCacheInterface) CacheContent() map[string]*instances.File {
+	fake.cacheContentMutex.Lock()
+	ret, specificReturn := fake.cacheContentReturnsOnCall[len(fake.cacheContentArgsForCall)]
+	fake.cacheContentArgsForCall = append(fake.cacheContentArgsForCall, struct {
+	}{})
+	stub := fake.CacheContentStub
+	fakeReturns := fake.cacheContentReturns
+	fake.recordInvocation("CacheContent", []interface{}{})
+	fake.cacheContentMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeFileCacheInterface) CacheContentCallCount() int {
+	fake.cacheContentMutex.RLock()
+	defer fake.cacheContentMutex.RUnlock()
+	return len(fake.cacheContentArgsForCall)
+}
+
+func (fake *FakeFileCacheInterface) CacheContentCalls(stub func() map[string]*instances.File) {
+	fake.cacheContentMutex.Lock()
+	defer fake.cacheContentMutex.Unlock()
+	fake.CacheContentStub = stub
+}
+
+func (fake *FakeFileCacheInterface) CacheContentReturns(result1 map[string]*instances.File) {
+	fake.cacheContentMutex.Lock()
+	defer fake.cacheContentMutex.Unlock()
+	fake.CacheContentStub = nil
+	fake.cacheContentReturns = struct {
+		result1 map[string]*instances.File
+	}{result1}
+}
+
+func (fake *FakeFileCacheInterface) CacheContentReturnsOnCall(i int, result1 map[string]*instances.File) {
+	fake.cacheContentMutex.Lock()
+	defer fake.cacheContentMutex.Unlock()
+	fake.CacheContentStub = nil
+	if fake.cacheContentReturnsOnCall == nil {
+		fake.cacheContentReturnsOnCall = make(map[int]struct {
+			result1 map[string]*instances.File
+		})
+	}
+	fake.cacheContentReturnsOnCall[i] = struct {
+		result1 map[string]*instances.File
+	}{result1}
 }
 
 func (fake *FakeFileCacheInterface) ReadFileCache() (map[string]*instances.File, error) {
@@ -193,6 +256,8 @@ func (fake *FakeFileCacheInterface) UpdateFileCacheReturnsOnCall(i int, result1 
 func (fake *FakeFileCacheInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.cacheContentMutex.RLock()
+	defer fake.cacheContentMutex.RUnlock()
 	fake.readFileCacheMutex.RLock()
 	defer fake.readFileCacheMutex.RUnlock()
 	fake.setCachePathMutex.RLock()

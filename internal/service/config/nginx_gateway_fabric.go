@@ -35,6 +35,10 @@ func (*NginxGatewayFabric) Complete() error {
 	return fmt.Errorf("not implemented")
 }
 
+func (*NginxGatewayFabric) Rollback(_ context.Context, _ writer.CacheContent, _, _, _ string) error {
+	return fmt.Errorf("not implemented")
+}
+
 func (*NginxGatewayFabric) Write(_ context.Context, _, _ string) (skippedFiles map[string]struct{}, err error) {
 	return nil, fmt.Errorf("not implemented")
 }

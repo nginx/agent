@@ -31,6 +31,7 @@ type (
 		Write(ctx context.Context, filesURL, tenantID, instanceID string) (skippedFiles map[string]struct{}, err error)
 		Complete() (err error)
 		SetConfigClient(configClient client.ConfigClientInterface)
+		Rollback(ctx context.Context, skippedFiles CacheContent, filesURL, tenantID, instanceID string) error
 	}
 
 	ConfigWriter struct {
@@ -60,15 +61,37 @@ func (cw *ConfigWriter) SetConfigClient(configClient client.ConfigClientInterfac
 	cw.configClient = configClient
 }
 
+func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent, filesURL,
+	tenantID, instanceID string,
+) error {
+	slog.Debug("Rolling back NGINX config changes due to error")
+	for key, value := range cw.fileCache.CacheContent() {
+		if _, ok := skippedFiles[key]; ok {
+			continue
+		}
+
+		err := fileExists(value.GetPath())
+		if err != nil {
+			return err
+		}
+
+		_, err = cw.updateFile(ctx, value, filesURL, tenantID, instanceID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	tenantID, instanceID string,
 ) (skippedFiles map[string]struct{}, err error) {
 	currentFileCache := make(CacheContent)
 	skippedFiles = make(map[string]struct{})
-	cacheContent, err := cw.fileCache.ReadFileCache()
-	if err != nil {
-		slog.Warn("Failed to read file cache")
-	}
+
+	cacheContent, _ := cw.fileCache.ReadFileCache()
+	slog.Info("cacheContent_write()", "cache_content", cacheContent)
 
 	filesMetaData, err := cw.getFileMetaData(ctx, filesURL, tenantID, instanceID)
 	if err != nil {
@@ -77,13 +100,13 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 
 	for _, fileData := range filesMetaData.GetFiles() {
 		if !doesFileRequireUpdate(cacheContent, fileData) {
-			slog.Debug("Skipping file as latest version is already on disk", "file_path", fileData.GetPath())
+			slog.Info("Skipping file as latest version is already on disk", "file_path", fileData.GetPath())
 			currentFileCache[fileData.GetPath()] = cacheContent[fileData.GetPath()]
 			skippedFiles[fileData.GetPath()] = struct{}{}
 
 			continue
 		}
-		slog.Debug("Updating file, latest version not on disk", "file_path", fileData.GetPath())
+		slog.Info("Updating file, latest version not on disk", "file_path", fileData.GetPath())
 		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID)
 		if updateErr != nil {
 			slog.Debug("Update Error", "err", updateErr)
@@ -148,15 +171,13 @@ func (cw *ConfigWriter) Complete() error {
 
 func writeFile(fileContent []byte, filePath string) error {
 	slog.Debug("Writing to file", "file_path", filePath)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		slog.Debug("File does not exist, creating new file", "file_path", filePath)
-		err = os.MkdirAll(path.Dir(filePath), filePermissions)
-		if err != nil {
-			return fmt.Errorf("error creating directory %s: %w", path.Dir(filePath), err)
-		}
+
+	err := fileExists(filePath)
+	if err != nil {
+		return err
 	}
 
-	err := os.WriteFile(filePath, fileContent, filePermissions)
+	err = os.WriteFile(filePath, fileContent, filePermissions)
 	if err != nil {
 		return fmt.Errorf("error writing to file %s: %w", filePath, err)
 	}
@@ -191,8 +212,30 @@ func doesFileRequireUpdate(fileCache CacheContent, fileData *instances.File) (up
 			return true
 		}
 
+		slog.Info("fileData.GetLastModified().AsTime()", "", fileData.GetLastModified().AsTime())
+		slog.Info("fileOnSystem.GetLastModified().AsTime().Before", "", fileOnSystem.GetLastModified().AsTime())
+
 		return ok && fileOnSystem.GetLastModified().AsTime().Before(fileData.GetLastModified().AsTime())
 	}
 
 	return false
+}
+
+func fileExists(filePath string) error {
+	_, statErr := os.Stat(filePath)
+	if statErr != nil {
+		if os.IsNotExist(statErr) {
+			slog.Debug("File does not exist, creating", "file_path", filePath)
+			err := os.MkdirAll(path.Dir(filePath), filePermissions)
+			if err != nil {
+				return fmt.Errorf("error creating directory %s: %w", path.Dir(filePath), err)
+			}
+
+			return nil
+		}
+
+		return statErr
+	}
+
+	return statErr
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/client"
 	"github.com/nginx/agent/v3/internal/datasource/config"
 )
@@ -18,6 +19,21 @@ type FakeConfigWriterInterface struct {
 		result1 error
 	}
 	completeReturnsOnCall map[int]struct {
+		result1 error
+	}
+	RollbackStub        func(context.Context, map[string]*instances.File, string, string, string) error
+	rollbackMutex       sync.RWMutex
+	rollbackArgsForCall []struct {
+		arg1 context.Context
+		arg2 map[string]*instances.File
+		arg3 string
+		arg4 string
+		arg5 string
+	}
+	rollbackReturns struct {
+		result1 error
+	}
+	rollbackReturnsOnCall map[int]struct {
 		result1 error
 	}
 	SetConfigClientStub        func(client.ConfigClientInterface)
@@ -94,6 +110,71 @@ func (fake *FakeConfigWriterInterface) CompleteReturnsOnCall(i int, result1 erro
 		})
 	}
 	fake.completeReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeConfigWriterInterface) Rollback(arg1 context.Context, arg2 map[string]*instances.File, arg3 string, arg4 string, arg5 string) error {
+	fake.rollbackMutex.Lock()
+	ret, specificReturn := fake.rollbackReturnsOnCall[len(fake.rollbackArgsForCall)]
+	fake.rollbackArgsForCall = append(fake.rollbackArgsForCall, struct {
+		arg1 context.Context
+		arg2 map[string]*instances.File
+		arg3 string
+		arg4 string
+		arg5 string
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.RollbackStub
+	fakeReturns := fake.rollbackReturns
+	fake.recordInvocation("Rollback", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.rollbackMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeConfigWriterInterface) RollbackCallCount() int {
+	fake.rollbackMutex.RLock()
+	defer fake.rollbackMutex.RUnlock()
+	return len(fake.rollbackArgsForCall)
+}
+
+func (fake *FakeConfigWriterInterface) RollbackCalls(stub func(context.Context, map[string]*instances.File, string, string, string) error) {
+	fake.rollbackMutex.Lock()
+	defer fake.rollbackMutex.Unlock()
+	fake.RollbackStub = stub
+}
+
+func (fake *FakeConfigWriterInterface) RollbackArgsForCall(i int) (context.Context, map[string]*instances.File, string, string, string) {
+	fake.rollbackMutex.RLock()
+	defer fake.rollbackMutex.RUnlock()
+	argsForCall := fake.rollbackArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeConfigWriterInterface) RollbackReturns(result1 error) {
+	fake.rollbackMutex.Lock()
+	defer fake.rollbackMutex.Unlock()
+	fake.RollbackStub = nil
+	fake.rollbackReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeConfigWriterInterface) RollbackReturnsOnCall(i int, result1 error) {
+	fake.rollbackMutex.Lock()
+	defer fake.rollbackMutex.Unlock()
+	fake.RollbackStub = nil
+	if fake.rollbackReturnsOnCall == nil {
+		fake.rollbackReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.rollbackReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -202,6 +283,8 @@ func (fake *FakeConfigWriterInterface) Invocations() map[string][][]interface{} 
 	defer fake.invocationsMutex.RUnlock()
 	fake.completeMutex.RLock()
 	defer fake.completeMutex.RUnlock()
+	fake.rollbackMutex.RLock()
+	defer fake.rollbackMutex.RUnlock()
 	fake.setConfigClientMutex.RLock()
 	defer fake.setConfigClientMutex.RUnlock()
 	fake.writeMutex.RLock()

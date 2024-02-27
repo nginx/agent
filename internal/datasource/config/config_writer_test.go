@@ -7,6 +7,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"testing"
@@ -78,13 +79,15 @@ func TestWriteConfig(t *testing.T) {
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
 			allowedDirs := []string{"./", "/var/"}
 
-			fileCache := NewFileCache(instanceID.String())
-			fileCache.SetCachePath(cachePath)
-			err = fileCache.UpdateFileCache(cacheContent)
-			require.NoError(t, err)
 			agentconfig := config2.Config{
 				AllowedDirectories: allowedDirs,
 			}
+
+			fileCache := NewFileCache(instanceID.String())
+			fileCache.SetCachePath(cachePath)
+			err := fileCache.UpdateFileCache(cacheContent)
+
+			require.NoError(t, err)
 
 			if !test.shouldBeEqual {
 				modified, protoErr := helpers.CreateProtoTime("2024-01-09T13:22:26Z")
@@ -104,6 +107,9 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, err)
 
 			// Will expand on this test in future PR to add more test scenarios (every file is updated etc)
+			slog.Info("cacheContent[nginxConf.Name()]                 ", "", cacheContent[nginxConf.Name()])
+			slog.Info("configWriter.currentFileCache[nginxConf.Name()]", "",
+				configWriter.currentFileCache[nginxConf.Name()])
 			checkProtoEquality(t, cacheContent[nginxConf.Name()], configWriter.currentFileCache[nginxConf.Name()],
 				test.shouldBeEqual)
 
@@ -121,6 +127,9 @@ func TestWriteConfig(t *testing.T) {
 	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 	assert.NoFileExists(t, cachePath)
+}
+
+func TestRollback(t *testing.T) {
 }
 
 func TestComplete(t *testing.T) {
