@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	helpers "github.com/nginx/agent/v3/test"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/spf13/pflag"
@@ -25,7 +27,7 @@ const (
 func TestRegisterConfigFile(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
 	file, err := os.Create("nginx-agent.conf")
-	defer os.Remove(file.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
 
 	currentDirectory, err := os.Getwd()
@@ -55,7 +57,6 @@ func TestGetConfig(t *testing.T) {
 	assert.False(t, result.DataplaneConfig.Nginx.TreatWarningsAsError)
 
 	assert.Equal(t, 30*time.Second, result.ProcessMonitor.MonitoringFrequency)
-
 	assert.Equal(t, 10*time.Second, result.Client.Timeout)
 
 	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:invalid/path", result.ConfigDir)
@@ -72,12 +73,12 @@ func TestSetVersion(t *testing.T) {
 
 func TestRegisterFlags(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
-	os.Setenv("NGINX_AGENT_LOG_LEVEL", "warn")
-	os.Setenv("NGINX_AGENT_LOG_PATH", "/var/log/test/agent.log")
-	os.Setenv("NGINX_AGENT_PROCESS_MONITOR_MONITORING_FREQUENCY", "10s")
-	os.Setenv("NGINX_AGENT_DATAPLANE_API_HOST", "example.com")
-	os.Setenv("NGINX_AGENT_DATAPLANE_API_PORT", "9090")
-	os.Setenv("NGINX_AGENT_CLIENT_TIMEOUT", "10s")
+	t.Setenv("NGINX_AGENT_LOG_LEVEL", "warn")
+	t.Setenv("NGINX_AGENT_LOG_PATH", "/var/log/test/agent.log")
+	t.Setenv("NGINX_AGENT_PROCESS_MONITOR_MONITORING_FREQUENCY", "10s")
+	t.Setenv("NGINX_AGENT_DATAPLANE_API_HOST", "example.com")
+	t.Setenv("NGINX_AGENT_DATAPLANE_API_PORT", "9090")
+	t.Setenv("NGINX_AGENT_CLIENT_TIMEOUT", "10s")
 	registerFlags()
 
 	assert.Equal(t, "warn", viperInstance.GetString(LogLevelConfigKey))

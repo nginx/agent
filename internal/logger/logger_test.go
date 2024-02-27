@@ -10,6 +10,8 @@ import (
 	"os"
 	"testing"
 
+	helpers "github.com/nginx/agent/v3/test"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -64,8 +66,8 @@ func TestGetLogLevel(t *testing.T) {
 
 func TestGetLogWriter(t *testing.T) {
 	file, err := os.CreateTemp(".", "TestGetLogWriter.*.log")
-	defer os.Remove(file.Name())
-	defer os.Remove("agent.log")
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, "agent.log")
 
 	require.NoError(t, err)
 

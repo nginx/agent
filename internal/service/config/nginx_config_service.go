@@ -15,6 +15,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/config"
+	writer "github.com/nginx/agent/v3/internal/datasource/config"
+
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
@@ -48,17 +51,43 @@ type (
 type Nginx struct {
 	executor      exec.ExecInterface
 	configContext *model.NginxConfigContext
+	configWriter writer.ConfigWriterInterface
+	fileCache    writer.FileCacheInterface
+	instance     *instances.Instance
 }
 
-func NewNginx() *Nginx {
+func NewNginx(instance *instances.Instance, agentConfig *config.Config) *Nginx {
+	fileCache := writer.NewFileCache(instance.GetInstanceId())
+	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache)
+	if err != nil {
+		slog.Error("failed to create new config writer for", "instance_id", instance.GetInstanceId(), "err", err)
+	}
+
 	return &Nginx{
 		configContext: &model.NginxConfigContext{},
-		executor:      &exec.Exec{},
+		executor:     &exec.Exec{},
+		fileCache:    fileCache,
+		configWriter: configWriter,
+		instance:     instance,
 	}
 }
 
-func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
-	payload, err := crossplane.Parse(instance.GetMeta().GetNginxMeta().GetConfigPath(),
+func (n *Nginx) Write(ctx context.Context, filesURL, tenantID string) (skippedFiles map[string]struct{},
+	err error,
+) {
+	return n.configWriter.Write(ctx, filesURL, tenantID, n.instance.GetInstanceId())
+}
+
+func (n *Nginx) Complete() error {
+	return n.configWriter.Complete()
+}
+
+func (n *Nginx) SetConfigWriter(configWriter writer.ConfigWriterInterface) {
+	n.configWriter = configWriter
+}
+
+func (n *Nginx) ParseConfig() (any, error) {
+	payload, err := crossplane.Parse(n.instance.GetMeta().GetNginxMeta().GetConfigPath(),
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   []string{},
 			SingleFile:         false,
@@ -68,7 +97,7 @@ func (*Nginx) ParseConfig(instance *instances.Instance) (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf(
 			"error reading config from %s, error: %w",
-			instance.GetMeta().GetNginxMeta().GetConfigPath(),
+			n.instance.GetMeta().GetNginxMeta().GetConfigPath(),
 			err,
 		)
 	}
@@ -118,8 +147,9 @@ func getLogs(payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog
 	return accessLogs, errorLogs, nil
 }
 
-func (n *Nginx) Validate(instance *instances.Instance) error {
-	exePath := instance.GetMeta().GetNginxMeta().GetExePath()
+func (n *Nginx) Validate() error {
+	slog.Debug("Validating NGINX config")
+	exePath := n.instance.GetMeta().GetNginxMeta().GetExePath()
 
 	out, err := n.executor.RunCmd(exePath, "-t")
 	if err != nil {
@@ -136,10 +166,11 @@ func (n *Nginx) Validate(instance *instances.Instance) error {
 	return nil
 }
 
-func (n *Nginx) Reload(instance *instances.Instance) error {
+func (n *Nginx) Apply() error {
+	slog.Debug("Applying NGINX config")
 	var errorsFound []string
 
-	exePath := instance.GetMeta().GetNginxMeta().GetExePath()
+	exePath := n.instance.GetMeta().GetNginxMeta().GetExePath()
 	errorLogs := n.configContext.ErrorLogs
 
 	logErrorChannel := make(chan string, len(errorLogs))
@@ -325,7 +356,6 @@ func crossplaneConfigTraverse(root *crossplane.Config, callback crossplaneTraver
 		}
 
 		err = traverse(dir, callback)
-
 		if err != nil {
 			return err
 		}
@@ -342,7 +372,6 @@ func traverse(root *crossplane.Directive, callback crossplaneTraverseCallback) e
 		}
 
 		err = traverse(child, callback)
-
 		if err != nil {
 			return err
 		}

@@ -14,9 +14,14 @@ import (
 	"testing"
 	"time"
 
+	helpers "github.com/nginx/agent/v3/test"
+
+	"github.com/nginx/agent/v3/internal/config"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
+	testconfig "github.com/nginx/agent/v3/test/config"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/model"
@@ -26,68 +31,39 @@ import (
 const (
 	errorLogLine   = "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)"
 	warningLogLine = "2023/03/14 14:16:23 nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024"
+	instanceID     = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 )
 
 func TestNginx_ParseConfig(t *testing.T) {
 	file, err := os.CreateTemp("./", "nginx-parse-config.conf")
-	defer os.Remove(file.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
 
 	errorLog, err := os.CreateTemp("./", "error.log")
-	defer os.Remove(errorLog.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, errorLog.Name())
 	require.NoError(t, err)
 
 	accessLog, err := os.CreateTemp("./", "access.log")
-	defer os.Remove(accessLog.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, accessLog.Name())
 	require.NoError(t, err)
 
 	combinedAccessLog, err := os.CreateTemp("./", "combined_access.log")
-	defer os.Remove(combinedAccessLog.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, combinedAccessLog.Name())
 	require.NoError(t, err)
 
 	ltsvAccessLog, err := os.CreateTemp("./", "ltsv_access.log")
-	defer os.Remove(ltsvAccessLog.Name())
+	defer helpers.RemoveFileWithErrorCheck(t, ltsvAccessLog.Name())
 	require.NoError(t, err)
 
-	data := []byte(fmt.Sprintf(`
-		user  nginx;
-		worker_processes  auto;
-		
-		error_log  %s notice;
-		pid        /var/run/nginx.pid;
-		
-		
-		events {
-			worker_connections  1024;
-		}
+	content, err := testconfig.GetNginxConfigWithMultipleAccessLogs(
+		errorLog.Name(),
+		accessLog.Name(),
+		combinedAccessLog.Name(),
+		ltsvAccessLog.Name(),
+	)
+	require.NoError(t, err)
 
-		http {
-			log_format upstream_time '$remote_addr - $remote_user [$time_local]';
-		
-			server {
-				access_log %s upstream_time;
-				access_log %s combined;
-			}
-		}
-
-		http {
-			log_format ltsv "time:$time_local"
-					"\thost:$remote_addr"
-					"\tmethod:$request_method"
-					"\turi:$request_uri"
-					"\tprotocol:$server_protocol"
-					"\tstatus:$status"
-					"\tsize:$body_bytes_sent"
-					"\treferer:$http_referer"
-					"\tua:$http_user_agent"
-					"\treqtime:$request_time"
-					"\tapptime:$upstream_response_time";
-		
-			server {
-				access_log %s ltsv;
-			}
-		}
-	`, errorLog.Name(), accessLog.Name(), combinedAccessLog.Name(), ltsvAccessLog.Name()))
+	data := []byte(content)
 
 	err = os.WriteFile(file.Name(), data, 0o600)
 	require.NoError(t, err)
@@ -124,9 +100,9 @@ func TestNginx_ParseConfig(t *testing.T) {
 		},
 	}
 
-	nginxConfig := NewNginx()
-	result, err := nginxConfig.ParseConfig(&instances.Instance{
-		Type: instances.Type_NGINX,
+	instance := &instances.Instance{
+		Type:       instances.Type_NGINX,
+		InstanceId: instanceID,
 		Meta: &instances.Meta{
 			Meta: &instances.Meta_NginxMeta{
 				NginxMeta: &instances.NginxMeta{
@@ -134,7 +110,10 @@ func TestNginx_ParseConfig(t *testing.T) {
 				},
 			},
 		},
-	})
+	}
+
+	nginxConfig := NewNginx(instance, &config.Config{})
+	result, err := nginxConfig.ParseConfig()
 
 	require.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)
@@ -166,7 +145,7 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 	}
 }
 
-func TestNginx_Reload(t *testing.T) {
+func TestNginx_Apply(t *testing.T) {
 	errorLogFile, err := os.CreateTemp(".", "error.log")
 	require.NoError(t, err)
 	defer os.Remove(errorLogFile.Name())
@@ -245,7 +224,20 @@ func TestNginx_Reload(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.RunCmdReturns(test.out, test.error)
-			nginxConfig := NewNginx()
+
+			instance := &instances.Instance{
+				Type:       instances.Type_NGINX,
+				InstanceId: instanceID,
+				Meta: &instances.Meta{
+					Meta: &instances.Meta_NginxMeta{
+						NginxMeta: &instances.NginxMeta{
+							ExePath: "nginx",
+						},
+					},
+				},
+			}
+			nginxConfig := NewNginx(instance, &config.Config{})
+			nginxConfig.executor = mockExec
 			nginxConfig.SetConfigContext(&model.NginxConfigContext{
 				ErrorLogs: test.errorLogs,
 			})
@@ -255,17 +247,7 @@ func TestNginx_Reload(t *testing.T) {
 			wg.Add(1)
 			go func(expected error) {
 				defer wg.Done()
-				reloadError := nginxConfig.Reload(&instances.Instance{
-					Type: instances.Type_NGINX,
-					Meta: &instances.Meta{
-						Meta: &instances.Meta_NginxMeta{
-							NginxMeta: &instances.NginxMeta{
-								ExePath: "nginx",
-							},
-						},
-					},
-				})
-
+				reloadError := nginxConfig.Apply()
 				assert.Equal(t, expected, reloadError)
 			}(test.expected)
 
@@ -312,11 +294,9 @@ func TestNginx_Validate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.RunCmdReturns(test.out, test.error)
-			nginxConfig := NewNginx()
-			nginxConfig.executor = mockExec
-
-			err := nginxConfig.Validate(&instances.Instance{
-				Type: instances.Type_NGINX,
+			instance := &instances.Instance{
+				Type:       instances.Type_NGINX,
+				InstanceId: instanceID,
 				Meta: &instances.Meta{
 					Meta: &instances.Meta_NginxMeta{
 						NginxMeta: &instances.NginxMeta{
@@ -324,7 +304,11 @@ func TestNginx_Validate(t *testing.T) {
 						},
 					},
 				},
-			})
+			}
+			nginxConfig := NewNginx(instance, &config.Config{})
+			nginxConfig.executor = mockExec
+
+			err := nginxConfig.Validate()
 
 			assert.Equal(t, test.expected, err)
 		})

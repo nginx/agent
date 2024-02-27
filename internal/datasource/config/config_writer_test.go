@@ -6,87 +6,47 @@ package config
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path"
 	"testing"
-	"time"
+
+	helpers "github.com/nginx/agent/v3/test"
+
+	"google.golang.org/protobuf/proto"
+
+	config2 "github.com/nginx/agent/v3/internal/config"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/client/clientfakes"
-	"github.com/nginx/agent/v3/internal/service/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestWriteConfig(t *testing.T) {
 	ctx := context.TODO()
-	testConf, err := os.CreateTemp(".", "test.conf")
-	require.NoError(t, err)
-	defer os.Remove(testConf.Name())
+	tempDir := t.TempDir()
+	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
 
 	testConfPath := testConf.Name()
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 
-	tenantID, instanceID, err := createTestIDs()
-	require.NoError(t, err)
+	tenantID, instanceID := helpers.CreateTestIDs(t)
 
-	tmpDir := os.TempDir()
-	instanceIDDir := path.Join(tmpDir, instanceID.String())
-	err = os.Mkdir(instanceIDDir, 0o755)
-	require.NoError(t, err)
-	defer os.Remove(instanceIDDir)
+	instanceIDDir := path.Join(tempDir, instanceID.String())
+	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
+	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
-	cacheFile, err := os.Create(path.Join(instanceIDDir, "cache.json"))
-	require.NoError(t, err)
-	defer os.Remove(cacheFile.Name())
-
+	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
 	cachePath := cacheFile.Name()
 
-	nginxConf, err := os.CreateTemp("./", "nginx.conf")
-	require.NoError(t, err)
-	defer os.Remove(nginxConf.Name())
-
-	metricsConf, err := os.CreateTemp("./", "metrics.conf")
-	require.NoError(t, err)
-	defer os.Remove(metricsConf.Name())
+	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
 
 	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
-	time1, err := createProtoTime("2024-01-08T13:22:23Z")
-	require.NoError(t, err)
-
-	test1Time2, err := createProtoTime("2024-01-08T14:22:20Z")
-	require.NoError(t, err)
-
-	test2Time2, err := createProtoTime("2024-01-08T13:22:25Z")
-	require.NoError(t, err)
-
-	time3, err := createProtoTime("2024-01-08T13:22:21Z")
-	require.NoError(t, err)
-
-	previousFileCache := FileCache{
-		nginxConf.Name(): {
-			LastModified: time1,
-			Path:         nginxConf.Name(),
-			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-		},
-		testConf.Name(): {
-			LastModified: test2Time2,
-			Path:         testConf.Name(),
-			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
-		},
-		metricsConf.Name(): {
-			LastModified: time3,
-			Path:         metricsConf.Name(),
-			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
-		},
-	}
-
-	err = createCacheFile(cachePath, previousFileCache)
+	files, err := helpers.GetFiles(nginxConf, testConf, metricsConf)
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -96,207 +56,125 @@ func TestWriteConfig(t *testing.T) {
 		shouldBeEqual  bool
 	}{
 		{
-			name: "file needs updating",
-			metaDataReturn: &instances.Files{
-				Files: []*instances.File{
-					{
-						LastModified: time1,
-						Path:         nginxConf.Name(),
-						Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-					},
-					{
-						LastModified: test1Time2,
-						Path:         testConf.Name(),
-						Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
-					},
-					{
-						LastModified: time3,
-						Path:         metricsConf.Name(),
-						Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
-					},
-				},
-			},
-			getFileReturn: &instances.FileDownloadResponse{
-				Encoded:     true,
-				FilePath:    testConf.Name(),
-				InstanceId:  instanceID.String(),
-				FileContent: []byte("location /test {\n    return 200 \"New Test location\\n\";\n}"),
-			},
-			shouldBeEqual: false,
+			name:           "file needs updating",
+			metaDataReturn: files,
+			getFileReturn:  helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
+			shouldBeEqual:  false,
 		},
 		{
-			name: "file doesn't need updating",
-			metaDataReturn: &instances.Files{
-				Files: []*instances.File{
-					{
-						LastModified: time1,
-						Path:         nginxConf.Name(),
-						Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-					},
-					{
-						LastModified: test2Time2,
-						Path:         testConf.Name(),
-						Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
-					},
-					{
-						LastModified: time3,
-						Path:         metricsConf.Name(),
-						Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
-					},
-				},
-			},
-			getFileReturn: &instances.FileDownloadResponse{
-				Encoded:     true,
-				FilePath:    testConf.Name(),
-				InstanceId:  instanceID.String(),
-				FileContent: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
-			},
-			shouldBeEqual: true,
+			name:           "file doesn't need updating",
+			metaDataReturn: files,
+			getFileReturn:  helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
+			shouldBeEqual:  true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			cacheContent, getCacheErr := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+			require.NoError(t, getCacheErr)
 			fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
-			allowedDirs := []string{"./"}
+			allowedDirs := []string{"./", "/var/"}
 
-			configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, instanceID.String())
-			configWriter.cachePath = cachePath
-			configWriter.previouseFileCache = previousFileCache
+			fileCache := NewFileCache(instanceID.String())
+			fileCache.SetCachePath(cachePath)
+			err = fileCache.UpdateFileCache(cacheContent)
+			require.NoError(t, err)
+			agentconfig := config2.Config{
+				AllowedDirectories: allowedDirs,
+			}
 
+			if !test.shouldBeEqual {
+				modified, protoErr := helpers.CreateProtoTime("2024-01-09T13:22:26Z")
+				require.NoError(t, protoErr)
+				cacheContent[nginxConf.Name()].LastModified = modified
+			}
+
+			configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+			require.NoError(t, err)
+
+			configWriter.SetConfigClient(fakeConfigClient)
 			err = writeFile(fileContent, testConfPath)
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
-			err = configWriter.Write(ctx, filesURL, tenantID)
+			_, err = configWriter.Write(ctx, filesURL, tenantID.String(), instanceID.String())
 			require.NoError(t, err)
 
-			if test.shouldBeEqual {
-				assert.Equal(t, previousFileCache, configWriter.currentFileCache)
-				testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
-				require.NoError(t, readErr)
-				assert.Equal(t, fileContent, testData)
-			} else {
-				assert.NotEqual(t, previousFileCache, configWriter.currentFileCache)
-				testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
-				require.NoError(t, readErr)
-				assert.NotEqual(t, testData, fileContent)
-			}
+			// Will expand on this test in future PR to add more test scenarios (every file is updated etc)
+			checkProtoEquality(t, cacheContent[nginxConf.Name()], configWriter.currentFileCache[nginxConf.Name()],
+				test.shouldBeEqual)
 
-			err = os.Remove(test.getFileReturn.GetFilePath())
-			require.NoError(t, err)
+			testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
+			require.NoError(t, readErr)
+
+			assert.Equal(t, fileContent, testData)
+
+			helpers.RemoveFileWithErrorCheck(t, test.getFileReturn.GetFilePath())
 			assert.NoFileExists(t, test.getFileReturn.GetFilePath())
 		})
 	}
 
-	err = os.Remove(cachePath)
-	require.NoError(t, err)
+	helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
+	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
+	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 	assert.NoFileExists(t, cachePath)
 }
 
 func TestComplete(t *testing.T) {
+	tempDir := t.TempDir()
 	instanceID, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	require.NoError(t, err)
 
-	instanceIDDir := fmt.Sprintf("./%s/", instanceID.String())
+	instanceIDDir := fmt.Sprintf("%s/%s/", tempDir, instanceID.String())
 
-	err = os.Mkdir(instanceIDDir, 0o755)
-	require.NoError(t, err)
-	defer os.Remove(instanceIDDir)
+	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
+	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
-	cacheFile, err := os.CreateTemp(instanceIDDir, "cache.json")
-	require.NoError(t, err)
-	defer os.Remove(cacheFile.Name())
-
+	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
 	cachePath := cacheFile.Name()
 
 	allowedDirs := []string{"./"}
 
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
-	configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, instanceID.String())
-	configWriter.cachePath = cachePath
 
-	testConf, err := os.CreateTemp(".", "test.conf")
-	require.NoError(t, err)
-	defer os.Remove(testConf.Name())
-
-	nginxConf, err := os.CreateTemp("./", "nginx.conf")
-	require.NoError(t, err)
-	defer os.Remove(nginxConf.Name())
-
-	metricsConf, err := os.CreateTemp("./", "metrics.conf")
-	require.NoError(t, err)
-	defer os.Remove(metricsConf.Name())
-
-	fileTime1, err := createProtoTime("2024-01-08T13:22:23Z")
-	require.NoError(t, err)
-
-	fileTime2, err := createProtoTime("2024-01-08T13:22:25Z")
-	require.NoError(t, err)
-
-	fileTime3, err := createProtoTime("2024-01-08T13:22:21Z")
-	require.NoError(t, err)
-
-	cacheData := FileCache{
-		nginxConf.Name(): {
-			LastModified: fileTime1,
-			Path:         nginxConf.Name(),
-			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-		},
-		testConf.Name(): {
-			LastModified: fileTime2,
-			Path:         testConf.Name(),
-			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
-		},
-		metricsConf.Name(): {
-			LastModified: fileTime3,
-			Path:         metricsConf.Name(),
-			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
-		},
+	fileCache := NewFileCache(instanceID.String())
+	agentconfig := config2.Config{
+		AllowedDirectories: allowedDirs,
 	}
+	fileCache.SetCachePath(cachePath)
 
-	err = createCacheFile(cachePath, cacheData)
+	configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+	require.NoError(t, err)
+	configWriter.configClient = fakeConfigClient
+
+	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
+
+	cacheData, err := helpers.GetFileCache(testConf, nginxConf, metricsConf)
 	require.NoError(t, err)
 
-	configWriter.currentFileCache = FileCache{
-		metricsConf.Name(): {
-			LastModified: fileTime1,
-			Path:         metricsConf.Name(),
-			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
-		},
-		testConf.Name(): {
-			LastModified: fileTime2,
-			Path:         testConf.Name(),
-			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
-		},
-	}
-	configWriter.cachePath = cachePath
+	configWriter.currentFileCache, err = helpers.GetFileCache(testConf, metricsConf)
+	require.NoError(t, err)
+
+	helpers.CreateCacheFiles(t, cachePath, cacheData)
 
 	err = configWriter.Complete()
 	require.NoError(t, err)
 
-	data, err := readInstanceCache(cachePath)
+	data, err := configWriter.fileCache.ReadFileCache()
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheData, data)
 
-	err = os.Remove(cachePath)
-	require.NoError(t, err)
+	helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
+	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
+	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
+	helpers.RemoveFileWithErrorCheck(t, testConf.Name())
+
 	assert.NoFileExists(t, cachePath)
-}
-
-func TestDataplaneConfig(t *testing.T) {
-	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
-	allowedDirs := []string{"./"}
-	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
-	configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
-	configWriter.cachePath = cachePath
-	nginxConfig := config.NewNginx()
-
-	configWriter.SetDataplaneConfig(nginxConfig)
-
-	assert.Equal(t, configWriter.dataplaneConfig, nginxConfig)
 }
 
 func TestWriteFile(t *testing.T) {
@@ -311,103 +189,8 @@ func TestWriteFile(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, fileContent, data)
 
-	err = os.Remove(filePath)
-	require.NoError(t, err)
+	helpers.RemoveFileWithErrorCheck(t, filePath)
 	assert.NoFileExists(t, filePath)
-}
-
-func TestReadCache(t *testing.T) {
-	instanceID, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
-	require.NoError(t, err)
-
-	instanceIDDir := fmt.Sprintf("./%s/", instanceID.String())
-
-	err = os.Mkdir(instanceIDDir, 0o755)
-	require.NoError(t, err)
-	defer os.Remove(instanceIDDir)
-
-	cacheFile, err := os.CreateTemp(instanceIDDir, "cache.json")
-	require.NoError(t, err)
-	defer os.Remove(cacheFile.Name())
-
-	cachePath := cacheFile.Name()
-
-	fileTime1, err := createProtoTime("2024-01-08T13:22:23Z")
-	require.NoError(t, err)
-
-	fileTime2, err := createProtoTime("2024-01-08T13:22:25Z")
-	require.NoError(t, err)
-
-	fileTime3, err := createProtoTime("2024-01-08T13:22:21Z")
-	require.NoError(t, err)
-
-	testConf, err := os.CreateTemp(".", "test.conf")
-	require.NoError(t, err)
-	defer os.Remove(testConf.Name())
-
-	nginxConf, err := os.CreateTemp("./", "nginx.conf")
-	require.NoError(t, err)
-	defer os.Remove(nginxConf.Name())
-
-	metricsConf, err := os.CreateTemp("./", "metrics.conf")
-	require.NoError(t, err)
-	defer os.Remove(metricsConf.Name())
-
-	cacheData := FileCache{
-		nginxConf.Name(): {
-			LastModified: fileTime1,
-			Path:         nginxConf.Name(),
-			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-		},
-		testConf.Name(): {
-			LastModified: fileTime2,
-			Path:         testConf.Name(),
-			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
-		},
-		metricsConf.Name(): {
-			LastModified: fileTime3,
-			Path:         metricsConf.Name(),
-			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
-		},
-	}
-
-	err = createCacheFile(cachePath, cacheData)
-	require.NoError(t, err)
-
-	tests := []struct {
-		name            string
-		path            string
-		shouldHaveError bool
-	}{
-		{
-			name:            "cache file exists",
-			path:            cachePath,
-			shouldHaveError: false,
-		},
-		{
-			name:            "cache file doesn't exist",
-			path:            "/tmp/cache.json",
-			shouldHaveError: true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			previousFileCache, readErr := readInstanceCache(test.path)
-
-			if test.shouldHaveError {
-				require.Error(t, readErr)
-				assert.NotEqual(t, cacheData, previousFileCache)
-			} else {
-				require.NoError(t, readErr)
-				assert.Equal(t, cacheData, previousFileCache)
-			}
-		})
-	}
-
-	err = os.Remove(cachePath)
-	require.NoError(t, err)
-	assert.NoFileExists(t, cachePath)
 }
 
 func TestIsFilePathValid(t *testing.T) {
@@ -446,8 +229,16 @@ func TestIsFilePathValid(t *testing.T) {
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 	allowedDirs := []string{"/tmp/"}
 	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
-	configWriter := NewConfigWriter(fakeConfigClient, allowedDirs, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
-	configWriter.cachePath = cachePath
+
+	fileCache := NewFileCache("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	fileCache.SetCachePath(cachePath)
+	agentConfig := config2.Config{
+		AllowedDirectories: allowedDirs,
+	}
+
+	configWriter, err := NewConfigWriter(&agentConfig, fileCache)
+	require.NoError(t, err)
+	configWriter.configClient = fakeConfigClient
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -458,13 +249,13 @@ func TestIsFilePathValid(t *testing.T) {
 }
 
 func TestDoesFileRequireUpdate(t *testing.T) {
-	fileTime1, err := createProtoTime("2024-01-08T14:22:21Z")
+	fileTime1, err := helpers.CreateProtoTime("2024-01-08T14:22:21Z")
 	require.NoError(t, err)
 
-	fileTime2, err := createProtoTime("2024-01-08T13:22:23Z")
+	fileTime2, err := helpers.CreateProtoTime("2024-01-08T13:22:23Z")
 	require.NoError(t, err)
 
-	previousFileCache := FileCache{
+	previousFileCache := CacheContent{
 		"/tmp/nginx/locations/metrics.conf": {
 			LastModified: fileTime1,
 			Path:         "/tmp/nginx/locations/metrics.conf",
@@ -477,12 +268,12 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 		},
 	}
 
-	updateTimeFile1, err := createProtoTime("2024-01-08T14:22:23Z")
+	updateTimeFile1, err := helpers.CreateProtoTime("2024-01-08T14:22:23Z")
 	require.NoError(t, err)
 
 	tests := []struct {
 		name            string
-		lastConfigApply FileCache
+		lastConfigApply CacheContent
 		fileData        *instances.File
 		expectedResult  bool
 	}{
@@ -516,42 +307,8 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 	}
 }
 
-func createTestIDs() (uuid.UUID, uuid.UUID, error) {
-	tenantID, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
-	if err != nil {
-		fmt.Printf("Error creating tenantID: %v", err)
-	}
-
-	instanceID, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
-	if err != nil {
-		fmt.Printf("Error creating instanceID: %v", err)
-	}
-
-	return tenantID, instanceID, err
-}
-
-func createProtoTime(timeString string) (*timestamppb.Timestamp, error) {
-	newTime, err := time.Parse(time.RFC3339, timeString)
-	protoTime := timestamppb.New(newTime)
-
-	return protoTime, err
-}
-
-func createCacheFile(cachePath string, cacheData FileCache) error {
-	cache, err := json.MarshalIndent(cacheData, "", "  ")
-	if err != nil {
-		return fmt.Errorf("error marshaling cache, error: %w", err)
-	}
-
-	err = os.MkdirAll(path.Dir(cachePath), 0o750)
-	if err != nil {
-		return fmt.Errorf("error creating cache directory, error: %w", err)
-	}
-
-	err = os.WriteFile(cachePath, cache, 0o600)
-	if err != nil {
-		return fmt.Errorf("error writing to file, error: %w", err)
-	}
-
-	return err
+func checkProtoEquality(t *testing.T, expected, actual proto.Message, shouldBeEqual bool) {
+	t.Helper()
+	res := proto.Equal(expected, actual)
+	assert.Equal(t, shouldBeEqual, res, "Expected %v, \nActual   %v", expected, actual)
 }

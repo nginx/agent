@@ -20,6 +20,9 @@ contents:
       dst: /etc/systemd/system/nginx-agent.service
     - dst: /var/log/nginx-agent
       type: dir
+    - src: ./scripts/packages/nginx-agent.openrc
+      dst: /etc/init.d/nginx-agent
+      packager: apk
 overrides:
     deb:
         depends:

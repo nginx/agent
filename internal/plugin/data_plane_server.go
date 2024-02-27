@@ -11,17 +11,17 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/internal/service"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	sloggin "github.com/samber/slog-gin"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type (
@@ -29,17 +29,9 @@ type (
 		Message string `json:"message,omitempty"`
 	}
 
-	DataplaneServerParameters struct {
-		Host            string
-		Port            int
-		Logger          *slog.Logger
-		instanceService service.InstanceServiceInterface
-	}
-
-	DataplaneServer struct {
+	DataPlaneServer struct {
 		address              string
 		logger               *slog.Logger
-		instanceService      service.InstanceServiceInterface
 		instances            []*instances.Instance
 		configurationStatues map[string]*instances.ConfigurationStatus
 		messagePipe          bus.MessagePipeInterface
@@ -47,33 +39,30 @@ type (
 	}
 )
 
-func NewDataplaneServer(dataplaneServerParameters *DataplaneServerParameters) *DataplaneServer {
-	if dataplaneServerParameters.instanceService == nil {
-		dataplaneServerParameters.instanceService = service.NewInstanceService()
-	}
+func NewDataPlaneServer(agentConfig *config.Config, logger *slog.Logger) *DataPlaneServer {
+	address := net.JoinHostPort(agentConfig.DataplaneAPI.Host, strconv.Itoa(agentConfig.DataplaneAPI.Port))
 
-	return &DataplaneServer{
-		address:              fmt.Sprintf("%s:%d", dataplaneServerParameters.Host, dataplaneServerParameters.Port),
-		logger:               dataplaneServerParameters.Logger,
-		instanceService:      dataplaneServerParameters.instanceService,
+	return &DataPlaneServer{
+		address:              address,
+		logger:               logger,
 		configurationStatues: make(map[string]*instances.ConfigurationStatus),
 	}
 }
 
-func (dps *DataplaneServer) Init(messagePipe bus.MessagePipeInterface) {
+func (dps *DataPlaneServer) Init(messagePipe bus.MessagePipeInterface) {
 	dps.messagePipe = messagePipe
 	go dps.run(messagePipe.Context())
 }
 
-func (*DataplaneServer) Close() {}
+func (*DataPlaneServer) Close() {}
 
-func (*DataplaneServer) Info() *bus.Info {
+func (*DataPlaneServer) Info() *bus.Info {
 	return &bus.Info{
 		Name: "dataplane-server",
 	}
 }
 
-func (dps *DataplaneServer) Process(msg *bus.Message) {
+func (dps *DataPlaneServer) Process(msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*instances.Instance); ok {
@@ -86,23 +75,23 @@ func (dps *DataplaneServer) Process(msg *bus.Message) {
 	}
 }
 
-func (*DataplaneServer) Subscriptions() []string {
+func (*DataPlaneServer) Subscriptions() []string {
 	return []string{
 		bus.InstancesTopic,
 		bus.InstanceConfigUpdateCompleteTopic,
 	}
 }
 
-func (dps *DataplaneServer) run(_ context.Context) {
+func (dps *DataPlaneServer) run(_ context.Context) {
 	gin.SetMode(gin.ReleaseMode)
 	server := gin.New()
 	server.Use(sloggin.NewWithConfig(dps.logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
 	dataplane.RegisterHandlersWithOptions(server, dps, dataplane.GinServerOptions{BaseURL: "/api/v1"})
 
-	slog.Info("Starting dataplane server", "address", dps.address)
+	slog.Info("Starting data plane server", "address", dps.address)
 	listener, err := net.Listen("tcp", dps.address)
 	if err != nil {
-		slog.Error("Startup of dataplane server failed", "error", err)
+		slog.Error("Startup of data plane server failed", "error", err)
 
 		return
 	}
@@ -111,13 +100,13 @@ func (dps *DataplaneServer) run(_ context.Context) {
 
 	err = server.RunListener(listener)
 	if err != nil {
-		slog.Error("Startup of dataplane server failed", "error", err)
+		slog.Error("Startup of data plane server failed", "error", err)
 	}
 }
 
 // GET /instances
 // nolint: revive // Get func not returning value
-func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
+func (dps *DataPlaneServer) GetInstances(ctx *gin.Context) {
 	slog.Debug("Get instances request")
 
 	response := []dataplane.Instance{}
@@ -127,6 +116,7 @@ func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 			InstanceId: &instance.InstanceId,
 			Type:       toPtr(mapTypeEnums(instance.GetType().String())),
 			Version:    &instance.Version,
+			Meta:       toPtr(convertMeta(instance.GetMeta())),
 		})
 	}
 
@@ -136,9 +126,9 @@ func (dps *DataplaneServer) GetInstances(ctx *gin.Context) {
 }
 
 // PUT /instances/{instanceID}/configurations
-func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceID string) {
+func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceID string) {
 	correlationID := uuid.New().String()
-	slog.Debug("Update instance configuration request", "correlationID", correlationID, "instanceID", instanceID)
+	slog.Debug("Update instance configuration request", "correlation_id", correlationID, "instance_id", instanceID)
 
 	var request dataplane.UpdateInstanceConfigurationJSONRequestBody
 	if err := ctx.Bind(&request); err != nil {
@@ -171,8 +161,8 @@ func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 		} else {
 			slog.Debug(
 				"Unable to update instance configuration",
-				"instanceID", instanceID,
-				"correlationID", correlationID,
+				"instance_id", instanceID,
+				"correlation_id", correlationID,
 			)
 			ctx.JSON(
 				http.StatusNotFound,
@@ -184,7 +174,7 @@ func (dps *DataplaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 
 // (GET /instances/{instanceId}/configurations/status)
 // nolint: revive // Get func not returning value
-func (dps *DataplaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, instanceID string) {
+func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, instanceID string) {
 	status := dps.getConfigurationStatus(instanceID)
 
 	if status != nil {
@@ -197,16 +187,16 @@ func (dps *DataplaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, ins
 
 		ctx.JSON(http.StatusOK, responseBody)
 	} else {
-		slog.Debug("Unable to get instance configuration status", "instanceID", instanceID)
+		slog.Debug("Unable to get instance configuration status", "instance_id", instanceID)
 		ctx.JSON(http.StatusNotFound, dataplane.ErrorResponse{Message: "Unable to find configuration status"})
 	}
 }
 
-func (dps *DataplaneServer) getConfigurationStatus(instanceID string) *instances.ConfigurationStatus {
+func (dps *DataPlaneServer) getConfigurationStatus(instanceID string) *instances.ConfigurationStatus {
 	return dps.configurationStatues[instanceID]
 }
 
-func (dps *DataplaneServer) getInstance(instanceID string) *instances.Instance {
+func (dps *DataPlaneServer) getInstance(instanceID string) *instances.Instance {
 	for _, instance := range dps.instances {
 		if instance.GetInstanceId() == instanceID {
 			return instance
@@ -234,6 +224,25 @@ func mapStatusEnums(typeString string) *dataplane.ConfigurationStatusType {
 	}
 
 	return toPtr(dataplane.INPROGESS)
+}
+
+func convertMeta(meta *instances.Meta) dataplane.Instance_Meta {
+	apiMeta := dataplane.Instance_Meta{}
+
+	if nginxMeta := meta.GetNginxMeta(); nginxMeta != nil {
+		err := apiMeta.MergeNginxMeta(
+			dataplane.NginxMeta{
+				Type:     dataplane.NGINXMETA,
+				ConfPath: &nginxMeta.ConfigPath,
+				ExePath:  &nginxMeta.ExePath,
+			},
+		)
+		if err != nil {
+			slog.Warn("Unable to merge nginx meta", "error", err)
+		}
+	}
+
+	return apiMeta
 }
 
 func toPtr[T any](value T) *T {

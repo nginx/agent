@@ -15,23 +15,16 @@ import (
 func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin {
 	plugins := []bus.Plugin{}
 
-	processMonitor := NewProcessMonitor(&ProcessMonitorParameters{
-		MonitoringFrequency: agentConfig.ProcessMonitor.MonitoringFrequency,
-	})
+	processMonitor := NewProcessMonitor(agentConfig)
+	instanceMonitor := NewInstance()
 
-	instanceMonitor := NewInstance(&InstanceParameters{})
-
-	configPlugin := NewConfig()
+	configPlugin := NewConfig(agentConfig)
 
 	plugins = append(plugins, processMonitor, instanceMonitor, configPlugin)
 
 	if agentConfig.DataplaneAPI.Host != "" && agentConfig.DataplaneAPI.Port != 0 {
-		dataplaneServer := NewDataplaneServer(&DataplaneServerParameters{
-			Host:   agentConfig.DataplaneAPI.Host,
-			Port:   agentConfig.DataplaneAPI.Port,
-			Logger: slogger,
-		})
-		plugins = append(plugins, dataplaneServer)
+		dataPlaneServer := NewDataPlaneServer(agentConfig, slogger)
+		plugins = append(plugins, dataPlaneServer)
 	}
 
 	return plugins
