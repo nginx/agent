@@ -25,10 +25,10 @@ threshold:
 # First rule from this list that matches file or package is going to apply new threshold to it.
 # If project has multiple rules that match same path, override rules should be listed in order from
 # specific to more general rules.
-override:
+#override:
   # Increase coverage threshold to 100% for `foo` package (default is 80, as configured above)
-  - threshold: 100
-    path: ^pkg/lib/foo$
+#  - threshold: 100
+#    path: ^pkg/lib/foo$
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:
