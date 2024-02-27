@@ -3,10 +3,11 @@ GOCMD	= go
 GOBUILD	= $(GOCMD) build
 GOTEST	= $(GOCMD) test
 GOTOOL	= $(GOCMD) tool
-GORUN	= ${GOCMD} run
-GOINST  = ${GOCMD} install
-GOGEN   = ${GOCMD} generate
-GOVET   = ${GOCMD} vet
+GORUN	= $(GOCMD) run
+GOINST  = $(GOCMD) install
+GOGEN   = $(GOCMD) generate
+GOVET   = $(GOCMD) vet
+GOBIN 	?= $$(go env GOPATH)/bin
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # https://docs.nginx.com/nginx/releases/                                                                                          #
@@ -27,8 +28,8 @@ GOVET   = ${GOCMD} vet
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 22.04
-BASE_IMAGE  = "docker.io/${OS_RELEASE}:${OS_VERSION}"
-IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
+BASE_IMAGE  = "docker.io/$(OS_RELEASE):$(OS_VERSION)"
+IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
@@ -36,15 +37,15 @@ BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
 
-VERSION = "v3.0.0"
-COMMIT  = $(shell git rev-parse --short HEAD)
-DATE    = $(shell date +%F_%H-%M-%S)
-LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
-DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
+VERSION 		= "v3.0.0"
+COMMIT  		= $(shell git rev-parse --short HEAD)
+DATE    		= $(shell date +%F_%H-%M-%S)
+LDFLAGS 		= "-w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
+DEBUG_LDFLAGS 	= "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
 
-OSS_PACKAGES_REPO := "packages.nginx.org"
-PACKAGE_PREFIX := nginx-agent
-PACKAGE_NAME := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
+OSS_PACKAGES_REPO 	:= "packages.nginx.org"
+PACKAGE_PREFIX 		:= nginx-agent
+PACKAGE_NAME 		:= "$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT)"
 
 
 MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= test/config/nginx
@@ -64,13 +65,13 @@ endif
 include Makefile.tools
 include Makefile.containers
 
-.PHONY: help clean no-local-changes build lint format unit-test run dev generate generate-mocks install-tools
+.PHONY: help clean no-local-changes build lint format unit-test integration-test run dev run-mock-management-server generate generate-mocks local-apk-package local-deb-package local-rpm-package
 
 help: ## Show help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\033[36m\033[0m\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 clean: ## Remove build directory
-	@rm -rf ${BUILD_DIR}
+	@rm -rf $(BUILD_DIR)
 	@echo "🌀 Cleaning Done"
 
 no-local-changes:
@@ -78,7 +79,7 @@ no-local-changes:
 
 build: ## Build agent executable
 	mkdir -p $(BUILD_DIR)
-	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
+	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	@echo "📦 Build Done"
 
 lint: ## Run linter
@@ -87,7 +88,7 @@ lint: ## Run linter
 	@echo "🏯 Linting Done"
 
 format: ## Format code
-	@$(GORUN) $(FOFUMPT) -l -w -extra .
+	@$(GORUN) $(GOFUMPT) -l -w -extra .
 	@echo "🏯 Format Done"
 
 $(TEST_BUILD_DIR):
@@ -96,22 +97,31 @@ $(TEST_BUILD_DIR):
 unit-test: $(TEST_BUILD_DIR) ## Run unit tests
 	@CGO_ENABLED=0 $(GOTEST) -count=1 -coverprofile=$(TEST_BUILD_DIR)/tmp_coverage.out -coverpkg=./... -covermode count ./internal/... ./api/... ./cmd/...
 	@cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v "fake_" > $(TEST_BUILD_DIR)/coverage.out
+	@rm $(TEST_BUILD_DIR)/tmp_coverage.out
 	@$(GOTOOL) cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
 	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
 
+$(TEST_BUILD_DIR)/coverage.out:
+	@$(MAKE) unit-test
+
+.PHONY: coverage
+coverage: $(TEST_BUILD_DIR)/coverage.out
+	@echo "Checking code coverage"
+	@$(GORUN) $(GOTESTCOVERAGE) --config=./.testcoverage.yaml
+
 integration-test:
-	TEST_ENV="Container" CONTAINER_OS_TYPE=${CONTAINER_OS_TYPE} BUILD_TARGET="install-agent-local" \
-	PACKAGES_REPO=${OSS_PACKAGES_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
-	OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} \
+	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
+	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
+	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
 	go test -v ./test/integration
 
 run: build ## Run code
 	@echo "🏃 Running App"
-	./${BUILD_DIR}/$(BINARY_NAME)
+	./$(BUILD_DIR)/$(BINARY_NAME)
 
 dev: ## Run agent executable
 	@echo "🚀 Running App"
-	$(GORUN) $(PROJECT_DIR)/${PROJECT_FILE}
+	$(GORUN) $(PROJECT_DIR)/$(PROJECT_FILE)
 
 run-mock-management-server: ## Run mock management server
 	@echo "🚀 Running mock management server"
@@ -131,14 +141,13 @@ generate-mocks: ## Regenerate all needed mocks, in order to add new mocks genera
 	@$(GORUN) $(OAPICODEGEN) -generate gin,types -package mock ./test/mock/mock-management-plane-api.yaml > ./test/mock/mock_management_plane.gen.go
 
 local-apk-package: ## Create local apk package
-	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
+	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
 
 local-deb-package: ## Create local deb package
-	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
+	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
 
 local-rpm-package: ## Create local rpm package
-	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
-
+	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
