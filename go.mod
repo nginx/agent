@@ -11,8 +11,8 @@ require (
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
-	github.com/trivago/grok v1.0.0
 	github.com/testcontainers/testcontainers-go v0.27.0
+	github.com/trivago/grok v1.0.0
 	google.golang.org/protobuf v1.32.0
 )
 
@@ -56,7 +56,6 @@ require (
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/sys/user v0.1.0 // indirect
