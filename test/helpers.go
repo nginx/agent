@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const filePermission = 0o777
+const filePermission = 0o700
 
 func CreateDirWithErrorCheck(t testing.TB, dirName string) {
 	t.Helper()
