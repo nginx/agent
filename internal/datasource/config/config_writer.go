@@ -86,7 +86,6 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	skippedFiles = make(map[string]struct{})
 
 	cacheContent, _ := cw.fileCache.ReadFileCache()
-	slog.Info("cacheContent_write()", "cache_content", cacheContent)
 
 	filesMetaData, err := cw.getFileMetaData(ctx, filesURL, tenantID, instanceID)
 	if err != nil {
@@ -209,9 +208,6 @@ func doesFileRequireUpdate(fileCache CacheContent, fileData *instances.File) (up
 		if !ok {
 			return true
 		}
-
-		slog.Info("fileData.GetLastModified().AsTime()", "", fileData.GetLastModified().AsTime())
-		slog.Info("fileOnSystem.GetLastModified().AsTime().Before", "", fileOnSystem.GetLastModified().AsTime())
 
 		return ok && fileOnSystem.GetLastModified().AsTime().Before(fileData.GetLastModified().AsTime())
 	}
