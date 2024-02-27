@@ -197,7 +197,7 @@ func TestRollback(t *testing.T) {
 
 	err = configWriter.Rollback(ctx, skippedFiles, filesURL, tenantID.String(), instanceID.String())
 	require.NoError(t, err)
-	
+
 	data, err := os.ReadFile(testConf.Name())
 	require.NoError(t, err)
 	assert.NotEqual(t, data, fileContent)
