@@ -28,25 +28,41 @@ var tailConfig = tail.Config{
 	},
 }
 
-// NginxAccessItem represents the decoded access log data
-type NginxAccessItem struct {
-	BodyBytesSent          string `mapstructure:"body_bytes_sent"`
-	Status                 string `mapstructure:"status"`
-	RemoteAddress          string `mapstructure:"remote_addr"`
-	HTTPUserAgent          string `mapstructure:"http_user_agent"`
-	Request                string `mapstructure:"request"`
-	BytesSent              string `mapstructure:"bytes_sent"`
-	RequestLength          string `mapstructure:"request_length"`
-	RequestTime            string `mapstructure:"request_time"`
-	GzipRatio              string `mapstructure:"gzip_ratio"`
-	ServerProtocol         string `mapstructure:"server_protocol"`
-	UpstreamConnectTime    string `mapstructure:"upstream_connect_time"`
-	UpstreamHeaderTime     string `mapstructure:"upstream_header_time"`
-	UpstreamResponseTime   string `mapstructure:"upstream_response_time"`
-	UpstreamResponseLength string `mapstructure:"upstream_response_length"`
-	UpstreamStatus         string `mapstructure:"upstream_status"`
-	UpstreamCacheStatus    string `mapstructure:"upstream_cache_status"`
-}
+type (
+	// NginxAccessItem represents the decoded access log data
+	NginxAccessItem struct {
+		BodyBytesSent          string `mapstructure:"body_bytes_sent"`
+		Status                 string `mapstructure:"status"`
+		RemoteAddress          string `mapstructure:"remote_addr"`
+		HTTPUserAgent          string `mapstructure:"http_user_agent"`
+		Request                string `mapstructure:"request"`
+		BytesSent              string `mapstructure:"bytes_sent"`
+		RequestLength          string `mapstructure:"request_length"`
+		RequestTime            string `mapstructure:"request_time"`
+		GzipRatio              string `mapstructure:"gzip_ratio"`
+		ServerProtocol         string `mapstructure:"server_protocol"`
+		UpstreamConnectTime    string `mapstructure:"upstream_connect_time"`
+		UpstreamHeaderTime     string `mapstructure:"upstream_header_time"`
+		UpstreamResponseTime   string `mapstructure:"upstream_response_time"`
+		UpstreamResponseLength string `mapstructure:"upstream_response_length"`
+		UpstreamStatus         string `mapstructure:"upstream_status"`
+		UpstreamCacheStatus    string `mapstructure:"upstream_cache_status"`
+	}
+
+	Tailer struct {
+		handle *tail.Tail
+	}
+
+	PatternTailer struct {
+		handle *tail.Tail
+		gc     *grok.CompiledGrok
+	}
+
+	// LTSV (Labeled Tab-separated Values) Tailer
+	LTSVTailer struct {
+		handle *tail.Tail
+	}
+)
 
 func NewNginxAccessItem(v map[string]string) (*NginxAccessItem, error) {
 	res := &NginxAccessItem{}
@@ -55,19 +71,6 @@ func NewNginxAccessItem(v map[string]string) (*NginxAccessItem, error) {
 	}
 
 	return res, nil
-}
-
-type Tailer struct {
-	handle *tail.Tail
-}
-
-type PatternTailer struct {
-	handle *tail.Tail
-	gc     *grok.CompiledGrok
-}
-
-type LTSVTailer struct {
-	handle *tail.Tail
 }
 
 func NewTailer(file string) (*Tailer, error) {
