@@ -100,7 +100,7 @@ func StartMockManagementPlaneContainer(
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:       "../../",
-			Dockerfile:    "./test/docker/mock-management-plane/Dockerfile",
+			Dockerfile:    "./test/mock/Dockerfile",
 			KeepImage:     false,
 			PrintBuildLog: true,
 		},

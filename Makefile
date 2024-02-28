@@ -101,7 +101,7 @@ unit-test: $(TEST_BUILD_DIR) ## Run unit tests
 
 integration-test:
 	mkdir -p $(BUILD_DIR)/mock-management-plane
-	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane/server test/cmd/main.go
+	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane/server test/mock/cmd/main.go
 	TEST_ENV="Container" CONTAINER_OS_TYPE=${CONTAINER_OS_TYPE} BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=${OSS_PACKAGES_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 	OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} \
@@ -117,7 +117,7 @@ dev: ## Run agent executable
 
 run-mock-management-server: ## Run mock management server
 	@echo "🚀 Running mock management server"
-	$(GORUN) test/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
+	$(GORUN) test/mock/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
