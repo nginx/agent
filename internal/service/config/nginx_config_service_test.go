@@ -204,7 +204,7 @@ func TestNginx_Apply(t *testing.T) {
 			},
 			errorLogContents: errorLogLine,
 			error:            nil,
-			expected:         fmt.Errorf(errorLogLine),
+			expected:         errors.Join(fmt.Errorf(errorLogLine)),
 		},
 		{
 			name: "failed reload due to warning in error logs",
@@ -216,7 +216,7 @@ func TestNginx_Apply(t *testing.T) {
 			},
 			errorLogContents: warningLogLine,
 			error:            nil,
-			expected:         fmt.Errorf(warningLogLine),
+			expected:         errors.Join(fmt.Errorf(warningLogLine)),
 		},
 	}
 

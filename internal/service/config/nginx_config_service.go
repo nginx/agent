@@ -8,6 +8,7 @@ package config
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -169,12 +170,12 @@ func (n *Nginx) Validate() error {
 
 func (n *Nginx) Apply() error {
 	slog.Debug("Applying NGINX config")
-	var errorsFound []string
+	var errorsFound error
 
 	exePath := n.instance.GetMeta().GetNginxMeta().GetExePath()
 	errorLogs := n.configContext.ErrorLogs
 
-	logErrorChannel := make(chan string, len(errorLogs))
+	logErrorChannel := make(chan error, len(errorLogs))
 	defer close(logErrorChannel)
 
 	go n.monitorLogs(errorLogs, logErrorChannel)
@@ -190,21 +191,21 @@ func (n *Nginx) Apply() error {
 	for i := 0; i < numberOfExpectedMessages; i++ {
 		err := <-logErrorChannel
 		slog.Debug("Message received in logErrorChannel", "error", err)
-		if err != "" {
-			errorsFound = append(errorsFound, err)
+		if err != nil {
+			errorsFound = errors.Join(errorsFound, err)
 		}
 	}
 
 	slog.Info("Finished monitoring post reload")
 
-	if len(errorsFound) > 0 {
-		return fmt.Errorf(errorsFound[0])
+	if errorsFound != nil {
+		return errorsFound
 	}
 
 	return nil
 }
 
-func (n *Nginx) monitorLogs(errorLogs []*model.ErrorLog, errorChannel chan string) {
+func (n *Nginx) monitorLogs(errorLogs []*model.ErrorLog, errorChannel chan error) {
 	if len(errorLogs) == 0 {
 		slog.Info("No NGINX error logs found to monitor")
 		return
@@ -215,12 +216,12 @@ func (n *Nginx) monitorLogs(errorLogs []*model.ErrorLog, errorChannel chan strin
 	}
 }
 
-func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
+func (n *Nginx) tailLog(logFile string, errorChannel chan error) {
 	t, err := nginx.NewTailer(logFile)
 	if err != nil {
 		slog.Error("Unable to tail error log after NGINX reload", "log_file", logFile, "error", err)
 		// this is not an error in the logs, ignoring tailing
-		errorChannel <- ""
+		errorChannel <- nil
 
 		return
 	}
@@ -237,11 +238,11 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 		select {
 		case d := <-data:
 			if n.doesLogLineContainError(d) {
-				errorChannel <- d
+				errorChannel <- fmt.Errorf(d)
 				return
 			}
 		case <-ctx.Done():
-			errorChannel <- ""
+			errorChannel <- nil
 			return
 		}
 	}
