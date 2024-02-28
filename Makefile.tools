@@ -5,6 +5,7 @@ PROTOCGENGO	  = google.golang.org/protobuf/cmd/protoc-gen-go@v1.32.0
 FOFUMPT	      = mvdan.cc/gofumpt@v0.5.0
 COUNTERFEITER = github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0
 NFPM          = github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.35.3
+BUF           = github.com/bufbuild/buf/cmd/buf@v1.29.0
 
 install-tools: ## Install tool dependencies
 	@echo "Installing Tools"
@@ -15,4 +16,5 @@ install-tools: ## Install tool dependencies
 	@$(GOINST) $(FOFUMPT)
 	@$(GOINST) $(COUNTERFEITER)
 	@$(GOINST) $(NFPM)
+	@$(GOINST) $(BUF)
 	@$(GORUN) $(LEFTHOOK) install pre-push

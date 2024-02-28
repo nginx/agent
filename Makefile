@@ -83,13 +83,10 @@ build: ## Build agent executable
 	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
 	@echo "📦 Build Done"
 
-proto-lint:
-	@cd api/grpc && buf lint
-	@echo "🏯 Linting Done"
-
 lint: ## Run linter
 	@$(GOVET) ./...
 	@$(GORUN) $(GOLANGCILINT) run -c ./.golangci.yml
+	@cd api/grpc && ${GORUN} $(BUF) lint
 	@echo "🏯 Linting Done"
 
 format: ## Format code
