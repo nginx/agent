@@ -6,12 +6,12 @@
 // These proto definitions follow https://protobuf.dev/programming-guides/style/
 // and recommendations outlined in https://static.sched.com/hosted_files/kccncna17/ad/2017%20CloudNativeCon%20-%20Mod%20gRPC%20Services.pdf
 syntax = "proto3";
-package f5.nginx.agent.api.grpc.mpi.v1;
+package mpi.v1;
 
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
-import "common.proto";
-import "file.proto";
+import "mpi/v1/common.proto";
+import "mpi/v1/file.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -26,19 +26,21 @@ import "google/protobuf/timestamp.proto";
 // Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as they may need to be retried.
 service CommandService {
     // Connects NGINX Agent to the Management Plane agnostic of instance data
-    rpc CreateConnection(ConnectionRequest) returns (ConnectionResponse) {}
+    rpc CreateConnection(CreateConnectionRequest) returns (CreateConnectionResponse) {}
     // Reports on instances and their configurations
-    rpc UpdateStatus(DataPlaneStatus) returns (DataPlaneStatusResponse) {}
+    rpc UpdateDataPlaneStatus(UpdateDataPlaneStatusRequest) returns (UpdateDataPlaneStatusResponse) {}
     // Reports on instance health
-    rpc UpdateHealth(DataPlaneHealth) returns (DataPlaneHealthResponse) {}
+    rpc UpdateDataPlaneHealth(UpdateDataPlaneHealthRequest) returns (UpdateDataPlaneHealthResponse) {}
     // A decoupled communication mechanism between the data plane and management plane.
+    // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+    // buf:lint:ignore RPC_REQUEST_STANDARD_NAME
     rpc Subscribe(stream DataPlaneResponse) returns (stream ManagementPlaneRequest) {}
 }
 
 // The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
-message ConnectionRequest {
+message CreateConnectionRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
+    mpi.v1.MessageMeta message_meta = 1;
     // instance information associated with the NGINX Agent
     Instance agent = 2;
 }
@@ -196,26 +198,26 @@ message NGINXPlusConfig {
     repeated string dynamic_modules = 8;
 }
 
-// A response to a ConnectionRequest
-message ConnectionResponse {
-    // the success or failure of the ConnectionRequest
-    f5.nginx.agent.api.grpc.mpi.v1.CommandResponse response = 1;
+// A response to a CreateConnectionRequest
+message CreateConnectionResponse {
+    // the success or failure of the CreateConnectionRequest
+    mpi.v1.CommandResponse response = 1;
     // the recommendation NGINX Agent configurations provided by the ManagementPlane
     AgentConfig agent_config = 2;
 }
 
 // Report on the status of the Data Plane
-message DataPlaneStatus {
+message UpdateDataPlaneStatusRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
+    mpi.v1.MessageMeta message_meta = 1;
     // Report on instances on the Data Plane
     repeated Instance instances = 2;
     // The AckIndex latest message index that has been processed
     string latest_message_index = 3;
 }
 
-// Respond to a DataPlaneStatus request - intentionally empty
-message DataPlaneStatusResponse {}
+// Respond to a UpdateDataPlaneStatusRequest - intentionally empty
+message UpdateDataPlaneStatusResponse {}
 
 // This represents an instance being reported on
 message Instance {
@@ -251,7 +253,7 @@ message InstanceAction {
 // Report on the health of a particular instance
 message InstanceHealth {
     // Health status enum
-    enum InstancHealthStatus {
+    enum InstanceHealthStatus {
         // Unspecified status
         INSTANCE_HEALTH_STATUS_UNSPECIFIED = 0;
         // Healthy status
@@ -263,7 +265,7 @@ message InstanceHealth {
     }
     string instance_id = 1;
     // Health status
-    InstancHealthStatus instance_health_status = 2;
+    InstanceHealthStatus instance_health_status = 2;
     // Provides a human readable context around why a health status is a particular state
     string description = 3;
 }
@@ -292,28 +294,28 @@ message InstanceMeta {
 }
 
 // Health report of a set of instances
-message DataPlaneHealth {
+message UpdateDataPlaneHealthRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
+    mpi.v1.MessageMeta message_meta = 1;
     // Health report of a set of instances
     repeated InstanceHealth instance_healths = 2;
 }
 
-// Response to a DataPlaneHealth request - intentionally empty
-message DataPlaneHealthResponse {}
+// Response to a UpdateDataPlaneHealthRequest - intentionally empty
+message UpdateDataPlaneHealthResponse {}
 
 // Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
 message DataPlaneResponse {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
+    mpi.v1.MessageMeta message_meta = 1;
     // The command response with the associated request
-    f5.nginx.agent.api.grpc.mpi.v1.CommandResponse command_response = 2;
+    mpi.v1.CommandResponse command_response = 2;
 }
 
 // A Management Plane request for information, triggers an associated rpc on the DataPlane
 message ManagementPlaneRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
+    mpi.v1.MessageMeta message_meta = 1;
     oneof request {
         // triggers a DataPlaneStatus rpc
         StatusRequest status_request = 2;              
@@ -342,16 +344,16 @@ message HealthRequest {}
 // Additional information associated with a ConfigApplyRequest
 message ConfigApplyRequest {
     // the config version
-    f5.nginx.agent.api.grpc.mpi.v1.ConfigVersion config_version = 1;
+    mpi.v1.ConfigVersion config_version = 1;
     // an optional set of files related to the request
-    optional f5.nginx.agent.api.grpc.mpi.v1.FileOverview overview = 2;
+    optional mpi.v1.FileOverview overview = 2;
 }
 
 message ConfigSyncRequest {
     // the config version
-    f5.nginx.agent.api.grpc.mpi.v1.ConfigVersion config_version = 1;
+    mpi.v1.ConfigVersion config_version = 1;
     // an optional set of files related to the request
-    optional f5.nginx.agent.api.grpc.mpi.v1.FileOverview overview = 2;
+    optional mpi.v1.FileOverview overview = 2;
 }
 
 // Additional information associated with a ConfigUploadRequest
@@ -375,7 +377,7 @@ message ActionRequest {
 // Request an update on a particular command
 message CommandStatusRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
+    mpi.v1.MessageMeta message_meta = 1;
 }
 
 // A default action placeholder

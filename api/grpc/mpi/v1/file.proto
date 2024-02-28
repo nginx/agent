@@ -4,11 +4,11 @@
 // LICENSE file in the root directory of this source tree.
 
 syntax = "proto3";
-package f5.nginx.agent.api.grpc.mpi.v1;
+package mpi.v1;
 
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
-import "common.proto";
+import "mpi/v1/common.proto";
 import "google/protobuf/timestamp.proto";
 
 // This specifies the FileService operations for transferring file data between a client and server.
@@ -19,9 +19,9 @@ import "google/protobuf/timestamp.proto";
 // A SHA256 hash string is 64 bytes, therefore the configured max message size should be maxFileSize + 64.
 service FileService {
     // Get the overview of files for a particular configuration version of an instance
-    rpc GetOverview(OverviewRequest) returns (OverviewResponse) {}
+    rpc GetOverview(GetOverviewRequest) returns (GetOverviewResponse) {}
     // Update the overview of files for a particular set of file changes on the data plane
-    rpc UpdateOverview(OverviewUpdateRequest) returns (OverviewUpdateResponse) {}
+    rpc UpdateOverview(UpdateOverviewRequest) returns (UpdateOverviewResponse) {}
     // Get the file contents for a particular file
     rpc GetFile(GetFileRequest) returns (GetFileResponse) {}
     // Update a file from the Agent to the Server
@@ -29,25 +29,25 @@ service FileService {
 }
 
 // Represents a request payload for a file overview
-message OverviewRequest {
+message GetOverviewRequest {
     // The config version of the overview you are requesting
     ConfigVersion config_version = 1;
 }
 
 // Represents a response payload for an overview of files for a particular configuration version of an instance
-message OverviewResponse {
+message GetOverviewResponse {
     // The file overview of 
     FileOverview overview = 1;
 }
 
 // Represents a the payload for an overview an update of  files for a particular configuration version of an instance
-message OverviewUpdateRequest {
+message UpdateOverviewRequest {
     // The file overview of 
     FileOverview overview = 1;
 }
 
-// Represents a the response from an OverviewUpdateRequest - intentionally left empty
-message OverviewUpdateResponse {}
+// Represents a the response from an UpdateOverviewRequest - intentionally left empty
+message UpdateOverviewResponse {}
 
 // Represents a specific configuration version associated with an instance
 message ConfigVersion {
@@ -97,7 +97,7 @@ message File {
 // Represents the get file request
 message GetFileRequest {
     // Meta-information associated with a message
-    f5.nginx.agent.api.grpc.mpi.v1.MessageMeta message_meta = 1;
+    mpi.v1.MessageMeta message_meta = 1;
     // Meta-information associated with the file
     FileMeta file_meta = 2;
 }

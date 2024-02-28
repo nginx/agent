@@ -83,6 +83,10 @@ build: ## Build agent executable
 	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=${LDFLAGS} $(PROJECT_DIR)/${PROJECT_FILE}
 	@echo "📦 Build Done"
 
+proto-lint:
+	@cd api/grpc && buf lint
+	@echo "🏯 Linting Done"
+
 lint: ## Run linter
 	@$(GOVET) ./...
 	@$(GORUN) $(GOLANGCILINT) run -c ./.golangci.yml
@@ -123,7 +127,7 @@ generate: ## Generate proto files and server and client stubs from OpenAPI speci
 	@echo "Generating proto files"
 	@mkdir -p ./${BUILD_DIR}/$(DOCS_DIR)
 	@mkdir -p ./${BUILD_DIR}/$(DOCS_DIR)/proto
-	@protoc --go_out=paths=source_relative:./api/grpc/mpi/v1/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/mpi/v1 --doc_out=./build/docs/proto/ --doc_opt=markdown,protos.md 
+	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --doc_out=./build/docs/proto/ --doc_opt=markdown,protos.md 
 	@cp -a ./${BUILD_DIR}/$(DOCS_DIR)/proto/* ./$(DOCS_DIR)/proto/
 	# @echo "Generating Go server and client stubs from OpenAPI specification"
 	# @$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/dataplane-api.yaml > ./api/http/dataplane/dataplane.gen.go
