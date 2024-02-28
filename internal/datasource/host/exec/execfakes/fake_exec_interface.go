@@ -4,6 +4,7 @@ package execfakes
 import (
 	"bytes"
 	"sync"
+	"syscall"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
@@ -21,6 +22,18 @@ type FakeExecInterface struct {
 	findExecutableReturnsOnCall map[int]struct {
 		result1 string
 		result2 error
+	}
+	KillProcessStub        func(int, syscall.Signal) error
+	killProcessMutex       sync.RWMutex
+	killProcessArgsForCall []struct {
+		arg1 int
+		arg2 syscall.Signal
+	}
+	killProcessReturns struct {
+		result1 error
+	}
+	killProcessReturnsOnCall map[int]struct {
+		result1 error
 	}
 	RunCmdStub        func(string, ...string) (*bytes.Buffer, error)
 	runCmdMutex       sync.RWMutex
@@ -104,6 +117,68 @@ func (fake *FakeExecInterface) FindExecutableReturnsOnCall(i int, result1 string
 	}{result1, result2}
 }
 
+func (fake *FakeExecInterface) KillProcess(arg1 int, arg2 syscall.Signal) error {
+	fake.killProcessMutex.Lock()
+	ret, specificReturn := fake.killProcessReturnsOnCall[len(fake.killProcessArgsForCall)]
+	fake.killProcessArgsForCall = append(fake.killProcessArgsForCall, struct {
+		arg1 int
+		arg2 syscall.Signal
+	}{arg1, arg2})
+	stub := fake.KillProcessStub
+	fakeReturns := fake.killProcessReturns
+	fake.recordInvocation("KillProcess", []interface{}{arg1, arg2})
+	fake.killProcessMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeExecInterface) KillProcessCallCount() int {
+	fake.killProcessMutex.RLock()
+	defer fake.killProcessMutex.RUnlock()
+	return len(fake.killProcessArgsForCall)
+}
+
+func (fake *FakeExecInterface) KillProcessCalls(stub func(int, syscall.Signal) error) {
+	fake.killProcessMutex.Lock()
+	defer fake.killProcessMutex.Unlock()
+	fake.KillProcessStub = stub
+}
+
+func (fake *FakeExecInterface) KillProcessArgsForCall(i int) (int, syscall.Signal) {
+	fake.killProcessMutex.RLock()
+	defer fake.killProcessMutex.RUnlock()
+	argsForCall := fake.killProcessArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeExecInterface) KillProcessReturns(result1 error) {
+	fake.killProcessMutex.Lock()
+	defer fake.killProcessMutex.Unlock()
+	fake.KillProcessStub = nil
+	fake.killProcessReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeExecInterface) KillProcessReturnsOnCall(i int, result1 error) {
+	fake.killProcessMutex.Lock()
+	defer fake.killProcessMutex.Unlock()
+	fake.KillProcessStub = nil
+	if fake.killProcessReturnsOnCall == nil {
+		fake.killProcessReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.killProcessReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeExecInterface) RunCmd(arg1 string, arg2 ...string) (*bytes.Buffer, error) {
 	fake.runCmdMutex.Lock()
 	ret, specificReturn := fake.runCmdReturnsOnCall[len(fake.runCmdArgsForCall)]
@@ -174,6 +249,8 @@ func (fake *FakeExecInterface) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.findExecutableMutex.RLock()
 	defer fake.findExecutableMutex.RUnlock()
+	fake.killProcessMutex.RLock()
+	defer fake.killProcessMutex.RUnlock()
 	fake.runCmdMutex.RLock()
 	defer fake.runCmdMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

@@ -23,6 +23,7 @@ message Meta {
 message NginxMeta {
     string config_path = 1;
     string exe_path = 2;
+    string process_id = 3;
 }
 
 enum Type {

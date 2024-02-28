@@ -11,7 +11,9 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/nginx/agent/v3/internal/config"
 	writer "github.com/nginx/agent/v3/internal/datasource/config"
@@ -147,12 +149,21 @@ func (n *Nginx) Validate() error {
 
 func (n *Nginx) Apply() error {
 	slog.Debug("Applying NGINX config")
-	exePath := n.instance.GetMeta().GetNginxMeta().GetExePath()
-	out, err := n.executor.RunCmd(exePath, "-s", "reload")
+
+	processID := n.instance.GetMeta().GetNginxMeta().GetProcessId()
+
+	intProcessID, err := strconv.Atoi(processID)
 	if err != nil {
-		return fmt.Errorf("failed to reload NGINX %w: %s", err, out)
+		slog.Error("Invalid NGINX master process ID", "process_id", processID, "error", err)
+		return err
 	}
-	slog.Info("NGINX reloaded")
+
+	err = n.executor.KillProcess(intProcessID, syscall.SIGHUP)
+	if err != nil {
+		return fmt.Errorf("failed to reload NGINX, %w", err)
+	}
+
+	slog.Info("NGINX reloaded", "process_id", processID)
 
 	return nil
 }

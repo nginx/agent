@@ -142,19 +142,16 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 func TestNginx_Apply(t *testing.T) {
 	tests := []struct {
 		name     string
-		out      *bytes.Buffer
 		error    error
 		expected error
 	}{
 		{
 			name:     "successful reload",
-			out:      bytes.NewBufferString(""),
 			error:    nil,
 			expected: nil,
 		},
 		{
 			name:     "failed reload",
-			out:      bytes.NewBufferString(""),
 			error:    errors.New("error reloading"),
 			expected: fmt.Errorf("failed to reload NGINX %w: ", errors.New("error reloading")),
 		},
@@ -163,7 +160,7 @@ func TestNginx_Apply(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
-			mockExec.RunCmdReturns(test.out, test.error)
+			mockExec.KillProcessReturns(test.error)
 
 			instance := &instances.Instance{
 				Type:       instances.Type_NGINX,
@@ -171,7 +168,8 @@ func TestNginx_Apply(t *testing.T) {
 				Meta: &instances.Meta{
 					Meta: &instances.Meta_NginxMeta{
 						NginxMeta: &instances.NginxMeta{
-							ExePath: "nginx",
+							ExePath:   "nginx",
+							ProcessId: "1",
 						},
 					},
 				},
@@ -182,7 +180,7 @@ func TestNginx_Apply(t *testing.T) {
 			err := nginxConfig.Apply()
 
 			if test.error != nil {
-				assert.Equal(t, fmt.Errorf("failed to reload NGINX %w: %s", test.error, test.out), err)
+				assert.Equal(t, fmt.Errorf("failed to reload NGINX, %w", test.error), err)
 			} else {
 				require.NoError(t, err)
 			}
