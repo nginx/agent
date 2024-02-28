@@ -11,7 +11,7 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
-//counterfeiter:generate . DataplaneInstanceService
-type DataplaneInstanceService interface {
+//counterfeiter:generate . DataPlaneInstanceService
+type DataPlaneInstanceService interface {
 	GetInstances(processes []*model.Process) []*instances.Instance
 }

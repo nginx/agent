@@ -26,8 +26,8 @@ const (
 	LogLevelConfigKey                          = "log_level"
 	LogPathConfigKey                           = "log_path"
 	ProcessMonitorMonitoringFrequencyConfigKey = "process_monitor_monitoring_frequency"
-	DataplaneAPIHostConfigKey                  = "dataplane_api_host"
-	DataplaneAPIPortConfigKey                  = "dataplane_api_port"
+	DataPlaneAPIHostConfigKey                  = "data_plane_api_host"
+	DataPlaneAPIPortConfigKey                  = "data_plane_api_port"
 	ClientTimeoutConfigKey                     = "client_timeout"
 	ConfigDirectoriesConfigKey                 = "config_dirs"
 )
@@ -69,7 +69,7 @@ func GetConfig() *Config {
 		Version:            viperInstance.GetString(VersionConfigKey),
 		Log:                getLog(),
 		ProcessMonitor:     getProcessMonitor(),
-		DataplaneAPI:       getDataplaneAPI(),
+		DataPlaneAPI:       getDataPlaneAPI(),
 		Client:             getClient(),
 		ConfigDir:          getConfigDir(),
 		AllowedDirectories: []string{},
@@ -116,8 +116,8 @@ func registerFlags() {
 		time.Minute,
 		"How often the NGINX Agent will check for process changes.",
 	)
-	fs.String(DataplaneAPIHostConfigKey, "", "The host used by the Dataplane API.")
-	fs.Int(DataplaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
+	fs.String(DataPlaneAPIHostConfigKey, "", "The host used by the DataPlane API.")
+	fs.Int(DataPlaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
 	fs.Duration(ClientTimeoutConfigKey, time.Minute, "Client timeout")
 	fs.String(ConfigDirectoriesConfigKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules",
 		"Defines the paths that you want to grant nginx-agent read/write access to."+
@@ -196,10 +196,10 @@ func getProcessMonitor() ProcessMonitor {
 	}
 }
 
-func getDataplaneAPI() DataplaneAPI {
-	return DataplaneAPI{
-		Host: viperInstance.GetString(DataplaneAPIHostConfigKey),
-		Port: viperInstance.GetInt(DataplaneAPIPortConfigKey),
+func getDataPlaneAPI() DataPlaneAPI {
+	return DataPlaneAPI{
+		Host: viperInstance.GetString(DataPlaneAPIHostConfigKey),
+		Port: viperInstance.GetInt(DataPlaneAPIPortConfigKey),
 	}
 }
 
