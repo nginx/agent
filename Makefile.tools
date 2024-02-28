@@ -1,0 +1,34 @@
+BUF              = "github.com/bufbuild/buf/cmd/buf@v1.29.0"
+OAPICODEGEN	     = "github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.0.0"
+LEFTHOOK	     = "github.com/evilmartians/lefthook@v1.5.5"
+GOSWAGGER        = "github.com/go-swagger/go-swagger/cmd/swagger"
+PROTOBUF         = "github.com/gogo/protobuf/protoc-gen-gogo"
+GOLANGCILINT     = "github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2"
+PROTOCGENGO	     = "google.golang.org/protobuf/cmd/protoc-gen-go@v1.32.0"
+PROTOCFAST       = "github.com/gogo/protobuf/protoc-gen-gogofast"
+PROTOCVALIDATORS = "github.com/mwitkow/go-proto-validators/protoc-gen-govalidators"
+PROTOCGENDOC     = "github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc"
+PROTOCGENGOGRPC  = "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
+NFPM             = "github.com/goreleaser/nfpm/v2/cmd/nfpm"
+MOCKGEN          = "go.uber.org/mock/mockgen"
+GOFUMPT	         = "mvdan.cc/gofumpt@v0.6.0"
+COUNTERFEITER    = "github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0"
+
+install-tools: ## Install tool dependencies
+	@echo "Installing Tools"
+	@$(GOGET) $(BUF)
+	@$(GOGET) $(OAPICODEGEN)
+	@$(GOGET) $(LEFTHOOK)
+	@$(GOGET) $(GOSWAGGER)
+	@$(GOGET) $(PROTOBUF)
+	@$(GOGET) $(GOLANGCILINT)
+	@$(GOGET) $(PROTOCGENGO)
+	@$(GOGET) $(PROTOCFAST)
+	@$(GOGET) $(PROTOCVALIDATORS)
+	@$(GOGET) $(PROTOCGENDOC)
+	@$(GOGET) $(PROTOCGENGOGRPC)
+	@$(GOGET) $(NFPM)
+	@$(GOGET) $(MOCKGEN)
+	@$(GOGET) $(GOFUMPT)
+	@$(GOGET) $(COUNTERFEITER)
+	@$(GORUN) $(LEFTHOOK) install pre-push

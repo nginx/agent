@@ -8,6 +8,16 @@ endif
 COMMIT = $(shell git rev-parse --short HEAD)
 DATE = $(shell date +%F_%H-%M-%S)
 
+GOCMD   = go
+GOBUILD = $(GOCMD) build
+GOTEST  = $(GOCMD) test
+GOTOOL  = $(GOCMD) tool
+GORUN   = ${GOCMD} run
+GOINST  = ${GOCMD} install
+GOGET   = ${GOCMD} get
+GOGEN   = ${GOCMD} generate
+GOVET   = ${GOCMD} vet
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # https://docs.nginx.com/nginx/releases/                                                                                          #
 # These images are based on https://github.com/nginxinc/docker-nginx and are NOT recommended for production                       #
@@ -69,6 +79,7 @@ CERT_SERVER_EE_CN  := server-ee.local
 CERT_SERVER_DNS    := tls.example.com
 
 include Makefile.containers
+include Makefile.tools
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Developer Targets                                                                                               #
@@ -119,11 +130,6 @@ lint: ## Run linter
 format: ## Format code
 	go run mvdan.cc/gofumpt -l -w .
 	buf format -w ./sdk/proto/
-
-install-tools: ## Install dependencies in tools.go using vendored version see https://www.jvt.me/posts/2023/06/19/go-install-from-mod/
-	@echo "Installing Tools"
-	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % env GOBIN=$$(git rev-parse --show-toplevel)/bin GOWORK=off go install -mod=vendor %
-	@go run github.com/evilmartians/lefthook install pre-push
 
 generate-swagger: ## Generates swagger.json from source code
 	go run github.com/go-swagger/go-swagger/cmd/swagger generate spec -o ./docs/swagger.json --scan-models
