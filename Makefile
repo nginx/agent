@@ -111,7 +111,7 @@ run-debug: ## Run code
 	./build/nginx-agent
 
 build: ## Build agent executable
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent 
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} ${GOBUILD} -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent 
 
 deps: ## Update dependencies in vendor folders
 	for dir in ${VENDOR_LOCATIONS}; do \
@@ -125,33 +125,33 @@ no-local-changes:
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
-	GOWORK=off go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2 run -c ./scripts/.golangci.yml
+	GOWORK=off $(GORUN) github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2 run -c ./scripts/.golangci.yml
 	cd sdk && make lint
 
 format: ## Format code
-	gofumpt -l -w .
+	GOWORK=off $(GORUN) ${GOFUMPT} -l -w .
 	buf format -w ./sdk/proto/
 
 generate-swagger: ## Generates swagger.json from source code
-	go run github.com/go-swagger/go-swagger/cmd/swagger generate spec -o ./docs/swagger.json --scan-models
+	$(GORUN) github.com/go-swagger/go-swagger/cmd/swagger generate spec -o ./docs/swagger.json --scan-models
 
 launch-swagger-ui: generate-swagger ## Launch Swagger UI
-	go run github.com/go-swagger/go-swagger/cmd/swagger serve ./docs/swagger.json -F=swagger --port=8082 --no-open
+	$(GORUN) github.com/go-swagger/go-swagger/cmd/swagger serve ./docs/swagger.json -F=swagger --port=8082 --no-open
 	
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Local Packaging                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 local-apk-package: ## Create local apk package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.apk;
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.apk;
 
 local-deb-package: ## Create local deb package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.deb;
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.deb;
 
 local-rpm-package: ## Create local rpm package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
 
 local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=freebsd go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
@@ -195,7 +195,7 @@ test-sdk: $(TEST_BUILD_DIR) ## Run sdk unit tests from root directory
 component-test: test-component-build test-component-run ## Run component tests
 
 test-component-build: ## Compile component tests
-	GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test ./test/component -c -o component.test
+	GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 ${GOTEST} ./test/component -c -o component.test
 
 test-container-component: ## Run integration tests in container
 	for container in ${$(CONTAINER_CLITOOL) ps -aqf "name=^nginx-agent_"}; do echo && $(CONTAINER_CLITOOL) ps -f "id=$$container" --format "{{.Image}}" && $(CONTAINER_CLITOOL) exec $$container ./tmp/component.test -test.v; done
@@ -210,22 +210,22 @@ performance-test: ## Run performance tests
 integration-test:
 	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-		go test -v ./test/integration/install
+		${GOTEST} -v ./test/integration/install
 	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-		go test -v ./test/integration/api
+		${GOTEST} -v ./test/integration/api
 	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-		go test -v ./test/integration/features
+		${GOTEST} -v ./test/integration/features
 	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 	    OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-		go test -v ./test/integration/grpc
+		${GOTEST} -v ./test/integration/grpc
 
 test-bench: ## Run benchmark tests
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem environment_test.go	
+	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
+	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
+	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
+	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem environment_test.go	
 
 benchmark-image: ## Build benchmark test container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build --no-cache -t nginx-agent-benchmark:1.0.0 \
