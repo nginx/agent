@@ -29,6 +29,6 @@ install-tools: ## Install tool dependencies
 	@$(GOGET) $(PROTOC_GEN_GO_GRPC)
 	@$(GOGET) $(NFPM)
 	@$(GOGET) $(MOCKGEN)
-	@$(GOGET) $(GOFUMPT)
+	@$(GOINST) $(GOFUMPT)
 	@$(GOGET) $(COUNTERFEITER)
 	@$(GORUN) $(LEFTHOOK) install pre-push
