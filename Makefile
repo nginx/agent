@@ -1,3 +1,7 @@
+include Makefile.containers
+include Makefile.tools
+include Makefile.packaging
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Variable Definitions                                                                                            #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -78,8 +82,6 @@ CERT_SERVER_INT_CN := server-int.local
 CERT_SERVER_EE_CN  := server-ee.local
 CERT_SERVER_DNS    := tls.example.com
 
-include Makefile.containers
-include Makefile.tools
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Developer Targets                                                                                               #
@@ -159,8 +161,6 @@ local-txz-package: ## Create local txz package
 txz-packager-image: ## Builds txz packager container image
 	@echo Building Local Packager; \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
-
-include Makefile.packaging
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Testing                                                                                                         #
@@ -282,14 +282,14 @@ image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and ng
 oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
-	--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
-	--target install-agent-local \
-	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
-	--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
-	--build-arg BASE_IMAGE=${BASE_IMAGE} \
-	--build-arg OS_RELEASE=${OS_RELEASE} \
-	--build-arg OS_VERSION=${OS_VERSION} \
-	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
+		--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
+		--target install-agent-local \
+		--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
+		--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
+		--build-arg BASE_IMAGE=${BASE_IMAGE} \
+		--build-arg OS_RELEASE=${OS_RELEASE} \
+		--build-arg OS_VERSION=${OS_VERSION} \
+		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG
 	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \
