@@ -114,7 +114,7 @@ build: ## Build agent executable
 deps: ## Update dependencies in vendor folders
 	cd sdk && make generate
 	for dir in ${VENDOR_LOCATIONS}; do \
-		(cd "$$dir" && echo "Running vendor commands on $$dir" && go mod tidy && go mod vendor && cd "$$OLDPWD" || exit) \
+		(cd "$$dir" && echo "Running vendor commands on $$dir" && go mod tidy && GOWORK=off go mod vendor && cd "$$OLDPWD" || exit) \
 	done
 	go mod download
 	go work sync
