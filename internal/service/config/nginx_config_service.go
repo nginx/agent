@@ -13,7 +13,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/nginx/agent/v3/internal/config"
 	writer "github.com/nginx/agent/v3/internal/datasource/config"
@@ -158,7 +157,7 @@ func (n *Nginx) Apply() error {
 		return err
 	}
 
-	err = n.executor.KillProcess(intProcessID, syscall.SIGHUP)
+	err = n.executor.KillProcess(intProcessID)
 	if err != nil {
 		return fmt.Errorf("failed to reload NGINX, %w", err)
 	}

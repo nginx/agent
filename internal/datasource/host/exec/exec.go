@@ -16,7 +16,7 @@ import (
 type ExecInterface interface {
 	RunCmd(cmd string, args ...string) (*bytes.Buffer, error)
 	FindExecutable(name string) (string, error)
-	KillProcess(pid int, signum syscall.Signal) error
+	KillProcess(pid int) error
 }
 
 type Exec struct{}
@@ -36,6 +36,6 @@ func (*Exec) FindExecutable(name string) (string, error) {
 	return exec.LookPath(name)
 }
 
-func (*Exec) KillProcess(pid int, signum syscall.Signal) error {
-	return syscall.Kill(pid, signum)
+func (*Exec) KillProcess(pid int) error {
+	return syscall.Kill(pid, syscall.SIGHUP)
 }

@@ -4,7 +4,6 @@ package execfakes
 import (
 	"bytes"
 	"sync"
-	"syscall"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
@@ -23,11 +22,10 @@ type FakeExecInterface struct {
 		result1 string
 		result2 error
 	}
-	KillProcessStub        func(int, syscall.Signal) error
+	KillProcessStub        func(int) error
 	killProcessMutex       sync.RWMutex
 	killProcessArgsForCall []struct {
 		arg1 int
-		arg2 syscall.Signal
 	}
 	killProcessReturns struct {
 		result1 error
@@ -117,19 +115,18 @@ func (fake *FakeExecInterface) FindExecutableReturnsOnCall(i int, result1 string
 	}{result1, result2}
 }
 
-func (fake *FakeExecInterface) KillProcess(arg1 int, arg2 syscall.Signal) error {
+func (fake *FakeExecInterface) KillProcess(arg1 int) error {
 	fake.killProcessMutex.Lock()
 	ret, specificReturn := fake.killProcessReturnsOnCall[len(fake.killProcessArgsForCall)]
 	fake.killProcessArgsForCall = append(fake.killProcessArgsForCall, struct {
 		arg1 int
-		arg2 syscall.Signal
-	}{arg1, arg2})
+	}{arg1})
 	stub := fake.KillProcessStub
 	fakeReturns := fake.killProcessReturns
-	fake.recordInvocation("KillProcess", []interface{}{arg1, arg2})
+	fake.recordInvocation("KillProcess", []interface{}{arg1})
 	fake.killProcessMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -143,17 +140,17 @@ func (fake *FakeExecInterface) KillProcessCallCount() int {
 	return len(fake.killProcessArgsForCall)
 }
 
-func (fake *FakeExecInterface) KillProcessCalls(stub func(int, syscall.Signal) error) {
+func (fake *FakeExecInterface) KillProcessCalls(stub func(int) error) {
 	fake.killProcessMutex.Lock()
 	defer fake.killProcessMutex.Unlock()
 	fake.KillProcessStub = stub
 }
 
-func (fake *FakeExecInterface) KillProcessArgsForCall(i int) (int, syscall.Signal) {
+func (fake *FakeExecInterface) KillProcessArgsForCall(i int) int {
 	fake.killProcessMutex.RLock()
 	defer fake.killProcessMutex.RUnlock()
 	argsForCall := fake.killProcessArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1
 }
 
 func (fake *FakeExecInterface) KillProcessReturns(result1 error) {
