@@ -7,10 +7,10 @@ package nginx
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/trivago/grok"
@@ -56,7 +56,8 @@ func TestGrok(t *testing.T) {
 }
 
 func TestTailer(t *testing.T) {
-	errorLogFile, _ := os.CreateTemp(os.TempDir(), "error.log")
+	errorLogFile := test.CreateFileWithErrorCheck(t, t.TempDir(), "error.log")
+	defer test.RemoveFileWithErrorCheck(t, errorLogFile.Name())
 	logLine := `2015/07/15 05:56:30 [info] 28386#28386: *94160 client 10.196.158.41 closed keepalive connection`
 
 	tailer, err := NewTailer(errorLogFile.Name())
@@ -91,12 +92,13 @@ T:
 		}
 	}
 
-	os.Remove(errorLogFile.Name())
 	assert.Equal(t, 1, count)
 }
 
 func TestPatternTailer(t *testing.T) {
-	accessLogFile, _ := os.CreateTemp(os.TempDir(), "access.log")
+	accessLogFile := test.CreateFileWithErrorCheck(t, t.TempDir(), "access.log")
+	defer test.RemoveFileWithErrorCheck(t, accessLogFile.Name())
+
 	logLine := "127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" " +
 		"500 98 \"-\" \"Go-http-client/1.1\" \"-\"\n"
 
@@ -130,12 +132,13 @@ T:
 		}
 	}
 
-	os.Remove(accessLogFile.Name())
 	assert.Equal(t, 1, count)
 }
 
 func TestLTSVTailer(t *testing.T) {
-	accessLogFile, _ := os.CreateTemp(os.TempDir(), "access.log")
+	accessLogFile := test.CreateFileWithErrorCheck(t, t.TempDir(), "access.log")
+	defer test.RemoveFileWithErrorCheck(t, accessLogFile.Name())
+
 	logLine := "remote_addr:127.0.0.1\t remote_user:-\t time_local:04/Nov/2020:19:40:38 +0000\t " +
 		"request:GET /500 HTTP/1.1\t status:500\t body_bytes_sent:4\t http_referer:-\t " +
 		"http_user_agent:curl/7.64.1\n"
@@ -172,7 +175,6 @@ T:
 		}
 	}
 
-	os.Remove(accessLogFile.Name())
 	assert.Equal(t, 1, count)
 	assert.Equal(
 		t,
