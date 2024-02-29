@@ -221,7 +221,7 @@ github.com/docker/buildx/util/platformutil
 github.com/docker/buildx/util/progress
 github.com/docker/buildx/util/resolver
 github.com/docker/buildx/util/waitmap
-# github.com/docker/cli v24.0.7+incompatible
+# github.com/docker/cli v24.0.6+incompatible
 ## explicit
 github.com/docker/cli/cli
 github.com/docker/cli/cli-plugins/manager
@@ -288,12 +288,11 @@ github.com/docker/distribution/registry/client/transport
 github.com/docker/distribution/registry/storage/cache
 github.com/docker/distribution/registry/storage/cache/memory
 github.com/docker/distribution/uuid
-# github.com/docker/docker v25.0.0+incompatible
+# github.com/docker/docker v24.0.7+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
 github.com/docker/docker/api/types/blkiodev
-github.com/docker/docker/api/types/checkpoint
 github.com/docker/docker/api/types/container
 github.com/docker/docker/api/types/events
 github.com/docker/docker/api/types/filters
@@ -304,7 +303,6 @@ github.com/docker/docker/api/types/registry
 github.com/docker/docker/api/types/strslice
 github.com/docker/docker/api/types/swarm
 github.com/docker/docker/api/types/swarm/runtime
-github.com/docker/docker/api/types/system
 github.com/docker/docker/api/types/time
 github.com/docker/docker/api/types/versions
 github.com/docker/docker/api/types/volume
@@ -312,16 +310,16 @@ github.com/docker/docker/builder/remotecontext/git
 github.com/docker/docker/builder/remotecontext/urlutil
 github.com/docker/docker/client
 github.com/docker/docker/errdefs
-github.com/docker/docker/image/spec/specs-go/v1
-github.com/docker/docker/internal/multierror
 github.com/docker/docker/pkg/archive
 github.com/docker/docker/pkg/homedir
 github.com/docker/docker/pkg/idtools
 github.com/docker/docker/pkg/ioutils
 github.com/docker/docker/pkg/jsonmessage
 github.com/docker/docker/pkg/longpath
+github.com/docker/docker/pkg/meminfo
 github.com/docker/docker/pkg/namesgenerator
 github.com/docker/docker/pkg/pools
+github.com/docker/docker/pkg/process
 github.com/docker/docker/pkg/progress
 github.com/docker/docker/pkg/stdcopy
 github.com/docker/docker/pkg/streamformatter
@@ -638,9 +636,6 @@ github.com/moby/sys/signal
 # github.com/moby/sys/symlink v0.2.0
 ## explicit; go 1.16
 github.com/moby/sys/symlink
-# github.com/moby/sys/user v0.1.0
-## explicit; go 1.17
-github.com/moby/sys/user
 # github.com/moby/term v0.5.0
 ## explicit; go 1.18
 github.com/moby/term
@@ -706,6 +701,7 @@ github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
 # github.com/opencontainers/runc v1.1.12 => github.com/opencontainers/runc v1.1.12
 ## explicit; go 1.17
+github.com/opencontainers/runc/libcontainer/user
 # github.com/opencontainers/runtime-spec v1.1.0
 ## explicit
 # github.com/opentracing/opentracing-go v1.2.0
