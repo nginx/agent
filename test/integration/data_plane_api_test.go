@@ -143,7 +143,7 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 	}
 }
 
-func TestDataplaneAPI_GetInstances(t *testing.T) {
+func TestDataPlaneAPI_GetInstances(t *testing.T) {
 	teardownTest := setupTest(t)
 	defer teardownTest(t)
 

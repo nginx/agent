@@ -29,9 +29,9 @@ func TestLoadPLugins(t *testing.T) {
 				&Config{},
 			},
 		}, {
-			name: "Dataplane API plugin enabled",
+			name: "DataPlane API plugin enabled",
 			input: &config.Config{
-				DataplaneAPI: config.DataplaneAPI{
+				DataPlaneAPI: config.DataPlaneAPI{
 					Host: "localhost",
 					Port: 8080,
 				},
