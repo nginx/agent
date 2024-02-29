@@ -40,10 +40,8 @@ func TestWriteConfig(t *testing.T) {
 	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
-	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
 
 	testConfPath := testConf.Name()
-	cachePath := cacheFile.Name()
 	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
 	files, err := helpers.GetFiles(nginxConf, testConf, metricsConf)
@@ -77,6 +75,8 @@ func TestWriteConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
+			cachePath := cacheFile.Name()
 			fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
@@ -119,16 +119,16 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, readErr)
 			res = reflect.DeepEqual(fileContent, testData)
 			assert.Equal(t, test.fileShouldBeEqual, res)
-
-			helpers.RemoveFileWithErrorCheck(t, test.getFileReturn.GetFilePath())
-			assert.NoFileExists(t, test.getFileReturn.GetFilePath())
+			helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
+			assert.NoFileExists(t, cachePath)
 		})
 	}
-	helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
+
 	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 	helpers.RemoveFileWithErrorCheck(t, testConf.Name())
+	assert.NoFileExists(t, testConf.Name())
 	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
-	assert.NoFileExists(t, cachePath)
+
 }
 
 func TestRollback(t *testing.T) {
