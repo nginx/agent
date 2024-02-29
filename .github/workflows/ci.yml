@@ -39,6 +39,15 @@ jobs:
                 go-version-file: 'go.mod'
           - name: Run Unit Tests
             run: make unit-test
+          - name: Check Coverage
+            uses: vladopajic/go-test-coverage@dd4b1f21c4e48db0425e1187d2845404b1206919
+            with:
+              config: ./.testcoverage.yaml
+
+              ## when token is not specified (value '') this feature is turned off
+              git-token: ${{ github.ref_name == 'v3' && secrets.GITHUB_TOKEN || '' }}
+              ## name of orphaned branch where badges are stored
+              git-branch: badges
   build-unsigned-snapshot:
       name: Build Unsigned Snapshot
       runs-on: ubuntu-22.04
