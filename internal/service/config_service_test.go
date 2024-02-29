@@ -140,10 +140,10 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	configService := NewConfigService(instance, &config.Config{})
 
-	fakeDataplaneConfig := &configfakes.FakeDataPlaneConfig{}
-	fakeDataplaneConfig.ParseConfigReturns(expectedConfigContext, nil)
+	fakeDataPlaneConfig := &configfakes.FakeDataPlaneConfig{}
+	fakeDataPlaneConfig.ParseConfigReturns(expectedConfigContext, nil)
 
-	configService.configService = fakeDataplaneConfig
+	configService.configService = fakeDataPlaneConfig
 
 	result, err := configService.ParseInstanceConfiguration("123")
 

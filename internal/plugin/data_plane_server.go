@@ -39,7 +39,7 @@ type (
 )
 
 func NewDataPlaneServer(agentConfig *config.Config, logger *slog.Logger) *DataPlaneServer {
-	address := net.JoinHostPort(agentConfig.DataplaneAPI.Host, strconv.Itoa(agentConfig.DataplaneAPI.Port))
+	address := net.JoinHostPort(agentConfig.DataPlaneAPI.Host, strconv.Itoa(agentConfig.DataPlaneAPI.Port))
 
 	return &DataPlaneServer{
 		address:      address,

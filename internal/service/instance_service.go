@@ -20,13 +20,13 @@ type InstanceServiceInterface interface {
 
 type InstanceService struct {
 	instances                 []*instances.Instance
-	dataplaneInstanceServices []instance.DataplaneInstanceService
+	dataPlaneInstanceServices []instance.DataPlaneInstanceService
 }
 
 func NewInstanceService() *InstanceService {
 	return &InstanceService{
 		instances: []*instances.Instance{},
-		dataplaneInstanceServices: []instance.DataplaneInstanceService{
+		dataPlaneInstanceServices: []instance.DataPlaneInstanceService{
 			instance.NewNginx(instance.NginxParameters{}),
 		},
 	}
@@ -35,8 +35,8 @@ func NewInstanceService() *InstanceService {
 func (is *InstanceService) GetInstances(processes []*model.Process) []*instances.Instance {
 	newInstances := []*instances.Instance{}
 
-	for _, dataplaneInstanceService := range is.dataplaneInstanceServices {
-		newInstances = append(newInstances, dataplaneInstanceService.GetInstances(processes)...)
+	for _, dataPlaneInstanceService := range is.dataPlaneInstanceServices {
+		newInstances = append(newInstances, dataPlaneInstanceService.GetInstances(processes)...)
 	}
 
 	is.instances = newInstances
