@@ -42,8 +42,7 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 	var container testcontainers.Container
 	ctx := context.TODO()
 
-	configDir, err := os.MkdirTemp("", "config")
-	require.NoError(tb, err)
+	configDir := tb.TempDir()
 	dir := filepath.Join(configDir, "/etc/nginx/")
 	test.CreateDirWithErrorCheck(tb, dir)
 
