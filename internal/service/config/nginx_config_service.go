@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -151,13 +150,7 @@ func (n *Nginx) Apply() error {
 
 	processID := n.instance.GetMeta().GetNginxMeta().GetProcessId()
 
-	intProcessID, err := strconv.Atoi(processID)
-	if err != nil {
-		slog.Error("Invalid NGINX master process ID", "process_id", processID, "error", err)
-		return err
-	}
-
-	err = n.executor.KillProcess(intProcessID)
+	err := n.executor.KillProcess(processID)
 	if err != nil {
 		return fmt.Errorf("failed to reload NGINX, %w", err)
 	}

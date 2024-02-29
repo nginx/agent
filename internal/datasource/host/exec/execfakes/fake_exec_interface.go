@@ -22,10 +22,10 @@ type FakeExecInterface struct {
 		result1 string
 		result2 error
 	}
-	KillProcessStub        func(int) error
+	KillProcessStub        func(int32) error
 	killProcessMutex       sync.RWMutex
 	killProcessArgsForCall []struct {
-		arg1 int
+		arg1 int32
 	}
 	killProcessReturns struct {
 		result1 error
@@ -115,11 +115,11 @@ func (fake *FakeExecInterface) FindExecutableReturnsOnCall(i int, result1 string
 	}{result1, result2}
 }
 
-func (fake *FakeExecInterface) KillProcess(arg1 int) error {
+func (fake *FakeExecInterface) KillProcess(arg1 int32) error {
 	fake.killProcessMutex.Lock()
 	ret, specificReturn := fake.killProcessReturnsOnCall[len(fake.killProcessArgsForCall)]
 	fake.killProcessArgsForCall = append(fake.killProcessArgsForCall, struct {
-		arg1 int
+		arg1 int32
 	}{arg1})
 	stub := fake.KillProcessStub
 	fakeReturns := fake.killProcessReturns
@@ -140,13 +140,13 @@ func (fake *FakeExecInterface) KillProcessCallCount() int {
 	return len(fake.killProcessArgsForCall)
 }
 
-func (fake *FakeExecInterface) KillProcessCalls(stub func(int) error) {
+func (fake *FakeExecInterface) KillProcessCalls(stub func(int32) error) {
 	fake.killProcessMutex.Lock()
 	defer fake.killProcessMutex.Unlock()
 	fake.KillProcessStub = stub
 }
 
-func (fake *FakeExecInterface) KillProcessArgsForCall(i int) int {
+func (fake *FakeExecInterface) KillProcessArgsForCall(i int) int32 {
 	fake.killProcessMutex.RLock()
 	defer fake.killProcessMutex.RUnlock()
 	argsForCall := fake.killProcessArgsForCall[i]

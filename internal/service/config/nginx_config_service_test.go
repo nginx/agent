@@ -169,7 +169,7 @@ func TestNginx_Apply(t *testing.T) {
 					Meta: &instances.Meta_NginxMeta{
 						NginxMeta: &instances.NginxMeta{
 							ExePath:   "nginx",
-							ProcessId: "1",
+							ProcessId: 1,
 						},
 					},
 				},
