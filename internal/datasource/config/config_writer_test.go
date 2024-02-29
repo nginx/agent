@@ -128,7 +128,6 @@ func TestWriteConfig(t *testing.T) {
 	helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 	assert.NoFileExists(t, testConf.Name())
 	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
-
 }
 
 func TestRollback(t *testing.T) {
