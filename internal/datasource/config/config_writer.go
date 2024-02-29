@@ -82,7 +82,7 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	tenantID, instanceID string,
 ) (skippedFiles CacheContent, err error) {
-	slog.Info("Writing file")
+	slog.Debug("Write nginx config", "files_url", filesURL)
 	currentFileCache := make(CacheContent)
 	skippedFiles = CacheContent{}
 

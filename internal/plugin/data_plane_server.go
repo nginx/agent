@@ -77,7 +77,7 @@ func (dps *DataPlaneServer) Process(msg *bus.Message) {
 func (dps *DataPlaneServer) updateEvents(configStatus *instances.ConfigurationStatus) {
 	instanceID := configStatus.GetInstanceId()
 	if configStatus.GetStatus() == instances.Status_IN_PROGRESS {
-		dps.configEvents[instanceID] = nil
+		dps.configEvents[instanceID] = make([]*instances.ConfigurationStatus, 0)
 		dps.configEvents[instanceID] = append(dps.configEvents[instanceID], configStatus)
 	} else {
 		dps.configEvents[instanceID] = append(dps.configEvents[instanceID], configStatus)
@@ -181,7 +181,7 @@ func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, ins
 	if status != nil {
 		slog.Info("status", "", status)
 		responseBody := &dataplane.ConfigurationStatus{
-			InstanceID:    &instanceID,
+			InstanceId:    &instanceID,
 			CorrelationId: &status[0].CorrelationId,
 			Events:        convertConfigStatus(status),
 		}

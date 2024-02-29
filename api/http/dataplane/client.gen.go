@@ -54,7 +54,7 @@ type Configuration struct {
 type ConfigurationStatus struct {
 	CorrelationId *string   `json:"correlationId,omitempty"`
 	Events        *[]Events `json:"events,omitempty"`
-	InstanceID    *string   `json:"instanceID,omitempty"`
+	InstanceId    *string   `json:"instanceId,omitempty"`
 }
 
 // CorrelationId defines model for CorrelationId.
