@@ -86,7 +86,10 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	currentFileCache := make(CacheContent)
 	skippedFiles = CacheContent{}
 
-	cacheContent, _ := cw.fileCache.ReadFileCache()
+	cacheContent, err := cw.fileCache.ReadFileCache()
+	if err != nil {
+		return nil, err
+	}
 
 	filesMetaData, err := cw.getFileMetaData(ctx, filesURL, tenantID, instanceID)
 	if err != nil {
