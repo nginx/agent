@@ -29,7 +29,7 @@ func TestWriteConfig(t *testing.T) {
 	tempDir := t.TempDir()
 	tenantID, instanceID := helpers.CreateTestIDs(t)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
-	allowedDirs := []string{"./", "/var/"}
+	allowedDirs := []string{"./", "/var/", "/tmp/"}
 	agentconfig := config2.Config{
 		AllowedDirectories: allowedDirs,
 	}
