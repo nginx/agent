@@ -70,7 +70,7 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 			continue
 		}
 
-		_, err := cw.updateFile(ctx, value, filesURL, tenantID, instanceID)
+		err := cw.updateFile(ctx, value, filesURL, tenantID, instanceID)
 		if err != nil {
 			return err
 		}
@@ -95,25 +95,20 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 
 	for _, fileData := range filesMetaData.GetFiles() {
 		if !doesFileRequireUpdate(cacheContent, fileData) {
-			slog.Info("Skipping file as latest version is already on disk", "file_path", fileData.GetPath())
+			slog.Debug("Skipping file as latest version is already on disk", "file_path", fileData.GetPath())
 			currentFileCache[fileData.GetPath()] = cacheContent[fileData.GetPath()]
 			skippedFiles[fileData.GetPath()] = fileData
 
 			continue
 		}
-		slog.Info("Updating file, latest version not on disk", "file_path", fileData.GetPath())
-		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID)
+		slog.Debug("Updating file, latest version not on disk", "file_path", fileData.GetPath())
+		updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID)
 		if updateErr != nil {
-			slog.Info("Update Error", "err", updateErr)
-			skippedFiles[fileData.GetPath()] = fileData
-		} else {
-			currentFileCache[fileData.GetPath()] = file
+			return nil, updateErr
 		}
 	}
 
 	cw.currentFileCache = currentFileCache
-
-	slog.Info("Skipped Files in Write", "", skippedFiles)
 
 	return skippedFiles, err
 }
@@ -135,27 +130,22 @@ func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID,
 
 func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File,
 	filesURL, tenantID, instanceID string,
-) (*instances.File, error) {
+) error {
 	if !cw.isFilePathValid(fileData.GetPath()) {
-		slog.Info("Invalid File Path, Skipping file")
-		return nil, fmt.Errorf("invalid file path: %s", fileData.GetPath())
+		return fmt.Errorf("invalid file path: %s", fileData.GetPath())
 	}
 	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID, instanceID)
 	if fetchErr != nil {
-		return nil, fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
+		return fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
 	}
 
 	fetchErr = writeFile(fileDownloadResponse.GetFileContent(), fileDownloadResponse.GetFilePath())
 
 	if fetchErr != nil {
-		return nil, fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.GetFilePath(), fetchErr)
+		return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.GetFilePath(), fetchErr)
 	}
 
-	return &instances.File{
-		Version:      fileData.GetVersion(),
-		Path:         fileData.GetPath(),
-		LastModified: fileData.GetLastModified(),
-	}, nil
+	return nil
 }
 
 func (cw *ConfigWriter) Complete() error {
