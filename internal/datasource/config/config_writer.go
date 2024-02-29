@@ -104,7 +104,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 		slog.Info("Updating file, latest version not on disk", "file_path", fileData.GetPath())
 		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID)
 		if updateErr != nil {
-			slog.Debug("Update Error", "err", updateErr)
+			slog.Info("Update Error", "err", updateErr)
 			skippedFiles[fileData.GetPath()] = fileData
 		} else {
 			currentFileCache[fileData.GetPath()] = file
@@ -137,7 +137,7 @@ func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File
 	filesURL, tenantID, instanceID string,
 ) (*instances.File, error) {
 	if !cw.isFilePathValid(fileData.GetPath()) {
-		slog.Debug("Invalid File Path, Skipping file")
+		slog.Info("Invalid File Path, Skipping file")
 		return nil, fmt.Errorf("invalid file path: %s", fileData.GetPath())
 	}
 	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID, instanceID)
