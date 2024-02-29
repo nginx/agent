@@ -29,7 +29,7 @@ func TestWriteConfig(t *testing.T) {
 	tempDir := t.TempDir()
 	tenantID, instanceID := helpers.CreateTestIDs(t)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
-	allowedDirs := []string{"./", "/var/", "/tmp/"}
+	allowedDirs := []string{tempDir}
 	agentconfig := config2.Config{
 		AllowedDirectories: allowedDirs,
 	}
@@ -136,7 +136,7 @@ func TestRollback(t *testing.T) {
 	ctx := context.TODO()
 	tempDir := t.TempDir()
 	tenantID, instanceID := helpers.CreateTestIDs(t)
-	allowedDirs := []string{"./", "/var/"}
+	allowedDirs := []string{tempDir}
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
 	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
@@ -225,7 +225,7 @@ func TestComplete(t *testing.T) {
 	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
 	cachePath := cacheFile.Name()
 
-	allowedDirs := []string{"./"}
+	allowedDirs := []string{tempDir}
 
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 
