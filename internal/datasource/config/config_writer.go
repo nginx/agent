@@ -114,6 +114,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	cw.currentFileCache = currentFileCache
 
 	slog.Info("Skipped Files in Write", "", skippedFiles)
+
 	return skippedFiles, err
 }
 
