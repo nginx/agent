@@ -35,25 +35,20 @@ const (
 )
 
 func TestNginx_ParseConfig(t *testing.T) {
-	file, err := os.CreateTemp("./", "nginx-parse-config.conf")
+	file := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "nginx-parse-config.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
-	require.NoError(t, err)
 
-	errorLog, err := os.CreateTemp("./", "error.log")
+	errorLog := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "error.log")
 	defer helpers.RemoveFileWithErrorCheck(t, errorLog.Name())
-	require.NoError(t, err)
 
-	accessLog, err := os.CreateTemp("./", "access.log")
+	accessLog := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "access.log")
 	defer helpers.RemoveFileWithErrorCheck(t, accessLog.Name())
-	require.NoError(t, err)
 
-	combinedAccessLog, err := os.CreateTemp("./", "combined_access.log")
+	combinedAccessLog := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "combined_access.log")
 	defer helpers.RemoveFileWithErrorCheck(t, combinedAccessLog.Name())
-	require.NoError(t, err)
 
-	ltsvAccessLog, err := os.CreateTemp("./", "ltsv_access.log")
+	ltsvAccessLog := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "ltsv_access.log")
 	defer helpers.RemoveFileWithErrorCheck(t, ltsvAccessLog.Name())
-	require.NoError(t, err)
 
 	content, err := testconfig.GetNginxConfigWithMultipleAccessLogs(
 		errorLog.Name(),
@@ -146,9 +141,8 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 }
 
 func TestNginx_Apply(t *testing.T) {
-	errorLogFile, err := os.CreateTemp(".", "error.log")
-	require.NoError(t, err)
-	defer os.Remove(errorLogFile.Name())
+	errorLogFile := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "error.log")
+	defer helpers.RemoveFileWithErrorCheck(t, errorLogFile.Name())
 
 	tests := []struct {
 		name             string
@@ -263,7 +257,7 @@ func TestNginx_Apply(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 
 			if test.errorLogContents != "" {
-				_, err = errorLogFile.WriteString(test.errorLogContents)
+				_, err := errorLogFile.WriteString(test.errorLogContents)
 				require.NoError(t, err, "Error writing data to error log file")
 			}
 
