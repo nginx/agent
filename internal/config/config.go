@@ -116,11 +116,11 @@ func registerFlags() {
 		time.Minute,
 		"How often the NGINX Agent will check for process changes.",
 	)
-	fs.String(DataPlaneAPIHostConfigKey, "", "The host used by the DataPlane API.")
+	fs.String(DataPlaneAPIHostConfigKey, "", "The host used by the data plane API.")
 	fs.Int(DataPlaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
 	fs.Duration(ClientTimeoutConfigKey, time.Minute, "Client timeout")
 	fs.String(ConfigDirectoriesConfigKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules",
-		"Defines the paths that you want to grant nginx-agent read/write access to."+
+		"Defines the paths that you want to grant NGINX Agent read/write access to."+
 			" This key is formatted as a string and follows Unix PATH format")
 
 	fs.SetNormalizeFunc(normalizeFunc)
