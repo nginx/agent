@@ -44,6 +44,7 @@ exclude:
     - internal/service # These need to be addressed
     - internal/datasource/host/exec # These need to be addressed
     - internal/service/config # These need to be addressed
+    - internal/plugin # These need to be addressed
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by

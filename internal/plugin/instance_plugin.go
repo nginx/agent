@@ -27,11 +27,12 @@ func NewInstance() *Instance {
 	}
 }
 
-func (i *Instance) Init(messagePipe bus.MessagePipeInterface) {
+func (i *Instance) Init(messagePipe bus.MessagePipeInterface) error {
 	i.messagePipe = messagePipe
+	return nil
 }
 
-func (*Instance) Close() {}
+func (*Instance) Close() error { return nil }
 
 func (*Instance) Info() *bus.Info {
 	return &bus.Info{

@@ -33,11 +33,12 @@ func NewConfig(agentConfig *config.Config) *Config {
 	}
 }
 
-func (c *Config) Init(messagePipe bus.MessagePipeInterface) {
+func (c *Config) Init(messagePipe bus.MessagePipeInterface) error {
 	c.messagePipe = messagePipe
+	return nil
 }
 
-func (*Config) Close() {}
+func (*Config) Close() error { return nil }
 
 func (*Config) Info() *bus.Info {
 	return &bus.Info{

@@ -19,20 +19,12 @@ import (
 )
 
 const (
-	ConfigFileName                             = "nginx-agent.conf"
-	EnvPrefix                                  = "NGINX_AGENT"
-	ConfigPathKey                              = "path"
-	VersionConfigKey                           = "version"
-	LogLevelConfigKey                          = "log_level"
-	LogPathConfigKey                           = "log_path"
-	ProcessMonitorMonitoringFrequencyConfigKey = "process_monitor_monitoring_frequency"
-	DataPlaneAPIHostConfigKey                  = "data_plane_api_host"
-	DataPlaneAPIPortConfigKey                  = "data_plane_api_port"
-	ClientTimeoutConfigKey                     = "client_timeout"
-	ConfigDirectoriesConfigKey                 = "config_dirs"
+	ConfigFileName = "nginx-agent.conf"
+	EnvPrefix      = "NGINX_AGENT"
+	keyDelimiter   = "_"
 )
 
-var viperInstance = viper.NewWithOptions(viper.KeyDelimiter("_"))
+var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
 
 func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 	RootCommand.Run = r
@@ -66,13 +58,14 @@ func RegisterConfigFile() error {
 
 func GetConfig() *Config {
 	config := &Config{
-		Version:            viperInstance.GetString(VersionConfigKey),
+		Version:            viperInstance.GetString(VersionKey),
 		Log:                getLog(),
 		ProcessMonitor:     getProcessMonitor(),
 		DataPlaneAPI:       getDataPlaneAPI(),
 		Client:             getClient(),
 		ConfigDir:          getConfigDir(),
 		AllowedDirectories: []string{},
+		Metrics:            getMetrics(),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDir, ":") {
@@ -89,7 +82,7 @@ func GetConfig() *Config {
 
 func setVersion(version, commit string) {
 	RootCommand.Version = version + "-" + commit
-	viperInstance.SetDefault(VersionConfigKey, version)
+	viperInstance.SetDefault(VersionKey, version)
 }
 
 func registerFlags() {
@@ -99,29 +92,63 @@ func registerFlags() {
 
 	fs := RootCommand.Flags()
 	fs.String(
-		LogLevelConfigKey,
+		LogLevelKey,
 		"info",
 		`The desired verbosity level for logging messages from nginx-agent. 
 		Available options, in order of severity from highest to lowest, are: 
 		panic, fatal, error, info, debug, and trace.`,
 	)
 	fs.String(
-		LogPathConfigKey,
+		LogPathKey,
 		"",
 		`The path to output log messages to. 
 		If the default path doesn't exist, log messages are output to stdout/stderr.`,
 	)
 	fs.Duration(
-		ProcessMonitorMonitoringFrequencyConfigKey,
+		ProcessMonitorMonitoringFrequencyKey,
 		time.Minute,
 		"How often the NGINX Agent will check for process changes.",
 	)
-	fs.String(DataPlaneAPIHostConfigKey, "", "The host used by the data plane API.")
-	fs.Int(DataPlaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
-	fs.Duration(ClientTimeoutConfigKey, time.Minute, "Client timeout")
-	fs.String(ConfigDirectoriesConfigKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules",
-		"Defines the paths that you want to grant NGINX Agent read/write access to."+
+	fs.String(DataPlaneAPIHostKey, "", "The host used by the Dataplane API.")
+	fs.Int(DataPlaneAPIPortKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
+	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")
+	fs.String(ConfigDirectoriesKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules",
+		"Defines the paths that you want to grant nginx-agent read/write access to."+
 			" This key is formatted as a string and follows Unix PATH format")
+	fs.Duration(
+		MetricsProduceIntervalKey, DefMetricsProduceInterval,
+		"The interval for how often NGINX Agent queries metrics from its sources.",
+	)
+	fs.Int(
+		OTelExporterBufferLengthKey, DefOTelExporterBufferLength,
+		"The length of the OTel Exporter's buffer for metrics.",
+	)
+	fs.Int(
+		OTelExporterExportRetryCountKey, DefOTelExporterExportRetryCount,
+		"How many times an OTel Export is retried in the event of failure.",
+	)
+	fs.Duration(
+		OTelExporterExportIntervalKey, DefOTelExporterExportInterval,
+		"The interval for how often NGINX Agent attempts to send the contents of its OTel Exporter's buffer.",
+	)
+	fs.String(
+		OTelGRPCTargetKey, "", "The target URI for a gRPC OTel Collector.",
+	)
+	fs.Duration(
+		OTelGRPCConnTimeoutKey, DefOTelGRPCConnTimeout,
+		"The connection timeout for the gRPC connection to the OTel collector.",
+	)
+	fs.Duration(
+		OTelGRPCMinConnTimeoutKey, DefOTelGRPCMinConnTimeout,
+		"The minimum connection timeout for the gRPC connection to the OTel collector.",
+	)
+	fs.Duration(
+		OTelGRPCBackoffDelayKey, DefOTelGRPCMBackoffDelay,
+		"The maximum delay on the gRPC backoff strategy for retrying a failed connection.",
+	)
+	fs.StringArray(
+		PrometheusTargetsKey, []string{}, "The target URI(s) of Prometheus endpoint(s) for metrics collection.",
+	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -185,30 +212,70 @@ func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 
 func getLog() Log {
 	return Log{
-		Level: viperInstance.GetString(LogLevelConfigKey),
-		Path:  viperInstance.GetString(LogPathConfigKey),
+		Level: viperInstance.GetString(LogLevelKey),
+		Path:  viperInstance.GetString(LogPathKey),
 	}
 }
 
 func getProcessMonitor() ProcessMonitor {
 	return ProcessMonitor{
-		MonitoringFrequency: viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyConfigKey),
+		MonitoringFrequency: viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyKey),
 	}
 }
 
 func getDataPlaneAPI() DataPlaneAPI {
 	return DataPlaneAPI{
-		Host: viperInstance.GetString(DataPlaneAPIHostConfigKey),
-		Port: viperInstance.GetInt(DataPlaneAPIPortConfigKey),
+		Host: viperInstance.GetString(DataPlaneAPIHostKey),
+		Port: viperInstance.GetInt(DataPlaneAPIPortKey),
 	}
 }
 
 func getClient() Client {
 	return Client{
-		Timeout: viperInstance.GetDuration(ClientTimeoutConfigKey),
+		Timeout: viperInstance.GetDuration(ClientTimeoutKey),
 	}
 }
 
 func getConfigDir() string {
-	return viperInstance.GetString(ConfigDirectoriesConfigKey)
+	return viperInstance.GetString(ConfigDirectoriesKey)
+}
+
+func getMetrics() *Metrics {
+	if !viperInstance.IsSet(MetricsRootKey) {
+		return nil
+	}
+
+	m := &Metrics{
+		ProduceInterval:  viperInstance.GetDuration(MetricsProduceIntervalKey),
+		OTelExporter:     nil,
+		PrometheusSource: nil,
+	}
+
+	if viperInstance.IsSet(MetricsOTelExporterKey) && viperInstance.IsSet(OTelGRPCKey) {
+		// For some reason viperInstance.UnmarshalKey did not work here (maybe due to the nested structs?).
+		otelExp := OTelExporter{
+			BufferLength:     viperInstance.GetInt(OTelExporterBufferLengthKey),
+			ExportRetryCount: viperInstance.GetInt(OTelExporterExportRetryCountKey),
+			ExportInterval:   viperInstance.GetDuration(OTelExporterExportIntervalKey),
+			GRPC: &GRPC{
+				Target:         viperInstance.GetString(OTelGRPCTargetKey),
+				ConnTimeout:    viperInstance.GetDuration(OTelGRPCConnTimeoutKey),
+				MinConnTimeout: viperInstance.GetDuration(OTelGRPCMinConnTimeoutKey),
+				BackoffDelay:   viperInstance.GetDuration(OTelGRPCBackoffDelayKey),
+			},
+		}
+		m.OTelExporter = &otelExp
+	}
+
+	if viperInstance.IsSet(PrometheusSrcKey) {
+		var prometheusSrc PrometheusSource
+		err := viperInstance.UnmarshalKey(PrometheusSrcKey, &prometheusSrc)
+		if err == nil {
+			m.PrometheusSource = &prometheusSrc
+		} else {
+			slog.Error("metrics configuration: no Prometheus source configured", "error", err)
+		}
+	}
+
+	return m
 }

@@ -48,12 +48,14 @@ func NewDataPlaneServer(agentConfig *config.Config, logger *slog.Logger) *DataPl
 	}
 }
 
-func (dps *DataPlaneServer) Init(messagePipe bus.MessagePipeInterface) {
+func (dps *DataPlaneServer) Init(messagePipe bus.MessagePipeInterface) error {
 	dps.messagePipe = messagePipe
 	go dps.run(messagePipe.Context())
+
+	return nil
 }
 
-func (*DataPlaneServer) Close() {}
+func (*DataPlaneServer) Close() error { return nil }
 
 func (*DataPlaneServer) Info() *bus.Info {
 	return &bus.Info{

@@ -23,7 +23,8 @@ import (
 
 func TestConfig_Init(t *testing.T) {
 	configPlugin := NewConfig(&config.Config{})
-	configPlugin.Init(&bus.MessagePipe{})
+	err := configPlugin.Init(&bus.MessagePipe{})
+	require.NoError(t, err)
 
 	assert.NotNil(t, configPlugin.messagePipe)
 }

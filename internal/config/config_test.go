@@ -2,7 +2,6 @@
 //
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
-
 package config
 
 import (
@@ -20,12 +19,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	viperKeyDeliDelimiter = "_"
-)
-
 func TestRegisterConfigFile(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
 	file, err := os.Create("nginx-agent.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
@@ -40,7 +35,7 @@ func TestRegisterConfigFile(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
 	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/usr/share/nginx/modules"}
 	require.NoError(t, err)
@@ -58,17 +53,34 @@ func TestGetConfig(t *testing.T) {
 
 	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules", result.ConfigDir)
 	assert.Equal(t, allowedDir, result.AllowedDirectories)
+
+	assert.NotNil(t, result.Metrics)
+	assert.Equal(t, 20*time.Second, result.Metrics.ProduceInterval)
+	assert.NotNil(t, result.Metrics.OTelExporter)
+	assert.NotNil(t, result.Metrics.OTelExporter.GRPC)
+	assert.NotNil(t, result.Metrics.PrometheusSource)
+	// OTel exporter settings
+	assert.Equal(t, 20, result.Metrics.OTelExporter.BufferLength)
+	assert.Equal(t, 3, result.Metrics.OTelExporter.ExportRetryCount)
+	assert.Equal(t, 20*time.Second, result.Metrics.OTelExporter.ExportInterval)
+	// gRPC settings
+	assert.Equal(t, "http://localhost:4317", result.Metrics.OTelExporter.GRPC.Target)
+	assert.Equal(t, 10*time.Second, result.Metrics.OTelExporter.GRPC.ConnTimeout)
+	assert.Equal(t, 5*time.Second, result.Metrics.OTelExporter.GRPC.MinConnTimeout)
+	assert.Equal(t, 240*time.Second, result.Metrics.OTelExporter.GRPC.BackoffDelay)
+	// Prometheus source settings
+	assert.Equal(t, []string{"http://localhost:9090"}, result.Metrics.PrometheusSource.Endpoints)
 }
 
 func TestSetVersion(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
 	setVersion("v1.2.3", "asdf1234")
 
-	assert.Equal(t, "v1.2.3", viperInstance.GetString(VersionConfigKey))
+	assert.Equal(t, "v1.2.3", viperInstance.GetString(VersionKey))
 }
 
 func TestRegisterFlags(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
 	t.Setenv("NGINX_AGENT_LOG_LEVEL", "warn")
 	t.Setenv("NGINX_AGENT_LOG_PATH", "/var/log/test/agent.log")
 	t.Setenv("NGINX_AGENT_PROCESS_MONITOR_MONITORING_FREQUENCY", "10s")
@@ -77,16 +89,16 @@ func TestRegisterFlags(t *testing.T) {
 	t.Setenv("NGINX_AGENT_CLIENT_TIMEOUT", "10s")
 	registerFlags()
 
-	assert.Equal(t, "warn", viperInstance.GetString(LogLevelConfigKey))
-	assert.Equal(t, "/var/log/test/agent.log", viperInstance.GetString(LogPathConfigKey))
-	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyConfigKey))
-	assert.Equal(t, "example.com", viperInstance.GetString(DataPlaneAPIHostConfigKey))
-	assert.Equal(t, 9090, viperInstance.GetInt(DataPlaneAPIPortConfigKey))
-	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutConfigKey))
+	assert.Equal(t, "warn", viperInstance.GetString(LogLevelKey))
+	assert.Equal(t, "/var/log/test/agent.log", viperInstance.GetString(LogPathKey))
+	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyKey))
+	assert.Equal(t, "example.com", viperInstance.GetString(DataPlaneAPIHostKey))
+	assert.Equal(t, 9090, viperInstance.GetInt(DataPlaneAPIPortKey))
+	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutKey))
 }
 
 func TestSeekFileInPaths(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
 	result, err := seekFileInPaths("nginx-agent.conf", []string{"./", "./testdata"}...)
 
 	require.NoError(t, err)
@@ -97,7 +109,7 @@ func TestSeekFileInPaths(t *testing.T) {
 }
 
 func TestGetConfigFilePaths(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
 	currentDirectory, err := os.Getwd()
 	require.NoError(t, err)
 
@@ -109,35 +121,52 @@ func TestGetConfigFilePaths(t *testing.T) {
 }
 
 func TestLoadPropertiesFromFile(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
 	require.NoError(t, err)
 
-	assert.Equal(t, "debug", viperInstance.GetString(LogLevelConfigKey))
-	assert.Equal(t, "./", viperInstance.GetString(LogPathConfigKey))
+	assert.Equal(t, "debug", viperInstance.GetString(LogLevelKey))
+	assert.Equal(t, "./", viperInstance.GetString(LogPathKey))
 
-	assert.Equal(t, "127.0.0.1", viperInstance.GetString(DataPlaneAPIHostConfigKey))
-	assert.Equal(t, 8038, viperInstance.GetInt(DataPlaneAPIPortConfigKey))
+	assert.Equal(t, "127.0.0.1", viperInstance.GetString(DataPlaneAPIHostKey))
+	assert.Equal(t, 8038, viperInstance.GetInt(DataPlaneAPIPortKey))
 
-	assert.Equal(t, 30*time.Second, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyConfigKey))
+	assert.Equal(t, 30*time.Second, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyKey))
 
-	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutConfigKey))
+	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutKey))
+
+	assert.True(t, viperInstance.IsSet(MetricsRootKey))
+	assert.True(t, viperInstance.IsSet(MetricsOTelExporterKey))
+	assert.True(t, viperInstance.IsSet(OTelGRPCKey))
+	assert.True(t, viperInstance.IsSet(PrometheusSrcKey))
+	assert.Equal(t, 20*time.Second, viperInstance.GetDuration(MetricsProduceIntervalKey))
+	// OTel exporter settings
+	assert.Equal(t, 20, viperInstance.GetInt(OTelExporterBufferLengthKey))
+	assert.Equal(t, 3, viperInstance.GetInt(OTelExporterExportRetryCountKey))
+	assert.Equal(t, 20*time.Second, viperInstance.GetDuration(OTelExporterExportIntervalKey))
+	// gRPC settings
+	assert.Equal(t, "http://localhost:4317", viperInstance.GetString(OTelGRPCTargetKey))
+	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(OTelGRPCConnTimeoutKey))
+	assert.Equal(t, 5*time.Second, viperInstance.GetDuration(OTelGRPCMinConnTimeoutKey))
+	assert.Equal(t, 240*time.Second, viperInstance.GetDuration(OTelGRPCBackoffDelayKey))
+	// Prometheus source settings
+	assert.Equal(t, []string{"http://localhost:9090"}, viperInstance.GetStringSlice(PrometheusTargetsKey))
 
 	err = loadPropertiesFromFile("./testdata/unknown.conf")
 	require.Error(t, err)
 }
 
 func TestNormalizeFunc(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
 	var expected pflag.NormalizedName = "test-flag-name"
 	result := normalizeFunc(&pflag.FlagSet{}, "test_flag.name")
 	assert.Equal(t, expected, result)
 }
 
 func TestGetLog(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
-	viperInstance.Set(LogLevelConfigKey, "error")
-	viperInstance.Set(LogPathConfigKey, "/var/log/test/test.log")
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance.Set(LogLevelKey, "error")
+	viperInstance.Set(LogPathKey, "/var/log/test/test.log")
 
 	result := getLog()
 	assert.Equal(t, "error", result.Level)
@@ -145,17 +174,17 @@ func TestGetLog(t *testing.T) {
 }
 
 func TestGetProcessMonitor(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
-	viperInstance.Set(ProcessMonitorMonitoringFrequencyConfigKey, time.Hour)
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance.Set(ProcessMonitorMonitoringFrequencyKey, time.Hour)
 
 	result := getProcessMonitor()
 	assert.Equal(t, time.Hour, result.MonitoringFrequency)
 }
 
 func TestGetDataPlaneAPI(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
-	viperInstance.Set(DataPlaneAPIHostConfigKey, "testhost")
-	viperInstance.Set(DataPlaneAPIPortConfigKey, 9091)
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance.Set(DataPlaneAPIHostKey, "testhost")
+	viperInstance.Set(DataPlaneAPIPortKey, 9091)
 
 	result := getDataPlaneAPI()
 	assert.Equal(t, "testhost", result.Host)
@@ -163,17 +192,85 @@ func TestGetDataPlaneAPI(t *testing.T) {
 }
 
 func TestGetClient(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
-	viperInstance.Set(ClientTimeoutConfigKey, time.Hour)
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance.Set(ClientTimeoutKey, time.Hour)
 
 	result := getClient()
 	assert.Equal(t, time.Hour, result.Timeout)
 }
 
 func TestGetAllowedDirectories(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
-	viperInstance.Set(ConfigDirectoriesConfigKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules")
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance.Set(ConfigDirectoriesKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules")
 
 	result := getConfigDir()
 	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules", result)
+}
+
+func TestMetrics(t *testing.T) {
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	expected := Metrics{
+		ProduceInterval: 5 * time.Second,
+		OTelExporter: &OTelExporter{
+			BufferLength:     55,
+			ExportRetryCount: 10,
+			ExportInterval:   30 * time.Second,
+			GRPC: &GRPC{
+				Target:         "dummy-target",
+				ConnTimeout:    15 * time.Second,
+				MinConnTimeout: 500 * time.Millisecond,
+				BackoffDelay:   1 * time.Hour,
+			},
+		},
+		PrometheusSource: &PrometheusSource{
+			Endpoints: []string{
+				"https://example.com",
+				"https://acme.com",
+			},
+		},
+	}
+	viperInstance.Set(MetricsProduceIntervalKey, expected.ProduceInterval)
+	// OTel Exporter
+	viperInstance.Set(OTelExporterBufferLengthKey, expected.OTelExporter.BufferLength)
+	viperInstance.Set(OTelExporterExportRetryCountKey, expected.OTelExporter.ExportRetryCount)
+	viperInstance.Set(OTelExporterExportIntervalKey, expected.OTelExporter.ExportInterval)
+	// OTel gRPC conf
+	viperInstance.Set(OTelGRPCTargetKey, expected.OTelExporter.GRPC.Target)
+	viperInstance.Set(OTelGRPCConnTimeoutKey, expected.OTelExporter.GRPC.ConnTimeout)
+	viperInstance.Set(OTelGRPCMinConnTimeoutKey, expected.OTelExporter.GRPC.MinConnTimeout)
+	viperInstance.Set(OTelGRPCBackoffDelayKey, expected.OTelExporter.GRPC.BackoffDelay)
+	// Prometheus endpoint
+	viperInstance.Set(PrometheusTargetsKey, expected.PrometheusSource.Endpoints)
+
+	assert.True(t, viperInstance.IsSet(MetricsRootKey))
+	assert.True(t, viperInstance.IsSet(MetricsOTelExporterKey))
+	assert.True(t, viperInstance.IsSet(OTelGRPCKey))
+	assert.True(t, viperInstance.IsSet(PrometheusSrcKey))
+
+	result := getMetrics()
+	assert.Equal(t, expected.ProduceInterval, result.ProduceInterval)
+	assert.Equal(t, expected.PrometheusSource, result.PrometheusSource)
+	assert.Equal(t, expected.OTelExporter, result.OTelExporter)
+}
+
+func TestMissingOTelExporter(t *testing.T) {
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+
+	expInterval := 5 * time.Second
+	expPrometheusEndpoints := []string{
+		"https://example.com",
+		"https://acme.com",
+	}
+	viperInstance.Set(MetricsProduceIntervalKey, expInterval)
+	viperInstance.Set(PrometheusTargetsKey, expPrometheusEndpoints)
+
+	assert.True(t, viperInstance.IsSet(MetricsRootKey))
+	assert.False(t, viperInstance.IsSet(MetricsOTelExporterKey))
+	assert.False(t, viperInstance.IsSet(OTelGRPCKey))
+	assert.True(t, viperInstance.IsSet(PrometheusSrcKey))
+
+	result := getMetrics()
+	assert.Equal(t, expInterval, result.ProduceInterval)
+	assert.Nil(t, result.OTelExporter)
+	assert.Equal(t, expPrometheusEndpoints, result.PrometheusSource.Endpoints)
 }

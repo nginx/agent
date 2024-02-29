@@ -13,12 +13,21 @@ import (
 )
 
 func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin {
-	plugins := []bus.Plugin{}
+	plugins := make([]bus.Plugin, 0)
 
 	processMonitor := NewProcessMonitor(agentConfig)
 	instanceMonitor := NewInstance()
 
 	configPlugin := NewConfig(agentConfig)
+
+	if agentConfig.Metrics != nil {
+		metrics, err := NewMetrics(*agentConfig)
+		if err != nil {
+			slogger.Error("Failed to initialize metrics plugin", "error", err)
+		} else {
+			plugins = append(plugins, metrics)
+		}
+	}
 
 	plugins = append(plugins, processMonitor, instanceMonitor, configPlugin)
 
