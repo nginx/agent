@@ -27,6 +27,7 @@ var (
 )
 
 type Info struct {
+	ProcessID     int32
 	Version       string
 	PlusVersion   string
 	Prefix        string
@@ -107,6 +108,7 @@ func (n *Nginx) getInfo(nginxProcess *model.Process) (*Info, error) {
 	nginxInfo = parseNginxVersionCommandOutput(outputBuffer)
 
 	nginxInfo.ExePath = exePath
+	nginxInfo.ProcessID = nginxProcess.Pid
 
 	return nginxInfo, err
 }
@@ -129,6 +131,7 @@ func convertInfoToProcess(nginxInfo Info) *instances.Instance {
 				NginxMeta: &instances.NginxMeta{
 					ConfigPath: nginxInfo.ConfPath,
 					ExePath:    nginxInfo.ExePath,
+					ProcessId:  nginxInfo.ProcessID,
 				},
 			},
 		},

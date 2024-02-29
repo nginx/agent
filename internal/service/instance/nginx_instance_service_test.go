@@ -70,14 +70,14 @@ func TestGetInstances(t *testing.T) {
 	processes := []*model.Process{
 		{
 			Pid:  123,
-			Ppid: 456,
+			Ppid: 789,
 			Name: "nginx",
 			Cmd:  "nginx: worker process",
 			Exe:  exePath,
 		},
 		{
 			Pid:  789,
-			Ppid: 123,
+			Ppid: 458,
 			Name: "nginx",
 			Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 			Exe:  exePath,
@@ -114,6 +114,7 @@ func TestGetInstances(t *testing.T) {
 							NginxMeta: &instances.NginxMeta{
 								ConfigPath: "/usr/local/etc/nginx/nginx.conf",
 								ExePath:    exePath,
+								ProcessId:  789,
 							},
 						},
 					},
@@ -137,6 +138,7 @@ func TestGetInstances(t *testing.T) {
 							NginxMeta: &instances.NginxMeta{
 								ConfigPath: "/etc/nginx/nginx.conf",
 								ExePath:    exePath,
+								ProcessId:  789,
 							},
 						},
 					},
