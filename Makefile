@@ -114,6 +114,7 @@ build: ## Build agent executable
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} ${GOBUILD} -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent 
 
 deps: ## Update dependencies in vendor folders
+	cd sdk && make generate
 	for dir in ${VENDOR_LOCATIONS}; do \
 		(cd "$$dir" && echo "Running vendor commands on $$dir" && go mod tidy && GOWORK=off go mod vendor && cd "$$OLDPWD" || exit) \
 	done
@@ -129,7 +130,7 @@ lint: ## Run linter
 	cd sdk && make lint
 
 format: ## Format code
-	GOWORK=off $(GORUN) ${GOFUMPT} -l -w .
+	$(GORUN) ${GOFUMPT} -l -w .
 	buf format -w ./sdk/proto/
 
 generate-swagger: ## Generates swagger.json from source code
