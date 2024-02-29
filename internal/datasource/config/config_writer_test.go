@@ -7,6 +7,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"reflect"
@@ -108,6 +109,7 @@ func TestWriteConfig(t *testing.T) {
 
 			skippedFiles, err := configWriter.Write(ctx, filesURL, tenantID.String(), instanceID.String())
 			require.NoError(t, err)
+			slog.Info("Skipped Files: ", "", skippedFiles)
 			assert.Len(t, skippedFiles, test.skipped)
 
 			res := reflect.DeepEqual(cacheContent, configWriter.currentFileCache)
