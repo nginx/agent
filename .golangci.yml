@@ -147,8 +147,6 @@ linters-settings:
     max: 3
     # Ignore when constant is not used as function argument. Default: true
     ignore-calls: true
-    # Exclude strings matching the given regular expression. Default: ""
-    ignore-strings: ""
   gocritic:
     # Which checks should be enabled; can't be combined with 'disabled-checks'.
     # See https://go-critic.github.io/overview#checks-overview.
@@ -616,7 +614,7 @@ linters-settings:
         severity: warning
         disabled: false
         arguments:
-          - "^[a-z][a-z0-9]{0,}$"
+          - "^[a-z][a-zA-Z0-9]{0,}$"
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#imports-blacklist
       - name: imports-blacklist
         severity: warning

@@ -13,43 +13,45 @@ import (
 	messagebus "github.com/vardius/message-bus"
 )
 
-type Payload interface{}
+type (
+	Payload interface{}
 
-type Message struct {
-	Topic string
-	Data  Payload
-}
+	Message struct {
+		Topic string
+		Data  Payload
+	}
 
-type Info struct {
-	Name string
-}
+	Info struct {
+		Name string
+	}
 
-type Plugin interface {
-	Init(messagePipe MessagePipeInterface)
-	Close()
-	Info() *Info
-	Process(message *Message)
-	Subscriptions() []string
-}
+	MessagePipeInterface interface {
+		Register(size int, plugins []Plugin) error
+		DeRegister(plugins []string) error
+		Process(messages ...*Message)
+		Run()
+		Context() context.Context
+		GetPlugins() []Plugin
+		IsPluginAlreadyRegistered(pluginName string) bool
+	}
 
-type MessagePipeInterface interface {
-	Register(size int, plugins []Plugin) error
-	DeRegister(plugins []string) error
-	Process(messages ...*Message)
-	Run()
-	Context() context.Context
-	GetPlugins() []Plugin
-	IsPluginAlreadyRegistered(pluginName string) bool
-}
+	Plugin interface {
+		Init(messagePipe MessagePipeInterface) error
+		Close() error
+		Info() *Info
+		Process(msg *Message)
+		Subscriptions() []string
+	}
 
-type MessagePipe struct {
-	bus            messagebus.MessageBus
-	messageChannel chan *Message
-	plugins        []Plugin
-	mu             sync.RWMutex
-	ctx            context.Context
-	cancel         context.CancelFunc
-}
+	MessagePipe struct {
+		bus            messagebus.MessageBus
+		messageChannel chan *Message
+		plugins        []Plugin
+		mu             sync.RWMutex
+		ctx            context.Context
+		cancel         context.CancelFunc
+	}
+)
 
 func NewMessagePipe(ctx context.Context, size int) *MessagePipe {
 	pipeContext, pipeCancel := context.WithCancel(ctx)
@@ -191,7 +193,10 @@ func (p *MessagePipe) GetPlugins() []Plugin {
 
 func (p *MessagePipe) initPlugins() {
 	for _, r := range p.plugins {
-		r.Init(p)
+		err := r.Init(p)
+		if err != nil {
+			slog.Error("Failed to initialize plugin", "plugin", r.Info().Name, "error", err)
+		}
 	}
 }
 
