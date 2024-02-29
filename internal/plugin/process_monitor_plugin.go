@@ -33,12 +33,14 @@ func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
 	}
 }
 
-func (pm *ProcessMonitor) Init(messagePipe bus.MessagePipeInterface) {
+func (pm *ProcessMonitor) Init(messagePipe bus.MessagePipeInterface) error {
 	pm.messagePipe = messagePipe
 	go pm.run(messagePipe.Context())
+
+	return nil
 }
 
-func (*ProcessMonitor) Close() {}
+func (*ProcessMonitor) Close() error { return nil }
 
 func (*ProcessMonitor) Info() *bus.Info {
 	return &bus.Info{

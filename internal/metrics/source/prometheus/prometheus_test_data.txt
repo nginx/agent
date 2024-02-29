@@ -1,0 +1,814 @@
+# HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 3.849e-05
+go_gc_duration_seconds{quantile="0.25"} 0.000171217
+go_gc_duration_seconds{quantile="0.5"} 0.000252162
+go_gc_duration_seconds{quantile="0.75"} 0.0008172
+go_gc_duration_seconds{quantile="1"} 0.003638701
+go_gc_duration_seconds_sum 0.012623016
+go_gc_duration_seconds_count 20
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 30
+# HELP go_info Information about the Go environment.
+# TYPE go_info gauge
+go_info{version="go1.21.4"} 1
+# HELP go_memstats_alloc_bytes Number of bytes allocated and still in use.
+# TYPE go_memstats_alloc_bytes gauge
+go_memstats_alloc_bytes 1.4566744e+07
+# HELP go_memstats_alloc_bytes_total Total number of bytes allocated, even if freed.
+# TYPE go_memstats_alloc_bytes_total counter
+go_memstats_alloc_bytes_total 1.30301312e+08
+# HELP go_memstats_buck_hash_sys_bytes Number of bytes used by the profiling bucket hash table.
+# TYPE go_memstats_buck_hash_sys_bytes gauge
+go_memstats_buck_hash_sys_bytes 1.465998e+06
+# HELP go_memstats_frees_total Total number of frees.
+# TYPE go_memstats_frees_total counter
+go_memstats_frees_total 149497
+# HELP go_memstats_gc_sys_bytes Number of bytes used for garbage collection system metadata.
+# TYPE go_memstats_gc_sys_bytes gauge
+go_memstats_gc_sys_bytes 5.651896e+06
+# HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and still in use.
+# TYPE go_memstats_heap_alloc_bytes gauge
+go_memstats_heap_alloc_bytes 1.4566744e+07
+# HELP go_memstats_heap_idle_bytes Number of heap bytes waiting to be used.
+# TYPE go_memstats_heap_idle_bytes gauge
+go_memstats_heap_idle_bytes 5.6762368e+07
+# HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use.
+# TYPE go_memstats_heap_inuse_bytes gauge
+go_memstats_heap_inuse_bytes 1.748992e+07
+# HELP go_memstats_heap_objects Number of allocated objects.
+# TYPE go_memstats_heap_objects gauge
+go_memstats_heap_objects 66206
+# HELP go_memstats_heap_released_bytes Number of heap bytes released to OS.
+# TYPE go_memstats_heap_released_bytes gauge
+go_memstats_heap_released_bytes 5.5074816e+07
+# HELP go_memstats_heap_sys_bytes Number of heap bytes obtained from system.
+# TYPE go_memstats_heap_sys_bytes gauge
+go_memstats_heap_sys_bytes 7.4252288e+07
+# HELP go_memstats_last_gc_time_seconds Number of seconds since 1970 of last garbage collection.
+# TYPE go_memstats_last_gc_time_seconds gauge
+go_memstats_last_gc_time_seconds 1.7056846830357141e+09
+# HELP go_memstats_lookups_total Total number of pointer lookups.
+# TYPE go_memstats_lookups_total counter
+go_memstats_lookups_total 0
+# HELP go_memstats_mallocs_total Total number of mallocs.
+# TYPE go_memstats_mallocs_total counter
+go_memstats_mallocs_total 215703
+# HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures.
+# TYPE go_memstats_mcache_inuse_bytes gauge
+go_memstats_mcache_inuse_bytes 14400
+# HELP go_memstats_mcache_sys_bytes Number of bytes used for mcache structures obtained from system.
+# TYPE go_memstats_mcache_sys_bytes gauge
+go_memstats_mcache_sys_bytes 15600
+# HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures.
+# TYPE go_memstats_mspan_inuse_bytes gauge
+go_memstats_mspan_inuse_bytes 292320
+# HELP go_memstats_mspan_sys_bytes Number of bytes used for mspan structures obtained from system.
+# TYPE go_memstats_mspan_sys_bytes gauge
+go_memstats_mspan_sys_bytes 309624
+# HELP go_memstats_next_gc_bytes Number of heap bytes when next garbage collection will take place.
+# TYPE go_memstats_next_gc_bytes gauge
+go_memstats_next_gc_bytes 2.9536232e+07
+# HELP go_memstats_other_sys_bytes Number of bytes used for other system allocations.
+# TYPE go_memstats_other_sys_bytes gauge
+go_memstats_other_sys_bytes 1.658474e+06
+# HELP go_memstats_stack_inuse_bytes Number of bytes in use by the stack allocator.
+# TYPE go_memstats_stack_inuse_bytes gauge
+go_memstats_stack_inuse_bytes 1.245184e+06
+# HELP go_memstats_stack_sys_bytes Number of bytes obtained from system for stack allocator.
+# TYPE go_memstats_stack_sys_bytes gauge
+go_memstats_stack_sys_bytes 1.245184e+06
+# HELP go_memstats_sys_bytes Number of bytes obtained from system.
+# TYPE go_memstats_sys_bytes gauge
+go_memstats_sys_bytes 8.4599064e+07
+# HELP go_threads Number of OS threads created.
+# TYPE go_threads gauge
+go_threads 18
+# HELP net_conntrack_dialer_conn_attempted_total Total number of connections attempted by the given dialer a given name.
+# TYPE net_conntrack_dialer_conn_attempted_total counter
+net_conntrack_dialer_conn_attempted_total{dialer_name="default"} 0
+net_conntrack_dialer_conn_attempted_total{dialer_name="prometheus"} 1
+# HELP net_conntrack_dialer_conn_closed_total Total number of connections closed which originated from the dialer of a given name.
+# TYPE net_conntrack_dialer_conn_closed_total counter
+net_conntrack_dialer_conn_closed_total{dialer_name="default"} 0
+net_conntrack_dialer_conn_closed_total{dialer_name="prometheus"} 0
+# HELP net_conntrack_dialer_conn_established_total Total number of connections successfully established by the given dialer a given name.
+# TYPE net_conntrack_dialer_conn_established_total counter
+net_conntrack_dialer_conn_established_total{dialer_name="default"} 0
+net_conntrack_dialer_conn_established_total{dialer_name="prometheus"} 1
+# HELP net_conntrack_dialer_conn_failed_total Total number of connections failed to dial by the dialer a given name.
+# TYPE net_conntrack_dialer_conn_failed_total counter
+net_conntrack_dialer_conn_failed_total{dialer_name="default",reason="refused"} 0
+net_conntrack_dialer_conn_failed_total{dialer_name="default",reason="resolution"} 0
+net_conntrack_dialer_conn_failed_total{dialer_name="default",reason="timeout"} 0
+net_conntrack_dialer_conn_failed_total{dialer_name="default",reason="unknown"} 0
+net_conntrack_dialer_conn_failed_total{dialer_name="prometheus",reason="refused"} 0
+net_conntrack_dialer_conn_failed_total{dialer_name="prometheus",reason="resolution"} 0
+net_conntrack_dialer_conn_failed_total{dialer_name="prometheus",reason="timeout"} 0
+net_conntrack_dialer_conn_failed_total{dialer_name="prometheus",reason="unknown"} 0
+# HELP net_conntrack_listener_conn_accepted_total Total number of connections opened to the listener of a given name.
+# TYPE net_conntrack_listener_conn_accepted_total counter
+net_conntrack_listener_conn_accepted_total{listener_name="http"} 3
+# HELP net_conntrack_listener_conn_closed_total Total number of connections closed that were made to the listener of a given name.
+# TYPE net_conntrack_listener_conn_closed_total counter
+net_conntrack_listener_conn_closed_total{listener_name="http"} 2
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 1.53
+# HELP process_max_fds Maximum number of open file descriptors.
+# TYPE process_max_fds gauge
+process_max_fds 1.048576e+06
+# HELP process_open_fds Number of open file descriptors.
+# TYPE process_open_fds gauge
+process_open_fds 50
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 8.5348352e+07
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1.70568325562e+09
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE process_virtual_memory_bytes gauge
+process_virtual_memory_bytes 1.5531008e+09
+# HELP process_virtual_memory_max_bytes Maximum amount of virtual memory available in bytes.
+# TYPE process_virtual_memory_max_bytes gauge
+process_virtual_memory_max_bytes 1.8446744073709552e+19
+# HELP prometheus_api_remote_read_queries The current number of remote read queries being executed or waiting.
+# TYPE prometheus_api_remote_read_queries gauge
+prometheus_api_remote_read_queries 0
+# HELP prometheus_build_info A metric with a constant '1' value labeled by version, revision, branch, goversion from which prometheus was built, and the goos and goarch for the build.
+# TYPE prometheus_build_info gauge
+prometheus_build_info{branch="HEAD",goarch="amd64",goos="linux",goversion="go1.21.4",revision="6d80b30990bc297d95b5c844e118c4011fad8054",tags="netgo,builtinassets,stringlabels",version="2.48.0"} 1
+# HELP prometheus_config_last_reload_success_timestamp_seconds Timestamp of the last successful configuration reload.
+# TYPE prometheus_config_last_reload_success_timestamp_seconds gauge
+prometheus_config_last_reload_success_timestamp_seconds 1.7056832569011555e+09
+# HELP prometheus_config_last_reload_successful Whether the last configuration reload attempt was successful.
+# TYPE prometheus_config_last_reload_successful gauge
+prometheus_config_last_reload_successful 1
+# HELP prometheus_engine_queries The current number of queries being executed or waiting.
+# TYPE prometheus_engine_queries gauge
+prometheus_engine_queries 0
+# HELP prometheus_engine_queries_concurrent_max The max number of concurrent queries.
+# TYPE prometheus_engine_queries_concurrent_max gauge
+prometheus_engine_queries_concurrent_max 20
+# HELP prometheus_engine_query_duration_seconds Query timings
+# TYPE prometheus_engine_query_duration_seconds summary
+prometheus_engine_query_duration_seconds{slice="inner_eval",quantile="0.5"} NaN
+prometheus_engine_query_duration_seconds{slice="inner_eval",quantile="0.9"} NaN
+prometheus_engine_query_duration_seconds{slice="inner_eval",quantile="0.99"} NaN
+prometheus_engine_query_duration_seconds_sum{slice="inner_eval"} 0
+prometheus_engine_query_duration_seconds_count{slice="inner_eval"} 0
+prometheus_engine_query_duration_seconds{slice="prepare_time",quantile="0.5"} NaN
+prometheus_engine_query_duration_seconds{slice="prepare_time",quantile="0.9"} NaN
+prometheus_engine_query_duration_seconds{slice="prepare_time",quantile="0.99"} NaN
+prometheus_engine_query_duration_seconds_sum{slice="prepare_time"} 0
+prometheus_engine_query_duration_seconds_count{slice="prepare_time"} 0
+prometheus_engine_query_duration_seconds{slice="queue_time",quantile="0.5"} NaN
+prometheus_engine_query_duration_seconds{slice="queue_time",quantile="0.9"} NaN
+prometheus_engine_query_duration_seconds{slice="queue_time",quantile="0.99"} NaN
+prometheus_engine_query_duration_seconds_sum{slice="queue_time"} 0
+prometheus_engine_query_duration_seconds_count{slice="queue_time"} 0
+prometheus_engine_query_duration_seconds{slice="result_sort",quantile="0.5"} NaN
+prometheus_engine_query_duration_seconds{slice="result_sort",quantile="0.9"} NaN
+prometheus_engine_query_duration_seconds{slice="result_sort",quantile="0.99"} NaN
+prometheus_engine_query_duration_seconds_sum{slice="result_sort"} 0
+prometheus_engine_query_duration_seconds_count{slice="result_sort"} 0
+# HELP prometheus_engine_query_log_enabled State of the query log.
+# TYPE prometheus_engine_query_log_enabled gauge
+prometheus_engine_query_log_enabled 0
+# HELP prometheus_engine_query_log_failures_total The number of query log failures.
+# TYPE prometheus_engine_query_log_failures_total counter
+prometheus_engine_query_log_failures_total 0
+# HELP prometheus_engine_query_samples_total The total number of samples loaded by all queries.
+# TYPE prometheus_engine_query_samples_total counter
+prometheus_engine_query_samples_total 0
+# HELP prometheus_http_request_duration_seconds Histogram of latencies for HTTP requests.
+# TYPE prometheus_http_request_duration_seconds histogram
+prometheus_http_request_duration_seconds_bucket{handler="/favicon.ico",le="0.1"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/favicon.ico",le="0.2"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/favicon.ico",le="0.4"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/favicon.ico",le="1"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/favicon.ico",le="3"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/favicon.ico",le="8"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/favicon.ico",le="20"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/favicon.ico",le="60"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/favicon.ico",le="120"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/favicon.ico",le="+Inf"} 1
+prometheus_http_request_duration_seconds_sum{handler="/favicon.ico"} 0.007942586
+prometheus_http_request_duration_seconds_count{handler="/favicon.ico"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/metrics",le="0.1"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/metrics",le="0.2"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/metrics",le="0.4"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/metrics",le="1"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/metrics",le="3"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/metrics",le="8"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/metrics",le="20"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/metrics",le="60"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/metrics",le="120"} 1
+prometheus_http_request_duration_seconds_bucket{handler="/metrics",le="+Inf"} 1
+prometheus_http_request_duration_seconds_sum{handler="/metrics"} 0.044252681
+prometheus_http_request_duration_seconds_count{handler="/metrics"} 1
+# HELP prometheus_http_requests_total Counter of HTTP requests.
+# TYPE prometheus_http_requests_total counter
+prometheus_http_requests_total{code="200",handler="/"} 0
+prometheus_http_requests_total{code="200",handler="/-/healthy"} 0
+prometheus_http_requests_total{code="200",handler="/-/quit"} 0
+prometheus_http_requests_total{code="200",handler="/-/ready"} 0
+prometheus_http_requests_total{code="200",handler="/-/reload"} 0
+prometheus_http_requests_total{code="200",handler="/alerts"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/*path"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/admin/tsdb/clean_tombstones"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/admin/tsdb/delete_series"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/admin/tsdb/snapshot"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/alertmanagers"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/alerts"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/format_query"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/label/:name/values"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/labels"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/metadata"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/otlp/v1/metrics"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/query"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/query_exemplars"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/query_range"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/read"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/rules"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/scrape_pools"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/series"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/status/buildinfo"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/status/config"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/status/flags"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/status/runtimeinfo"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/status/tsdb"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/status/walreplay"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/targets"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/targets/metadata"} 0
+prometheus_http_requests_total{code="200",handler="/api/v1/write"} 0
+prometheus_http_requests_total{code="200",handler="/classic/static/*filepath"} 0
+prometheus_http_requests_total{code="200",handler="/config"} 0
+prometheus_http_requests_total{code="200",handler="/consoles/*filepath"} 0
+prometheus_http_requests_total{code="200",handler="/debug/*subpath"} 0
+prometheus_http_requests_total{code="200",handler="/favicon.ico"} 1
+prometheus_http_requests_total{code="200",handler="/federate"} 0
+prometheus_http_requests_total{code="200",handler="/flags"} 0
+prometheus_http_requests_total{code="200",handler="/graph"} 0
+prometheus_http_requests_total{code="200",handler="/manifest.json"} 0
+prometheus_http_requests_total{code="200",handler="/metrics"} 1
+prometheus_http_requests_total{code="200",handler="/rules"} 0
+prometheus_http_requests_total{code="200",handler="/service-discovery"} 0
+prometheus_http_requests_total{code="200",handler="/starting"} 0
+prometheus_http_requests_total{code="200",handler="/static/*filepath"} 0
+prometheus_http_requests_total{code="200",handler="/status"} 0
+prometheus_http_requests_total{code="200",handler="/targets"} 0
+prometheus_http_requests_total{code="200",handler="/tsdb-status"} 0
+prometheus_http_requests_total{code="200",handler="/version"} 0
+# HELP prometheus_http_response_size_bytes Histogram of response size for HTTP requests.
+# TYPE prometheus_http_response_size_bytes histogram
+prometheus_http_response_size_bytes_bucket{handler="/favicon.ico",le="100"} 0
+prometheus_http_response_size_bytes_bucket{handler="/favicon.ico",le="1000"} 0
+prometheus_http_response_size_bytes_bucket{handler="/favicon.ico",le="10000"} 0
+prometheus_http_response_size_bytes_bucket{handler="/favicon.ico",le="100000"} 1
+prometheus_http_response_size_bytes_bucket{handler="/favicon.ico",le="1e+06"} 1
+prometheus_http_response_size_bytes_bucket{handler="/favicon.ico",le="1e+07"} 1
+prometheus_http_response_size_bytes_bucket{handler="/favicon.ico",le="1e+08"} 1
+prometheus_http_response_size_bytes_bucket{handler="/favicon.ico",le="1e+09"} 1
+prometheus_http_response_size_bytes_bucket{handler="/favicon.ico",le="+Inf"} 1
+prometheus_http_response_size_bytes_sum{handler="/favicon.ico"} 15086
+prometheus_http_response_size_bytes_count{handler="/favicon.ico"} 1
+prometheus_http_response_size_bytes_bucket{handler="/metrics",le="100"} 0
+prometheus_http_response_size_bytes_bucket{handler="/metrics",le="1000"} 0
+prometheus_http_response_size_bytes_bucket{handler="/metrics",le="10000"} 1
+prometheus_http_response_size_bytes_bucket{handler="/metrics",le="100000"} 1
+prometheus_http_response_size_bytes_bucket{handler="/metrics",le="1e+06"} 1
+prometheus_http_response_size_bytes_bucket{handler="/metrics",le="1e+07"} 1
+prometheus_http_response_size_bytes_bucket{handler="/metrics",le="1e+08"} 1
+prometheus_http_response_size_bytes_bucket{handler="/metrics",le="1e+09"} 1
+prometheus_http_response_size_bytes_bucket{handler="/metrics",le="+Inf"} 1
+prometheus_http_response_size_bytes_sum{handler="/metrics"} 7805
+prometheus_http_response_size_bytes_count{handler="/metrics"} 1
+# HELP prometheus_notifications_alertmanagers_discovered The number of alertmanagers discovered and active.
+# TYPE prometheus_notifications_alertmanagers_discovered gauge
+prometheus_notifications_alertmanagers_discovered 0
+# HELP prometheus_notifications_dropped_total Total number of alerts dropped due to errors when sending to Alertmanager.
+# TYPE prometheus_notifications_dropped_total counter
+prometheus_notifications_dropped_total 0
+# HELP prometheus_notifications_queue_capacity The capacity of the alert notifications queue.
+# TYPE prometheus_notifications_queue_capacity gauge
+prometheus_notifications_queue_capacity 10000
+# HELP prometheus_notifications_queue_length The number of alert notifications in the queue.
+# TYPE prometheus_notifications_queue_length gauge
+prometheus_notifications_queue_length 0
+# HELP prometheus_ready Whether Prometheus startup was fully completed and the server is ready for normal operation.
+# TYPE prometheus_ready gauge
+prometheus_ready 1
+# HELP prometheus_remote_storage_exemplars_in_total Exemplars in to remote storage, compare to exemplars out for queue managers.
+# TYPE prometheus_remote_storage_exemplars_in_total counter
+prometheus_remote_storage_exemplars_in_total 0
+# HELP prometheus_remote_storage_highest_timestamp_in_seconds Highest timestamp that has come into the remote storage via the Appender interface, in seconds since epoch.
+# TYPE prometheus_remote_storage_highest_timestamp_in_seconds gauge
+prometheus_remote_storage_highest_timestamp_in_seconds 1.705684682e+09
+# HELP prometheus_remote_storage_histograms_in_total HistogramSamples in to remote storage, compare to histograms out for queue managers.
+# TYPE prometheus_remote_storage_histograms_in_total counter
+prometheus_remote_storage_histograms_in_total 0
+# HELP prometheus_remote_storage_samples_in_total Samples in to remote storage, compare to samples out for queue managers.
+# TYPE prometheus_remote_storage_samples_in_total counter
+prometheus_remote_storage_samples_in_total 475
+# HELP prometheus_remote_storage_string_interner_zero_reference_releases_total The number of times release has been called for strings that are not interned.
+# TYPE prometheus_remote_storage_string_interner_zero_reference_releases_total counter
+prometheus_remote_storage_string_interner_zero_reference_releases_total 0
+# HELP prometheus_rule_evaluation_duration_seconds The duration for a rule to execute.
+# TYPE prometheus_rule_evaluation_duration_seconds summary
+prometheus_rule_evaluation_duration_seconds{quantile="0.5"} NaN
+prometheus_rule_evaluation_duration_seconds{quantile="0.9"} NaN
+prometheus_rule_evaluation_duration_seconds{quantile="0.99"} NaN
+prometheus_rule_evaluation_duration_seconds_sum 0
+prometheus_rule_evaluation_duration_seconds_count 0
+# HELP prometheus_rule_group_duration_seconds The duration of rule group evaluations.
+# TYPE prometheus_rule_group_duration_seconds summary
+prometheus_rule_group_duration_seconds{quantile="0.01"} NaN
+prometheus_rule_group_duration_seconds{quantile="0.05"} NaN
+prometheus_rule_group_duration_seconds{quantile="0.5"} NaN
+prometheus_rule_group_duration_seconds{quantile="0.9"} NaN
+prometheus_rule_group_duration_seconds{quantile="0.99"} NaN
+prometheus_rule_group_duration_seconds_sum 0
+prometheus_rule_group_duration_seconds_count 0
+# HELP prometheus_sd_azure_failures_total Number of Azure service discovery refresh failures.
+# TYPE prometheus_sd_azure_failures_total counter
+prometheus_sd_azure_failures_total 0
+# HELP prometheus_sd_consul_rpc_duration_seconds The duration of a Consul RPC call in seconds.
+# TYPE prometheus_sd_consul_rpc_duration_seconds summary
+prometheus_sd_consul_rpc_duration_seconds{call="service",endpoint="catalog",quantile="0.5"} NaN
+prometheus_sd_consul_rpc_duration_seconds{call="service",endpoint="catalog",quantile="0.9"} NaN
+prometheus_sd_consul_rpc_duration_seconds{call="service",endpoint="catalog",quantile="0.99"} NaN
+prometheus_sd_consul_rpc_duration_seconds_sum{call="service",endpoint="catalog"} 0
+prometheus_sd_consul_rpc_duration_seconds_count{call="service",endpoint="catalog"} 0
+prometheus_sd_consul_rpc_duration_seconds{call="services",endpoint="catalog",quantile="0.5"} NaN
+prometheus_sd_consul_rpc_duration_seconds{call="services",endpoint="catalog",quantile="0.9"} NaN
+prometheus_sd_consul_rpc_duration_seconds{call="services",endpoint="catalog",quantile="0.99"} NaN
+prometheus_sd_consul_rpc_duration_seconds_sum{call="services",endpoint="catalog"} 0
+prometheus_sd_consul_rpc_duration_seconds_count{call="services",endpoint="catalog"} 0
+# HELP prometheus_sd_consul_rpc_failures_total The number of Consul RPC call failures.
+# TYPE prometheus_sd_consul_rpc_failures_total counter
+prometheus_sd_consul_rpc_failures_total 0
+# HELP prometheus_sd_discovered_targets Current number of discovered targets.
+# TYPE prometheus_sd_discovered_targets gauge
+prometheus_sd_discovered_targets{config="prometheus",name="scrape"} 1
+# HELP prometheus_sd_dns_lookup_failures_total The number of DNS-SD lookup failures.
+# TYPE prometheus_sd_dns_lookup_failures_total counter
+prometheus_sd_dns_lookup_failures_total 0
+# HELP prometheus_sd_dns_lookups_total The number of DNS-SD lookups.
+# TYPE prometheus_sd_dns_lookups_total counter
+prometheus_sd_dns_lookups_total 0
+# HELP prometheus_sd_failed_configs Current number of service discovery configurations that failed to load.
+# TYPE prometheus_sd_failed_configs gauge
+prometheus_sd_failed_configs{name="notify"} 0
+prometheus_sd_failed_configs{name="scrape"} 0
+# HELP prometheus_sd_file_read_errors_total The number of File-SD read errors.
+# TYPE prometheus_sd_file_read_errors_total counter
+prometheus_sd_file_read_errors_total 0
+# HELP prometheus_sd_file_scan_duration_seconds The duration of the File-SD scan in seconds.
+# TYPE prometheus_sd_file_scan_duration_seconds summary
+prometheus_sd_file_scan_duration_seconds{quantile="0.5"} NaN
+prometheus_sd_file_scan_duration_seconds{quantile="0.9"} NaN
+prometheus_sd_file_scan_duration_seconds{quantile="0.99"} NaN
+prometheus_sd_file_scan_duration_seconds_sum 0
+prometheus_sd_file_scan_duration_seconds_count 0
+# HELP prometheus_sd_file_watcher_errors_total The number of File-SD errors caused by filesystem watch failures.
+# TYPE prometheus_sd_file_watcher_errors_total counter
+prometheus_sd_file_watcher_errors_total 0
+# HELP prometheus_sd_http_failures_total Number of HTTP service discovery refresh failures.
+# TYPE prometheus_sd_http_failures_total counter
+prometheus_sd_http_failures_total 0
+# HELP prometheus_sd_kubernetes_events_total The number of Kubernetes events handled.
+# TYPE prometheus_sd_kubernetes_events_total counter
+prometheus_sd_kubernetes_events_total{event="add",role="endpoints"} 0
+prometheus_sd_kubernetes_events_total{event="add",role="endpointslice"} 0
+prometheus_sd_kubernetes_events_total{event="add",role="ingress"} 0
+prometheus_sd_kubernetes_events_total{event="add",role="node"} 0
+prometheus_sd_kubernetes_events_total{event="add",role="pod"} 0
+prometheus_sd_kubernetes_events_total{event="add",role="service"} 0
+prometheus_sd_kubernetes_events_total{event="delete",role="endpoints"} 0
+prometheus_sd_kubernetes_events_total{event="delete",role="endpointslice"} 0
+prometheus_sd_kubernetes_events_total{event="delete",role="ingress"} 0
+prometheus_sd_kubernetes_events_total{event="delete",role="node"} 0
+prometheus_sd_kubernetes_events_total{event="delete",role="pod"} 0
+prometheus_sd_kubernetes_events_total{event="delete",role="service"} 0
+prometheus_sd_kubernetes_events_total{event="update",role="endpoints"} 0
+prometheus_sd_kubernetes_events_total{event="update",role="endpointslice"} 0
+prometheus_sd_kubernetes_events_total{event="update",role="ingress"} 0
+prometheus_sd_kubernetes_events_total{event="update",role="node"} 0
+prometheus_sd_kubernetes_events_total{event="update",role="pod"} 0
+prometheus_sd_kubernetes_events_total{event="update",role="service"} 0
+# HELP prometheus_sd_kuma_fetch_duration_seconds The duration of a Kuma MADS fetch call.
+# TYPE prometheus_sd_kuma_fetch_duration_seconds summary
+prometheus_sd_kuma_fetch_duration_seconds{quantile="0.5"} NaN
+prometheus_sd_kuma_fetch_duration_seconds{quantile="0.9"} NaN
+prometheus_sd_kuma_fetch_duration_seconds{quantile="0.99"} NaN
+prometheus_sd_kuma_fetch_duration_seconds_sum 0
+prometheus_sd_kuma_fetch_duration_seconds_count 0
+# HELP prometheus_sd_kuma_fetch_failures_total The number of Kuma MADS fetch call failures.
+# TYPE prometheus_sd_kuma_fetch_failures_total counter
+prometheus_sd_kuma_fetch_failures_total 0
+# HELP prometheus_sd_kuma_fetch_skipped_updates_total The number of Kuma MADS fetch calls that result in no updates to the targets.
+# TYPE prometheus_sd_kuma_fetch_skipped_updates_total counter
+prometheus_sd_kuma_fetch_skipped_updates_total 0
+# HELP prometheus_sd_linode_failures_total Number of Linode service discovery refresh failures.
+# TYPE prometheus_sd_linode_failures_total counter
+prometheus_sd_linode_failures_total 0
+# HELP prometheus_sd_nomad_failures_total Number of nomad service discovery refresh failures.
+# TYPE prometheus_sd_nomad_failures_total counter
+prometheus_sd_nomad_failures_total 0
+# HELP prometheus_sd_received_updates_total Total number of update events received from the SD providers.
+# TYPE prometheus_sd_received_updates_total counter
+prometheus_sd_received_updates_total{name="scrape"} 2
+# HELP prometheus_sd_updates_total Total number of update events sent to the SD consumers.
+# TYPE prometheus_sd_updates_total counter
+prometheus_sd_updates_total{name="scrape"} 1
+# HELP prometheus_target_interval_length_seconds Actual intervals between scrapes.
+# TYPE prometheus_target_interval_length_seconds summary
+prometheus_target_interval_length_seconds{interval="15s",quantile="0.01"} 14.998485175
+prometheus_target_interval_length_seconds{interval="15s",quantile="0.05"} 14.998643293
+prometheus_target_interval_length_seconds{interval="15s",quantile="0.5"} 14.999962658
+prometheus_target_interval_length_seconds{interval="15s",quantile="0.9"} 15.000613437
+prometheus_target_interval_length_seconds{interval="15s",quantile="0.99"} 15.001606335
+prometheus_target_interval_length_seconds_sum{interval="15s"} 1410.0019679389995
+prometheus_target_interval_length_seconds_count{interval="15s"} 94
+# HELP prometheus_target_metadata_cache_bytes The number of bytes that are currently used for storing metric metadata in the cache
+# TYPE prometheus_target_metadata_cache_bytes gauge
+prometheus_target_metadata_cache_bytes{scrape_job="prometheus"} 0
+# HELP prometheus_target_metadata_cache_entries Total number of metric metadata entries in the cache
+# TYPE prometheus_target_metadata_cache_entries gauge
+prometheus_target_metadata_cache_entries{scrape_job="prometheus"} 0
+# HELP prometheus_target_scrape_pool_exceeded_label_limits_total Total number of times scrape pools hit the label limits, during sync or config reload.
+# TYPE prometheus_target_scrape_pool_exceeded_label_limits_total counter
+prometheus_target_scrape_pool_exceeded_label_limits_total 0
+# HELP prometheus_target_scrape_pool_exceeded_target_limit_total Total number of times scrape pools hit the target limit, during sync or config reload.
+# TYPE prometheus_target_scrape_pool_exceeded_target_limit_total counter
+prometheus_target_scrape_pool_exceeded_target_limit_total 0
+# HELP prometheus_target_scrape_pool_reloads_failed_total Total number of failed scrape pool reloads.
+# TYPE prometheus_target_scrape_pool_reloads_failed_total counter
+prometheus_target_scrape_pool_reloads_failed_total 0
+# HELP prometheus_target_scrape_pool_reloads_total Total number of scrape pool reloads.
+# TYPE prometheus_target_scrape_pool_reloads_total counter
+prometheus_target_scrape_pool_reloads_total 0
+# HELP prometheus_target_scrape_pool_sync_total Total number of syncs that were executed on a scrape pool.
+# TYPE prometheus_target_scrape_pool_sync_total counter
+prometheus_target_scrape_pool_sync_total{scrape_job="prometheus"} 1
+# HELP prometheus_target_scrape_pool_target_limit Maximum number of targets allowed in this scrape pool.
+# TYPE prometheus_target_scrape_pool_target_limit gauge
+prometheus_target_scrape_pool_target_limit{scrape_job="prometheus"} 0
+# HELP prometheus_target_scrape_pool_targets Current number of targets in this scrape pool.
+# TYPE prometheus_target_scrape_pool_targets gauge
+prometheus_target_scrape_pool_targets{scrape_job="prometheus"} 1
+# HELP prometheus_target_scrape_pools_failed_total Total number of scrape pool creations that failed.
+# TYPE prometheus_target_scrape_pools_failed_total counter
+prometheus_target_scrape_pools_failed_total 0
+# HELP prometheus_target_scrape_pools_total Total number of scrape pool creation attempts.
+# TYPE prometheus_target_scrape_pools_total counter
+prometheus_target_scrape_pools_total 1
+# HELP prometheus_target_scrapes_cache_flush_forced_total How many times a scrape cache was flushed due to getting big while scrapes are failing.
+# TYPE prometheus_target_scrapes_cache_flush_forced_total counter
+prometheus_target_scrapes_cache_flush_forced_total 0
+# HELP prometheus_target_scrapes_exceeded_body_size_limit_total Total number of scrapes that hit the body size limit
+# TYPE prometheus_target_scrapes_exceeded_body_size_limit_total counter
+prometheus_target_scrapes_exceeded_body_size_limit_total 0
+# HELP prometheus_target_scrapes_exceeded_native_histogram_bucket_limit_total Total number of scrapes that hit the native histogram bucket limit and were rejected.
+# TYPE prometheus_target_scrapes_exceeded_native_histogram_bucket_limit_total counter
+prometheus_target_scrapes_exceeded_native_histogram_bucket_limit_total 0
+# HELP prometheus_target_scrapes_exceeded_sample_limit_total Total number of scrapes that hit the sample limit and were rejected.
+# TYPE prometheus_target_scrapes_exceeded_sample_limit_total counter
+prometheus_target_scrapes_exceeded_sample_limit_total 0
+# HELP prometheus_target_scrapes_exemplar_out_of_order_total Total number of exemplar rejected due to not being out of the expected order.
+# TYPE prometheus_target_scrapes_exemplar_out_of_order_total counter
+prometheus_target_scrapes_exemplar_out_of_order_total 0
+# HELP prometheus_target_scrapes_sample_duplicate_timestamp_total Total number of samples rejected due to duplicate timestamps but different values.
+# TYPE prometheus_target_scrapes_sample_duplicate_timestamp_total counter
+prometheus_target_scrapes_sample_duplicate_timestamp_total 0
+# HELP prometheus_target_scrapes_sample_out_of_bounds_total Total number of samples rejected due to timestamp falling outside of the time bounds.
+# TYPE prometheus_target_scrapes_sample_out_of_bounds_total counter
+prometheus_target_scrapes_sample_out_of_bounds_total 0
+# HELP prometheus_target_scrapes_sample_out_of_order_total Total number of samples rejected due to not being out of the expected order.
+# TYPE prometheus_target_scrapes_sample_out_of_order_total counter
+prometheus_target_scrapes_sample_out_of_order_total 0
+# HELP prometheus_target_sync_failed_total Total number of target sync failures.
+# TYPE prometheus_target_sync_failed_total counter
+prometheus_target_sync_failed_total{scrape_job="prometheus"} 0
+# HELP prometheus_target_sync_length_seconds Actual interval to sync the scrape pool.
+# TYPE prometheus_target_sync_length_seconds summary
+prometheus_target_sync_length_seconds{scrape_job="prometheus",quantile="0.01"} NaN
+prometheus_target_sync_length_seconds{scrape_job="prometheus",quantile="0.05"} NaN
+prometheus_target_sync_length_seconds{scrape_job="prometheus",quantile="0.5"} NaN
+prometheus_target_sync_length_seconds{scrape_job="prometheus",quantile="0.9"} NaN
+prometheus_target_sync_length_seconds{scrape_job="prometheus",quantile="0.99"} NaN
+prometheus_target_sync_length_seconds_sum{scrape_job="prometheus"} 0.001550738
+prometheus_target_sync_length_seconds_count{scrape_job="prometheus"} 1
+# HELP prometheus_template_text_expansion_failures_total The total number of template text expansion failures.
+# TYPE prometheus_template_text_expansion_failures_total counter
+prometheus_template_text_expansion_failures_total 0
+# HELP prometheus_template_text_expansions_total The total number of template text expansions.
+# TYPE prometheus_template_text_expansions_total counter
+prometheus_template_text_expansions_total 0
+# HELP prometheus_treecache_watcher_goroutines The current number of watcher goroutines.
+# TYPE prometheus_treecache_watcher_goroutines gauge
+prometheus_treecache_watcher_goroutines 0
+# HELP prometheus_treecache_zookeeper_failures_total The total number of ZooKeeper failures.
+# TYPE prometheus_treecache_zookeeper_failures_total counter
+prometheus_treecache_zookeeper_failures_total 0
+# HELP prometheus_tsdb_blocks_loaded Number of currently loaded data blocks
+# TYPE prometheus_tsdb_blocks_loaded gauge
+prometheus_tsdb_blocks_loaded 17
+# HELP prometheus_tsdb_checkpoint_creations_failed_total Total number of checkpoint creations that failed.
+# TYPE prometheus_tsdb_checkpoint_creations_failed_total counter
+prometheus_tsdb_checkpoint_creations_failed_total 0
+# HELP prometheus_tsdb_checkpoint_creations_total Total number of checkpoint creations attempted.
+# TYPE prometheus_tsdb_checkpoint_creations_total counter
+prometheus_tsdb_checkpoint_creations_total 1
+# HELP prometheus_tsdb_checkpoint_deletions_failed_total Total number of checkpoint deletions that failed.
+# TYPE prometheus_tsdb_checkpoint_deletions_failed_total counter
+prometheus_tsdb_checkpoint_deletions_failed_total 0
+# HELP prometheus_tsdb_checkpoint_deletions_total Total number of checkpoint deletions attempted.
+# TYPE prometheus_tsdb_checkpoint_deletions_total counter
+prometheus_tsdb_checkpoint_deletions_total 1
+# HELP prometheus_tsdb_clean_start -1: lockfile is disabled. 0: a lockfile from a previous execution was replaced. 1: lockfile creation was clean
+# TYPE prometheus_tsdb_clean_start gauge
+prometheus_tsdb_clean_start 1
+# HELP prometheus_tsdb_compaction_chunk_range_seconds Final time range of chunks on their first compaction
+# TYPE prometheus_tsdb_compaction_chunk_range_seconds histogram
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="100"} 0
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="400"} 0
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="1600"} 0
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="6400"} 0
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="25600"} 0
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="102400"} 0
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="409600"} 1
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="1.6384e+06"} 1
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="6.5536e+06"} 21
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="2.62144e+07"} 21
+prometheus_tsdb_compaction_chunk_range_seconds_bucket{le="+Inf"} 21
+prometheus_tsdb_compaction_chunk_range_seconds_sum 3.5685964e+07
+prometheus_tsdb_compaction_chunk_range_seconds_count 21
+# HELP prometheus_tsdb_compaction_chunk_samples Final number of samples on their first compaction
+# TYPE prometheus_tsdb_compaction_chunk_samples histogram
+prometheus_tsdb_compaction_chunk_samples_bucket{le="4"} 0
+prometheus_tsdb_compaction_chunk_samples_bucket{le="6"} 0
+prometheus_tsdb_compaction_chunk_samples_bucket{le="9"} 1
+prometheus_tsdb_compaction_chunk_samples_bucket{le="13.5"} 1
+prometheus_tsdb_compaction_chunk_samples_bucket{le="20.25"} 1
+prometheus_tsdb_compaction_chunk_samples_bucket{le="30.375"} 1
+prometheus_tsdb_compaction_chunk_samples_bucket{le="45.5625"} 1
+prometheus_tsdb_compaction_chunk_samples_bucket{le="68.34375"} 1
+prometheus_tsdb_compaction_chunk_samples_bucket{le="102.515625"} 1
+prometheus_tsdb_compaction_chunk_samples_bucket{le="153.7734375"} 21
+prometheus_tsdb_compaction_chunk_samples_bucket{le="230.66015625"} 21
+prometheus_tsdb_compaction_chunk_samples_bucket{le="345.990234375"} 21
+prometheus_tsdb_compaction_chunk_samples_bucket{le="+Inf"} 21
+prometheus_tsdb_compaction_chunk_samples_sum 2400
+prometheus_tsdb_compaction_chunk_samples_count 21
+# HELP prometheus_tsdb_compaction_chunk_size_bytes Final size of chunks on their first compaction
+# TYPE prometheus_tsdb_compaction_chunk_size_bytes histogram
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="32"} 0
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="48"} 0
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="72"} 0
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="108"} 1
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="162"} 1
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="243"} 17
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="364.5"} 17
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="546.75"} 17
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="820.125"} 17
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="1230.1875"} 21
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="1845.28125"} 21
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="2767.921875"} 21
+prometheus_tsdb_compaction_chunk_size_bytes_bucket{le="+Inf"} 21
+prometheus_tsdb_compaction_chunk_size_bytes_sum 7563
+prometheus_tsdb_compaction_chunk_size_bytes_count 21
+# HELP prometheus_tsdb_compaction_duration_seconds Duration of compaction runs
+# TYPE prometheus_tsdb_compaction_duration_seconds histogram
+prometheus_tsdb_compaction_duration_seconds_bucket{le="1"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="2"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="4"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="8"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="16"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="32"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="64"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="128"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="256"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="512"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="1024"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="2048"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="4096"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="8192"} 3
+prometheus_tsdb_compaction_duration_seconds_bucket{le="+Inf"} 3
+prometheus_tsdb_compaction_duration_seconds_sum 0.122946885
+prometheus_tsdb_compaction_duration_seconds_count 3
+# HELP prometheus_tsdb_compaction_populating_block Set to 1 when a block is currently being written to the disk.
+# TYPE prometheus_tsdb_compaction_populating_block gauge
+prometheus_tsdb_compaction_populating_block 0
+# HELP prometheus_tsdb_compactions_failed_total Total number of compactions that failed for the partition.
+# TYPE prometheus_tsdb_compactions_failed_total counter
+prometheus_tsdb_compactions_failed_total 0
+# HELP prometheus_tsdb_compactions_skipped_total Total number of skipped compactions due to disabled auto compaction.
+# TYPE prometheus_tsdb_compactions_skipped_total counter
+prometheus_tsdb_compactions_skipped_total 0
+# HELP prometheus_tsdb_compactions_total Total number of compactions that were executed for the partition.
+# TYPE prometheus_tsdb_compactions_total counter
+prometheus_tsdb_compactions_total 3
+# HELP prometheus_tsdb_compactions_triggered_total Total number of triggered compactions for the partition.
+# TYPE prometheus_tsdb_compactions_triggered_total counter
+prometheus_tsdb_compactions_triggered_total 24
+# HELP prometheus_tsdb_data_replay_duration_seconds Time taken to replay the data on disk.
+# TYPE prometheus_tsdb_data_replay_duration_seconds gauge
+prometheus_tsdb_data_replay_duration_seconds 0.03711207
+# HELP prometheus_tsdb_exemplar_exemplars_appended_total Total number of appended exemplars.
+# TYPE prometheus_tsdb_exemplar_exemplars_appended_total counter
+prometheus_tsdb_exemplar_exemplars_appended_total 0
+# HELP prometheus_tsdb_exemplar_exemplars_in_storage Number of exemplars currently in circular storage.
+# TYPE prometheus_tsdb_exemplar_exemplars_in_storage gauge
+prometheus_tsdb_exemplar_exemplars_in_storage 0
+# HELP prometheus_tsdb_exemplar_last_exemplars_timestamp_seconds The timestamp of the oldest exemplar stored in circular storage. Useful to check for what timerange the current exemplar buffer limit allows. This usually means the last timestampfor all exemplars for a typical setup. This is not true though if one of the series timestamp is in future compared to rest series.
+# TYPE prometheus_tsdb_exemplar_last_exemplars_timestamp_seconds gauge
+prometheus_tsdb_exemplar_last_exemplars_timestamp_seconds 0
+# HELP prometheus_tsdb_exemplar_max_exemplars Total number of exemplars the exemplar storage can store, resizeable.
+# TYPE prometheus_tsdb_exemplar_max_exemplars gauge
+prometheus_tsdb_exemplar_max_exemplars 0
+# HELP prometheus_tsdb_exemplar_out_of_order_exemplars_total Total number of out of order exemplar ingestion failed attempts.
+# TYPE prometheus_tsdb_exemplar_out_of_order_exemplars_total counter
+prometheus_tsdb_exemplar_out_of_order_exemplars_total 0
+# HELP prometheus_tsdb_exemplar_series_with_exemplars_in_storage Number of series with exemplars currently in circular storage.
+# TYPE prometheus_tsdb_exemplar_series_with_exemplars_in_storage gauge
+prometheus_tsdb_exemplar_series_with_exemplars_in_storage 0
+# HELP prometheus_tsdb_head_active_appenders Number of currently active appender transactions
+# TYPE prometheus_tsdb_head_active_appenders gauge
+prometheus_tsdb_head_active_appenders 0
+# HELP prometheus_tsdb_head_chunks Total number of chunks in the head block.
+# TYPE prometheus_tsdb_head_chunks gauge
+prometheus_tsdb_head_chunks 15
+# HELP prometheus_tsdb_head_chunks_created_total Total number of chunks created in the head
+# TYPE prometheus_tsdb_head_chunks_created_total counter
+prometheus_tsdb_head_chunks_created_total 36
+# HELP prometheus_tsdb_head_chunks_removed_total Total number of chunks removed in the head
+# TYPE prometheus_tsdb_head_chunks_removed_total counter
+prometheus_tsdb_head_chunks_removed_total 21
+# HELP prometheus_tsdb_head_chunks_storage_size_bytes Size of the chunks_head directory.
+# TYPE prometheus_tsdb_head_chunks_storage_size_bytes gauge
+prometheus_tsdb_head_chunks_storage_size_bytes 262144
+# HELP prometheus_tsdb_head_gc_duration_seconds Runtime of garbage collection in the head block.
+# TYPE prometheus_tsdb_head_gc_duration_seconds summary
+prometheus_tsdb_head_gc_duration_seconds_sum 0.003282828
+prometheus_tsdb_head_gc_duration_seconds_count 1
+# HELP prometheus_tsdb_head_max_time Maximum timestamp of the head block. The unit is decided by the library consumer.
+# TYPE prometheus_tsdb_head_max_time gauge
+prometheus_tsdb_head_max_time 1.705684682761e+12
+# HELP prometheus_tsdb_head_max_time_seconds Maximum timestamp of the head block.
+# TYPE prometheus_tsdb_head_max_time_seconds gauge
+prometheus_tsdb_head_max_time_seconds 1.705684682e+09
+# HELP prometheus_tsdb_head_min_time Minimum time bound of the head block. The unit is decided by the library consumer.
+# TYPE prometheus_tsdb_head_min_time gauge
+prometheus_tsdb_head_min_time 1.705680002359e+12
+# HELP prometheus_tsdb_head_min_time_seconds Minimum time bound of the head block.
+# TYPE prometheus_tsdb_head_min_time_seconds gauge
+prometheus_tsdb_head_min_time_seconds 1.705680002e+09
+# HELP prometheus_tsdb_head_out_of_order_samples_appended_total Total number of appended out of order samples.
+# TYPE prometheus_tsdb_head_out_of_order_samples_appended_total counter
+prometheus_tsdb_head_out_of_order_samples_appended_total 0
+# HELP prometheus_tsdb_head_samples_appended_total Total number of appended samples.
+# TYPE prometheus_tsdb_head_samples_appended_total counter
+prometheus_tsdb_head_samples_appended_total{type="float"} 475
+prometheus_tsdb_head_samples_appended_total{type="histogram"} 0
+# HELP prometheus_tsdb_head_series Total number of series in the head block.
+# TYPE prometheus_tsdb_head_series gauge
+prometheus_tsdb_head_series 5
+# HELP prometheus_tsdb_head_series_created_total Total number of series created in the head
+# TYPE prometheus_tsdb_head_series_created_total counter
+prometheus_tsdb_head_series_created_total 5
+# HELP prometheus_tsdb_head_series_not_found_total Total number of requests for series that were not found.
+# TYPE prometheus_tsdb_head_series_not_found_total counter
+prometheus_tsdb_head_series_not_found_total 0
+# HELP prometheus_tsdb_head_series_removed_total Total number of series removed in the head
+# TYPE prometheus_tsdb_head_series_removed_total counter
+prometheus_tsdb_head_series_removed_total 0
+# HELP prometheus_tsdb_head_truncations_failed_total Total number of head truncations that failed.
+# TYPE prometheus_tsdb_head_truncations_failed_total counter
+prometheus_tsdb_head_truncations_failed_total 0
+# HELP prometheus_tsdb_head_truncations_total Total number of head truncations attempted.
+# TYPE prometheus_tsdb_head_truncations_total counter
+prometheus_tsdb_head_truncations_total 1
+# HELP prometheus_tsdb_isolation_high_watermark The highest TSDB append ID that has been given out.
+# TYPE prometheus_tsdb_isolation_high_watermark gauge
+prometheus_tsdb_isolation_high_watermark 95
+# HELP prometheus_tsdb_isolation_low_watermark The lowest TSDB append ID that is still referenced.
+# TYPE prometheus_tsdb_isolation_low_watermark gauge
+prometheus_tsdb_isolation_low_watermark 95
+# HELP prometheus_tsdb_lowest_timestamp Lowest timestamp value stored in the database. The unit is decided by the library consumer.
+# TYPE prometheus_tsdb_lowest_timestamp gauge
+prometheus_tsdb_lowest_timestamp 1.704465504204e+12
+# HELP prometheus_tsdb_lowest_timestamp_seconds Lowest timestamp value stored in the database.
+# TYPE prometheus_tsdb_lowest_timestamp_seconds gauge
+prometheus_tsdb_lowest_timestamp_seconds 1.704465504e+09
+# HELP prometheus_tsdb_mmap_chunk_corruptions_total Total number of memory-mapped chunk corruptions.
+# TYPE prometheus_tsdb_mmap_chunk_corruptions_total counter
+prometheus_tsdb_mmap_chunk_corruptions_total 0
+# HELP prometheus_tsdb_mmap_chunks_total Total number of chunks that were memory-mapped.
+# TYPE prometheus_tsdb_mmap_chunks_total counter
+prometheus_tsdb_mmap_chunks_total 5
+# HELP prometheus_tsdb_out_of_bound_samples_total Total number of out of bound samples ingestion failed attempts with out of order support disabled.
+# TYPE prometheus_tsdb_out_of_bound_samples_total counter
+prometheus_tsdb_out_of_bound_samples_total{type="float"} 0
+# HELP prometheus_tsdb_out_of_order_samples_total Total number of out of order samples ingestion failed attempts due to out of order being disabled.
+# TYPE prometheus_tsdb_out_of_order_samples_total counter
+prometheus_tsdb_out_of_order_samples_total{type="float"} 0
+prometheus_tsdb_out_of_order_samples_total{type="histogram"} 0
+# HELP prometheus_tsdb_reloads_failures_total Number of times the database failed to reloadBlocks block data from disk.
+# TYPE prometheus_tsdb_reloads_failures_total counter
+prometheus_tsdb_reloads_failures_total 0
+# HELP prometheus_tsdb_reloads_total Number of times the database reloaded block data from disk.
+# TYPE prometheus_tsdb_reloads_total counter
+prometheus_tsdb_reloads_total 27
+# HELP prometheus_tsdb_retention_limit_bytes Max number of bytes to be retained in the tsdb blocks, configured 0 means disabled
+# TYPE prometheus_tsdb_retention_limit_bytes gauge
+prometheus_tsdb_retention_limit_bytes 0
+# HELP prometheus_tsdb_size_retentions_total The number of times that blocks were deleted because the maximum number of bytes was exceeded.
+# TYPE prometheus_tsdb_size_retentions_total counter
+prometheus_tsdb_size_retentions_total 0
+# HELP prometheus_tsdb_snapshot_replay_error_total Total number snapshot replays that failed.
+# TYPE prometheus_tsdb_snapshot_replay_error_total counter
+prometheus_tsdb_snapshot_replay_error_total 0
+# HELP prometheus_tsdb_storage_blocks_bytes The number of bytes that are currently used for local storage by all blocks.
+# TYPE prometheus_tsdb_storage_blocks_bytes gauge
+prometheus_tsdb_storage_blocks_bytes 778388
+# HELP prometheus_tsdb_symbol_table_size_bytes Size of symbol table in memory for loaded blocks
+# TYPE prometheus_tsdb_symbol_table_size_bytes gauge
+prometheus_tsdb_symbol_table_size_bytes 168
+# HELP prometheus_tsdb_time_retentions_total The number of times that blocks were deleted because the maximum time limit was exceeded.
+# TYPE prometheus_tsdb_time_retentions_total counter
+prometheus_tsdb_time_retentions_total 0
+# HELP prometheus_tsdb_tombstone_cleanup_seconds The time taken to recompact blocks to remove tombstones.
+# TYPE prometheus_tsdb_tombstone_cleanup_seconds histogram
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="0.005"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="0.01"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="0.025"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="0.05"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="0.1"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="0.25"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="0.5"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="1"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="2.5"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="5"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="10"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_bucket{le="+Inf"} 0
+prometheus_tsdb_tombstone_cleanup_seconds_sum 0
+prometheus_tsdb_tombstone_cleanup_seconds_count 0
+# HELP prometheus_tsdb_too_old_samples_total Total number of out of order samples ingestion failed attempts with out of support enabled, but sample outside of time window.
+# TYPE prometheus_tsdb_too_old_samples_total counter
+prometheus_tsdb_too_old_samples_total{type="float"} 0
+# HELP prometheus_tsdb_vertical_compactions_total Total number of compactions done on overlapping blocks.
+# TYPE prometheus_tsdb_vertical_compactions_total counter
+prometheus_tsdb_vertical_compactions_total 0
+# HELP prometheus_tsdb_wal_completed_pages_total Total number of completed pages.
+# TYPE prometheus_tsdb_wal_completed_pages_total counter
+prometheus_tsdb_wal_completed_pages_total 1
+# HELP prometheus_tsdb_wal_corruptions_total Total number of WAL corruptions.
+# TYPE prometheus_tsdb_wal_corruptions_total counter
+prometheus_tsdb_wal_corruptions_total 0
+# HELP prometheus_tsdb_wal_fsync_duration_seconds Duration of write log fsync.
+# TYPE prometheus_tsdb_wal_fsync_duration_seconds summary
+prometheus_tsdb_wal_fsync_duration_seconds{quantile="0.5"} NaN
+prometheus_tsdb_wal_fsync_duration_seconds{quantile="0.9"} NaN
+prometheus_tsdb_wal_fsync_duration_seconds{quantile="0.99"} NaN
+prometheus_tsdb_wal_fsync_duration_seconds_sum 0.001563371
+prometheus_tsdb_wal_fsync_duration_seconds_count 1
+# HELP prometheus_tsdb_wal_page_flushes_total Total number of page flushes.
+# TYPE prometheus_tsdb_wal_page_flushes_total counter
+prometheus_tsdb_wal_page_flushes_total 96
+# HELP prometheus_tsdb_wal_segment_current Write log segment index that TSDB is currently writing to.
+# TYPE prometheus_tsdb_wal_segment_current gauge
+prometheus_tsdb_wal_segment_current 149
+# HELP prometheus_tsdb_wal_storage_size_bytes Size of the write log directory.
+# TYPE prometheus_tsdb_wal_storage_size_bytes gauge
+prometheus_tsdb_wal_storage_size_bytes 104892
+# HELP prometheus_tsdb_wal_truncate_duration_seconds Duration of WAL truncation.
+# TYPE prometheus_tsdb_wal_truncate_duration_seconds summary
+prometheus_tsdb_wal_truncate_duration_seconds_sum 0.011218045
+prometheus_tsdb_wal_truncate_duration_seconds_count 1
+# HELP prometheus_tsdb_wal_truncations_failed_total Total number of write log truncations that failed.
+# TYPE prometheus_tsdb_wal_truncations_failed_total counter
+prometheus_tsdb_wal_truncations_failed_total 0
+# HELP prometheus_tsdb_wal_truncations_total Total number of write log truncations attempted.
+# TYPE prometheus_tsdb_wal_truncations_total counter
+prometheus_tsdb_wal_truncations_total 1
+# HELP prometheus_tsdb_wal_writes_failed_total Total number of write log writes that failed.
+# TYPE prometheus_tsdb_wal_writes_failed_total counter
+prometheus_tsdb_wal_writes_failed_total 0
+# HELP prometheus_web_federation_errors_total Total number of errors that occurred while sending federation responses.
+# TYPE prometheus_web_federation_errors_total counter
+prometheus_web_federation_errors_total 0
+# HELP prometheus_web_federation_warnings_total Total number of warnings that occurred while sending federation responses.
+# TYPE prometheus_web_federation_warnings_total counter
+prometheus_web_federation_warnings_total 0
+# HELP promhttp_metric_handler_requests_in_flight Current number of scrapes being served.
+# TYPE promhttp_metric_handler_requests_in_flight gauge
+promhttp_metric_handler_requests_in_flight 1
+# HELP promhttp_metric_handler_requests_total Total number of scrapes by HTTP status code.
+# TYPE promhttp_metric_handler_requests_total counter
+promhttp_metric_handler_requests_total{code="200"} 1
+promhttp_metric_handler_requests_total{code="500"} 0
+promhttp_metric_handler_requests_total{code="503"} 0
