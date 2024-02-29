@@ -126,6 +126,7 @@ func TestWriteConfig(t *testing.T) {
 	}
 	helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
+	helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 	assert.NoFileExists(t, cachePath)
 }
