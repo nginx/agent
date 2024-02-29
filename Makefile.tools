@@ -1,10 +1,11 @@
-OAPICODEGEN	  = github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.0.0
-LEFTHOOK	  = github.com/evilmartians/lefthook@v1.5.5
-GOLANGCILINT  = github.com/golangci/golangci-lint/cmd/golangci-lint@v1.56.1
-PROTOCGENGO	  = google.golang.org/protobuf/cmd/protoc-gen-go@v1.32.0
-FOFUMPT	      = mvdan.cc/gofumpt@v0.6.0
-COUNTERFEITER = github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0
-NFPM          = github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.35.3
+OAPICODEGEN	    = github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.0.0
+LEFTHOOK	    = github.com/evilmartians/lefthook@v1.5.5
+GOLANGCILINT    = github.com/golangci/golangci-lint/cmd/golangci-lint@v1.56.1
+PROTOCGENGO	    = google.golang.org/protobuf/cmd/protoc-gen-go@v1.32.0
+GOFUMPT	        = mvdan.cc/gofumpt@v0.6.0
+COUNTERFEITER   = github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0
+NFPM            = github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.35.3
+GOTESTCOVERAGE  = github.com/vladopajic/go-test-coverage/v2@v2.8.3
 
 install-tools: ## Install tool dependencies
 	@echo "Installing Tools"
@@ -12,7 +13,8 @@ install-tools: ## Install tool dependencies
 	@$(GOINST) $(LEFTHOOK)
 	@$(GOINST) $(GOLANGCILINT)
 	@$(GOINST) $(PROTOCGENGO)
-	@$(GOINST) $(FOFUMPT)
+	@$(GOINST) $(GOFUMPT)
 	@$(GOINST) $(COUNTERFEITER)
 	@$(GOINST) $(NFPM)
+	@$(GOINST) $(GOTESTCOVERAGE)
 	@$(GORUN) $(LEFTHOOK) install pre-push
