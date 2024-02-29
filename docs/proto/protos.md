@@ -204,6 +204,7 @@ Additional information associated with a ConfigUploadRequest
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | instance_id | [string](#string) |  | the instance identifier |
+| overview | [FileOverview](#mpi-v1-FileOverview) | optional | an optional set of files related to the request |
 
 
 
@@ -428,9 +429,8 @@ A Management Plane request for information, triggers an associated rpc on the Da
 | message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
 | status_request | [StatusRequest](#mpi-v1-StatusRequest) |  | triggers a DataPlaneStatus rpc |
 | health_request | [HealthRequest](#mpi-v1-HealthRequest) |  | triggers a DataPlaneHealth rpc |
-| config_apply_request | [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest) |  | triggers a rpc GetFile(FileRequest) for overview list, if overview is missing, triggers a rpc Overview(ConfigVersion) first |
-| config_upload_request | [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc SendFile(File) for that instances |
-| config_sync_request | [ConfigSyncRequest](#mpi-v1-ConfigSyncRequest) |  | triggers a reconciliation of with a command_response for a particular action |
+| config_apply_request | [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest) |  | triggers a rpc GetFile(FileRequest) for overview list, if overview is missing, triggers a rpc GetOverview(ConfigVersion) first |
+| config_upload_request | [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc UpdateFile(File) for that instances |
 | action_request | [ActionRequest](#mpi-v1-ActionRequest) |  | triggers a DataPlaneResponse with a command_response for a particular action |
 | command_status_request | [CommandStatusRequest](#mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneResponse with a command_response for a particular correlation_id |
 
