@@ -7,12 +7,16 @@ package mpi.v1;
 
 option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
 
+import "google/protobuf/timestamp.proto";
+
 // Meta-information associated with a message
 message MessageMeta {
     // monotonically increasing integer
-    string message_id = 1;
+    uint64 message_id = 1;
     // if 2 or more messages associated with the same workflow, use this field as an association
     string correlation_id = 2;
+    // timestamp for human readable timestamp in UTC format
+    google.protobuf.Timestamp timestamp = 3;
 }
 
 // Represents a the status response of an command

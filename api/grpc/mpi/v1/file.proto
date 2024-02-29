@@ -69,12 +69,6 @@ message FileOverview {
 message File {
     // Meta information about the file, the name (including path) and hash
     FileMeta file_meta = 1;
-    // last modified time of the file (created time if never modified)
-    google.protobuf.Timestamp modified_time = 2;
-    // the permission set associated with a particular file
-    string permissions = 3;
-    // Size of the file in bytes
-    int64 size = 4;
     // Action enumeration
     enum FileAction {
         // Default value, no action
@@ -89,9 +83,7 @@ message File {
         FILE_ACTION_DELETE = 4;
     }
     // optional action
-    optional FileAction action = 5;
-    // optional contents
-    optional FileContents contents = 6;
+    optional FileAction action = 2;
 }
 
 // Represents the get file request
@@ -118,8 +110,14 @@ message FileContents {
 message FileMeta {
     // the name of the file
     string name = 1;
-    // the hash of the file contents
+    // the hash of the file contents sha256, hex encoded
     string hash = 2;
+    // last modified time of the file (created time if never modified)
+    google.protobuf.Timestamp modified_time = 3;
+    // the permission set associated with a particular file
+    string permissions = 4;
+    // Size of the file in bytes
+    int64 size = 5;
 }
 
 // Represents the update file request

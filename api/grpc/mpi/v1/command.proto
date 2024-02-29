@@ -327,7 +327,7 @@ message ManagementPlaneRequest {
         // triggers a series of rpc UpdateFile(File) for that instances
         ConfigUploadRequest config_upload_request = 6;
         // triggers a DataPlaneResponse with a command_response for a particular action
-        ActionRequest action_request = 7;
+        APIActionRequest action_request = 7;
         // triggers a DataPlaneResponse with a command_response for a particular correlation_id
         CommandStatusRequest command_status_request = 8; 
     }
@@ -362,8 +362,8 @@ message ConfigUploadRequest {
     optional mpi.v1.FileOverview overview = 2;
 }
 
-// Perform an associated action on an instance
-message ActionRequest {
+// Perform an associated API action on an instance
+message APIActionRequest {
     // the instance identifier
     string instance_id = 1;
     // the action to be performed on the instance

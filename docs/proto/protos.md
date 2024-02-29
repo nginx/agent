@@ -4,7 +4,7 @@
 ## Table of Contents
 
 - [mpi/v1/command.proto](#mpi_v1_command-proto)
-    - [ActionRequest](#mpi-v1-ActionRequest)
+    - [APIActionRequest](#mpi-v1-APIActionRequest)
     - [AgentConfig](#mpi-v1-AgentConfig)
     - [Auth](#mpi-v1-Auth)
     - [Command](#mpi-v1-Command)
@@ -82,10 +82,10 @@ These proto definitions follow https://protobuf.dev/programming-guides/style/
 and recommendations outlined in https://static.sched.com/hosted_files/kccncna17/ad/2017%20CloudNativeCon%20-%20Mod%20gRPC%20Services.pdf
 
 
-<a name="mpi-v1-ActionRequest"></a>
+<a name="mpi-v1-APIActionRequest"></a>
 
-### ActionRequest
-Perform an associated action on an instance
+### APIActionRequest
+Perform an associated API action on an instance
 
 
 | Field | Type | Label | Description |
@@ -431,7 +431,7 @@ A Management Plane request for information, triggers an associated rpc on the Da
 | health_request | [HealthRequest](#mpi-v1-HealthRequest) |  | triggers a DataPlaneHealth rpc |
 | config_apply_request | [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest) |  | triggers a rpc GetFile(FileRequest) for overview list, if overview is missing, triggers a rpc GetOverview(ConfigVersion) first |
 | config_upload_request | [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc UpdateFile(File) for that instances |
-| action_request | [ActionRequest](#mpi-v1-ActionRequest) |  | triggers a DataPlaneResponse with a command_response for a particular action |
+| action_request | [APIActionRequest](#mpi-v1-APIActionRequest) |  | triggers a DataPlaneResponse with a command_response for a particular action |
 | command_status_request | [CommandStatusRequest](#mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneResponse with a command_response for a particular correlation_id |
 
 
@@ -734,8 +734,9 @@ Meta-information associated with a message
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_id | [string](#string) |  | monotonically increasing integer |
+| message_id | [uint64](#uint64) |  | monotonically increasing integer |
 | correlation_id | [string](#string) |  | if 2 or more messages associated with the same workflow, use this field as an association |
+| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | timestamp for human readable timestamp in UTC format |
 
 
 
@@ -797,11 +798,7 @@ Represents meta data about a file
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta information about the file, the name (including path) and hash |
-| modified_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | last modified time of the file (created time if never modified) |
-| permissions | [string](#string) |  | the permission set associated with a particular file |
-| size | [int64](#int64) |  | Size of the file in bytes |
 | action | [File.FileAction](#mpi-v1-File-FileAction) | optional | optional action |
-| contents | [FileContents](#mpi-v1-FileContents) | optional | optional contents |
 
 
 
@@ -832,7 +829,10 @@ Meta information about the file, the name (including path) and hash
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | the name of the file |
-| hash | [string](#string) |  | the hash of the file contents |
+| hash | [string](#string) |  | the hash of the file contents sha256, hex encoded |
+| modified_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | last modified time of the file (created time if never modified) |
+| permissions | [string](#string) |  | the permission set associated with a particular file |
+| size | [int64](#int64) |  | Size of the file in bytes |
 
 
 
