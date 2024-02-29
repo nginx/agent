@@ -1,3 +1,5 @@
+![coverage](https://raw.githubusercontent.com/nginx/agent/badges/.badges/v3/coverage.svg)
+
 # NGINX Agent
 
 NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus instance. It enables:

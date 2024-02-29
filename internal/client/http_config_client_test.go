@@ -118,3 +118,37 @@ func TestGetFile(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, testDataResponse.String(), resp.String())
 }
+
+func TestErrorCases(t *testing.T) {
+	tests := []struct {
+		name       string
+		filesURL   string
+		tenantID   string
+		instanceID string
+	}{
+		{
+			name:       "empty-params",
+			filesURL:   "",
+			tenantID:   "",
+			instanceID: "",
+		},
+		{
+			name:       "invalid-url",
+			filesURL:   "::/\\",
+			tenantID:   "",
+			instanceID: "",
+		},
+	}
+	hcd := NewHTTPConfigClient(time.Second * 10)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			f, err := hcd.GetFilesMetadata(
+				context.Background(), test.filesURL,
+				test.tenantID, test.instanceID,
+			)
+			require.Error(t, err)
+			assert.Empty(t, f)
+		})
+	}
+}
