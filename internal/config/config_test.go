@@ -50,8 +50,8 @@ func TestGetConfig(t *testing.T) {
 	assert.Equal(t, "debug", result.Log.Level)
 	assert.Equal(t, "./", result.Log.Path)
 
-	assert.Equal(t, "127.0.0.1", result.DataplaneAPI.Host)
-	assert.Equal(t, 8038, result.DataplaneAPI.Port)
+	assert.Equal(t, "127.0.0.1", result.DataPlaneAPI.Host)
+	assert.Equal(t, 8038, result.DataPlaneAPI.Port)
 
 	assert.Equal(t, 30*time.Second, result.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	assert.False(t, result.DataPlaneConfig.Nginx.TreatWarningsAsError)
@@ -76,16 +76,16 @@ func TestRegisterFlags(t *testing.T) {
 	t.Setenv("NGINX_AGENT_LOG_LEVEL", "warn")
 	t.Setenv("NGINX_AGENT_LOG_PATH", "/var/log/test/agent.log")
 	t.Setenv("NGINX_AGENT_PROCESS_MONITOR_MONITORING_FREQUENCY", "10s")
-	t.Setenv("NGINX_AGENT_DATAPLANE_API_HOST", "example.com")
-	t.Setenv("NGINX_AGENT_DATAPLANE_API_PORT", "9090")
+	t.Setenv("NGINX_AGENT_DATA_PLANE_API_HOST", "example.com")
+	t.Setenv("NGINX_AGENT_DATA_PLANE_API_PORT", "9090")
 	t.Setenv("NGINX_AGENT_CLIENT_TIMEOUT", "10s")
 	registerFlags()
 
 	assert.Equal(t, "warn", viperInstance.GetString(LogLevelConfigKey))
 	assert.Equal(t, "/var/log/test/agent.log", viperInstance.GetString(LogPathConfigKey))
 	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyConfigKey))
-	assert.Equal(t, "example.com", viperInstance.GetString(DataplaneAPIHostConfigKey))
-	assert.Equal(t, 9090, viperInstance.GetInt(DataplaneAPIPortConfigKey))
+	assert.Equal(t, "example.com", viperInstance.GetString(DataPlaneAPIHostConfigKey))
+	assert.Equal(t, 9090, viperInstance.GetInt(DataPlaneAPIPortConfigKey))
 	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutConfigKey))
 }
 
@@ -120,8 +120,8 @@ func TestLoadPropertiesFromFile(t *testing.T) {
 	assert.Equal(t, "debug", viperInstance.GetString(LogLevelConfigKey))
 	assert.Equal(t, "./", viperInstance.GetString(LogPathConfigKey))
 
-	assert.Equal(t, "127.0.0.1", viperInstance.GetString(DataplaneAPIHostConfigKey))
-	assert.Equal(t, 8038, viperInstance.GetInt(DataplaneAPIPortConfigKey))
+	assert.Equal(t, "127.0.0.1", viperInstance.GetString(DataPlaneAPIHostConfigKey))
+	assert.Equal(t, 8038, viperInstance.GetInt(DataPlaneAPIPortConfigKey))
 
 	assert.Equal(t, 30*time.Second, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyConfigKey))
 
@@ -156,12 +156,12 @@ func TestGetProcessMonitor(t *testing.T) {
 	assert.Equal(t, time.Hour, result.MonitoringFrequency)
 }
 
-func TestGetDataplaneAPI(t *testing.T) {
+func TestGetDataPlaneAPI(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(viperKeyDeliDelimiter))
-	viperInstance.Set(DataplaneAPIHostConfigKey, "testhost")
-	viperInstance.Set(DataplaneAPIPortConfigKey, 9091)
+	viperInstance.Set(DataPlaneAPIHostConfigKey, "testhost")
+	viperInstance.Set(DataPlaneAPIPortConfigKey, 9091)
 
-	result := getDataplaneAPI()
+	result := getDataPlaneAPI()
 	assert.Equal(t, "testhost", result.Host)
 	assert.Equal(t, 9091, result.Port)
 }

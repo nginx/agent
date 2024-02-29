@@ -172,7 +172,6 @@ func (n *Nginx) Apply() error {
 	slog.Debug("Applying NGINX config")
 	var errorsFound error
 
-	exePath := n.instance.GetMeta().GetNginxMeta().GetExePath()
 	errorLogs := n.configContext.ErrorLogs
 
 	logErrorChannel := make(chan error, len(errorLogs))
@@ -180,11 +179,13 @@ func (n *Nginx) Apply() error {
 
 	go n.monitorLogs(errorLogs, logErrorChannel)
 
-	out, err := n.executor.RunCmd(exePath, "-s", "reload")
+	processID := n.instance.GetMeta().GetNginxMeta().GetProcessId()
+	err := n.executor.KillProcess(processID)
 	if err != nil {
-		return fmt.Errorf("failed to reload NGINX %w: %s", err, out)
+		return fmt.Errorf("failed to reload NGINX, %w", err)
 	}
-	slog.Info("NGINX reloaded")
+
+	slog.Info("NGINX reloaded", "process_id", processID)
 
 	numberOfExpectedMessages := len(errorLogs)
 

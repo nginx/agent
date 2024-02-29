@@ -12,8 +12,8 @@ type Config struct {
 	Path               string          `yaml:"-"`
 	Log                Log             `yaml:"-" mapstructure:"log"`
 	ProcessMonitor     ProcessMonitor  `yaml:"-" mapstructure:"process_monitor"`
-	DataplaneAPI       DataplaneAPI    `yaml:"-" mapstructure:"dataplane_api"`
-	DataPlaneConfig    DataPlaneConfig `yaml:"-" mapstructure:"dataplane_config"`
+	DataPlaneAPI       DataPlaneAPI    `yaml:"-" mapstructure:"data_plane_api"`
+	DataPlaneConfig    DataPlaneConfig `yaml:"-" mapstructure:"data_plane_config"`
 	Client             Client          `yaml:"-" mapstructure:"client"`
 	ConfigDir          string          `yaml:"-" mapstructure:"config-dirs"`
 	AllowedDirectories []string        `yaml:"-"`
@@ -28,7 +28,7 @@ type ProcessMonitor struct {
 	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 }
 
-type DataplaneAPI struct {
+type DataPlaneAPI struct {
 	Host string `yaml:"-" mapstructure:"host"`
 	Port int    `yaml:"-" mapstructure:"port"`
 }

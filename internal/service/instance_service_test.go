@@ -23,11 +23,11 @@ var testInstances = []*instances.Instance{
 }
 
 func TestInstanceService_GetInstances(t *testing.T) {
-	fakeDataplaneService := &instancefakes.FakeDataplaneInstanceService{}
-	fakeDataplaneService.GetInstancesReturns(testInstances)
+	fakeDataPlaneService := &instancefakes.FakeDataPlaneInstanceService{}
+	fakeDataPlaneService.GetInstancesReturns(testInstances)
 
 	instanceService := NewInstanceService()
-	instanceService.dataplaneInstanceServices = []instance.DataplaneInstanceService{fakeDataplaneService}
+	instanceService.dataPlaneInstanceServices = []instance.DataPlaneInstanceService{fakeDataPlaneService}
 
 	assert.Equal(t, testInstances, instanceService.GetInstances([]*model.Process{}))
 }

@@ -190,9 +190,8 @@ func TestNginx_Apply(t *testing.T) {
 		},
 		{
 			name:     "failed reload",
-			out:      bytes.NewBufferString(""),
 			error:    errors.New("error reloading"),
-			expected: fmt.Errorf("failed to reload NGINX %w: ", errors.New("error reloading")),
+			expected: fmt.Errorf("failed to reload NGINX, %w", errors.New("error reloading")),
 		},
 		{
 			name: "failed reload due to error in error logs",
@@ -223,7 +222,7 @@ func TestNginx_Apply(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
-			mockExec.RunCmdReturns(test.out, test.error)
+			mockExec.KillProcessReturns(test.error)
 
 			instance := &instances.Instance{
 				Type:       instances.Type_NGINX,
@@ -231,7 +230,8 @@ func TestNginx_Apply(t *testing.T) {
 				Meta: &instances.Meta{
 					Meta: &instances.Meta_NginxMeta{
 						NginxMeta: &instances.NginxMeta{
-							ExePath: "nginx",
+							ExePath:   "nginx",
+							ProcessId: 1,
 						},
 					},
 				},

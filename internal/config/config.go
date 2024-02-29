@@ -26,10 +26,10 @@ const (
 	LogLevelConfigKey                                   = "log_level"
 	LogPathConfigKey                                    = "log_path"
 	ProcessMonitorMonitoringFrequencyConfigKey          = "process_monitor_monitoring_frequency"
-	DataplaneAPIHostConfigKey                           = "dataplane_api_host"
-	DataplaneAPIPortConfigKey                           = "dataplane_api_port"
-	DataPlaneConfigNginxReloadMonitoringPeriodConfigKey = "dataplane_config_nginx_reload_monitoring_period"
-	DataPlaneConfigNginxTreatWarningsAsErrorsConfigKey  = "dataplane_config_nginx_treat_warnings_as_error"
+	DataPlaneAPIHostConfigKey                           = "data_plane_api_host"
+	DataPlaneAPIPortConfigKey                           = "data_plane_api_port"
+	DataPlaneConfigNginxReloadMonitoringPeriodConfigKey = "data_plane_config_nginx_reload_monitoring_period"
+	DataPlaneConfigNginxTreatWarningsAsErrorsConfigKey  = "data_plane_config_nginx_treat_warnings_as_error"
 	ClientTimeoutConfigKey                              = "client_timeout"
 	ConfigDirectoriesConfigKey                          = "config_dirs"
 
@@ -73,7 +73,7 @@ func GetConfig() *Config {
 		Version:            viperInstance.GetString(VersionConfigKey),
 		Log:                getLog(),
 		ProcessMonitor:     getProcessMonitor(),
-		DataplaneAPI:       getDataplaneAPI(),
+		DataPlaneAPI:       getDataPlaneAPI(),
 		DataPlaneConfig:    getDataPlaneConfig(),
 		Client:             getClient(),
 		ConfigDir:          getConfigDir(),
@@ -124,8 +124,8 @@ func registerFlags() {
 		"How often the NGINX Agent will check for process changes.",
 	)
 
-	fs.String(DataplaneAPIHostConfigKey, "", "The host used by the Dataplane API.")
-	fs.Int(DataplaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
+	fs.String(DataPlaneAPIHostConfigKey, "", "The host used by the data plane API.")
+	fs.Int(DataPlaneAPIPortConfigKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
 
 	fs.Duration(
 		DataPlaneConfigNginxReloadMonitoringPeriodConfigKey,
@@ -141,7 +141,7 @@ func registerFlags() {
 	fs.Duration(ClientTimeoutConfigKey, time.Minute, "Client timeout")
 
 	fs.String(ConfigDirectoriesConfigKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules",
-		"Defines the paths that you want to grant nginx-agent read/write access to."+
+		"Defines the paths that you want to grant NGINX Agent read/write access to."+
 			" This key is formatted as a string and follows Unix PATH format")
 
 	fs.SetNormalizeFunc(normalizeFunc)
@@ -217,10 +217,10 @@ func getProcessMonitor() ProcessMonitor {
 	}
 }
 
-func getDataplaneAPI() DataplaneAPI {
-	return DataplaneAPI{
-		Host: viperInstance.GetString(DataplaneAPIHostConfigKey),
-		Port: viperInstance.GetInt(DataplaneAPIPortConfigKey),
+func getDataPlaneAPI() DataPlaneAPI {
+	return DataPlaneAPI{
+		Host: viperInstance.GetString(DataPlaneAPIHostConfigKey),
+		Port: viperInstance.GetInt(DataPlaneAPIPortConfigKey),
 	}
 }
 

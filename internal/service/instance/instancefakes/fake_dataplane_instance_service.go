@@ -9,7 +9,7 @@ import (
 	"github.com/nginx/agent/v3/internal/service/instance"
 )
 
-type FakeDataplaneInstanceService struct {
+type FakeDataPlaneInstanceService struct {
 	GetInstancesStub        func([]*model.Process) []*instances.Instance
 	getInstancesMutex       sync.RWMutex
 	getInstancesArgsForCall []struct {
@@ -25,7 +25,7 @@ type FakeDataplaneInstanceService struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeDataplaneInstanceService) GetInstances(arg1 []*model.Process) []*instances.Instance {
+func (fake *FakeDataPlaneInstanceService) GetInstances(arg1 []*model.Process) []*instances.Instance {
 	var arg1Copy []*model.Process
 	if arg1 != nil {
 		arg1Copy = make([]*model.Process, len(arg1))
@@ -49,26 +49,26 @@ func (fake *FakeDataplaneInstanceService) GetInstances(arg1 []*model.Process) []
 	return fakeReturns.result1
 }
 
-func (fake *FakeDataplaneInstanceService) GetInstancesCallCount() int {
+func (fake *FakeDataPlaneInstanceService) GetInstancesCallCount() int {
 	fake.getInstancesMutex.RLock()
 	defer fake.getInstancesMutex.RUnlock()
 	return len(fake.getInstancesArgsForCall)
 }
 
-func (fake *FakeDataplaneInstanceService) GetInstancesCalls(stub func([]*model.Process) []*instances.Instance) {
+func (fake *FakeDataPlaneInstanceService) GetInstancesCalls(stub func([]*model.Process) []*instances.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = stub
 }
 
-func (fake *FakeDataplaneInstanceService) GetInstancesArgsForCall(i int) []*model.Process {
+func (fake *FakeDataPlaneInstanceService) GetInstancesArgsForCall(i int) []*model.Process {
 	fake.getInstancesMutex.RLock()
 	defer fake.getInstancesMutex.RUnlock()
 	argsForCall := fake.getInstancesArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *FakeDataplaneInstanceService) GetInstancesReturns(result1 []*instances.Instance) {
+func (fake *FakeDataPlaneInstanceService) GetInstancesReturns(result1 []*instances.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = nil
@@ -77,7 +77,7 @@ func (fake *FakeDataplaneInstanceService) GetInstancesReturns(result1 []*instanc
 	}{result1}
 }
 
-func (fake *FakeDataplaneInstanceService) GetInstancesReturnsOnCall(i int, result1 []*instances.Instance) {
+func (fake *FakeDataPlaneInstanceService) GetInstancesReturnsOnCall(i int, result1 []*instances.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = nil
@@ -91,7 +91,7 @@ func (fake *FakeDataplaneInstanceService) GetInstancesReturnsOnCall(i int, resul
 	}{result1}
 }
 
-func (fake *FakeDataplaneInstanceService) Invocations() map[string][][]interface{} {
+func (fake *FakeDataPlaneInstanceService) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.getInstancesMutex.RLock()
@@ -103,7 +103,7 @@ func (fake *FakeDataplaneInstanceService) Invocations() map[string][][]interface
 	return copiedInvocations
 }
 
-func (fake *FakeDataplaneInstanceService) recordInvocation(key string, args []interface{}) {
+func (fake *FakeDataPlaneInstanceService) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -115,4 +115,4 @@ func (fake *FakeDataplaneInstanceService) recordInvocation(key string, args []in
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ instance.DataplaneInstanceService = new(FakeDataplaneInstanceService)
+var _ instance.DataPlaneInstanceService = new(FakeDataPlaneInstanceService)
