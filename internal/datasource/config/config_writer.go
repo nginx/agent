@@ -28,7 +28,7 @@ const (
 
 type (
 	ConfigWriterInterface interface {
-		Write(ctx context.Context, filesURL, tenantID, instanceID string) (skippedFiles map[string]struct{}, err error)
+		Write(ctx context.Context, filesURL, tenantID, instanceID string) (skippedFiles CacheContent, err error)
 		Complete() (err error)
 		SetConfigClient(configClient client.ConfigClientInterface)
 		Rollback(ctx context.Context, skippedFiles CacheContent, filesURL, tenantID, instanceID string) error
@@ -81,9 +81,9 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 
 func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	tenantID, instanceID string,
-) (skippedFiles map[string]struct{}, err error) {
+) (skippedFiles CacheContent, err error) {
 	currentFileCache := make(CacheContent)
-	skippedFiles = make(map[string]struct{})
+	skippedFiles = CacheContent{}
 
 	cacheContent, _ := cw.fileCache.ReadFileCache()
 
@@ -96,7 +96,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 		if !doesFileRequireUpdate(cacheContent, fileData) {
 			slog.Info("Skipping file as latest version is already on disk", "file_path", fileData.GetPath())
 			currentFileCache[fileData.GetPath()] = cacheContent[fileData.GetPath()]
-			skippedFiles[fileData.GetPath()] = struct{}{}
+			skippedFiles[fileData.GetPath()] = fileData
 
 			continue
 		}
@@ -104,9 +104,10 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 		file, updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID)
 		if updateErr != nil {
 			slog.Debug("Update Error", "err", updateErr)
-			return nil, updateErr
+			skippedFiles[fileData.GetPath()] = fileData
+		} else {
+			currentFileCache[fileData.GetPath()] = file
 		}
-		currentFileCache[fileData.GetPath()] = file
 	}
 
 	cw.currentFileCache = currentFileCache
@@ -133,6 +134,7 @@ func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File
 	filesURL, tenantID, instanceID string,
 ) (*instances.File, error) {
 	if !cw.isFilePathValid(fileData.GetPath()) {
+		slog.Debug("Invalid File Path, Skipping file")
 		return nil, fmt.Errorf("invalid file path: %s", fileData.GetPath())
 	}
 	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID, instanceID)

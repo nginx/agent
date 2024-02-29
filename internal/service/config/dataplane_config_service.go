@@ -17,7 +17,7 @@ type DataPlaneConfig interface {
 	ParseConfig() (any, error)
 	Validate() error
 	Apply() error
-	Write(ctx context.Context, filesURL, tenantID string) (skippedFiles map[string]struct{}, err error)
+	Write(ctx context.Context, filesURL, tenantID string) (skippedFiles writer.CacheContent, err error)
 	Complete() error
 	SetConfigWriter(configWriter writer.ConfigWriterInterface)
 	Rollback(ctx context.Context, skippedFiles writer.CacheContent, filesURL, tenantID, instanceID string) error

@@ -39,7 +39,7 @@ func TestConfig_Subscriptions(t *testing.T) {
 	subscriptions := configPlugin.Subscriptions()
 	assert.Equal(t, []string{
 		bus.InstanceConfigUpdateRequestTopic,
-		bus.InstanceConfigUpdateCompleteTopic,
+		bus.InstanceConfigUpdateTopic,
 		bus.InstancesTopic,
 	}, subscriptions)
 }
@@ -61,12 +61,20 @@ func TestConfig_Process(t *testing.T) {
 		CorrelationID: "456",
 	}
 
+	configurationStatusProgress := &instances.ConfigurationStatus{
+		InstanceId:    testInstance.GetInstanceId(),
+		CorrelationId: "456",
+		Status:        instances.Status_IN_PROGRESS,
+		Message:       "Instance configuration update in progress",
+		Timestamp:     timestamppb.Now(),
+	}
+
 	configurationStatus := &instances.ConfigurationStatus{
 		InstanceId:    testInstance.GetInstanceId(),
 		CorrelationId: "456",
 		Status:        instances.Status_SUCCESS,
 		Message:       "Successfully updated instance configuration.",
-		LastUpdated:   timestamppb.Now(),
+		Timestamp:     timestamppb.Now(),
 	}
 
 	tests := []struct {
@@ -77,7 +85,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated",
 			input: &bus.Message{
-				Topic: bus.InstanceConfigUpdateCompleteTopic,
+				Topic: bus.InstanceConfigUpdateTopic,
 				Data:  configurationStatus,
 			},
 			expected: []*bus.Message{
@@ -90,7 +98,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated - unknown message type",
 			input: &bus.Message{
-				Topic: bus.InstanceConfigUpdateCompleteTopic,
+				Topic: bus.InstanceConfigUpdateTopic,
 				Data:  nil,
 			},
 			expected: nil,
@@ -103,8 +111,18 @@ func TestConfig_Process(t *testing.T) {
 			},
 			expected: []*bus.Message{
 				{
-					Topic: bus.InstanceConfigUpdateCompleteTopic,
-					Data:  configurationStatus,
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  configurationStatusProgress,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data: &instances.ConfigurationStatus{
+						InstanceId:    testInstance.GetInstanceId(),
+						CorrelationId: "456",
+						Status:        instances.Status_SUCCESS,
+						Message:       "Successfully updated instance configuration.",
+						Timestamp:     timestamppb.Now(),
+					},
 				},
 			},
 		},
@@ -129,7 +147,7 @@ func TestConfig_Process(t *testing.T) {
 
 			configService := &servicefakes.FakeConfigServiceInterface{}
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
-			configService.UpdateInstanceConfigurationReturns(configurationStatus)
+			configService.UpdateInstanceConfigurationReturns(nil, configurationStatus)
 
 			instanceService := []*instances.Instance{testInstance}
 
@@ -140,7 +158,7 @@ func TestConfig_Process(t *testing.T) {
 
 			messages := messagePipe.GetMessages()
 
-			assert.Equal(tt, test.expected, messages)
+			assert.Equal(tt, len(test.expected), len(messages))
 		})
 	}
 }

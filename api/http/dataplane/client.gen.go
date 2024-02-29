@@ -18,14 +18,6 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
-// Defines values for ConfigurationStatusType.
-const (
-	FAILED         ConfigurationStatusType = "FAILED"
-	INPROGESS      ConfigurationStatusType = "IN_PROGESS"
-	ROLLBACKFAILED ConfigurationStatusType = "ROLLBACK_FAILED"
-	SUCCESS        ConfigurationStatusType = "SUCCESS"
-)
-
 // Defines values for InstanceType.
 const (
 	AGENT     InstanceType = "AGENT"
@@ -43,6 +35,16 @@ const (
 	NGINXMETA MetaType = "NGINX_META"
 )
 
+// Defines values for StatusState.
+const (
+	FAILED             StatusState = "FAILED"
+	INPROGRESS         StatusState = "IN_PROGRESS"
+	ROLLBACKFAILED     StatusState = "ROLLBACK_FAILED"
+	ROLLBACKINPROGRESS StatusState = "ROLLBACK_IN_PROGRESS"
+	ROLLBACKSUCCESS    StatusState = "ROLLBACK_SUCCESS"
+	SUCCESS            StatusState = "SUCCESS"
+)
+
 // Configuration defines model for Configuration.
 type Configuration struct {
 	Location *string `json:"location,omitempty"`
@@ -50,16 +52,10 @@ type Configuration struct {
 
 // ConfigurationStatus defines model for ConfigurationStatus.
 type ConfigurationStatus struct {
-	CorrelationId *string    `json:"correlationId,omitempty"`
-	LastUpdated   *time.Time `json:"lastUpdated,omitempty"`
-	Message       *string    `json:"message,omitempty"`
-
-	// Status The type of configuration status
-	Status *ConfigurationStatusType `json:"status,omitempty"`
+	CorrelationId *string   `json:"correlationId,omitempty"`
+	Events        *[]Events `json:"events,omitempty"`
+	InstanceID    *string   `json:"instanceID,omitempty"`
 }
-
-// ConfigurationStatusType The type of configuration status
-type ConfigurationStatusType string
 
 // CorrelationId defines model for CorrelationId.
 type CorrelationId struct {
@@ -69,6 +65,15 @@ type CorrelationId struct {
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
 	Message string `json:"message"`
+}
+
+// Events defines model for Events.
+type Events struct {
+	Message *string `json:"message,omitempty"`
+
+	// Status The type of configuration status
+	Status    *StatusState `json:"status,omitempty"`
+	Timestamp *time.Time   `json:"timestamp,omitempty"`
 }
 
 // Instance defines model for Instance.
@@ -100,6 +105,9 @@ type NginxMeta struct {
 	// Type The type of metadata
 	Type MetaType `json:"type"`
 }
+
+// StatusState The type of configuration status
+type StatusState string
 
 // InternalServerError defines model for InternalServerError.
 type InternalServerError = ErrorResponse

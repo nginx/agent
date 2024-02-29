@@ -73,7 +73,7 @@ type FakeDataPlaneConfig struct {
 	validateReturnsOnCall map[int]struct {
 		result1 error
 	}
-	WriteStub        func(context.Context, string, string) (map[string]struct{}, error)
+	WriteStub        func(context.Context, string, string) (map[string]*instances.File, error)
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
 		arg1 context.Context
@@ -81,11 +81,11 @@ type FakeDataPlaneConfig struct {
 		arg3 string
 	}
 	writeReturns struct {
-		result1 map[string]struct{}
+		result1 map[string]*instances.File
 		result2 error
 	}
 	writeReturnsOnCall map[int]struct {
-		result1 map[string]struct{}
+		result1 map[string]*instances.File
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -404,7 +404,7 @@ func (fake *FakeDataPlaneConfig) ValidateReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeDataPlaneConfig) Write(arg1 context.Context, arg2 string, arg3 string) (map[string]struct{}, error) {
+func (fake *FakeDataPlaneConfig) Write(arg1 context.Context, arg2 string, arg3 string) (map[string]*instances.File, error) {
 	fake.writeMutex.Lock()
 	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
 	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
@@ -431,7 +431,7 @@ func (fake *FakeDataPlaneConfig) WriteCallCount() int {
 	return len(fake.writeArgsForCall)
 }
 
-func (fake *FakeDataPlaneConfig) WriteCalls(stub func(context.Context, string, string) (map[string]struct{}, error)) {
+func (fake *FakeDataPlaneConfig) WriteCalls(stub func(context.Context, string, string) (map[string]*instances.File, error)) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = stub
@@ -444,28 +444,28 @@ func (fake *FakeDataPlaneConfig) WriteArgsForCall(i int) (context.Context, strin
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeDataPlaneConfig) WriteReturns(result1 map[string]struct{}, result2 error) {
+func (fake *FakeDataPlaneConfig) WriteReturns(result1 map[string]*instances.File, result2 error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = nil
 	fake.writeReturns = struct {
-		result1 map[string]struct{}
+		result1 map[string]*instances.File
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeDataPlaneConfig) WriteReturnsOnCall(i int, result1 map[string]struct{}, result2 error) {
+func (fake *FakeDataPlaneConfig) WriteReturnsOnCall(i int, result1 map[string]*instances.File, result2 error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = nil
 	if fake.writeReturnsOnCall == nil {
 		fake.writeReturnsOnCall = make(map[int]struct {
-			result1 map[string]struct{}
+			result1 map[string]*instances.File
 			result2 error
 		})
 	}
 	fake.writeReturnsOnCall[i] = struct {
-		result1 map[string]struct{}
+		result1 map[string]*instances.File
 		result2 error
 	}{result1, result2}
 }

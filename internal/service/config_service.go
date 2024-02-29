@@ -9,6 +9,10 @@ import (
 	"context"
 	"log/slog"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	config2 "github.com/nginx/agent/v3/internal/datasource/config"
+
 	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -22,10 +26,11 @@ type ConfigServiceInterface interface {
 	UpdateInstanceConfiguration(
 		ctx context.Context,
 		correlationID, location string,
-	) *instances.ConfigurationStatus
+	) (skippedFiles config2.CacheContent, configStatus *instances.ConfigurationStatus)
 	ParseInstanceConfiguration(
 		correlationID string,
 	) (instanceConfigContext any, err error)
+	Rollback(ctx context.Context, skippedFiles config2.CacheContent, filesURL, tenantID, instanceID string) error
 }
 
 type ConfigService struct {
@@ -59,56 +64,69 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 	cs.configContext = instanceConfigContext
 }
 
+func (cs *ConfigService) Rollback(ctx context.Context, skippedFiles config2.CacheContent, filesURL,
+	tenantID, instanceID string,
+) error {
+	err := cs.configService.Rollback(ctx, skippedFiles, filesURL, tenantID, instanceID)
+	return err
+}
+
 func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correlationID, location string,
-) *instances.ConfigurationStatus {
+) (skippedFiles config2.CacheContent, configStatus *instances.ConfigurationStatus) {
 	// remove when tenantID is being set
 	tenantID := "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 
-	_, err := cs.configService.Write(ctx, location, tenantID)
+	skippedFiles, err := cs.configService.Write(ctx, location, tenantID)
 	if err != nil {
-		// Rollback
-		return &instances.ConfigurationStatus{
+		slog.Debug("Error writing config", "err", err)
+		return skippedFiles, &instances.ConfigurationStatus{
 			InstanceId:    cs.instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
+			Timestamp:     timestamppb.Now(),
 		}
 	}
 
 	err = cs.configService.Validate()
 	if err != nil {
-		// Rollback
-		return &instances.ConfigurationStatus{
+		slog.Debug("Error validating config", "err", err)
+		return skippedFiles, &instances.ConfigurationStatus{
 			InstanceId:    cs.instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
+			Timestamp:     timestamppb.Now(),
 		}
 	}
 
 	err = cs.configService.Apply()
 	if err != nil {
-		// Rollback
-		return &instances.ConfigurationStatus{
+		slog.Debug("Error applying config and reloading nginx", "err", err)
+		return skippedFiles, &instances.ConfigurationStatus{
 			InstanceId:    cs.instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
+			Timestamp:     timestamppb.Now(),
 		}
 	}
 
 	err = cs.configService.Complete()
 	if err != nil {
-		// Rollback
-		return &instances.ConfigurationStatus{
+		slog.Debug("Error completing config apply", "err", err)
+		err = cs.configService.Rollback(ctx, skippedFiles, location, tenantID, cs.instance.GetInstanceId())
+
+		return skippedFiles, &instances.ConfigurationStatus{
 			InstanceId:    cs.instance.GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
+			Timestamp:     timestamppb.Now(),
 		}
 	}
 
-	return &instances.ConfigurationStatus{
+	return skippedFiles, &instances.ConfigurationStatus{
 		InstanceId:    cs.instance.GetInstanceId(),
 		CorrelationId: correlationID,
 		Status:        instances.Status_SUCCESS,

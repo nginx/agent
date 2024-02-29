@@ -15,7 +15,7 @@ option go_package = "github.com/nginx/agent/v3/api/grpc/instances";
 message ConfigurationStatus {
     string instance_id = 1;
     string correlation_id = 2;
-    google.protobuf.Timestamp last_updated = 3;
+    google.protobuf.Timestamp timestamp = 3;
     Status status = 4;
     string message = 5;
 }
@@ -24,5 +24,7 @@ enum Status {
     IN_PROGRESS = 0;
     SUCCESS = 1;
     FAILED = 2;
-    ROLLBACK_FAILED = 3;
+    ROLLBACK_IN_PROGRESS = 3;
+    ROLLBACK_SUCCESS = 4;
+    ROLLBACK_FAILED = 5;
 }

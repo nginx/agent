@@ -21,7 +21,6 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
 	sloggin "github.com/samber/slog-gin"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type (
@@ -30,12 +29,12 @@ type (
 	}
 
 	DataPlaneServer struct {
-		address              string
-		logger               *slog.Logger
-		instances            []*instances.Instance
-		configurationStatues map[string]*instances.ConfigurationStatus
-		messagePipe          bus.MessagePipeInterface
-		server               net.Listener
+		address      string
+		logger       *slog.Logger
+		instances    []*instances.Instance
+		configEvents map[string][]*instances.ConfigurationStatus
+		messagePipe  bus.MessagePipeInterface
+		server       net.Listener
 	}
 )
 
@@ -43,9 +42,9 @@ func NewDataPlaneServer(agentConfig *config.Config, logger *slog.Logger) *DataPl
 	address := net.JoinHostPort(agentConfig.DataplaneAPI.Host, strconv.Itoa(agentConfig.DataplaneAPI.Port))
 
 	return &DataPlaneServer{
-		address:              address,
-		logger:               logger,
-		configurationStatues: make(map[string]*instances.ConfigurationStatus),
+		address:      address,
+		logger:       logger,
+		configEvents: make(map[string][]*instances.ConfigurationStatus),
 	}
 }
 
@@ -68,17 +67,27 @@ func (dps *DataPlaneServer) Process(msg *bus.Message) {
 		if newInstances, ok := msg.Data.([]*instances.Instance); ok {
 			dps.instances = newInstances
 		}
-	case msg.Topic == bus.InstanceConfigUpdateCompleteTopic:
+	case msg.Topic == bus.InstanceConfigUpdateTopic:
 		if configStatus, ok := msg.Data.(*instances.ConfigurationStatus); ok {
-			dps.configurationStatues[configStatus.GetInstanceId()] = configStatus
+			dps.updateEvents(configStatus)
 		}
+	}
+}
+
+func (dps *DataPlaneServer) updateEvents(configStatus *instances.ConfigurationStatus) {
+	instanceID := configStatus.GetInstanceId()
+	if configStatus.GetStatus() == instances.Status_IN_PROGRESS {
+		dps.configEvents[instanceID] = nil
+		dps.configEvents[instanceID] = append(dps.configEvents[instanceID], configStatus)
+	} else {
+		dps.configEvents[instanceID] = append(dps.configEvents[instanceID], configStatus)
 	}
 }
 
 func (*DataPlaneServer) Subscriptions() []string {
 	return []string{
 		bus.InstancesTopic,
-		bus.InstanceConfigUpdateCompleteTopic,
+		bus.InstanceConfigUpdateTopic,
 	}
 }
 
@@ -149,14 +158,6 @@ func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 
 			dps.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateRequestTopic, Data: request})
 
-			dps.configurationStatues[instanceID] = &instances.ConfigurationStatus{
-				InstanceId:    instanceID,
-				CorrelationId: correlationID,
-				Status:        instances.Status_IN_PROGRESS,
-				LastUpdated:   timestamppb.Now(),
-				Message:       "Instance configuration update in progress",
-			}
-
 			ctx.JSON(http.StatusOK, dataplane.CorrelationId{CorrelationId: &correlationID})
 		} else {
 			slog.Debug(
@@ -178,11 +179,11 @@ func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, ins
 	status := dps.getConfigurationStatus(instanceID)
 
 	if status != nil {
+		slog.Info("status", "", status)
 		responseBody := &dataplane.ConfigurationStatus{
-			CorrelationId: &status.CorrelationId,
-			LastUpdated:   toPtr(status.GetLastUpdated().AsTime()),
-			Message:       &status.Message,
-			Status:        mapStatusEnums(status.GetStatus().String()),
+			InstanceID:    &instanceID,
+			CorrelationId: &status[0].CorrelationId,
+			Events:        convertConfigStatus(status),
 		}
 
 		ctx.JSON(http.StatusOK, responseBody)
@@ -192,8 +193,8 @@ func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, ins
 	}
 }
 
-func (dps *DataPlaneServer) getConfigurationStatus(instanceID string) *instances.ConfigurationStatus {
-	return dps.configurationStatues[instanceID]
+func (dps *DataPlaneServer) getConfigurationStatus(instanceID string) []*instances.ConfigurationStatus {
+	return dps.configEvents[instanceID]
 }
 
 func (dps *DataPlaneServer) getInstance(instanceID string) *instances.Instance {
@@ -214,16 +215,37 @@ func mapTypeEnums(typeString string) dataplane.InstanceType {
 	return dataplane.CUSTOM
 }
 
-func mapStatusEnums(typeString string) *dataplane.ConfigurationStatusType {
-	if typeString == instances.Status_SUCCESS.String() {
+func mapStatusEnums(typeString string) *dataplane.StatusState {
+	switch typeString {
+	case instances.Status_IN_PROGRESS.String():
+		return toPtr(dataplane.INPROGRESS)
+	case instances.Status_SUCCESS.String():
 		return toPtr(dataplane.SUCCESS)
-	} else if typeString == instances.Status_FAILED.String() {
+	case instances.Status_FAILED.String():
 		return toPtr(dataplane.FAILED)
-	} else if typeString == instances.Status_ROLLBACK_FAILED.String() {
+	case instances.Status_ROLLBACK_IN_PROGRESS.String():
+		return toPtr(dataplane.ROLLBACKINPROGRESS)
+	case instances.Status_ROLLBACK_SUCCESS.String():
+		return toPtr(dataplane.ROLLBACKSUCCESS)
+	case instances.Status_ROLLBACK_FAILED.String():
 		return toPtr(dataplane.ROLLBACKFAILED)
 	}
 
-	return toPtr(dataplane.INPROGESS)
+	return toPtr(dataplane.INPROGRESS)
+}
+
+func convertConfigStatus(statuses []*instances.ConfigurationStatus) *[]dataplane.Events {
+	dataplaneStatuses := []dataplane.Events{}
+	for _, status := range statuses {
+		dataplaneStatus := dataplane.Events{
+			Timestamp: toPtr(status.GetTimestamp().AsTime()),
+			Message:   &status.Message,
+			Status:    mapStatusEnums(status.GetStatus().String()),
+		}
+		dataplaneStatuses = append(dataplaneStatuses, dataplaneStatus)
+	}
+
+	return &dataplaneStatuses
 }
 
 func convertMeta(meta *instances.Meta) dataplane.Instance_Meta {

@@ -66,7 +66,7 @@ func NewNginx(instance *instances.Instance, agentConfig *config.Config) *Nginx {
 	}
 }
 
-func (n *Nginx) Write(ctx context.Context, filesURL, tenantID string) (skippedFiles map[string]struct{},
+func (n *Nginx) Write(ctx context.Context, filesURL, tenantID string) (skippedFiles writer.CacheContent,
 	err error,
 ) {
 	return n.configWriter.Write(ctx, filesURL, tenantID, n.instance.GetInstanceId())
