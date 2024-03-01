@@ -121,16 +121,16 @@ In order to build a container image with NGINX Plus, you must provide the SSL ce
 4. Download the **SSL Certificate** and **Private Key** files.
 5. Move the SSL certificate and private key files to the directory where you cloned the nginx-agent repo.
 
-   The Makefile expects to find these files in the path *./build/certs*.
-   Assuming you cloned the nginx-agent repo to your `$HOME` directory, you would move and rename the files as follows:
+   - The Makefile expects to find these files in the path *./build/certs*.  Assuming you cloned the nginx-agent repo to your `$HOME` directory, you would move and rename the files as follows:
 
-    ```shell
-    mkdir -p $HOME/nginx-agent/build/certs
-    mv nginx-repo-S-X00012345.key $HOME/nginx-agent/build/certs/nginx-repo.key
-    mv nginx-repo-S-X00012345.crt $HOME/nginx-agent/build/certs/nginx-repo.crt
-    ```
+     ```shell
+     mkdir -p $HOME/nginx-agent/build/certs
+     mv nginx-repo-S-X00012345.key $HOME/nginx-agent/build/certs/nginx-repo.key
+     mv nginx-repo-S-X00012345.crt $HOME/nginx-agent/build/certs/nginx-repo.crt
+     ```
 
-    Be sure to replace the example certificate and key filenames shown in the example command with your actual file names.
+   - Be sure to replace the example certificate and key filenames shown in the example command with your actual file names.
+   - The file names in the *build/certs* directory must match those shown in the example.
 
 ## Build commands
 
