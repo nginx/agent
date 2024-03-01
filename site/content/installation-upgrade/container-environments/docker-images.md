@@ -301,8 +301,6 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=suse OS_VERSION=sle15 make image
 
 {{%tab name="ubuntu"%}}
 
-The command below creates a base image using the most recent LTS version of Ubuntu as the base image:
-
 ```shell
 PACKAGE_NAME=[PATH-TO-PACKAGE] make image OS_RELEASE=ubuntu
 ```
