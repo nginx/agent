@@ -19,13 +19,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateDirWithErrorCheck(t *testing.T, dirName string) {
+const filePermission = 0o700
+
+func CreateDirWithErrorCheck(t testing.TB, dirName string) {
 	t.Helper()
-	err := os.Mkdir(dirName, os.ModePerm)
+	err := os.MkdirAll(dirName, filePermission)
 	require.NoError(t, err)
 }
 
-func CreateFileWithErrorCheck(t *testing.T, dir, fileName string) *os.File {
+func CreateFileWithErrorCheck(t testing.TB, dir, fileName string) *os.File {
 	t.Helper()
 
 	testConf, err := os.CreateTemp(dir, fileName)
@@ -34,7 +36,7 @@ func CreateFileWithErrorCheck(t *testing.T, dir, fileName string) *os.File {
 	return testConf
 }
 
-func CreateCacheFiles(t *testing.T, cachePath string, cacheData map[string]*instances.File) {
+func CreateCacheFiles(t testing.TB, cachePath string, cacheData map[string]*instances.File) {
 	t.Helper()
 	cache, err := json.MarshalIndent(cacheData, "", "  ")
 	require.NoError(t, err)
@@ -50,13 +52,13 @@ func CreateCacheFiles(t *testing.T, cachePath string, cacheData map[string]*inst
 	require.NoError(t, err)
 }
 
-func RemoveFileWithErrorCheck(t *testing.T, fileName string) {
+func RemoveFileWithErrorCheck(t testing.TB, fileName string) {
 	t.Helper()
 	err := os.Remove(fileName)
 	require.NoError(t, err)
 }
 
-func CreateTestIDs(t *testing.T) (uuid.UUID, uuid.UUID) {
+func CreateTestIDs(t testing.TB) (uuid.UUID, uuid.UUID) {
 	t.Helper()
 	tenantID, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
 	require.NoError(t, err)
