@@ -231,7 +231,9 @@ func getConfigurationStatus(t *testing.T, client *resty.Client, instanceID strin
 	t.Helper()
 	t.Log("getConfigurationStatus")
 	url := fmt.Sprintf("%s%s/configurations/status", instancesURL, instanceID)
+	t.Logf("URL: %v", url)
 	resp, err := client.R().EnableTrace().Get(url)
+	t.Logf("resp: %v", resp)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -241,7 +243,7 @@ func getConfigurationStatus(t *testing.T, client *resty.Client, instanceID strin
 	responseData := resp.Body()
 	assert.True(t, json.Valid(responseData))
 
-	t.Logf("Response Data: %v", responseData)
+	t.Logf("Response Data: %v", string(responseData))
 
 	err = json.Unmarshal(responseData, &statusResponse)
 	require.NoError(t, err)
