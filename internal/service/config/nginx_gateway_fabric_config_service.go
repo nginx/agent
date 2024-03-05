@@ -23,6 +23,8 @@ func (*NginxGatewayFabric) ParseConfig() (any, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (*NginxGatewayFabric) SetConfigContext(_ any) {}
+
 func (*NginxGatewayFabric) Validate() error {
 	return fmt.Errorf("not implemented")
 }

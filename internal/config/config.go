@@ -21,10 +21,10 @@ import (
 const (
 	ConfigFileName = "nginx-agent.conf"
 	EnvPrefix      = "NGINX_AGENT"
-	keyDelimiter   = "_"
+	KeyDelimiter   = "_"
 )
 
-var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
 func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 	RootCommand.Run = r
@@ -62,6 +62,7 @@ func GetConfig() *Config {
 		Log:                getLog(),
 		ProcessMonitor:     getProcessMonitor(),
 		DataPlaneAPI:       getDataPlaneAPI(),
+		DataPlaneConfig:    getDataPlaneConfig(),
 		Client:             getClient(),
 		ConfigDir:          getConfigDir(),
 		AllowedDirectories: []string{},
@@ -91,6 +92,7 @@ func registerFlags() {
 	viperInstance.AutomaticEnv()
 
 	fs := RootCommand.Flags()
+
 	fs.String(
 		LogLevelKey,
 		"info",
@@ -104,17 +106,32 @@ func registerFlags() {
 		`The path to output log messages to. 
 		If the default path doesn't exist, log messages are output to stdout/stderr.`,
 	)
+
 	fs.Duration(
 		ProcessMonitorMonitoringFrequencyKey,
 		time.Minute,
 		"How often the NGINX Agent will check for process changes.",
 	)
-	fs.String(DataPlaneAPIHostKey, "", "The host used by the Dataplane API.")
+
+	fs.String(DataPlaneAPIHostKey, "", "The host used by the data plane API.")
 	fs.Int(DataPlaneAPIPortKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
+
+	fs.Duration(
+		DataPlaneConfigNginxReloadMonitoringPeriodKey,
+		DefaultDataPlaneConfigNginxReloadMonitoringPeriod,
+		"The amount of time to monitor NGINX after a reload of configuration.",
+	)
+	fs.Bool(
+		DataPlaneConfigNginxTreatWarningsAsErrorsKey,
+		true,
+		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
+	)
+
 	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")
 	fs.String(ConfigDirectoriesKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules",
-		"Defines the paths that you want to grant nginx-agent read/write access to."+
+		"Defines the paths that you want to grant NGINX Agent read/write access to."+
 			" This key is formatted as a string and follows Unix PATH format")
+
 	fs.Duration(
 		MetricsProduceIntervalKey, DefMetricsProduceInterval,
 		"The interval for how often NGINX Agent queries metrics from its sources.",
@@ -227,6 +244,15 @@ func getDataPlaneAPI() DataPlaneAPI {
 	return DataPlaneAPI{
 		Host: viperInstance.GetString(DataPlaneAPIHostKey),
 		Port: viperInstance.GetInt(DataPlaneAPIPortKey),
+	}
+}
+
+func getDataPlaneConfig() DataPlaneConfig {
+	return DataPlaneConfig{
+		Nginx: NginxDataPlaneConfig{
+			ReloadMonitoringPeriod: viperInstance.GetDuration(DataPlaneConfigNginxReloadMonitoringPeriodKey),
+			TreatWarningsAsError:   viperInstance.GetBool(DataPlaneConfigNginxTreatWarningsAsErrorsKey),
+		},
 	}
 }
 
