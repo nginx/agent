@@ -33,9 +33,12 @@ IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
+DOCS_DIR        := docs
 BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
+DIRS            = build build/test build/docs build/docs/proto docs docs/proto
+$(shell mkdir -p $(DIRS))
 
 VERSION 		= "v3.0.0"
 COMMIT  		= $(shell git rev-parse --short HEAD)
@@ -46,7 +49,6 @@ DEBUG_LDFLAGS 	= "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.da
 OSS_PACKAGES_REPO 	:= "packages.nginx.org"
 PACKAGE_PREFIX 		:= nginx-agent
 PACKAGE_NAME 		:= "$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT)"
-
 
 MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= test/config/nginx
 
@@ -91,9 +93,6 @@ format: ## Format code
 	@$(GORUN) $(GOFUMPT) -l -w -extra .
 	@echo "🏯 Format Done"
 
-$(TEST_BUILD_DIR):
-	mkdir -p $(TEST_BUILD_DIR)
-
 unit-test: $(TEST_BUILD_DIR) ## Run unit tests
 	@CGO_ENABLED=0 $(GOTEST) -count=1 -coverprofile=$(TEST_BUILD_DIR)/tmp_coverage.out -coverpkg=./... -covermode count ./internal/... ./api/... ./cmd/...
 	@cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v "fake_" > $(TEST_BUILD_DIR)/coverage.out
@@ -127,8 +126,10 @@ run-mock-management-server: ## Run mock management server
 	@echo "🚀 Running mock management server"
 	$(GORUN) test/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
 
-generate: ## Generate proto files and server and client stubs from OpenAPI specifications
+generate: $(DOCS_BUILD_DIR) ${DOCS_DIR} ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
+	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --doc_out=./${BUILD_DIR}/$(DOCS_DIR)/proto/ --doc_opt=markdown,protos.md 
+	@cp -a ./${BUILD_DIR}/$(DOCS_DIR)/proto/* ./$(DOCS_DIR)/proto/
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specification"
 	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/data-plane-api.yaml > ./api/http/dataplane/data_plane.gen.go
