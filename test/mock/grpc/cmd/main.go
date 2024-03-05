@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"os"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
@@ -26,5 +27,9 @@ func main() {
 
 	grpcServer := grpc.NewServer(opts...)
 	v1.RegisterCommandServiceServer(grpcServer, server)
-	grpcServer.Serve(lis)
+	err = grpcServer.Serve(lis)
+	if err != nil {
+		slog.Error("Failed to serve server", "error", err)
+		os.Exit(1)
+	}
 }

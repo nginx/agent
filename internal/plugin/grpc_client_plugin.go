@@ -20,12 +20,12 @@ import (
 
 type (
 	GrpcClient struct {
-		logger *slog.Logger
+		logger      *slog.Logger
 		messagePipe bus.MessagePipeInterface
 	}
 )
 
-func NewGrpcClient(agentConfig *config.Config, logger *slog.Logger) *GrpcClient {
+func NewGrpcClient(_ *config.Config, logger *slog.Logger) *GrpcClient {
 	slog.Error("Starting grpc client")
 	serverAddr := net.JoinHostPort("127.0.0.1", "8080")
 
@@ -47,8 +47,8 @@ func NewGrpcClient(agentConfig *config.Config, logger *slog.Logger) *GrpcClient 
 			CorrelationId: "",
 			Timestamp:     timestamppb.Now(),
 		},
-		Agent:       &v1.Instance{
-			InstanceMeta:   &v1.InstanceMeta{
+		Agent: &v1.Instance{
+			InstanceMeta: &v1.InstanceMeta{
 				InstanceId:   "1234",
 				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
 				Version:      "v3",
