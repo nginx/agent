@@ -73,7 +73,6 @@ func (*Config) Subscriptions() []string {
 func (c *Config) processConfigurationStatus(msg *bus.Message) {
 	slog.Info("Instance Config Topic", "topic", msg.Topic, "message", msg.Data)
 	slog.Info("")
-	slog.Info("-----------", "topic", msg.Data.(*instances.ConfigurationStatus).Status)
 	if configurationStatus, ok := msg.Data.(*instances.ConfigurationStatus); !ok {
 		slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
 	} else if configurationStatus.GetStatus() == instances.Status_SUCCESS {
