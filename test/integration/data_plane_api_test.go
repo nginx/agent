@@ -204,11 +204,8 @@ func TestDataplaneAPI_UpdateInstances(t *testing.T) {
 
 	assert.NotNil(t, response.CorrelationId)
 
-	t.Logf("Instance ID: %v", instanceID)
-
 ConfigStatus:
 	for {
-		t.Log("Get Status")
 		statusResponse := getConfigurationStatus(t, client, instanceID)
 		for _, event := range *statusResponse.Events {
 			t.Log(*event.Status)
@@ -229,15 +226,11 @@ ConfigStatus:
 
 func getConfigurationStatus(t *testing.T, client *resty.Client, instanceID string) *dataplane.ConfigurationStatus {
 	t.Helper()
-	t.Log("getConfigurationStatus")
 	url := fmt.Sprintf("%s%s/configurations/status", instancesURL, instanceID)
-	t.Logf("URL: %v", url)
 	client.AddRetryCondition(func(r *resty.Response, err error) bool {
-		// Including "err != nil" emulates the default retry behavior for errors encountered during the request.
 		return err != nil || r.StatusCode() == http.StatusNotFound
 	})
 	resp, err := client.R().EnableTrace().Get(url)
-	t.Logf("resp: %v", resp)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -246,8 +239,6 @@ func getConfigurationStatus(t *testing.T, client *resty.Client, instanceID strin
 
 	responseData := resp.Body()
 	assert.True(t, json.Valid(responseData))
-
-	t.Logf("Response Data: %v", string(responseData))
 
 	err = json.Unmarshal(responseData, &statusResponse)
 	require.NoError(t, err)
