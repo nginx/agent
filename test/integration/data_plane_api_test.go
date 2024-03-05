@@ -204,20 +204,21 @@ func TestDataplaneAPI_UpdateInstances(t *testing.T) {
 
 	assert.NotNil(t, response.CorrelationId)
 
+ConfigStatus:
 	for {
 		statusResponse := getConfigurationStatus(t, client, instanceID)
-		t.Log(*statusResponse.Status)
-		t.Log(*statusResponse.Message)
+		for _, event := range *statusResponse.Events {
+			t.Log(*event.Status)
+			t.Log(*event.Message)
+			if *event.Status != dataplane.INPROGRESS {
+				assert.Equal(t, "Config applied successfully", *event.Message)
+				assert.Equal(t, test.ToPtr(dataplane.SUCCESS), event.Status)
 
-		if *statusResponse.Status != dataplane.INPROGESS {
-			assert.Equal(t, "Config applied successfully", *statusResponse.Message)
-			assert.Equal(t, test.ToPtr(dataplane.SUCCESS), statusResponse.Status)
-
-			break
+				break ConfigStatus
+			}
+			assert.Equal(t, "Instance configuration update in progress", *event.Message)
+			assert.Equal(t, test.ToPtr(dataplane.INPROGRESS), event.Status)
 		}
-
-		assert.Equal(t, "Instance configuration update in progress", *statusResponse.Message)
-		assert.Equal(t, test.ToPtr(dataplane.INPROGESS), statusResponse.Status)
 
 		time.Sleep(time.Second)
 	}
@@ -225,8 +226,10 @@ func TestDataplaneAPI_UpdateInstances(t *testing.T) {
 
 func getConfigurationStatus(t *testing.T, client *resty.Client, instanceID string) *dataplane.ConfigurationStatus {
 	t.Helper()
-
 	url := fmt.Sprintf("%s%s/configurations/status", instancesURL, instanceID)
+	client.AddRetryCondition(func(r *resty.Response, err error) bool {
+		return err != nil || r.StatusCode() == http.StatusNotFound
+	})
 	resp, err := client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
@@ -241,9 +244,11 @@ func getConfigurationStatus(t *testing.T, client *resty.Client, instanceID strin
 	require.NoError(t, err)
 
 	assert.NotNil(t, statusResponse.CorrelationId)
-	assert.NotNil(t, statusResponse.LastUpdated)
-	assert.NotNil(t, statusResponse.Message)
-	assert.NotNil(t, statusResponse.Status)
+	for _, event := range *statusResponse.Events {
+		assert.NotNil(t, event.Timestamp)
+		assert.NotNil(t, event.Message)
+		assert.NotNil(t, event.Status)
+	}
 
 	return statusResponse
 }

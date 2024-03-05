@@ -145,26 +145,38 @@ components:
     ConfigurationStatus:
       type: object
       properties:
+        instanceId:
+          type: string
+          example: "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
         correlationId:
           type: string
           example: "9e2d49c9-ada2-4ed1-b6f2-391d5cf634d9"
-        lastUpdated:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+    Event:
+      type: object
+      properties:
+        timestamp:
           type: string
           format: date-time
           example: "2023-10-19T11:26:32.676Z"
         status:
-          $ref: "#/components/schemas/ConfigurationStatusType"
+          $ref: "#/components/schemas/StatusState"
           example: SUCCESS
         message:
           type: string
           example: "Config updated successfully"
-    ConfigurationStatusType:
+    StatusState:
       type: string
       description: "The type of configuration status"
       enum:
-        - IN_PROGESS
+        - IN_PROGRESS
         - SUCCESS
         - FAILED
+        - ROLLBACK_IN_PROGRESS
+        - ROLLBACK_SUCCESS
         - ROLLBACK_FAILED
     CorrelationId:
       type: object

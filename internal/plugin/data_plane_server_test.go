@@ -67,7 +67,7 @@ func TestDataPlaneServer_Process(t *testing.T) {
 				Status:        instances.Status_SUCCESS,
 				Message:       "config updated",
 			},
-			topic: bus.InstanceConfigUpdateCompleteTopic,
+			topic: bus.InstanceConfigUpdateTopic,
 		},
 	}
 	for _, tt := range tests {
@@ -79,7 +79,7 @@ func TestDataPlaneServer_Process(t *testing.T) {
 			if tt.topic == bus.InstancesTopic {
 				actual = dataPlaneServer.instances
 			} else {
-				actual = dataPlaneServer.configurationStatues["123"]
+				actual = dataPlaneServer.configEvents["123"][0]
 			}
 
 			assert.Equal(t, tt.data, actual)
@@ -206,19 +206,77 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 
 func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	ctx := context.TODO()
-	instanceID := "ae6c58c1-bc92-30c1-a9c9-85591422068e"
 	correlationID := "dfsbhj6-bc92-30c1-a9c9-85591422068e"
-	status := &instances.ConfigurationStatus{
-		InstanceId:    instanceID,
-		CorrelationId: correlationID,
-		Status:        instances.Status_SUCCESS,
-		Message:       "Success",
+	instanceID := "ae6c58c1-bc92-30c1-a9c9-85591422068e"
+	tests := []struct {
+		name             string
+		instanceID       string
+		events           []*instances.ConfigurationStatus
+		expectedStatus   *dataplane.ConfigurationStatus
+		expectedResponse int
+	}{
+		{
+			name:       "happy path",
+			instanceID: instanceID,
+			events: []*instances.ConfigurationStatus{
+				{
+					InstanceId:    instanceID,
+					CorrelationId: correlationID,
+					Status:        instances.Status_SUCCESS,
+					Message:       "Success",
+				},
+				{
+					InstanceId:    instanceID,
+					CorrelationId: correlationID,
+					Status:        instances.Status_IN_PROGRESS,
+					Message:       "In Progress",
+				},
+			},
+			expectedStatus: &dataplane.ConfigurationStatus{
+				CorrelationId: toPtr(correlationID),
+				Events: &[]dataplane.Events{
+					{
+						Status:    toPtr(dataplane.SUCCESS),
+						Message:   toPtr("Success"),
+						Timestamp: nil,
+					},
+					{
+						Status:    toPtr(dataplane.INPROGRESS),
+						Message:   toPtr("In Progress"),
+						Timestamp: nil,
+					},
+				},
+				InstanceId: &instanceID,
+			},
+			expectedResponse: 200,
+		},
+		{
+			name:       "not found",
+			instanceID: "unknown-instance-id",
+			events:     nil,
+			expectedStatus: &dataplane.ConfigurationStatus{
+				CorrelationId: toPtr(correlationID),
+				Events: &[]dataplane.Events{
+					{
+						Status:    toPtr(dataplane.SUCCESS),
+						Message:   toPtr("Success"),
+						Timestamp: nil,
+					},
+					{
+						Status:    toPtr(dataplane.INPROGRESS),
+						Message:   toPtr("In Progress"),
+						Timestamp: nil,
+					},
+				},
+				InstanceId: toPtr("unknown-instance-id"),
+			},
+			expectedResponse: 404,
+		},
 	}
-	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 
+	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 	dataPlaneServer := NewDataPlaneServer(&config.Config{}, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
-
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
@@ -231,47 +289,54 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotNil(t, tcpAddr.Port)
 
-	dataPlaneServer.configurationStatues = map[string]*instances.ConfigurationStatus{
-		instanceID: status,
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.events != nil {
+				dataPlaneServer.configEvents = map[string][]*instances.ConfigurationStatus{
+					test.instanceID: test.events,
+				}
+			}
+			res, err := performGetInstanceConfigurationStatusRequest(ctx, dataPlaneServer, test.instanceID)
+			require.NoError(t, err)
+			assert.Equal(t, test.expectedResponse, res.StatusCode)
+
+			resBody, err := io.ReadAll(res.Body)
+			require.NoError(t, err)
+
+			result := &dataplane.ConfigurationStatus{}
+			err = json.Unmarshal(resBody, &result)
+			require.NoError(t, err)
+
+			compareResponse(t, result, *test.expectedStatus.Events, test.expectedStatus, resBody)
+
+			res.Body.Close()
+		})
 	}
+}
 
-	// Test happy path
-	res, err := performGetInstanceConfigurationStatusRequest(ctx, dataPlaneServer, instanceID)
-	require.NoError(t, err)
-	defer res.Body.Close()
-	assert.Equal(t, 200, res.StatusCode)
-
-	resBody, err := io.ReadAll(res.Body)
-	require.NoError(t, err)
-
-	result := &dataplane.ConfigurationStatus{}
-	err = json.Unmarshal(resBody, &result)
-	require.NoError(t, err)
-	assert.Equal(t, toPtr(status.GetCorrelationId()), result.CorrelationId)
-	assert.Equal(t, toPtr(status.GetMessage()), result.Message)
-	assert.Equal(t, toPtr(dataplane.SUCCESS), result.Status)
-	assert.NotNil(t, result.LastUpdated)
-
-	// Test configuration status not found
-	res, err = performGetInstanceConfigurationStatusRequest(ctx, dataPlaneServer, "unknown-instance-id")
-	require.NoError(t, err)
-	assert.Equal(t, 404, res.StatusCode)
-
-	resBody, err = io.ReadAll(res.Body)
-	require.NoError(t, err)
-
-	result2 := dataplane.ErrorResponse{}
-	err = json.Unmarshal(resBody, &result2)
-	require.NoError(t, err)
-	assert.Equal(t, "Unable to find configuration status", result2.Message)
-	defer res.Body.Close()
+func compareResponse(t *testing.T, result *dataplane.ConfigurationStatus, events []dataplane.Events,
+	expectedStatus *dataplane.ConfigurationStatus, resBody []byte,
+) {
+	t.Helper()
+	if result.Events != nil {
+		for key, resultStatus := range *result.Events {
+			assert.Equal(t, (events)[key].Status, resultStatus.Status)
+			assert.Equal(t, (events)[key].Message, resultStatus.Message)
+		}
+		assert.Equal(t, expectedStatus.CorrelationId, result.CorrelationId)
+	} else {
+		result2 := dataplane.ErrorResponse{}
+		err := json.Unmarshal(resBody, &result2)
+		require.NoError(t, err)
+		assert.Equal(t, "Unable to find configuration status", result2.Message)
+	}
 }
 
 func TestDataPlaneServer_MapStatusEnums(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected dataplane.ConfigurationStatusType
+		expected dataplane.StatusState
 	}{
 		{
 			name:     "Success type",
@@ -280,7 +345,7 @@ func TestDataPlaneServer_MapStatusEnums(t *testing.T) {
 		}, {
 			name:     "In progress type",
 			input:    "IN_PROGRESS",
-			expected: dataplane.INPROGESS,
+			expected: dataplane.INPROGRESS,
 		}, {
 			name:     "Failed type",
 			input:    "FAILED",

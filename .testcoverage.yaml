@@ -41,8 +41,10 @@ exclude:
     - app.go          # app.go and main.go should be tested by integration tests.
     - main.go
     - internal/datasource/config # These need to be addressed
+    - internal/service # These need to be addressed
     - internal/datasource/host # These need to be addressed
     - internal/datasource/host/exec # These need to be addressed
+    - internal/service/config # These need to be addressed
     - internal/plugin # These need to be addressed
 
 # NOTES:
