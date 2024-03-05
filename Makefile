@@ -96,7 +96,7 @@ format: ## Format code
 
 unit-test: $(TEST_BUILD_DIR) ## Run unit tests
 	@CGO_ENABLED=0 $(GOTEST) -count=1 -coverprofile=$(TEST_BUILD_DIR)/tmp_coverage.out -coverpkg=./... -covermode count ./internal/... ./api/... ./cmd/...
-	@cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v "fake_" > $(TEST_BUILD_DIR)/coverage.out
+	@cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v "fake_" | grep -v "github.com/nginx/agent/v3/test/" > $(TEST_BUILD_DIR)/coverage.out
 	@rm $(TEST_BUILD_DIR)/tmp_coverage.out
 	@$(GOTOOL) cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
 	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
@@ -110,6 +110,8 @@ coverage: $(TEST_BUILD_DIR)/coverage.out
 	@$(GORUN) $(GOTESTCOVERAGE) --config=./.testcoverage.yaml
 
 integration-test:
+	mkdir -p $(BUILD_DIR)/mock-management-plane
+	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane/server test/mock/cmd/main.go
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
@@ -125,7 +127,7 @@ dev: ## Run agent executable
 
 run-mock-management-server: ## Run mock management server
 	@echo "🚀 Running mock management server"
-	$(GORUN) test/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
+	$(GORUN) test/mock/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"

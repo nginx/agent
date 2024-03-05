@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package utils
+package test
 
 import (
 	"context"
@@ -14,14 +14,18 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
-
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const configFilePermissions = 0o700
 
 //nolint:ireturn
-func StartContainer(ctx context.Context, tb testing.TB, waitForLog, nginxConfigPath string) testcontainers.Container {
+func StartContainer(
+	ctx context.Context,
+	tb testing.TB,
+	containerNetwork *testcontainers.DockerNetwork,
+	waitForLog, nginxConfigPath string,
+) testcontainers.Container {
 	tb.Helper()
 
 	containerOSType := getEnv(tb, "CONTAINER_OS_TYPE")
@@ -52,6 +56,14 @@ func StartContainer(ctx context.Context, tb testing.TB, waitForLog, nginxConfigP
 		},
 		ExposedPorts: []string{"9091/tcp"},
 		WaitingFor:   wait.ForLog(waitForLog),
+		Networks: []string{
+			containerNetwork.Name,
+		},
+		NetworkAliases: map[string][]string{
+			containerNetwork.Name: {
+				"agent",
+			},
+		},
 		Files: []testcontainers.ContainerFile{
 			{
 				HostFilePath:      "./nginx-agent.conf",
@@ -70,6 +82,51 @@ func StartContainer(ctx context.Context, tb testing.TB, waitForLog, nginxConfigP
 		ContainerRequest: req,
 		Started:          true,
 	})
+
+	require.NoError(tb, err)
+
+	return container
+}
+
+//nolint:ireturn
+func StartMockManagementPlaneContainer(
+	ctx context.Context,
+	tb testing.TB,
+	containerNetwork *testcontainers.DockerNetwork,
+	nginxConfigPath string,
+) testcontainers.Container {
+	tb.Helper()
+
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:       "../../",
+			Dockerfile:    "./test/mock/Dockerfile",
+			KeepImage:     false,
+			PrintBuildLog: true,
+		},
+		ExposedPorts: []string{"9092/tcp"},
+		Networks: []string{
+			containerNetwork.Name,
+		},
+		NetworkAliases: map[string][]string{
+			containerNetwork.Name: {
+				"managementPlane",
+			},
+		},
+		Files: []testcontainers.ContainerFile{
+			{
+				HostFilePath:      nginxConfigPath,
+				ContainerFilePath: "/mock-management-plane/config/etc/nginx/nginx.conf",
+				FileMode:          configFilePermissions,
+			},
+		},
+	}
+
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+
 	require.NoError(tb, err)
 
 	return container
