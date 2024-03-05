@@ -204,16 +204,17 @@ func TestDataplaneAPI_UpdateInstances(t *testing.T) {
 
 	assert.NotNil(t, response.CorrelationId)
 
+ConfigStatus:
 	for {
 		statusResponse := getConfigurationStatus(t, client, instanceID)
-		t.Log(*statusResponse.Events)
-
 		for _, event := range *statusResponse.Events {
+			t.Log(*event.Status)
+			t.Log(*event.Message)
 			if *event.Status != dataplane.INPROGRESS {
 				assert.Equal(t, "Config applied successfully", *event.Message)
 				assert.Equal(t, test.ToPtr(dataplane.SUCCESS), event.Status)
 
-				break
+				break ConfigStatus
 			}
 			assert.Equal(t, "Instance configuration update in progress", *event.Message)
 			assert.Equal(t, test.ToPtr(dataplane.INPROGRESS), event.Status)
