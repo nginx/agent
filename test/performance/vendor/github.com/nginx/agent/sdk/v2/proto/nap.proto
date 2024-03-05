@@ -19,6 +19,8 @@ message AppProtectWAFDetails {
   string waf_location = 5 [(gogoproto.jsontag) = "waf_location"];
   // Determines whether the publication of NGINX App Protect pre-compiled content from an external source is supported
   bool precompiled_publication = 6 [(gogoproto.jsontag) = "precompiled_publication"];
+  // WAF release
+  string waf_release = 7 [(gogoproto.jsontag) = "waf_release"];
 }
 
 // Represents the health of App Protect WAF

@@ -25,6 +25,7 @@ type NginxAppProtect struct {
 type NAPReport struct {
 	Status                  string
 	NAPVersion              string
+	NAPRelease              string
 	AttackSignaturesVersion string
 	ThreatCampaignsVersion  string
 }
@@ -71,6 +72,7 @@ type NAPVersioningDetails struct {
 	NAPPlusModule string `json:"nap-plus-module,omitempty"`
 	NAPRelease    string `json:"nap-release"`
 	NginxPlus     string `json:"nginx-plus,omitempty"`
+	NAPVersion    string `json:"nap-version"`
 }
 
 // NAPReleaseMap is a mapping object meant to capture a specific NAP Release version as
@@ -90,6 +92,7 @@ type napRevisionDateTime struct {
 
 type Metadata struct {
 	NapVersion                       string            `json:"napVersion"`
+	NapRelease                       string            `json:"napRelease"`
 	PrecompiledPublication           bool              `json:"precompiledPublication"`
 	GlobalStateFileName              string            `json:"globalStateFileName,omitempty"`
 	GlobalStateFileUID               string            `json:"globalStateFileUID,omitempty"`

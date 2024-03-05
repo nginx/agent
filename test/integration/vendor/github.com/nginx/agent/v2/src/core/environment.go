@@ -868,10 +868,41 @@ func virtualization() (string, string) {
 		return "", "host"
 	}
 
-	if virtualizationSystem == "docker" {
+	if virtualizationSystem == "docker" || isContainer() {
+		log.Debugf("Virtualization detected as container with role %v", virtualizationRole)
 		return "container", virtualizationRole
 	}
+	log.Debugf("Virtualization detected as %v with role %v", virtualizationSystem, virtualizationRole)
 	return virtualizationSystem, virtualizationRole
+}
+
+func isContainer() bool {
+	const (
+		dockerEnv      = "/.dockerenv"
+		containerEnv   = "/run/.containerenv"
+		selfCgroup     = "/proc/self/cgroup"
+		k8sServiceAcct = "/var/run/secrets/kubernetes.io/serviceaccount"
+	)
+
+	res, err, _ := singleflightGroup.Do(IsContainerKey, func() (interface{}, error) {
+		for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
+			if _, err := os.Stat(filename); err == nil {
+				log.Debugf("Is a container because (%s) exists", filename)
+				return true, nil
+			}
+		}
+		// v1 check
+		if result, err := cGroupV1Check(selfCgroup); err == nil && result {
+			return result, err
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		log.Warnf("Unable to retrieve values from cache (%v)", err)
+	}
+
+	return res.(bool)
 }
 
 func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {

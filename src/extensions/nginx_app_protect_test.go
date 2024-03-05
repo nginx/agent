@@ -90,7 +90,7 @@ func TestNginxAppProtect(t *testing.T) {
 			Status:                  nap.RUNNING.String(),
 			AttackSignaturesVersion: testSigDate1,
 			ThreatCampaignsVersion:  testCampaignDate1,
-			Release:                 nap.ReleaseUnmappedBuild("3.780.1"),
+			Release:                 nap.ReleaseUnmappedBuild("3.780.1", "3.9.0"),
 		}
 		currentNAPPluginDetails = napPlugin.generateNAPDetailsProtoCommand()
 		assert.Equal(t, testNAPDetailsActive, currentNAPPluginDetails)
@@ -100,7 +100,7 @@ func TestNginxAppProtect(t *testing.T) {
 			Status:                  nap.INSTALLED.String(),
 			AttackSignaturesVersion: testSigDate1,
 			ThreatCampaignsVersion:  testCampaignDate1,
-			Release:                 nap.ReleaseUnmappedBuild("3.780.1"),
+			Release:                 nap.ReleaseUnmappedBuild("3.780.1", "3.9.0"),
 		}
 		currentNAPPluginDetails = napPlugin.generateNAPDetailsProtoCommand()
 		assert.Equal(t, testNAPDetailsDegraded, currentNAPPluginDetails)

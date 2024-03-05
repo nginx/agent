@@ -178,6 +178,7 @@ func (n *NginxAppProtect) generateNAPDetailsProtoCommand() *proto.DataplaneSoftw
 		AppProtectWafDetails: &proto.AppProtectWAFDetails{
 			WafLocation:             nap.APP_PROTECT_METADATA_FILE_PATH,
 			WafVersion:              napReport.NAPVersion,
+			WafRelease:              napReport.NAPRelease,
 			AttackSignaturesVersion: napReport.AttackSignaturesVersion,
 			ThreatCampaignsVersion:  napReport.ThreatCampaignsVersion,
 			PrecompiledPublication:  n.precompiledPublication,
