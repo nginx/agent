@@ -204,8 +204,11 @@ func TestDataplaneAPI_UpdateInstances(t *testing.T) {
 
 	assert.NotNil(t, response.CorrelationId)
 
+	t.Logf("Instance ID: %v", instanceID)
+
 ConfigStatus:
 	for {
+		t.Log("Get Status")
 		statusResponse := getConfigurationStatus(t, client, instanceID)
 		for _, event := range *statusResponse.Events {
 			t.Log(*event.Status)
@@ -226,7 +229,7 @@ ConfigStatus:
 
 func getConfigurationStatus(t *testing.T, client *resty.Client, instanceID string) *dataplane.ConfigurationStatus {
 	t.Helper()
-
+	t.Log("getConfigurationStatus")
 	url := fmt.Sprintf("%s%s/configurations/status", instancesURL, instanceID)
 	resp, err := client.R().EnableTrace().Get(url)
 
@@ -237,6 +240,8 @@ func getConfigurationStatus(t *testing.T, client *resty.Client, instanceID strin
 
 	responseData := resp.Body()
 	assert.True(t, json.Valid(responseData))
+
+	t.Logf("Response Data: %v", responseData)
 
 	err = json.Unmarshal(responseData, &statusResponse)
 	require.NoError(t, err)
