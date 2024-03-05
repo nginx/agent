@@ -54,7 +54,7 @@ func TestWriteConfig(t *testing.T) {
 		getFileReturn      *instances.FileDownloadResponse
 		cacheShouldBeEqual bool
 		fileShouldBeEqual  bool
-		skipped            int
+		expSkippedCount    int
 	}{
 		{
 			name:               "file needs updating",
@@ -62,7 +62,7 @@ func TestWriteConfig(t *testing.T) {
 			getFileReturn:      helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
 			cacheShouldBeEqual: false,
 			fileShouldBeEqual:  true,
-			skipped:            2,
+			expSkippedCount:    2,
 		},
 		{
 			name:               "file doesn't need updating",
@@ -70,7 +70,7 @@ func TestWriteConfig(t *testing.T) {
 			getFileReturn:      helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
 			cacheShouldBeEqual: true,
 			fileShouldBeEqual:  false,
-			skipped:            3,
+			expSkippedCount:    3,
 		},
 	}
 
@@ -102,15 +102,15 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, err)
 
 			configWriter.SetConfigClient(fakeConfigClient)
-			testConent := []byte("location /test {\n    return 200 \"Before Write \\n\";\n}")
-			err = writeFile(testConent, testConfPath)
+			testContent := []byte("location /test {\n    return 200 \"Before Write \\n\";\n}")
+			err = writeFile(testContent, testConfPath)
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
 			skippedFiles, err := configWriter.Write(ctx, filesURL, tenantID.String(), instanceID.String())
 			require.NoError(t, err)
 			slog.Info("Skipped Files: ", "", skippedFiles)
-			assert.Len(t, skippedFiles, test.skipped)
+			assert.Len(t, skippedFiles, test.expSkippedCount)
 
 			res := reflect.DeepEqual(cacheContent, configWriter.currentFileCache)
 			assert.Equal(t, test.cacheShouldBeEqual, res)

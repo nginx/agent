@@ -18,6 +18,9 @@ import (
 	"github.com/nginx/agent/v3/internal/service"
 )
 
+// remove when tenantID is being set
+const tenantID = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
+
 type Config struct {
 	messagePipe    bus.MessagePipeInterface
 	configServices map[string]service.ConfigServiceInterface
@@ -122,9 +125,6 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 }
 
 func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest) {
-	// remove when tenantID is being set
-	tenantID := "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
-
 	slog.Debug("Updating instance configuration")
 	instanceID := request.Instance.GetInstanceId()
 	if c.configServices[instanceID] == nil {
