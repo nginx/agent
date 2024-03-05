@@ -163,15 +163,32 @@ Here is an example of how to run the NGINX Agent container using Docker:
 docker run --name nginx-agent -d nginx-agent
 ```
 
-By default, the NGINX Agent REST API is not enabled. To enable the API, you must edit the NGINX Agent configuration file, *nginx-agent.conf*. For example:
+{{<note>}}To learn more about the configuration options, refer to the NGINX Agent [Configuration Overview]({{< relref "/configuration/configuration-overview" >}}).{{</note>}}
+
+### Enable the gRPC interface
+
+To connect your NGINX Agent container to your NGINX One or NGINX Instance Manager instance, you must enable the gRPC interface. To do this, you must edit the NGINX Agent configuration file, *nginx-agent.conf*. For example:
+
+```yaml
+erver:
+  host: 127.0.0.1 # mock control plane host
+  grpcPort: 54789 # mock control plane gRPC port
+
+# gRPC TLS options - DISABLING TLS IS NOT RECOMMENDED FOR PRODUCTION
+tls:
+  enable: false
+  skip_verify: true
+```
+
+### Enable the REST interface
+
+If your control plane requires REST API, you can expose NGINX Agent's REST API by editing the NGINX Agent configuration file, *nginx-agent.conf*. For example:
 
 ```yaml
 api:
   host: 0.0.0.0
   port: 8038
 ```
-
-To learn more about the configuration options, refer to the NGINX Agent [Configuration Overview]({{< relref "/configuration/configuration-overview" >}}).
 
 Once you have updated the *nginx-agent.conf* file, you can run the container with the updated **nginx-agent.conf** mounted and the port **8038** exposed with the following command:
 
