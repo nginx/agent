@@ -34,10 +34,11 @@ IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
 DOCS_DIR        := docs
+PROTO_DIR       := proto
 BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
-DIRS            = build build/test build/docs build/docs/proto docs docs/proto
+DIRS            = ${BUILD_DIR} ${TEST_BUILD_DIR} ${BUILD_DIR}/${DOCS_DIR} ${BUILD_DIR}/${DOCS_DIR}/${PROTO_DIR} ${DOCS_DIR} ${DOCS_DIR}/${PROTO_DIR}
 $(shell mkdir -p $(DIRS))
 
 VERSION 		= "v3.0.0"
@@ -73,7 +74,7 @@ help: ## Show help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\033[36m\033[0m\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 clean: ## Remove build directory
-	@rm -rf $(BUILD_DIR)
+	@rm -rf $(DIRS)
 	@echo "🌀 Cleaning Done"
 
 no-local-changes:
@@ -126,10 +127,10 @@ run-mock-management-server: ## Run mock management server
 	@echo "🚀 Running mock management server"
 	$(GORUN) test/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
 
-generate: $(DOCS_BUILD_DIR) ${DOCS_DIR} ## Generate proto files and server and client stubs from OpenAPI specifications
+generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
-	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --doc_out=./${BUILD_DIR}/$(DOCS_DIR)/proto/ --doc_opt=markdown,protos.md 
-	@cp -a ./${BUILD_DIR}/$(DOCS_DIR)/proto/* ./$(DOCS_DIR)/proto/
+	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --doc_out=./${BUILD_DIR}/$(DOCS_DIR)/${PROTO_DIR}/ --doc_opt=markdown,protos.md 
+	@cp -a ./${BUILD_DIR}/$(DOCS_DIR)/${PROTO_DIR}/* ./$(DOCS_DIR)/${PROTO_DIR}/
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specification"
 	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/data-plane-api.yaml > ./api/http/dataplane/data_plane.gen.go
