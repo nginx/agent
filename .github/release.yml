@@ -3,6 +3,9 @@ changelog:
     labels:
       - skip-changelog
   categories:
+    - title: 🌟 Highlights
+      labels:
+        - highlights
     - title: 🚀 Features
       labels:
         - enhancement
