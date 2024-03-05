@@ -14,39 +14,59 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type (
 	GrpcClient struct {
-		// address              string
-		logger               *slog.Logger
-		// instances            []*instances.Instance
-		messagePipe          bus.MessagePipeInterface
-		// server               net.Listener
+		logger *slog.Logger
+		messagePipe bus.MessagePipeInterface
 	}
 )
 
 func NewGrpcClient(agentConfig *config.Config, logger *slog.Logger) *GrpcClient {
+	slog.Error("Starting grpc client")
 	serverAddr := net.JoinHostPort("127.0.0.1", "8080")
 
-	// var opts []grpc.DialOption
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	opts = append(opts, grpc.WithBlock())
 
-	conn, err := grpc.Dial(serverAddr)
-	if (err != nil) {
+	conn, err := grpc.Dial(serverAddr, opts...)
+	if err != nil {
+		slog.Error("error dialing %v", err)
 		return nil
 	}
 
 	client := v1.NewCommandServiceClient(conn)
 
-	req := &v1.CreateConnectionRequest{}
+	req := &v1.CreateConnectionRequest{
+		MessageMeta: &v1.MessageMeta{
+			MessageId:     0,
+			CorrelationId: "",
+			Timestamp:     timestamppb.Now(),
+		},
+		Agent:       &v1.Instance{
+			InstanceMeta:   &v1.InstanceMeta{
+				InstanceId:   "1234",
+				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
+				Version:      "v3",
+			},
+			InstanceConfig: &v1.InstanceConfig{},
+		},
+	}
 
 	resp, err := client.CreateConnection(context.TODO(), req)
+	if err != nil {
+		slog.Debug("error", "some", err)
+	}
 
-	slog.Debug("%v", resp)
+	slog.Debug("resp", "some", resp)
 
 	return &GrpcClient{
 		// address:              address,
-		logger:               logger,
+		logger: logger,
 	}
 }
 
