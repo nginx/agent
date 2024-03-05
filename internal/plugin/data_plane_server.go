@@ -84,6 +84,7 @@ func (dps *DataPlaneServer) updateEvents(configStatus *instances.ConfigurationSt
 	} else {
 		dps.configEvents[instanceID] = append(dps.configEvents[instanceID], configStatus)
 	}
+	slog.Info("Updated Events for, ", "instance_id", instanceID)
 }
 
 func (*DataPlaneServer) Subscriptions() []string {
@@ -179,7 +180,8 @@ func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 // nolint: revive // Get func not returning value
 func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, instanceID string) {
 	status := dps.getConfigurationStatus(instanceID)
-
+	slog.Info("instanceID", "", instanceID)
+	slog.Info("status", "", status)
 	if status != nil {
 		slog.Info("status", "", status)
 		responseBody := &dataplane.ConfigurationStatus{
@@ -196,6 +198,9 @@ func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, ins
 }
 
 func (dps *DataPlaneServer) getConfigurationStatus(instanceID string) []*instances.ConfigurationStatus {
+	slog.Info("configEvents getConfigurationStatus()", "dps_config_events", dps.configEvents)
+	slog.Info("configEvents getConfigurationStatus()", "dps_config_events_instance_id", dps.configEvents[instanceID])
+
 	return dps.configEvents[instanceID]
 }
 
