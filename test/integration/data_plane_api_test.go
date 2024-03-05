@@ -232,6 +232,10 @@ func getConfigurationStatus(t *testing.T, client *resty.Client, instanceID strin
 	t.Log("getConfigurationStatus")
 	url := fmt.Sprintf("%s%s/configurations/status", instancesURL, instanceID)
 	t.Logf("URL: %v", url)
+	client.AddRetryCondition(func(r *resty.Response, err error) bool {
+		// Including "err != nil" emulates the default retry behavior for errors encountered during the request.
+		return err != nil || r.StatusCode() == http.StatusNotFound
+	})
 	resp, err := client.R().EnableTrace().Get(url)
 	t.Logf("resp: %v", resp)
 

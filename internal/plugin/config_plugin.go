@@ -52,6 +52,7 @@ func (*Config) Info() *bus.Info {
 func (c *Config) Process(msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.InstanceConfigUpdateTopic:
+		slog.Info("Process Topic", "topic", msg.Topic)
 		c.processConfigurationStatus(msg)
 	case msg.Topic == bus.InstanceConfigUpdateRequestTopic:
 		c.processInstanceConfigUpdateRequest(msg)
