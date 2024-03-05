@@ -4,23 +4,30 @@
 // LICENSE file in the root directory of this source tree.
 package config
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 const (
-	ClientTimeoutKey                     = "client_timeout"
-	ConfigDirectoriesKey                 = "config_dirs"
-	ConfigPathKey                        = "path"
-	DataPlaneAPIHostKey                  = "data_plane_api_host"
-	DataPlaneAPIPortKey                  = "data_plane_api_port"
-	LogLevelKey                          = "log_level"
-	LogPathKey                           = "log_path"
-	MetricsRootKey                       = "metrics"
-	ProcessMonitorMonitoringFrequencyKey = "process_monitor_monitoring_frequency"
-	VersionKey                           = "version"
+	ClientTimeoutKey                              = "client_timeout"
+	ConfigDirectoriesKey                          = "config_dirs"
+	ConfigPathKey                                 = "path"
+	DataPlaneAPIHostKey                           = "data_plane_api_host"
+	DataPlaneAPIPortKey                           = "data_plane_api_port"
+	DataPlaneConfigNginxReloadMonitoringPeriodKey = "data_plane_config_nginx_reload_monitoring_period"
+	DataPlaneConfigNginxTreatWarningsAsErrorsKey  = "data_plane_config_nginx_treat_warnings_as_error"
+	LogLevelKey                                   = "log_level"
+	LogPathKey                                    = "log_path"
+	MetricsRootKey                                = "metrics"
+	ProcessMonitorMonitoringFrequencyKey          = "process_monitor_monitoring_frequency"
+	VersionKey                                    = "version"
 	// Below consts are NOT flag keys.
 	OTelExporterRoot     = "otel_exporter"
 	GRPCRoot             = "grpc"
 	PrometheusSourceRoot = "prometheus_source"
+
+	DefaultDataPlaneConfigNginxReloadMonitoringPeriod = 10 * time.Second
 )
 
 var (
@@ -40,6 +47,6 @@ var (
 )
 
 func pre(prefixes ...string) string {
-	joined := strings.Join(prefixes, keyDelimiter)
-	return joined + keyDelimiter
+	joined := strings.Join(prefixes, KeyDelimiter)
+	return joined + KeyDelimiter
 }

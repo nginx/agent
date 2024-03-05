@@ -10,7 +10,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 	"testing"
+	"time"
 
 	helpers "github.com/nginx/agent/v3/test"
 
@@ -26,28 +28,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const instanceID = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
+const (
+	errorLogLine   = "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)"
+	warningLogLine = "2023/03/14 14:16:23 nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024"
+	instanceID     = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
+)
 
 func TestNginx_ParseConfig(t *testing.T) {
-	file, err := os.CreateTemp("./", "nginx-parse-config.conf")
+	file := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "nginx-parse-config.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
-	require.NoError(t, err)
 
-	errorLog, err := os.CreateTemp("./", "error.log")
+	errorLog := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "error.log")
 	defer helpers.RemoveFileWithErrorCheck(t, errorLog.Name())
-	require.NoError(t, err)
 
-	accessLog, err := os.CreateTemp("./", "access.log")
+	accessLog := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "access.log")
 	defer helpers.RemoveFileWithErrorCheck(t, accessLog.Name())
-	require.NoError(t, err)
 
-	combinedAccessLog, err := os.CreateTemp("./", "combined_access.log")
+	combinedAccessLog := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "combined_access.log")
 	defer helpers.RemoveFileWithErrorCheck(t, combinedAccessLog.Name())
-	require.NoError(t, err)
 
-	ltsvAccessLog, err := os.CreateTemp("./", "ltsv_access.log")
+	ltsvAccessLog := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "ltsv_access.log")
 	defer helpers.RemoveFileWithErrorCheck(t, ltsvAccessLog.Name())
-	require.NoError(t, err)
 
 	content, err := testconfig.GetNginxConfigWithMultipleAccessLogs(
 		errorLog.Name(),
@@ -140,20 +141,75 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 }
 
 func TestNginx_Apply(t *testing.T) {
+	errorLogFile := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "error.log")
+	defer helpers.RemoveFileWithErrorCheck(t, errorLogFile.Name())
+
 	tests := []struct {
-		name     string
-		error    error
-		expected error
+		name             string
+		out              *bytes.Buffer
+		errorLogs        []*model.ErrorLog
+		errorLogContents string
+		error            error
+		expected         error
 	}{
 		{
-			name:     "successful reload",
+			name: "successful reload",
+			out:  bytes.NewBufferString(""),
+			errorLogs: []*model.ErrorLog{
+				{
+					Name: errorLogFile.Name(),
+				},
+			},
+			errorLogContents: "",
+			error:            nil,
+			expected:         nil,
+		},
+		{
+			name: "successful reload - unknown error log location",
+			out:  bytes.NewBufferString(""),
+			errorLogs: []*model.ErrorLog{
+				{
+					Name: "/unknown/error.log",
+				},
+			},
+			errorLogContents: "",
+			error:            nil,
+			expected:         nil,
+		},
+		{
+			name:     "successful reload - no error logs",
+			out:      bytes.NewBufferString(""),
 			error:    nil,
 			expected: nil,
 		},
 		{
 			name:     "failed reload",
 			error:    errors.New("error reloading"),
-			expected: fmt.Errorf("failed to reload NGINX %w: ", errors.New("error reloading")),
+			expected: fmt.Errorf("failed to reload NGINX, %w", errors.New("error reloading")),
+		},
+		{
+			name: "failed reload due to error in error logs",
+			out:  bytes.NewBufferString(""),
+			errorLogs: []*model.ErrorLog{
+				{
+					Name: errorLogFile.Name(),
+				},
+			},
+			errorLogContents: errorLogLine,
+			error:            nil,
+			expected:         errors.Join(fmt.Errorf(errorLogLine)),
+		},
+		{
+			name: "failed reload due to warning in error logs",
+			out:  bytes.NewBufferString(""),
+			errorLogs: []*model.ErrorLog{
+				{
+					Name: errorLogFile.Name(),
+				},
+			},
+			errorLogContents: warningLogLine,
+			error:            nil,
+			expected:         errors.Join(fmt.Errorf(warningLogLine)),
 		},
 	}
 
@@ -174,16 +230,38 @@ func TestNginx_Apply(t *testing.T) {
 					},
 				},
 			}
-			nginxConfig := NewNginx(instance, &config.Config{})
+			nginxConfig := NewNginx(
+				instance,
+				&config.Config{
+					DataPlaneConfig: config.DataPlaneConfig{
+						Nginx: config.NginxDataPlaneConfig{
+							TreatWarningsAsError:   true,
+							ReloadMonitoringPeriod: 400 * time.Millisecond,
+						},
+					},
+				},
+			)
 			nginxConfig.executor = mockExec
+			nginxConfig.SetConfigContext(&model.NginxConfigContext{
+				ErrorLogs: test.errorLogs,
+			})
 
-			err := nginxConfig.Apply()
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func(expected error) {
+				defer wg.Done()
+				reloadError := nginxConfig.Apply()
+				assert.Equal(t, expected, reloadError)
+			}(test.expected)
 
-			if test.error != nil {
-				assert.Equal(t, fmt.Errorf("failed to reload NGINX, %w", test.error), err)
-			} else {
-				require.NoError(t, err)
+			time.Sleep(200 * time.Millisecond)
+
+			if test.errorLogContents != "" {
+				_, err := errorLogFile.WriteString(test.errorLogContents)
+				require.NoError(t, err, "Error writing data to error log file")
 			}
+
+			wg.Wait()
 		})
 	}
 }
