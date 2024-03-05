@@ -154,8 +154,8 @@ components:
         events:
           type: array
           items:
-            $ref: "#/components/schemas/Events"
-    Events:
+            $ref: "#/components/schemas/Event"
+    Event:
       type: object
       properties:
         timestamp:
