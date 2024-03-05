@@ -29,7 +29,9 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 		}
 	}
 
-	plugins = append(plugins, processMonitor, instanceMonitor, configPlugin)
+	grpcClient := NewGrpcClient(nil, nil)
+
+	plugins = append(plugins, processMonitor, instanceMonitor, configPlugin, grpcClient)
 
 	if agentConfig.DataPlaneAPI.Host != "" && agentConfig.DataPlaneAPI.Port != 0 {
 		dataPlaneServer := NewDataPlaneServer(agentConfig, slogger)

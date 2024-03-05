@@ -129,7 +129,7 @@ run-mock-management-server: ## Run mock management server
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
-	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --doc_out=./${BUILD_DIR}/$(DOCS_DIR)/${PROTO_DIR}/ --doc_opt=markdown,protos.md 
+	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --go-grpc_out=./api/grpc --doc_out=./${BUILD_DIR}/$(DOCS_DIR)/${PROTO_DIR}/ --doc_opt=markdown,protos.md 
 	@cp -a ./${BUILD_DIR}/$(DOCS_DIR)/${PROTO_DIR}/* ./$(DOCS_DIR)/${PROTO_DIR}/
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specification"

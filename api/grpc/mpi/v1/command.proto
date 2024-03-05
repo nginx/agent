@@ -8,7 +8,7 @@
 syntax = "proto3";
 package mpi.v1;
 
-option go_package = "github.com/nginx/agent/v3/api/grpc/mpi/v1";
+option go_package = "mpi/v1";
 
 import "mpi/v1/common.proto";
 import "google/protobuf/struct.proto";
