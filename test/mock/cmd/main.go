@@ -22,16 +22,25 @@ func main() {
 		slog.Error("Unable to get current directory", "error", err)
 	}
 
+	var address string
+
 	flag.StringVar(
 		&configDirectory,
 		"configDirectory",
 		currentPath,
 		"set the directory where the config files are stored",
 	)
+
+	flag.StringVar(
+		&address,
+		"address",
+		"127.0.0.1:0",
+		"set the address to run the server on",
+	)
 	flag.Parse()
 
 	server := mock.NewManagementServer(configDirectory)
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		slog.Error("Failed to create listener", "error", err)
 		os.Exit(1)

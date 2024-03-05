@@ -13,11 +13,23 @@ import (
 //go:embed nginx/nginx.conf
 var embedNginxConf embed.FS
 
+//go:embed nginx/nginx-with-test-location.conf
+var embedNginxConfWithTestLocation embed.FS
+
 //go:embed nginx/nginx-with-multiple-access-logs.conf
 var embedNginxConfWithMultipleAccessLogs embed.FS
 
 func GetNginxConfig() (string, error) {
 	content, err := embedNginxConf.ReadFile("nginx/nginx.conf")
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
+}
+
+func GetNginxConfWithTestLocation() (string, error) {
+	content, err := embedNginxConfWithTestLocation.ReadFile("nginx/nginx-with-test-location.conf")
 	if err != nil {
 		return "", err
 	}

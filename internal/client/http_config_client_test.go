@@ -68,7 +68,7 @@ func TestGetFilesMetadata(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	filesURL := fmt.Sprintf("%s/instance/%s/files/", ts.URL, instanceID.String())
+	filesURL := fmt.Sprintf("%s/instances/%s/files/", ts.URL, instanceID.String())
 
 	hcd := NewHTTPConfigClient(time.Second * 10)
 
@@ -94,7 +94,7 @@ func TestGetFile(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	filesURL := fmt.Sprintf("%s/instance/%s/files/", ts.URL, instanceID.String())
+	filesURL := fmt.Sprintf("%s/instances/%s/files/", ts.URL, instanceID.String())
 
 	fileTime, err := helpers.CreateProtoTime("2024-01-08T13:22:25Z")
 	require.NoError(t, err)

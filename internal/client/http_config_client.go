@@ -22,7 +22,7 @@ import (
 //counterfeiter:generate . ConfigClientInterface
 const (
 	tenantHeader = "tenantId"
-	fileLocation = "%s/instance/%s/files/"
+	fileLocation = "%s/instances/%s/files/"
 )
 
 type ConfigClientInterface interface {
@@ -81,6 +81,8 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(
 	if err != nil {
 		return nil, err
 	}
+
+	slog.Debug("Files metadata response", "location", location, "response", string(data))
 
 	// type is returned for the rest api but is not in the proto definitions so needs to be discarded
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
