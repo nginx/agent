@@ -17,17 +17,16 @@ NGINX Agent can run in most environments. We support the following distributions
 {{< bootstrap-table "table table-striped table-bordered" >}}
 | | AlmaLinux | Alpine Linux | Amazon Linux | Amazon Linux 2 | CentOS | Debian | 
 |-|-----------|--------------|--------------|----------------|--------|--------|
-|**Version**|8 <br><hr>9 |  3.16<br><hr>3.17<br><hr> 3.18<br><hr> 3.19|  2023|  LTS|  7.4+|  11<br><hr> 12|
-|**Architecture**| x86_84<br><hr>aarch64| x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 |
+|**Version**|8 <br><br>9 |  3.16<br><br>3.17<br><br> 3.18<br><br> 3.19|  2023|  LTS|  7.4+|  11<br><br> 12|
+|**Architecture**| x86_84<br><br>aarch64| x86_64<br><br>aarch64 | x86_64<br><br>aarch64 | x86_64<br><br>aarch64 | x86_64<br><br>aarch64 | x86_64<br><br>aarch64 |
 {{< /bootstrap-table >}}
 
 {{< bootstrap-table "table table-striped table-bordered" >}}
-| |FreeBSD | Oracle Linux | Red Hat <br>Enterprise Linux <br>(RHEL) | Rocky Linux | SUSE Linux <br>Enterprise Server <br>(SLES) | Ubuntu |
+| |FreeBSD | Oracle Linux | Red Hat <br>Enterprise Linux (RHEL) | Rocky Linux | SUSE Linux <br>Enterprise Server (SLES) | Ubuntu |
 |-|--------|--------------|---------------------------------|-------------|-------------------------------------|--------|
-|**Version**|13<br><hr>14|7.4+<br><hr>8.1+<br><hr>9|7.4+<br><hr>8.1+<br><hr>9.0+|8<br><hr>9|12 SP5<br><hr>15 SP2|20.04 LTS<br><hr>22.04 LTS|
-|**Architecture**|amd64|x86_64|x86_64<br><hr>aarch64|x86_64<br><hr>aarch64|x86_64|x86_64<br><hr>aarch64|
+|**Version**|13<br><br>14|7.4+<br><br>8.1+<br><br>9|7.4+<br><br>8.1+<br><br>9.0+|8<br><br>9|12 SP5<br><br>15 SP2|20.04 LTS<br><br>22.04 LTS|
+|**Architecture**|amd64|x86_64|x86_64<br><br>aarch64|x86_64<br><br>aarch64|x86_64|x86_64<br><br>aarch64|
 {{< /bootstrap-table >}}
-
 
 ## Supported Deployment Environments 
 
