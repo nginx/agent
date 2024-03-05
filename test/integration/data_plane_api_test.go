@@ -206,18 +206,18 @@ func TestDataplaneAPI_UpdateInstances(t *testing.T) {
 
 	for {
 		statusResponse := getConfigurationStatus(t, client, instanceID)
-		t.Log(*statusResponse.Status)
-		t.Log(*statusResponse.Message)
+		t.Log(*statusResponse.Events)
 
-		if *statusResponse.Status != dataplane.INPROGESS {
-			assert.Equal(t, "Config applied successfully", *statusResponse.Message)
-			assert.Equal(t, test.ToPtr(dataplane.SUCCESS), statusResponse.Status)
+		for _, event := range *statusResponse.Events {
+			if *event.Status != dataplane.INPROGRESS {
+				assert.Equal(t, "Config applied successfully", *event.Message)
+				assert.Equal(t, test.ToPtr(dataplane.SUCCESS), event.Status)
 
-			break
+				break
+			}
+			assert.Equal(t, "Instance configuration update in progress", *event.Message)
+			assert.Equal(t, test.ToPtr(dataplane.INPROGRESS), event.Status)
 		}
-
-		assert.Equal(t, "Instance configuration update in progress", *statusResponse.Message)
-		assert.Equal(t, test.ToPtr(dataplane.INPROGESS), statusResponse.Status)
 
 		time.Sleep(time.Second)
 	}
@@ -241,9 +241,11 @@ func getConfigurationStatus(t *testing.T, client *resty.Client, instanceID strin
 	require.NoError(t, err)
 
 	assert.NotNil(t, statusResponse.CorrelationId)
-	assert.NotNil(t, statusResponse.LastUpdated)
-	assert.NotNil(t, statusResponse.Message)
-	assert.NotNil(t, statusResponse.Status)
+	for _, event := range *statusResponse.Events {
+		assert.NotNil(t, event.Timestamp)
+		assert.NotNil(t, event.Message)
+		assert.NotNil(t, event.Status)
+	}
 
 	return statusResponse
 }
