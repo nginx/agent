@@ -85,7 +85,10 @@ func (p *FakeMessagePipe) ClearMessages() {
 
 func (p *FakeMessagePipe) Run() {
 	for _, plugin := range p.plugins {
-		plugin.Init(p)
+		err := plugin.Init(p)
+		if err != nil {
+			return
+		}
 	}
 
 	p.RunWithoutInit()

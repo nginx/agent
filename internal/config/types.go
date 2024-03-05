@@ -17,6 +17,7 @@ type Config struct {
 	Client             Client          `yaml:"-" mapstructure:"client"`
 	ConfigDir          string          `yaml:"-" mapstructure:"config-dirs"`
 	AllowedDirectories []string        `yaml:"-"`
+	Metrics            *Metrics        `yaml:"-" mapstructure:"metrics"`
 }
 
 type Log struct {
@@ -44,4 +45,30 @@ type NginxDataPlaneConfig struct {
 
 type Client struct {
 	Timeout time.Duration `yaml:"-" mapstructure:"timeout"`
+}
+
+type Metrics struct {
+	ProduceInterval  time.Duration     `yaml:"-" mapstructure:"produce_interval"`
+	OTelExporter     *OTelExporter     `yaml:"-" mapstructure:"otel_exporter"`
+	PrometheusSource *PrometheusSource `yaml:"-" mapstructure:"prometheus_source"`
+}
+
+// Is a DataSources implementation
+type PrometheusSource struct {
+	Endpoints []string `yaml:"-" mapstructure:"endpoints"`
+}
+
+// Is a Exporters implementation
+type OTelExporter struct {
+	BufferLength     int           `yaml:"-" mapstructure:"buffer_length"`
+	ExportRetryCount int           `yaml:"-" mapstructure:"export_retry_count"`
+	ExportInterval   time.Duration `yaml:"-" mapstructure:"export_interval"`
+	GRPC             *GRPC         `yaml:"-" mapstructure:"grpc"`
+}
+
+type GRPC struct {
+	Target         string        `yaml:"-" mapstructure:"target"`
+	ConnTimeout    time.Duration `yaml:"-" mapstructure:"connection_timeout"`
+	MinConnTimeout time.Duration `yaml:"-" mapstructure:"minimum_connection_timeout"`
+	BackoffDelay   time.Duration `yaml:"-" mapstructure:"backoff_delay"`
 }
