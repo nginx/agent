@@ -56,14 +56,14 @@ func TestDataPlaneServer_Process(t *testing.T) {
 	}{
 		{
 			name:  "instances test",
-			data:  []*instances.Instance{{InstanceId: "123", Type: instances.Type_NGINX}},
+			data:  []*instances.Instance{{InstanceId: instanceID, Type: instances.Type_NGINX}},
 			topic: bus.InstancesTopic,
 		},
 		{
 			name: "instances complete update",
 			data: &instances.ConfigurationStatus{
-				InstanceId:    "123",
-				CorrelationId: "456",
+				InstanceId:    instanceID,
+				CorrelationId: correlationID,
 				Status:        instances.Status_SUCCESS,
 				Message:       "config updated",
 			},
@@ -79,7 +79,7 @@ func TestDataPlaneServer_Process(t *testing.T) {
 			if tt.topic == bus.InstancesTopic {
 				actual = dataPlaneServer.instances
 			} else {
-				actual = dataPlaneServer.configEvents["123"][0]
+				actual = dataPlaneServer.configEvents[instanceID][0]
 			}
 
 			assert.Equal(t, tt.data, actual)
@@ -90,13 +90,13 @@ func TestDataPlaneServer_Process(t *testing.T) {
 func TestDataPlaneServer_GetInstances(t *testing.T) {
 	ctx := context.TODO()
 	expected := &dataplane.Instance{
-		InstanceId: toPtr("ae6c58c1-bc92-30c1-a9c9-85591422068e"),
+		InstanceId: toPtr(instanceID),
 		Type:       toPtr(dataplane.NGINX),
 		Version:    toPtr("1.23.1"),
 	}
 
 	instance := &instances.Instance{
-		InstanceId: "ae6c58c1-bc92-30c1-a9c9-85591422068e",
+		InstanceId: instanceID,
 		Type:       instances.Type_NGINX,
 		Version:    "1.23.1",
 	}
@@ -139,7 +139,6 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	ctx := context.TODO()
 	unknownInstanceID := "fe4c58c1-bc92-30c1-a9c9-85591422068e"
-	instanceID := "ae6c58c1-bc92-30c1-a9c9-85591422068e"
 	data := []byte(`{"location": "http://file-server.com"}`)
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 
@@ -206,8 +205,6 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 
 func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	ctx := context.TODO()
-	correlationID := "dfsbhj6-bc92-30c1-a9c9-85591422068e"
-	instanceID := "ae6c58c1-bc92-30c1-a9c9-85591422068e"
 	tests := []struct {
 		name             string
 		instanceID       string
@@ -246,7 +243,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 						Timestamp: nil,
 					},
 				},
-				InstanceId: &instanceID,
+				InstanceId: toPtr(instanceID),
 			},
 			expectedResponse: 200,
 		},

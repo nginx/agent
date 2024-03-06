@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/google/uuid"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -19,7 +21,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const filePermission = 0o700
+const (
+	filePermission = 0o700
+	instanceID     = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+	correlationID  = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
+)
 
 func CreateDirWithErrorCheck(t testing.TB, dirName string) {
 	t.Helper()
@@ -63,8 +69,67 @@ func CreateTestIDs(t testing.TB) (uuid.UUID, uuid.UUID) {
 	tenantID, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
 	require.NoError(t, err)
 
-	instanceID, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
+	instanceID, err := uuid.Parse(instanceID)
 	require.NoError(t, err)
 
 	return tenantID, instanceID
+}
+
+func CreateInProgressStatus() *instances.ConfigurationStatus {
+	return &instances.ConfigurationStatus{
+		InstanceId:    instanceID,
+		CorrelationId: correlationID,
+		Status:        instances.Status_IN_PROGRESS,
+		Message:       "Instance configuration update in progress",
+		Timestamp:     timestamppb.Now(),
+	}
+}
+
+func CreateSuccessStatus() *instances.ConfigurationStatus {
+	return &instances.ConfigurationStatus{
+		InstanceId:    instanceID,
+		CorrelationId: correlationID,
+		Status:        instances.Status_SUCCESS,
+		Message:       "Config applied successfully",
+		Timestamp:     timestamppb.Now(),
+	}
+}
+
+func CreateFailStatus(err string) *instances.ConfigurationStatus {
+	return &instances.ConfigurationStatus{
+		InstanceId:    instanceID,
+		CorrelationId: correlationID,
+		Status:        instances.Status_FAILED,
+		Message:       err,
+	}
+}
+
+func CreateRollbackSuccessStatus() *instances.ConfigurationStatus {
+	return &instances.ConfigurationStatus{
+		InstanceId:    instanceID,
+		CorrelationId: correlationID,
+		Status:        instances.Status_ROLLBACK_SUCCESS,
+		Timestamp:     timestamppb.Now(),
+		Message:       "Rollback successful",
+	}
+}
+
+func CreateRollbackFailStatus(err string) *instances.ConfigurationStatus {
+	return &instances.ConfigurationStatus{
+		InstanceId:    instanceID,
+		CorrelationId: correlationID,
+		Status:        instances.Status_ROLLBACK_FAILED,
+		Timestamp:     timestamppb.Now(),
+		Message:       err,
+	}
+}
+
+func CreateRollbackInProgressStatus() *instances.ConfigurationStatus {
+	return &instances.ConfigurationStatus{
+		InstanceId:    instanceID,
+		CorrelationId: correlationID,
+		Status:        instances.Status_ROLLBACK_IN_PROGRESS,
+		Timestamp:     timestamppb.Now(),
+		Message:       "Rollback in progress",
+	}
 }

@@ -7,7 +7,10 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 	"testing"
+
+	helpers "github.com/nginx/agent/v3/test"
 
 	"github.com/nginx/agent/v3/internal/config"
 
@@ -18,7 +21,11 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+const (
+	instanceID    = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 )
 
 func TestConfig_Init(t *testing.T) {
@@ -47,7 +54,7 @@ func TestConfig_Subscriptions(t *testing.T) {
 
 func TestConfig_Process(t *testing.T) {
 	testInstance := &instances.Instance{
-		InstanceId: "123",
+		InstanceId: instanceID,
 		Type:       instances.Type_NGINX,
 	}
 
@@ -59,24 +66,12 @@ func TestConfig_Process(t *testing.T) {
 	instanceConfigUpdateRequest := &model.InstanceConfigUpdateRequest{
 		Instance:      testInstance,
 		Location:      "http://file-server.com",
-		CorrelationID: "456",
+		CorrelationID: correlationID,
 	}
 
-	configurationStatusProgress := &instances.ConfigurationStatus{
-		InstanceId:    testInstance.GetInstanceId(),
-		CorrelationId: "456",
-		Status:        instances.Status_IN_PROGRESS,
-		Message:       "Instance configuration update in progress",
-		Timestamp:     timestamppb.Now(),
-	}
+	configurationStatusProgress := helpers.CreateInProgressStatus()
 
-	configurationStatus := &instances.ConfigurationStatus{
-		InstanceId:    testInstance.GetInstanceId(),
-		CorrelationId: "456",
-		Status:        instances.Status_SUCCESS,
-		Message:       "Successfully updated instance configuration.",
-		Timestamp:     timestamppb.Now(),
-	}
+	configurationStatus := helpers.CreateSuccessStatus()
 
 	tests := []struct {
 		name     string
@@ -117,13 +112,7 @@ func TestConfig_Process(t *testing.T) {
 				},
 				{
 					Topic: bus.InstanceConfigUpdateTopic,
-					Data: &instances.ConfigurationStatus{
-						InstanceId:    testInstance.GetInstanceId(),
-						CorrelationId: "456",
-						Status:        instances.Status_SUCCESS,
-						Message:       "Successfully updated instance configuration.",
-						Timestamp:     timestamppb.Now(),
-					},
+					Data:  helpers.CreateSuccessStatus(),
 				},
 			},
 		},
@@ -135,10 +124,20 @@ func TestConfig_Process(t *testing.T) {
 			},
 			expected: nil,
 		},
+		{
+			name: "Instance topic request ",
+			input: &bus.Message{
+				Topic: bus.InstancesTopic,
+				Data: []*instances.Instance{
+					testInstance,
+				},
+			},
+			expected: nil,
+		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
+	for _, processTest := range tests {
+		t.Run(processTest.name, func(tt *testing.T) {
 			messagePipe := bus.NewFakeMessagePipe(context.TODO())
 			configPlugin := NewConfig(&config.Config{})
 
@@ -152,10 +151,124 @@ func TestConfig_Process(t *testing.T) {
 
 			instanceService := []*instances.Instance{testInstance}
 
-			configPlugin.configServices["123"] = configService
+			configPlugin.configServices[instanceID] = configService
 			configPlugin.instances = instanceService
 
-			configPlugin.Process(test.input)
+			configPlugin.Process(processTest.input)
+
+			messages := messagePipe.GetMessages()
+
+			assert.Equal(tt, len(processTest.expected), len(messages))
+		})
+	}
+}
+
+func TestConfig_Update(t *testing.T) {
+	agentConfig := config.Config{}
+	instance := instances.Instance{
+		InstanceId: instanceID,
+		Type:       instances.Type_NGINX,
+	}
+
+	location := fmt.Sprintf("/instance/%s/files/", instanceID)
+	request := model.InstanceConfigUpdateRequest{
+		Instance:      &instance,
+		Location:      location,
+		CorrelationID: correlationID,
+	}
+
+	inProgressStatus := helpers.CreateInProgressStatus()
+	successStatus := helpers.CreateSuccessStatus()
+	failStatus := helpers.CreateFailStatus("error")
+	rollbackInProgressStatus := helpers.CreateRollbackInProgressStatus()
+
+	tests := []struct {
+		name               string
+		updateReturnStatus *instances.ConfigurationStatus
+		rollbackReturns    error
+		expected           []*bus.Message
+	}{
+		{
+			name:               "success",
+			updateReturnStatus: successStatus,
+			rollbackReturns:    nil,
+			expected: []*bus.Message{
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  inProgressStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  successStatus,
+				},
+			},
+		},
+		{
+			name:               "fail and rollback",
+			updateReturnStatus: failStatus,
+			rollbackReturns:    nil,
+			expected: []*bus.Message{
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  inProgressStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  failStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  rollbackInProgressStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  helpers.CreateRollbackSuccessStatus(),
+				},
+			},
+		},
+		{
+			name:               "rollback fails",
+			updateReturnStatus: failStatus,
+			rollbackReturns:    fmt.Errorf("rollback failed"),
+			expected: []*bus.Message{
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  inProgressStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  failStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  rollbackInProgressStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  helpers.CreateRollbackFailStatus("rollback failed"),
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			messagePipe := bus.NewFakeMessagePipe(context.TODO())
+			configPlugin := NewConfig(&agentConfig)
+
+			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
+			require.NoError(tt, err)
+			messagePipe.Run()
+
+			configService := &servicefakes.FakeConfigServiceInterface{}
+			configService.UpdateInstanceConfigurationReturns(make(map[string]*instances.File), test.updateReturnStatus)
+			configService.RollbackReturns(test.rollbackReturns)
+
+			instanceService := []*instances.Instance{&instance}
+			configPlugin.configServices[instanceID] = configService
+			configPlugin.instances = instanceService
+
+			configPlugin.updateInstanceConfig(&request)
 
 			messages := messagePipe.GetMessages()
 

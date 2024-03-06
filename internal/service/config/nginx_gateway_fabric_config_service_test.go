@@ -18,3 +18,15 @@ func TestNginxGatewayFabric_ParseConfig(t *testing.T) {
 	assert.Nil(t, result)
 	require.Error(t, err)
 }
+
+func TestNginxGatewayFabric_Validate(t *testing.T) {
+	err := NewNginxGatewayFabric().Validate()
+	// Not implemented yet so error is expected )
+	require.Error(t, err)
+}
+
+func TestNginxGatewayFabric_Apply(t *testing.T) {
+	err := NewNginxGatewayFabric().Apply()
+	// Not implemented yet so error is expected )
+	require.Error(t, err)
+}

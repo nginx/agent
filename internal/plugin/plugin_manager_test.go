@@ -42,6 +42,22 @@ func TestLoadPLugins(t *testing.T) {
 				&Config{},
 				&DataPlaneServer{},
 			},
+		}, {
+			name: "Metrics plugin enabled",
+			input: &config.Config{
+				DataPlaneAPI: config.DataPlaneAPI{
+					Host: "localhost",
+					Port: 8080,
+				},
+				Metrics: &config.Metrics{},
+			},
+			expected: []bus.Plugin{
+				&Metrics{},
+				&ProcessMonitor{},
+				&Instance{},
+				&Config{},
+				&DataPlaneServer{},
+			},
 		},
 	}
 
