@@ -11,8 +11,8 @@ import "google/protobuf/timestamp.proto";
 
 // Meta-information associated with a message
 message MessageMeta {
-    // monotonically increasing integer
-    uint64 message_id = 1;
+    // uuid v7 monotonically increasing string
+    string message_id = 1;
     // if 2 or more messages associated with the same workflow, use this field as an association
     string correlation_id = 2;
     // timestamp for human readable timestamp in UTC format

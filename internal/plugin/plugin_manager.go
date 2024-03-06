@@ -29,7 +29,7 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 		}
 	}
 
-	grpcClient := NewGrpcClient(nil, nil)
+	grpcClient := NewGrpcClient(agentConfig)
 
 	plugins = append(plugins, processMonitor, instanceMonitor, configPlugin, grpcClient)
 

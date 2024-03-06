@@ -295,7 +295,7 @@ Meta-information associated with a message
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message_id | [uint64](#uint64) |  | monotonically increasing integer |
+| message_id | [string](#string) |  | uuid v7 monotonically increasing string |
 | correlation_id | [string](#string) |  | if 2 or more messages associated with the same workflow, use this field as an association |
 | timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | timestamp for human readable timestamp in UTC format |
 

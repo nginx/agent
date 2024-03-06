@@ -8,10 +8,12 @@ package plugin
 import (
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/config"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGrpcClient_Init(t *testing.T) {
-	grpcClient := NewGrpcClient(nil, nil)
-	assert.NotNil(t, grpcClient.messagePipe)
+	grpcClient := NewGrpcClient(&config.Config{})
+	assert.NotNil(t, grpcClient.config)
 }

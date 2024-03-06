@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net"
 
+	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -20,31 +21,55 @@ import (
 
 type (
 	GrpcClient struct {
-		logger      *slog.Logger
 		messagePipe bus.MessagePipeInterface
+		config      *config.Config
 	}
 )
 
-func NewGrpcClient(_ *config.Config, logger *slog.Logger) *GrpcClient {
-	slog.Error("Starting grpc client")
-	serverAddr := net.JoinHostPort("127.0.0.1", "8080")
+func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
+	return &GrpcClient{
+		config: agentConfig,
+	}
+}
 
+func getDialOptions() []grpc.DialOption {
 	var opts []grpc.DialOption
+
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	opts = append(opts, grpc.WithBlock())
 
-	conn, err := grpc.Dial(serverAddr, opts...)
+	return opts
+}
+
+func (grpcClient *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
+	grpcClient.messagePipe = messagePipe
+
+	slog.Debug("Starting grpc client")
+	serverAddr := net.JoinHostPort("127.0.0.1", "8080")
+
+	conn, err := grpc.Dial(serverAddr, getDialOptions()...)
 	if err != nil {
 		slog.Error("error dialing %v", err)
 		return nil
+	}
+
+	// nolint:all
+	id, err := uuid.NewV7()
+	if err != nil {
+		slog.Error("error generating message id %v", err)
+	}
+
+	correlationID, err := uuid.NewUUID()
+	if err != nil {
+		slog.Error("error generating correlation id %v", err)
 	}
 
 	client := v1.NewCommandServiceClient(conn)
 
 	req := &v1.CreateConnectionRequest{
 		MessageMeta: &v1.MessageMeta{
-			MessageId:     0,
-			CorrelationId: "",
+			MessageId:     id.String(),
+			CorrelationId: correlationID.String(),
 			Timestamp:     timestamppb.Now(),
 		},
 		Agent: &v1.Instance{
@@ -59,20 +84,11 @@ func NewGrpcClient(_ *config.Config, logger *slog.Logger) *GrpcClient {
 
 	resp, err := client.CreateConnection(context.TODO(), req)
 	if err != nil {
-		slog.Debug("error", "some", err)
+		slog.Error("error", "some", err)
 	}
 
 	slog.Debug("resp", "some", resp)
 
-	return &GrpcClient{
-		// address:              address,
-		logger: logger,
-	}
-}
-
-func (grpcClient *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
-	// dps.messagePipe = messagePipe
-	// go dps.run(messagePipe.Context())
 	return nil
 }
 
@@ -80,7 +96,7 @@ func (grpcClient *GrpcClient) Close() error { return nil }
 
 func (grpcClient *GrpcClient) Info() *bus.Info {
 	return &bus.Info{
-		Name: "gprc-client",
+		Name: "grpc-client",
 	}
 }
 
