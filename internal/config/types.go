@@ -66,9 +66,9 @@ type GRPC struct {
 
 // Command Connection settings for connecting to a Command and Control Server
 type Command struct {
-	Server ServerConfig `yaml:"-" mapstructure:"server"`
-	Auth   AuthConfig   `yaml:"-" mapstructure:"auth"`
-	TLS    TLSConfig    `yaml:"-" mapstructure:"tls"`
+	Server *ServerConfig `yaml:"-" mapstructure:"server"`
+	Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
+	TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
 }
 
 type ServerConfig struct {

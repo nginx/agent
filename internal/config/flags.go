@@ -15,6 +15,7 @@ const (
 	LogLevelKey                          = "log_level"
 	LogPathKey                           = "log_path"
 	MetricsRootKey                       = "metrics"
+	CommandRootKey                       = "command"
 	ProcessMonitorMonitoringFrequencyKey = "process_monitor_monitoring_frequency"
 	VersionKey                           = "version"
 	// Below consts are NOT flag keys.
@@ -37,6 +38,18 @@ var (
 	OTelGRPCBackoffDelayKey         = pre(OTelGRPCKey) + "backoff_delay"
 	PrometheusSrcKey                = pre(MetricsRootKey) + PrometheusSourceRoot
 	PrometheusTargetsKey            = pre(PrometheusSrcKey) + "endpoints"
+	CommandServerKey                = pre(CommandRootKey) + "server"
+	CommandServerHostKey            = pre(CommandServerKey) + "host"
+	CommandServerPortKey            = pre(CommandServerKey) + "port"
+	CommandServerTypeKey            = pre(CommandServerKey) + "type"
+	CommandAuthKey                  = pre(CommandRootKey) + "auth"
+	CommandAuthTokenKey             = pre(CommandAuthKey) + "token"
+	CommandTLSKey                   = pre(CommandRootKey) + "tls"
+	CommandTLSEnableKey             = pre(CommandTLSKey) + "enable"
+	CommandTLSCertKey               = pre(CommandTLSKey) + "cert"
+	CommandTLSKeyKey                = pre(CommandTLSKey) + "key"
+	CommandTLSCaKey                 = pre(CommandTLSKey) + "ca"
+	CommandTLSSkipVerifyKey         = pre(CommandTLSKey) + "skip_verify"
 )
 
 func pre(prefixes ...string) string {

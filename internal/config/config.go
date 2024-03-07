@@ -66,6 +66,7 @@ func GetConfig() *Config {
 		ConfigDir:          getConfigDir(),
 		AllowedDirectories: []string{},
 		Metrics:            getMetrics(),
+		Command:            getCommand(),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDir, ":") {
@@ -148,6 +149,47 @@ func registerFlags() {
 	)
 	fs.StringArray(
 		PrometheusTargetsKey, []string{}, "The target URI(s) of Prometheus endpoint(s) for metrics collection.",
+	)
+	fs.String(
+		CommandServerHostKey, "", "The target URI of command server endpoint for command and control.",
+	)
+	fs.Int32(
+		CommandServerPortKey, 0, "The target port of command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandServerTypeKey,
+		"grpc",
+		"The target protocol (grpc or http) command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandAuthTokenKey,
+		"",
+		"The token used in the authentication handshake with the command server endpoint for command and control.",
+	)
+	fs.Bool(
+		CommandTLSEnableKey,
+		false,
+		"Enables TLS for secure communications with the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandTLSCertKey,
+		"",
+		"The path to the certificate file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandTLSKeyKey,
+		"",
+		"The path to the certificate key file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandTLSCaKey,
+		"",
+		"The path to CA certificate file to use for TLS communication with the command server.",
+	)
+	fs.Bool(
+		CommandTLSSkipVerifyKey,
+		false,
+		"Only intended for demonstration, sets InsecureSkipVerify for TLS credentials.",
 	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
@@ -245,7 +287,7 @@ func getMetrics() *Metrics {
 		return nil
 	}
 
-	m := &Metrics{
+	metrics := &Metrics{
 		ProduceInterval:  viperInstance.GetDuration(MetricsProduceIntervalKey),
 		OTelExporter:     nil,
 		PrometheusSource: nil,
@@ -264,18 +306,51 @@ func getMetrics() *Metrics {
 				BackoffDelay:   viperInstance.GetDuration(OTelGRPCBackoffDelayKey),
 			},
 		}
-		m.OTelExporter = &otelExp
+		metrics.OTelExporter = &otelExp
 	}
 
 	if viperInstance.IsSet(PrometheusSrcKey) {
 		var prometheusSrc PrometheusSource
 		err := viperInstance.UnmarshalKey(PrometheusSrcKey, &prometheusSrc)
 		if err == nil {
-			m.PrometheusSource = &prometheusSrc
+			metrics.PrometheusSource = &prometheusSrc
 		} else {
 			slog.Error("metrics configuration: no Prometheus source configured", "error", err)
 		}
 	}
 
-	return m
+	return metrics
+}
+
+func getCommand() *Command {
+	if !viperInstance.IsSet(CommandRootKey) {
+		return nil
+	}
+	command := &Command{}
+
+	if viperInstance.IsSet(CommandServerKey) {
+		command.Server = &ServerConfig{
+			Host: viperInstance.GetString(CommandServerHostKey),
+			Port: viperInstance.GetInt(CommandServerPortKey),
+			Type: viperInstance.GetString(CommandServerTypeKey),
+		}
+	}
+
+	if viperInstance.IsSet(CommandAuthKey) {
+		command.Auth = &AuthConfig{
+			Token: viperInstance.GetString(CommandAuthTokenKey),
+		}
+	}
+
+	if viperInstance.IsSet(CommandTLSKey) {
+		command.TLS = &TLSConfig{
+			Enable:     viperInstance.GetBool(CommandTLSEnableKey),
+			Cert:       viperInstance.GetString(CommandTLSCertKey),
+			Key:        viperInstance.GetString(CommandTLSKeyKey),
+			Ca:         viperInstance.GetString(CommandTLSCaKey),
+			SkipVerify: viperInstance.GetBool(CommandTLSSkipVerifyKey),
+		}
+	}
+
+	return command
 }

@@ -23,7 +23,7 @@ func TestGrpcClient_Init(t *testing.T) {
 			"grpc config",
 			&config.Config{
 				Command: &config.Command{
-					Server: config.ServerConfig{
+					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: 8888,
 						Type: "grpc",
@@ -36,7 +36,7 @@ func TestGrpcClient_Init(t *testing.T) {
 			"not grpc type",
 			&config.Config{
 				Command: &config.Command{
-					Server: config.ServerConfig{
+					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: 8888,
 						Type: "http",
