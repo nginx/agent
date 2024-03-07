@@ -125,7 +125,7 @@ func TestConfig_Process(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "Instance topic request ",
+			name: "Instance topic request",
 			input: &bus.Message{
 				Topic: bus.InstancesTopic,
 				Data: []*instances.Instance{
@@ -136,8 +136,8 @@ func TestConfig_Process(t *testing.T) {
 		},
 	}
 
-	for _, processTest := range tests {
-		t.Run(processTest.name, func(tt *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
 			messagePipe := bus.NewFakeMessagePipe(context.TODO())
 			configPlugin := NewConfig(&config.Config{})
 
@@ -154,11 +154,15 @@ func TestConfig_Process(t *testing.T) {
 			configPlugin.configServices[instanceID] = configService
 			configPlugin.instances = instanceService
 
-			configPlugin.Process(processTest.input)
+			configPlugin.Process(test.input)
 
 			messages := messagePipe.GetMessages()
 
-			assert.Equal(tt, len(processTest.expected), len(messages))
+			assert.Equal(tt, len(test.expected), len(messages))
+
+			for key, message := range test.expected {
+				assert.Equal(tt, message.Topic, messages[key].Topic)
+			}
 		})
 	}
 }
@@ -273,6 +277,10 @@ func TestConfig_Update(t *testing.T) {
 			messages := messagePipe.GetMessages()
 
 			assert.Equal(tt, len(test.expected), len(messages))
+
+			for key, message := range test.expected {
+				assert.Equal(tt, message.Topic, messages[key].Topic)
+			}
 		})
 	}
 }

@@ -118,7 +118,10 @@ func (m *Metrics) Close() error {
 func (m *Metrics) Process(msg *bus.Message) {
 	switch msg.Topic {
 	case bus.MetricsTopic:
-		m.processMessage(msg)
+		err := m.processMessage(msg)
+		if err != nil {
+			slog.Debug("error processing message", "err", err)
+		}
 	case bus.OsProcessesTopic:
 		slog.Debug("OS Processes have been updated")
 	}
@@ -203,24 +206,22 @@ func (m *Metrics) runProducer(ctx context.Context, producer model.MetricsProduce
 	}
 }
 
-func (m *Metrics) processMessage(msg *bus.Message) {
+func (m *Metrics) processMessage(msg *bus.Message) error {
 	de, ok := msg.Data.(model.DataEntry)
 	if !ok {
-		slog.Error("Metrics plugin received metrics event but could not cast it to correct type",
-			"payload", msg.Data)
+		return fmt.Errorf("metrics plugin received metrics event but could not cast it to correct type: %v", msg.Data)
 
-		return
 	}
 
 	exporter, ok := m.exporters[model.OTel]
 	if !ok {
-		slog.Error("Metrics plugin received metrics event but source type had no exporter",
-			"source_type", de.SourceType)
+		return fmt.Errorf("metrics plugin received metrics event but source type had no exporter: %v", de.SourceType)
 	} else {
 		err := exporter.Export(de)
 		if err != nil {
-			slog.Error("Failed to export metrics to data sink", "error", err)
+			return fmt.Errorf("failed to export metrics to data sink: %v", err)
 		}
+		return nil
 	}
 }
 

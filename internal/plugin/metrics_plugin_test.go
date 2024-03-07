@@ -7,6 +7,7 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"github.com/nginx/agent/v3/internal/model/modelfakes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -66,7 +67,7 @@ func TestMetrics_Subscriptions(t *testing.T) {
 	assert.Equal(t, []string{bus.OsProcessesTopic, bus.MetricsTopic}, subscriptions)
 }
 
-func TestMetrics_Process(t *testing.T) {
+func TestMetrics_ProcessMessage(t *testing.T) {
 	metrics, err := NewMetrics(testConfig(t))
 	require.NoError(t, err)
 
@@ -74,6 +75,13 @@ func TestMetrics_Process(t *testing.T) {
 		Name:   "value1",
 		Labels: make(map[string]string),
 		Value:  2,
+	}
+
+	invalidData := struct {
+		valueOne string
+		valueTwo string
+	}{
+		"one", "two",
 	}
 
 	dataEntry := model.DataEntry{
@@ -87,40 +95,42 @@ func TestMetrics_Process(t *testing.T) {
 	}
 
 	tests := []struct {
-		name  string
-		topic string
-		data  bus.Payload
+		name        string
+		topic       string
+		data        bus.Payload
+		expectError error
 	}{
 		{
-			name:  "OsProcesses Topic",
-			topic: bus.OsProcessesTopic,
-			data: struct {
-				valueOne string
-				valueTwo string
-			}{
-				"one", "two",
-			},
+			name:        "cant_cast_data",
+			topic:       bus.MetricsTopic,
+			data:        invalidData,
+			expectError: fmt.Errorf("metrics plugin received metrics event but could not cast it to correct type: %v", invalidData),
 		},
 		{
-			name:  "MetricsTopic cant cast data",
-			topic: bus.MetricsTopic,
-			data: struct {
-				valueOne string
-				valueTwo string
-			}{
-				"one", "two",
-			},
+			name:        "no_exporter",
+			topic:       bus.MetricsTopic,
+			data:        dataEntry,
+			expectError: fmt.Errorf("metrics plugin received metrics event but source type had no exporter: %v", dataEntry.SourceType),
 		},
 		{
-			name:  "MetricsTopic can cast data",
-			topic: bus.MetricsTopic,
-			data:  dataEntry,
+			name:        "exporter",
+			topic:       bus.MetricsTopic,
+			data:        dataEntry,
+			expectError: nil,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			metrics.Process(&bus.Message{Topic: test.topic, Data: test.data})
+			exporter := modelfakes.FakeExporter{}
+			exporter.ExportReturns(nil)
+			if test.name == "exporter" {
+				metrics.exporters[model.OTel] = &exporter
+			}
+
+			err = metrics.processMessage(&bus.Message{Topic: test.topic, Data: test.data})
+
+			assert.Equal(t, test.expectError, err)
 		})
 	}
 }
