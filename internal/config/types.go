@@ -72,19 +72,19 @@ type Command struct {
 }
 
 type ServerConfig struct {
-	Host string `mapstructure:"host" yaml:"-"`
-	Port int    `mapstructure:"port" yaml:"-"`
-	Type string `mapstructure:"type" yaml:"-"`
+	Host string `yaml:"-" mapstructure:"host"`
+	Port int    `yaml:"-" mapstructure:"port"`
+	Type string `yaml:"-" mapstructure:"type"`
 }
 
 type AuthConfig struct {
-	Token string `mapstructure:"token" yaml:""`
+	Token string `yaml:"-" mapstructure:"token"`
 }
 
 type TLSConfig struct {
-	Enable     bool   `mapstructure:"enable" yaml:"-"`
-	Cert       string `mapstructure:"cert" yaml:"-"`
-	Key        string `mapstructure:"key" yaml:"-"`
-	Ca         string `mapstructure:"ca" yaml:"-"`
-	SkipVerify bool   `mapstructure:"skip_verify" yaml:"-"`
+	Enable     bool   `yaml:"-" mapstructure:"enable"`
+	Cert       string `yaml:"-" mapstructure:"cert"`
+	Key        string `yaml:"-" mapstructure:"key"`
+	Ca         string `yaml:"-" mapstructure:"ca"`
+	SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
 }

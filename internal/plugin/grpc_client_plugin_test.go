@@ -57,7 +57,7 @@ func TestGrpcClient_Init(t *testing.T) {
 			grpcClient := NewGrpcClient(tt.agentConfig)
 
 			if grpcClient == nil {
-				assert.True(t, tt.expected == grpcClient)
+				assert.Equal(t, tt.expected, grpcClient)
 			} else {
 				assert.IsType(t, tt.expected, grpcClient)
 			}

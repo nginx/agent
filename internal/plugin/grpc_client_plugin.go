@@ -50,7 +50,9 @@ func (grpcClient *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 	grpcClient.messagePipe = messagePipe
 
 	slog.Debug("Starting grpc client")
-	serverAddr := net.JoinHostPort(grpcClient.config.Command.Server.Host, fmt.Sprint(grpcClient.config.Command.Server.Port))
+	serverAddr := net.JoinHostPort(
+		grpcClient.config.Command.Server.Host,
+		fmt.Sprint(grpcClient.config.Command.Server.Port))
 
 	conn, err := grpc.Dial(serverAddr, getDialOptions()...)
 	if err != nil {
