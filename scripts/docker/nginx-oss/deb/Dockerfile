@@ -7,7 +7,7 @@ ARG ENTRY_POINT
 ARG PACKAGE_NAME
 ARG PACKAGES_REPO
 
-COPY ./scripts/docker/supervisor.d/*.conf etc/supervisor/conf.d/
+COPY ./scripts/docker/supervisor.d/nginx.conf etc/supervisor/conf.d/
 
 WORKDIR /agent
 COPY ./build /agent/build
@@ -24,7 +24,7 @@ RUN set -x \
                                                                         lsb-release \
                                                                         procps \
                                                                         nginx \
-                                                                        supervisor
+                                                                        supervisor 
 
 # Setup nginx agent repository
 RUN curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor | tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null \
@@ -34,7 +34,7 @@ STOPSIGNAL SIGQUIT
 
 EXPOSE 80 443
 
-CMD ["/usr/bin/supervisord", "-c","/etc/supervisor/supervisord.conf"]
+ENTRYPOINT ["/usr/bin/supervisord", "-c","/etc/supervisor/supervisord.conf", "-u", "root", "--nodaemon", "--logfile", "/dev/stdout", "--logfile_maxbytes", "0" ]
 
 FROM install-nginx as install-agent-local
 

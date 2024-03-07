@@ -93,6 +93,8 @@ func (r *OneTimeRegistration) Process(msg *core.Message) {
 			defer r.dataplaneSoftwareDetailsMutex.Unlock()
 			r.dataplaneSoftwareDetails[data.GetPluginName()] = data.GetDataplaneSoftwareDetails()
 		}
+	case msg.Exact(core.NginxDetailProcUpdate):
+		r.processes = msg.Data().([]*core.Process)
 	}
 }
 
@@ -100,6 +102,7 @@ func (r *OneTimeRegistration) Subscriptions() []string {
 	return []string{
 		core.RegistrationCompletedTopic,
 		core.DataplaneSoftwareDetailsUpdated,
+		core.NginxDetailProcUpdate,
 	}
 }
 
@@ -153,22 +156,27 @@ func (r *OneTimeRegistration) areDataplaneSoftwareDetailsReady() error {
 func (r *OneTimeRegistration) registerAgent() {
 	var details []*proto.NginxDetails
 
-	for _, proc := range r.processes {
-		// only need master process for registration
-		if proc.IsMaster {
-			nginxDetails := r.binary.GetNginxDetailsFromProcess(proc)
-			details = append(details, nginxDetails)
-			// Reading nginx config during registration to populate nginx fields like access/error logs, etc.
-			_, err := r.binary.ReadConfig(nginxDetails.GetConfPath(), nginxDetails.NginxId, r.env.GetSystemUUID())
-			if err != nil {
-				log.Warnf("Unable to read config for NGINX instance %s, %v", nginxDetails.NginxId, err)
+	findMaster := func() {
+		for _, proc := range r.processes {
+			// only need master process for registration
+			if proc.IsMaster {
+				nginxDetails := r.binary.GetNginxDetailsFromProcess(proc)
+				details = append(details, nginxDetails)
+				// Reading nginx config during registration to populate nginx fields like access/error logs, etc.
+				_, err := r.binary.ReadConfig(nginxDetails.GetConfPath(), nginxDetails.NginxId, r.env.GetSystemUUID())
+				if err != nil {
+					log.Warnf("Unable to read config for NGINX instance %s, %v", nginxDetails.NginxId, err)
+				}
+			} else {
+				log.Tracef("NGINX non-master process: %d", proc.Pid)
 			}
-		} else {
-			log.Tracef("NGINX non-master process: %d", proc.Pid)
 		}
 	}
-	if len(details) == 0 {
-		log.Info("No master process found")
+	findMaster()
+	for len(details) == 0 {
+		log.Info("No master process found, waiting 10 seconds and searching again")
+		time.Sleep(10 * time.Second)
+		findMaster()
 	}
 	updated, err := types.TimestampProto(r.config.Updated)
 	if err != nil {
