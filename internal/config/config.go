@@ -183,11 +183,6 @@ func registerFlags() {
 		"",
 		"The token used in the authentication handshake with the command server endpoint for command and control.",
 	)
-	fs.Bool(
-		CommandTLSEnableKey,
-		false,
-		"Enables TLS for secure communications with the command server endpoint for command and control.",
-	)
 	fs.String(
 		CommandTLSCertKey,
 		"",
@@ -370,7 +365,6 @@ func getCommand() *Command {
 
 	if viperInstance.IsSet(CommandTLSKey) {
 		command.TLS = &TLSConfig{
-			Enable:     viperInstance.GetBool(CommandTLSEnableKey),
 			Cert:       viperInstance.GetString(CommandTLSCertKey),
 			Key:        viperInstance.GetString(CommandTLSKeyKey),
 			Ca:         viperInstance.GetString(CommandTLSCaKey),

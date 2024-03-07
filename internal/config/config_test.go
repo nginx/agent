@@ -59,7 +59,6 @@ func GetAgentConfig() *Config {
 				Token: "1234",
 			},
 			TLS: &TLSConfig{
-				Enable:     false,
 				Cert:       "some.cert",
 				Key:        "some.key",
 				Ca:         "some.ca",
@@ -342,7 +341,6 @@ func TestCommand(t *testing.T) {
 	viperInstance.Set(CommandAuthTokenKey, expected.Auth.Token)
 
 	// TLS
-	viperInstance.Set(CommandTLSEnableKey, expected.TLS.Enable)
 	viperInstance.Set(CommandTLSCertKey, expected.TLS.Cert)
 	viperInstance.Set(CommandTLSKeyKey, expected.TLS.Key)
 	viperInstance.Set(CommandTLSCaKey, expected.TLS.Ca)

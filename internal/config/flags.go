@@ -52,7 +52,6 @@ var (
 	CommandAuthKey                  = pre(CommandRootKey) + "auth"
 	CommandAuthTokenKey             = pre(CommandAuthKey) + "token"
 	CommandTLSKey                   = pre(CommandRootKey) + "tls"
-	CommandTLSEnableKey             = pre(CommandTLSKey) + "enable"
 	CommandTLSCertKey               = pre(CommandTLSKey) + "cert"
 	CommandTLSKeyKey                = pre(CommandTLSKey) + "key"
 	CommandTLSCaKey                 = pre(CommandTLSKey) + "ca"

@@ -47,7 +47,5 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 func isGrpcClientConfigured(agentConfig *config.Config) bool {
 	return agentConfig.Command != nil &&
 		agentConfig.Command.Server != nil &&
-		agentConfig.Command.Server.Host != "" &&
-		agentConfig.Command.Server.Port != 0 &&
 		agentConfig.Command.Server.Type == "grpc"
 }
