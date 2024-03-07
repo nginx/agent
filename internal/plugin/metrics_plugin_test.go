@@ -7,11 +7,12 @@ package plugin
 import (
 	"context"
 	"fmt"
-	"github.com/nginx/agent/v3/internal/model"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -97,7 +98,8 @@ func TestMetrics_Process(t *testing.T) {
 				valueOne string
 				valueTwo string
 			}{
-				"one", "two"},
+				"one", "two",
+			},
 		},
 		{
 			name:  "MetricsTopic cant cast data",
@@ -106,7 +108,8 @@ func TestMetrics_Process(t *testing.T) {
 				valueOne string
 				valueTwo string
 			}{
-				"one", "two"},
+				"one", "two",
+			},
 		},
 		{
 			name:  "MetricsTopic can cast data",
@@ -120,7 +123,6 @@ func TestMetrics_Process(t *testing.T) {
 			metrics.Process(&bus.Message{Topic: test.topic, Data: test.data})
 		})
 	}
-
 }
 
 func TestMetrics_Errors(t *testing.T) {
