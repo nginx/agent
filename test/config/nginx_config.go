@@ -6,35 +6,25 @@
 package config
 
 import (
-	"embed"
+	_ "embed"
 	"fmt"
 )
 
 //go:embed nginx/nginx.conf
-var embedNginxConf embed.FS
+var embedNginxConf string
 
 //go:embed nginx/nginx-with-test-location.conf
-var embedNginxConfWithTestLocation embed.FS
+var embedNginxConfWithTestLocation string
 
 //go:embed nginx/nginx-with-multiple-access-logs.conf
-var embedNginxConfWithMultipleAccessLogs embed.FS
+var embedNginxConfWithMultipleAccessLogs string
 
-func GetNginxConfig() (string, error) {
-	content, err := embedNginxConf.ReadFile("nginx/nginx.conf")
-	if err != nil {
-		return "", err
-	}
-
-	return string(content), nil
+func GetNginxConfig() string {
+	return embedNginxConf
 }
 
-func GetNginxConfWithTestLocation() (string, error) {
-	content, err := embedNginxConfWithTestLocation.ReadFile("nginx/nginx-with-test-location.conf")
-	if err != nil {
-		return "", err
-	}
-
-	return string(content), nil
+func GetNginxConfWithTestLocation() string {
+	return embedNginxConfWithTestLocation
 }
 
 func GetNginxConfigWithMultipleAccessLogs(
@@ -42,11 +32,12 @@ func GetNginxConfigWithMultipleAccessLogs(
 	accessLogName,
 	combinedAccessLogName,
 	ltsvAccessLogName string,
-) (string, error) {
-	content, err := embedNginxConfWithMultipleAccessLogs.ReadFile("nginx/nginx-with-multiple-access-logs.conf")
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf(string(content), errorLogName, accessLogName, combinedAccessLogName, ltsvAccessLogName), err
+) string {
+	return fmt.Sprintf(
+		embedNginxConfWithMultipleAccessLogs,
+		errorLogName,
+		accessLogName,
+		combinedAccessLogName,
+		ltsvAccessLogName,
+	)
 }

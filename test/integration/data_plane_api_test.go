@@ -9,7 +9,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"os"
@@ -22,7 +21,7 @@ import (
 	"github.com/nginx/agent/v3/test"
 	"github.com/nginx/agent/v3/test/config"
 
-	"github.com/nginx/agent/v3/test/mock"
+	mockHttp "github.com/nginx/agent/v3/test/mock/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -46,11 +45,10 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 	dir := filepath.Join(configDir, "/etc/nginx/")
 	test.CreateDirWithErrorCheck(tb, dir)
 
-	content, err := config.GetNginxConfWithTestLocation()
-	require.NoError(tb, err)
+	content := config.GetNginxConfWithTestLocation()
 
 	nginxConfigFilePath := filepath.Join(dir, "nginx.conf")
-	err = os.WriteFile(nginxConfigFilePath, []byte(content), 0o600)
+	err := os.WriteFile(nginxConfigFilePath, []byte(content), 0o600)
 	require.NoError(tb, err)
 	defer test.RemoveFileWithErrorCheck(tb, nginxConfigFilePath)
 
@@ -67,7 +65,7 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 			require.NoError(tb, containerNetwork.Remove(ctx))
 		})
 
-		mockManagementPlaneContainer = test.StartMockManagementPlaneContainer(
+		mockManagementPlaneContainer = test.StartMockManagementPlaneHTTPContainer(
 			ctx,
 			tb,
 			containerNetwork,
@@ -81,8 +79,8 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 			ctx,
 			tb,
 			containerNetwork,
-			"Processes updated",
 			"../config/nginx/nginx.conf",
+			"../config/agent/nginx-agent-with-data-plane-api.conf",
 		)
 
 		ipAddress, err := container.Host(ctx)
@@ -93,7 +91,7 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 		apiHost = ipAddress
 		apiPort = ports["9091/tcp"][0].HostPort
 	} else {
-		server := mock.NewManagementServer(configDir)
+		server := mockHttp.NewManagementServer(configDir)
 		listener, err := net.Listen("tcp", "localhost:0")
 		require.NoError(tb, err)
 
@@ -112,32 +110,7 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 		tb.Helper()
 
 		if os.Getenv("TEST_ENV") == "Container" {
-			tb.Log("Logging mock management container logs")
-			logReader, err := mockManagementPlaneContainer.Logs(ctx)
-			require.NoError(tb, err)
-
-			buf, err := io.ReadAll(logReader)
-			require.NoError(tb, err)
-			logs := string(buf)
-
-			tb.Log(logs)
-
-			err = mockManagementPlaneContainer.Terminate(ctx)
-			require.NoError(tb, err)
-
-			tb.Log("Logging nginx agent container logs")
-			logReader, err = container.Logs(ctx)
-			require.NoError(tb, err)
-
-			buf, err = io.ReadAll(logReader)
-			require.NoError(tb, err)
-			logs = string(buf)
-
-			tb.Log(logs)
-			assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
-
-			err = container.Terminate(ctx)
-			require.NoError(tb, err)
+			test.LogAndTerminateContainers(ctx, tb, mockManagementPlaneContainer, container)
 		}
 	}
 }

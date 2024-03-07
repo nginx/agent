@@ -109,9 +109,15 @@ coverage: $(TEST_BUILD_DIR)/coverage.out
 	@echo "Checking code coverage"
 	@$(GORUN) $(GOTESTCOVERAGE) --config=./.testcoverage.yaml
 
-integration-test:
-	mkdir -p $(BUILD_DIR)/mock-management-plane
-	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane/server test/mock/cmd/main.go
+build-mock-management-plane-http:
+	mkdir -p $(BUILD_DIR)/mock-management-plane-http
+	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-http/server test/mock/http/cmd/main.go
+
+build-mock-management-plane-grpc:
+	mkdir -p $(BUILD_DIR)/mock-management-plane-grpc
+	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-grpc/server test/mock/grpc/cmd/main.go
+
+integration-test: build-mock-management-plane-http build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
@@ -125,9 +131,13 @@ dev: ## Run agent executable
 	@echo "🚀 Running App"
 	$(GORUN) $(PROJECT_DIR)/$(PROJECT_FILE)
 
-run-mock-management-server: ## Run mock management server
-	@echo "🚀 Running mock management server"
-	$(GORUN) test/mock/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
+run-mock-management-grpc-server: ## Run mock management plane gRPC server
+	@echo "🚀 Running mock management plane gRPC server"
+	$(GORUN) test/mock/grpc/cmd/main.go
+
+run-mock-management-http-server: ## Run mock management HTTP server
+	@echo "🚀 Running mock management plane HTTP server"
+	$(GORUN) test/mock/http/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
@@ -142,7 +152,7 @@ generate-mocks: ## Regenerate all needed mocks, in order to add new mocks genera
 	@echo "Generating mocks"
 	@$(GOGEN) ./...
 	@echo "\nGenerating mock management plane Go server stubs from OpenAPI specification\n"
-	@$(GORUN) $(OAPICODEGEN) -generate gin,types -package mock ./test/mock/mock-management-plane-api.yaml > ./test/mock/mock_management_plane.gen.go
+	@$(GORUN) $(OAPICODEGEN) -generate gin,types -package http ./test/mock/http/mock-management-plane-api.yaml > ./test/mock/http/mock_management_plane.gen.go
 
 local-apk-package: ## Create local apk package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)

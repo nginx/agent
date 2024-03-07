@@ -134,6 +134,11 @@ This represents an instance being reported on
 Instance Configuration options
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | NGINX Agent runtime configuration settings |
+
+
 
 
 

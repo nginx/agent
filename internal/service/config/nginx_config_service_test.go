@@ -49,13 +49,12 @@ func TestNginx_ParseConfig(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, ltsvAccessLog.Name())
 	require.NoError(t, err)
 
-	content, err := testconfig.GetNginxConfigWithMultipleAccessLogs(
+	content := testconfig.GetNginxConfigWithMultipleAccessLogs(
 		errorLog.Name(),
 		accessLog.Name(),
 		combinedAccessLog.Name(),
 		ltsvAccessLog.Name(),
 	)
-	require.NoError(t, err)
 
 	data := []byte(content)
 

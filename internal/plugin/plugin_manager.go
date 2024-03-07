@@ -29,9 +29,12 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 		}
 	}
 
-	grpcClient := NewGrpcClient(agentConfig)
+	plugins = append(plugins, processMonitor, instanceMonitor, configPlugin)
 
-	plugins = append(plugins, processMonitor, instanceMonitor, configPlugin, grpcClient)
+	if isGrpcClientConfigured(agentConfig) {
+		grpcClient := NewGrpcClient(agentConfig)
+		plugins = append(plugins, grpcClient)
+	}
 
 	if agentConfig.DataPlaneAPI.Host != "" && agentConfig.DataPlaneAPI.Port != 0 {
 		dataPlaneServer := NewDataPlaneServer(agentConfig, slogger)
@@ -39,4 +42,12 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 	}
 
 	return plugins
+}
+
+func isGrpcClientConfigured(agentConfig *config.Config) bool {
+	return agentConfig.Command != nil &&
+		agentConfig.Command.Server != nil &&
+		agentConfig.Command.Server.Host != "" &&
+		agentConfig.Command.Server.Port != 0 &&
+		agentConfig.Command.Server.Type == "grpc"
 }

@@ -101,7 +101,12 @@ message InstanceMeta {
 }
 
 // Instance Configuration options
-message InstanceConfig {}
+message InstanceConfig {
+    oneof config {
+        // NGINX Agent runtime configuration settings
+        AgentConfig agent_config = 1;
+    }
+}
 
 // This contains a series of NGINX Agent configurations
 message AgentConfig { 

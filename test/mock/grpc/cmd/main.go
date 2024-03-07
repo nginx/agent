@@ -6,7 +6,7 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"log/slog"
 	"net"
 	"os"
@@ -17,9 +17,37 @@ import (
 )
 
 func main() {
+	var grpcAddress string
+	var apiAddress string
+
+	flag.StringVar(
+		&grpcAddress,
+		"grpcAddress",
+		"127.0.0.1:0",
+		"set the gRPC address to run the server on",
+	)
+
+	flag.StringVar(
+		&apiAddress,
+		"apiAddress",
+		"127.0.0.1:0",
+		"set the API address to run the server on",
+	)
+	flag.Parse()
+
 	server := mockGrpc.NewManagementGrpcServer()
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%s", "8080"))
+	go func() {
+		listener, err := net.Listen("tcp", apiAddress)
+		if err != nil {
+			slog.Error("Failed to create listener", "error", err)
+			os.Exit(1)
+		}
+
+		server.StartServer(listener)
+	}()
+
+	listener, err := net.Listen("tcp", grpcAddress)
 	if err != nil {
 		slog.Error("failed to listen: %v", err)
 	}
@@ -27,7 +55,10 @@ func main() {
 
 	grpcServer := grpc.NewServer(opts...)
 	v1.RegisterCommandServiceServer(grpcServer, server)
-	err = grpcServer.Serve(lis)
+
+	slog.Info("gRPC server running", "address", listener.Addr().String())
+
+	err = grpcServer.Serve(listener)
 	if err != nil {
 		slog.Error("Failed to serve server", "error", err)
 		os.Exit(1)
