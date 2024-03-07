@@ -43,12 +43,10 @@ func NewConfigService(instance *instances.Instance, agentConfig *config.Config) 
 	cs := &ConfigService{}
 
 	switch instance.GetType() {
-	case instances.Type_NGINX:
+	case instances.Type_NGINX, instances.Type_NGINX_PLUS:
 		cs.configService = service.NewNginx(instance, agentConfig)
 	case instances.Type_NGINX_GATEWAY_FABRIC:
 		cs.configService = service.NewNginxGatewayFabric()
-	case instances.Type_NGINX_PLUS:
-		fallthrough
 	case instances.Type_UNKNOWN:
 		fallthrough
 	default:
@@ -114,14 +112,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 
 	err = cs.configService.Complete()
 	if err != nil {
-		slog.Error("Error completing config apply", "err", err)
-		return skippedFiles, &instances.ConfigurationStatus{
-			InstanceId:    cs.instance.GetInstanceId(),
-			CorrelationId: correlationID,
-			Status:        instances.Status_FAILED,
-			Message:       err.Error(),
-			Timestamp:     timestamppb.Now(),
-		}
+		slog.Error("error updating cache during config apply", "err", err)
 	}
 
 	return skippedFiles, &instances.ConfigurationStatus{

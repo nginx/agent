@@ -65,6 +65,9 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 	tenantID, instanceID string,
 ) error {
 	slog.Debug("Rolling back NGINX config changes due to error")
+	if cw.fileCache.CacheContent() == nil {
+		return fmt.Errorf("error rolling back, no cache found")
+	}
 	for key, value := range cw.fileCache.CacheContent() {
 		if _, ok := skippedFiles[key]; ok {
 			continue
