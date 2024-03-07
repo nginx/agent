@@ -42,7 +42,6 @@ exclude:
     - main.go
 # Intentionally ignoring as GetProcesses & KillProcess arent being tested as they are wrappers
     - internal/datasource/host
-    - internal/plugin # currently fixing
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by

@@ -7,6 +7,7 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"github.com/nginx/agent/v3/internal/model"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -68,14 +69,58 @@ func TestMetrics_Process(t *testing.T) {
 	metrics, err := NewMetrics(testConfig(t))
 	require.NoError(t, err)
 
-	// Payload is ignored.
-	metrics.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: struct {
-		valueOne string
-		valueTwo string
-	}{"one", "two"}})
+	dataPoint := model.DataPoint{
+		Name:   "value1",
+		Labels: make(map[string]string),
+		Value:  2,
+	}
 
-	// Currently doesn't do anything.
-	require.NoError(t, err)
+	dataEntry := model.DataEntry{
+		Name:        "Test1",
+		Type:        model.Counter,
+		SourceType:  model.Prometheus,
+		Description: "testing",
+		Values: []model.DataPoint{
+			dataPoint,
+		},
+	}
+
+	tests := []struct {
+		name  string
+		topic string
+		data  bus.Payload
+	}{
+		{
+			name:  "OsProcesses Topic",
+			topic: bus.OsProcessesTopic,
+			data: struct {
+				valueOne string
+				valueTwo string
+			}{
+				"one", "two"},
+		},
+		{
+			name:  "MetricsTopic cant cast data",
+			topic: bus.MetricsTopic,
+			data: struct {
+				valueOne string
+				valueTwo string
+			}{
+				"one", "two"},
+		},
+		{
+			name:  "MetricsTopic can cast data",
+			topic: bus.MetricsTopic,
+			data:  dataEntry,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			metrics.Process(&bus.Message{Topic: test.topic, Data: test.data})
+		})
+	}
+
 }
 
 func TestMetrics_Errors(t *testing.T) {
