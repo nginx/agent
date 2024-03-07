@@ -7,6 +7,7 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 
@@ -27,9 +28,13 @@ type (
 )
 
 func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
-	return &GrpcClient{
-		config: agentConfig,
+	if agentConfig != nil && agentConfig.Command.Server.Type == "grpc" {
+		return &GrpcClient{
+			config: agentConfig,
+		}
 	}
+
+	return nil
 }
 
 func getDialOptions() []grpc.DialOption {
@@ -45,7 +50,7 @@ func (grpcClient *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 	grpcClient.messagePipe = messagePipe
 
 	slog.Debug("Starting grpc client")
-	serverAddr := net.JoinHostPort("127.0.0.1", "8080")
+	serverAddr := net.JoinHostPort(grpcClient.config.Command.Server.Host, fmt.Sprint(grpcClient.config.Command.Server.Port))
 
 	conn, err := grpc.Dial(serverAddr, getDialOptions()...)
 	if err != nil {

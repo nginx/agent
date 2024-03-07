@@ -17,6 +17,7 @@ type Config struct {
 	ConfigDir          string         `yaml:"-" mapstructure:"config-dirs"`
 	AllowedDirectories []string       `yaml:"-"`
 	Metrics            *Metrics       `yaml:"-" mapstructure:"metrics"`
+	Command            *Command       `yaml:"-" mapstructure:"command"`
 }
 
 type Log struct {
@@ -43,12 +44,12 @@ type Metrics struct {
 	PrometheusSource *PrometheusSource `yaml:"-" mapstructure:"prometheus_source"`
 }
 
-// Is a DataSources implementation
+// PrometheusSource is a DataSources implementation
 type PrometheusSource struct {
 	Endpoints []string `yaml:"-" mapstructure:"endpoints"`
 }
 
-// Is a Exporters implementation
+// OTelExporter is an Exporters implementation
 type OTelExporter struct {
 	BufferLength     int           `yaml:"-" mapstructure:"buffer_length"`
 	ExportRetryCount int           `yaml:"-" mapstructure:"export_retry_count"`
@@ -61,4 +62,29 @@ type GRPC struct {
 	ConnTimeout    time.Duration `yaml:"-" mapstructure:"connection_timeout"`
 	MinConnTimeout time.Duration `yaml:"-" mapstructure:"minimum_connection_timeout"`
 	BackoffDelay   time.Duration `yaml:"-" mapstructure:"backoff_delay"`
+}
+
+// Command Connection settings for connecting to a Command and Control Server
+type Command struct {
+	Server ServerConfig `yaml:"-" mapstructure:"server"`
+	Auth   AuthConfig   `yaml:"-" mapstructure:"auth"`
+	TLS    TLSConfig    `yaml:"-" mapstructure:"tls"`
+}
+
+type ServerConfig struct {
+	Host string `mapstructure:"host" yaml:"-"`
+	Port int    `mapstructure:"port" yaml:"-"`
+	Type string `mapstructure:"type" yaml:"-"`
+}
+
+type AuthConfig struct {
+	Token string `mapstructure:"token" yaml:""`
+}
+
+type TLSConfig struct {
+	Enable     bool   `mapstructure:"enable" yaml:"-"`
+	Cert       string `mapstructure:"cert" yaml:"-"`
+	Key        string `mapstructure:"key" yaml:"-"`
+	Ca         string `mapstructure:"ca" yaml:"-"`
+	SkipVerify bool   `mapstructure:"skip_verify" yaml:"-"`
 }

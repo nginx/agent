@@ -14,6 +14,53 @@ import (
 )
 
 func TestGrpcClient_Init(t *testing.T) {
-	grpcClient := NewGrpcClient(&config.Config{})
-	assert.NotNil(t, grpcClient.config)
+	tests := []struct {
+		name        string
+		agentConfig *config.Config
+		expected    *GrpcClient
+	}{
+		{
+			"grpc config",
+			&config.Config{
+				Command: &config.Command{
+					Server: config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: 8888,
+						Type: "grpc",
+					},
+				},
+			},
+			&GrpcClient{},
+		},
+		{
+			"not grpc type",
+			&config.Config{
+				Command: &config.Command{
+					Server: config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: 8888,
+						Type: "http",
+					},
+				},
+			},
+			nil,
+		},
+		{
+			"nil client",
+			nil,
+			nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			grpcClient := NewGrpcClient(tt.agentConfig)
+
+			if grpcClient == nil {
+				assert.True(t, tt.expected == grpcClient)
+			} else {
+				assert.IsType(t, tt.expected, grpcClient)
+			}
+		})
+	}
 }
