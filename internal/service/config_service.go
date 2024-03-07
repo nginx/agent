@@ -115,8 +115,6 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 	err = cs.configService.Complete()
 	if err != nil {
 		slog.Error("Error completing config apply", "err", err)
-		err = cs.configService.Rollback(ctx, skippedFiles, location, tenantID, cs.instance.GetInstanceId())
-
 		return skippedFiles, &instances.ConfigurationStatus{
 			InstanceId:    cs.instance.GetInstanceId(),
 			CorrelationId: correlationID,
@@ -131,6 +129,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 		CorrelationId: correlationID,
 		Status:        instances.Status_SUCCESS,
 		Message:       "Config applied successfully",
+		Timestamp:     timestamppb.Now(),
 	}
 }
 
