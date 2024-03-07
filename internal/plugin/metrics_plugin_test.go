@@ -191,7 +191,7 @@ func TestMetrics_CallProduce(t *testing.T) {
 			producer.ProduceReturns(test.entries, test.expectedProduceError)
 			failedAttempts := metrics.callProduce(context.TODO(), &producer, 0)
 
-			assert.Equal(t, test.expectedNumMessage, len(messagePipe.GetMessages()))
+			assert.Len(t, len(messagePipe.GetMessages()), test.expectedNumMessage)
 			assert.Equal(t, test.expectedFailedAttempts, failedAttempts)
 		})
 	}
