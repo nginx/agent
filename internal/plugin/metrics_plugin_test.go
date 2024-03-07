@@ -158,12 +158,14 @@ func TestMetrics_CallProduce(t *testing.T) {
 		name                   string
 		entries                []model.DataEntry
 		expectedFailedAttempts int
+		expectedNumMessage     int
 		expectedProduceError   error
 	}{
 		{
 			name:                   "failed_to_call_producer",
 			entries:                nil,
 			expectedFailedAttempts: 1,
+			expectedNumMessage:     0,
 			expectedProduceError:   fmt.Errorf("produce error"),
 		},
 		{
@@ -172,6 +174,7 @@ func TestMetrics_CallProduce(t *testing.T) {
 				dataEntry,
 			},
 			expectedProduceError:   nil,
+			expectedNumMessage:     1,
 			expectedFailedAttempts: 0,
 		},
 	}
@@ -188,6 +191,7 @@ func TestMetrics_CallProduce(t *testing.T) {
 			producer.ProduceReturns(test.entries, test.expectedProduceError)
 			failedAttempts := metrics.callProduce(context.TODO(), &producer, 0)
 
+			assert.Equal(t, test.expectedNumMessage, len(messagePipe.GetMessages()))
 			assert.Equal(t, test.expectedFailedAttempts, failedAttempts)
 		})
 	}

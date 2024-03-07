@@ -231,11 +231,9 @@ func (m *Metrics) callProduce(ctx context.Context, producer model.MetricsProduce
 	failedAttempts = 0
 
 	busMsgs := make([]*bus.Message, len(entries))
-	slog.Info("Entries", "", entries)
 
 	for i, e := range entries {
 		busMsgs[i] = e.ToBusMessage()
-		slog.Info("Bus MSG", "", busMsgs)
 	}
 
 	m.pipe.Process(busMsgs...)
