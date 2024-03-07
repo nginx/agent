@@ -7,11 +7,12 @@ package plugin
 import (
 	"context"
 	"fmt"
-	"github.com/nginx/agent/v3/internal/model/modelfakes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/model/modelfakes"
 
 	"github.com/nginx/agent/v3/internal/model"
 
@@ -101,16 +102,18 @@ func TestMetrics_ProcessMessage(t *testing.T) {
 		expectError error
 	}{
 		{
-			name:        "cant_cast_data",
-			topic:       bus.MetricsTopic,
-			data:        invalidData,
-			expectError: fmt.Errorf("metrics plugin received metrics event but could not cast it to correct type: %v", invalidData),
+			name:  "cant_cast_data",
+			topic: bus.MetricsTopic,
+			data:  invalidData,
+			expectError: fmt.Errorf("metrics plugin received metrics event but could not cast it to correct "+
+				"type: %v", invalidData),
 		},
 		{
-			name:        "no_exporter",
-			topic:       bus.MetricsTopic,
-			data:        dataEntry,
-			expectError: fmt.Errorf("metrics plugin received metrics event but source type had no exporter: %v", dataEntry.SourceType),
+			name:  "no_exporter",
+			topic: bus.MetricsTopic,
+			data:  dataEntry,
+			expectError: fmt.Errorf("metrics plugin received metrics event but source type had no exporter"+
+				": %v", dataEntry.SourceType),
 		},
 		{
 			name:        "exporter",
