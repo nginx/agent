@@ -138,6 +138,61 @@ func TestMetrics_ProcessMessage(t *testing.T) {
 	}
 }
 
+func TestMetrics_CallProduce(t *testing.T) {
+	dataPoint := model.DataPoint{
+		Name:   "value1",
+		Labels: make(map[string]string),
+		Value:  2,
+	}
+	dataEntry := model.DataEntry{
+		Name:        "Test1",
+		Type:        model.Counter,
+		SourceType:  model.Prometheus,
+		Description: "testing",
+		Values: []model.DataPoint{
+			dataPoint,
+		},
+	}
+
+	tests := []struct {
+		name                   string
+		entries                []model.DataEntry
+		expectedFailedAttempts int
+		expectedProduceError   error
+	}{
+		{
+			name:                   "failed_to_call_producer",
+			entries:                nil,
+			expectedFailedAttempts: 1,
+			expectedProduceError:   fmt.Errorf("produce error"),
+		},
+		{
+			name: "successfully_called_producer",
+			entries: []model.DataEntry{
+				dataEntry,
+			},
+			expectedProduceError:   nil,
+			expectedFailedAttempts: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			messagePipe := bus.FakeMessagePipe{}
+			metrics, err := NewMetrics(testConfig(t))
+			metrics.pipe = &messagePipe
+			require.NoError(t, err)
+
+			producer := modelfakes.FakeMetricsProducer{}
+
+			producer.ProduceReturns(test.entries, test.expectedProduceError)
+			failedAttempts := metrics.callProduce(context.TODO(), &producer, 0)
+
+			assert.Equal(t, test.expectedFailedAttempts, failedAttempts)
+		})
+	}
+}
+
 func TestMetrics_Errors(t *testing.T) {
 	testCases := []struct {
 		name        string
