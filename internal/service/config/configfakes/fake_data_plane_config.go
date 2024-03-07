@@ -5,6 +5,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/nginx/agent/v3/api/grpc/instances"
 	configa "github.com/nginx/agent/v3/internal/datasource/config"
 	"github.com/nginx/agent/v3/internal/service/config"
 )
@@ -42,6 +43,21 @@ type FakeDataPlaneConfig struct {
 		result1 any
 		result2 error
 	}
+	RollbackStub        func(context.Context, map[string]*instances.File, string, string, string) error
+	rollbackMutex       sync.RWMutex
+	rollbackArgsForCall []struct {
+		arg1 context.Context
+		arg2 map[string]*instances.File
+		arg3 string
+		arg4 string
+		arg5 string
+	}
+	rollbackReturns struct {
+		result1 error
+	}
+	rollbackReturnsOnCall map[int]struct {
+		result1 error
+	}
 	SetConfigWriterStub        func(configa.ConfigWriterInterface)
 	setConfigWriterMutex       sync.RWMutex
 	setConfigWriterArgsForCall []struct {
@@ -57,7 +73,7 @@ type FakeDataPlaneConfig struct {
 	validateReturnsOnCall map[int]struct {
 		result1 error
 	}
-	WriteStub        func(context.Context, string, string) (map[string]struct{}, error)
+	WriteStub        func(context.Context, string, string) (map[string]*instances.File, error)
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
 		arg1 context.Context
@@ -65,11 +81,11 @@ type FakeDataPlaneConfig struct {
 		arg3 string
 	}
 	writeReturns struct {
-		result1 map[string]struct{}
+		result1 map[string]*instances.File
 		result2 error
 	}
 	writeReturnsOnCall map[int]struct {
-		result1 map[string]struct{}
+		result1 map[string]*instances.File
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -238,6 +254,71 @@ func (fake *FakeDataPlaneConfig) ParseConfigReturnsOnCall(i int, result1 any, re
 	}{result1, result2}
 }
 
+func (fake *FakeDataPlaneConfig) Rollback(arg1 context.Context, arg2 map[string]*instances.File, arg3 string, arg4 string, arg5 string) error {
+	fake.rollbackMutex.Lock()
+	ret, specificReturn := fake.rollbackReturnsOnCall[len(fake.rollbackArgsForCall)]
+	fake.rollbackArgsForCall = append(fake.rollbackArgsForCall, struct {
+		arg1 context.Context
+		arg2 map[string]*instances.File
+		arg3 string
+		arg4 string
+		arg5 string
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.RollbackStub
+	fakeReturns := fake.rollbackReturns
+	fake.recordInvocation("Rollback", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.rollbackMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeDataPlaneConfig) RollbackCallCount() int {
+	fake.rollbackMutex.RLock()
+	defer fake.rollbackMutex.RUnlock()
+	return len(fake.rollbackArgsForCall)
+}
+
+func (fake *FakeDataPlaneConfig) RollbackCalls(stub func(context.Context, map[string]*instances.File, string, string, string) error) {
+	fake.rollbackMutex.Lock()
+	defer fake.rollbackMutex.Unlock()
+	fake.RollbackStub = stub
+}
+
+func (fake *FakeDataPlaneConfig) RollbackArgsForCall(i int) (context.Context, map[string]*instances.File, string, string, string) {
+	fake.rollbackMutex.RLock()
+	defer fake.rollbackMutex.RUnlock()
+	argsForCall := fake.rollbackArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
+func (fake *FakeDataPlaneConfig) RollbackReturns(result1 error) {
+	fake.rollbackMutex.Lock()
+	defer fake.rollbackMutex.Unlock()
+	fake.RollbackStub = nil
+	fake.rollbackReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeDataPlaneConfig) RollbackReturnsOnCall(i int, result1 error) {
+	fake.rollbackMutex.Lock()
+	defer fake.rollbackMutex.Unlock()
+	fake.RollbackStub = nil
+	if fake.rollbackReturnsOnCall == nil {
+		fake.rollbackReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.rollbackReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeDataPlaneConfig) SetConfigWriter(arg1 configa.ConfigWriterInterface) {
 	fake.setConfigWriterMutex.Lock()
 	fake.setConfigWriterArgsForCall = append(fake.setConfigWriterArgsForCall, struct {
@@ -323,7 +404,7 @@ func (fake *FakeDataPlaneConfig) ValidateReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeDataPlaneConfig) Write(arg1 context.Context, arg2 string, arg3 string) (map[string]struct{}, error) {
+func (fake *FakeDataPlaneConfig) Write(arg1 context.Context, arg2 string, arg3 string) (map[string]*instances.File, error) {
 	fake.writeMutex.Lock()
 	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
 	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
@@ -350,7 +431,7 @@ func (fake *FakeDataPlaneConfig) WriteCallCount() int {
 	return len(fake.writeArgsForCall)
 }
 
-func (fake *FakeDataPlaneConfig) WriteCalls(stub func(context.Context, string, string) (map[string]struct{}, error)) {
+func (fake *FakeDataPlaneConfig) WriteCalls(stub func(context.Context, string, string) (map[string]*instances.File, error)) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = stub
@@ -363,28 +444,28 @@ func (fake *FakeDataPlaneConfig) WriteArgsForCall(i int) (context.Context, strin
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeDataPlaneConfig) WriteReturns(result1 map[string]struct{}, result2 error) {
+func (fake *FakeDataPlaneConfig) WriteReturns(result1 map[string]*instances.File, result2 error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = nil
 	fake.writeReturns = struct {
-		result1 map[string]struct{}
+		result1 map[string]*instances.File
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeDataPlaneConfig) WriteReturnsOnCall(i int, result1 map[string]struct{}, result2 error) {
+func (fake *FakeDataPlaneConfig) WriteReturnsOnCall(i int, result1 map[string]*instances.File, result2 error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = nil
 	if fake.writeReturnsOnCall == nil {
 		fake.writeReturnsOnCall = make(map[int]struct {
-			result1 map[string]struct{}
+			result1 map[string]*instances.File
 			result2 error
 		})
 	}
 	fake.writeReturnsOnCall[i] = struct {
-		result1 map[string]struct{}
+		result1 map[string]*instances.File
 		result2 error
 	}{result1, result2}
 }
@@ -398,6 +479,8 @@ func (fake *FakeDataPlaneConfig) Invocations() map[string][][]interface{} {
 	defer fake.completeMutex.RUnlock()
 	fake.parseConfigMutex.RLock()
 	defer fake.parseConfigMutex.RUnlock()
+	fake.rollbackMutex.RLock()
+	defer fake.rollbackMutex.RUnlock()
 	fake.setConfigWriterMutex.RLock()
 	defer fake.setConfigWriterMutex.RUnlock()
 	fake.validateMutex.RLock()

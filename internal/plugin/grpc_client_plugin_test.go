@@ -13,7 +13,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGrpcClient_Init(t *testing.T) {
+var grpcAgentConfig *config.Config = &config.Config{
+	Command: &config.Command{
+		Server: &config.ServerConfig{
+			Host: "127.0.0.1",
+			Port: 8888,
+			Type: "grpc",
+		},
+	},
+}
+
+func TestGrpcClient_NewGrpcClient(t *testing.T) {
 	tests := []struct {
 		name        string
 		agentConfig *config.Config
@@ -21,15 +31,7 @@ func TestGrpcClient_Init(t *testing.T) {
 	}{
 		{
 			"grpc config",
-			&config.Config{
-				Command: &config.Command{
-					Server: &config.ServerConfig{
-						Host: "127.0.0.1",
-						Port: 8888,
-						Type: "grpc",
-					},
-				},
-			},
+			grpcAgentConfig,
 			&GrpcClient{},
 		},
 		{
@@ -63,4 +65,16 @@ func TestGrpcClient_Init(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGrpcClient_Info(t *testing.T) {
+	grpcClient := NewGrpcClient(grpcAgentConfig)
+	info := grpcClient.Info()
+	assert.Equal(t, "grpc-client", info.Name)
+}
+
+func TestGrpcClient_Subscriptions(t *testing.T) {
+	grpcClient := NewGrpcClient(grpcAgentConfig)
+	subscriptions := grpcClient.Subscriptions()
+	assert.Empty(t, subscriptions)
 }

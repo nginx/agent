@@ -26,6 +26,7 @@ type (
 		UpdateFileCache(cache CacheContent) error
 		ReadFileCache() (CacheContent, error)
 		SetCachePath(cachePath string)
+		CacheContent() CacheContent
 	}
 
 	FileCache struct {
@@ -39,6 +40,7 @@ type (
 
 func NewFileCache(instanceID string) *FileCache {
 	cachePath := fmt.Sprintf(cacheLocation, instanceID)
+
 	return &FileCache{
 		CachePath: cachePath,
 	}
@@ -86,6 +88,10 @@ func (f *FileCache) UpdateFileCache(cacheContent CacheContent) error {
 	f.cacheContent = cacheContent
 
 	return nil
+}
+
+func (f *FileCache) CacheContent() CacheContent {
+	return f.cacheContent
 }
 
 func (f *FileCache) SetCachePath(cachePath string) {

@@ -70,7 +70,7 @@ func GetAgentConfig() *Config {
 }
 
 func TestRegisterConfigFile(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	file, err := os.Create("nginx-agent.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestRegisterConfigFile(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
 	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/usr/share/nginx/modules"}
 	require.NoError(t, err)
@@ -98,10 +98,14 @@ func TestGetConfig(t *testing.T) {
 	assert.Equal(t, "127.0.0.1", result.DataPlaneAPI.Host)
 	assert.Equal(t, 8038, result.DataPlaneAPI.Port)
 
+	assert.Equal(t, 30*time.Second, result.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
+	assert.False(t, result.DataPlaneConfig.Nginx.TreatWarningsAsError)
+
 	assert.Equal(t, 30*time.Second, result.ProcessMonitor.MonitoringFrequency)
 	assert.Equal(t, 10*time.Second, result.Client.Timeout)
 
-	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules", result.ConfigDir)
+	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:invalid/path", result.ConfigDir)
+
 	assert.Equal(t, allowedDir, result.AllowedDirectories)
 
 	assert.NotNil(t, result.Metrics)
@@ -123,14 +127,14 @@ func TestGetConfig(t *testing.T) {
 }
 
 func TestSetVersion(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	setVersion("v1.2.3", "asdf1234")
 
 	assert.Equal(t, "v1.2.3", viperInstance.GetString(VersionKey))
 }
 
 func TestRegisterFlags(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	t.Setenv("NGINX_AGENT_LOG_LEVEL", "warn")
 	t.Setenv("NGINX_AGENT_LOG_PATH", "/var/log/test/agent.log")
 	t.Setenv("NGINX_AGENT_PROCESS_MONITOR_MONITORING_FREQUENCY", "10s")
@@ -148,7 +152,7 @@ func TestRegisterFlags(t *testing.T) {
 }
 
 func TestSeekFileInPaths(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	result, err := seekFileInPaths("nginx-agent.conf", []string{"./", "./testdata"}...)
 
 	require.NoError(t, err)
@@ -159,7 +163,7 @@ func TestSeekFileInPaths(t *testing.T) {
 }
 
 func TestGetConfigFilePaths(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	currentDirectory, err := os.Getwd()
 	require.NoError(t, err)
 
@@ -171,7 +175,7 @@ func TestGetConfigFilePaths(t *testing.T) {
 }
 
 func TestLoadPropertiesFromFile(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
 	require.NoError(t, err)
 
@@ -207,14 +211,14 @@ func TestLoadPropertiesFromFile(t *testing.T) {
 }
 
 func TestNormalizeFunc(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	var expected pflag.NormalizedName = "test-flag-name"
 	result := normalizeFunc(&pflag.FlagSet{}, "test_flag.name")
 	assert.Equal(t, expected, result)
 }
 
 func TestGetLog(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(LogLevelKey, "error")
 	viperInstance.Set(LogPathKey, "/var/log/test/test.log")
 
@@ -224,7 +228,7 @@ func TestGetLog(t *testing.T) {
 }
 
 func TestGetProcessMonitor(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(ProcessMonitorMonitoringFrequencyKey, time.Hour)
 
 	result := getProcessMonitor()
@@ -232,7 +236,7 @@ func TestGetProcessMonitor(t *testing.T) {
 }
 
 func TestGetDataPlaneAPI(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(DataPlaneAPIHostKey, "testhost")
 	viperInstance.Set(DataPlaneAPIPortKey, 9091)
 
@@ -242,7 +246,7 @@ func TestGetDataPlaneAPI(t *testing.T) {
 }
 
 func TestGetClient(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(ClientTimeoutKey, time.Hour)
 
 	result := getClient()
@@ -250,7 +254,7 @@ func TestGetClient(t *testing.T) {
 }
 
 func TestGetAllowedDirectories(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(ConfigDirectoriesKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules")
 
 	result := getConfigDir()
@@ -258,9 +262,27 @@ func TestGetAllowedDirectories(t *testing.T) {
 }
 
 func TestMetrics(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
-	expected := GetAgentConfig().Metrics
-
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	expected := Metrics{
+		ProduceInterval: 5 * time.Second,
+		OTelExporter: &OTelExporter{
+			BufferLength:     55,
+			ExportRetryCount: 10,
+			ExportInterval:   30 * time.Second,
+			GRPC: &GRPC{
+				Target:         "dummy-target",
+				ConnTimeout:    15 * time.Second,
+				MinConnTimeout: 500 * time.Millisecond,
+				BackoffDelay:   1 * time.Hour,
+			},
+		},
+		PrometheusSource: &PrometheusSource{
+			Endpoints: []string{
+				"https://example.com",
+				"https://acme.com",
+			},
+		},
+	}
 	viperInstance.Set(MetricsProduceIntervalKey, expected.ProduceInterval)
 	// OTel Exporter
 	viperInstance.Set(OTelExporterBufferLengthKey, expected.OTelExporter.BufferLength)
@@ -286,7 +308,7 @@ func TestMetrics(t *testing.T) {
 }
 
 func TestMissingOTelExporter(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
 	expInterval := 5 * time.Second
 	expPrometheusEndpoints := []string{
@@ -308,7 +330,7 @@ func TestMissingOTelExporter(t *testing.T) {
 }
 
 func TestCommand(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	expected := GetAgentConfig().Command
 
 	// Server
@@ -340,7 +362,7 @@ func TestCommand(t *testing.T) {
 }
 
 func TestMissingServerTLS(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
 	expected := GetAgentConfig().Command
 	expected.TLS = nil

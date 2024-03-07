@@ -7,13 +7,13 @@ package config
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
+	"reflect"
 	"testing"
 
 	helpers "github.com/nginx/agent/v3/test"
-
-	"google.golang.org/protobuf/proto"
 
 	config2 "github.com/nginx/agent/v3/internal/config"
 
@@ -27,99 +27,188 @@ import (
 func TestWriteConfig(t *testing.T) {
 	ctx := context.TODO()
 	tempDir := t.TempDir()
-	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
-
-	testConfPath := testConf.Name()
-	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
-
 	tenantID, instanceID := helpers.CreateTestIDs(t)
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	allowedDirs := []string{tempDir}
+	agentconfig := config2.Config{
+		AllowedDirectories: allowedDirs,
+	}
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
 	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
 	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
-	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
-	cachePath := cacheFile.Name()
-
+	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
 
+	testConfPath := testConf.Name()
 	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
 	files, err := helpers.GetFiles(nginxConf, testConf, metricsConf)
 	require.NoError(t, err)
 
 	tests := []struct {
-		name           string
-		metaDataReturn *instances.Files
-		getFileReturn  *instances.FileDownloadResponse
-		shouldBeEqual  bool
+		name               string
+		metaDataReturn     *instances.Files
+		getFileReturn      *instances.FileDownloadResponse
+		cacheShouldBeEqual bool
+		fileShouldBeEqual  bool
+		expSkippedCount    int
 	}{
 		{
-			name:           "file needs updating",
-			metaDataReturn: files,
-			getFileReturn:  helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
-			shouldBeEqual:  false,
+			name:               "file needs updating",
+			metaDataReturn:     files,
+			getFileReturn:      helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
+			cacheShouldBeEqual: false,
+			fileShouldBeEqual:  true,
+			expSkippedCount:    2,
 		},
 		{
-			name:           "file doesn't need updating",
-			metaDataReturn: files,
-			getFileReturn:  helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
-			shouldBeEqual:  true,
+			name:               "file doesn't need updating",
+			metaDataReturn:     files,
+			getFileReturn:      helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
+			cacheShouldBeEqual: true,
+			fileShouldBeEqual:  false,
+			expSkippedCount:    3,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cacheContent, getCacheErr := helpers.GetFileCache(nginxConf, testConf, metricsConf)
-			require.NoError(t, getCacheErr)
+			cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
+			cachePath := cacheFile.Name()
 			fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
-			allowedDirs := []string{"./", "/var/"}
+
+			cacheContent, getCacheErr := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+			require.NoError(t, getCacheErr)
 
 			fileCache := NewFileCache(instanceID.String())
 			fileCache.SetCachePath(cachePath)
-			err = fileCache.UpdateFileCache(cacheContent)
+			err := fileCache.UpdateFileCache(cacheContent)
 			require.NoError(t, err)
-			agentconfig := config2.Config{
-				AllowedDirectories: allowedDirs,
-			}
 
-			if !test.shouldBeEqual {
-				modified, protoErr := helpers.CreateProtoTime("2024-01-09T13:22:26Z")
+			if !test.cacheShouldBeEqual {
+				modified, protoErr := helpers.CreateProtoTime("2024-01-09T13:20:26Z")
 				require.NoError(t, protoErr)
-				cacheContent[nginxConf.Name()].LastModified = modified
+				cacheContent[testConf.Name()].LastModified = modified
+				err = fileCache.UpdateFileCache(cacheContent)
+				require.NoError(t, err)
 			}
 
 			configWriter, err := NewConfigWriter(&agentconfig, fileCache)
 			require.NoError(t, err)
 
 			configWriter.SetConfigClient(fakeConfigClient)
-			err = writeFile(fileContent, testConfPath)
+			testContent := []byte("location /test {\n    return 200 \"Before Write \\n\";\n}")
+			err = writeFile(testContent, testConfPath)
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
-			_, err = configWriter.Write(ctx, filesURL, tenantID.String(), instanceID.String())
+			skippedFiles, err := configWriter.Write(ctx, filesURL, tenantID.String(), instanceID.String())
 			require.NoError(t, err)
+			slog.Info("Skipped Files: ", "", skippedFiles)
+			assert.Len(t, skippedFiles, test.expSkippedCount)
 
-			// Will expand on this test in future PR to add more test scenarios (every file is updated etc)
-			checkProtoEquality(t, cacheContent[nginxConf.Name()], configWriter.currentFileCache[nginxConf.Name()],
-				test.shouldBeEqual)
+			res := reflect.DeepEqual(cacheContent, configWriter.currentFileCache)
+			assert.Equal(t, test.cacheShouldBeEqual, res)
+
+			assert.NotEqual(t, cacheContent, files)
 
 			testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
 			require.NoError(t, readErr)
-
-			assert.Equal(t, fileContent, testData)
-
-			helpers.RemoveFileWithErrorCheck(t, test.getFileReturn.GetFilePath())
-			assert.NoFileExists(t, test.getFileReturn.GetFilePath())
+			res = reflect.DeepEqual(fileContent, testData)
+			assert.Equal(t, test.fileShouldBeEqual, res)
+			helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
+			assert.NoFileExists(t, cachePath)
 		})
 	}
+
+	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
+	helpers.RemoveFileWithErrorCheck(t, testConf.Name())
+	assert.NoFileExists(t, testConf.Name())
+	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
+}
+
+func TestRollback(t *testing.T) {
+	ctx := context.TODO()
+	tempDir := t.TempDir()
+	tenantID, instanceID := helpers.CreateTestIDs(t)
+	allowedDirs := []string{tempDir}
+
+	instanceIDDir := path.Join(tempDir, instanceID.String())
+	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
+	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
+
+	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
+	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
+	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+
+	cachePath := cacheFile.Name()
+	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
+
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	err := writeFile(fileContent, testConf.Name())
+	require.NoError(t, err)
+	assert.FileExists(t, testConf.Name())
+
+	files, err := helpers.GetFiles(nginxConf, testConf, metricsConf)
+	require.NoError(t, err)
+
+	cacheContent, getCacheErr := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+	require.NoError(t, getCacheErr)
+
+	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
+	fakeConfigClient.GetFilesMetadataReturns(files, nil)
+	resp := []byte("location /test {\n    return 200 \"Test changed\\n\";\n}")
+	fakeConfigClient.GetFileReturns(helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), resp), nil)
+
+	agentconfig := config2.Config{
+		AllowedDirectories: allowedDirs,
+	}
+
+	fileCache := NewFileCache(instanceID.String())
+	fileCache.SetCachePath(cachePath)
+	err = fileCache.UpdateFileCache(cacheContent)
+	require.NoError(t, err)
+
+	configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+	require.NoError(t, err)
+	configWriter.SetConfigClient(fakeConfigClient)
+
+	fileTime1, err := helpers.CreateProtoTime("2024-01-08T14:22:21Z")
+	require.NoError(t, err)
+
+	fileTime2, err := helpers.CreateProtoTime("2024-01-08T13:22:23Z")
+	require.NoError(t, err)
+
+	skippedFiles := CacheContent{
+		metricsConf.Name(): {
+			LastModified: fileTime1,
+			Path:         "/tmp/nginx/locations/metrics.conf",
+			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
+		},
+		nginxConf.Name(): {
+			LastModified: fileTime2,
+			Path:         "/tmp/nginx/test.conf",
+			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+		},
+	}
+
+	err = configWriter.Rollback(ctx, skippedFiles, filesURL, tenantID.String(), instanceID.String())
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(testConf.Name())
+	require.NoError(t, err)
+	assert.NotEqual(t, data, fileContent)
 
 	helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
+	helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 	assert.NoFileExists(t, cachePath)
 }
 
@@ -136,7 +225,7 @@ func TestComplete(t *testing.T) {
 	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
 	cachePath := cacheFile.Name()
 
-	allowedDirs := []string{"./"}
+	allowedDirs := []string{tempDir}
 
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 
@@ -178,7 +267,8 @@ func TestComplete(t *testing.T) {
 }
 
 func TestWriteFile(t *testing.T) {
-	filePath := "/tmp/test.conf"
+	tempDir := t.TempDir()
+	filePath := fmt.Sprintf("%s/nginx.conf", tempDir)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 
 	err := writeFile(fileContent, filePath)
@@ -305,10 +395,4 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 			assert.Equal(t, test.expectedResult, valid)
 		})
 	}
-}
-
-func checkProtoEquality(t *testing.T, expected, actual proto.Message, shouldBeEqual bool) {
-	t.Helper()
-	res := proto.Equal(expected, actual)
-	assert.Equal(t, shouldBeEqual, res, "Expected %v, \nActual   %v", expected, actual)
 }

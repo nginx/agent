@@ -7,7 +7,10 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 	"testing"
+
+	helpers "github.com/nginx/agent/v3/test"
 
 	"github.com/nginx/agent/v3/internal/config"
 
@@ -18,7 +21,11 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+const (
+	instanceID    = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 )
 
 func TestConfig_Init(t *testing.T) {
@@ -40,14 +47,14 @@ func TestConfig_Subscriptions(t *testing.T) {
 	subscriptions := configPlugin.Subscriptions()
 	assert.Equal(t, []string{
 		bus.InstanceConfigUpdateRequestTopic,
-		bus.InstanceConfigUpdateCompleteTopic,
+		bus.InstanceConfigUpdateTopic,
 		bus.InstancesTopic,
 	}, subscriptions)
 }
 
 func TestConfig_Process(t *testing.T) {
 	testInstance := &instances.Instance{
-		InstanceId: "123",
+		InstanceId: instanceID,
 		Type:       instances.Type_NGINX,
 	}
 
@@ -59,16 +66,12 @@ func TestConfig_Process(t *testing.T) {
 	instanceConfigUpdateRequest := &model.InstanceConfigUpdateRequest{
 		Instance:      testInstance,
 		Location:      "http://file-server.com",
-		CorrelationID: "456",
+		CorrelationID: correlationID,
 	}
 
-	configurationStatus := &instances.ConfigurationStatus{
-		InstanceId:    testInstance.GetInstanceId(),
-		CorrelationId: "456",
-		Status:        instances.Status_SUCCESS,
-		Message:       "Successfully updated instance configuration.",
-		LastUpdated:   timestamppb.Now(),
-	}
+	configurationStatusProgress := helpers.CreateInProgressStatus()
+
+	configurationStatus := helpers.CreateSuccessStatus()
 
 	tests := []struct {
 		name     string
@@ -78,7 +81,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated",
 			input: &bus.Message{
-				Topic: bus.InstanceConfigUpdateCompleteTopic,
+				Topic: bus.InstanceConfigUpdateTopic,
 				Data:  configurationStatus,
 			},
 			expected: []*bus.Message{
@@ -91,7 +94,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Instance config updated - unknown message type",
 			input: &bus.Message{
-				Topic: bus.InstanceConfigUpdateCompleteTopic,
+				Topic: bus.InstanceConfigUpdateTopic,
 				Data:  nil,
 			},
 			expected: nil,
@@ -104,8 +107,12 @@ func TestConfig_Process(t *testing.T) {
 			},
 			expected: []*bus.Message{
 				{
-					Topic: bus.InstanceConfigUpdateCompleteTopic,
-					Data:  configurationStatus,
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  configurationStatusProgress,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  helpers.CreateSuccessStatus(),
 				},
 			},
 		},
@@ -114,6 +121,16 @@ func TestConfig_Process(t *testing.T) {
 			input: &bus.Message{
 				Topic: bus.InstanceConfigUpdateRequestTopic,
 				Data:  nil,
+			},
+			expected: nil,
+		},
+		{
+			name: "Instance topic request",
+			input: &bus.Message{
+				Topic: bus.InstancesTopic,
+				Data: []*instances.Instance{
+					testInstance,
+				},
 			},
 			expected: nil,
 		},
@@ -130,18 +147,140 @@ func TestConfig_Process(t *testing.T) {
 
 			configService := &servicefakes.FakeConfigServiceInterface{}
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
-			configService.UpdateInstanceConfigurationReturns(configurationStatus)
+			configService.UpdateInstanceConfigurationReturns(nil, configurationStatus)
 
 			instanceService := []*instances.Instance{testInstance}
 
-			configPlugin.configServices["123"] = configService
+			configPlugin.configServices[instanceID] = configService
 			configPlugin.instances = instanceService
 
 			configPlugin.Process(test.input)
 
 			messages := messagePipe.GetMessages()
 
-			assert.Equal(tt, test.expected, messages)
+			assert.Equal(tt, len(test.expected), len(messages))
+
+			for key, message := range test.expected {
+				assert.Equal(tt, message.Topic, messages[key].Topic)
+			}
+		})
+	}
+}
+
+func TestConfig_Update(t *testing.T) {
+	agentConfig := config.Config{}
+	instance := instances.Instance{
+		InstanceId: instanceID,
+		Type:       instances.Type_NGINX,
+	}
+
+	location := fmt.Sprintf("/instance/%s/files/", instanceID)
+	request := model.InstanceConfigUpdateRequest{
+		Instance:      &instance,
+		Location:      location,
+		CorrelationID: correlationID,
+	}
+
+	inProgressStatus := helpers.CreateInProgressStatus()
+	successStatus := helpers.CreateSuccessStatus()
+	failStatus := helpers.CreateFailStatus("error")
+	rollbackInProgressStatus := helpers.CreateRollbackInProgressStatus()
+
+	tests := []struct {
+		name               string
+		updateReturnStatus *instances.ConfigurationStatus
+		rollbackReturns    error
+		expected           []*bus.Message
+	}{
+		{
+			name:               "success",
+			updateReturnStatus: successStatus,
+			rollbackReturns:    nil,
+			expected: []*bus.Message{
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  inProgressStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  successStatus,
+				},
+			},
+		},
+		{
+			name:               "fail and rollback",
+			updateReturnStatus: failStatus,
+			rollbackReturns:    nil,
+			expected: []*bus.Message{
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  inProgressStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  failStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  rollbackInProgressStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  helpers.CreateRollbackSuccessStatus(),
+				},
+			},
+		},
+		{
+			name:               "rollback fails",
+			updateReturnStatus: failStatus,
+			rollbackReturns:    fmt.Errorf("rollback failed"),
+			expected: []*bus.Message{
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  inProgressStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  failStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  rollbackInProgressStatus,
+				},
+				{
+					Topic: bus.InstanceConfigUpdateTopic,
+					Data:  helpers.CreateRollbackFailStatus("rollback failed"),
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			messagePipe := bus.NewFakeMessagePipe(context.TODO())
+			configPlugin := NewConfig(&agentConfig)
+
+			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
+			require.NoError(tt, err)
+			messagePipe.Run()
+
+			configService := &servicefakes.FakeConfigServiceInterface{}
+			configService.UpdateInstanceConfigurationReturns(make(map[string]*instances.File), test.updateReturnStatus)
+			configService.RollbackReturns(test.rollbackReturns)
+
+			instanceService := []*instances.Instance{&instance}
+			configPlugin.configServices[instanceID] = configService
+			configPlugin.instances = instanceService
+
+			configPlugin.updateInstanceConfig(&request)
+
+			messages := messagePipe.GetMessages()
+
+			assert.Equal(tt, len(test.expected), len(messages))
+
+			for key, message := range test.expected {
+				assert.Equal(tt, message.Topic, messages[key].Topic)
+			}
 		})
 	}
 }

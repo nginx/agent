@@ -26,6 +26,12 @@ const (
 	Summary           InstrumentType = 4
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//counterfeiter:generate . MetricsProducer
+
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//counterfeiter:generate . Exporter
+
 type (
 	// DataEntry represents a single entry for a data source, is one of [counter, gauge, histogram, summary].
 	DataEntry struct {

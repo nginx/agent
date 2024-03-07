@@ -18,6 +18,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 )
 
 type (
@@ -37,38 +39,29 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 	return nil
 }
 
-func getDialOptions() []grpc.DialOption {
-	var opts []grpc.DialOption
-
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	opts = append(opts, grpc.WithBlock())
-
-	return opts
-}
-
-func (grpcClient *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
-	grpcClient.messagePipe = messagePipe
-
+func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 	slog.Debug("Starting grpc client")
+	gc.messagePipe = messagePipe
+
 	serverAddr := net.JoinHostPort(
-		grpcClient.config.Command.Server.Host,
-		fmt.Sprint(grpcClient.config.Command.Server.Port))
+		gc.config.Command.Server.Host,
+		fmt.Sprint(gc.config.Command.Server.Port),
+	)
 
 	conn, err := grpc.Dial(serverAddr, getDialOptions()...)
 	if err != nil {
-		slog.Error("error dialing %v", err)
-		return nil
+		return err
 	}
 
-	// nolint:all
+	// nolint: revive
 	id, err := uuid.NewV7()
 	if err != nil {
-		slog.Error("error generating message id %v", err)
+		return fmt.Errorf("error generating message id: %w", err)
 	}
 
 	correlationID, err := uuid.NewUUID()
 	if err != nil {
-		slog.Error("error generating correlation id %v", err)
+		return fmt.Errorf("error generating correlation id: %w", err)
 	}
 
 	client := v1.NewCommandServiceClient(conn)
@@ -81,36 +74,43 @@ func (grpcClient *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 		},
 		Agent: &v1.Instance{
 			InstanceMeta: &v1.InstanceMeta{
-				InstanceId:   "1234",
+				InstanceId:   uuidLibrary.Generate("/etc/nginx-agent/nginx-agent"),
 				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
-				Version:      "v3",
+				Version:      gc.config.Version,
 			},
 			InstanceConfig: &v1.InstanceConfig{},
 		},
 	}
 
-	resp, err := client.CreateConnection(context.TODO(), req)
+	response, err := client.CreateConnection(context.TODO(), req)
 	if err != nil {
-		slog.Error("error", "some", err)
+		return fmt.Errorf("error creating connection: %w", err)
 	}
 
-	slog.Debug("resp", "some", resp)
+	slog.Debug("Connection created", "response", response)
 
 	return nil
 }
 
-func (grpcClient *GrpcClient) Close() error { return nil }
+func (gc *GrpcClient) Close() error { return nil }
 
-func (grpcClient *GrpcClient) Info() *bus.Info {
+func (gc *GrpcClient) Info() *bus.Info {
 	return &bus.Info{
 		Name: "grpc-client",
 	}
 }
 
-func (grpcClient *GrpcClient) Process(msg *bus.Message) {}
+func (gc *GrpcClient) Process(msg *bus.Message) {}
 
-func (grpcClient *GrpcClient) Subscriptions() []string {
-	return []string{
-		bus.InstancesTopic,
-	}
+func (gc *GrpcClient) Subscriptions() []string {
+	return []string{}
+}
+
+func getDialOptions() []grpc.DialOption {
+	var opts []grpc.DialOption
+
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	opts = append(opts, grpc.WithBlock())
+
+	return opts
 }

@@ -23,6 +23,8 @@ func (*NginxGatewayFabric) ParseConfig() (any, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (*NginxGatewayFabric) SetConfigContext(_ any) {}
+
 func (*NginxGatewayFabric) Validate() error {
 	return fmt.Errorf("not implemented")
 }
@@ -35,7 +37,11 @@ func (*NginxGatewayFabric) Complete() error {
 	return fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Write(_ context.Context, _, _ string) (skippedFiles map[string]struct{}, err error) {
+func (*NginxGatewayFabric) Rollback(_ context.Context, _ writer.CacheContent, _, _, _ string) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (*NginxGatewayFabric) Write(_ context.Context, _, _ string) (skippedFiles writer.CacheContent, err error) {
 	return nil, fmt.Errorf("not implemented")
 }
 

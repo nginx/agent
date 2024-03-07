@@ -118,7 +118,10 @@ func (m *Metrics) Close() error {
 func (m *Metrics) Process(msg *bus.Message) {
 	switch msg.Topic {
 	case bus.MetricsTopic:
-		m.processMessage(msg)
+		err := m.processMessage(msg)
+		if err != nil {
+			slog.Debug("error processing message", "err", err)
+		}
 	case bus.OsProcessesTopic:
 		slog.Debug("OS Processes have been updated")
 	}
@@ -203,25 +206,19 @@ func (m *Metrics) runProducer(ctx context.Context, producer model.MetricsProduce
 	}
 }
 
-func (m *Metrics) processMessage(msg *bus.Message) {
+func (m *Metrics) processMessage(msg *bus.Message) error {
 	de, ok := msg.Data.(model.DataEntry)
 	if !ok {
-		slog.Error("Metrics plugin received metrics event but could not cast it to correct type",
-			"payload", msg.Data)
-
-		return
+		return fmt.Errorf("metrics plugin received metrics event but could not cast it to correct type: %v", msg.Data)
 	}
 
 	exporter, ok := m.exporters[model.OTel]
 	if !ok {
-		slog.Error("Metrics plugin received metrics event but source type had no exporter",
-			"source_type", de.SourceType)
-	} else {
-		err := exporter.Export(de)
-		if err != nil {
-			slog.Error("Failed to export metrics to data sink", "error", err)
-		}
+		return fmt.Errorf("metrics plugin received metrics event but source type had no exporter: %v", de.SourceType)
 	}
+	err := exporter.Export(de)
+
+	return err
 }
 
 func (m *Metrics) callProduce(ctx context.Context, producer model.MetricsProducer, failedAttempts int) int {
@@ -234,6 +231,7 @@ func (m *Metrics) callProduce(ctx context.Context, producer model.MetricsProduce
 	failedAttempts = 0
 
 	busMsgs := make([]*bus.Message, len(entries))
+
 	for i, e := range entries {
 		busMsgs[i] = e.ToBusMessage()
 	}
