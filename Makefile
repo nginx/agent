@@ -38,7 +38,7 @@ PROTO_DIR       := proto
 BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
-DIRS            = ${BUILD_DIR} ${TEST_BUILD_DIR} ${BUILD_DIR}/${DOCS_DIR} ${BUILD_DIR}/${DOCS_DIR}/${PROTO_DIR} ${DOCS_DIR} ${DOCS_DIR}/${PROTO_DIR}
+DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR) $(DOCS_DIR) $(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
 VERSION 		= "v3.0.0"
@@ -111,11 +111,11 @@ coverage: $(TEST_BUILD_DIR)/coverage.out
 
 build-mock-management-plane-http:
 	mkdir -p $(BUILD_DIR)/mock-management-plane-http
-	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-http/server test/mock/http/cmd/main.go
+	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-http/server test/mock/http/cmd/main.go
 
 build-mock-management-plane-grpc:
 	mkdir -p $(BUILD_DIR)/mock-management-plane-grpc
-	@CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-grpc/server test/mock/grpc/cmd/main.go
+	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-grpc/server test/mock/grpc/cmd/main.go
 
 integration-test: build-mock-management-plane-http build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
@@ -141,8 +141,8 @@ run-mock-management-http-server: ## Run mock management HTTP server
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
-	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --go-grpc_out=./api/grpc --doc_out=./${BUILD_DIR}/$(DOCS_DIR)/${PROTO_DIR}/ --doc_opt=markdown,protos.md 
-	@cp -a ./${BUILD_DIR}/$(DOCS_DIR)/${PROTO_DIR}/* ./$(DOCS_DIR)/${PROTO_DIR}/
+	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --go-grpc_out=./api/grpc --doc_out=./$(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)/ --doc_opt=markdown,protos.md 
+	@cp -a ./$(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)/* ./$(DOCS_DIR)/$(PROTO_DIR)/
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
 	@echo "Generating Go server and client stubs from OpenAPI specification"
 	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/data-plane-api.yaml > ./api/http/dataplane/data_plane.gen.go

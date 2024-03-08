@@ -71,7 +71,7 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, func(ttt *testing.T) {
 			grpcClient := NewGrpcClient(tt.agentConfig)
 
 			if grpcClient == nil {

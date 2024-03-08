@@ -129,10 +129,10 @@ func (ms *ManagementServer) GetInstanceFile(
 }
 
 func (ms *ManagementServer) StartServer(listener net.Listener) {
-	slog.Info("Starting mock management plane gRPC server API", "address", listener.Addr().String())
+	slog.Info("Starting mock management plane HTTP server", "address", listener.Addr().String())
 	err := ms.server.RunListener(listener)
 	if err != nil {
-		slog.Error("Startup of mock management plane gRPC server API failed", "error", err)
+		slog.Error("Startup of mock management plane HTTP server failed", "error", err)
 	}
 }
 

@@ -100,5 +100,5 @@ type TLSConfig struct {
 	SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
 }
 
-// leaving this blank ententionally for now, this will have the location of the file server for configurations
+// leaving this blank intentionally for now, this will have the location of the file server for configurations
 type File struct{}

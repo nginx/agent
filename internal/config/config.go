@@ -168,39 +168,43 @@ func registerFlags() {
 		PrometheusTargetsKey, []string{}, "The target URI(s) of Prometheus endpoint(s) for metrics collection.",
 	)
 	fs.String(
-		CommandServerHostKey, "", "The target hostanme of command server endpoint for command and control.",
+		CommandServerHostKey,
+		DefCommandServerHostKey,
+		"The target hostanme of the command server endpoint for command and control.",
 	)
 	fs.Int32(
-		CommandServerPortKey, 0, "The target port of command server endpoint for command and control.",
+		CommandServerPortKey,
+		DefCommandServerPortKey,
+		"The target port of the command server endpoint for command and control.",
 	)
 	fs.String(
 		CommandServerTypeKey,
-		"grpc",
-		"The target protocol (grpc or http) command server endpoint for command and control.",
+		DefCommandServerTypeKey,
+		"The target protocol (gRPC or HTTP) the command server endpoint for command and control.",
 	)
 	fs.String(
 		CommandAuthTokenKey,
-		"",
+		DefCommandAuthTokenKey,
 		"The token used in the authentication handshake with the command server endpoint for command and control.",
 	)
 	fs.String(
 		CommandTLSCertKey,
-		"",
+		DefCommandTLSCertKey,
 		"The path to the certificate file to use for TLS communication with the command server.",
 	)
 	fs.String(
 		CommandTLSKeyKey,
-		"",
+		DefCommandTLSKeyKey,
 		"The path to the certificate key file to use for TLS communication with the command server.",
 	)
 	fs.String(
 		CommandTLSCaKey,
-		"",
+		DefCommandTLSCaKey,
 		"The path to CA certificate file to use for TLS communication with the command server.",
 	)
 	fs.Bool(
 		CommandTLSSkipVerifyKey,
-		false,
+		DefCommandTLSSkipVerifyKey,
 		"Only intended for demonstration, sets InsecureSkipVerify for TLS credentials.",
 	)
 
