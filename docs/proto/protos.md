@@ -9,6 +9,7 @@
     - [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest)
     - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
     - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
+    - [File](#mpi-v1-File)
     - [Instance](#mpi-v1-Instance)
     - [InstanceConfig](#mpi-v1-InstanceConfig)
     - [InstanceMeta](#mpi-v1-InstanceMeta)
@@ -51,6 +52,7 @@ This contains a series of NGINX Agent configurations
 | ----- | ---- | ----- | ----------- |
 | command | [Command](#mpi-v1-Command) |  | Command server settings |
 | metrics | [Metrics](#mpi-v1-Metrics) |  | Metrics server settings |
+| file | [File](#mpi-v1-File) |  | File server settings |
 | labels | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | A series of key/value pairs to add more data to the NGINX Agent instance |
 | features | [string](#string) | repeated | A list of features that the NGINX Agent has |
 | message_buffer_size | [string](#string) |  | Message buffer size, maximum not acknowledged messages from the subscribe perspective |
@@ -106,6 +108,16 @@ A response to a CreateConnectionRequest
 
 ### DataPlaneResponse
 Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
+
+
+
+
+
+
+<a name="mpi-v1-File"></a>
+
+### File
+The file settings associated with file server for configurations
 
 
 

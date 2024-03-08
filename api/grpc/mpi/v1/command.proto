@@ -114,12 +114,14 @@ message AgentConfig {
     Command command = 1;
     // Metrics server settings
     Metrics metrics = 2;
+    // File server settings
+    File file = 3;
     // A series of key/value pairs to add more data to the NGINX Agent instance
-    repeated google.protobuf.Struct labels = 3;
+    repeated google.protobuf.Struct labels = 4;
     // A list of features that the NGINX Agent has
-    repeated string features = 4;
+    repeated string features = 5;
     // Message buffer size, maximum not acknowledged messages from the subscribe perspective
-    string message_buffer_size = 5;
+    string message_buffer_size = 6;
 }
 
 // The command settings, associated with messaging from an external source 
@@ -127,3 +129,6 @@ message Command {}
 
 // The metrics settings associated with orgins (sources) of the metrics and destinations (exporter)
 message Metrics {}
+
+// The file settings associated with file server for configurations
+message File {}

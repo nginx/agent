@@ -254,7 +254,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 			},
 			expectedStatus: &dataplane.ConfigurationStatus{
 				CorrelationId: toPtr(correlationID),
-				Events: &[]dataplane.Events{
+				Events: &[]dataplane.Event{
 					{
 						Status:    toPtr(dataplane.SUCCESS),
 						Message:   toPtr("Success"),
@@ -276,7 +276,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 			events:     nil,
 			expectedStatus: &dataplane.ConfigurationStatus{
 				CorrelationId: toPtr(correlationID),
-				Events: &[]dataplane.Events{
+				Events: &[]dataplane.Event{
 					{
 						Status:    toPtr(dataplane.SUCCESS),
 						Message:   toPtr("Success"),
@@ -340,7 +340,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func compareResponse(t *testing.T, result *dataplane.ConfigurationStatus, events []dataplane.Events,
+func compareResponse(t *testing.T, result *dataplane.ConfigurationStatus, events []dataplane.Event,
 	expectedStatus *dataplane.ConfigurationStatus, resBody []byte,
 ) {
 	t.Helper()

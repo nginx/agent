@@ -241,10 +241,10 @@ func mapStatusEnums(typeString string) *dataplane.StatusState {
 	return toPtr(dataplane.INPROGRESS)
 }
 
-func convertConfigStatus(statuses []*instances.ConfigurationStatus) *[]dataplane.Events {
-	dataplaneStatuses := []dataplane.Events{}
+func convertConfigStatus(statuses []*instances.ConfigurationStatus) *[]dataplane.Event {
+	dataplaneStatuses := []dataplane.Event{}
 	for _, status := range statuses {
-		dataplaneStatus := dataplane.Events{
+		dataplaneStatus := dataplane.Event{
 			Timestamp: toPtr(status.GetTimestamp().AsTime()),
 			Message:   &status.Message,
 			Status:    mapStatusEnums(status.GetStatus().String()),

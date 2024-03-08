@@ -19,6 +19,7 @@ type Config struct {
 	AllowedDirectories []string         `yaml:"-"`
 	Metrics            *Metrics         `yaml:"-" mapstructure:"metrics"`
 	Command            *Command         `yaml:"-" mapstructure:"command"`
+	File               *File            `yaml:"-" mapstructure:"file"`
 }
 
 type Log struct {
@@ -98,3 +99,6 @@ type TLSConfig struct {
 	Ca         string `yaml:"-" mapstructure:"ca"`
 	SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
 }
+
+// leaving this blank ententionally for now, this will have the location of the file server for configurations
+type File struct{}
