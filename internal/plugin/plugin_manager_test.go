@@ -22,7 +22,11 @@ func TestLoadPLugins(t *testing.T) {
 	}{
 		{
 			name:  "Only process manager plugin enabled",
-			input: &config.Config{},
+			input: &config.Config{
+				ProcessMonitor:     &config.ProcessMonitor{
+					MonitoringFrequency: 5,
+				},
+			},
 			expected: []bus.Plugin{
 				&ProcessMonitor{},
 				&Instance{},

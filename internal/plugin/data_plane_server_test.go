@@ -26,7 +26,10 @@ import (
 )
 
 func TestDataPlaneServer_Init(t *testing.T) {
-	dataPlaneServer := NewDataPlaneServer(getAgentConfig(), slog.Default())
+	agent_config := getAgentConfig()
+	agent_config.DataPlaneAPI.Port = 1230
+
+	dataPlaneServer := NewDataPlaneServer(agent_config, slog.Default())
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
@@ -44,7 +47,10 @@ func TestDataPlaneServer_Init(t *testing.T) {
 }
 
 func TestDataPlaneServer_Process(t *testing.T) {
-	dataPlaneServer := NewDataPlaneServer(getAgentConfig(), slog.Default())
+	agent_config := getAgentConfig()
+	agent_config.DataPlaneAPI.Port = 1231
+
+	dataPlaneServer := NewDataPlaneServer(agent_config, slog.Default())
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
@@ -106,7 +112,10 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 		Version:    "1.23.1",
 	}
 
-	dataPlaneServer := NewDataPlaneServer(getAgentConfig(), slog.Default())
+	agent_config := getAgentConfig()
+	agent_config.DataPlaneAPI.Port = 1232
+
+	dataPlaneServer := NewDataPlaneServer(agent_config, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(ctx, 100)
@@ -150,7 +159,10 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	data := []byte(`{"location": "http://file-server.com"}`)
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 
-	dataPlaneServer := NewDataPlaneServer(getAgentConfig(), slog.Default())
+	agent_config := getAgentConfig()
+	agent_config.DataPlaneAPI.Port = 1233
+
+	dataPlaneServer := NewDataPlaneServer(agent_config, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
@@ -283,7 +295,10 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	}
 
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
-	dataPlaneServer := NewDataPlaneServer(getAgentConfig(), slog.Default())
+	agent_config := getAgentConfig()
+	agent_config.DataPlaneAPI.Port = 1234
+
+	dataPlaneServer := NewDataPlaneServer(agent_config, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})

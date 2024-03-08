@@ -15,8 +15,13 @@ import (
 func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin {
 	plugins := make([]bus.Plugin, 0)
 
-	processMonitor := NewProcessMonitor(agentConfig)
+	if (agentConfig.ProcessMonitor != nil && agentConfig.ProcessMonitor.MonitoringFrequency != 0) {
+		processMonitor := NewProcessMonitor(agentConfig)
+		plugins = append(plugins, processMonitor)
+	}
+
 	instanceMonitor := NewInstance()
+	plugins = append(plugins, instanceMonitor)
 
 	configPlugin := NewConfig(agentConfig)
 
@@ -29,14 +34,14 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 		}
 	}
 
-	plugins = append(plugins, processMonitor, instanceMonitor, configPlugin)
+	plugins = append(plugins, configPlugin)
 
 	if isGrpcClientConfigured(agentConfig) {
 		grpcClient := NewGrpcClient(agentConfig)
 		plugins = append(plugins, grpcClient)
 	}
 
-	if agentConfig.DataPlaneAPI.Host != "" && agentConfig.DataPlaneAPI.Port != 0 {
+	if agentConfig.DataPlaneAPI != nil && agentConfig.DataPlaneAPI.Host != "" && agentConfig.DataPlaneAPI.Port != 0 {
 		dataPlaneServer := NewDataPlaneServer(agentConfig, slogger)
 		plugins = append(plugins, dataPlaneServer)
 	}

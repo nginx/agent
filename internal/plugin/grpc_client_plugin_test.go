@@ -92,7 +92,6 @@ func TestGrpcClient_InitWithInvalidServerAddr(t *testing.T) {
 	require.NoError(t, err)
 
 	err = client.Init(messagePipe)
-	require.NoError(t, err)
 	assert.Contains(t, err.Error(), "no such host")
 }
 
