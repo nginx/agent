@@ -168,7 +168,7 @@ func registerFlags() {
 		PrometheusTargetsKey, []string{}, "The target URI(s) of Prometheus endpoint(s) for metrics collection.",
 	)
 	fs.String(
-		CommandServerHostKey, "", "The target URI of command server endpoint for command and control.",
+		CommandServerHostKey, "", "The target hostanme of command server endpoint for command and control.",
 	)
 	fs.Int32(
 		CommandServerPortKey, 0, "The target port of command server endpoint for command and control.",
