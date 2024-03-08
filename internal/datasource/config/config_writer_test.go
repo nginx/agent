@@ -12,6 +12,7 @@ import (
 	"path"
 	"reflect"
 	"testing"
+	"time"
 
 	helpers "github.com/nginx/agent/v3/test"
 
@@ -33,7 +34,7 @@ func TestWriteConfig(t *testing.T) {
 	agentconfig := config2.Config{
 		AllowedDirectories: allowedDirs,
 		Client: &config2.Client{
-			Timeout: 5,
+			Timeout: 5 * time.Second,
 		},
 	}
 
@@ -172,7 +173,7 @@ func TestRollback(t *testing.T) {
 	agentconfig := config2.Config{
 		AllowedDirectories: allowedDirs,
 		Client: &config2.Client{
-			Timeout: 5,
+			Timeout: 5 * time.Second,
 		},
 	}
 
@@ -239,7 +240,7 @@ func TestComplete(t *testing.T) {
 	agentconfig := config2.Config{
 		AllowedDirectories: allowedDirs,
 		Client: &config2.Client{
-			Timeout: 5,
+			Timeout: 5 * time.Second,
 		},
 	}
 	fileCache.SetCachePath(cachePath)
@@ -334,7 +335,7 @@ func TestIsFilePathValid(t *testing.T) {
 	agentConfig := config2.Config{
 		AllowedDirectories: allowedDirs,
 		Client: &config2.Client{
-			Timeout: 5,
+			Timeout: 5 * time.Second,
 		},
 	}
 

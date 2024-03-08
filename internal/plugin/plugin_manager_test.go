@@ -21,10 +21,10 @@ func TestLoadPLugins(t *testing.T) {
 		expected []bus.Plugin
 	}{
 		{
-			name:  "Only process manager plugin enabled",
+			name: "Only process manager plugin enabled",
 			input: &config.Config{
-				ProcessMonitor:     &config.ProcessMonitor{
-					MonitoringFrequency: 5,
+				ProcessMonitor: &config.ProcessMonitor{
+					MonitoringFrequency: 500,
 				},
 			},
 			expected: []bus.Plugin{
@@ -41,7 +41,6 @@ func TestLoadPLugins(t *testing.T) {
 				},
 			},
 			expected: []bus.Plugin{
-				&ProcessMonitor{},
 				&Instance{},
 				&Config{},
 				&DataPlaneServer{},
@@ -56,9 +55,8 @@ func TestLoadPLugins(t *testing.T) {
 				Metrics: &config.Metrics{},
 			},
 			expected: []bus.Plugin{
-				&Metrics{},
-				&ProcessMonitor{},
 				&Instance{},
+				&Metrics{},
 				&Config{},
 				&DataPlaneServer{},
 			},
@@ -67,6 +65,7 @@ func TestLoadPLugins(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
+			t.Logf("running test %s", test.name)
 			result := LoadPlugins(test.input, slog.New(&slog.TextHandler{}))
 			assert.Equal(tt, len(test.expected), len(result))
 			for i, expectedPlugin := range test.expected {

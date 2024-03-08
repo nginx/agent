@@ -33,6 +33,9 @@ func getAgentConfig() *config.Config {
 		Client: &config.Client{
 			Timeout: 5 * time.Second,
 		},
+		ProcessMonitor: &config.ProcessMonitor{
+			MonitoringFrequency: time.Millisecond,
+		},
 	}
 }
 

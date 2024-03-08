@@ -21,12 +21,19 @@ import (
 
 func GetAgentConfig() *Config {
 	return &Config{
-		Version:            "",
-		Path:               "",
-		Log:                &Log{},
-		ProcessMonitor:     &ProcessMonitor{},
-		DataPlaneAPI:       &DataPlaneAPI{},
-		Client:             &Client{},
+		Version: "",
+		Path:    "",
+		Log:     &Log{},
+		ProcessMonitor: &ProcessMonitor{
+			MonitoringFrequency: time.Millisecond,
+		},
+		DataPlaneAPI: &DataPlaneAPI{
+			Host: "127.0.0.1",
+			Port: 8989,
+		},
+		Client: &Client{
+			Timeout: 5 * time.Second,
+		},
 		ConfigDir:          "",
 		AllowedDirectories: []string{},
 		Metrics: &Metrics{

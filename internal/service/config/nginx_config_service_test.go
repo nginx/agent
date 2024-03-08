@@ -106,7 +106,11 @@ func TestNginx_ParseConfig(t *testing.T) {
 		},
 	}
 
-	nginxConfig := NewNginx(instance, &config.Config{})
+	nginxConfig := NewNginx(instance, &config.Config{
+		Client: &config.Client{
+			Timeout: 5 * time.Second,
+		},
+	})
 	result, err := nginxConfig.ParseConfig()
 
 	require.NoError(t, err)
@@ -238,6 +242,9 @@ func TestNginx_Apply(t *testing.T) {
 							ReloadMonitoringPeriod: 400 * time.Millisecond,
 						},
 					},
+					Client: &config.Client{
+						Timeout: 5 * time.Second,
+					},
 				},
 			)
 			nginxConfig.executor = mockExec
@@ -307,7 +314,11 @@ func TestNginx_Validate(t *testing.T) {
 					},
 				},
 			}
-			nginxConfig := NewNginx(instance, &config.Config{})
+			nginxConfig := NewNginx(instance, &config.Config{
+				Client: &config.Client{
+					Timeout: 5 * time.Second,
+				},
+			})
 			nginxConfig.executor = mockExec
 
 			err := nginxConfig.Validate()

@@ -15,25 +15,12 @@ import (
 func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin {
 	plugins := make([]bus.Plugin, 0)
 
-	if (agentConfig.ProcessMonitor != nil && agentConfig.ProcessMonitor.MonitoringFrequency != 0) {
-		processMonitor := NewProcessMonitor(agentConfig)
-		plugins = append(plugins, processMonitor)
-	}
-
-	instanceMonitor := NewInstance()
-	plugins = append(plugins, instanceMonitor)
+	plugins = addProcessMonitor(agentConfig, plugins)
+	plugins = addInstanceMonitor(plugins)
 
 	configPlugin := NewConfig(agentConfig)
 
-	if agentConfig.Metrics != nil {
-		metrics, err := NewMetrics(*agentConfig)
-		if err != nil {
-			slogger.Error("Failed to initialize metrics plugin", "error", err)
-		} else {
-			plugins = append(plugins, metrics)
-		}
-	}
-
+	plugins = addMetrics(agentConfig, slogger, plugins)
 	plugins = append(plugins, configPlugin)
 
 	if isGrpcClientConfigured(agentConfig) {
@@ -44,6 +31,35 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 	if agentConfig.DataPlaneAPI != nil && agentConfig.DataPlaneAPI.Host != "" && agentConfig.DataPlaneAPI.Port != 0 {
 		dataPlaneServer := NewDataPlaneServer(agentConfig, slogger)
 		plugins = append(plugins, dataPlaneServer)
+	}
+
+	return plugins
+}
+
+func addMetrics(agentConfig *config.Config, slogger *slog.Logger, plugins []bus.Plugin) []bus.Plugin {
+	if agentConfig.Metrics != nil {
+		metrics, err := NewMetrics(*agentConfig)
+		if err != nil {
+			slogger.Error("Failed to initialize metrics plugin", "error", err)
+		} else {
+			plugins = append(plugins, metrics)
+		}
+	}
+
+	return plugins
+}
+
+func addInstanceMonitor(plugins []bus.Plugin) []bus.Plugin {
+	instanceMonitor := NewInstance()
+	plugins = append(plugins, instanceMonitor)
+
+	return plugins
+}
+
+func addProcessMonitor(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
+	if agentConfig.ProcessMonitor != nil && agentConfig.ProcessMonitor.MonitoringFrequency != 0 {
+		processMonitor := NewProcessMonitor(agentConfig)
+		plugins = append(plugins, processMonitor)
 	}
 
 	return plugins
