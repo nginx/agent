@@ -10,22 +10,33 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"time"
 
 	"github.com/google/uuid"
+	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
+)
+
+const (
+	DefaultClientTime   = 120  // Default time for client operations in seconds
+	DefaultTimeout      = 60   // Default timeout duration in seconds
+	DefaultPermitStream = true // Flag indicating permission of stream
 )
 
 type (
 	GrpcClient struct {
 		messagePipe bus.MessagePipeInterface
 		config      *config.Config
+		ctx         context.Context
+		cncl        context.CancelFunc
 	}
 )
 
@@ -48,7 +59,8 @@ func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 		fmt.Sprint(gc.config.Command.Server.Port),
 	)
 
-	conn, err := grpc.Dial(serverAddr, getDialOptions()...)
+	gc.ctx, gc.cncl = context.WithTimeout(gc.messagePipe.Context(), gc.config.Client.Timeout)
+	conn, err := grpc.DialContext(gc.ctx, serverAddr, gc.getDialOptions()...)
 	if err != nil {
 		return err
 	}
@@ -82,7 +94,7 @@ func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 		},
 	}
 
-	response, err := client.CreateConnection(context.TODO(), req)
+	response, err := client.CreateConnection(gc.ctx, req)
 	if err != nil {
 		return fmt.Errorf("error creating connection: %w", err)
 	}
@@ -92,7 +104,13 @@ func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 	return nil
 }
 
-func (gc *GrpcClient) Close() error { return nil }
+func (gc *GrpcClient) Close() error {
+	if gc.ctx != nil {
+		gc.cncl()
+	}
+
+	return nil
+}
 
 func (gc *GrpcClient) Info() *bus.Info {
 	return &bus.Info{
@@ -106,11 +124,19 @@ func (gc *GrpcClient) Subscriptions() []string {
 	return []string{}
 }
 
-func getDialOptions() []grpc.DialOption {
-	var opts []grpc.DialOption
-
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	opts = append(opts, grpc.WithBlock())
+func (gc *GrpcClient) getDialOptions() []grpc.DialOption {
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+		grpc.WithReturnConnectionError(),
+		grpc.WithStreamInterceptor(grpcRetry.StreamClientInterceptor()),
+		grpc.WithUnaryInterceptor(grpcRetry.UnaryClientInterceptor()),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                DefaultClientTime * time.Second, // add to config in future
+			Timeout:             DefaultTimeout * time.Second,
+			PermitWithoutStream: DefaultPermitStream,
+		}),
+	}
 
 	return opts
 }

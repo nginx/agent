@@ -32,6 +32,9 @@ func TestWriteConfig(t *testing.T) {
 	allowedDirs := []string{tempDir}
 	agentconfig := config2.Config{
 		AllowedDirectories: allowedDirs,
+		Client: &config2.Client{
+			Timeout: 5,
+		},
 	}
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
@@ -168,6 +171,9 @@ func TestRollback(t *testing.T) {
 
 	agentconfig := config2.Config{
 		AllowedDirectories: allowedDirs,
+		Client: &config2.Client{
+			Timeout: 5,
+		},
 	}
 
 	fileCache := NewFileCache(instanceID.String())
@@ -232,6 +238,9 @@ func TestComplete(t *testing.T) {
 	fileCache := NewFileCache(instanceID.String())
 	agentconfig := config2.Config{
 		AllowedDirectories: allowedDirs,
+		Client: &config2.Client{
+			Timeout: 5,
+		},
 	}
 	fileCache.SetCachePath(cachePath)
 
@@ -324,6 +333,9 @@ func TestIsFilePathValid(t *testing.T) {
 	fileCache.SetCachePath(cachePath)
 	agentConfig := config2.Config{
 		AllowedDirectories: allowedDirs,
+		Client: &config2.Client{
+			Timeout: 5,
+		},
 	}
 
 	configWriter, err := NewConfigWriter(&agentConfig, fileCache)

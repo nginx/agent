@@ -22,7 +22,7 @@ func TestProcessMonitor_Init(t *testing.T) {
 	testProcesses := []*model.Process{{Pid: 123, Name: "nginx"}}
 
 	processMonitor := NewProcessMonitor(&config.Config{
-		ProcessMonitor: config.ProcessMonitor{
+		ProcessMonitor: &config.ProcessMonitor{
 			MonitoringFrequency: time.Millisecond,
 		},
 	})

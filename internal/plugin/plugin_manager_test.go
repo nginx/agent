@@ -31,7 +31,7 @@ func TestLoadPLugins(t *testing.T) {
 		}, {
 			name: "DataPlane API plugin enabled",
 			input: &config.Config{
-				DataPlaneAPI: config.DataPlaneAPI{
+				DataPlaneAPI: &config.DataPlaneAPI{
 					Host: "localhost",
 					Port: 8080,
 				},
@@ -45,7 +45,7 @@ func TestLoadPLugins(t *testing.T) {
 		}, {
 			name: "Metrics plugin enabled",
 			input: &config.Config{
-				DataPlaneAPI: config.DataPlaneAPI{
+				DataPlaneAPI: &config.DataPlaneAPI{
 					Host: "localhost",
 					Port: 8080,
 				},

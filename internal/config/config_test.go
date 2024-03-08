@@ -23,10 +23,10 @@ func GetAgentConfig() *Config {
 	return &Config{
 		Version:            "",
 		Path:               "",
-		Log:                Log{},
-		ProcessMonitor:     ProcessMonitor{},
-		DataPlaneAPI:       DataPlaneAPI{},
-		Client:             Client{},
+		Log:                &Log{},
+		ProcessMonitor:     &ProcessMonitor{},
+		DataPlaneAPI:       &DataPlaneAPI{},
+		Client:             &Client{},
 		ConfigDir:          "",
 		AllowedDirectories: []string{},
 		Metrics: &Metrics{

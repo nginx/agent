@@ -55,7 +55,13 @@ func (dps *DataPlaneServer) Init(messagePipe bus.MessagePipeInterface) error {
 	return nil
 }
 
-func (*DataPlaneServer) Close() error { return nil }
+func (dps *DataPlaneServer) Close() error {
+	if dps.server != nil {
+		dps.server.Close()
+	}
+
+	return nil
+}
 
 func (*DataPlaneServer) Info() *bus.Info {
 	return &bus.Info{

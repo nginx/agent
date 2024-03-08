@@ -264,37 +264,37 @@ func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 	return flag.NormalizedName(name)
 }
 
-func getLog() Log {
-	return Log{
+func getLog() *Log {
+	return &Log{
 		Level: viperInstance.GetString(LogLevelKey),
 		Path:  viperInstance.GetString(LogPathKey),
 	}
 }
 
-func getProcessMonitor() ProcessMonitor {
-	return ProcessMonitor{
+func getProcessMonitor() *ProcessMonitor {
+	return &ProcessMonitor{
 		MonitoringFrequency: viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyKey),
 	}
 }
 
-func getDataPlaneAPI() DataPlaneAPI {
-	return DataPlaneAPI{
+func getDataPlaneAPI() *DataPlaneAPI {
+	return &DataPlaneAPI{
 		Host: viperInstance.GetString(DataPlaneAPIHostKey),
 		Port: viperInstance.GetInt(DataPlaneAPIPortKey),
 	}
 }
 
-func getDataPlaneConfig() DataPlaneConfig {
-	return DataPlaneConfig{
-		Nginx: NginxDataPlaneConfig{
+func getDataPlaneConfig() *DataPlaneConfig {
+	return &DataPlaneConfig{
+		Nginx: &NginxDataPlaneConfig{
 			ReloadMonitoringPeriod: viperInstance.GetDuration(DataPlaneConfigNginxReloadMonitoringPeriodKey),
 			TreatWarningsAsError:   viperInstance.GetBool(DataPlaneConfigNginxTreatWarningsAsErrorsKey),
 		},
 	}
 }
 
-func getClient() Client {
-	return Client{
+func getClient() *Client {
+	return &Client{
 		Timeout: viperInstance.GetDuration(ClientTimeoutKey),
 	}
 }
@@ -316,7 +316,7 @@ func getMetrics() *Metrics {
 
 	if viperInstance.IsSet(MetricsOTelExporterKey) && viperInstance.IsSet(OTelGRPCKey) {
 		// For some reason viperInstance.UnmarshalKey did not work here (maybe due to the nested structs?).
-		otelExp := OTelExporter{
+		otelExp := &OTelExporter{
 			BufferLength:     viperInstance.GetInt(OTelExporterBufferLengthKey),
 			ExportRetryCount: viperInstance.GetInt(OTelExporterExportRetryCountKey),
 			ExportInterval:   viperInstance.GetDuration(OTelExporterExportIntervalKey),
@@ -327,7 +327,7 @@ func getMetrics() *Metrics {
 				BackoffDelay:   viperInstance.GetDuration(OTelGRPCBackoffDelayKey),
 			},
 		}
-		metrics.OTelExporter = &otelExp
+		metrics.OTelExporter = otelExp
 	}
 
 	if viperInstance.IsSet(PrometheusSrcKey) {

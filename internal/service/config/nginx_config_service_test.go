@@ -232,8 +232,8 @@ func TestNginx_Apply(t *testing.T) {
 			nginxConfig := NewNginx(
 				instance,
 				&config.Config{
-					DataPlaneConfig: config.DataPlaneConfig{
-						Nginx: config.NginxDataPlaneConfig{
+					DataPlaneConfig: &config.DataPlaneConfig{
+						Nginx: &config.NginxDataPlaneConfig{
 							TreatWarningsAsError:   true,
 							ReloadMonitoringPeriod: 400 * time.Millisecond,
 						},
