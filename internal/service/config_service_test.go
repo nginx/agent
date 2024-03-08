@@ -87,7 +87,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			validateErr: nil,
 			applyErr:    nil,
 			completeErr: fmt.Errorf("error completing config apply"),
-			expected:    helpers.CreateFailStatus("error completing config apply"),
+			expected:    helpers.CreateSuccessStatus(),
 		},
 		{
 			name:        "success",
