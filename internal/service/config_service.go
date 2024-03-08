@@ -112,7 +112,8 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 
 	err = cs.configService.Complete()
 	if err != nil {
-		slog.Error("error updating instance file cache during config apply complete", "instance_id", cs.instance.GetInstanceId(), "err", err)
+		slog.Error("error updating instance file cache during config apply complete", "instance_id",
+			cs.instance.GetInstanceId(), "err", err)
 	}
 
 	return skippedFiles, &instances.ConfigurationStatus{
