@@ -47,8 +47,8 @@ OSS_PACKAGES_REPO 	:= "packages.nginx.org"
 PACKAGE_PREFIX 		:= nginx-agent
 PACKAGE_NAME 		:= "$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT)"
 
-
 MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= test/config/nginx
+OLD_BENCHMARK_RESULTS_FILE ?= $(TEST_BUILD_DIR)/benchmark.txt
 
 uname_m    := $(shell uname -m)
 
@@ -116,6 +116,14 @@ integration-test:
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
 	go test -v ./test/integration
+
+performance-test:
+	mkdir -p $(TEST_BUILD_DIR)
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/config > $(TEST_BUILD_DIR)/benchmark.txt
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/instance >> $(TEST_BUILD_DIR)/benchmark.txt
+
+compare-performance-benchmark-results:
+	@$(GORUN) $(BENCHSTAT) $(OLD_BENCHMARK_RESULTS_FILE) $(TEST_BUILD_DIR)/benchmark.txt
 
 run: build ## Run code
 	@echo "🏃 Running App"
