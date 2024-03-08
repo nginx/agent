@@ -6,6 +6,7 @@ GOFUMPT	        = mvdan.cc/gofumpt@v0.6.0
 COUNTERFEITER   = github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0
 NFPM            = github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.35.3
 GOTESTCOVERAGE  = github.com/vladopajic/go-test-coverage/v2@v2.8.3
+BUF             = github.com/bufbuild/buf/cmd/buf@v1.29.0
 
 install-tools: ## Install tool dependencies
 	@echo "Installing Tools"
@@ -17,4 +18,5 @@ install-tools: ## Install tool dependencies
 	@$(GOINST) $(COUNTERFEITER)
 	@$(GOINST) $(NFPM)
 	@$(GOINST) $(GOTESTCOVERAGE)
+	@$(GOINST) $(BUF)
 	@$(GORUN) $(LEFTHOOK) install pre-push

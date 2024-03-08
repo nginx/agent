@@ -13,6 +13,7 @@ const (
 	ClientTimeoutKey                              = "client_timeout"
 	ConfigDirectoriesKey                          = "config_dirs"
 	ConfigPathKey                                 = "path"
+	CommandRootKey                                = "command"
 	DataPlaneAPIHostKey                           = "data_plane_api_host"
 	DataPlaneAPIPortKey                           = "data_plane_api_port"
 	DataPlaneConfigNginxReloadMonitoringPeriodKey = "data_plane_config_nginx_reload_monitoring_period"
@@ -44,6 +45,17 @@ var (
 	OTelGRPCBackoffDelayKey         = pre(OTelGRPCKey) + "backoff_delay"
 	PrometheusSrcKey                = pre(MetricsRootKey) + PrometheusSourceRoot
 	PrometheusTargetsKey            = pre(PrometheusSrcKey) + "endpoints"
+	CommandServerKey                = pre(CommandRootKey) + "server"
+	CommandServerHostKey            = pre(CommandServerKey) + "host"
+	CommandServerPortKey            = pre(CommandServerKey) + "port"
+	CommandServerTypeKey            = pre(CommandServerKey) + "type"
+	CommandAuthKey                  = pre(CommandRootKey) + "auth"
+	CommandAuthTokenKey             = pre(CommandAuthKey) + "token"
+	CommandTLSKey                   = pre(CommandRootKey) + "tls"
+	CommandTLSCertKey               = pre(CommandTLSKey) + "cert"
+	CommandTLSKeyKey                = pre(CommandTLSKey) + "key"
+	CommandTLSCaKey                 = pre(CommandTLSKey) + "ca"
+	CommandTLSSkipVerifyKey         = pre(CommandTLSKey) + "skip_verify"
 )
 
 func pre(prefixes ...string) string {

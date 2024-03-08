@@ -11,7 +11,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/nginx/agent/v3/test/mock"
+	"github.com/nginx/agent/v3/test/mock/http"
 )
 
 func main() {
@@ -39,7 +39,7 @@ func main() {
 	)
 	flag.Parse()
 
-	server := mock.NewManagementServer(configDirectory)
+	server := http.NewManagementServer(configDirectory)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		slog.Error("Failed to create listener", "error", err)
