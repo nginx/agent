@@ -125,10 +125,10 @@ integration-test: build-mock-management-plane-http build-mock-management-plane-g
 	go test -v ./test/integration
 
 performance-test:
-	mkdir -p $(TEST_BUILD_DIR)
+	@mkdir -p $(TEST_BUILD_DIR)
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/config > $(TEST_BUILD_DIR)/benchmark.txt
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/instance >> $(TEST_BUILD_DIR)/benchmark.txt
-	cat $(TEST_BUILD_DIR)/benchmark.txt
+	@cat $(TEST_BUILD_DIR)/benchmark.txt
 
 compare-performance-benchmark-results:
 	@$(GORUN) $(BENCHSTAT) $(OLD_BENCHMARK_RESULTS_FILE) $(TEST_BUILD_DIR)/benchmark.txt

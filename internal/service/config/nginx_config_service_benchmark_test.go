@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,7 +25,7 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 				},
 			},
 		},
-		&config.Config{},
+		types.GetAgentConfig(),
 	)
 
 	for i := 0; i < b.N; i++ {
