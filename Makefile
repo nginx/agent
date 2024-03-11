@@ -134,10 +134,10 @@ format: ## Format code
 	buf format -w ./sdk/proto/
 
 generate-swagger: ## Generates swagger.json from source code
-	$(GORUN) github.com/go-swagger/go-swagger/cmd/swagger generate spec -o ./docs/swagger.json --scan-models
+	$(GORUN) $(GO_SWAGGER) generate spec -o ./docs/swagger.json --scan-models
 
 launch-swagger-ui: generate-swagger ## Launch Swagger UI
-	$(GORUN) github.com/go-swagger/go-swagger/cmd/swagger serve ./docs/swagger.json -F=swagger --port=8082 --no-open
+	$(GORUN) $(GO_SWAGGER) serve ./docs/swagger.json -F=swagger --port=8082 --no-open
 	
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Local Packaging                                                                                                 #
