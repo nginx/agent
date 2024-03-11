@@ -8,36 +8,14 @@ package plugin
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func getAgentConfig() *config.Config {
-	return &config.Config{
-		DataPlaneAPI: &config.DataPlaneAPI{
-			Host: "127.0.0.1",
-			Port: 8989,
-		},
-		Command: &config.Command{
-			Server: &config.ServerConfig{
-				Host: "127.0.0.1",
-				Port: 8888,
-				Type: "grpc",
-			},
-		},
-		Client: &config.Client{
-			Timeout: 5 * time.Second,
-		},
-		ProcessMonitor: &config.ProcessMonitor{
-			MonitoringFrequency: time.Millisecond,
-		},
-	}
-}
 
 func TestGrpcClient_NewGrpcClient(t *testing.T) {
 	tests := []struct {
@@ -47,7 +25,7 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 	}{
 		{
 			"grpc config",
-			getAgentConfig(),
+			types.GetAgentConfig(),
 			&GrpcClient{},
 		},
 		{
@@ -84,7 +62,7 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 }
 
 func TestGrpcClient_InitWithInvalidServerAddr(t *testing.T) {
-	agentConfig := getAgentConfig()
+	agentConfig := types.GetAgentConfig()
 	agentConfig.Command.Server.Host = "saasdkldsj"
 
 	client := NewGrpcClient(agentConfig)
@@ -99,19 +77,19 @@ func TestGrpcClient_InitWithInvalidServerAddr(t *testing.T) {
 }
 
 func TestGrpcClient_Info(t *testing.T) {
-	grpcClient := NewGrpcClient(getAgentConfig())
+	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	info := grpcClient.Info()
 	assert.Equal(t, "grpc-client", info.Name)
 }
 
 func TestGrpcClient_Subscriptions(t *testing.T) {
-	grpcClient := NewGrpcClient(getAgentConfig())
+	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
 	assert.Empty(t, subscriptions)
 }
 
 func TestGrpcClient_Process(t *testing.T) {
-	agentConfig := getAgentConfig()
+	agentConfig := types.GetAgentConfig()
 	client := NewGrpcClient(agentConfig)
 	assert.NotNil(t, client)
 
@@ -125,7 +103,7 @@ func TestGrpcClient_Process(t *testing.T) {
 }
 
 func TestGetDialOptions(t *testing.T) {
-	agentConfig := getAgentConfig()
+	agentConfig := types.GetAgentConfig()
 	client := NewGrpcClient(agentConfig)
 	assert.NotNil(t, client)
 

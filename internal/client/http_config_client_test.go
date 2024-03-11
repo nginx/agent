@@ -13,7 +13,9 @@ import (
 	"testing"
 	"time"
 
-	helpers "github.com/nginx/agent/v3/test"
+	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/protos"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -25,10 +27,10 @@ func TestGetFilesMetadata(t *testing.T) {
 	ctx := context.TODO()
 	tenantID, instanceID := helpers.CreateTestIDs(t)
 
-	fileTime1, err := helpers.CreateProtoTime("2024-01-08T13:22:25Z")
+	fileTime1, err := protos.CreateProtoTime("2024-01-08T13:22:25Z")
 	require.NoError(t, err)
 
-	fileTime2, err := helpers.CreateProtoTime("2024-01-08T13:22:21Z")
+	fileTime2, err := protos.CreateProtoTime("2024-01-08T13:22:21Z")
 	require.NoError(t, err)
 
 	testDataResponse := &instances.Files{
@@ -96,7 +98,7 @@ func TestGetFile(t *testing.T) {
 
 	filesURL := fmt.Sprintf("%s/instances/%s/files/", ts.URL, instanceID.String())
 
-	fileTime, err := helpers.CreateProtoTime("2024-01-08T13:22:25Z")
+	fileTime, err := protos.CreateProtoTime("2024-01-08T13:22:25Z")
 	require.NoError(t, err)
 
 	file := instances.File{
