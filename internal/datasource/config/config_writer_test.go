@@ -12,12 +12,10 @@ import (
 	"path"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
-
-	config2 "github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -32,12 +30,8 @@ func TestWriteConfig(t *testing.T) {
 	tenantID, instanceID := helpers.CreateTestIDs(t)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	allowedDirs := []string{tempDir}
-	agentconfig := config2.Config{
-		AllowedDirectories: allowedDirs,
-		Client: &config2.Client{
-			Timeout: 5 * time.Second,
-		},
-	}
+	agentConfig := types.GetAgentConfig()
+	agentConfig.AllowedDirectories = allowedDirs
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
 	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
@@ -103,7 +97,7 @@ func TestWriteConfig(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+			configWriter, err := NewConfigWriter(agentConfig, fileCache)
 			require.NoError(t, err)
 
 			configWriter.SetConfigClient(fakeConfigClient)
@@ -171,19 +165,15 @@ func TestRollback(t *testing.T) {
 	resp := []byte("location /test {\n    return 200 \"Test changed\\n\";\n}")
 	fakeConfigClient.GetFileReturns(protos.GetFileDownloadResponse(testConf.Name(), instanceID.String(), resp), nil)
 
-	agentconfig := config2.Config{
-		AllowedDirectories: allowedDirs,
-		Client: &config2.Client{
-			Timeout: 5 * time.Second,
-		},
-	}
+	agentConfig := types.GetAgentConfig()
+	agentConfig.AllowedDirectories = allowedDirs
 
 	fileCache := NewFileCache(instanceID.String())
 	fileCache.SetCachePath(cachePath)
 	err = fileCache.UpdateFileCache(cacheContent)
 	require.NoError(t, err)
 
-	configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache)
 	require.NoError(t, err)
 	configWriter.SetConfigClient(fakeConfigClient)
 
@@ -234,19 +224,14 @@ func TestComplete(t *testing.T) {
 	cachePath := cacheFile.Name()
 
 	allowedDirs := []string{tempDir}
-
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 
 	fileCache := NewFileCache(instanceID.String())
-	agentconfig := config2.Config{
-		AllowedDirectories: allowedDirs,
-		Client: &config2.Client{
-			Timeout: 5 * time.Second,
-		},
-	}
+	agentConfig := types.GetAgentConfig()
+	agentConfig.AllowedDirectories = allowedDirs
 	fileCache.SetCachePath(cachePath)
 
-	configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache)
 	require.NoError(t, err)
 	configWriter.configClient = fakeConfigClient
 
@@ -328,19 +313,13 @@ func TestIsFilePathValid(t *testing.T) {
 	}
 
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
-	allowedDirs := []string{"/tmp/"}
 	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 
 	fileCache := NewFileCache("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	fileCache.SetCachePath(cachePath)
-	agentConfig := config2.Config{
-		AllowedDirectories: allowedDirs,
-		Client: &config2.Client{
-			Timeout: 5 * time.Second,
-		},
-	}
+	agentConfig := types.GetAgentConfig()
 
-	configWriter, err := NewConfigWriter(&agentConfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache)
 	require.NoError(t, err)
 	configWriter.configClient = fakeConfigClient
 

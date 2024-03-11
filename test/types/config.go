@@ -43,7 +43,7 @@ func GetAgentConfig() *config.Config {
 			Timeout: clientTimeout,
 		},
 		ConfigDir:          "",
-		AllowedDirectories: []string{},
+		AllowedDirectories: []string{"/tmp/"},
 		Metrics: &config.Metrics{
 			ProduceInterval: produceInterval,
 			OTelExporter: &config.OTelExporter{

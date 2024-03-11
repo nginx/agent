@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/nginx/agent/v3/internal/config"
 	configfakes2 "github.com/nginx/agent/v3/internal/datasource/config/configfakes"
@@ -52,11 +53,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 		InstanceId: instanceID,
 		Type:       instances.Type_NGINX,
 	}
-	agentConfig := &config.Config{
-		Client: &config.Client{
-			Timeout: 5 * time.Second,
-		},
-	}
+	agentConfig := types.GetAgentConfig()
 
 	tests := []struct {
 		name        string

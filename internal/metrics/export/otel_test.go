@@ -623,7 +623,7 @@ func TestOTelMetrics(t *testing.T) {
 
 	assert.Eventually(
 		t, func() bool { return len(otelCollector.results) == 1 },
-		c.Metrics.OTelExporter.ExportInterval + 1 * time.Second, 1 * time.Second,
+		c.Metrics.OTelExporter.ExportInterval+1*time.Second, 1*time.Second,
 	)
 
 	for i, act := range otelCollector.results {
