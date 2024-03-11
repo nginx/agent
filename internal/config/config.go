@@ -170,7 +170,7 @@ func registerFlags() {
 	fs.String(
 		CommandServerHostKey,
 		DefCommandServerHostKey,
-		"The target hostanme of the command server endpoint for command and control.",
+		"The target hostname of the command server endpoint for command and control.",
 	)
 	fs.Int32(
 		CommandServerPortKey,

@@ -10,7 +10,8 @@ import (
 	"path"
 	"testing"
 
-	helpers "github.com/nginx/agent/v3/test"
+	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/protos"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ func TestUpdateCache(t *testing.T) {
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
 	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
 
-	expected, getCacheErr := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+	expected, getCacheErr := protos.GetFileCache(nginxConf, testConf, metricsConf)
 	require.NoError(t, getCacheErr)
 
 	fileCache := NewFileCache(instanceID.String())
@@ -73,7 +74,7 @@ func TestReadCache(t *testing.T) {
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
 
-	cacheData, err := helpers.GetFileCache(testConf, nginxConf, metricsConf)
+	cacheData, err := protos.GetFileCache(testConf, nginxConf, metricsConf)
 	require.NoError(t, err)
 
 	helpers.CreateCacheFiles(t, cachePath, cacheData)

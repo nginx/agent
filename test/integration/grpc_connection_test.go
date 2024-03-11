@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/nginx/agent/v3/test"
+	"github.com/nginx/agent/v3/test/helpers"
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 	"google.golang.org/grpc"
 
@@ -55,7 +55,7 @@ func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 			require.NoError(tb, containerNetwork.Remove(ctx))
 		})
 
-		mockManagementPlaneGrpcContainer = test.StartMockManagementPlaneGrpcContainer(
+		mockManagementPlaneGrpcContainer = helpers.StartMockManagementPlaneGrpcContainer(
 			ctx,
 			tb,
 			containerNetwork,
@@ -72,7 +72,7 @@ func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 		mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
 		tb.Logf("Mock management API server running on %s", mockManagementPlaneAPIAddress)
 
-		container = test.StartContainer(
+		container = helpers.StartContainer(
 			ctx,
 			tb,
 			containerNetwork,
@@ -115,7 +115,7 @@ func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 		tb.Helper()
 
 		if os.Getenv("TEST_ENV") == "Container" {
-			test.LogAndTerminateContainers(ctx, tb, mockManagementPlaneGrpcContainer, container)
+			helpers.LogAndTerminateContainers(ctx, tb, mockManagementPlaneGrpcContainer, container)
 		}
 	}
 }

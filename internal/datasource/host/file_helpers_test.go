@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	helpers "github.com/nginx/agent/v3/test"
+	"github.com/nginx/agent/v3/test/helpers"
 
 	"github.com/stretchr/testify/require"
 

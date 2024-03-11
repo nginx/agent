@@ -29,7 +29,7 @@ const (
 )
 
 type OTelExporter struct {
-	conf           config.Config
+	conf           *config.Config
 	intExp         *otlpmetricgrpc.Exporter
 	convert        model.Converter[metricdata.Metrics]
 	mut            *sync.Mutex
@@ -70,7 +70,7 @@ func NewGRPCExporter(ctx context.Context, conf config.GRPC) (*otlpmetricgrpc.Exp
 	)
 }
 
-func NewOTelExporter(ctx context.Context, agentConf config.Config, serviceName, id string,
+func NewOTelExporter(ctx context.Context, agentConf *config.Config, serviceName, id string,
 	c model.Converter[metricdata.Metrics],
 ) (*OTelExporter, error) {
 	exp, err := initGPRCExporter(ctx, agentConf.Metrics)
