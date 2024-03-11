@@ -48,7 +48,7 @@ Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
 		proto/*.proto; \
 	grep -v '^swagger:' ./../docs/proto/proto.md > ./../docs/proto/tmp-proto.md && mv ./../docs/proto/tmp-proto.md ./../docs/proto/proto.md
 	
-	go generate ./sdk/...
+	go generate ./...
 
 all-test: unit-test ## Run all tests
 

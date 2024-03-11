@@ -1,3 +1,7 @@
+include Makefile.containers
+include Makefile.tools
+include Makefile.packaging
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Variable Definitions                                                                                            #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -7,6 +11,16 @@ ifeq ($(VERSION),)
 endif
 COMMIT = $(shell git rev-parse --short HEAD)
 DATE = $(shell date +%F_%H-%M-%S)
+
+GOCMD   = go
+GOBUILD = $(GOCMD) build
+GOTEST  = $(GOCMD) test
+GOTOOL  = $(GOCMD) tool
+GORUN   = ${GOCMD} run
+GOINST  = ${GOCMD} install
+GOGET   = ${GOCMD} get
+GOGEN   = ${GOCMD} generate
+GOVET   = ${GOCMD} vet
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # https://docs.nginx.com/nginx/releases/                                                                                          #
@@ -68,7 +82,6 @@ CERT_SERVER_INT_CN := server-int.local
 CERT_SERVER_EE_CN  := server-ee.local
 CERT_SERVER_DNS    := tls.example.com
 
-include Makefile.containers
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Developer Targets                                                                                               #
@@ -98,12 +111,12 @@ run-debug: ## Run code
 	./build/nginx-agent
 
 build: ## Build agent executable
-	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} go build -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent 
+	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} ${GOBUILD} -pgo=auto -ldflags=${LDFLAGS} -o ./build/nginx-agent 
 
 deps: ## Update dependencies in vendor folders
 	cd sdk && make generate
 	for dir in ${VENDOR_LOCATIONS}; do \
-		(cd "$$dir" && echo "Running vendor commands on $$dir" && go mod tidy && go mod vendor && cd "$$OLDPWD" || exit) \
+		(cd "$$dir" && echo "Running vendor commands on $$dir" && go mod tidy && GOWORK=off go mod vendor && cd "$$OLDPWD" || exit) \
 	done
 	go mod download
 	go work sync
@@ -113,38 +126,33 @@ no-local-changes:
 
 lint: ## Run linter
 	GOWORK=off go vet ./...
-	GOWORK=off go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2 run -c ./scripts/.golangci.yml
+	GOWORK=off $(GORUN) $(GOLANGCI_LINT) run -c ./scripts/.golangci.yml
 	cd sdk && make lint
 
 format: ## Format code
-	go run mvdan.cc/gofumpt -l -w .
+	$(GORUN) ${GOFUMPT} -l -w .
 	buf format -w ./sdk/proto/
 
-install-tools: ## Install dependencies in tools.go using vendored version see https://www.jvt.me/posts/2023/06/19/go-install-from-mod/
-	@echo "Installing Tools"
-	@grep _ ./scripts/tools.go | awk '{print $$2}' | xargs -tI % env GOBIN=$$(git rev-parse --show-toplevel)/bin GOWORK=off go install -mod=vendor %
-	@go run github.com/evilmartians/lefthook install pre-push
-
 generate-swagger: ## Generates swagger.json from source code
-	go run github.com/go-swagger/go-swagger/cmd/swagger generate spec -o ./docs/swagger.json --scan-models
+	$(GORUN) $(GO_SWAGGER) generate spec -o ./docs/swagger.json --scan-models
 
 launch-swagger-ui: generate-swagger ## Launch Swagger UI
-	go run github.com/go-swagger/go-swagger/cmd/swagger serve ./docs/swagger.json -F=swagger --port=8082 --no-open
+	$(GORUN) $(GO_SWAGGER) serve ./docs/swagger.json -F=swagger --port=8082 --no-open
 	
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Local Packaging                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 local-apk-package: ## Create local apk package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.apk;
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.apk;
 
 local-deb-package: ## Create local deb package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.deb;
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.deb;
 
 local-rpm-package: ## Create local rpm package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') go run github.com/goreleaser/nfpm/v2/cmd/nfpm pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
+	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
 
 local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=freebsd go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
@@ -153,8 +161,6 @@ local-txz-package: ## Create local txz package
 txz-packager-image: ## Builds txz packager container image
 	@echo Building Local Packager; \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
-
-include Makefile.packaging
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Testing                                                                                                         #
@@ -190,7 +196,7 @@ test-sdk: $(TEST_BUILD_DIR) ## Run sdk unit tests from root directory
 component-test: test-component-build test-component-run ## Run component tests
 
 test-component-build: ## Compile component tests
-	GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test ./test/component -c -o component.test
+	GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 ${GOTEST} ./test/component -c -o component.test
 
 test-container-component: ## Run integration tests in container
 	for container in ${$(CONTAINER_CLITOOL) ps -aqf "name=^nginx-agent_"}; do echo && $(CONTAINER_CLITOOL) ps -f "id=$$container" --format "{{.Image}}" && $(CONTAINER_CLITOOL) exec $$container ./tmp/component.test -test.v; done
@@ -205,22 +211,22 @@ performance-test: ## Run performance tests
 integration-test:
 	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-		go test -v ./test/integration/install
+		${GOTEST} -v ./test/integration/install
 	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-		go test -v ./test/integration/api
+		${GOTEST} -v ./test/integration/api
 	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 		OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-		go test -v ./test/integration/features
+		${GOTEST} -v ./test/integration/features
 	PACKAGES_REPO=${OSS_PACKAGES_REPO} INSTALL_FROM_REPO=${INSTALL_FROM_REPO} PACKAGE_NAME=${PACKAGE_NAME} BASE_IMAGE=${BASE_IMAGE} \
 	    OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
-		go test -v ./test/integration/grpc
+		${GOTEST} -v ./test/integration/grpc
 
 test-bench: ## Run benchmark tests
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 go test -mod=vendor -count 5 -timeout 2m -bench=. -benchmem environment_test.go	
+	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
+	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
+	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
+	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem environment_test.go	
 
 benchmark-image: ## Build benchmark test container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build --no-cache -t nginx-agent-benchmark:1.0.0 \
@@ -276,14 +282,14 @@ image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and ng
 oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
-	--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
-	--target install-agent-local \
-	--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
-	--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
-	--build-arg BASE_IMAGE=${BASE_IMAGE} \
-	--build-arg OS_RELEASE=${OS_RELEASE} \
-	--build-arg OS_VERSION=${OS_VERSION} \
-	--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
+		--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
+		--target install-agent-local \
+		--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
+		--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
+		--build-arg BASE_IMAGE=${BASE_IMAGE} \
+		--build-arg OS_RELEASE=${OS_RELEASE} \
+		--build-arg OS_VERSION=${OS_VERSION} \
+		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG
 	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \
