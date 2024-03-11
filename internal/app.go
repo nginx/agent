@@ -45,7 +45,7 @@ func (a *App) Run() error {
 
 		agentConfig := config.GetConfig()
 
-		slogger := logger.New(agentConfig.Log)
+		slogger := logger.New(*agentConfig.Log)
 		slog.SetDefault(slogger)
 
 		slog.Info("Starting NGINX Agent")

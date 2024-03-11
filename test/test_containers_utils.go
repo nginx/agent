@@ -8,10 +8,12 @@ package test
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"testing"
 
 	"github.com/docker/docker/api/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -19,12 +21,12 @@ import (
 
 const configFilePermissions = 0o700
 
-//nolint:ireturn
+// nolint: ireturn
 func StartContainer(
 	ctx context.Context,
 	tb testing.TB,
 	containerNetwork *testcontainers.DockerNetwork,
-	waitForLog, nginxConfigPath string,
+	nginxConfigPath, nginxAgentConfigPath string,
 ) testcontainers.Container {
 	tb.Helper()
 
@@ -55,7 +57,7 @@ func StartContainer(
 			},
 		},
 		ExposedPorts: []string{"9091/tcp"},
-		WaitingFor:   wait.ForLog(waitForLog),
+		WaitingFor:   wait.ForLog("Processes updated"),
 		Networks: []string{
 			containerNetwork.Name,
 		},
@@ -66,7 +68,7 @@ func StartContainer(
 		},
 		Files: []testcontainers.ContainerFile{
 			{
-				HostFilePath:      "./nginx-agent.conf",
+				HostFilePath:      nginxAgentConfigPath,
 				ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
 				FileMode:          configFilePermissions,
 			},
@@ -88,8 +90,8 @@ func StartContainer(
 	return container
 }
 
-//nolint:ireturn
-func StartMockManagementPlaneContainer(
+// nolint: ireturn
+func StartMockManagementPlaneHTTPContainer(
 	ctx context.Context,
 	tb testing.TB,
 	containerNetwork *testcontainers.DockerNetwork,
@@ -100,7 +102,7 @@ func StartMockManagementPlaneContainer(
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:       "../../",
-			Dockerfile:    "./test/mock/Dockerfile",
+			Dockerfile:    "./test/mock/http/Dockerfile",
 			KeepImage:     false,
 			PrintBuildLog: true,
 		},
@@ -116,10 +118,47 @@ func StartMockManagementPlaneContainer(
 		Files: []testcontainers.ContainerFile{
 			{
 				HostFilePath:      nginxConfigPath,
-				ContainerFilePath: "/mock-management-plane/config/etc/nginx/nginx.conf",
+				ContainerFilePath: "/mock-management-plane-http/config/etc/nginx/nginx.conf",
 				FileMode:          configFilePermissions,
 			},
 		},
+	}
+
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+
+	require.NoError(tb, err)
+
+	return container
+}
+
+// nolint: ireturn
+func StartMockManagementPlaneGrpcContainer(
+	ctx context.Context,
+	tb testing.TB,
+	containerNetwork *testcontainers.DockerNetwork,
+) testcontainers.Container {
+	tb.Helper()
+
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:       "../../",
+			Dockerfile:    "./test/mock/grpc/Dockerfile",
+			KeepImage:     false,
+			PrintBuildLog: true,
+		},
+		ExposedPorts: []string{"9092/tcp", "9093/tcp"},
+		Networks: []string{
+			containerNetwork.Name,
+		},
+		NetworkAliases: map[string][]string{
+			containerNetwork.Name: {
+				"managementPlane",
+			},
+		},
+		WaitingFor: wait.ForLog("gRPC server running"),
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -144,4 +183,41 @@ func getEnv(tb testing.TB, envKey string) string {
 	require.NotEmptyf(tb, envValue, "Environment variable %s should not be empty", envKey)
 
 	return envValue
+}
+
+func LogAndTerminateContainers(
+	ctx context.Context,
+	tb testing.TB,
+	mockManagementPlaneContainer testcontainers.Container,
+	agentContainer testcontainers.Container,
+) {
+	tb.Helper()
+
+	tb.Log("Logging mock management container logs")
+
+	logReader, err := mockManagementPlaneContainer.Logs(ctx)
+	require.NoError(tb, err)
+
+	buf, err := io.ReadAll(logReader)
+	require.NoError(tb, err)
+	logs := string(buf)
+
+	tb.Log(logs)
+
+	err = mockManagementPlaneContainer.Terminate(ctx)
+	require.NoError(tb, err)
+
+	tb.Log("Logging nginx agent container logs")
+	logReader, err = agentContainer.Logs(ctx)
+	require.NoError(tb, err)
+
+	buf, err = io.ReadAll(logReader)
+	require.NoError(tb, err)
+	logs = string(buf)
+
+	tb.Log(logs)
+	assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
+
+	err = agentContainer.Terminate(ctx)
+	require.NoError(tb, err)
 }

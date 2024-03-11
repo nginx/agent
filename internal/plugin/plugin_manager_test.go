@@ -21,8 +21,12 @@ func TestLoadPLugins(t *testing.T) {
 		expected []bus.Plugin
 	}{
 		{
-			name:  "Only process manager plugin enabled",
-			input: &config.Config{},
+			name: "Only process manager plugin enabled",
+			input: &config.Config{
+				ProcessMonitor: &config.ProcessMonitor{
+					MonitoringFrequency: 500,
+				},
+			},
 			expected: []bus.Plugin{
 				&ProcessMonitor{},
 				&Instance{},
@@ -31,14 +35,28 @@ func TestLoadPLugins(t *testing.T) {
 		}, {
 			name: "DataPlane API plugin enabled",
 			input: &config.Config{
-				DataPlaneAPI: config.DataPlaneAPI{
+				DataPlaneAPI: &config.DataPlaneAPI{
 					Host: "localhost",
 					Port: 8080,
 				},
 			},
 			expected: []bus.Plugin{
-				&ProcessMonitor{},
 				&Instance{},
+				&Config{},
+				&DataPlaneServer{},
+			},
+		}, {
+			name: "Metrics plugin enabled",
+			input: &config.Config{
+				DataPlaneAPI: &config.DataPlaneAPI{
+					Host: "localhost",
+					Port: 8080,
+				},
+				Metrics: &config.Metrics{},
+			},
+			expected: []bus.Plugin{
+				&Instance{},
+				&Metrics{},
 				&Config{},
 				&DataPlaneServer{},
 			},
@@ -47,6 +65,7 @@ func TestLoadPLugins(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
+			t.Logf("running test %s", test.name)
 			result := LoadPlugins(test.input, slog.New(&slog.TextHandler{}))
 			assert.Equal(tt, len(test.expected), len(result))
 			for i, expectedPlugin := range test.expected {

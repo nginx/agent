@@ -12,6 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/model/modelfakes"
+
+	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/metrics/source/prometheus"
@@ -64,18 +68,133 @@ func TestMetrics_Subscriptions(t *testing.T) {
 	assert.Equal(t, []string{bus.OsProcessesTopic, bus.MetricsTopic}, subscriptions)
 }
 
-func TestMetrics_Process(t *testing.T) {
+func TestMetrics_ProcessMessage(t *testing.T) {
 	metrics, err := NewMetrics(testConfig(t))
 	require.NoError(t, err)
 
-	// Payload is ignored.
-	metrics.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: struct {
+	dataPoint := model.DataPoint{
+		Name:   "value1",
+		Labels: make(map[string]string),
+		Value:  2,
+	}
+
+	invalidData := struct {
 		valueOne string
 		valueTwo string
-	}{"one", "two"}})
+	}{
+		"one", "two",
+	}
 
-	// Currently doesn't do anything.
-	require.NoError(t, err)
+	dataEntry := model.DataEntry{
+		Name:        "Test1",
+		Type:        model.Counter,
+		SourceType:  model.Prometheus,
+		Description: "testing",
+		Values: []model.DataPoint{
+			dataPoint,
+		},
+	}
+
+	tests := []struct {
+		name        string
+		topic       string
+		data        bus.Payload
+		expectError error
+	}{
+		{
+			name:  "cant_cast_data",
+			topic: bus.MetricsTopic,
+			data:  invalidData,
+			expectError: fmt.Errorf("metrics plugin received metrics event but could not cast it to correct "+
+				"type: %v", invalidData),
+		},
+		{
+			name:  "no_exporter",
+			topic: bus.MetricsTopic,
+			data:  dataEntry,
+			expectError: fmt.Errorf("metrics plugin received metrics event but source type had no exporter"+
+				": %v", dataEntry.SourceType),
+		},
+		{
+			name:        "exporter",
+			topic:       bus.MetricsTopic,
+			data:        dataEntry,
+			expectError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			exporter := modelfakes.FakeExporter{}
+			exporter.ExportReturns(nil)
+			if test.name == "exporter" {
+				metrics.exporters[model.OTel] = &exporter
+			}
+
+			err = metrics.processMessage(&bus.Message{Topic: test.topic, Data: test.data})
+
+			assert.Equal(t, test.expectError, err)
+		})
+	}
+}
+
+func TestMetrics_CallProduce(t *testing.T) {
+	dataPoint := model.DataPoint{
+		Name:   "value1",
+		Labels: make(map[string]string),
+		Value:  2,
+	}
+	dataEntry := model.DataEntry{
+		Name:        "Test1",
+		Type:        model.Counter,
+		SourceType:  model.Prometheus,
+		Description: "testing",
+		Values: []model.DataPoint{
+			dataPoint,
+		},
+	}
+
+	tests := []struct {
+		name                   string
+		entries                []model.DataEntry
+		expectedFailedAttempts int
+		expectedNumMessage     int
+		expectedProduceError   error
+	}{
+		{
+			name:                   "failed_to_call_producer",
+			entries:                nil,
+			expectedFailedAttempts: 1,
+			expectedNumMessage:     0,
+			expectedProduceError:   fmt.Errorf("produce error"),
+		},
+		{
+			name: "successfully_called_producer",
+			entries: []model.DataEntry{
+				dataEntry,
+			},
+			expectedProduceError:   nil,
+			expectedNumMessage:     1,
+			expectedFailedAttempts: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			messagePipe := bus.FakeMessagePipe{}
+			metrics, err := NewMetrics(testConfig(t))
+			metrics.pipe = &messagePipe
+			require.NoError(t, err)
+
+			producer := modelfakes.FakeMetricsProducer{}
+
+			producer.ProduceReturns(test.entries, test.expectedProduceError)
+			failedAttempts := metrics.callProduce(context.TODO(), &producer, 0)
+
+			assert.Len(t, messagePipe.GetMessages(), test.expectedNumMessage)
+			assert.Equal(t, test.expectedFailedAttempts, failedAttempts)
+		})
+	}
 }
 
 func TestMetrics_Errors(t *testing.T) {

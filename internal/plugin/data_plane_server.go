@@ -55,7 +55,13 @@ func (dps *DataPlaneServer) Init(messagePipe bus.MessagePipeInterface) error {
 	return nil
 }
 
-func (*DataPlaneServer) Close() error { return nil }
+func (dps *DataPlaneServer) Close() error {
+	if dps.server != nil {
+		dps.server.Close()
+	}
+
+	return nil
+}
 
 func (*DataPlaneServer) Info() *bus.Info {
 	return &bus.Info{
@@ -235,10 +241,10 @@ func mapStatusEnums(typeString string) *dataplane.StatusState {
 	return toPtr(dataplane.INPROGRESS)
 }
 
-func convertConfigStatus(statuses []*instances.ConfigurationStatus) *[]dataplane.Events {
-	dataplaneStatuses := []dataplane.Events{}
+func convertConfigStatus(statuses []*instances.ConfigurationStatus) *[]dataplane.Event {
+	dataplaneStatuses := []dataplane.Event{}
 	for _, status := range statuses {
-		dataplaneStatus := dataplane.Events{
+		dataplaneStatus := dataplane.Event{
 			Timestamp: toPtr(status.GetTimestamp().AsTime()),
 			Message:   &status.Message,
 			Status:    mapStatusEnums(status.GetStatus().String()),

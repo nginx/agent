@@ -1,0 +1,42 @@
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
+syntax = "proto3";
+package mpi.v1;
+
+option go_package = "mpi/v1";
+
+import "google/protobuf/timestamp.proto";
+
+// Meta-information associated with a message
+message MessageMeta {
+    // uuid v7 monotonically increasing string
+    string message_id = 1;
+    // if 2 or more messages associated with the same workflow, use this field as an association
+    string correlation_id = 2;
+    // timestamp for human readable timestamp in UTC format
+    google.protobuf.Timestamp timestamp = 3;
+}
+
+// Represents a the status response of an command
+message CommandResponse {
+    // Command status enum
+    enum CommandStatus {
+        // Unspecified status of command
+        COMMAND_STATUS_UNSPECIFIED = 0;
+        // Command was successful
+        COMMAND_STATUS_OK = 1;
+        // Command failed
+        COMMAND_STATUS_ERROR = 2;
+        // Command in-progress
+        COMMAND_STATUS_IN_PROGRESS = 3;
+    }
+
+    // Command status
+    CommandStatus status = 1;
+    // Provides a user friendly message to describe the response
+    string message = 2;
+    // Provides an error message of why the command failed, only populated when CommandStatus is COMMAND_STATUS_ERROR
+    string error = 3;
+}

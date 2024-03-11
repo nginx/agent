@@ -52,9 +52,9 @@ type Configuration struct {
 
 // ConfigurationStatus defines model for ConfigurationStatus.
 type ConfigurationStatus struct {
-	CorrelationId *string   `json:"correlationId,omitempty"`
-	Events        *[]Events `json:"events,omitempty"`
-	InstanceId    *string   `json:"instanceId,omitempty"`
+	CorrelationId *string  `json:"correlationId,omitempty"`
+	Events        *[]Event `json:"events,omitempty"`
+	InstanceId    *string  `json:"instanceId,omitempty"`
 }
 
 // CorrelationId defines model for CorrelationId.
@@ -67,8 +67,8 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-// Events defines model for Events.
-type Events struct {
+// Event defines model for Event.
+type Event struct {
 	Message *string `json:"message,omitempty"`
 
 	// Status The type of configuration status

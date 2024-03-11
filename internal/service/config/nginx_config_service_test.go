@@ -50,17 +50,16 @@ func TestNginx_ParseConfig(t *testing.T) {
 	ltsvAccessLog := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "ltsv_access.log")
 	defer helpers.RemoveFileWithErrorCheck(t, ltsvAccessLog.Name())
 
-	content, err := testconfig.GetNginxConfigWithMultipleAccessLogs(
+	content := testconfig.GetNginxConfigWithMultipleAccessLogs(
 		errorLog.Name(),
 		accessLog.Name(),
 		combinedAccessLog.Name(),
 		ltsvAccessLog.Name(),
 	)
-	require.NoError(t, err)
 
 	data := []byte(content)
 
-	err = os.WriteFile(file.Name(), data, 0o600)
+	err := os.WriteFile(file.Name(), data, 0o600)
 	require.NoError(t, err)
 
 	expectedConfigContext := &model.NginxConfigContext{
@@ -107,7 +106,11 @@ func TestNginx_ParseConfig(t *testing.T) {
 		},
 	}
 
-	nginxConfig := NewNginx(instance, &config.Config{})
+	nginxConfig := NewNginx(instance, &config.Config{
+		Client: &config.Client{
+			Timeout: 5 * time.Second,
+		},
+	})
 	result, err := nginxConfig.ParseConfig()
 
 	require.NoError(t, err)
@@ -233,11 +236,14 @@ func TestNginx_Apply(t *testing.T) {
 			nginxConfig := NewNginx(
 				instance,
 				&config.Config{
-					DataPlaneConfig: config.DataPlaneConfig{
-						Nginx: config.NginxDataPlaneConfig{
+					DataPlaneConfig: &config.DataPlaneConfig{
+						Nginx: &config.NginxDataPlaneConfig{
 							TreatWarningsAsError:   true,
 							ReloadMonitoringPeriod: 400 * time.Millisecond,
 						},
+					},
+					Client: &config.Client{
+						Timeout: 5 * time.Second,
 					},
 				},
 			)
@@ -308,7 +314,11 @@ func TestNginx_Validate(t *testing.T) {
 					},
 				},
 			}
-			nginxConfig := NewNginx(instance, &config.Config{})
+			nginxConfig := NewNginx(instance, &config.Config{
+				Client: &config.Client{
+					Timeout: 5 * time.Second,
+				},
+			})
 			nginxConfig.executor = mockExec
 
 			err := nginxConfig.Validate()

@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package mock
+package http
 
 import (
 	"log/slog"
@@ -129,10 +129,10 @@ func (ms *ManagementServer) GetInstanceFile(
 }
 
 func (ms *ManagementServer) StartServer(listener net.Listener) {
-	slog.Info("Starting mock management plane server", "address", listener.Addr().String())
+	slog.Info("Starting mock management plane HTTP server", "address", listener.Addr().String())
 	err := ms.server.RunListener(listener)
 	if err != nil {
-		slog.Error("Startup of mock management plane server failed", "error", err)
+		slog.Error("Startup of mock management plane HTTP server failed", "error", err)
 	}
 }
 

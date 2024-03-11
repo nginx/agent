@@ -9,6 +9,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
+
+	helpers "github.com/nginx/agent/v3/test"
 
 	"github.com/nginx/agent/v3/internal/config"
 	configfakes2 "github.com/nginx/agent/v3/internal/datasource/config/configfakes"
@@ -20,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const instanceID = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
+const instanceID = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
 
 func TestConfigService_SetConfigContext(t *testing.T) {
 	expectedConfigContext := &model.NginxConfigContext{
@@ -32,76 +35,75 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 		Type:       instances.Type_NGINX,
 	}
 
-	configService := NewConfigService(instance, &config.Config{})
+	configService := NewConfigService(instance, &config.Config{
+		Client: &config.Client{
+			Timeout: 5 * time.Second,
+		},
+	})
 	configService.SetConfigContext(expectedConfigContext)
 
 	assert.Equal(t, expectedConfigContext, configService.configContext)
 }
 
 func TestUpdateInstanceConfiguration(t *testing.T) {
-	instanceID := "ae6c58c1-bc92-30c1-a9c9-85591422068e"
 	correlationID := "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 	ctx := context.TODO()
 	instance := instances.Instance{
 		InstanceId: instanceID,
 		Type:       instances.Type_NGINX,
 	}
-	agentConfig := config.Config{}
+	agentConfig := &config.Config{
+		Client: &config.Client{
+			Timeout: 5 * time.Second,
+		},
+	}
 
 	tests := []struct {
 		name        string
 		writeErr    error
 		validateErr error
-		reloadErr   error
+		applyErr    error
+		completeErr error
 		expected    *instances.ConfigurationStatus
 	}{
 		{
 			name:        "write fails",
 			writeErr:    fmt.Errorf("error writing config"),
 			validateErr: nil,
-			reloadErr:   nil,
-			expected: &instances.ConfigurationStatus{
-				InstanceId:    instanceID,
-				CorrelationId: correlationID,
-				Status:        instances.Status_FAILED,
-				Message:       "error writing config",
-			},
+			applyErr:    nil,
+			completeErr: nil,
+			expected:    helpers.CreateFailStatus("error writing config"),
 		},
 		{
 			name:        "validate fails",
 			writeErr:    nil,
 			validateErr: fmt.Errorf("error validating config"),
-			reloadErr:   nil,
-			expected: &instances.ConfigurationStatus{
-				InstanceId:    instanceID,
-				CorrelationId: correlationID,
-				Status:        instances.Status_FAILED,
-				Message:       "error validating config",
-			},
+			applyErr:    nil,
+			completeErr: nil,
+			expected:    helpers.CreateFailStatus("error validating config"),
 		},
 		{
-			name:        "reload fails",
+			name:        "apply fails",
 			writeErr:    nil,
 			validateErr: nil,
-			reloadErr:   fmt.Errorf("error reloading config"),
-			expected: &instances.ConfigurationStatus{
-				InstanceId:    instanceID,
-				CorrelationId: correlationID,
-				Status:        instances.Status_FAILED,
-				Message:       "error reloading config",
-			},
+			applyErr:    fmt.Errorf("error reloading config"),
+			completeErr: nil,
+			expected:    helpers.CreateFailStatus("error reloading config"),
+		},
+		{
+			name:        "complete fails",
+			writeErr:    nil,
+			validateErr: nil,
+			applyErr:    nil,
+			completeErr: fmt.Errorf("error completing config apply"),
+			expected:    helpers.CreateSuccessStatus(),
 		},
 		{
 			name:        "success",
 			writeErr:    nil,
 			validateErr: nil,
-			reloadErr:   nil,
-			expected: &instances.ConfigurationStatus{
-				InstanceId:    instanceID,
-				CorrelationId: correlationID,
-				Status:        instances.Status_SUCCESS,
-				Message:       "Config applied successfully",
-			},
+			applyErr:    nil,
+			expected:    helpers.CreateSuccessStatus(),
 		},
 	}
 	for _, test := range tests {
@@ -112,12 +114,13 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			mockService.SetConfigWriter(&mockConfigWriter)
 			mockConfigWriter.WriteReturns(nil, test.writeErr)
 			mockService.WriteReturns(nil, test.writeErr)
-			mockService.ApplyReturns(test.reloadErr)
+			mockService.ApplyReturns(test.applyErr)
 			mockService.ValidateReturns(test.validateErr)
+			mockService.CompleteReturns(test.completeErr)
 
 			filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
-			cs := NewConfigService(&instance, &agentConfig)
+			cs := NewConfigService(&instance, agentConfig)
 			cs.configService = &mockService
 			_, result := cs.UpdateInstanceConfiguration(ctx, correlationID, filesURL)
 
@@ -138,7 +141,11 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 		Type:       instances.Type_NGINX,
 	}
 
-	configService := NewConfigService(instance, &config.Config{})
+	configService := NewConfigService(instance, &config.Config{
+		Client: &config.Client{
+			Timeout: 5 * time.Second,
+		},
+	})
 
 	fakeDataPlaneConfig := &configfakes.FakeDataPlaneConfig{}
 	fakeDataPlaneConfig.ParseConfigReturns(expectedConfigContext, nil)

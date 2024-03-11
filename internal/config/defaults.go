@@ -14,4 +14,13 @@ const (
 	DefOTelGRPCConnTimeout          = 10 * time.Second
 	DefOTelGRPCMinConnTimeout       = 5 * time.Second
 	DefOTelGRPCMBackoffDelay        = 240 * time.Second
+
+	DefCommandServerHostKey    = ""
+	DefCommandServerPortKey    = 0
+	DefCommandServerTypeKey    = "grpc"
+	DefCommandAuthTokenKey     = ""
+	DefCommandTLSCertKey       = ""
+	DefCommandTLSKeyKey        = ""
+	DefCommandTLSCaKey         = ""
+	DefCommandTLSSkipVerifyKey = false
 )
