@@ -22,11 +22,12 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDataPlaneServer_Init(t *testing.T) {
-	agentConfig := getAgentConfig()
+	agentConfig := types.GetAgentConfig()
 	agentConfig.DataPlaneAPI.Port = 1230
 
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
@@ -47,7 +48,7 @@ func TestDataPlaneServer_Init(t *testing.T) {
 }
 
 func TestDataPlaneServer_Process(t *testing.T) {
-	agentConfig := getAgentConfig()
+	agentConfig := types.GetAgentConfig()
 	agentConfig.DataPlaneAPI.Port = 1231
 
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
@@ -112,7 +113,7 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 		Version:    "1.23.1",
 	}
 
-	agentConfig := getAgentConfig()
+	agentConfig := types.GetAgentConfig()
 	agentConfig.DataPlaneAPI.Port = 1232
 
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
@@ -159,7 +160,7 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	data := []byte(`{"location": "http://file-server.com"}`)
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 
-	agentConfig := getAgentConfig()
+	agentConfig := types.GetAgentConfig()
 	agentConfig.DataPlaneAPI.Port = 1233
 
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
@@ -295,7 +296,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	}
 
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
-	agentConfig := getAgentConfig()
+	agentConfig := types.GetAgentConfig()
 	agentConfig.DataPlaneAPI.Port = 1234
 
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())

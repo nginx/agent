@@ -18,8 +18,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/nginx/agent/v3/api/http/dataplane"
-	"github.com/nginx/agent/v3/test"
 	"github.com/nginx/agent/v3/test/config"
+	"github.com/nginx/agent/v3/test/helpers"
 
 	mockHttp "github.com/nginx/agent/v3/test/mock/http"
 	"github.com/stretchr/testify/assert"
@@ -43,14 +43,14 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 
 	configDir := tb.TempDir()
 	dir := filepath.Join(configDir, "/etc/nginx/")
-	test.CreateDirWithErrorCheck(tb, dir)
+	helpers.CreateDirWithErrorCheck(tb, dir)
 
 	content := config.GetNginxConfWithTestLocation()
 
 	nginxConfigFilePath := filepath.Join(dir, "nginx.conf")
 	err := os.WriteFile(nginxConfigFilePath, []byte(content), 0o600)
 	require.NoError(tb, err)
-	defer test.RemoveFileWithErrorCheck(tb, nginxConfigFilePath)
+	defer helpers.RemoveFileWithErrorCheck(tb, nginxConfigFilePath)
 
 	if os.Getenv("TEST_ENV") == "Container" {
 		tb.Log("Running tests in a container environment")
@@ -65,7 +65,7 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 			require.NoError(tb, containerNetwork.Remove(ctx))
 		})
 
-		mockManagementPlaneContainer = test.StartMockManagementPlaneHTTPContainer(
+		mockManagementPlaneContainer = helpers.StartMockManagementPlaneHTTPContainer(
 			ctx,
 			tb,
 			containerNetwork,
@@ -75,7 +75,7 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 		mockManagementPlaneAddress = "managementPlane:9092"
 		tb.Logf("Mock management server running on %s", mockManagementPlaneAddress)
 
-		container = test.StartContainer(
+		container = helpers.StartContainer(
 			ctx,
 			tb,
 			containerNetwork,
@@ -110,7 +110,7 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 		tb.Helper()
 
 		if os.Getenv("TEST_ENV") == "Container" {
-			test.LogAndTerminateContainers(ctx, tb, mockManagementPlaneContainer, container)
+			helpers.LogAndTerminateContainers(ctx, tb, mockManagementPlaneContainer, container)
 		}
 	}
 }
@@ -153,7 +153,7 @@ func TestDataplaneAPI_UpdateInstances(t *testing.T) {
 	defer teardownTest(t)
 
 	body := &dataplane.UpdateInstanceConfigurationJSONRequestBody{
-		Location: test.ToPtr(fmt.Sprintf("http://%s/api/v1", mockManagementPlaneAddress)),
+		Location: helpers.ToPtr(fmt.Sprintf("http://%s/api/v1", mockManagementPlaneAddress)),
 	}
 
 	client := resty.New()
@@ -185,12 +185,12 @@ ConfigStatus:
 			t.Log(*event.Message)
 			if *event.Status != dataplane.INPROGRESS {
 				assert.Equal(t, "Config applied successfully", *event.Message)
-				assert.Equal(t, test.ToPtr(dataplane.SUCCESS), event.Status)
+				assert.Equal(t, helpers.ToPtr(dataplane.SUCCESS), event.Status)
 
 				break ConfigStatus
 			}
 			assert.Equal(t, "Instance configuration update in progress", *event.Message)
-			assert.Equal(t, test.ToPtr(dataplane.INPROGRESS), event.Status)
+			assert.Equal(t, helpers.ToPtr(dataplane.INPROGRESS), event.Status)
 		}
 
 		time.Sleep(time.Second)

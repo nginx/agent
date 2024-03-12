@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	helpers "github.com/nginx/agent/v3/test"
+	"github.com/nginx/agent/v3/test/helpers"
 
 	"github.com/nginx/agent/v3/internal/config"
 

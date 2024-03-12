@@ -165,7 +165,7 @@ func (m *Metrics) createExporters(ctx context.Context) error {
 
 	if _, ok := m.exporters[model.OTel]; !ok {
 		exporter, err := export.NewOTelExporter(
-			ctx, m.conf, model.Prometheus.String(), id.String(), prometheus.ConvertPrometheus,
+			ctx, &m.conf, model.Prometheus.String(), id.String(), prometheus.ConvertPrometheus,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to create OTel exporter: %w", err)
