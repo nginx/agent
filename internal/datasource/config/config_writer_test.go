@@ -245,7 +245,7 @@ func TestComplete(t *testing.T) {
 	configWriter.currentFileCache, err = protos.GetFileCache(testConf, metricsConf)
 	require.NoError(t, err)
 
-	helpers.CreateCacheFiles(t, cachePath, cacheData)
+	protos.CreateCacheFiles(t, cachePath, cacheData)
 
 	err = configWriter.Complete()
 	require.NoError(t, err)
