@@ -28,7 +28,7 @@ func TestUpdateCache(t *testing.T) {
 
 	cacheData := CacheContent{}
 
-	protos.CreateCacheFiles(t, cacheFile.Name(), cacheData)
+	helpers.CreateCacheFiles(t, cacheFile.Name(), cacheData)
 
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
@@ -77,7 +77,7 @@ func TestReadCache(t *testing.T) {
 	cacheData, err := protos.GetFileCache(testConf, nginxConf, metricsConf)
 	require.NoError(t, err)
 
-	protos.CreateCacheFiles(t, cachePath, cacheData)
+	helpers.CreateCacheFiles(t, cachePath, cacheData)
 
 	tests := []struct {
 		name            string

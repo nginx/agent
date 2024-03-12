@@ -6,39 +6,16 @@
 package protos
 
 import (
-	"encoding/json"
 	"os"
-	"path"
-	"path/filepath"
-	"testing"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/test/helpers"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"github.com/stretchr/testify/require"
 )
 
 const (
 	instanceID    = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
 	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 )
-
-func CreateCacheFiles(t testing.TB, cachePath string, cacheData map[string]*instances.File) {
-	t.Helper()
-	cache, err := json.MarshalIndent(cacheData, "", "  ")
-	require.NoError(t, err)
-
-	err = os.MkdirAll(path.Dir(cachePath), os.ModePerm)
-	require.NoError(t, err)
-
-	for _, file := range cacheData {
-		helpers.CreateFileWithErrorCheck(t, filepath.Dir(file.GetPath()), filepath.Base(file.GetPath()))
-	}
-
-	err = os.WriteFile(cachePath, cache, os.ModePerm)
-	require.NoError(t, err)
-}
 
 func CreateInProgressStatus() *instances.ConfigurationStatus {
 	return &instances.ConfigurationStatus{
