@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/model/modelfakes"
+	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/nginx/agent/v3/internal/model"
 
@@ -35,7 +36,7 @@ func TestMetrics_Init(t *testing.T) {
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
 	scraper := prometheus.NewScraper([]string{fakePrometheus.URL})
 
-	metrics, err := NewMetrics(testConfig(t), WithDataSource(scraper))
+	metrics, err := NewMetrics(types.GetAgentConfig(), WithDataSource(scraper))
 	require.NoError(t, err)
 
 	err = messagePipe.Register(100, []bus.Plugin{metrics})
@@ -51,7 +52,7 @@ func TestMetrics_Init(t *testing.T) {
 }
 
 func TestMetrics_Info(t *testing.T) {
-	metrics, err := NewMetrics(testConfig(t))
+	metrics, err := NewMetrics(types.GetAgentConfig())
 	require.NoError(t, err)
 
 	i := metrics.Info()
@@ -61,7 +62,7 @@ func TestMetrics_Info(t *testing.T) {
 }
 
 func TestMetrics_Subscriptions(t *testing.T) {
-	metrics, err := NewMetrics(testConfig(t))
+	metrics, err := NewMetrics(types.GetAgentConfig())
 	require.NoError(t, err)
 
 	subscriptions := metrics.Subscriptions()
@@ -69,7 +70,7 @@ func TestMetrics_Subscriptions(t *testing.T) {
 }
 
 func TestMetrics_ProcessMessage(t *testing.T) {
-	metrics, err := NewMetrics(testConfig(t))
+	metrics, err := NewMetrics(types.GetAgentConfig())
 	require.NoError(t, err)
 
 	dataPoint := model.DataPoint{
@@ -182,7 +183,7 @@ func TestMetrics_CallProduce(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			messagePipe := bus.FakeMessagePipe{}
-			metrics, err := NewMetrics(testConfig(t))
+			metrics, err := NewMetrics(types.GetAgentConfig())
 			metrics.pipe = &messagePipe
 			require.NoError(t, err)
 
@@ -200,13 +201,13 @@ func TestMetrics_CallProduce(t *testing.T) {
 func TestMetrics_Errors(t *testing.T) {
 	testCases := []struct {
 		name        string
-		confModFunc func(config.Config) config.Config
+		confModFunc func(*config.Config) *config.Config
 		isErr       bool
 		expErr      string
 	}{
 		{
 			name: "nil-metrics-configuration",
-			confModFunc: func(c config.Config) config.Config {
+			confModFunc: func(c *config.Config) *config.Config {
 				c.Metrics = nil
 
 				return c
@@ -216,7 +217,7 @@ func TestMetrics_Errors(t *testing.T) {
 		},
 		{
 			name: "negative-produce-interval",
-			confModFunc: func(c config.Config) config.Config {
+			confModFunc: func(c *config.Config) *config.Config {
 				c.Metrics.ProduceInterval = -1
 
 				return c
@@ -227,7 +228,7 @@ func TestMetrics_Errors(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(tt *testing.T) {
-			c := test.confModFunc(testConfig(tt))
+			c := test.confModFunc(types.GetAgentConfig())
 
 			metrics, err := NewMetrics(c)
 			if test.isErr {
@@ -241,7 +242,7 @@ func TestMetrics_Errors(t *testing.T) {
 		})
 	}
 
-	metrics, err := NewMetrics(testConfig(t))
+	metrics, err := NewMetrics(types.GetAgentConfig())
 	require.NoError(t, err)
 
 	// Payload is ignored.
@@ -252,28 +253,4 @@ func TestMetrics_Errors(t *testing.T) {
 
 	// Currently doesn't do anything.
 	require.NoError(t, err)
-}
-
-func testConfig(t *testing.T) config.Config {
-	t.Helper()
-	return config.Config{
-		Version: "0.1",
-		Metrics: &config.Metrics{
-			ProduceInterval: 5 * time.Second,
-			OTelExporter: &config.OTelExporter{
-				BufferLength:     10,
-				ExportRetryCount: 3,
-				ExportInterval:   5 * time.Second,
-				GRPC: &config.GRPC{
-					Target:         "dummy-target",
-					ConnTimeout:    10 * time.Second,
-					MinConnTimeout: 7 * time.Second,
-					BackoffDelay:   240 * time.Second,
-				},
-			},
-			PrometheusSource: &config.PrometheusSource{
-				Endpoints: []string{},
-			},
-		},
-	}
 }

@@ -43,7 +43,7 @@ type OTelExporter struct {
 }
 
 // NewGRPCExporter returns a OTel export that transmits via gRPC.
-func NewGRPCExporter(ctx context.Context, conf config.GRPC) (*otlpmetricgrpc.Exporter, error) {
+func NewGRPCExporter(ctx context.Context, conf *config.GRPC) (*otlpmetricgrpc.Exporter, error) {
 	ctx, cancel := context.WithTimeout(ctx, conf.ConnTimeout)
 	defer cancel()
 	// Exponential back-off strategy.
@@ -236,5 +236,5 @@ func initGPRCExporter(ctx context.Context, conf *config.Metrics) (*otlpmetricgrp
 		return nil, fmt.Errorf("gRPC configuration missing")
 	}
 
-	return NewGRPCExporter(ctx, *conf.OTelExporter.GRPC)
+	return NewGRPCExporter(ctx, conf.OTelExporter.GRPC)
 }

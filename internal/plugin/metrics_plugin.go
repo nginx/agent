@@ -26,16 +26,15 @@ const (
 )
 
 type (
-	shutdownFunc func()
-
 	// The Metrics plugin. Discovers and owns the data source that produce metrics for the Agent.
 	Metrics struct {
 		producers       map[model.MetricsSourceType]model.MetricsProducer
 		exporters       map[model.ExporterType]model.Exporter
-		conf            config.Config
+		config          *config.Config
 		pipe            bus.MessagePipeInterface
+		shutdownFuncs   []*context.CancelFunc
 		collectInterval time.Duration
-		shutdownFuncs   []shutdownFunc
+		metricsTimer    *time.Ticker
 	}
 
 	// MetricsOption a functional option for `*Metrics`.
@@ -43,12 +42,12 @@ type (
 )
 
 // NewMetrics is the constructor for the Metrics plugin.
-func NewMetrics(c config.Config, options ...MetricsOption) (*Metrics, error) {
-	if c.Metrics == nil {
+func NewMetrics(conf *config.Config, options ...MetricsOption) (*Metrics, error) {
+	if conf.Metrics == nil {
 		return nil, fmt.Errorf("metrics configuration cannot be nil")
 	}
 
-	produceInterval := c.Metrics.ProduceInterval
+	produceInterval := conf.Metrics.ProduceInterval
 	if produceInterval <= 0 {
 		slog.Warn("Invalid metrics produce interval configured: using default",
 			"configured", produceInterval, "default", config.DefMetricsProduceInterval,
@@ -56,30 +55,31 @@ func NewMetrics(c config.Config, options ...MetricsOption) (*Metrics, error) {
 		produceInterval = config.DefMetricsProduceInterval
 	}
 
-	m := Metrics{
+	metrics := Metrics{
 		producers:       make(map[model.MetricsSourceType]model.MetricsProducer),
 		exporters:       make(map[model.ExporterType]model.Exporter),
-		conf:            c,
+		config:          conf,
 		pipe:            nil,
 		collectInterval: produceInterval,
-		shutdownFuncs:   make([]shutdownFunc, 0),
+		shutdownFuncs:   make([]*context.CancelFunc, 0),
+		metricsTimer:    nil,
 	}
 
 	for _, opt := range options {
-		err := opt(&m)
+		err := opt(&metrics)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply metrics plugin option: %w", err)
 		}
 	}
 
-	return &m, nil
+	return &metrics, nil
 }
 
 // Init initializes and starts the plugin. Required for the `Plugin` interface.
 func (m *Metrics) Init(mp bus.MessagePipeInterface) error {
 	m.pipe = mp
 	ctx, cancel := context.WithCancel(mp.Context())
-	m.shutdownFuncs = append(m.shutdownFuncs, shutdownFunc(cancel))
+	m.shutdownFuncs = append(m.shutdownFuncs, &cancel)
 
 	m.discoverSources()
 
@@ -107,9 +107,13 @@ func (m *Metrics) Info() *bus.Info {
 
 // Close about the plugin. Required for the `Plugin` interface.
 func (m *Metrics) Close() error {
-	for _, shutdown := range m.shutdownFuncs {
-		shutdown()
+	for _, shutdownFunc := range m.shutdownFuncs {
+		(*shutdownFunc)()
 	}
+
+	m.shutdownFuncs = nil
+	m.producers = nil
+	m.exporters = nil
 
 	return nil
 }
@@ -138,20 +142,20 @@ func (m *Metrics) Subscriptions() []string {
 // Dynamically populates `MetricsProducer`s.
 func (m *Metrics) discoverSources() {
 	// Initialize the first time only if the Prometheus config section is configured.
-	if m.conf.Metrics.PrometheusSource == nil {
+	if m.config.Metrics.PrometheusSource == nil {
 		slog.Debug("Prometheus metrics source not configured: skipping initialization")
 		return
 	}
 
 	if _, ok := m.producers[model.Prometheus]; !ok {
-		m.producers[model.Prometheus] = prometheus.NewScraper(m.conf.Metrics.PrometheusSource.Endpoints)
+		m.producers[model.Prometheus] = prometheus.NewScraper(m.config.Metrics.PrometheusSource.Endpoints)
 	} else {
 		slog.Debug("Prometheus metrics source already initialized")
 	}
 }
 
 func (m *Metrics) createExporters(ctx context.Context) error {
-	if m.conf.Metrics.OTelExporter == nil {
+	if m.config.Metrics.OTelExporter == nil {
 		slog.Debug("OTel exporter not configured: skipping exporter instantiation")
 		return nil
 	}
@@ -165,7 +169,7 @@ func (m *Metrics) createExporters(ctx context.Context) error {
 
 	if _, ok := m.exporters[model.OTel]; !ok {
 		exporter, err := export.NewOTelExporter(
-			ctx, &m.conf, model.Prometheus.String(), id.String(), prometheus.ConvertPrometheus,
+			ctx, m.config, model.Prometheus.String(), id.String(), prometheus.ConvertPrometheus,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to create OTel exporter: %w", err)
@@ -186,12 +190,14 @@ func (m *Metrics) startExporters(ctx context.Context) {
 
 // Produces metrics from the MetricsProducer at the configured interval and pushes to the given channel.
 func (m *Metrics) runProducer(ctx context.Context, producer model.MetricsProducer) {
-	t := time.NewTicker(m.collectInterval)
+	m.metricsTimer = time.NewTicker(m.collectInterval)
+
+	defer m.metricsTimer.Stop()
 
 	failedAttempts := 0
 	for failedAttempts != maxProducerRetries {
 		select {
-		case <-t.C:
+		case <-m.metricsTimer.C:
 			failedAttempts = m.callProduce(ctx, producer, failedAttempts)
 		case <-ctx.Done():
 			slog.Info("MetricsProducer stopped", "producer_type", producer.Type().String())

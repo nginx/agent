@@ -23,6 +23,7 @@ type ProcessMonitor struct {
 	processes           []*model.Process
 	messagePipe         bus.MessagePipeInterface
 	getProcessesFunc    GetProcessesFunc
+	processTicker       *time.Ticker
 }
 
 func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
@@ -30,6 +31,7 @@ func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
 		monitoringFrequency: agentConfig.ProcessMonitor.MonitoringFrequency,
 		processes:           []*model.Process{},
 		getProcessesFunc:    host.GetProcesses,
+		processTicker:       nil,
 	}
 }
 
@@ -40,7 +42,11 @@ func (pm *ProcessMonitor) Init(messagePipe bus.MessagePipeInterface) error {
 	return nil
 }
 
-func (*ProcessMonitor) Close() error { return nil }
+func (pm *ProcessMonitor) Close() error {
+	pm.processes = nil
+
+	return nil
+}
 
 func (*ProcessMonitor) Info() *bus.Info {
 	return &bus.Info{
@@ -65,13 +71,14 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 
 	slog.Debug("Processes updated")
 
-	ticker := time.NewTicker(pm.monitoringFrequency)
+	pm.processTicker = time.NewTicker(pm.monitoringFrequency)
+	defer pm.processTicker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
+		case <-pm.processTicker.C:
 			processes, err := pm.getProcessesFunc()
 			if err != nil {
 				slog.Error("Unable to get process information", "error", err)
