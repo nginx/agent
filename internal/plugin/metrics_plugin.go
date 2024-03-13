@@ -192,6 +192,7 @@ func (m *Metrics) startExporters(ctx context.Context) {
 func (m *Metrics) runProducer(ctx context.Context, producer model.MetricsProducer) {
 	m.metricsTimer = time.NewTicker(m.collectInterval)
 
+	// this should get moved to the individual producers destruction function
 	defer m.metricsTimer.Stop()
 
 	failedAttempts := 0

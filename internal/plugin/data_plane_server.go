@@ -11,9 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"os/signal"
 	"strconv"
-	"syscall"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -113,7 +111,7 @@ func (*DataPlaneServer) Subscriptions() []string {
 
 func (dps *DataPlaneServer) run(ctx context.Context) {
 	var serverCtx context.Context
-	serverCtx, dps.cncl = signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	serverCtx, dps.cncl = context.WithCancel(ctx)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
