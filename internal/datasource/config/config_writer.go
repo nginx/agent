@@ -113,28 +113,26 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 		currentFileCache[fileData.GetPath()] = fileData
 	}
 
-	if cacheContent != nil {
-		cw.removeFiles(currentFileCache, cacheContent)
-	}
-
 	cw.currentFileCache = currentFileCache
+
+	if cacheContent != nil {
+		err = cw.removeFiles(currentFileCache, cacheContent)
+	}
 
 	return skippedFiles, err
 }
 
-func (cw *ConfigWriter) removeFiles(currentFileCache, fileCache CacheContent) {
+func (cw *ConfigWriter) removeFiles(currentFileCache, fileCache CacheContent) error {
 	for _, file := range fileCache {
-		_, ok := currentFileCache[file.GetPath()]
-		if !ok {
+		if _, ok := currentFileCache[file.GetPath()]; !ok {
 			slog.Debug("removing file", "file_path", file.GetPath())
-			err := os.Remove(file.GetPath())
-			if err != nil {
-				slog.Error("error removing file: ", "err", err)
+			if err := os.Remove(file.GetPath()); err != nil {
+				return fmt.Errorf("error removing file: %s error: %w", file.GetPath(), err)
 			}
-
-			continue
 		}
 	}
+
+	return nil
 }
 
 func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID, instanceID string,
