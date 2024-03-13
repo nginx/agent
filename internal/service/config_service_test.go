@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -69,7 +69,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			validateErr: nil,
 			applyErr:    nil,
 			completeErr: nil,
-			expected:    helpers.CreateFailStatus("error writing config"),
+			expected:    protos.CreateFailStatus("error writing config"),
 		},
 		{
 			name:        "validate fails",
@@ -77,7 +77,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			validateErr: fmt.Errorf("error validating config"),
 			applyErr:    nil,
 			completeErr: nil,
-			expected:    helpers.CreateFailStatus("error validating config"),
+			expected:    protos.CreateFailStatus("error validating config"),
 		},
 		{
 			name:        "apply fails",
@@ -85,7 +85,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			validateErr: nil,
 			applyErr:    fmt.Errorf("error reloading config"),
 			completeErr: nil,
-			expected:    helpers.CreateFailStatus("error reloading config"),
+			expected:    protos.CreateFailStatus("error reloading config"),
 		},
 		{
 			name:        "complete fails",
@@ -93,14 +93,14 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			validateErr: nil,
 			applyErr:    nil,
 			completeErr: fmt.Errorf("error completing config apply"),
-			expected:    helpers.CreateSuccessStatus(),
+			expected:    protos.CreateSuccessStatus(),
 		},
 		{
 			name:        "success",
 			writeErr:    nil,
 			validateErr: nil,
 			applyErr:    nil,
-			expected:    helpers.CreateSuccessStatus(),
+			expected:    protos.CreateSuccessStatus(),
 		},
 	}
 	for _, test := range tests {
