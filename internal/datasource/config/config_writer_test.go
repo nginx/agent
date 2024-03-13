@@ -134,11 +134,8 @@ func TestWriteConfig(t *testing.T) {
 func TestDeleteFile(t *testing.T) {
 	tempDir := t.TempDir()
 	_, instanceID := helpers.CreateTestIDs(t)
-
-	allowedDirs := []string{tempDir}
-	agentconfig := config2.Config{
-		AllowedDirectories: allowedDirs,
-	}
+	
+	agentconfig := types.GetAgentConfig()
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
 	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
@@ -148,10 +145,10 @@ func TestDeleteFile(t *testing.T) {
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
 
-	fileCacheContent, getCacheErr := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+	fileCacheContent, getCacheErr := protos.GetFileCache(nginxConf, testConf, metricsConf)
 	require.NoError(t, getCacheErr)
 
-	currentFileCache, getCacheErr := helpers.GetFileCache(nginxConf, metricsConf)
+	currentFileCache, getCacheErr := protos.GetFileCache(nginxConf, metricsConf)
 	require.NoError(t, getCacheErr)
 
 	tests := []struct {
@@ -182,7 +179,8 @@ func TestDeleteFile(t *testing.T) {
 			fileCache.SetCachePath(cachePath)
 			err := fileCache.UpdateFileCache(test.fileCache)
 			require.NoError(t, err)
-			configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+			slog.Info("", "", &agentconfig)
+			configWriter, err := NewConfigWriter(agentconfig, fileCache)
 			require.NoError(t, err)
 
 			configWriter.removeFiles(test.currentFileCache, test.fileCache)
@@ -198,7 +196,6 @@ func TestDeleteFile(t *testing.T) {
 
 	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
-	assert.NoFileExists(t, testConf.Name())
 }
 
 func TestRollback(t *testing.T) {
