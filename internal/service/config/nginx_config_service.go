@@ -315,12 +315,12 @@ func getAccessLog(file, format string, formatMap map[string]string) *model.Acces
 		accessLog.Permissions = host.GetPermissions(info.Mode())
 	}
 
-	accessLog = Test(format, formatMap, accessLog)
+	accessLog = updateLogFormat(format, formatMap, accessLog)
 
 	return accessLog
 }
 
-func Test(format string, formatMap map[string]string, accessLog *model.AccessLog) *model.AccessLog {
+func updateLogFormat(format string, formatMap map[string]string, accessLog *model.AccessLog) *model.AccessLog {
 	if formatMap[format] != "" {
 		accessLog.Format = formatMap[format]
 	} else if format == "" || format == "combined" {

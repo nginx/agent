@@ -10,17 +10,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nginx/agent/v3/test/protos"
-
-	"github.com/nginx/agent/v3/internal/config"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
-	"github.com/stretchr/testify/assert"
+	"github.com/nginx/agent/v3/test/protos"
 )
 
 const (
