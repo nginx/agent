@@ -441,12 +441,13 @@ func TestNetworks(t *testing.T) {
 }
 
 func TestVirtualization(t *testing.T) {
+	env := EnvironmentType{}
 	// Test normal VM
 	virtualizationFunc = func(ctx context.Context) (string, string, error) {
 		return "LXC", "host", nil
 	}
 
-	virtualizationSystem, virtualizationRole := virtualization()
+	virtualizationSystem, virtualizationRole := env.virtualization()
 
 	assert.Equal(t, "LXC", virtualizationSystem)
 	assert.Equal(t, "host", virtualizationRole)
@@ -456,14 +457,15 @@ func TestVirtualization(t *testing.T) {
 		return "docker", "host", nil
 	}
 
-	virtualizationSystem, virtualizationRole = virtualization()
+	virtualizationSystem, virtualizationRole = env.virtualization()
 
 	assert.Equal(t, "container", virtualizationSystem)
 	assert.Equal(t, "host", virtualizationRole)
 }
 
 func TestProcessors(t *testing.T) {
-	processorInfo := processors("arm64")
+	env := EnvironmentType{}
+	processorInfo := env.processors("arm64")
 	// at least one network interface
 	assert.GreaterOrEqual(t, processorInfo[0].GetCpus(), int32(1))
 	// non empty architecture

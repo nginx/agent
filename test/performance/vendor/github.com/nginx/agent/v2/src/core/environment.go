@@ -152,7 +152,7 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			Uname:               getUnixName(),
 			Partitons:           disks,
 			Network:             env.networks(),
-			Processor:           processors(hostInformation.KernelArch),
+			Processor:           env.processors(hostInformation.KernelArch),
 			Release:             releaseInfo("/etc/os-release"),
 			Tags:                *tags,
 			AgentAccessibleDirs: configDirs,
@@ -729,7 +729,7 @@ func callSyscall(mib []int32) ([]byte, uint64, error) {
 	return buf, length, nil
 }
 
-func processors(architecture string) (res []*proto.CpuInfo) {
+func (env *EnvironmentType) processors(architecture string) (res []*proto.CpuInfo) {
 	log.Debug("Reading CPU information for dataplane host")
 	cpus, err := cpu.Info()
 	if err != nil {
@@ -737,7 +737,7 @@ func processors(architecture string) (res []*proto.CpuInfo) {
 		return []*proto.CpuInfo{}
 	}
 
-	hypervisor, virtual := virtualization()
+	hypervisor, virtual := env.virtualization()
 
 	for _, item := range cpus {
 		processor := proto.CpuInfo{
@@ -858,7 +858,7 @@ func formatBytes(bytes int) string {
 	}
 }
 
-func virtualization() (string, string) {
+func (env *EnvironmentType) virtualization() (string, string) {
 	ctx := context.Background()
 	defer ctx.Done()
 	// doesn't check k8s
@@ -868,10 +868,41 @@ func virtualization() (string, string) {
 		return "", "host"
 	}
 
-	if virtualizationSystem == "docker" {
+	if virtualizationSystem == "docker" || env.IsContainer() {
+		log.Debugf("Virtualization detected as container with role %v", virtualizationRole)
 		return "container", virtualizationRole
 	}
+	log.Debugf("Virtualization detected as %v with role %v", virtualizationSystem, virtualizationRole)
 	return virtualizationSystem, virtualizationRole
+}
+
+func isContainer() bool {
+	const (
+		dockerEnv      = "/.dockerenv"
+		containerEnv   = "/run/.containerenv"
+		selfCgroup     = "/proc/self/cgroup"
+		k8sServiceAcct = "/var/run/secrets/kubernetes.io/serviceaccount"
+	)
+
+	res, err, _ := singleflightGroup.Do(IsContainerKey, func() (interface{}, error) {
+		for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
+			if _, err := os.Stat(filename); err == nil {
+				log.Debugf("Is a container because (%s) exists", filename)
+				return true, nil
+			}
+		}
+		// v1 check
+		if result, err := cGroupV1Check(selfCgroup); err == nil && result {
+			return result, err
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		log.Warnf("Unable to retrieve values from cache (%v)", err)
+	}
+
+	return res.(bool)
 }
 
 func releaseInfo(osReleaseFile string) (release *proto.ReleaseInfo) {
