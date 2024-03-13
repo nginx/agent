@@ -109,26 +109,22 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 		}
 		slog.Debug("Updating file, latest version not on disk", "file_path", fileData.GetPath())
 		updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID)
-		currentFileCache[fileData.GetPath()] = fileData
 		if updateErr != nil {
 			return nil, updateErr
 		}
+		currentFileCache[fileData.GetPath()] = fileData
 	}
 
-	err = cw.removeFiles(currentFileCache)
-	if err != nil {
-		slog.Debug("error removing files: ", "err", err)
+	if cacheContent != nil {
+		cw.removeFiles(currentFileCache, cacheContent)
 	}
+
 	cw.currentFileCache = currentFileCache
 
 	return skippedFiles, err
 }
 
-func (cw *ConfigWriter) removeFiles(currentFileCache CacheContent) error {
-	fileCache, err := cw.fileCache.ReadFileCache()
-	if err != nil {
-		return err
-	}
+func (cw *ConfigWriter) removeFiles(currentFileCache, fileCache CacheContent) {
 	for _, file := range fileCache {
 		_, ok := currentFileCache[file.GetPath()]
 		if !ok {
@@ -141,8 +137,6 @@ func (cw *ConfigWriter) removeFiles(currentFileCache CacheContent) error {
 			continue
 		}
 	}
-
-	return nil
 }
 
 func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID, instanceID string,

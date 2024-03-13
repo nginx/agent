@@ -186,8 +186,7 @@ func TestDeleteFile(t *testing.T) {
 			configWriter, err := NewConfigWriter(&agentconfig, fileCache)
 			require.NoError(t, err)
 
-			err = configWriter.removeFiles(test.currentFileCache)
-			require.NoError(t, err)
+			configWriter.removeFiles(test.currentFileCache, test.fileCache)
 
 			if test.fileDeleted {
 				assert.NoFileExists(t, testConf.Name())
