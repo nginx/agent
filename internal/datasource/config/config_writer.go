@@ -86,8 +86,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	tenantID, instanceID string,
 ) (skippedFiles CacheContent, err error) {
 	slog.Debug("Write nginx config", "files_url", filesURL)
-	currentFileCache := make(CacheContent)
-	skippedFiles = CacheContent{}
+	currentFileCache, skippedFiles := make(CacheContent), make(CacheContent)
 
 	cacheContent, err := cw.fileCache.ReadFileCache()
 	if err != nil {
@@ -100,7 +99,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	}
 
 	for _, fileData := range filesMetaData.GetFiles() {
-		if !doesFileRequireUpdate(cacheContent, fileData) {
+		if cacheContent != nil && !doesFileRequireUpdate(cacheContent, fileData) {
 			slog.Debug("Skipping file as latest version is already on disk", "file_path", fileData.GetPath())
 			currentFileCache[fileData.GetPath()] = cacheContent[fileData.GetPath()]
 			skippedFiles[fileData.GetPath()] = fileData
@@ -108,8 +107,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 			continue
 		}
 		slog.Debug("Updating file, latest version not on disk", "file_path", fileData.GetPath())
-		updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID)
-		if updateErr != nil {
+		if updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID); updateErr != nil {
 			return nil, updateErr
 		}
 		currentFileCache[fileData.GetPath()] = fileData
@@ -221,9 +219,6 @@ func (cw *ConfigWriter) isFilePathValid(filePath string) (validPath bool) {
 }
 
 func doesFileRequireUpdate(fileCache CacheContent, fileData *instances.File) (updateRequired bool) {
-	if fileCache == nil {
-		return true
-	}
 	if len(fileCache) > 0 {
 		fileOnSystem, ok := fileCache[fileData.GetPath()]
 		if !ok {
