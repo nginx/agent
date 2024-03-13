@@ -32,7 +32,7 @@ type (
 		exporters       map[model.ExporterType]model.Exporter
 		config          *config.Config
 		pipe            bus.MessagePipeInterface
-		shutdownFuncs   []*context.CancelFunc
+		shutdownFuncs   []context.CancelFunc
 		collectInterval time.Duration
 		metricsTimer    *time.Ticker
 	}
@@ -61,7 +61,7 @@ func NewMetrics(conf *config.Config, options ...MetricsOption) (*Metrics, error)
 		config:          conf,
 		pipe:            nil,
 		collectInterval: produceInterval,
-		shutdownFuncs:   make([]*context.CancelFunc, 0),
+		shutdownFuncs:   make([]context.CancelFunc, 0),
 		metricsTimer:    nil,
 	}
 
@@ -79,7 +79,7 @@ func NewMetrics(conf *config.Config, options ...MetricsOption) (*Metrics, error)
 func (m *Metrics) Init(mp bus.MessagePipeInterface) error {
 	m.pipe = mp
 	ctx, cancel := context.WithCancel(mp.Context())
-	m.shutdownFuncs = append(m.shutdownFuncs, &cancel)
+	m.shutdownFuncs = append(m.shutdownFuncs, cancel)
 
 	m.discoverSources()
 
@@ -108,7 +108,7 @@ func (m *Metrics) Info() *bus.Info {
 // Close about the plugin. Required for the `Plugin` interface.
 func (m *Metrics) Close() error {
 	for _, shutdownFunc := range m.shutdownFuncs {
-		(*shutdownFunc)()
+		shutdownFunc()
 	}
 
 	m.shutdownFuncs = nil
