@@ -134,7 +134,7 @@ func TestWriteConfig(t *testing.T) {
 func TestDeleteFile(t *testing.T) {
 	tempDir := t.TempDir()
 	_, instanceID := helpers.CreateTestIDs(t)
-	
+
 	agentconfig := types.GetAgentConfig()
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
