@@ -3,77 +3,19 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package test
+package protos
 
 import (
-	"encoding/json"
 	"os"
-	"path"
-	"path/filepath"
-	"testing"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"github.com/google/uuid"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
-
-	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
-	filePermission = 0o700
-	instanceID     = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
-	correlationID  = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
+	instanceID    = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 )
-
-func CreateDirWithErrorCheck(t testing.TB, dirName string) {
-	t.Helper()
-	err := os.MkdirAll(dirName, filePermission)
-	require.NoError(t, err)
-}
-
-func CreateFileWithErrorCheck(t testing.TB, dir, fileName string) *os.File {
-	t.Helper()
-
-	testConf, err := os.CreateTemp(dir, fileName)
-	require.NoError(t, err)
-
-	return testConf
-}
-
-func CreateCacheFiles(t testing.TB, cachePath string, cacheData map[string]*instances.File) {
-	t.Helper()
-	cache, err := json.MarshalIndent(cacheData, "", "  ")
-	require.NoError(t, err)
-
-	err = os.MkdirAll(path.Dir(cachePath), os.ModePerm)
-	require.NoError(t, err)
-
-	for _, file := range cacheData {
-		CreateFileWithErrorCheck(t, filepath.Dir(file.GetPath()), filepath.Base(file.GetPath()))
-	}
-
-	err = os.WriteFile(cachePath, cache, os.ModePerm)
-	require.NoError(t, err)
-}
-
-func RemoveFileWithErrorCheck(t testing.TB, fileName string) {
-	t.Helper()
-	err := os.Remove(fileName)
-	require.NoError(t, err)
-}
-
-func CreateTestIDs(t testing.TB) (uuid.UUID, uuid.UUID) {
-	t.Helper()
-	tenantID, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
-	require.NoError(t, err)
-
-	instanceID, err := uuid.Parse(instanceID)
-	require.NoError(t, err)
-
-	return tenantID, instanceID
-}
 
 func CreateInProgressStatus() *instances.ConfigurationStatus {
 	return &instances.ConfigurationStatus{
@@ -131,5 +73,50 @@ func CreateRollbackInProgressStatus() *instances.ConfigurationStatus {
 		Status:        instances.Status_ROLLBACK_IN_PROGRESS,
 		Timestamp:     timestamppb.Now(),
 		Message:       "Rollback in progress",
+	}
+}
+
+func GetFileCache(files ...*os.File) (map[string]*instances.File, error) {
+	cache := make(map[string]*instances.File)
+	for _, file := range files {
+		lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")
+		if err != nil {
+			return nil, err
+		}
+
+		cache[file.Name()] = &instances.File{
+			LastModified: lastModified,
+			Path:         file.Name(),
+			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
+		}
+	}
+
+	return cache, nil
+}
+
+func GetFiles(files ...*os.File) (*instances.Files, error) {
+	instanceFiles := &instances.Files{}
+
+	for _, file := range files {
+		lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")
+		if err != nil {
+			return nil, err
+		}
+		instanceFiles.Files = append(instanceFiles.GetFiles(), &instances.File{
+			LastModified: lastModified,
+			Path:         file.Name(),
+			Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
+		})
+	}
+
+	return instanceFiles, nil
+}
+
+func GetFileDownloadResponse(filePath, instanceID string, content []byte) *instances.FileDownloadResponse {
+	return &instances.FileDownloadResponse{
+		Encoded:     true,
+		FilePath:    filePath,
+		InstanceId:  instanceID,
+		FileContent: content,
 	}
 }

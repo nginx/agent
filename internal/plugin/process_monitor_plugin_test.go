@@ -13,19 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/internal/bus"
-	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestProcessMonitor_Init(t *testing.T) {
 	testProcesses := []*model.Process{{Pid: 123, Name: "nginx"}}
 
-	processMonitor := NewProcessMonitor(&config.Config{
-		ProcessMonitor: config.ProcessMonitor{
-			MonitoringFrequency: time.Millisecond,
-		},
-	})
+	processMonitor := NewProcessMonitor(types.GetAgentConfig())
 
 	processMonitor.getProcessesFunc = func() ([]*model.Process, error) {
 		return testProcesses, nil
@@ -43,13 +39,13 @@ func TestProcessMonitor_Init(t *testing.T) {
 }
 
 func TestProcessMonitor_Info(t *testing.T) {
-	processMonitor := NewProcessMonitor(&config.Config{})
+	processMonitor := NewProcessMonitor(types.GetAgentConfig())
 	info := processMonitor.Info()
 	assert.Equal(t, "process-monitor", info.Name)
 }
 
 func TestProcessMonitor_Subscriptions(t *testing.T) {
-	processMonitor := NewProcessMonitor(&config.Config{})
+	processMonitor := NewProcessMonitor(types.GetAgentConfig())
 	subscriptions := processMonitor.Subscriptions()
 	assert.Equal(t, []string{}, subscriptions)
 }

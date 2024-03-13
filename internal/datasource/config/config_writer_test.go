@@ -13,9 +13,9 @@ import (
 	"reflect"
 	"testing"
 
-	helpers "github.com/nginx/agent/v3/test"
-
-	config2 "github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -30,9 +30,8 @@ func TestWriteConfig(t *testing.T) {
 	tenantID, instanceID := helpers.CreateTestIDs(t)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	allowedDirs := []string{tempDir}
-	agentconfig := config2.Config{
-		AllowedDirectories: allowedDirs,
-	}
+	agentConfig := types.GetAgentConfig()
+	agentConfig.AllowedDirectories = allowedDirs
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
 	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
@@ -45,7 +44,7 @@ func TestWriteConfig(t *testing.T) {
 	testConfPath := testConf.Name()
 	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
-	files, err := helpers.GetFiles(nginxConf, testConf, metricsConf)
+	files, err := protos.GetFiles(nginxConf, testConf, metricsConf)
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -59,7 +58,7 @@ func TestWriteConfig(t *testing.T) {
 		{
 			name:               "file needs updating",
 			metaDataReturn:     files,
-			getFileReturn:      helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
+			getFileReturn:      protos.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
 			cacheShouldBeEqual: false,
 			fileShouldBeEqual:  true,
 			expSkippedCount:    2,
@@ -67,7 +66,7 @@ func TestWriteConfig(t *testing.T) {
 		{
 			name:               "file doesn't need updating",
 			metaDataReturn:     files,
-			getFileReturn:      helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
+			getFileReturn:      protos.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
 			cacheShouldBeEqual: true,
 			fileShouldBeEqual:  false,
 			expSkippedCount:    3,
@@ -82,7 +81,7 @@ func TestWriteConfig(t *testing.T) {
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
 
-			cacheContent, getCacheErr := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+			cacheContent, getCacheErr := protos.GetFileCache(nginxConf, testConf, metricsConf)
 			require.NoError(t, getCacheErr)
 
 			fileCache := NewFileCache(instanceID.String())
@@ -91,14 +90,14 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, err)
 
 			if !test.cacheShouldBeEqual {
-				modified, protoErr := helpers.CreateProtoTime("2024-01-09T13:20:26Z")
+				modified, protoErr := protos.CreateProtoTime("2024-01-09T13:20:26Z")
 				require.NoError(t, protoErr)
 				cacheContent[testConf.Name()].LastModified = modified
 				err = fileCache.UpdateFileCache(cacheContent)
 				require.NoError(t, err)
 			}
 
-			configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+			configWriter, err := NewConfigWriter(agentConfig, fileCache)
 			require.NoError(t, err)
 
 			configWriter.SetConfigClient(fakeConfigClient)
@@ -225,34 +224,33 @@ func TestRollback(t *testing.T) {
 	require.NoError(t, err)
 	assert.FileExists(t, testConf.Name())
 
-	files, err := helpers.GetFiles(nginxConf, testConf, metricsConf)
+	files, err := protos.GetFiles(nginxConf, testConf, metricsConf)
 	require.NoError(t, err)
 
-	cacheContent, getCacheErr := helpers.GetFileCache(nginxConf, testConf, metricsConf)
+	cacheContent, getCacheErr := protos.GetFileCache(nginxConf, testConf, metricsConf)
 	require.NoError(t, getCacheErr)
 
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 	fakeConfigClient.GetFilesMetadataReturns(files, nil)
 	resp := []byte("location /test {\n    return 200 \"Test changed\\n\";\n}")
-	fakeConfigClient.GetFileReturns(helpers.GetFileDownloadResponse(testConf.Name(), instanceID.String(), resp), nil)
+	fakeConfigClient.GetFileReturns(protos.GetFileDownloadResponse(testConf.Name(), instanceID.String(), resp), nil)
 
-	agentconfig := config2.Config{
-		AllowedDirectories: allowedDirs,
-	}
+	agentConfig := types.GetAgentConfig()
+	agentConfig.AllowedDirectories = allowedDirs
 
 	fileCache := NewFileCache(instanceID.String())
 	fileCache.SetCachePath(cachePath)
 	err = fileCache.UpdateFileCache(cacheContent)
 	require.NoError(t, err)
 
-	configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache)
 	require.NoError(t, err)
 	configWriter.SetConfigClient(fakeConfigClient)
 
-	fileTime1, err := helpers.CreateProtoTime("2024-01-08T14:22:21Z")
+	fileTime1, err := protos.CreateProtoTime("2024-01-08T14:22:21Z")
 	require.NoError(t, err)
 
-	fileTime2, err := helpers.CreateProtoTime("2024-01-08T13:22:23Z")
+	fileTime2, err := protos.CreateProtoTime("2024-01-08T13:22:23Z")
 	require.NoError(t, err)
 
 	skippedFiles := CacheContent{
@@ -296,16 +294,14 @@ func TestComplete(t *testing.T) {
 	cachePath := cacheFile.Name()
 
 	allowedDirs := []string{tempDir}
-
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 
 	fileCache := NewFileCache(instanceID.String())
-	agentconfig := config2.Config{
-		AllowedDirectories: allowedDirs,
-	}
+	agentConfig := types.GetAgentConfig()
+	agentConfig.AllowedDirectories = allowedDirs
 	fileCache.SetCachePath(cachePath)
 
-	configWriter, err := NewConfigWriter(&agentconfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache)
 	require.NoError(t, err)
 	configWriter.configClient = fakeConfigClient
 
@@ -313,10 +309,10 @@ func TestComplete(t *testing.T) {
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
 
-	cacheData, err := helpers.GetFileCache(testConf, nginxConf, metricsConf)
+	cacheData, err := protos.GetFileCache(testConf, nginxConf, metricsConf)
 	require.NoError(t, err)
 
-	configWriter.currentFileCache, err = helpers.GetFileCache(testConf, metricsConf)
+	configWriter.currentFileCache, err = protos.GetFileCache(testConf, metricsConf)
 	require.NoError(t, err)
 
 	helpers.CreateCacheFiles(t, cachePath, cacheData)
@@ -387,16 +383,13 @@ func TestIsFilePathValid(t *testing.T) {
 	}
 
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
-	allowedDirs := []string{"/tmp/"}
 	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 
 	fileCache := NewFileCache("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	fileCache.SetCachePath(cachePath)
-	agentConfig := config2.Config{
-		AllowedDirectories: allowedDirs,
-	}
+	agentConfig := types.GetAgentConfig()
 
-	configWriter, err := NewConfigWriter(&agentConfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache)
 	require.NoError(t, err)
 	configWriter.configClient = fakeConfigClient
 
@@ -409,10 +402,10 @@ func TestIsFilePathValid(t *testing.T) {
 }
 
 func TestDoesFileRequireUpdate(t *testing.T) {
-	fileTime1, err := helpers.CreateProtoTime("2024-01-08T14:22:21Z")
+	fileTime1, err := protos.CreateProtoTime("2024-01-08T14:22:21Z")
 	require.NoError(t, err)
 
-	fileTime2, err := helpers.CreateProtoTime("2024-01-08T13:22:23Z")
+	fileTime2, err := protos.CreateProtoTime("2024-01-08T13:22:23Z")
 	require.NoError(t, err)
 
 	previousFileCache := CacheContent{
@@ -428,7 +421,7 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 		},
 	}
 
-	updateTimeFile1, err := helpers.CreateProtoTime("2024-01-08T14:22:23Z")
+	updateTimeFile1, err := protos.CreateProtoTime("2024-01-08T14:22:23Z")
 	require.NoError(t, err)
 
 	tests := []struct {

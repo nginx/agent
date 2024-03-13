@@ -9,8 +9,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
-	helpers "github.com/nginx/agent/v3/test"
+	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/nginx/agent/v3/internal/config"
 	configfakes2 "github.com/nginx/agent/v3/internal/datasource/config/configfakes"
@@ -34,7 +36,11 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 		Type:       instances.Type_NGINX,
 	}
 
-	configService := NewConfigService(instance, &config.Config{})
+	configService := NewConfigService(instance, &config.Config{
+		Client: &config.Client{
+			Timeout: 5 * time.Second,
+		},
+	})
 	configService.SetConfigContext(expectedConfigContext)
 
 	assert.Equal(t, expectedConfigContext, configService.configContext)
@@ -47,7 +53,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 		InstanceId: instanceID,
 		Type:       instances.Type_NGINX,
 	}
-	agentConfig := config.Config{}
+	agentConfig := types.GetAgentConfig()
 
 	tests := []struct {
 		name        string
@@ -63,7 +69,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			validateErr: nil,
 			applyErr:    nil,
 			completeErr: nil,
-			expected:    helpers.CreateFailStatus("error writing config"),
+			expected:    protos.CreateFailStatus("error writing config"),
 		},
 		{
 			name:        "validate fails",
@@ -71,7 +77,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			validateErr: fmt.Errorf("error validating config"),
 			applyErr:    nil,
 			completeErr: nil,
-			expected:    helpers.CreateFailStatus("error validating config"),
+			expected:    protos.CreateFailStatus("error validating config"),
 		},
 		{
 			name:        "apply fails",
@@ -79,7 +85,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			validateErr: nil,
 			applyErr:    fmt.Errorf("error reloading config"),
 			completeErr: nil,
-			expected:    helpers.CreateFailStatus("error reloading config"),
+			expected:    protos.CreateFailStatus("error reloading config"),
 		},
 		{
 			name:        "complete fails",
@@ -87,14 +93,14 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			validateErr: nil,
 			applyErr:    nil,
 			completeErr: fmt.Errorf("error completing config apply"),
-			expected:    helpers.CreateSuccessStatus(),
+			expected:    protos.CreateSuccessStatus(),
 		},
 		{
 			name:        "success",
 			writeErr:    nil,
 			validateErr: nil,
 			applyErr:    nil,
-			expected:    helpers.CreateSuccessStatus(),
+			expected:    protos.CreateSuccessStatus(),
 		},
 	}
 	for _, test := range tests {
@@ -111,7 +117,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 
 			filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
-			cs := NewConfigService(&instance, &agentConfig)
+			cs := NewConfigService(&instance, agentConfig)
 			cs.configService = &mockService
 			_, result := cs.UpdateInstanceConfiguration(ctx, correlationID, filesURL)
 
@@ -132,7 +138,11 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 		Type:       instances.Type_NGINX,
 	}
 
-	configService := NewConfigService(instance, &config.Config{})
+	configService := NewConfigService(instance, &config.Config{
+		Client: &config.Client{
+			Timeout: 5 * time.Second,
+		},
+	})
 
 	fakeDataPlaneConfig := &configfakes.FakeDataPlaneConfig{}
 	fakeDataPlaneConfig.ParseConfigReturns(expectedConfigContext, nil)

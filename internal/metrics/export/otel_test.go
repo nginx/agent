@@ -23,6 +23,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/metrics/source/prometheus"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
@@ -100,7 +101,7 @@ func TestGRPCExporter_Constructor(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	exporter, err := NewGRPCExporter(ctx, *testConfig(t).Metrics.OTelExporter.GRPC)
+	exporter, err := NewGRPCExporter(ctx, *types.GetAgentConfig().Metrics.OTelExporter.GRPC)
 	require.NoError(t, err)
 	require.NotNil(t, exporter)
 }
@@ -125,9 +126,9 @@ func TestOTelExporter_Constructor(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	exporter, err := NewOTelExporter(ctx, testConfig(t), serviceName, id, converterFunc)
+	exporter, err := NewOTelExporter(ctx, types.GetAgentConfig(), serviceName, id, converterFunc)
 	require.NoError(t, err)
-	assert.Equal(t, testConfig(t), exporter.conf)
+	assert.Equal(t, types.GetAgentConfig(), exporter.conf)
 	assert.NotNil(t, exporter.intExp)
 	assert.NotNil(t, exporter.convert)
 	assert.NotNil(t, exporter.mut)
@@ -140,13 +141,13 @@ func TestOTelExporter_Constructor(t *testing.T) {
 	t.Run("misconfiguration-errors", func(tt *testing.T) {
 		testCases := []struct {
 			name        string
-			confModFunc func(config.Config) config.Config
+			confModFunc func(*config.Config) *config.Config
 			isErr       bool
 			expErr      string
 		}{
 			{
 				name: "nil-gRPC",
-				confModFunc: func(c config.Config) config.Config {
+				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics.OTelExporter.GRPC = nil
 
 					return c
@@ -156,7 +157,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 			},
 			{
 				name: "nil-OTel-exporter",
-				confModFunc: func(c config.Config) config.Config {
+				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics.OTelExporter = nil
 
 					return c
@@ -166,7 +167,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 			},
 			{
 				name: "nil-metrics",
-				confModFunc: func(c config.Config) config.Config {
+				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics = nil
 
 					return c
@@ -176,7 +177,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 			},
 			{
 				name: "negative-buffer-length",
-				confModFunc: func(c config.Config) config.Config {
+				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics.OTelExporter.BufferLength = -1
 
 					return c
@@ -185,7 +186,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 			},
 			{
 				name: "negative-retry-count",
-				confModFunc: func(c config.Config) config.Config {
+				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics.OTelExporter.ExportRetryCount = -1
 
 					return c
@@ -194,7 +195,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 			},
 			{
 				name: "negative-export-interval",
-				confModFunc: func(c config.Config) config.Config {
+				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics.OTelExporter.ExportInterval = -1
 
 					return c
@@ -205,7 +206,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 
 		for _, test := range testCases {
 			tt.Run(test.name, func(ttt *testing.T) {
-				c := test.confModFunc(testConfig(ttt))
+				c := test.confModFunc(types.GetAgentConfig())
 
 				exporter, err = NewOTelExporter(ctx, c, serviceName, id, converterFunc)
 				if test.isErr {
@@ -229,7 +230,7 @@ func TestOTelExporter_Sink(t *testing.T) {
 	serviceName := "agent-test"
 	converterFunc := prometheus.ConvertPrometheus
 
-	exporter, err := NewOTelExporter(ctx, testConfig(t), serviceName, id, converterFunc)
+	exporter, err := NewOTelExporter(ctx, types.GetAgentConfig(), serviceName, id, converterFunc)
 	require.NoError(t, err)
 
 	// Start listening for entries.
@@ -599,22 +600,8 @@ func TestOTelMetrics(t *testing.T) {
 	go startGRPCServer(t, opts, otelCollector)
 
 	// Populate only relevant configs.
-	c := config.Config{
-		Version: "v0.1",
-		Metrics: &config.Metrics{
-			OTelExporter: &config.OTelExporter{
-				BufferLength:     20,
-				ExportRetryCount: 3,
-				ExportInterval:   5 * time.Second,
-				GRPC: &config.GRPC{
-					Target:         grpcEndpoint,
-					ConnTimeout:    10 * time.Second,
-					MinConnTimeout: 5 * time.Second,
-					BackoffDelay:   240 * time.Second,
-				},
-			},
-		},
-	}
+	c := types.GetAgentConfig()
+	c.Metrics.OTelExporter.GRPC.Target = grpcEndpoint
 
 	id := "agent-unique-id"
 	expScope := &commonV1.InstrumentationScope{
@@ -749,28 +736,4 @@ func assertHistogramPoints(t *testing.T, expected, actuals []*metricsV1.Histogra
 
 func toPtr[T any](input T) *T {
 	return &input
-}
-
-func testConfig(t *testing.T) config.Config {
-	t.Helper()
-	return config.Config{
-		Version: "0.1",
-		Metrics: &config.Metrics{
-			ProduceInterval: 5 * time.Second,
-			OTelExporter: &config.OTelExporter{
-				BufferLength:     10,
-				ExportRetryCount: 3,
-				ExportInterval:   5 * time.Second,
-				GRPC: &config.GRPC{
-					Target:         "dummy-target",
-					ConnTimeout:    10 * time.Second,
-					MinConnTimeout: 7 * time.Second,
-					BackoffDelay:   240 * time.Second,
-				},
-			},
-			PrometheusSource: &config.PrometheusSource{
-				Endpoints: []string{},
-			},
-		},
-	}
 }

@@ -15,11 +15,28 @@ import (
 func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin {
 	plugins := make([]bus.Plugin, 0)
 
-	processMonitor := NewProcessMonitor(agentConfig)
-	instanceMonitor := NewInstance()
+	plugins = addProcessMonitor(agentConfig, plugins)
+	plugins = addInstanceMonitor(plugins)
 
 	configPlugin := NewConfig(agentConfig)
 
+	plugins = addMetrics(agentConfig, slogger, plugins)
+	plugins = append(plugins, configPlugin)
+
+	if isGrpcClientConfigured(agentConfig) {
+		grpcClient := NewGrpcClient(agentConfig)
+		plugins = append(plugins, grpcClient)
+	}
+
+	if agentConfig.DataPlaneAPI != nil && agentConfig.DataPlaneAPI.Host != "" && agentConfig.DataPlaneAPI.Port != 0 {
+		dataPlaneServer := NewDataPlaneServer(agentConfig, slogger)
+		plugins = append(plugins, dataPlaneServer)
+	}
+
+	return plugins
+}
+
+func addMetrics(agentConfig *config.Config, slogger *slog.Logger, plugins []bus.Plugin) []bus.Plugin {
 	if agentConfig.Metrics != nil {
 		metrics, err := NewMetrics(*agentConfig)
 		if err != nil {
@@ -29,12 +46,27 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 		}
 	}
 
-	plugins = append(plugins, processMonitor, instanceMonitor, configPlugin)
+	return plugins
+}
 
-	if agentConfig.DataPlaneAPI.Host != "" && agentConfig.DataPlaneAPI.Port != 0 {
-		dataPlaneServer := NewDataPlaneServer(agentConfig, slogger)
-		plugins = append(plugins, dataPlaneServer)
+func addInstanceMonitor(plugins []bus.Plugin) []bus.Plugin {
+	instanceMonitor := NewInstance()
+	plugins = append(plugins, instanceMonitor)
+
+	return plugins
+}
+
+func addProcessMonitor(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
+	if agentConfig.ProcessMonitor != nil && agentConfig.ProcessMonitor.MonitoringFrequency != 0 {
+		processMonitor := NewProcessMonitor(agentConfig)
+		plugins = append(plugins, processMonitor)
 	}
 
 	return plugins
+}
+
+func isGrpcClientConfigured(agentConfig *config.Config) bool {
+	return agentConfig.Command != nil &&
+		agentConfig.Command.Server != nil &&
+		agentConfig.Command.Server.Type == "grpc"
 }

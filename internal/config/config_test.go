@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	helpers "github.com/nginx/agent/v3/test"
+	"github.com/nginx/agent/v3/test/helpers"
 
 	"github.com/stretchr/testify/require"
 
@@ -277,4 +277,113 @@ func TestMissingOTelExporter(t *testing.T) {
 	assert.Equal(t, expInterval, result.ProduceInterval)
 	assert.Nil(t, result.OTelExporter)
 	assert.Equal(t, expPrometheusEndpoints, result.PrometheusSource.Endpoints)
+}
+
+func TestCommand(t *testing.T) {
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	expected := getAgentConfig().Command
+
+	// Server
+	viperInstance.Set(CommandServerHostKey, expected.Server.Host)
+	viperInstance.Set(CommandServerPortKey, expected.Server.Port)
+	viperInstance.Set(CommandServerTypeKey, expected.Server.Type)
+
+	// Auth
+	viperInstance.Set(CommandAuthTokenKey, expected.Auth.Token)
+
+	// TLS
+	viperInstance.Set(CommandTLSCertKey, expected.TLS.Cert)
+	viperInstance.Set(CommandTLSKeyKey, expected.TLS.Key)
+	viperInstance.Set(CommandTLSCaKey, expected.TLS.Ca)
+	viperInstance.Set(CommandTLSSkipVerifyKey, expected.TLS.SkipVerify)
+
+	// root keys for sections are set
+	assert.True(t, viperInstance.IsSet(CommandRootKey))
+	assert.True(t, viperInstance.IsSet(CommandServerKey))
+	assert.True(t, viperInstance.IsSet(CommandAuthKey))
+	assert.True(t, viperInstance.IsSet(CommandTLSKey))
+
+	result := getCommand()
+
+	assert.Equal(t, expected.Server, result.Server)
+	assert.Equal(t, expected.Auth, result.Auth)
+	assert.Equal(t, expected.TLS, result.TLS)
+}
+
+func TestMissingServerTLS(t *testing.T) {
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+
+	expected := getAgentConfig().Command
+	expected.TLS = nil
+
+	viperInstance.Set(CommandServerHostKey, expected.Server.Host)
+	viperInstance.Set(CommandServerPortKey, expected.Server.Port)
+	viperInstance.Set(CommandServerTypeKey, expected.Server.Type)
+	viperInstance.Set(CommandAuthTokenKey, expected.Auth.Token)
+
+	assert.True(t, viperInstance.IsSet(CommandRootKey))
+	assert.True(t, viperInstance.IsSet(CommandServerKey))
+	assert.True(t, viperInstance.IsSet(CommandAuthKey))
+	assert.False(t, viperInstance.IsSet(CommandTLSKey))
+
+	result := getCommand()
+	assert.Equal(t, expected.Server, result.Server)
+	assert.Equal(t, expected.Auth, result.Auth)
+	assert.Nil(t, result.TLS)
+}
+
+func getAgentConfig() *Config {
+	return &Config{
+		Version: "",
+		Path:    "",
+		Log:     &Log{},
+		ProcessMonitor: &ProcessMonitor{
+			MonitoringFrequency: time.Millisecond,
+		},
+		DataPlaneAPI: &DataPlaneAPI{
+			Host: "127.0.0.1",
+			Port: 8989,
+		},
+		Client: &Client{
+			Timeout: 5 * time.Second,
+		},
+		ConfigDir:          "",
+		AllowedDirectories: []string{},
+		Metrics: &Metrics{
+			ProduceInterval: 5 * time.Second,
+			OTelExporter: &OTelExporter{
+				BufferLength:     55,
+				ExportRetryCount: 10,
+				ExportInterval:   30 * time.Second,
+				GRPC: &GRPC{
+					Target:         "dummy-target",
+					ConnTimeout:    15 * time.Second,
+					MinConnTimeout: 500 * time.Millisecond,
+					BackoffDelay:   1 * time.Hour,
+				},
+			},
+			PrometheusSource: &PrometheusSource{
+				Endpoints: []string{
+					"https://example.com",
+					"https://acme.com",
+				},
+			},
+		},
+		Command: &Command{
+			Server: &ServerConfig{
+				Host: "127.0.0.1",
+				Port: 8888,
+				Type: "grpc",
+			},
+			Auth: &AuthConfig{
+				Token: "1234",
+			},
+			TLS: &TLSConfig{
+				Cert:       "some.cert",
+				Key:        "some.key",
+				Ca:         "some.ca",
+				SkipVerify: false,
+			},
+		},
+	}
 }

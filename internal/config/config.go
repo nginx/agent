@@ -67,6 +67,7 @@ func GetConfig() *Config {
 		ConfigDir:          getConfigDir(),
 		AllowedDirectories: []string{},
 		Metrics:            getMetrics(),
+		Command:            getCommand(),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDir, ":") {
@@ -166,6 +167,46 @@ func registerFlags() {
 	fs.StringArray(
 		PrometheusTargetsKey, []string{}, "The target URI(s) of Prometheus endpoint(s) for metrics collection.",
 	)
+	fs.String(
+		CommandServerHostKey,
+		DefCommandServerHostKey,
+		"The target hostname of the command server endpoint for command and control.",
+	)
+	fs.Int32(
+		CommandServerPortKey,
+		DefCommandServerPortKey,
+		"The target port of the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandServerTypeKey,
+		DefCommandServerTypeKey,
+		"The target protocol (gRPC or HTTP) the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandAuthTokenKey,
+		DefCommandAuthTokenKey,
+		"The token used in the authentication handshake with the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandTLSCertKey,
+		DefCommandTLSCertKey,
+		"The path to the certificate file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandTLSKeyKey,
+		DefCommandTLSKeyKey,
+		"The path to the certificate key file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandTLSCaKey,
+		DefCommandTLSCaKey,
+		"The path to CA certificate file to use for TLS communication with the command server.",
+	)
+	fs.Bool(
+		CommandTLSSkipVerifyKey,
+		DefCommandTLSSkipVerifyKey,
+		"Only intended for demonstration, sets InsecureSkipVerify for TLS credentials.",
+	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -227,37 +268,37 @@ func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 	return flag.NormalizedName(name)
 }
 
-func getLog() Log {
-	return Log{
+func getLog() *Log {
+	return &Log{
 		Level: viperInstance.GetString(LogLevelKey),
 		Path:  viperInstance.GetString(LogPathKey),
 	}
 }
 
-func getProcessMonitor() ProcessMonitor {
-	return ProcessMonitor{
+func getProcessMonitor() *ProcessMonitor {
+	return &ProcessMonitor{
 		MonitoringFrequency: viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyKey),
 	}
 }
 
-func getDataPlaneAPI() DataPlaneAPI {
-	return DataPlaneAPI{
+func getDataPlaneAPI() *DataPlaneAPI {
+	return &DataPlaneAPI{
 		Host: viperInstance.GetString(DataPlaneAPIHostKey),
 		Port: viperInstance.GetInt(DataPlaneAPIPortKey),
 	}
 }
 
-func getDataPlaneConfig() DataPlaneConfig {
-	return DataPlaneConfig{
-		Nginx: NginxDataPlaneConfig{
+func getDataPlaneConfig() *DataPlaneConfig {
+	return &DataPlaneConfig{
+		Nginx: &NginxDataPlaneConfig{
 			ReloadMonitoringPeriod: viperInstance.GetDuration(DataPlaneConfigNginxReloadMonitoringPeriodKey),
 			TreatWarningsAsError:   viperInstance.GetBool(DataPlaneConfigNginxTreatWarningsAsErrorsKey),
 		},
 	}
 }
 
-func getClient() Client {
-	return Client{
+func getClient() *Client {
+	return &Client{
 		Timeout: viperInstance.GetDuration(ClientTimeoutKey),
 	}
 }
@@ -271,7 +312,7 @@ func getMetrics() *Metrics {
 		return nil
 	}
 
-	m := &Metrics{
+	metrics := &Metrics{
 		ProduceInterval:  viperInstance.GetDuration(MetricsProduceIntervalKey),
 		OTelExporter:     nil,
 		PrometheusSource: nil,
@@ -279,7 +320,7 @@ func getMetrics() *Metrics {
 
 	if viperInstance.IsSet(MetricsOTelExporterKey) && viperInstance.IsSet(OTelGRPCKey) {
 		// For some reason viperInstance.UnmarshalKey did not work here (maybe due to the nested structs?).
-		otelExp := OTelExporter{
+		otelExp := &OTelExporter{
 			BufferLength:     viperInstance.GetInt(OTelExporterBufferLengthKey),
 			ExportRetryCount: viperInstance.GetInt(OTelExporterExportRetryCountKey),
 			ExportInterval:   viperInstance.GetDuration(OTelExporterExportIntervalKey),
@@ -290,18 +331,50 @@ func getMetrics() *Metrics {
 				BackoffDelay:   viperInstance.GetDuration(OTelGRPCBackoffDelayKey),
 			},
 		}
-		m.OTelExporter = &otelExp
+		metrics.OTelExporter = otelExp
 	}
 
 	if viperInstance.IsSet(PrometheusSrcKey) {
 		var prometheusSrc PrometheusSource
 		err := viperInstance.UnmarshalKey(PrometheusSrcKey, &prometheusSrc)
 		if err == nil {
-			m.PrometheusSource = &prometheusSrc
+			metrics.PrometheusSource = &prometheusSrc
 		} else {
 			slog.Error("metrics configuration: no Prometheus source configured", "error", err)
 		}
 	}
 
-	return m
+	return metrics
+}
+
+func getCommand() *Command {
+	if !viperInstance.IsSet(CommandRootKey) {
+		return nil
+	}
+	command := &Command{}
+
+	if viperInstance.IsSet(CommandServerKey) {
+		command.Server = &ServerConfig{
+			Host: viperInstance.GetString(CommandServerHostKey),
+			Port: viperInstance.GetInt(CommandServerPortKey),
+			Type: viperInstance.GetString(CommandServerTypeKey),
+		}
+	}
+
+	if viperInstance.IsSet(CommandAuthKey) {
+		command.Auth = &AuthConfig{
+			Token: viperInstance.GetString(CommandAuthTokenKey),
+		}
+	}
+
+	if viperInstance.IsSet(CommandTLSKey) {
+		command.TLS = &TLSConfig{
+			Cert:       viperInstance.GetString(CommandTLSCertKey),
+			Key:        viperInstance.GetString(CommandTLSKeyKey),
+			Ca:         viperInstance.GetString(CommandTLSCaKey),
+			SkipVerify: viperInstance.GetBool(CommandTLSSkipVerifyKey),
+		}
+	}
+
+	return command
 }

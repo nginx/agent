@@ -10,17 +10,15 @@ import (
 	"fmt"
 	"testing"
 
-	helpers "github.com/nginx/agent/v3/test"
-
-	"github.com/nginx/agent/v3/internal/config"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
-	"github.com/stretchr/testify/assert"
+	"github.com/nginx/agent/v3/test/protos"
 )
 
 const (
@@ -69,9 +67,9 @@ func TestConfig_Process(t *testing.T) {
 		CorrelationID: correlationID,
 	}
 
-	configurationStatusProgress := helpers.CreateInProgressStatus()
+	configurationStatusProgress := protos.CreateInProgressStatus()
 
-	configurationStatus := helpers.CreateSuccessStatus()
+	configurationStatus := protos.CreateSuccessStatus()
 
 	tests := []struct {
 		name     string
@@ -112,7 +110,7 @@ func TestConfig_Process(t *testing.T) {
 				},
 				{
 					Topic: bus.InstanceConfigUpdateTopic,
-					Data:  helpers.CreateSuccessStatus(),
+					Data:  protos.CreateSuccessStatus(),
 				},
 			},
 		},
@@ -181,10 +179,10 @@ func TestConfig_Update(t *testing.T) {
 		CorrelationID: correlationID,
 	}
 
-	inProgressStatus := helpers.CreateInProgressStatus()
-	successStatus := helpers.CreateSuccessStatus()
-	failStatus := helpers.CreateFailStatus("error")
-	rollbackInProgressStatus := helpers.CreateRollbackInProgressStatus()
+	inProgressStatus := protos.CreateInProgressStatus()
+	successStatus := protos.CreateSuccessStatus()
+	failStatus := protos.CreateFailStatus("error")
+	rollbackInProgressStatus := protos.CreateRollbackInProgressStatus()
 
 	tests := []struct {
 		name               string
@@ -226,7 +224,7 @@ func TestConfig_Update(t *testing.T) {
 				},
 				{
 					Topic: bus.InstanceConfigUpdateTopic,
-					Data:  helpers.CreateRollbackSuccessStatus(),
+					Data:  protos.CreateRollbackSuccessStatus(),
 				},
 			},
 		},
@@ -249,7 +247,7 @@ func TestConfig_Update(t *testing.T) {
 				},
 				{
 					Topic: bus.InstanceConfigUpdateTopic,
-					Data:  helpers.CreateRollbackFailStatus("rollback failed"),
+					Data:  protos.CreateRollbackFailStatus("rollback failed"),
 				},
 			},
 		},

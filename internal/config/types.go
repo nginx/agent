@@ -8,16 +8,18 @@ package config
 import "time"
 
 type Config struct {
-	Version            string          `yaml:"-"`
-	Path               string          `yaml:"-"`
-	Log                Log             `yaml:"-" mapstructure:"log"`
-	ProcessMonitor     ProcessMonitor  `yaml:"-" mapstructure:"process_monitor"`
-	DataPlaneAPI       DataPlaneAPI    `yaml:"-" mapstructure:"data_plane_api"`
-	DataPlaneConfig    DataPlaneConfig `yaml:"-" mapstructure:"data_plane_config"`
-	Client             Client          `yaml:"-" mapstructure:"client"`
-	ConfigDir          string          `yaml:"-" mapstructure:"config-dirs"`
-	AllowedDirectories []string        `yaml:"-"`
-	Metrics            *Metrics        `yaml:"-" mapstructure:"metrics"`
+	Version            string           `yaml:"-"`
+	Path               string           `yaml:"-"`
+	Log                *Log             `yaml:"-" mapstructure:"log"`
+	ProcessMonitor     *ProcessMonitor  `yaml:"-" mapstructure:"process_monitor"`
+	DataPlaneAPI       *DataPlaneAPI    `yaml:"-" mapstructure:"data_plane_api"`
+	DataPlaneConfig    *DataPlaneConfig `yaml:"-" mapstructure:"data_plane_config"`
+	Client             *Client          `yaml:"-" mapstructure:"client"`
+	ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
+	AllowedDirectories []string         `yaml:"-"`
+	Metrics            *Metrics         `yaml:"-" mapstructure:"metrics"`
+	Command            *Command         `yaml:"-" mapstructure:"command"`
+	File               *File            `yaml:"-" mapstructure:"file"`
 }
 
 type Log struct {
@@ -35,7 +37,7 @@ type DataPlaneAPI struct {
 }
 
 type DataPlaneConfig struct {
-	Nginx NginxDataPlaneConfig `yaml:"-" mapstructure:"nginx"`
+	Nginx *NginxDataPlaneConfig `yaml:"-" mapstructure:"nginx"`
 }
 
 type NginxDataPlaneConfig struct {
@@ -53,12 +55,12 @@ type Metrics struct {
 	PrometheusSource *PrometheusSource `yaml:"-" mapstructure:"prometheus_source"`
 }
 
-// Is a DataSources implementation
+// PrometheusSource is a DataSources implementation
 type PrometheusSource struct {
 	Endpoints []string `yaml:"-" mapstructure:"endpoints"`
 }
 
-// Is a Exporters implementation
+// OTelExporter is an Exporters implementation
 type OTelExporter struct {
 	BufferLength     int           `yaml:"-" mapstructure:"buffer_length"`
 	ExportRetryCount int           `yaml:"-" mapstructure:"export_retry_count"`
@@ -72,3 +74,31 @@ type GRPC struct {
 	MinConnTimeout time.Duration `yaml:"-" mapstructure:"minimum_connection_timeout"`
 	BackoffDelay   time.Duration `yaml:"-" mapstructure:"backoff_delay"`
 }
+
+// Command Connection settings for connecting to a Command and Control Server
+type Command struct {
+	Server *ServerConfig `yaml:"-" mapstructure:"server"`
+	Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
+	TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+}
+
+type ServerConfig struct {
+	Host string `yaml:"-" mapstructure:"host"`
+	Port int    `yaml:"-" mapstructure:"port"`
+	Type string `yaml:"-" mapstructure:"type"`
+}
+
+type AuthConfig struct {
+	Token string `yaml:"-" mapstructure:"token"`
+}
+
+type TLSConfig struct {
+	Enable     bool   `yaml:"-" mapstructure:"enable"`
+	Cert       string `yaml:"-" mapstructure:"cert"`
+	Key        string `yaml:"-" mapstructure:"key"`
+	Ca         string `yaml:"-" mapstructure:"ca"`
+	SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
+}
+
+// leaving this blank intentionally for now, this will have the location of the file server for configurations
+type File struct{}

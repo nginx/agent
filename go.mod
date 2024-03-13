@@ -6,6 +6,7 @@ require (
 	github.com/docker/docker v25.0.2+incompatible
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/google/uuid v1.6.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nxadm/tail v1.4.11
 	github.com/oapi-codegen/runtime v1.1.1
