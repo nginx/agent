@@ -7,7 +7,12 @@ package internal
 
 import (
 	"context"
+	"log"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -57,6 +62,7 @@ func (a *App) Run() error {
 			return
 		}
 
+		handleSignals(ctx, cancel)
 		messagePipe.Run()
 	})
 	err := config.Execute()
@@ -65,4 +71,25 @@ func (a *App) Run() error {
 	}
 
 	return nil
+}
+
+// handleSignals handles signals to attempt graceful shutdown
+func handleSignals(
+	ctx context.Context,
+	cancel context.CancelFunc,
+) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		select {
+		case <-sigChan:
+			slog.Warn("NGINX Agent exiting")
+			cancel()
+
+			time.Sleep(config.DefGracefulShutdownPeriod)
+			// nolint: revive
+			log.Fatalf("Failed to gracefully shutdown within timeout of %v. Exiting", config.DefGracefulShutdownPeriod)
+		case <-ctx.Done():
+		}
+	}()
 }

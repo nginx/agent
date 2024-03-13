@@ -101,7 +101,7 @@ func TestGRPCExporter_Constructor(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	exporter, err := NewGRPCExporter(ctx, *types.GetAgentConfig().Metrics.OTelExporter.GRPC)
+	exporter, err := NewGRPCExporter(ctx, types.GetAgentConfig().Metrics.OTelExporter.GRPC)
 	require.NoError(t, err)
 	require.NotNil(t, exporter)
 }

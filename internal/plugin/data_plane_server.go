@@ -34,7 +34,8 @@ type (
 		instances    []*instances.Instance
 		configEvents map[string][]*instances.ConfigurationStatus
 		messagePipe  bus.MessagePipeInterface
-		server       net.Listener
+		server       *http.Server
+		cncl         context.CancelFunc
 	}
 )
 
@@ -56,9 +57,18 @@ func (dps *DataPlaneServer) Init(messagePipe bus.MessagePipeInterface) error {
 }
 
 func (dps *DataPlaneServer) Close() error {
-	if dps.server != nil {
-		dps.server.Close()
+	dps.cncl()
+	dps.logger.Info("shutting down gracefully, press Ctrl+C again to force")
+
+	// The context is used to inform the server it has, by default,
+	// 5 seconds to finish the request it is currently handling
+	ctx, cancel := context.WithTimeout(dps.messagePipe.Context(), config.DefGracefulShutdownPeriod)
+	defer cancel()
+	if err := dps.server.Shutdown(ctx); err != nil {
+		dps.logger.Error("Server forced to shutdown: ", err)
 	}
+
+	dps.logger.Info("Server exiting")
 
 	return nil
 }
@@ -99,26 +109,31 @@ func (*DataPlaneServer) Subscriptions() []string {
 	}
 }
 
-func (dps *DataPlaneServer) run(_ context.Context) {
+func (dps *DataPlaneServer) run(ctx context.Context) {
+	var serverCtx context.Context
+	serverCtx, dps.cncl = context.WithCancel(ctx)
+
 	gin.SetMode(gin.ReleaseMode)
-	server := gin.New()
-	server.Use(sloggin.NewWithConfig(dps.logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
-	dataplane.RegisterHandlersWithOptions(server, dps, dataplane.GinServerOptions{BaseURL: "/api/v1"})
+	router := gin.New()
+	router.Use(sloggin.NewWithConfig(dps.logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
+	dataplane.RegisterHandlersWithOptions(router, dps, dataplane.GinServerOptions{BaseURL: "/api/v1"})
 
 	slog.Info("Starting data plane server", "address", dps.address)
-	listener, err := net.Listen("tcp", dps.address)
-	if err != nil {
-		slog.Error("Startup of data plane server failed", "error", err)
 
-		return
+	dps.server = &http.Server{
+		Addr:    dps.address,
+		Handler: router,
 	}
 
-	dps.server = listener
+	go func() {
+		if err := dps.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("listen: %s\n", err)
+			dps.cncl()
+		}
+	}()
 
-	err = server.RunListener(listener)
-	if err != nil {
-		slog.Error("Startup of data plane server failed", "error", err)
-	}
+	// Listen for the interrupt signal.
+	<-serverCtx.Done()
 }
 
 // GET /instances

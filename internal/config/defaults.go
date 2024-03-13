@@ -7,6 +7,8 @@ package config
 import "time"
 
 const (
+	DefGracefulShutdownPeriod = 5 * time.Second
+
 	DefMetricsProduceInterval       = 30 * time.Second
 	DefOTelExporterBufferLength     = 100
 	DefOTelExporterExportRetryCount = 3

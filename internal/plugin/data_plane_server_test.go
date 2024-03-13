@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -28,8 +27,6 @@ import (
 
 func TestDataPlaneServer_Init(t *testing.T) {
 	agentConfig := types.GetAgentConfig()
-	agentConfig.DataPlaneAPI.Port = 1230
-
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
@@ -39,9 +36,8 @@ func TestDataPlaneServer_Init(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	addr, ok := dataPlaneServer.server.Addr().(*net.TCPAddr)
-	assert.True(t, ok)
-	assert.NotNil(t, addr.Port)
+	addr := dataPlaneServer.server.Addr
+	assert.NotNil(t, addr)
 
 	err = dataPlaneServer.Close()
 	require.NoError(t, err)
@@ -49,8 +45,6 @@ func TestDataPlaneServer_Init(t *testing.T) {
 
 func TestDataPlaneServer_Process(t *testing.T) {
 	agentConfig := types.GetAgentConfig()
-	agentConfig.DataPlaneAPI.Port = 1231
-
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
@@ -114,8 +108,6 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 	}
 
 	agentConfig := types.GetAgentConfig()
-	agentConfig.DataPlaneAPI.Port = 1232
-
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
@@ -126,11 +118,11 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	addr, ok := dataPlaneServer.server.Addr().(*net.TCPAddr)
-	assert.True(t, ok)
-	assert.NotNil(t, addr.Port)
+	addr := dataPlaneServer.server.Addr
+	assert.NotNil(t, addr)
 
-	target := "http://" + addr.AddrPort().String() + "/api/v1/instances"
+	target := fmt.Sprintf("http://%s/api/v1/instances", addr)
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
 	require.NoError(t, err)
 
@@ -161,8 +153,6 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 
 	agentConfig := types.GetAgentConfig()
-	agentConfig.DataPlaneAPI.Port = 1233
-
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
@@ -173,10 +163,8 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	addr, ok := dataPlaneServer.server.Addr().(*net.TCPAddr)
-	assert.True(t, ok)
-
-	assert.NotNil(t, addr.Port)
+	addr := dataPlaneServer.server.Addr
+	assert.NotNil(t, addr)
 
 	tests := []struct {
 		name               string
@@ -297,8 +285,6 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
 	agentConfig := types.GetAgentConfig()
-	agentConfig.DataPlaneAPI.Port = 1234
-
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
@@ -308,10 +294,9 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	tcpAddr, ok := dataPlaneServer.server.Addr().(*net.TCPAddr)
+	tcpAddr := dataPlaneServer.server.Addr
 
-	assert.True(t, ok)
-	assert.NotNil(t, tcpAddr.Port)
+	assert.NotNil(t, tcpAddr)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -398,11 +383,11 @@ func performPutRequest(
 	instanceID string,
 	data []byte,
 ) (*http.Response, error) {
-	addr, ok := dataPlaneServer.server.Addr().(*net.TCPAddr)
-	if !ok {
+	addr := dataPlaneServer.server.Addr
+	if addr == "" {
 		return nil, fmt.Errorf("unable to get server address")
 	}
-	target := "http://" + addr.AddrPort().String() + "/api/v1/instances/" + instanceID + "/configurations"
+	target := fmt.Sprintf("http://%s/api/v1/instances/%s/configurations", addr, instanceID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, target, bytes.NewBuffer(data))
 	if err != nil {
 		return &http.Response{}, err
@@ -419,13 +404,12 @@ func performGetInstanceConfigurationStatusRequest(
 	dataPlaneServer *DataPlaneServer,
 	instanceID string,
 ) (*http.Response, error) {
-	addr, ok := dataPlaneServer.server.Addr().(*net.TCPAddr)
-	if !ok {
+	addr := dataPlaneServer.server.Addr
+	if addr == "" {
 		return nil, fmt.Errorf("unable to get server address")
 	}
 
-	target := "http://" + addr.AddrPort().String() +
-		"/api/v1/instances/" + instanceID + "/configurations/status"
+	target := fmt.Sprintf("http://%s/api/v1/instances/%s/configurations/status", addr, instanceID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
 	if err != nil {
 		return &http.Response{}, err
