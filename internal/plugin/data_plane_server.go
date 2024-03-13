@@ -37,7 +37,6 @@ type (
 		configEvents map[string][]*instances.ConfigurationStatus
 		messagePipe  bus.MessagePipeInterface
 		server       *http.Server
-		ctx          context.Context
 		cncl         context.CancelFunc
 	}
 )
@@ -54,24 +53,24 @@ func NewDataPlaneServer(agentConfig *config.Config, logger *slog.Logger) *DataPl
 
 func (dps *DataPlaneServer) Init(messagePipe bus.MessagePipeInterface) error {
 	dps.messagePipe = messagePipe
-	go dps.run()
+	go dps.run(messagePipe.Context())
 
 	return nil
 }
 
 func (dps *DataPlaneServer) Close() error {
 	dps.cncl()
-	dps.logger.Debug("shutting down gracefully, press Ctrl+C again to force")
+	dps.logger.Info("shutting down gracefully, press Ctrl+C again to force")
 
 	// The context is used to inform the server it has, by default,
 	// 5 seconds to finish the request it is currently handling
-	ctx, cancel := context.WithTimeout(context.Background(), config.DefGracefulShutdownPeriod)
+	ctx, cancel := context.WithTimeout(dps.messagePipe.Context(), config.DefGracefulShutdownPeriod)
 	defer cancel()
 	if err := dps.server.Shutdown(ctx); err != nil {
 		dps.logger.Error("Server forced to shutdown: ", err)
 	}
 
-	dps.logger.Debug("Server exiting")
+	dps.logger.Info("Server exiting")
 
 	return nil
 }
@@ -112,8 +111,9 @@ func (*DataPlaneServer) Subscriptions() []string {
 	}
 }
 
-func (dps *DataPlaneServer) run() {
-	dps.ctx, dps.cncl = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+func (dps *DataPlaneServer) run(ctx context.Context) {
+	var serverCtx context.Context
+	serverCtx, dps.cncl = signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
@@ -135,7 +135,7 @@ func (dps *DataPlaneServer) run() {
 	}()
 
 	// Listen for the interrupt signal.
-	<-dps.ctx.Done()
+	<-serverCtx.Done()
 }
 
 // GET /instances
