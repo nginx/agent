@@ -32,7 +32,9 @@ In this release we have resolved the following issues:
 
 We have made the following updates to the documentation:
 
-- change log updated for last release by [@oliveromahony](https://github.com/oliveromahony) in [#583](https://github.com/nginx/agent/pull/583)- Restore agent container information from nms docs  by [@jputrino](https://github.com/jputrino) in [#584](https://github.com/nginx/agent/pull/584)- fix: add additional container checks during instance registration by [@mattdesmarais](https://github.com/mattdesmarais) in [#592](https://github.com/nginx/agent/pull/592)
+- change log updated for last release by [@oliveromahony](https://github.com/oliveromahony) in [#583](https://github.com/nginx/agent/pull/583)
+- Restore agent container information from nms docs  by [@jputrino](https://github.com/jputrino) in [#584](https://github.com/nginx/agent/pull/584)
+- fix: add additional container checks during instance registration by [@mattdesmarais](https://github.com/mattdesmarais) in [#592](https://github.com/nginx/agent/pull/592)
 
 ---
 ## Release [v2.32.1](https//github.com/nginx/agent/releases/tag/v2.32.1)
@@ -41,13 +43,17 @@ We have made the following updates to the documentation:
 
 This release introduces the following new features:
 
-- feat: Agent Docs IA refactor by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#548](https://github.com/nginx/agent/pull/548)- feat: move NMS agent docs by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#553](https://github.com/nginx/agent/pull/553)- feat: import changelog from github by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#570](https://github.com/nginx/agent/pull/570)
+- feat: Agent Docs IA refactor by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#548](https://github.com/nginx/agent/pull/548)
+- feat: move NMS agent docs by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#553](https://github.com/nginx/agent/pull/553)
+- feat: import changelog from github by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#570](https://github.com/nginx/agent/pull/570)
 
 ### 🐛 Bug Fixes
 
 In this release we have resolved the following issues:
 
-- fix runners and bump go version by [@oliveromahony](https://github.com/oliveromahony) in [#550](https://github.com/nginx/agent/pull/550)- Fix artifact name by [@oliveromahony](https://github.com/oliveromahony) in [#558](https://github.com/nginx/agent/pull/558)- fix: add missing catalog entry by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#572](https://github.com/nginx/agent/pull/572)
+- fix runners and bump go version by [@oliveromahony](https://github.com/oliveromahony) in [#550](https://github.com/nginx/agent/pull/550)
+- Fix artifact name by [@oliveromahony](https://github.com/oliveromahony) in [#558](https://github.com/nginx/agent/pull/558)
+- fix: add missing catalog entry by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#572](https://github.com/nginx/agent/pull/572)
 
 ### 📝 Documentation
 
@@ -60,6 +66,7 @@ We have made the following updates to the documentation:
 We have made the following maintenance-related minor changes:
 
 - bump vulnerable version of buildkit by [@oliveromahony](https://github.com/oliveromahony) in [#564](https://github.com/nginx/agent/pull/564)
+
 ---
 ## Release [v2.32.0](https//github.com/nginx/agent/releases/tag/v2.32.0)
 
@@ -82,13 +89,16 @@ In this release we have resolved the following issues:
 
 We have made the following updates to the documentation:
 
-- Update upgrade documentation by [@dhurley](https://github.com/dhurley) in [#526](https://github.com/nginx/agent/pull/526)- Bump the versions of containerd and go-git dependencies by [@dhurley](https://github.com/dhurley) in [#533](https://github.com/nginx/agent/pull/533)- updated dependencies by [@oliveromahony](https://github.com/oliveromahony) in [#536](https://github.com/nginx/agent/pull/536)
+- Update upgrade documentation by [@dhurley](https://github.com/dhurley) in [#526](https://github.com/nginx/agent/pull/526)
+- Bump the versions of containerd and go-git dependencies by [@dhurley](https://github.com/dhurley) in [#533](https://github.com/nginx/agent/pull/533)
+- updated dependencies by [@oliveromahony](https://github.com/oliveromahony) in [#536](https://github.com/nginx/agent/pull/536)
 
 ### 🔨 Maintenance
 
 We have made the following maintenance-related minor changes:
 
 - Bump crypto dependency from 0.14.0 to 0.17.0 by [@dhurley](https://github.com/dhurley) in [#532](https://github.com/nginx/agent/pull/532)
+
 ---
 ## Release [v2.31.1](https//github.com/nginx/agent/releases/tag/v2.31.1)
 
@@ -96,7 +106,8 @@ We have made the following maintenance-related minor changes:
 
 In this release we have resolved the following issues:
 
-- Fix permissions for log file and dynamic config directory by [@aphralG](https://github.com/aphralG) in [#517](https://github.com/nginx/agent/pull/517)- Fix server example in sdk to have timeout by [@aphralG](https://github.com/aphralG) in [#518](https://github.com/nginx/agent/pull/518)
+- Fix permissions for log file and dynamic config directory by [@aphralG](https://github.com/aphralG) in [#517](https://github.com/nginx/agent/pull/517)
+- Fix server example in sdk to have timeout by [@aphralG](https://github.com/aphralG) in [#518](https://github.com/nginx/agent/pull/518)
 
 ### 📝 Documentation
 
@@ -108,7 +119,10 @@ We have made the following updates to the documentation:
 
 We have made the following maintenance-related minor changes:
 
-- Replace mockgen by [@oliveromahony](https://github.com/oliveromahony) in [#524](https://github.com/nginx/agent/pull/524)- Restrict config apply directory permissions by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#519](https://github.com/nginx/agent/pull/519)- Restrict NAP file/dir permissions by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#516](https://github.com/nginx/agent/pull/516)
+- Replace mockgen by [@oliveromahony](https://github.com/oliveromahony) in [#524](https://github.com/nginx/agent/pull/524)
+- Restrict config apply directory permissions by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#519](https://github.com/nginx/agent/pull/519)
+- Restrict NAP file/dir permissions by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#516](https://github.com/nginx/agent/pull/516)
+
 ---
 ## Release [v2.31.0](https//github.com/nginx/agent/releases/tag/v2.31.0)
 
@@ -116,7 +130,11 @@ We have made the following maintenance-related minor changes:
 
 In this release we have resolved the following issues:
 
-- Fix otelcontrib version by [@oliveromahony](https://github.com/oliveromahony) in [#504](https://github.com/nginx/agent/pull/504)- Fix user agent request header to have the correct agent version by [@dhurley](https://github.com/dhurley) in [#498](https://github.com/nginx/agent/pull/498)- Fix alpine plus dockerfile on alpine>=3.17 by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#511](https://github.com/nginx/agent/pull/511)- fix: avoid stopping nginx-agent service on package upgrade by [@defanator](https://github.com/defanator) in [#352](https://github.com/nginx/agent/pull/352)- Fix SELinux Policy by [@aphralG](https://github.com/aphralG) in [#520](https://github.com/nginx/agent/pull/520)
+- Fix otelcontrib version by [@oliveromahony](https://github.com/oliveromahony) in [#504](https://github.com/nginx/agent/pull/504)
+- Fix user agent request header to have the correct agent version by [@dhurley](https://github.com/dhurley) in [#498](https://github.com/nginx/agent/pull/498)
+- Fix alpine plus dockerfile on alpine>=3.17 by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#511](https://github.com/nginx/agent/pull/511)
+- fix: avoid stopping nginx-agent service on package upgrade by [@defanator](https://github.com/defanator) in [#352](https://github.com/nginx/agent/pull/352)
+- Fix SELinux Policy by [@aphralG](https://github.com/aphralG) in [#520](https://github.com/nginx/agent/pull/520)
 
 ### 📝 Documentation
 
@@ -128,7 +146,10 @@ We have made the following updates to the documentation:
 
 We have made the following maintenance-related minor changes:
 
-- crossplane version bump by [@oliveromahony](https://github.com/oliveromahony) in [#512](https://github.com/nginx/agent/pull/512)- Add commander retry lock by [@dhurley](https://github.com/dhurley) in [#502](https://github.com/nginx/agent/pull/502)- Bump otel dependency version and fix github workflow for dependabot PRs by [@dhurley](https://github.com/dhurley) in [#515](https://github.com/nginx/agent/pull/515)
+- crossplane version bump by [@oliveromahony](https://github.com/oliveromahony) in [#512](https://github.com/nginx/agent/pull/512)
+- Add commander retry lock by [@dhurley](https://github.com/dhurley) in [#502](https://github.com/nginx/agent/pull/502)
+- Bump otel dependency version and fix github workflow for dependabot PRs by [@dhurley](https://github.com/dhurley) in [#515](https://github.com/nginx/agent/pull/515)
+
 ---
 ## Release [v2.30.3](https//github.com/nginx/agent/releases/tag/v2.30.3)
 
@@ -152,6 +173,7 @@ In this release we have resolved the following issues:
 We have made the following maintenance-related minor changes:
 
 - Update nginx-plus-go-client to stop 404 errors in NGINX access logs by [@dhurley](https://github.com/dhurley) in [#495](https://github.com/nginx/agent/pull/495)
+
 ---
 ## Release [v2.30.0](https//github.com/nginx/agent/releases/tag/v2.30.0)
 
@@ -159,17 +181,31 @@ We have made the following maintenance-related minor changes:
 
 In this release we have resolved the following issues:
 
-- Fix version for forked repo by [@dhurley](https://github.com/dhurley) in [#468](https://github.com/nginx/agent/pull/468)- Fix integration tests by [@aphralG](https://github.com/aphralG) in [#478](https://github.com/nginx/agent/pull/478)- Fix config apply by [@oliveromahony](https://github.com/oliveromahony) in [#480](https://github.com/nginx/agent/pull/480)- deprecate system.mem.used.all metric by [@aphralG](https://github.com/aphralG) in [#485](https://github.com/nginx/agent/pull/485)
+- Fix version for forked repo by [@dhurley](https://github.com/dhurley) in [#468](https://github.com/nginx/agent/pull/468)
+- Fix integration tests by [@aphralG](https://github.com/aphralG) in [#478](https://github.com/nginx/agent/pull/478)
+- Fix config apply by [@oliveromahony](https://github.com/oliveromahony) in [#480](https://github.com/nginx/agent/pull/480)
+- deprecate system.mem.used.all metric by [@aphralG](https://github.com/aphralG) in [#485](https://github.com/nginx/agent/pull/485)
 
 ### 📝 Documentation
 
 We have made the following updates to the documentation:
 
-- Update CLI flags documentation by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#476](https://github.com/nginx/agent/pull/476)- Update NGINX plugin to read NGINX config on startup by [@dhurley](https://github.com/dhurley) in [#489](https://github.com/nginx/agent/pull/489)
+- Update CLI flags documentation by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#476](https://github.com/nginx/agent/pull/476)
+- Update NGINX plugin to read NGINX config on startup by [@dhurley](https://github.com/dhurley) in [#489](https://github.com/nginx/agent/pull/489)
 
 ### 🔨 Maintenance
 
 We have made the following maintenance-related minor changes:
 
-- Update file watcher to ignore .swx files by [@dhurley](https://github.com/dhurley) in [#466](https://github.com/nginx/agent/pull/466)- Check Simplemetrics is not empty  by [@aphralG](https://github.com/aphralG) in [#474](https://github.com/nginx/agent/pull/474)- Add error log if duplicate NGINX IDs are found by [@dhurley](https://github.com/dhurley) in [#477](https://github.com/nginx/agent/pull/477)- Add tests for additional SSL directives and key algorithms. [#276](https://github.com/nginx/agent/issues/276) by [@arsenalzp](https://github.com/arsenalzp) in [#469](https://github.com/nginx/agent/pull/469)- call underlying os.Hostname instead of the entire hostInfo gopsutil call by [@oliveromahony](https://github.com/oliveromahony) in [#479](https://github.com/nginx/agent/pull/479)- Add grpc integration tests by [@dhurley](https://github.com/dhurley) in [#475](https://github.com/nginx/agent/pull/475)- remove error log causing failures  by [@aphralG](https://github.com/aphralG) in [#488](https://github.com/nginx/agent/pull/488)- Use singleflight for caching environment.go calls by [@oliveromahony](https://github.com/oliveromahony) in [#481](https://github.com/nginx/agent/pull/481)- Reduce the number of times env.Processes gets called by [@dhurley](https://github.com/dhurley) in [#482](https://github.com/nginx/agent/pull/482)- add additional check to nginxProcesses by [@aphralG](https://github.com/aphralG) in [#483](https://github.com/nginx/agent/pull/483)- profile.cgo by [@oliveromahony](https://github.com/oliveromahony) in [#493](https://github.com/nginx/agent/pull/493)
+- Update file watcher to ignore .swx files by [@dhurley](https://github.com/dhurley) in [#466](https://github.com/nginx/agent/pull/466)
+- Check Simplemetrics is not empty  by [@aphralG](https://github.com/aphralG) in [#474](https://github.com/nginx/agent/pull/474)
+- Add error log if duplicate NGINX IDs are found by [@dhurley](https://github.com/dhurley) in [#477](https://github.com/nginx/agent/pull/477)
+- Add tests for additional SSL directives and key algorithms. [#276](https://github.com/nginx/agent/issues/276) by [@arsenalzp](https://github.com/arsenalzp) in [#469](https://github.com/nginx/agent/pull/469)
+- call underlying os.Hostname instead of the entire hostInfo gopsutil call by [@oliveromahony](https://github.com/oliveromahony) in [#479](https://github.com/nginx/agent/pull/479)
+- Add grpc integration tests by [@dhurley](https://github.com/dhurley) in [#475](https://github.com/nginx/agent/pull/475)
+- remove error log causing failures  by [@aphralG](https://github.com/aphralG) in [#488](https://github.com/nginx/agent/pull/488)
+- Use singleflight for caching environment.go calls by [@oliveromahony](https://github.com/oliveromahony) in [#481](https://github.com/nginx/agent/pull/481)
+- Reduce the number of times env.Processes gets called by [@dhurley](https://github.com/dhurley) in [#482](https://github.com/nginx/agent/pull/482)
+- add additional check to nginxProcesses by [@aphralG](https://github.com/aphralG) in [#483](https://github.com/nginx/agent/pull/483)
+- profile.cgo by [@oliveromahony](https://github.com/oliveromahony) in [#493](https://github.com/nginx/agent/pull/493)
 
