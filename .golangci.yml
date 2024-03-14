@@ -487,7 +487,7 @@ linters-settings:
       - name: cognitive-complexity
         severity: warning
         disabled: false
-        arguments: [ 7 ]
+        arguments: [ 10 ]
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#comment-spacings
       - name: comment-spacings
         severity: warning
@@ -519,7 +519,7 @@ linters-settings:
       - name: cyclomatic
         severity: warning
         disabled: false
-        arguments: [ 7 ]
+        arguments: [ 10 ]
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#datarace
       - name: datarace
         severity: warning

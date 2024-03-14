@@ -38,8 +38,11 @@ func TestWriteConfig(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
 	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 
 	testConfPath := testConf.Name()
 	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
@@ -76,6 +79,7 @@ func TestWriteConfig(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
+			defer helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 			cachePath := cacheFile.Name()
 			fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
@@ -120,15 +124,74 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, readErr)
 			res = reflect.DeepEqual(fileContent, testData)
 			assert.Equal(t, test.fileShouldBeEqual, res)
-			helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
-			assert.NoFileExists(t, cachePath)
 		})
 	}
+}
 
-	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
-	helpers.RemoveFileWithErrorCheck(t, testConf.Name())
-	assert.NoFileExists(t, testConf.Name())
-	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
+func TestDeleteFile(t *testing.T) {
+	tempDir := t.TempDir()
+	_, instanceID := helpers.CreateTestIDs(t)
+
+	agentconfig := types.GetAgentConfig()
+
+	instanceIDDir := path.Join(tempDir, instanceID.String())
+	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
+	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
+
+	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
+	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
+
+	fileCacheContent, getCacheErr := protos.GetFileCache(nginxConf, testConf, metricsConf)
+	require.NoError(t, getCacheErr)
+
+	currentFileCache, getCacheErr := protos.GetFileCache(nginxConf, metricsConf)
+	require.NoError(t, getCacheErr)
+
+	tests := []struct {
+		name             string
+		fileCache        CacheContent
+		currentFileCache CacheContent
+		fileDeleted      bool
+	}{
+		{
+			name:             "file doesn't need deleting",
+			fileCache:        fileCacheContent,
+			currentFileCache: fileCacheContent,
+			fileDeleted:      false,
+		},
+		{
+			name:             "file needs deleting",
+			fileCache:        fileCacheContent,
+			currentFileCache: currentFileCache,
+			fileDeleted:      true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
+			defer helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
+			cachePath := cacheFile.Name()
+			fileCache := NewFileCache(instanceID.String())
+			fileCache.SetCachePath(cachePath)
+			err := fileCache.UpdateFileCache(test.fileCache)
+			require.NoError(t, err)
+			slog.Info("", "", &agentconfig)
+			configWriter, err := NewConfigWriter(agentconfig, fileCache)
+			require.NoError(t, err)
+
+			err = configWriter.removeFiles(test.currentFileCache, test.fileCache)
+			require.NoError(t, err)
+			if test.fileDeleted {
+				assert.NoFileExists(t, testConf.Name())
+			} else {
+				assert.FileExists(t, testConf.Name())
+			}
+		})
+	}
 }
 
 func TestRollback(t *testing.T) {
@@ -142,9 +205,13 @@ func TestRollback(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
 	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
+	defer helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 
 	cachePath := cacheFile.Name()
 	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
@@ -202,12 +269,6 @@ func TestRollback(t *testing.T) {
 	data, err := os.ReadFile(testConf.Name())
 	require.NoError(t, err)
 	assert.NotEqual(t, data, fileContent)
-
-	helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
-	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
-	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
-	helpers.RemoveFileWithErrorCheck(t, testConf.Name())
-	assert.NoFileExists(t, cachePath)
 }
 
 func TestComplete(t *testing.T) {
@@ -221,6 +282,7 @@ func TestComplete(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
 
 	cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
+	defer helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 	cachePath := cacheFile.Name()
 
 	allowedDirs := []string{tempDir}
@@ -236,8 +298,11 @@ func TestComplete(t *testing.T) {
 	configWriter.configClient = fakeConfigClient
 
 	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
 	metricsConf := helpers.CreateFileWithErrorCheck(t, tempDir, "metrics.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 
 	cacheData, err := protos.GetFileCache(testConf, nginxConf, metricsConf)
 	require.NoError(t, err)
@@ -253,13 +318,6 @@ func TestComplete(t *testing.T) {
 	data, err := configWriter.fileCache.ReadFileCache()
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheData, data)
-
-	helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
-	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
-	helpers.RemoveFileWithErrorCheck(t, nginxConf.Name())
-	helpers.RemoveFileWithErrorCheck(t, testConf.Name())
-
-	assert.NoFileExists(t, cachePath)
 }
 
 func TestWriteFile(t *testing.T) {
