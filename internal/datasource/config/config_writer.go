@@ -125,7 +125,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 func (cw *ConfigWriter) removeFiles(currentFileCache, fileCache CacheContent) error {
 	for _, file := range fileCache {
 		if _, ok := currentFileCache[file.GetPath()]; !ok {
-			slog.Debug("removing file", "file_path", file.GetPath())
+			slog.Debug("Removing file", "file_path", file.GetPath())
 			if err := os.Remove(file.GetPath()); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("error removing file: %s error: %w", file.GetPath(), err)
 			}
