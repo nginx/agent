@@ -27,8 +27,8 @@ const defaultFilePermissions = 0o644
 type ManagementGrpcFileServer struct {
 	v1.UnimplementedFileServiceServer
 	configDirectory    string
-	overviews          map[string][]*v1.File
-	versionDirectories map[string]string
+	overviews          map[string][]*v1.File // Key is the config version UID
+	versionDirectories map[string]string     // Key is the version directory name
 }
 
 func NewManagementGrpcFileServer(configDirectory string) (*ManagementGrpcFileServer, error) {
@@ -239,20 +239,34 @@ func getFileHash(filePath string) (string, error) {
 }
 
 func performFileAction(fileAction v1.File_FileAction, fileContents []byte, fullFilePath, filePermissions string) error {
-	if fileAction == v1.File_FILE_ACTION_ADD {
+	switch fileAction {
+	case v1.File_FILE_ACTION_ADD, v1.File_FILE_ACTION_UPDATE:
+		// Ensure if file doesn't exist that directories are created before creating the file
+		if _, err := os.Stat(fullFilePath); os.IsNotExist(err) {
+			err := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm)
+			if err != nil {
+				slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", err)
+				return status.Errorf(codes.Internal, "Failed to create/update file")
+			}
+		}
+
 		err := os.WriteFile(fullFilePath, fileContents, getFileMode(filePermissions))
 		if err != nil {
 			slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", err)
 			return status.Errorf(codes.Internal, "Failed to create/update file")
 		}
-	} else if fileAction == v1.File_FILE_ACTION_DELETE {
+	case v1.File_FILE_ACTION_DELETE:
 		err := os.Remove(fullFilePath)
 		if err != nil {
 			slog.Info("Failed to delete file", "full_file_path", fullFilePath, "error", err)
 			return status.Errorf(codes.Internal, "Failed to delete file")
 		}
-	} else {
+	case v1.File_FILE_ACTION_UNSPECIFIED:
+		slog.Info("Nothing to update, file action is unspecified", "full_file_path", fullFilePath)
+	case v1.File_FILE_ACTION_UNCHANGED:
 		slog.Info("Nothing to update, file action is unchanged", "full_file_path", fullFilePath)
+	default:
+		slog.Info("Nothing to update, unknown file action", "full_file_path", fullFilePath)
 	}
 
 	return nil
