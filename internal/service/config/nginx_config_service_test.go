@@ -292,7 +292,7 @@ func TestNginx_Validate(t *testing.T) {
 			expected: fmt.Errorf("NGINX config test failed %w: [emerg]", errors.New("error validating")),
 		},
 		{
-			name:     "Test 1: Validate Config failed",
+			name:     "Test 3: Validate Config failed",
 			out:      bytes.NewBufferString("nginx [emerg]"),
 			error:    nil,
 			expected: fmt.Errorf("error running nginx -t -c:\nnginx [emerg]"),

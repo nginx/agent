@@ -135,7 +135,7 @@ func TestGetFilesMetadata_ErrorCases(t *testing.T) {
 			instanceID: "",
 		},
 		{
-			name:       "Test 1: Provide invalid URL",
+			name:       "Test 2: Provide invalid URL",
 			filesURL:   "::/\\",
 			tenantID:   "",
 			instanceID: "",

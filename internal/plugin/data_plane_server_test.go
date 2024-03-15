@@ -260,7 +260,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 			expectedResponse: 200,
 		},
 		{
-			name:       "Test 1: Instance ID not found",
+			name:       "Test 2: Instance ID not found",
 			instanceID: "unknown-instance-id",
 			events:     nil,
 			expectedStatus: &dataplane.ConfigurationStatus{
