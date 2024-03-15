@@ -59,6 +59,7 @@ type Environment interface {
 	GetContainerID() (string, error)
 	GetNetOverflow() (float64, error)
 	IsContainer() bool
+	Virtualization() (string, string)
 }
 
 type ConfigApplyMarker interface {
@@ -737,7 +738,7 @@ func (env *EnvironmentType) processors(architecture string) (res []*proto.CpuInf
 		return []*proto.CpuInfo{}
 	}
 
-	hypervisor, virtual := env.virtualization()
+	hypervisor, virtual := env.Virtualization()
 
 	for _, item := range cpus {
 		processor := proto.CpuInfo{
@@ -858,7 +859,7 @@ func formatBytes(bytes int) string {
 	}
 }
 
-func (env *EnvironmentType) virtualization() (string, string) {
+func (env *EnvironmentType) Virtualization() (string, string) {
 	ctx := context.Background()
 	defer ctx.Done()
 	// doesn't check k8s

@@ -440,24 +440,43 @@ func TestNetworks(t *testing.T) {
 	assert.NotNil(t, networks.Default)
 }
 
+// MockEnvironment is a mock implementation of the Environment interface for testing purposes.
+type MockEnvironment struct {
+	isContainer bool
+}
+
+// IsContainer is a mock function for IsContainer() method.
+func (m *MockEnvironment) IsContainer() bool {
+	// Mock implementation for testing.
+	return m.isContainer
+}
+
+func (m *MockEnvironment) Virtualization() (string, string) {
+	realEnv := &EnvironmentType{}
+	return realEnv.Virtualization()
+}
+
 func TestVirtualization(t *testing.T) {
-	env := EnvironmentType{}
+	mockEnv := &MockEnvironment{isContainer: false}
+
 	// Test normal VM
-	virtualizationFunc = func(ctx context.Context) (string, string, error) {
+	virtualizationFunc = func(_ context.Context) (string, string, error) {
 		return "LXC", "host", nil
 	}
 
-	virtualizationSystem, virtualizationRole := env.virtualization()
+	virtualizationSystem, virtualizationRole := mockEnv.Virtualization()
 
 	assert.Equal(t, "LXC", virtualizationSystem)
 	assert.Equal(t, "host", virtualizationRole)
 
 	// Test container
-	virtualizationFunc = func(ctx context.Context) (string, string, error) {
+	virtualizationFunc = func(_ context.Context) (string, string, error) {
 		return "docker", "host", nil
 	}
 
-	virtualizationSystem, virtualizationRole = env.virtualization()
+	mockEnv.isContainer = true
+
+	virtualizationSystem, virtualizationRole = mockEnv.Virtualization()
 
 	assert.Equal(t, "container", virtualizationSystem)
 	assert.Equal(t, "host", virtualizationRole)
@@ -468,7 +487,7 @@ func TestProcessors(t *testing.T) {
 	processorInfo := env.processors("arm64")
 	// at least one network interface
 	assert.GreaterOrEqual(t, processorInfo[0].GetCpus(), int32(1))
-	// non empty architecture
+	// non-empty architecture
 	assert.NotEmpty(t, processorInfo[0].GetArchitecture())
 	assert.Equal(t, "arm64", processorInfo[0].GetArchitecture())
 }
