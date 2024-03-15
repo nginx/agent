@@ -5,6 +5,7 @@
 //
 //	mockgen -destination mocks/net_mocks.go -build_flags=--mod=mod -package mocks net Listener,Conn
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

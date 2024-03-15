@@ -59,6 +59,7 @@ type Environment interface {
 	GetContainerID() (string, error)
 	GetNetOverflow() (float64, error)
 	IsContainer() bool
+	Virtualization() (string, string)
 }
 
 type ConfigApplyMarker interface {
@@ -152,7 +153,7 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			Uname:               getUnixName(),
 			Partitons:           disks,
 			Network:             env.networks(),
-			Processor:           processors(hostInformation.KernelArch),
+			Processor:           env.processors(hostInformation.KernelArch),
 			Release:             releaseInfo("/etc/os-release"),
 			Tags:                *tags,
 			AgentAccessibleDirs: configDirs,
@@ -729,7 +730,7 @@ func callSyscall(mib []int32) ([]byte, uint64, error) {
 	return buf, length, nil
 }
 
-func processors(architecture string) (res []*proto.CpuInfo) {
+func (env *EnvironmentType) processors(architecture string) (res []*proto.CpuInfo) {
 	log.Debug("Reading CPU information for dataplane host")
 	cpus, err := cpu.Info()
 	if err != nil {
@@ -737,7 +738,7 @@ func processors(architecture string) (res []*proto.CpuInfo) {
 		return []*proto.CpuInfo{}
 	}
 
-	hypervisor, virtual := virtualization()
+	hypervisor, virtual := env.Virtualization()
 
 	for _, item := range cpus {
 		processor := proto.CpuInfo{
@@ -858,7 +859,7 @@ func formatBytes(bytes int) string {
 	}
 }
 
-func virtualization() (string, string) {
+func (env *EnvironmentType) Virtualization() (string, string) {
 	ctx := context.Background()
 	defer ctx.Done()
 	// doesn't check k8s
@@ -868,7 +869,7 @@ func virtualization() (string, string) {
 		return "", "host"
 	}
 
-	if virtualizationSystem == "docker" || isContainer() {
+	if virtualizationSystem == "docker" || env.IsContainer() {
 		log.Debugf("Virtualization detected as container with role %v", virtualizationRole)
 		return "container", virtualizationRole
 	}

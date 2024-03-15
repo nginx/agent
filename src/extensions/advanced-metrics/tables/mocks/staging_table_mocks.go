@@ -11,6 +11,7 @@
 //
 //	mockgen -source staging_table.go -destination mocks/staging_table_mocks.go -package mocks -copyright_file=../../../../COPYRIGHT
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

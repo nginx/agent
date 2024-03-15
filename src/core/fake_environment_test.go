@@ -163,6 +163,18 @@ type FakeEnvironment struct {
 		result1 []string
 		result2 error
 	}
+	VirtualizationStub        func() (string, string)
+	virtualizationMutex       sync.RWMutex
+	virtualizationArgsForCall []struct {
+	}
+	virtualizationReturns struct {
+		result1 string
+		result2 string
+	}
+	virtualizationReturnsOnCall map[int]struct {
+		result1 string
+		result2 string
+	}
 	WriteFileStub        func(ConfigApplyMarker, *proto.File, string) error
 	writeFileMutex       sync.RWMutex
 	writeFileArgsForCall []struct {
@@ -949,6 +961,62 @@ func (fake *FakeEnvironment) ReadDirectoryReturnsOnCall(i int, result1 []string,
 	}{result1, result2}
 }
 
+func (fake *FakeEnvironment) Virtualization() (string, string) {
+	fake.virtualizationMutex.Lock()
+	ret, specificReturn := fake.virtualizationReturnsOnCall[len(fake.virtualizationArgsForCall)]
+	fake.virtualizationArgsForCall = append(fake.virtualizationArgsForCall, struct {
+	}{})
+	stub := fake.VirtualizationStub
+	fakeReturns := fake.virtualizationReturns
+	fake.recordInvocation("Virtualization", []interface{}{})
+	fake.virtualizationMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeEnvironment) VirtualizationCallCount() int {
+	fake.virtualizationMutex.RLock()
+	defer fake.virtualizationMutex.RUnlock()
+	return len(fake.virtualizationArgsForCall)
+}
+
+func (fake *FakeEnvironment) VirtualizationCalls(stub func() (string, string)) {
+	fake.virtualizationMutex.Lock()
+	defer fake.virtualizationMutex.Unlock()
+	fake.VirtualizationStub = stub
+}
+
+func (fake *FakeEnvironment) VirtualizationReturns(result1 string, result2 string) {
+	fake.virtualizationMutex.Lock()
+	defer fake.virtualizationMutex.Unlock()
+	fake.VirtualizationStub = nil
+	fake.virtualizationReturns = struct {
+		result1 string
+		result2 string
+	}{result1, result2}
+}
+
+func (fake *FakeEnvironment) VirtualizationReturnsOnCall(i int, result1 string, result2 string) {
+	fake.virtualizationMutex.Lock()
+	defer fake.virtualizationMutex.Unlock()
+	fake.VirtualizationStub = nil
+	if fake.virtualizationReturnsOnCall == nil {
+		fake.virtualizationReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 string
+		})
+	}
+	fake.virtualizationReturnsOnCall[i] = struct {
+		result1 string
+		result2 string
+	}{result1, result2}
+}
+
 func (fake *FakeEnvironment) WriteFile(arg1 ConfigApplyMarker, arg2 *proto.File, arg3 string) error {
 	fake.writeFileMutex.Lock()
 	ret, specificReturn := fake.writeFileReturnsOnCall[len(fake.writeFileArgsForCall)]
@@ -1110,6 +1178,8 @@ func (fake *FakeEnvironment) Invocations() map[string][][]interface{} {
 	defer fake.processesMutex.RUnlock()
 	fake.readDirectoryMutex.RLock()
 	defer fake.readDirectoryMutex.RUnlock()
+	fake.virtualizationMutex.RLock()
+	defer fake.virtualizationMutex.RUnlock()
 	fake.writeFileMutex.RLock()
 	defer fake.writeFileMutex.RUnlock()
 	fake.writeFilesMutex.RLock()

@@ -11,6 +11,7 @@
 //
 //	mockgen -source ingester.go -destination mocks/ingester_mock.go -package mocks -copyright_file=../../../../COPYRIGHT
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
