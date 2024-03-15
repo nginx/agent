@@ -121,7 +121,7 @@ func TestGetFile(t *testing.T) {
 	assert.Equal(t, testDataResponse.String(), resp.String())
 }
 
-func TestErrorCases(t *testing.T) {
+func TestGetFilesMetadata_ErrorCases(t *testing.T) {
 	tests := []struct {
 		name       string
 		filesURL   string
@@ -129,13 +129,13 @@ func TestErrorCases(t *testing.T) {
 		instanceID string
 	}{
 		{
-			name:       "empty-params",
+			name:       "Test 1: Provide empty parameters",
 			filesURL:   "",
 			tenantID:   "",
 			instanceID: "",
 		},
 		{
-			name:       "invalid-url",
+			name:       "Test 2: Provide invalid URL",
 			filesURL:   "::/\\",
 			tenantID:   "",
 			instanceID: "",

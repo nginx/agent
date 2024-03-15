@@ -103,14 +103,14 @@ func TestMetrics_ProcessMessage(t *testing.T) {
 		expectError error
 	}{
 		{
-			name:  "cant_cast_data",
+			name:  "Test 1: Can not cast data",
 			topic: bus.MetricsTopic,
 			data:  invalidData,
 			expectError: fmt.Errorf("metrics plugin received metrics event but could not cast it to correct "+
 				"type: %v", invalidData),
 		},
 		{
-			name:  "no_exporter",
+			name:  "Test 2: No exporter",
 			topic: bus.MetricsTopic,
 			data:  dataEntry,
 			expectError: fmt.Errorf("metrics plugin received metrics event but source type had no exporter"+
@@ -163,14 +163,14 @@ func TestMetrics_CallProduce(t *testing.T) {
 		expectedProduceError   error
 	}{
 		{
-			name:                   "failed_to_call_producer",
+			name:                   "Test 1: Failed to call producer",
 			entries:                nil,
 			expectedFailedAttempts: 1,
 			expectedNumMessage:     0,
 			expectedProduceError:   fmt.Errorf("produce error"),
 		},
 		{
-			name: "successfully_called_producer",
+			name: "Test 2: Successfully called producer",
 			entries: []model.DataEntry{
 				dataEntry,
 			},
@@ -206,7 +206,7 @@ func TestMetrics_Errors(t *testing.T) {
 		expErr      string
 	}{
 		{
-			name: "nil-metrics-configuration",
+			name: "Test 1: Metrics configuration is nil",
 			confModFunc: func(c *config.Config) *config.Config {
 				c.Metrics = nil
 
@@ -216,7 +216,7 @@ func TestMetrics_Errors(t *testing.T) {
 			expErr: "metrics configuration cannot be nil",
 		},
 		{
-			name: "negative-produce-interval",
+			name: "Test 2: Produce interval is a negative value",
 			confModFunc: func(c *config.Config) *config.Config {
 				c.Metrics.ProduceInterval = -1
 

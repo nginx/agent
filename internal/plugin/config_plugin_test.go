@@ -77,7 +77,7 @@ func TestConfig_Process(t *testing.T) {
 		expected []*bus.Message
 	}{
 		{
-			name: "Instance config updated",
+			name: "Test 1: Instance config updated",
 			input: &bus.Message{
 				Topic: bus.InstanceConfigUpdateTopic,
 				Data:  configurationStatus,
@@ -90,7 +90,7 @@ func TestConfig_Process(t *testing.T) {
 			},
 		},
 		{
-			name: "Instance config updated - unknown message type",
+			name: "Test 2: Instance config updated - unknown message type",
 			input: &bus.Message{
 				Topic: bus.InstanceConfigUpdateTopic,
 				Data:  nil,
@@ -98,7 +98,7 @@ func TestConfig_Process(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "Instance config update request",
+			name: "Test 3: Instance config update request",
 			input: &bus.Message{
 				Topic: bus.InstanceConfigUpdateRequestTopic,
 				Data:  instanceConfigUpdateRequest,
@@ -115,7 +115,7 @@ func TestConfig_Process(t *testing.T) {
 			},
 		},
 		{
-			name: "Instance config update request - unknown message type",
+			name: "Test 4: Instance config update request - unknown message type",
 			input: &bus.Message{
 				Topic: bus.InstanceConfigUpdateRequestTopic,
 				Data:  nil,
@@ -123,7 +123,7 @@ func TestConfig_Process(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "Instance topic request",
+			name: "Test 5: Instance topic request",
 			input: &bus.Message{
 				Topic: bus.InstancesTopic,
 				Data: []*instances.Instance{
@@ -191,7 +191,7 @@ func TestConfig_Update(t *testing.T) {
 		expected           []*bus.Message
 	}{
 		{
-			name:               "success",
+			name:               "Test 1: Successful config update",
 			updateReturnStatus: successStatus,
 			rollbackReturns:    nil,
 			expected: []*bus.Message{
@@ -206,7 +206,7 @@ func TestConfig_Update(t *testing.T) {
 			},
 		},
 		{
-			name:               "fail and rollback",
+			name:               "Test 2: Config update failed and rolled back",
 			updateReturnStatus: failStatus,
 			rollbackReturns:    nil,
 			expected: []*bus.Message{
@@ -229,7 +229,7 @@ func TestConfig_Update(t *testing.T) {
 			},
 		},
 		{
-			name:               "rollback fails",
+			name:               "Test 2: Rollback fails",
 			updateReturnStatus: failStatus,
 			rollbackReturns:    fmt.Errorf("rollback failed"),
 			expected: []*bus.Message{

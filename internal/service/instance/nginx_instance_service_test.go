@@ -98,7 +98,7 @@ func TestGetInstances(t *testing.T) {
 		expected                  []*instances.Instance
 	}{
 		{
-			name: "NGINX open source",
+			name: "Test 1: NGINX open source",
 			nginxVersionCommandOutput: fmt.Sprintf(`nginx version: nginx/1.23.3
 					built by clang 14.0.0 (clang-1400.0.29.202)
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
@@ -121,7 +121,7 @@ func TestGetInstances(t *testing.T) {
 				},
 			},
 		}, {
-			name: "NGINX plus",
+			name: "Test 2: NGINX plus",
 			nginxVersionCommandOutput: fmt.Sprintf(`
 				nginx version: nginx/1.25.1 (nginx-plus-r30-p1)
 				built by gcc 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.2)
@@ -168,7 +168,7 @@ func TestGetInfo(t *testing.T) {
 		expected                  *Info
 	}{
 		{
-			name: "NGINX open source",
+			name: "Test 1: NGINX open source",
 			nginxVersionCommandOutput: fmt.Sprintf(`
 				nginx version: nginx/1.23.3
 				built by clang 14.0.0 (clang-1400.0.29.202)
@@ -231,7 +231,7 @@ func TestGetInfo(t *testing.T) {
 			},
 		},
 		{
-			name: "NGINX plus",
+			name: "Test 2: NGINX plus",
 			nginxVersionCommandOutput: fmt.Sprintf(`
 				nginx version: nginx/1.25.1 (nginx-plus-r30-p1)
 				built by gcc 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.2)

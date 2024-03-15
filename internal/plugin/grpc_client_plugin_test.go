@@ -24,12 +24,12 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 		expected    *GrpcClient
 	}{
 		{
-			"grpc config",
+			"Test 1: GRPC type specified in config",
 			types.GetAgentConfig(),
 			&GrpcClient{},
 		},
 		{
-			"not grpc type",
+			"Test 2: GRPC type not specified in config",
 			&config.Config{
 				Command: &config.Command{
 					Server: &config.ServerConfig{

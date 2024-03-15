@@ -64,7 +64,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 		expected    *instances.ConfigurationStatus
 	}{
 		{
-			name:        "write fails",
+			name:        "Test 1: Write fails",
 			writeErr:    fmt.Errorf("error writing config"),
 			validateErr: nil,
 			applyErr:    nil,
@@ -72,7 +72,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			expected:    protos.CreateFailStatus("error writing config"),
 		},
 		{
-			name:        "validate fails",
+			name:        "Test 2: Validate fails",
 			writeErr:    nil,
 			validateErr: fmt.Errorf("error validating config"),
 			applyErr:    nil,
@@ -80,7 +80,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			expected:    protos.CreateFailStatus("error validating config"),
 		},
 		{
-			name:        "apply fails",
+			name:        "Test 3: Apply fails",
 			writeErr:    nil,
 			validateErr: nil,
 			applyErr:    fmt.Errorf("error reloading config"),
@@ -88,7 +88,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			expected:    protos.CreateFailStatus("error reloading config"),
 		},
 		{
-			name:        "complete fails",
+			name:        "Test 4: Complete fails",
 			writeErr:    nil,
 			validateErr: nil,
 			applyErr:    nil,
@@ -96,7 +96,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			expected:    protos.CreateSuccessStatus(),
 		},
 		{
-			name:        "success",
+			name:        "Test 5: Successfully updated config",
 			writeErr:    nil,
 			validateErr: nil,
 			applyErr:    nil,
