@@ -59,7 +59,7 @@ func TestWriteConfig(t *testing.T) {
 		expSkippedCount    int
 	}{
 		{
-			name:               "file needs updating",
+			name:               "Test 1: File needs updating",
 			metaDataReturn:     files,
 			getFileReturn:      protos.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
 			cacheShouldBeEqual: false,
@@ -67,7 +67,7 @@ func TestWriteConfig(t *testing.T) {
 			expSkippedCount:    2,
 		},
 		{
-			name:               "file doesn't need updating",
+			name:               "Test 2: File doesn't need updating",
 			metaDataReturn:     files,
 			getFileReturn:      protos.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
 			cacheShouldBeEqual: true,
@@ -157,13 +157,13 @@ func TestDeleteFile(t *testing.T) {
 		fileDeleted      bool
 	}{
 		{
-			name:             "file doesn't need deleting",
+			name:             "Test 1: File doesn't need deleting",
 			fileCache:        fileCacheContent,
 			currentFileCache: fileCacheContent,
 			fileDeleted:      false,
 		},
 		{
-			name:             "file needs deleting",
+			name:             "Test 2: File needs deleting",
 			fileCache:        fileCacheContent,
 			currentFileCache: currentFileCache,
 			fileDeleted:      true,
@@ -344,27 +344,27 @@ func TestIsFilePathValid(t *testing.T) {
 		expectedResult bool
 	}{
 		{
-			name:           "valid path",
+			name:           "Test 1: Valid path",
 			path:           "/tmp/test.conf",
 			expectedResult: true,
 		},
 		{
-			name:           "directory path",
+			name:           "Test 2: Directory path",
 			path:           "/tmp/",
 			expectedResult: false,
 		},
 		{
-			name:           "invalid path",
+			name:           "Test 3: Invalid path",
 			path:           "/",
 			expectedResult: false,
 		},
 		{
-			name:           "empty path",
+			name:           "Test 4: Empty path",
 			path:           "",
 			expectedResult: false,
 		},
 		{
-			name:           "not allowed dir",
+			name:           "Test 5: Path not allowed directory",
 			path:           "./test/test.conf",
 			expectedResult: false,
 		},
@@ -419,7 +419,7 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 		expectedResult  bool
 	}{
 		{
-			name:            "file is latest",
+			name:            "Test 1: File is latest version",
 			lastConfigApply: previousFileCache,
 			fileData: &instances.File{
 				LastModified: fileTime1,
@@ -429,7 +429,7 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 			expectedResult: false,
 		},
 		{
-			name:            "file needs updating",
+			name:            "Test 2: File needs updating",
 			lastConfigApply: previousFileCache,
 			fileData: &instances.File{
 				LastModified: updateTimeFile1,

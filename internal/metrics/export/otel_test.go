@@ -146,7 +146,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 			expErr      string
 		}{
 			{
-				name: "nil-gRPC",
+				name: "Test 1: GRPC is nil",
 				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics.OTelExporter.GRPC = nil
 
@@ -156,7 +156,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 				expErr: "gRPC configuration missing",
 			},
 			{
-				name: "nil-OTel-exporter",
+				name: "Test 2: OTelExporter is nil",
 				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics.OTelExporter = nil
 
@@ -166,7 +166,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 				expErr: "OTel Exporter configuration missing",
 			},
 			{
-				name: "nil-metrics",
+				name: "Test 3: Metrics is nil",
 				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics = nil
 
@@ -176,7 +176,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 				expErr: "metrics configuration missing",
 			},
 			{
-				name: "negative-buffer-length",
+				name: "Test 4: Buffer length is a negative value",
 				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics.OTelExporter.BufferLength = -1
 
@@ -185,7 +185,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 				isErr: false,
 			},
 			{
-				name: "negative-retry-count",
+				name: "Test 5: Export retry count is a negative value",
 				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics.OTelExporter.ExportRetryCount = -1
 
@@ -194,7 +194,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 				isErr: false,
 			},
 			{
-				name: "negative-export-interval",
+				name: "Test 6: Export interval is a negative value",
 				confModFunc: func(c *config.Config) *config.Config {
 					c.Metrics.OTelExporter.ExportInterval = -1
 

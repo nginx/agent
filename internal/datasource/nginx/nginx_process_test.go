@@ -22,13 +22,13 @@ func TestGetExe(t *testing.T) {
 		expected      string
 	}{
 		{
-			name:          "Default exe if error executing command -v nginx",
+			name:          "Test 1: Default exe if error executing command -v nginx",
 			commandOutput: []byte{},
 			commandError:  fmt.Errorf("command error"),
 			expected:      "/usr/bin/nginx",
 		},
 		{
-			name:          "Sanitize Exe Deleted Path",
+			name:          "Test 2: Sanitize Exe Deleted Path",
 			commandOutput: []byte("/usr/sbin/nginx (deleted)"),
 			commandError:  nil,
 			expected:      "/usr/sbin/nginx",

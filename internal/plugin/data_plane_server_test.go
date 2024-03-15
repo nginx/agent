@@ -58,12 +58,12 @@ func TestDataPlaneServer_Process(t *testing.T) {
 		topic string
 	}{
 		{
-			name:  "instances test",
+			name:  "Test 1: Instances test",
 			data:  []*instances.Instance{{InstanceId: instanceID, Type: instances.Type_NGINX}},
 			topic: bus.InstancesTopic,
 		},
 		{
-			name: "instances complete update",
+			name: "Test 2: Instances complete update",
 			data: &instances.ConfigurationStatus{
 				InstanceId:    instanceID,
 				CorrelationId: correlationID,
@@ -173,12 +173,12 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 		expectedMessage    string
 	}{
 		{
-			name:               "Update known instance configuration",
+			name:               "Test 1: Update known instance configuration",
 			instanceID:         instanceID,
 			expectedStatusCode: 200,
 		},
 		{
-			name:               "Update unknown instance configuration",
+			name:               "Test 2: Update unknown instance configuration",
 			instanceID:         unknownInstanceID,
 			expectedStatusCode: 404,
 			expectedMessage:    fmt.Sprintf("Unable to find instance %s", unknownInstanceID),
@@ -225,7 +225,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 		expectedResponse int
 	}{
 		{
-			name:       "happy path",
+			name:       "Test 1: Successful config update",
 			instanceID: instanceID,
 			events: []*instances.ConfigurationStatus{
 				{
@@ -260,7 +260,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 			expectedResponse: 200,
 		},
 		{
-			name:       "not found",
+			name:       "Test 1: Instance ID not found",
 			instanceID: "unknown-instance-id",
 			events:     nil,
 			expectedStatus: &dataplane.ConfigurationStatus{
@@ -351,19 +351,19 @@ func TestDataPlaneServer_MapStatusEnums(t *testing.T) {
 		expected dataplane.StatusState
 	}{
 		{
-			name:     "Success type",
+			name:     "Test 1: Success type",
 			input:    "SUCCESS",
 			expected: dataplane.SUCCESS,
 		}, {
-			name:     "In progress type",
+			name:     "Test 2: In progress type",
 			input:    "IN_PROGRESS",
 			expected: dataplane.INPROGRESS,
 		}, {
-			name:     "Failed type",
+			name:     "Test 3: Failed type",
 			input:    "FAILED",
 			expected: dataplane.FAILED,
 		}, {
-			name:     "Rollback Failed type",
+			name:     "Test 4: Rollback Failed type",
 			input:    "ROLLBACK_FAILED",
 			expected: dataplane.ROLLBACKFAILED,
 		},

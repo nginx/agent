@@ -124,12 +124,12 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 		expected interface{}
 	}{
 		{
-			name:     "valid response",
+			name:     "Test 1: Valid response",
 			out:      "nginx [info]",
 			expected: nil,
 		},
 		{
-			name:     "err response",
+			name:     "Test 2: Error response",
 			out:      "nginx [emerg]",
 			expected: errors.New("error running nginx -t -c:\nnginx [emerg]"),
 		},
@@ -156,7 +156,7 @@ func TestNginx_Apply(t *testing.T) {
 		expected         error
 	}{
 		{
-			name: "successful reload",
+			name: "Test 1: Successful reload",
 			out:  bytes.NewBufferString(""),
 			errorLogs: []*model.ErrorLog{
 				{
@@ -168,7 +168,7 @@ func TestNginx_Apply(t *testing.T) {
 			expected:         nil,
 		},
 		{
-			name: "successful reload - unknown error log location",
+			name: "Test 2: Successful reload - unknown error log location",
 			out:  bytes.NewBufferString(""),
 			errorLogs: []*model.ErrorLog{
 				{
@@ -180,18 +180,18 @@ func TestNginx_Apply(t *testing.T) {
 			expected:         nil,
 		},
 		{
-			name:     "successful reload - no error logs",
+			name:     "Test 3: Successful reload - no error logs",
 			out:      bytes.NewBufferString(""),
 			error:    nil,
 			expected: nil,
 		},
 		{
-			name:     "failed reload",
+			name:     "Test 4: Failed reload",
 			error:    errors.New("error reloading"),
 			expected: fmt.Errorf("failed to reload NGINX, %w", errors.New("error reloading")),
 		},
 		{
-			name: "failed reload due to error in error logs",
+			name: "Test 5: Failed reload due to error in error logs",
 			out:  bytes.NewBufferString(""),
 			errorLogs: []*model.ErrorLog{
 				{
@@ -203,7 +203,7 @@ func TestNginx_Apply(t *testing.T) {
 			expected:         errors.Join(fmt.Errorf(errorLogLine)),
 		},
 		{
-			name: "failed reload due to warning in error logs",
+			name: "Test 6: Failed reload due to warning in error logs",
 			out:  bytes.NewBufferString(""),
 			errorLogs: []*model.ErrorLog{
 				{
@@ -280,19 +280,19 @@ func TestNginx_Validate(t *testing.T) {
 		expected error
 	}{
 		{
-			name:     "validate successful",
+			name:     "Test 1: Validate successful",
 			out:      bytes.NewBufferString(""),
 			error:    nil,
 			expected: nil,
 		},
 		{
-			name:     "validate failed",
+			name:     "Test 2: Validate failed",
 			out:      bytes.NewBufferString("[emerg]"),
 			error:    errors.New("error validating"),
 			expected: fmt.Errorf("NGINX config test failed %w: [emerg]", errors.New("error validating")),
 		},
 		{
-			name:     "validate Config failed",
+			name:     "Test 1: Validate Config failed",
 			out:      bytes.NewBufferString("nginx [emerg]"),
 			error:    nil,
 			expected: fmt.Errorf("error running nginx -t -c:\nnginx [emerg]"),

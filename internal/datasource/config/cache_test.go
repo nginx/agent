@@ -85,12 +85,12 @@ func TestReadCache(t *testing.T) {
 		shouldHaveError bool
 	}{
 		{
-			name:            "cache file exists",
+			name:            "Test 1: Cache file exists",
 			path:            cachePath,
 			shouldHaveError: false,
 		},
 		{
-			name:            "cache file doesn't exist",
+			name:            "Test 2: Cache file doesn't exist",
 			path:            "/tmp/cache.json",
 			shouldHaveError: true,
 		},

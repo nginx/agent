@@ -30,27 +30,27 @@ func TestGetLogLevel(t *testing.T) {
 		expected slog.Level
 	}{
 		{
-			name:     "Debug level",
+			name:     "Test 1: Debug level",
 			input:    "Debug",
 			expected: slog.LevelDebug,
 		},
 		{
-			name:     "Info level",
+			name:     "Test 2: Info level",
 			input:    "info",
 			expected: slog.LevelInfo,
 		},
 		{
-			name:     "Warn level",
+			name:     "Test 3: Warn level",
 			input:    "Warn",
 			expected: slog.LevelWarn,
 		},
 		{
-			name:     "Error level",
+			name:     "Test 4: Error level",
 			input:    "ERROR",
 			expected: slog.LevelError,
 		},
 		{
-			name:     "Unknown level",
+			name:     "Test 5: Unknown level",
 			input:    "Unknown",
 			expected: slog.LevelInfo,
 		},
@@ -77,22 +77,22 @@ func TestGetLogWriter(t *testing.T) {
 		expected io.Writer
 	}{
 		{
-			name:     "No log file",
+			name:     "Test 1: No log file",
 			input:    "",
 			expected: os.Stderr,
 		},
 		{
-			name:     "Log file does not exist",
+			name:     "Test 2: Log file does not exist",
 			input:    "/unknown/file.log",
 			expected: os.Stderr,
 		},
 		{
-			name:     "Log file exists",
+			name:     "Test 3: Log file exists",
 			input:    file.Name(),
 			expected: &os.File{},
 		},
 		{
-			name:     "Log directory",
+			name:     "Test 4: Log directory",
 			input:    ".",
 			expected: &os.File{},
 		},
