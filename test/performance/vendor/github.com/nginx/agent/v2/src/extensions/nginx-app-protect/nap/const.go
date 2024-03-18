@@ -9,7 +9,7 @@ package nap
 
 const (
 	NAP_VERSION_FILE         = "/opt/app_protect/VERSION"
-	BD_SOCKET_PLUGIN_PATH    = "/usr/share/ts/bin/bd-socket-plugin"
+	NAP_RELEASE_FILE         = "/opt/app_protect/RELEASE"
 	BD_SOCKET_PLUGIN_PROCESS = "bd-socket-plugin"
 
 	// TODO: Rather than using the update yaml files for attack signatures and threat

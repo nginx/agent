@@ -7,7 +7,7 @@
 
 package nap
 
-func ReleaseUnmappedBuild(buildVersion string) NAPRelease {
+func ReleaseUnmappedBuild(version, release string) NAPRelease {
 	return NAPRelease{
 		NAPPackages:           NAPReleasePackages{},
 		NAPCompilerPackages:   NAPReleasePackages{},
@@ -15,8 +15,8 @@ func ReleaseUnmappedBuild(buildVersion string) NAPRelease {
 		NAPPluginPackages:     NAPReleasePackages{},
 		NAPPlusModulePackages: NAPReleasePackages{},
 		VersioningDetails: NAPVersioningDetails{
-			NAPBuild:   buildVersion,
-			NAPRelease: buildVersion,
+			NAPBuild:   version,
+			NAPRelease: release,
 		},
 	}
 }
