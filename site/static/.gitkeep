@@ -1,0 +1,1 @@
+add or mount static resources (that don't need to be built by Hugo but belong in the build context) here
