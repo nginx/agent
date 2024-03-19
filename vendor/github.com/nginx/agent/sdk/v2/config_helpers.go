@@ -39,6 +39,7 @@ const (
 	stubStatusAPIDirective    = "stub_status"
 	apiFormat                 = "http://%s%s"
 	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
+	httpClientTimeout         = 1 * time.Second
 )
 
 type DirectoryMap struct {
@@ -856,10 +857,10 @@ func nginxPlusApiCallback(parent *crossplane.Directive, current *crossplane.Dire
 }
 
 func pingStubStatusApiEndpoint(statusAPI string) bool {
-	client := http.Client{Timeout: 1 * time.Second}
+	client := http.Client{Timeout: httpClientTimeout}
 	resp, err := client.Get(statusAPI)
 	if err != nil {
-		log.Debugf("Unable to create client for Stub Status API request: %v", err)
+		log.Warningf("Unable to perform Stub Status API GET request: %v", err)
 		return false
 	}
 
@@ -870,7 +871,7 @@ func pingStubStatusApiEndpoint(statusAPI string) bool {
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Debugf("Unable to read Stub Status API response body: %v", err)
+		log.Warningf("Unable to read Stub Status API response body: %v", err)
 		return false
 	}
 
@@ -885,10 +886,10 @@ func pingStubStatusApiEndpoint(statusAPI string) bool {
 }
 
 func pingNginxPlusApiEndpoint(statusAPI string) bool {
-	client := http.Client{Timeout: 1 * time.Second}
+	client := http.Client{Timeout: httpClientTimeout}
 	resp, err := client.Get(statusAPI)
 	if err != nil {
-		log.Debugf("Unable to create client for NGINX Plus API request: %v", err)
+		log.Warningf("Unable to perform NGINX Plus API GET request: %v", err)
 		return false
 	}
 
@@ -899,7 +900,7 @@ func pingNginxPlusApiEndpoint(statusAPI string) bool {
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Debugf("Unable to read NGINX Plus API response body: %v", err)
+		log.Warningf("Unable to read NGINX Plus API response body: %v", err)
 		return false
 	}
 
