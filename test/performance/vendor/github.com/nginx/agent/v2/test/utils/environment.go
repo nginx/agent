@@ -154,3 +154,8 @@ func (m *MockEnvironment) IsContainer() bool {
 	ret := m.Called()
 	return ret.Get(0).(bool)
 }
+
+func (m *MockEnvironment) Virtualization() (string, string) {
+	ret := m.Called()
+	return ret.Get(0).(string), ret.Get(0).(string)
+}

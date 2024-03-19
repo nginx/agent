@@ -20,6 +20,9 @@ contents:
     dst: /etc/systemd/system/nginx-agent.service
   - src: ./scripts/nginx-agent.logrotate
     dst: /etc/logrotate.d/nginx-agent
+  - src: ./scripts/packages/nginx-agent.openrc
+    dst: /etc/init.d/nginx-agent
+    packager: apk
   - src: ./scripts/selinux/nginx_agent_selinux.8.gz
     dst: /usr/share/man/man8/nginx_agent_selinux.8.gz
     packager: rpm
@@ -45,6 +48,8 @@ rpm:
 apk:
   signature:
     key_file: ".key.rsa"
+  scripts:
+    postupgrade: "./scripts/packages/postupgrade.sh"
 scripts:
   preinstall: "./scripts/packages/preinstall.sh"
   postinstall: "./scripts/packages/postinstall.sh"
