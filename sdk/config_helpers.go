@@ -856,18 +856,21 @@ func nginxPlusApiCallback(parent *crossplane.Directive, current *crossplane.Dire
 }
 
 func pingStubStatusApiEndpoint(statusAPI string) bool {
-	client := http.Client{Timeout: 50 * time.Millisecond}
+	client := http.Client{Timeout: 1 * time.Second}
 	resp, err := client.Get(statusAPI)
 	if err != nil {
+		log.Debugf("Unable to create client for Stub Status API request: %v", err)
 		return false
 	}
 
 	if resp.StatusCode != 200 {
+		log.Debugf("Stub Status API responded with a %d status code", resp.StatusCode)
 		return false
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Debugf("Unable to read Stub Status API response body: %v", err)
 		return false
 	}
 
@@ -882,18 +885,21 @@ func pingStubStatusApiEndpoint(statusAPI string) bool {
 }
 
 func pingNginxPlusApiEndpoint(statusAPI string) bool {
-	client := http.Client{Timeout: 50 * time.Millisecond}
+	client := http.Client{Timeout: 1 * time.Second}
 	resp, err := client.Get(statusAPI)
 	if err != nil {
+		log.Debugf("Unable to create client for NGINX Plus API request: %v", err)
 		return false
 	}
 
 	if resp.StatusCode != 200 {
+		log.Debugf("NGINX Plus API responded with a %d status code", resp.StatusCode)
 		return false
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Debugf("Unable to read NGINX Plus API response body: %v", err)
 		return false
 	}
 
@@ -901,8 +907,12 @@ func pingNginxPlusApiEndpoint(statusAPI string) bool {
 	// subset example: [ ... 6,7,8,9 ...]
 	var responseBody []int
 	err = json.Unmarshal(bodyBytes, &responseBody)
+	if err != nil {
+		log.Debugf("Unable to unmarshal NGINX Plus API response body: %v", err)
+		return false
+	}
 
-	return err == nil
+	return true
 }
 
 func getUrlsForLocationDirective(parent *crossplane.Directive, current *crossplane.Directive, locationDirectiveName string) []string {
