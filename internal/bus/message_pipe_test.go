@@ -19,16 +19,16 @@ type testPlugin struct {
 	mock.Mock
 }
 
-func (p *testPlugin) Init(pipe MessagePipeInterface) error {
+func (p *testPlugin) Init(_ context.Context, pipe MessagePipeInterface) error {
 	p.Called()
 	return nil
 }
 
-func (p *testPlugin) Process(_ *Message) {
+func (p *testPlugin) Process(_ context.Context, _ *Message) {
 	p.Called()
 }
 
-func (p *testPlugin) Close() error {
+func (p *testPlugin) Close(_ context.Context) error {
 	p.Called()
 	return nil
 }
@@ -53,18 +53,18 @@ func TestMessagePipe(t *testing.T) {
 	plugin := new(testPlugin)
 	plugin.On("Init").Times(1)
 	plugin.On("Process").Times(len(messages))
-	plugin.On("Close").Times(1)
+	plugin.On("Close", mock.Anything).Times(1)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	pipelineDone := make(chan bool)
 
-	messagePipe := NewMessagePipe(ctx, 100)
+	messagePipe := NewMessagePipe(100)
 	err := messagePipe.Register(10, []Plugin{plugin})
 
 	require.NoError(t, err)
 
 	go func() {
-		messagePipe.Run()
+		messagePipe.Run(ctx)
 		pipelineDone <- true
 	}()
 
@@ -84,13 +84,13 @@ func TestMessagePipe_DeRegister(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	messagePipe := NewMessagePipe(ctx, 100)
+	messagePipe := NewMessagePipe(100)
 	err := messagePipe.Register(100, []Plugin{plugin})
 
 	require.NoError(t, err)
 	assert.Len(t, messagePipe.GetPlugins(), 1)
 
-	err = messagePipe.DeRegister([]string{plugin.Info().Name})
+	err = messagePipe.DeRegister(ctx, []string{plugin.Info().Name})
 
 	require.NoError(t, err)
 	assert.Empty(t, len(messagePipe.GetPlugins()))
@@ -105,13 +105,13 @@ func TestMessagePipe_IsPluginAlreadyRegistered(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	pipelineDone := make(chan bool)
 
-	messagePipe := NewMessagePipe(ctx, 100)
+	messagePipe := NewMessagePipe(100)
 	err := messagePipe.Register(10, []Plugin{plugin})
 
 	require.NoError(t, err)
 
 	go func() {
-		messagePipe.Run()
+		messagePipe.Run(ctx)
 		pipelineDone <- true
 	}() // for the above call being asynchronous
 

@@ -6,7 +6,11 @@
 package main
 
 import (
+	"context"
+	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/nginx/agent/v3/internal"
 )
@@ -18,9 +22,27 @@ var (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		select {
+		case <-sigChan:
+			slog.Warn("NGINX Agent exiting")
+			cancel()
+			os.Exit(1)
+		case <-ctx.Done():
+		}
+	}()
+
 	app := internal.NewApp(commit, version)
-	err := app.Run()
+
+	err := app.Run(ctx)
 	if err != nil {
+		slog.Error("NGINX Agent exiting due to error", "error", err)
+		cancel()
 		os.Exit(1)
 	}
 }

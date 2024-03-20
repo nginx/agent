@@ -20,12 +20,13 @@ import (
 )
 
 func TestInstance_Init(t *testing.T) {
+	ctx := context.Background()
 	instanceMonitor := NewInstance()
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	time.Sleep(10 * time.Millisecond)
 
@@ -45,6 +46,7 @@ func TestInstance_Subscriptions(t *testing.T) {
 }
 
 func TestInstance_Process(t *testing.T) {
+	ctx := context.Background()
 	testInstances := []*instances.Instance{{InstanceId: "123", Type: instances.Type_NGINX}}
 
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
@@ -52,10 +54,10 @@ func TestInstance_Process(t *testing.T) {
 	instanceMonitor := NewInstance()
 	instanceMonitor.instanceService = fakeInstanceService
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{{Pid: 123, Name: "nginx"}}})
 
@@ -65,12 +67,13 @@ func TestInstance_Process(t *testing.T) {
 }
 
 func TestInstance_Process_Error_Expected(t *testing.T) {
+	ctx := context.Background()
 	instanceMonitor := NewInstance()
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 2)
+	messagePipe := bus.NewMessagePipe(2)
 	err := messagePipe.Register(2, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: nil})
 
@@ -80,16 +83,17 @@ func TestInstance_Process_Error_Expected(t *testing.T) {
 }
 
 func TestInstance_Process_Empty_Instances(t *testing.T) {
+	ctx := context.Background()
 	testInstances := []*instances.Instance{}
 
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
 	fakeInstanceService.GetInstancesReturns(testInstances)
 	instanceMonitor := NewInstance()
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 2)
+	messagePipe := bus.NewMessagePipe(2)
 	err := messagePipe.Register(2, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{}})
 

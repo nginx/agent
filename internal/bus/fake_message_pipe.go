@@ -14,15 +14,12 @@ type FakeMessagePipe struct {
 	plugins           []Plugin
 	messages          []*Message
 	processedMessages []*Message
-	ctx               context.Context
 }
 
 var _ MessagePipeInterface = &FakeMessagePipe{}
 
-func NewFakeMessagePipe(ctx context.Context) *FakeMessagePipe {
-	return &FakeMessagePipe{
-		ctx: ctx,
-	}
+func NewFakeMessagePipe() *FakeMessagePipe {
+	return &FakeMessagePipe{}
 }
 
 func (p *FakeMessagePipe) Register(size int, plugins []Plugin) error {
@@ -30,23 +27,23 @@ func (p *FakeMessagePipe) Register(size int, plugins []Plugin) error {
 	return nil
 }
 
-func (p *FakeMessagePipe) DeRegister(pluginNames []string) error {
+func (p *FakeMessagePipe) DeRegister(ctx context.Context, pluginNames []string) error {
 	var plugins []Plugin
 
 	plugins = p.findPlugins(pluginNames, plugins)
 
 	for _, plugin := range plugins {
 		index := getIndex(plugin.Info().Name, p.plugins)
-		p.unsubscribePlugin(index, plugin)
+		p.unsubscribePlugin(ctx, index, plugin)
 	}
 
 	return nil
 }
 
-func (p *FakeMessagePipe) unsubscribePlugin(index int, plugin Plugin) {
+func (p *FakeMessagePipe) unsubscribePlugin(ctx context.Context, index int, plugin Plugin) {
 	if index != -1 {
 		p.plugins = append(p.plugins[:index], p.plugins[index+1:]...)
-		plugin.Close()
+		plugin.Close(ctx)
 	}
 }
 
@@ -60,10 +57,6 @@ func (p *FakeMessagePipe) findPlugins(pluginNames []string, plugins []Plugin) []
 	}
 
 	return plugins
-}
-
-func (p *FakeMessagePipe) Context() context.Context {
-	return p.ctx
 }
 
 func (p *FakeMessagePipe) Process(msgs ...*Message) {
@@ -83,24 +76,24 @@ func (p *FakeMessagePipe) ClearMessages() {
 	p.messages = []*Message{}
 }
 
-func (p *FakeMessagePipe) Run() {
+func (p *FakeMessagePipe) Run(ctx context.Context) {
 	for _, plugin := range p.plugins {
-		err := plugin.Init(p)
+		err := plugin.Init(ctx, p)
 		if err != nil {
 			return
 		}
 	}
 
-	p.RunWithoutInit()
+	p.RunWithoutInit(ctx)
 }
 
-func (p *FakeMessagePipe) RunWithoutInit() {
+func (p *FakeMessagePipe) RunWithoutInit(ctx context.Context) {
 	var message *Message
 
 	for len(p.messages) > 0 {
 		message, p.messages = p.messages[0], p.messages[1:]
 		for _, plugin := range p.plugins {
-			plugin.Process(message)
+			plugin.Process(ctx, message)
 		}
 		p.processedMessages = append(p.processedMessages, message)
 	}

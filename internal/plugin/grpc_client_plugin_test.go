@@ -62,17 +62,18 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 }
 
 func TestGrpcClient_InitWithInvalidServerAddr(t *testing.T) {
+	ctx := context.Background()
 	agentConfig := types.GetAgentConfig()
 	agentConfig.Command.Server.Host = "saasdkldsj"
 
 	client := NewGrpcClient(agentConfig)
 	assert.NotNil(t, client)
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{client})
 	require.NoError(t, err)
 
-	err = client.Init(messagePipe)
+	err = client.Init(ctx, messagePipe)
 	assert.Contains(t, err.Error(), "connection error")
 }
 
@@ -89,6 +90,7 @@ func TestGrpcClient_Subscriptions(t *testing.T) {
 }
 
 func TestGrpcClient_Process(t *testing.T) {
+	ctx := context.Background()
 	agentConfig := types.GetAgentConfig()
 	client := NewGrpcClient(agentConfig)
 	assert.NotNil(t, client)
@@ -97,7 +99,7 @@ func TestGrpcClient_Process(t *testing.T) {
 		Topic: bus.InstanceConfigUpdateRequestTopic,
 		Data:  nil,
 	}
-	client.Process(mockMessage)
+	client.Process(ctx, mockMessage)
 	// add better assertions when the process function does something
 	assert.Nil(t, client.messagePipe)
 }

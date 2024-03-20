@@ -19,6 +19,7 @@ import (
 )
 
 func TestProcessMonitor_Init(t *testing.T) {
+	ctx := context.Background()
 	testProcesses := []*model.Process{{Pid: 123, Name: "nginx"}}
 
 	processMonitor := NewProcessMonitor(types.GetAgentConfig())
@@ -27,10 +28,10 @@ func TestProcessMonitor_Init(t *testing.T) {
 		return testProcesses, nil
 	}
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{processMonitor})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	time.Sleep(10 * time.Millisecond)
 

@@ -6,6 +6,7 @@
 package plugin
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -27,12 +28,18 @@ func NewInstance() *Instance {
 	}
 }
 
-func (i *Instance) Init(messagePipe bus.MessagePipeInterface) error {
+func (i *Instance) Init(_ context.Context, messagePipe bus.MessagePipeInterface) error {
+	slog.Debug("Starting instance plugin")
 	i.messagePipe = messagePipe
+
 	return nil
 }
 
-func (*Instance) Close() error { return nil }
+func (*Instance) Close(_ context.Context) error {
+	slog.Debug("Closing instance plugin")
+
+	return nil
+}
 
 func (*Instance) Info() *bus.Info {
 	return &bus.Info{
@@ -40,7 +47,7 @@ func (*Instance) Info() *bus.Info {
 	}
 }
 
-func (i *Instance) Process(msg *bus.Message) {
+func (i *Instance) Process(_ context.Context, msg *bus.Message) {
 	if msg.Topic == bus.OsProcessesTopic {
 		newProcesses, ok := msg.Data.([]*model.Process)
 		if !ok {
