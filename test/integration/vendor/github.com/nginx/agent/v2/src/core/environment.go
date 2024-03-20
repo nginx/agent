@@ -757,7 +757,7 @@ func (env *EnvironmentType) processors(architecture string) (res []*proto.CpuInf
 			// TODO - check if this is correct
 			Hypervisor:     hypervisor,
 			Virtualization: virtual,
-			Cache:          processorCache(item),
+			Cache:          processorCache(),
 		}
 
 		res = append(res, &processor)
@@ -766,7 +766,7 @@ func (env *EnvironmentType) processors(architecture string) (res []*proto.CpuInf
 	return res
 }
 
-func processorCache(_ cpu.InfoStat) map[string]string {
+func processorCache() map[string]string {
 	cache := getProcessorCacheInfo(cpuid.CPU)
 	if cpuid.CPU.Supports(cpuid.SSE, cpuid.SSE2) {
 		cache["SIMD 2:"] = "Streaming SIMD 2 Extensions"
@@ -788,7 +788,14 @@ func (e execShellCommand) Exec(cmd string, arg ...string) ([]byte, error) {
 var shell Shell = execShellCommand{}
 
 func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
-	cache := getDefaultProcessorCacheInfo(cpuInfo)
+	cache := map[string]string{
+		"L1d":       formatBytes(cpuInfo.Cache.L1D),
+		"L1i":       formatBytes(cpuInfo.Cache.L1D),
+		"L2":        formatBytes(cpuInfo.Cache.L2),
+		"L3":        formatBytes(cpuInfo.Cache.L3),
+		"Features:": strings.Join(cpuInfo.FeatureSet(), ","),
+		"Cacheline bytes:": fmt.Sprintf("%v", cpuInfo.CacheLine),
+	}
 	return getCacheInfo(cache)
 }
 
@@ -831,18 +838,6 @@ func parseLscpu(lscpuInfo string, cache map[string]string) map[string]string {
 	return cache
 }
 
-func getDefaultProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
-	// Find a library that supports multiple CPUs
-	return map[string]string{
-		"L1d":       formatBytes(cpuInfo.Cache.L1D),
-		"L1i":       formatBytes(cpuInfo.Cache.L1D),
-		"L2":        formatBytes(cpuInfo.Cache.L2),
-		"L3":        formatBytes(cpuInfo.Cache.L3),
-		"Features:": strings.Join(cpuInfo.FeatureSet(), ","),
-		// "Flags:": strings.Join(item.Flags, ","),
-		"Cacheline bytes:": fmt.Sprintf("%v", cpuInfo.CacheLine),
-	}
-}
 
 func formatBytes(bytes int) string {
 	if bytes <= -1 {
