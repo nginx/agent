@@ -506,7 +506,7 @@ Represents a response payload for an overview of files for a particular configur
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview of |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview of an instance |
 
 
 
@@ -552,7 +552,7 @@ Represents a the payload for an overview an update of  files for a particular co
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview of |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview of an instance |
 
 
 

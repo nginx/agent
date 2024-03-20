@@ -142,7 +142,7 @@ type GetOverviewResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The file overview of
+	// The file overview of an instance
 	Overview *FileOverview `protobuf:"bytes,1,opt,name=overview,proto3" json:"overview,omitempty"`
 }
 
@@ -191,7 +191,7 @@ type UpdateOverviewRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The file overview of
+	// The file overview of an instance
 	Overview *FileOverview `protobuf:"bytes,1,opt,name=overview,proto3" json:"overview,omitempty"`
 }
 

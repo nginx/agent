@@ -36,13 +36,13 @@ message GetOverviewRequest {
 
 // Represents a response payload for an overview of files for a particular configuration version of an instance
 message GetOverviewResponse {
-    // The file overview of 
+    // The file overview of an instance
     FileOverview overview = 1;
 }
 
 // Represents a the payload for an overview an update of  files for a particular configuration version of an instance
 message UpdateOverviewRequest {
-    // The file overview of 
+    // The file overview of an instance
     FileOverview overview = 1;
 }
 
