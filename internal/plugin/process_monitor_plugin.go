@@ -16,7 +16,7 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 )
 
-type GetProcessesFunc func() ([]*model.Process, error)
+type GetProcessesFunc func(ctx context.Context) ([]*model.Process, error)
 
 type ProcessMonitor struct {
 	monitoringFrequency time.Duration
@@ -69,7 +69,7 @@ func (*ProcessMonitor) Subscriptions() []string {
 }
 
 func (pm *ProcessMonitor) run(ctx context.Context) {
-	processes, err := pm.getProcessesFunc()
+	processes, err := pm.getProcessesFunc(ctx)
 	if err == nil {
 		pm.processes = processes
 		pm.messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
@@ -85,7 +85,7 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-pm.processTicker.C:
-			processes, err := pm.getProcessesFunc()
+			processes, err := pm.getProcessesFunc(ctx)
 			if err != nil {
 				slog.Error("Unable to get process information", "error", err)
 

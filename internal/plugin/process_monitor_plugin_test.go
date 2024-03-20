@@ -24,7 +24,7 @@ func TestProcessMonitor_Init(t *testing.T) {
 
 	processMonitor := NewProcessMonitor(types.GetAgentConfig())
 
-	processMonitor.getProcessesFunc = func() ([]*model.Process, error) {
+	processMonitor.getProcessesFunc = func(_ context.Context) ([]*model.Process, error) {
 		return testProcesses, nil
 	}
 
