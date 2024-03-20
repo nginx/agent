@@ -143,7 +143,7 @@ dev: ## Run agent executable
 
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🚀 Running mock management plane gRPC server"
-	$(GORUN) test/mock/grpc/cmd/main.go
+	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
 
 run-mock-management-http-server: ## Run mock management HTTP server
 	@echo "🚀 Running mock management plane HTTP server"

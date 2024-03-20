@@ -111,11 +111,11 @@ message InstanceConfig {
 // This contains a series of NGINX Agent configurations
 message AgentConfig { 
     // Command server settings
-    Command command = 1;
+    CommandServer command = 1;
     // Metrics server settings
-    Metrics metrics = 2;
+    MetricsServer metrics = 2;
     // File server settings
-    File file = 3;
+    FileServer file = 3;
     // A series of key/value pairs to add more data to the NGINX Agent instance
     repeated google.protobuf.Struct labels = 4;
     // A list of features that the NGINX Agent has
@@ -125,10 +125,10 @@ message AgentConfig {
 }
 
 // The command settings, associated with messaging from an external source 
-message Command {}
+message CommandServer {}
 
 // The metrics settings associated with orgins (sources) of the metrics and destinations (exporter)
-message Metrics {}
+message MetricsServer {}
 
 // The file settings associated with file server for configurations
-message File {}
+message FileServer {}

@@ -17,8 +17,30 @@ import (
 )
 
 func main() {
+	var configDirectory string
 	var grpcAddress string
 	var apiAddress string
+
+	currentPath, err := os.Getwd()
+	if err != nil {
+		slog.Error("Unable to get current directory", "error", err)
+	}
+
+	var address string
+
+	flag.StringVar(
+		&configDirectory,
+		"configDirectory",
+		currentPath,
+		"set the directory where the config files are stored",
+	)
+
+	flag.StringVar(
+		&address,
+		"address",
+		"127.0.0.1:0",
+		"set the address to run the server on",
+	)
 
 	flag.StringVar(
 		&grpcAddress,
@@ -35,26 +57,34 @@ func main() {
 	)
 	flag.Parse()
 
-	server := mockGrpc.NewManagementGrpcServer()
+	commandServer := mockGrpc.NewManagementGrpcServer()
 
 	go func() {
-		listener, err := net.Listen("tcp", apiAddress)
-		if err != nil {
+		listener, listenError := net.Listen("tcp", apiAddress)
+		if listenError != nil {
 			slog.Error("Failed to create listener", "error", err)
 			os.Exit(1)
 		}
 
-		server.StartServer(listener)
+		commandServer.StartServer(listener)
 	}()
+
+	fileServer, err := mockGrpc.NewManagementGrpcFileServer(configDirectory)
+	if err != nil {
+		slog.Error("Failed to create file server: %v", err)
+		os.Exit(1)
+	}
 
 	listener, err := net.Listen("tcp", grpcAddress)
 	if err != nil {
-		slog.Error("failed to listen: %v", err)
+		slog.Error("Failed to listen: %v", err)
+		os.Exit(1)
 	}
 	var opts []grpc.ServerOption
 
 	grpcServer := grpc.NewServer(opts...)
-	v1.RegisterCommandServiceServer(grpcServer, server)
+	v1.RegisterCommandServiceServer(grpcServer, commandServer)
+	v1.RegisterFileServiceServer(grpcServer, fileServer)
 
 	slog.Info("gRPC server running", "address", listener.Addr().String())
 
