@@ -789,11 +789,11 @@ var shell Shell = execShellCommand{}
 
 func getProcessorCacheInfo(cpuInfo cpuid.CPUInfo) map[string]string {
 	cache := map[string]string{
-		"L1d":       formatBytes(cpuInfo.Cache.L1D),
-		"L1i":       formatBytes(cpuInfo.Cache.L1D),
-		"L2":        formatBytes(cpuInfo.Cache.L2),
-		"L3":        formatBytes(cpuInfo.Cache.L3),
-		"Features:": strings.Join(cpuInfo.FeatureSet(), ","),
+		"L1d":              formatBytes(cpuInfo.Cache.L1D),
+		"L1i":              formatBytes(cpuInfo.Cache.L1D),
+		"L2":               formatBytes(cpuInfo.Cache.L2),
+		"L3":               formatBytes(cpuInfo.Cache.L3),
+		"Features:":        strings.Join(cpuInfo.FeatureSet(), ","),
 		"Cacheline bytes:": fmt.Sprintf("%v", cpuInfo.CacheLine),
 	}
 	return getCacheInfo(cache)
@@ -837,7 +837,6 @@ func parseLscpu(lscpuInfo string, cache map[string]string) map[string]string {
 
 	return cache
 }
-
 
 func formatBytes(bytes int) string {
 	if bytes <= -1 {
