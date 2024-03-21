@@ -42,6 +42,7 @@ func main() {
 					config.DefGracefulShutdownPeriod,
 				),
 			)
+			os.Exit(1)
 		case <-ctx.Done():
 		}
 	}()
