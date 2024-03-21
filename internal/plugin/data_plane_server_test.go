@@ -37,7 +37,7 @@ func TestDataPlaneServer_Init(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	addr := dataPlaneServer.server.Addr
+	addr := dataPlaneServer.getServerAddress()
 	assert.NotNil(t, addr)
 
 	err = dataPlaneServer.Close(ctx)
@@ -83,9 +83,9 @@ func TestDataPlaneServer_Process(t *testing.T) {
 
 			var actual interface{}
 			if tt.topic == bus.InstancesTopic {
-				actual = dataPlaneServer.instances
+				actual = dataPlaneServer.getInstances()
 			} else {
-				actual = dataPlaneServer.configEvents[instanceID][0]
+				actual = dataPlaneServer.getConfigurationStatus(instanceID)[0]
 			}
 
 			assert.Equal(t, tt.data, actual)
@@ -121,7 +121,7 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	addr := dataPlaneServer.server.Addr
+	addr := dataPlaneServer.getServerAddress()
 	assert.NotNil(t, addr)
 
 	target := fmt.Sprintf("http://%s/api/v1/instances", addr)
@@ -166,7 +166,7 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	addr := dataPlaneServer.server.Addr
+	addr := dataPlaneServer.getServerAddress()
 	assert.NotNil(t, addr)
 
 	tests := []struct {
@@ -301,7 +301,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	tcpAddr := dataPlaneServer.server.Addr
+	tcpAddr := dataPlaneServer.getServerAddress()
 
 	assert.NotNil(t, tcpAddr)
 
@@ -390,7 +390,7 @@ func performPutRequest(
 	instanceID string,
 	data []byte,
 ) (*http.Response, error) {
-	addr := dataPlaneServer.server.Addr
+	addr := dataPlaneServer.getServerAddress()
 	if addr == "" {
 		return nil, fmt.Errorf("unable to get server address")
 	}
@@ -411,7 +411,7 @@ func performGetInstanceConfigurationStatusRequest(
 	dataPlaneServer *DataPlaneServer,
 	instanceID string,
 ) (*http.Response, error) {
-	addr := dataPlaneServer.server.Addr
+	addr := dataPlaneServer.getServerAddress()
 	if addr == "" {
 		return nil, fmt.Errorf("unable to get server address")
 	}

@@ -102,6 +102,9 @@ unit-test: $(TEST_BUILD_DIR) ## Run unit tests
 	@$(GOTOOL) cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
 	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
 
+unit-test-with-race-condition-detection: $(TEST_BUILD_DIR) ## Run unit tests with race condition detection
+	@CGO_ENABLED=0 $(GOTEST) -race ./internal/... ./api/... ./cmd/...
+
 $(TEST_BUILD_DIR)/coverage.out:
 	@$(MAKE) unit-test
 
@@ -140,6 +143,10 @@ run: build ## Run code
 dev: ## Run agent executable
 	@echo "🚀 Running App"
 	$(GORUN) $(PROJECT_DIR)/$(PROJECT_FILE)
+
+dev-with-race-condition-detection: ## Run agent executable with race condition detection
+	@echo "🚀 Running app with race condition detection enabled"
+	$(GORUN) -race $(PROJECT_DIR)/$(PROJECT_FILE)
 
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🚀 Running mock management plane gRPC server"

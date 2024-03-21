@@ -46,20 +46,20 @@ type (
 		bus            messagebus.MessageBus
 		messageChannel chan *Message
 		plugins        []Plugin
-		mu             sync.RWMutex
+		pluginsMutex   sync.Mutex
 	}
 )
 
 func NewMessagePipe(size int) *MessagePipe {
 	return &MessagePipe{
 		messageChannel: make(chan *Message, size),
-		mu:             sync.RWMutex{},
+		pluginsMutex:   sync.Mutex{},
 	}
 }
 
 func (p *MessagePipe) Register(size int, plugins []Plugin) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.pluginsMutex.Lock()
+	defer p.pluginsMutex.Unlock()
 
 	p.plugins = append(p.plugins, plugins...)
 	p.bus = messagebus.New(size)
@@ -82,8 +82,8 @@ func (p *MessagePipe) Register(size int, plugins []Plugin) error {
 }
 
 func (p *MessagePipe) DeRegister(ctx context.Context, pluginNames []string) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.pluginsMutex.Lock()
+	defer p.pluginsMutex.Unlock()
 
 	var plugins []Plugin
 	plugins = p.findPlugins(pluginNames, plugins)
@@ -116,13 +116,9 @@ func (p *MessagePipe) Run(ctx context.Context) {
 				r.Close(ctx)
 			}
 
-			close(p.messageChannel)
-
 			return
 		case m := <-p.messageChannel:
-			p.mu.Lock()
 			p.bus.Publish(m.Topic, ctx, m)
-			p.mu.Unlock()
 		}
 	}
 }

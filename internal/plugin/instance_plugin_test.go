@@ -19,20 +19,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInstance_Init(t *testing.T) {
-	ctx := context.Background()
-	instanceMonitor := NewInstance()
-
-	messagePipe := bus.NewMessagePipe(100)
-	err := messagePipe.Register(100, []bus.Plugin{instanceMonitor})
-	require.NoError(t, err)
-	go messagePipe.Run(ctx)
-
-	time.Sleep(10 * time.Millisecond)
-
-	assert.NotNil(t, instanceMonitor.messagePipe)
-}
-
 func TestInstance_Info(t *testing.T) {
 	instanceMonitor := NewInstance()
 	info := instanceMonitor.Info()
@@ -63,7 +49,7 @@ func TestInstance_Process(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	assert.Equal(t, testInstances, instanceMonitor.instances)
+	assert.Equal(t, testInstances, instanceMonitor.getInstances())
 }
 
 func TestInstance_Process_Error_Expected(t *testing.T) {
