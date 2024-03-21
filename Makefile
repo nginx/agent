@@ -103,7 +103,7 @@ unit-test: $(TEST_BUILD_DIR) ## Run unit tests
 	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
 
 unit-test-with-race-condition-detection: $(TEST_BUILD_DIR) ## Run unit tests with race condition detection
-	@CGO_ENABLED=0 $(GOTEST) -race ./internal/... ./api/... ./cmd/...
+	@CGO_ENABLED=1 $(GOTEST) -race ./internal/... ./api/... ./cmd/...
 
 $(TEST_BUILD_DIR)/coverage.out:
 	@$(MAKE) unit-test
