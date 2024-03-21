@@ -7,11 +7,15 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/nginx/agent/v3/internal"
+	"github.com/nginx/agent/v3/internal/config"
 )
 
 var (
@@ -21,8 +25,26 @@ var (
 )
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+	ctx, cancel := context.WithCancel(context.Background())
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		select {
+		case <-sigChan:
+			slog.Warn("NGINX Agent exiting")
+			cancel()
+
+			time.Sleep(config.DefGracefulShutdownPeriod)
+			slog.Error(
+				fmt.Sprintf(
+					"Failed to gracefully shutdown within timeout of %v. Exiting",
+					config.DefGracefulShutdownPeriod,
+				),
+			)
+		case <-ctx.Done():
+		}
+	}()
 
 	app := internal.NewApp(commit, version)
 
