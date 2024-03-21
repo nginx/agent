@@ -31,7 +31,7 @@ type (
 		Process(messages ...*Message)
 		Run(ctx context.Context)
 		GetPlugins() []Plugin
-		IsPluginAlreadyRegistered(pluginName string) bool
+		IsPluginRegistered(pluginName string) bool
 	}
 
 	Plugin interface {
@@ -131,16 +131,16 @@ func (p *MessagePipe) GetPlugins() []Plugin {
 	return p.plugins
 }
 
-func (p *MessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
-	pluginAlreadyRegistered := false
+func (p *MessagePipe) IsPluginRegistered(pluginName string) bool {
+	isPluginRegistered := false
 
 	for _, plugin := range p.GetPlugins() {
 		if plugin.Info().Name == pluginName {
-			pluginAlreadyRegistered = true
+			isPluginRegistered = true
 		}
 	}
 
-	return pluginAlreadyRegistered
+	return isPluginRegistered
 }
 
 func (p *MessagePipe) unsubscribePlugin(ctx context.Context, index int, plugin Plugin) error {

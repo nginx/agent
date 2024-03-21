@@ -103,7 +103,7 @@ func (p *FakeMessagePipe) GetPlugins() []Plugin {
 	return p.plugins
 }
 
-func (p *FakeMessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
+func (p *FakeMessagePipe) IsPluginRegistered(pluginName string) bool {
 	pluginAlreadyRegistered := false
 
 	for _, plugin := range p.GetPlugins() {
