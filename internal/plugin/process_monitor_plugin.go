@@ -16,7 +16,7 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 )
 
-type GetProcessesFunc func() ([]*model.Process, error)
+type GetProcessesFunc func(ctx context.Context) ([]*model.Process, error)
 
 type ProcessMonitor struct {
 	monitoringFrequency time.Duration
@@ -24,6 +24,7 @@ type ProcessMonitor struct {
 	messagePipe         bus.MessagePipeInterface
 	getProcessesFunc    GetProcessesFunc
 	processTicker       *time.Ticker
+	cancel              context.CancelFunc
 }
 
 func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
@@ -35,15 +36,22 @@ func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
 	}
 }
 
-func (pm *ProcessMonitor) Init(messagePipe bus.MessagePipeInterface) error {
+func (pm *ProcessMonitor) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+	slog.Debug("Starting process monitor plugin", "monitoring_period", pm.monitoringFrequency)
+
 	pm.messagePipe = messagePipe
-	go pm.run(messagePipe.Context())
+	var pmCtx context.Context
+	pmCtx, pm.cancel = context.WithCancel(ctx)
+	go pm.run(pmCtx)
 
 	return nil
 }
 
-func (pm *ProcessMonitor) Close() error {
+func (pm *ProcessMonitor) Close(_ context.Context) error {
+	slog.Debug("Closing process monitor plugin")
+
 	pm.processes = nil
+	pm.cancel()
 
 	return nil
 }
@@ -54,16 +62,14 @@ func (*ProcessMonitor) Info() *bus.Info {
 	}
 }
 
-func (*ProcessMonitor) Process(*bus.Message) {}
+func (*ProcessMonitor) Process(_ context.Context, _ *bus.Message) {}
 
 func (*ProcessMonitor) Subscriptions() []string {
 	return []string{}
 }
 
 func (pm *ProcessMonitor) run(ctx context.Context) {
-	slog.Debug("Process monitor started", "monitoring_period", pm.monitoringFrequency)
-
-	processes, err := pm.getProcessesFunc()
+	processes, err := pm.getProcessesFunc(ctx)
 	if err == nil {
 		pm.processes = processes
 		pm.messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
@@ -79,7 +85,7 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-pm.processTicker.C:
-			processes, err := pm.getProcessesFunc()
+			processes, err := pm.getProcessesFunc(ctx)
 			if err != nil {
 				slog.Error("Unable to get process information", "error", err)
 

@@ -35,8 +35,8 @@ type (
 	GrpcClient struct {
 		messagePipe bus.MessagePipeInterface
 		config      *config.Config
-		ctx         context.Context
-		cncl        context.CancelFunc
+		conn        *grpc.ClientConn
+		cancel      context.CancelFunc
 	}
 )
 
@@ -50,8 +50,8 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 	return nil
 }
 
-func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
-	slog.Debug("Starting grpc client")
+func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+	slog.Debug("Starting grpc client plugin")
 	gc.messagePipe = messagePipe
 
 	serverAddr := net.JoinHostPort(
@@ -59,8 +59,11 @@ func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 		fmt.Sprint(gc.config.Command.Server.Port),
 	)
 
-	gc.ctx, gc.cncl = context.WithTimeout(gc.messagePipe.Context(), gc.config.Client.Timeout)
-	conn, err := grpc.DialContext(gc.ctx, serverAddr, gc.getDialOptions()...)
+	var grpcClientCtx context.Context
+	grpcClientCtx, gc.cancel = context.WithTimeout(ctx, gc.config.Client.Timeout)
+
+	var err error
+	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, gc.getDialOptions()...)
 	if err != nil {
 		return err
 	}
@@ -76,8 +79,7 @@ func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 		return fmt.Errorf("error generating correlation id: %w", err)
 	}
 
-	client := v1.NewCommandServiceClient(conn)
-
+	client := v1.NewCommandServiceClient(gc.conn)
 	req := &v1.CreateConnectionRequest{
 		MessageMeta: &v1.MessageMeta{
 			MessageId:     id.String(),
@@ -94,7 +96,7 @@ func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 		},
 	}
 
-	response, err := client.CreateConnection(gc.ctx, req)
+	response, err := client.CreateConnection(grpcClientCtx, req)
 	if err != nil {
 		return fmt.Errorf("error creating connection: %w", err)
 	}
@@ -104,9 +106,13 @@ func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 	return nil
 }
 
-func (gc *GrpcClient) Close() error {
-	if gc.ctx != nil {
-		gc.cncl()
+func (gc *GrpcClient) Close(_ context.Context) error {
+	slog.Debug("Closing grpc client plugin")
+
+	err := gc.conn.Close()
+	if err != nil {
+		slog.Error("Failed to gracefully close gRPC connection", "error", err)
+		gc.cancel()
 	}
 
 	return nil
@@ -118,7 +124,7 @@ func (gc *GrpcClient) Info() *bus.Info {
 	}
 }
 
-func (gc *GrpcClient) Process(msg *bus.Message) {}
+func (gc *GrpcClient) Process(_ context.Context, _ *bus.Message) {}
 
 func (gc *GrpcClient) Subscriptions() []string {
 	return []string{}

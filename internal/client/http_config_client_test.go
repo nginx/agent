@@ -24,7 +24,7 @@ import (
 )
 
 func TestGetFilesMetadata(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	tenantID, instanceID := helpers.CreateTestIDs(t)
 
 	fileTime1, err := protos.CreateProtoTime("2024-01-08T13:22:25Z")
@@ -80,7 +80,7 @@ func TestGetFilesMetadata(t *testing.T) {
 }
 
 func TestGetFile(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	tenantID, instanceID := helpers.CreateTestIDs(t)
 
 	test := `{

@@ -6,6 +6,7 @@
 package plugin
 
 import (
+	"context"
 	"log/slog"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -36,12 +37,18 @@ func NewConfig(agentConfig *config.Config) *Config {
 	}
 }
 
-func (c *Config) Init(messagePipe bus.MessagePipeInterface) error {
+func (c *Config) Init(_ context.Context, messagePipe bus.MessagePipeInterface) error {
+	slog.Debug("Starting config plugin")
 	c.messagePipe = messagePipe
+
 	return nil
 }
 
-func (*Config) Close() error { return nil }
+func (*Config) Close(_ context.Context) error {
+	slog.Debug("Closing config plugin")
+
+	return nil
+}
 
 func (*Config) Info() *bus.Info {
 	return &bus.Info{
@@ -49,12 +56,12 @@ func (*Config) Info() *bus.Info {
 	}
 }
 
-func (c *Config) Process(msg *bus.Message) {
+func (c *Config) Process(ctx context.Context, msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.InstanceConfigUpdateTopic:
 		c.processConfigurationStatus(msg)
 	case msg.Topic == bus.InstanceConfigUpdateRequestTopic:
-		c.processInstanceConfigUpdateRequest(msg)
+		c.processInstanceConfigUpdateRequest(ctx, msg)
 	case msg.Topic == bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*instances.Instance); ok {
 			c.instances = newInstances
@@ -91,11 +98,11 @@ func (c *Config) GetInstance(instanceID string) *instances.Instance {
 	return nil
 }
 
-func (c *Config) processInstanceConfigUpdateRequest(msg *bus.Message) {
+func (c *Config) processInstanceConfigUpdateRequest(ctx context.Context, msg *bus.Message) {
 	if request, ok := msg.Data.(*model.InstanceConfigUpdateRequest); !ok {
 		slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
 	} else {
-		c.updateInstanceConfig(request)
+		c.updateInstanceConfig(ctx, request)
 	}
 }
 
@@ -124,7 +131,7 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 	}
 }
 
-func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest) {
+func (c *Config) updateInstanceConfig(ctx context.Context, request *model.InstanceConfigUpdateRequest) {
 	slog.Debug("Updating instance configuration")
 	instanceID := request.Instance.GetInstanceId()
 	if c.configServices[instanceID] == nil {
@@ -141,7 +148,7 @@ func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest
 	c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: inProgressStatus})
 
 	skippedFiles, status := c.configServices[request.Instance.GetInstanceId()].UpdateInstanceConfiguration(
-		c.messagePipe.Context(),
+		ctx,
 		request.CorrelationID,
 		request.Location,
 	)
@@ -157,7 +164,7 @@ func (c *Config) updateInstanceConfig(request *model.InstanceConfigUpdateRequest
 		}
 		c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: rollbackInProgress})
 
-		err := c.configServices[instanceID].Rollback(c.messagePipe.Context(), skippedFiles,
+		err := c.configServices[instanceID].Rollback(ctx, skippedFiles,
 			request.Location, tenantID, instanceID)
 		if err != nil {
 			rollbackFailed := &instances.ConfigurationStatus{

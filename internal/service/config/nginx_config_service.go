@@ -243,8 +243,8 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan error) {
 		return
 	}
 
-	ctx, cncl := context.WithTimeout(context.Background(), n.agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
-	defer cncl()
+	ctx, cancel := context.WithTimeout(context.Background(), n.agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
+	defer cancel()
 
 	slog.Debug("Monitoring NGINX error log file for any errors", "file", logFile)
 

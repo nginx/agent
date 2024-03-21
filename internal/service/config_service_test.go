@@ -48,7 +48,7 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 
 func TestUpdateInstanceConfiguration(t *testing.T) {
 	correlationID := "dfsbhj6-bc92-30c1-a9c9-85591422068e"
-	ctx := context.TODO()
+	ctx := context.Background()
 	instance := instances.Instance{
 		InstanceId: instanceID,
 		Type:       instances.Type_NGINX,

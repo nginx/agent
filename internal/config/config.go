@@ -6,6 +6,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -30,9 +31,9 @@ func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 	RootCommand.Run = r
 }
 
-func Execute() error {
+func Execute(ctx context.Context) error {
 	RootCommand.AddCommand(CompletionCommand)
-	return RootCommand.Execute()
+	return RootCommand.ExecuteContext(ctx)
 }
 
 func Init(version, commit string) {
