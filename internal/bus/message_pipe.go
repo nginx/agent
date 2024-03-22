@@ -85,8 +85,7 @@ func (p *MessagePipe) DeRegister(ctx context.Context, pluginNames []string) erro
 	p.pluginsMutex.Lock()
 	defer p.pluginsMutex.Unlock()
 
-	var plugins []Plugin
-	plugins = p.findPlugins(pluginNames, plugins)
+	plugins := p.findPlugins(pluginNames)
 
 	for _, plugin := range plugins {
 		index := getIndex(plugin.Info().Name, p.plugins)
@@ -107,14 +106,18 @@ func (p *MessagePipe) Process(messages ...*Message) {
 }
 
 func (p *MessagePipe) Run(ctx context.Context) {
+	p.pluginsMutex.Lock()
 	p.initPlugins(ctx)
+	p.pluginsMutex.Unlock()
 
 	for {
 		select {
 		case <-ctx.Done():
+			p.pluginsMutex.Lock()
 			for _, r := range p.plugins {
 				r.Close(ctx)
 			}
+			p.pluginsMutex.Unlock()
 
 			return
 		case m := <-p.messageChannel:
@@ -156,7 +159,9 @@ func (p *MessagePipe) unsubscribePlugin(ctx context.Context, index int, plugin P
 	return nil
 }
 
-func (p *MessagePipe) findPlugins(pluginNames []string, plugins []Plugin) []Plugin {
+func (p *MessagePipe) findPlugins(pluginNames []string) []Plugin {
+	plugins := []Plugin{}
+
 	for _, name := range pluginNames {
 		for _, plugin := range p.plugins {
 			if plugin.Info().Name == name {

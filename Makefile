@@ -102,7 +102,7 @@ unit-test: $(TEST_BUILD_DIR) ## Run unit tests
 	@$(GOTOOL) cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
 	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
 
-unit-test-with-race-condition-detection: $(TEST_BUILD_DIR) ## Run unit tests with race condition detection
+race-condition-test: $(TEST_BUILD_DIR) ## Run unit tests with race condition detection
 	@CGO_ENABLED=1 $(GOTEST) -race ./internal/... ./api/... ./cmd/...
 
 $(TEST_BUILD_DIR)/coverage.out:
@@ -144,7 +144,7 @@ dev: ## Run agent executable
 	@echo "🚀 Running App"
 	$(GORUN) $(PROJECT_DIR)/$(PROJECT_FILE)
 
-dev-with-race-condition-detection: ## Run agent executable with race condition detection
+race-condition-dev: ## Run agent executable with race condition detection
 	@echo "🚀 Running app with race condition detection enabled"
 	$(GORUN) -race $(PROJECT_DIR)/$(PROJECT_FILE)
 
