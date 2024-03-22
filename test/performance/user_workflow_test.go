@@ -38,18 +38,16 @@ func BenchmarkNginxConfig(b *testing.B) {
 	for _, v := range largeConfigFiles {
 		func(confFile string) {
 			b.Run(confFile, func(bb *testing.B) {
-				bb.ReportAllocs()
-
 				allowedDirs := map[string]struct{}{}
 				allowedDirs["../testdata/configs/bigger/ssl/"] = struct{}{}
 
 				var nginxConfig *proto.NginxConfig
 				var err error
-				for n := 0; n < b.N; n++ {
+				for n := 0; n < bb.N; n++ {
 					nginxConfig, err = sdk.GetNginxConfig(confFile, "", "", allowedDirs)
+					require.NoError(bb, err)
+					require.NotNil(bb, nginxConfig, "Generated nginxConfig struct should not be nil")
 				}
-				require.NoError(bb, err)
-				require.NotNil(bb, nginxConfig, "Generated nginxConfig struct should not be nil")
 			})
 		}(v)
 	}
@@ -75,19 +73,18 @@ func BenchmarkGetConfigFiles(b *testing.B) {
 	for _, v := range configs {
 		func(config *proto.NginxConfig) {
 			b.Run("GetConfigFiles", func(bb *testing.B) {
-				bb.ReportAllocs()
 				var confFiles []*proto.File
 				var auxFiles []*proto.File
 				var err error
-				for n := 0; n < b.N; n++ {
+				for n := 0; n < bb.N; n++ {
 					confFiles, auxFiles, err = sdk.GetNginxConfigFiles(config)
-				}
-				require.NoError(bb, err)
-				conf := fmt.Sprintf("Generated config Files for %v should not be nil", config.GetDirectoryMap().GetDirectories()[0].GetFiles()[0].GetName())
-				confAux := fmt.Sprintf("Generated auxillary files for %v should not be nil", config.GetDirectoryMap().GetDirectories()[0].GetFiles()[0].GetName())
+					require.NoError(bb, err)
+					conf := fmt.Sprintf("Generated config Files for %v should not be nil", config.GetDirectoryMap().GetDirectories()[0].GetFiles()[0].GetName())
+					confAux := fmt.Sprintf("Generated auxillary files for %v should not be nil", config.GetDirectoryMap().GetDirectories()[0].GetFiles()[0].GetName())
 
-				require.NotNil(bb, confFiles, conf)
-				require.NotNil(bb, auxFiles, confAux)
+					require.NotNil(bb, confFiles, conf)
+					require.NotNil(bb, auxFiles, confAux)
+				}
 			})
 		}(v)
 	}
@@ -111,14 +108,13 @@ func BenchmarkReadConfig(b *testing.B) {
 		func(config string) {
 			testName := strings.Join([]string{"Read Config ", config}, "")
 			b.Run(testName, func(bb *testing.B) {
-				bb.ReportAllocs()
 				var err error
 				var nginxConfig *proto.NginxConfig
-				for n := 0; n < b.N; n++ {
+				for n := 0; n < bb.N; n++ {
 					nginxConfig, err = binary.ReadConfig(config, "", "")
+					require.NoError(bb, err)
+					require.NotNil(bb, nginxConfig, "NginxConfig read in should not be nil")
 				}
-				require.NoError(bb, err)
-				require.NotNil(bb, nginxConfig, "NginxConfig read in should not be nil")
 			})
 		}(v)
 	}
@@ -138,18 +134,17 @@ func BenchmarkZipConfig(b *testing.B) {
 		func(config string) {
 			testName := strings.Join([]string{"Zip config", config}, "")
 			b.Run(testName, func(bb *testing.B) {
-				bb.ReportAllocs()
 				var conf *zip.Writer
 				var err1, err2 error
 				var zipped *proto.ZippedFile
 
-				for n := 0; n < b.N; n++ {
+				for n := 0; n < bb.N; n++ {
 					conf, err1 = zip.NewWriter(config)
 					zipped, err2 = conf.Proto()
+					require.NoError(bb, err1)
+					require.NoError(bb, err2)
+					require.NotNil(bb, zipped, "Zipped Config should not be nil")
 				}
-				require.NoError(bb, err1)
-				require.NoError(bb, err2)
-				require.NotNil(bb, zipped, "Zipped Config should not be nil")
 			})
 		}(v)
 	}
@@ -182,14 +177,13 @@ func BenchmarkUnZipConfig(b *testing.B) {
 	for _, v := range zippedConfigs {
 		func(config *proto.ZippedFile) {
 			b.Run("", func(bb *testing.B) {
-				bb.ReportAllocs()
 				var files []*proto.File
 				var err error
-				for n := 0; n < b.N; n++ {
+				for n := 0; n < bb.N; n++ {
 					files, err = zip.UnPack(config)
+					require.NoError(bb, err)
+					require.NotNil(bb, files, "Unzipped Files should not be nil")
 				}
-				require.NoError(bb, err)
-				require.NotNil(bb, files, "Unzipped Files should not be nil")
 			})
 		}(v)
 	}
