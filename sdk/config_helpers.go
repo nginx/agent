@@ -39,6 +39,7 @@ const (
 	stubStatusAPIDirective    = "stub_status"
 	apiFormat                 = "http://%s%s"
 	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
+	httpClientTimeout         = 1 * time.Second
 )
 
 type DirectoryMap struct {
@@ -856,18 +857,21 @@ func nginxPlusApiCallback(parent *crossplane.Directive, current *crossplane.Dire
 }
 
 func pingStubStatusApiEndpoint(statusAPI string) bool {
-	client := http.Client{Timeout: 50 * time.Millisecond}
+	client := http.Client{Timeout: httpClientTimeout}
 	resp, err := client.Get(statusAPI)
 	if err != nil {
+		log.Warningf("Unable to perform Stub Status API GET request: %v", err)
 		return false
 	}
 
 	if resp.StatusCode != 200 {
+		log.Debugf("Stub Status API responded with a %d status code", resp.StatusCode)
 		return false
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Warningf("Unable to read Stub Status API response body: %v", err)
 		return false
 	}
 
@@ -882,18 +886,21 @@ func pingStubStatusApiEndpoint(statusAPI string) bool {
 }
 
 func pingNginxPlusApiEndpoint(statusAPI string) bool {
-	client := http.Client{Timeout: 50 * time.Millisecond}
+	client := http.Client{Timeout: httpClientTimeout}
 	resp, err := client.Get(statusAPI)
 	if err != nil {
+		log.Warningf("Unable to perform NGINX Plus API GET request: %v", err)
 		return false
 	}
 
 	if resp.StatusCode != 200 {
+		log.Debugf("NGINX Plus API responded with a %d status code", resp.StatusCode)
 		return false
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Warningf("Unable to read NGINX Plus API response body: %v", err)
 		return false
 	}
 
@@ -901,8 +908,12 @@ func pingNginxPlusApiEndpoint(statusAPI string) bool {
 	// subset example: [ ... 6,7,8,9 ...]
 	var responseBody []int
 	err = json.Unmarshal(bodyBytes, &responseBody)
+	if err != nil {
+		log.Debugf("Unable to unmarshal NGINX Plus API response body: %v", err)
+		return false
+	}
 
-	return err == nil
+	return true
 }
 
 func getUrlsForLocationDirective(parent *crossplane.Directive, current *crossplane.Directive, locationDirectiveName string) []string {
