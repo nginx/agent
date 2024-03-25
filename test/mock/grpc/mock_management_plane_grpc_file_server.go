@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -172,6 +172,7 @@ func (mgfs *ManagementGrpcFileServer) getConfigVersions(fileName, fileHash strin
 	return fileConfigVersions
 }
 
+// nolint: revive
 func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, error) {
 	files := make(map[string][]*v1.File)
 
@@ -184,6 +185,7 @@ func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, erro
 			splitPath := strings.SplitN(strings.Split(path, configDirectory)[1], "/", 3)
 			version := splitPath[1]
 
+			// nolint: gomnd
 			if len(splitPath) == 2 {
 				return nil
 			}

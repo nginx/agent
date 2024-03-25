@@ -14,7 +14,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	sloggin "github.com/samber/slog-gin"
 )
 
