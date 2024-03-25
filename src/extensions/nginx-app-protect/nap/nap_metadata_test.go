@@ -27,7 +27,8 @@ const (
 	nginxID  = "1"
 	systemID = "2"
 
-	wafVersion                 = "4.2.0"
+	wafVersion                 = "4.815.0"
+	wafRelease                 = "4.8.1"
 	wafAttackSignaturesVersion = "2023.01.01"
 	wafThreatCampaignsVersion  = "2023.01.02"
 )
@@ -57,7 +58,8 @@ var (
 	}`
 
 	metadata1 = `{
-	"napVersion": "4.2.0",
+	"napVersion": "4.815.0",
+	"napRelease": "4.8.1",
 	"precompiledPublication": false,
 	"attackSignatureRevisionTimestamp": "2023.01.09",
 	"threatCampaignRevisionTimestamp": "2023.01.04",
@@ -77,7 +79,8 @@ var (
 }`
 
 	metadata2 = `{
-	"napVersion":"4.2.0",
+	"napVersion":"4.815.0",
+	"napRelease":"4.8.1",
 	"precompiledPublication": true,
 	"attackSignatureRevisionTimestamp": "2023.01.09",
 	"threatCampaignRevisionTimestamp": "2023.01.04",
@@ -96,9 +99,9 @@ var (
 	]
 }`
 
-	expectedFalse = `{"napVersion":"4.2.0","precompiledPublication":false,"attackSignatureRevisionTimestamp":"2023.01.01","threatCampaignRevisionTimestamp":"2023.01.02","policyMetadata":[{"name":"my-nap-policy.json"}],"logProfileMetadata":[{"name":"log-all.json"}]}`
+	expectedFalse = `{"napVersion":"4.815.0","napRelease":"4.8.1","precompiledPublication":false,"attackSignatureRevisionTimestamp":"2023.01.01","threatCampaignRevisionTimestamp":"2023.01.02","policyMetadata":[{"name":"my-nap-policy.json"}],"logProfileMetadata":[{"name":"log-all.json"}]}`
 
-	expectedTrue = `{"napVersion":"4.2.0","precompiledPublication":true,"attackSignatureRevisionTimestamp":"2023.01.01","threatCampaignRevisionTimestamp":"2023.01.02","policyMetadata":[{"name":"my-nap-policy.json"}],"logProfileMetadata":[{"name":"log-all.json"}]}`
+	expectedTrue = `{"napVersion":"4.815.0","napRelease":"4.8.1","precompiledPublication":true,"attackSignatureRevisionTimestamp":"2023.01.01","threatCampaignRevisionTimestamp":"2023.01.02","policyMetadata":[{"name":"my-nap-policy.json"}],"logProfileMetadata":[{"name":"log-all.json"}]}`
 )
 
 func TestUpdateNapMetadata(t *testing.T) {
@@ -166,6 +169,7 @@ func TestUpdateNapMetadata(t *testing.T) {
 
 			appProtectWAFDetails := &proto.AppProtectWAFDetails{
 				WafVersion:              wafVersion,
+				WafRelease:              wafRelease,
 				AttackSignaturesVersion: wafAttackSignaturesVersion,
 				ThreatCampaignsVersion:  wafThreatCampaignsVersion,
 				WafLocation:             metadataFile,

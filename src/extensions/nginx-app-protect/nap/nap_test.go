@@ -22,6 +22,8 @@ const (
 	testNAPFile = "/tmp/test-nap"
 )
 
+var testRelease = ReleaseUnmappedBuild(testNAPVersion, testNAPRelease)
+
 func TestNewNginxAppProtect(t *testing.T) {
 	// TODO: Add a test case where NAP is installed
 	testCases := []struct {
@@ -65,13 +67,14 @@ func TestGenerateNAPReport(t *testing.T) {
 			testName: "NAPInstalled",
 			nap: NginxAppProtect{
 				Status:                  INSTALLED.String(),
-				Release:                 testUnmappedBuildRelease,
+				Release:                 testRelease,
 				AttackSignaturesVersion: "2022.02.24",
 				ThreatCampaignsVersion:  "2022.03.01",
 			},
 			expNAPReport: NAPReport{
 				Status:                  INSTALLED.String(),
-				NAPVersion:              testUnmappedBuildRelease.VersioningDetails.NAPRelease,
+				NAPRelease:              testNAPRelease,
+				NAPVersion:              testNAPVersion,
 				AttackSignaturesVersion: "2022.02.24",
 				ThreatCampaignsVersion:  "2022.03.01",
 			},

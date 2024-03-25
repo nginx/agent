@@ -1276,6 +1276,7 @@ Represents App Protect WAF details
 | health | [AppProtectWAFHealth](#f5-nginx-agent-sdk-AppProtectWAFHealth) |  | App Protect Health details (This is being deprecated and will be removed in a future release) |
 | waf_location | [string](#string) |  | Location of WAF metadata file |
 | precompiled_publication | [bool](#bool) |  | Determines whether the publication of NGINX App Protect pre-compiled content from an external source is supported |
+| waf_release | [string](#string) |  | WAF release |
 
 
 

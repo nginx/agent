@@ -102,6 +102,7 @@ var (
 	 }`)
 	wafMetaData1 = []byte(`{
 		 "napVersion": "3.1088.2",
+		 "napRelease": "3.12.2",
 		 "globalStateFileName": "",
 		 "globalStateFileUID": "",
 		 "attackSignatureRevisionTimestamp ": "2021.04.04",
@@ -142,6 +143,7 @@ func TestNginxConfigApply(t *testing.T) {
 		config     *proto.NginxConfig
 		msgTopics  []string
 		wafVersion string
+		wafRelease string
 	}{
 		{
 			config: &proto.NginxConfig{
@@ -175,6 +177,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
+			wafRelease: "",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -208,6 +211,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
+			wafRelease: "",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -241,6 +245,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
+			wafRelease: "",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -294,6 +299,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "3.1088.2",
+			wafRelease: "3.12.2",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -331,6 +337,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
+			wafRelease: "",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -364,6 +371,7 @@ func TestNginxConfigApply(t *testing.T) {
 				core.NginxConfigApplySucceeded,
 			},
 			wafVersion: "",
+			wafRelease: "",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -418,6 +426,7 @@ func TestNginxConfigApply(t *testing.T) {
 			},
 			// mismatch, test should still pass because of the NginxConfigAction_FORCE
 			wafVersion: "3.1088.1",
+			wafRelease: "3.12.1",
 		},
 		{
 			config: &proto.NginxConfig{
@@ -467,6 +476,7 @@ func TestNginxConfigApply(t *testing.T) {
 			},
 			// mismatch, should fail on preflight because of the NginxConfigAction_APPLY
 			wafVersion: "3.1088.1",
+			wafRelease: "3.12.1",
 		},
 	}
 
@@ -558,6 +568,7 @@ func TestNginxConfigApply(t *testing.T) {
 					PrecompiledPublication: true,
 					WafLocation:            auxPath,
 					WafVersion:             test.wafVersion,
+					WafRelease:             test.wafRelease,
 				}
 			}
 

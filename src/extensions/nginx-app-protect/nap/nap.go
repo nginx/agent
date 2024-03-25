@@ -28,7 +28,7 @@ const (
 )
 
 var (
-	requiredNAPFiles    = []string{BD_SOCKET_PLUGIN_PATH, NAP_VERSION_FILE}
+	requiredNAPFiles    = []string{NAP_VERSION_FILE, NAP_RELEASE_FILE}
 	requireNAPProcesses = []string{BD_SOCKET_PLUGIN_PROCESS}
 	processCheckFunc    = core.CheckForProcesses
 )
@@ -56,7 +56,7 @@ func NewNginxAppProtect(optDirPath, symLinkDir string) (*NginxAppProtect, error)
 	// Get the release version of NAP on the system if NAP is installed
 	var napRelease *NAPRelease
 	if status != MISSING {
-		napRelease, err = installedNAPRelease(NAP_VERSION_FILE)
+		napRelease, err = installedNAPRelease(NAP_VERSION_FILE, NAP_RELEASE_FILE)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func (nap *NginxAppProtect) Monitor(pollInterval time.Duration) chan NAPReportBu
 func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterval time.Duration) {
 	// Initial symlink sync
 	if nap.Release.VersioningDetails.NAPRelease != "" {
-		err := nap.syncSymLink("", nap.Release.VersioningDetails.NAPRelease)
+		err := nap.syncSymLink("", nap.Release.VersioningDetails.NAPBuild)
 		if err != nil {
 			log.Errorf("Error occurred while performing initial sync for NAP symlink  - %v", err)
 		}
@@ -137,7 +137,7 @@ func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterva
 			previousReport := nap.GenerateNAPReport()
 			log.Infof("Change in NAP detected... \nPrevious: %+v\nUpdated: %+v\n", previousReport, newNAPReport)
 
-			err = nap.syncSymLink(nap.Release.VersioningDetails.NAPRelease, newNAPReport.NAPVersion)
+			err = nap.syncSymLink(nap.Release.VersioningDetails.NAPBuild, newNAPReport.NAPVersion)
 			if err != nil {
 				log.Errorf("Got the following error syncing NAP symlink - %v", err)
 				break
@@ -237,7 +237,8 @@ func (nap *NginxAppProtect) removeNAPSymlinks(symlinkPatternToIgnore string) err
 // to be in sync with the current system NAP values.
 func (nap *NginxAppProtect) GenerateNAPReport() NAPReport {
 	return NAPReport{
-		NAPVersion:              nap.Release.VersioningDetails.NAPRelease,
+		NAPVersion:              nap.Release.VersioningDetails.NAPBuild,
+		NAPRelease:              nap.Release.VersioningDetails.NAPRelease,
 		Status:                  nap.Status,
 		AttackSignaturesVersion: nap.AttackSignaturesVersion,
 		ThreatCampaignsVersion:  nap.ThreatCampaignsVersion,

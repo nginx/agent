@@ -17,36 +17,40 @@ import (
 
 // installedNAPRelease gets the NAP release version based off the Nginx App Protect installed
 // on the system.
-func installedNAPRelease(versionFile string) (*NAPRelease, error) {
-	// Get build version of NAP, so we can determine the release  details
-	napBuildVersion, err := installedNAPBuildVersion(versionFile)
+func installedNAPRelease(versionFile, releaseFile string) (*NAPRelease, error) {
+	// Get build version of NAP, so we can determine the release details
+	napBuildVersion, err := installedNAP(versionFile)
+	if err != nil {
+		return nil, err
+	}
+	napRelease, err := installedNAP(releaseFile)
 	if err != nil {
 		return nil, err
 	}
 
-	unmappedRelease := ReleaseUnmappedBuild(napBuildVersion)
+	unmappedRelease := ReleaseUnmappedBuild(napBuildVersion, napRelease)
 	return &unmappedRelease, nil
 }
 
-// installedNAPBuildVersion gets the NAP build version based off the Nginx App Protect installed
+// installedNAP gets the NAP version or release based off the Nginx App Protect installed
 // on the system.
-func installedNAPBuildVersion(versionFile string) (string, error) {
+func installedNAP(file string) (string, error) {
 	// Check if nap version file exists
-	exists, err := core.FileExists(versionFile)
+	exists, err := core.FileExists(file)
 	if !exists && err == nil {
-		return "", fmt.Errorf(FILE_NOT_FOUND, versionFile)
+		return "", fmt.Errorf(FILE_NOT_FOUND, file)
 	} else if err != nil {
 		return "", err
 	}
 
-	versionBytes, err := os.ReadFile(versionFile)
+	bytes, err := os.ReadFile(file)
 	if err != nil {
 		return "", err
 	}
 
-	// Remove the trailing '\n' from the version string since it was read
+	// Remove the trailing '\n' from the string since it was read
 	// from a file
-	version := strings.Split(string(versionBytes), "\n")[0]
+	napNumber := strings.Split(string(bytes), "\n")[0]
 
-	return version, nil
+	return napNumber, nil
 }

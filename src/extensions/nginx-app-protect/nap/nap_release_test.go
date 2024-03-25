@@ -16,30 +16,36 @@ import (
 )
 
 const (
-	testNAPVersionFile     = "/tmp/test-nap-version"
-	testNAPVersion         = "3.780.1" // This is the actual build number for NAP 3.9
-	testUnsupportedVersion = "0.1.2"
+	testNAPVersionFile = "/tmp/test-nap-version"
+	testNAPReleaseFile = "/tmp/test-nap-release"
+	testNoFile         = "/tmp/no-file"
+	testNAPVersion     = "4.815.0" // This is the actual build number for NAP 4.8.1
+	testNAPRelease     = "4.8.1"
+	testUnsupported    = "0.1.2"
 )
 
-var testUnmappedBuildRelease = ReleaseUnmappedBuild(testUnsupportedVersion)
+var testUnmappedBuildRelease = ReleaseUnmappedBuild(testNAPVersion, testUnsupported)
 
 func TestInstalledNAPBuildVersion(t *testing.T) {
 	testCases := []struct {
 		testName        string
 		versionFile     string
 		version         string
+		releaseFile     string
+		release         string
 		expBuildVersion string
+		expRelease      string
 		expError        error
 	}{
 		{
 			testName:        "NAPVersionFileMissing",
-			versionFile:     NAP_VERSION_FILE,
+			versionFile:     testNoFile,
 			version:         "",
 			expBuildVersion: "",
-			expError:        fmt.Errorf(FILE_NOT_FOUND, NAP_VERSION_FILE),
+			expError:        fmt.Errorf(FILE_NOT_FOUND, testNoFile),
 		},
 		{
-			testName:        "SuccessfullyGetNAPBuildVersion",
+			testName:        "SuccessfullyGetNAPVersion",
 			versionFile:     testNAPVersionFile,
 			version:         testNAPVersion,
 			expBuildVersion: testNAPVersion,
@@ -61,7 +67,7 @@ func TestInstalledNAPBuildVersion(t *testing.T) {
 			}
 
 			// Get build version
-			buildVersion, err := installedNAPBuildVersion(tc.versionFile)
+			buildVersion, err := installedNAP(tc.versionFile)
 
 			// Validate returned build version
 			assert.Equal(t, err, tc.expError)
@@ -70,61 +76,65 @@ func TestInstalledNAPBuildVersion(t *testing.T) {
 	}
 }
 
-func buildFromPTR(v string) *NAPRelease {
-	version := ReleaseUnmappedBuild(v)
+func buildFromPTR(v, r string) *NAPRelease {
+	version := ReleaseUnmappedBuild(v, r)
 	return &version
 }
 
 func TestInstalledNAPRelease(t *testing.T) {
 	testCases := []struct {
-		testName          string
-		versionFile       string
-		version           string
-		expReleaseVersion *NAPRelease
-		expError          error
+		testName    string
+		releaseFile string
+		release     string
+		expRelease  *NAPRelease
+		expError    error
 	}{
 		{
-			testName:          "NAPVersionFileMissing",
-			versionFile:       NAP_VERSION_FILE,
-			version:           "",
-			expReleaseVersion: nil,
-			expError:          fmt.Errorf(FILE_NOT_FOUND, NAP_VERSION_FILE),
+			testName:    "NAPReleaseFileMissing",
+			releaseFile: testNoFile,
+			release:     "",
+			expRelease:  nil,
+			expError:    fmt.Errorf(FILE_NOT_FOUND, testNAPVersionFile),
 		},
 		{
-			testName:          "SuccessfullyGetNAPReleaseVersion",
-			versionFile:       testNAPVersionFile,
-			version:           testNAPVersion,
-			expReleaseVersion: buildFromPTR(testNAPVersion),
-			expError:          nil,
+			testName:    "SuccessfullyGetNAPReleaseVersion",
+			releaseFile: testNAPReleaseFile,
+			release:     testNAPRelease,
+			expRelease:  buildFromPTR(testNAPVersion, testNAPRelease),
+			expError:    nil,
 		},
 		{
-			testName:          "UnmappedBuildForSupportedReleases",
-			versionFile:       testNAPVersionFile,
-			version:           testUnsupportedVersion,
-			expReleaseVersion: &testUnmappedBuildRelease,
-			expError:          nil,
+			testName:    "UnmappedBuildForSupportedReleases",
+			releaseFile: testNAPReleaseFile,
+			release:     testUnsupported,
+			expRelease:  &testUnmappedBuildRelease,
+			expError:    nil,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
 			// Create a fake version file if required by test
-			if tc.version != "" {
-				err := os.WriteFile(tc.versionFile, []byte(tc.version), 0o644)
+			if tc.release != "" {
+				err := os.WriteFile(tc.releaseFile, []byte(tc.release), 0o644)
+				assert.Nil(t, err)
+				err = os.WriteFile(testNAPVersionFile, []byte(testNAPVersion), 0o644)
 				assert.Nil(t, err)
 
 				defer func() {
-					err := os.Remove(tc.versionFile)
+					err := os.Remove(tc.releaseFile)
+					assert.Nil(t, err)
+					err = os.Remove(testNAPVersionFile)
 					assert.Nil(t, err)
 				}()
 			}
 
-			// Get build version
-			releaseVersion, err := installedNAPRelease(tc.versionFile)
+			// Get release
+			release, err := installedNAPRelease(testNAPVersionFile, tc.releaseFile)
 
-			// Validate returned build version
+			// Validate returned release
 			assert.Equal(t, err, tc.expError)
-			assert.Equal(t, tc.expReleaseVersion, releaseVersion)
+			assert.Equal(t, tc.expRelease, release)
 		})
 	}
 }

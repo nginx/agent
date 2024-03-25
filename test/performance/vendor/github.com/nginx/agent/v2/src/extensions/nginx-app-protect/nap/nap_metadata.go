@@ -73,6 +73,7 @@ func UpdateMetadata(
 
 	metadata := &Metadata{
 		NapVersion:                       appProtectWAFDetails.GetWafVersion(),
+		NapRelease:                       appProtectWAFDetails.GetWafRelease(),
 		PrecompiledPublication:           appProtectWAFDetails.GetPrecompiledPublication(),
 		AttackSignatureRevisionTimestamp: appProtectWAFDetails.GetAttackSignaturesVersion(),
 		ThreatCampaignRevisionTimestamp:  appProtectWAFDetails.GetThreatCampaignsVersion(),
