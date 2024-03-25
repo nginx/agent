@@ -46,20 +46,20 @@ type (
 		bus            messagebus.MessageBus
 		messageChannel chan *Message
 		plugins        []Plugin
-		mu             sync.RWMutex
+		pluginsMutex   sync.Mutex
 	}
 )
 
 func NewMessagePipe(size int) *MessagePipe {
 	return &MessagePipe{
 		messageChannel: make(chan *Message, size),
-		mu:             sync.RWMutex{},
+		pluginsMutex:   sync.Mutex{},
 	}
 }
 
 func (p *MessagePipe) Register(size int, plugins []Plugin) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.pluginsMutex.Lock()
+	defer p.pluginsMutex.Unlock()
 
 	p.plugins = append(p.plugins, plugins...)
 	p.bus = messagebus.New(size)
@@ -82,11 +82,10 @@ func (p *MessagePipe) Register(size int, plugins []Plugin) error {
 }
 
 func (p *MessagePipe) DeRegister(ctx context.Context, pluginNames []string) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.pluginsMutex.Lock()
+	defer p.pluginsMutex.Unlock()
 
-	var plugins []Plugin
-	plugins = p.findPlugins(pluginNames, plugins)
+	plugins := p.findPlugins(pluginNames)
 
 	for _, plugin := range plugins {
 		index := getIndex(plugin.Info().Name, p.plugins)
@@ -107,22 +106,22 @@ func (p *MessagePipe) Process(messages ...*Message) {
 }
 
 func (p *MessagePipe) Run(ctx context.Context) {
+	p.pluginsMutex.Lock()
 	p.initPlugins(ctx)
+	p.pluginsMutex.Unlock()
 
 	for {
 		select {
 		case <-ctx.Done():
+			p.pluginsMutex.Lock()
 			for _, r := range p.plugins {
 				r.Close(ctx)
 			}
-
-			close(p.messageChannel)
+			p.pluginsMutex.Unlock()
 
 			return
 		case m := <-p.messageChannel:
-			p.mu.Lock()
 			p.bus.Publish(m.Topic, ctx, m)
-			p.mu.Unlock()
 		}
 	}
 }
@@ -160,7 +159,9 @@ func (p *MessagePipe) unsubscribePlugin(ctx context.Context, index int, plugin P
 	return nil
 }
 
-func (p *MessagePipe) findPlugins(pluginNames []string, plugins []Plugin) []Plugin {
+func (p *MessagePipe) findPlugins(pluginNames []string) []Plugin {
+	plugins := []Plugin{}
+
 	for _, name := range pluginNames {
 		for _, plugin := range p.plugins {
 			if plugin.Info().Name == name {

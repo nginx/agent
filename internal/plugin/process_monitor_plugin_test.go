@@ -35,8 +35,7 @@ func TestProcessMonitor_Init(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	assert.NotNil(t, processMonitor.messagePipe)
-	assert.Equal(t, testProcesses, processMonitor.processes)
+	assert.Equal(t, testProcesses, processMonitor.getProcesses())
 }
 
 func TestProcessMonitor_Info(t *testing.T) {

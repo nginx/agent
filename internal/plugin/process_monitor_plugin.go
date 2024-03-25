@@ -8,6 +8,7 @@ package plugin
 import (
 	"context"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/bus"
@@ -25,6 +26,7 @@ type ProcessMonitor struct {
 	getProcessesFunc    GetProcessesFunc
 	processTicker       *time.Ticker
 	cancel              context.CancelFunc
+	processesMutex      *sync.Mutex
 }
 
 func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
@@ -33,6 +35,7 @@ func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
 		processes:           []*model.Process{},
 		getProcessesFunc:    host.GetProcesses,
 		processTicker:       nil,
+		processesMutex:      &sync.Mutex{},
 	}
 }
 
@@ -49,6 +52,9 @@ func (pm *ProcessMonitor) Init(ctx context.Context, messagePipe bus.MessagePipeI
 
 func (pm *ProcessMonitor) Close(_ context.Context) error {
 	slog.Debug("Closing process monitor plugin")
+
+	pm.processesMutex.Lock()
+	defer pm.processesMutex.Unlock()
 
 	pm.processes = nil
 	pm.cancel()
@@ -68,10 +74,20 @@ func (*ProcessMonitor) Subscriptions() []string {
 	return []string{}
 }
 
+func (pm *ProcessMonitor) getProcesses() []*model.Process {
+	pm.processesMutex.Lock()
+	defer pm.processesMutex.Unlock()
+
+	return pm.processes
+}
+
 func (pm *ProcessMonitor) run(ctx context.Context) {
 	processes, err := pm.getProcessesFunc(ctx)
 	if err == nil {
+		pm.processesMutex.Lock()
 		pm.processes = processes
+		pm.processesMutex.Unlock()
+
 		pm.messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
 	}
 
@@ -92,7 +108,10 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 				continue
 			}
 
+			pm.processesMutex.Lock()
 			pm.processes = processes
+			pm.processesMutex.Unlock()
+
 			pm.messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
 			slog.Debug("Processes updated")
 		}

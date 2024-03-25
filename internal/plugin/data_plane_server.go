@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -29,13 +30,16 @@ type (
 	}
 
 	DataPlaneServer struct {
-		address      string
-		logger       *slog.Logger
-		instances    []*instances.Instance
-		configEvents map[string][]*instances.ConfigurationStatus
-		messagePipe  bus.MessagePipeInterface
-		server       *http.Server
-		cancel       context.CancelFunc
+		address           string
+		logger            *slog.Logger
+		instances         []*instances.Instance
+		configEvents      map[string][]*instances.ConfigurationStatus
+		messagePipe       bus.MessagePipeInterface
+		server            *http.Server
+		cancel            context.CancelFunc
+		serverMutex       *sync.Mutex
+		configEventsMutex *sync.Mutex
+		instancesMutex    *sync.Mutex
 	}
 )
 
@@ -43,9 +47,12 @@ func NewDataPlaneServer(agentConfig *config.Config, logger *slog.Logger) *DataPl
 	address := net.JoinHostPort(agentConfig.DataPlaneAPI.Host, strconv.Itoa(agentConfig.DataPlaneAPI.Port))
 
 	return &DataPlaneServer{
-		address:      address,
-		logger:       logger,
-		configEvents: make(map[string][]*instances.ConfigurationStatus),
+		address:           address,
+		logger:            logger,
+		configEvents:      make(map[string][]*instances.ConfigurationStatus),
+		serverMutex:       &sync.Mutex{},
+		configEventsMutex: &sync.Mutex{},
+		instancesMutex:    &sync.Mutex{},
 	}
 }
 
@@ -69,6 +76,10 @@ func (dps *DataPlaneServer) Close(ctx context.Context) error {
 	// 5 seconds to finish the request it is currently handling
 	serverShutdownCtx, cancel := context.WithTimeout(ctx, config.DefGracefulShutdownPeriod)
 	defer cancel()
+
+	dps.serverMutex.Lock()
+	defer dps.serverMutex.Unlock()
+
 	if err := dps.server.Shutdown(serverShutdownCtx); err != nil {
 		slog.Error("Data plane server failed to shutdown", "error", err)
 		dps.cancel()
@@ -89,7 +100,9 @@ func (dps *DataPlaneServer) Process(_ context.Context, msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*instances.Instance); ok {
+			dps.instancesMutex.Lock()
 			dps.instances = newInstances
+			dps.instancesMutex.Unlock()
 		}
 	case msg.Topic == bus.InstanceConfigUpdateTopic:
 		if configStatus, ok := msg.Data.(*instances.ConfigurationStatus); ok {
@@ -99,6 +112,9 @@ func (dps *DataPlaneServer) Process(_ context.Context, msg *bus.Message) {
 }
 
 func (dps *DataPlaneServer) updateEvents(configStatus *instances.ConfigurationStatus) {
+	dps.configEventsMutex.Lock()
+	defer dps.configEventsMutex.Unlock()
+
 	instanceID := configStatus.GetInstanceId()
 	if configStatus.GetStatus() == instances.Status_IN_PROGRESS {
 		dps.configEvents[instanceID] = make([]*instances.ConfigurationStatus, 0)
@@ -121,10 +137,12 @@ func (dps *DataPlaneServer) run(ctx context.Context) {
 	router.Use(sloggin.NewWithConfig(dps.logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
 	dataplane.RegisterHandlersWithOptions(router, dps, dataplane.GinServerOptions{BaseURL: "/api/v1"})
 
+	dps.serverMutex.Lock()
 	dps.server = &http.Server{
 		Addr:    dps.address,
 		Handler: router,
 	}
+	dps.serverMutex.Unlock()
 
 	go func() {
 		if err := dps.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -143,6 +161,9 @@ func (dps *DataPlaneServer) GetInstances(ctx *gin.Context) {
 	slog.Debug("Get instances request")
 
 	response := []dataplane.Instance{}
+
+	dps.instancesMutex.Lock()
+	defer dps.instancesMutex.Unlock()
 
 	for _, instance := range dps.instances {
 		response = append(response, dataplane.Instance{
@@ -216,11 +237,32 @@ func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, ins
 	}
 }
 
+func (dps *DataPlaneServer) getServerAddress() string {
+	dps.serverMutex.Lock()
+	defer dps.serverMutex.Unlock()
+
+	return dps.server.Addr
+}
+
 func (dps *DataPlaneServer) getConfigurationStatus(instanceID string) []*instances.ConfigurationStatus {
+	dps.configEventsMutex.Lock()
+	defer dps.configEventsMutex.Unlock()
+
 	return dps.configEvents[instanceID]
 }
 
+// nolint: revive
+func (dps *DataPlaneServer) getInstances() []*instances.Instance {
+	dps.instancesMutex.Lock()
+	defer dps.instancesMutex.Unlock()
+
+	return dps.instances
+}
+
 func (dps *DataPlaneServer) getInstance(instanceID string) *instances.Instance {
+	dps.instancesMutex.Lock()
+	defer dps.instancesMutex.Unlock()
+
 	for _, instance := range dps.instances {
 		if instance.GetInstanceId() == instanceID {
 			return instance

@@ -48,6 +48,16 @@ jobs:
               git-token: ${{ github.ref_name == 'v3' && secrets.GITHUB_TOKEN || '' }}
               ## name of orphaned branch where badges are stored
               git-branch: badges
+  race-condition-test:
+      name: Unit tests with race condition detection
+      runs-on: ubuntu-22.04
+      steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+            with:
+                go-version-file: 'go.mod'
+          - name: Run unit tests with race condition detection
+            run: make race-condition-test
   build-unsigned-snapshot:
       name: Build Unsigned Snapshot
       runs-on: ubuntu-22.04

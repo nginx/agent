@@ -9,21 +9,18 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service"
 )
 
 type Instance struct {
-	instances       []*instances.Instance
 	messagePipe     bus.MessagePipeInterface
 	instanceService service.InstanceServiceInterface
 }
 
 func NewInstance() *Instance {
 	return &Instance{
-		instances:       []*instances.Instance{},
 		instanceService: service.NewInstanceService(),
 	}
 }
@@ -57,7 +54,6 @@ func (i *Instance) Process(_ context.Context, msg *bus.Message) {
 
 		instanceList := i.instanceService.GetInstances(newProcesses)
 		if len(instanceList) > 0 {
-			i.instances = instanceList
 			i.messagePipe.Process(&bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
 		} else {
 			slog.Info("No instanceList found")
