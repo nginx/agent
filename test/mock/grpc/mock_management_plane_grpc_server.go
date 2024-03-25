@@ -136,6 +136,8 @@ func (mgs *ManagementGrpcServer) Subscribe(in v1.CommandService_SubscribeServer)
 	for {
 		request := <-mgs.requestChan
 
+		slog.Debug("Subscribe", "request", request)
+
 		err := in.Send(request)
 		if err != nil {
 			slog.Error("Failed to send management request", "err", err)
@@ -144,8 +146,8 @@ func (mgs *ManagementGrpcServer) Subscribe(in v1.CommandService_SubscribeServer)
 		dataPlaneResponse, err := in.Recv()
 		if err != nil {
 			slog.Error("Failed to receive data plane response", "err", err)
+		} else {
+			mgs.dataPlaneResponses = append(mgs.dataPlaneResponses, dataPlaneResponse)
 		}
-
-		mgs.dataPlaneResponses = append(mgs.dataPlaneResponses, dataPlaneResponse)
 	}
 }
