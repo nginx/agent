@@ -186,11 +186,11 @@ func (r *OneTimeRegistration) registerAgent() {
 		}
 		return fmt.Errorf("No master process found, waiting...")
 	}
-	err2 := backoff.WaitUntil(
+	err := backoff.WaitUntil(
 		context.Background(), backoffSetting, findMaster,
 	)
-	if err2 != nil {
-		log.Warn(err2.Error())
+	if err != nil {
+		log.Warn(err.Error())
 	}
 
 	updated, err := types.TimestampProto(r.config.Updated)
