@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
