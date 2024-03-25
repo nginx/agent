@@ -7,31 +7,33 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log/slog"
 	"net"
 	"os"
+	"path/filepath"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/logger"
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 	"google.golang.org/grpc"
+)
+
+const (
+	filePermissions = 0o640
 )
 
 func main() {
 	var configDirectory string
 	var grpcAddress string
 	var apiAddress string
-
-	currentPath, err := os.Getwd()
-	if err != nil {
-		slog.Error("Unable to get current directory", "error", err)
-	}
-
 	var address string
+	var logLevel string
 
 	flag.StringVar(
 		&configDirectory,
 		"configDirectory",
-		currentPath,
+		"",
 		"set the directory where the config files are stored",
 	)
 
@@ -55,14 +57,36 @@ func main() {
 		"127.0.0.1:0",
 		"set the API address to run the server on",
 	)
+
+	flag.StringVar(
+		&logLevel,
+		"logLevel",
+		"INFO",
+		"set the log level",
+	)
+
 	flag.Parse()
+
+	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: logger.GetLogLevel(logLevel),
+	}))
+	slog.SetDefault(newLogger)
+
+	if configDirectory == "" {
+		defaultConfigDirectory, err := generateDefaultConfigDirectory()
+		configDirectory = defaultConfigDirectory
+		if err != nil {
+			slog.Error("Failed to create default config directory", "error", err)
+			os.Exit(1)
+		}
+	}
 
 	commandServer := mockGrpc.NewManagementGrpcServer()
 
 	go func() {
 		listener, listenError := net.Listen("tcp", apiAddress)
 		if listenError != nil {
-			slog.Error("Failed to create listener", "error", err)
+			slog.Error("Failed to create listener", "error", listenError)
 			os.Exit(1)
 		}
 
@@ -71,13 +95,13 @@ func main() {
 
 	fileServer, err := mockGrpc.NewManagementGrpcFileServer(configDirectory)
 	if err != nil {
-		slog.Error("Failed to create file server: %v", err)
+		slog.Error("Failed to create file server", "error", err)
 		os.Exit(1)
 	}
 
 	listener, err := net.Listen("tcp", grpcAddress)
 	if err != nil {
-		slog.Error("Failed to listen: %v", err)
+		slog.Error("Failed to listen", "error", err)
 		os.Exit(1)
 	}
 	var opts []grpc.ServerOption
@@ -93,4 +117,36 @@ func main() {
 		slog.Error("Failed to serve server", "error", err)
 		os.Exit(1)
 	}
+}
+
+func generateDefaultConfigDirectory() (string, error) {
+	tempDirectory := os.TempDir()
+
+	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/etc/nginx"), filePermissions)
+	if err != nil {
+		slog.Error("Failed to create directories", "error", err)
+		return "", err
+	}
+
+	source, err := os.Open("test/config/nginx/nginx.conf")
+	if err != nil {
+		slog.Error("Failed to open nginx.conf", "error", err)
+		return "", err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(filepath.Join(tempDirectory, "config/1/etc/nginx/nginx.conf"))
+	if err != nil {
+		slog.Error("Failed to create nginx.conf", "error", err)
+		return "", err
+	}
+	defer destination.Close()
+
+	_, err = io.Copy(destination, source)
+	if err != nil {
+		slog.Error("Failed to copy nginx.conf", "error", err)
+		return "", err
+	}
+
+	return filepath.Join(tempDirectory, "config"), nil
 }
