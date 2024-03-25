@@ -172,7 +172,7 @@ func (mgfs *ManagementGrpcFileServer) getConfigVersions(fileName, fileHash strin
 	return fileConfigVersions
 }
 
-// nolint
+// nolint: gomnd
 func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, error) {
 	files := make(map[string][]*v1.File)
 
@@ -185,33 +185,22 @@ func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, erro
 
 		if !info.IsDir() {
 			slog.Info("Found file", "path", path)
+
 			splitPath := strings.SplitN(strings.Split(path, configDirectory)[1], "/", 3)
 			if len(splitPath) == 2 {
 				return nil
 			}
 			version := splitPath[1]
 			filePath := "/" + splitPath[2]
+
 			versionDirectory := filepath.Join(configDirectory, version)
 
-			hash, err := getFileHash(path)
+			file, err := createFile(path, filePath)
 			if err != nil {
 				return err
 			}
 
-			fileInfo, err := os.Stat(path)
-			if err != nil {
-				return err
-			}
-
-			files[versionDirectory] = append(files[versionDirectory], &v1.File{
-				FileMeta: &v1.FileMeta{
-					Name:         filePath,
-					Hash:         hash,
-					ModifiedTime: timestamppb.New(fileInfo.ModTime()),
-					Permissions:  fileInfo.Mode().Perm().String(),
-					Size:         fileInfo.Size(),
-				},
-			})
+			files[versionDirectory] = append(files[versionDirectory], file)
 		}
 
 		return nil
@@ -286,4 +275,26 @@ func getFileMode(mode string) os.FileMode {
 	}
 
 	return os.FileMode(result)
+}
+
+func createFile(fullPath, filePath string) (*v1.File, error) {
+	hash, err := getFileHash(fullPath)
+	if err != nil {
+		return nil, err
+	}
+
+	fileInfo, err := os.Stat(fullPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.File{
+		FileMeta: &v1.FileMeta{
+			Name:         filePath,
+			Hash:         hash,
+			ModifiedTime: timestamppb.New(fileInfo.ModTime()),
+			Permissions:  fileInfo.Mode().Perm().String(),
+			Size:         fileInfo.Size(),
+		},
+	}, nil
 }
