@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -94,7 +95,33 @@ var expResource = &resV1.Resource{
 
 type OTelCollector struct {
 	sdk.UnimplementedMetricsServiceServer
-	results []*metricsV1.ResourceMetrics
+	results      []*metricsV1.ResourceMetrics
+	resultsMutex *sync.RWMutex
+}
+
+func NewOTelCollector() *OTelCollector {
+	return &OTelCollector{
+		results:      []*metricsV1.ResourceMetrics{},
+		resultsMutex: &sync.RWMutex{},
+	}
+}
+
+func (oc *OTelCollector) Export(ctx context.Context, request *sdk.ExportMetricsServiceRequest) (
+	*sdk.ExportMetricsServiceResponse, error,
+) {
+	oc.resultsMutex.Lock()
+	defer oc.resultsMutex.Unlock()
+
+	oc.results = append(oc.results, request.GetResourceMetrics()...)
+
+	return &sdk.ExportMetricsServiceResponse{}, nil
+}
+
+func (oc *OTelCollector) GetResults() []*metricsV1.ResourceMetrics {
+	oc.resultsMutex.RLock()
+	defer oc.resultsMutex.RUnlock()
+
+	return oc.results
 }
 
 func TestGRPCExporter_Constructor(t *testing.T) {
@@ -131,7 +158,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 	assert.Equal(t, types.GetAgentConfig(), exporter.conf)
 	assert.NotNil(t, exporter.intExp)
 	assert.NotNil(t, exporter.convert)
-	assert.NotNil(t, exporter.mut)
+	assert.NotNil(t, exporter.bufferMutex)
 	assert.NotNil(t, exporter.sink)
 	assert.Empty(t, exporter.buffer)
 	assert.NotNil(t, exporter.res)
@@ -262,9 +289,9 @@ func TestOTelExporter_Sink(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(2 * time.Second)
 
-	assert.Len(t, exporter.buffer, 1)
+	assert.Len(t, exporter.getBuffer(), 1)
 
-	bufferValue := exporter.buffer[0]
+	bufferValue := exporter.getBuffer()[0]
 	assert.Equal(t, expMetricData.Name, bufferValue.Name)
 	assert.Equal(t, expMetricData.Description, bufferValue.Description)
 	assert.Equal(t, expMetricData.Unit, bufferValue.Unit)
@@ -291,13 +318,6 @@ func TestOTelExporter_Sink(t *testing.T) {
 	assert.Equal(t, expSum.Temporality, actualSum.Temporality)
 	assert.Equal(t, expSum.DataPoints[0].Attributes, actualSum.DataPoints[0].Attributes)
 	assert.Equal(t, expSum.DataPoints[0].Value, actualSum.DataPoints[0].Value)
-}
-
-func (otelserv *OTelCollector) Export(ctx context.Context, request *sdk.ExportMetricsServiceRequest) (
-	*sdk.ExportMetricsServiceResponse, error,
-) {
-	otelserv.results = append(otelserv.results, request.GetResourceMetrics()...)
-	return &sdk.ExportMetricsServiceResponse{}, nil
 }
 
 // nolint: gocognit, revive, dupl, maintidx
@@ -595,7 +615,7 @@ func TestOTelMetrics(t *testing.T) {
 		},
 	}
 
-	otelCollector := &OTelCollector{}
+	otelCollector := NewOTelCollector()
 	opts := make([]grpc.ServerOption, 0)
 	go startGRPCServer(t, opts, otelCollector)
 
@@ -622,17 +642,17 @@ func TestOTelMetrics(t *testing.T) {
 	}
 
 	assert.Eventually(
-		t, func() bool { return len(otelCollector.results) == 1 },
+		t, func() bool { return len(otelCollector.GetResults()) == 1 },
 		c.Metrics.OTelExporter.ExportInterval+1*time.Second, 1*time.Second,
 	)
 
-	for i, act := range otelCollector.results {
+	for i, act := range otelCollector.GetResults() {
 		assert.Equal(t, expResource, act.GetResource())
 		assert.NotEmpty(t, act.GetScopeMetrics())
 		assert.Equal(t, expScope, act.GetScopeMetrics()[0].GetScope())
 
 		assertMetrics(t,
-			expectations, otelCollector.results[i].GetScopeMetrics()[0].GetMetrics(),
+			expectations, otelCollector.GetResults()[i].GetScopeMetrics()[0].GetMetrics(),
 		)
 	}
 }

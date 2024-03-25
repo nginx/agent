@@ -8,7 +8,6 @@ package plugin
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -18,19 +17,6 @@ import (
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestInstance_Init(t *testing.T) {
-	instanceMonitor := NewInstance()
-
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
-	err := messagePipe.Register(100, []bus.Plugin{instanceMonitor})
-	require.NoError(t, err)
-	go messagePipe.Run()
-
-	time.Sleep(10 * time.Millisecond)
-
-	assert.NotNil(t, instanceMonitor.messagePipe)
-}
 
 func TestInstance_Info(t *testing.T) {
 	instanceMonitor := NewInstance()
@@ -45,6 +31,7 @@ func TestInstance_Subscriptions(t *testing.T) {
 }
 
 func TestInstance_Process(t *testing.T) {
+	ctx := context.Background()
 	testInstances := []*instances.Instance{{InstanceId: "123", Type: instances.Type_NGINX}}
 
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
@@ -52,48 +39,54 @@ func TestInstance_Process(t *testing.T) {
 	instanceMonitor := NewInstance()
 	instanceMonitor.instanceService = fakeInstanceService
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewFakeMessagePipe()
 	err := messagePipe.Register(100, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
-	go messagePipe.Run()
 
-	messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{{Pid: 123, Name: "nginx"}}})
+	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{{Pid: 123, Name: "nginx"}}}
+	messagePipe.Process(processesMessage)
+	messagePipe.Run(ctx)
 
-	time.Sleep(10 * time.Millisecond)
-
-	assert.Equal(t, testInstances, instanceMonitor.instances)
+	assert.Len(t, messagePipe.GetProcessedMessages(), 2)
+	assert.Equal(t, processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
+	assert.Equal(t, processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
+	assert.Equal(t, bus.InstancesTopic, messagePipe.GetProcessedMessages()[1].Topic)
+	assert.Equal(t, testInstances, messagePipe.GetProcessedMessages()[1].Data)
 }
 
 func TestInstance_Process_Error_Expected(t *testing.T) {
+	ctx := context.Background()
 	instanceMonitor := NewInstance()
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 2)
+	messagePipe := bus.NewFakeMessagePipe()
 	err := messagePipe.Register(2, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
-	go messagePipe.Run()
 
 	messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: nil})
+	messagePipe.Run(ctx)
 
-	time.Sleep(10 * time.Millisecond)
-
-	assert.Equal(t, []*instances.Instance{}, instanceMonitor.instances)
+	assert.Len(t, messagePipe.GetProcessedMessages(), 1)
+	assert.Equal(t, bus.OsProcessesTopic, messagePipe.GetProcessedMessages()[0].Topic)
+	assert.Nil(t, messagePipe.GetProcessedMessages()[0].Data)
 }
 
 func TestInstance_Process_Empty_Instances(t *testing.T) {
+	ctx := context.Background()
 	testInstances := []*instances.Instance{}
 
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
 	fakeInstanceService.GetInstancesReturns(testInstances)
 	instanceMonitor := NewInstance()
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 2)
+	messagePipe := bus.NewFakeMessagePipe()
 	err := messagePipe.Register(2, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
-	go messagePipe.Run()
 
-	messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{}})
+	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{}}
+	messagePipe.Process(processesMessage)
+	messagePipe.Run(ctx)
 
-	time.Sleep(10 * time.Millisecond)
-
-	assert.Equal(t, testInstances, instanceMonitor.instances)
+	assert.Len(t, messagePipe.GetProcessedMessages(), 1)
+	assert.Equal(t, processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
+	assert.Equal(t, processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
 }

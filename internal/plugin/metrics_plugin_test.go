@@ -25,6 +25,7 @@ import (
 )
 
 func TestMetrics_Init(t *testing.T) {
+	ctx := context.Background()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "")
 	})
@@ -33,7 +34,7 @@ func TestMetrics_Init(t *testing.T) {
 	fakePrometheus := httptest.NewServer(handler)
 	defer fakePrometheus.Close()
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewMessagePipe(100)
 	scraper := prometheus.NewScraper([]string{fakePrometheus.URL})
 
 	metrics, err := NewMetrics(types.GetAgentConfig(), WithDataSource(scraper))
@@ -41,13 +42,13 @@ func TestMetrics_Init(t *testing.T) {
 
 	err = messagePipe.Register(100, []bus.Plugin{metrics})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	time.Sleep(10 * time.Millisecond)
 
 	require.NoError(t, err)
 
-	err = metrics.Close()
+	err = metrics.Close(ctx)
 	require.NoError(t, err)
 }
 
@@ -182,15 +183,15 @@ func TestMetrics_CallProduce(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			messagePipe := bus.FakeMessagePipe{}
+			messagePipe := bus.NewFakeMessagePipe()
 			metrics, err := NewMetrics(types.GetAgentConfig())
-			metrics.pipe = &messagePipe
+			metrics.pipe = messagePipe
 			require.NoError(t, err)
 
 			producer := modelfakes.FakeMetricsProducer{}
 
 			producer.ProduceReturns(test.entries, test.expectedProduceError)
-			failedAttempts := metrics.callProduce(context.TODO(), &producer, 0)
+			failedAttempts := metrics.callProduce(context.Background(), &producer, 0)
 
 			assert.Len(t, messagePipe.GetMessages(), test.expectedNumMessage)
 			assert.Equal(t, test.expectedFailedAttempts, failedAttempts)
@@ -199,6 +200,8 @@ func TestMetrics_CallProduce(t *testing.T) {
 }
 
 func TestMetrics_Errors(t *testing.T) {
+	ctx := context.Background()
+
 	testCases := []struct {
 		name        string
 		confModFunc func(*config.Config) *config.Config
@@ -246,7 +249,7 @@ func TestMetrics_Errors(t *testing.T) {
 	require.NoError(t, err)
 
 	// Payload is ignored.
-	metrics.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: struct {
+	metrics.Process(ctx, &bus.Message{Topic: bus.OsProcessesTopic, Data: struct {
 		valueOne string
 		valueTwo string
 	}{"one", "two"}})

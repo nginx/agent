@@ -37,6 +37,7 @@ type (
 	GrpcClient struct {
 		messagePipe bus.MessagePipeInterface
 		config      *config.Config
+		conn        *grpc.ClientConn
 		cancel      context.CancelFunc
 		settings    *backoff.Settings
 		keepAlive   keepalive.ClientParameters
@@ -73,27 +74,30 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 	return nil
 }
 
-func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
-	slog.Debug("Starting grpc client")
+func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+	slog.Debug("Starting grpc client plugin")
 	gc.messagePipe = messagePipe
-
-	return backoff.WaitUntil(gc.messagePipe.Context(), gc.settings, gc.createConnection)
-}
-
-func (gc *GrpcClient) createConnection() error {
-	var connectionCtx context.Context
+	var grpcClientCtx context.Context
+	var err error
 
 	serverAddr := net.JoinHostPort(
 		gc.config.Command.Server.Host,
 		fmt.Sprint(gc.config.Command.Server.Port),
 	)
 
-	connectionCtx, gc.cancel = context.WithTimeout(gc.messagePipe.Context(), gc.config.Client.Timeout)
-	conn, err := grpc.DialContext(connectionCtx, serverAddr, gc.getDialOptions()...)
+	grpcClientCtx, gc.cancel = context.WithTimeout(ctx, gc.config.Client.Timeout)
+	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, gc.getDialOptions()...)
 	if err != nil {
 		return err
 	}
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, gc.config.Client.Timeout)
 
+	defer backoffCancel()
+
+	return backoff.WaitUntil(backOffCtx, gc.settings, gc.createConnection)
+}
+
+func (gc *GrpcClient) createConnection() error {
 	// nolint: revive
 	id, err := uuid.NewV7()
 	if err != nil {
@@ -105,8 +109,7 @@ func (gc *GrpcClient) createConnection() error {
 		return fmt.Errorf("error generating correlation id: %w", err)
 	}
 
-	client := v1.NewCommandServiceClient(conn)
-
+	client := v1.NewCommandServiceClient(gc.conn)
 	req := &v1.CreateConnectionRequest{
 		MessageMeta: &v1.MessageMeta{
 			MessageId:     id.String(),
@@ -123,7 +126,10 @@ func (gc *GrpcClient) createConnection() error {
 		},
 	}
 
-	response, err := client.CreateConnection(connectionCtx, req)
+	reqCtx, reqCncl := context.WithTimeout(context.Background(), gc.settings.MaxElapsedTime)
+	defer reqCncl()
+
+	response, err := client.CreateConnection(reqCtx, req)
 	if err != nil {
 		return fmt.Errorf("error creating connection: %w", err)
 	}
@@ -135,9 +141,13 @@ func (gc *GrpcClient) createConnection() error {
 	return nil
 }
 
-func (gc *GrpcClient) Close() error {
-	if gc.cancel != nil {
-		gc.cancel()
+func (gc *GrpcClient) Close(_ context.Context) error {
+	slog.Debug("Closing grpc client plugin")
+
+	err := gc.conn.Close()
+	if err != nil && gc.cancel != nil {
+		slog.Error("Failed to gracefully close gRPC connection", "error", err)
+		// gc.cancel()
 	}
 
 	return nil
@@ -149,7 +159,7 @@ func (gc *GrpcClient) Info() *bus.Info {
 	}
 }
 
-func (gc *GrpcClient) Process(msg *bus.Message) {
+func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	if msg.Topic == bus.GrpcConnectedTopic {
 		slog.Debug("Agent connected")
 	}

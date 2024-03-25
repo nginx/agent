@@ -40,7 +40,7 @@ type ConnectionRequest struct {
 func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 	tb.Helper()
 	var container testcontainers.Container
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	if os.Getenv("TEST_ENV") == "Container" {
 		tb.Log("Running tests in a container environment")

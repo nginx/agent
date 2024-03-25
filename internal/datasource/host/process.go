@@ -6,11 +6,13 @@
 package host
 
 import (
+	"context"
+
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
-func GetProcesses() ([]*model.Process, error) {
+func GetProcesses(ctx context.Context) ([]*model.Process, error) {
 	processes, err := process.Processes()
 	if err != nil {
 		return nil, err
@@ -19,10 +21,10 @@ func GetProcesses() ([]*model.Process, error) {
 	internalProcesses := []*model.Process{}
 
 	for _, proc := range processes {
-		ppid, _ := proc.Ppid()
-		name, _ := proc.Name()
-		cmd, _ := proc.Cmdline()
-		exe, _ := proc.Exe()
+		ppid, _ := proc.PpidWithContext(ctx)
+		name, _ := proc.NameWithContext(ctx)
+		cmd, _ := proc.CmdlineWithContext(ctx)
+		exe, _ := proc.ExeWithContext(ctx)
 
 		internalProcesses = append(internalProcesses, &model.Process{
 			Pid:  proc.Pid,

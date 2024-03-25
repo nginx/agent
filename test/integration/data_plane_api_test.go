@@ -39,7 +39,7 @@ var (
 func setupTest(tb testing.TB) func(tb testing.TB) {
 	tb.Helper()
 	var container testcontainers.Container
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	configDir := tb.TempDir()
 	dir := filepath.Join(configDir, "/etc/nginx/")
