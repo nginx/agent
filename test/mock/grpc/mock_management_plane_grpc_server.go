@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -24,11 +25,13 @@ type ManagementGrpcServer struct {
 	connectionRequest  *v1.CreateConnectionRequest
 	requestChan        chan *v1.ManagementPlaneRequest
 	dataPlaneResponses []*v1.DataPlaneResponse
+	mut                *sync.Mutex
 }
 
 func NewManagementGrpcServer() *ManagementGrpcServer {
 	mgs := &ManagementGrpcServer{
 		requestChan: make(chan *v1.ManagementPlaneRequest),
+		mut:         &sync.Mutex{},
 	}
 
 	handler := slog.NewTextHandler(
@@ -59,9 +62,13 @@ func NewManagementGrpcServer() *ManagementGrpcServer {
 		if mgs.dataPlaneResponses == nil {
 			c.JSON(http.StatusNotFound, nil)
 		} else {
+			mgs.mut.Lock()
+
 			c.JSON(http.StatusOK, gin.H{
 				"dataPlaneResponse": mgs.dataPlaneResponses,
 			})
+
+			mgs.mut.Unlock()
 		}
 	})
 
@@ -147,7 +154,9 @@ func (mgs *ManagementGrpcServer) Subscribe(in v1.CommandService_SubscribeServer)
 		if err != nil {
 			slog.Error("Failed to receive data plane response", "err", err)
 		} else {
+			mgs.mut.Lock()
 			mgs.dataPlaneResponses = append(mgs.dataPlaneResponses, dataPlaneResponse)
+			mgs.mut.Unlock()
 		}
 	}
 }
