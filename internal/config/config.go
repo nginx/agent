@@ -68,6 +68,7 @@ func GetConfig() *Config {
 		AllowedDirectories: []string{},
 		Metrics:            getMetrics(),
 		Command:            getCommand(),
+		Common:             getCommon(),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDir, ":") {
@@ -299,7 +300,9 @@ func getDataPlaneConfig() *DataPlaneConfig {
 
 func getClient() *Client {
 	return &Client{
-		Timeout: viperInstance.GetDuration(ClientTimeoutKey),
+		Timeout:      viperInstance.GetDuration(ClientTimeoutKey),
+		Time:         viper.GetDuration(ClientTimeKey),
+		PermitStream: viper.GetBool(ClientPermitStreamKey),
 	}
 }
 
@@ -377,4 +380,14 @@ func getCommand() *Command {
 	}
 
 	return command
+}
+
+func getCommon() *CommonSettings {
+	return &CommonSettings{
+		InitialInterval: DefBackoffInitalInterval,
+		MaxInterval:     DefBackoffMaxInterval,
+		MaxElapsedTime:  DefBackoffMaxElapsedTime,
+		Jitter:          DefBackoffJitter,
+		Multiplier:      DefBackoffMultiplier,
+	}
 }

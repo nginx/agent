@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	ClientTimeoutKey                              = "client_timeout"
 	ConfigDirectoriesKey                          = "config_dirs"
 	ConfigPathKey                                 = "path"
 	CommandRootKey                                = "command"
@@ -29,6 +28,8 @@ const (
 	PrometheusSourceRoot = "prometheus_source"
 
 	DefaultDataPlaneConfigNginxReloadMonitoringPeriod = 10 * time.Second
+
+	ClientRootKey = "client"
 )
 
 var (
@@ -56,6 +57,9 @@ var (
 	CommandTLSKeyKey                = pre(CommandTLSKey) + "key"
 	CommandTLSCaKey                 = pre(CommandTLSKey) + "ca"
 	CommandTLSSkipVerifyKey         = pre(CommandTLSKey) + "skip_verify"
+	ClientTimeoutKey                = pre(ClientRootKey) + "timeout"
+	ClientTimeKey                   = pre(ClientRootKey) + "time"
+	ClientPermitStreamKey           = pre(ClientRootKey) + "permit_stream"
 )
 
 func pre(prefixes ...string) string {

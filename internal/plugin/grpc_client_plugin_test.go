@@ -8,6 +8,7 @@ package plugin
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -38,12 +39,62 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 						Type: "http",
 					},
 				},
+				Common: &config.CommonSettings{
+					InitialInterval: 100 * time.Microsecond,
+					MaxInterval:     1000 * time.Microsecond,
+					MaxElapsedTime:  10 * time.Millisecond,
+					Jitter:          0.1,
+					Multiplier:      0.2,
+				},
+				Client: &config.Client{
+					Timeout:      100 * time.Microsecond,
+					Time:         200 * time.Microsecond,
+					PermitStream: false,
+				},
 			},
 			nil,
 		},
 		{
-			"nil client",
+			"Test 3: nil client, nil settings",
 			nil,
+			nil,
+		},
+		{
+			"Test 4: nil client settings",
+			&config.Config{
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: 8888,
+						Type: "http",
+					},
+				},
+				Common: &config.CommonSettings{
+					InitialInterval: 100 * time.Microsecond,
+					MaxInterval:     1000 * time.Microsecond,
+					MaxElapsedTime:  10 * time.Millisecond,
+					Jitter:          0.1,
+					Multiplier:      0.2,
+				},
+			},
+			nil,
+		},
+		{
+			"Test 5: nil common settings",
+			&config.Config{
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: 8888,
+						Type: "http",
+					},
+				},
+				Client: &config.Client{
+					Timeout:      100 * time.Microsecond,
+					Time:         200 * time.Microsecond,
+					PermitStream: false,
+				},
+			},
 			nil,
 		},
 	}
@@ -85,7 +136,8 @@ func TestGrpcClient_Info(t *testing.T) {
 func TestGrpcClient_Subscriptions(t *testing.T) {
 	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
-	assert.Empty(t, subscriptions)
+	assert.Len(t, subscriptions, 1)
+	assert.Equal(t, bus.GrpcConnectedTopic, subscriptions[0])
 }
 
 func TestGrpcClient_Process(t *testing.T) {
@@ -112,5 +164,5 @@ func TestGetDialOptions(t *testing.T) {
 	assert.NotNil(t, options)
 
 	// Ensure the expected number of dial options, will change over time
-	assert.Len(t, options, 6)
+	assert.Len(t, options, 7)
 }

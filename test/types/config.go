@@ -16,12 +16,21 @@ const (
 	commandPort = 8981
 	metricsPort = 8982
 
-	clientTimeout   = 5 * time.Second
+	clientPermitStream = true
+	clientTime         = 50 * time.Second
+	clientTimeout      = 5 * time.Second
+
 	connTimeout     = 10 * time.Second
 	minConnTimeout  = 7 * time.Second
 	backoffDelay    = 240 * time.Second
 	exportInterval  = 30 * time.Second
 	produceInterval = 5 * time.Second
+
+	commonInitialInterval = 100 * time.Microsecond
+	commonMaxInterval     = 1000 * time.Microsecond
+	commonMaxElapsedTime  = 10 * time.Millisecond
+	commonJitter          = 0.1
+	commonMultiplier      = 0.2
 
 	bufferLength     = 55
 	exportRetryCount = 3
@@ -40,7 +49,9 @@ func GetAgentConfig() *config.Config {
 			Port: apiPort,
 		},
 		Client: &config.Client{
-			Timeout: clientTimeout,
+			Timeout:      clientTimeout,
+			Time:         clientTime,
+			PermitStream: clientPermitStream,
 		},
 		ConfigDir:          "",
 		AllowedDirectories: []string{"/tmp/"},
@@ -79,6 +90,13 @@ func GetAgentConfig() *config.Config {
 				Ca:         "some.ca",
 				SkipVerify: false,
 			},
+		},
+		Common: &config.CommonSettings{
+			InitialInterval: commonInitialInterval,
+			MaxInterval:     commonMaxInterval,
+			MaxElapsedTime:  commonMaxElapsedTime,
+			Jitter:          commonJitter,
+			Multiplier:      commonMultiplier,
 		},
 	}
 }

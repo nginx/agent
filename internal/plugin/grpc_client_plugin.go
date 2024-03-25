@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"time"
 
 	"github.com/google/uuid"
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"google.golang.org/grpc"
@@ -25,25 +25,48 @@ import (
 	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 )
 
-const (
-	DefaultClientTime   = 120  // Default time for client operations in seconds
-	DefaultTimeout      = 60   // Default timeout duration in seconds
-	DefaultPermitStream = true // Flag indicating permission of stream
-)
+// these will come from the agent config
+var serviceConfig = `{
+		"loadBalancingPolicy": "round_robin",
+		"healthCheckConfig": {
+			"serviceName": "nginx-agent"
+		}
+	}`
 
 type (
 	GrpcClient struct {
 		messagePipe bus.MessagePipeInterface
 		config      *config.Config
-		ctx         context.Context
-		cncl        context.CancelFunc
+		cancel      context.CancelFunc
+		settings    *backoff.Settings
+		keepAlive   keepalive.ClientParameters
 	}
 )
 
 func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 	if agentConfig != nil && agentConfig.Command.Server.Type == "grpc" {
+		if agentConfig.Common == nil {
+			slog.Error("invalid configuration settings")
+			return nil
+		}
+		settings := &backoff.Settings{
+			InitialInterval: agentConfig.Common.InitialInterval,
+			MaxInterval:     agentConfig.Common.MaxInterval,
+			MaxElapsedTime:  agentConfig.Common.MaxElapsedTime,
+			Jitter:          agentConfig.Common.Jitter,
+			Multiplier:      agentConfig.Common.Multiplier,
+		}
+
+		keepAlive := keepalive.ClientParameters{
+			Time:                agentConfig.Client.Time, // add to config in future
+			Timeout:             agentConfig.Client.Timeout,
+			PermitWithoutStream: agentConfig.Client.PermitStream,
+		}
+
 		return &GrpcClient{
-			config: agentConfig,
+			config:    agentConfig,
+			settings:  settings,
+			keepAlive: keepAlive,
 		}
 	}
 
@@ -54,13 +77,19 @@ func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 	slog.Debug("Starting grpc client")
 	gc.messagePipe = messagePipe
 
+	return backoff.WaitUntil(gc.messagePipe.Context(), gc.settings, gc.createConnection)
+}
+
+func (gc *GrpcClient) createConnection() error {
+	var connectionCtx context.Context
+
 	serverAddr := net.JoinHostPort(
 		gc.config.Command.Server.Host,
 		fmt.Sprint(gc.config.Command.Server.Port),
 	)
 
-	gc.ctx, gc.cncl = context.WithTimeout(gc.messagePipe.Context(), gc.config.Client.Timeout)
-	conn, err := grpc.DialContext(gc.ctx, serverAddr, gc.getDialOptions()...)
+	connectionCtx, gc.cancel = context.WithTimeout(gc.messagePipe.Context(), gc.config.Client.Timeout)
+	conn, err := grpc.DialContext(connectionCtx, serverAddr, gc.getDialOptions()...)
 	if err != nil {
 		return err
 	}
@@ -94,19 +123,21 @@ func (gc *GrpcClient) Init(messagePipe bus.MessagePipeInterface) error {
 		},
 	}
 
-	response, err := client.CreateConnection(gc.ctx, req)
+	response, err := client.CreateConnection(connectionCtx, req)
 	if err != nil {
 		return fmt.Errorf("error creating connection: %w", err)
 	}
 
 	slog.Debug("Connection created", "response", response)
 
+	gc.messagePipe.Process(&bus.Message{Topic: bus.GrpcConnectedTopic, Data: response})
+
 	return nil
 }
 
 func (gc *GrpcClient) Close() error {
-	if gc.ctx != nil {
-		gc.cncl()
+	if gc.cancel != nil {
+		gc.cancel()
 	}
 
 	return nil
@@ -118,10 +149,14 @@ func (gc *GrpcClient) Info() *bus.Info {
 	}
 }
 
-func (gc *GrpcClient) Process(msg *bus.Message) {}
+func (gc *GrpcClient) Process(msg *bus.Message) {
+	if msg.Topic == bus.GrpcConnectedTopic {
+		slog.Debug("Agent connected")
+	}
+}
 
 func (gc *GrpcClient) Subscriptions() []string {
-	return []string{}
+	return []string{bus.GrpcConnectedTopic}
 }
 
 func (gc *GrpcClient) getDialOptions() []grpc.DialOption {
@@ -131,11 +166,8 @@ func (gc *GrpcClient) getDialOptions() []grpc.DialOption {
 		grpc.WithReturnConnectionError(),
 		grpc.WithStreamInterceptor(grpcRetry.StreamClientInterceptor()),
 		grpc.WithUnaryInterceptor(grpcRetry.UnaryClientInterceptor()),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                DefaultClientTime * time.Second, // add to config in future
-			Timeout:             DefaultTimeout * time.Second,
-			PermitWithoutStream: DefaultPermitStream,
-		}),
+		grpc.WithKeepaliveParams(gc.keepAlive),
+		grpc.WithDefaultServiceConfig(serviceConfig),
 	}
 
 	return opts
