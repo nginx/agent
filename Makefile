@@ -51,7 +51,8 @@ OSS_PACKAGES_REPO 	:= "packages.nginx.org"
 PACKAGE_PREFIX 		:= nginx-agent
 PACKAGE_NAME 		:= "$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT)"
 
-MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= test/config/nginx
+MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
+MOCK_MANAGEMENT_PLANE_LOG_LEVEL ?= INFO
 OLD_BENCHMARK_RESULTS_FILE ?= $(TEST_BUILD_DIR)/benchmark.txt
 
 uname_m    := $(shell uname -m)
@@ -83,7 +84,7 @@ no-local-changes:
 
 build: ## Build agent executable
 	mkdir -p $(BUILD_DIR)
-	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	@echo "📦 Build Done"
 
 lint: ## Run linter
@@ -101,6 +102,9 @@ unit-test: $(TEST_BUILD_DIR) ## Run unit tests
 	@rm $(TEST_BUILD_DIR)/tmp_coverage.out
 	@$(GOTOOL) cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
 	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
+
+race-condition-test: $(TEST_BUILD_DIR) ## Run unit tests with race condition detection
+	@CGO_ENABLED=1 $(GOTEST) -race ./internal/... ./api/... ./cmd/...
 
 $(TEST_BUILD_DIR)/coverage.out:
 	@$(MAKE) unit-test
@@ -141,9 +145,13 @@ dev: ## Run agent executable
 	@echo "🚀 Running App"
 	$(GORUN) $(PROJECT_DIR)/$(PROJECT_FILE)
 
+race-condition-dev: ## Run agent executable with race condition detection
+	@echo "🚀 Running app with race condition detection enabled"
+	$(GORUN) -race $(PROJECT_DIR)/$(PROJECT_FILE)
+
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🚀 Running mock management plane gRPC server"
-	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
+	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL)
 
 run-mock-management-http-server: ## Run mock management HTTP server
 	@echo "🚀 Running mock management plane HTTP server"
@@ -165,13 +173,24 @@ generate-mocks: ## Regenerate all needed mocks, in order to add new mocks genera
 	@$(GORUN) $(OAPICODEGEN) -generate gin,types -package http ./test/mock/http/mock-management-plane-api.yaml > ./test/mock/http/mock_management_plane.gen.go
 
 local-apk-package: ## Create local apk package
-	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
 
 local-deb-package: ## Create local deb package
-	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
 
 local-rpm-package: ## Create local rpm package
-	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
+
+generate-pgo-profile: build-mock-management-plane-http build-mock-management-plane-grpc
+	mv default.pgo profile.pprof
+	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
+	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
+	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
+	$(GOTEST) -v ./test/integration -cpuprofile integration_cpu.pprof
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/config -cpuprofile perf_config_cpu.pprof
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/instance -cpuprofile perf_instance_cpu.pprof
+	@$(GOTOOL) pprof -proto perf_config_cpu.pprof perf_instance_cpu.pprof integration_cpu.pprof > default.pgo
+	rm perf_config_cpu.pprof perf_instance_cpu.pprof config.test instance.test integration_cpu.pprof integration.test profile.pprof

@@ -19,23 +19,23 @@ import (
 )
 
 func TestProcessMonitor_Init(t *testing.T) {
+	ctx := context.Background()
 	testProcesses := []*model.Process{{Pid: 123, Name: "nginx"}}
 
 	processMonitor := NewProcessMonitor(types.GetAgentConfig())
 
-	processMonitor.getProcessesFunc = func() ([]*model.Process, error) {
+	processMonitor.getProcessesFunc = func(_ context.Context) ([]*model.Process, error) {
 		return testProcesses, nil
 	}
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{processMonitor})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	time.Sleep(10 * time.Millisecond)
 
-	assert.NotNil(t, processMonitor.messagePipe)
-	assert.Equal(t, testProcesses, processMonitor.processes)
+	assert.Equal(t, testProcesses, processMonitor.getProcesses())
 }
 
 func TestProcessMonitor_Info(t *testing.T) {

@@ -6,33 +6,37 @@
 package plugin
 
 import (
+	"context"
 	"log/slog"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service"
 )
 
 type Instance struct {
-	instances       []*instances.Instance
 	messagePipe     bus.MessagePipeInterface
 	instanceService service.InstanceServiceInterface
 }
 
 func NewInstance() *Instance {
 	return &Instance{
-		instances:       []*instances.Instance{},
 		instanceService: service.NewInstanceService(),
 	}
 }
 
-func (i *Instance) Init(messagePipe bus.MessagePipeInterface) error {
+func (i *Instance) Init(_ context.Context, messagePipe bus.MessagePipeInterface) error {
+	slog.Debug("Starting instance plugin")
 	i.messagePipe = messagePipe
+
 	return nil
 }
 
-func (*Instance) Close() error { return nil }
+func (*Instance) Close(_ context.Context) error {
+	slog.Debug("Closing instance plugin")
+
+	return nil
+}
 
 func (*Instance) Info() *bus.Info {
 	return &bus.Info{
@@ -40,7 +44,7 @@ func (*Instance) Info() *bus.Info {
 	}
 }
 
-func (i *Instance) Process(msg *bus.Message) {
+func (i *Instance) Process(_ context.Context, msg *bus.Message) {
 	if msg.Topic == bus.OsProcessesTopic {
 		newProcesses, ok := msg.Data.([]*model.Process)
 		if !ok {
@@ -50,7 +54,6 @@ func (i *Instance) Process(msg *bus.Message) {
 
 		instanceList := i.instanceService.GetInstances(newProcesses)
 		if len(instanceList) > 0 {
-			i.instances = instanceList
 			i.messagePipe.Process(&bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
 		} else {
 			slog.Info("No instanceList found")

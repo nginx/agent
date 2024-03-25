@@ -32,7 +32,7 @@ type OTelExporter struct {
 	conf           *config.Config
 	intExp         *otlpmetricgrpc.Exporter
 	convert        model.Converter[metricdata.Metrics]
-	mut            *sync.Mutex
+	bufferMutex    *sync.Mutex
 	sink           chan model.DataEntry
 	buffer         []metricdata.Metrics
 	bufferLen      int
@@ -125,7 +125,7 @@ func NewOTelExporter(ctx context.Context, agentConf *config.Config, serviceName,
 		conf:           agentConf,
 		intExp:         exp,
 		convert:        c,
-		mut:            &sync.Mutex{},
+		bufferMutex:    &sync.Mutex{},
 		sink:           make(chan model.DataEntry),
 		buffer:         make([]metricdata.Metrics, 0, bufferLength),
 		bufferLen:      bufferLength,
@@ -190,9 +190,9 @@ func (oe *OTelExporter) sendBuffer(ctx context.Context) error {
 	}
 
 	slog.Debug("Emptying OTel export buffer")
-	oe.mut.Lock()
+	oe.bufferMutex.Lock()
 	oe.buffer = make([]metricdata.Metrics, 0, oe.bufferLen)
-	oe.mut.Unlock()
+	oe.bufferMutex.Unlock()
 
 	return nil
 }
@@ -218,9 +218,16 @@ func (oe *OTelExporter) processEntry(ctx context.Context, de model.DataEntry) {
 		return
 	}
 
-	oe.mut.Lock()
+	oe.bufferMutex.Lock()
 	oe.buffer = append(oe.buffer, metric)
-	oe.mut.Unlock()
+	oe.bufferMutex.Unlock()
+}
+
+func (oe *OTelExporter) getBuffer() []metricdata.Metrics {
+	oe.bufferMutex.Lock()
+	defer oe.bufferMutex.Unlock()
+
+	return oe.buffer
 }
 
 func initGPRCExporter(ctx context.Context, conf *config.Metrics) (*otlpmetricgrpc.Exporter, error) {

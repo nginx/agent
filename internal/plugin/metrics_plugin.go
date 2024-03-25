@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,6 +36,7 @@ type (
 		shutdownFuncs   []context.CancelFunc
 		collectInterval time.Duration
 		metricsTimer    *time.Ticker
+		mutex           *sync.Mutex
 	}
 
 	// MetricsOption a functional option for `*Metrics`.
@@ -63,6 +65,7 @@ func NewMetrics(conf *config.Config, options ...MetricsOption) (*Metrics, error)
 		collectInterval: produceInterval,
 		shutdownFuncs:   make([]context.CancelFunc, 0),
 		metricsTimer:    nil,
+		mutex:           &sync.Mutex{},
 	}
 
 	for _, opt := range options {
@@ -76,24 +79,30 @@ func NewMetrics(conf *config.Config, options ...MetricsOption) (*Metrics, error)
 }
 
 // Init initializes and starts the plugin. Required for the `Plugin` interface.
-func (m *Metrics) Init(mp bus.MessagePipeInterface) error {
+func (m *Metrics) Init(ctx context.Context, mp bus.MessagePipeInterface) error {
+	slog.Debug("Starting metrics plugin")
+
 	m.pipe = mp
-	ctx, cancel := context.WithCancel(mp.Context())
+	metricsCtx, cancel := context.WithCancel(ctx)
+	m.mutex.Lock()
 	m.shutdownFuncs = append(m.shutdownFuncs, cancel)
+	m.mutex.Unlock()
 
 	m.discoverSources()
 
-	err := m.createExporters(ctx)
+	err := m.createExporters(metricsCtx)
 	if err != nil {
 		return fmt.Errorf("could not start exporters: %w", err)
 	}
 
-	m.startExporters(ctx)
+	m.startExporters(metricsCtx)
 
+	m.mutex.Lock()
 	for srcType, producer := range m.producers {
 		slog.Info("Starting producer", "producer_type", srcType.String())
-		go m.runProducer(ctx, producer)
+		go m.runProducer(metricsCtx, producer)
 	}
+	m.mutex.Unlock()
 
 	return nil
 }
@@ -106,7 +115,12 @@ func (m *Metrics) Info() *bus.Info {
 }
 
 // Close about the plugin. Required for the `Plugin` interface.
-func (m *Metrics) Close() error {
+func (m *Metrics) Close(_ context.Context) error {
+	slog.Debug("Closing metrics plugin")
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
 	for _, shutdownFunc := range m.shutdownFuncs {
 		shutdownFunc()
 	}
@@ -119,7 +133,7 @@ func (m *Metrics) Close() error {
 }
 
 // Process an incoming Message Bus message in the plugin. Required for the `Plugin` interface.
-func (m *Metrics) Process(msg *bus.Message) {
+func (m *Metrics) Process(_ context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.MetricsTopic:
 		err := m.processMessage(msg)
@@ -182,6 +196,9 @@ func (m *Metrics) createExporters(ctx context.Context) error {
 }
 
 func (m *Metrics) startExporters(ctx context.Context) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
 	for expType, exp := range m.exporters {
 		slog.Info("Starting export", "exporter_type", expType.String())
 		go exp.StartSink(ctx)

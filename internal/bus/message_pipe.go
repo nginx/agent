@@ -27,19 +27,18 @@ type (
 
 	MessagePipeInterface interface {
 		Register(size int, plugins []Plugin) error
-		DeRegister(plugins []string) error
+		DeRegister(ctx context.Context, plugins []string) error
 		Process(messages ...*Message)
-		Run()
-		Context() context.Context
+		Run(ctx context.Context)
 		GetPlugins() []Plugin
-		IsPluginAlreadyRegistered(pluginName string) bool
+		IsPluginRegistered(pluginName string) bool
 	}
 
 	Plugin interface {
-		Init(messagePipe MessagePipeInterface) error
-		Close() error
+		Init(ctx context.Context, messagePipe MessagePipeInterface) error
+		Close(ctx context.Context) error
 		Info() *Info
-		Process(msg *Message)
+		Process(ctx context.Context, msg *Message)
 		Subscriptions() []string
 	}
 
@@ -47,24 +46,20 @@ type (
 		bus            messagebus.MessageBus
 		messageChannel chan *Message
 		plugins        []Plugin
-		mu             sync.RWMutex
-		ctx            context.Context
-		cancel         context.CancelFunc
+		pluginsMutex   sync.Mutex
 	}
 )
 
-func NewMessagePipe(ctx context.Context, size int) *MessagePipe {
-	pipeContext, pipeCancel := context.WithCancel(ctx)
+func NewMessagePipe(size int) *MessagePipe {
 	return &MessagePipe{
 		messageChannel: make(chan *Message, size),
-		mu:             sync.RWMutex{},
-		ctx:            pipeContext,
-		cancel:         pipeCancel,
+		pluginsMutex:   sync.Mutex{},
 	}
 }
 
 func (p *MessagePipe) Register(size int, plugins []Plugin) error {
-	p.mu.Lock()
+	p.pluginsMutex.Lock()
+	defer p.pluginsMutex.Unlock()
 
 	p.plugins = append(p.plugins, plugins...)
 	p.bus = messagebus.New(size)
@@ -83,36 +78,75 @@ func (p *MessagePipe) Register(size int, plugins []Plugin) error {
 
 	slog.Info("Finished registering plugins", "plugins", pluginsRegistered)
 
-	p.mu.Unlock()
-
 	return nil
 }
 
-func (p *MessagePipe) DeRegister(pluginNames []string) error {
-	p.mu.Lock()
+func (p *MessagePipe) DeRegister(ctx context.Context, pluginNames []string) error {
+	p.pluginsMutex.Lock()
+	defer p.pluginsMutex.Unlock()
 
-	var plugins []Plugin
-	plugins = p.findPlugins(pluginNames, plugins)
+	plugins := p.findPlugins(pluginNames)
 
 	for _, plugin := range plugins {
 		index := getIndex(plugin.Info().Name, p.plugins)
 
-		err := p.unsubscribePlugin(index, plugin)
+		err := p.unsubscribePlugin(ctx, index, plugin)
 		if err != nil {
 			return err
 		}
 	}
 
-	p.mu.Unlock()
-
 	return nil
 }
 
-func (p *MessagePipe) unsubscribePlugin(index int, plugin Plugin) error {
+func (p *MessagePipe) Process(messages ...*Message) {
+	for _, m := range messages {
+		p.messageChannel <- m
+	}
+}
+
+func (p *MessagePipe) Run(ctx context.Context) {
+	p.pluginsMutex.Lock()
+	p.initPlugins(ctx)
+	p.pluginsMutex.Unlock()
+
+	for {
+		select {
+		case <-ctx.Done():
+			p.pluginsMutex.Lock()
+			for _, r := range p.plugins {
+				r.Close(ctx)
+			}
+			p.pluginsMutex.Unlock()
+
+			return
+		case m := <-p.messageChannel:
+			p.bus.Publish(m.Topic, ctx, m)
+		}
+	}
+}
+
+func (p *MessagePipe) GetPlugins() []Plugin {
+	return p.plugins
+}
+
+func (p *MessagePipe) IsPluginRegistered(pluginName string) bool {
+	isPluginRegistered := false
+
+	for _, plugin := range p.GetPlugins() {
+		if plugin.Info().Name == pluginName {
+			isPluginRegistered = true
+		}
+	}
+
+	return isPluginRegistered
+}
+
+func (p *MessagePipe) unsubscribePlugin(ctx context.Context, index int, plugin Plugin) error {
 	if index != -1 {
 		p.plugins = append(p.plugins[:index], p.plugins[index+1:]...)
 
-		plugin.Close()
+		plugin.Close(ctx)
 
 		for _, subscription := range plugin.Subscriptions() {
 			err := p.bus.Unsubscribe(subscription, plugin.Process)
@@ -125,7 +159,9 @@ func (p *MessagePipe) unsubscribePlugin(index int, plugin Plugin) error {
 	return nil
 }
 
-func (p *MessagePipe) findPlugins(pluginNames []string, plugins []Plugin) []Plugin {
+func (p *MessagePipe) findPlugins(pluginNames []string) []Plugin {
+	plugins := []Plugin{}
+
 	for _, name := range pluginNames {
 		for _, plugin := range p.plugins {
 			if plugin.Info().Name == name {
@@ -147,67 +183,11 @@ func getIndex(pluginName string, plugins []Plugin) int {
 	return -1
 }
 
-func (p *MessagePipe) Process(messages ...*Message) {
-	for _, m := range messages {
-		select {
-		case p.messageChannel <- m:
-		case <-p.ctx.Done():
-
-			return
-		}
-	}
-}
-
-func (p *MessagePipe) Run() {
-	p.initPlugins()
-
-	for {
-		select {
-		case <-p.ctx.Done():
-			for _, r := range p.plugins {
-				r.Close()
-			}
-
-			close(p.messageChannel)
-
-			return
-		case m := <-p.messageChannel:
-			p.mu.Lock()
-			p.bus.Publish(m.Topic, m)
-			p.mu.Unlock()
-		}
-	}
-}
-
-func (p *MessagePipe) Context() context.Context {
-	return p.ctx
-}
-
-func (p *MessagePipe) Cancel() context.CancelFunc {
-	return p.cancel
-}
-
-func (p *MessagePipe) GetPlugins() []Plugin {
-	return p.plugins
-}
-
-func (p *MessagePipe) initPlugins() {
+func (p *MessagePipe) initPlugins(ctx context.Context) {
 	for _, r := range p.plugins {
-		err := r.Init(p)
+		err := r.Init(ctx, p)
 		if err != nil {
 			slog.Error("Failed to initialize plugin", "plugin", r.Info().Name, "error", err)
 		}
 	}
-}
-
-func (p *MessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
-	pluginAlreadyRegistered := false
-
-	for _, plugin := range p.GetPlugins() {
-		if plugin.Info().Name == pluginName {
-			pluginAlreadyRegistered = true
-		}
-	}
-
-	return pluginAlreadyRegistered
 }

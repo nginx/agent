@@ -25,7 +25,7 @@ import (
 )
 
 func TestWriteConfig(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	tempDir := t.TempDir()
 	tenantID, instanceID := helpers.CreateTestIDs(t)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
@@ -195,7 +195,7 @@ func TestDeleteFile(t *testing.T) {
 }
 
 func TestRollback(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	tempDir := t.TempDir()
 	tenantID, instanceID := helpers.CreateTestIDs(t)
 	allowedDirs := []string{tempDir}

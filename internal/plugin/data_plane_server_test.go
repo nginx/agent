@@ -26,31 +26,34 @@ import (
 )
 
 func TestDataPlaneServer_Init(t *testing.T) {
+	ctx := context.Background()
 	agentConfig := types.GetAgentConfig()
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	time.Sleep(10 * time.Millisecond)
 
-	addr := dataPlaneServer.server.Addr
+	addr := dataPlaneServer.getServerAddress()
 	assert.NotNil(t, addr)
 
-	err = dataPlaneServer.Close()
+	err = dataPlaneServer.Close(ctx)
 	require.NoError(t, err)
 }
 
 func TestDataPlaneServer_Process(t *testing.T) {
+	ctx := context.Background()
 	agentConfig := types.GetAgentConfig()
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewMessagePipe(
+		100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	tests := []struct {
 		name  string
@@ -80,21 +83,21 @@ func TestDataPlaneServer_Process(t *testing.T) {
 
 			var actual interface{}
 			if tt.topic == bus.InstancesTopic {
-				actual = dataPlaneServer.instances
+				actual = dataPlaneServer.getInstances()
 			} else {
-				actual = dataPlaneServer.configEvents[instanceID][0]
+				actual = dataPlaneServer.getConfigurationStatus(instanceID)[0]
 			}
 
 			assert.Equal(t, tt.data, actual)
 		})
 	}
 
-	err = dataPlaneServer.Close()
+	err = dataPlaneServer.Close(ctx)
 	require.NoError(t, err)
 }
 
 func TestDataPlaneServer_GetInstances(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	expected := &dataplane.Instance{
 		InstanceId: toPtr(instanceID),
 		Type:       toPtr(dataplane.NGINX),
@@ -111,14 +114,14 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
-	messagePipe := bus.NewMessagePipe(ctx, 100)
+	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	time.Sleep(10 * time.Millisecond)
 
-	addr := dataPlaneServer.server.Addr
+	addr := dataPlaneServer.getServerAddress()
 	assert.NotNil(t, addr)
 
 	target := fmt.Sprintf("http://%s/api/v1/instances", addr)
@@ -142,12 +145,12 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.Equal(t, expected, result[0])
 
-	err = dataPlaneServer.Close()
+	err = dataPlaneServer.Close(ctx)
 	require.NoError(t, err)
 }
 
 func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	unknownInstanceID := "fe4c58c1-bc92-30c1-a9c9-85591422068e"
 	data := []byte(`{"location": "http://file-server.com"}`)
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
@@ -156,14 +159,14 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
 
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
-	go messagePipe.Run()
+	go messagePipe.Run(ctx)
 
 	time.Sleep(10 * time.Millisecond)
 
-	addr := dataPlaneServer.server.Addr
+	addr := dataPlaneServer.getServerAddress()
 	assert.NotNil(t, addr)
 
 	tests := []struct {
@@ -211,12 +214,12 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 		})
 	}
 
-	err = dataPlaneServer.Close()
+	err = dataPlaneServer.Close(ctx)
 	require.NoError(t, err)
 }
 
 func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	tests := []struct {
 		name             string
 		instanceID       string
@@ -284,17 +287,21 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	}
 
 	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
+
 	agentConfig := types.GetAgentConfig()
+
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 	dataPlaneServer.instances = []*instances.Instance{instance}
-	messagePipe := bus.NewMessagePipe(context.TODO(), 100)
+
+	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
-	go messagePipe.Run()
+
+	go messagePipe.Run(ctx)
 
 	time.Sleep(10 * time.Millisecond)
 
-	tcpAddr := dataPlaneServer.server.Addr
+	tcpAddr := dataPlaneServer.getServerAddress()
 
 	assert.NotNil(t, tcpAddr)
 
@@ -322,7 +329,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 		})
 	}
 
-	err = dataPlaneServer.Close()
+	err = dataPlaneServer.Close(ctx)
 	require.NoError(t, err)
 }
 
@@ -383,7 +390,7 @@ func performPutRequest(
 	instanceID string,
 	data []byte,
 ) (*http.Response, error) {
-	addr := dataPlaneServer.server.Addr
+	addr := dataPlaneServer.getServerAddress()
 	if addr == "" {
 		return nil, fmt.Errorf("unable to get server address")
 	}
@@ -404,7 +411,7 @@ func performGetInstanceConfigurationStatusRequest(
 	dataPlaneServer *DataPlaneServer,
 	instanceID string,
 ) (*http.Response, error) {
-	addr := dataPlaneServer.server.Addr
+	addr := dataPlaneServer.getServerAddress()
 	if addr == "" {
 		return nil, fmt.Errorf("unable to get server address")
 	}

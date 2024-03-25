@@ -27,8 +27,9 @@ const (
 )
 
 func TestConfig_Init(t *testing.T) {
+	ctx := context.Background()
 	configPlugin := NewConfig(&config.Config{})
-	err := configPlugin.Init(&bus.MessagePipe{})
+	err := configPlugin.Init(ctx, &bus.MessagePipe{})
 	require.NoError(t, err)
 
 	assert.NotNil(t, configPlugin.messagePipe)
@@ -51,6 +52,8 @@ func TestConfig_Subscriptions(t *testing.T) {
 }
 
 func TestConfig_Process(t *testing.T) {
+	ctx := context.Background()
+
 	testInstance := &instances.Instance{
 		InstanceId: instanceID,
 		Type:       instances.Type_NGINX,
@@ -136,12 +139,12 @@ func TestConfig_Process(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			messagePipe := bus.NewFakeMessagePipe(context.TODO())
+			messagePipe := bus.NewFakeMessagePipe()
 			configPlugin := NewConfig(&config.Config{})
 
 			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
 			require.NoError(tt, err)
-			messagePipe.Run()
+			messagePipe.Run(ctx)
 
 			configService := &servicefakes.FakeConfigServiceInterface{}
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
@@ -152,7 +155,7 @@ func TestConfig_Process(t *testing.T) {
 			configPlugin.configServices[instanceID] = configService
 			configPlugin.instances = instanceService
 
-			configPlugin.Process(test.input)
+			configPlugin.Process(ctx, test.input)
 
 			messages := messagePipe.GetMessages()
 
@@ -166,6 +169,7 @@ func TestConfig_Process(t *testing.T) {
 }
 
 func TestConfig_Update(t *testing.T) {
+	ctx := context.Background()
 	agentConfig := config.Config{}
 	instance := instances.Instance{
 		InstanceId: instanceID,
@@ -255,12 +259,12 @@ func TestConfig_Update(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			messagePipe := bus.NewFakeMessagePipe(context.TODO())
+			messagePipe := bus.NewFakeMessagePipe()
 			configPlugin := NewConfig(&agentConfig)
 
 			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
 			require.NoError(tt, err)
-			messagePipe.Run()
+			messagePipe.Run(ctx)
 
 			configService := &servicefakes.FakeConfigServiceInterface{}
 			configService.UpdateInstanceConfigurationReturns(make(map[string]*instances.File), test.updateReturnStatus)
@@ -270,7 +274,7 @@ func TestConfig_Update(t *testing.T) {
 			configPlugin.configServices[instanceID] = configService
 			configPlugin.instances = instanceService
 
-			configPlugin.updateInstanceConfig(&request)
+			configPlugin.updateInstanceConfig(ctx, &request)
 
 			messages := messagePipe.GetMessages()
 

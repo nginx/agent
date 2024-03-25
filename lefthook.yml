@@ -3,9 +3,11 @@ pre-push:
   follow: true
   piped: true # Stop if one of the steps fail
   commands:
-    1_lint: 
+    1_generate:
+      run: make generate generate-mocks
+    2_lint:
       run: make lint
-    2_format:
+    3_format:
       run: make format
-    3_check_local_changes:
+    4_check_local_changes:
       run: make no-local-changes
