@@ -172,16 +172,23 @@ func (mgfs *ManagementGrpcFileServer) getConfigVersions(fileName, fileHash strin
 	return fileConfigVersions
 }
 
+// nolint
 func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, error) {
 	files := make(map[string][]*v1.File)
+
+	slog.Info("Getting map of versioned files", "config_directory", configDirectory)
 
 	err := filepath.Walk(configDirectory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
+
 		if !info.IsDir() {
-			// nolint: gomnd
+			slog.Info("Found file", "path", path)
 			splitPath := strings.SplitN(strings.Split(path, configDirectory)[1], "/", 3)
+			if len(splitPath) == 2 {
+				return nil
+			}
 			version := splitPath[1]
 			filePath := "/" + splitPath[2]
 			versionDirectory := filepath.Join(configDirectory, version)

@@ -51,7 +51,7 @@ OSS_PACKAGES_REPO 	:= "packages.nginx.org"
 PACKAGE_PREFIX 		:= nginx-agent
 PACKAGE_NAME 		:= "$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT)"
 
-MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= test/config/nginx
+MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
 OLD_BENCHMARK_RESULTS_FILE ?= $(TEST_BUILD_DIR)/benchmark.txt
 
 uname_m    := $(shell uname -m)
