@@ -3,6 +3,7 @@ module github.com/nginx/agent/v3
 go 1.21.6
 
 require (
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/docker/docker v25.0.2+incompatible
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/google/uuid v1.6.0
@@ -28,7 +29,6 @@ require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.10.0-rc3 // indirect
-	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
