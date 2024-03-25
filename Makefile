@@ -52,6 +52,7 @@ PACKAGE_PREFIX 		:= nginx-agent
 PACKAGE_NAME 		:= "$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT)"
 
 MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
+MOCK_MANAGEMENT_PLANE_LOG_LEVEL ?= INFO
 OLD_BENCHMARK_RESULTS_FILE ?= $(TEST_BUILD_DIR)/benchmark.txt
 
 uname_m    := $(shell uname -m)
@@ -143,7 +144,7 @@ dev: ## Run agent executable
 
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🚀 Running mock management plane gRPC server"
-	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
+	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL)
 
 run-mock-management-http-server: ## Run mock management HTTP server
 	@echo "🚀 Running mock management plane HTTP server"

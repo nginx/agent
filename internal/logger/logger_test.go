@@ -58,7 +58,7 @@ func TestGetLogLevel(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			result := getLogLevel(test.input)
+			result := GetLogLevel(test.input)
 			assert.IsType(tt, test.expected, result)
 		})
 	}

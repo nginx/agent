@@ -31,14 +31,14 @@ func New(params config.Log) *slog.Logger {
 	handler := slog.NewTextHandler(
 		getLogWriter(params.Path),
 		&slog.HandlerOptions{
-			Level: getLogLevel(params.Level),
+			Level: GetLogLevel(params.Level),
 		},
 	)
 
 	return slog.New(handler)
 }
 
-func getLogLevel(level string) slog.Level {
+func GetLogLevel(level string) slog.Level {
 	if level == "" {
 		return slog.LevelInfo
 	}

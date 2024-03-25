@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/logger"
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 	"google.golang.org/grpc"
 )
@@ -26,8 +27,8 @@ func main() {
 	var configDirectory string
 	var grpcAddress string
 	var apiAddress string
-
 	var address string
+	var logLevel string
 
 	flag.StringVar(
 		&configDirectory,
@@ -57,7 +58,19 @@ func main() {
 		"set the API address to run the server on",
 	)
 
+	flag.StringVar(
+		&logLevel,
+		"logLevel",
+		"INFO",
+		"set the log level",
+	)
+
 	flag.Parse()
+
+	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: logger.GetLogLevel(logLevel),
+	}))
+	slog.SetDefault(newLogger)
 
 	if configDirectory == "" {
 		defaultConfigDirectory, err := generateDefaultConfigDirectory()
@@ -135,5 +148,5 @@ func generateDefaultConfigDirectory() (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(tempDirectory, "config/"), nil
+	return filepath.Join(tempDirectory, "config"), nil
 }

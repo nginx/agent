@@ -184,14 +184,14 @@ func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, erro
 		}
 
 		if !info.IsDir() {
-			slog.Info("Found file", "path", path)
+			slog.Debug("Found file", "path", path)
 
-			splitPath := strings.SplitN(strings.Split(path, configDirectory)[1], "/", 3)
+			splitPath := strings.SplitN(strings.Split(path, configDirectory)[1], string(filepath.Separator), 3)
 			if len(splitPath) == 2 {
 				return nil
 			}
 			version := splitPath[1]
-			filePath := "/" + splitPath[2]
+			filePath := string(filepath.Separator) + splitPath[2]
 
 			versionDirectory := filepath.Join(configDirectory, version)
 
