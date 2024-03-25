@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -20,12 +21,18 @@ import (
 
 type ManagementGrpcServer struct {
 	v1.UnimplementedCommandServiceServer
-	server            *gin.Engine
-	connectionRequest *v1.CreateConnectionRequest
+	server                       *gin.Engine
+	connectionRequest            *v1.CreateConnectionRequest
+	updateDataPlaneStatusRequest *v1.UpdateDataPlaneStatusRequest
+	connectionMutex              *sync.Mutex
+	updateDataPlaneStatusMutex   *sync.Mutex
 }
 
 func NewManagementGrpcServer() *ManagementGrpcServer {
-	mgs := &ManagementGrpcServer{}
+	mgs := &ManagementGrpcServer{
+		connectionMutex:            &sync.Mutex{},
+		updateDataPlaneStatusMutex: &sync.Mutex{},
+	}
 
 	handler := slog.NewTextHandler(
 		os.Stderr,
@@ -44,9 +51,23 @@ func NewManagementGrpcServer() *ManagementGrpcServer {
 		if mgs.connectionRequest == nil {
 			c.JSON(http.StatusNotFound, nil)
 		} else {
+			mgs.connectionMutex.Lock()
 			c.JSON(http.StatusOK, gin.H{
 				"connectionRequest": mgs.connectionRequest,
 			})
+			mgs.connectionMutex.Unlock()
+		}
+	})
+
+	server.GET("/api/v1/status", func(c *gin.Context) {
+		if mgs.updateDataPlaneStatusRequest == nil {
+			c.JSON(http.StatusNotFound, nil)
+		} else {
+			mgs.updateDataPlaneStatusMutex.Lock()
+			c.JSON(http.StatusOK, gin.H{
+				"updateDataPlaneStatusRequest": mgs.updateDataPlaneStatusRequest,
+			})
+			mgs.updateDataPlaneStatusMutex.Unlock()
 		}
 	})
 
@@ -75,7 +96,9 @@ func (mgs *ManagementGrpcServer) CreateConnection(
 		return nil, errors.New("empty connection request")
 	}
 
+	mgs.connectionMutex.Lock()
 	mgs.connectionRequest = request
+	mgs.connectionMutex.Unlock()
 
 	return &v1.CreateConnectionResponse{
 		Response: &v1.CommandResponse{
@@ -88,16 +111,26 @@ func (mgs *ManagementGrpcServer) CreateConnection(
 
 func (mgs *ManagementGrpcServer) UpdateDataPlaneStatus(
 	_ context.Context,
-	_ *v1.UpdateDataPlaneStatusRequest) (
+	request *v1.UpdateDataPlaneStatusRequest) (
 	*v1.UpdateDataPlaneStatusResponse,
 	error,
 ) {
+	slog.Debug("Update data plane status request", "request", request)
+
+	if request == nil {
+		return nil, errors.New("empty update data plane status request")
+	}
+
+	mgs.updateDataPlaneStatusMutex.Lock()
+	mgs.updateDataPlaneStatusRequest = request
+	mgs.updateDataPlaneStatusMutex.Unlock()
+
 	return &v1.UpdateDataPlaneStatusResponse{}, nil
 }
 
 func (mgs *ManagementGrpcServer) UpdateDataPlaneHealth(
-	ctx context.Context,
-	in *v1.UpdateDataPlaneHealthRequest) (
+	_ context.Context,
+	_ *v1.UpdateDataPlaneHealthRequest) (
 	*v1.UpdateDataPlaneHealthResponse,
 	error,
 ) {
