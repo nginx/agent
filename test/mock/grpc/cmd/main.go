@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	filePermissions = 0o700
+	filePermissions = 0o640
 )
 
 func main() {
