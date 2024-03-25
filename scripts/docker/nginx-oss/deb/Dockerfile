@@ -7,10 +7,9 @@ ARG ENTRY_POINT
 ARG PACKAGE_NAME
 ARG PACKAGES_REPO
 
-COPY ./scripts/docker/supervisor.d/nginx.conf etc/supervisor/conf.d/
-
 WORKDIR /agent
 COPY ./build /agent/build
+COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN set -x \
     && addgroup --system --gid 101 nginx \
@@ -23,18 +22,18 @@ RUN set -x \
                                                                         curl \
                                                                         lsb-release \
                                                                         procps \
-                                                                        nginx \
-                                                                        supervisor 
+                                                                        nginx
 
 # Setup nginx agent repository
 RUN curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor | tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null \
     && printf "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://${PACKAGES_REPO}/nginx-agent/ubuntu/ `lsb_release -cs` agent\n" > /etc/apt/sources.list.d/nginx-agent.list
 
-STOPSIGNAL SIGQUIT
+RUN chmod +x /agent/entrypoint.sh
+STOPSIGNAL SIGTERM
 
 EXPOSE 80 443
 
-ENTRYPOINT ["/usr/bin/supervisord", "-c","/etc/supervisor/supervisord.conf", "-u", "root", "--nodaemon", "--logfile", "/dev/stdout", "--logfile_maxbytes", "0" ]
+ENTRYPOINT ["/agent/entrypoint.sh"]
 
 FROM install-nginx as install-agent-local
 
