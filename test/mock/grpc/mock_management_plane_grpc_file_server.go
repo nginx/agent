@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -183,6 +183,11 @@ func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, erro
 			// nolint: gomnd
 			splitPath := strings.SplitN(strings.Split(path, configDirectory)[1], "/", 3)
 			version := splitPath[1]
+
+			if len(splitPath) == 2 {
+				return nil
+			}
+
 			filePath := "/" + splitPath[2]
 			versionDirectory := filepath.Join(configDirectory, version)
 
