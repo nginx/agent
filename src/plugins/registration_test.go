@@ -87,7 +87,7 @@ func TestRegistration_areDataplaneSoftwareDetailsReady(t *testing.T) {
 func TestRegistration_Subscriptions(t *testing.T) {
 	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil, tutils.GetProcesses())
 
-	assert.Equal(t, []string{core.RegistrationCompletedTopic, core.DataplaneSoftwareDetailsUpdated,core.NginxDetailProcUpdate}, pluginUnderTest.Subscriptions())
+	assert.Equal(t, []string{core.RegistrationCompletedTopic, core.DataplaneSoftwareDetailsUpdated, core.NginxDetailProcUpdate}, pluginUnderTest.Subscriptions())
 }
 
 func TestRegistration_Info(t *testing.T) {
