@@ -64,7 +64,55 @@ func TestRegistration_Process(t *testing.T) {
 			messages := messagePipe.GetMessages()
 
 			assert.Equal(tt, messages[0].Topic(), core.CommRegister)
-			// host info checked elsewhere
+			assert.NotNil(tt, messages[0].Data())
+
+			assert.Equal(tt, messages[1].Topic(), core.RegistrationCompletedTopic)
+			assert.Nil(tt, messages[1].Data())
+		})
+	}
+}
+
+func TestRegistration_registerAgent(t *testing.T) {
+	tests := []struct {
+		name                 string
+		expectedMessageCount int
+	}{
+		{
+			name:                 "test registration",
+			expectedMessageCount: 2,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(tt *testing.T) {
+			binary := tutils.GetMockNginxBinary()
+			binary.On("ReadConfig", mock.Anything, mock.Anything, mock.Anything).Return(&proto.NginxConfig{}, nil)
+			env := tutils.GetMockEnvWithHostAndProcess()
+
+			cfg := &config.Config{
+				Extensions: []string{agent_config.NginxAppProtectExtensionPlugin},
+			}
+
+			oneTimeReg := NewOneTimeRegistration(cfg, binary, env, &proto.Metadata{}, tutils.GetProcesses())
+
+			messagePipe := core.SetupMockMessagePipe(t, context.TODO(), []core.Plugin{oneTimeReg}, []core.ExtensionPlugin{})
+
+			oneTimeReg.pipeline = messagePipe
+			oneTimeReg.registerAgent()
+			defer oneTimeReg.Close()
+			messagePipe.Run()
+
+			assert.Eventually(
+				tt,
+				func() bool { return len(messagePipe.GetMessages()) == test.expectedMessageCount },
+				time.Duration(5*time.Second),
+				3*time.Millisecond,
+			)
+
+			messages := messagePipe.GetMessages()
+
+			assert.Equal(tt, messages[0].Topic(), core.CommRegister)
 			assert.NotNil(tt, messages[0].Data())
 
 			assert.Equal(tt, messages[1].Topic(), core.RegistrationCompletedTopic)
