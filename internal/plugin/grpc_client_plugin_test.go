@@ -7,20 +7,17 @@ package plugin
 
 import (
 	"context"
-	"strconv"
-
-	// "github.com/google/uuid"
-	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
-	"google.golang.org/grpc"
-	//"google.golang.org/grpc/test/bufconn"
-
+	"log/slog"
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"testing"
 	"time"
+
+	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -30,14 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	grpcServerMutex = &sync.Mutex{}
-)
-
-const (
-	bufSize    = 1024 * 1024
-	serverName = "bufnet"
-)
+var grpcServerMutex = &sync.Mutex{}
 
 func TestGrpcClient_NewGrpcClient(t *testing.T) {
 	tests := []struct {
@@ -152,7 +142,6 @@ func TestGrpcClient_Init(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(ttt *testing.T) {
-
 			ctx := context.Background()
 			tt.agentConfig.Command.Server.Host = tt.server
 			client := NewGrpcClient(tt.agentConfig)
@@ -232,7 +221,8 @@ func TestGrpcClient_createConnection(t *testing.T) {
 		{
 			"Test 1: GRPC can't connect",
 			types.GetAgentConfig(),
-			`context deadline exceeded: connection error: desc = "transport: Error while dialing: dial tcp 127.0.0.1:8981: connect: connection refused"`,
+			"context deadline exceeded: connection error: desc =" +
+				`"transport: Error while dialing: dial tcp 127.0.0.1:8981: connect: connection refused"`,
 		},
 		{
 			"Test 2: GRPC can connect",
@@ -242,18 +232,14 @@ func TestGrpcClient_createConnection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(ttt *testing.T) {
-
 			_, listener := startMockGrpcServer()
 
-			if tt.errorMessage == "" {
-				host, port, err := net.SplitHostPort(listener.Addr().String())
-				require.NoError(ttt, err)
-				tt.agentConfig.Command.Server.Host = host
-
-				portInt, err := strconv.Atoi(port)
-				require.NoError(ttt, err)
-				tt.agentConfig.Command.Server.Port = portInt
-			}
+			tt.agentConfig.Command.Server.Host,
+				tt.agentConfig.Command.Server.Port = getHostAndPort(
+				ttt,
+				listener.Addr().String(),
+				tt.errorMessage,
+			)
 
 			client := NewGrpcClient(tt.agentConfig)
 			assert.NotNil(t, client)
@@ -269,12 +255,27 @@ func TestGrpcClient_createConnection(t *testing.T) {
 				require.NoError(ttt, err)
 			}
 
-			err = listener.Close()
-			require.NoError(ttt, err)
-
-			stopMockCommandServer(listener)
+			err = stopMockCommandServer(listener)
+			if err != nil {
+				slog.Error("oh no")
+			}
 		})
 	}
+}
+
+func getHostAndPort(t *testing.T, address, errorMessage string) (string, int) {
+	t.Helper()
+	if errorMessage == "" {
+		host, port, err := net.SplitHostPort(address)
+		require.NoError(t, err)
+
+		portInt, err := strconv.Atoi(port)
+		require.NoError(t, err)
+
+		return host, portInt
+	}
+
+	return "", 0
 }
 
 func startMockGrpcServer() (*mockGrpc.ManagementGrpcServer, net.Listener) {
@@ -285,9 +286,11 @@ func startMockGrpcServer() (*mockGrpc.ManagementGrpcServer, net.Listener) {
 
 	listener, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
+		slog.Error("oh no, can't start mock server")
 	}
 
 	go server.StartServer(listener)
+
 	return server, listener
 }
 
@@ -307,6 +310,12 @@ func stopMockCommandServer(dialer net.Listener) error {
 
 	<-done
 	// server.GracefulStop()
+
+	err := dialer.Close()
+	if err != nil {
+		slog.Error("error closing dialer")
+		return err
+	}
+
 	return nil
 }
-
