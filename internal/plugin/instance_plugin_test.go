@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
@@ -32,7 +32,14 @@ func TestInstance_Subscriptions(t *testing.T) {
 
 func TestInstance_Process(t *testing.T) {
 	ctx := context.Background()
-	testInstances := []*instances.Instance{{InstanceId: "123", Type: instances.Type_NGINX}}
+	testInstances := []*v1.Instance{
+		{
+			InstanceMeta: &v1.InstanceMeta{
+				InstanceId:   "123",
+				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+			},
+		},
+	}
 
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
 	fakeInstanceService.GetInstancesReturns(testInstances)
@@ -72,7 +79,7 @@ func TestInstance_Process_Error_Expected(t *testing.T) {
 
 func TestInstance_Process_Empty_Instances(t *testing.T) {
 	ctx := context.Background()
-	testInstances := []*instances.Instance{}
+	testInstances := []*v1.Instance{}
 
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
 	fakeInstanceService.GetInstancesReturns(testInstances)

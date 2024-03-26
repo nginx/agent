@@ -16,6 +16,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	service "github.com/nginx/agent/v3/internal/service/config"
 )
 
@@ -36,18 +37,18 @@ type ConfigServiceInterface interface {
 type ConfigService struct {
 	configContext any
 	configService service.DataPlaneConfig
-	instance      *instances.Instance
+	instance      *v1.Instance
 }
 
-func NewConfigService(instance *instances.Instance, agentConfig *config.Config) *ConfigService {
+func NewConfigService(instance *v1.Instance, agentConfig *config.Config) *ConfigService {
 	cs := &ConfigService{}
 
-	switch instance.GetType() {
-	case instances.Type_NGINX, instances.Type_NGINX_PLUS:
+	switch instance.GetInstanceMeta().GetInstanceType() {
+	case v1.InstanceMeta_INSTANCE_TYPE_NGINX, v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
 		cs.configService = service.NewNginx(instance, agentConfig)
-	case instances.Type_NGINX_GATEWAY_FABRIC:
-		cs.configService = service.NewNginxGatewayFabric()
-	case instances.Type_UNKNOWN:
+	case v1.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
+		v1.InstanceMeta_INSTANCE_TYPE_AGENT,
+		v1.InstanceMeta_INSTANCE_TYPE_UNIT:
 		fallthrough
 	default:
 		slog.Warn("Not Implemented")
@@ -78,7 +79,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 	if err != nil {
 		slog.Error("Error writing config", "err", err)
 		return skippedFiles, &instances.ConfigurationStatus{
-			InstanceId:    cs.instance.GetInstanceId(),
+			InstanceId:    cs.instance.GetInstanceMeta().GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
@@ -90,7 +91,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 	if err != nil {
 		slog.Error("Error validating config", "err", err)
 		return skippedFiles, &instances.ConfigurationStatus{
-			InstanceId:    cs.instance.GetInstanceId(),
+			InstanceId:    cs.instance.GetInstanceMeta().GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
@@ -102,7 +103,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 	if err != nil {
 		slog.Error("Error applying config and reloading nginx", "err", err)
 		return skippedFiles, &instances.ConfigurationStatus{
-			InstanceId:    cs.instance.GetInstanceId(),
+			InstanceId:    cs.instance.GetInstanceMeta().GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
 			Message:       err.Error(),
@@ -113,11 +114,11 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 	err = cs.configService.Complete()
 	if err != nil {
 		slog.Error("error updating instance file cache during config apply complete", "instance_id",
-			cs.instance.GetInstanceId(), "err", err)
+			cs.instance.GetInstanceMeta().GetInstanceId(), "err", err)
 	}
 
 	return skippedFiles, &instances.ConfigurationStatus{
-		InstanceId:    cs.instance.GetInstanceId(),
+		InstanceId:    cs.instance.GetInstanceMeta().GetInstanceId(),
 		CorrelationId: correlationID,
 		Status:        instances.Status_SUCCESS,
 		Message:       "Config applied successfully",

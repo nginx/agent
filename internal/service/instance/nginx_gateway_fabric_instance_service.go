@@ -6,7 +6,7 @@
 package instance
 
 import (
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
 )
 
@@ -17,6 +17,6 @@ func NewNginxGatewayFabric() *NginxGatewayFabric {
 }
 
 //nolint:all // remove when implemented
-func (*NginxGatewayFabric) GetInstances(processes []*model.Process) []*instances.Instance {
-	return make([]*instances.Instance, 0)
+func (*NginxGatewayFabric) GetInstances(processes []*model.Process) []*v1.Instance {
+	return make([]*v1.Instance, 0)
 }

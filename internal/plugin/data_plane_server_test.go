@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/test/types"
@@ -61,8 +62,15 @@ func TestDataPlaneServer_Process(t *testing.T) {
 		topic string
 	}{
 		{
-			name:  "Test 1: Instances test",
-			data:  []*instances.Instance{{InstanceId: instanceID, Type: instances.Type_NGINX}},
+			name: "Test 1: Instances test",
+			data: []*v1.Instance{
+				{
+					InstanceMeta: &v1.InstanceMeta{
+						InstanceId:   instanceID,
+						InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+					},
+				},
+			},
 			topic: bus.InstancesTopic,
 		},
 		{
@@ -104,15 +112,17 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 		Version:    toPtr("1.23.1"),
 	}
 
-	instance := &instances.Instance{
-		InstanceId: instanceID,
-		Type:       instances.Type_NGINX,
-		Version:    "1.23.1",
+	instance := &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   instanceID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+			Version:      "1.23.1",
+		},
 	}
 
 	agentConfig := types.GetAgentConfig()
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
-	dataPlaneServer.instances = []*instances.Instance{instance}
+	dataPlaneServer.instances = []*v1.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
@@ -153,11 +163,17 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	ctx := context.Background()
 	unknownInstanceID := "fe4c58c1-bc92-30c1-a9c9-85591422068e"
 	data := []byte(`{"location": "http://file-server.com"}`)
-	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
+	instance := &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   instanceID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+			Version:      "1.23.1",
+		},
+	}
 
 	agentConfig := types.GetAgentConfig()
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
-	dataPlaneServer.instances = []*instances.Instance{instance}
+	dataPlaneServer.instances = []*v1.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
@@ -286,12 +302,18 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 		},
 	}
 
-	instance := &instances.Instance{InstanceId: instanceID, Type: instances.Type_NGINX, Version: "1.23.1"}
+	instance := &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   instanceID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+			Version:      "1.23.1",
+		},
+	}
 
 	agentConfig := types.GetAgentConfig()
 
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
-	dataPlaneServer.instances = []*instances.Instance{instance}
+	dataPlaneServer.instances = []*v1.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})

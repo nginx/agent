@@ -4,28 +4,28 @@ package instancefakes
 import (
 	"sync"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/instance"
 )
 
 type FakeDataPlaneInstanceService struct {
-	GetInstancesStub        func([]*model.Process) []*instances.Instance
+	GetInstancesStub        func([]*model.Process) []*v1.Instance
 	getInstancesMutex       sync.RWMutex
 	getInstancesArgsForCall []struct {
 		arg1 []*model.Process
 	}
 	getInstancesReturns struct {
-		result1 []*instances.Instance
+		result1 []*v1.Instance
 	}
 	getInstancesReturnsOnCall map[int]struct {
-		result1 []*instances.Instance
+		result1 []*v1.Instance
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeDataPlaneInstanceService) GetInstances(arg1 []*model.Process) []*instances.Instance {
+func (fake *FakeDataPlaneInstanceService) GetInstances(arg1 []*model.Process) []*v1.Instance {
 	var arg1Copy []*model.Process
 	if arg1 != nil {
 		arg1Copy = make([]*model.Process, len(arg1))
@@ -55,7 +55,7 @@ func (fake *FakeDataPlaneInstanceService) GetInstancesCallCount() int {
 	return len(fake.getInstancesArgsForCall)
 }
 
-func (fake *FakeDataPlaneInstanceService) GetInstancesCalls(stub func([]*model.Process) []*instances.Instance) {
+func (fake *FakeDataPlaneInstanceService) GetInstancesCalls(stub func([]*model.Process) []*v1.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = stub
@@ -68,26 +68,26 @@ func (fake *FakeDataPlaneInstanceService) GetInstancesArgsForCall(i int) []*mode
 	return argsForCall.arg1
 }
 
-func (fake *FakeDataPlaneInstanceService) GetInstancesReturns(result1 []*instances.Instance) {
+func (fake *FakeDataPlaneInstanceService) GetInstancesReturns(result1 []*v1.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = nil
 	fake.getInstancesReturns = struct {
-		result1 []*instances.Instance
+		result1 []*v1.Instance
 	}{result1}
 }
 
-func (fake *FakeDataPlaneInstanceService) GetInstancesReturnsOnCall(i int, result1 []*instances.Instance) {
+func (fake *FakeDataPlaneInstanceService) GetInstancesReturnsOnCall(i int, result1 []*v1.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = nil
 	if fake.getInstancesReturnsOnCall == nil {
 		fake.getInstancesReturnsOnCall = make(map[int]struct {
-			result1 []*instances.Instance
+			result1 []*v1.Instance
 		})
 	}
 	fake.getInstancesReturnsOnCall[i] = struct {
-		result1 []*instances.Instance
+		result1 []*v1.Instance
 	}{result1}
 }
 

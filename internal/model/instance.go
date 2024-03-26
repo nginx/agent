@@ -5,10 +5,12 @@
 
 package model
 
-import "github.com/nginx/agent/v3/api/grpc/instances"
+import (
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+)
 
 type InstanceConfigUpdateRequest struct {
-	Instance      *instances.Instance
+	Instance      *v1.Instance
 	Location      string
 	CorrelationID string
 }

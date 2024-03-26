@@ -8,17 +8,19 @@ package service
 import (
 	"testing"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/instance"
 	"github.com/nginx/agent/v3/internal/service/instance/instancefakes"
 	"github.com/stretchr/testify/assert"
 )
 
-var testInstances = []*instances.Instance{
+var testInstances = []*v1.Instance{
 	{
-		InstanceId: "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
-		Type:       instances.Type_NGINX,
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+		},
 	},
 }
 
