@@ -243,7 +243,7 @@ func TestGrpcClient_createConnection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(ttt *testing.T) {
 
-			listener := startMockGrpcServer()
+			_, listener := startMockGrpcServer()
 
 			if tt.errorMessage == "" {
 				host, port, err := net.SplitHostPort(listener.Addr().String())
@@ -291,7 +291,7 @@ func startMockGrpcServer() (*mockGrpc.ManagementGrpcServer, net.Listener) {
 	return server, listener
 }
 
-func stopMockCommandServer(server *mockGrpc.ManagementGrpcServer, dialer ) error {
+func stopMockCommandServer(dialer net.Listener) error {
 	grpcServerMutex.Lock()
 	defer grpcServerMutex.Unlock()
 	sigs := make(chan os.Signal, 1)
@@ -300,13 +300,13 @@ func stopMockCommandServer(server *mockGrpc.ManagementGrpcServer, dialer ) error
 
 	go func() {
 		signal.Stop(sigs)
-		server.Stop()
+		// server.Stop()
 		time.Sleep(200 * time.Millisecond)
 		done <- true
 	}()
 
 	<-done
-	server.GracefulStop()
+	// server.GracefulStop()
 	return nil
 }
 
