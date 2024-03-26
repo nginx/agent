@@ -196,4 +196,4 @@ generate-pgo-profile: build-mock-management-plane-http build-mock-management-pla
 	rm perf_config_cpu.pprof perf_instance_cpu.pprof config.test instance.test integration_cpu.pprof integration.test profile.pprof
 
 build-test-package: 
-	if ! [ -e ./build/*.deb ] && [ $(OS_RELEASE) == 'ubuntu' ]; then make local-deb-package; elif ! [ -e ./build/*.rpm ] && [ $(OS_RELEASE) == 'redhatenterprise'  ]; then make local-rpm-package; elif ! [ -e ./build/*.apk ] && [ $(OS_RELEASE) == 'alpine' ]; then make local-apk-package; else echo 'nothing to do'; fi
+	if ! [ -e ./build/*.deb ] && [ $(OS_RELEASE) == 'ubuntu' ]; then make local-deb-package; elif ! [ -e ./build/*.rpm ] && [ $(OS_RELEASE) == 'redhatenterprise'  ]; then make local-rpm-package; elif ! [ -e ./build/*.apk ] && [ $(OS_RELEASE) == 'alpine' ]; then make local-apk-package; fi
