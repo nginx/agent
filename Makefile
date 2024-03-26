@@ -26,8 +26,8 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | oraclelinux      | 7, 8, 9                                   |                                                                |
 # | suse             | sles12sp5, sle15                          |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE  ?= ubuntu
-OS_VERSION  ?= 22.04
+OS_RELEASE  ?= redhatenterprise
+OS_VERSION  ?= 9
 BASE_IMAGE  = "docker.io/$(OS_RELEASE):$(OS_VERSION)"
 IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 
@@ -122,7 +122,7 @@ build-mock-management-plane-grpc:
 	mkdir -p $(BUILD_DIR)/mock-management-plane-grpc
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-grpc/server test/mock/grpc/cmd/main.go
 
-integration-test: build-mock-management-plane-http build-mock-management-plane-grpc
+integration-test: build-test-package build-mock-management-plane-http build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
@@ -194,3 +194,6 @@ generate-pgo-profile: build-mock-management-plane-http build-mock-management-pla
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/instance -cpuprofile perf_instance_cpu.pprof
 	@$(GOTOOL) pprof -proto perf_config_cpu.pprof perf_instance_cpu.pprof integration_cpu.pprof > default.pgo
 	rm perf_config_cpu.pprof perf_instance_cpu.pprof config.test instance.test integration_cpu.pprof integration.test profile.pprof
+
+build-test-package: 
+	@if [ $(OS_RELEASE) == 'ubuntu' ]; then make local-deb-package; elif [ $(OS_RELEASE) == 'redhatenterprise' ]; then make local-rpm-package; elif [ $(OS_RELEASE) == 'alpine' ]; then make local-apk-package; fi

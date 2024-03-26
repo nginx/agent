@@ -122,6 +122,8 @@ jobs:
           path: build
       - name: Run Integration Tests
         run: |
+          ls
+          ls ./build
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
