@@ -7,6 +7,18 @@ package plugin
 
 import (
 	"context"
+	"strconv"
+
+	// "github.com/google/uuid"
+	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
+	"google.golang.org/grpc"
+	//"google.golang.org/grpc/test/bufconn"
+
+	"net"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -16,6 +28,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	grpcServerMutex = &sync.Mutex{}
+)
+
+const (
+	bufSize    = 1024 * 1024
+	serverName = "bufnet"
 )
 
 func TestGrpcClient_NewGrpcClient(t *testing.T) {
@@ -86,7 +107,7 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: 8888,
-						Type: "http",
+						Type: "grpc",
 					},
 				},
 				Client: &config.Client{
@@ -112,20 +133,43 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 	}
 }
 
-func TestGrpcClient_InitWithInvalidServerAddr(t *testing.T) {
-	ctx := context.Background()
-	agentConfig := types.GetAgentConfig()
-	agentConfig.Command.Server.Host = "saasdkldsj"
+func TestGrpcClient_Init(t *testing.T) {
+	tests := []struct {
+		name          string
+		agentConfig   *config.Config
+		server        string
+		expectedError bool
+		errorMessage  string
+	}{
+		{
+			"Test 1: GRPC type specified in config",
+			types.GetAgentConfig(),
+			"incorrect-server",
+			true,
+			"connection error",
+		},
+	}
 
-	client := NewGrpcClient(agentConfig)
-	assert.NotNil(t, client)
+	for _, tt := range tests {
+		t.Run(tt.name, func(ttt *testing.T) {
 
-	messagePipe := bus.NewMessagePipe(100)
-	err := messagePipe.Register(100, []bus.Plugin{client})
-	require.NoError(t, err)
+			ctx := context.Background()
+			tt.agentConfig.Command.Server.Host = tt.server
+			client := NewGrpcClient(tt.agentConfig)
+			assert.NotNil(t, client)
 
-	err = client.Init(ctx, messagePipe)
-	assert.Contains(t, err.Error(), "connection error")
+			messagePipe := bus.NewMessagePipe(100)
+			err := messagePipe.Register(100, []bus.Plugin{client})
+			require.NoError(t, err)
+
+			err = client.Init(ctx, messagePipe)
+			if tt.expectedError {
+				assert.Contains(ttt, err.Error(), tt.errorMessage)
+			} else {
+				require.NoError(ttt, err)
+			}
+		})
+	}
 }
 
 func TestGrpcClient_Info(t *testing.T) {
@@ -148,7 +192,7 @@ func TestGrpcClient_Process(t *testing.T) {
 	assert.NotNil(t, client)
 
 	mockMessage := &bus.Message{
-		Topic: bus.InstanceConfigUpdateRequestTopic,
+		Topic: bus.GrpcConnectedTopic,
 		Data:  nil,
 	}
 	client.Process(ctx, mockMessage)
@@ -156,7 +200,7 @@ func TestGrpcClient_Process(t *testing.T) {
 	assert.Nil(t, client.messagePipe)
 }
 
-func TestGetDialOptions(t *testing.T) {
+func TestGrpcClient_GetDialOptions(t *testing.T) {
 	agentConfig := types.GetAgentConfig()
 	client := NewGrpcClient(agentConfig)
 	assert.NotNil(t, client)
@@ -168,3 +212,101 @@ func TestGetDialOptions(t *testing.T) {
 	// Ensure the expected number of dial options, will change over time
 	assert.Len(t, options, 7)
 }
+
+func TestGrpcClient_Close(t *testing.T) {
+	agentConfig := types.GetAgentConfig()
+	client := NewGrpcClient(agentConfig)
+	assert.NotNil(t, client)
+
+	err := client.Close(context.Background())
+
+	require.NoError(t, err)
+}
+
+func TestGrpcClient_createConnection(t *testing.T) {
+	tests := []struct {
+		name         string
+		agentConfig  *config.Config
+		errorMessage string
+	}{
+		{
+			"Test 1: GRPC can't connect",
+			types.GetAgentConfig(),
+			`context deadline exceeded: connection error: desc = "transport: Error while dialing: dial tcp 127.0.0.1:8981: connect: connection refused"`,
+		},
+		{
+			"Test 2: GRPC can connect",
+			types.GetAgentConfig(),
+			"",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(ttt *testing.T) {
+
+			listener := startMockGrpcServer()
+
+			if tt.errorMessage == "" {
+				host, port, err := net.SplitHostPort(listener.Addr().String())
+				require.NoError(ttt, err)
+				tt.agentConfig.Command.Server.Host = host
+
+				portInt, err := strconv.Atoi(port)
+				require.NoError(ttt, err)
+				tt.agentConfig.Command.Server.Port = portInt
+			}
+
+			client := NewGrpcClient(tt.agentConfig)
+			assert.NotNil(t, client)
+
+			messagePipe := bus.NewMessagePipe(100)
+			err := messagePipe.Register(100, []bus.Plugin{client})
+			require.NoError(t, err)
+
+			err = client.Init(context.Background(), messagePipe)
+			if err != nil {
+				assert.Equal(ttt, tt.errorMessage, err.Error())
+			} else {
+				require.NoError(ttt, err)
+			}
+
+			err = listener.Close()
+			require.NoError(ttt, err)
+
+			stopMockCommandServer(listener)
+		})
+	}
+}
+
+func startMockGrpcServer() (*mockGrpc.ManagementGrpcServer, net.Listener) {
+	grpcServerMutex.Lock()
+	defer grpcServerMutex.Unlock()
+
+	server := mockGrpc.NewManagementGrpcServer()
+
+	listener, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+	}
+
+	go server.StartServer(listener)
+	return server, listener
+}
+
+func stopMockCommandServer(server *mockGrpc.ManagementGrpcServer, dialer ) error {
+	grpcServerMutex.Lock()
+	defer grpcServerMutex.Unlock()
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan bool, 1)
+
+	go func() {
+		signal.Stop(sigs)
+		server.Stop()
+		time.Sleep(200 * time.Millisecond)
+		done <- true
+	}()
+
+	<-done
+	server.GracefulStop()
+	return nil
+}
+

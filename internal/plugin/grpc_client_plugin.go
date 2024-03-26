@@ -18,6 +18,7 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -109,6 +110,10 @@ func (gc *GrpcClient) createConnection() error {
 		return fmt.Errorf("error generating correlation id: %w", err)
 	}
 
+	if gc.conn == nil || gc.conn.GetState() == connectivity.Shutdown {
+		return fmt.Errorf("can't connect to server")
+	}
+
 	client := v1.NewCommandServiceClient(gc.conn)
 	req := &v1.CreateConnectionRequest{
 		MessageMeta: &v1.MessageMeta{
@@ -126,8 +131,8 @@ func (gc *GrpcClient) createConnection() error {
 		},
 	}
 
-	reqCtx, reqCncl := context.WithTimeout(context.Background(), gc.settings.MaxElapsedTime)
-	defer reqCncl()
+	reqCtx, reqCancel := context.WithTimeout(context.Background(), gc.settings.MaxElapsedTime)
+	defer reqCancel()
 
 	response, err := client.CreateConnection(reqCtx, req)
 	if err != nil {
@@ -144,10 +149,12 @@ func (gc *GrpcClient) createConnection() error {
 func (gc *GrpcClient) Close(_ context.Context) error {
 	slog.Debug("Closing grpc client plugin")
 
-	err := gc.conn.Close()
-	if err != nil && gc.cancel != nil {
-		slog.Error("Failed to gracefully close gRPC connection", "error", err)
-		// gc.cancel()
+	if gc.conn != nil {
+		err := gc.conn.Close()
+		if err != nil && gc.cancel != nil {
+			slog.Error("Failed to gracefully close gRPC connection", "error", err)
+			gc.cancel()
+		}
 	}
 
 	return nil
