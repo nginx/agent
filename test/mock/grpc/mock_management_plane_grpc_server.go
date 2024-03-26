@@ -48,26 +48,28 @@ func NewManagementGrpcServer() *ManagementGrpcServer {
 	server.UseRawPath = true
 	server.Use(sloggin.NewWithConfig(logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
 	server.GET("/api/v1/connection", func(c *gin.Context) {
+		mgs.connectionMutex.Lock()
+		defer mgs.connectionMutex.Unlock()
+
 		if mgs.connectionRequest == nil {
 			c.JSON(http.StatusNotFound, nil)
 		} else {
-			mgs.connectionMutex.Lock()
 			c.JSON(http.StatusOK, gin.H{
 				"connectionRequest": mgs.connectionRequest,
 			})
-			mgs.connectionMutex.Unlock()
 		}
 	})
 
 	server.GET("/api/v1/status", func(c *gin.Context) {
+		mgs.updateDataPlaneStatusMutex.Lock()
+		defer mgs.updateDataPlaneStatusMutex.Unlock()
+
 		if mgs.updateDataPlaneStatusRequest == nil {
 			c.JSON(http.StatusNotFound, nil)
 		} else {
-			mgs.updateDataPlaneStatusMutex.Lock()
 			c.JSON(http.StatusOK, gin.H{
 				"updateDataPlaneStatusRequest": mgs.updateDataPlaneStatusRequest,
 			})
-			mgs.updateDataPlaneStatusMutex.Unlock()
 		}
 	})
 
