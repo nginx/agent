@@ -4,7 +4,11 @@
 // LICENSE file in the root directory of this source tree.
 package config
 
-import "time"
+import (
+	"time"
+
+	"github.com/nginx/agent/v3/internal/backoff"
+)
 
 const (
 	DefGracefulShutdownPeriod = 5 * time.Second
@@ -25,4 +29,10 @@ const (
 	DefCommandTLSKeyKey        = ""
 	DefCommandTLSCaKey         = ""
 	DefCommandTLSSkipVerifyKey = false
+
+	DefBackoffInitalInterval = 50 * time.Millisecond
+	DefBackoffJitter         = backoff.Jitter
+	DefBackoffMultiplier     = backoff.Multiplier
+	DefBackoffMaxInterval    = 200 * time.Millisecond
+	DefBackoffMaxElapsedTime = 3 * time.Second
 )

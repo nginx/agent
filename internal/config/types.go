@@ -20,6 +20,7 @@ type Config struct {
 	Metrics            *Metrics         `yaml:"-" mapstructure:"metrics"`
 	Command            *Command         `yaml:"-" mapstructure:"command"`
 	File               *File            `yaml:"-" mapstructure:"file"`
+	Common             *CommonSettings  `yaml:"-"`
 }
 
 type Log struct {
@@ -46,7 +47,9 @@ type NginxDataPlaneConfig struct {
 }
 
 type Client struct {
-	Timeout time.Duration `yaml:"-" mapstructure:"timeout"`
+	Timeout      time.Duration `yaml:"-" mapstructure:"timeout"`
+	Time         time.Duration `yaml:"-" mapstructure:"time"`
+	PermitStream bool          `yaml:"-" mapstructure:"permit_stream"`
 }
 
 type Metrics struct {
@@ -102,3 +105,11 @@ type TLSConfig struct {
 
 // leaving this blank intentionally for now, this will have the location of the file server for configurations
 type File struct{}
+
+type CommonSettings struct {
+	InitialInterval time.Duration `yaml:"-"`
+	MaxInterval     time.Duration `yaml:"-"`
+	MaxElapsedTime  time.Duration `yaml:"-"`
+	Jitter          float64       `yaml:"-"`
+	Multiplier      float64       `yaml:"-"`
+}

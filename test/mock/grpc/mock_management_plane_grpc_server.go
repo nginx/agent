@@ -15,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+
 	sloggin "github.com/samber/slog-gin"
 )
 

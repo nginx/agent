@@ -12,69 +12,42 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/logger"
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthgrpc "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 const (
-	filePermissions = 0o640
+	DefaultSleepDuration = time.Millisecond * 100
+	ServiceName          = "mock-management-plane"
+	filePermissions      = 0o640
+)
+
+var (
+	sleepDuration   = flag.Duration("sleepDuration", DefaultSleepDuration, "duration between changes in health")
+	configDirectory = flag.String("configDirectory", "", "set the directory where the config files are stored")
+	// address         = flag.String("address", "127.0.0.1:0", "set the address to run the server on")
+	grpcAddress = flag.String("grpcAddress", "127.0.0.1:0", "set the gRPC address to run the server on")
+	apiAddress  = flag.String("apiAddress", "127.0.0.1:0", "set the API address to run the server on")
+	logLevel    = flag.String("logLevel", "INFO", "set the log level")
 )
 
 func main() {
-	var configDirectory string
-	var grpcAddress string
-	var apiAddress string
-	var address string
-	var logLevel string
-
-	flag.StringVar(
-		&configDirectory,
-		"configDirectory",
-		"",
-		"set the directory where the config files are stored",
-	)
-
-	flag.StringVar(
-		&address,
-		"address",
-		"127.0.0.1:0",
-		"set the address to run the server on",
-	)
-
-	flag.StringVar(
-		&grpcAddress,
-		"grpcAddress",
-		"127.0.0.1:0",
-		"set the gRPC address to run the server on",
-	)
-
-	flag.StringVar(
-		&apiAddress,
-		"apiAddress",
-		"127.0.0.1:0",
-		"set the API address to run the server on",
-	)
-
-	flag.StringVar(
-		&logLevel,
-		"logLevel",
-		"INFO",
-		"set the log level",
-	)
-
 	flag.Parse()
 
 	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: logger.GetLogLevel(logLevel),
+		Level: logger.GetLogLevel(*logLevel),
 	}))
 	slog.SetDefault(newLogger)
 
-	if configDirectory == "" {
+	if configDirectory == nil {
 		defaultConfigDirectory, err := generateDefaultConfigDirectory()
-		configDirectory = defaultConfigDirectory
+		configDirectory = &defaultConfigDirectory
 		if err != nil {
 			slog.Error("Failed to create default config directory", "error", err)
 			os.Exit(1)
@@ -84,7 +57,7 @@ func main() {
 	commandServer := mockGrpc.NewManagementGrpcServer()
 
 	go func() {
-		listener, listenError := net.Listen("tcp", apiAddress)
+		listener, listenError := net.Listen("tcp", *apiAddress)
 		if listenError != nil {
 			slog.Error("Failed to create listener", "error", listenError)
 			os.Exit(1)
@@ -93,13 +66,13 @@ func main() {
 		commandServer.StartServer(listener)
 	}()
 
-	fileServer, err := mockGrpc.NewManagementGrpcFileServer(configDirectory)
+	fileServer, err := mockGrpc.NewManagementGrpcFileServer(*configDirectory)
 	if err != nil {
 		slog.Error("Failed to create file server", "error", err)
 		os.Exit(1)
 	}
 
-	listener, err := net.Listen("tcp", grpcAddress)
+	listener, err := net.Listen("tcp", *grpcAddress)
 	if err != nil {
 		slog.Error("Failed to listen", "error", err)
 		os.Exit(1)
@@ -107,15 +80,38 @@ func main() {
 	var opts []grpc.ServerOption
 
 	grpcServer := grpc.NewServer(opts...)
+
+	healthcheck := health.NewServer()
+	healthgrpc.RegisterHealthServer(grpcServer, healthcheck)
+
 	v1.RegisterCommandServiceServer(grpcServer, commandServer)
 	v1.RegisterFileServiceServer(grpcServer, fileServer)
 
 	slog.Info("gRPC server running", "address", listener.Addr().String())
 
+	// asynchronously inspect dependencies and toggle serving status as needed
+	// temporarily set to not serving for a chaos test
+	// flip back to a healthy state
+	go reportHealth(healthcheck, *sleepDuration)
+
 	err = grpcServer.Serve(listener)
 	if err != nil {
 		slog.Error("Failed to serve server", "error", err)
 		os.Exit(1)
+	}
+}
+
+func reportHealth(healthcheck *health.Server, sleep time.Duration) {
+	next := healthgrpc.HealthCheckResponse_SERVING
+	for {
+		healthcheck.SetServingStatus(ServiceName, next)
+
+		if next == healthgrpc.HealthCheckResponse_SERVING && (time.Now().Unix()%32 == 0) {
+			next = healthgrpc.HealthCheckResponse_NOT_SERVING
+		} else if next == healthgrpc.HealthCheckResponse_NOT_SERVING {
+			next = healthgrpc.HealthCheckResponse_SERVING
+		}
+		time.Sleep(sleep)
 	}
 }
 
