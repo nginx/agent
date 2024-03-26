@@ -29,7 +29,8 @@ const (
 	dataplaneSoftwareDetailsMaxWaitTime = time.Duration(5 * time.Second)
 	// Time between attempts to gather DataplaneSoftwareDetails
 	softwareDetailsOperationInterval = time.Duration(1 * time.Second)
-	nginxStartMaxWaitTime            = 0
+	// Timeout for master process search (will not stop searching until master process is found)
+	nginxStartMaxWaitTime = 0
 )
 
 type OneTimeRegistration struct {
@@ -95,7 +96,9 @@ func (r *OneTimeRegistration) Process(msg *core.Message) {
 			r.dataplaneSoftwareDetails[data.GetPluginName()] = data.GetDataplaneSoftwareDetails()
 		}
 	case msg.Exact(core.NginxDetailProcUpdate):
-		r.processes = msg.Data().([]*core.Process)
+		if processes, ok := msg.Data().([]*core.Process); ok {
+			r.processes = processes
+		}
 	}
 }
 
@@ -181,7 +184,6 @@ func (r *OneTimeRegistration) registerAgent() {
 				}
 			} else {
 				log.Tracef("NGINX non-master process: %d", proc.Pid)
-				return nil
 			}
 		}
 		return fmt.Errorf("No master process found, waiting...")
