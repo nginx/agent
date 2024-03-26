@@ -59,16 +59,15 @@ func NewManagementGrpcServer() *ManagementGrpcServer {
 	})
 
 	server.GET("/api/v1/responses", func(c *gin.Context) {
+		mgs.dataPlaneResponsesMutex.Lock()
+		defer mgs.dataPlaneResponsesMutex.Unlock()
+
 		if mgs.dataPlaneResponses == nil {
 			c.JSON(http.StatusNotFound, nil)
 		} else {
-			mgs.dataPlaneResponsesMutex.Lock()
-
 			c.JSON(http.StatusOK, gin.H{
 				"dataPlaneResponse": mgs.dataPlaneResponses,
 			})
-
-			mgs.dataPlaneResponsesMutex.Unlock()
 		}
 	})
 
