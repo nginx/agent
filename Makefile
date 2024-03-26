@@ -26,8 +26,8 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | oraclelinux      | 7, 8, 9                                   |                                                                |
 # | suse             | sles12sp5, sle15                          |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE  ?= redhatenterprise
-OS_VERSION  ?= 9
+OS_RELEASE  ?= ubuntu
+OS_VERSION  ?= 22.04
 BASE_IMAGE  = "docker.io/$(OS_RELEASE):$(OS_VERSION)"
 IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 
@@ -196,4 +196,4 @@ generate-pgo-profile: build-mock-management-plane-http build-mock-management-pla
 	rm perf_config_cpu.pprof perf_instance_cpu.pprof config.test instance.test integration_cpu.pprof integration.test profile.pprof
 
 build-test-package: 
-	@if [ $(OS_RELEASE) == 'ubuntu' ]; then make local-deb-package; elif [ $(OS_RELEASE) == 'redhatenterprise' ]; then make local-rpm-package; elif [ $(OS_RELEASE) == 'alpine' ]; then make local-apk-package; fi
+	@if ! [ -e ./build/*.deb ] && [ $(OS_RELEASE) == 'ubuntu' ]; then make local-deb-package; elif ! [ -e ./build/*.rpm ] && [ $(OS_RELEASE) == 'redhatenterprise'  ]; then make local-rpm-package; elif ! [ -e ./build/*.apk ] && [ $(OS_RELEASE) == 'alpine' ]; then make local-apk-package; fi
