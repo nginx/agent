@@ -135,6 +135,8 @@ jobs:
           go-version-file: 'go.mod'
       - name: Run Performance Tests
         run: |
+          echo ${{ github.ref_name }}
+          echo $GITHUB_REF
           make performance-test
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
