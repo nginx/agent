@@ -10,6 +10,42 @@ docs: "DOCS-1093"
 See the list of supported Operating Systems and architectures in the [Technical Specifications]({{< relref "./technical-specifications.md" >}}).
 
 ---
+## Release [v2.33.0](https//github.com/nginx/agent/releases/tag/v2.33.0)
+
+### 🌟 Highlights
+
+NGINX Agent v2.33.0 adds support for [NGINX App Protect WAF 5.0](https://docs.nginx.com/nginx-app-protect-waf/v5/). NGINX Agent will now recognize App Protect WAF 5.0 installations and report new information via de **DataplaneSoftwareDetails** message.
+
+### 🚀 Features
+
+This release introduces the following new features:
+
+- feat: Add Support for NAP 5 by [@edarzins](https://github.com/edarzins) in [#604](https://github.com/nginx/agent/pull/604)
+
+### 🐛 Bug Fixes
+
+In this release we have resolved the following issues:
+
+- Fix  nfpm.yaml for apk packages by [@dhurley](https://github.com/dhurley) in [#597](https://github.com/nginx/agent/pull/597)
+- fix unit test by [@oliveromahony](https://github.com/oliveromahony) in [#607](https://github.com/nginx/agent/pull/607)
+- Fix user workflow performance tests by [@dhurley](https://github.com/dhurley) in [#612](https://github.com/nginx/agent/pull/612)
+- fix Advanced Metrics  by [@aphralG](https://github.com/aphralG) in [#598](https://github.com/nginx/agent/pull/598)
+
+### 📝 Documentation
+
+We have made the following updates to the documentation:
+
+- chore: Add the 2.32.2 Changelog to the docs website by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#601](https://github.com/nginx/agent/pull/601)
+
+### 🔨 Maintenance
+
+We have made the following maintenance-related minor changes:
+
+- Bump the version of protobuf by [@oliveromahony](https://github.com/oliveromahony) in [#602](https://github.com/nginx/agent/pull/602)
+- replace duplicate isContainer call by [@oliveromahony](https://github.com/oliveromahony) in [#596](https://github.com/nginx/agent/pull/596)
+- Add logging to NGINX API http requests by [@dhurley](https://github.com/dhurley) in [#605](https://github.com/nginx/agent/pull/605)
+
+---
 ## Release [v2.32.2](https//github.com/nginx/agent/releases/tag/v2.32.2)
 
 ### 🌟 Highlights
@@ -173,39 +209,4 @@ In this release we have resolved the following issues:
 We have made the following maintenance-related minor changes:
 
 - Update nginx-plus-go-client to stop 404 errors in NGINX access logs by [@dhurley](https://github.com/dhurley) in [#495](https://github.com/nginx/agent/pull/495)
-
----
-## Release [v2.30.0](https//github.com/nginx/agent/releases/tag/v2.30.0)
-
-### 🐛 Bug Fixes
-
-In this release we have resolved the following issues:
-
-- Fix version for forked repo by [@dhurley](https://github.com/dhurley) in [#468](https://github.com/nginx/agent/pull/468)
-- Fix integration tests by [@aphralG](https://github.com/aphralG) in [#478](https://github.com/nginx/agent/pull/478)
-- Fix config apply by [@oliveromahony](https://github.com/oliveromahony) in [#480](https://github.com/nginx/agent/pull/480)
-- deprecate system.mem.used.all metric by [@aphralG](https://github.com/aphralG) in [#485](https://github.com/nginx/agent/pull/485)
-
-### 📝 Documentation
-
-We have made the following updates to the documentation:
-
-- Update CLI flags documentation by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#476](https://github.com/nginx/agent/pull/476)
-- Update NGINX plugin to read NGINX config on startup by [@dhurley](https://github.com/dhurley) in [#489](https://github.com/nginx/agent/pull/489)
-
-### 🔨 Maintenance
-
-We have made the following maintenance-related minor changes:
-
-- Update file watcher to ignore .swx files by [@dhurley](https://github.com/dhurley) in [#466](https://github.com/nginx/agent/pull/466)
-- Check Simplemetrics is not empty  by [@aphralG](https://github.com/aphralG) in [#474](https://github.com/nginx/agent/pull/474)
-- Add error log if duplicate NGINX IDs are found by [@dhurley](https://github.com/dhurley) in [#477](https://github.com/nginx/agent/pull/477)
-- Add tests for additional SSL directives and key algorithms. [#276](https://github.com/nginx/agent/issues/276) by [@arsenalzp](https://github.com/arsenalzp) in [#469](https://github.com/nginx/agent/pull/469)
-- call underlying os.Hostname instead of the entire hostInfo gopsutil call by [@oliveromahony](https://github.com/oliveromahony) in [#479](https://github.com/nginx/agent/pull/479)
-- Add grpc integration tests by [@dhurley](https://github.com/dhurley) in [#475](https://github.com/nginx/agent/pull/475)
-- remove error log causing failures  by [@aphralG](https://github.com/aphralG) in [#488](https://github.com/nginx/agent/pull/488)
-- Use singleflight for caching environment.go calls by [@oliveromahony](https://github.com/oliveromahony) in [#481](https://github.com/nginx/agent/pull/481)
-- Reduce the number of times env.Processes gets called by [@dhurley](https://github.com/dhurley) in [#482](https://github.com/nginx/agent/pull/482)
-- add additional check to nginxProcesses by [@aphralG](https://github.com/aphralG) in [#483](https://github.com/nginx/agent/pull/483)
-- profile.cgo by [@oliveromahony](https://github.com/oliveromahony) in [#493](https://github.com/nginx/agent/pull/493)
 
