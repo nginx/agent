@@ -18,7 +18,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	writer "github.com/nginx/agent/v3/internal/datasource/config"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
 
@@ -53,12 +53,12 @@ type Nginx struct {
 	configContext *model.NginxConfigContext
 	configWriter  writer.ConfigWriterInterface
 	fileCache     writer.FileCacheInterface
-	instance      *instances.Instance
+	instance      *v1.Instance
 	agentConfig   *config.Config
 }
 
-func NewNginx(instance *instances.Instance, agentConfig *config.Config) *Nginx {
-	fileCache := writer.NewFileCache(instance.GetInstanceId())
+func NewNginx(instance *v1.Instance, agentConfig *config.Config) *Nginx {
+	fileCache := writer.NewFileCache(instance.GetInstanceMeta().GetInstanceId())
 	cache, err := fileCache.ReadFileCache()
 	// Will in future work check cache and if its nil upload file
 	if err != nil {
@@ -70,7 +70,11 @@ func NewNginx(instance *instances.Instance, agentConfig *config.Config) *Nginx {
 
 	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache)
 	if err != nil {
-		slog.Error("failed to create new config writer for", "instance_id", instance.GetInstanceId(), "err", err)
+		slog.Error(
+			"Failed to create new config writer",
+			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+			"error", err,
+		)
 	}
 
 	return &Nginx{
@@ -86,7 +90,7 @@ func NewNginx(instance *instances.Instance, agentConfig *config.Config) *Nginx {
 func (n *Nginx) Write(ctx context.Context, filesURL, tenantID string) (skippedFiles writer.CacheContent,
 	err error,
 ) {
-	return n.configWriter.Write(ctx, filesURL, tenantID, n.instance.GetInstanceId())
+	return n.configWriter.Write(ctx, filesURL, tenantID, n.instance.GetInstanceMeta().GetInstanceId())
 }
 
 func (n *Nginx) Complete() error {
@@ -105,7 +109,7 @@ func (n *Nginx) SetConfigWriter(configWriter writer.ConfigWriterInterface) {
 }
 
 func (n *Nginx) ParseConfig() (any, error) {
-	payload, err := crossplane.Parse(n.instance.GetMeta().GetNginxMeta().GetConfigPath(),
+	payload, err := crossplane.Parse(n.instance.GetInstanceConfig().GetNginxConfig().GetConfigPath(),
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   []string{},
 			SingleFile:         false,
@@ -115,7 +119,7 @@ func (n *Nginx) ParseConfig() (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf(
 			"error reading config from %s, error: %w",
-			n.instance.GetMeta().GetNginxMeta().GetConfigPath(),
+			n.instance.GetInstanceConfig().GetNginxConfig().GetConfigPath(),
 			err,
 		)
 	}
@@ -167,7 +171,7 @@ func getLogs(payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog
 
 func (n *Nginx) Validate() error {
 	slog.Debug("Validating NGINX config")
-	exePath := n.instance.GetMeta().GetNginxMeta().GetExePath()
+	exePath := n.instance.GetInstanceConfig().GetNginxConfig().GetBinaryPath()
 
 	out, err := n.executor.RunCmd(exePath, "-t")
 	if err != nil {
@@ -195,7 +199,7 @@ func (n *Nginx) Apply() error {
 
 	go n.monitorLogs(errorLogs, logErrorChannel)
 
-	processID := n.instance.GetMeta().GetNginxMeta().GetProcessId()
+	processID := n.instance.GetInstanceConfig().GetNginxConfig().GetProcessId()
 	err := n.executor.KillProcess(processID)
 	if err != nil {
 		return fmt.Errorf("failed to reload NGINX, %w", err)

@@ -11,10 +11,13 @@
     - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
     - [FileServer](#mpi-v1-FileServer)
     - [Instance](#mpi-v1-Instance)
+    - [InstanceAction](#mpi-v1-InstanceAction)
     - [InstanceConfig](#mpi-v1-InstanceConfig)
     - [InstanceMeta](#mpi-v1-InstanceMeta)
     - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
     - [MetricsServer](#mpi-v1-MetricsServer)
+    - [NGINXConfig](#mpi-v1-NGINXConfig)
+    - [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig)
     - [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest)
     - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
     - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
@@ -159,6 +162,16 @@ This represents an instance being reported on
 
 
 
+<a name="mpi-v1-InstanceAction"></a>
+
+### InstanceAction
+A set of actions that can be performed on an instance
+
+
+
+
+
+
 <a name="mpi-v1-InstanceConfig"></a>
 
 ### InstanceConfig
@@ -167,7 +180,10 @@ Instance Configuration options
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| actions | [InstanceAction](#mpi-v1-InstanceAction) | repeated | provided actions associated with a particular instance. These are runtime based and provided by a particular version of the NGINX Agent |
 | agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | NGINX Agent runtime configuration settings |
+| nginx_config | [NGINXConfig](#mpi-v1-NGINXConfig) |  | NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process |
+| nginx_plus_config | [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig) |  | NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API |
 
 
 
@@ -211,6 +227,40 @@ The metrics settings associated with orgins (sources) of the metrics and destina
 
 
 
+<a name="mpi-v1-NGINXConfig"></a>
+
+### NGINXConfig
+A set of runtime NGINX configuration that gets populated
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| process_id | [int32](#int32) |  | master process id |
+| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
+| config_path | [string](#string) |  | where the configuration files are located |
+
+
+
+
+
+
+<a name="mpi-v1-NGINXPlusConfig"></a>
+
+### NGINXPlusConfig
+A set of runtime NGINX configuration that gets populated
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| process_id | [int32](#int32) |  | master process id |
+| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
+| config_path | [string](#string) |  | where the configuration files are located |
+
+
+
+
+
+
 <a name="mpi-v1-UpdateDataPlaneHealthRequest"></a>
 
 ### UpdateDataPlaneHealthRequest
@@ -235,6 +285,12 @@ Response to a UpdateDataPlaneHealthRequest - intentionally empty
 
 ### UpdateDataPlaneStatusRequest
 Report on the status of the Data Plane
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| instances | [Instance](#mpi-v1-Instance) | repeated | Report on instances on the Data Plane |
 
 
 

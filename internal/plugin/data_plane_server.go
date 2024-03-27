@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -32,7 +33,7 @@ type (
 	DataPlaneServer struct {
 		address           string
 		logger            *slog.Logger
-		instances         []*instances.Instance
+		instances         []*v1.Instance
 		configEvents      map[string][]*instances.ConfigurationStatus
 		messagePipe       bus.MessagePipeInterface
 		server            *http.Server
@@ -99,7 +100,7 @@ func (*DataPlaneServer) Info() *bus.Info {
 func (dps *DataPlaneServer) Process(_ context.Context, msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.InstancesTopic:
-		if newInstances, ok := msg.Data.([]*instances.Instance); ok {
+		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
 			dps.instancesMutex.Lock()
 			dps.instances = newInstances
 			dps.instancesMutex.Unlock()
@@ -167,10 +168,10 @@ func (dps *DataPlaneServer) GetInstances(ctx *gin.Context) {
 
 	for _, instance := range dps.instances {
 		response = append(response, dataplane.Instance{
-			InstanceId: &instance.InstanceId,
-			Type:       toPtr(mapTypeEnums(instance.GetType().String())),
-			Version:    &instance.Version,
-			Meta:       toPtr(convertMeta(instance.GetMeta())),
+			InstanceId: toPtr(instance.GetInstanceMeta().GetInstanceId()),
+			Type:       toPtr(mapTypeEnums(instance.GetInstanceMeta().GetInstanceType().String())),
+			Version:    toPtr(instance.GetInstanceMeta().GetVersion()),
+			Meta:       toPtr(convertMeta(instance.GetInstanceConfig())),
 		})
 	}
 
@@ -252,19 +253,19 @@ func (dps *DataPlaneServer) getConfigurationStatus(instanceID string) []*instanc
 }
 
 // nolint: revive
-func (dps *DataPlaneServer) getInstances() []*instances.Instance {
+func (dps *DataPlaneServer) getInstances() []*v1.Instance {
 	dps.instancesMutex.Lock()
 	defer dps.instancesMutex.Unlock()
 
 	return dps.instances
 }
 
-func (dps *DataPlaneServer) getInstance(instanceID string) *instances.Instance {
+func (dps *DataPlaneServer) getInstance(instanceID string) *v1.Instance {
 	dps.instancesMutex.Lock()
 	defer dps.instancesMutex.Unlock()
 
 	for _, instance := range dps.instances {
-		if instance.GetInstanceId() == instanceID {
+		if instance.GetInstanceMeta().GetInstanceId() == instanceID {
 			return instance
 		}
 	}
@@ -273,8 +274,10 @@ func (dps *DataPlaneServer) getInstance(instanceID string) *instances.Instance {
 }
 
 func mapTypeEnums(typeString string) dataplane.InstanceType {
-	if typeString == instances.Type_NGINX.String() {
+	if typeString == v1.InstanceMeta_INSTANCE_TYPE_NGINX.String() {
 		return dataplane.NGINX
+	} else if typeString == v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS.String() {
+		return dataplane.NGINXPLUS
 	}
 
 	return dataplane.CUSTOM
@@ -313,15 +316,27 @@ func convertConfigStatus(statuses []*instances.ConfigurationStatus) *[]dataplane
 	return &dataplaneStatuses
 }
 
-func convertMeta(meta *instances.Meta) dataplane.Instance_Meta {
+func convertMeta(instanceConfig *v1.InstanceConfig) dataplane.Instance_Meta {
 	apiMeta := dataplane.Instance_Meta{}
 
-	if nginxMeta := meta.GetNginxMeta(); nginxMeta != nil {
+	switch instanceConfig.GetConfig().(type) {
+	case *v1.InstanceConfig_NginxConfig:
 		err := apiMeta.MergeNginxMeta(
 			dataplane.NginxMeta{
 				Type:     dataplane.NGINXMETA,
-				ConfPath: &nginxMeta.ConfigPath,
-				ExePath:  &nginxMeta.ExePath,
+				ConfPath: toPtr(instanceConfig.GetNginxConfig().GetConfigPath()),
+				ExePath:  toPtr(instanceConfig.GetNginxConfig().GetBinaryPath()),
+			},
+		)
+		if err != nil {
+			slog.Warn("Unable to merge nginx meta", "error", err)
+		}
+	case *v1.InstanceConfig_NginxPlusConfig:
+		err := apiMeta.MergeNginxMeta(
+			dataplane.NginxMeta{
+				Type:     dataplane.NGINXMETA,
+				ConfPath: toPtr(instanceConfig.GetNginxPlusConfig().GetConfigPath()),
+				ExePath:  toPtr(instanceConfig.GetNginxPlusConfig().GetBinaryPath()),
 			},
 		)
 		if err != nil {

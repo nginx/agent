@@ -8,7 +8,7 @@ package config
 import (
 	"testing"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/require"
 )
@@ -26,11 +26,13 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 		func(configFilePath string) {
 			b.Run(configFilePath, func(bb *testing.B) {
 				nginxConfigService := NewNginx(
-					&instances.Instance{
-						Type: instances.Type_NGINX,
-						Meta: &instances.Meta{
-							Meta: &instances.Meta_NginxMeta{
-								NginxMeta: &instances.NginxMeta{
+					&v1.Instance{
+						InstanceMeta: &v1.InstanceMeta{
+							InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+						},
+						InstanceConfig: &v1.InstanceConfig{
+							Config: &v1.InstanceConfig_NginxConfig{
+								NginxConfig: &v1.NGINXConfig{
 									ConfigPath: configFilePath,
 								},
 							},
