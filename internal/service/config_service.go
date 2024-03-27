@@ -29,7 +29,7 @@ type ConfigServiceInterface interface {
 		correlationID, location string,
 	) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus)
 	ParseInstanceConfiguration(
-		correlationID string,
+		ctx context.Context,
 	) (instanceConfigContext any, err error)
 	Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL, tenantID, instanceID string) error
 }
@@ -127,7 +127,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 }
 
 func (cs *ConfigService) ParseInstanceConfiguration(
-	_ string,
+	_ context.Context,
 ) (instanceConfigContext any, err error) {
 	return cs.configService.ParseConfig()
 }

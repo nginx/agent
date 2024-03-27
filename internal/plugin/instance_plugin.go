@@ -44,19 +44,20 @@ func (*Instance) Info() *bus.Info {
 	}
 }
 
-func (i *Instance) Process(_ context.Context, msg *bus.Message) {
+func (i *Instance) Process(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Instance plugin process")
 	if msg.Topic == bus.OsProcessesTopic {
 		newProcesses, ok := msg.Data.([]*model.Process)
 		if !ok {
-			slog.Error("unable to cast message payload to model.Process", "payload", msg.Data)
+			slog.ErrorContext(ctx, "unable to cast message payload to model.Process", "payload", msg.Data)
 			return
 		}
 
 		instanceList := i.instanceService.GetInstances(newProcesses)
 		if len(instanceList) > 0 {
-			i.messagePipe.Process(&bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
+			i.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
 		} else {
-			slog.Info("No instanceList found")
+			slog.InfoContext(ctx, "No instanceList found")
 		}
 	}
 }

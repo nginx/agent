@@ -21,6 +21,11 @@ type (
 		Data  Payload
 	}
 
+	MessageWithContext struct {
+		ctx     context.Context
+		message *Message
+	}
+
 	Info struct {
 		Name string
 	}
@@ -28,7 +33,7 @@ type (
 	MessagePipeInterface interface {
 		Register(size int, plugins []Plugin) error
 		DeRegister(ctx context.Context, plugins []string) error
-		Process(messages ...*Message)
+		Process(ctx context.Context, messages ...*Message)
 		Run(ctx context.Context)
 		GetPlugins() []Plugin
 		IsPluginRegistered(pluginName string) bool
@@ -44,7 +49,7 @@ type (
 
 	MessagePipe struct {
 		bus            messagebus.MessageBus
-		messageChannel chan *Message
+		messageChannel chan *MessageWithContext
 		plugins        []Plugin
 		pluginsMutex   sync.Mutex
 	}
@@ -52,7 +57,7 @@ type (
 
 func NewMessagePipe(size int) *MessagePipe {
 	return &MessagePipe{
-		messageChannel: make(chan *Message, size),
+		messageChannel: make(chan *MessageWithContext, size),
 		pluginsMutex:   sync.Mutex{},
 	}
 }
@@ -99,9 +104,9 @@ func (p *MessagePipe) DeRegister(ctx context.Context, pluginNames []string) erro
 	return nil
 }
 
-func (p *MessagePipe) Process(messages ...*Message) {
-	for _, m := range messages {
-		p.messageChannel <- m
+func (p *MessagePipe) Process(ctx context.Context, messages ...*Message) {
+	for _, message := range messages {
+		p.messageChannel <- &MessageWithContext{ctx, message}
 	}
 }
 
@@ -121,7 +126,7 @@ func (p *MessagePipe) Run(ctx context.Context) {
 
 			return
 		case m := <-p.messageChannel:
-			p.bus.Publish(m.Topic, ctx, m)
+			p.bus.Publish(m.message.Topic, m.ctx, m.message)
 		}
 	}
 }

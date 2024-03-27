@@ -10,10 +10,10 @@ import (
 )
 
 type FakeConfigServiceInterface struct {
-	ParseInstanceConfigurationStub        func(string) (any, error)
+	ParseInstanceConfigurationStub        func(context.Context) (any, error)
 	parseInstanceConfigurationMutex       sync.RWMutex
 	parseInstanceConfigurationArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
 	}
 	parseInstanceConfigurationReturns struct {
 		result1 any
@@ -62,11 +62,11 @@ type FakeConfigServiceInterface struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeConfigServiceInterface) ParseInstanceConfiguration(arg1 string) (any, error) {
+func (fake *FakeConfigServiceInterface) ParseInstanceConfiguration(arg1 context.Context) (any, error) {
 	fake.parseInstanceConfigurationMutex.Lock()
 	ret, specificReturn := fake.parseInstanceConfigurationReturnsOnCall[len(fake.parseInstanceConfigurationArgsForCall)]
 	fake.parseInstanceConfigurationArgsForCall = append(fake.parseInstanceConfigurationArgsForCall, struct {
-		arg1 string
+		arg1 context.Context
 	}{arg1})
 	stub := fake.ParseInstanceConfigurationStub
 	fakeReturns := fake.parseInstanceConfigurationReturns
@@ -87,13 +87,13 @@ func (fake *FakeConfigServiceInterface) ParseInstanceConfigurationCallCount() in
 	return len(fake.parseInstanceConfigurationArgsForCall)
 }
 
-func (fake *FakeConfigServiceInterface) ParseInstanceConfigurationCalls(stub func(string) (any, error)) {
+func (fake *FakeConfigServiceInterface) ParseInstanceConfigurationCalls(stub func(context.Context) (any, error)) {
 	fake.parseInstanceConfigurationMutex.Lock()
 	defer fake.parseInstanceConfigurationMutex.Unlock()
 	fake.ParseInstanceConfigurationStub = stub
 }
 
-func (fake *FakeConfigServiceInterface) ParseInstanceConfigurationArgsForCall(i int) string {
+func (fake *FakeConfigServiceInterface) ParseInstanceConfigurationArgsForCall(i int) context.Context {
 	fake.parseInstanceConfigurationMutex.RLock()
 	defer fake.parseInstanceConfigurationMutex.RUnlock()
 	argsForCall := fake.parseInstanceConfigurationArgsForCall[i]

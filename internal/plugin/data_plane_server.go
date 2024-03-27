@@ -202,7 +202,7 @@ func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 				CorrelationID: correlationID,
 			}
 
-			dps.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateRequestTopic, Data: request})
+			dps.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateRequestTopic, Data: request})
 
 			ctx.JSON(http.StatusOK, dataplane.CorrelationId{CorrelationId: &correlationID})
 		} else {

@@ -14,6 +14,7 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/datasource/host"
+	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 )
 
@@ -82,16 +83,19 @@ func (pm *ProcessMonitor) getProcesses() []*model.Process {
 }
 
 func (pm *ProcessMonitor) run(ctx context.Context) {
-	processes, err := pm.getProcessesFunc(ctx)
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey{}, logger.GenerateCorrelationID())
+	slog.DebugContext(newCtx, "Getting processes on startup")
+
+	processes, err := pm.getProcessesFunc(newCtx)
 	if err == nil {
 		pm.processesMutex.Lock()
 		pm.processes = processes
 		pm.processesMutex.Unlock()
 
-		pm.messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
+		pm.messagePipe.Process(newCtx, &bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
 	}
 
-	slog.Debug("Processes updated")
+	slog.DebugContext(newCtx, "Processes updated")
 
 	pm.processTicker = time.NewTicker(pm.monitoringFrequency)
 	defer pm.processTicker.Stop()
@@ -101,9 +105,12 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-pm.processTicker.C:
-			processes, err := pm.getProcessesFunc(ctx)
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey{}, logger.GenerateCorrelationID())
+			slog.DebugContext(newCtx, "Checking for process changes")
+
+			processes, err := pm.getProcessesFunc(newCtx)
 			if err != nil {
-				slog.Error("Unable to get process information", "error", err)
+				slog.ErrorContext(newCtx, "Unable to get process information", "error", err)
 
 				continue
 			}
@@ -112,8 +119,8 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 			pm.processes = processes
 			pm.processesMutex.Unlock()
 
-			pm.messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
-			slog.Debug("Processes updated")
+			pm.messagePipe.Process(newCtx, &bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
+			slog.DebugContext(newCtx, "Processes updated")
 		}
 	}
 }

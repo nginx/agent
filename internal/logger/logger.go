@@ -6,12 +6,14 @@
 package logger
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"os"
 	"path"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/internal/config"
 )
 
@@ -27,6 +29,8 @@ var logLevels = map[string]slog.Level{
 	"error": slog.LevelError,
 }
 
+type CorrelationIDContextKey struct{}
+
 func New(params config.Log) *slog.Logger {
 	handler := slog.NewTextHandler(
 		getLogWriter(params.Path),
@@ -35,7 +39,11 @@ func New(params config.Log) *slog.Logger {
 		},
 	)
 
-	return slog.New(handler)
+	contextHandler := ContextHandler{handler, []any{
+		CorrelationIDContextKey{},
+	}}
+
+	return slog.New(contextHandler)
 }
 
 func GetLogLevel(level string) slog.Level {
@@ -71,4 +79,31 @@ func getLogWriter(logFile string) io.Writer {
 	}
 
 	return os.Stderr
+}
+
+type ContextHandler struct {
+	slog.Handler
+	keys []any
+}
+
+func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
+	r.AddAttrs(h.observe(ctx)...)
+	return h.Handler.Handle(ctx, r)
+}
+
+func (h ContextHandler) observe(ctx context.Context) (as []slog.Attr) {
+	for _, k := range h.keys {
+		a, ok := ctx.Value(k).(slog.Attr)
+		if !ok {
+			continue
+		}
+		a.Value = a.Value.Resolve()
+		as = append(as, a)
+	}
+
+	return as
+}
+
+func GenerateCorrelationID() slog.Attr {
+	return slog.Any("correlation_id", uuid.NewString())
 }

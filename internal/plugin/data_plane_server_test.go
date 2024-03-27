@@ -86,7 +86,7 @@ func TestDataPlaneServer_Process(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(ttt *testing.T) {
-			messagePipe.Process(&bus.Message{Topic: tt.topic, Data: tt.data})
+			messagePipe.Process(ctx, &bus.Message{Topic: tt.topic, Data: tt.data})
 			time.Sleep(10 * time.Millisecond)
 
 			var actual interface{}

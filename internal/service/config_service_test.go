@@ -156,7 +156,7 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	configService.configService = fakeDataPlaneConfig
 
-	result, err := configService.ParseInstanceConfiguration("123")
+	result, err := configService.ParseInstanceConfiguration(context.Background())
 
 	require.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)

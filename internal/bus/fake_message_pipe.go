@@ -59,7 +59,7 @@ func (p *FakeMessagePipe) findPlugins(pluginNames []string, plugins []Plugin) []
 	return plugins
 }
 
-func (p *FakeMessagePipe) Process(msgs ...*Message) {
+func (p *FakeMessagePipe) Process(ctx context.Context, msgs ...*Message) {
 	p.messages = append(p.messages, msgs...)
 }
 
