@@ -8,8 +8,9 @@ package instance
 import (
 	"bytes"
 	"fmt"
-	"github.com/nginx/agent/v3/internal/model"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/model"
 )
 
 func BenchmarkNginxService_getNginxProcesses(b *testing.B) {
