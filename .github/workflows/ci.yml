@@ -147,3 +147,6 @@ jobs:
           auto-push: false
           gh-pages-branch: "benchmark-results"
           fail-on-alert: true
+      - name: Push benchmark result
+        if:  ${{ success() && github.ref_name == 'compare-performance-test-results)'}}
+        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
