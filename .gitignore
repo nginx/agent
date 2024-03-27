@@ -22,7 +22,3 @@ __debug_bin
 
 # Local Netlify folder
 .netlify
-
-vendor/
-go.work
-go.work.sum
