@@ -96,7 +96,6 @@ type AuthConfig struct {
 }
 
 type TLSConfig struct {
-	Enable     bool   `yaml:"-" mapstructure:"enable"`
 	Cert       string `yaml:"-" mapstructure:"cert"`
 	Key        string `yaml:"-" mapstructure:"key"`
 	Ca         string `yaml:"-" mapstructure:"ca"`

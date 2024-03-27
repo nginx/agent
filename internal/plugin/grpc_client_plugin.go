@@ -12,27 +12,17 @@ import (
 	"net"
 
 	"github.com/google/uuid"
-	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 )
-
-// these will come from the agent config
-var serviceConfig = `{
-		"loadBalancingPolicy": "round_robin",
-		"healthCheckConfig": {
-			"serviceName": "nginx-agent"
-		}
-	}`
 
 type (
 	GrpcClient struct {
@@ -41,7 +31,6 @@ type (
 		conn        *grpc.ClientConn
 		cancel      context.CancelFunc
 		settings    *backoff.Settings
-		keepAlive   keepalive.ClientParameters
 	}
 )
 
@@ -59,16 +48,9 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 			Multiplier:      agentConfig.Common.Multiplier,
 		}
 
-		keepAlive := keepalive.ClientParameters{
-			Time:                agentConfig.Client.Time, // add to config in future
-			Timeout:             agentConfig.Client.Timeout,
-			PermitWithoutStream: agentConfig.Client.PermitStream,
-		}
-
 		return &GrpcClient{
-			config:    agentConfig,
-			settings:  settings,
-			keepAlive: keepAlive,
+			config:   agentConfig,
+			settings: settings,
 		}
 	}
 
@@ -87,7 +69,7 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	)
 
 	grpcClientCtx, gc.cancel = context.WithTimeout(ctx, gc.config.Client.Timeout)
-	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, gc.getDialOptions()...)
+	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, agentGrpc.GetDialOptions(gc.config)...)
 	if err != nil {
 		return err
 	}
@@ -174,18 +156,4 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 
 func (gc *GrpcClient) Subscriptions() []string {
 	return []string{bus.GrpcConnectedTopic}
-}
-
-func (gc *GrpcClient) getDialOptions() []grpc.DialOption {
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-		grpc.WithReturnConnectionError(),
-		grpc.WithStreamInterceptor(grpcRetry.StreamClientInterceptor()),
-		grpc.WithUnaryInterceptor(grpcRetry.UnaryClientInterceptor()),
-		grpc.WithKeepaliveParams(gc.keepAlive),
-		grpc.WithDefaultServiceConfig(serviceConfig),
-	}
-
-	return opts
 }

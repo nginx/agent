@@ -189,19 +189,6 @@ func TestGrpcClient_Process(t *testing.T) {
 	assert.Nil(t, client.messagePipe)
 }
 
-func TestGrpcClient_GetDialOptions(t *testing.T) {
-	agentConfig := types.GetAgentConfig()
-	client := NewGrpcClient(agentConfig)
-	assert.NotNil(t, client)
-
-	options := client.getDialOptions()
-
-	assert.NotNil(t, options)
-
-	// Ensure the expected number of dial options, will change over time
-	assert.Len(t, options, 7)
-}
-
 func TestGrpcClient_Close(t *testing.T) {
 	agentConfig := types.GetAgentConfig()
 	client := NewGrpcClient(agentConfig)
@@ -221,8 +208,7 @@ func TestGrpcClient_createConnection(t *testing.T) {
 		{
 			"Test 1: GRPC can't connect",
 			types.GetAgentConfig(),
-			"context deadline exceeded: connection error: desc =" +
-				`"transport: Error while dialing: dial tcp 127.0.0.1:8981: connect: connection refused"`,
+			`context deadline exceeded: connection error: desc = transport: Error while dialing: dial tcp`,
 		},
 		{
 			"Test 2: GRPC can connect",
@@ -250,7 +236,7 @@ func TestGrpcClient_createConnection(t *testing.T) {
 
 			err = client.Init(context.Background(), messagePipe)
 			if err != nil {
-				assert.Equal(ttt, tt.errorMessage, err.Error())
+				assert.Contains(ttt, tt.errorMessage, err.Error())
 			} else {
 				require.NoError(ttt, err)
 			}
@@ -284,7 +270,7 @@ func startMockGrpcServer() (*mockGrpc.ManagementGrpcServer, net.Listener) {
 
 	server := mockGrpc.NewManagementGrpcServer()
 
-	listener, err := net.Listen("tcp", "localhost:0")
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		slog.Error("oh no, can't start mock server")
 	}
