@@ -136,9 +136,14 @@ jobs:
       - name: Run Performance Tests
         run: |
           make performance-test
-          echo 'ls'
-          ls
-          echo './build'
-          ls ./build
-          echo 'test'
-          ls ./build/test
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Compare Benchmark Results
+          tool: 'go'
+          output-file-path: ./build/test/benchmark.txt
+          benchmark-data-dir-path: ""
+          # Set auto-push to false since GitHub API token is not given
+          auto-push: false
+          gh-pages-branch: "benchmark-results"
+          fail-on-alert: true
