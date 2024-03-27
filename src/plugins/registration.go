@@ -29,6 +29,8 @@ const (
 	dataplaneSoftwareDetailsMaxWaitTime = time.Duration(5 * time.Second)
 	// Time between attempts to gather DataplaneSoftwareDetails
 	softwareDetailsOperationInterval = time.Duration(1 * time.Second)
+	// Timeout for master process search (will not stop searching until master process is found)
+	nginxStartMaxWaitTime = 0
 )
 
 type OneTimeRegistration struct {
@@ -93,6 +95,10 @@ func (r *OneTimeRegistration) Process(msg *core.Message) {
 			defer r.dataplaneSoftwareDetailsMutex.Unlock()
 			r.dataplaneSoftwareDetails[data.GetPluginName()] = data.GetDataplaneSoftwareDetails()
 		}
+	case msg.Exact(core.NginxDetailProcUpdate):
+		if processes, ok := msg.Data().([]*core.Process); ok {
+			r.processes = processes
+		}
 	}
 }
 
@@ -100,6 +106,7 @@ func (r *OneTimeRegistration) Subscriptions() []string {
 	return []string{
 		core.RegistrationCompletedTopic,
 		core.DataplaneSoftwareDetailsUpdated,
+		core.NginxDetailProcUpdate,
 	}
 }
 
@@ -136,7 +143,6 @@ func (r *OneTimeRegistration) areDataplaneSoftwareDetailsReady() error {
 		log.Trace("No extension plugins to register")
 		return nil
 	}
-
 	r.dataplaneSoftwareDetailsMutex.Lock()
 	defer r.dataplaneSoftwareDetailsMutex.Unlock()
 
@@ -153,23 +159,42 @@ func (r *OneTimeRegistration) areDataplaneSoftwareDetailsReady() error {
 func (r *OneTimeRegistration) registerAgent() {
 	var details []*proto.NginxDetails
 
-	for _, proc := range r.processes {
-		// only need master process for registration
-		if proc.IsMaster {
-			nginxDetails := r.binary.GetNginxDetailsFromProcess(proc)
-			details = append(details, nginxDetails)
-			// Reading nginx config during registration to populate nginx fields like access/error logs, etc.
-			_, err := r.binary.ReadConfig(nginxDetails.GetConfPath(), nginxDetails.NginxId, r.env.GetSystemUUID())
-			if err != nil {
-				log.Warnf("Unable to read config for NGINX instance %s, %v", nginxDetails.NginxId, err)
+	backoffSetting := backoff.BackoffSettings{
+		InitialInterval: softwareDetailsOperationInterval,
+		MaxInterval:     softwareDetailsOperationInterval,
+		MaxElapsedTime:  nginxStartMaxWaitTime,
+		Jitter:          backoff.BACKOFF_JITTER,
+		Multiplier:      backoff.BACKOFF_MULTIPLIER,
+	}
+
+	findNginxMasterProcess := func() error {
+		for _, proc := range r.processes {
+			// only need master process for registration
+			if proc.IsMaster {
+				nginxDetails := r.binary.GetNginxDetailsFromProcess(proc)
+				details = append(details, nginxDetails)
+				if len(details) > 0 {
+					// Reading nginx config during registration to populate nginx fields like access/error logs, etc.
+					_, err := r.binary.ReadConfig(nginxDetails.GetConfPath(), nginxDetails.NginxId, r.env.GetSystemUUID())
+					if err != nil {
+						log.Warnf("Unable to read config for NGINX instance %s, %v", nginxDetails.NginxId, err)
+					}
+					log.Info("Master process has been found")
+					return nil
+				}
+			} else {
+				log.Tracef("NGINX non-master process: %d", proc.Pid)
 			}
-		} else {
-			log.Tracef("NGINX non-master process: %d", proc.Pid)
 		}
+		return fmt.Errorf("waiting for NGINX master process... ")
 	}
-	if len(details) == 0 {
-		log.Info("No master process found")
+	err := backoff.WaitUntil(
+		context.Background(), backoffSetting, findNginxMasterProcess,
+	)
+	if err != nil {
+		log.Errorf("Unable to find NGINX master processes, %v", err)
 	}
+
 	updated, err := types.TimestampProto(r.config.Updated)
 	if err != nil {
 		log.Warnf("failed to parse proto timestamp %s: %s, assuming now", r.config.Updated, err)

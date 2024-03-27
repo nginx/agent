@@ -23,7 +23,7 @@ import (
 	tutils "github.com/nginx/agent/v2/test/utils"
 )
 
-func TestRegistration_Process(t *testing.T) {
+func TestRegistration_startRegistration(t *testing.T) {
 	tests := []struct {
 		name                 string
 		expectedMessageCount int
@@ -64,7 +64,6 @@ func TestRegistration_Process(t *testing.T) {
 			messages := messagePipe.GetMessages()
 
 			assert.Equal(tt, messages[0].Topic(), core.CommRegister)
-			// host info checked elsewhere
 			assert.NotNil(tt, messages[0].Data())
 
 			assert.Equal(tt, messages[1].Topic(), core.RegistrationCompletedTopic)
@@ -88,7 +87,7 @@ func TestRegistration_areDataplaneSoftwareDetailsReady(t *testing.T) {
 func TestRegistration_Subscriptions(t *testing.T) {
 	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil, tutils.GetProcesses())
 
-	assert.Equal(t, []string{core.RegistrationCompletedTopic, core.DataplaneSoftwareDetailsUpdated}, pluginUnderTest.Subscriptions())
+	assert.Equal(t, []string{core.RegistrationCompletedTopic, core.DataplaneSoftwareDetailsUpdated, core.NginxDetailProcUpdate}, pluginUnderTest.Subscriptions())
 }
 
 func TestRegistration_Info(t *testing.T) {
