@@ -23,15 +23,20 @@ type ManagementGrpcServer struct {
 	v1.UnimplementedCommandServiceServer
 	server                       *gin.Engine
 	connectionRequest            *v1.CreateConnectionRequest
+	requestChan                  chan *v1.ManagementPlaneRequest
+	dataPlaneResponses           []*v1.DataPlaneResponse
 	updateDataPlaneStatusRequest *v1.UpdateDataPlaneStatusRequest
+	dataPlaneResponsesMutex      *sync.Mutex
 	connectionMutex              *sync.Mutex
 	updateDataPlaneStatusMutex   *sync.Mutex
 }
 
 func NewManagementGrpcServer() *ManagementGrpcServer {
 	mgs := &ManagementGrpcServer{
+		requestChan:                make(chan *v1.ManagementPlaneRequest),
 		connectionMutex:            &sync.Mutex{},
 		updateDataPlaneStatusMutex: &sync.Mutex{},
+		dataPlaneResponsesMutex:    &sync.Mutex{},
 	}
 
 	handler := slog.NewTextHandler(
@@ -47,6 +52,7 @@ func NewManagementGrpcServer() *ManagementGrpcServer {
 	server := gin.New()
 	server.UseRawPath = true
 	server.Use(sloggin.NewWithConfig(logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
+
 	server.GET("/api/v1/connection", func(c *gin.Context) {
 		mgs.connectionMutex.Lock()
 		defer mgs.connectionMutex.Unlock()
@@ -71,6 +77,32 @@ func NewManagementGrpcServer() *ManagementGrpcServer {
 				"updateDataPlaneStatusRequest": mgs.updateDataPlaneStatusRequest,
 			})
 		}
+	})
+
+	server.GET("/api/v1/responses", func(c *gin.Context) {
+		mgs.dataPlaneResponsesMutex.Lock()
+		defer mgs.dataPlaneResponsesMutex.Unlock()
+
+		if mgs.dataPlaneResponses == nil {
+			c.JSON(http.StatusNotFound, nil)
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"dataPlaneResponse": mgs.dataPlaneResponses,
+			})
+		}
+	})
+
+	server.POST("/api/v1/requests", func(c *gin.Context) {
+		var request *v1.ManagementPlaneRequest
+		err := c.Bind(request)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, nil)
+			return
+		}
+
+		mgs.requestChan <- request
+
+		c.JSON(http.StatusOK, request)
 	})
 
 	mgs.server = server
@@ -140,5 +172,23 @@ func (mgs *ManagementGrpcServer) UpdateDataPlaneHealth(
 }
 
 func (mgs *ManagementGrpcServer) Subscribe(in v1.CommandService_SubscribeServer) error {
-	return nil
+	for {
+		request := <-mgs.requestChan
+
+		slog.Debug("Subscribe", "request", request)
+
+		err := in.Send(request)
+		if err != nil {
+			slog.Error("Failed to send management request", "error", err)
+		}
+
+		dataPlaneResponse, err := in.Recv()
+		if err != nil {
+			slog.Error("Failed to receive data plane response", "error", err)
+		} else {
+			mgs.dataPlaneResponsesMutex.Lock()
+			mgs.dataPlaneResponses = append(mgs.dataPlaneResponses, dataPlaneResponse)
+			mgs.dataPlaneResponsesMutex.Unlock()
+		}
+	}
 }
