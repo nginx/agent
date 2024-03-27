@@ -167,7 +167,7 @@ func (r *OneTimeRegistration) registerAgent() {
 		Multiplier:      backoff.BACKOFF_MULTIPLIER,
 	}
 
-	findMaster := func() error {
+	findNginxMasterProcess := func() error {
 		for _, proc := range r.processes {
 			// only need master process for registration
 			if proc.IsMaster {
@@ -186,13 +186,13 @@ func (r *OneTimeRegistration) registerAgent() {
 				log.Tracef("NGINX non-master process: %d", proc.Pid)
 			}
 		}
-		return fmt.Errorf("No master process found, waiting...")
+		return fmt.Errorf("waiting for NGINX master process... ")
 	}
 	err := backoff.WaitUntil(
-		context.Background(), backoffSetting, findMaster,
+		context.Background(), backoffSetting, findNginxMasterProcess,
 	)
 	if err != nil {
-		log.Warn(err.Error())
+		log.Errorf("Unable to find NGINX master processes, %v", err)
 	}
 
 	updated, err := types.TimestampProto(r.config.Updated)
