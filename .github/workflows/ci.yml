@@ -149,5 +149,5 @@ jobs:
           gh-pages-branch: "benchmark-results"
           fail-on-alert: true
       - name: Push benchmark result
-#        if:  ${{ success() && github.ref_name == 'v3'}}
+        if:  ${{ success() && github.ref_name == 'v3'}}
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results

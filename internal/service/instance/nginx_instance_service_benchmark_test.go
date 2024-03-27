@@ -8,9 +8,9 @@ package instance
 import (
 	"bytes"
 	"fmt"
-	"testing"
-
 	"github.com/nginx/agent/v3/internal/model"
+	"testing"
+	"time"
 )
 
 func BenchmarkNginxService_getNginxProcesses(b *testing.B) {
@@ -63,6 +63,7 @@ func BenchmarkNginxService_getNginxProcesses(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
+		time.Sleep(1 * time.Millisecond)
 		nginxService.getNginxProcesses(newProcesses)
 	}
 }
