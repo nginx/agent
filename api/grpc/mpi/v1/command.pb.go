@@ -835,7 +835,7 @@ type NGINXConfig struct {
 	ProcessId int32 `protobuf:"varint,1,opt,name=process_id,json=processId,proto3" json:"process_id,omitempty"`
 	// where the binary location is, if empty, this is a remote instance
 	BinaryPath string `protobuf:"bytes,2,opt,name=binary_path,json=binaryPath,proto3" json:"binary_path,omitempty"`
-	// where the configguration files are located
+	// where the configuration files are located
 	ConfigPath string `protobuf:"bytes,3,opt,name=config_path,json=configPath,proto3" json:"config_path,omitempty"`
 }
 
@@ -902,7 +902,7 @@ type NGINXPlusConfig struct {
 	ProcessId int32 `protobuf:"varint,1,opt,name=process_id,json=processId,proto3" json:"process_id,omitempty"`
 	// where the binary location is, if empty, this is a remote instance
 	BinaryPath string `protobuf:"bytes,2,opt,name=binary_path,json=binaryPath,proto3" json:"binary_path,omitempty"`
-	// where the configguration files are located
+	// where the configuration files are located
 	ConfigPath string `protobuf:"bytes,3,opt,name=config_path,json=configPath,proto3" json:"config_path,omitempty"`
 }
 

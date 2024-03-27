@@ -144,7 +144,7 @@ message NGINXConfig {
     int32 process_id = 1;
     // where the binary location is, if empty, this is a remote instance
     string binary_path = 2;
-    // where the configguration files are located
+    // where the configuration files are located
     string config_path = 3;
 }
 
@@ -154,7 +154,7 @@ message NGINXPlusConfig {
     int32 process_id = 1;
     // where the binary location is, if empty, this is a remote instance
     string binary_path = 2;
-    // where the configguration files are located
+    // where the configuration files are located
     string config_path = 3;
 }
 

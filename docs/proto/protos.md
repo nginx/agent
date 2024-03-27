@@ -237,7 +237,7 @@ A set of runtime NGINX configuration that gets populated
 | ----- | ---- | ----- | ----------- |
 | process_id | [int32](#int32) |  | master process id |
 | binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
-| config_path | [string](#string) |  | where the configguration files are located |
+| config_path | [string](#string) |  | where the configuration files are located |
 
 
 
@@ -254,7 +254,7 @@ A set of runtime NGINX configuration that gets populated
 | ----- | ---- | ----- | ----------- |
 | process_id | [int32](#int32) |  | master process id |
 | binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
-| config_path | [string](#string) |  | where the configguration files are located |
+| config_path | [string](#string) |  | where the configuration files are located |
 
 
 
