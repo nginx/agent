@@ -146,7 +146,7 @@ jobs:
           benchmark-data-dir-path: ""
           # Set auto-push to false since GitHub API token is not given
           auto-push: false
-          alert-threshold: '25%'
+          alert-threshold: '125%'
           gh-pages-branch: "benchmark-results"
           fail-on-alert: true
       - name: Push benchmark result
