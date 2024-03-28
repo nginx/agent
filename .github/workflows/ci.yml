@@ -138,7 +138,7 @@ jobs:
         run: |
           make performance-test
       - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1
+        uses: benchmark-action/github-action-benchmark@cc9ac13ce81036c9b67fcfe2cb95ca366684b9ea # v1.19.3
         with:
           name: Compare Benchmark Results
           tool: 'go'
