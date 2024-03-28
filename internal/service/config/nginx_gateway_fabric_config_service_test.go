@@ -6,6 +6,7 @@
 package config
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,20 +14,23 @@ import (
 )
 
 func TestNginxGatewayFabric_ParseConfig(t *testing.T) {
-	result, err := NewNginxGatewayFabric().ParseConfig()
+	ctx := context.Background()
+
+	result, err := NewNginxGatewayFabric().ParseConfig(ctx)
 	// Not implemented yet so error is expected
 	assert.Nil(t, result)
 	require.Error(t, err)
 }
 
 func TestNginxGatewayFabric_Validate(t *testing.T) {
-	err := NewNginxGatewayFabric().Validate()
+	err := NewNginxGatewayFabric().Validate(context.Background())
 	// Not implemented yet so error is expected )
 	require.Error(t, err)
 }
 
 func TestNginxGatewayFabric_Apply(t *testing.T) {
-	err := NewNginxGatewayFabric().Apply()
+	ctx := context.Background()
+	err := NewNginxGatewayFabric().Apply(ctx)
 	// Not implemented yet so error is expected )
 	require.Error(t, err)
 }

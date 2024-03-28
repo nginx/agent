@@ -7,6 +7,7 @@ package exec
 
 import (
 	"bytes"
+	"context"
 	"os/exec"
 	"syscall"
 )
@@ -14,15 +15,15 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate . ExecInterface
 type ExecInterface interface {
-	RunCmd(cmd string, args ...string) (*bytes.Buffer, error)
+	RunCmd(ctx context.Context, cmd string, args ...string) (*bytes.Buffer, error)
 	FindExecutable(name string) (string, error)
 	KillProcess(pid int32) error
 }
 
 type Exec struct{}
 
-func (*Exec) RunCmd(cmd string, args ...string) (*bytes.Buffer, error) {
-	command := exec.Command(cmd, args...)
+func (*Exec) RunCmd(ctx context.Context, cmd string, args ...string) (*bytes.Buffer, error) {
+	command := exec.CommandContext(ctx, cmd, args...)
 
 	output, err := command.CombinedOutput()
 	if err != nil {

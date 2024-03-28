@@ -7,6 +7,7 @@ package instance
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 
@@ -67,6 +68,8 @@ const (
 )
 
 func TestGetInstances(t *testing.T) {
+	ctx := context.Background()
+
 	processes := []*model.Process{
 		{
 			Pid:  123,
@@ -157,7 +160,7 @@ func TestGetInstances(t *testing.T) {
 			mockExec.RunCmdReturns(bytes.NewBufferString(test.nginxVersionCommandOutput), nil)
 
 			n := NewNginx(NginxParameters{executer: mockExec})
-			result := n.GetInstances(processes)
+			result := n.GetInstances(ctx, processes)
 
 			assert.Equal(tt, test.expected, result)
 		})
@@ -165,6 +168,8 @@ func TestGetInstances(t *testing.T) {
 }
 
 func TestGetInfo(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name                      string
 		nginxVersionCommandOutput string
@@ -314,7 +319,7 @@ func TestGetInfo(t *testing.T) {
 			mockExec.RunCmdReturns(bytes.NewBufferString(test.nginxVersionCommandOutput), nil)
 
 			n := NewNginx(NginxParameters{executer: mockExec})
-			result, err := n.getInfo(test.process)
+			result, err := n.getInfo(ctx, test.process)
 
 			assert.Equal(tt, test.expected, result)
 			require.NoError(tt, err)

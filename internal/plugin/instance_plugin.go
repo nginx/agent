@@ -25,15 +25,15 @@ func NewInstance() *Instance {
 	}
 }
 
-func (i *Instance) Init(_ context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.Debug("Starting instance plugin")
+func (i *Instance) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+	slog.DebugContext(ctx, "Starting instance plugin")
 	i.messagePipe = messagePipe
 
 	return nil
 }
 
-func (*Instance) Close(_ context.Context) error {
-	slog.Debug("Closing instance plugin")
+func (*Instance) Close(ctx context.Context) error {
+	slog.DebugContext(ctx, "Closing instance plugin")
 
 	return nil
 }
@@ -53,7 +53,7 @@ func (i *Instance) Process(ctx context.Context, msg *bus.Message) {
 			return
 		}
 
-		instanceList := i.instanceService.GetInstances(newProcesses)
+		instanceList := i.instanceService.GetInstances(ctx, newProcesses)
 		if len(instanceList) > 0 {
 			i.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
 		} else {

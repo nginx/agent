@@ -6,6 +6,7 @@
 package service
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -25,13 +26,15 @@ var testInstances = []*v1.Instance{
 }
 
 func TestInstanceService_GetInstances(t *testing.T) {
+	ctx := context.Background()
+
 	fakeDataPlaneService := &instancefakes.FakeDataPlaneInstanceService{}
 	fakeDataPlaneService.GetInstancesReturns(testInstances)
 
 	instanceService := NewInstanceService()
 	instanceService.dataPlaneInstanceServices = []instance.DataPlaneInstanceService{fakeDataPlaneService}
 
-	assert.Equal(t, testInstances, instanceService.GetInstances([]*model.Process{}))
+	assert.Equal(t, testInstances, instanceService.GetInstances(ctx, []*model.Process{}))
 }
 
 func TestInstanceService_GetInstance(t *testing.T) {

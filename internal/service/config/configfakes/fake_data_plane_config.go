@@ -11,9 +11,10 @@ import (
 )
 
 type FakeDataPlaneConfig struct {
-	ApplyStub        func() error
+	ApplyStub        func(context.Context) error
 	applyMutex       sync.RWMutex
 	applyArgsForCall []struct {
+		arg1 context.Context
 	}
 	applyReturns struct {
 		result1 error
@@ -31,9 +32,10 @@ type FakeDataPlaneConfig struct {
 	completeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	ParseConfigStub        func() (any, error)
+	ParseConfigStub        func(context.Context) (any, error)
 	parseConfigMutex       sync.RWMutex
 	parseConfigArgsForCall []struct {
+		arg1 context.Context
 	}
 	parseConfigReturns struct {
 		result1 any
@@ -63,9 +65,10 @@ type FakeDataPlaneConfig struct {
 	setConfigWriterArgsForCall []struct {
 		arg1 configa.ConfigWriterInterface
 	}
-	ValidateStub        func() error
+	ValidateStub        func(context.Context) error
 	validateMutex       sync.RWMutex
 	validateArgsForCall []struct {
+		arg1 context.Context
 	}
 	validateReturns struct {
 		result1 error
@@ -92,17 +95,18 @@ type FakeDataPlaneConfig struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeDataPlaneConfig) Apply() error {
+func (fake *FakeDataPlaneConfig) Apply(arg1 context.Context) error {
 	fake.applyMutex.Lock()
 	ret, specificReturn := fake.applyReturnsOnCall[len(fake.applyArgsForCall)]
 	fake.applyArgsForCall = append(fake.applyArgsForCall, struct {
-	}{})
+		arg1 context.Context
+	}{arg1})
 	stub := fake.ApplyStub
 	fakeReturns := fake.applyReturns
-	fake.recordInvocation("Apply", []interface{}{})
+	fake.recordInvocation("Apply", []interface{}{arg1})
 	fake.applyMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -116,10 +120,17 @@ func (fake *FakeDataPlaneConfig) ApplyCallCount() int {
 	return len(fake.applyArgsForCall)
 }
 
-func (fake *FakeDataPlaneConfig) ApplyCalls(stub func() error) {
+func (fake *FakeDataPlaneConfig) ApplyCalls(stub func(context.Context) error) {
 	fake.applyMutex.Lock()
 	defer fake.applyMutex.Unlock()
 	fake.ApplyStub = stub
+}
+
+func (fake *FakeDataPlaneConfig) ApplyArgsForCall(i int) context.Context {
+	fake.applyMutex.RLock()
+	defer fake.applyMutex.RUnlock()
+	argsForCall := fake.applyArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeDataPlaneConfig) ApplyReturns(result1 error) {
@@ -198,17 +209,18 @@ func (fake *FakeDataPlaneConfig) CompleteReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeDataPlaneConfig) ParseConfig() (any, error) {
+func (fake *FakeDataPlaneConfig) ParseConfig(arg1 context.Context) (any, error) {
 	fake.parseConfigMutex.Lock()
 	ret, specificReturn := fake.parseConfigReturnsOnCall[len(fake.parseConfigArgsForCall)]
 	fake.parseConfigArgsForCall = append(fake.parseConfigArgsForCall, struct {
-	}{})
+		arg1 context.Context
+	}{arg1})
 	stub := fake.ParseConfigStub
 	fakeReturns := fake.parseConfigReturns
-	fake.recordInvocation("ParseConfig", []interface{}{})
+	fake.recordInvocation("ParseConfig", []interface{}{arg1})
 	fake.parseConfigMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -222,10 +234,17 @@ func (fake *FakeDataPlaneConfig) ParseConfigCallCount() int {
 	return len(fake.parseConfigArgsForCall)
 }
 
-func (fake *FakeDataPlaneConfig) ParseConfigCalls(stub func() (any, error)) {
+func (fake *FakeDataPlaneConfig) ParseConfigCalls(stub func(context.Context) (any, error)) {
 	fake.parseConfigMutex.Lock()
 	defer fake.parseConfigMutex.Unlock()
 	fake.ParseConfigStub = stub
+}
+
+func (fake *FakeDataPlaneConfig) ParseConfigArgsForCall(i int) context.Context {
+	fake.parseConfigMutex.RLock()
+	defer fake.parseConfigMutex.RUnlock()
+	argsForCall := fake.parseConfigArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeDataPlaneConfig) ParseConfigReturns(result1 any, result2 error) {
@@ -351,17 +370,18 @@ func (fake *FakeDataPlaneConfig) SetConfigWriterArgsForCall(i int) configa.Confi
 	return argsForCall.arg1
 }
 
-func (fake *FakeDataPlaneConfig) Validate() error {
+func (fake *FakeDataPlaneConfig) Validate(arg1 context.Context) error {
 	fake.validateMutex.Lock()
 	ret, specificReturn := fake.validateReturnsOnCall[len(fake.validateArgsForCall)]
 	fake.validateArgsForCall = append(fake.validateArgsForCall, struct {
-	}{})
+		arg1 context.Context
+	}{arg1})
 	stub := fake.ValidateStub
 	fakeReturns := fake.validateReturns
-	fake.recordInvocation("Validate", []interface{}{})
+	fake.recordInvocation("Validate", []interface{}{arg1})
 	fake.validateMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -375,10 +395,17 @@ func (fake *FakeDataPlaneConfig) ValidateCallCount() int {
 	return len(fake.validateArgsForCall)
 }
 
-func (fake *FakeDataPlaneConfig) ValidateCalls(stub func() error) {
+func (fake *FakeDataPlaneConfig) ValidateCalls(stub func(context.Context) error) {
 	fake.validateMutex.Lock()
 	defer fake.validateMutex.Unlock()
 	fake.ValidateStub = stub
+}
+
+func (fake *FakeDataPlaneConfig) ValidateArgsForCall(i int) context.Context {
+	fake.validateMutex.RLock()
+	defer fake.validateMutex.RUnlock()
+	argsForCall := fake.validateArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeDataPlaneConfig) ValidateReturns(result1 error) {

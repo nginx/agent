@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	datasource "github.com/nginx/agent/v3/internal/datasource/config"
+	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/nginx/agent/v3/internal/config"
 
@@ -26,7 +27,7 @@ type ConfigServiceInterface interface {
 	SetConfigContext(instanceConfigContext any)
 	UpdateInstanceConfiguration(
 		ctx context.Context,
-		correlationID, location string,
+		location string,
 	) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus)
 	ParseInstanceConfiguration(
 		ctx context.Context,
@@ -66,14 +67,14 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 func (cs *ConfigService) Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL,
 	tenantID, instanceID string,
 ) error {
-	err := cs.configService.Rollback(ctx, skippedFiles, filesURL, tenantID, instanceID)
-	return err
+	return cs.configService.Rollback(ctx, skippedFiles, filesURL, tenantID, instanceID)
 }
 
-func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correlationID, location string,
+func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, location string,
 ) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus) {
 	// remove when tenantID is being set
 	tenantID := "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
+	correlationID := logger.GetCorrelationID(ctx)
 
 	skippedFiles, err := cs.configService.Write(ctx, location, tenantID)
 	if err != nil {
@@ -87,7 +88,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 		}
 	}
 
-	err = cs.configService.Validate()
+	err = cs.configService.Validate(ctx)
 	if err != nil {
 		slog.Error("Error validating config", "err", err)
 		return skippedFiles, &instances.ConfigurationStatus{
@@ -99,7 +100,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 		}
 	}
 
-	err = cs.configService.Apply()
+	err = cs.configService.Apply(ctx)
 	if err != nil {
 		slog.Error("Error applying config and reloading nginx", "err", err)
 		return skippedFiles, &instances.ConfigurationStatus{
@@ -127,7 +128,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 }
 
 func (cs *ConfigService) ParseInstanceConfiguration(
-	_ context.Context,
+	ctx context.Context,
 ) (instanceConfigContext any, err error) {
-	return cs.configService.ParseConfig()
+	return cs.configService.ParseConfig(ctx)
 }

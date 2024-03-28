@@ -20,6 +20,8 @@ import (
 const (
 	defaultLogFile = "agent.log"
 	filePermission = 0o600
+
+	CorrelationIDKey = "correlation_id"
 )
 
 var logLevels = map[string]slog.Level{
@@ -105,5 +107,14 @@ func (h ContextHandler) observe(ctx context.Context) (as []slog.Attr) {
 }
 
 func GenerateCorrelationID() slog.Attr {
-	return slog.Any("correlation_id", uuid.NewString())
+	return slog.Any(CorrelationIDKey, uuid.NewString())
+}
+
+func GetCorrelationID(ctx context.Context) string {
+	value, ok := ctx.Value(CorrelationIDContextKey{}).(slog.Attr)
+	if ok {
+		return ""
+	}
+
+	return value.Value.String()
 }

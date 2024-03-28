@@ -50,7 +50,6 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 }
 
 func TestUpdateInstanceConfiguration(t *testing.T) {
-	correlationID := "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 	ctx := context.Background()
 	instance := &v1.Instance{
 		InstanceMeta: &v1.InstanceMeta{
@@ -124,7 +123,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 
 			cs := NewConfigService(instance, agentConfig)
 			cs.configService = &mockService
-			_, result := cs.UpdateInstanceConfiguration(ctx, correlationID, filesURL)
+			_, result := cs.UpdateInstanceConfiguration(ctx, filesURL)
 
 			assert.Equal(t, test.expected.GetStatus(), result.GetStatus())
 			assert.Equal(t, test.expected.GetMessage(), result.GetMessage())

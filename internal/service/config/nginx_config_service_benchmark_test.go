@@ -6,6 +6,7 @@
 package config
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -22,6 +23,8 @@ var configFilePaths = []string{
 }
 
 func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
+	ctx := context.Background()
+
 	for _, configFilePath := range configFilePaths {
 		func(configFilePath string) {
 			b.Run(configFilePath, func(bb *testing.B) {
@@ -42,7 +45,7 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 				)
 
 				for i := 0; i < bb.N; i++ {
-					_, err := nginxConfigService.ParseConfig()
+					_, err := nginxConfigService.ParseConfig(ctx)
 					require.NoError(bb, err)
 				}
 			})

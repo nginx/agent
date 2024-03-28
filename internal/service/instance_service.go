@@ -6,6 +6,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/instance"
@@ -14,7 +16,7 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate . InstanceServiceInterface
 type InstanceServiceInterface interface {
-	GetInstances(processes []*model.Process) []*v1.Instance
+	GetInstances(ctx context.Context, processes []*model.Process) []*v1.Instance
 	GetInstance(instanceID string) *v1.Instance
 }
 
@@ -32,11 +34,11 @@ func NewInstanceService() *InstanceService {
 	}
 }
 
-func (is *InstanceService) GetInstances(processes []*model.Process) []*v1.Instance {
+func (is *InstanceService) GetInstances(ctx context.Context, processes []*model.Process) []*v1.Instance {
 	newInstances := []*v1.Instance{}
 
 	for _, dataPlaneInstanceService := range is.dataPlaneInstanceServices {
-		newInstances = append(newInstances, dataPlaneInstanceService.GetInstances(processes)...)
+		newInstances = append(newInstances, dataPlaneInstanceService.GetInstances(ctx, processes)...)
 	}
 
 	is.instances = newInstances

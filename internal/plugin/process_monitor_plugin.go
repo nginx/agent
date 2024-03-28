@@ -41,7 +41,7 @@ func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
 }
 
 func (pm *ProcessMonitor) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.Debug("Starting process monitor plugin", "monitoring_period", pm.monitoringFrequency)
+	slog.DebugContext(ctx, "Starting process monitor plugin", "monitoring_period", pm.monitoringFrequency)
 
 	pm.messagePipe = messagePipe
 	var pmCtx context.Context
@@ -51,8 +51,8 @@ func (pm *ProcessMonitor) Init(ctx context.Context, messagePipe bus.MessagePipeI
 	return nil
 }
 
-func (pm *ProcessMonitor) Close(_ context.Context) error {
-	slog.Debug("Closing process monitor plugin")
+func (pm *ProcessMonitor) Close(ctx context.Context) error {
+	slog.DebugContext(ctx, "Closing process monitor plugin")
 
 	pm.processesMutex.Lock()
 	defer pm.processesMutex.Unlock()

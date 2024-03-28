@@ -7,6 +7,7 @@ package nginx
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 
@@ -15,6 +16,8 @@ import (
 )
 
 func TestGetExe(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name          string
 		commandOutput []byte
@@ -41,7 +44,7 @@ func TestGetExe(t *testing.T) {
 			mockExec.FindExecutableReturns("/usr/bin/nginx", nil)
 
 			n := New(mockExec)
-			result := n.GetExe()
+			result := n.GetExe(ctx)
 
 			assert.Equal(tt, test.expected, result)
 		})

@@ -15,12 +15,12 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/http/dataplane"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 	sloggin "github.com/samber/slog-gin"
 )
@@ -44,12 +44,12 @@ type (
 	}
 )
 
-func NewDataPlaneServer(agentConfig *config.Config, logger *slog.Logger) *DataPlaneServer {
+func NewDataPlaneServer(agentConfig *config.Config, slogger *slog.Logger) *DataPlaneServer {
 	address := net.JoinHostPort(agentConfig.DataPlaneAPI.Host, strconv.Itoa(agentConfig.DataPlaneAPI.Port))
 
 	return &DataPlaneServer{
 		address:           address,
-		logger:            logger,
+		logger:            slogger,
 		configEvents:      make(map[string][]*instances.ConfigurationStatus),
 		serverMutex:       &sync.Mutex{},
 		configEventsMutex: &sync.Mutex{},
@@ -58,7 +58,7 @@ func NewDataPlaneServer(agentConfig *config.Config, logger *slog.Logger) *DataPl
 }
 
 func (dps *DataPlaneServer) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.Info("Starting data plane server", "address", dps.address)
+	slog.InfoContext(ctx, "Starting data plane server", "address", dps.address)
 
 	dps.messagePipe = messagePipe
 
@@ -71,7 +71,7 @@ func (dps *DataPlaneServer) Init(ctx context.Context, messagePipe bus.MessagePip
 }
 
 func (dps *DataPlaneServer) Close(ctx context.Context) error {
-	slog.Debug("Closing data plane server plugin")
+	slog.DebugContext(ctx, "Closing data plane server plugin")
 
 	// The context is used to inform the server it has, by default,
 	// 5 seconds to finish the request it is currently handling
@@ -82,11 +82,11 @@ func (dps *DataPlaneServer) Close(ctx context.Context) error {
 	defer dps.serverMutex.Unlock()
 
 	if err := dps.server.Shutdown(serverShutdownCtx); err != nil {
-		slog.Error("Data plane server failed to shutdown", "error", err)
+		slog.ErrorContext(ctx, "Data plane server failed to shutdown", "error", err)
 		dps.cancel()
 	}
 
-	slog.Info("Data plane server closed")
+	slog.InfoContext(ctx, "Data plane server closed")
 
 	return nil
 }
@@ -147,7 +147,7 @@ func (dps *DataPlaneServer) run(ctx context.Context) {
 
 	go func() {
 		if err := dps.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("Failed to serve data plane server", "error", err)
+			slog.ErrorContext(ctx, "Failed to serve data plane server", "error", err)
 			dps.cancel()
 		}
 	}()
@@ -159,7 +159,8 @@ func (dps *DataPlaneServer) run(ctx context.Context) {
 // GET /instances
 // nolint: revive // Get func not returning value
 func (dps *DataPlaneServer) GetInstances(ctx *gin.Context) {
-	slog.Debug("Get instances request")
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey{}, logger.GenerateCorrelationID())
+	slog.DebugContext(newCtx, "Get instances request")
 
 	response := []dataplane.Instance{}
 
@@ -175,15 +176,17 @@ func (dps *DataPlaneServer) GetInstances(ctx *gin.Context) {
 		})
 	}
 
-	slog.Debug("Got instances", "instances", response)
+	slog.DebugContext(newCtx, "Got instances", "instances", response)
 
 	ctx.JSON(http.StatusOK, response)
 }
 
 // PUT /instances/{instanceID}/configurations
 func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceID string) {
-	correlationID := uuid.New().String()
-	slog.Debug("Update instance configuration request", "correlation_id", correlationID, "instance_id", instanceID)
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey{}, logger.GenerateCorrelationID())
+	slog.DebugContext(newCtx, "Update instance configuration request", "instance_id", instanceID)
+
+	correlationID := logger.GetCorrelationID(ctx)
 
 	var request dataplane.UpdateInstanceConfigurationJSONRequestBody
 	if err := ctx.Bind(&request); err != nil {
@@ -197,19 +200,17 @@ func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 		instance := dps.getInstance(instanceID)
 		if instance != nil {
 			request := &model.InstanceConfigUpdateRequest{
-				Instance:      dps.getInstance(instanceID),
-				Location:      *request.Location,
-				CorrelationID: correlationID,
+				Instance: dps.getInstance(instanceID),
+				Location: *request.Location,
 			}
 
 			dps.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateRequestTopic, Data: request})
-
-			ctx.JSON(http.StatusOK, dataplane.CorrelationId{CorrelationId: &correlationID})
+			ctx.JSON(http.StatusOK, dataplane.CorrelationId{CorrelationId: toPtr(correlationID)})
 		} else {
-			slog.Debug(
+			slog.DebugContext(
+				newCtx,
 				"Unable to update instance configuration",
 				"instance_id", instanceID,
-				"correlation_id", correlationID,
 			)
 			ctx.JSON(
 				http.StatusNotFound,
@@ -222,9 +223,10 @@ func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 // (GET /instances/{instanceId}/configurations/status)
 // nolint: revive // Get func not returning value
 func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, instanceID string) {
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey{}, logger.GenerateCorrelationID())
 	status := dps.getConfigurationStatus(instanceID)
 	if status != nil {
-		slog.Info("status", "", status)
+		slog.InfoContext(newCtx, "Got configuration status", "instance_id", instanceID, "status", status)
 		responseBody := &dataplane.ConfigurationStatus{
 			InstanceId:    &instanceID,
 			CorrelationId: &status[0].CorrelationId,
@@ -233,7 +235,7 @@ func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, ins
 
 		ctx.JSON(http.StatusOK, responseBody)
 	} else {
-		slog.Debug("Unable to get instance configuration status", "instance_id", instanceID)
+		slog.DebugContext(newCtx, "Unable to get instance configuration status", "instance_id", instanceID)
 		ctx.JSON(http.StatusNotFound, dataplane.ErrorResponse{Message: "Unable to find configuration status"})
 	}
 }
