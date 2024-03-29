@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -95,7 +95,7 @@ func TestGetInstances(t *testing.T) {
 	tests := []struct {
 		name                      string
 		nginxVersionCommandOutput string
-		expected                  []*instances.Instance
+		expected                  []*v1.Instance
 	}{
 		{
 			name: "Test 1: NGINX open source",
@@ -104,16 +104,18 @@ func TestGetInstances(t *testing.T) {
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
 					configure arguments: %s`, ossConfigArgs),
-			expected: []*instances.Instance{
+			expected: []*v1.Instance{
 				{
-					InstanceId: "5975af28-e028-3f87-a848-a39e50cdf0e9",
-					Type:       instances.Type_NGINX,
-					Version:    "1.23.3",
-					Meta: &instances.Meta{
-						Meta: &instances.Meta_NginxMeta{
-							NginxMeta: &instances.NginxMeta{
+					InstanceMeta: &v1.InstanceMeta{
+						InstanceId:   "5975af28-e028-3f87-a848-a39e50cdf0e9",
+						InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+						Version:      "1.23.3",
+					},
+					InstanceConfig: &v1.InstanceConfig{
+						Config: &v1.InstanceConfig_NginxConfig{
+							NginxConfig: &v1.NGINXConfig{
 								ConfigPath: "/usr/local/etc/nginx/nginx.conf",
-								ExePath:    exePath,
+								BinaryPath: exePath,
 								ProcessId:  789,
 							},
 						},
@@ -128,16 +130,18 @@ func TestGetInstances(t *testing.T) {
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
 				configure arguments: %s`, plusConfigArgs),
-			expected: []*instances.Instance{
+			expected: []*v1.Instance{
 				{
-					InstanceId: "2dbc5cb9-464f-30da-b703-5e63c62bf31e",
-					Type:       instances.Type_NGINX_PLUS,
-					Version:    "nginx-plus-r30-p1",
-					Meta: &instances.Meta{
-						Meta: &instances.Meta_NginxMeta{
-							NginxMeta: &instances.NginxMeta{
+					InstanceMeta: &v1.InstanceMeta{
+						InstanceId:   "2dbc5cb9-464f-30da-b703-5e63c62bf31e",
+						InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS,
+						Version:      "nginx-plus-r30-p1",
+					},
+					InstanceConfig: &v1.InstanceConfig{
+						Config: &v1.InstanceConfig_NginxPlusConfig{
+							NginxPlusConfig: &v1.NGINXPlusConfig{
 								ConfigPath: "/etc/nginx/nginx.conf",
-								ExePath:    exePath,
+								BinaryPath: exePath,
 								ProcessId:  789,
 							},
 						},

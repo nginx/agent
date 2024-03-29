@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
@@ -54,9 +55,11 @@ func TestConfig_Subscriptions(t *testing.T) {
 func TestConfig_Process(t *testing.T) {
 	ctx := context.Background()
 
-	testInstance := &instances.Instance{
-		InstanceId: instanceID,
-		Type:       instances.Type_NGINX,
+	testInstance := &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   instanceID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+		},
 	}
 
 	nginxConfigContext := model.NginxConfigContext{
@@ -129,7 +132,7 @@ func TestConfig_Process(t *testing.T) {
 			name: "Test 5: Instance topic request",
 			input: &bus.Message{
 				Topic: bus.InstancesTopic,
-				Data: []*instances.Instance{
+				Data: []*v1.Instance{
 					testInstance,
 				},
 			},
@@ -150,7 +153,7 @@ func TestConfig_Process(t *testing.T) {
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
 			configService.UpdateInstanceConfigurationReturns(nil, configurationStatus)
 
-			instanceService := []*instances.Instance{testInstance}
+			instanceService := []*v1.Instance{testInstance}
 
 			configPlugin.configServices[instanceID] = configService
 			configPlugin.instances = instanceService
@@ -171,9 +174,11 @@ func TestConfig_Process(t *testing.T) {
 func TestConfig_Update(t *testing.T) {
 	ctx := context.Background()
 	agentConfig := config.Config{}
-	instance := instances.Instance{
-		InstanceId: instanceID,
-		Type:       instances.Type_NGINX,
+	instance := v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   instanceID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+		},
 	}
 
 	location := fmt.Sprintf("/instance/%s/files/", instanceID)
@@ -270,7 +275,7 @@ func TestConfig_Update(t *testing.T) {
 			configService.UpdateInstanceConfigurationReturns(make(map[string]*instances.File), test.updateReturnStatus)
 			configService.RollbackReturns(test.rollbackReturns)
 
-			instanceService := []*instances.Instance{&instance}
+			instanceService := []*v1.Instance{&instance}
 			configPlugin.configServices[instanceID] = configService
 			configPlugin.instances = instanceService
 

@@ -52,7 +52,12 @@ message CreateConnectionResponse {
 }
 
 // Report on the status of the Data Plane
-message UpdateDataPlaneStatusRequest {}
+message UpdateDataPlaneStatusRequest {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
+    // Report on instances on the Data Plane
+    repeated Instance instances = 2;
+}
 
 // Respond to a UpdateDataPlaneStatusRequest - intentionally empty
 message UpdateDataPlaneStatusResponse {}
@@ -102,11 +107,20 @@ message InstanceMeta {
 
 // Instance Configuration options
 message InstanceConfig {
+    // provided actions associated with a particular instance. These are runtime based and provided by a particular version of the NGINX Agent
+    repeated InstanceAction actions = 1;
     oneof config {
         // NGINX Agent runtime configuration settings
-        AgentConfig agent_config = 1;
+        AgentConfig agent_config = 2;
+        // NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process
+        NGINXConfig nginx_config = 3;
+        // NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API
+        NGINXPlusConfig nginx_plus_config = 4;
     }
 }
+
+// A set of actions that can be performed on an instance
+message InstanceAction {}
 
 // This contains a series of NGINX Agent configurations
 message AgentConfig { 
@@ -122,6 +136,26 @@ message AgentConfig {
     repeated string features = 5;
     // Message buffer size, maximum not acknowledged messages from the subscribe perspective
     string message_buffer_size = 6;
+}
+
+// A set of runtime NGINX configuration that gets populated 
+message NGINXConfig {
+    // master process id
+    int32 process_id = 1;
+    // where the binary location is, if empty, this is a remote instance
+    string binary_path = 2;
+    // where the configuration files are located
+    string config_path = 3;
+}
+
+// A set of runtime NGINX configuration that gets populated 
+message NGINXPlusConfig {
+    // master process id
+    int32 process_id = 1;
+    // where the binary location is, if empty, this is a remote instance
+    string binary_path = 2;
+    // where the configuration files are located
+    string config_path = 3;
 }
 
 // The command settings, associated with messaging from an external source 

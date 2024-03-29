@@ -49,7 +49,11 @@ DEBUG_LDFLAGS 	= "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.da
 
 OSS_PACKAGES_REPO 	:= "packages.nginx.org"
 PACKAGE_PREFIX 		:= nginx-agent
-PACKAGE_NAME 		:= "$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT)"
+PACKAGE_NAME 		:= $(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT)
+
+APK_PACKAGE := ./build/$(PACKAGE_NAME).apk
+DEB_PACKAGE := ./build/$(PACKAGE_NAME).deb
+RPM_PACKAGE := ./build/$(PACKAGE_NAME).rpm
 
 MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
 MOCK_MANAGEMENT_PLANE_LOG_LEVEL ?= INFO
@@ -66,6 +70,25 @@ else
 		OSARCH = $(uname_m)
 	endif
 endif
+
+SELECTED_PACKAGE = $(DEB_PACKAGE)
+ifeq ($(OS_RELEASE),redhatenterprise)
+	SELECTED_PACKAGE = $(RPM_PACKAGE)
+else ifeq ($(OS_RELEASE),alpine)
+	SELECTED_PACKAGE = $(APK_PACKAGE)
+endif
+
+$(APK_PACKAGE):
+	@echo "Building .apk package..."
+	@$(MAKE) local-apk-package
+
+$(DEB_PACKAGE): 
+	@echo "Building .deb package..."
+	@$(MAKE) local-deb-package
+
+$(RPM_PACKAGE):
+	@echo "Building .rpm package..."
+	@$(MAKE) local-rpm-package
 
 include Makefile.tools
 include Makefile.containers
@@ -122,7 +145,7 @@ build-mock-management-plane-grpc:
 	mkdir -p $(BUILD_DIR)/mock-management-plane-grpc
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-grpc/server test/mock/grpc/cmd/main.go
 
-integration-test: build-mock-management-plane-http build-mock-management-plane-grpc
+integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-http build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
@@ -174,15 +197,15 @@ generate-mocks: ## Regenerate all needed mocks, in order to add new mocks genera
 
 local-apk-package: ## Create local apk package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target ./build/$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT).apk;
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target $(APK_PACKAGE);
 
 local-deb-package: ## Create local deb package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target ./build/$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT).deb;
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target $(DEB_PACKAGE);
 
 local-rpm-package: ## Create local rpm package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target ./build/$(PACKAGE_PREFIX)-$(shell echo $(VERSION) | tr -d 'v')-SNAPSHOT-$(COMMIT).rpm;
+	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target $(RPM_PACKAGE);
 
 generate-pgo-profile: build-mock-management-plane-http build-mock-management-plane-grpc
 	mv default.pgo profile.pprof

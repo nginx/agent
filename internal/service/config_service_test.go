@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,9 +32,11 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 	}
 
-	instance := &instances.Instance{
-		InstanceId: instanceID,
-		Type:       instances.Type_NGINX,
+	instance := &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   instanceID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+		},
 	}
 
 	configService := NewConfigService(instance, &config.Config{
@@ -49,9 +52,11 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 func TestUpdateInstanceConfiguration(t *testing.T) {
 	correlationID := "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 	ctx := context.Background()
-	instance := instances.Instance{
-		InstanceId: instanceID,
-		Type:       instances.Type_NGINX,
+	instance := &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   instanceID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+		},
 	}
 	agentConfig := types.GetAgentConfig()
 
@@ -117,7 +122,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 
 			filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
-			cs := NewConfigService(&instance, agentConfig)
+			cs := NewConfigService(instance, agentConfig)
 			cs.configService = &mockService
 			_, result := cs.UpdateInstanceConfiguration(ctx, correlationID, filesURL)
 
@@ -133,9 +138,11 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 	}
 
-	instance := &instances.Instance{
-		InstanceId: instanceID,
-		Type:       instances.Type_NGINX,
+	instance := &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   instanceID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+		},
 	}
 
 	configService := NewConfigService(instance, &config.Config{
