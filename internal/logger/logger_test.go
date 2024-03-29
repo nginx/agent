@@ -112,3 +112,14 @@ func TestGetCorrelationID(t *testing.T) {
 	correlationID := GetCorrelationID(ctx)
 	assert.NotEmpty(t, correlationID)
 }
+
+func TestContextHandler_observe(t *testing.T) {
+	ctx := context.WithValue(context.Background(), CorrelationIDContextKey, GenerateCorrelationID())
+
+	testContextHandler := contextHandler{nil, []any{CorrelationIDContextKey}}
+	attributes := testContextHandler.observe(ctx)
+
+	assert.Len(t, attributes, 1)
+	assert.Equal(t, CorrelationIDKey, attributes[0].Key)
+	assert.NotEmpty(t, attributes[0].Value.String())
+}
