@@ -24,14 +24,25 @@ const (
 	CorrelationIDKey = "correlation_id"
 )
 
-var logLevels = map[string]slog.Level{
-	"debug": slog.LevelDebug,
-	"info":  slog.LevelInfo,
-	"warn":  slog.LevelWarn,
-	"error": slog.LevelError,
-}
+var (
+	logLevels = map[string]slog.Level{
+		"debug": slog.LevelDebug,
+		"info":  slog.LevelInfo,
+		"warn":  slog.LevelWarn,
+		"error": slog.LevelError,
+	}
 
-// type CorrelationIDContextKey struct{}
+	CorrelationIDContextKey = contextKey(CorrelationIDKey)
+)
+
+type (
+	contextKey string
+
+	contextHandler struct {
+		slog.Handler
+		keys []any
+	}
+)
 
 func New(params config.Log) *slog.Logger {
 	handler := slog.NewTextHandler(
@@ -41,11 +52,12 @@ func New(params config.Log) *slog.Logger {
 		},
 	)
 
-	contextHandler := ContextHandler{handler, []any{
-		CorrelationIDContextKey,
-	}}
-
-	return slog.New(contextHandler)
+	return slog.New(
+		contextHandler{
+			handler, []any{
+				CorrelationIDContextKey,
+			},
+		})
 }
 
 func GetLogLevel(level string) slog.Level {
@@ -83,25 +95,16 @@ func getLogWriter(logFile string) io.Writer {
 	return os.Stderr
 }
 
-type contextKey string
-
 func (c contextKey) String() string {
 	return string(c)
 }
 
-type ContextHandler struct {
-	slog.Handler
-	keys []any
-}
-
-var CorrelationIDContextKey = contextKey(CorrelationIDKey)
-
-func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
+func (h contextHandler) Handle(ctx context.Context, r slog.Record) error {
 	r.AddAttrs(h.observe(ctx)...)
 	return h.Handler.Handle(ctx, r)
 }
 
-func (h ContextHandler) observe(ctx context.Context) (as []slog.Attr) {
+func (h contextHandler) observe(ctx context.Context) (as []slog.Attr) {
 	for _, k := range h.keys {
 		a, ok := ctx.Value(k).(slog.Attr)
 		if !ok {
