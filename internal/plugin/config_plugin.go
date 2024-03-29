@@ -14,6 +14,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service"
@@ -25,14 +26,14 @@ const tenantID = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 type Config struct {
 	messagePipe    bus.MessagePipeInterface
 	configServices map[string]service.ConfigServiceInterface
-	instances      []*instances.Instance
+	instances      []*v1.Instance
 	agentConfig    *config.Config
 }
 
 func NewConfig(agentConfig *config.Config) *Config {
 	return &Config{
 		configServices: make(map[string]service.ConfigServiceInterface), // key is instance id
-		instances:      []*instances.Instance{},
+		instances:      []*v1.Instance{},
 		agentConfig:    agentConfig,
 	}
 }
@@ -63,7 +64,7 @@ func (c *Config) Process(ctx context.Context, msg *bus.Message) {
 	case msg.Topic == bus.InstanceConfigUpdateRequestTopic:
 		c.processInstanceConfigUpdateRequest(ctx, msg)
 	case msg.Topic == bus.InstancesTopic:
-		if newInstances, ok := msg.Data.([]*instances.Instance); ok {
+		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
 			c.instances = newInstances
 		}
 	}
@@ -88,9 +89,9 @@ func (c *Config) processConfigurationStatus(msg *bus.Message) {
 	}
 }
 
-func (c *Config) GetInstance(instanceID string) *instances.Instance {
+func (c *Config) GetInstance(instanceID string) *v1.Instance {
 	for _, instanceEntity := range c.instances {
-		if instanceEntity.GetInstanceId() == instanceID {
+		if instanceEntity.GetInstanceMeta().GetInstanceId() == instanceID {
 			return instanceEntity
 		}
 	}
@@ -106,24 +107,25 @@ func (c *Config) processInstanceConfigUpdateRequest(ctx context.Context, msg *bu
 	}
 }
 
-func (c *Config) parseInstanceConfiguration(correlationID string, instance *instances.Instance) {
-	if c.configServices[instance.GetInstanceId()] == nil {
-		c.configServices[instance.GetInstanceId()] = service.NewConfigService(instance,
+func (c *Config) parseInstanceConfiguration(correlationID string, instance *v1.Instance) {
+	instanceID := instance.GetInstanceMeta().GetInstanceId()
+	if c.configServices[instanceID] == nil {
+		c.configServices[instanceID] = service.NewConfigService(instance,
 			c.agentConfig)
 	}
 
-	parsedConfig, err := c.configServices[instance.GetInstanceId()].ParseInstanceConfiguration(correlationID)
+	parsedConfig, err := c.configServices[instanceID].ParseInstanceConfiguration(correlationID)
 	if err != nil {
 		slog.Error(
 			"Unable to parse instance configuration",
 			"correlation_id", correlationID,
-			"instance_id", instance.GetInstanceId(),
+			"instance_id", instanceID,
 			"error", err,
 		)
 	} else {
 		switch configContext := parsedConfig.(type) {
 		case model.NginxConfigContext:
-			c.configServices[instance.GetInstanceId()].SetConfigContext(configContext)
+			c.configServices[instanceID].SetConfigContext(configContext)
 		default:
 			slog.Debug("Unknown config context", "config_context", configContext)
 		}
@@ -133,7 +135,7 @@ func (c *Config) parseInstanceConfiguration(correlationID string, instance *inst
 
 func (c *Config) updateInstanceConfig(ctx context.Context, request *model.InstanceConfigUpdateRequest) {
 	slog.Debug("Updating instance configuration")
-	instanceID := request.Instance.GetInstanceId()
+	instanceID := request.Instance.GetInstanceMeta().GetInstanceId()
 	if c.configServices[instanceID] == nil {
 		c.configServices[instanceID] = service.NewConfigService(request.Instance, c.agentConfig)
 	}
@@ -147,7 +149,7 @@ func (c *Config) updateInstanceConfig(ctx context.Context, request *model.Instan
 	}
 	c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: inProgressStatus})
 
-	skippedFiles, status := c.configServices[request.Instance.GetInstanceId()].UpdateInstanceConfiguration(
+	skippedFiles, status := c.configServices[instanceID].UpdateInstanceConfiguration(
 		ctx,
 		request.CorrelationID,
 		request.Location,

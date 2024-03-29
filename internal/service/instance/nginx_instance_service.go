@@ -14,7 +14,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	process "github.com/nginx/agent/v3/internal/datasource/nginx"
 	"github.com/nginx/agent/v3/internal/model"
@@ -54,8 +54,8 @@ func NewNginx(parameters NginxParameters) *Nginx {
 	}
 }
 
-func (n *Nginx) GetInstances(processes []*model.Process) []*instances.Instance {
-	var processList []*instances.Instance
+func (n *Nginx) GetInstances(processes []*model.Process) []*v1.Instance {
+	var processList []*v1.Instance
 
 	nginxProcesses := n.getNginxProcesses(processes)
 
@@ -113,28 +113,40 @@ func (n *Nginx) getInfo(nginxProcess *model.Process) (*Info, error) {
 	return nginxInfo, err
 }
 
-func convertInfoToProcess(nginxInfo Info) *instances.Instance {
-	nginxType := instances.Type_NGINX
+func convertInfoToProcess(nginxInfo Info) *v1.Instance {
+	nginxType := v1.InstanceMeta_INSTANCE_TYPE_NGINX
 	version := nginxInfo.Version
-
-	if nginxInfo.PlusVersion != "" {
-		nginxType = instances.Type_NGINX_PLUS
-		version = nginxInfo.PlusVersion
-	}
-
-	return &instances.Instance{
-		InstanceId: uuid.Generate("%s_%s_%s", nginxInfo.ExePath, nginxInfo.ConfPath, nginxInfo.Prefix),
-		Type:       nginxType,
-		Version:    version,
-		Meta: &instances.Meta{
-			Meta: &instances.Meta_NginxMeta{
-				NginxMeta: &instances.NginxMeta{
-					ConfigPath: nginxInfo.ConfPath,
-					ExePath:    nginxInfo.ExePath,
-					ProcessId:  nginxInfo.ProcessID,
-				},
+	instanceConfig := &v1.InstanceConfig{
+		Config: &v1.InstanceConfig_NginxConfig{
+			NginxConfig: &v1.NGINXConfig{
+				BinaryPath: nginxInfo.ExePath,
+				ProcessId:  nginxInfo.ProcessID,
+				ConfigPath: nginxInfo.ConfPath,
 			},
 		},
+	}
+
+	if nginxInfo.PlusVersion != "" {
+		nginxType = v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS
+		version = nginxInfo.PlusVersion
+		instanceConfig = &v1.InstanceConfig{
+			Config: &v1.InstanceConfig_NginxPlusConfig{
+				NginxPlusConfig: &v1.NGINXPlusConfig{
+					BinaryPath: nginxInfo.ExePath,
+					ProcessId:  nginxInfo.ProcessID,
+					ConfigPath: nginxInfo.ConfPath,
+				},
+			},
+		}
+	}
+
+	return &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   uuid.Generate("%s_%s_%s", nginxInfo.ExePath, nginxInfo.ConfPath, nginxInfo.Prefix),
+			InstanceType: nginxType,
+			Version:      version,
+		},
+		InstanceConfig: instanceConfig,
 	}
 }
 

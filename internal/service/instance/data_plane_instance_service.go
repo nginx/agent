@@ -6,12 +6,12 @@
 package instance
 
 import (
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
 //counterfeiter:generate . DataPlaneInstanceService
 type DataPlaneInstanceService interface {
-	GetInstances(processes []*model.Process) []*instances.Instance
+	GetInstances(processes []*model.Process) []*v1.Instance
 }

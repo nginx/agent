@@ -23,7 +23,7 @@ import (
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	testconfig "github.com/nginx/agent/v3/test/config"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -94,12 +94,14 @@ func TestNginx_ParseConfig(t *testing.T) {
 		},
 	}
 
-	instance := &instances.Instance{
-		Type:       instances.Type_NGINX,
-		InstanceId: instanceID,
-		Meta: &instances.Meta{
-			Meta: &instances.Meta_NginxMeta{
-				NginxMeta: &instances.NginxMeta{
+	instance := &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   instanceID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+		},
+		InstanceConfig: &v1.InstanceConfig{
+			Config: &v1.InstanceConfig_NginxConfig{
+				NginxConfig: &v1.NGINXConfig{
 					ConfigPath: file.Name(),
 				},
 			},
@@ -221,18 +223,21 @@ func TestNginx_Apply(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.KillProcessReturns(test.error)
 
-			instance := &instances.Instance{
-				Type:       instances.Type_NGINX,
-				InstanceId: instanceID,
-				Meta: &instances.Meta{
-					Meta: &instances.Meta_NginxMeta{
-						NginxMeta: &instances.NginxMeta{
-							ExePath:   "nginx",
-							ProcessId: 1,
+			instance := &v1.Instance{
+				InstanceMeta: &v1.InstanceMeta{
+					InstanceId:   instanceID,
+					InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+				},
+				InstanceConfig: &v1.InstanceConfig{
+					Config: &v1.InstanceConfig_NginxConfig{
+						NginxConfig: &v1.NGINXConfig{
+							BinaryPath: "nginx",
+							ProcessId:  1,
 						},
 					},
 				},
 			}
+
 			nginxConfig := NewNginx(
 				instance,
 				&config.Config{
@@ -303,17 +308,21 @@ func TestNginx_Validate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.RunCmdReturns(test.out, test.error)
-			instance := &instances.Instance{
-				Type:       instances.Type_NGINX,
-				InstanceId: instanceID,
-				Meta: &instances.Meta{
-					Meta: &instances.Meta_NginxMeta{
-						NginxMeta: &instances.NginxMeta{
-							ExePath: "nginx",
+
+			instance := &v1.Instance{
+				InstanceMeta: &v1.InstanceMeta{
+					InstanceId:   instanceID,
+					InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+				},
+				InstanceConfig: &v1.InstanceConfig{
+					Config: &v1.InstanceConfig_NginxConfig{
+						NginxConfig: &v1.NGINXConfig{
+							BinaryPath: "nginx",
 						},
 					},
 				},
 			}
+
 			nginxConfig := NewNginx(instance, &config.Config{
 				Client: &config.Client{
 					Timeout: 5 * time.Second,
