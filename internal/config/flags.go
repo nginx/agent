@@ -57,6 +57,7 @@ var (
 	CommandTLSKeyKey                = pre(CommandTLSKey) + "key"
 	CommandTLSCaKey                 = pre(CommandTLSKey) + "ca"
 	CommandTLSSkipVerifyKey         = pre(CommandTLSKey) + "skip_verify"
+	CommandTLSServerNameKey         = pre(CommandRootKey) + "server_name"
 	ClientTimeoutKey                = pre(ClientRootKey) + "timeout"
 	ClientTimeKey                   = pre(ClientRootKey) + "time"
 	ClientPermitStreamKey           = pre(ClientRootKey) + "permit_stream"

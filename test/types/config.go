@@ -85,10 +85,10 @@ func GetAgentConfig() *config.Config {
 				Token: "1234",
 			},
 			TLS: &config.TLSConfig{
-				Cert:       "some.cert",
-				Key:        "some.key",
-				Ca:         "some.ca",
-				SkipVerify: false,
+				Cert:       "cert.pem",
+				Key:        "key.pem",
+				Ca:         "ca.pem",
+				SkipVerify: true,
 			},
 		},
 		Common: &config.CommonSettings{

@@ -377,6 +377,7 @@ func getCommand() *Command {
 			Key:        viperInstance.GetString(CommandTLSKeyKey),
 			Ca:         viperInstance.GetString(CommandTLSCaKey),
 			SkipVerify: viperInstance.GetBool(CommandTLSSkipVerifyKey),
+			ServerName: viperInstance.GetString(CommandTLSServerNameKey),
 		}
 	}
 

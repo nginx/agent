@@ -100,6 +100,7 @@ type TLSConfig struct {
 	Key        string `yaml:"-" mapstructure:"key"`
 	Ca         string `yaml:"-" mapstructure:"ca"`
 	SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
+	ServerName string `yaml:"-" mapstructure:"server_name"`
 }
 
 // leaving this blank intentionally for now, this will have the location of the file server for configurations
