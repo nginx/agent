@@ -57,7 +57,7 @@ func TestConfig_Subscriptions(t *testing.T) {
 func TestConfig_Process(t *testing.T) {
 	ctx := context.WithValue(
 		context.Background(),
-		logger.CorrelationIDContextKey{},
+		logger.CorrelationIDContextKey,
 		slog.Any(logger.CorrelationIDKey, correlationID),
 	)
 
@@ -179,7 +179,7 @@ func TestConfig_Process(t *testing.T) {
 func TestConfig_Update(t *testing.T) {
 	ctx := context.WithValue(
 		context.Background(),
-		logger.CorrelationIDContextKey{},
+		logger.CorrelationIDContextKey,
 		slog.Any(logger.CorrelationIDKey, correlationID),
 	)
 

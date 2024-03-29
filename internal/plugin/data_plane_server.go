@@ -159,7 +159,7 @@ func (dps *DataPlaneServer) run(ctx context.Context) {
 // GET /instances
 // nolint: revive // Get func not returning value
 func (dps *DataPlaneServer) GetInstances(ctx *gin.Context) {
-	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey{}, logger.GenerateCorrelationID())
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
 	slog.DebugContext(newCtx, "Get instances request")
 
 	response := []dataplane.Instance{}
@@ -183,10 +183,12 @@ func (dps *DataPlaneServer) GetInstances(ctx *gin.Context) {
 
 // PUT /instances/{instanceID}/configurations
 func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instanceID string) {
-	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey{}, logger.GenerateCorrelationID())
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
 	slog.DebugContext(newCtx, "Update instance configuration request", "instance_id", instanceID)
 
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.GetCorrelationID(newCtx)
+
+	slog.DebugContext(newCtx, "Update instance configuration request", "instance_id", correlationID)
 
 	var request dataplane.UpdateInstanceConfigurationJSONRequestBody
 	if err := ctx.Bind(&request); err != nil {
@@ -204,7 +206,7 @@ func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 				Location: *request.Location,
 			}
 
-			dps.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateRequestTopic, Data: request})
+			dps.messagePipe.Process(newCtx, &bus.Message{Topic: bus.InstanceConfigUpdateRequestTopic, Data: request})
 			ctx.JSON(http.StatusOK, dataplane.CorrelationId{CorrelationId: toPtr(correlationID)})
 		} else {
 			slog.DebugContext(
@@ -223,7 +225,7 @@ func (dps *DataPlaneServer) UpdateInstanceConfiguration(ctx *gin.Context, instan
 // (GET /instances/{instanceId}/configurations/status)
 // nolint: revive // Get func not returning value
 func (dps *DataPlaneServer) GetInstanceConfigurationStatus(ctx *gin.Context, instanceID string) {
-	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey{}, logger.GenerateCorrelationID())
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
 	status := dps.getConfigurationStatus(instanceID)
 	if status != nil {
 		slog.InfoContext(newCtx, "Got configuration status", "instance_id", instanceID, "status", status)

@@ -18,7 +18,7 @@ type DataPlaneConfig interface {
 	Validate(ctx context.Context) error
 	Apply(ctx context.Context) error
 	Write(ctx context.Context, filesURL, tenantID string) (skippedFiles writer.CacheContent, err error)
-	Complete() error
+	Complete(ctx context.Context) error
 	SetConfigWriter(configWriter writer.ConfigWriterInterface)
 	Rollback(ctx context.Context, skippedFiles writer.CacheContent, filesURL, tenantID, instanceID string) error
 }

@@ -5,6 +5,7 @@
 package logger
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"os"
@@ -104,4 +105,10 @@ func TestGetLogWriter(t *testing.T) {
 			assert.IsType(tt, test.expected, result)
 		})
 	}
+}
+
+func TestGetCorrelationID(t *testing.T) {
+	ctx := context.WithValue(context.Background(), CorrelationIDContextKey, GenerateCorrelationID())
+	correlationID := GetCorrelationID(ctx)
+	assert.NotEmpty(t, correlationID)
 }

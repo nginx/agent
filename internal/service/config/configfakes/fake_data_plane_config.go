@@ -22,9 +22,10 @@ type FakeDataPlaneConfig struct {
 	applyReturnsOnCall map[int]struct {
 		result1 error
 	}
-	CompleteStub        func() error
+	CompleteStub        func(context.Context) error
 	completeMutex       sync.RWMutex
 	completeArgsForCall []struct {
+		arg1 context.Context
 	}
 	completeReturns struct {
 		result1 error
@@ -156,17 +157,18 @@ func (fake *FakeDataPlaneConfig) ApplyReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeDataPlaneConfig) Complete() error {
+func (fake *FakeDataPlaneConfig) Complete(arg1 context.Context) error {
 	fake.completeMutex.Lock()
 	ret, specificReturn := fake.completeReturnsOnCall[len(fake.completeArgsForCall)]
 	fake.completeArgsForCall = append(fake.completeArgsForCall, struct {
-	}{})
+		arg1 context.Context
+	}{arg1})
 	stub := fake.CompleteStub
 	fakeReturns := fake.completeReturns
-	fake.recordInvocation("Complete", []interface{}{})
+	fake.recordInvocation("Complete", []interface{}{arg1})
 	fake.completeMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -180,10 +182,17 @@ func (fake *FakeDataPlaneConfig) CompleteCallCount() int {
 	return len(fake.completeArgsForCall)
 }
 
-func (fake *FakeDataPlaneConfig) CompleteCalls(stub func() error) {
+func (fake *FakeDataPlaneConfig) CompleteCalls(stub func(context.Context) error) {
 	fake.completeMutex.Lock()
 	defer fake.completeMutex.Unlock()
 	fake.CompleteStub = stub
+}
+
+func (fake *FakeDataPlaneConfig) CompleteArgsForCall(i int) context.Context {
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
+	argsForCall := fake.completeArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeDataPlaneConfig) CompleteReturns(result1 error) {

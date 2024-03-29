@@ -29,6 +29,7 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 		func(configFilePath string) {
 			b.Run(configFilePath, func(bb *testing.B) {
 				nginxConfigService := NewNginx(
+					ctx,
 					&v1.Instance{
 						InstanceMeta: &v1.InstanceMeta{
 							InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,

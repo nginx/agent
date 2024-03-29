@@ -7,6 +7,7 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -111,7 +112,7 @@ func (c *Config) processInstanceConfigUpdateRequest(ctx context.Context, msg *bu
 func (c *Config) parseInstanceConfiguration(ctx context.Context, instance *v1.Instance) {
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	if c.configServices[instanceID] == nil {
-		c.configServices[instanceID] = service.NewConfigService(instance, c.agentConfig)
+		c.configServices[instanceID] = service.NewConfigService(ctx, instance, c.agentConfig)
 	}
 
 	parsedConfig, err := c.configServices[instanceID].ParseInstanceConfiguration(ctx)
@@ -124,10 +125,10 @@ func (c *Config) parseInstanceConfiguration(ctx context.Context, instance *v1.In
 		)
 	} else {
 		switch configContext := parsedConfig.(type) {
-		case model.NginxConfigContext:
+		case *model.NginxConfigContext:
 			c.configServices[instanceID].SetConfigContext(configContext)
 		default:
-			slog.DebugContext(ctx, "Unknown config context", "config_context", configContext)
+			slog.DebugContext(ctx, "Unknown config context", "config_context_type", fmt.Sprintf("%T", configContext))
 		}
 		c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigContextTopic, Data: parsedConfig})
 	}
@@ -140,7 +141,7 @@ func (c *Config) updateInstanceConfig(ctx context.Context, request *model.Instan
 
 	instanceID := request.Instance.GetInstanceMeta().GetInstanceId()
 	if c.configServices[instanceID] == nil {
-		c.configServices[instanceID] = service.NewConfigService(request.Instance, c.agentConfig)
+		c.configServices[instanceID] = service.NewConfigService(ctx, request.Instance, c.agentConfig)
 	}
 
 	inProgressStatus := &instances.ConfigurationStatus{

@@ -111,7 +111,7 @@ func TestNginx_ParseConfig(t *testing.T) {
 		},
 	}
 
-	nginxConfig := NewNginx(instance, &config.Config{
+	nginxConfig := NewNginx(ctx, instance, &config.Config{
 		Client: &config.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -244,6 +244,7 @@ func TestNginx_Apply(t *testing.T) {
 			}
 
 			nginxConfig := NewNginx(
+				ctx,
 				instance,
 				&config.Config{
 					DataPlaneConfig: &config.DataPlaneConfig{
@@ -330,7 +331,7 @@ func TestNginx_Validate(t *testing.T) {
 				},
 			}
 
-			nginxConfig := NewNginx(instance, &config.Config{
+			nginxConfig := NewNginx(ctx, instance, &config.Config{
 				Client: &config.Client{
 					Timeout: 5 * time.Second,
 				},

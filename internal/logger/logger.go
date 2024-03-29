@@ -31,7 +31,7 @@ var logLevels = map[string]slog.Level{
 	"error": slog.LevelError,
 }
 
-type CorrelationIDContextKey struct{}
+// type CorrelationIDContextKey struct{}
 
 func New(params config.Log) *slog.Logger {
 	handler := slog.NewTextHandler(
@@ -42,7 +42,7 @@ func New(params config.Log) *slog.Logger {
 	)
 
 	contextHandler := ContextHandler{handler, []any{
-		CorrelationIDContextKey{},
+		CorrelationIDContextKey,
 	}}
 
 	return slog.New(contextHandler)
@@ -83,10 +83,18 @@ func getLogWriter(logFile string) io.Writer {
 	return os.Stderr
 }
 
+type contextKey string
+
+func (c contextKey) String() string {
+	return string(c)
+}
+
 type ContextHandler struct {
 	slog.Handler
 	keys []any
 }
+
+var CorrelationIDContextKey = contextKey(CorrelationIDKey)
 
 func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 	r.AddAttrs(h.observe(ctx)...)
@@ -111,8 +119,9 @@ func GenerateCorrelationID() slog.Attr {
 }
 
 func GetCorrelationID(ctx context.Context) string {
-	value, ok := ctx.Value(CorrelationIDContextKey{}).(slog.Attr)
-	if ok {
+	value, ok := ctx.Value(CorrelationIDContextKey).(slog.Attr)
+	if !ok {
+		slog.Debug("Correlation ID not found in context")
 		return ""
 	}
 

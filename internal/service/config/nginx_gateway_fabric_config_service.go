@@ -25,15 +25,15 @@ func (*NginxGatewayFabric) ParseConfig(_ context.Context) (any, error) {
 
 func (*NginxGatewayFabric) SetConfigContext(_ any) {}
 
-func (*NginxGatewayFabric) Validate(ctx context.Context) error {
+func (*NginxGatewayFabric) Validate(_ context.Context) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Apply(ctx context.Context) error {
+func (*NginxGatewayFabric) Apply(_ context.Context) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Complete() error {
+func (*NginxGatewayFabric) Complete(_ context.Context) error {
 	return fmt.Errorf("not implemented")
 }
 

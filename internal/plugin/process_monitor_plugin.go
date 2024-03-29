@@ -83,7 +83,7 @@ func (pm *ProcessMonitor) getProcesses() []*model.Process {
 }
 
 func (pm *ProcessMonitor) run(ctx context.Context) {
-	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey{}, logger.GenerateCorrelationID())
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
 	slog.DebugContext(newCtx, "Getting processes on startup")
 
 	processes, err := pm.getProcessesFunc(newCtx)
@@ -105,7 +105,7 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-pm.processTicker.C:
-			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey{}, logger.GenerateCorrelationID())
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
 			slog.DebugContext(newCtx, "Checking for process changes")
 
 			processes, err := pm.getProcessesFunc(newCtx)

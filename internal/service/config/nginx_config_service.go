@@ -57,20 +57,21 @@ type Nginx struct {
 	agentConfig   *config.Config
 }
 
-func NewNginx(instance *v1.Instance, agentConfig *config.Config) *Nginx {
+func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Config) *Nginx {
 	fileCache := writer.NewFileCache(instance.GetInstanceMeta().GetInstanceId())
-	cache, err := fileCache.ReadFileCache()
+	cache, err := fileCache.ReadFileCache(ctx)
 	// Will in future work check cache and if its nil upload file
 	if err != nil {
-		err = fileCache.UpdateFileCache(cache)
+		err = fileCache.UpdateFileCache(ctx, cache)
 		if err != nil {
-			slog.Debug("error updating file cache %w", err)
+			slog.DebugContext(ctx, "Error updating file cache", "error", err)
 		}
 	}
 
 	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache)
 	if err != nil {
-		slog.Error(
+		slog.ErrorContext(
+			ctx,
 			"Failed to create new config writer",
 			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
 			"error", err,
@@ -93,8 +94,8 @@ func (n *Nginx) Write(ctx context.Context, filesURL, tenantID string) (skippedFi
 	return n.configWriter.Write(ctx, filesURL, tenantID, n.instance.GetInstanceMeta().GetInstanceId())
 }
 
-func (n *Nginx) Complete() error {
-	return n.configWriter.Complete()
+func (n *Nginx) Complete(ctx context.Context) error {
+	return n.configWriter.Complete(ctx)
 }
 
 func (n *Nginx) Rollback(ctx context.Context, skippedFiles writer.CacheContent,
