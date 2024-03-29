@@ -33,10 +33,11 @@ const (
 
 type (
 	GrpcClient struct {
-		messagePipe bus.MessagePipeInterface
-		config      *config.Config
-		conn        *grpc.ClientConn
-		cancel      context.CancelFunc
+		messagePipe       bus.MessagePipeInterface
+		config            *config.Config
+		conn              *grpc.ClientConn
+		cancel            context.CancelFunc
+		fileServiceClient v1.FileServiceClient
 	}
 )
 
@@ -67,6 +68,8 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	if err != nil {
 		return err
 	}
+
+	gc.fileServiceClient = v1.NewFileServiceClient(gc.conn)
 
 	// nolint: revive
 	id, err := uuid.NewV7()
@@ -122,6 +125,18 @@ func (gc *GrpcClient) Info() *bus.Info {
 	return &bus.Info{
 		Name: "grpc-client",
 	}
+}
+
+func (gc *GrpcClient) GetFileOverview(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview, error) {
+	resp, err := gc.fileServiceClient.GetOverview(ctx, request)
+
+	return resp.GetOverview(), err
+}
+
+func (gc *GrpcClient) GetFileContents(ctx context.Context, request *v1.GetFileRequest) (*v1.FileContents, error) {
+	resp, err := gc.fileServiceClient.GetFile(ctx, request)
+
+	return resp.GetContents(), err
 }
 
 func (gc *GrpcClient) Process(_ context.Context, _ *bus.Message) {}
