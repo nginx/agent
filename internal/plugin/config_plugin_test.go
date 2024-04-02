@@ -8,6 +8,7 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/nginx/agent/v3/test/protos"
@@ -53,7 +55,11 @@ func TestConfig_Subscriptions(t *testing.T) {
 }
 
 func TestConfig_Process(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.WithValue(
+		context.Background(),
+		logger.CorrelationIDContextKey,
+		slog.Any(logger.CorrelationIDKey, correlationID),
+	)
 
 	testInstance := &v1.Instance{
 		InstanceMeta: &v1.InstanceMeta{
@@ -68,9 +74,8 @@ func TestConfig_Process(t *testing.T) {
 	}
 
 	instanceConfigUpdateRequest := &model.InstanceConfigUpdateRequest{
-		Instance:      testInstance,
-		Location:      "http://file-server.com",
-		CorrelationID: correlationID,
+		Instance: testInstance,
+		Location: "http://file-server.com",
 	}
 
 	configurationStatusProgress := protos.CreateInProgressStatus()
@@ -172,7 +177,12 @@ func TestConfig_Process(t *testing.T) {
 }
 
 func TestConfig_Update(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.WithValue(
+		context.Background(),
+		logger.CorrelationIDContextKey,
+		slog.Any(logger.CorrelationIDKey, correlationID),
+	)
+
 	agentConfig := config.Config{}
 	instance := v1.Instance{
 		InstanceMeta: &v1.InstanceMeta{
@@ -183,9 +193,8 @@ func TestConfig_Update(t *testing.T) {
 
 	location := fmt.Sprintf("/instance/%s/files/", instanceID)
 	request := model.InstanceConfigUpdateRequest{
-		Instance:      &instance,
-		Location:      location,
-		CorrelationID: correlationID,
+		Instance: &instance,
+		Location: location,
 	}
 
 	inProgressStatus := protos.CreateInProgressStatus()

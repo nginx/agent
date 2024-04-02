@@ -215,9 +215,9 @@ func handleContextDone(ctx context.Context) {
 	ctxErr := ctx.Err()
 	switch ctxErr {
 	case context.DeadlineExceeded:
-		slog.Debug("Tailer canceled because deadline was exceeded", "error", ctxErr)
+		slog.DebugContext(ctx, "Tailer canceled because deadline was exceeded", "error", ctxErr)
 	case context.Canceled:
-		slog.Debug("Tailer forcibly canceled", "error", ctxErr)
+		slog.DebugContext(ctx, "Tailer forcibly canceled", "error", ctxErr)
 	}
-	slog.Debug("Tailer is done")
+	slog.DebugContext(ctx, "Tailer is done")
 }

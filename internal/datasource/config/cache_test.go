@@ -6,6 +6,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"path"
 	"testing"
@@ -18,6 +19,8 @@ import (
 )
 
 func TestUpdateCache(t *testing.T) {
+	ctx := context.Background()
+
 	_, instanceID := helpers.CreateTestIDs(t)
 	tempDir := t.TempDir()
 	instanceIDDir := path.Join(tempDir, instanceID.String())
@@ -40,7 +43,7 @@ func TestUpdateCache(t *testing.T) {
 	fileCache := NewFileCache(instanceID.String())
 	fileCache.SetCachePath(cacheFile.Name())
 
-	err := fileCache.UpdateFileCache(expected)
+	err := fileCache.UpdateFileCache(ctx, expected)
 	require.NoError(t, err)
 
 	helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
@@ -60,6 +63,7 @@ func TestSetCachePath(t *testing.T) {
 }
 
 func TestReadCache(t *testing.T) {
+	ctx := context.Background()
 	_, instanceID := helpers.CreateTestIDs(t)
 
 	tempDir := t.TempDir()
@@ -100,7 +104,7 @@ func TestReadCache(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			fileCache := NewFileCache(instanceID.String())
 			fileCache.SetCachePath(test.path)
-			cacheFile, readErr := fileCache.ReadFileCache()
+			cacheFile, readErr := fileCache.ReadFileCache(ctx)
 
 			if test.shouldHaveError {
 				require.Error(t, readErr)

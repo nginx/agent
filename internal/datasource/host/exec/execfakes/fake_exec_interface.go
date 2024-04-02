@@ -3,6 +3,7 @@ package execfakes
 
 import (
 	"bytes"
+	"context"
 	"sync"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
@@ -33,11 +34,12 @@ type FakeExecInterface struct {
 	killProcessReturnsOnCall map[int]struct {
 		result1 error
 	}
-	RunCmdStub        func(string, ...string) (*bytes.Buffer, error)
+	RunCmdStub        func(context.Context, string, ...string) (*bytes.Buffer, error)
 	runCmdMutex       sync.RWMutex
 	runCmdArgsForCall []struct {
-		arg1 string
-		arg2 []string
+		arg1 context.Context
+		arg2 string
+		arg3 []string
 	}
 	runCmdReturns struct {
 		result1 *bytes.Buffer
@@ -176,19 +178,20 @@ func (fake *FakeExecInterface) KillProcessReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeExecInterface) RunCmd(arg1 string, arg2 ...string) (*bytes.Buffer, error) {
+func (fake *FakeExecInterface) RunCmd(arg1 context.Context, arg2 string, arg3 ...string) (*bytes.Buffer, error) {
 	fake.runCmdMutex.Lock()
 	ret, specificReturn := fake.runCmdReturnsOnCall[len(fake.runCmdArgsForCall)]
 	fake.runCmdArgsForCall = append(fake.runCmdArgsForCall, struct {
-		arg1 string
-		arg2 []string
-	}{arg1, arg2})
+		arg1 context.Context
+		arg2 string
+		arg3 []string
+	}{arg1, arg2, arg3})
 	stub := fake.RunCmdStub
 	fakeReturns := fake.runCmdReturns
-	fake.recordInvocation("RunCmd", []interface{}{arg1, arg2})
+	fake.recordInvocation("RunCmd", []interface{}{arg1, arg2, arg3})
 	fake.runCmdMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2...)
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -202,17 +205,17 @@ func (fake *FakeExecInterface) RunCmdCallCount() int {
 	return len(fake.runCmdArgsForCall)
 }
 
-func (fake *FakeExecInterface) RunCmdCalls(stub func(string, ...string) (*bytes.Buffer, error)) {
+func (fake *FakeExecInterface) RunCmdCalls(stub func(context.Context, string, ...string) (*bytes.Buffer, error)) {
 	fake.runCmdMutex.Lock()
 	defer fake.runCmdMutex.Unlock()
 	fake.RunCmdStub = stub
 }
 
-func (fake *FakeExecInterface) RunCmdArgsForCall(i int) (string, []string) {
+func (fake *FakeExecInterface) RunCmdArgsForCall(i int) (context.Context, string, []string) {
 	fake.runCmdMutex.RLock()
 	defer fake.runCmdMutex.RUnlock()
 	argsForCall := fake.runCmdArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeExecInterface) RunCmdReturns(result1 *bytes.Buffer, result2 error) {

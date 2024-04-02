@@ -29,7 +29,7 @@ const (
 type (
 	ConfigWriterInterface interface {
 		Write(ctx context.Context, filesURL, tenantID, instanceID string) (skippedFiles CacheContent, err error)
-		Complete() (err error)
+		Complete(ctx context.Context) (err error)
 		SetConfigClient(configClient client.ConfigClientInterface)
 		Rollback(ctx context.Context, skippedFiles CacheContent, filesURL, tenantID, instanceID string) error
 	}
@@ -64,7 +64,7 @@ func (cw *ConfigWriter) SetConfigClient(configClient client.ConfigClientInterfac
 func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent, filesURL,
 	tenantID, instanceID string,
 ) error {
-	slog.Debug("Rolling back NGINX config changes due to error")
+	slog.DebugContext(ctx, "Rolling back NGINX config changes due to error")
 	if cw.fileCache.CacheContent() == nil {
 		return fmt.Errorf("error rolling back, no instance file cache found for instance %s", instanceID)
 	}
@@ -85,10 +85,10 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	tenantID, instanceID string,
 ) (skippedFiles CacheContent, err error) {
-	slog.Debug("Write nginx config", "files_url", filesURL)
+	slog.DebugContext(ctx, "Write nginx config", "files_url", filesURL)
 	currentFileCache, skippedFiles := make(CacheContent), make(CacheContent)
 
-	cacheContent, err := cw.fileCache.ReadFileCache()
+	cacheContent, err := cw.fileCache.ReadFileCache(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -100,13 +100,21 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 
 	for _, fileData := range filesMetaData.GetFiles() {
 		if cacheContent != nil && !doesFileRequireUpdate(cacheContent, fileData) {
-			slog.Debug("Skipping file as latest version is already on disk", "file_path", fileData.GetPath())
+			slog.DebugContext(
+				ctx,
+				"Skipping file as latest version is already on disk",
+				"file_path", fileData.GetPath(),
+			)
 			currentFileCache[fileData.GetPath()] = cacheContent[fileData.GetPath()]
 			skippedFiles[fileData.GetPath()] = fileData
 
 			continue
 		}
-		slog.Debug("Updating file, latest version not on disk", "file_path", fileData.GetPath())
+		slog.DebugContext(
+			ctx,
+			"Updating file, latest version not on disk",
+			"file_path", fileData.GetPath(),
+		)
 		if updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID); updateErr != nil {
 			return nil, updateErr
 		}
@@ -116,16 +124,16 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	cw.currentFileCache = currentFileCache
 
 	if cacheContent != nil {
-		err = cw.removeFiles(currentFileCache, cacheContent)
+		err = cw.removeFiles(ctx, currentFileCache, cacheContent)
 	}
 
 	return skippedFiles, err
 }
 
-func (cw *ConfigWriter) removeFiles(currentFileCache, fileCache CacheContent) error {
+func (cw *ConfigWriter) removeFiles(ctx context.Context, currentFileCache, fileCache CacheContent) error {
 	for _, file := range fileCache {
 		if _, ok := currentFileCache[file.GetPath()]; !ok {
-			slog.Debug("Removing file", "file_path", file.GetPath())
+			slog.DebugContext(ctx, "Removing file", "file_path", file.GetPath())
 			if err := os.Remove(file.GetPath()); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("error removing file: %s error: %w", file.GetPath(), err)
 			}
@@ -143,7 +151,7 @@ func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID,
 	}
 
 	if len(filesMetaData.GetFiles()) == 0 {
-		slog.Debug("No file metadata for instance", "instance_id", instanceID)
+		slog.DebugContext(ctx, "No file metadata for instance", "instance_id", instanceID)
 		return nil, fmt.Errorf("error getting files metadata, no metadata exists for instance: %s", instanceID)
 	}
 
@@ -153,7 +161,7 @@ func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID,
 func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File,
 	filesURL, tenantID, instanceID string,
 ) error {
-	if !cw.isFilePathValid(fileData.GetPath()) {
+	if !cw.isFilePathValid(ctx, fileData.GetPath()) {
 		return fmt.Errorf("invalid file path: %s", fileData.GetPath())
 	}
 	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID, instanceID)
@@ -161,7 +169,7 @@ func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File
 		return fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
 	}
 
-	fetchErr = writeFile(fileDownloadResponse.GetFileContent(), fileDownloadResponse.GetFilePath())
+	fetchErr = writeFile(ctx, fileDownloadResponse.GetFileContent(), fileDownloadResponse.GetFilePath())
 
 	if fetchErr != nil {
 		return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.GetFilePath(), fetchErr)
@@ -170,9 +178,9 @@ func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File
 	return nil
 }
 
-func (cw *ConfigWriter) Complete() error {
-	slog.Debug("Completing config apply")
-	err := cw.fileCache.UpdateFileCache(cw.currentFileCache)
+func (cw *ConfigWriter) Complete(ctx context.Context) error {
+	slog.DebugContext(ctx, "Completing config apply")
+	err := cw.fileCache.UpdateFileCache(ctx, cw.currentFileCache)
 	if err != nil {
 		return fmt.Errorf("error updating cache.json to %w", err)
 	}
@@ -180,11 +188,11 @@ func (cw *ConfigWriter) Complete() error {
 	return nil
 }
 
-func writeFile(fileContent []byte, filePath string) error {
-	slog.Debug("Writing to file", "file_path", filePath)
+func writeFile(ctx context.Context, fileContent []byte, filePath string) error {
+	slog.DebugContext(ctx, "Writing to file", "file_path", filePath)
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		slog.Debug("File does not exist, creating new file", "file_path", filePath)
+		slog.DebugContext(ctx, "File does not exist, creating new file", "file_path", filePath)
 		err = os.MkdirAll(path.Dir(filePath), filePermissions)
 		if err != nil {
 			return fmt.Errorf("error creating directory %s: %w", path.Dir(filePath), err)
@@ -195,13 +203,13 @@ func writeFile(fileContent []byte, filePath string) error {
 	if err != nil {
 		return fmt.Errorf("error writing to file %s: %w", filePath, err)
 	}
-	slog.Debug("Content written to file", "file_path", filePath)
+	slog.DebugContext(ctx, "Content written to file", "file_path", filePath)
 
 	return nil
 }
 
-func (cw *ConfigWriter) isFilePathValid(filePath string) (validPath bool) {
-	slog.Debug("Checking is file path is valid")
+func (cw *ConfigWriter) isFilePathValid(ctx context.Context, filePath string) (validPath bool) {
+	slog.DebugContext(ctx, "Checking is file path is valid")
 	if filePath == "" || strings.HasSuffix(filePath, "/") {
 		return false
 	}
@@ -211,7 +219,7 @@ func (cw *ConfigWriter) isFilePathValid(filePath string) (validPath bool) {
 		}
 	}
 
-	slog.Debug("file not in allowed directories:", "path", filePath)
+	slog.DebugContext(ctx, "File not in allowed directories", "path", filePath)
 
 	return false
 }

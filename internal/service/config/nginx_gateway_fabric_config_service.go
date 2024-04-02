@@ -19,21 +19,21 @@ func NewNginxGatewayFabric() *NginxGatewayFabric {
 	return &NginxGatewayFabric{}
 }
 
-func (*NginxGatewayFabric) ParseConfig() (any, error) {
+func (*NginxGatewayFabric) ParseConfig(_ context.Context) (any, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 func (*NginxGatewayFabric) SetConfigContext(_ any) {}
 
-func (*NginxGatewayFabric) Validate() error {
+func (*NginxGatewayFabric) Validate(_ context.Context) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Apply() error {
+func (*NginxGatewayFabric) Apply(_ context.Context) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Complete() error {
+func (*NginxGatewayFabric) Complete(_ context.Context) error {
 	return fmt.Errorf("not implemented")
 }
 

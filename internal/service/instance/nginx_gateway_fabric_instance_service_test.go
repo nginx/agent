@@ -6,6 +6,7 @@
 package instance
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/model"
@@ -13,6 +14,7 @@ import (
 )
 
 func TestNginxGatewayFabric_GetInstances(t *testing.T) {
-	result := NewNginxGatewayFabric().GetInstances([]*model.Process{})
+	ctx := context.Background()
+	result := NewNginxGatewayFabric().GetInstances(ctx, []*model.Process{})
 	assert.Empty(t, result)
 }

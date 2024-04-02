@@ -7,11 +7,13 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -38,15 +40,15 @@ func NewConfig(agentConfig *config.Config) *Config {
 	}
 }
 
-func (c *Config) Init(_ context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.Debug("Starting config plugin")
+func (c *Config) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+	slog.DebugContext(ctx, "Starting config plugin")
 	c.messagePipe = messagePipe
 
 	return nil
 }
 
-func (*Config) Close(_ context.Context) error {
-	slog.Debug("Closing config plugin")
+func (*Config) Close(ctx context.Context) error {
+	slog.DebugContext(ctx, "Closing config plugin")
 
 	return nil
 }
@@ -60,7 +62,7 @@ func (*Config) Info() *bus.Info {
 func (c *Config) Process(ctx context.Context, msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.InstanceConfigUpdateTopic:
-		c.processConfigurationStatus(msg)
+		c.processConfigurationStatus(ctx, msg)
 	case msg.Topic == bus.InstanceConfigUpdateRequestTopic:
 		c.processInstanceConfigUpdateRequest(ctx, msg)
 	case msg.Topic == bus.InstancesTopic:
@@ -78,12 +80,12 @@ func (*Config) Subscriptions() []string {
 	}
 }
 
-func (c *Config) processConfigurationStatus(msg *bus.Message) {
+func (c *Config) processConfigurationStatus(ctx context.Context, msg *bus.Message) {
 	if configurationStatus, ok := msg.Data.(*instances.ConfigurationStatus); !ok {
-		slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
+		slog.DebugContext(ctx, "Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
 	} else if configurationStatus.GetStatus() == instances.Status_SUCCESS {
 		c.parseInstanceConfiguration(
-			configurationStatus.GetCorrelationId(),
+			ctx,
 			c.GetInstance(configurationStatus.GetInstanceId()),
 		)
 	}
@@ -101,91 +103,91 @@ func (c *Config) GetInstance(instanceID string) *v1.Instance {
 
 func (c *Config) processInstanceConfigUpdateRequest(ctx context.Context, msg *bus.Message) {
 	if request, ok := msg.Data.(*model.InstanceConfigUpdateRequest); !ok {
-		slog.Debug("Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
+		slog.DebugContext(ctx, "Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
 	} else {
 		c.updateInstanceConfig(ctx, request)
 	}
 }
 
-func (c *Config) parseInstanceConfiguration(correlationID string, instance *v1.Instance) {
+func (c *Config) parseInstanceConfiguration(ctx context.Context, instance *v1.Instance) {
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	if c.configServices[instanceID] == nil {
-		c.configServices[instanceID] = service.NewConfigService(instance,
-			c.agentConfig)
+		c.configServices[instanceID] = service.NewConfigService(ctx, instance, c.agentConfig)
 	}
 
-	parsedConfig, err := c.configServices[instanceID].ParseInstanceConfiguration(correlationID)
+	parsedConfig, err := c.configServices[instanceID].ParseInstanceConfiguration(ctx)
 	if err != nil {
-		slog.Error(
+		slog.ErrorContext(
+			ctx,
 			"Unable to parse instance configuration",
-			"correlation_id", correlationID,
 			"instance_id", instanceID,
 			"error", err,
 		)
 	} else {
 		switch configContext := parsedConfig.(type) {
-		case model.NginxConfigContext:
+		case *model.NginxConfigContext:
 			c.configServices[instanceID].SetConfigContext(configContext)
 		default:
-			slog.Debug("Unknown config context", "config_context", configContext)
+			slog.DebugContext(ctx, "Unknown config context", "config_context_type", fmt.Sprintf("%T", configContext))
 		}
-		c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigContextTopic, Data: parsedConfig})
+		c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigContextTopic, Data: parsedConfig})
 	}
 }
 
 func (c *Config) updateInstanceConfig(ctx context.Context, request *model.InstanceConfigUpdateRequest) {
-	slog.Debug("Updating instance configuration")
+	slog.DebugContext(ctx, "Updating instance configuration")
+
+	correlationID := logger.GetCorrelationID(ctx)
+
 	instanceID := request.Instance.GetInstanceMeta().GetInstanceId()
 	if c.configServices[instanceID] == nil {
-		c.configServices[instanceID] = service.NewConfigService(request.Instance, c.agentConfig)
+		c.configServices[instanceID] = service.NewConfigService(ctx, request.Instance, c.agentConfig)
 	}
 
 	inProgressStatus := &instances.ConfigurationStatus{
 		InstanceId:    instanceID,
-		CorrelationId: request.CorrelationID,
+		CorrelationId: correlationID,
 		Status:        instances.Status_IN_PROGRESS,
 		Timestamp:     timestamppb.Now(),
 		Message:       "Instance configuration update in progress",
 	}
-	c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: inProgressStatus})
+	c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: inProgressStatus})
 
 	skippedFiles, status := c.configServices[instanceID].UpdateInstanceConfiguration(
 		ctx,
-		request.CorrelationID,
 		request.Location,
 	)
-	c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: status})
+	c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: status})
 
 	if status.GetStatus() == instances.Status_FAILED {
 		rollbackInProgress := &instances.ConfigurationStatus{
 			InstanceId:    instanceID,
-			CorrelationId: request.CorrelationID,
+			CorrelationId: correlationID,
 			Status:        instances.Status_ROLLBACK_IN_PROGRESS,
 			Timestamp:     timestamppb.Now(),
 			Message:       "Rollback in progress",
 		}
-		c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: rollbackInProgress})
+		c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: rollbackInProgress})
 
-		err := c.configServices[instanceID].Rollback(ctx, skippedFiles,
-			request.Location, tenantID, instanceID)
+		err := c.configServices[instanceID].Rollback(ctx, skippedFiles, request.Location, tenantID, instanceID)
 		if err != nil {
 			rollbackFailed := &instances.ConfigurationStatus{
 				InstanceId:    instanceID,
-				CorrelationId: request.CorrelationID,
+				CorrelationId: correlationID,
 				Status:        instances.Status_ROLLBACK_FAILED,
 				Timestamp:     timestamppb.Now(),
 				Message:       err.Error(),
 			}
-			c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: rollbackFailed})
+			c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: rollbackFailed})
 		} else {
 			rollbackComplete := &instances.ConfigurationStatus{
 				InstanceId:    instanceID,
-				CorrelationId: request.CorrelationID,
+				CorrelationId: correlationID,
 				Status:        instances.Status_ROLLBACK_SUCCESS,
 				Timestamp:     timestamppb.Now(),
 				Message:       "Rollback successful",
 			}
-			c.messagePipe.Process(&bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: rollbackComplete})
+			c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: rollbackComplete})
 		}
 	}
 }

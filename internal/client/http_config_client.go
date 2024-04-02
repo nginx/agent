@@ -52,7 +52,7 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(
 	ctx context.Context,
 	filesURL, tenantID, instanceID string,
 ) (*instances.Files, error) {
-	slog.Debug("Getting files metadata")
+	slog.DebugContext(ctx, "Getting files metadata")
 	files := instances.Files{}
 
 	location := fmt.Sprintf(fileLocation, filesURL, instanceID)
@@ -82,13 +82,13 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(
 		return nil, err
 	}
 
-	slog.Debug("Files metadata response", "location", location, "response", string(data))
+	slog.DebugContext(ctx, "Files metadata response", "location", location, "response", string(data))
 
 	// type is returned for the rest api but is not in the proto definitions so needs to be discarded
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 	err = pb.Unmarshal(data, &files)
 	if err != nil {
-		slog.Debug("Error unmarshalling GetFilesMetadata Response", "data", string(data))
+		slog.DebugContext(ctx, "Error unmarshalling GetFilesMetadata Response", "data", string(data))
 
 		return nil, fmt.Errorf("error unmarshalling GetFilesMetadata response: %w", err)
 	}
@@ -101,7 +101,7 @@ func (hcd *HTTPConfigClient) GetFile(
 	file *instances.File,
 	filesURL, tenantID, instanceID string,
 ) (*instances.FileDownloadResponse, error) {
-	slog.Debug("Getting file", "file_path", file.GetPath())
+	slog.DebugContext(ctx, "Getting file", "file_path", file.GetPath())
 	response := instances.FileDownloadResponse{}
 	params := url.Values{}
 
@@ -140,12 +140,12 @@ func (hcd *HTTPConfigClient) GetFile(
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 	err = pb.Unmarshal(data, &response)
 	if err != nil {
-		slog.Debug("Error unmarshalling GetFile Response", "data", string(data))
+		slog.DebugContext(ctx, "Error unmarshalling GetFile Response", "data", string(data))
 
 		return nil, fmt.Errorf("error unmarshalling GetFile response: %w", err)
 	}
 
-	slog.Info("response", "data", string(data))
+	slog.InfoContext(ctx, "Get file response", "data", string(data))
 
 	return &response, err
 }
