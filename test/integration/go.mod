@@ -213,6 +213,7 @@ require (
 replace (
 	github.com/containerd/containerd => github.com/containerd/containerd v1.7.11
 	github.com/cucumber/godog => github.com/laurazard/godog v0.0.0-20220922095256-4c4b17abdae7
+	github.com/docker/docker => github.com/docker/docker v24.0.9+incompatible
 	github.com/moby/buildkit => github.com/moby/buildkit v0.12.5
 	github.com/nginx/agent/sdk/v2 => ./../../sdk
 	github.com/nginx/agent/v2 => ./../../
