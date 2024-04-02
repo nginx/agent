@@ -110,7 +110,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 		t.Run(tt.name, func(ttt *testing.T) {
 			if tt.createCerts {
 				tmpDir := t.TempDir()
-				// not mtls scripts
+				// not mTLS scripts
 				key, cert := helpers.GenerateSelfSignedCert(t)
 				_, ca := helpers.GenerateSelfSignedCert(t)
 

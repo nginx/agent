@@ -58,7 +58,7 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 }
 
 func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.Debug("Starting grpc client plugin")
+	slog.Info("Starting grpc client plugin")
 	gc.messagePipe = messagePipe
 	var grpcClientCtx context.Context
 	var err error
@@ -69,6 +69,8 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	)
 
 	grpcClientCtx, gc.cancel = context.WithTimeout(ctx, gc.config.Client.Timeout)
+	slog.Info("Dialing grpc server", "server_addr", serverAddr)
+
 	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, agentGrpc.GetDialOptions(gc.config)...)
 	if err != nil {
 		return err

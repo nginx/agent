@@ -24,14 +24,14 @@ import (
 
 const defaultFilePermissions = 0o644
 
-type ManagementGrpcFileServer struct {
+type FileServer struct {
 	v1.UnimplementedFileServiceServer
 	configDirectory    string
 	overviews          map[string][]*v1.File // Key is the config version UID
 	versionDirectories map[string]string     // Key is the version directory name
 }
 
-func NewManagementGrpcFileServer(configDirectory string) (*ManagementGrpcFileServer, error) {
+func NewFileServer(configDirectory string) (*FileServer, error) {
 	overviews := make(map[string][]*v1.File)
 	versionDirectories := make(map[string]string)
 
@@ -52,20 +52,20 @@ func NewManagementGrpcFileServer(configDirectory string) (*ManagementGrpcFileSer
 		versionDirectories[configVersion] = versionDirectory
 	}
 
-	return &ManagementGrpcFileServer{
+	return &FileServer{
 		configDirectory:    configDirectory,
 		overviews:          overviews,
 		versionDirectories: versionDirectories,
 	}, nil
 }
 
-func (mgfs *ManagementGrpcFileServer) GetOverview(
+func (mgs *FileServer) GetOverview(
 	_ context.Context,
 	request *v1.GetOverviewRequest,
 ) (*v1.GetOverviewResponse, error) {
 	configVersion := request.GetConfigVersion()
 	version := configVersion.GetVersion()
-	files := mgfs.overviews[version]
+	files := mgs.overviews[version]
 
 	slog.Info("Getting overview", "config_version", configVersion)
 
@@ -83,7 +83,7 @@ func (mgfs *ManagementGrpcFileServer) GetOverview(
 }
 
 // nolint: unparam
-func (mgfs *ManagementGrpcFileServer) UpdateOverview(
+func (mgs *FileServer) UpdateOverview(
 	_ context.Context,
 	request *v1.UpdateOverviewRequest,
 ) (*v1.UpdateOverviewResponse, error) {
@@ -92,12 +92,12 @@ func (mgfs *ManagementGrpcFileServer) UpdateOverview(
 
 	slog.Info("Updating overview", "version", version)
 
-	mgfs.overviews[overview.GetConfigVersion().GetVersion()] = overview.GetFiles()
+	mgs.overviews[overview.GetConfigVersion().GetVersion()] = overview.GetFiles()
 
 	return &v1.UpdateOverviewResponse{}, nil
 }
 
-func (mgfs *ManagementGrpcFileServer) GetFile(
+func (mgs *FileServer) GetFile(
 	_ context.Context,
 	request *v1.GetFileRequest,
 ) (*v1.GetFileResponse, error) {
@@ -106,14 +106,14 @@ func (mgfs *ManagementGrpcFileServer) GetFile(
 
 	slog.Info("Getting file", "name", fileName, "hash", fileHash)
 
-	fileConfigVersions := mgfs.getConfigVersions(fileName, fileHash)
+	fileConfigVersions := mgs.getConfigVersions(fileName, fileHash)
 
 	if len(fileConfigVersions) == 0 {
 		slog.Error("File not found", "file_name", fileName)
 		return nil, status.Errorf(codes.NotFound, "File not found")
 	}
 
-	fullFilePath := filepath.Join(mgfs.configDirectory, mgfs.versionDirectories[fileConfigVersions[0]], fileName)
+	fullFilePath := filepath.Join(mgs.configDirectory, mgs.versionDirectories[fileConfigVersions[0]], fileName)
 
 	bytes, err := os.ReadFile(fullFilePath)
 	if err != nil {
@@ -128,7 +128,7 @@ func (mgfs *ManagementGrpcFileServer) GetFile(
 	}, nil
 }
 
-func (mgfs *ManagementGrpcFileServer) UpdateFile(
+func (mgs *FileServer) UpdateFile(
 	_ context.Context,
 	request *v1.UpdateFileRequest,
 ) (*v1.UpdateFileResponse, error) {
@@ -141,10 +141,10 @@ func (mgfs *ManagementGrpcFileServer) UpdateFile(
 
 	slog.Info("Updating file", "name", fileName, "hash", fileHash)
 
-	fileConfigVersions := mgfs.getConfigVersions(fileName, fileHash)
+	fileConfigVersions := mgs.getConfigVersions(fileName, fileHash)
 
 	for _, fileConfigVersion := range fileConfigVersions {
-		fullFilePath := filepath.Join(mgfs.configDirectory, mgfs.versionDirectories[fileConfigVersion], fileName)
+		fullFilePath := filepath.Join(mgs.configDirectory, mgs.versionDirectories[fileConfigVersion], fileName)
 
 		err := performFileAction(fileAction, fileContents, fullFilePath, filePermissions)
 		if err != nil {
@@ -157,10 +157,10 @@ func (mgfs *ManagementGrpcFileServer) UpdateFile(
 	}, nil
 }
 
-func (mgfs *ManagementGrpcFileServer) getConfigVersions(fileName, fileHash string) []string {
-	fileConfigVersions := []string{}
+func (mgs *FileServer) getConfigVersions(fileName, fileHash string) []string {
+	var fileConfigVersions []string
 
-	for configVersion, overview := range mgfs.overviews {
+	for configVersion, overview := range mgs.overviews {
 		for _, file := range overview {
 			if fileName == file.GetFileMeta().GetName() && fileHash == file.GetFileMeta().GetHash() {
 				fileConfigVersions = append(fileConfigVersions, configVersion)
@@ -224,7 +224,12 @@ func getFileHash(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			slog.Error("Error closing file", "error", err)
+		}
+	}(f)
 
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {

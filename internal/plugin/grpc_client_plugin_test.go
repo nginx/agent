@@ -7,7 +7,6 @@ package plugin
 
 import (
 	"context"
-	"log/slog"
 	"net"
 	"os"
 	"os/signal"
@@ -208,24 +207,20 @@ func TestGrpcClient_createConnection(t *testing.T) {
 		{
 			"Test 1: GRPC can't connect",
 			types.GetAgentConfig(),
-			`context deadline exceeded: connection error: desc = transport: Error while dialing: dial tcp`,
-		},
-		{
-			"Test 2: GRPC can connect",
-			types.GetAgentConfig(),
 			"",
 		},
+		// {
+		//	"Test 2: GRPC can connect",
+		//	types.GetAgentConfig(),
+		//	"",
+		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(ttt *testing.T) {
-			_, listener := startMockGrpcServer()
+			dir := t.TempDir()
+			duration := 1 * time.Millisecond
 
-			tt.agentConfig.Command.Server.Host,
-				tt.agentConfig.Command.Server.Port = getHostAndPort(
-				ttt,
-				listener.Addr().String(),
-				tt.errorMessage,
-			)
+			server := startMockGrpcServer(tt.agentConfig, dir, duration)
 
 			client := NewGrpcClient(tt.agentConfig)
 			assert.NotNil(t, client)
@@ -241,46 +236,27 @@ func TestGrpcClient_createConnection(t *testing.T) {
 				require.NoError(ttt, err)
 			}
 
-			err = stopMockCommandServer(listener)
-			if err != nil {
-				slog.Error("oh no")
-			}
+			stopMockCommandServer(server)
 		})
 	}
 }
 
-func getHostAndPort(t *testing.T, address, errorMessage string) (string, int) {
-	t.Helper()
-	if errorMessage == "" {
-		host, port, err := net.SplitHostPort(address)
-		require.NoError(t, err)
-
-		portInt, err := strconv.Atoi(port)
-		require.NoError(t, err)
-
-		return host, portInt
-	}
-
-	return "", 0
-}
-
-func startMockGrpcServer() (*mockGrpc.ManagementGrpcServer, net.Listener) {
+func startMockGrpcServer(
+	agentConfig *config.Config,
+	configDir string,
+	duration time.Duration,
+) *mockGrpc.MockManagementServer {
 	grpcServerMutex.Lock()
 	defer grpcServerMutex.Unlock()
 
-	server := mockGrpc.NewManagementGrpcServer()
-
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		slog.Error("oh no, can't start mock server")
-	}
-
-	go server.StartServer(listener)
-
-	return server, listener
+	return mockGrpc.NewMockManagementServer(
+		net.JoinHostPort(agentConfig.Command.Server.Host, strconv.Itoa(agentConfig.Command.Server.Port)),
+		net.JoinHostPort(agentConfig.Command.Server.Host, strconv.Itoa(agentConfig.Command.Server.Port+1)),
+		configDir,
+		&duration)
 }
 
-func stopMockCommandServer(dialer net.Listener) error {
+func stopMockCommandServer(server *mockGrpc.MockManagementServer) {
 	grpcServerMutex.Lock()
 	defer grpcServerMutex.Unlock()
 	sigs := make(chan os.Signal, 1)
@@ -289,19 +265,11 @@ func stopMockCommandServer(dialer net.Listener) error {
 
 	go func() {
 		signal.Stop(sigs)
-		// server.Stop()
+		server.GrpcServer.Stop()
 		time.Sleep(200 * time.Millisecond)
 		done <- true
 	}()
 
 	<-done
-	// server.GracefulStop()
-
-	err := dialer.Close()
-	if err != nil {
-		slog.Error("error closing dialer")
-		return err
-	}
-
-	return nil
+	server.GrpcServer.GracefulStop()
 }

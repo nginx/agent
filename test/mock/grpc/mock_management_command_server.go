@@ -20,7 +20,7 @@ import (
 	sloggin "github.com/samber/slog-gin"
 )
 
-type ManagementGrpcServer struct {
+type CommandServer struct {
 	v1.UnimplementedCommandServiceServer
 	server                       *gin.Engine
 	connectionRequest            *v1.CreateConnectionRequest
@@ -32,8 +32,8 @@ type ManagementGrpcServer struct {
 	updateDataPlaneStatusMutex   *sync.Mutex
 }
 
-func NewManagementGrpcServer() *ManagementGrpcServer {
-	mgs := &ManagementGrpcServer{
+func NewCommandServer() *CommandServer {
+	mgs := &CommandServer{
 		requestChan:                make(chan *v1.ManagementPlaneRequest),
 		connectionMutex:            &sync.Mutex{},
 		updateDataPlaneStatusMutex: &sync.Mutex{},
@@ -111,15 +111,15 @@ func NewManagementGrpcServer() *ManagementGrpcServer {
 	return mgs
 }
 
-func (mgs *ManagementGrpcServer) StartServer(listener net.Listener) {
-	slog.Info("Starting mock management plane gRPC server", "address", listener.Addr().String())
+func (mgs *CommandServer) StartServer(listener net.Listener) {
+	slog.Info("Starting mock management plane http server", "address", listener.Addr().String())
 	err := mgs.server.RunListener(listener)
 	if err != nil {
 		slog.Error("Startup of mock management plane server failed", "error", err)
 	}
 }
 
-func (mgs *ManagementGrpcServer) CreateConnection(
+func (mgs *CommandServer) CreateConnection(
 	_ context.Context,
 	request *v1.CreateConnectionRequest) (
 	*v1.CreateConnectionResponse,
@@ -144,7 +144,7 @@ func (mgs *ManagementGrpcServer) CreateConnection(
 	}, nil
 }
 
-func (mgs *ManagementGrpcServer) UpdateDataPlaneStatus(
+func (mgs *CommandServer) UpdateDataPlaneStatus(
 	_ context.Context,
 	request *v1.UpdateDataPlaneStatusRequest) (
 	*v1.UpdateDataPlaneStatusResponse,
@@ -163,7 +163,7 @@ func (mgs *ManagementGrpcServer) UpdateDataPlaneStatus(
 	return &v1.UpdateDataPlaneStatusResponse{}, nil
 }
 
-func (mgs *ManagementGrpcServer) UpdateDataPlaneHealth(
+func (mgs *CommandServer) UpdateDataPlaneHealth(
 	_ context.Context,
 	_ *v1.UpdateDataPlaneHealthRequest) (
 	*v1.UpdateDataPlaneHealthResponse,
@@ -172,7 +172,7 @@ func (mgs *ManagementGrpcServer) UpdateDataPlaneHealth(
 	return &v1.UpdateDataPlaneHealthResponse{}, nil
 }
 
-func (mgs *ManagementGrpcServer) Subscribe(in v1.CommandService_SubscribeServer) error {
+func (mgs *CommandServer) Subscribe(in v1.CommandService_SubscribeServer) error {
 	for {
 		request := <-mgs.requestChan
 

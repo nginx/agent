@@ -10,10 +10,11 @@ import (
 	"errors"
 
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	"google.golang.org/grpc/credentials/local"
+
 	"github.com/nginx/agent/v3/internal/config"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -24,6 +25,7 @@ var serviceConfig = `{
 		"serviceName": "nginx-agent"
 	}
 }`
+var defaultCredentials = local.NewCredentials()
 
 func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 	opts := []grpc.DialOption{
@@ -36,7 +38,7 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 
 	if agentConfig.Client != nil {
 		keepAlive := keepalive.ClientParameters{
-			Time:                agentConfig.Client.Time, // add to config in future
+			Time:                agentConfig.Client.Time,
 			Timeout:             agentConfig.Client.Timeout,
 			PermitWithoutStream: agentConfig.Client.PermitStream,
 		}
@@ -46,19 +48,23 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 		)
 	}
 
-	transportCreds, err := getTransportCredentials(agentConfig)
-	if err != nil {
+	transportCredentials, err := getTransportCredentials(agentConfig)
+	if err == nil {
 		opts = append(opts,
-			grpc.WithTransportCredentials(transportCreds),
+			grpc.WithTransportCredentials(transportCredentials),
 		)
-	}
 
-	if agentConfig.Command.Auth != nil {
+		if agentConfig.Command.Auth != nil {
+			opts = append(opts,
+				grpc.WithPerRPCCredentials(
+					&PerRPCCredentials{
+						Token: agentConfig.Command.Auth.Token,
+					}),
+			)
+		}
+	} else {
 		opts = append(opts,
-			grpc.WithPerRPCCredentials(
-				&PerRPCCredentials{
-					Token: agentConfig.Command.Auth.Token,
-				}),
+			grpc.WithTransportCredentials(defaultCredentials),
 		)
 	}
 
@@ -68,7 +74,7 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 // nolint: ireturn
 func getTransportCredentials(agentConfig *config.Config) (credentials.TransportCredentials, error) {
 	if agentConfig.Command.TLS == nil {
-		return insecure.NewCredentials(), nil
+		return defaultCredentials, nil
 	}
 
 	tlsConfig := &tls.Config{
