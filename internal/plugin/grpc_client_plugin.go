@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,16 +39,13 @@ type (
 		conn                 *grpc.ClientConn
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
-		instances            []*v1.Instance
-		instancesMutex       *sync.Mutex
 	}
 )
 
 func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 	if agentConfig != nil && agentConfig.Command.Server.Type == "grpc" {
 		return &GrpcClient{
-			config:         agentConfig,
-			instancesMutex: &sync.Mutex{},
+			config: agentConfig,
 		}
 	}
 
@@ -134,13 +130,10 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
-			gc.instancesMutex.Lock()
-			gc.instances = newInstances
 			err := gc.sendDataPlaneStatusUpdate(ctx, newInstances)
 			if err != nil {
 				slog.Error("Unable to send data plane status update", "error", err)
 			}
-			gc.instancesMutex.Unlock()
 		}
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
