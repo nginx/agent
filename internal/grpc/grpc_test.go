@@ -101,7 +101,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					Auth:   types.GetAgentConfig().Command.Auth,
 				},
 			},
-			7,
+			8,
 			false,
 		},
 	}
