@@ -105,7 +105,7 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-pm.processTicker.C:
-			slog.Debug("Checking for process updates")
+			slog.DebugContext(ctx, "Checking for process updates")
 
 			processes, err := pm.getProcessesFunc(ctx)
 			if err != nil {

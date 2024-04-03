@@ -132,7 +132,7 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
 			err := gc.sendDataPlaneStatusUpdate(ctx, newInstances)
 			if err != nil {
-				slog.Error("Unable to send data plane status update", "error", err)
+				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
 			}
 		}
 	default:
