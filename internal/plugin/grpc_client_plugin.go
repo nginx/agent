@@ -58,7 +58,7 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 }
 
 func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.Info("Starting grpc client plugin")
+	slog.InfoContext(ctx, "Starting grpc client plugin")
 	gc.messagePipe = messagePipe
 	var grpcClientCtx context.Context
 	var err error
@@ -129,8 +129,8 @@ func (gc *GrpcClient) createConnection() error {
 	return nil
 }
 
-func (gc *GrpcClient) Close(_ context.Context) error {
-	slog.Debug("Closing grpc client plugin")
+func (gc *GrpcClient) Close(ctx context.Context) error {
+	slog.InfoContext(ctx, "Closing grpc client plugin")
 
 	if gc.conn != nil {
 		err := gc.conn.Close()
