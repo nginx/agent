@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +18,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
@@ -33,17 +35,21 @@ const (
 
 type (
 	GrpcClient struct {
-		messagePipe bus.MessagePipeInterface
-		config      *config.Config
-		conn        *grpc.ClientConn
-		cancel      context.CancelFunc
+		messagePipe          bus.MessagePipeInterface
+		config               *config.Config
+		conn                 *grpc.ClientConn
+		commandServiceClient v1.CommandServiceClient
+		cancel               context.CancelFunc
+		instances            []*v1.Instance
+		instancesMutex       *sync.Mutex
 	}
 )
 
 func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 	if agentConfig != nil && agentConfig.Command.Server.Type == "grpc" {
 		return &GrpcClient{
-			config: agentConfig,
+			config:         agentConfig,
+			instancesMutex: &sync.Mutex{},
 		}
 	}
 
@@ -79,7 +85,7 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 		return fmt.Errorf("error generating correlation id: %w", err)
 	}
 
-	client := v1.NewCommandServiceClient(gc.conn)
+	gc.commandServiceClient = v1.NewCommandServiceClient(gc.conn)
 	req := &v1.CreateConnectionRequest{
 		MessageMeta: &v1.MessageMeta{
 			MessageId:     id.String(),
@@ -96,7 +102,7 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 		},
 	}
 
-	response, err := client.CreateConnection(grpcClientCtx, req)
+	response, err := gc.commandServiceClient.CreateConnection(grpcClientCtx, req)
 	if err != nil {
 		return fmt.Errorf("error creating connection: %w", err)
 	}
@@ -124,10 +130,27 @@ func (gc *GrpcClient) Info() *bus.Info {
 	}
 }
 
-func (gc *GrpcClient) Process(_ context.Context, _ *bus.Message) {}
+func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
+	switch {
+	case msg.Topic == bus.InstancesTopic:
+		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
+			gc.instancesMutex.Lock()
+			gc.instances = newInstances
+			err := gc.sendDataPlaneStatusUpdate(ctx, newInstances)
+			if err != nil {
+				slog.Error("Unable to send data plane status update", "error", err)
+			}
+			gc.instancesMutex.Unlock()
+		}
+	default:
+		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
+	}
+}
 
 func (gc *GrpcClient) Subscriptions() []string {
-	return []string{}
+	return []string{
+		bus.InstancesTopic,
+	}
 }
 
 func (gc *GrpcClient) getDialOptions() []grpc.DialOption {
@@ -145,4 +168,25 @@ func (gc *GrpcClient) getDialOptions() []grpc.DialOption {
 	}
 
 	return opts
+}
+
+func (gc *GrpcClient) sendDataPlaneStatusUpdate(
+	ctx context.Context,
+	instances []*v1.Instance,
+) error {
+	correlationID := logger.GetCorrelationID(ctx)
+
+	request := &v1.UpdateDataPlaneStatusRequest{
+		MessageMeta: &v1.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: correlationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		Instances: instances,
+	}
+
+	slog.DebugContext(ctx, "Sending data plane status update request", "request", request)
+	_, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+
+	return err
 }
