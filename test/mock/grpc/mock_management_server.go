@@ -7,10 +7,14 @@ package grpc
 
 import (
 	"context"
+	"crypto/tls"
+	"fmt"
 	"log/slog"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/config"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
@@ -26,11 +30,13 @@ import (
 
 const (
 	ServiceName           = "mock-management-plane"
-	maxConnectionIdle     = 15 * time.Second
-	maxConnectionAge      = 30 * time.Second
-	maxConnectionAgeGrace = 5 * time.Second
-	keepAliveTime         = 5 * time.Second
-	keepAliveTimeout      = 1 * time.Second
+	maxConnectionIdle     = 15 * time.Millisecond
+	maxConnectionAge      = 30 * time.Millisecond
+	maxConnectionAgeGrace = 5 * time.Millisecond
+	maxElapsedTime        = 5 * time.Millisecond
+	keepAliveTime         = 5 * time.Millisecond
+	keepAliveTimeout      = 1 * time.Millisecond
+	connectionType        = "tcp"
 )
 
 var keepAliveEnforcementPolicy = keepalive.EnforcementPolicy{
@@ -47,68 +53,127 @@ var keepAliveServerParameters = keepalive.ServerParameters{
 }
 
 type MockManagementServer struct {
-	CommandServer *CommandServer
-	FileServer    *FileServer
-	GrpcServer    *grpc.Server
+	CommandService *CommandService
+	FileService    *FileService
+	GrpcServer     *grpc.Server
 }
 
 func NewMockManagementServer(
-	apiAddress, grpcAddress, configDirectory string,
-	sleepDuration *time.Duration,
-) *MockManagementServer {
-	commandServer := NewCommandServer()
+	apiAddress string,
+	agentConfig *config.Config,
+) (*MockManagementServer, error) {
+	var err error
+	commandService := serveCommandService(apiAddress, agentConfig)
 
-	go func() {
-		listener, listenError := net.Listen("tcp", apiAddress)
-		if listenError != nil {
-			slog.Error("Failed to create listener", "error", listenError)
+	var fileServer *FileService
+	if agentConfig.File != nil && agentConfig.File.Location != "" {
+		fileServer, err = NewFileService(agentConfig.File.Location)
+		if err != nil {
+			slog.Error("Failed to create file server", "error", err)
+			return nil, err
 		}
-
-		commandServer.StartServer(listener)
-	}()
-
-	fileServer, err := NewFileServer(configDirectory)
-	if err != nil {
-		slog.Error("Failed to create file server", "error", err)
 	}
 
-	listener, err := net.Listen("tcp", grpcAddress)
+	grpcListener, err := net.Listen(connectionType,
+		fmt.Sprintf("%s:%d", agentConfig.Command.Server.Host, agentConfig.Command.Server.Port))
 	if err != nil {
 		slog.Error("Failed to listen", "error", err)
-	}
-	opts := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(grpcvalidator.UnaryServerInterceptor(), ensureValidToken),
-		grpc.StreamInterceptor(grpcvalidator.StreamServerInterceptor()),
-		grpc.KeepaliveEnforcementPolicy(keepAliveEnforcementPolicy),
-		grpc.KeepaliveParams(keepAliveServerParameters),
+		return nil, err
 	}
 
-	grpcServer := grpc.NewServer(opts...)
+	grpcServer := grpc.NewServer(getServerOptions(agentConfig)...)
 
 	healthcheck := health.NewServer()
 	healthgrpc.RegisterHealthServer(grpcServer, healthcheck)
 
-	v1.RegisterCommandServiceServer(grpcServer, commandServer)
+	v1.RegisterCommandServiceServer(grpcServer, commandService)
 	v1.RegisterFileServiceServer(grpcServer, fileServer)
-	go reportHealth(healthcheck, *sleepDuration)
+	go reportHealth(healthcheck, agentConfig)
 
 	go func() {
-		slog.Info("gRPC server running", "address", listener.Addr().String())
+		slog.Info("gRPC server running", "address", grpcListener.Addr().String())
 
-		err := grpcServer.Serve(listener)
+		err := grpcServer.Serve(grpcListener)
 		if err != nil {
 			slog.Error("Failed to serve server", "error", err)
 		}
 	}()
 
 	return &MockManagementServer{
-		CommandServer: commandServer,
-		FileServer:    fileServer,
-		GrpcServer:    grpcServer,
-	}
+		CommandService: commandService,
+		FileService:    fileServer,
+		GrpcServer:     grpcServer,
+	}, nil
 }
 
-func reportHealth(healthcheck *health.Server, sleep time.Duration) {
+func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {
+	opts := []grpc.ServerOption{
+		grpc.StreamInterceptor(grpcvalidator.StreamServerInterceptor()),
+		grpc.KeepaliveEnforcementPolicy(keepAliveEnforcementPolicy),
+		grpc.KeepaliveParams(keepAliveServerParameters),
+	}
+
+	if agentConfig.Command.Auth == nil || agentConfig.Command.Auth.Token == "" {
+		opts = append(opts, grpc.ChainUnaryInterceptor(grpcvalidator.UnaryServerInterceptor()))
+	} else {
+		opts = append(opts, grpc.ChainUnaryInterceptor(grpcvalidator.UnaryServerInterceptor(), ensureValidToken))
+	}
+
+	return opts
+}
+
+func serveCommandService(apiAddress string, agentConfig *config.Config) *CommandService {
+	commandServer := NewCommandService()
+
+	go func() {
+		cmdListener, listenerErr := createListener(apiAddress, agentConfig)
+		if listenerErr != nil {
+			return
+		}
+
+		if cmdListener != nil {
+			commandServer.StartServer(cmdListener)
+		}
+	}()
+
+	return commandServer
+}
+
+func createListener(apiAddress string, agentConfig *config.Config) (net.Listener, error) {
+	var listener net.Listener
+	var err error
+
+	if agentConfig.Command.TLS.Enable {
+		cert, keyPairErr := tls.LoadX509KeyPair(agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
+		if keyPairErr != nil {
+			slog.Error("Failed to load key and cert pair", "error", err)
+			return nil, keyPairErr
+		}
+
+		listener, err = tls.Listen(connectionType, apiAddress, &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12,
+		})
+	} else {
+		listener, err = net.Listen(connectionType, apiAddress)
+	}
+
+	if err != nil {
+		slog.Error("Failed to create listener", "error", err)
+		return nil, err
+	}
+
+	return listener, nil
+}
+
+func reportHealth(healthcheck *health.Server, conf *config.Config) {
+	var sleep time.Duration
+	if conf.Common == nil {
+		sleep = maxElapsedTime
+	} else {
+		sleep = conf.Common.MaxElapsedTime
+	}
+
 	next := healthgrpc.HealthCheckResponse_SERVING
 	for {
 		healthcheck.SetServingStatus(ServiceName, next)

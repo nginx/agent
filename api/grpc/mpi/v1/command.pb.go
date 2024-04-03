@@ -993,7 +993,7 @@ func (x *CommandServer) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CommandServer.ProtoReflect.Descriptor instead.
+// Deprecated: Use CommandService.ProtoReflect.Descriptor instead.
 func (*CommandServer) Descriptor() ([]byte, []int) {
 	return file_mpi_v1_command_proto_rawDescGZIP(), []int{15}
 }
@@ -1071,7 +1071,7 @@ func (x *FileServer) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FileServer.ProtoReflect.Descriptor instead.
+// Deprecated: Use FileService.ProtoReflect.Descriptor instead.
 func (*FileServer) Descriptor() ([]byte, []int) {
 	return file_mpi_v1_command_proto_rawDescGZIP(), []int{17}
 }
@@ -1257,9 +1257,9 @@ var file_mpi_v1_command_proto_goTypes = []interface{}{
 	(*AgentConfig)(nil),                   // 13: mpi.v1.AgentConfig
 	(*NGINXConfig)(nil),                   // 14: mpi.v1.NGINXConfig
 	(*NGINXPlusConfig)(nil),               // 15: mpi.v1.NGINXPlusConfig
-	(*CommandServer)(nil),                 // 16: mpi.v1.CommandServer
+	(*CommandServer)(nil),                 // 16: mpi.v1.CommandService
 	(*MetricsServer)(nil),                 // 17: mpi.v1.MetricsServer
-	(*FileServer)(nil),                    // 18: mpi.v1.FileServer
+	(*FileServer)(nil),                    // 18: mpi.v1.FileService
 	(*MessageMeta)(nil),                   // 19: mpi.v1.MessageMeta
 	(*CommandResponse)(nil),               // 20: mpi.v1.CommandResponse
 	(*structpb.Struct)(nil),               // 21: google.protobuf.Struct
@@ -1278,9 +1278,9 @@ var file_mpi_v1_command_proto_depIdxs = []int32{
 	13, // 10: mpi.v1.InstanceConfig.agent_config:type_name -> mpi.v1.AgentConfig
 	14, // 11: mpi.v1.InstanceConfig.nginx_config:type_name -> mpi.v1.NGINXConfig
 	15, // 12: mpi.v1.InstanceConfig.nginx_plus_config:type_name -> mpi.v1.NGINXPlusConfig
-	16, // 13: mpi.v1.AgentConfig.command:type_name -> mpi.v1.CommandServer
+	16, // 13: mpi.v1.AgentConfig.command:type_name -> mpi.v1.CommandService
 	17, // 14: mpi.v1.AgentConfig.metrics:type_name -> mpi.v1.MetricsServer
-	18, // 15: mpi.v1.AgentConfig.file:type_name -> mpi.v1.FileServer
+	18, // 15: mpi.v1.AgentConfig.file:type_name -> mpi.v1.FileService
 	21, // 16: mpi.v1.AgentConfig.labels:type_name -> google.protobuf.Struct
 	1,  // 17: mpi.v1.CommandService.CreateConnection:input_type -> mpi.v1.CreateConnectionRequest
 	3,  // 18: mpi.v1.CommandService.UpdateDataPlaneStatus:input_type -> mpi.v1.UpdateDataPlaneStatusRequest

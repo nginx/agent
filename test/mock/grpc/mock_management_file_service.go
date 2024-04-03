@@ -24,14 +24,14 @@ import (
 
 const defaultFilePermissions = 0o644
 
-type FileServer struct {
+type FileService struct {
 	v1.UnimplementedFileServiceServer
 	configDirectory    string
 	overviews          map[string][]*v1.File // Key is the config version UID
 	versionDirectories map[string]string     // Key is the version directory name
 }
 
-func NewFileServer(configDirectory string) (*FileServer, error) {
+func NewFileService(configDirectory string) (*FileService, error) {
 	overviews := make(map[string][]*v1.File)
 	versionDirectories := make(map[string]string)
 
@@ -52,14 +52,14 @@ func NewFileServer(configDirectory string) (*FileServer, error) {
 		versionDirectories[configVersion] = versionDirectory
 	}
 
-	return &FileServer{
+	return &FileService{
 		configDirectory:    configDirectory,
 		overviews:          overviews,
 		versionDirectories: versionDirectories,
 	}, nil
 }
 
-func (mgs *FileServer) GetOverview(
+func (mgs *FileService) GetOverview(
 	_ context.Context,
 	request *v1.GetOverviewRequest,
 ) (*v1.GetOverviewResponse, error) {
@@ -83,7 +83,7 @@ func (mgs *FileServer) GetOverview(
 }
 
 // nolint: unparam
-func (mgs *FileServer) UpdateOverview(
+func (mgs *FileService) UpdateOverview(
 	_ context.Context,
 	request *v1.UpdateOverviewRequest,
 ) (*v1.UpdateOverviewResponse, error) {
@@ -97,7 +97,7 @@ func (mgs *FileServer) UpdateOverview(
 	return &v1.UpdateOverviewResponse{}, nil
 }
 
-func (mgs *FileServer) GetFile(
+func (mgs *FileService) GetFile(
 	_ context.Context,
 	request *v1.GetFileRequest,
 ) (*v1.GetFileResponse, error) {
@@ -128,7 +128,7 @@ func (mgs *FileServer) GetFile(
 	}, nil
 }
 
-func (mgs *FileServer) UpdateFile(
+func (mgs *FileService) UpdateFile(
 	_ context.Context,
 	request *v1.UpdateFileRequest,
 ) (*v1.UpdateFileResponse, error) {
@@ -157,7 +157,7 @@ func (mgs *FileServer) UpdateFile(
 	}, nil
 }
 
-func (mgs *FileServer) getConfigVersions(fileName, fileHash string) []string {
+func (mgs *FileService) getConfigVersions(fileName, fileHash string) []string {
 	var fileConfigVersions []string
 
 	for configVersion, overview := range mgs.overviews {

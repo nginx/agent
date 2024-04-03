@@ -7,14 +7,15 @@ package plugin
 
 import (
 	"context"
-	"net"
+	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/test/helpers"
 
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 
@@ -189,13 +190,42 @@ func TestGrpcClient_Process(t *testing.T) {
 }
 
 func TestGrpcClient_Close(t *testing.T) {
-	agentConfig := types.GetAgentConfig()
+	ctx := context.Background()
+	agentConfig := &config.Config{
+		Client: types.GetAgentConfig().Client,
+		Command: &config.Command{
+			Server: &config.ServerConfig{
+				Host: "127.0.0.1",
+				Port: 9999,
+				Type: "grpc",
+			},
+		},
+		Common: types.GetAgentConfig().Common,
+	}
+
+	server, err := startMockGrpcServer(
+		fmt.Sprintf(
+			"%s:%d",
+			agentConfig.Command.Server.Host,
+			agentConfig.Command.Server.Port),
+		agentConfig)
+
+	require.NoError(t, err)
+
 	client := NewGrpcClient(agentConfig)
 	assert.NotNil(t, client)
 
-	err := client.Close(context.Background())
-
+	messagePipe := bus.NewMessagePipe(100)
+	err = messagePipe.Register(100, []bus.Plugin{client})
 	require.NoError(t, err)
+
+	err = client.Init(ctx, messagePipe)
+	require.NoError(t, err)
+
+	err = client.Close(context.Background())
+	require.NoError(t, err)
+
+	stopMockCommandServer(server)
 }
 
 func TestGrpcClient_createConnection(t *testing.T) {
@@ -203,37 +233,157 @@ func TestGrpcClient_createConnection(t *testing.T) {
 		name         string
 		agentConfig  *config.Config
 		errorMessage string
+		createCerts  bool
 	}{
 		{
-			"Test 1: GRPC can't connect",
+			"Test 1: GRPC can't connect, invalid token",
 			types.GetAgentConfig(),
-			"",
+			"cannot send secure credentials on an insecure connection",
+			false,
 		},
-		// {
-		//	"Test 2: GRPC can connect",
-		//	types.GetAgentConfig(),
-		//	"",
-		// },
+		{
+			"Test 2: GRPC can connect, insecure",
+			&config.Config{
+				Client: types.GetAgentConfig().Client,
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: types.GetAgentConfig().Command.Server.Port + 2,
+						Type: "grpc",
+					},
+					Auth: types.GetAgentConfig().Command.Auth,
+					TLS:  types.GetAgentConfig().Command.TLS,
+				},
+				Common: types.GetAgentConfig().Common,
+			},
+			"",
+			false,
+		},
+		{
+			"Test 3: GRPC can connect, no auth token",
+			&config.Config{
+				Client: types.GetAgentConfig().Client,
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: types.GetAgentConfig().Command.Server.Port + 4,
+						Type: "grpc",
+					},
+					TLS: types.GetAgentConfig().Command.TLS,
+				},
+				Common: types.GetAgentConfig().Common,
+			},
+			"",
+			false,
+		},
+		{
+			"Test 4: GRPC can connect, no tls, no auth token",
+			&config.Config{
+				Client: types.GetAgentConfig().Client,
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: types.GetAgentConfig().Command.Server.Port + 6,
+						Type: "grpc",
+					},
+				},
+				Common: types.GetAgentConfig().Common,
+			},
+			"",
+			false,
+		},
+		{
+			"Test 5: GRPC can connect with tls, no auth token",
+			&config.Config{
+				Client: types.GetAgentConfig().Client,
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: types.GetAgentConfig().Command.Server.Port + 8,
+						Type: "grpc",
+					},
+					TLS: types.GetAgentConfig().Command.TLS,
+				},
+				Common: types.GetAgentConfig().Common,
+			},
+			"",
+			true,
+		},
+		{
+			"Test 6: GRPC can't connect, context deadline exceeded",
+			&config.Config{
+				Client: types.GetAgentConfig().Client,
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: types.GetAgentConfig().Command.Server.Port + 10,
+						Type: "grpc",
+					},
+					Auth: types.GetAgentConfig().Command.Auth,
+					TLS:  types.GetAgentConfig().Command.TLS,
+				},
+				Common: &config.CommonSettings{
+					MaxElapsedTime: 1 * time.Microsecond,
+				},
+			},
+			"context deadline exceeded",
+			false,
+		},
+		{
+			"Test 7: GRPC can connect tls enabled",
+			&config.Config{
+				Client: types.GetAgentConfig().Client,
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: types.GetAgentConfig().Command.Server.Port + 12,
+						Type: "grpc",
+					},
+					Auth: types.GetAgentConfig().Command.Auth,
+					TLS:  types.GetAgentConfig().Command.TLS,
+				},
+				Common: &config.CommonSettings{
+					MaxElapsedTime: 1 * time.Microsecond,
+				},
+			},
+			"",
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(ttt *testing.T) {
-			dir := t.TempDir()
-			duration := 1 * time.Millisecond
+			address := fmt.Sprintf("%s:%d", tt.agentConfig.Command.Server.Host, tt.agentConfig.Command.Server.Port+1)
 
-			server := startMockGrpcServer(tt.agentConfig, dir, duration)
+			if tt.createCerts {
+				tt.agentConfig.Command.TLS.Enable = tt.createCerts
+				tmpDir := t.TempDir()
+				key, cert := helpers.GenerateSelfSignedCert(ttt)
+
+				keyContents := helpers.Cert{Name: "key.pem", Type: "RSA PRIVATE KEY", Contents: key}
+				certContents := helpers.Cert{Name: "cert.pem", Type: "CERTIFICATE", Contents: cert}
+
+				keyFile := helpers.WriteCertFiles(t, tmpDir, keyContents)
+				certFile := helpers.WriteCertFiles(t, tmpDir, certContents)
+
+				tt.agentConfig.Command.TLS.Key = keyFile
+				tt.agentConfig.Command.TLS.Cert = certFile
+			}
+
+			server, err := startMockGrpcServer(address, tt.agentConfig)
+			require.NoError(ttt, err)
 
 			client := NewGrpcClient(tt.agentConfig)
 			assert.NotNil(t, client)
 
 			messagePipe := bus.NewMessagePipe(100)
-			err := messagePipe.Register(100, []bus.Plugin{client})
+			err = messagePipe.Register(100, []bus.Plugin{client})
 			require.NoError(t, err)
 
 			err = client.Init(context.Background(), messagePipe)
-			if err != nil {
-				assert.Contains(ttt, tt.errorMessage, err.Error())
-			} else {
+			if err == nil {
 				require.NoError(ttt, err)
+			} else {
+				assert.Contains(ttt, err.Error(), tt.errorMessage)
 			}
 
 			stopMockCommandServer(server)
@@ -242,18 +392,13 @@ func TestGrpcClient_createConnection(t *testing.T) {
 }
 
 func startMockGrpcServer(
+	address string,
 	agentConfig *config.Config,
-	configDir string,
-	duration time.Duration,
-) *mockGrpc.MockManagementServer {
+) (*mockGrpc.MockManagementServer, error) {
 	grpcServerMutex.Lock()
 	defer grpcServerMutex.Unlock()
 
-	return mockGrpc.NewMockManagementServer(
-		net.JoinHostPort(agentConfig.Command.Server.Host, strconv.Itoa(agentConfig.Command.Server.Port)),
-		net.JoinHostPort(agentConfig.Command.Server.Host, strconv.Itoa(agentConfig.Command.Server.Port+1)),
-		configDir,
-		&duration)
+	return mockGrpc.NewMockManagementServer(address, agentConfig)
 }
 
 func stopMockCommandServer(server *mockGrpc.MockManagementServer) {
@@ -272,4 +417,5 @@ func stopMockCommandServer(server *mockGrpc.MockManagementServer) {
 
 	<-done
 	server.GrpcServer.GracefulStop()
+	time.Sleep(1 * time.Second)
 }

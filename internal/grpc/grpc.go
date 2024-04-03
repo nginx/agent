@@ -20,7 +20,6 @@ import (
 
 // these will come from the agent config
 var serviceConfig = `{
-	"loadBalancingPolicy": "round_robin",
 	"healthCheckConfig": {
 		"serviceName": "nginx-agent"
 	}
@@ -53,18 +52,17 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 		opts = append(opts,
 			grpc.WithTransportCredentials(transportCredentials),
 		)
-
-		if agentConfig.Command.Auth != nil {
-			opts = append(opts,
-				grpc.WithPerRPCCredentials(
-					&PerRPCCredentials{
-						Token: agentConfig.Command.Auth.Token,
-					}),
-			)
-		}
 	} else {
 		opts = append(opts,
 			grpc.WithTransportCredentials(defaultCredentials),
+		)
+	}
+	if agentConfig.Command.Auth != nil {
+		opts = append(opts,
+			grpc.WithPerRPCCredentials(
+				&PerRPCCredentials{
+					Token: agentConfig.Command.Auth.Token,
+				}),
 		)
 	}
 

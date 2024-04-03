@@ -6,6 +6,7 @@
 package types
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -62,7 +63,7 @@ func GetAgentConfig() *config.Config {
 				ExportRetryCount: exportRetryCount,
 				ExportInterval:   exportInterval,
 				GRPC: &config.GRPC{
-					Target:         "dummy-target",
+					Target:         fmt.Sprintf("%s:%d", "dummy-target", metricsPort),
 					ConnTimeout:    connTimeout,
 					MinConnTimeout: minConnTimeout,
 					BackoffDelay:   backoffDelay,
@@ -91,6 +92,7 @@ func GetAgentConfig() *config.Config {
 				SkipVerify: true,
 			},
 		},
+		File: &config.File{},
 		Common: &config.CommonSettings{
 			InitialInterval: commonInitialInterval,
 			MaxInterval:     commonMaxInterval,

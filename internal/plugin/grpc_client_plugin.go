@@ -124,8 +124,7 @@ func (gc *GrpcClient) createConnection() error {
 	}
 
 	slog.Debug("Connection created", "response", response)
-
-	gc.messagePipe.Process(&bus.Message{Topic: bus.GrpcConnectedTopic, Data: response})
+	gc.messagePipe.Process(reqCtx, &bus.Message{Topic: bus.GrpcConnectedTopic, Data: response})
 
 	return nil
 }

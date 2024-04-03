@@ -80,7 +80,7 @@ func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 			"../config/agent/nginx-config-with-grpc-client.conf",
 		)
 	} else {
-		server := mockGrpc.NewCommandServer()
+		server := mockGrpc.NewCommandService()
 
 		go func(tb testing.TB) {
 			tb.Helper()

@@ -101,10 +101,12 @@ type TLSConfig struct {
 	Ca         string `yaml:"-" mapstructure:"ca"`
 	SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
 	ServerName string `yaml:"-" mapstructure:"server_name"`
+	Enable     bool   `yaml:"-" mapstructure:"enable"`
 }
 
-// leaving this blank intentionally for now, this will have the location of the file server for configurations
-type File struct{}
+type File struct {
+	Location string `yaml:"-" mapstructure:"location"`
+}
 
 type CommonSettings struct {
 	InitialInterval time.Duration `yaml:"-"`

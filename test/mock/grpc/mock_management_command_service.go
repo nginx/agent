@@ -20,7 +20,7 @@ import (
 	sloggin "github.com/samber/slog-gin"
 )
 
-type CommandServer struct {
+type CommandService struct {
 	v1.UnimplementedCommandServiceServer
 	server                       *gin.Engine
 	connectionRequest            *v1.CreateConnectionRequest
@@ -32,8 +32,8 @@ type CommandServer struct {
 	updateDataPlaneStatusMutex   *sync.Mutex
 }
 
-func NewCommandServer() *CommandServer {
-	mgs := &CommandServer{
+func NewCommandService() *CommandService {
+	mgs := &CommandService{
 		requestChan:                make(chan *v1.ManagementPlaneRequest),
 		connectionMutex:            &sync.Mutex{},
 		updateDataPlaneStatusMutex: &sync.Mutex{},
@@ -111,7 +111,7 @@ func NewCommandServer() *CommandServer {
 	return mgs
 }
 
-func (mgs *CommandServer) StartServer(listener net.Listener) {
+func (mgs *CommandService) StartServer(listener net.Listener) {
 	slog.Info("Starting mock management plane http server", "address", listener.Addr().String())
 	err := mgs.server.RunListener(listener)
 	if err != nil {
@@ -119,7 +119,7 @@ func (mgs *CommandServer) StartServer(listener net.Listener) {
 	}
 }
 
-func (mgs *CommandServer) CreateConnection(
+func (mgs *CommandService) CreateConnection(
 	_ context.Context,
 	request *v1.CreateConnectionRequest) (
 	*v1.CreateConnectionResponse,
@@ -144,7 +144,7 @@ func (mgs *CommandServer) CreateConnection(
 	}, nil
 }
 
-func (mgs *CommandServer) UpdateDataPlaneStatus(
+func (mgs *CommandService) UpdateDataPlaneStatus(
 	_ context.Context,
 	request *v1.UpdateDataPlaneStatusRequest) (
 	*v1.UpdateDataPlaneStatusResponse,
@@ -163,7 +163,7 @@ func (mgs *CommandServer) UpdateDataPlaneStatus(
 	return &v1.UpdateDataPlaneStatusResponse{}, nil
 }
 
-func (mgs *CommandServer) UpdateDataPlaneHealth(
+func (mgs *CommandService) UpdateDataPlaneHealth(
 	_ context.Context,
 	_ *v1.UpdateDataPlaneHealthRequest) (
 	*v1.UpdateDataPlaneHealthResponse,
@@ -172,7 +172,7 @@ func (mgs *CommandServer) UpdateDataPlaneHealth(
 	return &v1.UpdateDataPlaneHealthResponse{}, nil
 }
 
-func (mgs *CommandServer) Subscribe(in v1.CommandService_SubscribeServer) error {
+func (mgs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error {
 	for {
 		request := <-mgs.requestChan
 
