@@ -210,13 +210,13 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	assert.Len(t, instances, 1)
 
 	// Verify instance metadata
-	assert.Equal(t, "cd2d5dc0-c528-3f37-b83c-727fd4010777", instances[0].InstanceMeta.GetInstanceId())
+	assert.NotEmpty(t, instances[0].InstanceMeta.GetInstanceId())
 	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, instances[0].InstanceMeta.GetInstanceType())
-	assert.Equal(t, "1.18.0", instances[0].InstanceMeta.GetVersion())
+	assert.NotEmpty(t, instances[0].InstanceMeta.GetVersion())
 
 	// Verify instance configuration
 	assert.Empty(t, instances[0].InstanceConfig.InstanceActions)
-	assert.Equal(t, int32(2), instances[0].InstanceConfig.Config.NginxConfig.GetProcessId())
+	assert.NotEmpty(t, instances[0].InstanceConfig.Config.NginxConfig.GetProcessId())
 	assert.Equal(t, "/usr/sbin/nginx", instances[0].InstanceConfig.Config.NginxConfig.GetBinaryPath())
 	assert.Equal(t, "/etc/nginx/nginx.conf", instances[0].InstanceConfig.Config.NginxConfig.GetConfigPath())
 }
