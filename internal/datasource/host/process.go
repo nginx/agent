@@ -7,12 +7,15 @@ package host
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
 func GetProcesses(ctx context.Context) ([]*model.Process, error) {
+	slog.DebugContext(ctx, "Getting host processes")
+
 	processes, err := process.Processes()
 	if err != nil {
 		return nil, err

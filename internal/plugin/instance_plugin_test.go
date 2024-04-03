@@ -51,7 +51,7 @@ func TestInstance_Process(t *testing.T) {
 	require.NoError(t, err)
 
 	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{{Pid: 123, Name: "nginx"}}}
-	messagePipe.Process(processesMessage)
+	messagePipe.Process(ctx, processesMessage)
 	messagePipe.Run(ctx)
 
 	assert.Len(t, messagePipe.GetProcessedMessages(), 2)
@@ -69,7 +69,7 @@ func TestInstance_Process_Error_Expected(t *testing.T) {
 	err := messagePipe.Register(2, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
 
-	messagePipe.Process(&bus.Message{Topic: bus.OsProcessesTopic, Data: nil})
+	messagePipe.Process(ctx, &bus.Message{Topic: bus.OsProcessesTopic, Data: nil})
 	messagePipe.Run(ctx)
 
 	assert.Len(t, messagePipe.GetProcessedMessages(), 1)
@@ -90,7 +90,7 @@ func TestInstance_Process_Empty_Instances(t *testing.T) {
 	require.NoError(t, err)
 
 	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{}}
-	messagePipe.Process(processesMessage)
+	messagePipe.Process(ctx, processesMessage)
 	messagePipe.Run(ctx)
 
 	assert.Len(t, messagePipe.GetProcessedMessages(), 1)

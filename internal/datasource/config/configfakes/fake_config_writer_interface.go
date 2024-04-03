@@ -11,9 +11,10 @@ import (
 )
 
 type FakeConfigWriterInterface struct {
-	CompleteStub        func() error
+	CompleteStub        func(context.Context) error
 	completeMutex       sync.RWMutex
 	completeArgsForCall []struct {
+		arg1 context.Context
 	}
 	completeReturns struct {
 		result1 error
@@ -61,17 +62,18 @@ type FakeConfigWriterInterface struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeConfigWriterInterface) Complete() error {
+func (fake *FakeConfigWriterInterface) Complete(arg1 context.Context) error {
 	fake.completeMutex.Lock()
 	ret, specificReturn := fake.completeReturnsOnCall[len(fake.completeArgsForCall)]
 	fake.completeArgsForCall = append(fake.completeArgsForCall, struct {
-	}{})
+		arg1 context.Context
+	}{arg1})
 	stub := fake.CompleteStub
 	fakeReturns := fake.completeReturns
-	fake.recordInvocation("Complete", []interface{}{})
+	fake.recordInvocation("Complete", []interface{}{arg1})
 	fake.completeMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -85,10 +87,17 @@ func (fake *FakeConfigWriterInterface) CompleteCallCount() int {
 	return len(fake.completeArgsForCall)
 }
 
-func (fake *FakeConfigWriterInterface) CompleteCalls(stub func() error) {
+func (fake *FakeConfigWriterInterface) CompleteCalls(stub func(context.Context) error) {
 	fake.completeMutex.Lock()
 	defer fake.completeMutex.Unlock()
 	fake.CompleteStub = stub
+}
+
+func (fake *FakeConfigWriterInterface) CompleteArgsForCall(i int) context.Context {
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
+	argsForCall := fake.completeArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeConfigWriterInterface) CompleteReturns(result1 error) {

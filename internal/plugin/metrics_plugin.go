@@ -260,7 +260,7 @@ func (m *Metrics) callProduce(ctx context.Context, producer model.MetricsProduce
 		busMsgs[i] = e.ToBusMessage()
 	}
 
-	m.pipe.Process(busMsgs...)
+	m.pipe.Process(ctx, busMsgs...)
 
 	return failedAttempts
 }

@@ -28,6 +28,8 @@ import (
 const instanceID = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
 
 func TestConfigService_SetConfigContext(t *testing.T) {
+	ctx := context.Background()
+
 	expectedConfigContext := &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 	}
@@ -39,7 +41,7 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 		},
 	}
 
-	configService := NewConfigService(instance, &config.Config{
+	configService := NewConfigService(ctx, instance, &config.Config{
 		Client: &config.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -50,7 +52,6 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 }
 
 func TestUpdateInstanceConfiguration(t *testing.T) {
-	correlationID := "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 	ctx := context.Background()
 	instance := &v1.Instance{
 		InstanceMeta: &v1.InstanceMeta{
@@ -122,9 +123,9 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 
 			filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
-			cs := NewConfigService(instance, agentConfig)
+			cs := NewConfigService(ctx, instance, agentConfig)
 			cs.configService = &mockService
-			_, result := cs.UpdateInstanceConfiguration(ctx, correlationID, filesURL)
+			_, result := cs.UpdateInstanceConfiguration(ctx, filesURL)
 
 			assert.Equal(t, test.expected.GetStatus(), result.GetStatus())
 			assert.Equal(t, test.expected.GetMessage(), result.GetMessage())
@@ -134,6 +135,8 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 }
 
 func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
+	ctx := context.Background()
+
 	expectedConfigContext := &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 	}
@@ -145,7 +148,7 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 		},
 	}
 
-	configService := NewConfigService(instance, &config.Config{
+	configService := NewConfigService(ctx, instance, &config.Config{
 		Client: &config.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -156,7 +159,7 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	configService.configService = fakeDataPlaneConfig
 
-	result, err := configService.ParseInstanceConfiguration("123")
+	result, err := configService.ParseInstanceConfiguration(context.Background())
 
 	require.NoError(t, err)
 	assert.Equal(t, expectedConfigContext, result)

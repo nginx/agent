@@ -6,6 +6,7 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -23,8 +24,8 @@ const (
 
 type (
 	FileCacheInterface interface {
-		UpdateFileCache(cache CacheContent) error
-		ReadFileCache() (CacheContent, error)
+		UpdateFileCache(ctx context.Context, cache CacheContent) error
+		ReadFileCache(ctx context.Context) (CacheContent, error)
 		SetCachePath(cachePath string)
 		CacheContent() CacheContent
 	}
@@ -46,8 +47,8 @@ func NewFileCache(instanceID string) *FileCache {
 	}
 }
 
-func (f *FileCache) ReadFileCache() (fileCache CacheContent, err error) {
-	slog.Debug("Reading file cache")
+func (f *FileCache) ReadFileCache(ctx context.Context) (fileCache CacheContent, err error) {
+	slog.DebugContext(ctx, "Reading file cache")
 	fileCache = make(CacheContent)
 
 	_, statErr := os.Stat(f.CachePath)
@@ -72,15 +73,15 @@ func (f *FileCache) ReadFileCache() (fileCache CacheContent, err error) {
 	return fileCache, err
 }
 
-func (f *FileCache) UpdateFileCache(cacheContent CacheContent) error {
-	slog.Debug("Updating file cache")
+func (f *FileCache) UpdateFileCache(ctx context.Context, cacheContent CacheContent) error {
+	slog.DebugContext(ctx, "Updating file cache")
 	cachePath := f.CachePath
 	cache, err := json.MarshalIndent(cacheContent, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error marshaling cache data from %s: %w", cachePath, err)
 	}
 
-	err = writeFile(cache, cachePath)
+	err = writeFile(ctx, cache, cachePath)
 	if err != nil {
 		return fmt.Errorf("error writing cache to %s: %w", cachePath, err)
 	}

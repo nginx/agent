@@ -90,14 +90,14 @@ func TestWriteConfig(t *testing.T) {
 
 			fileCache := NewFileCache(instanceID.String())
 			fileCache.SetCachePath(cachePath)
-			err := fileCache.UpdateFileCache(cacheContent)
+			err := fileCache.UpdateFileCache(ctx, cacheContent)
 			require.NoError(t, err)
 
 			if !test.cacheShouldBeEqual {
 				modified, protoErr := protos.CreateProtoTime("2024-01-09T13:20:26Z")
 				require.NoError(t, protoErr)
 				cacheContent[testConf.Name()].LastModified = modified
-				err = fileCache.UpdateFileCache(cacheContent)
+				err = fileCache.UpdateFileCache(ctx, cacheContent)
 				require.NoError(t, err)
 			}
 
@@ -106,7 +106,7 @@ func TestWriteConfig(t *testing.T) {
 
 			configWriter.SetConfigClient(fakeConfigClient)
 			testContent := []byte("location /test {\n    return 200 \"Before Write \\n\";\n}")
-			err = writeFile(testContent, testConfPath)
+			err = writeFile(ctx, testContent, testConfPath)
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
@@ -129,6 +129,8 @@ func TestWriteConfig(t *testing.T) {
 }
 
 func TestDeleteFile(t *testing.T) {
+	ctx := context.Background()
+
 	tempDir := t.TempDir()
 	_, instanceID := helpers.CreateTestIDs(t)
 
@@ -177,13 +179,13 @@ func TestDeleteFile(t *testing.T) {
 			cachePath := cacheFile.Name()
 			fileCache := NewFileCache(instanceID.String())
 			fileCache.SetCachePath(cachePath)
-			err := fileCache.UpdateFileCache(test.fileCache)
+			err := fileCache.UpdateFileCache(ctx, test.fileCache)
 			require.NoError(t, err)
 			slog.Info("", "", &agentconfig)
 			configWriter, err := NewConfigWriter(agentconfig, fileCache)
 			require.NoError(t, err)
 
-			err = configWriter.removeFiles(test.currentFileCache, test.fileCache)
+			err = configWriter.removeFiles(ctx, test.currentFileCache, test.fileCache)
 			require.NoError(t, err)
 			if test.fileDeleted {
 				assert.NoFileExists(t, testConf.Name())
@@ -217,7 +219,7 @@ func TestRollback(t *testing.T) {
 	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
-	err := writeFile(fileContent, testConf.Name())
+	err := writeFile(ctx, fileContent, testConf.Name())
 	require.NoError(t, err)
 	assert.FileExists(t, testConf.Name())
 
@@ -237,7 +239,7 @@ func TestRollback(t *testing.T) {
 
 	fileCache := NewFileCache(instanceID.String())
 	fileCache.SetCachePath(cachePath)
-	err = fileCache.UpdateFileCache(cacheContent)
+	err = fileCache.UpdateFileCache(ctx, cacheContent)
 	require.NoError(t, err)
 
 	configWriter, err := NewConfigWriter(agentConfig, fileCache)
@@ -272,6 +274,8 @@ func TestRollback(t *testing.T) {
 }
 
 func TestComplete(t *testing.T) {
+	ctx := context.Background()
+
 	tempDir := t.TempDir()
 	instanceID, err := uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	require.NoError(t, err)
@@ -312,20 +316,22 @@ func TestComplete(t *testing.T) {
 
 	helpers.CreateCacheFiles(t, cachePath, cacheData)
 
-	err = configWriter.Complete()
+	err = configWriter.Complete(ctx)
 	require.NoError(t, err)
 
-	data, err := configWriter.fileCache.ReadFileCache()
+	data, err := configWriter.fileCache.ReadFileCache(ctx)
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheData, data)
 }
 
 func TestWriteFile(t *testing.T) {
+	ctx := context.Background()
+
 	tempDir := t.TempDir()
 	filePath := fmt.Sprintf("%s/nginx.conf", tempDir)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 
-	err := writeFile(fileContent, filePath)
+	err := writeFile(ctx, fileContent, filePath)
 	require.NoError(t, err)
 	assert.FileExists(t, filePath)
 
@@ -338,6 +344,8 @@ func TestWriteFile(t *testing.T) {
 }
 
 func TestIsFilePathValid(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name           string
 		path           string
@@ -383,7 +391,7 @@ func TestIsFilePathValid(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			valid := configWriter.isFilePathValid(test.path)
+			valid := configWriter.isFilePathValid(ctx, test.path)
 			assert.Equal(t, test.expectedResult, valid)
 		})
 	}

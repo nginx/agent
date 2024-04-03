@@ -10,7 +10,6 @@ import (
 )
 
 type InstanceConfigUpdateRequest struct {
-	Instance      *v1.Instance
-	Location      string
-	CorrelationID string
+	Instance *v1.Instance
+	Location string
 }

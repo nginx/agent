@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	datasource "github.com/nginx/agent/v3/internal/datasource/config"
+	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/nginx/agent/v3/internal/config"
 
@@ -26,10 +27,10 @@ type ConfigServiceInterface interface {
 	SetConfigContext(instanceConfigContext any)
 	UpdateInstanceConfiguration(
 		ctx context.Context,
-		correlationID, location string,
+		location string,
 	) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus)
 	ParseInstanceConfiguration(
-		correlationID string,
+		ctx context.Context,
 	) (instanceConfigContext any, err error)
 	Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL, tenantID, instanceID string) error
 }
@@ -40,12 +41,12 @@ type ConfigService struct {
 	instance      *v1.Instance
 }
 
-func NewConfigService(instance *v1.Instance, agentConfig *config.Config) *ConfigService {
+func NewConfigService(ctx context.Context, instance *v1.Instance, agentConfig *config.Config) *ConfigService {
 	cs := &ConfigService{}
 
 	switch instance.GetInstanceMeta().GetInstanceType() {
 	case v1.InstanceMeta_INSTANCE_TYPE_NGINX, v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
-		cs.configService = service.NewNginx(instance, agentConfig)
+		cs.configService = service.NewNginx(ctx, instance, agentConfig)
 	case v1.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
 		v1.InstanceMeta_INSTANCE_TYPE_AGENT,
 		v1.InstanceMeta_INSTANCE_TYPE_UNIT:
@@ -66,18 +67,18 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 func (cs *ConfigService) Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL,
 	tenantID, instanceID string,
 ) error {
-	err := cs.configService.Rollback(ctx, skippedFiles, filesURL, tenantID, instanceID)
-	return err
+	return cs.configService.Rollback(ctx, skippedFiles, filesURL, tenantID, instanceID)
 }
 
-func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correlationID, location string,
+func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, location string,
 ) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus) {
 	// remove when tenantID is being set
 	tenantID := "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
+	correlationID := logger.GetCorrelationID(ctx)
 
 	skippedFiles, err := cs.configService.Write(ctx, location, tenantID)
 	if err != nil {
-		slog.Error("Error writing config", "err", err)
+		slog.ErrorContext(ctx, "Error writing config", "error", err)
 		return skippedFiles, &instances.ConfigurationStatus{
 			InstanceId:    cs.instance.GetInstanceMeta().GetInstanceId(),
 			CorrelationId: correlationID,
@@ -87,9 +88,9 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 		}
 	}
 
-	err = cs.configService.Validate()
+	err = cs.configService.Validate(ctx)
 	if err != nil {
-		slog.Error("Error validating config", "err", err)
+		slog.ErrorContext(ctx, "Error validating config", "error", err)
 		return skippedFiles, &instances.ConfigurationStatus{
 			InstanceId:    cs.instance.GetInstanceMeta().GetInstanceId(),
 			CorrelationId: correlationID,
@@ -99,9 +100,9 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 		}
 	}
 
-	err = cs.configService.Apply()
+	err = cs.configService.Apply(ctx)
 	if err != nil {
-		slog.Error("Error applying config and reloading nginx", "err", err)
+		slog.ErrorContext(ctx, "Error applying config and reloading nginx", "error", err)
 		return skippedFiles, &instances.ConfigurationStatus{
 			InstanceId:    cs.instance.GetInstanceMeta().GetInstanceId(),
 			CorrelationId: correlationID,
@@ -111,10 +112,10 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 		}
 	}
 
-	err = cs.configService.Complete()
+	err = cs.configService.Complete(ctx)
 	if err != nil {
-		slog.Error("error updating instance file cache during config apply complete", "instance_id",
-			cs.instance.GetInstanceMeta().GetInstanceId(), "err", err)
+		slog.ErrorContext(ctx, "Error updating instance file cache during config apply complete", "instance_id",
+			cs.instance.GetInstanceMeta().GetInstanceId(), "error", err)
 	}
 
 	return skippedFiles, &instances.ConfigurationStatus{
@@ -127,7 +128,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, correl
 }
 
 func (cs *ConfigService) ParseInstanceConfiguration(
-	_ string,
+	ctx context.Context,
 ) (instanceConfigContext any, err error) {
-	return cs.configService.ParseConfig()
+	return cs.configService.ParseConfig(ctx)
 }

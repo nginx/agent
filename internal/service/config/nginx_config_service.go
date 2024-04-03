@@ -57,20 +57,21 @@ type Nginx struct {
 	agentConfig   *config.Config
 }
 
-func NewNginx(instance *v1.Instance, agentConfig *config.Config) *Nginx {
+func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Config) *Nginx {
 	fileCache := writer.NewFileCache(instance.GetInstanceMeta().GetInstanceId())
-	cache, err := fileCache.ReadFileCache()
+	cache, err := fileCache.ReadFileCache(ctx)
 	// Will in future work check cache and if its nil upload file
 	if err != nil {
-		err = fileCache.UpdateFileCache(cache)
+		err = fileCache.UpdateFileCache(ctx, cache)
 		if err != nil {
-			slog.Debug("error updating file cache %w", err)
+			slog.DebugContext(ctx, "Error updating file cache", "error", err)
 		}
 	}
 
 	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache)
 	if err != nil {
-		slog.Error(
+		slog.ErrorContext(
+			ctx,
 			"Failed to create new config writer",
 			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
 			"error", err,
@@ -93,8 +94,8 @@ func (n *Nginx) Write(ctx context.Context, filesURL, tenantID string) (skippedFi
 	return n.configWriter.Write(ctx, filesURL, tenantID, n.instance.GetInstanceMeta().GetInstanceId())
 }
 
-func (n *Nginx) Complete() error {
-	return n.configWriter.Complete()
+func (n *Nginx) Complete(ctx context.Context) error {
+	return n.configWriter.Complete(ctx)
 }
 
 func (n *Nginx) Rollback(ctx context.Context, skippedFiles writer.CacheContent,
@@ -108,7 +109,7 @@ func (n *Nginx) SetConfigWriter(configWriter writer.ConfigWriterInterface) {
 	n.configWriter = configWriter
 }
 
-func (n *Nginx) ParseConfig() (any, error) {
+func (n *Nginx) ParseConfig(_ context.Context) (any, error) {
 	payload, err := crossplane.Parse(n.instance.GetInstanceConfig().GetNginxConfig().GetConfigPath(),
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   []string{},
@@ -169,11 +170,11 @@ func getLogs(payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog
 	return accessLogs, errorLogs, nil
 }
 
-func (n *Nginx) Validate() error {
-	slog.Debug("Validating NGINX config")
+func (n *Nginx) Validate(ctx context.Context) error {
+	slog.DebugContext(ctx, "Validating NGINX config")
 	exePath := n.instance.GetInstanceConfig().GetNginxConfig().GetBinaryPath()
 
-	out, err := n.executor.RunCmd(exePath, "-t")
+	out, err := n.executor.RunCmd(ctx, exePath, "-t")
 	if err != nil {
 		return fmt.Errorf("NGINX config test failed %w: %s", err, out)
 	}
@@ -183,13 +184,13 @@ func (n *Nginx) Validate() error {
 		return err
 	}
 
-	slog.Info("NGINX config tested", "output", out)
+	slog.InfoContext(ctx, "NGINX config tested", "output", out)
 
 	return nil
 }
 
-func (n *Nginx) Apply() error {
-	slog.Debug("Applying NGINX config")
+func (n *Nginx) Apply(ctx context.Context) error {
+	slog.DebugContext(ctx, "Applying NGINX config")
 	var errorsFound error
 
 	errorLogs := n.configContext.ErrorLogs
@@ -197,7 +198,7 @@ func (n *Nginx) Apply() error {
 	logErrorChannel := make(chan error, len(errorLogs))
 	defer close(logErrorChannel)
 
-	go n.monitorLogs(errorLogs, logErrorChannel)
+	go n.monitorLogs(ctx, errorLogs, logErrorChannel)
 
 	processID := n.instance.GetInstanceConfig().GetNginxConfig().GetProcessId()
 	err := n.executor.KillProcess(processID)
@@ -205,19 +206,19 @@ func (n *Nginx) Apply() error {
 		return fmt.Errorf("failed to reload NGINX, %w", err)
 	}
 
-	slog.Info("NGINX reloaded", "process_id", processID)
+	slog.InfoContext(ctx, "NGINX reloaded", "process_id", processID)
 
 	numberOfExpectedMessages := len(errorLogs)
 
 	for i := 0; i < numberOfExpectedMessages; i++ {
 		err := <-logErrorChannel
-		slog.Debug("Message received in logErrorChannel", "error", err)
+		slog.DebugContext(ctx, "Message received in logErrorChannel", "error", err)
 		if err != nil {
 			errorsFound = errors.Join(errorsFound, err)
 		}
 	}
 
-	slog.Info("Finished monitoring post reload")
+	slog.InfoContext(ctx, "Finished monitoring post reload")
 
 	if errorsFound != nil {
 		return errorsFound
@@ -226,34 +227,34 @@ func (n *Nginx) Apply() error {
 	return nil
 }
 
-func (n *Nginx) monitorLogs(errorLogs []*model.ErrorLog, errorChannel chan error) {
+func (n *Nginx) monitorLogs(ctx context.Context, errorLogs []*model.ErrorLog, errorChannel chan error) {
 	if len(errorLogs) == 0 {
-		slog.Info("No NGINX error logs found to monitor")
+		slog.InfoContext(ctx, "No NGINX error logs found to monitor")
 		return
 	}
 
 	for _, errorLog := range errorLogs {
-		go n.tailLog(errorLog.Name, errorChannel)
+		go n.tailLog(ctx, errorLog.Name, errorChannel)
 	}
 }
 
-func (n *Nginx) tailLog(logFile string, errorChannel chan error) {
+func (n *Nginx) tailLog(ctx context.Context, logFile string, errorChannel chan error) {
 	t, err := nginx.NewTailer(logFile)
 	if err != nil {
-		slog.Error("Unable to tail error log after NGINX reload", "log_file", logFile, "error", err)
+		slog.ErrorContext(ctx, "Unable to tail error log after NGINX reload", "log_file", logFile, "error", err)
 		// this is not an error in the logs, ignoring tailing
 		errorChannel <- nil
 
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), n.agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, n.agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	defer cancel()
 
-	slog.Debug("Monitoring NGINX error log file for any errors", "file", logFile)
+	slog.DebugContext(ctxWithTimeout, "Monitoring NGINX error log file for any errors", "file", logFile)
 
 	data := make(chan string, logTailerChannelSize)
-	go t.Tail(ctx, data)
+	go t.Tail(ctxWithTimeout, data)
 
 	for {
 		select {
@@ -262,7 +263,7 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan error) {
 				errorChannel <- fmt.Errorf(d)
 				return
 			}
-		case <-ctx.Done():
+		case <-ctxWithTimeout.Done():
 			errorChannel <- nil
 			return
 		}

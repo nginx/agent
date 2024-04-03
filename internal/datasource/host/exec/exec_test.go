@@ -6,6 +6,7 @@
 package exec
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,9 +14,10 @@ import (
 )
 
 func TestRunCmd(t *testing.T) {
+	ctx := context.Background()
 	ex := Exec{}
 
-	output, err := ex.RunCmd("/bin/ls")
+	output, err := ex.RunCmd(ctx, "/bin/ls")
 	require.NoError(t, err)
 
 	require.NotNil(t, output)

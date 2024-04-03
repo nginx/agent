@@ -8,6 +8,7 @@ package instance
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"log/slog"
 	"path"
@@ -54,7 +55,7 @@ func NewNginx(parameters NginxParameters) *Nginx {
 	}
 }
 
-func (n *Nginx) GetInstances(processes []*model.Process) []*v1.Instance {
+func (n *Nginx) GetInstances(ctx context.Context, processes []*model.Process) []*v1.Instance {
 	var processList []*v1.Instance
 
 	nginxProcesses := n.getNginxProcesses(processes)
@@ -62,9 +63,9 @@ func (n *Nginx) GetInstances(processes []*model.Process) []*v1.Instance {
 	for _, nginxProcess := range nginxProcesses {
 		_, ok := nginxProcesses[nginxProcess.Ppid]
 		if !ok {
-			nginxInfo, err := n.getInfo(nginxProcess)
+			nginxInfo, err := n.getInfo(ctx, nginxProcess)
 			if err != nil {
-				slog.Debug("Unable to get NGINX info", "pid", nginxProcess.Pid, "error", err)
+				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.Pid, "error", err)
 
 				continue
 			}
@@ -88,11 +89,11 @@ func (*Nginx) getNginxProcesses(processes []*model.Process) map[int32]*model.Pro
 	return nginxProcesses
 }
 
-func (n *Nginx) getInfo(nginxProcess *model.Process) (*Info, error) {
+func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info, error) {
 	exePath := nginxProcess.Exe
 
 	if exePath == "" {
-		exePath = process.New(n.executer).GetExe()
+		exePath = process.New(n.executer).GetExe(ctx)
 		if exePath == "" {
 			return nil, fmt.Errorf("unable to find NGINX exe for process %d", nginxProcess.Pid)
 		}
@@ -100,12 +101,12 @@ func (n *Nginx) getInfo(nginxProcess *model.Process) (*Info, error) {
 
 	var nginxInfo *Info
 
-	outputBuffer, err := n.executer.RunCmd(exePath, "-V")
+	outputBuffer, err := n.executer.RunCmd(ctx, exePath, "-V")
 	if err != nil {
 		return nil, err
 	}
 
-	nginxInfo = parseNginxVersionCommandOutput(outputBuffer)
+	nginxInfo = parseNginxVersionCommandOutput(ctx, outputBuffer)
 
 	nginxInfo.ExePath = exePath
 	nginxInfo.ProcessID = nginxProcess.Pid
@@ -154,7 +155,7 @@ func isNginxProcess(name, cmd string) bool {
 	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
 }
 
-func parseNginxVersionCommandOutput(output *bytes.Buffer) *Info {
+func parseNginxVersionCommandOutput(ctx context.Context, output *bytes.Buffer) *Info {
 	nginxInfo := &Info{}
 
 	scanner := bufio.NewScanner(output)
@@ -168,8 +169,8 @@ func parseNginxVersionCommandOutput(output *bytes.Buffer) *Info {
 		}
 	}
 
-	nginxInfo.Prefix = getNginxPrefix(nginxInfo)
-	nginxInfo.ConfPath = getNginxConfPath(nginxInfo)
+	nginxInfo.Prefix = getNginxPrefix(ctx, nginxInfo)
+	nginxInfo.ConfPath = getNginxConfPath(ctx, nginxInfo)
 
 	return nginxInfo
 }
@@ -216,14 +217,14 @@ func parseConfigureArguments(line string) map[string]interface{} {
 	return result
 }
 
-func getNginxPrefix(nginxInfo *Info) string {
+func getNginxPrefix(ctx context.Context, nginxInfo *Info) string {
 	var prefix string
 
 	if nginxInfo.ConfigureArgs["prefix"] != nil {
 		var ok bool
 		prefix, ok = nginxInfo.ConfigureArgs["prefix"].(string)
 		if !ok {
-			slog.Warn("Failed to cast nginxInfo prefix to string")
+			slog.WarnContext(ctx, "Failed to cast nginxInfo prefix to string")
 		}
 	} else {
 		prefix = "/usr/local/nginx"
@@ -232,14 +233,14 @@ func getNginxPrefix(nginxInfo *Info) string {
 	return prefix
 }
 
-func getNginxConfPath(nginxInfo *Info) string {
+func getNginxConfPath(ctx context.Context, nginxInfo *Info) string {
 	var confPath string
 
 	if nginxInfo.ConfigureArgs["conf-path"] != nil {
 		var ok bool
 		confPath, ok = nginxInfo.ConfigureArgs["conf-path"].(string)
 		if !ok {
-			slog.Warn("failed to cast nginxInfo conf-path to string")
+			slog.WarnContext(ctx, "failed to cast nginxInfo conf-path to string")
 		}
 	} else {
 		confPath = path.Join(nginxInfo.Prefix, "/conf/nginx.conf")

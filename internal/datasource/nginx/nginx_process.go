@@ -6,6 +6,7 @@
 package nginx
 
 import (
+	"context"
 	"strings"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
@@ -19,10 +20,10 @@ func New(executer exec.ExecInterface) *Process {
 	return &Process{executer: executer}
 }
 
-func (np *Process) GetExe() string {
+func (np *Process) GetExe(ctx context.Context) string {
 	exePath := ""
 
-	out, commandErr := np.executer.RunCmd("sh", "-c", "command -v nginx")
+	out, commandErr := np.executer.RunCmd(ctx, "sh", "-c", "command -v nginx")
 	if commandErr == nil {
 		exePath = strings.TrimSuffix(out.String(), "\n")
 	}

@@ -146,7 +146,7 @@ func (ms *ManagementServer) getFiles() ([]File, error) {
 		}
 		if !info.IsDir() {
 			files = append(files, File{
-				Path:         "/" + strings.Split(path, ms.configDirectory)[1],
+				Path:         strings.Split(path, ms.configDirectory)[1],
 				Version:      "1",
 				LastModified: time.Now(),
 			})

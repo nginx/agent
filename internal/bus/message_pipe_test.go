@@ -68,7 +68,7 @@ func TestMessagePipe(t *testing.T) {
 		pipelineDone <- true
 	}()
 
-	messagePipe.Process(messages...)
+	messagePipe.Process(ctx, messages...)
 	time.Sleep(10 * time.Millisecond) // for the above call being asynchronous
 
 	cancel()
