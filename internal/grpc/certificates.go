@@ -23,7 +23,7 @@ func appendRootCAs(tlsConfig *tls.Config, caFile string) error {
 
 	ca, err := os.ReadFile(caFile)
 	if err != nil {
-		return fmt.Errorf("could not read CA file (%s): %w", caFile, err)
+		return fmt.Errorf("read CA file (%s): %w", caFile, err)
 	}
 
 	// If CAs have already been set, append to existing
@@ -33,7 +33,7 @@ func appendRootCAs(tlsConfig *tls.Config, caFile string) error {
 	}
 
 	if !caPool.AppendCertsFromPEM(ca) {
-		return fmt.Errorf("could not parse CA cert (%s)", caFile)
+		return fmt.Errorf("parse CA cert (%s)", caFile)
 	}
 
 	tlsConfig.RootCAs = caPool
@@ -55,7 +55,7 @@ func appendCertKeyPair(tlsConfig *tls.Config, certFile, keyFile string) error {
 
 	certificate, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return fmt.Errorf("could not load X509 keypair: %w", err)
+		return fmt.Errorf("load X509 keypair: %w", err)
 	}
 
 	tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)

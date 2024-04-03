@@ -32,16 +32,16 @@ func WaitUntil(
 	backoffSettings *Settings,
 	operation backoff.Operation,
 ) error {
-	exponentialBackoff := backoff.NewExponentialBackOff()
-	exponentialBackoff.InitialInterval = backoffSettings.InitialInterval
-	exponentialBackoff.MaxInterval = backoffSettings.MaxInterval
-	exponentialBackoff.MaxElapsedTime = backoffSettings.MaxElapsedTime
-	exponentialBackoff.RandomizationFactor = backoffSettings.Jitter
-	exponentialBackoff.Multiplier = backoffSettings.Multiplier
+	eb := backoff.NewExponentialBackOff()
+	eb.InitialInterval = backoffSettings.InitialInterval
+	eb.MaxInterval = backoffSettings.MaxInterval
+	eb.MaxElapsedTime = backoffSettings.MaxElapsedTime
+	eb.RandomizationFactor = backoffSettings.Jitter
+	eb.Multiplier = backoffSettings.Multiplier
 
-	expoBackoffWithContext := backoff.WithContext(exponentialBackoff, ctx)
+	backoffWithContext := backoff.WithContext(eb, ctx)
 
-	err := backoff.Retry(operation, expoBackoffWithContext)
+	err := backoff.Retry(operation, backoffWithContext)
 	if err != nil {
 		return err
 	}
