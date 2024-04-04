@@ -101,7 +101,6 @@ type TLSConfig struct {
 	Ca         string `yaml:"-" mapstructure:"ca"`
 	SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
 	ServerName string `yaml:"-" mapstructure:"server_name"`
-	Enable     bool   `yaml:"-" mapstructure:"enable"`
 }
 
 type File struct {

@@ -190,55 +190,6 @@ func TestGrpcClient_Process(t *testing.T) {
 }
 
 func TestGrpcClient_Close(t *testing.T) {
-	tmpDir := t.TempDir()
-	key, cert := helpers.GenerateSelfSignedCert(t)
-
-	keyContents := helpers.Cert{Name: "key.pem", Type: "RSA PRIVATE KEY", Contents: key}
-	certContents := helpers.Cert{Name: "cert.pem", Type: "CERTIFICATE", Contents: cert}
-
-	agentConfig := &config.Config{
-		Client: types.GetAgentConfig().Client,
-		Command: &config.Command{
-			Server: &config.ServerConfig{
-				Host: "127.0.0.1",
-				Port: 9999,
-				Type: "grpc",
-			},
-			Auth: types.GetAgentConfig().Command.Auth,
-			TLS: &config.TLSConfig{
-				Cert:       helpers.WriteCertFiles(t, tmpDir, certContents),
-				Key:        helpers.WriteCertFiles(t, tmpDir, keyContents),
-				SkipVerify: true,
-				Enable:     true,
-				ServerName: "unit-test-server",
-			},
-		},
-		Common: &config.CommonSettings{
-			MaxElapsedTime: 1 * time.Microsecond,
-		},
-	}
-
-	address := fmt.Sprintf("%s:%d", agentConfig.Command.Server.Host, agentConfig.Command.Server.Port+1)
-	server, err := startMockGrpcServer(address, agentConfig)
-	require.NoError(t, err)
-
-	client := NewGrpcClient(agentConfig)
-	assert.NotNil(t, client)
-
-	messagePipe := bus.NewMessagePipe(100)
-	err = messagePipe.Register(100, []bus.Plugin{client})
-	require.NoError(t, err)
-
-	err = client.Init(context.Background(), messagePipe)
-	require.NoError(t, err)
-
-	err = client.Close(context.Background())
-	require.NoError(t, err)
-
-	stopMockCommandServer(server)
-}
-
-func TestGrpcClient_createConnection(t *testing.T) {
 	tests := []struct {
 		name         string
 		agentConfig  *config.Config
@@ -365,7 +316,6 @@ func TestGrpcClient_createConnection(t *testing.T) {
 			address := fmt.Sprintf("%s:%d", tt.agentConfig.Command.Server.Host, tt.agentConfig.Command.Server.Port+1)
 
 			if tt.createCerts {
-				tt.agentConfig.Command.TLS.Enable = tt.createCerts
 				tmpDir := t.TempDir()
 				key, cert := helpers.GenerateSelfSignedCert(ttt)
 
@@ -395,6 +345,9 @@ func TestGrpcClient_createConnection(t *testing.T) {
 			} else {
 				assert.Contains(ttt, err.Error(), tt.errorMessage)
 			}
+
+			err = client.Close(context.Background())
+			require.NoError(ttt, err)
 
 			stopMockCommandServer(server)
 		})

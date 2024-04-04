@@ -142,7 +142,7 @@ func createListener(apiAddress string, agentConfig *config.Config) (net.Listener
 	var listener net.Listener
 	var err error
 
-	if agentConfig.Command.TLS != nil && agentConfig.Command.TLS.Enable {
+	if agentConfig.Command.TLS != nil {
 		cert, keyPairErr := tls.LoadX509KeyPair(agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
 		if keyPairErr != nil {
 			slog.Error("Failed to load key and cert pair", "error", keyPairErr)
