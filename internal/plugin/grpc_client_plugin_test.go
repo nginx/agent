@@ -190,7 +190,12 @@ func TestGrpcClient_Process(t *testing.T) {
 }
 
 func TestGrpcClient_Close(t *testing.T) {
-	ctx := context.Background()
+	tmpDir := t.TempDir()
+	key, cert := helpers.GenerateSelfSignedCert(t)
+
+	keyContents := helpers.Cert{Name: "key.pem", Type: "RSA PRIVATE KEY", Contents: key}
+	certContents := helpers.Cert{Name: "cert.pem", Type: "CERTIFICATE", Contents: cert}
+
 	agentConfig := &config.Config{
 		Client: types.GetAgentConfig().Client,
 		Command: &config.Command{
@@ -199,17 +204,22 @@ func TestGrpcClient_Close(t *testing.T) {
 				Port: 9999,
 				Type: "grpc",
 			},
+			Auth: types.GetAgentConfig().Command.Auth,
+			TLS: &config.TLSConfig{
+				Cert:       helpers.WriteCertFiles(t, tmpDir, certContents),
+				Key:        helpers.WriteCertFiles(t, tmpDir, keyContents),
+				SkipVerify: true,
+				Enable:     true,
+				ServerName: "unit-test-server",
+			},
 		},
-		Common: types.GetAgentConfig().Common,
+		Common: &config.CommonSettings{
+			MaxElapsedTime: 1 * time.Microsecond,
+		},
 	}
 
-	server, err := startMockGrpcServer(
-		fmt.Sprintf(
-			"%s:%d",
-			agentConfig.Command.Server.Host,
-			agentConfig.Command.Server.Port),
-		agentConfig)
-
+	address := fmt.Sprintf("%s:%d", agentConfig.Command.Server.Host, agentConfig.Command.Server.Port+1)
+	server, err := startMockGrpcServer(address, agentConfig)
 	require.NoError(t, err)
 
 	client := NewGrpcClient(agentConfig)
@@ -219,7 +229,7 @@ func TestGrpcClient_Close(t *testing.T) {
 	err = messagePipe.Register(100, []bus.Plugin{client})
 	require.NoError(t, err)
 
-	err = client.Init(ctx, messagePipe)
+	err = client.Init(context.Background(), messagePipe)
 	require.NoError(t, err)
 
 	err = client.Close(context.Background())

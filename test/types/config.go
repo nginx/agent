@@ -90,6 +90,7 @@ func GetAgentConfig() *config.Config {
 				Key:        "key.pem",
 				Ca:         "ca.pem",
 				SkipVerify: true,
+				ServerName: "test-server",
 			},
 		},
 		File: &config.File{},

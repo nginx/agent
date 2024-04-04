@@ -29,7 +29,6 @@ import (
 )
 
 const (
-	ServiceName           = "mock-management-plane"
 	maxConnectionIdle     = 15 * time.Millisecond
 	maxConnectionAge      = 30 * time.Millisecond
 	maxConnectionAgeGrace = 5 * time.Millisecond
@@ -143,10 +142,10 @@ func createListener(apiAddress string, agentConfig *config.Config) (net.Listener
 	var listener net.Listener
 	var err error
 
-	if agentConfig.Command.TLS.Enable {
+	if agentConfig.Command.TLS != nil && agentConfig.Command.TLS.Enable {
 		cert, keyPairErr := tls.LoadX509KeyPair(agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
 		if keyPairErr != nil {
-			slog.Error("Failed to load key and cert pair", "error", err)
+			slog.Error("Failed to load key and cert pair", "error", keyPairErr)
 			return nil, keyPairErr
 		}
 
@@ -166,17 +165,24 @@ func createListener(apiAddress string, agentConfig *config.Config) (net.Listener
 	return listener, nil
 }
 
-func reportHealth(healthcheck *health.Server, conf *config.Config) {
+func reportHealth(healthcheck *health.Server, agentConfig *config.Config) {
 	var sleep time.Duration
-	if conf.Common == nil {
+	var serverName string
+	if agentConfig.Common == nil {
 		sleep = maxElapsedTime
 	} else {
-		sleep = conf.Common.MaxElapsedTime
+		sleep = agentConfig.Common.MaxElapsedTime
+	}
+
+	if agentConfig.Command.TLS == nil {
+		serverName = "test-server"
+	} else {
+		serverName = agentConfig.Command.TLS.ServerName
 	}
 
 	next := healthgrpc.HealthCheckResponse_SERVING
 	for {
-		healthcheck.SetServingStatus(ServiceName, next)
+		healthcheck.SetServingStatus(serverName, next)
 
 		if next == healthgrpc.HealthCheckResponse_SERVING && (time.Now().Unix()%32 == 0) {
 			next = healthgrpc.HealthCheckResponse_NOT_SERVING

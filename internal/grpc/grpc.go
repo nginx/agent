@@ -8,6 +8,7 @@ package grpc
 import (
 	"crypto/tls"
 	"errors"
+	"log/slog"
 
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"google.golang.org/grpc/credentials/local"
@@ -49,15 +50,18 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 
 	transportCredentials, err := getTransportCredentials(agentConfig)
 	if err == nil {
+		slog.Debug("add transport credentials")
 		opts = append(opts,
 			grpc.WithTransportCredentials(transportCredentials),
 		)
 	} else {
+		slog.Debug("taking default credentials")
 		opts = append(opts,
 			grpc.WithTransportCredentials(defaultCredentials),
 		)
 	}
 	if agentConfig.Command.Auth != nil {
+		slog.Debug("adding token")
 		opts = append(opts,
 			grpc.WithPerRPCCredentials(
 				&PerRPCCredentials{
@@ -77,7 +81,7 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 
 	tlsConfig := &tls.Config{
 		MinVersion:         tls.VersionTLS12,
-		ServerName:         agentConfig.Command.Server.Host,
+		ServerName:         agentConfig.Command.TLS.ServerName,
 		InsecureSkipVerify: agentConfig.Command.TLS.SkipVerify,
 	}
 
@@ -85,13 +89,14 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 		return credentials.NewTLS(tlsConfig), nil
 	}
 
-	err := appendRootCAs(tlsConfig, agentConfig.Command.TLS.Ca)
-	if err != nil {
-		return nil, errors.New("unable to append root CA")
-	}
-	err = appendCertKeyPair(tlsConfig, agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
+	err := appendCertKeyPair(tlsConfig, agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
 	if err != nil {
 		return nil, errors.New("unable to append cert and key pair")
+	}
+
+	err = appendRootCAs(tlsConfig, agentConfig.Command.TLS.Ca)
+	if err != nil {
+		slog.Debug("unable to append root CA", "error", err)
 	}
 
 	return credentials.NewTLS(tlsConfig), nil
