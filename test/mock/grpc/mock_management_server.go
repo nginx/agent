@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -51,6 +52,11 @@ var keepAliveServerParameters = keepalive.ServerParameters{
 	Timeout:               keepAliveTimeout,
 }
 
+var (
+	commandServiceLock sync.Mutex
+	fileServiceLock    sync.Mutex
+)
+
 type MockManagementServer struct {
 	CommandService *CommandService
 	FileService    *FileService
@@ -72,6 +78,9 @@ func NewMockManagementServer(
 			return nil, err
 		}
 	}
+
+	fileServiceLock.Lock()
+	defer fileServiceLock.Unlock()
 
 	grpcListener, err := net.Listen(connectionType,
 		fmt.Sprintf("%s:%d", agentConfig.Command.Server.Host, agentConfig.Command.Server.Port))
@@ -131,6 +140,8 @@ func serveCommandService(apiAddress string, agentConfig *config.Config) *Command
 		}
 
 		if cmdListener != nil {
+			commandServiceLock.Lock()
+			defer commandServiceLock.Unlock()
 			commandServer.StartServer(cmdListener)
 		}
 	}()
@@ -142,18 +153,18 @@ func createListener(apiAddress string, agentConfig *config.Config) (net.Listener
 	var listener net.Listener
 	var err error
 
-	if agentConfig.Command.TLS != nil {
+	if agentConfig.Command.TLS != nil && agentConfig.Command.TLS.Cert != "" && agentConfig.Command.TLS.Key != "" {
 		cert, keyPairErr := tls.LoadX509KeyPair(agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
-		if keyPairErr != nil {
+		if keyPairErr == nil {
 			slog.Error("Failed to load key and cert pair", "error", keyPairErr)
-			return nil, keyPairErr
+			// keep going with default listener
+			listener, err = tls.Listen(connectionType, apiAddress, &tls.Config{
+				Certificates: []tls.Certificate{cert},
+				MinVersion:   tls.VersionTLS12,
+			})
 		}
-
-		listener, err = tls.Listen(connectionType, apiAddress, &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			MinVersion:   tls.VersionTLS12,
-		})
-	} else {
+	}
+	if listener != nil {
 		listener, err = net.Listen(connectionType, apiAddress)
 	}
 
