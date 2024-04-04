@@ -127,23 +127,22 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 }
 
 func haveProcessesChanged(oldProcesses, newProcesses []*model.Process) bool {
-	haveChanged := false
-
-	if len(oldProcesses) == len(newProcesses) {
-		processIDMap := make(map[int32]struct{})
-		for _, oldProcess := range oldProcesses {
-			processIDMap[oldProcess.Pid] = struct{}{}
-		}
-
-		for _, newProcess := range newProcesses {
-			if _, ok := processIDMap[newProcess.Pid]; !ok {
-				haveChanged = true
-				break
-			}
-		}
-	} else {
-		haveChanged = true
+	// Check if the number of processes has changed
+	if len(oldProcesses) != len(newProcesses) {
+		return true
 	}
 
-	return haveChanged
+	processIDMap := make(map[int32]struct{})
+	for _, oldProcess := range oldProcesses {
+		processIDMap[oldProcess.Pid] = struct{}{}
+	}
+
+	// Check if the process IDs have changed
+	for _, newProcess := range newProcesses {
+		if _, ok := processIDMap[newProcess.Pid]; !ok {
+			return true
+		}
+	}
+
+	return false
 }
