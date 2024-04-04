@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	filePermissions = 0o640
+	directoryPermissions = 0o700
 )
 
 func main() {
@@ -122,7 +122,7 @@ func main() {
 func generateDefaultConfigDirectory() (string, error) {
 	tempDirectory := os.TempDir()
 
-	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/etc/nginx"), filePermissions)
+	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/etc/nginx"), directoryPermissions)
 	if err != nil {
 		slog.Error("Failed to create directories", "error", err)
 		return "", err
