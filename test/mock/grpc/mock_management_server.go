@@ -39,6 +39,7 @@ const (
 	maxElapsedTime        = 5 * time.Millisecond
 	keepAliveTime         = 5 * time.Millisecond
 	keepAliveTimeout      = 1 * time.Millisecond
+	testTimeout           = 100 * time.Millisecond
 	connectionType        = "tcp"
 )
 
@@ -128,19 +129,19 @@ func (ms *MockManagementServer) Stop() {
 		signal.Stop(sigs)
 
 		// commandServiceLock.Lock()
-		defer ms.GrpcServer.Stop()
+		ms.GrpcServer.Stop()
 		// commandServiceLock.Unlock()
 
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(testTimeout)
 		done <- true
 	}()
 
 	<-done
 	// commandServiceLock.Lock()
-	defer ms.GrpcServer.GracefulStop()
+	ms.GrpcServer.GracefulStop()
 	// commandServiceLock.Unlock()
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(testTimeout)
 }
 
 func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {

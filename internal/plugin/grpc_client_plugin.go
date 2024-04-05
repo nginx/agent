@@ -26,11 +26,11 @@ import (
 
 type (
 	GrpcClient struct {
-		messagePipe     bus.MessagePipeInterface
-		config          *config.Config
-		conn            *grpc.ClientConn
-		cancel          context.CancelFunc
-		settings        *backoff.Settings
+		messagePipe bus.MessagePipeInterface
+		config      *config.Config
+		conn        *grpc.ClientConn
+		cancel      context.CancelFunc
+		settings    *backoff.Settings
 	}
 )
 
@@ -49,8 +49,8 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 		}
 
 		return &GrpcClient{
-			config:          agentConfig,
-			settings:        settings,
+			config:   agentConfig,
+			settings: settings,
 		}
 	}
 

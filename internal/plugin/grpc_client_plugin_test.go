@@ -343,7 +343,7 @@ func TestGrpcClient_Close(t *testing.T) {
 			err = client.Close(context.Background())
 			require.NoError(ttt, err)
 
-			server.Stop()
+			defer server.Stop()
 		})
 	}
 }
