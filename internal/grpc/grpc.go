@@ -28,7 +28,7 @@ var serviceConfig = `{
 var defaultCredentials = insecure.NewCredentials()
 
 func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
-	insecure := false; 
+	skipToken := false
 	opts := []grpc.DialOption{
 		grpc.WithBlock(),
 		grpc.WithReturnConnectionError(),
@@ -60,9 +60,9 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 		opts = append(opts,
 			grpc.WithTransportCredentials(defaultCredentials),
 		)
-		insecure = true
+		skipToken = true
 	}
-	if agentConfig.Command.Auth != nil && !insecure {
+	if agentConfig.Command.Auth != nil && !skipToken {
 		slog.Debug("adding token")
 		opts = append(opts,
 			grpc.WithPerRPCCredentials(
