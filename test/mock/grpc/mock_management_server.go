@@ -152,16 +152,16 @@ func serveCommandService(apiAddress string, agentConfig *config.Config) *Command
 func createListener(apiAddress string, agentConfig *config.Config) (net.Listener, error) {
 	if agentConfig.Command.TLS != nil {
 		cert, keyPairErr := tls.LoadX509KeyPair(agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
+
 		if keyPairErr == nil {
 			slog.Error("Failed to load key and cert pair", "error", keyPairErr)
-			// keep going with default listener
 			return tls.Listen(connectionType, apiAddress, &tls.Config{
 				Certificates: []tls.Certificate{cert},
 				MinVersion:   tls.VersionTLS12,
 			})
-
 		}
 	}
+
 	return net.Listen(connectionType, apiAddress)
 }
 
