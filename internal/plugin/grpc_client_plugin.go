@@ -75,7 +75,6 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	slog.Info("Dialing grpc server", "server_addr", serverAddr)
 
 	gc.connectionMutex.Lock()
-	defer gc.connectionMutex.Unlock()
 	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, agentGrpc.GetDialOptions(gc.config)...)
 	if err != nil {
 		return err
@@ -83,6 +82,7 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, gc.config.Client.Timeout)
 
 	defer backoffCancel()
+	defer gc.connectionMutex.Unlock()
 
 	return backoff.WaitUntil(backOffCtx, gc.settings, gc.createConnection)
 }
@@ -98,9 +98,6 @@ func (gc *GrpcClient) createConnection() error {
 	if err != nil {
 		return fmt.Errorf("error generating correlation id: %w", err)
 	}
-
-	gc.connectionMutex.Lock()
-	defer gc.connectionMutex.Unlock()
 
 	if gc.conn == nil || gc.conn.GetState() == connectivity.Shutdown {
 		return fmt.Errorf("can't connect to server")
@@ -139,6 +136,7 @@ func (gc *GrpcClient) createConnection() error {
 
 func (gc *GrpcClient) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing grpc client plugin")
+
 	gc.connectionMutex.Lock()
 	defer gc.connectionMutex.Unlock()
 
