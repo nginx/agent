@@ -6,6 +6,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io"
 	"log/slog"
@@ -37,6 +38,7 @@ var (
 
 func main() {
 	flag.Parse()
+	ctx := context.Background()
 
 	agentConfig := types.GetAgentConfig()
 	grpcHost, grpcPort, err := net.SplitHostPort(*grpcAddress)
@@ -73,6 +75,7 @@ func main() {
 		slog.Error("Failed to start mock management server", "error", err)
 		os.Exit(1)
 	}
+	<-ctx.Done()
 }
 
 func generateDefaultConfigDirectory() (string, error) {
