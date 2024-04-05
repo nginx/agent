@@ -55,11 +55,7 @@ func (i *Instance) Process(ctx context.Context, msg *bus.Message) {
 		}
 
 		instanceList := i.instanceService.GetInstances(ctx, newProcesses)
-		if len(instanceList) > 0 {
-			i.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
-		} else {
-			slog.InfoContext(ctx, "No instances found")
-		}
+		i.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
 	}
 }
 
