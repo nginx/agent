@@ -11,8 +11,11 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -68,6 +71,7 @@ func NewMockManagementServer(
 	agentConfig *config.Config,
 ) (*MockManagementServer, error) {
 	var err error
+	// commandServiceLock.Lock()
 	commandService := serveCommandService(apiAddress, agentConfig)
 
 	var fileServer *FileService
@@ -106,12 +110,37 @@ func NewMockManagementServer(
 			slog.Error("Failed to serve server", "error", err)
 		}
 	}()
+	// commandServiceLock.Unlock()
 
 	return &MockManagementServer{
 		CommandService: commandService,
 		FileService:    fileServer,
 		GrpcServer:     grpcServer,
 	}, nil
+}
+
+func (ms *MockManagementServer) Stop() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan bool, 1)
+
+	go func() {
+		signal.Stop(sigs)
+
+		// commandServiceLock.Lock()
+		defer ms.GrpcServer.Stop()
+		// commandServiceLock.Unlock()
+
+		time.Sleep(100 * time.Millisecond)
+		done <- true
+	}()
+
+	<-done
+	// commandServiceLock.Lock()
+	defer ms.GrpcServer.GracefulStop()
+	// commandServiceLock.Unlock()
+
+	time.Sleep(1 * time.Second)
 }
 
 func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {

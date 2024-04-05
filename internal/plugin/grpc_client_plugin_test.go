@@ -8,10 +8,6 @@ package plugin
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 	"testing"
 	"time"
 
@@ -26,8 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-var grpcServerMutex = &sync.Mutex{}
 
 func TestGrpcClient_NewGrpcClient(t *testing.T) {
 	tests := []struct {
@@ -329,7 +323,7 @@ func TestGrpcClient_Close(t *testing.T) {
 				tt.agentConfig.Command.TLS.Cert = certFile
 			}
 
-			server, err := startMockGrpcServer(address, tt.agentConfig)
+			server, err := mockGrpc.NewMockManagementServer(address, tt.agentConfig)
 			require.NoError(ttt, err)
 
 			client := NewGrpcClient(tt.agentConfig)
@@ -349,36 +343,7 @@ func TestGrpcClient_Close(t *testing.T) {
 			err = client.Close(context.Background())
 			require.NoError(ttt, err)
 
-			stopMockCommandServer(server)
+			server.Stop()
 		})
 	}
-}
-
-func startMockGrpcServer(
-	address string,
-	agentConfig *config.Config,
-) (*mockGrpc.MockManagementServer, error) {
-	grpcServerMutex.Lock()
-	defer grpcServerMutex.Unlock()
-
-	return mockGrpc.NewMockManagementServer(address, agentConfig)
-}
-
-func stopMockCommandServer(server *mockGrpc.MockManagementServer) {
-	grpcServerMutex.Lock()
-	defer grpcServerMutex.Unlock()
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	done := make(chan bool, 1)
-
-	go func() {
-		signal.Stop(sigs)
-		server.GrpcServer.Stop()
-		time.Sleep(200 * time.Millisecond)
-		done <- true
-	}()
-
-	<-done
-	server.GrpcServer.GracefulStop()
-	time.Sleep(1 * time.Second)
 }

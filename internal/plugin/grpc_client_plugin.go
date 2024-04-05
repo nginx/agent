@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"sync"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -32,7 +31,6 @@ type (
 		conn            *grpc.ClientConn
 		cancel          context.CancelFunc
 		settings        *backoff.Settings
-		connectionMutex *sync.Mutex
 	}
 )
 
@@ -53,7 +51,6 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 		return &GrpcClient{
 			config:          agentConfig,
 			settings:        settings,
-			connectionMutex: &sync.Mutex{},
 		}
 	}
 
@@ -74,7 +71,6 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	grpcClientCtx, gc.cancel = context.WithTimeout(ctx, gc.config.Client.Timeout)
 	slog.Info("Dialing grpc server", "server_addr", serverAddr)
 
-	gc.connectionMutex.Lock()
 	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, agentGrpc.GetDialOptions(gc.config)...)
 	if err != nil {
 		return err
@@ -82,7 +78,6 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, gc.config.Client.Timeout)
 
 	defer backoffCancel()
-	defer gc.connectionMutex.Unlock()
 
 	return backoff.WaitUntil(backOffCtx, gc.settings, gc.createConnection)
 }
@@ -136,9 +131,6 @@ func (gc *GrpcClient) createConnection() error {
 
 func (gc *GrpcClient) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing grpc client plugin")
-
-	gc.connectionMutex.Lock()
-	defer gc.connectionMutex.Unlock()
 
 	if gc.conn != nil {
 		err := gc.conn.Close()
