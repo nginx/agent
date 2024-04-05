@@ -158,7 +158,7 @@ func StartMockManagementPlaneGrpcContainer(
 				"managementPlane",
 			},
 		},
-		WaitingFor: wait.ForLog("gRPC server running"),
+		WaitingFor: wait.ForLog("Starting mock management plane gRPC server"),
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{

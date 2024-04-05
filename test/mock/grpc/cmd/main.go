@@ -110,11 +110,11 @@ func main() {
 	v1.RegisterCommandServiceServer(grpcServer, commandServer)
 	v1.RegisterFileServiceServer(grpcServer, fileServer)
 
-	slog.Info("gRPC server running", "address", listener.Addr().String())
+	slog.Info("Starting mock management plane gRPC server", "address", listener.Addr().String())
 
 	err = grpcServer.Serve(listener)
 	if err != nil {
-		slog.Error("Failed to serve server", "error", err)
+		slog.Error("Failed to serve mock management plane gRPC server", "error", err)
 		os.Exit(1)
 	}
 }

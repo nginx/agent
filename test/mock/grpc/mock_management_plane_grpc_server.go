@@ -111,10 +111,10 @@ func NewManagementGrpcServer() *ManagementGrpcServer {
 }
 
 func (mgs *ManagementGrpcServer) StartServer(listener net.Listener) {
-	slog.Info("Starting mock management plane gRPC server", "address", listener.Addr().String())
+	slog.Info("Starting mock management plane http server", "address", listener.Addr().String())
 	err := mgs.server.RunListener(listener)
 	if err != nil {
-		slog.Error("Startup of mock management plane server failed", "error", err)
+		slog.Error("Startup of mock management plane http server failed", "error", err)
 	}
 }
 
