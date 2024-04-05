@@ -150,30 +150,19 @@ func serveCommandService(apiAddress string, agentConfig *config.Config) *Command
 }
 
 func createListener(apiAddress string, agentConfig *config.Config) (net.Listener, error) {
-	var listener net.Listener
-	var err error
-
-	if agentConfig.Command.TLS != nil && agentConfig.Command.TLS.Cert != "" && agentConfig.Command.TLS.Key != "" {
+	if agentConfig.Command.TLS != nil {
 		cert, keyPairErr := tls.LoadX509KeyPair(agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
 		if keyPairErr == nil {
 			slog.Error("Failed to load key and cert pair", "error", keyPairErr)
 			// keep going with default listener
-			listener, err = tls.Listen(connectionType, apiAddress, &tls.Config{
+			return tls.Listen(connectionType, apiAddress, &tls.Config{
 				Certificates: []tls.Certificate{cert},
 				MinVersion:   tls.VersionTLS12,
 			})
+
 		}
 	}
-	if listener != nil {
-		listener, err = net.Listen(connectionType, apiAddress)
-	}
-
-	if err != nil {
-		slog.Error("Failed to create listener", "error", err)
-		return nil, err
-	}
-
-	return listener, nil
+	return net.Listen(connectionType, apiAddress)
 }
 
 func reportHealth(healthcheck *health.Server, agentConfig *config.Config) {
