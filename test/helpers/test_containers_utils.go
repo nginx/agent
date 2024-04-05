@@ -57,7 +57,7 @@ func StartContainer(
 			},
 		},
 		ExposedPorts: []string{"9091/tcp"},
-		WaitingFor:   wait.ForLog("Processes updated"),
+		WaitingFor:   wait.ForLog("Agent connected"),
 		Networks: []string{
 			containerNetwork.Name,
 		},

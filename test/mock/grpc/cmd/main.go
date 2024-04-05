@@ -54,6 +54,8 @@ func main() {
 
 	agentConfig.Command.Server.Host = grpcHost
 	agentConfig.Command.Server.Port = portInt
+	agentConfig.Command.Auth = nil
+	agentConfig.Command.TLS = nil
 	agentConfig.Common.MaxElapsedTime = *sleepDuration
 
 	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{

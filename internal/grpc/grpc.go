@@ -11,11 +11,11 @@ import (
 	"log/slog"
 
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
-	"google.golang.org/grpc/credentials/local"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -25,9 +25,10 @@ var serviceConfig = `{
 		"serviceName": "nginx-agent"
 	}
 }`
-var defaultCredentials = local.NewCredentials()
+var defaultCredentials = insecure.NewCredentials()
 
 func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
+	insecure := false; 
 	opts := []grpc.DialOption{
 		grpc.WithBlock(),
 		grpc.WithReturnConnectionError(),
@@ -59,8 +60,9 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 		opts = append(opts,
 			grpc.WithTransportCredentials(defaultCredentials),
 		)
+		insecure = true
 	}
-	if agentConfig.Command.Auth != nil {
+	if agentConfig.Command.Auth != nil && !insecure {
 		slog.Debug("adding token")
 		opts = append(opts,
 			grpc.WithPerRPCCredentials(

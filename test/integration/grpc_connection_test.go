@@ -124,8 +124,6 @@ func TestGrpcConnection(t *testing.T) {
 	teardownTest := setupConnectionTest(t)
 	defer teardownTest(t)
 
-	time.Sleep(200 * time.Millisecond)
-
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 

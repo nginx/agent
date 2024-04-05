@@ -199,7 +199,7 @@ func TestGrpcClient_Close(t *testing.T) {
 		{
 			"Test 1: GRPC can't connect, invalid token",
 			types.GetAgentConfig(),
-			"cannot send secure credentials on an insecure connection",
+			"invalid token",
 			false,
 		},
 		{
