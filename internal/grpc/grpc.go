@@ -92,12 +92,12 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 
 	err := appendCertKeyPair(tlsConfig, agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
 	if err != nil {
-		return nil, errors.New("unable to append cert and key pair")
+		return nil, errors.New("append cert and key pair")
 	}
 
 	err = appendRootCAs(tlsConfig, agentConfig.Command.TLS.Ca)
 	if err != nil {
-		slog.Debug("unable to append root CA", "error", err)
+		slog.Debug("did not append root CA", "error", err)
 	}
 
 	return credentials.NewTLS(tlsConfig), nil

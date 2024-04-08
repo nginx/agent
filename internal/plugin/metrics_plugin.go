@@ -92,7 +92,7 @@ func (m *Metrics) Init(ctx context.Context, mp bus.MessagePipeInterface) error {
 
 	err := m.createExporters(metricsCtx)
 	if err != nil {
-		return fmt.Errorf("could not start exporters: %w", err)
+		return fmt.Errorf("starting exporters: %w", err)
 	}
 
 	m.startExporters(metricsCtx)
