@@ -281,7 +281,7 @@ func TestConfig_Update(t *testing.T) {
 			messagePipe.Run(ctx)
 
 			configService := &servicefakes.FakeConfigServiceInterface{}
-			configService.UpdateInstanceConfigurationReturns(make(map[string]*instances.File), test.updateReturnStatus)
+			configService.UpdateInstanceConfigurationReturns(make(map[string]*v1.FileMeta), test.updateReturnStatus)
 			configService.RollbackReturns(test.rollbackReturns)
 
 			instanceService := []*v1.Instance{&instance}

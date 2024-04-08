@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -46,7 +46,7 @@ func RemoveFileWithErrorCheck(t testing.TB, fileName string) {
 	require.NoError(t, err)
 }
 
-func CreateCacheFiles(t testing.TB, cachePath string, cacheData map[string]*instances.File) {
+func CreateCacheFiles(t testing.TB, cachePath string, cacheData map[string]*v1.FileMeta) {
 	t.Helper()
 	cache, err := json.MarshalIndent(cacheData, "", "  ")
 	require.NoError(t, err)
@@ -55,7 +55,7 @@ func CreateCacheFiles(t testing.TB, cachePath string, cacheData map[string]*inst
 	require.NoError(t, err)
 
 	for _, file := range cacheData {
-		CreateFileWithErrorCheck(t, filepath.Dir(file.GetPath()), filepath.Base(file.GetPath()))
+		CreateFileWithErrorCheck(t, filepath.Dir(file.GetName()), filepath.Base(file.GetName()))
 	}
 
 	err = os.WriteFile(cachePath, cache, os.ModePerm)

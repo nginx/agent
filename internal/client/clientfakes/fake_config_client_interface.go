@@ -5,29 +5,29 @@ import (
 	"context"
 	"sync"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/client"
 )
 
 type FakeConfigClientInterface struct {
-	GetFileStub        func(context.Context, *instances.File, string, string, string) (*instances.FileDownloadResponse, error)
+	GetFileStub        func(context.Context, *v1.FileMeta, string, string, string) (*v1.FileContents, error)
 	getFileMutex       sync.RWMutex
 	getFileArgsForCall []struct {
 		arg1 context.Context
-		arg2 *instances.File
+		arg2 *v1.FileMeta
 		arg3 string
 		arg4 string
 		arg5 string
 	}
 	getFileReturns struct {
-		result1 *instances.FileDownloadResponse
+		result1 *v1.FileContents
 		result2 error
 	}
 	getFileReturnsOnCall map[int]struct {
-		result1 *instances.FileDownloadResponse
+		result1 *v1.FileContents
 		result2 error
 	}
-	GetFilesMetadataStub        func(context.Context, string, string, string) (*instances.Files, error)
+	GetFilesMetadataStub        func(context.Context, string, string, string) (*v1.FileOverview, error)
 	getFilesMetadataMutex       sync.RWMutex
 	getFilesMetadataArgsForCall []struct {
 		arg1 context.Context
@@ -36,23 +36,23 @@ type FakeConfigClientInterface struct {
 		arg4 string
 	}
 	getFilesMetadataReturns struct {
-		result1 *instances.Files
+		result1 *v1.FileOverview
 		result2 error
 	}
 	getFilesMetadataReturnsOnCall map[int]struct {
-		result1 *instances.Files
+		result1 *v1.FileOverview
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeConfigClientInterface) GetFile(arg1 context.Context, arg2 *instances.File, arg3 string, arg4 string, arg5 string) (*instances.FileDownloadResponse, error) {
+func (fake *FakeConfigClientInterface) GetFile(arg1 context.Context, arg2 *v1.FileMeta, arg3 string, arg4 string, arg5 string) (*v1.FileContents, error) {
 	fake.getFileMutex.Lock()
 	ret, specificReturn := fake.getFileReturnsOnCall[len(fake.getFileArgsForCall)]
 	fake.getFileArgsForCall = append(fake.getFileArgsForCall, struct {
 		arg1 context.Context
-		arg2 *instances.File
+		arg2 *v1.FileMeta
 		arg3 string
 		arg4 string
 		arg5 string
@@ -76,46 +76,46 @@ func (fake *FakeConfigClientInterface) GetFileCallCount() int {
 	return len(fake.getFileArgsForCall)
 }
 
-func (fake *FakeConfigClientInterface) GetFileCalls(stub func(context.Context, *instances.File, string, string, string) (*instances.FileDownloadResponse, error)) {
+func (fake *FakeConfigClientInterface) GetFileCalls(stub func(context.Context, *v1.FileMeta, string, string, string) (*v1.FileContents, error)) {
 	fake.getFileMutex.Lock()
 	defer fake.getFileMutex.Unlock()
 	fake.GetFileStub = stub
 }
 
-func (fake *FakeConfigClientInterface) GetFileArgsForCall(i int) (context.Context, *instances.File, string, string, string) {
+func (fake *FakeConfigClientInterface) GetFileArgsForCall(i int) (context.Context, *v1.FileMeta, string, string, string) {
 	fake.getFileMutex.RLock()
 	defer fake.getFileMutex.RUnlock()
 	argsForCall := fake.getFileArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
 }
 
-func (fake *FakeConfigClientInterface) GetFileReturns(result1 *instances.FileDownloadResponse, result2 error) {
+func (fake *FakeConfigClientInterface) GetFileReturns(result1 *v1.FileContents, result2 error) {
 	fake.getFileMutex.Lock()
 	defer fake.getFileMutex.Unlock()
 	fake.GetFileStub = nil
 	fake.getFileReturns = struct {
-		result1 *instances.FileDownloadResponse
+		result1 *v1.FileContents
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeConfigClientInterface) GetFileReturnsOnCall(i int, result1 *instances.FileDownloadResponse, result2 error) {
+func (fake *FakeConfigClientInterface) GetFileReturnsOnCall(i int, result1 *v1.FileContents, result2 error) {
 	fake.getFileMutex.Lock()
 	defer fake.getFileMutex.Unlock()
 	fake.GetFileStub = nil
 	if fake.getFileReturnsOnCall == nil {
 		fake.getFileReturnsOnCall = make(map[int]struct {
-			result1 *instances.FileDownloadResponse
+			result1 *v1.FileContents
 			result2 error
 		})
 	}
 	fake.getFileReturnsOnCall[i] = struct {
-		result1 *instances.FileDownloadResponse
+		result1 *v1.FileContents
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeConfigClientInterface) GetFilesMetadata(arg1 context.Context, arg2 string, arg3 string, arg4 string) (*instances.Files, error) {
+func (fake *FakeConfigClientInterface) GetFilesMetadata(arg1 context.Context, arg2 string, arg3 string, arg4 string) (*v1.FileOverview, error) {
 	fake.getFilesMetadataMutex.Lock()
 	ret, specificReturn := fake.getFilesMetadataReturnsOnCall[len(fake.getFilesMetadataArgsForCall)]
 	fake.getFilesMetadataArgsForCall = append(fake.getFilesMetadataArgsForCall, struct {
@@ -143,7 +143,7 @@ func (fake *FakeConfigClientInterface) GetFilesMetadataCallCount() int {
 	return len(fake.getFilesMetadataArgsForCall)
 }
 
-func (fake *FakeConfigClientInterface) GetFilesMetadataCalls(stub func(context.Context, string, string, string) (*instances.Files, error)) {
+func (fake *FakeConfigClientInterface) GetFilesMetadataCalls(stub func(context.Context, string, string, string) (*v1.FileOverview, error)) {
 	fake.getFilesMetadataMutex.Lock()
 	defer fake.getFilesMetadataMutex.Unlock()
 	fake.GetFilesMetadataStub = stub
@@ -156,28 +156,28 @@ func (fake *FakeConfigClientInterface) GetFilesMetadataArgsForCall(i int) (conte
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
-func (fake *FakeConfigClientInterface) GetFilesMetadataReturns(result1 *instances.Files, result2 error) {
+func (fake *FakeConfigClientInterface) GetFilesMetadataReturns(result1 *v1.FileOverview, result2 error) {
 	fake.getFilesMetadataMutex.Lock()
 	defer fake.getFilesMetadataMutex.Unlock()
 	fake.GetFilesMetadataStub = nil
 	fake.getFilesMetadataReturns = struct {
-		result1 *instances.Files
+		result1 *v1.FileOverview
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeConfigClientInterface) GetFilesMetadataReturnsOnCall(i int, result1 *instances.Files, result2 error) {
+func (fake *FakeConfigClientInterface) GetFilesMetadataReturnsOnCall(i int, result1 *v1.FileOverview, result2 error) {
 	fake.getFilesMetadataMutex.Lock()
 	defer fake.getFilesMetadataMutex.Unlock()
 	fake.GetFilesMetadataStub = nil
 	if fake.getFilesMetadataReturnsOnCall == nil {
 		fake.getFilesMetadataReturnsOnCall = make(map[int]struct {
-			result1 *instances.Files
+			result1 *v1.FileOverview
 			result2 error
 		})
 	}
 	fake.getFilesMetadataReturnsOnCall[i] = struct {
-		result1 *instances.Files
+		result1 *v1.FileOverview
 		result2 error
 	}{result1, result2}
 }

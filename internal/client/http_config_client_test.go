@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/nginx/agent/v3/api/grpc/instances"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -33,36 +33,53 @@ func TestGetFilesMetadata(t *testing.T) {
 	fileTime2, err := protos.CreateProtoTime("2024-01-08T13:22:21Z")
 	require.NoError(t, err)
 
-	testDataResponse := &instances.Files{
-		Files: []*instances.File{
+	testDataResponse := &v1.FileOverview{
+		Files: []*v1.File{
 			{
-				LastModified: fileTime1,
-				Path:         "/usr/local/etc/nginx/locations/test.conf",
-				Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+				FileMeta: &v1.FileMeta{
+					ModifiedTime: fileTime1,
+					Name:         "/usr/local/etc/nginx/locations/test.conf",
+					Hash:         "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+				},
 			},
 			{
-				LastModified: fileTime2,
-				Path:         "/usr/local/etc/nginx/nginx.conf",
-				Version:      "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
+				FileMeta: &v1.FileMeta{
+					ModifiedTime: fileTime2,
+					Name:         "/usr/local/etc/nginx/nginx.conf",
+					Hash:         "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
+				},
 			},
+		},
+		ConfigVersion: &v1.ConfigVersion{
+			Version:    "2",
+			InstanceId: "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
 		},
 	}
 
 	test := `{
 		"files":[
 			{
-				"lastModified":"2024-01-08T13:22:25Z",
-				"path":"/usr/local/etc/nginx/locations/test.conf",
-				"version":"Rh3phZuCRwNGANTkdst51he_0WKWy.tZ"
+				"file_meta":
+					{
+						"name":"/usr/local/etc/nginx/locations/test.conf",
+						"hash":"Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+						"modified_time":"2024-01-08T13:22:25Z"
+					}
 			},
 			{
-				"lastModified":"2024-01-08T13:22:21Z",
-				"path":"/usr/local/etc/nginx/nginx.conf",
-				"version":"BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c"
+				"file_meta":
+					{
+						"name":"/usr/local/etc/nginx/nginx.conf",
+						"hash":"BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
+						"modified_time":"2024-01-08T13:22:21Z"
+					}
 			}
 		],
-		"instanceID":"aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
-		"type":""
+		"config_version":
+			{
+				"instance_id":"aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
+				"version":"2"
+			}
 	}`
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -76,20 +93,14 @@ func TestGetFilesMetadata(t *testing.T) {
 
 	resp, err := hcd.GetFilesMetadata(ctx, filesURL, tenantID.String(), instanceID.String())
 	require.NoError(t, err)
-	assert.Equal(t, resp.String(), testDataResponse.String())
+	assert.Equal(t, testDataResponse.String(), resp.String())
 }
 
 func TestGetFile(t *testing.T) {
 	ctx := context.Background()
 	tenantID, instanceID := helpers.CreateTestIDs(t)
 
-	test := `{
-		"encoded":true,
-		"fileContent":"bG9jYXRpb24gL3Rlc3QgewogICAgcmV0dXJuIDIwMCAiVGVzdCBsb2NhdGlvblxuIjsKfQ==",
-		"filePath":"/usr/local/etc/nginx/locations/test.conf",
-		"instanceID":"aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
-		"type":""
-	}`
+	test := `{"contents":"bG9jYXRpb24gL3Rlc3QgewogICAgcmV0dXJuIDIwMCAiVGVzdCBsb2NhdGlvblxuIjsKfQ=="}`
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, test)
@@ -101,17 +112,14 @@ func TestGetFile(t *testing.T) {
 	fileTime, err := protos.CreateProtoTime("2024-01-08T13:22:25Z")
 	require.NoError(t, err)
 
-	file := instances.File{
-		LastModified: fileTime,
-		Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
-		Path:         "/usr/local/etc/nginx/locations/test.conf",
+	file := v1.FileMeta{
+		ModifiedTime: fileTime,
+		Hash:         "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+		Name:         "/usr/local/etc/nginx/locations/test.conf",
 	}
 
-	testDataResponse := &instances.FileDownloadResponse{
-		Encoded:     true,
-		FilePath:    "/usr/local/etc/nginx/locations/test.conf",
-		InstanceId:  instanceID.String(),
-		FileContent: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
+	testDataResponse := &v1.FileContents{
+		Contents: []byte("location /test {\n    return 200 \"Test location\\n\";\n}"),
 	}
 
 	hcd := NewHTTPConfigClient(time.Second * 10)
