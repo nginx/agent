@@ -309,7 +309,11 @@ func TestGrpcClient_Close(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			address := fmt.Sprintf("%s:%d", test.agentConfig.Command.Server.Host, test.agentConfig.Command.Server.Port+1)
+			address := fmt.Sprintf(
+				"%s:%d",
+				test.agentConfig.Command.Server.Host,
+				test.agentConfig.Command.Server.Port+1,
+			)
 
 			if test.createCerts {
 				tmpDir := tt.TempDir()
