@@ -38,9 +38,9 @@ type (
 		messagePipe       bus.MessagePipeInterface
 		server            *http.Server
 		cancel            context.CancelFunc
-		serverMutex       *sync.Mutex
-		configEventsMutex *sync.Mutex
-		instancesMutex    *sync.Mutex
+		serverMutex       sync.Mutex
+		configEventsMutex sync.Mutex
+		instancesMutex    sync.Mutex
 	}
 )
 
@@ -51,9 +51,9 @@ func NewDataPlaneServer(agentConfig *config.Config, slogger *slog.Logger) *DataP
 		address:           address,
 		logger:            slogger,
 		configEvents:      make(map[string][]*instances.ConfigurationStatus),
-		serverMutex:       &sync.Mutex{},
-		configEventsMutex: &sync.Mutex{},
-		instancesMutex:    &sync.Mutex{},
+		serverMutex:       sync.Mutex{},
+		configEventsMutex: sync.Mutex{},
+		instancesMutex:    sync.Mutex{},
 	}
 }
 

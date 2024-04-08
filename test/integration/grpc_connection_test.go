@@ -72,15 +72,20 @@ func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 		mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
 		tb.Logf("Mock management API server running on %s", mockManagementPlaneAPIAddress)
 
+		params := &helpers.Parameters{
+			NginxConfigPath:      "../config/nginx/nginx.conf",
+			NginxAgentConfigPath: "../config/agent/nginx-config-with-grpc-client.conf",
+			LogMessage:           "Agent connected",
+		}
+
 		container = helpers.StartContainer(
 			ctx,
 			tb,
 			containerNetwork,
-			"../config/nginx/nginx.conf",
-			"../config/agent/nginx-config-with-grpc-client.conf",
+			params,
 		)
 	} else {
-		server := mockGrpc.NewManagementGrpcServer()
+		server := mockGrpc.NewCommandService()
 
 		go func(tb testing.TB) {
 			tb.Helper()

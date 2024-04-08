@@ -4,7 +4,9 @@
 // LICENSE file in the root directory of this source tree.
 package config
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	DefGracefulShutdownPeriod = 5 * time.Second
@@ -25,4 +27,11 @@ const (
 	DefCommandTLSKeyKey        = ""
 	DefCommandTLSCaKey         = ""
 	DefCommandTLSSkipVerifyKey = false
+
+	DefBackoffInitalInterval = 50 * time.Millisecond
+	// the value is 0 <= and < 1
+	DefBackoffRandomizationFactor = 0.1
+	DefBackoffMultiplier          = 1.5
+	DefBackoffMaxInterval         = 200 * time.Millisecond
+	DefBackoffMaxElapsedTime      = 3 * time.Second
 )

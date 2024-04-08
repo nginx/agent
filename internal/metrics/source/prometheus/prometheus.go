@@ -57,7 +57,7 @@ func (s *Scraper) Produce(ctx context.Context) ([]model.DataEntry, error) {
 	cancellableCtx, cancelFunc := context.WithCancel(ctx)
 	s.cancelFunc = cancelFunc
 
-	mut := &sync.Mutex{}
+	mut := sync.Mutex{}
 	wg := &sync.WaitGroup{}
 	errChan := make(chan error)
 
@@ -65,7 +65,7 @@ func (s *Scraper) Produce(ctx context.Context) ([]model.DataEntry, error) {
 	// Query each endpoint in its own goroutine.
 	for _, ep := range s.endpoints {
 		wg.Add(1)
-		go func(target string, l *sync.Mutex) {
+		go func(target string, mu *sync.Mutex) {
 			defer wg.Done()
 			entries, err := scrapeEndpoint(cancellableCtx, strings.TrimSpace(target))
 			if err != nil {
@@ -73,10 +73,10 @@ func (s *Scraper) Produce(ctx context.Context) ([]model.DataEntry, error) {
 				return
 			}
 
-			l.Lock()
+			mu.Lock()
 			results = append(results, entries...)
-			l.Unlock()
-		}(ep, mut)
+			mu.Unlock()
+		}(ep, &mut)
 	}
 
 	wg.Wait()

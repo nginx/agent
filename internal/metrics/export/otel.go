@@ -32,7 +32,7 @@ type OTelExporter struct {
 	conf           *config.Config
 	intExp         *otlpmetricgrpc.Exporter
 	convert        model.Converter[metricdata.Metrics]
-	bufferMutex    *sync.Mutex
+	bufferMutex    sync.Mutex
 	sink           chan model.DataEntry
 	buffer         []metricdata.Metrics
 	bufferLen      int
@@ -125,7 +125,7 @@ func NewOTelExporter(ctx context.Context, agentConf *config.Config, serviceName,
 		conf:           agentConf,
 		intExp:         exp,
 		convert:        c,
-		bufferMutex:    &sync.Mutex{},
+		bufferMutex:    sync.Mutex{},
 		sink:           make(chan model.DataEntry),
 		buffer:         make([]metricdata.Metrics, 0, bufferLength),
 		bufferLen:      bufferLength,
