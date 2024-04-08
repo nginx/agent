@@ -14,7 +14,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -26,12 +26,12 @@ const (
 )
 
 type ConfigClientInterface interface {
-	GetFilesMetadata(ctx context.Context, filesURL, tenantID, instanceID string) (*instances.Files, error)
+	GetFilesMetadata(ctx context.Context, filesURL, tenantID, instanceID string) (*v1.FileOverview, error)
 	GetFile(
 		ctx context.Context,
-		file *instances.File,
+		file *v1.FileMeta,
 		filesURL, tenantID, instanceID string,
-	) (*instances.FileDownloadResponse, error)
+	) (*v1.FileContents, error)
 }
 
 type HTTPConfigClient struct {
@@ -51,9 +51,9 @@ func NewHTTPConfigClient(timeout time.Duration) *HTTPConfigClient {
 func (hcd *HTTPConfigClient) GetFilesMetadata(
 	ctx context.Context,
 	filesURL, tenantID, instanceID string,
-) (*instances.Files, error) {
+) (*v1.FileOverview, error) {
 	slog.DebugContext(ctx, "Getting files metadata")
-	files := instances.Files{}
+	files := v1.FileOverview{}
 
 	location := fmt.Sprintf(fileLocation, filesURL, instanceID)
 
@@ -98,20 +98,16 @@ func (hcd *HTTPConfigClient) GetFilesMetadata(
 
 func (hcd *HTTPConfigClient) GetFile(
 	ctx context.Context,
-	file *instances.File,
+	file *v1.FileMeta,
 	filesURL, tenantID, instanceID string,
-) (*instances.FileDownloadResponse, error) {
-	slog.DebugContext(ctx, "Getting file", "file_path", file.GetPath())
-	response := instances.FileDownloadResponse{}
-	params := url.Values{}
+) (*v1.FileContents, error) {
+	slog.DebugContext(ctx, "Getting file", "file_path", file.GetName())
+	response := v1.FileContents{}
 
-	params.Add("version", file.GetVersion())
-	params.Add("encoded", "true")
-
-	filePath := url.QueryEscape(file.GetPath())
+	filePath := url.QueryEscape(file.GetName())
 
 	location := fmt.Sprintf(fileLocation, filesURL, instanceID)
-	fileURL := fmt.Sprintf("%s%s?%s", location, filePath, params.Encode())
+	fileURL := fmt.Sprintf("%s%s?", location, filePath)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating GetFile request %s: %w", filesURL, err)

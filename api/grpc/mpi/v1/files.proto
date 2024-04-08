@@ -30,8 +30,10 @@ service FileService {
 
 // Represents a request payload for a file overview
 message GetOverviewRequest {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
     // The config version of the overview you are requesting
-    ConfigVersion config_version = 1;
+    ConfigVersion config_version = 2;
 }
 
 // Represents a response payload for an overview of files for a particular configuration version of an instance
@@ -42,8 +44,10 @@ message GetOverviewResponse {
 
 // Represents a the payload for an overview an update of  files for a particular configuration version of an instance
 message UpdateOverviewRequest {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
     // The file overview of an instance
-    FileOverview overview = 1;
+    FileOverview overview = 2;
 }
 
 // Represents a the response from an UpdateOverviewRequest - intentionally left empty

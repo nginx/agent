@@ -547,6 +547,7 @@ Represents a request payload for a file overview
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
 | config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | The config version of the overview you are requesting |
 
 
@@ -608,6 +609,7 @@ Represents a the payload for an overview an update of  files for a particular co
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
 | overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview of an instance |
 
 
