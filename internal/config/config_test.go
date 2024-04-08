@@ -296,6 +296,7 @@ func TestCommand(t *testing.T) {
 	viperInstance.Set(CommandTLSKeyKey, expected.TLS.Key)
 	viperInstance.Set(CommandTLSCaKey, expected.TLS.Ca)
 	viperInstance.Set(CommandTLSSkipVerifyKey, expected.TLS.SkipVerify)
+	viperInstance.Set(CommandTLSServerNameKey, expected.TLS.ServerName)
 
 	// root keys for sections are set
 	assert.True(t, viperInstance.IsSet(CommandRootKey))
@@ -383,6 +384,7 @@ func getAgentConfig() *Config {
 				Key:        "some.key",
 				Ca:         "some.ca",
 				SkipVerify: false,
+				ServerName: "server-name",
 			},
 		},
 	}

@@ -27,7 +27,7 @@ type ProcessMonitor struct {
 	getProcessesFunc    GetProcessesFunc
 	processTicker       *time.Ticker
 	cancel              context.CancelFunc
-	processesMutex      *sync.Mutex
+	processesMutex      sync.Mutex
 }
 
 func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
@@ -36,7 +36,7 @@ func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
 		processes:           []*model.Process{},
 		getProcessesFunc:    host.GetProcesses,
 		processTicker:       nil,
-		processesMutex:      &sync.Mutex{},
+		processesMutex:      sync.Mutex{},
 	}
 }
 

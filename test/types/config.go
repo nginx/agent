@@ -6,6 +6,7 @@
 package types
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -16,12 +17,21 @@ const (
 	commandPort = 8981
 	metricsPort = 8982
 
-	clientTimeout   = 5 * time.Second
+	clientPermitWithoutStream = true
+	clientTime                = 50 * time.Second
+	clientTimeout             = 5 * time.Second
+
 	connTimeout     = 10 * time.Second
 	minConnTimeout  = 7 * time.Second
 	backoffDelay    = 240 * time.Second
 	exportInterval  = 30 * time.Second
 	produceInterval = 5 * time.Second
+
+	commonInitialInterval     = 100 * time.Microsecond
+	commonMaxInterval         = 1000 * time.Microsecond
+	commonMaxElapsedTime      = 10 * time.Millisecond
+	commonRandomizationFactor = 0.1
+	commonMultiplier          = 0.2
 
 	bufferLength     = 55
 	exportRetryCount = 3
@@ -40,7 +50,9 @@ func GetAgentConfig() *config.Config {
 			Port: apiPort,
 		},
 		Client: &config.Client{
-			Timeout: clientTimeout,
+			Timeout:             clientTimeout,
+			Time:                clientTime,
+			PermitWithoutStream: clientPermitWithoutStream,
 		},
 		ConfigDir:          "",
 		AllowedDirectories: []string{"/tmp/"},
@@ -51,7 +63,7 @@ func GetAgentConfig() *config.Config {
 				ExportRetryCount: exportRetryCount,
 				ExportInterval:   exportInterval,
 				GRPC: &config.GRPC{
-					Target:         "dummy-target",
+					Target:         fmt.Sprintf("%s:%d", "dummy-target", metricsPort),
 					ConnTimeout:    connTimeout,
 					MinConnTimeout: minConnTimeout,
 					BackoffDelay:   backoffDelay,
@@ -74,11 +86,20 @@ func GetAgentConfig() *config.Config {
 				Token: "1234",
 			},
 			TLS: &config.TLSConfig{
-				Cert:       "some.cert",
-				Key:        "some.key",
-				Ca:         "some.ca",
-				SkipVerify: false,
+				Cert:       "cert.pem",
+				Key:        "key.pem",
+				Ca:         "ca.pem",
+				SkipVerify: true,
+				ServerName: "test-server",
 			},
+		},
+		File: &config.File{},
+		Common: &config.CommonSettings{
+			InitialInterval:     commonInitialInterval,
+			MaxInterval:         commonMaxInterval,
+			MaxElapsedTime:      commonMaxElapsedTime,
+			RandomizationFactor: commonRandomizationFactor,
+			Multiplier:          commonMultiplier,
 		},
 	}
 }

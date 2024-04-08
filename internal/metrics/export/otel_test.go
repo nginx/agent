@@ -158,7 +158,7 @@ func TestOTelExporter_Constructor(t *testing.T) {
 	assert.Equal(t, types.GetAgentConfig(), exporter.conf)
 	assert.NotNil(t, exporter.intExp)
 	assert.NotNil(t, exporter.convert)
-	assert.NotNil(t, exporter.bufferMutex)
+	assert.NotNil(t, &exporter.bufferMutex)
 	assert.NotNil(t, exporter.sink)
 	assert.Empty(t, exporter.buffer)
 	assert.NotNil(t, exporter.res)
