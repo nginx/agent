@@ -141,7 +141,7 @@ func (gc *GrpcClient) Close(ctx context.Context) error {
 	if gc.conn != nil {
 		err := gc.conn.Close()
 		if err != nil && gc.cancel != nil {
-			slog.Error("Failed to gracefully close gRPC connection", "error", err)
+			slog.ErrorContext(ctx, "Failed to gracefully close gRPC connection", "error", err)
 			gc.cancel()
 		}
 	}
