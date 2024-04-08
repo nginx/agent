@@ -5,11 +5,17 @@
 
 package grpc
 
-import "context"
+import (
+	"context"
+
+	"google.golang.org/grpc/credentials"
+)
 
 const (
 	TokenKey = "token"
 )
+
+var _ credentials.PerRPCCredentials = (*PerRPCCredentials)(nil)
 
 // PerRPCCredentials implements the PerRPCCredentials interface.
 type PerRPCCredentials struct {

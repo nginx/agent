@@ -72,7 +72,6 @@ func NewMockManagementServer(
 	agentConfig *config.Config,
 ) (*MockManagementServer, error) {
 	var err error
-	// commandServiceLock.Lock()
 	commandService := serveCommandService(apiAddress, agentConfig)
 
 	var fileServer *FileService
@@ -111,7 +110,6 @@ func NewMockManagementServer(
 			slog.Error("Failed to serve server", "error", err)
 		}
 	}()
-	// commandServiceLock.Unlock()
 
 	return &MockManagementServer{
 		CommandService: commandService,
@@ -128,18 +126,14 @@ func (ms *MockManagementServer) Stop() {
 	go func() {
 		signal.Stop(sigs)
 
-		// commandServiceLock.Lock()
 		ms.GrpcServer.Stop()
-		// commandServiceLock.Unlock()
 
 		time.Sleep(testTimeout)
 		done <- true
 	}()
 
 	<-done
-	// commandServiceLock.Lock()
 	ms.GrpcServer.GracefulStop()
-	// commandServiceLock.Unlock()
 
 	time.Sleep(testTimeout)
 }

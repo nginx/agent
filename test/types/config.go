@@ -17,9 +17,9 @@ const (
 	commandPort = 8981
 	metricsPort = 8982
 
-	clientPermitStream = true
-	clientTime         = 50 * time.Second
-	clientTimeout      = 5 * time.Second
+	clientPermitWithoutStream = true
+	clientTime                = 50 * time.Second
+	clientTimeout             = 5 * time.Second
 
 	connTimeout     = 10 * time.Second
 	minConnTimeout  = 7 * time.Second
@@ -27,11 +27,11 @@ const (
 	exportInterval  = 30 * time.Second
 	produceInterval = 5 * time.Second
 
-	commonInitialInterval = 100 * time.Microsecond
-	commonMaxInterval     = 1000 * time.Microsecond
-	commonMaxElapsedTime  = 10 * time.Millisecond
-	commonJitter          = 0.1
-	commonMultiplier      = 0.2
+	commonInitialInterval     = 100 * time.Microsecond
+	commonMaxInterval         = 1000 * time.Microsecond
+	commonMaxElapsedTime      = 10 * time.Millisecond
+	commonRandomizationFactor = 0.1
+	commonMultiplier          = 0.2
 
 	bufferLength     = 55
 	exportRetryCount = 3
@@ -50,9 +50,9 @@ func GetAgentConfig() *config.Config {
 			Port: apiPort,
 		},
 		Client: &config.Client{
-			Timeout:      clientTimeout,
-			Time:         clientTime,
-			PermitStream: clientPermitStream,
+			Timeout:             clientTimeout,
+			Time:                clientTime,
+			PermitWithoutStream: clientPermitWithoutStream,
 		},
 		ConfigDir:          "",
 		AllowedDirectories: []string{"/tmp/"},
@@ -95,11 +95,11 @@ func GetAgentConfig() *config.Config {
 		},
 		File: &config.File{},
 		Common: &config.CommonSettings{
-			InitialInterval: commonInitialInterval,
-			MaxInterval:     commonMaxInterval,
-			MaxElapsedTime:  commonMaxElapsedTime,
-			Jitter:          commonJitter,
-			Multiplier:      commonMultiplier,
+			InitialInterval:     commonInitialInterval,
+			MaxInterval:         commonMaxInterval,
+			MaxElapsedTime:      commonMaxElapsedTime,
+			RandomizationFactor: commonRandomizationFactor,
+			Multiplier:          commonMultiplier,
 		},
 	}
 }

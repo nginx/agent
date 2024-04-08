@@ -83,11 +83,11 @@ func TestWaitUntil(t *testing.T) {
 	for _, test := range tests {
 		invocations = 0
 		settings := &Settings{
-			InitialInterval: test.initialInterval,
-			MaxInterval:     test.maxInterval,
-			MaxElapsedTime:  test.maxElapsedTime,
-			Jitter:          Jitter,
-			Multiplier:      Multiplier,
+			InitialInterval:     test.initialInterval,
+			MaxInterval:         test.maxInterval,
+			MaxElapsedTime:      test.maxElapsedTime,
+			RandomizationFactor: RandomizationFactor,
+			Multiplier:          Multiplier,
 		}
 		result := WaitUntil(test.context, settings, test.operation)
 

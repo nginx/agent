@@ -40,13 +40,13 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					},
 				},
 			},
-			7,
+			6,
 			false,
 		},
 		{
 			"Test 2: DialOptions mTLS",
 			types.GetAgentConfig(),
-			7,
+			6,
 			true,
 		},
 		{
@@ -65,7 +65,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 				},
 				Client: types.GetAgentConfig().Client,
 			},
-			7,
+			6,
 			false,
 		},
 		{
@@ -77,7 +77,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					TLS:    types.GetAgentConfig().Command.TLS,
 				},
 			},
-			6,
+			5,
 			false,
 		},
 		{
@@ -89,7 +89,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					TLS:    types.GetAgentConfig().Command.TLS,
 				},
 			},
-			7,
+			6,
 			false,
 		},
 		{
@@ -101,14 +101,14 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					Auth:   types.GetAgentConfig().Command.Auth,
 				},
 			},
-			8,
+			7,
 			false,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(ttt *testing.T) {
-			if tt.createCerts {
+	for _, test := range tests {
+		t.Run(test.name, func(ttt *testing.T) {
+			if test.createCerts {
 				tmpDir := t.TempDir()
 				// not mTLS scripts
 				key, cert := helpers.GenerateSelfSignedCert(t)
@@ -122,14 +122,14 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 				helpers.WriteCertFiles(t, tmpDir, certContents)
 				helpers.WriteCertFiles(t, tmpDir, caContents)
 
-				tt.agentConfig.Command.TLS.Cert = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, certFileName)
-				tt.agentConfig.Command.TLS.Key = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, keyFileName)
-				tt.agentConfig.Command.TLS.Ca = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, caFileName)
+				test.agentConfig.Command.TLS.Cert = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, certFileName)
+				test.agentConfig.Command.TLS.Key = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, keyFileName)
+				test.agentConfig.Command.TLS.Ca = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, caFileName)
 			}
 
-			options := GetDialOptions(tt.agentConfig)
+			options := GetDialOptions(test.agentConfig)
 			assert.NotNil(ttt, options)
-			assert.Len(ttt, options, tt.expected)
+			assert.Len(ttt, options, test.expected)
 		})
 	}
 }

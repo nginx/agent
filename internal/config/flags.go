@@ -60,7 +60,7 @@ var (
 	CommandTLSServerNameKey         = pre(CommandRootKey) + "server_name"
 	ClientTimeoutKey                = pre(ClientRootKey) + "timeout"
 	ClientTimeKey                   = pre(ClientRootKey) + "time"
-	ClientPermitStreamKey           = pre(ClientRootKey) + "permit_stream"
+	ClientPermitWithoutStreamKey    = pre(ClientRootKey) + "permit_without_stream"
 )
 
 func pre(prefixes ...string) string {

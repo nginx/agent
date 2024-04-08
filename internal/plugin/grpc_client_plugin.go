@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -26,31 +27,33 @@ import (
 
 type (
 	GrpcClient struct {
-		messagePipe bus.MessagePipeInterface
-		config      *config.Config
-		conn        *grpc.ClientConn
-		cancel      context.CancelFunc
-		settings    *backoff.Settings
+		messagePipe    bus.MessagePipeInterface
+		config         *config.Config
+		conn           *grpc.ClientConn
+		cancel         context.CancelFunc
+		settings       *backoff.Settings
+		connectionLock *sync.Mutex
 	}
 )
 
 func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 	if agentConfig != nil && agentConfig.Command.Server.Type == "grpc" {
 		if agentConfig.Common == nil {
-			slog.Error("invalid configuration settings")
+			slog.Error("Invalid configuration settings")
 			return nil
 		}
 		settings := &backoff.Settings{
-			InitialInterval: agentConfig.Common.InitialInterval,
-			MaxInterval:     agentConfig.Common.MaxInterval,
-			MaxElapsedTime:  agentConfig.Common.MaxElapsedTime,
-			Jitter:          agentConfig.Common.Jitter,
-			Multiplier:      agentConfig.Common.Multiplier,
+			InitialInterval:     agentConfig.Common.InitialInterval,
+			MaxInterval:         agentConfig.Common.MaxInterval,
+			MaxElapsedTime:      agentConfig.Common.MaxElapsedTime,
+			RandomizationFactor: agentConfig.Common.RandomizationFactor,
+			Multiplier:          agentConfig.Common.Multiplier,
 		}
 
 		return &GrpcClient{
-			config:   agentConfig,
-			settings: settings,
+			config:         agentConfig,
+			settings:       settings,
+			connectionLock: &sync.Mutex{},
 		}
 	}
 
@@ -58,10 +61,13 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 }
 
 func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+	var (
+		grpcClientCtx context.Context
+		err           error
+	)
+
 	slog.InfoContext(ctx, "Starting grpc client plugin")
 	gc.messagePipe = messagePipe
-	var grpcClientCtx context.Context
-	var err error
 
 	serverAddr := net.JoinHostPort(
 		gc.config.Command.Server.Host,
@@ -69,9 +75,12 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	)
 
 	grpcClientCtx, gc.cancel = context.WithTimeout(ctx, gc.config.Client.Timeout)
-	slog.Info("Dialing grpc server", "server_addr", serverAddr)
+	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
 
+	gc.connectionLock.Lock()
 	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, agentGrpc.GetDialOptions(gc.config)...)
+	gc.connectionLock.Unlock()
+
 	if err != nil {
 		return err
 	}
@@ -93,6 +102,9 @@ func (gc *GrpcClient) createConnection() error {
 	if err != nil {
 		return fmt.Errorf("error generating correlation id: %w", err)
 	}
+
+	gc.connectionLock.Lock()
+	defer gc.connectionLock.Unlock()
 
 	if gc.conn == nil || gc.conn.GetState() == connectivity.Shutdown {
 		return fmt.Errorf("can't connect to server")
@@ -120,7 +132,7 @@ func (gc *GrpcClient) createConnection() error {
 
 	response, err := client.CreateConnection(reqCtx, req)
 	if err != nil {
-		return fmt.Errorf("error creating connection: %w", err)
+		return fmt.Errorf("creating connection: %w", err)
 	}
 
 	slog.Debug("Connection created", "response", response)
@@ -131,6 +143,9 @@ func (gc *GrpcClient) createConnection() error {
 
 func (gc *GrpcClient) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing grpc client plugin")
+
+	gc.connectionLock.Lock()
+	defer gc.connectionLock.Unlock()
 
 	if gc.conn != nil {
 		err := gc.conn.Close()
@@ -151,7 +166,7 @@ func (gc *GrpcClient) Info() *bus.Info {
 
 func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	if msg.Topic == bus.GrpcConnectedTopic {
-		slog.Debug("Agent connected")
+		slog.DebugContext(ctx, "Agent connected")
 	}
 }
 

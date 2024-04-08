@@ -84,19 +84,19 @@ func TestDataPlaneServer_Process(t *testing.T) {
 			topic: bus.InstanceConfigUpdateTopic,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(ttt *testing.T) {
-			messagePipe.Process(ctx, &bus.Message{Topic: tt.topic, Data: tt.data})
+	for _, test := range tests {
+		t.Run(test.name, func(ttt *testing.T) {
+			messagePipe.Process(ctx, &bus.Message{Topic: test.topic, Data: test.data})
 			time.Sleep(10 * time.Millisecond)
 
 			var actual interface{}
-			if tt.topic == bus.InstancesTopic {
+			if test.topic == bus.InstancesTopic {
 				actual = dataPlaneServer.getInstances()
 			} else {
 				actual = dataPlaneServer.getConfigurationStatus(instanceID)[0]
 			}
 
-			assert.Equal(t, tt.data, actual)
+			assert.Equal(t, test.data, actual)
 		})
 	}
 

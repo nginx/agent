@@ -47,9 +47,9 @@ type NginxDataPlaneConfig struct {
 }
 
 type Client struct {
-	Timeout      time.Duration `yaml:"-" mapstructure:"timeout"`
-	Time         time.Duration `yaml:"-" mapstructure:"time"`
-	PermitStream bool          `yaml:"-" mapstructure:"permit_stream"`
+	Timeout             time.Duration `yaml:"-" mapstructure:"timeout"`
+	Time                time.Duration `yaml:"-" mapstructure:"time"`
+	PermitWithoutStream bool          `yaml:"-" mapstructure:"permit_without_stream"`
 }
 
 type Metrics struct {
@@ -108,9 +108,9 @@ type File struct {
 }
 
 type CommonSettings struct {
-	InitialInterval time.Duration `yaml:"-"`
-	MaxInterval     time.Duration `yaml:"-"`
-	MaxElapsedTime  time.Duration `yaml:"-"`
-	Jitter          float64       `yaml:"-"`
-	Multiplier      float64       `yaml:"-"`
+	InitialInterval     time.Duration `yaml:"-" mapstructure:"initial_interval"`
+	MaxInterval         time.Duration `yaml:"-" mapstructure:"max_interval"`
+	MaxElapsedTime      time.Duration `yaml:"-" mapstructure:"max_elapsed_time"`
+	RandomizationFactor float64       `yaml:"-" mapstructure:"randomization_factor"`
+	Multiplier          float64       `yaml:"-" mapstructure:"multiplier"`
 }

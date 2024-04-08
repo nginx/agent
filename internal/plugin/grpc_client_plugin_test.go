@@ -8,6 +8,7 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -45,16 +46,16 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 					},
 				},
 				Common: &config.CommonSettings{
-					InitialInterval: 100 * time.Microsecond,
-					MaxInterval:     1000 * time.Microsecond,
-					MaxElapsedTime:  10 * time.Millisecond,
-					Jitter:          0.1,
-					Multiplier:      0.2,
+					InitialInterval:     100 * time.Microsecond,
+					MaxInterval:         1000 * time.Microsecond,
+					MaxElapsedTime:      10 * time.Millisecond,
+					RandomizationFactor: 0.1,
+					Multiplier:          0.2,
 				},
 				Client: &config.Client{
-					Timeout:      100 * time.Microsecond,
-					Time:         200 * time.Microsecond,
-					PermitStream: false,
+					Timeout:             100 * time.Microsecond,
+					Time:                200 * time.Microsecond,
+					PermitWithoutStream: false,
 				},
 			},
 			nil,
@@ -75,11 +76,11 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 					},
 				},
 				Common: &config.CommonSettings{
-					InitialInterval: 100 * time.Microsecond,
-					MaxInterval:     1000 * time.Microsecond,
-					MaxElapsedTime:  10 * time.Millisecond,
-					Jitter:          0.1,
-					Multiplier:      0.2,
+					InitialInterval:     100 * time.Microsecond,
+					MaxInterval:         1000 * time.Microsecond,
+					MaxElapsedTime:      10 * time.Millisecond,
+					RandomizationFactor: 0.1,
+					Multiplier:          0.2,
 				},
 			},
 			nil,
@@ -95,23 +96,23 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 					},
 				},
 				Client: &config.Client{
-					Timeout:      100 * time.Microsecond,
-					Time:         200 * time.Microsecond,
-					PermitStream: false,
+					Timeout:             100 * time.Microsecond,
+					Time:                200 * time.Microsecond,
+					PermitWithoutStream: false,
 				},
 			},
 			nil,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(ttt *testing.T) {
-			grpcClient := NewGrpcClient(tt.agentConfig)
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			grpcClient := NewGrpcClient(test.agentConfig)
 
 			if grpcClient == nil {
-				assert.Equal(t, tt.expected, grpcClient)
+				assert.Equal(t, test.expected, grpcClient)
 			} else {
-				assert.IsType(t, tt.expected, grpcClient)
+				assert.IsType(t, test.expected, grpcClient)
 			}
 		})
 	}
@@ -134,22 +135,22 @@ func TestGrpcClient_Init(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(ttt *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
 			ctx := context.Background()
-			tt.agentConfig.Command.Server.Host = tt.server
-			client := NewGrpcClient(tt.agentConfig)
-			assert.NotNil(t, client)
+			test.agentConfig.Command.Server.Host = test.server
+			client := NewGrpcClient(test.agentConfig)
+			assert.NotNil(tt, client)
 
 			messagePipe := bus.NewMessagePipe(100)
 			err := messagePipe.Register(100, []bus.Plugin{client})
-			require.NoError(t, err)
+			require.NoError(tt, err)
 
 			err = client.Init(ctx, messagePipe)
-			if tt.expectedError {
-				assert.Contains(ttt, err.Error(), tt.errorMessage)
+			if test.expectedError {
+				assert.Contains(tt, err.Error(), test.errorMessage)
 			} else {
-				require.NoError(ttt, err)
+				require.NoError(tt, err)
 			}
 		})
 	}
@@ -184,6 +185,7 @@ func TestGrpcClient_Process(t *testing.T) {
 }
 
 func TestGrpcClient_Close(t *testing.T) {
+	serverMockLock := sync.Mutex{}
 	tests := []struct {
 		name         string
 		agentConfig  *config.Config
@@ -305,43 +307,45 @@ func TestGrpcClient_Close(t *testing.T) {
 			true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(ttt *testing.T) {
-			address := fmt.Sprintf("%s:%d", tt.agentConfig.Command.Server.Host, tt.agentConfig.Command.Server.Port+1)
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			address := fmt.Sprintf("%s:%d", test.agentConfig.Command.Server.Host, test.agentConfig.Command.Server.Port+1)
 
-			if tt.createCerts {
-				tmpDir := t.TempDir()
-				key, cert := helpers.GenerateSelfSignedCert(ttt)
+			if test.createCerts {
+				tmpDir := tt.TempDir()
+				key, cert := helpers.GenerateSelfSignedCert(tt)
 
 				keyContents := helpers.Cert{Name: "key.pem", Type: "RSA PRIVATE KEY", Contents: key}
 				certContents := helpers.Cert{Name: "cert.pem", Type: "CERTIFICATE", Contents: cert}
 
-				keyFile := helpers.WriteCertFiles(t, tmpDir, keyContents)
-				certFile := helpers.WriteCertFiles(t, tmpDir, certContents)
+				keyFile := helpers.WriteCertFiles(tt, tmpDir, keyContents)
+				certFile := helpers.WriteCertFiles(tt, tmpDir, certContents)
 
-				tt.agentConfig.Command.TLS.Key = keyFile
-				tt.agentConfig.Command.TLS.Cert = certFile
+				test.agentConfig.Command.TLS.Key = keyFile
+				test.agentConfig.Command.TLS.Cert = certFile
 			}
 
-			server, err := mockGrpc.NewMockManagementServer(address, tt.agentConfig)
-			require.NoError(ttt, err)
+			serverMockLock.Lock()
+			server, err := mockGrpc.NewMockManagementServer(address, test.agentConfig)
+			require.NoError(tt, err)
+			serverMockLock.Unlock()
 
-			client := NewGrpcClient(tt.agentConfig)
-			assert.NotNil(t, client)
+			client := NewGrpcClient(test.agentConfig)
+			assert.NotNil(tt, client)
 
 			messagePipe := bus.NewMessagePipe(100)
 			err = messagePipe.Register(100, []bus.Plugin{client})
-			require.NoError(t, err)
+			require.NoError(tt, err)
 
 			err = client.Init(context.Background(), messagePipe)
 			if err == nil {
-				require.NoError(ttt, err)
+				require.NoError(tt, err)
 			} else {
-				assert.Contains(ttt, err.Error(), tt.errorMessage)
+				assert.Contains(tt, err.Error(), test.errorMessage)
 			}
 
 			err = client.Close(context.Background())
-			require.NoError(ttt, err)
+			require.NoError(tt, err)
 
 			defer server.Stop()
 		})

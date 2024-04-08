@@ -32,6 +32,10 @@ type CommandService struct {
 	updateDataPlaneStatusMutex   *sync.Mutex
 }
 
+func init() {
+	gin.SetMode(gin.ReleaseMode)
+}
+
 func NewCommandService() *CommandService {
 	mgs := &CommandService{
 		requestChan:                make(chan *v1.ManagementPlaneRequest),
@@ -49,7 +53,6 @@ func NewCommandService() *CommandService {
 
 	logger := slog.New(handler)
 
-	gin.SetMode(gin.ReleaseMode)
 	server := gin.New()
 	server.UseRawPath = true
 	server.Use(sloggin.NewWithConfig(logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))

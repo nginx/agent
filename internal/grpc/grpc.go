@@ -30,7 +30,6 @@ var defaultCredentials = insecure.NewCredentials()
 func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 	skipToken := false
 	opts := []grpc.DialOption{
-		grpc.WithBlock(),
 		grpc.WithReturnConnectionError(),
 		grpc.WithStreamInterceptor(grpcRetry.StreamClientInterceptor()),
 		grpc.WithUnaryInterceptor(grpcRetry.UnaryClientInterceptor()),
@@ -41,7 +40,7 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 		keepAlive := keepalive.ClientParameters{
 			Time:                agentConfig.Client.Time,
 			Timeout:             agentConfig.Client.Timeout,
-			PermitWithoutStream: agentConfig.Client.PermitStream,
+			PermitWithoutStream: agentConfig.Client.PermitWithoutStream,
 		}
 
 		opts = append(opts,

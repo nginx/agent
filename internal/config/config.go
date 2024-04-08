@@ -301,9 +301,9 @@ func getDataPlaneConfig() *DataPlaneConfig {
 
 func getClient() *Client {
 	return &Client{
-		Timeout:      viperInstance.GetDuration(ClientTimeoutKey),
-		Time:         viper.GetDuration(ClientTimeKey),
-		PermitStream: viper.GetBool(ClientPermitStreamKey),
+		Timeout:             viperInstance.GetDuration(ClientTimeoutKey),
+		Time:                viper.GetDuration(ClientTimeKey),
+		PermitWithoutStream: viper.GetBool(ClientPermitWithoutStreamKey),
 	}
 }
 
@@ -386,10 +386,10 @@ func getCommand() *Command {
 
 func getCommon() *CommonSettings {
 	return &CommonSettings{
-		InitialInterval: DefBackoffInitalInterval,
-		MaxInterval:     DefBackoffMaxInterval,
-		MaxElapsedTime:  DefBackoffMaxElapsedTime,
-		Jitter:          DefBackoffJitter,
-		Multiplier:      DefBackoffMultiplier,
+		InitialInterval:     DefBackoffInitalInterval,
+		MaxInterval:         DefBackoffMaxInterval,
+		MaxElapsedTime:      DefBackoffMaxElapsedTime,
+		RandomizationFactor: DefBackoffRandomizationFactor,
+		Multiplier:          DefBackoffMultiplier,
 	}
 }
