@@ -20,6 +20,7 @@ type Config struct {
 	Metrics            *Metrics         `yaml:"-" mapstructure:"metrics"`
 	Command            *Command         `yaml:"-" mapstructure:"command"`
 	File               *File            `yaml:"-" mapstructure:"file"`
+	Common             *CommonSettings  `yaml:"-"`
 }
 
 type Log struct {
@@ -46,7 +47,9 @@ type NginxDataPlaneConfig struct {
 }
 
 type Client struct {
-	Timeout time.Duration `yaml:"-" mapstructure:"timeout"`
+	Timeout             time.Duration `yaml:"-" mapstructure:"timeout"`
+	Time                time.Duration `yaml:"-" mapstructure:"time"`
+	PermitWithoutStream bool          `yaml:"-" mapstructure:"permit_without_stream"`
 }
 
 type Metrics struct {
@@ -93,12 +96,21 @@ type AuthConfig struct {
 }
 
 type TLSConfig struct {
-	Enable     bool   `yaml:"-" mapstructure:"enable"`
 	Cert       string `yaml:"-" mapstructure:"cert"`
 	Key        string `yaml:"-" mapstructure:"key"`
 	Ca         string `yaml:"-" mapstructure:"ca"`
 	SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
+	ServerName string `yaml:"-" mapstructure:"server_name"`
 }
 
-// leaving this blank intentionally for now, this will have the location of the file server for configurations
-type File struct{}
+type File struct {
+	Location string `yaml:"-" mapstructure:"location"`
+}
+
+type CommonSettings struct {
+	InitialInterval     time.Duration `yaml:"-" mapstructure:"initial_interval"`
+	MaxInterval         time.Duration `yaml:"-" mapstructure:"max_interval"`
+	MaxElapsedTime      time.Duration `yaml:"-" mapstructure:"max_elapsed_time"`
+	RandomizationFactor float64       `yaml:"-" mapstructure:"randomization_factor"`
+	Multiplier          float64       `yaml:"-" mapstructure:"multiplier"`
+}

@@ -6,117 +6,76 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io"
 	"log/slog"
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/logger"
-	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
-	"google.golang.org/grpc"
+	"github.com/nginx/agent/v3/test/mock/grpc"
+	"github.com/nginx/agent/v3/test/types"
 )
 
 const (
+	defaultSleepDuration = time.Millisecond * 100
 	directoryPermissions = 0o700
 )
 
+var (
+	sleepDuration   = flag.Duration("sleepDuration", defaultSleepDuration, "duration between changes in health")
+	configDirectory = flag.String("configDirectory", "", "set the directory where the config files are stored")
+	grpcAddress     = flag.String("grpcAddress", "127.0.0.1:0", "set the gRPC address to run the server on")
+	apiAddress      = flag.String("apiAddress", "127.0.0.1:0", "set the API address to run the server on")
+	logLevel        = flag.String("logLevel", "INFO", "set the log level")
+)
+
 func main() {
-	var configDirectory string
-	var grpcAddress string
-	var apiAddress string
-	var address string
-	var logLevel string
-
-	flag.StringVar(
-		&configDirectory,
-		"configDirectory",
-		"",
-		"set the directory where the config files are stored",
-	)
-
-	flag.StringVar(
-		&address,
-		"address",
-		"127.0.0.1:0",
-		"set the address to run the server on",
-	)
-
-	flag.StringVar(
-		&grpcAddress,
-		"grpcAddress",
-		"127.0.0.1:0",
-		"set the gRPC address to run the server on",
-	)
-
-	flag.StringVar(
-		&apiAddress,
-		"apiAddress",
-		"127.0.0.1:0",
-		"set the API address to run the server on",
-	)
-
-	flag.StringVar(
-		&logLevel,
-		"logLevel",
-		"INFO",
-		"set the log level",
-	)
-
 	flag.Parse()
+	ctx := context.Background()
+
+	agentConfig := types.GetAgentConfig()
+	grpcHost, grpcPort, err := net.SplitHostPort(*grpcAddress)
+	if err != nil {
+		slog.Error("Failed to read host and port", "error", err)
+		os.Exit(1)
+	}
+	portInt, err := strconv.Atoi(grpcPort)
+	if err != nil {
+		slog.Error("Failed to convert port", "error", err)
+		os.Exit(1)
+	}
+
+	agentConfig.Command.Server.Host = grpcHost
+	agentConfig.Command.Server.Port = portInt
+	agentConfig.Command.Auth = nil
+	agentConfig.Command.TLS = nil
+	agentConfig.Common.MaxElapsedTime = *sleepDuration
 
 	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: logger.GetLogLevel(logLevel),
+		Level: logger.GetLogLevel(*logLevel),
 	}))
 	slog.SetDefault(newLogger)
 
-	if configDirectory == "" {
-		defaultConfigDirectory, err := generateDefaultConfigDirectory()
-		configDirectory = defaultConfigDirectory
-		if err != nil {
+	if configDirectory == nil {
+		defaultConfigDirectory, configDirErr := generateDefaultConfigDirectory()
+		configDirectory = &defaultConfigDirectory
+		if configDirErr != nil {
 			slog.Error("Failed to create default config directory", "error", err)
 			os.Exit(1)
 		}
 	}
 
-	commandServer := mockGrpc.NewManagementGrpcServer()
-
-	go func() {
-		listener, listenError := net.Listen("tcp", apiAddress)
-		if listenError != nil {
-			slog.Error("Failed to create listener", "error", listenError)
-			os.Exit(1)
-		}
-
-		commandServer.StartServer(listener)
-	}()
-
-	fileServer, err := mockGrpc.NewManagementGrpcFileServer(configDirectory)
+	_, err = grpc.NewMockManagementServer(*apiAddress, agentConfig)
 	if err != nil {
-		slog.Error("Failed to create file server", "error", err)
+		slog.Error("Failed to start mock management server", "error", err)
 		os.Exit(1)
 	}
-
-	listener, err := net.Listen("tcp", grpcAddress)
-	if err != nil {
-		slog.Error("Failed to listen", "error", err)
-		os.Exit(1)
-	}
-	var opts []grpc.ServerOption
-
-	grpcServer := grpc.NewServer(opts...)
-	v1.RegisterCommandServiceServer(grpcServer, commandServer)
-	v1.RegisterFileServiceServer(grpcServer, fileServer)
-
-	slog.Info("Starting mock management plane gRPC server", "address", listener.Addr().String())
-
-	err = grpcServer.Serve(listener)
-	if err != nil {
-		slog.Error("Failed to serve mock management plane gRPC server", "error", err)
-		os.Exit(1)
-	}
+	<-ctx.Done()
 }
 
 func generateDefaultConfigDirectory() (string, error) {
@@ -133,14 +92,14 @@ func generateDefaultConfigDirectory() (string, error) {
 		slog.Error("Failed to open nginx.conf", "error", err)
 		return "", err
 	}
-	defer source.Close()
+	defer CloseFile(source)
 
 	destination, err := os.Create(filepath.Join(tempDirectory, "config/1/etc/nginx/nginx.conf"))
 	if err != nil {
 		slog.Error("Failed to create nginx.conf", "error", err)
 		return "", err
 	}
-	defer destination.Close()
+	defer CloseFile(destination)
 
 	_, err = io.Copy(destination, source)
 	if err != nil {
@@ -149,4 +108,11 @@ func generateDefaultConfigDirectory() (string, error) {
 	}
 
 	return filepath.Join(tempDirectory, "config"), nil
+}
+
+func CloseFile(file *os.File) {
+	err := file.Close()
+	if err != nil {
+		slog.Error("Failed to close file", "error", err)
+	}
 }
