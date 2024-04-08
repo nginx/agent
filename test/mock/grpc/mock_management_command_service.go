@@ -27,9 +27,9 @@ type CommandService struct {
 	requestChan                  chan *v1.ManagementPlaneRequest
 	dataPlaneResponses           []*v1.DataPlaneResponse
 	updateDataPlaneStatusRequest *v1.UpdateDataPlaneStatusRequest
-	dataPlaneResponsesMutex      *sync.Mutex
-	connectionMutex              *sync.Mutex
-	updateDataPlaneStatusMutex   *sync.Mutex
+	dataPlaneResponsesMutex      sync.Mutex
+	connectionMutex              sync.Mutex
+	updateDataPlaneStatusMutex   sync.Mutex
 }
 
 func init() {
@@ -39,9 +39,9 @@ func init() {
 func NewCommandService() *CommandService {
 	mgs := &CommandService{
 		requestChan:                make(chan *v1.ManagementPlaneRequest),
-		connectionMutex:            &sync.Mutex{},
-		updateDataPlaneStatusMutex: &sync.Mutex{},
-		dataPlaneResponsesMutex:    &sync.Mutex{},
+		connectionMutex:            sync.Mutex{},
+		updateDataPlaneStatusMutex: sync.Mutex{},
+		dataPlaneResponsesMutex:    sync.Mutex{},
 	}
 
 	handler := slog.NewTextHandler(

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -82,12 +83,12 @@ func TestWaitUntil(t *testing.T) {
 
 	for _, test := range tests {
 		invocations = 0
-		settings := &Settings{
+		settings := &config.CommonSettings{
 			InitialInterval:     test.initialInterval,
 			MaxInterval:         test.maxInterval,
 			MaxElapsedTime:      test.maxElapsedTime,
-			RandomizationFactor: RandomizationFactor,
-			Multiplier:          Multiplier,
+			RandomizationFactor: config.DefBackoffRandomizationFactor,
+			Multiplier:          config.DefBackoffMultiplier,
 		}
 		result := WaitUntil(test.context, settings, test.operation)
 

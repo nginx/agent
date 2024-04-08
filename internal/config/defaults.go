@@ -6,8 +6,6 @@ package config
 
 import (
 	"time"
-
-	"github.com/nginx/agent/v3/internal/backoff"
 )
 
 const (
@@ -30,9 +28,10 @@ const (
 	DefCommandTLSCaKey         = ""
 	DefCommandTLSSkipVerifyKey = false
 
-	DefBackoffInitalInterval      = 50 * time.Millisecond
-	DefBackoffRandomizationFactor = backoff.RandomizationFactor
-	DefBackoffMultiplier          = backoff.Multiplier
+	DefBackoffInitalInterval = 50 * time.Millisecond
+	// the value is 0 <= and < 1
+	DefBackoffRandomizationFactor = 0.1
+	DefBackoffMultiplier          = 1.5
 	DefBackoffMaxInterval         = 200 * time.Millisecond
 	DefBackoffMaxElapsedTime      = 3 * time.Second
 )

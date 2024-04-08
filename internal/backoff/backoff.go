@@ -7,27 +7,12 @@ package backoff
 
 import (
 	"context"
-	"time"
 
 	"github.com/cenkalti/backoff/v4"
-)
-
-const (
-	// this is the randomization factor used in the calculation of the randomized_interval
-	// the value is 0 <= and < 1
-	RandomizationFactor = 0.5
-	Multiplier          = backoff.DefaultMultiplier
+	"github.com/nginx/agent/v3/internal/config"
 )
 
 type Backoff[T any] struct{}
-
-type Settings struct {
-	InitialInterval     time.Duration
-	MaxInterval         time.Duration
-	MaxElapsedTime      time.Duration
-	Multiplier          float64
-	RandomizationFactor float64
-}
 
 // Implementation of backoff operations that increases the back off period for each retry attempt using
 // a randomization function that grows exponentially.
@@ -65,7 +50,7 @@ type Settings struct {
 // Information from https://pkg.go.dev/github.com/cenkalti/backoff/v4#section-readme
 func WaitUntil(
 	ctx context.Context,
-	backoffSettings *Settings,
+	backoffSettings *config.CommonSettings,
 	operation backoff.Operation,
 ) error {
 	eb := backoff.NewExponentialBackOff()

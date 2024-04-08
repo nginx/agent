@@ -22,11 +22,18 @@ import (
 const configFilePermissions = 0o700
 
 // nolint: ireturn
+type Parameters struct {
+	NginxConfigPath      string
+	NginxAgentConfigPath string
+	LogMessage           string
+}
+
+// nolint: ireturn
 func StartContainer(
 	ctx context.Context,
 	tb testing.TB,
 	containerNetwork *testcontainers.DockerNetwork,
-	nginxConfigPath, nginxAgentConfigPath string,
+	parameters *Parameters,
 ) testcontainers.Container {
 	tb.Helper()
 
@@ -57,7 +64,7 @@ func StartContainer(
 			},
 		},
 		ExposedPorts: []string{"9091/tcp"},
-		WaitingFor:   wait.ForLog("Agent connected"),
+		WaitingFor:   wait.ForLog(parameters.LogMessage),
 		Networks: []string{
 			containerNetwork.Name,
 		},
@@ -68,12 +75,12 @@ func StartContainer(
 		},
 		Files: []testcontainers.ContainerFile{
 			{
-				HostFilePath:      nginxAgentConfigPath,
+				HostFilePath:      parameters.NginxAgentConfigPath,
 				ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
 				FileMode:          configFilePermissions,
 			},
 			{
-				HostFilePath:      nginxConfigPath,
+				HostFilePath:      parameters.NginxConfigPath,
 				ContainerFilePath: "/etc/nginx/nginx.conf",
 				FileMode:          configFilePermissions,
 			},

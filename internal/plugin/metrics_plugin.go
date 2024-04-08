@@ -36,7 +36,7 @@ type (
 		shutdownFuncs   []context.CancelFunc
 		collectInterval time.Duration
 		metricsTimer    *time.Ticker
-		mutex           *sync.Mutex
+		mutex           sync.Mutex
 	}
 
 	// MetricsOption a functional option for `*Metrics`.
@@ -65,7 +65,7 @@ func NewMetrics(conf *config.Config, options ...MetricsOption) (*Metrics, error)
 		collectInterval: produceInterval,
 		shutdownFuncs:   make([]context.CancelFunc, 0),
 		metricsTimer:    nil,
-		mutex:           &sync.Mutex{},
+		mutex:           sync.Mutex{},
 	}
 
 	for _, opt := range options {

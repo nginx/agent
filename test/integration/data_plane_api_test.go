@@ -75,12 +75,17 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 		mockManagementPlaneAddress = "managementPlane:9092"
 		tb.Logf("Mock management server running on %s", mockManagementPlaneAddress)
 
+		params := &helpers.Parameters{
+			NginxConfigPath:      "../config/nginx/nginx.conf",
+			NginxAgentConfigPath: "../config/agent/nginx-agent-with-data-plane-api.conf",
+			LogMessage:           "Processes updated",
+		}
+
 		container = helpers.StartContainer(
 			ctx,
 			tb,
 			containerNetwork,
-			"../config/nginx/nginx.conf",
-			"../config/agent/nginx-agent-with-data-plane-api.conf",
+			params,
 		)
 
 		ipAddress, err := container.Host(ctx)

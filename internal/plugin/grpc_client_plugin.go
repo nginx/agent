@@ -31,8 +31,7 @@ type (
 		config         *config.Config
 		conn           *grpc.ClientConn
 		cancel         context.CancelFunc
-		settings       *backoff.Settings
-		connectionLock *sync.Mutex
+		connectionLock sync.Mutex
 	}
 )
 
@@ -42,18 +41,10 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 			slog.Error("Invalid configuration settings")
 			return nil
 		}
-		settings := &backoff.Settings{
-			InitialInterval:     agentConfig.Common.InitialInterval,
-			MaxInterval:         agentConfig.Common.MaxInterval,
-			MaxElapsedTime:      agentConfig.Common.MaxElapsedTime,
-			RandomizationFactor: agentConfig.Common.RandomizationFactor,
-			Multiplier:          agentConfig.Common.Multiplier,
-		}
 
 		return &GrpcClient{
 			config:         agentConfig,
-			settings:       settings,
-			connectionLock: &sync.Mutex{},
+			connectionLock: sync.Mutex{},
 		}
 	}
 
@@ -88,7 +79,7 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 
 	defer backoffCancel()
 
-	return backoff.WaitUntil(backOffCtx, gc.settings, gc.createConnection)
+	return backoff.WaitUntil(backOffCtx, gc.config.Common, gc.createConnection)
 }
 
 func (gc *GrpcClient) createConnection() error {
@@ -127,7 +118,7 @@ func (gc *GrpcClient) createConnection() error {
 		},
 	}
 
-	reqCtx, reqCancel := context.WithTimeout(context.Background(), gc.settings.MaxElapsedTime)
+	reqCtx, reqCancel := context.WithTimeout(context.Background(), gc.config.Common.MaxElapsedTime)
 	defer reqCancel()
 
 	response, err := client.CreateConnection(reqCtx, req)
