@@ -64,7 +64,7 @@ message Resource {
 message HostInfo {
     // the host identifier
     string id = 1;
-    // the name of the hose
+    // the name of the host
     string hostname = 2;
     // Release information of the host
     ReleaseInfo release_info = 3;
