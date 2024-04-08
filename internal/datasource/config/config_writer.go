@@ -15,7 +15,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/config"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/client"
 )
 
@@ -99,26 +99,26 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 	}
 
 	for _, fileData := range filesMetaData.GetFiles() {
-		if cacheContent != nil && !doesFileRequireUpdate(cacheContent, fileData) {
+		if cacheContent != nil && !doesFileRequireUpdate(cacheContent, fileData.GetFileMeta()) {
 			slog.DebugContext(
 				ctx,
 				"Skipping file as latest version is already on disk",
-				"file_path", fileData.GetPath(),
+				"file_path", fileData.GetFileMeta().GetName(),
 			)
-			currentFileCache[fileData.GetPath()] = cacheContent[fileData.GetPath()]
-			skippedFiles[fileData.GetPath()] = fileData
+			currentFileCache[fileData.GetFileMeta().GetName()] = cacheContent[fileData.GetFileMeta().GetName()]
+			skippedFiles[fileData.GetFileMeta().GetName()] = fileData.GetFileMeta()
 
 			continue
 		}
 		slog.DebugContext(
 			ctx,
 			"Updating file, latest version not on disk",
-			"file_path", fileData.GetPath(),
+			"file_path", fileData.GetFileMeta().GetName(),
 		)
-		if updateErr := cw.updateFile(ctx, fileData, filesURL, tenantID, instanceID); updateErr != nil {
+		if updateErr := cw.updateFile(ctx, fileData.GetFileMeta(), filesURL, tenantID, instanceID); updateErr != nil {
 			return nil, updateErr
 		}
-		currentFileCache[fileData.GetPath()] = fileData
+		currentFileCache[fileData.GetFileMeta().GetName()] = fileData.GetFileMeta()
 	}
 
 	cw.currentFileCache = currentFileCache
@@ -132,10 +132,10 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 
 func (cw *ConfigWriter) removeFiles(ctx context.Context, currentFileCache, fileCache CacheContent) error {
 	for _, file := range fileCache {
-		if _, ok := currentFileCache[file.GetPath()]; !ok {
-			slog.DebugContext(ctx, "Removing file", "file_path", file.GetPath())
-			if err := os.Remove(file.GetPath()); err != nil && !os.IsNotExist(err) {
-				return fmt.Errorf("error removing file: %s error: %w", file.GetPath(), err)
+		if _, ok := currentFileCache[file.GetName()]; !ok {
+			slog.DebugContext(ctx, "Removing file", "file_path", file.GetName())
+			if err := os.Remove(file.GetName()); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("error removing file: %s error: %w", file.GetName(), err)
 			}
 		}
 	}
@@ -144,7 +144,7 @@ func (cw *ConfigWriter) removeFiles(ctx context.Context, currentFileCache, fileC
 }
 
 func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID, instanceID string,
-) (filesMetaData *instances.Files, err error) {
+) (filesMetaData *v1.FileOverview, err error) {
 	filesMetaData, err = cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID, instanceID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
@@ -158,21 +158,21 @@ func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID,
 	return filesMetaData, nil
 }
 
-func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *instances.File,
+func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *v1.FileMeta,
 	filesURL, tenantID, instanceID string,
 ) error {
-	if !cw.isFilePathValid(ctx, fileData.GetPath()) {
-		return fmt.Errorf("invalid file path: %s", fileData.GetPath())
+	if !cw.isFilePathValid(ctx, fileData.GetName()) {
+		return fmt.Errorf("invalid file path: %s", fileData.GetName())
 	}
 	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID, instanceID)
 	if fetchErr != nil {
 		return fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
 	}
 
-	fetchErr = writeFile(ctx, fileDownloadResponse.GetFileContent(), fileDownloadResponse.GetFilePath())
+	fetchErr = writeFile(ctx, fileDownloadResponse.GetContents(), fileData.GetName())
 
 	if fetchErr != nil {
-		return fmt.Errorf("error writing to file %s: %w", fileDownloadResponse.GetFilePath(), fetchErr)
+		return fmt.Errorf("error writing to file %s: %w", fileData.GetName(), fetchErr)
 	}
 
 	return nil
@@ -224,14 +224,14 @@ func (cw *ConfigWriter) isFilePathValid(ctx context.Context, filePath string) (v
 	return false
 }
 
-func doesFileRequireUpdate(fileCache CacheContent, fileData *instances.File) (updateRequired bool) {
+func doesFileRequireUpdate(fileCache CacheContent, fileData *v1.FileMeta) (updateRequired bool) {
 	if len(fileCache) > 0 {
-		fileOnSystem, ok := fileCache[fileData.GetPath()]
+		fileOnSystem, ok := fileCache[fileData.GetName()]
 		if !ok {
 			return true
 		}
 
-		return ok && fileOnSystem.GetLastModified().AsTime().Before(fileData.GetLastModified().AsTime())
+		return ok && fileOnSystem.GetModifiedTime().AsTime().Before(fileData.GetModifiedTime().AsTime())
 	}
 
 	return false

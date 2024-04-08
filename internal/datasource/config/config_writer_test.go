@@ -13,12 +13,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/google/uuid"
-	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/internal/client/clientfakes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,8 +53,8 @@ func TestWriteConfig(t *testing.T) {
 
 	tests := []struct {
 		name               string
-		metaDataReturn     *instances.Files
-		getFileReturn      *instances.FileDownloadResponse
+		metaDataReturn     *v1.FileOverview
+		getFileReturn      *v1.FileContents
 		cacheShouldBeEqual bool
 		fileShouldBeEqual  bool
 		expSkippedCount    int
@@ -61,7 +62,7 @@ func TestWriteConfig(t *testing.T) {
 		{
 			name:               "Test 1: File needs updating",
 			metaDataReturn:     files,
-			getFileReturn:      protos.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
+			getFileReturn:      protos.GetFileDownloadResponse(fileContent),
 			cacheShouldBeEqual: false,
 			fileShouldBeEqual:  true,
 			expSkippedCount:    2,
@@ -69,7 +70,7 @@ func TestWriteConfig(t *testing.T) {
 		{
 			name:               "Test 2: File doesn't need updating",
 			metaDataReturn:     files,
-			getFileReturn:      protos.GetFileDownloadResponse(testConf.Name(), instanceID.String(), fileContent),
+			getFileReturn:      protos.GetFileDownloadResponse(fileContent),
 			cacheShouldBeEqual: true,
 			fileShouldBeEqual:  false,
 			expSkippedCount:    3,
@@ -96,7 +97,7 @@ func TestWriteConfig(t *testing.T) {
 			if !test.cacheShouldBeEqual {
 				modified, protoErr := protos.CreateProtoTime("2024-01-09T13:20:26Z")
 				require.NoError(t, protoErr)
-				cacheContent[testConf.Name()].LastModified = modified
+				cacheContent[testConf.Name()].ModifiedTime = modified
 				err = fileCache.UpdateFileCache(ctx, cacheContent)
 				require.NoError(t, err)
 			}
@@ -120,7 +121,7 @@ func TestWriteConfig(t *testing.T) {
 
 			assert.NotEqual(t, cacheContent, files)
 
-			testData, readErr := os.ReadFile(test.getFileReturn.GetFilePath())
+			testData, readErr := os.ReadFile(testConfPath)
 			require.NoError(t, readErr)
 			res = reflect.DeepEqual(fileContent, testData)
 			assert.Equal(t, test.fileShouldBeEqual, res)
@@ -232,7 +233,7 @@ func TestRollback(t *testing.T) {
 	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
 	fakeConfigClient.GetFilesMetadataReturns(files, nil)
 	resp := []byte("location /test {\n    return 200 \"Test changed\\n\";\n}")
-	fakeConfigClient.GetFileReturns(protos.GetFileDownloadResponse(testConf.Name(), instanceID.String(), resp), nil)
+	fakeConfigClient.GetFileReturns(protos.GetFileDownloadResponse(resp), nil)
 
 	agentConfig := types.GetAgentConfig()
 	agentConfig.AllowedDirectories = allowedDirs
@@ -254,14 +255,14 @@ func TestRollback(t *testing.T) {
 
 	skippedFiles := CacheContent{
 		metricsConf.Name(): {
-			LastModified: fileTime1,
-			Path:         "/tmp/nginx/locations/metrics.conf",
-			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
+			ModifiedTime: fileTime1,
+			Name:         "/tmp/nginx/locations/metrics.conf",
+			Hash:         "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
 		},
 		nginxConf.Name(): {
-			LastModified: fileTime2,
-			Path:         "/tmp/nginx/test.conf",
-			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+			ModifiedTime: fileTime2,
+			Name:         "/tmp/nginx/test.conf",
+			Hash:         "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
 		},
 	}
 
@@ -406,14 +407,14 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 
 	previousFileCache := CacheContent{
 		"/tmp/nginx/locations/metrics.conf": {
-			LastModified: fileTime1,
-			Path:         "/tmp/nginx/locations/metrics.conf",
-			Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
+			ModifiedTime: fileTime1,
+			Name:         "/tmp/nginx/locations/metrics.conf",
+			Hash:         "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
 		},
 		"/tmp/nginx/test.conf": {
-			LastModified: fileTime2,
-			Path:         "/tmp/nginx/test.conf",
-			Version:      "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
+			ModifiedTime: fileTime2,
+			Name:         "/tmp/nginx/test.conf",
+			Hash:         "Rh3phZuCRwNGANTkdst51he_0WKWy.tZ",
 		},
 	}
 
@@ -423,26 +424,26 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 	tests := []struct {
 		name            string
 		lastConfigApply CacheContent
-		fileData        *instances.File
+		fileData        *v1.FileMeta
 		expectedResult  bool
 	}{
 		{
 			name:            "Test 1: File is latest version",
 			lastConfigApply: previousFileCache,
-			fileData: &instances.File{
-				LastModified: fileTime1,
-				Path:         "/tmp/nginx/locations/metrics.conf",
-				Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
+			fileData: &v1.FileMeta{
+				ModifiedTime: fileTime1,
+				Name:         "/tmp/nginx/locations/metrics.conf",
+				Hash:         "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
 			},
 			expectedResult: false,
 		},
 		{
 			name:            "Test 2: File needs updating",
 			lastConfigApply: previousFileCache,
-			fileData: &instances.File{
-				LastModified: updateTimeFile1,
-				Path:         "/tmp/nginx/test.conf",
-				Version:      "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
+			fileData: &v1.FileMeta{
+				ModifiedTime: updateTimeFile1,
+				Name:         "/tmp/nginx/test.conf",
+				Hash:         "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
 			},
 			expectedResult: true,
 		},

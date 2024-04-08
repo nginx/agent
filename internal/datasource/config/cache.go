@@ -12,7 +12,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
 const (
@@ -36,7 +36,7 @@ type (
 	}
 
 	// map of files with filepath as key
-	CacheContent = map[string]*instances.File
+	CacheContent = map[string]*v1.FileMeta
 )
 
 func NewFileCache(instanceID string) *FileCache {

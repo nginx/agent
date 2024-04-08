@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/service"
 )
 
@@ -23,11 +24,11 @@ type FakeConfigServiceInterface struct {
 		result1 any
 		result2 error
 	}
-	RollbackStub        func(context.Context, map[string]*instances.File, string, string, string) error
+	RollbackStub        func(context.Context, map[string]*v1.FileMeta, string, string, string) error
 	rollbackMutex       sync.RWMutex
 	rollbackArgsForCall []struct {
 		arg1 context.Context
-		arg2 map[string]*instances.File
+		arg2 map[string]*v1.FileMeta
 		arg3 string
 		arg4 string
 		arg5 string
@@ -43,18 +44,18 @@ type FakeConfigServiceInterface struct {
 	setConfigContextArgsForCall []struct {
 		arg1 any
 	}
-	UpdateInstanceConfigurationStub        func(context.Context, string) (map[string]*instances.File, *instances.ConfigurationStatus)
+	UpdateInstanceConfigurationStub        func(context.Context, string) (map[string]*v1.FileMeta, *instances.ConfigurationStatus)
 	updateInstanceConfigurationMutex       sync.RWMutex
 	updateInstanceConfigurationArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 	}
 	updateInstanceConfigurationReturns struct {
-		result1 map[string]*instances.File
+		result1 map[string]*v1.FileMeta
 		result2 *instances.ConfigurationStatus
 	}
 	updateInstanceConfigurationReturnsOnCall map[int]struct {
-		result1 map[string]*instances.File
+		result1 map[string]*v1.FileMeta
 		result2 *instances.ConfigurationStatus
 	}
 	invocations      map[string][][]interface{}
@@ -125,12 +126,12 @@ func (fake *FakeConfigServiceInterface) ParseInstanceConfigurationReturnsOnCall(
 	}{result1, result2}
 }
 
-func (fake *FakeConfigServiceInterface) Rollback(arg1 context.Context, arg2 map[string]*instances.File, arg3 string, arg4 string, arg5 string) error {
+func (fake *FakeConfigServiceInterface) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 string, arg4 string, arg5 string) error {
 	fake.rollbackMutex.Lock()
 	ret, specificReturn := fake.rollbackReturnsOnCall[len(fake.rollbackArgsForCall)]
 	fake.rollbackArgsForCall = append(fake.rollbackArgsForCall, struct {
 		arg1 context.Context
-		arg2 map[string]*instances.File
+		arg2 map[string]*v1.FileMeta
 		arg3 string
 		arg4 string
 		arg5 string
@@ -154,13 +155,13 @@ func (fake *FakeConfigServiceInterface) RollbackCallCount() int {
 	return len(fake.rollbackArgsForCall)
 }
 
-func (fake *FakeConfigServiceInterface) RollbackCalls(stub func(context.Context, map[string]*instances.File, string, string, string) error) {
+func (fake *FakeConfigServiceInterface) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, string, string, string) error) {
 	fake.rollbackMutex.Lock()
 	defer fake.rollbackMutex.Unlock()
 	fake.RollbackStub = stub
 }
 
-func (fake *FakeConfigServiceInterface) RollbackArgsForCall(i int) (context.Context, map[string]*instances.File, string, string, string) {
+func (fake *FakeConfigServiceInterface) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, string, string, string) {
 	fake.rollbackMutex.RLock()
 	defer fake.rollbackMutex.RUnlock()
 	argsForCall := fake.rollbackArgsForCall[i]
@@ -222,7 +223,7 @@ func (fake *FakeConfigServiceInterface) SetConfigContextArgsForCall(i int) any {
 	return argsForCall.arg1
 }
 
-func (fake *FakeConfigServiceInterface) UpdateInstanceConfiguration(arg1 context.Context, arg2 string) (map[string]*instances.File, *instances.ConfigurationStatus) {
+func (fake *FakeConfigServiceInterface) UpdateInstanceConfiguration(arg1 context.Context, arg2 string) (map[string]*v1.FileMeta, *instances.ConfigurationStatus) {
 	fake.updateInstanceConfigurationMutex.Lock()
 	ret, specificReturn := fake.updateInstanceConfigurationReturnsOnCall[len(fake.updateInstanceConfigurationArgsForCall)]
 	fake.updateInstanceConfigurationArgsForCall = append(fake.updateInstanceConfigurationArgsForCall, struct {
@@ -248,7 +249,7 @@ func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationCallCount() i
 	return len(fake.updateInstanceConfigurationArgsForCall)
 }
 
-func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationCalls(stub func(context.Context, string) (map[string]*instances.File, *instances.ConfigurationStatus)) {
+func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationCalls(stub func(context.Context, string) (map[string]*v1.FileMeta, *instances.ConfigurationStatus)) {
 	fake.updateInstanceConfigurationMutex.Lock()
 	defer fake.updateInstanceConfigurationMutex.Unlock()
 	fake.UpdateInstanceConfigurationStub = stub
@@ -261,28 +262,28 @@ func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationArgsForCall(i
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationReturns(result1 map[string]*instances.File, result2 *instances.ConfigurationStatus) {
+func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationReturns(result1 map[string]*v1.FileMeta, result2 *instances.ConfigurationStatus) {
 	fake.updateInstanceConfigurationMutex.Lock()
 	defer fake.updateInstanceConfigurationMutex.Unlock()
 	fake.UpdateInstanceConfigurationStub = nil
 	fake.updateInstanceConfigurationReturns = struct {
-		result1 map[string]*instances.File
+		result1 map[string]*v1.FileMeta
 		result2 *instances.ConfigurationStatus
 	}{result1, result2}
 }
 
-func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationReturnsOnCall(i int, result1 map[string]*instances.File, result2 *instances.ConfigurationStatus) {
+func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationReturnsOnCall(i int, result1 map[string]*v1.FileMeta, result2 *instances.ConfigurationStatus) {
 	fake.updateInstanceConfigurationMutex.Lock()
 	defer fake.updateInstanceConfigurationMutex.Unlock()
 	fake.UpdateInstanceConfigurationStub = nil
 	if fake.updateInstanceConfigurationReturnsOnCall == nil {
 		fake.updateInstanceConfigurationReturnsOnCall = make(map[int]struct {
-			result1 map[string]*instances.File
+			result1 map[string]*v1.FileMeta
 			result2 *instances.ConfigurationStatus
 		})
 	}
 	fake.updateInstanceConfigurationReturnsOnCall[i] = struct {
-		result1 map[string]*instances.File
+		result1 map[string]*v1.FileMeta
 		result2 *instances.ConfigurationStatus
 	}{result1, result2}
 }
