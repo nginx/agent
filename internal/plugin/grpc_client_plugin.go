@@ -27,24 +27,24 @@ import (
 
 type (
 	GrpcClient struct {
-		messagePipe    bus.MessagePipeInterface
-		config         *config.Config
-		conn           *grpc.ClientConn
-		cancel         context.CancelFunc
-		connectionLock sync.Mutex
+		messagePipe     bus.MessagePipeInterface
+		config          *config.Config
+		conn            *grpc.ClientConn
+		cancel          context.CancelFunc
+		connectionMutex sync.Mutex
 	}
 )
 
 func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 	if agentConfig != nil && agentConfig.Command.Server.Type == "grpc" {
 		if agentConfig.Common == nil {
-			slog.Error("Invalid configuration settings")
+			slog.Error("Invalid common configuration settings")
 			return nil
 		}
 
 		return &GrpcClient{
-			config:         agentConfig,
-			connectionLock: sync.Mutex{},
+			config:          agentConfig,
+			connectionMutex: sync.Mutex{},
 		}
 	}
 
@@ -68,9 +68,9 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	grpcClientCtx, gc.cancel = context.WithTimeout(ctx, gc.config.Client.Timeout)
 	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
 
-	gc.connectionLock.Lock()
+	gc.connectionMutex.Lock()
 	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, agentGrpc.GetDialOptions(gc.config)...)
-	gc.connectionLock.Unlock()
+	gc.connectionMutex.Unlock()
 
 	if err != nil {
 		return err
@@ -94,8 +94,8 @@ func (gc *GrpcClient) createConnection() error {
 		return fmt.Errorf("error generating correlation id: %w", err)
 	}
 
-	gc.connectionLock.Lock()
-	defer gc.connectionLock.Unlock()
+	gc.connectionMutex.Lock()
+	defer gc.connectionMutex.Unlock()
 
 	if gc.conn == nil || gc.conn.GetState() == connectivity.Shutdown {
 		return fmt.Errorf("can't connect to server")
@@ -135,8 +135,8 @@ func (gc *GrpcClient) createConnection() error {
 func (gc *GrpcClient) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing grpc client plugin")
 
-	gc.connectionLock.Lock()
-	defer gc.connectionLock.Unlock()
+	gc.connectionMutex.Lock()
+	defer gc.connectionMutex.Unlock()
 
 	if gc.conn != nil {
 		err := gc.conn.Close()

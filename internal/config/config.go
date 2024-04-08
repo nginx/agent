@@ -302,8 +302,8 @@ func getDataPlaneConfig() *DataPlaneConfig {
 func getClient() *Client {
 	return &Client{
 		Timeout:             viperInstance.GetDuration(ClientTimeoutKey),
-		Time:                viper.GetDuration(ClientTimeKey),
-		PermitWithoutStream: viper.GetBool(ClientPermitWithoutStreamKey),
+		Time:                viperInstance.GetDuration(ClientTimeKey),
+		PermitWithoutStream: viperInstance.GetBool(ClientPermitWithoutStreamKey),
 	}
 }
 

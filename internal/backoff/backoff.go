@@ -62,10 +62,5 @@ func WaitUntil(
 
 	backoffWithContext := backoff.WithContext(eb, ctx)
 
-	err := backoff.Retry(operation, backoffWithContext)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return backoff.Retry(operation, backoffWithContext)
 }

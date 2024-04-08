@@ -50,19 +50,19 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 
 	transportCredentials, err := getTransportCredentials(agentConfig)
 	if err == nil {
-		slog.Debug("add transport credentials")
+		slog.Debug("Adding transport credentials to gRPC dial options")
 		opts = append(opts,
 			grpc.WithTransportCredentials(transportCredentials),
 		)
 	} else {
-		slog.Debug("taking default credentials")
+		slog.Debug("Adding default transport credentials to gRPC dial options")
 		opts = append(opts,
 			grpc.WithTransportCredentials(defaultCredentials),
 		)
 		skipToken = true
 	}
 	if agentConfig.Command.Auth != nil && !skipToken {
-		slog.Debug("adding token")
+		slog.Debug("Adding token to RPC credentials")
 		opts = append(opts,
 			grpc.WithPerRPCCredentials(
 				&PerRPCCredentials{
@@ -97,7 +97,7 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 
 	err = appendRootCAs(tlsConfig, agentConfig.Command.TLS.Ca)
 	if err != nil {
-		slog.Debug("did not append root CA", "error", err)
+		slog.Debug("Unable to append root CA", "error", err)
 	}
 
 	return credentials.NewTLS(tlsConfig), nil
