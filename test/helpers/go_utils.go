@@ -50,14 +50,19 @@ func GetRequiredModuleVersion(t testing.TB, moduleName string, level int) (strin
 	for _, requiredModule := range file.Require {
 		t.Logf("%s : %s", requiredModule.Mod.Path, requiredModule.Mod.Version)
 		if requiredModule.Mod.Path == moduleName {
-			if strings.HasPrefix(requiredModule.Mod.Version, "v") {
-				return requiredModule.Mod.Version[1:], nil
-			}
-			return requiredModule.Mod.Version, nil
+
+			return normalizeVersion(requiredModule.Mod.Version), nil
 		}
 	}
 
 	return file.Go.Version, nil
+}
+
+func normalizeVersion(version string) string {
+	if strings.HasPrefix(version, "v") {
+		return version[1:]
+	}
+	return version
 }
 
 func generatePattern(n int) (string, error) {
@@ -96,9 +101,5 @@ func getModfileBytes(fileName string, level int) (string, []byte, error) {
 }
 
 func parseModfile(modFilePath string, modBytes []byte) (*modfile.File, error) {
-	file, err := modfile.Parse(modFilePath, modBytes, nil)
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
+	return modfile.Parse(modFilePath, modBytes, nil)
 }
