@@ -535,8 +535,8 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 
 	t.Run("no-data-points", func(tt *testing.T) {
 		input := testDataPoint(tt)
-		res, err := ConvertPrometheus(input)
-		require.NoError(tt, err)
+		res, conErr := ConvertPrometheus(input)
+		require.NoError(tt, conErr)
 		assert.Equal(tt, input.Name, res.Name)
 		assert.Equal(tt, input.Description, res.Description)
 		assert.Equal(tt, "", res.Unit)
@@ -557,8 +557,8 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 			},
 		}
 
-		res, err := ConvertPrometheus(input)
-		require.NoError(tt, err)
+		res, conErr := ConvertPrometheus(input)
+		require.NoError(tt, conErr)
 		assert.Equal(tt, metricdata.Metrics{}, res)
 	})
 
@@ -574,8 +574,8 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 				Value: "not-a-valid-type",
 			},
 		}
-		res, err := ConvertPrometheus(input)
-		require.Error(tt, err)
+		res, conErr := ConvertPrometheus(input)
+		require.Error(tt, conErr)
 		assert.Equal(tt, "could not convert data entry of value type [string] to OTel metric", err.Error())
 		assert.Equal(tt, metricdata.Metrics{}, res)
 	})
@@ -600,8 +600,8 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 			},
 		}
 
-		res, err := ConvertPrometheus(input)
-		require.NoError(tt, err)
+		res, convErr := ConvertPrometheus(input)
+		require.NoError(tt, convErr)
 
 		data, ok := res.Data.(metricdata.Sum[float64])
 		require.True(t, ok)
@@ -629,8 +629,8 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 			},
 		}
 
-		res, err := ConvertPrometheus(input)
-		require.NoError(tt, err)
+		res, convErr := ConvertPrometheus(input)
+		require.NoError(tt, convErr)
 
 		data, ok := res.Data.(metricdata.Gauge[float64])
 		require.True(t, ok)
@@ -672,7 +672,7 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 			},
 		}
 
-		_, err := ConvertPrometheus(input)
+		_, err = ConvertPrometheus(input)
 		require.Error(tt, err)
 		assert.Equal(t, "could not convert data entry of value type [string] to OTel metric", err.Error())
 	})
@@ -690,9 +690,9 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 			},
 		}
 
-		res, err := ConvertPrometheus(input)
-		require.Error(tt, err)
-		assert.Equal(tt, "unhandled metrics conversion of type: unknown", err.Error())
+		res, convErr := ConvertPrometheus(input)
+		require.Error(tt, convErr)
+		assert.Equal(tt, "unhandled metrics conversion of type: unknown", convErr.Error())
 
 		assert.Equal(tt, metricdata.Metrics{}, res)
 	})

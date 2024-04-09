@@ -50,7 +50,6 @@ func GetRequiredModuleVersion(t testing.TB, moduleName string, level int) (strin
 	for _, requiredModule := range file.Require {
 		t.Logf("%s : %s", requiredModule.Mod.Path, requiredModule.Mod.Version)
 		if requiredModule.Mod.Path == moduleName {
-
 			return normalizeVersion(requiredModule.Mod.Version), nil
 		}
 	}
@@ -62,6 +61,7 @@ func normalizeVersion(version string) string {
 	if strings.HasPrefix(version, "v") {
 		return version[1:]
 	}
+
 	return version
 }
 
