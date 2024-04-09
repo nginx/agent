@@ -186,9 +186,9 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 		gc.isConnected.Store(true)
 
 		gc.instancesMutex.Lock()
-		defer gc.instancesMutex.Unlock()
-
 		err := gc.sendDataPlaneStatusUpdate(ctx, gc.instances)
+		gc.instancesMutex.Unlock()
+
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
 		}
