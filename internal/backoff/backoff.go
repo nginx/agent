@@ -64,20 +64,3 @@ func WaitUntil(
 
 	return backoff.Retry(operation, backoffWithContext)
 }
-
-func WaitUntilWithOperationContext(
-	ctx context.Context,
-	backoffSettings *config.CommonSettings,
-	operation backoff.OperationWithData[context.Context],
-) (context.Context, error) {
-	eb := backoff.NewExponentialBackOff()
-	eb.InitialInterval = backoffSettings.InitialInterval
-	eb.MaxInterval = backoffSettings.MaxInterval
-	eb.MaxElapsedTime = backoffSettings.MaxElapsedTime
-	eb.RandomizationFactor = backoffSettings.RandomizationFactor
-	eb.Multiplier = backoffSettings.Multiplier
-
-	backoffWithContext := backoff.WithContext(eb, ctx)
-
-	return backoff.RetryWithData(operation, backoffWithContext)
-}
