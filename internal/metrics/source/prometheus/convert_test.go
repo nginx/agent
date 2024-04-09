@@ -576,7 +576,7 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 		}
 		res, conErr := ConvertPrometheus(input)
 		require.Error(tt, conErr)
-		assert.Equal(tt, "could not convert data entry of value type [string] to OTel metric", err.Error())
+		assert.Equal(tt, "could not convert data entry of value type [string] to OTel metric", conErr.Error())
 		assert.Equal(tt, metricdata.Metrics{}, res)
 	})
 
