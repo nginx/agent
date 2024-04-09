@@ -16,16 +16,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nginx/agent/v3/test/types"
-
-	"github.com/nginx/agent/v3/test/mock/grpc"
-
 	"github.com/nginx/agent/v3/internal/logger"
+	"github.com/nginx/agent/v3/test/mock/grpc"
+	"github.com/nginx/agent/v3/test/types"
 )
 
 const (
 	defaultSleepDuration = time.Millisecond * 100
-	filePermissions      = 0o640
+	directoryPermissions = 0o700
 )
 
 var (
@@ -83,7 +81,7 @@ func main() {
 func generateDefaultConfigDirectory() (string, error) {
 	tempDirectory := os.TempDir()
 
-	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/etc/nginx"), filePermissions)
+	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/etc/nginx"), directoryPermissions)
 	if err != nil {
 		slog.Error("Failed to create directories", "error", err)
 		return "", err

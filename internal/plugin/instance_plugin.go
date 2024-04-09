@@ -49,16 +49,13 @@ func (i *Instance) Process(ctx context.Context, msg *bus.Message) {
 	if msg.Topic == bus.OsProcessesTopic {
 		newProcesses, ok := msg.Data.([]*model.Process)
 		if !ok {
-			slog.ErrorContext(ctx, "unable to cast message payload to model.Process", "payload", msg.Data)
+			slog.ErrorContext(ctx, "Unable to cast message payload to model.Process", "payload", msg.Data)
+
 			return
 		}
 
 		instanceList := i.instanceService.GetInstances(ctx, newProcesses)
-		if len(instanceList) > 0 {
-			i.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
-		} else {
-			slog.InfoContext(ctx, "No instanceList found")
-		}
+		i.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
 	}
 }
 

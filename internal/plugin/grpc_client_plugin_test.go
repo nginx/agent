@@ -16,6 +16,8 @@ import (
 
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/test/types"
@@ -165,23 +167,29 @@ func TestGrpcClient_Info(t *testing.T) {
 func TestGrpcClient_Subscriptions(t *testing.T) {
 	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
-	assert.Len(t, subscriptions, 1)
-	assert.Equal(t, bus.GrpcConnectedTopic, subscriptions[0])
+	assert.Len(t, subscriptions, 2)
+	assert.Equal(t, bus.InstancesTopic, subscriptions[0])
+	assert.Equal(t, bus.GrpcConnectedTopic, subscriptions[1])
 }
 
-func TestGrpcClient_Process(t *testing.T) {
+func TestGrpcClient_Process_InstancesTopic(t *testing.T) {
 	ctx := context.Background()
 	agentConfig := types.GetAgentConfig()
 	client := NewGrpcClient(agentConfig)
 	assert.NotNil(t, client)
 
+	fakeCommandServiceClient := &v1fakes.FakeCommandServiceClient{}
+	fakeCommandServiceClient.UpdateDataPlaneStatusReturns(&v1.UpdateDataPlaneStatusResponse{}, nil)
+
+	client.commandServiceClient = fakeCommandServiceClient
+
 	mockMessage := &bus.Message{
-		Topic: bus.GrpcConnectedTopic,
-		Data:  nil,
+		Topic: bus.InstancesTopic,
+		Data:  []*v1.Instance{},
 	}
 	client.Process(ctx, mockMessage)
-	// add better assertions when the process function does something
-	assert.Nil(t, client.messagePipe)
+
+	assert.Equal(t, 1, fakeCommandServiceClient.UpdateDataPlaneStatusCallCount())
 }
 
 func TestGrpcClient_Close(t *testing.T) {

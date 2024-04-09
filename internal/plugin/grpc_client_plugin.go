@@ -17,21 +17,23 @@ import (
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
-	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
+	"github.com/nginx/agent/v3/internal/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
 	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 )
 
 type (
 	GrpcClient struct {
-		messagePipe     bus.MessagePipeInterface
-		config          *config.Config
-		conn            *grpc.ClientConn
-		cancel          context.CancelFunc
-		connectionMutex sync.Mutex
+		messagePipe          bus.MessagePipeInterface
+		config               *config.Config
+		conn                 *grpc.ClientConn
+		commandServiceClient v1.CommandServiceClient
+		cancel               context.CancelFunc
+		connectionMutex      sync.Mutex
 	}
 )
 
@@ -101,7 +103,7 @@ func (gc *GrpcClient) createConnection() error {
 		return fmt.Errorf("can't connect to server")
 	}
 
-	client := v1.NewCommandServiceClient(gc.conn)
+	gc.commandServiceClient = v1.NewCommandServiceClient(gc.conn)
 	req := &v1.CreateConnectionRequest{
 		MessageMeta: &v1.MessageMeta{
 			MessageId:     id.String(),
@@ -121,7 +123,7 @@ func (gc *GrpcClient) createConnection() error {
 	reqCtx, reqCancel := context.WithTimeout(context.Background(), gc.config.Common.MaxElapsedTime)
 	defer reqCancel()
 
-	response, err := client.CreateConnection(reqCtx, req)
+	response, err := gc.commandServiceClient.CreateConnection(reqCtx, req)
 	if err != nil {
 		return fmt.Errorf("creating connection: %w", err)
 	}
@@ -156,11 +158,45 @@ func (gc *GrpcClient) Info() *bus.Info {
 }
 
 func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
-	if msg.Topic == bus.GrpcConnectedTopic {
+	switch msg.Topic {
+	case bus.InstancesTopic:
+		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
+			err := gc.sendDataPlaneStatusUpdate(ctx, newInstances)
+			if err != nil {
+				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
+			}
+		}
+	case bus.GrpcConnectedTopic:
 		slog.DebugContext(ctx, "Agent connected")
+	default:
+		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
 }
 
 func (gc *GrpcClient) Subscriptions() []string {
-	return []string{bus.GrpcConnectedTopic}
+	return []string{
+		bus.InstancesTopic,
+		bus.GrpcConnectedTopic,
+	}
+}
+
+func (gc *GrpcClient) sendDataPlaneStatusUpdate(
+	ctx context.Context,
+	instances []*v1.Instance,
+) error {
+	correlationID := logger.GetCorrelationID(ctx)
+
+	request := &v1.UpdateDataPlaneStatusRequest{
+		MessageMeta: &v1.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: correlationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		Instances: instances,
+	}
+
+	slog.DebugContext(ctx, "Sending data plane status update request", "request", request)
+	_, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+
+	return err
 }

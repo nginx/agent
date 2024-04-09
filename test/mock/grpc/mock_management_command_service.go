@@ -118,7 +118,7 @@ func (mgs *CommandService) StartServer(listener net.Listener) {
 	slog.Info("Starting mock management plane http server", "address", listener.Addr().String())
 	err := mgs.server.RunListener(listener)
 	if err != nil {
-		slog.Error("Startup of mock management plane server failed", "error", err)
+		slog.Error("Failed to start mock management plane http server", "error", err)
 	}
 }
 

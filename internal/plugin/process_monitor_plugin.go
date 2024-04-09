@@ -105,22 +105,44 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-pm.processTicker.C:
-			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
-			slog.DebugContext(newCtx, "Checking for process changes")
+			slog.DebugContext(ctx, "Checking for process updates")
 
-			processes, err := pm.getProcessesFunc(newCtx)
+			processes, err := pm.getProcessesFunc(ctx)
 			if err != nil {
-				slog.ErrorContext(newCtx, "Unable to get process information", "error", err)
+				slog.ErrorContext(ctx, "Unable to get process information", "error", err)
 
 				continue
 			}
 
 			pm.processesMutex.Lock()
-			pm.processes = processes
+			if haveProcessesChanged(pm.processes, processes) {
+				newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
+				slog.DebugContext(newCtx, "Processes changes detected")
+				pm.processes = processes
+				pm.messagePipe.Process(newCtx, &bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
+			}
 			pm.processesMutex.Unlock()
-
-			pm.messagePipe.Process(newCtx, &bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
-			slog.DebugContext(newCtx, "Processes updated")
 		}
 	}
+}
+
+func haveProcessesChanged(oldProcesses, newProcesses []*model.Process) bool {
+	// Check if the number of processes has changed
+	if len(oldProcesses) != len(newProcesses) {
+		return true
+	}
+
+	processIDMap := make(map[int32]struct{})
+	for _, oldProcess := range oldProcesses {
+		processIDMap[oldProcess.Pid] = struct{}{}
+	}
+
+	// Check if the process IDs have changed
+	for _, newProcess := range newProcesses {
+		if _, ok := processIDMap[newProcess.Pid]; !ok {
+			return true
+		}
+	}
+
+	return false
 }
