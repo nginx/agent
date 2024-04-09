@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"sync"
+	"sync/atomic"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -31,7 +32,7 @@ type (
 		messagePipe          bus.MessagePipeInterface
 		config               *config.Config
 		conn                 *grpc.ClientConn
-		isConnected          bool
+		isConnected          *atomic.Bool
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
 		instances            []*v1.Instance
@@ -47,9 +48,12 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 			return nil
 		}
 
+		isConnected := &atomic.Bool{}
+		isConnected.Store(false)
+
 		return &GrpcClient{
 			config:          agentConfig,
-			isConnected:     false,
+			isConnected:     isConnected,
 			instances:       []*v1.Instance{},
 			connectionMutex: sync.Mutex{},
 			instancesMutex:  sync.Mutex{},
@@ -179,7 +183,7 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 		}
 	case bus.GrpcConnectedTopic:
 		slog.DebugContext(ctx, "Agent connected")
-		gc.isConnected = true
+		gc.isConnected.Store(true)
 
 		gc.instancesMutex.Lock()
 		defer gc.instancesMutex.Unlock()
@@ -204,7 +208,7 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	ctx context.Context,
 	instances []*v1.Instance,
 ) error {
-	if !gc.isConnected {
+	if !gc.isConnected.Load() {
 		slog.DebugContext(ctx, "gRPC client not connected yet. Skipping sending data plane status update")
 		return nil
 	}
