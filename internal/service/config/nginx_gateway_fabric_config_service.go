@@ -37,7 +37,7 @@ func (*NginxGatewayFabric) Complete(_ context.Context) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (*NginxGatewayFabric) Rollback(_ context.Context, _ writer.CacheContent, _, _, _ string) error {
+func (*NginxGatewayFabric) Rollback(_ context.Context, _ writer.CacheContent, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 

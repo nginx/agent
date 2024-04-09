@@ -88,10 +88,10 @@ func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Co
 	}
 }
 
-func (n *Nginx) Write(ctx context.Context, filesURL, tenantID string) (skippedFiles writer.CacheContent,
+func (n *Nginx) Write(ctx context.Context, filesURL string) (skippedFiles writer.CacheContent,
 	err error,
 ) {
-	return n.configWriter.Write(ctx, filesURL, tenantID, n.instance.GetInstanceMeta().GetInstanceId())
+	return n.configWriter.Write(ctx, filesURL, n.instance.GetInstanceMeta().GetInstanceId())
 }
 
 func (n *Nginx) Complete(ctx context.Context) error {
@@ -99,9 +99,9 @@ func (n *Nginx) Complete(ctx context.Context) error {
 }
 
 func (n *Nginx) Rollback(ctx context.Context, skippedFiles writer.CacheContent,
-	filesURL, tenantID, instanceID string,
+	filesURL, instanceID string,
 ) error {
-	err := n.configWriter.Rollback(ctx, skippedFiles, filesURL, tenantID, instanceID)
+	err := n.configWriter.Rollback(ctx, skippedFiles, filesURL, instanceID)
 	return err
 }
 

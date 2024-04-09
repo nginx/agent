@@ -27,11 +27,12 @@ import (
 
 type (
 	GrpcClient struct {
-		messagePipe     bus.MessagePipeInterface
-		config          *config.Config
-		conn            *grpc.ClientConn
-		cancel          context.CancelFunc
-		connectionMutex sync.Mutex
+		messagePipe       bus.MessagePipeInterface
+		config            *config.Config
+		conn              *grpc.ClientConn
+		cancel            context.CancelFunc
+		connectionMutex   sync.Mutex
+		fileServiceClient v1.FileServiceClient
 	}
 )
 
@@ -71,6 +72,8 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	gc.connectionMutex.Lock()
 	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, agentGrpc.GetDialOptions(gc.config)...)
 	gc.connectionMutex.Unlock()
+
+	gc.fileServiceClient = v1.NewFileServiceClient(gc.conn)
 
 	if err != nil {
 		return err
@@ -149,6 +152,18 @@ func (gc *GrpcClient) Close(ctx context.Context) error {
 	return nil
 }
 
+func (gc *GrpcClient) GetFileOverview(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview, error) {
+	resp, err := gc.fileServiceClient.GetOverview(ctx, request)
+
+	return resp.GetOverview(), err
+}
+
+func (gc *GrpcClient) GetFileContents(ctx context.Context, request *v1.GetFileRequest) (*v1.FileContents, error) {
+	resp, err := gc.fileServiceClient.GetFile(ctx, request)
+
+	return resp.GetContents(), err
+}
+
 func (gc *GrpcClient) Info() *bus.Info {
 	return &bus.Info{
 		Name: "grpc-client",
@@ -163,4 +178,19 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 
 func (gc *GrpcClient) Subscriptions() []string {
 	return []string{bus.GrpcConnectedTopic}
+}
+
+type GrpcConfigClient struct {
+	grpcOverviewFn    func(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview, error)
+	grpFileContentsFn func(ctx context.Context, request *v1.GetFileRequest) (*v1.FileContents, error)
+}
+
+func (gcc *GrpcConfigClient) GetFilesMetadata(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview,
+	error,
+) {
+	return gcc.grpcOverviewFn(ctx, request)
+}
+
+func (gcc *GrpcConfigClient) GetFile(ctx context.Context, request *v1.GetFileRequest) (*v1.FileContents, error) {
+	return gcc.grpFileContentsFn(ctx, request)
 }

@@ -28,14 +28,14 @@ const (
 
 type (
 	ConfigWriterInterface interface {
-		Write(ctx context.Context, filesURL, tenantID, instanceID string) (skippedFiles CacheContent, err error)
+		Write(ctx context.Context, filesURL, instanceID string) (skippedFiles CacheContent, err error)
 		Complete(ctx context.Context) (err error)
-		SetConfigClient(configClient client.ConfigClientInterface)
-		Rollback(ctx context.Context, skippedFiles CacheContent, filesURL, tenantID, instanceID string) error
+		SetConfigClient(configClient client.ConfigClient)
+		Rollback(ctx context.Context, skippedFiles CacheContent, filesURL, instanceID string) error
 	}
 
 	ConfigWriter struct {
-		configClient       client.ConfigClientInterface
+		configClient       client.ConfigClient
 		allowedDirectories []string
 		fileCache          FileCacheInterface
 		currentFileCache   CacheContent
@@ -57,12 +57,11 @@ func NewConfigWriter(agentConfig *config.Config, fileCache FileCacheInterface,
 	}, nil
 }
 
-func (cw *ConfigWriter) SetConfigClient(configClient client.ConfigClientInterface) {
+func (cw *ConfigWriter) SetConfigClient(configClient client.ConfigClient) {
 	cw.configClient = configClient
 }
 
-func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent, filesURL,
-	tenantID, instanceID string,
+func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent, filesURL, instanceID string,
 ) error {
 	slog.DebugContext(ctx, "Rolling back NGINX config changes due to error")
 	if cw.fileCache.CacheContent() == nil {
@@ -73,7 +72,7 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 			continue
 		}
 
-		err := cw.updateFile(ctx, value, filesURL, tenantID, instanceID)
+		err := cw.updateFile(ctx, value, filesURL)
 		if err != nil {
 			return err
 		}
@@ -82,8 +81,7 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 	return nil
 }
 
-func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
-	tenantID, instanceID string,
+func (cw *ConfigWriter) Write(ctx context.Context, filesURL, instanceID string,
 ) (skippedFiles CacheContent, err error) {
 	slog.DebugContext(ctx, "Write nginx config", "files_url", filesURL)
 	currentFileCache, skippedFiles := make(CacheContent), make(CacheContent)
@@ -93,7 +91,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 		return nil, err
 	}
 
-	filesMetaData, err := cw.getFileMetaData(ctx, filesURL, tenantID, instanceID)
+	filesMetaData, err := cw.getFileMetaData(ctx, filesURL, instanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +113,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL,
 			"Updating file, latest version not on disk",
 			"file_path", fileData.GetFileMeta().GetName(),
 		)
-		if updateErr := cw.updateFile(ctx, fileData.GetFileMeta(), filesURL, tenantID, instanceID); updateErr != nil {
+		if updateErr := cw.updateFile(ctx, fileData.GetFileMeta(), filesURL); updateErr != nil {
 			return nil, updateErr
 		}
 		currentFileCache[fileData.GetFileMeta().GetName()] = fileData.GetFileMeta()
@@ -143,9 +141,10 @@ func (cw *ConfigWriter) removeFiles(ctx context.Context, currentFileCache, fileC
 	return nil
 }
 
-func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID, instanceID string,
+func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, instanceID string,
 ) (filesMetaData *v1.FileOverview, err error) {
-	filesMetaData, err = cw.configClient.GetFilesMetadata(ctx, filesURL, tenantID, instanceID)
+	// TODO: fix this to use a request
+	filesMetaData, err = cw.configClient.GetFilesMetadata(ctx, &v1.GetOverviewRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
 	}
@@ -159,12 +158,13 @@ func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, tenantID,
 }
 
 func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *v1.FileMeta,
-	filesURL, tenantID, instanceID string,
+	filesURL string,
 ) error {
 	if !cw.isFilePathValid(ctx, fileData.GetName()) {
 		return fmt.Errorf("invalid file path: %s", fileData.GetName())
 	}
-	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, fileData, filesURL, tenantID, instanceID)
+	// TODO: fix this to use a request
+	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, &v1.GetFileRequest{})
 	if fetchErr != nil {
 		return fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
 	}

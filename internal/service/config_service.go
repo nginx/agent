@@ -32,7 +32,7 @@ type ConfigServiceInterface interface {
 	ParseInstanceConfiguration(
 		ctx context.Context,
 	) (instanceConfigContext any, err error)
-	Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL, tenantID, instanceID string) error
+	Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL, instanceID string) error
 }
 
 type ConfigService struct {
@@ -65,18 +65,16 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 }
 
 func (cs *ConfigService) Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL,
-	tenantID, instanceID string,
+	instanceID string,
 ) error {
-	return cs.configService.Rollback(ctx, skippedFiles, filesURL, tenantID, instanceID)
+	return cs.configService.Rollback(ctx, skippedFiles, filesURL, instanceID)
 }
 
 func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, location string,
 ) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus) {
-	// remove when tenantID is being set
-	tenantID := "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 	correlationID := logger.GetCorrelationID(ctx)
 
-	skippedFiles, err := cs.configService.Write(ctx, location, tenantID)
+	skippedFiles, err := cs.configService.Write(ctx, location)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error writing config", "error", err)
 		return skippedFiles, &instances.ConfigurationStatus{

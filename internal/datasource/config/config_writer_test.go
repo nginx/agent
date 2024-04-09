@@ -28,7 +28,7 @@ import (
 func TestWriteConfig(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
-	tenantID, instanceID := helpers.CreateTestIDs(t)
+	_, instanceID := helpers.CreateTestIDs(t)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	allowedDirs := []string{tempDir}
 	agentConfig := types.GetAgentConfig()
@@ -82,7 +82,7 @@ func TestWriteConfig(t *testing.T) {
 			cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
 			defer helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 			cachePath := cacheFile.Name()
-			fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
+			fakeConfigClient := &clientfakes.FakeConfigClient{}
 			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
 
@@ -111,7 +111,7 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
-			skippedFiles, err := configWriter.Write(ctx, filesURL, tenantID.String(), instanceID.String())
+			skippedFiles, err := configWriter.Write(ctx, filesURL, instanceID.String())
 			require.NoError(t, err)
 			slog.Info("Skipped Files: ", "", skippedFiles)
 			assert.Len(t, skippedFiles, test.expSkippedCount)
@@ -200,7 +200,7 @@ func TestDeleteFile(t *testing.T) {
 func TestRollback(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
-	tenantID, instanceID := helpers.CreateTestIDs(t)
+	_, instanceID := helpers.CreateTestIDs(t)
 	allowedDirs := []string{tempDir}
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
@@ -230,7 +230,7 @@ func TestRollback(t *testing.T) {
 	cacheContent, getCacheErr := protos.GetFileCache(nginxConf, testConf, metricsConf)
 	require.NoError(t, getCacheErr)
 
-	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
+	fakeConfigClient := &clientfakes.FakeConfigClient{}
 	fakeConfigClient.GetFilesMetadataReturns(files, nil)
 	resp := []byte("location /test {\n    return 200 \"Test changed\\n\";\n}")
 	fakeConfigClient.GetFileReturns(protos.GetFileDownloadResponse(resp), nil)
@@ -266,7 +266,7 @@ func TestRollback(t *testing.T) {
 		},
 	}
 
-	err = configWriter.Rollback(ctx, skippedFiles, filesURL, tenantID.String(), instanceID.String())
+	err = configWriter.Rollback(ctx, skippedFiles, filesURL, instanceID.String())
 	require.NoError(t, err)
 
 	data, err := os.ReadFile(testConf.Name())
@@ -291,7 +291,7 @@ func TestComplete(t *testing.T) {
 	cachePath := cacheFile.Name()
 
 	allowedDirs := []string{tempDir}
-	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
+	fakeConfigClient := &clientfakes.FakeConfigClient{}
 
 	fileCache := NewFileCache(instanceID.String())
 	agentConfig := types.GetAgentConfig()
@@ -379,7 +379,7 @@ func TestIsFilePathValid(t *testing.T) {
 		},
 	}
 
-	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
+	fakeConfigClient := &clientfakes.FakeConfigClient{}
 	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 
 	fileCache := NewFileCache("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")

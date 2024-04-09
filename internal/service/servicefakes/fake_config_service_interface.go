@@ -24,14 +24,13 @@ type FakeConfigServiceInterface struct {
 		result1 any
 		result2 error
 	}
-	RollbackStub        func(context.Context, map[string]*v1.FileMeta, string, string, string) error
+	RollbackStub        func(context.Context, map[string]*v1.FileMeta, string, string) error
 	rollbackMutex       sync.RWMutex
 	rollbackArgsForCall []struct {
 		arg1 context.Context
 		arg2 map[string]*v1.FileMeta
 		arg3 string
 		arg4 string
-		arg5 string
 	}
 	rollbackReturns struct {
 		result1 error
@@ -126,7 +125,7 @@ func (fake *FakeConfigServiceInterface) ParseInstanceConfigurationReturnsOnCall(
 	}{result1, result2}
 }
 
-func (fake *FakeConfigServiceInterface) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 string, arg4 string, arg5 string) error {
+func (fake *FakeConfigServiceInterface) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 string, arg4 string) error {
 	fake.rollbackMutex.Lock()
 	ret, specificReturn := fake.rollbackReturnsOnCall[len(fake.rollbackArgsForCall)]
 	fake.rollbackArgsForCall = append(fake.rollbackArgsForCall, struct {
@@ -134,14 +133,13 @@ func (fake *FakeConfigServiceInterface) Rollback(arg1 context.Context, arg2 map[
 		arg2 map[string]*v1.FileMeta
 		arg3 string
 		arg4 string
-		arg5 string
-	}{arg1, arg2, arg3, arg4, arg5})
+	}{arg1, arg2, arg3, arg4})
 	stub := fake.RollbackStub
 	fakeReturns := fake.rollbackReturns
-	fake.recordInvocation("Rollback", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.recordInvocation("Rollback", []interface{}{arg1, arg2, arg3, arg4})
 	fake.rollbackMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4, arg5)
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1
@@ -155,17 +153,17 @@ func (fake *FakeConfigServiceInterface) RollbackCallCount() int {
 	return len(fake.rollbackArgsForCall)
 }
 
-func (fake *FakeConfigServiceInterface) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, string, string, string) error) {
+func (fake *FakeConfigServiceInterface) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, string, string) error) {
 	fake.rollbackMutex.Lock()
 	defer fake.rollbackMutex.Unlock()
 	fake.RollbackStub = stub
 }
 
-func (fake *FakeConfigServiceInterface) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, string, string, string) {
+func (fake *FakeConfigServiceInterface) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, string, string) {
 	fake.rollbackMutex.RLock()
 	defer fake.rollbackMutex.RUnlock()
 	argsForCall := fake.rollbackArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *FakeConfigServiceInterface) RollbackReturns(result1 error) {

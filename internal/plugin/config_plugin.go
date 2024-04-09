@@ -22,9 +22,6 @@ import (
 	"github.com/nginx/agent/v3/internal/service"
 )
 
-// remove when tenantID is being set
-const tenantID = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
-
 type Config struct {
 	messagePipe    bus.MessagePipeInterface
 	configServices map[string]service.ConfigServiceInterface
@@ -169,7 +166,7 @@ func (c *Config) updateInstanceConfig(ctx context.Context, request *model.Instan
 		}
 		c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateTopic, Data: rollbackInProgress})
 
-		err := c.configServices[instanceID].Rollback(ctx, skippedFiles, request.Location, tenantID, instanceID)
+		err := c.configServices[instanceID].Rollback(ctx, skippedFiles, request.Location, instanceID)
 		if err != nil {
 			rollbackFailed := &instances.ConfigurationStatus{
 				InstanceId:    instanceID,
