@@ -38,7 +38,7 @@ type (
 		instances            []*v1.Instance
 		connectionMutex      sync.Mutex
 		instancesMutex       sync.Mutex
-		fileServiceClient v1.FileServiceClient
+		fileServiceClient    v1.FileServiceClient
 	}
 )
 
