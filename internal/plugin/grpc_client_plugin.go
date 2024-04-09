@@ -126,7 +126,8 @@ func (gc *GrpcClient) createConnection() error {
 		},
 	}
 
-	reqCtx, reqCancel := context.WithTimeout(context.Background(), gc.config.Common.MaxElapsedTime)
+	ctx := context.Background()
+	reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
 	defer reqCancel()
 
 	response, err := gc.commandServiceClient.CreateConnection(reqCtx, req)
@@ -135,7 +136,7 @@ func (gc *GrpcClient) createConnection() error {
 	}
 
 	slog.Debug("Connection created", "response", response)
-	gc.messagePipe.Process(reqCtx, &bus.Message{Topic: bus.GrpcConnectedTopic, Data: response})
+	gc.messagePipe.Process(ctx, &bus.Message{Topic: bus.GrpcConnectedTopic, Data: response})
 
 	return nil
 }
