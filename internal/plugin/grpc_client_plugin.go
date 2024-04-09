@@ -31,9 +31,12 @@ type (
 		messagePipe          bus.MessagePipeInterface
 		config               *config.Config
 		conn                 *grpc.ClientConn
+		isConnected          bool
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
+		instances            []*v1.Instance
 		connectionMutex      sync.Mutex
+		instancesMutex       sync.Mutex
 	}
 )
 
@@ -46,7 +49,10 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 
 		return &GrpcClient{
 			config:          agentConfig,
+			isConnected:     false,
+			instances:       []*v1.Instance{},
 			connectionMutex: sync.Mutex{},
+			instancesMutex:  sync.Mutex{},
 		}
 	}
 
@@ -161,6 +167,10 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
+			gc.instancesMutex.Lock()
+			gc.instances = newInstances
+			gc.instancesMutex.Unlock()
+
 			err := gc.sendDataPlaneStatusUpdate(ctx, newInstances)
 			if err != nil {
 				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
@@ -168,6 +178,15 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 		}
 	case bus.GrpcConnectedTopic:
 		slog.DebugContext(ctx, "Agent connected")
+		gc.isConnected = true
+
+		gc.instancesMutex.Lock()
+		defer gc.instancesMutex.Unlock()
+
+		err := gc.sendDataPlaneStatusUpdate(ctx, gc.instances)
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
+		}
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
@@ -184,6 +203,11 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	ctx context.Context,
 	instances []*v1.Instance,
 ) error {
+	if !gc.isConnected {
+		slog.DebugContext(ctx, "gRPC client not connected yet. Skipping sending data plane status update")
+		return nil
+	}
+
 	correlationID := logger.GetCorrelationID(ctx)
 
 	request := &v1.UpdateDataPlaneStatusRequest{
@@ -196,6 +220,10 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	}
 
 	slog.DebugContext(ctx, "Sending data plane status update request", "request", request)
+	if gc.commandServiceClient == nil {
+		return fmt.Errorf("command service client is not initialized")
+	}
+
 	_, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
 
 	return err
