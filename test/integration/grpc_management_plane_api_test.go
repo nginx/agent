@@ -33,9 +33,26 @@ var (
 	mockManagementPlaneAPIAddress    string
 )
 
-type ConnectionRequest struct {
-	ConnectionRequest *v1.CreateConnectionRequest `json:"connectionRequest"`
-}
+type (
+	ConnectionRequest struct {
+		ConnectionRequest *v1.CreateConnectionRequest `json:"connectionRequest"`
+	}
+	NginxInstanceConfig struct {
+		InstanceActions []*v1.InstanceAction           `json:"instance_actions"`
+		Config          *v1.InstanceConfig_NginxConfig `json:"Config"`
+	}
+	Instance struct {
+		InstanceMeta   *v1.InstanceMeta    `json:"instance_meta"`
+		InstanceConfig NginxInstanceConfig `json:"instance_config"`
+	}
+	NginxUpdateDataPlaneHealthRequest struct {
+		MessageMeta *v1.MessageMeta `json:"message_meta"`
+		Instances   []Instance      `json:"instances"`
+	}
+	UpdateDataPlaneStatusRequest struct {
+		UpdateDataPlaneStatusRequest NginxUpdateDataPlaneHealthRequest `json:"updateDataPlaneStatusRequest"`
+	}
+)
 
 func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 	tb.Helper()
@@ -125,9 +142,17 @@ func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 	}
 }
 
-func TestGrpcConnection(t *testing.T) {
+// Verify that the agent sends a connection request and an update data plane status request
+func TestGrpc_StartUp(t *testing.T) {
 	teardownTest := setupConnectionTest(t)
 	defer teardownTest(t)
+
+	verifyConnection(t)
+	verifyUpdateDataPlaneStatus(t)
+}
+
+func verifyConnection(t *testing.T) {
+	t.Helper()
 
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
@@ -148,10 +173,55 @@ func TestGrpcConnection(t *testing.T) {
 	err = json.Unmarshal(responseData, &connectionRequest)
 	require.NoError(t, err)
 
+	instanceMeta := connectionRequest.ConnectionRequest.GetAgent().GetInstanceMeta()
+
 	assert.NotNil(t, connectionRequest.ConnectionRequest)
-	assert.Equal(
-		t,
-		v1.InstanceMeta_INSTANCE_TYPE_AGENT,
-		connectionRequest.ConnectionRequest.GetAgent().GetInstanceMeta().GetInstanceType(),
-	)
+	assert.NotEmpty(t, instanceMeta.GetInstanceId())
+	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_AGENT, instanceMeta.GetInstanceType())
+	assert.Equal(t, "v3.0.0", instanceMeta.GetVersion())
+}
+
+func verifyUpdateDataPlaneStatus(t *testing.T) {
+	t.Helper()
+
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+
+	url := fmt.Sprintf("http://%s/api/v1/status", mockManagementPlaneAPIAddress)
+	resp, err := client.R().EnableTrace().Get(url)
+
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+
+	var updateDataPlaneStatusRequest UpdateDataPlaneStatusRequest
+
+	responseData := resp.Body()
+	t.Logf("Response: %s", string(responseData))
+	assert.True(t, json.Valid(responseData))
+
+	// nolint: musttag
+	err = json.Unmarshal(responseData, &updateDataPlaneStatusRequest)
+	require.NoError(t, err)
+
+	assert.NotNil(t, updateDataPlaneStatusRequest.UpdateDataPlaneStatusRequest)
+
+	// Verify message metadata
+	messageMeta := updateDataPlaneStatusRequest.UpdateDataPlaneStatusRequest.MessageMeta
+	assert.NotEmpty(t, messageMeta.GetCorrelationId())
+	assert.NotEmpty(t, messageMeta.GetMessageId())
+	assert.NotEmpty(t, messageMeta.GetTimestamp())
+
+	instances := updateDataPlaneStatusRequest.UpdateDataPlaneStatusRequest.Instances
+	assert.Len(t, instances, 1)
+
+	// Verify instance metadata
+	assert.NotEmpty(t, instances[0].InstanceMeta.GetInstanceId())
+	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, instances[0].InstanceMeta.GetInstanceType())
+	assert.NotEmpty(t, instances[0].InstanceMeta.GetVersion())
+
+	// Verify instance configuration
+	assert.Empty(t, instances[0].InstanceConfig.InstanceActions)
+	assert.NotEmpty(t, instances[0].InstanceConfig.Config.NginxConfig.GetProcessId())
+	assert.Equal(t, "/usr/sbin/nginx", instances[0].InstanceConfig.Config.NginxConfig.GetBinaryPath())
+	assert.Equal(t, "/etc/nginx/nginx.conf", instances[0].InstanceConfig.Config.NginxConfig.GetConfigPath())
 }

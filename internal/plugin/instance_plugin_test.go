@@ -93,7 +93,9 @@ func TestInstance_Process_Empty_Instances(t *testing.T) {
 	messagePipe.Process(ctx, processesMessage)
 	messagePipe.Run(ctx)
 
-	assert.Len(t, messagePipe.GetProcessedMessages(), 1)
+	assert.Len(t, messagePipe.GetProcessedMessages(), 2)
 	assert.Equal(t, processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
 	assert.Equal(t, processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
+	assert.Equal(t, bus.InstancesTopic, messagePipe.GetProcessedMessages()[1].Topic)
+	assert.Equal(t, testInstances, messagePipe.GetProcessedMessages()[1].Data)
 }

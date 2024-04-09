@@ -49,3 +49,44 @@ func TestProcessMonitor_Subscriptions(t *testing.T) {
 	subscriptions := processMonitor.Subscriptions()
 	assert.Equal(t, []string{}, subscriptions)
 }
+
+func TestProcessMonitor_haveProcessesChanged(t *testing.T) {
+	tests := []struct {
+		name         string
+		oldProcesses []*model.Process
+		newProcesses []*model.Process
+		expected     bool
+	}{
+		{
+			name:         "Test 1: number of processes are the same and PIDs have not changed",
+			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
+			newProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
+			expected:     false,
+		},
+		{
+			name:         "Test 2: number of processes are the same but PIDs are different",
+			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
+			newProcesses: []*model.Process{{Pid: 456, Name: "nginx"}},
+			expected:     true,
+		},
+		{
+			name:         "Test 3: number of new processes is less than old processes",
+			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
+			newProcesses: []*model.Process{},
+			expected:     true,
+		},
+		{
+			name:         "Test 4: number of new processes is more than old processes",
+			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
+			newProcesses: []*model.Process{{Pid: 123, Name: "nginx"}, {Pid: 456, Name: "nginx"}},
+			expected:     true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			actual := haveProcessesChanged(test.oldProcesses, test.newProcesses)
+			assert.Equal(tt, test.expected, actual)
+		})
+	}
+}
