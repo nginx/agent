@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	TokenKey = "token"
+	TokenKey = "authorization"
+	UUID     = "uuid"
 )
 
 var _ credentials.PerRPCCredentials = (*PerRPCCredentials)(nil)
@@ -20,12 +21,14 @@ var _ credentials.PerRPCCredentials = (*PerRPCCredentials)(nil)
 // PerRPCCredentials implements the PerRPCCredentials interface.
 type PerRPCCredentials struct {
 	Token string
+	ID    string
 }
 
 // GetRequestMetadata returns the request metadata as a map.
 func (t *PerRPCCredentials) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	return map[string]string{
 		TokenKey: t.Token,
+		UUID:	  t.ID,
 	}, nil
 }
 
