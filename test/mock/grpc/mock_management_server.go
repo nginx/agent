@@ -104,9 +104,9 @@ func NewMockManagementServer(
 
 	go func() {
 		slog.Info("Starting mock management plane gRPC server", "address", grpcListener.Addr().String())
-		err := grpcServer.Serve(grpcListener)
-		if err != nil {
-			slog.Error("Failed to start mock management plane gRPC server", "error", err)
+		grpcErr := grpcServer.Serve(grpcListener)
+		if grpcErr != nil {
+			slog.Error("Failed to start mock management plane gRPC server", "error", grpcErr)
 		}
 	}()
 

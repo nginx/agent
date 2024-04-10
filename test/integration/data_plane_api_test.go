@@ -55,12 +55,12 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 	if os.Getenv("TEST_ENV") == "Container" {
 		tb.Log("Running tests in a container environment")
 
-		containerNetwork, err := network.New(
+		containerNetwork, networkErr := network.New(
 			ctx,
 			network.WithCheckDuplicate(),
 			network.WithAttachable(),
 		)
-		require.NoError(tb, err)
+		require.NoError(tb, networkErr)
 		tb.Cleanup(func() {
 			require.NoError(tb, containerNetwork.Remove(ctx))
 		})
@@ -88,17 +88,17 @@ func setupTest(tb testing.TB) func(tb testing.TB) {
 			params,
 		)
 
-		ipAddress, err := container.Host(ctx)
-		require.NoError(tb, err)
-		ports, err := container.Ports(ctx)
-		require.NoError(tb, err)
+		ipAddress, hostErr := container.Host(ctx)
+		require.NoError(tb, hostErr)
+		ports, portErr := container.Ports(ctx)
+		require.NoError(tb, portErr)
 
 		apiHost = ipAddress
 		apiPort = ports["9091/tcp"][0].HostPort
 	} else {
 		server := mockHttp.NewManagementServer(configDir)
-		listener, err := net.Listen("tcp", "localhost:0")
-		require.NoError(tb, err)
+		listener, listenErr := net.Listen("tcp", "localhost:0")
+		require.NoError(tb, listenErr)
 
 		go server.StartServer(listener)
 

@@ -1,9 +1,10 @@
+issues:
+  exclude-files:
+    - ".*gen.go"
+  exclude-dirs:
+    - ".*fakes" # Skip mock directories
 run:
   timeout: 3m
-  skip-dirs:
-    - ".*fakes" # Skip mock directories
-  skip-files:
-    - ".*gen.go"
 linters:
   # By default, the enabled linters are:
   # errcheck, gosimple, govet, ineffassign, staticcheck, unused
@@ -91,8 +92,10 @@ linters-settings:
     package-average: 0.0
     skip-tests: true
   govet:
-    # Report about shadowed variables. Default: false
-    check-shadowing: true
+    settings:
+      shadow:
+        # Report about shadowed variables. Default: false
+        strict: true
     # Each analyzer can be configured separately in the 'settings:' section.
     # settings:
     # Run `go tool vet help` to see all analyzers. Default: false
