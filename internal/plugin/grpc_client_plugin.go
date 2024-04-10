@@ -121,7 +121,7 @@ func (gc *GrpcClient) createConnection() error {
 		},
 		Agent: &v1.Instance{
 			InstanceMeta: &v1.InstanceMeta{
-				InstanceId:   agentGrpc.UUID,
+				InstanceId:   gc.config.UUID,
 				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
 				Version:      gc.config.Version,
 			},

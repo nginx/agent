@@ -54,7 +54,13 @@ func RegisterConfigFile() error {
 
 	slog.Debug("Configuration file loaded", "config_path", configPath)
 	viperInstance.Set(ConfigPathKey, configPath)
-	viperInstance.Set(UUIDKey, uuidLibrary.Generate(configPath))
+
+	exePath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	viperInstance.Set(UUIDKey, uuidLibrary.Generate(exePath, configPath))
 
 	return nil
 }
@@ -63,6 +69,7 @@ func GetConfig() *Config {
 	config := &Config{
 		UUID:               viperInstance.GetString(UUIDKey),
 		Version:            viperInstance.GetString(VersionKey),
+		Path:               viperInstance.GetString(ConfigPathKey),
 		Log:                getLog(),
 		ProcessMonitor:     getProcessMonitor(),
 		DataPlaneAPI:       getDataPlaneAPI(),
