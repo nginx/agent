@@ -10,7 +10,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . ConfigClient
 
 type ConfigClient interface {

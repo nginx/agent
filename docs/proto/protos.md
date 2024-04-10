@@ -338,7 +338,7 @@ The ManagementPlaneRequest sent in the Subscribe stream triggers one or more cli
 Messages provided by the Management Plane must be a FIFO ordered queue. Messages in the queue must have a monotonically-increasing integer index. 
 The indexes do not need to be sequential. The index must be a 64-bit signed integer.
 The index must not reset for the entire lifetime of a unique Agent (i.e. the index does not reset to 0 only because of a temporary disconnection or new session). 
-Messages must not be removed from the Mangement Plane queue until Ack’d by the Agent. 
+Messages must not be removed from the Management Plane queue until Ack’d by the Agent. 
 Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as they may need to be retried.
 
 | Method Name | Request Type | Response Type | Description |
