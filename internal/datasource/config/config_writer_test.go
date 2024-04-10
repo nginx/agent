@@ -111,9 +111,7 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
-			skippedFiles, err := configWriter.Write(ctx, filesURL, instanceID.String())
-			require.NoError(t, err)
-			skippedFiles, cwErr = configWriter.Write(ctx, filesURL, instanceID.String())
+			skippedFiles, cwErr := configWriter.Write(ctx, filesURL, instanceID.String())
 			require.NoError(t, cwErr)
 			slog.Info("Skipped Files: ", "", skippedFiles)
 			assert.Len(t, skippedFiles, test.expSkippedCount)
