@@ -21,7 +21,7 @@ import (
 	service "github.com/nginx/agent/v3/internal/service/config"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . ConfigServiceInterface
 type ConfigServiceInterface interface {
 	SetConfigContext(instanceConfigContext any)

@@ -12,7 +12,7 @@ go_gc_duration_seconds_count 20
 go_goroutines 30
 # HELP go_info Information about the Go environment.
 # TYPE go_info gauge
-go_info{version="go1.21.4"} 1
+go_info{version="go1.22.2"} 1
 # HELP go_memstats_alloc_bytes Number of bytes allocated and still in use.
 # TYPE go_memstats_alloc_bytes gauge
 go_memstats_alloc_bytes 1.4566744e+07
@@ -139,7 +139,7 @@ process_virtual_memory_max_bytes 1.8446744073709552e+19
 prometheus_api_remote_read_queries 0
 # HELP prometheus_build_info A metric with a constant '1' value labeled by version, revision, branch, goversion from which prometheus was built, and the goos and goarch for the build.
 # TYPE prometheus_build_info gauge
-prometheus_build_info{branch="HEAD",goarch="amd64",goos="linux",goversion="go1.21.4",revision="6d80b30990bc297d95b5c844e118c4011fad8054",tags="netgo,builtinassets,stringlabels",version="2.48.0"} 1
+prometheus_build_info{branch="HEAD",goarch="amd64",goos="linux",goversion="go1.22.2",revision="6d80b30990bc297d95b5c844e118c4011fad8054",tags="netgo,builtinassets,stringlabels",version="2.48.0"} 1
 # HELP prometheus_config_last_reload_success_timestamp_seconds Timestamp of the last successful configuration reload.
 # TYPE prometheus_config_last_reload_success_timestamp_seconds gauge
 prometheus_config_last_reload_success_timestamp_seconds 1.7056832569011555e+09

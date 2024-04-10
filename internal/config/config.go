@@ -47,7 +47,7 @@ func RegisterConfigFile() error {
 		return err
 	}
 
-	if err := loadPropertiesFromFile(configPath); err != nil {
+	if err = loadPropertiesFromFile(configPath); err != nil {
 		return err
 	}
 

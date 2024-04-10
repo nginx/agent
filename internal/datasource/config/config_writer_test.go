@@ -91,7 +91,7 @@ func TestWriteConfig(t *testing.T) {
 
 			fileCache := NewFileCache(instanceID.String())
 			fileCache.SetCachePath(cachePath)
-			err := fileCache.UpdateFileCache(ctx, cacheContent)
+			err = fileCache.UpdateFileCache(ctx, cacheContent)
 			require.NoError(t, err)
 
 			if !test.cacheShouldBeEqual {
@@ -102,8 +102,8 @@ func TestWriteConfig(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			configWriter, err := NewConfigWriter(agentConfig, fileCache)
-			require.NoError(t, err)
+			configWriter, cwErr := NewConfigWriter(agentConfig, fileCache)
+			require.NoError(t, cwErr)
 
 			configWriter.SetConfigClient(fakeConfigClient)
 			testContent := []byte("location /test {\n    return 200 \"Before Write \\n\";\n}")
@@ -113,6 +113,8 @@ func TestWriteConfig(t *testing.T) {
 
 			skippedFiles, err := configWriter.Write(ctx, filesURL, instanceID.String())
 			require.NoError(t, err)
+			skippedFiles, cwErr := configWriter.Write(ctx, filesURL, tenantID.String(), instanceID.String())
+			require.NoError(t, cwErr)
 			slog.Info("Skipped Files: ", "", skippedFiles)
 			assert.Len(t, skippedFiles, test.expSkippedCount)
 

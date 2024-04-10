@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -17,38 +18,6 @@ import (
 )
 
 var (
-	floatGauge = model.DataEntry{
-		Name:        "go_info",
-		Description: "Information about the Go environment.",
-		Type:        model.Gauge,
-		SourceType:  model.Prometheus,
-		Values: []model.DataPoint{
-			{
-				Name: "go_info",
-				Labels: map[string]string{
-					"version": "go1.21.4",
-				},
-				Value: float64(1),
-			},
-		},
-	}
-
-	intGauge = model.DataEntry{
-		Name:        "go_info",
-		Description: "Information about the Go environment.",
-		Type:        model.Gauge,
-		SourceType:  model.Prometheus,
-		Values: []model.DataPoint{
-			{
-				Name: "go_info",
-				Labels: map[string]string{
-					"version": "go1.21.4",
-				},
-				Value: int64(1),
-			},
-		},
-	}
-
 	floatCounter = model.DataEntry{
 		Name:        "go_memstats_alloc_bytes_total",
 		Description: "Total number of bytes allocated, even if freed.",
@@ -274,10 +243,34 @@ var (
 
 // nolint: dupl
 func TestPrometheusConverter_FloatGauge(t *testing.T) {
+	goVersion, err := helpers.GetGoVersion(t, 4)
+	require.NoError(t, err)
+
+	floatGauge := model.DataEntry{
+		Name:        "go_info",
+		Description: "Information about the Go environment.",
+		Type:        model.Gauge,
+		SourceType:  model.Prometheus,
+		Values: []model.DataPoint{
+			{
+				Name: "go_info",
+				Labels: map[string]string{
+					"version": goVersion,
+				},
+				Value: float64(1),
+			},
+		},
+	}
+
 	expData := []metricdata.DataPoint[float64]{
 		{
-			Attributes: attribute.NewSet(attribute.KeyValue{Key: "version", Value: attribute.StringValue("go1.21.4")}),
-			Value:      float64(1),
+			Attributes: attribute.NewSet(
+				attribute.KeyValue{
+					Key:   "version",
+					Value: attribute.StringValue(goVersion),
+				},
+			),
+			Value: float64(1),
 		},
 	}
 	expMetricData := metricdata.Metrics{
@@ -305,10 +298,34 @@ func TestPrometheusConverter_FloatGauge(t *testing.T) {
 
 // nolint: dupl
 func TestPrometheusConverter_IntGauge(t *testing.T) {
+	goVersion, err := helpers.GetGoVersion(t, 4)
+	require.NoError(t, err)
+
+	intGauge := model.DataEntry{
+		Name:        "go_info",
+		Description: "Information about the Go environment.",
+		Type:        model.Gauge,
+		SourceType:  model.Prometheus,
+		Values: []model.DataPoint{
+			{
+				Name: "go_info",
+				Labels: map[string]string{
+					"version": goVersion,
+				},
+				Value: int64(1),
+			},
+		},
+	}
+
 	expData := []metricdata.DataPoint[int64]{
 		{
-			Attributes: attribute.NewSet(attribute.KeyValue{Key: "version", Value: attribute.StringValue("go1.21.4")}),
-			Value:      int64(1),
+			Attributes: attribute.NewSet(
+				attribute.KeyValue{
+					Key:   "version",
+					Value: attribute.StringValue(goVersion),
+				},
+			),
+			Value: int64(1),
 		},
 	}
 	expMetricData := metricdata.Metrics{
@@ -513,10 +530,13 @@ func TestPrometheusConverter_IntHistogram(t *testing.T) {
 }
 
 func TestPrometheusConverter_Errors(t *testing.T) {
+	goVersion, err := helpers.GetGoVersion(t, 4)
+	require.NoError(t, err)
+
 	t.Run("no-data-points", func(tt *testing.T) {
 		input := testDataPoint(tt)
-		res, err := ConvertPrometheus(input)
-		require.NoError(tt, err)
+		res, conErr := ConvertPrometheus(input)
+		require.NoError(tt, conErr)
 		assert.Equal(tt, input.Name, res.Name)
 		assert.Equal(tt, input.Description, res.Description)
 		assert.Equal(tt, "", res.Unit)
@@ -531,14 +551,14 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 			{
 				Name: "go_info",
 				Labels: map[string]string{
-					"version": "go1.21.4",
+					"version": goVersion,
 				},
 				Value: float64(1),
 			},
 		}
 
-		res, err := ConvertPrometheus(input)
-		require.NoError(tt, err)
+		res, conErr := ConvertPrometheus(input)
+		require.NoError(tt, conErr)
 		assert.Equal(tt, metricdata.Metrics{}, res)
 	})
 
@@ -554,9 +574,9 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 				Value: "not-a-valid-type",
 			},
 		}
-		res, err := ConvertPrometheus(input)
-		require.Error(tt, err)
-		assert.Equal(tt, "could not convert data entry of value type [string] to OTel metric", err.Error())
+		res, conErr := ConvertPrometheus(input)
+		require.Error(tt, conErr)
+		assert.Equal(tt, "could not convert data entry of value type [string] to OTel metric", conErr.Error())
 		assert.Equal(tt, metricdata.Metrics{}, res)
 	})
 
@@ -580,8 +600,8 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 			},
 		}
 
-		res, err := ConvertPrometheus(input)
-		require.NoError(tt, err)
+		res, convErr := ConvertPrometheus(input)
+		require.NoError(tt, convErr)
 
 		data, ok := res.Data.(metricdata.Sum[float64])
 		require.True(t, ok)
@@ -596,21 +616,21 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 			{
 				Name: "go_info",
 				Labels: map[string]string{
-					"version": "go1.21.4",
+					"version": goVersion,
 				},
 				Value: float64(23),
 			},
 			{
 				Name: "go_info",
 				Labels: map[string]string{
-					"version": "go1.21.4",
+					"version": goVersion,
 				},
 				Value: "not-a-valid-type",
 			},
 		}
 
-		res, err := ConvertPrometheus(input)
-		require.NoError(tt, err)
+		res, convErr := ConvertPrometheus(input)
+		require.NoError(tt, convErr)
 
 		data, ok := res.Data.(metricdata.Gauge[float64])
 		require.True(t, ok)
@@ -652,7 +672,7 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 			},
 		}
 
-		_, err := ConvertPrometheus(input)
+		_, err = ConvertPrometheus(input)
 		require.Error(tt, err)
 		assert.Equal(t, "could not convert data entry of value type [string] to OTel metric", err.Error())
 	})
@@ -670,9 +690,9 @@ func TestPrometheusConverter_Errors(t *testing.T) {
 			},
 		}
 
-		res, err := ConvertPrometheus(input)
-		require.Error(tt, err)
-		assert.Equal(tt, "unhandled metrics conversion of type: unknown", err.Error())
+		res, convErr := ConvertPrometheus(input)
+		require.Error(tt, convErr)
+		assert.Equal(tt, "unhandled metrics conversion of type: unknown", convErr.Error())
 
 		assert.Equal(tt, metricdata.Metrics{}, res)
 	})

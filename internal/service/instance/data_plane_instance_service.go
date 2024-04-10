@@ -12,7 +12,7 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.7.0 -generate
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . DataPlaneInstanceService
 type DataPlaneInstanceService interface {
 	GetInstances(ctx context.Context, processes []*model.Process) []*v1.Instance
