@@ -67,6 +67,7 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 			grpc.WithPerRPCCredentials(
 				&PerRPCCredentials{
 					Token: agentConfig.Command.Auth.Token,
+					ID:    agentConfig.UUID,
 				}),
 		)
 	}

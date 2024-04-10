@@ -32,6 +32,7 @@ func TestRegisterConfigFile(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, path.Join(currentDirectory, "nginx-agent.conf"), viperInstance.GetString(ConfigPathKey))
+	assert.NotEmpty(t, viperInstance.GetString(UUIDKey))
 }
 
 func TestGetConfig(t *testing.T) {
@@ -335,6 +336,7 @@ func TestMissingServerTLS(t *testing.T) {
 
 func getAgentConfig() *Config {
 	return &Config{
+		UUID:    "",
 		Version: "",
 		Path:    "",
 		Log:     &Log{},

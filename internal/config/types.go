@@ -8,6 +8,7 @@ package config
 import "time"
 
 type Config struct {
+	UUID               string           `yaml:"-"`
 	Version            string           `yaml:"-"`
 	Path               string           `yaml:"-"`
 	Log                *Log             `yaml:"-" mapstructure:"log"`
