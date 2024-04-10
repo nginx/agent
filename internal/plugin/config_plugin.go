@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/nginx/agent/v3/internal/client"
+
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -27,6 +29,7 @@ type Config struct {
 	configServices map[string]service.ConfigServiceInterface
 	instances      []*v1.Instance
 	agentConfig    *config.Config
+	configClient   client.ConfigClient
 }
 
 func NewConfig(agentConfig *config.Config) *Config {
@@ -65,6 +68,11 @@ func (c *Config) Process(ctx context.Context, msg *bus.Message) {
 	case msg.Topic == bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
 			c.instances = newInstances
+		}
+	case msg.Topic == bus.ConfigClientTopic:
+		if configClient, ok := msg.Data.(client.ConfigClient); ok {
+			slog.InfoContext(ctx, "Valid config client")
+			c.configClient = configClient
 		}
 	}
 }

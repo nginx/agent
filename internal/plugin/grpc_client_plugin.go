@@ -145,6 +145,14 @@ func (gc *GrpcClient) createConnection() error {
 	slog.Debug("Connection created", "response", response)
 	gc.messagePipe.Process(ctx, &bus.Message{Topic: bus.GrpcConnectedTopic, Data: response})
 
+	gc.messagePipe.Process(ctx, &bus.Message{
+		Topic: bus.ConfigClientTopic,
+		Data: &GrpcConfigClient{
+			grpcOverviewFn:    gc.GetFileOverview,
+			grpFileContentsFn: gc.GetFileContents,
+		},
+	})
+
 	return nil
 }
 
