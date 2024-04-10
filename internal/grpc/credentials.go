@@ -28,7 +28,7 @@ type PerRPCCredentials struct {
 func (t *PerRPCCredentials) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	return map[string]string{
 		TokenKey: t.Token,
-		UUID:	  t.ID,
+		UUID:     t.ID,
 	}, nil
 }
 

@@ -24,7 +24,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
-	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 )
 
 type (
@@ -122,7 +121,7 @@ func (gc *GrpcClient) createConnection() error {
 		},
 		Agent: &v1.Instance{
 			InstanceMeta: &v1.InstanceMeta{
-				InstanceId:   uuidLibrary.Generate("/etc/nginx-agent/nginx-agent"),
+				InstanceId:   agentGrpc.UUID,
 				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
 				Version:      gc.config.Version,
 			},

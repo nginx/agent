@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
+	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 )
 
 const (
@@ -55,7 +55,6 @@ func RegisterConfigFile() error {
 	slog.Debug("Configuration file loaded", "config_path", configPath)
 	viperInstance.Set(ConfigPathKey, configPath)
 	viperInstance.Set(UUIDKey, uuidLibrary.Generate(configPath))
-
 
 	return nil
 }

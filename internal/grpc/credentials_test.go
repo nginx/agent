@@ -17,7 +17,7 @@ func TestTokenCredentials_GetRequestMetadata(t *testing.T) {
 	id := "1234-5678-9012"
 	credentials := &PerRPCCredentials{
 		Token: token,
-		ID: id,
+		ID:    id,
 	}
 
 	metadata, err := credentials.GetRequestMetadata(context.TODO())
