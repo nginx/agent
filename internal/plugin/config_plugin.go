@@ -117,7 +117,7 @@ func (c *Config) processInstanceConfigUpdateRequest(ctx context.Context, msg *bu
 func (c *Config) parseInstanceConfiguration(ctx context.Context, instance *v1.Instance) {
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	if c.configServices[instanceID] == nil {
-		c.configServices[instanceID] = service.NewConfigService(ctx, instance, c.agentConfig)
+		c.configServices[instanceID] = service.NewConfigService(ctx, instance, c.agentConfig, c.configClient)
 	}
 
 	parsedConfig, err := c.configServices[instanceID].ParseInstanceConfiguration(ctx)
@@ -146,7 +146,7 @@ func (c *Config) updateInstanceConfig(ctx context.Context, request *model.Instan
 
 	instanceID := request.Instance.GetInstanceMeta().GetInstanceId()
 	if c.configServices[instanceID] == nil {
-		c.configServices[instanceID] = service.NewConfigService(ctx, request.Instance, c.agentConfig)
+		c.configServices[instanceID] = service.NewConfigService(ctx, request.Instance, c.agentConfig, c.configClient)
 	}
 
 	inProgressStatus := &instances.ConfigurationStatus{

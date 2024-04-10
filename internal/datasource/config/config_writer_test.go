@@ -102,7 +102,7 @@ func TestWriteConfig(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			configWriter, cwErr := NewConfigWriter(agentConfig, fileCache)
+			configWriter, cwErr := NewConfigWriter(agentConfig, fileCache, fakeConfigClient)
 			require.NoError(t, cwErr)
 
 			configWriter.SetConfigClient(fakeConfigClient)
@@ -140,6 +140,7 @@ func TestDeleteFile(t *testing.T) {
 	instanceIDDir := path.Join(tempDir, instanceID.String())
 	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
 	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
+	fakeConfigClient := &clientfakes.FakeConfigClient{}
 
 	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
@@ -183,7 +184,7 @@ func TestDeleteFile(t *testing.T) {
 			err := fileCache.UpdateFileCache(ctx, test.fileCache)
 			require.NoError(t, err)
 			slog.Info("", "", &agentconfig)
-			configWriter, err := NewConfigWriter(agentconfig, fileCache)
+			configWriter, err := NewConfigWriter(agentconfig, fileCache, fakeConfigClient)
 			require.NoError(t, err)
 
 			err = configWriter.removeFiles(ctx, test.currentFileCache, test.fileCache)
@@ -243,7 +244,7 @@ func TestRollback(t *testing.T) {
 	err = fileCache.UpdateFileCache(ctx, cacheContent)
 	require.NoError(t, err)
 
-	configWriter, err := NewConfigWriter(agentConfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache, fakeConfigClient)
 	require.NoError(t, err)
 	configWriter.SetConfigClient(fakeConfigClient)
 
@@ -298,7 +299,7 @@ func TestComplete(t *testing.T) {
 	agentConfig.AllowedDirectories = allowedDirs
 	fileCache.SetCachePath(cachePath)
 
-	configWriter, err := NewConfigWriter(agentConfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache, fakeConfigClient)
 	require.NoError(t, err)
 	configWriter.configClient = fakeConfigClient
 
@@ -386,7 +387,7 @@ func TestIsFilePathValid(t *testing.T) {
 	fileCache.SetCachePath(cachePath)
 	agentConfig := types.GetAgentConfig()
 
-	configWriter, err := NewConfigWriter(agentConfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache, fakeConfigClient)
 	require.NoError(t, err)
 	configWriter.configClient = fakeConfigClient
 

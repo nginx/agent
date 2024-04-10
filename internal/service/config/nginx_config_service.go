@@ -15,6 +15,8 @@ import (
 	re "regexp"
 	"strings"
 
+	"github.com/nginx/agent/v3/internal/client"
+
 	"github.com/nginx/agent/v3/internal/config"
 	writer "github.com/nginx/agent/v3/internal/datasource/config"
 
@@ -57,7 +59,9 @@ type Nginx struct {
 	agentConfig   *config.Config
 }
 
-func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Config) *Nginx {
+func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Config,
+	configClient client.ConfigClient,
+) *Nginx {
 	fileCache := writer.NewFileCache(instance.GetInstanceMeta().GetInstanceId())
 	cache, err := fileCache.ReadFileCache(ctx)
 	// Will in future work check cache and if its nil upload file
@@ -68,7 +72,7 @@ func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Co
 		}
 	}
 
-	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache)
+	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache, configClient)
 	if err != nil {
 		slog.ErrorContext(
 			ctx,

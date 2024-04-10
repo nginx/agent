@@ -43,12 +43,11 @@ type (
 )
 
 func NewConfigWriter(agentConfig *config.Config, fileCache FileCacheInterface,
+	configClient client.ConfigClient,
 ) (*ConfigWriter, error) {
 	if agentConfig == nil {
 		return nil, fmt.Errorf("failed to create config writer, agent config is nil")
 	}
-
-	configClient := client.NewHTTPConfigClient(agentConfig.Client.Timeout)
 
 	return &ConfigWriter{
 		configClient:       configClient,
@@ -144,6 +143,7 @@ func (cw *ConfigWriter) removeFiles(ctx context.Context, currentFileCache, fileC
 func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, instanceID string,
 ) (filesMetaData *v1.FileOverview, err error) {
 	// TODO: fix this to use a request
+	// TODO: remove filesURL
 	filesMetaData, err = cw.configClient.GetFilesMetadata(ctx, &v1.GetOverviewRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)

@@ -9,6 +9,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/client/clientfakes"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/require"
@@ -43,6 +45,7 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 						},
 					},
 					types.GetAgentConfig(),
+					&clientfakes.FakeConfigClient{},
 				)
 
 				for i := 0; i < bb.N; i++ {

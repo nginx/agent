@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/client/clientfakes"
+
 	"github.com/nginx/agent/v3/test/helpers"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -115,7 +117,7 @@ func TestNginx_ParseConfig(t *testing.T) {
 		Client: &config.Client{
 			Timeout: 5 * time.Second,
 		},
-	})
+	}, &clientfakes.FakeConfigClient{})
 	result, err := nginxConfig.ParseConfig(ctx)
 
 	require.NoError(t, err)
@@ -257,6 +259,7 @@ func TestNginx_Apply(t *testing.T) {
 						Timeout: 5 * time.Second,
 					},
 				},
+				&clientfakes.FakeConfigClient{},
 			)
 			nginxConfig.executor = mockExec
 			nginxConfig.SetConfigContext(&model.NginxConfigContext{
@@ -335,7 +338,7 @@ func TestNginx_Validate(t *testing.T) {
 				Client: &config.Client{
 					Timeout: 5 * time.Second,
 				},
-			})
+			}, &clientfakes.FakeConfigClient{})
 			nginxConfig.executor = mockExec
 
 			err := nginxConfig.Validate(ctx)

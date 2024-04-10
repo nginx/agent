@@ -9,6 +9,8 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/nginx/agent/v3/internal/client"
+
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	datasource "github.com/nginx/agent/v3/internal/datasource/config"
@@ -41,12 +43,14 @@ type ConfigService struct {
 	instance      *v1.Instance
 }
 
-func NewConfigService(ctx context.Context, instance *v1.Instance, agentConfig *config.Config) *ConfigService {
+func NewConfigService(ctx context.Context, instance *v1.Instance, agentConfig *config.Config,
+	configClient client.ConfigClient,
+) *ConfigService {
 	cs := &ConfigService{}
 
 	switch instance.GetInstanceMeta().GetInstanceType() {
 	case v1.InstanceMeta_INSTANCE_TYPE_NGINX, v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
-		cs.configService = service.NewNginx(ctx, instance, agentConfig)
+		cs.configService = service.NewNginx(ctx, instance, agentConfig, configClient)
 	case v1.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
 		v1.InstanceMeta_INSTANCE_TYPE_AGENT,
 		v1.InstanceMeta_INSTANCE_TYPE_UNIT:

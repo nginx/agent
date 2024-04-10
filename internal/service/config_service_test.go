@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/client/clientfakes"
+
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 
@@ -45,7 +47,7 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 		Client: &config.Client{
 			Timeout: 5 * time.Second,
 		},
-	})
+	}, &clientfakes.FakeConfigClient{})
 	configService.SetConfigContext(expectedConfigContext)
 
 	assert.Equal(t, expectedConfigContext, configService.configContext)
@@ -123,7 +125,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 
 			filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
-			cs := NewConfigService(ctx, instance, agentConfig)
+			cs := NewConfigService(ctx, instance, agentConfig, &clientfakes.FakeConfigClient{})
 			cs.configService = &mockService
 			_, result := cs.UpdateInstanceConfiguration(ctx, filesURL)
 
@@ -152,7 +154,7 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 		Client: &config.Client{
 			Timeout: 5 * time.Second,
 		},
-	})
+	}, &clientfakes.FakeConfigClient{})
 
 	fakeDataPlaneConfig := &configfakes.FakeDataPlaneConfig{}
 	fakeDataPlaneConfig.ParseConfigReturns(expectedConfigContext, nil)
