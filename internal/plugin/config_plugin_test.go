@@ -44,6 +44,12 @@ func TestConfig_Info(t *testing.T) {
 	assert.Equal(t, "config", info.Name)
 }
 
+func TestConfig_Close(t *testing.T) {
+	configPlugin := NewConfig(&config.Config{})
+	err := configPlugin.Close(context.Background())
+	require.NoError(t, err)
+}
+
 func TestConfig_Subscriptions(t *testing.T) {
 	configPlugin := NewConfig(&config.Config{})
 	subscriptions := configPlugin.Subscriptions()
@@ -51,6 +57,7 @@ func TestConfig_Subscriptions(t *testing.T) {
 		bus.InstanceConfigUpdateRequestTopic,
 		bus.InstanceConfigUpdateTopic,
 		bus.InstancesTopic,
+		bus.ResourceTopic,
 	}, subscriptions)
 }
 
@@ -143,6 +150,18 @@ func TestConfig_Process(t *testing.T) {
 			},
 			expected: nil,
 		},
+		{
+			name: "Test 6: Resource request",
+			input: &bus.Message{
+				Topic: bus.ResourceTopic,
+				Data: &v1.Resource{
+					Instances: []*v1.Instance{
+						testInstance,
+					},
+				},
+			},
+			expected: nil,
+		},
 	}
 
 	for _, test := range tests {
@@ -161,7 +180,7 @@ func TestConfig_Process(t *testing.T) {
 			instanceService := []*v1.Instance{testInstance}
 
 			configPlugin.configServices[instanceID] = configService
-			configPlugin.instances = instanceService
+			configPlugin.resource.Instances = instanceService
 
 			configPlugin.Process(ctx, test.input)
 
@@ -286,7 +305,7 @@ func TestConfig_Update(t *testing.T) {
 
 			instanceService := []*v1.Instance{&instance}
 			configPlugin.configServices[instanceID] = configService
-			configPlugin.instances = instanceService
+			configPlugin.resource.Instances = instanceService
 
 			configPlugin.updateInstanceConfig(ctx, &request)
 
