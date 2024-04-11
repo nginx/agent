@@ -182,6 +182,7 @@ func TestGrpcClient_Process_InstancesTopic(t *testing.T) {
 	fakeCommandServiceClient.UpdateDataPlaneStatusReturns(&v1.UpdateDataPlaneStatusResponse{}, nil)
 
 	client.commandServiceClient = fakeCommandServiceClient
+	client.isConnected.Store(true)
 
 	mockMessage := &bus.Message{
 		Topic: bus.InstancesTopic,

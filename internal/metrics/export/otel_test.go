@@ -24,6 +24,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/metrics/source/prometheus"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,61 +38,6 @@ const (
 	grpcProtocol = "tcp"
 	grpcEndpoint = "127.0.0.1:4317"
 )
-
-// The Resource is static currently, so should be the same for each metric.
-var expResource = &resV1.Resource{
-	Attributes: []*commonV1.KeyValue{
-		{
-			Key: "service.instance.id",
-			Value: &commonV1.AnyValue{
-				Value: &commonV1.AnyValue_StringValue{
-					StringValue: "agent-unique-id",
-				},
-			},
-		},
-		{
-			Key: "service.name",
-			Value: &commonV1.AnyValue{
-				Value: &commonV1.AnyValue_StringValue{
-					StringValue: "Prometheus",
-				},
-			},
-		},
-		{
-			Key: "service.namespace",
-			Value: &commonV1.AnyValue{
-				Value: &commonV1.AnyValue_StringValue{
-					StringValue: "nginx",
-				},
-			},
-		},
-		{
-			Key: "telemetry.sdk.language",
-			Value: &commonV1.AnyValue{
-				Value: &commonV1.AnyValue_StringValue{
-					StringValue: "go",
-				},
-			},
-		},
-		{
-			Key: "telemetry.sdk.name",
-			Value: &commonV1.AnyValue{
-				Value: &commonV1.AnyValue_StringValue{
-					StringValue: "opentelemetry",
-				},
-			},
-		},
-		{
-			Key: "telemetry.sdk.version",
-			Value: &commonV1.AnyValue{
-				Value: &commonV1.AnyValue_StringValue{
-					StringValue: "1.21.0",
-				},
-			},
-		},
-	},
-	DroppedAttributesCount: 0,
-}
 
 type OTelCollector struct {
 	sdk.UnimplementedMetricsServiceServer
@@ -323,6 +269,64 @@ func TestOTelExporter_Sink(t *testing.T) {
 // nolint: gocognit, revive, dupl, maintidx
 func TestOTelMetrics(t *testing.T) {
 	ctx := context.Background()
+
+	otelSdkVersion, err := helpers.GetRequiredModuleVersion(t, "go.opentelemetry.io/otel/sdk", 3)
+	require.NoError(t, err)
+
+	expResource := &resV1.Resource{
+		Attributes: []*commonV1.KeyValue{
+			{
+				Key: "service.instance.id",
+				Value: &commonV1.AnyValue{
+					Value: &commonV1.AnyValue_StringValue{
+						StringValue: "agent-unique-id",
+					},
+				},
+			},
+			{
+				Key: "service.name",
+				Value: &commonV1.AnyValue{
+					Value: &commonV1.AnyValue_StringValue{
+						StringValue: "Prometheus",
+					},
+				},
+			},
+			{
+				Key: "service.namespace",
+				Value: &commonV1.AnyValue{
+					Value: &commonV1.AnyValue_StringValue{
+						StringValue: "nginx",
+					},
+				},
+			},
+			{
+				Key: "telemetry.sdk.language",
+				Value: &commonV1.AnyValue{
+					Value: &commonV1.AnyValue_StringValue{
+						StringValue: "go",
+					},
+				},
+			},
+			{
+				Key: "telemetry.sdk.name",
+				Value: &commonV1.AnyValue{
+					Value: &commonV1.AnyValue_StringValue{
+						StringValue: "opentelemetry",
+					},
+				},
+			},
+			{
+				Key: "telemetry.sdk.version",
+				Value: &commonV1.AnyValue{
+					Value: &commonV1.AnyValue_StringValue{
+						StringValue: otelSdkVersion,
+					},
+				},
+			},
+		},
+		DroppedAttributesCount: 0,
+	}
+
 	inputs := []model.DataEntry{
 		{
 			Name:        "nginx_ingress_controller_nginx_last_reload_milliseconds",

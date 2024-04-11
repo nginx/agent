@@ -195,9 +195,9 @@ func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, erro
 
 			versionDirectory := filepath.Join(configDirectory, version)
 
-			file, err := createFile(path, filePath)
-			if err != nil {
-				return err
+			file, fileErr := createFile(path, filePath)
+			if fileErr != nil {
+				return fileErr
 			}
 
 			files[versionDirectory] = append(files[versionDirectory], file)
@@ -225,15 +225,15 @@ func getFileHash(filePath string) (string, error) {
 		return "", err
 	}
 	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			slog.Error("Error closing file", "error", err)
+		closeErr := f.Close()
+		if closeErr != nil {
+			slog.Error("Error closing file", "error", closeErr)
 		}
 	}(f)
 
 	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", err
+	if _, copyErr := io.Copy(h, f); copyErr != nil {
+		return "", copyErr
 	}
 
 	return string(h.Sum(nil)), nil
@@ -244,9 +244,9 @@ func performFileAction(fileAction v1.File_FileAction, fileContents []byte, fullF
 	case v1.File_FILE_ACTION_ADD, v1.File_FILE_ACTION_UPDATE:
 		// Ensure if file doesn't exist that directories are created before creating the file
 		if _, err := os.Stat(fullFilePath); os.IsNotExist(err) {
-			err := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm)
-			if err != nil {
-				slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", err)
+			statErr := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm)
+			if statErr != nil {
+				slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", statErr)
 				return status.Errorf(codes.Internal, "Failed to create/update file")
 			}
 		}

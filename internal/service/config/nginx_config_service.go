@@ -211,7 +211,7 @@ func (n *Nginx) Apply(ctx context.Context) error {
 	numberOfExpectedMessages := len(errorLogs)
 
 	for i := 0; i < numberOfExpectedMessages; i++ {
-		err := <-logErrorChannel
+		err = <-logErrorChannel
 		slog.DebugContext(ctx, "Message received in logErrorChannel", "error", err)
 		if err != nil {
 			errorsFound = errors.Join(errorsFound, err)

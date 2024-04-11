@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -47,19 +48,28 @@ func RegisterConfigFile() error {
 		return err
 	}
 
-	if err := loadPropertiesFromFile(configPath); err != nil {
+	if err = loadPropertiesFromFile(configPath); err != nil {
 		return err
 	}
 
 	slog.Debug("Configuration file loaded", "config_path", configPath)
 	viperInstance.Set(ConfigPathKey, configPath)
 
+	exePath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	viperInstance.Set(UUIDKey, uuidLibrary.Generate(exePath, configPath))
+
 	return nil
 }
 
 func GetConfig() *Config {
 	config := &Config{
+		UUID:               viperInstance.GetString(UUIDKey),
 		Version:            viperInstance.GetString(VersionKey),
+		Path:               viperInstance.GetString(ConfigPathKey),
 		Log:                getLog(),
 		ProcessMonitor:     getProcessMonitor(),
 		DataPlaneAPI:       getDataPlaneAPI(),

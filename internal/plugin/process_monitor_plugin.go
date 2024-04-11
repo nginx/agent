@@ -107,7 +107,7 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 		case <-pm.processTicker.C:
 			slog.DebugContext(ctx, "Checking for process updates")
 
-			processes, err := pm.getProcessesFunc(ctx)
+			processes, err = pm.getProcessesFunc(ctx)
 			if err != nil {
 				slog.ErrorContext(ctx, "Unable to get process information", "error", err)
 
@@ -116,10 +116,14 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 
 			pm.processesMutex.Lock()
 			if haveProcessesChanged(pm.processes, processes) {
-				newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
-				slog.DebugContext(newCtx, "Processes changes detected")
+				procChangedCtx := context.WithValue(
+					newCtx,
+					logger.CorrelationIDContextKey,
+					logger.GenerateCorrelationID(),
+				)
+				slog.DebugContext(procChangedCtx, "Processes changes detected")
 				pm.processes = processes
-				pm.messagePipe.Process(newCtx, &bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
+				pm.messagePipe.Process(procChangedCtx, &bus.Message{Topic: bus.OsProcessesTopic, Data: processes})
 			}
 			pm.processesMutex.Unlock()
 		}
