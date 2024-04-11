@@ -122,7 +122,7 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 
 	agentConfig := types.GetAgentConfig()
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
-	dataPlaneServer.instances = []*v1.Instance{instance}
+	dataPlaneServer.resource.Instances = []*v1.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
@@ -173,7 +173,7 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 
 	agentConfig := types.GetAgentConfig()
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
-	dataPlaneServer.instances = []*v1.Instance{instance}
+	dataPlaneServer.resource.Instances = []*v1.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
@@ -313,7 +313,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	agentConfig := types.GetAgentConfig()
 
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
-	dataPlaneServer.instances = []*v1.Instance{instance}
+	dataPlaneServer.resource.Instances = []*v1.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(100)
 	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})

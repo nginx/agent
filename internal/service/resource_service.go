@@ -19,17 +19,47 @@ type ResourceServiceInterface interface {
 }
 
 type ResourceService struct {
-	info host.InfoInterface
+	info     host.InfoInterface
+	resource *v1.Resource
 }
 
 func NewResourceService() *ResourceService {
+	resource := &v1.Resource{
+		Id: "",
+		Instances: []*v1.Instance{
+			{
+				InstanceMeta: &v1.InstanceMeta{
+					// InstanceId:   gc.config.UUID,
+					InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
+					// Version:      gc.config.Version,
+				},
+				InstanceConfig: &v1.InstanceConfig{},
+			},
+		},
+		// Info: host.NewInfo(),
+	}
+
 	return &ResourceService{
-		info: host.NewInfo(),
+		info:     host.NewInfo(),
+		resource: resource,
 	}
 }
 
 func (rs *ResourceService) GetResource(ctx context.Context) *v1.Resource {
-	resource := &v1.Resource{}
+	resource := &v1.Resource{
+		Id: "",
+		Instances: []*v1.Instance{
+			{
+				InstanceMeta: &v1.InstanceMeta{
+					// InstanceId:   gc.config.UUID,
+					InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
+					// Version:      gc.config.Version,
+				},
+				InstanceConfig: &v1.InstanceConfig{},
+			},
+		},
+		Info: nil,
+	}
 
 	if rs.info.IsContainer() {
 		resource.Info = rs.info.GetContainerInfo()

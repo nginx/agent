@@ -37,13 +37,14 @@ type (
 	ConnectionRequest struct {
 		ConnectionRequest *v1.CreateConnectionRequest `json:"connectionRequest"`
 	}
-	NginxInstanceConfig struct {
-		InstanceActions []*v1.InstanceAction           `json:"instance_actions"`
-		Config          *v1.InstanceConfig_NginxConfig `json:"Config"`
-	}
+	// NginxInstanceConfig struct {
+	// 	InstanceActions []*v1.InstanceAction           `json:"instance_actions"`
+	// 	Config          *v1.InstanceConfig_NginxConfig `json:"Config"`
+	// }
 	Instance struct {
-		InstanceMeta   *v1.InstanceMeta    `json:"instance_meta"`
-		InstanceConfig NginxInstanceConfig `json:"instance_config"`
+		InstanceMeta *v1.InstanceMeta `json:"instance_meta"`
+		// InstanceConfig v  `json:"instance_config"`
+		InstanceRuntime *v1.InstanceRuntime `json:"instance_runtime"`
 	}
 	NginxUpdateDataPlaneHealthRequest struct {
 		MessageMeta *v1.MessageMeta `json:"message_meta"`
@@ -225,8 +226,8 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	assert.NotEmpty(t, instances[0].InstanceMeta.GetVersion())
 
 	// Verify instance configuration
-	assert.Empty(t, instances[0].InstanceConfig.InstanceActions)
-	assert.NotEmpty(t, instances[0].InstanceConfig.Config.NginxConfig.GetProcessId())
-	assert.Equal(t, "/usr/sbin/nginx", instances[0].InstanceConfig.Config.NginxConfig.GetBinaryPath())
-	assert.Equal(t, "/etc/nginx/nginx.conf", instances[0].InstanceConfig.Config.NginxConfig.GetConfigPath())
+	// assert.Empty(t, instances[0].InstanceConfig.InstanceActions)
+	assert.NotEmpty(t, instances[0].InstanceRuntime.GetProcessId())
+	assert.Equal(t, "/usr/sbin/nginx", instances[0].InstanceRuntime.GetBinaryPath())
+	assert.Equal(t, "/etc/nginx/nginx.conf", instances[0].InstanceRuntime.GetConfigPath())
 }

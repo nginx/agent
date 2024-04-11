@@ -34,7 +34,7 @@ type (
 		isConnected          *atomic.Bool
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
-		instances            []*v1.Instance
+		resource             *v1.Resource
 		connectionMutex      sync.Mutex
 		instancesMutex       sync.Mutex
 	}
@@ -53,7 +53,7 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 		return &GrpcClient{
 			config:          agentConfig,
 			isConnected:     isConnected,
-			instances:       []*v1.Instance{},
+			resource:        &v1.Resource{},
 			connectionMutex: sync.Mutex{},
 			instancesMutex:  sync.Mutex{},
 		}
@@ -119,18 +119,7 @@ func (gc *GrpcClient) createConnection() error {
 			CorrelationId: correlationID.String(),
 			Timestamp:     timestamppb.Now(),
 		},
-		Resource: &v1.Resource{
-			Instances: []*v1.Instance{
-				{
-					InstanceMeta: &v1.InstanceMeta{
-						InstanceId:   gc.config.UUID,
-						InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
-						Version:      gc.config.Version,
-					},
-					InstanceConfig: &v1.InstanceConfig{},
-				},
-			},
-		},
+		Resource: gc.resource,
 	}
 
 	ctx := context.Background()
@@ -176,10 +165,10 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	case bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
 			gc.instancesMutex.Lock()
-			gc.instances = newInstances
+			gc.resource.Instances = newInstances
 			gc.instancesMutex.Unlock()
 
-			err := gc.sendDataPlaneStatusUpdate(ctx, newInstances)
+			err := gc.sendDataPlaneStatusUpdate(ctx, gc.resource)
 			if err != nil {
 				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
 			}
@@ -189,7 +178,7 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 		gc.isConnected.Store(true)
 
 		gc.instancesMutex.Lock()
-		err := gc.sendDataPlaneStatusUpdate(ctx, gc.instances)
+		err := gc.sendDataPlaneStatusUpdate(ctx, gc.resource)
 		gc.instancesMutex.Unlock()
 
 		if err != nil {
@@ -209,7 +198,7 @@ func (gc *GrpcClient) Subscriptions() []string {
 
 func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	ctx context.Context,
-	instances []*v1.Instance,
+	resource *v1.Resource,
 ) error {
 	if !gc.isConnected.Load() {
 		slog.DebugContext(ctx, "gRPC client not connected yet. Skipping sending data plane status update")
@@ -224,7 +213,7 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
-		Instances: instances,
+		Resource: resource,
 	}
 
 	slog.DebugContext(ctx, "Sending data plane status update request", "request", request)

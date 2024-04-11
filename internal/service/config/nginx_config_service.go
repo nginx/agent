@@ -110,7 +110,7 @@ func (n *Nginx) SetConfigWriter(configWriter writer.ConfigWriterInterface) {
 }
 
 func (n *Nginx) ParseConfig(_ context.Context) (any, error) {
-	payload, err := crossplane.Parse(n.instance.GetInstanceConfig().GetNginxConfig().GetConfigPath(),
+	payload, err := crossplane.Parse(n.instance.GetInstanceRuntime().GetConfigPath(),
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   []string{},
 			SingleFile:         false,
@@ -120,7 +120,7 @@ func (n *Nginx) ParseConfig(_ context.Context) (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf(
 			"error reading config from %s, error: %w",
-			n.instance.GetInstanceConfig().GetNginxConfig().GetConfigPath(),
+			n.instance.GetInstanceRuntime().GetConfigPath(),
 			err,
 		)
 	}
@@ -172,7 +172,7 @@ func getLogs(payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog
 
 func (n *Nginx) Validate(ctx context.Context) error {
 	slog.DebugContext(ctx, "Validating NGINX config")
-	exePath := n.instance.GetInstanceConfig().GetNginxConfig().GetBinaryPath()
+	exePath := n.instance.GetInstanceRuntime().GetBinaryPath()
 
 	out, err := n.executor.RunCmd(ctx, exePath, "-t")
 	if err != nil {
@@ -200,7 +200,7 @@ func (n *Nginx) Apply(ctx context.Context) error {
 
 	go n.monitorLogs(ctx, errorLogs, logErrorChannel)
 
-	processID := n.instance.GetInstanceConfig().GetNginxConfig().GetProcessId()
+	processID := n.instance.GetInstanceRuntime().GetProcessId()
 	err := n.executor.KillProcess(processID)
 	if err != nil {
 		return fmt.Errorf("failed to reload NGINX, %w", err)

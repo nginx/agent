@@ -114,15 +114,21 @@ func TestGetInstances(t *testing.T) {
 						InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
 						Version:      "1.23.3",
 					},
-					InstanceConfig: &v1.InstanceConfig{
-						Config: &v1.InstanceConfig_NginxConfig{
-							NginxConfig: &v1.NGINXConfig{
-								ConfigPath: "/usr/local/etc/nginx/nginx.conf",
-								BinaryPath: exePath,
-								ProcessId:  789,
+					InstanceRuntime: &v1.InstanceRuntime{
+						ProcessId:  789,
+						BinaryPath: exePath,
+						ConfigPath: "/usr/local/etc/nginx/nginx.conf",
+						Details: &v1.InstanceRuntime_NginxRuntimeInfo{
+							NginxRuntimeInfo: &v1.NGINXRuntimeInfo{
+								StubStatus:      "",
+								AccessLogs:      []string{},
+								ErrorLogs:       []string{},
+								LoadableModules: []string{},
+								DynamicModules:  []string{},
 							},
 						},
 					},
+					InstanceConfig: nil,
 				},
 			},
 		}, {
@@ -140,15 +146,22 @@ func TestGetInstances(t *testing.T) {
 						InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS,
 						Version:      "nginx-plus-r30-p1",
 					},
-					InstanceConfig: &v1.InstanceConfig{
-						Config: &v1.InstanceConfig_NginxPlusConfig{
-							NginxPlusConfig: &v1.NGINXPlusConfig{
-								ConfigPath: "/etc/nginx/nginx.conf",
-								BinaryPath: exePath,
-								ProcessId:  789,
+					InstanceRuntime: &v1.InstanceRuntime{
+						ProcessId:  789,
+						BinaryPath: exePath,
+						ConfigPath: "/etc/nginx/nginx.conf",
+						Details: &v1.InstanceRuntime_NginxPlusRuntimeInfo{
+							NginxPlusRuntimeInfo: &v1.NGINXPlusRuntimeInfo{
+								StubStatus:      "",
+								AccessLogs:      []string{},
+								ErrorLogs:       []string{},
+								LoadableModules: []string{},
+								DynamicModules:  []string{},
+								PlusApi:         "",
 							},
 						},
 					},
+					InstanceConfig: nil,
 				},
 			},
 		},

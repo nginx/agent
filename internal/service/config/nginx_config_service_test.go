@@ -102,13 +102,17 @@ func TestNginx_ParseConfig(t *testing.T) {
 			InstanceId:   instanceID,
 			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
 		},
-		InstanceConfig: &v1.InstanceConfig{
-			Config: &v1.InstanceConfig_NginxConfig{
-				NginxConfig: &v1.NGINXConfig{
-					ConfigPath: file.Name(),
-				},
-			},
+		InstanceRuntime: &v1.InstanceRuntime{
+			ConfigPath: file.Name(),
 		},
+		// InstanceConfig: &v1.InstanceConfig{
+		// Config: &v1.InstanceConfig_NginxConfig{
+		// 	NginxConfig: &v1.NGINXConfig{
+		// 		ConfigPath: file.Name(),
+		// 	},
+		// },
+		// },
+
 	}
 
 	nginxConfig := NewNginx(ctx, instance, &config.Config{
@@ -233,14 +237,18 @@ func TestNginx_Apply(t *testing.T) {
 					InstanceId:   instanceID,
 					InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
 				},
-				InstanceConfig: &v1.InstanceConfig{
-					Config: &v1.InstanceConfig_NginxConfig{
-						NginxConfig: &v1.NGINXConfig{
-							BinaryPath: "nginx",
-							ProcessId:  1,
-						},
-					},
+				InstanceRuntime: &v1.InstanceRuntime{
+					BinaryPath: "nginx",
+					ProcessId:  1,
 				},
+				// InstanceConfig: &v1.InstanceConfig{
+				// 	Config: &v1.InstanceConfig_NginxConfig{
+				// 		NginxConfig: &v1.NGINXConfig{
+				// 			BinaryPath: "nginx",
+				// 			ProcessId:  1,
+				// 		},
+				// 	},
+				// },
 			}
 
 			nginxConfig := NewNginx(
@@ -322,13 +330,16 @@ func TestNginx_Validate(t *testing.T) {
 					InstanceId:   instanceID,
 					InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
 				},
-				InstanceConfig: &v1.InstanceConfig{
-					Config: &v1.InstanceConfig_NginxConfig{
-						NginxConfig: &v1.NGINXConfig{
-							BinaryPath: "nginx",
-						},
-					},
+				InstanceRuntime: &v1.InstanceRuntime{
+					BinaryPath: "nginx",
 				},
+				// InstanceConfig: &v1.InstanceConfig{
+				// 	Config: &v1.InstanceConfig_NginxConfig{
+				// 		NginxConfig: &v1.NGINXConfig{
+				// 			BinaryPath: "nginx",
+				// 		},
+				// 	},
+				// },
 			}
 
 			nginxConfig := NewNginx(ctx, instance, &config.Config{

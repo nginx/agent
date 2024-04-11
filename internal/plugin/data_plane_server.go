@@ -33,14 +33,14 @@ type (
 	DataPlaneServer struct {
 		address           string
 		logger            *slog.Logger
-		instances         []*v1.Instance
+		resource          *v1.Resource
 		configEvents      map[string][]*instances.ConfigurationStatus
 		messagePipe       bus.MessagePipeInterface
 		server            *http.Server
 		cancel            context.CancelFunc
 		serverMutex       sync.Mutex
 		configEventsMutex sync.Mutex
-		instancesMutex    sync.Mutex
+		resourceMutex     sync.Mutex
 	}
 )
 
@@ -53,7 +53,7 @@ func NewDataPlaneServer(agentConfig *config.Config, slogger *slog.Logger) *DataP
 		configEvents:      make(map[string][]*instances.ConfigurationStatus),
 		serverMutex:       sync.Mutex{},
 		configEventsMutex: sync.Mutex{},
-		instancesMutex:    sync.Mutex{},
+		resourceMutex:     sync.Mutex{},
 	}
 }
 
@@ -101,9 +101,9 @@ func (dps *DataPlaneServer) Process(_ context.Context, msg *bus.Message) {
 	switch {
 	case msg.Topic == bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
-			dps.instancesMutex.Lock()
-			dps.instances = newInstances
-			dps.instancesMutex.Unlock()
+			dps.resourceMutex.Lock()
+			dps.resource.Instances = newInstances
+			dps.resourceMutex.Unlock()
 		}
 	case msg.Topic == bus.InstanceConfigUpdateTopic:
 		if configStatus, ok := msg.Data.(*instances.ConfigurationStatus); ok {
@@ -164,15 +164,15 @@ func (dps *DataPlaneServer) GetInstances(ctx *gin.Context) {
 
 	response := []dataplane.Instance{}
 
-	dps.instancesMutex.Lock()
-	defer dps.instancesMutex.Unlock()
+	dps.resourceMutex.Lock()
+	defer dps.resourceMutex.Unlock()
 
-	for _, instance := range dps.instances {
+	for _, instance := range dps.resource.GetInstances() {
 		response = append(response, dataplane.Instance{
 			InstanceId: toPtr(instance.GetInstanceMeta().GetInstanceId()),
 			Type:       toPtr(mapTypeEnums(instance.GetInstanceMeta().GetInstanceType().String())),
 			Version:    toPtr(instance.GetInstanceMeta().GetVersion()),
-			Meta:       toPtr(convertMeta(instance.GetInstanceConfig())),
+			Meta:       toPtr(convertMeta(instance.GetInstanceRuntime())),
 		})
 	}
 
@@ -258,17 +258,17 @@ func (dps *DataPlaneServer) getConfigurationStatus(instanceID string) []*instanc
 
 // nolint: revive
 func (dps *DataPlaneServer) getInstances() []*v1.Instance {
-	dps.instancesMutex.Lock()
-	defer dps.instancesMutex.Unlock()
+	dps.resourceMutex.Lock()
+	defer dps.resourceMutex.Unlock()
 
-	return dps.instances
+	return dps.resource.GetInstances()
 }
 
 func (dps *DataPlaneServer) getInstance(instanceID string) *v1.Instance {
-	dps.instancesMutex.Lock()
-	defer dps.instancesMutex.Unlock()
+	dps.resourceMutex.Lock()
+	defer dps.resourceMutex.Unlock()
 
-	for _, instance := range dps.instances {
+	for _, instance := range dps.resource.GetInstances() {
 		if instance.GetInstanceMeta().GetInstanceId() == instanceID {
 			return instance
 		}
@@ -320,27 +320,27 @@ func convertConfigStatus(statuses []*instances.ConfigurationStatus) *[]dataplane
 	return &dataplaneStatuses
 }
 
-func convertMeta(instanceConfig *v1.InstanceConfig) dataplane.Instance_Meta {
+func convertMeta(instanceRuntimeInfo *v1.InstanceRuntime) dataplane.Instance_Meta {
 	apiMeta := dataplane.Instance_Meta{}
 
-	switch instanceConfig.GetConfig().(type) {
-	case *v1.InstanceConfig_NginxConfig:
+	switch instanceRuntimeInfo.GetDetails().(type) {
+	case *v1.InstanceRuntime_NginxRuntimeInfo:
 		err := apiMeta.MergeNginxMeta(
 			dataplane.NginxMeta{
-				Type:     dataplane.NGINXMETA,
-				ConfPath: toPtr(instanceConfig.GetNginxConfig().GetConfigPath()),
-				ExePath:  toPtr(instanceConfig.GetNginxConfig().GetBinaryPath()),
+				Type: dataplane.NGINXMETA,
+				// ConfPath: toPtr(instanceRuntimeInfo.GetDetails().GetConfigPath()),
+				ExePath: toPtr(instanceRuntimeInfo.GetBinaryPath()),
 			},
 		)
 		if err != nil {
 			slog.Warn("Unable to merge nginx meta", "error", err)
 		}
-	case *v1.InstanceConfig_NginxPlusConfig:
+	case *v1.InstanceRuntime_NginxPlusRuntimeInfo:
 		err := apiMeta.MergeNginxMeta(
 			dataplane.NginxMeta{
-				Type:     dataplane.NGINXMETA,
-				ConfPath: toPtr(instanceConfig.GetNginxPlusConfig().GetConfigPath()),
-				ExePath:  toPtr(instanceConfig.GetNginxPlusConfig().GetBinaryPath()),
+				Type: dataplane.NGINXMETA,
+				// ConfPath: toPtr(instanceConfig.GetNginxPlusConfig().GetConfigPath()),
+				ExePath: toPtr(instanceRuntimeInfo.GetBinaryPath()),
 			},
 		)
 		if err != nil {
