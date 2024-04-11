@@ -8,8 +8,13 @@ package exec
 import (
 	"bytes"
 	"context"
+	"log/slog"
+	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/shirou/gopsutil/host"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
@@ -18,6 +23,9 @@ type ExecInterface interface {
 	RunCmd(ctx context.Context, cmd string, args ...string) (*bytes.Buffer, error)
 	FindExecutable(name string) (string, error)
 	KillProcess(pid int32) error
+	GetHostname() (string, error)
+	GetHostID(ctx context.Context) (string, error)
+	GetReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo)
 }
 
 type Exec struct{}
@@ -39,4 +47,28 @@ func (*Exec) FindExecutable(name string) (string, error) {
 
 func (*Exec) KillProcess(pid int32) error {
 	return syscall.Kill(int(pid), syscall.SIGHUP)
+}
+
+func (*Exec) GetHostname() (string, error) {
+	return os.Hostname()
+}
+
+func (*Exec) GetHostID(ctx context.Context) (string, error) {
+	return host.HostIDWithContext(ctx)
+}
+
+func (*Exec) GetReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo) {
+	hostInfo, err := host.InfoWithContext(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "Could not read release information for host", "error", err)
+		return &v1.ReleaseInfo{}
+	}
+
+	return &v1.ReleaseInfo{
+		VersionId: hostInfo.PlatformVersion,
+		Version:   hostInfo.KernelVersion,
+		Codename:  hostInfo.OS,
+		Name:      hostInfo.PlatformFamily,
+		Id:        hostInfo.Platform,
+	}
 }

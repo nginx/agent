@@ -17,7 +17,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/shirou/gopsutil/host"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -69,10 +69,12 @@ type (
 
 	Info struct {
 		// containerSpecificFiles are files that are only created in containers.
-		// We this to determine if an instance is running in a container or not
+		// We use this to determine if an instance is running in a container or not
 		containerSpecificFiles []string
 		selfCgroupLocation     string
 		mountInfoLocation      string
+		osReleaseLocation      string
+		exec                   exec.ExecInterface
 	}
 )
 
@@ -85,6 +87,8 @@ func NewInfo() *Info {
 		},
 		selfCgroupLocation: selfCgroupLocation,
 		mountInfoLocation:  mountInfoLocation,
+		osReleaseLocation:  osReleaseLocation,
+		exec:               &exec.Exec{},
 	}
 }
 
@@ -114,23 +118,22 @@ func (i *Info) IsContainer() bool {
 func (i *Info) GetContainerInfo() *v1.Resource_ContainerInfo {
 	return &v1.Resource_ContainerInfo{
 		ContainerInfo: &v1.ContainerInfo{
-			ContainerId: i.getContainerID(),
-			Image:       "",
+			Id: i.getContainerID(),
 		},
 	}
 }
 
-func (*Info) GetHostInfo(ctx context.Context) *v1.Resource_HostInfo {
-	hostname, err := os.Hostname()
+func (i *Info) GetHostInfo(ctx context.Context) *v1.Resource_HostInfo {
+	hostname, err := i.exec.GetHostname()
 	if err != nil {
 		slog.WarnContext(ctx, "Unable to get hostname", "error", err)
 	}
 
 	return &v1.Resource_HostInfo{
 		HostInfo: &v1.HostInfo{
-			Id:          getHostID(ctx),
+			Id:          i.getHostID(ctx),
 			Hostname:    hostname,
-			ReleaseInfo: getReleaseInfo(ctx, osReleaseLocation),
+			ReleaseInfo: i.getReleaseInfo(ctx, i.osReleaseLocation),
 		},
 	}
 }
@@ -181,7 +184,9 @@ func getContainerIDFromMountInfo(mountInfo string) (string, error) {
 	}
 	defer func(f *os.File, fileName string) {
 		closeErr := f.Close()
-		slog.Error("Unable to close file %s: %w", fileName, closeErr)
+		if closeErr != nil {
+			slog.Error("Unable to close file", "file", fileName, "error", closeErr)
+		}
 	}(mInfoFile, mountInfo)
 
 	fileScanner := bufio.NewScanner(mInfoFile)
@@ -238,11 +243,11 @@ func containsContainerID(slices []string) bool {
 	return len(slices) >= 2 && len(slices[1]) == lengthOfContainerID
 }
 
-func getHostID(ctx context.Context) string {
+func (i *Info) getHostID(ctx context.Context) string {
 	res, err, _ := singleflightGroup.Do(GetSystemUUIDKey, func() (interface{}, error) {
 		var err error
 
-		hostID, err := host.HostIDWithContext(ctx)
+		hostID, err := i.exec.GetHostID(ctx)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to get host ID", "error", err)
 			return "", err
@@ -263,11 +268,11 @@ func getHostID(ctx context.Context) string {
 	return ""
 }
 
-func getReleaseInfo(ctx context.Context, osReleaseFile string) (releaseInfo *v1.ReleaseInfo) {
-	hostReleaseInfo := getHostReleaseInfo(ctx)
-	osRelease, err := getOsRelease(osReleaseFile)
+func (i *Info) getReleaseInfo(ctx context.Context, osReleaseLocation string) (releaseInfo *v1.ReleaseInfo) {
+	hostReleaseInfo := i.exec.GetReleaseInfo(ctx)
+	osRelease, err := readOsRelease(osReleaseLocation)
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to read from os release file: %w", err)
+		slog.WarnContext(ctx, "Unable to read from os release file", "error", err)
 
 		return hostReleaseInfo
 	}
@@ -275,30 +280,16 @@ func getReleaseInfo(ctx context.Context, osReleaseFile string) (releaseInfo *v1.
 	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease)
 }
 
-func getHostReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo) {
-	hostInfo, err := host.InfoWithContext(ctx)
-	if err != nil {
-		slog.ErrorContext(ctx, "Could not read release information for host: %w", err)
-		return &v1.ReleaseInfo{}
-	}
-
-	return &v1.ReleaseInfo{
-		VersionId: hostInfo.PlatformVersion,
-		Version:   hostInfo.KernelVersion,
-		Codename:  hostInfo.OS,
-		Name:      hostInfo.PlatformFamily,
-		Id:        hostInfo.Platform,
-	}
-}
-
-func getOsRelease(path string) (map[string]string, error) {
+func readOsRelease(path string) (map[string]string, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("release file %s is unreadable: %w", path, err)
 	}
 	defer func(f *os.File, fileName string) {
 		closeErr := f.Close()
-		slog.Error("Unable to close file %s: %w", fileName, closeErr)
+		if closeErr != nil {
+			slog.Error("Unable to close file", "file", fileName, "error", closeErr)
+		}
 	}(f, path)
 
 	info, err := parseOsReleaseFile(f)

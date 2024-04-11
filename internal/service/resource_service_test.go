@@ -19,8 +19,7 @@ func TestResourceService_GetResource(t *testing.T) {
 
 	containerInfo := &v1.Resource_ContainerInfo{
 		ContainerInfo: &v1.ContainerInfo{
-			ContainerId: "123",
-			Image:       "nginx:v1.0.0",
+			Id: "123",
 		},
 	}
 
