@@ -105,6 +105,7 @@ func NewCommandService() *CommandService {
 		if err != nil {
 			slog.Error("error reading request body", "err", err)
 			c.JSON(http.StatusBadRequest, nil)
+
 			return
 		}
 

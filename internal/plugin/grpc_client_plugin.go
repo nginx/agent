@@ -98,11 +98,12 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	}
 
 	// TODO: subscribe should return error that is handled
-	//go gc.subscribe(ctx)
+	// go gc.subscribe(ctx)
 
 	return nil
 }
 
+// nolint
 func (gc *GrpcClient) subscribe(ctx context.Context) {
 	// subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
 	subscribeClient, _ := gc.commandServiceClient.Subscribe(ctx)
