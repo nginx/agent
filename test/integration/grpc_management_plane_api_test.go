@@ -173,7 +173,12 @@ func verifyConnection(t *testing.T) {
 	err = json.Unmarshal(responseData, &connectionRequest)
 	require.NoError(t, err)
 
-	instanceMeta := connectionRequest.ConnectionRequest.GetAgent().GetInstanceMeta()
+	resource := connectionRequest.ConnectionRequest.GetResource()
+
+	assert.NotNil(t, resource.GetId())
+	assert.NotNil(t, resource.GetContainerInfo().GetContainerId())
+
+	instanceMeta := resource.GetInstances()[0].GetInstanceMeta()
 
 	assert.NotNil(t, connectionRequest.ConnectionRequest)
 	assert.NotEmpty(t, instanceMeta.GetInstanceId())

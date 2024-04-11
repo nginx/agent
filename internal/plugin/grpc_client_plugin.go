@@ -110,13 +110,17 @@ func (gc *GrpcClient) createConnection() error {
 			CorrelationId: correlationID.String(),
 			Timestamp:     timestamppb.Now(),
 		},
-		Agent: &v1.Instance{
-			InstanceMeta: &v1.InstanceMeta{
-				InstanceId:   uuidLibrary.Generate("/etc/nginx-agent/nginx-agent"),
-				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
-				Version:      gc.config.Version,
+		Resource: &v1.Resource{
+			Instances: []*v1.Instance{
+				{
+					InstanceMeta: &v1.InstanceMeta{
+						InstanceId:   uuidLibrary.Generate("/etc/nginx-agent/nginx-agent"),
+						InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
+						Version:      gc.config.Version,
+					},
+					InstanceConfig: &v1.InstanceConfig{},
+				},
 			},
-			InstanceConfig: &v1.InstanceConfig{},
 		},
 	}
 

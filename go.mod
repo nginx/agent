@@ -11,6 +11,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nxadm/tail v1.4.11
 	github.com/oapi-codegen/runtime v1.1.1
+	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.28.0
@@ -19,6 +20,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.21.0
 	go.opentelemetry.io/proto/otlp v1.0.0
 	go.uber.org/goleak v1.3.0
+	golang.org/x/sync v0.6.0
 	google.golang.org/protobuf v1.32.0
 )
 

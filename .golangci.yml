@@ -210,7 +210,7 @@ linters-settings:
       - assign
     # List of numbers to exclude from analysis. The numbers should be written as string.
     # Values always ignored: "1", "1.0", "0" and "0.0". Default: []
-    ignored-numbers: []
+    ignored-numbers: ["2"]
     # List of file patterns to exclude from analysis. Values always ignored: `.+_test.go`. Default: []
     ignored-files: []
     # List of function patterns to exclude from analysis.

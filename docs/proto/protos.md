@@ -6,10 +6,12 @@
 - [mpi/v1/command.proto](#mpi_v1_command-proto)
     - [AgentConfig](#mpi-v1-AgentConfig)
     - [CommandServer](#mpi-v1-CommandServer)
+    - [ContainerInfo](#mpi-v1-ContainerInfo)
     - [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest)
     - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
     - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
     - [FileServer](#mpi-v1-FileServer)
+    - [HostInfo](#mpi-v1-HostInfo)
     - [Instance](#mpi-v1-Instance)
     - [InstanceAction](#mpi-v1-InstanceAction)
     - [InstanceConfig](#mpi-v1-InstanceConfig)
@@ -18,6 +20,8 @@
     - [MetricsServer](#mpi-v1-MetricsServer)
     - [NGINXConfig](#mpi-v1-NGINXConfig)
     - [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig)
+    - [ReleaseInfo](#mpi-v1-ReleaseInfo)
+    - [Resource](#mpi-v1-Resource)
     - [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest)
     - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
     - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
@@ -94,6 +98,22 @@ The command settings, associated with messaging from an external source
 
 
 
+<a name="mpi-v1-ContainerInfo"></a>
+
+### ContainerInfo
+Container information
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| container_id | [string](#string) |  | The container identifier |
+| image | [string](#string) |  | The image name. Need to determine if this is possible |
+
+
+
+
+
+
 <a name="mpi-v1-CreateConnectionRequest"></a>
 
 ### CreateConnectionRequest
@@ -103,7 +123,7 @@ The connection request is an intial handshake to establish a connection, sending
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
-| agent | [Instance](#mpi-v1-Instance) |  | instance information associated with the NGINX Agent |
+| resource | [Resource](#mpi-v1-Resource) |  | Instance and infrastructure information associated with the NGINX Agent |
 
 
 
@@ -118,8 +138,8 @@ A response to a CreateConnectionRequest
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| response | [CommandResponse](#mpi-v1-CommandResponse) |  | the success or failure of the CreateConnectionRequest |
-| agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | the recommendation NGINX Agent configurations provided by the ManagementPlane |
+| response | [CommandResponse](#mpi-v1-CommandResponse) |  | The success or failure of the CreateConnectionRequest |
+| agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | The recommendation NGINX Agent configurations provided by the ManagementPlane |
 
 
 
@@ -140,6 +160,23 @@ Reports the status of an associated command. This may be in response to a Manage
 
 ### FileServer
 The file settings associated with file server for configurations
+
+
+
+
+
+
+<a name="mpi-v1-HostInfo"></a>
+
+### HostInfo
+Represents the host system information
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | The host identifier |
+| hostname | [string](#string) |  | The name of the host |
+| release_info | [ReleaseInfo](#mpi-v1-ReleaseInfo) |  | Release information of the host |
 
 
 
@@ -255,6 +292,43 @@ A set of runtime NGINX configuration that gets populated
 | process_id | [int32](#int32) |  | master process id |
 | binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
 | config_path | [string](#string) |  | where the configuration files are located |
+
+
+
+
+
+
+<a name="mpi-v1-ReleaseInfo"></a>
+
+### ReleaseInfo
+Release information of the host
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| codename | [string](#string) |  | OS type (e.g. freebsd, linux, etc) |
+| id | [string](#string) |  | OS name (e.g. ubuntu, linuxmint, etc) |
+| name | [string](#string) |  | OS family (e.g. debian, rhel) |
+| version_id | [string](#string) |  | Version of the OS kernel |
+| version | [string](#string) |  | Version of the OS |
+
+
+
+
+
+
+<a name="mpi-v1-Resource"></a>
+
+### Resource
+A representation of instances and runtime resource information
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | A resource identifier |
+| instances | [Instance](#mpi-v1-Instance) | repeated | A list of instances associated with this resource |
+| host_info | [HostInfo](#mpi-v1-HostInfo) |  | If running on bare-metal, provides additional information |
+| container_info | [ContainerInfo](#mpi-v1-ContainerInfo) |  | If running in a contanierized environment, provides additional information |
 
 
 

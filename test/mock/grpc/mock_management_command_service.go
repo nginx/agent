@@ -143,7 +143,7 @@ func (mgs *CommandService) CreateConnection(
 			Status:  v1.CommandResponse_COMMAND_STATUS_OK,
 			Message: "Success",
 		},
-		AgentConfig: request.GetAgent().GetInstanceConfig().GetAgentConfig(),
+		AgentConfig: request.GetResource().GetInstances()[0].GetInstanceConfig().GetAgentConfig(),
 	}, nil
 }
 
