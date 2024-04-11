@@ -19,6 +19,7 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
+	"github.com/nginx/agent/v3/internal/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -35,6 +36,7 @@ type (
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
 		instances            []*v1.Instance
+		resourceService      service.ResourceServiceInterface
 		connectionMutex      sync.Mutex
 		instancesMutex       sync.Mutex
 	}
@@ -54,6 +56,7 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 			config:          agentConfig,
 			isConnected:     isConnected,
 			instances:       []*v1.Instance{},
+			resourceService: service.NewResourceService(),
 			connectionMutex: sync.Mutex{},
 			instancesMutex:  sync.Mutex{},
 		}
@@ -94,6 +97,8 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 }
 
 func (gc *GrpcClient) createConnection() error {
+	ctx := context.Background()
+
 	// nolint: revive
 	id, err := uuid.NewV7()
 	if err != nil {
@@ -103,6 +108,18 @@ func (gc *GrpcClient) createConnection() error {
 	correlationID, err := uuid.NewUUID()
 	if err != nil {
 		return fmt.Errorf("error generating correlation id: %w", err)
+	}
+
+	newResource := gc.resourceService.GetResource(ctx)
+	newResource.Instances = []*v1.Instance{
+		{
+			InstanceMeta: &v1.InstanceMeta{
+				InstanceId:   gc.config.UUID,
+				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
+				Version:      gc.config.Version,
+			},
+			InstanceConfig: &v1.InstanceConfig{},
+		},
 	}
 
 	gc.connectionMutex.Lock()
@@ -119,21 +136,9 @@ func (gc *GrpcClient) createConnection() error {
 			CorrelationId: correlationID.String(),
 			Timestamp:     timestamppb.Now(),
 		},
-		Resource: &v1.Resource{
-			Instances: []*v1.Instance{
-				{
-					InstanceMeta: &v1.InstanceMeta{
-						InstanceId:   gc.config.UUID,
-						InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
-						Version:      gc.config.Version,
-					},
-					InstanceConfig: &v1.InstanceConfig{},
-				},
-			},
-		},
+		Resource: newResource,
 	}
 
-	ctx := context.Background()
 	reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
 	defer reqCancel()
 

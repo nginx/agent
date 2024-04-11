@@ -9,7 +9,6 @@ const (
 	GrpcConnectedTopic               = "grpc-connected"
 	OsProcessesTopic                 = "host-processes"
 	InstancesTopic                   = "instances"
-	ResourceTopic                    = "resource"
 	InstanceConfigUpdateRequestTopic = "instance-config-update-request"
 	InstanceConfigUpdateTopic        = "instance-config-update"
 	InstanceConfigContextTopic       = "instance-config-context"
