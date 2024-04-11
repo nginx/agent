@@ -142,7 +142,7 @@ func (cw *ConfigWriter) removeFiles(ctx context.Context, currentFileCache, fileC
 
 func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, instanceID string,
 ) (filesMetaData *v1.FileOverview, err error) {
-	// TODO: fix this to use a request
+	// TODO: use a request
 	// TODO: remove filesURL
 	filesMetaData, err = cw.configClient.GetFilesMetadata(ctx, &v1.GetOverviewRequest{})
 	if err != nil {
@@ -163,7 +163,7 @@ func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *v1.FileMeta,
 	if !cw.isFilePathValid(ctx, fileData.GetName()) {
 		return fmt.Errorf("invalid file path: %s", fileData.GetName())
 	}
-	// TODO: fix this to use a request
+	// TODO: use actual request
 	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, &v1.GetFileRequest{})
 	if fetchErr != nil {
 		return fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)

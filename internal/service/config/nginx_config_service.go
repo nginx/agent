@@ -64,7 +64,7 @@ func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Co
 ) *Nginx {
 	fileCache := writer.NewFileCache(instance.GetInstanceMeta().GetInstanceId())
 	cache, err := fileCache.ReadFileCache(ctx)
-	// Will in future work check cache and if its nil upload file
+	// TODO: Will in future work check cache and if its nil upload file
 	if err != nil {
 		err = fileCache.UpdateFileCache(ctx, cache)
 		if err != nil {

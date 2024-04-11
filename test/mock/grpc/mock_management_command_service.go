@@ -8,11 +8,14 @@ package grpc
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"sync"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -97,16 +100,25 @@ func NewCommandService() *CommandService {
 	})
 
 	server.POST("/api/v1/requests", func(c *gin.Context) {
-		var request *v1.ManagementPlaneRequest
-		err := c.Bind(request)
+		request := v1.ManagementPlaneRequest{}
+		data, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			slog.Error("error reading request body", "err", err)
+			c.JSON(http.StatusBadRequest, nil)
+			return
+		}
+
+		// protojson is needed to deal with the one of protos
+		pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+		err = pb.Unmarshal(data, &request)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, nil)
 			return
 		}
 
-		mgs.requestChan <- request
+		mgs.requestChan <- &request
 
-		c.JSON(http.StatusOK, request)
+		c.JSON(http.StatusOK, &request)
 	})
 
 	mgs.server = server
@@ -177,6 +189,7 @@ func (mgs *CommandService) UpdateDataPlaneHealth(
 
 func (mgs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error {
 	for {
+		slog.Info("Starting Subscribe")
 		request := <-mgs.requestChan
 
 		slog.Debug("Subscribe", "request", request)

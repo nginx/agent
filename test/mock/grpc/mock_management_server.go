@@ -33,14 +33,11 @@ import (
 )
 
 const (
-	maxConnectionIdle     = 15 * time.Millisecond
-	maxConnectionAge      = 30 * time.Millisecond
-	maxConnectionAgeGrace = 5 * time.Millisecond
-	maxElapsedTime        = 5 * time.Millisecond
-	keepAliveTime         = 5 * time.Millisecond
-	keepAliveTimeout      = 1 * time.Millisecond
-	testTimeout           = 100 * time.Millisecond
-	connectionType        = "tcp"
+	maxElapsedTime   = 5 * time.Second
+	keepAliveTime    = 5 * time.Second
+	keepAliveTimeout = 10 * time.Second
+	testTimeout      = 100 * time.Millisecond
+	connectionType   = "tcp"
 )
 
 var keepAliveEnforcementPolicy = keepalive.EnforcementPolicy{
@@ -49,11 +46,8 @@ var keepAliveEnforcementPolicy = keepalive.EnforcementPolicy{
 }
 
 var keepAliveServerParameters = keepalive.ServerParameters{
-	MaxConnectionIdle:     maxConnectionIdle,
-	MaxConnectionAge:      maxConnectionAge,
-	MaxConnectionAgeGrace: maxConnectionAgeGrace,
-	Time:                  keepAliveTime,
-	Timeout:               keepAliveTimeout,
+	Time:    keepAliveTime,
+	Timeout: keepAliveTimeout,
 }
 
 var (

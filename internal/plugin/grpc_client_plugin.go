@@ -18,13 +18,12 @@ import (
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
+	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
-	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 )
 
 type (
@@ -92,9 +91,31 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	}
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, gc.config.Client.Timeout)
 
+	err = backoff.WaitUntil(backOffCtx, gc.config.Common, gc.createConnection)
 	defer backoffCancel()
+	if err != nil {
+		return err
+	}
 
-	return backoff.WaitUntil(backOffCtx, gc.config.Common, gc.createConnection)
+	// TODO: subscribe should return error that is handled
+	//go gc.subscribe(ctx)
+
+	return nil
+}
+
+func (gc *GrpcClient) subscribe(ctx context.Context) {
+	// subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
+	subscribeClient, _ := gc.commandServiceClient.Subscribe(ctx)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			request, err := subscribeClient.Recv()
+			slog.InfoContext(ctx, "Subscribe received: ", "req", request, "err", err)
+		}
+	}
 }
 
 func (gc *GrpcClient) createConnection() error {

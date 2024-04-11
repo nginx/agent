@@ -11,6 +11,7 @@ package mpi.v1;
 option go_package = "mpi/v1";
 
 import "mpi/v1/common.proto";
+import "mpi/v1/files.proto";
 import "google/protobuf/struct.proto";
 
 // A service outlining the command and control options for a DataPlane Client
@@ -35,7 +36,7 @@ service CommandService {
     rpc Subscribe(stream DataPlaneResponse) returns (stream ManagementPlaneRequest) {}
 }
 
-// The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
+// The connection request is an initial handshake to establish a connection, sending NGINX Agent instance information
 message CreateConnectionRequest {
     // Meta-information associated with a message
     mpi.v1.MessageMeta message_meta = 1;
@@ -69,10 +70,56 @@ message UpdateDataPlaneHealthRequest {}
 message UpdateDataPlaneHealthResponse {}
 
 // Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
-message DataPlaneResponse {}
+message DataPlaneResponse {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
+    // The command response with the associated request
+    mpi.v1.CommandResponse command_response = 2;
+}
 
 // A Management Plane request for information, triggers an associated rpc on the DataPlane
-message ManagementPlaneRequest {}
+message ManagementPlaneRequest {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
+    oneof request {
+        // triggers a DataPlaneStatus rpc
+        StatusRequest status_request = 2;
+        // triggers a DataPlaneHealth rpc
+        HealthRequest health_request = 3;
+        // triggers a rpc GetFile(FileRequest) for overview list, 
+        // if overview is missing, triggers a rpc GetOverview(ConfigVersion) first
+        ConfigApplyRequest config_apply_request = 5;
+        // triggers a series of rpc UpdateFile(File) for that instances
+        ConfigUploadRequest config_upload_request = 6;
+        // triggers a DataPlaneResponse with a command_response for a particular action
+        APIActionRequest action_request = 7;
+        // triggers a DataPlaneResponse with a command_response for a particular correlation_id
+        CommandStatusRequest command_status_request = 8;
+    }
+}
+
+// Additional information associated with a StatusRequest
+message StatusRequest {}
+
+// Additional information associated with a HealthRequest
+message HealthRequest {}
+
+// Additional information associated with a ConfigApplyRequest
+message ConfigApplyRequest {
+    // the config version
+    mpi.v1.ConfigVersion config_version = 1;
+    // an optional set of files related to the request
+    optional mpi.v1.FileOverview overview = 2;
+}
+
+// Additional information associated with a ConfigUploadRequest
+message ConfigUploadRequest {}
+
+// Perform an associated API action on an instance
+message APIActionRequest {}
+
+// Request an update on a particular command
+message CommandStatusRequest {}
 
 // This represents an instance being reported on
 message Instance {
