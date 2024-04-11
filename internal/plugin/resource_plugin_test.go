@@ -23,8 +23,7 @@ func TestResourceMonitor_Init(t *testing.T) {
 		Instances: []*v1.Instance{},
 		Info: &v1.Resource_ContainerInfo{
 			ContainerInfo: &v1.ContainerInfo{
-				ContainerId: "f43f5eg54g54g54",
-				Image:       "nginx-agent:v3.0.0",
+				Id: "f43f5eg54g54g54",
 			},
 		},
 	}
@@ -35,9 +34,9 @@ func TestResourceMonitor_Init(t *testing.T) {
 	messagePipe := bus.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)
 
-	resourceMonitor := NewResourceMonitor()
-	resourceMonitor.resourceService = mockReourceService
-	err := resourceMonitor.Init(ctx, messagePipe)
+	resourcePlugin := NewResource()
+	resourcePlugin.resourceService = mockReourceService
+	err := resourcePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
 	messages := messagePipe.GetMessages()
@@ -48,13 +47,13 @@ func TestResourceMonitor_Init(t *testing.T) {
 }
 
 func TestResourceMonitor_Info(t *testing.T) {
-	resourceMonitor := NewResourceMonitor()
-	assert.Equal(t, &bus.Info{Name: "resource-monitor"}, resourceMonitor.Info())
+	resource := NewResource()
+	assert.Equal(t, &bus.Info{Name: "resource"}, resource.Info())
 }
 
 func TestResourceMonitor_Subscriptions(t *testing.T) {
-	resourceMonitor := NewResourceMonitor()
-	assert.Equal(t, []string{bus.InstancesTopic}, resourceMonitor.Subscriptions())
+	resource := NewResource()
+	assert.Equal(t, []string{bus.InstancesTopic}, resource.Subscriptions())
 }
 
 func TestResourceMonitor_Process(t *testing.T) {
@@ -64,8 +63,7 @@ func TestResourceMonitor_Process(t *testing.T) {
 		Instances: []*v1.Instance{},
 		Info: &v1.Resource_ContainerInfo{
 			ContainerInfo: &v1.ContainerInfo{
-				ContainerId: "f43f5eg54g54g54",
-				Image:       "nginx-agent:v3.0.0",
+				Id: "f43f5eg54g54g54",
 			},
 		},
 	}
@@ -76,9 +74,9 @@ func TestResourceMonitor_Process(t *testing.T) {
 	messagePipe := bus.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)
 
-	resourceMonitor := NewResourceMonitor()
-	resourceMonitor.resourceService = mockReourceService
-	err := resourceMonitor.Init(ctx, messagePipe)
+	resourcePlugin := NewResource()
+	resourcePlugin.resourceService = mockReourceService
+	err := resourcePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
 	instances := []*v1.Instance{
@@ -90,7 +88,7 @@ func TestResourceMonitor_Process(t *testing.T) {
 		},
 	}
 
-	resourceMonitor.Process(ctx, &bus.Message{
+	resourcePlugin.Process(ctx, &bus.Message{
 		Topic: bus.InstancesTopic,
 		Data:  instances,
 	})

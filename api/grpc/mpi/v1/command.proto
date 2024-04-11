@@ -84,10 +84,8 @@ message ReleaseInfo {
 
 // Container information
 message ContainerInfo {
-    // The container identifier
-    string container_id = 1;
-    // The image name. Need to determine if this is possible
-    string image = 2;
+    // The identifier of the container
+    string id = 1;
 }
 
 // A response to a CreateConnectionRequest

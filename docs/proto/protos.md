@@ -106,8 +106,7 @@ Container information
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| container_id | [string](#string) |  | The container identifier |
-| image | [string](#string) |  | The image name. Need to determine if this is possible |
+| id | [string](#string) |  | The identifier of the container |
 
 
 

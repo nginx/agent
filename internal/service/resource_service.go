@@ -33,7 +33,7 @@ func (rs *ResourceService) GetResource(ctx context.Context) *v1.Resource {
 
 	if rs.info.IsContainer() {
 		resource.Info = rs.info.GetContainerInfo()
-		resource.Id = resource.GetContainerInfo().GetContainerId()
+		resource.Id = resource.GetContainerInfo().GetId()
 	} else {
 		resource.Info = rs.info.GetHostInfo(ctx)
 		resource.Id = resource.GetHostInfo().GetId()
