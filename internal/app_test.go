@@ -7,14 +7,15 @@ package internal
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestApp(t *testing.T) {
 	app := NewApp("1234", "1.2.3")
 
 	err := app.Run(context.Background())
-	
+
 	require.NoError(t, err)
 }
