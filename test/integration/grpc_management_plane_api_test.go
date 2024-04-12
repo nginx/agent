@@ -176,8 +176,8 @@ func verifyConnection(t *testing.T) {
 
 	resource := connectionRequest.ConnectionRequest.GetResource()
 
-	assert.NotNil(t, resource.GetId())
-	assert.NotNil(t, resource.GetContainerInfo().GetId())
+	assert.NotNil(t, resource.GetResourceId())
+	assert.NotNil(t, resource.GetContainerInfo().GetContainerId())
 
 	instanceMeta := resource.GetInstances()[0].GetInstanceMeta()
 

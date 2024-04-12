@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	versionId   = "VERSION_ID"
+	versionID   = "VERSION_ID"
 	version     = "VERSION"
 	codeName    = "VERSION_CODENAME"
 	id          = "ID"
@@ -84,7 +84,7 @@ func (rs *ResourceService) GetResource(ctx context.Context) *v1.Resource {
 	} else {
 		resource.Info = &v1.Resource_HostInfo{
 			HostInfo: &v1.HostInfo{
-				ReleaseInfo: rs.releaseInfo(releaseFile),
+				ReleaseInfo: rs.releaseInfo(ctx, releaseFile),
 			},
 		}
 	}
@@ -96,15 +96,14 @@ func (rs *ResourceService) GetResource(ctx context.Context) *v1.Resource {
 	return resource
 }
 
-func (rs *ResourceService) getHostReleaseInfo() (release *v1.ReleaseInfo) {
-	ctx := context.Background()
-	defer ctx.Done()
-
+func (rs *ResourceService) getHostReleaseInfo(ctx context.Context) (release *v1.ReleaseInfo) {
 	hostInfo, err := gopsutilHost.InfoWithContext(ctx)
 	if err != nil {
 		slog.Warn("Could not read release information for host: ", "error", err)
+
 		return &v1.ReleaseInfo{}
 	}
+
 	return &v1.ReleaseInfo{
 		VersionId: hostInfo.PlatformVersion,
 		Version:   hostInfo.KernelVersion,
@@ -114,13 +113,14 @@ func (rs *ResourceService) getHostReleaseInfo() (release *v1.ReleaseInfo) {
 	}
 }
 
-func (rs *ResourceService) releaseInfo(osReleaseFile string) (release *v1.ReleaseInfo) {
-	hostReleaseInfo := rs.getHostReleaseInfo()
+func (rs *ResourceService) releaseInfo(ctx context.Context, osReleaseFile string) (release *v1.ReleaseInfo) {
+	hostReleaseInfo := rs.getHostReleaseInfo(ctx)
 	osRelease, err := rs.getOsRelease(osReleaseFile)
 	if err != nil {
 		slog.Warn("ould not read from osRelease file", "error", err)
 		return hostReleaseInfo
 	}
+
 	return rs.mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease)
 }
 
@@ -129,24 +129,24 @@ func (rs *ResourceService) mergeHostAndOsReleaseInfo(hostReleaseInfo *v1.Release
 ) (release *v1.ReleaseInfo) {
 	// override os-release info with host info,
 	// if os-release info is empty.
-	if len(osReleaseInfo[versionId]) == 0 {
-		osReleaseInfo[versionId] = hostReleaseInfo.VersionId
+	if len(osReleaseInfo[versionID]) == 0 {
+		osReleaseInfo[versionID] = hostReleaseInfo.GetVersionId()
 	}
 	if len(osReleaseInfo[version]) == 0 {
-		osReleaseInfo[version] = hostReleaseInfo.Version
+		osReleaseInfo[version] = hostReleaseInfo.GetVersion()
 	}
 	if len(osReleaseInfo[codeName]) == 0 {
-		osReleaseInfo[codeName] = hostReleaseInfo.Codename
+		osReleaseInfo[codeName] = hostReleaseInfo.GetCodename()
 	}
 	if len(osReleaseInfo[name]) == 0 {
-		osReleaseInfo[name] = hostReleaseInfo.Name
+		osReleaseInfo[name] = hostReleaseInfo.GetName()
 	}
 	if len(osReleaseInfo[id]) == 0 {
-		osReleaseInfo[id] = hostReleaseInfo.Id
+		osReleaseInfo[id] = hostReleaseInfo.GetId()
 	}
 
 	return &v1.ReleaseInfo{
-		VersionId: osReleaseInfo[versionId],
+		VersionId: osReleaseInfo[versionID],
 		Version:   osReleaseInfo[version],
 		Codename:  osReleaseInfo[codeName],
 		Name:      osReleaseInfo[name],
@@ -171,6 +171,7 @@ func (rs *ResourceService) getOsRelease(path string) (map[string]string, error) 
 	if err != nil {
 		return nil, fmt.Errorf("release file %s unparsable: %w", path, err)
 	}
+
 	return info, nil
 }
 

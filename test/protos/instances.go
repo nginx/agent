@@ -16,16 +16,17 @@ import (
 const (
 	instanceID    = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
 	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
+	processID     = 1234
 )
 
 func GetNginxOssInstance() *v1.Instance {
 	return &v1.Instance{
 		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   "123",
+			InstanceId:   instanceID,
 			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
 		},
 		InstanceRuntime: &v1.InstanceRuntime{
-			ProcessId:  1234,
+			ProcessId:  processID,
 			BinaryPath: "/var/run/nginx",
 			ConfigPath: "/etc/nginx",
 			Details: &v1.InstanceRuntime_NginxRuntimeInfo{
@@ -44,11 +45,11 @@ func GetNginxOssInstance() *v1.Instance {
 func GetNginxPlusInstance() *v1.Instance {
 	return &v1.Instance{
 		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   "123",
+			InstanceId:   instanceID,
 			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
 		},
 		InstanceRuntime: &v1.InstanceRuntime{
-			ProcessId:  1234,
+			ProcessId:  processID,
 			BinaryPath: "/var/run/nginx",
 			ConfigPath: "/etc/nginx",
 			Details: &v1.InstanceRuntime_NginxPlusRuntimeInfo{

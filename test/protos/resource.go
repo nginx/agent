@@ -5,7 +5,7 @@
 
 package protos
 
-import v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+import "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 func GetContainerizedResource() *v1.Resource {
 	return &v1.Resource{
