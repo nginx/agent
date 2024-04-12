@@ -115,6 +115,21 @@ func (gc *GrpcClient) subscribe(ctx context.Context) {
 		default:
 			request, err := subscribeClient.Recv()
 			slog.InfoContext(ctx, "Subscribe received: ", "req", request, "err", err)
+			// err = subscribeClient.Send(&v1.DataPlaneResponse{
+			//	MessageMeta: &v1.MessageMeta{
+			//		MessageId:     "123456789",
+			//		CorrelationId: request.MessageMeta.CorrelationId,
+			//		Timestamp:     timestamppb.Now(),
+			//	},
+			//	CommandResponse: &v1.CommandResponse{
+			//		Status:  v1.CommandResponse_COMMAND_STATUS_OK,
+			//		Message: "hi",
+			//	},
+			// })
+
+			if err != nil {
+				slog.Info("err", err)
+			}
 		}
 	}
 }

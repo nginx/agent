@@ -61,6 +61,7 @@ func NewCommandService() *CommandService {
 	server.Use(sloggin.NewWithConfig(logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
 
 	server.GET("/api/v1/connection", func(c *gin.Context) {
+		slog.Info("Connection Request")
 		mgs.connectionMutex.Lock()
 		defer mgs.connectionMutex.Unlock()
 
@@ -101,7 +102,8 @@ func NewCommandService() *CommandService {
 
 	server.POST("/api/v1/requests", func(c *gin.Context) {
 		request := v1.ManagementPlaneRequest{}
-		data, err := io.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(c.Request.Body)
+		slog.Debug("received request, ", "body", body)
 		if err != nil {
 			slog.Error("error reading request body", "err", err)
 			c.JSON(http.StatusBadRequest, nil)
@@ -109,9 +111,8 @@ func NewCommandService() *CommandService {
 			return
 		}
 
-		// protojson is needed to deal with the one of protos
 		pb := protojson.UnmarshalOptions{DiscardUnknown: true}
-		err = pb.Unmarshal(data, &request)
+		err = pb.Unmarshal(body, &request)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, nil)
 			return
@@ -189,6 +190,20 @@ func (mgs *CommandService) UpdateDataPlaneHealth(
 }
 
 func (mgs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error {
+	go func() {
+		for {
+			dataPlaneResponse, err := in.Recv()
+			slog.Debug("Received data plane response", "data_plane_response", dataPlaneResponse)
+			if err != nil {
+				slog.Error("Failed to receive data plane response", "error", err)
+			} else {
+				mgs.dataPlaneResponsesMutex.Lock()
+				mgs.dataPlaneResponses = append(mgs.dataPlaneResponses, dataPlaneResponse)
+				mgs.dataPlaneResponsesMutex.Unlock()
+			}
+		}
+	}()
+
 	for {
 		slog.Info("Starting Subscribe")
 		request := <-mgs.requestChan
@@ -198,15 +213,6 @@ func (mgs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error
 		err := in.Send(request)
 		if err != nil {
 			slog.Error("Failed to send management request", "error", err)
-		}
-
-		dataPlaneResponse, err := in.Recv()
-		if err != nil {
-			slog.Error("Failed to receive data plane response", "error", err)
-		} else {
-			mgs.dataPlaneResponsesMutex.Lock()
-			mgs.dataPlaneResponses = append(mgs.dataPlaneResponses, dataPlaneResponse)
-			mgs.dataPlaneResponsesMutex.Unlock()
 		}
 	}
 }
