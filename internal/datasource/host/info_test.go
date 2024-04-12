@@ -497,7 +497,7 @@ func TestInfo_GetContainerInfo(t *testing.T) {
 			info.mountInfoLocation = mountInfoFile.Name()
 			containerInfo := info.GetContainerInfo()
 
-			assert.Equal(tt, test.expect, containerInfo.ContainerInfo.GetId())
+			assert.Equal(tt, test.expect, containerInfo.ContainerInfo.GetContainerId())
 		})
 	}
 }
@@ -536,7 +536,7 @@ func TestInfo_GetHostInfo(t *testing.T) {
 		Version:   "20.04.5 LTS (Focal Fossa)",
 	}
 
-	assert.Equal(t, "d7661353-302a-3ea6-9778-3c2bff72f5c2", hostInfo.HostInfo.GetId())
+	assert.Equal(t, "d7661353-302a-3ea6-9778-3c2bff72f5c2", hostInfo.HostInfo.GetHostId())
 	assert.Equal(t, "server.com", hostInfo.HostInfo.GetHostname())
 	assert.Equal(t, expectedReleaseInfo, hostInfo.HostInfo.GetReleaseInfo())
 }

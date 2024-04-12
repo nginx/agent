@@ -12,12 +12,14 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service"
 )
 
 type Resource struct {
 	messagePipe     bus.MessagePipeInterface
 	resourceService service.ResourceServiceInterface
+	instanceService service.InstanceServiceInterface
 	resource        *v1.Resource
 	resourceMutex   sync.Mutex
 }
@@ -65,6 +67,16 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: r.resource})
 			r.resourceMutex.Unlock()
 		}
+	case bus.OsProcessesTopic:
+		newProcesses, ok := msg.Data.([]*model.Process)
+		if !ok {
+			slog.ErrorContext(ctx, "Unable to cast message payload to model.Process", "payload", msg.Data)
+
+			return
+		}
+
+		instanceList := r.instanceService.GetInstances(ctx, newProcesses)
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
@@ -72,6 +84,9 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 
 func (*Resource) Subscriptions() []string {
 	return []string{
+		bus.OsProcessesTopic,
 		bus.InstancesTopic,
+		// this was in instances plugin, will double check if needed
+		bus.InstanceConfigUpdateRequestTopic,
 	}
 }

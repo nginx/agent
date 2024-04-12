@@ -22,6 +22,9 @@ type ServerInterface interface {
 	// Returns the latest status of the instance's configuration
 	// (GET /instances/{instanceId}/configurations/status)
 	GetInstanceConfigurationStatus(c *gin.Context, instanceId string)
+	// Returns a list of resources.
+	// (GET /resources)
+	GetResources(c *gin.Context)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -94,6 +97,19 @@ func (siw *ServerInterfaceWrapper) GetInstanceConfigurationStatus(c *gin.Context
 	siw.Handler.GetInstanceConfigurationStatus(c, instanceId)
 }
 
+// GetResources operation middleware
+func (siw *ServerInterfaceWrapper) GetResources(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetResources(c)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -124,4 +140,5 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.GET(options.BaseURL+"/instances", wrapper.GetInstances)
 	router.PUT(options.BaseURL+"/instances/:instanceId/configurations", wrapper.UpdateInstanceConfiguration)
 	router.GET(options.BaseURL+"/instances/:instanceId/configurations/status", wrapper.GetInstanceConfigurationStatus)
+	router.GET(options.BaseURL+"/resources", wrapper.GetResources)
 }

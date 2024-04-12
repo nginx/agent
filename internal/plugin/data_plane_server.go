@@ -54,6 +54,7 @@ func NewDataPlaneServer(agentConfig *config.Config, slogger *slog.Logger) *DataP
 		serverMutex:       sync.Mutex{},
 		configEventsMutex: sync.Mutex{},
 		resourceMutex:     sync.Mutex{},
+		resource:          &v1.Resource{},
 	}
 }
 
@@ -109,6 +110,12 @@ func (dps *DataPlaneServer) Process(_ context.Context, msg *bus.Message) {
 		if configStatus, ok := msg.Data.(*instances.ConfigurationStatus); ok {
 			dps.updateEvents(configStatus)
 		}
+	case msg.Topic == bus.ResourceTopic:
+		if resource, ok := msg.Data.(*v1.Resource); ok {
+			dps.resourceMutex.Lock()
+			dps.resource = resource
+			dps.resourceMutex.Unlock()
+		}
 	}
 }
 
@@ -127,6 +134,7 @@ func (dps *DataPlaneServer) updateEvents(configStatus *instances.ConfigurationSt
 
 func (*DataPlaneServer) Subscriptions() []string {
 	return []string{
+		bus.ResourceTopic,
 		bus.InstancesTopic,
 		bus.InstanceConfigUpdateTopic,
 	}
@@ -154,6 +162,31 @@ func (dps *DataPlaneServer) run(ctx context.Context) {
 
 	// Listen for the interrupt signal.
 	<-ctx.Done()
+}
+
+// GET /resources
+// nolint: revive // Get func not returning value
+func (dps *DataPlaneServer) GetResources(ctx *gin.Context) {
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
+	slog.DebugContext(newCtx, "Get resources request")
+
+	response := []dataplane.Instance{}
+
+	dps.resourceMutex.Lock()
+	defer dps.resourceMutex.Unlock()
+
+	for _, instance := range dps.resource.GetInstances() {
+		response = append(response, dataplane.Instance{
+			InstanceId: toPtr(instance.GetInstanceMeta().GetInstanceId()),
+			Type:       toPtr(mapTypeEnums(instance.GetInstanceMeta().GetInstanceType().String())),
+			Version:    toPtr(instance.GetInstanceMeta().GetVersion()),
+			Meta:       toPtr(convertMeta(instance.GetInstanceRuntime())),
+		})
+	}
+
+	slog.DebugContext(newCtx, "Got instances", "instances", response)
+
+	ctx.JSON(http.StatusOK, response)
 }
 
 // GET /instances

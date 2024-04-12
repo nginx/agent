@@ -18,6 +18,53 @@ const (
 	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 )
 
+func GetNginxOssInstance() *v1.Instance {
+	return &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   "123",
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+		},
+		InstanceRuntime: &v1.InstanceRuntime{
+			ProcessId:  1234,
+			BinaryPath: "/var/run/nginx",
+			ConfigPath: "/etc/nginx",
+			Details: &v1.InstanceRuntime_NginxRuntimeInfo{
+				NginxRuntimeInfo: &v1.NGINXRuntimeInfo{
+					StubStatus:      "/stub",
+					AccessLogs:      []string{},
+					ErrorLogs:       []string{},
+					LoadableModules: []string{},
+					DynamicModules:  []string{},
+				},
+			},
+		},
+	}
+}
+
+func GetNginxPlusInstance() *v1.Instance {
+	return &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   "123",
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+		},
+		InstanceRuntime: &v1.InstanceRuntime{
+			ProcessId:  1234,
+			BinaryPath: "/var/run/nginx",
+			ConfigPath: "/etc/nginx",
+			Details: &v1.InstanceRuntime_NginxPlusRuntimeInfo{
+				NginxPlusRuntimeInfo: &v1.NGINXPlusRuntimeInfo{
+					StubStatus:      "/stub",
+					AccessLogs:      []string{},
+					ErrorLogs:       []string{},
+					LoadableModules: []string{},
+					DynamicModules:  []string{},
+					PlusApi:         "/api",
+				},
+			},
+		},
+	}
+}
+
 func CreateInProgressStatus() *instances.ConfigurationStatus {
 	return &instances.ConfigurationStatus{
 		InstanceId:    instanceID,

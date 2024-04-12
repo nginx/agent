@@ -83,6 +83,16 @@ func TestDataPlaneServer_Process(t *testing.T) {
 			},
 			topic: bus.InstanceConfigUpdateTopic,
 		},
+		{
+			name: "Test 3: Resource update",
+			data: &instances.ConfigurationStatus{
+				InstanceId:    instanceID,
+				CorrelationId: correlationID,
+				Status:        instances.Status_SUCCESS,
+				Message:       "config updated",
+			},
+			topic: bus.ResourceTopic,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(ttt *testing.T) {

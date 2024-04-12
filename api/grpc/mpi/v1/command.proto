@@ -46,7 +46,7 @@ message CreateConnectionRequest {
 // A representation of instances and runtime resource information
 message Resource {
     // A resource identifier
-    string id = 1;
+    string resource_id = 1;
     // A list of instances associated with this resource
     repeated Instance instances = 2;
     // Runtime information of where the instances reside. Host or container based
@@ -61,7 +61,7 @@ message Resource {
 // Represents the host system information
 message HostInfo {
     // The host identifier
-    string id = 1;
+    string host_id = 1;
     // The name of the host
     string hostname = 2;
     // Release information of the host
@@ -85,7 +85,7 @@ message ReleaseInfo {
 // Container information
 message ContainerInfo {
     // The identifier of the container
-    string id = 1;
+    string container_id = 1;
 }
 
 // A response to a CreateConnectionRequest

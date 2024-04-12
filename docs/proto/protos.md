@@ -109,7 +109,7 @@ Container information
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | The identifier of the container |
+| container_id | [string](#string) |  | The identifier of the container |
 
 
 
@@ -176,7 +176,7 @@ Represents the host system information
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | The host identifier |
+| host_id | [string](#string) |  | The host identifier |
 | hostname | [string](#string) |  | The name of the host |
 | release_info | [ReleaseInfo](#mpi-v1-ReleaseInfo) |  | Release information of the host |
 
@@ -384,7 +384,7 @@ A representation of instances and runtime resource information
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | A resource identifier |
+| resource_id | [string](#string) |  | A resource identifier |
 | instances | [Instance](#mpi-v1-Instance) | repeated | A list of instances associated with this resource |
 | host_info | [HostInfo](#mpi-v1-HostInfo) |  | If running on bare-metal, provides additional information |
 | container_info | [ContainerInfo](#mpi-v1-ContainerInfo) |  | If running in a contanierized environment, provides additional information |

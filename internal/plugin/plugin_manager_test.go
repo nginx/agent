@@ -29,7 +29,7 @@ func TestLoadPLugins(t *testing.T) {
 			},
 			expected: []bus.Plugin{
 				&ProcessMonitor{},
-				&Instance{},
+				&Resource{},
 				&Config{},
 			},
 		}, {
@@ -41,7 +41,7 @@ func TestLoadPLugins(t *testing.T) {
 				},
 			},
 			expected: []bus.Plugin{
-				&Instance{},
+				&Resource{},
 				&Config{},
 				&DataPlaneServer{},
 			},
@@ -55,7 +55,7 @@ func TestLoadPLugins(t *testing.T) {
 				Metrics: &config.Metrics{},
 			},
 			expected: []bus.Plugin{
-				&Instance{},
+				&Resource{},
 				&Metrics{},
 				&Config{},
 				&DataPlaneServer{},

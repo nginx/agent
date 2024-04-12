@@ -3,6 +3,20 @@ info:
   title: DataPlane API
   version: 1.0.0
 paths:
+  /resources:
+    get:
+      summary: Returns a list of resources.
+      responses:
+        '200':
+          description: A JSON array of resources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Resource'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /instances:
     get:
       summary: Returns a list of instances.
@@ -101,6 +115,33 @@ components:
           type: string
         exe_path:
           type: string
+    Resource:
+      type: object
+      properties:
+        resourceId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        instances:
+          type: array
+          items:
+            $ref: "#/components/schemas/Instance"
+        meta:
+          type: object
+          oneOf:
+            - $ref: "#/components/schemas/HostInfo"
+            - $ref: "#/components/schemas/ContainerInfo"
+    HostInfo:
+      type: object
+      properties:
+        hostId:
+          type: string
+          example: "fe19bc3f-d3ec-40e1-a0a5-7c15035d5eba"
+    ContainerInfo:
+      type: object
+      properties:
+        containerId:
+          type: string
+          example: "d89577a0-5d96-4fb1-a2b6-e847b2718fbe"
     Instance:
       type: object
       properties:

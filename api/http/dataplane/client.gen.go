@@ -57,6 +57,11 @@ type ConfigurationStatus struct {
 	InstanceId    *string  `json:"instanceId,omitempty"`
 }
 
+// ContainerInfo defines model for ContainerInfo.
+type ContainerInfo struct {
+	ContainerId *string `json:"containerId,omitempty"`
+}
+
 // CorrelationId defines model for CorrelationId.
 type CorrelationId struct {
 	CorrelationId *string `json:"correlationId,omitempty"`
@@ -74,6 +79,11 @@ type Event struct {
 	// Status The type of configuration status
 	Status    *StatusState `json:"status,omitempty"`
 	Timestamp *time.Time   `json:"timestamp,omitempty"`
+}
+
+// HostInfo defines model for HostInfo.
+type HostInfo struct {
+	HostId *string `json:"hostId,omitempty"`
 }
 
 // Instance defines model for Instance.
@@ -104,6 +114,18 @@ type NginxMeta struct {
 
 	// Type The type of metadata
 	Type MetaType `json:"type"`
+}
+
+// Resource defines model for Resource.
+type Resource struct {
+	Instances  *[]Instance    `json:"instances,omitempty"`
+	Meta       *Resource_Meta `json:"meta,omitempty"`
+	ResourceId *string        `json:"resourceId,omitempty"`
+}
+
+// Resource_Meta defines model for Resource.Meta.
+type Resource_Meta struct {
+	union json.RawMessage
 }
 
 // StatusState The type of configuration status
@@ -173,6 +195,68 @@ func (t Instance_Meta) MarshalJSON() ([]byte, error) {
 }
 
 func (t *Instance_Meta) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsHostInfo returns the union data inside the Resource_Meta as a HostInfo
+func (t Resource_Meta) AsHostInfo() (HostInfo, error) {
+	var body HostInfo
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromHostInfo overwrites any union data inside the Resource_Meta as the provided HostInfo
+func (t *Resource_Meta) FromHostInfo(v HostInfo) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeHostInfo performs a merge with any union data inside the Resource_Meta, using the provided HostInfo
+func (t *Resource_Meta) MergeHostInfo(v HostInfo) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsContainerInfo returns the union data inside the Resource_Meta as a ContainerInfo
+func (t Resource_Meta) AsContainerInfo() (ContainerInfo, error) {
+	var body ContainerInfo
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromContainerInfo overwrites any union data inside the Resource_Meta as the provided ContainerInfo
+func (t *Resource_Meta) FromContainerInfo(v ContainerInfo) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeContainerInfo performs a merge with any union data inside the Resource_Meta, using the provided ContainerInfo
+func (t *Resource_Meta) MergeContainerInfo(v ContainerInfo) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t Resource_Meta) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *Resource_Meta) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -260,6 +344,9 @@ type ClientInterface interface {
 
 	// GetInstanceConfigurationStatus request
 	GetInstanceConfigurationStatus(ctx context.Context, instanceId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetResources request
+	GetResources(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetInstances(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -300,6 +387,18 @@ func (c *Client) UpdateInstanceConfiguration(ctx context.Context, instanceId str
 
 func (c *Client) GetInstanceConfigurationStatus(ctx context.Context, instanceId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetInstanceConfigurationStatusRequest(c.Server, instanceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetResources(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetResourcesRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -418,6 +517,33 @@ func NewGetInstanceConfigurationStatusRequest(server string, instanceId string) 
 	return req, nil
 }
 
+// NewGetResourcesRequest generates requests for GetResources
+func NewGetResourcesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/resources")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -471,6 +597,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetInstanceConfigurationStatusWithResponse request
 	GetInstanceConfigurationStatusWithResponse(ctx context.Context, instanceId string, reqEditors ...RequestEditorFn) (*GetInstanceConfigurationStatusResponse, error)
+
+	// GetResourcesWithResponse request
+	GetResourcesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetResourcesResponse, error)
 }
 
 type GetInstancesResponse struct {
@@ -544,6 +673,29 @@ func (r GetInstanceConfigurationStatusResponse) StatusCode() int {
 	return 0
 }
 
+type GetResourcesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Resource
+	JSON500      *InternalServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetResourcesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetResourcesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // GetInstancesWithResponse request returning *GetInstancesResponse
 func (c *ClientWithResponses) GetInstancesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetInstancesResponse, error) {
 	rsp, err := c.GetInstances(ctx, reqEditors...)
@@ -577,6 +729,15 @@ func (c *ClientWithResponses) GetInstanceConfigurationStatusWithResponse(ctx con
 		return nil, err
 	}
 	return ParseGetInstanceConfigurationStatusResponse(rsp)
+}
+
+// GetResourcesWithResponse request returning *GetResourcesResponse
+func (c *ClientWithResponses) GetResourcesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetResourcesResponse, error) {
+	rsp, err := c.GetResources(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetResourcesResponse(rsp)
 }
 
 // ParseGetInstancesResponse parses an HTTP response from a GetInstancesWithResponse call
@@ -679,6 +840,39 @@ func ParseGetInstanceConfigurationStatusResponse(rsp *http.Response) (*GetInstan
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetResourcesResponse parses an HTTP response from a GetResourcesWithResponse call
+func ParseGetResourcesResponse(rsp *http.Response) (*GetResourcesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetResourcesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Resource
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest InternalServerError

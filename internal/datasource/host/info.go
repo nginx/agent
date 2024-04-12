@@ -118,7 +118,7 @@ func (i *Info) IsContainer() bool {
 func (i *Info) GetContainerInfo() *v1.Resource_ContainerInfo {
 	return &v1.Resource_ContainerInfo{
 		ContainerInfo: &v1.ContainerInfo{
-			Id: i.getContainerID(),
+			ContainerId: i.getContainerID(),
 		},
 	}
 }
@@ -131,7 +131,7 @@ func (i *Info) GetHostInfo(ctx context.Context) *v1.Resource_HostInfo {
 
 	return &v1.Resource_HostInfo{
 		HostInfo: &v1.HostInfo{
-			Id:          i.getHostID(ctx),
+			HostId:      i.getHostID(ctx),
 			Hostname:    hostname,
 			ReleaseInfo: i.getReleaseInfo(ctx, i.osReleaseLocation),
 		},
