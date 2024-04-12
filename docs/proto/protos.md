@@ -327,7 +327,7 @@ A representation of instances and runtime resource information
 | id | [string](#string) |  | A resource identifier |
 | instances | [Instance](#mpi-v1-Instance) | repeated | A list of instances associated with this resource |
 | host_info | [HostInfo](#mpi-v1-HostInfo) |  | If running on bare-metal, provides additional information |
-| container_info | [ContainerInfo](#mpi-v1-ContainerInfo) |  | If running in a contanierized environment, provides additional information |
+| container_info | [ContainerInfo](#mpi-v1-ContainerInfo) |  | If running in a containerized environment, provides additional information |
 
 
 
