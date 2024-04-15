@@ -12,8 +12,6 @@ import (
 	"github.com/nginx/agent/v3/internal/datasource/host"
 )
 
-
-
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . ResourceServiceInterface
 type ResourceServiceInterface interface {
@@ -28,7 +26,7 @@ type ResourceService struct {
 func NewResourceService() *ResourceService {
 	resource := &v1.Resource{
 		ResourceId: "",
-		Instances: []*v1.Instance{},
+		Instances:  []*v1.Instance{},
 	}
 
 	return &ResourceService{

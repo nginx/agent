@@ -35,7 +35,7 @@ func TestResource_Init(t *testing.T) {
 
 	messages := messagePipe.GetMessages()
 
-	assert.Len(t, messages, 0)
+	assert.Empty(t, messages)
 }
 
 func TestResourceMonitor_Info(t *testing.T) {
