@@ -9,7 +9,7 @@ import "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 func GetContainerizedResource() *v1.Resource {
 	return &v1.Resource{
-		ResourceId: "123",
+		ResourceId: "f43f5eg54g54g54",
 		Instances:  []*v1.Instance{},
 		Info: &v1.Resource_ContainerInfo{
 			ContainerInfo: &v1.ContainerInfo{
@@ -21,7 +21,7 @@ func GetContainerizedResource() *v1.Resource {
 
 func GetHostResource() *v1.Resource {
 	return &v1.Resource{
-		ResourceId: "123",
+		ResourceId: "1234",
 		Instances:  []*v1.Instance{},
 		Info: &v1.Resource_HostInfo{
 			HostInfo: &v1.HostInfo{

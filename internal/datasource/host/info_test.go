@@ -424,7 +424,7 @@ func TestInfo_IsContainer(t *testing.T) {
 	}
 }
 
-func TestInfo_GetContainerInfo(t *testing.T) {
+func TestInfo_ContainerInfo(t *testing.T) {
 	tests := []struct {
 		name      string
 		mountInfo string
@@ -495,14 +495,14 @@ func TestInfo_GetContainerInfo(t *testing.T) {
 
 			info := NewInfo()
 			info.mountInfoLocation = mountInfoFile.Name()
-			containerInfo := info.GetContainerInfo()
+			containerInfo := info.ContainerInfo()
 
 			assert.Equal(tt, test.expect, containerInfo.ContainerInfo.GetContainerId())
 		})
 	}
 }
 
-func TestInfo_GetHostInfo(t *testing.T) {
+func TestInfo_HostInfo(t *testing.T) {
 	ctx := context.Background()
 
 	osReleaseFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "os-release")
@@ -519,14 +519,14 @@ func TestInfo_GetHostInfo(t *testing.T) {
 	}
 
 	execMock := &execfakes.FakeExecInterface{}
-	execMock.GetHostnameReturns("server.com", nil)
-	execMock.GetHostIDReturns("test-host-id", nil)
-	execMock.GetReleaseInfoReturns(releaseInfo)
+	execMock.HostnameReturns("server.com", nil)
+	execMock.HostIDReturns("test-host-id", nil)
+	execMock.ReleaseInfoReturns(releaseInfo)
 
 	info := NewInfo()
 	info.exec = execMock
 	info.osReleaseLocation = osReleaseFile.Name()
-	hostInfo := info.GetHostInfo(ctx)
+	hostInfo := info.HostInfo(ctx)
 
 	expectedReleaseInfo := &v1.ReleaseInfo{
 		Codename:  "focal",
