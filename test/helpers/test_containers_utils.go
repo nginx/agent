@@ -21,7 +21,6 @@ import (
 
 const configFilePermissions = 0o700
 
-// nolint: ireturn
 type Parameters struct {
 	NginxConfigPath      string
 	NginxAgentConfigPath string
@@ -138,16 +137,7 @@ func ToPtr[T any](value T) *T {
 	return &value
 }
 
-func getEnv(tb testing.TB, envKey string) string {
-	tb.Helper()
-
-	envValue := os.Getenv(envKey)
-	tb.Logf("Environment variable %s is set to %s", envKey, envValue)
-	require.NotEmptyf(tb, envValue, "Environment variable %s should not be empty", envKey)
-
-	return envValue
-}
-
+// nolint: ireturn
 func LogAndTerminateContainers(
 	ctx context.Context,
 	tb testing.TB,
@@ -183,4 +173,15 @@ func LogAndTerminateContainers(
 
 	err = agentContainer.Terminate(ctx)
 	require.NoError(tb, err)
+}
+
+func getEnv(tb testing.TB, envKey string) string {
+	tb.Helper()
+
+	envValue := os.Getenv(envKey)
+	tb.Logf("Environment variable %s is set to %s", envKey, envValue)
+
+	require.NotEmptyf(tb, envValue, "Environment variable %s should not be empty", envKey)
+
+	return envValue
 }
