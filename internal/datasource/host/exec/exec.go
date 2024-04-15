@@ -23,9 +23,9 @@ type ExecInterface interface {
 	RunCmd(ctx context.Context, cmd string, args ...string) (*bytes.Buffer, error)
 	FindExecutable(name string) (string, error)
 	KillProcess(pid int32) error
-	GetHostname() (string, error)
-	GetHostID(ctx context.Context) (string, error)
-	GetReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo)
+	Hostname() (string, error)
+	HostID(ctx context.Context) (string, error)
+	ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo)
 }
 
 type Exec struct{}
@@ -49,15 +49,15 @@ func (*Exec) KillProcess(pid int32) error {
 	return syscall.Kill(int(pid), syscall.SIGHUP)
 }
 
-func (*Exec) GetHostname() (string, error) {
+func (*Exec) Hostname() (string, error) {
 	return os.Hostname()
 }
 
-func (*Exec) GetHostID(ctx context.Context) (string, error) {
+func (*Exec) HostID(ctx context.Context) (string, error) {
 	return host.HostIDWithContext(ctx)
 }
 
-func (*Exec) GetReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo) {
+func (*Exec) ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo) {
 	hostInfo, err := host.InfoWithContext(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "Could not read release information for host", "error", err)

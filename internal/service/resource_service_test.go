@@ -38,8 +38,8 @@ func TestResourceService_GetResource(t *testing.T) {
 	}
 
 	mockInfo := &hostfakes.FakeInfoInterface{}
-	mockInfo.GetContainerInfoReturns(containerInfo)
-	mockInfo.GetHostInfoReturns(hostInfo)
+	mockInfo.ContainerInfoReturns(containerInfo)
+	mockInfo.HostInfoReturns(hostInfo)
 
 	resourceService := NewResourceService()
 	resourceService.info = mockInfo

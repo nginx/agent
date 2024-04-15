@@ -73,8 +73,8 @@ var (
 type (
 	InfoInterface interface {
 		IsContainer() bool
-		GetContainerInfo() *v1.Resource_ContainerInfo
-		GetHostInfo(ctx context.Context) *v1.Resource_HostInfo
+		ContainerInfo() *v1.Resource_ContainerInfo
+		HostInfo(ctx context.Context) *v1.Resource_HostInfo
 	}
 
 	Info struct {
@@ -125,7 +125,7 @@ func (i *Info) IsContainer() bool {
 	return false
 }
 
-func (i *Info) GetContainerInfo() *v1.Resource_ContainerInfo {
+func (i *Info) ContainerInfo() *v1.Resource_ContainerInfo {
 	return &v1.Resource_ContainerInfo{
 		ContainerInfo: &v1.ContainerInfo{
 			Id: i.getContainerID(),
@@ -133,8 +133,8 @@ func (i *Info) GetContainerInfo() *v1.Resource_ContainerInfo {
 	}
 }
 
-func (i *Info) GetHostInfo(ctx context.Context) *v1.Resource_HostInfo {
-	hostname, err := i.exec.GetHostname()
+func (i *Info) HostInfo(ctx context.Context) *v1.Resource_HostInfo {
+	hostname, err := i.exec.Hostname()
 	if err != nil {
 		slog.WarnContext(ctx, "Unable to get hostname", "error", err)
 	}
@@ -257,7 +257,7 @@ func (i *Info) getHostID(ctx context.Context) string {
 	res, err, _ := singleflightGroup.Do(GetSystemUUIDKey, func() (interface{}, error) {
 		var err error
 
-		hostID, err := i.exec.GetHostID(ctx)
+		hostID, err := i.exec.HostID(ctx)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to get host ID", "error", err)
 			return "", err
@@ -279,7 +279,7 @@ func (i *Info) getHostID(ctx context.Context) string {
 }
 
 func (i *Info) getReleaseInfo(ctx context.Context, osReleaseLocation string) (releaseInfo *v1.ReleaseInfo) {
-	hostReleaseInfo := i.exec.GetReleaseInfo(ctx)
+	hostReleaseInfo := i.exec.ReleaseInfo(ctx)
 	osRelease, err := readOsRelease(osReleaseLocation)
 	if err != nil {
 		slog.WarnContext(ctx, "Unable to read from os release file", "error", err)

@@ -10,25 +10,25 @@ import (
 )
 
 type FakeInfoInterface struct {
-	GetContainerInfoStub        func() *v1.Resource_ContainerInfo
-	getContainerInfoMutex       sync.RWMutex
-	getContainerInfoArgsForCall []struct {
+	ContainerInfoStub        func() *v1.Resource_ContainerInfo
+	containerInfoMutex       sync.RWMutex
+	containerInfoArgsForCall []struct {
 	}
-	getContainerInfoReturns struct {
+	containerInfoReturns struct {
 		result1 *v1.Resource_ContainerInfo
 	}
-	getContainerInfoReturnsOnCall map[int]struct {
+	containerInfoReturnsOnCall map[int]struct {
 		result1 *v1.Resource_ContainerInfo
 	}
-	GetHostInfoStub        func(context.Context) *v1.Resource_HostInfo
-	getHostInfoMutex       sync.RWMutex
-	getHostInfoArgsForCall []struct {
+	HostInfoStub        func(context.Context) *v1.Resource_HostInfo
+	hostInfoMutex       sync.RWMutex
+	hostInfoArgsForCall []struct {
 		arg1 context.Context
 	}
-	getHostInfoReturns struct {
+	hostInfoReturns struct {
 		result1 *v1.Resource_HostInfo
 	}
-	getHostInfoReturnsOnCall map[int]struct {
+	hostInfoReturnsOnCall map[int]struct {
 		result1 *v1.Resource_HostInfo
 	}
 	IsContainerStub        func() bool
@@ -45,15 +45,15 @@ type FakeInfoInterface struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInfoInterface) GetContainerInfo() *v1.Resource_ContainerInfo {
-	fake.getContainerInfoMutex.Lock()
-	ret, specificReturn := fake.getContainerInfoReturnsOnCall[len(fake.getContainerInfoArgsForCall)]
-	fake.getContainerInfoArgsForCall = append(fake.getContainerInfoArgsForCall, struct {
+func (fake *FakeInfoInterface) ContainerInfo() *v1.Resource_ContainerInfo {
+	fake.containerInfoMutex.Lock()
+	ret, specificReturn := fake.containerInfoReturnsOnCall[len(fake.containerInfoArgsForCall)]
+	fake.containerInfoArgsForCall = append(fake.containerInfoArgsForCall, struct {
 	}{})
-	stub := fake.GetContainerInfoStub
-	fakeReturns := fake.getContainerInfoReturns
-	fake.recordInvocation("GetContainerInfo", []interface{}{})
-	fake.getContainerInfoMutex.Unlock()
+	stub := fake.ContainerInfoStub
+	fakeReturns := fake.containerInfoReturns
+	fake.recordInvocation("ContainerInfo", []interface{}{})
+	fake.containerInfoMutex.Unlock()
 	if stub != nil {
 		return stub()
 	}
@@ -63,51 +63,51 @@ func (fake *FakeInfoInterface) GetContainerInfo() *v1.Resource_ContainerInfo {
 	return fakeReturns.result1
 }
 
-func (fake *FakeInfoInterface) GetContainerInfoCallCount() int {
-	fake.getContainerInfoMutex.RLock()
-	defer fake.getContainerInfoMutex.RUnlock()
-	return len(fake.getContainerInfoArgsForCall)
+func (fake *FakeInfoInterface) ContainerInfoCallCount() int {
+	fake.containerInfoMutex.RLock()
+	defer fake.containerInfoMutex.RUnlock()
+	return len(fake.containerInfoArgsForCall)
 }
 
-func (fake *FakeInfoInterface) GetContainerInfoCalls(stub func() *v1.Resource_ContainerInfo) {
-	fake.getContainerInfoMutex.Lock()
-	defer fake.getContainerInfoMutex.Unlock()
-	fake.GetContainerInfoStub = stub
+func (fake *FakeInfoInterface) ContainerInfoCalls(stub func() *v1.Resource_ContainerInfo) {
+	fake.containerInfoMutex.Lock()
+	defer fake.containerInfoMutex.Unlock()
+	fake.ContainerInfoStub = stub
 }
 
-func (fake *FakeInfoInterface) GetContainerInfoReturns(result1 *v1.Resource_ContainerInfo) {
-	fake.getContainerInfoMutex.Lock()
-	defer fake.getContainerInfoMutex.Unlock()
-	fake.GetContainerInfoStub = nil
-	fake.getContainerInfoReturns = struct {
+func (fake *FakeInfoInterface) ContainerInfoReturns(result1 *v1.Resource_ContainerInfo) {
+	fake.containerInfoMutex.Lock()
+	defer fake.containerInfoMutex.Unlock()
+	fake.ContainerInfoStub = nil
+	fake.containerInfoReturns = struct {
 		result1 *v1.Resource_ContainerInfo
 	}{result1}
 }
 
-func (fake *FakeInfoInterface) GetContainerInfoReturnsOnCall(i int, result1 *v1.Resource_ContainerInfo) {
-	fake.getContainerInfoMutex.Lock()
-	defer fake.getContainerInfoMutex.Unlock()
-	fake.GetContainerInfoStub = nil
-	if fake.getContainerInfoReturnsOnCall == nil {
-		fake.getContainerInfoReturnsOnCall = make(map[int]struct {
+func (fake *FakeInfoInterface) ContainerInfoReturnsOnCall(i int, result1 *v1.Resource_ContainerInfo) {
+	fake.containerInfoMutex.Lock()
+	defer fake.containerInfoMutex.Unlock()
+	fake.ContainerInfoStub = nil
+	if fake.containerInfoReturnsOnCall == nil {
+		fake.containerInfoReturnsOnCall = make(map[int]struct {
 			result1 *v1.Resource_ContainerInfo
 		})
 	}
-	fake.getContainerInfoReturnsOnCall[i] = struct {
+	fake.containerInfoReturnsOnCall[i] = struct {
 		result1 *v1.Resource_ContainerInfo
 	}{result1}
 }
 
-func (fake *FakeInfoInterface) GetHostInfo(arg1 context.Context) *v1.Resource_HostInfo {
-	fake.getHostInfoMutex.Lock()
-	ret, specificReturn := fake.getHostInfoReturnsOnCall[len(fake.getHostInfoArgsForCall)]
-	fake.getHostInfoArgsForCall = append(fake.getHostInfoArgsForCall, struct {
+func (fake *FakeInfoInterface) HostInfo(arg1 context.Context) *v1.Resource_HostInfo {
+	fake.hostInfoMutex.Lock()
+	ret, specificReturn := fake.hostInfoReturnsOnCall[len(fake.hostInfoArgsForCall)]
+	fake.hostInfoArgsForCall = append(fake.hostInfoArgsForCall, struct {
 		arg1 context.Context
 	}{arg1})
-	stub := fake.GetHostInfoStub
-	fakeReturns := fake.getHostInfoReturns
-	fake.recordInvocation("GetHostInfo", []interface{}{arg1})
-	fake.getHostInfoMutex.Unlock()
+	stub := fake.HostInfoStub
+	fakeReturns := fake.hostInfoReturns
+	fake.recordInvocation("HostInfo", []interface{}{arg1})
+	fake.hostInfoMutex.Unlock()
 	if stub != nil {
 		return stub(arg1)
 	}
@@ -117,44 +117,44 @@ func (fake *FakeInfoInterface) GetHostInfo(arg1 context.Context) *v1.Resource_Ho
 	return fakeReturns.result1
 }
 
-func (fake *FakeInfoInterface) GetHostInfoCallCount() int {
-	fake.getHostInfoMutex.RLock()
-	defer fake.getHostInfoMutex.RUnlock()
-	return len(fake.getHostInfoArgsForCall)
+func (fake *FakeInfoInterface) HostInfoCallCount() int {
+	fake.hostInfoMutex.RLock()
+	defer fake.hostInfoMutex.RUnlock()
+	return len(fake.hostInfoArgsForCall)
 }
 
-func (fake *FakeInfoInterface) GetHostInfoCalls(stub func(context.Context) *v1.Resource_HostInfo) {
-	fake.getHostInfoMutex.Lock()
-	defer fake.getHostInfoMutex.Unlock()
-	fake.GetHostInfoStub = stub
+func (fake *FakeInfoInterface) HostInfoCalls(stub func(context.Context) *v1.Resource_HostInfo) {
+	fake.hostInfoMutex.Lock()
+	defer fake.hostInfoMutex.Unlock()
+	fake.HostInfoStub = stub
 }
 
-func (fake *FakeInfoInterface) GetHostInfoArgsForCall(i int) context.Context {
-	fake.getHostInfoMutex.RLock()
-	defer fake.getHostInfoMutex.RUnlock()
-	argsForCall := fake.getHostInfoArgsForCall[i]
+func (fake *FakeInfoInterface) HostInfoArgsForCall(i int) context.Context {
+	fake.hostInfoMutex.RLock()
+	defer fake.hostInfoMutex.RUnlock()
+	argsForCall := fake.hostInfoArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *FakeInfoInterface) GetHostInfoReturns(result1 *v1.Resource_HostInfo) {
-	fake.getHostInfoMutex.Lock()
-	defer fake.getHostInfoMutex.Unlock()
-	fake.GetHostInfoStub = nil
-	fake.getHostInfoReturns = struct {
+func (fake *FakeInfoInterface) HostInfoReturns(result1 *v1.Resource_HostInfo) {
+	fake.hostInfoMutex.Lock()
+	defer fake.hostInfoMutex.Unlock()
+	fake.HostInfoStub = nil
+	fake.hostInfoReturns = struct {
 		result1 *v1.Resource_HostInfo
 	}{result1}
 }
 
-func (fake *FakeInfoInterface) GetHostInfoReturnsOnCall(i int, result1 *v1.Resource_HostInfo) {
-	fake.getHostInfoMutex.Lock()
-	defer fake.getHostInfoMutex.Unlock()
-	fake.GetHostInfoStub = nil
-	if fake.getHostInfoReturnsOnCall == nil {
-		fake.getHostInfoReturnsOnCall = make(map[int]struct {
+func (fake *FakeInfoInterface) HostInfoReturnsOnCall(i int, result1 *v1.Resource_HostInfo) {
+	fake.hostInfoMutex.Lock()
+	defer fake.hostInfoMutex.Unlock()
+	fake.HostInfoStub = nil
+	if fake.hostInfoReturnsOnCall == nil {
+		fake.hostInfoReturnsOnCall = make(map[int]struct {
 			result1 *v1.Resource_HostInfo
 		})
 	}
-	fake.getHostInfoReturnsOnCall[i] = struct {
+	fake.hostInfoReturnsOnCall[i] = struct {
 		result1 *v1.Resource_HostInfo
 	}{result1}
 }
@@ -215,10 +215,10 @@ func (fake *FakeInfoInterface) IsContainerReturnsOnCall(i int, result1 bool) {
 func (fake *FakeInfoInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getContainerInfoMutex.RLock()
-	defer fake.getContainerInfoMutex.RUnlock()
-	fake.getHostInfoMutex.RLock()
-	defer fake.getHostInfoMutex.RUnlock()
+	fake.containerInfoMutex.RLock()
+	defer fake.containerInfoMutex.RUnlock()
+	fake.hostInfoMutex.RLock()
+	defer fake.hostInfoMutex.RUnlock()
 	fake.isContainerMutex.RLock()
 	defer fake.isContainerMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
