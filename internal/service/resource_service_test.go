@@ -54,7 +54,7 @@ func TestResourceService_GetResource(t *testing.T) {
 
 		resource := resourceService.GetResource(ctx)
 		assert.Equal(t, tc.expectedResource.GetResourceId(), resource.GetResourceId())
-		assert.Equal(t, tc.expectedResource.GetInstances(), resource.GetInstances())
+		assert.Empty(t, resource.GetInstances())
 
 		if tc.isContainer {
 			assert.Equal(t, tc.expectedResource.GetContainerInfo(), resource.GetContainerInfo())

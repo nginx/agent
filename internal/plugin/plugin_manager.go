@@ -28,11 +28,6 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 		plugins = append(plugins, grpcClient)
 	}
 
-	if agentConfig.DataPlaneAPI != nil && agentConfig.DataPlaneAPI.Host != "" && agentConfig.DataPlaneAPI.Port != 0 {
-		dataPlaneServer := NewDataPlaneServer(agentConfig, slogger)
-		plugins = append(plugins, dataPlaneServer)
-	}
-
 	return plugins
 }
 

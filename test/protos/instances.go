@@ -24,6 +24,7 @@ func GetNginxOssInstance() *v1.Instance {
 		InstanceMeta: &v1.InstanceMeta{
 			InstanceId:   instanceID,
 			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+			Version:      "nginx/1.25.4",
 		},
 		InstanceRuntime: &v1.InstanceRuntime{
 			ProcessId:  processID,
@@ -47,6 +48,7 @@ func GetNginxPlusInstance() *v1.Instance {
 		InstanceMeta: &v1.InstanceMeta{
 			InstanceId:   instanceID,
 			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+			Version:      "nginx/1.25.3 (nginx-plus-r31-p1)",
 		},
 		InstanceRuntime: &v1.InstanceRuntime{
 			ProcessId:  processID,

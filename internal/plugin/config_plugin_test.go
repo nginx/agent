@@ -68,12 +68,7 @@ func TestConfig_Process(t *testing.T) {
 		slog.Any(logger.CorrelationIDKey, correlationID),
 	)
 
-	testInstance := &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   instanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-		},
-	}
+	testInstance := protos.GetNginxOssInstance()
 
 	nginxConfigContext := model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{{Name: "access.log"}},
@@ -154,11 +149,7 @@ func TestConfig_Process(t *testing.T) {
 			name: "Test 6: Resource request",
 			input: &bus.Message{
 				Topic: bus.ResourceTopic,
-				Data: &v1.Resource{
-					Instances: []*v1.Instance{
-						testInstance,
-					},
-				},
+				Data:  protos.GetContainerizedResource(),
 			},
 			expected: nil,
 		},
@@ -177,10 +168,10 @@ func TestConfig_Process(t *testing.T) {
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
 			configService.UpdateInstanceConfigurationReturns(nil, configurationStatus)
 
-			instanceService := []*v1.Instance{testInstance}
+			instances := []*v1.Instance{testInstance}
 
 			configPlugin.configServices[instanceID] = configService
-			configPlugin.resource.Instances = instanceService
+			configPlugin.resource.Instances = instances
 
 			configPlugin.Process(ctx, test.input)
 

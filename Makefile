@@ -185,9 +185,6 @@ generate: ## Generate proto files and server and client stubs from OpenAPI speci
 	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --go-grpc_out=./api/grpc --doc_out=./$(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)/ --doc_opt=markdown,protos.md 
 	@cp -a ./$(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)/* ./$(DOCS_DIR)/$(PROTO_DIR)/
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
-	@echo "Generating Go server and client stubs from OpenAPI specification"
-	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/data-plane-api.yaml > ./api/http/dataplane/data_plane.gen.go
-	@$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane ./api/http/dataplane/data-plane-api.yaml > ./api/http/dataplane/client.gen.go
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	@echo "Generating mocks"

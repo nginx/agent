@@ -9,32 +9,48 @@ import "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 func GetContainerizedResource() *v1.Resource {
 	return &v1.Resource{
-		ResourceId: "f43f5eg54g54g54",
-		Instances:  []*v1.Instance{},
+		ResourceId: GetContainerInfo().GetContainerId(),
+		Instances: []*v1.Instance{
+			GetNginxOssInstance(),
+		},
 		Info: &v1.Resource_ContainerInfo{
-			ContainerInfo: &v1.ContainerInfo{
-				ContainerId: "f43f5eg54g54g54",
-			},
+			ContainerInfo: GetContainerInfo(),
 		},
 	}
 }
 
 func GetHostResource() *v1.Resource {
 	return &v1.Resource{
-		ResourceId: "1234",
-		Instances:  []*v1.Instance{},
-		Info: &v1.Resource_HostInfo{
-			HostInfo: &v1.HostInfo{
-				HostId:   "1234",
-				Hostname: "test-host",
-				ReleaseInfo: &v1.ReleaseInfo{
-					Codename:  "Focal Fossa",
-					Id:        "ubuntu",
-					Name:      "Ubuntu 20.04.3 LTS",
-					VersionId: "20.04.3",
-					Version:   "",
-				},
-			},
+		ResourceId: GetHostInfo().GetHostId(),
+		Instances: []*v1.Instance{
+			GetNginxOssInstance(),
 		},
+		Info: &v1.Resource_HostInfo{
+			HostInfo: GetHostInfo(),
+		},
+	}
+}
+
+func GetHostInfo() *v1.HostInfo {
+	return &v1.HostInfo{
+		HostId:      "1234",
+		Hostname:    "test-host",
+		ReleaseInfo: GetReleaseInfo(),
+	}
+}
+
+func GetReleaseInfo() *v1.ReleaseInfo {
+	return &v1.ReleaseInfo{
+		Codename:  "Focal Fossa",
+		Id:        "ubuntu",
+		Name:      "Ubuntu 20.04.3 LTS",
+		VersionId: "20.04.3",
+		Version:   "",
+	}
+}
+
+func GetContainerInfo() *v1.ContainerInfo {
+	return &v1.ContainerInfo{
+		ContainerId: "f43f5eg54g54g54",
 	}
 }

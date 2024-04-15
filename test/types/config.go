@@ -45,10 +45,6 @@ func GetAgentConfig() *config.Config {
 		ProcessMonitor: &config.ProcessMonitor{
 			MonitoringFrequency: time.Millisecond,
 		},
-		DataPlaneAPI: &config.DataPlaneAPI{
-			Host: "127.0.0.1",
-			Port: apiPort,
-		},
 		Client: &config.Client{
 			Timeout:             clientTimeout,
 			Time:                clientTime,

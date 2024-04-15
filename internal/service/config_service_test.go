@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	modelHelpers "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 
@@ -20,26 +21,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/stretchr/testify/assert"
 )
-
-const instanceID = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
 
 func TestConfigService_SetConfigContext(t *testing.T) {
 	ctx := context.Background()
 
-	expectedConfigContext := &model.NginxConfigContext{
-		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
-	}
+	expectedConfigContext := modelHelpers.GetConfigContext()
 
-	instance := &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   instanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-		},
-	}
+	instance := protos.GetNginxOssInstance()
 
 	configService := NewConfigService(ctx, instance, &config.Config{
 		Client: &config.Client{
@@ -53,12 +44,7 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 
 func TestUpdateInstanceConfiguration(t *testing.T) {
 	ctx := context.Background()
-	instance := &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   instanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-		},
-	}
+	instance := protos.GetNginxOssInstance()
 	agentConfig := types.GetAgentConfig()
 
 	tests := []struct {
@@ -121,7 +107,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			mockService.ValidateReturns(test.validateErr)
 			mockService.CompleteReturns(test.completeErr)
 
-			filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
+			filesURL := fmt.Sprintf("/instance/%s/files/", test.expected.GetInstanceId())
 
 			cs := NewConfigService(ctx, instance, agentConfig)
 			cs.configService = &mockService
@@ -137,16 +123,9 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 	ctx := context.Background()
 
-	expectedConfigContext := &model.NginxConfigContext{
-		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
-	}
+	expectedConfigContext := modelHelpers.GetConfigContext()
 
-	instance := &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   instanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-		},
-	}
+	instance := protos.GetNginxOssInstance()
 
 	configService := NewConfigService(ctx, instance, &config.Config{
 		Client: &config.Client{
