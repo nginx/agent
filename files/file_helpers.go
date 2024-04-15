@@ -7,10 +7,12 @@
 package files
 
 import (
+	"cmp"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
+	"slices"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/uuid"
@@ -23,10 +25,14 @@ func GetPermissions(fileMode os.FileMode) string {
 
 // GenerateConfigVersion returns a unique config version for a set of files.
 // The config version is calculated by joining the file hashes together and generating a unique ID.
-func GenerateConfigVersion(files []*v1.File) string {
+func GenerateConfigVersion(fileSlice []*v1.File) string {
 	var hashes string
 
-	for _, file := range files {
+	slices.SortFunc(fileSlice, func(a, b *v1.File) int {
+		return cmp.Compare[string](a.GetFileMeta().GetName(), b.GetFileMeta().GetName())
+	})
+
+	for _, file := range fileSlice {
 		hashes += file.GetFileMeta().GetHash()
 	}
 

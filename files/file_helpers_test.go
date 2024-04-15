@@ -29,24 +29,37 @@ func TestGetPermissions(t *testing.T) {
 }
 
 func Test_GenerateConfigVersion(t *testing.T) {
-	files := []*v1.File{
-		{
-			FileMeta: &v1.FileMeta{
-				Name: "file1",
-				Hash: "3151431543",
-			},
+	expectedConfigVersion := "a7d6580c-8ac9-376e-acde-b2cbed21d291"
+
+	file1 := &v1.File{
+		FileMeta: &v1.FileMeta{
+			Name: "file1",
+			Hash: "3151431543",
 		},
-		{
-			FileMeta: &v1.FileMeta{
-				Name: "file2",
-				Hash: "4234235325",
-			},
+	}
+	file2 := &v1.File{
+		FileMeta: &v1.FileMeta{
+			Name: "file2",
+			Hash: "4234235325",
 		},
 	}
 
-	configVersion := GenerateConfigVersion(files)
+	files := []*v1.File{
+		file1,
+		file2,
+	}
 
-	assert.Equal(t, "a7d6580c-8ac9-376e-acde-b2cbed21d291", configVersion)
+	configVersion := GenerateConfigVersion(files)
+	assert.Equal(t, expectedConfigVersion, configVersion)
+
+	// Reorder files to make sure version is still the same
+	files = []*v1.File{
+		file2,
+		file1,
+	}
+
+	configVersion = GenerateConfigVersion(files)
+	assert.Equal(t, expectedConfigVersion, configVersion)
 }
 
 func Test_GenerateFileHash(t *testing.T) {
