@@ -11,6 +11,7 @@ import (
 	"log/slog"
 
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	grpcValidator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -33,6 +34,7 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 		grpc.WithReturnConnectionError(),
 		grpc.WithStreamInterceptor(grpcRetry.StreamClientInterceptor()),
 		grpc.WithUnaryInterceptor(grpcRetry.UnaryClientInterceptor()),
+		grpc.WithUnaryInterceptor(grpcValidator.UnaryClientInterceptor()),
 		grpc.WithDefaultServiceConfig(serviceConfig),
 	}
 
