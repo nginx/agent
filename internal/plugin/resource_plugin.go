@@ -28,7 +28,9 @@ func NewResource() *Resource {
 	return &Resource{
 		resourceMutex:   sync.Mutex{},
 		resourceService: service.NewResourceService(),
-		resource:        &v1.Resource{},
+		resource: &v1.Resource{
+			Instances: []*v1.Instance{},
+		},
 	}
 }
 

@@ -11,7 +11,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nxadm/tail v1.4.11
 	github.com/oapi-codegen/runtime v1.1.1
-	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.30.0

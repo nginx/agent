@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/protos"
 
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/stretchr/testify/assert"
@@ -141,7 +143,14 @@ func TestGrpcClient_Init(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			ctx := context.Background()
 			test.agentConfig.Command.Server.Host = test.server
+
+			resource := protos.GetContainerizedResource()
+
+			mockReourceService := &servicefakes.FakeResourceServiceInterface{}
+			mockReourceService.GetResourceReturns(resource)
+
 			client := NewGrpcClient(test.agentConfig)
+			client.resourceService = mockReourceService
 			assert.NotNil(tt, client)
 
 			messagePipe := bus.NewMessagePipe(100)

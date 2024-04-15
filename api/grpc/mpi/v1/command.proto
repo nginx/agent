@@ -53,7 +53,7 @@ message Resource {
     oneof info {
         // If running on bare-metal, provides additional information
         HostInfo host_info = 3;
-        // If running in a contanierized environment, provides additional information
+        // If running in a containerized environment, provides additional information
         ContainerInfo container_info = 4;
     }
 }

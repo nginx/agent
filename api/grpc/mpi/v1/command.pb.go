@@ -244,7 +244,7 @@ type Resource_HostInfo struct {
 }
 
 type Resource_ContainerInfo struct {
-	// If running in a contanierized environment, provides additional information
+	// If running in a containerized environment, provides additional information
 	ContainerInfo *ContainerInfo `protobuf:"bytes,4,opt,name=container_info,json=containerInfo,proto3,oneof"`
 }
 

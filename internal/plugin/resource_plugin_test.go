@@ -47,7 +47,13 @@ func TestResourceMonitor_Info(t *testing.T) {
 
 func TestResourceMonitor_Subscriptions(t *testing.T) {
 	resource := NewResource()
-	assert.Equal(t, []string{bus.InstancesTopic, bus.OsProcessesTopic}, resource.Subscriptions())
+	assert.Equal(t,
+		[]string{
+			bus.OsProcessesTopic,
+			bus.InstancesTopic,
+			bus.InstanceConfigUpdateRequestTopic,
+		},
+		resource.Subscriptions())
 }
 
 func TestResourceMonitor_Process(t *testing.T) {
@@ -66,12 +72,7 @@ func TestResourceMonitor_Process(t *testing.T) {
 	require.NoError(t, err)
 
 	instances := []*v1.Instance{
-		{
-			InstanceMeta: &v1.InstanceMeta{
-				InstanceId:   "123",
-				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-			},
-		},
+		protos.GetNginxOssInstance(),
 	}
 
 	resourcePlugin.Process(ctx, &bus.Message{
@@ -93,18 +94,13 @@ func TestResourceMonitor_Process(t *testing.T) {
 
 func TestResource_Instances_Process(t *testing.T) {
 	ctx := context.Background()
-	testInstances := []*v1.Instance{
-		{
-			InstanceMeta: &v1.InstanceMeta{
-				InstanceId:   "123",
-				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-			},
-		},
-	}
+	expectedResource := protos.GetHostResource()
 
 	fakeResourceService := &servicefakes.FakeResourceServiceInterface{}
+	fakeResourceService.GetResourceReturns(expectedResource)
+
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
-	fakeInstanceService.GetInstancesReturns(testInstances)
+	fakeInstanceService.GetInstancesReturns(expectedResource.GetInstances())
 
 	resourcePlugin := NewResource()
 	resourcePlugin.instanceService = fakeInstanceService
@@ -118,11 +114,11 @@ func TestResource_Instances_Process(t *testing.T) {
 	messagePipe.Process(ctx, processesMessage)
 	messagePipe.Run(ctx)
 
-	assert.Len(t, messagePipe.GetProcessedMessages(), 2)
+	assert.Len(t, messagePipe.GetProcessedMessages(), 4)
 	assert.Equal(t, processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
 	assert.Equal(t, processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
-	assert.Equal(t, bus.InstancesTopic, messagePipe.GetProcessedMessages()[1].Topic)
-	assert.Equal(t, testInstances, messagePipe.GetProcessedMessages()[1].Data)
+	assert.Equal(t, bus.ResourceTopic, messagePipe.GetProcessedMessages()[1].Topic)
+	assert.Equal(t, expectedResource, messagePipe.GetProcessedMessages()[1].Data)
 }
 
 func TestResource_Process_Error_Expected(t *testing.T) {

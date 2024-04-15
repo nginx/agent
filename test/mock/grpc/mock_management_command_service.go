@@ -7,6 +7,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	sloggin "github.com/samber/slog-gin"
 )
@@ -37,7 +39,7 @@ func init() {
 }
 
 func NewCommandService() *CommandService {
-	mgs := &CommandService{
+	cs := &CommandService{
 		requestChan:                make(chan *v1.ManagementPlaneRequest),
 		connectionMutex:            sync.Mutex{},
 		updateDataPlaneStatusMutex: sync.Mutex{},
@@ -53,76 +55,20 @@ func NewCommandService() *CommandService {
 
 	logger := slog.New(handler)
 
-	server := gin.New()
-	server.UseRawPath = true
-	server.Use(sloggin.NewWithConfig(logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
+	cs.createServer(logger)
 
-	server.GET("/api/v1/connection", func(c *gin.Context) {
-		mgs.connectionMutex.Lock()
-		defer mgs.connectionMutex.Unlock()
-
-		if mgs.connectionRequest == nil {
-			c.JSON(http.StatusNotFound, nil)
-		} else {
-			c.JSON(http.StatusOK, gin.H{
-				"connectionRequest": mgs.connectionRequest,
-			})
-		}
-	})
-
-	server.GET("/api/v1/status", func(c *gin.Context) {
-		mgs.updateDataPlaneStatusMutex.Lock()
-		defer mgs.updateDataPlaneStatusMutex.Unlock()
-
-		if mgs.updateDataPlaneStatusRequest == nil {
-			c.JSON(http.StatusNotFound, nil)
-		} else {
-			c.JSON(http.StatusOK, gin.H{
-				"updateDataPlaneStatusRequest": mgs.updateDataPlaneStatusRequest,
-			})
-		}
-	})
-
-	server.GET("/api/v1/responses", func(c *gin.Context) {
-		mgs.dataPlaneResponsesMutex.Lock()
-		defer mgs.dataPlaneResponsesMutex.Unlock()
-
-		if mgs.dataPlaneResponses == nil {
-			c.JSON(http.StatusNotFound, nil)
-		} else {
-			c.JSON(http.StatusOK, gin.H{
-				"dataPlaneResponse": mgs.dataPlaneResponses,
-			})
-		}
-	})
-
-	server.POST("/api/v1/requests", func(c *gin.Context) {
-		var request *v1.ManagementPlaneRequest
-		err := c.Bind(request)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, nil)
-			return
-		}
-
-		mgs.requestChan <- request
-
-		c.JSON(http.StatusOK, request)
-	})
-
-	mgs.server = server
-
-	return mgs
+	return cs
 }
 
-func (mgs *CommandService) StartServer(listener net.Listener) {
+func (cs *CommandService) StartServer(listener net.Listener) {
 	slog.Info("Starting mock management plane http server", "address", listener.Addr().String())
-	err := mgs.server.RunListener(listener)
+	err := cs.server.RunListener(listener)
 	if err != nil {
 		slog.Error("Failed to start mock management plane http server", "error", err)
 	}
 }
 
-func (mgs *CommandService) CreateConnection(
+func (cs *CommandService) CreateConnection(
 	_ context.Context,
 	request *v1.CreateConnectionRequest) (
 	*v1.CreateConnectionResponse,
@@ -134,9 +80,9 @@ func (mgs *CommandService) CreateConnection(
 		return nil, errors.New("empty connection request")
 	}
 
-	mgs.connectionMutex.Lock()
-	mgs.connectionRequest = request
-	mgs.connectionMutex.Unlock()
+	cs.connectionMutex.Lock()
+	cs.connectionRequest = request
+	cs.connectionMutex.Unlock()
 
 	return &v1.CreateConnectionResponse{
 		Response: &v1.CommandResponse{
@@ -147,7 +93,7 @@ func (mgs *CommandService) CreateConnection(
 	}, nil
 }
 
-func (mgs *CommandService) UpdateDataPlaneStatus(
+func (cs *CommandService) UpdateDataPlaneStatus(
 	_ context.Context,
 	request *v1.UpdateDataPlaneStatusRequest) (
 	*v1.UpdateDataPlaneStatusResponse,
@@ -159,14 +105,14 @@ func (mgs *CommandService) UpdateDataPlaneStatus(
 		return nil, errors.New("empty update data plane status request")
 	}
 
-	mgs.updateDataPlaneStatusMutex.Lock()
-	mgs.updateDataPlaneStatusRequest = request
-	mgs.updateDataPlaneStatusMutex.Unlock()
+	cs.updateDataPlaneStatusMutex.Lock()
+	cs.updateDataPlaneStatusRequest = request
+	cs.updateDataPlaneStatusMutex.Unlock()
 
 	return &v1.UpdateDataPlaneStatusResponse{}, nil
 }
 
-func (mgs *CommandService) UpdateDataPlaneHealth(
+func (cs *CommandService) UpdateDataPlaneHealth(
 	_ context.Context,
 	_ *v1.UpdateDataPlaneHealthRequest) (
 	*v1.UpdateDataPlaneHealthResponse,
@@ -175,9 +121,9 @@ func (mgs *CommandService) UpdateDataPlaneHealth(
 	return &v1.UpdateDataPlaneHealthResponse{}, nil
 }
 
-func (mgs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error {
+func (cs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error {
 	for {
-		request := <-mgs.requestChan
+		request := <-cs.requestChan
 
 		slog.Debug("Subscribe", "request", request)
 
@@ -190,9 +136,81 @@ func (mgs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error
 		if err != nil {
 			slog.Error("Failed to receive data plane response", "error", err)
 		} else {
-			mgs.dataPlaneResponsesMutex.Lock()
-			mgs.dataPlaneResponses = append(mgs.dataPlaneResponses, dataPlaneResponse)
-			mgs.dataPlaneResponsesMutex.Unlock()
+			cs.dataPlaneResponsesMutex.Lock()
+			cs.dataPlaneResponses = append(cs.dataPlaneResponses, dataPlaneResponse)
+			cs.dataPlaneResponsesMutex.Unlock()
 		}
 	}
+}
+
+func (cs *CommandService) createServer(logger *slog.Logger) {
+	cs.server = gin.New()
+	cs.server.UseRawPath = true
+	cs.server.Use(sloggin.NewWithConfig(logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
+
+	cs.addConnectionEndpoint()
+	cs.addStatusEndpoint()
+	cs.addResponseAndRequestEndpoints()
+}
+
+func (cs *CommandService) addConnectionEndpoint() {
+	cs.server.GET("/api/v1/connection", func(c *gin.Context) {
+		cs.connectionMutex.Lock()
+		defer cs.connectionMutex.Unlock()
+
+		if cs.connectionRequest == nil {
+			c.JSON(http.StatusNotFound, nil)
+		} else {
+			var data map[string]interface{}
+			if err := json.Unmarshal([]byte(protojson.Format(cs.connectionRequest)), &data); err != nil {
+				slog.Error("Failed to return connection", "error", err)
+				c.JSON(http.StatusInternalServerError, nil)
+			}
+			c.JSON(http.StatusOK, data)
+		}
+	})
+}
+
+func (cs *CommandService) addStatusEndpoint() {
+	cs.server.GET("/api/v1/status", func(c *gin.Context) {
+		cs.updateDataPlaneStatusMutex.Lock()
+		defer cs.updateDataPlaneStatusMutex.Unlock()
+
+		if cs.updateDataPlaneStatusRequest == nil {
+			c.JSON(http.StatusNotFound, nil)
+		} else {
+			var data map[string]interface{}
+			if err := json.Unmarshal([]byte(protojson.Format(cs.updateDataPlaneStatusRequest)), &data); err != nil {
+				slog.Error("Failed to return status", "error", err)
+				c.JSON(http.StatusInternalServerError, nil)
+			}
+			c.JSON(http.StatusOK, data)
+		}
+	})
+}
+
+func (cs *CommandService) addResponseAndRequestEndpoints() {
+	cs.server.GET("/api/v1/responses", func(c *gin.Context) {
+		cs.dataPlaneResponsesMutex.Lock()
+		defer cs.dataPlaneResponsesMutex.Unlock()
+
+		if cs.dataPlaneResponses == nil {
+			c.JSON(http.StatusNotFound, nil)
+		} else {
+			c.JSON(http.StatusOK, cs.dataPlaneResponses)
+		}
+	})
+
+	cs.server.POST("/api/v1/requests", func(c *gin.Context) {
+		var request *v1.ManagementPlaneRequest
+		err := c.Bind(request)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, nil)
+			return
+		}
+
+		cs.requestChan <- request
+
+		c.JSON(http.StatusOK, request)
+	})
 }

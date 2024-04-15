@@ -20,12 +20,13 @@ import (
 )
 
 const (
-	versionID   = "VERSION_ID"
-	version     = "VERSION"
-	codeName    = "VERSION_CODENAME"
-	id          = "ID"
-	name        = "NAME"
-	releaseFile = "/etc/os-release"
+	versionID     = "VERSION_ID"
+	version       = "VERSION"
+	codeName      = "VERSION_CODENAME"
+	id            = "ID"
+	name          = "NAME"
+	releaseFile   = "/etc/os-release"
+	fieldPosition = 2
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
@@ -181,7 +182,7 @@ func (rs *ResourceService) parseOsReleaseFile(reader io.Reader) (map[string]stri
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		field := strings.Split(line, "=")
-		if len(field) < 2 {
+		if len(field) < fieldPosition {
 			continue
 		}
 		osReleaseInfoMap[field[0]] = strings.Trim(field[1], "\"")

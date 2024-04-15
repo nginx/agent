@@ -7,6 +7,7 @@ package host
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -32,9 +33,10 @@ const (
 
 	k8sKind    = "kubepods"
 	docker     = "docker"
-	conatinerd = "containerd"
+	containerd = "containerd"
 
-	lengthOfContainerID = 64
+	numberOfKeysAndValues = 2
+	lengthOfContainerID   = 64
 
 	versionID = "VERSION_ID"
 	version   = "VERSION"
@@ -50,10 +52,18 @@ const (
 var (
 	singleflightGroup = &singleflight.Group{}
 
-	basePattern       = regexp.MustCompile("/([a-f0-9]{64})$")
-	colonPattern      = regexp.MustCompile(":([a-f0-9]{64})$")
-	scopePattern      = regexp.MustCompile(`/.+-(.+?).scope$`)
+	// example: /docker/f244832c5a58377c3f1c7581b311c5bd8479808741f3e912d8bea8afe6431cb4
+	basePattern = regexp.MustCompile("/([a-f0-9]{64})$")
+	// nolint: lll
+	// example: /system.slice/containerd.service/kubepods-besteffort-pod214f3ba8_4b69_4bdb_a7d5_5ecc73f04ae9.slice:cri-containerd:d4e8e05a546c86b6443f101966c618e47753ed01fa9929cae00d3b692f7a9f80
+	colonPattern = regexp.MustCompile(":([a-f0-9]{64})$")
+	// example: /system.slice/crio-9e524432d716aa750574c9b6c01dee49e4b453445006684aad94c3d6df849e5c.scope
+	scopePattern = regexp.MustCompile(`/.+-(.+?).scope$`)
+	// nolint: lll
+	// example: /containers/storage/overlay-containers/ba0be90007be48bca767be0a462390ad2c9b0e910608158f79c8d6a984302b7e/userdata/hostname
 	containersPattern = regexp.MustCompile("containers/([a-f0-9]{64})")
+	// nolint: lll
+	// example: /var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/d7cb24ec5dede02990283dec30bd1e6ae1f93e3e19b152b708b7e0e133c6baec/hostname
 	containerdPattern = regexp.MustCompile("sandboxes/([a-f0-9]{64})")
 )
 
@@ -145,10 +155,10 @@ func containsContainerReference(cgroupFile string) bool {
 		return false
 	}
 
-	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if strings.Contains(line, k8sKind) || strings.Contains(line, docker) || strings.Contains(line, conatinerd) {
+		if strings.Contains(line, k8sKind) || strings.Contains(line, docker) || strings.Contains(line, containerd) {
 			return true
 		}
 	}
@@ -192,7 +202,7 @@ func getContainerIDFromMountInfo(mountInfo string) (string, error) {
 	fileScanner := bufio.NewScanner(mInfoFile)
 	fileScanner.Split(bufio.ScanLines)
 
-	var lines []string
+	lines := make([]string, 0)
 	for fileScanner.Scan() {
 		lines = append(lines, fileScanner.Text())
 	}
@@ -306,7 +316,7 @@ func parseOsReleaseFile(reader io.Reader) (map[string]string, error) {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		field := strings.Split(line, "=")
-		if len(field) < 2 {
+		if len(field) < numberOfKeysAndValues {
 			continue
 		}
 		osReleaseInfoMap[field[0]] = strings.Trim(field[1], "\"")
@@ -319,7 +329,8 @@ func parseOsReleaseFile(reader io.Reader) (map[string]string, error) {
 	return osReleaseInfoMap, nil
 }
 
-func mergeHostAndOsReleaseInfo(releaseInfo *v1.ReleaseInfo,
+func mergeHostAndOsReleaseInfo(
+	releaseInfo *v1.ReleaseInfo,
 	osReleaseInfo map[string]string,
 ) (release *v1.ReleaseInfo) {
 	if len(osReleaseInfo[versionID]) == 0 {
