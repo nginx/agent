@@ -35,9 +35,7 @@ func TestResource_Init(t *testing.T) {
 
 	messages := messagePipe.GetMessages()
 
-	assert.Len(t, messages, 1)
-	assert.Equal(t, bus.ResourceTopic, messages[0].Topic)
-	assert.Equal(t, resource, messages[0].Data)
+	assert.Len(t, messages, 0)
 }
 
 func TestResourceMonitor_Info(t *testing.T) {
@@ -82,43 +80,40 @@ func TestResourceMonitor_Process(t *testing.T) {
 
 	messages := messagePipe.GetMessages()
 
-	assert.Len(t, messages, 2)
+	assert.Len(t, messages, 1)
 	assert.Equal(t, bus.ResourceTopic, messages[0].Topic)
 	assert.Equal(t, resource, messages[0].Data)
-
-	resource.Instances = instances
-
-	assert.Equal(t, bus.ResourceTopic, messages[1].Topic)
-	assert.Equal(t, resource, messages[1].Data)
 }
 
 func TestResource_Instances_Process(t *testing.T) {
 	ctx := context.Background()
-	expectedResource := protos.GetHostResource()
+	testResource := protos.GetHostResource()
 
 	fakeResourceService := &servicefakes.FakeResourceServiceInterface{}
-	fakeResourceService.GetResourceReturns(expectedResource)
+	fakeResourceService.GetResourceReturns(testResource)
 
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
-	fakeInstanceService.GetInstancesReturns(expectedResource.GetInstances())
+	fakeInstanceService.GetInstancesReturns(testResource.GetInstances())
 
 	resourcePlugin := NewResource()
 	resourcePlugin.instanceService = fakeInstanceService
 	resourcePlugin.resourceService = fakeResourceService
 
 	messagePipe := bus.NewFakeMessagePipe()
-	err := messagePipe.Register(100, []bus.Plugin{resourcePlugin})
+	err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 	require.NoError(t, err)
 
 	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{{Pid: 123, Name: "nginx"}}}
 	messagePipe.Process(ctx, processesMessage)
 	messagePipe.Run(ctx)
 
-	assert.Len(t, messagePipe.GetProcessedMessages(), 4)
+	assert.Len(t, messagePipe.GetProcessedMessages(), 3)
 	assert.Equal(t, processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
 	assert.Equal(t, processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
-	assert.Equal(t, bus.ResourceTopic, messagePipe.GetProcessedMessages()[1].Topic)
-	assert.Equal(t, expectedResource, messagePipe.GetProcessedMessages()[1].Data)
+	assert.Equal(t, bus.InstancesTopic, messagePipe.GetProcessedMessages()[1].Topic)
+	assert.Equal(t, testResource.GetInstances(), messagePipe.GetProcessedMessages()[1].Data)
+	assert.Equal(t, bus.ResourceTopic, messagePipe.GetProcessedMessages()[2].Topic)
+	assert.Equal(t, testResource, messagePipe.GetProcessedMessages()[2].Data)
 }
 
 func TestResource_Process_Error_Expected(t *testing.T) {
@@ -140,10 +135,17 @@ func TestResource_Process_Error_Expected(t *testing.T) {
 func TestResource_Process_Empty_Instances(t *testing.T) {
 	ctx := context.Background()
 	testInstances := []*v1.Instance{}
+	testResource := protos.GetHostResource()
 
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
 	fakeInstanceService.GetInstancesReturns(testInstances)
+
+	fakeResourceService := &servicefakes.FakeResourceServiceInterface{}
+	fakeResourceService.GetResourceReturns(testResource)
+
 	resource := NewResource()
+	resource.instanceService = fakeInstanceService
+	resource.resourceService = fakeResourceService
 
 	messagePipe := bus.NewFakeMessagePipe()
 	err := messagePipe.Register(2, []bus.Plugin{resource})
@@ -153,9 +155,11 @@ func TestResource_Process_Empty_Instances(t *testing.T) {
 	messagePipe.Process(ctx, processesMessage)
 	messagePipe.Run(ctx)
 
-	assert.Len(t, messagePipe.GetProcessedMessages(), 2)
+	assert.Len(t, messagePipe.GetProcessedMessages(), 3)
 	assert.Equal(t, processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
 	assert.Equal(t, processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
 	assert.Equal(t, bus.InstancesTopic, messagePipe.GetProcessedMessages()[1].Topic)
 	assert.Equal(t, testInstances, messagePipe.GetProcessedMessages()[1].Data)
+	assert.Equal(t, bus.ResourceTopic, messagePipe.GetProcessedMessages()[2].Topic)
+	assert.Equal(t, testResource, messagePipe.GetProcessedMessages()[2].Data)
 }

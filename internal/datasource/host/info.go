@@ -151,7 +151,7 @@ func (i *Info) HostInfo(ctx context.Context) *v1.Resource_HostInfo {
 func containsContainerReference(cgroupFile string) bool {
 	data, err := os.ReadFile(cgroupFile)
 	if err != nil {
-		slog.Error("Unable to check if cgroup file contains a container reference", "error", err)
+		slog.Warn("Unable to check if cgroup file contains a container reference", "error", err)
 		return false
 	}
 
