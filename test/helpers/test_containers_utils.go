@@ -98,50 +98,6 @@ func StartContainer(
 }
 
 // nolint: ireturn
-func StartMockManagementPlaneHTTPContainer(
-	ctx context.Context,
-	tb testing.TB,
-	containerNetwork *testcontainers.DockerNetwork,
-	nginxConfigPath string,
-) testcontainers.Container {
-	tb.Helper()
-
-	req := testcontainers.ContainerRequest{
-		FromDockerfile: testcontainers.FromDockerfile{
-			Context:       "../../",
-			Dockerfile:    "./test/mock/http/Dockerfile",
-			KeepImage:     false,
-			PrintBuildLog: true,
-		},
-		ExposedPorts: []string{"9092/tcp"},
-		Networks: []string{
-			containerNetwork.Name,
-		},
-		NetworkAliases: map[string][]string{
-			containerNetwork.Name: {
-				"managementPlane",
-			},
-		},
-		Files: []testcontainers.ContainerFile{
-			{
-				HostFilePath:      nginxConfigPath,
-				ContainerFilePath: "/mock-management-plane-http/config/etc/nginx/nginx.conf",
-				FileMode:          configFilePermissions,
-			},
-		},
-	}
-
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-
-	require.NoError(tb, err)
-
-	return container
-}
-
-// nolint: ireturn
 func StartMockManagementPlaneGrpcContainer(
 	ctx context.Context,
 	tb testing.TB,
