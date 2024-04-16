@@ -13,7 +13,10 @@ import (
 	"path"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/client"
@@ -28,10 +31,12 @@ const (
 
 type (
 	ConfigWriterInterface interface {
-		Write(ctx context.Context, filesURL, instanceID string) (skippedFiles CacheContent, err error)
+		Write(ctx context.Context, request *v1.ManagementPlaneRequest_ConfigApplyRequest,
+			instanceID string) (skippedFiles CacheContent, err error)
 		Complete(ctx context.Context) (err error)
 		SetConfigClient(configClient client.ConfigClient)
-		Rollback(ctx context.Context, skippedFiles CacheContent, filesURL, instanceID string) error
+		Rollback(ctx context.Context, skippedFiles CacheContent,
+			request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string) error
 	}
 
 	ConfigWriter struct {
@@ -60,18 +65,21 @@ func (cw *ConfigWriter) SetConfigClient(configClient client.ConfigClient) {
 	cw.configClient = configClient
 }
 
-func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent, filesURL, instanceID string,
+func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
+	_ *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string,
 ) error {
+	// TODO: if the config apply has failed before a file is wrtten the skipped files will be empty
+	// TODO: if one but not all the files failed to download should handle comparing the hash in doesFileRequireUpdate
 	slog.DebugContext(ctx, "Rolling back NGINX config changes due to error")
 	if cw.fileCache.CacheContent() == nil {
 		return fmt.Errorf("error rolling back, no instance file cache found for instance %s", instanceID)
 	}
-	for key, value := range cw.fileCache.CacheContent() {
+	for key, fileMeta := range cw.fileCache.CacheContent() {
 		if _, ok := skippedFiles[key]; ok {
 			continue
 		}
 
-		err := cw.updateFile(ctx, value, filesURL)
+		err := cw.updateFile(ctx, fileMeta)
 		if err != nil {
 			return err
 		}
@@ -80,9 +88,11 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 	return nil
 }
 
-func (cw *ConfigWriter) Write(ctx context.Context, filesURL, instanceID string,
+// nolint
+func (cw *ConfigWriter) Write(ctx context.Context,
+	request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string,
 ) (skippedFiles CacheContent, err error) {
-	slog.DebugContext(ctx, "Write nginx config", "files_url", filesURL)
+	slog.DebugContext(ctx, "Write nginx config")
 	currentFileCache, skippedFiles := make(CacheContent), make(CacheContent)
 
 	cacheContent, err := cw.fileCache.ReadFileCache(ctx)
@@ -90,12 +100,16 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL, instanceID string,
 		return nil, err
 	}
 
-	filesMetaData, err := cw.getFileMetaData(ctx, filesURL, instanceID)
-	if err != nil {
-		return nil, err
+	filesOverview := request.ConfigApplyRequest.GetOverview()
+
+	if filesOverview == nil {
+		filesOverview, err = cw.getFileOverview(ctx, request, instanceID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	for _, fileData := range filesMetaData.GetFiles() {
+	for _, fileData := range filesOverview.GetFiles() {
 		if cacheContent != nil && !doesFileRequireUpdate(cacheContent, fileData.GetFileMeta()) {
 			slog.DebugContext(
 				ctx,
@@ -112,7 +126,7 @@ func (cw *ConfigWriter) Write(ctx context.Context, filesURL, instanceID string,
 			"Updating file, latest version not on disk",
 			"file_path", fileData.GetFileMeta().GetName(),
 		)
-		if updateErr := cw.updateFile(ctx, fileData.GetFileMeta(), filesURL); updateErr != nil {
+		if updateErr := cw.updateFile(ctx, fileData.GetFileMeta()); updateErr != nil {
 			return nil, updateErr
 		}
 		currentFileCache[fileData.GetFileMeta().GetName()] = fileData.GetFileMeta()
@@ -140,33 +154,44 @@ func (cw *ConfigWriter) removeFiles(ctx context.Context, currentFileCache, fileC
 	return nil
 }
 
-func (cw *ConfigWriter) getFileMetaData(ctx context.Context, filesURL, instanceID string,
-) (filesMetaData *v1.FileOverview, err error) {
-	// TODO: use a request
-	// TODO: remove filesURL
-	filesMetaData, err = cw.configClient.GetFilesMetadata(ctx, &v1.GetOverviewRequest{})
+func (cw *ConfigWriter) getFileOverview(ctx context.Context, request *v1.ManagementPlaneRequest_ConfigApplyRequest,
+	instanceID string,
+) (fileOverview *v1.FileOverview, err error) {
+	fileOverview, err = cw.configClient.GetFilesMetadata(ctx, &v1.GetOverviewRequest{
+		MessageMeta: &v1.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: logger.GetCorrelationID(ctx),
+			Timestamp:     timestamppb.Now(),
+		},
+		ConfigVersion: request.ConfigApplyRequest.GetConfigVersion(),
+	})
 	if err != nil {
-		return nil, fmt.Errorf("error getting files metadata from %s: %w", filesURL, err)
+		return nil, fmt.Errorf("error getting files metadata: %w", err)
 	}
 
-	if len(filesMetaData.GetFiles()) == 0 {
+	if len(fileOverview.GetFiles()) == 0 {
 		slog.DebugContext(ctx, "No file metadata for instance", "instance_id", instanceID)
 		return nil, fmt.Errorf("error getting files metadata, no metadata exists for instance: %s", instanceID)
 	}
 
-	return filesMetaData, nil
+	return fileOverview, nil
 }
 
 func (cw *ConfigWriter) updateFile(ctx context.Context, fileData *v1.FileMeta,
-	filesURL string,
 ) error {
 	if !cw.isFilePathValid(ctx, fileData.GetName()) {
 		return fmt.Errorf("invalid file path: %s", fileData.GetName())
 	}
-	// TODO: use actual request
-	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, &v1.GetFileRequest{})
+	fileDownloadResponse, fetchErr := cw.configClient.GetFile(ctx, &v1.GetFileRequest{
+		MessageMeta: &v1.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: logger.GetCorrelationID(ctx),
+			Timestamp:     timestamppb.Now(),
+		},
+		FileMeta: fileData,
+	})
 	if fetchErr != nil {
-		return fmt.Errorf("error getting file data from %s: %w", filesURL, fetchErr)
+		return fmt.Errorf("error getting file data for %s: %w", fileData.GetName(), fetchErr)
 	}
 
 	fetchErr = writeFile(ctx, fileDownloadResponse.GetContents(), fileData.GetName())
@@ -231,6 +256,7 @@ func doesFileRequireUpdate(fileCache CacheContent, fileData *v1.FileMeta) (updat
 			return true
 		}
 
+		// TODO: Use hash
 		return ok && fileOnSystem.GetModifiedTime().AsTime().Before(fileData.GetModifiedTime().AsTime())
 	}
 

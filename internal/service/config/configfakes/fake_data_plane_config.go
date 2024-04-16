@@ -46,12 +46,12 @@ type FakeDataPlaneConfig struct {
 		result1 any
 		result2 error
 	}
-	RollbackStub        func(context.Context, map[string]*v1.FileMeta, string, string) error
+	RollbackStub        func(context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest, string) error
 	rollbackMutex       sync.RWMutex
 	rollbackArgsForCall []struct {
 		arg1 context.Context
 		arg2 map[string]*v1.FileMeta
-		arg3 string
+		arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest
 		arg4 string
 	}
 	rollbackReturns struct {
@@ -76,11 +76,11 @@ type FakeDataPlaneConfig struct {
 	validateReturnsOnCall map[int]struct {
 		result1 error
 	}
-	WriteStub        func(context.Context, string) (map[string]*v1.FileMeta, error)
+	WriteStub        func(context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest) (map[string]*v1.FileMeta, error)
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
 		arg1 context.Context
-		arg2 string
+		arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest
 	}
 	writeReturns struct {
 		result1 map[string]*v1.FileMeta
@@ -280,13 +280,13 @@ func (fake *FakeDataPlaneConfig) ParseConfigReturnsOnCall(i int, result1 any, re
 	}{result1, result2}
 }
 
-func (fake *FakeDataPlaneConfig) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 string, arg4 string) error {
+func (fake *FakeDataPlaneConfig) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest, arg4 string) error {
 	fake.rollbackMutex.Lock()
 	ret, specificReturn := fake.rollbackReturnsOnCall[len(fake.rollbackArgsForCall)]
 	fake.rollbackArgsForCall = append(fake.rollbackArgsForCall, struct {
 		arg1 context.Context
 		arg2 map[string]*v1.FileMeta
-		arg3 string
+		arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest
 		arg4 string
 	}{arg1, arg2, arg3, arg4})
 	stub := fake.RollbackStub
@@ -308,13 +308,13 @@ func (fake *FakeDataPlaneConfig) RollbackCallCount() int {
 	return len(fake.rollbackArgsForCall)
 }
 
-func (fake *FakeDataPlaneConfig) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, string, string) error) {
+func (fake *FakeDataPlaneConfig) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest, string) error) {
 	fake.rollbackMutex.Lock()
 	defer fake.rollbackMutex.Unlock()
 	fake.RollbackStub = stub
 }
 
-func (fake *FakeDataPlaneConfig) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, string, string) {
+func (fake *FakeDataPlaneConfig) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest, string) {
 	fake.rollbackMutex.RLock()
 	defer fake.rollbackMutex.RUnlock()
 	argsForCall := fake.rollbackArgsForCall[i]
@@ -437,12 +437,12 @@ func (fake *FakeDataPlaneConfig) ValidateReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeDataPlaneConfig) Write(arg1 context.Context, arg2 string) (map[string]*v1.FileMeta, error) {
+func (fake *FakeDataPlaneConfig) Write(arg1 context.Context, arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest) (map[string]*v1.FileMeta, error) {
 	fake.writeMutex.Lock()
 	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
 	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
 		arg1 context.Context
-		arg2 string
+		arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest
 	}{arg1, arg2})
 	stub := fake.WriteStub
 	fakeReturns := fake.writeReturns
@@ -463,13 +463,13 @@ func (fake *FakeDataPlaneConfig) WriteCallCount() int {
 	return len(fake.writeArgsForCall)
 }
 
-func (fake *FakeDataPlaneConfig) WriteCalls(stub func(context.Context, string) (map[string]*v1.FileMeta, error)) {
+func (fake *FakeDataPlaneConfig) WriteCalls(stub func(context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest) (map[string]*v1.FileMeta, error)) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = stub
 }
 
-func (fake *FakeDataPlaneConfig) WriteArgsForCall(i int) (context.Context, string) {
+func (fake *FakeDataPlaneConfig) WriteArgsForCall(i int) (context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest) {
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	argsForCall := fake.writeArgsForCall[i]

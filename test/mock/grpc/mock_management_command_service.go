@@ -196,11 +196,11 @@ func (mgs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error
 			slog.Debug("Received data plane response", "data_plane_response", dataPlaneResponse)
 			if err != nil {
 				slog.Error("Failed to receive data plane response", "error", err)
-			} else {
-				mgs.dataPlaneResponsesMutex.Lock()
-				mgs.dataPlaneResponses = append(mgs.dataPlaneResponses, dataPlaneResponse)
-				mgs.dataPlaneResponsesMutex.Unlock()
+				return
 			}
+			mgs.dataPlaneResponsesMutex.Lock()
+			mgs.dataPlaneResponses = append(mgs.dataPlaneResponses, dataPlaneResponse)
+			mgs.dataPlaneResponsesMutex.Unlock()
 		}
 	}()
 

@@ -105,8 +105,10 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 
 // nolint
 func (gc *GrpcClient) subscribe(ctx context.Context) {
-	// subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
-	subscribeClient, _ := gc.commandServiceClient.Subscribe(ctx)
+	subscribeClient, err := gc.commandServiceClient.Subscribe(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "error subscribing: ", err)
+	}
 
 	for {
 		select {
@@ -114,7 +116,24 @@ func (gc *GrpcClient) subscribe(ctx context.Context) {
 			return
 		default:
 			request, err := subscribeClient.Recv()
-			slog.InfoContext(ctx, "Subscribe received: ", "req", request, "err", err)
+			if err != nil {
+				slog.ErrorContext(ctx, "error receiving messages", "err", err)
+			}
+			slog.DebugContext(ctx, "Subscribe received: ", "req", request)
+
+			switch request.GetRequest().(type) {
+			case *v1.ManagementPlaneRequest_ConfigApplyRequest:
+				slog.Info("Received Config Apply Request")
+				subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
+				gc.messagePipe.Process(subCtx, &bus.Message{
+					Topic: bus.InstanceConfigUpdateRequestTopic,
+					Data:  request,
+				})
+			default:
+				slog.Info("Not implemented yet")
+			}
+
+			// subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
 			// err = subscribeClient.Send(&v1.DataPlaneResponse{
 			//	MessageMeta: &v1.MessageMeta{
 			//		MessageId:     "123456789",
@@ -127,9 +146,6 @@ func (gc *GrpcClient) subscribe(ctx context.Context) {
 			//	},
 			// })
 
-			if err != nil {
-				slog.Info("err", err)
-			}
 		}
 	}
 }
@@ -261,6 +277,7 @@ func (gc *GrpcClient) Subscriptions() []string {
 	return []string{
 		bus.InstancesTopic,
 		bus.GrpcConnectedTopic,
+		bus.InstanceConfigUpdateStatusTopic,
 	}
 }
 

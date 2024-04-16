@@ -167,9 +167,10 @@ func TestGrpcClient_Info(t *testing.T) {
 func TestGrpcClient_Subscriptions(t *testing.T) {
 	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
-	assert.Len(t, subscriptions, 2)
+	assert.Len(t, subscriptions, 3)
 	assert.Equal(t, bus.InstancesTopic, subscriptions[0])
 	assert.Equal(t, bus.GrpcConnectedTopic, subscriptions[1])
+	assert.Equal(t, bus.InstanceConfigUpdateStatusTopic, subscriptions[2])
 }
 
 func TestGrpcClient_Process_InstancesTopic(t *testing.T) {

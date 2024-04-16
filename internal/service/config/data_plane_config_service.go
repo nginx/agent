@@ -8,6 +8,8 @@ package config
 import (
 	"context"
 
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+
 	writer "github.com/nginx/agent/v3/internal/datasource/config"
 )
 
@@ -17,8 +19,10 @@ type DataPlaneConfig interface {
 	ParseConfig(ctx context.Context) (any, error)
 	Validate(ctx context.Context) error
 	Apply(ctx context.Context) error
-	Write(ctx context.Context, filesURL string) (skippedFiles writer.CacheContent, err error)
+	Write(ctx context.Context, request *v1.ManagementPlaneRequest_ConfigApplyRequest) (
+		skippedFiles writer.CacheContent, err error)
 	Complete(ctx context.Context) error
 	SetConfigWriter(configWriter writer.ConfigWriterInterface)
-	Rollback(ctx context.Context, skippedFiles writer.CacheContent, filesURL, instanceID string) error
+	Rollback(ctx context.Context, skippedFiles writer.CacheContent,
+		request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string) error
 }

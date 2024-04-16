@@ -81,7 +81,7 @@ func TestDataPlaneServer_Process(t *testing.T) {
 				Status:        instances.Status_SUCCESS,
 				Message:       "config updated",
 			},
-			topic: bus.InstanceConfigUpdateTopic,
+			topic: bus.InstanceConfigUpdateStatusTopic,
 		},
 	}
 	for _, test := range tests {

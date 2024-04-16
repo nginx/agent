@@ -105,7 +105,7 @@ func (dps *DataPlaneServer) Process(_ context.Context, msg *bus.Message) {
 			dps.instances = newInstances
 			dps.instancesMutex.Unlock()
 		}
-	case msg.Topic == bus.InstanceConfigUpdateTopic:
+	case msg.Topic == bus.InstanceConfigUpdateStatusTopic:
 		if configStatus, ok := msg.Data.(*instances.ConfigurationStatus); ok {
 			dps.updateEvents(configStatus)
 		}
@@ -128,7 +128,7 @@ func (dps *DataPlaneServer) updateEvents(configStatus *instances.ConfigurationSt
 func (*DataPlaneServer) Subscriptions() []string {
 	return []string{
 		bus.InstancesTopic,
-		bus.InstanceConfigUpdateTopic,
+		bus.InstanceConfigUpdateStatusTopic,
 	}
 }
 

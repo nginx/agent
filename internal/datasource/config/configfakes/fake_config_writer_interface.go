@@ -22,12 +22,12 @@ type FakeConfigWriterInterface struct {
 	completeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	RollbackStub        func(context.Context, map[string]*v1.FileMeta, string, string) error
+	RollbackStub        func(context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest, string) error
 	rollbackMutex       sync.RWMutex
 	rollbackArgsForCall []struct {
 		arg1 context.Context
 		arg2 map[string]*v1.FileMeta
-		arg3 string
+		arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest
 		arg4 string
 	}
 	rollbackReturns struct {
@@ -41,11 +41,11 @@ type FakeConfigWriterInterface struct {
 	setConfigClientArgsForCall []struct {
 		arg1 client.ConfigClient
 	}
-	WriteStub        func(context.Context, string, string) (map[string]*v1.FileMeta, error)
+	WriteStub        func(context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest, string) (map[string]*v1.FileMeta, error)
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
 		arg1 context.Context
-		arg2 string
+		arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest
 		arg3 string
 	}
 	writeReturns struct {
@@ -121,13 +121,13 @@ func (fake *FakeConfigWriterInterface) CompleteReturnsOnCall(i int, result1 erro
 	}{result1}
 }
 
-func (fake *FakeConfigWriterInterface) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 string, arg4 string) error {
+func (fake *FakeConfigWriterInterface) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest, arg4 string) error {
 	fake.rollbackMutex.Lock()
 	ret, specificReturn := fake.rollbackReturnsOnCall[len(fake.rollbackArgsForCall)]
 	fake.rollbackArgsForCall = append(fake.rollbackArgsForCall, struct {
 		arg1 context.Context
 		arg2 map[string]*v1.FileMeta
-		arg3 string
+		arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest
 		arg4 string
 	}{arg1, arg2, arg3, arg4})
 	stub := fake.RollbackStub
@@ -149,13 +149,13 @@ func (fake *FakeConfigWriterInterface) RollbackCallCount() int {
 	return len(fake.rollbackArgsForCall)
 }
 
-func (fake *FakeConfigWriterInterface) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, string, string) error) {
+func (fake *FakeConfigWriterInterface) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest, string) error) {
 	fake.rollbackMutex.Lock()
 	defer fake.rollbackMutex.Unlock()
 	fake.RollbackStub = stub
 }
 
-func (fake *FakeConfigWriterInterface) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, string, string) {
+func (fake *FakeConfigWriterInterface) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest, string) {
 	fake.rollbackMutex.RLock()
 	defer fake.rollbackMutex.RUnlock()
 	argsForCall := fake.rollbackArgsForCall[i]
@@ -217,12 +217,12 @@ func (fake *FakeConfigWriterInterface) SetConfigClientArgsForCall(i int) client.
 	return argsForCall.arg1
 }
 
-func (fake *FakeConfigWriterInterface) Write(arg1 context.Context, arg2 string, arg3 string) (map[string]*v1.FileMeta, error) {
+func (fake *FakeConfigWriterInterface) Write(arg1 context.Context, arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest, arg3 string) (map[string]*v1.FileMeta, error) {
 	fake.writeMutex.Lock()
 	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
 	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
 		arg1 context.Context
-		arg2 string
+		arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest
 		arg3 string
 	}{arg1, arg2, arg3})
 	stub := fake.WriteStub
@@ -244,13 +244,13 @@ func (fake *FakeConfigWriterInterface) WriteCallCount() int {
 	return len(fake.writeArgsForCall)
 }
 
-func (fake *FakeConfigWriterInterface) WriteCalls(stub func(context.Context, string, string) (map[string]*v1.FileMeta, error)) {
+func (fake *FakeConfigWriterInterface) WriteCalls(stub func(context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest, string) (map[string]*v1.FileMeta, error)) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = stub
 }
 
-func (fake *FakeConfigWriterInterface) WriteArgsForCall(i int) (context.Context, string, string) {
+func (fake *FakeConfigWriterInterface) WriteArgsForCall(i int) (context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest, string) {
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	argsForCall := fake.writeArgsForCall[i]

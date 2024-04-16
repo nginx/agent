@@ -29,12 +29,13 @@ type ConfigServiceInterface interface {
 	SetConfigContext(instanceConfigContext any)
 	UpdateInstanceConfiguration(
 		ctx context.Context,
-		location string,
+		request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 	) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus)
 	ParseInstanceConfiguration(
 		ctx context.Context,
 	) (instanceConfigContext any, err error)
-	Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL, instanceID string) error
+	Rollback(ctx context.Context, skippedFiles datasource.CacheContent,
+		request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string) error
 }
 
 type ConfigService struct {
@@ -68,17 +69,19 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 	cs.configContext = instanceConfigContext
 }
 
-func (cs *ConfigService) Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL,
+func (cs *ConfigService) Rollback(ctx context.Context, skippedFiles datasource.CacheContent,
+	request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 	instanceID string,
 ) error {
-	return cs.configService.Rollback(ctx, skippedFiles, filesURL, instanceID)
+	return cs.configService.Rollback(ctx, skippedFiles, request, instanceID)
 }
 
-func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, location string,
+func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context,
+	request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 ) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus) {
 	correlationID := logger.GetCorrelationID(ctx)
 
-	skippedFiles, err := cs.configService.Write(ctx, location)
+	skippedFiles, err := cs.configService.Write(ctx, request)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error writing config", "error", err)
 		return skippedFiles, &instances.ConfigurationStatus{

@@ -29,8 +29,8 @@ const (
 var (
 	sleepDuration   = flag.Duration("sleepDuration", defaultSleepDuration, "duration between changes in health")
 	configDirectory = flag.String("configDirectory", "", "set the directory where the config files are stored")
-	grpcAddress     = flag.String("grpcAddress", "127.0.0.1:0", "set the gRPC address to run the server on")
-	apiAddress      = flag.String("apiAddress", "127.0.0.1:0", "set the API address to run the server on")
+	grpcAddress     = flag.String("grpcAddress", "127.0.0.1:60980", "set the gRPC address to run the server on")
+	apiAddress      = flag.String("apiAddress", "127.0.0.1:60979", "set the API address to run the server on")
 	logLevel        = flag.String("logLevel", "INFO", "set the log level")
 )
 

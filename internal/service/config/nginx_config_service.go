@@ -64,7 +64,6 @@ func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Co
 ) *Nginx {
 	fileCache := writer.NewFileCache(instance.GetInstanceMeta().GetInstanceId())
 	cache, err := fileCache.ReadFileCache(ctx)
-	// TODO: Will in future work check cache and if its nil upload file
 	if err != nil {
 		err = fileCache.UpdateFileCache(ctx, cache)
 		if err != nil {
@@ -92,10 +91,11 @@ func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Co
 	}
 }
 
-func (n *Nginx) Write(ctx context.Context, filesURL string) (skippedFiles writer.CacheContent,
+func (n *Nginx) Write(ctx context.Context, request *v1.ManagementPlaneRequest_ConfigApplyRequest) (
+	skippedFiles writer.CacheContent,
 	err error,
 ) {
-	return n.configWriter.Write(ctx, filesURL, n.instance.GetInstanceMeta().GetInstanceId())
+	return n.configWriter.Write(ctx, request, n.instance.GetInstanceMeta().GetInstanceId())
 }
 
 func (n *Nginx) Complete(ctx context.Context) error {
@@ -103,9 +103,9 @@ func (n *Nginx) Complete(ctx context.Context) error {
 }
 
 func (n *Nginx) Rollback(ctx context.Context, skippedFiles writer.CacheContent,
-	filesURL, instanceID string,
+	request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string,
 ) error {
-	err := n.configWriter.Rollback(ctx, skippedFiles, filesURL, instanceID)
+	err := n.configWriter.Rollback(ctx, skippedFiles, request, instanceID)
 	return err
 }
 
