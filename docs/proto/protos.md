@@ -4,13 +4,18 @@
 ## Table of Contents
 
 - [mpi/v1/command.proto](#mpi_v1_command-proto)
+    - [APIActionRequest](#mpi-v1-APIActionRequest)
     - [AgentConfig](#mpi-v1-AgentConfig)
     - [CommandServer](#mpi-v1-CommandServer)
+    - [CommandStatusRequest](#mpi-v1-CommandStatusRequest)
+    - [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest)
+    - [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest)
     - [ContainerInfo](#mpi-v1-ContainerInfo)
     - [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest)
     - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
     - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
     - [FileServer](#mpi-v1-FileServer)
+    - [HealthRequest](#mpi-v1-HealthRequest)
     - [HostInfo](#mpi-v1-HostInfo)
     - [Instance](#mpi-v1-Instance)
     - [InstanceAction](#mpi-v1-InstanceAction)
@@ -22,6 +27,7 @@
     - [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig)
     - [ReleaseInfo](#mpi-v1-ReleaseInfo)
     - [Resource](#mpi-v1-Resource)
+    - [StatusRequest](#mpi-v1-StatusRequest)
     - [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest)
     - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
     - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
@@ -68,6 +74,16 @@ These proto definitions follow https://protobuf.dev/programming-guides/style/
 and recommendations outlined in https://static.sched.com/hosted_files/kccncna17/ad/2017%20CloudNativeCon%20-%20Mod%20gRPC%20Services.pdf
 
 
+<a name="mpi-v1-APIActionRequest"></a>
+
+### APIActionRequest
+Perform an associated API action on an instance
+
+
+
+
+
+
 <a name="mpi-v1-AgentConfig"></a>
 
 ### AgentConfig
@@ -98,6 +114,42 @@ The command settings, associated with messaging from an external source
 
 
 
+<a name="mpi-v1-CommandStatusRequest"></a>
+
+### CommandStatusRequest
+Request an update on a particular command
+
+
+
+
+
+
+<a name="mpi-v1-ConfigApplyRequest"></a>
+
+### ConfigApplyRequest
+Additional information associated with a ConfigApplyRequest
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | the config version |
+| overview | [FileOverview](#mpi-v1-FileOverview) | optional | an optional set of files related to the request |
+
+
+
+
+
+
+<a name="mpi-v1-ConfigUploadRequest"></a>
+
+### ConfigUploadRequest
+Additional information associated with a ConfigUploadRequest
+
+
+
+
+
+
 <a name="mpi-v1-ContainerInfo"></a>
 
 ### ContainerInfo
@@ -116,7 +168,7 @@ Container information
 <a name="mpi-v1-CreateConnectionRequest"></a>
 
 ### CreateConnectionRequest
-The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
+The connection request is an initial handshake to establish a connection, sending NGINX Agent instance information
 
 
 | Field | Type | Label | Description |
@@ -151,6 +203,12 @@ A response to a CreateConnectionRequest
 Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| command_response | [CommandResponse](#mpi-v1-CommandResponse) |  | The command response with the associated request |
+
+
 
 
 
@@ -159,6 +217,16 @@ Reports the status of an associated command. This may be in response to a Manage
 
 ### FileServer
 The file settings associated with file server for configurations
+
+
+
+
+
+
+<a name="mpi-v1-HealthRequest"></a>
+
+### HealthRequest
+Additional information associated with a HealthRequest
 
 
 
@@ -249,6 +317,17 @@ Metainformation relating to the reported instance
 A Management Plane request for information, triggers an associated rpc on the DataPlane
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| status_request | [StatusRequest](#mpi-v1-StatusRequest) |  | triggers a DataPlaneStatus rpc |
+| health_request | [HealthRequest](#mpi-v1-HealthRequest) |  | triggers a DataPlaneHealth rpc |
+| config_apply_request | [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest) |  | triggers a rpc GetFile(FileRequest) for overview list, if overview is missing, triggers a rpc GetOverview(ConfigVersion) first |
+| config_upload_request | [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc UpdateFile(File) for that instances |
+| action_request | [APIActionRequest](#mpi-v1-APIActionRequest) |  | triggers a DataPlaneResponse with a command_response for a particular action |
+| command_status_request | [CommandStatusRequest](#mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneResponse with a command_response for a particular correlation_id |
+
+
 
 
 
@@ -334,6 +413,16 @@ A representation of instances and runtime resource information
 
 
 
+<a name="mpi-v1-StatusRequest"></a>
+
+### StatusRequest
+Additional information associated with a StatusRequest
+
+
+
+
+
+
 <a name="mpi-v1-UpdateDataPlaneHealthRequest"></a>
 
 ### UpdateDataPlaneHealthRequest
@@ -411,7 +500,7 @@ The ManagementPlaneRequest sent in the Subscribe stream triggers one or more cli
 Messages provided by the Management Plane must be a FIFO ordered queue. Messages in the queue must have a monotonically-increasing integer index. 
 The indexes do not need to be sequential. The index must be a 64-bit signed integer.
 The index must not reset for the entire lifetime of a unique Agent (i.e. the index does not reset to 0 only because of a temporary disconnection or new session). 
-Messages must not be removed from the Mangement Plane queue until Ack’d by the Agent. 
+Messages must not be removed from the Management Plane queue until Ack’d by the Agent. 
 Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as they may need to be retried.
 
 | Method Name | Request Type | Response Type | Description |

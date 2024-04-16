@@ -16,8 +16,6 @@ import (
 	"os"
 	"sync"
 
-	"google.golang.org/protobuf/encoding/protojson"
-
 	"github.com/gin-gonic/gin"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -217,7 +215,7 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 		if err != nil {
 			slog.Error("error reading request body", "err", err)
 			c.JSON(http.StatusBadRequest, nil)
-			
+
 			return
 		}
 

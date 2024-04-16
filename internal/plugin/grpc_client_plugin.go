@@ -21,7 +21,6 @@ import (
 	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/service"
-	uuidLibrary "github.com/nginx/agent/v3/internal/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/timestamppb"
