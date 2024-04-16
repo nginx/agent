@@ -96,7 +96,7 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, getCacheErr)
 
 			fakeConfigClient := &clientfakes.FakeConfigClient{}
-			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
+			fakeConfigClient.GetOverviewReturns(test.metaDataReturn, nil)
 			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
 
 			fileCache := NewFileCache(instanceID.String())
