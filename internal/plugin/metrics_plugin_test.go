@@ -40,7 +40,7 @@ func TestMetrics_Init(t *testing.T) {
 	metrics, err := NewMetrics(types.GetAgentConfig(), WithDataSource(scraper))
 	require.NoError(t, err)
 
-	err = messagePipe.Register(100, []bus.Plugin{metrics})
+	err = messagePipe.Register(ctx, 100, []bus.Plugin{metrics})
 	require.NoError(t, err)
 	go messagePipe.Run(ctx)
 

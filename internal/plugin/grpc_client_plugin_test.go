@@ -145,7 +145,7 @@ func TestGrpcClient_Init(t *testing.T) {
 			assert.NotNil(tt, client)
 
 			messagePipe := bus.NewMessagePipe(100)
-			err := messagePipe.Register(100, []bus.Plugin{client})
+			err := messagePipe.Register(ctx, 100, []bus.Plugin{client})
 			require.NoError(tt, err)
 
 			err = client.Init(ctx, messagePipe)
@@ -182,7 +182,6 @@ func TestGrpcClient_Process_InstancesTopic(t *testing.T) {
 	fakeCommandServiceClient.UpdateDataPlaneStatusReturns(&v1.UpdateDataPlaneStatusResponse{}, nil)
 
 	client.commandServiceClient = fakeCommandServiceClient
-	client.isConnected.Store(true)
 
 	mockMessage := &bus.Message{
 		Topic: bus.InstancesTopic,
@@ -194,7 +193,9 @@ func TestGrpcClient_Process_InstancesTopic(t *testing.T) {
 }
 
 func TestGrpcClient_Close(t *testing.T) {
+	ctx := context.Background()
 	serverMockLock := sync.Mutex{}
+
 	tests := []struct {
 		name         string
 		agentConfig  *config.Config
@@ -346,18 +347,16 @@ func TestGrpcClient_Close(t *testing.T) {
 			client := NewGrpcClient(test.agentConfig)
 			assert.NotNil(tt, client)
 
-			messagePipe := bus.NewMessagePipe(100)
-			err = messagePipe.Register(100, []bus.Plugin{client})
-			require.NoError(tt, err)
+			messagePipe := bus.NewFakeMessagePipe()
 
-			err = client.Init(context.Background(), messagePipe)
+			err = client.Init(ctx, messagePipe)
 			if err == nil {
 				require.NoError(tt, err)
 			} else {
 				assert.Contains(tt, err.Error(), test.errorMessage)
 			}
 
-			err = client.Close(context.Background())
+			err = client.Close(ctx)
 			require.NoError(tt, err)
 
 			defer server.Stop()

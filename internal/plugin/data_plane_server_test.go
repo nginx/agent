@@ -32,7 +32,7 @@ func TestDataPlaneServer_Init(t *testing.T) {
 	dataPlaneServer := NewDataPlaneServer(agentConfig, slog.Default())
 
 	messagePipe := bus.NewMessagePipe(100)
-	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
+	err := messagePipe.Register(ctx, 100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
 	go messagePipe.Run(ctx)
 
@@ -52,7 +52,7 @@ func TestDataPlaneServer_Process(t *testing.T) {
 
 	messagePipe := bus.NewMessagePipe(
 		100)
-	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
+	err := messagePipe.Register(ctx, 100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
 	go messagePipe.Run(ctx)
 
@@ -125,7 +125,7 @@ func TestDataPlaneServer_GetInstances(t *testing.T) {
 	dataPlaneServer.instances = []*v1.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(100)
-	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
+	err := messagePipe.Register(ctx, 100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
 	go messagePipe.Run(ctx)
 
@@ -176,7 +176,7 @@ func TestDataPlaneServer_UpdateInstanceConfiguration(t *testing.T) {
 	dataPlaneServer.instances = []*v1.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(100)
-	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
+	err := messagePipe.Register(ctx, 100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
 	go messagePipe.Run(ctx)
 
@@ -316,7 +316,7 @@ func TestDataPlaneServer_GetInstanceConfigurationStatus(t *testing.T) {
 	dataPlaneServer.instances = []*v1.Instance{instance}
 
 	messagePipe := bus.NewMessagePipe(100)
-	err := messagePipe.Register(100, []bus.Plugin{dataPlaneServer})
+	err := messagePipe.Register(ctx, 100, []bus.Plugin{dataPlaneServer})
 	require.NoError(t, err)
 
 	go messagePipe.Run(ctx)

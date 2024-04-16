@@ -31,7 +31,7 @@ type (
 	}
 
 	MessagePipeInterface interface {
-		Register(size int, plugins []Plugin) error
+		Register(ctx context.Context, size int, plugins []Plugin) error
 		DeRegister(ctx context.Context, plugins []string) error
 		Process(ctx context.Context, messages ...*Message)
 		Run(ctx context.Context)
@@ -62,12 +62,14 @@ func NewMessagePipe(size int) *MessagePipe {
 	}
 }
 
-func (p *MessagePipe) Register(size int, plugins []Plugin) error {
+func (p *MessagePipe) Register(ctx context.Context, size int, plugins []Plugin) error {
 	p.pluginsMutex.Lock()
 	defer p.pluginsMutex.Unlock()
 
 	p.plugins = append(p.plugins, plugins...)
 	p.bus = messagebus.New(size)
+
+	p.initPlugins(ctx)
 
 	pluginsRegistered := []string{}
 
@@ -81,7 +83,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin) error {
 		pluginsRegistered = append(pluginsRegistered, plugin.Info().Name)
 	}
 
-	slog.Info("Finished registering plugins", "plugins", pluginsRegistered)
+	slog.InfoContext(ctx, "Finished registering plugins", "plugins", pluginsRegistered)
 
 	return nil
 }
@@ -111,10 +113,6 @@ func (p *MessagePipe) Process(ctx context.Context, messages ...*Message) {
 }
 
 func (p *MessagePipe) Run(ctx context.Context) {
-	p.pluginsMutex.Lock()
-	p.initPlugins(ctx)
-	p.pluginsMutex.Unlock()
-
 	for {
 		select {
 		case <-ctx.Done():

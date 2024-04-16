@@ -150,7 +150,7 @@ func TestConfig_Process(t *testing.T) {
 			messagePipe := bus.NewFakeMessagePipe()
 			configPlugin := NewConfig(&config.Config{})
 
-			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
+			err := messagePipe.Register(ctx, 10, []bus.Plugin{configPlugin})
 			require.NoError(tt, err)
 			messagePipe.Run(ctx)
 
@@ -276,7 +276,7 @@ func TestConfig_Update(t *testing.T) {
 			messagePipe := bus.NewFakeMessagePipe()
 			configPlugin := NewConfig(&agentConfig)
 
-			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
+			err := messagePipe.Register(ctx, 10, []bus.Plugin{configPlugin})
 			require.NoError(tt, err)
 			messagePipe.Run(ctx)
 

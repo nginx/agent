@@ -11,7 +11,6 @@ import (
 	"log/slog"
 	"net"
 	"sync"
-	"sync/atomic"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -31,12 +30,9 @@ type (
 		messagePipe          bus.MessagePipeInterface
 		config               *config.Config
 		conn                 *grpc.ClientConn
-		isConnected          *atomic.Bool
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
-		instances            []*v1.Instance
 		connectionMutex      sync.Mutex
-		instancesMutex       sync.Mutex
 	}
 )
 
@@ -47,15 +43,9 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 			return nil
 		}
 
-		isConnected := &atomic.Bool{}
-		isConnected.Store(false)
-
 		return &GrpcClient{
 			config:          agentConfig,
-			isConnected:     isConnected,
-			instances:       []*v1.Instance{},
 			connectionMutex: sync.Mutex{},
-			instancesMutex:  sync.Mutex{},
 		}
 	}
 
@@ -171,10 +161,6 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.InstancesTopic:
 		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
-			gc.instancesMutex.Lock()
-			gc.instances = newInstances
-			gc.instancesMutex.Unlock()
-
 			err := gc.sendDataPlaneStatusUpdate(ctx, newInstances)
 			if err != nil {
 				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
@@ -182,15 +168,6 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 		}
 	case bus.GrpcConnectedTopic:
 		slog.DebugContext(ctx, "Agent connected")
-		gc.isConnected.Store(true)
-
-		gc.instancesMutex.Lock()
-		err := gc.sendDataPlaneStatusUpdate(ctx, gc.instances)
-		gc.instancesMutex.Unlock()
-
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
-		}
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
@@ -207,11 +184,6 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	ctx context.Context,
 	instances []*v1.Instance,
 ) error {
-	if !gc.isConnected.Load() {
-		slog.DebugContext(ctx, "gRPC client not connected yet. Skipping sending data plane status update")
-		return nil
-	}
-
 	correlationID := logger.GetCorrelationID(ctx)
 
 	request := &v1.UpdateDataPlaneStatusRequest{

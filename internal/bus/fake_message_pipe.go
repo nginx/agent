@@ -22,7 +22,7 @@ func NewFakeMessagePipe() *FakeMessagePipe {
 	return &FakeMessagePipe{}
 }
 
-func (p *FakeMessagePipe) Register(size int, plugins []Plugin) error {
+func (p *FakeMessagePipe) Register(ctx context.Context, size int, plugins []Plugin) error {
 	p.plugins = append(p.plugins, plugins...)
 	return nil
 }

@@ -47,7 +47,7 @@ func TestInstance_Process(t *testing.T) {
 	instanceMonitor.instanceService = fakeInstanceService
 
 	messagePipe := bus.NewFakeMessagePipe()
-	err := messagePipe.Register(100, []bus.Plugin{instanceMonitor})
+	err := messagePipe.Register(ctx, 100, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
 
 	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{{Pid: 123, Name: "nginx"}}}
@@ -66,7 +66,7 @@ func TestInstance_Process_Error_Expected(t *testing.T) {
 	instanceMonitor := NewInstance()
 
 	messagePipe := bus.NewFakeMessagePipe()
-	err := messagePipe.Register(2, []bus.Plugin{instanceMonitor})
+	err := messagePipe.Register(ctx, 2, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
 
 	messagePipe.Process(ctx, &bus.Message{Topic: bus.OsProcessesTopic, Data: nil})
@@ -86,7 +86,7 @@ func TestInstance_Process_Empty_Instances(t *testing.T) {
 	instanceMonitor := NewInstance()
 
 	messagePipe := bus.NewFakeMessagePipe()
-	err := messagePipe.Register(2, []bus.Plugin{instanceMonitor})
+	err := messagePipe.Register(ctx, 2, []bus.Plugin{instanceMonitor})
 	require.NoError(t, err)
 
 	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{}}

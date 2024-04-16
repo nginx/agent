@@ -29,7 +29,7 @@ func TestProcessMonitor_Init(t *testing.T) {
 	}
 
 	messagePipe := bus.NewMessagePipe(100)
-	err := messagePipe.Register(100, []bus.Plugin{processMonitor})
+	err := messagePipe.Register(ctx, 100, []bus.Plugin{processMonitor})
 	require.NoError(t, err)
 	go messagePipe.Run(ctx)
 
