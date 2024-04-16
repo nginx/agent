@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-// Package files implements utility routines for gathering information about files nad their contents.
+// Package files implements utility routines for gathering information about files and their contents.
 package files
 
 import (
@@ -29,7 +29,7 @@ func GenerateConfigVersion(fileSlice []*v1.File) string {
 	var hashes string
 
 	slices.SortFunc(fileSlice, func(a, b *v1.File) int {
-		return cmp.Compare[string](a.GetFileMeta().GetName(), b.GetFileMeta().GetName())
+		return cmp.Compare(a.GetFileMeta().GetName(), b.GetFileMeta().GetName())
 	})
 
 	for _, file := range fileSlice {
