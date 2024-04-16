@@ -15,6 +15,7 @@ import (
 	re "regexp"
 	"strings"
 
+	"github.com/nginx/agent/v3/files"
 	"github.com/nginx/agent/v3/internal/config"
 	writer "github.com/nginx/agent/v3/internal/datasource/config"
 
@@ -22,7 +23,6 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
 
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/datasource/nginx"
 )
@@ -317,7 +317,7 @@ func getAccessLog(file, format string, formatMap map[string]string) *model.Acces
 	info, err := os.Stat(file)
 	if err == nil {
 		accessLog.Readable = true
-		accessLog.Permissions = host.GetPermissions(info.Mode())
+		accessLog.Permissions = files.GetPermissions(info.Mode())
 	}
 
 	accessLog = updateLogFormat(format, formatMap, accessLog)
@@ -347,7 +347,7 @@ func getErrorLog(file, level string) *model.ErrorLog {
 	}
 	info, err := os.Stat(file)
 	if err == nil {
-		errorLog.Permissions = host.GetPermissions(info.Mode())
+		errorLog.Permissions = files.GetPermissions(info.Mode())
 		errorLog.Readable = true
 	}
 

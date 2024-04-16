@@ -7,8 +7,6 @@ package grpc
 
 import (
 	"context"
-	"crypto/sha256"
-	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -16,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/uuid"
+	filesHelper "github.com/nginx/agent/v3/files"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -41,7 +39,7 @@ func NewFileService(configDirectory string) (*FileService, error) {
 	}
 
 	for versionDirectory, versionedFiles := range mapOfVersionedFiles {
-		configVersion := generateConfigVersion(versionedFiles)
+		configVersion := filesHelper.GenerateConfigVersion(versionedFiles)
 		slog.Info(
 			"Found versioned files",
 			"version_directory_name", versionDirectory,
@@ -209,36 +207,6 @@ func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, erro
 	return files, err
 }
 
-func generateConfigVersion(files []*v1.File) string {
-	var hashes string
-
-	for _, file := range files {
-		hashes += file.GetFileMeta().GetHash()
-	}
-
-	return uuid.Generate("%s", hashes)
-}
-
-func getFileHash(filePath string) (string, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer func(f *os.File) {
-		closeErr := f.Close()
-		if closeErr != nil {
-			slog.Error("Error closing file", "error", closeErr)
-		}
-	}(f)
-
-	h := sha256.New()
-	if _, copyErr := io.Copy(h, f); copyErr != nil {
-		return "", copyErr
-	}
-
-	return string(h.Sum(nil)), nil
-}
-
 func performFileAction(fileAction v1.File_FileAction, fileContents []byte, fullFilePath, filePermissions string) error {
 	switch fileAction {
 	case v1.File_FILE_ACTION_ADD, v1.File_FILE_ACTION_UPDATE:
@@ -283,7 +251,7 @@ func getFileMode(mode string) os.FileMode {
 }
 
 func createFile(fullPath, filePath string) (*v1.File, error) {
-	hash, err := getFileHash(fullPath)
+	hash, err := filesHelper.GenerateFileHash(fullPath)
 	if err != nil {
 		return nil, err
 	}

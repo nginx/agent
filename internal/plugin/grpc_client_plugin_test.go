@@ -20,6 +20,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/stretchr/testify/assert"
@@ -141,7 +142,22 @@ func TestGrpcClient_Init(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			ctx := context.Background()
 			test.agentConfig.Command.Server.Host = test.server
+
+			resource := &v1.Resource{
+				Id:        "123",
+				Instances: []*v1.Instance{},
+				Info: &v1.Resource_ContainerInfo{
+					ContainerInfo: &v1.ContainerInfo{
+						Id: "f43f5eg54g54g54",
+					},
+				},
+			}
+
+			mockReourceService := &servicefakes.FakeResourceServiceInterface{}
+			mockReourceService.GetResourceReturns(resource)
+
 			client := NewGrpcClient(test.agentConfig)
+			client.resourceService = mockReourceService
 			assert.NotNil(tt, client)
 
 			messagePipe := bus.NewMessagePipe(100)
