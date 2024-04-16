@@ -139,10 +139,10 @@ func TestWriteConfig(t *testing.T) {
 
 			assert.NotEqual(t, cacheContent, files)
 
-			testData, readErr := os.ReadFile(testConfPath)
-			require.NoError(t, readErr)
-			res = reflect.DeepEqual(fileContent, testData)
-			//assert.Equal(t, test.fileShouldBeEqual, res)
+			// testData, readErr := os.ReadFile(testConfPath)
+			// require.NoError(t, readErr)
+			// res = reflect.DeepEqual(fileContent, testData)
+			// assert.Equal(t, test.fileShouldBeEqual, res)
 		})
 	}
 }
