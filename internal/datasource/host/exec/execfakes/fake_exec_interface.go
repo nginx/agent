@@ -6,6 +6,7 @@ import (
 	"context"
 	"sync"
 
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
 
@@ -23,6 +24,31 @@ type FakeExecInterface struct {
 		result1 string
 		result2 error
 	}
+	HostIDStub        func(context.Context) (string, error)
+	hostIDMutex       sync.RWMutex
+	hostIDArgsForCall []struct {
+		arg1 context.Context
+	}
+	hostIDReturns struct {
+		result1 string
+		result2 error
+	}
+	hostIDReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
+	HostnameStub        func() (string, error)
+	hostnameMutex       sync.RWMutex
+	hostnameArgsForCall []struct {
+	}
+	hostnameReturns struct {
+		result1 string
+		result2 error
+	}
+	hostnameReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	KillProcessStub        func(int32) error
 	killProcessMutex       sync.RWMutex
 	killProcessArgsForCall []struct {
@@ -33,6 +59,17 @@ type FakeExecInterface struct {
 	}
 	killProcessReturnsOnCall map[int]struct {
 		result1 error
+	}
+	ReleaseInfoStub        func(context.Context) *v1.ReleaseInfo
+	releaseInfoMutex       sync.RWMutex
+	releaseInfoArgsForCall []struct {
+		arg1 context.Context
+	}
+	releaseInfoReturns struct {
+		result1 *v1.ReleaseInfo
+	}
+	releaseInfoReturnsOnCall map[int]struct {
+		result1 *v1.ReleaseInfo
 	}
 	RunCmdStub        func(context.Context, string, ...string) (*bytes.Buffer, error)
 	runCmdMutex       sync.RWMutex
@@ -117,6 +154,126 @@ func (fake *FakeExecInterface) FindExecutableReturnsOnCall(i int, result1 string
 	}{result1, result2}
 }
 
+func (fake *FakeExecInterface) HostID(arg1 context.Context) (string, error) {
+	fake.hostIDMutex.Lock()
+	ret, specificReturn := fake.hostIDReturnsOnCall[len(fake.hostIDArgsForCall)]
+	fake.hostIDArgsForCall = append(fake.hostIDArgsForCall, struct {
+		arg1 context.Context
+	}{arg1})
+	stub := fake.HostIDStub
+	fakeReturns := fake.hostIDReturns
+	fake.recordInvocation("HostID", []interface{}{arg1})
+	fake.hostIDMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeExecInterface) HostIDCallCount() int {
+	fake.hostIDMutex.RLock()
+	defer fake.hostIDMutex.RUnlock()
+	return len(fake.hostIDArgsForCall)
+}
+
+func (fake *FakeExecInterface) HostIDCalls(stub func(context.Context) (string, error)) {
+	fake.hostIDMutex.Lock()
+	defer fake.hostIDMutex.Unlock()
+	fake.HostIDStub = stub
+}
+
+func (fake *FakeExecInterface) HostIDArgsForCall(i int) context.Context {
+	fake.hostIDMutex.RLock()
+	defer fake.hostIDMutex.RUnlock()
+	argsForCall := fake.hostIDArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeExecInterface) HostIDReturns(result1 string, result2 error) {
+	fake.hostIDMutex.Lock()
+	defer fake.hostIDMutex.Unlock()
+	fake.HostIDStub = nil
+	fake.hostIDReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeExecInterface) HostIDReturnsOnCall(i int, result1 string, result2 error) {
+	fake.hostIDMutex.Lock()
+	defer fake.hostIDMutex.Unlock()
+	fake.HostIDStub = nil
+	if fake.hostIDReturnsOnCall == nil {
+		fake.hostIDReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.hostIDReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeExecInterface) Hostname() (string, error) {
+	fake.hostnameMutex.Lock()
+	ret, specificReturn := fake.hostnameReturnsOnCall[len(fake.hostnameArgsForCall)]
+	fake.hostnameArgsForCall = append(fake.hostnameArgsForCall, struct {
+	}{})
+	stub := fake.HostnameStub
+	fakeReturns := fake.hostnameReturns
+	fake.recordInvocation("Hostname", []interface{}{})
+	fake.hostnameMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeExecInterface) HostnameCallCount() int {
+	fake.hostnameMutex.RLock()
+	defer fake.hostnameMutex.RUnlock()
+	return len(fake.hostnameArgsForCall)
+}
+
+func (fake *FakeExecInterface) HostnameCalls(stub func() (string, error)) {
+	fake.hostnameMutex.Lock()
+	defer fake.hostnameMutex.Unlock()
+	fake.HostnameStub = stub
+}
+
+func (fake *FakeExecInterface) HostnameReturns(result1 string, result2 error) {
+	fake.hostnameMutex.Lock()
+	defer fake.hostnameMutex.Unlock()
+	fake.HostnameStub = nil
+	fake.hostnameReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeExecInterface) HostnameReturnsOnCall(i int, result1 string, result2 error) {
+	fake.hostnameMutex.Lock()
+	defer fake.hostnameMutex.Unlock()
+	fake.HostnameStub = nil
+	if fake.hostnameReturnsOnCall == nil {
+		fake.hostnameReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.hostnameReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeExecInterface) KillProcess(arg1 int32) error {
 	fake.killProcessMutex.Lock()
 	ret, specificReturn := fake.killProcessReturnsOnCall[len(fake.killProcessArgsForCall)]
@@ -175,6 +332,67 @@ func (fake *FakeExecInterface) KillProcessReturnsOnCall(i int, result1 error) {
 	}
 	fake.killProcessReturnsOnCall[i] = struct {
 		result1 error
+	}{result1}
+}
+
+func (fake *FakeExecInterface) ReleaseInfo(arg1 context.Context) *v1.ReleaseInfo {
+	fake.releaseInfoMutex.Lock()
+	ret, specificReturn := fake.releaseInfoReturnsOnCall[len(fake.releaseInfoArgsForCall)]
+	fake.releaseInfoArgsForCall = append(fake.releaseInfoArgsForCall, struct {
+		arg1 context.Context
+	}{arg1})
+	stub := fake.ReleaseInfoStub
+	fakeReturns := fake.releaseInfoReturns
+	fake.recordInvocation("ReleaseInfo", []interface{}{arg1})
+	fake.releaseInfoMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeExecInterface) ReleaseInfoCallCount() int {
+	fake.releaseInfoMutex.RLock()
+	defer fake.releaseInfoMutex.RUnlock()
+	return len(fake.releaseInfoArgsForCall)
+}
+
+func (fake *FakeExecInterface) ReleaseInfoCalls(stub func(context.Context) *v1.ReleaseInfo) {
+	fake.releaseInfoMutex.Lock()
+	defer fake.releaseInfoMutex.Unlock()
+	fake.ReleaseInfoStub = stub
+}
+
+func (fake *FakeExecInterface) ReleaseInfoArgsForCall(i int) context.Context {
+	fake.releaseInfoMutex.RLock()
+	defer fake.releaseInfoMutex.RUnlock()
+	argsForCall := fake.releaseInfoArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeExecInterface) ReleaseInfoReturns(result1 *v1.ReleaseInfo) {
+	fake.releaseInfoMutex.Lock()
+	defer fake.releaseInfoMutex.Unlock()
+	fake.ReleaseInfoStub = nil
+	fake.releaseInfoReturns = struct {
+		result1 *v1.ReleaseInfo
+	}{result1}
+}
+
+func (fake *FakeExecInterface) ReleaseInfoReturnsOnCall(i int, result1 *v1.ReleaseInfo) {
+	fake.releaseInfoMutex.Lock()
+	defer fake.releaseInfoMutex.Unlock()
+	fake.ReleaseInfoStub = nil
+	if fake.releaseInfoReturnsOnCall == nil {
+		fake.releaseInfoReturnsOnCall = make(map[int]struct {
+			result1 *v1.ReleaseInfo
+		})
+	}
+	fake.releaseInfoReturnsOnCall[i] = struct {
+		result1 *v1.ReleaseInfo
 	}{result1}
 }
 
@@ -249,8 +467,14 @@ func (fake *FakeExecInterface) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.findExecutableMutex.RLock()
 	defer fake.findExecutableMutex.RUnlock()
+	fake.hostIDMutex.RLock()
+	defer fake.hostIDMutex.RUnlock()
+	fake.hostnameMutex.RLock()
+	defer fake.hostnameMutex.RUnlock()
 	fake.killProcessMutex.RLock()
 	defer fake.killProcessMutex.RUnlock()
+	fake.releaseInfoMutex.RLock()
+	defer fake.releaseInfoMutex.RUnlock()
 	fake.runCmdMutex.RLock()
 	defer fake.runCmdMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

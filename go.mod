@@ -20,6 +20,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.2.0
 	go.uber.org/goleak v1.3.0
 	golang.org/x/mod v0.17.0
+	golang.org/x/sync v0.7.0
 	google.golang.org/protobuf v1.33.0
 )
 
@@ -103,7 +104,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/tools v0.20.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240401170217-c3f982113cda // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240401170217-c3f982113cda // indirect
