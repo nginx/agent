@@ -68,8 +68,9 @@ func (cw *ConfigWriter) SetConfigClient(configClient client.ConfigClient) {
 func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 	_ *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string,
 ) error {
-	// TODO: if the config apply has failed before a file is wrtten the skipped files will be empty
-	// TODO: if one but not all the files failed to download should handle comparing the hash in doesFileRequireUpdate
+	// The below will be done in a followup PR
+	// if the config apply has failed before a file is written the skipped files will be empty
+	// if one but not all the files failed to download should handle comparing the hash in doesFileRequireUpdate
 	slog.DebugContext(ctx, "Rolling back NGINX config changes due to error")
 	if cw.fileCache.CacheContent() == nil {
 		return fmt.Errorf("error rolling back, no instance file cache found for instance %s", instanceID)
@@ -157,7 +158,7 @@ func (cw *ConfigWriter) removeFiles(ctx context.Context, currentFileCache, fileC
 func (cw *ConfigWriter) getFileOverview(ctx context.Context, request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 	instanceID string,
 ) (fileOverview *v1.FileOverview, err error) {
-	fileOverview, err = cw.configClient.GetFilesMetadata(ctx, &v1.GetOverviewRequest{
+	fileOverview, err = cw.configClient.GetOverview(ctx, &v1.GetOverviewRequest{
 		MessageMeta: &v1.MessageMeta{
 			MessageId:     uuid.NewString(),
 			CorrelationId: logger.GetCorrelationID(ctx),

@@ -28,7 +28,7 @@ func NewHTTPConfigClient(timeout time.Duration) *HTTPConfigClient {
 	}
 }
 
-func (hcd *HTTPConfigClient) GetFilesMetadata(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview,
+func (hcd *HTTPConfigClient) GetOverview(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview,
 	error,
 ) {
 	return nil, fmt.Errorf("not implemented")

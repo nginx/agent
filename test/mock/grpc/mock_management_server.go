@@ -64,13 +64,15 @@ type MockManagementServer struct {
 func NewMockManagementServer(
 	apiAddress string,
 	agentConfig *config.Config,
+	configDirectory *string,
 ) (*MockManagementServer, error) {
 	var err error
 	commandService := serveCommandService(apiAddress, agentConfig)
 
 	var fileServer *FileService
-	if agentConfig.File != nil && agentConfig.File.Location != "" {
-		fileServer, err = NewFileService(agentConfig.File.Location)
+
+	if *configDirectory != "" {
+		fileServer, err = NewFileService(*configDirectory)
 		if err != nil {
 			slog.Error("Failed to create file server", "error", err)
 			return nil, err

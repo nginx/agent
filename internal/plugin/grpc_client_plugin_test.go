@@ -212,6 +212,7 @@ func TestGrpcClient_Process_InstancesTopic(t *testing.T) {
 
 func TestGrpcClient_Close(t *testing.T) {
 	serverMockLock := sync.Mutex{}
+	configDirectory := ""
 	tests := []struct {
 		name         string
 		agentConfig  *config.Config
@@ -356,7 +357,7 @@ func TestGrpcClient_Close(t *testing.T) {
 			}
 
 			serverMockLock.Lock()
-			server, err := mockGrpc.NewMockManagementServer(address, test.agentConfig)
+			server, err := mockGrpc.NewMockManagementServer(address, test.agentConfig, &configDirectory)
 			require.NoError(tt, err)
 			serverMockLock.Unlock()
 

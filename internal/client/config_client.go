@@ -14,6 +14,6 @@ import (
 //counterfeiter:generate . ConfigClient
 
 type ConfigClient interface {
-	GetFilesMetadata(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview, error)
+	GetOverview(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview, error)
 	GetFile(ctx context.Context, request *v1.GetFileRequest) (*v1.FileContents, error)
 }

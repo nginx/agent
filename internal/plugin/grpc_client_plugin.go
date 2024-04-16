@@ -324,7 +324,7 @@ type GrpcConfigClient struct {
 	grpFileContentsFn func(ctx context.Context, request *v1.GetFileRequest) (*v1.FileContents, error)
 }
 
-func (gcc *GrpcConfigClient) GetFilesMetadata(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview,
+func (gcc *GrpcConfigClient) GetOverview(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview,
 	error,
 ) {
 	return gcc.grpcOverviewFn(ctx, request)

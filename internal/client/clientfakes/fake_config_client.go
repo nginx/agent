@@ -107,7 +107,7 @@ func (fake *FakeConfigClient) GetFileReturnsOnCall(i int, result1 *v1.FileConten
 	}{result1, result2}
 }
 
-func (fake *FakeConfigClient) GetFilesMetadata(arg1 context.Context, arg2 *v1.GetOverviewRequest) (*v1.FileOverview, error) {
+func (fake *FakeConfigClient) GetOverview(arg1 context.Context, arg2 *v1.GetOverviewRequest) (*v1.FileOverview, error) {
 	fake.getFilesMetadataMutex.Lock()
 	ret, specificReturn := fake.getFilesMetadataReturnsOnCall[len(fake.getFilesMetadataArgsForCall)]
 	fake.getFilesMetadataArgsForCall = append(fake.getFilesMetadataArgsForCall, struct {
@@ -116,7 +116,7 @@ func (fake *FakeConfigClient) GetFilesMetadata(arg1 context.Context, arg2 *v1.Ge
 	}{arg1, arg2})
 	stub := fake.GetFilesMetadataStub
 	fakeReturns := fake.getFilesMetadataReturns
-	fake.recordInvocation("GetFilesMetadata", []interface{}{arg1, arg2})
+	fake.recordInvocation("GetOverview", []interface{}{arg1, arg2})
 	fake.getFilesMetadataMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
