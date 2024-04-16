@@ -69,7 +69,7 @@ func (p *MessagePipe) Register(ctx context.Context, size int, plugins []Plugin) 
 	p.plugins = append(p.plugins, plugins...)
 	p.bus = messagebus.New(size)
 
-	p.initPlugins(ctx)
+	p.initPlugins(ctx, plugins)
 
 	pluginsRegistered := []string{}
 
@@ -186,11 +186,11 @@ func getIndex(pluginName string, plugins []Plugin) int {
 	return -1
 }
 
-func (p *MessagePipe) initPlugins(ctx context.Context) {
-	for _, r := range p.plugins {
-		err := r.Init(ctx, p)
+func (p *MessagePipe) initPlugins(ctx context.Context, plugins []Plugin) {
+	for _, plugin := range plugins {
+		err := plugin.Init(ctx, p)
 		if err != nil {
-			slog.Error("Failed to initialize plugin", "plugin", r.Info().Name, "error", err)
+			slog.ErrorContext(ctx, "Failed to initialize plugin", "plugin", plugin.Info().Name, "error", err)
 		}
 	}
 }
