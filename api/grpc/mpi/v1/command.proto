@@ -40,15 +40,60 @@ service CommandService {
 message CreateConnectionRequest {
     // Meta-information associated with a message
     mpi.v1.MessageMeta message_meta = 1;
-    // instance information associated with the NGINX Agent
-    Instance agent = 2;
+    // Instance and infrastructure information associated with the NGINX Agent
+    Resource resource = 2;
+}
+
+// A representation of instances and runtime resource information
+message Resource {
+    // A resource identifier
+    string id = 1;
+    // A list of instances associated with this resource
+    repeated Instance instances = 2;
+    // Runtime information of where the instances reside. Host or container based
+    oneof info {
+        // If running on bare-metal, provides additional information
+        HostInfo host_info = 3;
+        // If running in a containerized environment, provides additional information
+        ContainerInfo container_info = 4;
+    }
+}
+
+// Represents the host system information
+message HostInfo {
+    // The host identifier
+    string id = 1;
+    // The name of the host
+    string hostname = 2;
+    // Release information of the host
+    ReleaseInfo release_info = 3;
+}
+
+// Release information of the host
+message ReleaseInfo {
+    // OS type (e.g. freebsd, linux, etc)
+    string codename = 1;
+    // OS name (e.g. ubuntu, linuxmint, etc)
+    string id = 2;
+    // OS family (e.g. debian, rhel)
+    string name = 3;
+    // Version of the OS kernel
+    string version_id = 4;
+    // Version of the OS
+    string version = 5;
+}
+
+// Container information
+message ContainerInfo {
+    // The identifier of the container
+    string id = 1;
 }
 
 // A response to a CreateConnectionRequest
 message CreateConnectionResponse {
-    // the success or failure of the CreateConnectionRequest
+    // The success or failure of the CreateConnectionRequest
     mpi.v1.CommandResponse response = 1;
-    // the recommendation NGINX Agent configurations provided by the ManagementPlane
+    // The recommendation NGINX Agent configurations provided by the ManagementPlane
     AgentConfig agent_config = 2;
 }
 

@@ -14,12 +14,19 @@ import (
 
 func TestTokenCredentials_GetRequestMetadata(t *testing.T) {
 	token := "test_token"
-	credentials := &PerRPCCredentials{Token: token}
+	id := "1234-5678-9012"
+	credentials := &PerRPCCredentials{
+		Token: token,
+		ID:    id,
+	}
 
 	metadata, err := credentials.GetRequestMetadata(context.TODO())
 	require.NoError(t, err)
 
-	expectedMetadata := map[string]string{TokenKey: token}
+	expectedMetadata := map[string]string{
+		TokenKey: token,
+		UUID:     id,
+	}
 
 	for key, value := range expectedMetadata {
 		assert.Equal(t, metadata[key], value)

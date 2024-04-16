@@ -25,33 +25,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/network"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
 	mockManagementPlaneGrpcContainer testcontainers.Container
 	mockManagementPlaneGrpcAddress   string
 	mockManagementPlaneAPIAddress    string
-)
-
-type (
-	ConnectionRequest struct {
-		ConnectionRequest *v1.CreateConnectionRequest `json:"connectionRequest"`
-	}
-	NginxInstanceConfig struct {
-		InstanceActions []*v1.InstanceAction           `json:"instance_actions"`
-		Config          *v1.InstanceConfig_NginxConfig `json:"Config"`
-	}
-	Instance struct {
-		InstanceMeta   *v1.InstanceMeta    `json:"instance_meta"`
-		InstanceConfig NginxInstanceConfig `json:"instance_config"`
-	}
-	NginxUpdateDataPlaneHealthRequest struct {
-		MessageMeta *v1.MessageMeta `json:"message_meta"`
-		Instances   []Instance      `json:"instances"`
-	}
-	UpdateDataPlaneStatusRequest struct {
-		UpdateDataPlaneStatusRequest NginxUpdateDataPlaneHealthRequest `json:"updateDataPlaneStatusRequest"`
-	}
 )
 
 func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
@@ -163,19 +143,25 @@ func verifyConnection(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	var connectionRequest ConnectionRequest
+	connectionRequest := v1.CreateConnectionRequest{}
 
 	responseData := resp.Body()
 	t.Logf("Response: %s", string(responseData))
 	assert.True(t, json.Valid(responseData))
 
-	// nolint: musttag
-	err = json.Unmarshal(responseData, &connectionRequest)
-	require.NoError(t, err)
+	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+	unmarshalErr := pb.Unmarshal(responseData, &connectionRequest)
+	require.NoError(t, unmarshalErr)
 
-	instanceMeta := connectionRequest.ConnectionRequest.GetAgent().GetInstanceMeta()
+	t.Logf("ConnectionRequest: %v", &connectionRequest)
 
-	assert.NotNil(t, connectionRequest.ConnectionRequest)
+	resource := connectionRequest.GetResource()
+
+	assert.NotNil(t, resource.GetId())
+	assert.NotNil(t, resource.GetContainerInfo().GetId())
+
+	instanceMeta := resource.GetInstances()[0].GetInstanceMeta()
+
 	assert.NotEmpty(t, instanceMeta.GetInstanceId())
 	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_AGENT, instanceMeta.GetInstanceType())
 	assert.Equal(t, "v3.0.0", instanceMeta.GetVersion())
@@ -193,35 +179,37 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	var updateDataPlaneStatusRequest UpdateDataPlaneStatusRequest
+	updateDataPlaneStatusRequest := v1.UpdateDataPlaneStatusRequest{}
 
 	responseData := resp.Body()
 	t.Logf("Response: %s", string(responseData))
 	assert.True(t, json.Valid(responseData))
 
-	// nolint: musttag
-	err = json.Unmarshal(responseData, &updateDataPlaneStatusRequest)
-	require.NoError(t, err)
+	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+	unmarshalErr := pb.Unmarshal(responseData, &updateDataPlaneStatusRequest)
+	require.NoError(t, unmarshalErr)
 
-	assert.NotNil(t, updateDataPlaneStatusRequest.UpdateDataPlaneStatusRequest)
+	t.Logf("UpdateDataPlaneStatusRequest: %v", &updateDataPlaneStatusRequest)
+
+	assert.NotNil(t, &updateDataPlaneStatusRequest)
 
 	// Verify message metadata
-	messageMeta := updateDataPlaneStatusRequest.UpdateDataPlaneStatusRequest.MessageMeta
+	messageMeta := updateDataPlaneStatusRequest.GetMessageMeta()
 	assert.NotEmpty(t, messageMeta.GetCorrelationId())
 	assert.NotEmpty(t, messageMeta.GetMessageId())
 	assert.NotEmpty(t, messageMeta.GetTimestamp())
 
-	instances := updateDataPlaneStatusRequest.UpdateDataPlaneStatusRequest.Instances
+	instances := updateDataPlaneStatusRequest.GetInstances()
 	assert.Len(t, instances, 1)
 
 	// Verify instance metadata
-	assert.NotEmpty(t, instances[0].InstanceMeta.GetInstanceId())
-	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, instances[0].InstanceMeta.GetInstanceType())
-	assert.NotEmpty(t, instances[0].InstanceMeta.GetVersion())
+	assert.NotEmpty(t, instances[0].GetInstanceMeta().GetInstanceId())
+	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, instances[0].GetInstanceMeta().GetInstanceType())
+	assert.NotEmpty(t, instances[0].GetInstanceMeta().GetVersion())
 
 	// Verify instance configuration
-	assert.Empty(t, instances[0].InstanceConfig.InstanceActions)
-	assert.NotEmpty(t, instances[0].InstanceConfig.Config.NginxConfig.GetProcessId())
-	assert.Equal(t, "/usr/sbin/nginx", instances[0].InstanceConfig.Config.NginxConfig.GetBinaryPath())
-	assert.Equal(t, "/etc/nginx/nginx.conf", instances[0].InstanceConfig.Config.NginxConfig.GetConfigPath())
+	assert.Empty(t, instances[0].GetInstanceConfig().GetActions())
+	assert.NotEmpty(t, instances[0].GetInstanceConfig().GetNginxConfig().GetProcessId())
+	assert.Equal(t, "/usr/sbin/nginx", instances[0].GetInstanceConfig().GetNginxConfig().GetBinaryPath())
+	assert.Equal(t, "/etc/nginx/nginx.conf", instances[0].GetInstanceConfig().GetNginxConfig().GetConfigPath())
 }
