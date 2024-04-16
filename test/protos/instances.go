@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	instanceID    = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
+	ossInstanceID    = "e1374cb1-462d-3b6c-9f3b-f28332b5f10c"
+	plusInstanceID    = "0f9dda0-e45f-34cf-bba7-f173700f50a2"
 	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 	processID     = 1234
 )
@@ -22,14 +23,14 @@ const (
 func GetNginxOssInstance() *v1.Instance {
 	return &v1.Instance{
 		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   instanceID,
+			InstanceId:   ossInstanceID,
 			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-			Version:      "nginx/1.25.4",
+			Version:      "1.25.3",
 		},
 		InstanceRuntime: &v1.InstanceRuntime{
 			ProcessId:  processID,
-			BinaryPath: "/var/run/nginx",
-			ConfigPath: "/etc/nginx",
+			BinaryPath: "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
+			ConfigPath:"/usr/local/etc/nginx/nginx.conf",
 			Details: &v1.InstanceRuntime_NginxRuntimeInfo{
 				NginxRuntimeInfo: &v1.NGINXRuntimeInfo{
 					StubStatus:      "/stub",
@@ -46,14 +47,14 @@ func GetNginxOssInstance() *v1.Instance {
 func GetNginxPlusInstance() *v1.Instance {
 	return &v1.Instance{
 		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   instanceID,
+			InstanceId:   plusInstanceID,
 			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-			Version:      "nginx/1.25.3 (nginx-plus-r31-p1)",
+			Version:      "nginx-plus-r31-p1",
 		},
 		InstanceRuntime: &v1.InstanceRuntime{
 			ProcessId:  processID,
-			BinaryPath: "/var/run/nginx",
-			ConfigPath: "/etc/nginx",
+			BinaryPath: "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
+			ConfigPath: "/etc/nginx/nginx.conf",
 			Details: &v1.InstanceRuntime_NginxPlusRuntimeInfo{
 				NginxPlusRuntimeInfo: &v1.NGINXPlusRuntimeInfo{
 					StubStatus:      "/stub",
@@ -70,7 +71,7 @@ func GetNginxPlusInstance() *v1.Instance {
 
 func CreateInProgressStatus() *instances.ConfigurationStatus {
 	return &instances.ConfigurationStatus{
-		InstanceId:    instanceID,
+		InstanceId:    ossInstanceID,
 		CorrelationId: correlationID,
 		Status:        instances.Status_IN_PROGRESS,
 		Message:       "Instance configuration update in progress",
@@ -80,7 +81,7 @@ func CreateInProgressStatus() *instances.ConfigurationStatus {
 
 func CreateSuccessStatus() *instances.ConfigurationStatus {
 	return &instances.ConfigurationStatus{
-		InstanceId:    instanceID,
+		InstanceId:    ossInstanceID,
 		CorrelationId: correlationID,
 		Status:        instances.Status_SUCCESS,
 		Message:       "Config applied successfully",
@@ -90,7 +91,7 @@ func CreateSuccessStatus() *instances.ConfigurationStatus {
 
 func CreateFailStatus(err string) *instances.ConfigurationStatus {
 	return &instances.ConfigurationStatus{
-		InstanceId:    instanceID,
+		InstanceId:    ossInstanceID,
 		CorrelationId: correlationID,
 		Status:        instances.Status_FAILED,
 		Message:       err,
@@ -99,7 +100,7 @@ func CreateFailStatus(err string) *instances.ConfigurationStatus {
 
 func CreateRollbackSuccessStatus() *instances.ConfigurationStatus {
 	return &instances.ConfigurationStatus{
-		InstanceId:    instanceID,
+		InstanceId:    ossInstanceID,
 		CorrelationId: correlationID,
 		Status:        instances.Status_ROLLBACK_SUCCESS,
 		Timestamp:     timestamppb.Now(),
@@ -109,7 +110,7 @@ func CreateRollbackSuccessStatus() *instances.ConfigurationStatus {
 
 func CreateRollbackFailStatus(err string) *instances.ConfigurationStatus {
 	return &instances.ConfigurationStatus{
-		InstanceId:    instanceID,
+		InstanceId:    ossInstanceID,
 		CorrelationId: correlationID,
 		Status:        instances.Status_ROLLBACK_FAILED,
 		Timestamp:     timestamppb.Now(),
@@ -119,7 +120,7 @@ func CreateRollbackFailStatus(err string) *instances.ConfigurationStatus {
 
 func CreateRollbackInProgressStatus() *instances.ConfigurationStatus {
 	return &instances.ConfigurationStatus{
-		InstanceId:    instanceID,
+		InstanceId:    ossInstanceID,
 		CorrelationId: correlationID,
 		Status:        instances.Status_ROLLBACK_IN_PROGRESS,
 		Timestamp:     timestamppb.Now(),

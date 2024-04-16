@@ -16,6 +16,8 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/test/helpers"
+	modelHelpers "github.com/nginx/agent/v3/test/model"
+	"github.com/nginx/agent/v3/test/protos"
 
 	"github.com/nginx/agent/v3/internal/config"
 
@@ -24,7 +26,6 @@ import (
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	testconfig "github.com/nginx/agent/v3/test/config"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -65,55 +66,9 @@ func TestNginx_ParseConfig(t *testing.T) {
 	err := os.WriteFile(file.Name(), data, 0o600)
 	require.NoError(t, err)
 
-	expectedConfigContext := &model.NginxConfigContext{
-		AccessLogs: []*model.AccessLog{
-			{
-				Name:        accessLog.Name(),
-				Format:      "$remote_addr - $remote_user [$time_local]",
-				Readable:    true,
-				Permissions: "0600",
-			},
-			{
-				Name: combinedAccessLog.Name(),
-				Format: "$remote_addr - $remote_user [$time_local] " +
-					"\"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\"",
-				Readable:    true,
-				Permissions: "0600",
-			},
-			{
-				Name:        ltsvAccessLog.Name(),
-				Format:      "ltsv",
-				Readable:    true,
-				Permissions: "0600",
-			},
-		},
-		ErrorLogs: []*model.ErrorLog{
-			{
-				Name:        errorLog.Name(),
-				LogLevel:    "notice",
-				Readable:    true,
-				Permissions: "0600",
-			},
-		},
-	}
+	expectedConfigContext := modelHelpers.GetConfigContextWithNames(accessLog.Name(), combinedAccessLog.Name(), ltsvAccessLog.Name(), errorLog.Name())
 
-	instance := &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   instanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-		},
-		InstanceRuntime: &v1.InstanceRuntime{
-			ConfigPath: file.Name(),
-		},
-		// InstanceConfig: &v1.InstanceConfig{
-		// Config: &v1.InstanceConfig_NginxConfig{
-		// 	NginxConfig: &v1.NGINXConfig{
-		// 		ConfigPath: file.Name(),
-		// 	},
-		// },
-		// },
-
-	}
+	instance := protos.GetNginxOssInstance()
 
 	nginxConfig := NewNginx(ctx, instance, &config.Config{
 		Client: &config.Client{
@@ -232,24 +187,7 @@ func TestNginx_Apply(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.KillProcessReturns(test.error)
 
-			instance := &v1.Instance{
-				InstanceMeta: &v1.InstanceMeta{
-					InstanceId:   instanceID,
-					InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-				},
-				InstanceRuntime: &v1.InstanceRuntime{
-					BinaryPath: "nginx",
-					ProcessId:  1,
-				},
-				// InstanceConfig: &v1.InstanceConfig{
-				// 	Config: &v1.InstanceConfig_NginxConfig{
-				// 		NginxConfig: &v1.NGINXConfig{
-				// 			BinaryPath: "nginx",
-				// 			ProcessId:  1,
-				// 		},
-				// 	},
-				// },
-			}
+			instance := protos.GetNginxOssInstance()
 
 			nginxConfig := NewNginx(
 				ctx,
@@ -267,9 +205,7 @@ func TestNginx_Apply(t *testing.T) {
 				},
 			)
 			nginxConfig.executor = mockExec
-			nginxConfig.SetConfigContext(&model.NginxConfigContext{
-				ErrorLogs: test.errorLogs,
-			})
+			nginxConfig.SetConfigContext(modelHelpers.GetConfigContext())
 
 			var wg sync.WaitGroup
 			wg.Add(1)
@@ -325,22 +261,7 @@ func TestNginx_Validate(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.RunCmdReturns(test.out, test.error)
 
-			instance := &v1.Instance{
-				InstanceMeta: &v1.InstanceMeta{
-					InstanceId:   instanceID,
-					InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-				},
-				InstanceRuntime: &v1.InstanceRuntime{
-					BinaryPath: "nginx",
-				},
-				// InstanceConfig: &v1.InstanceConfig{
-				// 	Config: &v1.InstanceConfig_NginxConfig{
-				// 		NginxConfig: &v1.NGINXConfig{
-				// 			BinaryPath: "nginx",
-				// 		},
-				// 	},
-				// },
-			}
+			instance := protos.GetNginxOssInstance()
 
 			nginxConfig := NewNginx(ctx, instance, &config.Config{
 				Client: &config.Client{

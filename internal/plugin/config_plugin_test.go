@@ -21,6 +21,7 @@ import (
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
+	modelHelpers "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 )
 
@@ -70,10 +71,7 @@ func TestConfig_Process(t *testing.T) {
 
 	testInstance := protos.GetNginxOssInstance()
 
-	nginxConfigContext := model.NginxConfigContext{
-		AccessLogs: []*model.AccessLog{{Name: "access.log"}},
-		ErrorLogs:  []*model.ErrorLog{{Name: "error.log"}},
-	}
+	nginxConfigContext := modelHelpers.GetConfigContext()
 
 	instanceConfigUpdateRequest := &model.InstanceConfigUpdateRequest{
 		Instance: testInstance,
@@ -193,17 +191,12 @@ func TestConfig_Update(t *testing.T) {
 		slog.Any(logger.CorrelationIDKey, correlationID),
 	)
 
-	agentConfig := config.Config{}
-	instance := v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   instanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-		},
-	}
+	agentConfig := config.Config{Client: &config.Client{ Timeout: 300 }}
+	instance := protos.GetNginxOssInstance()
 
 	location := fmt.Sprintf("/instance/%s/files/", instanceID)
 	request := model.InstanceConfigUpdateRequest{
-		Instance: &instance,
+		Instance: instance,
 		Location: location,
 	}
 
@@ -294,7 +287,7 @@ func TestConfig_Update(t *testing.T) {
 			configService.UpdateInstanceConfigurationReturns(make(map[string]*v1.FileMeta), test.updateReturnStatus)
 			configService.RollbackReturns(test.rollbackReturns)
 
-			instanceService := []*v1.Instance{&instance}
+			instanceService := []*v1.Instance{instance}
 			configPlugin.configServices[instanceID] = configService
 			configPlugin.resource.Instances = instanceService
 
