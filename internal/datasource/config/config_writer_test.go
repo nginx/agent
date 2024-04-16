@@ -250,7 +250,7 @@ func TestRollback(t *testing.T) {
 	require.NoError(t, getCacheErr)
 
 	fakeConfigClient := &clientfakes.FakeConfigClient{}
-	fakeConfigClient.GetFilesMetadataReturns(files, nil)
+	fakeConfigClient.GetOverviewReturns(files, nil)
 	resp := []byte("location /test {\n    return 200 \"Test changed\\n\";\n}")
 	fakeConfigClient.GetFileReturns(protos.GetFileDownloadResponse(resp), nil)
 
