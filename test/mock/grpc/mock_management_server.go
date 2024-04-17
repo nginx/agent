@@ -18,17 +18,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 
-	grpcvalidator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/health"
-	healthgrpc "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	grpcvalidator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthgrpc "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 const (
