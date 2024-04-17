@@ -41,7 +41,7 @@ PROJECT_FILE	= main.go
 DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR) $(DOCS_DIR) $(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
-VERSION 		= "v3.0.0"
+VERSION 		?= "v3.0.0"
 COMMIT  		= $(shell git rev-parse --short HEAD)
 DATE    		= $(shell date +%F_%H-%M-%S)
 LDFLAGS 		= "-w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
@@ -92,6 +92,7 @@ $(RPM_PACKAGE):
 
 include Makefile.tools
 include Makefile.containers
+include Makefile.packaging
 
 .PHONY: help clean no-local-changes build lint format unit-test integration-test run dev run-mock-management-server generate generate-mocks local-apk-package local-deb-package local-rpm-package
 
