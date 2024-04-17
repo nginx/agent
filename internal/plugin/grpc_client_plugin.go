@@ -92,25 +92,12 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 
 	defer backoffCancel()
 
-	return backoff.WaitUntil(backOffCtx, gc.config.Common, gc.createConnection)
+	return backoff.WaitUntil(backOffCtx, gc.config.Common, gc.createConnectionClient)
 }
 
-func (gc *GrpcClient) createConnection() error {
-	ctx := context.Background()
-
+func (gc *GrpcClient) createConnectionClient() error {
 	gc.resourceMutex.Lock()
 	defer gc.resourceMutex.Unlock()
-
-	// nolint: revive
-	id, err := uuid.NewV7()
-	if err != nil {
-		return fmt.Errorf("error generating message id: %w", err)
-	}
-
-	correlationID, err := uuid.NewUUID()
-	if err != nil {
-		return fmt.Errorf("error generating correlation id: %w", err)
-	}
 
 	gc.connectionMutex.Lock()
 	defer gc.connectionMutex.Unlock()
@@ -120,25 +107,6 @@ func (gc *GrpcClient) createConnection() error {
 	}
 
 	gc.commandServiceClient = v1.NewCommandServiceClient(gc.conn)
-	req := &v1.CreateConnectionRequest{
-		MessageMeta: &v1.MessageMeta{
-			MessageId:     id.String(),
-			CorrelationId: correlationID.String(),
-			Timestamp:     timestamppb.Now(),
-		},
-		Resource: gc.resource,
-	}
-
-	reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
-	defer reqCancel()
-
-	response, err := gc.commandServiceClient.CreateConnection(reqCtx, req)
-	if err != nil {
-		return fmt.Errorf("creating connection: %w", err)
-	}
-
-	slog.Debug("Connection created", "response", response)
-	gc.messagePipe.Process(ctx, &bus.Message{Topic: bus.GrpcConnectedTopic, Data: response})
 
 	return nil
 }
@@ -169,25 +137,83 @@ func (gc *GrpcClient) Info() *bus.Info {
 func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.GrpcConnectedTopic:
-		slog.DebugContext(ctx, "Agent connected")
-		gc.isConnected.Store(true)
-
-		gc.resourceMutex.Lock()
-		err := gc.sendDataPlaneStatusUpdate(ctx, gc.resource)
-		gc.resourceMutex.Unlock()
-
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
-		}
+		gc.connected(ctx)
 	case bus.ResourceTopic:
 		if newResource, ok := msg.Data.(*v1.Resource); ok {
 			gc.resourceMutex.Lock()
 			gc.resource = newResource
 			gc.resourceMutex.Unlock()
+
+			if !gc.isConnected.Load() {
+				// nolint: revive
+				err := gc.createConnection(ctx)
+				if err != nil {
+					return
+				}
+			}
 		}
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
+}
+
+func (gc *GrpcClient) connected(ctx context.Context) {
+	slog.DebugContext(ctx, "Agent connected")
+	gc.isConnected.Store(true)
+
+	gc.resourceMutex.Lock()
+	err := gc.sendDataPlaneStatusUpdate(ctx, gc.resource)
+	gc.resourceMutex.Unlock()
+
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
+	}
+}
+
+func (gc *GrpcClient) createConnection(ctx context.Context) error {
+	req, err := gc.createConnectionRequest()
+	if err != nil {
+		slog.Error("Creating connection request", "error", err)
+		return err
+	}
+
+	reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
+	defer reqCancel()
+
+	response, err := gc.commandServiceClient.CreateConnection(reqCtx, req)
+	if err != nil {
+		slog.Error("Creating connection", "error", err)
+
+		return err
+	}
+
+	slog.Debug("Connection created", "response", response)
+	gc.messagePipe.Process(ctx, &bus.Message{Topic: bus.GrpcConnectedTopic, Data: response})
+
+	return nil
+}
+
+func (gc *GrpcClient) createConnectionRequest() (*v1.CreateConnectionRequest, error) {
+	id, err := uuid.NewV7()
+	if err != nil {
+		slog.Error("Generating message id", "error", err)
+		return nil, err
+	}
+
+	correlationID, err := uuid.NewUUID()
+	if err != nil {
+		slog.Error("Generating correlation id", "error", err)
+		return nil, err
+	}
+
+	return &v1.CreateConnectionRequest{
+		MessageMeta: &v1.MessageMeta{
+			MessageId:     id.String(),
+			CorrelationId: correlationID.String(),
+			Timestamp:     timestamppb.Now(),
+		},
+		Resource: gc.resource,
+	}, nil
 }
 
 func (gc *GrpcClient) Subscriptions() []string {
