@@ -20,15 +20,18 @@ type ResourceServiceInterface interface {
 }
 
 type ResourceService struct {
-	info     host.InfoInterface
-	resource *v1.Resource
-	// config   *v1.AgentConfig
+	info          host.InfoInterface
+	resource      *v1.Resource
 	resourceMutex sync.Mutex
 }
 
 func NewResourceService() *ResourceService {
 	return &ResourceService{
+		resource:      &v1.Resource{
+			Instances: []*v1.Instance{},
+		},
 		resourceMutex: sync.Mutex{},
+		info:          host.NewInfo(),
 	}
 }
 

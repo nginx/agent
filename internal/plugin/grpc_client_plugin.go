@@ -57,7 +57,9 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 		return &GrpcClient{
 			config:          agentConfig,
 			isConnected:     isConnected,
-			resource:        &v1.Resource{},
+			resource:        &v1.Resource{
+				Instances:  []*v1.Instance{},
+			},
 			instances:       []*v1.Instance{},
 			connectionMutex: sync.Mutex{},
 			instancesMutex:  sync.Mutex{},
@@ -102,19 +104,8 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 func (gc *GrpcClient) createConnection() error {
 	ctx := context.Background()
 
-	gc.instancesMutex.Lock()
-	defer gc.instancesMutex.Unlock()
-
-	if len(gc.instances) == 0 {
-		return fmt.Errorf("error waiting on instances to get updated")
-	}
-
 	gc.resourceMutex.Lock()
 	defer gc.resourceMutex.Unlock()
-
-	if (gc.resource == &v1.Resource{}) {
-		return fmt.Errorf("error waiting on resource to get updated")
-	}
 
 	// nolint: revive
 	id, err := uuid.NewV7()
@@ -187,9 +178,9 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 		slog.DebugContext(ctx, "Agent connected")
 		gc.isConnected.Store(true)
 
-		gc.instancesMutex.Lock()
+		gc.resourceMutex.Lock()
 		err := gc.sendDataPlaneStatusUpdate(ctx, gc.resource)
-		gc.instancesMutex.Unlock()
+		gc.resourceMutex.Unlock()
 
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
@@ -199,11 +190,6 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 			gc.resourceMutex.Lock()
 			gc.resource = newResource
 			gc.resourceMutex.Unlock()
-
-			err := gc.sendDataPlaneStatusUpdate(ctx, gc.resource)
-			if err != nil {
-				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
-			}
 		}
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
