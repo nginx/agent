@@ -7,16 +7,15 @@ package service
 
 import (
 	"context"
+	"github.com/nginx/agent/v3/internal/logger"
 	"log/slog"
 
 	"github.com/nginx/agent/v3/internal/client"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	datasource "github.com/nginx/agent/v3/internal/datasource/config"
-	"github.com/nginx/agent/v3/internal/logger"
-
 	"github.com/nginx/agent/v3/internal/config"
+	datasource "github.com/nginx/agent/v3/internal/datasource/config"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -48,7 +47,6 @@ func NewConfigService(ctx context.Context, instance *v1.Instance, agentConfig *c
 	configClient client.ConfigClient,
 ) *ConfigService {
 	cs := &ConfigService{}
-
 	switch instance.GetInstanceMeta().GetInstanceType() {
 	case v1.InstanceMeta_INSTANCE_TYPE_NGINX, v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
 		cs.configService = service.NewNginx(ctx, instance, agentConfig, configClient)
@@ -80,6 +78,17 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context,
 	request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 ) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus) {
 	correlationID := logger.GetCorrelationID(ctx)
+
+	if cs.configService == nil {
+		slog.ErrorContext(ctx, "Error writing config, config service is nil")
+		return nil, &instances.ConfigurationStatus{
+			InstanceId:    cs.instance.GetInstanceMeta().GetInstanceId(),
+			CorrelationId: correlationID,
+			Status:        instances.Status_FAILED,
+			Message:       "error writing config, config service is nil",
+			Timestamp:     timestamppb.Now(),
+		}
+	}
 
 	skippedFiles, err := cs.configService.Write(ctx, request)
 	if err != nil {

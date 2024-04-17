@@ -82,7 +82,7 @@ func generateDefaultConfigDirectory() (string, error) {
 	slog.Info("Generating default configs")
 	tempDirectory := os.TempDir()
 
-	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/etc/nginx"), directoryPermissions)
+	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/opt/homebrew/etc/nginx"), directoryPermissions)
 	if err != nil {
 		slog.Error("Failed to create directories", "error", err)
 		return "", err
@@ -95,7 +95,7 @@ func generateDefaultConfigDirectory() (string, error) {
 	}
 	defer CloseFile(source)
 
-	destination, err := os.Create(filepath.Join(tempDirectory, "config/1/etc/nginx/nginx.conf"))
+	destination, err := os.Create(filepath.Join(tempDirectory, "config/1/opt/homebrew/etc/nginx/nginx.conf"))
 	if err != nil {
 		slog.Error("Failed to create nginx.conf", "error", err)
 		return "", err

@@ -99,8 +99,7 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 		return err
 	}
 
-	// TODO: subscribe should return error that is handled
-	// go gc.subscribe(ctx)
+	go gc.subscribe(ctx)
 
 	return nil
 }
@@ -120,6 +119,7 @@ func (gc *GrpcClient) subscribe(ctx context.Context) {
 			request, err := subscribeClient.Recv()
 			if err != nil {
 				slog.ErrorContext(ctx, "error receiving messages", "err", err)
+				return
 			}
 			slog.DebugContext(ctx, "Subscribe received: ", "req", request)
 
@@ -129,7 +129,7 @@ func (gc *GrpcClient) subscribe(ctx context.Context) {
 				subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
 				gc.messagePipe.Process(subCtx, &bus.Message{
 					Topic: bus.InstanceConfigUpdateRequestTopic,
-					Data:  request,
+					Data:  request.GetRequest(),
 				})
 			default:
 				slog.Info("Not implemented yet")
@@ -236,7 +236,6 @@ func (gc *GrpcClient) Close(ctx context.Context) error {
 
 func (gc *GrpcClient) GetFileOverview(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview, error) {
 	resp, err := gc.fileServiceClient.GetOverview(ctx, request)
-
 	return resp.GetOverview(), err
 }
 
