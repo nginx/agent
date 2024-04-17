@@ -213,7 +213,7 @@ func TestGetInfo(t *testing.T) {
 		{
 			name: "Test 2: NGINX plus",
 			nginxVersionCommandOutput: fmt.Sprintf(`
-				nginx version: nginx/1.25.3 nginx-plus-r31-p1)
+				nginx version: nginx/1.25.3 (nginx-plus-r31-p1)
 				built by gcc 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.2)
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled

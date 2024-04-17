@@ -9,13 +9,11 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	modelHelpers "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 
-	"github.com/nginx/agent/v3/internal/config"
 	configfakes2 "github.com/nginx/agent/v3/internal/datasource/config/configfakes"
 	"github.com/nginx/agent/v3/internal/service/config/configfakes"
 	"github.com/stretchr/testify/require"
@@ -32,11 +30,7 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 
 	instance := protos.GetNginxOssInstance()
 
-	configService := NewConfigService(ctx, instance, &config.Config{
-		Client: &config.Client{
-			Timeout: 5 * time.Second,
-		},
-	})
+	configService := NewConfigService(ctx, instance, types.GetAgentConfig())
 	configService.SetConfigContext(expectedConfigContext)
 
 	assert.Equal(t, expectedConfigContext, configService.configContext)
@@ -127,11 +121,7 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	instance := protos.GetNginxOssInstance()
 
-	configService := NewConfigService(ctx, instance, &config.Config{
-		Client: &config.Client{
-			Timeout: 5 * time.Second,
-		},
-	})
+	configService := NewConfigService(ctx, instance, types.GetAgentConfig())
 
 	fakeDataPlaneConfig := &configfakes.FakeDataPlaneConfig{}
 	fakeDataPlaneConfig.ParseConfigReturns(expectedConfigContext, nil)

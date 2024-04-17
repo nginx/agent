@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	ossInstanceID    = "e1374cb1-462d-3b6c-9f3b-f28332b5f10c"
-	plusInstanceID    = "0f9dda0-e45f-34cf-bba7-f173700f50a2"
-	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
-	processID     = 1234
+	ossInstanceID  = "e1374cb1-462d-3b6c-9f3b-f28332b5f10c"
+	plusInstanceID = "40f9dda0-e45f-34cf-bba7-f173700f50a2"
+	correlationID  = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
+	processID      = 1234
 )
 
 func GetNginxOssInstance() *v1.Instance {
@@ -30,10 +30,10 @@ func GetNginxOssInstance() *v1.Instance {
 		InstanceRuntime: &v1.InstanceRuntime{
 			ProcessId:  processID,
 			BinaryPath: "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
-			ConfigPath:"/usr/local/etc/nginx/nginx.conf",
+			ConfigPath: "/usr/local/etc/nginx/nginx.conf",
 			Details: &v1.InstanceRuntime_NginxRuntimeInfo{
 				NginxRuntimeInfo: &v1.NGINXRuntimeInfo{
-					StubStatus:      "/stub",
+					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
 					LoadableModules: []string{},
@@ -48,7 +48,7 @@ func GetNginxPlusInstance() *v1.Instance {
 	return &v1.Instance{
 		InstanceMeta: &v1.InstanceMeta{
 			InstanceId:   plusInstanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS,
 			Version:      "nginx-plus-r31-p1",
 		},
 		InstanceRuntime: &v1.InstanceRuntime{
@@ -57,12 +57,12 @@ func GetNginxPlusInstance() *v1.Instance {
 			ConfigPath: "/etc/nginx/nginx.conf",
 			Details: &v1.InstanceRuntime_NginxPlusRuntimeInfo{
 				NginxPlusRuntimeInfo: &v1.NGINXPlusRuntimeInfo{
-					StubStatus:      "/stub",
+					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
 					LoadableModules: []string{},
 					DynamicModules:  []string{},
-					PlusApi:         "/api",
+					PlusApi:         "",
 				},
 			},
 		},

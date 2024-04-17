@@ -100,7 +100,7 @@ message CreateConnectionResponse {
 message UpdateDataPlaneStatusRequest {
     // Meta-information associated with a message
     mpi.v1.MessageMeta message_meta = 1;
-    // the reresentation of a data plane
+    // the representation of a data plane
     Resource resource = 2;
 }
 
@@ -129,7 +129,7 @@ message Instance {
     InstanceRuntime instance_runtime = 3;
 }
 
-// Metainformation relating to the reported instance
+// Meta-information relating to the reported instance
 message InstanceMeta {
     // the identifier associated with the instance
     string instance_id = 1;
@@ -186,7 +186,7 @@ message NGINXRuntimeInfo {
     repeated string access_logs = 2;
     // a list of error_logs
     repeated string error_logs = 3;
-    // List of NGINX potentially lodable modules (installed but not loaded).
+    // List of NGINX potentially loadable modules (installed but not loaded).
     repeated string loadable_modules = 4;
     // List of NGINX dynamic modules.
     repeated string dynamic_modules = 5;
@@ -200,7 +200,7 @@ message NGINXPlusRuntimeInfo {
     repeated string access_logs = 2;
     // a list of error_logs
     repeated string error_logs = 3;
-    // List of NGINX potentially lodable modules (installed but not loaded).
+    // List of NGINX potentially loadable modules (installed but not loaded).
     repeated string loadable_modules = 4;
     // List of NGINX dynamic modules.
     repeated string dynamic_modules = 5;

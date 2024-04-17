@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,10 +24,10 @@ import (
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	modelHelpers "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/types"
 )
 
 const (
-	instanceID    = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
 	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 )
 
@@ -79,7 +80,6 @@ func TestConfig_Process(t *testing.T) {
 	}
 
 	configurationStatusProgress := protos.CreateInProgressStatus()
-
 	configurationStatus := protos.CreateSuccessStatus()
 
 	tests := []struct {
@@ -156,7 +156,9 @@ func TestConfig_Process(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			messagePipe := bus.NewFakeMessagePipe()
-			configPlugin := NewConfig(&config.Config{})
+			configPlugin := NewConfig(&config.Config{
+				Client: &config.Client{Timeout: 1 * time.Second},
+			})
 
 			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
 			require.NoError(tt, err)
@@ -166,10 +168,8 @@ func TestConfig_Process(t *testing.T) {
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
 			configService.UpdateInstanceConfigurationReturns(nil, configurationStatus)
 
-			instances := []*v1.Instance{testInstance}
-
-			configPlugin.configServices[instanceID] = configService
-			configPlugin.resource.Instances = instances
+			configPlugin.configServices[protos.GetNginxOssInstance().GetInstanceMeta().GetInstanceId()] = configService
+			configPlugin.resource.Instances = []*v1.Instance{testInstance}
 
 			configPlugin.Process(ctx, test.input)
 
@@ -191,10 +191,10 @@ func TestConfig_Update(t *testing.T) {
 		slog.Any(logger.CorrelationIDKey, correlationID),
 	)
 
-	agentConfig := config.Config{Client: &config.Client{ Timeout: 300 }}
+	agentConfig := types.GetAgentConfig()
 	instance := protos.GetNginxOssInstance()
 
-	location := fmt.Sprintf("/instance/%s/files/", instanceID)
+	location := fmt.Sprintf("/instance/%s/files/", protos.GetNginxOssInstance().GetInstanceMeta().GetInstanceId())
 	request := model.InstanceConfigUpdateRequest{
 		Instance: instance,
 		Location: location,
@@ -277,7 +277,7 @@ func TestConfig_Update(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			messagePipe := bus.NewFakeMessagePipe()
-			configPlugin := NewConfig(&agentConfig)
+			configPlugin := NewConfig(agentConfig)
 
 			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
 			require.NoError(tt, err)
@@ -288,7 +288,7 @@ func TestConfig_Update(t *testing.T) {
 			configService.RollbackReturns(test.rollbackReturns)
 
 			instanceService := []*v1.Instance{instance}
-			configPlugin.configServices[instanceID] = configService
+			configPlugin.configServices[protos.GetNginxOssInstance().GetInstanceMeta().GetInstanceId()] = configService
 			configPlugin.resource.Instances = instanceService
 
 			configPlugin.updateInstanceConfig(ctx, &request)

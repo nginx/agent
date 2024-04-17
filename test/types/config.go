@@ -33,6 +33,8 @@ const (
 	commonRandomizationFactor = 0.1
 	commonMultiplier          = 0.2
 
+	reloadMonitoringPeriod = 400 * time.Millisecond
+
 	bufferLength     = 55
 	exportRetryCount = 3
 )
@@ -96,6 +98,12 @@ func GetAgentConfig() *config.Config {
 			MaxElapsedTime:      commonMaxElapsedTime,
 			RandomizationFactor: commonRandomizationFactor,
 			Multiplier:          commonMultiplier,
+		},
+		DataPlaneConfig: &config.DataPlaneConfig{
+			Nginx: &config.NginxDataPlaneConfig{
+				TreatWarningsAsError:   true,
+				ReloadMonitoringPeriod: reloadMonitoringPeriod,
+			},
 		},
 	}
 }
