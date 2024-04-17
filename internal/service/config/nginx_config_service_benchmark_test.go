@@ -37,13 +37,6 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 						InstanceRuntime: &v1.InstanceRuntime{
 							ConfigPath: configFilePath,
 						},
-						// InstanceConfig: &v1.InstanceConfig{
-						// 	Config: &v1.InstanceConfig_NginxConfig{
-						// 		NginxConfig: &v1.NGINXConfig{
-						// 			ConfigPath: configFilePath,
-						// 		},
-						// 	},
-						// },
 					},
 					types.GetAgentConfig(),
 				)
