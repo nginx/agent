@@ -29,9 +29,11 @@ type CommandService struct {
 	requestChan                  chan *v1.ManagementPlaneRequest
 	dataPlaneResponses           []*v1.DataPlaneResponse
 	updateDataPlaneStatusRequest *v1.UpdateDataPlaneStatusRequest
+	updateDataPlaneHealthRequest *v1.UpdateDataPlaneHealthRequest
 	dataPlaneResponsesMutex      sync.Mutex
-	connectionMutex              sync.Mutex
 	updateDataPlaneStatusMutex   sync.Mutex
+	updateDataPlaneHealthMutex   sync.Mutex
+	connectionMutex              sync.Mutex
 }
 
 func init() {
@@ -43,6 +45,7 @@ func NewCommandService() *CommandService {
 		requestChan:                make(chan *v1.ManagementPlaneRequest),
 		connectionMutex:            sync.Mutex{},
 		updateDataPlaneStatusMutex: sync.Mutex{},
+		updateDataPlaneHealthMutex: sync.Mutex{},
 		dataPlaneResponsesMutex:    sync.Mutex{},
 	}
 
@@ -114,10 +117,20 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 
 func (cs *CommandService) UpdateDataPlaneHealth(
 	_ context.Context,
-	_ *v1.UpdateDataPlaneHealthRequest) (
+	request *v1.UpdateDataPlaneHealthRequest) (
 	*v1.UpdateDataPlaneHealthResponse,
 	error,
 ) {
+	slog.Debug("Update data plane health request", "request", request)
+
+	if request == nil {
+		return nil, errors.New("empty update dataplane health request")
+	}
+
+	cs.updateDataPlaneHealthMutex.Lock()
+	cs.updateDataPlaneHealthRequest = request
+	cs.updateDataPlaneHealthMutex.Unlock()
+
 	return &v1.UpdateDataPlaneHealthResponse{}, nil
 }
 
@@ -150,6 +163,7 @@ func (cs *CommandService) createServer(logger *slog.Logger) {
 
 	cs.addConnectionEndpoint()
 	cs.addStatusEndpoint()
+	cs.addHealthEndpoint()
 	cs.addResponseAndRequestEndpoints()
 }
 
@@ -182,6 +196,24 @@ func (cs *CommandService) addStatusEndpoint() {
 			var data map[string]interface{}
 			if err := json.Unmarshal([]byte(protojson.Format(cs.updateDataPlaneStatusRequest)), &data); err != nil {
 				slog.Error("Failed to return status", "error", err)
+				c.JSON(http.StatusInternalServerError, nil)
+			}
+			c.JSON(http.StatusOK, data)
+		}
+	})
+}
+
+func (cs *CommandService) addHealthEndpoint() {
+	cs.server.GET("/api/v1/health", func(c *gin.Context) {
+		cs.updateDataPlaneHealthMutex.Lock()
+		defer cs.updateDataPlaneHealthMutex.Unlock()
+
+		if cs.updateDataPlaneHealthRequest == nil {
+			c.JSON(http.StatusNotFound, nil)
+		} else {
+			var data map[string]interface{}
+			if err := json.Unmarshal([]byte(protojson.Format(cs.updateDataPlaneHealthRequest)), &data); err != nil {
+				slog.Error("Failed to return data plane health", "error", err)
 				c.JSON(http.StatusInternalServerError, nil)
 			}
 			c.JSON(http.StatusOK, data)

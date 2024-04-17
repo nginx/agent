@@ -15,6 +15,7 @@
     - [Instance](#mpi-v1-Instance)
     - [InstanceAction](#mpi-v1-InstanceAction)
     - [InstanceConfig](#mpi-v1-InstanceConfig)
+    - [InstanceHealth](#mpi-v1-InstanceHealth)
     - [InstanceMeta](#mpi-v1-InstanceMeta)
     - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
     - [MetricsServer](#mpi-v1-MetricsServer)
@@ -27,6 +28,7 @@
     - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
     - [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse)
   
+    - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
     - [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType)
   
     - [CommandService](#mpi-v1-CommandService)
@@ -116,7 +118,7 @@ Container information
 <a name="mpi-v1-CreateConnectionRequest"></a>
 
 ### CreateConnectionRequest
-The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
+The connection request is an initial handshake to establish a connection, sending NGINX Agent instance information
 
 
 | Field | Type | Label | Description |
@@ -226,6 +228,23 @@ Instance Configuration options
 
 
 
+<a name="mpi-v1-InstanceHealth"></a>
+
+### InstanceHealth
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance_id | [string](#string) |  |  |
+| instance_health_status | [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus) |  | Health status |
+| description | [string](#string) |  | Provides a human readable context around why a health status is a particular state |
+
+
+
+
+
+
 <a name="mpi-v1-InstanceMeta"></a>
 
 ### InstanceMeta
@@ -256,7 +275,7 @@ A Management Plane request for information, triggers an associated rpc on the Da
 <a name="mpi-v1-MetricsServer"></a>
 
 ### MetricsServer
-The metrics settings associated with orgins (sources) of the metrics and destinations (exporter)
+The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
 
 
 
@@ -340,6 +359,12 @@ A representation of instances and runtime resource information
 Health report of a set of instances
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| instance_healths | [InstanceHealth](#mpi-v1-InstanceHealth) | repeated | Health report of a set of instances |
+
+
 
 
 
@@ -382,6 +407,20 @@ Respond to a UpdateDataPlaneStatusRequest - intentionally empty
  
 
 
+<a name="mpi-v1-InstanceHealth-InstanceHealthStatus"></a>
+
+### InstanceHealth.InstanceHealthStatus
+Health status enum
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| INSTANCE_HEALTH_STATUS_UNSPECIFIED | 0 | Unspecified status |
+| INSTANCE_HEALTH_STATUS_HEALTHY | 1 | Healthy status |
+| INSTANCE_HEALTH_STATUS_UNHEALTHY | 2 | Unhealthy status |
+| INSTANCE_HEALTH_STATUS_DEGRADED | 3 | Degraded status |
+
+
+
 <a name="mpi-v1-InstanceMeta-InstanceType"></a>
 
 ### InstanceMeta.InstanceType
@@ -411,7 +450,7 @@ The ManagementPlaneRequest sent in the Subscribe stream triggers one or more cli
 Messages provided by the Management Plane must be a FIFO ordered queue. Messages in the queue must have a monotonically-increasing integer index. 
 The indexes do not need to be sequential. The index must be a 64-bit signed integer.
 The index must not reset for the entire lifetime of a unique Agent (i.e. the index does not reset to 0 only because of a temporary disconnection or new session). 
-Messages must not be removed from the Mangement Plane queue until Ack’d by the Agent. 
+Messages must not be removed from the Management Plane queue until Ack’d by the Agent. 
 Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as they may need to be retried.
 
 | Method Name | Request Type | Response Type | Description |
