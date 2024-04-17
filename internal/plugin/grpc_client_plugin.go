@@ -55,10 +55,10 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 		isConnected.Store(false)
 
 		return &GrpcClient{
-			config:          agentConfig,
-			isConnected:     isConnected,
-			resource:        &v1.Resource{
-				Instances:  []*v1.Instance{},
+			config:      agentConfig,
+			isConnected: isConnected,
+			resource: &v1.Resource{
+				Instances: []*v1.Instance{},
 			},
 			instances:       []*v1.Instance{},
 			connectionMutex: sync.Mutex{},

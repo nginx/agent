@@ -27,7 +27,7 @@ type ResourceService struct {
 
 func NewResourceService() *ResourceService {
 	return &ResourceService{
-		resource:      &v1.Resource{
+		resource: &v1.Resource{
 			Instances: []*v1.Instance{},
 		},
 		resourceMutex: sync.Mutex{},
