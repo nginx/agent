@@ -326,7 +326,7 @@ A set of runtime NGINX Plus settings
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| stub_status | [string](#string) |  | the stub status API location |
+| stub_status | [string](#string) |  | the stub status API URL |
 | access_logs | [string](#string) | repeated | a list of access_logs |
 | error_logs | [string](#string) | repeated | a list of error_logs |
 | loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
@@ -346,7 +346,7 @@ A set of runtime NGINX OSS settings
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| stub_status | [string](#string) |  | the stub status API location |
+| stub_status | [string](#string) |  | the stub status API URL |
 | access_logs | [string](#string) | repeated | a list of access_logs |
 | error_logs | [string](#string) | repeated | a list of error_logs |
 | loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |

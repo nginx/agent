@@ -83,7 +83,5 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 func (*Resource) Subscriptions() []string {
 	return []string{
 		bus.OsProcessesTopic,
-		// this was in instances plugin, will double check if needed
-		bus.InstanceConfigUpdateRequestTopic,
 	}
 }

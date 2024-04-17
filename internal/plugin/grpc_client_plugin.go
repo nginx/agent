@@ -19,7 +19,6 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
-	"github.com/nginx/agent/v3/internal/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -36,10 +35,7 @@ type (
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
 		resource             *v1.Resource
-		instances            []*v1.Instance
-		resourceService      service.ResourceServiceInterface
 		connectionMutex      sync.Mutex
-		instancesMutex       sync.Mutex
 		resourceMutex        sync.Mutex
 	}
 )
@@ -60,9 +56,7 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 			resource: &v1.Resource{
 				Instances: []*v1.Instance{},
 			},
-			instances:       []*v1.Instance{},
 			connectionMutex: sync.Mutex{},
-			instancesMutex:  sync.Mutex{},
 			resourceMutex:   sync.Mutex{},
 		}
 	}

@@ -48,7 +48,6 @@ func TestResourceMonitor_Subscriptions(t *testing.T) {
 	assert.Equal(t,
 		[]string{
 			bus.OsProcessesTopic,
-			bus.InstanceConfigUpdateRequestTopic,
 		},
 		resource.Subscriptions())
 }

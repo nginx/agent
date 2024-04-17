@@ -180,7 +180,7 @@ message InstanceRuntime {
 
 // A set of runtime NGINX OSS settings
 message NGINXRuntimeInfo {
-    // the stub status API location
+    // the stub status API URL
     string stub_status = 1;
     // a list of access_logs
     repeated string access_logs = 2;
@@ -194,7 +194,7 @@ message NGINXRuntimeInfo {
 
 // A set of runtime NGINX Plus settings
 message NGINXPlusRuntimeInfo {
-    // the stub status API location
+    // the stub status API URL
     string stub_status = 1;
     // a list of access_logs
     repeated string access_logs = 2;

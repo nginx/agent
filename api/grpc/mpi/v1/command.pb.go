@@ -1094,7 +1094,7 @@ type NGINXRuntimeInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// the stub status API location
+	// the stub status API URL
 	StubStatus string `protobuf:"bytes,1,opt,name=stub_status,json=stubStatus,proto3" json:"stub_status,omitempty"`
 	// a list of access_logs
 	AccessLogs []string `protobuf:"bytes,2,rep,name=access_logs,json=accessLogs,proto3" json:"access_logs,omitempty"`
@@ -1179,7 +1179,7 @@ type NGINXPlusRuntimeInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// the stub status API location
+	// the stub status API URL
 	StubStatus string `protobuf:"bytes,1,opt,name=stub_status,json=stubStatus,proto3" json:"stub_status,omitempty"`
 	// a list of access_logs
 	AccessLogs []string `protobuf:"bytes,2,rep,name=access_logs,json=accessLogs,proto3" json:"access_logs,omitempty"`
