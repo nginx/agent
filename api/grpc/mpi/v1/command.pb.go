@@ -519,7 +519,7 @@ type UpdateDataPlaneStatusRequest struct {
 
 	// Meta-information associated with a message
 	MessageMeta *MessageMeta `protobuf:"bytes,1,opt,name=message_meta,json=messageMeta,proto3" json:"message_meta,omitempty"`
-	// the reresentation of a data plane
+	// the representation of a data plane
 	Resource *Resource `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
 }
 
@@ -831,7 +831,7 @@ func (x *Instance) GetInstanceRuntime() *InstanceRuntime {
 	return nil
 }
 
-// Metainformation relating to the reported instance
+// Meta-information relating to the reported instance
 type InstanceMeta struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1100,7 +1100,7 @@ type NGINXRuntimeInfo struct {
 	AccessLogs []string `protobuf:"bytes,2,rep,name=access_logs,json=accessLogs,proto3" json:"access_logs,omitempty"`
 	// a list of error_logs
 	ErrorLogs []string `protobuf:"bytes,3,rep,name=error_logs,json=errorLogs,proto3" json:"error_logs,omitempty"`
-	// List of NGINX potentially lodable modules (installed but not loaded).
+	// List of NGINX potentially loadable modules (installed but not loaded).
 	LoadableModules []string `protobuf:"bytes,4,rep,name=loadable_modules,json=loadableModules,proto3" json:"loadable_modules,omitempty"`
 	// List of NGINX dynamic modules.
 	DynamicModules []string `protobuf:"bytes,5,rep,name=dynamic_modules,json=dynamicModules,proto3" json:"dynamic_modules,omitempty"`
@@ -1185,7 +1185,7 @@ type NGINXPlusRuntimeInfo struct {
 	AccessLogs []string `protobuf:"bytes,2,rep,name=access_logs,json=accessLogs,proto3" json:"access_logs,omitempty"`
 	// a list of error_logs
 	ErrorLogs []string `protobuf:"bytes,3,rep,name=error_logs,json=errorLogs,proto3" json:"error_logs,omitempty"`
-	// List of NGINX potentially lodable modules (installed but not loaded).
+	// List of NGINX potentially loadable modules (installed but not loaded).
 	LoadableModules []string `protobuf:"bytes,4,rep,name=loadable_modules,json=loadableModules,proto3" json:"loadable_modules,omitempty"`
 	// List of NGINX dynamic modules.
 	DynamicModules []string `protobuf:"bytes,5,rep,name=dynamic_modules,json=dynamicModules,proto3" json:"dynamic_modules,omitempty"`

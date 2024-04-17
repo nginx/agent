@@ -231,7 +231,7 @@ Instance Configuration options
 <a name="mpi-v1-InstanceMeta"></a>
 
 ### InstanceMeta
-Metainformation relating to the reported instance
+Meta-information relating to the reported instance
 
 
 | Field | Type | Label | Description |
@@ -329,7 +329,7 @@ A set of runtime NGINX Plus settings
 | stub_status | [string](#string) |  | the stub status API location |
 | access_logs | [string](#string) | repeated | a list of access_logs |
 | error_logs | [string](#string) | repeated | a list of error_logs |
-| loadable_modules | [string](#string) | repeated | List of NGINX potentially lodable modules (installed but not loaded). |
+| loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
 | dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
 | plus_api | [string](#string) |  | the plus API location |
 
@@ -349,7 +349,7 @@ A set of runtime NGINX OSS settings
 | stub_status | [string](#string) |  | the stub status API location |
 | access_logs | [string](#string) | repeated | a list of access_logs |
 | error_logs | [string](#string) | repeated | a list of error_logs |
-| loadable_modules | [string](#string) | repeated | List of NGINX potentially lodable modules (installed but not loaded). |
+| loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
 | dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
 
 
@@ -423,7 +423,7 @@ Report on the status of the Data Plane
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
-| resource | [Resource](#mpi-v1-Resource) |  | the reresentation of a data plane |
+| resource | [Resource](#mpi-v1-Resource) |  | the representation of a data plane |
 
 
 
