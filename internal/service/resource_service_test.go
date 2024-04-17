@@ -51,6 +51,7 @@ func TestResourceService_GetResource(t *testing.T) {
 
 		resourceService := NewResourceService()
 		resourceService.info = mockInfo
+		resourceService.resource = tc.expectedResource
 
 		resource := resourceService.GetResource(ctx)
 		assert.Equal(t, tc.expectedResource.GetResourceId(), resource.GetResourceId())
