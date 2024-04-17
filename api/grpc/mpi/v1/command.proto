@@ -20,7 +20,7 @@ import "google/protobuf/struct.proto";
 // Messages provided by the Management Plane must be a FIFO ordered queue. Messages in the queue must have a monotonically-increasing integer index. 
 // The indexes do not need to be sequential. The index must be a 64-bit signed integer.
 // The index must not reset for the entire lifetime of a unique Agent (i.e. the index does not reset to 0 only because of a temporary disconnection or new session). 
-// Messages must not be removed from the Mangement Plane queue until Ack’d by the Agent. 
+// Messages must not be removed from the Management Plane queue until Ack’d by the Agent. 
 // Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as they may need to be retried.
 service CommandService {
     // Connects NGINX Agent to the Management Plane agnostic of instance data
@@ -35,7 +35,7 @@ service CommandService {
     rpc Subscribe(stream DataPlaneResponse) returns (stream ManagementPlaneRequest) {}
 }
 
-// The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
+// The connection request is an initial handshake to establish a connection, sending NGINX Agent instance information
 message CreateConnectionRequest {
     // Meta-information associated with a message
     mpi.v1.MessageMeta message_meta = 1;
@@ -107,8 +107,32 @@ message UpdateDataPlaneStatusRequest {
 // Respond to a UpdateDataPlaneStatusRequest - intentionally empty
 message UpdateDataPlaneStatusResponse {}
 
+message InstanceHealth {
+    // Health status enum
+    enum InstanceHealthStatus {
+        // Unspecified status
+        INSTANCE_HEALTH_STATUS_UNSPECIFIED = 0;
+        // Healthy status
+        INSTANCE_HEALTH_STATUS_HEALTHY = 1;
+        // Unhealthy status
+        INSTANCE_HEALTH_STATUS_UNHEALTHY = 2;
+        // Degraded status
+        INSTANCE_HEALTH_STATUS_DEGRADED = 3;
+    }
+    string instance_id = 1;
+    // Health status
+    InstanceHealthStatus instance_health_status = 2;
+    // Provides a human readable context around why a health status is a particular state
+    string description = 3;
+}
+
 // Health report of a set of instances
-message UpdateDataPlaneHealthRequest {}
+message UpdateDataPlaneHealthRequest {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
+    // Health report of a set of instances
+    repeated InstanceHealth instance_healths = 2;
+}
 
 // Response to a UpdateDataPlaneHealthRequest - intentionally empty
 message UpdateDataPlaneHealthResponse {}
@@ -250,7 +274,7 @@ message NGINXPlusConfig {
 // The command settings, associated with messaging from an external source 
 message CommandServer {}
 
-// The metrics settings associated with orgins (sources) of the metrics and destinations (exporter)
+// The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
 message MetricsServer {}
 
 // The file settings associated with file server for configurations
