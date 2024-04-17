@@ -42,25 +42,9 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 		{
 			"Test 2: GRPC type not specified in config",
 			&config.Config{
-				Command: &config.Command{
-					Server: &config.ServerConfig{
-						Host: "127.0.0.1",
-						Port: 8888,
-						Type: "http",
-					},
-				},
-				Common: &config.CommonSettings{
-					InitialInterval:     100 * time.Microsecond,
-					MaxInterval:         1000 * time.Microsecond,
-					MaxElapsedTime:      10 * time.Millisecond,
-					RandomizationFactor: 0.1,
-					Multiplier:          0.2,
-				},
-				Client: &config.Client{
-					Timeout:             100 * time.Microsecond,
-					Time:                200 * time.Microsecond,
-					PermitWithoutStream: false,
-				},
+				Command: types.GetAgentConfig().Command,
+				Common:  types.GetAgentConfig().Common,
+				Client:  types.GetAgentConfig().Client,
 			},
 			nil,
 		},
@@ -72,38 +56,16 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 		{
 			"Test 4: nil client settings",
 			&config.Config{
-				Command: &config.Command{
-					Server: &config.ServerConfig{
-						Host: "127.0.0.1",
-						Port: 8888,
-						Type: "http",
-					},
-				},
-				Common: &config.CommonSettings{
-					InitialInterval:     100 * time.Microsecond,
-					MaxInterval:         1000 * time.Microsecond,
-					MaxElapsedTime:      10 * time.Millisecond,
-					RandomizationFactor: 0.1,
-					Multiplier:          0.2,
-				},
+				Command: types.GetAgentConfig().Command,
+				Common:  types.GetAgentConfig().Common,
 			},
 			nil,
 		},
 		{
 			"Test 5: nil common settings",
 			&config.Config{
-				Command: &config.Command{
-					Server: &config.ServerConfig{
-						Host: "127.0.0.1",
-						Port: 8888,
-						Type: "grpc",
-					},
-				},
-				Client: &config.Client{
-					Timeout:             100 * time.Microsecond,
-					Time:                200 * time.Microsecond,
-					PermitWithoutStream: false,
-				},
+				Command: types.GetAgentConfig().Command,
+				Client:  types.GetAgentConfig().Client,
 			},
 			nil,
 		},
@@ -153,8 +115,8 @@ func TestGrpcClient_Init(t *testing.T) {
 			client.resourceService = mockReourceService
 			assert.NotNil(tt, client)
 
-			messagePipe := bus.NewMessagePipe(100)
-			err := messagePipe.Register(100, []bus.Plugin{client})
+			messagePipe := bus.NewMessagePipe(10)
+			err := messagePipe.Register(1, []bus.Plugin{client})
 			require.NoError(tt, err)
 
 			err = client.Init(ctx, messagePipe)
@@ -176,9 +138,10 @@ func TestGrpcClient_Info(t *testing.T) {
 func TestGrpcClient_Subscriptions(t *testing.T) {
 	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
-	assert.Len(t, subscriptions, 2)
+	assert.Len(t, subscriptions, 3)
 	assert.Equal(t, bus.InstancesTopic, subscriptions[0])
 	assert.Equal(t, bus.GrpcConnectedTopic, subscriptions[1])
+	assert.Equal(t, bus.ResourceTopic, subscriptions[2])
 }
 
 func TestGrpcClient_Process_InstancesTopic(t *testing.T) {
@@ -195,11 +158,32 @@ func TestGrpcClient_Process_InstancesTopic(t *testing.T) {
 
 	mockMessage := &bus.Message{
 		Topic: bus.InstancesTopic,
-		Data:  []*v1.Instance{},
+		Data:  []*v1.Instance{protos.GetNginxOssInstance()},
 	}
 	client.Process(ctx, mockMessage)
 
 	assert.Equal(t, 1, fakeCommandServiceClient.UpdateDataPlaneStatusCallCount())
+}
+
+func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
+	ctx := context.Background()
+	agentConfig := types.GetAgentConfig()
+	expected := protos.GetHostResource()
+	client := NewGrpcClient(agentConfig)
+	assert.NotNil(t, client)
+
+	fakeCommandServiceClient := &v1fakes.FakeCommandServiceClient{}
+
+	client.commandServiceClient = fakeCommandServiceClient
+	client.isConnected.Store(true)
+
+	mockMessage := &bus.Message{
+		Topic: bus.ResourceTopic,
+		Data:  expected,
+	}
+	client.Process(ctx, mockMessage)
+
+	assert.Equal(t, expected, client.resource)
 }
 
 func TestGrpcClient_Close(t *testing.T) {
@@ -354,6 +338,9 @@ func TestGrpcClient_Close(t *testing.T) {
 
 			client := NewGrpcClient(test.agentConfig)
 			assert.NotNil(tt, client)
+
+			client.resource = protos.GetHostResource()
+			client.instances = []*v1.Instance{protos.GetNginxOssInstance()}
 
 			messagePipe := bus.NewMessagePipe(100)
 			err = messagePipe.Register(100, []bus.Plugin{client})

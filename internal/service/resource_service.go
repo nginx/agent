@@ -7,6 +7,7 @@ package service
 
 import (
 	"context"
+	"sync"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host"
@@ -21,32 +22,32 @@ type ResourceServiceInterface interface {
 type ResourceService struct {
 	info     host.InfoInterface
 	resource *v1.Resource
+	// config   *v1.AgentConfig
+	resourceMutex sync.Mutex
 }
 
 func NewResourceService() *ResourceService {
-	resource := &v1.Resource{
-		ResourceId: "",
-		Instances:  []*v1.Instance{},
-	}
-
 	return &ResourceService{
-		info:     host.NewInfo(),
-		resource: resource,
+		resourceMutex: sync.Mutex{},
 	}
 }
 
 func (rs *ResourceService) GetResource(ctx context.Context) *v1.Resource {
-	resource := &v1.Resource{
-		Instances: []*v1.Instance{},
-	}
+	rs.resourceMutex.Lock()
+	// oldInstances := rs.resource.Instances
 
 	if rs.info.IsContainer() {
-		resource.Info = rs.info.ContainerInfo()
-		resource.ResourceId = resource.GetContainerInfo().GetContainerId()
+		rs.resource.Info = rs.info.ContainerInfo()
+		rs.resource.ResourceId = rs.resource.GetContainerInfo().GetContainerId()
+
+		rs.resource.Instances = []*v1.Instance{}
 	} else {
-		resource.Info = rs.info.HostInfo(ctx)
-		resource.ResourceId = resource.GetHostInfo().GetHostId()
+		rs.resource.Info = rs.info.HostInfo(ctx)
+		rs.resource.ResourceId = rs.resource.GetHostInfo().GetHostId()
+		rs.resource.Instances = []*v1.Instance{}
 	}
 
-	return resource
+	rs.resourceMutex.Unlock()
+
+	return rs.resource
 }

@@ -40,6 +40,7 @@ type (
 		resourceService      service.ResourceServiceInterface
 		connectionMutex      sync.Mutex
 		instancesMutex       sync.Mutex
+		resourceMutex        sync.Mutex
 	}
 )
 
@@ -58,9 +59,9 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 			isConnected:     isConnected,
 			resource:        &v1.Resource{},
 			instances:       []*v1.Instance{},
-			resourceService: service.NewResourceService(),
 			connectionMutex: sync.Mutex{},
 			instancesMutex:  sync.Mutex{},
+			resourceMutex:   sync.Mutex{},
 		}
 	}
 
@@ -101,6 +102,20 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 func (gc *GrpcClient) createConnection() error {
 	ctx := context.Background()
 
+	gc.instancesMutex.Lock()
+	defer gc.instancesMutex.Unlock()
+
+	if len(gc.instances) == 0 {
+		return fmt.Errorf("error waiting on instances to get updated")
+	}
+
+	gc.resourceMutex.Lock()
+	defer gc.resourceMutex.Unlock()
+
+	if (gc.resource == &v1.Resource{}) {
+		return fmt.Errorf("error waiting on resource to get updated")
+	}
+
 	// nolint: revive
 	id, err := uuid.NewV7()
 	if err != nil {
@@ -110,18 +125,6 @@ func (gc *GrpcClient) createConnection() error {
 	correlationID, err := uuid.NewUUID()
 	if err != nil {
 		return fmt.Errorf("error generating correlation id: %w", err)
-	}
-
-	newResource := gc.resourceService.GetResource(ctx)
-	newResource.Instances = []*v1.Instance{
-		{
-			InstanceMeta: &v1.InstanceMeta{
-				InstanceId:   gc.config.UUID,
-				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
-				Version:      gc.config.Version,
-			},
-			InstanceConfig: &v1.InstanceConfig{},
-		},
 	}
 
 	gc.connectionMutex.Lock()
@@ -138,7 +141,7 @@ func (gc *GrpcClient) createConnection() error {
 			CorrelationId: correlationID.String(),
 			Timestamp:     timestamppb.Now(),
 		},
-		Resource: newResource,
+		Resource: gc.resource,
 	}
 
 	reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
@@ -202,6 +205,12 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
 		}
+	case bus.ResourceTopic:
+		if newResource, ok := msg.Data.(*v1.Resource); ok {
+			gc.resourceMutex.Lock()
+			gc.resource = newResource
+			gc.resourceMutex.Unlock()
+		}
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
@@ -211,6 +220,7 @@ func (gc *GrpcClient) Subscriptions() []string {
 	return []string{
 		bus.InstancesTopic,
 		bus.GrpcConnectedTopic,
+		bus.ResourceTopic,
 	}
 }
 
