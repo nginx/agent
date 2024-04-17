@@ -34,7 +34,7 @@ func NewResourceService() *ResourceService {
 
 func (rs *ResourceService) GetResource(ctx context.Context) *v1.Resource {
 	rs.resourceMutex.Lock()
-	// oldInstances := rs.resource.Instances
+	defer rs.resourceMutex.Unlock()
 
 	if rs.info.IsContainer() {
 		rs.resource.Info = rs.info.ContainerInfo()
@@ -46,8 +46,6 @@ func (rs *ResourceService) GetResource(ctx context.Context) *v1.Resource {
 		rs.resource.ResourceId = rs.resource.GetHostInfo().GetHostId()
 		rs.resource.Instances = []*v1.Instance{}
 	}
-
-	rs.resourceMutex.Unlock()
 
 	return rs.resource
 }

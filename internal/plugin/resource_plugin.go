@@ -43,7 +43,6 @@ func (r *Resource) Init(ctx context.Context, messagePipe bus.MessagePipeInterfac
 
 	r.resourceMutex.Lock()
 	r.resource = r.resourceService.GetResource(ctx)
-	// r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: r.resource})
 	r.resourceMutex.Unlock()
 
 	return nil

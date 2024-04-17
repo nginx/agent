@@ -38,13 +38,8 @@ type (
 	ConnectionRequest struct {
 		ConnectionRequest *v1.CreateConnectionRequest `json:"connectionRequest"`
 	}
-	// NginxInstanceConfig struct {
-	// 	InstanceActions []*v1.InstanceAction           `json:"instance_actions"`
-	// 	Config          *v1.InstanceConfig_NginxConfig `json:"Config"`
-	// }
 	Instance struct {
-		InstanceMeta *v1.InstanceMeta `json:"instance_meta"`
-		// InstanceConfig v  `json:"instance_config"`
+		InstanceMeta    *v1.InstanceMeta    `json:"instance_meta"`
 		InstanceRuntime *v1.InstanceRuntime `json:"instance_runtime"`
 	}
 	NginxUpdateDataPlaneHealthRequest struct {

@@ -118,7 +118,13 @@ func TestResource_Instances_Process(t *testing.T) {
 
 func TestResource_Process_Error_Expected(t *testing.T) {
 	ctx := context.Background()
+	testResource := protos.GetHostResource()
+
+	fakeResourceService := &servicefakes.FakeResourceServiceInterface{}
+	fakeResourceService.GetResourceReturns(testResource)
+
 	resourcePlugin := NewResource()
+	resourcePlugin.resourceService = fakeResourceService
 
 	messagePipe := bus.NewFakeMessagePipe()
 	err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
