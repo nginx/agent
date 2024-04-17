@@ -58,7 +58,6 @@ func TestConfig_Subscriptions(t *testing.T) {
 	assert.Equal(t, []string{
 		bus.InstanceConfigUpdateRequestTopic,
 		bus.InstanceConfigUpdateTopic,
-		bus.InstancesTopic,
 		bus.ResourceTopic,
 	}, subscriptions)
 }
@@ -134,17 +133,7 @@ func TestConfig_Process(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "Test 5: Instance topic request",
-			input: &bus.Message{
-				Topic: bus.InstancesTopic,
-				Data: []*v1.Instance{
-					testInstance,
-				},
-			},
-			expected: nil,
-		},
-		{
-			name: "Test 6: Resource request",
+			name: "Test 5: Resource request",
 			input: &bus.Message{
 				Topic: bus.ResourceTopic,
 				Data:  protos.GetContainerizedResource(),

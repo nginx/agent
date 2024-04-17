@@ -48,41 +48,9 @@ func TestResourceMonitor_Subscriptions(t *testing.T) {
 	assert.Equal(t,
 		[]string{
 			bus.OsProcessesTopic,
-			bus.InstancesTopic,
 			bus.InstanceConfigUpdateRequestTopic,
 		},
 		resource.Subscriptions())
-}
-
-func TestResourceMonitor_Process(t *testing.T) {
-	ctx := context.Background()
-	resource := protos.GetContainerizedResource()
-
-	mockReourceService := &servicefakes.FakeResourceServiceInterface{}
-	mockReourceService.GetResourceReturns(resource)
-
-	messagePipe := bus.NewFakeMessagePipe()
-	messagePipe.RunWithoutInit(ctx)
-
-	resourcePlugin := NewResource()
-	resourcePlugin.resourceService = mockReourceService
-	err := resourcePlugin.Init(ctx, messagePipe)
-	require.NoError(t, err)
-
-	instances := []*v1.Instance{
-		protos.GetNginxOssInstance(),
-	}
-
-	resourcePlugin.Process(ctx, &bus.Message{
-		Topic: bus.InstancesTopic,
-		Data:  instances,
-	})
-
-	messages := messagePipe.GetMessages()
-
-	assert.Len(t, messages, 1)
-	assert.Equal(t, bus.ResourceTopic, messages[0].Topic)
-	assert.Equal(t, resource, messages[0].Data)
 }
 
 func TestResource_Instances_Process(t *testing.T) {
@@ -107,13 +75,11 @@ func TestResource_Instances_Process(t *testing.T) {
 	messagePipe.Process(ctx, processesMessage)
 	messagePipe.Run(ctx)
 
-	assert.Len(t, messagePipe.GetProcessedMessages(), 3)
+	assert.Len(t, messagePipe.GetProcessedMessages(), 2)
 	assert.Equal(t, processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
 	assert.Equal(t, processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
-	assert.Equal(t, bus.InstancesTopic, messagePipe.GetProcessedMessages()[1].Topic)
-	assert.Equal(t, testResource.GetInstances(), messagePipe.GetProcessedMessages()[1].Data)
-	assert.Equal(t, bus.ResourceTopic, messagePipe.GetProcessedMessages()[2].Topic)
-	assert.Equal(t, testResource, messagePipe.GetProcessedMessages()[2].Data)
+	assert.Equal(t, bus.ResourceTopic, messagePipe.GetProcessedMessages()[1].Topic)
+	assert.Equal(t, testResource, messagePipe.GetProcessedMessages()[1].Data)
 }
 
 func TestResource_Process_Error_Expected(t *testing.T) {
@@ -161,11 +127,9 @@ func TestResource_Process_Empty_Instances(t *testing.T) {
 	messagePipe.Process(ctx, processesMessage)
 	messagePipe.Run(ctx)
 
-	assert.Len(t, messagePipe.GetProcessedMessages(), 3)
+	assert.Len(t, messagePipe.GetProcessedMessages(), 2)
 	assert.Equal(t, processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
 	assert.Equal(t, processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
-	assert.Equal(t, bus.InstancesTopic, messagePipe.GetProcessedMessages()[1].Topic)
-	assert.Equal(t, testInstances, messagePipe.GetProcessedMessages()[1].Data)
-	assert.Equal(t, bus.ResourceTopic, messagePipe.GetProcessedMessages()[2].Topic)
-	assert.Equal(t, testResource, messagePipe.GetProcessedMessages()[2].Data)
+	assert.Equal(t, bus.ResourceTopic, messagePipe.GetProcessedMessages()[1].Topic)
+	assert.Equal(t, testResource, messagePipe.GetProcessedMessages()[1].Data)
 }

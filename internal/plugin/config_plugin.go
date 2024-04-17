@@ -69,12 +69,6 @@ func (c *Config) Process(ctx context.Context, msg *bus.Message) {
 		c.processConfigurationStatus(ctx, msg)
 	case msg.Topic == bus.InstanceConfigUpdateRequestTopic:
 		c.processInstanceConfigUpdateRequest(ctx, msg)
-	case msg.Topic == bus.InstancesTopic:
-		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
-			c.resourceMutex.Lock()
-			c.resource.Instances = newInstances
-			c.resourceMutex.Unlock()
-		}
 	case msg.Topic == bus.ResourceTopic:
 		if resource, ok := msg.Data.(*v1.Resource); ok {
 			c.resourceMutex.Lock()
@@ -88,7 +82,6 @@ func (*Config) Subscriptions() []string {
 	return []string{
 		bus.InstanceConfigUpdateRequestTopic,
 		bus.InstanceConfigUpdateTopic,
-		bus.InstancesTopic,
 		bus.ResourceTopic,
 	}
 }

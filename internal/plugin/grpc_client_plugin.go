@@ -183,17 +183,6 @@ func (gc *GrpcClient) Info() *bus.Info {
 
 func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	case bus.InstancesTopic:
-		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
-			gc.instancesMutex.Lock()
-			gc.resource.Instances = newInstances
-			gc.instancesMutex.Unlock()
-
-			err := gc.sendDataPlaneStatusUpdate(ctx, gc.resource)
-			if err != nil {
-				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
-			}
-		}
 	case bus.GrpcConnectedTopic:
 		slog.DebugContext(ctx, "Agent connected")
 		gc.isConnected.Store(true)
@@ -210,6 +199,11 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 			gc.resourceMutex.Lock()
 			gc.resource = newResource
 			gc.resourceMutex.Unlock()
+
+			err := gc.sendDataPlaneStatusUpdate(ctx, gc.resource)
+			if err != nil {
+				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
+			}
 		}
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
@@ -218,7 +212,6 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 
 func (gc *GrpcClient) Subscriptions() []string {
 	return []string{
-		bus.InstancesTopic,
 		bus.GrpcConnectedTopic,
 		bus.ResourceTopic,
 	}

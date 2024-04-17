@@ -61,13 +61,6 @@ func (*Resource) Info() *bus.Info {
 
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	case bus.InstancesTopic:
-		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
-			r.resourceMutex.Lock()
-			r.resource.Instances = newInstances
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: r.resource})
-			r.resourceMutex.Unlock()
-		}
 	case bus.OsProcessesTopic:
 		newProcesses, ok := msg.Data.([]*model.Process)
 		if !ok {
@@ -77,7 +70,10 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		}
 
 		instanceList := r.instanceService.GetInstances(ctx, newProcesses)
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstancesTopic, Data: instanceList})
+		r.resourceMutex.Lock()
+		r.resource.Instances = instanceList
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: r.resource})
+		r.resourceMutex.Unlock()
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
@@ -86,7 +82,6 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 func (*Resource) Subscriptions() []string {
 	return []string{
 		bus.OsProcessesTopic,
-		bus.InstancesTopic,
 		// this was in instances plugin, will double check if needed
 		bus.InstanceConfigUpdateRequestTopic,
 	}
