@@ -115,30 +115,44 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 }
 
 func convertInfoToProcess(nginxInfo Info) *v1.Instance {
+	var instanceRuntime *v1.InstanceRuntime
 	nginxType := v1.InstanceMeta_INSTANCE_TYPE_NGINX
 	version := nginxInfo.Version
-	instanceConfig := &v1.InstanceConfig{
-		Config: &v1.InstanceConfig_NginxConfig{
-			NginxConfig: &v1.NGINXConfig{
-				BinaryPath: nginxInfo.ExePath,
-				ProcessId:  nginxInfo.ProcessID,
-				ConfigPath: nginxInfo.ConfPath,
-			},
-		},
-	}
 
-	if nginxInfo.PlusVersion != "" {
-		nginxType = v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS
-		version = nginxInfo.PlusVersion
-		instanceConfig = &v1.InstanceConfig{
-			Config: &v1.InstanceConfig_NginxPlusConfig{
-				NginxPlusConfig: &v1.NGINXPlusConfig{
-					BinaryPath: nginxInfo.ExePath,
-					ProcessId:  nginxInfo.ProcessID,
-					ConfigPath: nginxInfo.ConfPath,
+	if nginxInfo.PlusVersion == "" {
+		instanceRuntime = &v1.InstanceRuntime{
+			ProcessId:  nginxInfo.ProcessID,
+			BinaryPath: nginxInfo.ExePath,
+			ConfigPath: nginxInfo.ConfPath,
+			Details: &v1.InstanceRuntime_NginxRuntimeInfo{
+				NginxRuntimeInfo: &v1.NGINXRuntimeInfo{
+					StubStatus:      "",
+					AccessLogs:      []string{},
+					ErrorLogs:       []string{},
+					LoadableModules: []string{},
+					DynamicModules:  []string{},
 				},
 			},
 		}
+	} else {
+		instanceRuntime = &v1.InstanceRuntime{
+			ProcessId:  nginxInfo.ProcessID,
+			BinaryPath: nginxInfo.ExePath,
+			ConfigPath: nginxInfo.ConfPath,
+			Details: &v1.InstanceRuntime_NginxPlusRuntimeInfo{
+				NginxPlusRuntimeInfo: &v1.NGINXPlusRuntimeInfo{
+					StubStatus:      "",
+					AccessLogs:      []string{},
+					ErrorLogs:       []string{},
+					LoadableModules: []string{},
+					DynamicModules:  []string{},
+					PlusApi:         "",
+				},
+			},
+		}
+
+		nginxType = v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS
+		version = nginxInfo.PlusVersion
 	}
 
 	return &v1.Instance{
@@ -147,7 +161,7 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 			InstanceType: nginxType,
 			Version:      version,
 		},
-		InstanceConfig: instanceConfig,
+		InstanceRuntime: instanceRuntime,
 	}
 }
 

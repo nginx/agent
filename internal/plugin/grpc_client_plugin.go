@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"sync"
+	"sync/atomic"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -18,7 +19,6 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
-	"github.com/nginx/agent/v3/internal/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -31,9 +31,9 @@ type (
 		messagePipe          bus.MessagePipeInterface
 		config               *config.Config
 		conn                 *grpc.ClientConn
+		isConnected          *atomic.Bool
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
-		resourceService      service.ResourceServiceInterface
 		connectionMutex      sync.Mutex
 	}
 )
@@ -45,9 +45,12 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 			return nil
 		}
 
+		isConnected := &atomic.Bool{}
+		isConnected.Store(false)
+
 		return &GrpcClient{
 			config:          agentConfig,
-			resourceService: service.NewResourceService(),
+			isConnected:     isConnected,
 			connectionMutex: sync.Mutex{},
 		}
 	}
@@ -83,35 +86,10 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 
 	defer backoffCancel()
 
-	return backoff.WaitUntil(backOffCtx, gc.config.Common, gc.createConnection)
+	return backoff.WaitUntil(backOffCtx, gc.config.Common, gc.createConnectionClient)
 }
 
-func (gc *GrpcClient) createConnection() error {
-	ctx := context.Background()
-
-	// nolint: revive
-	id, err := uuid.NewV7()
-	if err != nil {
-		return fmt.Errorf("error generating message id: %w", err)
-	}
-
-	correlationID, err := uuid.NewUUID()
-	if err != nil {
-		return fmt.Errorf("error generating correlation id: %w", err)
-	}
-
-	newResource := gc.resourceService.GetResource(ctx)
-	newResource.Instances = []*v1.Instance{
-		{
-			InstanceMeta: &v1.InstanceMeta{
-				InstanceId:   gc.config.UUID,
-				InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
-				Version:      gc.config.Version,
-			},
-			InstanceConfig: &v1.InstanceConfig{},
-		},
-	}
-
+func (gc *GrpcClient) createConnectionClient() error {
 	gc.connectionMutex.Lock()
 	defer gc.connectionMutex.Unlock()
 
@@ -120,25 +98,6 @@ func (gc *GrpcClient) createConnection() error {
 	}
 
 	gc.commandServiceClient = v1.NewCommandServiceClient(gc.conn)
-	req := &v1.CreateConnectionRequest{
-		MessageMeta: &v1.MessageMeta{
-			MessageId:     id.String(),
-			CorrelationId: correlationID.String(),
-			Timestamp:     timestamppb.Now(),
-		},
-		Resource: newResource,
-	}
-
-	reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
-	defer reqCancel()
-
-	response, err := gc.commandServiceClient.CreateConnection(reqCtx, req)
-	if err != nil {
-		return fmt.Errorf("creating connection: %w", err)
-	}
-
-	slog.Debug("Connection created", "response", response)
-	gc.messagePipe.Process(ctx, &bus.Message{Topic: bus.GrpcConnectedTopic, Data: response})
 
 	return nil
 }
@@ -168,30 +127,83 @@ func (gc *GrpcClient) Info() *bus.Info {
 
 func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	case bus.InstancesTopic:
-		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
-			err := gc.sendDataPlaneStatusUpdate(ctx, newInstances)
+	case bus.ResourceTopic:
+		if resource, ok := msg.Data.(*v1.Resource); ok {
+			err := gc.createConnection(ctx, resource)
+			if err != nil {
+				return
+			}
+
+			err = gc.sendDataPlaneStatusUpdate(ctx, resource)
 			if err != nil {
 				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
 			}
 		}
-	case bus.GrpcConnectedTopic:
-		slog.DebugContext(ctx, "Agent connected")
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
 }
 
+func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resource) error {
+	if !gc.isConnected.Load() {
+		req, err := gc.createConnectionRequest(resource)
+		if err != nil {
+			slog.Error("Creating connection request", "error", err)
+			return err
+		}
+
+		reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
+		defer reqCancel()
+
+		response, err := gc.commandServiceClient.CreateConnection(reqCtx, req)
+		if err != nil {
+			slog.Error("Creating connection", "error", err)
+
+			return err
+		}
+
+		slog.DebugContext(ctx, "Connection created", "response", response)
+		slog.DebugContext(ctx, "Agent connected")
+
+		gc.isConnected.Store(true)
+	}
+
+	return nil
+}
+
+func (gc *GrpcClient) createConnectionRequest(resource *v1.Resource) (*v1.CreateConnectionRequest, error) {
+	id, err := uuid.NewV7()
+	if err != nil {
+		slog.Error("Generating message id", "error", err)
+		return nil, err
+	}
+
+	correlationID, err := uuid.NewUUID()
+	if err != nil {
+		slog.Error("Generating correlation id", "error", err)
+		return nil, err
+	}
+
+	return &v1.CreateConnectionRequest{
+		MessageMeta: &v1.MessageMeta{
+			MessageId:     id.String(),
+			CorrelationId: correlationID.String(),
+			Timestamp:     timestamppb.Now(),
+		},
+		Resource: resource,
+	}, nil
+}
+
 func (gc *GrpcClient) Subscriptions() []string {
 	return []string{
-		bus.InstancesTopic,
 		bus.GrpcConnectedTopic,
+		bus.ResourceTopic,
 	}
 }
 
 func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	ctx context.Context,
-	instances []*v1.Instance,
+	resource *v1.Resource,
 ) error {
 	correlationID := logger.GetCorrelationID(ctx)
 
@@ -201,7 +213,7 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
-		Instances: instances,
+		Resource: resource,
 	}
 
 	slog.DebugContext(ctx, "Sending data plane status update request", "request", request)

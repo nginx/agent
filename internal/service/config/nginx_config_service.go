@@ -10,9 +10,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"net"
+	"net/http"
 	"os"
 	re "regexp"
+	"strconv"
 	"strings"
 
 	"github.com/nginx/agent/v3/files"
@@ -33,6 +37,10 @@ const (
 	ltsvArg                           = "ltsv"
 	defaultNumberOfDirectiveArguments = 2
 	logTailerChannelSize              = 1024
+	plusAPIDirective                  = "api"
+	stubStatusAPIDirective            = "stub_status"
+	apiFormat                         = "http://%s%s"
+	locationDirective                 = "location"
 )
 
 var (
@@ -45,7 +53,8 @@ var (
 )
 
 type (
-	crossplaneTraverseCallback = func(parent, current *crossplane.Directive) error
+	crossplaneTraverseCallback    = func(ctx context.Context, parent, current *crossplane.Directive) error
+	crossplaneTraverseCallbackStr = func(ctx context.Context, parent, current *crossplane.Directive) string
 )
 
 type Nginx struct {
@@ -109,8 +118,8 @@ func (n *Nginx) SetConfigWriter(configWriter writer.ConfigWriterInterface) {
 	n.configWriter = configWriter
 }
 
-func (n *Nginx) ParseConfig(_ context.Context) (any, error) {
-	payload, err := crossplane.Parse(n.instance.GetInstanceConfig().GetNginxConfig().GetConfigPath(),
+func (n *Nginx) ParseConfig(ctx context.Context) (any, error) {
+	payload, err := crossplane.Parse(n.instance.GetInstanceRuntime().GetConfigPath(),
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   []string{},
 			SingleFile:         false,
@@ -120,19 +129,25 @@ func (n *Nginx) ParseConfig(_ context.Context) (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf(
 			"error reading config from %s, error: %w",
-			n.instance.GetInstanceConfig().GetNginxConfig().GetConfigPath(),
+			n.instance.GetInstanceRuntime().GetConfigPath(),
 			err,
 		)
 	}
 
-	accessLogs, errorLogs, err := getLogs(payload)
+	accessLogs, errorLogs, err := n.logs(ctx, payload)
 	if err != nil {
 		return nil, err
+	}
+
+	stubStatus, err := n.stubStatus(ctx)
+	if err != nil {
+		slog.Warn("Can not set stub_status", "error", err)
 	}
 
 	return &model.NginxConfigContext{
 		AccessLogs: accessLogs,
 		ErrorLogs:  errorLogs,
+		StubStatus: stubStatus,
 	}, nil
 }
 
@@ -142,21 +157,208 @@ func (n *Nginx) SetConfigContext(configContext any) {
 	}
 }
 
-func getLogs(payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog, error) {
+func (n *Nginx) stubStatus(ctx context.Context) (string, error) {
+	payload, err := crossplane.Parse(n.instance.GetInstanceRuntime().GetConfigPath(),
+		&crossplane.ParseOptions{
+			SingleFile:         false,
+			StopParsingOnError: true,
+			CombineConfigs:     true,
+		},
+	)
+	if err != nil {
+		return "",
+			fmt.Errorf("error reading config from %s, error: %w",
+				n.instance.GetInstanceRuntime().GetConfigPath(),
+				err)
+	}
+
+	for _, xpConf := range payload.Config {
+		stubStatusAPIURL := n.crossplaneConfigTraverseStr(ctx, &xpConf, n.stubStatusAPICallback)
+		if stubStatusAPIURL != "" {
+			return stubStatusAPIURL, nil
+		}
+	}
+
+	return "", errors.New("no stub status api reachable from the agent found")
+}
+
+func (n *Nginx) stubStatusAPICallback(ctx context.Context, parent, current *crossplane.Directive) string {
+	urls := n.urlsForLocationDirective(parent, current, stubStatusAPIDirective)
+
+	for _, url := range urls {
+		if n.pingStubStatusAPIEndpoint(ctx, url) {
+			slog.Debug("Stub_status not found", "url", url)
+			return url
+		}
+		slog.Debug("Stub_status is not reachable", "url", url)
+	}
+
+	return ""
+}
+
+func (n *Nginx) pingStubStatusAPIEndpoint(ctx context.Context, statusAPI string) bool {
+	client := http.Client{Timeout: n.agentConfig.Client.Timeout}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
+	if err != nil {
+		slog.Warn("Unable to create Stub Status API GET request", "error", err)
+		return false
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		slog.Warn("Unable to GET Stub Status from API request", "error", err)
+		return false
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		slog.Debug("Stub Status API responded with a status code", "status_code", resp.StatusCode)
+		return false
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		slog.Warn("Unable to read Stub Status API response body", "error", err)
+		return false
+	}
+
+	// Expecting API to return data like this:
+	//
+	// Active connections: 2
+	// server accepts handled requests
+	//  18 18 3266
+	// Reading: 0 Writing: 1 Waiting: 1
+	body := string(bodyBytes)
+	defer resp.Body.Close()
+
+	return strings.Contains(body, "Active connections") && strings.Contains(body, "server accepts handled requests")
+}
+
+func (n *Nginx) urlsForLocationDirective(parent, current *crossplane.Directive, locationDirectiveName string) []string {
+	var urls []string
+	// process from the location block
+	if current.Directive != locationDirective {
+		return urls
+	}
+
+	for _, locChild := range current.Block {
+		if locChild.Directive != plusAPIDirective && locChild.Directive != stubStatusAPIDirective {
+			continue
+		}
+
+		addresses := n.parseAddressesFromServerDirective(parent)
+
+		for _, address := range addresses {
+			path := n.parsePathFromLocationDirective(current)
+
+			if locChild.Directive == locationDirectiveName {
+				urls = append(urls, fmt.Sprintf(apiFormat, address, path))
+			}
+		}
+	}
+
+	return urls
+}
+
+func (n *Nginx) parsePathFromLocationDirective(location *crossplane.Directive) string {
+	path := "/"
+	if len(location.Args) > 0 {
+		if location.Args[0] != "=" {
+			path = location.Args[0]
+		} else {
+			path = location.Args[1]
+		}
+	}
+
+	return path
+}
+
+func (n *Nginx) parseAddressesFromServerDirective(parent *crossplane.Directive) []string {
+	foundHosts := []string{}
+	port := "80"
+
+	for _, dir := range parent.Block {
+		var hostname string
+
+		switch dir.Directive {
+		case "listen":
+			listenHost, listenPort, err := net.SplitHostPort(dir.Args[0])
+			if err == nil {
+				hostname, port = n.parseListenHostAndPort(listenHost, listenPort)
+			} else {
+				hostname, port = n.parseListenDirective(dir, "127.0.0.1", port)
+			}
+			foundHosts = append(foundHosts, hostname)
+		case "server_name":
+			if dir.Args[0] == "_" {
+				// default server
+				continue
+			}
+			hostname = dir.Args[0]
+			foundHosts = append(foundHosts, hostname)
+		}
+	}
+
+	return n.formatAddresses(foundHosts, port)
+}
+
+func (n *Nginx) formatAddresses(foundHosts []string, port string) []string {
+	addresses := []string{}
+	for _, foundHost := range foundHosts {
+		addresses = append(addresses, fmt.Sprintf("%s:%s", foundHost, port))
+	}
+
+	return addresses
+}
+
+func (n *Nginx) parseListenDirective(
+	dir *crossplane.Directive,
+	hostname, port string,
+) (directiveHost, directivePort string) {
+	directiveHost = hostname
+	directivePort = port
+	if n.isPort(dir.Args[0]) {
+		directivePort = dir.Args[0]
+	} else {
+		directiveHost = dir.Args[0]
+	}
+
+	return directiveHost, directivePort
+}
+
+func (n *Nginx) parseListenHostAndPort(listenHost, listenPort string) (hostname, port string) {
+	if listenHost == "*" || listenHost == "" {
+		hostname = "127.0.0.1"
+	} else if listenHost == "::" || listenHost == "::1" {
+		hostname = "[::1]"
+	} else {
+		hostname = listenHost
+	}
+	port = listenPort
+
+	return hostname, port
+}
+
+func (n *Nginx) isPort(value string) bool {
+	port, err := strconv.Atoi(value)
+
+	return err == nil && port >= 1 && port <= 65535
+}
+
+func (n *Nginx) logs(ctx context.Context, payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog, error) {
 	accessLogs := []*model.AccessLog{}
 	errorLogs := []*model.ErrorLog{}
 	for index := range payload.Config {
 		formatMap := make(map[string]string)
-		err := crossplaneConfigTraverse(&payload.Config[index],
-			func(parent, directive *crossplane.Directive) error {
+		err := n.crossplaneConfigTraverse(ctx, &payload.Config[index],
+			func(ctx context.Context, parent, directive *crossplane.Directive) error {
 				switch directive.Directive {
 				case "log_format":
-					formatMap = getFormatMap(directive)
+					formatMap = n.formatMap(directive)
 				case "access_log":
-					accessLog := getAccessLog(directive.Args[0], getAccessLogDirectiveFormat(directive), formatMap)
+					accessLog := n.accessLog(directive.Args[0], n.accessLogDirectiveFormat(directive), formatMap)
 					accessLogs = append(accessLogs, accessLog)
 				case "error_log":
-					errorLog := getErrorLog(directive.Args[0], getErrorLogDirectiveLevel(directive))
+					errorLog := n.errorLog(directive.Args[0], n.errorLogDirectiveLevel(directive))
 					errorLogs = append(errorLogs, errorLog)
 				}
 
@@ -172,14 +374,14 @@ func getLogs(payload *crossplane.Payload) ([]*model.AccessLog, []*model.ErrorLog
 
 func (n *Nginx) Validate(ctx context.Context) error {
 	slog.DebugContext(ctx, "Validating NGINX config")
-	exePath := n.instance.GetInstanceConfig().GetNginxConfig().GetBinaryPath()
+	exePath := n.instance.GetInstanceRuntime().GetBinaryPath()
 
 	out, err := n.executor.RunCmd(ctx, exePath, "-t")
 	if err != nil {
 		return fmt.Errorf("NGINX config test failed %w: %s", err, out)
 	}
 
-	err = validateConfigCheckResponse(out.Bytes())
+	err = n.validateConfigCheckResponse(out.Bytes())
 	if err != nil {
 		return err
 	}
@@ -200,7 +402,7 @@ func (n *Nginx) Apply(ctx context.Context) error {
 
 	go n.monitorLogs(ctx, errorLogs, logErrorChannel)
 
-	processID := n.instance.GetInstanceConfig().GetNginxConfig().GetProcessId()
+	processID := n.instance.GetInstanceRuntime().GetProcessId()
 	err := n.executor.KillProcess(processID)
 	if err != nil {
 		return fmt.Errorf("failed to reload NGINX, %w", err)
@@ -284,7 +486,7 @@ func (n *Nginx) doesLogLineContainError(line string) bool {
 	return false
 }
 
-func validateConfigCheckResponse(out []byte) error {
+func (n *Nginx) validateConfigCheckResponse(out []byte) error {
 	if bytes.Contains(out, []byte("[emerg]")) ||
 		bytes.Contains(out, []byte("[alert]")) ||
 		bytes.Contains(out, []byte("[crit]")) {
@@ -294,10 +496,10 @@ func validateConfigCheckResponse(out []byte) error {
 	return nil
 }
 
-func getFormatMap(directive *crossplane.Directive) map[string]string {
+func (n *Nginx) formatMap(directive *crossplane.Directive) map[string]string {
 	formatMap := make(map[string]string)
 
-	if hasAdditionArguments(directive.Args) {
+	if n.hasAdditionArguments(directive.Args) {
 		if directive.Args[0] == ltsvArg {
 			formatMap[directive.Args[0]] = ltsvArg
 		} else {
@@ -308,7 +510,7 @@ func getFormatMap(directive *crossplane.Directive) map[string]string {
 	return formatMap
 }
 
-func getAccessLog(file, format string, formatMap map[string]string) *model.AccessLog {
+func (n *Nginx) accessLog(file, format string, formatMap map[string]string) *model.AccessLog {
 	accessLog := &model.AccessLog{
 		Name:     file,
 		Readable: false,
@@ -320,12 +522,16 @@ func getAccessLog(file, format string, formatMap map[string]string) *model.Acces
 		accessLog.Permissions = files.GetPermissions(info.Mode())
 	}
 
-	accessLog = updateLogFormat(format, formatMap, accessLog)
+	accessLog = n.updateLogFormat(format, formatMap, accessLog)
 
 	return accessLog
 }
 
-func updateLogFormat(format string, formatMap map[string]string, accessLog *model.AccessLog) *model.AccessLog {
+func (n *Nginx) updateLogFormat(
+	format string,
+	formatMap map[string]string,
+	accessLog *model.AccessLog,
+) *model.AccessLog {
 	if formatMap[format] != "" {
 		accessLog.Format = formatMap[format]
 	} else if format == "" || format == "combined" {
@@ -339,7 +545,7 @@ func updateLogFormat(format string, formatMap map[string]string, accessLog *mode
 	return accessLog
 }
 
-func getErrorLog(file, level string) *model.ErrorLog {
+func (n *Nginx) errorLog(file, level string) *model.ErrorLog {
 	errorLog := &model.ErrorLog{
 		Name:     file,
 		LogLevel: level,
@@ -354,30 +560,34 @@ func getErrorLog(file, level string) *model.ErrorLog {
 	return errorLog
 }
 
-func getAccessLogDirectiveFormat(directive *crossplane.Directive) string {
-	if hasAdditionArguments(directive.Args) {
+func (n *Nginx) accessLogDirectiveFormat(directive *crossplane.Directive) string {
+	if n.hasAdditionArguments(directive.Args) {
 		return strings.ReplaceAll(directive.Args[1], "$", "")
 	}
 
 	return ""
 }
 
-func getErrorLogDirectiveLevel(directive *crossplane.Directive) string {
-	if hasAdditionArguments(directive.Args) {
+func (n *Nginx) errorLogDirectiveLevel(directive *crossplane.Directive) string {
+	if n.hasAdditionArguments(directive.Args) {
 		return directive.Args[1]
 	}
 
 	return ""
 }
 
-func crossplaneConfigTraverse(root *crossplane.Config, callback crossplaneTraverseCallback) error {
+func (n *Nginx) crossplaneConfigTraverse(
+	ctx context.Context,
+	root *crossplane.Config,
+	callback crossplaneTraverseCallback,
+) error {
 	for _, dir := range root.Parsed {
-		err := callback(nil, dir)
+		err := callback(ctx, nil, dir)
 		if err != nil {
 			return err
 		}
 
-		err = traverse(dir, callback)
+		err = n.traverse(ctx, dir, callback)
 		if err != nil {
 			return err
 		}
@@ -386,14 +596,60 @@ func crossplaneConfigTraverse(root *crossplane.Config, callback crossplaneTraver
 	return nil
 }
 
-func traverse(root *crossplane.Directive, callback crossplaneTraverseCallback) error {
+func (n *Nginx) crossplaneConfigTraverseStr(
+	ctx context.Context,
+	root *crossplane.Config,
+	callback crossplaneTraverseCallbackStr,
+) string {
+	stop := false
+	response := ""
+	for _, dir := range root.Parsed {
+		response = callback(ctx, nil, dir)
+		if response != "" {
+			return response
+		}
+		response = traverseStr(ctx, dir, callback, &stop)
+		if response != "" {
+			return response
+		}
+	}
+
+	return response
+}
+
+func traverseStr(
+	ctx context.Context,
+	root *crossplane.Directive,
+	callback crossplaneTraverseCallbackStr,
+	stop *bool,
+) string {
+	response := ""
+	if *stop {
+		return ""
+	}
 	for _, child := range root.Block {
-		err := callback(root, child)
+		response = callback(ctx, root, child)
+		if response != "" {
+			*stop = true
+			return response
+		}
+		response = traverseStr(ctx, child, callback, stop)
+		if *stop {
+			return response
+		}
+	}
+
+	return response
+}
+
+func (n *Nginx) traverse(ctx context.Context, root *crossplane.Directive, callback crossplaneTraverseCallback) error {
+	for _, child := range root.Block {
+		err := callback(ctx, root, child)
 		if err != nil {
 			return err
 		}
 
-		err = traverse(child, callback)
+		err = n.traverse(ctx, child, callback)
 		if err != nil {
 			return err
 		}
@@ -402,6 +658,6 @@ func traverse(root *crossplane.Directive, callback crossplaneTraverseCallback) e
 	return nil
 }
 
-func hasAdditionArguments(args []string) bool {
+func (n *Nginx) hasAdditionArguments(args []string) bool {
 	return len(args) >= defaultNumberOfDirectiveArguments
 }

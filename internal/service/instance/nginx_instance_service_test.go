@@ -16,12 +16,13 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	exePath       = "/usr/local/Cellar/nginx/1.23.3/bin/nginx"
-	ossConfigArgs = "--prefix=/usr/local/Cellar/nginx/1.23.3 --sbin-path=/usr/local/Cellar/nginx/1.23.3/bin/nginx " +
+	exePath       = "/usr/local/Cellar/nginx/1.25.3/bin/nginx"
+	ossConfigArgs = "--prefix=/usr/local/Cellar/nginx/1.25.3 --sbin-path=/usr/local/Cellar/nginx/1.25.3/bin/nginx " +
 		"--with-cc-opt='-I/usr/local/opt/pcre2/include -I/usr/local/opt/openssl@1.1/include' " +
 		"--with-ld-opt='-L/usr/local/opt/pcre2/lib -L/usr/local/opt/openssl@1.1/lib' " +
 		"--conf-path=/usr/local/etc/nginx/nginx.conf --pid-path=/usr/local/var/run/nginx.pid " +
@@ -56,13 +57,13 @@ const (
 		"--with-http_ssl_module --with-http_stub_status_module --with-http_sub_module " +
 		"--with-http_v2_module --with-http_v3_module --with-mail --with-mail_ssl_module --with-stream " +
 		"--with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module " +
-		"--build=nginx-plus-r30-p1 --with-http_auth_jwt_module --with-http_f4f_module " +
+		"--build=nginx-plus-r31-p1 --with-http_auth_jwt_module --with-http_f4f_module " +
 		"--with-http_hls_module --with-http_proxy_protocol_vendor_module " +
 		"--with-http_session_log_module --with-stream_mqtt_filter_module " +
 		"--with-stream_mqtt_preread_module --with-stream_proxy_protocol_vendor_module " +
 		"--with-cc-opt='-g -O2 " +
 		"-fdebug-prefix-map=" +
-		"/data/builder/debuild/nginx-plus-1.25.1/debian/debuild-base/nginx-plus-1.25.1=. " +
+		"/data/builder/debuild/nginx-plus-1.25.3/debian/debuild-base/nginx-plus-1.25.3=. " +
 		"-fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fPIC' " +
 		"--with-ld-opt='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie'"
 )
@@ -72,15 +73,15 @@ func TestGetInstances(t *testing.T) {
 
 	processes := []*model.Process{
 		{
-			Pid:  123,
-			Ppid: 789,
+			Pid:  789,
+			Ppid: 1234,
 			Name: "nginx",
 			Cmd:  "nginx: worker process",
 			Exe:  exePath,
 		},
 		{
-			Pid:  789,
-			Ppid: 458,
+			Pid:  1234,
+			Ppid: 1,
 			Name: "nginx",
 			Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 			Exe:  exePath,
@@ -102,54 +103,24 @@ func TestGetInstances(t *testing.T) {
 	}{
 		{
 			name: "Test 1: NGINX open source",
-			nginxVersionCommandOutput: fmt.Sprintf(`nginx version: nginx/1.23.3
+			nginxVersionCommandOutput: fmt.Sprintf(`nginx version: nginx/1.25.3
 					built by clang 14.0.0 (clang-1400.0.29.202)
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
 					configure arguments: %s`, ossConfigArgs),
 			expected: []*v1.Instance{
-				{
-					InstanceMeta: &v1.InstanceMeta{
-						InstanceId:   "5975af28-e028-3f87-a848-a39e50cdf0e9",
-						InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-						Version:      "1.23.3",
-					},
-					InstanceConfig: &v1.InstanceConfig{
-						Config: &v1.InstanceConfig_NginxConfig{
-							NginxConfig: &v1.NGINXConfig{
-								ConfigPath: "/usr/local/etc/nginx/nginx.conf",
-								BinaryPath: exePath,
-								ProcessId:  789,
-							},
-						},
-					},
-				},
+				protos.GetNginxOssInstance(),
 			},
 		}, {
 			name: "Test 2: NGINX plus",
 			nginxVersionCommandOutput: fmt.Sprintf(`
-				nginx version: nginx/1.25.1 (nginx-plus-r30-p1)
+				nginx version: nginx/1.25.3 (nginx-plus-r31-p1)
 				built by gcc 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.2)
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
 				configure arguments: %s`, plusConfigArgs),
 			expected: []*v1.Instance{
-				{
-					InstanceMeta: &v1.InstanceMeta{
-						InstanceId:   "2dbc5cb9-464f-30da-b703-5e63c62bf31e",
-						InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS,
-						Version:      "nginx-plus-r30-p1",
-					},
-					InstanceConfig: &v1.InstanceConfig{
-						Config: &v1.InstanceConfig_NginxPlusConfig{
-							NginxPlusConfig: &v1.NGINXPlusConfig{
-								ConfigPath: "/etc/nginx/nginx.conf",
-								BinaryPath: exePath,
-								ProcessId:  789,
-							},
-						},
-					},
-				},
+				protos.GetNginxPlusInstance(),
 			},
 		},
 	}
@@ -179,18 +150,18 @@ func TestGetInfo(t *testing.T) {
 		{
 			name: "Test 1: NGINX open source",
 			nginxVersionCommandOutput: fmt.Sprintf(`
-				nginx version: nginx/1.23.3
-				built by clang 14.0.0 (clang-1400.0.29.202)
-				built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
+				nginx version: nginx/1.25.3
+				built by clang 14.0.3 (clang-1403.0.22.14.1)
+				built with OpenSSL 3.1.3 19 Sep 2023 (running with OpenSSL 3.2.0 23 Nov 2023)
 				TLS SNI support enabled
 				configure arguments: %s`, ossConfigArgs),
 			process: &model.Process{
 				Exe: exePath,
 			},
 			expected: &Info{
-				Version:     "1.23.3",
+				Version:     "1.25.3",
 				PlusVersion: "",
-				Prefix:      "/usr/local/Cellar/nginx/1.23.3",
+				Prefix:      "/usr/local/Cellar/nginx/1.25.3",
 				ConfPath:    "/usr/local/etc/nginx/nginx.conf",
 				ExePath:     exePath,
 				ConfigureArgs: map[string]interface{}{
@@ -204,7 +175,7 @@ func TestGetInfo(t *testing.T) {
 					"http-uwsgi-temp-path":       "/usr/local/var/run/nginx/uwsgi_temp",
 					"lock-path":                  "/usr/local/var/run/nginx.lock",
 					"pid-path":                   "/usr/local/var/run/nginx.pid",
-					"prefix":                     "/usr/local/Cellar/nginx/1.23.3",
+					"prefix":                     "/usr/local/Cellar/nginx/1.25.3",
 					"sbin-path":                  exePath,
 					"with-cc-opt": "'-I/usr/local/opt/pcre2/include " +
 						"-I/usr/local/opt/openssl@1.1/include'",
@@ -242,7 +213,7 @@ func TestGetInfo(t *testing.T) {
 		{
 			name: "Test 2: NGINX plus",
 			nginxVersionCommandOutput: fmt.Sprintf(`
-				nginx version: nginx/1.25.1 (nginx-plus-r30-p1)
+				nginx version: nginx/1.25.3 (nginx-plus-r31-p1)
 				built by gcc 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.2)
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
@@ -251,13 +222,13 @@ func TestGetInfo(t *testing.T) {
 				Exe: exePath,
 			},
 			expected: &Info{
-				Version:     "1.25.1",
-				PlusVersion: "nginx-plus-r30-p1",
+				Version:     "1.25.3",
+				PlusVersion: "nginx-plus-r31-p1",
 				Prefix:      "/etc/nginx",
 				ConfPath:    "/etc/nginx/nginx.conf",
 				ExePath:     exePath,
 				ConfigureArgs: map[string]interface{}{
-					"build":                                  "nginx-plus-r30-p1",
+					"build":                                  "nginx-plus-r31-p1",
 					"conf-path":                              "/etc/nginx/nginx.conf",
 					"error-log-path":                         "/var/log/nginx/error.log",
 					"group":                                  "nginx",

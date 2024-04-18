@@ -13,14 +13,14 @@ option go_package = "mpi/v1";
 import "mpi/v1/common.proto";
 import "google/protobuf/struct.proto";
 
-// A service outlining the command and control options for a DataPlane Client
+// A service outlining the command and control options for a Data Plane Client
 // All operations are written from a client perspective
 // The RPC calls generally flow Client -> Server, except for Subscribe which contains a bidirectional stream
 // The ManagementPlaneRequest sent in the Subscribe stream triggers one or more client actions.
 // Messages provided by the Management Plane must be a FIFO ordered queue. Messages in the queue must have a monotonically-increasing integer index. 
 // The indexes do not need to be sequential. The index must be a 64-bit signed integer.
 // The index must not reset for the entire lifetime of a unique Agent (i.e. the index does not reset to 0 only because of a temporary disconnection or new session). 
-// Messages must not be removed from the Mangement Plane queue until Ack’d by the Agent. 
+// Messages must not be removed from the Management Plane queue until Ack’d by the Agent. 
 // Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as they may need to be retried.
 service CommandService {
     // Connects NGINX Agent to the Management Plane agnostic of instance data
@@ -35,7 +35,7 @@ service CommandService {
     rpc Subscribe(stream DataPlaneResponse) returns (stream ManagementPlaneRequest) {}
 }
 
-// The connection request is an intial handshake to establish a connection, sending NGINX Agent instance information
+// The connection request is an initial handshake to establish a connection, sending NGINX Agent instance information
 message CreateConnectionRequest {
     // Meta-information associated with a message
     mpi.v1.MessageMeta message_meta = 1;
@@ -46,7 +46,7 @@ message CreateConnectionRequest {
 // A representation of instances and runtime resource information
 message Resource {
     // A resource identifier
-    string id = 1;
+    string resource_id = 1;
     // A list of instances associated with this resource
     repeated Instance instances = 2;
     // Runtime information of where the instances reside. Host or container based
@@ -61,7 +61,7 @@ message Resource {
 // Represents the host system information
 message HostInfo {
     // The host identifier
-    string id = 1;
+    string host_id = 1;
     // The name of the host
     string hostname = 2;
     // Release information of the host
@@ -85,7 +85,7 @@ message ReleaseInfo {
 // Container information
 message ContainerInfo {
     // The identifier of the container
-    string id = 1;
+    string container_id = 1;
 }
 
 // A response to a CreateConnectionRequest
@@ -100,15 +100,39 @@ message CreateConnectionResponse {
 message UpdateDataPlaneStatusRequest {
     // Meta-information associated with a message
     mpi.v1.MessageMeta message_meta = 1;
-    // Report on instances on the Data Plane
-    repeated Instance instances = 2;
+    // the representation of a data plane
+    Resource resource = 2;
 }
 
 // Respond to a UpdateDataPlaneStatusRequest - intentionally empty
 message UpdateDataPlaneStatusResponse {}
 
+message InstanceHealth {
+    // Health status enum
+    enum InstanceHealthStatus {
+        // Unspecified status
+        INSTANCE_HEALTH_STATUS_UNSPECIFIED = 0;
+        // Healthy status
+        INSTANCE_HEALTH_STATUS_HEALTHY = 1;
+        // Unhealthy status
+        INSTANCE_HEALTH_STATUS_UNHEALTHY = 2;
+        // Degraded status
+        INSTANCE_HEALTH_STATUS_DEGRADED = 3;
+    }
+    string instance_id = 1;
+    // Health status
+    InstanceHealthStatus instance_health_status = 2;
+    // Provides a human readable context around why a health status is a particular state
+    string description = 3;
+}
+
 // Health report of a set of instances
-message UpdateDataPlaneHealthRequest {}
+message UpdateDataPlaneHealthRequest {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
+    // Health report of a set of instances
+    repeated InstanceHealth instance_healths = 2;
+}
 
 // Response to a UpdateDataPlaneHealthRequest - intentionally empty
 message UpdateDataPlaneHealthResponse {}
@@ -116,18 +140,20 @@ message UpdateDataPlaneHealthResponse {}
 // Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
 message DataPlaneResponse {}
 
-// A Management Plane request for information, triggers an associated rpc on the DataPlane
+// A Management Plane request for information, triggers an associated rpc on the Data Plane
 message ManagementPlaneRequest {}
 
 // This represents an instance being reported on
 message Instance {
     // Meta-information associated with an instance
     InstanceMeta instance_meta = 1;
-    // Runtime configuration associated with an instance
+    // Read and write configuration associated with an instance that can be modified via this definition
     InstanceConfig instance_config = 2;
+    // Read-only meta data associated with the instance running in it's environment
+    InstanceRuntime instance_runtime = 3;
 }
 
-// Metainformation relating to the reported instance
+// Meta-information relating to the reported instance
 message InstanceMeta {
     // the identifier associated with the instance
     string instance_id = 1;
@@ -157,11 +183,53 @@ message InstanceConfig {
     oneof config {
         // NGINX Agent runtime configuration settings
         AgentConfig agent_config = 2;
-        // NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process
-        NGINXConfig nginx_config = 3;
-        // NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API
-        NGINXPlusConfig nginx_plus_config = 4;
     }
+}
+
+message InstanceRuntime {
+    // the process identifier
+    int32 process_id = 1;
+    // the binary path location
+    string binary_path = 2;
+    // the config path location
+    string config_path = 3;
+    // more detailed runtime objects
+    oneof details {
+        // NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process
+        NGINXRuntimeInfo nginx_runtime_info = 4;
+        // NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API
+        NGINXPlusRuntimeInfo nginx_plus_runtime_info = 5;
+    }
+}
+
+// A set of runtime NGINX OSS settings
+message NGINXRuntimeInfo {
+    // the stub status API URL
+    string stub_status = 1;
+    // a list of access_logs
+    repeated string access_logs = 2;
+    // a list of error_logs
+    repeated string error_logs = 3;
+    // List of NGINX potentially loadable modules (installed but not loaded).
+    repeated string loadable_modules = 4;
+    // List of NGINX dynamic modules.
+    repeated string dynamic_modules = 5;
+}
+
+// A set of runtime NGINX Plus settings
+message NGINXPlusRuntimeInfo {
+    // the stub status API URL
+    string stub_status = 1;
+    // a list of access_logs
+    repeated string access_logs = 2;
+    // a list of error_logs
+    repeated string error_logs = 3;
+    // List of NGINX potentially loadable modules (installed but not loaded).
+    repeated string loadable_modules = 4;
+    // List of NGINX dynamic modules.
+    repeated string dynamic_modules = 5;
+    // the plus API location
+    string plus_api = 6;
 }
 
 // A set of actions that can be performed on an instance
@@ -206,7 +274,7 @@ message NGINXPlusConfig {
 // The command settings, associated with messaging from an external source 
 message CommandServer {}
 
-// The metrics settings associated with orgins (sources) of the metrics and destinations (exporter)
+// The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
 message MetricsServer {}
 
 // The file settings associated with file server for configurations

@@ -13,8 +13,6 @@ const (
 	ConfigDirectoriesKey                          = "config_dirs"
 	ConfigPathKey                                 = "path"
 	CommandRootKey                                = "command"
-	DataPlaneAPIHostKey                           = "data_plane_api_host"
-	DataPlaneAPIPortKey                           = "data_plane_api_port"
 	DataPlaneConfigNginxReloadMonitoringPeriodKey = "data_plane_config_nginx_reload_monitoring_period"
 	DataPlaneConfigNginxTreatWarningsAsErrorsKey  = "data_plane_config_nginx_treat_warnings_as_error"
 	LogLevelKey                                   = "log_level"
