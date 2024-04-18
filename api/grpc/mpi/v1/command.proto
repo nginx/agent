@@ -108,8 +108,32 @@ message UpdateDataPlaneStatusRequest {
 // Respond to a UpdateDataPlaneStatusRequest - intentionally empty
 message UpdateDataPlaneStatusResponse {}
 
+message InstanceHealth {
+    // Health status enum
+    enum InstanceHealthStatus {
+        // Unspecified status
+        INSTANCE_HEALTH_STATUS_UNSPECIFIED = 0;
+        // Healthy status
+        INSTANCE_HEALTH_STATUS_HEALTHY = 1;
+        // Unhealthy status
+        INSTANCE_HEALTH_STATUS_UNHEALTHY = 2;
+        // Degraded status
+        INSTANCE_HEALTH_STATUS_DEGRADED = 3;
+    }
+    string instance_id = 1;
+    // Health status
+    InstanceHealthStatus instance_health_status = 2;
+    // Provides a human readable context around why a health status is a particular state
+    string description = 3;
+}
+
 // Health report of a set of instances
-message UpdateDataPlaneHealthRequest {}
+message UpdateDataPlaneHealthRequest {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
+    // Health report of a set of instances
+    repeated InstanceHealth instance_healths = 2;
+}
 
 // Response to a UpdateDataPlaneHealthRequest - intentionally empty
 message UpdateDataPlaneHealthResponse {}
@@ -253,7 +277,7 @@ message NGINXPlusConfig {
 // The command settings, associated with messaging from an external source 
 message CommandServer {}
 
-// The metrics settings associated with orgins (sources) of the metrics and destinations (exporter)
+// The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
 message MetricsServer {}
 
 // The file settings associated with file server for configurations
