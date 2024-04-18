@@ -257,7 +257,7 @@ func doesFileRequireUpdate(fileCache CacheContent, fileData *v1.FileMeta) (updat
 		if !ok {
 			return true
 		}
-		
+
 		return ok && fileOnSystem.GetModifiedTime().AsTime().Before(fileData.GetModifiedTime().AsTime())
 	}
 
