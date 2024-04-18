@@ -180,8 +180,8 @@ func verifyConnection(t *testing.T) {
 	instanceMeta := resource.GetInstances()[0].GetInstanceMeta()
 
 	assert.NotEmpty(t, instanceMeta.GetInstanceId())
-	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_AGENT, instanceMeta.GetInstanceType())
-	assert.Equal(t, "v3.0.0", instanceMeta.GetVersion())
+	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, instanceMeta.GetInstanceType())
+	assert.Equal(t, "1.18.0", instanceMeta.GetVersion())
 }
 
 func verifyUpdateDataPlaneStatus(t *testing.T) {
