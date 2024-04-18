@@ -12,6 +12,7 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service"
 )
@@ -24,11 +25,11 @@ type Resource struct {
 	resourceMutex   sync.Mutex
 }
 
-func NewResource() *Resource {
+func NewResource(agentConfig *config.Config) *Resource {
 	return &Resource{
 		resourceMutex:   sync.Mutex{},
 		resourceService: service.NewResourceService(),
-		instanceService: service.NewInstanceService(),
+		instanceService: service.NewInstanceService(agentConfig),
 		resource: &v1.Resource{
 			Instances: []*v1.Instance{},
 		},

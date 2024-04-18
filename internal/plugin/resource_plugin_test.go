@@ -14,6 +14,7 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +29,7 @@ func TestResource_Init(t *testing.T) {
 	messagePipe := bus.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)
 
-	resourcePlugin := NewResource()
+	resourcePlugin := NewResource(types.GetAgentConfig())
 	resourcePlugin.resourceService = mockReourceService
 	err := resourcePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
@@ -39,17 +40,17 @@ func TestResource_Init(t *testing.T) {
 }
 
 func TestResourceMonitor_Info(t *testing.T) {
-	resource := NewResource()
-	assert.Equal(t, &bus.Info{Name: "resource"}, resource.Info())
+	resourcePlugin := NewResource(types.GetAgentConfig())
+	assert.Equal(t, &bus.Info{Name: "resource"}, resourcePlugin.Info())
 }
 
 func TestResourceMonitor_Subscriptions(t *testing.T) {
-	resource := NewResource()
+	resourcePlugin := NewResource(types.GetAgentConfig())
 	assert.Equal(t,
 		[]string{
 			bus.OsProcessesTopic,
 		},
-		resource.Subscriptions())
+		resourcePlugin.Subscriptions())
 }
 
 func TestResource_Instances_Process(t *testing.T) {
@@ -62,7 +63,7 @@ func TestResource_Instances_Process(t *testing.T) {
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
 	fakeInstanceService.GetInstancesReturns(testResource.GetInstances())
 
-	resourcePlugin := NewResource()
+	resourcePlugin := NewResource(types.GetAgentConfig())
 	resourcePlugin.instanceService = fakeInstanceService
 	resourcePlugin.resourceService = fakeResourceService
 
@@ -88,7 +89,7 @@ func TestResource_Process_Error_Expected(t *testing.T) {
 	fakeResourceService := &servicefakes.FakeResourceServiceInterface{}
 	fakeResourceService.GetResourceReturns(testResource)
 
-	resourcePlugin := NewResource()
+	resourcePlugin := NewResource(types.GetAgentConfig())
 	resourcePlugin.resourceService = fakeResourceService
 
 	messagePipe := bus.NewFakeMessagePipe()
@@ -114,12 +115,12 @@ func TestResource_Process_Empty_Instances(t *testing.T) {
 	fakeResourceService := &servicefakes.FakeResourceServiceInterface{}
 	fakeResourceService.GetResourceReturns(testResource)
 
-	resource := NewResource()
-	resource.instanceService = fakeInstanceService
-	resource.resourceService = fakeResourceService
+	resourcePlugin := NewResource(types.GetAgentConfig())
+	resourcePlugin.instanceService = fakeInstanceService
+	resourcePlugin.resourceService = fakeResourceService
 
 	messagePipe := bus.NewFakeMessagePipe()
-	err := messagePipe.Register(2, []bus.Plugin{resource})
+	err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 	require.NoError(t, err)
 
 	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{}}
