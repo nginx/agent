@@ -205,6 +205,11 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	ctx context.Context,
 	resource *v1.Resource,
 ) error {
+	if !gc.isConnected.Load() {
+		slog.DebugContext(ctx, "gRPC client not connected yet. Skipping sending data plane status update")
+		return nil
+	}
+
 	correlationID := logger.GetCorrelationID(ctx)
 
 	request := &v1.UpdateDataPlaneStatusRequest{
