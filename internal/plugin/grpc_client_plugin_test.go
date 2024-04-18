@@ -13,14 +13,13 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/protos"
 
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/stretchr/testify/assert"
@@ -41,25 +40,9 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 		{
 			"Test 2: GRPC type not specified in config",
 			&config.Config{
-				Command: &config.Command{
-					Server: &config.ServerConfig{
-						Host: "127.0.0.1",
-						Port: 8888,
-						Type: "http",
-					},
-				},
-				Common: &config.CommonSettings{
-					InitialInterval:     100 * time.Microsecond,
-					MaxInterval:         1000 * time.Microsecond,
-					MaxElapsedTime:      10 * time.Millisecond,
-					RandomizationFactor: 0.1,
-					Multiplier:          0.2,
-				},
-				Client: &config.Client{
-					Timeout:             100 * time.Microsecond,
-					Time:                200 * time.Microsecond,
-					PermitWithoutStream: false,
-				},
+				Command: types.GetAgentConfig().Command,
+				Common:  types.GetAgentConfig().Common,
+				Client:  types.GetAgentConfig().Client,
 			},
 			nil,
 		},
@@ -71,38 +54,16 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 		{
 			"Test 4: nil client settings",
 			&config.Config{
-				Command: &config.Command{
-					Server: &config.ServerConfig{
-						Host: "127.0.0.1",
-						Port: 8888,
-						Type: "http",
-					},
-				},
-				Common: &config.CommonSettings{
-					InitialInterval:     100 * time.Microsecond,
-					MaxInterval:         1000 * time.Microsecond,
-					MaxElapsedTime:      10 * time.Millisecond,
-					RandomizationFactor: 0.1,
-					Multiplier:          0.2,
-				},
+				Command: types.GetAgentConfig().Command,
+				Common:  types.GetAgentConfig().Common,
 			},
 			nil,
 		},
 		{
 			"Test 5: nil common settings",
 			&config.Config{
-				Command: &config.Command{
-					Server: &config.ServerConfig{
-						Host: "127.0.0.1",
-						Port: 8888,
-						Type: "grpc",
-					},
-				},
-				Client: &config.Client{
-					Timeout:             100 * time.Microsecond,
-					Time:                200 * time.Microsecond,
-					PermitWithoutStream: false,
-				},
+				Command: types.GetAgentConfig().Command,
+				Client:  types.GetAgentConfig().Client,
 			},
 			nil,
 		},
@@ -143,25 +104,11 @@ func TestGrpcClient_Init(t *testing.T) {
 			ctx := context.Background()
 			test.agentConfig.Command.Server.Host = test.server
 
-			resource := &v1.Resource{
-				Id:        "123",
-				Instances: []*v1.Instance{},
-				Info: &v1.Resource_ContainerInfo{
-					ContainerInfo: &v1.ContainerInfo{
-						Id: "f43f5eg54g54g54",
-					},
-				},
-			}
-
-			mockReourceService := &servicefakes.FakeResourceServiceInterface{}
-			mockReourceService.GetResourceReturns(resource)
-
 			client := NewGrpcClient(test.agentConfig)
-			client.resourceService = mockReourceService
 			assert.NotNil(tt, client)
 
-			messagePipe := bus.NewMessagePipe(100)
-			err := messagePipe.Register(100, []bus.Plugin{client})
+			messagePipe := bus.NewMessagePipe(10)
+			err := messagePipe.Register(1, []bus.Plugin{client})
 			require.NoError(tt, err)
 
 			err = client.Init(ctx, messagePipe)
@@ -184,29 +131,28 @@ func TestGrpcClient_Subscriptions(t *testing.T) {
 	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
 	assert.Len(t, subscriptions, 2)
-	assert.Equal(t, bus.InstancesTopic, subscriptions[0])
-	assert.Equal(t, bus.GrpcConnectedTopic, subscriptions[1])
+	assert.Equal(t, bus.GrpcConnectedTopic, subscriptions[0])
+	assert.Equal(t, bus.ResourceTopic, subscriptions[1])
 }
 
-func TestGrpcClient_Process_InstancesTopic(t *testing.T) {
+func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
 	ctx := context.Background()
 	agentConfig := types.GetAgentConfig()
+	expected := protos.GetHostResource()
 	client := NewGrpcClient(agentConfig)
 	assert.NotNil(t, client)
 
 	fakeCommandServiceClient := &v1fakes.FakeCommandServiceClient{}
-	fakeCommandServiceClient.UpdateDataPlaneStatusReturns(&v1.UpdateDataPlaneStatusResponse{}, nil)
 
 	client.commandServiceClient = fakeCommandServiceClient
-	client.isConnected.Store(true)
 
 	mockMessage := &bus.Message{
-		Topic: bus.InstancesTopic,
-		Data:  []*v1.Instance{},
+		Topic: bus.ResourceTopic,
+		Data:  expected,
 	}
 	client.Process(ctx, mockMessage)
 
-	assert.Equal(t, 1, fakeCommandServiceClient.UpdateDataPlaneStatusCallCount())
+	assert.True(t, client.isConnected.Load())
 }
 
 func TestGrpcClient_Close(t *testing.T) {

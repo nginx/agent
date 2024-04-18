@@ -7,6 +7,7 @@ package service
 
 import (
 	"context"
+	"sync"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
@@ -23,6 +24,7 @@ type InstanceServiceInterface interface {
 type InstanceService struct {
 	instances                 []*v1.Instance
 	dataPlaneInstanceServices []instance.DataPlaneInstanceService
+	instancesMutex            sync.Mutex
 }
 
 func NewInstanceService() *InstanceService {
@@ -31,6 +33,7 @@ func NewInstanceService() *InstanceService {
 		dataPlaneInstanceServices: []instance.DataPlaneInstanceService{
 			instance.NewNginx(instance.NginxParameters{}),
 		},
+		instancesMutex: sync.Mutex{},
 	}
 }
 
@@ -41,12 +44,17 @@ func (is *InstanceService) GetInstances(ctx context.Context, processes []*model.
 		newInstances = append(newInstances, dataPlaneInstanceService.GetInstances(ctx, processes)...)
 	}
 
+	is.instancesMutex.Lock()
 	is.instances = newInstances
+	is.instancesMutex.Unlock()
 
 	return is.instances
 }
 
 func (is *InstanceService) GetInstance(instanceID string) *v1.Instance {
+	is.instancesMutex.Lock()
+	defer is.instancesMutex.Unlock()
+
 	for _, instanceEntity := range is.instances {
 		if instanceEntity.GetInstanceMeta().GetInstanceId() == instanceID {
 			return instanceEntity

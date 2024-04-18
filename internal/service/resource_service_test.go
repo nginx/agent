@@ -11,50 +11,56 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/hostfakes"
+	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestResourceService_GetResource(t *testing.T) {
 	ctx := context.Background()
 
-	containerInfo := &v1.Resource_ContainerInfo{
-		ContainerInfo: &v1.ContainerInfo{
-			Id: "123",
+	testCases := []struct {
+		isContainer      bool
+		expectedResource *v1.Resource
+	}{
+		{
+			isContainer:      true,
+			expectedResource: protos.GetContainerizedResource(),
+		},
+		{
+			isContainer:      false,
+			expectedResource: protos.GetHostResource(),
 		},
 	}
+	for _, tc := range testCases {
+		mockInfo := &hostfakes.FakeInfoInterface{}
+		if tc.isContainer {
+			mockInfo.ContainerInfoReturns(
+				&v1.Resource_ContainerInfo{
+					ContainerInfo: tc.expectedResource.GetContainerInfo(),
+				},
+			)
+		} else {
+			mockInfo.HostInfoReturns(
+				&v1.Resource_HostInfo{
+					HostInfo: tc.expectedResource.GetHostInfo(),
+				},
+			)
+		}
 
-	hostInfo := &v1.Resource_HostInfo{
-		HostInfo: &v1.HostInfo{
-			Id:       "123",
-			Hostname: "example.com",
-			ReleaseInfo: &v1.ReleaseInfo{
-				Codename:  "linux",
-				Id:        "ubuntu",
-				Name:      "debian",
-				VersionId: "2.34.2",
-				Version:   "1.3.34",
-			},
-		},
+		mockInfo.IsContainerReturns(tc.isContainer)
+
+		resourceService := NewResourceService()
+		resourceService.info = mockInfo
+		resourceService.resource = tc.expectedResource
+
+		resource := resourceService.GetResource(ctx)
+		assert.Equal(t, tc.expectedResource.GetResourceId(), resource.GetResourceId())
+		assert.Empty(t, resource.GetInstances())
+
+		if tc.isContainer {
+			assert.Equal(t, tc.expectedResource.GetContainerInfo(), resource.GetContainerInfo())
+		} else {
+			assert.Equal(t, tc.expectedResource.GetHostInfo(), resource.GetHostInfo())
+		}
 	}
-
-	mockInfo := &hostfakes.FakeInfoInterface{}
-	mockInfo.ContainerInfoReturns(containerInfo)
-	mockInfo.HostInfoReturns(hostInfo)
-
-	resourceService := NewResourceService()
-	resourceService.info = mockInfo
-
-	// Test Container
-	mockInfo.IsContainerReturns(true)
-
-	resource := resourceService.GetResource(ctx)
-
-	assert.Equal(t, &v1.Resource{Id: "123", Info: containerInfo}, resource)
-
-	// Test VM
-	mockInfo.IsContainerReturns(false)
-
-	resource = resourceService.GetResource(ctx)
-
-	assert.Equal(t, &v1.Resource{Id: "123", Info: hostInfo}, resource)
 }

@@ -12,6 +12,7 @@ type ConfigContext interface {
 type NginxConfigContext struct {
 	AccessLogs []*AccessLog
 	ErrorLogs  []*ErrorLog
+	StubStatus string
 }
 
 type AccessLog struct {

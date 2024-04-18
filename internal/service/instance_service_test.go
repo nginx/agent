@@ -10,37 +10,32 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/test/protos"
+
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/instance"
 	"github.com/nginx/agent/v3/internal/service/instance/instancefakes"
 	"github.com/stretchr/testify/assert"
 )
 
-var testInstances = []*v1.Instance{
-	{
-		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c",
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-		},
-	},
-}
-
 func TestInstanceService_GetInstances(t *testing.T) {
 	ctx := context.Background()
 
 	fakeDataPlaneService := &instancefakes.FakeDataPlaneInstanceService{}
-	fakeDataPlaneService.GetInstancesReturns(testInstances)
+	fakeDataPlaneService.GetInstancesReturns([]*v1.Instance{protos.GetNginxOssInstance()})
 
 	instanceService := NewInstanceService()
 	instanceService.dataPlaneInstanceServices = []instance.DataPlaneInstanceService{fakeDataPlaneService}
 
-	assert.Equal(t, testInstances, instanceService.GetInstances(ctx, []*model.Process{}))
+	assert.Equal(t, []*v1.Instance{protos.GetNginxOssInstance()}, instanceService.GetInstances(ctx, []*model.Process{}))
 }
 
 func TestInstanceService_GetInstance(t *testing.T) {
 	instanceService := NewInstanceService()
-	instanceService.instances = testInstances
+	instanceService.instances = []*v1.Instance{protos.GetNginxPlusInstance()}
 
-	assert.Equal(t, testInstances[0], instanceService.GetInstance("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"))
+	assert.Equal(t, protos.GetNginxPlusInstance(),
+		instanceService.GetInstance(
+			protos.GetNginxPlusInstance().GetInstanceMeta().GetInstanceId()))
 	assert.Nil(t, instanceService.GetInstance("unknown"))
 }
