@@ -12,6 +12,7 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -106,20 +107,28 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 
 // nolint
 func (gc *GrpcClient) subscribe(ctx context.Context) {
-	subscribeClient, err := gc.commandServiceClient.Subscribe(ctx)
-	if err != nil {
-		slog.ErrorContext(ctx, "error subscribing: ", err)
-	}
-
+	var subscribeClient v1.CommandService_SubscribeClient
+	var err error
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
+			subscribeClient, err = gc.commandServiceClient.Subscribe(ctx)
+			if err != nil {
+				slog.ErrorContext(ctx, "error subscribing: ", err)
+				// this is temporary and will be changed in a followup PR use back off and allow the time to be set
+				// but needed to add retry to stop the logs being spammed with errors
+				time.Sleep(5 * time.Second)
+				continue
+			}
+
 			request, err := subscribeClient.Recv()
 			if err != nil {
 				slog.ErrorContext(ctx, "error receiving messages", "err", err)
-				return
+				subscribeClient = nil
+				time.Sleep(5 * time.Second)
+				continue
 			}
 			slog.DebugContext(ctx, "Subscribe received: ", "req", request)
 

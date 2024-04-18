@@ -7,8 +7,9 @@ package service
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/logger"
 	"log/slog"
+
+	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/nginx/agent/v3/internal/client"
 

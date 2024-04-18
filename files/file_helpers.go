@@ -52,6 +52,6 @@ func GenerateFileHash(filePath string) (string, error) {
 	if _, copyErr := io.Copy(h, f); copyErr != nil {
 		return "", copyErr
 	}
-	
+
 	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
 }
