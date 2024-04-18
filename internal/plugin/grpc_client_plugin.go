@@ -104,9 +104,8 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	return nil
 }
 
-// has cognitive-complexity of 12 due to the for loop with the err checks
 // wastedassign giving out that subscribeClient is set to nil
-// nolint: revive, wastedassign
+// nolint: wastedassign
 func (gc *GrpcClient) subscribe(ctx context.Context) {
 	var subscribeClient v1.CommandService_SubscribeClient
 	var err error
@@ -135,17 +134,21 @@ func (gc *GrpcClient) subscribe(ctx context.Context) {
 			}
 			slog.DebugContext(ctx, "Subscribe received: ", "req", request)
 
-			switch request.GetRequest().(type) {
-			case *v1.ManagementPlaneRequest_ConfigApplyRequest:
-				subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
-				gc.messagePipe.Process(subCtx, &bus.Message{
-					Topic: bus.InstanceConfigUpdateRequestTopic,
-					Data:  request.GetRequest(),
-				})
-			default:
-				slog.Info("Not implemented yet")
-			}
+			gc.ProcessRequest(ctx, request)
 		}
+	}
+}
+
+func (gc *GrpcClient) ProcessRequest(ctx context.Context, request *v1.ManagementPlaneRequest) {
+	switch request.GetRequest().(type) {
+	case *v1.ManagementPlaneRequest_ConfigApplyRequest:
+		subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
+		gc.messagePipe.Process(subCtx, &bus.Message{
+			Topic: bus.InstanceConfigUpdateRequestTopic,
+			Data:  request.GetRequest(),
+		})
+	default:
+		slog.Info("Not implemented yet")
 	}
 }
 

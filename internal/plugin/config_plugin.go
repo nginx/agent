@@ -172,10 +172,4 @@ func (c *Config) updateInstanceConfig(ctx context.Context, request *v1.Managemen
 		request,
 	)
 	c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateStatusTopic, Data: status})
-
-	// Rollback will be fixed in followup PR
-	// if status.GetStatus() == instances.Status_FAILED {
-	//	err := c.configServices[instanceID].Rollback(ctx, skippedFiles, request, instanceID)
-	//	slog.ErrorContext(ctx, "error", err)
-	// }
 }

@@ -28,7 +28,6 @@ import (
 )
 
 const (
-	instanceID    = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
 	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 )
 
@@ -121,16 +120,9 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
-			request := v1.ManagementPlaneRequest_ConfigApplyRequest{
-				ConfigApplyRequest: &v1.ConfigApplyRequest{
-					ConfigVersion: &v1.ConfigVersion{
-						Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
-						InstanceId: instanceID.String(),
-					},
-				},
-			}
+			request := helpers.CreateManagementPlaneRequestConfigApplyRequest()
 
-			skippedFiles, cwErr := configWriter.Write(ctx, &request, instanceID.String())
+			skippedFiles, cwErr := configWriter.Write(ctx, request, instanceID.String())
 			require.NoError(t, cwErr)
 			slog.Info("Skipped Files: ", "", skippedFiles)
 			assert.Len(t, skippedFiles, test.expSkippedCount)

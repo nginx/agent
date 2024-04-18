@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/test/helpers"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -74,14 +76,7 @@ func TestConfig_Process(t *testing.T) {
 
 	nginxConfigContext := modelHelpers.GetConfigContext()
 
-	instanceConfigUpdateRequest := &v1.ManagementPlaneRequest_ConfigApplyRequest{
-		ConfigApplyRequest: &v1.ConfigApplyRequest{
-			ConfigVersion: &v1.ConfigVersion{
-				Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
-				InstanceId: testInstance.GetInstanceMeta().GetInstanceId(),
-			},
-		},
-	}
+	instanceConfigUpdateRequest := helpers.CreateManagementPlaneRequestConfigApplyRequest()
 
 	configurationStatusProgress := protos.CreateInProgressStatus()
 	configurationStatus := protos.CreateSuccessStatus()
@@ -188,19 +183,11 @@ func TestConfig_Update(t *testing.T) {
 	agentConfig := types.GetAgentConfig()
 	instance := protos.GetNginxOssInstance()
 
-	request := &v1.ManagementPlaneRequest_ConfigApplyRequest{
-		ConfigApplyRequest: &v1.ConfigApplyRequest{
-			ConfigVersion: &v1.ConfigVersion{
-				Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
-				InstanceId: protos.GetNginxOssInstance().GetInstanceMeta().GetInstanceId(),
-			},
-		},
-	}
+	request := helpers.CreateManagementPlaneRequestConfigApplyRequest()
 
 	inProgressStatus := protos.CreateInProgressStatus()
 	successStatus := protos.CreateSuccessStatus()
 	failStatus := protos.CreateFailStatus("error")
-	// rollbackInProgressStatus := protos.CreateRollbackInProgressStatus()
 
 	tests := []struct {
 		name               string
