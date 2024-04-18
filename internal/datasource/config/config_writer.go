@@ -89,7 +89,8 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 	return nil
 }
 
-// nolint
+// has cognitive-complexity of 11 due to the number or nil and error checks
+// nolint: revive
 func (cw *ConfigWriter) Write(ctx context.Context,
 	request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string,
 ) (skippedFiles CacheContent, err error) {

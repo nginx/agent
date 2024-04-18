@@ -71,5 +71,5 @@ func Test_GenerateFileHash(t *testing.T) {
 	hash, err := GenerateFileHash(testFile.Name())
 	require.NoError(t, err)
 
-	assert.Equal(t, "\x91o\x00'\xa5u\aL\xe7*3\x17w\xc3G\x8de\x13\xf7\x86\xa5\x91\xbd\x89-\xa1\xa5w\xbf#5\xf9", hash)
+	assert.Equal(t, "kW8AJ6V1B0znKjMXd8NHjWUT94alkb2JLaGld78jNfk=", hash)
 }

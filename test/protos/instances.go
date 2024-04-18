@@ -96,7 +96,12 @@ func GetFileCache(files ...*os.File) (map[string]*v1.FileMeta, error) {
 }
 
 func GetFiles(files ...*os.File) (*v1.FileOverview, error) {
-	instanceFiles := &v1.FileOverview{}
+	instanceFiles := &v1.FileOverview{
+		ConfigVersion: &v1.ConfigVersion{
+			Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
+			InstanceId: instanceID,
+		},
+	}
 
 	for _, file := range files {
 		lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")

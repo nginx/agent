@@ -77,14 +77,14 @@ func TestWriteConfig(t *testing.T) {
 			fileShouldBeEqual:  true,
 			expSkippedCount:    2,
 		},
-		// {
-		//	name:               "Test 2: File doesn't need updating",
-		//	metaDataReturn:     files,
-		//	getFileReturn:      protos.GetFileDownloadResponse(fileContent),
-		//	cacheShouldBeEqual: true,
-		//	fileShouldBeEqual:  false,
-		//	expSkippedCount:    3,
-		// },
+		{
+			name:               "Test 2: File doesn't need updating",
+			metaDataReturn:     files,
+			getFileReturn:      protos.GetFileDownloadResponse(fileContent),
+			cacheShouldBeEqual: true,
+			fileShouldBeEqual:  false,
+			expSkippedCount:    3,
+		},
 	}
 
 	for _, test := range tests {
@@ -121,28 +121,29 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
-			// request := v1.ManagementPlaneRequest_ConfigApplyRequest{
-			//	ConfigApplyRequest: v1.ConfigApplyRequest{
-			//		ConfigVersion: v1.ConfigVersion{
-			//			Version: ""
-			//		}
-			//	}
-			// }
+			request := v1.ManagementPlaneRequest_ConfigApplyRequest{
+				ConfigApplyRequest: &v1.ConfigApplyRequest{
+					ConfigVersion: &v1.ConfigVersion{
+						Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
+						InstanceId: instanceID.String(),
+					},
+				},
+			}
 
-			// skippedFiles, cwErr := configWriter.Write(ctx, &request, instanceID.String())
+			skippedFiles, cwErr := configWriter.Write(ctx, &request, instanceID.String())
 			require.NoError(t, cwErr)
-			// slog.Info("Skipped Files: ", "", skippedFiles)
-			// assert.Len(t, skippedFiles, test.expSkippedCount)
+			slog.Info("Skipped Files: ", "", skippedFiles)
+			assert.Len(t, skippedFiles, test.expSkippedCount)
 
 			res := reflect.DeepEqual(cacheContent, configWriter.currentFileCache)
 			assert.Equal(t, test.cacheShouldBeEqual, res)
 
 			assert.NotEqual(t, cacheContent, files)
 
-			// testData, readErr := os.ReadFile(testConfPath)
-			// require.NoError(t, readErr)
-			// res = reflect.DeepEqual(fileContent, testData)
-			// assert.Equal(t, test.fileShouldBeEqual, res)
+			testData, readErr := os.ReadFile(testConfPath)
+			require.NoError(t, readErr)
+			res = reflect.DeepEqual(fileContent, testData)
+			assert.Equal(t, test.fileShouldBeEqual, res)
 		})
 	}
 }

@@ -108,9 +108,8 @@ func (c *Config) GetInstance(instanceID string) *v1.Instance {
 }
 
 func (c *Config) processInstanceConfigUpdateRequest(ctx context.Context, msg *bus.Message) {
-	slog.Info("------------ InstanceConfigUpdateRequestTopic received in config plugin", "message", msg.Data)
 	if request, ok := msg.Data.(*v1.ManagementPlaneRequest_ConfigApplyRequest); !ok {
-		slog.DebugContext(ctx, "Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
+		slog.InfoContext(ctx, "Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
 	} else {
 		c.updateInstanceConfig(ctx, request)
 	}
@@ -159,16 +158,19 @@ func (c *Config) updateInstanceConfig(ctx context.Context, request *v1.Managemen
 		Timestamp:     timestamppb.Now(),
 		Message:       "Instance configuration update in progress",
 	}
+	slog.Info("Send Message ------")
 	c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateStatusTopic, Data: inProgressStatus})
 
-	skippedFiles, status := c.configServices[instanceID].UpdateInstanceConfiguration(
+	_, status := c.configServices[instanceID].UpdateInstanceConfiguration(
 		ctx,
 		request,
 	)
+	slog.Info("Send Message ------")
 	c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateStatusTopic, Data: status})
 
-	if status.GetStatus() == instances.Status_FAILED {
-		err := c.configServices[instanceID].Rollback(ctx, skippedFiles, request, instanceID)
-		slog.ErrorContext(ctx, "error", err)
-	}
+	// Rollback will be fixed in followup PR
+	// if status.GetStatus() == instances.Status_FAILED {
+	//	err := c.configServices[instanceID].Rollback(ctx, skippedFiles, request, instanceID)
+	//	slog.ErrorContext(ctx, "error", err)
+	// }
 }

@@ -27,6 +27,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const sleepTime = 5
+
 type (
 	GrpcClient struct {
 		messagePipe          bus.MessagePipeInterface
@@ -35,6 +37,7 @@ type (
 		isConnected          *atomic.Bool
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
+		subscribeCancel      context.CancelFunc
 		instances            []*v1.Instance
 		resourceService      service.ResourceServiceInterface
 		connectionMutex      sync.Mutex
@@ -69,6 +72,7 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
 	var (
 		grpcClientCtx context.Context
+		subscribeCtx  context.Context
 		err           error
 	)
 
@@ -100,12 +104,16 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 		return err
 	}
 
-	go gc.subscribe(ctx)
+	subscribeCtx, gc.subscribeCancel = context.WithCancel(ctx)
+
+	go gc.subscribe(subscribeCtx)
 
 	return nil
 }
 
-// nolint
+// has cognitive-complexity of 12 due to the for loop with the err checks
+// wastedassign giving out that subscribeClient is set to nil
+// nolint: revive, wastedassign
 func (gc *GrpcClient) subscribe(ctx context.Context) {
 	var subscribeClient v1.CommandService_SubscribeClient
 	var err error
@@ -119,15 +127,17 @@ func (gc *GrpcClient) subscribe(ctx context.Context) {
 				slog.ErrorContext(ctx, "error subscribing: ", err)
 				// this is temporary and will be changed in a followup PR use back off and allow the time to be set
 				// but needed to add retry to stop the logs being spammed with errors
-				time.Sleep(5 * time.Second)
+				time.Sleep(sleepTime * time.Second)
+
 				continue
 			}
 
-			request, err := subscribeClient.Recv()
-			if err != nil {
-				slog.ErrorContext(ctx, "error receiving messages", "err", err)
+			request, recErr := subscribeClient.Recv()
+			if recErr != nil {
+				slog.ErrorContext(ctx, "error receiving messages", "err", recErr)
 				subscribeClient = nil
-				time.Sleep(5 * time.Second)
+				time.Sleep(sleepTime * time.Second)
+
 				continue
 			}
 			slog.DebugContext(ctx, "Subscribe received: ", "req", request)
@@ -143,20 +153,6 @@ func (gc *GrpcClient) subscribe(ctx context.Context) {
 			default:
 				slog.Info("Not implemented yet")
 			}
-
-			// subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
-			// err = subscribeClient.Send(&v1.DataPlaneResponse{
-			//	MessageMeta: &v1.MessageMeta{
-			//		MessageId:     "123456789",
-			//		CorrelationId: request.MessageMeta.CorrelationId,
-			//		Timestamp:     timestamppb.Now(),
-			//	},
-			//	CommandResponse: &v1.CommandResponse{
-			//		Status:  v1.CommandResponse_COMMAND_STATUS_OK,
-			//		Message: "hi",
-			//	},
-			// })
-
 		}
 	}
 }
@@ -232,8 +228,9 @@ func (gc *GrpcClient) Close(ctx context.Context) error {
 	gc.connectionMutex.Lock()
 	defer gc.connectionMutex.Unlock()
 
-	if gc.conn != nil {
+	if gc.conn != nil && gc.subscribeCancel != nil {
 		err := gc.conn.Close()
+		gc.subscribeCancel()
 		if err != nil && gc.cancel != nil {
 			slog.ErrorContext(ctx, "Failed to gracefully close gRPC connection", "error", err)
 			gc.cancel()

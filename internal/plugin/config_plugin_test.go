@@ -74,9 +74,13 @@ func TestConfig_Process(t *testing.T) {
 		ErrorLogs:  []*model.ErrorLog{{Name: "error.log"}},
 	}
 
-	instanceConfigUpdateRequest := &model.InstanceConfigUpdateRequest{
-		Instance: testInstance,
-		Location: "http://file-server.com",
+	instanceConfigUpdateRequest := &v1.ManagementPlaneRequest_ConfigApplyRequest{
+		ConfigApplyRequest: &v1.ConfigApplyRequest{
+			ConfigVersion: &v1.ConfigVersion{
+				Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
+				InstanceId: instanceID,
+			},
+		},
 	}
 
 	configurationStatusProgress := protos.CreateInProgressStatus()
@@ -166,14 +170,13 @@ func TestConfig_Process(t *testing.T) {
 
 			configPlugin.Process(ctx, test.input)
 
-			// messages := messagePipe.GetMessages()
+			messages := messagePipe.GetMessages()
 
-			// No message is being sent anymore, might need to change how this test works
-			// assert.Equal(tt, len(test.expected), len(messages))
+			assert.Equal(tt, len(test.expected), len(messages))
 
-			// for key, message := range test.expected {
-			//	assert.Equal(tt, message.Topic, messages[key].Topic)
-			// }
+			for key, message := range test.expected {
+				assert.Equal(tt, message.Topic, messages[key].Topic)
+			}
 		})
 	}
 }
@@ -193,16 +196,19 @@ func TestConfig_Update(t *testing.T) {
 		},
 	}
 
-	// location := fmt.Sprintf("/instance/%s/files/", instanceID)
-	// request := model.InstanceConfigUpdateRequest{
-	//	Instance: &instance,
-	//	Location: location,
-	// }
+	request := &v1.ManagementPlaneRequest_ConfigApplyRequest{
+		ConfigApplyRequest: &v1.ConfigApplyRequest{
+			ConfigVersion: &v1.ConfigVersion{
+				Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
+				InstanceId: instanceID,
+			},
+		},
+	}
 
 	inProgressStatus := protos.CreateInProgressStatus()
 	successStatus := protos.CreateSuccessStatus()
 	failStatus := protos.CreateFailStatus("error")
-	rollbackInProgressStatus := protos.CreateRollbackInProgressStatus()
+	// rollbackInProgressStatus := protos.CreateRollbackInProgressStatus()
 
 	tests := []struct {
 		name               string
@@ -226,6 +232,7 @@ func TestConfig_Update(t *testing.T) {
 			},
 		},
 		{
+			// removed rollback part of this test for now
 			name:               "Test 2: Config update failed and rolled back",
 			updateReturnStatus: failStatus,
 			rollbackReturns:    nil,
@@ -238,17 +245,10 @@ func TestConfig_Update(t *testing.T) {
 					Topic: bus.InstanceConfigUpdateStatusTopic,
 					Data:  failStatus,
 				},
-				{
-					Topic: bus.InstanceConfigUpdateStatusTopic,
-					Data:  rollbackInProgressStatus,
-				},
-				{
-					Topic: bus.InstanceConfigUpdateStatusTopic,
-					Data:  protos.CreateRollbackSuccessStatus(),
-				},
 			},
 		},
 		{
+			// removed rollback part of this test for now
 			name:               "Test 2: Rollback fails",
 			updateReturnStatus: failStatus,
 			rollbackReturns:    fmt.Errorf("rollback failed"),
@@ -260,14 +260,6 @@ func TestConfig_Update(t *testing.T) {
 				{
 					Topic: bus.InstanceConfigUpdateStatusTopic,
 					Data:  failStatus,
-				},
-				{
-					Topic: bus.InstanceConfigUpdateStatusTopic,
-					Data:  rollbackInProgressStatus,
-				},
-				{
-					Topic: bus.InstanceConfigUpdateStatusTopic,
-					Data:  protos.CreateRollbackFailStatus("rollback failed"),
 				},
 			},
 		},
@@ -290,15 +282,15 @@ func TestConfig_Update(t *testing.T) {
 			configPlugin.configServices[instanceID] = configService
 			configPlugin.instances = instanceService
 
-			// configPlugin.updateInstanceConfig(ctx, &request)
+			configPlugin.updateInstanceConfig(ctx, request)
 
-			// messages := messagePipe.GetMessages()
+			messages := messagePipe.GetMessages()
 
-			// assert.Equal(tt, len(test.expected), len(messages))
+			assert.Equal(tt, len(test.expected), len(messages))
 
-			// for key, message := range test.expected {
-			//	assert.Equal(tt, message.Topic, messages[key].Topic)
-			// }
+			for key, message := range test.expected {
+				assert.Equal(tt, message.Topic, messages[key].Topic)
+			}
 		})
 	}
 }
