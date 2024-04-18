@@ -31,7 +31,7 @@ type (
 	}
 
 	MessagePipeInterface interface {
-		Register(ctx context.Context, size int, plugins []Plugin) error
+		Register(size int, plugins []Plugin) error
 		DeRegister(ctx context.Context, plugins []string) error
 		Process(ctx context.Context, messages ...*Message)
 		Run(ctx context.Context)
@@ -62,14 +62,12 @@ func NewMessagePipe(size int) *MessagePipe {
 	}
 }
 
-func (p *MessagePipe) Register(ctx context.Context, size int, plugins []Plugin) error {
+func (p *MessagePipe) Register(size int, plugins []Plugin) error {
 	p.pluginsMutex.Lock()
 	defer p.pluginsMutex.Unlock()
 
 	p.plugins = append(p.plugins, plugins...)
 	p.bus = messagebus.New(size)
-
-	p.initPlugins(ctx, plugins)
 
 	pluginsRegistered := []string{}
 
@@ -83,7 +81,7 @@ func (p *MessagePipe) Register(ctx context.Context, size int, plugins []Plugin) 
 		pluginsRegistered = append(pluginsRegistered, plugin.Info().Name)
 	}
 
-	slog.InfoContext(ctx, "Finished registering plugins", "plugins", pluginsRegistered)
+	slog.Info("Finished registering plugins", "plugins", pluginsRegistered)
 
 	return nil
 }
@@ -113,6 +111,10 @@ func (p *MessagePipe) Process(ctx context.Context, messages ...*Message) {
 }
 
 func (p *MessagePipe) Run(ctx context.Context) {
+	p.pluginsMutex.Lock()
+	p.initPlugins(ctx)
+	p.pluginsMutex.Unlock()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -186,11 +188,21 @@ func getIndex(pluginName string, plugins []Plugin) int {
 	return -1
 }
 
-func (p *MessagePipe) initPlugins(ctx context.Context, plugins []Plugin) {
-	for _, plugin := range plugins {
+func (p *MessagePipe) initPlugins(ctx context.Context) {
+	for index, plugin := range p.plugins {
 		err := plugin.Init(ctx, p)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to initialize plugin", "plugin", plugin.Info().Name, "error", err)
+
+			unsubscribeError := p.unsubscribePlugin(ctx, index, plugin)
+			if unsubscribeError != nil {
+				slog.ErrorContext(
+					ctx,
+					"Failed to unsubscribe plugin",
+					"plugin", plugin.Info().Name,
+					"error", unsubscribeError,
+				)
+			}
 		}
 	}
 }

@@ -48,7 +48,7 @@ func (a *App) Run(ctx context.Context) error {
 		slog.Info("Starting NGINX Agent")
 
 		messagePipe := bus.NewMessagePipe(defaultMessagePipeChannelSize)
-		err = messagePipe.Register(ctx, defaultQueueSize, plugin.LoadPlugins(agentConfig, slogger))
+		err = messagePipe.Register(defaultQueueSize, plugin.LoadPlugins(agentConfig, slogger))
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to register plugins", "error", err)
 			return

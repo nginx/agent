@@ -59,7 +59,7 @@ func TestMessagePipe(t *testing.T) {
 	pipelineDone := make(chan bool)
 
 	messagePipe := NewMessagePipe(100)
-	err := messagePipe.Register(ctx, 10, []Plugin{plugin})
+	err := messagePipe.Register(10, []Plugin{plugin})
 
 	require.NoError(t, err)
 
@@ -79,14 +79,13 @@ func TestMessagePipe(t *testing.T) {
 
 func TestMessagePipe_DeRegister(t *testing.T) {
 	plugin := new(testPlugin)
-	plugin.On("Init").Times(1)
 	plugin.On("Close").Times(1)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	messagePipe := NewMessagePipe(100)
-	err := messagePipe.Register(ctx, 100, []Plugin{plugin})
+	err := messagePipe.Register(100, []Plugin{plugin})
 
 	require.NoError(t, err)
 	assert.Len(t, messagePipe.GetPlugins(), 1)
@@ -107,7 +106,7 @@ func TestMessagePipe_IsPluginRegistered(t *testing.T) {
 	pipelineDone := make(chan bool)
 
 	messagePipe := NewMessagePipe(100)
-	err := messagePipe.Register(ctx, 10, []Plugin{plugin})
+	err := messagePipe.Register(10, []Plugin{plugin})
 
 	require.NoError(t, err)
 

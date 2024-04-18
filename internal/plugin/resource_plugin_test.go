@@ -67,7 +67,7 @@ func TestResource_Instances_Process(t *testing.T) {
 	resourcePlugin.resourceService = fakeResourceService
 
 	messagePipe := bus.NewFakeMessagePipe()
-	err := messagePipe.Register(ctx, 2, []bus.Plugin{resourcePlugin})
+	err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 	require.NoError(t, err)
 
 	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{{Pid: 123, Name: "nginx"}}}
@@ -92,7 +92,7 @@ func TestResource_Process_Error_Expected(t *testing.T) {
 	resourcePlugin.resourceService = fakeResourceService
 
 	messagePipe := bus.NewFakeMessagePipe()
-	err := messagePipe.Register(ctx, 2, []bus.Plugin{resourcePlugin})
+	err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 	require.NoError(t, err)
 
 	messagePipe.Process(ctx, &bus.Message{Topic: bus.OsProcessesTopic, Data: nil})
@@ -119,7 +119,7 @@ func TestResource_Process_Empty_Instances(t *testing.T) {
 	resource.resourceService = fakeResourceService
 
 	messagePipe := bus.NewFakeMessagePipe()
-	err := messagePipe.Register(ctx, 2, []bus.Plugin{resource})
+	err := messagePipe.Register(2, []bus.Plugin{resource})
 	require.NoError(t, err)
 
 	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{}}

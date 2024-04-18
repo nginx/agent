@@ -108,7 +108,7 @@ func TestGrpcClient_Init(t *testing.T) {
 			assert.NotNil(tt, client)
 
 			messagePipe := bus.NewMessagePipe(10)
-			err := messagePipe.Register(ctx, 1, []bus.Plugin{client})
+			err := messagePipe.Register(1, []bus.Plugin{client})
 			require.NoError(tt, err)
 
 			err = client.Init(ctx, messagePipe)
