@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,13 +20,14 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
-	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
+	modelHelpers "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/types"
 )
 
 const (
-	instanceID    = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
 	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 )
 
@@ -44,14 +46,20 @@ func TestConfig_Info(t *testing.T) {
 	assert.Equal(t, "config", info.Name)
 }
 
+func TestConfig_Close(t *testing.T) {
+	configPlugin := NewConfig(&config.Config{})
+	err := configPlugin.Close(context.Background())
+	require.NoError(t, err)
+}
+
 func TestConfig_Subscriptions(t *testing.T) {
 	configPlugin := NewConfig(&config.Config{})
 	subscriptions := configPlugin.Subscriptions()
 	assert.Equal(t, []string{
 		bus.InstanceConfigUpdateRequestTopic,
 		bus.InstanceConfigUpdateStatusTopic,
-		bus.InstancesTopic,
 		bus.ConfigClientTopic,
+		bus.ResourceTopic,
 	}, subscriptions)
 }
 
@@ -62,29 +70,20 @@ func TestConfig_Process(t *testing.T) {
 		slog.Any(logger.CorrelationIDKey, correlationID),
 	)
 
-	testInstance := &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   instanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-		},
-	}
+	testInstance := protos.GetNginxOssInstance()
 
-	nginxConfigContext := model.NginxConfigContext{
-		AccessLogs: []*model.AccessLog{{Name: "access.log"}},
-		ErrorLogs:  []*model.ErrorLog{{Name: "error.log"}},
-	}
+	nginxConfigContext := modelHelpers.GetConfigContext()
 
 	instanceConfigUpdateRequest := &v1.ManagementPlaneRequest_ConfigApplyRequest{
 		ConfigApplyRequest: &v1.ConfigApplyRequest{
 			ConfigVersion: &v1.ConfigVersion{
 				Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
-				InstanceId: instanceID,
+				InstanceId: testInstance.InstanceMeta.InstanceId,
 			},
 		},
 	}
 
 	configurationStatusProgress := protos.CreateInProgressStatus()
-
 	configurationStatus := protos.CreateSuccessStatus()
 
 	tests := []struct {
@@ -139,12 +138,10 @@ func TestConfig_Process(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "Test 5: Instance topic request",
+			name: "Test 5: Resource request",
 			input: &bus.Message{
-				Topic: bus.InstancesTopic,
-				Data: []*v1.Instance{
-					testInstance,
-				},
+				Topic: bus.ResourceTopic,
+				Data:  protos.GetContainerizedResource(),
 			},
 			expected: nil,
 		},
@@ -153,7 +150,9 @@ func TestConfig_Process(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			messagePipe := bus.NewFakeMessagePipe()
-			configPlugin := NewConfig(&config.Config{})
+			configPlugin := NewConfig(&config.Config{
+				Client: &config.Client{Timeout: 1 * time.Second},
+			})
 
 			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
 			require.NoError(tt, err)
@@ -163,10 +162,8 @@ func TestConfig_Process(t *testing.T) {
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
 			configService.UpdateInstanceConfigurationReturns(nil, configurationStatus)
 
-			instanceService := []*v1.Instance{testInstance}
-
-			configPlugin.configServices[instanceID] = configService
-			configPlugin.instances = instanceService
+			configPlugin.configServices[protos.GetNginxOssInstance().GetInstanceMeta().GetInstanceId()] = configService
+			configPlugin.resource.Instances = []*v1.Instance{testInstance}
 
 			configPlugin.Process(ctx, test.input)
 
@@ -188,19 +185,14 @@ func TestConfig_Update(t *testing.T) {
 		slog.Any(logger.CorrelationIDKey, correlationID),
 	)
 
-	agentConfig := config.Config{}
-	instance := v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
-			InstanceId:   instanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
-		},
-	}
+	agentConfig := types.GetAgentConfig()
+	instance := protos.GetNginxOssInstance()
 
 	request := &v1.ManagementPlaneRequest_ConfigApplyRequest{
 		ConfigApplyRequest: &v1.ConfigApplyRequest{
 			ConfigVersion: &v1.ConfigVersion{
 				Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
-				InstanceId: instanceID,
+				InstanceId: protos.GetNginxOssInstance().GetInstanceMeta().GetInstanceId(),
 			},
 		},
 	}
@@ -268,7 +260,7 @@ func TestConfig_Update(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			messagePipe := bus.NewFakeMessagePipe()
-			configPlugin := NewConfig(&agentConfig)
+			configPlugin := NewConfig(agentConfig)
 
 			err := messagePipe.Register(10, []bus.Plugin{configPlugin})
 			require.NoError(tt, err)
@@ -278,9 +270,9 @@ func TestConfig_Update(t *testing.T) {
 			configService.UpdateInstanceConfigurationReturns(make(map[string]*v1.FileMeta), test.updateReturnStatus)
 			configService.RollbackReturns(test.rollbackReturns)
 
-			instanceService := []*v1.Instance{&instance}
-			configPlugin.configServices[instanceID] = configService
-			configPlugin.instances = instanceService
+			instanceService := []*v1.Instance{instance}
+			configPlugin.configServices[protos.GetNginxOssInstance().GetInstanceMeta().GetInstanceId()] = configService
+			configPlugin.resource.Instances = instanceService
 
 			configPlugin.updateInstanceConfig(ctx, request)
 

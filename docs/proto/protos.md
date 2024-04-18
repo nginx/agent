@@ -22,10 +22,13 @@
     - [InstanceConfig](#mpi-v1-InstanceConfig)
     - [InstanceHealth](#mpi-v1-InstanceHealth)
     - [InstanceMeta](#mpi-v1-InstanceMeta)
+    - [InstanceRuntime](#mpi-v1-InstanceRuntime)
     - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
     - [MetricsServer](#mpi-v1-MetricsServer)
     - [NGINXConfig](#mpi-v1-NGINXConfig)
     - [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig)
+    - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
+    - [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo)
     - [ReleaseInfo](#mpi-v1-ReleaseInfo)
     - [Resource](#mpi-v1-Resource)
     - [StatusRequest](#mpi-v1-StatusRequest)
@@ -160,7 +163,7 @@ Container information
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | The identifier of the container |
+| container_id | [string](#string) |  | The identifier of the container |
 
 
 
@@ -243,7 +246,7 @@ Represents the host system information
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | The host identifier |
+| host_id | [string](#string) |  | The host identifier |
 | hostname | [string](#string) |  | The name of the host |
 | release_info | [ReleaseInfo](#mpi-v1-ReleaseInfo) |  | Release information of the host |
 
@@ -261,7 +264,8 @@ This represents an instance being reported on
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | instance_meta | [InstanceMeta](#mpi-v1-InstanceMeta) |  | Meta-information associated with an instance |
-| instance_config | [InstanceConfig](#mpi-v1-InstanceConfig) |  | Runtime configuration associated with an instance |
+| instance_config | [InstanceConfig](#mpi-v1-InstanceConfig) |  | Read and write configuration associated with an instance that can be modified via this definition |
+| instance_runtime | [InstanceRuntime](#mpi-v1-InstanceRuntime) |  | Read-only meta data associated with the instance running in it&#39;s environment |
 
 
 
@@ -288,8 +292,6 @@ Instance Configuration options
 | ----- | ---- | ----- | ----------- |
 | actions | [InstanceAction](#mpi-v1-InstanceAction) | repeated | provided actions associated with a particular instance. These are runtime based and provided by a particular version of the NGINX Agent |
 | agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | NGINX Agent runtime configuration settings |
-| nginx_config | [NGINXConfig](#mpi-v1-NGINXConfig) |  | NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process |
-| nginx_plus_config | [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig) |  | NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API |
 
 
 
@@ -316,7 +318,7 @@ Instance Configuration options
 <a name="mpi-v1-InstanceMeta"></a>
 
 ### InstanceMeta
-Metainformation relating to the reported instance
+Meta-information relating to the reported instance
 
 
 | Field | Type | Label | Description |
@@ -330,10 +332,29 @@ Metainformation relating to the reported instance
 
 
 
+<a name="mpi-v1-InstanceRuntime"></a>
+
+### InstanceRuntime
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| process_id | [int32](#int32) |  | the process identifier |
+| binary_path | [string](#string) |  | the binary path location |
+| config_path | [string](#string) |  | the config path location |
+| nginx_runtime_info | [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo) |  | NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process |
+| nginx_plus_runtime_info | [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo) |  | NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API |
+
+
+
+
+
+
 <a name="mpi-v1-ManagementPlaneRequest"></a>
 
 ### ManagementPlaneRequest
-A Management Plane request for information, triggers an associated rpc on the DataPlane
+A Management Plane request for information, triggers an associated rpc on the Data Plane
 
 
 | Field | Type | Label | Description |
@@ -395,6 +416,45 @@ A set of runtime NGINX configuration that gets populated
 
 
 
+<a name="mpi-v1-NGINXPlusRuntimeInfo"></a>
+
+### NGINXPlusRuntimeInfo
+A set of runtime NGINX Plus settings
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| stub_status | [string](#string) |  | the stub status API URL |
+| access_logs | [string](#string) | repeated | a list of access_logs |
+| error_logs | [string](#string) | repeated | a list of error_logs |
+| loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
+| dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
+| plus_api | [string](#string) |  | the plus API location |
+
+
+
+
+
+
+<a name="mpi-v1-NGINXRuntimeInfo"></a>
+
+### NGINXRuntimeInfo
+A set of runtime NGINX OSS settings
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| stub_status | [string](#string) |  | the stub status API URL |
+| access_logs | [string](#string) | repeated | a list of access_logs |
+| error_logs | [string](#string) | repeated | a list of error_logs |
+| loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
+| dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
+
+
+
+
+
+
 <a name="mpi-v1-ReleaseInfo"></a>
 
 ### ReleaseInfo
@@ -422,7 +482,7 @@ A representation of instances and runtime resource information
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | A resource identifier |
+| resource_id | [string](#string) |  | A resource identifier |
 | instances | [Instance](#mpi-v1-Instance) | repeated | A list of instances associated with this resource |
 | host_info | [HostInfo](#mpi-v1-HostInfo) |  | If running on bare-metal, provides additional information |
 | container_info | [ContainerInfo](#mpi-v1-ContainerInfo) |  | If running in a containerized environment, provides additional information |
@@ -477,7 +537,7 @@ Report on the status of the Data Plane
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
-| instances | [Instance](#mpi-v1-Instance) | repeated | Report on instances on the Data Plane |
+| resource | [Resource](#mpi-v1-Resource) |  | the representation of a data plane |
 
 
 
@@ -532,7 +592,7 @@ the types of instances possible
 <a name="mpi-v1-CommandService"></a>
 
 ### CommandService
-A service outlining the command and control options for a DataPlane Client
+A service outlining the command and control options for a Data Plane Client
 All operations are written from a client perspective
 The RPC calls generally flow Client -&gt; Server, except for Subscribe which contains a bidirectional stream
 The ManagementPlaneRequest sent in the Subscribe stream triggers one or more client actions.

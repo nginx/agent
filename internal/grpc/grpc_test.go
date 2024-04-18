@@ -40,13 +40,13 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					},
 				},
 			},
-			6,
+			7,
 			false,
 		},
 		{
 			"Test 2: DialOptions mTLS",
 			types.GetAgentConfig(),
-			6,
+			7,
 			true,
 		},
 		{
@@ -65,7 +65,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 				},
 				Client: types.GetAgentConfig().Client,
 			},
-			6,
+			7,
 			false,
 		},
 		{
@@ -77,7 +77,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					TLS:    types.GetAgentConfig().Command.TLS,
 				},
 			},
-			5,
+			6,
 			false,
 		},
 		{
@@ -89,7 +89,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					TLS:    types.GetAgentConfig().Command.TLS,
 				},
 			},
-			6,
+			7,
 			false,
 		},
 		{
@@ -101,7 +101,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					Auth:   types.GetAgentConfig().Command.Auth,
 				},
 			},
-			7,
+			8,
 			false,
 		},
 	}

@@ -34,6 +34,23 @@ var (
 	mockManagementPlaneAPIAddress    string
 )
 
+type (
+	ConnectionRequest struct {
+		ConnectionRequest *v1.CreateConnectionRequest `json:"connectionRequest"`
+	}
+	Instance struct {
+		InstanceMeta    *v1.InstanceMeta    `json:"instance_meta"`
+		InstanceRuntime *v1.InstanceRuntime `json:"instance_runtime"`
+	}
+	NginxUpdateDataPlaneHealthRequest struct {
+		MessageMeta *v1.MessageMeta `json:"message_meta"`
+		Instances   []Instance      `json:"instances"`
+	}
+	UpdateDataPlaneStatusRequest struct {
+		UpdateDataPlaneStatusRequest NginxUpdateDataPlaneHealthRequest `json:"updateDataPlaneStatusRequest"`
+	}
+)
+
 func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 	tb.Helper()
 	var container testcontainers.Container
@@ -157,14 +174,19 @@ func verifyConnection(t *testing.T) {
 
 	resource := connectionRequest.GetResource()
 
-	assert.NotNil(t, resource.GetId())
-	assert.NotNil(t, resource.GetContainerInfo().GetId())
+	assert.NotNil(t, resource.GetResourceId())
+	assert.NotNil(t, resource.GetContainerInfo().GetContainerId())
 
-	instanceMeta := resource.GetInstances()[0].GetInstanceMeta()
+	instance := resource.GetInstances()[0]
+	instanceMeta := instance.GetInstanceMeta()
 
 	assert.NotEmpty(t, instanceMeta.GetInstanceId())
-	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_AGENT, instanceMeta.GetInstanceType())
-	assert.Equal(t, "v3.0.0", instanceMeta.GetVersion())
+	assert.NotEmpty(t, instanceMeta.GetVersion())
+
+	assert.NotEmpty(t, instance.GetInstanceRuntime().GetBinaryPath())
+
+	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, instanceMeta.GetInstanceType())
+	assert.Equal(t, "/etc/nginx/nginx.conf", instance.GetInstanceRuntime().GetConfigPath())
 }
 
 func verifyUpdateDataPlaneStatus(t *testing.T) {
@@ -199,7 +221,7 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	assert.NotEmpty(t, messageMeta.GetMessageId())
 	assert.NotEmpty(t, messageMeta.GetTimestamp())
 
-	instances := updateDataPlaneStatusRequest.GetInstances()
+	instances := updateDataPlaneStatusRequest.GetResource().GetInstances()
 	assert.Len(t, instances, 1)
 
 	// Verify instance metadata
@@ -209,7 +231,7 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 
 	// Verify instance configuration
 	assert.Empty(t, instances[0].GetInstanceConfig().GetActions())
-	assert.NotEmpty(t, instances[0].GetInstanceConfig().GetNginxConfig().GetProcessId())
-	assert.Equal(t, "/usr/sbin/nginx", instances[0].GetInstanceConfig().GetNginxConfig().GetBinaryPath())
-	assert.Equal(t, "/etc/nginx/nginx.conf", instances[0].GetInstanceConfig().GetNginxConfig().GetConfigPath())
+	assert.NotEmpty(t, instances[0].GetInstanceRuntime().GetProcessId())
+	assert.Equal(t, "/usr/sbin/nginx", instances[0].GetInstanceRuntime().GetBinaryPath())
+	assert.Equal(t, "/etc/nginx/nginx.conf", instances[0].GetInstanceRuntime().GetConfigPath())
 }

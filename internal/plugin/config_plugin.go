@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/nginx/agent/v3/internal/client"
 
@@ -27,16 +28,18 @@ import (
 type Config struct {
 	messagePipe    bus.MessagePipeInterface
 	configServices map[string]service.ConfigServiceInterface
-	instances      []*v1.Instance
+	resource       *v1.Resource
 	agentConfig    *config.Config
 	configClient   client.ConfigClient
+	resourceMutex  sync.Mutex
 }
 
 func NewConfig(agentConfig *config.Config) *Config {
 	return &Config{
 		configServices: make(map[string]service.ConfigServiceInterface), // key is instance id
-		instances:      []*v1.Instance{},
+		resource:       &v1.Resource{},
 		agentConfig:    agentConfig,
+		resourceMutex:  sync.Mutex{},
 	}
 }
 
@@ -47,8 +50,9 @@ func (c *Config) Init(ctx context.Context, messagePipe bus.MessagePipeInterface)
 	return nil
 }
 
-func (*Config) Close(ctx context.Context) error {
+func (c *Config) Close(ctx context.Context) error {
 	slog.DebugContext(ctx, "Closing config plugin")
+	c.configServices = nil
 
 	return nil
 }
@@ -65,9 +69,11 @@ func (c *Config) Process(ctx context.Context, msg *bus.Message) {
 		c.processConfigurationStatus(ctx, msg)
 	case msg.Topic == bus.InstanceConfigUpdateRequestTopic:
 		c.processInstanceConfigUpdateRequest(ctx, msg)
-	case msg.Topic == bus.InstancesTopic:
-		if newInstances, ok := msg.Data.([]*v1.Instance); ok {
-			c.instances = newInstances
+	case msg.Topic == bus.ResourceTopic:
+		if resource, ok := msg.Data.(*v1.Resource); ok {
+			c.resourceMutex.Lock()
+			c.resource = resource
+			c.resourceMutex.Unlock()
 		}
 	case msg.Topic == bus.ConfigClientTopic:
 		if configClient, ok := msg.Data.(client.ConfigClient); ok {
@@ -80,8 +86,8 @@ func (*Config) Subscriptions() []string {
 	return []string{
 		bus.InstanceConfigUpdateRequestTopic,
 		bus.InstanceConfigUpdateStatusTopic,
-		bus.InstancesTopic,
 		bus.ConfigClientTopic,
+		bus.ResourceTopic,
 	}
 }
 
@@ -97,7 +103,9 @@ func (c *Config) processConfigurationStatus(ctx context.Context, msg *bus.Messag
 }
 
 func (c *Config) GetInstance(instanceID string) *v1.Instance {
-	for _, instanceEntity := range c.instances {
+	c.resourceMutex.Lock()
+	defer c.resourceMutex.Unlock()
+	for _, instanceEntity := range c.resource.GetInstances() {
 		if instanceEntity.GetInstanceMeta().GetInstanceId() == instanceID {
 			return instanceEntity
 		}

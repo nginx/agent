@@ -137,15 +137,11 @@ coverage: $(TEST_BUILD_DIR)/coverage.out
 	@echo "Checking code coverage"
 	@$(GORUN) $(GOTESTCOVERAGE) --config=./.testcoverage.yaml
 
-build-mock-management-plane-http:
-	mkdir -p $(BUILD_DIR)/mock-management-plane-http
-	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-http/server test/mock/http/cmd/main.go
-
 build-mock-management-plane-grpc:
 	mkdir -p $(BUILD_DIR)/mock-management-plane-grpc
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-grpc/server test/mock/grpc/cmd/main.go
 
-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-http build-mock-management-plane-grpc
+integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
@@ -176,24 +172,15 @@ run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🚀 Running mock management plane gRPC server"
 	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL)
 
-run-mock-management-http-server: ## Run mock management HTTP server
-	@echo "🚀 Running mock management plane HTTP server"
-	$(GORUN) test/mock/http/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY)
-
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
 	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --go-grpc_out=./api/grpc --doc_out=./$(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)/ --doc_opt=markdown,protos.md 
 	@cp -a ./$(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)/* ./$(DOCS_DIR)/$(PROTO_DIR)/
 	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
-	@echo "Generating Go server and client stubs from OpenAPI specification"
-	@$(GORUN) $(OAPICODEGEN) -generate gin -package dataplane ./api/http/dataplane/data-plane-api.yaml > ./api/http/dataplane/data_plane.gen.go
-	@$(GORUN) $(OAPICODEGEN) -generate types,client -package dataplane ./api/http/dataplane/data-plane-api.yaml > ./api/http/dataplane/client.gen.go
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	@echo "Generating mocks"
 	@$(GOGEN) ./...
-	@echo "\nGenerating mock management plane Go server stubs from OpenAPI specification\n"
-	@$(GORUN) $(OAPICODEGEN) -generate gin,types -package http ./test/mock/http/mock-management-plane-api.yaml > ./test/mock/http/mock_management_plane.gen.go
 
 local-apk-package: ## Create local apk package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
@@ -207,7 +194,7 @@ local-rpm-package: ## Create local rpm package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target $(RPM_PACKAGE);
 
-generate-pgo-profile: build-mock-management-plane-http build-mock-management-plane-grpc
+generate-pgo-profile: build-mock-management-plane-grpc
 	mv default.pgo profile.pprof
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \

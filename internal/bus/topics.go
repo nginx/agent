@@ -8,7 +8,7 @@ package bus
 const (
 	GrpcConnectedTopic               = "grpc-connected"
 	OsProcessesTopic                 = "host-processes"
-	InstancesTopic                   = "instances"
+	ResourceTopic                    = "resource"
 	InstanceConfigUpdateRequestTopic = "instance-config-update-request"
 	InstanceConfigUpdateStatusTopic  = "instance-config-update-status"
 	InstanceConfigContextTopic       = "instance-config-context"

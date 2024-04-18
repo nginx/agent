@@ -72,7 +72,6 @@ func GetConfig() *Config {
 		Path:               viperInstance.GetString(ConfigPathKey),
 		Log:                getLog(),
 		ProcessMonitor:     getProcessMonitor(),
-		DataPlaneAPI:       getDataPlaneAPI(),
 		DataPlaneConfig:    getDataPlaneConfig(),
 		Client:             getClient(),
 		ConfigDir:          getConfigDir(),
@@ -125,9 +124,6 @@ func registerFlags() {
 		time.Minute,
 		"How often the NGINX Agent will check for process changes.",
 	)
-
-	fs.String(DataPlaneAPIHostKey, "", "The host used by the data plane API.")
-	fs.Int(DataPlaneAPIPortKey, 0, "The desired port to use for NGINX Agent to expose for HTTP traffic.")
 
 	fs.Duration(
 		DataPlaneConfigNginxReloadMonitoringPeriodKey,
@@ -290,13 +286,6 @@ func getLog() *Log {
 func getProcessMonitor() *ProcessMonitor {
 	return &ProcessMonitor{
 		MonitoringFrequency: viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyKey),
-	}
-}
-
-func getDataPlaneAPI() *DataPlaneAPI {
-	return &DataPlaneAPI{
-		Host: viperInstance.GetString(DataPlaneAPIHostKey),
-		Port: viperInstance.GetInt(DataPlaneAPIPortKey),
 	}
 }
 
