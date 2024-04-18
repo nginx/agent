@@ -146,9 +146,8 @@ func LogAndTerminateContainers(
 ) {
 	tb.Helper()
 
-	tb.Log("Logging mock management container logs")
-
-	logReader, err := mockManagementPlaneContainer.Logs(ctx)
+	tb.Log("Logging nginx agent container logs")
+	logReader, err := agentContainer.Logs(ctx)
 	require.NoError(tb, err)
 
 	buf, err := io.ReadAll(logReader)
@@ -156,12 +155,14 @@ func LogAndTerminateContainers(
 	logs := string(buf)
 
 	tb.Log(logs)
+	assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
 
-	err = mockManagementPlaneContainer.Terminate(ctx)
+	err = agentContainer.Terminate(ctx)
 	require.NoError(tb, err)
 
-	tb.Log("Logging nginx agent container logs")
-	logReader, err = agentContainer.Logs(ctx)
+	tb.Log("Logging mock management container logs")
+
+	logReader, err = mockManagementPlaneContainer.Logs(ctx)
 	require.NoError(tb, err)
 
 	buf, err = io.ReadAll(logReader)
@@ -169,9 +170,8 @@ func LogAndTerminateContainers(
 	logs = string(buf)
 
 	tb.Log(logs)
-	assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
 
-	err = agentContainer.Terminate(ctx)
+	err = mockManagementPlaneContainer.Terminate(ctx)
 	require.NoError(tb, err)
 }
 
