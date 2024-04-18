@@ -29,8 +29,8 @@ const (
 var (
 	sleepDuration   = flag.Duration("sleepDuration", defaultSleepDuration, "duration between changes in health")
 	configDirectory = flag.String("configDirectory", "", "set the directory where the config files are stored")
-	grpcAddress     = flag.String("grpcAddress", "127.0.0.1:60980", "set the gRPC address to run the server on")
-	apiAddress      = flag.String("apiAddress", "127.0.0.1:60979", "set the API address to run the server on")
+	grpcAddress     = flag.String("grpcAddress", "127.0.0.1:0", "set the gRPC address to run the server on")
+	apiAddress      = flag.String("apiAddress", "127.0.0.1:0", "set the API address to run the server on")
 	logLevel        = flag.String("logLevel", "INFO", "set the log level")
 )
 
@@ -82,7 +82,7 @@ func generateDefaultConfigDirectory() (string, error) {
 	slog.Info("Generating default configs")
 	tempDirectory := os.TempDir()
 
-	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/opt/homebrew/etc/nginx"), directoryPermissions)
+	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/etc/nginx"), directoryPermissions)
 	if err != nil {
 		slog.Error("Failed to create directories", "error", err)
 		return "", err
@@ -95,7 +95,7 @@ func generateDefaultConfigDirectory() (string, error) {
 	}
 	defer CloseFile(source)
 
-	destination, err := os.Create(filepath.Join(tempDirectory, "config/1/opt/homebrew/etc/nginx/nginx.conf"))
+	destination, err := os.Create(filepath.Join(tempDirectory, "config/1/etc/nginx/nginx.conf"))
 	if err != nil {
 		slog.Error("Failed to create nginx.conf", "error", err)
 		return "", err

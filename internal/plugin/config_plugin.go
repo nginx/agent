@@ -71,7 +71,6 @@ func (c *Config) Process(ctx context.Context, msg *bus.Message) {
 		}
 	case msg.Topic == bus.ConfigClientTopic:
 		if configClient, ok := msg.Data.(client.ConfigClient); ok {
-			slog.InfoContext(ctx, "Valid config client")
 			c.configClient = configClient
 		}
 	}
@@ -109,7 +108,7 @@ func (c *Config) GetInstance(instanceID string) *v1.Instance {
 
 func (c *Config) processInstanceConfigUpdateRequest(ctx context.Context, msg *bus.Message) {
 	if request, ok := msg.Data.(*v1.ManagementPlaneRequest_ConfigApplyRequest); !ok {
-		slog.InfoContext(ctx, "Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
+		slog.DebugContext(ctx, "Unknown message processed by config service", "topic", msg.Topic, "message", msg.Data)
 	} else {
 		c.updateInstanceConfig(ctx, request)
 	}
@@ -158,14 +157,12 @@ func (c *Config) updateInstanceConfig(ctx context.Context, request *v1.Managemen
 		Timestamp:     timestamppb.Now(),
 		Message:       "Instance configuration update in progress",
 	}
-	slog.Info("Send Message ------")
 	c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateStatusTopic, Data: inProgressStatus})
 
 	_, status := c.configServices[instanceID].UpdateInstanceConfiguration(
 		ctx,
 		request,
 	)
-	slog.Info("Send Message ------")
 	c.messagePipe.Process(ctx, &bus.Message{Topic: bus.InstanceConfigUpdateStatusTopic, Data: status})
 
 	// Rollback will be fixed in followup PR

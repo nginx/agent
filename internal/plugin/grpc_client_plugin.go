@@ -144,7 +144,6 @@ func (gc *GrpcClient) subscribe(ctx context.Context) {
 
 			switch request.GetRequest().(type) {
 			case *v1.ManagementPlaneRequest_ConfigApplyRequest:
-				slog.Info("Received Config Apply Request")
 				subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
 				gc.messagePipe.Process(subCtx, &bus.Message{
 					Topic: bus.InstanceConfigUpdateRequestTopic,
