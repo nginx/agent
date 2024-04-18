@@ -145,7 +145,6 @@ func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
 	fakeCommandServiceClient := &v1fakes.FakeCommandServiceClient{}
 
 	client.commandServiceClient = fakeCommandServiceClient
-	client.isConnected.Store(true)
 
 	mockMessage := &bus.Message{
 		Topic: bus.ResourceTopic,
