@@ -8,8 +8,9 @@ package service
 import (
 	"context"
 	"fmt"
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"testing"
+
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 	"github.com/nginx/agent/v3/internal/client/clientfakes"
 

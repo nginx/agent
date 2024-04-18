@@ -201,14 +201,14 @@ func (n *Nginx) stubStatusAPICallback(ctx context.Context, parent, current *cros
 }
 
 func (n *Nginx) pingStubStatusAPIEndpoint(ctx context.Context, statusAPI string) bool {
-	client := http.Client{Timeout: n.agentConfig.Client.Timeout}
+	httpClient := http.Client{Timeout: n.agentConfig.Client.Timeout}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
 	if err != nil {
 		slog.Warn("Unable to create Stub Status API GET request", "error", err)
 		return false
 	}
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		slog.Warn("Unable to GET Stub Status from API request", "error", err)
 		return false

@@ -238,7 +238,6 @@ func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resourc
 		slog.DebugContext(ctx, "Agent connected")
 
 		gc.isConnected.Store(true)
-
 	}
 
 	slog.Info("pipe", "msg", gc.messagePipe)

@@ -103,7 +103,8 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			nginxConfig := NewNginx(context.Background(), protos.GetNginxOssInstance(), types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+			nginxConfig := NewNginx(context.Background(), protos.GetNginxOssInstance(),
+				types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 
 			err := nginxConfig.validateConfigCheckResponse([]byte(test.out))
 			assert.Equal(t, test.expected, err)

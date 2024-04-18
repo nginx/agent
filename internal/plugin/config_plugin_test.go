@@ -78,7 +78,7 @@ func TestConfig_Process(t *testing.T) {
 		ConfigApplyRequest: &v1.ConfigApplyRequest{
 			ConfigVersion: &v1.ConfigVersion{
 				Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
-				InstanceId: testInstance.InstanceMeta.InstanceId,
+				InstanceId: testInstance.GetInstanceMeta().GetInstanceId(),
 			},
 		},
 	}
