@@ -177,11 +177,16 @@ func verifyConnection(t *testing.T) {
 	assert.NotNil(t, resource.GetResourceId())
 	assert.NotNil(t, resource.GetContainerInfo().GetContainerId())
 
-	instanceMeta := resource.GetInstances()[0].GetInstanceMeta()
+	instance := resource.GetInstances()[0]
+	instanceMeta := instance.GetInstanceMeta()
 
 	assert.NotEmpty(t, instanceMeta.GetInstanceId())
+	assert.NotEmpty(t, instanceMeta.GetVersion())
+
+	assert.NotEmpty(t, instance.GetInstanceRuntime().GetBinaryPath())
+
 	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, instanceMeta.GetInstanceType())
-	assert.Equal(t, "1.18.0", instanceMeta.GetVersion())
+	assert.Equal(t, "/etc/nginx/nginx.conf", instance.GetInstanceRuntime().GetConfigPath())
 }
 
 func verifyUpdateDataPlaneStatus(t *testing.T) {

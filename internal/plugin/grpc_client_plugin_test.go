@@ -105,7 +105,6 @@ func TestGrpcClient_Init(t *testing.T) {
 			test.agentConfig.Command.Server.Host = test.server
 
 			client := NewGrpcClient(test.agentConfig)
-			client.resource = protos.GetContainerizedResource()
 			assert.NotNil(tt, client)
 
 			messagePipe := bus.NewMessagePipe(10)
@@ -154,7 +153,7 @@ func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
 	}
 	client.Process(ctx, mockMessage)
 
-	assert.Equal(t, expected, client.resource)
+	assert.True(t, client.isConnected.Load())
 }
 
 func TestGrpcClient_Close(t *testing.T) {
@@ -309,8 +308,6 @@ func TestGrpcClient_Close(t *testing.T) {
 
 			client := NewGrpcClient(test.agentConfig)
 			assert.NotNil(tt, client)
-
-			client.resource = protos.GetHostResource()
 
 			messagePipe := bus.NewMessagePipe(100)
 			err = messagePipe.Register(100, []bus.Plugin{client})

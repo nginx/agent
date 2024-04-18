@@ -34,9 +34,7 @@ type (
 		isConnected          *atomic.Bool
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
-		resource             *v1.Resource
 		connectionMutex      sync.Mutex
-		resourceMutex        sync.Mutex
 	}
 )
 
@@ -51,13 +49,9 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 		isConnected.Store(false)
 
 		return &GrpcClient{
-			config:      agentConfig,
-			isConnected: isConnected,
-			resource: &v1.Resource{
-				Instances: []*v1.Instance{},
-			},
+			config:          agentConfig,
+			isConnected:     isConnected,
 			connectionMutex: sync.Mutex{},
-			resourceMutex:   sync.Mutex{},
 		}
 	}
 
@@ -96,9 +90,6 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 }
 
 func (gc *GrpcClient) createConnectionClient() error {
-	gc.resourceMutex.Lock()
-	defer gc.resourceMutex.Unlock()
-
 	gc.connectionMutex.Lock()
 	defer gc.connectionMutex.Unlock()
 
@@ -136,20 +127,16 @@ func (gc *GrpcClient) Info() *bus.Info {
 
 func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	case bus.GrpcConnectedTopic:
-		gc.connected(ctx)
 	case bus.ResourceTopic:
-		if newResource, ok := msg.Data.(*v1.Resource); ok {
-			gc.resourceMutex.Lock()
-			gc.resource = newResource
-			gc.resourceMutex.Unlock()
+		if resource, ok := msg.Data.(*v1.Resource); ok {
+			err := gc.createConnection(ctx, resource)
+			if err != nil {
+				return
+			}
 
-			if !gc.isConnected.Load() {
-				// nolint: revive
-				err := gc.createConnection(ctx)
-				if err != nil {
-					return
-				}
+			err = gc.sendDataPlaneStatusUpdate(ctx, resource)
+			if err != nil {
+				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
 			}
 		}
 	default:
@@ -157,43 +144,34 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	}
 }
 
-func (gc *GrpcClient) connected(ctx context.Context) {
-	slog.DebugContext(ctx, "Agent connected")
-	gc.isConnected.Store(true)
+func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resource) error {
+	if !gc.isConnected.Load() {
+		req, err := gc.createConnectionRequest(resource)
+		if err != nil {
+			slog.Error("Creating connection request", "error", err)
+			return err
+		}
 
-	gc.resourceMutex.Lock()
-	err := gc.sendDataPlaneStatusUpdate(ctx, gc.resource)
-	gc.resourceMutex.Unlock()
+		reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
+		defer reqCancel()
 
-	if err != nil {
-		slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
+		response, err := gc.commandServiceClient.CreateConnection(reqCtx, req)
+		if err != nil {
+			slog.Error("Creating connection", "error", err)
+
+			return err
+		}
+
+		slog.DebugContext(ctx, "Connection created", "response", response)
+		slog.DebugContext(ctx, "Agent connected")
+
+		gc.isConnected.Store(true)
 	}
-}
-
-func (gc *GrpcClient) createConnection(ctx context.Context) error {
-	req, err := gc.createConnectionRequest()
-	if err != nil {
-		slog.Error("Creating connection request", "error", err)
-		return err
-	}
-
-	reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
-	defer reqCancel()
-
-	response, err := gc.commandServiceClient.CreateConnection(reqCtx, req)
-	if err != nil {
-		slog.Error("Creating connection", "error", err)
-
-		return err
-	}
-
-	slog.Debug("Connection created", "response", response)
-	gc.messagePipe.Process(ctx, &bus.Message{Topic: bus.GrpcConnectedTopic, Data: response})
 
 	return nil
 }
 
-func (gc *GrpcClient) createConnectionRequest() (*v1.CreateConnectionRequest, error) {
+func (gc *GrpcClient) createConnectionRequest(resource *v1.Resource) (*v1.CreateConnectionRequest, error) {
 	id, err := uuid.NewV7()
 	if err != nil {
 		slog.Error("Generating message id", "error", err)
@@ -212,7 +190,7 @@ func (gc *GrpcClient) createConnectionRequest() (*v1.CreateConnectionRequest, er
 			CorrelationId: correlationID.String(),
 			Timestamp:     timestamppb.Now(),
 		},
-		Resource: gc.resource,
+		Resource: resource,
 	}, nil
 }
 
