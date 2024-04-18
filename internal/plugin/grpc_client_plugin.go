@@ -13,9 +13,11 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/cenkalti/backoff/v4"
+
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/backoff"
+	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
@@ -58,11 +60,8 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 	return nil
 }
 
-func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	var (
-		grpcClientCtx context.Context
-		err           error
-	)
+func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) (err error) {
+	var grpcClientCtx context.Context
 
 	slog.InfoContext(ctx, "Starting grpc client plugin")
 	gc.messagePipe = messagePipe
@@ -82,14 +81,7 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	if err != nil {
 		return err
 	}
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, gc.config.Client.Timeout)
 
-	defer backoffCancel()
-
-	return backoff.WaitUntil(backOffCtx, gc.config.Common, gc.createConnectionClient)
-}
-
-func (gc *GrpcClient) createConnectionClient() error {
 	gc.connectionMutex.Lock()
 	defer gc.connectionMutex.Unlock()
 
@@ -155,10 +147,18 @@ func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resourc
 		reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
 		defer reqCancel()
 
-		response, err := gc.commandServiceClient.CreateConnection(reqCtx, req)
-		if err != nil {
-			slog.Error("Creating connection", "error", err)
+		connectFn := func() (*v1.CreateConnectionResponse, error) {
+			response, connectErr := gc.commandServiceClient.CreateConnection(reqCtx, req)
+			if connectErr != nil {
+				slog.Error("Creating connection", "error", err)
 
+				return nil, connectErr
+			}
+
+			return response, nil
+		}
+		response, err := backoff.RetryWithData(connectFn, backoffHelpers.Context(reqCtx, gc.config.Common))
+		if err != nil {
 			return err
 		}
 
@@ -221,12 +221,30 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 		Resource: resource,
 	}
 
-	slog.DebugContext(ctx, "Sending data plane status update request", "request", request)
-	if gc.commandServiceClient == nil {
-		return fmt.Errorf("command service client is not initialized")
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, gc.config.Client.Timeout)
+	defer backoffCancel()
+
+	sendDataPlaneStatus := func() (*v1.UpdateDataPlaneStatusResponse, error) {
+		slog.DebugContext(ctx, "Sending data plane status update request", "request", request)
+		if gc.commandServiceClient == nil {
+			return nil, fmt.Errorf("command service client is not initialized")
+		}
+
+		response, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+		if err != nil {
+			slog.Error("Creating connection", "error", err)
+
+			return nil, err
+		}
+
+		return response, nil
 	}
 
-	_, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+	response, err := backoff.RetryWithData(sendDataPlaneStatus, backoffHelpers.Context(backOffCtx, gc.config.Common))
+	if err != nil {
+		return err
+	}
+	slog.DebugContext(ctx, " UpdateDataPlaneStatus response ", "response", response)
 
-	return err
+	return nil
 }
