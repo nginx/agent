@@ -183,3 +183,17 @@ func TestWaitUntilWithData(t *testing.T) {
 		}
 	}
 }
+
+func TestContext(t *testing.T) {
+	settings := &config.CommonSettings{
+		InitialInterval:     10 * time.Millisecond,
+		MaxInterval:         10 * time.Millisecond,
+		MaxElapsedTime:      10 * time.Millisecond,
+		RandomizationFactor: config.DefBackoffRandomizationFactor,
+		Multiplier:          config.DefBackoffMultiplier,
+	}
+
+	backoffCtx := Context(context.Background(), settings)
+
+	assert.NotEmpty(t, backoffCtx)
+}
