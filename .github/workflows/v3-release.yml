@@ -13,7 +13,8 @@ jobs:
     with:
       draftRelease: false
       buildPackages: true
-      packageBuildNo: 2
+      packageVersion: 3.0.0
+      packageBuildNo: 1
       uploadAzure: false
       publishPackages: false
       tagRelease: false
