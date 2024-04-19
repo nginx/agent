@@ -7,6 +7,7 @@ package plugin
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -82,11 +83,8 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 		return err
 	}
 
-	gc.connectionMutex.Lock()
-	defer gc.connectionMutex.Unlock()
-
 	if gc.conn == nil || gc.conn.GetState() == connectivity.Shutdown {
-		return fmt.Errorf("can't connect to server")
+		return errors.New("can't connect to server")
 	}
 
 	gc.commandServiceClient = v1.NewCommandServiceClient(gc.conn)
@@ -150,7 +148,7 @@ func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resourc
 		connectFn := func() (*v1.CreateConnectionResponse, error) {
 			response, connectErr := gc.commandServiceClient.CreateConnection(reqCtx, req)
 			if connectErr != nil {
-				slog.Error("Creating connection", "error", err)
+				slog.ErrorContext(reqCtx, "Creating connection", "error", err)
 
 				return nil, connectErr
 			}
@@ -227,12 +225,12 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	sendDataPlaneStatus := func() (*v1.UpdateDataPlaneStatusResponse, error) {
 		slog.DebugContext(ctx, "Sending data plane status update request", "request", request)
 		if gc.commandServiceClient == nil {
-			return nil, fmt.Errorf("command service client is not initialized")
+			return nil, errors.New("command service client is not initialized")
 		}
 
 		response, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
 		if err != nil {
-			slog.Error("Creating connection", "error", err)
+			slog.ErrorContext(backOffCtx, "Creating connection", "error", err)
 
 			return nil, err
 		}
