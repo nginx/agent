@@ -32,7 +32,7 @@ func main() {
 	go func() {
 		select {
 		case <-sigChan:
-			slog.Warn("NGINX Agent exiting")
+			slog.WarnContext(ctx, "NGINX Agent exiting")
 			cancel()
 
 			time.Sleep(config.DefGracefulShutdownPeriod)
@@ -51,6 +51,6 @@ func main() {
 
 	err := app.Run(ctx)
 	if err != nil {
-		slog.Error("NGINX Agent exiting due to error", "error", err)
+		slog.ErrorContext(ctx, "NGINX Agent exiting due to error", "error", err)
 	}
 }
