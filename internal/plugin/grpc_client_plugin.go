@@ -26,7 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const sleepTime = 5
+const retryInterval = 5 * time.Second
 
 type (
 	GrpcClient struct {
@@ -108,35 +108,38 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	return nil
 }
 
-// wastedassign giving out that subscribeClient is set to nil
-// nolint: wastedassign
+// revive cognitive complexity 13 due to the nil checks
+// nolint: revive
 func (gc *GrpcClient) subscribe(ctx context.Context) {
 	var subscribeClient v1.CommandService_SubscribeClient
 	var err error
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			subscribeClient, err = gc.commandServiceClient.Subscribe(ctx)
-			if err != nil {
-				slog.ErrorContext(ctx, "error subscribing: ", err)
-				// this is temporary and will be changed in a followup PR use back off and allow the time to be set
-				// but needed to add retry to stop the logs being spammed with errors
-				time.Sleep(sleepTime * time.Second)
+			if subscribeClient == nil {
+				subscribeClient, err = gc.commandServiceClient.Subscribe(ctx)
+				if err != nil {
+					slog.ErrorContext(ctx, "Unable to subscribe", "error", err)
+					// this is temporary and will be changed in a followup PR use back off and allow the time to be set
+					// but needed to add retry to stop the logs being spammed with errors
+					time.Sleep(retryInterval)
 
-				continue
+					continue
+				}
 			}
 
 			request, recErr := subscribeClient.Recv()
 			if recErr != nil {
 				slog.ErrorContext(ctx, "error receiving messages", "err", recErr)
 				subscribeClient = nil
-				time.Sleep(sleepTime * time.Second)
+				time.Sleep(retryInterval)
 
 				continue
 			}
-			slog.DebugContext(ctx, "Subscribe received: ", "req", request)
+			slog.DebugContext(ctx, "Subscribe received", "request", request)
 
 			gc.ProcessRequest(ctx, request)
 		}
@@ -152,7 +155,7 @@ func (gc *GrpcClient) ProcessRequest(ctx context.Context, request *v1.Management
 			Data:  request.GetRequest(),
 		})
 	default:
-		slog.Info("Not implemented yet")
+		slog.InfoContext(ctx, "Not implemented yet")
 	}
 }
 
@@ -252,8 +255,6 @@ func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resourc
 		gc.isConnected.Store(true)
 	}
 
-	slog.Info("pipe", "msg", gc.messagePipe)
-	slog.Info("func", "overview", gc.GetFileOverview)
 	gc.messagePipe.Process(ctx, &bus.Message{
 		Topic: bus.ConfigClientTopic,
 		Data: &GrpcConfigClient{

@@ -122,7 +122,7 @@ func TestWriteConfig(t *testing.T) {
 
 			request := helpers.CreateManagementPlaneRequestConfigApplyRequest()
 
-			skippedFiles, cwErr := configWriter.Write(ctx, request, instanceID.String())
+			skippedFiles, cwErr := configWriter.Write(ctx, request)
 			require.NoError(t, cwErr)
 			slog.Info("Skipped Files: ", "", skippedFiles)
 			assert.Len(t, skippedFiles, test.expSkippedCount)
@@ -278,7 +278,7 @@ func TestRollback(t *testing.T) {
 		},
 	}
 
-	err = configWriter.Rollback(ctx, skippedFiles, &v1.ManagementPlaneRequest_ConfigApplyRequest{}, instanceID.String())
+	err = configWriter.Rollback(ctx, skippedFiles, &v1.ManagementPlaneRequest_ConfigApplyRequest{})
 	require.NoError(t, err)
 
 	data, err := os.ReadFile(testConf.Name())

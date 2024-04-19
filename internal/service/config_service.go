@@ -35,7 +35,7 @@ type ConfigServiceInterface interface {
 		ctx context.Context,
 	) (instanceConfigContext any, err error)
 	Rollback(ctx context.Context, skippedFiles datasource.CacheContent,
-		request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string) error
+		request *v1.ManagementPlaneRequest_ConfigApplyRequest) error
 }
 
 type ConfigService struct {
@@ -70,9 +70,8 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 
 func (cs *ConfigService) Rollback(ctx context.Context, skippedFiles datasource.CacheContent,
 	request *v1.ManagementPlaneRequest_ConfigApplyRequest,
-	instanceID string,
 ) error {
-	return cs.configService.Rollback(ctx, skippedFiles, request, instanceID)
+	return cs.configService.Rollback(ctx, skippedFiles, request)
 }
 
 func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context,
@@ -86,7 +85,7 @@ func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context,
 			InstanceId:    cs.instance.GetInstanceMeta().GetInstanceId(),
 			CorrelationId: correlationID,
 			Status:        instances.Status_FAILED,
-			Message:       "error writing config, config service is nil",
+			Message:       "Internal error",
 			Timestamp:     timestamppb.Now(),
 		}
 	}

@@ -24,5 +24,5 @@ type DataPlaneConfig interface {
 	Complete(ctx context.Context) error
 	SetConfigWriter(configWriter writer.ConfigWriterInterface)
 	Rollback(ctx context.Context, skippedFiles writer.CacheContent,
-		request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string) error
+		request *v1.ManagementPlaneRequest_ConfigApplyRequest) error
 }

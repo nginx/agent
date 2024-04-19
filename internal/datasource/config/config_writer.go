@@ -31,12 +31,12 @@ const (
 
 type (
 	ConfigWriterInterface interface {
-		Write(ctx context.Context, request *v1.ManagementPlaneRequest_ConfigApplyRequest,
-			instanceID string) (skippedFiles CacheContent, err error)
+		Write(ctx context.Context, request *v1.ManagementPlaneRequest_ConfigApplyRequest) (skippedFiles CacheContent,
+			err error)
 		Complete(ctx context.Context) (err error)
 		SetConfigClient(configClient client.ConfigClient)
 		Rollback(ctx context.Context, skippedFiles CacheContent,
-			request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string) error
+			request *v1.ManagementPlaneRequest_ConfigApplyRequest) error
 	}
 
 	ConfigWriter struct {
@@ -66,14 +66,15 @@ func (cw *ConfigWriter) SetConfigClient(configClient client.ConfigClient) {
 }
 
 func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
-	_ *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string,
+	request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 ) error {
 	// The below will be done in a followup PR
 	// if the config apply has failed before a file is written the skipped files will be empty
 	// if one but not all the files failed to download should handle comparing the hash in doesFileRequireUpdate
 	slog.DebugContext(ctx, "Rolling back NGINX config changes due to error")
 	if cw.fileCache.CacheContent() == nil {
-		return fmt.Errorf("error rolling back, no instance file cache found for instance %s", instanceID)
+		return fmt.Errorf("error rolling back, no instance file cache found for instance %s",
+			request.ConfigApplyRequest.GetConfigVersion().GetInstanceId())
 	}
 	for key, fileMeta := range cw.fileCache.CacheContent() {
 		if _, ok := skippedFiles[key]; ok {
@@ -92,7 +93,7 @@ func (cw *ConfigWriter) Rollback(ctx context.Context, skippedFiles CacheContent,
 // has cognitive-complexity of 11 due to the number or nil and error checks
 // nolint: revive
 func (cw *ConfigWriter) Write(ctx context.Context,
-	request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string,
+	request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 ) (skippedFiles CacheContent, err error) {
 	slog.DebugContext(ctx, "Write nginx config")
 	currentFileCache, skippedFiles := make(CacheContent), make(CacheContent)
@@ -105,7 +106,7 @@ func (cw *ConfigWriter) Write(ctx context.Context,
 	filesOverview := request.ConfigApplyRequest.GetOverview()
 
 	if filesOverview == nil {
-		filesOverview, err = cw.getFileOverview(ctx, request, instanceID)
+		filesOverview, err = cw.getFileOverview(ctx, request)
 		if err != nil {
 			return nil, err
 		}
@@ -157,8 +158,8 @@ func (cw *ConfigWriter) removeFiles(ctx context.Context, currentFileCache, fileC
 }
 
 func (cw *ConfigWriter) getFileOverview(ctx context.Context, request *v1.ManagementPlaneRequest_ConfigApplyRequest,
-	instanceID string,
 ) (fileOverview *v1.FileOverview, err error) {
+	instanceID := request.ConfigApplyRequest.GetConfigVersion().GetInstanceId()
 	fileOverview, err = cw.configClient.GetOverview(ctx, &v1.GetOverviewRequest{
 		MessageMeta: &v1.MessageMeta{
 			MessageId:     uuid.NewString(),

@@ -104,7 +104,7 @@ func (n *Nginx) Write(ctx context.Context, request *v1.ManagementPlaneRequest_Co
 	skippedFiles writer.CacheContent,
 	err error,
 ) {
-	return n.configWriter.Write(ctx, request, n.instance.GetInstanceMeta().GetInstanceId())
+	return n.configWriter.Write(ctx, request)
 }
 
 func (n *Nginx) Complete(ctx context.Context) error {
@@ -112,9 +112,9 @@ func (n *Nginx) Complete(ctx context.Context) error {
 }
 
 func (n *Nginx) Rollback(ctx context.Context, skippedFiles writer.CacheContent,
-	request *v1.ManagementPlaneRequest_ConfigApplyRequest, instanceID string,
+	request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 ) error {
-	err := n.configWriter.Rollback(ctx, skippedFiles, request, instanceID)
+	err := n.configWriter.Rollback(ctx, skippedFiles, request)
 	return err
 }
 
