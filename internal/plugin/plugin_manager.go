@@ -16,7 +16,7 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 	plugins := make([]bus.Plugin, 0)
 
 	plugins = addProcessMonitor(agentConfig, plugins)
-	plugins = addResourceMonitor(plugins)
+	plugins = addResourceMonitor(agentConfig, plugins)
 
 	configPlugin := NewConfig(agentConfig)
 
@@ -44,8 +44,8 @@ func addMetrics(agentConfig *config.Config, slogger *slog.Logger, plugins []bus.
 	return plugins
 }
 
-func addResourceMonitor(plugins []bus.Plugin) []bus.Plugin {
-	instanceMonitor := NewResource()
+func addResourceMonitor(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
+	instanceMonitor := NewResource(agentConfig)
 	plugins = append(plugins, instanceMonitor)
 
 	return plugins

@@ -139,7 +139,7 @@ func (n *Nginx) ParseConfig(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
-	stubStatus, err := n.stubStatus(ctx)
+	stubStatus, err := n.stubStatus(ctx, payload)
 	if err != nil {
 		slog.Warn("Can not set stub_status", "error", err)
 	}
@@ -157,21 +157,7 @@ func (n *Nginx) SetConfigContext(configContext any) {
 	}
 }
 
-func (n *Nginx) stubStatus(ctx context.Context) (string, error) {
-	payload, err := crossplane.Parse(n.instance.GetInstanceRuntime().GetConfigPath(),
-		&crossplane.ParseOptions{
-			SingleFile:         false,
-			StopParsingOnError: true,
-			CombineConfigs:     true,
-		},
-	)
-	if err != nil {
-		return "",
-			fmt.Errorf("error reading config from %s, error: %w",
-				n.instance.GetInstanceRuntime().GetConfigPath(),
-				err)
-	}
-
+func (n *Nginx) stubStatus(ctx context.Context, payload *crossplane.Payload) (string, error) {
 	for _, xpConf := range payload.Config {
 		stubStatusAPIURL := n.crossplaneConfigTraverseStr(ctx, &xpConf, n.stubStatusAPICallback)
 		if stubStatusAPIURL != "" {
