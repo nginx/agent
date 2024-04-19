@@ -9,7 +9,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"log/slog"
 
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
@@ -129,7 +128,8 @@ func ProtoValidatorUnaryClientInterceptor() (grpc.UnaryClientInterceptor, error)
 		if replyValidationErr != nil {
 			return status.Errorf(
 				codes.InvalidArgument,
-				fmt.Errorf("invalid reply message: %w", replyValidationErr).Error(),
+				"invalid reply message: %s",
+				replyValidationErr.Error(),
 			)
 		}
 
