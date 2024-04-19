@@ -156,7 +156,9 @@ func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
 }
 
 func TestGrpcClient_Close(t *testing.T) {
+	ctx := context.Background()
 	serverMockLock := sync.Mutex{}
+
 	tests := []struct {
 		name         string
 		agentConfig  *config.Config
@@ -308,18 +310,16 @@ func TestGrpcClient_Close(t *testing.T) {
 			client := NewGrpcClient(test.agentConfig)
 			assert.NotNil(tt, client)
 
-			messagePipe := bus.NewMessagePipe(100)
-			err = messagePipe.Register(100, []bus.Plugin{client})
-			require.NoError(tt, err)
+			messagePipe := bus.NewFakeMessagePipe()
 
-			err = client.Init(context.Background(), messagePipe)
+			err = client.Init(ctx, messagePipe)
 			if err == nil {
 				require.NoError(tt, err)
 			} else {
 				assert.Contains(tt, err.Error(), test.errorMessage)
 			}
 
-			err = client.Close(context.Background())
+			err = client.Close(ctx)
 			require.NoError(tt, err)
 
 			defer server.Stop()
