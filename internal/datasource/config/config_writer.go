@@ -100,7 +100,7 @@ func (cw *ConfigWriter) Write(ctx context.Context,
 
 	cacheContent, err := cw.fileCache.ReadFileCache(ctx)
 	if err != nil {
-		slog.Warn("Unable to read file cache")
+		slog.WarnContext(ctx, "Unable to read file cache", "error", err)
 	}
 
 	filesOverview := request.ConfigApplyRequest.GetOverview()

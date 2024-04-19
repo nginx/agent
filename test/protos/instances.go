@@ -172,7 +172,7 @@ func GetFiles(files ...*os.File) (*v1.FileOverview, error) {
 	return instanceFiles, nil
 }
 
-func GetFileDownloadResponse(content []byte) *v1.FileContents {
+func GetFileContents(content []byte) *v1.FileContents {
 	return &v1.FileContents{
 		Contents: content,
 	}

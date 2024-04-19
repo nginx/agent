@@ -329,3 +329,54 @@ func TestGrpcClient_Close(t *testing.T) {
 		})
 	}
 }
+
+func TestGrpcConfigClient_GetOverview(t *testing.T) {
+	ctx := context.Background()
+	fileServiceClient := v1fakes.FakeFileServiceClient{}
+	overviewResponse, err := helpers.CreateGetOverviewResponse()
+	fileResponse := helpers.CreateGetFileResponse()
+	fileServiceClient.GetOverviewReturns(overviewResponse, nil)
+	fileServiceClient.GetFileReturns(fileResponse, nil)
+	require.NoError(t, err)
+
+	client := NewGrpcClient(types.GetAgentConfig())
+	assert.NotNil(t, client)
+
+	client.fileServiceClient = &fileServiceClient
+
+	gcc := GrpcConfigClient{
+		grpcOverviewFn:    client.GetFileOverview,
+		grpFileContentsFn: client.GetFileContents,
+	}
+	req := helpers.CreateGetOverviewRequest()
+
+	resp, err := gcc.GetOverview(ctx, req)
+	require.NoError(t, err)
+	assert.Equal(t, overviewResponse.GetOverview(), resp)
+}
+
+func TestGrpcConfigClient_GetFile(t *testing.T) {
+	ctx := context.Background()
+	fileServiceClient := v1fakes.FakeFileServiceClient{}
+	overviewResponse, err := helpers.CreateGetOverviewResponse()
+	fileResponse := helpers.CreateGetFileResponse()
+	fileServiceClient.GetOverviewReturns(overviewResponse, nil)
+	fileServiceClient.GetFileReturns(fileResponse, nil)
+	require.NoError(t, err)
+
+	client := NewGrpcClient(types.GetAgentConfig())
+	assert.NotNil(t, client)
+
+	client.fileServiceClient = &fileServiceClient
+
+	gcc := GrpcConfigClient{
+		grpcOverviewFn:    client.GetFileOverview,
+		grpFileContentsFn: client.GetFileContents,
+	}
+	req, err := helpers.CreateGetFileRequest()
+	require.NoError(t, err)
+
+	resp, err := gcc.GetFile(ctx, req)
+	require.NoError(t, err)
+	assert.Equal(t, fileResponse.GetContents(), resp)
+}

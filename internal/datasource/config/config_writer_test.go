@@ -71,7 +71,7 @@ func TestWriteConfig(t *testing.T) {
 		{
 			name:               "Test 1: File needs updating",
 			metaDataReturn:     files,
-			getFileReturn:      protos.GetFileDownloadResponse(fileContent),
+			getFileReturn:      protos.GetFileContents(fileContent),
 			cacheShouldBeEqual: false,
 			fileShouldBeEqual:  true,
 			expSkippedCount:    2,
@@ -79,7 +79,7 @@ func TestWriteConfig(t *testing.T) {
 		{
 			name:               "Test 2: File doesn't need updating",
 			metaDataReturn:     files,
-			getFileReturn:      protos.GetFileDownloadResponse(fileContent),
+			getFileReturn:      protos.GetFileContents(fileContent),
 			cacheShouldBeEqual: true,
 			fileShouldBeEqual:  false,
 			expSkippedCount:    3,
@@ -245,7 +245,7 @@ func TestRollback(t *testing.T) {
 	fakeConfigClient := &clientfakes.FakeConfigClient{}
 	fakeConfigClient.GetOverviewReturns(files, nil)
 	resp := []byte("location /test {\n    return 200 \"Test changed\\n\";\n}")
-	fakeConfigClient.GetFileReturns(protos.GetFileDownloadResponse(resp), nil)
+	fakeConfigClient.GetFileReturns(protos.GetFileContents(resp), nil)
 
 	agentConfig := types.GetAgentConfig()
 	agentConfig.AllowedDirectories = allowedDirs
