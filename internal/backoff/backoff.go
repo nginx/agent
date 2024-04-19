@@ -12,9 +12,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 )
 
-type Backoff[T any] struct{}
-
-// Implementation of backoff operations that increases the back off period for each retry attempt using
+// WaitUntil Implementation of backoff operations that increases the back off period for each retry attempt using
 // a randomization function that grows exponentially.
 //
 // This is calculated using the following formula:
@@ -60,7 +58,32 @@ func WaitUntil(
 	eb.RandomizationFactor = backoffSettings.RandomizationFactor
 	eb.Multiplier = backoffSettings.Multiplier
 
-	backoffWithContext := backoff.WithContext(eb, ctx)
+	backoffWithContext := Context(ctx, backoffSettings)
 
 	return backoff.Retry(operation, backoffWithContext)
+}
+
+// WaitUntilWithData Implementation of backoff operations that increases the back off period for each retry
+// attempt using a randomization function that grows exponentially. This does not allow for parameters.
+// nolint: ireturn
+func WaitUntilWithData[T any](
+	ctx context.Context,
+	backoffSettings *config.CommonSettings,
+	operation backoff.OperationWithData[T],
+) (T, error) {
+	backoffWithContext := Context(ctx, backoffSettings)
+
+	return backoff.RetryWithData(operation, backoffWithContext)
+}
+
+// nolint: ireturn
+func Context(ctx context.Context, backoffSettings *config.CommonSettings) backoff.BackOffContext {
+	eb := backoff.NewExponentialBackOff()
+	eb.InitialInterval = backoffSettings.InitialInterval
+	eb.MaxInterval = backoffSettings.MaxInterval
+	eb.MaxElapsedTime = backoffSettings.MaxElapsedTime
+	eb.RandomizationFactor = backoffSettings.RandomizationFactor
+	eb.Multiplier = backoffSettings.Multiplier
+
+	return backoff.WithContext(eb, ctx)
 }

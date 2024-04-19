@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/instance"
 )
@@ -27,10 +28,11 @@ type InstanceService struct {
 	instancesMutex            sync.Mutex
 }
 
-func NewInstanceService() *InstanceService {
+func NewInstanceService(agentConfig *config.Config) *InstanceService {
 	return &InstanceService{
 		instances: []*v1.Instance{},
 		dataPlaneInstanceServices: []instance.DataPlaneInstanceService{
+			instance.NewNginxAgent(agentConfig),
 			instance.NewNginx(instance.NginxParameters{}),
 		},
 		instancesMutex: sync.Mutex{},

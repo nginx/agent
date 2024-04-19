@@ -11,6 +11,7 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/instance"
@@ -24,14 +25,14 @@ func TestInstanceService_GetInstances(t *testing.T) {
 	fakeDataPlaneService := &instancefakes.FakeDataPlaneInstanceService{}
 	fakeDataPlaneService.GetInstancesReturns([]*v1.Instance{protos.GetNginxOssInstance()})
 
-	instanceService := NewInstanceService()
+	instanceService := NewInstanceService(types.GetAgentConfig())
 	instanceService.dataPlaneInstanceServices = []instance.DataPlaneInstanceService{fakeDataPlaneService}
 
 	assert.Equal(t, []*v1.Instance{protos.GetNginxOssInstance()}, instanceService.GetInstances(ctx, []*model.Process{}))
 }
 
 func TestInstanceService_GetInstance(t *testing.T) {
-	instanceService := NewInstanceService()
+	instanceService := NewInstanceService(types.GetAgentConfig())
 	instanceService.instances = []*v1.Instance{protos.GetNginxPlusInstance()}
 
 	assert.Equal(t, protos.GetNginxPlusInstance(),

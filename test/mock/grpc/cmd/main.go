@@ -41,12 +41,12 @@ func main() {
 	agentConfig := types.GetAgentConfig()
 	grpcHost, grpcPort, err := net.SplitHostPort(*grpcAddress)
 	if err != nil {
-		slog.Error("Failed to read host and port", "error", err)
+		slog.ErrorContext(ctx, "Failed to read host and port", "error", err)
 		os.Exit(1)
 	}
 	portInt, err := strconv.Atoi(grpcPort)
 	if err != nil {
-		slog.Error("Failed to convert port", "error", err)
+		slog.ErrorContext(ctx, "Failed to convert port", "error", err)
 		os.Exit(1)
 	}
 
@@ -65,14 +65,14 @@ func main() {
 		defaultConfigDirectory, configDirErr := generateDefaultConfigDirectory()
 		configDirectory = &defaultConfigDirectory
 		if configDirErr != nil {
-			slog.Error("Failed to create default config directory", "error", err)
+			slog.ErrorContext(ctx, "Failed to create default config directory", "error", err)
 			os.Exit(1)
 		}
 	}
 
 	_, err = grpc.NewMockManagementServer(*apiAddress, agentConfig, configDirectory)
 	if err != nil {
-		slog.Error("Failed to start mock management server", "error", err)
+		slog.ErrorContext(ctx, "Failed to start mock management server", "error", err)
 		os.Exit(1)
 	}
 	<-ctx.Done()

@@ -7,6 +7,7 @@ package plugin
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -14,9 +15,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
+
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/backoff"
+	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
@@ -64,11 +67,10 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 	return nil
 }
 
-func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) (err error) {
 	var (
-		grpcClientCtx context.Context
 		subscribeCtx  context.Context
-		err           error
+		grpcClientCtx context.Context
 	)
 
 	slog.InfoContext(ctx, "Starting grpc client plugin")
@@ -91,13 +93,12 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	if err != nil {
 		return err
 	}
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, gc.config.Client.Timeout)
 
-	err = backoff.WaitUntil(backOffCtx, gc.config.Common, gc.createConnectionClient)
-	defer backoffCancel()
-	if err != nil {
-		return err
+	if gc.conn == nil || gc.conn.GetState() == connectivity.Shutdown {
+		return errors.New("can't connect to server")
 	}
+
+	gc.commandServiceClient = v1.NewCommandServiceClient(gc.conn)
 
 	gc.subscribeMutex.Lock()
 	subscribeCtx, gc.subscribeCancel = context.WithCancel(ctx)
@@ -157,19 +158,6 @@ func (gc *GrpcClient) ProcessRequest(ctx context.Context, request *v1.Management
 	default:
 		slog.InfoContext(ctx, "Not implemented yet")
 	}
-}
-
-func (gc *GrpcClient) createConnectionClient() error {
-	gc.connectionMutex.Lock()
-	defer gc.connectionMutex.Unlock()
-
-	if gc.conn == nil || gc.conn.GetState() == connectivity.Shutdown {
-		return fmt.Errorf("can't connect to server")
-	}
-
-	gc.commandServiceClient = v1.NewCommandServiceClient(gc.conn)
-
-	return nil
 }
 
 func (gc *GrpcClient) Close(ctx context.Context) error {
@@ -242,10 +230,18 @@ func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resourc
 		reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
 		defer reqCancel()
 
-		response, err := gc.commandServiceClient.CreateConnection(reqCtx, req)
-		if err != nil {
-			slog.Error("Creating connection", "error", err)
+		connectFn := func() (*v1.CreateConnectionResponse, error) {
+			response, connectErr := gc.commandServiceClient.CreateConnection(reqCtx, req)
+			if connectErr != nil {
+				slog.ErrorContext(reqCtx, "Creating connection", "error", err)
 
+				return nil, connectErr
+			}
+
+			return response, nil
+		}
+		response, err := backoff.RetryWithData(connectFn, backoffHelpers.Context(reqCtx, gc.config.Common))
+		if err != nil {
 			return err
 		}
 
@@ -317,14 +313,32 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 		Resource: resource,
 	}
 
-	slog.DebugContext(ctx, "Sending data plane status update request", "request", request)
-	if gc.commandServiceClient == nil {
-		return fmt.Errorf("command service client is not initialized")
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, gc.config.Client.Timeout)
+	defer backoffCancel()
+
+	sendDataPlaneStatus := func() (*v1.UpdateDataPlaneStatusResponse, error) {
+		slog.DebugContext(ctx, "Sending data plane status update request", "request", request)
+		if gc.commandServiceClient == nil {
+			return nil, errors.New("command service client is not initialized")
+		}
+
+		response, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+		if err != nil {
+			slog.ErrorContext(backOffCtx, "Creating connection", "error", err)
+
+			return nil, err
+		}
+
+		return response, nil
 	}
 
-	_, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+	response, err := backoff.RetryWithData(sendDataPlaneStatus, backoffHelpers.Context(backOffCtx, gc.config.Common))
+	if err != nil {
+		return err
+	}
+	slog.DebugContext(ctx, " UpdateDataPlaneStatus response ", "response", response)
 
-	return err
+	return nil
 }
 
 type GrpcConfigClient struct {

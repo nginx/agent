@@ -177,16 +177,27 @@ func verifyConnection(t *testing.T) {
 	assert.NotNil(t, resource.GetResourceId())
 	assert.NotNil(t, resource.GetContainerInfo().GetContainerId())
 
-	instance := resource.GetInstances()[0]
-	instanceMeta := instance.GetInstanceMeta()
+	agentInstance := resource.GetInstances()[0]
+	agentInstanceMeta := agentInstance.GetInstanceMeta()
 
-	assert.NotEmpty(t, instanceMeta.GetInstanceId())
-	assert.NotEmpty(t, instanceMeta.GetVersion())
+	assert.NotEmpty(t, agentInstanceMeta.GetInstanceId())
+	assert.NotEmpty(t, agentInstanceMeta.GetVersion())
 
-	assert.NotEmpty(t, instance.GetInstanceRuntime().GetBinaryPath())
+	assert.NotEmpty(t, agentInstance.GetInstanceRuntime().GetBinaryPath())
 
-	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, instanceMeta.GetInstanceType())
-	assert.Equal(t, "/etc/nginx/nginx.conf", instance.GetInstanceRuntime().GetConfigPath())
+	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_AGENT, agentInstanceMeta.GetInstanceType())
+	assert.Equal(t, "/etc/nginx-agent/nginx-agent.conf", agentInstance.GetInstanceRuntime().GetConfigPath())
+
+	nginxInstance := resource.GetInstances()[1]
+	nginxInstanceMeta := nginxInstance.GetInstanceMeta()
+
+	assert.NotEmpty(t, nginxInstanceMeta.GetInstanceId())
+	assert.NotEmpty(t, nginxInstanceMeta.GetVersion())
+
+	assert.NotEmpty(t, nginxInstance.GetInstanceRuntime().GetBinaryPath())
+
+	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, nginxInstanceMeta.GetInstanceType())
+	assert.Equal(t, "/etc/nginx/nginx.conf", nginxInstance.GetInstanceRuntime().GetConfigPath())
 }
 
 func verifyUpdateDataPlaneStatus(t *testing.T) {
@@ -222,16 +233,27 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	assert.NotEmpty(t, messageMeta.GetTimestamp())
 
 	instances := updateDataPlaneStatusRequest.GetResource().GetInstances()
-	assert.Len(t, instances, 1)
+	assert.Len(t, instances, 2)
 
-	// Verify instance metadata
+	// Verify agent instance metadata
 	assert.NotEmpty(t, instances[0].GetInstanceMeta().GetInstanceId())
-	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, instances[0].GetInstanceMeta().GetInstanceType())
+	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_AGENT, instances[0].GetInstanceMeta().GetInstanceType())
 	assert.NotEmpty(t, instances[0].GetInstanceMeta().GetVersion())
 
-	// Verify instance configuration
+	// Verify agent instance configuration
 	assert.Empty(t, instances[0].GetInstanceConfig().GetActions())
 	assert.NotEmpty(t, instances[0].GetInstanceRuntime().GetProcessId())
-	assert.Equal(t, "/usr/sbin/nginx", instances[0].GetInstanceRuntime().GetBinaryPath())
-	assert.Equal(t, "/etc/nginx/nginx.conf", instances[0].GetInstanceRuntime().GetConfigPath())
+	assert.Equal(t, "/usr/bin/nginx-agent", instances[0].GetInstanceRuntime().GetBinaryPath())
+	assert.Equal(t, "/etc/nginx-agent/nginx-agent.conf", instances[0].GetInstanceRuntime().GetConfigPath())
+
+	// Verify NGINX instance metadata
+	assert.NotEmpty(t, instances[1].GetInstanceMeta().GetInstanceId())
+	assert.Equal(t, v1.InstanceMeta_INSTANCE_TYPE_NGINX, instances[1].GetInstanceMeta().GetInstanceType())
+	assert.NotEmpty(t, instances[1].GetInstanceMeta().GetVersion())
+
+	// Verify NGINX instance configuration
+	assert.Empty(t, instances[1].GetInstanceConfig().GetActions())
+	assert.NotEmpty(t, instances[1].GetInstanceRuntime().GetProcessId())
+	assert.Equal(t, "/usr/sbin/nginx", instances[1].GetInstanceRuntime().GetBinaryPath())
+	assert.Equal(t, "/etc/nginx/nginx.conf", instances[1].GetInstanceRuntime().GetConfigPath())
 }

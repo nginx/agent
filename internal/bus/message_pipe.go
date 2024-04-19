@@ -189,10 +189,20 @@ func getIndex(pluginName string, plugins []Plugin) int {
 }
 
 func (p *MessagePipe) initPlugins(ctx context.Context) {
-	for _, r := range p.plugins {
-		err := r.Init(ctx, p)
+	for index, plugin := range p.plugins {
+		err := plugin.Init(ctx, p)
 		if err != nil {
-			slog.Error("Failed to initialize plugin", "plugin", r.Info().Name, "error", err)
+			slog.ErrorContext(ctx, "Failed to initialize plugin", "plugin", plugin.Info().Name, "error", err)
+
+			unsubscribeError := p.unsubscribePlugin(ctx, index, plugin)
+			if unsubscribeError != nil {
+				slog.ErrorContext(
+					ctx,
+					"Failed to unsubscribe plugin",
+					"plugin", plugin.Info().Name,
+					"error", unsubscribeError,
+				)
+			}
 		}
 	}
 }
