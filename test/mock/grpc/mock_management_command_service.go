@@ -72,12 +72,12 @@ func (cs *CommandService) StartServer(listener net.Listener) {
 }
 
 func (cs *CommandService) CreateConnection(
-	_ context.Context,
+	ctx context.Context,
 	request *v1.CreateConnectionRequest) (
 	*v1.CreateConnectionResponse,
 	error,
 ) {
-	slog.Debug("Create connection request", "request", request)
+	slog.DebugContext(ctx, "Create connection request", "request", request)
 
 	if request == nil {
 		return nil, errors.New("empty connection request")
