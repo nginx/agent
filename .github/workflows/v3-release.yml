@@ -1,0 +1,21 @@
+name: Release the v3 nginx agent
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      v3-workflow
+
+jobs:
+  release:
+    name: Release Agent v3
+    uses: nginx/agent/.github/workflows/release.yml@packaging
+    with:
+      draftRelease: false
+      buildPackages: true
+      packageBuildNo: 2
+      uploadAzure: false
+      publishPackages: false
+      tagRelease: false
+      createPullRequest: false
+      uploadJWT: abc123
