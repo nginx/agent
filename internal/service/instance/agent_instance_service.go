@@ -32,7 +32,7 @@ func (na *NginxAgent) GetInstances(ctx context.Context, _ []*model.Process) []*v
 	processPath, err := os.Executable()
 	if err != nil {
 		processPath = defaultAgentPath
-		slog.WarnContext(ctx, "Unable to read process location, defaulting to /var/run/nginx-agent")
+		slog.WarnContext(ctx, "Unable to read process location, defaulting to /var/run/nginx-agent", "error", err)
 	}
 
 	instance := &v1.Instance{
