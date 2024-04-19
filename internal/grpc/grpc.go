@@ -107,13 +107,14 @@ func ProtoValidatorUnaryClientInterceptor() (grpc.UnaryClientInterceptor, error)
 		invoker grpc.UnaryInvoker,
 		opts ...grpc.CallOption,
 	) error {
-		slog.Debug("Validation interceptor request", "req", req)
+		slog.DebugContext(ctx, "Validation interceptor request", "req", req)
 
 		requestValidationErr := validateMessage(validator, req)
 		if requestValidationErr != nil {
 			return status.Errorf(
 				codes.InvalidArgument,
-				fmt.Errorf("invalid request message: %w", requestValidationErr).Error(),
+				"invalid request message: %s",
+				requestValidationErr.Error(),
 			)
 		}
 
@@ -122,7 +123,7 @@ func ProtoValidatorUnaryClientInterceptor() (grpc.UnaryClientInterceptor, error)
 			return invokerErr
 		}
 
-		slog.Debug("Validation interceptor reply", "reply", reply)
+		slog.DebugContext(ctx, "Validation interceptor reply", "reply", reply)
 
 		replyValidationErr := validateMessage(validator, reply)
 		if replyValidationErr != nil {
