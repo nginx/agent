@@ -243,9 +243,9 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 	cs.server.POST("/api/v1/requests", func(c *gin.Context) {
 		request := v1.ManagementPlaneRequest{}
 		body, err := io.ReadAll(c.Request.Body)
-		slog.Debug("received request, ", "body", body)
+		slog.Debug("Received request, ", "body", body)
 		if err != nil {
-			slog.Error("error reading request body", "err", err)
+			slog.Error("Error reading request body", "err", err)
 			c.JSON(http.StatusBadRequest, nil)
 
 			return

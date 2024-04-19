@@ -61,7 +61,7 @@ func main() {
 	}))
 	slog.SetDefault(newLogger)
 
-	if *configDirectory == "" {
+	if configDirectory == nil || *configDirectory == "" {
 		defaultConfigDirectory, configDirErr := generateDefaultConfigDirectory()
 		configDirectory = &defaultConfigDirectory
 		if configDirErr != nil {
