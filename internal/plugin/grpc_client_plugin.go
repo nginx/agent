@@ -8,12 +8,6 @@ package plugin
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"net"
-	"sync"
-	"sync/atomic"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
@@ -24,6 +18,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"log/slog"
+	"net"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 const sleepTime = 5
@@ -38,6 +37,7 @@ type (
 		cancel               context.CancelFunc
 		subscribeCancel      context.CancelFunc
 		connectionMutex      sync.Mutex
+		subscribeMutex       sync.Mutex
 		fileServiceClient    v1.FileServiceClient
 	}
 )
@@ -56,6 +56,7 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 			config:          agentConfig,
 			isConnected:     isConnected,
 			connectionMutex: sync.Mutex{},
+			subscribeMutex:  sync.Mutex{},
 		}
 	}
 
@@ -97,7 +98,9 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 		return err
 	}
 
+	gc.subscribeMutex.Lock()
 	subscribeCtx, gc.subscribeCancel = context.WithCancel(ctx)
+	gc.subscribeMutex.Unlock()
 
 	go gc.subscribe(subscribeCtx)
 
@@ -167,19 +170,23 @@ func (gc *GrpcClient) createConnectionClient() error {
 
 func (gc *GrpcClient) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing grpc client plugin")
+	
+	gc.subscribeMutex.Lock()
+	if gc.subscribeCancel != nil {
+		gc.subscribeCancel()
+	}
+	gc.subscribeMutex.Unlock()
 
 	gc.connectionMutex.Lock()
 	defer gc.connectionMutex.Unlock()
 
-	if gc.conn != nil && gc.subscribeCancel != nil {
+	if gc.conn != nil {
 		err := gc.conn.Close()
-		gc.subscribeCancel()
 		if err != nil && gc.cancel != nil {
 			slog.ErrorContext(ctx, "Failed to gracefully close gRPC connection", "error", err)
 			gc.cancel()
 		}
 	}
-
 	return nil
 }
 
