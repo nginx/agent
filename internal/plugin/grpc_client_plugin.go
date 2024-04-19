@@ -8,6 +8,12 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"net"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
@@ -18,11 +24,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"log/slog"
-	"net"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 const sleepTime = 5
@@ -170,7 +171,7 @@ func (gc *GrpcClient) createConnectionClient() error {
 
 func (gc *GrpcClient) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing grpc client plugin")
-	
+
 	gc.subscribeMutex.Lock()
 	if gc.subscribeCancel != nil {
 		gc.subscribeCancel()
@@ -187,6 +188,7 @@ func (gc *GrpcClient) Close(ctx context.Context) error {
 			gc.cancel()
 		}
 	}
+
 	return nil
 }
 
