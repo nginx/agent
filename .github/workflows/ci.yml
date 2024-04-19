@@ -16,7 +16,6 @@ on:
     - synchronize
 
 env:
-  GOLANGCI_LINT_VERSION: 'v1.55.2'
   NFPM_VERSION: 'v2.35.3'
 
 jobs:
