@@ -36,7 +36,7 @@ func (a *App) Run(ctx context.Context) error {
 	config.RegisterRunner(func(_ *cobra.Command, _ []string) {
 		err := config.RegisterConfigFile()
 		if err != nil {
-			slog.Error("Failed to load configuration file", "error", err)
+			slog.ErrorContext(ctx, "Failed to load configuration file", "error", err)
 			return
 		}
 
@@ -50,7 +50,7 @@ func (a *App) Run(ctx context.Context) error {
 		messagePipe := bus.NewMessagePipe(defaultMessagePipeChannelSize)
 		err = messagePipe.Register(defaultQueueSize, plugin.LoadPlugins(agentConfig, slogger))
 		if err != nil {
-			slog.Error("Failed to register plugins", "error", err)
+			slog.ErrorContext(ctx, "Failed to register plugins", "error", err)
 			return
 		}
 
