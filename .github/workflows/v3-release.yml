@@ -21,3 +21,4 @@ jobs:
       createPullRequest: false
       uploadJWT: abc123
       releaseBranch: packaging
+    secrets: inherit
