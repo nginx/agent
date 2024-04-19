@@ -6,18 +6,24 @@
 package grpc
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
-	grpcValidator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
+
+	"github.com/bufbuild/protovalidate-go"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // these will come from the agent config
@@ -30,11 +36,19 @@ var defaultCredentials = insecure.NewCredentials()
 
 func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 	skipToken := false
+	unaryClientInterceptors := []grpc.UnaryClientInterceptor{grpcRetry.UnaryClientInterceptor()}
+
+	protoValidatorUnaryClientInterceptor, err := ProtoValidatorUnaryClientInterceptor()
+	if err != nil {
+		slog.Error("Unable to add proto validation interceptor", "error", err)
+	} else {
+		unaryClientInterceptors = append(unaryClientInterceptors, protoValidatorUnaryClientInterceptor)
+	}
+
 	opts := []grpc.DialOption{
 		grpc.WithReturnConnectionError(),
-		grpc.WithStreamInterceptor(grpcRetry.StreamClientInterceptor()),
-		grpc.WithUnaryInterceptor(grpcRetry.UnaryClientInterceptor()),
-		grpc.WithUnaryInterceptor(grpcValidator.UnaryClientInterceptor()),
+		grpc.WithChainStreamInterceptor(grpcRetry.StreamClientInterceptor()),
+		grpc.WithChainUnaryInterceptor(unaryClientInterceptors...),
 		grpc.WithDefaultServiceConfig(serviceConfig),
 	}
 
@@ -77,7 +91,65 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 	return opts
 }
 
-// nolint: ireturn
+// Have to create our own UnaryClientInterceptor function since protovalidate only provides a UnaryServerInterceptor
+// https://pkg.go.dev/github.com/grpc-ecosystem/go-grpc-middleware/v2@v2.1.0/interceptors/protovalidate
+func ProtoValidatorUnaryClientInterceptor() (grpc.UnaryClientInterceptor, error) {
+	validator, err := protovalidate.New()
+	if err != nil {
+		return nil, err
+	}
+
+	return func(
+		ctx context.Context,
+		method string,
+		req, reply interface{},
+		cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker,
+		opts ...grpc.CallOption,
+	) error {
+		slog.Debug("Validation interceptor request", "req", req)
+
+		requestValidationErr := validateMessage(validator, req)
+		if requestValidationErr != nil {
+			return status.Errorf(
+				codes.InvalidArgument,
+				fmt.Errorf("invalid request message: %w", requestValidationErr).Error(),
+			)
+		}
+
+		invokerErr := invoker(ctx, method, req, reply, cc, opts...)
+		if invokerErr != nil {
+			return invokerErr
+		}
+
+		slog.Debug("Validation interceptor reply", "reply", reply)
+
+		replyValidationErr := validateMessage(validator, reply)
+		if replyValidationErr != nil {
+			return status.Errorf(
+				codes.InvalidArgument,
+				fmt.Errorf("invalid reply message: %w", replyValidationErr).Error(),
+			)
+		}
+
+		return nil
+	}, nil
+}
+
+func validateMessage(validator *protovalidate.Validator, message any) error {
+	protoMessage, ok := message.(proto.Message)
+	if !ok {
+		return status.Errorf(codes.InvalidArgument, "invalid request type: %T", message)
+	}
+
+	validationErr := validator.Validate(protoMessage)
+	if validationErr != nil {
+		return status.Errorf(codes.InvalidArgument, validationErr.Error())
+	}
+
+	return nil
+}
+
 func getTransportCredentials(agentConfig *config.Config) (credentials.TransportCredentials, error) {
 	if agentConfig.Command.TLS == nil {
 		return defaultCredentials, nil

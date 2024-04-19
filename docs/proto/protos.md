@@ -3,6 +3,12 @@
 
 ## Table of Contents
 
+- [mpi/v1/common.proto](#mpi_v1_common-proto)
+    - [CommandResponse](#mpi-v1-CommandResponse)
+    - [MessageMeta](#mpi-v1-MessageMeta)
+  
+    - [CommandResponse.CommandStatus](#mpi-v1-CommandResponse-CommandStatus)
+  
 - [mpi/v1/command.proto](#mpi_v1_command-proto)
     - [AgentConfig](#mpi-v1-AgentConfig)
     - [CommandServer](#mpi-v1-CommandServer)
@@ -36,12 +42,6 @@
   
     - [CommandService](#mpi-v1-CommandService)
   
-- [mpi/v1/common.proto](#mpi_v1_common-proto)
-    - [CommandResponse](#mpi-v1-CommandResponse)
-    - [MessageMeta](#mpi-v1-MessageMeta)
-  
-    - [CommandResponse.CommandStatus](#mpi-v1-CommandResponse-CommandStatus)
-  
 - [mpi/v1/files.proto](#mpi_v1_files-proto)
     - [ConfigVersion](#mpi-v1-ConfigVersion)
     - [File](#mpi-v1-File)
@@ -62,6 +62,73 @@
     - [FileService](#mpi-v1-FileService)
   
 - [Scalar Value Types](#scalar-value-types)
+
+
+
+<a name="mpi_v1_common-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## mpi/v1/common.proto
+Copyright (c) F5, Inc.
+
+This source code is licensed under the Apache License, Version 2.0 license found in the
+LICENSE file in the root directory of this source tree.
+
+
+<a name="mpi-v1-CommandResponse"></a>
+
+### CommandResponse
+Represents a the status response of an command
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| status | [CommandResponse.CommandStatus](#mpi-v1-CommandResponse-CommandStatus) |  | Command status |
+| message | [string](#string) |  | Provides a user friendly message to describe the response |
+| error | [string](#string) |  | Provides an error message of why the command failed, only populated when CommandStatus is COMMAND_STATUS_ERROR |
+
+
+
+
+
+
+<a name="mpi-v1-MessageMeta"></a>
+
+### MessageMeta
+Meta-information associated with a message
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_id | [string](#string) |  | uuid v7 monotonically increasing string |
+| correlation_id | [string](#string) |  | if 2 or more messages associated with the same workflow, use this field as an association |
+| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | timestamp for human readable timestamp in UTC format |
+
+
+
+
+
+ 
+
+
+<a name="mpi-v1-CommandResponse-CommandStatus"></a>
+
+### CommandResponse.CommandStatus
+Command status enum
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| COMMAND_STATUS_UNSPECIFIED | 0 | Unspecified status of command |
+| COMMAND_STATUS_OK | 1 | Command was successful |
+| COMMAND_STATUS_ERROR | 2 | Command failed |
+| COMMAND_STATUS_IN_PROGRESS | 3 | Command in-progress |
+
+
+ 
+
+ 
+
+ 
 
 
 
@@ -519,73 +586,6 @@ Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as t
 | UpdateDataPlaneStatus | [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest) | [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse) | Reports on instances and their configurations |
 | UpdateDataPlaneHealth | [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest) | [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse) | Reports on instance health |
 | Subscribe | [DataPlaneResponse](#mpi-v1-DataPlaneResponse) stream | [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest) stream | A decoupled communication mechanism between the data plane and management plane. buf:lint:ignore RPC_RESPONSE_STANDARD_NAME buf:lint:ignore RPC_REQUEST_STANDARD_NAME |
-
- 
-
-
-
-<a name="mpi_v1_common-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## mpi/v1/common.proto
-Copyright (c) F5, Inc.
-
-This source code is licensed under the Apache License, Version 2.0 license found in the
-LICENSE file in the root directory of this source tree.
-
-
-<a name="mpi-v1-CommandResponse"></a>
-
-### CommandResponse
-Represents a the status response of an command
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| status | [CommandResponse.CommandStatus](#mpi-v1-CommandResponse-CommandStatus) |  | Command status |
-| message | [string](#string) |  | Provides a user friendly message to describe the response |
-| error | [string](#string) |  | Provides an error message of why the command failed, only populated when CommandStatus is COMMAND_STATUS_ERROR |
-
-
-
-
-
-
-<a name="mpi-v1-MessageMeta"></a>
-
-### MessageMeta
-Meta-information associated with a message
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| message_id | [string](#string) |  | uuid v7 monotonically increasing string |
-| correlation_id | [string](#string) |  | if 2 or more messages associated with the same workflow, use this field as an association |
-| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | timestamp for human readable timestamp in UTC format |
-
-
-
-
-
- 
-
-
-<a name="mpi-v1-CommandResponse-CommandStatus"></a>
-
-### CommandResponse.CommandStatus
-Command status enum
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| COMMAND_STATUS_UNSPECIFIED | 0 | Unspecified status of command |
-| COMMAND_STATUS_OK | 1 | Command was successful |
-| COMMAND_STATUS_ERROR | 2 | Command failed |
-| COMMAND_STATUS_IN_PROGRESS | 3 | Command in-progress |
-
-
- 
-
- 
 
  
 
