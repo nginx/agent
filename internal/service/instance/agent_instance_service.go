@@ -16,6 +16,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+const defaultAgentPath = "/run/nginx-agent"
+
 type NginxAgent struct {
 	agentConfig *config.Config
 }
@@ -29,7 +31,7 @@ func NewNginxAgent(agentConfig *config.Config) *NginxAgent {
 func (na *NginxAgent) GetInstances(ctx context.Context, _ []*model.Process) []*v1.Instance {
 	processPath, err := os.Executable()
 	if err != nil {
-		processPath = "/var/run/nginx-agent"
+		processPath = defaultAgentPath
 		slog.WarnContext(ctx, "Unable to read process location, defaulting to /var/run/nginx-agent")
 	}
 
