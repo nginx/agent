@@ -19,4 +19,4 @@ jobs:
       tagRelease: false
       createPullRequest: false
       uploadJWT: abc123
-      releaseBranch: packaging
+      releaseBranch: refs/head/packaging
