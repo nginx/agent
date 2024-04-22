@@ -1,0 +1,13 @@
+version: v1
+plugins:
+  - plugin: buf.build/protocolbuffers/go
+    out: .
+    opt: paths=source_relative
+  - plugin: buf.build/grpc/go
+    out: .
+    opt: paths=source_relative,require_unimplemented_servers=false
+  - plugin: buf.build/bufbuild/validate-go
+    out: .
+  - plugin: buf.build/community/pseudomuto-doc
+    out: ../../docs/proto
+    opt: markdown,protos.md
