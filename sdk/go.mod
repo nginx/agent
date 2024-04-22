@@ -26,8 +26,8 @@ require (
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/stretchr/objx v0.5.1 // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/net v0.24.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240116215550-a9fa1716bcac // indirect
