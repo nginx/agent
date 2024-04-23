@@ -61,7 +61,7 @@ func main() {
 	}))
 	slog.SetDefault(newLogger)
 
-	if configDirectory == nil {
+	if configDirectory == nil || *configDirectory == "" {
 		defaultConfigDirectory, configDirErr := generateDefaultConfigDirectory()
 		configDirectory = &defaultConfigDirectory
 		if configDirErr != nil {
@@ -70,7 +70,7 @@ func main() {
 		}
 	}
 
-	_, err = grpc.NewMockManagementServer(*apiAddress, agentConfig)
+	_, err = grpc.NewMockManagementServer(*apiAddress, agentConfig, configDirectory)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to start mock management server", "error", err)
 		os.Exit(1)
@@ -79,6 +79,7 @@ func main() {
 }
 
 func generateDefaultConfigDirectory() (string, error) {
+	slog.Info("Generating default configs")
 	tempDirectory := os.TempDir()
 
 	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/etc/nginx"), directoryPermissions)

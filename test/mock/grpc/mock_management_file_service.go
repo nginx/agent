@@ -111,7 +111,7 @@ func (mgs *FileService) GetFile(
 		return nil, status.Errorf(codes.NotFound, "File not found")
 	}
 
-	fullFilePath := filepath.Join(mgs.configDirectory, mgs.versionDirectories[fileConfigVersions[0]], fileName)
+	fullFilePath := filepath.Join(mgs.versionDirectories[fileConfigVersions[0]], fileName)
 
 	bytes, err := os.ReadFile(fullFilePath)
 	if err != nil {

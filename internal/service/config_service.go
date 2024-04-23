@@ -9,12 +9,14 @@ import (
 	"context"
 	"log/slog"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	datasource "github.com/nginx/agent/v3/internal/datasource/config"
 	"github.com/nginx/agent/v3/internal/logger"
 
+	"github.com/nginx/agent/v3/internal/client"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/nginx/agent/v3/internal/config"
+	datasource "github.com/nginx/agent/v3/internal/datasource/config"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -27,12 +29,13 @@ type ConfigServiceInterface interface {
 	SetConfigContext(instanceConfigContext any)
 	UpdateInstanceConfiguration(
 		ctx context.Context,
-		location string,
+		request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 	) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus)
 	ParseInstanceConfiguration(
 		ctx context.Context,
 	) (instanceConfigContext any, err error)
-	Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL, tenantID, instanceID string) error
+	Rollback(ctx context.Context, skippedFiles datasource.CacheContent,
+		request *v1.ManagementPlaneRequest_ConfigApplyRequest) error
 }
 
 type ConfigService struct {
@@ -41,12 +44,13 @@ type ConfigService struct {
 	instance      *v1.Instance
 }
 
-func NewConfigService(ctx context.Context, instance *v1.Instance, agentConfig *config.Config) *ConfigService {
+func NewConfigService(ctx context.Context, instance *v1.Instance, agentConfig *config.Config,
+	configClient client.ConfigClient,
+) *ConfigService {
 	cs := &ConfigService{}
-
 	switch instance.GetInstanceMeta().GetInstanceType() {
 	case v1.InstanceMeta_INSTANCE_TYPE_NGINX, v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
-		cs.configService = service.NewNginx(ctx, instance, agentConfig)
+		cs.configService = service.NewNginx(ctx, instance, agentConfig, configClient)
 	case v1.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
 		v1.InstanceMeta_INSTANCE_TYPE_AGENT,
 		v1.InstanceMeta_INSTANCE_TYPE_UNIT:
@@ -64,19 +68,29 @@ func (cs *ConfigService) SetConfigContext(instanceConfigContext any) {
 	cs.configContext = instanceConfigContext
 }
 
-func (cs *ConfigService) Rollback(ctx context.Context, skippedFiles datasource.CacheContent, filesURL,
-	tenantID, instanceID string,
+func (cs *ConfigService) Rollback(ctx context.Context, skippedFiles datasource.CacheContent,
+	request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 ) error {
-	return cs.configService.Rollback(ctx, skippedFiles, filesURL, tenantID, instanceID)
+	return cs.configService.Rollback(ctx, skippedFiles, request)
 }
 
-func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context, location string,
+func (cs *ConfigService) UpdateInstanceConfiguration(ctx context.Context,
+	request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 ) (skippedFiles datasource.CacheContent, configStatus *instances.ConfigurationStatus) {
-	// remove when tenantID is being set
-	tenantID := "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 	correlationID := logger.GetCorrelationID(ctx)
 
-	skippedFiles, err := cs.configService.Write(ctx, location, tenantID)
+	if cs.configService == nil {
+		slog.ErrorContext(ctx, "Error writing config, config service is nil")
+		return nil, &instances.ConfigurationStatus{
+			InstanceId:    cs.instance.GetInstanceMeta().GetInstanceId(),
+			CorrelationId: correlationID,
+			Status:        instances.Status_FAILED,
+			Message:       "Internal error",
+			Timestamp:     timestamppb.Now(),
+		}
+	}
+
+	skippedFiles, err := cs.configService.Write(ctx, request)
 	if err != nil {
 		slog.ErrorContext(ctx, "Error writing config", "error", err)
 		return skippedFiles, &instances.ConfigurationStatus{

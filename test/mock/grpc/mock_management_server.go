@@ -35,14 +35,11 @@ import (
 )
 
 const (
-	maxConnectionIdle     = 15 * time.Millisecond
-	maxConnectionAge      = 30 * time.Millisecond
-	maxConnectionAgeGrace = 5 * time.Millisecond
-	maxElapsedTime        = 5 * time.Millisecond
-	keepAliveTime         = 5 * time.Millisecond
-	keepAliveTimeout      = 1 * time.Millisecond
-	testTimeout           = 100 * time.Millisecond
-	connectionType        = "tcp"
+	maxElapsedTime   = 5 * time.Second
+	keepAliveTime    = 5 * time.Second
+	keepAliveTimeout = 10 * time.Second
+	testTimeout      = 100 * time.Millisecond
+	connectionType   = "tcp"
 )
 
 var keepAliveEnforcementPolicy = keepalive.EnforcementPolicy{
@@ -51,11 +48,8 @@ var keepAliveEnforcementPolicy = keepalive.EnforcementPolicy{
 }
 
 var keepAliveServerParameters = keepalive.ServerParameters{
-	MaxConnectionIdle:     maxConnectionIdle,
-	MaxConnectionAge:      maxConnectionAge,
-	MaxConnectionAgeGrace: maxConnectionAgeGrace,
-	Time:                  keepAliveTime,
-	Timeout:               keepAliveTimeout,
+	Time:    keepAliveTime,
+	Timeout: keepAliveTimeout,
 }
 
 var (
@@ -72,13 +66,15 @@ type MockManagementServer struct {
 func NewMockManagementServer(
 	apiAddress string,
 	agentConfig *config.Config,
+	configDirectory *string,
 ) (*MockManagementServer, error) {
 	var err error
 	commandService := serveCommandService(apiAddress, agentConfig)
 
 	var fileServer *FileService
-	if agentConfig.File != nil && agentConfig.File.Location != "" {
-		fileServer, err = NewFileService(agentConfig.File.Location)
+
+	if *configDirectory != "" {
+		fileServer, err = NewFileService(*configDirectory)
 		if err != nil {
 			slog.Error("Failed to create file server", "error", err)
 			return nil, err
