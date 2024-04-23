@@ -6,18 +6,22 @@
 package grpc
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/nginx/agent/v3/test/helpers"
+	"google.golang.org/grpc"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/test/types"
 
+	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestGrpcClient_GetDialOptions(t *testing.T) {
+func Test_GetDialOptions(t *testing.T) {
 	tests := []struct {
 		name        string
 		agentConfig *config.Config
@@ -40,13 +44,13 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					},
 				},
 			},
-			7,
+			6,
 			false,
 		},
 		{
 			"Test 2: DialOptions mTLS",
 			types.GetAgentConfig(),
-			7,
+			6,
 			true,
 		},
 		{
@@ -65,7 +69,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 				},
 				Client: types.GetAgentConfig().Client,
 			},
-			7,
+			6,
 			false,
 		},
 		{
@@ -77,7 +81,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					TLS:    types.GetAgentConfig().Command.TLS,
 				},
 			},
-			6,
+			5,
 			false,
 		},
 		{
@@ -89,7 +93,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					TLS:    types.GetAgentConfig().Command.TLS,
 				},
 			},
-			7,
+			6,
 			false,
 		},
 		{
@@ -101,7 +105,7 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 					Auth:   types.GetAgentConfig().Command.Auth,
 				},
 			},
-			8,
+			7,
 			false,
 		},
 	}
@@ -130,6 +134,55 @@ func TestGrpcClient_GetDialOptions(t *testing.T) {
 			options := GetDialOptions(test.agentConfig)
 			assert.NotNil(ttt, options)
 			assert.Len(ttt, options, test.expected)
+		})
+	}
+}
+
+func Test_ProtoValidatorUnaryClientInterceptor(t *testing.T) {
+	ctx := context.Background()
+	interceptor, err := ProtoValidatorUnaryClientInterceptor()
+	require.NoError(t, err)
+
+	invoker := func(
+		ctx context.Context,
+		method string,
+		req, reply any,
+		cc *grpc.ClientConn,
+		opts ...grpc.CallOption,
+	) error {
+		return nil
+	}
+
+	tests := []struct {
+		name            string
+		request         any
+		reply           any
+		isErrorExpected bool
+	}{
+		{
+			name:            "Test 1: Invalid request type",
+			request:         "invalid",
+			reply:           protos.GetNginxOssInstance(),
+			isErrorExpected: true,
+		},
+		{
+			name:            "Test 2: Invalid reply type",
+			request:         protos.GetNginxOssInstance(),
+			reply:           "invalid",
+			isErrorExpected: true,
+		},
+		{
+			name:            "Test 3: Valid request & reply types",
+			request:         protos.GetNginxOssInstance(),
+			reply:           protos.GetNginxOssInstance(),
+			isErrorExpected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(ttt *testing.T) {
+			validationError := interceptor(ctx, "", test.request, test.reply, nil, invoker, nil)
+			assert.Equal(t, test.isErrorExpected, validationError != nil)
 		})
 	}
 }

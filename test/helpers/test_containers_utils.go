@@ -27,7 +27,6 @@ type Parameters struct {
 	LogMessage           string
 }
 
-// nolint: ireturn
 func StartContainer(
 	ctx context.Context,
 	tb testing.TB,
@@ -96,7 +95,6 @@ func StartContainer(
 	return container
 }
 
-// nolint: ireturn
 func StartMockManagementPlaneGrpcContainer(
 	ctx context.Context,
 	tb testing.TB,
@@ -137,7 +135,6 @@ func ToPtr[T any](value T) *T {
 	return &value
 }
 
-// nolint: ireturn
 func LogAndTerminateContainers(
 	ctx context.Context,
 	tb testing.TB,

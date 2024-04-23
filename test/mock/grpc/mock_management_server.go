@@ -25,6 +25,8 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"github.com/bufbuild/protovalidate-go"
+	protovalidateInterceptor "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	grpcvalidator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"google.golang.org/grpc"
@@ -134,16 +136,30 @@ func (ms *MockManagementServer) Stop() {
 }
 
 func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {
+	validator, _ := protovalidate.New()
+
 	opts := []grpc.ServerOption{
-		grpc.StreamInterceptor(grpcvalidator.StreamServerInterceptor()),
+		grpc.ChainStreamInterceptor(
+			grpcvalidator.StreamServerInterceptor(),
+			protovalidateInterceptor.StreamServerInterceptor(validator),
+		),
 		grpc.KeepaliveEnforcementPolicy(keepAliveEnforcementPolicy),
 		grpc.KeepaliveParams(keepAliveServerParameters),
 	}
 
 	if agentConfig.Command.Auth == nil || agentConfig.Command.Auth.Token == "" {
-		opts = append(opts, grpc.ChainUnaryInterceptor(grpcvalidator.UnaryServerInterceptor()))
+		opts = append(opts, grpc.ChainUnaryInterceptor(
+			grpcvalidator.UnaryServerInterceptor(),
+			protovalidateInterceptor.UnaryServerInterceptor(validator),
+		),
+		)
 	} else {
-		opts = append(opts, grpc.ChainUnaryInterceptor(grpcvalidator.UnaryServerInterceptor(), ensureValidToken))
+		opts = append(opts, grpc.ChainUnaryInterceptor(
+			grpcvalidator.UnaryServerInterceptor(),
+			protovalidateInterceptor.UnaryServerInterceptor(validator),
+			ensureValidToken,
+		),
+		)
 	}
 
 	return opts

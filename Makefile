@@ -113,6 +113,7 @@ build: ## Build agent executable
 lint: ## Run linter
 	@$(GOVET) ./...
 	@$(GORUN) $(GOLANGCILINT) run -c ./.golangci.yml
+	@cd api/grpc && $(GORUN) $(BUF) generate
 	@echo "🏯 Linting Done"
 
 format: ## Format code
@@ -121,7 +122,7 @@ format: ## Format code
 
 unit-test: $(TEST_BUILD_DIR) ## Run unit tests
 	@CGO_ENABLED=0 $(GOTEST) -count=1 -coverprofile=$(TEST_BUILD_DIR)/tmp_coverage.out -coverpkg=./... -covermode count ./internal/... ./api/... ./cmd/... ./files/...
-	@cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v "fake_" | grep -v "github.com/nginx/agent/v3/test/" > $(TEST_BUILD_DIR)/coverage.out
+	@cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v ".pb.validate.go" | grep -v "fake_" | grep -v "github.com/nginx/agent/v3/test/" > $(TEST_BUILD_DIR)/coverage.out
 	@rm $(TEST_BUILD_DIR)/tmp_coverage.out
 	@$(GOTOOL) cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
 	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
@@ -174,9 +175,7 @@ run-mock-management-grpc-server: ## Run mock management plane gRPC server
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
-	@protoc --go_out=paths=source_relative:./api/grpc/ ./api/grpc/mpi/v1/*.proto --proto_path=./api/grpc/ --go-grpc_out=./api/grpc --doc_out=./$(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)/ --doc_opt=markdown,protos.md 
-	@cp -a ./$(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)/* ./$(DOCS_DIR)/$(PROTO_DIR)/
-	@protoc --go_out=paths=source_relative:. ./api/grpc/**/*.proto
+	@cd api/grpc && $(GORUN) $(BUF) generate
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
 	@echo "Generating mocks"
