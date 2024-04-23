@@ -26,8 +26,6 @@
     - [InstanceRuntime](#mpi-v1-InstanceRuntime)
     - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
     - [MetricsServer](#mpi-v1-MetricsServer)
-    - [NGINXConfig](#mpi-v1-NGINXConfig)
-    - [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig)
     - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
     - [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo)
     - [ReleaseInfo](#mpi-v1-ReleaseInfo)
@@ -364,40 +362,6 @@ A Management Plane request for information, triggers an associated rpc on the Da
 
 ### MetricsServer
 The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
-
-
-
-
-
-
-<a name="mpi-v1-NGINXConfig"></a>
-
-### NGINXConfig
-A set of runtime NGINX configuration that gets populated
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| process_id | [int32](#int32) |  | master process id |
-| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
-| config_path | [string](#string) |  | where the configuration files are located |
-
-
-
-
-
-
-<a name="mpi-v1-NGINXPlusConfig"></a>
-
-### NGINXPlusConfig
-A set of runtime NGINX configuration that gets populated
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| process_id | [int32](#int32) |  | master process id |
-| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
-| config_path | [string](#string) |  | where the configuration files are located |
 
 
 

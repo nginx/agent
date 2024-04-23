@@ -111,7 +111,7 @@ func Test_GetDialOptions(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(ttt *testing.T) {
+		t.Run(test.name, func(tt *testing.T) {
 			if test.createCerts {
 				tmpDir := t.TempDir()
 				// not mTLS scripts
@@ -132,8 +132,8 @@ func Test_GetDialOptions(t *testing.T) {
 			}
 
 			options := GetDialOptions(test.agentConfig)
-			assert.NotNil(ttt, options)
-			assert.Len(ttt, options, test.expected)
+			assert.NotNil(tt, options)
+			assert.Len(tt, options, test.expected)
 		})
 	}
 }
@@ -180,9 +180,10 @@ func Test_ProtoValidatorUnaryClientInterceptor(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(ttt *testing.T) {
+		t.Run(test.name, func(tt *testing.T) {
 			validationError := interceptor(ctx, "", test.request, test.reply, nil, invoker, nil)
-			assert.Equal(t, test.isErrorExpected, validationError != nil)
+			tt.Log(validationError)
+			assert.Equal(tt, test.isErrorExpected, validationError != nil)
 		})
 	}
 }

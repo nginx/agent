@@ -10,6 +10,7 @@ option go_package = "mpi/v1";
 
 import "mpi/v1/common.proto";
 import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
 
 // This specifies the FileService operations for transferring file data between a client and server.
 // All operations are written from a client perspective and flow Client -> Server
@@ -56,7 +57,7 @@ message UpdateOverviewResponse {}
 // Represents a specific configuration version associated with an instance
 message ConfigVersion {
     // the instance identifier
-    string instance_id = 1;
+    string instance_id = 1 [(buf.validate.field).string.uuid = true];
     // the version of the configuration
     string version = 2;
 }
@@ -113,13 +114,13 @@ message FileContents {
 // Meta information about the file, the name (including path) and hash
 message FileMeta {
     // the name of the file
-    string name = 1;
+    string name = 1 [(buf.validate.field).string.prefix = "/"];
     // the hash of the file contents sha256, hex encoded
     string hash = 2;
     // last modified time of the file (created time if never modified)
-    google.protobuf.Timestamp modified_time = 3;
+    google.protobuf.Timestamp modified_time = 3 [(buf.validate.field).timestamp.lt_now = true];
     // the permission set associated with a particular file
-    string permissions = 4;
+    string permissions = 4 [(buf.validate.field).string.pattern = "0[0-7]{3}"];
     // Size of the file in bytes
     int64 size = 5;
 }
