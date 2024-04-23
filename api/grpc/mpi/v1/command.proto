@@ -208,7 +208,7 @@ message NGINXRuntimeInfo {
     // the stub status API URL
     string stub_status = 1 [(buf.validate.field).cel = {
         id:  "string.uri",
-        message: "value must be a valid uri or can be empty",
+        message: "value must be a valid URI or can be empty",
         expression: "this == \'\' || this.isUri()"
     }];
     // a list of access_logs
@@ -226,7 +226,7 @@ message NGINXPlusRuntimeInfo {
     // the stub status API URL
     string stub_status = 1 [(buf.validate.field).cel = {
         id:  "string.uri",
-        message: "value must be a valid uri or can be empty",
+        message: "value must be a valid URI or can be empty",
         expression: "this == \'\' || this.isUri()"
     }];
     // a list of access_logs
@@ -240,7 +240,7 @@ message NGINXPlusRuntimeInfo {
     // the plus API location
     string plus_api = 6 [(buf.validate.field).cel = {
         id:  "string.uri",
-        message: "value must be a valid uri or can be empty",
+        message: "value must be a valid URI or can be empty",
         expression: "this == \'\' || this.isUri()"
     }];
 }

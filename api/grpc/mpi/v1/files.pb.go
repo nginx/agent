@@ -298,9 +298,9 @@ type ConfigVersion struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// the instance identifier
+	// The instance identifier
 	InstanceId string `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
-	// the version of the configuration
+	// The version of the configuration
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -358,7 +358,7 @@ type FileOverview struct {
 
 	// A list of files
 	Files []*File `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
-	// the configuration version of the current set of files
+	// The configuration version of the current set of files
 	ConfigVersion *ConfigVersion `protobuf:"bytes,2,opt,name=config_version,json=configVersion,proto3" json:"config_version,omitempty"`
 }
 
@@ -416,7 +416,7 @@ type File struct {
 
 	// Meta information about the file, the name (including path) and hash
 	FileMeta *FileMeta `protobuf:"bytes,1,opt,name=file_meta,json=fileMeta,proto3" json:"file_meta,omitempty"`
-	// optional action
+	// Optional action
 	Action *File_FileAction `protobuf:"varint,2,opt,name=action,proto3,enum=mpi.v1.File_FileAction,oneof" json:"action,omitempty"`
 }
 
@@ -530,7 +530,7 @@ type GetFileResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// the contents of a file
+	// The contents of a file
 	Contents *FileContents `protobuf:"bytes,1,opt,name=contents,proto3" json:"contents,omitempty"`
 }
 
@@ -579,7 +579,7 @@ type FileContents struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// byte representation of a file without encoding
+	// Byte representation of a file without encoding
 	Contents []byte `protobuf:"bytes,1,opt,name=contents,proto3" json:"contents,omitempty"`
 }
 
@@ -628,15 +628,15 @@ type FileMeta struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// the name of the file
+	// The full path of the file
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// the hash of the file contents sha256, hex encoded
+	// The hash of the file contents sha256, hex encoded
 	Hash string `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`
-	// last modified time of the file (created time if never modified)
+	// Last modified time of the file (created time if never modified)
 	ModifiedTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=modified_time,json=modifiedTime,proto3" json:"modified_time,omitempty"`
-	// the permission set associated with a particular file
+	// The permission set associated with a particular file
 	Permissions string `protobuf:"bytes,4,opt,name=permissions,proto3" json:"permissions,omitempty"`
-	// Size of the file in bytes
+	// The size of the file in bytes
 	Size int64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
 }
 
@@ -715,7 +715,7 @@ type UpdateFileRequest struct {
 
 	// The file requested to be updated
 	File *File `protobuf:"bytes,1,opt,name=file,proto3" json:"file,omitempty"`
-	// the contents of a file
+	// The contents of a file
 	Contents *FileContents `protobuf:"bytes,2,opt,name=contents,proto3" json:"contents,omitempty"`
 }
 
