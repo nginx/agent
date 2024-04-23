@@ -134,7 +134,7 @@ func (gc *GrpcClient) subscribe(ctx context.Context) {
 
 			request, recErr := subscribeClient.Recv()
 			if recErr != nil {
-				slog.ErrorContext(ctx, "error receiving messages", "err", recErr)
+				slog.ErrorContext(ctx, "Error receiving messages", "err", recErr)
 				subscribeClient = nil
 				time.Sleep(retryInterval)
 
@@ -156,7 +156,7 @@ func (gc *GrpcClient) ProcessRequest(ctx context.Context, request *v1.Management
 			Data:  request.GetRequest(),
 		})
 	default:
-		slog.InfoContext(ctx, "Not implemented yet")
+		slog.InfoContext(ctx, "Management plane request not implemented yet", "request_type", request.GetRequest())
 	}
 }
 
