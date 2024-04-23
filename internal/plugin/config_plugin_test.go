@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v3/test/helpers"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -76,7 +74,7 @@ func TestConfig_Process(t *testing.T) {
 
 	nginxConfigContext := modelHelpers.GetConfigContext()
 
-	instanceConfigUpdateRequest := helpers.CreateManagementPlaneRequestConfigApplyRequest()
+	instanceConfigUpdateRequest := protos.CreateManagementPlaneRequestConfigApplyRequest()
 
 	configurationStatusProgress := protos.CreateInProgressStatus()
 	configurationStatus := protos.CreateSuccessStatus()
@@ -183,7 +181,7 @@ func TestConfig_Update(t *testing.T) {
 	agentConfig := types.GetAgentConfig()
 	instance := protos.GetNginxOssInstance()
 
-	request := helpers.CreateManagementPlaneRequestConfigApplyRequest()
+	request := protos.CreateManagementPlaneRequestConfigApplyRequest()
 
 	inProgressStatus := protos.CreateInProgressStatus()
 	successStatus := protos.CreateSuccessStatus()

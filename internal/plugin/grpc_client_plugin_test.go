@@ -333,8 +333,8 @@ func TestGrpcClient_Close(t *testing.T) {
 func TestGrpcConfigClient_GetOverview(t *testing.T) {
 	ctx := context.Background()
 	fileServiceClient := v1fakes.FakeFileServiceClient{}
-	overviewResponse, err := helpers.CreateGetOverviewResponse()
-	fileResponse := helpers.CreateGetFileResponse()
+	overviewResponse, err := protos.CreateGetOverviewResponse()
+	fileResponse := protos.CreateGetFileResponse([]byte("location /test {\n    return 200 \"Test location\\n\";\n}"))
 	fileServiceClient.GetOverviewReturns(overviewResponse, nil)
 	fileServiceClient.GetFileReturns(fileResponse, nil)
 	require.NoError(t, err)
@@ -348,7 +348,7 @@ func TestGrpcConfigClient_GetOverview(t *testing.T) {
 		grpcOverviewFn:    client.GetFileOverview,
 		grpFileContentsFn: client.GetFileContents,
 	}
-	req := helpers.CreateGetOverviewRequest()
+	req := protos.CreateGetOverviewRequest()
 
 	resp, err := gcc.GetOverview(ctx, req)
 	require.NoError(t, err)
@@ -358,8 +358,8 @@ func TestGrpcConfigClient_GetOverview(t *testing.T) {
 func TestGrpcConfigClient_GetFile(t *testing.T) {
 	ctx := context.Background()
 	fileServiceClient := v1fakes.FakeFileServiceClient{}
-	overviewResponse, err := helpers.CreateGetOverviewResponse()
-	fileResponse := helpers.CreateGetFileResponse()
+	overviewResponse, err := protos.CreateGetOverviewResponse()
+	fileResponse := protos.CreateGetFileResponse([]byte("location /test {\n    return 200 \"Test location\\n\";\n}"))
 	fileServiceClient.GetOverviewReturns(overviewResponse, nil)
 	fileServiceClient.GetFileReturns(fileResponse, nil)
 	require.NoError(t, err)
@@ -373,7 +373,7 @@ func TestGrpcConfigClient_GetFile(t *testing.T) {
 		grpcOverviewFn:    client.GetFileOverview,
 		grpFileContentsFn: client.GetFileContents,
 	}
-	req, err := helpers.CreateGetFileRequest()
+	req, err := protos.CreateGetFileRequest("nginx.conf")
 	require.NoError(t, err)
 
 	resp, err := gcc.GetFile(ctx, req)

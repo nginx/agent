@@ -27,15 +27,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	correlationID = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
-)
-
 func TestWriteConfig(t *testing.T) {
+	correlationID, _ := helpers.CreateTestIDs(t)
 	ctx := context.WithValue(
 		context.Background(),
 		logger.CorrelationIDContextKey,
-		slog.Any(logger.CorrelationIDKey, correlationID),
+		slog.Any(logger.CorrelationIDKey, correlationID.String()),
 	)
 	tempDir := t.TempDir()
 	_, instanceID := helpers.CreateTestIDs(t)
@@ -57,7 +54,7 @@ func TestWriteConfig(t *testing.T) {
 
 	testConfPath := testConf.Name()
 
-	files, err := protos.GetFiles(nginxConf, testConf, metricsConf)
+	files, err := protos.GetFileOverview(nginxConf.Name(), testConf.Name(), metricsConf.Name())
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -120,11 +117,10 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
-			request := helpers.CreateManagementPlaneRequestConfigApplyRequest()
+			request := protos.CreateManagementPlaneRequestConfigApplyRequest()
 
 			skippedFiles, cwErr := configWriter.Write(ctx, request)
 			require.NoError(t, cwErr)
-			slog.Info("Skipped Files: ", "", skippedFiles)
 			assert.Len(t, skippedFiles, test.expSkippedCount)
 
 			res := reflect.DeepEqual(cacheContent, configWriter.currentFileCache)
@@ -194,7 +190,6 @@ func TestDeleteFile(t *testing.T) {
 			fileCache.SetCachePath(cachePath)
 			err := fileCache.UpdateFileCache(ctx, test.fileCache)
 			require.NoError(t, err)
-			slog.Info("", "", &agentconfig)
 			configWriter, err := NewConfigWriter(agentconfig, fileCache, fakeConfigClient)
 			require.NoError(t, err)
 
@@ -236,7 +231,7 @@ func TestRollback(t *testing.T) {
 	require.NoError(t, err)
 	assert.FileExists(t, testConf.Name())
 
-	files, err := protos.GetFiles(nginxConf, testConf, metricsConf)
+	files, err := protos.GetFileOverview(nginxConf.Name(), testConf.Name(), metricsConf.Name())
 	require.NoError(t, err)
 
 	cacheContent, getCacheErr := protos.GetFileCache(nginxConf, testConf, metricsConf)

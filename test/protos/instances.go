@@ -145,35 +145,3 @@ func GetFileCache(files ...*os.File) (map[string]*v1.FileMeta, error) {
 
 	return cache, nil
 }
-
-func GetFiles(files ...*os.File) (*v1.FileOverview, error) {
-	instance := GetNginxOssInstance()
-	instanceFiles := &v1.FileOverview{
-		ConfigVersion: &v1.ConfigVersion{
-			Version:    "f9a31750-566c-31b3-a763-b9fb5982547b",
-			InstanceId: instance.GetInstanceMeta().GetInstanceId(),
-		},
-	}
-
-	for _, file := range files {
-		lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")
-		if err != nil {
-			return nil, err
-		}
-		instanceFiles.Files = append(instanceFiles.GetFiles(), &v1.File{
-			FileMeta: &v1.FileMeta{
-				ModifiedTime: lastModified,
-				Name:         file.Name(),
-				Hash:         "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-			},
-		})
-	}
-
-	return instanceFiles, nil
-}
-
-func GetFileContents(content []byte) *v1.FileContents {
-	return &v1.FileContents{
-		Contents: content,
-	}
-}
