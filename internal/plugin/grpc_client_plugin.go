@@ -150,7 +150,7 @@ func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resourc
 		connectFn := func() (*v1.CreateConnectionResponse, error) {
 			response, connectErr := gc.commandServiceClient.CreateConnection(reqCtx, req)
 
-			validatedError := validateGrpcError(reqCtx, connectErr)
+			validatedError := validateGrpcError(connectErr)
 			if validatedError != nil {
 				slog.ErrorContext(reqCtx, "Failed to create connection", "error", validatedError)
 
@@ -233,9 +233,9 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 			return nil, errors.New("command service client is not initialized")
 		}
 
-		response, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+		response, updateError := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
 
-		validatedError := validateGrpcError(ctx, err)
+		validatedError := validateGrpcError(updateError)
 		if validatedError != nil {
 			slog.ErrorContext(ctx, "Failed to send update data plane status", "error", validatedError)
 
@@ -254,9 +254,8 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	return nil
 }
 
-func validateGrpcError(ctx context.Context, err error) error {
+func validateGrpcError(err error) error {
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create connection", "error", err)
 		if statusError, ok := status.FromError(err); ok {
 			if statusError.Code() == codes.InvalidArgument {
 				return backoff.Permanent(err)
