@@ -23,7 +23,9 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
@@ -147,14 +149,17 @@ func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resourc
 
 		connectFn := func() (*v1.CreateConnectionResponse, error) {
 			response, connectErr := gc.commandServiceClient.CreateConnection(reqCtx, req)
-			if connectErr != nil {
-				slog.ErrorContext(reqCtx, "Creating connection", "error", err)
 
-				return nil, connectErr
+			validatedError := validateGrpcError(reqCtx, connectErr)
+			if validatedError != nil {
+				slog.ErrorContext(reqCtx, "Failed to create connection", "error", validatedError)
+
+				return nil, validatedError
 			}
 
 			return response, nil
 		}
+
 		response, err := backoff.RetryWithData(connectFn, backoffHelpers.Context(reqCtx, gc.config.Common))
 		if err != nil {
 			return err
@@ -229,10 +234,12 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 		}
 
 		response, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
-		if err != nil {
-			slog.ErrorContext(backOffCtx, "Creating connection", "error", err)
 
-			return nil, err
+		validatedError := validateGrpcError(ctx, err)
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send update data plane status", "error", validatedError)
+
+			return nil, validatedError
 		}
 
 		return response, nil
@@ -243,6 +250,21 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 		return err
 	}
 	slog.DebugContext(ctx, " UpdateDataPlaneStatus response ", "response", response)
+
+	return nil
+}
+
+func validateGrpcError(ctx context.Context, err error) error {
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create connection", "error", err)
+		if statusError, ok := status.FromError(err); ok {
+			if statusError.Code() == codes.InvalidArgument {
+				return backoff.Permanent(err)
+			}
+		}
+
+		return err
+	}
 
 	return nil
 }
