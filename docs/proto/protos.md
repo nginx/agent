@@ -9,39 +9,6 @@
   
     - [CommandResponse.CommandStatus](#mpi-v1-CommandResponse-CommandStatus)
   
-- [mpi/v1/command.proto](#mpi_v1_command-proto)
-    - [AgentConfig](#mpi-v1-AgentConfig)
-    - [CommandServer](#mpi-v1-CommandServer)
-    - [ContainerInfo](#mpi-v1-ContainerInfo)
-    - [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest)
-    - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
-    - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
-    - [FileServer](#mpi-v1-FileServer)
-    - [HostInfo](#mpi-v1-HostInfo)
-    - [Instance](#mpi-v1-Instance)
-    - [InstanceAction](#mpi-v1-InstanceAction)
-    - [InstanceConfig](#mpi-v1-InstanceConfig)
-    - [InstanceHealth](#mpi-v1-InstanceHealth)
-    - [InstanceMeta](#mpi-v1-InstanceMeta)
-    - [InstanceRuntime](#mpi-v1-InstanceRuntime)
-    - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
-    - [MetricsServer](#mpi-v1-MetricsServer)
-    - [NGINXConfig](#mpi-v1-NGINXConfig)
-    - [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig)
-    - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
-    - [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo)
-    - [ReleaseInfo](#mpi-v1-ReleaseInfo)
-    - [Resource](#mpi-v1-Resource)
-    - [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest)
-    - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
-    - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
-    - [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse)
-  
-    - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
-    - [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType)
-  
-    - [CommandService](#mpi-v1-CommandService)
-  
 - [mpi/v1/files.proto](#mpi_v1_files-proto)
     - [ConfigVersion](#mpi-v1-ConfigVersion)
     - [File](#mpi-v1-File)
@@ -60,6 +27,45 @@
     - [File.FileAction](#mpi-v1-File-FileAction)
   
     - [FileService](#mpi-v1-FileService)
+  
+- [mpi/v1/command.proto](#mpi_v1_command-proto)
+    - [APIActionRequest](#mpi-v1-APIActionRequest)
+    - [AgentConfig](#mpi-v1-AgentConfig)
+    - [CommandServer](#mpi-v1-CommandServer)
+    - [CommandStatusRequest](#mpi-v1-CommandStatusRequest)
+    - [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest)
+    - [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest)
+    - [ContainerInfo](#mpi-v1-ContainerInfo)
+    - [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest)
+    - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
+    - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
+    - [FileServer](#mpi-v1-FileServer)
+    - [HealthRequest](#mpi-v1-HealthRequest)
+    - [HostInfo](#mpi-v1-HostInfo)
+    - [Instance](#mpi-v1-Instance)
+    - [InstanceAction](#mpi-v1-InstanceAction)
+    - [InstanceConfig](#mpi-v1-InstanceConfig)
+    - [InstanceHealth](#mpi-v1-InstanceHealth)
+    - [InstanceMeta](#mpi-v1-InstanceMeta)
+    - [InstanceRuntime](#mpi-v1-InstanceRuntime)
+    - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
+    - [MetricsServer](#mpi-v1-MetricsServer)
+    - [NGINXConfig](#mpi-v1-NGINXConfig)
+    - [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig)
+    - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
+    - [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo)
+    - [ReleaseInfo](#mpi-v1-ReleaseInfo)
+    - [Resource](#mpi-v1-Resource)
+    - [StatusRequest](#mpi-v1-StatusRequest)
+    - [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest)
+    - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
+    - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
+    - [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse)
+  
+    - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
+    - [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType)
+  
+    - [CommandService](#mpi-v1-CommandService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -127,465 +133,6 @@ Command status enum
  
 
  
-
- 
-
-
-
-<a name="mpi_v1_command-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## mpi/v1/command.proto
-These proto definitions follow https://protobuf.dev/programming-guides/style/
-and recommendations outlined in https://static.sched.com/hosted_files/kccncna17/ad/2017%20CloudNativeCon%20-%20Mod%20gRPC%20Services.pdf
-
-
-<a name="mpi-v1-AgentConfig"></a>
-
-### AgentConfig
-This contains a series of NGINX Agent configurations
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| command | [CommandServer](#mpi-v1-CommandServer) |  | Command server settings |
-| metrics | [MetricsServer](#mpi-v1-MetricsServer) |  | Metrics server settings |
-| file | [FileServer](#mpi-v1-FileServer) |  | File server settings |
-| labels | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | A series of key/value pairs to add more data to the NGINX Agent instance |
-| features | [string](#string) | repeated | A list of features that the NGINX Agent has |
-| message_buffer_size | [string](#string) |  | Message buffer size, maximum not acknowledged messages from the subscribe perspective |
-
-
-
-
-
-
-<a name="mpi-v1-CommandServer"></a>
-
-### CommandServer
-The command settings, associated with messaging from an external source
-
-
-
-
-
-
-<a name="mpi-v1-ContainerInfo"></a>
-
-### ContainerInfo
-Container information
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| container_id | [string](#string) |  | The identifier of the container |
-
-
-
-
-
-
-<a name="mpi-v1-CreateConnectionRequest"></a>
-
-### CreateConnectionRequest
-The connection request is an initial handshake to establish a connection, sending NGINX Agent instance information
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
-| resource | [Resource](#mpi-v1-Resource) |  | Instance and infrastructure information associated with the NGINX Agent |
-
-
-
-
-
-
-<a name="mpi-v1-CreateConnectionResponse"></a>
-
-### CreateConnectionResponse
-A response to a CreateConnectionRequest
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| response | [CommandResponse](#mpi-v1-CommandResponse) |  | The success or failure of the CreateConnectionRequest |
-| agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | The recommendation NGINX Agent configurations provided by the ManagementPlane |
-
-
-
-
-
-
-<a name="mpi-v1-DataPlaneResponse"></a>
-
-### DataPlaneResponse
-Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
-
-
-
-
-
-
-<a name="mpi-v1-FileServer"></a>
-
-### FileServer
-The file settings associated with file server for configurations
-
-
-
-
-
-
-<a name="mpi-v1-HostInfo"></a>
-
-### HostInfo
-Represents the host system information
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| host_id | [string](#string) |  | The host identifier |
-| hostname | [string](#string) |  | The name of the host |
-| release_info | [ReleaseInfo](#mpi-v1-ReleaseInfo) |  | Release information of the host |
-
-
-
-
-
-
-<a name="mpi-v1-Instance"></a>
-
-### Instance
-This represents an instance being reported on
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| instance_meta | [InstanceMeta](#mpi-v1-InstanceMeta) |  | Meta-information associated with an instance |
-| instance_config | [InstanceConfig](#mpi-v1-InstanceConfig) |  | Read and write configuration associated with an instance that can be modified via this definition |
-| instance_runtime | [InstanceRuntime](#mpi-v1-InstanceRuntime) |  | Read-only meta data associated with the instance running in it&#39;s environment |
-
-
-
-
-
-
-<a name="mpi-v1-InstanceAction"></a>
-
-### InstanceAction
-A set of actions that can be performed on an instance
-
-
-
-
-
-
-<a name="mpi-v1-InstanceConfig"></a>
-
-### InstanceConfig
-Instance Configuration options
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| actions | [InstanceAction](#mpi-v1-InstanceAction) | repeated | provided actions associated with a particular instance. These are runtime based and provided by a particular version of the NGINX Agent |
-| agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | NGINX Agent runtime configuration settings |
-
-
-
-
-
-
-<a name="mpi-v1-InstanceHealth"></a>
-
-### InstanceHealth
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| instance_id | [string](#string) |  |  |
-| instance_health_status | [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus) |  | Health status |
-| description | [string](#string) |  | Provides a human readable context around why a health status is a particular state |
-
-
-
-
-
-
-<a name="mpi-v1-InstanceMeta"></a>
-
-### InstanceMeta
-Meta-information relating to the reported instance
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| instance_id | [string](#string) |  | the identifier associated with the instance |
-| instance_type | [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType) |  | the types of instances possible |
-| version | [string](#string) |  | the version of the instance |
-
-
-
-
-
-
-<a name="mpi-v1-InstanceRuntime"></a>
-
-### InstanceRuntime
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| process_id | [int32](#int32) |  | the process identifier |
-| binary_path | [string](#string) |  | the binary path location |
-| config_path | [string](#string) |  | the config path location |
-| nginx_runtime_info | [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo) |  | NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process |
-| nginx_plus_runtime_info | [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo) |  | NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API |
-
-
-
-
-
-
-<a name="mpi-v1-ManagementPlaneRequest"></a>
-
-### ManagementPlaneRequest
-A Management Plane request for information, triggers an associated rpc on the Data Plane
-
-
-
-
-
-
-<a name="mpi-v1-MetricsServer"></a>
-
-### MetricsServer
-The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
-
-
-
-
-
-
-<a name="mpi-v1-NGINXConfig"></a>
-
-### NGINXConfig
-A set of runtime NGINX configuration that gets populated
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| process_id | [int32](#int32) |  | master process id |
-| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
-| config_path | [string](#string) |  | where the configuration files are located |
-
-
-
-
-
-
-<a name="mpi-v1-NGINXPlusConfig"></a>
-
-### NGINXPlusConfig
-A set of runtime NGINX configuration that gets populated
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| process_id | [int32](#int32) |  | master process id |
-| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
-| config_path | [string](#string) |  | where the configuration files are located |
-
-
-
-
-
-
-<a name="mpi-v1-NGINXPlusRuntimeInfo"></a>
-
-### NGINXPlusRuntimeInfo
-A set of runtime NGINX Plus settings
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| stub_status | [string](#string) |  | the stub status API URL |
-| access_logs | [string](#string) | repeated | a list of access_logs |
-| error_logs | [string](#string) | repeated | a list of error_logs |
-| loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
-| dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
-| plus_api | [string](#string) |  | the plus API location |
-
-
-
-
-
-
-<a name="mpi-v1-NGINXRuntimeInfo"></a>
-
-### NGINXRuntimeInfo
-A set of runtime NGINX OSS settings
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| stub_status | [string](#string) |  | the stub status API URL |
-| access_logs | [string](#string) | repeated | a list of access_logs |
-| error_logs | [string](#string) | repeated | a list of error_logs |
-| loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
-| dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
-
-
-
-
-
-
-<a name="mpi-v1-ReleaseInfo"></a>
-
-### ReleaseInfo
-Release information of the host
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| codename | [string](#string) |  | OS type (e.g. freebsd, linux, etc) |
-| id | [string](#string) |  | OS name (e.g. ubuntu, linuxmint, etc) |
-| name | [string](#string) |  | OS family (e.g. debian, rhel) |
-| version_id | [string](#string) |  | Version of the OS kernel |
-| version | [string](#string) |  | Version of the OS |
-
-
-
-
-
-
-<a name="mpi-v1-Resource"></a>
-
-### Resource
-A representation of instances and runtime resource information
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| resource_id | [string](#string) |  | A resource identifier |
-| instances | [Instance](#mpi-v1-Instance) | repeated | A list of instances associated with this resource |
-| host_info | [HostInfo](#mpi-v1-HostInfo) |  | If running on bare-metal, provides additional information |
-| container_info | [ContainerInfo](#mpi-v1-ContainerInfo) |  | If running in a containerized environment, provides additional information |
-
-
-
-
-
-
-<a name="mpi-v1-UpdateDataPlaneHealthRequest"></a>
-
-### UpdateDataPlaneHealthRequest
-Health report of a set of instances
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
-| instance_healths | [InstanceHealth](#mpi-v1-InstanceHealth) | repeated | Health report of a set of instances |
-
-
-
-
-
-
-<a name="mpi-v1-UpdateDataPlaneHealthResponse"></a>
-
-### UpdateDataPlaneHealthResponse
-Response to a UpdateDataPlaneHealthRequest - intentionally empty
-
-
-
-
-
-
-<a name="mpi-v1-UpdateDataPlaneStatusRequest"></a>
-
-### UpdateDataPlaneStatusRequest
-Report on the status of the Data Plane
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
-| resource | [Resource](#mpi-v1-Resource) |  | the representation of a data plane |
-
-
-
-
-
-
-<a name="mpi-v1-UpdateDataPlaneStatusResponse"></a>
-
-### UpdateDataPlaneStatusResponse
-Respond to a UpdateDataPlaneStatusRequest - intentionally empty
-
-
-
-
-
- 
-
-
-<a name="mpi-v1-InstanceHealth-InstanceHealthStatus"></a>
-
-### InstanceHealth.InstanceHealthStatus
-Health status enum
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| INSTANCE_HEALTH_STATUS_UNSPECIFIED | 0 | Unspecified status |
-| INSTANCE_HEALTH_STATUS_HEALTHY | 1 | Healthy status |
-| INSTANCE_HEALTH_STATUS_UNHEALTHY | 2 | Unhealthy status |
-| INSTANCE_HEALTH_STATUS_DEGRADED | 3 | Degraded status |
-
-
-
-<a name="mpi-v1-InstanceMeta-InstanceType"></a>
-
-### InstanceMeta.InstanceType
-the types of instances possible
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| INSTANCE_TYPE_UNSPECIFIED | 0 | Unspecified instance type |
-| INSTANCE_TYPE_AGENT | 1 | NGINX Agent |
-| INSTANCE_TYPE_NGINX | 2 | NGINX |
-| INSTANCE_TYPE_NGINX_PLUS | 3 | NGINX Plus |
-| INSTANCE_TYPE_UNIT | 4 | NGINX Unit |
-
-
- 
-
- 
-
-
-<a name="mpi-v1-CommandService"></a>
-
-### CommandService
-A service outlining the command and control options for a Data Plane Client
-All operations are written from a client perspective
-The RPC calls generally flow Client -&gt; Server, except for Subscribe which contains a bidirectional stream
-The ManagementPlaneRequest sent in the Subscribe stream triggers one or more client actions.
-Messages provided by the Management Plane must be a FIFO ordered queue. Messages in the queue must have a monotonically-increasing integer index. 
-The indexes do not need to be sequential. The index must be a 64-bit signed integer.
-The index must not reset for the entire lifetime of a unique Agent (i.e. the index does not reset to 0 only because of a temporary disconnection or new session). 
-Messages must not be removed from the Management Plane queue until Ack’d by the Agent. 
-Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as they may need to be retried.
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| CreateConnection | [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest) | [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse) | Connects NGINX Agent to the Management Plane agnostic of instance data |
-| UpdateDataPlaneStatus | [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest) | [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse) | Reports on instances and their configurations |
-| UpdateDataPlaneHealth | [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest) | [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse) | Reports on instance health |
-| Subscribe | [DataPlaneResponse](#mpi-v1-DataPlaneResponse) stream | [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest) stream | A decoupled communication mechanism between the data plane and management plane. buf:lint:ignore RPC_RESPONSE_STANDARD_NAME buf:lint:ignore RPC_REQUEST_STANDARD_NAME |
 
  
 
@@ -836,6 +383,548 @@ A SHA256 hash string is 64 bytes, therefore the configured max message size shou
 | UpdateOverview | [UpdateOverviewRequest](#mpi-v1-UpdateOverviewRequest) | [UpdateOverviewResponse](#mpi-v1-UpdateOverviewResponse) | Update the overview of files for a particular set of file changes on the data plane |
 | GetFile | [GetFileRequest](#mpi-v1-GetFileRequest) | [GetFileResponse](#mpi-v1-GetFileResponse) | Get the file contents for a particular file |
 | UpdateFile | [UpdateFileRequest](#mpi-v1-UpdateFileRequest) | [UpdateFileResponse](#mpi-v1-UpdateFileResponse) | Update a file from the Agent to the Server |
+
+ 
+
+
+
+<a name="mpi_v1_command-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## mpi/v1/command.proto
+These proto definitions follow https://protobuf.dev/programming-guides/style/
+and recommendations outlined in https://static.sched.com/hosted_files/kccncna17/ad/2017%20CloudNativeCon%20-%20Mod%20gRPC%20Services.pdf
+
+
+<a name="mpi-v1-APIActionRequest"></a>
+
+### APIActionRequest
+Perform an associated API action on an instance
+
+
+
+
+
+
+<a name="mpi-v1-AgentConfig"></a>
+
+### AgentConfig
+This contains a series of NGINX Agent configurations
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| command | [CommandServer](#mpi-v1-CommandServer) |  | Command server settings |
+| metrics | [MetricsServer](#mpi-v1-MetricsServer) |  | Metrics server settings |
+| file | [FileServer](#mpi-v1-FileServer) |  | File server settings |
+| labels | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | A series of key/value pairs to add more data to the NGINX Agent instance |
+| features | [string](#string) | repeated | A list of features that the NGINX Agent has |
+| message_buffer_size | [string](#string) |  | Message buffer size, maximum not acknowledged messages from the subscribe perspective |
+
+
+
+
+
+
+<a name="mpi-v1-CommandServer"></a>
+
+### CommandServer
+The command settings, associated with messaging from an external source
+
+
+
+
+
+
+<a name="mpi-v1-CommandStatusRequest"></a>
+
+### CommandStatusRequest
+Request an update on a particular command
+
+
+
+
+
+
+<a name="mpi-v1-ConfigApplyRequest"></a>
+
+### ConfigApplyRequest
+Additional information associated with a ConfigApplyRequest
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | the config version |
+| overview | [FileOverview](#mpi-v1-FileOverview) | optional | an optional set of files related to the request |
+
+
+
+
+
+
+<a name="mpi-v1-ConfigUploadRequest"></a>
+
+### ConfigUploadRequest
+Additional information associated with a ConfigUploadRequest
+
+
+
+
+
+
+<a name="mpi-v1-ContainerInfo"></a>
+
+### ContainerInfo
+Container information
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| container_id | [string](#string) |  | The identifier of the container |
+
+
+
+
+
+
+<a name="mpi-v1-CreateConnectionRequest"></a>
+
+### CreateConnectionRequest
+The connection request is an initial handshake to establish a connection, sending NGINX Agent instance information
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| resource | [Resource](#mpi-v1-Resource) |  | Instance and infrastructure information associated with the NGINX Agent |
+
+
+
+
+
+
+<a name="mpi-v1-CreateConnectionResponse"></a>
+
+### CreateConnectionResponse
+A response to a CreateConnectionRequest
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| response | [CommandResponse](#mpi-v1-CommandResponse) |  | The success or failure of the CreateConnectionRequest |
+| agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | The recommendation NGINX Agent configurations provided by the ManagementPlane |
+
+
+
+
+
+
+<a name="mpi-v1-DataPlaneResponse"></a>
+
+### DataPlaneResponse
+Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| command_response | [CommandResponse](#mpi-v1-CommandResponse) |  | The command response with the associated request |
+
+
+
+
+
+
+<a name="mpi-v1-FileServer"></a>
+
+### FileServer
+The file settings associated with file server for configurations
+
+
+
+
+
+
+<a name="mpi-v1-HealthRequest"></a>
+
+### HealthRequest
+Additional information associated with a HealthRequest
+
+
+
+
+
+
+<a name="mpi-v1-HostInfo"></a>
+
+### HostInfo
+Represents the host system information
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| host_id | [string](#string) |  | The host identifier |
+| hostname | [string](#string) |  | The name of the host |
+| release_info | [ReleaseInfo](#mpi-v1-ReleaseInfo) |  | Release information of the host |
+
+
+
+
+
+
+<a name="mpi-v1-Instance"></a>
+
+### Instance
+This represents an instance being reported on
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance_meta | [InstanceMeta](#mpi-v1-InstanceMeta) |  | Meta-information associated with an instance |
+| instance_config | [InstanceConfig](#mpi-v1-InstanceConfig) |  | Read and write configuration associated with an instance that can be modified via this definition |
+| instance_runtime | [InstanceRuntime](#mpi-v1-InstanceRuntime) |  | Read-only meta data associated with the instance running in it&#39;s environment |
+
+
+
+
+
+
+<a name="mpi-v1-InstanceAction"></a>
+
+### InstanceAction
+A set of actions that can be performed on an instance
+
+
+
+
+
+
+<a name="mpi-v1-InstanceConfig"></a>
+
+### InstanceConfig
+Instance Configuration options
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| actions | [InstanceAction](#mpi-v1-InstanceAction) | repeated | provided actions associated with a particular instance. These are runtime based and provided by a particular version of the NGINX Agent |
+| agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | NGINX Agent runtime configuration settings |
+
+
+
+
+
+
+<a name="mpi-v1-InstanceHealth"></a>
+
+### InstanceHealth
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance_id | [string](#string) |  |  |
+| instance_health_status | [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus) |  | Health status |
+| description | [string](#string) |  | Provides a human readable context around why a health status is a particular state |
+
+
+
+
+
+
+<a name="mpi-v1-InstanceMeta"></a>
+
+### InstanceMeta
+Meta-information relating to the reported instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance_id | [string](#string) |  | the identifier associated with the instance |
+| instance_type | [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType) |  | the types of instances possible |
+| version | [string](#string) |  | the version of the instance |
+
+
+
+
+
+
+<a name="mpi-v1-InstanceRuntime"></a>
+
+### InstanceRuntime
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| process_id | [int32](#int32) |  | the process identifier |
+| binary_path | [string](#string) |  | the binary path location |
+| config_path | [string](#string) |  | the config path location |
+| nginx_runtime_info | [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo) |  | NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process |
+| nginx_plus_runtime_info | [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo) |  | NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API |
+
+
+
+
+
+
+<a name="mpi-v1-ManagementPlaneRequest"></a>
+
+### ManagementPlaneRequest
+A Management Plane request for information, triggers an associated rpc on the Data Plane
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| status_request | [StatusRequest](#mpi-v1-StatusRequest) |  | triggers a DataPlaneStatus rpc |
+| health_request | [HealthRequest](#mpi-v1-HealthRequest) |  | triggers a DataPlaneHealth rpc |
+| config_apply_request | [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest) |  | triggers a rpc GetFile(FileRequest) for overview list, if overview is missing, triggers a rpc GetOverview(ConfigVersion) first |
+| config_upload_request | [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc UpdateFile(File) for that instances |
+| action_request | [APIActionRequest](#mpi-v1-APIActionRequest) |  | triggers a DataPlaneResponse with a command_response for a particular action |
+| command_status_request | [CommandStatusRequest](#mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneResponse with a command_response for a particular correlation_id |
+
+
+
+
+
+
+<a name="mpi-v1-MetricsServer"></a>
+
+### MetricsServer
+The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
+
+
+
+
+
+
+<a name="mpi-v1-NGINXConfig"></a>
+
+### NGINXConfig
+A set of runtime NGINX configuration that gets populated
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| process_id | [int32](#int32) |  | master process id |
+| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
+| config_path | [string](#string) |  | where the configuration files are located |
+
+
+
+
+
+
+<a name="mpi-v1-NGINXPlusConfig"></a>
+
+### NGINXPlusConfig
+A set of runtime NGINX configuration that gets populated
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| process_id | [int32](#int32) |  | master process id |
+| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
+| config_path | [string](#string) |  | where the configuration files are located |
+
+
+
+
+
+
+<a name="mpi-v1-NGINXPlusRuntimeInfo"></a>
+
+### NGINXPlusRuntimeInfo
+A set of runtime NGINX Plus settings
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| stub_status | [string](#string) |  | the stub status API URL |
+| access_logs | [string](#string) | repeated | a list of access_logs |
+| error_logs | [string](#string) | repeated | a list of error_logs |
+| loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
+| dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
+| plus_api | [string](#string) |  | the plus API location |
+
+
+
+
+
+
+<a name="mpi-v1-NGINXRuntimeInfo"></a>
+
+### NGINXRuntimeInfo
+A set of runtime NGINX OSS settings
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| stub_status | [string](#string) |  | the stub status API URL |
+| access_logs | [string](#string) | repeated | a list of access_logs |
+| error_logs | [string](#string) | repeated | a list of error_logs |
+| loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
+| dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
+
+
+
+
+
+
+<a name="mpi-v1-ReleaseInfo"></a>
+
+### ReleaseInfo
+Release information of the host
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| codename | [string](#string) |  | OS type (e.g. freebsd, linux, etc) |
+| id | [string](#string) |  | OS name (e.g. ubuntu, linuxmint, etc) |
+| name | [string](#string) |  | OS family (e.g. debian, rhel) |
+| version_id | [string](#string) |  | Version of the OS kernel |
+| version | [string](#string) |  | Version of the OS |
+
+
+
+
+
+
+<a name="mpi-v1-Resource"></a>
+
+### Resource
+A representation of instances and runtime resource information
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| resource_id | [string](#string) |  | A resource identifier |
+| instances | [Instance](#mpi-v1-Instance) | repeated | A list of instances associated with this resource |
+| host_info | [HostInfo](#mpi-v1-HostInfo) |  | If running on bare-metal, provides additional information |
+| container_info | [ContainerInfo](#mpi-v1-ContainerInfo) |  | If running in a containerized environment, provides additional information |
+
+
+
+
+
+
+<a name="mpi-v1-StatusRequest"></a>
+
+### StatusRequest
+Additional information associated with a StatusRequest
+
+
+
+
+
+
+<a name="mpi-v1-UpdateDataPlaneHealthRequest"></a>
+
+### UpdateDataPlaneHealthRequest
+Health report of a set of instances
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| instance_healths | [InstanceHealth](#mpi-v1-InstanceHealth) | repeated | Health report of a set of instances |
+
+
+
+
+
+
+<a name="mpi-v1-UpdateDataPlaneHealthResponse"></a>
+
+### UpdateDataPlaneHealthResponse
+Response to a UpdateDataPlaneHealthRequest - intentionally empty
+
+
+
+
+
+
+<a name="mpi-v1-UpdateDataPlaneStatusRequest"></a>
+
+### UpdateDataPlaneStatusRequest
+Report on the status of the Data Plane
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| resource | [Resource](#mpi-v1-Resource) |  | the representation of a data plane |
+
+
+
+
+
+
+<a name="mpi-v1-UpdateDataPlaneStatusResponse"></a>
+
+### UpdateDataPlaneStatusResponse
+Respond to a UpdateDataPlaneStatusRequest - intentionally empty
+
+
+
+
+
+ 
+
+
+<a name="mpi-v1-InstanceHealth-InstanceHealthStatus"></a>
+
+### InstanceHealth.InstanceHealthStatus
+Health status enum
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| INSTANCE_HEALTH_STATUS_UNSPECIFIED | 0 | Unspecified status |
+| INSTANCE_HEALTH_STATUS_HEALTHY | 1 | Healthy status |
+| INSTANCE_HEALTH_STATUS_UNHEALTHY | 2 | Unhealthy status |
+| INSTANCE_HEALTH_STATUS_DEGRADED | 3 | Degraded status |
+
+
+
+<a name="mpi-v1-InstanceMeta-InstanceType"></a>
+
+### InstanceMeta.InstanceType
+the types of instances possible
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| INSTANCE_TYPE_UNSPECIFIED | 0 | Unspecified instance type |
+| INSTANCE_TYPE_AGENT | 1 | NGINX Agent |
+| INSTANCE_TYPE_NGINX | 2 | NGINX |
+| INSTANCE_TYPE_NGINX_PLUS | 3 | NGINX Plus |
+| INSTANCE_TYPE_UNIT | 4 | NGINX Unit |
+
+
+ 
+
+ 
+
+
+<a name="mpi-v1-CommandService"></a>
+
+### CommandService
+A service outlining the command and control options for a Data Plane Client
+All operations are written from a client perspective
+The RPC calls generally flow Client -&gt; Server, except for Subscribe which contains a bidirectional stream
+The ManagementPlaneRequest sent in the Subscribe stream triggers one or more client actions.
+Messages provided by the Management Plane must be a FIFO ordered queue. Messages in the queue must have a monotonically-increasing integer index. 
+The indexes do not need to be sequential. The index must be a 64-bit signed integer.
+The index must not reset for the entire lifetime of a unique Agent (i.e. the index does not reset to 0 only because of a temporary disconnection or new session). 
+Messages must not be removed from the Management Plane queue until Ack’d by the Agent. 
+Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as they may need to be retried.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| CreateConnection | [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest) | [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse) | Connects NGINX Agent to the Management Plane agnostic of instance data |
+| UpdateDataPlaneStatus | [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest) | [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse) | Reports on instances and their configurations |
+| UpdateDataPlaneHealth | [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest) | [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse) | Reports on instance health |
+| Subscribe | [DataPlaneResponse](#mpi-v1-DataPlaneResponse) stream | [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest) stream | A decoupled communication mechanism between the data plane and management plane. buf:lint:ignore RPC_RESPONSE_STANDARD_NAME buf:lint:ignore RPC_REQUEST_STANDARD_NAME |
 
  
 

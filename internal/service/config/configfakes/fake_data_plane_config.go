@@ -46,14 +46,12 @@ type FakeDataPlaneConfig struct {
 		result1 any
 		result2 error
 	}
-	RollbackStub        func(context.Context, map[string]*v1.FileMeta, string, string, string) error
+	RollbackStub        func(context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest) error
 	rollbackMutex       sync.RWMutex
 	rollbackArgsForCall []struct {
 		arg1 context.Context
 		arg2 map[string]*v1.FileMeta
-		arg3 string
-		arg4 string
-		arg5 string
+		arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest
 	}
 	rollbackReturns struct {
 		result1 error
@@ -77,12 +75,11 @@ type FakeDataPlaneConfig struct {
 	validateReturnsOnCall map[int]struct {
 		result1 error
 	}
-	WriteStub        func(context.Context, string, string) (map[string]*v1.FileMeta, error)
+	WriteStub        func(context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest) (map[string]*v1.FileMeta, error)
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
 		arg1 context.Context
-		arg2 string
-		arg3 string
+		arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest
 	}
 	writeReturns struct {
 		result1 map[string]*v1.FileMeta
@@ -282,22 +279,20 @@ func (fake *FakeDataPlaneConfig) ParseConfigReturnsOnCall(i int, result1 any, re
 	}{result1, result2}
 }
 
-func (fake *FakeDataPlaneConfig) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 string, arg4 string, arg5 string) error {
+func (fake *FakeDataPlaneConfig) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest) error {
 	fake.rollbackMutex.Lock()
 	ret, specificReturn := fake.rollbackReturnsOnCall[len(fake.rollbackArgsForCall)]
 	fake.rollbackArgsForCall = append(fake.rollbackArgsForCall, struct {
 		arg1 context.Context
 		arg2 map[string]*v1.FileMeta
-		arg3 string
-		arg4 string
-		arg5 string
-	}{arg1, arg2, arg3, arg4, arg5})
+		arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest
+	}{arg1, arg2, arg3})
 	stub := fake.RollbackStub
 	fakeReturns := fake.rollbackReturns
-	fake.recordInvocation("Rollback", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.recordInvocation("Rollback", []interface{}{arg1, arg2, arg3})
 	fake.rollbackMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4, arg5)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -311,17 +306,17 @@ func (fake *FakeDataPlaneConfig) RollbackCallCount() int {
 	return len(fake.rollbackArgsForCall)
 }
 
-func (fake *FakeDataPlaneConfig) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, string, string, string) error) {
+func (fake *FakeDataPlaneConfig) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest) error) {
 	fake.rollbackMutex.Lock()
 	defer fake.rollbackMutex.Unlock()
 	fake.RollbackStub = stub
 }
 
-func (fake *FakeDataPlaneConfig) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, string, string, string) {
+func (fake *FakeDataPlaneConfig) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest) {
 	fake.rollbackMutex.RLock()
 	defer fake.rollbackMutex.RUnlock()
 	argsForCall := fake.rollbackArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeDataPlaneConfig) RollbackReturns(result1 error) {
@@ -440,20 +435,19 @@ func (fake *FakeDataPlaneConfig) ValidateReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeDataPlaneConfig) Write(arg1 context.Context, arg2 string, arg3 string) (map[string]*v1.FileMeta, error) {
+func (fake *FakeDataPlaneConfig) Write(arg1 context.Context, arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest) (map[string]*v1.FileMeta, error) {
 	fake.writeMutex.Lock()
 	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
 	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
 		arg1 context.Context
-		arg2 string
-		arg3 string
-	}{arg1, arg2, arg3})
+		arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest
+	}{arg1, arg2})
 	stub := fake.WriteStub
 	fakeReturns := fake.writeReturns
-	fake.recordInvocation("Write", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("Write", []interface{}{arg1, arg2})
 	fake.writeMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -467,17 +461,17 @@ func (fake *FakeDataPlaneConfig) WriteCallCount() int {
 	return len(fake.writeArgsForCall)
 }
 
-func (fake *FakeDataPlaneConfig) WriteCalls(stub func(context.Context, string, string) (map[string]*v1.FileMeta, error)) {
+func (fake *FakeDataPlaneConfig) WriteCalls(stub func(context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest) (map[string]*v1.FileMeta, error)) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = stub
 }
 
-func (fake *FakeDataPlaneConfig) WriteArgsForCall(i int) (context.Context, string, string) {
+func (fake *FakeDataPlaneConfig) WriteArgsForCall(i int) (context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest) {
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	argsForCall := fake.writeArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeDataPlaneConfig) WriteReturns(result1 map[string]*v1.FileMeta, result2 error) {

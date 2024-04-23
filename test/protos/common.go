@@ -9,8 +9,12 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+const messageID = "964e1e51-44cc-4c55-8422-2a3205bdfc2f"
 
 func CreateProtoTime(timeString string) (*timestamppb.Timestamp, error) {
 	newTime, err := time.Parse(time.RFC3339, timeString)
@@ -20,4 +24,12 @@ func CreateProtoTime(timeString string) (*timestamppb.Timestamp, error) {
 	}
 
 	return timestamppb.New(newTime), nil
+}
+
+func CreateMessageMeta() *v1.MessageMeta {
+	return &v1.MessageMeta{
+		MessageId:     messageID,
+		CorrelationId: correlationID,
+		Timestamp:     timestamppb.Now(),
+	}
 }

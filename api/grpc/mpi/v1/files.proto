@@ -114,7 +114,7 @@ message FileContents {
 message FileMeta {
     // the name of the file
     string name = 1;
-    // the hash of the file contents sha256, hex encoded
+    // the hash of the file contents sha256, hex encoded 
     string hash = 2;
     // last modified time of the file (created time if never modified)
     google.protobuf.Timestamp modified_time = 3;

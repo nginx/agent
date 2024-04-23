@@ -13,6 +13,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/logger"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 	"github.com/nginx/agent/v3/test/helpers"
@@ -26,9 +28,14 @@ import (
 )
 
 func TestWriteConfig(t *testing.T) {
-	ctx := context.Background()
+	correlationID, _ := helpers.CreateTestIDs(t)
+	ctx := context.WithValue(
+		context.Background(),
+		logger.CorrelationIDContextKey,
+		slog.Any(logger.CorrelationIDKey, correlationID.String()),
+	)
 	tempDir := t.TempDir()
-	tenantID, instanceID := helpers.CreateTestIDs(t)
+	_, instanceID := helpers.CreateTestIDs(t)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	allowedDirs := []string{tempDir}
 	agentConfig := types.GetAgentConfig()
@@ -46,9 +53,8 @@ func TestWriteConfig(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, metricsConf.Name())
 
 	testConfPath := testConf.Name()
-	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
-	files, err := protos.GetFiles(nginxConf, testConf, metricsConf)
+	files, err := protos.GetFileOverview(nginxConf.Name(), testConf.Name(), metricsConf.Name())
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -62,7 +68,7 @@ func TestWriteConfig(t *testing.T) {
 		{
 			name:               "Test 1: File needs updating",
 			metaDataReturn:     files,
-			getFileReturn:      protos.GetFileDownloadResponse(fileContent),
+			getFileReturn:      protos.GetFileContents(fileContent),
 			cacheShouldBeEqual: false,
 			fileShouldBeEqual:  true,
 			expSkippedCount:    2,
@@ -70,7 +76,7 @@ func TestWriteConfig(t *testing.T) {
 		{
 			name:               "Test 2: File doesn't need updating",
 			metaDataReturn:     files,
-			getFileReturn:      protos.GetFileDownloadResponse(fileContent),
+			getFileReturn:      protos.GetFileContents(fileContent),
 			cacheShouldBeEqual: true,
 			fileShouldBeEqual:  false,
 			expSkippedCount:    3,
@@ -82,12 +88,12 @@ func TestWriteConfig(t *testing.T) {
 			cacheFile := helpers.CreateFileWithErrorCheck(t, instanceIDDir, "cache.json")
 			defer helpers.RemoveFileWithErrorCheck(t, cacheFile.Name())
 			cachePath := cacheFile.Name()
-			fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
-			fakeConfigClient.GetFilesMetadataReturns(test.metaDataReturn, nil)
-			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
-
 			cacheContent, getCacheErr := protos.GetFileCache(nginxConf, testConf, metricsConf)
 			require.NoError(t, getCacheErr)
+
+			fakeConfigClient := &clientfakes.FakeConfigClient{}
+			fakeConfigClient.GetOverviewReturns(test.metaDataReturn, nil)
+			fakeConfigClient.GetFileReturns(test.getFileReturn, nil)
 
 			fileCache := NewFileCache(instanceID.String())
 			fileCache.SetCachePath(cachePath)
@@ -102,7 +108,7 @@ func TestWriteConfig(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			configWriter, cwErr := NewConfigWriter(agentConfig, fileCache)
+			configWriter, cwErr := NewConfigWriter(agentConfig, fileCache, fakeConfigClient)
 			require.NoError(t, cwErr)
 
 			configWriter.SetConfigClient(fakeConfigClient)
@@ -111,9 +117,10 @@ func TestWriteConfig(t *testing.T) {
 			require.NoError(t, err)
 			assert.FileExists(t, testConfPath)
 
-			skippedFiles, cwErr := configWriter.Write(ctx, filesURL, tenantID.String(), instanceID.String())
+			request := protos.CreateManagementPlaneRequestConfigApplyRequest()
+
+			skippedFiles, cwErr := configWriter.Write(ctx, request)
 			require.NoError(t, cwErr)
-			slog.Info("Skipped Files: ", "", skippedFiles)
 			assert.Len(t, skippedFiles, test.expSkippedCount)
 
 			res := reflect.DeepEqual(cacheContent, configWriter.currentFileCache)
@@ -140,6 +147,7 @@ func TestDeleteFile(t *testing.T) {
 	instanceIDDir := path.Join(tempDir, instanceID.String())
 	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
 	defer helpers.RemoveFileWithErrorCheck(t, instanceIDDir)
+	fakeConfigClient := &clientfakes.FakeConfigClient{}
 
 	testConf := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
 	nginxConf := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
@@ -182,8 +190,7 @@ func TestDeleteFile(t *testing.T) {
 			fileCache.SetCachePath(cachePath)
 			err := fileCache.UpdateFileCache(ctx, test.fileCache)
 			require.NoError(t, err)
-			slog.Info("", "", &agentconfig)
-			configWriter, err := NewConfigWriter(agentconfig, fileCache)
+			configWriter, err := NewConfigWriter(agentconfig, fileCache, fakeConfigClient)
 			require.NoError(t, err)
 
 			err = configWriter.removeFiles(ctx, test.currentFileCache, test.fileCache)
@@ -197,10 +204,11 @@ func TestDeleteFile(t *testing.T) {
 	}
 }
 
+// This test will be fixed in a followup PR
 func TestRollback(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
-	tenantID, instanceID := helpers.CreateTestIDs(t)
+	_, instanceID := helpers.CreateTestIDs(t)
 	allowedDirs := []string{tempDir}
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
@@ -217,23 +225,22 @@ func TestRollback(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, testConf.Name())
 
 	cachePath := cacheFile.Name()
-	filesURL := fmt.Sprintf("/instance/%s/files/", instanceID)
 
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	err := writeFile(ctx, fileContent, testConf.Name())
 	require.NoError(t, err)
 	assert.FileExists(t, testConf.Name())
 
-	files, err := protos.GetFiles(nginxConf, testConf, metricsConf)
+	files, err := protos.GetFileOverview(nginxConf.Name(), testConf.Name(), metricsConf.Name())
 	require.NoError(t, err)
 
 	cacheContent, getCacheErr := protos.GetFileCache(nginxConf, testConf, metricsConf)
 	require.NoError(t, getCacheErr)
 
-	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
-	fakeConfigClient.GetFilesMetadataReturns(files, nil)
+	fakeConfigClient := &clientfakes.FakeConfigClient{}
+	fakeConfigClient.GetOverviewReturns(files, nil)
 	resp := []byte("location /test {\n    return 200 \"Test changed\\n\";\n}")
-	fakeConfigClient.GetFileReturns(protos.GetFileDownloadResponse(resp), nil)
+	fakeConfigClient.GetFileReturns(protos.GetFileContents(resp), nil)
 
 	agentConfig := types.GetAgentConfig()
 	agentConfig.AllowedDirectories = allowedDirs
@@ -243,7 +250,7 @@ func TestRollback(t *testing.T) {
 	err = fileCache.UpdateFileCache(ctx, cacheContent)
 	require.NoError(t, err)
 
-	configWriter, err := NewConfigWriter(agentConfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache, fakeConfigClient)
 	require.NoError(t, err)
 	configWriter.SetConfigClient(fakeConfigClient)
 
@@ -266,7 +273,7 @@ func TestRollback(t *testing.T) {
 		},
 	}
 
-	err = configWriter.Rollback(ctx, skippedFiles, filesURL, tenantID.String(), instanceID.String())
+	err = configWriter.Rollback(ctx, skippedFiles, &v1.ManagementPlaneRequest_ConfigApplyRequest{})
 	require.NoError(t, err)
 
 	data, err := os.ReadFile(testConf.Name())
@@ -291,14 +298,14 @@ func TestComplete(t *testing.T) {
 	cachePath := cacheFile.Name()
 
 	allowedDirs := []string{tempDir}
-	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
+	fakeConfigClient := &clientfakes.FakeConfigClient{}
 
 	fileCache := NewFileCache(instanceID.String())
 	agentConfig := types.GetAgentConfig()
 	agentConfig.AllowedDirectories = allowedDirs
 	fileCache.SetCachePath(cachePath)
 
-	configWriter, err := NewConfigWriter(agentConfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache, fakeConfigClient)
 	require.NoError(t, err)
 	configWriter.configClient = fakeConfigClient
 
@@ -379,14 +386,14 @@ func TestIsFilePathValid(t *testing.T) {
 		},
 	}
 
-	fakeConfigClient := &clientfakes.FakeConfigClientInterface{}
+	fakeConfigClient := &clientfakes.FakeConfigClient{}
 	cachePath := fmt.Sprintf(cacheLocation, "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 
 	fileCache := NewFileCache("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	fileCache.SetCachePath(cachePath)
 	agentConfig := types.GetAgentConfig()
 
-	configWriter, err := NewConfigWriter(agentConfig, fileCache)
+	configWriter, err := NewConfigWriter(agentConfig, fileCache, fakeConfigClient)
 	require.NoError(t, err)
 	configWriter.configClient = fakeConfigClient
 

@@ -10,6 +10,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+
+	"github.com/nginx/agent/v3/internal/client/clientfakes"
+
 	modelHelpers "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
@@ -30,7 +34,7 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 
 	instance := protos.GetNginxOssInstance()
 
-	configService := NewConfigService(ctx, instance, types.GetAgentConfig())
+	configService := NewConfigService(ctx, instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 	configService.SetConfigContext(expectedConfigContext)
 
 	assert.Equal(t, expectedConfigContext, configService.configContext)
@@ -101,11 +105,9 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 			mockService.ValidateReturns(test.validateErr)
 			mockService.CompleteReturns(test.completeErr)
 
-			filesURL := fmt.Sprintf("/instance/%s/files/", test.expected.GetInstanceId())
-
-			cs := NewConfigService(ctx, instance, agentConfig)
+			cs := NewConfigService(ctx, instance, agentConfig, &clientfakes.FakeConfigClient{})
 			cs.configService = &mockService
-			_, result := cs.UpdateInstanceConfiguration(ctx, filesURL)
+			_, result := cs.UpdateInstanceConfiguration(ctx, &v1.ManagementPlaneRequest_ConfigApplyRequest{})
 
 			assert.Equal(t, test.expected.GetStatus(), result.GetStatus())
 			assert.Equal(t, test.expected.GetMessage(), result.GetMessage())
@@ -121,7 +123,7 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	instance := protos.GetNginxOssInstance()
 
-	configService := NewConfigService(ctx, instance, types.GetAgentConfig())
+	configService := NewConfigService(ctx, instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 
 	fakeDataPlaneConfig := &configfakes.FakeDataPlaneConfig{}
 	fakeDataPlaneConfig.ParseConfigReturns(expectedConfigContext, nil)

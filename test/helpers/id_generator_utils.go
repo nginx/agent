@@ -13,17 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	instanceID = "aecea348-62c1-4e3d-b848-6d6cdeb1cb9c"
-)
-
-func CreateTestIDs(t testing.TB) (uuid.UUID, uuid.UUID) {
+func CreateTestIDs(t testing.TB) (correlationID, instanceID uuid.UUID) {
 	t.Helper()
-	tenantID, err := uuid.Parse("7332d596-d2e6-4d1e-9e75-70f91ef9bd0e")
+	correlationID, err := uuid.Parse("1a968ddd-ef9b-4ad1-97a4-e4590467bcf7")
+	require.NoError(t, err)
+	instanceID, err = uuid.Parse("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	require.NoError(t, err)
 
-	instanceID, err := uuid.Parse(instanceID)
-	require.NoError(t, err)
-
-	return tenantID, instanceID
+	return correlationID, instanceID
 }
