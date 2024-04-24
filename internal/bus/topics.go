@@ -10,7 +10,8 @@ const (
 	OsProcessesTopic                 = "host-processes"
 	ResourceTopic                    = "resource"
 	InstanceConfigUpdateRequestTopic = "instance-config-update-request"
-	InstanceConfigUpdateTopic        = "instance-config-update"
+	InstanceConfigUpdateStatusTopic  = "instance-config-update-status"
 	InstanceConfigContextTopic       = "instance-config-context"
 	MetricsTopic                     = "metrics"
+	ConfigClientTopic                = "config-client"
 )

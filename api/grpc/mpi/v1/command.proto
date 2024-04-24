@@ -11,7 +11,9 @@ package mpi.v1;
 option go_package = "mpi/v1";
 
 import "mpi/v1/common.proto";
+import "mpi/v1/files.proto";
 import "google/protobuf/struct.proto";
+import "buf/validate/validate.proto";
 
 // A service outlining the command and control options for a Data Plane Client
 // All operations are written from a client perspective
@@ -46,7 +48,7 @@ message CreateConnectionRequest {
 // A representation of instances and runtime resource information
 message Resource {
     // A resource identifier
-    string resource_id = 1;
+    string resource_id = 1 [(buf.validate.field).string.uuid = true];
     // A list of instances associated with this resource
     repeated Instance instances = 2;
     // Runtime information of where the instances reside. Host or container based
@@ -61,9 +63,9 @@ message Resource {
 // Represents the host system information
 message HostInfo {
     // The host identifier
-    string host_id = 1;
+    string host_id = 1 [(buf.validate.field).string.uuid = true];
     // The name of the host
-    string hostname = 2;
+    string hostname = 2 [(buf.validate.field).string.address = true];
     // Release information of the host
     ReleaseInfo release_info = 3;
 }
@@ -85,7 +87,7 @@ message ReleaseInfo {
 // Container information
 message ContainerInfo {
     // The identifier of the container
-    string container_id = 1;
+    string container_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
 // A response to a CreateConnectionRequest
@@ -119,7 +121,7 @@ message InstanceHealth {
         // Degraded status
         INSTANCE_HEALTH_STATUS_DEGRADED = 3;
     }
-    string instance_id = 1;
+    string instance_id = 1 [(buf.validate.field).string.uuid = true];
     // Health status
     InstanceHealthStatus instance_health_status = 2;
     // Provides a human readable context around why a health status is a particular state
@@ -138,10 +140,56 @@ message UpdateDataPlaneHealthRequest {
 message UpdateDataPlaneHealthResponse {}
 
 // Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
-message DataPlaneResponse {}
+message DataPlaneResponse {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
+    // The command response with the associated request
+    mpi.v1.CommandResponse command_response = 2;
+}
 
 // A Management Plane request for information, triggers an associated rpc on the Data Plane
-message ManagementPlaneRequest {}
+message ManagementPlaneRequest {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
+    oneof request {
+        // triggers a DataPlaneStatus rpc
+        StatusRequest status_request = 2;
+        // triggers a DataPlaneHealth rpc
+        HealthRequest health_request = 3;
+        // triggers a rpc GetFile(FileRequest) for overview list, 
+        // if overview is missing, triggers a rpc GetOverview(ConfigVersion) first
+        ConfigApplyRequest config_apply_request = 5;
+        // triggers a series of rpc UpdateFile(File) for that instances
+        ConfigUploadRequest config_upload_request = 6;
+        // triggers a DataPlaneResponse with a command_response for a particular action
+        APIActionRequest action_request = 7;
+        // triggers a DataPlaneResponse with a command_response for a particular correlation_id
+        CommandStatusRequest command_status_request = 8;
+    }
+}
+
+// Additional information associated with a StatusRequest
+message StatusRequest {}
+
+// Additional information associated with a HealthRequest
+message HealthRequest {}
+
+// Additional information associated with a ConfigApplyRequest
+message ConfigApplyRequest {
+    // the config version
+    mpi.v1.ConfigVersion config_version = 1;
+    // an optional set of files related to the request
+    optional mpi.v1.FileOverview overview = 2;
+}
+
+// Additional information associated with a ConfigUploadRequest
+message ConfigUploadRequest {}
+
+// Perform an associated API action on an instance
+message APIActionRequest {}
+
+// Request an update on a particular command
+message CommandStatusRequest {}
 
 // This represents an instance being reported on
 message Instance {
@@ -156,7 +204,7 @@ message Instance {
 // Meta-information relating to the reported instance
 message InstanceMeta {
     // the identifier associated with the instance
-    string instance_id = 1;
+    string instance_id = 1 [(buf.validate.field).string.uuid = true];
     // the types of instances possible
     enum InstanceType {
         // Unspecified instance type
@@ -190,9 +238,9 @@ message InstanceRuntime {
     // the process identifier
     int32 process_id = 1;
     // the binary path location
-    string binary_path = 2;
+    string binary_path = 2 [(buf.validate.field).string.prefix = "/"];
     // the config path location
-    string config_path = 3;
+    string config_path = 3 [(buf.validate.field).string.prefix = "/"];
     // more detailed runtime objects
     oneof details {
         // NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process
@@ -205,9 +253,13 @@ message InstanceRuntime {
 // A set of runtime NGINX OSS settings
 message NGINXRuntimeInfo {
     // the stub status API URL
-    string stub_status = 1;
+    string stub_status = 1 [(buf.validate.field).cel = {
+        id:  "string.uri",
+        message: "value must be a valid URI or can be empty",
+        expression: "this == \'\' || this.isUri()"
+    }];
     // a list of access_logs
-    repeated string access_logs = 2;
+    repeated string access_logs = 2; 
     // a list of error_logs
     repeated string error_logs = 3;
     // List of NGINX potentially loadable modules (installed but not loaded).
@@ -219,7 +271,11 @@ message NGINXRuntimeInfo {
 // A set of runtime NGINX Plus settings
 message NGINXPlusRuntimeInfo {
     // the stub status API URL
-    string stub_status = 1;
+    string stub_status = 1 [(buf.validate.field).cel = {
+        id:  "string.uri",
+        message: "value must be a valid URI or can be empty",
+        expression: "this == \'\' || this.isUri()"
+    }];
     // a list of access_logs
     repeated string access_logs = 2;
     // a list of error_logs
@@ -229,7 +285,11 @@ message NGINXPlusRuntimeInfo {
     // List of NGINX dynamic modules.
     repeated string dynamic_modules = 5;
     // the plus API location
-    string plus_api = 6;
+    string plus_api = 6 [(buf.validate.field).cel = {
+        id:  "string.uri",
+        message: "value must be a valid URI or can be empty",
+        expression: "this == \'\' || this.isUri()"
+    }];
 }
 
 // A set of actions that can be performed on an instance
@@ -249,26 +309,6 @@ message AgentConfig {
     repeated string features = 5;
     // Message buffer size, maximum not acknowledged messages from the subscribe perspective
     string message_buffer_size = 6;
-}
-
-// A set of runtime NGINX configuration that gets populated 
-message NGINXConfig {
-    // master process id
-    int32 process_id = 1;
-    // where the binary location is, if empty, this is a remote instance
-    string binary_path = 2;
-    // where the configuration files are located
-    string config_path = 3;
-}
-
-// A set of runtime NGINX configuration that gets populated 
-message NGINXPlusConfig {
-    // master process id
-    int32 process_id = 1;
-    // where the binary location is, if empty, this is a remote instance
-    string binary_path = 2;
-    // where the configuration files are located
-    string config_path = 3;
 }
 
 // The command settings, associated with messaging from an external source 

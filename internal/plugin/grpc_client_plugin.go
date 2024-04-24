@@ -13,6 +13,7 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/cenkalti/backoff/v4"
 
@@ -21,13 +22,16 @@ import (
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
 )
+
+const retryInterval = 5 * time.Second
 
 type (
 	GrpcClient struct {
@@ -37,7 +41,10 @@ type (
 		isConnected          *atomic.Bool
 		commandServiceClient v1.CommandServiceClient
 		cancel               context.CancelFunc
+		subscribeCancel      context.CancelFunc
 		connectionMutex      sync.Mutex
+		subscribeMutex       sync.Mutex
+		fileServiceClient    v1.FileServiceClient
 	}
 )
 
@@ -55,6 +62,7 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 			config:          agentConfig,
 			isConnected:     isConnected,
 			connectionMutex: sync.Mutex{},
+			subscribeMutex:  sync.Mutex{},
 		}
 	}
 
@@ -62,7 +70,10 @@ func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
 }
 
 func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) (err error) {
-	var grpcClientCtx context.Context
+	var (
+		subscribeCtx  context.Context
+		grpcClientCtx context.Context
+	)
 
 	slog.InfoContext(ctx, "Starting grpc client plugin")
 	gc.messagePipe = messagePipe
@@ -79,6 +90,8 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, agentGrpc.GetDialOptions(gc.config)...)
 	gc.connectionMutex.Unlock()
 
+	gc.fileServiceClient = v1.NewFileServiceClient(gc.conn)
+
 	if err != nil {
 		return err
 	}
@@ -89,11 +102,74 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 
 	gc.commandServiceClient = v1.NewCommandServiceClient(gc.conn)
 
+	gc.subscribeMutex.Lock()
+	subscribeCtx, gc.subscribeCancel = context.WithCancel(ctx)
+	gc.subscribeMutex.Unlock()
+
+	go gc.subscribe(subscribeCtx)
+
 	return nil
+}
+
+// revive cognitive complexity 13 due to the nil checks
+// nolint: revive
+func (gc *GrpcClient) subscribe(ctx context.Context) {
+	var subscribeClient v1.CommandService_SubscribeClient
+	var err error
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			if subscribeClient == nil {
+				subscribeClient, err = gc.commandServiceClient.Subscribe(ctx)
+				if err != nil {
+					slog.ErrorContext(ctx, "Unable to subscribe", "error", err)
+					// this is temporary and will be changed in a followup PR use back off and allow the time to be set
+					// but needed to add retry to stop the logs being spammed with errors
+					time.Sleep(retryInterval)
+
+					continue
+				}
+			}
+
+			request, recErr := subscribeClient.Recv()
+			if recErr != nil {
+				slog.ErrorContext(ctx, "Error receiving messages", "err", recErr)
+				subscribeClient = nil
+				time.Sleep(retryInterval)
+
+				continue
+			}
+			slog.DebugContext(ctx, "Subscribe received", "request", request)
+
+			gc.ProcessRequest(ctx, request)
+		}
+	}
+}
+
+func (gc *GrpcClient) ProcessRequest(ctx context.Context, request *v1.ManagementPlaneRequest) {
+	switch request.GetRequest().(type) {
+	case *v1.ManagementPlaneRequest_ConfigApplyRequest:
+		subCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
+		gc.messagePipe.Process(subCtx, &bus.Message{
+			Topic: bus.InstanceConfigUpdateRequestTopic,
+			Data:  request.GetRequest(),
+		})
+	default:
+		slog.InfoContext(ctx, "Management plane request not implemented yet", "request_type", request.GetRequest())
+	}
 }
 
 func (gc *GrpcClient) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing grpc client plugin")
+
+	gc.subscribeMutex.Lock()
+	if gc.subscribeCancel != nil {
+		gc.subscribeCancel()
+	}
+	gc.subscribeMutex.Unlock()
 
 	gc.connectionMutex.Lock()
 	defer gc.connectionMutex.Unlock()
@@ -107,6 +183,17 @@ func (gc *GrpcClient) Close(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (gc *GrpcClient) GetFileOverview(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview, error) {
+	resp, err := gc.fileServiceClient.GetOverview(ctx, request)
+	return resp.GetOverview(), err
+}
+
+func (gc *GrpcClient) GetFileContents(ctx context.Context, request *v1.GetFileRequest) (*v1.FileContents, error) {
+	resp, err := gc.fileServiceClient.GetFile(ctx, request)
+
+	return resp.GetContents(), err
 }
 
 func (gc *GrpcClient) Info() *bus.Info {
@@ -147,14 +234,17 @@ func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resourc
 
 		connectFn := func() (*v1.CreateConnectionResponse, error) {
 			response, connectErr := gc.commandServiceClient.CreateConnection(reqCtx, req)
-			if connectErr != nil {
-				slog.ErrorContext(reqCtx, "Creating connection", "error", err)
 
-				return nil, connectErr
+			validatedError := validateGrpcError(connectErr)
+			if validatedError != nil {
+				slog.ErrorContext(reqCtx, "Failed to create connection", "error", validatedError)
+
+				return nil, validatedError
 			}
 
 			return response, nil
 		}
+
 		response, err := backoff.RetryWithData(connectFn, backoffHelpers.Context(reqCtx, gc.config.Common))
 		if err != nil {
 			return err
@@ -165,6 +255,14 @@ func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resourc
 
 		gc.isConnected.Store(true)
 	}
+
+	gc.messagePipe.Process(ctx, &bus.Message{
+		Topic: bus.ConfigClientTopic,
+		Data: &GrpcConfigClient{
+			grpcOverviewFn:    gc.GetFileOverview,
+			grpFileContentsFn: gc.GetFileContents,
+		},
+	})
 
 	return nil
 }
@@ -196,6 +294,7 @@ func (gc *GrpcClient) Subscriptions() []string {
 	return []string{
 		bus.GrpcConnectedTopic,
 		bus.ResourceTopic,
+		bus.InstanceConfigUpdateStatusTopic,
 	}
 }
 
@@ -228,11 +327,13 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 			return nil, errors.New("command service client is not initialized")
 		}
 
-		response, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
-		if err != nil {
-			slog.ErrorContext(backOffCtx, "Creating connection", "error", err)
+		response, updateError := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
 
-			return nil, err
+		validatedError := validateGrpcError(updateError)
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send update data plane status", "error", validatedError)
+
+			return nil, validatedError
 		}
 
 		return response, nil
@@ -245,4 +346,34 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	slog.DebugContext(ctx, " UpdateDataPlaneStatus response ", "response", response)
 
 	return nil
+}
+
+func validateGrpcError(err error) error {
+	if err != nil {
+		if statusError, ok := status.FromError(err); ok {
+			if statusError.Code() == codes.InvalidArgument {
+				return backoff.Permanent(err)
+			}
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+type GrpcConfigClient struct {
+	grpcOverviewFn    func(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview, error)
+	grpFileContentsFn func(ctx context.Context, request *v1.GetFileRequest) (*v1.FileContents, error)
+}
+
+func (gcc *GrpcConfigClient) GetOverview(
+	ctx context.Context,
+	request *v1.GetOverviewRequest,
+) (*v1.FileOverview, error) {
+	return gcc.grpcOverviewFn(ctx, request)
+}
+
+func (gcc *GrpcConfigClient) GetFile(ctx context.Context, request *v1.GetFileRequest) (*v1.FileContents, error) {
+	return gcc.grpFileContentsFn(ctx, request)
 }

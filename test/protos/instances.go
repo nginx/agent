@@ -145,29 +145,3 @@ func GetFileCache(files ...*os.File) (map[string]*v1.FileMeta, error) {
 
 	return cache, nil
 }
-
-func GetFiles(files ...*os.File) (*v1.FileOverview, error) {
-	instanceFiles := &v1.FileOverview{}
-
-	for _, file := range files {
-		lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")
-		if err != nil {
-			return nil, err
-		}
-		instanceFiles.Files = append(instanceFiles.GetFiles(), &v1.File{
-			FileMeta: &v1.FileMeta{
-				ModifiedTime: lastModified,
-				Name:         file.Name(),
-				Hash:         "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-			},
-		})
-	}
-
-	return instanceFiles, nil
-}
-
-func GetFileDownloadResponse(content []byte) *v1.FileContents {
-	return &v1.FileContents{
-		Contents: content,
-	}
-}

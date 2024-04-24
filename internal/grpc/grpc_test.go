@@ -12,6 +12,8 @@ import (
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/test/types"
@@ -111,7 +113,7 @@ func Test_GetDialOptions(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(ttt *testing.T) {
+		t.Run(test.name, func(tt *testing.T) {
 			if test.createCerts {
 				tmpDir := t.TempDir()
 				// not mTLS scripts
@@ -132,8 +134,8 @@ func Test_GetDialOptions(t *testing.T) {
 			}
 
 			options := GetDialOptions(test.agentConfig)
-			assert.NotNil(ttt, options)
-			assert.Len(ttt, options, test.expected)
+			assert.NotNil(tt, options)
+			assert.Len(tt, options, test.expected)
 		})
 	}
 }
@@ -180,9 +182,17 @@ func Test_ProtoValidatorUnaryClientInterceptor(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(ttt *testing.T) {
+		t.Run(test.name, func(tt *testing.T) {
 			validationError := interceptor(ctx, "", test.request, test.reply, nil, invoker, nil)
-			assert.Equal(t, test.isErrorExpected, validationError != nil)
+			tt.Log(validationError)
+
+			assert.Equal(tt, test.isErrorExpected, validationError != nil)
+
+			if validationError != nil {
+				if err, ok := status.FromError(validationError); ok {
+					assert.Equal(tt, codes.InvalidArgument, err.Code())
+				}
+			}
 		})
 	}
 }

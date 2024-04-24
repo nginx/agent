@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nginx/agent/v3/internal/client"
+
 	"github.com/nginx/agent/v3/files"
 	"github.com/nginx/agent/v3/internal/config"
 	writer "github.com/nginx/agent/v3/internal/datasource/config"
@@ -66,10 +68,11 @@ type Nginx struct {
 	agentConfig   *config.Config
 }
 
-func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Config) *Nginx {
+func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Config,
+	configClient client.ConfigClient,
+) *Nginx {
 	fileCache := writer.NewFileCache(instance.GetInstanceMeta().GetInstanceId())
 	cache, err := fileCache.ReadFileCache(ctx)
-	// Will in future work check cache and if its nil upload file
 	if err != nil {
 		err = fileCache.UpdateFileCache(ctx, cache)
 		if err != nil {
@@ -77,7 +80,7 @@ func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Co
 		}
 	}
 
-	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache)
+	configWriter, err := writer.NewConfigWriter(agentConfig, fileCache, configClient)
 	if err != nil {
 		slog.ErrorContext(
 			ctx,
@@ -97,10 +100,11 @@ func NewNginx(ctx context.Context, instance *v1.Instance, agentConfig *config.Co
 	}
 }
 
-func (n *Nginx) Write(ctx context.Context, filesURL, tenantID string) (skippedFiles writer.CacheContent,
+func (n *Nginx) Write(ctx context.Context, request *v1.ManagementPlaneRequest_ConfigApplyRequest) (
+	skippedFiles writer.CacheContent,
 	err error,
 ) {
-	return n.configWriter.Write(ctx, filesURL, tenantID, n.instance.GetInstanceMeta().GetInstanceId())
+	return n.configWriter.Write(ctx, request)
 }
 
 func (n *Nginx) Complete(ctx context.Context) error {
@@ -108,9 +112,9 @@ func (n *Nginx) Complete(ctx context.Context) error {
 }
 
 func (n *Nginx) Rollback(ctx context.Context, skippedFiles writer.CacheContent,
-	filesURL, tenantID, instanceID string,
+	request *v1.ManagementPlaneRequest_ConfigApplyRequest,
 ) error {
-	err := n.configWriter.Rollback(ctx, skippedFiles, filesURL, tenantID, instanceID)
+	err := n.configWriter.Rollback(ctx, skippedFiles, request)
 	return err
 }
 
@@ -183,14 +187,14 @@ func (n *Nginx) stubStatusAPICallback(ctx context.Context, parent, current *cros
 }
 
 func (n *Nginx) pingStubStatusAPIEndpoint(ctx context.Context, statusAPI string) bool {
-	client := http.Client{Timeout: n.agentConfig.Client.Timeout}
+	httpClient := http.Client{Timeout: n.agentConfig.Client.Timeout}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
 	if err != nil {
 		slog.Warn("Unable to create Stub Status API GET request", "error", err)
 		return false
 	}
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		slog.Warn("Unable to GET Stub Status from API request", "error", err)
 		return false

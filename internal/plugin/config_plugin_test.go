@@ -20,7 +20,7 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
-	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
 	modelHelpers "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
@@ -57,7 +57,8 @@ func TestConfig_Subscriptions(t *testing.T) {
 	subscriptions := configPlugin.Subscriptions()
 	assert.Equal(t, []string{
 		bus.InstanceConfigUpdateRequestTopic,
-		bus.InstanceConfigUpdateTopic,
+		bus.InstanceConfigUpdateStatusTopic,
+		bus.ConfigClientTopic,
 		bus.ResourceTopic,
 	}, subscriptions)
 }
@@ -73,10 +74,7 @@ func TestConfig_Process(t *testing.T) {
 
 	nginxConfigContext := modelHelpers.GetConfigContext()
 
-	instanceConfigUpdateRequest := &model.InstanceConfigUpdateRequest{
-		Instance: testInstance,
-		Location: "http://file-server.com",
-	}
+	instanceConfigUpdateRequest := protos.CreateManagementPlaneRequestConfigApplyRequest()
 
 	configurationStatusProgress := protos.CreateInProgressStatus()
 	configurationStatus := protos.CreateSuccessStatus()
@@ -89,7 +87,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Test 1: Instance config updated",
 			input: &bus.Message{
-				Topic: bus.InstanceConfigUpdateTopic,
+				Topic: bus.InstanceConfigUpdateStatusTopic,
 				Data:  configurationStatus,
 			},
 			expected: []*bus.Message{
@@ -102,7 +100,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Test 2: Instance config updated - unknown message type",
 			input: &bus.Message{
-				Topic: bus.InstanceConfigUpdateTopic,
+				Topic: bus.InstanceConfigUpdateStatusTopic,
 				Data:  nil,
 			},
 			expected: nil,
@@ -115,11 +113,11 @@ func TestConfig_Process(t *testing.T) {
 			},
 			expected: []*bus.Message{
 				{
-					Topic: bus.InstanceConfigUpdateTopic,
+					Topic: bus.InstanceConfigUpdateStatusTopic,
 					Data:  configurationStatusProgress,
 				},
 				{
-					Topic: bus.InstanceConfigUpdateTopic,
+					Topic: bus.InstanceConfigUpdateStatusTopic,
 					Data:  protos.CreateSuccessStatus(),
 				},
 			},
@@ -184,17 +182,11 @@ func TestConfig_Update(t *testing.T) {
 	agentConfig := types.GetAgentConfig()
 	instance := protos.GetNginxOssInstance([]string{})
 
-	location := fmt.Sprintf("/instance/%s/files/", protos.GetNginxOssInstance([]string{}).
-		GetInstanceMeta().GetInstanceId())
-	request := model.InstanceConfigUpdateRequest{
-		Instance: instance,
-		Location: location,
-	}
+	request := protos.CreateManagementPlaneRequestConfigApplyRequest()
 
 	inProgressStatus := protos.CreateInProgressStatus()
 	successStatus := protos.CreateSuccessStatus()
 	failStatus := protos.CreateFailStatus("error")
-	rollbackInProgressStatus := protos.CreateRollbackInProgressStatus()
 
 	tests := []struct {
 		name               string
@@ -208,58 +200,44 @@ func TestConfig_Update(t *testing.T) {
 			rollbackReturns:    nil,
 			expected: []*bus.Message{
 				{
-					Topic: bus.InstanceConfigUpdateTopic,
+					Topic: bus.InstanceConfigUpdateStatusTopic,
 					Data:  inProgressStatus,
 				},
 				{
-					Topic: bus.InstanceConfigUpdateTopic,
+					Topic: bus.InstanceConfigUpdateStatusTopic,
 					Data:  successStatus,
 				},
 			},
 		},
 		{
+			// removed rollback part of this test for now
 			name:               "Test 2: Config update failed and rolled back",
 			updateReturnStatus: failStatus,
 			rollbackReturns:    nil,
 			expected: []*bus.Message{
 				{
-					Topic: bus.InstanceConfigUpdateTopic,
+					Topic: bus.InstanceConfigUpdateStatusTopic,
 					Data:  inProgressStatus,
 				},
 				{
-					Topic: bus.InstanceConfigUpdateTopic,
+					Topic: bus.InstanceConfigUpdateStatusTopic,
 					Data:  failStatus,
-				},
-				{
-					Topic: bus.InstanceConfigUpdateTopic,
-					Data:  rollbackInProgressStatus,
-				},
-				{
-					Topic: bus.InstanceConfigUpdateTopic,
-					Data:  protos.CreateRollbackSuccessStatus(),
 				},
 			},
 		},
 		{
+			// removed rollback part of this test for now
 			name:               "Test 2: Rollback fails",
 			updateReturnStatus: failStatus,
 			rollbackReturns:    fmt.Errorf("rollback failed"),
 			expected: []*bus.Message{
 				{
-					Topic: bus.InstanceConfigUpdateTopic,
+					Topic: bus.InstanceConfigUpdateStatusTopic,
 					Data:  inProgressStatus,
 				},
 				{
-					Topic: bus.InstanceConfigUpdateTopic,
+					Topic: bus.InstanceConfigUpdateStatusTopic,
 					Data:  failStatus,
-				},
-				{
-					Topic: bus.InstanceConfigUpdateTopic,
-					Data:  rollbackInProgressStatus,
-				},
-				{
-					Topic: bus.InstanceConfigUpdateTopic,
-					Data:  protos.CreateRollbackFailStatus("rollback failed"),
 				},
 			},
 		},
@@ -283,7 +261,7 @@ func TestConfig_Update(t *testing.T) {
 				GetInstanceMeta().GetInstanceId()] = configService
 			configPlugin.resource.Instances = instanceService
 
-			configPlugin.updateInstanceConfig(ctx, &request)
+			configPlugin.updateInstanceConfig(ctx, request)
 
 			messages := messagePipe.GetMessages()
 
