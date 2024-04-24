@@ -130,10 +130,8 @@ func TestGrpcClient_Info(t *testing.T) {
 func TestGrpcClient_Subscriptions(t *testing.T) {
 	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
-	assert.Len(t, subscriptions, 3)
-	assert.Equal(t, bus.GrpcConnectedTopic, subscriptions[0])
-	assert.Equal(t, bus.ResourceTopic, subscriptions[1])
-	assert.Equal(t, bus.InstanceConfigUpdateStatusTopic, subscriptions[2])
+	assert.Len(t, subscriptions, 1)
+	assert.Equal(t, bus.ResourceTopic, subscriptions[0])
 }
 
 func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
@@ -308,6 +306,7 @@ func TestGrpcClient_Close(t *testing.T) {
 			serverMockLock.Lock()
 			server, err := mockGrpc.NewMockManagementServer(address, test.agentConfig, &configDirectory)
 			require.NoError(tt, err)
+			defer server.Stop()
 			serverMockLock.Unlock()
 
 			client := NewGrpcClient(test.agentConfig)
@@ -324,8 +323,6 @@ func TestGrpcClient_Close(t *testing.T) {
 
 			err = client.Close(ctx)
 			require.NoError(tt, err)
-
-			defer server.Stop()
 		})
 	}
 }

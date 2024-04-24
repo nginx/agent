@@ -287,9 +287,7 @@ func (gc *GrpcClient) createConnectionRequest(resource *v1.Resource) (*v1.Create
 
 func (gc *GrpcClient) Subscriptions() []string {
 	return []string{
-		bus.GrpcConnectedTopic,
 		bus.ResourceTopic,
-		bus.InstanceConfigUpdateStatusTopic,
 	}
 }
 
