@@ -25,7 +25,9 @@ import (
 	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -232,14 +234,17 @@ func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resourc
 
 		connectFn := func() (*v1.CreateConnectionResponse, error) {
 			response, connectErr := gc.commandServiceClient.CreateConnection(reqCtx, req)
-			if connectErr != nil {
-				slog.ErrorContext(reqCtx, "Creating connection", "error", err)
 
-				return nil, connectErr
+			validatedError := validateGrpcError(connectErr)
+			if validatedError != nil {
+				slog.ErrorContext(reqCtx, "Failed to create connection", "error", validatedError)
+
+				return nil, validatedError
 			}
 
 			return response, nil
 		}
+
 		response, err := backoff.RetryWithData(connectFn, backoffHelpers.Context(reqCtx, gc.config.Common))
 		if err != nil {
 			return err
@@ -322,11 +327,13 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 			return nil, errors.New("command service client is not initialized")
 		}
 
-		response, err := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
-		if err != nil {
-			slog.ErrorContext(backOffCtx, "Creating connection", "error", err)
+		response, updateError := gc.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
 
-			return nil, err
+		validatedError := validateGrpcError(updateError)
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send update data plane status", "error", validatedError)
+
+			return nil, validatedError
 		}
 
 		return response, nil
@@ -341,14 +348,29 @@ func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	return nil
 }
 
+func validateGrpcError(err error) error {
+	if err != nil {
+		if statusError, ok := status.FromError(err); ok {
+			if statusError.Code() == codes.InvalidArgument {
+				return backoff.Permanent(err)
+			}
+		}
+
+		return err
+	}
+
+	return nil
+}
+
 type GrpcConfigClient struct {
 	grpcOverviewFn    func(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview, error)
 	grpFileContentsFn func(ctx context.Context, request *v1.GetFileRequest) (*v1.FileContents, error)
 }
 
-func (gcc *GrpcConfigClient) GetOverview(ctx context.Context, request *v1.GetOverviewRequest) (*v1.FileOverview,
-	error,
-) {
+func (gcc *GrpcConfigClient) GetOverview(
+	ctx context.Context,
+	request *v1.GetOverviewRequest,
+) (*v1.FileOverview, error) {
 	return gcc.grpcOverviewFn(ctx, request)
 }
 
