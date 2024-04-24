@@ -36,7 +36,7 @@ func GetNginxOssInstance() *v1.Instance {
 					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
-					LoadableModules: []string{},
+					LoadableModules: nil,
 					DynamicModules:  []string{},
 				},
 			},
@@ -44,7 +44,7 @@ func GetNginxOssInstance() *v1.Instance {
 	}
 }
 
-func GetNginxPlusInstance() *v1.Instance {
+func GetNginxPlusInstance(expectedModules string) *v1.Instance {
 	return &v1.Instance{
 		InstanceMeta: &v1.InstanceMeta{
 			InstanceId:   plusInstanceID,
@@ -60,7 +60,7 @@ func GetNginxPlusInstance() *v1.Instance {
 					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
-					LoadableModules: []string{},
+					LoadableModules: []string{expectedModules},
 					DynamicModules:  []string{},
 					PlusApi:         "",
 				},

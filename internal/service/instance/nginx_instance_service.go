@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"path"
 	"regexp"
 	"strings"
@@ -28,13 +29,14 @@ var (
 )
 
 type Info struct {
-	ProcessID     int32
-	Version       string
-	PlusVersion   string
-	Prefix        string
-	ConfPath      string
-	ConfigureArgs map[string]interface{}
-	ExePath       string
+	ProcessID       int32
+	Version         string
+	PlusVersion     string
+	Prefix          string
+	ConfPath        string
+	ConfigureArgs   map[string]interface{}
+	ExePath         string
+	LoadableModules []string
 }
 
 type Nginx struct {
@@ -111,6 +113,12 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 	nginxInfo.ExePath = exePath
 	nginxInfo.ProcessID = nginxProcess.Pid
 
+	loadableModules, moduleErr := getLoadableModules(nginxInfo)
+	if moduleErr != nil {
+		slog.Warn("Unable to parse module path", err, moduleErr)
+	}
+	nginxInfo.LoadableModules = loadableModules
+
 	return nginxInfo, err
 }
 
@@ -129,7 +137,7 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
-					LoadableModules: []string{},
+					LoadableModules: nginxInfo.LoadableModules,
 					DynamicModules:  []string{},
 				},
 			},
@@ -144,7 +152,7 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
-					LoadableModules: []string{},
+					LoadableModules: nginxInfo.LoadableModules,
 					DynamicModules:  []string{},
 					PlusApi:         "",
 				},
@@ -270,4 +278,35 @@ func isFlag(vals []string) bool {
 // nolint: gomnd
 func isKeyValueFlag(vals []string) bool {
 	return len(vals) == 2
+}
+
+func getLoadableModules(nginxInfo *Info) (modules []string, err error) {
+	if nginxInfo.ConfigureArgs["modules-path"] != nil {
+		modulePath, ok := nginxInfo.ConfigureArgs["modules-path"].(string)
+		if !ok {
+			return modules, fmt.Errorf("error parsing modules-path")
+		}
+		modules, err = readDirectory(modulePath, ".so")
+		if err != nil {
+			return modules, err
+		}
+
+		return modules, err
+	}
+
+	return modules, err
+}
+
+func readDirectory(dir, ext string) (files []string, err error) {
+	dirInfo, err := os.ReadDir(dir)
+	if err != nil {
+		slog.Warn("Unable to read directory", "directory", dir, "error", err)
+		return files, err
+	}
+
+	for _, file := range dirInfo {
+		files = append(files, strings.ReplaceAll(file.Name(), ext, ""))
+	}
+
+	return files, err
 }

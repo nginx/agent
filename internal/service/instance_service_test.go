@@ -33,10 +33,10 @@ func TestInstanceService_GetInstances(t *testing.T) {
 
 func TestInstanceService_GetInstance(t *testing.T) {
 	instanceService := NewInstanceService(types.GetAgentConfig())
-	instanceService.instances = []*v1.Instance{protos.GetNginxPlusInstance()}
+	instanceService.instances = []*v1.Instance{protos.GetNginxPlusInstance("")}
 
-	assert.Equal(t, protos.GetNginxPlusInstance(),
+	assert.Equal(t, protos.GetNginxPlusInstance(""),
 		instanceService.GetInstance(
-			protos.GetNginxPlusInstance().GetInstanceMeta().GetInstanceId()))
+			protos.GetNginxPlusInstance("").GetInstanceMeta().GetInstanceId()))
 	assert.Nil(t, instanceService.GetInstance("unknown"))
 }
