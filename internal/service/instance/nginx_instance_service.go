@@ -119,6 +119,7 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 	}
 	nginxInfo.LoadableModules = loadableModules
 
+	// Comment to test pipeline
 	return nginxInfo, err
 }
 
