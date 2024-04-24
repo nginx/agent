@@ -130,7 +130,8 @@ func TestGetInstances(t *testing.T) {
 			expected: []*v1.Instance{
 				protos.GetNginxOssInstance([]string{expectedModules}),
 			},
-		}, {
+		},
+		{
 			name: "Test 2: NGINX plus",
 			nginxVersionCommandOutput: fmt.Sprintf(`
 				nginx version: nginx/1.25.3 (nginx-plus-r31-p1)
