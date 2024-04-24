@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -85,7 +86,8 @@ func TestGetInstances(t *testing.T) {
 
 	plusArgs := fmt.Sprintf(plusConfigArgs, modulePath)
 	ossArgs := fmt.Sprintf(ossConfigArgs, modulePath)
-
+	noModuleArgs := fmt.Sprintf(ossConfigArgs, t.TempDir()+"\"/usr/lib/nginx/modules\"")
+	slog.Info("", "", noModuleArgs)
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 
 	processes := []*model.Process{
@@ -138,6 +140,17 @@ func TestGetInstances(t *testing.T) {
 				configure arguments: %s`, plusArgs),
 			expected: []*v1.Instance{
 				protos.GetNginxPlusInstance([]string{expectedModules}),
+			},
+		},
+		{
+			name: "Test 3: No Modules",
+			nginxVersionCommandOutput: fmt.Sprintf(`nginx version: nginx/1.25.3
+					built by clang 14.0.0 (clang-1400.0.29.202)
+					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
+					TLS SNI support enabled
+					configure arguments: %s`, noModuleArgs),
+			expected: []*v1.Instance{
+				protos.GetNginxOssInstance(nil),
 			},
 		},
 	}

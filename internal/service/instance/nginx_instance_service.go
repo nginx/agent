@@ -115,6 +115,8 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 
 	loadableModules := getLoadableModules(nginxInfo)
 	nginxInfo.LoadableModules = loadableModules
+	slog.Info("", "", loadableModules)
+	slog.Info("nginxInfo.LoadableModules", "", nginxInfo.LoadableModules)
 
 	return nginxInfo, err
 }
