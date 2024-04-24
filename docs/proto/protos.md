@@ -50,8 +50,6 @@
     - [InstanceRuntime](#mpi-v1-InstanceRuntime)
     - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
     - [MetricsServer](#mpi-v1-MetricsServer)
-    - [NGINXConfig](#mpi-v1-NGINXConfig)
-    - [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig)
     - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
     - [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo)
     - [ReleaseInfo](#mpi-v1-ReleaseInfo)
@@ -153,8 +151,8 @@ Represents a specific configuration version associated with an instance
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| instance_id | [string](#string) |  | the instance identifier |
-| version | [string](#string) |  | the version of the configuration |
+| instance_id | [string](#string) |  | The instance identifier |
+| version | [string](#string) |  | The version of the configuration |
 
 
 
@@ -170,7 +168,7 @@ Represents meta data about a file
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta information about the file, the name (including path) and hash |
-| action | [File.FileAction](#mpi-v1-File-FileAction) | optional | optional action |
+| action | [File.FileAction](#mpi-v1-File-FileAction) | optional | Optional action |
 
 
 
@@ -185,7 +183,7 @@ Represents the bytes contents of the file https://protobuf.dev/programming-guide
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| contents | [bytes](#bytes) |  | byte representation of a file without encoding |
+| contents | [bytes](#bytes) |  | Byte representation of a file without encoding |
 
 
 
@@ -200,11 +198,11 @@ Meta information about the file, the name (including path) and hash
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  | the name of the file |
-| hash | [string](#string) |  | the hash of the file contents sha256, hex encoded |
-| modified_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | last modified time of the file (created time if never modified) |
-| permissions | [string](#string) |  | the permission set associated with a particular file |
-| size | [int64](#int64) |  | Size of the file in bytes |
+| name | [string](#string) |  | The full path of the file |
+| hash | [string](#string) |  | The hash of the file contents sha256, hex encoded |
+| modified_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Last modified time of the file (created time if never modified) |
+| permissions | [string](#string) |  | The permission set associated with a particular file |
+| size | [int64](#int64) |  | The size of the file in bytes |
 
 
 
@@ -220,7 +218,7 @@ Represents a collection of files
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | files | [File](#mpi-v1-File) | repeated | A list of files |
-| config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | the configuration version of the current set of files |
+| config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | The configuration version of the current set of files |
 
 
 
@@ -251,7 +249,7 @@ Represents the response to a get file request
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| contents | [FileContents](#mpi-v1-FileContents) |  | the contents of a file |
+| contents | [FileContents](#mpi-v1-FileContents) |  | The contents of a file |
 
 
 
@@ -298,7 +296,7 @@ Represents the update file request
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | file | [File](#mpi-v1-File) |  | The file requested to be updated |
-| contents | [FileContents](#mpi-v1-FileContents) |  | the contents of a file |
+| contents | [FileContents](#mpi-v1-FileContents) |  | The contents of a file |
 
 
 
@@ -693,40 +691,6 @@ A Management Plane request for information, triggers an associated rpc on the Da
 
 ### MetricsServer
 The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
-
-
-
-
-
-
-<a name="mpi-v1-NGINXConfig"></a>
-
-### NGINXConfig
-A set of runtime NGINX configuration that gets populated
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| process_id | [int32](#int32) |  | master process id |
-| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
-| config_path | [string](#string) |  | where the configuration files are located |
-
-
-
-
-
-
-<a name="mpi-v1-NGINXPlusConfig"></a>
-
-### NGINXPlusConfig
-A set of runtime NGINX configuration that gets populated
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| process_id | [int32](#int32) |  | master process id |
-| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
-| config_path | [string](#string) |  | where the configuration files are located |
 
 
 

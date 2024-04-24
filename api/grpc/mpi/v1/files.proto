@@ -10,6 +10,7 @@ option go_package = "mpi/v1";
 
 import "mpi/v1/common.proto";
 import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
 
 // This specifies the FileService operations for transferring file data between a client and server.
 // All operations are written from a client perspective and flow Client -> Server
@@ -55,9 +56,9 @@ message UpdateOverviewResponse {}
 
 // Represents a specific configuration version associated with an instance
 message ConfigVersion {
-    // the instance identifier
-    string instance_id = 1;
-    // the version of the configuration
+    // The instance identifier
+    string instance_id = 1 [(buf.validate.field).string.uuid = true];
+    // The version of the configuration
     string version = 2;
 }
 
@@ -65,7 +66,7 @@ message ConfigVersion {
 message FileOverview {
     // A list of files
     repeated File files = 1;
-    // the configuration version of the current set of files
+    // The configuration version of the current set of files
     ConfigVersion config_version = 2;
 }
 
@@ -86,7 +87,7 @@ message File {
         // File deleted
         FILE_ACTION_DELETE = 4;
     }
-    // optional action
+    // Optional action
     optional FileAction action = 2;
 }
 
@@ -100,27 +101,27 @@ message GetFileRequest {
 
 // Represents the response to a get file request
 message GetFileResponse {
-    // the contents of a file
+    // The contents of a file
     FileContents contents = 1;
 }
 
 // Represents the bytes contents of the file https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string
 message FileContents {
-    // byte representation of a file without encoding
+    // Byte representation of a file without encoding
     bytes contents = 1;
 }
 
 // Meta information about the file, the name (including path) and hash
 message FileMeta {
-    // the name of the file
-    string name = 1;
-    // the hash of the file contents sha256, hex encoded 
+    // The full path of the file
+    string name = 1 [(buf.validate.field).string.prefix = "/"];
+    // The hash of the file contents sha256, hex encoded
     string hash = 2;
-    // last modified time of the file (created time if never modified)
-    google.protobuf.Timestamp modified_time = 3;
-    // the permission set associated with a particular file
-    string permissions = 4;
-    // Size of the file in bytes
+    // Last modified time of the file (created time if never modified)
+    google.protobuf.Timestamp modified_time = 3 [(buf.validate.field).timestamp.lt_now = true];
+    // The permission set associated with a particular file
+    string permissions = 4 [(buf.validate.field).string.pattern = "0[0-7]{3}"];
+    // The size of the file in bytes
     int64 size = 5;
 }
 
@@ -128,7 +129,7 @@ message FileMeta {
 message UpdateFileRequest {
     // The file requested to be updated
     File file = 1;
-    // the contents of a file
+    // The contents of a file
     FileContents contents = 2;
 }
 
