@@ -27,7 +27,7 @@ import (
 const (
 	exePath       = "/usr/local/Cellar/nginx/1.25.3/bin/nginx"
 	ossConfigArgs = "--prefix=/usr/local/Cellar/nginx/1.25.3 --sbin-path=/usr/local/Cellar/nginx/1.25.3/bin/nginx " +
-		"--with-cc-opt='-I/usr/local/opt/pcre2/include -I/usr/local/opt/openssl@1.1/include' " +
+		"--modules-path=%s --with-cc-opt='-I/usr/local/opt/pcre2/include -I/usr/local/opt/openssl@1.1/include' " +
 		"--with-ld-opt='-L/usr/local/opt/pcre2/lib -L/usr/local/opt/openssl@1.1/lib' " +
 		"--conf-path=/usr/local/etc/nginx/nginx.conf --pid-path=/usr/local/var/run/nginx.pid " +
 		"--lock-path=/usr/local/var/run/nginx.lock " +
@@ -84,6 +84,7 @@ func TestGetInstances(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, testModule.Name())
 
 	plusArgs := fmt.Sprintf(plusConfigArgs, modulePath)
+	ossArgs := fmt.Sprintf(ossConfigArgs, modulePath)
 
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 
@@ -123,9 +124,9 @@ func TestGetInstances(t *testing.T) {
 					built by clang 14.0.0 (clang-1400.0.29.202)
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
-					configure arguments: %s`, ossConfigArgs),
+					configure arguments: %s`, ossArgs),
 			expected: []*v1.Instance{
-				protos.GetNginxOssInstance(),
+				protos.GetNginxOssInstance([]string{expectedModules}),
 			},
 		}, {
 			name: "Test 2: NGINX plus",
@@ -136,7 +137,7 @@ func TestGetInstances(t *testing.T) {
 				TLS SNI support enabled
 				configure arguments: %s`, plusArgs),
 			expected: []*v1.Instance{
-				protos.GetNginxPlusInstance(expectedModules),
+				protos.GetNginxPlusInstance([]string{expectedModules}),
 			},
 		},
 	}
@@ -166,6 +167,7 @@ func TestGetInfo(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, testModule.Name())
 
 	plusArgs := fmt.Sprintf(plusConfigArgs, modulePath)
+	ossArgs := fmt.Sprintf(ossConfigArgs, modulePath)
 
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 
@@ -182,7 +184,7 @@ func TestGetInfo(t *testing.T) {
 				built by clang 14.0.3 (clang-1403.0.22.14.1)
 				built with OpenSSL 3.1.3 19 Sep 2023 (running with OpenSSL 3.2.0 23 Nov 2023)
 				TLS SNI support enabled
-				configure arguments: %s`, ossConfigArgs),
+				configure arguments: %s`, ossArgs),
 			process: &model.Process{
 				Exe: exePath,
 			},
@@ -202,6 +204,7 @@ func TestGetInfo(t *testing.T) {
 					"http-scgi-temp-path":        "/usr/local/var/run/nginx/scgi_temp",
 					"http-uwsgi-temp-path":       "/usr/local/var/run/nginx/uwsgi_temp",
 					"lock-path":                  "/usr/local/var/run/nginx.lock",
+					"modules-path":               modulePath,
 					"pid-path":                   "/usr/local/var/run/nginx.pid",
 					"prefix":                     "/usr/local/Cellar/nginx/1.25.3",
 					"sbin-path":                  exePath,
@@ -236,6 +239,7 @@ func TestGetInfo(t *testing.T) {
 					"with-stream_ssl_module":         true,
 					"with-stream_ssl_preread_module": true,
 				},
+				LoadableModules: []string{expectedModules},
 			},
 		},
 		{

@@ -23,20 +23,21 @@ func TestInstanceService_GetInstances(t *testing.T) {
 	ctx := context.Background()
 
 	fakeDataPlaneService := &instancefakes.FakeDataPlaneInstanceService{}
-	fakeDataPlaneService.GetInstancesReturns([]*v1.Instance{protos.GetNginxOssInstance()})
+	fakeDataPlaneService.GetInstancesReturns([]*v1.Instance{protos.GetNginxOssInstance([]string{})})
 
 	instanceService := NewInstanceService(types.GetAgentConfig())
 	instanceService.dataPlaneInstanceServices = []instance.DataPlaneInstanceService{fakeDataPlaneService}
 
-	assert.Equal(t, []*v1.Instance{protos.GetNginxOssInstance()}, instanceService.GetInstances(ctx, []*model.Process{}))
+	assert.Equal(t, []*v1.Instance{protos.GetNginxOssInstance([]string{})},
+		instanceService.GetInstances(ctx, []*model.Process{}))
 }
 
 func TestInstanceService_GetInstance(t *testing.T) {
 	instanceService := NewInstanceService(types.GetAgentConfig())
-	instanceService.instances = []*v1.Instance{protos.GetNginxPlusInstance("")}
+	instanceService.instances = []*v1.Instance{protos.GetNginxPlusInstance([]string{})}
 
-	assert.Equal(t, protos.GetNginxPlusInstance(""),
+	assert.Equal(t, protos.GetNginxPlusInstance([]string{}),
 		instanceService.GetInstance(
-			protos.GetNginxPlusInstance("").GetInstanceMeta().GetInstanceId()))
+			protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()))
 	assert.Nil(t, instanceService.GetInstance("unknown"))
 }

@@ -113,13 +113,9 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 	nginxInfo.ExePath = exePath
 	nginxInfo.ProcessID = nginxProcess.Pid
 
-	loadableModules, moduleErr := getLoadableModules(nginxInfo)
-	if moduleErr != nil {
-		slog.Warn("Unable to parse module path", err, moduleErr)
-	}
+	loadableModules := getLoadableModules(nginxInfo)
 	nginxInfo.LoadableModules = loadableModules
 
-	// Comment to test pipeline
 	return nginxInfo, err
 }
 
@@ -281,28 +277,30 @@ func isKeyValueFlag(vals []string) bool {
 	return len(vals) == 2
 }
 
-func getLoadableModules(nginxInfo *Info) (modules []string, err error) {
+func getLoadableModules(nginxInfo *Info) (modules []string) {
+	var err error
 	if nginxInfo.ConfigureArgs["modules-path"] != nil {
 		modulePath, ok := nginxInfo.ConfigureArgs["modules-path"].(string)
 		if !ok {
-			return modules, fmt.Errorf("error parsing modules-path")
+			slog.Warn("error parsing modules-path")
+			return modules
 		}
 		modules, err = readDirectory(modulePath, ".so")
 		if err != nil {
-			return modules, err
+			slog.Warn("error reading module dir", "dir", modulePath, "error", err)
+			return modules
 		}
 
-		return modules, err
+		return modules
 	}
 
-	return modules, err
+	return modules
 }
 
 func readDirectory(dir, ext string) (files []string, err error) {
 	dirInfo, err := os.ReadDir(dir)
 	if err != nil {
-		slog.Warn("Unable to read directory", "directory", dir, "error", err)
-		return files, err
+		return files, fmt.Errorf("unable to read directory %s, %w", dir, err)
 	}
 
 	for _, file := range dirInfo {

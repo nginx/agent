@@ -28,7 +28,7 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 
 	expectedConfigContext := modelHelpers.GetConfigContext()
 
-	instance := protos.GetNginxOssInstance()
+	instance := protos.GetNginxOssInstance([]string{})
 
 	configService := NewConfigService(ctx, instance, types.GetAgentConfig())
 	configService.SetConfigContext(expectedConfigContext)
@@ -38,7 +38,7 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 
 func TestUpdateInstanceConfiguration(t *testing.T) {
 	ctx := context.Background()
-	instance := protos.GetNginxOssInstance()
+	instance := protos.GetNginxOssInstance([]string{})
 	agentConfig := types.GetAgentConfig()
 
 	tests := []struct {
@@ -119,7 +119,7 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	expectedConfigContext := modelHelpers.GetConfigContext()
 
-	instance := protos.GetNginxOssInstance()
+	instance := protos.GetNginxOssInstance([]string{})
 
 	configService := NewConfigService(ctx, instance, types.GetAgentConfig())
 

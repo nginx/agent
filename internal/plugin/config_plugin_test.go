@@ -69,7 +69,7 @@ func TestConfig_Process(t *testing.T) {
 		slog.Any(logger.CorrelationIDKey, correlationID),
 	)
 
-	testInstance := protos.GetNginxOssInstance()
+	testInstance := protos.GetNginxOssInstance([]string{})
 
 	nginxConfigContext := modelHelpers.GetConfigContext()
 
@@ -157,7 +157,8 @@ func TestConfig_Process(t *testing.T) {
 			configService.ParseInstanceConfigurationReturns(nginxConfigContext, nil)
 			configService.UpdateInstanceConfigurationReturns(nil, configurationStatus)
 
-			configPlugin.configServices[protos.GetNginxOssInstance().GetInstanceMeta().GetInstanceId()] = configService
+			configPlugin.configServices[protos.GetNginxOssInstance([]string{}).
+				GetInstanceMeta().GetInstanceId()] = configService
 			configPlugin.resource.Instances = []*v1.Instance{testInstance}
 
 			configPlugin.Process(ctx, test.input)
@@ -181,9 +182,10 @@ func TestConfig_Update(t *testing.T) {
 	)
 
 	agentConfig := types.GetAgentConfig()
-	instance := protos.GetNginxOssInstance()
+	instance := protos.GetNginxOssInstance([]string{})
 
-	location := fmt.Sprintf("/instance/%s/files/", protos.GetNginxOssInstance().GetInstanceMeta().GetInstanceId())
+	location := fmt.Sprintf("/instance/%s/files/", protos.GetNginxOssInstance([]string{}).
+		GetInstanceMeta().GetInstanceId())
 	request := model.InstanceConfigUpdateRequest{
 		Instance: instance,
 		Location: location,
@@ -277,7 +279,8 @@ func TestConfig_Update(t *testing.T) {
 			configService.RollbackReturns(test.rollbackReturns)
 
 			instanceService := []*v1.Instance{instance}
-			configPlugin.configServices[protos.GetNginxOssInstance().GetInstanceMeta().GetInstanceId()] = configService
+			configPlugin.configServices[protos.GetNginxOssInstance([]string{}).
+				GetInstanceMeta().GetInstanceId()] = configService
 			configPlugin.resource.Instances = instanceService
 
 			configPlugin.updateInstanceConfig(ctx, &request)
