@@ -130,9 +130,10 @@ func TestGrpcClient_Info(t *testing.T) {
 func TestGrpcClient_Subscriptions(t *testing.T) {
 	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
-	assert.Len(t, subscriptions, 2)
+	assert.Len(t, subscriptions, 3)
 	assert.Equal(t, bus.GrpcConnectedTopic, subscriptions[0])
 	assert.Equal(t, bus.ResourceTopic, subscriptions[1])
+	assert.Equal(t, bus.InstanceConfigUpdateStatusTopic, subscriptions[2])
 }
 
 func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
@@ -140,6 +141,7 @@ func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
 	agentConfig := types.GetAgentConfig()
 	expected := protos.GetHostResource()
 	client := NewGrpcClient(agentConfig)
+	client.messagePipe = &bus.FakeMessagePipe{}
 	assert.NotNil(t, client)
 
 	fakeCommandServiceClient := &v1fakes.FakeCommandServiceClient{}
@@ -158,6 +160,7 @@ func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
 func TestGrpcClient_Close(t *testing.T) {
 	ctx := context.Background()
 	serverMockLock := sync.Mutex{}
+	configDirectory := ""
 
 	tests := []struct {
 		name         string
@@ -303,7 +306,7 @@ func TestGrpcClient_Close(t *testing.T) {
 			}
 
 			serverMockLock.Lock()
-			server, err := mockGrpc.NewMockManagementServer(address, test.agentConfig)
+			server, err := mockGrpc.NewMockManagementServer(address, test.agentConfig, &configDirectory)
 			require.NoError(tt, err)
 			serverMockLock.Unlock()
 
@@ -325,4 +328,55 @@ func TestGrpcClient_Close(t *testing.T) {
 			defer server.Stop()
 		})
 	}
+}
+
+func TestGrpcConfigClient_GetOverview(t *testing.T) {
+	ctx := context.Background()
+	fileServiceClient := v1fakes.FakeFileServiceClient{}
+	overviewResponse, err := protos.CreateGetOverviewResponse()
+	fileResponse := protos.CreateGetFileResponse([]byte("location /test {\n    return 200 \"Test location\\n\";\n}"))
+	fileServiceClient.GetOverviewReturns(overviewResponse, nil)
+	fileServiceClient.GetFileReturns(fileResponse, nil)
+	require.NoError(t, err)
+
+	client := NewGrpcClient(types.GetAgentConfig())
+	assert.NotNil(t, client)
+
+	client.fileServiceClient = &fileServiceClient
+
+	gcc := GrpcConfigClient{
+		grpcOverviewFn:    client.GetFileOverview,
+		grpFileContentsFn: client.GetFileContents,
+	}
+	req := protos.CreateGetOverviewRequest()
+
+	resp, err := gcc.GetOverview(ctx, req)
+	require.NoError(t, err)
+	assert.Equal(t, overviewResponse.GetOverview(), resp)
+}
+
+func TestGrpcConfigClient_GetFile(t *testing.T) {
+	ctx := context.Background()
+	fileServiceClient := v1fakes.FakeFileServiceClient{}
+	overviewResponse, err := protos.CreateGetOverviewResponse()
+	fileResponse := protos.CreateGetFileResponse([]byte("location /test {\n    return 200 \"Test location\\n\";\n}"))
+	fileServiceClient.GetOverviewReturns(overviewResponse, nil)
+	fileServiceClient.GetFileReturns(fileResponse, nil)
+	require.NoError(t, err)
+
+	client := NewGrpcClient(types.GetAgentConfig())
+	assert.NotNil(t, client)
+
+	client.fileServiceClient = &fileServiceClient
+
+	gcc := GrpcConfigClient{
+		grpcOverviewFn:    client.GetFileOverview,
+		grpFileContentsFn: client.GetFileContents,
+	}
+	req, err := protos.CreateGetFileRequest("nginx.conf")
+	require.NoError(t, err)
+
+	resp, err := gcc.GetFile(ctx, req)
+	require.NoError(t, err)
+	assert.Equal(t, fileResponse.GetContents(), resp)
 }

@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -135,7 +136,22 @@ func (cs *CommandService) UpdateDataPlaneHealth(
 }
 
 func (cs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error {
+	go func() {
+		for {
+			dataPlaneResponse, err := in.Recv()
+			slog.Debug("Received data plane response", "data_plane_response", dataPlaneResponse)
+			if err != nil {
+				slog.Error("Failed to receive data plane response", "error", err)
+				return
+			}
+			cs.dataPlaneResponsesMutex.Lock()
+			cs.dataPlaneResponses = append(cs.dataPlaneResponses, dataPlaneResponse)
+			cs.dataPlaneResponsesMutex.Unlock()
+		}
+	}()
+
 	for {
+		slog.Info("Starting Subscribe")
 		request := <-cs.requestChan
 
 		slog.Debug("Subscribe", "request", request)
@@ -143,15 +159,6 @@ func (cs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error 
 		err := in.Send(request)
 		if err != nil {
 			slog.Error("Failed to send management request", "error", err)
-		}
-
-		dataPlaneResponse, err := in.Recv()
-		if err != nil {
-			slog.Error("Failed to receive data plane response", "error", err)
-		} else {
-			cs.dataPlaneResponsesMutex.Lock()
-			cs.dataPlaneResponses = append(cs.dataPlaneResponses, dataPlaneResponse)
-			cs.dataPlaneResponsesMutex.Unlock()
 		}
 	}
 }
@@ -234,15 +241,25 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 	})
 
 	cs.server.POST("/api/v1/requests", func(c *gin.Context) {
-		var request *v1.ManagementPlaneRequest
-		err := c.Bind(request)
+		request := v1.ManagementPlaneRequest{}
+		body, err := io.ReadAll(c.Request.Body)
+		slog.Debug("Received request, ", "body", body)
+		if err != nil {
+			slog.Error("Error reading request body", "err", err)
+			c.JSON(http.StatusBadRequest, nil)
+
+			return
+		}
+
+		pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+		err = pb.Unmarshal(body, &request)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, nil)
 			return
 		}
 
-		cs.requestChan <- request
+		cs.requestChan <- &request
 
-		c.JSON(http.StatusOK, request)
+		c.JSON(http.StatusOK, &request)
 	})
 }

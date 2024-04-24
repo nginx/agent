@@ -24,14 +24,12 @@ type FakeConfigServiceInterface struct {
 		result1 any
 		result2 error
 	}
-	RollbackStub        func(context.Context, map[string]*v1.FileMeta, string, string, string) error
+	RollbackStub        func(context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest) error
 	rollbackMutex       sync.RWMutex
 	rollbackArgsForCall []struct {
 		arg1 context.Context
 		arg2 map[string]*v1.FileMeta
-		arg3 string
-		arg4 string
-		arg5 string
+		arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest
 	}
 	rollbackReturns struct {
 		result1 error
@@ -44,11 +42,11 @@ type FakeConfigServiceInterface struct {
 	setConfigContextArgsForCall []struct {
 		arg1 any
 	}
-	UpdateInstanceConfigurationStub        func(context.Context, string) (map[string]*v1.FileMeta, *instances.ConfigurationStatus)
+	UpdateInstanceConfigurationStub        func(context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest) (map[string]*v1.FileMeta, *instances.ConfigurationStatus)
 	updateInstanceConfigurationMutex       sync.RWMutex
 	updateInstanceConfigurationArgsForCall []struct {
 		arg1 context.Context
-		arg2 string
+		arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest
 	}
 	updateInstanceConfigurationReturns struct {
 		result1 map[string]*v1.FileMeta
@@ -126,22 +124,20 @@ func (fake *FakeConfigServiceInterface) ParseInstanceConfigurationReturnsOnCall(
 	}{result1, result2}
 }
 
-func (fake *FakeConfigServiceInterface) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 string, arg4 string, arg5 string) error {
+func (fake *FakeConfigServiceInterface) Rollback(arg1 context.Context, arg2 map[string]*v1.FileMeta, arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest) error {
 	fake.rollbackMutex.Lock()
 	ret, specificReturn := fake.rollbackReturnsOnCall[len(fake.rollbackArgsForCall)]
 	fake.rollbackArgsForCall = append(fake.rollbackArgsForCall, struct {
 		arg1 context.Context
 		arg2 map[string]*v1.FileMeta
-		arg3 string
-		arg4 string
-		arg5 string
-	}{arg1, arg2, arg3, arg4, arg5})
+		arg3 *v1.ManagementPlaneRequest_ConfigApplyRequest
+	}{arg1, arg2, arg3})
 	stub := fake.RollbackStub
 	fakeReturns := fake.rollbackReturns
-	fake.recordInvocation("Rollback", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.recordInvocation("Rollback", []interface{}{arg1, arg2, arg3})
 	fake.rollbackMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4, arg5)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -155,17 +151,17 @@ func (fake *FakeConfigServiceInterface) RollbackCallCount() int {
 	return len(fake.rollbackArgsForCall)
 }
 
-func (fake *FakeConfigServiceInterface) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, string, string, string) error) {
+func (fake *FakeConfigServiceInterface) RollbackCalls(stub func(context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest) error) {
 	fake.rollbackMutex.Lock()
 	defer fake.rollbackMutex.Unlock()
 	fake.RollbackStub = stub
 }
 
-func (fake *FakeConfigServiceInterface) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, string, string, string) {
+func (fake *FakeConfigServiceInterface) RollbackArgsForCall(i int) (context.Context, map[string]*v1.FileMeta, *v1.ManagementPlaneRequest_ConfigApplyRequest) {
 	fake.rollbackMutex.RLock()
 	defer fake.rollbackMutex.RUnlock()
 	argsForCall := fake.rollbackArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeConfigServiceInterface) RollbackReturns(result1 error) {
@@ -223,12 +219,12 @@ func (fake *FakeConfigServiceInterface) SetConfigContextArgsForCall(i int) any {
 	return argsForCall.arg1
 }
 
-func (fake *FakeConfigServiceInterface) UpdateInstanceConfiguration(arg1 context.Context, arg2 string) (map[string]*v1.FileMeta, *instances.ConfigurationStatus) {
+func (fake *FakeConfigServiceInterface) UpdateInstanceConfiguration(arg1 context.Context, arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest) (map[string]*v1.FileMeta, *instances.ConfigurationStatus) {
 	fake.updateInstanceConfigurationMutex.Lock()
 	ret, specificReturn := fake.updateInstanceConfigurationReturnsOnCall[len(fake.updateInstanceConfigurationArgsForCall)]
 	fake.updateInstanceConfigurationArgsForCall = append(fake.updateInstanceConfigurationArgsForCall, struct {
 		arg1 context.Context
-		arg2 string
+		arg2 *v1.ManagementPlaneRequest_ConfigApplyRequest
 	}{arg1, arg2})
 	stub := fake.UpdateInstanceConfigurationStub
 	fakeReturns := fake.updateInstanceConfigurationReturns
@@ -249,13 +245,13 @@ func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationCallCount() i
 	return len(fake.updateInstanceConfigurationArgsForCall)
 }
 
-func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationCalls(stub func(context.Context, string) (map[string]*v1.FileMeta, *instances.ConfigurationStatus)) {
+func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationCalls(stub func(context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest) (map[string]*v1.FileMeta, *instances.ConfigurationStatus)) {
 	fake.updateInstanceConfigurationMutex.Lock()
 	defer fake.updateInstanceConfigurationMutex.Unlock()
 	fake.UpdateInstanceConfigurationStub = stub
 }
 
-func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationArgsForCall(i int) (context.Context, string) {
+func (fake *FakeConfigServiceInterface) UpdateInstanceConfigurationArgsForCall(i int) (context.Context, *v1.ManagementPlaneRequest_ConfigApplyRequest) {
 	fake.updateInstanceConfigurationMutex.RLock()
 	defer fake.updateInstanceConfigurationMutex.RUnlock()
 	argsForCall := fake.updateInstanceConfigurationArgsForCall[i]

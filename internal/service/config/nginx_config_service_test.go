@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/client/clientfakes"
+
 	"github.com/nginx/agent/v3/test/helpers"
 	modelHelpers "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
@@ -74,7 +76,7 @@ func TestNginx_ParseConfig(t *testing.T) {
 	instance := protos.GetNginxOssInstance()
 	instance.InstanceRuntime.ConfigPath = file.Name()
 
-	nginxConfig := NewNginx(ctx, instance, types.GetAgentConfig())
+	nginxConfig := NewNginx(ctx, instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 	result, err := nginxConfig.ParseConfig(ctx)
 
 	require.NoError(t, err)
@@ -101,7 +103,8 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			nginxConfig := NewNginx(context.Background(), protos.GetNginxOssInstance(), types.GetAgentConfig())
+			nginxConfig := NewNginx(context.Background(), protos.GetNginxOssInstance(),
+				types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 
 			err := nginxConfig.validateConfigCheckResponse([]byte(test.out))
 			assert.Equal(t, test.expected, err)
@@ -194,7 +197,7 @@ func TestNginx_Apply(t *testing.T) {
 			nginxConfig := NewNginx(
 				ctx,
 				instance,
-				types.GetAgentConfig())
+				types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 
 			nginxConfig.executor = mockExec
 			nginxConfig.SetConfigContext(&model.NginxConfigContext{
@@ -257,7 +260,7 @@ func TestNginx_Validate(t *testing.T) {
 
 			instance := protos.GetNginxOssInstance()
 
-			nginxConfig := NewNginx(ctx, instance, types.GetAgentConfig())
+			nginxConfig := NewNginx(ctx, instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 			nginxConfig.executor = mockExec
 
 			err := nginxConfig.Validate(ctx)
@@ -628,7 +631,7 @@ func TestParseStatusAPIEndpoints(t *testing.T) {
 		payload, err := crossplane.Parse(f.Name(), parseOptions)
 		require.NoError(t, err)
 		instance := protos.GetNginxOssInstance()
-		nginxConfig := NewNginx(context.Background(), instance, types.GetAgentConfig())
+		nginxConfig := NewNginx(context.Background(), instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 
 		var oss, plus []string
 

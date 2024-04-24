@@ -8,6 +8,7 @@ package mpi.v1;
 option go_package = "mpi/v1";
 
 import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
 
 // Meta-information associated with a message
 message MessageMeta {

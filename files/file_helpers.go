@@ -9,6 +9,7 @@ package files
 import (
 	"cmp"
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -52,5 +53,5 @@ func GenerateFileHash(filePath string) (string, error) {
 		return "", copyErr
 	}
 
-	return string(h.Sum(nil)), nil
+	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
 }

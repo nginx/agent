@@ -113,7 +113,7 @@ func Test_GetDialOptions(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(ttt *testing.T) {
+		t.Run(test.name, func(tt *testing.T) {
 			if test.createCerts {
 				tmpDir := t.TempDir()
 				// not mTLS scripts
@@ -134,8 +134,8 @@ func Test_GetDialOptions(t *testing.T) {
 			}
 
 			options := GetDialOptions(test.agentConfig)
-			assert.NotNil(ttt, options)
-			assert.Len(ttt, options, test.expected)
+			assert.NotNil(tt, options)
+			assert.Len(tt, options, test.expected)
 		})
 	}
 }

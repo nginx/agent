@@ -9,39 +9,6 @@
   
     - [CommandResponse.CommandStatus](#mpi-v1-CommandResponse-CommandStatus)
   
-- [mpi/v1/command.proto](#mpi_v1_command-proto)
-    - [AgentConfig](#mpi-v1-AgentConfig)
-    - [CommandServer](#mpi-v1-CommandServer)
-    - [ContainerInfo](#mpi-v1-ContainerInfo)
-    - [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest)
-    - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
-    - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
-    - [FileServer](#mpi-v1-FileServer)
-    - [HostInfo](#mpi-v1-HostInfo)
-    - [Instance](#mpi-v1-Instance)
-    - [InstanceAction](#mpi-v1-InstanceAction)
-    - [InstanceConfig](#mpi-v1-InstanceConfig)
-    - [InstanceHealth](#mpi-v1-InstanceHealth)
-    - [InstanceMeta](#mpi-v1-InstanceMeta)
-    - [InstanceRuntime](#mpi-v1-InstanceRuntime)
-    - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
-    - [MetricsServer](#mpi-v1-MetricsServer)
-    - [NGINXConfig](#mpi-v1-NGINXConfig)
-    - [NGINXPlusConfig](#mpi-v1-NGINXPlusConfig)
-    - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
-    - [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo)
-    - [ReleaseInfo](#mpi-v1-ReleaseInfo)
-    - [Resource](#mpi-v1-Resource)
-    - [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest)
-    - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
-    - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
-    - [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse)
-  
-    - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
-    - [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType)
-  
-    - [CommandService](#mpi-v1-CommandService)
-  
 - [mpi/v1/files.proto](#mpi_v1_files-proto)
     - [ConfigVersion](#mpi-v1-ConfigVersion)
     - [File](#mpi-v1-File)
@@ -60,6 +27,43 @@
     - [File.FileAction](#mpi-v1-File-FileAction)
   
     - [FileService](#mpi-v1-FileService)
+  
+- [mpi/v1/command.proto](#mpi_v1_command-proto)
+    - [APIActionRequest](#mpi-v1-APIActionRequest)
+    - [AgentConfig](#mpi-v1-AgentConfig)
+    - [CommandServer](#mpi-v1-CommandServer)
+    - [CommandStatusRequest](#mpi-v1-CommandStatusRequest)
+    - [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest)
+    - [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest)
+    - [ContainerInfo](#mpi-v1-ContainerInfo)
+    - [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest)
+    - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
+    - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
+    - [FileServer](#mpi-v1-FileServer)
+    - [HealthRequest](#mpi-v1-HealthRequest)
+    - [HostInfo](#mpi-v1-HostInfo)
+    - [Instance](#mpi-v1-Instance)
+    - [InstanceAction](#mpi-v1-InstanceAction)
+    - [InstanceConfig](#mpi-v1-InstanceConfig)
+    - [InstanceHealth](#mpi-v1-InstanceHealth)
+    - [InstanceMeta](#mpi-v1-InstanceMeta)
+    - [InstanceRuntime](#mpi-v1-InstanceRuntime)
+    - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
+    - [MetricsServer](#mpi-v1-MetricsServer)
+    - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
+    - [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo)
+    - [ReleaseInfo](#mpi-v1-ReleaseInfo)
+    - [Resource](#mpi-v1-Resource)
+    - [StatusRequest](#mpi-v1-StatusRequest)
+    - [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest)
+    - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
+    - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
+    - [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse)
+  
+    - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
+    - [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType)
+  
+    - [CommandService](#mpi-v1-CommandService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -132,12 +136,272 @@ Command status enum
 
 
 
+<a name="mpi_v1_files-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## mpi/v1/files.proto
+
+
+
+<a name="mpi-v1-ConfigVersion"></a>
+
+### ConfigVersion
+Represents a specific configuration version associated with an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance_id | [string](#string) |  | The instance identifier |
+| version | [string](#string) |  | The version of the configuration |
+
+
+
+
+
+
+<a name="mpi-v1-File"></a>
+
+### File
+Represents meta data about a file
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta information about the file, the name (including path) and hash |
+| action | [File.FileAction](#mpi-v1-File-FileAction) | optional | Optional action |
+
+
+
+
+
+
+<a name="mpi-v1-FileContents"></a>
+
+### FileContents
+Represents the bytes contents of the file https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| contents | [bytes](#bytes) |  | Byte representation of a file without encoding |
+
+
+
+
+
+
+<a name="mpi-v1-FileMeta"></a>
+
+### FileMeta
+Meta information about the file, the name (including path) and hash
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | The full path of the file |
+| hash | [string](#string) |  | The hash of the file contents sha256, hex encoded |
+| modified_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Last modified time of the file (created time if never modified) |
+| permissions | [string](#string) |  | The permission set associated with a particular file |
+| size | [int64](#int64) |  | The size of the file in bytes |
+
+
+
+
+
+
+<a name="mpi-v1-FileOverview"></a>
+
+### FileOverview
+Represents a collection of files
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| files | [File](#mpi-v1-File) | repeated | A list of files |
+| config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | The configuration version of the current set of files |
+
+
+
+
+
+
+<a name="mpi-v1-GetFileRequest"></a>
+
+### GetFileRequest
+Represents the get file request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta-information associated with the file |
+
+
+
+
+
+
+<a name="mpi-v1-GetFileResponse"></a>
+
+### GetFileResponse
+Represents the response to a get file request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| contents | [FileContents](#mpi-v1-FileContents) |  | The contents of a file |
+
+
+
+
+
+
+<a name="mpi-v1-GetOverviewRequest"></a>
+
+### GetOverviewRequest
+Represents a request payload for a file overview
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | The config version of the overview you are requesting |
+
+
+
+
+
+
+<a name="mpi-v1-GetOverviewResponse"></a>
+
+### GetOverviewResponse
+Represents a response payload for an overview of files for a particular configuration version of an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview of an instance |
+
+
+
+
+
+
+<a name="mpi-v1-UpdateFileRequest"></a>
+
+### UpdateFileRequest
+Represents the update file request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| file | [File](#mpi-v1-File) |  | The file requested to be updated |
+| contents | [FileContents](#mpi-v1-FileContents) |  | The contents of a file |
+
+
+
+
+
+
+<a name="mpi-v1-UpdateFileResponse"></a>
+
+### UpdateFileResponse
+Represents the response to an update file request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta-information associated with the updated file |
+
+
+
+
+
+
+<a name="mpi-v1-UpdateOverviewRequest"></a>
+
+### UpdateOverviewRequest
+Represents a the payload for an overview an update of  files for a particular configuration version of an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview of an instance |
+
+
+
+
+
+
+<a name="mpi-v1-UpdateOverviewResponse"></a>
+
+### UpdateOverviewResponse
+Represents a the response from an UpdateOverviewRequest - intentionally left empty
+
+
+
+
+
+ 
+
+
+<a name="mpi-v1-File-FileAction"></a>
+
+### File.FileAction
+Action enumeration
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| FILE_ACTION_UNSPECIFIED | 0 | Default value, no action |
+| FILE_ACTION_UNCHANGED | 1 | No changes to the file |
+| FILE_ACTION_ADD | 2 | New file |
+| FILE_ACTION_UPDATE | 3 | Updated file |
+| FILE_ACTION_DELETE | 4 | File deleted |
+
+
+ 
+
+ 
+
+
+<a name="mpi-v1-FileService"></a>
+
+### FileService
+This specifies the FileService operations for transferring file data between a client and server.
+All operations are written from a client perspective and flow Client -&gt; Server
+The server must set a max file size (in bytes), and that size must be used to configure 
+the gRPC server and client for the FileService such that the FileContents object can be sent with bytes of the configured size. 
+The actual configured max size for gRPC objects must be maxFileSize &#43; sizeOfSha256HashString since a FileContents object contains both. 
+A SHA256 hash string is 64 bytes, therefore the configured max message size should be maxFileSize &#43; 64.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| GetOverview | [GetOverviewRequest](#mpi-v1-GetOverviewRequest) | [GetOverviewResponse](#mpi-v1-GetOverviewResponse) | Get the overview of files for a particular configuration version of an instance |
+| UpdateOverview | [UpdateOverviewRequest](#mpi-v1-UpdateOverviewRequest) | [UpdateOverviewResponse](#mpi-v1-UpdateOverviewResponse) | Update the overview of files for a particular set of file changes on the data plane |
+| GetFile | [GetFileRequest](#mpi-v1-GetFileRequest) | [GetFileResponse](#mpi-v1-GetFileResponse) | Get the file contents for a particular file |
+| UpdateFile | [UpdateFileRequest](#mpi-v1-UpdateFileRequest) | [UpdateFileResponse](#mpi-v1-UpdateFileResponse) | Update a file from the Agent to the Server |
+
+ 
+
+
+
 <a name="mpi_v1_command-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## mpi/v1/command.proto
 These proto definitions follow https://protobuf.dev/programming-guides/style/
 and recommendations outlined in https://static.sched.com/hosted_files/kccncna17/ad/2017%20CloudNativeCon%20-%20Mod%20gRPC%20Services.pdf
+
+
+<a name="mpi-v1-APIActionRequest"></a>
+
+### APIActionRequest
+Perform an associated API action on an instance
+
+
+
+
 
 
 <a name="mpi-v1-AgentConfig"></a>
@@ -164,6 +428,42 @@ This contains a series of NGINX Agent configurations
 
 ### CommandServer
 The command settings, associated with messaging from an external source
+
+
+
+
+
+
+<a name="mpi-v1-CommandStatusRequest"></a>
+
+### CommandStatusRequest
+Request an update on a particular command
+
+
+
+
+
+
+<a name="mpi-v1-ConfigApplyRequest"></a>
+
+### ConfigApplyRequest
+Additional information associated with a ConfigApplyRequest
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | the config version |
+| overview | [FileOverview](#mpi-v1-FileOverview) | optional | an optional set of files related to the request |
+
+
+
+
+
+
+<a name="mpi-v1-ConfigUploadRequest"></a>
+
+### ConfigUploadRequest
+Additional information associated with a ConfigUploadRequest
 
 
 
@@ -223,6 +523,12 @@ A response to a CreateConnectionRequest
 Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| command_response | [CommandResponse](#mpi-v1-CommandResponse) |  | The command response with the associated request |
+
+
 
 
 
@@ -231,6 +537,16 @@ Reports the status of an associated command. This may be in response to a Manage
 
 ### FileServer
 The file settings associated with file server for configurations
+
+
+
+
+
+
+<a name="mpi-v1-HealthRequest"></a>
+
+### HealthRequest
+Additional information associated with a HealthRequest
 
 
 
@@ -356,6 +672,17 @@ Meta-information relating to the reported instance
 A Management Plane request for information, triggers an associated rpc on the Data Plane
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| status_request | [StatusRequest](#mpi-v1-StatusRequest) |  | triggers a DataPlaneStatus rpc |
+| health_request | [HealthRequest](#mpi-v1-HealthRequest) |  | triggers a DataPlaneHealth rpc |
+| config_apply_request | [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest) |  | triggers a rpc GetFile(FileRequest) for overview list, if overview is missing, triggers a rpc GetOverview(ConfigVersion) first |
+| config_upload_request | [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc UpdateFile(File) for that instances |
+| action_request | [APIActionRequest](#mpi-v1-APIActionRequest) |  | triggers a DataPlaneResponse with a command_response for a particular action |
+| command_status_request | [CommandStatusRequest](#mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneResponse with a command_response for a particular correlation_id |
+
+
 
 
 
@@ -364,40 +691,6 @@ A Management Plane request for information, triggers an associated rpc on the Da
 
 ### MetricsServer
 The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
-
-
-
-
-
-
-<a name="mpi-v1-NGINXConfig"></a>
-
-### NGINXConfig
-A set of runtime NGINX configuration that gets populated
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| process_id | [int32](#int32) |  | master process id |
-| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
-| config_path | [string](#string) |  | where the configuration files are located |
-
-
-
-
-
-
-<a name="mpi-v1-NGINXPlusConfig"></a>
-
-### NGINXPlusConfig
-A set of runtime NGINX configuration that gets populated
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| process_id | [int32](#int32) |  | master process id |
-| binary_path | [string](#string) |  | where the binary location is, if empty, this is a remote instance |
-| config_path | [string](#string) |  | where the configuration files are located |
 
 
 
@@ -474,6 +767,16 @@ A representation of instances and runtime resource information
 | instances | [Instance](#mpi-v1-Instance) | repeated | A list of instances associated with this resource |
 | host_info | [HostInfo](#mpi-v1-HostInfo) |  | If running on bare-metal, provides additional information |
 | container_info | [ContainerInfo](#mpi-v1-ContainerInfo) |  | If running in a containerized environment, provides additional information |
+
+
+
+
+
+
+<a name="mpi-v1-StatusRequest"></a>
+
+### StatusRequest
+Additional information associated with a StatusRequest
 
 
 
@@ -586,256 +889,6 @@ Messages sent but not yet Ack’d must be kept in an “in-flight” buffer as t
 | UpdateDataPlaneStatus | [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest) | [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse) | Reports on instances and their configurations |
 | UpdateDataPlaneHealth | [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest) | [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse) | Reports on instance health |
 | Subscribe | [DataPlaneResponse](#mpi-v1-DataPlaneResponse) stream | [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest) stream | A decoupled communication mechanism between the data plane and management plane. buf:lint:ignore RPC_RESPONSE_STANDARD_NAME buf:lint:ignore RPC_REQUEST_STANDARD_NAME |
-
- 
-
-
-
-<a name="mpi_v1_files-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## mpi/v1/files.proto
-
-
-
-<a name="mpi-v1-ConfigVersion"></a>
-
-### ConfigVersion
-Represents a specific configuration version associated with an instance
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| instance_id | [string](#string) |  | the instance identifier |
-| version | [string](#string) |  | the version of the configuration |
-
-
-
-
-
-
-<a name="mpi-v1-File"></a>
-
-### File
-Represents meta data about a file
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta information about the file, the name (including path) and hash |
-| action | [File.FileAction](#mpi-v1-File-FileAction) | optional | optional action |
-
-
-
-
-
-
-<a name="mpi-v1-FileContents"></a>
-
-### FileContents
-Represents the bytes contents of the file https://protobuf.dev/programming-guides/api/#dont-encode-data-in-a-string
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| contents | [bytes](#bytes) |  | byte representation of a file without encoding |
-
-
-
-
-
-
-<a name="mpi-v1-FileMeta"></a>
-
-### FileMeta
-Meta information about the file, the name (including path) and hash
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  | the name of the file |
-| hash | [string](#string) |  | the hash of the file contents sha256, hex encoded |
-| modified_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | last modified time of the file (created time if never modified) |
-| permissions | [string](#string) |  | the permission set associated with a particular file |
-| size | [int64](#int64) |  | Size of the file in bytes |
-
-
-
-
-
-
-<a name="mpi-v1-FileOverview"></a>
-
-### FileOverview
-Represents a collection of files
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| files | [File](#mpi-v1-File) | repeated | A list of files |
-| config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | the configuration version of the current set of files |
-
-
-
-
-
-
-<a name="mpi-v1-GetFileRequest"></a>
-
-### GetFileRequest
-Represents the get file request
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
-| file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta-information associated with the file |
-
-
-
-
-
-
-<a name="mpi-v1-GetFileResponse"></a>
-
-### GetFileResponse
-Represents the response to a get file request
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| contents | [FileContents](#mpi-v1-FileContents) |  | the contents of a file |
-
-
-
-
-
-
-<a name="mpi-v1-GetOverviewRequest"></a>
-
-### GetOverviewRequest
-Represents a request payload for a file overview
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
-| config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | The config version of the overview you are requesting |
-
-
-
-
-
-
-<a name="mpi-v1-GetOverviewResponse"></a>
-
-### GetOverviewResponse
-Represents a response payload for an overview of files for a particular configuration version of an instance
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview of an instance |
-
-
-
-
-
-
-<a name="mpi-v1-UpdateFileRequest"></a>
-
-### UpdateFileRequest
-Represents the update file request
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| file | [File](#mpi-v1-File) |  | The file requested to be updated |
-| contents | [FileContents](#mpi-v1-FileContents) |  | the contents of a file |
-
-
-
-
-
-
-<a name="mpi-v1-UpdateFileResponse"></a>
-
-### UpdateFileResponse
-Represents the response to an update file request
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta-information associated with the updated file |
-
-
-
-
-
-
-<a name="mpi-v1-UpdateOverviewRequest"></a>
-
-### UpdateOverviewRequest
-Represents a the payload for an overview an update of  files for a particular configuration version of an instance
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
-| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview of an instance |
-
-
-
-
-
-
-<a name="mpi-v1-UpdateOverviewResponse"></a>
-
-### UpdateOverviewResponse
-Represents a the response from an UpdateOverviewRequest - intentionally left empty
-
-
-
-
-
- 
-
-
-<a name="mpi-v1-File-FileAction"></a>
-
-### File.FileAction
-Action enumeration
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| FILE_ACTION_UNSPECIFIED | 0 | Default value, no action |
-| FILE_ACTION_UNCHANGED | 1 | No changes to the file |
-| FILE_ACTION_ADD | 2 | New file |
-| FILE_ACTION_UPDATE | 3 | Updated file |
-| FILE_ACTION_DELETE | 4 | File deleted |
-
-
- 
-
- 
-
-
-<a name="mpi-v1-FileService"></a>
-
-### FileService
-This specifies the FileService operations for transferring file data between a client and server.
-All operations are written from a client perspective and flow Client -&gt; Server
-The server must set a max file size (in bytes), and that size must be used to configure 
-the gRPC server and client for the FileService such that the FileContents object can be sent with bytes of the configured size. 
-The actual configured max size for gRPC objects must be maxFileSize &#43; sizeOfSha256HashString since a FileContents object contains both. 
-A SHA256 hash string is 64 bytes, therefore the configured max message size should be maxFileSize &#43; 64.
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| GetOverview | [GetOverviewRequest](#mpi-v1-GetOverviewRequest) | [GetOverviewResponse](#mpi-v1-GetOverviewResponse) | Get the overview of files for a particular configuration version of an instance |
-| UpdateOverview | [UpdateOverviewRequest](#mpi-v1-UpdateOverviewRequest) | [UpdateOverviewResponse](#mpi-v1-UpdateOverviewResponse) | Update the overview of files for a particular set of file changes on the data plane |
-| GetFile | [GetFileRequest](#mpi-v1-GetFileRequest) | [GetFileResponse](#mpi-v1-GetFileResponse) | Get the file contents for a particular file |
-| UpdateFile | [UpdateFileRequest](#mpi-v1-UpdateFileRequest) | [UpdateFileResponse](#mpi-v1-UpdateFileResponse) | Update a file from the Agent to the Server |
 
  
 
