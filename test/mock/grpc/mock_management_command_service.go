@@ -140,19 +140,20 @@ func (cs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error 
 
 	go cs.listenForDataPlaneResponses(ctx, in)
 
+	slog.InfoContext(ctx, "Starting Subscribe")
+
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			slog.Info("Starting Subscribe")
 			request := <-cs.requestChan
 
-			slog.Debug("Subscribe", "request", request)
+			slog.DebugContext(ctx, "Subscribe", "request", request)
 
 			err := in.Send(request)
 			if err != nil {
-				slog.Error("Failed to send management request", "error", err)
+				slog.ErrorContext(ctx, "Failed to send management request", "error", err)
 			}
 		}
 	}
@@ -165,9 +166,9 @@ func (cs *CommandService) listenForDataPlaneResponses(ctx context.Context, in v1
 			return
 		default:
 			dataPlaneResponse, err := in.Recv()
-			slog.Debug("Received data plane response", "data_plane_response", dataPlaneResponse)
+			slog.DebugContext(ctx, "Received data plane response", "data_plane_response", dataPlaneResponse)
 			if err != nil {
-				slog.Error("Failed to receive data plane response", "error", err)
+				slog.ErrorContext(ctx, "Failed to receive data plane response", "error", err)
 				return
 			}
 			cs.dataPlaneResponsesMutex.Lock()
