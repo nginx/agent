@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -86,7 +87,7 @@ func TestGetInstances(t *testing.T) {
 
 	plusArgs := fmt.Sprintf(plusConfigArgs, modulePath)
 	ossArgs := fmt.Sprintf(ossConfigArgs, modulePath)
-	noModuleArgs := fmt.Sprintf(ossConfigArgs, t.TempDir()+"\"/usr/lib/nginx/modules\"")
+	noModuleArgs := path.Join(ossConfigArgs, t.TempDir()+"/usr/lib/nginx/modules")
 	slog.Info("", "", noModuleArgs)
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 
