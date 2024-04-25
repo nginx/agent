@@ -115,8 +115,6 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 
 	loadableModules := getLoadableModules(nginxInfo)
 	nginxInfo.LoadableModules = loadableModules
-	slog.Info("", "", loadableModules)
-	slog.Info("nginxInfo.LoadableModules", "", nginxInfo.LoadableModules)
 
 	return nginxInfo, err
 }
@@ -281,15 +279,15 @@ func isKeyValueFlag(vals []string) bool {
 
 func getLoadableModules(nginxInfo *Info) (modules []string) {
 	var err error
-	if nginxInfo.ConfigureArgs["modules-path"] != nil {
-		modulePath, ok := nginxInfo.ConfigureArgs["modules-path"].(string)
-		if !ok {
-			slog.Warn("error parsing modules-path")
+	if mp, ok := nginxInfo.ConfigureArgs["modules-path"]; ok {
+		modulePath, pathOK := mp.(string)
+		if !pathOK {
+			slog.Warn("Error parsing modules-path")
 			return modules
 		}
 		modules, err = readDirectory(modulePath, ".so")
 		if err != nil {
-			slog.Warn("error reading module dir", "dir", modulePath, "error", err)
+			slog.Warn("Error reading module dir", "dir", modulePath, "error", err)
 			return modules
 		}
 
@@ -299,14 +297,15 @@ func getLoadableModules(nginxInfo *Info) (modules []string) {
 	return modules
 }
 
-func readDirectory(dir, ext string) (files []string, err error) {
+// readDirectory returns a list of all files in the directory which match the extension
+func readDirectory(dir, extension string) (files []string, err error) {
 	dirInfo, err := os.ReadDir(dir)
 	if err != nil {
-		return files, fmt.Errorf("unable to read directory %s, %w", dir, err)
+		return files, fmt.Errorf("read directory %s, %w", dir, err)
 	}
 
 	for _, file := range dirInfo {
-		files = append(files, strings.ReplaceAll(file.Name(), ext, ""))
+		files = append(files, strings.ReplaceAll(file.Name(), extension, ""))
 	}
 
 	return files, err
