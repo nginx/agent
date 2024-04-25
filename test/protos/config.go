@@ -12,6 +12,6 @@ const configVersion = "f9a31750-566c-31b3-a763-b9fb5982547b"
 func CreateConfigVersion() *v1.ConfigVersion {
 	return &v1.ConfigVersion{
 		Version:    configVersion,
-		InstanceId: GetNginxOssInstance().GetInstanceMeta().GetInstanceId(),
+		InstanceId: GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 	}
 }

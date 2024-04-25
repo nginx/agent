@@ -11,7 +11,7 @@ func GetContainerizedResource() *v1.Resource {
 	return &v1.Resource{
 		ResourceId: GetContainerInfo().GetContainerId(),
 		Instances: []*v1.Instance{
-			GetNginxOssInstance(),
+			GetNginxOssInstance([]string{}),
 		},
 		Info: &v1.Resource_ContainerInfo{
 			ContainerInfo: GetContainerInfo(),
@@ -23,7 +23,7 @@ func GetHostResource() *v1.Resource {
 	return &v1.Resource{
 		ResourceId: GetHostInfo().GetHostId(),
 		Instances: []*v1.Instance{
-			GetNginxOssInstance(),
+			GetNginxOssInstance([]string{}),
 		},
 		Info: &v1.Resource_HostInfo{
 			HostInfo: GetHostInfo(),

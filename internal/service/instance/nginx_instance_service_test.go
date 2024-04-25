@@ -9,7 +9,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
+	"path"
+	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/nginx/agent/v3/test/helpers"
 
 	"github.com/stretchr/testify/require"
 
@@ -23,7 +29,7 @@ import (
 const (
 	exePath       = "/usr/local/Cellar/nginx/1.25.3/bin/nginx"
 	ossConfigArgs = "--prefix=/usr/local/Cellar/nginx/1.25.3 --sbin-path=/usr/local/Cellar/nginx/1.25.3/bin/nginx " +
-		"--with-cc-opt='-I/usr/local/opt/pcre2/include -I/usr/local/opt/openssl@1.1/include' " +
+		"--modules-path=%s --with-cc-opt='-I/usr/local/opt/pcre2/include -I/usr/local/opt/openssl@1.1/include' " +
 		"--with-ld-opt='-L/usr/local/opt/pcre2/lib -L/usr/local/opt/openssl@1.1/lib' " +
 		"--conf-path=/usr/local/etc/nginx/nginx.conf --pid-path=/usr/local/var/run/nginx.pid " +
 		"--lock-path=/usr/local/var/run/nginx.lock " +
@@ -42,7 +48,7 @@ const (
 		"--with-http_v2_module --with-ipv6 --with-mail --with-mail_ssl_module --with-pcre " +
 		"--with-pcre-jit --with-stream --with-stream_realip_module --with-stream_ssl_module " +
 		"--with-stream_ssl_preread_module"
-	plusConfigArgs = "--prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib/nginx/modules " +
+	plusConfigArgs = "--prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=%s " +
 		"--conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log " +
 		"--http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid " +
 		"--lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp " +
@@ -70,6 +76,20 @@ const (
 
 func TestGetInstances(t *testing.T) {
 	ctx := context.Background()
+	tempDir := t.TempDir()
+	modulePath := tempDir + "/usr/lib/nginx/modules"
+
+	helpers.CreateDirWithErrorCheck(t, modulePath)
+	defer helpers.RemoveFileWithErrorCheck(t, modulePath)
+
+	testModule := helpers.CreateFileWithErrorCheck(t, modulePath, "test.so")
+	defer helpers.RemoveFileWithErrorCheck(t, testModule.Name())
+
+	plusArgs := fmt.Sprintf(plusConfigArgs, modulePath)
+	ossArgs := fmt.Sprintf(ossConfigArgs, modulePath)
+	noModuleArgs := path.Join(ossConfigArgs, t.TempDir()+"/usr/lib/nginx/modules")
+	slog.Info("", "", noModuleArgs)
+	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 
 	processes := []*model.Process{
 		{
@@ -107,20 +127,32 @@ func TestGetInstances(t *testing.T) {
 					built by clang 14.0.0 (clang-1400.0.29.202)
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
-					configure arguments: %s`, ossConfigArgs),
+					configure arguments: %s`, ossArgs),
 			expected: []*v1.Instance{
-				protos.GetNginxOssInstance(),
+				protos.GetNginxOssInstance([]string{expectedModules}),
 			},
-		}, {
+		},
+		{
 			name: "Test 2: NGINX plus",
 			nginxVersionCommandOutput: fmt.Sprintf(`
 				nginx version: nginx/1.25.3 (nginx-plus-r31-p1)
 				built by gcc 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.2)
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
-				configure arguments: %s`, plusConfigArgs),
+				configure arguments: %s`, plusArgs),
 			expected: []*v1.Instance{
-				protos.GetNginxPlusInstance(),
+				protos.GetNginxPlusInstance([]string{expectedModules}),
+			},
+		},
+		{
+			name: "Test 3: No Modules",
+			nginxVersionCommandOutput: fmt.Sprintf(`nginx version: nginx/1.25.3
+					built by clang 14.0.0 (clang-1400.0.29.202)
+					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
+					TLS SNI support enabled
+					configure arguments: %s`, noModuleArgs),
+			expected: []*v1.Instance{
+				protos.GetNginxOssInstance(nil),
 			},
 		},
 	}
@@ -140,6 +172,19 @@ func TestGetInstances(t *testing.T) {
 
 func TestGetInfo(t *testing.T) {
 	ctx := context.Background()
+	tempDir := t.TempDir()
+	modulePath := tempDir + "/usr/lib/nginx/modules"
+
+	helpers.CreateDirWithErrorCheck(t, modulePath)
+	defer helpers.RemoveFileWithErrorCheck(t, modulePath)
+
+	testModule := helpers.CreateFileWithErrorCheck(t, modulePath, "test.so")
+	defer helpers.RemoveFileWithErrorCheck(t, testModule.Name())
+
+	plusArgs := fmt.Sprintf(plusConfigArgs, modulePath)
+	ossArgs := fmt.Sprintf(ossConfigArgs, modulePath)
+
+	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 
 	tests := []struct {
 		name                      string
@@ -154,7 +199,7 @@ func TestGetInfo(t *testing.T) {
 				built by clang 14.0.3 (clang-1403.0.22.14.1)
 				built with OpenSSL 3.1.3 19 Sep 2023 (running with OpenSSL 3.2.0 23 Nov 2023)
 				TLS SNI support enabled
-				configure arguments: %s`, ossConfigArgs),
+				configure arguments: %s`, ossArgs),
 			process: &model.Process{
 				Exe: exePath,
 			},
@@ -174,6 +219,7 @@ func TestGetInfo(t *testing.T) {
 					"http-scgi-temp-path":        "/usr/local/var/run/nginx/scgi_temp",
 					"http-uwsgi-temp-path":       "/usr/local/var/run/nginx/uwsgi_temp",
 					"lock-path":                  "/usr/local/var/run/nginx.lock",
+					"modules-path":               modulePath,
 					"pid-path":                   "/usr/local/var/run/nginx.pid",
 					"prefix":                     "/usr/local/Cellar/nginx/1.25.3",
 					"sbin-path":                  exePath,
@@ -208,6 +254,7 @@ func TestGetInfo(t *testing.T) {
 					"with-stream_ssl_module":         true,
 					"with-stream_ssl_preread_module": true,
 				},
+				LoadableModules: []string{expectedModules},
 			},
 		},
 		{
@@ -217,7 +264,7 @@ func TestGetInfo(t *testing.T) {
 				built by gcc 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.2)
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
-				configure arguments: %s`, plusConfigArgs),
+				configure arguments: %s`, plusArgs),
 			process: &model.Process{
 				Exe: exePath,
 			},
@@ -239,7 +286,7 @@ func TestGetInfo(t *testing.T) {
 					"http-scgi-temp-path":                    "/var/cache/nginx/scgi_temp",
 					"http-uwsgi-temp-path":                   "/var/cache/nginx/uwsgi_temp",
 					"lock-path":                              "/var/run/nginx.lock",
-					"modules-path":                           "/usr/lib/nginx/modules",
+					"modules-path":                           modulePath,
 					"pid-path":                               "/var/run/nginx.pid",
 					"prefix":                                 "/etc/nginx",
 					"sbin-path":                              "/usr/sbin/nginx",
@@ -280,6 +327,7 @@ func TestGetInfo(t *testing.T) {
 					"with-stream_ssl_preread_module":           true,
 					"with-threads":                             true,
 				},
+				LoadableModules: []string{expectedModules},
 			},
 		},
 	}

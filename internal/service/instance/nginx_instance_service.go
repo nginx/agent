@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"path"
 	"regexp"
 	"strings"
@@ -28,13 +29,14 @@ var (
 )
 
 type Info struct {
-	ProcessID     int32
-	Version       string
-	PlusVersion   string
-	Prefix        string
-	ConfPath      string
-	ConfigureArgs map[string]interface{}
-	ExePath       string
+	ProcessID       int32
+	Version         string
+	PlusVersion     string
+	Prefix          string
+	ConfPath        string
+	ConfigureArgs   map[string]interface{}
+	ExePath         string
+	LoadableModules []string
 }
 
 type Nginx struct {
@@ -111,6 +113,9 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 	nginxInfo.ExePath = exePath
 	nginxInfo.ProcessID = nginxProcess.Pid
 
+	loadableModules := getLoadableModules(nginxInfo)
+	nginxInfo.LoadableModules = loadableModules
+
 	return nginxInfo, err
 }
 
@@ -129,7 +134,7 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
-					LoadableModules: []string{},
+					LoadableModules: nginxInfo.LoadableModules,
 					DynamicModules:  []string{},
 				},
 			},
@@ -144,7 +149,7 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
-					LoadableModules: []string{},
+					LoadableModules: nginxInfo.LoadableModules,
 					DynamicModules:  []string{},
 					PlusApi:         "",
 				},
@@ -270,4 +275,38 @@ func isFlag(vals []string) bool {
 // nolint: gomnd
 func isKeyValueFlag(vals []string) bool {
 	return len(vals) == 2
+}
+
+func getLoadableModules(nginxInfo *Info) (modules []string) {
+	var err error
+	if mp, ok := nginxInfo.ConfigureArgs["modules-path"]; ok {
+		modulePath, pathOK := mp.(string)
+		if !pathOK {
+			slog.Warn("Error parsing modules-path")
+			return modules
+		}
+		modules, err = readDirectory(modulePath, ".so")
+		if err != nil {
+			slog.Warn("Error reading module dir", "dir", modulePath, "error", err)
+			return modules
+		}
+
+		return modules
+	}
+
+	return modules
+}
+
+// readDirectory returns a list of all files in the directory which match the extension
+func readDirectory(dir, extension string) (files []string, err error) {
+	dirInfo, err := os.ReadDir(dir)
+	if err != nil {
+		return files, fmt.Errorf("read directory %s, %w", dir, err)
+	}
+
+	for _, file := range dirInfo {
+		files = append(files, strings.ReplaceAll(file.Name(), extension, ""))
+	}
+
+	return files, err
 }

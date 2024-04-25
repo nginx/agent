@@ -164,19 +164,19 @@ func Test_ProtoValidatorUnaryClientInterceptor(t *testing.T) {
 		{
 			name:            "Test 1: Invalid request type",
 			request:         "invalid",
-			reply:           protos.GetNginxOssInstance(),
+			reply:           protos.GetNginxOssInstance([]string{}),
 			isErrorExpected: true,
 		},
 		{
 			name:            "Test 2: Invalid reply type",
-			request:         protos.GetNginxOssInstance(),
+			request:         protos.GetNginxOssInstance([]string{}),
 			reply:           "invalid",
 			isErrorExpected: true,
 		},
 		{
 			name:            "Test 3: Valid request & reply types",
-			request:         protos.GetNginxOssInstance(),
-			reply:           protos.GetNginxOssInstance(),
+			request:         protos.GetNginxOssInstance([]string{}),
+			reply:           protos.GetNginxOssInstance([]string{}),
 			isErrorExpected: false,
 		},
 	}

@@ -29,7 +29,7 @@ func TestConfig_ParseConfig(t *testing.T) {
 
 	fakeDataPlaneConfig := &FakeDataPlaneConfig{}
 	result, err := fakeDataPlaneConfig.ParseConfig(
-		protos.GetNginxOssInstance(),
+		protos.GetNginxOssInstance([]string{}),
 	)
 
 	require.NoError(t, err)

@@ -73,7 +73,7 @@ func TestNginx_ParseConfig(t *testing.T) {
 		ltsvAccessLog.Name(),
 		errorLog.Name())
 
-	instance := protos.GetNginxOssInstance()
+	instance := protos.GetNginxOssInstance([]string{})
 	instance.InstanceRuntime.ConfigPath = file.Name()
 
 	nginxConfig := NewNginx(ctx, instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
@@ -103,7 +103,7 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			nginxConfig := NewNginx(context.Background(), protos.GetNginxOssInstance(),
+			nginxConfig := NewNginx(context.Background(), protos.GetNginxOssInstance([]string{}),
 				types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 
 			err := nginxConfig.validateConfigCheckResponse([]byte(test.out))
@@ -192,7 +192,7 @@ func TestNginx_Apply(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.KillProcessReturns(test.error)
 
-			instance := protos.GetNginxOssInstance()
+			instance := protos.GetNginxOssInstance([]string{})
 
 			nginxConfig := NewNginx(
 				ctx,
@@ -258,7 +258,7 @@ func TestNginx_Validate(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.RunCmdReturns(test.out, test.error)
 
-			instance := protos.GetNginxOssInstance()
+			instance := protos.GetNginxOssInstance([]string{})
 
 			nginxConfig := NewNginx(ctx, instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 			nginxConfig.executor = mockExec
@@ -630,7 +630,7 @@ func TestParseStatusAPIEndpoints(t *testing.T) {
 
 		payload, err := crossplane.Parse(f.Name(), parseOptions)
 		require.NoError(t, err)
-		instance := protos.GetNginxOssInstance()
+		instance := protos.GetNginxOssInstance([]string{})
 		nginxConfig := NewNginx(context.Background(), instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
 
 		var oss, plus []string
