@@ -37,6 +37,7 @@ type Info struct {
 	ConfigureArgs   map[string]interface{}
 	ExePath         string
 	LoadableModules []string
+	DynamicModules  []string
 }
 
 type Nginx struct {
@@ -46,6 +47,11 @@ type Nginx struct {
 type NginxParameters struct {
 	executer exec.ExecInterface
 }
+
+const (
+	withWithPrefix   = "with-"
+	withModuleSuffix = "module"
+)
 
 func NewNginx(parameters NginxParameters) *Nginx {
 	if parameters.executer == nil {
@@ -116,6 +122,8 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 	loadableModules := getLoadableModules(nginxInfo)
 	nginxInfo.LoadableModules = loadableModules
 
+	nginxInfo.DynamicModules = getDynamicModules(nginxInfo)
+
 	return nginxInfo, err
 }
 
@@ -135,7 +143,7 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
 					LoadableModules: nginxInfo.LoadableModules,
-					DynamicModules:  []string{},
+					DynamicModules:  nginxInfo.DynamicModules,
 				},
 			},
 		}
@@ -150,7 +158,7 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
 					LoadableModules: nginxInfo.LoadableModules,
-					DynamicModules:  []string{},
+					DynamicModules:  nginxInfo.DynamicModules,
 					PlusApi:         "",
 				},
 			},
@@ -292,6 +300,17 @@ func getLoadableModules(nginxInfo *Info) (modules []string) {
 		}
 
 		return modules
+	}
+
+	return modules
+}
+
+func getDynamicModules(nginxInfo *Info) (modules []string) {
+	configArgs := nginxInfo.ConfigureArgs
+	for arg := range configArgs {
+		if value := strings.Index(arg, withWithPrefix); value > -1 && strings.HasSuffix(arg, withModuleSuffix) {
+			modules = append(modules, arg[value+len(withWithPrefix):])
+		}
 	}
 
 	return modules
