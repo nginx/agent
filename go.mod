@@ -1,8 +1,9 @@
 module github.com/nginx/agent/v3
 
-go 1.22.2
+go 1.22
 
 require (
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240401165935-b983156c5e99.1
 	github.com/bufbuild/protovalidate-go v0.2.1
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/docker/docker v26.0.0+incompatible
@@ -26,7 +27,6 @@ require (
 )
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240401165935-b983156c5e99.1 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
