@@ -308,8 +308,8 @@ func getLoadableModules(nginxInfo *Info) (modules []string) {
 func getDynamicModules(nginxInfo *Info) (modules []string) {
 	configArgs := nginxInfo.ConfigureArgs
 	for arg := range configArgs {
-		if value := strings.Index(arg, withWithPrefix); value > -1 && strings.HasSuffix(arg, withModuleSuffix) {
-			modules = append(modules, arg[value+len(withWithPrefix):])
+		if strings.HasPrefix(arg, withWithPrefix) && strings.HasSuffix(arg, withModuleSuffix) {
+			modules = append(modules, strings.TrimPrefix(arg, withWithPrefix))
 		}
 	}
 
