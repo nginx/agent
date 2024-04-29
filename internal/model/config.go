@@ -13,6 +13,7 @@ type NginxConfigContext struct {
 	AccessLogs []*AccessLog
 	ErrorLogs  []*ErrorLog
 	StubStatus string
+	PlusAPI    string
 }
 
 type AccessLog struct {
