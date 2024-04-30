@@ -1,0 +1,30 @@
+name: "Dependency Review"
+on:
+  pull_request:
+    branches:
+      - main
+      - release-*
+      - v3
+  merge_group:
+
+concurrency:
+  group: ${{ github.ref_name }}-deps-review
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read # for actions/checkout
+      pull-requests: write # for actions/dependency-review-action to post comments
+    steps:
+      - name: "Checkout Repository"
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+
+      - name: "Dependency Review"
+        uses: actions/dependency-review-action@5bbc3ba658137598168acb2ab73b21c432dd411b # v4.2.5
+        with:
+          config-file: "nginxinc/k8s-common/dependency-review-config.yml@main"
