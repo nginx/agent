@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd site
 mv public nginx-agent
 mkdir -p public
 mv nginx-agent public
