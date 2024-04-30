@@ -11,17 +11,44 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/protos"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/test/types"
 
-	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type ClientStream struct{}
+
+func (*ClientStream) Header() (metadata.MD, error) {
+	return nil, nil
+}
+
+func (*ClientStream) Trailer() metadata.MD {
+	return nil
+}
+
+func (*ClientStream) CloseSend() error {
+	return nil
+}
+
+func (*ClientStream) Context() context.Context {
+	return nil
+}
+
+func (*ClientStream) SendMsg(m any) error {
+	return nil
+}
+
+func (*ClientStream) RecvMsg(m any) error {
+	return nil
+}
 
 func Test_GetDialOptions(t *testing.T) {
 	tests := []struct {
@@ -184,15 +211,114 @@ func Test_ProtoValidatorUnaryClientInterceptor(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			validationError := interceptor(ctx, "", test.request, test.reply, nil, invoker, nil)
-			tt.Log(validationError)
-
-			assert.Equal(tt, test.isErrorExpected, validationError != nil)
-
-			if validationError != nil {
-				if err, ok := status.FromError(validationError); ok {
-					assert.Equal(tt, codes.InvalidArgument, err.Code())
-				}
-			}
+			validateError(tt, validationError, test.isErrorExpected)
 		})
+	}
+}
+
+func Test_ProtoValidatorStreamClientInterceptor_RecvMsg(t *testing.T) {
+	ctx := context.Background()
+	interceptor, err := ProtoValidatorStreamClientInterceptor()
+	require.NoError(t, err)
+
+	tests := []struct {
+		name            string
+		receivedMessage any
+		isErrorExpected bool
+	}{
+		{
+			name:            "Test 1: Invalid received message type",
+			receivedMessage: "invalid",
+			isErrorExpected: true,
+		}, {
+			name:            "Test 2: Valid received message type",
+			receivedMessage: protos.GetNginxOssInstance([]string{}),
+			isErrorExpected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			clientStream := createStreamInterceptor(tt, ctx, interceptor)
+
+			validationError := clientStream.RecvMsg(test.receivedMessage)
+			validateError(tt, validationError, test.isErrorExpected)
+		})
+	}
+}
+
+func Test_ProtoValidatorStreamClientInterceptor_SendMsg(t *testing.T) {
+	ctx := context.Background()
+	interceptor, err := ProtoValidatorStreamClientInterceptor()
+	require.NoError(t, err)
+
+	tests := []struct {
+		name            string
+		sentMessage     any
+		isErrorExpected bool
+	}{
+		{
+			name:            "Test 1: Invalid sent message type",
+			sentMessage:     "invalid",
+			isErrorExpected: true,
+		}, {
+			name:            "Test 2: Valid sent message type",
+			sentMessage:     protos.GetNginxOssInstance([]string{}),
+			isErrorExpected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			clientStream := createStreamInterceptor(tt, ctx, interceptor)
+
+			validationError := clientStream.SendMsg(test.sentMessage)
+			validateError(tt, validationError, test.isErrorExpected)
+		})
+	}
+}
+
+func createStreamInterceptor(
+	t *testing.T,
+	ctx context.Context,
+	interceptor grpc.StreamClientInterceptor,
+) grpc.ClientStream {
+	t.Helper()
+
+	streamer := func(
+		ctx context.Context,
+		desc *grpc.StreamDesc,
+		cc *grpc.ClientConn,
+		method string,
+		opts ...grpc.CallOption,
+	) (grpc.ClientStream, error) {
+		return &ClientStream{}, nil
+	}
+
+	clientStream, interceptorError := interceptor(
+		ctx,
+		&grpc.StreamDesc{},
+		&grpc.ClientConn{},
+		"",
+		streamer,
+		[]grpc.CallOption{}...,
+	)
+	require.NoError(t, interceptorError)
+	assert.NotNil(t, clientStream)
+
+	return clientStream
+}
+
+func validateError(t *testing.T, validationError error, isErrorExpected bool) {
+	t.Helper()
+
+	t.Log(validationError)
+
+	assert.Equal(t, isErrorExpected, validationError != nil)
+
+	if validationError != nil {
+		if err, ok := status.FromError(validationError); ok {
+			assert.Equal(t, codes.InvalidArgument, err.Code())
+		}
 	}
 }
