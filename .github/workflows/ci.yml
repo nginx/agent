@@ -107,6 +107,7 @@ jobs:
     needs: build-unsigned-snapshot
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
         container:
         - image: "rockylinux"
