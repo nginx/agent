@@ -133,7 +133,7 @@ func Test_GetDialOptions(t *testing.T) {
 				test.agentConfig.Command.TLS.Ca = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, caFileName)
 			}
 
-			options := GetDialOptions(test.agentConfig)
+			options := GetDialOptions(test.agentConfig, "123")
 			assert.NotNil(tt, options)
 			assert.Len(tt, options, test.expected)
 		})

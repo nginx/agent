@@ -33,7 +33,7 @@ var serviceConfig = `{
 }`
 var defaultCredentials = insecure.NewCredentials()
 
-func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
+func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOption {
 	skipToken := false
 	unaryClientInterceptors := []grpc.UnaryClientInterceptor{grpcRetry.UnaryClientInterceptor()}
 
@@ -76,13 +76,14 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 		)
 		skipToken = true
 	}
+
 	if agentConfig.Command.Auth != nil && !skipToken {
 		slog.Debug("Adding token to RPC credentials")
 		opts = append(opts,
 			grpc.WithPerRPCCredentials(
 				&PerRPCCredentials{
 					Token: agentConfig.Command.Auth.Token,
-					ID:    agentConfig.UUID,
+					ID:    resourceID,
 				}),
 		)
 	}
