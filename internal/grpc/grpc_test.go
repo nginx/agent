@@ -160,7 +160,7 @@ func Test_GetDialOptions(t *testing.T) {
 				test.agentConfig.Command.TLS.Ca = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, caFileName)
 			}
 
-			options := GetDialOptions(test.agentConfig)
+			options := GetDialOptions(test.agentConfig, "123")
 			assert.NotNil(tt, options)
 			assert.Len(tt, options, test.expected)
 		})
@@ -232,7 +232,7 @@ func Test_ProtoValidatorStreamClientInterceptor_RecvMsg(t *testing.T) {
 			isErrorExpected: true,
 		}, {
 			name:            "Test 2: Valid received message type",
-			receivedMessage: protos.GetNginxOssInstance(),
+			receivedMessage: protos.GetNginxOssInstance([]string{}),
 			isErrorExpected: false,
 		},
 	}
@@ -263,7 +263,7 @@ func Test_ProtoValidatorStreamClientInterceptor_SendMsg(t *testing.T) {
 			isErrorExpected: true,
 		}, {
 			name:            "Test 2: Valid sent message type",
-			sentMessage:     protos.GetNginxOssInstance(),
+			sentMessage:     protos.GetNginxOssInstance([]string{}),
 			isErrorExpected: false,
 		},
 	}

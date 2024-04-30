@@ -22,6 +22,7 @@ import (
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/datasource/host"
 	agentGrpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"google.golang.org/grpc"
@@ -86,8 +87,11 @@ func (gc *GrpcClient) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	grpcClientCtx, gc.cancel = context.WithTimeout(ctx, gc.config.Client.Timeout)
 	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
 
+	info := host.NewInfo()
+	resourceID := info.ResourceID(ctx)
+
 	gc.connectionMutex.Lock()
-	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, agentGrpc.GetDialOptions(gc.config)...)
+	gc.conn, err = grpc.DialContext(grpcClientCtx, serverAddr, agentGrpc.GetDialOptions(gc.config, resourceID)...)
 	gc.connectionMutex.Unlock()
 
 	gc.fileServiceClient = v1.NewFileServiceClient(gc.conn)
