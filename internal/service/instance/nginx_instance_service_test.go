@@ -9,9 +9,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log/slog"
-	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -78,17 +77,21 @@ func TestGetInstances(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
 	modulePath := tempDir + "/usr/lib/nginx/modules"
+	noModulesPath := t.TempDir() + "/usr/lib/nginx/modules"
 
 	helpers.CreateDirWithErrorCheck(t, modulePath)
 	defer helpers.RemoveFileWithErrorCheck(t, modulePath)
+
+	helpers.CreateDirWithErrorCheck(t, noModulesPath)
+	defer helpers.RemoveFileWithErrorCheck(t, noModulesPath)
 
 	testModule := helpers.CreateFileWithErrorCheck(t, modulePath, "test.so")
 	defer helpers.RemoveFileWithErrorCheck(t, testModule.Name())
 
 	plusArgs := fmt.Sprintf(plusConfigArgs, modulePath)
 	ossArgs := fmt.Sprintf(ossConfigArgs, modulePath)
-	noModuleArgs := path.Join(ossConfigArgs, t.TempDir()+"/usr/lib/nginx/modules")
-	slog.Info("", "", noModuleArgs)
+	noModuleArgs := fmt.Sprintf(ossConfigArgs, noModulesPath)
+
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 
 	processes := []*model.Process{
@@ -165,6 +168,13 @@ func TestGetInstances(t *testing.T) {
 			n := NewNginx(NginxParameters{executer: mockExec})
 			result := n.GetInstances(ctx, processes)
 
+			for _, instance := range result {
+				if instance.GetInstanceRuntime().GetNginxRuntimeInfo() != nil {
+					sort.Strings(instance.GetInstanceRuntime().GetNginxRuntimeInfo().GetDynamicModules())
+				} else {
+					sort.Strings(instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetDynamicModules())
+				}
+			}
 			assert.Equal(tt, test.expected, result)
 		})
 	}
@@ -255,6 +265,8 @@ func TestGetInfo(t *testing.T) {
 					"with-stream_ssl_preread_module": true,
 				},
 				LoadableModules: []string{expectedModules},
+				DynamicModules: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetNginxRuntimeInfo().
+					GetDynamicModules(),
 			},
 		},
 		{
@@ -328,6 +340,8 @@ func TestGetInfo(t *testing.T) {
 					"with-threads":                             true,
 				},
 				LoadableModules: []string{expectedModules},
+				DynamicModules: protos.GetNginxPlusInstance([]string{}).GetInstanceRuntime().GetNginxPlusRuntimeInfo().
+					GetDynamicModules(),
 			},
 		},
 	}
@@ -339,6 +353,7 @@ func TestGetInfo(t *testing.T) {
 
 			n := NewNginx(NginxParameters{executer: mockExec})
 			result, err := n.getInfo(ctx, test.process)
+			sort.Strings(result.DynamicModules)
 
 			assert.Equal(tt, test.expected, result)
 			require.NoError(tt, err)
