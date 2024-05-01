@@ -29,7 +29,7 @@ func TestInstanceService_GetInstances(t *testing.T) {
 	instanceService.dataPlaneInstanceServices = []instance.DataPlaneInstanceService{fakeDataPlaneService}
 
 	assert.Equal(t, []*v1.Instance{protos.GetNginxOssInstance([]string{})},
-		instanceService.GetInstances(ctx, []*model.Process{}))
+		instanceService.GetInstances(ctx, make(map[int32]*model.Process)))
 }
 
 func TestInstanceService_GetInstance(t *testing.T) {

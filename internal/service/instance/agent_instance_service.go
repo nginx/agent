@@ -28,7 +28,7 @@ func NewNginxAgent(agentConfig *config.Config) *NginxAgent {
 	}
 }
 
-func (na *NginxAgent) GetInstances(ctx context.Context, _ []*model.Process) []*v1.Instance {
+func (na *NginxAgent) GetInstances(ctx context.Context, _ map[int32]*model.Process) []*v1.Instance {
 	processPath, err := os.Executable()
 	if err != nil {
 		processPath = defaultAgentPath

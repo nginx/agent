@@ -11,11 +11,11 @@ import (
 )
 
 type FakeDataPlaneInstanceService struct {
-	GetInstancesStub        func(context.Context, []*model.Process) []*v1.Instance
+	GetInstancesStub        func(context.Context, map[int32]*model.Process) []*v1.Instance
 	getInstancesMutex       sync.RWMutex
 	getInstancesArgsForCall []struct {
 		arg1 context.Context
-		arg2 []*model.Process
+		arg2 map[int32]*model.Process
 	}
 	getInstancesReturns struct {
 		result1 []*v1.Instance
@@ -27,21 +27,16 @@ type FakeDataPlaneInstanceService struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeDataPlaneInstanceService) GetInstances(arg1 context.Context, arg2 []*model.Process) []*v1.Instance {
-	var arg2Copy []*model.Process
-	if arg2 != nil {
-		arg2Copy = make([]*model.Process, len(arg2))
-		copy(arg2Copy, arg2)
-	}
+func (fake *FakeDataPlaneInstanceService) GetInstances(arg1 context.Context, arg2 map[int32]*model.Process) []*v1.Instance {
 	fake.getInstancesMutex.Lock()
 	ret, specificReturn := fake.getInstancesReturnsOnCall[len(fake.getInstancesArgsForCall)]
 	fake.getInstancesArgsForCall = append(fake.getInstancesArgsForCall, struct {
 		arg1 context.Context
-		arg2 []*model.Process
-	}{arg1, arg2Copy})
+		arg2 map[int32]*model.Process
+	}{arg1, arg2})
 	stub := fake.GetInstancesStub
 	fakeReturns := fake.getInstancesReturns
-	fake.recordInvocation("GetInstances", []interface{}{arg1, arg2Copy})
+	fake.recordInvocation("GetInstances", []interface{}{arg1, arg2})
 	fake.getInstancesMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
@@ -58,13 +53,13 @@ func (fake *FakeDataPlaneInstanceService) GetInstancesCallCount() int {
 	return len(fake.getInstancesArgsForCall)
 }
 
-func (fake *FakeDataPlaneInstanceService) GetInstancesCalls(stub func(context.Context, []*model.Process) []*v1.Instance) {
+func (fake *FakeDataPlaneInstanceService) GetInstancesCalls(stub func(context.Context, map[int32]*model.Process) []*v1.Instance) {
 	fake.getInstancesMutex.Lock()
 	defer fake.getInstancesMutex.Unlock()
 	fake.GetInstancesStub = stub
 }
 
-func (fake *FakeDataPlaneInstanceService) GetInstancesArgsForCall(i int) (context.Context, []*model.Process) {
+func (fake *FakeDataPlaneInstanceService) GetInstancesArgsForCall(i int) (context.Context, map[int32]*model.Process) {
 	fake.getInstancesMutex.RLock()
 	defer fake.getInstancesMutex.RUnlock()
 	argsForCall := fake.getInstancesArgsForCall[i]

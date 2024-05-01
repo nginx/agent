@@ -16,7 +16,7 @@ import (
 
 func TestNginxAgent_GetInstances(t *testing.T) {
 	ctx := context.Background()
-	result := NewNginxAgent(types.GetAgentConfig()).GetInstances(ctx, []*model.Process{})
+	result := NewNginxAgent(types.GetAgentConfig()).GetInstances(ctx, make(map[int32]*model.Process))
 	assert.Len(t, result, 1)
 
 	assert.Equal(t, types.GetAgentConfig().UUID, result[0].GetInstanceMeta().GetInstanceId())

@@ -63,10 +63,8 @@ func NewNginx(parameters NginxParameters) *Nginx {
 	}
 }
 
-func (n *Nginx) GetInstances(ctx context.Context, processes []*model.Process) []*v1.Instance {
+func (n *Nginx) GetInstances(ctx context.Context, nginxProcesses map[int32]*model.Process) []*v1.Instance {
 	var processList []*v1.Instance
-
-	nginxProcesses := n.getNginxProcesses(processes)
 
 	for _, nginxProcess := range nginxProcesses {
 		_, ok := nginxProcesses[nginxProcess.Ppid]
@@ -83,18 +81,6 @@ func (n *Nginx) GetInstances(ctx context.Context, processes []*model.Process) []
 	}
 
 	return processList
-}
-
-func (*Nginx) getNginxProcesses(processes []*model.Process) map[int32]*model.Process {
-	nginxProcesses := make(map[int32]*model.Process)
-
-	for _, p := range processes {
-		if isNginxProcess(p.Name, p.Cmd) {
-			nginxProcesses[p.Pid] = p
-		}
-	}
-
-	return nginxProcesses
 }
 
 func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info, error) {
@@ -176,10 +162,6 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 		},
 		InstanceRuntime: instanceRuntime,
 	}
-}
-
-func isNginxProcess(name, cmd string) bool {
-	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
 }
 
 func parseNginxVersionCommandOutput(ctx context.Context, output *bytes.Buffer) *Info {

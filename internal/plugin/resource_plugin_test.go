@@ -7,6 +7,7 @@ package plugin
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -82,7 +83,7 @@ func TestResource_Instances_Process(t *testing.T) {
 			name: "Test 1: OS Process Topic",
 			processesMessage: &bus.Message{
 				Topic: bus.OsProcessesTopic,
-				Data:  []*model.Process{{Pid: 123, Name: "nginx"}},
+				Data:  map[int32]*model.Process{123: {Pid: 123, Name: "nginx"}},
 			},
 			resource: protos.GetHostResource(),
 			topic:    bus.ResourceTopic,
@@ -114,6 +115,7 @@ func TestResource_Instances_Process(t *testing.T) {
 			messagePipe.Process(ctx, test.processesMessage)
 			messagePipe.Run(ctx)
 
+			slog.Info("messages", "", messagePipe.GetProcessedMessages()[0].Data)
 			assert.Len(t, messagePipe.GetProcessedMessages(), 2)
 			assert.Equal(t, test.processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
 			assert.Equal(t, test.processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
@@ -164,7 +166,7 @@ func TestResource_Process_Empty_Instances(t *testing.T) {
 	err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 	require.NoError(t, err)
 
-	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{}}
+	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: make(map[int32]*model.Process)}
 	messagePipe.Process(ctx, processesMessage)
 	messagePipe.Run(ctx)
 

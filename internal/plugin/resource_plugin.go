@@ -64,7 +64,7 @@ func (*Resource) Info() *bus.Info {
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.OsProcessesTopic:
-		newProcesses, ok := msg.Data.([]*model.Process)
+		newProcesses, ok := msg.Data.(map[int32]*model.Process)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to model.Process", "payload", msg.Data)
 

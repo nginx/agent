@@ -20,11 +20,10 @@ import (
 
 func TestProcessMonitor_Init(t *testing.T) {
 	ctx := context.Background()
-	testProcesses := []*model.Process{{Pid: 123, Name: "nginx"}}
-
+	testProcesses := map[int32]*model.Process{123: {Pid: 123, Name: "nginx"}}
 	processMonitor := NewProcessMonitor(types.GetAgentConfig())
 
-	processMonitor.getProcessesFunc = func(_ context.Context) ([]*model.Process, error) {
+	processMonitor.getProcessesFunc = func(_ context.Context) (map[int32]*model.Process, error) {
 		return testProcesses, nil
 	}
 
@@ -53,32 +52,32 @@ func TestProcessMonitor_Subscriptions(t *testing.T) {
 func TestProcessMonitor_haveProcessesChanged(t *testing.T) {
 	tests := []struct {
 		name         string
-		oldProcesses []*model.Process
-		newProcesses []*model.Process
+		oldProcesses map[int32]*model.Process
+		newProcesses map[int32]*model.Process
 		expected     bool
 	}{
 		{
 			name:         "Test 1: number of processes are the same and PIDs have not changed",
-			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
-			newProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
+			oldProcesses: map[int32]*model.Process{123: {Pid: 123, Name: "nginx"}},
+			newProcesses: map[int32]*model.Process{123: {Pid: 123, Name: "nginx"}},
 			expected:     false,
 		},
 		{
 			name:         "Test 2: number of processes are the same but PIDs are different",
-			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
-			newProcesses: []*model.Process{{Pid: 456, Name: "nginx"}},
+			oldProcesses: map[int32]*model.Process{123: {Pid: 123, Name: "nginx"}},
+			newProcesses: map[int32]*model.Process{456: {Pid: 456, Name: "nginx"}},
 			expected:     true,
 		},
 		{
 			name:         "Test 3: number of new processes is less than old processes",
-			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
-			newProcesses: []*model.Process{},
+			oldProcesses: map[int32]*model.Process{123: {Pid: 123, Name: "nginx"}},
+			newProcesses: make(map[int32]*model.Process),
 			expected:     true,
 		},
 		{
 			name:         "Test 4: number of new processes is more than old processes",
-			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
-			newProcesses: []*model.Process{{Pid: 123, Name: "nginx"}, {Pid: 456, Name: "nginx"}},
+			oldProcesses: map[int32]*model.Process{123: {Pid: 123, Name: "nginx"}},
+			newProcesses: map[int32]*model.Process{123: {Pid: 123, Name: "nginx"}, 456: {Pid: 456, Name: "nginx"}},
 			expected:     true,
 		},
 	}

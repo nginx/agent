@@ -18,7 +18,7 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . InstanceServiceInterface
 type InstanceServiceInterface interface {
-	GetInstances(ctx context.Context, processes []*model.Process) []*v1.Instance
+	GetInstances(ctx context.Context, processes map[int32]*model.Process) []*v1.Instance
 	GetInstance(instanceID string) *v1.Instance
 }
 
@@ -39,7 +39,7 @@ func NewInstanceService(agentConfig *config.Config) *InstanceService {
 	}
 }
 
-func (is *InstanceService) GetInstances(ctx context.Context, processes []*model.Process) []*v1.Instance {
+func (is *InstanceService) GetInstances(ctx context.Context, processes map[int32]*model.Process) []*v1.Instance {
 	newInstances := []*v1.Instance{}
 
 	for _, dataPlaneInstanceService := range is.dataPlaneInstanceServices {

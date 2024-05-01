@@ -18,11 +18,11 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 )
 
-type GetProcessesFunc func(ctx context.Context) ([]*model.Process, error)
+type GetProcessesFunc func(ctx context.Context) (map[int32]*model.Process, error)
 
 type ProcessMonitor struct {
 	monitoringFrequency time.Duration
-	processes           []*model.Process
+	processes           map[int32]*model.Process
 	messagePipe         bus.MessagePipeInterface
 	getProcessesFunc    GetProcessesFunc
 	processTicker       *time.Ticker
@@ -33,7 +33,7 @@ type ProcessMonitor struct {
 func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
 	return &ProcessMonitor{
 		monitoringFrequency: agentConfig.ProcessMonitor.MonitoringFrequency,
-		processes:           []*model.Process{},
+		processes:           make(map[int32]*model.Process),
 		getProcessesFunc:    host.GetProcesses,
 		processTicker:       nil,
 		processesMutex:      sync.Mutex{},
@@ -75,7 +75,7 @@ func (*ProcessMonitor) Subscriptions() []string {
 	return []string{}
 }
 
-func (pm *ProcessMonitor) getProcesses() []*model.Process {
+func (pm *ProcessMonitor) getProcesses() map[int32]*model.Process {
 	pm.processesMutex.Lock()
 	defer pm.processesMutex.Unlock()
 
@@ -130,7 +130,7 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 	}
 }
 
-func haveProcessesChanged(oldProcesses, newProcesses []*model.Process) bool {
+func haveProcessesChanged(oldProcesses, newProcesses map[int32]*model.Process) bool {
 	// Check if the number of processes has changed
 	if len(oldProcesses) != len(newProcesses) {
 		return true
