@@ -220,6 +220,7 @@ func (n *Nginx) pingStubStatusAPIEndpoint(ctx context.Context, statusAPI string)
 	if resp.StatusCode != http.StatusOK {
 		slog.DebugContext(ctx, "Stub Status API responded with unexpected status code", "status_code",
 			resp.StatusCode, "expected", http.StatusOK)
+
 		return false
 	}
 
@@ -282,6 +283,7 @@ func (n *Nginx) pingPlusAPIEndpoint(ctx context.Context, statusAPI string) bool 
 	if resp.StatusCode != http.StatusOK {
 		slog.DebugContext(ctx, "NGINX Plus API responded with unexpected status code", "status_code",
 			resp.StatusCode, "expected", http.StatusOK)
+
 		return false
 	}
 
