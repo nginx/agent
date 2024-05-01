@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1714488326486,
+  "lastUpdate": 1714575800894,
   "repoUrl": "https://github.com/nginx/agent",
   "entries": {
     "Compare Benchmark Results": [
@@ -25292,6 +25292,510 @@ window.BENCHMARK_DATA = {
             "value": 76,
             "unit": "allocs/op",
             "extra": "89497 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "108004222+aphralG@users.noreply.github.com",
+            "name": "aphralG",
+            "username": "aphralG"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a66a4e216f7a1211fbf1a102bd265a644dd8bfc7",
+          "message": "Add dynamic modules to NGINX Info (#654)\n\n* add Dynamic modules",
+          "timestamp": "2024-05-01T16:00:45+01:00",
+          "tree_id": "2307d9815940f1b9b77f7045374f8dadd79abbc0",
+          "url": "https://github.com/nginx/agent/commit/a66a4e216f7a1211fbf1a102bd265a644dd8bfc7"
+        },
+        "date": 1714575800366,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses",
+            "value": 259.9,
+            "unit": "ns/op\t     160 B/op\t       2 allocs/op",
+            "extra": "4682374 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - ns/op",
+            "value": 259.9,
+            "unit": "ns/op",
+            "extra": "4682374 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "4682374 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - allocs/op",
+            "value": 2,
+            "unit": "allocs/op",
+            "extra": "4682374 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses",
+            "value": 260.2,
+            "unit": "ns/op\t     160 B/op\t       2 allocs/op",
+            "extra": "4671810 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - ns/op",
+            "value": 260.2,
+            "unit": "ns/op",
+            "extra": "4671810 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "4671810 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - allocs/op",
+            "value": 2,
+            "unit": "allocs/op",
+            "extra": "4671810 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses",
+            "value": 268.5,
+            "unit": "ns/op\t     160 B/op\t       2 allocs/op",
+            "extra": "4667308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - ns/op",
+            "value": 268.5,
+            "unit": "ns/op",
+            "extra": "4667308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "4667308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - allocs/op",
+            "value": 2,
+            "unit": "allocs/op",
+            "extra": "4667308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses",
+            "value": 256,
+            "unit": "ns/op\t     160 B/op\t       2 allocs/op",
+            "extra": "4652950 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - ns/op",
+            "value": 256,
+            "unit": "ns/op",
+            "extra": "4652950 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "4652950 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - allocs/op",
+            "value": 2,
+            "unit": "allocs/op",
+            "extra": "4652950 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses",
+            "value": 255.9,
+            "unit": "ns/op\t     160 B/op\t       2 allocs/op",
+            "extra": "4703614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - ns/op",
+            "value": 255.9,
+            "unit": "ns/op",
+            "extra": "4703614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "4703614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - allocs/op",
+            "value": 2,
+            "unit": "allocs/op",
+            "extra": "4703614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses",
+            "value": 278,
+            "unit": "ns/op\t     160 B/op\t       2 allocs/op",
+            "extra": "4696778 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - ns/op",
+            "value": 278,
+            "unit": "ns/op",
+            "extra": "4696778 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "4696778 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - allocs/op",
+            "value": 2,
+            "unit": "allocs/op",
+            "extra": "4696778 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses",
+            "value": 257.6,
+            "unit": "ns/op\t     160 B/op\t       2 allocs/op",
+            "extra": "4340348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - ns/op",
+            "value": 257.6,
+            "unit": "ns/op",
+            "extra": "4340348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "4340348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - allocs/op",
+            "value": 2,
+            "unit": "allocs/op",
+            "extra": "4340348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses",
+            "value": 255.9,
+            "unit": "ns/op\t     160 B/op\t       2 allocs/op",
+            "extra": "4669366 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - ns/op",
+            "value": 255.9,
+            "unit": "ns/op",
+            "extra": "4669366 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "4669366 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - allocs/op",
+            "value": 2,
+            "unit": "allocs/op",
+            "extra": "4669366 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses",
+            "value": 255,
+            "unit": "ns/op\t     160 B/op\t       2 allocs/op",
+            "extra": "4718479 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - ns/op",
+            "value": 255,
+            "unit": "ns/op",
+            "extra": "4718479 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "4718479 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - allocs/op",
+            "value": 2,
+            "unit": "allocs/op",
+            "extra": "4718479 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses",
+            "value": 255.4,
+            "unit": "ns/op\t     160 B/op\t       2 allocs/op",
+            "extra": "4682744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - ns/op",
+            "value": 255.4,
+            "unit": "ns/op",
+            "extra": "4682744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "4682744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_getNginxProcesses - allocs/op",
+            "value": 2,
+            "unit": "allocs/op",
+            "extra": "4682744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput",
+            "value": 13291,
+            "unit": "ns/op\t   14736 B/op\t      76 allocs/op",
+            "extra": "87440 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - ns/op",
+            "value": 13291,
+            "unit": "ns/op",
+            "extra": "87440 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - B/op",
+            "value": 14736,
+            "unit": "B/op",
+            "extra": "87440 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - allocs/op",
+            "value": 76,
+            "unit": "allocs/op",
+            "extra": "87440 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput",
+            "value": 13316,
+            "unit": "ns/op\t   14725 B/op\t      76 allocs/op",
+            "extra": "89478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - ns/op",
+            "value": 13316,
+            "unit": "ns/op",
+            "extra": "89478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - B/op",
+            "value": 14725,
+            "unit": "B/op",
+            "extra": "89478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - allocs/op",
+            "value": 76,
+            "unit": "allocs/op",
+            "extra": "89478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput",
+            "value": 13275,
+            "unit": "ns/op\t   14735 B/op\t      76 allocs/op",
+            "extra": "89931 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - ns/op",
+            "value": 13275,
+            "unit": "ns/op",
+            "extra": "89931 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - B/op",
+            "value": 14735,
+            "unit": "B/op",
+            "extra": "89931 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - allocs/op",
+            "value": 76,
+            "unit": "allocs/op",
+            "extra": "89931 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput",
+            "value": 13274,
+            "unit": "ns/op\t   14727 B/op\t      76 allocs/op",
+            "extra": "91486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - ns/op",
+            "value": 13274,
+            "unit": "ns/op",
+            "extra": "91486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - B/op",
+            "value": 14727,
+            "unit": "B/op",
+            "extra": "91486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - allocs/op",
+            "value": 76,
+            "unit": "allocs/op",
+            "extra": "91486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput",
+            "value": 13248,
+            "unit": "ns/op\t   14728 B/op\t      76 allocs/op",
+            "extra": "89545 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - ns/op",
+            "value": 13248,
+            "unit": "ns/op",
+            "extra": "89545 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - B/op",
+            "value": 14728,
+            "unit": "B/op",
+            "extra": "89545 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - allocs/op",
+            "value": 76,
+            "unit": "allocs/op",
+            "extra": "89545 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput",
+            "value": 13298,
+            "unit": "ns/op\t   14738 B/op\t      76 allocs/op",
+            "extra": "90585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - ns/op",
+            "value": 13298,
+            "unit": "ns/op",
+            "extra": "90585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - B/op",
+            "value": 14738,
+            "unit": "B/op",
+            "extra": "90585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - allocs/op",
+            "value": 76,
+            "unit": "allocs/op",
+            "extra": "90585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput",
+            "value": 13263,
+            "unit": "ns/op\t   14733 B/op\t      76 allocs/op",
+            "extra": "89119 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - ns/op",
+            "value": 13263,
+            "unit": "ns/op",
+            "extra": "89119 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - B/op",
+            "value": 14733,
+            "unit": "B/op",
+            "extra": "89119 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - allocs/op",
+            "value": 76,
+            "unit": "allocs/op",
+            "extra": "89119 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput",
+            "value": 13234,
+            "unit": "ns/op\t   14713 B/op\t      76 allocs/op",
+            "extra": "88046 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - ns/op",
+            "value": 13234,
+            "unit": "ns/op",
+            "extra": "88046 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - B/op",
+            "value": 14713,
+            "unit": "B/op",
+            "extra": "88046 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - allocs/op",
+            "value": 76,
+            "unit": "allocs/op",
+            "extra": "88046 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput",
+            "value": 13264,
+            "unit": "ns/op\t   14732 B/op\t      76 allocs/op",
+            "extra": "91564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - ns/op",
+            "value": 13264,
+            "unit": "ns/op",
+            "extra": "91564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - B/op",
+            "value": 14732,
+            "unit": "B/op",
+            "extra": "91564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - allocs/op",
+            "value": 76,
+            "unit": "allocs/op",
+            "extra": "91564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput",
+            "value": 13248,
+            "unit": "ns/op\t   14730 B/op\t      76 allocs/op",
+            "extra": "90058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - ns/op",
+            "value": 13248,
+            "unit": "ns/op",
+            "extra": "90058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - B/op",
+            "value": 14730,
+            "unit": "B/op",
+            "extra": "90058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxService_parseNginxVersionCommandOutput - allocs/op",
+            "value": 76,
+            "unit": "allocs/op",
+            "extra": "90058 times\n4 procs"
           }
         ]
       }
