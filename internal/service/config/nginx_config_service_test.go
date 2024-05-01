@@ -37,7 +37,6 @@ import (
 const (
 	errorLogLine   = "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)"
 	warningLogLine = "2023/03/14 14:16:23 nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024"
-	instanceID     = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 )
 
 func TestNginx_ParseConfig(t *testing.T) {
@@ -73,7 +72,8 @@ func TestNginx_ParseConfig(t *testing.T) {
 		accessLog.Name(),
 		combinedAccessLog.Name(),
 		ltsvAccessLog.Name(),
-		errorLog.Name())
+		errorLog.Name(),
+		protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId())
 
 	instance := protos.GetNginxOssInstance([]string{})
 	instance.InstanceRuntime.ConfigPath = file.Name()

@@ -124,6 +124,8 @@ func (n *Nginx) SetConfigWriter(configWriter writer.ConfigWriterInterface) {
 }
 
 func (n *Nginx) ParseConfig(ctx context.Context) (any, error) {
+	var plusAPI string
+	var plusErr error
 	payload, err := crossplane.Parse(n.instance.GetInstanceRuntime().GetConfigPath(),
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   []string{},
@@ -146,12 +148,16 @@ func (n *Nginx) ParseConfig(ctx context.Context) (any, error) {
 
 	stubStatus, err := n.stubStatus(ctx, payload)
 	if err != nil {
-		slog.Warn("Can not set stub_status", "error", err)
+		slog.WarnContext(ctx, "Unable to get Stub Status API from configuration, NGINX OSS metrics will be "+
+			"unavailable. Please configure a Stub Status API to get NGINX OSS metrics ", "error", err)
 	}
 
-	plusAPI, err := n.plusAPI(ctx, payload)
-	if err != nil {
-		slog.WarnContext(ctx, "Can not set plus API", "error", err)
+	if n.instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo() != nil {
+		plusAPI, plusErr = n.plusAPI(ctx, payload)
+		if plusErr != nil {
+			slog.WarnContext(ctx, "Unable to get Plus API from configuration, NGINX Plus metrics will be "+
+				"unavailable. Please configure a Plus API to get NGINX Plus metrics ", "error", err)
+		}
 	}
 
 	return &model.NginxConfigContext{
@@ -159,6 +165,7 @@ func (n *Nginx) ParseConfig(ctx context.Context) (any, error) {
 		ErrorLogs:  errorLogs,
 		StubStatus: stubStatus,
 		PlusAPI:    plusAPI,
+		InstanceID: n.instance.GetInstanceMeta().GetInstanceId(),
 	}, nil
 }
 
@@ -184,10 +191,10 @@ func (n *Nginx) stubStatusAPICallback(ctx context.Context, parent, current *cros
 
 	for _, url := range urls {
 		if n.pingStubStatusAPIEndpoint(ctx, url) {
-			slog.Debug("Stub_status found", "url", url)
+			slog.DebugContext(ctx, "Stub_status found", "url", url)
 			return url
 		}
-		slog.Debug("Stub_status is not reachable", "url", url)
+		slog.DebugContext(ctx, "Stub_status is not reachable", "url", url)
 	}
 
 	return ""
@@ -197,24 +204,24 @@ func (n *Nginx) pingStubStatusAPIEndpoint(ctx context.Context, statusAPI string)
 	httpClient := http.Client{Timeout: n.agentConfig.Client.Timeout}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
 	if err != nil {
-		slog.Warn("Unable to create Stub Status API GET request", "error", err)
+		slog.WarnContext(ctx, "Unable to create Stub Status API GET request", "error", err)
 		return false
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		slog.Warn("Unable to GET Stub Status from API request", "error", err)
+		slog.WarnContext(ctx, "Unable to GET Stub Status from API request", "error", err)
 		return false
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.Debug("Stub Status API responded with a status code", "status_code", resp.StatusCode)
+		slog.DebugContext(ctx, "Stub Status API responded with a status code", "status_code", resp.StatusCode)
 		return false
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Warn("Unable to read Stub Status API response body", "error", err)
+		slog.WarnContext(ctx, "Unable to read Stub Status API response body", "error", err)
 		return false
 	}
 

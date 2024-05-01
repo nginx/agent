@@ -76,13 +76,61 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		r.resource.Instances = instanceList
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: r.resource})
 		r.resourceMutex.Unlock()
+	case bus.InstanceConfigContextTopic:
+		nginxConfigContext, ok := msg.Data.(*model.NginxConfigContext)
+		if !ok {
+			slog.ErrorContext(ctx, "Unable to cast message payload to model.NginxConfigContext",
+				"payload", msg.Data)
+		}
+
+		r.resourceMutex.Lock()
+		instances := r.resource.GetInstances()
+		for _, instance := range instances {
+			if instance.GetInstanceMeta().GetInstanceId() == nginxConfigContext.InstanceID {
+				r.updateInstance(nginxConfigContext, instance)
+			}
+		}
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: r.resource})
+		r.resourceMutex.Unlock()
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
 }
 
+func (r *Resource) updateInstance(nginxConfigContext *model.NginxConfigContext, instance *v1.Instance) {
+	if instance.GetInstanceRuntime().GetNginxRuntimeInfo() != nil {
+		instanceRuntime := instance.GetInstanceRuntime().GetNginxRuntimeInfo()
+		instanceRuntime.AccessLogs = convertAccessLogs(nginxConfigContext.AccessLogs)
+		instanceRuntime.ErrorLogs = convertErrorLogs(nginxConfigContext.ErrorLogs)
+		instanceRuntime.StubStatus = nginxConfigContext.StubStatus
+	} else {
+		instanceRuntime := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo()
+		instanceRuntime.AccessLogs = convertAccessLogs(nginxConfigContext.AccessLogs)
+		instanceRuntime.ErrorLogs = convertErrorLogs(nginxConfigContext.ErrorLogs)
+		instanceRuntime.StubStatus = nginxConfigContext.StubStatus
+		instanceRuntime.PlusApi = nginxConfigContext.PlusAPI
+	}
+}
+
+func convertAccessLogs(accessLogs []*model.AccessLog) (logs []string) {
+	for _, log := range accessLogs {
+		logs = append(logs, log.Name)
+	}
+
+	return logs
+}
+
+func convertErrorLogs(errorLogs []*model.ErrorLog) (logs []string) {
+	for _, log := range errorLogs {
+		logs = append(logs, log.Name)
+	}
+
+	return logs
+}
+
 func (*Resource) Subscriptions() []string {
 	return []string{
 		bus.OsProcessesTopic,
+		bus.InstanceConfigContextTopic,
 	}
 }

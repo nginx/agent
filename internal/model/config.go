@@ -14,6 +14,7 @@ type NginxConfigContext struct {
 	ErrorLogs  []*ErrorLog
 	StubStatus string
 	PlusAPI    string
+	InstanceID string
 }
 
 type AccessLog struct {

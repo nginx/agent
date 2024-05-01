@@ -19,6 +19,7 @@ func GetConfigContextWithNames(
 	combinedAccessLogName,
 	ltsvAccessLogName,
 	errorLogName string,
+	instanceID string,
 ) *model.NginxConfigContext {
 	return &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{
@@ -50,5 +51,6 @@ func GetConfigContextWithNames(
 				Permissions: "0600",
 			},
 		},
+		InstanceID: instanceID,
 	}
 }

@@ -25,6 +25,8 @@ import (
 	"github.com/nginx/agent/v3/internal/service"
 )
 
+var once sync.Once
+
 type Config struct {
 	messagePipe    bus.MessagePipeInterface
 	configServices map[string]service.ConfigServiceInterface
@@ -75,6 +77,18 @@ func (c *Config) Process(ctx context.Context, msg *bus.Message) {
 			c.resource = resource
 			c.resourceMutex.Unlock()
 		}
+
+		once.Do(func() {
+			// This will be replaced when we implement config upload
+			instanceList := c.resource.GetInstances()
+			if len(instanceList) > 1 {
+				c.parseInstanceConfiguration(
+					ctx,
+					c.GetInstance(instanceList[1].GetInstanceMeta().GetInstanceId()),
+				)
+			}
+		})
+
 	case msg.Topic == bus.ConfigClientTopic:
 		if configClient, ok := msg.Data.(client.ConfigClient); ok {
 			c.configClient = configClient
