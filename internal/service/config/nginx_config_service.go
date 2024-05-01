@@ -124,8 +124,11 @@ func (n *Nginx) SetConfigWriter(configWriter writer.ConfigWriterInterface) {
 }
 
 func (n *Nginx) ParseConfig(ctx context.Context) (any, error) {
-	var plusAPI string
-	var plusErr error
+	var (
+		plusAPI string
+		plusErr error
+	)
+
 	payload, err := crossplane.Parse(n.instance.GetInstanceRuntime().GetConfigPath(),
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   []string{},
@@ -215,7 +218,8 @@ func (n *Nginx) pingStubStatusAPIEndpoint(ctx context.Context, statusAPI string)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.DebugContext(ctx, "Stub Status API responded with a status code", "status_code", resp.StatusCode)
+		slog.DebugContext(ctx, "Stub Status API responded with unexpected status code", "status_code",
+			resp.StatusCode, "expected", http.StatusOK)
 		return false
 	}
 
@@ -276,7 +280,8 @@ func (n *Nginx) pingPlusAPIEndpoint(ctx context.Context, statusAPI string) bool 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.DebugContext(ctx, "NGINX Plus API responded with a status code", "status_code", resp.StatusCode)
+		slog.DebugContext(ctx, "NGINX Plus API responded with unexpected status code", "status_code",
+			resp.StatusCode, "expected", http.StatusOK)
 		return false
 	}
 
@@ -286,7 +291,7 @@ func (n *Nginx) pingPlusAPIEndpoint(ctx context.Context, statusAPI string) bool 
 		return false
 	}
 
-	// Expecting API to return the api versions in an array of positive integers
+	// Expecting API to return the API versions in an array of positive integers
 	// subset example: [ ... 6,7,8,9 ...]
 	var responseBody []int
 	err = json.Unmarshal(bodyBytes, &responseBody)
