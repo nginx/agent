@@ -73,6 +73,7 @@ var (
 type (
 	InfoInterface interface {
 		IsContainer() bool
+		ResourceID(ctx context.Context) string
 		ContainerInfo() *v1.Resource_ContainerInfo
 		HostInfo(ctx context.Context) *v1.Resource_HostInfo
 	}
@@ -123,6 +124,14 @@ func (i *Info) IsContainer() bool {
 	}
 
 	return false
+}
+
+func (i *Info) ResourceID(ctx context.Context) string {
+	if i.IsContainer() {
+		return i.getContainerID()
+	}
+
+	return i.getHostID(ctx)
 }
 
 func (i *Info) ContainerInfo() *v1.Resource_ContainerInfo {

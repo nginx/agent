@@ -41,6 +41,17 @@ type FakeInfoInterface struct {
 	isContainerReturnsOnCall map[int]struct {
 		result1 bool
 	}
+	ResourceIDStub        func(context.Context) string
+	resourceIDMutex       sync.RWMutex
+	resourceIDArgsForCall []struct {
+		arg1 context.Context
+	}
+	resourceIDReturns struct {
+		result1 string
+	}
+	resourceIDReturnsOnCall map[int]struct {
+		result1 string
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -212,6 +223,67 @@ func (fake *FakeInfoInterface) IsContainerReturnsOnCall(i int, result1 bool) {
 	}{result1}
 }
 
+func (fake *FakeInfoInterface) ResourceID(arg1 context.Context) string {
+	fake.resourceIDMutex.Lock()
+	ret, specificReturn := fake.resourceIDReturnsOnCall[len(fake.resourceIDArgsForCall)]
+	fake.resourceIDArgsForCall = append(fake.resourceIDArgsForCall, struct {
+		arg1 context.Context
+	}{arg1})
+	stub := fake.ResourceIDStub
+	fakeReturns := fake.resourceIDReturns
+	fake.recordInvocation("ResourceID", []interface{}{arg1})
+	fake.resourceIDMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeInfoInterface) ResourceIDCallCount() int {
+	fake.resourceIDMutex.RLock()
+	defer fake.resourceIDMutex.RUnlock()
+	return len(fake.resourceIDArgsForCall)
+}
+
+func (fake *FakeInfoInterface) ResourceIDCalls(stub func(context.Context) string) {
+	fake.resourceIDMutex.Lock()
+	defer fake.resourceIDMutex.Unlock()
+	fake.ResourceIDStub = stub
+}
+
+func (fake *FakeInfoInterface) ResourceIDArgsForCall(i int) context.Context {
+	fake.resourceIDMutex.RLock()
+	defer fake.resourceIDMutex.RUnlock()
+	argsForCall := fake.resourceIDArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeInfoInterface) ResourceIDReturns(result1 string) {
+	fake.resourceIDMutex.Lock()
+	defer fake.resourceIDMutex.Unlock()
+	fake.ResourceIDStub = nil
+	fake.resourceIDReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakeInfoInterface) ResourceIDReturnsOnCall(i int, result1 string) {
+	fake.resourceIDMutex.Lock()
+	defer fake.resourceIDMutex.Unlock()
+	fake.ResourceIDStub = nil
+	if fake.resourceIDReturnsOnCall == nil {
+		fake.resourceIDReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.resourceIDReturnsOnCall[i] = struct {
+		result1 string
+	}{result1}
+}
+
 func (fake *FakeInfoInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -221,6 +293,8 @@ func (fake *FakeInfoInterface) Invocations() map[string][][]interface{} {
 	defer fake.hostInfoMutex.RUnlock()
 	fake.isContainerMutex.RLock()
 	defer fake.isContainerMutex.RUnlock()
+	fake.resourceIDMutex.RLock()
+	defer fake.resourceIDMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
