@@ -26,27 +26,76 @@ import (
 )
 
 // these will come from the agent config
-var serviceConfig = `{
-	"healthCheckConfig": {
-		"serviceName": "nginx-agent"
-	}
-}`
-var defaultCredentials = insecure.NewCredentials()
+var (
+	serviceConfig = `{
+		"healthCheckConfig": {
+			"serviceName": "nginx-agent"
+		}
+	}`
 
-func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
+	defaultCredentials = insecure.NewCredentials()
+)
+
+type wrappedStream struct {
+	grpc.ClientStream
+	*protovalidate.Validator
+}
+
+func (w *wrappedStream) RecvMsg(message any) error {
+	err := w.ClientStream.RecvMsg(message)
+	if err == nil {
+		slog.Debug("Stream validation interceptor received message", "message", message)
+
+		messageErr := validateMessage(w.Validator, message)
+		if messageErr != nil {
+			return status.Errorf(
+				codes.InvalidArgument,
+				"invalid message received from stream: %s",
+				messageErr.Error(),
+			)
+		}
+	}
+
+	return err
+}
+
+func (w *wrappedStream) SendMsg(message any) error {
+	slog.Debug("Stream validation interceptor message to be sent", "message", message)
+
+	messageErr := validateMessage(w.Validator, message)
+	if messageErr != nil {
+		return status.Errorf(
+			codes.InvalidArgument,
+			"invalid message attempted to be sent on stream: %s",
+			messageErr.Error(),
+		)
+	}
+
+	return w.ClientStream.SendMsg(message)
+}
+
+func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOption {
 	skipToken := false
+	streamClientInterceptors := []grpc.StreamClientInterceptor{grpcRetry.StreamClientInterceptor()}
 	unaryClientInterceptors := []grpc.UnaryClientInterceptor{grpcRetry.UnaryClientInterceptor()}
+
+	protoValidatorStreamClientInterceptor, err := ProtoValidatorStreamClientInterceptor()
+	if err != nil {
+		slog.Error("Unable to add proto validation stream interceptor", "error", err)
+	} else {
+		streamClientInterceptors = append(streamClientInterceptors, protoValidatorStreamClientInterceptor)
+	}
 
 	protoValidatorUnaryClientInterceptor, err := ProtoValidatorUnaryClientInterceptor()
 	if err != nil {
-		slog.Error("Unable to add proto validation interceptor", "error", err)
+		slog.Error("Unable to add proto validation unary interceptor", "error", err)
 	} else {
 		unaryClientInterceptors = append(unaryClientInterceptors, protoValidatorUnaryClientInterceptor)
 	}
 
 	opts := []grpc.DialOption{
 		grpc.WithReturnConnectionError(),
-		grpc.WithChainStreamInterceptor(grpcRetry.StreamClientInterceptor()),
+		grpc.WithChainStreamInterceptor(streamClientInterceptors...),
 		grpc.WithChainUnaryInterceptor(unaryClientInterceptors...),
 		grpc.WithDefaultServiceConfig(serviceConfig),
 	}
@@ -76,13 +125,14 @@ func GetDialOptions(agentConfig *config.Config) []grpc.DialOption {
 		)
 		skipToken = true
 	}
+
 	if agentConfig.Command.Auth != nil && !skipToken {
 		slog.Debug("Adding token to RPC credentials")
 		opts = append(opts,
 			grpc.WithPerRPCCredentials(
 				&PerRPCCredentials{
 					Token: agentConfig.Command.Auth.Token,
-					ID:    agentConfig.UUID,
+					ID:    resourceID,
 				}),
 		)
 	}
@@ -134,6 +184,29 @@ func ProtoValidatorUnaryClientInterceptor() (grpc.UnaryClientInterceptor, error)
 		}
 
 		return nil
+	}, nil
+}
+
+func ProtoValidatorStreamClientInterceptor() (grpc.StreamClientInterceptor, error) {
+	validator, err := protovalidate.New()
+	if err != nil {
+		return nil, err
+	}
+
+	return func(
+		ctx context.Context,
+		desc *grpc.StreamDesc,
+		cc *grpc.ClientConn,
+		method string,
+		streamer grpc.Streamer,
+		opts ...grpc.CallOption,
+	) (grpc.ClientStream, error) {
+		clientStream, streamerError := streamer(ctx, desc, cc, method, opts...)
+		if streamerError != nil {
+			return nil, streamerError
+		}
+
+		return &wrappedStream{clientStream, validator}, nil
 	}, nil
 }
 
