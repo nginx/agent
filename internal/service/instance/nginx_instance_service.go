@@ -31,7 +31,6 @@ var (
 type Info struct {
 	ProcessID       int32
 	Version         string
-	PlusVersion     string
 	Prefix          string
 	ConfPath        string
 	ConfigureArgs   map[string]interface{}
@@ -132,7 +131,7 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 	nginxType := v1.InstanceMeta_INSTANCE_TYPE_NGINX
 	version := nginxInfo.Version
 
-	if nginxInfo.PlusVersion == "" {
+	if !strings.Contains(nginxInfo.Version, "plus") {
 		instanceRuntime = &v1.InstanceRuntime{
 			ProcessId:  nginxInfo.ProcessID,
 			BinaryPath: nginxInfo.ExePath,
@@ -165,7 +164,7 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 		}
 
 		nginxType = v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS
-		version = nginxInfo.PlusVersion
+		version = nginxInfo.Version
 	}
 
 	return &v1.Instance{
@@ -190,7 +189,7 @@ func parseNginxVersionCommandOutput(ctx context.Context, output *bytes.Buffer) *
 		line := strings.TrimSpace(scanner.Text())
 		switch {
 		case strings.HasPrefix(line, "nginx version"):
-			nginxInfo.Version, nginxInfo.PlusVersion = parseNginxVersion(line)
+			nginxInfo.Version = parseNginxVersion(line)
 		case strings.HasPrefix(line, "configure arguments"):
 			nginxInfo.ConfigureArgs = parseConfigureArguments(line)
 		}
@@ -202,29 +201,15 @@ func parseNginxVersionCommandOutput(ctx context.Context, output *bytes.Buffer) *
 	return nginxInfo
 }
 
-func parseNginxVersion(line string) (version, plusVersion string) {
-	ossVersionMatches := ossVersionRegex.FindStringSubmatch(line)
-	plusVersionMatches := plusVersionRegex.FindStringSubmatch(line)
+func parseNginxVersion(line string) string {
+	ossVersionMatches := ossVersionRegex.FindString(line)
+	plusVersionMatches := plusVersionRegex.FindString(line)
 
-	ossSubNames := ossVersionRegex.SubexpNames()
-	plusSubNames := plusVersionRegex.SubexpNames()
-
-	for index, value := range ossVersionMatches {
-		if ossSubNames[index] == "version" {
-			version = value
-		}
+	if plusVersionMatches == "" {
+		return strings.TrimPrefix(ossVersionMatches, "nginx/")
 	}
 
-	for index, value := range plusVersionMatches {
-		switch plusSubNames[index] {
-		case "plus":
-			plusVersion = value
-		case "version":
-			version = value
-		}
-	}
-
-	return version, plusVersion
+	return strings.TrimPrefix(plusVersionMatches, "nginx/")
 }
 
 func parseConfigureArguments(line string) map[string]interface{} {
