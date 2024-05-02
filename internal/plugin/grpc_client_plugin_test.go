@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
