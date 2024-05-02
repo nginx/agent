@@ -9,11 +9,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	"github.com/nginx/agent/v3/test/helpers"
 

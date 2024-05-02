@@ -7,9 +7,10 @@ package plugin
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	"github.com/stretchr/testify/require"
 

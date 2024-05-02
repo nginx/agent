@@ -7,9 +7,10 @@ package instance
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"log/slog"
 	"os"
+
+	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"

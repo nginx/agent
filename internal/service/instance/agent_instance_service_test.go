@@ -7,8 +7,9 @@ package instance
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
