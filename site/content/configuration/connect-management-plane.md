@@ -89,6 +89,7 @@ To establish a TLS connection between the NGINX Agent and the management plane s
    ```bash
    sudo systemctl restart nginx-agent
    ```
+   
 ## Insecure connection
 
 {{< warning >}}Insecure connections are not recommended for production environments.{{< /warning >}}
