@@ -151,15 +151,13 @@ func (n *Nginx) ParseConfig(ctx context.Context) (any, error) {
 
 	stubStatus, err := n.stubStatus(ctx, payload)
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to get Stub Status API from configuration, NGINX OSS metrics will be "+
-			"unavailable. Please configure a Stub Status API to get NGINX OSS metrics ", "error", err)
+		slog.WarnContext(ctx, "Unable to get Stub Status API from NGINX configuration", "error", err)
 	}
 
 	if n.instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo() != nil {
 		plusAPI, plusErr = n.plusAPI(ctx, payload)
 		if plusErr != nil {
-			slog.WarnContext(ctx, "Unable to get Plus API from configuration, NGINX Plus metrics will be "+
-				"unavailable. Please configure a Plus API to get NGINX Plus metrics ", "error", err)
+			slog.WarnContext(ctx, "Unable to get Plus API from NGINX configuration ", "error", err)
 		}
 	}
 
