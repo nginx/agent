@@ -23,10 +23,7 @@ import (
 	"github.com/nginx/agent/v3/internal/uuid"
 )
 
-var (
-	ossVersionRegex  = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+)`)
-	plusVersionRegex = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+).\((?P<plus>\S+plus\S+)\)`)
-)
+var versionRegex = regexp.MustCompile(`(?P<name>\S+)\/(?P<version>.*)`)
 
 type Info struct {
 	ProcessID       int32
@@ -202,14 +199,7 @@ func parseNginxVersionCommandOutput(ctx context.Context, output *bytes.Buffer) *
 }
 
 func parseNginxVersion(line string) string {
-	ossVersionMatches := ossVersionRegex.FindString(line)
-	plusVersionMatches := plusVersionRegex.FindString(line)
-
-	if plusVersionMatches == "" {
-		return strings.TrimPrefix(ossVersionMatches, "nginx/")
-	}
-
-	return strings.TrimPrefix(plusVersionMatches, "nginx/")
+	return strings.TrimPrefix(versionRegex.FindString(line), "nginx/")
 }
 
 func parseConfigureArguments(line string) map[string]interface{} {
