@@ -59,6 +59,6 @@ func BenchmarkNginxService_getNginxProcesses(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		getNginxProcesses(newProcesses)
+		findNginxProcesses(newProcesses)
 	}
 }

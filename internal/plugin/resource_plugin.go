@@ -7,6 +7,7 @@ package plugin
 
 import (
 	"context"
+	"github.com/nginx/agent/v3/internal/datasource/host"
 	"log/slog"
 	"sync"
 
@@ -66,7 +67,7 @@ func (*Resource) Info() *bus.Info {
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.OsProcessesTopic:
-		newProcesses, ok := msg.Data.(map[int32]*model.Process)
+		newProcesses, ok := msg.Data.(host.NginxProcesses)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to model.Process", "payload", msg.Data)
 

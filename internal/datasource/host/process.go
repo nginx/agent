@@ -14,7 +14,10 @@ import (
 	"github.com/shirou/gopsutil/v3/process"
 )
 
-func GetProcesses(ctx context.Context) (map[int32]*model.Process, error) {
+// map of NGINX Processes with ProcessID as key
+type NginxProcesses = map[int32]*model.Process
+
+func GetNginxProcesses(ctx context.Context) (NginxProcesses, error) {
 	slog.DebugContext(ctx, "Getting host processes")
 
 	processes, err := process.Processes()
@@ -39,7 +42,7 @@ func GetProcesses(ctx context.Context) (map[int32]*model.Process, error) {
 		})
 	}
 
-	nginxProcesses := getNginxProcesses(internalProcesses)
+	nginxProcesses := findNginxProcesses(internalProcesses)
 
 	return nginxProcesses, nil
 }
@@ -48,8 +51,8 @@ func isNginxProcess(name, cmd string) bool {
 	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
 }
 
-func getNginxProcesses(processes []*model.Process) map[int32]*model.Process {
-	nginxProcesses := make(map[int32]*model.Process)
+func findNginxProcesses(processes []*model.Process) NginxProcesses {
+	nginxProcesses := make(NginxProcesses)
 
 	for _, p := range processes {
 		if isNginxProcess(p.Name, p.Cmd) {

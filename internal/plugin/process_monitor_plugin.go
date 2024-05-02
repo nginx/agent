@@ -15,14 +15,13 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/datasource/host"
 	"github.com/nginx/agent/v3/internal/logger"
-	"github.com/nginx/agent/v3/internal/model"
 )
 
-type GetProcessesFunc func(ctx context.Context) (map[int32]*model.Process, error)
+type GetProcessesFunc func(ctx context.Context) (host.NginxProcesses, error)
 
 type ProcessMonitor struct {
 	monitoringFrequency time.Duration
-	processes           map[int32]*model.Process
+	processes           host.NginxProcesses
 	messagePipe         bus.MessagePipeInterface
 	getProcessesFunc    GetProcessesFunc
 	processTicker       *time.Ticker
@@ -33,8 +32,8 @@ type ProcessMonitor struct {
 func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
 	return &ProcessMonitor{
 		monitoringFrequency: agentConfig.ProcessMonitor.MonitoringFrequency,
-		processes:           make(map[int32]*model.Process),
-		getProcessesFunc:    host.GetProcesses,
+		processes:           make(host.NginxProcesses),
+		getProcessesFunc:    host.GetNginxProcesses,
 		processTicker:       nil,
 		processesMutex:      sync.Mutex{},
 	}
@@ -75,7 +74,7 @@ func (*ProcessMonitor) Subscriptions() []string {
 	return []string{}
 }
 
-func (pm *ProcessMonitor) getProcesses() map[int32]*model.Process {
+func (pm *ProcessMonitor) getProcesses() host.NginxProcesses {
 	pm.processesMutex.Lock()
 	defer pm.processesMutex.Unlock()
 
@@ -130,7 +129,7 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 	}
 }
 
-func haveProcessesChanged(oldProcesses, newProcesses map[int32]*model.Process) bool {
+func haveProcessesChanged(oldProcesses, newProcesses host.NginxProcesses) bool {
 	// Check if the number of processes has changed
 	if len(oldProcesses) != len(newProcesses) {
 		return true

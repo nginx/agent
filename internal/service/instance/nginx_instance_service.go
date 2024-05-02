@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/nginx/agent/v3/internal/datasource/host"
 	"log/slog"
 	"os"
 	"path"
@@ -63,7 +64,7 @@ func NewNginx(parameters NginxParameters) *Nginx {
 	}
 }
 
-func (n *Nginx) GetInstances(ctx context.Context, nginxProcesses map[int32]*model.Process) []*v1.Instance {
+func (n *Nginx) GetInstances(ctx context.Context, nginxProcesses host.NginxProcesses) []*v1.Instance {
 	var processList []*v1.Instance
 
 	for _, nginxProcess := range nginxProcesses {

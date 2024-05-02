@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/nginx/agent/v3/internal/datasource/host"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -93,7 +94,7 @@ func TestGetInstances(t *testing.T) {
 	noModuleArgs := fmt.Sprintf(ossConfigArgs, noModulesPath)
 
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
-	processes := map[int32]*model.Process{
+	processes := host.NginxProcesses{
 		789: {
 			Pid:  789,
 			Ppid: 1234,
