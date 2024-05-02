@@ -1,6 +1,5 @@
 ---
 title: "Connect to management plane"
-draft: false
 weight: 400
 toc: true
 tags: [ "docs" ]
@@ -18,7 +17,7 @@ There are three types of connections you can establish between the NGINX Agent a
 - [Transport Layer Security (TLS) connection](#tls-connection)
 - [Insecure connection](#insecure-connection)
 
-## mTLS Connection
+## mTLS connection
 
 To establish a mTLS connection between the NGINX Agent and the management plane server, follow these steps:
 
@@ -57,7 +56,7 @@ To establish a mTLS connection between the NGINX Agent and the management plane 
    sudo systemctl restart nginx-agent
    ```
 
-## TLS Connection
+## TLS connection
 
 To establish a TLS connection between the NGINX Agent and the management plane server, follow these steps:
 
@@ -90,7 +89,8 @@ To establish a TLS connection between the NGINX Agent and the management plane s
    ```bash
    sudo systemctl restart nginx-agent
    ```
-## Insecure Connection
+   
+## Insecure connection
 
 {{< warning >}}Insecure connections are not recommended for production environments.{{< /warning >}}
 
