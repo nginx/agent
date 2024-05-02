@@ -135,14 +135,9 @@ func haveProcessesChanged(oldProcesses, newProcesses host.NginxProcesses) bool {
 		return true
 	}
 
-	processIDMap := make(map[int32]struct{})
-	for _, oldProcess := range oldProcesses {
-		processIDMap[oldProcess.Pid] = struct{}{}
-	}
-
 	// Check if the process IDs have changed
 	for _, newProcess := range newProcesses {
-		if _, ok := processIDMap[newProcess.Pid]; !ok {
+		if _, ok := oldProcesses[newProcess.Pid]; !ok {
 			return true
 		}
 	}
