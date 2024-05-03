@@ -8,6 +8,7 @@ package config
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -123,6 +124,11 @@ func (n *Nginx) SetConfigWriter(configWriter writer.ConfigWriterInterface) {
 }
 
 func (n *Nginx) ParseConfig(ctx context.Context) (any, error) {
+	var (
+		plusAPI string
+		plusErr error
+	)
+
 	payload, err := crossplane.Parse(n.instance.GetInstanceRuntime().GetConfigPath(),
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   []string{},
@@ -145,13 +151,22 @@ func (n *Nginx) ParseConfig(ctx context.Context) (any, error) {
 
 	stubStatus, err := n.stubStatus(ctx, payload)
 	if err != nil {
-		slog.Warn("Can not set stub_status", "error", err)
+		slog.WarnContext(ctx, "Unable to get Stub Status API from NGINX configuration", "error", err)
+	}
+
+	if n.instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo() != nil {
+		plusAPI, plusErr = n.plusAPI(ctx, payload)
+		if plusErr != nil {
+			slog.WarnContext(ctx, "Unable to get Plus API from NGINX configuration ", "error", err)
+		}
 	}
 
 	return &model.NginxConfigContext{
 		AccessLogs: accessLogs,
 		ErrorLogs:  errorLogs,
 		StubStatus: stubStatus,
+		PlusAPI:    plusAPI,
+		InstanceID: n.instance.GetInstanceMeta().GetInstanceId(),
 	}, nil
 }
 
@@ -177,10 +192,10 @@ func (n *Nginx) stubStatusAPICallback(ctx context.Context, parent, current *cros
 
 	for _, url := range urls {
 		if n.pingStubStatusAPIEndpoint(ctx, url) {
-			slog.Debug("Stub_status not found", "url", url)
+			slog.DebugContext(ctx, "Stub_status found", "url", url)
 			return url
 		}
-		slog.Debug("Stub_status is not reachable", "url", url)
+		slog.DebugContext(ctx, "Stub_status is not reachable", "url", url)
 	}
 
 	return ""
@@ -190,24 +205,26 @@ func (n *Nginx) pingStubStatusAPIEndpoint(ctx context.Context, statusAPI string)
 	httpClient := http.Client{Timeout: n.agentConfig.Client.Timeout}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
 	if err != nil {
-		slog.Warn("Unable to create Stub Status API GET request", "error", err)
+		slog.WarnContext(ctx, "Unable to create Stub Status API GET request", "error", err)
 		return false
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		slog.Warn("Unable to GET Stub Status from API request", "error", err)
+		slog.WarnContext(ctx, "Unable to GET Stub Status from API request", "error", err)
 		return false
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.Debug("Stub Status API responded with a status code", "status_code", resp.StatusCode)
+		slog.DebugContext(ctx, "Stub Status API responded with unexpected status code", "status_code",
+			resp.StatusCode, "expected", http.StatusOK)
+
 		return false
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Warn("Unable to read Stub Status API response body", "error", err)
+		slog.WarnContext(ctx, "Unable to read Stub Status API response body", "error", err)
 		return false
 	}
 
@@ -221,6 +238,70 @@ func (n *Nginx) pingStubStatusAPIEndpoint(ctx context.Context, statusAPI string)
 	defer resp.Body.Close()
 
 	return strings.Contains(body, "Active connections") && strings.Contains(body, "server accepts handled requests")
+}
+
+func (n *Nginx) plusAPI(ctx context.Context, payload *crossplane.Payload) (string, error) {
+	for _, xpConfig := range payload.Config {
+		plusAPIURL := n.crossplaneConfigTraverseStr(ctx, &xpConfig, n.plusAPICallback)
+		if plusAPIURL != "" {
+			return plusAPIURL, nil
+		}
+	}
+
+	return "", errors.New("no plus api reachable from the agent found")
+}
+
+func (n *Nginx) plusAPICallback(ctx context.Context, parent, current *crossplane.Directive) string {
+	urls := n.urlsForLocationDirective(parent, current, plusAPIDirective)
+
+	for _, url := range urls {
+		if n.pingPlusAPIEndpoint(ctx, url) {
+			slog.DebugContext(ctx, "Plus API found", "url", url)
+			return url
+		}
+		slog.DebugContext(ctx, "Plus API is not reachable", "url", url)
+	}
+
+	return ""
+}
+
+func (n *Nginx) pingPlusAPIEndpoint(ctx context.Context, statusAPI string) bool {
+	httpClient := http.Client{Timeout: n.agentConfig.Client.Timeout}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
+	if err != nil {
+		slog.WarnContext(ctx, "Unable to create NGINX Plus API GET request", "error", err)
+		return false
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		slog.WarnContext(ctx, "Unable to GET NGINX Plus API from API request", "error", err)
+		return false
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		slog.DebugContext(ctx, "NGINX Plus API responded with unexpected status code", "status_code",
+			resp.StatusCode, "expected", http.StatusOK)
+
+		return false
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		slog.WarnContext(ctx, "Unable to read NGINX Plus API response body", "error", err)
+		return false
+	}
+
+	// Expecting API to return the API versions in an array of positive integers
+	// subset example: [ ... 6,7,8,9 ...]
+	var responseBody []int
+	err = json.Unmarshal(bodyBytes, &responseBody)
+	defer resp.Body.Close()
+	if err != nil {
+		slog.DebugContext(ctx, "Unable to unmarshal NGINX Plus API response body", "error", err)
+		return false
+	}
+
+	return true
 }
 
 func (n *Nginx) urlsForLocationDirective(parent, current *crossplane.Directive, locationDirectiveName string) []string {
