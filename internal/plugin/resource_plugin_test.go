@@ -49,37 +49,78 @@ func TestResourceMonitor_Subscriptions(t *testing.T) {
 	assert.Equal(t,
 		[]string{
 			bus.OsProcessesTopic,
+			bus.InstanceConfigContextTopic,
 		},
 		resourcePlugin.Subscriptions())
 }
 
 func TestResource_Instances_Process(t *testing.T) {
 	ctx := context.Background()
-	testResource := protos.GetHostResource()
 
-	fakeResourceService := &servicefakes.FakeResourceServiceInterface{}
-	fakeResourceService.GetResourceReturns(testResource)
+	nginxConfigContext := &model.NginxConfigContext{
+		AccessLogs: []*model.AccessLog{
+			{
+				Name: "/usr/local/var/log/nginx/access.log",
+			},
+		},
+		ErrorLogs: []*model.ErrorLog{
+			{
+				Name: "/usr/local/var/log/nginx/error.log",
+			},
+		},
+		StubStatus: "http://127.0.0.1:8081/api",
+		InstanceID: protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+	}
 
-	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
-	fakeInstanceService.GetInstancesReturns(testResource.GetInstances())
+	tests := []struct {
+		name             string
+		processesMessage *bus.Message
+		resource         *v1.Resource
+		topic            string
+	}{
+		{
+			name: "Test 1: OS Process Topic",
+			processesMessage: &bus.Message{
+				Topic: bus.OsProcessesTopic,
+				Data:  []*model.Process{{Pid: 123, Name: "nginx"}},
+			},
+			resource: protos.GetHostResource(),
+			topic:    bus.ResourceTopic,
+		},
+		{
+			name:             "Test 2: Instance Config Context Topic",
+			processesMessage: &bus.Message{Topic: bus.InstanceConfigContextTopic, Data: nginxConfigContext},
+			resource:         protos.GetHostResource(),
+			topic:            bus.ResourceTopic,
+		},
+	}
 
-	resourcePlugin := NewResource(types.GetAgentConfig())
-	resourcePlugin.instanceService = fakeInstanceService
-	resourcePlugin.resourceService = fakeResourceService
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fakeResourceService := &servicefakes.FakeResourceServiceInterface{}
+			fakeResourceService.GetResourceReturns(test.resource)
 
-	messagePipe := bus.NewFakeMessagePipe()
-	err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
-	require.NoError(t, err)
+			fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
+			fakeInstanceService.GetInstancesReturns(test.resource.GetInstances())
 
-	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{{Pid: 123, Name: "nginx"}}}
-	messagePipe.Process(ctx, processesMessage)
-	messagePipe.Run(ctx)
+			resourcePlugin := NewResource(types.GetAgentConfig())
+			resourcePlugin.instanceService = fakeInstanceService
+			resourcePlugin.resourceService = fakeResourceService
 
-	assert.Len(t, messagePipe.GetProcessedMessages(), 2)
-	assert.Equal(t, processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
-	assert.Equal(t, processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
-	assert.Equal(t, bus.ResourceTopic, messagePipe.GetProcessedMessages()[1].Topic)
-	assert.Equal(t, testResource, messagePipe.GetProcessedMessages()[1].Data)
+			messagePipe := bus.NewFakeMessagePipe()
+			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			require.NoError(t, err)
+
+			messagePipe.Process(ctx, test.processesMessage)
+			messagePipe.Run(ctx)
+
+			assert.Len(t, messagePipe.GetProcessedMessages(), 2)
+			assert.Equal(t, test.processesMessage.Topic, messagePipe.GetProcessedMessages()[0].Topic)
+			assert.Equal(t, test.processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
+			assert.Equal(t, test.topic, messagePipe.GetProcessedMessages()[1].Topic)
+			assert.Equal(t, test.resource, messagePipe.GetProcessedMessages()[1].Data)
+		})
+	}
 }
 
 func TestResource_Process_Error_Expected(t *testing.T) {
@@ -132,4 +173,76 @@ func TestResource_Process_Empty_Instances(t *testing.T) {
 	assert.Equal(t, processesMessage.Data, messagePipe.GetProcessedMessages()[0].Data)
 	assert.Equal(t, bus.ResourceTopic, messagePipe.GetProcessedMessages()[1].Topic)
 	assert.Equal(t, testResource, messagePipe.GetProcessedMessages()[1].Data)
+}
+
+func TestResource_Instances_updateInstance(t *testing.T) {
+	resourcePlugin := NewResource(types.GetAgentConfig())
+
+	nginxOSSConfigContext := &model.NginxConfigContext{
+		AccessLogs: []*model.AccessLog{
+			{
+				Name: "/usr/local/var/log/nginx/access.log",
+			},
+		},
+		ErrorLogs: []*model.ErrorLog{
+			{
+				Name: "/usr/local/var/log/nginx/error.log",
+			},
+		},
+		StubStatus: "http://127.0.0.1:8081/api",
+	}
+
+	nginxPlusConfigContext := &model.NginxConfigContext{
+		AccessLogs: []*model.AccessLog{
+			{
+				Name: "/usr/local/var/log/nginx/access.log",
+			},
+		},
+		ErrorLogs: []*model.ErrorLog{
+			{
+				Name: "/usr/local/var/log/nginx/error.log",
+			},
+		},
+		PlusAPI: "http://127.0.0.1:8081/api",
+	}
+
+	tests := []struct {
+		name               string
+		nginxConfigContext *model.NginxConfigContext
+		instance           *v1.Instance
+	}{
+		{
+			name:               "Test 1: OSS Instance",
+			nginxConfigContext: nginxOSSConfigContext,
+			instance:           protos.GetNginxOssInstance([]string{}),
+		},
+		{
+			name:               "Test 2: Plus Instance",
+			nginxConfigContext: nginxPlusConfigContext,
+			instance:           protos.GetNginxPlusInstance([]string{}),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			resourcePlugin.updateInstance(test.nginxConfigContext, test.instance)
+			if test.name == "Test 2: Plus Instance" {
+				assert.Equal(t, test.nginxConfigContext.AccessLogs[0].Name, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetAccessLogs()[0])
+				assert.Equal(t, test.nginxConfigContext.ErrorLogs[0].Name, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetErrorLogs()[0])
+				assert.Equal(t, test.nginxConfigContext.StubStatus, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetStubStatus())
+				assert.Equal(t, test.nginxConfigContext.PlusAPI, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetPlusApi())
+			} else {
+				assert.Equal(t, test.nginxConfigContext.AccessLogs[0].Name, test.instance.GetInstanceRuntime().
+					GetNginxRuntimeInfo().GetAccessLogs()[0])
+				assert.Equal(t, test.nginxConfigContext.ErrorLogs[0].Name, test.instance.GetInstanceRuntime().
+					GetNginxRuntimeInfo().GetErrorLogs()[0])
+				assert.Equal(t, test.nginxConfigContext.StubStatus, test.instance.GetInstanceRuntime().
+					GetNginxRuntimeInfo().GetStubStatus())
+			}
+		})
+	}
 }

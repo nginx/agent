@@ -10,6 +10,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"sync"
 	"testing"
@@ -35,7 +37,6 @@ import (
 const (
 	errorLogLine   = "2023/03/14 14:16:23 [emerg] 3871#3871: bind() to 0.0.0.0:8081 failed (98: Address already in use)"
 	warningLogLine = "2023/03/14 14:16:23 nginx: [warn] 2048 worker_connections exceed open file resource limit: 1024"
-	instanceID     = "7332d596-d2e6-4d1e-9e75-70f91ef9bd0e"
 )
 
 func TestNginx_ParseConfig(t *testing.T) {
@@ -71,7 +72,8 @@ func TestNginx_ParseConfig(t *testing.T) {
 		accessLog.Name(),
 		combinedAccessLog.Name(),
 		ltsvAccessLog.Name(),
-		errorLog.Name())
+		errorLog.Name(),
+		protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId())
 
 	instance := protos.GetNginxOssInstance([]string{})
 	instance.InstanceRuntime.ConfigPath = file.Name()
@@ -652,5 +654,124 @@ func TestParseStatusAPIEndpoints(t *testing.T) {
 
 		assert.Equal(t, tt.plus, plus)
 		assert.Equal(t, tt.oss, oss)
+	}
+}
+
+// linter doesn't like the duplicate handler and server function
+// nolint: dupl
+func TestNginx_PingPlusAPIEndpoint(t *testing.T) {
+	handler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.String() == "/good_api" {
+			data := []byte("[1,2,3,4,5,6,7,8]")
+			_, err := rw.Write(data)
+			require.NoError(t, err)
+		} else if req.URL.String() == "/invalid_body_api" {
+			data := []byte("Invalid")
+			_, err := rw.Write(data)
+			require.NoError(t, err)
+		} else {
+			rw.WriteHeader(http.StatusInternalServerError)
+			data := []byte("")
+			_, err := rw.Write(data)
+			require.NoError(t, err)
+		}
+	})
+
+	fakeServer := httptest.NewServer(handler)
+	defer fakeServer.Close()
+
+	instance := protos.GetNginxOssInstance([]string{})
+	nginxConfig := NewNginx(context.Background(), instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+
+	tests := []struct {
+		name     string
+		endpoint string
+		expected bool
+	}{
+		{
+			name:     "Test 1: valid API",
+			endpoint: "/good_api",
+			expected: true,
+		},
+		{
+			name:     "Test 2: invalid response status code",
+			endpoint: "/bad_api",
+			expected: false,
+		},
+		{
+			name:     "Test 3: invalid response body",
+			endpoint: "/invalid_body_api",
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.Background()
+			result := nginxConfig.pingPlusAPIEndpoint(ctx, fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint))
+			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
+// linter doesn't like the duplicate handler and server function
+// nolint: dupl
+func TestNginx_PingStubStatusAPIEndpoint(t *testing.T) {
+	handler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.String() == "/good_api" {
+			data := []byte(`
+Active connections: 2
+server accepts handled requests
+	18 18 3266
+Reading: 0 Writing: 1 Waiting: 1
+			`)
+			_, err := rw.Write(data)
+			require.NoError(t, err)
+		} else if req.URL.String() == "/invalid_body_api" {
+			data := []byte("Invalid")
+			_, err := rw.Write(data)
+			require.NoError(t, err)
+		} else {
+			rw.WriteHeader(http.StatusInternalServerError)
+			data := []byte("")
+			_, err := rw.Write(data)
+			require.NoError(t, err)
+		}
+	})
+
+	fakeServer := httptest.NewServer(handler)
+	defer fakeServer.Close()
+
+	instance := protos.GetNginxOssInstance([]string{})
+	nginxConfig := NewNginx(context.Background(), instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+
+	tests := []struct {
+		name     string
+		endpoint string
+		expected bool
+	}{
+		{
+			name:     "Test 1: valid API",
+			endpoint: "/good_api",
+			expected: true,
+		},
+		{
+			name:     "Test 2: invalid response status code",
+			endpoint: "/bad_api",
+			expected: false,
+		},
+		{
+			name:     "Test 3: invalid response body",
+			endpoint: "/invalid_body_api",
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.Background()
+			result := nginxConfig.pingStubStatusAPIEndpoint(ctx, fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint))
+			assert.Equal(t, test.expected, result)
+		})
 	}
 }
