@@ -33,6 +33,7 @@ UPLOAD_URL          := "https://up-ap.nginx.com/"
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Release Packaging                                                                                               #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+.PHONY: clean-packages
 clean-packages: 
 	rm -rf $(PACKAGES_DIR)
 	rm -rf $(GITHUB_PACKAGES_DIR)
@@ -47,6 +48,7 @@ $(GITHUB_PACKAGES_DIR):
 $(AZURE_PACKAGES_DIR):
 	@mkdir -p $(AZURE_PACKAGES_DIR)
 
+.PHONY: package
 package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) #### Create final packages for all supported distros
 	# Create deb packages
 	
@@ -187,9 +189,11 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	echo "Azure packages:"; \
 	find $(AZURE_PACKAGES_DIR) ;
 
+.PHONY: build-signed-packager
 build-signed-packager:
 	docker build -f scripts/packages/packager/Dockerfile --build-arg package_type=signed-package -t build-signed-packager:1.0.0 .
 
+.PHONY: gpg-key
 gpg-key: ## Generate GPG public key
 	$$(gpg --import $(NFPM_SIGNING_KEY_FILE)); \
 	keyid=$$(gpg --list-keys NGINX | egrep -A1 "^pub" | egrep -v "^pub" | tr -d '[:space:]'); \
@@ -199,6 +203,7 @@ gpg-key: ## Generate GPG public key
 	$$(gpg --export-secret-key $$keyid | openpgp2ssh $$keyid > .key.rsa); \
 	$$(gpg --output $(GPG_PUBLIC_KEY) --armor --export)
 
+.PHONY: release
 release: ## Publish tarball to the UPLOAD_URL
 	echo "Publishing nginx-agent packages to ${UPLOAD_URL}"; \
 	curl -XPOST -F "file=@$(PACKAGES_DIR)/$(TARBALL_NAME)" -H "Token: ${TOKEN}" ${UPLOAD_URL}; \
