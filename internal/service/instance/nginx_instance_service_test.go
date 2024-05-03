@@ -208,11 +208,10 @@ func TestGetInfo(t *testing.T) {
 				Exe: exePath,
 			},
 			expected: &Info{
-				Version:     "1.25.3",
-				PlusVersion: "",
-				Prefix:      "/usr/local/Cellar/nginx/1.25.3",
-				ConfPath:    "/usr/local/etc/nginx/nginx.conf",
-				ExePath:     exePath,
+				Version:  "1.25.3",
+				Prefix:   "/usr/local/Cellar/nginx/1.25.3",
+				ConfPath: "/usr/local/etc/nginx/nginx.conf",
+				ExePath:  exePath,
 				ConfigureArgs: map[string]interface{}{
 					"conf-path":                  "/usr/local/etc/nginx/nginx.conf",
 					"error-log-path":             "/usr/local/var/log/nginx/error.log",
@@ -275,11 +274,10 @@ func TestGetInfo(t *testing.T) {
 				Exe: exePath,
 			},
 			expected: &Info{
-				Version:     "1.25.3",
-				PlusVersion: "nginx-plus-r31-p1",
-				Prefix:      "/etc/nginx",
-				ConfPath:    "/etc/nginx/nginx.conf",
-				ExePath:     exePath,
+				Version:  "1.25.3 (nginx-plus-r31-p1)",
+				Prefix:   "/etc/nginx",
+				ConfPath: "/etc/nginx/nginx.conf",
+				ExePath:  exePath,
 				ConfigureArgs: map[string]interface{}{
 					"build":                                  "nginx-plus-r31-p1",
 					"conf-path":                              "/etc/nginx/nginx.conf",
