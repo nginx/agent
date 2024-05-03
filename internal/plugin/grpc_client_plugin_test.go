@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
 
@@ -153,6 +155,55 @@ func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
 	client.Process(ctx, mockMessage)
 
 	assert.True(t, client.isConnected.Load())
+}
+
+func TestGrpcClient_ProcessRequest(t *testing.T) {
+	ctx := context.Background()
+
+	agentConfig := types.GetAgentConfig()
+	client := NewGrpcClient(agentConfig)
+	pipe := &bus.FakeMessagePipe{}
+	client.messagePipe = pipe
+	assert.NotNil(t, client)
+
+	tests := []struct {
+		name     string
+		request  *v1.ManagementPlaneRequest
+		expected *bus.Message
+	}{
+		{
+			name: "Test 1: Config Apply Request",
+			request: &v1.ManagementPlaneRequest{
+				Request: &v1.ManagementPlaneRequest_ConfigApplyRequest{
+					ConfigApplyRequest: &v1.ConfigApplyRequest{
+						ConfigVersion: protos.CreateConfigVersion(),
+					},
+				},
+			},
+			expected: &bus.Message{
+				Topic: bus.InstanceConfigUpdateRequestTopic,
+				Data: &v1.ManagementPlaneRequest_ConfigApplyRequest{
+					ConfigApplyRequest: &v1.ConfigApplyRequest{
+						ConfigVersion: protos.CreateConfigVersion(),
+					},
+				},
+			},
+		},
+		{
+			name: "Test 2: Invalid Request",
+			request: &v1.ManagementPlaneRequest{
+				Request: &v1.ManagementPlaneRequest_ActionRequest{},
+			},
+			expected: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			client.ProcessRequest(ctx, test.request)
+			pipe.GetMessages()
+		})
+	}
 }
 
 func TestGrpcClient_Close(t *testing.T) {

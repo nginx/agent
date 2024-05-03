@@ -57,6 +57,8 @@ RPM_PACKAGE := ./build/$(PACKAGE_NAME).rpm
 
 MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
 MOCK_MANAGEMENT_PLANE_LOG_LEVEL ?= INFO
+MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS ?= 127.0.0.1:0
+MOCK_MANAGEMENT_PLANE_API_ADDRESS ?= 127.0.0.1:0
 OLD_BENCHMARK_RESULTS_FILE ?= $(TEST_BUILD_DIR)/benchmark.txt
 
 uname_m    := $(shell uname -m)
@@ -171,7 +173,7 @@ race-condition-dev: ## Run agent executable with race condition detection
 
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🚀 Running mock management plane gRPC server"
-	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL)
+	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
 	@echo "Generating proto files"
