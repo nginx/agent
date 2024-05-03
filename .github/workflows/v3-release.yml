@@ -1,0 +1,68 @@
+name: Release the v3 nginx agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      githubRelease:
+        description: 'Setup release in github'
+        type: boolean
+        default: false
+      buildPackages:
+        description: 'Build packages'
+        default: true
+        type: boolean
+      packageVersion:
+        description: 'Package version number'
+        default: "3.0.0"
+        type: string
+      packageBuildNo:
+        description: 'Package Build number'
+        default: "1"
+        type: string
+      uploadAzure:
+        description: 'Publish packages Azure storage'
+        default: true
+        type: boolean
+      publishPackages:
+        description: 'Publish packages to up-ap.nginx.com'
+        default: true
+        type: boolean
+      tagRelease:
+        description: 'Add tag to release branch'
+        default: false
+        type: boolean
+      createPullRequest:
+        description: 'Create pull request back into v3'
+        default: false
+        type: boolean
+      releaseBranch:
+        description: 'Release branch to build & publish from'
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.ref_name }}-release-v3
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Release Agent v3
+    uses: nginx/agent/.github/workflows/release.yml@v3
+    with:
+      githubRelease: ${{ inputs.githubRelease }}
+      buildPackages: ${{ inputs.buildPackages }}
+      packageVersion: ${{ inputs.packageVersion }}
+      packageBuildNo: ${{ inputs.packageBuildNo }}
+      uploadAzure: ${{ inputs.uploadAzure }}
+      publishPackages: ${{ inputs.publishPackages }}
+      tagRelease: ${{ inputs.tagRelease }}
+      createPullRequest: ${{ inputs.createPullRequest }}
+      releaseBranch: ${{ inputs.releaseBranch }}
+    secrets: inherit
