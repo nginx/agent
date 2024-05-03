@@ -56,7 +56,7 @@ func GetNginxPlusInstance(expectedModules []string) *v1.Instance {
 		InstanceMeta: &v1.InstanceMeta{
 			InstanceId:   plusInstanceID,
 			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS,
-			Version:      "nginx-plus-r31-p1",
+			Version:      "1.25.3 (nginx-plus-r31-p1)",
 		},
 		InstanceRuntime: &v1.InstanceRuntime{
 			ProcessId:  processID,
