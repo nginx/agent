@@ -20,7 +20,7 @@ func TestFeatures_NginxCountingEnabled(t *testing.T) {
 		t,
 		"features-nginx-counting-enabled",
 		"./test_configs/nginx-agent-counting.conf:/etc/nginx-agent/nginx-agent.conf",
-		"OneTimeRegistration completed",
+		"Starting Agent API HTTP server with port from config and TLS disabled",
 	)
 	utils.TestAgentHasNoErrorLogs(t, testContainer)
 
