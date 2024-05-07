@@ -213,7 +213,7 @@ func registerFlags() {
 	fs.Bool(
 		CommandTLSSkipVerifyKey,
 		DefCommandTLSSkipVerifyKey,
-		"Only intended for demonstration, sets InsecureSkipVerify for TLS credentials.",
+		"Testing only. If true, SkipVerify controls client verification of a server's certificate chain and host name.",
 	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
