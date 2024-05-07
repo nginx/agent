@@ -46,8 +46,6 @@ const (
 	errorStatus   = "ERROR"
 	unknownStatus = "UNKNOWN"
 
-	healthStatusOk           string = "OK"
-	healthStatusError        string = "ERROR"
 	registration             string = "registration"
 	commandServiceConnection string = "commandServiceConnection"
 	metricsServiceConnection string = "metricsServiceConnection"
@@ -153,14 +151,14 @@ type HealthStatusCheck struct {
 	// example: commandServiceConnection
 	Name string `json:"name"`
 	// Health check status
-	// example: UP
+	// example: OK
 	Status string `json:"status"`
 }
 
 // swagger:model HealthResponse
 type HealthResponse struct {
 	// Overall health status
-	// example: UP
+	// example: OK
 	Status string `json:"status"`
 	// Array of health checks
 	Checks []HealthStatusCheck `json:"checks"`
@@ -688,17 +686,17 @@ func (rh *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 	w.WriteHeader(http.StatusOK)
 
-	overallStatus := healthStatusOk
+	overallStatus := okStatus
 	checks := []HealthStatusCheck{}
 
-	registrationStatus := healthStatusOk
-	commandServiceStatus := healthStatusOk
-	metricsServiceStatus := healthStatusOk
+	registrationStatus := okStatus
+	commandServiceStatus := okStatus
+	metricsServiceStatus := okStatus
 
 	if rh.config.IsGrpcServerConfigured() {
 		if !rh.isGrpcRegistered {
-			registrationStatus = healthStatusError
-			overallStatus = healthStatusError
+			registrationStatus = errorStatus
+			overallStatus = errorStatus
 		}
 
 		checks = append(checks, HealthStatusCheck{
@@ -711,8 +709,8 @@ func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 		lastCommandSentDiff := timeNow.Sub(rh.lastCommandSent)
 
 		if lastCommandSentDiff > (2 * rh.config.Dataplane.Status.PollInterval) {
-			commandServiceStatus = healthStatusError
-			overallStatus = healthStatusError
+			commandServiceStatus = errorStatus
+			overallStatus = errorStatus
 		}
 
 		checks = append(checks, HealthStatusCheck{
@@ -724,8 +722,8 @@ func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 			lastMetricReportSentDiff := timeNow.Sub(rh.lastMetricReportSent)
 
 			if lastMetricReportSentDiff > (2 * rh.config.AgentMetrics.ReportInterval) {
-				metricsServiceStatus = healthStatusError
-				overallStatus = healthStatusError
+				metricsServiceStatus = errorStatus
+				overallStatus = errorStatus
 			}
 
 			checks = append(checks, HealthStatusCheck{

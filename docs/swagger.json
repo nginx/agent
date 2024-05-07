@@ -233,7 +233,7 @@
           "description": "Overall health status",
           "type": "string",
           "x-go-name": "Status",
-          "example": "UP"
+          "example": "OK"
         }
       },
       "x-go-package": "github.com/nginx/agent/v2/src/plugins"
@@ -251,7 +251,7 @@
           "description": "Health check status",
           "type": "string",
           "x-go-name": "Status",
-          "example": "UP"
+          "example": "OK"
         }
       },
       "x-go-package": "github.com/nginx/agent/v2/src/plugins"

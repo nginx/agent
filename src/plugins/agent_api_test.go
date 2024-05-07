@@ -547,19 +547,19 @@ func TestRootHandler_healthCheck(t *testing.T) {
 				lastMetricReportSent: time.Now(),
 			},
 			expected: &HealthResponse{
-				Status: healthStatusOk,
+				Status: okStatus,
 				Checks: []HealthStatusCheck{
 					{
 						Name:   registration,
-						Status: healthStatusOk,
+						Status: okStatus,
 					},
 					{
 						Name:   commandServiceConnection,
-						Status: healthStatusOk,
+						Status: okStatus,
 					},
 					{
 						Name:   metricsServiceConnection,
-						Status: healthStatusOk,
+						Status: okStatus,
 					},
 				},
 			},
@@ -573,19 +573,19 @@ func TestRootHandler_healthCheck(t *testing.T) {
 				lastMetricReportSent: time.Now(),
 			},
 			expected: &HealthResponse{
-				Status: healthStatusError,
+				Status: errorStatus,
 				Checks: []HealthStatusCheck{
 					{
 						Name:   registration,
-						Status: healthStatusError,
+						Status: errorStatus,
 					},
 					{
 						Name:   commandServiceConnection,
-						Status: healthStatusOk,
+						Status: okStatus,
 					},
 					{
 						Name:   metricsServiceConnection,
-						Status: healthStatusOk,
+						Status: okStatus,
 					},
 				},
 			},
@@ -599,19 +599,19 @@ func TestRootHandler_healthCheck(t *testing.T) {
 				lastMetricReportSent: time.Now(),
 			},
 			expected: &HealthResponse{
-				Status: healthStatusError,
+				Status: errorStatus,
 				Checks: []HealthStatusCheck{
 					{
 						Name:   registration,
-						Status: healthStatusOk,
+						Status: okStatus,
 					},
 					{
 						Name:   commandServiceConnection,
-						Status: healthStatusError,
+						Status: errorStatus,
 					},
 					{
 						Name:   metricsServiceConnection,
-						Status: healthStatusOk,
+						Status: okStatus,
 					},
 				},
 			},
@@ -625,19 +625,19 @@ func TestRootHandler_healthCheck(t *testing.T) {
 				lastMetricReportSent: time.Now().AddDate(0, 0, -1),
 			},
 			expected: &HealthResponse{
-				Status: healthStatusError,
+				Status: errorStatus,
 				Checks: []HealthStatusCheck{
 					{
 						Name:   registration,
-						Status: healthStatusOk,
+						Status: okStatus,
 					},
 					{
 						Name:   commandServiceConnection,
-						Status: healthStatusOk,
+						Status: okStatus,
 					},
 					{
 						Name:   metricsServiceConnection,
-						Status: healthStatusError,
+						Status: errorStatus,
 					},
 				},
 			},
