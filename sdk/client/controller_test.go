@@ -45,8 +45,7 @@ func TestControllerConnect(t *testing.T) {
 	controller.WithClient(metricsReportClient)
 	controller.WithContext(ctx)
 
-	err := controller.Connect()
-	assert.Nil(t, err)
+	controller.Connect()
 
 	commanderClient.AssertNumberOfCalls(t, "Connect", 1)
 	metricsReportClient.AssertNumberOfCalls(t, "Connect", 1)
@@ -75,8 +74,7 @@ func TestControllerConnect_error(t *testing.T) {
 	controller.WithClient(metricsReportClient)
 	controller.WithContext(ctx)
 
-	err := controller.Connect()
-	assert.NotNil(t, err)
+	controller.Connect()
 
 	commanderClient.AssertNumberOfCalls(t, "Connect", 1)
 	metricsReportClient.AssertNumberOfCalls(t, "Connect", 1)

@@ -30,7 +30,7 @@ func TestRegistration_startRegistration(t *testing.T) {
 	}{
 		{
 			name:                 "test registration",
-			expectedMessageCount: 2,
+			expectedMessageCount: 1,
 		},
 	}
 
@@ -65,9 +65,6 @@ func TestRegistration_startRegistration(t *testing.T) {
 
 			assert.Equal(tt, messages[0].Topic(), core.CommRegister)
 			assert.NotNil(tt, messages[0].Data())
-
-			assert.Equal(tt, messages[1].Topic(), core.RegistrationCompletedTopic)
-			assert.Nil(tt, messages[1].Data())
 		})
 	}
 }
@@ -87,7 +84,7 @@ func TestRegistration_areDataplaneSoftwareDetailsReady(t *testing.T) {
 func TestRegistration_Subscriptions(t *testing.T) {
 	pluginUnderTest := NewOneTimeRegistration(tutils.GetMockAgentConfig(), nil, tutils.GetMockEnv(), nil, tutils.GetProcesses())
 
-	assert.Equal(t, []string{core.RegistrationCompletedTopic, core.DataplaneSoftwareDetailsUpdated, core.NginxDetailProcUpdate}, pluginUnderTest.Subscriptions())
+	assert.Equal(t, []string{core.AgentConnected, core.DataplaneSoftwareDetailsUpdated, core.NginxDetailProcUpdate}, pluginUnderTest.Subscriptions())
 }
 
 func TestRegistration_Info(t *testing.T) {

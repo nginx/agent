@@ -78,7 +78,7 @@ type (
 		WithClient(Client) Controller
 		Context() context.Context
 		WithContext(context.Context) Controller
-		Connect() error
+		Connect()
 		Close() error
 	}
 )

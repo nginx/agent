@@ -9,6 +9,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -161,6 +162,12 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 					return err
 				}
 			}
+
+			if r.channel == nil {
+				isRetrying = true
+				return r.handleGrpcError("Metric Reporter Channel Send", errors.New("metric service stream client not created yet"))
+			}
+
 			if err := r.channel.Send(report); err != nil {
 				isRetrying = true
 				return r.handleGrpcError("Metric Reporter Channel Send", err)

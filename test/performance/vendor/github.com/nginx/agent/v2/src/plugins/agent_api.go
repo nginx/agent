@@ -45,9 +45,16 @@ const (
 	pendingStatus = "PENDING"
 	errorStatus   = "ERROR"
 	unknownStatus = "UNKNOWN"
+
+	healthStatusOk           string = "OK"
+	healthStatusError        string = "ERROR"
+	registration             string = "registration"
+	commandServiceConnection string = "commandServiceConnection"
+	metricsServiceConnection string = "metricsServiceConnection"
 )
 
 var (
+	healthRegex       = regexp.MustCompile(`^\/health[\/]*$`)
 	instancesRegex    = regexp.MustCompile(`^\/nginx[\/]*$`)
 	configRegex       = regexp.MustCompile(`^\/nginx/config[\/]*$`)
 	configStatusRegex = regexp.MustCompile(`^\/nginx/config/status[\/]*$`)
@@ -60,8 +67,16 @@ type AgentAPI struct {
 	server       http.Server
 	nginxBinary  core.NginxBinary
 	nginxHandler *NginxHandler
+	rootHandler  *RootHandler
 	exporter     *prometheus_metrics.Exporter
 	processes    []*core.Process
+}
+
+type RootHandler struct {
+	config               *config.Config
+	isGrpcRegistered     bool
+	lastCommandSent      time.Time
+	lastMetricReportSent time.Time
 }
 
 type NginxHandler struct {
@@ -132,6 +147,25 @@ type AgentAPIConfigApplyStatusResponse struct {
 	Status string `json:"status"`
 }
 
+// swagger:model HealthStatusCheck
+type HealthStatusCheck struct {
+	// Health check name
+	// example: commandServiceConnection
+	Name string `json:"name"`
+	// Health check status
+	// example: UP
+	Status string `json:"status"`
+}
+
+// swagger:model HealthResponse
+type HealthResponse struct {
+	// Overall health status
+	// example: UP
+	Status string `json:"status"`
+	// Array of health checks
+	Checks []HealthStatusCheck `json:"checks"`
+}
+
 const (
 	contentTypeHeader = "Content-Type"
 	jsonMimeType      = "application/json"
@@ -191,6 +225,12 @@ func (a *AgentAPI) Process(message *core.Message) {
 		if a.nginxHandler != nil {
 			a.nginxHandler.syncProcessInfo(a.processes)
 		}
+	case core.AgentConnected:
+		a.rootHandler.isGrpcRegistered = true
+	case core.CommandSent:
+		a.rootHandler.lastCommandSent = time.Now()
+	case core.MetricReportSent:
+		a.rootHandler.lastMetricReportSent = time.Now()
 	}
 }
 
@@ -206,10 +246,19 @@ func (a *AgentAPI) Subscriptions() []string {
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,
 		core.NginxDetailProcUpdate,
+		core.AgentConnected,
+		core.CommandSent,
+		core.MetricReportSent,
 	}
 }
 
 func (a *AgentAPI) createHttpServer() {
+	a.rootHandler = &RootHandler{
+		config:               a.config,
+		isGrpcRegistered:     false,
+		lastMetricReportSent: time.Now(),
+	}
+
 	a.nginxHandler = &NginxHandler{
 		config:                 a.config,
 		pipeline:               a.pipeline,
@@ -224,6 +273,7 @@ func (a *AgentAPI) createHttpServer() {
 
 	mux.Handle("/metrics/", a.getPrometheusHandler())
 	mux.Handle("/nginx/", a.nginxHandler)
+	mux.Handle("/", a.rootHandler)
 
 	handler := cors.New(cors.Options{AllowedMethods: []string{"OPTIONS", "GET", "PUT"}}).Handler(mux)
 	a.server = http.Server{
@@ -546,7 +596,7 @@ func (h *NginxHandler) applyNginxConfig(nginxDetail *proto.NginxDetails, buf *by
 //	200: AgentAPIConfigApplyResponse
 //	400: AgentAPIConfigApplyStatusResponse
 //	404: AgentAPIConfigApplyStatusResponse
-//	500
+//	500: AgentAPICommonResponse
 func (h *NginxHandler) getConfigStatus(w http.ResponseWriter, r *http.Request) error {
 	correlationId := r.URL.Query().Get("correlation_id")
 
@@ -603,6 +653,94 @@ func (h *NginxHandler) syncProcessInfo(processInfo []*core.Process) {
 	h.processesMutex.Lock()
 	defer h.processesMutex.Unlock()
 	h.processes = processInfo
+}
+
+func (rh *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(contentTypeHeader, jsonMimeType)
+
+	switch {
+	case healthRegex.MatchString(r.URL.Path):
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		err := rh.healthCheck(w)
+		if err != nil {
+			log.Warnf("Failed to get agent health: %v", err)
+		}
+	default:
+		w.WriteHeader(http.StatusNotFound)
+		_, err := fmt.Fprint(w, []byte("not found"))
+		if err != nil {
+			log.Warnf("Failed to send api response: %v", err)
+		}
+	}
+}
+
+// swagger:route GET /health nginx-agent health-check
+//
+// # Check the health of the NGINX Agent
+//
+// responses:
+//
+//	200: HealthResponse
+func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusOK)
+
+	overallStatus := healthStatusOk
+	checks := []HealthStatusCheck{}
+
+	registrationStatus := healthStatusOk
+	commandServiceStatus := healthStatusOk
+	metricsServiceStatus := healthStatusOk
+
+	if rh.config.IsGrpcServerConfigured() {
+		if !rh.isGrpcRegistered {
+			registrationStatus = healthStatusError
+			overallStatus = healthStatusError
+		}
+
+		checks = append(checks, HealthStatusCheck{
+			Name:   registration,
+			Status: registrationStatus,
+		})
+
+		timeNow := time.Now()
+
+		lastCommandSentDiff := timeNow.Sub(rh.lastCommandSent)
+
+		if lastCommandSentDiff > (2 * rh.config.Dataplane.Status.PollInterval) {
+			commandServiceStatus = healthStatusError
+			overallStatus = healthStatusError
+		}
+
+		checks = append(checks, HealthStatusCheck{
+			Name:   commandServiceConnection,
+			Status: commandServiceStatus,
+		})
+
+		if rh.config.IsFeatureEnabled(agent_config.FeatureMetrics) || rh.config.IsFeatureEnabled(agent_config.FeatureMetricsSender) {
+			lastMetricReportSentDiff := timeNow.Sub(rh.lastMetricReportSent)
+
+			if lastMetricReportSentDiff > (2 * rh.config.AgentMetrics.ReportInterval) {
+				metricsServiceStatus = healthStatusError
+				overallStatus = healthStatusError
+			}
+
+			checks = append(checks, HealthStatusCheck{
+				Name:   metricsServiceConnection,
+				Status: metricsServiceStatus,
+			})
+		}
+	}
+
+	healthResponse := &HealthResponse{
+		Status: overallStatus,
+		Checks: checks,
+	}
+
+	return writeObjectToResponseBody(w, healthResponse)
 }
 
 func writeObjectToResponseBody(w http.ResponseWriter, response any) error {

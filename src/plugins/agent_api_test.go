@@ -56,6 +56,9 @@ func TestAgentAPI_Subscriptions(t *testing.T) {
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,
 		core.NginxDetailProcUpdate,
+		core.AgentConnected,
+		core.CommandSent,
+		core.MetricReportSent,
 	}
 
 	agentAPI := AgentAPI{}
@@ -521,6 +524,140 @@ func TestMtls_forApi(t *testing.T) {
 			if tt.clientMTLS {
 				os.RemoveAll("../../build/certs/")
 			}
+		})
+	}
+}
+
+func TestRootHandler_healthCheck(t *testing.T) {
+	agentConfig := tutils.GetMockAgentConfig()
+	agentConfig.Dataplane.Status.PollInterval = time.Minute
+	agentConfig.AgentMetrics.ReportInterval = time.Minute
+
+	tests := []struct {
+		name        string
+		rootHandler *RootHandler
+		expected    *HealthResponse
+	}{
+		{
+			name: "Test 1: Everything healthy",
+			rootHandler: &RootHandler{
+				config:               agentConfig,
+				isGrpcRegistered:     true,
+				lastCommandSent:      time.Now(),
+				lastMetricReportSent: time.Now(),
+			},
+			expected: &HealthResponse{
+				Status: healthStatusOk,
+				Checks: []HealthStatusCheck{
+					{
+						Name:   registration,
+						Status: healthStatusOk,
+					},
+					{
+						Name:   commandServiceConnection,
+						Status: healthStatusOk,
+					},
+					{
+						Name:   metricsServiceConnection,
+						Status: healthStatusOk,
+					},
+				},
+			},
+		},
+		{
+			name: "Test 2: Registration failed",
+			rootHandler: &RootHandler{
+				config:               agentConfig,
+				isGrpcRegistered:     false,
+				lastCommandSent:      time.Now(),
+				lastMetricReportSent: time.Now(),
+			},
+			expected: &HealthResponse{
+				Status: healthStatusError,
+				Checks: []HealthStatusCheck{
+					{
+						Name:   registration,
+						Status: healthStatusError,
+					},
+					{
+						Name:   commandServiceConnection,
+						Status: healthStatusOk,
+					},
+					{
+						Name:   metricsServiceConnection,
+						Status: healthStatusOk,
+					},
+				},
+			},
+		},
+		{
+			name: "Test 3: Command service connection failed",
+			rootHandler: &RootHandler{
+				config:               agentConfig,
+				isGrpcRegistered:     true,
+				lastCommandSent:      time.Now().AddDate(0, 0, -1),
+				lastMetricReportSent: time.Now(),
+			},
+			expected: &HealthResponse{
+				Status: healthStatusError,
+				Checks: []HealthStatusCheck{
+					{
+						Name:   registration,
+						Status: healthStatusOk,
+					},
+					{
+						Name:   commandServiceConnection,
+						Status: healthStatusError,
+					},
+					{
+						Name:   metricsServiceConnection,
+						Status: healthStatusOk,
+					},
+				},
+			},
+		},
+		{
+			name: "Test 4: Metrics service connection failed",
+			rootHandler: &RootHandler{
+				config:               agentConfig,
+				isGrpcRegistered:     true,
+				lastCommandSent:      time.Now(),
+				lastMetricReportSent: time.Now().AddDate(0, 0, -1),
+			},
+			expected: &HealthResponse{
+				Status: healthStatusError,
+				Checks: []HealthStatusCheck{
+					{
+						Name:   registration,
+						Status: healthStatusOk,
+					},
+					{
+						Name:   commandServiceConnection,
+						Status: healthStatusOk,
+					},
+					{
+						Name:   metricsServiceConnection,
+						Status: healthStatusError,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			responseRecorder := httptest.NewRecorder()
+
+			err := tt.rootHandler.healthCheck(responseRecorder)
+			require.NoError(t, err)
+
+			assert.Equal(t, http.StatusOK, responseRecorder.Result().StatusCode)
+
+			actualBody := &HealthResponse{}
+			err = json.NewDecoder(responseRecorder.Result().Body).Decode(actualBody)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.expected, actualBody)
 		})
 	}
 }

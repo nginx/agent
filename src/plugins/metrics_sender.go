@@ -59,7 +59,7 @@ func (r *MetricsSender) Info() *core.Info {
 }
 
 func (r *MetricsSender) Process(msg *core.Message) {
-	if msg.Exact(core.RegistrationCompletedTopic) {
+	if msg.Exact(core.AgentConnected) {
 		r.readyToSend.Toggle()
 		return
 	}
@@ -81,6 +81,8 @@ func (r *MetricsSender) Process(msg *core.Message) {
 				err := r.reporter.Send(r.ctx, message)
 				if err != nil {
 					log.Errorf("Failed to send MetricsReport: %v", err)
+				} else {
+					r.pipeline.Process(core.NewMessage(core.MetricReportSent, nil))
 				}
 			case *models.EventReport:
 				err := r.reporter.Send(r.ctx, client.MessageFromEvents(report))
@@ -119,5 +121,5 @@ func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
 }
 
 func (r *MetricsSender) Subscriptions() []string {
-	return []string{core.CommMetrics, core.RegistrationCompletedTopic, core.AgentConfigChanged}
+	return []string{core.CommMetrics, core.AgentConnected, core.AgentConfigChanged}
 }

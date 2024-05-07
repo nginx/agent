@@ -326,7 +326,6 @@ func TestMetrics_Info(t *testing.T) {
 
 func TestMetrics_Subscriptions(t *testing.T) {
 	subs := []string{
-		core.RegistrationCompletedTopic,
 		core.AgentCollectorsUpdate,
 		core.AgentConfigChanged,
 		core.NginxPluginConfigured,

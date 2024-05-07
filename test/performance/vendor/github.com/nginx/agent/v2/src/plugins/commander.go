@@ -120,6 +120,8 @@ func (c *Commander) sendCommand(ctx context.Context, cmd *proto.Command) {
 	log.Debugf("Sending command (messageId=%s), %v", cmd.GetMeta().MessageId, cmd.GetData())
 	if err := c.cmdr.Send(ctx, client.MessageFromCommand(cmd)); err != nil {
 		log.Errorf("Error sending to command channel %v", err)
+	} else {
+		c.pipeline.Process(core.NewMessage(core.CommandSent, nil))
 	}
 }
 

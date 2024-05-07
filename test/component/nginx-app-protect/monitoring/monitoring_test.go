@@ -143,7 +143,7 @@ func TestNAPMonitoring(t *testing.T) {
 
 	pipe := initializeMessagePipe(t, ctx, []core.Plugin{metricsSender}, []core.ExtensionPlugin{napMonitoring})
 
-	pipe.Process(core.NewMessage(core.RegistrationCompletedTopic, nil))
+	pipe.Process(core.NewMessage(core.AgentConnected, nil))
 
 	wg.Add(1)
 	go func() {
