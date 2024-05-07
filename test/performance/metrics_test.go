@@ -313,10 +313,8 @@ func startNginxAgent(b *testing.B) {
 
 	controller.WithClient(commander)
 	controller.WithClient(reporter)
-	if err := controller.Connect(); err != nil {
-		fmt.Printf("Unable to connect to control plane: %v", err)
-		return
-	}
+
+	controller.Connect()
 
 	processes := env.Processes()
 
