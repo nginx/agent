@@ -316,6 +316,8 @@ func startNginxAgent(b *testing.B) {
 
 	controller.Connect()
 
+	time.Sleep(5 * time.Second)
+
 	processes := env.Processes()
 
 	corePlugins := []core.Plugin{
