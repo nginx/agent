@@ -110,7 +110,7 @@ func registerFlags() {
 		"info",
 		`The desired verbosity level for logging messages from nginx-agent. 
 		Available options, in order of severity from highest to lowest, are: 
-		panic, fatal, error, info, debug, and trace.`,
+		panic, fatal, error, info, debug and trace.`,
 	)
 	fs.String(
 		LogPathKey,
@@ -213,7 +213,7 @@ func registerFlags() {
 	fs.Bool(
 		CommandTLSSkipVerifyKey,
 		DefCommandTLSSkipVerifyKey,
-		"Testing only. If true, SkipVerify controls client verification of a server's certificate chain and host name.",
+		"Testing only. SkipVerify controls client verification of a server's certificate chain and host name.",
 	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
