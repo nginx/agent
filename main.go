@@ -73,10 +73,7 @@ func main() {
 		controller, commander, reporter := core.CreateGrpcClients(ctx, loadedConfig)
 
 		if controller != nil {
-			if err := controller.Connect(); err != nil {
-				log.Warnf("Unable to connect to control plane: %v", err)
-				return
-			}
+			go controller.Connect()
 		}
 
 		binary := core.NewNginxBinary(env, loadedConfig)

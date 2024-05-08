@@ -50,6 +50,7 @@ func GetMockAgentConfig() *config.Config {
 			Host:     "127.0.0.1",
 			GrpcPort: 67890,
 		},
+		Features: agent_config.GetDefaultFeatures(),
 	}
 }
 

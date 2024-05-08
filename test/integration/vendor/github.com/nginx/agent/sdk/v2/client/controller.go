@@ -10,6 +10,8 @@ package client
 import (
 	"context"
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func NewClientController() Controller {
@@ -33,19 +35,12 @@ func (c *ctrl) WithContext(ctx context.Context) Controller {
 	return c
 }
 
-func (c *ctrl) Connect() error {
-	var retErr error
+func (c *ctrl) Connect() {
 	for _, client := range c.clients {
 		if err := client.Connect(c.ctx); err != nil {
-			if retErr == nil {
-				retErr = fmt.Errorf("%s failed to connect: %w", client.Server(), err)
-			} else {
-				retErr = fmt.Errorf("%v\n%s failed to connect: %w", retErr, client.Server(), err)
-			}
+			log.Warnf("%s failed to connect: %v", client.Server(), err)
 		}
 	}
-
-	return retErr
 }
 
 func (c *ctrl) Close() error {

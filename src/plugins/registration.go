@@ -86,7 +86,7 @@ func (r *OneTimeRegistration) Info() *core.Info {
 
 func (r *OneTimeRegistration) Process(msg *core.Message) {
 	switch {
-	case msg.Exact(core.RegistrationCompletedTopic):
+	case msg.Exact(core.AgentConnected):
 		log.Info("OneTimeRegistration completed")
 	case msg.Exact(core.DataplaneSoftwareDetailsUpdated):
 		switch data := msg.Data().(type) {
@@ -104,7 +104,7 @@ func (r *OneTimeRegistration) Process(msg *core.Message) {
 
 func (r *OneTimeRegistration) Subscriptions() []string {
 	return []string{
-		core.RegistrationCompletedTopic,
+		core.AgentConnected,
 		core.DataplaneSoftwareDetailsUpdated,
 		core.NginxDetailProcUpdate,
 	}
@@ -237,10 +237,7 @@ func (r *OneTimeRegistration) registerAgent() {
 		},
 	}
 
-	r.pipeline.Process(
-		core.NewMessage(core.CommRegister, agentConnectRequest),
-		core.NewMessage(core.RegistrationCompletedTopic, nil),
-	)
+	r.pipeline.Process(core.NewMessage(core.CommRegister, agentConnectRequest))
 }
 
 // dataplaneSoftwareDetails converts the map of dataplane software details into a

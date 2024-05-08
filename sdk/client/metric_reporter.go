@@ -9,6 +9,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -28,6 +29,7 @@ func NewMetricReporterClient() MetricReporter {
 	return &metricReporter{
 		connector:       newConnector(),
 		backoffSettings: DefaultBackoffSettings,
+		isRetrying:      false,
 	}
 }
 
@@ -39,6 +41,8 @@ type metricReporter struct {
 	ctx             context.Context
 	mu              sync.Mutex
 	backoffSettings backoff.BackoffSettings
+	isRetrying      bool
+	retryLock       sync.Mutex
 }
 
 func (r *metricReporter) WithInterceptor(interceptor interceptors.Interceptor) Client {
@@ -57,11 +61,14 @@ func (r *metricReporter) Connect(ctx context.Context) error {
 	log.Debugf("Metric Reporter connecting to %s", r.server)
 
 	r.ctx = ctx
+
+	r.retryLock.Lock()
 	err := backoff.WaitUntil(
 		r.ctx,
 		r.backoffSettings,
 		r.createClient,
 	)
+	r.retryLock.Unlock()
 	if err != nil {
 		return err
 	}
@@ -151,18 +158,19 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 			return fmt.Errorf("MetricReporter expected a metrics report message, but received %T", message.Data())
 		}
 
-		isRetrying := false
-
 		err = backoff.WaitUntil(r.ctx, r.backoffSettings, func() error {
-			if isRetrying {
-				log.Infof("Metric Reporter Channel Send: retrying to connect to %s", r.grpc.Target())
-				err := r.createClient()
-				if err != nil {
-					return err
-				}
+			err := r.checkClientConnection()
+			if err != nil {
+				return err
 			}
+
+			if r.channel == nil {
+				r.isRetrying = true
+				return r.handleGrpcError("Metric Reporter Channel Send", errors.New("metric service stream client not created yet"))
+			}
+
 			if err := r.channel.Send(report); err != nil {
-				isRetrying = true
+				r.isRetrying = true
 				return r.handleGrpcError("Metric Reporter Channel Send", err)
 			}
 
@@ -176,18 +184,14 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 			return fmt.Errorf("MetricReporter expected an events report message, but received %T", message.Data())
 		}
 
-		isRetrying := false
-
 		err = backoff.WaitUntil(r.ctx, r.backoffSettings, func() error {
-			if isRetrying {
-				log.Infof("Metric Reporter Channel Send: retrying to connect to %s", r.grpc.Target())
-				err = r.createClient()
-				if err != nil {
-					return err
-				}
+			err := r.checkClientConnection()
+			if err != nil {
+				return err
 			}
+
 			if err := r.eventsChannel.Send(report); err != nil {
-				isRetrying = true
+				r.isRetrying = true
 				return r.handleGrpcError("Metric Reporter Events Channel Send", err)
 			}
 
@@ -200,6 +204,21 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 	}
 
 	return err
+}
+
+func (r *metricReporter) checkClientConnection() error {
+	r.retryLock.Lock()
+	defer r.retryLock.Unlock()
+
+	if r.isRetrying {
+		log.Infof("Metric Reporter Channel Send: retrying to connect to %s", r.grpc.Target())
+		err := r.createClient()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *metricReporter) closeConnection() error {

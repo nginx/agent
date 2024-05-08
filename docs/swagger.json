@@ -3,6 +3,23 @@
   "info": {},
   "host": "localhost:8081",
   "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "nginx-agent"
+        ],
+        "summary": "Check the health of the NGINX Agent",
+        "operationId": "health-check",
+        "responses": {
+          "200": {
+            "description": "HealthResponse",
+            "schema": {
+              "$ref": "#/definitions/HealthResponse"
+            }
+          }
+        }
+      }
+    },
     "/metrics/": {
       "get": {
         "description": "# Returns prometheus metrics",
@@ -127,6 +144,12 @@
             "schema": {
               "$ref": "#/definitions/AgentAPIConfigApplyStatusResponse"
             }
+          },
+          "500": {
+            "description": "AgentAPICommonResponse",
+            "schema": {
+              "$ref": "#/definitions/AgentAPICommonResponse"
+            }
           }
         }
       }
@@ -191,6 +214,44 @@
           "type": "string",
           "x-go-name": "Status",
           "example": "PENDING"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/v2/src/plugins"
+    },
+    "HealthResponse": {
+      "type": "object",
+      "properties": {
+        "checks": {
+          "description": "Array of health checks",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HealthStatusCheck"
+          },
+          "x-go-name": "Checks"
+        },
+        "status": {
+          "description": "Overall health status",
+          "type": "string",
+          "x-go-name": "Status",
+          "example": "OK"
+        }
+      },
+      "x-go-package": "github.com/nginx/agent/v2/src/plugins"
+    },
+    "HealthStatusCheck": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Health check name",
+          "type": "string",
+          "x-go-name": "Name",
+          "example": "commandConnection"
+        },
+        "status": {
+          "description": "Health check status",
+          "type": "string",
+          "x-go-name": "Status",
+          "example": "OK"
         }
       },
       "x-go-package": "github.com/nginx/agent/v2/src/plugins"

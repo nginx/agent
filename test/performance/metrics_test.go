@@ -210,12 +210,34 @@ func (h *handler) handle(server proto.Commander_CommandChannelServer, wg *sync.W
 	}()
 	h.handleCount.Inc()
 	for {
-		_, err := server.Recv()
+		commandReceived, err := server.Recv()
 		if err != nil {
 			fmt.Printf("Command Error: %v\n", err)
 			return
 		}
 		h.msgCount.Inc()
+
+		connectRequest := commandReceived.GetAgentConnectRequest()
+		if connectRequest != nil {
+			err = server.Send(
+				&proto.Command{
+					Data: &proto.Command_AgentConnectResponse{
+						AgentConnectResponse: &proto.AgentConnectResponse{
+							AgentConfig: &proto.AgentConfig{
+								Details: connectRequest.GetMeta().GetAgentDetails(),
+							},
+							Status: &proto.AgentConnectStatus{
+								StatusCode: proto.AgentConnectStatus_CONNECT_OK,
+							},
+						},
+					},
+				},
+			)
+			if err != nil {
+				fmt.Printf("Command Error: %v\n", err)
+				return
+			}
+		}
 	}
 }
 
@@ -313,10 +335,10 @@ func startNginxAgent(b *testing.B) {
 
 	controller.WithClient(commander)
 	controller.WithClient(reporter)
-	if err := controller.Connect(); err != nil {
-		fmt.Printf("Unable to connect to control plane: %v", err)
-		return
-	}
+
+	controller.Connect()
+
+	time.Sleep(5 * time.Second)
 
 	processes := env.Processes()
 

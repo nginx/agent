@@ -10,6 +10,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -74,11 +75,15 @@ func (c *commander) Connect(ctx context.Context) error {
 	log.Debugf("Commander connecting to %s", c.server)
 
 	c.ctx = ctx
+
+	c.retryLock.Lock()
 	err := backoff.WaitUntil(
 		c.ctx,
 		c.backoffSettings,
 		c.createClient,
 	)
+	c.retryLock.Unlock()
+
 	if err != nil {
 		return err
 	}
@@ -161,6 +166,11 @@ func (c *commander) Send(ctx context.Context, message Message) error {
 		err := c.checkClientConnection()
 		if err != nil {
 			return err
+		}
+
+		if c.channel == nil {
+			c.setIsRetrying(true)
+			return c.handleGrpcError("Commander Channel Send", errors.New("command channel client not created yet"))
 		}
 
 		if err := c.channel.Send(cmd); err != nil {

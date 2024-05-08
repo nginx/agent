@@ -152,7 +152,6 @@ func (m *Metrics) Info() *core.Info {
 
 func (m *Metrics) Subscriptions() []string {
 	return []string{
-		core.RegistrationCompletedTopic,
 		core.AgentCollectorsUpdate,
 		core.AgentConfigChanged,
 		core.NginxPluginConfigured,

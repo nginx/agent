@@ -10,7 +10,6 @@ package core
 const (
 	UNKNOWN                         = "unknown"
 	RegistrationPrefix              = "registration."
-	RegistrationCompletedTopic      = RegistrationPrefix + "completed"
 	CommNginxConfig                 = "nginx.config"
 	NginxConfigUpload               = "nginx.config.upload"
 	NginxReload                     = "nginx.reload"
@@ -49,4 +48,6 @@ const (
 	EnableExtension                 = "enable.extension"
 	EnableFeature                   = "enable.feature"
 	AgentAPIConfigApplyResponse     = "agent.api.config.apply.response"
+	CommandSent                     = "command.sent"
+	MetricReportSent                = "metrics.report.sent"
 )
