@@ -229,6 +229,10 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 		return defaultCredentials, nil
 	}
 
+	if agentConfig.Command.TLS.SkipVerify {
+		slog.Warn("Verification of the server's certificate chain and host name is disabled")
+	}
+
 	tlsConfig := &tls.Config{
 		MinVersion:         tls.VersionTLS12,
 		ServerName:         agentConfig.Command.TLS.ServerName,
