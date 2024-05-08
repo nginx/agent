@@ -20,6 +20,9 @@ on:
         default: ''
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   update-draft:
     permissions:
