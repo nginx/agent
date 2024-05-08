@@ -21,7 +21,6 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
-	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/klauspost/cpuid/v2"
@@ -666,69 +665,14 @@ func getNginxProcessExe(nginxProcess *process.Process) string {
 	if exeErr != nil {
 		out, commandErr := exec.Command("sh", "-c", "command -v nginx").CombinedOutput()
 		if commandErr != nil {
-			// process.Exe() is not implemented yet for FreeBSD.
-			// This is a temporary workaround  until the gopsutil library supports it.
-			var err error
-			exe, err = getExe(nginxProcess.Pid)
-			if err != nil {
-				log.Tracef("Failed to find exe information for process: %d. Failed for the following errors: %v, %v, %v", nginxProcess.Pid, exeErr, commandErr, err)
-				log.Errorf("Unable to find NGINX executable for process %d", nginxProcess.Pid)
-			}
+			log.Tracef("Failed to find exe information for process: %d. Failed for the following errors: %v, %v", nginxProcess.Pid, exeErr, commandErr)
+			log.Errorf("Unable to find NGINX executable for process %d", nginxProcess.Pid)
 		} else {
 			exe = strings.TrimSuffix(string(out), "\n")
 		}
 	}
 
 	return exe
-}
-
-func getExe(pid int32) (string, error) {
-	mib := []int32{CTLKern, KernProc, KernProcPathname, pid}
-	buf, _, err := callSyscall(mib)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.Trim(string(buf), "\x00"), nil
-}
-
-func callSyscall(mib []int32) ([]byte, uint64, error) {
-	mibptr := unsafe.Pointer(&mib[0])
-	miblen := uint64(len(mib))
-
-	// get required buffer size
-	length := uint64(0)
-	_, _, err := unix.Syscall6(
-		SYS_SYSCTL,
-		uintptr(mibptr),
-		uintptr(miblen),
-		0,
-		uintptr(unsafe.Pointer(&length)),
-		0,
-		0)
-	if err != 0 {
-		var b []byte
-		return b, length, err
-	}
-	if length == 0 {
-		var b []byte
-		return b, length, err
-	}
-	// get proc info itself
-	buf := make([]byte, length)
-	_, _, err = unix.Syscall6(
-		SYS_SYSCTL,
-		uintptr(mibptr),
-		uintptr(miblen),
-		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(unsafe.Pointer(&length)),
-		0,
-		0)
-	if err != 0 {
-		return buf, length, err
-	}
-
-	return buf, length, nil
 }
 
 func (env *EnvironmentType) processors(architecture string) (res []*proto.CpuInfo) {
