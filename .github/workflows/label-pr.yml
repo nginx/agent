@@ -4,6 +4,9 @@ on:
   pull_request_target:
     types: [opened, reopened, synchronize]
 
+permissions:  # added using https://github.com/step-security/secure-repo
+  contents: read
+
 jobs:
   label-pr:
     permissions:

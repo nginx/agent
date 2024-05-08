@@ -15,12 +15,18 @@ on:
     - reopened
     - synchronize
 
+permissions:
+  contents: read
+
 env:
   GOLANGCI_LINT_VERSION: 'v1.54.2'
   NFPM_VERSION: 'v2.32.0'
 
 jobs:
   lint:
+    permissions:
+      contents: read  # for actions/checkout to fetch code
+      pull-requests: read  # for golangci/golangci-lint-action to fetch pull requests
     name: Lint
     runs-on: ubuntu-22.04
     steps:

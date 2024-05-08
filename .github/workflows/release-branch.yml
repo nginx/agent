@@ -22,6 +22,9 @@ on:
 
 jobs:
   update-draft:
+    permissions:
+      contents: write
+      pull-requests: write
     name: Update Release
     runs-on: ubuntu-22.04
     steps:
