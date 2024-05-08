@@ -554,11 +554,11 @@ func TestRootHandler_healthCheck(t *testing.T) {
 						Status: okStatus,
 					},
 					{
-						Name:   commandServiceConnection,
+						Name:   commandConnection,
 						Status: okStatus,
 					},
 					{
-						Name:   metricsServiceConnection,
+						Name:   metricsConnection,
 						Status: okStatus,
 					},
 				},
@@ -580,11 +580,11 @@ func TestRootHandler_healthCheck(t *testing.T) {
 						Status: errorStatus,
 					},
 					{
-						Name:   commandServiceConnection,
+						Name:   commandConnection,
 						Status: okStatus,
 					},
 					{
-						Name:   metricsServiceConnection,
+						Name:   metricsConnection,
 						Status: okStatus,
 					},
 				},
@@ -606,11 +606,11 @@ func TestRootHandler_healthCheck(t *testing.T) {
 						Status: okStatus,
 					},
 					{
-						Name:   commandServiceConnection,
+						Name:   commandConnection,
 						Status: errorStatus,
 					},
 					{
-						Name:   metricsServiceConnection,
+						Name:   metricsConnection,
 						Status: okStatus,
 					},
 				},
@@ -632,11 +632,11 @@ func TestRootHandler_healthCheck(t *testing.T) {
 						Status: okStatus,
 					},
 					{
-						Name:   commandServiceConnection,
+						Name:   commandConnection,
 						Status: okStatus,
 					},
 					{
-						Name:   metricsServiceConnection,
+						Name:   metricsConnection,
 						Status: errorStatus,
 					},
 				},

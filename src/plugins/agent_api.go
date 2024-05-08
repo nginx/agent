@@ -46,9 +46,9 @@ const (
 	errorStatus   = "ERROR"
 	unknownStatus = "UNKNOWN"
 
-	registration             string = "registration"
-	commandServiceConnection string = "commandServiceConnection"
-	metricsServiceConnection string = "metricsServiceConnection"
+	registration      string = "registration"
+	commandConnection string = "commandConnection"
+	metricsConnection string = "metricsConnection"
 )
 
 var (
@@ -148,7 +148,7 @@ type AgentAPIConfigApplyStatusResponse struct {
 // swagger:model HealthStatusCheck
 type HealthStatusCheck struct {
 	// Health check name
-	// example: commandServiceConnection
+	// example: commandConnection
 	Name string `json:"name"`
 	// Health check status
 	// example: OK
@@ -714,7 +714,7 @@ func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 		}
 
 		checks = append(checks, HealthStatusCheck{
-			Name:   commandServiceConnection,
+			Name:   commandConnection,
 			Status: commandServiceStatus,
 		})
 
@@ -727,7 +727,7 @@ func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 			}
 
 			checks = append(checks, HealthStatusCheck{
-				Name:   metricsServiceConnection,
+				Name:   metricsConnection,
 				Status: metricsServiceStatus,
 			})
 		}

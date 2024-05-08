@@ -245,7 +245,7 @@
           "description": "Health check name",
           "type": "string",
           "x-go-name": "Name",
-          "example": "commandServiceConnection"
+          "example": "commandConnection"
         },
         "status": {
           "description": "Health check status",
