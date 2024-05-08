@@ -11,6 +11,8 @@ on:
     branches:
       - main
       - v3
+    paths-ignore:
+      - '**/vendor'
   merge_group:
   schedule:
     - cron: "36 6 * * 4" # run every Thursday at 06:36 UTC
