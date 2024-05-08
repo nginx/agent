@@ -10,6 +10,8 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/nginx/agent/v3/internal/datasource/host"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -18,11 +20,12 @@ import (
 )
 
 type Resource struct {
-	messagePipe     bus.MessagePipeInterface
-	resourceService service.ResourceServiceInterface
-	instanceService service.InstanceServiceInterface
-	resource        *v1.Resource
-	resourceMutex   sync.Mutex
+	messagePipe         bus.MessagePipeInterface
+	resourceService     service.ResourceServiceInterface
+	instanceService     service.InstanceServiceInterface
+	resource            *v1.Resource
+	resourceMutex       sync.Mutex
+	nginxConfigContexts map[string]*model.NginxConfigContext
 }
 
 func NewResource(agentConfig *config.Config) *Resource {
@@ -33,6 +36,7 @@ func NewResource(agentConfig *config.Config) *Resource {
 		resource: &v1.Resource{
 			Instances: []*v1.Instance{},
 		},
+		nginxConfigContexts: make(map[string]*model.NginxConfigContext),
 	}
 }
 
@@ -64,7 +68,7 @@ func (*Resource) Info() *bus.Info {
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.OsProcessesTopic:
-		newProcesses, ok := msg.Data.([]*model.Process)
+		newProcesses, ok := msg.Data.(host.NginxProcesses)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to model.Process", "payload", msg.Data)
 
@@ -74,6 +78,7 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		instanceList := r.instanceService.GetInstances(ctx, newProcesses)
 		r.resourceMutex.Lock()
 		r.resource.Instances = instanceList
+		r.updateNginxConfigContexts()
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: r.resource})
 		r.resourceMutex.Unlock()
 	case bus.InstanceConfigContextTopic:
@@ -88,12 +93,21 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		for _, instance := range instances {
 			if instance.GetInstanceMeta().GetInstanceId() == nginxConfigContext.InstanceID {
 				r.updateInstance(nginxConfigContext, instance)
+				r.nginxConfigContexts[instance.GetInstanceMeta().GetInstanceId()] = nginxConfigContext
 			}
 		}
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: r.resource})
 		r.resourceMutex.Unlock()
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
+	}
+}
+
+func (r *Resource) updateNginxConfigContexts() {
+	for _, instance := range r.resource.GetInstances() {
+		if val, configOk := r.nginxConfigContexts[instance.GetInstanceMeta().GetInstanceId()]; configOk {
+			r.updateInstance(val, instance)
+		}
 	}
 }
 

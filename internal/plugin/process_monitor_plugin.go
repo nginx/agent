@@ -15,14 +15,13 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/datasource/host"
 	"github.com/nginx/agent/v3/internal/logger"
-	"github.com/nginx/agent/v3/internal/model"
 )
 
-type GetProcessesFunc func(ctx context.Context) ([]*model.Process, error)
+type GetProcessesFunc func(ctx context.Context) (host.NginxProcesses, error)
 
 type ProcessMonitor struct {
 	monitoringFrequency time.Duration
-	processes           []*model.Process
+	processes           host.NginxProcesses
 	messagePipe         bus.MessagePipeInterface
 	getProcessesFunc    GetProcessesFunc
 	processTicker       *time.Ticker
@@ -33,8 +32,8 @@ type ProcessMonitor struct {
 func NewProcessMonitor(agentConfig *config.Config) *ProcessMonitor {
 	return &ProcessMonitor{
 		monitoringFrequency: agentConfig.ProcessMonitor.MonitoringFrequency,
-		processes:           []*model.Process{},
-		getProcessesFunc:    host.GetProcesses,
+		processes:           make(host.NginxProcesses),
+		getProcessesFunc:    host.GetNginxProcesses,
 		processTicker:       nil,
 		processesMutex:      sync.Mutex{},
 	}
@@ -75,7 +74,7 @@ func (*ProcessMonitor) Subscriptions() []string {
 	return []string{}
 }
 
-func (pm *ProcessMonitor) getProcesses() []*model.Process {
+func (pm *ProcessMonitor) getProcesses() host.NginxProcesses {
 	pm.processesMutex.Lock()
 	defer pm.processesMutex.Unlock()
 
@@ -130,20 +129,15 @@ func (pm *ProcessMonitor) run(ctx context.Context) {
 	}
 }
 
-func haveProcessesChanged(oldProcesses, newProcesses []*model.Process) bool {
+func haveProcessesChanged(oldProcesses, newProcesses host.NginxProcesses) bool {
 	// Check if the number of processes has changed
 	if len(oldProcesses) != len(newProcesses) {
 		return true
 	}
 
-	processIDMap := make(map[int32]struct{})
-	for _, oldProcess := range oldProcesses {
-		processIDMap[oldProcess.Pid] = struct{}{}
-	}
-
 	// Check if the process IDs have changed
 	for _, newProcess := range newProcesses {
-		if _, ok := processIDMap[newProcess.Pid]; !ok {
+		if _, ok := oldProcesses[newProcess.Pid]; !ok {
 			return true
 		}
 	}

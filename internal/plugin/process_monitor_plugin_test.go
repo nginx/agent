@@ -10,21 +10,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/datasource/host"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/internal/bus"
-	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestProcessMonitor_Init(t *testing.T) {
 	ctx := context.Background()
-	testProcesses := []*model.Process{{Pid: 123, Name: "nginx"}}
-
+	testProcesses := host.NginxProcesses{123: {Pid: 123, Name: "nginx"}}
 	processMonitor := NewProcessMonitor(types.GetAgentConfig())
 
-	processMonitor.getProcessesFunc = func(_ context.Context) ([]*model.Process, error) {
+	processMonitor.getProcessesFunc = func(_ context.Context) (host.NginxProcesses, error) {
 		return testProcesses, nil
 	}
 
@@ -53,32 +53,32 @@ func TestProcessMonitor_Subscriptions(t *testing.T) {
 func TestProcessMonitor_haveProcessesChanged(t *testing.T) {
 	tests := []struct {
 		name         string
-		oldProcesses []*model.Process
-		newProcesses []*model.Process
+		oldProcesses host.NginxProcesses
+		newProcesses host.NginxProcesses
 		expected     bool
 	}{
 		{
 			name:         "Test 1: number of processes are the same and PIDs have not changed",
-			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
-			newProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
+			oldProcesses: host.NginxProcesses{123: {Pid: 123, Name: "nginx"}},
+			newProcesses: host.NginxProcesses{123: {Pid: 123, Name: "nginx"}},
 			expected:     false,
 		},
 		{
 			name:         "Test 2: number of processes are the same but PIDs are different",
-			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
-			newProcesses: []*model.Process{{Pid: 456, Name: "nginx"}},
+			oldProcesses: host.NginxProcesses{123: {Pid: 123, Name: "nginx"}},
+			newProcesses: host.NginxProcesses{456: {Pid: 456, Name: "nginx"}},
 			expected:     true,
 		},
 		{
 			name:         "Test 3: number of new processes is less than old processes",
-			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
-			newProcesses: []*model.Process{},
+			oldProcesses: host.NginxProcesses{123: {Pid: 123, Name: "nginx"}},
+			newProcesses: make(host.NginxProcesses),
 			expected:     true,
 		},
 		{
 			name:         "Test 4: number of new processes is more than old processes",
-			oldProcesses: []*model.Process{{Pid: 123, Name: "nginx"}},
-			newProcesses: []*model.Process{{Pid: 123, Name: "nginx"}, {Pid: 456, Name: "nginx"}},
+			oldProcesses: host.NginxProcesses{123: {Pid: 123, Name: "nginx"}},
+			newProcesses: host.NginxProcesses{123: {Pid: 123, Name: "nginx"}, 456: {Pid: 456, Name: "nginx"}},
 			expected:     true,
 		},
 	}

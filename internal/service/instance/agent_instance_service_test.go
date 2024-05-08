@@ -9,14 +9,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/internal/datasource/host"
+
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNginxAgent_GetInstances(t *testing.T) {
 	ctx := context.Background()
-	result := NewNginxAgent(types.GetAgentConfig()).GetInstances(ctx, []*model.Process{})
+	result := NewNginxAgent(types.GetAgentConfig()).GetInstances(ctx, make(host.NginxProcesses))
 	assert.Len(t, result, 1)
 
 	assert.Equal(t, types.GetAgentConfig().UUID, result[0].GetInstanceMeta().GetInstanceId())

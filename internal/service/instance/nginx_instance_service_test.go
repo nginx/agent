@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/datasource/host"
+
 	"github.com/nginx/agent/v3/test/helpers"
 
 	"github.com/stretchr/testify/require"
@@ -93,29 +95,20 @@ func TestGetInstances(t *testing.T) {
 	noModuleArgs := fmt.Sprintf(ossConfigArgs, noModulesPath)
 
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
-
-	processes := []*model.Process{
-		{
+	processes := host.NginxProcesses{
+		789: {
 			Pid:  789,
 			Ppid: 1234,
 			Name: "nginx",
 			Cmd:  "nginx: worker process",
 			Exe:  exePath,
 		},
-		{
+		1234: {
 			Pid:  1234,
 			Ppid: 1,
 			Name: "nginx",
 			Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 			Exe:  exePath,
-		},
-		{
-			Pid:  543,
-			Ppid: 454,
-			Name: "grep",
-			Cmd: "grep --color=auto --exclude-dir=.bzr --exclude-dir=CVS --exclude-dir=.git " +
-				"--exclude-dir=.hg --exclude-dir=.svn --exclude-dir=.idea --exclude-dir=.tox nginx",
-			Exe: exePath,
 		},
 	}
 
@@ -175,6 +168,7 @@ func TestGetInstances(t *testing.T) {
 					sort.Strings(instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetDynamicModules())
 				}
 			}
+
 			assert.Equal(tt, test.expected, result)
 		})
 	}

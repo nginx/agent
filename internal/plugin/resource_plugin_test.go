@@ -9,6 +9,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/datasource/host"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
@@ -82,7 +84,7 @@ func TestResource_Instances_Process(t *testing.T) {
 			name: "Test 1: OS Process Topic",
 			processesMessage: &bus.Message{
 				Topic: bus.OsProcessesTopic,
-				Data:  []*model.Process{{Pid: 123, Name: "nginx"}},
+				Data:  host.NginxProcesses{123: {Pid: 123, Name: "nginx"}},
 			},
 			resource: protos.GetHostResource(),
 			topic:    bus.ResourceTopic,
@@ -96,7 +98,7 @@ func TestResource_Instances_Process(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &servicefakes.FakeResourceServiceInterface{}
 			fakeResourceService.GetResourceReturns(test.resource)
 
@@ -164,7 +166,7 @@ func TestResource_Process_Empty_Instances(t *testing.T) {
 	err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
 	require.NoError(t, err)
 
-	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: []*model.Process{}}
+	processesMessage := &bus.Message{Topic: bus.OsProcessesTopic, Data: make(host.NginxProcesses)}
 	messagePipe.Process(ctx, processesMessage)
 	messagePipe.Run(ctx)
 
@@ -224,7 +226,7 @@ func TestResource_Instances_updateInstance(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.name, func(tt *testing.T) {
 			resourcePlugin.updateInstance(test.nginxConfigContext, test.instance)
 			if test.name == "Test 2: Plus Instance" {
 				assert.Equal(t, test.nginxConfigContext.AccessLogs[0].Name, test.instance.GetInstanceRuntime().

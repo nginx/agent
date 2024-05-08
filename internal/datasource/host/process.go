@@ -8,12 +8,16 @@ package host
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
-func GetProcesses(ctx context.Context) ([]*model.Process, error) {
+// map of NGINX Processes with ProcessID as key
+type NginxProcesses = map[int32]*model.Process
+
+func GetNginxProcesses(ctx context.Context) (NginxProcesses, error) {
 	slog.DebugContext(ctx, "Getting host processes")
 
 	processes, err := process.Processes()
@@ -38,5 +42,23 @@ func GetProcesses(ctx context.Context) ([]*model.Process, error) {
 		})
 	}
 
-	return internalProcesses, nil
+	nginxProcesses := findNginxProcesses(internalProcesses)
+
+	return nginxProcesses, nil
+}
+
+func isNginxProcess(name, cmd string) bool {
+	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
+}
+
+func findNginxProcesses(processes []*model.Process) NginxProcesses {
+	nginxProcesses := make(NginxProcesses)
+
+	for _, p := range processes {
+		if isNginxProcess(p.Name, p.Cmd) {
+			nginxProcesses[p.Pid] = p
+		}
+	}
+
+	return nginxProcesses
 }

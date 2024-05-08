@@ -9,11 +9,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/datasource/host"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 
-	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/instance"
 	"github.com/nginx/agent/v3/internal/service/instance/instancefakes"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ func TestInstanceService_GetInstances(t *testing.T) {
 	instanceService.dataPlaneInstanceServices = []instance.DataPlaneInstanceService{fakeDataPlaneService}
 
 	assert.Equal(t, []*v1.Instance{protos.GetNginxOssInstance([]string{})},
-		instanceService.GetInstances(ctx, []*model.Process{}))
+		instanceService.GetInstances(ctx, make(host.NginxProcesses)))
 }
 
 func TestInstanceService_GetInstance(t *testing.T) {
