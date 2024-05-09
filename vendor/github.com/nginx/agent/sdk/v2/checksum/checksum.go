@@ -26,13 +26,26 @@ func HexChecksum(b []byte) string {
 // Chunk - split bytes to chunk limits
 func Chunk(buf []byte, lim int) [][]byte {
 	var chunk []byte
-	chunks := make([][]byte, 0, len(buf)/lim+1)
+	bufSize := len(buf)
+
+	if bufSize == 0 {
+		return [][]byte{}
+	}
+
+	if bufSize <= lim {
+		return [][]byte{buf}
+	}
+
+	chunks := make([][]byte, 0)
+
 	for len(buf) >= lim {
 		chunk, buf = buf[:lim], buf[lim:]
 		chunks = append(chunks, chunk)
 	}
+
 	if len(buf) > 0 {
 		chunks = append(chunks, buf[:])
 	}
+
 	return chunks
 }
