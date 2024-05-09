@@ -642,6 +642,31 @@ func TestRootHandler_healthCheck(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Test 5: Metrics service connection pending",
+			rootHandler: &RootHandler{
+				config:           agentConfig,
+				isGrpcRegistered: true,
+				lastCommandSent:  time.Now(),
+			},
+			expected: &HealthResponse{
+				Status: pendingStatus,
+				Checks: []HealthStatusCheck{
+					{
+						Name:   registration,
+						Status: okStatus,
+					},
+					{
+						Name:   commandConnection,
+						Status: okStatus,
+					},
+					{
+						Name:   metricsConnection,
+						Status: pendingStatus,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
