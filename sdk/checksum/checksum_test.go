@@ -87,6 +87,7 @@ func TestHexChunk(t *testing.T) {
 			expected: [][]byte{},
 		},
 	}
+
 	for _, test := range tests {
 		result := Chunk(test.input, test.limit)
 		assert.Equal(t, test.expected, result)
