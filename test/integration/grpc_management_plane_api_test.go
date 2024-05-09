@@ -20,7 +20,7 @@ import (
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 	"google.golang.org/grpc"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -256,4 +256,45 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	assert.NotEmpty(t, instances[1].GetInstanceRuntime().GetProcessId())
 	assert.Equal(t, "/usr/sbin/nginx", instances[1].GetInstanceRuntime().GetBinaryPath())
 	assert.Equal(t, "/etc/nginx/nginx.conf", instances[1].GetInstanceRuntime().GetConfigPath())
+}
+
+func verifyUpdateDataPlaneHealth(t *testing.T) {
+	t.Helper()
+
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+
+	url := fmt.Sprintf("http://%s/api/v1/health", mockManagementPlaneAPIAddress)
+
+	resp, err := client.R().EnableTrace().Get(url)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+
+	responseData := resp.Body()
+	t.Logf("Response: %s", string(responseData))
+	assert.True(t, json.Valid(responseData))
+
+	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+
+	updateDataPlaneHealthRequest := v1.UpdateDataPlaneHealthRequest{}
+	unmarshalErr := pb.Unmarshal(responseData, &updateDataPlaneHealthRequest)
+	require.NoError(t, unmarshalErr)
+
+	t.Logf("UpdateDataPlaneStatusRequest: %v", &updateDataPlaneHealthRequest)
+
+	assert.NotNil(t, &updateDataPlaneHealthRequest)
+
+	// Verify message metadata
+	messageMeta := updateDataPlaneHealthRequest.GetMessageMeta()
+	assert.NotEmpty(t, messageMeta.GetCorrelationId())
+	assert.NotEmpty(t, messageMeta.GetMessageId())
+	assert.NotEmpty(t, messageMeta.GetTimestamp())
+
+	healths := updateDataPlaneHealthRequest.GetInstanceHealths()
+	assert.Len(t, healths, 1)
+
+	// Verify health metadata
+	assert.NotEmpty(t, healths[0].GetInstanceId())
+	assert.Equal(t, v1.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY, healths[0].GetInstanceHealthStatus())
+	assert.NotEmpty(t, healths[0].GetDescription())
 }

@@ -392,7 +392,7 @@ func getCommand() *Command {
 
 func getCommon() *CommonSettings {
 	return &CommonSettings{
-		InitialInterval:     DefBackoffInitalInterval,
+		InitialInterval:     DefBackoffInitialInterval,
 		MaxInterval:         DefBackoffMaxInterval,
 		MaxElapsedTime:      DefBackoffMaxElapsedTime,
 		RandomizationFactor: DefBackoffRandomizationFactor,

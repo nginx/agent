@@ -28,7 +28,7 @@ const (
 	DefCommandTLSCaKey         = ""
 	DefCommandTLSSkipVerifyKey = false
 
-	DefBackoffInitalInterval = 50 * time.Millisecond
+	DefBackoffInitialInterval = 50 * time.Millisecond
 	// the value is 0 <= and < 1
 	DefBackoffRandomizationFactor = 0.1
 	DefBackoffMultiplier          = 1.5
