@@ -10,9 +10,6 @@ package checksum
 import (
 	"crypto/sha256"
 	"fmt"
-	"math"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // Checksum - calculate checksum from []byte
@@ -39,19 +36,8 @@ func Chunk(buf []byte, lim int) [][]byte {
 		return [][]byte{buf}
 	}
 
-	if lim <= 0 {
-		log.Error("Unable to chuck payload, chunk size is too small")
-		return [][]byte{}
-	}
+	chunks := make([][]byte, 0)
 
-	chuckSize := bufSize / lim
-
-	if chuckSize > math.MaxInt64-1 {
-		log.Error("Unable to chuck payload, data too large")
-		return [][]byte{}
-	}
-
-	chunks := make([][]byte, 0, chuckSize+1)
 	for len(buf) >= lim {
 		chunk, buf = buf[:lim], buf[lim:]
 		chunks = append(chunks, chunk)
