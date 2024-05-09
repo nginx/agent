@@ -75,6 +75,7 @@ type RootHandler struct {
 	isGrpcRegistered     bool
 	lastCommandSent      time.Time
 	lastMetricReportSent time.Time
+	startTime            time.Time
 }
 
 type NginxHandler struct {
@@ -254,6 +255,7 @@ func (a *AgentAPI) createHttpServer() {
 	a.rootHandler = &RootHandler{
 		config:           a.config,
 		isGrpcRegistered: false,
+		startTime:        time.Now(),
 	}
 
 	a.nginxHandler = &NginxHandler{
@@ -706,6 +708,7 @@ func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 		})
 
 		timeNow := time.Now()
+		startTimeDiff := timeNow.Sub(rh.startTime)
 
 		if !rh.lastCommandSent.IsZero() {
 			lastCommandSentDiff := timeNow.Sub(rh.lastCommandSent)
@@ -716,6 +719,9 @@ func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 			} else {
 				commandServiceStatus = okStatus
 			}
+		} else if startTimeDiff > (2 * rh.config.Dataplane.Status.PollInterval) {
+			commandServiceStatus = errorStatus
+			overallStatus = errorStatus
 		}
 
 		checks = append(checks, HealthStatusCheck{
@@ -733,6 +739,9 @@ func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 				} else {
 					metricsServiceStatus = okStatus
 				}
+			} else if startTimeDiff > (2 * rh.config.AgentMetrics.ReportInterval) {
+				metricsServiceStatus = errorStatus
+				overallStatus = errorStatus
 			}
 
 			checks = append(checks, HealthStatusCheck{
