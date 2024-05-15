@@ -16,7 +16,7 @@ To monitor the state of the NGINX Agent, there is a health endpoint in the REST 
 To enable the REST API, the following configuration is needed:
 ```nginx configuration
 api:
-  host: <FQDN>
+  host: 127.0.0.1
   port: 8038
 ```
 
