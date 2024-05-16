@@ -1,5 +1,5 @@
 ---
-title: "Configuration Overview"
+title: "Configuration overview"
 draft: false
 weight: 100
 toc: true

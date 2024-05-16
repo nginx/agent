@@ -1,13 +1,16 @@
 ---
-title: "Technical Specifications"
+title: "Technical specifications"
 draft: false
-description: "This document describes the requirements for NGINX Agent."
 weight: 200
 toc: true
 tags: [ "docs" ]
 categories: ["development"]
 doctypes: ["task"]
 ---
+
+## Overview
+
+This document provides technical specifications for NGINX Agent. It includes information on supported distributions, deployment environments, NGINX versions, sizing recommendations, and logging.
 
 ## Supported Distributions
 
