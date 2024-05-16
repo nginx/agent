@@ -1,5 +1,5 @@
 ---
-title: "Development Environment Setup"
+title: "Development environment setup"
 draft: false
 weight: 200
 toc: true

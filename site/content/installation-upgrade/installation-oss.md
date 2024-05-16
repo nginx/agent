@@ -1,5 +1,5 @@
 ---
-title: "Installation From NGINX Repository"
+title: "Installation from NGINX repository"
 draft: false
 weight: 300
 toc: true
@@ -174,7 +174,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     ```
 
 1. To set up the zypper repository for `nginx-agent` packages, run the following command:
-  
+
     ```shell
     sudo zypper addrepo --gpgcheck --refresh --check \
         'http://packages.nginx.org/nginx-agent/sles/$releasever_major' nginx-agent
@@ -249,7 +249,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     ```
 
     The output should contain the following modulus:
-    
+
     ```
     Public-Key: (2048 bit)
     Modulus:

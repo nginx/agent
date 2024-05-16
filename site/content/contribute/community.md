@@ -1,5 +1,5 @@
 ---
-title: "Community and Contribution"
+title: "Community and contribution"
 draft: false
 weight: 100
 toc: true
