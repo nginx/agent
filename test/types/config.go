@@ -106,5 +106,10 @@ func GetAgentConfig() *config.Config {
 				ReloadMonitoringPeriod: reloadMonitoringPeriod,
 			},
 		},
+		Watchers: &config.Watchers{
+			InstanceWatcher: config.InstanceWatcher{
+				MonitoringFrequency: config.DefInstanceWatcherMonitoringFrequency,
+			},
+		},
 	}
 }

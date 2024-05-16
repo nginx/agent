@@ -79,6 +79,7 @@ func GetConfig() *Config {
 		Metrics:            getMetrics(),
 		Command:            getCommand(),
 		Common:             getCommon(),
+		Watchers:           getWatchers(),
 	}
 
 	for _, dir := range strings.Split(config.ConfigDir, ":") {
@@ -214,6 +215,12 @@ func registerFlags() {
 		CommandTLSSkipVerifyKey,
 		DefCommandTLSSkipVerifyKey,
 		"Testing only. SkipVerify controls client verification of a server's certificate chain and host name.",
+	)
+
+	fs.Duration(
+		InstanceWatcherMonitoringFrequencyKey,
+		DefInstanceWatcherMonitoringFrequency,
+		"How often the NGINX Agent will check for process changes.",
 	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
@@ -390,5 +397,13 @@ func getCommon() *CommonSettings {
 		MaxElapsedTime:      DefBackoffMaxElapsedTime,
 		RandomizationFactor: DefBackoffRandomizationFactor,
 		Multiplier:          DefBackoffMultiplier,
+	}
+}
+
+func getWatchers() *Watchers {
+	return &Watchers{
+		InstanceWatcher: InstanceWatcher{
+			MonitoringFrequency: DefInstanceWatcherMonitoringFrequency,
+		},
 	}
 }

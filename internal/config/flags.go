@@ -21,6 +21,8 @@ const (
 	ProcessMonitorMonitoringFrequencyKey          = "process_monitor_monitoring_frequency"
 	VersionKey                                    = "version"
 	UUIDKey                                       = "uuid"
+	InstanceWatcherMonitoringFrequencyKey         = "watchers_instance_watcher_monitoring_frequency"
+
 	// Below consts are NOT flag keys.
 	OTelExporterRoot     = "otel_exporter"
 	GRPCRoot             = "grpc"

@@ -7,6 +7,7 @@ package bus
 
 import (
 	"context"
+	"sync"
 )
 
 // FakeMessagePipe is a mock message pipe
@@ -14,12 +15,15 @@ type FakeMessagePipe struct {
 	plugins           []Plugin
 	messages          []*Message
 	processedMessages []*Message
+	messagesLock      sync.Mutex
 }
 
 var _ MessagePipeInterface = &FakeMessagePipe{}
 
 func NewFakeMessagePipe() *FakeMessagePipe {
-	return &FakeMessagePipe{}
+	return &FakeMessagePipe{
+		messagesLock: sync.Mutex{},
+	}
 }
 
 func (p *FakeMessagePipe) Register(size int, plugins []Plugin) error {
@@ -60,10 +64,16 @@ func (p *FakeMessagePipe) findPlugins(pluginNames []string, plugins []Plugin) []
 }
 
 func (p *FakeMessagePipe) Process(ctx context.Context, msgs ...*Message) {
+	p.messagesLock.Lock()
+	defer p.messagesLock.Unlock()
+
 	p.messages = append(p.messages, msgs...)
 }
 
 func (p *FakeMessagePipe) GetMessages() []*Message {
+	p.messagesLock.Lock()
+	defer p.messagesLock.Unlock()
+
 	return p.messages
 }
 
@@ -72,6 +82,9 @@ func (p *FakeMessagePipe) GetProcessedMessages() []*Message {
 }
 
 func (p *FakeMessagePipe) ClearMessages() {
+	p.messagesLock.Lock()
+	defer p.messagesLock.Unlock()
+
 	p.processedMessages = []*Message{}
 	p.messages = []*Message{}
 }
@@ -89,6 +102,9 @@ func (p *FakeMessagePipe) Run(ctx context.Context) {
 
 func (p *FakeMessagePipe) RunWithoutInit(ctx context.Context) {
 	var message *Message
+
+	// p.messagesLock.Lock()
+	// defer p.messagesLock.Unlock()
 
 	for len(p.messages) > 0 {
 		message, p.messages = p.messages[0], p.messages[1:]
