@@ -85,9 +85,9 @@ func TestResource_Process(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.AddInstanceReturns(protos.GetHostResource(), nil)
-			fakeResourceService.UpdateInstanceReturns(test.resource, nil)
-			fakeResourceService.DeleteInstanceReturns(test.resource, nil)
+			fakeResourceService.AddInstanceReturns(protos.GetHostResource())
+			fakeResourceService.UpdateInstanceReturns(test.resource)
+			fakeResourceService.DeleteInstanceReturns(test.resource)
 			messagePipe := bus.NewFakeMessagePipe()
 
 			resourcePlugin := NewResource()

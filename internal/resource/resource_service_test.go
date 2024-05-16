@@ -6,41 +6,31 @@
 package resource
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestResourceService_AddInstance(t *testing.T) {
 	tests := []struct {
-		name     string
-		msg      *bus.Message
-		resource *v1.Resource
-		err      error
+		name         string
+		instanceList []*v1.Instance
+		resource     *v1.Resource
 	}{
 		{
 			name: "Test 1: Add One Instance",
-			msg: &bus.Message{
-				Topic: bus.NewInstances,
-				Data: []*v1.Instance{
-					protos.GetNginxOssInstance([]string{}),
-				},
+			instanceList: []*v1.Instance{
+				protos.GetNginxOssInstance([]string{}),
 			},
 			resource: protos.GetHostResource(),
-			err:      nil,
 		},
 		{
 			name: "Test 2: Add Multiple Instance",
-			msg: &bus.Message{
-				Topic: bus.NewInstances,
-				Data: []*v1.Instance{
-					protos.GetNginxOssInstance([]string{}),
-					protos.GetNginxPlusInstance([]string{}),
-				},
+			instanceList: []*v1.Instance{
+				protos.GetNginxOssInstance([]string{}),
+				protos.GetNginxPlusInstance([]string{}),
 			},
 			resource: &v1.Resource{
 				ResourceId: protos.GetHostResource().GetResourceId(),
@@ -50,25 +40,14 @@ func TestResourceService_AddInstance(t *testing.T) {
 				},
 				Info: protos.GetHostResource().GetInfo(),
 			},
-			err: nil,
-		},
-		{
-			name: "Test 3: Error",
-			msg: &bus.Message{
-				Topic: bus.NewInstances,
-				Data:  nil,
-			},
-			resource: nil,
-			err:      fmt.Errorf("unable to cast message payload to []*v1.Instance, payload, %v", nil),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			resourceService := NewResourceService()
-			resource, err := resourceService.AddInstance(test.msg)
+			resource := resourceService.AddInstance(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
-			assert.Equal(tt, test.err, err)
 		})
 	}
 }
@@ -86,18 +65,14 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		msg      *bus.Message
-		resource *v1.Resource
-		err      error
+		name         string
+		instanceList []*v1.Instance
+		resource     *v1.Resource
 	}{
 		{
 			name: "Test 1: Update Instances",
-			msg: &bus.Message{
-				Topic: bus.UpdatedInstances,
-				Data: []*v1.Instance{
-					updatedInstance,
-				},
+			instanceList: []*v1.Instance{
+				updatedInstance,
 			},
 			resource: &v1.Resource{
 				ResourceId: protos.GetHostResource().GetResourceId(),
@@ -106,16 +81,6 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 				},
 				Info: protos.GetHostResource().GetInfo(),
 			},
-			err: nil,
-		},
-		{
-			name: "Test 2: Error",
-			msg: &bus.Message{
-				Topic: bus.UpdatedInstances,
-				Data:  nil,
-			},
-			resource: nil,
-			err:      fmt.Errorf("unable to cast message payload to []*v1.Instance, payload, %v", nil),
 		},
 	}
 
@@ -123,27 +88,23 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			resourceService := NewResourceService()
 			resourceService.resource.Instances = []*v1.Instance{protos.GetNginxOssInstance([]string{})}
-			resource, err := resourceService.UpdateInstance(test.msg)
+			resource := resourceService.UpdateInstance(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
-			assert.Equal(tt, test.err, err)
 		})
 	}
 }
 
 func TestResourceService_DeleteInstance(t *testing.T) {
 	tests := []struct {
-		name     string
-		msg      *bus.Message
-		resource *v1.Resource
-		err      error
+		name         string
+		instanceList []*v1.Instance
+		resource     *v1.Resource
+		err          error
 	}{
 		{
 			name: "Test 1: Update Instances",
-			msg: &bus.Message{
-				Topic: bus.DeletedInstances,
-				Data: []*v1.Instance{
-					protos.GetNginxPlusInstance([]string{}),
-				},
+			instanceList: []*v1.Instance{
+				protos.GetNginxPlusInstance([]string{}),
 			},
 			resource: &v1.Resource{
 				ResourceId: protos.GetHostResource().GetResourceId(),
@@ -152,16 +113,6 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 				},
 				Info: protos.GetHostResource().GetInfo(),
 			},
-			err: nil,
-		},
-		{
-			name: "Test 2: Error",
-			msg: &bus.Message{
-				Topic: bus.DeletedInstances,
-				Data:  nil,
-			},
-			resource: nil,
-			err:      fmt.Errorf("unable to cast message payload to []*v1.Instance, payload, %v", nil),
 		},
 	}
 
@@ -172,9 +123,8 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 				protos.GetNginxOssInstance([]string{}),
 				protos.GetNginxPlusInstance([]string{}),
 			}
-			resource, err := resourceService.DeleteInstance(test.msg)
+			resource := resourceService.DeleteInstance(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
-			assert.Equal(tt, test.err, err)
 		})
 	}
 }

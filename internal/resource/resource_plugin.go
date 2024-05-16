@@ -9,6 +9,8 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+
 	"github.com/nginx/agent/v3/internal/bus"
 )
 
@@ -45,29 +47,33 @@ func (*Resource) Info() *bus.Info {
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.NewInstances:
-		updatedResource, err := r.resourceService.AddInstance(msg)
-		if err != nil {
-			slog.ErrorContext(ctx, "Error adding new instance", "error", err)
+		instanceList, ok := msg.Data.([]*v1.Instance)
+		if !ok {
+			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
 		}
+
+		updatedResource := r.resourceService.AddInstance(instanceList)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: updatedResource})
 
 		return
 	case bus.UpdatedInstances:
-		updatedResource, err := r.resourceService.UpdateInstance(msg)
-		if err != nil {
-			slog.ErrorContext(ctx, "Error updating instances", "error", err)
+		instanceList, ok := msg.Data.([]*v1.Instance)
+		if !ok {
+			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
 		}
+		updatedResource := r.resourceService.UpdateInstance(instanceList)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: updatedResource})
 
 		return
 
 	case bus.DeletedInstances:
-		updatedResource, err := r.resourceService.DeleteInstance(msg)
-		if err != nil {
-			slog.ErrorContext(ctx, "Error deleting instances", "error", err)
+		instanceList, ok := msg.Data.([]*v1.Instance)
+		if !ok {
+			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
 		}
+		updatedResource := r.resourceService.DeleteInstance(instanceList)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: updatedResource})
 
