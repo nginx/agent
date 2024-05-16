@@ -220,7 +220,7 @@ func registerFlags() {
 	fs.Duration(
 		InstanceWatcherMonitoringFrequencyKey,
 		DefInstanceWatcherMonitoringFrequency,
-		"How often the NGINX Agent will check for process changes.",
+		"How often the NGINX Agent will check for instance changes.",
 	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
