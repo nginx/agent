@@ -1,5 +1,5 @@
 ---
-title: Container Support and Troubleshooting
+title: Container support and troubleshooting
 categories:
 - installation
 draft: false

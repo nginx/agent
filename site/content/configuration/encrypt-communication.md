@@ -1,5 +1,5 @@
 ---
-title: Encrypt Communication
+title: Encrypt communication
 tags:
 - docs
 toc: true

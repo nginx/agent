@@ -1,5 +1,5 @@
 ---
-title: "Installation From NGINX Repository"
+title: "Installation from NGINX repository"
 draft: false
 weight: 300
 toc: true
