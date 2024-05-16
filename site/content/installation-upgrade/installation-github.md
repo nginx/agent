@@ -1,5 +1,5 @@
 ---
-title: "Installation grom GitHub release"
+title: "Installation from GitHub release"
 draft: false
 weight: 200
 toc: true
