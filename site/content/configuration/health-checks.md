@@ -1,5 +1,5 @@
 ---
-title: "Health Checks"
+title: "Health checks"
 draft: false
 weight: 400
 toc: true
@@ -14,7 +14,7 @@ The REST API includes a health endpoint for keeping track of the status of NGINX
 
 ## Configure the REST API
 
-To enable the REST API, use the following configuration:
+To enable the REST API, add the following configuration to the NGINX Agent configuration file located here `/etc/nginx-agent/nginx-agent.conf`:
 
 ```nginx
 api:

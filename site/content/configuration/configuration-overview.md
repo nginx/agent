@@ -249,6 +249,10 @@ This section displays the configurable options for NGINX Agent that can be set w
 - NMS_QUEUE_SIZE
 - NMS_DATAPLANE_REPORT_INTERVAL
 - NMS_DATAPLANE_STATUS_POLL_INTERVAL
+- NMS_API_HOST
+- NMS_API_PORT
+- NMS_API_KEY
+- NMS_API_CERT
 ```
 </details>
 
