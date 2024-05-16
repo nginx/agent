@@ -1,5 +1,5 @@
 ---
-title: "Configuration Overview"
+title: "Configuration overview"
 draft: false
 weight: 100
 toc: true
@@ -44,9 +44,9 @@ In the following example `nginx-agent.conf` file, you can change the `server.hos
 #
 # Configuration file for NGINX Agent.
 #
-# This file tracks agent configuration values that are meant to be statically set. There  
+# This file tracks agent configuration values that are meant to be statically set. There
 # are additional NGINX Agent configuration values that are set via the API and agent install script
-# which can be found in /etc/nginx-agent/agent-dynamic.conf. 
+# which can be found in /etc/nginx-agent/agent-dynamic.conf.
 
 # specify the server grpc port to connect to
 server:
@@ -130,7 +130,7 @@ Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.con
 # The agent configuration value that the agent install script can modify are as follows:
 #    - instance_group
 
-instance_group: devenv-group 
+instance_group: devenv-group
 tags:
   - devenv
   - test
@@ -254,7 +254,7 @@ This section displays the configurable options for NGINX Agent that can be set w
 
 ### NGINX Agent Log Rotation
 
-By default, NGINX Agent rotates logs daily using logrotate with the following configuration: 
+By default, NGINX Agent rotates logs daily using logrotate with the following configuration:
 
 <details open>
   <summary>NGINX Agent Logrotate Configuration</summary>
@@ -275,7 +275,7 @@ By default, NGINX Agent rotates logs daily using logrotate with the following co
    # old log files are compressed
    compress
    # if the log file is missing it will go on to the next one without issuing an error message
-   missingok 
+   missingok
    # do not rotate the log if it is empty
    notifempty
 }

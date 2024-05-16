@@ -1,5 +1,5 @@
 ---
-title: "Installation From GitHub Release"
+title: "Installation grom GitHub release"
 draft: false
 weight: 200
 toc: true
@@ -30,7 +30,7 @@ Use your system's package manager to install the package. Some examples:
   ```
 
 - RHEL, CentOS RHEL, Amazon Linux, Oracle Linux, and other distributions using the `yum` package manager
-  
+
   ```shell
   sudo yum localinstall nginx-agent-<agent-version>.rpm
   ```
@@ -48,7 +48,7 @@ Use your system's package manager to install the package. Some examples:
   ```
 
 - FreeBSD
- 
+
   ```shell
   sudo pkg add nginx-agent-<agent-version>.pkg
   ```
