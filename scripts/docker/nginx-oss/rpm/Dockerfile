@@ -38,8 +38,8 @@ enabled=1" > /etc/yum.repos.d/nginx.repo; \
 
 
 RUN set -x \
-    && groupadd --system --gid 101 nginx \
-    && adduser -g nginx --system --no-create-home --home /nonexistent --shell /bin/false --uid 101 nginx \
+    && groupadd --system --gid 102 nginx \
+    && adduser -g nginx --system --no-create-home --home /nonexistent --shell /bin/false --uid 102 nginx \
     && usermod -s /sbin/nologin nginx \
     && usermod -L nginx \
     && yum install -y git \
