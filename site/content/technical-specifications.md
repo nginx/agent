@@ -1,7 +1,6 @@
 ---
-title: "Technical Specifications"
+title: "Technical specifications"
 draft: false
-description: "This document describes the requirements for NGINX Agent."
 weight: 200
 toc: true
 tags: [ "docs" ]
@@ -10,12 +9,16 @@ categories: ["development"]
 doctypes: ["task"]
 ---
 
+## Overview
+
+This document provides technical specifications for NGINX Agent. It includes information on supported distributions, deployment environments, NGINX versions, sizing recommendations, and logging.
+
 ## Supported Distributions
 
 NGINX Agent can run in most environments. We support the following distributions:
 
 {{< bootstrap-table "table table-striped table-bordered" >}}
-| | AlmaLinux | Alpine Linux | Amazon Linux | Amazon Linux 2 | CentOS | Debian | 
+| | AlmaLinux | Alpine Linux | Amazon Linux | Amazon Linux 2 | CentOS | Debian |
 |-|-----------|--------------|--------------|----------------|--------|--------|
 |**Version**|8 <br><hr>9 |  3.16<br><hr>3.17<br><hr> 3.18<br><hr> 3.19|  2023|  LTS|  7.4+|  11<br><hr> 12|
 |**Architecture**| x86_84<br><hr>aarch64| x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 |
@@ -29,7 +32,7 @@ NGINX Agent can run in most environments. We support the following distributions
 {{< /bootstrap-table >}}
 
 
-## Supported Deployment Environments 
+## Supported Deployment Environments
 
 NGINX Agent can be deployed in the following environments:
 
@@ -38,7 +41,7 @@ NGINX Agent can be deployed in the following environments:
 - Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
 - Virtual Machine
 
-## Supported NGINX Versions 
+## Supported NGINX Versions
 
 NGINX Agent works with all supported versions of NGINX Open Source and NGINX Plus.
 

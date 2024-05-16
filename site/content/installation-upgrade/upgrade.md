@@ -1,5 +1,5 @@
 ---
-title: "Upgrade NGINX Agent Package"
+title: "Upgrade NGINX Agent package"
 draft: false
 weight: 600
 toc: true
