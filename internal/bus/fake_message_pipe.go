@@ -103,9 +103,6 @@ func (p *FakeMessagePipe) Run(ctx context.Context) {
 func (p *FakeMessagePipe) RunWithoutInit(ctx context.Context) {
 	var message *Message
 
-	// p.messagesLock.Lock()
-	// defer p.messagesLock.Unlock()
-
 	for len(p.messages) > 0 {
 		message, p.messages = p.messages[0], p.messages[1:]
 		for _, plugin := range p.plugins {

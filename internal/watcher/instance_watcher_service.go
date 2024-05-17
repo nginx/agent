@@ -12,6 +12,7 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 )
 
@@ -67,9 +68,10 @@ func (iw *InstanceWatcherService) Watch(ctx context.Context, ch chan<- InstanceU
 			close(ch)
 			return
 		case <-instanceWatcherTicker.C:
-			instanceUpdates, err := iw.updates(ctx)
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
+			instanceUpdates, err := iw.updates(newCtx)
 			if err != nil {
-				slog.ErrorContext(ctx, "Instance watcher updates", "error", err)
+				slog.ErrorContext(newCtx, "Instance watcher updates", "error", err)
 			} else {
 				ch <- instanceUpdates
 			}
