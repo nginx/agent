@@ -68,7 +68,7 @@ func TestInstanceWatcherService_Updates(t *testing.T) {
 			fakeProcessParser.ParseReturns(test.parsedInstances)
 
 			instanceWatcherService := NewInstanceWatcherService(types.GetAgentConfig())
-			instanceWatcherService.processWatcher = fakeProcessWatcher
+			instanceWatcherService.processOperator = fakeProcessWatcher
 			instanceWatcherService.processParsers = []processParser{fakeProcessParser}
 			instanceWatcherService.cache = test.oldInstances
 

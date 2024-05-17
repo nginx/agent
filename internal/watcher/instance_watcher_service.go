@@ -17,13 +17,13 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
-//counterfeiter:generate . processWatcherOperator
+//counterfeiter:generate . processOperator
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . processParser
 
 type (
-	processWatcherOperator interface {
+	processOperator interface {
 		Processes(ctx context.Context) ([]*model.Process, error)
 	}
 
@@ -32,10 +32,10 @@ type (
 	}
 
 	InstanceWatcherService struct {
-		agentConfig    *config.Config
-		processWatcher processWatcherOperator
-		processParsers []processParser
-		cache          []*v1.Instance
+		agentConfig     *config.Config
+		processOperator processOperator
+		processParsers  []processParser
+		cache           []*v1.Instance
 	}
 
 	InstanceUpdates struct {
@@ -46,8 +46,8 @@ type (
 
 func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherService {
 	return &InstanceWatcherService{
-		agentConfig:    agentConfig,
-		processWatcher: NewProcessWatcher(),
+		agentConfig:     agentConfig,
+		processOperator: NewProcessOperator(),
 		processParsers: []processParser{
 			NewNginxProcessParser(),
 		},
@@ -83,7 +83,7 @@ func (iw *InstanceWatcherService) updates(ctx context.Context) (
 	instanceUpdates InstanceUpdates,
 	err error,
 ) {
-	processes, err := iw.processWatcher.Processes(ctx)
+	processes, err := iw.processOperator.Processes(ctx)
 	if err != nil {
 		return instanceUpdates, err
 	}

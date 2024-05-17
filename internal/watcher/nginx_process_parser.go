@@ -44,7 +44,11 @@ type (
 	}
 )
 
-var versionRegex = regexp.MustCompile(`(?P<name>\S+)\/(?P<version>.*)`)
+var (
+	_ processParser = (*NginxProcessParser)(nil)
+
+	versionRegex = regexp.MustCompile(`(?P<name>\S+)\/(?P<version>.*)`)
+)
 
 func NewNginxProcessParser() *NginxProcessParser {
 	return &NginxProcessParser{

@@ -13,14 +13,16 @@ import (
 )
 
 type (
-	ProcessWatcher struct{}
+	ProcessOperator struct{}
 )
 
-func NewProcessWatcher() *ProcessWatcher {
-	return &ProcessWatcher{}
+var _ processOperator = (*ProcessOperator)(nil)
+
+func NewProcessOperator() *ProcessOperator {
+	return &ProcessOperator{}
 }
 
-func (pw *ProcessWatcher) Processes(ctx context.Context) ([]*model.Process, error) {
+func (pw *ProcessOperator) Processes(ctx context.Context) ([]*model.Process, error) {
 	processes, err := process.Processes()
 	if err != nil {
 		return nil, err
