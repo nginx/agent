@@ -11,6 +11,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
 )
 
 type (
@@ -18,7 +19,7 @@ type (
 		messagePipe            bus.MessagePipeInterface
 		agentConfig            *config.Config
 		instanceWatcherService *InstanceWatcherService
-		instanceUpdatesChannel chan InstanceUpdates
+		instanceUpdatesChannel chan InstanceUpdatesMessage
 		cancel                 context.CancelFunc
 	}
 )
@@ -27,7 +28,7 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 	return &Watcher{
 		agentConfig:            agentConfig,
 		instanceWatcherService: NewInstanceWatcherService(agentConfig),
-		instanceUpdatesChannel: make(chan InstanceUpdates),
+		instanceUpdatesChannel: make(chan InstanceUpdatesMessage),
 	}
 }
 
@@ -41,7 +42,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 	w.cancel = cancel
 
 	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel)
-	go w.monitorInstanceUpdates(watcherContext)
+	go w.monitorWatchers(watcherContext)
 
 	return nil
 }
@@ -68,24 +69,26 @@ func (*Watcher) Subscriptions() []string {
 	return []string{}
 }
 
-func (w *Watcher) monitorInstanceUpdates(ctx context.Context) {
+func (w *Watcher) monitorWatchers(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case instanceUpdates := <-w.instanceUpdatesChannel:
-			if len(instanceUpdates.newInstances) > 0 {
-				slog.DebugContext(ctx, "New instances found", "instances", instanceUpdates.newInstances)
+		case message := <-w.instanceUpdatesChannel:
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.correlationID)
+
+			if len(message.instanceUpdates.newInstances) > 0 {
+				slog.DebugContext(newCtx, "New instances found", "instances", message.instanceUpdates.newInstances)
 				w.messagePipe.Process(
-					ctx,
-					&bus.Message{Topic: bus.NewInstancesTopic, Data: instanceUpdates.newInstances},
+					newCtx,
+					&bus.Message{Topic: bus.NewInstancesTopic, Data: message.instanceUpdates.newInstances},
 				)
 			}
-			if len(instanceUpdates.deletedInstances) > 0 {
-				slog.DebugContext(ctx, "Instances deleted", "instances", instanceUpdates.deletedInstances)
+			if len(message.instanceUpdates.deletedInstances) > 0 {
+				slog.DebugContext(newCtx, "Instances deleted", "instances", message.instanceUpdates.deletedInstances)
 				w.messagePipe.Process(
-					ctx,
-					&bus.Message{Topic: bus.DeletedInstancesTopic, Data: instanceUpdates.deletedInstances},
+					newCtx,
+					&bus.Message{Topic: bus.DeletedInstancesTopic, Data: message.instanceUpdates.deletedInstances},
 				)
 			}
 		}
