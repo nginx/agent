@@ -16,11 +16,11 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/helpers"
 	mockGrpc "github.com/nginx/agent/v3/test/mock/grpc"
 	"google.golang.org/grpc"
 
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -146,6 +146,7 @@ func TestGrpc_StartUp(t *testing.T) {
 
 	verifyConnection(t)
 	verifyUpdateDataPlaneStatus(t)
+	verifyUpdateDataPlaneHealth(t)
 }
 
 func verifyConnection(t *testing.T) {
