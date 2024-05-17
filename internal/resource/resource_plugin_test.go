@@ -85,9 +85,9 @@ func TestResource_Process(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.AddInstanceReturns(protos.GetHostResource())
-			fakeResourceService.UpdateInstanceReturns(test.resource)
-			fakeResourceService.DeleteInstanceReturns(test.resource)
+			fakeResourceService.AddInstancesReturns(protos.GetHostResource())
+			fakeResourceService.UpdateInstancesReturns(test.resource)
+			fakeResourceService.DeleteInstancesReturns(test.resource)
 			messagePipe := bus.NewFakeMessagePipe()
 
 			resourcePlugin := NewResource()
@@ -124,11 +124,16 @@ func TestResource_Info(t *testing.T) {
 
 func TestResource_Init(t *testing.T) {
 	ctx := context.Background()
+	resource := protos.GetContainerizedResource()
+
+	resourceService := resourcefakes.FakeResourceServiceInterface{}
+	resourceService.GetResourceReturns(resource)
 
 	messagePipe := bus.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)
 
 	resourcePlugin := NewResource()
+	resourcePlugin.resourceService = &resourceService
 	err := resourcePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 

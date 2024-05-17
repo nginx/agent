@@ -6,7 +6,10 @@
 package resource
 
 import (
+	"context"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/datasource/host/hostfakes"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/protos"
@@ -46,7 +49,7 @@ func TestResourceService_AddInstance(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			resourceService := NewResourceService()
-			resource := resourceService.AddInstance(test.instanceList)
+			resource := resourceService.AddInstances(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
 		})
 	}
@@ -88,7 +91,7 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			resourceService := NewResourceService()
 			resourceService.resource.Instances = []*v1.Instance{protos.GetNginxOssInstance([]string{})}
-			resource := resourceService.UpdateInstance(test.instanceList)
+			resource := resourceService.UpdateInstances(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
 		})
 	}
@@ -123,8 +126,58 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 				protos.GetNginxOssInstance([]string{}),
 				protos.GetNginxPlusInstance([]string{}),
 			}
-			resource := resourceService.DeleteInstance(test.instanceList)
+			resource := resourceService.DeleteInstances(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
 		})
+	}
+}
+
+func TestResourceService_GetResource(t *testing.T) {
+	ctx := context.Background()
+
+	testCases := []struct {
+		isContainer      bool
+		expectedResource *v1.Resource
+	}{
+		{
+			isContainer:      true,
+			expectedResource: protos.GetContainerizedResource(),
+		},
+		{
+			isContainer:      false,
+			expectedResource: protos.GetHostResource(),
+		},
+	}
+	for _, tc := range testCases {
+		mockInfo := &hostfakes.FakeInfoInterface{}
+		if tc.isContainer {
+			mockInfo.ContainerInfoReturns(
+				&v1.Resource_ContainerInfo{
+					ContainerInfo: tc.expectedResource.GetContainerInfo(),
+				},
+			)
+		} else {
+			mockInfo.HostInfoReturns(
+				&v1.Resource_HostInfo{
+					HostInfo: tc.expectedResource.GetHostInfo(),
+				},
+			)
+		}
+
+		mockInfo.IsContainerReturns(tc.isContainer)
+
+		resourceService := NewResourceService()
+		resourceService.info = mockInfo
+		resourceService.resource = tc.expectedResource
+
+		resource := resourceService.GetResource(ctx)
+		assert.Equal(t, tc.expectedResource.GetResourceId(), resource.GetResourceId())
+		assert.Empty(t, resource.GetInstances())
+
+		if tc.isContainer {
+			assert.Equal(t, tc.expectedResource.GetContainerInfo(), resource.GetContainerInfo())
+		} else {
+			assert.Equal(t, tc.expectedResource.GetHostInfo(), resource.GetHostInfo())
+		}
 	}
 }

@@ -6,7 +6,10 @@
 package resource
 
 import (
+	"context"
 	"sync"
+
+	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
@@ -14,12 +17,14 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . resourceServiceInterface
 type resourceServiceInterface interface {
-	AddInstance(instanceList []*v1.Instance) *v1.Resource
-	UpdateInstance(instanceList []*v1.Instance) *v1.Resource
-	DeleteInstance(instanceList []*v1.Instance) *v1.Resource
+	AddInstances(instanceList []*v1.Instance) *v1.Resource
+	UpdateInstances(instanceList []*v1.Instance) *v1.Resource
+	DeleteInstances(instanceList []*v1.Instance) *v1.Resource
+	GetResource(ctx context.Context) *v1.Resource
 }
 
 type ResourceService struct {
+	info          host.InfoInterface
 	resource      *v1.Resource
 	resourceMutex sync.Mutex
 }
@@ -30,19 +35,21 @@ func NewResourceService() *ResourceService {
 			Instances: []*v1.Instance{},
 		},
 		resourceMutex: sync.Mutex{},
+		info:          host.NewInfo(),
 	}
 }
 
-func (r *ResourceService) AddInstance(instanceList []*v1.Instance) *v1.Resource {
+func (r *ResourceService) AddInstances(instanceList []*v1.Instance) *v1.Resource {
 	r.resourceMutex.Lock()
+	defer r.resourceMutex.Unlock()
 	r.resource.Instances = append(r.resource.GetInstances(), instanceList...)
-	r.resourceMutex.Unlock()
 
 	return r.resource
 }
 
-func (r *ResourceService) UpdateInstance(instanceList []*v1.Instance) *v1.Resource {
+func (r *ResourceService) UpdateInstances(instanceList []*v1.Instance) *v1.Resource {
 	r.resourceMutex.Lock()
+	defer r.resourceMutex.Unlock()
 
 	for _, updatedInstance := range instanceList {
 		for _, instance := range r.resource.GetInstances() {
@@ -53,13 +60,13 @@ func (r *ResourceService) UpdateInstance(instanceList []*v1.Instance) *v1.Resour
 			}
 		}
 	}
-	r.resourceMutex.Unlock()
 
 	return r.resource
 }
 
-func (r *ResourceService) DeleteInstance(instanceList []*v1.Instance) *v1.Resource {
+func (r *ResourceService) DeleteInstances(instanceList []*v1.Instance) *v1.Resource {
 	r.resourceMutex.Lock()
+	defer r.resourceMutex.Unlock()
 
 	for _, deletedInstance := range instanceList {
 		for index, instance := range r.resource.GetInstances() {
@@ -69,7 +76,22 @@ func (r *ResourceService) DeleteInstance(instanceList []*v1.Instance) *v1.Resour
 		}
 	}
 
-	r.resourceMutex.Unlock()
+	return r.resource
+}
+
+func (r *ResourceService) GetResource(ctx context.Context) *v1.Resource {
+	r.resourceMutex.Lock()
+	defer r.resourceMutex.Unlock()
+
+	if r.info.IsContainer() {
+		r.resource.Info = r.info.ContainerInfo()
+		r.resource.ResourceId = r.resource.GetContainerInfo().GetContainerId()
+		r.resource.Instances = []*v1.Instance{}
+	} else {
+		r.resource.Info = r.info.HostInfo(ctx)
+		r.resource.ResourceId = r.resource.GetHostInfo().GetHostId()
+		r.resource.Instances = []*v1.Instance{}
+	}
 
 	return r.resource
 }
