@@ -29,8 +29,8 @@ GOVET   = ${GOCMD} vet
 # | OS_RELEASE       | OS_VERSION                                | NOTES                                                          |
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
-# | ubuntu           | 20.04, 22.04                              |                                                                |
-# | debian           | bullseye-slim, bookworm-slim 			 |                                                                |
+# | ubuntu           | 20.04, 22.04, 24.04                       |                                                                |
+# | debian           | bullseye-slim, bookworm-slim              |                                                                |
 # | centos           | 7                                         |                                                                |
 # | redhatenterprise | 7, 8, 9                                   |                                                                |
 # | rockylinux       | 8, 9                                      |                                                                |
@@ -41,7 +41,7 @@ GOVET   = ${GOCMD} vet
 # | freebsd          |                                           | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
-OS_VERSION  ?= 22.04
+OS_VERSION  ?= 24.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
