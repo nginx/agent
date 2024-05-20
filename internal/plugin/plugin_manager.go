@@ -10,6 +10,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/watcher"
 )
 
 func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin {
@@ -27,6 +28,8 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 		grpcClient := NewGrpcClient(agentConfig)
 		plugins = append(plugins, grpcClient)
 	}
+
+	plugins = append(plugins, watcher.NewWatcher(agentConfig))
 
 	return plugins
 }
