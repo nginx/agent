@@ -65,7 +65,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	}
 
 	if strings.Contains(osReleaseContent, "UBUNTU") || strings.Contains(osReleaseContent, "Debian") {
-		err := updateDebRepo(testContainer, osReleaseContent)
+		err := updateDebRepo(testContainer)
 		require.NoError(t, err, "failed to update deb repo package cache")
 	}
 
@@ -146,7 +146,7 @@ func uninstallAgent(ctx context.Context, container *testcontainers.DockerContain
 	return string(stdoutStderr), err
 }
 
-func updateDebRepo(testContainer *testcontainers.DockerContainer, osReleaseContent string) error {
+func updateDebRepo(testContainer *testcontainers.DockerContainer) error {
 	if INSTALL_FROM_REPO == "" {
 		return nil
 	}

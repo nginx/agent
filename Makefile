@@ -41,7 +41,7 @@ GOVET   = ${GOCMD} vet
 # | freebsd          |                                           | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
-OS_VERSION  ?= 22.04
+OS_VERSION  ?= 24.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
