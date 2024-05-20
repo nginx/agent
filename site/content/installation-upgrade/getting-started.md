@@ -1,5 +1,5 @@
 ---
-title: "Getting Started"
+title: "Getting started"
 draft: false
 weight: 100
 toc: true

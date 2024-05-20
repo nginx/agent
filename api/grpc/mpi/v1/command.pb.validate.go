@@ -2487,6 +2487,41 @@ func (m *ConfigUploadRequest) validate(all bool) error {
 
 	var errors []error
 
+	// no validation rules for InstanceId
+
+	if m.Overview != nil {
+
+		if all {
+			switch v := interface{}(m.GetOverview()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigUploadRequestValidationError{
+						field:  "Overview",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigUploadRequestValidationError{
+						field:  "Overview",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetOverview()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigUploadRequestValidationError{
+					field:  "Overview",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return ConfigUploadRequestMultiError(errors)
 	}
