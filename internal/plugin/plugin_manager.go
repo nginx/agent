@@ -8,6 +8,8 @@ package plugin
 import (
 	"log/slog"
 
+	"github.com/nginx/agent/v3/internal/resource"
+
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 )
@@ -17,6 +19,7 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 
 	plugins = addProcessMonitor(agentConfig, plugins)
 	plugins = addResourceMonitor(agentConfig, plugins)
+	plugins = addResourcePlugin(plugins)
 
 	configPlugin := NewConfig(agentConfig)
 
@@ -56,6 +59,13 @@ func addProcessMonitor(agentConfig *config.Config, plugins []bus.Plugin) []bus.P
 		processMonitor := NewProcessMonitor(agentConfig)
 		plugins = append(plugins, processMonitor)
 	}
+
+	return plugins
+}
+
+func addResourcePlugin(plugins []bus.Plugin) []bus.Plugin {
+	resourcePlugin := resource.NewResource()
+	plugins = append(plugins, resourcePlugin)
 
 	return plugins
 }

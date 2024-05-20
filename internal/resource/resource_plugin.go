@@ -19,6 +19,8 @@ type Resource struct {
 	resourceService resourceServiceInterface
 }
 
+var _ bus.Plugin = (*Resource)(nil)
+
 func NewResource() *Resource {
 	return &Resource{
 		resourceService: NewResourceService(),
