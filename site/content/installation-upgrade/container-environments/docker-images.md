@@ -304,7 +304,7 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] make oss-image OS_RELEASE=ubuntu
 
 {{<important>}}You need a license to use NGINX Agent with NGINX Plus. You must complete the steps in the [Download the certificate and key files from MyF5](#myf5-download) section before proceeding.{{</important>}}
 
-Run the following `make` command to build the default image, which uses Ubuntu 22.04 (Jammy) as the base image.
+Run the following `make` command to build the default image, which uses Ubuntu 24.04 (Noble) as the base image.
 
 ```shell
 PACKAGE_NAME=[PATH-TO-PACKAGE] make official-plus-image
