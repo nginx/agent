@@ -17,7 +17,6 @@ import (
 type Resource struct {
 	messagePipe     bus.MessagePipeInterface
 	resourceService resourceServiceInterface
-	resource        *v1.Resource
 }
 
 func NewResource() *Resource {
@@ -30,7 +29,6 @@ func (r *Resource) Init(ctx context.Context, messagePipe bus.MessagePipeInterfac
 	slog.DebugContext(ctx, "Starting resource plugin")
 
 	r.messagePipe = messagePipe
-	r.resource = r.resourceService.GetResource(ctx)
 
 	return nil
 }
@@ -54,9 +52,9 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
 		}
 
-		r.resource = r.resourceService.AddInstances(instanceList)
+		resource := r.resourceService.AddInstances(instanceList)
 
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: r.resource})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: resource})
 
 		return
 	case bus.UpdatedInstances:
@@ -64,9 +62,9 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
 		}
-		r.resource = r.resourceService.UpdateInstances(instanceList)
+		resource := r.resourceService.UpdateInstances(instanceList)
 
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: r.resource})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: resource})
 
 		return
 
@@ -75,9 +73,9 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
 		}
-		r.resource = r.resourceService.DeleteInstances(instanceList)
+		resource := r.resourceService.DeleteInstances(instanceList)
 
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: r.resource})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: resource})
 
 		return
 	default:
