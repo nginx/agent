@@ -51,12 +51,11 @@ func TestWatcher_Init(t *testing.T) {
 
 	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
 
+	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 2 }, 2*time.Second, 10*time.Millisecond)
 	messages = messagePipe.GetMessages()
-
-	assert.Eventually(t, func() bool { return len(messages) == 2 }, 5*time.Second, 10*time.Millisecond)
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.NewInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.newInstances},
+		&bus.Message{Topic: bus.AddInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.newInstances},
 		messages[0],
 	)
 	assert.Equal(

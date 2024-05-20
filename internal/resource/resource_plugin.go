@@ -48,7 +48,7 @@ func (*Resource) Info() *bus.Info {
 
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	case bus.NewInstances:
+	case bus.AddInstancesTopic:
 		instanceList, ok := msg.Data.([]*v1.Instance)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
@@ -56,28 +56,28 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 
 		resource := r.resourceService.AddInstances(instanceList)
 
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: resource})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
 
 		return
-	case bus.UpdatedInstances:
+	case bus.UpdatedInstancesTopic:
 		instanceList, ok := msg.Data.([]*v1.Instance)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
 		}
 		resource := r.resourceService.UpdateInstances(instanceList)
 
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: resource})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
 
 		return
 
-	case bus.DeletedInstances:
+	case bus.DeletedInstancesTopic:
 		instanceList, ok := msg.Data.([]*v1.Instance)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
 		}
 		resource := r.resourceService.DeleteInstances(instanceList)
 
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdate, Data: resource})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
 
 		return
 	default:
@@ -87,8 +87,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 
 func (*Resource) Subscriptions() []string {
 	return []string{
-		bus.NewInstances,
-		bus.UpdatedInstances,
-		bus.DeletedInstances,
+		bus.AddInstancesTopic,
+		bus.UpdatedInstancesTopic,
+		bus.DeletedInstancesTopic,
 	}
 }

@@ -40,18 +40,18 @@ func TestResource_Process(t *testing.T) {
 		{
 			name: "Test 1: New Instance Topic",
 			message: &bus.Message{
-				Topic: bus.NewInstances,
+				Topic: bus.AddInstancesTopic,
 				Data: []*v1.Instance{
 					protos.GetNginxOssInstance([]string{}),
 				},
 			},
 			resource: protos.GetHostResource(),
-			topic:    bus.ResourceUpdate,
+			topic:    bus.ResourceUpdateTopic,
 		},
 		{
 			name: "Test 2: Update Instance Topic",
 			message: &bus.Message{
-				Topic: bus.UpdatedInstances,
+				Topic: bus.UpdatedInstancesTopic,
 				Data: []*v1.Instance{
 					updatedInstance,
 				},
@@ -63,12 +63,12 @@ func TestResource_Process(t *testing.T) {
 				},
 				Info: protos.GetHostResource().GetInfo(),
 			},
-			topic: bus.ResourceUpdate,
+			topic: bus.ResourceUpdateTopic,
 		},
 		{
 			name: "Test 3: Delete Instance Topic",
 			message: &bus.Message{
-				Topic: bus.DeletedInstances,
+				Topic: bus.DeletedInstancesTopic,
 				Data: []*v1.Instance{
 					updatedInstance,
 				},
@@ -78,7 +78,7 @@ func TestResource_Process(t *testing.T) {
 				Instances:  []*v1.Instance{},
 				Info:       protos.GetHostResource().GetInfo(),
 			},
-			topic: bus.ResourceUpdate,
+			topic: bus.ResourceUpdateTopic,
 		},
 	}
 
@@ -110,9 +110,9 @@ func TestResource_Subscriptions(t *testing.T) {
 	resourcePlugin := NewResource()
 	assert.Equal(t,
 		[]string{
-			bus.NewInstances,
-			bus.UpdatedInstances,
-			bus.DeletedInstances,
+			bus.AddInstancesTopic,
+			bus.UpdatedInstancesTopic,
+			bus.DeletedInstancesTopic,
 		},
 		resourcePlugin.Subscriptions())
 }
