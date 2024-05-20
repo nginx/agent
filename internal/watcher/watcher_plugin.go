@@ -24,6 +24,8 @@ type (
 	}
 )
 
+var _ bus.Plugin = (*Watcher)(nil)
+
 func NewWatcher(agentConfig *config.Config) *Watcher {
 	return &Watcher{
 		agentConfig:            agentConfig,
