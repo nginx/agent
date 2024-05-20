@@ -21,6 +21,7 @@ type Config struct {
 	Command            *Command         `yaml:"-" mapstructure:"command"`
 	File               *File            `yaml:"-" mapstructure:"file"`
 	Common             *CommonSettings  `yaml:"-"`
+	Watchers           *Watchers        `yaml:"-"`
 }
 
 type Log struct {
@@ -108,4 +109,12 @@ type CommonSettings struct {
 	MaxElapsedTime      time.Duration `yaml:"-" mapstructure:"max_elapsed_time"`
 	RandomizationFactor float64       `yaml:"-" mapstructure:"randomization_factor"`
 	Multiplier          float64       `yaml:"-" mapstructure:"multiplier"`
+}
+
+type Watchers struct {
+	InstanceWatcher InstanceWatcher `yaml:"-" mapstructure:"instance_watcher"`
+}
+
+type InstanceWatcher struct {
+	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 }

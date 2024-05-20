@@ -34,4 +34,6 @@ const (
 	DefBackoffMultiplier          = 1.5
 	DefBackoffMaxInterval         = 200 * time.Millisecond
 	DefBackoffMaxElapsedTime      = 3 * time.Second
+
+	DefInstanceWatcherMonitoringFrequency = 5 * time.Second
 )

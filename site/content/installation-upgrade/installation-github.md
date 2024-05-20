@@ -1,5 +1,5 @@
 ---
-title: "Installation From GitHub Release"
+title: "Installation from GitHub release"
 draft: false
 weight: 200
 toc: true

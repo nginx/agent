@@ -13,6 +13,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/watcher"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,6 +35,7 @@ func TestLoadPLugins(t *testing.T) {
 				&Resource{},
 				&resource.Resource{},
 				&Config{},
+				&watcher.Watcher{},
 			},
 		}, {
 			name: "Test 2: Metrics plugin enabled",
@@ -45,6 +47,7 @@ func TestLoadPLugins(t *testing.T) {
 				&resource.Resource{},
 				&Metrics{},
 				&Config{},
+				&watcher.Watcher{},
 			},
 		},
 	}

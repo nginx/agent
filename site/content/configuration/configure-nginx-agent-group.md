@@ -1,5 +1,5 @@
 ---
-title: "Add NGINX Users to nginx-agent Group"
+title: "Add NGINX Users to nginx-agent group"
 draft: false
 weight: 300
 toc: true
