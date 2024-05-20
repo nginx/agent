@@ -83,7 +83,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 				slog.DebugContext(newCtx, "New instances found", "instances", message.instanceUpdates.newInstances)
 				w.messagePipe.Process(
 					newCtx,
-					&bus.Message{Topic: bus.NewInstancesTopic, Data: message.instanceUpdates.newInstances},
+					&bus.Message{Topic: bus.AddInstancesTopic, Data: message.instanceUpdates.newInstances},
 				)
 			}
 			if len(message.instanceUpdates.deletedInstances) > 0 {
