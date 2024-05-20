@@ -57,11 +57,13 @@ func NewNginxProcessParser() *NginxProcessParser {
 }
 
 func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Process) []*v1.Instance {
-	processList := []*v1.Instance{}
+	instanceList := []*v1.Instance{}
 
 	nginxProcesses := filterNginxProcesses(processes)
 
 	for _, nginxProcess := range nginxProcesses {
+		// Here we are determining if the nginxProcess is a master process.
+		// NGINX worker processes are ignored.
 		_, ok := nginxProcesses[nginxProcess.Ppid]
 		if !ok {
 			nginxInfo, err := npp.getInfo(ctx, nginxProcess)
@@ -71,11 +73,11 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 				continue
 			}
 
-			processList = append(processList, convertInfoToProcess(*nginxInfo))
+			instanceList = append(instanceList, convertInfoToInstance(*nginxInfo))
 		}
 	}
 
-	return processList
+	return instanceList
 }
 
 func (npp *NginxProcessParser) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info, error) {
@@ -145,7 +147,7 @@ func sanitizeExeDeletedPath(exe string) string {
 	return strings.TrimSpace(exe)
 }
 
-func convertInfoToProcess(nginxInfo Info) *v1.Instance {
+func convertInfoToInstance(nginxInfo Info) *v1.Instance {
 	var instanceRuntime *v1.InstanceRuntime
 	nginxType := v1.InstanceMeta_INSTANCE_TYPE_NGINX
 	version := nginxInfo.Version

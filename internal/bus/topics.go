@@ -13,6 +13,8 @@ const (
 	InstanceConfigContextTopic       = "instance-config-context"
 	MetricsTopic                     = "metrics"
 	ConfigClientTopic                = "config-client"
-	NewInstancesTopic                = "new-instances"
+	AddInstancesTopic                = "add-instances"
+	UpdatedInstancesTopic            = "updated-instances"
 	DeletedInstancesTopic            = "deleted-instances"
+	ResourceUpdateTopic              = "resource-update"
 )

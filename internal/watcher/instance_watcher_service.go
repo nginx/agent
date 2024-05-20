@@ -42,6 +42,11 @@ type (
 		newInstances     []*v1.Instance
 		deletedInstances []*v1.Instance
 	}
+
+	InstanceUpdatesMessage struct {
+		correlationID   slog.Attr
+		instanceUpdates InstanceUpdates
+	}
 )
 
 func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherService {
@@ -55,7 +60,7 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 	}
 }
 
-func (iw *InstanceWatcherService) Watch(ctx context.Context, ch chan<- InstanceUpdates) {
+func (iw *InstanceWatcherService) Watch(ctx context.Context, ch chan<- InstanceUpdatesMessage) {
 	monitoringFrequency := iw.agentConfig.Watchers.InstanceWatcher.MonitoringFrequency
 	slog.DebugContext(ctx, "Starting instance watcher monitoring", "monitoring_frequency", monitoringFrequency)
 
@@ -68,12 +73,21 @@ func (iw *InstanceWatcherService) Watch(ctx context.Context, ch chan<- InstanceU
 			close(ch)
 			return
 		case <-instanceWatcherTicker.C:
-			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, logger.GenerateCorrelationID())
+			correlationID := logger.GenerateCorrelationID()
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
+
 			instanceUpdates, err := iw.updates(newCtx)
 			if err != nil {
 				slog.ErrorContext(newCtx, "Instance watcher updates", "error", err)
+			}
+
+			if len(instanceUpdates.newInstances) > 0 || len(instanceUpdates.deletedInstances) > 0 {
+				ch <- InstanceUpdatesMessage{
+					correlationID:   correlationID,
+					instanceUpdates: instanceUpdates,
+				}
 			} else {
-				ch <- instanceUpdates
+				slog.DebugContext(newCtx, "Instance watcher found no instance updates")
 			}
 		}
 	}
