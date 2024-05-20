@@ -26,6 +26,8 @@ type (
 	}
 )
 
+var _ bus.Plugin = (*Collector)(nil)
+
 // NewCollector is the constructor for the Collector plugin.
 func NewCollector(conf *config.Config) (*Collector, error) {
 	settings := collector.OTelCollectorSettings(conf)
@@ -40,7 +42,7 @@ func NewCollector(conf *config.Config) (*Collector, error) {
 	}, nil
 }
 
-// Init initializes and starts the plugin. Required for the `Plugin` interface.
+// Init initializes and starts the plugin
 func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) error {
 	slog.InfoContext(ctx, "Starting OTel Collector plugin")
 
@@ -50,7 +52,7 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 	go func() {
 		err := oc.run(runCtx)
 		if err != nil {
-			slog.ErrorContext(ctx, "error", err)
+			slog.ErrorContext(runCtx, "error", err)
 		}
 	}()
 
@@ -72,8 +74,6 @@ func (oc *Collector) run(ctx context.Context) error {
 
 	for {
 		state := oc.svc.GetState()
-
-		oc.svc.GetState()
 		// While waiting for collector start, an error was found. Most likely
 		// an invalid custom collector configuration file.
 		if err != nil {
@@ -92,14 +92,14 @@ func (oc *Collector) run(ctx context.Context) error {
 	}
 }
 
-// Info about the plugin. Required for the `Plugin` interface.
+// Info the plugin.
 func (oc *Collector) Info() *bus.Info {
 	return &bus.Info{
 		Name: "collector",
 	}
 }
 
-// Close about the plugin. Required for the `Plugin` interface.
+// Close the plugin.
 func (oc *Collector) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing OTel Collector plugin")
 
@@ -112,11 +112,11 @@ func (oc *Collector) Close(ctx context.Context) error {
 	return nil
 }
 
-// Process an incoming Message Bus message in the plugin. Required for the `Plugin` interface.
+// Process an incoming Message Bus message in the plugin
 func (oc *Collector) Process(_ context.Context, msg *bus.Message) {
 }
 
-// Subscriptions returns the list of topics the plugin is subscribed to. Required for the `Plugin` interface.
+// Subscriptions returns the list of topics the plugin is subscribed to
 func (oc *Collector) Subscriptions() []string {
 	return []string{}
 }

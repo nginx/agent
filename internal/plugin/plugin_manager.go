@@ -81,7 +81,7 @@ func isGrpcClientConfigured(agentConfig *config.Config) bool {
 }
 
 func addCollector(agentConfig *config.Config, logger *slog.Logger, plugins []bus.Plugin) []bus.Plugin {
-	if agentConfig.Metrics.Collector {
+	if agentConfig.Metrics != nil && agentConfig.Metrics.Collector {
 		collector, err := NewCollector(agentConfig)
 		if err == nil {
 			plugins = append(plugins, collector)

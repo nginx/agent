@@ -5,6 +5,8 @@
 package collector
 
 import (
+	"errors"
+
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/grafanacloudconnector"
@@ -76,7 +78,6 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/nopreceiver"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
-	"go.uber.org/multierr"
 )
 
 // OTelComponentFactories returns all the OTel collector components supported
@@ -86,27 +87,27 @@ func OTelComponentFactories() (otelcol.Factories, error) {
 
 	connectors, err := createConnectorFactories()
 	if err != nil {
-		errs = multierr.Append(errs, err)
+		errs = errors.Join(errs, err)
 	}
 
 	extensions, err := createExtensionFactories()
 	if err != nil {
-		errs = multierr.Append(errs, err)
+		errs = errors.Join(errs, err)
 	}
 
 	receivers, err := createReceiverFactories()
 	if err != nil {
-		errs = multierr.Append(errs, err)
+		errs = errors.Join(errs, err)
 	}
 
 	processors, err := createProcessorFactories()
 	if err != nil {
-		errs = multierr.Append(errs, err)
+		errs = errors.Join(errs, err)
 	}
 
 	exporters, err := createExporterFactories()
 	if err != nil {
-		errs = multierr.Append(errs, err)
+		errs = errors.Join(errs, err)
 	}
 
 	factories := otelcol.Factories{

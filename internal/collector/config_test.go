@@ -38,8 +38,8 @@ func TestConfigProviderSettings(t *testing.T) {
 
 func TestGetConfig(t *testing.T) {
 	// Test with environment variable set
-	os.Setenv("OPENTELEMETRY_COLLECTOR_CONFIG_FILE", "/path/to/config.yaml")
-	defer os.Unsetenv("OPENTELEMETRY_COLLECTOR_CONFIG_FILE")
+	t.Setenv("OPENTELEMETRY_COLLECTOR_CONFIG_FILE", "/path/to/config.yaml")
+	defer t.Setenv("OPENTELEMETRY_COLLECTOR_CONFIG_FILE", "")
 
 	configURI := getConfig(nil)
 	assert.Equal(t, "/path/to/config.yaml", configURI, "Config URI should match the environment variable")
