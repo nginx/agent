@@ -268,7 +268,7 @@ jobs:
 
   build-example:
     name: Build Grafana Dashboard Example
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -278,7 +278,7 @@ jobs:
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
       - name: Build Grafana example
-        run: BASE_IMAGE="docker.io/ubuntu:22.04" make build-grafana-example
+        run: make build-grafana-example
       - name: Clean Grafana example
         run: make clean-grafana-example
 
