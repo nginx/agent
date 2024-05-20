@@ -68,7 +68,6 @@ func (oc *Collector) run(ctx context.Context) error {
 		appErr := oc.svc.Run(ctx)
 		if appErr != nil {
 			err = appErr
-			slog.ErrorContext(ctx, "error", appErr)
 		}
 	}()
 

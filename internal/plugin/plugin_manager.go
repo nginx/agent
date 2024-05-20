@@ -15,7 +15,7 @@ import (
 	"github.com/nginx/agent/v3/internal/watcher"
 )
 
-func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin {
+func LoadPlugins(agentConfig *config.Config) []bus.Plugin {
 	plugins := make([]bus.Plugin, 0)
 
 	plugins = addProcessMonitor(agentConfig, plugins)
@@ -24,7 +24,7 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 
 	configPlugin := NewConfig(agentConfig)
 
-	plugins = addMetrics(agentConfig, slogger, plugins)
+	plugins = addMetrics(agentConfig, plugins)
 	plugins = append(plugins, configPlugin)
 
 	if isGrpcClientConfigured(agentConfig) {
@@ -32,17 +32,17 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 		plugins = append(plugins, grpcClient)
 	}
 
-	plugins = addCollector(agentConfig, slogger, plugins)
+	plugins = addCollector(agentConfig, plugins)
 	plugins = append(plugins, watcher.NewWatcher(agentConfig))
 
 	return plugins
 }
 
-func addMetrics(agentConfig *config.Config, logger *slog.Logger, plugins []bus.Plugin) []bus.Plugin {
+func addMetrics(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
 	if agentConfig.Metrics != nil {
 		metrics, err := NewMetrics(agentConfig)
 		if err != nil {
-			logger.Error("Failed to initialize metrics plugin", "error", err)
+			slog.Error("Failed to initialize metrics plugin", "error", err)
 		} else {
 			plugins = append(plugins, metrics)
 		}
@@ -80,13 +80,13 @@ func isGrpcClientConfigured(agentConfig *config.Config) bool {
 		agentConfig.Command.Server.Type == "grpc"
 }
 
-func addCollector(agentConfig *config.Config, logger *slog.Logger, plugins []bus.Plugin) []bus.Plugin {
+func addCollector(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
 	if agentConfig.Metrics != nil && agentConfig.Metrics.Collector {
 		collector, err := NewCollector(agentConfig)
 		if err == nil {
 			plugins = append(plugins, collector)
 		} else {
-			logger.Error("Failed to initialize collector plugin", "error", err)
+			slog.Error("Failed to initialize collector plugin", "error", err)
 		}
 	}
 
