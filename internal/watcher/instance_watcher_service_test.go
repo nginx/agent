@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
 	"github.com/nginx/agent/v3/test/protos"
@@ -20,6 +21,9 @@ import (
 
 func TestInstanceWatcherService_Updates(t *testing.T) {
 	ctx := context.Background()
+	processID := int32(123)
+
+	agentInstance := protos.GetAgentInstance(processID, types.GetAgentConfig())
 
 	tests := []struct {
 		name                    string
@@ -29,14 +33,15 @@ func TestInstanceWatcherService_Updates(t *testing.T) {
 	}{
 		{
 			name:                    "Test 1: No updates",
-			oldInstances:            []*v1.Instance{},
+			oldInstances:            []*v1.Instance{agentInstance},
 			parsedInstances:         []*v1.Instance{},
 			expectedInstanceUpdates: InstanceUpdates{},
 		},
 		{
 			name:         "Test 2: New instance",
-			oldInstances: []*v1.Instance{},
+			oldInstances: []*v1.Instance{agentInstance},
 			parsedInstances: []*v1.Instance{
+				agentInstance,
 				protos.GetNginxOssInstance([]string{}),
 			},
 			expectedInstanceUpdates: InstanceUpdates{
@@ -48,6 +53,7 @@ func TestInstanceWatcherService_Updates(t *testing.T) {
 		{
 			name: "Test 3: Deleted instance",
 			oldInstances: []*v1.Instance{
+				agentInstance,
 				protos.GetNginxOssInstance([]string{}),
 			},
 			parsedInstances: []*v1.Instance{},
@@ -67,15 +73,20 @@ func TestInstanceWatcherService_Updates(t *testing.T) {
 			fakeProcessParser := &watcherfakes.FakeProcessParser{}
 			fakeProcessParser.ParseReturns(test.parsedInstances)
 
+			fakeExec := &execfakes.FakeExecInterface{}
+			fakeExec.ExecutableReturns(defaultAgentPath, nil)
+			fakeExec.ProcessIDReturns(processID)
+
 			instanceWatcherService := NewInstanceWatcherService(types.GetAgentConfig())
 			instanceWatcherService.processOperator = fakeProcessWatcher
 			instanceWatcherService.processParsers = []processParser{fakeProcessParser}
 			instanceWatcherService.cache = test.oldInstances
+			instanceWatcherService.executer = fakeExec
 
 			instanceUpdates, err := instanceWatcherService.updates(ctx)
 
-			require.NoError(t, err)
-			assert.Equal(t, test.expectedInstanceUpdates, instanceUpdates)
+			require.NoError(tt, err)
+			assert.Equal(tt, test.expectedInstanceUpdates, instanceUpdates)
 		})
 	}
 }

@@ -21,7 +21,9 @@ import (
 //counterfeiter:generate . ExecInterface
 type ExecInterface interface {
 	RunCmd(ctx context.Context, cmd string, args ...string) (*bytes.Buffer, error)
+	Executable() (string, error)
 	FindExecutable(name string) (string, error)
+	ProcessID() int32
 	KillProcess(pid int32) error
 	Hostname() (string, error)
 	HostID(ctx context.Context) (string, error)
@@ -41,8 +43,16 @@ func (*Exec) RunCmd(ctx context.Context, cmd string, args ...string) (*bytes.Buf
 	return bytes.NewBuffer(output), nil
 }
 
+func (*Exec) Executable() (string, error) {
+	return os.Executable()
+}
+
 func (*Exec) FindExecutable(name string) (string, error) {
 	return exec.LookPath(name)
+}
+
+func (*Exec) ProcessID() int32 {
+	return int32(os.Getpid())
 }
 
 func (*Exec) KillProcess(pid int32) error {

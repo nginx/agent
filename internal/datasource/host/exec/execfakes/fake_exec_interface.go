@@ -11,6 +11,18 @@ import (
 )
 
 type FakeExecInterface struct {
+	ExecutableStub        func() (string, error)
+	executableMutex       sync.RWMutex
+	executableArgsForCall []struct {
+	}
+	executableReturns struct {
+		result1 string
+		result2 error
+	}
+	executableReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	FindExecutableStub        func(string) (string, error)
 	findExecutableMutex       sync.RWMutex
 	findExecutableArgsForCall []struct {
@@ -60,6 +72,16 @@ type FakeExecInterface struct {
 	killProcessReturnsOnCall map[int]struct {
 		result1 error
 	}
+	ProcessIDStub        func() int32
+	processIDMutex       sync.RWMutex
+	processIDArgsForCall []struct {
+	}
+	processIDReturns struct {
+		result1 int32
+	}
+	processIDReturnsOnCall map[int]struct {
+		result1 int32
+	}
 	ReleaseInfoStub        func(context.Context) *v1.ReleaseInfo
 	releaseInfoMutex       sync.RWMutex
 	releaseInfoArgsForCall []struct {
@@ -88,6 +110,62 @@ type FakeExecInterface struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeExecInterface) Executable() (string, error) {
+	fake.executableMutex.Lock()
+	ret, specificReturn := fake.executableReturnsOnCall[len(fake.executableArgsForCall)]
+	fake.executableArgsForCall = append(fake.executableArgsForCall, struct {
+	}{})
+	stub := fake.ExecutableStub
+	fakeReturns := fake.executableReturns
+	fake.recordInvocation("Executable", []interface{}{})
+	fake.executableMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeExecInterface) ExecutableCallCount() int {
+	fake.executableMutex.RLock()
+	defer fake.executableMutex.RUnlock()
+	return len(fake.executableArgsForCall)
+}
+
+func (fake *FakeExecInterface) ExecutableCalls(stub func() (string, error)) {
+	fake.executableMutex.Lock()
+	defer fake.executableMutex.Unlock()
+	fake.ExecutableStub = stub
+}
+
+func (fake *FakeExecInterface) ExecutableReturns(result1 string, result2 error) {
+	fake.executableMutex.Lock()
+	defer fake.executableMutex.Unlock()
+	fake.ExecutableStub = nil
+	fake.executableReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeExecInterface) ExecutableReturnsOnCall(i int, result1 string, result2 error) {
+	fake.executableMutex.Lock()
+	defer fake.executableMutex.Unlock()
+	fake.ExecutableStub = nil
+	if fake.executableReturnsOnCall == nil {
+		fake.executableReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.executableReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeExecInterface) FindExecutable(arg1 string) (string, error) {
@@ -335,6 +413,59 @@ func (fake *FakeExecInterface) KillProcessReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeExecInterface) ProcessID() int32 {
+	fake.processIDMutex.Lock()
+	ret, specificReturn := fake.processIDReturnsOnCall[len(fake.processIDArgsForCall)]
+	fake.processIDArgsForCall = append(fake.processIDArgsForCall, struct {
+	}{})
+	stub := fake.ProcessIDStub
+	fakeReturns := fake.processIDReturns
+	fake.recordInvocation("ProcessID", []interface{}{})
+	fake.processIDMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeExecInterface) ProcessIDCallCount() int {
+	fake.processIDMutex.RLock()
+	defer fake.processIDMutex.RUnlock()
+	return len(fake.processIDArgsForCall)
+}
+
+func (fake *FakeExecInterface) ProcessIDCalls(stub func() int32) {
+	fake.processIDMutex.Lock()
+	defer fake.processIDMutex.Unlock()
+	fake.ProcessIDStub = stub
+}
+
+func (fake *FakeExecInterface) ProcessIDReturns(result1 int32) {
+	fake.processIDMutex.Lock()
+	defer fake.processIDMutex.Unlock()
+	fake.ProcessIDStub = nil
+	fake.processIDReturns = struct {
+		result1 int32
+	}{result1}
+}
+
+func (fake *FakeExecInterface) ProcessIDReturnsOnCall(i int, result1 int32) {
+	fake.processIDMutex.Lock()
+	defer fake.processIDMutex.Unlock()
+	fake.ProcessIDStub = nil
+	if fake.processIDReturnsOnCall == nil {
+		fake.processIDReturnsOnCall = make(map[int]struct {
+			result1 int32
+		})
+	}
+	fake.processIDReturnsOnCall[i] = struct {
+		result1 int32
+	}{result1}
+}
+
 func (fake *FakeExecInterface) ReleaseInfo(arg1 context.Context) *v1.ReleaseInfo {
 	fake.releaseInfoMutex.Lock()
 	ret, specificReturn := fake.releaseInfoReturnsOnCall[len(fake.releaseInfoArgsForCall)]
@@ -465,6 +596,8 @@ func (fake *FakeExecInterface) RunCmdReturnsOnCall(i int, result1 *bytes.Buffer,
 func (fake *FakeExecInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.executableMutex.RLock()
+	defer fake.executableMutex.RUnlock()
 	fake.findExecutableMutex.RLock()
 	defer fake.findExecutableMutex.RUnlock()
 	fake.hostIDMutex.RLock()
@@ -473,6 +606,8 @@ func (fake *FakeExecInterface) Invocations() map[string][][]interface{} {
 	defer fake.hostnameMutex.RUnlock()
 	fake.killProcessMutex.RLock()
 	defer fake.killProcessMutex.RUnlock()
+	fake.processIDMutex.RLock()
+	defer fake.processIDMutex.RUnlock()
 	fake.releaseInfoMutex.RLock()
 	defer fake.releaseInfoMutex.RUnlock()
 	fake.runCmdMutex.RLock()
