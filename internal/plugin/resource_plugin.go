@@ -23,19 +23,15 @@ type Resource struct {
 	messagePipe         bus.MessagePipeInterface
 	resourceService     service.ResourceServiceInterface
 	instanceService     service.InstanceServiceInterface
-	resource            *v1.Resource
 	resourceMutex       sync.Mutex
 	nginxConfigContexts map[string]*model.NginxConfigContext
 }
 
 func NewResource(agentConfig *config.Config) *Resource {
 	return &Resource{
-		resourceMutex:   sync.Mutex{},
-		resourceService: service.NewResourceService(),
-		instanceService: service.NewInstanceService(agentConfig),
-		resource: &v1.Resource{
-			Instances: []*v1.Instance{},
-		},
+		resourceMutex:       sync.Mutex{},
+		resourceService:     service.NewResourceService(),
+		instanceService:     service.NewInstanceService(agentConfig),
 		nginxConfigContexts: make(map[string]*model.NginxConfigContext),
 	}
 }
@@ -46,10 +42,6 @@ func (r *Resource) Init(ctx context.Context, messagePipe bus.MessagePipeInterfac
 	slog.DebugContext(ctx, "Starting resource plugin")
 
 	r.messagePipe = messagePipe
-
-	r.resourceMutex.Lock()
-	r.resource = r.resourceService.GetResource(ctx)
-	r.resourceMutex.Unlock()
 
 	return nil
 }
@@ -75,11 +67,12 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 			return
 		}
 
+		resource := r.resourceService.GetResource(ctx)
 		instanceList := r.instanceService.GetInstances(ctx, newProcesses)
 		r.resourceMutex.Lock()
-		r.resource.Instances = instanceList
-		r.updateNginxConfigContexts()
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: r.resource})
+		resource.Instances = instanceList
+		r.updateNginxConfigContexts(ctx)
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: resource})
 		r.resourceMutex.Unlock()
 	case bus.InstanceConfigContextTopic:
 		nginxConfigContext, ok := msg.Data.(*model.NginxConfigContext)
@@ -89,22 +82,24 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		}
 
 		r.resourceMutex.Lock()
-		instances := r.resource.GetInstances()
+		resource := r.resourceService.GetResource(ctx)
+		instances := resource.GetInstances()
 		for _, instance := range instances {
 			if instance.GetInstanceMeta().GetInstanceId() == nginxConfigContext.InstanceID {
 				r.updateInstance(nginxConfigContext, instance)
 				r.nginxConfigContexts[instance.GetInstanceMeta().GetInstanceId()] = nginxConfigContext
 			}
 		}
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: r.resource})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceTopic, Data: resource})
 		r.resourceMutex.Unlock()
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
 }
 
-func (r *Resource) updateNginxConfigContexts() {
-	for _, instance := range r.resource.GetInstances() {
+func (r *Resource) updateNginxConfigContexts(ctx context.Context) {
+	resource := r.resourceService.GetResource(ctx)
+	for _, instance := range resource.GetInstances() {
 		if val, configOk := r.nginxConfigContexts[instance.GetInstanceMeta().GetInstanceId()]; configOk {
 			r.updateInstance(val, instance)
 		}
