@@ -8,6 +8,7 @@ package plugin
 import (
 	"log/slog"
 
+	"github.com/nginx/agent/v3/internal/metrics/collector"
 	"github.com/nginx/agent/v3/internal/resource"
 
 	"github.com/nginx/agent/v3/internal/bus"
@@ -82,9 +83,9 @@ func isGrpcClientConfigured(agentConfig *config.Config) bool {
 
 func addCollector(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
 	if agentConfig.Metrics != nil && agentConfig.Metrics.Collector {
-		collector, err := NewCollector(agentConfig)
+		oTelCollector, err := collector.NewCollector(agentConfig)
 		if err == nil {
-			plugins = append(plugins, collector)
+			plugins = append(plugins, oTelCollector)
 		} else {
 			slog.Error("Failed to initialize collector plugin", "error", err)
 		}

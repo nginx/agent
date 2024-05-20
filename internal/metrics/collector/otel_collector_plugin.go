@@ -2,7 +2,7 @@
 //
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
-package plugin
+package collector
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"log/slog"
 
 	"github.com/nginx/agent/v3/internal/bus"
-	"github.com/nginx/agent/v3/internal/collector"
 	"github.com/nginx/agent/v3/internal/config"
 	"go.opentelemetry.io/collector/otelcol"
 )
@@ -30,7 +29,7 @@ var _ bus.Plugin = (*Collector)(nil)
 
 // NewCollector is the constructor for the Collector plugin.
 func NewCollector(conf *config.Config) (*Collector, error) {
-	settings := collector.OTelCollectorSettings(conf)
+	settings := OTelCollectorSettings(conf)
 	oTelCollector, err := otelcol.NewCollector(settings)
 	if err != nil {
 		return nil, err
