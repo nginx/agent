@@ -183,7 +183,12 @@ message ConfigApplyRequest {
 }
 
 // Additional information associated with a ConfigUploadRequest
-message ConfigUploadRequest {}
+message ConfigUploadRequest {
+    // the instance identifier
+    string instance_id = 1;
+    // an optional set of files related to the request
+    optional mpi.v1.FileOverview overview = 2;
+}
 
 // Perform an associated API action on an instance
 message APIActionRequest {}
