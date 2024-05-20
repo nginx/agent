@@ -13,6 +13,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 )
 
+// nolint
 type (
 	Watcher struct {
 		messagePipe            bus.MessagePipeInterface
