@@ -1,5 +1,5 @@
 ---
-title: "Build Container Images"
+title: "Build container images"
 draft: false
 weight: 100
 toc: true

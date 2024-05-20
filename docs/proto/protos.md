@@ -466,6 +466,12 @@ Additional information associated with a ConfigApplyRequest
 Additional information associated with a ConfigUploadRequest
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance_id | [string](#string) |  | the instance identifier |
+| overview | [FileOverview](#mpi-v1-FileOverview) | optional | an optional set of files related to the request |
+
+
 
 
 

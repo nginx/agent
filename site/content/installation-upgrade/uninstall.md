@@ -1,5 +1,5 @@
 ---
-title: "Uninstall NGINX Agent Package"
+title: "Uninstall NGINX Agent package"
 draft: false
 weight: 700
 toc: true
