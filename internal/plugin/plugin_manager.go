@@ -28,14 +28,16 @@ func LoadPlugins(agentConfig *config.Config, slogger *slog.Logger) []bus.Plugin 
 		plugins = append(plugins, grpcClient)
 	}
 
+	plugins = addCollector(agentConfig, slogger, plugins)
+
 	return plugins
 }
 
-func addMetrics(agentConfig *config.Config, slogger *slog.Logger, plugins []bus.Plugin) []bus.Plugin {
+func addMetrics(agentConfig *config.Config, logger *slog.Logger, plugins []bus.Plugin) []bus.Plugin {
 	if agentConfig.Metrics != nil {
 		metrics, err := NewMetrics(agentConfig)
 		if err != nil {
-			slogger.Error("Failed to initialize metrics plugin", "error", err)
+			logger.Error("Failed to initialize metrics plugin", "error", err)
 		} else {
 			plugins = append(plugins, metrics)
 		}
@@ -64,4 +66,17 @@ func isGrpcClientConfigured(agentConfig *config.Config) bool {
 	return agentConfig.Command != nil &&
 		agentConfig.Command.Server != nil &&
 		agentConfig.Command.Server.Type == "grpc"
+}
+
+func addCollector(agentConfig *config.Config, logger *slog.Logger, plugins []bus.Plugin) []bus.Plugin {
+	if agentConfig.Metrics.Collector {
+		collector, err := NewCollector(agentConfig)
+		if err == nil {
+			plugins = append(plugins, collector)
+		} else {
+			logger.Error("Failed to initialize collector plugin", "error", err)
+		}
+	}
+
+	return plugins
 }

@@ -35,6 +35,7 @@ var (
 	// child flags saved as vars to enable easier prefixing.
 	MetricsProduceIntervalKey       = pre(MetricsRootKey) + "produce_interval"
 	MetricsOTelExporterKey          = pre(MetricsRootKey) + OTelExporterRoot
+	MetricsCollectorKey             = pre(MetricsRootKey) + "collector"
 	OTelExporterBufferLengthKey     = pre(MetricsOTelExporterKey) + "buffer_length"
 	OTelExporterExportRetryCountKey = pre(MetricsOTelExporterKey) + "export_retry_count"
 	OTelExporterExportIntervalKey   = pre(MetricsOTelExporterKey) + "export_interval"

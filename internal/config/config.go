@@ -319,6 +319,7 @@ func getMetrics() *Metrics {
 		ProduceInterval:  viperInstance.GetDuration(MetricsProduceIntervalKey),
 		OTelExporter:     nil,
 		PrometheusSource: nil,
+		Collector:        viperInstance.GetBool(MetricsCollectorKey),
 	}
 
 	if viperInstance.IsSet(MetricsOTelExporterKey) && viperInstance.IsSet(OTelGRPCKey) {
