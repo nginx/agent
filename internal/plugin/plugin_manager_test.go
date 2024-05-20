@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/resource"
+
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/stretchr/testify/assert"
@@ -30,6 +32,7 @@ func TestLoadPLugins(t *testing.T) {
 			expected: []bus.Plugin{
 				&ProcessMonitor{},
 				&Resource{},
+				&resource.Resource{},
 				&Config{},
 			},
 		}, {
@@ -39,6 +42,7 @@ func TestLoadPLugins(t *testing.T) {
 			},
 			expected: []bus.Plugin{
 				&Resource{},
+				&resource.Resource{},
 				&Metrics{},
 				&Config{},
 			},
