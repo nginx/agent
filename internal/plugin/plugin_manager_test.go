@@ -6,7 +6,6 @@
 package plugin
 
 import (
-	"log/slog"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/resource"
