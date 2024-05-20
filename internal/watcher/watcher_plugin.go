@@ -19,6 +19,7 @@ type (
 		agentConfig            *config.Config
 		instanceWatcherService *InstanceWatcherService
 		instanceUpdatesChannel chan InstanceUpdates
+		healthWatcherService   *HealthWatcherService
 		cancel                 context.CancelFunc
 	}
 )
