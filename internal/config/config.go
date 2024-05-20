@@ -405,5 +405,8 @@ func getWatchers() *Watchers {
 		InstanceWatcher: InstanceWatcher{
 			MonitoringFrequency: DefInstanceWatcherMonitoringFrequency,
 		},
+		InstanceHealthWatcher: InstanceHealthWatcher{
+			MonitoringFrequency: DefInstanceWatcherMonitoringFrequency,
+		},
 	}
 }

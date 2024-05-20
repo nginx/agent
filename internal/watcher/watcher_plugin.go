@@ -22,6 +22,7 @@ type (
 		instanceWatcherService *InstanceWatcherService
 		instanceUpdatesChannel chan InstanceUpdatesMessage
 		healthWatcherService   *HealthWatcherService
+		instanceHealthChannel  chan InstanceHealthMessage
 		cancel                 context.CancelFunc
 	}
 )
@@ -33,6 +34,8 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		agentConfig:            agentConfig,
 		instanceWatcherService: NewInstanceWatcherService(agentConfig),
 		instanceUpdatesChannel: make(chan InstanceUpdatesMessage),
+		healthWatcherService:   NewHealthWatcherService(agentConfig),
+		instanceHealthChannel:  make(chan InstanceHealthMessage),
 	}
 }
 
@@ -46,6 +49,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 	w.cancel = cancel
 
 	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel)
+	go w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
 	go w.monitorWatchers(watcherContext)
 
 	return nil
@@ -83,6 +87,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 
 			if len(message.instanceUpdates.newInstances) > 0 {
 				slog.DebugContext(newCtx, "New instances found", "instances", message.instanceUpdates.newInstances)
+				w.healthWatcherService.AddHealthWatcher(message.instanceUpdates.newInstances)
 				w.messagePipe.Process(
 					newCtx,
 					&bus.Message{Topic: bus.AddInstancesTopic, Data: message.instanceUpdates.newInstances},
@@ -90,11 +95,17 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			}
 			if len(message.instanceUpdates.deletedInstances) > 0 {
 				slog.DebugContext(newCtx, "Instances deleted", "instances", message.instanceUpdates.deletedInstances)
+				w.healthWatcherService.DeleteHealthWatcher(message.instanceUpdates.deletedInstances)
 				w.messagePipe.Process(
 					newCtx,
 					&bus.Message{Topic: bus.DeletedInstancesTopic, Data: message.instanceUpdates.deletedInstances},
 				)
 			}
+		case message := <-w.instanceHealthChannel:
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.correlationID)
+			w.messagePipe.Process(newCtx, &bus.Message{
+				Topic: bus.InstanceHealthTopic, Data: message.instanceHealth,
+			})
 		}
 	}
 }

@@ -17,4 +17,5 @@ const (
 	UpdatedInstancesTopic            = "updated-instances"
 	DeletedInstancesTopic            = "deleted-instances"
 	ResourceUpdateTopic              = "resource-update"
+	InstanceHealthTopic              = "instance-health-topic"
 )
