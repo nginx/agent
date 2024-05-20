@@ -137,7 +137,7 @@ jobs:
         - image: "oraclelinux"
           version: "9"
         - image: "ubuntu"
-          version: "22.04"
+          version: "24.04"
         - image: "alpine"
           version: "3.16"
         - image: "alpine"
