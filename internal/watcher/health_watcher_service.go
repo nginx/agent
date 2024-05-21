@@ -8,6 +8,7 @@ package watcher
 import (
 	"context"
 	"log/slog"
+	"reflect"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -16,7 +17,9 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
-// nolint
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . healthWatcherOperator
+
 type (
 	healthWatcherOperator interface {
 		Health(ctx context.Context, instanceID string) *v1.InstanceHealth
@@ -24,8 +27,8 @@ type (
 
 	HealthWatcherService struct {
 		agentConfig *config.Config
-		cache       map[string]*v1.InstanceHealth // key is instanceID
-		watchers    map[string]healthWatcherOperator
+		cache       map[string]*v1.InstanceHealth    // key is instanceID
+		watchers    map[string]healthWatcherOperator // key is instanceID
 	}
 
 	InstanceHealthMessage struct {
@@ -77,23 +80,43 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 			close(ch)
 			return
 		case <-instanceHealthTicker.C:
-			var healthStatuses []*v1.InstanceHealth
 			correlationID := logger.GenerateCorrelationID()
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
 
-			for instanceID, watcher := range hw.watchers {
-				health := watcher.Health(ctx, instanceID)
-				healthStatuses = append(healthStatuses, health)
-			}
+			healthStatuses, currentHealth, equal := hw.health(ctx)
+			if !equal {
+				if len(healthStatuses) > 0 {
+					ch <- InstanceHealthMessage{
+						correlationID:  correlationID,
+						instanceHealth: healthStatuses,
+					}
 
-			if len(healthStatuses) > 0 {
-				ch <- InstanceHealthMessage{
-					correlationID:  correlationID,
-					instanceHealth: healthStatuses,
+					hw.updateCache(currentHealth)
+				} else {
+					slog.DebugContext(newCtx, "Instance health watcher found no health updates")
 				}
-			} else {
-				slog.DebugContext(newCtx, "Instance health watcher found no health updates")
 			}
 		}
+	}
+}
+
+func (hw *HealthWatcherService) health(ctx context.Context) ([]*v1.InstanceHealth,
+	map[string]*v1.InstanceHealth, bool,
+) {
+	healthStatuses := make([]*v1.InstanceHealth, 0, len(hw.watchers))
+	currentHealth := make(map[string]*v1.InstanceHealth)
+
+	for instanceID, watcher := range hw.watchers {
+		instanceHealth := watcher.Health(ctx, instanceID)
+		healthStatuses = append(healthStatuses, instanceHealth)
+		currentHealth[instanceID] = instanceHealth
+	}
+
+	return healthStatuses, currentHealth, reflect.DeepEqual(currentHealth, hw.cache)
+}
+
+func (hw *HealthWatcherService) updateCache(currentHealth map[string]*v1.InstanceHealth) {
+	for instanceID, healthStatus := range currentHealth {
+		hw.cache[instanceID] = healthStatus
 	}
 }
