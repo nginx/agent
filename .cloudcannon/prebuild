@@ -4,6 +4,8 @@
 ## if it is different from the one defined in the go.mod file
 ## then run hugo mod get -u to update the theme
 
+cd site
+
 theme_version=$(grep -o 'v[0-9]\+\(\.[0-9]\+\)\{2\}' go.mod)
 
 current_theme_version=$(hugo mod graph | grep -o 'v[0-9]\+\(\.[0-9]\+\)\{2\}')
