@@ -670,7 +670,13 @@ _snippets:
           type: string
         - editor_key: initial_state
           type: string
+        - editor_key: icon_prefix
+          type: boolean
+        - editor_key: icon
+          type: string
     _inputs:
+      icon_prefix:
+        type: checkbox
       initial_state:
         type: select
         options:
