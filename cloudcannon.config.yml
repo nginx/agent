@@ -660,9 +660,11 @@ _snippets:
     template: hugo_paired_shortcode_named_args
     inline: false
     preview:
-      text: Details Disclosure
-      subtext: 
-        - key: summary
+      text:
+        - template: 'Details Disclosure: {summary}'
+        - Details Disclosure
+      subtext:
+        - template: '{inner}' 
         - Present information inside a toggle
     definitions:
       shortcode_name: details-disclosure
@@ -670,16 +672,22 @@ _snippets:
       named_args:
         - editor_key: summary
           type: string
-        - editor_key: initial_state
-          type: string
         - editor_key: icon_prefix
           type: boolean
         - editor_key: icon
           type: string
+        - editor_key: initial_state
+          type: string
     _inputs:
       icon_prefix:
+        comment: Check to include an icon at the start of the summary.
         type: checkbox
+      icon:
+        comment: Enter all required FontAwesome icon classes here, e.g. "fa-solid fa-file"
+        type: text
+        hidden: "!icon_prefix"
       initial_state:
+        comment: Whether the details are open or closed by default.
         type: select
         options:
           values:
