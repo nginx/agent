@@ -128,15 +128,16 @@ tags:
 
 This section displays the configurable options for NGINX Agent that can be set with CLI flags. See the CLI flags and their uses in the figure below:
 
-<details open="">
-  <summary>NGINX Agent CLI flags &amp; usage</summary>
-<pre><code class="language-text">Usage:
+{{< details-disclosure summary="NGINX Agent CLI flags & usage" initial_state="open" icon_prefix=false icon="" >}}```
+Usage:
   nginx-agent [flags]
   nginx-agent [command]
-<p>Available Commands:
+
+Available Commands:
 completion  Generate completion script.
-help        Help about any command</p>
-<p>Flags:
+help        Help about any command
+
+Flags:
 --api-cert string                                  The cert used by the Agent API.
 --api-host string                                  The host used by the Agent API. (default "127.0.0.1")
 --api-key string                                   The key used by the Agent API.
@@ -172,10 +173,10 @@ help        Help about any command</p>
 --tls-enable                                       Enables TLS for secure communications.
 --tls-key string                                   The path to the certificate key file to use for TLS.
 --tls-skip-verify                                  Only intended for demonstration, sets InsecureSkipVerify for gRPC TLS credentials
--v, --version                                          version for nginx-agent</p>
-<p>Use "nginx-agent [command] --help" for more information about a command.
-</p></code></pre><p></p>
-</details>
+-v, --version                                          version for nginx-agent
+
+Use "nginx-agent [command] --help" for more information about a command.
+```{{< /details-disclosure >}}
 
 #### NGINX Agent Config Dirs Option
 
