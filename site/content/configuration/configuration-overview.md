@@ -103,7 +103,8 @@ nginx_app_protect:
 
 Default location in FreeBSD environments: \`/var/db/nginx-agent/agent-dynamic.conf\`{{< /note >}}
 
-{{< highlight "nginx" >}}# Dynamic configuration file for NGINX Agent.
+```
+# Dynamic configuration file for NGINX Agent.
 #
 # The purpose of this file is to track agent configuration
 # values that can be dynamically changed via the API and the agent install script.
@@ -115,10 +116,13 @@ Default location in FreeBSD environments: \`/var/db/nginx-agent/agent-dynamic.co
 #
 # The agent configuration value that the agent install script can modify are as follows:
 #    - instance_group
-instance_group: devenv-group
-tags:
-- devenv
-- test{{< /highlight >}}{{< /details-disclosure >}}
+<p>instance_group: devenv-group
+tags:</p>
+<ul>
+<li>devenv</li>
+<li>test
+</li></ul>
+```{{< /details-disclosure >}}
 
 ### NGINX Agent CLI Flags & Usage \{#nginx-agent-cli-flags-usage\}
 
