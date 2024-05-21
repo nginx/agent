@@ -115,12 +115,10 @@ Default location in FreeBSD environments: \`/var/db/nginx-agent/agent-dynamic.co
 #
 # The agent configuration value that the agent install script can modify are as follows:
 #    - instance_group
-<p>instance_group: devenv-group
-tags:</p>
-<ul>
-<li>devenv</li>
-<li>test
-</li></ul>{{< /highlight >}}{{< /details-disclosure >}}
+instance_group: devenv-group
+tags:
+- devenv
+- test{{< /highlight >}}{{< /details-disclosure >}}
 
 ### NGINX Agent CLI Flags & Usage \{#nginx-agent-cli-flags-usage\}
 
