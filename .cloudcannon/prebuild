@@ -1,0 +1,29 @@
+#!/bin/bash
+
+## check the version of the hugo theme currently being used 
+## if it is different from the one defined in the go.mod file
+## then run hugo mod get -u to update the theme
+
+theme_version=$(grep -o 'v[0-9]\+\(\.[0-9]\+\)\{2\}' go.mod)
+
+current_theme_version=$(hugo mod graph | grep -o 'v[0-9]\+\(\.[0-9]\+\)\{2\}')
+
+printf "Theme version in go.mod is: %s \n" "$theme_version"
+
+printf "Theme version in use by Hugo is: %s \n" "$current_theme_version"
+
+
+# if the theme version in go.mod is the same as the one in use by Hugo, run hugo mod clean to clear any outdated theme files from the cache
+# if the theme version in go.mod is different from the one in use by Hugo, update it by running hugo mod get -u
+
+if [ "$theme_version" == "$current_theme_version" ]; then
+    printf "Theme version in go.mod is the same as the one in use by Hugo. Cleaning the cache. \n"
+    hugo mod clean ;
+elif [ "$theme_version" != "$current_theme_version" ]; then
+    printf "Updating theme version to %s \n" "$current_theme_version"
+    hugo mod get -u ;
+# if an error occurs, exit with a non-zero status code
+else
+    printf "An error occurred: unable to retrieve the latest version of the Hugo theme.\n"
+    exit 1
+fi
