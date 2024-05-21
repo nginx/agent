@@ -661,7 +661,9 @@ _snippets:
     inline: false
     preview:
       text: Details Disclosure
-      subtext: Present information inside a toggle
+      subtext: 
+        - key: summary
+        - Present information inside a toggle
     definitions:
       shortcode_name: details-disclosure
       content_key: inner
