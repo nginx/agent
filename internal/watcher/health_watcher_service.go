@@ -118,6 +118,13 @@ func (hw *HealthWatcherService) updateCache(currentHealth map[string]*v1.Instanc
 	for instanceID, healthStatus := range currentHealth {
 		hw.cache[instanceID] = healthStatus
 	}
+
+	for key := range hw.cache {
+		if _, ok := currentHealth[key]; !ok {
+			delete(hw.cache, key)
+		}
+	}
+
 	slog.Info("Updating Cache", "", hw.cache)
 }
 

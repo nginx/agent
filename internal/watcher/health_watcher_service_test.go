@@ -120,6 +120,17 @@ func TestHealthWatcherService_health(t *testing.T) {
 			},
 			expectedEqual: true,
 		},
+		{
+			name: "Test 3: Less Instances",
+			cache: map[string]*v1.InstanceHealth{
+				ossInstance.GetInstanceMeta().GetInstanceId(): {
+					InstanceId:           ossInstance.GetInstanceMeta().GetInstanceId(),
+					Description:          "instance is healthy",
+					InstanceHealthStatus: 1,
+				},
+			},
+			expectedEqual: false,
+		},
 	}
 
 	for _, test := range tests {
