@@ -227,46 +227,12 @@ This section displays the configurable options for NGINX Agent that can be set w
 - NMS_DATAPLANE_STATUS_POLL_INTERVAL
 ```{{< /details-disclosure >}}
 
-<details open="">
-  <summary>NGINX Agent Environment Variables</summary>
-<pre><code class="language-text">- NMS_INSTANCE_GROUP
-- NMS_DISPLAY_NAME
-- NMS_FEATURES
-- NMS_LOG_LEVEL
-- NMS_LOG_PATH
-- NMS_PATH
-- NMS_METRICS_COLLECTION_INTERVAL
-- NMS_METRICS_MODE
-- NMS_METRICS_BULK_SIZE
-- NMS_METRICS_REPORT_INTERVAL
-- NMS_NGINX_EXCLUDE_LOGS
-- NMS_NGINX_SOCKET
-- NMS_NGINX_TREAT_WARNINGS_AS_ERRORS
-- NMS_SERVER_GRPCPORT
-- NMS_SERVER_HOST
-- NMS_SERVER_TOKEN
-- NMS_SERVER_COMMAND
-- NMS_SERVER_METRICS
-- NMS_TAGS
-- NMS_TLS_CA
-- NMS_TLS_CERT
-- NMS_TLS_ENABLE
-- NMS_TLS_KEY
-- NMS_TLS_SKIP_VERIFY
-- NMS_CONFIG_DIRS
-- NMS_QUEUE_SIZE
-- NMS_DATAPLANE_REPORT_INTERVAL
-- NMS_DATAPLANE_STATUS_POLL_INTERVAL
-</code></pre>
-</details>
-
 ### NGINX Agent Log Rotation
 
 By default, NGINX Agent rotates logs daily using logrotate with the following configuration:
 
-<details open="">
-  <summary>NGINX Agent Logrotate Configuration</summary>
-<pre><code class="language-yaml">/var/log/nginx-agent/*.log
+{{< details-disclosure summary="NGINX Agent Logrotate Configuration" initial_state="open" icon_prefix=false icon="" >}}```
+/var/log/nginx-agent/*.log
 {
    # log files are rotated every day
    daily
@@ -285,8 +251,7 @@ By default, NGINX Agent rotates logs daily using logrotate with the following co
    # do not rotate the log if it is empty
    notifempty
 }
-</code></pre>
-</details>
+```{{< /details-disclosure >}}
 
 If you need to make changes to the default configuration you can update the file here `/etc/logrotate.d/nginx-agent`
 
