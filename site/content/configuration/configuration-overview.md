@@ -99,82 +99,11 @@ nginx_app_protect:
   # Enable precompiled publication from the NGINX Management Suite (true) or perform compilation on the data plane host (false).
   precompiled_publication: true{{< /highlight >}}{{< /details-disclosure >}}
 
-<details open="">
-    <summary>example nginx-agent.conf</summary>
-{{< note >}}
-In the following example `nginx-agent.conf` file, you can change the `server.host` and `server.grpcPort` to connect to the control/management plane.
-{{< /note >}}
-<pre><code class="language-nginx">#
-# /etc/nginx-agent/nginx-agent.conf
-#
-# Configuration file for NGINX Agent.
-#
-# This file tracks agent configuration values that are meant to be statically set. There
-# are additional NGINX Agent configuration values that are set via the API and agent install script
-# which can be found in /etc/nginx-agent/agent-dynamic.conf.
-<h1>specify the server grpc port to connect to</h1>
-<p>server:</p>
-<h1>host of the control plane</h1>
-<p>host: &lt;FQDN&gt;
-grpcPort: 443</p>
-<h1>tls options</h1>
-<p>tls:</p>
-<h1>enable tls in the nginx-agent setup for grpcs</h1>
-<h1>default to enable to connect with secure connection but without client cert for mtls</h1>
-<p>enable: true</p>
-<h1>controls whether the server certificate chain and host name are verified.</h1>
-<h1>for production use, see instructions for configuring TLS</h1>
-<p>skip_verify: false
-log:</p>
-<h1>set log level (panic, fatal, error, info, debug, trace; default "info")</h1>
-<p>level: info</p>
-<h1>set log path. if empty, don't log to file.</h1>
-<p>path: /var/log/nginx-agent/
-nginx:</p>
-<h1>path of NGINX logs to exclude</h1>
-<p>exclude_logs: ""</p>
-<h1>Set to true when NGINX configuration should contain no warnings when performing a configuration apply (nginx -t is used to carry out this check)</h1>
-<p>treat_warnings_as_errors: false # Default is false</p>
-<h1>data plane status message / 'heartbeat'</h1>
-<p>dataplane:
-status:
-# poll interval for dataplane status - the frequency the agent will query the dataplane for changes
-poll_interval: 30s
-# report interval for dataplane status - the maximum duration to wait before syncing dataplane information if no updates have been observed
-report_interval: 24h
-metrics:</p>
-<h1>specify the size of a buffer to build before sending metrics</h1>
-<p>bulk_size: 20</p>
-<h1>specify metrics poll interval</h1>
-<p>report_interval: 1m
-collection_interval: 15s
-mode: aggregated</p>
-<h1>OSS NGINX default config path</h1>
-<h1>path to aux file dirs can also be added</h1>
-<p>config_dirs: "/etc/nginx:/usr/local/etc/nginx"</p>
-<h1>Internal queue size</h1>
-<p>queue_size: 100</p>
-<p>extensions:</p>
-<ul>
-<li>nginx-app-protect</li>
-</ul>
-<h1>Enable reporting NGINX App Protect details to the control plane.</h1>
-<p>nginx_app_protect:</p>
-<h1>Report interval for NGINX App Protect details - the frequency NGINX Agent checks NGINX App Protect for changes.</h1>
-<p>report_interval: 15s</p>
-<h1>Enable precompiled publication from the NGINX Management Suite (true) or perform compilation on the data plane host (false).</h1>
-<p>precompiled_publication: true
-</p></code></pre><p></p>
-</details>
+{{< details-disclosure summary="example dynamic-agent.conf" initial_state="open" icon_prefix=false icon="" >}}{{< note >}}Default location in Linux environments: \`/var/lib/nginx-agent/agent-dynamic.conf\`
 
-<details open="">
-    <summary>example dynamic-agent.conf</summary>
-{{< note >}}
-Default location in Linux environments: `/var/lib/nginx-agent/agent-dynamic.conf`
+Default location in FreeBSD environments: \`/var/db/nginx-agent/agent-dynamic.conf\`{{< /note >}}
 
-Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.conf`
-{{< /note >}}
-<pre><code class="language-yaml"># Dynamic configuration file for NGINX Agent.
+{{< highlight "nginx" >}}# Dynamic configuration file for NGINX Agent.
 #
 # The purpose of this file is to track agent configuration
 # values that can be dynamically changed via the API and the agent install script.
@@ -191,8 +120,7 @@ tags:</p>
 <ul>
 <li>devenv</li>
 <li>test
-</li></ul></code></pre>
-</details>
+</li></ul>{{< /highlight >}}{{< /details-disclosure >}}
 
 ### NGINX Agent CLI Flags & Usage \{#nginx-agent-cli-flags-usage\}
 
