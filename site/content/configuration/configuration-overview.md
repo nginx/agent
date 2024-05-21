@@ -35,8 +35,7 @@ Examples of the configuration files are provided below:
 
 {{< details-disclosure summary="example nginx-agent.conf" initial_state="open" icon_prefix=false icon="" >}}{{< note >}}In the following example \`nginx-agent.conf\` file, you can change the \`server.host\` and \`server.grpcPort\` to connect to the control/management plane.{{< /note >}}
 
-```
-#
+{{< highlight "nginx" >}}#
 # /etc/nginx-agent/nginx-agent.conf
 #
 # Configuration file for NGINX Agent.
@@ -98,8 +97,7 @@ nginx_app_protect:
   # Report interval for NGINX App Protect details - the frequency NGINX Agent checks NGINX App Protect for changes.
   report_interval: 15s
   # Enable precompiled publication from the NGINX Management Suite (true) or perform compilation on the data plane host (false).
-  precompiled_publication: true
-```{{< /details-disclosure >}}
+  precompiled_publication: true{{< /highlight >}}{{< /details-disclosure >}}
 
 <details open="">
     <summary>example nginx-agent.conf</summary>
