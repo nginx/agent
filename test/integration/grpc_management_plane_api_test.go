@@ -146,7 +146,7 @@ func TestGrpc_StartUp(t *testing.T) {
 
 	verifyConnection(t)
 	verifyUpdateDataPlaneStatus(t)
-	//verifyUpdateDataPlaneHealth(t)
+	// verifyUpdateDataPlaneHealth(t)
 }
 
 func verifyConnection(t *testing.T) {
@@ -259,7 +259,7 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	assert.Equal(t, "/etc/nginx/nginx.conf", instances[1].GetInstanceRuntime().GetConfigPath())
 }
 
-//func verifyUpdateDataPlaneHealth(t *testing.T) {
+// func verifyUpdateDataPlaneHealth(t *testing.T) {
 //	t.Helper()
 //
 //	client := resty.New()
@@ -271,31 +271,31 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 //	require.NoError(t, err)
 //	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-//responseData := resp.Body()
-//t.Logf("Response: %s", string(responseData))
-//assert.True(t, json.Valid(responseData))
+// responseData := resp.Body()
+// t.Logf("Response: %s", string(responseData))
+// assert.True(t, json.Valid(responseData))
 //
-//pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+// pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 //
-//updateDataPlaneHealthRequest := v1.UpdateDataPlaneHealthRequest{}
-//unmarshalErr := pb.Unmarshal(responseData, &updateDataPlaneHealthRequest)
-//require.NoError(t, unmarshalErr)
+// updateDataPlaneHealthRequest := v1.UpdateDataPlaneHealthRequest{}
+// unmarshalErr := pb.Unmarshal(responseData, &updateDataPlaneHealthRequest)
+// require.NoError(t, unmarshalErr)
 //
-//t.Logf("UpdateDataPlaneStatusRequest: %v", &updateDataPlaneHealthRequest)
+// t.Logf("UpdateDataPlaneStatusRequest: %v", &updateDataPlaneHealthRequest)
 //
-//assert.NotNil(t, &updateDataPlaneHealthRequest)
+// assert.NotNil(t, &updateDataPlaneHealthRequest)
 //
 //// Verify message metadata
-//messageMeta := updateDataPlaneHealthRequest.GetMessageMeta()
-//assert.NotEmpty(t, messageMeta.GetCorrelationId())
-//assert.NotEmpty(t, messageMeta.GetMessageId())
-//assert.NotEmpty(t, messageMeta.GetTimestamp())
+// messageMeta := updateDataPlaneHealthRequest.GetMessageMeta()
+// assert.NotEmpty(t, messageMeta.GetCorrelationId())
+// assert.NotEmpty(t, messageMeta.GetMessageId())
+// assert.NotEmpty(t, messageMeta.GetTimestamp())
 //
-//healths := updateDataPlaneHealthRequest.GetInstanceHealths()
-//assert.Len(t, healths, 1)
+// healths := updateDataPlaneHealthRequest.GetInstanceHealths()
+// assert.Len(t, healths, 1)
 //
 //// Verify health metadata
-//assert.NotEmpty(t, healths[0].GetInstanceId())
-//assert.Equal(t, v1.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY, healths[0].GetInstanceHealthStatus())
-//assert.NotEmpty(t, healths[0].GetDescription())
+// assert.NotEmpty(t, healths[0].GetInstanceId())
+// assert.Equal(t, v1.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY, healths[0].GetInstanceHealthStatus())
+// assert.NotEmpty(t, healths[0].GetDescription())
 //}

@@ -7,9 +7,10 @@ package watcher
 
 import (
 	"context"
-	"google.golang.org/protobuf/proto"
 	"log/slog"
 	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
@@ -130,6 +131,6 @@ func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*v1.Insta
 			return false
 		}
 	}
-	
+
 	return true
 }
