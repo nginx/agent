@@ -1,0 +1,1 @@
+hugo mod get -u
