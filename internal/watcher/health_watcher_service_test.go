@@ -7,6 +7,7 @@ package watcher
 
 import (
 	"context"
+	"google.golang.org/protobuf/proto"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
@@ -125,7 +126,10 @@ func TestHealthWatcherService_health(t *testing.T) {
 			healthWatcher.updateCache(test.cache)
 			_, currentHealth, equal := healthWatcher.health(ctx)
 			assert.Equal(t, test.expectedEqual, equal)
-			assert.Equal(tt, expected, currentHealth)
+			
+			for key, health := range currentHealth {
+				assert.True(tt, proto.Equal(health, expected[key]))
+			}
 		})
 	}
 }

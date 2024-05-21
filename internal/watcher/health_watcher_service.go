@@ -7,8 +7,8 @@ package watcher
 
 import (
 	"context"
+	"google.golang.org/protobuf/proto"
 	"log/slog"
-	"reflect"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -84,17 +84,15 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
 
 			healthStatuses, currentHealth, equal := hw.health(ctx)
-			if !equal {
-				if len(healthStatuses) > 0 {
-					ch <- InstanceHealthMessage{
-						correlationID:  correlationID,
-						instanceHealth: healthStatuses,
-					}
-
-					hw.updateCache(currentHealth)
-				} else {
-					slog.DebugContext(newCtx, "Instance health watcher found no health updates")
+			if !equal && len(healthStatuses) > 0 {
+				ch <- InstanceHealthMessage{
+					correlationID:  correlationID,
+					instanceHealth: healthStatuses,
 				}
+
+				hw.updateCache(currentHealth)
+			} else {
+				slog.DebugContext(newCtx, "Instance health watcher found no health updates")
 			}
 		}
 	}
@@ -112,11 +110,26 @@ func (hw *HealthWatcherService) health(ctx context.Context) ([]*v1.InstanceHealt
 		currentHealth[instanceID] = instanceHealth
 	}
 
-	return healthStatuses, currentHealth, reflect.DeepEqual(currentHealth, hw.cache)
+	return healthStatuses, currentHealth, hw.compareHealth(currentHealth)
 }
 
 func (hw *HealthWatcherService) updateCache(currentHealth map[string]*v1.InstanceHealth) {
 	for instanceID, healthStatus := range currentHealth {
 		hw.cache[instanceID] = healthStatus
 	}
+	slog.Info("Updating Cache", "", hw.cache)
+}
+
+func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*v1.InstanceHealth) bool {
+	if len(currentHealth) != len(hw.cache) {
+		return false
+	}
+
+	for key, health := range currentHealth {
+		if !proto.Equal(health, hw.cache[key]) {
+			return false
+		}
+	}
+	
+	return true
 }
