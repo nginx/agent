@@ -52,7 +52,7 @@ The top-level `status` field is the overall health status of NGINX Agent. The he
 2. `OK`: NGINX Agent is in a healthy state.
 3. `ERROR`: NGINX Agent is in an unhealthy state.
 
-We do three checks to determine the overall health of the NGINX Agent:
+The health checkpoint performs three checks to determine the overall health of the NGINX Agent:
 
 1. `registration`: Checks if NGINX Agent has successfully registered with the management plane server.
 2. `commandConnection`: Checks if NGINX Agent is still able to receive and send commands.
