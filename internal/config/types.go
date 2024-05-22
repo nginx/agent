@@ -52,6 +52,8 @@ type Metrics struct {
 	ProduceInterval  time.Duration     `yaml:"-" mapstructure:"produce_interval"`
 	OTelExporter     *OTelExporter     `yaml:"-" mapstructure:"otel_exporter"`
 	PrometheusSource *PrometheusSource `yaml:"-" mapstructure:"prometheus_source"`
+	// temporary setting to enable the collector
+	Collector bool `yaml:"-" mapstructure:"collector"`
 }
 
 // PrometheusSource is a DataSources implementation
