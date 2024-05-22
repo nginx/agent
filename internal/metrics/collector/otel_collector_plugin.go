@@ -17,7 +17,7 @@ import (
 type (
 	// Collector The OTel collector plugin start an embedded OTel collector for metrics collection in the OTel format.
 	Collector struct {
-		svc     *otelcol.Collector
+		service *otelcol.Collector
 		appDone chan struct{}
 		stopped bool
 		cancel  context.CancelFunc
@@ -36,8 +36,8 @@ func NewCollector(conf *config.Config) (*Collector, error) {
 	}
 
 	return &Collector{
-		config: conf,
-		svc:    oTelCollector,
+		config:  conf,
+		service: oTelCollector,
 	}, nil
 }
 
@@ -64,14 +64,14 @@ func (oc *Collector) run(ctx context.Context) error {
 
 	go func() {
 		defer close(oc.appDone)
-		appErr := oc.svc.Run(ctx)
+		appErr := oc.service.Run(ctx)
 		if appErr != nil {
 			err = appErr
 		}
 	}()
 
 	for {
-		state := oc.svc.GetState()
+		state := oc.service.GetState()
 		// While waiting for collector start, an error was found. Most likely
 		// an invalid custom collector configuration file.
 		if err != nil {
@@ -103,7 +103,7 @@ func (oc *Collector) Close(ctx context.Context) error {
 
 	if !oc.stopped {
 		oc.stopped = true
-		oc.svc.Shutdown()
+		oc.service.Shutdown()
 	}
 	<-oc.appDone
 
