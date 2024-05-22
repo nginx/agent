@@ -1,6 +1,4 @@
-include Makefile.containers
 include Makefile.tools
-include Makefile.packaging
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Variable Definitions                                                                                            #
@@ -82,6 +80,7 @@ CERT_SERVER_INT_CN := server-int.local
 CERT_SERVER_EE_CN  := server-ee.local
 CERT_SERVER_DNS    := tls.example.com
 
+include Makefile.containers
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Developer Targets                                                                                               #
@@ -161,6 +160,8 @@ local-txz-package: ## Create local txz package
 txz-packager-image: ## Builds txz packager container image
 	@echo Building Local Packager; \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
+
+include Makefile.packaging
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Testing                                                                                                         #
