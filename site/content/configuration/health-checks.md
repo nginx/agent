@@ -10,11 +10,11 @@ doctypes: ["task"]
 
 ## Overview
 
-The REST API includes a health endpoint for keeping track of the status of NGINX Agent.
+The REST API includes a health endpoint to verify the status of NGINX Agent.
 
 ## Configure the REST API
 
-To enable the REST API, add the following configuration to the NGINX Agent configuration file located here `/etc/nginx-agent/nginx-agent.conf`:
+To enable the REST API, add the following configuration to the NGINX Agent configuration file, `/etc/nginx-agent/nginx-agent.conf`:
 
 ```nginx
 api:
