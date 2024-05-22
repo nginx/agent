@@ -310,7 +310,7 @@ func (gc *GrpcClient) Subscriptions() []string {
 	}
 }
 
-// will revisit this, has duplicate code with sendDataPlaneStatusUpdate, not sure how to fix that yet
+// says sendDataPlaneHealthUpdate & sendDataPlaneStatusUpdate are duplicate code
 // nolint: dupl
 func (gc *GrpcClient) sendDataPlaneHealthUpdate(ctx context.Context, instanceHealths []*v1.InstanceHealth) error {
 	if !gc.isConnected.Load() {
@@ -359,7 +359,6 @@ func (gc *GrpcClient) sendDataPlaneHealthUpdate(ctx context.Context, instanceHea
 	return nil
 }
 
-// will revisit this, has duplicate code with sendDataPlaneHealthUpdate, not sure how to fix that yet
 // nolint: dupl
 func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	ctx context.Context,
