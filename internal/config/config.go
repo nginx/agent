@@ -223,6 +223,12 @@ func registerFlags() {
 		"How often the NGINX Agent will check for instance changes.",
 	)
 
+	fs.Duration(
+		InstanceHealthWatcherMonitoringFrequencyKey,
+		DefInstanceHealthWatcherMonitoringFrequency,
+		"How often the NGINX Agent will check for instance health changes.",
+	)
+
 	fs.SetNormalizeFunc(normalizeFunc)
 
 	fs.VisitAll(func(flag *flag.Flag) {
@@ -406,7 +412,7 @@ func getWatchers() *Watchers {
 			MonitoringFrequency: DefInstanceWatcherMonitoringFrequency,
 		},
 		InstanceHealthWatcher: InstanceHealthWatcher{
-			MonitoringFrequency: DefInstanceWatcherMonitoringFrequency,
+			MonitoringFrequency: DefInstanceHealthWatcherMonitoringFrequency,
 		},
 	}
 }

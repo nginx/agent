@@ -57,7 +57,8 @@ func (hw *HealthWatcherService) AddHealthWatcher(instances []*v1.Instance) {
 			v1.InstanceMeta_INSTANCE_TYPE_UNIT:
 			fallthrough
 		default:
-			slog.Warn("Not Implemented")
+			slog.Warn("Health watcher not implemented", "instance_type",
+				instance.GetInstanceMeta().GetInstanceType())
 		}
 	}
 }
@@ -84,14 +85,12 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 			correlationID := logger.GenerateCorrelationID()
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
 
-			healthStatuses, currentHealth, equal := hw.health(ctx)
-			if !equal && len(healthStatuses) > 0 {
+			healthStatuses, isHealthDiff := hw.health(ctx)
+			if isHealthDiff && len(healthStatuses) > 0 {
 				ch <- InstanceHealthMessage{
 					correlationID:  correlationID,
 					instanceHealth: healthStatuses,
 				}
-
-				hw.updateCache(currentHealth)
 			} else {
 				slog.DebugContext(newCtx, "Instance health watcher found no health updates")
 			}
@@ -99,8 +98,7 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 	}
 }
 
-func (hw *HealthWatcherService) health(ctx context.Context) ([]*v1.InstanceHealth,
-	map[string]*v1.InstanceHealth, bool,
+func (hw *HealthWatcherService) health(ctx context.Context) ([]*v1.InstanceHealth, bool,
 ) {
 	healthStatuses := make([]*v1.InstanceHealth, 0, len(hw.watchers))
 	currentHealth := make(map[string]*v1.InstanceHealth)
@@ -111,7 +109,13 @@ func (hw *HealthWatcherService) health(ctx context.Context) ([]*v1.InstanceHealt
 		currentHealth[instanceID] = instanceHealth
 	}
 
-	return healthStatuses, currentHealth, hw.compareHealth(currentHealth)
+	isHealthDiff := hw.compareHealth(currentHealth)
+
+	if isHealthDiff {
+		hw.updateCache(currentHealth)
+	}
+
+	return healthStatuses, isHealthDiff
 }
 
 func (hw *HealthWatcherService) updateCache(currentHealth map[string]*v1.InstanceHealth) {
@@ -125,19 +129,19 @@ func (hw *HealthWatcherService) updateCache(currentHealth map[string]*v1.Instanc
 		}
 	}
 
-	slog.Info("Updating Cache", "", hw.cache)
+	slog.Debug("Updating health watcher cache", "cache", hw.cache)
 }
 
 func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*v1.InstanceHealth) bool {
 	if len(currentHealth) != len(hw.cache) {
-		return false
+		return true
 	}
 
 	for key, health := range currentHealth {
 		if !proto.Equal(health, hw.cache[key]) {
-			return false
+			return true
 		}
 	}
 
-	return true
+	return false
 }

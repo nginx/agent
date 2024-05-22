@@ -7,9 +7,8 @@ package watcher
 
 import (
 	"context"
+	"reflect"
 	"testing"
-
-	"google.golang.org/protobuf/proto"
 
 	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
 
@@ -70,13 +69,13 @@ func TestHealthWatcherService_health(t *testing.T) {
 	watchers[ossInstance.GetInstanceMeta().GetInstanceId()] = &fakeOSSHealthOp
 	healthWatcher.watchers = watchers
 
-	expected := map[string]*v1.InstanceHealth{
-		ossInstance.GetInstanceMeta().GetInstanceId(): {
+	expected := []*v1.InstanceHealth{
+		{
 			InstanceId:           ossInstance.GetInstanceMeta().GetInstanceId(),
 			Description:          "instance is healthy",
 			InstanceHealthStatus: 1,
 		},
-		plusInstance.GetInstanceMeta().GetInstanceId(): {
+		{
 			InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
 			Description:          "instance is unhealthy",
 			InstanceHealthStatus: 2,
@@ -84,9 +83,9 @@ func TestHealthWatcherService_health(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
-		cache         map[string]*v1.InstanceHealth
-		expectedEqual bool
+		name         string
+		cache        map[string]*v1.InstanceHealth
+		isHealthDiff bool
 	}{
 		{
 			name: "Test 1: Status Changed",
@@ -102,7 +101,7 @@ func TestHealthWatcherService_health(t *testing.T) {
 					InstanceHealthStatus: 1,
 				},
 			},
-			expectedEqual: false,
+			isHealthDiff: true,
 		},
 		{
 			name: "Test 2: Status Not Changed",
@@ -118,7 +117,7 @@ func TestHealthWatcherService_health(t *testing.T) {
 					InstanceHealthStatus: 2,
 				},
 			},
-			expectedEqual: true,
+			isHealthDiff: false,
 		},
 		{
 			name: "Test 3: Less Instances",
@@ -129,19 +128,17 @@ func TestHealthWatcherService_health(t *testing.T) {
 					InstanceHealthStatus: 1,
 				},
 			},
-			expectedEqual: false,
+			isHealthDiff: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			healthWatcher.updateCache(test.cache)
-			_, currentHealth, equal := healthWatcher.health(ctx)
-			assert.Equal(t, test.expectedEqual, equal)
+			instanceHealth, healthDiff := healthWatcher.health(ctx)
+			assert.Equal(t, test.isHealthDiff, healthDiff)
 
-			for key, health := range currentHealth {
-				assert.True(tt, proto.Equal(health, expected[key]))
-			}
+			reflect.DeepEqual(instanceHealth, expected)
 		})
 	}
 }

@@ -35,5 +35,6 @@ const (
 	DefBackoffMaxInterval         = 200 * time.Millisecond
 	DefBackoffMaxElapsedTime      = 3 * time.Second
 
-	DefInstanceWatcherMonitoringFrequency = 5 * time.Second
+	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second
+	DefInstanceHealthWatcherMonitoringFrequency = 5 * time.Second
 )
