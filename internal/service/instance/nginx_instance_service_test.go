@@ -112,6 +112,13 @@ func TestGetInstances(t *testing.T) {
 		},
 	}
 
+	process1 := protos.GetNginxOssInstance([]string{expectedModules})
+	process1.GetInstanceRuntime().InstanceChildren = nil
+	process2 := protos.GetNginxPlusInstance([]string{expectedModules})
+	process2.GetInstanceRuntime().InstanceChildren = nil
+	process3 := protos.GetNginxOssInstance(nil)
+	process3.GetInstanceRuntime().InstanceChildren = nil
+
 	tests := []struct {
 		name                      string
 		nginxVersionCommandOutput string
@@ -125,7 +132,7 @@ func TestGetInstances(t *testing.T) {
 					TLS SNI support enabled
 					configure arguments: %s`, ossArgs),
 			expected: []*v1.Instance{
-				protos.GetNginxOssInstance([]string{expectedModules}),
+				process1,
 			},
 		},
 		{
@@ -137,7 +144,7 @@ func TestGetInstances(t *testing.T) {
 				TLS SNI support enabled
 				configure arguments: %s`, plusArgs),
 			expected: []*v1.Instance{
-				protos.GetNginxPlusInstance([]string{expectedModules}),
+				process2,
 			},
 		},
 		{
@@ -148,7 +155,7 @@ func TestGetInstances(t *testing.T) {
 					TLS SNI support enabled
 					configure arguments: %s`, noModuleArgs),
 			expected: []*v1.Instance{
-				protos.GetNginxOssInstance(nil),
+				process3,
 			},
 		},
 	}

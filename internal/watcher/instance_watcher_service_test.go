@@ -24,20 +24,21 @@ func TestInstanceWatcherService_Updates(t *testing.T) {
 	tests := []struct {
 		name                    string
 		oldInstances            []*v1.Instance
-		parsedInstances         []*v1.Instance
+		parsedInstances         map[string]*v1.Instance
 		expectedInstanceUpdates InstanceUpdates
 	}{
 		{
 			name:                    "Test 1: No updates",
 			oldInstances:            []*v1.Instance{},
-			parsedInstances:         []*v1.Instance{},
+			parsedInstances:         make(map[string]*v1.Instance),
 			expectedInstanceUpdates: InstanceUpdates{},
 		},
 		{
 			name:         "Test 2: New instance",
 			oldInstances: []*v1.Instance{},
-			parsedInstances: []*v1.Instance{
-				protos.GetNginxOssInstance([]string{}),
+			parsedInstances: map[string]*v1.Instance{
+				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.GetNginxOssInstance(
+					[]string{}),
 			},
 			expectedInstanceUpdates: InstanceUpdates{
 				newInstances: []*v1.Instance{
@@ -50,7 +51,7 @@ func TestInstanceWatcherService_Updates(t *testing.T) {
 			oldInstances: []*v1.Instance{
 				protos.GetNginxOssInstance([]string{}),
 			},
-			parsedInstances: []*v1.Instance{},
+			parsedInstances: make(map[string]*v1.Instance),
 			expectedInstanceUpdates: InstanceUpdates{
 				deletedInstances: []*v1.Instance{
 					protos.GetNginxOssInstance([]string{}),

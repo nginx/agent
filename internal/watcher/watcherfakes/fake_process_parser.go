@@ -10,23 +10,23 @@ import (
 )
 
 type FakeProcessParser struct {
-	ParseStub        func(context.Context, []*model.Process) []*v1.Instance
+	ParseStub        func(context.Context, []*model.Process) map[string]*v1.Instance
 	parseMutex       sync.RWMutex
 	parseArgsForCall []struct {
 		arg1 context.Context
 		arg2 []*model.Process
 	}
 	parseReturns struct {
-		result1 []*v1.Instance
+		result1 map[string]*v1.Instance
 	}
 	parseReturnsOnCall map[int]struct {
-		result1 []*v1.Instance
+		result1 map[string]*v1.Instance
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeProcessParser) Parse(arg1 context.Context, arg2 []*model.Process) []*v1.Instance {
+func (fake *FakeProcessParser) Parse(arg1 context.Context, arg2 []*model.Process) map[string]*v1.Instance {
 	var arg2Copy []*model.Process
 	if arg2 != nil {
 		arg2Copy = make([]*model.Process, len(arg2))
@@ -57,7 +57,7 @@ func (fake *FakeProcessParser) ParseCallCount() int {
 	return len(fake.parseArgsForCall)
 }
 
-func (fake *FakeProcessParser) ParseCalls(stub func(context.Context, []*model.Process) []*v1.Instance) {
+func (fake *FakeProcessParser) ParseCalls(stub func(context.Context, []*model.Process) map[string]*v1.Instance) {
 	fake.parseMutex.Lock()
 	defer fake.parseMutex.Unlock()
 	fake.ParseStub = stub
@@ -70,26 +70,26 @@ func (fake *FakeProcessParser) ParseArgsForCall(i int) (context.Context, []*mode
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeProcessParser) ParseReturns(result1 []*v1.Instance) {
+func (fake *FakeProcessParser) ParseReturns(result1 map[string]*v1.Instance) {
 	fake.parseMutex.Lock()
 	defer fake.parseMutex.Unlock()
 	fake.ParseStub = nil
 	fake.parseReturns = struct {
-		result1 []*v1.Instance
+		result1 map[string]*v1.Instance
 	}{result1}
 }
 
-func (fake *FakeProcessParser) ParseReturnsOnCall(i int, result1 []*v1.Instance) {
+func (fake *FakeProcessParser) ParseReturnsOnCall(i int, result1 map[string]*v1.Instance) {
 	fake.parseMutex.Lock()
 	defer fake.parseMutex.Unlock()
 	fake.ParseStub = nil
 	if fake.parseReturnsOnCall == nil {
 		fake.parseReturnsOnCall = make(map[int]struct {
-			result1 []*v1.Instance
+			result1 map[string]*v1.Instance
 		})
 	}
 	fake.parseReturnsOnCall[i] = struct {
-		result1 []*v1.Instance
+		result1 map[string]*v1.Instance
 	}{result1}
 }
 

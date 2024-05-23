@@ -18,6 +18,8 @@ const (
 	plusInstanceID = "40f9dda0-e45f-34cf-bba7-f173700f50a2"
 	correlationID  = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 	processID      = 1234
+	childID        = 789
+	childID2       = 567
 )
 
 func GetNginxOssInstance(expectedModules []string) *v1.Instance {
@@ -47,6 +49,7 @@ func GetNginxOssInstance(expectedModules []string) *v1.Instance {
 					},
 				},
 			},
+			InstanceChildren: []*v1.InstanceChild{{ProcessId: childID}, {ProcessId: childID2}},
 		},
 	}
 }
@@ -82,6 +85,7 @@ func GetNginxPlusInstance(expectedModules []string) *v1.Instance {
 					PlusApi: "",
 				},
 			},
+			InstanceChildren: []*v1.InstanceChild{{ProcessId: childID}, {ProcessId: childID2}},
 		},
 	}
 }
