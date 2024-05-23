@@ -98,10 +98,9 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 	}
 }
 
-func (hw *HealthWatcherService) health(ctx context.Context) ([]*v1.InstanceHealth, bool,
+func (hw *HealthWatcherService) health(ctx context.Context) (healthStatuses []*v1.InstanceHealth, isHealthDiff bool,
 ) {
-	healthStatuses := make([]*v1.InstanceHealth, 0, len(hw.watchers))
-	currentHealth := make(map[string]*v1.InstanceHealth)
+	currentHealth := make(map[string]*v1.InstanceHealth, len(hw.watchers))
 
 	for instanceID, watcher := range hw.watchers {
 		instanceHealth := watcher.Health(ctx, instanceID)
@@ -109,7 +108,7 @@ func (hw *HealthWatcherService) health(ctx context.Context) ([]*v1.InstanceHealt
 		currentHealth[instanceID] = instanceHealth
 	}
 
-	isHealthDiff := hw.compareHealth(currentHealth)
+	isHealthDiff = hw.compareHealth(currentHealth)
 
 	if isHealthDiff {
 		hw.updateCache(currentHealth)
