@@ -170,16 +170,21 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 			n.executer = mockExec
 			result := n.Parse(ctx, processes)
 
-			for _, instance := range result {
-				instanceID := instance.GetInstanceMeta().GetInstanceId()
-				if instance.GetInstanceRuntime().GetNginxRuntimeInfo() != nil {
-					sort.Strings(instance.GetInstanceRuntime().GetNginxRuntimeInfo().GetDynamicModules())
-					assert.Equal(tt, test.expected[instanceID].GetInstanceRuntime().GetNginxRuntimeInfo(),
-						instance.GetInstanceRuntime().GetNginxRuntimeInfo())
+			for id, instance := range result {
+				resultRun := instance.GetInstanceRuntime()
+				expectedRun := test.expected[id].GetInstanceRuntime()
+				if resultRun.GetNginxRuntimeInfo() != nil {
+					sort.Strings(resultRun.GetNginxRuntimeInfo().GetDynamicModules())
+					expectedRun.InstanceChildren = protos.SortInstanceChildren(expectedRun.GetInstanceChildren())
+					resultRun.InstanceChildren = protos.SortInstanceChildren(resultRun.GetInstanceChildren())
+
+					assert.True(tt, proto.Equal(test.expected[id], instance))
 				} else {
-					sort.Strings(instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetDynamicModules())
-					assert.Equal(tt, test.expected[instanceID].GetInstanceRuntime().GetNginxPlusRuntimeInfo(),
-						instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo())
+					sort.Strings(resultRun.GetNginxPlusRuntimeInfo().GetDynamicModules())
+					expectedRun.InstanceChildren = protos.SortInstanceChildren(expectedRun.GetInstanceChildren())
+					resultRun.InstanceChildren = protos.SortInstanceChildren(resultRun.GetInstanceChildren())
+
+					assert.True(tt, proto.Equal(test.expected[id], instance))
 				}
 			}
 
@@ -372,7 +377,6 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 
 				expectedRun.InstanceChildren = protos.SortInstanceChildren(expectedRun.GetInstanceChildren())
 				resultRun.InstanceChildren = protos.SortInstanceChildren(resultRun.GetInstanceChildren())
-				assert.Equal(tt, test.expected[id], instance)
 
 				assert.True(tt, proto.Equal(test.expected[id], instance))
 			}
