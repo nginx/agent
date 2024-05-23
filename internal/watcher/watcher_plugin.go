@@ -16,11 +16,12 @@ import (
 
 type (
 	Watcher struct {
-		messagePipe            bus.MessagePipeInterface
-		agentConfig            *config.Config
-		instanceWatcherService *InstanceWatcherService
-		instanceUpdatesChannel chan InstanceUpdatesMessage
-		cancel                 context.CancelFunc
+		messagePipe               bus.MessagePipeInterface
+		agentConfig               *config.Config
+		instanceWatcherService    *InstanceWatcherService
+		instanceUpdatesChannel    chan InstanceUpdatesMessage
+		nginxConfigContextChannel chan NginxConfigContextMessage
+		cancel                    context.CancelFunc
 	}
 )
 
@@ -28,9 +29,10 @@ var _ bus.Plugin = (*Watcher)(nil)
 
 func NewWatcher(agentConfig *config.Config) *Watcher {
 	return &Watcher{
-		agentConfig:            agentConfig,
-		instanceWatcherService: NewInstanceWatcherService(agentConfig),
-		instanceUpdatesChannel: make(chan InstanceUpdatesMessage),
+		agentConfig:               agentConfig,
+		instanceWatcherService:    NewInstanceWatcherService(agentConfig),
+		instanceUpdatesChannel:    make(chan InstanceUpdatesMessage),
+		nginxConfigContextChannel: make(chan NginxConfigContextMessage),
 	}
 }
 
@@ -43,7 +45,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 	watcherContext, cancel := context.WithCancel(ctx)
 	w.cancel = cancel
 
-	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel)
+	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel, w.nginxConfigContextChannel)
 	go w.monitorWatchers(watcherContext)
 
 	return nil
@@ -93,6 +95,17 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 					&bus.Message{Topic: bus.DeletedInstancesTopic, Data: message.instanceUpdates.deletedInstances},
 				)
 			}
+		case message := <-w.nginxConfigContextChannel:
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.correlationID)
+			slog.DebugContext(
+				newCtx,
+				"Updated NGINX config context",
+				"nginx_config_context", message.nginxConfigContext,
+			)
+			w.messagePipe.Process(
+				newCtx,
+				&bus.Message{Topic: bus.NginxConfigContextTopic, Data: message.nginxConfigContext},
+			)
 		}
 	}
 }

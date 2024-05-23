@@ -13,13 +13,46 @@ import (
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
+	testModel "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestInstanceWatcherService_Updates(t *testing.T) {
+func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
+	ctx := context.Background()
+
+	nginxConfigContext := testModel.GetConfigContext()
+
+	fakeProcessWatcher := &watcherfakes.FakeProcessWatcherOperator{}
+	fakeProcessWatcher.ProcessesReturns([]*model.Process{}, nil)
+
+	fakeProcessParser := &watcherfakes.FakeProcessParser{}
+	fakeProcessParser.ParseReturns([]*v1.Instance{protos.GetNginxOssInstance([]string{})})
+
+	fakeNginxConfigParser := &watcherfakes.FakeNginxConfigParser{}
+	fakeNginxConfigParser.ParseReturns(nginxConfigContext, nil)
+
+	instanceWatcherService := NewInstanceWatcherService(types.GetAgentConfig())
+	instanceWatcherService.processOperator = fakeProcessWatcher
+	instanceWatcherService.processParsers = []processParser{fakeProcessParser}
+	instanceWatcherService.nginxConfigParser = fakeNginxConfigParser
+
+	instanceUpdatesChannel := make(chan InstanceUpdatesMessage, 1)
+	nginxConfigContextChannel := make(chan NginxConfigContextMessage, 1)
+
+	instanceWatcherService.checkForUpdates(ctx, instanceUpdatesChannel, nginxConfigContextChannel)
+
+	instanceUpdatesMessage := <-instanceUpdatesChannel
+	assert.Len(t, instanceUpdatesMessage.instanceUpdates.newInstances, 2)
+	assert.Empty(t, instanceUpdatesMessage.instanceUpdates.deletedInstances)
+
+	nginxConfigContextMessage := <-nginxConfigContextChannel
+	assert.Equal(t, nginxConfigContext, nginxConfigContextMessage.nginxConfigContext)
+}
+
+func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 	ctx := context.Background()
 	processID := int32(123)
 
@@ -80,10 +113,10 @@ func TestInstanceWatcherService_Updates(t *testing.T) {
 			instanceWatcherService := NewInstanceWatcherService(types.GetAgentConfig())
 			instanceWatcherService.processOperator = fakeProcessWatcher
 			instanceWatcherService.processParsers = []processParser{fakeProcessParser}
-			instanceWatcherService.cache = test.oldInstances
+			instanceWatcherService.instanceCache = test.oldInstances
 			instanceWatcherService.executer = fakeExec
 
-			instanceUpdates, err := instanceWatcherService.updates(ctx)
+			instanceUpdates, err := instanceWatcherService.instanceUpdates(ctx)
 
 			require.NoError(tt, err)
 			assert.Equal(tt, test.expectedInstanceUpdates, instanceUpdates)

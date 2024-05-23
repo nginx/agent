@@ -17,7 +17,28 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+func GetFileMeta(filePath string) (*v1.FileMeta, error) {
+	hash, err := GenerateFileHash(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.FileMeta{
+		Name:         filePath,
+		Hash:         hash,
+		ModifiedTime: timestamppb.New(fileInfo.ModTime()),
+		Permissions:  fileInfo.Mode().Perm().String(),
+		Size:         fileInfo.Size(),
+	}, nil
+}
 
 // GetPermissions returns a file's permissions as a string.
 func GetPermissions(fileMode os.FileMode) string {
