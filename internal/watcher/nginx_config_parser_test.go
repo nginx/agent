@@ -323,11 +323,12 @@ func TestNginxConfigParser_rootFiles(t *testing.T) {
 
 	// Not in allowed directory
 	nginxConfig := NewNginxConfigParser(types.GetAgentConfig())
+	nginxConfig.agentConfig.AllowedDirectories = []string{}
 	rootfiles := nginxConfig.rootFiles(ctx, dir)
 	assert.Empty(t, rootfiles)
 
 	// In allowed directory
-	nginxConfig.agentConfig.AllowedDirectories = append(nginxConfig.agentConfig.AllowedDirectories, dir)
+	nginxConfig.agentConfig.AllowedDirectories = []string{dir}
 	rootfiles = nginxConfig.rootFiles(ctx, dir)
 	assert.Len(t, rootfiles, 2)
 	assert.Equal(t, file1.Name(), rootfiles[0].GetFileMeta().GetName())
@@ -343,11 +344,12 @@ func TestNginxConfigParser_sslCert(t *testing.T) {
 
 	// Not in allowed directory
 	nginxConfig := NewNginxConfigParser(types.GetAgentConfig())
+	nginxConfig.agentConfig.AllowedDirectories = []string{}
 	sslCert := nginxConfig.sslCert(ctx, file1.Name(), dir)
 	assert.Nil(t, sslCert)
 
 	// In allowed directory
-	nginxConfig.agentConfig.AllowedDirectories = append(nginxConfig.agentConfig.AllowedDirectories, dir)
+	nginxConfig.agentConfig.AllowedDirectories = []string{dir}
 	sslCert = nginxConfig.sslCert(ctx, file1.Name(), dir)
 	assert.Equal(t, file1.Name(), sslCert.GetFileMeta().GetName())
 }
