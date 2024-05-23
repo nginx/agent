@@ -22,6 +22,7 @@ const (
 	VersionKey                                    = "version"
 	UUIDKey                                       = "uuid"
 	InstanceWatcherMonitoringFrequencyKey         = "watchers_instance_watcher_monitoring_frequency"
+	InstanceHealthWatcherMonitoringFrequencyKey   = "watchers_instance_health_watcher_monitoring_frequency"
 
 	// Below consts are NOT flag keys.
 	OTelExporterRoot     = "otel_exporter"
