@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
@@ -190,15 +192,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 	ctx := context.Background()
 	modulePath := t.TempDir() + "/usr/lib/nginx/modules"
 
-	helpers.CreateDirWithErrorCheck(t, modulePath)
-	defer helpers.RemoveFileWithErrorCheck(t, modulePath)
-
-	testModule := helpers.CreateFileWithErrorCheck(t, modulePath, "test.so")
-	defer helpers.RemoveFileWithErrorCheck(t, testModule.Name())
-
 	configArgs := fmt.Sprintf(ossConfigArgs, modulePath)
-
-	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 
 	nginxVersionCommandOutput := fmt.Sprintf(`nginx version: nginx/1.25.3
 					built by clang 14.0.0 (clang-1400.0.29.202)
@@ -206,37 +200,27 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 					TLS SNI support enabled
 					configure arguments: %s`, configArgs)
 
-	process1 := protos.GetNginxOssInstance([]string{expectedModules})
-
-	process2 := protos.GetNginxOssInstance([]string{expectedModules})
-	process2.GetInstanceRuntime().ProcessId = 5678
-	process2.GetInstanceMeta().InstanceId = "557cdf06-08fd-31eb-a8e7-daafd3a93db7"
-	process2.GetInstanceRuntime().InstanceChildren = []*v1.InstanceChild{{ProcessId: 987}, {ProcessId: 321}}
-
-	noChildrenInstance := protos.GetNginxOssInstance([]string{expectedModules})
-	noChildrenInstance.GetInstanceRuntime().InstanceChildren = nil
-
-	noMasterInstance := protos.GetNginxOssInstance([]string{expectedModules})
-	noMasterInstance.GetInstanceRuntime().ProcessId = 0
-
-	noMasterInstance2 := protos.GetNginxOssInstance([]string{expectedModules})
-	noMasterInstance2.GetInstanceRuntime().ProcessId = 0
-	noMasterInstance2.GetInstanceMeta().InstanceId = "557cdf06-08fd-31eb-a8e7-daafd3a93db7"
-
-	instances1 := map[string]*v1.Instance{
+	process1 := protos.GetNginxOssInstance(nil)
+	instancesTest1 := map[string]*v1.Instance{
 		process1.GetInstanceMeta().GetInstanceId(): process1,
 	}
 
-	instances2 := map[string]*v1.Instance{
+	noChildrenInstance := protos.GetNginxOssInstance(nil)
+	noChildrenInstance.GetInstanceRuntime().InstanceChildren = nil
+	instancesTest2 := map[string]*v1.Instance{
 		noChildrenInstance.GetInstanceMeta().GetInstanceId(): noChildrenInstance,
 	}
-	instances3 := map[string]*v1.Instance{
-		noMasterInstance.GetInstanceMeta().GetInstanceId(): noMasterInstance,
-		"557cdf06-08fd-31eb-a8e7-daafd3a93db7":             noMasterInstance2,
+
+	noParentInstanceList := protos.GetInstancesNoParentProcess(nil)
+	instancesTest3 := map[string]*v1.Instance{
+		noParentInstanceList[0].GetInstanceMeta().GetInstanceId(): noParentInstanceList[0],
+		noParentInstanceList[1].GetInstanceMeta().GetInstanceId(): noParentInstanceList[1],
 	}
-	instances4 := map[string]*v1.Instance{
-		process1.GetInstanceMeta().GetInstanceId(): process1,
-		"557cdf06-08fd-31eb-a8e7-daafd3a93db7":     process2,
+
+	instancesList := protos.GetMultipleInstances(nil)
+	instancesTest4 := map[string]*v1.Instance{
+		instancesList[0].GetInstanceMeta().GetInstanceId(): instancesList[0],
+		instancesList[1].GetInstanceMeta().GetInstanceId(): instancesList[1],
 	}
 
 	tests := []struct {
@@ -269,7 +253,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 					Exe:  exePath,
 				},
 			},
-			expected: instances1,
+			expected: instancesTest1,
 		},
 		{
 			name: "Test 2: 1 master process, no workers",
@@ -282,7 +266,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 					Exe:  exePath,
 				},
 			},
-			expected: instances2,
+			expected: instancesTest2,
 		},
 		{
 			name: "Test 3: no master process, 2 workers for each killed master",
@@ -309,14 +293,14 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
 				},
 				{
-					Pid:  765,
+					Pid:  321,
 					Ppid: 4321,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
 				},
 			},
-			expected: instances3,
+			expected: instancesTest3,
 		},
 		{
 			name: "Test 4: 2 master process each with 2 workers",
@@ -364,7 +348,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
 				},
 			},
-			expected: instances4,
+			expected: instancesTest4,
 		},
 	}
 
@@ -381,12 +365,19 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 			result := n.Parse(ctx, test.processes)
 
 			for id, instance := range result {
-				instance := instance.GetInstanceRuntime()
-				sort.Strings(instance.GetNginxRuntimeInfo().GetDynamicModules())
-				assert.Equal(tt, len(test.expected[id].GetInstanceRuntime().GetInstanceChildren()),
-					len(instance.GetInstanceChildren()))
-				assert.Equal(tt, test.expected[id].GetInstanceRuntime().GetProcessId(), instance.GetProcessId())
+				resultRun := instance.GetInstanceRuntime()
+				expectedRun := test.expected[id].GetInstanceRuntime()
+
+				sort.Strings(resultRun.GetNginxRuntimeInfo().GetDynamicModules())
+
+				expectedRun.InstanceChildren = protos.SortInstanceChildren(expectedRun.GetInstanceChildren())
+				resultRun.InstanceChildren = protos.SortInstanceChildren(resultRun.GetInstanceChildren())
+				assert.Equal(tt, test.expected[id], instance)
+
+				assert.True(tt, proto.Equal(test.expected[id], instance))
 			}
+
+			assert.Equal(tt, len(test.expected), len(result))
 		})
 	}
 }
