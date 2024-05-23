@@ -18,4 +18,5 @@ const (
 	DeletedInstancesTopic            = "deleted-instances"
 	ResourceUpdateTopic              = "resource-update"
 	NginxConfigContextTopic          = "nginx-config-context"
+	InstanceHealthTopic              = "instance-health"
 )

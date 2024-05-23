@@ -206,6 +206,8 @@ func (gc *GrpcClient) Info() *bus.Info {
 	}
 }
 
+// cognitive complexity of 14 dont think there is a way around that
+// nolint: revive
 func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.ResourceTopic:
@@ -218,6 +220,13 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 			err = gc.sendDataPlaneStatusUpdate(ctx, resource)
 			if err != nil {
 				slog.ErrorContext(ctx, "Unable to send data plane status update", "error", err)
+			}
+		}
+	case bus.InstanceHealthTopic:
+		if instances, ok := msg.Data.([]*v1.InstanceHealth); ok {
+			err := gc.sendDataPlaneHealthUpdate(ctx, instances)
+			if err != nil {
+				slog.ErrorContext(ctx, "Unable to send data plane health status", "error", err)
 			}
 		}
 	default:
@@ -297,9 +306,60 @@ func (gc *GrpcClient) createConnectionRequest(resource *v1.Resource) (*v1.Create
 func (gc *GrpcClient) Subscriptions() []string {
 	return []string{
 		bus.ResourceTopic,
+		bus.InstanceHealthTopic,
 	}
 }
 
+// says sendDataPlaneHealthUpdate & sendDataPlaneStatusUpdate are duplicate code
+// nolint: dupl
+func (gc *GrpcClient) sendDataPlaneHealthUpdate(ctx context.Context, instanceHealths []*v1.InstanceHealth) error {
+	if !gc.isConnected.Load() {
+		slog.InfoContext(ctx, "gRPC client not connected yet. Skipping sending data plane health update")
+		return nil
+	}
+	correlationID := logger.GetCorrelationID(ctx)
+
+	request := &v1.UpdateDataPlaneHealthRequest{
+		MessageMeta: &v1.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: correlationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		InstanceHealths: instanceHealths,
+	}
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, gc.config.Client.Timeout)
+	defer backoffCancel()
+
+	sendDataPlaneHealth := func() (*v1.UpdateDataPlaneHealthResponse, error) {
+		slog.DebugContext(ctx, "Sending data plane health update request", "request", request)
+		if gc.commandServiceClient == nil {
+			return nil, errors.New("command service client is not initialized")
+		}
+
+		response, updateError := gc.commandServiceClient.UpdateDataPlaneHealth(ctx, request)
+
+		validatedError := validateGrpcError(updateError)
+
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send update data plane health", "error", validatedError)
+
+			return nil, validatedError
+		}
+
+		return response, nil
+	}
+
+	response, err := backoff.RetryWithData(sendDataPlaneHealth, backoffHelpers.Context(backOffCtx, gc.config.Common))
+	if err != nil {
+		return err
+	}
+	slog.DebugContext(ctx, " UpdateDataPlaneHealth response ", "response", response)
+
+	return nil
+}
+
+// nolint: dupl
 func (gc *GrpcClient) sendDataPlaneStatusUpdate(
 	ctx context.Context,
 	resource *v1.Resource,

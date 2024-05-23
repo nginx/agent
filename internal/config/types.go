@@ -117,10 +117,15 @@ type CommonSettings struct {
 }
 
 type Watchers struct {
-	InstanceWatcher InstanceWatcher `yaml:"-" mapstructure:"instance_watcher"`
+	InstanceWatcher       InstanceWatcher       `yaml:"-" mapstructure:"instance_watcher"`
+	InstanceHealthWatcher InstanceHealthWatcher `yaml:"-" mapstructure:"instance_health_watcher"`
 }
 
 type InstanceWatcher struct {
+	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
+}
+
+type InstanceHealthWatcher struct {
 	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 }
 
