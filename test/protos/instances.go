@@ -10,6 +10,7 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/config"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -25,6 +26,21 @@ const (
 	childID3            = 987
 	childID4            = 321
 )
+
+func GetAgentInstance(processID int32, agentConfig *config.Config) *v1.Instance {
+	return &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   agentConfig.UUID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
+			Version:      agentConfig.Version,
+		},
+		InstanceRuntime: &v1.InstanceRuntime{
+			ProcessId:  processID,
+			BinaryPath: "/run/nginx-agent",
+			ConfigPath: agentConfig.Path,
+		},
+	}
+}
 
 func GetNginxOssInstance(expectedModules []string) *v1.Instance {
 	return &v1.Instance{

@@ -52,6 +52,8 @@ type Metrics struct {
 	ProduceInterval  time.Duration     `yaml:"-" mapstructure:"produce_interval"`
 	OTelExporter     *OTelExporter     `yaml:"-" mapstructure:"otel_exporter"`
 	PrometheusSource *PrometheusSource `yaml:"-" mapstructure:"prometheus_source"`
+	// temporary setting to enable the collector
+	Collector bool `yaml:"-" mapstructure:"collector"`
 }
 
 // PrometheusSource is a DataSources implementation
@@ -112,9 +114,14 @@ type CommonSettings struct {
 }
 
 type Watchers struct {
-	InstanceWatcher InstanceWatcher `yaml:"-" mapstructure:"instance_watcher"`
+	InstanceWatcher       InstanceWatcher       `yaml:"-" mapstructure:"instance_watcher"`
+	InstanceHealthWatcher InstanceHealthWatcher `yaml:"-" mapstructure:"instance_health_watcher"`
 }
 
 type InstanceWatcher struct {
+	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
+}
+
+type InstanceHealthWatcher struct {
 	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 }

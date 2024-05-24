@@ -132,8 +132,9 @@ func TestGrpcClient_Info(t *testing.T) {
 func TestGrpcClient_Subscriptions(t *testing.T) {
 	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
-	assert.Len(t, subscriptions, 1)
+	assert.Len(t, subscriptions, 2)
 	assert.Equal(t, bus.ResourceTopic, subscriptions[0])
+	assert.Equal(t, bus.InstanceHealthTopic, subscriptions[1])
 }
 
 func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
@@ -155,6 +156,34 @@ func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
 	client.Process(ctx, mockMessage)
 
 	assert.True(t, client.isConnected.Load())
+}
+
+func TestGrpcClient_sendDataPlaneHealthUpdate(t *testing.T) {
+	ctx := context.Background()
+	agentConfig := types.GetAgentConfig()
+	instances := []*v1.InstanceHealth{
+		{
+			InstanceId:           protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+			InstanceHealthStatus: 1,
+			Description:          "healthy",
+		},
+		{
+			InstanceId:           protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+			InstanceHealthStatus: 2,
+			Description:          "unhealthy",
+		},
+	}
+	client := NewGrpcClient(agentConfig)
+	client.messagePipe = &bus.FakeMessagePipe{}
+	assert.NotNil(t, client)
+	fakeCommandServiceClient := &v1fakes.FakeCommandServiceClient{}
+
+	client.commandServiceClient = fakeCommandServiceClient
+	err := client.createConnection(ctx, protos.GetHostResource())
+	require.NoError(t, err)
+
+	healthErr := client.sendDataPlaneHealthUpdate(ctx, instances)
+	require.NoError(t, healthErr)
 }
 
 func TestGrpcClient_ProcessRequest(t *testing.T) {

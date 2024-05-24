@@ -110,6 +110,9 @@ func GetAgentConfig() *config.Config {
 			InstanceWatcher: config.InstanceWatcher{
 				MonitoringFrequency: config.DefInstanceWatcherMonitoringFrequency,
 			},
+			InstanceHealthWatcher: config.InstanceHealthWatcher{
+				MonitoringFrequency: config.DefInstanceWatcherMonitoringFrequency,
+			},
 		},
 	}
 }

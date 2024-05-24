@@ -12,9 +12,13 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
+	"google.golang.org/protobuf/types/known/structpb"
 )
+
+const defaultAgentPath = "/run/nginx-agent"
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . processOperator
@@ -36,6 +40,7 @@ type (
 		processOperator processOperator
 		processParsers  []processParser
 		cache           []*v1.Instance
+		executer        exec.ExecInterface
 	}
 
 	InstanceUpdates struct {
@@ -56,7 +61,8 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 		processParsers: []processParser{
 			NewNginxProcessParser(),
 		},
-		cache: []*v1.Instance{},
+		cache:    []*v1.Instance{},
+		executer: &exec.Exec{},
 	}
 }
 
@@ -102,7 +108,8 @@ func (iw *InstanceWatcherService) updates(ctx context.Context) (
 		return instanceUpdates, err
 	}
 
-	instancesFound := []*v1.Instance{}
+	// NGINX Agent is always the first instance in the list
+	instancesFound := []*v1.Instance{iw.agentInstance(ctx)}
 
 	for _, processParser := range iw.processParsers {
 		instances := processParser.Parse(ctx, processes)
@@ -118,6 +125,41 @@ func (iw *InstanceWatcherService) updates(ctx context.Context) (
 	iw.cache = instancesFound
 
 	return instanceUpdates, nil
+}
+
+func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *v1.Instance {
+	processPath, err := iw.executer.Executable()
+	if err != nil {
+		processPath = defaultAgentPath
+		slog.WarnContext(ctx, "Unable to read process location, defaulting to /var/run/nginx-agent", "error", err)
+	}
+
+	return &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   iw.agentConfig.UUID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
+			Version:      iw.agentConfig.Version,
+		},
+		InstanceConfig: &v1.InstanceConfig{
+			Actions: []*v1.InstanceAction{},
+			Config: &v1.InstanceConfig_AgentConfig{
+				AgentConfig: &v1.AgentConfig{
+					Command:           &v1.CommandServer{},
+					Metrics:           &v1.MetricsServer{},
+					File:              &v1.FileServer{},
+					Labels:            []*structpb.Struct{},
+					Features:          []string{},
+					MessageBufferSize: "",
+				},
+			},
+		},
+		InstanceRuntime: &v1.InstanceRuntime{
+			ProcessId:  iw.executer.ProcessID(),
+			BinaryPath: processPath,
+			ConfigPath: iw.agentConfig.Path,
+			Details:    nil,
+		},
+	}
 }
 
 func compareInstances(oldInstances, instances []*v1.Instance) (newInstances, deletedInstances []*v1.Instance) {
