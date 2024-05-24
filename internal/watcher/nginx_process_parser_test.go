@@ -173,17 +173,14 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 			for id, instance := range result {
 				resultRun := instance.GetInstanceRuntime()
 				expectedRun := test.expected[id].GetInstanceRuntime()
+				expectedRun.InstanceChildren = protos.SortInstanceChildren(expectedRun.GetInstanceChildren())
+				resultRun.InstanceChildren = protos.SortInstanceChildren(resultRun.GetInstanceChildren())
+
 				if resultRun.GetNginxRuntimeInfo() != nil {
 					sort.Strings(resultRun.GetNginxRuntimeInfo().GetDynamicModules())
-					expectedRun.InstanceChildren = protos.SortInstanceChildren(expectedRun.GetInstanceChildren())
-					resultRun.InstanceChildren = protos.SortInstanceChildren(resultRun.GetInstanceChildren())
-
 					assert.True(tt, proto.Equal(test.expected[id], instance))
 				} else {
 					sort.Strings(resultRun.GetNginxPlusRuntimeInfo().GetDynamicModules())
-					expectedRun.InstanceChildren = protos.SortInstanceChildren(expectedRun.GetInstanceChildren())
-					resultRun.InstanceChildren = protos.SortInstanceChildren(resultRun.GetInstanceChildren())
-
 					assert.True(tt, proto.Equal(test.expected[id], instance))
 				}
 			}
