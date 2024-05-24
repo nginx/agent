@@ -52,8 +52,8 @@ func (hw *HealthWatcherService) AddHealthWatcher(instances []*v1.Instance) {
 		case v1.InstanceMeta_INSTANCE_TYPE_NGINX, v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
 			watcher := NewNginxHealthWatcher()
 			hw.watchers[instance.GetInstanceMeta().GetInstanceId()] = watcher
-		case v1.InstanceMeta_INSTANCE_TYPE_AGENT,
-			v1.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
+		case v1.InstanceMeta_INSTANCE_TYPE_AGENT:
+		case v1.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
 			v1.InstanceMeta_INSTANCE_TYPE_UNIT:
 			fallthrough
 		default:

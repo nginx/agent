@@ -6,7 +6,6 @@
 package types
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -21,12 +20,6 @@ const (
 	clientTime                = 50 * time.Second
 	clientTimeout             = 5 * time.Second
 
-	connTimeout     = 10 * time.Second
-	minConnTimeout  = 7 * time.Second
-	backoffDelay    = 240 * time.Second
-	exportInterval  = 30 * time.Second
-	produceInterval = 5 * time.Second
-
 	commonInitialInterval     = 100 * time.Microsecond
 	commonMaxInterval         = 1000 * time.Microsecond
 	commonMaxElapsedTime      = 10 * time.Millisecond
@@ -34,9 +27,6 @@ const (
 	commonMultiplier          = 0.2
 
 	reloadMonitoringPeriod = 400 * time.Millisecond
-
-	bufferLength     = 55
-	exportRetryCount = 3
 )
 
 func GetAgentConfig() *config.Config {
@@ -45,9 +35,6 @@ func GetAgentConfig() *config.Config {
 		UUID:    "75442486-0878-440c-9db1-a7006c25a39f",
 		Path:    "/etc/nginx-agent",
 		Log:     &config.Log{},
-		ProcessMonitor: &config.ProcessMonitor{
-			MonitoringFrequency: time.Millisecond,
-		},
 		Client: &config.Client{
 			Timeout:             clientTimeout,
 			Time:                clientTime,
@@ -55,26 +42,7 @@ func GetAgentConfig() *config.Config {
 		},
 		ConfigDir:          "",
 		AllowedDirectories: []string{"/tmp/"},
-		Metrics: &config.Metrics{
-			ProduceInterval: produceInterval,
-			OTelExporter: &config.OTelExporter{
-				BufferLength:     bufferLength,
-				ExportRetryCount: exportRetryCount,
-				ExportInterval:   exportInterval,
-				GRPC: &config.GRPC{
-					Target:         fmt.Sprintf("%s:%d", "dummy-target", metricsPort),
-					ConnTimeout:    connTimeout,
-					MinConnTimeout: minConnTimeout,
-					BackoffDelay:   backoffDelay,
-				},
-			},
-			PrometheusSource: &config.PrometheusSource{
-				Endpoints: []string{
-					"https://example.com",
-					"https://acme.com",
-				},
-			},
-		},
+		Metrics:            &config.Metrics{},
 		Command: &config.Command{
 			Server: &config.ServerConfig{
 				Host: "127.0.0.1",

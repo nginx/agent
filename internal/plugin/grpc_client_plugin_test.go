@@ -12,7 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
@@ -27,6 +30,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type TestError struct{}
+
+func (z TestError) Error() string {
+	return "Test"
+}
 
 func TestGrpcClient_NewGrpcClient(t *testing.T) {
 	tests := []struct {
@@ -133,11 +142,11 @@ func TestGrpcClient_Subscriptions(t *testing.T) {
 	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
 	assert.Len(t, subscriptions, 2)
-	assert.Equal(t, bus.ResourceTopic, subscriptions[0])
+	assert.Equal(t, bus.ResourceUpdateTopic, subscriptions[0])
 	assert.Equal(t, bus.InstanceHealthTopic, subscriptions[1])
 }
 
-func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
+func TestGrpcClient_Process(t *testing.T) {
 	ctx := context.Background()
 	agentConfig := types.GetAgentConfig()
 	expected := protos.GetHostResource()
@@ -149,30 +158,32 @@ func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
 
 	client.commandServiceClient = fakeCommandServiceClient
 
+	// ResourceTopic
 	mockMessage := &bus.Message{
-		Topic: bus.ResourceTopic,
+		Topic: bus.ResourceUpdateTopic,
 		Data:  expected,
 	}
 	client.Process(ctx, mockMessage)
 
 	assert.True(t, client.isConnected.Load())
+	assert.Equal(t, 1, fakeCommandServiceClient.UpdateDataPlaneStatusCallCount())
+
+	// InstanceHealthTopic
+	mockMessage = &bus.Message{
+		Topic: bus.InstanceHealthTopic,
+		Data:  protos.GetInstanceHealths(),
+	}
+	client.Process(ctx, mockMessage)
+
+	assert.True(t, client.isConnected.Load())
+	assert.Equal(t, 1, fakeCommandServiceClient.UpdateDataPlaneHealthCallCount())
 }
 
 func TestGrpcClient_sendDataPlaneHealthUpdate(t *testing.T) {
 	ctx := context.Background()
 	agentConfig := types.GetAgentConfig()
-	instances := []*v1.InstanceHealth{
-		{
-			InstanceId:           protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-			InstanceHealthStatus: 1,
-			Description:          "healthy",
-		},
-		{
-			InstanceId:           protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-			InstanceHealthStatus: 2,
-			Description:          "unhealthy",
-		},
-	}
+	instances := protos.GetInstanceHealths()
+
 	client := NewGrpcClient(agentConfig)
 	client.messagePipe = &bus.FakeMessagePipe{}
 	assert.NotNil(t, client)
@@ -405,6 +416,14 @@ func TestGrpcClient_Close(t *testing.T) {
 			require.NoError(tt, err)
 		})
 	}
+}
+
+func TestGrpcClient_validateGrpcError(t *testing.T) {
+	result := validateGrpcError(TestError{})
+	assert.IsType(t, TestError{}, result)
+
+	result = validateGrpcError(status.Errorf(codes.InvalidArgument, "error"))
+	assert.IsType(t, &backoff.PermanentError{}, result)
 }
 
 func TestGrpcConfigClient_GetOverview(t *testing.T) {

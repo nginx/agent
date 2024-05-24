@@ -71,7 +71,6 @@ func GetConfig() *Config {
 		Version:            viperInstance.GetString(VersionKey),
 		Path:               viperInstance.GetString(ConfigPathKey),
 		Log:                getLog(),
-		ProcessMonitor:     getProcessMonitor(),
 		DataPlaneConfig:    getDataPlaneConfig(),
 		Client:             getClient(),
 		ConfigDir:          getConfigDir(),
@@ -121,12 +120,6 @@ func registerFlags() {
 	)
 
 	fs.Duration(
-		ProcessMonitorMonitoringFrequencyKey,
-		time.Minute,
-		"How often the NGINX Agent will check for process changes.",
-	)
-
-	fs.Duration(
 		DataPlaneConfigNginxReloadMonitoringPeriodKey,
 		DefaultDataPlaneConfigNginxReloadMonitoringPeriod,
 		"The amount of time to monitor NGINX after a reload of configuration.",
@@ -142,40 +135,6 @@ func registerFlags() {
 		"Defines the paths that you want to grant NGINX Agent read/write access to."+
 			" This key is formatted as a string and follows Unix PATH format")
 
-	fs.Duration(
-		MetricsProduceIntervalKey, DefMetricsProduceInterval,
-		"The interval for how often NGINX Agent queries metrics from its sources.",
-	)
-	fs.Int(
-		OTelExporterBufferLengthKey, DefOTelExporterBufferLength,
-		"The length of the OTel Exporter's buffer for metrics.",
-	)
-	fs.Int(
-		OTelExporterExportRetryCountKey, DefOTelExporterExportRetryCount,
-		"How many times an OTel Export is retried in the event of failure.",
-	)
-	fs.Duration(
-		OTelExporterExportIntervalKey, DefOTelExporterExportInterval,
-		"The interval for how often NGINX Agent attempts to send the contents of its OTel Exporter's buffer.",
-	)
-	fs.String(
-		OTelGRPCTargetKey, "", "The target URI for a gRPC OTel Collector.",
-	)
-	fs.Duration(
-		OTelGRPCConnTimeoutKey, DefOTelGRPCConnTimeout,
-		"The connection timeout for the gRPC connection to the OTel collector.",
-	)
-	fs.Duration(
-		OTelGRPCMinConnTimeoutKey, DefOTelGRPCMinConnTimeout,
-		"The minimum connection timeout for the gRPC connection to the OTel collector.",
-	)
-	fs.Duration(
-		OTelGRPCBackoffDelayKey, DefOTelGRPCMBackoffDelay,
-		"The maximum delay on the gRPC backoff strategy for retrying a failed connection.",
-	)
-	fs.StringArray(
-		PrometheusTargetsKey, []string{}, "The target URI(s) of Prometheus endpoint(s) for metrics collection.",
-	)
 	fs.String(
 		CommandServerHostKey,
 		DefCommandServerHostKey,
@@ -296,12 +255,6 @@ func getLog() *Log {
 	}
 }
 
-func getProcessMonitor() *ProcessMonitor {
-	return &ProcessMonitor{
-		MonitoringFrequency: viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyKey),
-	}
-}
-
 func getDataPlaneConfig() *DataPlaneConfig {
 	return &DataPlaneConfig{
 		Nginx: &NginxDataPlaneConfig{
@@ -329,36 +282,7 @@ func getMetrics() *Metrics {
 	}
 
 	metrics := &Metrics{
-		ProduceInterval:  viperInstance.GetDuration(MetricsProduceIntervalKey),
-		OTelExporter:     nil,
-		PrometheusSource: nil,
-		Collector:        viperInstance.GetBool(MetricsCollectorKey),
-	}
-
-	if viperInstance.IsSet(MetricsOTelExporterKey) && viperInstance.IsSet(OTelGRPCKey) {
-		// For some reason viperInstance.UnmarshalKey did not work here (maybe due to the nested structs?).
-		otelExp := &OTelExporter{
-			BufferLength:     viperInstance.GetInt(OTelExporterBufferLengthKey),
-			ExportRetryCount: viperInstance.GetInt(OTelExporterExportRetryCountKey),
-			ExportInterval:   viperInstance.GetDuration(OTelExporterExportIntervalKey),
-			GRPC: &GRPC{
-				Target:         viperInstance.GetString(OTelGRPCTargetKey),
-				ConnTimeout:    viperInstance.GetDuration(OTelGRPCConnTimeoutKey),
-				MinConnTimeout: viperInstance.GetDuration(OTelGRPCMinConnTimeoutKey),
-				BackoffDelay:   viperInstance.GetDuration(OTelGRPCBackoffDelayKey),
-			},
-		}
-		metrics.OTelExporter = otelExp
-	}
-
-	if viperInstance.IsSet(PrometheusSrcKey) {
-		var prometheusSrc PrometheusSource
-		err := viperInstance.UnmarshalKey(PrometheusSrcKey, &prometheusSrc)
-		if err == nil {
-			metrics.PrometheusSource = &prometheusSrc
-		} else {
-			slog.Error("metrics configuration: no Prometheus source configured", "error", err)
-		}
+		Collector: viperInstance.GetBool(MetricsCollectorKey),
 	}
 
 	return metrics

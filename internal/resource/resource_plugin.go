@@ -22,15 +22,14 @@ type Resource struct {
 var _ bus.Plugin = (*Resource)(nil)
 
 func NewResource() *Resource {
-	return &Resource{
-		resourceService: NewResourceService(),
-	}
+	return &Resource{}
 }
 
 func (r *Resource) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
 	slog.DebugContext(ctx, "Starting resource plugin")
 
 	r.messagePipe = messagePipe
+	r.resourceService = NewResourceService(ctx)
 
 	return nil
 }

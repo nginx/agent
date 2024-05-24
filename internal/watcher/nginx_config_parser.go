@@ -518,6 +518,10 @@ func (ncp *NginxConfigParser) parseAddressesFromServerDirective(parent *crosspla
 	foundHosts := []string{}
 	port := "80"
 
+	if parent == nil {
+		return []string{}
+	}
+
 	for _, dir := range parent.Block {
 		var hostname string
 
