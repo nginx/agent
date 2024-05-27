@@ -253,10 +253,12 @@ message InstanceRuntime {
         // NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API
         NGINXPlusRuntimeInfo nginx_plus_runtime_info = 5;
     }
+    // List of worker processes
     repeated InstanceChild instance_children = 6;
 }
 
 message InstanceChild {
+    // the process identifier
     int32 process_id = 1;
 }
 
