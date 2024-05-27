@@ -154,6 +154,7 @@ performance-test:
 	@mkdir -p $(TEST_BUILD_DIR)
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/config > $(TEST_BUILD_DIR)/benchmark.txt
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/instance >> $(TEST_BUILD_DIR)/benchmark.txt
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/watcher >> $(TEST_BUILD_DIR)/benchmark.txt
 	@cat $(TEST_BUILD_DIR)/benchmark.txt
 
 compare-performance-benchmark-results:

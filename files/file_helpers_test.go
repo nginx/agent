@@ -15,6 +15,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestGetFileMeta(t *testing.T) {
+	file, err := os.CreateTemp(t.TempDir(), "get_file_meta.txt")
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
+	require.NoError(t, err)
+
+	expected := &v1.FileMeta{
+		Name:        file.Name(),
+		Hash:        "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
+		Permissions: "-rw-------",
+		Size:        0,
+	}
+
+	fileMeta, err := GetFileMeta(file.Name())
+	require.NoError(t, err)
+
+	assert.Equal(t, expected.GetName(), fileMeta.GetName())
+	assert.Equal(t, expected.GetHash(), fileMeta.GetHash())
+	assert.Equal(t, expected.GetPermissions(), fileMeta.GetPermissions())
+	assert.Equal(t, expected.GetSize(), fileMeta.GetSize())
+	assert.NotNil(t, fileMeta.GetModifiedTime())
+}
+
 func TestGetPermissions(t *testing.T) {
 	file, err := os.CreateTemp(t.TempDir(), "get_permissions_test.txt")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
