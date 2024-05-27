@@ -29,7 +29,10 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	fakeProcessWatcher.ProcessesReturns([]*model.Process{}, nil)
 
 	fakeProcessParser := &watcherfakes.FakeProcessParser{}
-	fakeProcessParser.ParseReturns([]*v1.Instance{protos.GetNginxOssInstance([]string{})})
+	fakeProcessParser.ParseReturns(map[string]*v1.Instance{
+		protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
+			GetNginxOssInstance([]string{}),
+	})
 
 	fakeNginxConfigParser := &watcherfakes.FakeNginxConfigParser{}
 	fakeNginxConfigParser.ParseReturns(nginxConfigContext, nil)
