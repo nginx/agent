@@ -6,8 +6,8 @@
 package model
 
 type Process struct {
-	Pid  int32
-	Ppid int32
+	PID  int32
+	PPID int32
 	Name string
 	Cmd  string
 	Exe  string
