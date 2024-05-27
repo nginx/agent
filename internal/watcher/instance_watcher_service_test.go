@@ -29,7 +29,10 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	fakeProcessWatcher.ProcessesReturns([]*model.Process{}, nil)
 
 	fakeProcessParser := &watcherfakes.FakeProcessParser{}
-	fakeProcessParser.ParseReturns([]*v1.Instance{protos.GetNginxOssInstance([]string{})})
+	fakeProcessParser.ParseReturns(map[string]*v1.Instance{
+		protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
+			GetNginxOssInstance([]string{}),
+	})
 
 	fakeNginxConfigParser := &watcherfakes.FakeNginxConfigParser{}
 	fakeNginxConfigParser.ParseReturns(nginxConfigContext, nil)
@@ -61,21 +64,22 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 	tests := []struct {
 		name                    string
 		oldInstances            []*v1.Instance
-		parsedInstances         []*v1.Instance
+		parsedInstances         map[string]*v1.Instance
 		expectedInstanceUpdates InstanceUpdates
 	}{
 		{
 			name:                    "Test 1: No updates",
 			oldInstances:            []*v1.Instance{agentInstance},
-			parsedInstances:         []*v1.Instance{},
+			parsedInstances:         make(map[string]*v1.Instance),
 			expectedInstanceUpdates: InstanceUpdates{},
 		},
 		{
 			name:         "Test 2: New instance",
 			oldInstances: []*v1.Instance{agentInstance},
-			parsedInstances: []*v1.Instance{
-				agentInstance,
-				protos.GetNginxOssInstance([]string{}),
+			parsedInstances: map[string]*v1.Instance{
+				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
+				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.GetNginxOssInstance(
+					[]string{}),
 			},
 			expectedInstanceUpdates: InstanceUpdates{
 				newInstances: []*v1.Instance{
@@ -89,7 +93,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 				agentInstance,
 				protos.GetNginxOssInstance([]string{}),
 			},
-			parsedInstances: []*v1.Instance{},
+			parsedInstances: make(map[string]*v1.Instance),
 			expectedInstanceUpdates: InstanceUpdates{
 				deletedInstances: []*v1.Instance{
 					protos.GetNginxOssInstance([]string{}),

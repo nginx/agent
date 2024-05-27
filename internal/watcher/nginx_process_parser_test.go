@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
@@ -100,6 +102,13 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 			Exe:  exePath,
 		},
 		{
+			Pid:  567,
+			Ppid: 1234,
+			Name: "nginx",
+			Cmd:  "nginx: worker process",
+			Exe:  exePath,
+		},
+		{
 			Pid:  1234,
 			Ppid: 1,
 			Name: "nginx",
@@ -111,7 +120,7 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 	tests := []struct {
 		name                      string
 		nginxVersionCommandOutput string
-		expected                  []*v1.Instance
+		expected                  map[string]*v1.Instance
 	}{
 		{
 			name: "Test 1: NGINX open source",
@@ -120,8 +129,9 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
 					configure arguments: %s`, ossArgs),
-			expected: []*v1.Instance{
-				protos.GetNginxOssInstance([]string{expectedModules}),
+			expected: map[string]*v1.Instance{
+				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.GetNginxOssInstance(
+					[]string{expectedModules}),
 			},
 		},
 		{
@@ -132,8 +142,9 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
 				configure arguments: %s`, plusArgs),
-			expected: []*v1.Instance{
-				protos.GetNginxPlusInstance([]string{expectedModules}),
+			expected: map[string]*v1.Instance{
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.GetNginxPlusInstance(
+					[]string{expectedModules}),
 			},
 		},
 		{
@@ -143,8 +154,9 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
 					configure arguments: %s`, noModuleArgs),
-			expected: []*v1.Instance{
-				protos.GetNginxOssInstance(nil),
+			expected: map[string]*v1.Instance{
+				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
+					GetNginxOssInstance(nil),
 			},
 		},
 	}
@@ -152,21 +164,221 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
-			mockExec.RunCmdReturns(bytes.NewBufferString(test.nginxVersionCommandOutput), nil)
+			mockExec.RunCmdReturnsOnCall(0, bytes.NewBufferString(test.nginxVersionCommandOutput), nil)
 
 			n := NewNginxProcessParser()
 			n.executer = mockExec
 			result := n.Parse(ctx, processes)
 
-			for _, instance := range result {
-				if instance.GetInstanceRuntime().GetNginxRuntimeInfo() != nil {
-					sort.Strings(instance.GetInstanceRuntime().GetNginxRuntimeInfo().GetDynamicModules())
+			for id, instance := range result {
+				resultRun := instance.GetInstanceRuntime()
+				expectedRun := test.expected[id].GetInstanceRuntime()
+				expectedRun.InstanceChildren = protos.SortInstanceChildren(expectedRun.GetInstanceChildren())
+				resultRun.InstanceChildren = protos.SortInstanceChildren(resultRun.GetInstanceChildren())
+
+				if resultRun.GetNginxRuntimeInfo() != nil {
+					sort.Strings(resultRun.GetNginxRuntimeInfo().GetDynamicModules())
+					assert.True(tt, proto.Equal(test.expected[id], instance))
 				} else {
-					sort.Strings(instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetDynamicModules())
+					sort.Strings(resultRun.GetNginxPlusRuntimeInfo().GetDynamicModules())
+					assert.True(tt, proto.Equal(test.expected[id], instance))
 				}
 			}
 
-			assert.Equal(tt, test.expected, result)
+			assert.Equal(tt, len(test.expected), len(result))
+		})
+	}
+}
+
+func TestNginxProcessParser_Parse_Processes(t *testing.T) {
+	ctx := context.Background()
+	modulePath := t.TempDir() + "/usr/lib/nginx/modules"
+
+	configArgs := fmt.Sprintf(ossConfigArgs, modulePath)
+
+	nginxVersionCommandOutput := fmt.Sprintf(`nginx version: nginx/1.25.3
+					built by clang 14.0.0 (clang-1400.0.29.202)
+					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
+					TLS SNI support enabled
+					configure arguments: %s`, configArgs)
+
+	process1 := protos.GetNginxOssInstance(nil)
+	instancesTest1 := map[string]*v1.Instance{
+		process1.GetInstanceMeta().GetInstanceId(): process1,
+	}
+
+	noChildrenInstance := protos.GetNginxOssInstance(nil)
+	noChildrenInstance.GetInstanceRuntime().InstanceChildren = nil
+	instancesTest2 := map[string]*v1.Instance{
+		noChildrenInstance.GetInstanceMeta().GetInstanceId(): noChildrenInstance,
+	}
+
+	noParentInstanceList := protos.GetInstancesNoParentProcess(nil)
+	instancesTest3 := map[string]*v1.Instance{
+		noParentInstanceList[0].GetInstanceMeta().GetInstanceId(): noParentInstanceList[0],
+		noParentInstanceList[1].GetInstanceMeta().GetInstanceId(): noParentInstanceList[1],
+	}
+
+	instancesList := protos.GetMultipleInstances(nil)
+	instancesTest4 := map[string]*v1.Instance{
+		instancesList[0].GetInstanceMeta().GetInstanceId(): instancesList[0],
+		instancesList[1].GetInstanceMeta().GetInstanceId(): instancesList[1],
+	}
+
+	tests := []struct {
+		name      string
+		processes []*model.Process
+		expected  map[string]*v1.Instance
+	}{
+		{
+			name: "Test 1: 1 master process, 2 workers",
+			processes: []*model.Process{
+				{
+					Pid:  567,
+					Ppid: 1234,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  exePath,
+				},
+				{
+					Pid:  789,
+					Ppid: 1234,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  exePath,
+				},
+				{
+					Pid:  1234,
+					Ppid: 1,
+					Name: "nginx",
+					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+					Exe:  exePath,
+				},
+			},
+			expected: instancesTest1,
+		},
+		{
+			name: "Test 2: 1 master process, no workers",
+			processes: []*model.Process{
+				{
+					Pid:  1234,
+					Ppid: 1,
+					Name: "nginx",
+					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+					Exe:  exePath,
+				},
+			},
+			expected: instancesTest2,
+		},
+		{
+			name: "Test 3: no master process, 2 workers for each killed master",
+			processes: []*model.Process{
+				{
+					Pid:  789,
+					Ppid: 1234,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  exePath,
+				},
+				{
+					Pid:  567,
+					Ppid: 1234,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  exePath,
+				},
+				{
+					Pid:  987,
+					Ppid: 4321,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
+				},
+				{
+					Pid:  321,
+					Ppid: 4321,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
+				},
+			},
+			expected: instancesTest3,
+		},
+		{
+			name: "Test 4: 2 master process each with 2 workers",
+			processes: []*model.Process{
+				{
+					Pid:  789,
+					Ppid: 1234,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  exePath,
+				},
+				{
+					Pid:  567,
+					Ppid: 1234,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  exePath,
+				},
+				{
+					Pid:  1234,
+					Ppid: 1,
+					Name: "nginx",
+					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+					Exe:  exePath,
+				},
+				{
+					Pid:  987,
+					Ppid: 5678,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
+				},
+				{
+					Pid:  321,
+					Ppid: 5678,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
+				},
+				{
+					Pid:  5678,
+					Ppid: 1,
+					Name: "nginx",
+					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
+				},
+			},
+			expected: instancesTest4,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			mockExec := &execfakes.FakeExecInterface{}
+			mockExec.RunCmdReturnsOnCall(0, bytes.NewBufferString(nginxVersionCommandOutput), nil)
+			mockExec.RunCmdReturnsOnCall(1, bytes.NewBufferString(nginxVersionCommandOutput), nil)
+			mockExec.RunCmdReturnsOnCall(2, bytes.NewBufferString(nginxVersionCommandOutput), nil)
+			mockExec.RunCmdReturnsOnCall(3, bytes.NewBufferString(nginxVersionCommandOutput), nil)
+
+			n := NewNginxProcessParser()
+			n.executer = mockExec
+			result := n.Parse(ctx, test.processes)
+
+			for id, instance := range result {
+				resultRun := instance.GetInstanceRuntime()
+				expectedRun := test.expected[id].GetInstanceRuntime()
+
+				sort.Strings(resultRun.GetNginxRuntimeInfo().GetDynamicModules())
+
+				expectedRun.InstanceChildren = protos.SortInstanceChildren(expectedRun.GetInstanceChildren())
+				resultRun.InstanceChildren = protos.SortInstanceChildren(resultRun.GetInstanceChildren())
+
+				assert.True(tt, proto.Equal(test.expected[id], instance))
+			}
+
+			assert.Equal(tt, len(test.expected), len(result))
 		})
 	}
 }

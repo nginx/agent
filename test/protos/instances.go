@@ -15,10 +15,16 @@ import (
 )
 
 const (
-	ossInstanceID  = "e1374cb1-462d-3b6c-9f3b-f28332b5f10c"
-	plusInstanceID = "40f9dda0-e45f-34cf-bba7-f173700f50a2"
-	correlationID  = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
-	processID      = 1234
+	ossInstanceID       = "e1374cb1-462d-3b6c-9f3b-f28332b5f10c"
+	plusInstanceID      = "40f9dda0-e45f-34cf-bba7-f173700f50a2"
+	secondOssInstanceID = "557cdf06-08fd-31eb-a8e7-daafd3a93db7"
+	correlationID       = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
+	processID           = 1234
+	processID2          = 5678
+	childID             = 789
+	childID2            = 567
+	childID3            = 987
+	childID4            = 321
 )
 
 func GetAgentInstance(processID int32, agentConfig *config.Config) *v1.Instance {
@@ -63,6 +69,7 @@ func GetNginxOssInstance(expectedModules []string) *v1.Instance {
 					},
 				},
 			},
+			InstanceChildren: []*v1.InstanceChild{{ProcessId: childID}, {ProcessId: childID2}},
 		},
 	}
 }
@@ -98,8 +105,26 @@ func GetNginxPlusInstance(expectedModules []string) *v1.Instance {
 					PlusApi: "",
 				},
 			},
+			InstanceChildren: []*v1.InstanceChild{{ProcessId: childID}, {ProcessId: childID2}},
 		},
 	}
+}
+
+func GetMultipleInstances(expectedModules []string) []*v1.Instance {
+	process1 := GetNginxOssInstance(expectedModules)
+	process2 := getSecondNginxOssInstance(expectedModules)
+
+	return []*v1.Instance{process1, process2}
+}
+
+func GetInstancesNoParentProcess(expectedModules []string) []*v1.Instance {
+	process1 := GetNginxOssInstance(expectedModules)
+	process1.GetInstanceRuntime().ProcessId = 0
+
+	process2 := getSecondNginxOssInstance(expectedModules)
+	process2.GetInstanceRuntime().ProcessId = 0
+
+	return []*v1.Instance{process1, process2}
 }
 
 func CreateInProgressStatus() *instances.ConfigurationStatus {
@@ -177,4 +202,14 @@ func GetFileCache(files ...*os.File) (map[string]*v1.FileMeta, error) {
 	}
 
 	return cache, nil
+}
+
+func getSecondNginxOssInstance(expectedModules []string) *v1.Instance {
+	process2 := GetNginxOssInstance(expectedModules)
+	process2.GetInstanceRuntime().ProcessId = processID2
+	process2.GetInstanceMeta().InstanceId = secondOssInstanceID
+	process2.GetInstanceRuntime().BinaryPath = "/opt/homebrew/etc/nginx/1.25.3/bin/nginx"
+	process2.GetInstanceRuntime().InstanceChildren = []*v1.InstanceChild{{ProcessId: childID3}, {ProcessId: childID4}}
+
+	return process2
 }

@@ -56,28 +56,70 @@ func NewNginxProcessParser() *NginxProcessParser {
 	}
 }
 
-func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Process) []*v1.Instance {
-	instanceList := []*v1.Instance{}
+// cognitive complexity of 16 because of the if statements in the for loop
+// don't think can be avoided due to the need for continue
+// nolint: revive
+func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Process) map[string]*v1.Instance {
+	instanceMap := make(map[string]*v1.Instance)   // key is instanceID
+	workers := make(map[int32][]*v1.InstanceChild) // key is ppid of process
 
 	nginxProcesses := filterNginxProcesses(processes)
 
 	for _, nginxProcess := range nginxProcesses {
-		// Here we are determining if the nginxProcess is a master process.
-		// NGINX worker processes are ignored.
-		_, ok := nginxProcesses[nginxProcess.Ppid]
-		if !ok {
+		// Here we are determining if the nginxProcess is a worker process
+		if masterProcess, ok := nginxProcesses[nginxProcess.Ppid]; ok {
+			workers[masterProcess.Pid] = append(workers[masterProcess.Pid],
+				&v1.InstanceChild{ProcessId: nginxProcess.Pid})
+
+			continue
+		}
+		// Here we are determining if the nginxProcess is a worker process that has no master
+		if strings.Contains(nginxProcess.Cmd, "worker") {
 			nginxInfo, err := npp.getInfo(ctx, nginxProcess)
 			if err != nil {
 				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.Pid, "error", err)
 
 				continue
 			}
+			// set instance process ID to 0 as there is no master process
+			nginxInfo.ProcessID = 0
 
-			instanceList = append(instanceList, convertInfoToInstance(*nginxInfo))
+			instance := convertInfoToInstance(*nginxInfo)
+
+			if foundInstance, ok := instanceMap[instance.GetInstanceMeta().GetInstanceId()]; ok {
+				foundInstance.GetInstanceRuntime().InstanceChildren = append(foundInstance.GetInstanceRuntime().
+					GetInstanceChildren(), &v1.InstanceChild{ProcessId: nginxProcess.Pid})
+
+				continue
+			}
+
+			instance.GetInstanceRuntime().InstanceChildren = append(instance.GetInstanceRuntime().
+				GetInstanceChildren(), &v1.InstanceChild{ProcessId: nginxProcess.Pid})
+
+			instanceMap[instance.GetInstanceMeta().GetInstanceId()] = instance
+
+			continue
+		}
+		// Here we are determining if the nginxProcess is a master process
+
+		nginxInfo, err := npp.getInfo(ctx, nginxProcess)
+		if err != nil {
+			slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.Pid, "error", err)
+
+			continue
+		}
+
+		instance := convertInfoToInstance(*nginxInfo)
+		instanceMap[instance.GetInstanceMeta().GetInstanceId()] = instance
+	}
+
+	for _, instance := range instanceMap {
+		if val, ok := workers[instance.GetInstanceRuntime().GetProcessId()]; ok {
+			instance.InstanceRuntime.InstanceChildren = val
 		}
 	}
 
-	return instanceList
+	return instanceMap
 }
 
 func (npp *NginxProcessParser) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info, error) {
