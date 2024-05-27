@@ -5,7 +5,10 @@
 
 package config
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type Config struct {
 	UUID               string           `yaml:"-"`
@@ -124,4 +127,14 @@ type InstanceWatcher struct {
 
 type InstanceHealthWatcher struct {
 	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
+}
+
+func (c *Config) IsDirectoryAllowed(directory string) bool {
+	for _, allowedDirectory := range c.AllowedDirectories {
+		if strings.HasPrefix(directory, allowedDirectory) {
+			return true
+		}
+	}
+
+	return false
 }

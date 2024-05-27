@@ -26,6 +26,9 @@ const defaultAgentPath = "/run/nginx-agent"
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . processParser
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . nginxConfigParser
+
 type (
 	processOperator interface {
 		Processes(ctx context.Context) ([]*model.Process, error)
@@ -35,12 +38,18 @@ type (
 		Parse(ctx context.Context, processes []*model.Process) map[string]*v1.Instance
 	}
 
+	nginxConfigParser interface {
+		Parse(ctx context.Context, instance *v1.Instance) (*model.NginxConfigContext, error)
+	}
+
 	InstanceWatcherService struct {
-		agentConfig     *config.Config
-		processOperator processOperator
-		processParsers  []processParser
-		cache           []*v1.Instance
-		executer        exec.ExecInterface
+		agentConfig       *config.Config
+		processOperator   processOperator
+		processParsers    []processParser
+		nginxConfigParser nginxConfigParser
+		instanceCache     []*v1.Instance
+		nginxConfigCache  map[string]*model.NginxConfigContext // key is instanceID
+		executer          exec.ExecInterface
 	}
 
 	InstanceUpdates struct {
@@ -52,6 +61,11 @@ type (
 		correlationID   slog.Attr
 		instanceUpdates InstanceUpdates
 	}
+
+	NginxConfigContextMessage struct {
+		correlationID      slog.Attr
+		nginxConfigContext *model.NginxConfigContext
+	}
 )
 
 func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherService {
@@ -61,12 +75,18 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 		processParsers: []processParser{
 			NewNginxProcessParser(),
 		},
-		cache:    []*v1.Instance{},
-		executer: &exec.Exec{},
+		nginxConfigParser: NewNginxConfigParser(agentConfig),
+		instanceCache:     []*v1.Instance{},
+		nginxConfigCache:  make(map[string]*model.NginxConfigContext),
+		executer:          &exec.Exec{},
 	}
 }
 
-func (iw *InstanceWatcherService) Watch(ctx context.Context, ch chan<- InstanceUpdatesMessage) {
+func (iw *InstanceWatcherService) Watch(
+	ctx context.Context,
+	instancesChannel chan<- InstanceUpdatesMessage,
+	nginxConfigContextChannel chan<- NginxConfigContextMessage,
+) {
 	monitoringFrequency := iw.agentConfig.Watchers.InstanceWatcher.MonitoringFrequency
 	slog.DebugContext(ctx, "Starting instance watcher monitoring", "monitoring_frequency", monitoringFrequency)
 
@@ -76,30 +96,53 @@ func (iw *InstanceWatcherService) Watch(ctx context.Context, ch chan<- InstanceU
 	for {
 		select {
 		case <-ctx.Done():
-			close(ch)
+			close(instancesChannel)
+			close(nginxConfigContextChannel)
+
 			return
 		case <-instanceWatcherTicker.C:
-			correlationID := logger.GenerateCorrelationID()
-			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
-
-			instanceUpdates, err := iw.updates(newCtx)
-			if err != nil {
-				slog.ErrorContext(newCtx, "Instance watcher updates", "error", err)
-			}
-
-			if len(instanceUpdates.newInstances) > 0 || len(instanceUpdates.deletedInstances) > 0 {
-				ch <- InstanceUpdatesMessage{
-					correlationID:   correlationID,
-					instanceUpdates: instanceUpdates,
-				}
-			} else {
-				slog.DebugContext(newCtx, "Instance watcher found no instance updates")
-			}
+			iw.checkForUpdates(ctx, instancesChannel, nginxConfigContextChannel)
 		}
 	}
 }
 
-func (iw *InstanceWatcherService) updates(ctx context.Context) (
+func (iw *InstanceWatcherService) checkForUpdates(
+	ctx context.Context,
+	instancesChannel chan<- InstanceUpdatesMessage,
+	nginxConfigContextChannel chan<- NginxConfigContextMessage,
+) {
+	correlationID := logger.GenerateCorrelationID()
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
+
+	instanceUpdates, err := iw.instanceUpdates(newCtx)
+	if err != nil {
+		slog.ErrorContext(newCtx, "Instance watcher updates", "error", err)
+	}
+
+	for _, newInstance := range instanceUpdates.newInstances {
+		instanceType := newInstance.GetInstanceMeta().GetInstanceType()
+
+		if instanceType == v1.InstanceMeta_INSTANCE_TYPE_NGINX ||
+			instanceType == v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+			nginxConfigContext := iw.parseNginxInstanceConfig(newCtx, newInstance)
+			iw.updateNginxInstanceRuntime(newInstance, nginxConfigContext)
+
+			nginxConfigContextChannel <- NginxConfigContextMessage{
+				correlationID:      correlationID,
+				nginxConfigContext: nginxConfigContext,
+			}
+		}
+	}
+
+	if len(instanceUpdates.newInstances) > 0 || len(instanceUpdates.deletedInstances) > 0 {
+		instancesChannel <- InstanceUpdatesMessage{
+			correlationID:   correlationID,
+			instanceUpdates: instanceUpdates,
+		}
+	}
+}
+
+func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	instanceUpdates InstanceUpdates,
 	err error,
 ) {
@@ -118,11 +161,12 @@ func (iw *InstanceWatcherService) updates(ctx context.Context) (
 		}
 	}
 
-	newInstances, deletedInstances := compareInstances(iw.cache, instancesFound)
+	newInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
+
 	instanceUpdates.newInstances = newInstances
 	instanceUpdates.deletedInstances = deletedInstances
 
-	iw.cache = instancesFound
+	iw.instanceCache = instancesFound
 
 	return instanceUpdates, nil
 }
@@ -189,4 +233,62 @@ func compareInstances(oldInstances, instances []*v1.Instance) (newInstances, del
 	}
 
 	return newInstances, deletedInstances
+}
+
+func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
+	instance *v1.Instance,
+	nginxConfigContext *model.NginxConfigContext,
+) {
+	instanceType := instance.GetInstanceMeta().GetInstanceType()
+
+	if instanceType == v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+		nginxPlusRuntimeInfo := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo()
+
+		nginxPlusRuntimeInfo.AccessLogs = convertAccessLogs(nginxConfigContext.AccessLogs)
+		nginxPlusRuntimeInfo.ErrorLogs = convertErrorLogs(nginxConfigContext.ErrorLogs)
+		nginxPlusRuntimeInfo.StubStatus = nginxConfigContext.StubStatus
+		nginxPlusRuntimeInfo.PlusApi = nginxConfigContext.PlusAPI
+	} else {
+		nginxRuntimeInfo := instance.GetInstanceRuntime().GetNginxRuntimeInfo()
+
+		nginxRuntimeInfo.AccessLogs = convertAccessLogs(nginxConfigContext.AccessLogs)
+		nginxRuntimeInfo.ErrorLogs = convertErrorLogs(nginxConfigContext.ErrorLogs)
+		nginxRuntimeInfo.StubStatus = nginxConfigContext.StubStatus
+	}
+}
+
+func (iw *InstanceWatcherService) parseNginxInstanceConfig(
+	ctx context.Context,
+	instance *v1.Instance,
+) *model.NginxConfigContext {
+	nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
+	if parseErr != nil {
+		slog.WarnContext(
+			ctx,
+			"Parsing NGINX instance config",
+			"config_path", instance.GetInstanceRuntime().GetConfigPath(),
+			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+			"error", parseErr,
+		)
+	}
+
+	iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
+
+	return nginxConfigContext
+}
+
+func convertAccessLogs(accessLogs []*model.AccessLog) (logs []string) {
+	for _, log := range accessLogs {
+		logs = append(logs, log.Name)
+	}
+
+	return logs
+}
+
+func convertErrorLogs(errorLogs []*model.ErrorLog) (logs []string) {
+	for _, log := range errorLogs {
+		logs = append(logs, log.Name)
+	}
+
+	return logs
 }
