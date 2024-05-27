@@ -21,12 +21,12 @@ import (
 )
 
 func GetFileMeta(filePath string) (*v1.FileMeta, error) {
-	hash, err := GenerateFileHash(filePath)
+	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	fileInfo, err := os.Stat(filePath)
+	hash, err := GenerateFileHash(filePath)
 	if err != nil {
 		return nil, err
 	}

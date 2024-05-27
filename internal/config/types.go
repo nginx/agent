@@ -109,14 +109,11 @@ type InstanceHealthWatcher struct {
 }
 
 func (c *Config) IsDirectoryAllowed(directory string) bool {
-	isDirectoryAllowed := false
-
 	for _, allowedDirectory := range c.AllowedDirectories {
 		if strings.HasPrefix(directory, allowedDirectory) {
-			isDirectoryAllowed = true
-			break
+			return true
 		}
 	}
 
-	return isDirectoryAllowed
+	return false
 }

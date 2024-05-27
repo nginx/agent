@@ -48,7 +48,7 @@ type (
 		processParsers    []processParser
 		nginxConfigParser nginxConfigParser
 		instanceCache     []*v1.Instance
-		nginxConfigCache  map[string]*model.NginxConfigContext
+		nginxConfigCache  map[string]*model.NginxConfigContext // key is instanceID
 		executer          exec.ExecInterface
 	}
 
