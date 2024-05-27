@@ -215,46 +215,46 @@ Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.con
 
 ### NGINX Agent Environment Variables
 
-This section displays the configurable options for NGINX Agent that can be set with environment variables. A list of the configurable environment variables can be seen below:
+This section displays the configurable options for NGINX Agent that can be set with environment variables. Each environment variable maps to a CLI flag, [explained above](#nginx-agent-cli-flags-usage).
 
-<details open>
-  <summary>NGINX Agent Environment Variables</summary>
+{{<bootstrap-table "table table-striped table-bordered">}}
 
-```text
-- NMS_INSTANCE_GROUP
-- NMS_DISPLAY_NAME
-- NMS_FEATURES
-- NMS_LOG_LEVEL
-- NMS_LOG_PATH
-- NMS_PATH
-- NMS_METRICS_COLLECTION_INTERVAL
-- NMS_METRICS_MODE
-- NMS_METRICS_BULK_SIZE
-- NMS_METRICS_REPORT_INTERVAL
-- NMS_NGINX_EXCLUDE_LOGS
-- NMS_NGINX_SOCKET
-- NMS_NGINX_TREAT_WARNINGS_AS_ERRORS
-- NMS_SERVER_GRPCPORT
-- NMS_SERVER_HOST
-- NMS_SERVER_TOKEN
-- NMS_SERVER_COMMAND
-- NMS_SERVER_METRICS
-- NMS_TAGS
-- NMS_TLS_CA
-- NMS_TLS_CERT
-- NMS_TLS_ENABLE
-- NMS_TLS_KEY
-- NMS_TLS_SKIP_VERIFY
-- NMS_CONFIG_DIRS
-- NMS_QUEUE_SIZE
-- NMS_DATAPLANE_REPORT_INTERVAL
-- NMS_DATAPLANE_STATUS_POLL_INTERVAL
-- NMS_API_HOST
-- NMS_API_PORT
-- NMS_API_KEY
-- NMS_API_CERT
-```
-</details>
+| Environment variable                 | CLI flag                                 |
+| ------------------------------------ | ---------------------------------------- |
+| *NMS_CONFIG_DIRS*                    | *--config-dirs*                          |
+| *NMS_DATAPLANE_REPORT_INTERVAL*      | *--dataplane-report-interval*            |
+| *NMS_DATAPLANE_STATUS_POLL_INTERVAL* | *--dataplane-status-poll-interval*       |
+| *NMS_DISPLAY_NAME*                   | *--display-name*                         |  
+| *NMS_FEATURES*                       | *--features*                             |
+| *NMS_INSTANCE_GROUP*                 | *--instance-group*                       |
+| *NMS_LOG_LEVEL*                      | *--log-level*                            |
+| *NMS_LOG_PATH*                       | *--log-path*                             |
+| *NMS_PATH*                           | N/A, defines path for `nginx-agent.conf` |
+| *NMS_METRICS_COLLECTION_INTERVAL*    | *--metrics-collection-interval*          |
+| *NMS_METRICS_MODE*                   | *--metrics-mode*                         |
+| *NMS_METRICS_BULK_SIZE*              | *--metrics-bulk-size*                    |
+| *NMS_METRICS_REPORT_INTERVAL*        | *--metrics-report-interval*              |
+| *NMS_NGINX_EXCLUDE_LOGS*             | *--nginx-exclude-log*                    |
+| *NMS_NGINX_SOCKET*                   | *--nginx-socket*                         |
+| *NMS_NGINX_TREAT_WARNINGS_AS_ERRORS* | *--nginx-treat-warnings-as-errors*       |
+| *NMS_QUEUE_SIZE*                     | *--queue-size*                           |
+| *NMS_SERVER_GRPCPORT*                | *--server-grpcport*                      |
+| *NMS_SERVER_HOST*                    | *--server-host*                          |
+| *NMS_SERVER_TOKEN*                   | *--server-token*                         |
+| *NMS_SERVER_COMMAND*                 | *--server-command*                       |
+| *NMS_SERVER_METRICS*                 | *--server-metrics*                       |
+| *NMS_TAGS*                           | *--tags*                                 |
+| *NMS_TLS_CA*                         | *--tls-ca*                               |
+| *NMS_TLS_CERT*                       | *--tls-cert*                             |
+| *NMS_TLS_ENABLE*                     | *--tls-enable*                           |
+| *NMS_TLS_KEY*                        | *--tls-key*                              |
+| *NMS_TLS_SKIP_VERIFY*                | *--tls-skip-verify*                      |
+| *NMS_API_HOST*                       | *--api-host*                             |
+| *NMS_API_PORT*                       | *--api-port*                             |
+| *NMS_API_KEY*                        | *--api-key*                              |
+| *NMS_API_CERT*                       | *--api-cert*                             |
+
+{{</bootstrap-table>}}
 
 ### NGINX Agent Log Rotation
 
