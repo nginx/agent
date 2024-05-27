@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/test/protos"
@@ -97,15 +97,15 @@ func TestGetInstances(t *testing.T) {
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 	processes := host.NginxProcesses{
 		789: {
-			Pid:  789,
-			Ppid: 1234,
+			PID:  789,
+			PPID: 1234,
 			Name: "nginx",
 			Cmd:  "nginx: worker process",
 			Exe:  exePath,
 		},
 		1234: {
-			Pid:  1234,
-			Ppid: 1,
+			PID:  1234,
+			PPID: 1,
 			Name: "nginx",
 			Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 			Exe:  exePath,

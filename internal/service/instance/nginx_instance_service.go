@@ -18,7 +18,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/datasource/host"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	process "github.com/nginx/agent/v3/internal/datasource/nginx"
 	"github.com/nginx/agent/v3/internal/model"
@@ -65,11 +65,11 @@ func (n *Nginx) GetInstances(ctx context.Context, nginxProcesses host.NginxProce
 	var processList []*v1.Instance
 
 	for _, nginxProcess := range nginxProcesses {
-		_, ok := nginxProcesses[nginxProcess.Ppid]
+		_, ok := nginxProcesses[nginxProcess.PPID]
 		if !ok {
 			nginxInfo, err := n.getInfo(ctx, nginxProcess)
 			if err != nil {
-				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.Pid, "error", err)
+				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.PID, "error", err)
 
 				continue
 			}
@@ -87,7 +87,7 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 	if exePath == "" {
 		exePath = process.New(n.executer).GetExe(ctx)
 		if exePath == "" {
-			return nil, fmt.Errorf("unable to find NGINX exe for process %d", nginxProcess.Pid)
+			return nil, fmt.Errorf("unable to find NGINX exe for process %d", nginxProcess.PID)
 		}
 	}
 
@@ -101,7 +101,7 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 	nginxInfo = parseNginxVersionCommandOutput(ctx, outputBuffer)
 
 	nginxInfo.ExePath = exePath
-	nginxInfo.ProcessID = nginxProcess.Pid
+	nginxInfo.ProcessID = nginxProcess.PID
 
 	loadableModules := getLoadableModules(nginxInfo)
 	nginxInfo.LoadableModules = loadableModules

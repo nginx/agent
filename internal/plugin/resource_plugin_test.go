@@ -11,7 +11,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/datasource/host"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
@@ -84,7 +84,7 @@ func TestResource_Instances_Process(t *testing.T) {
 			name: "Test 1: OS Process Topic",
 			processesMessage: &bus.Message{
 				Topic: bus.OsProcessesTopic,
-				Data:  host.NginxProcesses{123: {Pid: 123, Name: "nginx"}},
+				Data:  host.NginxProcesses{123: {PID: 123, Name: "nginx"}},
 			},
 			resource: protos.GetHostResource(),
 			topic:    bus.ResourceTopic,

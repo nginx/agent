@@ -34,8 +34,8 @@ func GetNginxProcesses(ctx context.Context) (NginxProcesses, error) {
 		exe, _ := proc.ExeWithContext(ctx)
 
 		internalProcesses = append(internalProcesses, &model.Process{
-			Pid:  proc.Pid,
-			Ppid: ppid,
+			PID:  proc.Pid,
+			PPID: ppid,
 			Name: name,
 			Cmd:  cmd,
 			Exe:  exe,
@@ -56,7 +56,7 @@ func findNginxProcesses(processes []*model.Process) NginxProcesses {
 
 	for _, p := range processes {
 		if isNginxProcess(p.Name, p.Cmd) {
-			nginxProcesses[p.Pid] = p
+			nginxProcesses[p.PID] = p
 		}
 	}
 

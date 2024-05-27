@@ -16,7 +16,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/uuid"
@@ -67,9 +67,9 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 
 	for _, nginxProcess := range nginxProcesses {
 		// Here we are determining if the nginxProcess is a worker process
-		if masterProcess, ok := nginxProcesses[nginxProcess.Ppid]; ok {
-			workers[masterProcess.Pid] = append(workers[masterProcess.Pid],
-				&v1.InstanceChild{ProcessId: nginxProcess.Pid})
+		if masterProcess, ok := nginxProcesses[nginxProcess.PPID]; ok {
+			workers[masterProcess.PID] = append(workers[masterProcess.PID],
+				&v1.InstanceChild{ProcessId: nginxProcess.PID})
 
 			continue
 		}
@@ -77,7 +77,7 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 		if strings.Contains(nginxProcess.Cmd, "worker") {
 			nginxInfo, err := npp.getInfo(ctx, nginxProcess)
 			if err != nil {
-				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.Pid, "error", err)
+				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.PID, "error", err)
 
 				continue
 			}
@@ -88,13 +88,13 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 
 			if foundInstance, ok := instanceMap[instance.GetInstanceMeta().GetInstanceId()]; ok {
 				foundInstance.GetInstanceRuntime().InstanceChildren = append(foundInstance.GetInstanceRuntime().
-					GetInstanceChildren(), &v1.InstanceChild{ProcessId: nginxProcess.Pid})
+					GetInstanceChildren(), &v1.InstanceChild{ProcessId: nginxProcess.PID})
 
 				continue
 			}
 
 			instance.GetInstanceRuntime().InstanceChildren = append(instance.GetInstanceRuntime().
-				GetInstanceChildren(), &v1.InstanceChild{ProcessId: nginxProcess.Pid})
+				GetInstanceChildren(), &v1.InstanceChild{ProcessId: nginxProcess.PID})
 
 			instanceMap[instance.GetInstanceMeta().GetInstanceId()] = instance
 
@@ -104,7 +104,7 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 
 		nginxInfo, err := npp.getInfo(ctx, nginxProcess)
 		if err != nil {
-			slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.Pid, "error", err)
+			slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.PID, "error", err)
 
 			continue
 		}
@@ -128,7 +128,7 @@ func (npp *NginxProcessParser) getInfo(ctx context.Context, nginxProcess *model.
 	if exePath == "" {
 		exePath = npp.getExe(ctx)
 		if exePath == "" {
-			return nil, fmt.Errorf("unable to find NGINX exe for process %d", nginxProcess.Pid)
+			return nil, fmt.Errorf("unable to find NGINX exe for process %d", nginxProcess.PID)
 		}
 	}
 
@@ -142,7 +142,7 @@ func (npp *NginxProcessParser) getInfo(ctx context.Context, nginxProcess *model.
 	nginxInfo = parseNginxVersionCommandOutput(ctx, outputBuffer)
 
 	nginxInfo.ExePath = exePath
-	nginxInfo.ProcessID = nginxProcess.Pid
+	nginxInfo.ProcessID = nginxProcess.PID
 
 	loadableModules := getLoadableModules(nginxInfo)
 	nginxInfo.LoadableModules = loadableModules
@@ -372,7 +372,7 @@ func filterNginxProcesses(processes []*model.Process) map[int32]*model.Process {
 
 	for _, p := range processes {
 		if isNginxProcess(p.Name, p.Cmd) {
-			nginxProcesses[p.Pid] = p
+			nginxProcesses[p.PID] = p
 		}
 	}
 

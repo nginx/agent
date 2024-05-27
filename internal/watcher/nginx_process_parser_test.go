@@ -16,7 +16,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/test/helpers"
@@ -95,22 +95,22 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 	processes := []*model.Process{
 		{
-			Pid:  789,
-			Ppid: 1234,
+			PID:  789,
+			PPID: 1234,
 			Name: "nginx",
 			Cmd:  "nginx: worker process",
 			Exe:  exePath,
 		},
 		{
-			Pid:  567,
-			Ppid: 1234,
+			PID:  567,
+			PPID: 1234,
 			Name: "nginx",
 			Cmd:  "nginx: worker process",
 			Exe:  exePath,
 		},
 		{
-			Pid:  1234,
-			Ppid: 1,
+			PID:  1234,
+			PPID: 1,
 			Name: "nginx",
 			Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 			Exe:  exePath,
@@ -234,22 +234,22 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 			name: "Test 1: 1 master process, 2 workers",
 			processes: []*model.Process{
 				{
-					Pid:  567,
-					Ppid: 1234,
+					PID:  567,
+					PPID: 1234,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  exePath,
 				},
 				{
-					Pid:  789,
-					Ppid: 1234,
+					PID:  789,
+					PPID: 1234,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  exePath,
 				},
 				{
-					Pid:  1234,
-					Ppid: 1,
+					PID:  1234,
+					PPID: 1,
 					Name: "nginx",
 					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 					Exe:  exePath,
@@ -261,8 +261,8 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 			name: "Test 2: 1 master process, no workers",
 			processes: []*model.Process{
 				{
-					Pid:  1234,
-					Ppid: 1,
+					PID:  1234,
+					PPID: 1,
 					Name: "nginx",
 					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 					Exe:  exePath,
@@ -274,29 +274,29 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 			name: "Test 3: no master process, 2 workers for each killed master",
 			processes: []*model.Process{
 				{
-					Pid:  789,
-					Ppid: 1234,
+					PID:  789,
+					PPID: 1234,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  exePath,
 				},
 				{
-					Pid:  567,
-					Ppid: 1234,
+					PID:  567,
+					PPID: 1234,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  exePath,
 				},
 				{
-					Pid:  987,
-					Ppid: 4321,
+					PID:  987,
+					PPID: 4321,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
 				},
 				{
-					Pid:  321,
-					Ppid: 4321,
+					PID:  321,
+					PPID: 4321,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
@@ -308,43 +308,43 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 			name: "Test 4: 2 master process each with 2 workers",
 			processes: []*model.Process{
 				{
-					Pid:  789,
-					Ppid: 1234,
+					PID:  789,
+					PPID: 1234,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  exePath,
 				},
 				{
-					Pid:  567,
-					Ppid: 1234,
+					PID:  567,
+					PPID: 1234,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  exePath,
 				},
 				{
-					Pid:  1234,
-					Ppid: 1,
+					PID:  1234,
+					PPID: 1,
 					Name: "nginx",
 					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 					Exe:  exePath,
 				},
 				{
-					Pid:  987,
-					Ppid: 5678,
+					PID:  987,
+					PPID: 5678,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
 				},
 				{
-					Pid:  321,
-					Ppid: 5678,
+					PID:  321,
+					PPID: 5678,
 					Name: "nginx",
 					Cmd:  "nginx: worker process",
 					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
 				},
 				{
-					Pid:  5678,
-					Ppid: 1,
+					PID:  5678,
+					PPID: 1,
 					Name: "nginx",
 					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 					Exe:  "/opt/homebrew/etc/nginx/1.25.3/bin/nginx",
