@@ -1541,8 +1541,9 @@ type InstanceRuntime struct {
 	//
 	//	*InstanceRuntime_NginxRuntimeInfo
 	//	*InstanceRuntime_NginxPlusRuntimeInfo
-	Details          isInstanceRuntime_Details `protobuf_oneof:"details"`
-	InstanceChildren []*InstanceChild          `protobuf:"bytes,6,rep,name=instance_children,json=instanceChildren,proto3" json:"instance_children,omitempty"`
+	Details isInstanceRuntime_Details `protobuf_oneof:"details"`
+	// List of worker processes
+	InstanceChildren []*InstanceChild `protobuf:"bytes,6,rep,name=instance_children,json=instanceChildren,proto3" json:"instance_children,omitempty"`
 }
 
 func (x *InstanceRuntime) Reset() {
@@ -1649,6 +1650,7 @@ type InstanceChild struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// the process identifier
 	ProcessId int32 `protobuf:"varint,1,opt,name=process_id,json=processId,proto3" json:"process_id,omitempty"`
 }
 
