@@ -35,7 +35,7 @@ type (
 	}
 
 	processParser interface {
-		Parse(ctx context.Context, processes []*model.Process) []*v1.Instance
+		Parse(ctx context.Context, processes []*model.Process) map[string]*v1.Instance
 	}
 
 	nginxConfigParser interface {
@@ -155,7 +155,10 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	instancesFound := []*v1.Instance{iw.agentInstance(ctx)}
 
 	for _, processParser := range iw.processParsers {
-		instancesFound = append(instancesFound, processParser.Parse(ctx, processes)...)
+		instances := processParser.Parse(ctx, processes)
+		for _, instance := range instances {
+			instancesFound = append(instancesFound, instance)
+		}
 	}
 
 	newInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
