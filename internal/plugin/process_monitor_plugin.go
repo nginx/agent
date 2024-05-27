@@ -137,7 +137,7 @@ func haveProcessesChanged(oldProcesses, newProcesses host.NginxProcesses) bool {
 
 	// Check if the process IDs have changed
 	for _, newProcess := range newProcesses {
-		if _, ok := oldProcesses[newProcess.Pid]; !ok {
+		if _, ok := oldProcesses[newProcess.PID]; !ok {
 			return true
 		}
 	}

@@ -22,15 +22,15 @@ func TestProcess_GetNginxProcesses(t *testing.T) {
 			name: "Test 1: One NGINX Process ",
 			processes: []*model.Process{
 				{
-					Pid:  2,
-					Ppid: 1,
+					PID:  2,
+					PPID: 1,
 					Name: "test",
 					Cmd:  "test -start",
 					Exe:  "/bin/test",
 				},
 				{
-					Pid:  3,
-					Ppid: 1,
+					PID:  3,
+					PPID: 1,
 					Name: "nginx",
 					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 					Exe:  "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
@@ -38,8 +38,8 @@ func TestProcess_GetNginxProcesses(t *testing.T) {
 			},
 			expected: NginxProcesses{
 				3: &model.Process{
-					Pid:  3,
-					Ppid: 1,
+					PID:  3,
+					PPID: 1,
 					Name: "nginx",
 					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 					Exe:  "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
@@ -50,8 +50,8 @@ func TestProcess_GetNginxProcesses(t *testing.T) {
 			name: "Test 2: No NGINX Process ",
 			processes: []*model.Process{
 				{
-					Pid:  2,
-					Ppid: 1,
+					PID:  2,
+					PPID: 1,
 					Name: "test",
 					Cmd:  "test -start",
 					Exe:  "/bin/test",
@@ -63,8 +63,8 @@ func TestProcess_GetNginxProcesses(t *testing.T) {
 			name: "Test 3: Upgrade NGINX Process ",
 			processes: []*model.Process{
 				{
-					Pid:  2,
-					Ppid: 1,
+					PID:  2,
+					PPID: 1,
 					Name: "nginx",
 					Cmd:  "nginx: upgrade",
 					Exe:  "/usr/local/Cellar/nginx/1.23.3/bin/nginx",
@@ -77,8 +77,8 @@ func TestProcess_GetNginxProcesses(t *testing.T) {
 			name: "Test 4: Non NGINX Process ",
 			processes: []*model.Process{
 				{
-					Pid:  2,
-					Ppid: 1,
+					PID:  2,
+					PPID: 1,
 					Name: "nginx",
 					Cmd:  "/usr/sbin/nginx-asg-sync -log_path=/var/log/nginx-asg-sync/nginx-asg-sync.log",
 					Exe:  "",

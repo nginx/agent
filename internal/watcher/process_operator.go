@@ -37,8 +37,8 @@ func (pw *ProcessOperator) Processes(ctx context.Context) ([]*model.Process, err
 		exe, _ := proc.ExeWithContext(ctx)
 
 		internalProcesses = append(internalProcesses, &model.Process{
-			Pid:  proc.Pid,
-			Ppid: ppid,
+			PID:  proc.Pid,
+			PPID: ppid,
 			Name: name,
 			Cmd:  cmd,
 			Exe:  exe,

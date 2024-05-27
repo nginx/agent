@@ -14,13 +14,13 @@ import (
 	"strings"
 	"testing"
 
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	"github.com/nginx/agent/v3/test/helpers"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/test/protos"
@@ -97,15 +97,15 @@ func TestGetInstances(t *testing.T) {
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 	processes := host.NginxProcesses{
 		789: {
-			Pid:  789,
-			Ppid: 1234,
+			PID:  789,
+			PPID: 1234,
 			Name: "nginx",
 			Cmd:  "nginx: worker process",
 			Exe:  exePath,
 		},
 		1234: {
-			Pid:  1234,
-			Ppid: 1,
+			PID:  1234,
+			PPID: 1,
 			Name: "nginx",
 			Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 			Exe:  exePath,
@@ -122,7 +122,7 @@ func TestGetInstances(t *testing.T) {
 	tests := []struct {
 		name                      string
 		nginxVersionCommandOutput string
-		expected                  []*v1.Instance
+		expected                  []*mpi.Instance
 	}{
 		{
 			name: "Test 1: NGINX open source",
@@ -131,7 +131,7 @@ func TestGetInstances(t *testing.T) {
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
 					configure arguments: %s`, ossArgs),
-			expected: []*v1.Instance{
+			expected: []*mpi.Instance{
 				process1,
 			},
 		},
@@ -143,7 +143,7 @@ func TestGetInstances(t *testing.T) {
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
 				configure arguments: %s`, plusArgs),
-			expected: []*v1.Instance{
+			expected: []*mpi.Instance{
 				process2,
 			},
 		},
@@ -154,7 +154,7 @@ func TestGetInstances(t *testing.T) {
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
 					configure arguments: %s`, noModuleArgs),
-			expected: []*v1.Instance{
+			expected: []*mpi.Instance{
 				process3,
 			},
 		},
