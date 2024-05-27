@@ -54,6 +54,7 @@ type (
 
 	InstanceUpdates struct {
 		newInstances     []*v1.Instance
+		updatedInstances []*v1.Instance
 		deletedInstances []*v1.Instance
 	}
 
@@ -161,9 +162,10 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 		}
 	}
 
-	newInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
+	newInstances, updatedInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
 
 	instanceUpdates.newInstances = newInstances
+	instanceUpdates.updatedInstances = updatedInstances
 	instanceUpdates.deletedInstances = deletedInstances
 
 	iw.instanceCache = instancesFound
@@ -206,33 +208,57 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *v1.Instanc
 	}
 }
 
-func compareInstances(oldInstances, instances []*v1.Instance) (newInstances, deletedInstances []*v1.Instance) {
-	instancesMap := make(map[int32]*v1.Instance)
-	oldInstancesMap := make(map[int32]*v1.Instance)
+func compareInstances(oldInstances, instances []*v1.Instance) (
+	newInstances, updatedInstances, deletedInstances []*v1.Instance,
+) {
+	instancesMap := make(map[string]*v1.Instance)
+	oldInstancesMap := make(map[string]*v1.Instance)
+	updatedInstancesMap := make(map[string]*v1.Instance)
+	updatedOldInstancesMap := make(map[string]*v1.Instance)
 
 	for _, instance := range instances {
-		instancesMap[instance.GetInstanceRuntime().GetProcessId()] = instance
+		instancesMap[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 
 	for _, oldInstance := range oldInstances {
-		oldInstancesMap[oldInstance.GetInstanceRuntime().GetProcessId()] = oldInstance
+		oldInstancesMap[oldInstance.GetInstanceMeta().GetInstanceId()] = oldInstance
 	}
 
-	for pid, instance := range instancesMap {
-		_, ok := oldInstancesMap[pid]
+	for instanceID, instance := range instancesMap {
+		_, ok := oldInstancesMap[instanceID]
 		if !ok {
 			newInstances = append(newInstances, instance)
+		} else {
+			updatedInstancesMap[instanceID] = instance
 		}
 	}
 
-	for pid, oldInstance := range oldInstancesMap {
-		_, ok := instancesMap[pid]
+	for instanceID, oldInstance := range oldInstancesMap {
+		_, ok := instancesMap[instanceID]
 		if !ok {
 			deletedInstances = append(deletedInstances, oldInstance)
+		} else {
+			updatedOldInstancesMap[instanceID] = oldInstance
 		}
 	}
 
-	return newInstances, deletedInstances
+	updatedInstances = checkForProcessChanges(updatedInstancesMap, updatedOldInstancesMap)
+
+	return newInstances, updatedInstances, deletedInstances
+}
+
+func checkForProcessChanges(
+	updatedInstancesMap map[string]*v1.Instance,
+	updatedOldInstancesMap map[string]*v1.Instance,
+) (updatedInstances []*v1.Instance) {
+	for instanceID, instance := range updatedInstancesMap {
+		oldInstance := updatedOldInstancesMap[instanceID]
+		if oldInstance.GetInstanceRuntime().GetProcessId() != instance.GetInstanceRuntime().GetProcessId() {
+			updatedInstances = append(updatedInstances, instance)
+		}
+	}
+
+	return updatedInstances
 }
 
 func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
