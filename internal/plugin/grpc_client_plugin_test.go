@@ -154,29 +154,59 @@ func TestGrpcClient_Process(t *testing.T) {
 	client.messagePipe = &bus.FakeMessagePipe{}
 	assert.NotNil(t, client)
 
-	fakeCommandServiceClient := &v1fakes.FakeCommandServiceClient{}
-
-	client.commandServiceClient = fakeCommandServiceClient
-
-	// ResourceTopic
-	mockMessage := &bus.Message{
-		Topic: bus.ResourceUpdateTopic,
-		Data:  expected,
+	tests := []struct {
+		name                           string
+		message                        *bus.Message
+		updateDataPlaneStatusCallCount int
+		updateDataPlaneHealthCallCount int
+	}{
+		{
+			name: "Test 1: ResourceTopic",
+			message: &bus.Message{
+				Topic: bus.ResourceUpdateTopic,
+				Data:  expected,
+			},
+			updateDataPlaneStatusCallCount: 1,
+			updateDataPlaneHealthCallCount: 0,
+		}, {
+			name: "Test 2: InstanceHealthTopic",
+			message: &bus.Message{
+				Topic: bus.InstanceHealthTopic,
+				Data:  protos.GetInstanceHealths(),
+			},
+			updateDataPlaneStatusCallCount: 0,
+			updateDataPlaneHealthCallCount: 1,
+		}, {
+			name: "Test 3: UnknownTopic",
+			message: &bus.Message{
+				Topic: "unknown",
+				Data:  nil,
+			},
+			updateDataPlaneStatusCallCount: 0,
+			updateDataPlaneHealthCallCount: 0,
+		},
 	}
-	client.Process(ctx, mockMessage)
 
-	assert.True(t, client.isConnected.Load())
-	assert.Equal(t, 1, fakeCommandServiceClient.UpdateDataPlaneStatusCallCount())
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			fakeCommandServiceClient := &v1fakes.FakeCommandServiceClient{}
+			client.commandServiceClient = fakeCommandServiceClient
 
-	// InstanceHealthTopic
-	mockMessage = &bus.Message{
-		Topic: bus.InstanceHealthTopic,
-		Data:  protos.GetInstanceHealths(),
+			client.Process(ctx, test.message)
+
+			assert.True(t, client.isConnected.Load())
+			assert.Equal(
+				t,
+				test.updateDataPlaneStatusCallCount,
+				fakeCommandServiceClient.UpdateDataPlaneStatusCallCount(),
+			)
+			assert.Equal(
+				t,
+				test.updateDataPlaneHealthCallCount,
+				fakeCommandServiceClient.UpdateDataPlaneHealthCallCount(),
+			)
+		})
 	}
-	client.Process(ctx, mockMessage)
-
-	assert.True(t, client.isConnected.Load())
-	assert.Equal(t, 1, fakeCommandServiceClient.UpdateDataPlaneHealthCallCount())
 }
 
 func TestGrpcClient_sendDataPlaneHealthUpdate(t *testing.T) {
