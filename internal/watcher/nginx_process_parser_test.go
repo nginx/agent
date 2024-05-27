@@ -16,7 +16,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/test/helpers"
@@ -120,7 +120,7 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 	tests := []struct {
 		name                      string
 		nginxVersionCommandOutput string
-		expected                  map[string]*v1.Instance
+		expected                  map[string]*mpi.Instance
 	}{
 		{
 			name: "Test 1: NGINX open source",
@@ -129,7 +129,7 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
 					configure arguments: %s`, ossArgs),
-			expected: map[string]*v1.Instance{
+			expected: map[string]*mpi.Instance{
 				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.GetNginxOssInstance(
 					[]string{expectedModules}),
 			},
@@ -142,7 +142,7 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
 				configure arguments: %s`, plusArgs),
-			expected: map[string]*v1.Instance{
+			expected: map[string]*mpi.Instance{
 				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.GetNginxPlusInstance(
 					[]string{expectedModules}),
 			},
@@ -154,7 +154,7 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
 					configure arguments: %s`, noModuleArgs),
-			expected: map[string]*v1.Instance{
+			expected: map[string]*mpi.Instance{
 				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
 					GetNginxOssInstance(nil),
 			},
@@ -203,24 +203,24 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 					configure arguments: %s`, configArgs)
 
 	process1 := protos.GetNginxOssInstance(nil)
-	instancesTest1 := map[string]*v1.Instance{
+	instancesTest1 := map[string]*mpi.Instance{
 		process1.GetInstanceMeta().GetInstanceId(): process1,
 	}
 
 	noChildrenInstance := protos.GetNginxOssInstance(nil)
 	noChildrenInstance.GetInstanceRuntime().InstanceChildren = nil
-	instancesTest2 := map[string]*v1.Instance{
+	instancesTest2 := map[string]*mpi.Instance{
 		noChildrenInstance.GetInstanceMeta().GetInstanceId(): noChildrenInstance,
 	}
 
 	noParentInstanceList := protos.GetInstancesNoParentProcess(nil)
-	instancesTest3 := map[string]*v1.Instance{
+	instancesTest3 := map[string]*mpi.Instance{
 		noParentInstanceList[0].GetInstanceMeta().GetInstanceId(): noParentInstanceList[0],
 		noParentInstanceList[1].GetInstanceMeta().GetInstanceId(): noParentInstanceList[1],
 	}
 
 	instancesList := protos.GetMultipleInstances(nil)
-	instancesTest4 := map[string]*v1.Instance{
+	instancesTest4 := map[string]*mpi.Instance{
 		instancesList[0].GetInstanceMeta().GetInstanceId(): instancesList[0],
 		instancesList[1].GetInstanceMeta().GetInstanceId(): instancesList[1],
 	}
@@ -228,7 +228,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 	tests := []struct {
 		name      string
 		processes []*model.Process
-		expected  map[string]*v1.Instance
+		expected  map[string]*mpi.Instance
 	}{
 		{
 			name: "Test 1: 1 master process, 2 workers",

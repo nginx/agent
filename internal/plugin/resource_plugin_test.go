@@ -11,7 +11,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/datasource/host"
 
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/service/servicefakes"
@@ -77,7 +77,7 @@ func TestResource_Instances_Process(t *testing.T) {
 	tests := []struct {
 		name             string
 		processesMessage *bus.Message
-		resource         *v1.Resource
+		resource         *mpi.Resource
 		topic            string
 	}{
 		{
@@ -149,7 +149,7 @@ func TestResource_Process_Error_Expected(t *testing.T) {
 
 func TestResource_Process_Empty_Instances(t *testing.T) {
 	ctx := context.Background()
-	testInstances := []*v1.Instance{}
+	testInstances := []*mpi.Instance{}
 	testResource := protos.GetHostResource()
 
 	fakeInstanceService := &servicefakes.FakeInstanceServiceInterface{}
@@ -211,7 +211,7 @@ func TestResource_Instances_updateInstance(t *testing.T) {
 	tests := []struct {
 		name               string
 		nginxConfigContext *model.NginxConfigContext
-		instance           *v1.Instance
+		instance           *mpi.Instance
 	}{
 		{
 			name:               "Test 1: OSS Instance",

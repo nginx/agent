@@ -18,7 +18,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/datasource/host"
 
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	process "github.com/nginx/agent/v3/internal/datasource/nginx"
 	"github.com/nginx/agent/v3/internal/model"
@@ -61,8 +61,8 @@ func NewNginx(parameters NginxParameters) *Nginx {
 	}
 }
 
-func (n *Nginx) GetInstances(ctx context.Context, nginxProcesses host.NginxProcesses) []*v1.Instance {
-	var processList []*v1.Instance
+func (n *Nginx) GetInstances(ctx context.Context, nginxProcesses host.NginxProcesses) []*mpi.Instance {
+	var processList []*mpi.Instance
 
 	for _, nginxProcess := range nginxProcesses {
 		_, ok := nginxProcesses[nginxProcess.PPID]
@@ -111,18 +111,18 @@ func (n *Nginx) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info
 	return nginxInfo, err
 }
 
-func convertInfoToProcess(nginxInfo Info) *v1.Instance {
-	var instanceRuntime *v1.InstanceRuntime
-	nginxType := v1.InstanceMeta_INSTANCE_TYPE_NGINX
+func convertInfoToProcess(nginxInfo Info) *mpi.Instance {
+	var instanceRuntime *mpi.InstanceRuntime
+	nginxType := mpi.InstanceMeta_INSTANCE_TYPE_NGINX
 	version := nginxInfo.Version
 
 	if !strings.Contains(nginxInfo.Version, "plus") {
-		instanceRuntime = &v1.InstanceRuntime{
+		instanceRuntime = &mpi.InstanceRuntime{
 			ProcessId:  nginxInfo.ProcessID,
 			BinaryPath: nginxInfo.ExePath,
 			ConfigPath: nginxInfo.ConfPath,
-			Details: &v1.InstanceRuntime_NginxRuntimeInfo{
-				NginxRuntimeInfo: &v1.NGINXRuntimeInfo{
+			Details: &mpi.InstanceRuntime_NginxRuntimeInfo{
+				NginxRuntimeInfo: &mpi.NGINXRuntimeInfo{
 					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
@@ -132,12 +132,12 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 			},
 		}
 	} else {
-		instanceRuntime = &v1.InstanceRuntime{
+		instanceRuntime = &mpi.InstanceRuntime{
 			ProcessId:  nginxInfo.ProcessID,
 			BinaryPath: nginxInfo.ExePath,
 			ConfigPath: nginxInfo.ConfPath,
-			Details: &v1.InstanceRuntime_NginxPlusRuntimeInfo{
-				NginxPlusRuntimeInfo: &v1.NGINXPlusRuntimeInfo{
+			Details: &mpi.InstanceRuntime_NginxPlusRuntimeInfo{
+				NginxPlusRuntimeInfo: &mpi.NGINXPlusRuntimeInfo{
 					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
@@ -148,12 +148,12 @@ func convertInfoToProcess(nginxInfo Info) *v1.Instance {
 			},
 		}
 
-		nginxType = v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS
+		nginxType = mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS
 		version = nginxInfo.Version
 	}
 
-	return &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
+	return &mpi.Instance{
+		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   uuid.Generate("%s_%s_%s", nginxInfo.ExePath, nginxInfo.ConfPath, nginxInfo.Prefix),
 			InstanceType: nginxType,
 			Version:      version,
