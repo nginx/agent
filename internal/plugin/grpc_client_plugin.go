@@ -210,7 +210,7 @@ func (gc *GrpcClient) Info() *bus.Info {
 // nolint: revive
 func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	case bus.ResourceTopic:
+	case bus.ResourceUpdateTopic:
 		if resource, ok := msg.Data.(*v1.Resource); ok {
 			err := gc.createConnection(ctx, resource)
 			if err != nil {
@@ -305,7 +305,7 @@ func (gc *GrpcClient) createConnectionRequest(resource *v1.Resource) (*v1.Create
 
 func (gc *GrpcClient) Subscriptions() []string {
 	return []string{
-		bus.ResourceTopic,
+		bus.ResourceUpdateTopic,
 		bus.InstanceHealthTopic,
 	}
 }

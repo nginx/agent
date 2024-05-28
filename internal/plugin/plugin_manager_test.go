@@ -8,6 +8,7 @@ package plugin
 import (
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/metrics/collector"
 	"github.com/nginx/agent/v3/internal/resource"
 
 	"github.com/nginx/agent/v3/internal/bus"
@@ -23,29 +24,41 @@ func TestLoadPLugins(t *testing.T) {
 		expected []bus.Plugin
 	}{
 		{
-			name: "Test 1: Only process manager plugin enabled",
-			input: &config.Config{
-				ProcessMonitor: &config.ProcessMonitor{
-					MonitoringFrequency: 500,
-				},
-			},
+			name:  "Test 1: Load plugins",
+			input: &config.Config{},
 			expected: []bus.Plugin{
-				&ProcessMonitor{},
-				&Resource{},
 				&resource.Resource{},
 				&Config{},
 				&watcher.Watcher{},
 			},
 		}, {
-			name: "Test 2: Metrics plugin enabled",
+			name: "Test 2: Load grpc client plugin",
 			input: &config.Config{
-				Metrics: &config.Metrics{},
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: 443,
+						Type: "grpc",
+					},
+				},
 			},
 			expected: []bus.Plugin{
-				&Resource{},
 				&resource.Resource{},
-				&Metrics{},
 				&Config{},
+				&GrpcClient{},
+				&watcher.Watcher{},
+			},
+		}, {
+			name: "Test 3: Load metrics collector plugin",
+			input: &config.Config{
+				Metrics: &config.Metrics{
+					Collector: true,
+				},
+			},
+			expected: []bus.Plugin{
+				&resource.Resource{},
+				&Config{},
+				&collector.Collector{},
 				&watcher.Watcher{},
 			},
 		},

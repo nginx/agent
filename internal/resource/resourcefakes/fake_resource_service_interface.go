@@ -2,7 +2,6 @@
 package resourcefakes
 
 import (
-	"context"
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -29,17 +28,6 @@ type FakeResourceServiceInterface struct {
 		result1 *v1.Resource
 	}
 	deleteInstancesReturnsOnCall map[int]struct {
-		result1 *v1.Resource
-	}
-	GetResourceStub        func(context.Context) *v1.Resource
-	getResourceMutex       sync.RWMutex
-	getResourceArgsForCall []struct {
-		arg1 context.Context
-	}
-	getResourceReturns struct {
-		result1 *v1.Resource
-	}
-	getResourceReturnsOnCall map[int]struct {
 		result1 *v1.Resource
 	}
 	UpdateInstancesStub        func([]*v1.Instance) *v1.Resource
@@ -189,67 +177,6 @@ func (fake *FakeResourceServiceInterface) DeleteInstancesReturnsOnCall(i int, re
 	}{result1}
 }
 
-func (fake *FakeResourceServiceInterface) GetResource(arg1 context.Context) *v1.Resource {
-	fake.getResourceMutex.Lock()
-	ret, specificReturn := fake.getResourceReturnsOnCall[len(fake.getResourceArgsForCall)]
-	fake.getResourceArgsForCall = append(fake.getResourceArgsForCall, struct {
-		arg1 context.Context
-	}{arg1})
-	stub := fake.GetResourceStub
-	fakeReturns := fake.getResourceReturns
-	fake.recordInvocation("GetResource", []interface{}{arg1})
-	fake.getResourceMutex.Unlock()
-	if stub != nil {
-		return stub(arg1)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakeResourceServiceInterface) GetResourceCallCount() int {
-	fake.getResourceMutex.RLock()
-	defer fake.getResourceMutex.RUnlock()
-	return len(fake.getResourceArgsForCall)
-}
-
-func (fake *FakeResourceServiceInterface) GetResourceCalls(stub func(context.Context) *v1.Resource) {
-	fake.getResourceMutex.Lock()
-	defer fake.getResourceMutex.Unlock()
-	fake.GetResourceStub = stub
-}
-
-func (fake *FakeResourceServiceInterface) GetResourceArgsForCall(i int) context.Context {
-	fake.getResourceMutex.RLock()
-	defer fake.getResourceMutex.RUnlock()
-	argsForCall := fake.getResourceArgsForCall[i]
-	return argsForCall.arg1
-}
-
-func (fake *FakeResourceServiceInterface) GetResourceReturns(result1 *v1.Resource) {
-	fake.getResourceMutex.Lock()
-	defer fake.getResourceMutex.Unlock()
-	fake.GetResourceStub = nil
-	fake.getResourceReturns = struct {
-		result1 *v1.Resource
-	}{result1}
-}
-
-func (fake *FakeResourceServiceInterface) GetResourceReturnsOnCall(i int, result1 *v1.Resource) {
-	fake.getResourceMutex.Lock()
-	defer fake.getResourceMutex.Unlock()
-	fake.GetResourceStub = nil
-	if fake.getResourceReturnsOnCall == nil {
-		fake.getResourceReturnsOnCall = make(map[int]struct {
-			result1 *v1.Resource
-		})
-	}
-	fake.getResourceReturnsOnCall[i] = struct {
-		result1 *v1.Resource
-	}{result1}
-}
-
 func (fake *FakeResourceServiceInterface) UpdateInstances(arg1 []*v1.Instance) *v1.Resource {
 	var arg1Copy []*v1.Instance
 	if arg1 != nil {
@@ -323,8 +250,6 @@ func (fake *FakeResourceServiceInterface) Invocations() map[string][][]interface
 	defer fake.addInstancesMutex.RUnlock()
 	fake.deleteInstancesMutex.RLock()
 	defer fake.deleteInstancesMutex.RUnlock()
-	fake.getResourceMutex.RLock()
-	defer fake.getResourceMutex.RUnlock()
 	fake.updateInstancesMutex.RLock()
 	defer fake.updateInstancesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

@@ -49,29 +49,11 @@ func TestGetConfig(t *testing.T) {
 	assert.Equal(t, 30*time.Second, result.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	assert.False(t, result.DataPlaneConfig.Nginx.TreatWarningsAsError)
 
-	assert.Equal(t, 30*time.Second, result.ProcessMonitor.MonitoringFrequency)
 	assert.Equal(t, 10*time.Second, result.Client.Timeout)
 
 	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:invalid/path", result.ConfigDir)
 
 	assert.Equal(t, allowedDir, result.AllowedDirectories)
-
-	assert.NotNil(t, result.Metrics)
-	assert.Equal(t, 20*time.Second, result.Metrics.ProduceInterval)
-	assert.NotNil(t, result.Metrics.OTelExporter)
-	assert.NotNil(t, result.Metrics.OTelExporter.GRPC)
-	assert.NotNil(t, result.Metrics.PrometheusSource)
-	// OTel exporter settings
-	assert.Equal(t, 20, result.Metrics.OTelExporter.BufferLength)
-	assert.Equal(t, 3, result.Metrics.OTelExporter.ExportRetryCount)
-	assert.Equal(t, 20*time.Second, result.Metrics.OTelExporter.ExportInterval)
-	// gRPC settings
-	assert.Equal(t, "http://localhost:4317", result.Metrics.OTelExporter.GRPC.Target)
-	assert.Equal(t, 10*time.Second, result.Metrics.OTelExporter.GRPC.ConnTimeout)
-	assert.Equal(t, 5*time.Second, result.Metrics.OTelExporter.GRPC.MinConnTimeout)
-	assert.Equal(t, 240*time.Second, result.Metrics.OTelExporter.GRPC.BackoffDelay)
-	// Prometheus source settings
-	assert.Equal(t, []string{"http://localhost:9090"}, result.Metrics.PrometheusSource.Endpoints)
 }
 
 func TestSetVersion(t *testing.T) {
@@ -93,7 +75,6 @@ func TestRegisterFlags(t *testing.T) {
 
 	assert.Equal(t, "warn", viperInstance.GetString(LogLevelKey))
 	assert.Equal(t, "/var/log/test/agent.log", viperInstance.GetString(LogPathKey))
-	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyKey))
 	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutKey))
 }
 
@@ -128,26 +109,7 @@ func TestLoadPropertiesFromFile(t *testing.T) {
 	assert.Equal(t, "debug", viperInstance.GetString(LogLevelKey))
 	assert.Equal(t, "./", viperInstance.GetString(LogPathKey))
 
-	assert.Equal(t, 30*time.Second, viperInstance.GetDuration(ProcessMonitorMonitoringFrequencyKey))
-
 	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutKey))
-
-	assert.True(t, viperInstance.IsSet(MetricsRootKey))
-	assert.True(t, viperInstance.IsSet(MetricsOTelExporterKey))
-	assert.True(t, viperInstance.IsSet(OTelGRPCKey))
-	assert.True(t, viperInstance.IsSet(PrometheusSrcKey))
-	assert.Equal(t, 20*time.Second, viperInstance.GetDuration(MetricsProduceIntervalKey))
-	// OTel exporter settings
-	assert.Equal(t, 20, viperInstance.GetInt(OTelExporterBufferLengthKey))
-	assert.Equal(t, 3, viperInstance.GetInt(OTelExporterExportRetryCountKey))
-	assert.Equal(t, 20*time.Second, viperInstance.GetDuration(OTelExporterExportIntervalKey))
-	// gRPC settings
-	assert.Equal(t, "http://localhost:4317", viperInstance.GetString(OTelGRPCTargetKey))
-	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(OTelGRPCConnTimeoutKey))
-	assert.Equal(t, 5*time.Second, viperInstance.GetDuration(OTelGRPCMinConnTimeoutKey))
-	assert.Equal(t, 240*time.Second, viperInstance.GetDuration(OTelGRPCBackoffDelayKey))
-	// Prometheus source settings
-	assert.Equal(t, []string{"http://localhost:9090"}, viperInstance.GetStringSlice(PrometheusTargetsKey))
 
 	err = loadPropertiesFromFile("./testdata/unknown.conf")
 	require.Error(t, err)
@@ -170,14 +132,6 @@ func TestGetLog(t *testing.T) {
 	assert.Equal(t, "/var/log/test/test.log", result.Path)
 }
 
-func TestGetProcessMonitor(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	viperInstance.Set(ProcessMonitorMonitoringFrequencyKey, time.Hour)
-
-	result := getProcessMonitor()
-	assert.Equal(t, time.Hour, result.MonitoringFrequency)
-}
-
 func TestGetClient(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(ClientTimeoutKey, time.Hour)
@@ -192,74 +146,6 @@ func TestGetAllowedDirectories(t *testing.T) {
 
 	result := getConfigDir()
 	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules", result)
-}
-
-func TestMetrics(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	expected := Metrics{
-		ProduceInterval: 5 * time.Second,
-		OTelExporter: &OTelExporter{
-			BufferLength:     55,
-			ExportRetryCount: 10,
-			ExportInterval:   30 * time.Second,
-			GRPC: &GRPC{
-				Target:         "dummy-target",
-				ConnTimeout:    15 * time.Second,
-				MinConnTimeout: 500 * time.Millisecond,
-				BackoffDelay:   1 * time.Hour,
-			},
-		},
-		PrometheusSource: &PrometheusSource{
-			Endpoints: []string{
-				"https://example.com",
-				"https://acme.com",
-			},
-		},
-	}
-	viperInstance.Set(MetricsProduceIntervalKey, expected.ProduceInterval)
-	// OTel Exporter
-	viperInstance.Set(OTelExporterBufferLengthKey, expected.OTelExporter.BufferLength)
-	viperInstance.Set(OTelExporterExportRetryCountKey, expected.OTelExporter.ExportRetryCount)
-	viperInstance.Set(OTelExporterExportIntervalKey, expected.OTelExporter.ExportInterval)
-	// OTel gRPC conf
-	viperInstance.Set(OTelGRPCTargetKey, expected.OTelExporter.GRPC.Target)
-	viperInstance.Set(OTelGRPCConnTimeoutKey, expected.OTelExporter.GRPC.ConnTimeout)
-	viperInstance.Set(OTelGRPCMinConnTimeoutKey, expected.OTelExporter.GRPC.MinConnTimeout)
-	viperInstance.Set(OTelGRPCBackoffDelayKey, expected.OTelExporter.GRPC.BackoffDelay)
-	// Prometheus endpoint
-	viperInstance.Set(PrometheusTargetsKey, expected.PrometheusSource.Endpoints)
-
-	assert.True(t, viperInstance.IsSet(MetricsRootKey))
-	assert.True(t, viperInstance.IsSet(MetricsOTelExporterKey))
-	assert.True(t, viperInstance.IsSet(OTelGRPCKey))
-	assert.True(t, viperInstance.IsSet(PrometheusSrcKey))
-
-	result := getMetrics()
-	assert.Equal(t, expected.ProduceInterval, result.ProduceInterval)
-	assert.Equal(t, expected.PrometheusSource, result.PrometheusSource)
-	assert.Equal(t, expected.OTelExporter, result.OTelExporter)
-}
-
-func TestMissingOTelExporter(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-
-	expInterval := 5 * time.Second
-	expPrometheusEndpoints := []string{
-		"https://example.com",
-		"https://acme.com",
-	}
-	viperInstance.Set(MetricsProduceIntervalKey, expInterval)
-	viperInstance.Set(PrometheusTargetsKey, expPrometheusEndpoints)
-
-	assert.True(t, viperInstance.IsSet(MetricsRootKey))
-	assert.False(t, viperInstance.IsSet(MetricsOTelExporterKey))
-	assert.False(t, viperInstance.IsSet(OTelGRPCKey))
-	assert.True(t, viperInstance.IsSet(PrometheusSrcKey))
-
-	result := getMetrics()
-	assert.Equal(t, expInterval, result.ProduceInterval)
-	assert.Nil(t, result.OTelExporter)
-	assert.Equal(t, expPrometheusEndpoints, result.PrometheusSource.Endpoints)
 }
 
 func TestCommand(t *testing.T) {
@@ -322,34 +208,12 @@ func getAgentConfig() *Config {
 		Version: "",
 		Path:    "",
 		Log:     &Log{},
-		ProcessMonitor: &ProcessMonitor{
-			MonitoringFrequency: time.Millisecond,
-		},
 		Client: &Client{
 			Timeout: 5 * time.Second,
 		},
 		ConfigDir:          "",
 		AllowedDirectories: []string{},
-		Metrics: &Metrics{
-			ProduceInterval: 5 * time.Second,
-			OTelExporter: &OTelExporter{
-				BufferLength:     55,
-				ExportRetryCount: 10,
-				ExportInterval:   30 * time.Second,
-				GRPC: &GRPC{
-					Target:         "dummy-target",
-					ConnTimeout:    15 * time.Second,
-					MinConnTimeout: 500 * time.Millisecond,
-					BackoffDelay:   1 * time.Hour,
-				},
-			},
-			PrometheusSource: &PrometheusSource{
-				Endpoints: []string{
-					"https://example.com",
-					"https://acme.com",
-				},
-			},
-		},
+		Metrics:            &Metrics{},
 		Command: &Command{
 			Server: &ServerConfig{
 				Host: "127.0.0.1",
