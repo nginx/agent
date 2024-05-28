@@ -44,6 +44,9 @@ func TestWatcher_Init(t *testing.T) {
 			newInstances: []*v1.Instance{
 				protos.GetNginxOssInstance([]string{}),
 			},
+			updatedInstances: []*v1.Instance{
+				protos.GetNginxOssInstance([]string{}),
+			},
 			deletedInstances: []*v1.Instance{
 				protos.GetNginxPlusInstance([]string{}),
 			},
@@ -58,7 +61,7 @@ func TestWatcher_Init(t *testing.T) {
 	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
 	watcherPlugin.nginxConfigContextChannel <- nginxConfigContextMessage
 
-	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 3 }, 2*time.Second, 10*time.Millisecond)
+	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 4 }, 2*time.Second, 10*time.Millisecond)
 	messages = messagePipe.GetMessages()
 
 	assert.Equal(
@@ -68,13 +71,18 @@ func TestWatcher_Init(t *testing.T) {
 	)
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.DeletedInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.deletedInstances},
+		&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.updatedInstances},
 		messages[1],
 	)
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.NginxConfigContextTopic, Data: nginxConfigContextMessage.nginxConfigContext},
+		&bus.Message{Topic: bus.DeletedInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.deletedInstances},
 		messages[2],
+	)
+	assert.Equal(
+		t,
+		&bus.Message{Topic: bus.NginxConfigContextTopic, Data: nginxConfigContextMessage.nginxConfigContext},
+		messages[3],
 	)
 }
 
