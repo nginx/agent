@@ -249,6 +249,10 @@ This section displays the configurable options for NGINX Agent that can be set w
 | *NMS_TLS_ENABLE*                     | *--tls-enable*                           |
 | *NMS_TLS_KEY*                        | *--tls-key*                              |
 | *NMS_TLS_SKIP_VERIFY*                | *--tls-skip-verify*                      |
+| *NMS_API_HOST*                       | *--api-host*                             |
+| *NMS_API_PORT*                       | *--api-port*                             |
+| *NMS_API_KEY*                        | *--api-key*                              |
+| *NMS_API_CERT*                       | *--api-cert*                             |
 
 {{</bootstrap-table>}}
 
