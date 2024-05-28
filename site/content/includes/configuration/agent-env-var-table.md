@@ -6,6 +6,10 @@ docs:
 
 | Environment variable                 | Description                              |
 | ------------------------------------ | ---------------------------------------- |
+| *NMS_API_CERT*                       | The cert used by the Agent API. |
+| *NMS_API_HOST*                       | The host used by the Agent API. (default "127.0.0.1") |
+| *NMS_API_KEY*                        | The key used by the Agent API. |
+| *NMS_API_PORT*                       | The desired port to use for nginx-agent to expose for HTTP traffic. |
 | *NMS_CONFIG_DIRS*                    | Defines the paths that you want to grant nginx-agent read/write access to. This key is formatted as a string and follows Unix PATH format. (default "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms") |
 | *NMS_DATAPLANE_REPORT_INTERVAL*      | The amount of time the agent will report on the dataplane. After this period of time it will send a snapshot of the dataplane information. (default 24h0m0s) |
 | *NMS_DATAPLANE_STATUS_POLL_INTERVAL* | The frequency the agent will check the dataplane for changes. Used as a "heartbeat" to keep the gRPC connections alive. (default 30s) |
