@@ -75,6 +75,7 @@ type RootHandler struct {
 	isGrpcRegistered     bool
 	lastCommandSent      time.Time
 	lastMetricReportSent time.Time
+	startTime            time.Time
 }
 
 type NginxHandler struct {
@@ -252,9 +253,9 @@ func (a *AgentAPI) Subscriptions() []string {
 
 func (a *AgentAPI) createHttpServer() {
 	a.rootHandler = &RootHandler{
-		config:               a.config,
-		isGrpcRegistered:     false,
-		lastMetricReportSent: time.Now(),
+		config:           a.config,
+		isGrpcRegistered: false,
+		startTime:        time.Now(),
 	}
 
 	a.nginxHandler = &NginxHandler{
@@ -686,17 +687,19 @@ func (rh *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 	w.WriteHeader(http.StatusOK)
 
-	overallStatus := okStatus
+	overallStatus := pendingStatus
 	checks := []HealthStatusCheck{}
 
-	registrationStatus := okStatus
-	commandServiceStatus := okStatus
-	metricsServiceStatus := okStatus
+	registrationStatus := pendingStatus
+	commandServiceStatus := pendingStatus
+	metricsServiceStatus := pendingStatus
 
 	if rh.config.IsGrpcServerConfigured() {
 		if !rh.isGrpcRegistered {
 			registrationStatus = errorStatus
 			overallStatus = errorStatus
+		} else {
+			registrationStatus = okStatus
 		}
 
 		checks = append(checks, HealthStatusCheck{
@@ -705,10 +708,18 @@ func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 		})
 
 		timeNow := time.Now()
+		startTimeDiff := timeNow.Sub(rh.startTime)
 
-		lastCommandSentDiff := timeNow.Sub(rh.lastCommandSent)
+		if !rh.lastCommandSent.IsZero() {
+			lastCommandSentDiff := timeNow.Sub(rh.lastCommandSent)
 
-		if lastCommandSentDiff > (2 * rh.config.Dataplane.Status.PollInterval) {
+			if lastCommandSentDiff > (2 * rh.config.Dataplane.Status.PollInterval) {
+				commandServiceStatus = errorStatus
+				overallStatus = errorStatus
+			} else {
+				commandServiceStatus = okStatus
+			}
+		} else if startTimeDiff > (2 * rh.config.Dataplane.Status.PollInterval) {
 			commandServiceStatus = errorStatus
 			overallStatus = errorStatus
 		}
@@ -719,9 +730,16 @@ func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 		})
 
 		if rh.config.IsFeatureEnabled(agent_config.FeatureMetrics) || rh.config.IsFeatureEnabled(agent_config.FeatureMetricsSender) {
-			lastMetricReportSentDiff := timeNow.Sub(rh.lastMetricReportSent)
+			if !rh.lastMetricReportSent.IsZero() {
+				lastMetricReportSentDiff := timeNow.Sub(rh.lastMetricReportSent)
 
-			if lastMetricReportSentDiff > (2 * rh.config.AgentMetrics.ReportInterval) {
+				if lastMetricReportSentDiff > (2 * rh.config.AgentMetrics.ReportInterval) {
+					metricsServiceStatus = errorStatus
+					overallStatus = errorStatus
+				} else {
+					metricsServiceStatus = okStatus
+				}
+			} else if startTimeDiff > (2 * rh.config.AgentMetrics.ReportInterval) {
 				metricsServiceStatus = errorStatus
 				overallStatus = errorStatus
 			}
@@ -731,6 +749,10 @@ func (rh *RootHandler) healthCheck(w http.ResponseWriter) error {
 				Status: metricsServiceStatus,
 			})
 		}
+	}
+
+	if registrationStatus == okStatus && commandServiceStatus == okStatus && metricsServiceStatus == okStatus {
+		overallStatus = okStatus
 	}
 
 	healthResponse := &HealthResponse{

@@ -617,12 +617,116 @@ func TestRootHandler_healthCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "Test 4: Metrics service connection failed",
+			name: "Test 4: Command service connection pending",
+			rootHandler: &RootHandler{
+				config:               agentConfig,
+				isGrpcRegistered:     true,
+				lastMetricReportSent: time.Now(),
+				startTime:            time.Now(),
+			},
+			expected: &HealthResponse{
+				Status: pendingStatus,
+				Checks: []HealthStatusCheck{
+					{
+						Name:   registration,
+						Status: okStatus,
+					},
+					{
+						Name:   commandConnection,
+						Status: pendingStatus,
+					},
+					{
+						Name:   metricsConnection,
+						Status: okStatus,
+					},
+				},
+			},
+		},
+		{
+			name: "Test 5: Command service never connected",
+			rootHandler: &RootHandler{
+				config:               agentConfig,
+				isGrpcRegistered:     true,
+				lastMetricReportSent: time.Now(),
+				startTime:            time.Now().AddDate(0, 0, -1),
+			},
+			expected: &HealthResponse{
+				Status: errorStatus,
+				Checks: []HealthStatusCheck{
+					{
+						Name:   registration,
+						Status: okStatus,
+					},
+					{
+						Name:   commandConnection,
+						Status: errorStatus,
+					},
+					{
+						Name:   metricsConnection,
+						Status: okStatus,
+					},
+				},
+			},
+		},
+		{
+			name: "Test 6: Metrics service connection failed",
 			rootHandler: &RootHandler{
 				config:               agentConfig,
 				isGrpcRegistered:     true,
 				lastCommandSent:      time.Now(),
 				lastMetricReportSent: time.Now().AddDate(0, 0, -1),
+			},
+			expected: &HealthResponse{
+				Status: errorStatus,
+				Checks: []HealthStatusCheck{
+					{
+						Name:   registration,
+						Status: okStatus,
+					},
+					{
+						Name:   commandConnection,
+						Status: okStatus,
+					},
+					{
+						Name:   metricsConnection,
+						Status: errorStatus,
+					},
+				},
+			},
+		},
+		{
+			name: "Test 7: Metrics service connection pending",
+			rootHandler: &RootHandler{
+				config:           agentConfig,
+				isGrpcRegistered: true,
+				lastCommandSent:  time.Now(),
+				startTime:        time.Now(),
+			},
+			expected: &HealthResponse{
+				Status: pendingStatus,
+				Checks: []HealthStatusCheck{
+					{
+						Name:   registration,
+						Status: okStatus,
+					},
+					{
+						Name:   commandConnection,
+						Status: okStatus,
+					},
+					{
+						Name:   metricsConnection,
+						Status: pendingStatus,
+					},
+				},
+			},
+		},
+		{
+			name: "Test 8: Metrics service never connected",
+			rootHandler: &RootHandler{
+				config:           agentConfig,
+				isGrpcRegistered: true,
+				lastCommandSent:  time.Now(),
+				startTime:        time.Now().AddDate(0, 0, -1),
 			},
 			expected: &HealthResponse{
 				Status: errorStatus,
