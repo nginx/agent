@@ -215,42 +215,9 @@ Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.con
 
 ### NGINX Agent Environment Variables
 
-This section displays the configurable options for NGINX Agent that can be set with environment variables. Each environment variable maps to a CLI flag, [explained above](#nginx-agent-cli-flags-usage).
+This section displays the configurable options for NGINX Agent that can be set with environment variables.
 
-{{<bootstrap-table "table table-striped table-bordered">}}
-
-| Environment variable                 | CLI flag                                 |
-| ------------------------------------ | ---------------------------------------- |
-| *NMS_CONFIG_DIRS*                    | *--config-dirs*                          |
-| *NMS_DATAPLANE_REPORT_INTERVAL*      | *--dataplane-report-interval*            |
-| *NMS_DATAPLANE_STATUS_POLL_INTERVAL* | *--dataplane-status-poll-interval*       |
-| *NMS_DISPLAY_NAME*                   | *--display-name*                         |  
-| *NMS_FEATURES*                       | *--features*                             |
-| *NMS_INSTANCE_GROUP*                 | *--instance-group*                       |
-| *NMS_LOG_LEVEL*                      | *--log-level*                            |
-| *NMS_LOG_PATH*                       | *--log-path*                             |
-| *NMS_PATH*                           | N/A, defines path for `nginx-agent.conf` |
-| *NMS_METRICS_COLLECTION_INTERVAL*    | *--metrics-collection-interval*          |
-| *NMS_METRICS_MODE*                   | *--metrics-mode*                         |
-| *NMS_METRICS_BULK_SIZE*              | *--metrics-bulk-size*                    |
-| *NMS_METRICS_REPORT_INTERVAL*        | *--metrics-report-interval*              |
-| *NMS_NGINX_EXCLUDE_LOGS*             | *--nginx-exclude-log*                    |
-| *NMS_NGINX_SOCKET*                   | *--nginx-socket*                         |
-| *NMS_NGINX_TREAT_WARNINGS_AS_ERRORS* | *--nginx-treat-warnings-as-errors*       |
-| *NMS_QUEUE_SIZE*                     | *--queue-size*                           |
-| *NMS_SERVER_GRPCPORT*                | *--server-grpcport*                      |
-| *NMS_SERVER_HOST*                    | *--server-host*                          |
-| *NMS_SERVER_TOKEN*                   | *--server-token*                         |
-| *NMS_SERVER_COMMAND*                 | *--server-command*                       |
-| *NMS_SERVER_METRICS*                 | *--server-metrics*                       |
-| *NMS_TAGS*                           | *--tags*                                 |
-| *NMS_TLS_CA*                         | *--tls-ca*                               |
-| *NMS_TLS_CERT*                       | *--tls-cert*                             |
-| *NMS_TLS_ENABLE*                     | *--tls-enable*                           |
-| *NMS_TLS_KEY*                        | *--tls-key*                              |
-| *NMS_TLS_SKIP_VERIFY*                | *--tls-skip-verify*                      |
-
-{{</bootstrap-table>}}
+{{< include "configuration/agent-env-var-table.md" >}}
 
 ### NGINX Agent Log Rotation
 
