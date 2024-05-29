@@ -41,9 +41,9 @@ type (
 	}
 
 	GrpcConnection struct {
-		config          *config.Config
-		conn            *grpc.ClientConn
-		connectionMutex sync.Mutex
+		config *config.Config
+		conn   *grpc.ClientConn
+		mutex  sync.Mutex
 	}
 
 	wrappedStream struct {
@@ -66,11 +66,11 @@ var (
 
 func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcConnection, error) {
 	if agentConfig == nil || agentConfig.Command.Server.Type != "grpc" {
-		return nil, fmt.Errorf("invalid command server settings")
+		return nil, errors.New("invalid command server settings")
 	}
 
 	if agentConfig.Common == nil {
-		return nil, fmt.Errorf("invalid common configuration settings")
+		return nil, errors.New("invalid common configuration settings")
 	}
 
 	grpcConnection := &GrpcConnection{
@@ -88,9 +88,9 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcCo
 	resourceID := info.ResourceID(ctx)
 
 	var err error
-	grpcConnection.connectionMutex.Lock()
+	grpcConnection.mutex.Lock()
 	grpcConnection.conn, err = grpc.DialContext(ctx, serverAddr, GetDialOptions(agentConfig, resourceID)...)
-	grpcConnection.connectionMutex.Unlock()
+	grpcConnection.mutex.Unlock()
 	if err != nil {
 		return nil, err
 	}
@@ -100,16 +100,16 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcCo
 
 // nolint: ireturn
 func (gc *GrpcConnection) CommandServiceClient() mpi.CommandServiceClient {
-	gc.connectionMutex.Lock()
-	defer gc.connectionMutex.Unlock()
+	gc.mutex.Lock()
+	defer gc.mutex.Unlock()
 
 	return mpi.NewCommandServiceClient(gc.conn)
 }
 
 // nolint: ireturn
 func (gc *GrpcConnection) FileServiceClient() mpi.FileServiceClient {
-	gc.connectionMutex.Lock()
-	defer gc.connectionMutex.Unlock()
+	gc.mutex.Lock()
+	defer gc.mutex.Unlock()
 
 	return mpi.NewFileServiceClient(gc.conn)
 }
@@ -117,8 +117,8 @@ func (gc *GrpcConnection) FileServiceClient() mpi.FileServiceClient {
 func (gc *GrpcConnection) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing grpc connection")
 
-	gc.connectionMutex.Lock()
-	defer gc.connectionMutex.Unlock()
+	gc.mutex.Lock()
+	defer gc.mutex.Unlock()
 
 	if gc.conn != nil {
 		err := gc.conn.Close()
