@@ -9,7 +9,10 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"log/slog"
+	"net"
+	"sync"
 
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 
@@ -17,7 +20,9 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/datasource/host"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
@@ -25,7 +30,28 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// these will come from the agent config
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . GrpcConnectionInterface
+
+type (
+	GrpcConnectionInterface interface {
+		CommandServiceClient() mpi.CommandServiceClient
+		FileServiceClient() mpi.FileServiceClient
+		Close(ctx context.Context) error
+	}
+
+	GrpcConnection struct {
+		config          *config.Config
+		conn            *grpc.ClientConn
+		connectionMutex sync.Mutex
+	}
+
+	wrappedStream struct {
+		grpc.ClientStream
+		*protovalidate.Validator
+	}
+)
+
 var (
 	serviceConfig = `{
 		"healthCheckConfig": {
@@ -34,11 +60,75 @@ var (
 	}`
 
 	defaultCredentials = insecure.NewCredentials()
+
+	_ GrpcConnectionInterface = (*GrpcConnection)(nil)
 )
 
-type wrappedStream struct {
-	grpc.ClientStream
-	*protovalidate.Validator
+func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcConnection, error) {
+	if agentConfig == nil || agentConfig.Command.Server.Type != "grpc" {
+		return nil, fmt.Errorf("invalid command server settings")
+	}
+
+	if agentConfig.Common == nil {
+		return nil, fmt.Errorf("invalid common configuration settings")
+	}
+
+	grpcConnection := &GrpcConnection{
+		config: agentConfig,
+	}
+
+	serverAddr := net.JoinHostPort(
+		agentConfig.Command.Server.Host,
+		fmt.Sprint(agentConfig.Command.Server.Port),
+	)
+
+	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
+
+	info := host.NewInfo()
+	resourceID := info.ResourceID(ctx)
+
+	var err error
+	grpcConnection.connectionMutex.Lock()
+	grpcConnection.conn, err = grpc.DialContext(ctx, serverAddr, GetDialOptions(agentConfig, resourceID)...)
+	grpcConnection.connectionMutex.Unlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return grpcConnection, nil
+}
+
+// nolint: ireturn
+func (gc *GrpcConnection) CommandServiceClient() mpi.CommandServiceClient {
+	gc.connectionMutex.Lock()
+	defer gc.connectionMutex.Unlock()
+
+	return mpi.NewCommandServiceClient(gc.conn)
+}
+
+// nolint: ireturn
+func (gc *GrpcConnection) FileServiceClient() mpi.FileServiceClient {
+	gc.connectionMutex.Lock()
+	defer gc.connectionMutex.Unlock()
+
+	return mpi.NewFileServiceClient(gc.conn)
+}
+
+func (gc *GrpcConnection) Close(ctx context.Context) error {
+	slog.InfoContext(ctx, "Closing grpc connection")
+
+	gc.connectionMutex.Lock()
+	defer gc.connectionMutex.Unlock()
+
+	if gc.conn != nil {
+		err := gc.conn.Close()
+		gc.conn = nil
+		if err != nil {
+			return fmt.Errorf("gracefully closing gRPC connection: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (w *wrappedStream) RecvMsg(message any) error {
@@ -94,7 +184,6 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 	}
 
 	opts := []grpc.DialOption{
-		grpc.WithReturnConnectionError(),
 		grpc.WithChainStreamInterceptor(streamClientInterceptors...),
 		grpc.WithChainUnaryInterceptor(unaryClientInterceptors...),
 		grpc.WithDefaultServiceConfig(serviceConfig),

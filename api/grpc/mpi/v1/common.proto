@@ -28,10 +28,12 @@ message CommandResponse {
         COMMAND_STATUS_UNSPECIFIED = 0;
         // Command was successful
         COMMAND_STATUS_OK = 1;
-        // Command failed
+        // Command error
         COMMAND_STATUS_ERROR = 2;
         // Command in-progress
         COMMAND_STATUS_IN_PROGRESS = 3;
+        // Command failure
+        COMMAND_STATUS_FAILURE = 4;
     }
 
     // Command status

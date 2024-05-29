@@ -95,18 +95,14 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 
 func TestGrpcClient_Init(t *testing.T) {
 	tests := []struct {
-		name          string
-		agentConfig   *config.Config
-		server        string
-		expectedError bool
-		errorMessage  string
+		name        string
+		agentConfig *config.Config
+		server      string
 	}{
 		{
 			"Test 1: GRPC type specified in config",
 			types.GetAgentConfig(),
-			"incorrect-server",
-			true,
-			"connection error",
+			"server.com",
 		},
 	}
 
@@ -123,11 +119,7 @@ func TestGrpcClient_Init(t *testing.T) {
 			require.NoError(tt, err)
 
 			err = client.Init(ctx, messagePipe)
-			if test.expectedError {
-				assert.Contains(tt, err.Error(), test.errorMessage)
-			} else {
-				require.NoError(tt, err)
-			}
+			require.NoError(tt, err)
 		})
 	}
 }
