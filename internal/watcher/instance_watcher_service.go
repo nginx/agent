@@ -135,7 +135,11 @@ func (iw *InstanceWatcherService) checkForUpdates(
 		}
 	}
 
-	if len(instanceUpdates.newInstances) > 0 || len(instanceUpdates.deletedInstances) > 0 {
+	numberOfChanges := len(instanceUpdates.newInstances) +
+		len(instanceUpdates.updatedInstances) +
+		len(instanceUpdates.deletedInstances)
+
+	if numberOfChanges > 0 {
 		instancesChannel <- InstanceUpdatesMessage{
 			correlationID:   correlationID,
 			instanceUpdates: instanceUpdates,

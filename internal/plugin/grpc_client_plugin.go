@@ -212,6 +212,11 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.ResourceUpdateTopic:
 		if resource, ok := msg.Data.(*v1.Resource); ok {
+			// Only send a resource update message if instances other than the agent instance are found
+			if len(resource.GetInstances()) <= 1 {
+				return
+			}
+
 			err := gc.createConnection(ctx, resource)
 			if err != nil {
 				return

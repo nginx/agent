@@ -5,7 +5,10 @@
 
 package protos
 
-import "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+import (
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/test/types"
+)
 
 func GetContainerizedResource() *v1.Resource {
 	return &v1.Resource{
@@ -23,6 +26,7 @@ func GetHostResource() *v1.Resource {
 	return &v1.Resource{
 		ResourceId: GetHostInfo().GetHostId(),
 		Instances: []*v1.Instance{
+			GetAgentInstance(1, types.GetAgentConfig()),
 			GetNginxOssInstance([]string{}),
 		},
 		Info: &v1.Resource_HostInfo{

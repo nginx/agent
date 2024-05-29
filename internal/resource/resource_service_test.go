@@ -13,6 +13,7 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,6 +28,7 @@ func TestResourceService_AddInstance(t *testing.T) {
 		{
 			name: "Test 1: Add One Instance",
 			instanceList: []*v1.Instance{
+				protos.GetAgentInstance(1, types.GetAgentConfig()),
 				protos.GetNginxOssInstance([]string{}),
 			},
 			resource: protos.GetHostResource(),
@@ -34,12 +36,14 @@ func TestResourceService_AddInstance(t *testing.T) {
 		{
 			name: "Test 2: Add Multiple Instance",
 			instanceList: []*v1.Instance{
+				protos.GetAgentInstance(1, types.GetAgentConfig()),
 				protos.GetNginxOssInstance([]string{}),
 				protos.GetNginxPlusInstance([]string{}),
 			},
 			resource: &v1.Resource{
 				ResourceId: protos.GetHostResource().GetResourceId(),
 				Instances: []*v1.Instance{
+					protos.GetAgentInstance(1, types.GetAgentConfig()),
 					protos.GetNginxOssInstance([]string{}),
 					protos.GetNginxPlusInstance([]string{}),
 				},
