@@ -212,11 +212,6 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.ResourceUpdateTopic:
 		if resource, ok := msg.Data.(*v1.Resource); ok {
-			// Only send a resource update message if instances other than the agent instance are found
-			if len(resource.GetInstances()) <= 1 {
-				return
-			}
-
 			err := gc.createConnection(ctx, resource)
 			if err != nil {
 				return
@@ -240,39 +235,46 @@ func (gc *GrpcClient) Process(ctx context.Context, msg *bus.Message) {
 }
 
 func (gc *GrpcClient) createConnection(ctx context.Context, resource *v1.Resource) error {
-	if !gc.isConnected.Load() {
-		req, err := gc.createConnectionRequest(resource)
-		if err != nil {
-			slog.Error("Creating connection request", "error", err)
-			return err
-		}
-
-		reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
-		defer reqCancel()
-
-		connectFn := func() (*v1.CreateConnectionResponse, error) {
-			response, connectErr := gc.commandServiceClient.CreateConnection(reqCtx, req)
-
-			validatedError := validateGrpcError(connectErr)
-			if validatedError != nil {
-				slog.ErrorContext(reqCtx, "Failed to create connection", "error", validatedError)
-
-				return nil, validatedError
-			}
-
-			return response, nil
-		}
-
-		response, err := backoff.RetryWithData(connectFn, backoffHelpers.Context(reqCtx, gc.config.Common))
-		if err != nil {
-			return err
-		}
-
-		slog.DebugContext(ctx, "Connection created", "response", response)
-		slog.DebugContext(ctx, "Agent connected")
-
-		gc.isConnected.Store(true)
+	if gc.isConnected.Load() {
+		return nil
 	}
+
+	// Only send a resource update message if instances other than the agent instance are found
+	if len(resource.GetInstances()) <= 1 {
+		return errors.New("waiting for data plane instances to be found before sending create connection request")
+	}
+
+	req, err := gc.createConnectionRequest(resource)
+	if err != nil {
+		slog.Error("Creating connection request", "error", err)
+		return err
+	}
+
+	reqCtx, reqCancel := context.WithTimeout(ctx, gc.config.Common.MaxElapsedTime)
+	defer reqCancel()
+
+	connectFn := func() (*v1.CreateConnectionResponse, error) {
+		response, connectErr := gc.commandServiceClient.CreateConnection(reqCtx, req)
+
+		validatedError := validateGrpcError(connectErr)
+		if validatedError != nil {
+			slog.ErrorContext(reqCtx, "Failed to create connection", "error", validatedError)
+
+			return nil, validatedError
+		}
+
+		return response, nil
+	}
+
+	response, err := backoff.RetryWithData(connectFn, backoffHelpers.Context(reqCtx, gc.config.Common))
+	if err != nil {
+		return err
+	}
+
+	slog.DebugContext(ctx, "Connection created", "response", response)
+	slog.DebugContext(ctx, "Agent connected")
+
+	gc.isConnected.Store(true)
 
 	gc.messagePipe.Process(ctx, &bus.Message{
 		Topic: bus.ConfigClientTopic,
