@@ -293,7 +293,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 2,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 					Auth: types.GetAgentConfig().Command.Auth,
 					TLS:  types.GetAgentConfig().Command.TLS,
@@ -311,7 +311,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 4,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 					TLS: types.GetAgentConfig().Command.TLS,
 				},
@@ -328,7 +328,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 6,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 				},
 				Common: types.GetAgentConfig().Common,
@@ -344,7 +344,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 8,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 					TLS: types.GetAgentConfig().Command.TLS,
 				},
@@ -361,7 +361,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 10,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 					Auth: types.GetAgentConfig().Command.Auth,
 					TLS:  types.GetAgentConfig().Command.TLS,
@@ -381,7 +381,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 12,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 					Auth: types.GetAgentConfig().Command.Auth,
 					TLS:  types.GetAgentConfig().Command.TLS,

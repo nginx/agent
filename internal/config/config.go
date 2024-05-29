@@ -295,10 +295,19 @@ func getCommand() *Command {
 	command := &Command{}
 
 	if viperInstance.IsSet(CommandServerKey) {
+		serverType, ok := parseServerType(viperInstance.GetString(CommandServerTypeKey))
+		if !ok {
+			serverType = Grpc
+			slog.Error(
+				"Invalid value for command server type, defaulting to gRPC server type",
+				"server_type", viperInstance.GetString(CommandServerTypeKey),
+			)
+		}
+
 		command.Server = &ServerConfig{
 			Host: viperInstance.GetString(CommandServerHostKey),
 			Port: viperInstance.GetInt(CommandServerPortKey),
-			Type: viperInstance.GetString(CommandServerTypeKey),
+			Type: serverType,
 		}
 	}
 
