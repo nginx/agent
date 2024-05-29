@@ -16,7 +16,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/uuid"
@@ -59,17 +59,17 @@ func NewNginxProcessParser() *NginxProcessParser {
 // cognitive complexity of 16 because of the if statements in the for loop
 // don't think can be avoided due to the need for continue
 // nolint: revive
-func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Process) map[string]*v1.Instance {
-	instanceMap := make(map[string]*v1.Instance)   // key is instanceID
-	workers := make(map[int32][]*v1.InstanceChild) // key is ppid of process
+func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Process) map[string]*mpi.Instance {
+	instanceMap := make(map[string]*mpi.Instance)   // key is instanceID
+	workers := make(map[int32][]*mpi.InstanceChild) // key is ppid of process
 
 	nginxProcesses := filterNginxProcesses(processes)
 
 	for _, nginxProcess := range nginxProcesses {
 		// Here we are determining if the nginxProcess is a worker process
-		if masterProcess, ok := nginxProcesses[nginxProcess.Ppid]; ok {
-			workers[masterProcess.Pid] = append(workers[masterProcess.Pid],
-				&v1.InstanceChild{ProcessId: nginxProcess.Pid})
+		if masterProcess, ok := nginxProcesses[nginxProcess.PPID]; ok {
+			workers[masterProcess.PID] = append(workers[masterProcess.PID],
+				&mpi.InstanceChild{ProcessId: nginxProcess.PID})
 
 			continue
 		}
@@ -77,7 +77,7 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 		if strings.Contains(nginxProcess.Cmd, "worker") {
 			nginxInfo, err := npp.getInfo(ctx, nginxProcess)
 			if err != nil {
-				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.Pid, "error", err)
+				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.PID, "error", err)
 
 				continue
 			}
@@ -88,13 +88,13 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 
 			if foundInstance, ok := instanceMap[instance.GetInstanceMeta().GetInstanceId()]; ok {
 				foundInstance.GetInstanceRuntime().InstanceChildren = append(foundInstance.GetInstanceRuntime().
-					GetInstanceChildren(), &v1.InstanceChild{ProcessId: nginxProcess.Pid})
+					GetInstanceChildren(), &mpi.InstanceChild{ProcessId: nginxProcess.PID})
 
 				continue
 			}
 
 			instance.GetInstanceRuntime().InstanceChildren = append(instance.GetInstanceRuntime().
-				GetInstanceChildren(), &v1.InstanceChild{ProcessId: nginxProcess.Pid})
+				GetInstanceChildren(), &mpi.InstanceChild{ProcessId: nginxProcess.PID})
 
 			instanceMap[instance.GetInstanceMeta().GetInstanceId()] = instance
 
@@ -104,7 +104,7 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 
 		nginxInfo, err := npp.getInfo(ctx, nginxProcess)
 		if err != nil {
-			slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.Pid, "error", err)
+			slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.PID, "error", err)
 
 			continue
 		}
@@ -128,7 +128,7 @@ func (npp *NginxProcessParser) getInfo(ctx context.Context, nginxProcess *model.
 	if exePath == "" {
 		exePath = npp.getExe(ctx)
 		if exePath == "" {
-			return nil, fmt.Errorf("unable to find NGINX exe for process %d", nginxProcess.Pid)
+			return nil, fmt.Errorf("unable to find NGINX exe for process %d", nginxProcess.PID)
 		}
 	}
 
@@ -142,7 +142,7 @@ func (npp *NginxProcessParser) getInfo(ctx context.Context, nginxProcess *model.
 	nginxInfo = parseNginxVersionCommandOutput(ctx, outputBuffer)
 
 	nginxInfo.ExePath = exePath
-	nginxInfo.ProcessID = nginxProcess.Pid
+	nginxInfo.ProcessID = nginxProcess.PID
 
 	loadableModules := getLoadableModules(nginxInfo)
 	nginxInfo.LoadableModules = loadableModules
@@ -189,18 +189,18 @@ func sanitizeExeDeletedPath(exe string) string {
 	return strings.TrimSpace(exe)
 }
 
-func convertInfoToInstance(nginxInfo Info) *v1.Instance {
-	var instanceRuntime *v1.InstanceRuntime
-	nginxType := v1.InstanceMeta_INSTANCE_TYPE_NGINX
+func convertInfoToInstance(nginxInfo Info) *mpi.Instance {
+	var instanceRuntime *mpi.InstanceRuntime
+	nginxType := mpi.InstanceMeta_INSTANCE_TYPE_NGINX
 	version := nginxInfo.Version
 
 	if !strings.Contains(nginxInfo.Version, "plus") {
-		instanceRuntime = &v1.InstanceRuntime{
+		instanceRuntime = &mpi.InstanceRuntime{
 			ProcessId:  nginxInfo.ProcessID,
 			BinaryPath: nginxInfo.ExePath,
 			ConfigPath: nginxInfo.ConfPath,
-			Details: &v1.InstanceRuntime_NginxRuntimeInfo{
-				NginxRuntimeInfo: &v1.NGINXRuntimeInfo{
+			Details: &mpi.InstanceRuntime_NginxRuntimeInfo{
+				NginxRuntimeInfo: &mpi.NGINXRuntimeInfo{
 					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
@@ -210,12 +210,12 @@ func convertInfoToInstance(nginxInfo Info) *v1.Instance {
 			},
 		}
 	} else {
-		instanceRuntime = &v1.InstanceRuntime{
+		instanceRuntime = &mpi.InstanceRuntime{
 			ProcessId:  nginxInfo.ProcessID,
 			BinaryPath: nginxInfo.ExePath,
 			ConfigPath: nginxInfo.ConfPath,
-			Details: &v1.InstanceRuntime_NginxPlusRuntimeInfo{
-				NginxPlusRuntimeInfo: &v1.NGINXPlusRuntimeInfo{
+			Details: &mpi.InstanceRuntime_NginxPlusRuntimeInfo{
+				NginxPlusRuntimeInfo: &mpi.NGINXPlusRuntimeInfo{
 					StubStatus:      "",
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
@@ -226,12 +226,12 @@ func convertInfoToInstance(nginxInfo Info) *v1.Instance {
 			},
 		}
 
-		nginxType = v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS
+		nginxType = mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS
 		version = nginxInfo.Version
 	}
 
-	return &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
+	return &mpi.Instance{
+		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   uuid.Generate("%s_%s_%s", nginxInfo.ExePath, nginxInfo.ConfPath, nginxInfo.Prefix),
 			InstanceType: nginxType,
 			Version:      version,
@@ -372,7 +372,7 @@ func filterNginxProcesses(processes []*model.Process) map[int32]*model.Process {
 
 	for _, p := range processes {
 		if isNginxProcess(p.Name, p.Cmd) {
-			nginxProcesses[p.Pid] = p
+			nginxProcesses[p.PID] = p
 		}
 	}
 

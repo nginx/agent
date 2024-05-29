@@ -15,7 +15,6 @@ type Config struct {
 	Version            string           `yaml:"-"`
 	Path               string           `yaml:"-"`
 	Log                *Log             `yaml:"-" mapstructure:"log"`
-	ProcessMonitor     *ProcessMonitor  `yaml:"-" mapstructure:"process_monitor"`
 	DataPlaneConfig    *DataPlaneConfig `yaml:"-" mapstructure:"data_plane_config"`
 	Client             *Client          `yaml:"-" mapstructure:"client"`
 	ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
@@ -30,10 +29,6 @@ type Config struct {
 type Log struct {
 	Level string `yaml:"-" mapstructure:"level"`
 	Path  string `yaml:"-" mapstructure:"path"`
-}
-
-type ProcessMonitor struct {
-	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 }
 
 type DataPlaneConfig struct {
@@ -52,24 +47,8 @@ type Client struct {
 }
 
 type Metrics struct {
-	ProduceInterval  time.Duration     `yaml:"-" mapstructure:"produce_interval"`
-	OTelExporter     *OTelExporter     `yaml:"-" mapstructure:"otel_exporter"`
-	PrometheusSource *PrometheusSource `yaml:"-" mapstructure:"prometheus_source"`
 	// temporary setting to enable the collector
 	Collector bool `yaml:"-" mapstructure:"collector"`
-}
-
-// PrometheusSource is a DataSources implementation
-type PrometheusSource struct {
-	Endpoints []string `yaml:"-" mapstructure:"endpoints"`
-}
-
-// OTelExporter is an Exporters implementation
-type OTelExporter struct {
-	BufferLength     int           `yaml:"-" mapstructure:"buffer_length"`
-	ExportRetryCount int           `yaml:"-" mapstructure:"export_retry_count"`
-	ExportInterval   time.Duration `yaml:"-" mapstructure:"export_interval"`
-	GRPC             *GRPC         `yaml:"-" mapstructure:"grpc"`
 }
 
 type GRPC struct {

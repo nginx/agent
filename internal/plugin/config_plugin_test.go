@@ -59,7 +59,7 @@ func TestConfig_Subscriptions(t *testing.T) {
 		bus.InstanceConfigUpdateRequestTopic,
 		bus.InstanceConfigUpdateStatusTopic,
 		bus.ConfigClientTopic,
-		bus.ResourceTopic,
+		bus.ResourceUpdateTopic,
 	}, subscriptions)
 }
 
@@ -133,7 +133,7 @@ func TestConfig_Process(t *testing.T) {
 		{
 			name: "Test 5: Resource request",
 			input: &bus.Message{
-				Topic: bus.ResourceTopic,
+				Topic: bus.ResourceUpdateTopic,
 				Data:  protos.GetContainerizedResource(),
 			},
 			expected: nil,

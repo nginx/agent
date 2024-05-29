@@ -124,10 +124,7 @@ func TestResource_Info(t *testing.T) {
 
 func TestResource_Init(t *testing.T) {
 	ctx := context.Background()
-	resource := protos.GetContainerizedResource()
-
 	resourceService := resourcefakes.FakeResourceServiceInterface{}
-	resourceService.GetResourceReturns(resource)
 
 	messagePipe := bus.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)

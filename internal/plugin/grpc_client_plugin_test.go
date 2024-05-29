@@ -12,7 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
@@ -27,6 +30,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type TestError struct{}
+
+func (z TestError) Error() string {
+	return "Test"
+}
 
 func TestGrpcClient_NewGrpcClient(t *testing.T) {
 	tests := []struct {
@@ -133,11 +142,11 @@ func TestGrpcClient_Subscriptions(t *testing.T) {
 	grpcClient := NewGrpcClient(types.GetAgentConfig())
 	subscriptions := grpcClient.Subscriptions()
 	assert.Len(t, subscriptions, 2)
-	assert.Equal(t, bus.ResourceTopic, subscriptions[0])
+	assert.Equal(t, bus.ResourceUpdateTopic, subscriptions[0])
 	assert.Equal(t, bus.InstanceHealthTopic, subscriptions[1])
 }
 
-func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
+func TestGrpcClient_Process(t *testing.T) {
 	ctx := context.Background()
 	agentConfig := types.GetAgentConfig()
 	expected := protos.GetHostResource()
@@ -145,34 +154,66 @@ func TestGrpcClient_Process_ResourceTopic(t *testing.T) {
 	client.messagePipe = &bus.FakeMessagePipe{}
 	assert.NotNil(t, client)
 
-	fakeCommandServiceClient := &v1fakes.FakeCommandServiceClient{}
-
-	client.commandServiceClient = fakeCommandServiceClient
-
-	mockMessage := &bus.Message{
-		Topic: bus.ResourceTopic,
-		Data:  expected,
+	tests := []struct {
+		name                           string
+		message                        *bus.Message
+		updateDataPlaneStatusCallCount int
+		updateDataPlaneHealthCallCount int
+	}{
+		{
+			name: "Test 1: ResourceTopic",
+			message: &bus.Message{
+				Topic: bus.ResourceUpdateTopic,
+				Data:  expected,
+			},
+			updateDataPlaneStatusCallCount: 1,
+			updateDataPlaneHealthCallCount: 0,
+		}, {
+			name: "Test 2: InstanceHealthTopic",
+			message: &bus.Message{
+				Topic: bus.InstanceHealthTopic,
+				Data:  protos.GetInstanceHealths(),
+			},
+			updateDataPlaneStatusCallCount: 0,
+			updateDataPlaneHealthCallCount: 1,
+		}, {
+			name: "Test 3: UnknownTopic",
+			message: &bus.Message{
+				Topic: "unknown",
+				Data:  nil,
+			},
+			updateDataPlaneStatusCallCount: 0,
+			updateDataPlaneHealthCallCount: 0,
+		},
 	}
-	client.Process(ctx, mockMessage)
 
-	assert.True(t, client.isConnected.Load())
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			fakeCommandServiceClient := &v1fakes.FakeCommandServiceClient{}
+			client.commandServiceClient = fakeCommandServiceClient
+
+			client.Process(ctx, test.message)
+
+			assert.True(t, client.isConnected.Load())
+			assert.Equal(
+				t,
+				test.updateDataPlaneStatusCallCount,
+				fakeCommandServiceClient.UpdateDataPlaneStatusCallCount(),
+			)
+			assert.Equal(
+				t,
+				test.updateDataPlaneHealthCallCount,
+				fakeCommandServiceClient.UpdateDataPlaneHealthCallCount(),
+			)
+		})
+	}
 }
 
 func TestGrpcClient_sendDataPlaneHealthUpdate(t *testing.T) {
 	ctx := context.Background()
 	agentConfig := types.GetAgentConfig()
-	instances := []*v1.InstanceHealth{
-		{
-			InstanceId:           protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-			InstanceHealthStatus: 1,
-			Description:          "healthy",
-		},
-		{
-			InstanceId:           protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-			InstanceHealthStatus: 2,
-			Description:          "unhealthy",
-		},
-	}
+	instances := protos.GetInstanceHealths()
+
 	client := NewGrpcClient(agentConfig)
 	client.messagePipe = &bus.FakeMessagePipe{}
 	assert.NotNil(t, client)
@@ -405,6 +446,14 @@ func TestGrpcClient_Close(t *testing.T) {
 			require.NoError(tt, err)
 		})
 	}
+}
+
+func TestGrpcClient_validateGrpcError(t *testing.T) {
+	result := validateGrpcError(TestError{})
+	assert.IsType(t, TestError{}, result)
+
+	result = validateGrpcError(status.Errorf(codes.InvalidArgument, "error"))
+	assert.IsType(t, &backoff.PermanentError{}, result)
 }
 
 func TestGrpcConfigClient_GetOverview(t *testing.T) {

@@ -60,6 +60,9 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 	processID := int32(123)
 
 	agentInstance := protos.GetAgentInstance(processID, types.GetAgentConfig())
+	nginxInstance := protos.GetNginxOssInstance([]string{})
+	nginxInstanceWithDifferentPID := protos.GetNginxOssInstance([]string{})
+	nginxInstanceWithDifferentPID.GetInstanceRuntime().ProcessId = 3526
 
 	tests := []struct {
 		name                    string
@@ -78,17 +81,32 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			oldInstances: []*v1.Instance{agentInstance},
 			parsedInstances: map[string]*v1.Instance{
 				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
-				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.GetNginxOssInstance(
-					[]string{}),
+				nginxInstance.GetInstanceMeta().GetInstanceId(): nginxInstance,
 			},
 			expectedInstanceUpdates: InstanceUpdates{
 				newInstances: []*v1.Instance{
-					protos.GetNginxOssInstance([]string{}),
+					nginxInstance,
 				},
 			},
 		},
 		{
-			name: "Test 3: Deleted instance",
+			name: "Test 3: Updated instance",
+			oldInstances: []*v1.Instance{
+				agentInstance,
+				nginxInstanceWithDifferentPID,
+			},
+			parsedInstances: map[string]*v1.Instance{
+				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
+				nginxInstance.GetInstanceMeta().GetInstanceId(): nginxInstance,
+			},
+			expectedInstanceUpdates: InstanceUpdates{
+				updatedInstances: []*v1.Instance{
+					nginxInstance,
+				},
+			},
+		},
+		{
+			name: "Test 4: Deleted instance",
 			oldInstances: []*v1.Instance{
 				agentInstance,
 				protos.GetNginxOssInstance([]string{}),

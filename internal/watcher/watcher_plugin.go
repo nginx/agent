@@ -86,23 +86,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			return
 		case message := <-w.instanceUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.correlationID)
-
-			if len(message.instanceUpdates.newInstances) > 0 {
-				slog.DebugContext(newCtx, "New instances found", "instances", message.instanceUpdates.newInstances)
-				w.healthWatcherService.AddHealthWatcher(message.instanceUpdates.newInstances)
-				w.messagePipe.Process(
-					newCtx,
-					&bus.Message{Topic: bus.AddInstancesTopic, Data: message.instanceUpdates.newInstances},
-				)
-			}
-			if len(message.instanceUpdates.deletedInstances) > 0 {
-				slog.DebugContext(newCtx, "Instances deleted", "instances", message.instanceUpdates.deletedInstances)
-				w.healthWatcherService.DeleteHealthWatcher(message.instanceUpdates.deletedInstances)
-				w.messagePipe.Process(
-					newCtx,
-					&bus.Message{Topic: bus.DeletedInstancesTopic, Data: message.instanceUpdates.deletedInstances},
-				)
-			}
+			w.handleInstanceUpdates(newCtx, message)
 		case message := <-w.nginxConfigContextChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.correlationID)
 			slog.DebugContext(
@@ -120,5 +104,31 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 				Topic: bus.InstanceHealthTopic, Data: message.instanceHealth,
 			})
 		}
+	}
+}
+
+func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message InstanceUpdatesMessage) {
+	if len(message.instanceUpdates.newInstances) > 0 {
+		slog.DebugContext(newCtx, "New instances found", "instances", message.instanceUpdates.newInstances)
+		w.healthWatcherService.AddHealthWatcher(message.instanceUpdates.newInstances)
+		w.messagePipe.Process(
+			newCtx,
+			&bus.Message{Topic: bus.AddInstancesTopic, Data: message.instanceUpdates.newInstances},
+		)
+	}
+	if len(message.instanceUpdates.updatedInstances) > 0 {
+		slog.DebugContext(newCtx, "Instances updated", "instances", message.instanceUpdates.updatedInstances)
+		w.messagePipe.Process(
+			newCtx,
+			&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: message.instanceUpdates.updatedInstances},
+		)
+	}
+	if len(message.instanceUpdates.deletedInstances) > 0 {
+		slog.DebugContext(newCtx, "Instances deleted", "instances", message.instanceUpdates.deletedInstances)
+		w.healthWatcherService.DeleteHealthWatcher(message.instanceUpdates.deletedInstances)
+		w.messagePipe.Process(
+			newCtx,
+			&bus.Message{Topic: bus.DeletedInstancesTopic, Data: message.instanceUpdates.deletedInstances},
+		)
 	}
 }

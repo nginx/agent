@@ -20,7 +20,6 @@ type resourceServiceInterface interface {
 	AddInstances(instanceList []*v1.Instance) *v1.Resource
 	UpdateInstances(instanceList []*v1.Instance) *v1.Resource
 	DeleteInstances(instanceList []*v1.Instance) *v1.Resource
-	GetResource(ctx context.Context) *v1.Resource
 }
 
 type ResourceService struct {
@@ -29,14 +28,16 @@ type ResourceService struct {
 	resourceMutex sync.Mutex
 }
 
-func NewResourceService() *ResourceService {
-	return &ResourceService{
-		resource: &v1.Resource{
-			Instances: []*v1.Instance{},
-		},
+func NewResourceService(ctx context.Context) *ResourceService {
+	resourceService := &ResourceService{
+		resource:      &v1.Resource{},
 		resourceMutex: sync.Mutex{},
 		info:          host.NewInfo(),
 	}
+
+	resourceService.updateResourceInfo(ctx)
+
+	return resourceService
 }
 
 func (r *ResourceService) AddInstances(instanceList []*v1.Instance) *v1.Resource {
@@ -79,7 +80,7 @@ func (r *ResourceService) DeleteInstances(instanceList []*v1.Instance) *v1.Resou
 	return r.resource
 }
 
-func (r *ResourceService) GetResource(ctx context.Context) *v1.Resource {
+func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
 
@@ -92,6 +93,4 @@ func (r *ResourceService) GetResource(ctx context.Context) *v1.Resource {
 		r.resource.ResourceId = r.resource.GetHostInfo().GetHostId()
 		r.resource.Instances = []*v1.Instance{}
 	}
-
-	return r.resource
 }
