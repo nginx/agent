@@ -125,8 +125,9 @@ Command status enum
 | ---- | ------ | ----------- |
 | COMMAND_STATUS_UNSPECIFIED | 0 | Unspecified status of command |
 | COMMAND_STATUS_OK | 1 | Command was successful |
-| COMMAND_STATUS_ERROR | 2 | Command failed |
+| COMMAND_STATUS_ERROR | 2 | Command error |
 | COMMAND_STATUS_IN_PROGRESS | 3 | Command in-progress |
+| COMMAND_STATUS_FAILURE | 4 | Command failure |
 
 
  

@@ -46,7 +46,7 @@ func addResourcePlugin(plugins []bus.Plugin) []bus.Plugin {
 func isGrpcClientConfigured(agentConfig *config.Config) bool {
 	return agentConfig.Command != nil &&
 		agentConfig.Command.Server != nil &&
-		agentConfig.Command.Server.Type == "grpc"
+		agentConfig.Command.Server.Type == config.Grpc
 }
 
 func addCollector(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {

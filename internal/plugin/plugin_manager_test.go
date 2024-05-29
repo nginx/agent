@@ -38,7 +38,7 @@ func TestLoadPLugins(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: 443,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 				},
 			},

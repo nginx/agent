@@ -50,7 +50,7 @@ type (
 )
 
 func NewGrpcClient(agentConfig *config.Config) *GrpcClient {
-	if agentConfig != nil && agentConfig.Command.Server.Type == "grpc" {
+	if agentConfig != nil && agentConfig.Command.Server.Type == config.Grpc {
 		if agentConfig.Common == nil {
 			slog.Error("Invalid common configuration settings")
 			return nil
