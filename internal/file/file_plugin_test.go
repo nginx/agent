@@ -43,14 +43,14 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 	assert.Equal(
 		t,
 		[]string{
-			bus.NginxConfigContextTopic,
+			bus.NginxConfigUpdateTopic,
 			bus.ConfigUploadRequestTopic,
 		},
 		filePlugin.Subscriptions(),
 	)
 }
 
-func TestFilePlugin_Process_NginxConfigContextTopic(t *testing.T) {
+func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	ctx := context.Background()
 
 	fileMeta, fileMetaError := protos.GetFileMeta("/etc/nginx/nginx/conf")
@@ -73,7 +73,7 @@ func TestFilePlugin_Process_NginxConfigContextTopic(t *testing.T) {
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
-	filePlugin.Process(ctx, &bus.Message{Topic: bus.NginxConfigContextTopic, Data: message})
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: message})
 
 	assert.Eventually(
 		t,

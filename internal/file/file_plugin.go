@@ -57,7 +57,7 @@ func (fp *FilePlugin) Info() *bus.Info {
 
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	case bus.NginxConfigContextTopic:
+	case bus.NginxConfigUpdateTopic:
 		fp.handleNginxConfigUpdate(ctx, msg)
 	case bus.ConfigUploadRequestTopic:
 		fp.handleConfigUploadRequest(ctx, msg)
@@ -68,7 +68,7 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 
 func (fp *FilePlugin) Subscriptions() []string {
 	return []string{
-		bus.NginxConfigContextTopic,
+		bus.NginxConfigUpdateTopic,
 		bus.ConfigUploadRequestTopic,
 	}
 }

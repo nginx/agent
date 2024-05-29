@@ -96,7 +96,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			)
 			w.messagePipe.Process(
 				newCtx,
-				&bus.Message{Topic: bus.NginxConfigContextTopic, Data: message.nginxConfigContext},
+				&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: message.nginxConfigContext},
 			)
 		case message := <-w.instanceHealthChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.correlationID)
