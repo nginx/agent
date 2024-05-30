@@ -62,7 +62,7 @@ func addCollector(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin
 		if err == nil {
 			plugins = append(plugins, oTelCollector)
 		} else {
-			slog.Error("Failed to initialize collector plugin", "error", err)
+			slog.Error("init collector plugin", "error", err)
 		}
 	}
 

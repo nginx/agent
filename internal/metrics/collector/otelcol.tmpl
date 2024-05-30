@@ -1,0 +1,55 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: {{ .OTLPReceiverURL }}
+  {{- range .CollectorReceivers }}
+  {{- if eq . "hostmetrics" }}
+  hostmetrics:
+    collection_interval: 1m
+    initial_delay: 1s
+    scrapers:
+      cpu:
+      disk:
+      load:
+      filesystem:
+      memory:
+      network:
+      paging:
+      processes:
+      process:
+  {{- end }}
+  {{- end }}
+
+processors:
+  batch:
+
+exporters:
+  otlp:
+    endpoint: {{ .OTLPExportURL }}
+    compression: none
+    timeout: 10s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 10s
+      max_interval: 60s
+      max_elapsed_time: 10m
+
+extensions:
+  health_check:
+    endpoint: "localhost:13133"
+
+service:
+  extensions:
+    - health_check
+  pipelines:
+    metrics:
+      receivers:
+        - otlp
+        {{- range .CollectorReceivers }}
+        - {{ . }}
+        {{- end }}
+      processors:
+        - batch
+      exporters:
+        - otlp

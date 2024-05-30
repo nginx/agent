@@ -5,11 +5,12 @@
 package collector
 
 import (
-	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOTelCollectorSettings(t *testing.T) {
@@ -33,20 +34,17 @@ func TestConfigProviderSettings(t *testing.T) {
 	assert.Len(t, settings.ResolverSettings.ProviderFactories, 5, "There should be 5 provider factories")
 	assert.Len(t, settings.ResolverSettings.ConverterFactories, 1, "There should be 1 converter factory")
 	assert.NotEmpty(t, settings.ResolverSettings.URIs, "URIs should not be empty")
-	assert.Equal(t, "/tmp/otel-collector-config.yaml", settings.ResolverSettings.URIs[0], "Default URI should match")
+	assert.Equal(t, "/var/etc/nginx-agent/nginx-agent-otelcol.yaml", settings.ResolverSettings.URIs[0],
+		"Default URI should match")
 }
 
-func TestGetConfig(t *testing.T) {
-	// Test with environment variable set
-	t.Setenv("OPENTELEMETRY_COLLECTOR_CONFIG_FILE", "/path/to/config.yaml")
-	defer t.Setenv("OPENTELEMETRY_COLLECTOR_CONFIG_FILE", "")
+func TestTemplateWrite(t *testing.T) {
+	cfg := types.GetAgentConfig()
+	cfg.Metrics.Collector = true
+	cfg.Metrics.CollectorConfigPath = filepath.Join(t.TempDir(), "nginx-agent-otelcol-test.yaml")
+	// cfg.Metrics.CollectorConfigPath = "/tmp/nginx-agent-otelcol-test.yaml"
+	require.NotNil(t, cfg)
 
-	configURI := getConfig(nil)
-	assert.Equal(t, "/path/to/config.yaml", configURI, "Config URI should match the environment variable")
-
-	// Test without environment variable set
-	os.Unsetenv("OPENTELEMETRY_COLLECTOR_CONFIG_FILE")
-
-	configURI = getConfig(nil)
-	assert.Equal(t, "/tmp/otel-collector-config.yaml", configURI, "Config URI should match the default value")
+	err := writeCollectorConfig(cfg.Metrics)
+	require.NoError(t, err)
 }

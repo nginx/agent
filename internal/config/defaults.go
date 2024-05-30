@@ -8,16 +8,14 @@ import (
 	"time"
 )
 
+var DefCollectorReceivers = []string{"otlp"}
+
 const (
 	DefGracefulShutdownPeriod = 5 * time.Second
 
-	DefMetricsProduceInterval       = 30 * time.Second
-	DefOTelExporterBufferLength     = 100
-	DefOTelExporterExportRetryCount = 3
-	DefOTelExporterExportInterval   = 20 * time.Second
-	DefOTelGRPCConnTimeout          = 10 * time.Second
-	DefOTelGRPCMinConnTimeout       = 5 * time.Second
-	DefOTelGRPCMBackoffDelay        = 240 * time.Second
+	DefCollectorConfigPath = "/var/run/nginx-agent-otelcol.yaml"
+	DefOTLPExportURL       = ""
+	DefOTLPReceiverURL     = "localhost:4317"
 
 	DefCommandServerHostKey    = ""
 	DefCommandServerPortKey    = 0

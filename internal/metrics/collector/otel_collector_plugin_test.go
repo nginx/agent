@@ -6,7 +6,7 @@ package collector
 
 import (
 	"context"
-	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -16,66 +16,14 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 )
 
-// Example OpenTelemetry Collector configuration YAML embedded as a string
-const otelCollectorConfig = `
-receivers:
-  otlp:
-    protocols:
-      grpc:
-        endpoint: 0.0.0.0:55690
-
-processors:
-  batch:
-
-exporters:
-  debug:
-    verbosity: detailed
-    sampling_initial: 5
-    sampling_thereafter: 200
-  otlp:
-    endpoint: ${ENDPOINT}:443
-    compression: none
-    timeout: 10s
-    retry_on_failure:
-      enabled: true
-      initial_interval: 10s
-      max_interval: 60s
-      max_elapsed_time: 10m
-
-extensions:
-  health_check:
-  pprof:
-    endpoint: 0.0.0.0:1888
-
-service:
-  extensions: [pprof, health_check]
-  pipelines:
-    metrics:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [otlp, debug]
-`
-
 func TestNewCollector(t *testing.T) {
-	configFilePath, removFn, err := setupOTelConfig()
-	require.NoError(t, err)
-	defer func() {
-		require.NoError(t, removFn(configFilePath))
-	}()
-
-	conf := &config.Config{}
-	_, err = NewCollector(conf)
+	conf := setupOTelConfig(t)
+	_, err := NewCollector(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 }
 
 func TestInitAndClose(t *testing.T) {
-	configFilePath, removFn, err := setupOTelConfig()
-	require.NoError(t, err)
-	defer func() {
-		require.NoError(t, removFn(configFilePath))
-	}()
-
-	conf := &config.Config{}
+	conf := setupOTelConfig(t)
 	collector, err := NewCollector(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 
@@ -97,14 +45,17 @@ func TestInitAndClose(t *testing.T) {
 	}
 }
 
-func setupOTelConfig() (string, func(string) error, error) {
-	// Define the path to the configuration file
-	configFilePath := "/tmp/otel-collector-config.yaml"
-
-	// Write the configuration to the file using os.WriteFile
-	err := os.WriteFile(configFilePath, []byte(otelCollectorConfig), 0o600)
-	// assert.NoError(t, err, "should be able to write to the configuration file")
-
-	// Clean up the file afterwards
-	return configFilePath, os.Remove, err
+func setupOTelConfig(t *testing.T) *config.Config {
+	t.Helper()
+	return &config.Config{
+		Metrics: &config.Metrics{
+			Collector:           true,
+			OTLPExportURL:       "saas:9090",
+			OTLPReceiverURL:     "localhost:4317",
+			CollectorConfigPath: filepath.Join(t.TempDir(), "otel-collector-config.yaml"),
+			CollectorReceivers: []config.OTelReceiver{
+				"hostmetrics",
+			},
+		},
+	}
 }

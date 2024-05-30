@@ -24,8 +24,6 @@ const (
 	InstanceHealthWatcherMonitoringFrequencyKey   = "watchers_instance_health_watcher_monitoring_frequency"
 
 	// Below consts are NOT flag keys.
-	PrometheusSourceRoot = "prometheus_source"
-
 	DefaultDataPlaneConfigNginxReloadMonitoringPeriod = 10 * time.Second
 
 	ClientRootKey = "client"
@@ -33,22 +31,26 @@ const (
 
 var (
 	// child flags saved as vars to enable easier prefixing.
-	MetricsCollectorKey          = pre(MetricsRootKey) + "collector"
-	CommandServerKey             = pre(CommandRootKey) + "server"
-	CommandServerHostKey         = pre(CommandServerKey) + "host"
-	CommandServerPortKey         = pre(CommandServerKey) + "port"
-	CommandServerTypeKey         = pre(CommandServerKey) + "type"
-	CommandAuthKey               = pre(CommandRootKey) + "auth"
-	CommandAuthTokenKey          = pre(CommandAuthKey) + "token"
-	CommandTLSKey                = pre(CommandRootKey) + "tls"
-	CommandTLSCertKey            = pre(CommandTLSKey) + "cert"
-	CommandTLSKeyKey             = pre(CommandTLSKey) + "key"
-	CommandTLSCaKey              = pre(CommandTLSKey) + "ca"
-	CommandTLSSkipVerifyKey      = pre(CommandTLSKey) + "skip_verify"
-	CommandTLSServerNameKey      = pre(CommandRootKey) + "server_name"
-	ClientTimeoutKey             = pre(ClientRootKey) + "timeout"
-	ClientTimeKey                = pre(ClientRootKey) + "time"
-	ClientPermitWithoutStreamKey = pre(ClientRootKey) + "permit_without_stream"
+	MetricsCollectorKey           = pre(MetricsRootKey) + "collector"
+	MetricsOTLPExportURLKey       = pre(MetricsRootKey) + "otlp_export_url"
+	MetricsOTLPReceiverURLKey     = pre(MetricsRootKey) + "otlp_receiver_url"
+	MetricsCollectorConfigPathKey = pre(MetricsRootKey) + "collector_config_path"
+	MetricsCollectorReceiversKey  = pre(MetricsRootKey) + "collector_receivers"
+	CommandServerKey              = pre(CommandRootKey) + "server"
+	CommandServerHostKey          = pre(CommandServerKey) + "host"
+	CommandServerPortKey          = pre(CommandServerKey) + "port"
+	CommandServerTypeKey          = pre(CommandServerKey) + "type"
+	CommandAuthKey                = pre(CommandRootKey) + "auth"
+	CommandAuthTokenKey           = pre(CommandAuthKey) + "token"
+	CommandTLSKey                 = pre(CommandRootKey) + "tls"
+	CommandTLSCertKey             = pre(CommandTLSKey) + "cert"
+	CommandTLSKeyKey              = pre(CommandTLSKey) + "key"
+	CommandTLSCaKey               = pre(CommandTLSKey) + "ca"
+	CommandTLSSkipVerifyKey       = pre(CommandTLSKey) + "skip_verify"
+	CommandTLSServerNameKey       = pre(CommandRootKey) + "server_name"
+	ClientTimeoutKey              = pre(ClientRootKey) + "timeout"
+	ClientTimeKey                 = pre(ClientRootKey) + "time"
+	ClientPermitWithoutStreamKey  = pre(ClientRootKey) + "permit_without_stream"
 )
 
 func pre(prefixes ...string) string {

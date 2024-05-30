@@ -42,7 +42,13 @@ func GetAgentConfig() *config.Config {
 		},
 		ConfigDir:          "",
 		AllowedDirectories: []string{"/tmp/"},
-		Metrics:            &config.Metrics{},
+		Metrics: &config.Metrics{
+			Collector:           false,
+			OTLPExportURL:       "localhost:3000",
+			OTLPReceiverURL:     "localhost:1234",
+			CollectorConfigPath: "/var/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			CollectorReceivers:  []config.OTelReceiver{config.HostMetrics},
+		},
 		Command: &config.Command{
 			Server: &config.ServerConfig{
 				Host: "127.0.0.1",

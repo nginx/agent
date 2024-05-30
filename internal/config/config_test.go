@@ -49,6 +49,12 @@ func TestGetConfig(t *testing.T) {
 	assert.Equal(t, 30*time.Second, result.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	assert.False(t, result.DataPlaneConfig.Nginx.TreatWarningsAsError)
 
+	require.NotNil(t, result.Metrics)
+	assert.True(t, result.Metrics.Collector)
+	assert.Equal(t, "localhost:3000", result.Metrics.OTLPExportURL)
+	assert.Equal(t, "localhost:4318", result.Metrics.OTLPReceiverURL)
+	assert.Equal(t, "/var/etc/nginx-agent/nginx-agent-otelcol.yaml", result.Metrics.CollectorConfigPath)
+
 	assert.Equal(t, 10*time.Second, result.Client.Timeout)
 
 	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:invalid/path", result.ConfigDir)
@@ -213,7 +219,12 @@ func getAgentConfig() *Config {
 		},
 		ConfigDir:          "",
 		AllowedDirectories: []string{},
-		Metrics:            &Metrics{},
+		Metrics: &Metrics{
+			Collector:           true,
+			OTLPExportURL:       "localhost:3000",
+			CollectorConfigPath: "/var/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			CollectorReceivers:  []OTelReceiver{HostMetrics},
+		},
 		Command: &Command{
 			Server: &ServerConfig{
 				Host: "127.0.0.1",

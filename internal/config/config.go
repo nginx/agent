@@ -187,6 +187,26 @@ func registerFlags() {
 		DefInstanceHealthWatcherMonitoringFrequency,
 		"How often the NGINX Agent will check for instance health changes.",
 	)
+	fs.String(
+		MetricsOTLPExportURLKey,
+		DefOTLPExportURL,
+		"The OTLP metrics exporter's gRPC URL for the NGINX Agent OTel Collector.",
+	)
+	fs.String(
+		MetricsCollectorConfigPathKey,
+		DefCollectorConfigPath,
+		"The path to the Opentelemetry Collector configuration file.",
+	)
+	fs.String(
+		MetricsOTLPReceiverURLKey,
+		DefOTLPReceiverURL,
+		"The OTLP metrics receiver's gRPC URL for the NGINX Agent OTel Collector.",
+	)
+	fs.StringArray(
+		MetricsCollectorReceiversKey,
+		DefCollectorReceivers,
+		"Metrics receiver names for the NGINX Agent OTel Collector.",
+	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -281,8 +301,22 @@ func getMetrics() *Metrics {
 		return nil
 	}
 
+	strReceivers := viperInstance.GetStringSlice(MetricsCollectorConfigPathKey)
+	enumReceivers := make([]OTelReceiver, 0, len(strReceivers))
+	for _, rec := range strReceivers {
+		rec := toOTelReceiver(strings.ToLower(rec))
+		// A OTLP receiver is always automatically added.
+		if rec != Unsupported && rec != OTLP {
+			enumReceivers = append(enumReceivers, rec)
+		}
+	}
+
 	metrics := &Metrics{
-		Collector: viperInstance.GetBool(MetricsCollectorKey),
+		Collector:           viperInstance.GetBool(MetricsCollectorKey),
+		OTLPExportURL:       viperInstance.GetString(MetricsOTLPExportURLKey),
+		OTLPReceiverURL:     viperInstance.GetString(MetricsOTLPReceiverURLKey),
+		CollectorConfigPath: viperInstance.GetString(MetricsCollectorConfigPathKey),
+		CollectorReceivers:  enumReceivers,
 	}
 
 	return metrics
