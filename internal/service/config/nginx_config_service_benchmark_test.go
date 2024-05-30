@@ -30,6 +30,9 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 	for _, configFilePath := range configFilePaths {
 		func(configFilePath string) {
 			b.Run(configFilePath, func(bb *testing.B) {
+				agentConfig := types.GetAgentConfig()
+				agentConfig.Log.Level = "error"
+				
 				nginxConfigService := NewNginx(
 					ctx,
 					&v1.Instance{
@@ -40,7 +43,7 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 							ConfigPath: configFilePath,
 						},
 					},
-					types.GetAgentConfig(),
+					agentConfig,
 					&clientfakes.FakeConfigClient{},
 				)
 
