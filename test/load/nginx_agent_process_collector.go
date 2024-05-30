@@ -360,6 +360,7 @@ func (cp *nginxAgentProcessCollector) WatchResourceConsumption() error {
 				if remainingFailures > 0 {
 					remainingFailures--
 					log.Printf("Resource utilization too high. Remaining attempts: %d", remainingFailures)
+					
 					continue
 				}
 				if _, errStop := cp.Stop(); errStop != nil {

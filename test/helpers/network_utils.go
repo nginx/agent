@@ -2,8 +2,8 @@
 //
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
-// 
-// Useful functions pulled in from non public 
+//
+// Useful functions pulled in from non public
 // "github.com/open-telemetry/opentelemetry-collector-contrib/internal/common/testutil"
 package helpers
 
@@ -84,6 +84,8 @@ func GetAvailableLocalNetworkAddress(t testing.TB, network string) string {
 
 // Get excluded ports on Windows from the command: netsh interface ipv4 show excludedportrange protocol=tcp
 func getExclusionsList(t testing.TB) []portpair {
+	t.Helper()
+
 	cmdTCP := exec.Command("netsh", "interface", "ipv4", "show", "excludedportrange", "protocol=tcp")
 	outputTCP, errTCP := cmdTCP.CombinedOutput()
 	require.NoError(t, errTCP)
@@ -98,6 +100,8 @@ func getExclusionsList(t testing.TB) []portpair {
 }
 
 func createExclusionsList(t testing.TB, exclusionsText string) []portpair {
+	t.Helper()
+
 	var exclusions []portpair
 
 	parts := strings.Split(exclusionsText, "--------")
@@ -117,6 +121,8 @@ func createExclusionsList(t testing.TB, exclusionsText string) []portpair {
 }
 
 func findAvailableAddress(t testing.TB, network string) string {
+	t.Helper()
+
 	switch network {
 	// net.Listen supported network strings
 	case "tcp", "tcp4", "tcp6", "unix", "unixpacket":
@@ -139,5 +145,6 @@ func findAvailableAddress(t testing.TB, network string) string {
 		}()
 		return ln.LocalAddr().String()
 	}
+
 	return ""
 }
