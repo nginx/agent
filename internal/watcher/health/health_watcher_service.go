@@ -3,10 +3,11 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package watcher
+package health
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
@@ -23,49 +24,59 @@ import (
 
 type (
 	healthWatcherOperator interface {
-		Health(ctx context.Context, instanceID string) *v1.InstanceHealth
+		Health(ctx context.Context, instance *mpi.Instance) (*mpi.InstanceHealth, error)
 	}
 
 	HealthWatcherService struct {
 		agentConfig *config.Config
-		cache       map[string]*v1.InstanceHealth    // key is instanceID
+		cache       map[string]*mpi.InstanceHealth   // key is instanceID
 		watchers    map[string]healthWatcherOperator // key is instanceID
+		instances   map[string]*mpi.Instance         // key is instanceID
 	}
 
 	InstanceHealthMessage struct {
-		correlationID  slog.Attr
-		instanceHealth []*v1.InstanceHealth
+		CorrelationID  slog.Attr
+		InstanceHealth []*mpi.InstanceHealth
 	}
 )
 
 func NewHealthWatcherService(agentConfig *config.Config) *HealthWatcherService {
 	return &HealthWatcherService{
 		watchers:    make(map[string]healthWatcherOperator),
-		cache:       make(map[string]*v1.InstanceHealth),
+		cache:       make(map[string]*mpi.InstanceHealth),
+		instances:   make(map[string]*mpi.Instance),
 		agentConfig: agentConfig,
 	}
 }
 
-func (hw *HealthWatcherService) AddHealthWatcher(instances []*v1.Instance) {
+func (hw *HealthWatcherService) AddHealthWatcher(instances []*mpi.Instance) {
 	for _, instance := range instances {
 		switch instance.GetInstanceMeta().GetInstanceType() {
-		case v1.InstanceMeta_INSTANCE_TYPE_NGINX, v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
+		case mpi.InstanceMeta_INSTANCE_TYPE_NGINX, mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
 			watcher := NewNginxHealthWatcher()
 			hw.watchers[instance.GetInstanceMeta().GetInstanceId()] = watcher
-		case v1.InstanceMeta_INSTANCE_TYPE_AGENT:
-		case v1.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
-			v1.InstanceMeta_INSTANCE_TYPE_UNIT:
+		case mpi.InstanceMeta_INSTANCE_TYPE_AGENT:
+		case mpi.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
+			mpi.InstanceMeta_INSTANCE_TYPE_UNIT:
 			fallthrough
 		default:
 			slog.Warn("Health watcher not implemented", "instance_type",
 				instance.GetInstanceMeta().GetInstanceType())
 		}
+		hw.instances[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 }
 
-func (hw *HealthWatcherService) DeleteHealthWatcher(instances []*v1.Instance) {
+func (hw *HealthWatcherService) UpdateHealthWatcher(instances []*mpi.Instance) {
+	for _, instance := range instances {
+		hw.instances[instance.GetInstanceMeta().GetInstanceId()] = instance
+	}
+}
+
+func (hw *HealthWatcherService) DeleteHealthWatcher(instances []*mpi.Instance) {
 	for _, instance := range instances {
 		delete(hw.watchers, instance.GetInstanceMeta().GetInstanceId())
+		delete(hw.instances, instance.GetInstanceMeta().GetInstanceId())
 	}
 }
 
@@ -88,8 +99,8 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 			healthStatuses, isHealthDiff := hw.health(ctx)
 			if isHealthDiff && len(healthStatuses) > 0 {
 				ch <- InstanceHealthMessage{
-					correlationID:  correlationID,
-					instanceHealth: healthStatuses,
+					CorrelationID:  correlationID,
+					InstanceHealth: healthStatuses,
 				}
 			} else {
 				slog.DebugContext(newCtx, "Instance health watcher found no health updates")
@@ -98,12 +109,19 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 	}
 }
 
-func (hw *HealthWatcherService) health(ctx context.Context) (healthStatuses []*v1.InstanceHealth, isHealthDiff bool,
+func (hw *HealthWatcherService) health(ctx context.Context) (healthStatuses []*mpi.InstanceHealth, isHealthDiff bool,
 ) {
-	currentHealth := make(map[string]*v1.InstanceHealth, len(hw.watchers))
+	currentHealth := make(map[string]*mpi.InstanceHealth, len(hw.watchers))
 
 	for instanceID, watcher := range hw.watchers {
-		instanceHealth := watcher.Health(ctx, instanceID)
+		instanceHealth, err := watcher.Health(ctx, hw.instances[instanceID])
+		if instanceHealth == nil {
+			instanceHealth = &mpi.InstanceHealth{
+				InstanceId:           instanceID,
+				InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNSPECIFIED,
+				Description:          fmt.Sprintf("failed to get health for instance %s, error: %v", instanceID, err),
+			}
+		}
 		healthStatuses = append(healthStatuses, instanceHealth)
 		currentHealth[instanceID] = instanceHealth
 	}
@@ -114,10 +132,12 @@ func (hw *HealthWatcherService) health(ctx context.Context) (healthStatuses []*v
 		hw.updateCache(currentHealth)
 	}
 
+	healthStatuses = hw.compareCache(healthStatuses)
+
 	return healthStatuses, isHealthDiff
 }
 
-func (hw *HealthWatcherService) updateCache(currentHealth map[string]*v1.InstanceHealth) {
+func (hw *HealthWatcherService) updateCache(currentHealth map[string]*mpi.InstanceHealth) {
 	for instanceID, healthStatus := range currentHealth {
 		hw.cache[instanceID] = healthStatus
 	}
@@ -131,7 +151,25 @@ func (hw *HealthWatcherService) updateCache(currentHealth map[string]*v1.Instanc
 	slog.Debug("Updating health watcher cache", "cache", hw.cache)
 }
 
-func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*v1.InstanceHealth) bool {
+func (hw *HealthWatcherService) compareCache(healthStatuses []*mpi.InstanceHealth) []*mpi.InstanceHealth {
+	if len(hw.cache) != len(hw.instances) {
+		for instanceID := range hw.cache {
+			if _, ok := hw.instances[instanceID]; !ok {
+				health := &mpi.InstanceHealth{
+					InstanceId:           instanceID,
+					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
+					Description:          fmt.Sprintf("instance has been deleted %s", instanceID),
+				}
+				healthStatuses = append(healthStatuses, health)
+				delete(hw.cache, instanceID)
+			}
+		}
+	}
+
+	return healthStatuses
+}
+
+func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*mpi.InstanceHealth) bool {
 	if len(currentHealth) != len(hw.cache) {
 		return true
 	}

@@ -3,14 +3,16 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package watcher
+package instance
 
 import (
 	"context"
 	"log/slog"
 	"time"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/watcher/process"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/logger"
@@ -21,63 +23,56 @@ import (
 const defaultAgentPath = "/run/nginx-agent"
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
-//counterfeiter:generate . processOperator
-
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . processParser
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . nginxConfigParser
 
 type (
-	processOperator interface {
-		Processes(ctx context.Context) ([]*model.Process, error)
-	}
-
 	processParser interface {
-		Parse(ctx context.Context, processes []*model.Process) map[string]*v1.Instance
+		Parse(ctx context.Context, processes []*model.Process) map[string]*mpi.Instance
 	}
 
 	nginxConfigParser interface {
-		Parse(ctx context.Context, instance *v1.Instance) (*model.NginxConfigContext, error)
+		Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error)
 	}
 
 	InstanceWatcherService struct {
 		agentConfig       *config.Config
-		processOperator   processOperator
+		processOperator   process.ProcessOperatorInterface
 		processParsers    []processParser
 		nginxConfigParser nginxConfigParser
-		instanceCache     []*v1.Instance
+		instanceCache     []*mpi.Instance
 		nginxConfigCache  map[string]*model.NginxConfigContext // key is instanceID
 		executer          exec.ExecInterface
 	}
 
 	InstanceUpdates struct {
-		newInstances     []*v1.Instance
-		updatedInstances []*v1.Instance
-		deletedInstances []*v1.Instance
+		NewInstances     []*mpi.Instance
+		UpdatedInstances []*mpi.Instance
+		DeletedInstances []*mpi.Instance
 	}
 
 	InstanceUpdatesMessage struct {
-		correlationID   slog.Attr
-		instanceUpdates InstanceUpdates
+		CorrelationID   slog.Attr
+		InstanceUpdates InstanceUpdates
 	}
 
 	NginxConfigContextMessage struct {
-		correlationID      slog.Attr
-		nginxConfigContext *model.NginxConfigContext
+		CorrelationID      slog.Attr
+		NginxConfigContext *model.NginxConfigContext
 	}
 )
 
 func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherService {
 	return &InstanceWatcherService{
 		agentConfig:     agentConfig,
-		processOperator: NewProcessOperator(),
+		processOperator: process.NewProcessOperator(),
 		processParsers: []processParser{
 			NewNginxProcessParser(),
 		},
 		nginxConfigParser: NewNginxConfigParser(agentConfig),
-		instanceCache:     []*v1.Instance{},
+		instanceCache:     []*mpi.Instance{},
 		nginxConfigCache:  make(map[string]*model.NginxConfigContext),
 		executer:          &exec.Exec{},
 	}
@@ -120,25 +115,25 @@ func (iw *InstanceWatcherService) checkForUpdates(
 		slog.ErrorContext(newCtx, "Instance watcher updates", "error", err)
 	}
 
-	for _, newInstance := range instanceUpdates.newInstances {
+	for _, newInstance := range instanceUpdates.NewInstances {
 		instanceType := newInstance.GetInstanceMeta().GetInstanceType()
 
-		if instanceType == v1.InstanceMeta_INSTANCE_TYPE_NGINX ||
-			instanceType == v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+		if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
+			instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 			nginxConfigContext := iw.parseNginxInstanceConfig(newCtx, newInstance)
 			iw.updateNginxInstanceRuntime(newInstance, nginxConfigContext)
 
 			nginxConfigContextChannel <- NginxConfigContextMessage{
-				correlationID:      correlationID,
-				nginxConfigContext: nginxConfigContext,
+				CorrelationID:      correlationID,
+				NginxConfigContext: nginxConfigContext,
 			}
 		}
 	}
 
-	if len(instanceUpdates.newInstances) > 0 || len(instanceUpdates.deletedInstances) > 0 {
+	if len(instanceUpdates.NewInstances) > 0 || len(instanceUpdates.DeletedInstances) > 0 {
 		instancesChannel <- InstanceUpdatesMessage{
-			correlationID:   correlationID,
-			instanceUpdates: instanceUpdates,
+			CorrelationID:   correlationID,
+			InstanceUpdates: instanceUpdates,
 		}
 	}
 }
@@ -153,7 +148,7 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	}
 
 	// NGINX Agent is always the first instance in the list
-	instancesFound := []*v1.Instance{iw.agentInstance(ctx)}
+	instancesFound := []*mpi.Instance{iw.agentInstance(ctx)}
 
 	for _, processParser := range iw.processParsers {
 		instances := processParser.Parse(ctx, processes)
@@ -164,42 +159,42 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 
 	newInstances, updatedInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
 
-	instanceUpdates.newInstances = newInstances
-	instanceUpdates.updatedInstances = updatedInstances
-	instanceUpdates.deletedInstances = deletedInstances
+	instanceUpdates.NewInstances = newInstances
+	instanceUpdates.UpdatedInstances = updatedInstances
+	instanceUpdates.DeletedInstances = deletedInstances
 
 	iw.instanceCache = instancesFound
 
 	return instanceUpdates, nil
 }
 
-func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *v1.Instance {
+func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instance {
 	processPath, err := iw.executer.Executable()
 	if err != nil {
 		processPath = defaultAgentPath
 		slog.WarnContext(ctx, "Unable to read process location, defaulting to /var/run/nginx-agent", "error", err)
 	}
 
-	return &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
+	return &mpi.Instance{
+		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   iw.agentConfig.UUID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
+			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_AGENT,
 			Version:      iw.agentConfig.Version,
 		},
-		InstanceConfig: &v1.InstanceConfig{
-			Actions: []*v1.InstanceAction{},
-			Config: &v1.InstanceConfig_AgentConfig{
-				AgentConfig: &v1.AgentConfig{
-					Command:           &v1.CommandServer{},
-					Metrics:           &v1.MetricsServer{},
-					File:              &v1.FileServer{},
+		InstanceConfig: &mpi.InstanceConfig{
+			Actions: []*mpi.InstanceAction{},
+			Config: &mpi.InstanceConfig_AgentConfig{
+				AgentConfig: &mpi.AgentConfig{
+					Command:           &mpi.CommandServer{},
+					Metrics:           &mpi.MetricsServer{},
+					File:              &mpi.FileServer{},
 					Labels:            []*structpb.Struct{},
 					Features:          []string{},
 					MessageBufferSize: "",
 				},
 			},
 		},
-		InstanceRuntime: &v1.InstanceRuntime{
+		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  iw.executer.ProcessID(),
 			BinaryPath: processPath,
 			ConfigPath: iw.agentConfig.Path,
@@ -208,13 +203,13 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *v1.Instanc
 	}
 }
 
-func compareInstances(oldInstances, instances []*v1.Instance) (
-	newInstances, updatedInstances, deletedInstances []*v1.Instance,
+func compareInstances(oldInstances, instances []*mpi.Instance) (
+	newInstances, updatedInstances, deletedInstances []*mpi.Instance,
 ) {
-	instancesMap := make(map[string]*v1.Instance)
-	oldInstancesMap := make(map[string]*v1.Instance)
-	updatedInstancesMap := make(map[string]*v1.Instance)
-	updatedOldInstancesMap := make(map[string]*v1.Instance)
+	instancesMap := make(map[string]*mpi.Instance)
+	oldInstancesMap := make(map[string]*mpi.Instance)
+	updatedInstancesMap := make(map[string]*mpi.Instance)
+	updatedOldInstancesMap := make(map[string]*mpi.Instance)
 
 	for _, instance := range instances {
 		instancesMap[instance.GetInstanceMeta().GetInstanceId()] = instance
@@ -248,9 +243,9 @@ func compareInstances(oldInstances, instances []*v1.Instance) (
 }
 
 func checkForProcessChanges(
-	updatedInstancesMap map[string]*v1.Instance,
-	updatedOldInstancesMap map[string]*v1.Instance,
-) (updatedInstances []*v1.Instance) {
+	updatedInstancesMap map[string]*mpi.Instance,
+	updatedOldInstancesMap map[string]*mpi.Instance,
+) (updatedInstances []*mpi.Instance) {
 	for instanceID, instance := range updatedInstancesMap {
 		oldInstance := updatedOldInstancesMap[instanceID]
 		if oldInstance.GetInstanceRuntime().GetProcessId() != instance.GetInstanceRuntime().GetProcessId() {
@@ -262,12 +257,12 @@ func checkForProcessChanges(
 }
 
 func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
-	instance *v1.Instance,
+	instance *mpi.Instance,
 	nginxConfigContext *model.NginxConfigContext,
 ) {
 	instanceType := instance.GetInstanceMeta().GetInstanceType()
 
-	if instanceType == v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 		nginxPlusRuntimeInfo := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo()
 
 		nginxPlusRuntimeInfo.AccessLogs = convertAccessLogs(nginxConfigContext.AccessLogs)
@@ -285,7 +280,7 @@ func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 
 func (iw *InstanceWatcherService) parseNginxInstanceConfig(
 	ctx context.Context,
-	instance *v1.Instance,
+	instance *mpi.Instance,
 ) *model.NginxConfigContext {
 	nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
 	if parseErr != nil {

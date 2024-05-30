@@ -10,7 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/watcher/instance"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/test/model"
@@ -38,24 +40,24 @@ func TestWatcher_Init(t *testing.T) {
 
 	assert.Empty(t, messages)
 
-	instanceUpdatesMessage := InstanceUpdatesMessage{
-		correlationID: logger.GenerateCorrelationID(),
-		instanceUpdates: InstanceUpdates{
-			newInstances: []*v1.Instance{
+	instanceUpdatesMessage := instance.InstanceUpdatesMessage{
+		CorrelationID: logger.GenerateCorrelationID(),
+		InstanceUpdates: instance.InstanceUpdates{
+			NewInstances: []*mpi.Instance{
 				protos.GetNginxOssInstance([]string{}),
 			},
-			updatedInstances: []*v1.Instance{
+			UpdatedInstances: []*mpi.Instance{
 				protos.GetNginxOssInstance([]string{}),
 			},
-			deletedInstances: []*v1.Instance{
+			DeletedInstances: []*mpi.Instance{
 				protos.GetNginxPlusInstance([]string{}),
 			},
 		},
 	}
 
-	nginxConfigContextMessage := NginxConfigContextMessage{
-		correlationID:      logger.GenerateCorrelationID(),
-		nginxConfigContext: model.GetConfigContext(),
+	nginxConfigContextMessage := instance.NginxConfigContextMessage{
+		CorrelationID:      logger.GenerateCorrelationID(),
+		NginxConfigContext: model.GetConfigContext(),
 	}
 
 	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
@@ -66,22 +68,22 @@ func TestWatcher_Init(t *testing.T) {
 
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.AddInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.newInstances},
+		&bus.Message{Topic: bus.AddInstancesTopic, Data: instanceUpdatesMessage.InstanceUpdates.NewInstances},
 		messages[0],
 	)
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.updatedInstances},
+		&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: instanceUpdatesMessage.InstanceUpdates.UpdatedInstances},
 		messages[1],
 	)
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.DeletedInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.deletedInstances},
+		&bus.Message{Topic: bus.DeletedInstancesTopic, Data: instanceUpdatesMessage.InstanceUpdates.DeletedInstances},
 		messages[2],
 	)
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.NginxConfigContextTopic, Data: nginxConfigContextMessage.nginxConfigContext},
+		&bus.Message{Topic: bus.NginxConfigContextTopic, Data: nginxConfigContextMessage.NginxConfigContext},
 		messages[3],
 	)
 }

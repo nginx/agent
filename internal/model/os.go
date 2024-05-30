@@ -6,9 +6,11 @@
 package model
 
 type Process struct {
-	PID  int32
-	PPID int32
-	Name string
-	Cmd  string
-	Exe  string
+	PID     int32
+	PPID    int32
+	Name    string
+	Cmd     string
+	Exe     string
+	Status  string
+	Running bool
 }

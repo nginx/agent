@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package watcher
+package instance
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/files"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
@@ -56,7 +56,7 @@ func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 	}
 }
 
-func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *v1.Instance) (*model.NginxConfigContext, error) {
+func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error) {
 	payload, err := crossplane.Parse(instance.GetInstanceRuntime().GetConfigPath(),
 		&crossplane.ParseOptions{
 			SingleFile:         false,
@@ -79,7 +79,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *v1.Instance) 
 // nolint: cyclop,revive
 func (ncp *NginxConfigParser) createNginxConfigContext(
 	ctx context.Context,
-	instance *v1.Instance,
+	instance *mpi.Instance,
 	payload *crossplane.Payload,
 ) (*model.NginxConfigContext, error) {
 	nginxConfigContext := &model.NginxConfigContext{
@@ -121,7 +121,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			nginxConfigContext.StubStatus = stubStatus
 		}
 
-		if instance.GetInstanceMeta().GetInstanceType() == v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+		if instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 			plusAPIURL := ncp.crossplaneConfigTraverseStr(ctx, &conf, ncp.plusAPICallback)
 			if plusAPIURL != "" {
 				nginxConfigContext.PlusAPI = plusAPIURL
@@ -132,7 +132,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
 		} else {
-			nginxConfigContext.Files = append(nginxConfigContext.Files, &v1.File{FileMeta: fileMeta})
+			nginxConfigContext.Files = append(nginxConfigContext.Files, &mpi.File{FileMeta: fileMeta})
 		}
 	}
 
@@ -219,7 +219,7 @@ func (ncp *NginxConfigParser) errorLogDirectiveLevel(directive *crossplane.Direc
 	return ""
 }
 
-func (ncp *NginxConfigParser) rootFiles(ctx context.Context, rootDir string) (rootFiles []*v1.File) {
+func (ncp *NginxConfigParser) rootFiles(ctx context.Context, rootDir string) (rootFiles []*mpi.File) {
 	if !ncp.agentConfig.IsDirectoryAllowed(rootDir) {
 		slog.DebugContext(ctx, "Root directory not in allowed directories", "root_directory", rootDir)
 		return rootFiles
@@ -240,7 +240,7 @@ func (ncp *NginxConfigParser) rootFiles(ctx context.Context, rootDir string) (ro
 				return fileMetaErr
 			}
 
-			rootFiles = append(rootFiles, &v1.File{FileMeta: rootFileMeta})
+			rootFiles = append(rootFiles, &mpi.File{FileMeta: rootFileMeta})
 
 			return nil
 		},
@@ -252,7 +252,7 @@ func (ncp *NginxConfigParser) rootFiles(ctx context.Context, rootDir string) (ro
 	return rootFiles
 }
 
-func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string) (sslCertFile *v1.File) {
+func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string) (sslCertFile *mpi.File) {
 	if strings.Contains(file, "$") {
 		// cannot process any filepath with variables
 		return nil
@@ -269,7 +269,7 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 		if fileMetaErr != nil {
 			slog.ErrorContext(ctx, "Unable to get file metadata", "file", file, "error", fileMetaErr)
 		} else {
-			sslCertFile = &v1.File{FileMeta: sslCertFileMeta}
+			sslCertFile = &mpi.File{FileMeta: sslCertFileMeta}
 		}
 	}
 
