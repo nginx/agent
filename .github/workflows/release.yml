@@ -1,0 +1,355 @@
+name: Release Agent V3
+
+on:
+  workflow_call:
+    inputs:
+      githubRelease:
+        description: 'Perform release in github'
+        type: boolean
+        default: true
+      buildPackages:
+        description: 'Build packages'
+        required: true
+        type: boolean
+      packageVersion:
+        description: 'Package version number'
+        default: "3.0.0"
+        type: string
+      packageBuildNo:
+        description: 'Package Build number'
+        default: "1"
+        type: string
+      uploadAzure:
+        description: 'Publish packages Azure storage'
+        required: true
+        type: boolean
+      publishPackages:
+        description: 'Publish packages to up-ap.nginx.com'
+        required: true
+        type: boolean
+      tagRelease:
+        description: 'Add tag to release branch'
+        required: true
+        type: boolean
+      createPullRequest:
+        description: 'Create pull request back into main'
+        required: true
+        type: boolean
+      releaseBranch:
+        description: 'Release branch to build & publish from'
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.ref_name }}-v3-release
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  vars:
+    name: Set workflow variables
+    runs-on: ubuntu-22.04
+    outputs:
+      github_release: ${{steps.vars.outputs.github_release }}
+      build_packages: ${{steps.vars.outputs.build_packages }}
+      upload_azure: ${{steps.vars.outputs.upload_azure }}
+      publish_packages: ${{steps.vars.outputs.publish_packages }}
+      tag_release: ${{steps.vars.outputs.tag_release }}
+      create_pull_request: ${{steps.vars.outputs.create_pull_request }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        with:
+          ref: ${{ inputs.releaseBranch }}
+
+      - name: Set variables
+        id: vars
+        run: |
+          echo "github_release=${{ inputs.githubRelease }}" >> $GITHUB_OUTPUT
+          echo "build_packages=${{ inputs.buildPackages }}" >> $GITHUB_OUTPUT
+          echo "upload_azure=${{ inputs.uploadAzure }}" >> $GITHUB_OUTPUT
+          echo "publish_packages=${{ inputs.publishPackages }}" >> $GITHUB_OUTPUT
+          echo "tag_release=${{ inputs.tagRelease }}" >> $GITHUB_OUTPUT
+          echo "create_pull_request=${{ inputs.createPullRequest }}" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+
+  release-draft:
+    name: Update Release Draft
+    runs-on: ubuntu-22.04
+    needs: [vars]
+    outputs:
+      release_id: ${{ steps.vars.outputs.RELEASE_ID }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        with:
+          ref: ${{ inputs.releaseBranch }}
+
+      - name: Setup Node Environment
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+
+      - name: Create Draft Release
+        if: ${{ needs.vars.outputs.github_release == 'true' }}
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        id: release
+        env:
+          version: ${{ inputs.packageVersion }}
+        with:
+          script: |
+            const {version} = process.env
+            console.log(`The release version is v${version}`)
+            
+            const releases = (await github.rest.repos.listReleases({
+              owner: context.payload.repository.owner.login,
+              repo: context.payload.repository.name,
+              per_page: 100,
+            })).data
+            
+            const latest_release = (await github.rest.repos.getLatestRelease({
+                owner: context.payload.repository.owner.login,
+                repo: context.payload.repository.name,
+            })).data.tag_name
+            
+            console.log(`The latest release was ${latest_release}`)
+
+            if (latest_release === "v"+version) {
+                core.setFailed(`A published release already exists for ${latest_release}`)
+            } else {
+                const draft = releases.find((r) => r.draft && r.tag_name === "v"+version)
+                const draft_found = !(draft === undefined)
+                
+                let release
+                if (draft_found){
+                console.log("Draft release already exists. Deleting current draft release and recreating it")
+                release = (await github.rest.repos.deleteRelease({
+                    owner: context.payload.repository.owner.login,
+                    repo: context.payload.repository.name,
+                    release_id: draft.id,
+                }))
+                }
+                
+                const release_notes = (await github.rest.repos.generateReleaseNotes({
+                    owner: context.payload.repository.owner.login,
+                    repo: context.payload.repository.name,
+                    tag_name: "v"+version,
+                    previous_tag_name: latest_release,
+                    target_commitish: ref,
+                }))
+                
+                const footer = `
+            ## Resources
+            - Documentation -- https://github.com/nginx/agent#readme
+                `
+                
+                release = (await github.rest.repos.createRelease({
+                    owner: context.payload.repository.owner.login,
+                    repo: context.payload.repository.name,
+                    tag_name: "v"+version,
+                    target_commitish: ref,
+                    name: "v"+version,
+                    body: release_notes.data.body + footer,
+                    draft: true,
+                }))
+                
+                console.log(`Release created: ${release.data.html_url}`)
+                console.log(`Release ID: ${release.data.id}`)
+                console.log(`Release notes: ${release_notes.data.body}`)
+                console.log(`Release Upload URL: ${release.data.upload_url}`)
+                
+                return {
+                    version: version,
+                    release_id: release.data.id,
+                    release_upload_url: release.data.upload_url,
+                }
+            }
+
+      - name: Set Environment Variables
+        id: vars
+        run: |
+          echo "RELEASE_ID=$(echo '${{steps.release.outputs.result}}' | jq -r '.release_id')" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+
+  tag-release:
+    name: Tag Release
+    runs-on: ubuntu-22.04
+    needs: [vars,release-draft]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        with:
+          ref: ${{ inputs.releaseBranch }}
+
+      - name: Tag release
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git tag -a "v${{ inputs.packageVersion }}" -m "CI Autogenerated"
+
+      - name: Push Tags
+        if: ${{ needs.vars.outputs.tag_release == 'true' }}
+        run: |
+          git push origin "v${{ inputs.packageVersion }}"
+
+  build-packages:
+    if: ${{ needs.vars.outputs.build_packages == 'true' }}
+    name: Build packages
+    needs: [vars,release-draft]
+    uses: ./.github/workflows/build-package.yml
+    with:
+      version: ${{ inputs.packageVersion }}
+      build: ${{ inputs.packageBuildNo }}
+      branch: ${{ inputs.releaseBranch }}
+    secrets:
+      gpg-key: ${{ secrets.INDIGO_GPG_AGENT }}
+
+  azure-upload:
+    if: ${{ needs.vars.outputs.upload_azure == 'true' }}
+    name: Upload packages to Azure
+    runs-on: ubuntu-22.04
+    needs: [vars,build-packages,release-draft]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        with:
+          ref: ${{ inputs.releaseBranch }}
+
+      - name: Fetch Cached Package Artifacts
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          key: ${{ needs.build-packages.outputs.package_cache_key }}
+          path: build
+          fail-on-cache-miss: true
+
+      - name: Azure Login
+        uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a # v2.0.0
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Azure Upload Release Packages
+        uses: azure/CLI@965c8d7571d2231a54e321ddd07f7b10317f34d9 # v2.0.0
+        with:
+          inlineScript: |
+            for i in ./build/azure/packages/nginx-agent*; do
+              echo "Uploading ${i} to nginx-agent/${GITHUB_REF##*/}/${i##*/}"
+              az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/${i##*/}
+            done 
+
+  nginx-upload:
+    if: ${{ needs.vars.outputs.publish_packages == 'true' }}
+    name: Upload packages to NGINX package repository
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write
+    needs: [vars,build-packages,release-draft]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        with:
+          ref: ${{ inputs.releaseBranch }}
+
+      - name: Fetch Cached Package Artifacts
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          key: ${{ needs.build-packages.outputs.package_cache_key }}
+          path: build
+          fail-on-cache-miss: true
+
+      - name: Install GPG tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gpgv1 monkeysphere
+
+      - name: Get Id Token
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        id: idtoken
+        with:
+          script: |
+            let id_token = await core.getIDToken()
+            core.setOutput('id_token', id_token)
+
+      - name: Publish Release Packages
+        env:
+          TOKEN: ${{ steps.idtoken.outputs.id_token }}
+          GPG_KEY: ${{ secrets.INDIGO_GPG_AGENT }}
+          NFPM_SIGNING_KEY_FILE: .key.asc
+        run: |
+          echo "${GPG_KEY}" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
+          make gpg-key
+          make release
+
+  github-release:
+    if: ${{ needs.vars.outputs.github_release == 'true' }}
+    name: Publish packages
+    runs-on: ubuntu-22.04
+    needs: [vars,build-packages,release-draft]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        with:
+          ref: ${{ inputs.releaseBranch }}
+
+      - name: Fetch Cached Package Artifacts
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          key: ${{ needs.build-packages.outputs.package_cache_key }}
+          path: build
+          fail-on-cache-miss: true
+
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # clobber overwrites existing assets of the same name
+        run: |
+          gh release upload --clobber v${{ inputs.packageVersion }} \
+            $(find ./build/github/packages -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.pkg" -o -name "*.apk" \))
+
+      - name: Publish Github Release
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const {RELEASE_ID} = process.env
+            const release = (await github.rest.repos.updateRelease({
+              owner: context.payload.repository.owner.login,
+              repo: context.payload.repository.name,
+              release_id: `${RELEASE_ID}`,
+              draft: false,
+            }))
+            console.log(`Release published: ${release.data.html_url}`)
+        env:
+          RELEASE_ID: ${{ needs.release-draft.outputs.release_id }}
+
+  merge-release:
+    if: ${{ needs.vars.outputs.create_pull_request == 'true' }}
+    name: Publish packages
+    runs-on: ubuntu-22.04
+    needs: [vars,tag-release]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        with:
+          ref: ${{ inputs.releaseBranch }}
+
+      - name: Create Pull Request
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const result = await github.rest.pulls.create({
+              title: 'Merge ${{ github.ref_name }} back into v3',
+              owner,
+              repo,
+              head: '${{ github.ref_name }}',
+              base: 'v3',
+              body: [
+                'This PR is auto-generated by the release workflow.'
+              ].join('\n')
+            });

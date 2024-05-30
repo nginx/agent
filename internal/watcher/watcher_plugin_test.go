@@ -83,7 +83,7 @@ func TestWatcher_Init(t *testing.T) {
 	)
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.NginxConfigContextTopic, Data: nginxConfigContextMessage.NginxConfigContext},
+		&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: NginxConfigContextMessage.nginxConfigContext},
 		messages[3],
 	)
 }

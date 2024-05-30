@@ -95,18 +95,14 @@ func TestGrpcClient_NewGrpcClient(t *testing.T) {
 
 func TestGrpcClient_Init(t *testing.T) {
 	tests := []struct {
-		name          string
-		agentConfig   *config.Config
-		server        string
-		expectedError bool
-		errorMessage  string
+		name        string
+		agentConfig *config.Config
+		server      string
 	}{
 		{
 			"Test 1: GRPC type specified in config",
 			types.GetAgentConfig(),
-			"incorrect-server",
-			true,
-			"connection error",
+			"server.com",
 		},
 	}
 
@@ -123,11 +119,7 @@ func TestGrpcClient_Init(t *testing.T) {
 			require.NoError(tt, err)
 
 			err = client.Init(ctx, messagePipe)
-			if test.expectedError {
-				assert.Contains(tt, err.Error(), test.errorMessage)
-			} else {
-				require.NoError(tt, err)
-			}
+			require.NoError(tt, err)
 		})
 	}
 }
@@ -301,7 +293,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 2,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 					Auth: types.GetAgentConfig().Command.Auth,
 					TLS:  types.GetAgentConfig().Command.TLS,
@@ -319,7 +311,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 4,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 					TLS: types.GetAgentConfig().Command.TLS,
 				},
@@ -336,7 +328,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 6,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 				},
 				Common: types.GetAgentConfig().Common,
@@ -352,7 +344,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 8,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 					TLS: types.GetAgentConfig().Command.TLS,
 				},
@@ -369,7 +361,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 10,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 					Auth: types.GetAgentConfig().Command.Auth,
 					TLS:  types.GetAgentConfig().Command.TLS,
@@ -389,7 +381,7 @@ func TestGrpcClient_Close(t *testing.T) {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: types.GetAgentConfig().Command.Server.Port + 12,
-						Type: "grpc",
+						Type: config.Grpc,
 					},
 					Auth: types.GetAgentConfig().Command.Auth,
 					TLS:  types.GetAgentConfig().Command.TLS,

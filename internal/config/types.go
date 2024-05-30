@@ -10,6 +10,21 @@ import (
 	"time"
 )
 
+type ServerType int
+
+const (
+	Grpc ServerType = iota + 1
+)
+
+var serverTypes = map[string]ServerType{
+	"grpc": Grpc,
+}
+
+func parseServerType(str string) (ServerType, bool) {
+	c, ok := serverTypes[strings.ToLower(str)]
+	return c, ok
+}
+
 type Config struct {
 	UUID               string           `yaml:"-"`
 	Version            string           `yaml:"-"`
@@ -66,9 +81,9 @@ type Command struct {
 }
 
 type ServerConfig struct {
-	Host string `yaml:"-" mapstructure:"host"`
-	Port int    `yaml:"-" mapstructure:"port"`
-	Type string `yaml:"-" mapstructure:"type"`
+	Host string     `yaml:"-" mapstructure:"host"`
+	Port int        `yaml:"-" mapstructure:"port"`
+	Type ServerType `yaml:"-" mapstructure:"type"`
 }
 
 type AuthConfig struct {

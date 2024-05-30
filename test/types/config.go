@@ -47,7 +47,7 @@ func GetAgentConfig() *config.Config {
 			Server: &config.ServerConfig{
 				Host: "127.0.0.1",
 				Port: commandPort,
-				Type: "grpc",
+				Type: config.Grpc,
 			},
 			Auth: &config.AuthConfig{
 				Token: "1234",

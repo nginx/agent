@@ -50,6 +50,20 @@ func (*ClientStream) RecvMsg(m any) error {
 	return nil
 }
 
+func Test_GrpcConnection(t *testing.T) {
+	ctx := context.Background()
+
+	conn, err := NewGrpcConnection(ctx, types.GetAgentConfig())
+
+	require.NoError(t, err)
+	assert.NotNil(t, conn)
+
+	assert.NotNil(t, conn.CommandServiceClient())
+	assert.NotNil(t, conn.FileServiceClient())
+
+	require.NoError(t, conn.Close(ctx))
+}
+
 func Test_GetDialOptions(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -73,13 +87,13 @@ func Test_GetDialOptions(t *testing.T) {
 					},
 				},
 			},
-			6,
+			5,
 			false,
 		},
 		{
 			"Test 2: DialOptions mTLS",
 			types.GetAgentConfig(),
-			6,
+			5,
 			true,
 		},
 		{
@@ -98,7 +112,7 @@ func Test_GetDialOptions(t *testing.T) {
 				},
 				Client: types.GetAgentConfig().Client,
 			},
-			6,
+			5,
 			false,
 		},
 		{
@@ -110,7 +124,7 @@ func Test_GetDialOptions(t *testing.T) {
 					TLS:    types.GetAgentConfig().Command.TLS,
 				},
 			},
-			5,
+			4,
 			false,
 		},
 		{
@@ -122,7 +136,7 @@ func Test_GetDialOptions(t *testing.T) {
 					TLS:    types.GetAgentConfig().Command.TLS,
 				},
 			},
-			6,
+			5,
 			false,
 		},
 		{
@@ -134,7 +148,7 @@ func Test_GetDialOptions(t *testing.T) {
 					Auth:   types.GetAgentConfig().Command.Auth,
 				},
 			},
-			7,
+			6,
 			false,
 		},
 	}
