@@ -32,7 +32,7 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 			b.Run(configFilePath, func(bb *testing.B) {
 				agentConfig := types.GetAgentConfig()
 				agentConfig.Log.Level = "error"
-				
+
 				nginxConfigService := NewNginx(
 					ctx,
 					&v1.Instance{
