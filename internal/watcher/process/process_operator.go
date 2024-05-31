@@ -44,8 +44,8 @@ func (pw *ProcessOperator) Processes(ctx context.Context) ([]*model.Process, err
 		name, _ := proc.NameWithContext(ctx)
 		cmd, _ := proc.CmdlineWithContext(ctx)
 		exe, _ := proc.ExeWithContext(ctx)
-		status, _ := proc.Status()
-		running, _ := proc.IsRunning()
+		status, _ := proc.StatusWithContext(ctx)
+		running, _ := proc.IsRunningWithContext(ctx)
 
 		internalProcesses = append(internalProcesses, &model.Process{
 			PID:     proc.Pid,
@@ -63,8 +63,8 @@ func (pw *ProcessOperator) Processes(ctx context.Context) ([]*model.Process, err
 
 func (pw *ProcessOperator) Process(ctx context.Context, pid int32) (*model.Process, error) {
 	newProc, err := process.NewProcessWithContext(ctx, pid)
-	status, _ := newProc.Status()
-	running, _ := newProc.IsRunning()
+	status, _ := newProc.StatusWithContext(ctx)
+	running, _ := newProc.IsRunningWithContext(ctx)
 	ppid, _ := newProc.PpidWithContext(ctx)
 	name, _ := newProc.NameWithContext(ctx)
 	cmd, _ := newProc.CmdlineWithContext(ctx)

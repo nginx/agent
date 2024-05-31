@@ -158,7 +158,7 @@ func (hw *HealthWatcherService) compareCache(healthStatuses []*mpi.InstanceHealt
 				health := &mpi.InstanceHealth{
 					InstanceId:           instanceID,
 					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
-					Description:          fmt.Sprintf("instance has been deleted %s", instanceID),
+					Description:          fmt.Sprintf("instance not found %s", instanceID),
 				}
 				healthStatuses = append(healthStatuses, health)
 				delete(hw.cache, instanceID)
