@@ -40,7 +40,7 @@ func (nhw *NginxHealthWatcher) Health(ctx context.Context, instance *mpi.Instanc
 		InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
 	}
 	if strings.Contains(proc.Status, "zombie") || !proc.Running {
-		health.Description = fmt.Sprintf("PID: %d is degraded, status: %s", proc.PID, proc.Status)
+		health.Description = fmt.Sprintf("PID: %d is unhealthy, status: %s", proc.PID, proc.Status)
 		health.InstanceHealthStatus = mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY
 	}
 
