@@ -19,13 +19,10 @@ import (
 func LoadPlugins(agentConfig *config.Config) []bus.Plugin {
 	plugins := make([]bus.Plugin, 0)
 
-	plugins = addProcessMonitor(agentConfig, plugins)
-	plugins = addResourceMonitor(agentConfig, plugins)
 	plugins = addResourcePlugin(plugins)
 
 	configPlugin := NewConfig(agentConfig)
 
-	plugins = addMetrics(agentConfig, plugins)
 	plugins = append(plugins, configPlugin)
 
 	if isGrpcClientConfigured(agentConfig) {
@@ -35,35 +32,6 @@ func LoadPlugins(agentConfig *config.Config) []bus.Plugin {
 
 	plugins = addCollector(agentConfig, plugins)
 	plugins = append(plugins, watcher.NewWatcher(agentConfig))
-
-	return plugins
-}
-
-func addMetrics(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
-	if agentConfig.Metrics != nil {
-		metrics, err := NewMetrics(agentConfig)
-		if err != nil {
-			slog.Error("Failed to initialize metrics plugin", "error", err)
-		} else {
-			plugins = append(plugins, metrics)
-		}
-	}
-
-	return plugins
-}
-
-func addResourceMonitor(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
-	instanceMonitor := NewResource(agentConfig)
-	plugins = append(plugins, instanceMonitor)
-
-	return plugins
-}
-
-func addProcessMonitor(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
-	if agentConfig.ProcessMonitor != nil && agentConfig.ProcessMonitor.MonitoringFrequency != 0 {
-		processMonitor := NewProcessMonitor(agentConfig)
-		plugins = append(plugins, processMonitor)
-	}
 
 	return plugins
 }
@@ -78,7 +46,7 @@ func addResourcePlugin(plugins []bus.Plugin) []bus.Plugin {
 func isGrpcClientConfigured(agentConfig *config.Config) bool {
 	return agentConfig.Command != nil &&
 		agentConfig.Command.Server != nil &&
-		agentConfig.Command.Server.Type == "grpc"
+		agentConfig.Command.Server.Type == config.Grpc
 }
 
 func addCollector(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {

@@ -44,6 +44,7 @@
     - [HostInfo](#mpi-v1-HostInfo)
     - [Instance](#mpi-v1-Instance)
     - [InstanceAction](#mpi-v1-InstanceAction)
+    - [InstanceChild](#mpi-v1-InstanceChild)
     - [InstanceConfig](#mpi-v1-InstanceConfig)
     - [InstanceHealth](#mpi-v1-InstanceHealth)
     - [InstanceMeta](#mpi-v1-InstanceMeta)
@@ -124,8 +125,9 @@ Command status enum
 | ---- | ------ | ----------- |
 | COMMAND_STATUS_UNSPECIFIED | 0 | Unspecified status of command |
 | COMMAND_STATUS_OK | 1 | Command was successful |
-| COMMAND_STATUS_ERROR | 2 | Command failed |
+| COMMAND_STATUS_ERROR | 2 | Command error |
 | COMMAND_STATUS_IN_PROGRESS | 3 | Command in-progress |
+| COMMAND_STATUS_FAILURE | 4 | Command failure |
 
 
  
@@ -603,6 +605,21 @@ A set of actions that can be performed on an instance
 
 
 
+<a name="mpi-v1-InstanceChild"></a>
+
+### InstanceChild
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| process_id | [int32](#int32) |  | the process identifier |
+
+
+
+
+
+
 <a name="mpi-v1-InstanceConfig"></a>
 
 ### InstanceConfig
@@ -666,6 +683,7 @@ Meta-information relating to the reported instance
 | config_path | [string](#string) |  | the config path location |
 | nginx_runtime_info | [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo) |  | NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process |
 | nginx_plus_runtime_info | [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo) |  | NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API |
+| instance_children | [InstanceChild](#mpi-v1-InstanceChild) | repeated | List of worker processes |
 
 
 

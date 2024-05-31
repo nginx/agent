@@ -6,8 +6,6 @@
 package bus
 
 const (
-	OsProcessesTopic                 = "host-processes"
-	ResourceTopic                    = "resource"
 	InstanceConfigUpdateRequestTopic = "instance-config-update-request"
 	InstanceConfigUpdateStatusTopic  = "instance-config-update-status"
 	InstanceConfigContextTopic       = "instance-config-context"
@@ -17,5 +15,8 @@ const (
 	UpdatedInstancesTopic            = "updated-instances"
 	DeletedInstancesTopic            = "deleted-instances"
 	ResourceUpdateTopic              = "resource-update"
+	NginxConfigUpdateTopic           = "nginx-config-update"
 	InstanceHealthTopic              = "instance-health"
+	ConfigUploadRequestTopic         = "config-upload-request"
+	DataPlaneResponseTopic           = "data-plane-response"
 )

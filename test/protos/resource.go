@@ -54,3 +54,18 @@ func GetContainerInfo() *v1.ContainerInfo {
 		ContainerId: "f43f5eg54g54g54",
 	}
 }
+
+func GetInstanceHealths() []*v1.InstanceHealth {
+	return []*v1.InstanceHealth{
+		{
+			InstanceId:           GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+			InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
+			Description:          "healthy",
+		},
+		{
+			InstanceId:           GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+			InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
+			Description:          "unhealthy",
+		},
+	}
+}

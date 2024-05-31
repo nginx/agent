@@ -5,11 +5,14 @@
 
 package model
 
+import "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+
 type ConfigContext interface {
 	NginxConfigContext | NginxGatewayFabricConfigContext
 }
 
 type NginxConfigContext struct {
+	Files      []*v1.File
 	AccessLogs []*AccessLog
 	ErrorLogs  []*ErrorLog
 	StubStatus string

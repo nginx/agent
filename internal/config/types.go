@@ -5,14 +5,31 @@
 
 package config
 
-import "time"
+import (
+	"strings"
+	"time"
+)
+
+type ServerType int
+
+const (
+	Grpc ServerType = iota + 1
+)
+
+var serverTypes = map[string]ServerType{
+	"grpc": Grpc,
+}
+
+func parseServerType(str string) (ServerType, bool) {
+	c, ok := serverTypes[strings.ToLower(str)]
+	return c, ok
+}
 
 type Config struct {
 	UUID               string           `yaml:"-"`
 	Version            string           `yaml:"-"`
 	Path               string           `yaml:"-"`
 	Log                *Log             `yaml:"-" mapstructure:"log"`
-	ProcessMonitor     *ProcessMonitor  `yaml:"-" mapstructure:"process_monitor"`
 	DataPlaneConfig    *DataPlaneConfig `yaml:"-" mapstructure:"data_plane_config"`
 	Client             *Client          `yaml:"-" mapstructure:"client"`
 	ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
@@ -27,10 +44,6 @@ type Config struct {
 type Log struct {
 	Level string `yaml:"-" mapstructure:"level"`
 	Path  string `yaml:"-" mapstructure:"path"`
-}
-
-type ProcessMonitor struct {
-	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 }
 
 type DataPlaneConfig struct {
@@ -49,24 +62,8 @@ type Client struct {
 }
 
 type Metrics struct {
-	ProduceInterval  time.Duration     `yaml:"-" mapstructure:"produce_interval"`
-	OTelExporter     *OTelExporter     `yaml:"-" mapstructure:"otel_exporter"`
-	PrometheusSource *PrometheusSource `yaml:"-" mapstructure:"prometheus_source"`
 	// temporary setting to enable the collector
 	Collector bool `yaml:"-" mapstructure:"collector"`
-}
-
-// PrometheusSource is a DataSources implementation
-type PrometheusSource struct {
-	Endpoints []string `yaml:"-" mapstructure:"endpoints"`
-}
-
-// OTelExporter is an Exporters implementation
-type OTelExporter struct {
-	BufferLength     int           `yaml:"-" mapstructure:"buffer_length"`
-	ExportRetryCount int           `yaml:"-" mapstructure:"export_retry_count"`
-	ExportInterval   time.Duration `yaml:"-" mapstructure:"export_interval"`
-	GRPC             *GRPC         `yaml:"-" mapstructure:"grpc"`
 }
 
 type GRPC struct {
@@ -84,9 +81,9 @@ type Command struct {
 }
 
 type ServerConfig struct {
-	Host string `yaml:"-" mapstructure:"host"`
-	Port int    `yaml:"-" mapstructure:"port"`
-	Type string `yaml:"-" mapstructure:"type"`
+	Host string     `yaml:"-" mapstructure:"host"`
+	Port int        `yaml:"-" mapstructure:"port"`
+	Type ServerType `yaml:"-" mapstructure:"type"`
 }
 
 type AuthConfig struct {
@@ -124,4 +121,14 @@ type InstanceWatcher struct {
 
 type InstanceHealthWatcher struct {
 	MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
+}
+
+func (c *Config) IsDirectoryAllowed(directory string) bool {
+	for _, allowedDirectory := range c.AllowedDirectories {
+		if strings.HasPrefix(directory, allowedDirectory) {
+			return true
+		}
+	}
+
+	return false
 }

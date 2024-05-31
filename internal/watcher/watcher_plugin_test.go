@@ -13,6 +13,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/logger"
+	"github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
@@ -43,16 +44,26 @@ func TestWatcher_Init(t *testing.T) {
 			newInstances: []*v1.Instance{
 				protos.GetNginxOssInstance([]string{}),
 			},
+			updatedInstances: []*v1.Instance{
+				protos.GetNginxOssInstance([]string{}),
+			},
 			deletedInstances: []*v1.Instance{
 				protos.GetNginxPlusInstance([]string{}),
 			},
 		},
 	}
 
-	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
+	nginxConfigContextMessage := NginxConfigContextMessage{
+		correlationID:      logger.GenerateCorrelationID(),
+		nginxConfigContext: model.GetConfigContext(),
+	}
 
-	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 2 }, 2*time.Second, 10*time.Millisecond)
+	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
+	watcherPlugin.nginxConfigContextChannel <- nginxConfigContextMessage
+
+	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 4 }, 2*time.Second, 10*time.Millisecond)
 	messages = messagePipe.GetMessages()
+
 	assert.Equal(
 		t,
 		&bus.Message{Topic: bus.AddInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.newInstances},
@@ -60,8 +71,18 @@ func TestWatcher_Init(t *testing.T) {
 	)
 	assert.Equal(
 		t,
-		&bus.Message{Topic: bus.DeletedInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.deletedInstances},
+		&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.updatedInstances},
 		messages[1],
+	)
+	assert.Equal(
+		t,
+		&bus.Message{Topic: bus.DeletedInstancesTopic, Data: instanceUpdatesMessage.instanceUpdates.deletedInstances},
+		messages[2],
+	)
+	assert.Equal(
+		t,
+		&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: nginxConfigContextMessage.nginxConfigContext},
+		messages[3],
 	)
 }
 

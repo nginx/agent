@@ -9,91 +9,91 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 )
 
-type FakeProcessParser struct {
-	ParseStub        func(context.Context, []*model.Process) map[string]*v1.Instance
+type FakeNginxConfigParser struct {
+	ParseStub        func(context.Context, *v1.Instance) (*model.NginxConfigContext, error)
 	parseMutex       sync.RWMutex
 	parseArgsForCall []struct {
 		arg1 context.Context
-		arg2 []*model.Process
+		arg2 *v1.Instance
 	}
 	parseReturns struct {
-		result1 map[string]*v1.Instance
+		result1 *model.NginxConfigContext
+		result2 error
 	}
 	parseReturnsOnCall map[int]struct {
-		result1 map[string]*v1.Instance
+		result1 *model.NginxConfigContext
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeProcessParser) Parse(arg1 context.Context, arg2 []*model.Process) map[string]*v1.Instance {
-	var arg2Copy []*model.Process
-	if arg2 != nil {
-		arg2Copy = make([]*model.Process, len(arg2))
-		copy(arg2Copy, arg2)
-	}
+func (fake *FakeNginxConfigParser) Parse(arg1 context.Context, arg2 *v1.Instance) (*model.NginxConfigContext, error) {
 	fake.parseMutex.Lock()
 	ret, specificReturn := fake.parseReturnsOnCall[len(fake.parseArgsForCall)]
 	fake.parseArgsForCall = append(fake.parseArgsForCall, struct {
 		arg1 context.Context
-		arg2 []*model.Process
-	}{arg1, arg2Copy})
+		arg2 *v1.Instance
+	}{arg1, arg2})
 	stub := fake.ParseStub
 	fakeReturns := fake.parseReturns
-	fake.recordInvocation("Parse", []interface{}{arg1, arg2Copy})
+	fake.recordInvocation("Parse", []interface{}{arg1, arg2})
 	fake.parseMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeProcessParser) ParseCallCount() int {
+func (fake *FakeNginxConfigParser) ParseCallCount() int {
 	fake.parseMutex.RLock()
 	defer fake.parseMutex.RUnlock()
 	return len(fake.parseArgsForCall)
 }
 
-func (fake *FakeProcessParser) ParseCalls(stub func(context.Context, []*model.Process) map[string]*v1.Instance) {
+func (fake *FakeNginxConfigParser) ParseCalls(stub func(context.Context, *v1.Instance) (*model.NginxConfigContext, error)) {
 	fake.parseMutex.Lock()
 	defer fake.parseMutex.Unlock()
 	fake.ParseStub = stub
 }
 
-func (fake *FakeProcessParser) ParseArgsForCall(i int) (context.Context, []*model.Process) {
+func (fake *FakeNginxConfigParser) ParseArgsForCall(i int) (context.Context, *v1.Instance) {
 	fake.parseMutex.RLock()
 	defer fake.parseMutex.RUnlock()
 	argsForCall := fake.parseArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeProcessParser) ParseReturns(result1 map[string]*v1.Instance) {
+func (fake *FakeNginxConfigParser) ParseReturns(result1 *model.NginxConfigContext, result2 error) {
 	fake.parseMutex.Lock()
 	defer fake.parseMutex.Unlock()
 	fake.ParseStub = nil
 	fake.parseReturns = struct {
-		result1 map[string]*v1.Instance
-	}{result1}
+		result1 *model.NginxConfigContext
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeProcessParser) ParseReturnsOnCall(i int, result1 map[string]*v1.Instance) {
+func (fake *FakeNginxConfigParser) ParseReturnsOnCall(i int, result1 *model.NginxConfigContext, result2 error) {
 	fake.parseMutex.Lock()
 	defer fake.parseMutex.Unlock()
 	fake.ParseStub = nil
 	if fake.parseReturnsOnCall == nil {
 		fake.parseReturnsOnCall = make(map[int]struct {
-			result1 map[string]*v1.Instance
+			result1 *model.NginxConfigContext
+			result2 error
 		})
 	}
 	fake.parseReturnsOnCall[i] = struct {
-		result1 map[string]*v1.Instance
-	}{result1}
+		result1 *model.NginxConfigContext
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeProcessParser) Invocations() map[string][][]interface{} {
+func (fake *FakeNginxConfigParser) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.parseMutex.RLock()
@@ -105,7 +105,7 @@ func (fake *FakeProcessParser) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *FakeProcessParser) recordInvocation(key string, args []interface{}) {
+func (fake *FakeNginxConfigParser) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {

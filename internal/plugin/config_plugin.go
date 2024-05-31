@@ -71,7 +71,7 @@ func (c *Config) Process(ctx context.Context, msg *bus.Message) {
 		c.processConfigurationStatus(ctx, msg)
 	case msg.Topic == bus.InstanceConfigUpdateRequestTopic:
 		c.processInstanceConfigUpdateRequest(ctx, msg)
-	case msg.Topic == bus.ResourceTopic:
+	case msg.Topic == bus.ResourceUpdateTopic:
 		if resource, ok := msg.Data.(*v1.Resource); ok {
 			c.resourceMutex.Lock()
 			c.resource = resource
@@ -101,7 +101,7 @@ func (*Config) Subscriptions() []string {
 		bus.InstanceConfigUpdateRequestTopic,
 		bus.InstanceConfigUpdateStatusTopic,
 		bus.ConfigClientTopic,
-		bus.ResourceTopic,
+		bus.ResourceUpdateTopic,
 	}
 }
 

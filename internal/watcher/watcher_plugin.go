@@ -17,13 +17,14 @@ import (
 // nolint
 type (
 	Watcher struct {
-		messagePipe            bus.MessagePipeInterface
-		agentConfig            *config.Config
-		instanceWatcherService *InstanceWatcherService
-		instanceUpdatesChannel chan InstanceUpdatesMessage
-		healthWatcherService   *HealthWatcherService
-		instanceHealthChannel  chan InstanceHealthMessage
-		cancel                 context.CancelFunc
+		messagePipe               bus.MessagePipeInterface
+		agentConfig               *config.Config
+		instanceWatcherService    *InstanceWatcherService
+		healthWatcherService      *HealthWatcherService
+		instanceUpdatesChannel    chan InstanceUpdatesMessage
+		nginxConfigContextChannel chan NginxConfigContextMessage
+		instanceHealthChannel     chan InstanceHealthMessage
+		cancel                    context.CancelFunc
 	}
 )
 
@@ -31,11 +32,12 @@ var _ bus.Plugin = (*Watcher)(nil)
 
 func NewWatcher(agentConfig *config.Config) *Watcher {
 	return &Watcher{
-		agentConfig:            agentConfig,
-		instanceWatcherService: NewInstanceWatcherService(agentConfig),
-		instanceUpdatesChannel: make(chan InstanceUpdatesMessage),
-		healthWatcherService:   NewHealthWatcherService(agentConfig),
-		instanceHealthChannel:  make(chan InstanceHealthMessage),
+		agentConfig:               agentConfig,
+		instanceWatcherService:    NewInstanceWatcherService(agentConfig),
+		healthWatcherService:      NewHealthWatcherService(agentConfig),
+		instanceUpdatesChannel:    make(chan InstanceUpdatesMessage),
+		nginxConfigContextChannel: make(chan NginxConfigContextMessage),
+		instanceHealthChannel:     make(chan InstanceHealthMessage),
 	}
 }
 
@@ -48,7 +50,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 	watcherContext, cancel := context.WithCancel(ctx)
 	w.cancel = cancel
 
-	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel)
+	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel, w.nginxConfigContextChannel)
 	go w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
 	go w.monitorWatchers(watcherContext)
 
@@ -84,28 +86,49 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			return
 		case message := <-w.instanceUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.correlationID)
-
-			if len(message.instanceUpdates.newInstances) > 0 {
-				slog.DebugContext(newCtx, "New instances found", "instances", message.instanceUpdates.newInstances)
-				w.healthWatcherService.AddHealthWatcher(message.instanceUpdates.newInstances)
-				w.messagePipe.Process(
-					newCtx,
-					&bus.Message{Topic: bus.AddInstancesTopic, Data: message.instanceUpdates.newInstances},
-				)
-			}
-			if len(message.instanceUpdates.deletedInstances) > 0 {
-				slog.DebugContext(newCtx, "Instances deleted", "instances", message.instanceUpdates.deletedInstances)
-				w.healthWatcherService.DeleteHealthWatcher(message.instanceUpdates.deletedInstances)
-				w.messagePipe.Process(
-					newCtx,
-					&bus.Message{Topic: bus.DeletedInstancesTopic, Data: message.instanceUpdates.deletedInstances},
-				)
-			}
+			w.handleInstanceUpdates(newCtx, message)
+		case message := <-w.nginxConfigContextChannel:
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.correlationID)
+			slog.DebugContext(
+				newCtx,
+				"Updated NGINX config context",
+				"nginx_config_context", message.nginxConfigContext,
+			)
+			w.messagePipe.Process(
+				newCtx,
+				&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: message.nginxConfigContext},
+			)
 		case message := <-w.instanceHealthChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.correlationID)
 			w.messagePipe.Process(newCtx, &bus.Message{
 				Topic: bus.InstanceHealthTopic, Data: message.instanceHealth,
 			})
 		}
+	}
+}
+
+func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message InstanceUpdatesMessage) {
+	if len(message.instanceUpdates.newInstances) > 0 {
+		slog.DebugContext(newCtx, "New instances found", "instances", message.instanceUpdates.newInstances)
+		w.healthWatcherService.AddHealthWatcher(message.instanceUpdates.newInstances)
+		w.messagePipe.Process(
+			newCtx,
+			&bus.Message{Topic: bus.AddInstancesTopic, Data: message.instanceUpdates.newInstances},
+		)
+	}
+	if len(message.instanceUpdates.updatedInstances) > 0 {
+		slog.DebugContext(newCtx, "Instances updated", "instances", message.instanceUpdates.updatedInstances)
+		w.messagePipe.Process(
+			newCtx,
+			&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: message.instanceUpdates.updatedInstances},
+		)
+	}
+	if len(message.instanceUpdates.deletedInstances) > 0 {
+		slog.DebugContext(newCtx, "Instances deleted", "instances", message.instanceUpdates.deletedInstances)
+		w.healthWatcherService.DeleteHealthWatcher(message.instanceUpdates.deletedInstances)
+		w.messagePipe.Process(
+			newCtx,
+			&bus.Message{Topic: bus.DeletedInstancesTopic, Data: message.instanceUpdates.deletedInstances},
+		)
 	}
 }

@@ -17,6 +17,8 @@ import (
 )
 
 func TestResourceService_AddInstance(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name         string
 		instanceList []*v1.Instance
@@ -48,7 +50,7 @@ func TestResourceService_AddInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService()
+			resourceService := NewResourceService(ctx)
 			resource := resourceService.AddInstances(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
 		})
@@ -56,6 +58,8 @@ func TestResourceService_AddInstance(t *testing.T) {
 }
 
 func TestResourceService_UpdateInstance(t *testing.T) {
+	ctx := context.Background()
+
 	updatedInstance := &v1.Instance{
 		InstanceConfig: protos.GetNginxOssInstance([]string{}).GetInstanceConfig(),
 		InstanceMeta:   protos.GetNginxOssInstance([]string{}).GetInstanceMeta(),
@@ -89,7 +93,7 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService()
+			resourceService := NewResourceService(ctx)
 			resourceService.resource.Instances = []*v1.Instance{protos.GetNginxOssInstance([]string{})}
 			resource := resourceService.UpdateInstances(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
@@ -98,6 +102,8 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 }
 
 func TestResourceService_DeleteInstance(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name         string
 		instanceList []*v1.Instance
@@ -121,7 +127,7 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService()
+			resourceService := NewResourceService(ctx)
 			resourceService.resource.Instances = []*v1.Instance{
 				protos.GetNginxOssInstance([]string{}),
 				protos.GetNginxPlusInstance([]string{}),
@@ -166,18 +172,18 @@ func TestResourceService_GetResource(t *testing.T) {
 
 		mockInfo.IsContainerReturns(tc.isContainer)
 
-		resourceService := NewResourceService()
+		resourceService := NewResourceService(ctx)
 		resourceService.info = mockInfo
 		resourceService.resource = tc.expectedResource
 
-		resource := resourceService.GetResource(ctx)
-		assert.Equal(t, tc.expectedResource.GetResourceId(), resource.GetResourceId())
-		assert.Empty(t, resource.GetInstances())
+		resourceService.updateResourceInfo(ctx)
+		assert.Equal(t, tc.expectedResource.GetResourceId(), resourceService.resource.GetResourceId())
+		assert.Empty(t, resourceService.resource.GetInstances())
 
 		if tc.isContainer {
-			assert.Equal(t, tc.expectedResource.GetContainerInfo(), resource.GetContainerInfo())
+			assert.Equal(t, tc.expectedResource.GetContainerInfo(), resourceService.resource.GetContainerInfo())
 		} else {
-			assert.Equal(t, tc.expectedResource.GetHostInfo(), resource.GetHostInfo())
+			assert.Equal(t, tc.expectedResource.GetHostInfo(), resourceService.resource.GetHostInfo())
 		}
 	}
 }

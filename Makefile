@@ -41,7 +41,7 @@ PROJECT_FILE	= main.go
 DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR) $(DOCS_DIR) $(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
-VERSION 		= "v3.0.0"
+VERSION 		?= "v3.0.0"
 COMMIT  		= $(shell git rev-parse --short HEAD)
 DATE    		= $(shell date +%F_%H-%M-%S)
 LDFLAGS 		= "-w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
@@ -94,6 +94,7 @@ $(RPM_PACKAGE):
 
 include Makefile.tools
 include Makefile.containers
+include Makefile.packaging
 
 .PHONY: help clean no-local-changes build lint format unit-test integration-test run dev run-mock-management-server generate generate-mocks local-apk-package local-deb-package local-rpm-package
 
@@ -153,7 +154,7 @@ integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 performance-test:
 	@mkdir -p $(TEST_BUILD_DIR)
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/config > $(TEST_BUILD_DIR)/benchmark.txt
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/instance >> $(TEST_BUILD_DIR)/benchmark.txt
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/watcher >> $(TEST_BUILD_DIR)/benchmark.txt
 	@cat $(TEST_BUILD_DIR)/benchmark.txt
 
 compare-performance-benchmark-results:
@@ -202,6 +203,6 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
 	$(GOTEST) -v ./test/integration -cpuprofile integration_cpu.pprof
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/service/config -cpuprofile perf_config_cpu.pprof
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/service/instance -cpuprofile perf_instance_cpu.pprof
-	@$(GOTOOL) pprof -proto perf_config_cpu.pprof perf_instance_cpu.pprof integration_cpu.pprof > default.pgo
-	rm perf_config_cpu.pprof perf_instance_cpu.pprof config.test instance.test integration_cpu.pprof integration.test profile.pprof
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher -cpuprofile perf_watcher_cpu.pprof
+	@$(GOTOOL) pprof -proto perf_config_cpu.pprof perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
+	rm perf_config_cpu.pprof perf_watcher_cpu.pprof config.test integration_cpu.pprof integration.test profile.pprof
