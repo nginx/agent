@@ -109,9 +109,10 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 	}
 }
 
-func (hw *HealthWatcherService) health(ctx context.Context) (healthStatuses []*mpi.InstanceHealth, isHealthDiff bool,
+func (hw *HealthWatcherService) health(ctx context.Context) (updatedStatuses []*mpi.InstanceHealth, isHealthDiff bool,
 ) {
 	currentHealth := make(map[string]*mpi.InstanceHealth, len(hw.watchers))
+	allStatuses := make([]*mpi.InstanceHealth, 0)
 
 	for instanceID, watcher := range hw.watchers {
 		instanceHealth, err := watcher.Health(ctx, hw.instances[instanceID])
@@ -123,7 +124,7 @@ func (hw *HealthWatcherService) health(ctx context.Context) (healthStatuses []*m
 					instanceID, err.Error()),
 			}
 		}
-		healthStatuses = append(healthStatuses, instanceHealth)
+		allStatuses = append(allStatuses, instanceHealth)
 		currentHealth[instanceID] = instanceHealth
 	}
 
@@ -133,11 +134,12 @@ func (hw *HealthWatcherService) health(ctx context.Context) (healthStatuses []*m
 		hw.updateCache(currentHealth)
 	}
 
-	healthStatuses = hw.compareCache(healthStatuses)
+	updatedStatuses = hw.compareCache(allStatuses)
 
-	return healthStatuses, isHealthDiff
+	return updatedStatuses, isHealthDiff
 }
 
+// update the cache with the most recent instance healths
 func (hw *HealthWatcherService) updateCache(currentHealth map[string]*mpi.InstanceHealth) {
 	for instanceID, healthStatus := range currentHealth {
 		hw.cache[instanceID] = healthStatus
@@ -152,6 +154,8 @@ func (hw *HealthWatcherService) updateCache(currentHealth map[string]*mpi.Instan
 	slog.Debug("Updating health watcher cache", "cache", hw.cache)
 }
 
+// compare the cache with the current list of instances to check if an instance has been deleted
+// if an instance has been deleted add an UNHEALTHY health status to the list of instances for that instance
 func (hw *HealthWatcherService) compareCache(healthStatuses []*mpi.InstanceHealth) []*mpi.InstanceHealth {
 	if len(hw.cache) != len(hw.instances) {
 		for instanceID := range hw.cache {
@@ -170,6 +174,7 @@ func (hw *HealthWatcherService) compareCache(healthStatuses []*mpi.InstanceHealt
 	return healthStatuses
 }
 
+// compare current health with cached health to see if the health of an instance has changed
 func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*mpi.InstanceHealth) bool {
 	if len(currentHealth) != len(hw.cache) {
 		return true

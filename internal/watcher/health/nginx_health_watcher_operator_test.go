@@ -65,7 +65,7 @@ func TestNginxHealthWatcherOperator_Health(t *testing.T) {
 			},
 			expected: &mpi.InstanceHealth{
 				InstanceId:           instance.GetInstanceMeta().GetInstanceId(),
-				Description:          fmt.Sprintf("pid: %d is degraded, status: %s", 123, "sleep"),
+				Description:          fmt.Sprintf("PID: %d is degraded, status: %s", 123, "sleep"),
 				InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
 			},
 			err:      nil,
@@ -84,7 +84,7 @@ func TestNginxHealthWatcherOperator_Health(t *testing.T) {
 			},
 			expected: &mpi.InstanceHealth{
 				InstanceId: instance.GetInstanceMeta().GetInstanceId(),
-				Description: fmt.Sprintf("pid: %d is degraded, status: %s, instance "+
+				Description: fmt.Sprintf("PID: %d is degraded, status: %s, instance "+
 					"does not have enough children", 123, "sleep"),
 				InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_DEGRADED,
 			},
