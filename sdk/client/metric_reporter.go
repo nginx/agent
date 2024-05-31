@@ -216,6 +216,7 @@ func (r *metricReporter) checkClientConnection() error {
 		if err != nil {
 			return err
 		}
+		r.isRetrying = false
 	}
 
 	return nil
