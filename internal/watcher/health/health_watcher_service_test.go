@@ -189,7 +189,7 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 				},
 				{
 					InstanceId: plusInstance.GetInstanceMeta().GetInstanceId(),
-					Description: fmt.Sprintf("instance has been deleted %s", plusInstance.
+					Description: fmt.Sprintf("instance %s not found", plusInstance.
 						GetInstanceMeta().GetInstanceId()),
 					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
 				},
