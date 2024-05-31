@@ -120,7 +120,7 @@ func (hw *HealthWatcherService) health(ctx context.Context) (updatedStatuses []*
 			instanceHealth = &mpi.InstanceHealth{
 				InstanceId:           instanceID,
 				InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNSPECIFIED,
-				Description: fmt.Sprintf("failed to get health for instance %s, error: %v",
+				Description: fmt.Sprintf("failed to get health for instance %s, error: %s",
 					instanceID, err.Error()),
 			}
 		}
