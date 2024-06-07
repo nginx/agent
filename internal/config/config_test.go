@@ -35,13 +35,14 @@ func TestRegisterConfigFile(t *testing.T) {
 	assert.NotEmpty(t, viperInstance.GetString(UUIDKey))
 }
 
-func TestGetConfig(t *testing.T) {
+func TestResolveConfig(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
-	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/usr/share/nginx/modules"}
+	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules"}
 	require.NoError(t, err)
 
-	result := GetConfig()
+	result, err := ResolveConfig()
+	require.NoError(t, err)
 
 	assert.Equal(t, "debug", result.Log.Level)
 	assert.Equal(t, "./", result.Log.Path)
@@ -53,11 +54,12 @@ func TestGetConfig(t *testing.T) {
 	assert.True(t, result.Metrics.Collector)
 	assert.Equal(t, "localhost:3000", result.Metrics.OTLPExportURL)
 	assert.Equal(t, "localhost:4318", result.Metrics.OTLPReceiverURL)
-	assert.Equal(t, "/var/etc/nginx-agent/nginx-agent-otelcol.yaml", result.Metrics.CollectorConfigPath)
+	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", result.Metrics.CollectorConfigPath)
 
 	assert.Equal(t, 10*time.Second, result.Client.Timeout)
 
-	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:invalid/path", result.ConfigDir)
+	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/var/run/nginx:/usr/share/nginx/modules:invalid/path",
+		result.ConfigDir)
 
 	assert.Equal(t, allowedDir, result.AllowedDirectories)
 }
@@ -95,7 +97,7 @@ func TestSeekFileInPaths(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestGetConfigFilePaths(t *testing.T) {
+func TestResolveConfigFilePaths(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	currentDirectory, err := os.Getwd()
 	require.NoError(t, err)
@@ -128,30 +130,40 @@ func TestNormalizeFunc(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
-func TestGetLog(t *testing.T) {
+func TestResolveLog(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(LogLevelKey, "error")
 	viperInstance.Set(LogPathKey, "/var/log/test/test.log")
 
-	result := getLog()
+	result := resolveLog()
 	assert.Equal(t, "error", result.Level)
 	assert.Equal(t, "/var/log/test/test.log", result.Path)
 }
 
-func TestGetClient(t *testing.T) {
+func TestResolveClient(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(ClientTimeoutKey, time.Hour)
 
-	result := getClient()
+	result := resolveClient()
 	assert.Equal(t, time.Hour, result.Timeout)
 }
 
-func TestGetAllowedDirectories(t *testing.T) {
+func TestResolveMetrics(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	viperInstance.Set(ConfigDirectoriesKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules")
+	ac := getAgentConfig()
+	expected := ac.Metrics
 
-	result := getConfigDir()
-	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules", result)
+	viperInstance.Set(MetricsRootKey, "set")
+	viperInstance.Set(MetricsCollectorConfigPathKey, expected.CollectorConfigPath)
+	viperInstance.Set(MetricsCollectorKey, expected.Collector)
+	viperInstance.Set(MetricsOTLPExportURLKey, expected.OTLPExportURL)
+	viperInstance.Set(MetricsOTLPReceiverURLKey, expected.OTLPReceiverURL)
+	viperInstance.Set(MetricsCollectorReceiversKey, []string{"hostmetrics"})
+
+	actual, err := resolveMetrics(ac.AllowedDirectories)
+	require.NoError(t, err)
+
+	assert.Equal(t, expected, actual)
 }
 
 func TestCommand(t *testing.T) {
@@ -179,7 +191,7 @@ func TestCommand(t *testing.T) {
 	assert.True(t, viperInstance.IsSet(CommandAuthKey))
 	assert.True(t, viperInstance.IsSet(CommandTLSKey))
 
-	result := getCommand()
+	result := resolveCommand()
 
 	assert.Equal(t, expected.Server, result.Server)
 	assert.Equal(t, expected.Auth, result.Auth)
@@ -202,7 +214,7 @@ func TestMissingServerTLS(t *testing.T) {
 	assert.True(t, viperInstance.IsSet(CommandAuthKey))
 	assert.False(t, viperInstance.IsSet(CommandTLSKey))
 
-	result := getCommand()
+	result := resolveCommand()
 	assert.Equal(t, expected.Server, result.Server)
 	assert.Equal(t, expected.Auth, result.Auth)
 	assert.Nil(t, result.TLS)
@@ -217,12 +229,15 @@ func getAgentConfig() *Config {
 		Client: &Client{
 			Timeout: 5 * time.Second,
 		},
-		ConfigDir:          "",
-		AllowedDirectories: []string{},
+		ConfigDir: "",
+		AllowedDirectories: []string{
+			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules",
+		},
 		Metrics: &Metrics{
 			Collector:           true,
 			OTLPExportURL:       "localhost:3000",
-			CollectorConfigPath: "/var/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			OTLPReceiverURL:     "localhost:4317",
+			CollectorConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
 			CollectorReceivers:  []OTelReceiver{HostMetrics},
 		},
 		Command: &Command{

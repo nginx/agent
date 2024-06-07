@@ -71,7 +71,7 @@ type (
 	Metrics struct {
 		Collector           bool           `yaml:"-" mapstructure:"collector"`
 		OTLPExportURL       string         `yaml:"-" mapstructure:"otlp_export_url"`
-		OTLPReceiverURL     string         `yaml:"-" mapstructure:"otlp_receiver_port"`
+		OTLPReceiverURL     string         `yaml:"-" mapstructure:"otlp_receiver_url"`
 		CollectorConfigPath string         `yaml:"-" mapstructure:"collector_config_path"`
 		CollectorReceivers  []OTelReceiver `yaml:"-" mapstructure:"collector_receivers"`
 	}
@@ -150,7 +150,7 @@ func (c *Config) IsDirectoryAllowed(directory string) bool {
 func toOTelReceiver(input string) OTelReceiver {
 	switch OTelReceiver(input) {
 	case OTLP, HostMetrics:
-		return toOTelReceiver(input)
+		return OTelReceiver(input)
 	case Unsupported:
 		fallthrough
 	default:

@@ -7,6 +7,7 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -23,7 +24,7 @@ import (
 const (
 	ConfigFileName = "nginx-agent.conf"
 	EnvPrefix      = "NGINX_AGENT"
-	KeyDelimiter   = "_"
+	KeyDelimiter   = "."
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -65,32 +66,45 @@ func RegisterConfigFile() error {
 	return nil
 }
 
-func GetConfig() *Config {
-	config := &Config{
-		UUID:               viperInstance.GetString(UUIDKey),
-		Version:            viperInstance.GetString(VersionKey),
-		Path:               viperInstance.GetString(ConfigPathKey),
-		Log:                getLog(),
-		DataPlaneConfig:    getDataPlaneConfig(),
-		Client:             getClient(),
-		ConfigDir:          getConfigDir(),
-		AllowedDirectories: []string{},
-		Metrics:            getMetrics(),
-		Command:            getCommand(),
-		Common:             getCommon(),
-		Watchers:           getWatchers(),
-	}
-
-	for _, dir := range strings.Split(config.ConfigDir, ":") {
+func ResolveConfig() (*Config, error) {
+	// Collect allowed directories, so that paths in the config can be validated.
+	configDir := viperInstance.GetString(ConfigDirectoriesKey)
+	allowedDirs := make([]string, 0)
+	for _, dir := range strings.Split(configDir, ":") {
 		if dir != "" && filepath.IsAbs(dir) {
-			config.AllowedDirectories = append(config.AllowedDirectories, dir)
+			allowedDirs = append(allowedDirs, dir)
 		} else {
 			slog.Warn("Invalid directory: ", "dir", dir)
 		}
 	}
+
+	// Collect all parsing errors before returning the error, so the user sees all issues with config
+	// in one error message.
+	var err error
+	metrics, metricsErr := resolveMetrics(allowedDirs)
+	err = errors.Join(err, metricsErr)
+	if err != nil {
+		return nil, err
+	}
+
+	config := &Config{
+		UUID:               viperInstance.GetString(UUIDKey),
+		Version:            viperInstance.GetString(VersionKey),
+		Path:               viperInstance.GetString(ConfigPathKey),
+		Log:                resolveLog(),
+		DataPlaneConfig:    resolveDataPlaneConfig(),
+		Client:             resolveClient(),
+		ConfigDir:          configDir,
+		AllowedDirectories: allowedDirs,
+		Metrics:            metrics,
+		Command:            resolveCommand(),
+		Common:             resolveCommon(),
+		Watchers:           resolveWatchers(),
+	}
+
 	slog.Debug("Agent config", "config", config)
 
-	return config
+	return config, nil
 }
 
 func setVersion(version, commit string) {
@@ -268,14 +282,14 @@ func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 	return flag.NormalizedName(name)
 }
 
-func getLog() *Log {
+func resolveLog() *Log {
 	return &Log{
 		Level: viperInstance.GetString(LogLevelKey),
 		Path:  viperInstance.GetString(LogPathKey),
 	}
 }
 
-func getDataPlaneConfig() *DataPlaneConfig {
+func resolveDataPlaneConfig() *DataPlaneConfig {
 	return &DataPlaneConfig{
 		Nginx: &NginxDataPlaneConfig{
 			ReloadMonitoringPeriod: viperInstance.GetDuration(DataPlaneConfigNginxReloadMonitoringPeriodKey),
@@ -284,7 +298,7 @@ func getDataPlaneConfig() *DataPlaneConfig {
 	}
 }
 
-func getClient() *Client {
+func resolveClient() *Client {
 	return &Client{
 		Timeout:             viperInstance.GetDuration(ClientTimeoutKey),
 		Time:                viperInstance.GetDuration(ClientTimeKey),
@@ -292,16 +306,15 @@ func getClient() *Client {
 	}
 }
 
-func getConfigDir() string {
-	return viperInstance.GetString(ConfigDirectoriesKey)
-}
-
-func getMetrics() *Metrics {
+func resolveMetrics(allowedDirs []string) (*Metrics, error) {
+	// We do not want to return a sentinel error because we are joining all returned errors
+	// from config resolution and returning them without pattern matching.
+	// nolint: nilnil
 	if !viperInstance.IsSet(MetricsRootKey) {
-		return nil
+		return nil, nil
 	}
 
-	strReceivers := viperInstance.GetStringSlice(MetricsCollectorConfigPathKey)
+	strReceivers := viperInstance.GetStringSlice(MetricsCollectorReceiversKey)
 	enumReceivers := make([]OTelReceiver, 0, len(strReceivers))
 	for _, rec := range strReceivers {
 		rec := toOTelReceiver(strings.ToLower(rec))
@@ -311,18 +324,23 @@ func getMetrics() *Metrics {
 		}
 	}
 
-	metrics := &Metrics{
+	var err error
+	otelColConfPath, pathErr := filePathKey(MetricsCollectorConfigPathKey, allowedDirs)
+	err = errors.Join(pathErr, pathErr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid metrics: %w", err)
+	}
+
+	return &Metrics{
 		Collector:           viperInstance.GetBool(MetricsCollectorKey),
 		OTLPExportURL:       viperInstance.GetString(MetricsOTLPExportURLKey),
 		OTLPReceiverURL:     viperInstance.GetString(MetricsOTLPReceiverURLKey),
-		CollectorConfigPath: viperInstance.GetString(MetricsCollectorConfigPathKey),
+		CollectorConfigPath: otelColConfPath,
 		CollectorReceivers:  enumReceivers,
-	}
-
-	return metrics
+	}, nil
 }
 
-func getCommand() *Command {
+func resolveCommand() *Command {
 	if !viperInstance.IsSet(CommandRootKey) {
 		return nil
 	}
@@ -364,7 +382,7 @@ func getCommand() *Command {
 	return command
 }
 
-func getCommon() *CommonSettings {
+func resolveCommon() *CommonSettings {
 	return &CommonSettings{
 		InitialInterval:     DefBackoffInitialInterval,
 		MaxInterval:         DefBackoffMaxInterval,
@@ -374,7 +392,7 @@ func getCommon() *CommonSettings {
 	}
 }
 
-func getWatchers() *Watchers {
+func resolveWatchers() *Watchers {
 	return &Watchers{
 		InstanceWatcher: InstanceWatcher{
 			MonitoringFrequency: DefInstanceWatcherMonitoringFrequency,
@@ -383,4 +401,18 @@ func getWatchers() *Watchers {
 			MonitoringFrequency: DefInstanceHealthWatcherMonitoringFrequency,
 		},
 	}
+}
+
+// Resolves the given `configKey` from viper and validates it.
+func filePathKey(configKey string, allowedDirPaths []string) (string, error) {
+	inputPath := viperInstance.GetString(configKey)
+	cleaned := filepath.Clean(inputPath)
+
+	for _, path := range allowedDirPaths {
+		if strings.HasPrefix(cleaned, path) {
+			return cleaned, nil
+		}
+	}
+
+	return "", fmt.Errorf("%s: path %s not allowed", configKey, cleaned)
 }
