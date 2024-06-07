@@ -14,6 +14,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +26,7 @@ func TestFileManagerService_UpdateOverview(t *testing.T) {
 	require.NoError(t, fileMetaError)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fileManagerService := NewFileManagerService(fakeFileServiceClient)
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.GetAgentConfig())
 
 	err := fileManagerService.UpdateOverview(ctx, "123", []*mpi.File{
 		{
@@ -48,7 +49,7 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 	require.NoError(t, fileMetaError)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fileManagerService := NewFileManagerService(fakeFileServiceClient)
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.GetAgentConfig())
 
 	err := fileManagerService.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})
 

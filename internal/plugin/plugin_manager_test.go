@@ -6,8 +6,11 @@
 package plugin
 
 import (
+	"context"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/command"
+	"github.com/nginx/agent/v3/internal/file"
 	"github.com/nginx/agent/v3/internal/metrics/collector"
 	"github.com/nginx/agent/v3/internal/resource"
 
@@ -18,6 +21,8 @@ import (
 )
 
 func TestLoadPLugins(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name     string
 		input    *config.Config
@@ -28,11 +33,10 @@ func TestLoadPLugins(t *testing.T) {
 			input: &config.Config{},
 			expected: []bus.Plugin{
 				&resource.Resource{},
-				&Config{},
 				&watcher.Watcher{},
 			},
 		}, {
-			name: "Test 2: Load grpc client plugin",
+			name: "Test 2: Load file and command plugins",
 			input: &config.Config{
 				Command: &config.Command{
 					Server: &config.ServerConfig{
@@ -44,8 +48,8 @@ func TestLoadPLugins(t *testing.T) {
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},
-				&Config{},
-				&GrpcClient{},
+				&command.CommandPlugin{},
+				&file.FilePlugin{},
 				&watcher.Watcher{},
 			},
 		}, {
@@ -57,7 +61,6 @@ func TestLoadPLugins(t *testing.T) {
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},
-				&Config{},
 				&collector.Collector{},
 				&watcher.Watcher{},
 			},
@@ -67,7 +70,7 @@ func TestLoadPLugins(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			t.Logf("running test %s", test.name)
-			result := LoadPlugins(test.input)
+			result := LoadPlugins(ctx, test.input)
 			assert.Equal(tt, len(test.expected), len(result))
 			for i, expectedPlugin := range test.expected {
 				assert.IsType(tt, expectedPlugin, result[i])

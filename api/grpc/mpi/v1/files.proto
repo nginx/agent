@@ -120,7 +120,7 @@ message FileMeta {
     // Last modified time of the file (created time if never modified)
     google.protobuf.Timestamp modified_time = 3 [(buf.validate.field).timestamp.lt_now = true];
     // The permission set associated with a particular file
-    string permissions = 4 [(buf.validate.field).string.pattern = "0[0-7]{3}"];
+    string permissions = 4 [(buf.validate.field).string.pattern = "[rwx-]{9}"];
     // The size of the file in bytes
     int64 size = 5;
 }
