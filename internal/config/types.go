@@ -69,7 +69,7 @@ type (
 	}
 
 	Metrics struct {
-		Collector           bool           `yaml:"-" mapstructure:"collector"`
+		CollectorEnabled    bool           `yaml:"-" mapstructure:"collector_enabled"`
 		OTLPExportURL       string         `yaml:"-" mapstructure:"otlp_export_url"`
 		OTLPReceiverURL     string         `yaml:"-" mapstructure:"otlp_receiver_url"`
 		CollectorConfigPath string         `yaml:"-" mapstructure:"collector_config_path"`

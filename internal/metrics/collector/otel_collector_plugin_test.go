@@ -49,7 +49,7 @@ func setupOTelConfig(t *testing.T) *config.Config {
 	t.Helper()
 	return &config.Config{
 		Metrics: &config.Metrics{
-			Collector:           true,
+			CollectorEnabled:    true,
 			OTLPExportURL:       "saas:9090",
 			OTLPReceiverURL:     "localhost:4317",
 			CollectorConfigPath: filepath.Join(t.TempDir(), "otel-collector-config.yaml"),

@@ -11,7 +11,9 @@ import (
 var DefCollectorReceivers = []string{"otlp"}
 
 const (
-	DefGracefulShutdownPeriod = 5 * time.Second
+	DefGracefulShutdownPeriod      = 5 * time.Second
+	DefNginxReloadMonitoringPeriod = 10 * time.Second
+	DefTreatErrorsAsWarnings       = true
 
 	DefCollectorConfigPath = "/var/run/nginx-agent-otelcol.yaml"
 	DefOTLPExportURL       = ""

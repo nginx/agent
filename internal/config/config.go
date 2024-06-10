@@ -24,7 +24,7 @@ import (
 const (
 	ConfigFileName = "nginx-agent.conf"
 	EnvPrefix      = "NGINX_AGENT"
-	KeyDelimiter   = "."
+	KeyDelimiter   = "_"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -134,13 +134,13 @@ func registerFlags() {
 	)
 
 	fs.Duration(
-		DataPlaneConfigNginxReloadMonitoringPeriodKey,
-		DefaultDataPlaneConfigNginxReloadMonitoringPeriod,
+		NginxReloadMonitoringPeriodKey,
+		DefNginxReloadMonitoringPeriod,
 		"The amount of time to monitor NGINX after a reload of configuration.",
 	)
 	fs.Bool(
-		DataPlaneConfigNginxTreatWarningsAsErrorsKey,
-		true,
+		NginxTreatWarningsAsErrorsKey,
+		DefTreatErrorsAsWarnings,
 		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
 	)
 
@@ -292,8 +292,8 @@ func resolveLog() *Log {
 func resolveDataPlaneConfig() *DataPlaneConfig {
 	return &DataPlaneConfig{
 		Nginx: &NginxDataPlaneConfig{
-			ReloadMonitoringPeriod: viperInstance.GetDuration(DataPlaneConfigNginxReloadMonitoringPeriodKey),
-			TreatWarningsAsError:   viperInstance.GetBool(DataPlaneConfigNginxTreatWarningsAsErrorsKey),
+			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
+			TreatWarningsAsError:   viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
 		},
 	}
 }
@@ -326,13 +326,13 @@ func resolveMetrics(allowedDirs []string) (*Metrics, error) {
 
 	var err error
 	otelColConfPath, pathErr := filePathKey(MetricsCollectorConfigPathKey, allowedDirs)
-	err = errors.Join(pathErr, pathErr)
+	err = errors.Join(err, pathErr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid metrics: %w", err)
 	}
 
 	return &Metrics{
-		Collector:           viperInstance.GetBool(MetricsCollectorKey),
+		CollectorEnabled:    viperInstance.GetBool(MetricsCollectorEnabledKey),
 		OTLPExportURL:       viperInstance.GetString(MetricsOTLPExportURLKey),
 		OTLPReceiverURL:     viperInstance.GetString(MetricsOTLPReceiverURLKey),
 		CollectorConfigPath: otelColConfPath,

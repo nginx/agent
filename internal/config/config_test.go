@@ -51,7 +51,7 @@ func TestResolveConfig(t *testing.T) {
 	assert.False(t, result.DataPlaneConfig.Nginx.TreatWarningsAsError)
 
 	require.NotNil(t, result.Metrics)
-	assert.True(t, result.Metrics.Collector)
+	assert.True(t, result.Metrics.CollectorEnabled)
 	assert.Equal(t, "localhost:3000", result.Metrics.OTLPExportURL)
 	assert.Equal(t, "localhost:4318", result.Metrics.OTLPReceiverURL)
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", result.Metrics.CollectorConfigPath)
@@ -155,7 +155,7 @@ func TestResolveMetrics(t *testing.T) {
 
 	viperInstance.Set(MetricsRootKey, "set")
 	viperInstance.Set(MetricsCollectorConfigPathKey, expected.CollectorConfigPath)
-	viperInstance.Set(MetricsCollectorKey, expected.Collector)
+	viperInstance.Set(MetricsCollectorEnabledKey, expected.CollectorEnabled)
 	viperInstance.Set(MetricsOTLPExportURLKey, expected.OTLPExportURL)
 	viperInstance.Set(MetricsOTLPReceiverURLKey, expected.OTLPReceiverURL)
 	viperInstance.Set(MetricsCollectorReceiversKey, []string{"hostmetrics"})
@@ -234,7 +234,7 @@ func getAgentConfig() *Config {
 			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules",
 		},
 		Metrics: &Metrics{
-			Collector:           true,
+			CollectorEnabled:    true,
 			OTLPExportURL:       "localhost:3000",
 			OTLPReceiverURL:     "localhost:4317",
 			CollectorConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",

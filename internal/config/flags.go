@@ -6,51 +6,48 @@ package config
 
 import (
 	"strings"
-	"time"
 )
 
 const (
-	ConfigDirectoriesKey                          = "config_dirs"
-	ConfigPathKey                                 = "path"
-	CommandRootKey                                = "command"
-	DataPlaneConfigNginxReloadMonitoringPeriodKey = "data_plane_config_nginx_reload_monitoring_period"
-	DataPlaneConfigNginxTreatWarningsAsErrorsKey  = "data_plane_config_nginx_treat_warnings_as_error"
-	LogLevelKey                                   = "log.level"
-	LogPathKey                                    = "log.path"
-	MetricsRootKey                                = "metrics"
-	VersionKey                                    = "version"
-	UUIDKey                                       = "uuid"
-	InstanceWatcherMonitoringFrequencyKey         = "watchers_instance_watcher_monitoring_frequency"
-	InstanceHealthWatcherMonitoringFrequencyKey   = "watchers_instance_health_watcher_monitoring_frequency"
-
-	// Below consts are NOT flag keys.
-	DefaultDataPlaneConfigNginxReloadMonitoringPeriod = 10 * time.Second
-
-	ClientRootKey = "client"
+	ClientRootKey                               = "client"
+	ConfigDirectoriesKey                        = "config_dirs"
+	ConfigPathKey                               = "path"
+	CommandRootKey                              = "command"
+	DataPlaneConfigRootKey                      = "data_plane_config"
+	LogLevelRoot                                = "log"
+	MetricsRootKey                              = "metrics"
+	VersionKey                                  = "version"
+	UUIDKey                                     = "uuid"
+	InstanceWatcherMonitoringFrequencyKey       = "watchers_instance_watcher_monitoring_frequency"
+	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
 )
 
 var (
 	// child flags saved as vars to enable easier prefixing.
-	MetricsCollectorKey           = pre(MetricsRootKey) + "collector"
-	MetricsOTLPExportURLKey       = pre(MetricsRootKey) + "otlp_export_url"
-	MetricsOTLPReceiverURLKey     = pre(MetricsRootKey) + "otlp_receiver_url"
-	MetricsCollectorConfigPathKey = pre(MetricsRootKey) + "collector_config_path"
-	MetricsCollectorReceiversKey  = pre(MetricsRootKey) + "collector_receivers"
-	CommandServerKey              = pre(CommandRootKey) + "server"
-	CommandServerHostKey          = pre(CommandServerKey) + "host"
-	CommandServerPortKey          = pre(CommandServerKey) + "port"
-	CommandServerTypeKey          = pre(CommandServerKey) + "type"
-	CommandAuthKey                = pre(CommandRootKey) + "auth"
-	CommandAuthTokenKey           = pre(CommandAuthKey) + "token"
-	CommandTLSKey                 = pre(CommandRootKey) + "tls"
-	CommandTLSCertKey             = pre(CommandTLSKey) + "cert"
-	CommandTLSKeyKey              = pre(CommandTLSKey) + "key"
-	CommandTLSCaKey               = pre(CommandTLSKey) + "ca"
-	CommandTLSSkipVerifyKey       = pre(CommandTLSKey) + "skip_verify"
-	CommandTLSServerNameKey       = pre(CommandRootKey) + "server_name"
-	ClientTimeoutKey              = pre(ClientRootKey) + "timeout"
-	ClientTimeKey                 = pre(ClientRootKey) + "time"
-	ClientPermitWithoutStreamKey  = pre(ClientRootKey) + "permit_without_stream"
+	ClientPermitWithoutStreamKey   = pre(ClientRootKey) + "permit_without_stream"
+	ClientTimeKey                  = pre(ClientRootKey) + "time"
+	ClientTimeoutKey               = pre(ClientRootKey) + "timeout"
+	CommandAuthKey                 = pre(CommandRootKey) + "auth"
+	CommandAuthTokenKey            = pre(CommandAuthKey) + "token"
+	CommandServerHostKey           = pre(CommandServerKey) + "host"
+	CommandServerKey               = pre(CommandRootKey) + "server"
+	CommandServerPortKey           = pre(CommandServerKey) + "port"
+	CommandServerTypeKey           = pre(CommandServerKey) + "type"
+	CommandTLSCaKey                = pre(CommandTLSKey) + "ca"
+	CommandTLSCertKey              = pre(CommandTLSKey) + "cert"
+	CommandTLSKey                  = pre(CommandRootKey) + "tls"
+	CommandTLSKeyKey               = pre(CommandTLSKey) + "key"
+	CommandTLSServerNameKey        = pre(CommandRootKey) + "server_name"
+	CommandTLSSkipVerifyKey        = pre(CommandTLSKey) + "skip_verify"
+	NginxReloadMonitoringPeriodKey = pre(DataPlaneConfigRootKey, "nginx") + "reload_monitoring_period"
+	NginxTreatWarningsAsErrorsKey  = pre(DataPlaneConfigRootKey, "nginx") + "treat_warnings_as_error"
+	LogLevelKey                    = pre(LogLevelRoot) + "level"
+	LogPathKey                     = pre(LogLevelRoot) + "path"
+	MetricsCollectorConfigPathKey  = pre(MetricsRootKey) + "collector_config_path"
+	MetricsCollectorEnabledKey     = pre(MetricsRootKey) + "collector_enabled"
+	MetricsCollectorReceiversKey   = pre(MetricsRootKey) + "collector_receivers"
+	MetricsOTLPExportURLKey        = pre(MetricsRootKey) + "otlp_export_url"
+	MetricsOTLPReceiverURLKey      = pre(MetricsRootKey) + "otlp_receiver_url"
 )
 
 func pre(prefixes ...string) string {

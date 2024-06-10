@@ -56,7 +56,7 @@ func TestLoadPLugins(t *testing.T) {
 			name: "Test 3: Load metrics collector plugin",
 			input: &config.Config{
 				Metrics: &config.Metrics{
-					Collector: true,
+					CollectorEnabled: true,
 				},
 			},
 			expected: []bus.Plugin{
