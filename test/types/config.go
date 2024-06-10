@@ -30,6 +30,12 @@ const (
 )
 
 func GetAgentConfig() *config.Config {
+	var (
+		randomPort1 = 1234
+		randomPort2 = 4321
+		randomPort3 = 1337
+	)
+
 	return &config.Config{
 		Version: "test-version",
 		UUID:    "75442486-0878-440c-9db1-a7006c25a39f",
@@ -42,12 +48,53 @@ func GetAgentConfig() *config.Config {
 		},
 		ConfigDir:          "",
 		AllowedDirectories: []string{"/tmp/"},
-		Metrics: &config.Metrics{
-			CollectorEnabled:    false,
-			OTLPExportURL:       "localhost:3000",
-			OTLPReceiverURL:     "localhost:1234",
-			CollectorConfigPath: "/var/etc/nginx-agent/nginx-agent-otelcol.yaml",
-			CollectorReceivers:  []config.OTelReceiver{config.HostMetrics},
+		Collector: &config.Collector{
+			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			Exporters: []config.Exporter{
+				{
+					Type: "otlp",
+					Server: config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: randomPort1,
+						Type: 0,
+					},
+					Auth: &config.AuthConfig{
+						Token: "super-secret-token",
+					},
+					TLS: &config.TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-cert.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: true,
+						ServerName: "remote-saas-server",
+					},
+				},
+			},
+			Receivers: []config.Receiver{
+				{
+					Type: "otlp",
+					Server: config.ServerConfig{
+						Host: "localhost",
+						Port: randomPort2,
+						Type: 0,
+					},
+					Auth: &config.AuthConfig{
+						Token: "even-secreter-token",
+					},
+					TLS: &config.TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-cert.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: true,
+						ServerName: "local-dataa-plane-server",
+					},
+				},
+			},
+			HealthzEndpoint: &config.ServerConfig{
+				Host: "localhost",
+				Port: randomPort3,
+				Type: 0,
+			},
 		},
 		Command: &config.Command{
 			Server: &config.ServerConfig{

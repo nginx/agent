@@ -29,13 +29,13 @@ type (
 var _ bus.Plugin = (*Collector)(nil)
 
 // NewCollector is the constructor for the Collector plugin.
-func NewCollector(conf *config.Config) (*Collector, error) {
+func New(conf *config.Config) (*Collector, error) {
 	if conf == nil {
 		return nil, errors.New("nil agent config")
 	}
 
-	if conf.Metrics == nil {
-		return nil, errors.New("nil metrics config")
+	if conf.Collector == nil {
+		return nil, errors.New("nil collector config")
 	}
 
 	settings := OTelCollectorSettings(conf)
@@ -57,7 +57,7 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 	var runCtx context.Context
 	runCtx, oc.cancel = context.WithCancel(ctx)
 
-	err := writeCollectorConfig(oc.config.Metrics)
+	err := writeCollectorConfig(oc.config.Collector)
 	if err != nil {
 		return fmt.Errorf("write OTel Collector config: %w", err)
 	}

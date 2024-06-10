@@ -36,32 +36,39 @@ func TestRegisterConfigFile(t *testing.T) {
 }
 
 func TestResolveConfig(t *testing.T) {
+	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules"}
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
-	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules"}
 	require.NoError(t, err)
 
-	result, err := ResolveConfig()
+	// Validate Keys are set.
+	assert.True(t, viperInstance.IsSet(CollectorRootKey))
+	assert.True(t, viperInstance.IsSet(CollectorConfigPathKey))
+	assert.True(t, viperInstance.IsSet(CollectorExportersKey))
+	assert.True(t, viperInstance.IsSet(CollectorReceiversKey))
+	assert.True(t, viperInstance.IsSet(CollectorHealthzEndpointKey))
+
+	actual, err := ResolveConfig()
 	require.NoError(t, err)
 
-	assert.Equal(t, "debug", result.Log.Level)
-	assert.Equal(t, "./", result.Log.Path)
+	assert.Equal(t, "debug", actual.Log.Level)
+	assert.Equal(t, "./", actual.Log.Path)
 
-	assert.Equal(t, 30*time.Second, result.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
-	assert.False(t, result.DataPlaneConfig.Nginx.TreatWarningsAsError)
+	assert.Equal(t, 30*time.Second, actual.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
+	assert.False(t, actual.DataPlaneConfig.Nginx.TreatWarningsAsError)
 
-	require.NotNil(t, result.Metrics)
-	assert.True(t, result.Metrics.CollectorEnabled)
-	assert.Equal(t, "localhost:3000", result.Metrics.OTLPExportURL)
-	assert.Equal(t, "localhost:4318", result.Metrics.OTLPReceiverURL)
-	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", result.Metrics.CollectorConfigPath)
+	require.NotNil(t, actual.Collector)
+	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
+	assert.NotEmpty(t, actual.Collector.Receivers)
+	assert.NotEmpty(t, actual.Collector.Exporters)
+	assert.NotEmpty(t, actual.Collector.HealthzEndpoint)
 
-	assert.Equal(t, 10*time.Second, result.Client.Timeout)
+	assert.Equal(t, 10*time.Second, actual.Client.Timeout)
 
 	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/var/run/nginx:/usr/share/nginx/modules:invalid/path",
-		result.ConfigDir)
+		actual.ConfigDir)
 
-	assert.Equal(t, allowedDir, result.AllowedDirectories)
+	assert.Equal(t, allowedDir, actual.AllowedDirectories)
 }
 
 func TestSetVersion(t *testing.T) {
@@ -148,19 +155,18 @@ func TestResolveClient(t *testing.T) {
 	assert.Equal(t, time.Hour, result.Timeout)
 }
 
-func TestResolveMetrics(t *testing.T) {
+func TestResolveCollector(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	ac := getAgentConfig()
-	expected := ac.Metrics
+	expected := ac.Collector
 
-	viperInstance.Set(MetricsRootKey, "set")
-	viperInstance.Set(MetricsCollectorConfigPathKey, expected.CollectorConfigPath)
-	viperInstance.Set(MetricsCollectorEnabledKey, expected.CollectorEnabled)
-	viperInstance.Set(MetricsOTLPExportURLKey, expected.OTLPExportURL)
-	viperInstance.Set(MetricsOTLPReceiverURLKey, expected.OTLPReceiverURL)
-	viperInstance.Set(MetricsCollectorReceiversKey, []string{"hostmetrics"})
+	viperInstance.Set(CollectorRootKey, "set")
+	viperInstance.Set(CollectorConfigPathKey, expected.ConfigPath)
+	viperInstance.Set(CollectorReceiversKey, expected.Receivers)
+	viperInstance.Set(CollectorExportersKey, expected.Exporters)
+	viperInstance.Set(CollectorHealthzEndpointKey, expected.HealthzEndpoint)
 
-	actual, err := resolveMetrics(ac.AllowedDirectories)
+	actual, err := resolveCollector(ac.AllowedDirectories)
 	require.NoError(t, err)
 
 	assert.Equal(t, expected, actual)
@@ -233,12 +239,53 @@ func getAgentConfig() *Config {
 		AllowedDirectories: []string{
 			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules",
 		},
-		Metrics: &Metrics{
-			CollectorEnabled:    true,
-			OTLPExportURL:       "localhost:3000",
-			OTLPReceiverURL:     "localhost:4317",
-			CollectorConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
-			CollectorReceivers:  []OTelReceiver{HostMetrics},
+		Collector: &Collector{
+			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			Exporters: []Exporter{
+				{
+					Type: "otlp",
+					Server: ServerConfig{
+						Host: "127.0.0.1",
+						Port: 1234,
+						Type: 0,
+					},
+					Auth: &AuthConfig{
+						Token: "super-secret-token",
+					},
+					TLS: &TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-cert.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: true,
+						ServerName: "remote-saas-server",
+					},
+				},
+			},
+			Receivers: []Receiver{
+				{
+					Type: "otlp",
+					Server: ServerConfig{
+						Host: "localhost",
+						Port: 4321,
+						Type: 0,
+					},
+					Auth: &AuthConfig{
+						Token: "even-secreter-token",
+					},
+					TLS: &TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-cert.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: true,
+						ServerName: "local-dataa-plane-server",
+					},
+				},
+			},
+			HealthzEndpoint: &ServerConfig{
+				Host: "localhost",
+				Port: 1337,
+				Type: 0,
+			},
 		},
 		Command: &Command{
 			Server: &ServerConfig{

@@ -5,6 +5,7 @@
 package collector
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -68,18 +69,17 @@ func createConverterFactories() []confmap.ConverterFactory {
 }
 
 func createURIs(cfg *config.Config) []string {
-	return []string{cfg.Metrics.CollectorConfigPath}
+	return []string{cfg.Collector.ConfigPath}
 }
 
 // Generates a OTel Collector config to a file by injecting the Metrics Config to a Go template.
-func writeCollectorConfig(conf *config.Metrics) error {
+func writeCollectorConfig(conf *config.Collector) error {
 	otelcolTemplate, err := template.New(otelTemplatePath).ParseFiles(otelTemplatePath)
 	if err != nil {
 		return err
 	}
 
-	// Should check that we are within an allowed directory in the future.
-	confPath := filepath.Clean(conf.CollectorConfigPath)
+	confPath := filepath.Clean(conf.ConfigPath)
 
 	// Check if file exists.
 	_, err = os.Stat(confPath)
@@ -96,16 +96,17 @@ func writeCollectorConfig(conf *config.Metrics) error {
 	}
 
 	file, err := os.OpenFile(confPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, configFilePermission)
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			slog.Warn("Failed to close file", "file_path", confPath)
+		}
+	}()
 	if err != nil {
 		return err
 	}
 
 	err = otelcolTemplate.Execute(file, conf)
-	if err != nil {
-		return err
-	}
-
-	err = file.Close()
 	if err != nil {
 		return err
 	}

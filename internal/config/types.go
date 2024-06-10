@@ -41,7 +41,7 @@ type (
 		Client             *Client          `yaml:"-" mapstructure:"client"`
 		ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
 		AllowedDirectories []string         `yaml:"-"`
-		Metrics            *Metrics         `yaml:"-" mapstructure:"metrics"`
+		Collector          *Collector       `yaml:"-" mapstructure:"collector"`
 		Command            *Command         `yaml:"-" mapstructure:"command"`
 		File               *File            `yaml:"-" mapstructure:"file"`
 		Common             *CommonSettings  `yaml:"-"`
@@ -68,12 +68,27 @@ type (
 		PermitWithoutStream bool          `yaml:"-" mapstructure:"permit_without_stream"`
 	}
 
-	Metrics struct {
-		CollectorEnabled    bool           `yaml:"-" mapstructure:"collector_enabled"`
-		OTLPExportURL       string         `yaml:"-" mapstructure:"otlp_export_url"`
-		OTLPReceiverURL     string         `yaml:"-" mapstructure:"otlp_receiver_url"`
-		CollectorConfigPath string         `yaml:"-" mapstructure:"collector_config_path"`
-		CollectorReceivers  []OTelReceiver `yaml:"-" mapstructure:"collector_receivers"`
+	Collector struct {
+		ConfigPath      string        `yaml:"-" mapstructure:"config_path"`
+		Exporters       []Exporter    `yaml:"-" mapstructure:"exporters"`
+		Receivers       []Receiver    `yaml:"-" mapstructure:"receivers"`
+		HealthzEndpoint *ServerConfig `yaml:"-" mapstructure:"health_check_endpoint"`
+	}
+
+	// OTel Collector Exporter configuration.
+	Exporter struct {
+		Type   string       `yaml:"-" mapstructure:"type"`
+		Server ServerConfig `yaml:"-" mapstructure:"server"`
+		Auth   *AuthConfig  `yaml:"-" mapstructure:"auth"`
+		TLS    *TLSConfig   `yaml:"-" mapstructure:"tls"`
+	}
+
+	// OTel Collector Receiver configuration.
+	Receiver struct {
+		Type   string       `yaml:"-" mapstructure:"type"`
+		Server ServerConfig `yaml:"-" mapstructure:"server"`
+		Auth   *AuthConfig  `yaml:"-" mapstructure:"auth"`
+		TLS    *TLSConfig   `yaml:"-" mapstructure:"tls"`
 	}
 
 	GRPC struct {
@@ -144,16 +159,4 @@ func (c *Config) IsDirectoryAllowed(directory string) bool {
 	}
 
 	return false
-}
-
-// Converts a string to a OTelReceiver
-func toOTelReceiver(input string) OTelReceiver {
-	switch OTelReceiver(input) {
-	case OTLP, HostMetrics:
-		return OTelReceiver(input)
-	case Unsupported:
-		fallthrough
-	default:
-		return Unsupported
-	}
 }

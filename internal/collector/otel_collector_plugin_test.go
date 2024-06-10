@@ -18,13 +18,13 @@ import (
 
 func TestNewCollector(t *testing.T) {
 	conf := setupOTelConfig(t)
-	_, err := NewCollector(conf)
+	_, err := New(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 }
 
 func TestInitAndClose(t *testing.T) {
 	conf := setupOTelConfig(t)
-	collector, err := NewCollector(conf)
+	collector, err := New(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 
 	ctx := context.Background()
@@ -48,13 +48,32 @@ func TestInitAndClose(t *testing.T) {
 func setupOTelConfig(t *testing.T) *config.Config {
 	t.Helper()
 	return &config.Config{
-		Metrics: &config.Metrics{
-			CollectorEnabled:    true,
-			OTLPExportURL:       "saas:9090",
-			OTLPReceiverURL:     "localhost:4317",
-			CollectorConfigPath: filepath.Join(t.TempDir(), "otel-collector-config.yaml"),
-			CollectorReceivers: []config.OTelReceiver{
-				"hostmetrics",
+		Collector: &config.Collector{
+			ConfigPath: filepath.Join(t.TempDir(), "otel-collector-config.yaml"),
+			Exporters: []config.Exporter{
+				{
+					Type: "otlp",
+					Server: config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: 1234,
+						Type: 0,
+					},
+				},
+			},
+			Receivers: []config.Receiver{
+				{
+					Type: "otlp",
+					Server: config.ServerConfig{
+						Host: "localhost",
+						Port: 4321,
+						Type: 0,
+					},
+				},
+			},
+			HealthzEndpoint: &config.ServerConfig{
+				Host: "localhost",
+				Port: 1337,
+				Type: 0,
 			},
 		},
 	}

@@ -81,8 +81,8 @@ func ResolveConfig() (*Config, error) {
 	// Collect all parsing errors before returning the error, so the user sees all issues with config
 	// in one error message.
 	var err error
-	metrics, metricsErr := resolveMetrics(allowedDirs)
-	err = errors.Join(err, metricsErr)
+	collector, otelcolErr := resolveCollector(allowedDirs)
+	err = errors.Join(err, otelcolErr)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func ResolveConfig() (*Config, error) {
 		Client:             resolveClient(),
 		ConfigDir:          configDir,
 		AllowedDirectories: allowedDirs,
-		Metrics:            metrics,
+		Collector:          collector,
 		Command:            resolveCommand(),
 		Common:             resolveCommon(),
 		Watchers:           resolveWatchers(),
@@ -202,24 +202,9 @@ func registerFlags() {
 		"How often the NGINX Agent will check for instance health changes.",
 	)
 	fs.String(
-		MetricsOTLPExportURLKey,
-		DefOTLPExportURL,
-		"The OTLP metrics exporter's gRPC URL for the NGINX Agent OTel Collector.",
-	)
-	fs.String(
-		MetricsCollectorConfigPathKey,
+		CollectorConfigPathKey,
 		DefCollectorConfigPath,
 		"The path to the Opentelemetry Collector configuration file.",
-	)
-	fs.String(
-		MetricsOTLPReceiverURLKey,
-		DefOTLPReceiverURL,
-		"The OTLP metrics receiver's gRPC URL for the NGINX Agent OTel Collector.",
-	)
-	fs.StringArray(
-		MetricsCollectorReceiversKey,
-		DefCollectorReceivers,
-		"Metrics receiver names for the NGINX Agent OTel Collector.",
 	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
@@ -306,37 +291,39 @@ func resolveClient() *Client {
 	}
 }
 
-func resolveMetrics(allowedDirs []string) (*Metrics, error) {
+func resolveCollector(allowedDirs []string) (*Collector, error) {
 	// We do not want to return a sentinel error because we are joining all returned errors
 	// from config resolution and returning them without pattern matching.
 	// nolint: nilnil
-	if !viperInstance.IsSet(MetricsRootKey) {
+	if !viperInstance.IsSet(CollectorRootKey) {
 		return nil, nil
 	}
 
-	strReceivers := viperInstance.GetStringSlice(MetricsCollectorReceiversKey)
-	enumReceivers := make([]OTelReceiver, 0, len(strReceivers))
-	for _, rec := range strReceivers {
-		rec := toOTelReceiver(strings.ToLower(rec))
-		// A OTLP receiver is always automatically added.
-		if rec != Unsupported && rec != OTLP {
-			enumReceivers = append(enumReceivers, rec)
-		}
-	}
+	var (
+		err         error
+		exporters   []Exporter
+		receivers   []Receiver
+		healthCheck ServerConfig
+	)
 
-	var err error
-	otelColConfPath, pathErr := filePathKey(MetricsCollectorConfigPathKey, allowedDirs)
-	err = errors.Join(err, pathErr)
+	otelColConfPath, pathErr := filePathKey(CollectorConfigPathKey, allowedDirs)
+
+	err = errors.Join(
+		err,
+		pathErr,
+		resolveMapStructure(CollectorExportersKey, &exporters),
+		resolveMapStructure(CollectorReceiversKey, &receivers),
+		resolveMapStructure(CollectorHealthzEndpointKey, &healthCheck),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("invalid metrics: %w", err)
+		return nil, fmt.Errorf("unmarshalling collector config: %w", err)
 	}
 
-	return &Metrics{
-		CollectorEnabled:    viperInstance.GetBool(MetricsCollectorEnabledKey),
-		OTLPExportURL:       viperInstance.GetString(MetricsOTLPExportURLKey),
-		OTLPReceiverURL:     viperInstance.GetString(MetricsOTLPReceiverURLKey),
-		CollectorConfigPath: otelColConfPath,
-		CollectorReceivers:  enumReceivers,
+	return &Collector{
+		ConfigPath:      otelColConfPath,
+		Exporters:       exporters,
+		Receivers:       receivers,
+		HealthzEndpoint: &healthCheck,
 	}, nil
 }
 
@@ -415,4 +402,14 @@ func filePathKey(configKey string, allowedDirPaths []string) (string, error) {
 	}
 
 	return "", fmt.Errorf("%s: path %s not allowed", configKey, cleaned)
+}
+
+// Wrapper needed for more detailed error message.
+func resolveMapStructure(key string, object any) error {
+	err := viperInstance.UnmarshalKey(key, &object)
+	if err != nil {
+		return fmt.Errorf("resolve config %s", key)
+	}
+
+	return nil
 }

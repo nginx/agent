@@ -40,11 +40,10 @@ func TestConfigProviderSettings(t *testing.T) {
 
 func TestTemplateWrite(t *testing.T) {
 	cfg := types.GetAgentConfig()
-	cfg.Metrics.CollectorEnabled = true
-	cfg.Metrics.CollectorConfigPath = filepath.Join(t.TempDir(), "nginx-agent-otelcol-test.yaml")
+	cfg.Collector.ConfigPath = filepath.Join(t.TempDir(), "nginx-agent-otelcol-test.yaml")
 	// cfg.Metrics.CollectorConfigPath = "/tmp/nginx-agent-otelcol-test.yaml"
 	require.NotNil(t, cfg)
 
-	err := writeCollectorConfig(cfg.Metrics)
+	err := writeCollectorConfig(cfg.Collector)
 	require.NoError(t, err)
 }

@@ -9,9 +9,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/collector"
 	"github.com/nginx/agent/v3/internal/command"
 	"github.com/nginx/agent/v3/internal/file"
-	"github.com/nginx/agent/v3/internal/metrics/collector"
 	"github.com/nginx/agent/v3/internal/resource"
 
 	"github.com/nginx/agent/v3/internal/bus"
@@ -55,9 +55,7 @@ func TestLoadPLugins(t *testing.T) {
 		}, {
 			name: "Test 3: Load metrics collector plugin",
 			input: &config.Config{
-				Metrics: &config.Metrics{
-					CollectorEnabled: true,
-				},
+				Collector: &config.Collector{},
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},

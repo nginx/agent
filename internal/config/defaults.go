@@ -17,7 +17,7 @@ const (
 
 	DefCollectorConfigPath = "/var/run/nginx-agent-otelcol.yaml"
 	DefOTLPExportURL       = ""
-	DefOTLPReceiverURL     = "localhost:4317"
+	DefOTLPReceiverURL     = "127.0.0.1:4317"
 
 	DefCommandServerHostKey    = ""
 	DefCommandServerPortKey    = 0

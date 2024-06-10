@@ -9,10 +9,10 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/nginx/agent/v3/internal/collector"
 	"github.com/nginx/agent/v3/internal/command"
 	"github.com/nginx/agent/v3/internal/file"
 	"github.com/nginx/agent/v3/internal/grpc"
-	"github.com/nginx/agent/v3/internal/metrics/collector"
 	"github.com/nginx/agent/v3/internal/resource"
 
 	"github.com/nginx/agent/v3/internal/bus"
@@ -57,8 +57,8 @@ func isGrpcClientConfigured(agentConfig *config.Config) bool {
 }
 
 func addCollector(agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
-	if agentConfig.Metrics != nil && agentConfig.Metrics.CollectorEnabled {
-		oTelCollector, err := collector.NewCollector(agentConfig)
+	if agentConfig.Collector != nil {
+		oTelCollector, err := collector.New(agentConfig)
 		if err == nil {
 			plugins = append(plugins, oTelCollector)
 		} else {
