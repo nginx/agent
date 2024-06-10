@@ -61,6 +61,8 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 		fp.handleNginxConfigUpdate(ctx, msg)
 	case bus.ConfigUploadRequestTopic:
 		fp.handleConfigUploadRequest(ctx, msg)
+	case bus.ConfigApplyRequestTopic:
+		fp.handleConfigApplyRequest(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "File plugin unknown topic", "topic", msg.Topic)
 	}
@@ -70,7 +72,60 @@ func (fp *FilePlugin) Subscriptions() []string {
 	return []string{
 		bus.NginxConfigUpdateTopic,
 		bus.ConfigUploadRequestTopic,
+		bus.ConfigApplyRequestTopic,
+		// TODO: Need to subscribe to successful/failed config apply sent from resource plugin
+		// To determine if we need to rollback files or clear the cache content
 	}
+}
+
+func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
+	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest_ConfigApplyRequest)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
+			"payload", msg.Data)
+	}
+	configApplyRequest := managementPlaneRequest.ConfigApplyRequest
+	correlationID := logger.GetCorrelationID(ctx)
+	var response *mpi.DataPlaneResponse
+
+	err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
+
+	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Failed to update file overview",
+			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
+			"error", err,
+		)
+
+		response = &mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     uuid.NewString(),
+				CorrelationId: correlationID,
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status: mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				Message: fmt.Sprintf("Config apply failed for instanceId: %s", configApplyRequest.
+					GetConfigVersion().GetInstanceId()),
+				Error: err.Error(),
+			},
+		}
+	} else {
+		response = &mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     uuid.NewString(),
+				CorrelationId: correlationID,
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+				Message: "Successfully applied config",
+			},
+		}
+	}
+
+	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 }
 
 func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {

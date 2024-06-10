@@ -19,4 +19,5 @@ const (
 	InstanceHealthTopic              = "instance-health"
 	ConfigUploadRequestTopic         = "config-upload-request"
 	DataPlaneResponseTopic           = "data-plane-response"
+	ConfigApplyRequestTopic          = "config-apply-topic"
 )
