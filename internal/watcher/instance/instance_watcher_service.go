@@ -250,7 +250,7 @@ func checkForProcessChanges(
 ) (updatedInstances []*mpi.Instance) {
 	for instanceID, instance := range updatedInstancesMap {
 		oldInstance := updatedOldInstancesMap[instanceID]
-		if compareInstance(oldInstance.GetInstanceRuntime(), instance.GetInstanceRuntime()) {
+		if !areInstancesEqual(oldInstance.GetInstanceRuntime(), instance.GetInstanceRuntime()) {
 			updatedInstances = append(updatedInstances, instance)
 		}
 	}
@@ -258,16 +258,12 @@ func checkForProcessChanges(
 	return updatedInstances
 }
 
-func compareInstance(oldRuntime, currentRuntime *mpi.InstanceRuntime) (updated bool) {
+func areInstancesEqual(oldRuntime, currentRuntime *mpi.InstanceRuntime) (equal bool) {
 	if oldRuntime.GetProcessId() != currentRuntime.GetProcessId() {
-		return true
+		return false
 	}
 
-	if !reflect.DeepEqual(oldRuntime.GetInstanceChildren(), currentRuntime.GetInstanceChildren()) {
-		return true
-	}
-
-	return false
+	return reflect.DeepEqual(oldRuntime.GetInstanceChildren(), currentRuntime.GetInstanceChildren())
 }
 
 func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
