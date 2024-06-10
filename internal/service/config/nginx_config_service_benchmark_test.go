@@ -7,7 +7,11 @@ package config
 
 import (
 	"context"
+	"log/slog"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/nginx/agent/v3/internal/client/clientfakes"
 
@@ -30,6 +34,9 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 	for _, configFilePath := range configFilePaths {
 		func(configFilePath string) {
 			b.Run(configFilePath, func(bb *testing.B) {
+				slogger := logger.New(config.Log{Level: "error"})
+				slog.SetDefault(slogger)
+
 				nginxConfigService := NewNginx(
 					ctx,
 					&v1.Instance{

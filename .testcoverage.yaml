@@ -42,6 +42,7 @@ exclude:
     - main.go
 # Intentionally ignoring as GetProcesses & KillProcess arent being tested as they are wrappers
     - internal/datasource/host
+    - internal/watcher/process
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by

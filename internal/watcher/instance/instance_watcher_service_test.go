@@ -3,16 +3,18 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package watcher
+package instance
 
 import (
 	"context"
 	"testing"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/watcher/instance/instancefakes"
+	"github.com/nginx/agent/v3/internal/watcher/process/processfakes"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
 	testModel "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
@@ -25,16 +27,16 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 
 	nginxConfigContext := testModel.GetConfigContext()
 
-	fakeProcessWatcher := &watcherfakes.FakeProcessWatcherOperator{}
+	fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
 	fakeProcessWatcher.ProcessesReturns([]*model.Process{}, nil)
 
-	fakeProcessParser := &watcherfakes.FakeProcessParser{}
-	fakeProcessParser.ParseReturns(map[string]*v1.Instance{
+	fakeProcessParser := &instancefakes.FakeProcessParser{}
+	fakeProcessParser.ParseReturns(map[string]*mpi.Instance{
 		protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
 			GetNginxOssInstance([]string{}),
 	})
 
-	fakeNginxConfigParser := &watcherfakes.FakeNginxConfigParser{}
+	fakeNginxConfigParser := &instancefakes.FakeNginxConfigParser{}
 	fakeNginxConfigParser.ParseReturns(nginxConfigContext, nil)
 
 	instanceWatcherService := NewInstanceWatcherService(types.GetAgentConfig())
@@ -48,11 +50,11 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	instanceWatcherService.checkForUpdates(ctx, instanceUpdatesChannel, nginxConfigContextChannel)
 
 	instanceUpdatesMessage := <-instanceUpdatesChannel
-	assert.Len(t, instanceUpdatesMessage.instanceUpdates.newInstances, 2)
-	assert.Empty(t, instanceUpdatesMessage.instanceUpdates.deletedInstances)
+	assert.Len(t, instanceUpdatesMessage.InstanceUpdates.NewInstances, 2)
+	assert.Empty(t, instanceUpdatesMessage.InstanceUpdates.DeletedInstances)
 
 	nginxConfigContextMessage := <-nginxConfigContextChannel
-	assert.Equal(t, nginxConfigContext, nginxConfigContextMessage.nginxConfigContext)
+	assert.Equal(t, nginxConfigContext, nginxConfigContextMessage.NginxConfigContext)
 }
 
 func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
@@ -66,54 +68,54 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 
 	tests := []struct {
 		name                    string
-		oldInstances            []*v1.Instance
-		parsedInstances         map[string]*v1.Instance
+		oldInstances            []*mpi.Instance
+		parsedInstances         map[string]*mpi.Instance
 		expectedInstanceUpdates InstanceUpdates
 	}{
 		{
 			name:                    "Test 1: No updates",
-			oldInstances:            []*v1.Instance{agentInstance},
-			parsedInstances:         make(map[string]*v1.Instance),
+			oldInstances:            []*mpi.Instance{agentInstance},
+			parsedInstances:         make(map[string]*mpi.Instance),
 			expectedInstanceUpdates: InstanceUpdates{},
 		},
 		{
 			name:         "Test 2: New instance",
-			oldInstances: []*v1.Instance{agentInstance},
-			parsedInstances: map[string]*v1.Instance{
+			oldInstances: []*mpi.Instance{agentInstance},
+			parsedInstances: map[string]*mpi.Instance{
 				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
 				nginxInstance.GetInstanceMeta().GetInstanceId(): nginxInstance,
 			},
 			expectedInstanceUpdates: InstanceUpdates{
-				newInstances: []*v1.Instance{
+				NewInstances: []*mpi.Instance{
 					nginxInstance,
 				},
 			},
 		},
 		{
 			name: "Test 3: Updated instance",
-			oldInstances: []*v1.Instance{
+			oldInstances: []*mpi.Instance{
 				agentInstance,
 				nginxInstanceWithDifferentPID,
 			},
-			parsedInstances: map[string]*v1.Instance{
+			parsedInstances: map[string]*mpi.Instance{
 				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
 				nginxInstance.GetInstanceMeta().GetInstanceId(): nginxInstance,
 			},
 			expectedInstanceUpdates: InstanceUpdates{
-				updatedInstances: []*v1.Instance{
+				UpdatedInstances: []*mpi.Instance{
 					nginxInstance,
 				},
 			},
 		},
 		{
 			name: "Test 4: Deleted instance",
-			oldInstances: []*v1.Instance{
+			oldInstances: []*mpi.Instance{
 				agentInstance,
 				protos.GetNginxOssInstance([]string{}),
 			},
-			parsedInstances: make(map[string]*v1.Instance),
+			parsedInstances: make(map[string]*mpi.Instance),
 			expectedInstanceUpdates: InstanceUpdates{
-				deletedInstances: []*v1.Instance{
+				DeletedInstances: []*mpi.Instance{
 					protos.GetNginxOssInstance([]string{}),
 				},
 			},
@@ -122,10 +124,10 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			fakeProcessWatcher := &watcherfakes.FakeProcessWatcherOperator{}
+			fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
 			fakeProcessWatcher.ProcessesReturns([]*model.Process{}, nil)
 
-			fakeProcessParser := &watcherfakes.FakeProcessParser{}
+			fakeProcessParser := &instancefakes.FakeProcessParser{}
 			fakeProcessParser.ParseReturns(test.parsedInstances)
 
 			fakeExec := &execfakes.FakeExecInterface{}
@@ -180,7 +182,7 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 	tests := []struct {
 		name               string
 		nginxConfigContext *model.NginxConfigContext
-		instance           *v1.Instance
+		instance           *mpi.Instance
 	}{
 		{
 			name:               "Test 1: OSS Instance",
