@@ -8,6 +8,7 @@ package instance
 import (
 	"context"
 	"log/slog"
+	"reflect"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/watcher/process"
@@ -130,7 +131,8 @@ func (iw *InstanceWatcherService) checkForUpdates(
 		}
 	}
 
-	if len(instanceUpdates.NewInstances) > 0 || len(instanceUpdates.DeletedInstances) > 0 {
+	if len(instanceUpdates.NewInstances) > 0 || len(instanceUpdates.DeletedInstances) > 0 ||
+		len(instanceUpdates.UpdatedInstances) > 0 {
 		instancesChannel <- InstanceUpdatesMessage{
 			CorrelationID:   correlationID,
 			InstanceUpdates: instanceUpdates,
@@ -248,12 +250,24 @@ func checkForProcessChanges(
 ) (updatedInstances []*mpi.Instance) {
 	for instanceID, instance := range updatedInstancesMap {
 		oldInstance := updatedOldInstancesMap[instanceID]
-		if oldInstance.GetInstanceRuntime().GetProcessId() != instance.GetInstanceRuntime().GetProcessId() {
+		if compareInstance(oldInstance.GetInstanceRuntime(), instance.GetInstanceRuntime()) {
 			updatedInstances = append(updatedInstances, instance)
 		}
 	}
 
 	return updatedInstances
+}
+
+func compareInstance(oldRuntime, currentRuntime *mpi.InstanceRuntime) (updated bool) {
+	if oldRuntime.GetProcessId() != currentRuntime.GetProcessId() {
+		return true
+	}
+
+	if !reflect.DeepEqual(oldRuntime.GetInstanceChildren(), currentRuntime.GetInstanceChildren()) {
+		return true
+	}
+
+	return false
 }
 
 func (iw *InstanceWatcherService) updateNginxInstanceRuntime(

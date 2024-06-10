@@ -7,8 +7,11 @@ package health
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
+
+	process2 "github.com/shirou/gopsutil/v3/process"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
@@ -30,15 +33,21 @@ func NewNginxHealthWatcher() *NginxHealthWatcher {
 }
 
 func (nhw *NginxHealthWatcher) Health(ctx context.Context, instance *mpi.Instance) (*mpi.InstanceHealth, error) {
-	proc, err := nhw.processOperator.Process(ctx, instance.GetInstanceRuntime().GetProcessId())
-	if err != nil {
-		return nil, err
-	}
-
 	health := &mpi.InstanceHealth{
 		InstanceId:           instance.GetInstanceMeta().GetInstanceId(),
 		InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
 	}
+
+	proc, err := nhw.processOperator.Process(ctx, instance.GetInstanceRuntime().GetProcessId())
+	if errors.Is(err, process2.ErrorProcessNotRunning) {
+		health.Description = fmt.Sprintf("PID: %d is not running", instance.GetInstanceRuntime().GetProcessId())
+		health.InstanceHealthStatus = mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY
+
+		return health, err
+	} else if err != nil {
+		return nil, err
+	}
+
 	if strings.Contains(proc.Status, "zombie") || !proc.Running {
 		health.Description = fmt.Sprintf("PID: %d is unhealthy, status: %s", proc.PID, proc.Status)
 		health.InstanceHealthStatus = mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY
