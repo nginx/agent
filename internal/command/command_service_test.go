@@ -48,7 +48,13 @@ func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
 	)
 	defer commandService.CancelSubscription(ctx)
 
+	// Fail first time since there are no other instances besides the agent
 	err := commandService.UpdateDataPlaneStatus(ctx, protos.GetHostResource())
+	require.Error(t, err)
+
+	resource := protos.GetHostResource()
+	resource.Instances = append(resource.Instances, protos.GetNginxOssInstance([]string{}))
+	err = commandService.UpdateDataPlaneStatus(ctx, resource)
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, commandServiceClient.CreateConnectionCallCount())
@@ -73,7 +79,9 @@ func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 	assert.Equal(t, 0, commandServiceClient.UpdateDataPlaneHealthCallCount())
 
 	// connection created
-	err = commandService.createConnection(ctx, protos.GetHostResource())
+	resource := protos.GetHostResource()
+	resource.Instances = append(resource.Instances, protos.GetNginxOssInstance([]string{}))
+	err = commandService.createConnection(ctx, resource)
 	require.NoError(t, err)
 	assert.Equal(t, 1, commandServiceClient.CreateConnectionCallCount())
 

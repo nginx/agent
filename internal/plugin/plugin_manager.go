@@ -28,7 +28,7 @@ func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 	if isGrpcClientConfigured(agentConfig) {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to create gRPC connection", "error", err)
+			slog.WarnContext(ctx, "Failed to create gRPC connection", "error", err)
 		} else {
 			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection)
 			plugins = append(plugins, commandPlugin)

@@ -233,7 +233,7 @@ func (cs *CommandService) subscribe(ctx context.Context) {
 
 			retryError := backoff.Retry(subscribeFn, backoffHelpers.Context(ctx, commonSettings))
 			if retryError != nil {
-				slog.ErrorContext(ctx, "Failed to receive messages from subscribe stream", "error", retryError)
+				slog.WarnContext(ctx, "Failed to receive messages from subscribe stream", "error", retryError)
 			}
 		}
 	}
@@ -241,6 +241,11 @@ func (cs *CommandService) subscribe(ctx context.Context) {
 
 func (cs *CommandService) createConnection(ctx context.Context, resource *mpi.Resource) error {
 	correlationID := logger.GetCorrelationID(ctx)
+
+	// Only send a resource update message if instances other than the agent instance are found
+	if len(resource.GetInstances()) <= 1 {
+		return errors.New("waiting for data plane instances to be found before sending create connection request")
+	}
 
 	request := &mpi.CreateConnectionRequest{
 		MessageMeta: &mpi.MessageMeta{
