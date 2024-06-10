@@ -66,6 +66,7 @@ func TestCommandPlugin_Process(t *testing.T) {
 	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	err := commandPlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
+	defer commandPlugin.Close(ctx)
 
 	commandPlugin.commandService = fakeCommandService
 

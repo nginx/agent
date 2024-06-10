@@ -40,7 +40,12 @@ func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
 	commandServiceClient.SubscribeReturns(fakeSubscribeClient, nil)
 
-	commandService := NewCommandService(commandServiceClient, types.GetAgentConfig())
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.GetAgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
 	defer commandService.CancelSubscription(ctx)
 
 	err := commandService.UpdateDataPlaneStatus(ctx, protos.GetHostResource())
@@ -54,7 +59,12 @@ func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 	ctx := context.Background()
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
 
-	commandService := NewCommandService(commandServiceClient, types.GetAgentConfig())
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.GetAgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
 
 	// connection not created yet
 	err := commandService.UpdateDataPlaneHealth(ctx, protos.GetInstanceHealths())

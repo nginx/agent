@@ -13,6 +13,7 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/grpc"
+	"github.com/nginx/agent/v3/internal/logger"
 )
 
 var _ bus.Plugin = (*CommandPlugin)(nil)
@@ -28,17 +29,19 @@ type (
 	}
 
 	CommandPlugin struct {
-		messagePipe    bus.MessagePipeInterface
-		config         *config.Config
-		conn           grpc.GrpcConnectionInterface
-		commandService commandService
+		messagePipe      bus.MessagePipeInterface
+		config           *config.Config
+		conn             grpc.GrpcConnectionInterface
+		commandService   commandService
+		subscribeChannel chan *mpi.ManagementPlaneRequest
 	}
 )
 
 func NewCommandPlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface) *CommandPlugin {
 	return &CommandPlugin{
-		config: agentConfig,
-		conn:   grpcConnection,
+		config:           agentConfig,
+		conn:             grpcConnection,
+		subscribeChannel: make(chan *mpi.ManagementPlaneRequest),
 	}
 }
 
@@ -46,7 +49,9 @@ func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeIn
 	slog.DebugContext(ctx, "Starting command plugin")
 
 	cp.messagePipe = messagePipe
-	cp.commandService = NewCommandService(cp.conn.CommandServiceClient(), cp.config)
+	cp.commandService = NewCommandService(ctx, cp.conn.CommandServiceClient(), cp.config, cp.subscribeChannel)
+
+	go cp.monitorSubscribeChannel(ctx)
 
 	return nil
 }
@@ -88,5 +93,21 @@ func (cp *CommandPlugin) Subscriptions() []string {
 	return []string{
 		bus.ResourceUpdateTopic,
 		bus.InstanceHealthTopic,
+	}
+}
+
+func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case message := <-cp.subscribeChannel:
+			newCtx := context.WithValue(
+				ctx,
+				logger.CorrelationIDContextKey,
+				slog.Any(logger.CorrelationIDKey, message.GetMessageMeta().GetCorrelationId()),
+			)
+			slog.DebugContext(newCtx, "Received management plane request", "request", message)
+		}
 	}
 }

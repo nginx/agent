@@ -31,26 +31,42 @@ const (
 	createConnectionMaxElapsedTime = 0
 )
 
-type CommandService struct {
-	commandServiceClient mpi.CommandServiceClient
-	agentConfig          *config.Config
-	isConnected          *atomic.Bool
-	subscribeCancel      context.CancelFunc
-	subscribeMutex       sync.Mutex
-}
+type (
+	CommandService struct {
+		commandServiceClient mpi.CommandServiceClient
+		agentConfig          *config.Config
+		isConnected          *atomic.Bool
+		subscribeCancel      context.CancelFunc
+		subscribeMutex       sync.Mutex
+		subscribeChannel     chan *mpi.ManagementPlaneRequest
+	}
+)
 
 func NewCommandService(
+	ctx context.Context,
 	commandServiceClient mpi.CommandServiceClient,
 	agentConfig *config.Config,
+	subscribeChannel chan *mpi.ManagementPlaneRequest,
 ) *CommandService {
 	isConnected := &atomic.Bool{}
 	isConnected.Store(false)
 
-	return &CommandService{
+	commandService := &CommandService{
 		commandServiceClient: commandServiceClient,
 		agentConfig:          agentConfig,
 		isConnected:          isConnected,
+		subscribeChannel:     subscribeChannel,
 	}
+
+	var subscribeCtx context.Context
+
+	commandService.subscribeMutex.Lock()
+	subscribeCtx, commandService.subscribeCancel = context.WithCancel(ctx)
+	commandService.subscribeMutex.Unlock()
+
+	go commandService.subscribe(subscribeCtx)
+
+	return commandService
 }
 
 func (cs *CommandService) UpdateDataPlaneStatus(ctx context.Context, resource *mpi.Resource) error {
@@ -59,14 +75,6 @@ func (cs *CommandService) UpdateDataPlaneStatus(ctx context.Context, resource *m
 		if err != nil {
 			return err
 		}
-
-		var subscribeCtx context.Context
-
-		cs.subscribeMutex.Lock()
-		subscribeCtx, cs.subscribeCancel = context.WithCancel(ctx)
-		cs.subscribeMutex.Unlock()
-
-		go cs.subscribe(subscribeCtx)
 	}
 
 	correlationID := logger.GetCorrelationID(ctx)
@@ -174,8 +182,7 @@ func (cs *CommandService) CancelSubscription(ctx context.Context) {
 	cs.subscribeMutex.Unlock()
 }
 
-// revive cognitive complexity 13 due to the nil checks
-// nolint: revive
+// nolint: revive,gocognit
 func (cs *CommandService) subscribe(ctx context.Context) {
 	var subscribeClient mpi.CommandService_SubscribeClient
 	var err error
@@ -185,36 +192,51 @@ func (cs *CommandService) subscribe(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			if subscribeClient == nil {
-				subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
-				if err != nil {
-					slog.ErrorContext(ctx, "Unable to subscribe", "error", err)
-					// this is temporary and will be changed in a followup PR use back off and allow the time to be set
-					// but needed to add retry to stop the logs being spammed with errors
-					time.Sleep(retryInterval)
+			subscribeFn := func() error {
+				if subscribeClient == nil {
+					if cs.commandServiceClient == nil {
+						return errors.New("command service client is not initialized")
+					}
 
-					continue
+					subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
+					if err != nil {
+						slog.ErrorContext(ctx, "Failed to create subscribe client", "error", err)
+
+						return err
+					}
+
+					if subscribeClient == nil {
+						return errors.New("subscribe client is not initialized")
+					}
 				}
+
+				request, recvError := subscribeClient.Recv()
+				if recvError != nil {
+					slog.ErrorContext(ctx, "Failed to receive message from subscribe stream", "error", recvError)
+					subscribeClient = nil
+
+					return recvError
+				}
+
+				cs.subscribeChannel <- request
+
+				return nil
 			}
 
-			request, recErr := subscribeClient.Recv()
-			if recErr != nil {
-				slog.ErrorContext(ctx, "Error receiving messages", "err", recErr)
-				subscribeClient = nil
-				time.Sleep(retryInterval)
-
-				continue
+			commonSettings := &config.CommonSettings{
+				InitialInterval:     cs.agentConfig.Common.InitialInterval,
+				MaxInterval:         cs.agentConfig.Common.MaxInterval,
+				MaxElapsedTime:      createConnectionMaxElapsedTime,
+				RandomizationFactor: cs.agentConfig.Common.RandomizationFactor,
+				Multiplier:          cs.agentConfig.Common.Multiplier,
 			}
 
-			slog.DebugContext(ctx, "Subscribe received", "request", request)
-
-			cs.processRequest(ctx, request)
+			retryError := backoff.Retry(subscribeFn, backoffHelpers.Context(ctx, commonSettings))
+			if retryError != nil {
+				slog.ErrorContext(ctx, "Failed to receive messages from subscribe stream", "error", retryError)
+			}
 		}
 	}
-}
-
-func (cs *CommandService) processRequest(ctx context.Context, request *mpi.ManagementPlaneRequest) {
-	slog.InfoContext(ctx, "Management plane request not implemented yet", "request_type", request.GetRequest())
 }
 
 func (cs *CommandService) createConnection(ctx context.Context, resource *mpi.Resource) error {
