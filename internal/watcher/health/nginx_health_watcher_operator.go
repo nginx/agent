@@ -11,16 +11,16 @@ import (
 	"fmt"
 	"strings"
 
-	process2 "github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v3/process"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
-	"github.com/nginx/agent/v3/internal/watcher/process"
+	processwatcher "github.com/nginx/agent/v3/internal/watcher/process"
 )
 
 type NginxHealthWatcher struct {
 	executer        exec.ExecInterface
-	processOperator process.ProcessOperatorInterface
+	processOperator processwatcher.ProcessOperatorInterface
 }
 
 var _ healthWatcherOperator = (*NginxHealthWatcher)(nil)
@@ -28,7 +28,7 @@ var _ healthWatcherOperator = (*NginxHealthWatcher)(nil)
 func NewNginxHealthWatcher() *NginxHealthWatcher {
 	return &NginxHealthWatcher{
 		executer:        &exec.Exec{},
-		processOperator: process.NewProcessOperator(),
+		processOperator: processwatcher.NewProcessOperator(),
 	}
 }
 
@@ -39,7 +39,7 @@ func (nhw *NginxHealthWatcher) Health(ctx context.Context, instance *mpi.Instanc
 	}
 
 	proc, err := nhw.processOperator.Process(ctx, instance.GetInstanceRuntime().GetProcessId())
-	if errors.Is(err, process2.ErrorProcessNotRunning) {
+	if errors.Is(err, process.ErrorProcessNotRunning) {
 		health.Description = fmt.Sprintf("PID: %d is not running", instance.GetInstanceRuntime().GetProcessId())
 		health.InstanceHealthStatus = mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY
 
