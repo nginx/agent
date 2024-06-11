@@ -8,8 +8,8 @@ package file
 import (
 	"bytes"
 	"context"
-	"io"
 	"errors"
+	"io"
 	"log/slog"
 	"os"
 
