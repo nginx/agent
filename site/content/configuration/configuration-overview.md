@@ -136,7 +136,7 @@ tags:
 
 </details>
 
-## NGINX Agent CLI Flags & Environment Variables
+## CLI Flags & Environment Variables
 
 This section details the CLI flags and corresponding environment variables used to configure the NGINX Agent.
 
@@ -213,7 +213,7 @@ Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.con
 
 {{</note>}}
 
-## NGINX Agent Log Rotation
+## Log Rotation
 
 By default, NGINX Agent rotates logs daily using logrotate with the following configuration:
 
