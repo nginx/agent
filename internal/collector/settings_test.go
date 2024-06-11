@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,7 +42,40 @@ func TestConfigProviderSettings(t *testing.T) {
 func TestTemplateWrite(t *testing.T) {
 	cfg := types.GetAgentConfig()
 	cfg.Collector.ConfigPath = filepath.Join(t.TempDir(), "nginx-agent-otelcol-test.yaml")
-	// cfg.Metrics.CollectorConfigPath = "/tmp/nginx-agent-otelcol-test.yaml"
+	// cfg.Collector.ConfigPath = "/tmp/nginx-agent-otelcol-test.yaml"
+
+	cfg.Collector.Exporters = append(cfg.Collector.Exporters, config.Exporter{
+		Type: "prometheus",
+		Server: &config.ServerConfig{
+			Host: "localhost",
+			Port: 9876,
+			Type: 0,
+		},
+		Auth: nil, // Auth and TLS not supported yet.
+		TLS:  nil,
+	}, config.Exporter{
+		Type:   "debug",
+		Server: nil, // not relevant to the debug exporter
+		Auth:   nil,
+		TLS:    nil,
+	})
+
+	cfg.Collector.Receivers = append(cfg.Collector.Receivers, config.Receiver{
+		Type:   "hostmetrics",
+		Server: nil, // not relevant to hostmetrics receiver.
+		Auth:   nil,
+		TLS:    nil,
+	}, config.Receiver{
+		Type: "prometheus",
+		Server: &config.ServerConfig{
+			Host: "192.168.200.15",
+			Port: 7765,
+			Type: 0,
+		},
+		Auth: nil, // Auth and TLS not supported yet.
+		TLS:  nil,
+	})
+
 	require.NotNil(t, cfg)
 
 	err := writeCollectorConfig(cfg.Collector)

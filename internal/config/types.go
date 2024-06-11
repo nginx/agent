@@ -6,8 +6,24 @@
 package config
 
 import (
+	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
+)
+
+var (
+	supportedExporters = map[string]struct{}{
+		"debug":      {},
+		"otlp":       {},
+		"prometheus": {},
+	}
+
+	supportedReceivers = map[string]struct{}{
+		"otlp":        {},
+		"hostmetrics": {},
+		"prometheus":  {},
+	}
 )
 
 type ServerType int
@@ -24,12 +40,6 @@ func parseServerType(str string) (ServerType, bool) {
 	c, ok := serverTypes[strings.ToLower(str)]
 	return c, ok
 }
-
-const (
-	Unsupported OTelReceiver = "unknown"
-	OTLP        OTelReceiver = "otlp"
-	HostMetrics OTelReceiver = "hostmetrics"
-)
 
 type (
 	Config struct {
@@ -77,18 +87,18 @@ type (
 
 	// OTel Collector Exporter configuration.
 	Exporter struct {
-		Type   string       `yaml:"-" mapstructure:"type"`
-		Server ServerConfig `yaml:"-" mapstructure:"server"`
-		Auth   *AuthConfig  `yaml:"-" mapstructure:"auth"`
-		TLS    *TLSConfig   `yaml:"-" mapstructure:"tls"`
+		Type   string        `yaml:"-" mapstructure:"type"`
+		Server *ServerConfig `yaml:"-" mapstructure:"server"`
+		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
+		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
 	}
 
 	// OTel Collector Receiver configuration.
 	Receiver struct {
-		Type   string       `yaml:"-" mapstructure:"type"`
-		Server ServerConfig `yaml:"-" mapstructure:"server"`
-		Auth   *AuthConfig  `yaml:"-" mapstructure:"auth"`
-		TLS    *TLSConfig   `yaml:"-" mapstructure:"tls"`
+		Type   string        `yaml:"-" mapstructure:"type"`
+		Server *ServerConfig `yaml:"-" mapstructure:"server"`
+		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
+		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
 	}
 
 	GRPC struct {
@@ -146,14 +156,46 @@ type (
 	InstanceHealthWatcher struct {
 		MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 	}
-
-	// Enum for the supported OTel Collector receiver names that the Agent supports.
-	OTelReceiver string
 )
 
+func (col *Collector) Validate(allowedDirectories []string) error {
+	cleaned := filepath.Clean(col.ConfigPath)
+
+	if !isAllowedDir(cleaned, allowedDirectories) {
+		return fmt.Errorf("collector path %s not allowed", col.ConfigPath)
+	}
+
+	for _, exp := range col.Exporters {
+		t := strings.ToLower(exp.Type)
+
+		if _, ok := supportedExporters[t]; !ok {
+			return fmt.Errorf("unsupported exporter type: %s", exp.Type)
+		}
+
+		// normalize field too
+		exp.Type = t
+	}
+
+	for _, rec := range col.Receivers {
+		t := strings.ToLower(rec.Type)
+
+		if _, ok := supportedReceivers[t]; !ok {
+			return fmt.Errorf("unsupported receiver type: %s", rec.Type)
+		}
+
+		rec.Type = t
+	}
+
+	return nil
+}
+
 func (c *Config) IsDirectoryAllowed(directory string) bool {
-	for _, allowedDirectory := range c.AllowedDirectories {
-		if strings.HasPrefix(directory, allowedDirectory) {
+	return isAllowedDir(directory, c.AllowedDirectories)
+}
+
+func isAllowedDir(dir string, allowedDirs []string) bool {
+	for _, allowedDirectory := range allowedDirs {
+		if strings.HasPrefix(dir, allowedDirectory) {
 			return true
 		}
 	}

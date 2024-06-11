@@ -53,7 +53,7 @@ func GetAgentConfig() *config.Config {
 			Exporters: []config.Exporter{
 				{
 					Type: "otlp",
-					Server: config.ServerConfig{
+					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: randomPort1,
 						Type: 0,
@@ -73,7 +73,7 @@ func GetAgentConfig() *config.Config {
 			Receivers: []config.Receiver{
 				{
 					Type: "otlp",
-					Server: config.ServerConfig{
+					Server: &config.ServerConfig{
 						Host: "localhost",
 						Port: randomPort2,
 						Type: 0,

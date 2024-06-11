@@ -84,7 +84,7 @@ func ResolveConfig() (*Config, error) {
 	collector, otelcolErr := resolveCollector(allowedDirs)
 	err = errors.Join(err, otelcolErr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
 	config := &Config{
@@ -306,25 +306,29 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		healthCheck ServerConfig
 	)
 
-	otelColConfPath, pathErr := filePathKey(CollectorConfigPathKey, allowedDirs)
-
 	err = errors.Join(
 		err,
-		pathErr,
 		resolveMapStructure(CollectorExportersKey, &exporters),
 		resolveMapStructure(CollectorReceiversKey, &receivers),
 		resolveMapStructure(CollectorHealthzEndpointKey, &healthCheck),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshalling collector config: %w", err)
+		return nil, fmt.Errorf("unmarshal collector config: %w", err)
 	}
 
-	return &Collector{
-		ConfigPath:      otelColConfPath,
+	col := &Collector{
+		ConfigPath:      viperInstance.GetString(CollectorConfigPathKey),
 		Exporters:       exporters,
 		Receivers:       receivers,
 		HealthzEndpoint: &healthCheck,
-	}, nil
+	}
+
+	err = col.Validate(allowedDirs)
+	if err != nil {
+		return nil, fmt.Errorf("collector config: %w", err)
+	}
+
+	return col, nil
 }
 
 func resolveCommand() *Command {
@@ -388,20 +392,6 @@ func resolveWatchers() *Watchers {
 			MonitoringFrequency: DefInstanceHealthWatcherMonitoringFrequency,
 		},
 	}
-}
-
-// Resolves the given `configKey` from viper and validates it.
-func filePathKey(configKey string, allowedDirPaths []string) (string, error) {
-	inputPath := viperInstance.GetString(configKey)
-	cleaned := filepath.Clean(inputPath)
-
-	for _, path := range allowedDirPaths {
-		if strings.HasPrefix(cleaned, path) {
-			return cleaned, nil
-		}
-	}
-
-	return "", fmt.Errorf("%s: path %s not allowed", configKey, cleaned)
 }
 
 // Wrapper needed for more detailed error message.

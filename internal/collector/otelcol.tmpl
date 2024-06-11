@@ -1,10 +1,15 @@
 receivers:
+  {{- range .Receivers }}
+  {{- if eq .Type "otlp" }}
   otlp:
     protocols:
+      {{- if eq .Server.Type 0 }}
       grpc:
-        endpoint: {{ .OTLPReceiverURL }}
-  {{- range .CollectorReceivers }}
-  {{- if eq . "hostmetrics" }}
+      {{- else }}
+      http:
+      {{- end }}
+        endpoint: "{{- .Server.Host -}}:{{- .Server.Port -}}"
+  {{- else if eq .Type "hostmetrics" }}
   hostmetrics:
     collection_interval: 1m
     initial_delay: 1s
@@ -18,6 +23,14 @@ receivers:
       paging:
       processes:
       process:
+  {{- else if eq .Type "prometheus" }}
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'nginx-agent-otelcol'
+          scrape_interval: 5s
+          static_configs:
+            - targets: ['{{- .Server.Host -}}:{{- .Server.Port -}}']
   {{- end }}
   {{- end }}
 
@@ -25,8 +38,10 @@ processors:
   batch:
 
 exporters:
+  {{- range .Exporters }}
+  {{- if eq .Type "otlp" }}
   otlp:
-    endpoint: {{ .OTLPExportURL }}
+    endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
     compression: none
     timeout: 10s
     retry_on_failure:
@@ -34,10 +49,26 @@ exporters:
       initial_interval: 10s
       max_interval: 60s
       max_elapsed_time: 10m
+  {{- else if eq .Type "prometheus" }}
+  prometheus:
+    endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
+    namespace: "nginx-agent"
+  {{- else if eq .Type "debug" }}
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+  {{- end }}
+  {{- end }}
+  
 
 extensions:
   health_check:
+    {{- if .HealthzEndpoint }}
+    endpoint: "{{ .HealthzEndpoint.Host -}}:{{- .HealthzEndpoint.Port }}"
+    {{- else }}
     endpoint: "localhost:13133"
+    {{- end }}
 
 service:
   extensions:
@@ -45,11 +76,12 @@ service:
   pipelines:
     metrics:
       receivers:
-        - otlp
-        {{- range .CollectorReceivers }}
-        - {{ . }}
+        {{- range .Receivers }}
+        - {{ .Type }}
         {{- end }}
       processors:
         - batch
       exporters:
-        - otlp
+        {{- range .Exporters }}
+        - {{ .Type }}
+        {{- end }}

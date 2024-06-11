@@ -41,7 +41,7 @@ func TestResolveConfig(t *testing.T) {
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
 	require.NoError(t, err)
 
-	// Validate Keys are set.
+	// Ensure viper instance has populated values based on config file before resolving to struct.
 	assert.True(t, viperInstance.IsSet(CollectorRootKey))
 	assert.True(t, viperInstance.IsSet(CollectorConfigPathKey))
 	assert.True(t, viperInstance.IsSet(CollectorExportersKey))
@@ -156,20 +156,74 @@ func TestResolveClient(t *testing.T) {
 }
 
 func TestResolveCollector(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	ac := getAgentConfig()
-	expected := ac.Collector
+	testDefault := getAgentConfig()
+	tests := []struct {
+		name      string
+		expected  *Collector
+		shouldErr bool
+		errMsg    string
+	}{
+		{
+			name:     "Test 1: Happy path",
+			expected: testDefault.Collector,
+		},
+		{
+			name: "Test 2: Non allowed path",
+			expected: &Collector{
+				ConfigPath: "/path/to/secret",
+			},
+			shouldErr: true,
+			errMsg:    "collector path /path/to/secret not allowed",
+		},
+		{
+			name: "Test 3: Unsupported Exporter",
+			expected: &Collector{
+				ConfigPath: testDefault.Collector.ConfigPath,
+				Exporters: []Exporter{
+					{
+						Type: "envoy",
+					},
+				},
+			},
+			shouldErr: true,
+			errMsg:    "unsupported exporter type: envoy",
+		},
+		{
+			name: "Test 4: Unsupported Receiver",
+			expected: &Collector{
+				ConfigPath: testDefault.Collector.ConfigPath,
+				Exporters:  testDefault.Collector.Exporters,
+				Receivers: []Receiver{
+					{
+						Type: "haproxy",
+					},
+				},
+			},
+			shouldErr: true,
+			errMsg:    "unsupported receiver type: haproxy",
+		},
+	}
 
-	viperInstance.Set(CollectorRootKey, "set")
-	viperInstance.Set(CollectorConfigPathKey, expected.ConfigPath)
-	viperInstance.Set(CollectorReceiversKey, expected.Receivers)
-	viperInstance.Set(CollectorExportersKey, expected.Exporters)
-	viperInstance.Set(CollectorHealthzEndpointKey, expected.HealthzEndpoint)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+			viperInstance.Set(CollectorRootKey, "set")
+			viperInstance.Set(CollectorConfigPathKey, test.expected.ConfigPath)
+			viperInstance.Set(CollectorReceiversKey, test.expected.Receivers)
+			viperInstance.Set(CollectorExportersKey, test.expected.Exporters)
+			viperInstance.Set(CollectorHealthzEndpointKey, test.expected.HealthzEndpoint)
 
-	actual, err := resolveCollector(ac.AllowedDirectories)
-	require.NoError(t, err)
+			actual, err := resolveCollector(testDefault.AllowedDirectories)
+			if test.shouldErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), test.errMsg)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expected, actual)
+			}
+		})
 
-	assert.Equal(t, expected, actual)
+	}
 }
 
 func TestCommand(t *testing.T) {
@@ -244,7 +298,7 @@ func getAgentConfig() *Config {
 			Exporters: []Exporter{
 				{
 					Type: "otlp",
-					Server: ServerConfig{
+					Server: &ServerConfig{
 						Host: "127.0.0.1",
 						Port: 1234,
 						Type: 0,
@@ -264,7 +318,7 @@ func getAgentConfig() *Config {
 			Receivers: []Receiver{
 				{
 					Type: "otlp",
-					Server: ServerConfig{
+					Server: &ServerConfig{
 						Host: "localhost",
 						Port: 4321,
 						Type: 0,

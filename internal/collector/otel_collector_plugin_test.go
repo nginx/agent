@@ -53,7 +53,7 @@ func setupOTelConfig(t *testing.T) *config.Config {
 			Exporters: []config.Exporter{
 				{
 					Type: "otlp",
-					Server: config.ServerConfig{
+					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: 1234,
 						Type: 0,
@@ -63,7 +63,7 @@ func setupOTelConfig(t *testing.T) *config.Config {
 			Receivers: []config.Receiver{
 				{
 					Type: "otlp",
-					Server: config.ServerConfig{
+					Server: &config.ServerConfig{
 						Host: "localhost",
 						Port: 4321,
 						Type: 0,
