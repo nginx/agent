@@ -91,10 +91,18 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 }
 
 func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {
-	configUploadRequest, ok := msg.Data.(*mpi.ConfigUploadRequest)
+	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ConfigUploadRequest", "payload", msg.Data)
+		slog.ErrorContext(
+			ctx,
+			"Unable to cast message payload to *mpi.ManagementPlaneRequest",
+			"payload", msg.Data,
+		)
+
+		return
 	}
+
+	configUploadRequest := managementPlaneRequest.GetConfigUploadRequest()
 
 	correlationID := logger.GetCorrelationID(ctx)
 

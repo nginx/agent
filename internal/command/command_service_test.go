@@ -133,3 +133,24 @@ func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, commandServiceClient.UpdateDataPlaneHealthCallCount())
 }
+
+func TestCommandService_SendDataPlaneResponse(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+	subscribeClient := &FakeSubscribeClient{}
+
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.GetAgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+
+	commandService.subscribeClientMutex.Lock()
+	commandService.subscribeClient = subscribeClient
+	commandService.subscribeClientMutex.Unlock()
+
+	err := commandService.SendDataPlaneResponse(ctx, protos.OKDataPlaneResponse())
+
+	require.NoError(t, err)
+}

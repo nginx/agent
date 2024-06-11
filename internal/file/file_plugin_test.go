@@ -92,20 +92,24 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	fileMeta, fileMetaError := protos.GetFileMeta(testFile.Name())
 	require.NoError(t, fileMetaError)
 
-	message := &mpi.ConfigUploadRequest{
-		InstanceId: "123",
-		Overview: &mpi.FileOverview{
-			Files: []*mpi.File{
-				{
-					FileMeta: fileMeta,
-				},
-				{
-					FileMeta: fileMeta,
-				},
-			},
-			ConfigVersion: &mpi.ConfigVersion{
+	message := &mpi.ManagementPlaneRequest{
+		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+			ConfigUploadRequest: &mpi.ConfigUploadRequest{
 				InstanceId: "123",
-				Version:    "f33ref3d32d3c32d3a",
+				Overview: &mpi.FileOverview{
+					Files: []*mpi.File{
+						{
+							FileMeta: fileMeta,
+						},
+						{
+							FileMeta: fileMeta,
+						},
+					},
+					ConfigVersion: &mpi.ConfigVersion{
+						InstanceId: "123",
+						Version:    "f33ref3d32d3c32d3a",
+					},
+				},
 			},
 		},
 	}
@@ -147,20 +151,24 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	fileMeta, fileMetaError := protos.GetFileMeta("/unknown/file.conf")
 	require.NoError(t, fileMetaError)
 
-	message := &mpi.ConfigUploadRequest{
-		InstanceId: "123",
-		Overview: &mpi.FileOverview{
-			Files: []*mpi.File{
-				{
-					FileMeta: fileMeta,
-				},
-				{
-					FileMeta: fileMeta,
-				},
-			},
-			ConfigVersion: &mpi.ConfigVersion{
+	message := &mpi.ManagementPlaneRequest{
+		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+			ConfigUploadRequest: &mpi.ConfigUploadRequest{
 				InstanceId: "123",
-				Version:    "f33ref3d32d3c32d3a",
+				Overview: &mpi.FileOverview{
+					Files: []*mpi.File{
+						{
+							FileMeta: fileMeta,
+						},
+						{
+							FileMeta: fileMeta,
+						},
+					},
+					ConfigVersion: &mpi.ConfigVersion{
+						InstanceId: "123",
+						Version:    "f33ref3d32d3c32d3a",
+					},
+				},
 			},
 		},
 	}

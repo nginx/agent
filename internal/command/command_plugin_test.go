@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/command/commandfakes"
 	"github.com/nginx/agent/v3/internal/grpc/grpcfakes"
@@ -38,6 +39,7 @@ func TestCommandPlugin_Subscriptions(t *testing.T) {
 		[]string{
 			bus.ResourceUpdateTopic,
 			bus.InstanceHealthTopic,
+			bus.DataPlaneResponseTopic,
 		},
 		subscriptions,
 	)
@@ -79,6 +81,44 @@ func TestCommandPlugin_Process(t *testing.T) {
 
 	commandPlugin.Process(ctx, &bus.Message{Topic: bus.InstanceHealthTopic, Data: protos.GetInstanceHealths()})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
+
+	commandPlugin.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: protos.OKDataPlaneResponse()})
+	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
+}
+
+func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	messagePipe := bus.NewFakeMessagePipe()
+
+	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	err := commandPlugin.Init(ctx, messagePipe)
+	require.NoError(t, err)
+	defer commandPlugin.Close(ctx)
+
+	go commandPlugin.monitorSubscribeChannel(ctx)
+
+	commandPlugin.subscribeChannel <- &mpi.ManagementPlaneRequest{
+		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+			ConfigUploadRequest: &mpi.ConfigUploadRequest{},
+		},
+	}
+
+	assert.Eventually(
+		t,
+		func() bool { return len(messagePipe.GetMessages()) == 1 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+
+	messages := messagePipe.GetMessages()
+	assert.Len(t, messages, 1)
+	assert.Equal(t, bus.ConfigUploadRequestTopic, messages[0].Topic)
+
+	request, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
+	assert.True(t, ok)
+	require.NotNil(t, request.GetConfigUploadRequest())
 }
 
 func TestMonitorSubscribeChannel(t *testing.T) {
