@@ -142,8 +142,17 @@ This section details the CLI flags and corresponding environment variables used 
 
 ### Usage
 
+#### CLI Flags
+
 ```sh
 nginx-agent [flags]
+```
+
+#### Environment Variables
+
+```sh
+export ENV_VARIABLE_NAME="value"
+nginx-agent
 ```
 
 ### CLI Flags and Environment Variables
