@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package watcher
+package instance
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/files"
 	testconfig "github.com/nginx/agent/v3/test/config"
 	"github.com/nginx/agent/v3/test/helpers"
@@ -274,7 +274,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		instance *v1.Instance
+		instance *mpi.Instance
 	}{
 		{
 			name:     "Test 1: Valid response",
@@ -295,7 +295,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				errorLog.Name(),
 				test.instance.GetInstanceMeta().GetInstanceId(),
 			)
-			expectedConfigContext.Files = append(expectedConfigContext.Files, &v1.File{
+			expectedConfigContext.Files = append(expectedConfigContext.Files, &mpi.File{
 				FileMeta: fileMeta,
 			})
 
