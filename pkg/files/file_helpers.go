@@ -16,7 +16,7 @@ import (
 	"slices"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/uuid"
+	"github.com/nginx/agent/v3/pkg/files/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
