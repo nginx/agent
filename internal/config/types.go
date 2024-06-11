@@ -22,6 +22,7 @@ var (
 	supportedReceivers = map[string]struct{}{
 		"otlp":        {},
 		"hostmetrics": {},
+		"nginx":       {},
 		"prometheus":  {},
 	}
 )

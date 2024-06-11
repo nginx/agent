@@ -5,6 +5,7 @@
 package collector
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -41,8 +42,9 @@ func TestConfigProviderSettings(t *testing.T) {
 
 func TestTemplateWrite(t *testing.T) {
 	cfg := types.GetAgentConfig()
-	cfg.Collector.ConfigPath = filepath.Join(t.TempDir(), "nginx-agent-otelcol-test.yaml")
-	// cfg.Collector.ConfigPath = "/tmp/nginx-agent-otelcol-test.yaml"
+	actualConfPath := filepath.Join(t.TempDir(), "nginx-agent-otelcol-test.yaml")
+	cfg.Collector.ConfigPath = actualConfPath
+	// cfg.Collector.ConfigPath = "testdata/test-otelcol.yaml"
 
 	cfg.Collector.Exporters = append(cfg.Collector.Exporters, config.Exporter{
 		Type: "prometheus",
@@ -74,10 +76,28 @@ func TestTemplateWrite(t *testing.T) {
 		},
 		Auth: nil, // Auth and TLS not supported yet.
 		TLS:  nil,
+	}, config.Receiver{
+		Type: "nginx",
+		Server: &config.ServerConfig{
+			Host: "localhost",
+			Port: 80,
+			Type: 0,
+		},
+		Auth: nil, // Auth and TLS not supported yet.
+		TLS:  nil,
 	})
 
 	require.NotNil(t, cfg)
 
 	err := writeCollectorConfig(cfg.Collector)
 	require.NoError(t, err)
+
+	expected, err := os.ReadFile("testdata/test-otelcol.yaml")
+	require.NoError(t, err)
+
+	actual, err := os.ReadFile(actualConfPath)
+	require.NoError(t, err)
+
+	// Convert to string for human readable error messages.
+	assert.Equal(t, string(expected), string(actual))
 }

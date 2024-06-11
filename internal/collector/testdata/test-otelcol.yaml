@@ -1,0 +1,71 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "localhost:4321"
+  hostmetrics:
+    collection_interval: 1m
+    initial_delay: 1s
+    scrapers:
+      cpu:
+      disk:
+      load:
+      filesystem:
+      memory:
+      network:
+      paging:
+      processes:
+      process:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'nginx-agent-otelcol'
+          scrape_interval: 5s
+          static_configs:
+            - targets: ['192.168.200.15:7765']
+  nginx:
+    endpoint: "http://localhost:80/status"
+    collection_interval: 10s
+
+processors:
+  batch:
+
+exporters:
+  otlp:
+    endpoint: "127.0.0.1:1234"
+    compression: none
+    timeout: 10s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 10s
+      max_interval: 60s
+      max_elapsed_time: 10m
+  prometheus:
+    endpoint: "localhost:9876"
+    namespace: "nginx-agent"
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+  
+
+extensions:
+  health_check:
+    endpoint: "localhost:1337"
+
+service:
+  extensions:
+    - health_check
+  pipelines:
+    metrics:
+      receivers:
+        - otlp
+        - hostmetrics
+        - prometheus
+        - nginx
+      processors:
+        - batch
+      exporters:
+        - otlp
+        - prometheus
+        - debug

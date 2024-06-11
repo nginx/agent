@@ -31,6 +31,10 @@ receivers:
           scrape_interval: 5s
           static_configs:
             - targets: ['{{- .Server.Host -}}:{{- .Server.Port -}}']
+  {{- else if eq .Type "nginx" }}
+  nginx:
+    endpoint: "http://{{- .Server.Host -}}:{{- .Server.Port -}}/status"
+    collection_interval: 10s
   {{- end }}
   {{- end }}
 
