@@ -243,6 +243,6 @@ By default, NGINX Agent rotates logs daily using logrotate with the following co
 ```
 </details>
 
-If you need to make changes to the default configuration you can update the file here `/etc/logrotate.d/nginx-agent`
+If you need to change the default configuration, update the file at `/etc/logrotate.d/nginx-agent`.
 
-For more detail on logrotate configuration see [Logrotate Configuration Options](https://linux.die.net/man/8/logrotate)
+For more details on logrotate configuration, see [Logrotate Configuration Options](https://linux.die.net/man/8/logrotate).
