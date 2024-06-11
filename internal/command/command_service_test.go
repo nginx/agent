@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/test/helpers"
@@ -38,6 +39,27 @@ func (*FakeSubscribeClient) Send(*mpi.DataPlaneResponse) error {
 // nolint: nilnil
 func (*FakeSubscribeClient) Recv() (*mpi.ManagementPlaneRequest, error) {
 	return nil, nil
+}
+
+func TestCommandService_NewCommandService(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.GetAgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+
+	defer commandService.CancelSubscription(ctx)
+
+	assert.Eventually(
+		t,
+		func() bool { return commandServiceClient.SubscribeCallCount() > 0 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
 }
 
 func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
